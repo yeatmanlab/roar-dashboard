@@ -29,6 +29,7 @@
               class="flex surface-0 p-1 mr-1 border-black-alpha-10 w-full text-center justify-content-center hover:border-primary hover:surface-ground"
               style="border-radius: 3rem; height: 3rem"
               @click="authWithGoogle"
+              data-cy="sign-in__google-sso"
             >
               <img src="../assets/provider-google-logo.svg" alt="The Google Logo" class="flex mr-2 w-2" />
               <span>Google</span>
@@ -38,6 +39,7 @@
               class="flex surface-0 p-1 mr-1 border-black-alpha-10 w-full justify-content-center hover:border-primary hover:surface-ground"
               style="border-radius: 3rem; height: 3rem"
               @click="authWithClever"
+              data-cy="sign-in__clever-sso"
             >
               <img src="../assets/provider-clever-logo.svg" alt="The Clever Logo" class="flex mr-2 w-2" />
               <span>Clever</span>
@@ -47,6 +49,7 @@
               class="flex surface-0 p-1 mr-1 border-black-alpha-10 w-full justify-content-center hover:border-primary hover:surface-ground"
               style="border-radius: 3rem; height: 3rem"
               @click="authWithClassLink"
+              data-cy="sign-in__classlink-sso"
             >
               <img src="../assets/provider-classlink-logo.png" alt="The ClassLink Logo" class="flex mr-2 w-2" />
               <span>ClassLink</span>

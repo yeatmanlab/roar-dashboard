@@ -1,7 +1,4 @@
 import { languageOptions } from './languageOptions';
-import { signInWithClever } from '../participant/participant-helpers';
-
-const timeout = Cypress.env('timeout');
 
 function clickButton(selector) {
   cy.get(selector).then(($btn) => {
@@ -12,11 +9,11 @@ function clickButton(selector) {
 }
 
 function checkGameTab(language, task) {
-  cy.get('.p-tabview', { timeout: timeout }).contains(languageOptions[language][task].gameTab).should('exist');
+  cy.get('.p-tabview').contains(languageOptions[language][task].gameTab).should('exist');
 }
 
 function makeChoiceOrContinue(gameCompleteText) {
-  cy.wait(0.2 * timeout);
+  cy.wait(0.2 * Cypress.env('timeout'));
   cy.get('body').then((body) => {
     const text = body.text().replace(/\s\s+/g, ' ').trim();
     cy.log('Found text: ', text);
@@ -38,12 +35,12 @@ function makeChoiceOrContinue(gameCompleteText) {
 
 export function startGame(administration, language, optional, task, auth) {
   Cypress.on('uncaught:exception', () => false);
-  cy.visit('/', { timeout: 2 * timeout });
+  cy.visit('/');
   if (auth === 'username') {
-    cy.login(Cypress.env('participantUsername'), Cypress.env('participantPassword'));
-    cy.visit('/', { timeout: 2 * timeout });
+    cy.login(Cypress.env('PARTICIPANT_USERNAME'), Cypress.env('PARTICIPANT_PASSWORD'));
+    cy.visit('/');
   } else {
-    signInWithClever();
+    cy.loginWithClever(Cypress.env('cleverSchoolName'), Cypress.env('CLEVER_USERNAME'), Cypress.env('CLEVER_PASSWORD'));
   }
 
   cy.selectAdministration(administration);
@@ -60,12 +57,12 @@ export function startGame(administration, language, optional, task, auth) {
     .should('be.visible')
     .click();
 
-  cy.wait(0.1 * timeout);
+  cy.wait(0.1 * Cypress.env('timeout'));
   Cypress.on('uncaught:exception', () => {
     return false;
   });
 
-  cy.get('.go-button', { timeout: timeout }).should('be.visible').click();
+  cy.get('.go-button').should('be.visible').click();
 }
 
 export function playMorphology({
@@ -82,7 +79,7 @@ export function playMorphology({
   cy.log('Game finished successfully.');
 
   cy.visit('/');
-  cy.wait(0.2 * timeout);
+  cy.wait(0.2 * Cypress.env('timeout'));
   cy.selectAdministration(administration);
 
   if (optional === true) {
@@ -108,7 +105,7 @@ export function playWrittenVocabulary({
   cy.log('Game finished successfully.');
 
   cy.visit('/');
-  cy.wait(0.2 * timeout);
+  cy.wait(0.2 * Cypress.env('timeout'));
   cy.selectAdministration(administration);
 
   if (optional === true) {

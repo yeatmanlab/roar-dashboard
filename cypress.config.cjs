@@ -122,17 +122,6 @@ module.exports = defineConfig({
     firestoreAppUrl:
       'https://firestore.googleapis.com/v1/projects/gse-roar-assessment-dev/databases/(default)/documents',
     timeout: 10000,
-    superAdminUsername: process.env.CYPRESS_SUPER_ADMIN_USERNAME,
-    superAdminPassword: process.env.CYPRESS_SUPER_ADMIN_PASSWORD,
-    superAdminId: process.env.CYPRESS_SUPER_ADMIN_ID,
-    partnerAdminUsername: process.env.CYPRESS_PARTNER_ADMIN_USERNAME,
-    partnerAdminPassword: process.env.CYPRESS_PARTNER_ADMIN_PASSWORD,
-    partnerAdminId: process.env.CYPRESS_PARTNER_ADMIN_ID,
-    participantUsername: process.env.CYPRESS_PARTICIPANT_USERNAME,
-    participantPassword: process.env.CYPRESS_PARTICIPANT_PASSWORD,
-    participantUid: process.env.CYPRESS_PARTICIPANT_UID,
-    participantEmail: process.env.CYPRESS_PARTICIPANT_EMAIL,
-    participantEmailPassword: process.env.CYPRESS_PARTICIPANT_EMAIL_PASSWORD,
     cleverOAuthLink: 'https://clever.com/oauth/authorize',
     cleverSchoolName: '61e8aee84cf0e71b14295d45',
     cleverUsername: process.env.CYPRESS_CLEVER_USERNAME,
@@ -180,15 +169,15 @@ module.exports = defineConfig({
     testGrade: 'Grade 5',
     stanfordUniversityAddress: '450 Jane Stanford Way, Stanford, CA 94305, USA',
     testTag: 'stanford university',
-    cypressDownloads: 'cypress/downloads',
     testRoarAppsAdministration: 'Cypress Test Roar Apps Administration',
     testRoarAppsAdministrationId: 'K8UaI8p79Dntj5Z2CJk8',
     testOptionalRoarAppsAdministration: 'Cypress Test Optional Roar Apps Administration',
     testOptionalRoarAppsAdministrationId: 'Fuy4nQaMu6YmfNg1eBYH',
     testSpanishRoarAppsAdministration: 'Cypress Test Spanish Roar Apps Administration',
     testSpanishRoarAppsAdministrationId: '',
-    // Generate a list of test users CypressTestStudent0, CypressTestStudent1, ..., CypressTestStudent50 and push the test_legal_doc user
     testUserList: (() => {
+      // Generate a list of test users and push the test_legal_doc user to the end of the list.
+      // These users exist in the Firestore dev database and are used in the tests.
       const list = Array.from({ length: 51 }, (_, i) => `CypressTestStudent${i}`);
       list.push('test_legal_doc');
       return list;

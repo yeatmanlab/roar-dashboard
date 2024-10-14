@@ -1,47 +1,36 @@
+const baseUrl = Cypress.config().baseUrl;
 const testDistrictId = Cypress.env('testDistrictId');
 const testPartnerAdministrationName = Cypress.env('testPartnerAdministrationName');
 const testPartnerAdministrationId = Cypress.env('testPartnerAdministrationId');
-const testPartnerAdminUsername = Cypress.env('partnerAdminUsername');
-const testPartnerAdminPassword = Cypress.env('partnerAdminPassword');
-const timeout = Cypress.env('timeout');
-const baseUrl = Cypress.env('baseUrl');
+const testPartnerAdminUsername = Cypress.env('PARTNER_ADMIN_USERNAME');
+const testPartnerAdminPassword = Cypress.env('PARTNER_ADMIN_PASSWORD');
 const testUserList = Cypress.env('testUserList');
 
-function checkUrl() {
-  cy.login(testPartnerAdminUsername, testPartnerAdminPassword);
-  cy.navigateTo('/');
-  cy.url({ timeout: timeout }).should('eq', `${baseUrl}/`);
-}
-
-function clickScoreButton() {
-  cy.get('button', { timeout: timeout }).contains('Scores').first().click();
-  cy.url({ timeout: timeout }).should(
-    'eq',
-    `${baseUrl}/scores/${testPartnerAdministrationId}/district/${testDistrictId}`,
-  );
-}
-
-function checkIndividualScoreReport() {
-  cy.get('[data-cy="route-button"]', { timeout: 3 * timeout })
-    .first()
-    .click();
-  cy.wait(0.3 * timeout);
-  cy.get('body', { timeout: 3 * timeout }).should('contain', 'Individual Score Report');
-  cy.get('button', { timeout: 3 * timeout })
-    .contains('Expand All Sections')
-    .click();
-  cy.get('button', { timeout: 3 * timeout }).contains('Export to PDF');
-  cy.get('div', { timeout: 3 * timeout }).contains('The ROAR assessments return these kinds of scores');
-}
-
-describe('The partner admin can view individual score reports for a given administration.', () => {
+describe('Partner Admin: Individual Reports', () => {
   it("Selects an administration and views a student's individual score report", () => {
-    checkUrl();
+    // Login as a partner admin.
+    cy.login(testPartnerAdminUsername, testPartnerAdminPassword);
+
+    // Wait until the administrations list is loaded.
+    // Note: As the application currently does not support paginated fetching of administrations, we have to wait for
+    // the whole list to be loaded and that can take a while, hence the long timeout.
+    cy.waitForAdministrationsList();
+
+    // Select the test administration and open the details page.
     cy.getAdministrationCard(testPartnerAdministrationName);
-    clickScoreButton();
-    cy.wait(0.3 * timeout);
+
+    // Open the score report.
+    cy.get('button').contains('Scores').first().click();
+    cy.url().should('eq', `${baseUrl}/scores/${testPartnerAdministrationId}/district/${testDistrictId}`);
+
+    // Validate that all test users are present in the progress report.
     cy.checkUserList(testUserList);
-    cy.wait(0.3 * timeout);
-    checkIndividualScoreReport();
+
+    // Validate the individual score report.
+    cy.get('[data-cy="data-table__entry-details-btn"]').first().click();
+    cy.get('[data-cy="report__header"] h1').should('contain', 'Individual Score Report');
+    cy.get('[data-cy="report__expand-btn"]').contains('Expand All Sections').click();
+    cy.get('[data-cy="report__pdf-export-btn"]').contains('Export to PDF');
+    cy.get('div').contains('The ROAR assessments return these kinds of scores');
   });
 });
