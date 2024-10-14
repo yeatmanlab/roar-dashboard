@@ -79,6 +79,13 @@ jobs:
       - name: Build application
         run: npm run build
 
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build
+          path: dist
+          retention-days: 2
+
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
   # End-to-end tests
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
@@ -171,3 +178,31 @@ jobs:
           ci-build-id: ${{ github.run_id }}-component-${{ matrix.browser }}
           spec: |
             cypress/component/**/*.cy.js
+
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  # Deploy to Preview Environment
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  deploy-preview:
+    name: Deploy to Preview Environment
+    runs-on: ubuntu-latest
+    needs: [lint, test, build]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+          token: ${{ secrets.CI_GITHUB_PAT }}
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: build
+
+      - name: Deploy to Firebase Hosting Channel
+        id: firebase-deploy-preview
+        uses: FirebaseExtended/action-hosting-deploy@v0.9.0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_ADMIN_STAGING }}
+          projectId: ${{ secrets.FIREBASE_PROJECT_ID_ADMIN_STAGING }}
