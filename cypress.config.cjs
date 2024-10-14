@@ -139,6 +139,10 @@ module.exports = defineConfig({
     testOptionalRoarAppsAdministrationId: 'Fuy4nQaMu6YmfNg1eBYH',
     testSpanishRoarAppsAdministration: 'Cypress Test Spanish Roar Apps Administration',
     testSpanishRoarAppsAdministrationId: '',
+    parentFirstName: process.env.PARENT_FIRST_NAME,
+    parentLastName: process.env.PARENT_LAST_NAME,
+    parentEmail: process.env.PARENT_EMAIL,
+    parentPassword: process.env.PARENT_PASSWORD,
     // Generate a list of test users CypressTestStudent0, CypressTestStudent1, ..., CypressTestStudent50 and push the test_legal_doc user
     testUserList: (() => {
       const list = Array.from({ length: 51 }, (_, i) => `CypressTestStudent${i}`);
