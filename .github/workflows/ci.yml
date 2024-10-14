@@ -113,6 +113,7 @@ jobs:
           COMMIT_INFO_MESSAGE: '${{ github.event.pull_request.title }} (#${{ github.event.pull_request.number }})'
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
+          build: npm run build
           start: npm run preview -- --host
           tag: ${{ github.event_name }},e2e,${{ matrix.browser }}
           wait-on: ${{ env.CYPRESS_BASE_URL }}
@@ -159,6 +160,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           component: true
+          build: npm run build
           start: npm run preview -- --host
           tag: ${{ github.event_name }},component,${{ matrix.browser }}
           wait-on: ${{ env.CYPRESS_BASE_URL }}
