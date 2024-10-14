@@ -25,6 +25,7 @@ let levanteTaskLauncher;
 const taskId = props.taskId;
 const { version } = packageLockJson.packages['node_modules/@levante-framework/core-tasks'];
 const router = useRouter();
+const taskStarted = ref(false);
 const gameStarted = ref(false);
 const authStore = useAuthStore();
 const gameStore = useGameStore();
@@ -76,14 +77,16 @@ onBeforeUnmount(() => {
 watch(
   [isFirekitInit, isLoadingUserData],
   async ([newFirekitInitValue, newLoadingUserData]) => {
-    if (newFirekitInitValue && !newLoadingUserData) await startTask();
+    if (newFirekitInitValue && !newLoadingUserData && !taskStarted.value) {
+      taskStarted.value = true;
+      const { selectedAdmin } = storeToRefs(gameStore);
+      await startTask(selectedAdmin);
+    }
   },
   { immediate: true },
 );
 
-const { selectedAdmin } = storeToRefs(gameStore);
-
-async function startTask() {
+async function startTask(selectedAdmin) {
   try {
     let checkGameStarted = setInterval(function () {
       // Poll for the preload trials progress bar to exist and then begin the game
