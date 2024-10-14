@@ -45,19 +45,11 @@
             <div class="assignment-select-container flex flex-row justify-content-between justify-content-start">
               <div class="flex flex-column align-content-start justify-content-start w-3">
                 <PvDropdown
-                  v-if="userAssignments.every((administration) => administration.publicName)"
                   v-model="selectedAdmin"
                   :options="sortedUserAdministrations ?? []"
-                  option-label="publicName"
-                  input-id="dd-assignment"
-                  data-cy="dropdown-select-administration"
-                  @change="toggleShowOptionalAssessments"
-                />
-                <PvDropdown
-                  v-else
-                  v-model="selectedAdmin"
-                  :options="sortedUserAdministrations ?? []"
-                  option-label="name"
+                  :option-label="
+                    userAssignments.every((administration) => administration.publicName) ? 'publicName' : 'name'
+                  "
                   input-id="dd-assignment"
                   data-cy="dropdown-select-administration"
                   @change="toggleShowOptionalAssessments"
@@ -377,25 +369,31 @@ const studentInfo = computed(() => {
 
 watch(
   [userData, selectedAdmin, userAssignments],
-  async ([updatedUserData, updatedSelectedAdmin]) => {
-    if (!_isEmpty(updatedUserData) && updatedSelectedAdmin) {
+  async ([newUserData, isSelectedAdminChanged]) => {
+    // If the assignments are still loading, abort.
+    if (isLoadingAssignments.value || isFetchingAssignments.value || !userAssignments.value.length) return;
+
+    // If the selected admin changed, ensure consent was given before proceeding.
+    if (!_isEmpty(newUserData) && isSelectedAdminChanged) {
       await checkConsent();
     }
 
     const selectedAdminId = selectedAdmin.value?.id;
-    const allAdminIds = (userAssignments.value ?? []).map((administration) => administration.id);
-    // If there is no selected administration or if the selected administration is not in the list
-    // of all administrations choose the first one after sorting alphabetically by publicName
-    if (allAdminIds.length > 0 && (!selectedAdminId || !allAdminIds.includes(selectedAdminId))) {
-      // Choose the first sorted administration
-      selectedAdmin.value = sortedUserAdministrations.value[0];
-    } else {
-      // Although this seems redundant, we ensure that the selected admin is a fresh instance of the admin.
-      // This is relevant in the case that the game store does not flush properly.
+    const allAdminIds = userAssignments.value?.map((administration) => administration.id) ?? [];
+
+    // Verify that we have a selected administration and it is in the list of all assigned administrations.
+    if (selectedAdminId && allAdminIds.includes(selectedAdminId)) {
+      // Ensure that the selected administration is a fresh instance of the administration. Whilst this seems redundant,
+      // this is apparently relevant in the case that the game store does not flush properly.
       selectedAdmin.value = sortedUserAdministrations.value.find(
         (administration) => administration.id === selectedAdminId,
       );
+
+      return;
     }
+
+    // Otherwise, choose the first sorted administration if there is no selected administration.
+    selectedAdmin.value = sortedUserAdministrations.value[0];
   },
   { immediate: true },
 );
