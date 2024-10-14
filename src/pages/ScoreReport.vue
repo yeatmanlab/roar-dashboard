@@ -1047,8 +1047,8 @@ const exportData = async ({ selectedRows = null, includeProgress = false }) => {
   const fileNameSuffix = includeProgress ? '-scores-progress' : '-scores';
   const selectedSuffix = selectedRows ? '-selected' : '';
   const fileName = `roar${fileNameSuffix}${selectedSuffix}-${_kebabCase(
-    getTitle(administrationInfo.value, isSuperAdmin.value),
-  )}-${_kebabCase(orgInfo.value.name)}.csv`;
+    getTitle(administrationData.value, isSuperAdmin.value),
+  )}-${_kebabCase(orgData.value.name)}.csv`;
 
   // Export CSV
   exportCsv(exportData, fileName);
