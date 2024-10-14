@@ -593,17 +593,14 @@ const computeAssignmentAndRunData = computed(() => {
     const runsByTaskIdAcc = {};
 
     for (const { assignment, user } of assignmentData.value) {
-      // We can't garentee that the user's school is still in the current list of schools
-      //   So we'll find the school both in the 'all' list as well as assignment.readOrgs
-      const userSchools = user.schools?.all;
-      const assignmentOrgs = assignment.readOrgs.schools;
-      const matchingSchools = userSchools?.filter((schoolId) => assignmentOrgs.includes(schoolId));
-
       // for each row, compute: username, firstName, lastName, assessmentPID, grade, school, all the scores, and routeParams for report link
       const grade = user.studentData?.grade;
-      // compute schoolName
+
+      // compute schoolName. Use the schoolId from the assignment's assigningOrgs, as this should be correct even when the
+      //   user is unenrolled. The assigningOrgs should be up to date and persistant. Fallback to the student's current schools.
       let schoolName = '';
-      const schoolId = matchingSchools[0];
+      const assigningSchool = assignment?.readOrgs?.schools;
+      const schoolId = assigningSchool[0] ?? user?.schools?.current[0];
       if (schoolId) {
         schoolName = schoolNameDictionary.value[schoolId];
       }
