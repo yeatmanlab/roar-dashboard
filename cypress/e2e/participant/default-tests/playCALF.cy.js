@@ -1,26 +1,26 @@
-import { playFluencyCALF } from '../../../support/helper-functions/roam-fluency/fluencyHelpers';
+import { playCALF } from '../../../support/helper-functions/roam-apps/roamHelpers';
 import { isCurrentVersion } from '../../../support/utils';
 
-const app = '@bdelab/roam-fluency';
+const app = '@bdelab/roam-apps';
 
-describe('Test playthrough of Fluency as a participant using username authentication', () => {
-  it('Fluency Playthrough Test', () => {
+describe('Test playthrough of ROAM CALF-ES as a participant using username authentication', () => {
+  it('ROAM Playthrough Test', () => {
     cy.wrap(isCurrentVersion(app)).then((isCurrentVersion) => {
       if (isCurrentVersion) {
         cy.log(`Did not detect a new version of ${app}, skipping test.`);
       } else {
         cy.log(`Detected a new version of ${app}, running test.`);
-        playFluencyCALF({ auth: 'username' });
+        playCALF({ auth: 'username' });
       }
     });
   });
-  it('Fluency Playthrough Test using Clever authentication', () => {
+  it('ROAM Playthrough Test using Clever authentication', () => {
     cy.wrap(isCurrentVersion(app)).then((isCurrentVersion) => {
       if (isCurrentVersion) {
         cy.log(`Did not detect a new version of ${app}, skipping test.`);
       } else {
         cy.log(`Detected a new version of ${app}, running test.`);
-        playFluencyCALF({ auth: 'clever' });
+        playCALF({ auth: 'clever' });
       }
     });
   });

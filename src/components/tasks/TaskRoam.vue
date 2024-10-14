@@ -129,7 +129,7 @@ async function startTask(selectedAdmin) {
 }
 </script>
 <style>
-@import '@bdelab/roam-fluency/lib/resources/roam-fluency.css';
+@import '@bdelab/roam-fluency/lib/resources/roam-apps.css';
 
 .game-target {
   position: absolute;
