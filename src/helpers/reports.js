@@ -105,6 +105,14 @@ export const taskDisplayNames = {
     extendedName: 'Picture Vocabulary',
     order: 12,
   },
+  fluency: {
+    name: 'Fluency',
+    publicName: 'ROAR - Fluency',
+    studentFacingName: 'Fluency',
+    extendedTitle: 'ROAM - Fluency',
+    extendedName: 'Math Fluency',
+    order: 12,
+  },
   'fluency-arf': {
     name: 'Single Digit Fluency',
     publicName: 'ROAM - Math Facts Fluency',
@@ -223,6 +231,54 @@ export const taskDisplayNames = {
     extendedTitle: 'ROAR - External Test',
     extendedName: 'External Test',
     order: 26,
+  },
+};
+
+export const extendedDescriptions = {
+  swr: 'This test measures your student’s skill in reading single words quickly and correctly.',
+  'swr-es':
+    'This test measures how well a student can identify real words and made-up words. ' +
+    'The goal is for students to recognize words quickly and accurately, a skill called decoding. ' +
+    'High scores on this assessment indicate a readiness to be a skilled and fluent reader.',
+  pa: 'This test measures how well your student can break down a spoken word into its individual sounds and choose or create a word with the same sounds.',
+  sre: 'This test measures how quickly your student can silently read and understand sentences.',
+  vocab: 'This test measures how well your student knows words by having them match a picture to a spoken word.',
+  multichoice: 'Temporary description for multichoice',
+  morph:
+    'This test measures how well your student understands how parts of words, including prefixes and suffixes, can change the meaning of a word in a sentence',
+  cva: 'This test measures your students’ knowledge of words that are often used in the books they read at school',
+  letter:
+    'This test measures how well your student knows the names of letters and which letters are used to spell each sound',
+  'letter-es.':
+    'This test measures how well your student knows the names of letters and which letters are used to spell each sound.',
+  comp: 'Temporary description for comp',
+  phonics:
+    'This test measures phonics knowledge by testing how well your student can match the sounds of a word to the spelling',
+  syntax: 'This test measures how well students understand sentences that vary from simple to complicated',
+  trog: 'This test measures how well students understand sentences that vary from simple to complicated',
+  fluency: 'Temporary description for fluency',
+  ran: 'Temporary description for ran',
+  crowding: 'Temporary description for crowding',
+  'roav-mep': 'Temporary description for mep',
+};
+
+/*
+ *  Descriptions By Task Id
+ *  A map to correlate taskId with a proper header and description for use in the distribution graphs.
+ */
+export const descriptionsByTaskId = {
+  // "letter": { header: "ROAR-Letter Sound Matching (ROAR-Letter)", description: " assesses knowledge of letter names and sounds." },
+  pa: {
+    header: 'ROAR-Phonological Awareness (ROAR-Phoneme)',
+    description: ' measures the ability to hear and manipulate the individual sounds within words.',
+  },
+  swr: {
+    header: 'ROAR-Single Word Recognition (ROAR-Word)',
+    description: ' assesses decoding skills at the word level.',
+  },
+  sre: {
+    header: 'ROAR-Sentence Reading Efficiency (ROAR-Sentence)',
+    description: ' assesses reading fluency at the sentence level.',
   },
 };
 
