@@ -186,6 +186,7 @@ jobs:
     name: Deploy to Preview Environment
     runs-on: ubuntu-latest
     needs: [lint, test, build]
+    if: ${{ vars.CI_ENABLE_PR_ENVIRONMENT_DEPLOYMENTS == 'true' }}
 
     steps:
       - name: Checkout repository
