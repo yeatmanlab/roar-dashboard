@@ -26,7 +26,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup environment
-        uses: ./.github/actions/setup-node
+        uses: ./.github/actions/setup-node-environment
 
       - name: Run linter
         run: npm run lint
@@ -47,7 +47,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup environment
-        uses: ./.github/actions/setup-node
+        uses: ./.github/actions/setup-node-environment
 
       - name: Run unit tests
         run: npm run test
@@ -74,7 +74,7 @@ jobs:
           token: ${{ secrets.CI_GITHUB_PAT }}
 
       - name: Setup environment
-        uses: ./.github/actions/setup-node
+        uses: ./.github/actions/setup-node-environment
 
       - name: Build application
         run: npm run build
@@ -105,22 +105,6 @@ jobs:
           submodules: 'true'
           token: ${{ secrets.CI_GITHUB_PAT }}
 
-      - name: Restore dependencies from cache
-        uses: actions/cache@v4
-        id: cache-node-modules
-        with:
-          path: |
-            ~/.cache/Cypress
-            node_modules
-          key: ${{ runner.os }}-modules-${{ github.ref }}-${{ hashFiles('**/package-lock.json') }}
-
-      - name: Install dependencies
-        if: steps.cache-node-modules.outputs.cache-hit != 'true'
-        run: npm ci
-
-      - name: Build application
-        run: npm run build
-
       - name: Execute Cypress tests
         uses: cypress-io/github-action@v6
         env:
@@ -129,9 +113,8 @@ jobs:
           COMMIT_INFO_MESSAGE: '${{ github.event.pull_request.title }} (#${{ github.event.pull_request.number }})'
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag: ${{ github.event_name }},e2e,${{ matrix.browser }}
-          install: false
           start: npm run preview -- --host
+          tag: ${{ github.event_name }},e2e,${{ matrix.browser }}
           wait-on: ${{ env.CYPRESS_BASE_URL }}
           wait-on-timeout: 120
           record: true
@@ -167,12 +150,6 @@ jobs:
           submodules: 'true'
           token: ${{ secrets.CI_GITHUB_PAT }}
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build application
-        run: npm run build
-
       - name: Execute Cypress tests
         uses: cypress-io/github-action@v6
         env:
@@ -182,14 +159,13 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           component: true
-          tag: ${{ github.event_name }},component,${{ matrix.browser }}
-          install: false
           start: npm run preview -- --host
+          tag: ${{ github.event_name }},component,${{ matrix.browser }}
           wait-on: ${{ env.CYPRESS_BASE_URL }}
           wait-on-timeout: 120
           record: true
           parallel: true
           browser: ${{ matrix.browser }}
-          ci-build-id: ${{ github.run_id }}-e2e-${{ matrix.browser }}
+          ci-build-id: ${{ github.run_id }}-component-${{ matrix.browser }}
           spec: |
             cypress/component/**/*.cy.js
