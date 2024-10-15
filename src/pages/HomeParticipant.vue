@@ -1,81 +1,79 @@
 <template>
   <div>
-    <div v-if="isFetching" class="loading-container py-8">
+    <div v-if="!initialized || isLoading || isFetching" class="loading-container py-8">
       <AppSpinner style="margin-bottom: 1rem" />
       <span>{{ $t('homeParticipant.loadingAssignments') }}</span>
     </div>
 
-    <div v-else>
-      <div v-if="!hasAssignments">
-        <div class="col-full text-center py-8">
-          <h1>{{ $t('homeParticipant.noAssignments') }}</h1>
-          <p class="text-center">{{ $t('homeParticipant.contactAdministrator') }}</p>
+    <div v-else-if="!hasAssignments">
+      <div class="col-full text-center py-8">
+        <h1>{{ $t('homeParticipant.noAssignments') }}</h1>
+        <p class="text-center">{{ $t('homeParticipant.contactAdministrator') }}</p>
 
-          <PvButton
-            :label="$t('navBar.signOut')"
-            class="no-underline bg-primary border-none border-round p-2 text-white hover:bg-red-900"
-            icon="pi pi-sign-out"
-            @click="signOut"
-          />
-        </div>
+        <PvButton
+          :label="$t('navBar.signOut')"
+          class="no-underline bg-primary border-none border-round p-2 text-white hover:bg-red-900"
+          icon="pi pi-sign-out"
+          @click="signOut"
+        />
       </div>
+    </div>
 
-      <div v-else>
-        <h2 v-if="userAssignments?.length == 1" class="p-float-label dropdown-container">
-          {{ userAssignments.at(0).publicName || userAssignments.at(0).name }}
-        </h2>
-        <div class="flex flex-row-reverse align-items-end gap-2 justify-content-between">
-          <div
-            v-if="optionalAssessments.length !== 0"
-            class="switch-container flex flex-row align-items-center justify-content-end mr-6 gap-2"
-          >
-            <PvInputSwitch
-              v-model="showOptionalAssessments"
-              input-id="switch-optional"
-              data-cy="switch-show-optional-assessments"
-            />
-            <label for="switch-optional" class="mr-2 text-gray-500">{{
-              $t('homeParticipant.showOptionalAssignments')
-            }}</label>
-          </div>
-          <div
-            v-if="userAssignments?.length > 0"
-            class="flex flex-row justify-center align-items-center p-float-label dropdown-container gap-4 w-full"
-          >
-            <div class="assignment-select-container flex flex-row justify-content-between justify-content-start">
-              <div class="flex flex-column align-content-start justify-content-start w-3">
-                <PvDropdown
-                  v-model="selectedAdmin"
-                  :options="sortedUserAdministrations ?? []"
-                  :option-label="
-                    userAssignments.every((administration) => administration.publicName) ? 'publicName' : 'name'
-                  "
-                  input-id="dd-assignment"
-                  data-cy="dropdown-select-administration"
-                  @change="toggleShowOptionalAssessments"
-                />
-                <label for="dd-assignment">{{ $t('homeParticipant.selectAssignment') }}</label>
-              </div>
+    <div v-else>
+      <h2 v-if="userAssignments?.length == 1" class="p-float-label dropdown-container">
+        {{ userAssignments.at(0).publicName || userAssignments.at(0).name }}
+      </h2>
+      <div class="flex flex-row-reverse align-items-end gap-2 justify-content-between">
+        <div
+          v-if="optionalAssessments.length !== 0"
+          class="switch-container flex flex-row align-items-center justify-content-end mr-6 gap-2"
+        >
+          <PvInputSwitch
+            v-model="showOptionalAssessments"
+            input-id="switch-optional"
+            data-cy="switch-show-optional-assessments"
+          />
+          <label for="switch-optional" class="mr-2 text-gray-500">{{
+            $t('homeParticipant.showOptionalAssignments')
+          }}</label>
+        </div>
+        <div
+          v-if="userAssignments?.length > 0"
+          class="flex flex-row justify-center align-items-center p-float-label dropdown-container gap-4 w-full"
+        >
+          <div class="assignment-select-container flex flex-row justify-content-between justify-content-start">
+            <div class="flex flex-column align-content-start justify-content-start w-3">
+              <PvDropdown
+                v-model="selectedAdmin"
+                :options="sortedUserAdministrations ?? []"
+                :option-label="
+                  userAssignments.every((administration) => administration.publicName) ? 'publicName' : 'name'
+                "
+                input-id="dd-assignment"
+                data-cy="dropdown-select-administration"
+                @change="toggleShowOptionalAssessments"
+              />
+              <label for="dd-assignment">{{ $t('homeParticipant.selectAssignment') }}</label>
             </div>
           </div>
         </div>
-        <div class="tabs-container">
-          <ParticipantSidebar :total-games="totalGames" :completed-games="completeGames" :student-info="studentInfo" />
-          <Transition name="fade" mode="out-in">
-            <GameTabs
-              v-if="showOptionalAssessments && userData"
-              :games="optionalAssessments"
-              :sequential="isSequential"
-              :user-data="userData"
-            />
-            <GameTabs
-              v-else-if="requiredAssessments && userData"
-              :games="requiredAssessments"
-              :sequential="isSequential"
-              :user-data="userData"
-            />
-          </Transition>
-        </div>
+      </div>
+      <div class="tabs-container">
+        <ParticipantSidebar :total-games="totalGames" :completed-games="completeGames" :student-info="studentInfo" />
+        <Transition name="fade" mode="out-in">
+          <GameTabs
+            v-if="showOptionalAssessments && userData"
+            :games="optionalAssessments"
+            :sequential="isSequential"
+            :user-data="userData"
+          />
+          <GameTabs
+            v-else-if="requiredAssessments && userData"
+            :games="requiredAssessments"
+            :sequential="isSequential"
+            :user-data="userData"
+          />
+        </Transition>
       </div>
     </div>
   </div>
@@ -184,8 +182,8 @@ const isFetching = computed(() => {
 });
 
 const hasAssignments = computed(() => {
-  if (isFetching.value || isLoading.value) return false;
-  return assessments.value.length !== 0;
+  if (isLoading.value || isFetching.value) return false;
+  return assessments.value.length > 0;
 });
 
 async function checkConsent() {
@@ -371,7 +369,7 @@ watch(
   [userData, selectedAdmin, userAssignments],
   async ([newUserData, isSelectedAdminChanged]) => {
     // If the assignments are still loading, abort.
-    if (isLoadingAssignments.value || isFetchingAssignments.value || !userAssignments.value.length) return;
+    if (isLoadingAssignments.value || isFetchingAssignments.value || !userAssignments.value?.length) return;
 
     // If the selected admin changed, ensure consent was given before proceeding.
     if (!_isEmpty(newUserData) && isSelectedAdminChanged) {
