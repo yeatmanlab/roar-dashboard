@@ -19,17 +19,21 @@
 
     <SessionTimer v-if="loadSessionTimeoutHandler" />
   </div>
+
+  <VueQueryDevtools v-if="showDevtools" />
 </template>
 
 <script setup>
-import { computed, onBeforeMount, ref, defineAsyncComponent, onUpdated } from 'vue';
+import { computed, onBeforeMount, onMounted, ref, defineAsyncComponent } from 'vue';
 import { useRoute } from 'vue-router';
 import { useRecaptchaProvider } from 'vue-recaptcha';
 import { Head } from '@unhead/vue/components';
-
 import NavBar from '@/components/NavBar.vue';
 
 const SessionTimer = defineAsyncComponent(() => import('@/containers/SessionTimer/SessionTimer.vue'));
+const VueQueryDevtools = defineAsyncComponent(() =>
+  import('@tanstack/vue-query-devtools').then((module) => module.VueQueryDevtools),
+);
 
 import { useAuthStore } from '@/store/auth';
 import { fetchDocById } from '@/helpers/query/utils';
@@ -37,6 +41,7 @@ import { i18n } from '@/translations/i18n';
 
 const isLevante = import.meta.env.MODE === 'LEVANTE';
 const isAuthStoreReady = ref(false);
+const showDevtools = ref(false);
 
 const authStore = useAuthStore();
 const route = useRoute();
@@ -79,14 +84,13 @@ const navbarBlacklist = ref([
   'MEP',
 ]);
 
-onUpdated(async () => {
-  await authStore.updateTasksDictionary();
-});
-
 onBeforeMount(async () => {
   await authStore.initFirekit();
-  authStore.setUser();
+
   await authStore.initStateFromRedirect().then(async () => {
+    // @TODO: Refactor this callback as we should ideally use the useUserClaimsQuery and useUserDataQuery composables.
+    // @NOTE: Whilst the rest of the application relies on the user's ROAR UID, this callback requires the user's ID
+    // in order for SSO to work and cannot currently be changed without significant refactoring.
     if (authStore.uid) {
       const userClaims = await fetchDocById('userClaims', authStore.uid);
       authStore.userClaims = userClaims;
@@ -96,6 +100,20 @@ onBeforeMount(async () => {
       authStore.userData = userData;
     }
   });
+
   isAuthStoreReady.value = true;
+});
+
+onMounted(() => {
+  const isLocal = import.meta.env.MODE === 'development';
+  const isDevToolsEnabled = import.meta.env.VITE_QUERY_DEVTOOLS_ENABLED === 'true';
+
+  if (isLocal) {
+    showDevtools.value = true;
+  } else if (isDevToolsEnabled) {
+    window.toggleDevtools = () => {
+      showDevtools.value = !showDevtools.value;
+    };
+  }
 });
 </script>

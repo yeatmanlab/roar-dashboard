@@ -204,13 +204,13 @@
   </div>
 </template>
 <script setup>
+import { watch, ref, onMounted, computed } from 'vue';
 import { useAuthStore } from '@/store/auth';
 import { storeToRefs } from 'pinia';
-import { useQuery } from '@tanstack/vue-query';
-import { fetchDocById } from '@/helpers/query/utils';
-import { watch, ref, onMounted, computed } from 'vue';
 import _isEmpty from 'lodash/isEmpty';
 import _get from 'lodash/get';
+import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
+
 const props = defineProps({
   userData: {
     type: Object,
@@ -230,7 +230,7 @@ const props = defineProps({
 const emit = defineEmits(['modalClosed', 'update:userData']);
 
 const authStore = useAuthStore();
-const { roarfirekit, uid, userQueryKeyIndex } = storeToRefs(authStore);
+const { roarfirekit } = storeToRefs(authStore);
 const initialized = ref(false);
 
 watch(
@@ -361,12 +361,8 @@ watch(
 );
 
 // Determine if the user is an admin
-const { data: userClaims } = useQuery({
-  queryKey: ['userClaims', uid, userQueryKeyIndex],
-  queryFn: () => fetchDocById('userClaims', uid.value),
-  keepPreviousData: true,
+const { data: userClaims } = useUserClaimsQuery({
   enabled: initialized,
-  staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
 const isSuperAdmin = computed(() => {

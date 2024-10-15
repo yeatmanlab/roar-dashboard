@@ -51,7 +51,7 @@
   </div>
   <div class="my-2 mx-4">
     <SubscoreTable
-      v-if="taskId === 'letter'"
+      v-if="taskId === 'letter' && !isLoadingTasksDictionary"
       task-id="letter"
       :task-name="tasksDictionary['letter'].publicName"
       :administration-id="administrationId"
@@ -62,7 +62,7 @@
       :computed-table-data="computedTableData"
     />
     <SubscoreTable
-      v-if="taskId === 'pa'"
+      v-if="taskId === 'pa' && !isLoadingTasksDictionary"
       task-id="pa"
       :task-name="tasksDictionary['pa'].publicName"
       :administration-id="administrationId"
@@ -75,18 +75,14 @@
   </div>
 </template>
 <script setup>
-import DistributionChartFacet from '@/components/reports/DistributionChartFacet.vue';
-import DistributionChartSupport from '@/components/reports/DistributionChartSupport.vue';
+import { ref, computed } from 'vue';
 import Accordion from 'primevue/accordion';
 import AccordionTab from 'primevue/accordiontab';
 import { tasksToDisplayGraphs, taskInfoById } from '@/helpers/reports.js';
+import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery.js';
 import SubscoreTable from '@/components/reports/SubscoreTable.vue';
-import { ref, computed } from 'vue';
-import { useAuthStore } from '@/store/auth';
-import { storeToRefs } from 'pinia';
-
-const authStore = useAuthStore();
-const { tasksDictionary } = storeToRefs(authStore);
+import DistributionChartFacet from '@/components/reports/DistributionChartFacet.vue';
+import DistributionChartSupport from '@/components/reports/DistributionChartSupport.vue';
 
 // eslint-disable-next-line no-unused-vars
 const props = defineProps({
@@ -127,6 +123,8 @@ const props = defineProps({
     required: true,
   },
 });
+
+const { data: tasksDictionary, isLoading: isLoadingTasksDictionary } = useTasksDictionaryQuery();
 
 const facetMode = ref({ name: 'Grade', key: 'grade' });
 const facetModes = [

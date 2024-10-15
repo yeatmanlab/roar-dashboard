@@ -61,13 +61,10 @@ import RegisterStudent from '../components/auth/RegisterStudent.vue';
 import ROARLogoShort from '@/assets/RoarLogo-Short.vue';
 import { ref, onMounted, onBeforeUnmount, watch, toRaw, computed } from 'vue';
 import { useAuthStore } from '@/store/auth';
-import { useQuery } from '@tanstack/vue-query';
-import { storeToRefs } from 'pinia';
-import { fetchDocById } from '@/helpers/query/utils';
 import router from '../router';
+import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 
 const authStore = useAuthStore();
-const { uid } = storeToRefs(authStore);
 const initialized = ref(false);
 const spinner = ref(false);
 
@@ -76,12 +73,8 @@ const props = defineProps({
   code: { type: String, default: null },
 });
 
-const { data: userClaims } = useQuery({
-  queryKey: ['userClaims', uid],
-  queryFn: () => fetchDocById('userClaims', uid.value),
-  keepPreviousData: true,
+const { data: userClaims } = useUserClaimsQuery({
   enabled: initialized,
-  staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
 const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
