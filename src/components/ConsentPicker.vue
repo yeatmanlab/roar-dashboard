@@ -274,11 +274,10 @@
 
 <script setup>
 import { ref, onMounted, watch, computed } from 'vue';
-import { fetchLegalDocs } from '@/helpers/query/legal';
-import { useQuery } from '@tanstack/vue-query';
 import { useAuthStore } from '@/store/auth';
 import { marked } from 'marked';
 import _forEach from 'lodash/forEach';
+import useLegalDocsQuery from '@/composables/queries/useLegalDocsQuery';
 
 const props = defineProps({
   legal: { type: Object, required: false, default: null },
@@ -422,12 +421,8 @@ function checkBoxStatus() {
   }
 }
 
-const { data: consents } = useQuery({
-  queryKey: ['currentCommit', 'currentCommit', 'gitHubOrg', 'lastUpdated'],
-  queryFn: fetchLegalDocs,
-  keepPreviousData: true,
+const { data: consents } = useLegalDocsQuery({
   enabled: initialized,
-  staleTime: 5 * 60 * 1000,
 });
 
 const listOfDocs = computed(() => {

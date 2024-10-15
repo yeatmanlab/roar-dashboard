@@ -96,11 +96,13 @@ import _get from 'lodash/get';
 import _head from 'lodash/head';
 import { useAuthStore } from '@/store/auth';
 import { orgFetcher, orgFetchAll } from '@/helpers/query/orgs';
-import { fetchDocById, orderByDefault } from '@/helpers/query/utils';
+import { orderByDefault } from '@/helpers/query/utils';
+import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
+import useDistrictsListQuery from '@/composables/queries/useDistrictsListQuery';
 
 const initialized = ref(false);
 const authStore = useAuthStore();
-const { roarfirekit, uid } = storeToRefs(authStore);
+const { roarfirekit } = storeToRefs(authStore);
 
 const selectedDistrict = ref(undefined);
 const selectedSchool = ref(undefined);
@@ -147,12 +149,8 @@ watch(
   { immediate: true, deep: true },
 );
 
-const { isLoading: isLoadingClaims, data: userClaims } = useQuery({
-  queryKey: ['userClaims', uid],
-  queryFn: () => fetchDocById('userClaims', uid.value),
-  keepPreviousData: true,
+const { isLoading: isLoadingClaims, data: userClaims } = useUserClaimsQuery({
   enabled: initialized,
-  staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
 const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
@@ -206,14 +204,10 @@ const activeOrgType = computed(() => {
   return Object.keys(orgHeaders.value)[activeIndex.value];
 });
 
-const claimsLoaded = computed(() => !isLoadingClaims.value);
+const claimsLoaded = computed(() => initialized.value && !isLoadingClaims.value);
 
-const { isLoading: isLoadingDistricts, data: allDistricts } = useQuery({
-  queryKey: ['districts'],
-  queryFn: () => orgFetcher('districts', undefined, isSuperAdmin, adminOrgs),
-  keepPreviousData: true,
+const { isLoading: isLoadingDistricts, data: allDistricts } = useDistrictsListQuery({
   enabled: claimsLoaded,
-  staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
 const schoolQueryEnabled = computed(() => {

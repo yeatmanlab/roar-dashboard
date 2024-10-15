@@ -2,15 +2,15 @@
   <PvToast />
   <PvSelectButton
     v-model="viewModel"
-    :options="modelViews"
+    :options="Object.values(MODEL_VIEWS)"
     class="flex my-2 select-button p-2"
     @change="handleViewChange($event.value)"
   />
-  <div v-show="viewModel === 'Create Task'">
+  <div v-show="viewModel === MODEL_VIEWS.CREATE_TASK">
     <div v-if="!created" class="card px-3">
       <h1 class="text-center font-bold">Create a New Task</h1>
       <!-- <p class="login-title" align="left">Register for ROAR</p> -->
-      <form class="p-fluid" @submit.prevent="handleNewTaskSubmit(!t$.$invalid)">
+      <form class="p-fluid" @submit.prevent="handleNewTaskSubmit(!v$.$invalid)">
         <!-- Task name -->
         <div class="flex flex-column row-gap-3">
           <section class="form-section">
@@ -20,19 +20,19 @@
                 <span class="required">*</span></label
               >
               <PvInputText
-                v-model="t$.taskName.$model"
+                v-model="v$.taskName.$model"
                 name="taskName"
-                :class="{ 'p-invalid': t$.taskName.$invalid && submitted }"
+                :class="{ 'p-invalid': v$.taskName.$invalid && submitted }"
                 aria-describedby="activation-code-error"
               />
             </div>
-            <span v-if="t$.taskName.$error && submitted">
-              <span v-for="(error, index) of t$.taskName.$errors" :key="index">
+            <span v-if="v$.taskName.$error && submitted">
+              <span v-for="(error, index) of v$.taskName.$errors" :key="index">
                 <small class="p-error">{{ error.$message }}</small>
               </span>
             </span>
-            <small v-if="(t$.taskName.$invalid && submitted) || t$.taskName.$pending.$response" class="p-error">
-              {{ t$.taskName.required.$message.replace('Value', 'Task Name') }}
+            <small v-if="(v$.taskName.$invalid && submitted) || v$.taskName.$pending.$response" class="p-error">
+              {{ v$.taskName.required.$message.replace('Value', 'Task Name') }}
             </small>
           </section>
           <!-- Task ID -->
@@ -43,19 +43,19 @@
                 <span class="required">*</span></label
               >
               <PvInputText
-                v-model="t$.taskId.$model"
+                v-model="v$.taskId.$model"
                 name="taskId"
-                :class="{ 'p-invalid': t$.taskId.$invalid && submitted }"
+                :class="{ 'p-invalid': v$.taskId.$invalid && submitted }"
                 aria-describedby="activation-code-error"
               />
             </div>
-            <span v-if="t$.taskId.$error && submitted">
-              <span v-for="(error, index) of t$.taskId.$errors" :key="index">
+            <span v-if="v$.taskId.$error && submitted">
+              <span v-for="(error, index) of v$.taskId.$errors" :key="index">
                 <small class="p-error">{{ error.$message }}</small>
               </span>
             </span>
-            <small v-else-if="(t$.taskId.$invalid && submitted) || t$.taskId.$pending.$response" class="p-error">
-              {{ t$.taskId.required.$message.replace('Value', 'Task ID') }}
+            <small v-else-if="(v$.taskId.$invalid && submitted) || v$.taskId.$pending.$response" class="p-error">
+              {{ v$.taskId.required.$message.replace('Value', 'Task ID') }}
             </small>
           </section>
           <!-- Cover Image -->
@@ -84,18 +84,18 @@
                 <span class="required">*</span></label
               >
               <PvInputText
-                v-model="t$.taskURL.$model"
+                v-model="v$.taskURL.$model"
                 name="taskURL"
-                :class="{ 'p-invalid': t$.taskURL.$invalid && submitted }"
+                :class="{ 'p-invalid': v$.taskURL.$invalid && submitted }"
                 aria-describedby="first-name-error"
               />
-              <span v-if="t$.taskURL.$error && submitted">
-                <span v-for="(error, index) of t$.taskURL.$errors" :key="index">
+              <span v-if="v$.taskURL.$error && submitted">
+                <span v-for="(error, index) of v$.taskURL.$errors" :key="index">
                   <small class="p-error">{{ error.$message }}</small>
                 </span>
               </span>
-              <small v-else-if="(t$.taskURL.$invalid && submitted) || t$.taskURL.$pending.$response" class="p-error">
-                {{ t$.taskURL.required.$message.replace('Value', 'Task URL') }}
+              <small v-else-if="(v$.taskURL.$invalid && submitted) || v$.taskURL.$pending.$response" class="p-error">
+                {{ v$.taskURL.required.$message.replace('Value', 'Task URL') }}
               </small>
             </div>
           </section>
@@ -218,7 +218,7 @@
     </div>
   </div>
 
-  <div v-show="viewModel === 'Update Task'">
+  <div v-show="viewModel === MODEL_VIEWS.UPDATE_TASK">
     <h1 class="text-center font-bold">Update a Task</h1>
     <form @submit.prevent="handleUpdateTask()">
       <section class="flex flex-column gap-2 mb-4 p-4">
@@ -425,12 +425,13 @@
 import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { required, requiredIf, url } from '@vuelidate/validators';
 import { useVuelidate } from '@vuelidate/core';
-import { useAuthStore } from '@/store/auth';
-import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import { storeToRefs } from 'pinia';
 import { useToast } from 'primevue/usetoast';
-import { taskFetcher } from '@/helpers/query/tasks';
 import { cloneDeep, camelCase } from 'lodash';
+import { useAuthStore } from '@/store/auth';
+import useTasksQuery from '@/composables/queries/useTasksQuery';
+import useAddTaskMutation from '@/composables/mutations/useAddTaskMutation';
+import useUpdateTaskMutation from '@/composables/mutations/useUpdateTaskMutation';
 
 const toast = useToast();
 const initialized = ref(false);
@@ -438,13 +439,15 @@ const registeredTasksOnly = ref(true);
 const taskCheckboxData = ref();
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
-const queryClient = useQueryClient();
+
+const { mutate: addTask } = useAddTaskMutation();
+const { mutate: updateTask } = useUpdateTaskMutation();
 
 const isExternalTask = computed(() => !!taskCheckboxData.value?.find((item) => item === 'isExternalTask'));
 const selectedTask = ref(null);
+
 let taskData = computed(() => {
   if (!selectedTask.value) return null;
-
   return tasks.value.find((task) => task.id === selectedTask.value);
 });
 
@@ -457,11 +460,15 @@ let newFields = reactive([]);
 // This array of objects is later converted back into an object and spread into the updatedTaskData object
 let addedGameConfig = reactive([]);
 
-const viewModel = ref('Create Task');
-const modelViews = ['Create Task', 'Update Task'];
+const MODEL_VIEWS = Object.freeze({
+  CREATE_TASK: 'Create Task',
+  UPDATE_TASK: 'Update Task',
+});
+
+const viewModel = ref(MODEL_VIEWS.CREATE_TASK);
 
 const handleViewChange = (value) => {
-  const selectedView = modelViews.find((view) => view === value);
+  const selectedView = Object.values(MODEL_VIEWS).find((view) => view === value);
   if (selectedView) {
     viewModel.value = selectedView;
   }
@@ -498,13 +505,8 @@ onMounted(() => {
   if (roarfirekit.value.restConfig) init();
 });
 
-const { data: tasks } = useQuery({
-  queryKey: ['tasks', registeredTasksOnly],
-  // non-registered tasks, all data
-  queryFn: () => taskFetcher(false, true),
-  keepPreviousData: true,
+const { data: tasks } = useTasksQuery(registeredTasksOnly, null, {
   enabled: initialized,
-  staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
 const formattedTasks = computed(() => {
@@ -536,7 +538,7 @@ const taskRules = {
   taskId: { required },
 };
 
-const t$ = useVuelidate(taskRules, taskFields);
+const v$ = useVuelidate(taskRules, taskFields);
 
 // Array of objects which models the game configuration fields
 // This array of objects is later converted back into an object and spread into the task object
@@ -612,7 +614,6 @@ const checkForDuplicates = (newItemsArray, currentDataObject) => {
 // Helper function to check for errors before updating a task
 // Returns true if there are errors, false if there are none
 const checkForErrors = () => {
-  console.log('Checking for errors...');
   if (!selectedTask.value) {
     toast.add({ severity: 'error', summary: 'Oops!', detail: 'Please select a task to update.', life: 3000 });
     return true;
@@ -652,7 +653,8 @@ const handleUpdateTask = async () => {
 
   const convertedFields = convertParamsToObj(newFields);
   const convertedGameConfig = convertParamsToObj(addedGameConfig);
-  const updateData = {
+
+  const taskData = {
     taskId: selectedTask.value,
     data: {
       ...updatedTaskData,
@@ -664,16 +666,21 @@ const handleUpdateTask = async () => {
     },
   };
 
-  try {
-    await authStore.roarfirekit.updateTaskOrVariant(updateData);
-    toast.add({ severity: 'success', summary: 'Hoorah!', detail: 'Task successfully updated.', life: 3000 });
-
-    // Reset the form and re-fetch the tasks
-    resetUpdateTaskForm();
-    await queryClient.invalidateQueries(['tasks', registeredTasksOnly]);
-  } catch (error) {
-    console.error(error);
-  }
+  await updateTask(taskData, {
+    onSuccess: () => {
+      toast.add({ severity: 'success', summary: 'Hoorah!', detail: 'Task successfully updated.', life: 3000 });
+      resetUpdateTaskForm();
+    },
+    onError: (error) => {
+      toast.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'Unable to update task, please try again.',
+        life: 3000,
+      });
+      console.error('Failed to update task.', error);
+    },
+  });
 };
 
 const handleNewTaskSubmit = async (isFormValid) => {
@@ -706,15 +713,22 @@ const handleNewTaskSubmit = async (isFormValid) => {
     newTaskObject.taskURL = buildTaskURL(taskFields.taskURL, taskParams);
   }
 
-  // Write task variant to DB
-  try {
-    await authStore.roarfirekit.registerTaskVariant({ ...newTaskObject });
-    created.value = true;
-    // Re-fetch tasks
-    await queryClient.invalidateQueries(['tasks', registeredTasksOnly]);
-  } catch (error) {
-    console.error(error);
-  }
+  await addTask(newTaskObject, {
+    onSuccess: () => {
+      created.value = true;
+      // @TODO: Add form reset to ensure users see a clean form when clicking the "Create Another Task" button. This
+      // will also prevent users from accidentally submitting the same task twice.
+    },
+    onError: (error) => {
+      toast.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'Unable to create task, please try again.',
+        life: 3000,
+      });
+      console.error('Failed to add task.', error);
+    },
+  });
 };
 
 function convertParamsToObj(paramType) {

@@ -11,6 +11,7 @@
               </div>
               <div class="text-md text-gray-500 ml-6">Lists administrations assigned to your account</div>
             </div>
+
             <div class="flex align-items-center gap-2">
               <div class="flex gap-3 align-items-stretch justify-content-start">
                 <div v-if="isSuperAdmin" class="flex flex-column gap-1">
@@ -38,6 +39,7 @@
                   </div>
                 </div>
               </div>
+
               <div class="flex flex-column gap-1">
                 <small for="dd-sort" class="text-gray-400">Sort by</small>
                 <PvDropdown
@@ -51,6 +53,7 @@
               </div>
             </div>
           </div>
+
           <div
             v-if="search.length > 0"
             class="flex align-items-center gap-3 text-gray-700 px-4 py-3 my-1 bg-gray-100 rounded"
@@ -67,8 +70,16 @@
             </PvButton>
           </div>
         </div>
-        <div v-if="initialized && !fetchingAdministrations">
-          <PvBlockUI :blocked="fetchingAdministrations">
+
+        <div v-if="!initialized || isLoadingAdministrations" class="loading-container">
+          <AppSpinner class="mb-4" />
+          <span class="uppercase font-light text-sm text-gray-600">
+            <template v-if="fetchTestAdministrations">Fetching Test Administrations</template>
+            <template v-else>Fetching Administrations</template>
+          </span>
+        </div>
+        <div v-else>
+          <PvBlockUI :blocked="isFetchingAdministrations">
             <PvDataView
               :key="dataViewKey"
               :value="filteredAdministrations"
@@ -103,19 +114,13 @@
                 <div>
                   {{
                     isLevante
-                      ? 'There are no administrations to display. You can create an administration by navigating to the' +
-                        'Create administration page from the dropdown menu.'
-                      : 'There are no administrations to display. Please contact a lab administrator to add you as an admin' +
-                        ' to an administration.'
+                      ? 'There are no administrations to display. You can create an administration by navigating to the Create administration page from the dropdown menu.'
+                      : 'There are no administrations to display. Please contact a lab administrator to add you as an admin to an administration.'
                   }}
                 </div>
               </template>
             </PvDataView>
           </PvBlockUI>
-        </div>
-        <div v-else class="loading-container">
-          <AppSpinner style="margin-bottom: 1rem" />
-          <span class="uppercase font-light text-sm text-gray-600">Loading Administrations</span>
         </div>
       </div>
     </section>
@@ -123,22 +128,34 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue';
+import { onMounted, ref, watch } from 'vue';
 import { storeToRefs } from 'pinia';
-import { fetchDocById, orderByDefault } from '@/helpers/query/utils';
-import { administrationPageFetcher, getTitle } from '../helpers/query/administrations';
-import CardAdministration from '@/components/CardAdministration.vue';
 import { useAuthStore } from '@/store/auth';
-import { useQuery, useQueryClient } from '@tanstack/vue-query';
+import { orderByDefault } from '@/helpers/query/utils';
+import { getTitle } from '@/helpers/query/administrations';
+import useUserType from '@/composables/useUserType';
+import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
+import useAdministrationsListQuery from '@/composables/queries/useAdministrationsListQuery';
+import CardAdministration from '@/components/CardAdministration.vue';
 
 const initialized = ref(false);
 const pageLimit = ref(10);
+const page = ref(0);
+
+const orderBy = ref(orderByDefault);
+const searchSuggestions = ref([]);
+const searchTokens = ref([]);
+const searchInput = ref('');
+const search = ref('');
+
+const filteredAdministrations = ref([]);
+const fetchTestAdministrations = ref(false);
+
 const isLevante = import.meta.env.MODE === 'LEVANTE';
 
-const queryClient = useQueryClient();
 const authStore = useAuthStore();
 
-const { roarfirekit, uid, administrationQueryKeyIndex, userClaimsQueryKeyIndex } = storeToRefs(authStore);
+const { roarfirekit } = storeToRefs(authStore);
 
 let unsubscribeInitializer;
 const init = () => {
@@ -154,95 +171,70 @@ onMounted(() => {
   if (roarfirekit.value.restConfig) init();
 });
 
-const orderBy = ref(orderByDefault);
-const fetchTestAdministrations = ref(false);
-const testAdminsCached = ref(false);
-
-const exhaustiveAdminOrgs = computed(() => userClaims.value?.claims?.adminOrgs);
-const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
-const canQueryAdministrations = computed(() => {
-  return initialized.value && !isLoadingClaims.value;
+const { data: userClaims } = useUserClaimsQuery({
+  enabled: initialized,
 });
 
-const isFetchingCachedAdministrations = ref(false);
+const { isSuperAdmin } = useUserType(userClaims);
 
 /**
- * Fetches administrations from the cache or the server
- * @param {Array} queryKey - The query key to use for fetching the data
- * @returns {Promise<unknown>} - The cached or fetched data
+ * Generate search tokens for autocomplete.
+ *
+ * Using the administrations data, generates search tokens for the autocomplete search feature by splitting the
+ * invididual administration names into separate tokens. For example, the administration "Partner Test Administration"
+ * would be split into three tokens: "partner", "test", and "administration".
+ *
+ * @returns {void}
  */
-const getAdministrations = async (queryKey) => {
-  isFetchingCachedAdministrations.value = true;
+const generateAutoCompleteSearchTokens = () => {
+  if (!administrations.value?.length) return;
 
-  let cachedData = await queryClient.getQueryData(queryKey);
-
-  if (!cachedData) {
-    cachedData = await queryClient.fetchQuery({
-      queryKey,
-      queryFn: () =>
-        administrationPageFetcher(isSuperAdmin, exhaustiveAdminOrgs, fetchTestAdministrations.value, orderBy),
-      keepPreviousData: true,
-      enabled: canQueryAdministrations,
-      staleTime: 5 * 60 * 1000, // 5 minutes
-    });
-    testAdminsCached.value = true;
+  // Set search tokens based on each administration's name.
+  for (const item of administrations.value) {
+    searchTokens.value.push(...item.name.toLowerCase().split(' '));
   }
 
-  isFetchingCachedAdministrations.value = false;
-  return cachedData;
+  // Remove duplicates from array.
+  searchTokens.value = [...new Set(searchTokens.value)];
 };
 
-const { isLoading: isLoadingClaims, data: userClaims } = useQuery({
-  queryKey: ['userClaims', uid, userClaimsQueryKeyIndex],
-  queryFn: () => fetchDocById('userClaims', uid.value),
-  keepPreviousData: true,
+const {
+  isLoading: isLoadingAdministrations,
+  isFetching: isFetchingAdministrations,
+  data: administrations,
+} = useAdministrationsListQuery(orderBy, fetchTestAdministrations, {
   enabled: initialized,
-  staleTime: 5 * 60 * 1000, // 5 minutes
-  cacheTime: Infinity,
 });
 
-const { isFetching: isFetchingAdministrations, data: administrations } = useQuery({
-  queryKey: ['administrations', uid, isSuperAdmin, administrationQueryKeyIndex, fetchTestAdministrations.value],
-  queryFn: () => administrationPageFetcher(isSuperAdmin, exhaustiveAdminOrgs, fetchTestAdministrations.value, orderBy),
-  keepPreviousData: true,
-  enabled: canQueryAdministrations,
-  staleTime: 5 * 60 * 1000, // 5 minutes
-  cacheTime: Infinity,
-  onSuccess: (data) => {
-    for (const admin of data) {
-      adminSearchTokens.value.push(...admin.name.toLowerCase().split(' '));
-    }
-    // remove duplicates from array
-    adminSearchTokens.value = [...new Set(adminSearchTokens.value)];
-    if (!search.value) filteredAdministrations.value = data;
-    else {
-      filteredAdministrations.value = data?.filter((item) =>
+/**
+ * Administration data watcher
+ *
+ * Watches the administrations data, and once data is available, generates search tokens and sets the filtered
+ * administrations based on the search value.
+ *
+ * @returns {void}
+ */
+watch(
+  administrations,
+  (updatedAdministrationsData) => {
+    if (!updatedAdministrationsData) return;
+
+    // Generate auto-complete search tokens based on the data.
+    generateAutoCompleteSearchTokens();
+
+    // Set the filtered administrations based on the search value.
+    if (!search.value) {
+      filteredAdministrations.value = updatedAdministrationsData;
+    } else {
+      filteredAdministrations.value = updatedAdministrationsData?.filter((item) =>
         item.name.toLowerCase().includes(search.value.toLowerCase()),
       );
     }
   },
-});
+  { immediate: true },
+);
 
-const fetchingAdministrations = computed(() => {
-  return isFetchingAdministrations.value || isFetchingCachedAdministrations.value;
-});
-
-const filteredAdministrations = ref(administrations.value);
-
-watch(fetchTestAdministrations, async (newState) => {
-  const queryKey = ['administrations', uid, isSuperAdmin, administrationQueryKeyIndex, newState];
-
-  filteredAdministrations.value = await getAdministrations(queryKey);
-});
-
-const page = ref(0);
-const searchSuggestions = ref([]);
-const adminSearchTokens = ref([]);
-const searchInput = ref('');
-const search = ref('');
-const sortOrder = ref();
-const sortField = ref();
-const dataViewKey = ref(0);
+// Table sort options
 const sortOptions = ref([
   {
     label: 'Name (ascending)',
@@ -318,13 +310,24 @@ const sortOptions = ref([
   },
 ]);
 const sortKey = ref(sortOptions.value[0]);
+const sortOrder = ref();
+const sortField = ref();
+const dataViewKey = ref(0);
 
+/**
+ * Clear the search input and reset the filtered administrations list.
+ * @returns {void}
+ */
 const clearSearch = () => {
   search.value = '';
   searchInput.value = '';
   filteredAdministrations.value = administrations.value;
 };
 
+/**
+ * Perform a search based on the search input value.
+ * @returns {void}
+ */
 const onSearch = () => {
   search.value = searchInput.value;
   if (!search.value) filteredAdministrations.value = administrations.value;
@@ -335,12 +338,21 @@ const onSearch = () => {
   }
 };
 
+/**
+ * Perform an autocomplete search based on the search input value.
+ * @returns {void}
+ */
 const autocomplete = () => {
-  searchSuggestions.value = adminSearchTokens.value.filter((item) =>
-    item.toLowerCase().includes(searchInput.value.toLowerCase()),
-  );
+  searchSuggestions.value = searchTokens.value.filter((item) => {
+    return item.toLowerCase().includes(searchInput.value.toLowerCase());
+  });
 };
 
+/**
+ * Sort change event handler
+ * @param {*} event – The sort event object emitted by PrimeVue
+ * @returns {void}
+ */
 const onSortChange = (event) => {
   dataViewKey.value += 1;
   page.value = 0;

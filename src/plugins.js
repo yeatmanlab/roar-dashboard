@@ -1,8 +1,3 @@
-// *********************************************
-// | Use this file to create a shared list of plugins  |
-// | for both the main app and testing.                  |
-// *********************************************
-
 import PrimeVue from 'primevue/config';
 import ConfirmationService from 'primevue/confirmationservice';
 import ToastService from 'primevue/toastservice';
@@ -22,6 +17,19 @@ const head = createHead();
 const plugins = [
   [PrimeVue, { ripple: true }],
   [
+    VueQueryPlugin,
+    {
+      queryClientConfig: {
+        defaultOptions: {
+          queries: {
+            staleTime: window.Cypress ? 0 : 10 * 60 * 1000,
+            gcTime: window.Cypress ? 0 : 15 * 60 * 1000,
+          },
+        },
+      },
+    },
+  ],
+  [
     VueGoogleMaps,
     {
       load: {
@@ -35,7 +43,6 @@ const plugins = [
   router,
   TextClamp,
   head,
-  VueQueryPlugin,
   surveyPlugin,
   i18n,
   pinia,

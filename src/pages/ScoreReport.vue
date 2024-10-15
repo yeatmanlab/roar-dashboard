@@ -2,18 +2,19 @@
   <main class="container main">
     <section class="main-body">
       <div>
-        <div class="">
-          <div v-if="isLoadingOrgInfo" class="loading-wrapper">
+        <section>
+          <div v-if="isLoadingOrgData" class="loading-wrapper">
             <AppSpinner style="margin: 0.3rem 0rem" />
             <div class="uppercase text-sm text-gray-600 font-light">Loading Org Info</div>
           </div>
-          <div v-if="orgInfo && administrationInfo" id="at-a-glance-charts">
+
+          <div v-if="orgData && administrationData" id="at-a-glance-charts">
             <div class="flex justify-content-between align-items-center">
               <div class="flex flex-column align-items-start gap-2">
                 <div>
                   <div class="uppercase font-light text-gray-500 text-xs">{{ props.orgType }} Score Report</div>
                   <div class="report-title">
-                    {{ _toUpper(orgInfo?.name) }}
+                    {{ _toUpper(orgData?.name) }}
                   </div>
                 </div>
                 <div>
@@ -38,7 +39,8 @@
                   >
                   </PvSelectButton>
                 </div>
-                <div v-if="!isLoadingScores" class="flex flex-column gap-2 mr-5">
+
+                <div v-if="!isLoadingAssignments" class="flex flex-column gap-2 mr-5">
                   <PvButton
                     class="flex flex-row p-2 text-sm bg-primary text-white border-none border-round h-2rem text-sm hover:bg-red-900"
                     :icon="!exportLoading ? 'pi pi-download mr-2' : 'pi pi-spin pi-spinner mr-2'"
@@ -56,7 +58,7 @@
                 </div>
               </div>
             </div>
-            <div v-if="isLoadingScores" class="loading-wrapper">
+            <div v-if="isLoadingAssignments" class="loading-wrapper">
               <AppSpinner style="margin: 1rem 0rem" />
               <div class="uppercase text-sm text-gray-600 font-light">Loading Overview Charts</div>
             </div>
@@ -88,7 +90,7 @@
                 </div>
               </div>
               <div
-                v-if="!isLoadingScores && sortedAndFilteredTaskIds?.length > 0"
+                v-if="!isLoadingAssignments && sortedAndFilteredTaskIds?.length > 0"
                 class="legend-container flex flex-column align-items-center rounded"
               >
                 <div class="flex align-items-center">
@@ -115,9 +117,10 @@
               </div>
             </div>
           </div>
-        </div>
+        </section>
+
         <!-- Loading data spinner -->
-        <div v-if="isLoadingScores || isFetchingScores" class="loading-container my-4">
+        <div v-if="isLoadingAssignments || isFetchingAssignments" class="loading-container my-4">
           <AppSpinner style="margin-bottom: 1rem" />
           <span class="text-sm text-gray-600 uppercase font-light">Loading Administration Datatable</span>
         </div>
@@ -129,7 +132,7 @@
             :columns="scoreReportColumns"
             :total-records="filteredTableData?.length"
             :page-limit="pageLimit"
-            :loading="isLoadingScores || isFetchingScores"
+            :loading="isLoadingAssignments || isFetchingAssignments"
             :groupheaders="true"
             data-cy="roar-data-table"
             @reset-filters="resetFilters"
@@ -152,7 +155,7 @@
             </span>
           </RoarDataTable>
         </div>
-        <div v-if="!isLoadingScores" class="legend-container">
+        <div v-if="!isLoadingAssignments" class="legend-container">
           <div class="legend-entry">
             <div class="circle tooltip" :style="`background-color: ${supportLevelColors.below};`" />
             <div>
@@ -184,11 +187,13 @@
           Pale colors indicate that the score may not reflect the reader’s ability because responses were made too
           quickly or the assessment was incomplete.
         </div>
+
         <!-- Subscores tables -->
-        <div v-if="isLoadingScores" class="loading-wrapper">
+        <div v-if="isLoadingAssignments || isLoadingTasksDictionary" class="loading-wrapper">
           <AppSpinner style="margin: 1rem 0rem" />
           <div class="uppercase text-sm font-light text-gray-600">Loading Task Reports</div>
         </div>
+
         <PvTabView :active-index="activeTabIndex">
           <PvTabPanel
             v-for="taskId of sortedTaskIds"
@@ -205,8 +210,8 @@
                 :runs="computeAssignmentAndRunData.runsByTaskId[taskId]"
                 :org-type="orgType"
                 :org-id="orgId"
-                :org-info="orgInfo"
-                :administration-info="administrationInfo"
+                :org-info="orgData"
+                :administration-info="administrationData"
               />
             </div>
           </PvTabPanel>
@@ -261,6 +266,7 @@
 import { computed, ref, onMounted, watch } from 'vue';
 import FilterBar from '@/components/slots/FilterBar.vue';
 import { storeToRefs } from 'pinia';
+import { useRouter } from 'vue-router';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
 import _toUpper from 'lodash/toUpper';
@@ -271,12 +277,16 @@ import _kebabCase from 'lodash/kebabCase';
 import _pickBy from 'lodash/pickBy';
 import _lowerCase from 'lodash/lowerCase';
 import { useAuthStore } from '@/store/auth';
-import { useQuery } from '@tanstack/vue-query';
+import { getDynamicRouterPath } from '@/helpers/getDynamicRouterPath';
+import useUserType from '@/composables/useUserType';
+import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
+import useAdministrationsQuery from '@/composables/queries/useAdministrationsQuery';
+import useOrgQuery from '@/composables/queries/useOrgQuery';
+import useDistrictSchoolsQuery from '@/composables/queries/useDistrictSchoolsQuery';
+import useAdministrationAssignmentsQuery from '@/composables/queries/useAdministrationAssignmentsQuery';
+import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery';
 import { getGrade } from '@bdelab/roar-utils';
-import { fetchDocById, exportCsv } from '@/helpers/query/utils';
-import { assignmentFetchAll } from '@/helpers/query/assignments';
-import { orgFetcher } from '@/helpers/query/orgs';
-import { pluralizeFirestoreCollection } from '@/helpers';
+import { exportCsv } from '@/helpers/query/utils';
 import { getTitle } from '../helpers/query/administrations';
 import { useFilteredTableData } from '../composables/useFilteredTableData.js';
 import {
@@ -294,13 +304,15 @@ import {
   gradeOptions,
   tasksToDisplayCorrectIncorrectDifference,
   includedValidityFlags,
-} from '@/helpers/reports.js';
+} from '@/helpers/reports';
+import { APP_ROUTES } from '@/constants/routes';
+import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
 
 let TaskReport, DistributionChartOverview, NextSteps;
 
+const router = useRouter();
 const authStore = useAuthStore();
-
-const { roarfirekit, uid, userQueryKeyIndex, tasksDictionary } = storeToRefs(authStore);
+const { roarfirekit } = storeToRefs(authStore);
 
 const props = defineProps({
   administrationId: {
@@ -320,8 +332,8 @@ const props = defineProps({
 const initialized = ref(false);
 
 const displayName = computed(() => {
-  if (administrationInfo.value) {
-    return getTitle(administrationInfo.value, isSuperAdmin.value);
+  if (administrationData.value) {
+    return getTitle(administrationData.value, isSuperAdmin.value);
   }
   return 'Fetching administration name...';
 });
@@ -333,7 +345,8 @@ const reportViews = [
 ];
 
 const handleViewChange = () => {
-  window.location.href = `/administration/${props.administrationId}/${props.orgType}/${props.orgId}`;
+  const { administrationId, orgType, orgId } = props;
+  router.push({ path: getDynamicRouterPath(APP_ROUTES.PROGRESS_REPORT, { administrationId, orgType, orgId }) });
 };
 
 const exportLoading = ref(false);
@@ -384,8 +397,8 @@ const handleExportToPdf = async () => {
     yCounter = await addElementToPdf(closing, doc, yCounter);
   }
   doc.save(
-    `roar-scores-${_kebabCase(getTitle(administrationInfo.value, isSuperAdmin.value))}-${_kebabCase(
-      orgInfo.value.name,
+    `roar-scores-${_kebabCase(getTitle(administrationData.value, isSuperAdmin.value))}-${_kebabCase(
+      orgData.value.name,
     )}.pdf`,
   );
   exportLoading.value = false;
@@ -414,78 +427,54 @@ if (props.orgType === 'district') {
 
 const pageLimit = ref(10);
 
-// User Claims
-const { isLoading: isLoadingClaims, data: userClaims } = useQuery({
-  queryKey: ['userClaims', uid, userQueryKeyIndex],
-  queryFn: () => fetchDocById('userClaims', uid.value),
-  keepPreviousData: true,
+const { data: tasksDictionary, isLoading: isLoadingTasksDictionary } = useTasksDictionaryQuery({
   enabled: initialized,
-  staleTime: 5 * 60 * 1000, // 5 minutes
-});
-const claimsLoaded = computed(() => !isLoadingClaims.value);
-const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
-const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
-
-const { data: administrationInfo } = useQuery({
-  queryKey: ['administrationInfo', uid, props.administrationId],
-  queryFn: () => fetchDocById('administrations', props.administrationId, ['name', 'publicName', 'assessments']),
-  keepPreviousData: true,
-  enabled: initialized,
-  staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
-const { data: orgInfo, isLoading: isLoadingOrgInfo } = useQuery({
-  queryKey: ['orgInfo', uid, props.orgId],
-  queryFn: () => fetchDocById(pluralizeFirestoreCollection(props.orgType), props.orgId, ['name']),
-  keepPreviousData: true,
+const { data: userClaims } = useUserClaimsQuery({
   enabled: initialized,
-  staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
-// Grab schools if this is a district score report
-const { data: schoolsInfo } = useQuery({
-  queryKey: ['schools', uid, ref(props.orgId)],
-  queryFn: () => orgFetcher('schools', ref(props.orgId), isSuperAdmin, adminOrgs, ['name', 'id', 'lowGrade']),
-  keepPreviousData: true,
-  enabled: props.orgType === 'district' && initialized,
-  staleTime: 5 * 60 * 1000, // 5 minutes
+const { isSuperAdmin } = useUserType(userClaims);
+
+const { data: administrationData } = useAdministrationsQuery([props.administrationId], {
+  enabled: initialized,
+  select: (data) => data[0],
+});
+
+const { data: districtSchoolsData } = useDistrictSchoolsQuery(props.orgId, {
+  enabled: props.orgType === SINGULAR_ORG_TYPES.DISTRICTS && initialized,
+});
+
+const { data: orgData, isLoading: isLoadingOrgData } = useOrgQuery(props.orgType, [props.orgId], {
+  enabled: initialized,
+  select: (data) => data[0],
+});
+
+const {
+  isLoading: isLoadingAssignments,
+  isFetching: isFetchingAssignments,
+  data: assignmentData,
+} = useAdministrationAssignmentsQuery(props.administrationId, props.orgType, props.orgId, {
+  enabled: initialized,
 });
 
 const schoolsDictWithGrade = computed(() => {
-  if (schoolsInfo.value) {
-    return schoolsInfo.value.reduce((acc, school) => {
+  return (
+    districtSchoolsData.value?.reduce((acc, school) => {
       acc[school.id] = getGrade(school.lowGrade ?? 0) + ' ' + school.name;
       return acc;
-    }, {});
-  } else {
-    return {};
-  }
+    }, {}) || {}
+  );
 });
 
 const schoolNameDictionary = computed(() => {
-  if (schoolsInfo.value) {
-    return schoolsInfo.value.reduce((acc, school) => {
+  return (
+    districtSchoolsData.value?.reduce((acc, school) => {
       acc[school.id] = school.name;
       return acc;
-    }, {});
-  } else {
-    return {};
-  }
-});
-
-const scoresQueryEnabled = computed(() => initialized.value && claimsLoaded.value);
-
-// Scores Query
-const {
-  isLoading: isLoadingScores,
-  isFetching: isFetchingScores,
-  data: assignmentData,
-} = useQuery({
-  queryKey: ['scores', uid, props.administrationId, props.orgId],
-  queryFn: () => assignmentFetchAll(props.administrationId, props.orgType, props.orgId, true),
-  keepPreviousData: true,
-  enabled: scoresQueryEnabled,
-  staleTime: 5 * 60 * 1000, // 5 mins
+    }, {}) || {}
+  );
 });
 
 // Return a faded color if assessment is not reliable
@@ -994,6 +983,7 @@ const createExportData = ({ rows, includeProgress = false }) => {
 
     return tableRow;
   });
+
   return computedExportData;
 };
 
@@ -1057,8 +1047,8 @@ const exportData = async ({ selectedRows = null, includeProgress = false }) => {
   const fileNameSuffix = includeProgress ? '-scores-progress' : '-scores';
   const selectedSuffix = selectedRows ? '-selected' : '';
   const fileName = `roar${fileNameSuffix}${selectedSuffix}-${_kebabCase(
-    getTitle(administrationInfo.value, isSuperAdmin.value),
-  )}-${_kebabCase(orgInfo.value.name)}.csv`;
+    getTitle(administrationData.value, isSuperAdmin.value),
+  )}-${_kebabCase(orgData.value.name)}.csv`;
 
   // Export CSV
   exportCsv(exportData, fileName);
@@ -1114,7 +1104,7 @@ const getTaskStyle = (taskId, backgroundColor, tasks) => {
 // compute and store schoolid -> school name map for schools. store adminId,
 // orgType, orgId for individual score report link
 const scoreReportColumns = computed(() => {
-  if (assignmentData.value === undefined) return [];
+  if (isLoadingTasksDictionary.value || assignmentData.value === undefined) return [];
   const tableColumns = [];
   tableColumns.push({
     header: 'Report',
@@ -1305,8 +1295,8 @@ const scoreReportColumns = computed(() => {
 });
 
 const allTasks = computed(() => {
-  if (administrationInfo.value?.assessments?.length > 0) {
-    return administrationInfo.value?.assessments?.map((assessment) => assessment.taskId);
+  if (administrationData.value?.assessments?.length > 0) {
+    return administrationData.value?.assessments?.map((assessment) => assessment.taskId);
   } else return [];
 });
 

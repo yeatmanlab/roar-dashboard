@@ -1,14 +1,11 @@
-// *****************************************
-// | Use this file to create a shared setup for  |
-// | both the main app and testing.                 |
-// *****************************************
-
 import { createApp } from 'vue';
 import { VueRecaptchaPlugin } from 'vue-recaptcha';
 import { Buffer } from 'buffer';
 import { initSentry } from '@/sentry';
+
 import App from '@/App.vue';
 import plugins from './plugins';
+
 import './styles.css';
 
 // PrimeVue component imports
@@ -77,13 +74,15 @@ import RoarDataTable from '@/components/RoarDataTable.vue';
 import LanguageSelector from '@/components/LanguageSelector.vue';
 
 /**
- * Create a new Vue app instance with all the necessary plugins and components registered that can be used in the main app or in Cypress component tests.
+ * Create a new Vue app instance with all the necessary plugins and components registered that can be used in the main
+ * app or in Cypress component tests.
+ *
  * @returns {App<Element>}
  */
 export const createAppInstance = () => {
   const app = createApp(App);
 
-  // Register all default  app plugins
+  // Register all default app plugins
   plugins.forEach((plugin) => {
     if (Array.isArray(plugin)) {
       app.use(...plugin);

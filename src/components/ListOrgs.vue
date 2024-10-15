@@ -151,14 +151,9 @@
   </RoarModal>
 </template>
 <script setup>
-import { orgFetcher, orgFetchAll, orgPageFetcher } from '@/helpers/query/orgs';
-import { orderByDefault, exportCsv, fetchDocById } from '@/helpers/query/utils';
-import { fetchUsersByOrg, countUsersByOrg } from '@/helpers/query/users';
 import { ref, computed, onMounted, watch } from 'vue';
 import * as Sentry from '@sentry/vue';
 import { storeToRefs } from 'pinia';
-import { useQuery } from '@tanstack/vue-query';
-import { useAuthStore } from '@/store/auth';
 import { useToast } from 'primevue/usetoast';
 import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts.js';
 import EditOrgsForm from './EditOrgsForm.vue';
@@ -166,10 +161,18 @@ import RoarModal from './modals/RoarModal.vue';
 import _get from 'lodash/get';
 import _head from 'lodash/head';
 import _kebabCase from 'lodash/kebabCase';
+import { useAuthStore } from '@/store/auth';
+import { orgFetchAll } from '@/helpers/query/orgs';
+import { fetchUsersByOrg, countUsersByOrg } from '@/helpers/query/users';
+import { orderByDefault, exportCsv, fetchDocById } from '@/helpers/query/utils';
+import useUserType from '@/composables/useUserType';
+import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
+import useDistrictsListQuery from '@/composables/queries/useDistrictsListQuery';
+import useDistrictSchoolsQuery from '@/composables/queries/useDistrictSchoolsQuery';
+import useOrgsTableQuery from '@/composables/queries/useOrgsTableQuery';
 import { CSV_EXPORT_MAX_RECORD_COUNT } from '@/constants/csvExport';
 
 const initialized = ref(false);
-const orgsQueryKeyIndex = ref(0);
 const selectedDistrict = ref(undefined);
 const selectedSchool = ref(undefined);
 const orderBy = ref(orderByDefault);
@@ -195,20 +198,15 @@ const schoolPlaceholder = computed(() => {
   return 'Select a school';
 });
 
-// Authstore and Sidebar
 const authStore = useAuthStore();
-const { roarfirekit, uid, userQueryKeyIndex } = storeToRefs(authStore);
+const { roarfirekit } = storeToRefs(authStore);
 
-const { isLoading: isLoadingClaims, data: userClaims } = useQuery({
-  queryKey: ['userClaims', uid, userQueryKeyIndex],
-  queryFn: () => fetchDocById('userClaims', uid.value),
-  keepPreviousData: true,
+const { data: userClaims } = useUserClaimsQuery({
   enabled: initialized,
-  staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
-const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
-const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
+const { isSuperAdmin } = useUserType(userClaims);
+const adminOrgs = computed(() => userClaims?.value?.claims?.minimalAdminOrgs);
 
 const orgHeaders = computed(() => {
   const headers = {
@@ -244,14 +242,26 @@ const activeOrgType = computed(() => {
   return Object.keys(orgHeaders.value)[activeIndex.value];
 });
 
-const claimsLoaded = computed(() => !isLoadingClaims.value);
+const claimsLoaded = computed(() => !!userClaims?.value?.claims);
 
-const { isLoading: isLoadingDistricts, data: allDistricts } = useQuery({
-  queryKey: ['districts', uid, orgsQueryKeyIndex],
-  queryFn: () => orgFetcher('districts', undefined, isSuperAdmin, adminOrgs),
-  keepPreviousData: true,
+const { isLoading: isLoadingDistricts, data: allDistricts } = useDistrictsListQuery({
   enabled: claimsLoaded,
-  staleTime: 5 * 60 * 1000, // 5 minutes
+});
+
+const schoolQueryEnabled = computed(() => {
+  return claimsLoaded.value && !!selectedDistrict.value;
+});
+
+const { isLoading: isLoadingSchools, data: allSchools } = useDistrictSchoolsQuery(selectedDistrict, {
+  enabled: schoolQueryEnabled,
+});
+
+const {
+  isLoading,
+  isFetching,
+  data: orgData,
+} = useOrgsTableQuery(activeOrgType, selectedDistrict, selectedSchool, orderBy, {
+  enabled: claimsLoaded,
 });
 
 function copyToClipboard(text) {
@@ -274,40 +284,6 @@ function copyToClipboard(text) {
       });
     });
 }
-
-const schoolQueryEnabled = computed(() => {
-  return claimsLoaded.value && selectedDistrict.value !== undefined;
-});
-
-const { isLoading: isLoadingSchools, data: allSchools } = useQuery({
-  queryKey: ['schools', uid, selectedDistrict, orgsQueryKeyIndex],
-  queryFn: () => orgFetcher('schools', selectedDistrict, isSuperAdmin, adminOrgs),
-  keepPreviousData: true,
-  enabled: schoolQueryEnabled,
-  staleTime: 5 * 60 * 1000, // 5 minutes
-});
-
-const {
-  isLoading,
-  isFetching,
-  data: orgData,
-} = useQuery({
-  queryKey: ['orgsPage', uid, activeOrgType, selectedDistrict, selectedSchool, orderBy, orgsQueryKeyIndex],
-  queryFn: () =>
-    orgPageFetcher(
-      activeOrgType,
-      selectedDistrict,
-      selectedSchool,
-      orderBy,
-      ref(100000),
-      ref(0),
-      isSuperAdmin,
-      adminOrgs,
-    ),
-  keepPreviousData: true,
-  enabled: claimsLoaded,
-  staleTime: 5 * 60 * 1000, // 5 minutes
-});
 
 const exportAll = async () => {
   const exportData = await orgFetchAll(
@@ -462,7 +438,7 @@ const tableColumns = computed(() => {
 
 const tableData = computed(() => {
   if (isLoading.value) return [];
-  return orgData.value.map((org) => {
+  return orgData?.value?.map((org) => {
     return {
       ...org,
       routeParams: {
