@@ -11,6 +11,7 @@
               </div>
               <div class="text-md text-gray-500 ml-6">Lists administrations assigned to your account</div>
             </div>
+
             <div class="flex align-items-center gap-2">
               <div class="flex gap-3 align-items-stretch justify-content-start">
                 <div v-if="isSuperAdmin" class="flex flex-column gap-1">
@@ -38,6 +39,7 @@
                   </div>
                 </div>
               </div>
+
               <div class="flex flex-column gap-1">
                 <small for="dd-sort" class="text-gray-400">Sort by</small>
                 <PvDropdown
@@ -51,6 +53,7 @@
               </div>
             </div>
           </div>
+
           <div
             v-if="search.length > 0"
             class="flex align-items-center gap-3 text-gray-700 px-4 py-3 my-1 bg-gray-100 rounded"
@@ -212,22 +215,23 @@ const {
  * @returns {void}
  */
 watch(
-  () => administrations.value,
-  (data) => {
-    if (!data) return;
+  administrations,
+  (updatedAdministrationsData) => {
+    if (!updatedAdministrationsData) return;
 
     // Generate auto-complete search tokens based on the data.
     generateAutoCompleteSearchTokens();
 
     // Set the filtered administrations based on the search value.
     if (!search.value) {
-      filteredAdministrations.value = data;
+      filteredAdministrations.value = updatedAdministrationsData;
     } else {
-      filteredAdministrations.value = data?.filter((item) =>
+      filteredAdministrations.value = updatedAdministrationsData?.filter((item) =>
         item.name.toLowerCase().includes(search.value.toLowerCase()),
       );
     }
   },
+  { immediate: true },
 );
 
 // Table sort options
