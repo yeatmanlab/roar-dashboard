@@ -77,7 +77,12 @@ const { isLoading: isLoadingClaims, data: userClaims } = useUserClaimsQuery({
 const { isAdmin, isSuperAdmin, isParticipant } = useUserType(userClaims);
 
 const isAdminUser = computed(() => isAdmin.value || isSuperAdmin.value);
-const isLoading = computed(() => isLoadingClaims.value || isLoadingUserData.value);
+const isLoading = computed(() => {
+  // @NOTE: In addition to the loading states, we also check if user data and user claims are loaded as due to the
+  // current application initialization flow, the userData and userClaims queries initially reset. Once this is improved
+  // these additional checks can be removed.
+  return !initialized || isLoadingUserData.value || isLoadingClaims.value || !userData.value || !userClaims.value;
+});
 
 const showConsent = ref(false);
 const consentType = computed(() => {
