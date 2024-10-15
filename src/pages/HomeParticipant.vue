@@ -283,11 +283,11 @@ const toggleShowOptionalAssessments = async () => {
 // Assessments to populate the game tabs.
 // Generated based on the current selected administration Id
 const assessments = computed(() => {
-  if (!isFetching.value && selectedAdmin.value && (taskInfo.value ?? []).length > 0) {
+  if (!isFetching.value && selectedAdmin.value && (userTasks.value ?? []).length > 0) {
     const fetchedAssessments = _without(
       selectedAdmin.value.assessments.map((assessment) => {
-        // Get the matching assessment from assignmentInfo
-        const matchingAssignment = _find(assignmentInfo.value, { id: selectedAdmin.value.id });
+        // Get the matching assessment from userAssignments
+        const matchingAssignment = _find(userAssignments.value, { id: selectedAdmin.value.id });
         const matchingAssessments = matchingAssignment?.assessments ?? [];
         const matchingAssessment = _find(matchingAssessments, { taskId: assessment.taskId });
 
@@ -301,8 +301,8 @@ const assessments = computed(() => {
           ...optionalAssessment,
           ...assessment,
           taskData: {
-            ..._find(taskInfo.value ?? [], { id: assessment.taskId }),
-            variantURL: _get(assessment, 'params.variantURL'),
+            ..._find(userTasks.value ?? [], { id: assessment.taskId }),
+            variantURL: assessment?.params?.variantURL,
           },
         };
         return combinedAssessment;
@@ -310,7 +310,7 @@ const assessments = computed(() => {
       undefined,
     );
 
-    if (authStore.userData?.userType === 'student' && import.meta.env.MODE === 'LEVANTE') {
+    if (authStore.userData?.userType === 'student' && isLevante) {
       // This is just to mark the card as complete
       if (gameStore.isSurveyCompleted || surveyResponsesData.value?.length) {
         fetchedAssessments.forEach((assessment) => {
