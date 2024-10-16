@@ -14,12 +14,12 @@ export function useFilteredTableData(tableData) {
   // Expects an unwrapped array for each filter
   const updateFilters = (filterSchools, filterGrades) => {
     let filteredData = tableData.value;
-
     if (filterSchools.length > 0) {
       filteredData = filteredData.filter((item) => filterSchools.includes(item.user.schoolName));
+      console.log('filteredData', filteredData);
     }
     if (filterGrades.length > 0) {
-      filteredData = filteredData.filter((item) => filterGrades.includes(item.user.grade));
+      filteredData = filteredData.filter((item) => filterGrades.includes(String(item.user.grade)));
     }
 
     // Update the filteredTableData with the filtered data, or the original data if no filters are applied
@@ -30,7 +30,7 @@ export function useFilteredTableData(tableData) {
   // setData() is called only once to snapshot the data before any filters are applied
   watch(tableData, (newValue) => {
     setData();
-
+    console.log('tableData changed', newValue);
     filteredTableData.value = newValue;
   });
 
