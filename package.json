@@ -96,7 +96,7 @@
     "@vite-pwa/assets-generator": "^0.2.4",
     "@vitejs/plugin-vue": "^5.1.2",
     "@vitest/coverage-istanbul": "^2.0.5",
-    "cypress": "^13.14.2",
+    "cypress": "^13.15.0",
     "cypress-fs": "^0.2.5",
     "cypress-vite": "^1.5.0",
     "eslint": "^8.53.0",
