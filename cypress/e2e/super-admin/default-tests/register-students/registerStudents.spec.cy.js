@@ -2,6 +2,7 @@ import { navigateToPageFromMenubar } from '../../../../support/helper-functions/
 
 const timeout = Cypress.env('timeout');
 const selector = '.p-datatable-thead > tr > :nth-child';
+const filepath = 'cypress/fixtures/super-admin/testStudentData.csv';
 
 // This function clicks the dropdown menu, which is indexed by int, then clicks the field.
 function selectField(int, fieldName) {
@@ -26,7 +27,10 @@ describe(
 
         navigateToPageFromMenubar('Users', 'Register students');
 
-        cy.get('input[type=file]').selectFile('cypress/fixtures/testStudentData.csv', { force: true, timeout: 10000 });
+        cy.get('input[type=file]').selectFile(filepath, {
+          force: true,
+          timeout: 10000,
+        });
 
         selectField(1, 'Student Username');
         selectField(2, 'Password');
