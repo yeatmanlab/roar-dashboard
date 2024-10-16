@@ -13,10 +13,9 @@ export function useFilteredTableData(tableData) {
 
   // Expects an unwrapped array for each filter
   const updateFilters = (filterSchools, filterGrades) => {
-    let filteredData = tableData.value;
+    let filteredData = data;
     if (filterSchools.length > 0) {
       filteredData = filteredData.filter((item) => filterSchools.includes(item.user.schoolName));
-      console.log('filteredData', filteredData);
     }
     if (filterGrades.length > 0) {
       filteredData = filteredData.filter((item) => filterGrades.includes(String(item.user.grade)));
@@ -30,7 +29,6 @@ export function useFilteredTableData(tableData) {
   // setData() is called only once to snapshot the data before any filters are applied
   watch(tableData, (newValue) => {
     setData();
-    console.log('tableData changed', newValue);
     filteredTableData.value = newValue;
   });
 
