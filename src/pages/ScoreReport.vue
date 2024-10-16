@@ -140,7 +140,7 @@
             @export-selected="exportData({ selectedRows: $event })"
           >
             <template #filterbar>
-              <FilterBar :schools="schoolsInfo" :grades="gradeOptions" :update-filters="updateFilters" />
+              <FilterBar :schools="schoolOptions" :grades="gradeOptions" :update-filters="updateFilters" />
             </template>
             <span>
               <label for="view-columns" class="view-label">View</label>
@@ -475,6 +475,10 @@ const schoolNameDictionary = computed(() => {
       return acc;
     }, {}) || {}
   );
+});
+
+const schoolOptions = computed(() => {
+  return Object.values(schoolNameDictionary.value).map((name) => ({ name: name, label: name }));
 });
 
 // Return a faded color if assessment is not reliable
