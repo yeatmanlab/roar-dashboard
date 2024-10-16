@@ -13,7 +13,7 @@ function waitTimeout() {
   cy.wait(0.1 * timeout);
 }
 
-function playFluencyARFIntro() {
+function playARFIntro() {
   waitTimeout();
 
   //   Click textbox and enter random participantId
@@ -68,7 +68,7 @@ function playFluencyARFIntro() {
   typeEnter();
 }
 
-function playFluencyCALFIntro() {
+function playCALFIntro() {
   waitTimeout();
 
   //   Click textbox and enter random participantId
@@ -152,7 +152,7 @@ function checkGameComplete(endText, continueText = null) {
     });
 }
 
-export function playFluencyARF({
+export function playARF({
   administration = Cypress.env('testRoarAppsAdministration'),
   language = 'en',
   task = 'fluency-arf',
@@ -183,7 +183,7 @@ export function playFluencyARF({
     .should('be.visible')
     .click();
 
-  playFluencyARFIntro();
+  playARFIntro();
   checkGameComplete(endText, continueText);
 
   //  Check if game is marked as complete on the dashboard
@@ -193,7 +193,7 @@ export function playFluencyARF({
   cy.get('.p-tabview', { timeout: timeout }).contains(languageOptions[language][task].gameTab).should('exist');
 }
 
-export function playFluencyCALF({
+export function playCALF({
   administration = Cypress.env('testRoarAppsAdministration'),
   language = 'en',
   task = 'fluency-calf',
@@ -229,7 +229,7 @@ export function playFluencyCALF({
     .should('be.visible')
     .click();
 
-  playFluencyCALFIntro();
+  playCALFIntro();
   checkGameComplete(endText, continueText);
 
   //  Check if game is marked as complete on the dashboard

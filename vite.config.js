@@ -51,7 +51,7 @@ export default defineConfig({
           tanstack: ['@tanstack/vue-query'],
           chartJs: ['chart.js'],
           sentry: ['@sentry/browser', '@sentry/integrations', '@sentry/vue', '@sentry/wasm'],
-          fluency: ['@bdelab/roam-fluency'],
+          roam: ['@bdelab/roam-apps'],
           firekit: ['@bdelab/roar-firekit'],
           letter: ['@bdelab/roar-letter'],
           multichoice: ['@bdelab/roar-multichoice'],

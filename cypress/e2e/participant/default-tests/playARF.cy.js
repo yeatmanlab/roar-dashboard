@@ -1,26 +1,26 @@
-import { playFluencyARF } from '../../../support/helper-functions/roam-fluency/fluencyHelpers';
+import { playARF } from '../../../support/helper-functions/roam-apps/roamHelpers';
 import { isCurrentVersion } from '../../../support/utils';
 
-const app = '@bdelab/roam-fluency';
+const app = '@bdelab/roam-apps';
 
-describe('Test playthrough of Fluency as a participant', () => {
-  it('Fluency Playthrough Test with username/password authentication', () => {
+describe('Test playthrough of ROAM ARF as a participant', () => {
+  it('ROAM Playthrough Test with username/password authentication', () => {
     cy.wrap(isCurrentVersion(app)).then((isCurrentVersion) => {
       if (isCurrentVersion) {
         cy.log(`Did not detect a new version of ${app}, skipping test.`);
       } else {
         cy.log(`Detected a new version of ${app}, running test.`);
-        playFluencyARF({ auth: 'username' });
+        playARF({ auth: 'username' });
       }
     });
   });
-  it('Fluency Playthrough Test with Clever authentication', () => {
+  it('ROAM Playthrough Test with Clever authentication', () => {
     cy.wrap(isCurrentVersion(app)).then((isCurrentVersion) => {
       if (isCurrentVersion) {
         cy.log(`Did not detect a new version of ${app}, skipping test.`);
       } else {
         cy.log(`Detected a new version of ${app}, running test.`);
-        playFluencyARF({ auth: 'clever' });
+        playARF({ auth: 'clever' });
       }
     });
   });
