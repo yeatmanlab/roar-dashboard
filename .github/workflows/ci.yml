@@ -214,5 +214,18 @@ jobs:
         id: set-env-url
         run: echo "environmentUrl=${{ fromJson(steps.firebase-deploy-preview.outputs.urls)[0] }}" >> $GITHUB_OUTPUT
 
-      - name: Whitelist App Check domains
-        run: echo 'Not implemented yet…'
+      - name: Whitelist AppCheck admin environment
+        uses: ./.github/actions/whitelist-appcheck-environment
+        with:
+          project-id: ${{ secrets.FIREBASE_PROJECT_ID_ADMIN_STAGING }}
+          service-account-key: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_ADMIN_STAGING }}
+          appcheck-site-key: ${{ secrets.FIREBASE_APPCHECK_SITE_KEY_ADMIN_STAGING }}
+          environment-url: ${{ steps.set-env-url.outputs.environmentUrl }}
+
+      - name: Whitelist AppCheck app environment
+        uses: ./.github/actions/whitelist-appcheck-environment
+        with:
+          project-id: ${{ secrets.FIREBASE_PROJECT_ID_APP_STAGING }}
+          service-account-key: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_APP_STAGING }}
+          appcheck-site-key: ${{ secrets.FIREBASE_APPCHECK_SITE_KEY_APP_STAGING }}
+          environment-url: ${{ steps.set-env-url.outputs.environmentUrl }}
