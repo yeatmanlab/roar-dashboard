@@ -340,42 +340,41 @@ const onSearch = () => {
       item.name.toLowerCase().includes(search.value.toLowerCase()),
     );
   }
+};
+/**
+ * Perform an autocomplete search based on the search input value.
+ * @returns {void}
+ */
+const autocomplete = () => {
+  searchSuggestions.value = searchTokens.value.filter((item) => {
+    return item.toLowerCase().includes(searchInput.value.toLowerCase());
+  });
+};
 
-  /**
-   * Perform an autocomplete search based on the search input value.
-   * @returns {void}
-   */
-  const autocomplete = () => {
-    searchSuggestions.value = searchTokens.value.filter((item) => {
-      return item.toLowerCase().includes(searchInput.value.toLowerCase());
-    });
-  };
+/**
+ * Sort change event handler
+ * @param {*} event – The sort event object emitted by PrimeVue
+ * @returns {void}
+ */
+const onSortChange = (event) => {
+  dataViewKey.value += 1;
+  page.value = 0;
+  const value = event.value.value;
+  const sortValue = event.value;
 
-  /**
-   * Sort change event handler
-   * @param {*} event – The sort event object emitted by PrimeVue
-   * @returns {void}
-   */
-  const onSortChange = (event) => {
-    dataViewKey.value += 1;
-    page.value = 0;
-    const value = event.value.value;
-    const sortValue = event.value;
+  if (!isSuperAdmin.value && sortValue[0].field.fieldPath === 'name') {
+    // catches edge case where a partner admin should sort by the public name attribute
+    sortField.value = 'publicName';
+  } else {
+    sortField.value = value[0].field?.fieldPath;
+  }
+  if (value[0].direction === 'DESCENDING') {
+    sortOrder.value = -1;
+  } else {
+    sortOrder.value = 1;
+  }
 
-    if (!isSuperAdmin.value && sortValue[0].field.fieldPath === 'name') {
-      // catches edge case where a partner admin should sort by the public name attribute
-      sortField.value = 'publicName';
-    } else {
-      sortField.value = value[0].field?.fieldPath;
-    }
-    if (value[0].direction === 'DESCENDING') {
-      sortOrder.value = -1;
-    } else {
-      sortOrder.value = 1;
-    }
-
-    sortKey.value = sortValue;
-  };
+  sortKey.value = sortValue;
 };
 </script>
 
