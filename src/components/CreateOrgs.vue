@@ -175,7 +175,12 @@
             <label class="ml-1 mr-3" for="chbx-demodata">Mark as <b>Demo Organization</b></label>
           </div>
           <div class="flex flex-row align-items-center">
-            <PvCheckbox v-model="isTestData" input-id="chbx-testdata" :binary="true" />
+            <PvCheckbox
+              v-model="isTestData"
+              input-id="chbx-testdata"
+              :binary="true"
+              data-cy="checkbox-test-data-orgs"
+            />
             <label class="ml-1 mr-3" for="chbx-testdata">Mark as <b>Test Organization</b></label>
           </div>
         </div>
