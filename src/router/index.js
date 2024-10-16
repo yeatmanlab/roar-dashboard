@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 import { useAuthStore } from '@/store/auth';
 import _get from 'lodash/get';
 import { pageTitlesEN, pageTitlesUS, pageTitlesES, pageTitlesCO } from '@/translations/exports';
+import { APP_ROUTES } from '@/constants/routes';
 
 function removeQueryParams(to) {
   if (Object.keys(to.query).length) return { path: to.path, query: {}, hash: to.hash };
@@ -24,18 +25,6 @@ const routes = [
         'es-CO': pageTitlesCO['home'],
       },
     },
-  },
-  {
-    path: '/clever-user',
-    name: 'CleverLanding',
-    component: () => import('../pages/CleverLanding.vue'),
-    meta: { pageTitle: 'Logging You In' },
-  },
-  {
-    path: '/classlink-user',
-    name: 'ClassLinkLanding',
-    component: () => import('../pages/ClassLinkLanding.vue'),
-    meta: { pageTitle: 'Logging You In' },
   },
   {
     path: '/game/swr',
@@ -131,44 +120,44 @@ const routes = [
   {
     path: '/game/fluency-arf',
     name: 'Fluency-ARF',
-    component: () => import('../components/tasks/TaskFluency.vue'),
+    component: () => import('../components/tasks/TaskRoam.vue'),
     props: { taskId: 'fluency-arf', language: 'en' },
-    meta: { pageTitle: 'Fluency-ARF' },
+    meta: { pageTitle: 'ROAM-ARF' },
   },
   {
     path: '/game/fluency-arf-es',
     name: 'Fluency-ARF-ES',
-    component: () => import('../components/tasks/TaskFluency.vue'),
+    component: () => import('../components/tasks/TaskRoam.vue'),
     props: { taskId: 'fluency-arf-es', language: 'es' },
-    meta: { pageTitle: 'Fluency-ARF ES' },
+    meta: { pageTitle: 'ROAM-ARF ES' },
   },
   {
     path: '/game/fluency-calf',
     name: 'Fluency-CALF',
-    component: () => import('../components/tasks/TaskFluency.vue'),
+    component: () => import('../components/tasks/TaskRoam.vue'),
     props: { taskId: 'fluency-calf', language: 'en' },
-    meta: { pageTitle: 'Fluency-CALF' },
+    meta: { pageTitle: 'ROAM-CALF' },
   },
   {
     path: '/game/fluency-calf-es',
     name: 'Fluency-CALF-ES',
-    component: () => import('../components/tasks/TaskFluency.vue'),
+    component: () => import('../components/tasks/TaskRoam.vue'),
     props: { taskId: 'fluency-calf-es', language: 'es' },
-    meta: { pageTitle: 'Fluency-CALF ES' },
+    meta: { pageTitle: 'ROAM-CALF ES' },
   },
   {
     path: '/game/fluency-alpaca',
     name: 'Fluency-Alpaca',
-    component: () => import('../components/tasks/TaskFluency.vue'),
+    component: () => import('../components/tasks/TaskRoam.vue'),
     props: { taskId: 'fluency-alpaca', language: 'en' },
-    meta: { pageTitle: 'Fluency-Alpaca' },
+    meta: { pageTitle: 'ROAM-Alpaca' },
   },
   {
     path: '/game/fluency-alpaca-es',
     name: 'Fluency-Alpaca-ES',
-    component: () => import('../components/tasks/TaskFluency.vue'),
+    component: () => import('../components/tasks/TaskRoam.vue'),
     props: { taskId: 'fluency-alpaca-es', language: 'es' },
-    meta: { pageTitle: 'Fluency-Alpaca ES' },
+    meta: { pageTitle: 'ROAM-Alpaca ES' },
   },
   {
     path: '/game/core-tasks/:taskId',
@@ -233,7 +222,7 @@ const routes = [
     meta: { pageTitle: 'Register Students', requireAdmin: true, requireSuperAdmin: true },
   },
   {
-    path: '/signin',
+    path: APP_ROUTES.SIGN_IN,
     name: 'SignIn',
     component: () => import('../pages/SignIn.vue'),
     meta: {
@@ -245,28 +234,13 @@ const routes = [
       },
     },
   },
-  // TODO: Make this logic happen on click of sign out button
   {
-    path: '/signout',
-    name: 'SignOut',
-    async beforeEnter() {
-      const store = useAuthStore();
-      if (store.isAuthenticated) {
-        await store.signOut();
-      }
-      // Clear auth and game store so kids playing on the same device don't run into issues
-      sessionStorage.removeItem('gameStore');
-      sessionStorage.removeItem('authStore');
-      return { name: 'SignIn' };
-    },
-    meta: {
-      pageTitle: {
-        'en-US': pageTitlesUS['signOut'],
-        en: pageTitlesEN['signOut'],
-        es: pageTitlesES['signOut'],
-        'es-CO': pageTitlesCO['signOut'],
-      },
-    },
+    path: APP_ROUTES.SSO,
+    name: 'SSO',
+    beforeRouteLeave: [removeQueryParams, removeHash],
+    component: () => import('../pages/SSOAuthPage.vue'),
+    props: (route) => ({ code: route.query.code }), // @TODO: Isn't the code processed by the sign-in page?
+    meta: { pageTitle: 'Signing you in…' },
   },
   {
     path: '/auth-clever',
@@ -343,31 +317,35 @@ const routes = [
   },
   {
     path: '/administration/:administrationId/:orgType/:orgId',
-    name: 'ViewAdministration',
+    name: 'ProgressReport',
     props: true,
     component: () => import('../pages/ProgressReport.vue'),
     meta: { pageTitle: 'View Administration', requireAdmin: true },
   },
   {
-    path: '/scores/:administrationId/:orgType/:orgId',
+    path: APP_ROUTES.SCORE_REPORT,
     name: 'ScoreReport',
     props: true,
     component: () => import('../pages/ScoreReport.vue'),
     meta: { pageTitle: 'View Scores', requireAdmin: true },
   },
   {
-    path: '/scores/:administrationId/:orgType/:orgId/user/:userId',
+    path: APP_ROUTES.STUDENT_REPORT,
     name: 'StudentReport',
     props: true,
-    component: () => import('../pages/IndividualReport.vue'),
+    component: () => import('../pages/StudentReport.vue'),
     meta: { pageTitle: 'Student Score Report', requireAdmin: true },
   },
   {
-    path: '/profile',
+    path: APP_ROUTES.ACCOUNT_PROFILE,
     name: 'Profile',
     component: () => import('../pages/AdminProfile.vue'),
     children: [
-      { path: '', name: 'ProfileInfo', component: () => import('../components/views/UserInfoView.vue') },
+      {
+        path: '',
+        name: 'ProfileInfo',
+        component: () => import('../components/views/UserInfoView.vue'),
+      },
       {
         path: 'password',
         name: 'ProfilePassword',
@@ -440,6 +418,7 @@ router.beforeEach(async (to, from, next) => {
 
   const allowedUnauthenticatedRoutes = [
     'SignIn',
+    'SSO', //@TODO: Remove before merging
     'Maintenance',
     'AuthClever',
     'AuthClassLink',

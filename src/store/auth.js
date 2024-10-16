@@ -4,17 +4,14 @@ import { useRouter } from 'vue-router';
 import _isEmpty from 'lodash/isEmpty';
 import _union from 'lodash/union';
 import { initNewFirekit } from '../firebaseInit';
-import { useGameStore } from '@/store/game';
-import { taskFetcher } from '../helpers/query/tasks.js';
+import { AUTH_SSO_PROVIDERS } from '../constants/auth';
 
 export const useAuthStore = () => {
   return defineStore('authStore', {
-    // id is required so that Pinia can connect the store to the devtools
     id: 'authStore',
     state: () => {
       return {
         spinner: false,
-        consentSpinner: false,
         firebaseUser: {
           adminFirebaseUser: null,
           appFirebaseUser: null,
@@ -26,13 +23,10 @@ export const useAuthStore = () => {
         cleverOAuthRequested: false,
         classLinkOAuthRequested: false,
         routeToProfile: false,
-        authFromClever: false,
-        authFromClassLink: false,
-        userQueryKeyIndex: 0,
-        assignmentQueryKeyIndex: 0,
-        administrationQueryKeyIndex: 0,
-        tasksDictionary: {},
+        ssoProvider: null,
         showOptionalAssessments: false,
+        adminAuthStateListener: null,
+        appAuthStateListener: null,
       };
     },
     getters: {
@@ -66,11 +60,20 @@ export const useAuthStore = () => {
     },
     actions: {
       async completeAssessment(adminId, taskId) {
+        //@TODO: Move to mutation since we cannot rotate query keys anymore.
         await this.roarfirekit.completeAssessment(adminId, taskId);
-        this.assignmentQueryKeyIndex += 1;
       },
-      setUser() {
-        onAuthStateChanged(this.roarfirekit?.admin.auth, async (user) => {
+      async initFirekit() {
+        try {
+          this.roarfirekit = await initNewFirekit();
+          this.setAuthStateListeners();
+        } catch (error) {
+          // @TODO: Improve error handling as this is a critical error.
+          console.error('Error initializing Firekit:', error);
+        }
+      },
+      setAuthStateListeners() {
+        this.adminAuthStateListener = onAuthStateChanged(this.roarfirekit?.admin.auth, async (user) => {
           if (user) {
             this.localFirekitInit = true;
             this.firebaseUser.adminFirebaseUser = user;
@@ -78,36 +81,16 @@ export const useAuthStore = () => {
             this.firebaseUser.adminFirebaseUser = null;
           }
         });
-        onAuthStateChanged(this.roarfirekit?.app.auth, async (user) => {
+        this.appAuthStateListener = onAuthStateChanged(this.roarfirekit?.app.auth, async (user) => {
           if (user) {
             this.firebaseUser.appFirebaseUser = user;
-            await this.updateTasksDictionary();
           } else {
             this.firebaseUser.appFirebaseUser = null;
           }
         });
       },
-      async initFirekit() {
-        this.roarfirekit = await initNewFirekit().then((firekit) => {
-          return firekit;
-        });
-      },
       async getLegalDoc(docName) {
         return await this.roarfirekit.getLegalDoc(docName);
-      },
-      async updateTasksDictionary() {
-        if (this.isFirekitInit) {
-          const taskDocs = await taskFetcher(true, true);
-          this.tasksDictionary = taskDocs.reduce((acc, doc) => {
-            acc[doc.id] = doc;
-            return acc;
-          });
-        } else {
-          console.warn('Initialize Firekit before updating tasks dictionary.');
-        }
-      },
-      async updateConsentStatus(docName, consentVersion, params = {}) {
-        return await this.roarfirekit.updateConsentStatus(docName, consentVersion, params);
       },
       async registerWithEmailAndPassword({ email, password, userData }) {
         return this.roarfirekit.createStudentWithEmailPassword(email, password, userData);
@@ -140,31 +123,31 @@ export const useAuthStore = () => {
       },
       async signInWithGooglePopup() {
         if (this.isFirekitInit) {
-          return this.roarfirekit.signInWithPopup('google');
-        }
-      },
-      async signInWithCleverPopup() {
-        this.authFromClever = true;
-        if (this.isFirekitInit) {
-          return this.roarfirekit.signInWithPopup('clever');
-        }
-      },
-      async signInWithClassLinkPopup() {
-        this.authFromClasslink = true;
-        if (this.isFirekitInit) {
-          return this.roarfirekit.signInWithPopup('classlink');
+          return this.roarfirekit.signInWithPopup(AUTH_SSO_PROVIDERS.GOOGLE);
         }
       },
       async signInWithGoogleRedirect() {
-        return this.roarfirekit.initiateRedirect('google');
+        return this.roarfirekit.initiateRedirect(AUTH_SSO_PROVIDERS.GOOGLE);
+      },
+      async signInWithCleverPopup() {
+        this.ssoProvider = AUTH_SSO_PROVIDERS.CLEVER;
+        if (this.isFirekitInit) {
+          return this.roarfirekit.signInWithPopup(AUTH_SSO_PROVIDERS.CLEVER);
+        }
       },
       async signInWithCleverRedirect() {
-        this.authFromClever = true;
-        return this.roarfirekit.initiateRedirect('clever');
+        this.ssoProvider = AUTH_SSO_PROVIDERS.CLEVER;
+        return this.roarfirekit.initiateRedirect(AUTH_SSO_PROVIDERS.CLEVER);
+      },
+      async signInWithClassLinkPopup() {
+        this.ssoProvider = AUTH_SSO_PROVIDERS.CLASSLINK;
+        if (this.isFirekitInit) {
+          return this.roarfirekit.signInWithPopup(AUTH_SSO_PROVIDERS.CLASSLINK);
+        }
       },
       async signInWithClassLinkRedirect() {
-        this.authFromClassLink = true;
-        return this.roarfirekit.initiateRedirect('classlink');
+        this.ssoProvider = AUTH_SSO_PROVIDERS.CLASSLINK;
+        return this.roarfirekit.initiateRedirect(AUTH_SSO_PROVIDERS.CLASSLINK);
       },
       async initStateFromRedirect() {
         this.spinner = true;
@@ -186,37 +169,6 @@ export const useAuthStore = () => {
       async forceIdTokenRefresh() {
         await this.roarfirekit.forceIdTokenRefresh();
       },
-      refreshQueryKeys() {
-        this.userQueryKeyIndex += 1;
-        this.assignmentQueryKeyIndex += 1;
-        this.administrationQueryKeyIndex += 1;
-      },
-      async signOut() {
-        if (this.isAuthenticated && this.isFirekitInit) {
-          return this.roarfirekit.signOut().then(() => {
-            this.adminOrgs = null;
-            this.authFromClever = false;
-            this.authFromClassLink = false;
-            this.firebaseUser = {
-              adminFirebaseUser: null,
-              appFirebaseUser: null,
-            };
-            this.spinner = false;
-            this.userClaims = null;
-            this.userData = null;
-
-            this.userQueryKeyIndex += 1;
-            this.assignmentQueryKeyIndex += 1;
-            this.administrationQueryKeyIndex += 1;
-            this.tasksDictionary = {};
-
-            const gameStore = useGameStore();
-            gameStore.selectedAdmin = undefined;
-          });
-        } else {
-          console.log('Cant log out while not logged in');
-        }
-      },
       async sendMyPasswordResetEmail() {
         if (this.email) {
           return await this.roarfirekit.sendPasswordResetEmail(this.email).then(() => {
@@ -236,7 +188,6 @@ export const useAuthStore = () => {
         return this.roarfirekit.createLevanteUsersWithEmailPassword(userData);
       },
     },
-    // persist: true
     persist: {
       storage: sessionStorage,
       debug: false,

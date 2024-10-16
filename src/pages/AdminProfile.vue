@@ -48,15 +48,14 @@
 </template>
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-import { useAuthStore } from '@/store/auth';
 import { storeToRefs } from 'pinia';
-import { useQuery } from '@tanstack/vue-query';
-import { fetchDocById } from '@/helpers/query/utils';
 import _isEmpty from 'lodash/isEmpty';
 import _union from 'lodash/union';
+import { useAuthStore } from '@/store/auth';
+import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 
 const authStore = useAuthStore();
-const { roarfirekit, uid } = storeToRefs(authStore);
+const { roarfirekit } = storeToRefs(authStore);
 const sidebarOpen = ref(true);
 
 const providerIds = computed(() => {
@@ -88,12 +87,8 @@ onMounted(() => {
   if (roarfirekit.value.restConfig) init();
 });
 
-const { data: userClaims } = useQuery({
-  queryKey: ['userClaims', uid],
-  queryFn: () => fetchDocById('userClaims', uid.value),
-  keepPreviousData: true,
+const { data: userClaims } = useUserClaimsQuery({
   enabled: initialized,
-  staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
 // Keep track of the user's type

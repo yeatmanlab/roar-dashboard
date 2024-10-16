@@ -18,11 +18,7 @@
 <script setup>
 import { onMounted, ref, watch, computed } from 'vue';
 import embed from 'vega-embed';
-import { useAuthStore } from '@/store/auth';
-import { storeToRefs } from 'pinia';
-
-const authStore = useAuthStore();
-const { tasksDictionary } = storeToRefs(authStore);
+import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery';
 
 const props = defineProps({
   initialized: {
@@ -61,6 +57,8 @@ const props = defineProps({
     required: true,
   },
 });
+
+const { data: tasksDictionary, isLoading: isLoadingTasksDictionary } = useTasksDictionaryQuery();
 
 const scoreMode = ref({ name: 'Raw Score', key: 'rawScore' });
 const scoreModes = [
@@ -109,11 +107,12 @@ const computedRuns = computed(() => {
   return props.runs;
 });
 
-const distributionChartFacet = (taskId) => {
+const distributionChartFacet = computed(() => {
+  if (isLoadingTasksDictionary.value) return {};
   return {
     background: null,
     title: {
-      text: `${tasksDictionary.value[taskId]?.publicName ?? taskId}`,
+      text: `${tasksDictionary.value[props.taskId]?.publicName ?? props.taskId}`,
       subtitle: `${scoreMode.value.name} Distribution By ${props.facetMode.name}`,
       anchor: 'middle',
       fontSize: 18,
@@ -165,8 +164,8 @@ const distributionChartFacet = (taskId) => {
         field: `scores.${scoreMode.value.key}`,
         title: scoreMode.value.name === 'Percentile' ? `${scoreMode.value.name} Score` : `${scoreMode.value.name}`,
         bin: {
-          step: getBinSize(scoreMode.value.name, taskId),
-          extent: [getRangeLow(scoreMode.value.name, taskId), getRangeHigh(scoreMode.value.name, taskId)],
+          step: getBinSize(scoreMode.value.name, props.taskId),
+          extent: [getRangeLow(scoreMode.value.name, props.taskId), getRangeHigh(scoreMode.value.name, props.taskId)],
         },
         sort: 'ascending',
         axis: {
@@ -208,10 +207,10 @@ const distributionChartFacet = (taskId) => {
       },
     },
   };
-};
+});
 
 const draw = async () => {
-  let chartSpecDist = distributionChartFacet(props.taskId, props.runs);
+  let chartSpecDist = distributionChartFacet.value;
   await embed(`#roar-distribution-chart-${props.taskId}`, chartSpecDist);
 };
 

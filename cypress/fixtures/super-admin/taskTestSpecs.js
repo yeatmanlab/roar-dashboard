@@ -2,7 +2,7 @@ import { playSWR } from '../../support/helper-functions/roar-swr/swrHelpers.js';
 import { playSRE } from '../../support/helper-functions/roar-sre/sreHelpers.js';
 import { playLetter } from '../../support/helper-functions/roar-letter/letterHelpers.js';
 import { playPA } from '../../support/helper-functions/roar-pa/paHelpers.js';
-import { playFluencyARF, playFluencyCALF } from '../../support/helper-functions/roam-fluency/fluencyHelpers.js';
+import { playARF, playCALF } from '../../support/helper-functions/roam-apps/roamHelpers';
 import {
   playMorphology,
   playWrittenVocabulary,
@@ -79,25 +79,25 @@ export const testSpecs = [
   {
     name: 'ROAM - Single Digit',
     app: '@bdelab/roam-fluency',
-    spec: playFluencyARF,
+    spec: playARF,
     language: 'en',
   },
   {
     name: 'ROAM - Un Dígito',
     app: '@bdelab/roam-fluency',
-    spec: playFluencyARF,
+    spec: playARF,
     language: 'es',
   },
   {
     name: 'ROAM - Multi Digit',
     app: '@bdelab/roam-fluency',
-    spec: playFluencyCALF,
+    spec: playCALF,
     language: 'en',
   },
   {
     name: 'ROAM - Varios Dígitos',
     app: '@bdelab/roam-fluency',
-    spec: playFluencyCALF,
+    spec: playCALF,
     language: 'es',
   },
 ];

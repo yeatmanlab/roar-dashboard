@@ -10,12 +10,13 @@ import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router';
 import _get from 'lodash/get';
 import _union from 'lodash/union';
+import _isEmpty from 'lodash/isEmpty';
 import AppSpinner from '@/components/AppSpinner.vue';
 import { fetchDocById } from '@/helpers/query/utils';
 
 const router = useRouter();
 const authStore = useAuthStore();
-const { roarUid, authFromClassLink } = storeToRefs(authStore);
+const { uid, roarUid, authFromClassLink } = storeToRefs(authStore);
 
 let userDataCheckInterval;
 
@@ -40,10 +41,17 @@ async function checkForUserType() {
       }
     } else if (userType && userType !== 'guest') {
       console.log(`User ${roarUid.value} found with userType ${userType}.`);
-      console.log('Routing to Home');
-      clearInterval(userDataCheckInterval);
-      authStore.refreshQueryKeys();
-      router.push({ name: 'Home' });
+      const userClaims = await fetchDocById('userClaims', uid.value);
+      const adminOrgs = _get(userClaims, 'claims.adminOrgs', {});
+      console.log(`User ${roarUid.value} found with userType ${userType} and adminOrgs:`, adminOrgs);
+      if (!_isEmpty(adminOrgs)) {
+        console.log('Routing to Home');
+        clearInterval(userDataCheckInterval);
+        authStore.refreshQueryKeys();
+        router.push({ name: 'Home' });
+      } else {
+        console.log(`User ${roarUid.value} found with userType ${userType} but no adminOrgs. Retrying...`);
+      }
     } else {
       console.log(`User ${roarUid.value} found with userType ${userType}. Retrying...`);
     }

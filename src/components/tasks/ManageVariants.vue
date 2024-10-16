@@ -438,13 +438,14 @@
 import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { required } from '@vuelidate/validators';
 import { useVuelidate } from '@vuelidate/core';
-import { useAuthStore } from '@/store/auth';
-import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import { storeToRefs } from 'pinia';
 import { useToast } from 'primevue/usetoast';
-import { taskFetcher } from '@/helpers/query/tasks';
-import { variantsFetcher } from '../../helpers/query/tasks';
 import { cloneDeep, camelCase } from 'lodash';
+import { useAuthStore } from '@/store/auth';
+import useTasksQuery from '@/composables/queries/useTasksQuery';
+import useTaskVariantsQuery from '@/composables/queries/useTaskVariantsQuery';
+import useAddTaskVariantMutation from '@/composables/mutations/useAddTaskVariantMutation';
+import useUpdateTaskVariantMutation from '@/composables/mutations/useUpdateTaskVariantMutation';
 
 const toast = useToast();
 const initialized = ref(false);
@@ -452,7 +453,9 @@ const registeredTasksOnly = ref(true);
 const variantCheckboxData = ref();
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
-const queryClient = useQueryClient();
+
+const { mutate: addVariant } = useAddTaskVariantMutation();
+const { mutate: updateVariant } = useUpdateTaskVariantMutation();
 
 const selectedTask = ref(null);
 const selectedVariant = ref(null);
@@ -506,20 +509,12 @@ onMounted(() => {
   if (roarfirekit.value.restConfig) init();
 });
 
-const { isFetching: isFetchingTasks, data: tasks } = useQuery({
-  queryKey: ['tasks', registeredTasksOnly],
-  queryFn: () => taskFetcher(registeredTasksOnly.value),
-  keepPreviousData: true,
+const { isFetching: isFetchingTasks, data: tasks } = useTasksQuery({
   enabled: initialized,
-  staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
-const { data: allVariants } = useQuery({
-  queryKey: ['variants', 'all'],
-  queryFn: () => variantsFetcher(),
-  keepPreviousData: true,
+const { data: variants } = useTaskVariantsQuery(registeredTasksOnly, {
   enabled: initialized,
-  staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
 const formattedTasks = computed(() => {
@@ -534,11 +529,11 @@ const formattedTasks = computed(() => {
 
 // Filter variants based on selected task
 const filteredVariants = computed(() => {
-  if (!allVariants.value || !selectedTask.value) {
+  if (!variants.value || !selectedTask.value) {
     return [];
   }
 
-  return allVariants.value.filter((variant) => variant.task.id === selectedTask.value);
+  return variants.value.filter((variant) => variant.task.id === selectedTask.value);
 });
 
 // Fields for modeling  a new variant
@@ -663,7 +658,7 @@ const checkForDuplicates = (newItemsArray, currentDataObject) => {
 };
 
 function checkVariantExists(value) {
-  allVariants.value.forEach((item) => {
+  variants.value.forEach((item) => {
     if (value === item.variant?.name) {
       toast.add({
         severity: 'error',
@@ -680,8 +675,6 @@ function checkVariantExists(value) {
 // Helper function to check for errors before updating a task
 // Returns true if there are errors, false if there are none
 const checkForErrors = () => {
-  console.log('Checking for errors...');
-
   if (addedFields.length > 0) {
     const { isDuplicate, duplicateField } = checkForDuplicates(addedFields, updatedVariantData);
     if (isDuplicate) {
@@ -727,7 +720,8 @@ const handleUpdateVariant = async () => {
 
   const convertedFields = convertParamsToObj(addedFields);
   // const convertedParams = convertParamsToObj(addedParams);
-  const updateData = {
+
+  const variantData = {
     taskId: selectedTask.value,
     variantId: selectedVariant.value.id,
     data: {
@@ -740,17 +734,21 @@ const handleUpdateVariant = async () => {
     },
   };
 
-  try {
-    await authStore.roarfirekit.updateTaskOrVariant(updateData);
-    toast.add({ severity: 'success', summary: 'Hoorah!', detail: 'Variant successfully updated.', life: 3000 });
-
-    // Reset the form and re-fetch the data
-    resetUpdateVariantForm();
-    await queryClient.invalidateQueries(['tasks', registeredTasksOnly]);
-    await queryClient.invalidateQueries(['variants', 'all']);
-  } catch (error) {
-    console.error(error);
-  }
+  await updateVariant(variantData, {
+    onSuccess: () => {
+      toast.add({ severity: 'success', summary: 'Hoorah!', detail: 'Variant successfully updated.', life: 3000 });
+      resetUpdateVariantForm();
+    },
+    onError: (error) => {
+      toast.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'Unable to update variant, please try again.',
+        life: 3000,
+      });
+      console.error('Failed to update task.', error);
+    },
+  });
 };
 
 const handleVariantSubmit = async (isFormValid) => {
@@ -786,20 +784,22 @@ const handleVariantSubmit = async (isFormValid) => {
     registered: isRegisteredVariant,
   });
 
-  try {
-    await authStore.roarfirekit.registerTaskVariant({ ...newVariantObject });
-
-    toast.add({ severity: 'success', summary: 'Hoorah!', detail: 'Variant successfully created.', life: 3000 });
-
-    submitted.value = false;
-
-    // Reset the form and re-fetch the data
-    resetCreateVariantForm();
-    await queryClient.invalidateQueries(['tasks', registeredTasksOnly]);
-    await queryClient.invalidateQueries(['variants', 'all']);
-  } catch (error) {
-    console.error(error);
-  }
+  await addVariant(newVariantObject, {
+    onSuccess: () => {
+      toast.add({ severity: 'success', summary: 'Hoorah!', detail: 'Variant successfully created.', life: 3000 });
+      submitted.value = false;
+      resetCreateVariantForm();
+    },
+    onError: (error) => {
+      toast.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'Unable to create variant, please try again.',
+        life: 3000,
+      });
+      console.error('Failed to add variant.', error);
+    },
+  });
 };
 
 function resetCreateVariantForm() {

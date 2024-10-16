@@ -1,107 +1,108 @@
 <template>
   <div>
-    <div v-if="!noGamesAvailable || consentSpinner">
-      <div v-if="isFetching" class="loading-container">
-        <AppSpinner style="margin-bottom: 1rem" />
-        <span>{{ $t('homeParticipant.loadingAssignments') }}</span>
+    <div v-if="!initialized || isLoading || isFetching" class="loading-container py-8">
+      <AppSpinner style="margin-bottom: 1rem" />
+      <span>{{ $t('homeParticipant.loadingAssignments') }}</span>
+    </div>
+
+    <div v-else-if="!hasAssignments">
+      <div class="col-full text-center py-8">
+        <h1>{{ $t('homeParticipant.noAssignments') }}</h1>
+        <p class="text-center">{{ $t('homeParticipant.contactAdministrator') }}</p>
+
+        <PvButton
+          :label="$t('navBar.signOut')"
+          class="no-underline bg-primary border-none border-round p-2 text-white hover:bg-red-900"
+          icon="pi pi-sign-out"
+          @click="signOut"
+        />
       </div>
-      <div v-else>
-        <h2 v-if="assignmentInfo?.length == 1" class="p-float-label dropdown-container">
-          {{ assignmentInfo.at(0).publicName || assignmentInfo.at(0).name }}
-        </h2>
-        <div class="flex flex-row-reverse align-items-end gap-2 justify-content-between">
-          <div
-            v-if="optionalAssessments.length !== 0"
-            class="switch-container flex flex-row align-items-center justify-content-end mr-6 gap-2"
-          >
-            <PvInputSwitch
-              v-model="showOptionalAssessments"
-              input-id="switch-optional"
-              data-cy="switch-show-optional-assessments"
-            />
-            <label for="switch-optional" class="mr-2 text-gray-500">{{
-              $t('homeParticipant.showOptionalAssignments')
-            }}</label>
-          </div>
-          <div
-            v-if="assignmentInfo?.length > 0"
-            class="flex flex-row justify-center align-items-center p-float-label dropdown-container gap-4 w-full"
-          >
-            <div class="assignment-select-container flex flex-row justify-content-between justify-content-start">
-              <div class="flex flex-column align-content-start justify-content-start w-3">
-                <PvDropdown
-                  v-if="assignmentInfo.every((admin) => admin.publicName)"
-                  v-model="selectedAdmin"
-                  :options="sortedAdminInfo ?? []"
-                  option-label="publicName"
-                  input-id="dd-assignment"
-                  data-cy="dropdown-select-administration"
-                  @change="toggleShowOptionalAssessments"
-                />
-                <PvDropdown
-                  v-else
-                  v-model="selectedAdmin"
-                  :options="sortedAdminInfo ?? []"
-                  option-label="name"
-                  input-id="dd-assignment"
-                  data-cy="dropdown-select-administration"
-                  @change="toggleShowOptionalAssessments"
-                />
-                <label for="dd-assignment">{{ $t('homeParticipant.selectAssignment') }}</label>
-              </div>
+    </div>
+
+    <div v-else>
+      <h2 v-if="userAssignments?.length == 1" class="p-float-label dropdown-container">
+        {{ userAssignments.at(0).publicName || userAssignments.at(0).name }}
+      </h2>
+      <div class="flex flex-row-reverse align-items-end gap-2 justify-content-between">
+        <div
+          v-if="optionalAssessments.length !== 0"
+          class="switch-container flex flex-row align-items-center justify-content-end mr-6 gap-2"
+        >
+          <PvInputSwitch
+            v-model="showOptionalAssessments"
+            input-id="switch-optional"
+            data-cy="switch-show-optional-assessments"
+          />
+          <label for="switch-optional" class="mr-2 text-gray-500">{{
+            $t('homeParticipant.showOptionalAssignments')
+          }}</label>
+        </div>
+        <div
+          v-if="userAssignments?.length > 0"
+          class="flex flex-row justify-center align-items-center p-float-label dropdown-container gap-4 w-full"
+        >
+          <div class="assignment-select-container flex flex-row justify-content-between justify-content-start">
+            <div class="flex flex-column align-content-start justify-content-start w-3">
+              <PvDropdown
+                v-model="selectedAdmin"
+                :options="sortedUserAdministrations ?? []"
+                :option-label="
+                  userAssignments.every((administration) => administration.publicName) ? 'publicName' : 'name'
+                "
+                input-id="dd-assignment"
+                data-cy="dropdown-select-administration"
+                @change="toggleShowOptionalAssessments"
+              />
+              <label for="dd-assignment">{{ $t('homeParticipant.selectAssignment') }}</label>
             </div>
           </div>
         </div>
-        <div class="tabs-container">
-          <ParticipantSidebar :total-games="totalGames" :completed-games="completeGames" :student-info="studentInfo" />
-          <Transition name="fade" mode="out-in">
-            <GameTabs
-              v-if="showOptionalAssessments"
-              :games="optionalAssessments"
-              :sequential="isSequential"
-              :user-data="userData"
-            />
-            <GameTabs v-else :games="requiredAssessments" :sequential="isSequential" :user-data="userData" />
-          </Transition>
-        </div>
       </div>
-    </div>
-    <div v-else>
-      <div class="col-full text-center">
-        <h1>{{ $t('homeParticipant.noAssignments') }}</h1>
-        <p class="text-center">{{ $t('homeParticipant.contactAdministrator') }}</p>
-        <router-link :to="{ name: 'SignOut' }">
-          <PvButton
-            :label="$t('navBar.signOut')"
-            class="no-underline bg-primary border-none border-round p-2 text-white hover:bg-red-900"
-            icon="pi pi-sign-out"
+      <div class="tabs-container">
+        <ParticipantSidebar :total-games="totalGames" :completed-games="completeGames" :student-info="studentInfo" />
+        <Transition name="fade" mode="out-in">
+          <GameTabs
+            v-if="showOptionalAssessments && userData"
+            :games="optionalAssessments"
+            :sequential="isSequential"
+            :user-data="userData"
           />
-        </router-link>
+          <GameTabs
+            v-else-if="requiredAssessments && userData"
+            :games="requiredAssessments"
+            :sequential="isSequential"
+            :user-data="userData"
+          />
+        </Transition>
       </div>
     </div>
   </div>
+
   <ConsentModal
     v-if="showConsent && !isLevante"
     :consent-text="confirmText"
     :consent-type="consentType"
-    @accepted="updateConsent"
+    :on-confirm="updateConsent"
   />
 </template>
 
 <script setup>
-import { onMounted, ref, watch, computed, toRaw } from 'vue';
+import { onMounted, ref, watch, computed } from 'vue';
 import _filter from 'lodash/filter';
 import _get from 'lodash/get';
 import _find from 'lodash/find';
 import _without from 'lodash/without';
-import _forEach from 'lodash/forEach';
+import _isEmpty from 'lodash/isEmpty';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
 import { storeToRefs } from 'pinia';
-import { useQuery, useQueryClient } from '@tanstack/vue-query';
-import { fetchDocById, fetchDocsById, fetchSubcollection } from '../helpers/query/utils';
-import { getUserAssignments } from '../helpers/query/assignments';
-import ConsentModal from '../components/ConsentModal.vue';
+import useUserDataQuery from '@/composables/queries/useUserDataQuery';
+import useUserAssignmentsQuery from '@/composables/queries/useUserAssignmentsQuery';
+import useTasksQuery from '@/composables/queries/useTasksQuery';
+import useSurveyReponsesQuery from '@/composables/queries/useSurveyResponsesQuery';
+import useUpdateConsentMutation from '@/composables/mutations/useUpdateConsentMutation';
+import useSignOutMutation from '@/composables/mutations/useSignOutMutation';
+import ConsentModal from '@/components/ConsentModal.vue';
 import GameTabs from '@/components/GameTabs.vue';
 import ParticipantSidebar from '@/components/ParticipantSidebar.vue';
 
@@ -112,6 +113,10 @@ const consentType = ref('');
 const consentParams = ref({});
 
 const isLevante = import.meta.env.MODE === 'LEVANTE';
+
+const { mutateAsync: updateConsentStatus } = useUpdateConsentMutation();
+const { mutate: signOut } = useSignOutMutation();
+
 let unsubscribe;
 const initialized = ref(false);
 const init = () => {
@@ -119,18 +124,8 @@ const init = () => {
   initialized.value = true;
 };
 
-const queryClient = useQueryClient();
-
 const authStore = useAuthStore();
-const {
-  roarfirekit,
-  roarUid,
-  uid,
-  consentSpinner,
-  showOptionalAssessments,
-  userQueryKeyIndex,
-  assignmentQueryKeyIndex,
-} = storeToRefs(authStore);
+const { roarfirekit, showOptionalAssessments } = storeToRefs(authStore);
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.roarfirekit.restConfig) init();
@@ -147,34 +142,51 @@ const {
   isLoading: isLoadingUserData,
   isFetching: isFetchingUserData,
   data: userData,
-} = useQuery({
-  queryKey: ['userData', roarUid, userQueryKeyIndex],
-  queryFn: () => fetchDocById('users', roarUid.value),
-  keepPreviousData: true,
+} = useUserDataQuery(null, {
   enabled: initialized,
-  staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
 const {
   isLoading: isLoadingAssignments,
   isFetching: isFetchingAssignments,
-  data: assignmentInfo,
-} = useQuery({
-  queryKey: ['assignments', uid, assignmentQueryKeyIndex],
-  queryFn: () => getUserAssignments(roarUid.value),
-  keepPreviousData: true,
+  data: userAssignments,
+} = useUserAssignmentsQuery({
   enabled: initialized,
-  staleTime: 5 * 60 * 1000, // 5 min
-  // For MEFS, since it is opened in a separate tab
-  refetchOnWindowFocus: 'always',
 });
 
-const sortedAdminInfo = computed(() => {
-  return [...(assignmentInfo.value ?? [])].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+const sortedUserAdministrations = computed(() => {
+  return [...(userAssignments.value ?? [])].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+});
+
+const taskIds = computed(() => (selectedAdmin.value?.assessments ?? []).map((assessment) => assessment.taskId));
+const tasksQueryEnabled = computed(() => !isLoadingAssignments.value && !_isEmpty(taskIds.value));
+
+const {
+  isLoading: isLoadingTasks,
+  isFetching: isFetchingTasks,
+  data: userTasks,
+} = useTasksQuery(false, taskIds, {
+  enabled: tasksQueryEnabled,
+});
+
+const { data: surveyResponsesData } = useSurveyReponsesQuery({
+  enabled: initialized.value && isLevante,
+});
+
+const isLoading = computed(() => {
+  return isLoadingUserData.value || isLoadingAssignments.value || isLoadingTasks.value;
+});
+
+const isFetching = computed(() => {
+  return isFetchingUserData.value || isFetchingAssignments.value || isFetchingTasks.value;
+});
+
+const hasAssignments = computed(() => {
+  if (isLoading.value || isFetching.value) return false;
+  return assessments.value.length > 0;
 });
 
 async function checkConsent() {
-  showConsent.value = false;
   const dob = new Date(userData.value?.studentData?.dob);
   const grade = userData.value?.studentData?.grade;
   const currentDate = new Date();
@@ -183,6 +195,8 @@ async function checkConsent() {
 
   if (!legal?.consent) {
     // Always show consent form for this test student when running Cypress tests
+    // @TODO: Remove this once we update the E2E tests to handle the consent form without persisting state. This would
+    // improve the test relability as enforcing the below condition defeats parts of the test purpose.
     if (userData.value?.id === 'O75V6IcVeiTwW8TRjXb76uydlwV2') {
       consentType.value = 'consent';
       confirmText.value = 'This is a test student. Please do not accept this form.';
@@ -202,38 +216,38 @@ async function checkConsent() {
 
   consentType.value = docType;
 
-  const consentStatus = _get(userData.value, `legal.${consentType.value}`);
+  const consentStatus = userData.value?.legal?.[consentType.value];
   const consentDoc = await authStore.getLegalDoc(docType);
   consentVersion.value = consentDoc.version;
 
-  if (_get(toRaw(consentStatus), consentDoc.version)) {
-    const legalDocs = _get(toRaw(consentStatus), consentDoc.version);
+  if (consentStatus?.[consentDoc.version]) {
+    const legalDocs = consentStatus?.[consentDoc.version];
+
     let found = false;
     let signedBeforeAugFirst = false;
-    let signedAfterAugFirst = false;
 
-    _forEach(legalDocs, (document) => {
+    const augustFirstThisYear = new Date(currentDate.getFullYear(), 7, 1); // August 1st of the current year
+
+    for (const document of legalDocs) {
       const signedDate = new Date(document.dateSigned);
-      const augustFirstThisYear = new Date(currentDate.getFullYear(), 7, 1); // August 1st of the current year
 
       if (document.amount === docAmount && document.expectedTime === docExpectedTime) {
         found = true;
+
         if (signedDate < augustFirstThisYear && currentDate >= augustFirstThisYear) {
           signedBeforeAugFirst = true;
-        } else if (signedDate >= augustFirstThisYear) {
-          signedAfterAugFirst = true;
-          return false; // This stops the loop in Lodash _.forEach
+          break;
         }
       }
+
       if (isNaN(new Date(document.dateSigned)) && currentDate >= augustFirstThisYear) {
         signedBeforeAugFirst = true;
+        break;
       }
-    });
+    }
 
     // If any document is signed after August 1st, do not show the consent form
-    if (signedAfterAugFirst) {
-      showConsent.value = false;
-    } else if (!found || signedBeforeAugFirst) {
+    if (!found || signedBeforeAugFirst) {
       if (docAmount !== '' || docExpectedTime !== '' || signedBeforeAugFirst) {
         confirmText.value = consentDoc.text;
         showConsent.value = true;
@@ -253,58 +267,13 @@ async function updateConsent() {
     expectedTime: selectedAdmin.value?.legal.expectedTime,
     dateSigned: new Date(),
   };
-  try {
-    await authStore.updateConsentStatus(consentType.value, consentVersion.value, consentParams.value).then(async () => {
-      userQueryKeyIndex.value += 1;
-      await queryClient.invalidateQueries(['userData', roarUid, userQueryKeyIndex]);
-    });
-  } catch (e) {
-    console.log("Couldn't update consent value", e);
-  }
+
+  await updateConsentStatus({
+    consentType,
+    consentVersion,
+    consentParams,
+  });
 }
-
-const taskIds = computed(() => (selectedAdmin.value?.assessments ?? []).map((assessment) => assessment.taskId));
-
-const {
-  isLoading: isLoadingTasks,
-  isFetching: isFetchingTasks,
-  data: taskInfo,
-} = useQuery({
-  queryKey: ['tasks', uid, taskIds],
-  queryFn: () => {
-    return fetchDocsById(
-      taskIds.value.map((taskId) => ({
-        collection: 'tasks',
-        docId: taskId,
-      })),
-      'app',
-    );
-  },
-  keepPreviousData: true,
-  enabled: initialized,
-  staleTime: 5 * 60 * 1000,
-});
-
-const { data: surveyResponsesData } = useQuery({
-  queryKey: ['surveyResponses', uid],
-  queryFn: () => fetchSubcollection(`users/${uid.value}`, 'surveyResponses'),
-  keepPreviousData: true,
-  enabled: initialized.value && import.meta.env.MODE === 'LEVANTE',
-  staleTime: 5 * 60 * 1000,
-});
-
-const isLoading = computed(() => {
-  return isLoadingUserData.value || isLoadingAssignments.value || isLoadingTasks.value;
-});
-
-const isFetching = computed(() => {
-  return isFetchingUserData.value || isFetchingAssignments.value || isFetchingTasks.value;
-});
-
-const noGamesAvailable = computed(() => {
-  if (isFetching.value || isLoading.value) return false;
-  return assessments.value.length === 0;
-});
 
 const toggleShowOptionalAssessments = async () => {
   await checkConsent();
@@ -312,13 +281,13 @@ const toggleShowOptionalAssessments = async () => {
 };
 
 // Assessments to populate the game tabs.
-// Generated based on the current selected admin Id
+// Generated based on the current selected administration Id
 const assessments = computed(() => {
-  if (!isFetching.value && selectedAdmin.value && (taskInfo.value ?? []).length > 0) {
+  if (!isFetching.value && selectedAdmin.value && (userTasks.value ?? []).length > 0) {
     const fetchedAssessments = _without(
       selectedAdmin.value.assessments.map((assessment) => {
-        // Get the matching assessment from assignmentInfo
-        const matchingAssignment = _find(assignmentInfo.value, { id: selectedAdmin.value.id });
+        // Get the matching assessment from userAssignments
+        const matchingAssignment = _find(userAssignments.value, { id: selectedAdmin.value.id });
         const matchingAssessments = matchingAssignment?.assessments ?? [];
         const matchingAssessment = _find(matchingAssessments, { taskId: assessment.taskId });
 
@@ -332,8 +301,8 @@ const assessments = computed(() => {
           ...optionalAssessment,
           ...assessment,
           taskData: {
-            ..._find(taskInfo.value ?? [], { id: assessment.taskId }),
-            variantURL: _get(assessment, 'params.variantURL'),
+            ..._find(userTasks.value ?? [], { id: assessment.taskId }),
+            variantURL: assessment?.params?.variantURL,
           },
         };
         return combinedAssessment;
@@ -341,7 +310,7 @@ const assessments = computed(() => {
       undefined,
     );
 
-    if (authStore.userData?.userType === 'student' && import.meta.env.MODE === 'LEVANTE') {
+    if (authStore.userData?.userType === 'student' && isLevante) {
       // This is just to mark the card as complete
       if (gameStore.isSurveyCompleted || surveyResponsesData.value?.length) {
         fetchedAssessments.forEach((assessment) => {
@@ -365,12 +334,12 @@ const optionalAssessments = computed(() => {
   return _filter(assessments.value, (assessment) => assessment.optional);
 });
 
-// Grab the sequential key from the current admin's data object
+// Grab the sequential key from the current administration's data object
 const isSequential = computed(() => {
   return (
     _get(
-      _find(assignmentInfo.value, (admin) => {
-        return admin.id === selectedAdmin.value.id;
+      _find(userAssignments.value, (administration) => {
+        return administration.id === selectedAdmin.value.id;
       }),
       'sequential',
     ) ?? true
@@ -389,32 +358,40 @@ let completeGames = computed(() => {
 
 // Set up studentInfo for sidebar
 const studentInfo = computed(() => {
-  if (isLevante) {
-    return null;
-  }
+  if (isLevante) return null;
+
   return {
-    grade: _get(userData.value, 'studentData.grade'),
+    grade: userData.value?.studentData?.grade,
   };
 });
 
 watch(
-  [selectedAdmin, assignmentInfo],
-  async ([updateSelectedAdmin]) => {
-    if (updateSelectedAdmin) {
+  [userData, selectedAdmin, userAssignments],
+  async ([newUserData, isSelectedAdminChanged]) => {
+    // If the assignments are still loading, abort.
+    if (isLoadingAssignments.value || isFetchingAssignments.value || !userAssignments.value?.length) return;
+
+    // If the selected admin changed, ensure consent was given before proceeding.
+    if (!_isEmpty(newUserData) && isSelectedAdminChanged) {
       await checkConsent();
     }
+
     const selectedAdminId = selectedAdmin.value?.id;
-    const allAdminIds = (assignmentInfo.value ?? []).map((admin) => admin.id);
-    // If there is no selected admin or if the selected admin is not in the list
-    // of all administrations choose the first one after sorting alphabetically by publicName
-    if (allAdminIds.length > 0 && (!selectedAdminId || !allAdminIds.includes(selectedAdminId))) {
-      // Choose the first sorted administration
-      selectedAdmin.value = sortedAdminInfo.value[0];
-    } else {
-      // N.B. Although this seems redundant, we ensure that the selected admin is a fresh instance of the admin.
-      //   This is relevant in the case that the game store does not flush properly.
-      selectedAdmin.value = sortedAdminInfo.value.find((admin) => admin.id === selectedAdminId);
+    const allAdminIds = userAssignments.value?.map((administration) => administration.id) ?? [];
+
+    // Verify that we have a selected administration and it is in the list of all assigned administrations.
+    if (selectedAdminId && allAdminIds.includes(selectedAdminId)) {
+      // Ensure that the selected administration is a fresh instance of the administration. Whilst this seems redundant,
+      // this is apparently relevant in the case that the game store does not flush properly.
+      selectedAdmin.value = sortedUserAdministrations.value.find(
+        (administration) => administration.id === selectedAdminId,
+      );
+
+      return;
     }
+
+    // Otherwise, choose the first sorted administration if there is no selected administration.
+    selectedAdmin.value = sortedUserAdministrations.value[0];
   },
   { immediate: true },
 );
