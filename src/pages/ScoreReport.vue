@@ -849,14 +849,12 @@ const filteredTableData = ref([]);
 const { updateFilters } = useFilteredTableData(filteredTableData);
 
 // Check if assignmentTableData is populated
-const assignmentAndRunDataReady = computed(() => {
-  return computeAssignmentAndRunData.value.assignmentTableData.length > 0;
-});
+const assignmentAndRunDataReady = computed(() => computeAssignmentAndRunData.value.assignmentTableData.length > 0);
 
 // When assignmentAndRunDataReady is true, we can pass the assignmentTableData to the FilterBar component
 // This will snapshot the assignmentTableData and pass it to the FilterBar component for filtering
 watch(
-  () => assignmentAndRunDataReady.value,
+  assignmentAndRunDataReady,
   () => {
     filteredTableData.value = computeAssignmentAndRunData.value.assignmentTableData;
   },
