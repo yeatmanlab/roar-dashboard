@@ -844,17 +844,23 @@ const computeAssignmentAndRunData = computed(() => {
   }
 });
 
-// Composable to filter table data using FilterBar.vue component which is passed in as a slot to RoarDataTable
+// This composable manages the data which is passed into the FilterBar component slot for filtering
 const filteredTableData = ref([]);
 const { updateFilters } = useFilteredTableData(filteredTableData);
 
-// Watch for changes in assignmentTableData and update filteredTableData
-// This will snapshot the assignmentTableData and filter it based on the current filters
+// Check if assignmentTableData is populated
+const assignmentAndRunDataReady = computed(() => {
+  return computeAssignmentAndRunData.value.assignmentTableData.length > 0;
+});
+
+// When assignmentAndRunDataReady is true, we can pass the assignmentTableData to the FilterBar component
+// This will snapshot the assignmentTableData and pass it to the FilterBar component for filtering
 watch(
-  () => computeAssignmentAndRunData.value.assignmentTableData,
-  (newTableData) => {
-    filteredTableData.value = newTableData;
+  () => assignmentAndRunDataReady.value,
+  () => {
+    filteredTableData.value = computeAssignmentAndRunData.value.assignmentTableData;
   },
+  { immediate: true },
 );
 
 const viewMode = ref('color');
