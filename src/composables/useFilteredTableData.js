@@ -39,7 +39,7 @@ export function useFilteredTableData(tableData) {
       filteredData.value = filteredData.value.filter((item) => filterGrades.includes(String(item?.user.grade)));
     }
 
-    tableData.value = !filterSchools.length && !filterGrades.length ? initialTableData : filteredData.value;
+    filteredTableData.value = !filterSchools.length && !filterGrades.length ? initialTableData : filteredData.value;
   };
 
   watch(tableData, (newValue) => {
