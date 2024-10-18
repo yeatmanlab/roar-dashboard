@@ -34,7 +34,7 @@
     "@bdelab/roam-apps": "^1.0.0",
     "@bdelab/roar-firekit": "9.1.0",
     "@bdelab/roar-letter": "1.11.8",
-    "@bdelab/roar-multichoice": "^1.11.3",
+    "@bdelab/roar-multichoice": "1.11.4",
     "@bdelab/roar-pa": "2.2.4",
     "@bdelab/roar-sre": "1.15.9",
     "@bdelab/roar-swr": "^1.12.1",
