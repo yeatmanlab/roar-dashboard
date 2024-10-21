@@ -1,10 +1,9 @@
-import { generatedSpecTemplate } from '../../fixtures/generatedTestTemplate';
+import { generatedSpecTemplate } from '../../fixtures/super-admin/generatedTestTemplate.js';
 import { getDevFirebase } from '../../support/devFirebase';
 import { getOpenAdministrations } from '../../support/query';
-import * as path from 'path';
 
 const timeout = Cypress.env('timeout');
-
+const testDirName = 'cypress/e2e/pre-release-tests/generated-tests';
 async function getOpenAdmins() {
   const adminFirestore = getDevFirebase('admin').db;
   const openAdmins = await getOpenAdministrations(adminFirestore);
@@ -14,10 +13,7 @@ async function getOpenAdmins() {
 
 function createAdminTestSpec(adminName) {
   cy.log('Creating test spec for administration:', adminName);
-  const currentPath = __dirname;
-  const testSpecPath = path.join(currentPath, 'generated-tests', `${adminName.replaceAll(' ', '_')}.cy.js`);
-  cy.log(`Test spec path: ${testSpecPath}`);
-  cy.fsWriteFile(testSpecPath, generatedSpecTemplate(adminName)).then(() => {
+  cy.writeFile(`${testDirName}/${adminName.replaceAll(' ', '_')}.cy.js`, generatedSpecTemplate(adminName)).then(() => {
     cy.log('Successfully created test spec:', adminName);
   });
 }
@@ -44,23 +40,19 @@ describe('Fetches all open administrations and generates test spec files for eac
   });
 
   it('Deletes existing test spec files if they exist.', () => {
-    const currentPath = __dirname;
-    const dirPath = path.join(currentPath, 'generated-tests');
-    cy.log(`Current working directory: ${dirPath}`);
-
     cy.log('Checking for existing test spec files...');
-    cy.fsDirExists(dirPath).then((directoryExists) => {
+    cy.fsDirExists(`./${testDirName}`).then((directoryExists) => {
       if (directoryExists === true) {
         cy.log('Deleting existing test spec directory...');
-        cy.fsDeleteDirectory(dirPath, { recursive: true }).then(() => {
-          cy.fsCreateDirectory(dirPath).then(() => {
-            cy.log(`Created test spec directory: ${dirPath}`);
+        cy.fsDeleteDirectory(`./${testDirName}`, { recursive: true }).then(() => {
+          cy.fsCreateDirectory(`./${testDirName}`).then(() => {
+            cy.log(`Created test spec directory: ${testDirName}`);
           });
         });
       } else {
         cy.log('Creating new test spec directory...');
-        cy.fsCreateDirectory(dirPath).then(() => {
-          cy.log(`Created test spec directory: ${dirPath}`);
+        cy.fsCreateDirectory(`./${testDirName}`).then(() => {
+          cy.log(`Created test spec directory: ${testDirName}`);
         });
       }
     });
@@ -74,19 +66,20 @@ describe('Fetches all open administrations and generates test spec files for eac
 
     cy.log('Getting open admins...');
     cy.get('@openAdmins').then((openAdmins) => {
-      const currentPath = __dirname;
-      const dirPath = path.join(currentPath, 'generated-tests');
       openAdmins.forEach((admin) => {
         // Creating a test spec file for the current administration
-        cy.fsDirExists(dirPath).then((directoryExists) => {
-          if (directoryExists === true) {
-            try {
-              createAdminTestSpec(admin);
-            } catch (error) {
-              cy.log('Error creating test spec:', error);
-            }
-          } else {
-            throw new Error('Test spec directory does not exist.');
+        cy.fsDirExists(`./${testDirName}`).then((directoryExists) => {
+          if (!directoryExists) {
+            // throw new Error('Test spec directory does not exist.');
+            cy.log('No directory found, creating a new one...');
+            cy.fsCreateDirectory(`./${testDirName}`).then(() => {
+              cy.log(`Created test spec directory: /generated-tests`);
+            });
+          }
+          try {
+            createAdminTestSpec(admin);
+          } catch (error) {
+            cy.log('Error creating test spec:', error);
           }
         });
       });

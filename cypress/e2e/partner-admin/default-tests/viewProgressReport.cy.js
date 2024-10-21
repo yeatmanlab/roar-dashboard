@@ -46,9 +46,13 @@ function checkProgressTags(headers) {
 describe('The partner admin can view progress reports for a given administration.', () => {
   it('Selects an administration and views its progress report', () => {
     checkUrl();
+    cy.wait(0.3 * timeout);
     cy.getAdministrationCard(testPartnerAdministrationName);
+    cy.wait(0.3 * timeout);
     clickProgressButton();
+    cy.wait(0.3 * timeout);
     cy.checkUserList(testUserList);
+    cy.wait(0.3 * timeout);
     checkProgressTags(testAssignments);
   });
 });

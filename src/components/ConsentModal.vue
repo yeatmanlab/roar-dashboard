@@ -1,8 +1,15 @@
 <template>
   <PvToast />
-  <PvConfirmDialog group="templating" class="confirm" :close-on-escape="false">
+  <PvConfirmDialog
+    v-model:visible="dialogVisible"
+    group="consent"
+    class="confirm"
+    :draggable="false"
+    :close-on-escape="false"
+  >
     <template #message>
       <div class="scrolling-box">
+        <!-- @TODO: Add sanitization! -->
         <!-- eslint-disable-next-line vue/no-v-html -->
         <div v-html="markdownToHtml"></div>
       </div>
@@ -11,39 +18,41 @@
 </template>
 
 <script setup>
-import { computed, onMounted } from 'vue';
-import { storeToRefs } from 'pinia';
+import { computed, onMounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
+import * as Sentry from '@sentry/vue';
 import { useConfirm } from 'primevue/useconfirm';
 import { useToast } from 'primevue/usetoast';
 import { marked } from 'marked';
-import { useAuthStore } from '@/store/auth';
-import { useI18n } from 'vue-i18n';
+import DOMPurify from 'dompurify';
 import _lowerCase from 'lodash/lowerCase';
-import { useRouter } from 'vue-router';
+import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
 
-const authStore = useAuthStore();
 const i18n = useI18n();
 const router = useRouter();
 
 const props = defineProps({
-  consentText: { type: String, require: true, default: 'Text Here' },
-  consentType: { type: String, require: true, default: 'Consent' },
+  consentText: { type: String, required: true, default: 'Text Here' },
+  consentType: { type: String, required: true, default: 'Consent' },
+  onConfirm: { type: Function, required: true },
 });
-
-const emit = defineEmits(['accepted', 'delayed']);
 
 const confirm = useConfirm();
 const toast = useToast();
 
+const dialogVisible = ref(false);
+const isSubmitting = ref(false);
+
 const markdownToHtml = computed(() => {
-  return marked(props.consentText);
+  const sanitizedHtml = DOMPurify.sanitize(marked(props.consentText));
+  return sanitizedHtml;
 });
 
-const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-const { consentSpinner } = storeToRefs(authStore);
-
 onMounted(() => {
-  const delayPromise = delay(1000);
+  dialogVisible.value = true;
+
+  const acceptIcon = computed(() => (isSubmitting.value ? 'pi pi-spin pi-spinner mr-2' : 'pi pi-check mr-2'));
+
   confirm.require({
     group: 'templating',
     header: i18n.t(`consentModal.header`, props.consentType.toUpperCase()),
@@ -55,18 +64,34 @@ onMounted(() => {
     rejectClass: 'bg-red-600 text-white border-none border-round p-2 hover:bg-red-800',
     rejectIcon: 'pi pi-times mr-2',
     accept: async () => {
-      toast.add({
-        severity: 'info',
-        summary: i18n.t('consentModal.toastHeader'),
-        detail: i18n.t(`consentModal.${_lowerCase(props.consentType)}UpdatedStatus`),
-        life: 3000,
-      });
-      emit('accepted');
-      consentSpinner.value = true;
-      await delayPromise.then(() => {
-        consentSpinner.value = false;
-        emit('delayed');
-      });
+      try {
+        isSubmitting.value = true;
+
+        await new Promise((resolve) => setTimeout(resolve, 600));
+        await props.onConfirm();
+
+        toast.add({
+          severity: TOAST_SEVERITIES.INFO,
+          summary: i18n.t('consentModal.toastHeader'),
+          detail: i18n.t(`consentModal.${_lowerCase(props.consentType)}UpdatedStatus`),
+          life: TOAST_DEFAULT_LIFE_DURATION,
+        });
+
+        dialogVisible.value = false;
+      } catch (error) {
+        toast.add({
+          severity: TOAST_SEVERITIES.ERROR,
+          summary: 'Error',
+          detail: 'An error occurred while updating the consent status, please try again.',
+          life: TOAST_DEFAULT_LIFE_DURATION,
+        });
+
+        Sentry.captureException(error);
+
+        return Promise.resolve(false);
+      } finally {
+        isSubmitting.value = false;
+      }
     },
     reject: () => {
       authStore.signOut();

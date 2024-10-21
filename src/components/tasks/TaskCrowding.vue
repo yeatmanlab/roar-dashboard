@@ -9,11 +9,10 @@
 import { onMounted, watch, ref, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
-import { useQuery } from '@tanstack/vue-query';
+import _get from 'lodash/get';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
-import _get from 'lodash/get';
-import { fetchDocById } from '@/helpers/query/utils';
+import useUserStudentDataQuery from '@/composables/queries/useUserStudentDataQuery';
 import packageLockJson from '../../../package-lock.json';
 
 const props = defineProps({
@@ -26,10 +25,11 @@ let TaskLauncher;
 const taskId = props.taskId;
 const { version } = packageLockJson.packages['node_modules/@bdelab/roav-crowding'];
 const router = useRouter();
+const taskStarted = ref(false);
 const gameStarted = ref(false);
 const authStore = useAuthStore();
 const gameStore = useGameStore();
-const { isFirekitInit, roarfirekit, uid } = storeToRefs(authStore);
+const { isFirekitInit, roarfirekit } = storeToRefs(authStore);
 
 const initialized = ref(false);
 let unsubscribe;
@@ -45,12 +45,8 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.roarfirekit.restConfig) init();
 });
 
-const { isLoading: isLoadingUserData, data: userData } = useQuery({
-  queryKey: ['userData', uid, 'studentData'],
-  queryFn: () => fetchDocById('users', uid.value, ['studentData']),
-  keepPreviousData: true,
+const { isLoading: isLoadingUserData, data: userData } = useUserStudentDataQuery({
   enabled: initialized,
-  staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
 // The following code intercepts the back button and instead forces a refresh.
@@ -71,22 +67,25 @@ onMounted(async () => {
   }
 
   if (roarfirekit.value.restConfig) init();
-  if (isFirekitInit.value && !isLoadingUserData.value) {
-    await startTask();
-  }
 });
 
 onBeforeUnmount(() => {
   window.removeEventListener('popstate', handlePopState);
 });
 
-watch([isFirekitInit, isLoadingUserData], async ([newFirekitInitValue, newLoadingUserData]) => {
-  if (newFirekitInitValue && !newLoadingUserData) await startTask();
-});
+watch(
+  [isFirekitInit, isLoadingUserData],
+  async ([newFirekitInitValue, newLoadingUserData]) => {
+    if (newFirekitInitValue && !newLoadingUserData && !taskStarted.value) {
+      taskStarted.value = true;
+      const { selectedAdmin } = storeToRefs(gameStore);
+      await startTask(selectedAdmin);
+    }
+  },
+  { immediate: true },
+);
 
-const { selectedAdmin } = storeToRefs(gameStore);
-
-async function startTask() {
+async function startTask(selectedAdmin) {
   try {
     let checkGameStarted = setInterval(function () {
       // Poll for the preload trials progress bar to exist and then begin the game

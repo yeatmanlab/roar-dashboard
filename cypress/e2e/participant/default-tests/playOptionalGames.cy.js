@@ -1,11 +1,12 @@
-import { optionalGames } from '../../../fixtures/optionalGamesList';
+import { optionalGames } from '../../../fixtures/participant/optionalGamesList.js';
 import { isCurrentVersion } from '../../../support/utils';
 
 const administration = Cypress.env('testOptionalRoarAppsAdministration');
 const language = 'en';
+const optional = true;
 
 function playOptionalGame(game, administration, language, optional) {
-  game.testSpec(administration, language, optional);
+  game.testSpec({ administration: administration, language: language, optional: optional });
 }
 
 describe('Play Optional Games', () => {
@@ -16,7 +17,7 @@ describe('Play Optional Games', () => {
           cy.log(`Did not detect a new version of ${game.app}, skipping test.`);
         } else {
           cy.log(`Detected a new version of ${game.app}, running test.`);
-          playOptionalGame(game, administration, language, game.optional);
+          playOptionalGame(game, administration, language, optional);
         }
       });
     });

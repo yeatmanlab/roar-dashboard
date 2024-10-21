@@ -192,7 +192,7 @@ const dropdownOptions = ref([
       { label: 'Unenroll', value: 'unenroll' },
       { label: 'State ID', value: 'state_id' },
       { label: 'Gender', value: 'gender' },
-      { label: 'English Language Level', value: 'ell_status' },
+      { label: 'English Language Learner', value: 'ell_status' },
       { label: 'Free-Reduced Lunch', value: 'frl_status' },
       { label: 'IEP Status', value: 'iep_status' },
       { label: 'Hispanic Ethinicity', value: 'hispanic_ethnicity' },

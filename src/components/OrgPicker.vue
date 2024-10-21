@@ -94,14 +94,15 @@ import { storeToRefs } from 'pinia';
 import _capitalize from 'lodash/capitalize';
 import _get from 'lodash/get';
 import _head from 'lodash/head';
-import _union from 'lodash/union';
 import { useAuthStore } from '@/store/auth';
 import { orgFetcher, orgFetchAll } from '@/helpers/query/orgs';
-import { fetchDocById, orderByDefault } from '@/helpers/query/utils';
+import { orderByDefault } from '@/helpers/query/utils';
+import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
+import useDistrictsListQuery from '@/composables/queries/useDistrictsListQuery';
 
 const initialized = ref(false);
 const authStore = useAuthStore();
-const { roarfirekit, uid } = storeToRefs(authStore);
+const { roarfirekit } = storeToRefs(authStore);
 
 const selectedDistrict = ref(undefined);
 const selectedSchool = ref(undefined);
@@ -130,23 +131,26 @@ const selectedOrgs = reactive({
   families: [],
 });
 
+// Declare computed property to watch for changes in props.orgs
+const computedOrgsProp = computed(() => {
+  return props.orgs ?? {};
+});
+
+// Watch for changes in computedOrgsProp and update selectedOrgs
 watch(
-  () => props.orgs,
+  () => computedOrgsProp.value,
   (orgs) => {
-    selectedOrgs.districts = _union(selectedOrgs.districts, orgs.districts);
-    selectedOrgs.schools = _union(selectedOrgs.schools, orgs.schools);
-    selectedOrgs.classes = _union(selectedOrgs.classes, orgs.classes);
-    selectedOrgs.groups = _union(selectedOrgs.groups, orgs.groups);
-    selectedOrgs.families = _union(selectedOrgs.families, orgs.families);
+    selectedOrgs.districts = orgs.districts ?? [];
+    selectedOrgs.schools = orgs.schools ?? [];
+    selectedOrgs.classes = orgs.classes ?? [];
+    selectedOrgs.groups = orgs.groups ?? [];
+    selectedOrgs.families = orgs.families ?? [];
   },
+  { immediate: true, deep: true },
 );
 
-const { isLoading: isLoadingClaims, data: userClaims } = useQuery({
-  queryKey: ['userClaims', uid],
-  queryFn: () => fetchDocById('userClaims', uid.value),
-  keepPreviousData: true,
+const { isLoading: isLoadingClaims, data: userClaims } = useUserClaimsQuery({
   enabled: initialized,
-  staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
 const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
@@ -200,14 +204,10 @@ const activeOrgType = computed(() => {
   return Object.keys(orgHeaders.value)[activeIndex.value];
 });
 
-const claimsLoaded = computed(() => !isLoadingClaims.value);
+const claimsLoaded = computed(() => initialized.value && !isLoadingClaims.value);
 
-const { isLoading: isLoadingDistricts, data: allDistricts } = useQuery({
-  queryKey: ['districts'],
-  queryFn: () => orgFetcher('districts', undefined, isSuperAdmin, adminOrgs),
-  keepPreviousData: true,
+const { isLoading: isLoadingDistricts, data: allDistricts } = useDistrictsListQuery({
   enabled: claimsLoaded,
-  staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
 const schoolQueryEnabled = computed(() => {
@@ -243,7 +243,6 @@ const isSelected = (orgType, orgId) => {
 };
 
 const remove = (org, orgKey) => {
-  console.log('remove called. trying to remove', org, 'from key', orgKey);
   selectedOrgs[orgKey] = selectedOrgs[orgKey].filter((_org) => _org.id !== org.id);
 };
 

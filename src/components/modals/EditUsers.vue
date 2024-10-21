@@ -199,12 +199,12 @@
   </PvDialog>
 </template>
 <script setup>
-import { useToast } from 'primevue/usetoast';
-import { useAuthStore } from '@/store/auth';
-import { storeToRefs } from 'pinia';
-import { useQuery } from '@tanstack/vue-query';
-import { fetchDocById } from '@/helpers/query/utils';
 import { watch, ref, onMounted, computed } from 'vue';
+import { useToast } from 'primevue/usetoast';
+import { storeToRefs } from 'pinia';
+import { useAuthStore } from '@/store/auth';
+import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
+
 const props = defineProps({
   userData: {
     type: Object,
@@ -225,7 +225,7 @@ const props = defineProps({
 const emit = defineEmits(['modalClosed']);
 
 const authStore = useAuthStore();
-const { roarfirekit, uid, userQueryKeyIndex } = storeToRefs(authStore);
+const { roarfirekit } = storeToRefs(authStore);
 const initialized = ref(false);
 
 watch(
@@ -380,12 +380,8 @@ onMounted(() => {
 });
 
 // Determine if the user is an admin
-const { data: userClaims } = useQuery({
-  queryKey: ['userClaims', uid, userQueryKeyIndex],
-  queryFn: () => fetchDocById('userClaims', uid.value),
-  keepPreviousData: true,
+const { data: userClaims } = useUserClaimsQuery({
   enabled: initialized,
-  staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
 const isSuperAdmin = computed(() => {

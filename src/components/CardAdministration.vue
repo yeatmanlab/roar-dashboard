@@ -19,29 +19,33 @@
             button-class="p-button-outlined p-button-sm w-3rem h-3rem border-primary border-1 border-circle bg-transparent hover:surface-300"
             :tooltip-options="{ position: 'top' }"
             :pt="{ button: { size: 'small' } }"
-            data-cy="button-speed-dial"
           />
           <PvConfirmPopup />
         </div>
       </div>
+
       <div class="card-admin-details">
         <span class="mr-1"><strong>Dates</strong>:</span>
         <span class="mr-1">
           {{ processedDates.start.toLocaleDateString() }} — {{ processedDates.end.toLocaleDateString() }}
         </span>
       </div>
+
       <div class="card-admin-assessments">
         <span class="mr-1"><strong>Assessments</strong>:</span>
-        <span v-for="assessmentId in assessmentIds" :key="assessmentId" class="card-inline-list-item">
-          <span>{{ tasksDictionary[assessmentId]?.publicName ?? assessmentId }}</span>
-          <span
-            v-if="showParams"
-            v-tooltip.top="'Click to view params'"
-            class="pi pi-info-circle cursor-pointer ml-1"
-            style="font-size: 1rem"
-            @click="toggleParams($event, assessmentId)"
-          />
-        </span>
+        <template v-if="!isLoadingTasksDictionary">
+          <span v-for="assessmentId in assessmentIds" :key="assessmentId" class="card-inline-list-item">
+            <span>{{ tasksDictionary[assessmentId]?.publicName ?? assessmentId }}</span>
+            <span
+              v-if="showParams"
+              v-tooltip.top="'Click to view params'"
+              class="pi pi-info-circle cursor-pointer ml-1"
+              style="font-size: 1rem"
+              @click="toggleParams($event, assessmentId)"
+            />
+          </span>
+        </template>
+
         <div v-if="showParams">
           <PvOverlayPanel v-for="assessmentId in assessmentIds" :key="assessmentId" :ref="paramPanelRefs[assessmentId]">
             <div v-if="getAssessment(assessmentId).variantId">
@@ -62,6 +66,7 @@
           </PvOverlayPanel>
         </div>
       </div>
+
       <div v-if="isAssigned">
         <PvButton
           class="mt-2 m-0 bg-primary text-white border-none border-round h-2rem text-sm hover:bg-red-900"
@@ -72,6 +77,7 @@
           @click="toggleTable"
         />
       </div>
+
       <PvTreeTable
         v-if="showTable"
         class="mt-3"
@@ -94,10 +100,10 @@
         </PvColumn>
         <PvColumn field="id" header="" style="width: 14rem">
           <template #body="{ node }">
-            <div class="flex m-0">
+            <div v-if="node.data.id" class="flex m-0">
               <router-link
                 :to="{
-                  name: 'ViewAdministration',
+                  name: 'ProgressReport',
                   params: { administrationId: props.id, orgId: node.data.id, orgType: node.data.orgType },
                 }"
                 class="no-underline"
@@ -146,29 +152,27 @@
 
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue';
-import { useQuery } from '@tanstack/vue-query';
 import { useConfirm } from 'primevue/useconfirm';
 import { useToast } from 'primevue/usetoast';
-import { storeToRefs } from 'pinia';
-import { batchGetDocs } from '@/helpers/query/utils';
-import { taskDisplayNames } from '@/helpers/reports';
-import { useAuthStore } from '@/store/auth';
-import { removeEmptyOrgs } from '@/helpers';
 import { useRouter } from 'vue-router';
-import _flattenDeep from 'lodash/flattenDeep';
 import _fromPairs from 'lodash/fromPairs';
 import _isEmpty from 'lodash/isEmpty';
 import _mapValues from 'lodash/mapValues';
 import _toPairs from 'lodash/toPairs';
 import _without from 'lodash/without';
 import _zip from 'lodash/zip';
+import { batchGetDocs } from '@/helpers/query/utils';
+import { taskDisplayNames } from '@/helpers/reports';
+import { removeEmptyOrgs } from '@/helpers';
 import { setBarChartData, setBarChartOptions } from '@/helpers/plotting';
-import { isLevante } from '@/helpers';
+import useDsgfOrgQuery from '@/composables/queries/useDsgfOrgQuery';
+import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery';
+import useDeleteAdministrationMutation from '@/composables/mutations/useDeleteAdministrationMutation';
+import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
+import { FIRESTORE_COLLECTIONS } from '@/constants/firebase';
+import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
 
 const router = useRouter();
-
-const authStore = useAuthStore();
-const { roarfirekit, administrationQueryKeyIndex, uid, tasksDictionary } = storeToRefs(authStore);
 
 const props = defineProps({
   id: { type: String, required: true },
@@ -185,6 +189,8 @@ const props = defineProps({
 const confirm = useConfirm();
 const toast = useToast();
 
+const { mutateAsync: deleteAdministration } = useDeleteAdministrationMutation();
+
 const speedDialItems = ref([
   {
     label: 'Delete',
@@ -195,18 +201,22 @@ const speedDialItems = ref([
         message: 'Are you sure you want to delete this administration?',
         icon: 'pi pi-exclamation-triangle',
         accept: async () => {
-          await roarfirekit.value.deleteAdministration(props.id).then(() => {
-            toast.add({
-              severity: 'info',
-              summary: 'Confirmed',
-              detail: `Deleted administration ${props.title}`,
-              life: 3000,
-            });
-            administrationQueryKeyIndex.value += 1;
+          await deleteAdministration(props.id);
+
+          toast.add({
+            severity: TOAST_SEVERITIES.INFO,
+            summary: 'Confirmed',
+            detail: `Deleted administration ${props.title}`,
+            life: TOAST_DEFAULT_LIFE_DURATION,
           });
         },
         reject: () => {
-          toast.add({ severity: 'error', summary: 'Rejected', detail: 'Deletion aborted', life: 3000 });
+          toast.add({
+            severity: TOAST_SEVERITIES.ERROR,
+            summary: 'Rejected',
+            detail: `Failed to delete administration ${props.title}`,
+            life: TOAST_DEFAULT_LIFE_DURATION,
+          });
         },
       });
     },
@@ -276,152 +286,14 @@ const isWideScreen = computed(() => {
   return window.innerWidth > 768;
 });
 
-const singularOrgTypes = {
-  districts: 'district',
-  schools: 'school',
-  classes: 'class',
-  groups: 'group',
-  families: 'families',
-};
+const { data: tasksDictionary, isLoading: isLoadingTasksDictionary } = useTasksDictionaryQuery();
 
-// dsgf: districts, schools, groups, families
-const fetchTreeOrgs = async () => {
-  const orgTypes = ['districts', 'schools', 'groups', 'families'];
-  const orgPaths = _flattenDeep(
-    orgTypes.map((orgType) => (props.assignees[orgType] ?? []).map((orgId) => `${orgType}/${orgId}`) ?? []),
-  );
-
-  const statsPaths = _flattenDeep(
-    orgTypes.map(
-      (orgType) => (props.assignees[orgType] ?? []).map((orgId) => `administrations/${props.id}/stats/${orgId}`) ?? [],
-    ),
-  );
-
-  const promises = [batchGetDocs(orgPaths, ['name', 'schools', 'classes', 'districtId']), batchGetDocs(statsPaths)];
-
-  const [orgDocs, statsDocs] = await Promise.all(promises);
-
-  const dsgfOrgs = _zip(orgDocs, statsDocs).map(([orgDoc, stats], index) => {
-    const { classes, schools, collection, ...nodeData } = orgDoc;
-    const node = {
-      key: String(index),
-      data: {
-        orgType: singularOrgTypes[collection],
-        schools,
-        classes,
-        stats,
-        ...nodeData,
-      },
-    };
-    if (classes)
-      node.children = classes.map((classId) => {
-        return {
-          key: `${node.key}-${classId}`,
-          data: {
-            orgType: 'class',
-            id: classId,
-          },
-        };
-      });
-    return node;
-  });
-
-  const dependentSchoolIds = _flattenDeep(dsgfOrgs.map((node) => node.data.schools ?? []));
-  const independentSchoolIds =
-    dsgfOrgs.length > 0 ? _without(props.assignees.schools, ...dependentSchoolIds) : props.assignees.schools;
-  const dependentClassIds = _flattenDeep(dsgfOrgs.map((node) => node.data.classes ?? []));
-  const independentClassIds =
-    dsgfOrgs.length > 0 ? _without(props.assignees.classes, ...dependentClassIds) : props.assignees.classes;
-
-  const independentSchools = (dsgfOrgs ?? []).filter((node) => {
-    return node.data.orgType === 'school' && independentSchoolIds.includes(node.data.id);
-  });
-
-  const dependentSchools = (dsgfOrgs ?? []).filter((node) => {
-    return node.data.orgType === 'school' && !independentSchoolIds.includes(node.data.id);
-  });
-
-  const independentClassPaths = independentClassIds.map((classId) => `classes/${classId}`);
-  const independentClassStatPaths = independentClassIds.map(
-    (classId) => `administrations/${props.id}/stats/${classId}`,
-  );
-
-  const classPromises = [
-    batchGetDocs(independentClassPaths, ['name', 'schoolId']),
-    batchGetDocs(independentClassStatPaths),
-  ];
-
-  const [classDocs, classStats] = await Promise.all(classPromises);
-
-  const independentClasses = _without(
-    _zip(classDocs, classStats).map(([orgDoc, stats], index) => {
-      const { collection = 'classes', ...nodeData } = orgDoc ?? {};
-
-      if (_isEmpty(nodeData)) return undefined;
-
-      const node = {
-        key: String(dsgfOrgs.length + index),
-        data: {
-          orgType: singularOrgTypes[collection],
-          ...(stats && { stats }),
-          ...nodeData,
-        },
-      };
-      return node;
-    }),
-    undefined,
-  );
-
-  const treeTableOrgs = dsgfOrgs.filter((node) => node.data.orgType === 'district');
-  treeTableOrgs.push(...independentSchools);
-
-  for (const school of dependentSchools) {
-    const districtId = school.data.districtId;
-    const districtIndex = treeTableOrgs.findIndex((node) => node.data.id === districtId);
-    if (districtIndex !== -1) {
-      if (treeTableOrgs[districtIndex].children === undefined) {
-        treeTableOrgs[districtIndex].children = [
-          {
-            ...school,
-            key: `${treeTableOrgs[districtIndex].key}-${school.key}`,
-          },
-        ];
-      } else {
-        treeTableOrgs[districtIndex].children.push(school);
-      }
-    } else {
-      treeTableOrgs.push(school);
-    }
-  }
-
-  treeTableOrgs.push(...(independentClasses ?? []));
-  treeTableOrgs.push(...dsgfOrgs.filter((node) => node.data.orgType === 'group'));
-  treeTableOrgs.push(...dsgfOrgs.filter((node) => node.data.orgType === 'family'));
-
-  treeTableOrgs.forEach((node) => {
-    // Sort the schools by existance of stats then alphabetically
-    if (node.children) {
-      node.children.sort((a, b) => {
-        if (!a.data.stats) return 1;
-        if (!b.data.stats) return -1;
-        return a.data.name.localeCompare(b.data.name);
-      });
-    }
-  });
-
-  return treeTableOrgs;
-};
-
-const { data: orgs, isLoading: loadingDsgfOrgs } = useQuery({
-  queryKey: ['dsgfOrgs', uid, props.id],
-  queryFn: () => fetchTreeOrgs(),
-  keepPreviousData: true,
-  staleTime: 5 * 60 * 1000, // 5 minutes
+const { data: orgs, isLoading: isLoadingDsgfOrgs } = useDsgfOrgQuery(props.id, props.assignees, {
   enabled: enableQueries,
 });
 
 const loadingTreeTable = computed(() => {
-  return loadingDsgfOrgs.value || expanding.value;
+  return isLoadingDsgfOrgs.value || expanding.value;
 });
 
 const treeTableOrgs = ref([]);
@@ -435,7 +307,7 @@ watch(showTable, (newValue) => {
 
 const expanding = ref(false);
 const onExpand = async (node) => {
-  if (node.data.orgType === 'school' && node.children?.length > 0 && !node.data.expanded) {
+  if (node.data.orgType === SINGULAR_ORG_TYPES.SCHOOLS && node.children?.length > 0 && !node.data.expanded) {
     expanding.value = true;
 
     const classPaths = node.children.map(({ data }) => `classes/${data.id}`);
@@ -457,14 +329,14 @@ const onExpand = async (node) => {
 
     const childNodes = _without(
       _zip(classDocs, classStats).map(([orgDoc, stats], index) => {
-        const { collection = 'classes', ...nodeData } = orgDoc ?? {};
+        const { collection = FIRESTORE_COLLECTIONS.CLASSES, ...nodeData } = orgDoc ?? {};
 
         if (_isEmpty(nodeData)) return undefined;
 
         return {
           key: `${node.key}-${index}`,
           data: {
-            orgType: singularOrgTypes[collection],
+            orgType: SINGULAR_ORG_TYPES[collection.toUpperCase()],
             ...(stats && { stats }),
             ...nodeData,
           },
@@ -500,18 +372,23 @@ const onExpand = async (node) => {
       return n;
     });
 
-    // Sort the classes by existance of stats then alphabetically
-    newNodes.forEach((districtNode) => {
-      districtNode.children.forEach((schoolNode) => {
+    // Sort the classes by existence of stats then alphabetically
+    // TODO: This fails currently as it tries to set a read only reactive handler
+    // Specifically, setting the `children` key fails because the
+    // schoolNode target is read-only.
+    // Also, I'm pretty sure this is useless now because all classes will have stats
+    // due to preallocation of accounts.
+    for (const districtNode of newNodes ?? []) {
+      for (const schoolNode of districtNode?.children ?? []) {
         if (schoolNode.children) {
-          schoolNode.children.sort((a, b) => {
+          schoolNode.children = schoolNode.children.toSorted((a, b) => {
             if (!a.data.stats) return 1;
             if (!b.data.stats) return -1;
             return a.data.name.localeCompare(b.data.name);
           });
         }
-      });
-    });
+      }
+    }
 
     treeTableOrgs.value = newNodes;
     expanding.value = false;
