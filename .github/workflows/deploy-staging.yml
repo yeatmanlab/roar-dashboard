@@ -22,9 +22,9 @@ jobs:
     steps:
       - id: generate-matrix
         run: |
-          defaultEnvironment='{"name":"staging","projectId":"testProjectId","envFileKeyRef":"DOTENV_PRIVATE_KEY_STAGING","firebaseServiceAccountRef":"FIREBASE_SERVICE_ACCOUNT_ADMIN_STAGING"}'
+          defaultEnvironment='{"name":"staging","projectId":"${{ secrets.FIREBASE_PROJECT_ID_ADMIN_STAGING }}","envFileKeyRef":"DOTENV_PRIVATE_KEY_STAGING","firebaseServiceAccountRef":"FIREBASE_SERVICE_ACCOUNT_ADMIN_STAGING"}'
           environments='${{ vars.STAGING_ENVIRONMENTS }}'
-          matrix="[$defaultEnvironment]"
+          matrix="[$(echo "$defaultEnvironment" | jq -c '.')]"
           if [ -n "$environments" ]; then
             matrix="$matrix, $environments"
           fi
