@@ -51,7 +51,7 @@ jobs:
       - name: Get configuration
         id: get-config
         run: |
-          config='${{ fromJson(needs.generate-matrix.outputs.matrix).environments[matrix.index] }}'
+          config='${{ toJson(fromJson(needs.generate-matrix.outputs.matrix).environments[matrix.index]) }}'
           echo "config=$config" >> $GITHUB_OUTPUT
 
       - name: Use configuration
