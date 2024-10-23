@@ -52,7 +52,9 @@ jobs:
         id: get-config
         run: |
           config='${{ toJson(fromJson(needs.generate-matrix.outputs.matrix).environments[matrix.index]) }}'
-          echo "config=$config" >> $GITHUB_OUTPUT
+          echo "JSON_RESPONSE<<EOF" >> "$GITHUB_ENV"
+          echo "$config" | jq -c '.' >> "$GITHUB_ENV"
+          echo "EOF" >> "$GITHUB_ENV"
 
       - name: Use configuration
         run: |
