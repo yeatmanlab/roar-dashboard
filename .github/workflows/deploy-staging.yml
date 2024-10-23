@@ -49,7 +49,6 @@ jobs:
           echo ${{ toJson(needs.generate-matrix.outputs.matrix) }}
 
       - name: Get configuration
-        id: get-config
         run: |
           config='${{ toJson(fromJson(needs.generate-matrix.outputs.matrix).environments[matrix.index]) }}'
           echo "JSON_RESPONSE<<EOF" >> "$GITHUB_ENV"
@@ -58,9 +57,9 @@ jobs:
 
       - name: Use configuration
         run: |
-          projectId=$(echo "${{ steps.get-config.outputs.config }}" | jq -r '.projectId')
-          envFileKeyRef=$(echo "${{ steps.get-config.outputs.config }}" | jq -r '.envFileKeyRef')
-          firebaseServiceAccountRef=$(echo "${{ steps.get-config.outputs.config }}" | jq -r '.firebaseServiceAccountRef')
+          projectId=$(echo "${{ env.JSON_RESPONSE }}" | jq -r '.projectId')
+          envFileKeyRef=$(echo "${{ env.JSON_RESPONSE }}" | jq -r '.envFileKeyRef')
+          firebaseServiceAccountRef=$(echo "${{ env.JSON_RESPONSE }}" | jq -r '.firebaseServiceAccountRef')
           echo "Project ID: $projectId"
           echo "Env File Key Ref: $envFileKeyRef"
           echo "Firebase Service Account Ref: $firebaseServiceAccountRef"
