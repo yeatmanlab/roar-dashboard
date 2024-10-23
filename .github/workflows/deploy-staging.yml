@@ -16,6 +16,7 @@ jobs:
   # Generate matrix
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
   generate-matrix:
+    name: Prepare deployment matrix
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.generate-matrix.outputs.matrix }}
@@ -35,7 +36,7 @@ jobs:
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
   build-and-deploy:
     needs: [generate-matrix]
-    name: Build and deploy ${{ fromJson(needs.generate-matrix.outputs.matrix).environments[matrix.index].name }}
+    name: Deploy ${{ fromJson(needs.generate-matrix.outputs.matrix).environments[matrix.index].name }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     strategy:
@@ -45,7 +46,7 @@ jobs:
     steps:
       - name: Debug
         run: |
-          echo "Matrix: ${{ toJson(needs.generate-matrix.outputs.matrix) }}"
+          echo ${{ toJson(needs.generate-matrix.outputs.matrix) }}
 
       # - name: Get configuration
       #   id: get-config
