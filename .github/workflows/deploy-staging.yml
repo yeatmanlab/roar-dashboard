@@ -32,7 +32,7 @@ jobs:
             }
           ]'
           if [ -n "$environments" ]; then
-            matrix="$matrix, $environments"
+            matrix="$matrix, $(echo "$environments" | jq -c '.')"
           fi
           echo "matrix=$matrix" >> $GITHUB_OUTPUT
 
