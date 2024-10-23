@@ -58,9 +58,9 @@ jobs:
 
       - name: Use configuration
         run: |
-          projectId=$(${{ steps.get-config.outputs.JSON_RESPONSE }} | jq -r '.projectId')
-          envFileKeyRef=$(${{ steps.get-config.outputs.JSON_RESPONSE }} | jq -r '.envFileKeyRef')
-          firebaseServiceAccountRef=$(${{ steps.get-config.outputs.JSON_RESPONSE }} | jq -r '.firebaseServiceAccountRef')
+          projectId=$(echo '${{ steps.get-config.outputs.JSON_RESPONSE }}' | jq -r .projectId)
+          envFileKeyRef=$(echo '${{ steps.get-config.outputs.JSON_RESPONSE }}' | jq -r .envFileKeyRef)
+          firebaseServiceAccountRef=$(echo '${{ steps.get-config.outputs.JSON_RESPONSE }}' | jq -r .firebaseServiceAccountRef)
           echo "Project ID: $projectId"
           echo "Env File Key Ref: $envFileKeyRef"
           echo "Firebase Service Account Ref: $firebaseServiceAccountRef"
