@@ -13,69 +13,66 @@ concurrency:
 
 jobs:
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
-  # Generate matrix
+  # Prepare deployment
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
-  generate-matrix:
-    name: Prepare deployment matrix
+  prepare-deployment:
+    name: Prepare deployment
     runs-on: ubuntu-latest
     outputs:
-      matrix: ${{ steps.generate-matrix.outputs.matrix }}
+      target-envs: ${{ steps.environment-configs.outputs.envs }}
     steps:
-      - id: generate-matrix
+      - name: Generate environment matrix
+        id: environment-configs
         run: |
           defaultEnvironment='{"name":"staging","projectId":"${{ secrets.FIREBASE_PROJECT_ID_ADMIN_STAGING }}","envFileKeyRef":"DOTENV_PRIVATE_KEY_STAGING","firebaseServiceAccountRef":"FIREBASE_SERVICE_ACCOUNT_ADMIN_STAGING"}'
-          environments='${{ vars.STAGING_ENVIRONMENTS }}'
-          matrix="[$(echo "$defaultEnvironment" | jq -c '.')]"
-          if [ -n "$environments" ]; then
-            matrix="$matrix, $environments"
+          additionalEnvironments='${{ vars.STAGING_ENVIRONMENTS }}'
+          envs="[$(echo "$defaultEnvironment" | jq -c '.')]"
+          if [ -n "$additionalEnvironments" ]; then
+            envs="$envs, $additionalEnvironments"
           fi
-          echo "matrix=$(jq -cn --argjson environments "$matrix" '{environments: $environments}')" >> $GITHUB_OUTPUT
+          echo "envs=$(jq -cn --argjson environments "$envs" '{environments: $environments}')" >> $GITHUB_OUTPUT
 
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
   # Build and deploy the application
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
   build-and-deploy:
-    needs: [generate-matrix]
-    name: Deploy ${{ fromJson(needs.generate-matrix.outputs.matrix).environments[matrix.index].name }}
+    needs: [prepare-deployment]
+    name: Deploy to ${{ fromJson(needs.prepare-deployment.outputs.target-envs).environments[matrix.index].name }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     strategy:
       matrix:
-        environment: ${{ fromJson(needs.generate-matrix.outputs.matrix).environments }}
+        environment: ${{ fromJson(needs.prepare-deployment.outputs.target-envs).environments }}
 
     steps:
-      - name: Debug
+      - name: Retrieve environment configuration
+        id: config
         run: |
-          echo ${{ toJson(needs.generate-matrix.outputs.matrix) }}
-
-      - name: Get configuration
-        id: get-config
-        run: |
-          config='${{ toJson(fromJson(needs.generate-matrix.outputs.matrix).environments[matrix.index]) }}'
+          config='${{ toJson(fromJson(needs.prepare-deployment.outputs.target-envs).environments[matrix.index]) }}'
           echo "JSON_RESPONSE<<EOF" >> "$GITHUB_OUTPUT"
           echo "$config" | jq -c '.' >> "$GITHUB_OUTPUT"
           echo "EOF" >> "$GITHUB_OUTPUT"
 
       - name: Use configuration
         run: |
-          projectId=$(echo '${{ steps.get-config.outputs.JSON_RESPONSE }}' | jq -r .projectId)
-          envFileKeyRef=$(echo '${{ steps.get-config.outputs.JSON_RESPONSE }}' | jq -r .envFileKeyRef)
-          firebaseServiceAccountRef=$(echo '${{ steps.get-config.outputs.JSON_RESPONSE }}' | jq -r .firebaseServiceAccountRef)
+          projectId=$(echo '${{ steps.config.outputs.JSON_RESPONSE }}' | jq -r .projectId)
+          envFileKeyRef=$(echo '${{ steps.config.outputs.JSON_RESPONSE }}' | jq -r .envFileKeyRef)
+          firebaseServiceAccountRef=$(echo '${{ steps.config.outputs.JSON_RESPONSE }}' | jq -r .firebaseServiceAccountRef)
           echo "Project ID: $projectId"
           echo "Env File Key Ref: $envFileKeyRef"
           echo "Firebase Service Account Ref: $firebaseServiceAccountRef"
 
-      # - name: Checkout repository
-      #   uses: actions/checkout@v4
-      #   with:
-      #     submodules: true
-      #     token: ${{ secrets.CI_GITHUB_PAT }}
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+          token: ${{ secrets.CI_GITHUB_PAT }}
 
-      # - name: Setup environment
-      #   uses: ./.github/actions/setup-node-environment
+      - name: Setup environment
+        uses: ./.github/actions/setup-node-environment
 
-      # - name: Build application
-      #   run: npm run build
+      - name: Build application
+        run: npm run build
 
       # - name: Debug
       #   run: |
