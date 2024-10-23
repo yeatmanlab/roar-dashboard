@@ -23,18 +23,16 @@ jobs:
       - id: generate-matrix
         run: |
           environments='${{ vars.STAGING_ENVIRONMENTS }}'
-          matrix='[
-            {
-              "name": "staging",
-              "projectId": "${{ secrets.FIREBASE_PROJECT_ID_ADMIN_STAGING }}",
-              "envFileKeyRef": "DOTENV_PRIVATE_KEY_STAGING",
-              "firebaseServiceAccountRef": "FIREBASE_SERVICE_ACCOUNT_ADMIN_STAGING"
-            }
-          ]'
+          defaultEnvironment='{
+            "name": "staging",
+            "projectId": "${{ secrets.FIREBASE_PROJECT_ID_ADMIN_STAGING }}",
+            "envFileKeyRef": "DOTENV_PRIVATE_KEY_STAGING",
+            "firebaseServiceAccountRef": "FIREBASE_SERVICE_ACCOUNT_ADMIN_STAGING"
+          }'
           if [ -n "$environments" ]; then
-            matrix="$matrix, $(echo "$environments" | jq -c '.')"
+            matrix="[$matrix, $environments]"
           fi
-          echo "matrix=$matrix" >> $GITHUB_OUTPUT
+          echo "matrix=[$matrix]" >> $GITHUB_OUTPUT
 
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
   # Build and deploy the application
