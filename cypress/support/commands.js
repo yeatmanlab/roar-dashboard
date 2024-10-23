@@ -69,7 +69,7 @@ Cypress.Commands.add('logout', () => {
 Cypress.Commands.add('navigateTo', (page) => {
   cy.log(`Navigating to \`${Cypress.env('baseUrl')}${page}`);
   cy.visit(page, { timeout: Cypress.env('timeout') });
-  cy.url().should('eq', `${Cypress.env('baseUrl')}${page}`);
+  cy.url().should('eq', `${Cypress.env('baseUrl')}${page}`, { timeout: Cypress.env('timeout') });
 });
 
 /**
@@ -222,6 +222,11 @@ Cypress.Commands.add('switchToRequiredAssessments', () => {
         cy.log('required already selected');
       }
     });
+});
+
+Cypress.Commands.add('switchToTestAdministrations', () => {
+  cy.wait(0.2 * Cypress.env('timeout'));
+  cy.get("[data-cy='switch-show-test-administrations']").click();
 });
 
 /**

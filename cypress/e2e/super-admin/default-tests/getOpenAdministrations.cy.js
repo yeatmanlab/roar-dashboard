@@ -1,17 +1,15 @@
-import { signInAsSuperAdmin } from '../../../support/helper-functions/super-admin/superAdminHelpers';
-import { getDevFirebase } from '../../../support/devFirebase';
 import { getOpenAdministrations } from '../../../support/query';
+import { useDevFirebase, signInAsSuperAdmin } from '../../../support/utils.js';
 
-const adminAuth = getDevFirebase('admin').auth;
-const adminFirestore = getDevFirebase('admin').db;
+const { auth, db } = useDevFirebase('adminDev');
 
 describe('Get Open Administrations', () => {
   before(() => {
-    signInAsSuperAdmin(adminAuth);
+    signInAsSuperAdmin(auth);
   });
 
   it('should return open administrations', () => {
-    cy.then(() => getOpenAdministrations(adminFirestore)).then((admins) => {
+    cy.then(() => getOpenAdministrations(db)).then((admins) => {
       cy.log(admins.length);
       cy.log(admins);
     });
