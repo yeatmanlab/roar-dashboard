@@ -49,6 +49,7 @@ jobs:
           echo ${{ toJson(needs.generate-matrix.outputs.matrix) }}
 
       - name: Get configuration
+        id: get-config
         run: |
           config='${{ toJson(fromJson(needs.generate-matrix.outputs.matrix).environments[matrix.index]) }}'
           echo "JSON_RESPONSE<<EOF" >> "$GITHUB_OUTPUT"
