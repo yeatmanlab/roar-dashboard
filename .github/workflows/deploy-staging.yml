@@ -1,0 +1,79 @@
+name: Deploy to Staging
+
+# on:
+#   push:
+#     branches:
+#       - main
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.run_id }}
+
+jobs:
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  # Generate matrix
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  generate-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.generate-matrix.outputs.matrix }}
+    steps:
+      - id: generate-matrix
+        run: |
+          environments='${{ vars.STAGING_ENVIRONMENTS }}'
+          matrix='[
+            {
+              "name": "staging",
+              "projectId": "${{ secrets.FIREBASE_PROJECT_ID_ADMIN_STAGING }}",
+              "envFileKeyRef": "DOTENV_PRIVATE_KEY_STAGING",
+              "firebaseServiceAccountRef": "FIREBASE_SERVICE_ACCOUNT_ADMIN_STAGING"
+            }
+          ]'
+          if [ -n "$environments" ]; then
+            matrix="$matrix, $environments"
+          fi
+          echo "matrix=$matrix" >> $GITHUB_OUTPUT
+
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  # Build and deploy the application
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  build-and-deploy:
+    needs: [generate-matrix]
+    name: Build and deploy ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    strategy:
+      matrix: ${{ fromJson(needs.generate-matrix.outputs.matrix) }}
+    env:
+      ${{ matrix.envFileKeyRef }}: ${{ secrets[matrix.envFileKeyRef] }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+          token: ${{ secrets.CI_GITHUB_PAT }}
+
+      - name: Setup environment
+        uses: ./.github/actions/setup-node-environment
+
+      - name: Build application
+        run: npm run build
+
+      - name: Debug
+        run: |
+          echo "Matrix: ${{ toJson(matrix) }}"
+
+      # - name: Deploy to Firebase Hosting Channel
+      #   id: firebase-deploy-staging
+      #   uses: FirebaseExtended/action-hosting-deploy@v0.9.0
+      #   with:
+      #     repoToken: ${{ secrets.GITHUB_TOKEN }}
+      #     firebaseServiceAccount: ${{ secrets[matrix.firebaseServiceAccountRef] }}
+      #     projectId: ${{ matrix.projectId }}
+
+      # - name: Update deployment status
+      #   if: ${{ success() }}
+      #   run: echo "url=${{ fromJson(steps.firebase-deploy-staging.outputs.urls)[0] }}" >> $GITHUB_OUTPUT
