@@ -43,20 +43,24 @@ jobs:
         environment: ${{ fromJson(needs.generate-matrix.outputs.matrix).environments }}
 
     steps:
-      - name: Get configuration
-        id: get-config
+      - name: Debug
         run: |
-          config='${{ fromJson(needs.generate-matrix.outputs.matrix).environments[matrix.index] }}'
-          echo "config=$config" >> $GITHUB_OUTPUT
+          echo "Matrix: ${{ toJson(needs.generate-matrix.outputs.matrix) }}"
 
-      - name: Use configuration
-        run: |
-          projectId=$(echo "${{ steps.get-config.outputs.config }}" | jq -r '.projectId')
-          envFileKeyRef=$(echo "${{ steps.get-config.outputs.config }}" | jq -r '.envFileKeyRef')
-          firebaseServiceAccountRef=$(echo "${{ steps.get-config.outputs.config }}" | jq -r '.firebaseServiceAccountRef')
-          echo "Project ID: $projectId"
-          echo "Env File Key Ref: $envFileKeyRef"
-          echo "Firebase Service Account Ref: $firebaseServiceAccountRef"
+      # - name: Get configuration
+      #   id: get-config
+      #   run: |
+      #     config='${{ fromJson(needs.generate-matrix.outputs.matrix).environments[matrix.index] }}'
+      #     echo "config=$config" >> $GITHUB_OUTPUT
+
+      # - name: Use configuration
+      #   run: |
+      #     projectId=$(echo "${{ steps.get-config.outputs.config }}" | jq -r '.projectId')
+      #     envFileKeyRef=$(echo "${{ steps.get-config.outputs.config }}" | jq -r '.envFileKeyRef')
+      #     firebaseServiceAccountRef=$(echo "${{ steps.get-config.outputs.config }}" | jq -r '.firebaseServiceAccountRef')
+      #     echo "Project ID: $projectId"
+      #     echo "Env File Key Ref: $envFileKeyRef"
+      #     echo "Firebase Service Account Ref: $firebaseServiceAccountRef"
 
       # - name: Checkout repository
       #   uses: actions/checkout@v4
