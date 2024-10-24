@@ -286,6 +286,7 @@ export const fetchSubcollection = async (
   const queryParams = select.map((field) => `mask.fieldPaths=${field}`).join('&');
   const queryString = queryParams ? `?${queryParams}` : '';
 
+  try {
     const response = await axiosInstance.get(subcollectionPath + queryString);
 
     // Check if the API returns an array of document data in the subcollection
