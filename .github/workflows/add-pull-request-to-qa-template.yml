@@ -2,6 +2,9 @@ name: Add Pull Request to QA Template Based on QA Priority Label
 
 on:
   pull_request:
+    branches:
+      - main
+      - 'enh/auto-add-prs-to-qa-template'
     types:
       - labeled
 
