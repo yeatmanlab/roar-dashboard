@@ -1,0 +1,139 @@
+{
+  "authSignIn": {
+    "atLeastOneLowercase": "Mindestens ein Kleinbuchstabe",
+    "atLeastOneUpperCase": "Mindestens ein Großbuchstabe",
+    "atLeastOneNumber": "Mindestens eine Zahl",
+    "atLeastOneNumeric": "Mindestens eine Nummer",
+    "buttonLabel": "Los!",
+    "minimumCharacters": "Mindestens 8 Zeichen",
+    "emailId": "E-Mail",
+    "emailPlaceholder": "Benutzername oder E-Mail",
+    "incorrectEmailOrPassword": "Falscher Benutzername/E-Mail oder Passwort",
+    "invalidEmailPlaceholder": "Fehler: Ungültige E-Mail",
+    "passwordId": "Passwort",
+    "passwordPlaceholder": "Passwort",
+    "pickPassword": "Wählen Sie ein Passwort",
+    "selectLanguage": "Sprache auswählen",
+    "signInWithEmailLinkPlaceHolder": "Drücken Sie „Los“, um sich mit einem E-Mail-Link anzumelden.",
+    "signInWithEmailLinkInstead": "Mit E-Mail-Link anmelden",
+    "signInWithPasswordInstead": "Mit Passwort anmelden",
+    "suggestions": "Vorschläge"
+  },
+  "cleverLanding": {
+    "cleverLoading": "Loading your data from Clever..."
+  },
+  "classLinkLanding": {
+    "classLinkLoading": "Loading your data from ClassLink..."
+  },
+"consentModal": {
+  "header": "Zustimmung",
+  "title": "Zustimmung",
+  "acceptButton": "Akzeptieren",
+  "rejectButton": "Nein, mich abmelden",
+  "toastHeader": "Bestätigt",
+  "consentUpdatedStatus": "Zustimmungsstatus aktualisiert"
+  },
+  "homeParticipant": {
+    "showOptionalAssignments": "Optionale Zuordnungen anzeigen",
+    "loadingAssignments": "Lade Zuordnungen",
+    "selectAssignment": "Wählen Sie eine Zuordnung aus",
+    "noAssignments": "Sie haben keine Zuordnungen!",
+    "contactAdministrator": "Bitte kontaktieren Sie Ihren Administrator, um zu einer Zuordnung hinzugefügt zu werden."
+  },
+  "homeSelector": {
+    "loading": "Laden...",
+    "inactivityLogout": "Sie werden aus Sicherheitsgründen bald abgemeldet. Bitte klicken Sie auf 'Fortsetzen', wenn Sie Ihre Sitzung fortsetzen möchten. Andernfalls werden Sie automatisch in { timeLeft } Sekunden abgemeldet.",
+    "inactivityLogoutAcceptLabel": "Fortsetzen"
+  },
+  "gameTabs": {
+    "clickToStart": "Klicken zum Starten",
+    "taskCompleted": "Aufgabe abgeschlossen!",
+    "LEVANTE TRANSLATIONS--------------------------": "",
+    "intro": "Instructions",
+    "heartsAndFlowersDescription": "Wählen Sie die richtige Seite für die Herzen und Blumen.",
+    "heartsAndFlowersName": "Herzen & Blumen",
+    "egmaMathDescription": "Lösen Sie die Mathematikaufgaben.",
+    "egmaMathName": "Mathe",
+    "matrixReasoningDescription": "Finden Sie das fehlende Teil, um das Puzzle zu vervollständigen.",
+    "matrixReasoningName": "Logisches Denken",
+    "memoryGameDescription": "Beobachten Sie, wie die Quadrate aufleuchten. Merken Sie sich die Reihenfolge und machen Sie dasselbe Muster.",
+    "memoryGameName": "Memory",
+    "mentalRotationDescription": "Bilder zuordnen.",
+    "mentalRotationName": "Rotationsspiel",
+    "sameDifferentSelectionDescription": "Finden Sie Gemeinsamkeiten der Formen.",
+    "sameDifferentSelectionName": "Formenspiel",
+    "theoryOfMindDescription": "Hören Sie sich die Geschichten an und beantworten Sie die Fragen.",
+    "theoryOfMindName": "Bildergeschichten",
+    "trogDescription": "Hören Sie sich die Wörter an und wählen Sie das passende Bild aus.",
+    "trogName": "Wörter & Bilder",
+    "surveyNameChild": "Fragebogen",
+    "surveyDescriptionChild": "Beantworten Sie Fragen zu Ihrer Schulzeit.",
+    "surveyNameParentPart1": "Umfrage - Betreuer",
+    "surveyDescriptionParentPart1": "Umfrage für Eltern: Die folgende Umfrage dauert etwa 20-30 Minuten und enthält Fragen zu Ihrem Kind. ",
+    "surveyNameParentPart2": "Umfrage - Familie",
+    "surveyDescriptionParentPart2": "Umfrage für Eltern: Die folgende Umfrage dauert etwa 20-30 Minuten und enthält Fragen Ihrem zu Hause und zu Ihrer Person. ",
+    "surveyNameTeacherPart1": "Umfrage - Allgemein",
+    "surveyDescriptionTeacherPart1": "This survey will take approximately 5-10 minutes to complete and asks about your background and beliefs about teaching.",
+    "surveyNameTeacherPart2": "Umfrage - Klassenzimmer",
+    "surveyDescriptionTeacherPart2": "This survey will take approximately 5-10 minutes to complete and asks questions about the classroom(s) you teach.",
+    "surveyProgressGeneral": "Allgemein",
+    "surveyProgressGeneralParent": "Familie",
+    "surveyProgressSpecificParent": "Kind",
+    "surveyProgressSpecificParentMonth": "Monat",
+    "surveyProgressSpecificParentYear": "Jahr",
+    "surveyProgressGeneralTeacher": "Lehrer",
+    "surveyProgressSpecificTeacher": "Klassenzimmer",
+    "mefsName": "Löwe und Affe",
+    "mefsDescription": "Formen und Farben zuordnen.",
+    "vocabName": "Vokabeln",
+    "vocabDescription": "Hören Sie sich das Wort an und wählen Sie das passende Bild aus."
+  },
+  "navBar": {
+    "signOut": "Abmelden"
+  },
+  "notFound": {
+    "label": "Klicken Sie hier, um zur Startseite zu gelangen.",
+    "pageNotFound": "Seite nicht gefunden",
+    "sorry": "Entschuldigung, wir konnten diese Seite nicht finden!"
+  },
+  "participantSidebar": {
+    "grade": "Klasse",
+    "studentInfo": "Schülerinformationen",
+    "tasksCompleted": "Aufgaben abgeschlossen!"
+  },
+  "pageSignIn": {
+    "havingTrouble": "Haben Sie Schwierigkeiten?",
+    "login": "Melden Sie sich an, um auf Ihr Dashboard zuzugreifen",
+    "loginWith": "Anmelden mit",
+    "welcome": "Willkommen bei ROAR!",
+    "adminPrompt": "Sind Sie ein Administrator? Klicken Sie {action}, um sich anzumelden.",
+    "adminAction": "hier",
+    "adminInfoPrompt": "Wenn Sie sich mit einer Google-E-Mail oder Ihr E-Mail-Anbieter Google SSO verwendet, registriert haben."
+  },
+  "tasks": {
+    "preparing": "Bereite Ihr Spiel vor!",
+    "loading": "Laden"
+  },
+  "sentryForm": {
+    "formTitle": "Ein Problem bei ROAR melden",
+    "buttonLabel": "Ein Problem melden",
+    "submitButtonLabel": "Problembericht einreichen",
+    "cancelButtonLabel": "Abbrechen",
+    "namePlaceholder": "Ihr Name (optional)",
+    "emailPlaceholder": "ihre.email@beispiel.org (optional)",
+    "messageLabel": "Beschreibung",
+    "messagePlaceholder": "Was ist das Problem? Was wollten Sie stattdessen erleben? Vielen Dank für Ihr Feedback."
+  },
+  "userSurvey": {
+    "specificRelationDescriptionChildA": "Für Kind mit Geburtsmonat",
+    "specificRelationDescriptionChildB": "und Geburtsjahr",
+    "specificRelationDescriptionClass": "Für Klasse"
+  },
+  "profile": {
+    "settings": {
+      "settings": "Einstellungen",
+      "language": "Sprache",
+      "languageDescription": "Wählen Sie die Sprache, die Sie im Dashboard verwenden möchten. Dies wird NUR die Sprache des Dashboards und der Umfragen ändern, nicht die Aufgaben."
+    }
+  }
+}

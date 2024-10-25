@@ -19,10 +19,21 @@
           </div>
           <SignIn :invalid="incorrect" @submit="authWithEmail" @update:email="email = $event" />
         </section>
-        <section class="flex flex-row align-content-center">
-          <h4 class="flex m-0 align-content-center justify-content-center mr-3 flex-wrap-reverse">
-            {{ $t('pageSignIn.loginWith') }}
-          </h4>
+        <section v-if="isLevante" class="w-full mb-2">
+          <!-- <p class="text-center m-auto">
+            Are you an Admin? Click
+            <span class="underline text-red-700 cursor-pointer" @click="toggleAdminSignIn">Here</span> to Sign In
+          </p> -->
+          <i18n-t keypath="pageSignIn.adminPrompt" tag="p" class="text-center m-auto">
+            <template #action>
+              <span class="underline text-red-700 cursor-pointer" @click="toggleAdminSignIn">{{
+                $t('pageSignIn.adminAction')
+              }}</span>
+            </template>
+          </i18n-t>
+        </section>
+        <section v-if="adminSignIn || !isLevante" class="signin-option-container signin-option-providers">
+          <h4 class="signin-option-title">{{ $t('pageSignIn.loginWith') }}</h4>
           <div class="flex">
             <PvButton
               label="Sign in with Google"
@@ -52,6 +63,7 @@
               <span>ClassLink</span>
             </PvButton>
           </div>
+          <p class="text-xs">*{{ $t('pageSignIn.adminInfoPrompt') }}</p>
         </section>
         <!-- <section class="signin-option-container signin-option-providers">
           <div class="flex flex-row justify-content-center w-full">
@@ -145,29 +157,22 @@ import ROARLogoShort from '@/assets/RoarLogo-Short.vue';
 import { useAuthStore } from '@/store/auth';
 import { isMobileBrowser } from '@/helpers';
 import { fetchDocById } from '../helpers/query/utils';
+import { isLevante } from '@/helpers';
 import RoarModal from '../components/modals/RoarModal.vue';
 import { AUTH_SSO_PROVIDERS } from '@/constants/auth';
 import { APP_ROUTES } from '@/constants/routes';
 
 const incorrect = ref(false);
-const isLevante = import.meta.env.MODE === 'LEVANTE';
 const authStore = useAuthStore();
 const router = useRouter();
+const adminSignIn = ref(false);
 
 const { spinner, ssoProvider, routeToProfile, roarfirekit } = storeToRefs(authStore);
 const warningModalOpen = ref(false);
 
 authStore.$subscribe(() => {
   if (authStore.uid) {
-    if (authStore.userData && isLevante) {
-      if (
-        toRaw(authStore.userData?.userType?.toLowerCase()) === 'parent' ||
-        toRaw(authStore.userData?.userType?.toLowerCase()) === 'teacher'
-      ) {
-        router.push({ name: 'Survey' });
-        return;
-      }
-    }
+
 
     if (ssoProvider.value) {
       router.push({ path: APP_ROUTES.SSO });
@@ -178,6 +183,10 @@ authStore.$subscribe(() => {
     }
   }
 });
+
+const toggleAdminSignIn = () => {
+  adminSignIn.value = !adminSignIn.value;
+};
 
 const authWithGoogle = () => {
   if (isMobileBrowser()) {
@@ -234,7 +243,7 @@ const authWithClassLink = () => {
   }
 };
 
-const authWithEmail = (state) => {
+const authWithEmail = async (state) => {
   // If username is supplied instead of email
   // turn it into our internal auth email
   incorrect.value = false;
@@ -248,7 +257,7 @@ const authWithEmail = (state) => {
       creds.email = `${creds.email}@roar-auth.com`;
     }
 
-    authStore
+    await authStore
       .logInWithEmailAndPassword(creds)
       .then(async () => {
         if (authStore.uid) {

@@ -1,5 +1,4 @@
-name: Build and Deploy
-
+name: Preview Deploy
 on:
   pull_request:
     types: [opened, reopened, synchronize]
@@ -12,6 +11,12 @@ on:
 concurrency:
   group: ci-preview-tests-${{ github.ref }}-1
   cancel-in-progress: true
+
+permissions:
+  contents: read
+  checks: write
+  deployments: write
+  pull-requests: write
 
 jobs:
   build-and-preview:
@@ -40,25 +45,26 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 'lts/*'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build project
-        run: npm run build
-
+          # Checkout the PR branch from the PR repository if the PR is from a fork, otherwise checkout the PR branch from the main repository
+          repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
+          # Use the branch from the PR if workflow is triggered manually, otherwise use the PR branch from the event
+          ref: ${{ github.event.inputs.pr_branch || github.event.pull_request.head.ref }}
+      - name: Build (ROAR)
+        if: ${{ contains(github.repository, 'roar') }}
+        run: npm ci && npm run build
+      - name: Build (LEVANTE)
+        if: ${{ contains(github.repository, 'levante') }}
+        run: npm ci && npm run build:levante-dev
       - name: Deploy to Firebase Hosting Channel
         id: firebase-deploy
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
-          repoToken: ${{ secrets.GITHUB_TOKEN }}
-          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_GSE_ROAR_ADMIN }}
-          projectId: gse-roar-admin
-          target: staging
-
-      - name: Set Output Deploy URL
-        id: set-deploy-url
-        run: echo "deployUrl=${{ fromJson(steps.firebase-deploy.outputs.urls)[0] }}" >> $GITHUB_OUTPUT
+          firebaseToolsVersion: v13.3.1 # <- Locking version because the newest (13.13.0) does not add the deploy URL to auth whitelist
+          repoToken: '${{ secrets.GITHUB_TOKEN }}'
+          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_DEV_ADMIN }}'
+          projectId: '${{ secrets.FIREBASE_PROJECT }}'
+          target: ${{ contains(github.repository, 'levante') && 'production' || 'staging' }}
+      - run: echo ${{ fromJson(steps.firebase-deploy.outputs.urls)[0] }}
 
     outputs:
       deployUrl: ${{ steps.set-deploy-url.outputs.deployUrl }}

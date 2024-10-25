@@ -13,9 +13,9 @@
       </div>
       <div>
         <div class="flex flex-row">
-          <span class="font-bold" style="margin-left: 0.625rem">{{ variant.task.name }}</span>
+          <span class="font-bold text-lg pl-2" >{{ variant.task.name }}</span>
           <PvButton
-            class="p-0 surface-hover border-none border-circle hover:text-100 hover:bg-primary"
+            class="p-0 surface-hover border-none border-circle hover:text-100 hover:bg-primary ml-2"
             @click="toggle($event)"
             ><i
               v-tooltip.top="'Click to view params'"
@@ -23,11 +23,9 @@
             ></i
           ></PvButton>
         </div>
-        <div class="flex align-items-center gap-2">
-          <p class="m-0 mt-1 ml-2">
-            <span class="font-bold">Variant name:</span> {{ variant.variant.name }} <br />
-            <span class="font-bold">Variant id: </span>{{ variant.id }}
-          </p>
+        <div class="pl-2 w-full">
+          <p class="m-0"><span class="font-semibold">Variant name:</span> {{ variant.variant.name }}</p>
+          <p class="m-0" v-if="isDev"><span  class="font-semibold">Variant id: </span>{{ variant.id }}</p>
         </div>
         <PvOverlayPanel ref="op" append-to="body" style="width: 40vh">
           <div class="flex justify-content-end mt-0 mb-2">
@@ -278,6 +276,7 @@ const props = defineProps({
   },
 });
 
+const isDev = import.meta.env.MODE === 'development';
 const backupImage = '/src/assets/roar-logo.png';
 const showContent = ref(false);
 const op = ref(null);

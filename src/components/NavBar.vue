@@ -54,10 +54,6 @@
                       <i class="pi pi-cog"></i></button
                   ></router-link>
                 </div>
-
-                <div class="my-2">
-                  <LanguageSelector />
-                </div>
               </div>
             </template>
           </PvMenubar>
@@ -77,7 +73,7 @@ import { useAuthStore } from '@/store/auth';
 import { getSidebarActions } from '@/router/sidebarActions';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useSignOutMutation from '@/composables/mutations/useSignOutMutation';
-import LanguageSelector from './LanguageSelector.vue';
+import { isLevante } from '@/helpers';
 import { APP_ROUTES } from '@/constants/routes';
 import ROARLogo from '@/assets/RoarLogo.vue';
 
@@ -88,8 +84,6 @@ const { roarfirekit } = storeToRefs(authStore);
 const initialized = ref(false);
 const menu = ref();
 const screenWidth = ref(window.innerWidth);
-
-const isLevante = import.meta.env.MODE === 'LEVANTE';
 
 const { mutate: signOut } = useSignOutMutation();
 
