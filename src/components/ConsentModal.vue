@@ -27,6 +27,7 @@ import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import _lowerCase from 'lodash/lowerCase';
 import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
+import { useRouter } from 'vue-router';
 
 const i18n = useI18n();
 const router = useRouter();

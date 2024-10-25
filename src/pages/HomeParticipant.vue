@@ -50,7 +50,7 @@
                 :options="sortedUserAdministrations ?? []"
                 :option-label="
                   userAssignments.every((administration) => administration.publicName) ? 'publicName' : 'name'
-                "
+                " 
                 input-id="dd-assignment"
                 data-cy="dropdown-select-administration"
                 @change="toggleShowOptionalAssessments"
