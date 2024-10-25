@@ -5,49 +5,51 @@
       <p class="text-center">{{ $t('homeSelector.loading') }}</p>
     </div>
   </div>
+
   <div v-else>
-    <HomeParticipant v-if="!isAdmin" />
-    <HomeAdministrator v-else-if="isAdmin" />
+    <HomeParticipant v-if="isParticipant" />
+    <HomeAdministrator v-else-if="isAdminUser" />
   </div>
+
   <ConsentModal
-    v-if="showConsent && isAdmin"
+    v-if="!isLoading && showConsent && isAdminUser"
     :consent-text="confirmText"
     :consent-type="consentType"
-    @accepted="updateConsent"
-    @delayed="refreshDocs"
+    :on-confirm="updateConsent"
   />
 </template>
 
 <script setup>
-import { computed, onMounted, ref, toRaw, watch } from 'vue';
-import { useQuery } from '@tanstack/vue-query';
+import { computed, defineAsyncComponent, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
+import { storeToRefs } from 'pinia';
+import _isEmpty from 'lodash/isEmpty';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
-import _get from 'lodash/get';
-import _isEmpty from 'lodash/isEmpty';
-import _union from 'lodash/union';
-import { storeToRefs } from 'pinia';
-import { fetchDocById } from '@/helpers/query/utils';
-import { useI18n } from 'vue-i18n';
-import { isLevante } from '@/helpers';
-import { useIdle } from '@vueuse/core';
-import { useConfirm } from 'primevue/useconfirm';
+import useUserType from '@/composables/useUserType';
+import useUserDataQuery from '@/composables/queries/useUserDataQuery';
+import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
+import useUpdateConsentMutation from '@/composables/mutations/useUpdateConsentMutation';
+import { CONSENT_TYPES } from '@/constants/consentTypes';
+import { APP_ROUTES } from '@/constants/routes';
 
-let HomeParticipant, HomeAdministrator, ConsentModal;
+const HomeParticipant = defineAsyncComponent(() => import('@/pages/HomeParticipant.vue'));
+const HomeAdministrator = defineAsyncComponent(() => import('@/pages/HomeAdministrator.vue'));
+const ConsentModal = defineAsyncComponent(() => import('@/components/ConsentModal.vue'));
 
+const isLevante = import.meta.env.MODE === 'LEVANTE';
 const authStore = useAuthStore();
-const { roarfirekit, uid, userQueryKeyIndex, authFromClever, authFromClassLink } = storeToRefs(authStore);
+const { roarfirekit, ssoProvider } = storeToRefs(authStore);
 
 const router = useRouter();
 const i18n = useI18n();
 
-if (authFromClever.value) {
-  console.log('Detected Clever authentication, routing to CleverLanding page');
-  router.push({ name: 'CleverLanding' });
-} else if (authFromClassLink.value) {
-  console.log('Detected ClassLink authentication, routing to ClassLinkLanding page');
-  router.push({ name: 'ClassLinkLanding' });
+const { mutateAsync: updateConsentStatus } = useUpdateConsentMutation();
+
+if (ssoProvider.value) {
+  console.log('Detected SSO authentication, redirecting...');
+  router.replace({ path: APP_ROUTES.SSO });
 }
 
 const gameStore = useGameStore();
@@ -64,152 +66,85 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.roarfirekit.restConfig) init();
 });
 
-onMounted(async () => {
-  HomeParticipant = (await import('@/pages/HomeParticipant.vue')).default;
-  HomeAdministrator = (await import('@/pages/HomeAdministrator.vue')).default;
-  ConsentModal = (await import('@/components/ConsentModal.vue')).default;
-
-  if (requireRefresh.value) {
-    requireRefresh.value = false;
-    router.go(0);
-  }
-  if (roarfirekit.value.restConfig) init();
-  if (!isLoading.value) {
-    refreshDocs();
-    if (isAdmin.value) {
-      await checkConsent();
-    }
-  }
-});
-
-const { isLoading: isLoadingUserData, data: userData } = useQuery({
-  queryKey: ['userData', uid, userQueryKeyIndex],
-  queryFn: () => fetchDocById('users', uid.value),
-  keepPreviousData: true,
+const { isLoading: isLoadingUserData, data: userData } = useUserDataQuery(null, {
   enabled: initialized,
-  staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
-const { isLoading: isLoadingClaims, data: userClaims } = useQuery({
-  queryKey: ['userClaims', uid, userQueryKeyIndex],
-  queryFn: () => fetchDocById('userClaims', uid.value),
-  keepPreviousData: true,
+const { isLoading: isLoadingClaims, data: userClaims } = useUserClaimsQuery({
   enabled: initialized,
-  staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
-const isLoading = computed(() => isLoadingClaims.value || isLoadingUserData.value);
+const { isAdmin, isSuperAdmin, isParticipant } = useUserType(userClaims);
 
-const isAdmin = computed(() => {
-  if (userClaims.value?.claims?.super_admin) return true;
-  if (userClaims.value?.claims?.admin) return true;
-  if (_isEmpty(_union(...Object.values(userClaims.value?.claims?.minimalAdminOrgs ?? {})))) return false;
-  return true;
+const isAdminUser = computed(() => isAdmin.value || isSuperAdmin.value);
+const isLoading = computed(() => {
+  // @NOTE: In addition to the loading states, we also check if user data and user claims are loaded as due to the
+  // current application initialization flow, the userData and userClaims queries initially reset. Once this is improved
+  // these additional checks can be removed.
+  return !initialized.value || isLoadingUserData.value || isLoadingClaims.value || !userData.value || !userClaims.value;
 });
 
-const consentType = computed(() => {
-  if (isAdmin.value) {
-    return 'tos';
-  } else {
-    return i18n.locale.value.includes('es') ? 'assent-es' : 'assent';
-  }
-});
 const showConsent = ref(false);
+const consentType = computed(() => {
+  if (isAdminUser.value) {
+    return CONSENT_TYPES.TOS;
+  } else {
+    return i18n.locale.value.includes('es') ? CONSENT_TYPES.ASSENT_ES : CONSENT_TYPES.ASSENT;
+  }
+});
+
 const confirmText = ref('');
 const consentVersion = ref('');
 
 async function updateConsent() {
-  if (isAdmin.value) {
-    await authStore.updateConsentStatus(consentType.value, consentVersion.value);
-    userQueryKeyIndex.value += 1;
-  }
-}
-
-function refreshDocs() {
-  authStore.refreshQueryKeys();
+  await updateConsentStatus({ consentType, consentVersion });
 }
 
 async function checkConsent() {
-  if (isLevante) {
-    // skip the consent for levante
+  if (isLevante || !isAdminUser.value) return;
+
+  const consentStatus = userData.value?.legal?.[consentType.value];
+  const consentDoc = await authStore.getLegalDoc(consentType.value);
+
+  consentVersion.value = consentDoc.version;
+
+  if (!consentStatus?.[consentDoc.version]) {
+    confirmText.value = consentDoc.text;
+    showConsent.value = true;
     return;
   }
-  // Check for consent
-  if (isAdmin.value) {
-    const consentStatus = _get(userData.value, `legal.${consentType.value}`);
-    const consentDoc = await authStore.getLegalDoc(consentType.value);
-    consentVersion.value = consentDoc.version;
-    if (!_get(toRaw(consentStatus), consentDoc.version)) {
-      confirmText.value = consentDoc.text;
-      showConsent.value = true;
-    }
+
+  const legalDocs = consentStatus?.[consentDoc.version] || [];
+  if (!Array.isArray(legalDocs)) return;
+  const signedBeforeAugFirst = legalDocs.some((doc) => isSignedBeforeAugustFirst(doc.dateSigned));
+
+  if (signedBeforeAugFirst) {
+    confirmText.value = consentDoc.text;
+    showConsent.value = true;
   }
 }
 
-onMounted(async () => {
-  HomeParticipant = (await import('@/pages/HomeParticipant.vue')).default;
-  HomeAdministrator = (await import('@/pages/HomeAdministrator.vue')).default;
-  ConsentModal = (await import('@/components/ConsentModal.vue')).default;
+function isSignedBeforeAugustFirst(signedDate) {
+  const currentDate = new Date();
+  const augustFirstThisYear = new Date(currentDate.getFullYear(), 7, 1); // August 1st of the current year
+  return new Date(signedDate) < augustFirstThisYear;
+}
 
+watch(
+  [userData, isAdminUser],
+  async ([updatedUserData, updatedAdminUserState]) => {
+    if (!_isEmpty(updatedUserData) && updatedAdminUserState) {
+      await checkConsent();
+    }
+  },
+  { immediate: true },
+);
+
+onMounted(async () => {
   if (requireRefresh.value) {
     requireRefresh.value = false;
     router.go(0);
   }
   if (roarfirekit.value.restConfig) init();
-  if (!isLoading.value) {
-    refreshDocs();
-    if (isAdmin.value) {
-      await checkConsent();
-    }
-  }
-});
-
-watch(isLoading, async (newValue) => {
-  if (!newValue && isAdmin.value) {
-    await checkConsent();
-  }
-});
-
-watch([userData, userClaims], async ([newUserData, newUserClaims]) => {
-  if (newUserData && newUserClaims) {
-    authStore.userData = newUserData;
-    authStore.userClaims = newUserClaims;
-
-    // const userType = toRaw(newUserData)?.userType?.toLowerCase();
-    // if (userType === 'parent' || userType === 'teacher') {
-    //   router.push({ name: 'Survey' });
-    // }
-  }
-});
-
-
-const { idle } = useIdle(60 * 10 * 1000); // 10 min
-const confirm = useConfirm();
-const timeLeft = ref(60);
-const t = i18n.t;
-
-watch(idle, (idleValue) => {
-  if (idleValue) {
-    const timer = setInterval(async () => {
-      timeLeft.value -= 1;
-
-      if (timeLeft.value <= 0) {
-        clearInterval(timer);
-        const authStore = useAuthStore();
-        await authStore.signOut();
-        router.replace({ name: 'SignIn' });
-      }
-    }, 1000);
-    confirm.require({
-      group: 'inactivity-logout',
-      icon: 'pi pi-exclamation-triangle',
-      acceptLabel: t('homeSelector.inactivityLogoutAcceptLabel'),
-      acceptIcon: 'pi pi-check mr-2',
-      accept: () => {
-        clearInterval(timer);
-        timeLeft.value = 60;
-      },
-    });
-  }
 });
 </script>

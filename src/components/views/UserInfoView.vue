@@ -31,21 +31,20 @@
   </section>
 </template>
 <script setup>
-import { useAuthStore } from '@/store/auth';
+import { ref, onMounted, computed } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useToast } from 'primevue/usetoast';
-import { useQuery } from '@tanstack/vue-query';
-import { ref, onMounted, computed } from 'vue';
-import EditUsersForm from '../EditUsersForm.vue';
-import { fetchDocById } from '@/helpers/query/utils';
 import _get from 'lodash/get';
+import { useAuthStore } from '@/store/auth';
+import useUserDataQuery from '@/composables/queries/useUserDataQuery';
+import EditUsersForm from '../EditUsersForm.vue';
 
 // +----------------+
 // | Initialization |
 // +----------------+
 const authStore = useAuthStore();
 const toast = useToast();
-const { roarfirekit, uid } = storeToRefs(authStore);
+const { roarfirekit, roarUid } = storeToRefs(authStore);
 const localUserData = ref({});
 const isEditMode = ref(false);
 const isSubmitting = ref(false);
@@ -74,12 +73,8 @@ onMounted(() => {
 // +---------+
 // | Queries |
 // +---------+
-const { data: userData } = useQuery({
-  queryKey: ['userData', uid],
-  queryFn: () => fetchDocById('users', uid.value),
-  keepPrevousData: true,
+const { data: userData } = useUserDataQuery(null, {
   enabled: initialized,
-  staleTime: 1000 * 60 * 5, // 5 minutes
 });
 
 // +------------+
@@ -90,7 +85,7 @@ async function submitUserData() {
   isSubmitting.value = true;
 
   await roarfirekit.value
-    .updateUserData(uid.value, localUserData.value)
+    .updateUserData(roarUid.value, localUserData.value)
     .then(() => {
       isEditMode.value = false;
       isSubmitting.value = false;

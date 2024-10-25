@@ -13,7 +13,7 @@
                   name="noActivationCode"
                   @change="updateActivationCode"
                 />
-                <label for="noActivationCode" class="ml-2">I don't have code</label>
+                <label for="noActivationCode" class="ml-2">I don't have a code</label>
               </div>
             </div>
             <PvInputGroup v-if="!student.noActivationCode">
@@ -51,7 +51,7 @@
         <section v-else>
           <h2 class="text-primary font-bold">You are registering for:</h2>
           <div class="flex">
-            <h2 class="text-primary h-3 m-0 p-0" style="width: 70%">{{ student.orgName }}</h2>
+            <h2 class="text-primary h-3 m-0 p-0" style="width: 70%" data-cy="org-name">{{ student.orgName }}</h2>
             <PvButton
               class="bg-primary border-none border-round p-2 text-white hover:surface-300 hover:text-black-alpha-90"
               label="Is this not right?"
@@ -351,7 +351,6 @@ today.setFullYear(today.getFullYear() - 2);
 const maxDoB = ref(today);
 const orgName = ref('');
 const activationCodeRef = ref('');
-const errors = ref('');
 
 const props = defineProps({
   isRegistering: { type: Boolean, default: true },
@@ -529,31 +528,32 @@ const handleFormSubmit = async (isFormValid) => {
 };
 
 const validateCode = async (studentCode, outerIndex = 0) => {
-  if (studentCode && studentCode !== '') {
-    const activationCode = await fetchDocById('activationCodes', studentCode, undefined, 'admin', true, true).catch(
-      (error) => {
-        errors.value = error;
-        dialogMessage.value =
-          'The code does not belong to any organization \n Please enter a valid code or select: \n "I don`t have code "';
-        showErrorDialog();
-        submitted.value = false;
-        return null;
-      },
-    );
-    if (activationCode.orgId && errors.value === '') {
+  // @TODO: Add proper error handling.
+  if (!studentCode || studentCode === '') return;
+
+  try {
+    const activationCode = await fetchDocById('activationCodes', studentCode, undefined, 'admin', true, true);
+
+    if (activationCode.orgId) {
       state.students[outerIndex].orgName = `${_capitalize(activationCode.orgType)} - ${
         activationCode.orgName ?? activationCode.orgId
       }`;
       state.students[outerIndex].activationCode = studentCode;
       orgName.value = `${_capitalize(activationCode.orgType)} - ${activationCode.orgName ?? activationCode.orgId}`;
-    } else {
-      errors.value = '';
-      if (!state.students[outerIndex].noActivationCode || props.code) {
-        dialogMessage.value = `The code ${studentCode} does not belong to any organization \n please enter a valid code or select: "I do not have code"`;
-        showErrorDialog();
-      }
-      return false;
     }
+  } catch (error) {
+    console.error('Failed to validate activation code', error);
+
+    if (!state.students[outerIndex].noActivationCode || props.code) {
+      dialogMessage.value = `The code ${studentCode} does not belong to any organization \n please enter a valid code or select: "I do not have a code"`;
+    } else {
+      dialogMessage.value =
+        'The code does not belong to any organization \n Please enter a valid code or select: \n "I don\'t have a code"';
+    }
+
+    showErrorDialog();
+
+    submitted.value = false;
   }
 };
 

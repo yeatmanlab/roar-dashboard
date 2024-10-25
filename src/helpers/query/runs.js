@@ -1,3 +1,4 @@
+import { toValue } from 'vue';
 import _pick from 'lodash/pick';
 import _get from 'lodash/get';
 import _mapValues from 'lodash/mapValues';
@@ -6,6 +7,23 @@ import _without from 'lodash/without';
 import { convertValues, getAxiosInstance, mapFields } from './utils';
 import { pluralizeFirestoreCollection } from '@/helpers';
 
+/**
+ * Constructs the request body for fetching runs based on the provided parameters.
+ *
+ * @param {Object} params - The parameters for constructing the request body.
+ * @param {string} params.administrationId - The administration ID.
+ * @param {string} params.orgType - The type of the organization.
+ * @param {string} params.orgId - The ID of the organization.
+ * @param {string} [params.taskId] - The task ID.
+ * @param {boolean} [params.aggregationQuery] - Whether to use aggregation query.
+ * @param {number} [params.pageLimit] - The page limit for pagination.
+ * @param {number} [params.page] - The page number for pagination.
+ * @param {boolean} [params.paginate=true] - Whether to paginate the results.
+ * @param {Array<string>} [params.select=['scores.computed.composite']] - The fields to select.
+ * @param {boolean} [params.allDescendants=true] - Whether to include all descendants.
+ * @param {boolean} [params.requireCompleted=false] - Whether to require completed runs.
+ * @returns {Object} The constructed request body.
+ */
 export const getRunsRequestBody = ({
   administrationId,
   orgType,
@@ -44,7 +62,6 @@ export const getRunsRequestBody = ({
   ];
 
   if (administrationId && (orgId || !allDescendants)) {
-    console.log('adding assignmentId and bestRun to structuredQuery');
     requestBody.structuredQuery.where = {
       compositeFilter: {
         op: 'AND',
@@ -68,7 +85,6 @@ export const getRunsRequestBody = ({
     };
 
     if (orgId) {
-      console.log('adding orgId to structuredQuery');
       requestBody.structuredQuery.where.compositeFilter.filters.push({
         fieldFilter: {
           field: { fieldPath: `readOrgs.${pluralizeFirestoreCollection(orgType)}` },
@@ -131,12 +147,20 @@ export const getRunsRequestBody = ({
   return requestBody;
 };
 
-export const runCounter = (administrationId, orgType, orgId) => {
+/**
+ * Counts the number of runs for a given administration and organization.
+ *
+ * @param {string} administrationId - The administration ID.
+ * @param {string} orgType - The type of the organization.
+ * @param {string} orgId - The ID of the organization.
+ * @returns {Promise<number>} The count of runs.
+ */
+export const runCounter = async (administrationId, orgType, orgId) => {
   const axiosInstance = getAxiosInstance('app');
   const requestBody = getRunsRequestBody({
-    administrationId,
-    orgType,
-    orgId,
+    administrationId: toValue(administrationId),
+    orgType: toValue(orgType),
+    orgId: toValue(orgId),
     aggregationQuery: true,
   });
   return axiosInstance.post(':runAggregationQuery', requestBody).then(({ data }) => {
@@ -144,6 +168,22 @@ export const runCounter = (administrationId, orgType, orgId) => {
   });
 };
 
+/**
+ * Fetches run page data for a given set of parameters.
+ *
+ * @param {Object} params - The parameters for fetching run page data.
+ * @param {string} params.administrationId - The administration ID.
+ * @param {string} [params.userId] - The user ID.
+ * @param {string} params.orgType - The organization type.
+ * @param {string} params.orgId - The organization ID.
+ * @param {string} [params.taskId] - The task ID.
+ * @param {number} [params.pageLimit] - The page limit for pagination.
+ * @param {number} [params.page] - The page number for pagination.
+ * @param {Array<string>} [params.select=['scores.computed.composite']] - The fields to select.
+ * @param {string} [params.scoreKey='scores.computed.composite'] - The key for scores.
+ * @param {boolean} [params.paginate=true] - Whether to paginate the results.
+ * @returns {Promise<Array<Object>>} The fetched run page data.
+ */
 export const runPageFetcher = async ({
   administrationId,
   userId,
@@ -158,18 +198,18 @@ export const runPageFetcher = async ({
 }) => {
   const appAxiosInstance = getAxiosInstance('app');
   const requestBody = getRunsRequestBody({
-    administrationId,
-    orgType,
-    orgId,
-    taskId,
-    allDescendants: userId === undefined,
+    administrationId: toValue(administrationId),
+    orgType: toValue(orgType),
+    orgId: toValue(orgId),
+    taskId: toValue(taskId),
+    allDescendants: toValue(userId) === undefined,
     aggregationQuery: false,
-    pageLimit: paginate ? pageLimit.value : undefined,
-    page: paginate ? page.value : undefined,
-    paginate: paginate,
-    select: select,
+    pageLimit: paginate ? toValue(pageLimit) : undefined,
+    page: paginate ? toValue(page) : undefined,
+    paginate: toValue(paginate),
+    select: toValue(select),
   });
-  const runQuery = userId === undefined ? ':runQuery' : `/users/${userId}:runQuery`;
+  const runQuery = toValue(userId) === undefined ? ':runQuery' : `/users/${toValue(userId)}:runQuery`;
   return appAxiosInstance.post(runQuery, requestBody).then(async ({ data }) => {
     const runData = mapFields(data, true);
 

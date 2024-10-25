@@ -67,12 +67,13 @@ service cloud.firestore {
         allow read, write: if request.auth.uid == uid;
       }
 
-      function isUserAdmin() {
-        let districts = resource.data.get(['districts', 'current'], []);
-        let schools = resource.data.get(['schools', 'current'], []);
-        let classes = resource.data.get(['classes', 'current'], []);
-        let groups = resource.data.get(['groups', 'current'], []);
-        let families = resource.data.get(['families', 'current'], []);
+      function isUserAdmin(requireCurrent) {
+        let orgStatus = requireCurrent ? 'current' : 'all';
+        let districts = resource.data.get(['districts', orgStatus], []);
+        let schools = resource.data.get(['schools', orgStatus], []);
+        let classes = resource.data.get(['classes', orgStatus], []);
+        let groups = resource.data.get(['groups', orgStatus], []);
+        let families = resource.data.get(['families', orgStatus], []);
         let adminOrgs = get(/databases/$(database)/documents/userClaims/$(request.auth.uid)).data.get('claims', {}).get('adminOrgs', {});
         return districts.hasAny(adminOrgs.get('districts', ['..']))
         || schools.hasAny(adminOrgs.get('schools', ['..']))
@@ -82,7 +83,7 @@ service cloud.firestore {
       }
 
       function canReadExistingUser() {
-        return myData() || isUserAdmin();
+        return myData() || isUserAdmin(false) || isUserAdmin(true);
       }
 
       allow read: if canReadExistingUser();

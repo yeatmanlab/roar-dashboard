@@ -1,3 +1,4 @@
+import { toValue, toRaw } from 'vue';
 import _find from 'lodash/find';
 import _flatten from 'lodash/flatten';
 import _get from 'lodash/get';
@@ -9,7 +10,6 @@ import _without from 'lodash/without';
 import _isEmpty from 'lodash/isEmpty';
 import { convertValues, getAxiosInstance, getProjectId, mapFields } from './utils';
 import { pluralizeFirestoreCollection } from '@/helpers';
-import { toRaw } from 'vue';
 
 const userSelectFields = ['name', 'assessmentPid', 'username', 'studentData', 'schools', 'classes'];
 
@@ -20,9 +20,13 @@ const assignmentSelectFields = [
   'dateAssigned',
   'dateClosed',
   'dateOpened',
-  'readOrgs',
-  'started',
   'id',
+  'legal',
+  'name',
+  'publicName',
+  'readOrgs',
+  'sequential',
+  'started',
 ];
 
 export const getAssignmentsRequestBody = ({
@@ -154,90 +158,6 @@ export const getAssignmentsRequestBody = ({
 
   if (!_isEmpty(orderBy)) {
     requestBody.structuredQuery.orderBy = orderBy;
-  }
-
-  if (aggregationQuery) {
-    return {
-      structuredAggregationQuery: {
-        ...requestBody,
-        aggregations: [
-          {
-            alias: 'count',
-            count: {},
-          },
-        ],
-      },
-    };
-  }
-
-  return requestBody;
-};
-
-export const getUsersByAssignmentIdRequestBody = ({
-  adminId,
-  orgType,
-  orgId,
-  filter,
-  aggregationQuery,
-  pageLimit,
-  page,
-  paginate = true,
-  select = userSelectFields,
-}) => {
-  const requestBody = {
-    structuredQuery: {},
-  };
-
-  if (!aggregationQuery) {
-    if (paginate) {
-      requestBody.structuredQuery.limit = pageLimit;
-      requestBody.structuredQuery.offset = page * pageLimit;
-    }
-
-    if (select.length > 0) {
-      requestBody.structuredQuery.select = {
-        fields: select.map((field) => ({ fieldPath: field })),
-      };
-    }
-  }
-
-  requestBody.structuredQuery.from = [
-    {
-      collectionId: 'users',
-      allDescendants: false,
-    },
-  ];
-
-  requestBody.structuredQuery.where = {
-    compositeFilter: {
-      op: 'AND',
-      filters: [
-        {
-          fieldFilter: {
-            field: { fieldPath: `${pluralizeFirestoreCollection(orgType)}.current` },
-            op: 'ARRAY_CONTAINS',
-            value: { stringValue: orgId },
-          },
-        },
-        {
-          fieldFilter: {
-            field: { fieldPath: `assignments.assigned` },
-            op: 'ARRAY_CONTAINS_ANY',
-            value: { arrayValue: { values: [{ stringValue: adminId }] } },
-          },
-        },
-      ],
-    },
-  };
-
-  if (filter) {
-    requestBody.structuredQuery.where.compositeFilter.filters.push({
-      fieldFilter: {
-        field: { fieldPath: filter[0].field },
-        op: 'EQUAL',
-        value: { stringValue: filter[0].value },
-      },
-    });
   }
 
   if (aggregationQuery) {
@@ -1058,6 +978,13 @@ export const assignmentPageFetcher = async (
   }
 };
 
+/**
+/**
+ * Fetches the assignments that are currently open for a user.
+ *
+ * @param {ref<String>} roarUid - A Vue ref containing the user's ROAR ID.
+ * @returns {Promise<Array>} - A promise that resolves to an array of open assignments for the user.
+ */
 export const getUserAssignments = async (roarUid) => {
   const adminAxiosInstance = getAxiosInstance();
   const assignmentRequest = getAssignmentsRequestBody({
@@ -1065,11 +992,14 @@ export const getUserAssignments = async (roarUid) => {
     paginate: false,
     isCollectionGroupQuery: false,
   });
-  return await adminAxiosInstance.post(`/users/${roarUid}:runQuery`, assignmentRequest).then(async ({ data }) => {
-    const assignmentData = mapFields(data);
-    const openAssignments = assignmentData.filter((assignment) => new Date(assignment.dateOpened) <= new Date());
-    return openAssignments;
-  });
+  const userId = toValue(roarUid);
+  return await adminAxiosInstance
+    .post(`/users/${toValue(userId)}:runQuery`, assignmentRequest)
+    .then(async ({ data }) => {
+      const assignmentData = mapFields(data);
+      const openAssignments = assignmentData.filter((assignment) => new Date(assignment.dateOpened) <= new Date());
+      return openAssignments;
+    });
 };
 
 export const assignmentFetchAll = async (adminId, orgType, orgId, includeScores = false) => {

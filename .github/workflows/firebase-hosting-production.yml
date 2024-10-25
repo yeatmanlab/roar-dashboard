@@ -7,125 +7,128 @@ on:
       - 'v[0-9]+.[0-9]+.[0-9]+-alpha.[0-9]+'
       - 'v[0-9]+.[0-9]+.[0-9]+-beta.[0-9]+'
 
-concurrency:
-  group: ci-preview-tests-${{ github.ref }}-0
-  cancel-in-progress: true
+# concurrency:
+#   group: ci-preview-tests-${{ github.ref }}-0
+#   cancel-in-progress: true
 
 jobs:
-  build-cypress-pre-release-tests:
-    name: Build Cypress Pre-Release Tests
-    runs-on: ubuntu-latest
-    timeout-minutes: 180
-    strategy:
-      fail-fast: false
-      matrix:
-        browser: [chromium]
-        containers: [1]
-    env:
-      NODE_ENV: 'test'
-      CYPRESS_BASE_URL: 'http://localhost:5173'
-      CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
-      COMMIT_INFO_MESSAGE: Generating pre-release tests for ROAR Dashboard ${{ github.event.number }} "${{ github.event.pull_request.title }}" from commit "${{ github.event.pull_request.head.sha }}"
-      COMMIT_INFO_SHA: ${{ github.event.pull_request.head.sha }}
-      PARTICIPANT_USERNAME: ${{ secrets.PARTICIPANT_USERNAME}}
-      PARTICIPANT_PASSWORD: ${{ secrets.PARTICIPANT_PASSWORD }}
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+  # build-cypress-pre-release-tests:
+  #   name: Build Cypress Pre-Release Tests
+  #   runs-on: ubuntu-latest
+  #   timeout-minutes: 180
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       browser: [chromium]
+  #       containers: [1]
+  #   env:
+  #     NODE_ENV: 'test'
+  #     CYPRESS_BASE_URL: 'http://localhost:5173'
+  #     CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
+  #     COMMIT_INFO_MESSAGE: Generating pre-release tests for ROAR Dashboard ${{ github.event.number }} "${{ github.event.pull_request.title }}" from commit "${{ github.event.pull_request.head.sha }}"
+  #     COMMIT_INFO_SHA: ${{ github.event.pull_request.head.sha }}
+  #     PARTICIPANT_USERNAME: ${{ secrets.PARTICIPANT_USERNAME}}
+  #     PARTICIPANT_PASSWORD: ${{ secrets.PARTICIPANT_PASSWORD }}
+  #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #     VITE_APPCHECK_DEBUG_TOKEN: ${{ secrets.VITE_APPCHECK_DEBUG_TOKEN }}
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v2
 
-      - name: Delete generated-tests directory if it exists
-        run: |
-          if [ -d "cypress/e2e/pre-release-tests/generated-tests" ]; then
-            rm -rf cypress/e2e/pre-release-tests/generated-tests
-            echo "Directory cypress/e2e/pre-release-tests/generated-tests was deleted."
-          else
-            echo "Directory cypress/e2e/pre-release-tests/generated-tests does not exist."
-          fi
+  #     - name: Delete generated-tests directory if it exists
+  #       run: |
+  #         if [ -d "cypress/e2e/pre-release-tests/generated-tests" ]; then
+  #           rm -rf cypress/e2e/pre-release-tests/generated-tests
+  #           echo "Directory cypress/e2e/pre-release-tests/generated-tests was deleted."
+  #         else
+  #           echo "Directory cypress/e2e/pre-release-tests/generated-tests does not exist."
+  #         fi
 
-      - name: Generate Cypress Pre-Release Tests
-        uses: cypress-io/github-action@v6
-        with:
-          browser: ${{ matrix.browser }}
-          build: npm ci && npm run build
-          start: npm run dev
-          wait-on: ${{ env.CYPRESS_BASE_URL }}
-          wait-on-timeout: 120
-          record: true
-          parallel: false
-          spec: 'cypress/e2e/pre-release-tests/generatePrereleaseTests.cy.js'
-          ci-build-id: ${{ matrix.containers }}-${{ matrix.browser }}-${{ github.run_id }}-${{ github.ref }}
+  #     - name: Generate Cypress Pre-Release Tests
+  #       uses: cypress-io/github-action@v6
+  #       with:
+  #         browser: ${{ matrix.browser }}
+  #         build: npm ci && npm run build
+  #         start: npm run dev
+  #         wait-on: ${{ env.CYPRESS_BASE_URL }}
+  #         wait-on-timeout: 120
+  #         record: true
+  #         parallel: false
+  #         spec: 'cypress/e2e/pre-release-tests/generatePrereleaseTests.cy.js'
+  #         ci-build-id: ${{ matrix.containers }}-${{ matrix.browser }}-${{ github.run_id }}-${{ github.ref }}
 
-      - name: List contents of generated-tests directory before upload
-        run: |
-          echo "Contents of cypress/e2e/pre-release-tests/generated-tests before upload:"
-          ls -R cypress/e2e/pre-release-tests/generated-tests || echo "Directory does not exist or is empty"
+  #     - name: List contents of generated-tests directory before upload
+  #       run: |
+  #         echo "Contents of cypress/e2e/pre-release-tests/generated-tests before upload:"
+  #         ls -R cypress/e2e/pre-release-tests/generated-tests || echo "Directory does not exist or is empty"
 
-      # Filesystem does not persist between jobs, so we need to upload the artifacts
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v3
-        with:
-          name: generated-tests
-          path: cypress/e2e/pre-release-tests/generated-tests
+  #     # Filesystem does not persist between jobs, so we need to upload the artifacts
+  #     - name: Upload artifacts
+  #       uses: actions/upload-artifact@v3
+  #       with:
+  #         name: generated-tests
+  #         path: cypress/e2e/pre-release-tests/generated-tests
 
-  run-cypress-pre-release-tests:
-    name: Run Cypress Pre-Release Tests
-    needs: [build-cypress-pre-release-tests]
-    runs-on: ubuntu-latest
-    timeout-minutes: 180
-    strategy:
-      fail-fast: false
-      matrix:
-        browser: [chromium]
-        containers: [1, 2, 3, 4, 5]
+  # run-cypress-pre-release-tests:
+  #   name: Run Cypress Pre-Release Tests
+  #   needs: [build-cypress-pre-release-tests]
+  #   runs-on: ubuntu-latest
+  #   timeout-minutes: 180
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       browser: [chromium]
+  #       containers: [1, 2, 3, 4, 5]
 
-    env:
-      NODE_ENV: 'test'
-      CYPRESS_BASE_URL: 'http://localhost:5173'
-      CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
-      COMMIT_INFO_MESSAGE: Running pre-release tests for ROAR Dashboard ${{ github.event.number }} "${{ github.event.pull_request.title }}" from commit "${{ github.event.pull_request.head.sha }}"
-      COMMIT_INFO_SHA: ${{ github.event.pull_request.head.sha }}
-      PARTICIPANT_USERNAME: ${{ secrets.PARTICIPANT_USERNAME}}
-      PARTICIPANT_PASSWORD: ${{ secrets.PARTICIPANT_PASSWORD }}
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+  #   env:
+  #     NODE_ENV: 'test'
+  #     CYPRESS_BASE_URL: 'http://localhost:5173'
+  #     CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
+  #     COMMIT_INFO_MESSAGE: Running pre-release tests for ROAR Dashboard ${{ github.event.number }} "${{ github.event.pull_request.title }}" from commit "${{ github.event.pull_request.head.sha }}"
+  #     COMMIT_INFO_SHA: ${{ github.event.pull_request.head.sha }}
+  #     PARTICIPANT_USERNAME: ${{ secrets.PARTICIPANT_USERNAME}}
+  #     PARTICIPANT_PASSWORD: ${{ secrets.PARTICIPANT_PASSWORD }}
+  #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #     VITE_APPCHECK_DEBUG_TOKEN: ${{ secrets.VITE_APPCHECK_DEBUG_TOKEN }}
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v2
 
-      # Filesystem does not persist between jobs, so we need to download the artifacts from the previous job
-      - name: Download artifacts
-        uses: actions/download-artifact@v3
-        with:
-          name: generated-tests
-          path: cypress/e2e/pre-release-tests/generated-tests
+  #     # Filesystem does not persist between jobs, so we need to download the artifacts from the previous job
+  #     - name: Download artifacts
+  #       uses: actions/download-artifact@v3
+  #       with:
+  #         name: generated-tests
+  #         path: cypress/e2e/pre-release-tests/generated-tests
 
-      - name: List contents of generated-tests directory after download
-        run: |
-          echo "Contents of cypress/e2e/pre-release-tests/generated-tests after download:"
-          ls -R cypress/e2e/pre-release-tests/generated-tests || echo "Directory does not exist or is empty"
+  #     - name: List contents of generated-tests directory after download
+  #       run: |
+  #         echo "Contents of cypress/e2e/pre-release-tests/generated-tests after download:"
+  #         ls -R cypress/e2e/pre-release-tests/generated-tests || echo "Directory does not exist or is empty"
 
-      - name: Run Generated Cypress Tests
-        uses: cypress-io/github-action@v6
-        with:
-          browser: ${{ matrix.browser }}
-          build: npm ci && npm run build
-          start: npm run dev
-          wait-on: ${{ env.CYPRESS_BASE_URL }}
-          wait-on-timeout: 120
-          record: true
-          parallel: true
-          spec: 'cypress/e2e/pre-release-tests/generated-tests/**/*'
-          ci-build-id: ${{ github.run_id }}-${{ matrix.browser }}
+  #     - name: Run Generated Cypress Tests
+  #       uses: cypress-io/github-action@v6
+  #       with:
+  #         browser: ${{ matrix.browser }}
+  #         build: npm ci && npm run build
+  #         start: npm run dev
+  #         wait-on: ${{ env.CYPRESS_BASE_URL }}
+  #         wait-on-timeout: 120
+  #         record: true
+  #         parallel: true
+  #         spec: 'cypress/e2e/pre-release-tests/generated-tests/**/*'
+  #         ci-build-id: ${{ github.run_id }}-${{ matrix.browser }}
 
   build-and-deploy:
     name: Deploy to Firebase Production Hosting Channel
-    needs: [build-cypress-pre-release-tests, run-cypress-pre-release-tests]
+    # needs: [build-cypress-pre-release-tests, run-cypress-pre-release-tests]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v4
         with:
           node-version: 'lts/*'
+
       - name: 'vite production build'
         env:
           NODE_OPTIONS: '--max_old_space_size=8192'

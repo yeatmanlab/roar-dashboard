@@ -29,7 +29,7 @@
       </div>
     </div>
     <div class="flex justify-content-center mt-2">
-      <PvCheckbox v-model="noConsent" input-id="no-consent" class="flex" value="noConsent" />
+      <PvCheckbox v-model="noConsent" :binary="true" input-id="no-consent" class="flex" value="noConsent" />
       <label class="ml-2 flex text-center" for="no-consent"
         >This administration does not require consent {{ isLevante ? '' : 'or assent' }} forms</label
       >
@@ -280,12 +280,11 @@
 
 <script setup>
 import { ref, onMounted, watch, computed } from 'vue';
-import { fetchLegalDocs } from '@/helpers/query/legal';
-import { useQuery } from '@tanstack/vue-query';
 import { useAuthStore } from '@/store/auth';
 import { marked } from 'marked';
 import _forEach from 'lodash/forEach';
 import { isLevante } from '@/helpers';
+import useLegalDocsQuery from '@/composables/queries/useLegalDocsQuery';
 
 const props = defineProps({
   legal: { type: Object, required: false, default: null },
@@ -430,12 +429,8 @@ function checkBoxStatus() {
   }
 }
 
-const { data: consents } = useQuery({
-  queryKey: ['currentCommit', 'currentCommit', 'gitHubOrg', 'lastUpdated'],
-  queryFn: fetchLegalDocs,
-  keepPreviousData: true,
+const { data: consents } = useLegalDocsQuery({
   enabled: initialized,
-  staleTime: 5 * 60 * 1000,
 });
 
 const listOfDocs = computed(() => {
@@ -571,6 +566,20 @@ function processConsentAssent(consent, targetArray) {
   });
 }
 
+// Declare a computed property to watch the legal prop
+const computedLegalProps = computed(() => {
+  return props.legal ?? {};
+});
+
+// Watch the computed property and set the noConsent value accordingly
+watch(computedLegalProps, (newValue) => {
+  if (newValue.consent === 'No Consent') {
+    noConsent.value = true;
+  } else {
+    noConsent.value = false;
+  }
+});
+
 watch(amount, (newValue) => {
   result.amount = newValue;
   emit('consent-selected', result);
@@ -582,7 +591,7 @@ watch(expectedTime, (newValue) => {
 });
 
 watch(noConsent, () => {
-  if (noConsent.value && noConsent.value?.find((item) => item === 'noConsent')) {
+  if (noConsent.value) {
     emit('consent-selected', 'No Consent');
   } else {
     emit('consent-selected', '');

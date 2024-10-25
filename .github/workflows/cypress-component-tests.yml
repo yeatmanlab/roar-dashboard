@@ -1,0 +1,72 @@
+name: Run Cypress Component Tests
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+  workflow_dispatch:
+    inputs:
+      pr_branch:
+        description: 'Checkout this branch from the LEVANTE repository and execute CI/CD tests on it.'
+        required: true
+
+concurrency:
+  group: cypress-tests-${{ github.ref }}-3
+  cancel-in-progress: true
+
+jobs:
+  cypress-run:
+    name: Run Cypress Component Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, edge]
+        containers: [1, 2]
+    env:
+      NODE_OPTIONS: '--max_old_space_size=8192'
+      NODE_ENV: 'test'
+      CYPRESS_BASE_URL: 'http://localhost:5173'
+      CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
+      COMMIT_INFO_MESSAGE: Component Tests for PR ${{ github.event.number }} "${{ github.event.pull_request.title }}" from commit "${{ github.event.pull_request.head.sha }}"
+      COMMIT_INFO_SHA: ${{ github.event.pull_request.head.sha }}
+      PARTNER_ADMIN_USERNAME: ${{ secrets.PARTNER_ADMIN_USERNAME }}
+      PARTNER_ADMIN_PASSWORD: ${{ secrets.PARTNER_ADMIN_PASSWORD }}
+      PARTNER_ADMIN_ID: ${{ secrets.PARTNER_ADMIN_ID }}
+      PARTICIPANT_USERNAME: ${{ secrets.PARTICIPANT_USERNAME}}
+      PARTICIPANT_PASSWORD: ${{ secrets.PARTICIPANT_PASSWORD }}
+      PARTICIPANT_UID: ${{ secrets.PARTICIPANT_UID }}
+      PARTICIPANT_EMAIL: ${{ secrets.PARTICIPANT_EMAIL }}
+      PARTICIPANT_EMAIL_PASSWORD: ${{ secrets.PARTICIPANT_EMAIL_PASSWORD }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      VITE_APPCHECK_DEBUG_TOKEN: ${{ secrets.VITE_APPCHECK_DEBUG_TOKEN }}
+    steps:
+      # For workflows triggered by pull requests
+      - name: Checkout PR code
+        if: github.event_name == 'pull_request'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+
+      # For workflows triggered manually, targeting the LEVANTE dashboard repository specifically
+      - name: Checkout manual trigger code
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.pr_branch }}
+          repository: levante-framework/levante-dashboard
+          fetch-depth: 0
+
+      - name: Cypress run
+        uses: cypress-io/github-action@v6
+        with:
+          component: true
+          browser: ${{ matrix.browser }}
+          build: npm ci && npm run build
+          start: npm run dev
+          wait-on: ${{ env.CYPRESS_BASE_URL }}
+          wait-on-timeout: 120
+          record: true
+          parallel: true
+          spec: 'cypress/component/**/*'
+          ci-build-id: ${{ github.run_id }}-${{ matrix.browser }}

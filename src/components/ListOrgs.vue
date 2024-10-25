@@ -60,6 +60,8 @@
             :allow-filtering="false"
             @export-all="exportAll"
             @selected-org-id="showCode"
+            @export-org-users="(orgId) => exportOrgUsers(orgId)"
+            @edit-button="onEditButtonClick($event)"
           />
           <AppSpinner v-else />
         </PvTabPanel>
@@ -93,9 +95,16 @@
         </PvInputGroup>
         <p class="font-bold text-lg">Code:</p>
         <PvInputGroup class="mt-3">
-          <PvInputText style="width: 70%" :value="activationCode" autocomplete="off" readonly />
+          <PvInputText
+            style="width: 70%"
+            :value="activationCode"
+            autocomplete="off"
+            data-cy="input-text-activation-code"
+            readonly
+          />
           <PvButton
             class="bg-primary border-none p-2 text-white hover:bg-red-900"
+            data-cy="button-copy-invitation"
             @click="copyToClipboard(activationCode)"
           >
             <i class="pi pi-copy p-2"></i>
@@ -111,26 +120,69 @@
       </PvDialog>
     </section>
   </main>
+  <RoarModal
+    title="Edit Organization"
+    subtitle="Modify or add organization information"
+    :is-enabled="isEditModalEnabled"
+    @modal-closed="closeEditModal"
+  >
+    <EditOrgsForm :org-id="currentEditOrgId" :org-type="activeOrgType" @update:org-data="localOrgData = $event" />
+    <template #footer>
+      <div>
+        <div class="flex gap-2">
+          <PvButton
+            tabindex="0"
+            class="border-none border-round bg-white text-primary p-2 hover:surface-200"
+            text
+            label="Cancel"
+            outlined
+            @click="closeEditModal"
+          ></PvButton>
+          <PvButton
+            tabindex="0"
+            class="border-none border-round bg-primary text-white p-2 hover:surface-400"
+            label="Save"
+            @click="updateOrgData"
+            ><i v-if="isSubmitting" class="pi pi-spinner pi-spin"></i
+          ></PvButton>
+        </div>
+      </div>
+    </template>
+  </RoarModal>
 </template>
 <script setup>
-import { orgFetcher, orgFetchAll, orgPageFetcher } from '@/helpers/query/orgs';
-import { orderByDefault, exportCsv, fetchDocById } from '@/helpers/query/utils';
 import { ref, computed, onMounted, watch } from 'vue';
+import * as Sentry from '@sentry/vue';
 import { storeToRefs } from 'pinia';
-import { useQuery } from '@tanstack/vue-query';
-import { useAuthStore } from '@/store/auth';
 import { useToast } from 'primevue/usetoast';
+import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts.js';
+import EditOrgsForm from './EditOrgsForm.vue';
+import RoarModal from './modals/RoarModal.vue';
 import _get from 'lodash/get';
 import _head from 'lodash/head';
+import _kebabCase from 'lodash/kebabCase';
+import { useAuthStore } from '@/store/auth';
+import { orgFetchAll } from '@/helpers/query/orgs';
+import { fetchUsersByOrg, countUsersByOrg } from '@/helpers/query/users';
+import { orderByDefault, exportCsv, fetchDocById } from '@/helpers/query/utils';
+import useUserType from '@/composables/useUserType';
+import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
+import useDistrictsListQuery from '@/composables/queries/useDistrictsListQuery';
+import useDistrictSchoolsQuery from '@/composables/queries/useDistrictSchoolsQuery';
+import useOrgsTableQuery from '@/composables/queries/useOrgsTableQuery';
+import { CSV_EXPORT_MAX_RECORD_COUNT } from '@/constants/csvExport';
 
 const initialized = ref(false);
-const orgsQueryKeyIndex = ref(0);
 const selectedDistrict = ref(undefined);
 const selectedSchool = ref(undefined);
 const orderBy = ref(orderByDefault);
 let activationCode = ref(null);
 const isDialogVisible = ref(false);
 const toast = useToast();
+const isEditModalEnabled = ref(false);
+const currentEditOrgId = ref(null);
+const localOrgData = ref(null);
+const isSubmitting = ref(false);
 
 const districtPlaceholder = computed(() => {
   if (isLoadingDistricts.value) {
@@ -146,20 +198,15 @@ const schoolPlaceholder = computed(() => {
   return 'Select a school';
 });
 
-// Authstore and Sidebar
 const authStore = useAuthStore();
-const { roarfirekit, uid, userQueryKeyIndex } = storeToRefs(authStore);
+const { roarfirekit } = storeToRefs(authStore);
 
-const { isLoading: isLoadingClaims, data: userClaims } = useQuery({
-  queryKey: ['userClaims', uid, userQueryKeyIndex],
-  queryFn: () => fetchDocById('userClaims', uid.value),
-  keepPreviousData: true,
+const { data: userClaims } = useUserClaimsQuery({
   enabled: initialized,
-  staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
-const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
-const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
+const { isSuperAdmin } = useUserType(userClaims);
+const adminOrgs = computed(() => userClaims?.value?.claims?.minimalAdminOrgs);
 
 const orgHeaders = computed(() => {
   const headers = {
@@ -195,14 +242,26 @@ const activeOrgType = computed(() => {
   return Object.keys(orgHeaders.value)[activeIndex.value];
 });
 
-const claimsLoaded = computed(() => !isLoadingClaims.value);
+const claimsLoaded = computed(() => !!userClaims?.value?.claims);
 
-const { isLoading: isLoadingDistricts, data: allDistricts } = useQuery({
-  queryKey: ['districts', uid, orgsQueryKeyIndex],
-  queryFn: () => orgFetcher('districts', undefined, isSuperAdmin, adminOrgs),
-  keepPreviousData: true,
+const { isLoading: isLoadingDistricts, data: allDistricts } = useDistrictsListQuery({
   enabled: claimsLoaded,
-  staleTime: 5 * 60 * 1000, // 5 minutes
+});
+
+const schoolQueryEnabled = computed(() => {
+  return claimsLoaded.value && !!selectedDistrict.value;
+});
+
+const { isLoading: isLoadingSchools, data: allSchools } = useDistrictSchoolsQuery(selectedDistrict, {
+  enabled: schoolQueryEnabled,
+});
+
+const {
+  isLoading,
+  isFetching,
+  data: orgData,
+} = useOrgsTableQuery(activeOrgType, selectedDistrict, selectedSchool, orderBy, {
+  enabled: claimsLoaded,
 });
 
 function copyToClipboard(text) {
@@ -210,55 +269,21 @@ function copyToClipboard(text) {
     .writeText(text)
     .then(function () {
       toast.add({
-        severity: 'success',
+        severity: TOAST_SEVERITIES.SUCCESS,
         summary: 'Hoorah!',
         detail: 'Your code has been successfully copied to clipboard!',
-        life: 3000,
+        life: TOAST_DEFAULT_LIFE_DURATION,
       });
     })
     .catch(function () {
       toast.add({
-        severity: 'error',
+        severity: TOAST_SEVERITIES.ERROR,
         summary: 'Error!',
         detail: 'Your code has not been copied to clipboard! \n Please try again',
-        life: 3000,
+        life: TOAST_DEFAULT_LIFE_DURATION,
       });
     });
 }
-
-const schoolQueryEnabled = computed(() => {
-  return claimsLoaded.value && selectedDistrict.value !== undefined;
-});
-
-const { isLoading: isLoadingSchools, data: allSchools } = useQuery({
-  queryKey: ['schools', uid, selectedDistrict, orgsQueryKeyIndex],
-  queryFn: () => orgFetcher('schools', selectedDistrict, isSuperAdmin, adminOrgs),
-  keepPreviousData: true,
-  enabled: schoolQueryEnabled,
-  staleTime: 5 * 60 * 1000, // 5 minutes
-});
-
-const {
-  isLoading,
-  isFetching,
-  data: orgData,
-} = useQuery({
-  queryKey: ['orgsPage', uid, activeOrgType, selectedDistrict, selectedSchool, orderBy, orgsQueryKeyIndex],
-  queryFn: () =>
-    orgPageFetcher(
-      activeOrgType,
-      selectedDistrict,
-      selectedSchool,
-      orderBy,
-      ref(100000),
-      ref(0),
-      isSuperAdmin,
-      adminOrgs,
-    ),
-  keepPreviousData: true,
-  enabled: claimsLoaded,
-  staleTime: 5 * 60 * 1000, // 5 minutes
-});
 
 const exportAll = async () => {
   const exportData = await orgFetchAll(
@@ -270,6 +295,87 @@ const exportAll = async () => {
     adminOrgs,
   );
   exportCsv(exportData, `roar-${activeOrgType.value}.csv`);
+};
+
+/**
+ * Exports users of a given organization type to a CSV file.
+ *
+ * @NOTE In order to avoid overly large exports, the function will allow exports up to a predefined limit (currently
+ * 10,000 records). To avoid running a large and potentially unecessary query, we first run an aggregation query to
+ * verify that the export is within the limit.
+ *
+ * @TODO Replace this logic with a server driven export, for example a cloud function that generate a download link for
+ * the user, effectively allowing complete and large exports.
+ *
+ * @param {Object} orgType - The organization type object.
+ * @param {string} orgType.id - The ID of the organization type.
+ * @param {string} orgType.name - The name of the organization type.
+ *
+ * @returns {Promise<void>} - A promise that resolves when the export is complete.
+ */
+const exportOrgUsers = async (orgType) => {
+  try {
+    // First, count the users
+    const userCount = await countUsersByOrg(activeOrgType.value, orgType.id, orderBy);
+
+    if (userCount === 0) {
+      toast.add({
+        severity: 'error',
+        summary: 'Export Failed',
+        detail: 'No users found for the organization.',
+        life: 3000,
+      });
+      return;
+    }
+
+    if (userCount > CSV_EXPORT_MAX_RECORD_COUNT) {
+      toast.add({
+        severity: 'error',
+        summary: 'Export Failed',
+        detail: 'Too many users to export. Please filter the users by selecting a smaller org type.',
+        life: 3000,
+      });
+      return;
+    }
+
+    // Fetch the users if the count is within acceptable limits
+    const users = await fetchUsersByOrg(activeOrgType.value, orgType.id, userCount, ref(0), orderBy);
+
+    const computedExportData = users.map((user) => ({
+      Username: _get(user, 'username'),
+      Email: _get(user, 'email'),
+      FirstName: _get(user, 'name.first'),
+      LastName: _get(user, 'name.last'),
+      Grade: _get(user, 'studentData.grade'),
+      Gender: _get(user, 'studentData.gender'),
+      DateOfBirth: _get(user, 'studentData.dob'),
+      UserType: _get(user, 'userType'),
+      ell_status: _get(user, 'studentData.ell_status'),
+      iep_status: _get(user, 'studentData.iep_status'),
+      frl_status: _get(user, 'studentData.frl_status'),
+      race: _get(user, 'studentData.race'),
+      hispanic_ethnicity: _get(user, 'studentData.hispanic_ethnicity'),
+      home_language: _get(user, 'studentData.home_language'),
+    }));
+
+    // ex. cypress-test-district-users-export.csv
+    exportCsv(computedExportData, `${_kebabCase(orgType.name)}-users-export.csv`);
+
+    toast.add({
+      severity: 'success',
+      summary: 'Export Successful',
+      detail: 'Users have been exported successfully!',
+      life: 3000,
+    });
+  } catch (error) {
+    toast.add({
+      severity: 'error',
+      summary: 'Export Failed',
+      detail: error.message,
+      life: 3000,
+    });
+    Sentry.captureException(error);
+  }
 };
 
 const tableColumns = computed(() => {
@@ -294,11 +400,19 @@ const tableColumns = computed(() => {
 
   columns.push(
     {
+      header: 'Users',
       link: true,
       routeName: 'ListUsers',
       routeTooltip: 'View users',
       routeLabel: 'Users',
       routeIcon: 'pi pi-user',
+      sort: false,
+    },
+    {
+      header: 'Edit',
+      button: true,
+      eventName: 'edit-button',
+      buttonIcon: 'pi pi-pencil',
       sort: false,
     },
     {
@@ -309,6 +423,14 @@ const tableColumns = computed(() => {
       buttonIcon: 'pi pi-send mr-2',
       sort: false,
     },
+    {
+      header: 'Export Users',
+      buttonLabel: 'Export Users',
+      button: true,
+      eventName: 'export-org-users',
+      buttonIcon: 'pi pi-download mr-2',
+      sort: false,
+    },
   );
 
   return columns;
@@ -316,7 +438,7 @@ const tableColumns = computed(() => {
 
 const tableData = computed(() => {
   if (isLoading.value) return [];
-  return orgData.value.map((org) => {
+  return orgData?.value?.map((org) => {
     return {
       ...org,
       routeParams: {
@@ -337,8 +459,51 @@ const showCode = async (selectedOrg) => {
   }
 };
 
+const onEditButtonClick = (event) => {
+  isEditModalEnabled.value = true;
+  currentEditOrgId.value = _get(event, 'id', null);
+};
+
+const closeEditModal = () => {
+  isEditModalEnabled.value = false;
+  currentEditOrgId.value = null;
+};
+
 const closeDialog = () => {
   isDialogVisible.value = false;
+};
+
+const updateOrgData = async () => {
+  isSubmitting.value = true;
+  await roarfirekit.value
+    .createOrg(
+      activeOrgType.value,
+      localOrgData.value,
+      _get(localOrgData.value, 'testData', false),
+      _get(localOrgData.value, 'demoData', false),
+      currentEditOrgId.value,
+    )
+    .then(() => {
+      closeEditModal();
+      toast.add({
+        severity: TOAST_SEVERITIES.SUCCESS,
+        summary: 'Updated',
+        detail: 'Organization data updated successfully!',
+        life: TOAST_DEFAULT_LIFE_DURATION,
+      });
+    })
+    .catch((error) => {
+      toast.add({
+        severity: TOAST_SEVERITIES.ERROR,
+        summary: 'Unexpected error',
+        detail: `Unexpected error occurred: ${error.message}`,
+        life: TOAST_DEFAULT_LIFE_DURATION,
+      });
+      Sentry.captureException(error);
+    })
+    .finally(() => {
+      isSubmitting.value = false;
+    });
 };
 
 let unsubscribe;

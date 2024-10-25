@@ -10,7 +10,7 @@ on:
         required: true
 
 concurrency:
-  group: ci-preview-tests-${{ github.ref }}-3
+  group: cypress-tests-${{ github.ref }}-2
   cancel-in-progress: true
 
 jobs:
@@ -30,7 +30,7 @@ jobs:
       CLEVER_PASSWORD: ${{ secrets.CLEVER_PASSWORD }}
       CYPRESS_BASE_URL: 'http://localhost:5173'
       CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
-      COMMIT_INFO_MESSAGE: Tests for PR ${{ github.event.number }} "${{ github.event.pull_request.title }}" from commit "${{ github.event.pull_request.head.sha }}"
+      COMMIT_INFO_MESSAGE: E2E Tests for PR ${{ github.event.number }} "${{ github.event.pull_request.title }}" from commit "${{ github.event.pull_request.head.sha }}"
       COMMIT_INFO_SHA: ${{ github.event.pull_request.head.sha }}
       PARTNER_ADMIN_USERNAME: ${{ secrets.PARTNER_ADMIN_USERNAME }}
       PARTNER_ADMIN_PASSWORD: ${{ secrets.PARTNER_ADMIN_PASSWORD }}
@@ -40,6 +40,7 @@ jobs:
       PARTICIPANT_EMAIL: ${{ secrets.PARTICIPANT_EMAIL }}
       PARTICIPANT_EMAIL_PASSWORD: ${{ secrets.PARTICIPANT_EMAIL_PASSWORD }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      VITE_APPCHECK_DEBUG_TOKEN: ${{ secrets.VITE_APPCHECK_DEBUG_TOKEN }}
     steps:
       # For workflows triggered by pull requests
       - name: Checkout PR code

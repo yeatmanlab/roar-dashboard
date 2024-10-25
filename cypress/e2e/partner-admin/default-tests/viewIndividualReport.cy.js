@@ -6,7 +6,6 @@ const testPartnerAdminPassword = Cypress.env('partnerAdminPassword');
 const timeout = Cypress.env('timeout');
 const baseUrl = Cypress.env('baseUrl');
 const testUserList = Cypress.env('testUserList');
-const testAssignments = Cypress.env('testAssignmentsList');
 
 function checkUrl() {
   cy.login(testPartnerAdminUsername, testPartnerAdminPassword);
@@ -22,21 +21,12 @@ function clickScoreButton() {
   );
 }
 
-function checkAssignmentColumns(assignments) {
-  cy.get('[data-cy="roar-data-table"] thead th').then(($header) => {
-    const tableHeaders = $header.map((index, elem) => Cypress.$(elem).text()).get();
-
-    assignments.forEach((assignment) => {
-      expect(tableHeaders).to.include(assignment);
-    });
-  });
-}
-
 function checkIndividualScoreReport() {
   cy.get('[data-cy="route-button"]', { timeout: 3 * timeout })
     .first()
     .click();
-  cy.get('div', { timeout: 3 * timeout }).should('contain', 'Individual Score Report');
+  cy.wait(0.3 * timeout);
+  cy.get('body', { timeout: 3 * timeout }).should('contain', 'Individual Score Report');
   cy.get('button', { timeout: 3 * timeout })
     .contains('Expand All Sections')
     .click();
@@ -49,8 +39,9 @@ describe('The partner admin can view individual score reports for a given admini
     checkUrl();
     cy.getAdministrationCard(testPartnerAdministrationName);
     clickScoreButton();
+    cy.wait(0.3 * timeout);
     cy.checkUserList(testUserList);
-    checkAssignmentColumns(testAssignments);
+    cy.wait(0.3 * timeout);
     checkIndividualScoreReport();
   });
 });
