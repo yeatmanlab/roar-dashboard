@@ -1,7 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { useAuthStore } from '@/store/auth';
-import { useGameStore } from '@/store/game';
-import { useSurveyStore } from '@/store/survey';
 import _get from 'lodash/get';
 import { pageTitlesEN, pageTitlesUS, pageTitlesES, pageTitlesCO } from '@/translations/exports';
 import { isLevante } from '@/helpers';
