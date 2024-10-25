@@ -10,15 +10,13 @@ on:
 
 jobs:
   add-to-project:
-    name: Add pull request to QA project
-    runs-on: ubuntu-latest
-    steps:
-      uses: actions/add-to-project@v1.0.2
-      with:
-        project-url: https://github.com/orgs/yeatmanlab/projects/33
-        github-token: ${{ secrets.KMONTVILLE_PERSONAL_ACCESS_TOKEN }}
-        labeled:
-          - '[qa] low priority'
-          - '[qa] medium priority'
-          - '[qa] high priority'
-        label-operator: OR
+    name: Add To GitHub projects
+    uses: actions/add-to-project@v1.0.2
+    with:
+      project-url: ${{ secrets.QA_PROJECT_URL }}
+      github-token: ${{ secrets.KMONTVILLE_PERSONAL_ACCESS_TOKEN }}
+      labeled:
+        - '[qa] High Priority'
+        - '[qa] Medium Priority'
+        - '[qa] Low Priority'
+      label-operator: OR
