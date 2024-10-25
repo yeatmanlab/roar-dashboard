@@ -19,5 +19,5 @@ jobs:
         with:
           project-url: ${{ secrets.QA_PROJECT_URL }}
           github-token: ${{ secrets.KMONTVILLE_PERSONAL_ACCESS_TOKEN }}
-          labeled: '[qa] Low Priority'
+          labeled: '[qa] low priority'
           label-operator: OR
