@@ -18,6 +18,6 @@ jobs:
         uses: actions/add-to-project@v1.0.2
         with:
           project-url: ${{ secrets.QA_PROJECT_URL }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.ADD_PRS_TO_QA_PROJECTS_TOKEN }}
           labeled: '[qa] low priority'
           label-operator: OR
