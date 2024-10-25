@@ -1,5 +1,4 @@
 name: Add Pull Request to QA Template Based on QA Priority Label
-
 on:
   pull_request:
     branches:
@@ -11,12 +10,14 @@ on:
 jobs:
   add-to-project:
     name: Add To GitHub projects
-    uses: actions/add-to-project@v1.0.2
-    with:
-      project-url: ${{ secrets.QA_PROJECT_URL }}
-      github-token: ${{ secrets.KMONTVILLE_PERSONAL_ACCESS_TOKEN }}
-      labeled:
-        - '[qa] High Priority'
-        - '[qa] Medium Priority'
-        - '[qa] Low Priority'
-      label-operator: OR
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Add To GitHub projects
+        uses: actions/add-to-project@v1.0.2
+        with:
+          project-url: ${{ secrets.QA_PROJECT_URL }}
+          github-token: ${{ secrets.KMONTVILLE_PERSONAL_ACCESS_TOKEN }}
+          labeled: '[qa] Low Priority'
+          label-operator: OR
