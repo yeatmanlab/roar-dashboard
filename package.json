@@ -41,7 +41,7 @@
     "@bdelab/roar-utils": "^1.2.1",
     "@bdelab/roar-vocab": "^1.8.0",
     "@bdelab/roav-crowding": "1.1.16",
-    "@bdelab/roav-mep": "^1.1.21",
+    "@bdelab/roav-mep": "1.1.28",
     "@bdelab/roav-ran": "^1.0.30",
     "@levante-framework/core-tasks": "1.0.0-beta.16",
     "@sentry/browser": "^8.0.0",
