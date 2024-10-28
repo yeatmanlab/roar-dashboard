@@ -1,7 +1,7 @@
 <template>
   <Head>
     <title>{{ isLevante ? '' : 'ROAR:' }} {{ pageTitle }}</title>
-    <meta name="description" content="A web-based tool to query ROAR assessment data!" />
+    <meta name="description" content="The Rapid Online Assessment of Reading" />
 
     <!-- Social -->
     <meta property="og:title" content="ROAR Web Query" />
