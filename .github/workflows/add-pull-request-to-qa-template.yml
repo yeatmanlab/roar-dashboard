@@ -19,8 +19,5 @@ jobs:
         with:
           project-url: ${{ secrets.QA_PROJECT_URL }}
           github-token: ${{ secrets.ADD_PRS_TO_QA_PROJECTS_TOKEN }}
-          labeled:
-            - '[qa] low priority'
-            - '[qa] medium priority'
-            - '[qa] high priority'
+          labeled: '[qa] low priority, [qa] medium priority, [qa] high priority'
           label-operator: OR
