@@ -50,7 +50,7 @@
   </div>
 </template>
 <script setup>
-import { ref, defineProps, onMounted, watch } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { useAuthStore } from '@/store/auth';
 import { storeToRefs } from 'pinia';
 import { fetchDocById } from '@/helpers/query/utils';
