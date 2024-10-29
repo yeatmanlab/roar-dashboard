@@ -976,23 +976,6 @@ const emit = defineEmits(['export-all', 'selection', 'reset-filters', 'export-se
   margin-bottom: 3px;
 }
 
-.p-checkbox .p-checkbox-box {
-  border: 2px solid var(--surface-300);
-  background: var(--surface-a);
-  width: 16px;
-  height: 16px;
-  color: var(--text-color);
-  border-radius: var(--border-radius);
-  transition: none;
-}
-
-.p-checkbox-box.p-component.p-highlight {
-  background-color: var(--primary-color);
-  color: white;
-  border: none;
-  padding: 0.25rem;
-}
-
 .circle {
   border-color: white;
   display: inline-block;
