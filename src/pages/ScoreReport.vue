@@ -263,7 +263,6 @@
 
 <script setup>
 import { computed, ref, onMounted, watch } from 'vue';
-import FilterBar from '@/components/slots/FilterBar.vue';
 import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router';
 import { jsPDF } from 'jspdf';
@@ -275,6 +274,13 @@ import _map from 'lodash/map';
 import _kebabCase from 'lodash/kebabCase';
 import _pickBy from 'lodash/pickBy';
 import _lowerCase from 'lodash/lowerCase';
+import { getGrade } from '@bdelab/roar-utils';
+import PvButton from 'primevue/button';
+import PvConfirmDialog from 'primevue/confirmdialog';
+import PvDropdown from 'primevue/dropdown';
+import PvSelectButton from 'primevue/selectbutton';
+import PvTabPanel from 'primevue/tabpanel';
+import PvTabView from 'primevue/tabview';
 import { useAuthStore } from '@/store/auth';
 import { getDynamicRouterPath } from '@/helpers/getDynamicRouterPath';
 import useUserType from '@/composables/useUserType';
@@ -284,10 +290,9 @@ import useOrgQuery from '@/composables/queries/useOrgQuery';
 import useDistrictSchoolsQuery from '@/composables/queries/useDistrictSchoolsQuery';
 import useAdministrationAssignmentsQuery from '@/composables/queries/useAdministrationAssignmentsQuery';
 import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery';
-import { getGrade } from '@bdelab/roar-utils';
+import { useFilteredTableData } from '@/composables/useFilteredTableData.js';
 import { exportCsv } from '@/helpers/query/utils';
-import { getTitle } from '../helpers/query/administrations';
-import { useFilteredTableData } from '../composables/useFilteredTableData.js';
+import { getTitle } from '@/helpers/query/administrations';
 import {
   taskDisplayNames,
   taskInfoById,
@@ -304,6 +309,8 @@ import {
   tasksToDisplayCorrectIncorrectDifference,
   includedValidityFlags,
 } from '@/helpers/reports';
+import FilterBar from '@/components/slots/FilterBar.vue';
+import RoarDataTable from '@/components/RoarDataTable.vue';
 import { APP_ROUTES } from '@/constants/routes';
 import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
 

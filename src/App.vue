@@ -28,6 +28,7 @@ import { computed, onBeforeMount, onMounted, ref, defineAsyncComponent } from 'v
 import { useRoute } from 'vue-router';
 import { useRecaptchaProvider } from 'vue-recaptcha';
 import { Head } from '@unhead/vue/components';
+import PvToast from 'primevue/toast';
 import NavBar from '@/components/NavBar.vue';
 
 const SessionTimer = defineAsyncComponent(() => import('@/containers/SessionTimer/SessionTimer.vue'));

@@ -78,14 +78,17 @@
 </template>
 <script setup>
 import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { storeToRefs } from 'pinia';
 import _get from 'lodash/get';
 import _find from 'lodash/find';
 import _findIndex from 'lodash/findIndex';
+import { camelize, getAgeData } from '@bdelab/roar-utils';
+import PvTabPanel from 'primevue/tabpanel';
+import PvTabView from 'primevue/tabview';
+import PvTag from 'primevue/tag';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
-import { storeToRefs } from 'pinia';
-import { useI18n } from 'vue-i18n';
-import { camelize, getAgeData } from '@bdelab/roar-utils';
 import VideoPlayer from '@/components/VideoPlayer.vue';
 
 const props = defineProps({

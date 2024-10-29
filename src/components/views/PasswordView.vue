@@ -28,6 +28,8 @@ import { ref, reactive, computed, onMounted } from 'vue';
 import { useVuelidate } from '@vuelidate/core';
 import { useAuthStore } from '@/store/auth';
 import { useToast } from 'primevue/usetoast';
+import PvButton from 'primevue/button';
+import PvInputText from 'primevue/inputtext';
 import { storeToRefs } from 'pinia';
 import { required, sameAs, minLength } from '@vuelidate/validators';
 // +-------------------+

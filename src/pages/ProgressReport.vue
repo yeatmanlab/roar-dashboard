@@ -168,6 +168,9 @@ import { useRouter } from 'vue-router';
 import _get from 'lodash/get';
 import _kebabCase from 'lodash/kebabCase';
 import _map from 'lodash/map';
+import PvChart from 'primevue/chart';
+import PvMultiSelect from 'primevue/multiselect';
+import PvSelectButton from 'primevue/selectbutton';
 import { useAuthStore } from '@/store/auth';
 import useUserType from '@/composables/useUserType';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
@@ -184,6 +187,7 @@ import { getTitle } from '@/helpers/query/administrations';
 import { setBarChartData, setBarChartOptions } from '@/helpers/plotting';
 import { APP_ROUTES } from '@/constants/routes';
 import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
+import RoarDataTable from '@/components/RoarDataTable.vue';
 
 const router = useRouter();
 const authStore = useAuthStore();

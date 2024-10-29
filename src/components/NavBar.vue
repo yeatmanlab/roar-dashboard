@@ -73,13 +73,16 @@ import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import _isEmpty from 'lodash/isEmpty';
 import _union from 'lodash/union';
+import PvButton from 'primevue/button';
+import PvImage from 'primevue/image';
+import PvMenubar from 'primevue/menubar';
 import { useAuthStore } from '@/store/auth';
 import { getSidebarActions } from '@/router/sidebarActions';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useSignOutMutation from '@/composables/mutations/useSignOutMutation';
-import LanguageSelector from './LanguageSelector.vue';
 import { APP_ROUTES } from '@/constants/routes';
 import ROARLogo from '@/assets/RoarLogo.vue';
+import LanguageSelector from '@/components/LanguageSelector.vue';
 
 const router = useRouter();
 const authStore = useAuthStore();

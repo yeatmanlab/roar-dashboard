@@ -56,6 +56,8 @@ import { storeToRefs } from 'pinia';
 import { fetchDocById } from '@/helpers/query/utils';
 import { useQuery } from '@tanstack/vue-query';
 import PvChips from 'primevue/chips';
+import PvCheckbox from 'primevue/checkbox';
+import PvInputText from 'primevue/inputtext';
 import _isEmpty from 'lodash/isEmpty';
 const props = defineProps({
   orgType: { type: String, required: true },

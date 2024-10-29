@@ -23,6 +23,8 @@ import { useI18n } from 'vue-i18n';
 import * as Sentry from '@sentry/vue';
 import { useConfirm } from 'primevue/useconfirm';
 import { useToast } from 'primevue/usetoast';
+import PvConfirmDialog from 'primevue/confirmdialog';
+import PvToast from 'primevue/toast';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import _lowerCase from 'lodash/lowerCase';

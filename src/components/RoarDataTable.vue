@@ -565,8 +565,21 @@
 <script setup>
 import { ref, computed } from 'vue';
 import { useToast } from 'primevue/usetoast';
+import PvButton from 'primevue/button';
+import PvCalendar from 'primevue/calendar';
+import PvChip from 'primevue/chip';
+import PvColumn from 'primevue/column';
+import PvColumnGroup from 'primevue/columngroup';
+import PvDataTable from 'primevue/datatable';
+import PvDropdown from 'primevue/dropdown';
+import PvInputNumber from 'primevue/inputnumber';
+import PvInputText from 'primevue/inputtext';
+import PvMultiSelect from 'primevue/multiselect';
+import PvOverlayPanel from 'primevue/overlaypanel';
+import PvTag from 'primevue/tag';
+import PvTriStateCheckbox from 'primevue/tristatecheckbox';
+import PvRow from 'primevue/row';
 import { FilterMatchMode, FilterOperator } from 'primevue/api';
-import SkeletonTable from '@/components/SkeletonTable.vue';
 import _get from 'lodash/get';
 import _map from 'lodash/map';
 import _forEach from 'lodash/forEach';
@@ -574,6 +587,7 @@ import _find from 'lodash/find';
 import _toUpper from 'lodash/toUpper';
 import _startCase from 'lodash/startCase';
 import { supportLevelColors, progressTags } from '@/helpers/reports';
+import SkeletonTable from '@/components/SkeletonTable.vue';
 import TableScoreTag from '@/components/reports/TableScoreTag.vue';
 
 /*

@@ -266,6 +266,15 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import _isEmpty from 'lodash/isEmpty';
+import PvButton from 'primevue/button';
+import PvColumn from 'primevue/column';
+import PvDataTable from 'primevue/datatable';
+import PvDialog from 'primevue/dialog';
+import PvDivider from 'primevue/divider';
+import PvDropdown from 'primevue/dropdown';
+import PvInputSwitch from 'primevue/inputswitch';
+import PvInputText from 'primevue/inputtext';
+import PvTag from 'primevue/tag';
 
 const visible = ref(false);
 const props = defineProps({
