@@ -76,8 +76,8 @@
 </template>
 <script setup>
 import { ref, computed } from 'vue';
-import PvAccordion from 'primevue/PvAccordion';
-import PvAccordionTab from 'primevue/PvAccordionTab';
+import PvAccordion from 'primevue/accordion';
+import PvAccordionTab from 'primevue/accordiontab';
 import PvSelectButton from 'primevue/selectbutton';
 import { tasksToDisplayGraphs, taskInfoById } from '@/helpers/reports.js';
 import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery.js';
