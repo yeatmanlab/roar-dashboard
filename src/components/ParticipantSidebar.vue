@@ -19,6 +19,7 @@
 </template>
 <script setup>
 import { ref, computed } from 'vue';
+import PvChart from 'primevue/chart';
 
 const props = defineProps({
   totalGames: { type: Number, required: true, default: 0 },

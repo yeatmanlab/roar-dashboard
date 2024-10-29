@@ -146,8 +146,14 @@ import _toLower from 'lodash/toLower';
 import _isEmpty from 'lodash/isEmpty';
 import _union from 'lodash/union';
 import { VueDraggableNext } from 'vue-draggable-next';
-import VariantCard from './VariantCard.vue';
 import { useToast } from 'primevue/usetoast';
+import PvButton from 'primevue/button';
+import PvDropdown from 'primevue/dropdown';
+import PvInputSwitch from 'primevue/inputswitch';
+import PvInputText from 'primevue/inputtext';
+import PvPanel from 'primevue/panel';
+import PvScrollPanel from 'primevue/scrollpanel';
+import VariantCard from './VariantCard.vue';
 
 const toast = useToast();
 

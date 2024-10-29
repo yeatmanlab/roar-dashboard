@@ -17,6 +17,7 @@
 </template>
 
 <script setup>
+import PvButton from 'primevue/button';
 import RegisterUser from '@/components/auth/RegisterUser.vue';
 import { useAuthStore } from '@/store/auth';
 import { isMobileBrowser } from '@/helpers';

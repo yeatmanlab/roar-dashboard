@@ -56,13 +56,16 @@
 </template>
 
 <script setup>
-import Register from '../components/auth/RegisterParent.vue';
-import RegisterStudent from '../components/auth/RegisterStudent.vue';
-import ROARLogoShort from '@/assets/RoarLogo-Short.vue';
 import { ref, onMounted, onBeforeUnmount, watch, toRaw, computed } from 'vue';
+import PvButton from 'primevue/button';
+import PvCheckbox from 'primevue/checkbox';
+import PvDialog from 'primevue/dialog';
 import { useAuthStore } from '@/store/auth';
 import router from '../router';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
+import Register from '../components/auth/RegisterParent.vue';
+import RegisterStudent from '../components/auth/RegisterStudent.vue';
+import ROARLogoShort from '@/assets/RoarLogo-Short.vue';
 
 const authStore = useAuthStore();
 const initialized = ref(false);

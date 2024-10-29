@@ -565,8 +565,21 @@
 <script setup>
 import { ref, computed } from 'vue';
 import { useToast } from 'primevue/usetoast';
+import PvButton from 'primevue/button';
+import PvCalendar from 'primevue/calendar';
+import PvChip from 'primevue/chip';
+import PvColumn from 'primevue/column';
+import PvColumnGroup from 'primevue/columngroup';
+import PvDataTable from 'primevue/datatable';
+import PvDropdown from 'primevue/dropdown';
+import PvInputNumber from 'primevue/inputnumber';
+import PvInputText from 'primevue/inputtext';
+import PvMultiSelect from 'primevue/multiselect';
+import PvOverlayPanel from 'primevue/overlaypanel';
+import PvTag from 'primevue/tag';
+import PvTriStateCheckbox from 'primevue/tristatecheckbox';
+import PvRow from 'primevue/row';
 import { FilterMatchMode, FilterOperator } from 'primevue/api';
-import SkeletonTable from '@/components/SkeletonTable.vue';
 import _get from 'lodash/get';
 import _map from 'lodash/map';
 import _forEach from 'lodash/forEach';
@@ -574,6 +587,7 @@ import _find from 'lodash/find';
 import _toUpper from 'lodash/toUpper';
 import _startCase from 'lodash/startCase';
 import { supportLevelColors, progressTags } from '@/helpers/reports';
+import SkeletonTable from '@/components/SkeletonTable.vue';
 import TableScoreTag from '@/components/reports/TableScoreTag.vue';
 
 /*
@@ -960,23 +974,6 @@ const emit = defineEmits(['export-all', 'selection', 'reset-filters', 'export-se
   margin-left: 5px;
   margin-top: 3px;
   margin-bottom: 3px;
-}
-
-.p-checkbox .p-checkbox-box {
-  border: 2px solid var(--surface-300);
-  background: var(--surface-a);
-  width: 16px;
-  height: 16px;
-  color: var(--text-color);
-  border-radius: var(--border-radius);
-  transition: none;
-}
-
-.p-checkbox-box.p-component.p-highlight {
-  background-color: var(--primary-color);
-  color: white;
-  border: none;
-  padding: 0.25rem;
 }
 
 .circle {

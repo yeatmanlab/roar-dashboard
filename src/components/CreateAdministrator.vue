@@ -89,7 +89,10 @@ import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useToast } from 'primevue/usetoast';
-
+import PvButton from 'primevue/button';
+import PvCheckbox from 'primevue/checkbox';
+import PvDivider from 'primevue/divider';
+import PvInputText from 'primevue/inputtext';
 import _cloneDeep from 'lodash/cloneDeep';
 import _union from 'lodash/union';
 import { useAuthStore } from '@/store/auth';

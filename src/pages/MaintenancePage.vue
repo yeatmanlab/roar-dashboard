@@ -17,10 +17,13 @@
 </template>
 <script setup>
 import { onMounted, onBeforeUnmount } from 'vue';
+import PvImage from 'primevue/image';
 import ROARLogoShort from '@/assets/RoarLogo-Short.vue';
+
 onMounted(() => {
   document.body.classList.add('page-signin');
 });
+
 onBeforeUnmount(() => {
   document.body.classList.remove('page-signin');
 });

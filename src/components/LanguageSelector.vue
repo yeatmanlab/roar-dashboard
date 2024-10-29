@@ -20,6 +20,7 @@
 
 <script setup>
 import { computed } from 'vue';
+import PvDropdown from 'primevue/dropdown';
 import { languageOptions } from '@/translations/i18n.js';
 
 // Convert the object to an array of [key, value] pairs
