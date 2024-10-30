@@ -195,6 +195,7 @@ async function saveResults(sender) {
 
 <template>
   <div v-if="survey && !isSavingResponses && !audioLoading">
+    <!-- eslint-disable-next-line vue/no-undef-components -->
     <SurveyComponent :model="survey" />
 
     <div v-for="page in fetchedSurvey.pages" :key="page.name">
