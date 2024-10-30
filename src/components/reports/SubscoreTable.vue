@@ -18,6 +18,7 @@ import _toUpper from 'lodash/toUpper';
 import { exportCsv } from '@/helpers/query/utils';
 import { useAuthStore } from '@/store/auth';
 import { storeToRefs } from 'pinia';
+import RoarDataTable from '@/components/RoarDataTable.vue';
 
 const props = defineProps({
   administrationId: { type: String, required: true, default: '' },

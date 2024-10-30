@@ -145,6 +145,10 @@ import _startCase from 'lodash/startCase';
 import _toUpper from 'lodash/toUpper';
 import _get from 'lodash/get';
 import { getGrade } from '@bdelab/roar-utils';
+import PvAccordion from 'primevue/accordion';
+import PvAccordionTab from 'primevue/accordiontab';
+import PvKnob from 'primevue/knob';
+import PvTag from 'primevue/tag';
 import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery';
 import {
   rawOnlyTasks,

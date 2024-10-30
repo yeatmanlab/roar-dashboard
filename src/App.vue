@@ -1,7 +1,7 @@
 <template>
   <Head>
     <title>{{ isLevante ? '' : 'ROAR:' }} {{ pageTitle }}</title>
-    <meta name="description" content="A web-based tool to query ROAR assessment data!" />
+    <meta name="description" content="The Rapid Online Assessment of Reading" />
 
     <!-- Social -->
     <meta property="og:title" content="ROAR Web Query" />
@@ -28,6 +28,7 @@ import { computed, onBeforeMount, onMounted, ref, defineAsyncComponent } from 'v
 import { useRoute } from 'vue-router';
 import { useRecaptchaProvider } from 'vue-recaptcha';
 import { Head } from '@unhead/vue/components';
+import PvToast from 'primevue/toast';
 import NavBar from '@/components/NavBar.vue';
 
 const SessionTimer = defineAsyncComponent(() => import('@/containers/SessionTimer/SessionTimer.vue'));

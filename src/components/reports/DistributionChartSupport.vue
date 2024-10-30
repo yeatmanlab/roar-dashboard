@@ -16,6 +16,7 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue';
 import embed from 'vega-embed';
+import PvSelectButton from 'primevue/selectbutton';
 import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery';
 
 const { data: tasksDictionary, isLoading: isLoadingTasksDictionary } = useTasksDictionaryQuery();

@@ -161,13 +161,17 @@
 
 <script setup>
 import { computed, reactive, ref } from 'vue';
+import { ChallengeV3 } from 'vue-recaptcha';
 import { storeToRefs } from 'pinia';
 import { required, sameAs, minLength } from '@vuelidate/validators';
 import { useVuelidate } from '@vuelidate/core';
+import PvButton from 'primevue/button';
+import PvCheckbox from 'primevue/checkbox';
+import PvDialog from 'primevue/dialog';
+import PvInputText from 'primevue/inputtext';
+import PvPassword from 'primevue/password';
 import { useAuthStore } from '@/store/auth';
 import ConsentModal from '../ConsentModal.vue';
-import { ChallengeV3 } from 'vue-recaptcha';
-// import _debounce from 'lodash/debounce';
 
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);

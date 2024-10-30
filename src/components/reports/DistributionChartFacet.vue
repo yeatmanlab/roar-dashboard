@@ -18,6 +18,7 @@
 <script setup>
 import { onMounted, ref, watch, computed } from 'vue';
 import embed from 'vega-embed';
+import PvSelectButton from 'primevue/selectbutton';
 import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery';
 
 const props = defineProps({

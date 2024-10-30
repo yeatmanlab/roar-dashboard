@@ -135,12 +135,11 @@
             :loading="isLoadingAssignments || isFetchingAssignments"
             :groupheaders="true"
             data-cy="roar-data-table"
-            @reset-filters="resetFilters"
             @export-all="exportData({ selectedRows: $event })"
             @export-selected="exportData({ selectedRows: $event })"
           >
             <template #filterbar>
-              <FilterBar :schools="schoolsInfo" :grades="gradeOptions" :update-filters="updateFilters" />
+              <FilterBar :schools="schoolOptions" :grades="gradeOptions" :update-filters="updateFilters" />
             </template>
             <span>
               <label for="view-columns" class="view-label">View</label>
@@ -264,7 +263,6 @@
 
 <script setup>
 import { computed, ref, onMounted, watch } from 'vue';
-import FilterBar from '@/components/slots/FilterBar.vue';
 import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router';
 import { jsPDF } from 'jspdf';
@@ -276,6 +274,13 @@ import _map from 'lodash/map';
 import _kebabCase from 'lodash/kebabCase';
 import _pickBy from 'lodash/pickBy';
 import _lowerCase from 'lodash/lowerCase';
+import { getGrade } from '@bdelab/roar-utils';
+import PvButton from 'primevue/button';
+import PvConfirmDialog from 'primevue/confirmdialog';
+import PvDropdown from 'primevue/dropdown';
+import PvSelectButton from 'primevue/selectbutton';
+import PvTabPanel from 'primevue/tabpanel';
+import PvTabView from 'primevue/tabview';
 import { useAuthStore } from '@/store/auth';
 import { getDynamicRouterPath } from '@/helpers/getDynamicRouterPath';
 import useUserType from '@/composables/useUserType';
@@ -285,10 +290,9 @@ import useOrgQuery from '@/composables/queries/useOrgQuery';
 import useDistrictSchoolsQuery from '@/composables/queries/useDistrictSchoolsQuery';
 import useAdministrationAssignmentsQuery from '@/composables/queries/useAdministrationAssignmentsQuery';
 import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery';
-import { getGrade } from '@bdelab/roar-utils';
+import { useFilteredTableData } from '@/composables/useFilteredTableData.js';
 import { exportCsv } from '@/helpers/query/utils';
-import { getTitle } from '../helpers/query/administrations';
-import { useFilteredTableData } from '../composables/useFilteredTableData.js';
+import { getTitle } from '@/helpers/query/administrations';
 import {
   taskDisplayNames,
   taskInfoById,
@@ -305,6 +309,8 @@ import {
   tasksToDisplayCorrectIncorrectDifference,
   includedValidityFlags,
 } from '@/helpers/reports';
+import FilterBar from '@/components/slots/FilterBar.vue';
+import RoarDataTable from '@/components/RoarDataTable.vue';
 import { APP_ROUTES } from '@/constants/routes';
 import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
 
@@ -477,6 +483,10 @@ const schoolNameDictionary = computed(() => {
   );
 });
 
+const schoolOptions = computed(() => {
+  return Object.values(schoolNameDictionary.value).map((name) => ({ name: name, label: name }));
+});
+
 // Return a faded color if assessment is not reliable
 function returnColorByReliability(assessment, rawScore, support_level, tag_color) {
   if (assessment.reliable !== undefined && !assessment.reliable && assessment.engagementFlags !== undefined) {
@@ -597,9 +607,12 @@ const computeAssignmentAndRunData = computed(() => {
     for (const { assignment, user } of assignmentData.value) {
       // for each row, compute: username, firstName, lastName, assessmentPID, grade, school, all the scores, and routeParams for report link
       const grade = user.studentData?.grade;
-      // compute schoolName
+
+      // compute schoolName. Use the schoolId from the assignment's assigningOrgs, as this should be correct even when the
+      //   user is unenrolled. The assigningOrgs should be up to date and persistant. Fallback to the student's current schools.
       let schoolName = '';
-      const schoolId = user?.schools?.current[0];
+      const assigningSchool = assignment?.assigningOrgs?.schools;
+      const schoolId = assigningSchool[0] ?? user?.schools?.current[0];
       if (schoolId) {
         schoolName = schoolNameDictionary.value[schoolId];
       }
@@ -783,7 +796,7 @@ const computeAssignmentAndRunData = computed(() => {
           taskId,
           user: {
             grade: grade,
-            schoolName: schoolsDictWithGrade.value[schoolId],
+            schoolName: schoolsDictWithGrade.value[schoolId] ?? '0 Unknown School',
           },
           tag_color: tag_color,
         };
@@ -838,17 +851,16 @@ const computeAssignmentAndRunData = computed(() => {
   }
 });
 
-// Composable to filter table data using FilterBar.vue component which is passed in as a slot to RoarDataTable
+// This composable manages the data which is passed into the FilterBar component slot for filtering
 const filteredTableData = ref([]);
 const { updateFilters } = useFilteredTableData(filteredTableData);
 
-// Watch for changes in assignmentTableData and update filteredTableData
-// This will snapshot the assignmentTableData and filter it based on the current filters
 watch(
-  () => computeAssignmentAndRunData.value.assignmentTableData,
-  (newTableData) => {
-    filteredTableData.value = newTableData;
+  computeAssignmentAndRunData,
+  (newValue) => {
+    filteredTableData.value = newValue.assignmentTableData;
   },
+  { immediate: true, deep: true },
 );
 
 const viewMode = ref('color');

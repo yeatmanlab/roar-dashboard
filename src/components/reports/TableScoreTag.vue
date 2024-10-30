@@ -26,6 +26,7 @@
 <script setup>
 import _get from 'lodash/get';
 import _lowerCase from 'lodash/lowerCase';
+import PvTag from 'primevue/tag';
 import {
   tasksToDisplayPercentCorrect,
   tasksToDisplayCorrectIncorrectDifference,

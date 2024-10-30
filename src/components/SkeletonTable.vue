@@ -13,6 +13,9 @@
 
 <script setup>
 import { ref } from 'vue';
+import PvColumn from 'primevue/column';
+import PvDataTable from 'primevue/datatable';
+import PvSkeleton from 'primevue/skeleton';
 
 const skeletonData = ref([
   { col0: '', col1: '', col2: '', col3: '' },

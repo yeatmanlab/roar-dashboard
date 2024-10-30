@@ -17,6 +17,7 @@ dev-dist
 *.local
 
 # Editor directories and files
+.editorconfig
 .idea
 /idea
 .vscode/*

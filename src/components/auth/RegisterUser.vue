@@ -177,6 +177,13 @@
 import { computed, reactive, ref } from 'vue';
 import { required, sameAs } from '@vuelidate/validators';
 import { useVuelidate } from '@vuelidate/core';
+import PvButton from 'primevue/button';
+import PvCalendar from 'primevue/calendar';
+import PvCheckbox from 'primevue/checkbox';
+import PvDivider from 'primevue/divider';
+import PvDropdown from 'primevue/dropdown';
+import PvInputText from 'primevue/inputtext';
+import PvPassword from 'primevue/password';
 
 // TODO: Include middle
 const state = reactive({
