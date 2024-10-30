@@ -162,6 +162,7 @@ import _without from 'lodash/without';
 import _zip from 'lodash/zip';
 import PvButton from 'primevue/button';
 import PvColumn from 'primevue/column';
+import PvChart from 'primevue/chart';
 import PvConfirmPopup from 'primevue/confirmpopup';
 import PvDataTable from 'primevue/datatable';
 import PvOverlayPanel from 'primevue/overlaypanel';
