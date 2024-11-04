@@ -1,4 +1,4 @@
-const timeout = Cypress.env('timeout');
+import { APP_ROUTES } from '../../../../src/constants/routes';
 const orgs = [
   { tabName: 'Districts', orgName: Cypress.env('testPartnerDistrictName') },
   { tabName: 'Schools', orgName: Cypress.env('testPartnerSchoolName') },
@@ -6,33 +6,17 @@ const orgs = [
   { tabName: 'Groups', orgName: Cypress.env('testPartnerGroupName') },
 ];
 
-const listOrgsUrl = '/list-orgs';
-
-function checkOrgExists(org) {
-  cy.get('ul > li', { timeout: timeout }).contains(org.tabName, { timeout: timeout }).click();
-  cy.log('Tab ' + org.tabName + ' found.');
-
-  cy.get('div', { timeout: timeout }).should('contain.text', org.orgName, {
-    timeout: timeout,
-  });
-  cy.log(`${org.orgName} exists.`);
-}
-
 describe('The partner admin user', () => {
   beforeEach(() => {
     cy.login(Cypress.env('partnerAdminUsername'), Cypress.env('partnerAdminPassword'));
-    cy.wait(0.2 * timeout);
-    cy.navigateTo('/');
-    cy.wait(0.2 * timeout);
-    cy.navigateTo(listOrgsUrl, { timeout: timeout });
-    // cy.get('button').contains('Organizations').click();
-    // cy.get('button').contains('List Organizations').click();
+    cy.navigateTo(APP_ROUTES.HOME);
+    cy.navigateTo(APP_ROUTES.LIST_ORGS);
   });
 
   orgs.forEach((org) => {
     context(`when navigating to the ${org.tabName} tab`, () => {
       it(`should see the organization ${org.orgName}`, () => {
-        checkOrgExists(org);
+        cy.checkOrgExists(org);
       });
     });
   });
