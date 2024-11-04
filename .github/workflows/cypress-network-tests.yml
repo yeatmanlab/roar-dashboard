@@ -1,54 +1,54 @@
-name: Cypress Pre-Release Tests
-on:
-  workflow_run:
-    workflows: ['Deploy to Firebase Hosting (production)']
-    types:
-      - completed
+# name: Cypress Pre-Release Tests
+# on:
+#   workflow_run:
+#     workflows: ['Deploy to Firebase Hosting (production)']
+#     types:
+#       - completed
 
-concurrency:
-  group: ci-preview-tests-${{ github.ref }}-1
-  cancel-in-progress: true
+# concurrency:
+#   group: ci-preview-tests-${{ github.ref }}-1
+#   cancel-in-progress: true
 
-jobs:
-  cypress-run:
-    name: Run Cypress Network Tests
-    runs-on: ubuntu-latest
-    timeout-minutes: 90
-    strategy:
-      fail-fast: false
-      matrix:
-        browser: [chromium, edge]
-        containers: [1, 2]
-    env:
-      CYPRESS_BASE_URL: ${{ secrets.ROAR_PRODUCTION_URL }}
-      CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
-      COMMIT_INFO_MESSAGE: Network Tests for Release ${{ github.event.release.tag_name }} "${{ github.event.release.name }}:" "${{ github.event.release.body }}"
-      COMMIT_INFO_SHA: ${{ github.event.release.release_id }}
-      PARTNER_ADMIN_USERNAME: ${{ secrets.PARTNER_ADMIN_USERNAME }}
-      PARTNER_ADMIN_PASSWORD: ${{ secrets.PARTNER_ADMIN_PASSWORD }}
-      PARTNER_ADMIN_ID: ${{ secrets.PARTNER_ADMIN_ID }}
-      PARTICIPANT_USERNAME: ${{ secrets.PARTICIPANT_USERNAME }}
-      PARTICIPANT_PASSWORD: ${{ secrets.PARTICIPANT_PASSWORD }}
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Cache node modules
-        uses: actions/cache@v2
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
-      - name: Cypress run
-        uses: cypress-io/github-action@v6
-        with:
-          browser: ${{ matrix.browser }}
-          build: echo "Build step already completed"
-          start: echo "App already deployed to Firebase"
-          wait-on: ${{ env.CYPRESS_BASE_URL }}
-          wait-on-timeout: 120
-          record: true
-          parallel: true
-          spec: 'cypress/e2e/participant/network-tests/**/*'
-          ci-build-id: ${{ github.run_id }}-${{ matrix.browser }}
+# jobs:
+#   cypress-run:
+#     name: Run Cypress Network Tests
+#     runs-on: ubuntu-latest
+#     timeout-minutes: 90
+#     strategy:
+#       fail-fast: false
+#       matrix:
+#         browser: [chromium, edge]
+#         containers: [1, 2]
+#     env:
+#       CYPRESS_BASE_URL: ${{ secrets.ROAR_PRODUCTION_URL }}
+#       CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
+#       COMMIT_INFO_MESSAGE: Network Tests for Release ${{ github.event.release.tag_name }} "${{ github.event.release.name }}:" "${{ github.event.release.body }}"
+#       COMMIT_INFO_SHA: ${{ github.event.release.release_id }}
+#       PARTNER_ADMIN_USERNAME: ${{ secrets.PARTNER_ADMIN_USERNAME }}
+#       PARTNER_ADMIN_PASSWORD: ${{ secrets.PARTNER_ADMIN_PASSWORD }}
+#       PARTNER_ADMIN_ID: ${{ secrets.PARTNER_ADMIN_ID }}
+#       PARTICIPANT_USERNAME: ${{ secrets.PARTICIPANT_USERNAME }}
+#       PARTICIPANT_PASSWORD: ${{ secrets.PARTICIPANT_PASSWORD }}
+#       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#     steps:
+#       - name: Checkout
+#         uses: actions/checkout@v4
+#       - name: Cache node modules
+#         uses: actions/cache@v2
+#         with:
+#           path: ~/.npm
+#           key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+#           restore-keys: |
+#             ${{ runner.os }}-node-
+#       - name: Cypress run
+#         uses: cypress-io/github-action@v6
+#         with:
+#           browser: ${{ matrix.browser }}
+#           build: echo "Build step already completed"
+#           start: echo "App already deployed to Firebase"
+#           wait-on: ${{ env.CYPRESS_BASE_URL }}
+#           wait-on-timeout: 120
+#           record: true
+#           parallel: true
+#           spec: 'cypress/e2e/participant/network-tests/**/*'
+#           ci-build-id: ${{ github.run_id }}-${{ matrix.browser }}
