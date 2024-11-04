@@ -55,6 +55,7 @@ jobs:
         id: firebase-deploy
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
+          firebaseToolsVersion: v13.3.1 # <- Locking version because the newest (13.13.0) does not add the deploy URL to auth whitelist
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
           firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_DEV_ADMIN }}'
           projectId: '${{ secrets.FIREBASE_PROJECT }}'
