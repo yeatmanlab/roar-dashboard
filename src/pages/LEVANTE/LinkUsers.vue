@@ -48,8 +48,8 @@
             :label="activeSubmit ? 'Linking Users' : 'Start Linking'"
             :icon="activeSubmit ? 'pi pi-spin pi-spinner' : ''"
             :disabled="activeSubmit"
-            @click="submitUsers"
             class="bg-primary mb-2 p-3 w-2 text-white border-none border-round h-3rem m-0 hover:bg-red-900"
+            @click="submitUsers"
           />
         </div>
       </div>
@@ -131,8 +131,7 @@ const onFileUpload = async (event) => {
 
 const validateUsers = () => {
   errorUsers.value = [];
-  const userMap = new Map(toRaw(rawUserFile.value).map(user => [user.id, user]));
-  console.log('userMap:', userMap);
+  const userMap = new Map(toRaw(rawUserFile.value).map(user => [user.id.toString(), user]));
 
   rawUserFile.value.forEach(user => {
     const errors = [];
@@ -151,25 +150,23 @@ const validateUsers = () => {
         errors.push('Child must have either parentId or teacherId');
       }
       if (user.parentId) {
-        console.log('user.parentId:', user.parentId);
         const parentIds = typeof user.parentId === 'string' ? user.parentId.split(',').map(id => id.trim()) : [user.parentId.toString()];
         parentIds.forEach(parentId => {
           console.log('parentId in loop:', parentId);
 
-          if (!userMap.has(parseInt(parentId))) {
+          if (!userMap.has(parentId)) {
             errors.push(`Parent with ID ${parentId} not found`);
-          } else if (userMap.get(parseInt(parentId)).userType !== 'parent') {
+          } else if (userMap.get(parentId).userType !== 'parent') {
             errors.push(`User with ID ${parentId} is not a parent`);
           }
         });
       }
       if (user.teacherId) {
-        console.log('user.teacherId:', user.teacherId);
         const teacherIds = typeof user.teacherId === 'string' ? user.teacherId.split(',').map(id => id.trim()) : [user.teacherId.toString()];
         teacherIds.forEach(teacherId => {
-          if (!userMap.has(parseInt(teacherId))) {
+          if (!userMap.has(teacherId)) {
             errors.push(`Teacher with ID ${teacherId} not found`);
-          } else if (userMap.get(parseInt(teacherId)).userType !== 'teacher') {
+          } else if (userMap.get(teacherId).userType !== 'teacher') {
             errors.push(`User with ID ${teacherId} is not a teacher`);
           }
         });
