@@ -174,7 +174,7 @@ const validateUsers = () => {
           }
         });
       }
-    } else if (user.userType === 'parent' || user.userType === 'teacher') {
+    } else if (user.userType.toLowerCase() === 'parent' || user.userType.toLowerCase() === 'teacher') {
       if (user.parentId || user.teacherId) {
         errors.push(`${user.userType} should not have parentId or teacherId`);
       }
