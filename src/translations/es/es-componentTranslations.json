@@ -50,8 +50,8 @@
   "gameTabs": {
     "clickToStart": "Haz clic para empezar",
     "taskCompleted": "¡Tarea completada!",
-    "instructionsName": "Instrucciones",
-    "instructionsDescription": "Aprende a jugar a nuestros juegos.",
+    "introName": "Introducción",
+    "introDescription": "Aprende a jugar a nuestros juegos.",
     "heartsAndFlowersDescription": "Haz coincidir el lado correcto con los corazones y las flores.",
     "heartsAndFlowersName": "Corazones y Flores",
     "egmaMathDescription": "Resuelve los problemas matemáticos.",
