@@ -188,6 +188,7 @@ const getSpecificSurveyProgress = computed(() => (loopIndex) => {
 const { t, locale } = useI18n();
 
 const levanteTasks = [
+  'intro',
   'heartsAndFlowers',
   'egmaMath',
   'matrixReasoning',

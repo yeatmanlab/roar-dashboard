@@ -50,7 +50,8 @@
   "gameTabs": {
     "clickToStart": "Haz clic para empezar",
     "taskCompleted": "¡Tarea completada!",
-    "LEVANTE TRANSLATIONS--------------------------": "",
+    "introName": "Introducción",
+    "introDescription": "Aprende a jugar a nuestros juegos.",
     "heartsAndFlowersDescription": "Haz coincidir el lado correcto con los corazones y las flores.",
     "heartsAndFlowersName": "Corazones y Flores",
     "egmaMathDescription": "Resuelve los problemas matemáticos.",
@@ -64,7 +65,7 @@
     "sameDifferentSelectionDescription": "Encuentra cosas iguales en las formas.",
     "sameDifferentSelectionName": "Iguales y Diferentes",
     "theoryOfMindDescription": "Escucha las historias y responde a las preguntas.",
-    "theoryOfMindName": "Teoría de la Mente",
+    "theoryOfMindName": "Historias",
     "trogDescription": "Escucha las palabras y elige la imagen correspondiente.",
     "trogName": "Comprensión de Frases",
     "surveyNameChild": "Pensamientos y Sentimientos",
@@ -84,7 +85,7 @@
     "surveyProgressSpecificParentYear": "Año",
     "surveyProgressGeneralTeacher": "Profesor",
     "surveyProgressSpecificTeacher": "Aula",
-    "mefsName": "León y Mono",
+    "mefsName": "El León y El Mono",
     "mefsDescription": "Empareja las formas y los colores.",
     "vocabName": "Vocabulario",
     "vocabDescription": "Escucha la palabra y elige la imagen correspondiente."
