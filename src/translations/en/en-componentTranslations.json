@@ -49,7 +49,9 @@
     "clickToStart": "Click to start",
     "taskCompleted": "Task Completed!",
     "LEVANTE TRANSLATIONS--------------------------": "",
-    "heartsAndFlowersDescription": "Choose the correct side for the hearts and flowers.",
+    "instructionsName": "Instructions",
+    "instructionsDescription": "Learn how to play our games. ",
+    "heartsAndFlowersDescription": "Match the correct side to the hearts and flowers.",
     "heartsAndFlowersName": "Hearts and Flowers",
     "egmaMathDescription": "Solve the math problems.",
     "egmaMathName": "Math",
@@ -76,7 +78,7 @@
     "surveyNameTeacherPart2": "Survey - Classroom",
     "surveyDescriptionTeacherPart2": "This survey will take approximately 5-10 minutes to complete and asks questions about the classroom(s) you teach.",
     "surveyProgressGeneral": "General",
-    "surveyProgressGeneralParent": "Family",
+    "surveyProgressGeneralParent": "Home/Caregiver",
     "surveyProgressSpecificParent": "Child",
     "surveyProgressSpecificParentMonth": "Month",
     "surveyProgressSpecificParentYear": "Year",
@@ -85,7 +87,7 @@
     "mefsName": "Lion and Monkey",
     "mefsDescription": "Match the shapes and colors.",
     "vocabName": "Vocabulary",
-    "vocabDescription": "Listen to the word and choose the matching image."
+    "vocabDescription": "Listen to the word and choose the matching picture."
   },
   "navBar": {
     "signOut": "Sign Out"
