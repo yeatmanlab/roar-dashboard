@@ -70,6 +70,7 @@
     "vocabDescription": "Listen to the word and choose the matching image."
   },
   "navBar": {
+    "greeting": "Hi",
     "signOut": "Sign Out"
   },
   "notFound": {
