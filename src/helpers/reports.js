@@ -161,6 +161,14 @@ export const taskDisplayNames = {
     extendedName: 'Syntax',
     order: 17,
   },
+  roarInference: {
+    name: 'Inference',
+    publicName: 'ROAR - Inference',
+    studentFacingName: 'Inference',
+    extendedTitle: 'ROAR - Inference',
+    extendedName: 'Inference',
+    order: 27,
+  },
   phonics: {
     name: 'Phonics',
     publicName: 'ROAR - Phonics',
