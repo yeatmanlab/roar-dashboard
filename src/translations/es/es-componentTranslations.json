@@ -68,7 +68,9 @@
     "mefsName": "Juego del León y el Mono",
     "mefsDescription": "Empareja las formas y los colores.",
     "vocabName": "Juego de Vocabulario",
-    "vocabDescription": "Escucha la palabra y elige la imagen correspondiente."
+    "vocabDescription": "Escucha la palabra y elige la imagen correspondiente.",
+    "roarInferenceName": "Roar - Inferencia",
+    "roarInferenceDescription": "Lee las historias y responde a las preguntas."
   },
   "navBar": {
     "greeting": "¡Hola",

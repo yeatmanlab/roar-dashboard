@@ -117,6 +117,7 @@ const levanteTasks = [
   'trog',
   'survey',
   'mefs',
+  'roarInference',
 ];
 
 const levantifiedRoarTasks = [
