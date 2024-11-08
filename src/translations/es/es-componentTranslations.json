@@ -71,6 +71,7 @@
     "vocabDescription": "Escucha la palabra y elige la imagen correspondiente."
   },
   "navBar": {
+    "greeting": "¡Hola",
     "signOut": "Salir"
   },
   "notFound": {

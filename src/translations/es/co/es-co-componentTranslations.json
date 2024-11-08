@@ -48,6 +48,7 @@
     "taskCompleted": "¡Tarea completa!"
   },
   "navBar": {
+    "greeting": "¡Hola",
     "signOut": "Salir"
   },
   "notFound": {
