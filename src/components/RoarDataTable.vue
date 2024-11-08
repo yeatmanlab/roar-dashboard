@@ -839,11 +839,13 @@ const supplementaryTasks = [
   'scores.cva.percentCorrect',
   'scores.vocab.percentCorrect',
   'scores.trog.percentCorrect',
+  'scores.roar-inference.percentCorrect',
   'scores.phonics.percentCorrect',
   'scores.morphology.percentile',
   'scores.cva.percentile',
   'scores.vocab.percentile',
   'scores.trog.percentile',
+  'scores.roar-inference.percentile',
   'scores.phonics.percentile',
 ];
 

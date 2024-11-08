@@ -1,6 +1,6 @@
 <template>
   <div id="games" class="game-tab-container">
-    <PvTabView v-model:activeIndex="displayGameIndex" :scrollable="true" class="flex flex-column">
+    <PvTabView v-model:active-index="displayGameIndex" :scrollable="true" class="flex flex-column">
       <PvTabPanel
         v-for="(game, index) in games"
         :key="game.taskId"
@@ -117,6 +117,7 @@ const levanteTasks = [
   'trog',
   'survey',
   'mefs',
+  'roarInference',
 ];
 
 const levantifiedRoarTasks = [
