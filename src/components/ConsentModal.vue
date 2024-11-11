@@ -53,20 +53,23 @@ onMounted(() => {
   dialogVisible.value = true;
 
   const acceptIcon = computed(() => (isSubmitting.value ? 'pi pi-spin pi-spinner mr-2' : 'pi pi-check mr-2'));
-  const header;
-  if(props.consentType.includes('consent')) {
-    header = `Consent`;
+  let header;
+  if (props.consentType.includes('consent')) {
+    if (props.consentType.includes('-es')) {
+      header = `Consentimiento`;
+    } else {
+      header = `Consent`;
+    }
   } else {
-    header = `Assent`;
-  }
-  if(props.consentType.includes("-es") && props.consentType.includes("consent")) {
-    header = `Consentimiento`;
-  } else {
-    header = `Asentimiento`;
+    if (props.consentType.includes('-es')) {
+      header = `Asentimiento`;
+    } else {
+      header = `Assent`;
+    }
   }
 
   confirm.require({
-  group: 'consent',
+    group: 'consent',
     header: header,
     icon: 'pi pi-question-circle',
     acceptLabel: i18n.t('consentModal.acceptButton'),
