@@ -12,7 +12,7 @@ describe('Test to maintain that assent form shows in when signing in with an un-
     // how can we write some logic to reset the already played
     cy.login(test_login, test_pw);
     cy.visit('/');
-    cy.get('.p-dialog-title', { timeout: timeout }).contains('Consent').should('be.visible');
+    cy.get('.p-dialog-title', { timeout: timeout }).contains(i18n.t('consentModalo.consentTitle')).should('be.visible');
     cy.get('.p-confirm-dialog-accept').contains('Continue').should('be.visible');
   });
 });
