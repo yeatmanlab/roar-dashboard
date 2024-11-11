@@ -223,6 +223,7 @@ const orgHeaders = computed(() => {
     schools: { header: 'Schools', id: 'schools' },
     classes: { header: 'Classes', id: 'classes' },
     groups: { header: 'Groups', id: 'groups' },
+    families: { header: 'Families', id: 'families' },
   };
 
   if (isSuperAdmin.value) return headers;
@@ -242,6 +243,9 @@ const orgHeaders = computed(() => {
   }
   if ((adminOrgs.value?.groups ?? []).length > 0) {
     result.groups = { header: 'Groups', id: 'groups' };
+  }
+  if ((adminOrgs.value?.families ?? []).length > 0) {
+    result.families = { header: 'Families', id: 'families' };
   }
   return result;
 });
