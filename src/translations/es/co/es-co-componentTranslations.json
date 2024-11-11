@@ -27,7 +27,8 @@
     "classLinkLoading": "Cargando tus datos desde ClassLink..."
   },
   "consentModal": {
-    "title": "Consentimiento",
+    "consentTitle": "Consentimiento",
+    "assentTitle": "Asentimiento",
     "acceptButton": "Continuar",
     "toastHeader": "Confirmado"
   },
