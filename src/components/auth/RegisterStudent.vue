@@ -1,7 +1,7 @@
 <template>
-  <div class="card bg-gray-100">
+  <div class="card bg-gray-100 p-2 rounded shadow-lg">
     <form class="p-fluid">
-      <div class="font-bold text-lg text-gray-500 py-2">Student/Child Registration</div>
+      <div class="font-bold text-lg text-gray-500 py-4">Student/Child Registration</div>
       <div
         v-for="(student, outerIndex) in state.students"
         :key="outerIndex"
