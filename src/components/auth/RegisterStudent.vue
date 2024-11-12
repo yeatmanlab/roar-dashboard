@@ -1,9 +1,15 @@
 <template>
-  <div class="card">
+  <div class="card bg-gray-100">
     <form class="p-fluid">
-      <div v-for="(student, outerIndex) in state.students" :key="outerIndex" class="student-form-border">
+      <div class="font-bold text-lg text-gray-500 py-2">Student/Child Registration</div>
+      <div
+        v-for="(student, outerIndex) in state.students"
+        :key="outerIndex"
+        class="bg-gray-200 p-3 border-1 border-dashed border-red-800 rounded"
+      >
         <section v-if="!student.orgName" class="form-section">
           <div class="p-input-icon-right">
+            <div>Student {{ outerIndex + 1 }}</div>
             <div class="flex justify-content-between">
               <label for="activationCode">Activation code <span class="required">*</span></label>
               <div class="flex align-items-center">
@@ -738,9 +744,9 @@ const validateRoarUsername = async () => {
   margin-bottom: 0.75rem;
 }
 .student-form-border {
-  border: 2px solid #ccc; /* Add a border around each student form */
-  padding: 20px; /* Add padding for better spacing */
-  margin: 5px; /* Add margin for better spacing */
+  /* border: 2px solid #ccc; Add a border around each student form */
+  /* padding: 20px; Add padding for better spacing */
+  /* margin: 5px; Add margin for better spacing */
 }
 .form-section-button {
   display: flex;

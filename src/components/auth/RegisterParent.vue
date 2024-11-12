@@ -1,6 +1,7 @@
 <template>
-  <div class="card">
+  <div class="card bg-gray-100 p-3 rounded shadow-md">
     <form class="p-fluid" @submit.prevent="handleFormSubmit(!v$.$invalid)">
+      <div class="font-bold text-lg text-gray-500">Parent/Guardian Registration</div>
       <section class="form-section flex lg:flex-row">
         <div>
           <label for="firstName">First Name <span class="required p-1">*</span></label>

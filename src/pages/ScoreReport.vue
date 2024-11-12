@@ -571,6 +571,7 @@ const getScoresAndSupportFromAssessment = ({
 };
 
 const computedProgressData = computed(() => {
+  console.log('assignmentdata', assignmentData);
   if (!assignmentData.value) return [];
   return assignmentData.value.map(({ assignment }) => {
     const progress = assignment.assessments.reduce((acc, assessment) => {

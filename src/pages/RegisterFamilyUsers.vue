@@ -1,24 +1,28 @@
 <template>
   <div id="register-container">
     <section id="register">
-      <header>
-        <div class="signin-logo">
-          <ROARLogoShort />
+      <header class="p-1 mx-2">
+        <div class="flex flex-row flex-wrap justify-content-around">
+          <div class="signin-logo">
+            <ROARLogoShort />
+          </div>
+          <div class="flex flex-column align-items-start register-title">
+            <h1 align="center">ROAR at Home</h1>
+            <p align="center">Enter your information to register an account.</p>
+          </div>
         </div>
+        <!-- <div v-else class="register-title"> <h1 align="center">Register your child</h1>
+          <p align="center">Enter your child's information to create their ROAR account.</p>
+        </div> -->
       </header>
       <div>
-        <div v-if="activeIndex === 0" class="register-title">
-          <h1 align="center">Register for ROAR</h1>
-          <p align="center">Enter your information to create an account.</p>
-        </div>
-        <div v-else class="register-title">
-          <h1 align="center">Register your child</h1>
-          <p align="center">Enter your child's information to create their ROAR account.</p>
-        </div>
         <div v-if="spinner === false">
-          <KeepAlive>
+          <RegisterParent />
+          <div class="my-4" />
+          <RegisterStudent />
+          <!-- <KeepAlive>
             <component :is="activeComp()" :code="code" @submit="handleSubmit($event)" />
-          </KeepAlive>
+          </KeepAlive> -->
           <div
             v-if="isSuperAdmin"
             class="flex flex-row justify-content-center align-content-center z-2 absolute ml-5"
@@ -63,7 +67,7 @@ import PvDialog from 'primevue/dialog';
 import { useAuthStore } from '@/store/auth';
 import router from '../router';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
-import Register from '../components/auth/RegisterParent.vue';
+import RegisterParent from '../components/auth/RegisterParent.vue';
 import RegisterStudent from '../components/auth/RegisterStudent.vue';
 import ROARLogoShort from '@/assets/RoarLogo-Short.vue';
 
