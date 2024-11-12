@@ -26,7 +26,8 @@
     "classLinkLoading": "Loading your data from ClassLink..."
   },
   "consentModal": {
-    "title": "Consent",
+    "consentTitle": "Consent",
+    "assentTitle": "Assent",
     "acceptButton": "Continue",
     "toastHeader": "Confirmed"
   },
