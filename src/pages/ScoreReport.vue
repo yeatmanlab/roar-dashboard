@@ -734,7 +734,7 @@ const computeAssignmentAndRunData = computed(() => {
           currRowScores[taskId].percentCorrect = percentCorrect;
           currRowScores[taskId].numAttempted = numAttempted;
           currRowScores[taskId].numCorrect = numCorrect;
-          currRowScores[taskId].tagColor = percentCorrect === null ? '#EEEEF0' : tagColor;
+          currRowScores[taskId].tagColor = percentCorrect === null ? 'transparent' : tagColor;
           scoreFilterTags += ' Assessed ';
         } else if (tasksToDisplayTotalCorrect.includes(taskId)) {
           const numAttempted = assessment.scores?.raw?.composite?.test?.numAttempted;
@@ -1077,7 +1077,7 @@ const getTaskStyle = (taskId, backgroundColor, tasks) => {
   const taskGroups = {
     spanish: ['letter-es', 'pa-es', 'swr-es', 'sre-es'],
     spanishmath: ['fluency-arf-es', 'fluency-calf-es'],
-    supplementary: ['morphology', 'cva', 'vocab', 'trog', 'phonics'],
+    supplementary: ['morphology', 'cva', 'vocab', 'trog', 'phonics', 'roar-inference'],
     roam: ['fluency-arf', 'fluency-calf', 'roam-alpaca', 'egma-math'],
     roav: ['ran', 'crowding', 'roav-mep', 'mep', 'mep-pseudo'],
   };
@@ -1206,7 +1206,7 @@ const scoreReportColumns = computed(() => {
   const priorityTasks = ['swr', 'sre', 'pa', 'letter'];
   const spanishTasks = ['letter-es', 'pa-es', 'swr-es', 'sre-es'];
   const spanishMathTasks = ['fluency-arf-es', 'fluency-calf-es'];
-  const supplementaryTasks = ['morphology', 'cva', 'vocab', 'trog', 'phonics'];
+  const supplementaryTasks = ['morphology', 'cva', 'vocab', 'trog', 'phonics', 'roar-inference'];
   const roamTasks = ['fluency-arf', 'fluency-calf', 'roam-alpaca', 'egma-math'];
   const roavTasks = ['ran', 'crowding', 'roav-mep', 'mep', 'mep-pseudo'];
   const orderedTasks = [];

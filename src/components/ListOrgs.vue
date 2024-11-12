@@ -11,7 +11,7 @@
         </div>
         <div class="text-md text-gray-500 ml-6">View organizations asssigned to your account.</div>
       </div>
-      <PvTabView v-if="claimsLoaded" v-model:activeIndex="activeIndex" lazy class="mb-7">
+      <PvTabView v-if="claimsLoaded" v-model:active-index="activeIndex" lazy class="mb-7">
         <PvTabPanel v-for="orgType in orgHeaders" :key="orgType" :header="orgType.header">
           <div class="grid column-gap-3 mt-2">
             <div
@@ -223,6 +223,7 @@ const orgHeaders = computed(() => {
     schools: { header: 'Schools', id: 'schools' },
     classes: { header: 'Classes', id: 'classes' },
     groups: { header: 'Groups', id: 'groups' },
+    families: { header: 'Families', id: 'families' },
   };
 
   if (isSuperAdmin.value) return headers;
@@ -242,6 +243,9 @@ const orgHeaders = computed(() => {
   }
   if ((adminOrgs.value?.groups ?? []).length > 0) {
     result.groups = { header: 'Groups', id: 'groups' };
+  }
+  if ((adminOrgs.value?.families ?? []).length > 0) {
+    result.families = { header: 'Families', id: 'families' };
   }
   return result;
 });

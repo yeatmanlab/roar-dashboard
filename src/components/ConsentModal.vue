@@ -53,12 +53,13 @@ onMounted(() => {
   dialogVisible.value = true;
 
   const acceptIcon = computed(() => (isSubmitting.value ? 'pi pi-spin pi-spinner mr-2' : 'pi pi-check mr-2'));
+  const header = props.consentType.includes('consent')
+    ? i18n.t('consentModal.consentTitle')
+    : i18n.t('consentModal.assentTitle');
 
   confirm.require({
     group: 'consent',
-    header: props.consentType.includes('-es')
-      ? `FORMULARIO DE ${_lowerCase(props.consentType).toUpperCase()}`
-      : `${_lowerCase(props.consentType).toUpperCase()} FORM`,
+    header: header,
     icon: 'pi pi-question-circle',
     acceptLabel: i18n.t('consentModal.acceptButton'),
     acceptClass: 'bg-primary text-white border-none border-round p-2 hover:bg-red-900',

@@ -839,11 +839,13 @@ const supplementaryTasks = [
   'scores.cva.percentCorrect',
   'scores.vocab.percentCorrect',
   'scores.trog.percentCorrect',
+  'scores.roar-inference.percentCorrect',
   'scores.phonics.percentCorrect',
   'scores.morphology.percentile',
   'scores.cva.percentile',
   'scores.vocab.percentile',
   'scores.trog.percentile',
+  'scores.roar-inference.percentile',
   'scores.phonics.percentile',
 ];
 
@@ -933,9 +935,22 @@ const visionSpacerColumns = computed(() => {
 });
 
 function getFormattedDate(date) {
-  if (date && !isNaN(date)) {
+  if (date instanceof Date) {
     return date.toLocaleDateString('en-us', { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' });
-  } else return '';
+  } else if (typeof date === 'string') {
+    try {
+      const dateObj = new Date(date);
+      return dateObj.toLocaleDateString('en-us', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      });
+    } catch (error) {
+      return '';
+    }
+  }
+  return '';
 }
 
 const onColumnToggle = (selected) => {
