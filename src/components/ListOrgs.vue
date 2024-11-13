@@ -52,9 +52,9 @@
           </div>
           <div v-if="activeOrgType === 'groups'" class="mx-2">
             <PvToggleButton
-              v-model="showSubgroups"
-              offLabel="Show Subgroups"
-              onLabel="Hide Subgroups"
+              v-model="hideSubgroups"
+              offLabel="Hide Subgroups"
+              onLabel="Show Subgroups"
               class="p-2 rounded"
             />
           </div>
@@ -201,7 +201,7 @@ const isEditModalEnabled = ref(false);
 const currentEditOrgId = ref(null);
 const localOrgData = ref(null);
 const isSubmitting = ref(false);
-const showSubgroups = ref(true);
+const hideSubgroups = ref(false);
 
 const districtPlaceholder = computed(() => {
   if (isLoadingDistricts.value) {
@@ -472,7 +472,7 @@ const tableData = computed(() => {
       },
     };
   });
-  if (activeOrgType.value === 'groups' && !showSubgroups.value) {
+  if (activeOrgType.value === 'groups' && !hideSubgroups.value) {
     return tableData.filter((org) => !org.parentOrgId && !org.parentOrgType);
   } else {
     return tableData;
