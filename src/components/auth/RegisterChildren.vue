@@ -745,11 +745,6 @@ const validateRoarUsername = async () => {
   margin-top: 0;
   margin-bottom: 0.75rem;
 }
-.student-form-border {
-  /* border: 2px solid #ccc; Add a border around each student form */
-  padding: 20px; /* Add padding for better spacing */
-  margin: 5px; /* Add margin for better spacing */
-}
 .form-section-button {
   display: flex;
   align-items: center;
