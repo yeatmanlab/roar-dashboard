@@ -50,7 +50,7 @@
               </span>
             </div>
           </div>
-          <div v-if="activeOrgType === 'groups'" class="mx-2">
+          <div v-if="activeOrgType === ORG_TYPES.GROUPS" class="mx-2">
             <PvToggleButton
               v-model="hideSubgroups"
               offLabel="Hide Subgroups"
@@ -189,6 +189,7 @@ import RoarModal from './modals/RoarModal.vue';
 import { CSV_EXPORT_MAX_RECORD_COUNT } from '@/constants/csvExport';
 import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts.js';
 import RoarDataTable from '@/components/RoarDataTable.vue';
+import { ORG_TYPES } from '../constants/orgTypes';
 
 const initialized = ref(false);
 const selectedDistrict = ref(undefined);
@@ -475,7 +476,7 @@ const tableData = computed(() => {
   if (activeOrgType.value === ORG_TYPES.GROUPS && !hideSubgroups.value) {
     return tableData.filter((org) => !org.parentOrgId && !org.parentOrgType);
   }
-  
+
   return tableData;
 });
 
