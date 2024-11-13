@@ -37,6 +37,8 @@ export const getOrgsRequestBody = ({
     'name',
     'ncesId',
     'tags',
+    'parentOrgId',
+    'parentOrgType',
   ],
 }) => {
   const requestBody = {
