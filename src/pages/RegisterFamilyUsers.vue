@@ -7,7 +7,10 @@
             <ROARLogoShort />
           </div>
           <div v-if="activeIndex === 0" class="flex flex-wrap flex-column align-items-start gap-2">
-            <div class="text-center font-bold text-3xl text-red-800 mb-1 italic">ROAR @ Home</div>
+            <div class="flex">
+              <div class="text-center font-bold text-3xl text-red-800 mb-1 italic">ROAR@Home</div>
+              <div class="text-sm font-bold text-red-800 ml-1 uppercase">beta</div>
+            </div>
             <div class="bg-gray-100 rounded p-2">
               <div class="flex flex-wrap text-gray-600 text-md font-bold">Register a parent or guardian account.</div>
               <div class="flex flex-wrap text-gray-400 text-sm">
@@ -19,7 +22,10 @@
             </div>
           </div>
           <div v-else class="flex flex-wrap flex-column align-items-start gap-2">
-            <div class="text-center font-bold text-3xl text-red-800 mb-1 italic">ROAR @ Home</div>
+            <div class="flex">
+              <div class="text-center font-bold text-3xl text-red-800 mb-1 italic">ROAR@Home</div>
+              <div class="text-sm font-bold text-red-800 ml-1 uppercase">beta</div>
+            </div>
             <div class="bg-gray-100 rounded p-2">
               <div class="flex flex-wrap text-gray-600 text-md font-bold">Register children or students.</div>
               <div class="flex flex-wrap text-gray-400 text-sm">
