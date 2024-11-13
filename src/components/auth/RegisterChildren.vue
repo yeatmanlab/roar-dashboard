@@ -7,7 +7,7 @@
         class="bg-gray-100 rounded py-3 px-5 flex flex-column gap-2 my-3"
       >
         <div class="flex flex-row justify-content-between align-items-center">
-          <div class="font-bold text-xl text-red-800">Student #{{ outerIndex + 1 }}</div>
+          <div class="font-bold text-2xl text-gray-600">Student #{{ outerIndex + 1 }}</div>
           <section v-if="!student.orgName" class="form-section">
             <div class="p-input-icon-right">
               <div class="flex justify-content-between gap-2">
