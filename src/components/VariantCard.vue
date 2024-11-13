@@ -254,6 +254,12 @@
 <script setup>
 import { ref } from 'vue';
 import _toPairs from 'lodash/toPairs';
+import PvButton from 'primevue/button';
+import PvColumn from 'primevue/column';
+import PvDataTable from 'primevue/datatable';
+import PvDialog from 'primevue/dialog';
+import PvOverlayPanel from 'primevue/overlaypanel';
+import PvTag from 'primevue/tag';
 import EditVariantDialog from '@/components/EditVariantDialog.vue';
 
 const props = defineProps({

@@ -16,6 +16,8 @@
 <script setup>
 import { useAuthStore } from '@/store/auth';
 import { storeToRefs } from 'pinia';
+import PvButton from 'primevue/button';
+import PvMessage from 'primevue/message';
 
 const authStore = useAuthStore();
 const { email } = storeToRefs(authStore);

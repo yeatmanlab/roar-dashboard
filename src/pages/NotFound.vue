@@ -12,6 +12,6 @@
   </div>
 </template>
 
-<script></script>
-
-<style scoped></style>
+<script setup>
+import PvButton from 'primevue/button';
+</script>

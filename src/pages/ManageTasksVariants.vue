@@ -24,6 +24,8 @@
 </template>
 
 <script setup>
+import PvTabPanel from 'primevue/tabpanel';
+import PvTabView from 'primevue/tabview';
 import ManageTasks from '../components/tasks/ManageTasks.vue';
 import ManageVariants from '../components/tasks/ManageVariants.vue';
 </script>

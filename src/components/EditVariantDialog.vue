@@ -197,6 +197,12 @@ import { ref, onMounted, computed, toRaw, watch } from 'vue';
 import _isEmpty from 'lodash/isEmpty';
 import _cloneDeep from 'lodash/cloneDeep';
 import { isLevante } from '@/helpers';
+import PvButton from 'primevue/button';
+import PvDialog from 'primevue/dialog';
+import PvDivider from 'primevue/divider';
+import PvDropdown from 'primevue/dropdown';
+import PvInputSwitch from 'primevue/inputswitch';
+import PvTag from 'primevue/tag';
 
 const props = defineProps({
   assessment: {

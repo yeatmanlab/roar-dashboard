@@ -17,6 +17,7 @@
 <script setup>
 import { useConfirm } from 'primevue/useconfirm';
 import { useI18n } from 'vue-i18n';
+import PvConfirmDialog from 'primevue/confirmdialog';
 import useInactivityTimeout from '@/composables/useInactivityTimeout/useInactivityTimeout';
 import useSignOutMutation from '@/composables/mutations/useSignOutMutation';
 import { AUTH_SESSION_TIMEOUT_IDLE_THRESHOLD, AUTH_SESSION_TIMEOUT_COUNTDOWN_DURATION } from '@/constants/auth';

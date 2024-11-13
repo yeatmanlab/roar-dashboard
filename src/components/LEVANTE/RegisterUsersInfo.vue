@@ -35,6 +35,10 @@
   </PvPanel>
 </template>
 
+<script setup>
+import PvPanel from 'primevue/panel';
+</script>
+
 <style scoped>
 .info-message-container {
   display: flex;

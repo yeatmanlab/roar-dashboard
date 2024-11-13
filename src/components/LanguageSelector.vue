@@ -21,6 +21,7 @@
 
 <script setup>
 import { computed } from 'vue';
+import PvDropdown from 'primevue/dropdown';
 import { languageOptions } from '@/translations/i18n.js';
 import { isLevante } from '@/helpers';
 import { useSurveyStore } from '@/store/survey';

@@ -44,6 +44,7 @@
 
 <script setup>
 import { ref, watch } from 'vue';
+import PvMultiSelect from 'primevue/multiselect';
 
 const props = defineProps({
   updateFilters: {

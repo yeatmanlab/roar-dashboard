@@ -336,11 +336,22 @@
 <script setup>
 import { reactive, ref, onMounted, toRaw } from 'vue';
 import { required, minLength, helpers } from '@vuelidate/validators';
+import PvAccordion from 'primevue/accordion';
+import PvAccordionTab from 'primevue/accordiontab';
+import PvButton from 'primevue/button';
+import PvCalendar from 'primevue/calendar';
+import PvCheckbox from 'primevue/checkbox';
+import PvDialog from 'primevue/dialog';
+import PvDropdown from 'primevue/dropdown';
+import PvInputGroup from 'primevue/inputgroup';
+import PvInputText from 'primevue/inputtext';
+import PvPassword from 'primevue/password';
 import { fetchDocById } from '@/helpers/query/utils';
 import { useVuelidate } from '@vuelidate/core';
 import { useAuthStore } from '@/store/auth';
 import { storeToRefs } from 'pinia';
 import _capitalize from 'lodash/capitalize';
+import PvAutoComplete from 'primevue/autocomplete';
 
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);

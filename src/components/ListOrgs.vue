@@ -11,7 +11,7 @@
         </div>
         <div class="text-md text-gray-500 ml-6">View organizations asssigned to your account.</div>
       </div>
-      <PvTabView v-if="claimsLoaded" v-model:activeIndex="activeIndex" lazy class="mb-7">
+      <PvTabView v-if="claimsLoaded" v-model:active-index="activeIndex" lazy class="mb-7">
         <PvTabPanel v-for="orgType in orgHeaders" :key="orgType" :header="orgType.header">
           <div class="grid column-gap-3 mt-2">
             <div
@@ -155,9 +155,14 @@ import { ref, computed, onMounted, watch } from 'vue';
 import * as Sentry from '@sentry/vue';
 import { storeToRefs } from 'pinia';
 import { useToast } from 'primevue/usetoast';
-import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts.js';
-import EditOrgsForm from './EditOrgsForm.vue';
-import RoarModal from './modals/RoarModal.vue';
+import PvButton from 'primevue/button';
+import PvDialog from 'primevue/dialog';
+import PvDropdown from 'primevue/dropdown';
+import PvInputGroup from 'primevue/inputgroup';
+import PvInputText from 'primevue/inputtext';
+import PvTabPanel from 'primevue/tabpanel';
+import PvTabView from 'primevue/tabview';
+import PvToast from 'primevue/toast';
 import _get from 'lodash/get';
 import _head from 'lodash/head';
 import _kebabCase from 'lodash/kebabCase';
@@ -170,7 +175,11 @@ import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useDistrictsListQuery from '@/composables/queries/useDistrictsListQuery';
 import useDistrictSchoolsQuery from '@/composables/queries/useDistrictSchoolsQuery';
 import useOrgsTableQuery from '@/composables/queries/useOrgsTableQuery';
+import EditOrgsForm from './EditOrgsForm.vue';
+import RoarModal from './modals/RoarModal.vue';
 import { CSV_EXPORT_MAX_RECORD_COUNT } from '@/constants/csvExport';
+import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts.js';
+import RoarDataTable from '@/components/RoarDataTable.vue';
 
 const initialized = ref(false);
 const selectedDistrict = ref(undefined);
@@ -214,6 +223,7 @@ const orgHeaders = computed(() => {
     schools: { header: 'Schools', id: 'schools' },
     classes: { header: 'Classes', id: 'classes' },
     groups: { header: 'Groups', id: 'groups' },
+    families: { header: 'Families', id: 'families' },
   };
 
   if (isSuperAdmin.value) return headers;
@@ -233,6 +243,9 @@ const orgHeaders = computed(() => {
   }
   if ((adminOrgs.value?.groups ?? []).length > 0) {
     result.groups = { header: 'Groups', id: 'groups' };
+  }
+  if ((adminOrgs.value?.families ?? []).length > 0) {
+    result.families = { header: 'Families', id: 'families' };
   }
   return result;
 });
