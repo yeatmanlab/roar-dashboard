@@ -472,11 +472,11 @@ const tableData = computed(() => {
       },
     };
   });
-  if (activeOrgType.value === 'groups' && !hideSubgroups.value) {
+  if (activeOrgType.value === ORG_TYPES.GROUPS && !hideSubgroups.value) {
     return tableData.filter((org) => !org.parentOrgId && !org.parentOrgType);
-  } else {
-    return tableData;
   }
+  
+  return tableData;
 });
 
 const showCode = async (selectedOrg) => {
