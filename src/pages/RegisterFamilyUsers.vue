@@ -158,7 +158,7 @@ function updateState() {
 }
 
 function activeComp() {
-  if (activeIndex.value === 0) {
+  if (activeIndex.value === 1) {
     return Register;
   } else {
     return RegisterStudent;

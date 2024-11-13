@@ -65,7 +65,7 @@
               <div>
                 <PvButton
                   class="bg-primary border-none border-round p-2 text-white hover:surface-300 hover:text-black-alpha-90 text-xs"
-                  icon="pi pi-replay"
+                  icon="pi pi-replay ml-2"
                   iconPos="right"
                   label="Use another code"
                   @click="codeNotRight(outerIndex)"
@@ -140,7 +140,7 @@
         <section class="form-section">
           <div>
             <!-- Age / DOB -->
-            <div class="flex justify-content-between">
+            <div class="flex justify-content-start gap-2">
               <label>Date of Birth <span class="required">*</span></label>
               <div class="flex align-items-center">
                 <PvCheckbox v-model="student.yearOnlyCheckRef" :binary="true" name="yearOnly" />
@@ -187,7 +187,7 @@
           <PvAccordionTab header="Optional Info">
             <!--First / Last Name-->
             <section class="form-section">
-              <div>
+              <div class="flex flex-wrap">
                 <label for="firstName">First Name </label>
                 <PvInputText
                   v-model="student.firstName"
@@ -203,9 +203,7 @@
                 <label for="middleName">Middle Name </label>
                 <PvInputText v-model="student.middleName" name="middleName" />
               </div>
-            </section>
-            <section class="form-section">
-              <div>
+              <div class="flex flex-column">
                 <label for="lastName">Last Name </label>
                 <PvInputText
                   v-model="student.lastName"
