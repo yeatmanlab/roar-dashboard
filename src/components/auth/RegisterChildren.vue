@@ -6,21 +6,12 @@
         :key="outerIndex"
         class="bg-gray-100 rounded py-3 px-5 flex flex-column gap-2 my-3"
       >
-        <div class="flex flex-row justify-content-between align-items-center">
+        <div class="flex flex-column justify-content-between align-items-center">
           <div class="font-bold text-2xl text-gray-600">Student #{{ outerIndex + 1 }}</div>
           <section v-if="!student.orgName" class="form-section">
             <div class="p-input-icon-right">
               <div class="flex justify-content-between gap-2">
                 <label for="activationCode">Activation code <span class="required">*</span></label>
-                <div class="flex align-items-center">
-                  <PvCheckbox
-                    v-model="student.noActivationCode"
-                    :binary="true"
-                    name="noActivationCode"
-                    @change="updateActivationCode"
-                  />
-                  <label for="noActivationCode" class="ml-2">I don't have a code</label>
-                </div>
               </div>
               <PvInputGroup v-if="!student.noActivationCode">
                 <PvInputText
@@ -38,6 +29,15 @@
                   @click="validateCode(student.activationCode, outerIndex)"
                 />
               </PvInputGroup>
+              <div class="flex align-items-center">
+                <PvCheckbox
+                  v-model="student.noActivationCode"
+                  :binary="true"
+                  name="noActivationCode"
+                  @change="updateActivationCode"
+                />
+                <label for="noActivationCode" class="ml-2">I don't have a code</label>
+              </div>
             </div>
             <span
               v-if="
@@ -55,27 +55,37 @@
             </span>
           </section>
           <section v-else>
-            <div class="flex justify-content-between align-items-center">
-              <div class="flex flex-column my-3 gap-1">
-                <div class="text-xs text-gray-500 font-light uppercase">Registering for</div>
-                <div class="text-lg font-bold text-red-800 m-0 p-0" style="width: 70%" data-cy="org-name">
-                  {{ student.orgName }}
+            <div class="flex justify-content-between align-items-center my-2">
+              <div class="flex-column gap-2">
+                <div class="text-xs text-gray-500 font-light uppercase">Registering under</div>
+                <div class="flex gap-2">
+                  <PvInputText
+                    :placeholder="student.orgName"
+                    disabled
+                    class="text-lg font-bold text-gray-800 py-2"
+                    variant="filled"
+                  />
+                  <div>
+                    <PvButton
+                      class="bg-primary border-none border-round py-2 text-white hover:surface-300 hover:text-black-alpha-90 text-md"
+                      icon="pi pi-replay ml-2"
+                      iconPos="right"
+                      label="Enter another code"
+                      @click="codeNotRight(outerIndex)"
+                    />
+                  </div>
                 </div>
-              </div>
-              <div>
-                <PvButton
-                  class="bg-primary border-none border-round p-2 text-white hover:surface-300 hover:text-black-alpha-90 text-xs"
-                  icon="pi pi-replay ml-2"
-                  iconPos="right"
-                  label="Use another code"
-                  @click="codeNotRight(outerIndex)"
-                />
+                <div>
+                  <small class="text-xs text-gray-500 font-light"
+                    >This is the default ROAR@Home registration group.</small
+                  >
+                </div>
               </div>
             </div>
           </section>
         </div>
         <section class="form-section">
-          <div class="p-input-icon-right flex gap-3">
+          <div class="p-input-icon-right flex flex-column">
             <label for="studentUsername">Student Username <span class="required">*</span></label>
             <PvInputText
               v-model="student.studentUsername"
@@ -169,10 +179,7 @@
               v$.students.$each.$response.$errors[outerIndex].dob.$message.replace('Value', 'Date of Birth')
             }}</small>
           </div>
-        </section>
-        <section class="form-section">
-          <!--Grade-->
-          <div class="flex gap-3">
+          <div class="flex flex-column">
             <label for="grade">Grade <span class="required">*</span></label>
             <PvDropdown
               v-model="student.grade"
@@ -182,6 +189,9 @@
               name="grade"
             />
           </div>
+        </section>
+        <section class="form-section">
+          <!--Grade-->
         </section>
         <PvAccordion>
           <PvAccordionTab header="Optional Info">
@@ -217,7 +227,7 @@
             </section>
             <section class="form-section">
               <!--English Language Level-->
-              <div class="mt-4 mb-5">
+              <div class="mt-2 mb-3">
                 <label for="ell">English as a Second Language</label>
                 <PvDropdown
                   v-model="student.ell"
@@ -228,7 +238,7 @@
                 />
               </div>
               <!--Sex-->
-              <div class="mt-4 mb-5">
+              <div class="flex flex-column mt-2 mb-3">
                 <label for="sex">Gender </label>
                 <PvDropdown
                   v-model="student.gender"
@@ -239,9 +249,9 @@
                 />
               </div>
             </section>
-            <section class="form-section">
+            <section class="form-section mt-2 mb-3">
               <!-- Free-Reduced Lunch -->
-              <div class="mt-4 mb-5">
+              <div class="flex flex-column">
                 <label for="stateId">Free-Reduced Lunch </label>
                 <PvDropdown
                   v-model="student.freeReducedLunch"
@@ -252,7 +262,7 @@
                 />
               </div>
               <!-- IEP Status -->
-              <div class="mt-4 mb-5">
+              <div class="flex flex-column">
                 <label for="stateId">IEP Status</label>
                 <PvDropdown
                   v-model="student.IEPStatus"
@@ -263,9 +273,9 @@
                 />
               </div>
             </section>
-            <section class="form-section">
+            <section class="flex flex-row form-section mt-2 mb-3">
               <!-- Race -->
-              <div class="mt-4 mb-5">
+              <div class="flex flex-column">
                 <label for="race">Race </label>
                 <PvAutoComplete
                   v-model="student.race"
@@ -276,7 +286,7 @@
                 />
               </div>
               <!-- Hispanic Ethinicity -->
-              <div class="mt-4 mb-5">
+              <div class="flex flex-column">
                 <label for="hispanicEthnicity">Hispanic or Latino Ethnicity </label>
                 <PvDropdown
                   v-model="student.hispanicEthnicity"
@@ -286,10 +296,7 @@
                   name="hispanicEthinicity"
                 />
               </div>
-            </section>
-            <section class="form-section">
-              <!-- Home Language -->
-              <div class="mt-4 mb-5">
+              <div class="flex flex-column">
                 <label for="stateId">Home Language </label>
                 <PvAutoComplete
                   v-model="student.homeLanguage"
@@ -309,6 +316,7 @@
             icon="pi pi-trash"
             @click="deleteStudentForm(outerIndex)"
           >
+            <i class="pi pi-trash mr-2"></i>
             Delete Student
           </PvButton>
         </section>
