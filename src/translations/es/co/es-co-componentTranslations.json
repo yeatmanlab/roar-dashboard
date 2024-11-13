@@ -28,7 +28,8 @@
   },
 "consentModal": {
   "header": "Consentimiento",
-  "title": "Consentimiento",
+  "consentTitle": "Consentimiento",
+    "assentTitle": "Asentimiento",
   "acceptButton": "Aceptar",
   "rejectButton": "No, cerrar sesión",
   "toastHeader": "Confirmado"
@@ -51,6 +52,7 @@
     "taskCompleted": "¡Tarea completa!"
   },
   "navBar": {
+    "greeting": "¡Hola",
     "signOut": "Salir"
   },
   "notFound": {

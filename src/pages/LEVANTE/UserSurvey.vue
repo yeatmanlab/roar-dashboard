@@ -8,6 +8,7 @@ import { AudioContext } from '@/helpers/audio';
 import { getParsedLocale } from '@/helpers/survey';
 import { onBeforeRouteLeave } from 'vue-router';
 import { isLevante } from '@/helpers';
+import PvButton from 'primevue/button';
 
 
 const authStore = useAuthStore();

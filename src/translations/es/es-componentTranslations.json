@@ -28,7 +28,8 @@
   },
 "consentModal": {
   "header": "Consentimiento",
-  "title": "Consentimiento",
+  "consentTitle": "Consentimiento",
+    "assentTitle": "Asentimiento",
   "acceptButton": "Aceptar",
   "rejectButton": "No, cerrar sesión",
   "toastHeader": "Confirmado",
@@ -88,9 +89,12 @@
     "mefsName": "El León y El Mono",
     "mefsDescription": "Empareja las formas y los colores.",
     "vocabName": "Vocabulario",
-    "vocabDescription": "Escucha la palabra y elige la imagen correspondiente."
+    "vocabDescription": "Escucha la palabra y elige la imagen correspondiente.",
+    "roarInferenceName": "Roar - Inferencia",
+    "roarInferenceDescription": "Lee las historias y responde a las preguntas."
   },
   "navBar": {
+    "greeting": "¡Hola",
     "signOut": "Salir"
   },
   "notFound": {

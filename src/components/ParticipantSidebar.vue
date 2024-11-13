@@ -20,6 +20,7 @@
 <script setup>
 import { ref, computed } from 'vue';
 import _isEmpty from 'lodash/isEmpty';
+import PvChart from 'primevue/chart';
 
 const props = defineProps({
   totalGames: { type: Number, required: true, default: 0 },

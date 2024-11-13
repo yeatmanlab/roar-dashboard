@@ -31,6 +31,11 @@
 
 <script setup>
 import { ref } from 'vue';
+import PvButton from 'primevue/button';
+import PvCard from 'primevue/card';
+import PvInlineMessage from 'primevue/inlinemessage';
+import PvTag from 'primevue/tag';
+
 const props = defineProps({
   gameId: { type: String, required: true },
   title: { type: String, required: true },

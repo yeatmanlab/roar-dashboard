@@ -1,6 +1,6 @@
 <template>
   <div id="games" class="game-tab-container">
-    <PvTabView v-model:activeIndex="displayGameIndex" :scrollable="true" class="flex flex-column">
+    <PvTabView v-model:active-index="displayGameIndex" :scrollable="true" class="flex flex-column">
       <PvTabPanel
         v-for="(game, index) in games"
         :key="game.taskId"
@@ -11,19 +11,25 @@
         "
       >
         <template #header>
-          <!--Complete Game-->
-          <i v-if="game.completedOn" class="pi pi-check-circle mr-2" data-game-status="complete" />
-          <!--Current Game-->
-          <i
-            v-else-if="game.taskId == currentGameId || !sequential"
-            class="pi pi-circle mr-2"
-            data-game-status="current"
-          />
-          <!--Locked Game-->
-          <i v-else-if="sequential" class="pi pi-lock mr-2" data-game-status="incomplete" />
-          <span class="tabview-nav-link-label" :data-game-status="`${game.completedOn ? 'complete' : 'incomplete'}`">{{
-            getTaskName(game.taskId, game.taskData.name)
-          }}</span>
+          <div class="flex align-items-start">
+            <!--Complete Game-->
+            <i v-if="game.completedOn" class="pi pi-check-circle mr-2" data-game-status="complete" />
+            <!--Current Game-->
+            <i
+              v-else-if="game.taskId == currentGameId || !sequential"
+              class="pi pi-circle mr-2"
+              data-game-status="current"
+            />
+            <!--Locked Game-->
+            <i v-else-if="sequential" class="pi pi-lock mr-2" data-game-status="incomplete" />
+            <div class="flex min-w-full">
+              <span
+                class="tabview-nav-link-label flex-shrink-1"
+                :data-game-status="`${game.completedOn ? 'complete' : 'incomplete'}`"
+                >{{ getTaskName(game.taskId, game.taskData.name) }}</span
+              >
+            </div>
+          </div>
         </template>
         <div class="roar-tabview-game pointer flex flex-column">
           <div class="flex">
@@ -119,15 +125,18 @@
 </template>
 <script setup>
 import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { storeToRefs } from 'pinia';
 import _get from 'lodash/get';
 import _find from 'lodash/find';
 import _findIndex from 'lodash/findIndex';
+import { camelize, getAgeData } from '@bdelab/roar-utils';
+import PvTabPanel from 'primevue/tabpanel';
+import PvTabView from 'primevue/tabview';
+import PvTag from 'primevue/tag';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
 import { useSurveyStore } from '@/store/survey';
-import { storeToRefs } from 'pinia';
-import { useI18n } from 'vue-i18n';
-import { camelize, getAgeData } from '@bdelab/roar-utils';
 import VideoPlayer from '@/components/VideoPlayer.vue';
 import { isLevante } from '@/helpers';
 import _capitalize from 'lodash/capitalize';
@@ -199,6 +208,7 @@ const levanteTasks = [
   'trog',
   'survey',
   'mefs',
+  'roarInference',
 ];
 
 const levantifiedRoarTasks = [

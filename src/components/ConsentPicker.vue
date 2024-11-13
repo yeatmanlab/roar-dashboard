@@ -280,10 +280,18 @@
 
 <script setup>
 import { ref, onMounted, watch, computed } from 'vue';
-import { useAuthStore } from '@/store/auth';
 import { marked } from 'marked';
 import _forEach from 'lodash/forEach';
 import { isLevante } from '@/helpers';
+import PvButton from 'primevue/button';
+import PvCheckbox from 'primevue/checkbox';
+import PvDialog from 'primevue/dialog';
+import PvDropdown from 'primevue/dropdown';
+import PvInputText from 'primevue/inputtext';
+import PvPanel from 'primevue/panel';
+import PvRadioButton from 'primevue/radiobutton';
+import PvFieldset from 'primevue/fieldset';
+import { useAuthStore } from '@/store/auth';
 import useLegalDocsQuery from '@/composables/queries/useLegalDocsQuery';
 
 const props = defineProps({

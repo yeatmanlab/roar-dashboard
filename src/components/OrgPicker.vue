@@ -2,7 +2,7 @@
   <div class="grid">
     <div class="col-12 md:col-6">
       <PvPanel class="m-0 p-0" header="Select organizations here">
-        <PvTabView v-if="claimsLoaded" v-model:activeIndex="activeIndex" class="m-0 p-0" lazy>
+        <PvTabView v-if="claimsLoaded" v-model:active-index="activeIndex" class="m-0 p-0" lazy>
           <PvTabPanel v-for="orgType in orgHeaders" :key="orgType" :header="orgType.header">
             <div class="grid column-gap-3">
               <div
@@ -94,6 +94,14 @@ import { storeToRefs } from 'pinia';
 import _capitalize from 'lodash/capitalize';
 import _get from 'lodash/get';
 import _head from 'lodash/head';
+import PvCheckbox from 'primevue/checkbox';
+import PvChip from 'primevue/chip';
+import PvDropdown from 'primevue/dropdown';
+import PvListbox from 'primevue/listbox';
+import PvPanel from 'primevue/panel';
+import PvScrollPanel from 'primevue/scrollpanel';
+import PvTabPanel from 'primevue/tabpanel';
+import PvTabView from 'primevue/tabview';
 import { useAuthStore } from '@/store/auth';
 import { orgFetcher, orgFetchAll } from '@/helpers/query/orgs';
 import { orderByDefault } from '@/helpers/query/utils';

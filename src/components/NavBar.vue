@@ -26,7 +26,7 @@
               <div class="flex gap-2 align-items-center justify-content-center mr-3">
                 <div v-if="isWideScreen" class="nav-user-wrapper flex align-items-center gap-2 bg-gray-100">
                   <div class="text-lg font-bold text-gray-600" data-cy="user-display-name">
-                    {{ userDisplayName }}
+                    {{ $t('navBar.greeting') }}, {{ userDisplayName }}!
                   </div>
                   <PvButton
                     text
@@ -69,6 +69,9 @@ import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import _isEmpty from 'lodash/isEmpty';
 import _union from 'lodash/union';
+import PvButton from 'primevue/button';
+import PvImage from 'primevue/image';
+import PvMenubar from 'primevue/menubar';
 import { useAuthStore } from '@/store/auth';
 import { getSidebarActions } from '@/router/sidebarActions';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
@@ -76,6 +79,7 @@ import useSignOutMutation from '@/composables/mutations/useSignOutMutation';
 import { isLevante } from '@/helpers';
 import { APP_ROUTES } from '@/constants/routes';
 import ROARLogo from '@/assets/RoarLogo.vue';
+import LanguageSelector from '@/components/LanguageSelector.vue';
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -158,7 +162,7 @@ const userDisplayName = computed(() => {
     const username = authStore?.userData?.username;
     const firstName = authStore?.userData?.name?.first;
     const userType = isAdmin.value ? 'Admin' : 'User';
-    return `Hi, ${firstName || displayName || username || email || userType}!`;
+    return ` ${firstName || displayName || username || email || userType}`;
   }
 });
 

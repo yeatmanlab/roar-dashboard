@@ -154,6 +154,11 @@ import { storeToRefs } from 'pinia';
 import { required, requiredUnless } from '@vuelidate/validators';
 import { useVuelidate } from '@vuelidate/core';
 import _debounce from 'lodash/debounce';
+import PvButton from 'primevue/button';
+import PvDivider from 'primevue/divider';
+import PvInputText from 'primevue/inputtext';
+import PvPassword from 'primevue/password';
+import PvSkeleton from 'primevue/skeleton';
 import { useAuthStore } from '@/store/auth';
 import RoarModal from '../modals/RoarModal.vue';
 

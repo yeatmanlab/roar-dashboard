@@ -203,6 +203,13 @@ import { watch, ref, onMounted, computed } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '@/store/auth';
+import PvAutoComplete from 'primevue/autocomplete';
+import PvButton from 'primevue/button';
+import PvCalendar from 'primevue/calendar';
+import PvCheckbox from 'primevue/checkbox';
+import PvDialog from 'primevue/dialog';
+import PvDropdown from 'primevue/dropdown';
+import PvInputText from 'primevue/inputtext';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 
 const props = defineProps({

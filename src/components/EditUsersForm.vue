@@ -209,6 +209,11 @@ import { useAuthStore } from '@/store/auth';
 import { storeToRefs } from 'pinia';
 import _isEmpty from 'lodash/isEmpty';
 import _get from 'lodash/get';
+import PvAutoComplete from 'primevue/autocomplete';
+import PvCalendar from 'primevue/calendar';
+import PvCheckbox from 'primevue/checkbox';
+import PvDropdown from 'primevue/dropdown';
+import PvInputText from 'primevue/inputtext';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 
 const props = defineProps({

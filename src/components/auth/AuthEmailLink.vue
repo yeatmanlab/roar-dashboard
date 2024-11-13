@@ -16,9 +16,12 @@
 
 <script setup>
 import { onMounted, ref } from 'vue';
-import { useAuthStore } from '@/store/auth';
-import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router';
+import { storeToRefs } from 'pinia';
+import PvButton from 'primevue/button';
+import PvInputText from 'primevue/inputtext';
+import PvMessage from 'primevue/message';
+import { useAuthStore } from '@/store/auth';
 import { fetchDocById } from '@/helpers/query/utils';
 
 const router = useRouter();

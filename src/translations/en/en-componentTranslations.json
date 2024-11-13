@@ -27,7 +27,8 @@
   },
   "consentModal": {
     "header": "Consent",
-    "title": "Consent",
+    "consentTitle": "Consent",
+    "assentTitle": "Assent",
     "acceptButton": "Accept",
     "rejectButton": "No, sign me out",
     "toastHeader": "Confirmed",
@@ -87,9 +88,12 @@
     "mefsName": "Lion and Monkey",
     "mefsDescription": "Match the shapes and colors.",
     "vocabName": "Vocabulary",
-    "vocabDescription": "Listen to the word and choose the matching picture."
+    "vocabDescription": "Listen to the word and choose the matching picture.",
+    "roarInferenceName": "Roar - Inference",
+    "roarInferenceDescription": "Read the stories and answer the questions."
   },
   "navBar": {
+    "greeting": "Hi",
     "signOut": "Sign Out"
   },
   "notFound": {
