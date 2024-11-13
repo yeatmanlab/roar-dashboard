@@ -58,27 +58,23 @@
             <div class="flex justify-content-between align-items-center my-2">
               <div class="flex-column gap-2">
                 <div class="text-xs text-gray-500 font-light uppercase">Registering under</div>
-                <div class="flex gap-2">
-                  <PvInputText
-                    :placeholder="student.orgName"
-                    disabled
-                    class="text-lg font-bold text-gray-800 py-2"
-                    variant="filled"
-                  />
-                  <div>
-                    <PvButton
-                      class="bg-primary border-none border-round py-2 text-white hover:surface-300 hover:text-black-alpha-90 text-md"
-                      icon="pi pi-replay ml-2"
-                      iconPos="right"
-                      label="Enter another code"
-                      @click="codeNotRight(outerIndex)"
-                    />
-                  </div>
+                <div class="flex gap-2 rounded bg-gray-200 p-2">
+                  <div class="text-sm text-gray-600 font-bold">{{ student.orgName }}</div>
                 </div>
                 <div>
                   <small class="text-xs text-gray-500 font-light"
                     >This is the default ROAR@Home registration group.</small
                   >
+                </div>
+                <div>
+                  <PvButton
+                    class="bg-primary border-none border-round py-2 text-white hover:surface-300 hover:text-black-alpha-90 text-md"
+                    icon="pi pi-replay ml-2"
+                    iconPos="right"
+                    severity="secondary"
+                    label="Enter another code"
+                    @click="codeNotRight(outerIndex)"
+                  />
                 </div>
               </div>
             </div>
