@@ -14,6 +14,9 @@
       <PvTabView v-if="claimsLoaded" v-model:active-index="activeIndex" lazy class="mb-7">
         <PvTabPanel v-for="orgType in orgHeaders" :key="orgType" :header="orgType.header">
           <div class="grid column-gap-3 mt-2">
+            <div v-if="activeOrgType === 'groups'">
+              <PvToggleButton v-model="showSubgroups" offLabel="Show Subgroups" onLabel="Hide Subgroups" />
+            </div>
             <div
               v-if="activeOrgType === 'schools' || activeOrgType === 'classes'"
               class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3"
@@ -163,6 +166,7 @@ import PvInputText from 'primevue/inputtext';
 import PvTabPanel from 'primevue/tabpanel';
 import PvTabView from 'primevue/tabview';
 import PvToast from 'primevue/toast';
+import PvToggleButton from 'primevue/togglebutton';
 import _get from 'lodash/get';
 import _head from 'lodash/head';
 import _kebabCase from 'lodash/kebabCase';
@@ -192,6 +196,7 @@ const isEditModalEnabled = ref(false);
 const currentEditOrgId = ref(null);
 const localOrgData = ref(null);
 const isSubmitting = ref(false);
+const showSubgroups = ref(true);
 
 const districtPlaceholder = computed(() => {
   if (isLoadingDistricts.value) {
@@ -450,8 +455,9 @@ const tableColumns = computed(() => {
 });
 
 const tableData = computed(() => {
+  console.log('tabledata');
   if (isLoading.value) return [];
-  return orgData?.value?.map((org) => {
+  const tableData = orgData?.value?.map((org) => {
     return {
       ...org,
       routeParams: {
@@ -462,6 +468,12 @@ const tableData = computed(() => {
       },
     };
   });
+  if (activeOrgType === 'groups' && !showSubgroups.value) {
+    console.log('groups table data fired');
+    return tableData.filter((org) => !org.parentOrgId && !org.parentOrgType);
+  } else {
+    return tableData;
+  }
 });
 
 const showCode = async (selectedOrg) => {
