@@ -1,64 +1,71 @@
 <template>
   <div class="card">
     <form class="p-fluid">
-      <div v-for="(student, outerIndex) in state.students" :key="outerIndex" class="student-form-border">
-        <section v-if="!student.orgName" class="form-section">
-          <div class="p-input-icon-right">
-            <div class="flex justify-content-between">
-              <label for="activationCode">Activation code <span class="required">*</span></label>
-              <div class="flex align-items-center">
-                <PvCheckbox
-                  v-model="student.noActivationCode"
-                  :binary="true"
-                  name="noActivationCode"
-                  @change="updateActivationCode"
-                />
-                <label for="noActivationCode" class="ml-2">I don't have a code</label>
+      <div
+        v-for="(student, outerIndex) in state.students"
+        :key="outerIndex"
+        class="bg-gray-100 rounded p-2 flex flex-column gap-2 m-2"
+      >
+        <div class="flex flex-row justify-content-around align-items-center">
+          <div class="font-bold text-xl text-red-800">Student #{{ outerIndex + 1 }}</div>
+          <section v-if="!student.orgName" class="form-section">
+            <div class="p-input-icon-right">
+              <div class="flex justify-content-between">
+                <label for="activationCode">Activation code <span class="required">*</span></label>
+                <div class="flex align-items-center">
+                  <PvCheckbox
+                    v-model="student.noActivationCode"
+                    :binary="true"
+                    name="noActivationCode"
+                    @change="updateActivationCode"
+                  />
+                  <label for="noActivationCode" class="ml-2">I don't have a code</label>
+                </div>
               </div>
+              <PvInputGroup v-if="!student.noActivationCode">
+                <PvInputText
+                  v-model="student.activationCode"
+                  name="noActivationCode"
+                  :class="{
+                    'p-invalid': v$.students.$each.$response.$data[outerIndex].activationCode.$invalid && submitted,
+                  }"
+                  aria-describedby="activation-code-error"
+                  :disabled="student.noActivationCode"
+                />
+                <PvButton
+                  class="w-4 bg-primary text-white hover:bg-red-900"
+                  label="Validate Code"
+                  @click="validateCode(student.activationCode, outerIndex)"
+                />
+              </PvInputGroup>
             </div>
-            <PvInputGroup v-if="!student.noActivationCode">
-              <PvInputText
-                v-model="student.activationCode"
-                name="noActivationCode"
-                :class="{
-                  'p-invalid': v$.students.$each.$response.$data[outerIndex].activationCode.$invalid && submitted,
-                }"
-                aria-describedby="activation-code-error"
-                :disabled="student.noActivationCode"
-              />
-              <PvButton
-                class="w-4 bg-primary text-white hover:bg-red-900"
-                label="Validate Code"
-                @click="validateCode(student.activationCode, outerIndex)"
-              />
-            </PvInputGroup>
-          </div>
-          <span
-            v-if="
-              v$.students.$each.$response.$data[outerIndex].noActivationCode &&
-              v$.students.$each.$response.$data[outerIndex].activationCode.$invalid &&
-              submitted
-            "
-          >
             <span
-              v-for="(error, innerIndex) in v$.students.$each.$response.$errors[outerIndex].activationCode"
-              :key="`error-${outerIndex}-${innerIndex}`"
+              v-if="
+                v$.students.$each.$response.$data[outerIndex].noActivationCode &&
+                v$.students.$each.$response.$data[outerIndex].activationCode.$invalid &&
+                submitted
+              "
             >
-              <small class="p-error">{{ error.$message.replace('Value', 'Activation Code') }}</small>
+              <span
+                v-for="(error, innerIndex) in v$.students.$each.$response.$errors[outerIndex].activationCode"
+                :key="`error-${outerIndex}-${innerIndex}`"
+              >
+                <small class="p-error">{{ error.$message.replace('Value', 'Activation Code') }}</small>
+              </span>
             </span>
-          </span>
-        </section>
-        <section v-else>
-          <h2 class="text-primary font-bold">You are registering for:</h2>
-          <div class="flex">
-            <h2 class="text-primary h-3 m-0 p-0" style="width: 70%" data-cy="org-name">{{ student.orgName }}</h2>
-            <PvButton
-              class="bg-primary border-none border-round p-2 text-white hover:surface-300 hover:text-black-alpha-90"
-              label="Is this not right?"
-              @click="codeNotRight(outerIndex)"
-            />
-          </div>
-        </section>
+          </section>
+          <section v-else>
+            <h2 class="text-sm text-red-800 font-bold">You are registering for:</h2>
+            <div class="flex align-items-centerg">
+              <h2 class="text-primary h-3 m-0 p-0" style="width: 70%" data-cy="org-name">{{ student.orgName }}</h2>
+              <PvButton
+                class="bg-primary border-none border-round p-2 text-white hover:surface-300 hover:text-black-alpha-90"
+                label="Enter another code"
+                @click="codeNotRight(outerIndex)"
+              />
+            </div>
+          </section>
+        </div>
         <section class="form-section">
           <div class="p-input-icon-right">
             <label for="studentUsername">Student Username <span class="required">*</span></label>
@@ -304,8 +311,9 @@
       <PvButton
         class="bg-primary border-none border-round text-white p-3 hover:surface-300 hover:text-black-alpha-90"
         @click="addStudent()"
+        icon="pi pi-plus"
+        label="Add Student"
       >
-        Add another student
       </PvButton>
     </div>
     <section class="flex mt-8 justify-content-end">
@@ -738,7 +746,7 @@ const validateRoarUsername = async () => {
   margin-bottom: 0.75rem;
 }
 .student-form-border {
-  border: 2px solid #ccc; /* Add a border around each student form */
+  /* border: 2px solid #ccc; Add a border around each student form */
   padding: 20px; /* Add padding for better spacing */
   margin: 5px; /* Add margin for better spacing */
 }

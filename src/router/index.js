@@ -210,7 +210,7 @@ const routes = [
       {
         name: 'registerStudent',
         path: 'student',
-        component: () => import('../components/auth/RegisterStudent.vue'),
+        component: () => import('../components/auth/RegisterChildren.vue'),
       },
     ],
     meta: { requiresGuest: true },
