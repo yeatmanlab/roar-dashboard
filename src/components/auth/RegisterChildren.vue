@@ -1,16 +1,16 @@
 <template>
   <div class="card">
-    <form class="p-fluid">
+    <form class="">
       <div
         v-for="(student, outerIndex) in state.students"
         :key="outerIndex"
-        class="bg-gray-100 rounded p-2 flex flex-column gap-2 m-2"
+        class="bg-gray-100 rounded py-3 px-5 flex flex-column gap-2 my-3"
       >
-        <div class="flex flex-row justify-content-around align-items-center">
+        <div class="flex flex-row justify-content-between align-items-center">
           <div class="font-bold text-xl text-red-800">Student #{{ outerIndex + 1 }}</div>
           <section v-if="!student.orgName" class="form-section">
             <div class="p-input-icon-right">
-              <div class="flex justify-content-between">
+              <div class="flex justify-content-between gap-2">
                 <label for="activationCode">Activation code <span class="required">*</span></label>
                 <div class="flex align-items-center">
                   <PvCheckbox
@@ -33,8 +33,8 @@
                   :disabled="student.noActivationCode"
                 />
                 <PvButton
-                  class="w-4 bg-primary text-white hover:bg-red-900"
-                  label="Validate Code"
+                  class="w-4 bg-primary text-white hover:bg-red-900 text-sm"
+                  label="Validate"
                   @click="validateCode(student.activationCode, outerIndex)"
                 />
               </PvInputGroup>
@@ -55,19 +55,27 @@
             </span>
           </section>
           <section v-else>
-            <h2 class="text-sm text-red-800 font-bold">You are registering for:</h2>
-            <div class="flex align-items-centerg">
-              <h2 class="text-primary h-3 m-0 p-0" style="width: 70%" data-cy="org-name">{{ student.orgName }}</h2>
-              <PvButton
-                class="bg-primary border-none border-round p-2 text-white hover:surface-300 hover:text-black-alpha-90"
-                label="Enter another code"
-                @click="codeNotRight(outerIndex)"
-              />
+            <div class="flex justify-content-between align-items-center">
+              <div class="flex flex-column my-3 gap-1">
+                <div class="text-xs text-gray-500 font-light uppercase">Registering for</div>
+                <div class="text-lg font-bold text-red-800 m-0 p-0" style="width: 70%" data-cy="org-name">
+                  {{ student.orgName }}
+                </div>
+              </div>
+              <div>
+                <PvButton
+                  class="bg-primary border-none border-round p-2 text-white hover:surface-300 hover:text-black-alpha-90 text-xs"
+                  icon="pi pi-replay"
+                  iconPos="right"
+                  label="Use another code"
+                  @click="codeNotRight(outerIndex)"
+                />
+              </div>
             </div>
           </section>
         </div>
         <section class="form-section">
-          <div class="p-input-icon-right">
+          <div class="p-input-icon-right flex gap-3">
             <label for="studentUsername">Student Username <span class="required">*</span></label>
             <PvInputText
               v-model="student.studentUsername"
@@ -89,7 +97,7 @@
         <section class="form-section flex lg:flex-row">
           <div>
             <div>
-              <label for="password">Password <span class="required">*</span></label>
+              <label for="password">Password (Minimum 6 characters) <span class="required">*</span></label>
               <PvPassword
                 v-model="student.password"
                 name="password"
@@ -164,7 +172,7 @@
         </section>
         <section class="form-section">
           <!--Grade-->
-          <div>
+          <div class="flex gap-3">
             <label for="grade">Grade <span class="required">*</span></label>
             <PvDropdown
               v-model="student.grade"
@@ -300,6 +308,7 @@
           <PvButton
             v-if="outerIndex !== 0"
             class="bg-primary border-none border-round p-3 text-white hover:surface-300 hover:text-black-alpha-90"
+            icon="pi pi-trash"
             @click="deleteStudentForm(outerIndex)"
           >
             Delete Student
@@ -702,6 +711,11 @@ const validateRoarUsername = async () => {
 </script>
 
 <style scoped>
+label {
+  font-size: 0.875rem;
+  font-weight: 300;
+}
+
 .stepper {
   margin: 2rem 0rem;
 }

@@ -65,7 +65,7 @@
         <section class="form-section flex lg:flex-row">
           <div>
             <div>
-              <label for="password">Password <span class="required p-1">*</span></label>
+              <label for="password">Password (minimum 6 characters)<span class="required p-1">*</span></label>
               <PvPassword
                 v-model="v$.password.$model"
                 name="password"
@@ -290,6 +290,11 @@ const isNextButtonDisabled = computed(() => {
 </script>
 
 <style scoped>
+label {
+  font-size: 0.775rem;
+  font-weight: 300;
+}
+
 .p-checkbox-box.p-highlight {
   background-color: var(--primary-color);
   border-color: var(--primary-color);
