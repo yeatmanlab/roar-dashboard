@@ -14,9 +14,6 @@
       <PvTabView v-if="claimsLoaded" v-model:active-index="activeIndex" lazy class="mb-7">
         <PvTabPanel v-for="orgType in orgHeaders" :key="orgType" :header="orgType.header">
           <div class="grid column-gap-3 mt-2">
-            <div v-if="activeOrgType === 'groups'">
-              <PvToggleButton v-model="showSubgroups" offLabel="Show Subgroups" onLabel="Hide Subgroups" />
-            </div>
             <div
               v-if="activeOrgType === 'schools' || activeOrgType === 'classes'"
               class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3"
@@ -52,6 +49,14 @@
                 <label for="school">School</label>
               </span>
             </div>
+          </div>
+          <div v-if="activeOrgType === 'groups'" class="mx-2">
+            <PvToggleButton
+              v-model="showSubgroups"
+              offLabel="Show Subgroups"
+              onLabel="Hide Subgroups"
+              class="p-2 rounded"
+            />
           </div>
           <RoarDataTable
             v-if="tableData"
@@ -455,7 +460,6 @@ const tableColumns = computed(() => {
 });
 
 const tableData = computed(() => {
-  console.log('tabledata');
   if (isLoading.value) return [];
   const tableData = orgData?.value?.map((org) => {
     return {
@@ -468,8 +472,7 @@ const tableData = computed(() => {
       },
     };
   });
-  if (activeOrgType === 'groups' && !showSubgroups.value) {
-    console.log('groups table data fired');
+  if (activeOrgType.value === 'groups' && !showSubgroups.value) {
     return tableData.filter((org) => !org.parentOrgId && !org.parentOrgType);
   } else {
     return tableData;
