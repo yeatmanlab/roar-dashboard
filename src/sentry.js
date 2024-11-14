@@ -10,9 +10,10 @@ const regex = /https:\/\/roar-staging(--pr\d+-\w+)?\.web\.app/;
 export function initSentry(app) {
   // skip if levante instance
   let dsn;
+  let tracePropagationTargets;
   if (isLevante) {
     dsn = 'https://9d67b24a405feffb49477ca8002cc033@o4507250485035008.ingest.us.sentry.io/4507376476618752';
-    tracePropagationTargets = ['localhost:8080', 'https://levante-network.org/*']; // ToDo: add regex for staging/dev/demo URLs...
+    tracePropagationTargets = ['https://hs-levante-admin-prod.web.app/**/*', 'https://hs-levante-admin-dev.web.app/**/*'];
   } else {
     dsn = 'https://f15e3ff866394e93e00514b42113d03d@o4505913837420544.ingest.us.sentry.io/4506820782129152';
     tracePropagationTargets = ['localhost:5173', 'https://roar.education/**/*', regex];
