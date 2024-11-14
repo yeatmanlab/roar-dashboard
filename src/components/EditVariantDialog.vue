@@ -50,7 +50,7 @@
         </div>
         <PvDataTable
           v-if="assignedConditions.length > 0"
-          v-model:editingRows="assignedEditingRows"
+          v-model:editing-rows="assignedEditingRows"
           :value="assignedConditions"
           edit-mode="row"
           data-key="id"
@@ -146,7 +146,7 @@
           </div>
           <PvDataTable
             v-if="optionalConditions.length > 0"
-            v-model:editingRows="optionalEditingRows"
+            v-model:editing-rows="optionalEditingRows"
             :value="optionalConditions"
             edit-mode="row"
             data-key="id"
