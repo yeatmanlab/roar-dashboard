@@ -18,7 +18,7 @@ export function initSentry(app) {
     tracePropagationTargets = ['localhost:5173', 'https://roar.education/**/*', regex];
   }
   // Only initialize Sentry in production
-  if (process.env.NODE_ENV === 'production' && !isLevante) {
+  if (process.env.NODE_ENV === 'production') {
     Sentry.init({
       app,
       dsn: dsn,
