@@ -103,7 +103,7 @@ const { data: userClaims } = useUserClaimsQuery({
 
 const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
 
-const activeIndex = ref(1); // Current active step
+const activeIndex = ref(0); // Current active step
 const isTestData = ref(false);
 
 const parentInfo = ref(null);
