@@ -141,6 +141,8 @@ async function createConsent() {
     }
   }
 
+  // Check this after putting new email
+
   if (docStatus.value === 'SIGNED') {
     // props.isAdobe = false;
     isVisible.value = false;
