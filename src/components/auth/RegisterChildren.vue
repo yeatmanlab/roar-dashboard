@@ -1,11 +1,34 @@
 <template>
   <div class="card">
-    <form class="p-fluid">
-      <div v-for="(student, outerIndex) in state.students" :key="outerIndex" class="student-form-border">
-        <section v-if="!student.orgName" class="form-section">
-          <div class="p-input-icon-right">
-            <div class="flex justify-content-between">
-              <label for="activationCode" class="text-gray-600">Activation code <span class="required">*</span></label>
+    <form class="">
+      <div
+        v-for="(student, outerIndex) in state.students"
+        :key="outerIndex"
+        class="bg-gray-100 rounded py-3 px-5 flex flex-column gap-2 my-3"
+      >
+        <div class="flex flex-column justify-content-between align-items-center">
+          <div class="font-bold text-2xl text-gray-600">Student #{{ outerIndex + 1 }}</div>
+          <section v-if="!student.orgName" class="form-section">
+            <div class="p-input-icon-right">
+              <div class="flex justify-content-between gap-2">
+                <label for="activationCode">Activation code <span class="required">*</span></label>
+              </div>
+              <PvInputGroup v-if="!student.noActivationCode">
+                <PvInputText
+                  v-model="student.activationCode"
+                  name="noActivationCode"
+                  :class="{
+                    'p-invalid': v$.students.$each.$response.$data[outerIndex].activationCode.$invalid && submitted,
+                  }"
+                  aria-describedby="activation-code-error"
+                  :disabled="student.noActivationCode"
+                />
+                <PvButton
+                  class="w-4 bg-primary text-white hover:bg-red-900 text-sm"
+                  label="Validate"
+                  @click="validateCode(student.activationCode, outerIndex)"
+                />
+              </PvInputGroup>
               <div class="flex align-items-center">
                 <PvCheckbox
                   v-model="student.noActivationCode"
@@ -13,64 +36,59 @@
                   name="noActivationCode"
                   @change="updateActivationCode"
                 />
-                <label for="noActivationCode" class="ml-2 text-gray-600">I don't have code</label>
+                <label for="noActivationCode" class="ml-2">I don't have a code</label>
               </div>
             </div>
-            <PvInputGroup v-if="!student.noActivationCode">
-              <PvInputText
-                v-model="student.activationCode"
-                name="noActivationCode"
-                :class="{
-                  'p-invalid': v$.students.$each.$response.$data[outerIndex].activationCode.$invalid && submitted,
-                }"
-                aria-describedby="activation-code-error"
-                :disabled="student.noActivationCode"
-              />
-              <PvButton
-                class="w-4 bg-primary text-white hover:bg-red-900"
-                label="Validate Code"
-                @click="validateCode(student.activationCode, outerIndex)"
-              />
-            </PvInputGroup>
-          </div>
-          <span
-            v-if="
-              v$.students.$each.$response.$data[outerIndex].noActivationCode &&
-              v$.students.$each.$response.$data[outerIndex].activationCode.$invalid &&
-              submitted
-            "
-          >
             <span
-              v-for="(error, innerIndex) in v$.students.$each.$response.$errors[outerIndex].activationCode"
-              :key="`error-${outerIndex}-${innerIndex}`"
+              v-if="
+                v$.students.$each.$response.$data[outerIndex].noActivationCode &&
+                v$.students.$each.$response.$data[outerIndex].activationCode.$invalid &&
+                submitted
+              "
             >
-              <small class="p-error">{{ error.$message.replace('Value', 'Activation Code') }}</small>
+              <span
+                v-for="(error, innerIndex) in v$.students.$each.$response.$errors[outerIndex].activationCode"
+                :key="`error-${outerIndex}-${innerIndex}`"
+              >
+                <small class="p-error">{{ error.$message.replace('Value', 'Activation Code') }}</small>
+              </span>
             </span>
-          </span>
-        </section>
-        <section v-else>
-          <h2 class="text-primary font-bold">You are registering for:</h2>
-          <div class="flex">
-            <h2 class="text-primary h-3 m-0 p-0" style="width: 70%">{{ student.orgName }}</h2>
-            <PvButton
-              class="bg-primary border-none border-round p-2 text-white hover:surface-300 hover:text-black-alpha-90"
-              label="Is this not right?"
-              @click="codeNotRight(outerIndex)"
-            />
-          </div>
-        </section>
-        <section class="form-section" style="width: 100%">
-          <div class="p-input-icon-right">
-            <label for="studentUsername" class="text-gray-600"
-              >Student Username <span class="required mr-2">*</span></label
-            >
+          </section>
+          <section v-else>
+            <div class="flex justify-content-between align-items-center my-2">
+              <div class="flex-column gap-2">
+                <div class="text-xs text-gray-500 font-light uppercase">Registering under</div>
+                <div class="flex gap-2 rounded bg-gray-200 p-2">
+                  <div class="text-sm text-gray-600 font-bold">{{ student.orgName }}</div>
+                </div>
+                <div>
+                  <small class="text-xs text-gray-500 font-light"
+                    >This is the default ROAR@Home registration group.</small
+                  >
+                </div>
+                <div>
+                  <PvButton
+                    class="bg-primary border-none border-round py-2 text-white hover:surface-300 hover:text-black-alpha-90 text-md"
+                    icon="pi pi-replay ml-2"
+                    icon-pos="right"
+                    severity="secondary"
+                    label="Enter another code"
+                    @click="codeNotRight(outerIndex)"
+                  />
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+        <section class="form-section">
+          <div class="p-input-icon-right flex flex-column">
+            <label for="studentUsername">Student Username <span class="required">*</span></label>
             <PvInputText
               v-model="student.studentUsername"
               name="studentUsername"
               :class="{
                 'p-invalid': v$.students.$each.$response.$data[outerIndex].studentUsername.$invalid && submitted,
               }"
-              style="width: 100%"
               aria-describedby="username-error"
             />
           </div>
@@ -85,12 +103,13 @@
         <section class="form-section flex lg:flex-row">
           <div>
             <div>
-              <label for="password" class="text-gray-600">Password <span class="required">*</span></label>
+              <label for="password">Password (Minimum 6 characters) <span class="required">*</span></label>
               <PvPassword
                 v-model="student.password"
                 name="password"
                 :class="{
                   'p-invalid': v$.students.$each.$response.$data[outerIndex].password.$invalid && submitted,
+                  'w-full': true,
                 }"
                 toggle-mask
                 show-icon="pi pi-eye-slash"
@@ -110,14 +129,12 @@
           <!-- Confirm Password -->
           <div>
             <div>
-              <label for="confirmPassword" class="text-gray-600"
-                >Confirm Password <span class="required">*</span></label
-              >
+              <label for="confirmPassword">Confirm Password <span class="required">*</span></label>
               <PvPassword
                 :id="`confirmPassword-${isRegistering ? 'register' : 'login'}`"
                 v-model="student.confirmPassword"
                 name="confirmPassword"
-                :class="{ 'p-invalid': isPasswordMismatch(outerIndex) && submitted }"
+                :class="{ 'p-invalid': isPasswordMismatch(outerIndex) && submitted, 'w-full': true }"
                 toggle-mask
                 show-icon="pi pi-eye-slash"
                 hide-icon="pi pi-eye"
@@ -130,175 +147,164 @@
         <section class="form-section">
           <div>
             <!-- Age / DOB -->
-            <div class="flex justify-content-between">
-              <label class="text-gray-600">Date of Birth <span class="required">*</span></label>
+            <div class="flex justify-content-start gap-2">
+              <label>Date of Birth <span class="required">*</span></label>
               <div class="flex align-items-center">
                 <PvCheckbox v-model="student.yearOnlyCheckRef" :binary="true" name="yearOnly" />
-                <label for="yearOnly" class="ml-2 text-gray-600">Use Year Only</label>
+                <label for="yearOnly" class="ml-2">Use Year Only</label>
               </div>
             </div>
             <div v-if="!student.yearOnlyCheckRef">
-              <PvDatePicker
+              <PvCalendar
                 v-model="student.dob"
                 :max-date="maxDoB"
+                class="w-full"
                 view="date"
                 date-format="mm/dd/yy"
                 icon="pi pi-calendar text-white p-1"
-                class="w-full"
               />
             </div>
             <div v-else>
-              <PvDatePicker
+              <PvCalendar
                 v-model="student.dob"
                 :max-date="maxDoB"
+                class="w-full"
                 view="year"
                 date-format="yy"
                 icon="pi pi-calendar text-white p-1"
-                class="w-full"
               />
             </div>
             <small v-if="v$.students.$each.$response.$data[outerIndex].dob.$invalid && submitted" class="p-error">{{
               v$.students.$each.$response.$errors[outerIndex].dob.$message.replace('Value', 'Date of Birth')
             }}</small>
           </div>
-        </section>
-        <section class="form-section" style="width: 100%">
-          <!--Grade-->
-          <div>
-            <label for="grade" class="text-gray-600">Grade <span class="required">*</span></label>
-            <PvSelect
+          <div class="flex flex-column">
+            <label for="grade">Grade <span class="required">*</span></label>
+            <PvDropdown
               v-model="student.grade"
               :options="gradeOptions"
               option-label="label"
               option-value="value"
-              style="width: 100%"
+              class="w-full"
               name="grade"
             />
           </div>
         </section>
-        <PvAccordion expand-icon="pi pi-plus" collapse-icon="pi pi-minus">
+        <section class="form-section">
+          <!--Grade-->
+        </section>
+        <PvAccordion>
           <PvAccordionTab header="Optional Info">
             <!--First / Last Name-->
             <section class="form-section">
-              <div>
-                <label for="firstName" class="text-gray-600">First Name </label>
+              <div class="flex flex-wrap">
+                <label for="firstName">First Name </label>
                 <PvInputText
                   v-model="student.firstName"
                   name="firstName"
                   :class="{
                     'p-invalid': v$.students.$each.$response.$data[outerIndex]?.firstName.$invalid,
+                    'w-full': true,
                   }"
                   aria-describedby="first-name-error"
                 />
               </div>
               <!-- Middle Name -->
               <div>
-                <label for="middleName" class="text-gray-600">Middle Name </label>
+                <label for="middleName">Middle Name </label>
                 <PvInputText v-model="student.middleName" name="middleName" />
               </div>
-            </section>
-            <section class="form-section" style="width: 100%">
-              <div>
-                <label for="lastName" class="text-gray-600">Last Name </label>
+              <div class="flex flex-column">
+                <label for="lastName">Last Name </label>
                 <PvInputText
                   v-model="student.lastName"
                   name="lastName"
                   :class="{
                     'p-invalid': v$.students.$each.$response.$data[outerIndex]?.lastName.$invalid,
+                    'w-full': true,
                   }"
                   aria-describedby="first-name-error"
-                  style="width: 100%"
                 />
               </div>
             </section>
-            <section class="form-section flex flex-column">
+            <section class="form-section">
               <!--English Language Level-->
-              <div class="w-full">
-                <label for="ell" class="text-gray-600">English as a Second Language</label>
-                <PvSelect
+              <div class="mt-2 mb-3">
+                <label for="ell">English as a Second Language</label>
+                <PvDropdown
                   v-model="student.ell"
                   :options="ellOptions"
                   option-label="label"
                   option-value="value"
                   name="ell"
-                  class="w-full"
                 />
               </div>
               <!--Sex-->
-              <div class="w-full">
-                <label for="sex" class="text-gray-600">Gender </label>
-                <PvSelect
+              <div class="flex flex-column mt-2 mb-3">
+                <label for="sex">Gender </label>
+                <PvDropdown
                   v-model="student.gender"
                   :options="genderOptions"
                   option-label="label"
                   option-value="value"
                   name="gender"
-                  class="w-full"
                 />
               </div>
             </section>
-            <section class="form-section flex flex-column">
+            <section class="form-section mt-2 mb-3">
               <!-- Free-Reduced Lunch -->
-              <div class="w-full">
-                <label for="stateId" class="text-gray-600">Free-Reduced Lunch </label>
-                <PvSelect
+              <div class="flex flex-column">
+                <label for="stateId">Free-Reduced Lunch </label>
+                <PvDropdown
                   v-model="student.freeReducedLunch"
                   :options="frlOptions"
                   option-label="label"
                   option-value="value"
                   name="freeReducedLunch"
-                  class="w-full"
                 />
               </div>
               <!-- IEP Status -->
-              <div class="w-full">
-                <label for="stateId" class="text-gray-600">IEP Status</label>
-                <PvSelect
+              <div class="flex flex-column">
+                <label for="stateId">IEP Status</label>
+                <PvDropdown
                   v-model="student.IEPStatus"
                   :options="IEPOptions"
                   option-label="label"
                   option-value="value"
                   name="IEPStatus"
-                  class="w-full"
                 />
               </div>
             </section>
-            <section class="form-section flex flex-column">
+            <section class="flex flex-row form-section mt-2 mb-3">
               <!-- Race -->
-              <div class="w-full">
-                <label for="race" class="text-gray-600">Race </label>
+              <div class="flex flex-column">
+                <label for="race">Race </label>
                 <PvAutoComplete
                   v-model="student.race"
                   multiple
                   :suggestions="raceOptions"
                   name="race"
-                  class="w-full"
                   @complete="searchRaces"
                 />
               </div>
               <!-- Hispanic Ethinicity -->
-              <div class="w-full">
-                <label for="hispanicEthnicity" class="text-gray-600">Hispanic or Latino Ethnicity </label>
-                <PvSelect
+              <div class="flex flex-column">
+                <label for="hispanicEthnicity">Hispanic or Latino Ethnicity </label>
+                <PvDropdown
                   v-model="student.hispanicEthnicity"
                   :options="ethnicityOptions"
                   option-label="label"
                   option-value="value"
                   name="hispanicEthinicity"
-                  class="w-full"
                 />
               </div>
-            </section>
-            <section class="form-section">
-              <!-- Home Language -->
-              <div class="w-full">
-                <label for="stateId" class="text-gray-600">Home Language </label>
+              <div class="flex flex-column">
+                <label for="stateId">Home Language </label>
                 <PvAutoComplete
                   v-model="student.homeLanguage"
                   multiple
                   :suggestions="languageOptions"
                   name="homeLanguage"
-                  class="w-full"
                   @complete="searchLanguages"
                 />
               </div>
@@ -309,8 +315,10 @@
           <PvButton
             v-if="outerIndex !== 0"
             class="bg-primary border-none border-round p-3 text-white hover:surface-300 hover:text-black-alpha-90"
+            icon="pi pi-trash"
             @click="deleteStudentForm(outerIndex)"
           >
+            <i class="pi pi-trash mr-2"></i>
             Delete Student
           </PvButton>
         </section>
@@ -319,9 +327,10 @@
     <div class="form-section-button2">
       <PvButton
         class="bg-primary border-none border-round text-white p-3 hover:surface-300 hover:text-black-alpha-90"
+        icon="pi pi-plus"
+        label="Add Student"
         @click="addStudent()"
       >
-        Add another student
       </PvButton>
     </div>
     <section class="flex mt-8 justify-content-end">
@@ -352,11 +361,22 @@
 <script setup>
 import { reactive, ref, onMounted, toRaw } from 'vue';
 import { required, minLength, helpers } from '@vuelidate/validators';
+import PvAccordion from 'primevue/accordion';
+import PvAccordionTab from 'primevue/accordiontab';
+import PvButton from 'primevue/button';
+import PvCalendar from 'primevue/calendar';
+import PvCheckbox from 'primevue/checkbox';
+import PvDialog from 'primevue/dialog';
+import PvDropdown from 'primevue/dropdown';
+import PvInputGroup from 'primevue/inputgroup';
+import PvInputText from 'primevue/inputtext';
+import PvPassword from 'primevue/password';
 import { fetchDocById } from '@/helpers/query/utils';
 import { useVuelidate } from '@vuelidate/core';
 import { useAuthStore } from '@/store/auth';
 import { storeToRefs } from 'pinia';
 import _capitalize from 'lodash/capitalize';
+import PvAutoComplete from 'primevue/autocomplete';
 
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
@@ -367,7 +387,6 @@ today.setFullYear(today.getFullYear() - 2);
 const maxDoB = ref(today);
 const orgName = ref('');
 const activationCodeRef = ref('');
-const errors = ref('');
 
 const props = defineProps({
   isRegistering: { type: Boolean, default: true },
@@ -545,31 +564,32 @@ const handleFormSubmit = async (isFormValid) => {
 };
 
 const validateCode = async (studentCode, outerIndex = 0) => {
-  if (studentCode && studentCode !== '') {
-    const activationCode = await fetchDocById('activationCodes', studentCode, undefined, 'admin', true, true).catch(
-      (error) => {
-        errors.value = error;
-        dialogMessage.value =
-          'The code does not belong to any organization \n Please enter a valid code or select: \n "I don`t have code "';
-        showErrorDialog();
-        submitted.value = false;
-        return null;
-      },
-    );
-    if (activationCode.orgId && errors.value === '') {
+  // @TODO: Add proper error handling.
+  if (!studentCode || studentCode === '') return;
+
+  try {
+    const activationCode = await fetchDocById('activationCodes', studentCode, undefined, 'admin', true, true);
+
+    if (activationCode.orgId) {
       state.students[outerIndex].orgName = `${_capitalize(activationCode.orgType)} - ${
         activationCode.orgName ?? activationCode.orgId
       }`;
       state.students[outerIndex].activationCode = studentCode;
       orgName.value = `${_capitalize(activationCode.orgType)} - ${activationCode.orgName ?? activationCode.orgId}`;
-    } else {
-      errors.value = '';
-      if (!state.students[outerIndex].noActivationCode || props.code) {
-        dialogMessage.value = `The code ${studentCode} does not belong to any organization \n please enter a valid code or select: "I do not have code"`;
-        showErrorDialog();
-      }
-      return false;
     }
+  } catch (error) {
+    console.error('Failed to validate activation code', error);
+
+    if (!state.students[outerIndex].noActivationCode || props.code) {
+      dialogMessage.value = `The code ${studentCode} does not belong to any organization \n please enter a valid code or select: "I do not have a code"`;
+    } else {
+      dialogMessage.value =
+        'The code does not belong to any organization \n Please enter a valid code or select: \n "I don\'t have a code"';
+    }
+
+    showErrorDialog();
+
+    submitted.value = false;
   }
 };
 
@@ -699,6 +719,11 @@ const validateRoarUsername = async () => {
 </script>
 
 <style scoped>
+label {
+  font-size: 0.875rem;
+  font-weight: 300;
+}
+
 .stepper {
   margin: 2rem 0rem;
 }
@@ -718,7 +743,7 @@ const validateRoarUsername = async () => {
   color: white;
 }
 .required {
-  color: var(--primary-color);
+  color: var(--bright-red);
 }
 .login-title {
   font-size: 26px;
@@ -741,11 +766,6 @@ const validateRoarUsername = async () => {
 .terms-checkbox {
   margin-top: 0;
   margin-bottom: 0.75rem;
-}
-.student-form-border {
-  border: 2px solid #ccc; /* Add a border around each student form */
-  padding: 20px; /* Add padding for better spacing */
-  margin: 5px; /* Add margin for better spacing */
 }
 .form-section-button {
   display: flex;
