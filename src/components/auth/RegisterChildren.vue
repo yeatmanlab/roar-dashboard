@@ -109,6 +109,7 @@
                 name="password"
                 :class="{
                   'p-invalid': v$.students.$each.$response.$data[outerIndex].password.$invalid && submitted,
+                  'w-full': true,
                 }"
                 toggle-mask
                 show-icon="pi pi-eye-slash"
@@ -133,7 +134,7 @@
                 :id="`confirmPassword-${isRegistering ? 'register' : 'login'}`"
                 v-model="student.confirmPassword"
                 name="confirmPassword"
-                :class="{ 'p-invalid': isPasswordMismatch(outerIndex) && submitted }"
+                :class="{ 'p-invalid': isPasswordMismatch(outerIndex) && submitted, 'w-full': true }"
                 toggle-mask
                 show-icon="pi pi-eye-slash"
                 hide-icon="pi pi-eye"
@@ -157,6 +158,7 @@
               <PvCalendar
                 v-model="student.dob"
                 :max-date="maxDoB"
+                class="w-full"
                 view="date"
                 date-format="mm/dd/yy"
                 icon="pi pi-calendar text-white p-1"
@@ -166,6 +168,7 @@
               <PvCalendar
                 v-model="student.dob"
                 :max-date="maxDoB"
+                class="w-full"
                 view="year"
                 date-format="yy"
                 icon="pi pi-calendar text-white p-1"
@@ -182,6 +185,7 @@
               :options="gradeOptions"
               option-label="label"
               option-value="value"
+              class="w-full"
               name="grade"
             />
           </div>
@@ -200,6 +204,7 @@
                   name="firstName"
                   :class="{
                     'p-invalid': v$.students.$each.$response.$data[outerIndex]?.firstName.$invalid,
+                    'w-full': true,
                   }"
                   aria-describedby="first-name-error"
                 />
@@ -216,6 +221,7 @@
                   name="lastName"
                   :class="{
                     'p-invalid': v$.students.$each.$response.$data[outerIndex]?.lastName.$invalid,
+                    'w-full': true,
                   }"
                   aria-describedby="first-name-error"
                 />
