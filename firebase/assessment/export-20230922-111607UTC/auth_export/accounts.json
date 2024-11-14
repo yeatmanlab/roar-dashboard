@@ -1,0 +1,56 @@
+{
+  "kind": "identitytoolkit#DownloadAccountResponse",
+  "users": [
+    {
+      "localId": "IYRFSuMDfvDDPfoDyzBp4ZDXADO0",
+      "createdAt": "1694348680509",
+      "lastLoginAt": "1695243308136",
+      "displayName": "Super Admin",
+      "photoUrl": "",
+      "passwordHash": "fakeHash:salt=fakeSaltMtUT7lfiCLqh1KPx5XK0:password=super-admin",
+      "salt": "fakeSaltMtUT7lfiCLqh1KPx5XK0",
+      "passwordUpdatedAt": 1695267484887,
+      "customAttributes": "{\"roarUid\":\"OXVqWoOEcUeMVghErMzQaHlpTWor\",\"assessmentUid\":\"IYRFSuMDfvDDPfoDyzBp4ZDXADO0\",\"adminUid\":\"OXVqWoOEcUeMVghErMzQaHlpTWor\",\"super_admin\":true}",
+      "providerUserInfo": [
+        {
+          "providerId": "password",
+          "email": "super-admin@roar-auth.com",
+          "federatedId": "super-admin@roar-auth.com",
+          "rawId": "super-admin@roar-auth.com",
+          "displayName": "Super Admin",
+          "photoUrl": ""
+        }
+      ],
+      "validSince": "1695267484",
+      "email": "super-admin@roar-auth.com",
+      "emailVerified": false,
+      "disabled": false
+    },
+    {
+      "localId": "utkOPfq2g6pjCnFq9GwZN1evdtj8",
+      "createdAt": "1695242630606",
+      "lastLoginAt": "1695313598110",
+      "displayName": "School Admin",
+      "photoUrl": "",
+      "passwordHash": "fakeHash:salt=fakeSalttnjZJx9uLJ3lzlsv3UUz:password=school-admin",
+      "salt": "fakeSalttnjZJx9uLJ3lzlsv3UUz",
+      "passwordUpdatedAt": 1695267484888,
+      "customAttributes": "{\"roarUid\":\"s8vs4MUZ6lz8H13CWkTloGU8bfsU\",\"assessmentUid\":\"utkOPfq2g6pjCnFq9GwZN1evdtj8\",\"adminUid\":\"s8vs4MUZ6lz8H13CWkTloGU8bfsU\",\"adminOrgs\":{\"districts\":[\"61e8aee84cf0e71b14295d45\"]}}",
+      "providerUserInfo": [
+        {
+          "providerId": "password",
+          "email": "school-admin@roar-auth.com",
+          "federatedId": "school-admin@roar-auth.com",
+          "rawId": "school-admin@roar-auth.com",
+          "displayName": "School Admin",
+          "photoUrl": ""
+        }
+      ],
+      "validSince": "1695267484",
+      "email": "school-admin@roar-auth.com",
+      "emailVerified": false,
+      "disabled": false,
+      "lastRefreshAt": "2023-09-22T10:53:36.338Z"
+    }
+  ]
+}

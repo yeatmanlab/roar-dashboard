@@ -1,0 +1,36 @@
+{
+  "firestore": {
+    "rules": "firebase/LEVANTE/admin/firestore.rules",
+    "indexes": "firebase/LEVANTE/admin/firestore.indexes.json"
+  },
+  "hosting": [
+    {
+      "public": "dist",
+      "target": "production",
+      "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+      "rewrites": [
+        {
+          "source": "**",
+          "destination": "/index.html",
+          "headers": [
+            {
+              "key": "Cross-Origin-Opener-Policy",
+              "value": "same-origin-allow-popups"
+            }
+          ]
+        }
+      ],
+      "headers": [
+        {
+          "source": "**",
+          "headers": [
+            {
+              "key": "Cross-Origin-Opener-Policy",
+              "value": "same-origin-allow-popups"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

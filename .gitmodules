@@ -1,0 +1,3 @@
+[submodule "roar-firebase-functions"]
+	path = roar-firebase-functions
+	url = ../roar-firebase-functions.git

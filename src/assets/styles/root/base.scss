@@ -1,0 +1,51 @@
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  font-family: var(--font-family);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+// Sentry feedback widget
+#sentry-feedback {
+  --bottom: 1rem; /* Adjust this value to change the distance from the bottom */
+  --right: 88%;
+  --left: 1rem;
+  display: flex;
+  justify-content: flex-start;
+  --border: 1px solid var(--primary-color);
+  --background-hover: var(--red-100);
+  --submit-border: var(--primary-color);
+  --submit-background: var(--primary-color);
+  --submit-background-hover: var(--primary-color-hover);
+  --cancel-background-hover: var(--red-100);
+}
+
+// Placeholder
+::-webkit-input-placeholder {
+  color: var(--text-color-secondary);
+}
+
+:-moz-placeholder {
+  color: var(--text-color-secondary);
+}
+
+::-moz-placeholder {
+  color: var(--text-color-secondary);
+}
+
+:-ms-input-placeholder {
+  color: var(--text-color-secondary);
+}
+
+.admin-page-header {
+  font-size: clamp(1.3rem, 1.65rem, 1.75rem);
+  color: #52525b;
+  font-weight: bold;
+}

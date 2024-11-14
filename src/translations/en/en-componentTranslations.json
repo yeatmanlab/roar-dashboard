@@ -1,0 +1,105 @@
+{
+  "authSignIn": {
+    "atLeastOneLowercase": "At least one lowercase",
+    "atLeastOneUpperCase": "At least one uppercase",
+    "atLeastOneNumber": "At least one number",
+    "atLeastOneNumeric": "At least one numeric",
+    "buttonLabel": "Go!",
+    "minimumCharacters": "Minimum 8 characters",
+    "emailId": "email",
+    "emailPlaceholder": "Username or email",
+    "incorrectEmailOrPassword": "Incorrect username/email or password",
+    "invalidEmailPlaceholder": "Error: invalid email",
+    "passwordId": "password",
+    "passwordPlaceholder": "Password",
+    "pickPassword": "Pick a password",
+    "selectLanguage": "Select Language",
+    "signInWithEmailLinkPlaceHolder": "Press Go to sign-in with an email link.",
+    "signInWithEmailLinkInstead": "Sign-in using email link",
+    "signInWithPasswordInstead": "Sign-in using password",
+    "suggestions": "Suggestions"
+  },
+  "cleverLanding": {
+    "cleverLoading": "Loading your data from Clever..."
+  },
+  "classLinkLanding": {
+    "classLinkLoading": "Loading your data from ClassLink..."
+  },
+  "consentModal": {
+    "title": "Consent",
+    "acceptButton": "Continue",
+    "toastHeader": "Confirmed"
+  },
+  "homeParticipant": {
+    "showOptionalAssignments": "Show optional assignments",
+    "loadingAssignments": "Loading Assignments",
+    "selectAssignment": "Select an assignment",
+    "noAssignments": "You have no assignments!",
+    "contactAdministrator": "Please contact your administrator to get added to an assignment."
+  },
+  "homeSelector": {
+    "loading": "Loading...",
+    "inactivityLogout": "You will soon be logged out for security purposes. Please click \"Continue\" if you wish to continue your session.\n Otherwise, you will be automatically logged out in { timeLeft } seconds.",
+    "inactivityLogoutAcceptLabel": "Continue"
+  },
+  "gameTabs": {
+    "clickToStart": "Click to start",
+    "taskCompleted": "Task Completed!",
+    "LEVANTE TRANSLATIONS--------------------------": "",
+    "heartsAndFlowersDescription": "Choose the correct side for the hearts and flowers.",
+    "heartsAndFlowersName": "Hearts and Flowers",
+    "egmaMathDescription": "Solve the math problems.",
+    "egmaMathName": "Math Game",
+    "matrixReasoningDescription": "Find the missing piece to complete the puzzle.",
+    "matrixReasoningName": "Puzzle Game",
+    "memoryGameDescription": "Watch the squares light up. Remember the order and make the same pattern.",
+    "memoryGameName": "Memory Game",
+    "mentalRotationDescription": "Match the pictures.",
+    "mentalRotationName": "Matching Game",
+    "sameDifferentSelectionDescription": "Find things that are the same about the shapes.",
+    "sameDifferentSelectionName": "Shapes Game",
+    "theoryOfMindDescription": "Listen to the stories and answer the questions.",
+    "theoryOfMindName": "Stories Game",
+    "trogDescription": "Listen to the words and choose the matching picture.",
+    "trogName": "Words and Pictures Game",
+    "surveyName": "Thoughts and Feelings",
+    "surveyDescription": "Answer questions about your time at school.",
+    "mefsName": "Lion and Monkey Game",
+    "mefsDescription": "Match the shapes and colors.",
+    "vocabName": "Vocabulary Game",
+    "vocabDescription": "Listen to the word and choose the matching image."
+  },
+  "navBar": {
+    "signOut": "Sign Out"
+  },
+  "notFound": {
+    "label": "Return to Home",
+    "pageNotFound": "Page not found",
+    "sorry": "Sorry, we could not find that page!"
+  },
+  "participantSidebar": {
+    "grade": "Grade",
+    "studentInfo": "Student Info",
+    "tasksCompleted": "tasks completed!"
+  },
+  "pageSignIn": {
+    "havingTrouble": "Having trouble?",
+    "login": "Log in to access your dashboard",
+    "loginWith": "Or log in with: ",
+    "welcome": "Welcome to ROAR!"
+  },
+  "tasks": {
+    "preparing": "Preparing your game!",
+    "loading": "loading"
+  },
+  "sentryForm": {
+    "formTitle": "Report an Issue to ROAR",
+    "buttonLabel": "Report an Issue",
+    "submitButtonLabel": "Submit Issue Report",
+    "cancelButtonLabel": "Cancel",
+    "namePlaceholder": "Your Name (optional)",
+    "emailPlaceholder": "your.email@example.org (optional)",
+    "messageLabel": "Description",
+    "messagePlaceholder": "What is the issue? What did you want to experience instead? Thank you for sharing."
+  }
+}

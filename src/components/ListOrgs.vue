@@ -1,0 +1,384 @@
+<template>
+  <PvToast />
+  <main class="container main">
+    <section class="main-body">
+      <div class="flex flex-column mb-5">
+        <div class="flex justify-content-between mb-2">
+          <div class="flex align-items-center gap-3">
+            <i class="pi pi-folder-open text-gray-400 rounded" style="font-size: 1.6rem" />
+            <div class="admin-page-header">List Organizations</div>
+          </div>
+        </div>
+        <div class="text-md text-gray-500 ml-6">View organizations assigned to your account.</div>
+      </div>
+      <PvTabs v-if="claimsLoaded" v-model:value="activeOrgType" class="mb-7">
+        <PvTabList>
+          <PvTab v-for="orgType in orgHeaders" :key="orgType.id" :value="orgType.id" class="text-lg">
+            {{ orgType.header }}
+          </PvTab>
+        </PvTabList>
+        <PvTabPanels>
+          <PvTabPanel v-for="orgType in orgHeaders" :key="orgType.id" :value="orgType.id">
+            <div class="grid column-gap-3 mt-2">
+              <div
+                v-if="activeOrgType === 'schools' || activeOrgType === 'classes'"
+                class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3"
+              >
+                <PvFloatLabel>
+                  <PvSelect
+                    v-model="selectedDistrict"
+                    input-id="district"
+                    :options="allDistricts"
+                    option-label="name"
+                    option-value="id"
+                    :placeholder="districtPlaceholder"
+                    :loading="isLoadingDistricts"
+                    class="w-full"
+                    data-cy="dropdown-parent-district"
+                  />
+                  <label for="district">District</label>
+                </PvFloatLabel>
+              </div>
+              <div v-if="orgType.id === 'classes'" class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3">
+                <PvFloatLabel>
+                  <PvSelect
+                    v-model="selectedSchool"
+                    input-id="school"
+                    :options="allSchools"
+                    option-label="name"
+                    option-value="id"
+                    :placeholder="schoolPlaceholder"
+                    :loading="isLoadingSchools"
+                    class="w-full"
+                    data-cy="dropdown-parent-school"
+                  />
+                  <label for="school">School</label>
+                </PvFloatLabel>
+              </div>
+            </div>
+            <div v-if="tableData.length > 0">
+              <RoarDataTable
+                :key="tableKey"
+                :columns="tableColumns"
+                :data="tableData"
+                sortable
+                :loading="isLoading || isFetching"
+                :allow-filtering="false"
+                @export-all="exportAll"
+                @selected-org-id="showCode"
+              />
+            </div>
+            <AppSpinner v-else />
+          </PvTabPanel>
+        </PvTabPanels>
+      </PvTabs>
+      <AppSpinner v-else />
+    </section>
+    <section class="flex mt-8 justify-content-end">
+      <PvDialog
+        v-model:visible="isDialogVisible"
+        dialog-title="text-primary"
+        :style="{ width: '50rem' }"
+        :draggable="false"
+      >
+        <template #header>
+          <h1 class="text-primary font-bold m-0">Invitation</h1>
+        </template>
+        <p class="font-bold text-lg">Link:</p>
+        <PvInputGroup>
+          <PvInputText
+            style="width: 70%"
+            :value="`https://roar.education/register/?code=${activationCode}`"
+            autocomplete="off"
+            readonly
+          />
+          <PvButton
+            class="bg-primary border-none p-2 text-white hover:bg-red-900"
+            @click="copyToClipboard(`https://roar.education/register/?code=${activationCode}`)"
+          >
+            <i class="pi pi-copy p-2"></i>
+          </PvButton>
+        </PvInputGroup>
+        <p class="font-bold text-lg">Code:</p>
+        <PvInputGroup class="mt-3">
+          <PvInputText style="width: 70%" :value="activationCode" autocomplete="off" readonly />
+          <PvButton
+            class="bg-primary border-none p-2 text-white hover:bg-red-900"
+            @click="copyToClipboard(activationCode)"
+          >
+            <i class="pi pi-copy p-2"></i>
+          </PvButton>
+        </PvInputGroup>
+        <div class="flex justify-content-end">
+          <PvButton
+            class="mt-3 bg-primary border-none border-round p-3 text-white hover:bg-red-900"
+            @click="closeDialog"
+            >Close</PvButton
+          >
+        </div>
+      </PvDialog>
+    </section>
+  </main>
+</template>
+
+<script setup>
+import { orgFetcher, orgFetchAll, orgPageFetcher } from '@/helpers/query/orgs';
+import { orderByDefault, exportCsv, fetchDocById } from '@/helpers/query/utils';
+import { ref, computed, onMounted, watch } from 'vue';
+import { storeToRefs } from 'pinia';
+import { useQuery } from '@tanstack/vue-query';
+import { useAuthStore } from '@/store/auth';
+import { useToast } from 'primevue/usetoast';
+import _get from 'lodash/get';
+import _head from 'lodash/head';
+
+const initialized = ref(false);
+const orgsQueryKeyIndex = ref(0);
+const selectedDistrict = ref(undefined);
+const selectedSchool = ref(undefined);
+const orderBy = ref(orderByDefault);
+let activationCode = ref(null);
+const isDialogVisible = ref(false);
+const toast = useToast();
+
+const districtPlaceholder = computed(() => {
+  if (isLoadingDistricts.value) {
+    return 'Loading...';
+  }
+  return 'Select a district';
+});
+
+const schoolPlaceholder = computed(() => {
+  if (isLoadingSchools.value) {
+    return 'Loading...';
+  }
+  return 'Select a school';
+});
+
+// Authstore and Sidebar
+const authStore = useAuthStore();
+const { roarfirekit, uid, userQueryKeyIndex } = storeToRefs(authStore);
+
+const { isLoading: isLoadingClaims, data: userClaims } = useQuery({
+  queryKey: ['userClaims', uid, userQueryKeyIndex],
+  queryFn: () => fetchDocById('userClaims', uid.value),
+  keepPreviousData: true,
+  enabled: initialized,
+  staleTime: 5 * 60 * 1000, // 5 minutes
+});
+
+const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
+const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
+
+const orgHeaders = computed(() => {
+  const headers = {
+    districts: { header: 'Districts', id: 'districts' },
+    schools: { header: 'Schools', id: 'schools' },
+    classes: { header: 'Classes', id: 'classes' },
+    groups: { header: 'Groups', id: 'groups' },
+  };
+
+  if (isSuperAdmin.value) return headers;
+
+  const result = {};
+  if ((adminOrgs.value?.districts ?? []).length > 0) {
+    result.districts = { header: 'Districts', id: 'districts' };
+    result.schools = { header: 'Schools', id: 'schools' };
+    result.classes = { header: 'Classes', id: 'classes' };
+  }
+  if ((adminOrgs.value?.schools ?? []).length > 0) {
+    result.schools = { header: 'Schools', id: 'schools' };
+    result.classes = { header: 'Classes', id: 'classes' };
+  }
+  if ((adminOrgs.value?.classes ?? []).length > 0) {
+    result.classes = { header: 'Classes', id: 'classes' };
+  }
+  if ((adminOrgs.value?.groups ?? []).length > 0) {
+    result.groups = { header: 'Groups', id: 'groups' };
+  }
+  return result;
+});
+
+const activeOrgType = ref('districts');
+
+const claimsLoaded = computed(() => !isLoadingClaims.value);
+
+const { isLoading: isLoadingDistricts, data: allDistricts } = useQuery({
+  queryKey: ['districts', uid, orgsQueryKeyIndex],
+  queryFn: () => orgFetcher('districts', undefined, isSuperAdmin, adminOrgs),
+  keepPreviousData: true,
+  enabled: claimsLoaded,
+  staleTime: 5 * 60 * 1000, // 5 minutes
+});
+
+function copyToClipboard(text) {
+  navigator.clipboard
+    .writeText(text)
+    .then(function () {
+      toast.add({
+        severity: 'success',
+        summary: 'Hoorah!',
+        detail: 'Your code has been successfully copied to clipboard!',
+        life: 3000,
+      });
+    })
+    .catch(function () {
+      toast.add({
+        severity: 'error',
+        summary: 'Error!',
+        detail: 'Your code has not been copied to clipboard! \n Please try again',
+        life: 3000,
+      });
+    });
+}
+
+const schoolQueryEnabled = computed(() => {
+  return claimsLoaded.value && selectedDistrict.value !== undefined;
+});
+
+const { isLoading: isLoadingSchools, data: allSchools } = useQuery({
+  queryKey: ['schools', uid, selectedDistrict, orgsQueryKeyIndex],
+  queryFn: () => orgFetcher('schools', selectedDistrict, isSuperAdmin, adminOrgs),
+  keepPreviousData: true,
+  enabled: schoolQueryEnabled,
+  staleTime: 5 * 60 * 1000, // 5 minutes
+});
+
+const {
+  isLoading,
+  isFetching,
+  data: orgData,
+} = useQuery({
+  queryKey: ['orgsPage', uid, activeOrgType, selectedDistrict, selectedSchool, orderBy, orgsQueryKeyIndex],
+  queryFn: () =>
+    orgPageFetcher(
+      activeOrgType,
+      selectedDistrict,
+      selectedSchool,
+      orderBy,
+      ref(100000),
+      ref(0),
+      isSuperAdmin,
+      adminOrgs,
+    ),
+  keepPreviousData: true,
+  enabled: claimsLoaded,
+  staleTime: 5 * 60 * 1000, // 5 minutes
+});
+
+const exportAll = async () => {
+  const exportData = await orgFetchAll(
+    activeOrgType,
+    selectedDistrict,
+    selectedSchool,
+    orderBy,
+    isSuperAdmin,
+    adminOrgs,
+  );
+  exportCsv(exportData, `roar-${activeOrgType.value}.csv`);
+};
+
+const tableColumns = computed(() => {
+  const columns = [
+    { field: 'name', header: 'Name', dataType: 'string', pinned: true, sort: true },
+    { field: 'abbreviation', header: 'Abbreviation', dataType: 'string', sort: true },
+    { field: 'address.formattedAddress', header: 'Address', dataType: 'string', sort: true },
+    { field: 'tags', header: 'Tags', dataType: 'array', chip: true, sort: false },
+  ];
+
+  if (['districts', 'schools'].includes(activeOrgType.value)) {
+    columns.push(
+      { field: 'mdrNumber', header: 'MDR Number', dataType: 'string', sort: false },
+      { field: 'ncesId', header: 'NCES ID', dataType: 'string', sort: false },
+    );
+  }
+
+  if (['districts', 'schools', 'classes'].includes(activeOrgType.value)) {
+    columns.push({ field: 'clever', header: 'Clever', dataType: 'boolean', sort: false });
+    columns.push({ field: 'classlink', header: 'ClassLink', dataType: 'boolean', sort: false });
+  }
+
+  columns.push(
+    {
+      link: true,
+      routeName: 'ListUsers',
+      routeTooltip: 'View users',
+      routeLabel: 'Users',
+      routeIcon: 'pi pi-user',
+      sort: false,
+    },
+    {
+      header: 'SignUp Code',
+      buttonLabel: 'Invite Users',
+      button: true,
+      eventName: 'selected-org-id',
+      buttonIcon: 'pi pi-send mr-2',
+      sort: false,
+    },
+  );
+  return columns;
+});
+
+const tableData = computed(() => {
+  if (isLoading.value) return [];
+  return orgData.value.map((org) => {
+    return {
+      ...org,
+      routeParams: {
+        orgType: activeOrgType.value,
+        orgId: org.id,
+        orgName: org.name,
+        tooltip: 'View Users in ' + org.name,
+      },
+    };
+  });
+});
+
+const showCode = async (selectedOrg) => {
+  const orgInfo = await fetchDocById(activeOrgType.value, selectedOrg.id);
+  if (orgInfo?.currentActivationCode) {
+    activationCode.value = orgInfo.currentActivationCode;
+    isDialogVisible.value = true;
+  }
+};
+
+const closeDialog = () => {
+  isDialogVisible.value = false;
+};
+
+let unsubscribe;
+const initTable = () => {
+  if (unsubscribe) unsubscribe();
+  initialized.value = true;
+};
+
+unsubscribe = authStore.$subscribe(async (mutation, state) => {
+  if (state.roarfirekit.restConfig) initTable();
+});
+
+onMounted(() => {
+  if (roarfirekit.value.restConfig) initTable();
+});
+
+watch(allDistricts, (newValue) => {
+  selectedDistrict.value = _get(_head(newValue), 'id');
+});
+
+watch(allSchools, (newValue) => {
+  selectedSchool.value = _get(_head(newValue), 'id');
+});
+
+const tableKey = ref(0);
+watch([selectedDistrict, selectedSchool, activeOrgType], () => {
+  tableKey.value += 1;
+});
+</script>
+
+<style>
+.p-datatable-gridlines .p-datatable-tbody > tr > td {
+  padding-left: 0.5rem !important;
+  padding-right: 0.5rem !important;
+  padding-top: 0.3rem !important;
+  padding-bottom: 0.3rem !important;
+}
+</style>

@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin-allow-popups" />
+    <title>ROAR</title>
+    <link rel="icon" href="/lion.svg" sizes="any" type="image/svg+xml" />
+    <!--  Target ios browsers. -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-180x180.png" />
+    <!--  Target safari on MacOS. -->
+    <link rel="icon" type="image/png" sizes="64x64" href="/pwa-64x64.png" />
+    <!--  The classic favicon displayed in tabs. -->
+    <link rel="icon" type="image/png" sizes="16x16" href="/pwa-64x64.png" />
+    <!-- Used by Android Chrome for the "Add to home screen" icon and settings. -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <!--  Used for Safari pinned tabs. -->
+    <link rel="mask-icon" type="image/png" href="/maskable-icon-512x512.png" color="#193860" />
+    <!--  Target older browsers like IE 10 and lower. -->
+    <link rel="icon" href="/favicon.ico" />
+    <!-- Used by Chrome, Firefox OS, and opera to change the browser address bar. -->
+    <meta name="theme-color" content="#ccccc7" />
+    <!--  Used by windows 8, 8.1, and 10 for the start menu tiles. -->
+    <meta name="msapplication-TileColor" content="#00aba9" />
+  </head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YYE3YN0S99"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() {
+      dataLayer.push(arguments);
+    }
+    gtag('js', new Date());
+
+    gtag('config', 'G-YYE3YN0S99');
+  </script>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

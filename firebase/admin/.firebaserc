@@ -1,0 +1,9 @@
+{
+  "projects": {
+    "default": "demo-gse-roar-assessment",
+    "admin": "gse-roar-admin",
+    "assessment": "demo-gse-roar-assessment"
+  },
+  "targets": {},
+  "etags": {}
+}

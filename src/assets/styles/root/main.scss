@@ -1,0 +1,17 @@
+main.main {
+  width: 100vw;
+  padding-block: 2rem;
+  gap: 2rem;
+  display: flex;
+  margin-inline: auto;
+
+  .main-sidebar {
+    flex: 30ch 30ch auto;
+    width: 10ch;
+  }
+
+  .main-body {
+    flex: 1 1 auto;
+    width: 1px;
+  }
+}

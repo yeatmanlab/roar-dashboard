@@ -1,0 +1,35 @@
+.navbar-container {
+  width: 100%;
+  background: var(--surface-a);
+  border-top: 7px solid var(--primary-color);
+  border-bottom: 1px solid var(--surface-d);
+
+  nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .navbar-logo {
+    margin-top: 1.25rem;
+    margin-bottom: 1.25rem;
+
+    svg {
+      height: 65px;
+      width: auto;
+
+      * {
+        fill: var(--primary-color);
+      }
+    }
+  }
+  .login-container {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+  }
+  .menu-icon {
+    font-size: 1.5rem;
+    margin-left: 1rem;
+  }
+}
