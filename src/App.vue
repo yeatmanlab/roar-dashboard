@@ -83,6 +83,7 @@ const navbarBlacklist = ref([
   'RAN',
   'Crowding',
   'MEP',
+  'RegisterClinic',
 ]);
 
 onBeforeMount(async () => {

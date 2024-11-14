@@ -70,7 +70,7 @@
                   <PvButton
                     class="bg-primary border-none border-round py-2 text-white hover:surface-300 hover:text-black-alpha-90 text-md"
                     icon="pi pi-replay ml-2"
-                    iconPos="right"
+                    icon-pos="right"
                     severity="secondary"
                     label="Enter another code"
                     @click="codeNotRight(outerIndex)"
@@ -327,9 +327,9 @@
     <div class="form-section-button2">
       <PvButton
         class="bg-primary border-none border-round text-white p-3 hover:surface-300 hover:text-black-alpha-90"
-        @click="addStudent()"
         icon="pi pi-plus"
         label="Add Student"
+        @click="addStudent()"
       >
       </PvButton>
     </div>
