@@ -91,6 +91,16 @@ const columns = computed(() => {
       { field: 'scores.letter.incorrectPhonemes', header: 'Sounds To Work On', dataType: 'text', sort: false },
     );
   }
+  if (props.taskId === 'letter-en-ca') {
+    tableColumns.push(
+      { field: 'scores.letter-en-ca.lowerCaseScore', header: 'Lower Case', dataType: 'text', sort: false },
+      { field: 'scores.letter-en-ca.upperCaseScore', header: 'Upper Case', dataType: 'text', sort: false },
+      { field: 'scores.letter-en-ca.phonemeScore', header: 'Letter Sounds', dataType: 'text', sort: false },
+      { field: 'scores.letter-en-ca.totalScore', header: 'Total', dataType: 'text', sort: false },
+      { field: 'scores.letter-en-ca.incorrectLetters', header: 'Letters To Work On', dataType: 'text', sort: false },
+      { field: 'scores.letter-en-ca.incorrectPhonemes', header: 'Sounds To Work On', dataType: 'text', sort: false },
+    );
+  }
   if (props.taskId === 'pa') {
     tableColumns.push(
       { field: 'scores.pa.firstSound', header: 'First Sound', dataType: 'text', sort: false },
@@ -118,6 +128,14 @@ const exportSelected = (selectedRows) => {
       _set(tableRow, 'Total', _get(scores, 'letter.totalScore'));
       _set(tableRow, 'Letters To Work On', _get(scores, 'letter.incorrectLetters'));
       _set(tableRow, 'Sounds To Work On', _get(scores, 'letter.incorrectPhonemes'));
+    }
+    if (props.taskId === 'letter-en-ca') {
+      _set(tableRow, 'Lower Case', _get(scores, 'letter-en-ca.lowerCaseScore'));
+      _set(tableRow, 'Upper Case', _get(scores, 'letter-en-ca.upperCaseScore'));
+      _set(tableRow, 'Letter Sounds', _get(scores, 'letter-en-ca.phonemeScore'));
+      _set(tableRow, 'Total', _get(scores, 'letter-en-ca.totalScore'));
+      _set(tableRow, 'Letters To Work On', _get(scores, 'letter-en-ca.incorrectLetters'));
+      _set(tableRow, 'Sounds To Work On', _get(scores, 'letter-en-ca.incorrectPhonemes'));
     }
     if (props.taskId === 'pa') {
       _set(tableRow, 'First Sound', _get(scores, 'pa.firstSound'));
@@ -147,6 +165,13 @@ const exportAll = async () => {
       _set(tableRow, 'Total', _get(scores, 'letter.totalScore'));
       _set(tableRow, 'Letters To Work On', _get(scores, 'letter.incorrectLetters'));
       _set(tableRow, 'Sounds To Work On', _get(scores, 'letter.incorrectPhonemes'));
+    } else if (props.taskId === 'letter-en-ca') {
+      _set(tableRow, 'Lower Case', _get(scores, 'letter-en-ca.lowerCaseScore'));
+      _set(tableRow, 'Upper Case', _get(scores, 'letter-en-ca.upperCaseScore'));
+      _set(tableRow, 'Letter Sounds', _get(scores, 'letter-en-ca.phonemeScore'));
+      _set(tableRow, 'Total', _get(scores, 'letter-en-ca.totalScore'));
+      _set(tableRow, 'Letters To Work On', _get(scores, 'letter-en-ca.incorrectLetters'));
+      _set(tableRow, 'Sounds To Work On', _get(scores, 'letter-en-ca.incorrectPhonemes'));
     } else if (props.taskId === 'pa') {
       _set(tableRow, 'First Sound', _get(scores, 'pa.firstSound'));
       _set(tableRow, 'Last Sound', _get(scores, 'pa.lastSound'));

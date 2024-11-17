@@ -1203,7 +1203,7 @@ const scoreReportColumns = computed(() => {
     }
   });
 
-  const priorityTasks = ['swr', 'sre', 'pa', 'letter'];
+  const priorityTasks = ['swr', 'sre', 'pa', 'letter', 'letter-en-ca'];
   const spanishTasks = ['letter-es', 'pa-es', 'swr-es', 'sre-es'];
   const spanishMathTasks = ['fluency-arf-es', 'fluency-calf-es'];
   const supplementaryTasks = ['morphology', 'cva', 'vocab', 'trog', 'phonics', 'roar-inference'];

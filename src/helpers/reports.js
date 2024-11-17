@@ -25,6 +25,14 @@ export const taskDisplayNames = {
     extendedName: 'Letter Names and Sounds',
     order: 2,
   },
+  'letter-en-ca': {
+    name: 'Letter',
+    publicName: 'ROAR - Letter',
+    studentFacingName: 'Letter',
+    extendedTitle: 'ROAR - Letter',
+    extendedName: 'Letter Names and Sounds',
+    order: 27,
+  },
   pa: {
     name: 'Phoneme',
     publicName: 'ROAR - Phoneme',
@@ -257,6 +265,8 @@ export const extendedDescriptions = {
   cva: 'This test measures your students’ knowledge of words that are often used in the books they read at school',
   letter:
     'This test measures how well your student knows the names of letters and which letters are used to spell each sound',
+  'letter-en-ca':
+    'This test measures how well your student knows the names of letters and which letters are used to spell each sound',
   'letter-es.':
     'This test measures how well your student knows the names of letters and which letters are used to spell each sound.',
   comp: 'Temporary description for comp',
@@ -339,6 +349,7 @@ export const rawOnlyTasks = ['letter', 'cva', 'morphology', 'vocab', 'fluency', 
 export const tasksToDisplayPercentCorrect = [
   'letter',
   'letter-es',
+  'letter-en-ca',
   'cva',
   'swr-es',
   'pa-es',
