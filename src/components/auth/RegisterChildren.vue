@@ -322,6 +322,25 @@
             Delete Student
           </PvButton>
         </section>
+        <ChallengeV3 v-model="response" action="submit">
+          <div class="field-checkbox terms-checkbox">
+            <PvCheckbox
+              :id="`accept-${isRegistering ? 'register' : 'login'}`"
+              v-model="v$.accept.$model"
+              name="accept"
+              binary
+              :disabled="showConsent"
+              :class="[{ 'p-invalid': v$.accept.$invalid && submitted }]"
+              @change="getConsent"
+            />
+            <!-- <label for="accept" :class="{ 'p-error': v$.accept.$invalid && submitted }"
+                >I agree to the terms and conditions<span class="required">*</span></label
+              > -->
+          </div>
+          <!-- <small v-if="(v$.accept.$invalid && submitted) || v$.accept.$pending.$response" class="p-error">
+              You must agree to the terms and conditions
+            </small> -->
+        </ChallengeV3>
       </div>
     </form>
     <div class="form-section-button2">
@@ -360,7 +379,7 @@
 
 <script setup>
 import { reactive, ref, onMounted, toRaw } from 'vue';
-import { required, minLength, helpers } from '@vuelidate/validators';
+import { required, minLength, helpers, sameAs } from '@vuelidate/validators';
 import PvAccordion from 'primevue/accordion';
 import PvAccordionTab from 'primevue/accordiontab';
 import PvButton from 'primevue/button';
@@ -377,6 +396,7 @@ import { useAuthStore } from '@/store/auth';
 import { storeToRefs } from 'pinia';
 import _capitalize from 'lodash/capitalize';
 import PvAutoComplete from 'primevue/autocomplete';
+import { ChallengeV3 } from 'vue-recaptcha';
 
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
@@ -430,6 +450,7 @@ const state = reactive({
       noActivationCode: noActivationCodeRef.value,
       yearOnlyCheck: yearOnlyCheckRef.value,
       orgName: '',
+      accept: false,
     },
   ],
 });
@@ -456,6 +477,7 @@ const rules = {
       noActivationCode: {},
       yearOnlyCheck: {},
       orgName: {},
+      accept: { sameAs: sameAs(true) },
     }),
   },
 };
