@@ -30,9 +30,9 @@
     </div>
     <div class="flex justify-content-center mt-2">
       <PvCheckbox v-model="noConsent" :binary="true" input-id="no-consent" class="flex" value="noConsent" />
-      <label class="ml-2 flex text-center" for="no-consent"
-        >This administration does not require consent {{ isLevante ? '' : 'or assent' }} forms</label
-      >
+      <label class="ml-2 flex text-center" for="no-consent">
+        This administration does not require consent {{ isLevante ? '' : 'or assent' }} forms
+      </label>
     </div>
     <div class="flex flex-row">
       <div v-if="userDrivenFlow && !noConsent" class="align-content-center" style="width: 50%">
@@ -48,15 +48,15 @@
                   @change="checkBoxStatus"
                 />
                 <i class="pi pi-align-justify" style="font-size: 1rem; width: 8%"></i>
-                <label class="mr-3 p-0 ml-1 flex cursor-pointer" style="width: 80%" for="default-params"
-                  >Default Data Collection Values</label
-                >
+                <label class="mr-3 p-0 ml-1 flex cursor-pointer" style="width: 80%" for="default-params">
+                  Default Data Collection Values
+                </label>
               </div>
             </div>
           </div>
           <hr />
           <div class="ml-5" style="width: 70%">
-            <div v-for="param in defaultParams" :key="param" class="mt-1 mb-1 ml-3 mr-0 p-0 text-center flex">
+            <div v-for="param in defaultParams" :key="param.name" class="mt-1 mb-1 ml-3 mr-0 p-0 text-center flex">
               <i :class="param.icon" style="font-size: 1rem; width: 10%"></i>
               <div class="mr-3 ml-0 p-0 flex" style="width: 80%">{{ param.name }}</div>
             </div>
@@ -85,8 +85,9 @@
                 :class="['mr-3 p-0 flex cursor-pointer', { 'pointer-events-none': !disableIfNotDefault }]"
                 style="width: 80%"
                 for="video-recording"
-                >Video Recording</label
               >
+                Video Recording
+              </label>
             </div>
           </div>
         </div>
@@ -112,8 +113,9 @@
                 :class="['mr-3 p-0 flex cursor-pointer', { 'pointer-events-none': !disableIfNotDefault }]"
                 style="width: 80%"
                 for="audio-recording"
-                >Audio Recording</label
               >
+                Audio Recording
+              </label>
             </div>
           </div>
         </div>
@@ -139,8 +141,9 @@
                 :class="['mr-3 p-0 flex cursor-pointer', { 'pointer-events-none': !disableIfNotDefault }]"
                 style="width: 80%"
                 for="eye-tracking"
-                >Eye - Tracking</label
               >
+                Eye - Tracking
+              </label>
             </div>
           </div>
         </div>
@@ -149,13 +152,13 @@
           <div class="flex flex-row">
             <div class="mr-1">
               <span class="p-float-label">
-                <PvInputText id="consent-amount" v-model="amount" class="w-full" disabled="true" />
+                <PvInputText id="consent-amount" v-model="amount" class="w-full" disabled />
                 <label for="consent-amount" class="text-sm w-full">Payment Amount $$</label>
               </span>
             </div>
             <div class="ml-3">
               <span class="p-float-label">
-                <PvInputText id="consent-time" v-model="expectedTime" class="w-full" disabled="true" />
+                <PvInputText id="consent-time" v-model="expectedTime" class="w-full" disabled />
                 <label for="consent-time" class="text-sm w-full">Expected Time Amount</label>
               </span>
             </div>
@@ -181,20 +184,20 @@
             style="width: 70%"
             :placeholder="props.legal?.assent[0]?.fileName || 'Select an Assent Form'"
             @change="updateAssent"
-            />
+          />
         </div>
         <div class="hidden">
           <h3 class="mb-4 mt-5">Consent Amount and Expected Time</h3>
           <div class="flex flex-row">
             <div class="mr-1">
               <span class="p-float-label">
-                <PvInputText id="consent-amount" v-model="amount" class="w-full" disabled="true" />
+                <PvInputText id="consent-amount" v-model="amount" class="w-full" disabled />
                 <label for="consent-amount" class="text-sm w-full">Payment Amount $$</label>
               </span>
             </div>
             <div class="ml-3">
               <span class="p-float-label">
-                <PvInputText id="consent-time" v-model="expectedTime" class="w-full" disabled="true" />
+                <PvInputText id="consent-time" v-model="expectedTime" class="w-full" disabled />
                 <label for="consent-time" class="text-sm w-full">Expected Time Amount</label>
               </span>
             </div>
@@ -209,14 +212,14 @@
               <div style="width: 80%">
                 <p class="m-0">
                   <span class="font-bold">Name: </span>{{ result.consent[0]?.fileName }} <br />
-                  <div v-if="!isLevante">
+                  <template v-if="!isLevante">
                     <span class="font-bold">Current Commit: </span>{{ result.consent[0]?.currentCommit }}
                     <br />
                     <span class="font-bold">GitHub Org: </span>{{ result.consent[0]?.gitHubOrg }} <br />
                     <span class="font-bold">GitHub Repository: </span>{{ result.consent[0]?.gitHubRepository }}
                     <br />
                     <span class="font-bold">Last Updated: </span>{{ result.consent[0]?.lastUpdated }} <br />
-                  </div>
+                  </template>
                 </p>
               </div>
               <div class="flex align-items-center justify-content-center">
