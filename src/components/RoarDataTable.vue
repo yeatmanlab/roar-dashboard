@@ -800,6 +800,9 @@ function getUniqueOptions(column) {
 const primaryTasks = [
   'scores.letter.percentCorrect',
   'scores.letter.percentile',
+  'scores.letter-en-ca.percentCorrect',
+  'scores.letter-en-ca.percentile',
+  'scores.letter-en-ca.rawScore',
   'scores.pa.percentile',
   'scores.swr.percentile',
   'scores.sre.percentile',
