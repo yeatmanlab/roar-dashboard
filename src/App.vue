@@ -10,9 +10,6 @@
     <!-- Twitter -->
     <meta name="twitter:title" content="ROAR Web Query" />
     <meta name="twitter:description" content="A web-based tool to query ROAR assessment data!" />
-
-    <!-- Dynamic Favicon -->
-    <link rel="icon" :href="`/favicon-${project}.ico`" />
   </Head>
   <div>
     <PvToast />

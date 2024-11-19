@@ -1,63 +1,63 @@
-# name: Deploy Firestore Rules and Indexes (Development)
-# 'on':
-#   push:
-#     branches:
-#       - main
+name: Deploy Firestore Rules and Indexes (Development)
+'on':
+  push:
+    branches:
+      - main
 
-# jobs:
-#   deploy-admin-rules:
-#     name: Admin Rules
-#     runs-on: ubuntu-latest
-#     steps:
-#       - name: Checkout Repo
-#         uses: actions/checkout@master
-#       - name: Deploy to Firebase
-#         uses: w9jds/firebase-action@v13.0.3
-#         with:
-#           args: deploy --only firestore:rules
-#         env:
-#           GCP_SA_KEY: ${{ secrets.FIRESTORE_UPDATE_SERVICE_ACCOUNT_GSE_ROAR_ADMIN_DEV }}
-#           PROJECT_ID: gse-roar-admin-dev
-#           PROJECT_PATH: ./firebase/admin
-#   deploy-assessment-rules:
-#     name: Assessment Rules
-#     runs-on: ubuntu-latest
-#     steps:
-#       - name: Checkout Repo
-#         uses: actions/checkout@master
-#       - name: Deploy to Firebase
-#         uses: w9jds/firebase-action@v13.0.3
-#         with:
-#           args: deploy --only firestore:rules
-#         env:
-#           GCP_SA_KEY: ${{ secrets.FIRESTORE_UPDATE_SERVICE_ACCOUNT_GSE_ROAR_ASSESSMENT_DEV }}
-#           PROJECT_ID: gse-roar-assessment-dev
-#           PROJECT_PATH: ./firebase/assessment
-#   deploy-admin-indexes:
-#     name: Admin Indexes
-#     runs-on: ubuntu-latest
-#     steps:
-#       - name: Checkout Repo
-#         uses: actions/checkout@master
-#       - name: Deploy to Firebase
-#         uses: w9jds/firebase-action@v13.0.3
-#         with:
-#           args: deploy --only firestore:indexes
-#         env:
-#           GCP_SA_KEY: ${{ secrets.FIRESTORE_UPDATE_SERVICE_ACCOUNT_GSE_ROAR_ADMIN_DEV }}
-#           PROJECT_ID: gse-roar-admin-dev
-#           PROJECT_PATH: ./firebase/admin
-#   deploy-assessment-indexes:
-#     name: Assessment Indexes
-#     runs-on: ubuntu-latest
-#     steps:
-#       - name: Checkout Repo
-#         uses: actions/checkout@master
-#       - name: Deploy to Firebase
-#         uses: w9jds/firebase-action@v13.0.3
-#         with:
-#           args: deploy --only firestore:indexes
-#         env:
-#           GCP_SA_KEY: ${{ secrets.FIRESTORE_UPDATE_SERVICE_ACCOUNT_GSE_ROAR_ASSESSMENT_DEV }}
-#           PROJECT_ID: gse-roar-assessment-dev
-#           PROJECT_PATH: ./firebase/assessment
+jobs:
+  deploy-admin-rules:
+    name: Admin Rules
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@master
+      - name: Deploy to Firebase
+        uses: w9jds/firebase-action@v13.0.3
+        with:
+          args: deploy --only firestore:rules
+        env:
+          GCP_SA_KEY: ${{ secrets.FIRESTORE_UPDATE_SERVICE_ACCOUNT_GSE_ROAR_ADMIN_DEV }}
+          PROJECT_ID: gse-roar-admin-dev
+          PROJECT_PATH: ./firebase/admin
+  deploy-assessment-rules:
+    name: Assessment Rules
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@master
+      - name: Deploy to Firebase
+        uses: w9jds/firebase-action@v13.0.3
+        with:
+          args: deploy --only firestore:rules
+        env:
+          GCP_SA_KEY: ${{ secrets.FIRESTORE_UPDATE_SERVICE_ACCOUNT_GSE_ROAR_ASSESSMENT_DEV }}
+          PROJECT_ID: gse-roar-assessment-dev
+          PROJECT_PATH: ./firebase/assessment
+  deploy-admin-indexes:
+    name: Admin Indexes
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@master
+      - name: Deploy to Firebase
+        uses: w9jds/firebase-action@v13.0.3
+        with:
+          args: deploy --only firestore:indexes
+        env:
+          GCP_SA_KEY: ${{ secrets.FIRESTORE_UPDATE_SERVICE_ACCOUNT_GSE_ROAR_ADMIN_DEV }}
+          PROJECT_ID: gse-roar-admin-dev
+          PROJECT_PATH: ./firebase/admin
+  deploy-assessment-indexes:
+    name: Assessment Indexes
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@master
+      - name: Deploy to Firebase
+        uses: w9jds/firebase-action@v13.0.3
+        with:
+          args: deploy --only firestore:indexes
+        env:
+          GCP_SA_KEY: ${{ secrets.FIRESTORE_UPDATE_SERVICE_ACCOUNT_GSE_ROAR_ASSESSMENT_DEV }}
+          PROJECT_ID: gse-roar-assessment-dev
+          PROJECT_PATH: ./firebase/assessment
