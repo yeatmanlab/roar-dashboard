@@ -86,6 +86,10 @@ import { csvFileToJson } from '@/helpers';
 import { useToast } from 'primevue/usetoast';
 import { useAuthStore } from '@/store/auth';
 import LinkUsersInfo from '@/components/LEVANTE/LinkUsersInfo.vue';
+import PvButton from 'primevue/button';
+import PvColumn from 'primevue/column';
+import PvDataTable from 'primevue/datatable';
+import PvFileUpload from 'primevue/fileupload';
 
 const authStore = useAuthStore();
 const toast = useToast();

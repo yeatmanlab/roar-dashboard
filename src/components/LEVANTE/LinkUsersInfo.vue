@@ -26,9 +26,13 @@
       />
     </PvPanel>
   </template>
-  
-  <style scoped>
-  .info-message-container {
+
+<script setup>
+  import PvPanel from 'primevue/panel';
+</script>
+
+<style scoped>
+.info-message-container {
     display: flex;
     background-color: rgb(252, 252, 218);
     border: 2px solid rgb(228, 206, 7);
