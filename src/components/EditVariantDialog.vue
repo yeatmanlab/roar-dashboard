@@ -284,22 +284,22 @@ const computedConditionOptions = (field) => {
   
   if (selectedField === 'Grade') {
     return [
-      { label: 'Less Than', value: 'LESS_THAN' },
-      { label: 'Greater Than', value: 'GREATER_THAN' },
-      { label: 'Less Than or Equal', value: 'LESS_THAN_OR_EQUAL' },
-      { label: 'Greater Than or Equal', value: 'GREATER_THAN_OR_EQUAL' },
-      { label: 'Equal', value: 'EQUAL' },
-      { label: 'Not Equal', value: 'NOT_EQUAL' },
+      { label: 'Less Than (<)', value: 'LESS_THAN' },
+      { label: 'Greater Than (>)', value: 'GREATER_THAN' },
+      { label: 'Less Than or Equal (<=)', value: 'LESS_THAN_OR_EQUAL' },
+      { label: 'Greater Than or Equal (>=)', value: 'GREATER_THAN_OR_EQUAL' },
+      { label: 'Equal (=)', value: 'EQUAL' },
+      { label: 'Not Equal (!=)', value: 'NOT_EQUAL' },
     ];
   } else if (selectedField === 'School Level') {
     return [
-      { label: 'Equal', value: 'EQUAL' },
-      { label: 'Not Equal', value: 'NOT_EQUAL' },
+      { label: 'Equal (=)', value: 'EQUAL' },
+      { label: 'Not Equal (!=)', value: 'NOT_EQUAL' },
     ];
   } else if (selectedField === 'User Type') {
     return [
-      { label: 'Equal', value: 'EQUAL' },
-      { label: 'Not Equal', value: 'NOT_EQUAL' },
+      { label: 'Equal (=)', value: 'EQUAL' },
+      { label: 'Not Equal (!=)', value: 'NOT_EQUAL' },
     ];
   }
 }

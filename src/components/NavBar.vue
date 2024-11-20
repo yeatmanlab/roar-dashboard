@@ -56,6 +56,10 @@
                 </div>
               </div>
             </template>
+
+            <div v-if="!isLevante" class="my-2">
+              <LanguageSelector />
+            </div>
           </PvMenubar>
         </div>
       </div>
