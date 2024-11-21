@@ -103,21 +103,23 @@ export const flattenObj = (obj) => {
   return result;
 };
 
-export const csvFileToJson = async (file) => {
-  const results = await Papa.parse(await file.text(), {
-    header: true,
-    skipEmptyLines: true,
-    transformHeader: (header) => header.trim(),
-    transform: (value, field) => {
-      if (field === 'id') {
-        return value.trim();
-      }
-      return value;
-    }
+export const csvFileToJson = (fileObject) =>
+  new Promise((resolve, reject) => {
+    Papa.parse(fileObject, {
+      header: true,
+      dynamicTyping: true,
+      skipEmptyLines: 'greedy',
+      transform: (value) => value.trim(),
+      transformHeader: (value) => value.trim(),
+      complete: function (results) {
+        if (results.errors.length !== 0) {
+          reject(results.errors);
+        }
+        resolve(results.data);
+      },
+    });
   });
-  return results.data;
-};
-
+  
 export const standardDeviation = (arr, usePopulation = false) => {
   // prevent divide by 0
   if (arr.length === 0) return Infinity;

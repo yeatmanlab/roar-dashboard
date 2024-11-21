@@ -11,7 +11,7 @@ import _isEmpty from 'lodash/isEmpty';
 import { convertValues, getAxiosInstance, getProjectId, mapFields } from './utils';
 import { pluralizeFirestoreCollection } from '@/helpers';
 
-const userSelectFields = ['name', 'assessmentPid', 'username', 'studentData', 'schools', 'classes'];
+const userSelectFields = ['name', 'assessmentPid', 'username', 'studentData', 'schools', 'classes', 'email', 'userType'];
 
 const assignmentSelectFields = [
   'assessments',
@@ -1003,7 +1003,7 @@ export const getUserAssignments = async (roarUid) => {
 };
 
 export const assignmentFetchAll = async (adminId, orgType, orgId, includeScores = false) => {
-  return await assignmentPageFetcher(
+  const assignments = await assignmentPageFetcher(
     adminId,
     orgType,
     orgId,
@@ -1013,4 +1013,6 @@ export const assignmentFetchAll = async (adminId, orgType, orgId, includeScores 
     true,
     true,
   );
+
+  return assignments;
 };

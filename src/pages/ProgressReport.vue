@@ -53,7 +53,7 @@
                 <div v-if="tasksDictionary[taskId]" class="text-lg font-bold text-gray-600 w-full">
                   {{ tasksDictionary[taskId]?.technicalName ?? taskId }}
                   <span v-if="tasksDictionary[taskId]?.publicName" class="font-light uppercase text-sm">
-                    ({{ tasksDictionary[taskId].publicName }})
+                    ({{ tasksDictionary[taskId]?.publicName }})
                   </span>
                 </div>
                 <div v-else class="text-lg font-bold text-gray-600 w-full">
@@ -326,7 +326,8 @@ const computedProgressData = computed(() => {
     const currRow = {
       user: {
         username: user.username,
-        email: user.email || assignment.userData.email,
+        email: user.email,
+        userType: user.userType,
         userId: user.userId,
         firstName: user?.name?.first || '',
         lastName: user?.name?.last || '',
@@ -473,7 +474,7 @@ const progressReportColumns = computed(() => {
 
   if (isLevante) {
     tableColumns.push({ field: 'user.userId', header: 'UID', dataType: 'text', sort: true, filter: true });
-    tableColumns.push({ field: 'user.email', header: 'Email', dataType: 'text', sort: true, filter: true });
+    tableColumns.push({ field: 'user.userType', header: 'User Type', dataType: 'text', sort: true, filter: true });
   }
 
   if (props.orgType === 'district') {

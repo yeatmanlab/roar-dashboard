@@ -20,13 +20,13 @@
     </div>
 
     <div v-else>
-      <h2 v-if="userAssignments && userAssignments.length == 1" class="p-float-label dropdown-container">
+      <h2 v-if="userAssignments?.length == 1" class="p-float-label dropdown-container">
         {{ userAssignments.at(0).publicName || userAssignments.at(0).name }}
       </h2>
 
       <div class="flex flex-row-reverse align-items-end gap-2 justify-content-between">
         <div
-          v-if="optionalAssessments && optionalAssessments.length !== 0"
+          v-if="optionalAssessments?.length !== 0"
           class="switch-container flex flex-row align-items-center justify-content-end mr-6 gap-2"
         >
           <PvInputSwitch
@@ -178,7 +178,6 @@ const {
   enabled: initialized,
 });
 
-console.log('userAssignments', userAssignments.value)
 
 const sortedUserAdministrations = computed(() => {
   return [...(userAssignments.value ?? [])].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
@@ -286,10 +285,10 @@ async function checkConsent() {
       }
     }
   } else if (age > 7 || grade > 1) {
-    confirmText.value = consentDoc.text;
+      confirmText.value = consentDoc.text;
       showConsent.value = true;
       return;
-      }
+    }
 
     // LEVANTE
   } else {
@@ -437,7 +436,6 @@ watch(
   [userData, selectedAdmin, userAssignments],
   async ([newUserData, isSelectedAdminChanged]) => {
     // If the assignments are still loading, abort.
-    console.log('userAssignments in watcher: ', userAssignments.value)
 
     if (isLoadingAssignments.value || isFetchingAssignments.value || !userAssignments.value?.length) return;
 
