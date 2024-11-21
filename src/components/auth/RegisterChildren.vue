@@ -326,21 +326,34 @@
           <div class="field-checkbox terms-checkbox">
             <PvCheckbox
               :id="`accept-${isRegistering ? 'register' : 'login'}`"
-              v-model="v$.accept.$model"
-              name="accept"
+              v-model="v$.students.$each.$response.$data[outerIndex].accept.$model"
               binary
               :disabled="showConsent"
-              :class="[{ 'p-invalid': v$.accept.$invalid && submitted }]"
+              :class="[{ 'p-invalid': v$.students.$each.$response.$data[outerIndex].accept.$invalid && submitted }]"
               @change="getConsent"
             />
-            <!-- <label for="accept" :class="{ 'p-error': v$.accept.$invalid && submitted }"
-                >I agree to the terms and conditions<span class="required">*</span></label
-              > -->
+            <label
+              for="accept"
+              :class="{ 'p-error': v$.students.$each.$response.$data[outerIndex].accept.$invalid && submitted }"
+              >I agree to the terms and conditions<span class="required">*</span></label
+            >
           </div>
-          <!-- <small v-if="(v$.accept.$invalid && submitted) || v$.accept.$pending.$response" class="p-error">
-              You must agree to the terms and conditions
-            </small> -->
+          <small
+            v-if="
+              (v$.students.$each.$response.$data[outerIndex].accept.$invalid && submitted) ||
+              v$.students.$each.$response.$data[outerIndex].accept.$pending
+            "
+            class="p-error"
+          >
+            You must agree to the terms and conditions
+          </small>
         </ChallengeV3>
+        <ConsentModal
+          v-if="showConsent"
+          :consent-text="consentText"
+          consent-type="consent"
+          :on-confirm="handleConsentAccept()"
+        />
       </div>
     </form>
     <div class="form-section-button2">
@@ -390,6 +403,7 @@ import PvDropdown from 'primevue/dropdown';
 import PvInputGroup from 'primevue/inputgroup';
 import PvInputText from 'primevue/inputtext';
 import PvPassword from 'primevue/password';
+import ConsentModal from '../ConsentModal.vue';
 import { fetchDocById } from '@/helpers/query/utils';
 import { useVuelidate } from '@vuelidate/core';
 import { useAuthStore } from '@/store/auth';
@@ -415,6 +429,37 @@ const props = defineProps({
 
 const isDialogVisible = ref(false);
 const submitted = ref(false);
+
+const showConsent = ref(false);
+const consentText = ref('');
+const isCaptchaverified = ref(null);
+
+async function handleConsentAccept(outerIndex) {
+  console.log('handle consent accept for student: ', outerIndex);
+  state.students[outerIndex].accept = true;
+}
+
+function handleCaptcha() {
+  isCaptchaverified.value = response.value;
+}
+
+async function handleCheckCaptcha() {
+  await new Promise((resolve) => {
+    // Simulate a delay to ensure the reCAPTCHA value is updated
+    setTimeout(() => {
+      resolve();
+      handleCaptcha();
+    }, 500); // You might adjust the delay time if needed
+  });
+}
+
+async function getConsent() {
+  const consentDoc = await authStore.getLegalDoc('consent-behavioral-eye-tracking');
+  consentText.value = consentDoc.text;
+  // consentVersion = consentDoc.version;
+  showConsent.value = true;
+  handleCheckCaptcha();
+}
 
 const showErrorDialog = () => {
   isDialogVisible.value = true;
@@ -481,6 +526,8 @@ const rules = {
     }),
   },
 };
+
+const response = ref(null);
 
 function addStudent() {
   state.students.push({
