@@ -74,6 +74,24 @@ Cypress.Commands.add('navigateTo', (page) => {
 });
 
 /**
+ * Wait for the participant homepage to load.
+ */
+Cypress.Commands.add('waitForParticipantHomepage', () => {
+  // Note: Especially during SSO auth flows, the application takes a while to load. Until this is resolved, we need to
+  // work with a slightly excessive timeout to ensure we allow the application to complete the auth flow.
+  cy.waitUntil(
+    () => {
+      return Cypress.$('[data-cy="home-participant__administration"]').length > 0;
+    },
+    {
+      errorMsg: 'Failed to load the participant home page before timeout',
+      timeout: 60000,
+      interval: 1000,
+    },
+  );
+});
+
+/**
  * Selects a test district, school, class, and group within a multi-level dropdown.
  *
  * @param {string} [testDistrictName=Cypress.env('testDistrictName')] - Name of the district to select.
