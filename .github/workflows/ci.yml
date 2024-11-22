@@ -4,9 +4,15 @@ on:
   pull_request:
     types: [opened, reopened, synchronize, ready_for_review]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
   pull-requests: write
+  checks: write
+  id-token: write
 
 jobs:
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
@@ -21,15 +27,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version-file: '.nvmrc'
-          cache: 'npm'
-          cache-dependency-path: package-lock.json
-
-      - name: Install dependencies
-        run: npm ci
+      - name: Setup environment
+        uses: ./.github/actions/setup-node-environment
 
       - name: Run linter
         run: npm run lint
@@ -41,7 +40,7 @@ jobs:
   # Test
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
   test:
-    name: Test
+    name: Unit tests
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
@@ -49,15 +48,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version-file: '.nvmrc'
-          cache: 'npm'
-          cache-dependency-path: package-lock.json
-
-      - name: Install dependencies
-        run: npm ci
+      - name: Setup environment
+        uses: ./.github/actions/setup-node-environment
 
       - name: Run unit tests
         run: npm run test
@@ -73,20 +65,160 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    env:
+      DOTENV_PRIVATE_KEY_DEVELOPMENT: ${{ secrets.DOTENV_PRIVATE_KEY_DEVELOPMENT }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+          token: ${{ secrets.CI_GITHUB_PAT }}
+
+      - name: Setup environment
+        uses: ./.github/actions/setup-node-environment
+
+      - name: Build application
+        run: npm run build
+
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  # End-to-end tests
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  e2e-tests:
+    name: End-to-end tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chrome, edge]
+        containers: [1, 2]
+    container:
+      image: cypress/browsers:node-20.18.0-chrome-129.0.6668.89-1-ff-131.0.2-edge-129.0.2792.65-1
+      options: --user 1001
+    env:
+      DOTENV_PRIVATE_KEY_DEVELOPMENT: ${{ secrets.DOTENV_PRIVATE_KEY_DEVELOPMENT }}
+      DOTENV_PRIVATE_KEY_TEST: ${{ secrets.DOTENV_PRIVATE_KEY_TEST }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: 'true'
+          token: ${{ secrets.CI_GITHUB_PAT }}
+
+      - name: Execute Cypress tests
+        uses: cypress-io/github-action@v6
+        env:
+          CYPRESS_BASE_URL: 'http://127.0.0.1:4173'
+          CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
+          COMMIT_INFO_MESSAGE: '${{ github.event.pull_request.title }} (#${{ github.event.pull_request.number }})'
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          build: npm run build
+          start: npm run preview -- --host
+          tag: ${{ github.event_name }},e2e,${{ matrix.browser }}
+          wait-on: ${{ env.CYPRESS_BASE_URL }}
+          wait-on-timeout: 120
+          record: true
+          parallel: true
+          browser: ${{ matrix.browser }}
+          ci-build-id: ${{ github.run_id }}-e2e-${{ matrix.browser }}
+          spec: |
+            cypress/e2e/participant/default-tests/**/*.cy.js
+            cypress/e2e/partner-admin/default-tests/**/*.cy.js
+
+  # # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  # # Component Tests
+  # # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  # component-tests:
+  #   name: Component tests
+  #   runs-on: ubuntu-latest
+  #   timeout-minutes: 90
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       browser: [chrome, edge]
+  #   container:
+  #     image: cypress/browsers:node-20.18.0-chrome-129.0.6668.89-1-ff-131.0.2-edge-129.0.2792.65-1
+  #     options: --user 1001
+  #   env:
+  #     DOTENV_PRIVATE_KEY_DEVELOPMENT: ${{ secrets.DOTENV_PRIVATE_KEY_DEVELOPMENT }}
+  #     DOTENV_PRIVATE_KEY_TEST: ${{ secrets.DOTENV_PRIVATE_KEY_TEST }}
+
+  #   steps:
+  #     - name: Checkout repository
+  #       uses: actions/checkout@v4
+  #       with:
+  #         submodules: 'true'
+  #         token: ${{ secrets.CI_GITHUB_PAT }}
+
+  #     - name: Execute Cypress tests
+  #       uses: cypress-io/github-action@v6
+  #       env:
+  #         CYPRESS_BASE_URL: 'http://127.0.0.1:4173'
+  #         CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
+  #         COMMIT_INFO_MESSAGE: '${{ github.event.pull_request.title }} (#${{ github.event.pull_request.number }})'
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       with:
+  #         component: true
+  #         build: npm run build
+  #         start: npm run preview -- --host
+  #         tag: ${{ github.event_name }},component,${{ matrix.browser }}
+  #         wait-on: ${{ env.CYPRESS_BASE_URL }}
+  #         wait-on-timeout: 120
+  #         record: true
+  #         parallel: true
+  #         browser: ${{ matrix.browser }}
+  #         ci-build-id: ${{ github.run_id }}-component-${{ matrix.browser }}
+  #         spec: |
+  #           cypress/component/**/*.cy.js
+
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  # Deploy to Preview Environment
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    needs: [lint, test, build]
+    timeout-minutes: 5
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install Node.js
-        uses: actions/setup-node@v4
+      - name: Build app
+        uses: ./.github/actions/build
         with:
-          node-version-file: '.nvmrc'
-          cache: 'npm'
-          cache-dependency-path: package-lock.json
+          environment: staging
+          github-pat: ${{ secrets.CI_GITHUB_PAT }}
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Deploy app
+        uses: ./.github/actions/deploy
+        id: deployment
+        with:
+          firebase-channel: preview
+          firebase-project-id: ${{ secrets.CI_FIREBASE_PROJECT_ID_ADMIN_STAGING }}
+          gcp-workload-identity-provider: ${{ secrets.CI_FIREBASE_WORKLOAD_IDENTITY_PROVIDER_ADMIN_STAGING }}
+          gcp-service-account-id: ${{ secrets.CI_FIREBASE_HOSTING_SERVICE_ACCOUNT_ID_ADMIN_STAGING }}
 
-      - name: Build
-        run: npm run build
+      - name: Debug
+        run: echo ${{ steps.deployment.outputs.deployment-url }}
+
+      # - name: Whitelist AppCheck admin environment
+      #   if: ${{ success() }}
+      #   uses: ./.github/actions/whitelist-appcheck-environment
+      #   with:
+      #     project-id: ${{ secrets.CI_FIREBASE_PROJECT_ID_ADMIN_STAGING }}
+      #     service-account-key: ${{ secrets.CI_FIREBASE_SERVICE_ACCOUNT_ADMIN_STAGING }}
+      #     appcheck-site-key: ${{ secrets.FIREBASE_APPCHECK_SITE_KEY_ADMIN_STAGING }}
+      #     environment-url: ${{ fromJson(steps.firebase-deploy-preview.outputs.urls)[0] }}
+
+      # - name: Whitelist AppCheck assessment environment
+      #   if: ${{ success() }}
+      #   uses: ./.github/actions/whitelist-appcheck-environment
+      #   with:
+      #     project-id: ${{ secrets.FIREBASE_PROJECT_ID_ASSESSMENT_STAGING }}
+      #     service-account-key: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_ASSESSMENT_STAGING }}
+      #     appcheck-site-key: ${{ secrets.FIREBASE_APPCHECK_SITE_KEY_ASSESSMENT_STAGING }}
+      #     environment-url: ${{ fromJson(steps.firebase-deploy-preview.outputs.urls)[0] }}
