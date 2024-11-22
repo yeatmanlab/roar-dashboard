@@ -1,0 +1,80 @@
+# –––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––– #
+# roar-dashboard/deploy
+# –––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––– #
+
+name: Deploy
+description: Deploys the ROAR Dashboard to Firebase Hosting.
+outputs:
+  deployment-url:
+    description: 'The URL of the deployed application.'
+    value: ${{ steps.output-deployment-url.outputs.deployment-url }}
+inputs:
+  firebase-channel:
+    description: 'The Firebase hosting channel to deploy to, preview or default.'
+    required: true
+  firebase-project-id:
+    description: 'The Firebase project ID to deploy to.'
+    required: true
+  gcp-workload-identity-provider:
+    description: 'The GCP workload identity provider to authenticate with.'
+    required: true
+  gcp-service-account-id:
+    description: 'The GCP service account ID to impersonate.'
+    required: true
+
+runs:
+  using: composite
+  steps:
+    # Authenticate with GCP using Workload Identity Federation
+    - name: Authenticate with GCP
+      id: gcp-auth
+      uses: google-github-actions/auth@v2
+      with:
+        project_id: ${{ inputs.firebase-project-id }}
+        workload_identity_provider: ${{ inputs.gcp-workload-identity-provider }}
+        service_account: ${{ inputs.gcp-service-account-id }}
+        create_credentials_file: true
+        token_format: 'access_token'
+        access_token_scopes: 'email,openid,https://www.googleapis.com/auth/cloudplatformprojects.readonly,https://www.googleapis.com/auth/firebase,https://www.googleapis.com/auth/cloud-platform'
+
+    # Retrieve GCP credentials
+    # Note: This is currently necessary as firebaseextended/action-hosting-deploy does not support currently support
+    # automatic GCP authentication using google-github-actions/auth action.
+    - name: Retrieve GCP credentials
+      shell: bash
+      run: |
+        echo "GCP_HOSTING_SERVICE_ACCOUNT_KEY=$(cat "${{ steps.gcp-auth.outputs.credentials_file_path }}" | tr -d '\n')" >> $GITHUB_ENV
+
+    # Prepare deployment
+    # Note: As the project relies on two simultaneous Firebase projects and the configs are stored in the /firebase
+    # directory, we prepare the deployment by ensuring that the Firebase config and dist directory are located on the
+    # same path. Otherwise, the firebaseextended/action-hosting-deploy action fails to deploy the application.
+    - name: Prepare deployment
+      shell: bash
+      run: |
+        mkdir app
+        cp -r roar-dashboard/dist app/dist
+        cp -r roar-dashboard/firebase/admin/* app/
+        rm -rf roar-dashboard
+        cd app && pwd && ls -la
+
+    # Deploy application
+    # Note: When invoking this action with 'pr' as environment, the channelId is set to an empty string to deploy to an
+    # ephemeral preview environment in Firebase Hosting.
+    - name: Deploy application
+      uses: FirebaseExtended/action-hosting-deploy@v0.9.0
+      id: firebase-deploy
+      with:
+        firebaseServiceAccount: '${{ env.GCP_HOSTING_SERVICE_ACCOUNT_KEY }}'
+        projectId: '${{ inputs.firebase-project-id }}'
+        channelId: ${{ inputs.firebase-channel == 'preview' && '' || 'live' }}
+        entryPoint: ./app
+
+    # Output deployment URL
+    - name: Output deployment URL
+      if: ${{ inputs.firebase-channel == 'preview' }}
+      id: output-deployment-url
+      shell: bash
+      run: |
+        deployment_url=$(echo "${{ steps.firebase-deploy.outputs.urls }}" | jq -r '.[0]')
+        echo "deployment-url=$deployment_url" >> $GITHUB_OUTPUT
