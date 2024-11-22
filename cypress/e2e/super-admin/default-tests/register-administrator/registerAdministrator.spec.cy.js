@@ -29,7 +29,7 @@ describe('The admin user can create a new administrator and assign them to a gro
     'Logs into the dashboard, navigates to the Create Administrator component, ' +
       'creates a new administrator, and assigns the new administrator to a group,',
     () => {
-      cy.login(Cypress.env('superAdminUsername'), Cypress.env('superAdminPassword'));
+      cy.login(Cypress.env('SUPER_ADMIN_USERNAME'), Cypress.env('SUPER_ADMIN_PASSWORD'));
       cy.navigateTo('/create-administrator');
       cy.wait(0.5 * timeout);
       inputAdministratorDetails();

@@ -3,7 +3,7 @@ import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 export function signInAsSuperAdmin(firebaseAuth) {
   const auth = getAuth(firebaseAuth);
   cy.then(() =>
-    signInWithEmailAndPassword(auth, 'testsuperadmin1@roar-auth.com', Cypress.env('superAdminPassword')),
+    signInWithEmailAndPassword(auth, 'testsuperadmin1@roar-auth.com', Cypress.env('SUPER_ADMIN_PASSWORD')),
   ).then((userCredential) => {
     cy.log('User: ', userCredential.user);
   });

@@ -10,11 +10,11 @@ export function signInWithClever() {
     cy.get('input[title="School name"]', { timeout: 6 * innerTimeout }).type(Cypress.env('cleverSchoolName'));
     cy.get('ul > li', { timeout: innerTimeout }).contains(Cypress.env('cleverSchoolName')).click();
     // Find the username input field and input the username
-    cy.get('input#username', { timeout: innerTimeout }).type(Cypress.env('cleverUsername'));
+    cy.get('input#username', { timeout: innerTimeout }).type(Cypress.env('CLEVER_USERNAME'));
     cy.wait(0.2 * innerTimeout);
 
     // Input password
-    cy.get('input#password', { timeout: innerTimeout }).type(Cypress.env('cleverPassword'));
+    cy.get('input#password', { timeout: innerTimeout }).type(Cypress.env('CLEVER_PASSWORD'));
     cy.wait(0.2 * innerTimeout);
     // Click the login button
     cy.get('button#UsernamePasswordForm--loginButton', { timeout: innerTimeout }).click();

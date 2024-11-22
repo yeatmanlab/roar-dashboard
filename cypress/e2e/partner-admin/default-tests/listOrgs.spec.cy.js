@@ -20,7 +20,7 @@ function checkOrgExists(org) {
 
 describe('The partner admin user', () => {
   beforeEach(() => {
-    cy.login(Cypress.env('partnerAdminUsername'), Cypress.env('partnerAdminPassword'));
+    cy.login(Cypress.env('PARTNER_ADMIN_USERNAME'), Cypress.env('PARTNER_ADMIN_PASSWORD'));
     cy.wait(0.2 * timeout);
     cy.navigateTo('/');
     cy.wait(0.2 * timeout);

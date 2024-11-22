@@ -55,7 +55,7 @@ describe('The admin user can edit the conditions of an administration.', () => {
     'Logs into the dashboard, navigates to the Create Administrations component,' +
       'edits an existing administration, and checks the fields for the appropriate changes..',
     () => {
-      cy.login(Cypress.env('superAdminUsername'), Cypress.env('superAdminPassword'));
+      cy.login(Cypress.env('SUPER_ADMIN_USERNAME'), Cypress.env('SUPER_ADMIN_PASSWORD'));
       cy.navigateTo('/');
       cy.wait(0.3 * timeout);
       cy.navigateTo(`/edit-administration/${administrationId}/`);
