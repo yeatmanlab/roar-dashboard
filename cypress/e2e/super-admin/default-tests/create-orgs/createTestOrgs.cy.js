@@ -28,7 +28,7 @@ const randomOrgs = [
 describe('The admin user can create a set of test orgs', () => {
   randomOrgs.forEach((org) => {
     it(`Creates a test ${org.orgType}`, () => {
-      cy.login(Cypress.env('superAdminUsername'), Cypress.env('superAdminPassword'));
+      cy.login(Cypress.env('SUPER_ADMIN_USERNAME'), Cypress.env('SUPER_ADMIN_PASSWORD'));
       cy.navigateTo('/create-orgs');
       cy.log(`Creating a ${org.orgType.toLowerCase()} named ${org.name}`);
       selectOrgFromDropdown(org.orgType.toLowerCase());

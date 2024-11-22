@@ -31,7 +31,7 @@ function completeParentSignUp(org) {
 
 describe('The partner admin user', () => {
   beforeEach(() => {
-    cy.login(Cypress.env('partnerAdminUsername'), Cypress.env('partnerAdminPassword'));
+    cy.login(Cypress.env('PARTNER_ADMIN_USERNAME'), Cypress.env('PARTNER_ADMIN_PASSWORD'));
     cy.visit(APP_ROUTES.HOME);
     cy.visit(APP_ROUTES.LIST_ORGS);
   });
