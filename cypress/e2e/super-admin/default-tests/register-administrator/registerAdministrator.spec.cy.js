@@ -1,6 +1,4 @@
 import { randomizeName } from '../../../../support/utils';
-
-const timeout = Cypress.env('timeout');
 const randomTenDigitNumber = Math.floor(1000000000 + Math.random() * 9000000000);
 const randomAdministratorFirstName = randomizeName(Cypress.env('testAdministratorFirstName'));
 const randomAdministratorMiddleName = randomizeName(Cypress.env('testAdministratorMiddleName'));
@@ -31,7 +29,7 @@ describe('The admin user can create a new administrator and assign them to a gro
     () => {
       cy.login(Cypress.env('SUPER_ADMIN_USERNAME'), Cypress.env('SUPER_ADMIN_PASSWORD'));
       cy.navigateTo('/create-administrator');
-      cy.wait(0.5 * timeout);
+      cy.wait(0.5 * Cypress.env('timeout'));
       inputAdministratorDetails();
       cy.selectTestOrgs();
       createAdministrator();

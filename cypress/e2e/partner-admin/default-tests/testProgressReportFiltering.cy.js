@@ -10,7 +10,6 @@
 // const testAdministrationId = Cypress.env('testAdministrationId');
 // const roarTestAdministrationName = Cypress.env('testRoarAppsAdministration');
 // const roarTestAdministrationId = Cypress.env('testRoarAppsAdministrationId');
-// const timeout = Cypress.env('timeout');
 // const baseUrl = Cypress.config().baseUrl;
 // const testPartnerAdminUsername = Cypress.env('PARTNER_ADMIN_USERNAME');
 // const testPartnerAdminPassword = Cypress.env('PARTNER_ADMIN_PASSWORD');
@@ -21,42 +20,42 @@
 // function checkUrl() {
 //   cy.login(testPartnerAdminUsername, testPartnerAdminPassword);
 //   cy.navigateTo('/');
-//   cy.url({ timeout: 3 * timeout }).should('eq', `${baseUrl}/`);
+//   cy.url().should('eq', `${baseUrl}/`);
 // }
 
 //
 
 // function clickProgressButton(adminId) {
-//   cy.get('button', { timeout: timeout }).contains('Progress').first().click();
-//   cy.url({ timeout: 3 * timeout }).should('eq', `${baseUrl}/administration/${adminId}/district/${testDistrictId}`);
+//   cy.get('button').contains('Progress').first().click();
+//   cy.url().should('eq', `${baseUrl}/administration/${adminId}/district/${testDistrictId}`);
 // }
 
 //
 
 // function setFilterBySchool(school) {
-//   cy.get('[data-cy="filter-by-school"]', { timeout: timeout }).click();
-//   cy.get('ul > li', { timeout: timeout }).contains(school).click();
-//   cy.wait(0.05 * timeout);
+//   cy.get('[data-cy="filter-by-school"]').click();
+//   cy.get('ul > li').contains(school).click();
+//   cy.wait(0.05 * Cypress.env('timeout'));
 // }
 
 //
 
 // function setFilterByGrade(grade) {
-//   cy.get('[data-cy="filter-by-grade"]', { timeout: timeout }).click();
-//   cy.get('ul > li', { timeout: timeout }).contains(grade).click();
+//   cy.get('[data-cy="filter-by-grade"]').click();
+//   cy.get('ul > li').contains(grade).click();
 //   cy.get('body').type('{esc}');
-//   cy.wait(0.05 * timeout);
+//   cy.wait(0.05 * Cypress.env('timeout'));
 // }
 
 //
 
 // function setFilterByProgressCategory(header, category) {
 //   cy.contains('div.p-column-header-content', header).find('button').click();
-//   cy.get('[data-cy="progress-filter-dropdown"]', { timeout: timeout }).click();
-//   cy.get('ul>li').find('.p-tag-value', { timeout: timeout }).contains(category).click();
+//   cy.get('[data-cy="progress-filter-dropdown"]').click();
+//   cy.get('ul>li').find('.p-tag-value').contains(category).click();
 //   // Click off the dropdown to prevent it from hiding other elements
 //   cy.get('button').contains('Apply').click();
-//   cy.wait(0.05 * timeout);
+//   cy.wait(0.05 * Cypress.env('timeout'));
 // }
 
 //
@@ -92,7 +91,7 @@
 //
 
 //       if (headerIndex !== -1) {
-//         cy.get('[data-cy="roar-data-table"] tbody tr', { timeout: timeout }).each(($row) => {
+//         cy.get('[data-cy="roar-data-table"] tbody tr').each(($row) => {
 //           cy.wrap($row)
 //             .find('td')
 //             .eq(headerIndex)
