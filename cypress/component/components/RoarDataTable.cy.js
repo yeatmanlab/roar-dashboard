@@ -49,8 +49,8 @@ function mockFilterBySupportLevelCategory(task, supportLevel) {
 
 function setFilterByCategory(header, category) {
   cy.contains('div.p-column-header-content', header).find('button').click();
-  cy.get('[data-cy="score-filter-dropdown"]', { timeout: timeout }).click();
-  cy.get('ul > li', { timeout: timeout }).contains(category).click();
+  cy.get('[data-cy="score-filter-dropdown"]').click();
+  cy.get('ul > li').contains(category).click();
   cy.get('button').contains('Apply').click();
 }
 
