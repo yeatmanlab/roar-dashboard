@@ -1,6 +1,5 @@
 import { randomizeName } from '../../../../support/utils';
 
-const timeout = Cypress.env('timeout');
 const today = new Date().getDate();
 const variant = 'word-default';
 const assignedvalue = '5';
@@ -9,10 +8,8 @@ const assignedvalue2 = 'postsecondary';
 const randomAdministrationName = randomizeName(Cypress.env('testAdministrationName'));
 
 function typeAdministrationName() {
-  cy.get('[data-cy="input-administration-name"]', { timeout: Cypress.env('timeout') }).type(randomAdministrationName);
-  cy.get('[data-cy="input-administration-name-public"]', { timeout: Cypress.env('timeout') }).type(
-    `Public ${randomAdministrationName}`,
-  );
+  cy.get('[data-cy="input-administration-name"]').type(randomAdministrationName);
+  cy.get('[data-cy="input-administration-name-public"]').type(`Public ${randomAdministrationName}`);
 }
 
 function selectStartDate() {
@@ -30,29 +27,25 @@ function selectEndDate() {
 }
 
 function editVariantCard(_variant) {
-  cy.get('[data-cy="button-edit-variant"]', { timeout: Cypress.env('timeout') }).type(_variant);
+  cy.get('[data-cy="button-edit-variant"]').type(_variant);
 }
 
 function addCondition(_variant, _assignedvalue) {
-  cy.get('[data-cy="button-assigned-condition"]', { timeout: Cypress.env('timeout') }).type(_variant);
-  cy.get('[data-cy="dropdown-assigned-field"]', { timeout: 2 * Cypress.env('timeout') }).type('{enter}');
-  cy.get('ul > li', { timeout: Cypress.env('timeout') })
-    .contains('studentData.grade')
-    .click();
-  cy.get('[data-cy="dropdown-assigned-operator"]', { timeout: 2 * Cypress.env('timeout') }).click();
-  cy.get('ul > li', { timeout: Cypress.env('timeout') })
-    .contains('>')
-    .click();
-  cy.get('[data-cy="assigned-value-content"]', { timeout: Cypress.env('timeout') }).type(_assignedvalue);
-  cy.get('.p-row-editor-save', { timeout: Cypress.env('timeout') }).click();
-  cy.wait(0.2 * timeout);
+  cy.get('[data-cy="button-assigned-condition"]').type(_variant);
+  cy.get('[data-cy="dropdown-assigned-field"]').type('{enter}');
+  cy.get('ul > li').contains('studentData.grade').click();
+  cy.get('[data-cy="dropdown-assigned-operator"]').click();
+  cy.get('ul > li').contains('>').click();
+  cy.get('[data-cy="assigned-value-content"]').type(_assignedvalue);
+  cy.get('.p-row-editor-save').click();
+  cy.wait(0.2 * Cypress.env('timeout'));
 }
 
 function makeOptional(_variant) {
-  cy.get('[data-cy="switch-optional-for-everyone"]', { timeout: Cypress.env('timeout') }).type(_variant);
+  cy.get('[data-cy="switch-optional-for-everyone"]').type(_variant);
   // saving
-  cy.get('[data-cy="button-save-conditions"]', { timeout: Cypress.env('timeout') }).type(_variant);
-  cy.wait(0.2 * timeout);
+  cy.get('[data-cy="button-save-conditions"]').type(_variant);
+  cy.wait(0.2 * Cypress.env('timeout'));
 }
 
 function inputParameters() {
@@ -66,31 +59,24 @@ function inputParameters() {
 }
 
 function selectVariantCard(variant) {
-  cy.get('[data-cy="selected-variant"]', { timeout: Cypress.env('timeout') })
-    .first()
-    .type(variant);
+  cy.get('[data-cy="selected-variant"]').first().type(variant);
   inputParameters();
-  cy.get('[data-cy="radio-button-not-sequential"]', { timeout: Cypress.env('timeout') }).type(variant);
-  cy.get('[data-cy="checkbutton-test-data"]', { timeout: Cypress.env('timeout') }).type(variant);
+  cy.get('[data-cy="radio-button-not-sequential"]').type(variant);
+  cy.get('[data-cy="checkbutton-test-data"]').type(variant);
 }
 
 function selectAndAssignAdministration(variant) {
-  cy.get('[data-cy="input-variant-name"]', { timeout: Cypress.env('timeout') }).type(variant);
-  cy.wait(0.3 * timeout);
+  cy.get('[data-cy="input-variant-name"]').type(variant);
+  cy.wait(Cypress.env('timeout'));
   selectVariantCard(variant);
-  cy.get('[data-cy="button-create-administration"]', { timeout: Cypress.env('timeout') }).type(variant);
+  cy.get('[data-cy="button-create-administration"]').type(variant);
 }
 
 function checkAdministrationCreated() {
   cy.url({ timeout: 2 * Cypress.env('timeout') }).should('eq', `${Cypress.config().baseUrl}/`);
-  cy.get('[data-cy="dropdown-sort-administrations"]', { timeout: 2 * Cypress.env('timeout') }).click();
-  cy.get('ul > li', { timeout: Cypress.env('timeout') })
-    .contains('Creation date (descending)')
-    .click();
-  cy.get('[data-cy="h2-card-admin-title"]', { timeout: 2 * Cypress.env('timeout') }).should(
-    'contain.text',
-    randomAdministrationName,
-  );
+  cy.get('[data-cy="dropdown-sort-administrations"]').click();
+  cy.get('ul > li').contains('Creation date (descending)').click();
+  cy.get('[data-cy="h2-card-admin-title"]').should('contain.text', randomAdministrationName);
   cy.log('Administration successfully created.');
 }
 
@@ -100,7 +86,7 @@ describe('The admin user can create an administration and assign it to a distric
       'creates a new administration, and assigns it to a test district.',
     () => {
       cy.login(Cypress.env('SUPER_ADMIN_USERNAME'), Cypress.env('SUPER_ADMIN_PASSWORD'));
-      cy.wait(0.3 * timeout);
+      cy.wait(Cypress.env('timeout'));
       cy.navigateTo('/create-administration');
       typeAdministrationName();
       selectStartDate();

@@ -6,14 +6,12 @@ const CLEVER_PASSWORD = Cypress.env('CLEVER_PASSWORD');
 const PARTICIPANT_USERNAME = Cypress.env('PARTICIPANT_USERNAME');
 const PARTICIPANT_PASSWORD = Cypress.env('PARTICIPANT_PASSWORD');
 
-const timeout = Cypress.env('timeout');
-
 function checkGameTab(language) {
   cy.get('.p-tablist-tab-list', { timeout: timeout }).contains(languageOptions[language].gameTab).should('exist');
 }
 
 function makeChoiceOrContinue(gameCompleteText) {
-  cy.wait(0.2 * timeout);
+  cy.wait(0.2 * Cypress.env('timeout'));
   cy.get('body').then((body) => {
     //   If a go button is found, click it and then return to playMultichoice loop
     if (body.find('.continue').length > 0) {
@@ -47,22 +45,19 @@ function makeChoiceOrContinue(gameCompleteText) {
   });
 }
 function selectAlienAvatar() {
-  cy.get('img.intro_aliens', { timeout: 2 * timeout })
-    .should('be.visible')
-    .first()
-    .click();
+  cy.get('img.intro_aliens').should('be.visible').first().click();
 }
 
 function startGame(administration, language, optional, auth) {
-  cy.wait(0.1 * timeout);
+  cy.wait(0.1 * Cypress.env('timeout'));
   Cypress.on('uncaught:exception', () => {
     return false;
   });
 
-  cy.visit('/', { timeout: 2 * timeout });
+  cy.visit('/');
   if (auth === 'username') {
     cy.login(PARTICIPANT_USERNAME, PARTICIPANT_PASSWORD);
-    cy.visit('/', { timeout: 2 * timeout });
+    cy.visit('/');
   }
 
   if (auth === 'clever') {
@@ -79,9 +74,7 @@ function startGame(administration, language, optional, auth) {
   checkGameTab(language);
   cy.visit(languageOptions[language].url);
 
-  cy.get('.jspsych-btn', { timeout: 18 * timeout })
-    .should('be.visible')
-    .click();
+  cy.get('.jspsych-btn').should('be.visible').click();
 
   selectAlienAvatar();
 }
@@ -100,7 +93,7 @@ export function playVocabulary({
   cy.log('Game finished successfully.');
 
   cy.visit('/');
-  cy.wait(0.2 * timeout);
+  cy.wait(0.2 * Cypress.env('timeout'));
   cy.selectAdministration(administration);
 
   if (optional === true) {
