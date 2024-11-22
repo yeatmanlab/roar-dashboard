@@ -125,6 +125,11 @@ export default defineConfig(({ mode }) => {
       strictPort: process.env.CI === 'true' ? true : false,
     },
 
+    preview: {
+      port: 4173,
+      strictPort: process.env.CI === 'true' ? true : false,
+    },
+
     build: {
       cssCodeSplit: true,
       sourcemap: true,
