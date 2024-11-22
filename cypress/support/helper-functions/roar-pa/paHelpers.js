@@ -1,5 +1,10 @@
 import { languageOptions } from './languageOptions';
-import { signInWithClever } from '../participant/participant-helpers';
+
+const CLEVER_SCHOOL_NAME = Cypress.env('CLEVER_SCHOOL_NAME');
+const CLEVER_USERNAME = Cypress.env('CLEVER_USERNAME');
+const CLEVER_PASSWORD = Cypress.env('CLEVER_PASSWORD');
+const PARTICIPANT_USERNAME = Cypress.env('PARTICIPANT_USERNAME');
+const PARTICIPANT_PASSWORD = Cypress.env('PARTICIPANT_PASSWORD');
 
 export const timeout = Cypress.env('timeout');
 
@@ -139,11 +144,13 @@ export function playPA({
   auth = 'username',
 } = {}) {
   cy.visit('/');
+
   if (auth === 'clever') {
-    signInWithClever();
+    cy.loginWithClever(CLEVER_SCHOOL_NAME, CLEVER_USERNAME, CLEVER_PASSWORD);
   }
+
   if (auth === 'username') {
-    cy.login(Cypress.env('PARTICIPANT_USERNAME'), Cypress.env('PARTICIPANT_PASSWORD'));
+    cy.login(PARTICIPANT_USERNAME, PARTICIPANT_PASSWORD);
     cy.visit('/');
   }
 
