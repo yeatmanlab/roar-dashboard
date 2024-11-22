@@ -1,4 +1,4 @@
-const baseUrl = Cypress.env('baseUrl');
+const baseUrl = Cypress.config().baseUrl;
 import { APP_ROUTES } from '../../../../src/constants/routes';
 
 const orgs = [

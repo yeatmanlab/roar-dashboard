@@ -19,7 +19,7 @@ function createAdministrator() {
 }
 
 function checkAdministratorCreated() {
-  cy.url({ timeout: 2 * Cypress.env('timeout') }).should('eq', `${Cypress.env('baseUrl')}/`);
+  cy.url({ timeout: 2 * Cypress.env('timeout') }).should('eq', `${Cypress.config().baseUrl}/`);
   cy.log('Administrator successfully created.');
   //   Need to expand the checks on this spec
 }

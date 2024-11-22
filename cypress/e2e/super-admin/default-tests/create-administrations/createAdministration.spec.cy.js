@@ -82,7 +82,7 @@ function selectAndAssignAdministration(variant) {
 }
 
 function checkAdministrationCreated() {
-  cy.url({ timeout: 2 * Cypress.env('timeout') }).should('eq', `${Cypress.env('baseUrl')}/`);
+  cy.url({ timeout: 2 * Cypress.env('timeout') }).should('eq', `${Cypress.config().baseUrl}/`);
   cy.get('[data-cy="dropdown-sort-administrations"]', { timeout: 2 * Cypress.env('timeout') }).click();
   cy.get('ul > li', { timeout: Cypress.env('timeout') })
     .contains('Creation date (descending)')
