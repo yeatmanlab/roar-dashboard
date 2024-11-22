@@ -19,7 +19,7 @@
       </div>
     </div>
 
-    <div v-else>
+    <div v-else data-cy="sign-in__classlink-sso">
       <h2 v-if="userAssignments?.length == 1" class="p-float-label dropdown-container">
         {{ userAssignments.at(0).publicName || userAssignments.at(0).name }}
       </h2>
