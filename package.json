@@ -15,15 +15,9 @@
     "emulate:start": "unset GOOGLE_APPLICATION_CREDENTIALS && npm run emulate:admin && npm run emulate:assessment",
     "emulate:stop": "ps -e | grep 'firebase emulators:start' | grep -v 'grep' | grep -v 'rg' | sed -e 's/^[ \t]*//' | tr -s ' ' | cut -d ' ' -f 1 | xargs kill -s INT",
     "cypress:open": "cypress open",
-<<<<<<< HEAD
     "generate-pwa-assets": "npx pwa-assets-generator",
     "format": "prettier . --write --log-level=warn",
     "format:check": "prettier . --check",
-=======
-    "generate-pwa-assets": "npx pwa-assets-generator",
-    "format": "prettier . --write --log-level=warn",
-    "check-format": "prettier . --check",
->>>>>>> 0097c45a (Remove @vite-pwa/assets-generator due to dependency conflicts)
     "lint": "eslint --ext .js,.vue --ignore-path .gitignore --fix src",
     "postversion": "GIT_REMOTE=$(git remote -v | grep \"yeatmanlab/roar-dashboard.git \\(push\\)\" | cut -f 1) && git push $GIT_REMOTE && git push $GIT_REMOTE --tags",
     "prepare": "husky install",
