@@ -1,8 +1,8 @@
 name: Run Cypress Partner Admin Tests
 
 on:
-  pull_request:
-    types: [opened, reopened, synchronize]
+  # pull_request:
+  #   types: [opened, reopened, synchronize]
   workflow_dispatch:
     inputs:
       pr_branch:
@@ -37,10 +37,6 @@ jobs:
       PARTICIPANT_PASSWORD: ${{ secrets.PARTICIPANT_PASSWORD }}
       PARTICIPANT_EMAIL: ${{ secrets.PARTICIPANT_EMAIL }}
       PARTICIPANT_EMAIL_PASSWORD: ${{ secrets.PARTICIPANT_EMAIL_PASSWORD }}
-      PARENT_FIRST_NAME: ${{ secrets.PARENT_FIRST_NAME }}
-      PARENT_LAST_NAME: ${{ secrets.PARENT_LAST_NAME }}
-      PARENT_EMAIL: ${{ secrets.PARENT_EMAIL }}
-      PARENT_PASSWORD: ${{ secrets.PARENT_PASSWORD }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       VITE_APPCHECK_DEBUG_TOKEN: ${{ secrets.VITE_APPCHECK_DEBUG_TOKEN }}
     steps:
