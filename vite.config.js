@@ -41,6 +41,11 @@ export default defineConfig({
     },
   },
 
+  preview: {
+    port: 4173,
+    strictPort: process.env.CI === 'true' ? true : false,
+  },
+
   build: {
     cssCodeSplit: true,
     sourcemap: true,
@@ -73,5 +78,5 @@ export default defineConfig({
       'vue-google-maps-community-fork',
       'fast-deep-equal', // Required due to https://github.com/nathanap/vue-google-maps-community-fork/issues/4
     ],
-  },
+  }
 });
