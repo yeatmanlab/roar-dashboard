@@ -418,7 +418,6 @@ router.beforeEach(async (to, from, next) => {
 
   const allowedUnauthenticatedRoutes = [
     'SignIn',
-    'SSO', //@TODO: Remove before merging
     'Maintenance',
     'AuthClever',
     'AuthClassLink',
