@@ -9,55 +9,95 @@ import '@testing-library/cypress/add-commands';
  * @param {string} password - The password to log in with.
  */
 Cypress.Commands.add('login', (username, password) => {
-  cy.session([username, password], () => {
-    cy.visit('/', { timeout: Cypress.env('timeout') });
-    cy.get('[data-cy="input-username-email"]').type(username, { log: false, timeout: Cypress.env('timeout') });
-    cy.get('[data-cy="input-password"]').type(password, { log: false, timeout: Cypress.env('timeout') });
-    cy.get('button')
-      .contains('Go!', { timeout: Cypress.env('timeout') })
-      .click();
-    cy.log('Login successful.');
-    cy.wait(3000);
-  });
+  cy.session(
+    [username],
+    () => {
+      cy.visit(APP_ROUTES.HOME);
+
+      cy.get('[data-cy="input-username-email"]').type(username, { log: false });
+      cy.get('[data-cy="input-password"]').type(password, { log: false });
+
+      cy.get('button').contains('Go!').click();
+
+      cy.url().should('eq', `${baseUrl}/`);
+
+      cy.log('Login successful.');
+    },
+    {
+      validate: () => {
+        cy.window().then((win) => {
+          const sessionStorageKeys = Object.keys(win.sessionStorage);
+
+          const adminAuthUserKeyPattern = new RegExp('^firebase:authUser:.+:admin$');
+          const appAuthUserKeyPattern = new RegExp('^firebase:authUser:.+:app$');
+
+          const hasAdminAuthUserKey = sessionStorageKeys.some((key) => adminAuthUserKeyPattern.test(key));
+          const hasAppAuthUserKey = sessionStorageKeys.some((key) => appAuthUserKeyPattern.test(key));
+
+          expect(hasAdminAuthUserKey, 'Session storage should contain a firebase:authUser:{id}:admin key').to.be.true;
+          expect(hasAppAuthUserKey, 'Session storage should contain a firebase:authUser:{id}:app key').to.be.true;
+        });
+      },
+    },
+  );
+
+  cy.visit('/');
+  cy.url().should('eq', `${baseUrl}/`);
 });
 
 /**
- * Logs in a user using email-based authentication flow.
- * Handles different sign-in methods including email/password and magic link.
+ * Logs in a user using Clever SSO.
  *
- * @param {string} username - The email to log in with.
+ * @param {string} schoolName - The name of the school to log in with.
+ * @param {string} username - The username to log in with.
  * @param {string} password - The password to log in with.
  */
-Cypress.Commands.add('loginWithEmail', (username, password) => {
-  cy.session([username, password], () => {
-    cy.visit('/', { timeout: Cypress.env('timeout') });
-    // Set username to email, check for existence of 'sign in using password' button)
-    cy.get('[data-cy="input-username-email"]').type(username, { log: false, timeout: Cypress.env('timeout') });
-    cy.contains('Sign-in using password');
+Cypress.Commands.add('loginWithClever', (schoolName, username, password) => {
+  const CLEVER_SSO_URL = Cypress.env('cleverOAuthLink');
 
-    // Click button to switch to email / password sign in
-    cy.get('[data-cy="sign-in-with-password"]').click();
+  cy.visit(APP_ROUTES.HOME);
+  cy.url().should('eq', `${baseUrl}${APP_ROUTES.SIGN_IN}`);
 
-    // Click button to switch to email magic link sign in
-    cy.get('[data-cy="sign-in-with-email-link"]').click();
+  cy.get('[data-cy="sign-in__clever-sso"]').contains('Clever').click();
 
-    // Click button to switch to email / password sign in and log in
-    cy.get('[data-cy="sign-in-with-password"]').click();
-    cy.get('[data-cy="input-password"]').type(password, { log: false, timeout: Cypress.env('timeout') });
-    cy.get('button')
-      .contains('Go!', { timeout: Cypress.env('timeout') })
-      .click();
-    cy.log('Login successful.').wait(3000);
-  });
+  cy.origin(
+    CLEVER_SSO_URL,
+    {
+      args: {
+        schoolName,
+        username,
+        password,
+      },
+    },
+    ({ schoolName, username, password }) => {
+      cy.get('input[title="School name"]').type(schoolName);
+      cy.get('ul > li').contains(schoolName).click();
+
+      cy.get('input#username').type(username);
+      cy.get('input#password').type(password, { log: false });
+      cy.wait(1000); // Add a delay to simulate user input, as Clever SSO is sensitive to rapid input.
+      cy.get('button#UsernamePasswordForm--loginButton').click();
+    },
+  );
+
+  cy.url().should('include', `${baseUrl}/`);
+
+  cy.get('[data-cy="app-spinner"]').should('be.visible');
+
+  cy.waitForParticipantHomepage();
+
+  cy.url().should('eq', `${baseUrl}/`);
+
+  cy.log('SSO login successful.');
 });
 
 /**
  * Logs out the current user and verifies redirection to the sign-in page.
  */
 Cypress.Commands.add('logout', () => {
-  cy.get('[data-cy="navbar__signout-btn-desktop"]', { timeout: Cypress.env('timeout') }).click();
-  cy.get('h1', { timeout: Cypress.env('timeout') }).should('contain.text', 'Welcome to ROAR!');
-  cy.url({ timeout: Cypress.env('timeout') }).should('eq', `${Cypress.env('baseUrl')}/signin`);
+  cy.get('[data-cy="navbar__signout-btn-desktop"]').click();
+  cy.url().should('eq', `${baseUrl}/signin`);
+  cy.get('h1').should('contain.text', 'Welcome to ROAR!');
   cy.log('Logout successful.');
 });
 
