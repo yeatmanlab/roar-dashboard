@@ -50,7 +50,7 @@ export const generatedSpecTemplate = (adminName) => {
 
   describe('Testing synced administration: ${adminName}', () => {
     it('Tests a synced administration', () => {
-      cy.login(Cypress.env('participantUsername'), Cypress.env('participantPassword'));
+      cy.login(Cypress.env('PARTICIPANT_USERNAME'), Cypress.env('PARTICIPANT_PASSWORD'));
       cy.visit('/', { timeout: 2 * timeout });
       cy.selectAdministration('${adminName}');
       testSpecs.forEach((spec) => {
