@@ -1,5 +1,10 @@
-// Extend Cypress with additional commands.
+
+import 'cypress-wait-until';
 import '@testing-library/cypress/add-commands';
+import { createMockStore } from './utils.js';
+import { APP_ROUTES } from '../../src/constants/routes.js';
+
+const baseUrl = Cypress.config().baseUrl;
 
 /**
  * Logs in a user using the provided username and password.
@@ -102,14 +107,31 @@ Cypress.Commands.add('logout', () => {
 });
 
 /**
- * Navigates to a specified page, optionally logging in first.
+ * Navigates to a specified page.
  *
  * @param {string} page - The path to navigate to.
- * @param {boolean} [login=false] - Whether to log in before navigating.
  */
 Cypress.Commands.add('navigateTo', (page) => {
   cy.visit(page);
   cy.url().should('eq', `${baseUrl}${page}`);
+});
+
+/**
+ * Waits for the administrations list to load.
+ */
+Cypress.Commands.add('waitForAdministrationsList', () => {
+  // Note: As the application currently does not support paginated fetching of administrations, we have to wait for
+  // the whole list to be loaded and that can take a while, hence the long timeout.
+  cy.waitUntil(
+    () => {
+      return Cypress.$('main [data-cy="administrations-list"] ').length;
+    },
+    {
+      errorMsg: 'Failed to find the administrations list before timeout',
+      timeout: 600000,
+      interval: 1000,
+    },
+  );
 });
 
 /**
@@ -212,12 +234,12 @@ Cypress.Commands.add('selectAdministration', function selectAdministration(testA
     cy.log('Retries exceeded, administration not found, exiting test...');
     return;
   }
-  cy.get('[data-cy="dropdown-select-administration"]', { timeout: 2 * Cypress.env('timeout') }).click();
-  cy.get('body', { timeout: 2 * Cypress.env('timeout') })
+  cy.get('[data-cy="dropdown-select-administration"]').click();
+  cy.get('body')
     .invoke('text')
     .then((text) => {
       if (text.includes(testAdministration)) {
-        cy.get('.p-select-list-container', { timeout: 2 * Cypress.env('timeout') })
+        cy.get('.p-select-list-container')
           .contains(testAdministration)
           .click();
         cy.log('Selected administration:', testAdministration);
@@ -235,17 +257,17 @@ Cypress.Commands.add('selectAdministration', function selectAdministration(testA
  * @param {string} testAdministration - The name of the administration to search for.
  */
 Cypress.Commands.add('getAdministrationCard', (testAdministration) => {
-  cy.get('[data-cy=search-input]', { timeout: Cypress.env('timeout') }).type(`${testAdministration}{enter}`);
-  // cy.get('ul > li').contains(`Name (${sort})`).click();
+  cy.get('[data-cy=search-input]').type(`${testAdministration}{enter}`);
 
-  cy.get('[data-cy="h2-card-admin-title"]', { timeout: Cypress.env('timeout') })
+  cy.get('[data-cy="administration-card"]')
     .filter((index, element) => {
-      return Cypress.$(element).text().includes(testAdministration);
+      return Cypress.$(element).find('[data-cy="administration-card__title"]').text().includes(testAdministration);
     })
-    .should('have.length', 2)
-    .find('button', { timeout: Cypress.env('timeout') })
-    .contains('Show details')
-    .click();
+    .then(($cards) => {
+      cy.wrap($cards).should('have.length.greaterThan', 0);
+
+      cy.wrap($cards.get(0)).find('button').contains('Show details').click();
+    });
 });
 
 /**
@@ -333,15 +355,16 @@ Cypress.Commands.add(
  * @param {Array<string>} userList - The list of users to check.
  */
 Cypress.Commands.add('checkUserList', (userList) => {
-  cy.get('[data-cy="roar-data-table"] tbody tr', { timeout: Cypress.env('timeout') }).each((row) => {
+  cy.get('[data-cy="roar-data-table"] tbody tr').each((row) => {
     cy.wrap(row)
       .find('td.p-datatable-frozen-column')
       .then((cell) => {
-        // The following cleans the non-breaking space character and any whitespace from the cell text
+        // Clean the non-breaking space character and any whitespace from the cell text.
         const cellText = cell
           .text()
           .replace(/&nbsp;/g, '')
           .trim();
+
         expect(userList).to.include(cellText);
       });
   });
@@ -362,24 +385,20 @@ Cypress.Commands.add('playOptionalGame', (game, administration, optional) => {
 });
 
 /**
- * Custom command to check if a partner district exists in the organization list.
- *
- * This command performs the following actions:
- * 1. Locates and clicks on the 'Districts' option in a list.
- * 2. Verifies if the partner district name (retrieved from Cypress environment variables) exists in a specific `div` element.
- * 3. Logs a message confirming that the district exists.
- *
- * @param {number} [timeout=10000] - Optional timeout for each command, defaulting to 10 seconds.
+ * Create a mock store for the user type specified.
+ * @param {string} userType - The type of user to create a mock store for. One of 'superAdmin', 'partnerAdmin', or 'participant'. Defaults to 'participant'.
+ * @returns {void}
  */
-Cypress.Commands.add('checkOrgExists', (org, timeout = 10000) => {
-  // Click on the 'Districts' item in the list
-  cy.get('.p-tabview-tablist', { timeout: timeout }).contains(org.tabName, { timeout: timeout }).click();
+Cypress.Commands.add('setAuthStore', (userType = 'participant') => {
+  const authStore = createMockStore(userType);
+  const serializedStore = JSON.stringify(authStore.$state);
 
-  // Verify the partner district name is present in the div
-  cy.get('div', { timeout }).should('contain.text', Cypress.env('testPartnerDistrictName'), {
-    timeout,
+  // Store the mock store in sessionStorage
+  cy.window().then((window) => {
+    window.sessionStorage.setItem('authStore', serializedStore);
   });
 
-  // Log the district name exists
-  cy.log(`${Cypress.env('testPartnerDistrictName')} exists.`);
+  cy.log('Created mock store for user type:', userType, ' with state:', authStore.$state);
+  // Store the mock store in the Cypress context as an alias
+  return cy.wrap(authStore.$state).as('authStore');
 });
