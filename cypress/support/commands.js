@@ -68,9 +68,8 @@ Cypress.Commands.add('logout', () => {
  * @param {boolean} [login=false] - Whether to log in before navigating.
  */
 Cypress.Commands.add('navigateTo', (page) => {
-  cy.log(`Navigating to \`${Cypress.env('baseUrl')}${page}`);
-  cy.visit(page, { timeout: Cypress.env('timeout') });
-  cy.url().should('eq', `${Cypress.env('baseUrl')}${page}`);
+  cy.visit(page);
+  cy.url().should('eq', `${baseUrl}${page}`);
 });
 
 /**
