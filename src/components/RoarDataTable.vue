@@ -509,7 +509,7 @@
                     :label="colData.routeParams.buttonLabel"
                     :aria-label="col.routeTooltip"
                     :icon="col.routeIcon"
-                    data-cy="route-button"
+                    data-cy="data-table__entry-details-btn"
                     size="small"
                   />
                 </router-link>
