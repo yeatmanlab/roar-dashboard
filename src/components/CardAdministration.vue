@@ -1,5 +1,5 @@
 <template>
-  <div class="p-card card-administration mb-1 w-full">
+  <div class="p-card card-administration mb-1 w-full" data-cy="administration-card">
     <div v-if="props.stats && isSuperAdmin" class="card-admin-chart">
       <PvChart type="doughnut" :data="doughnutChartData" :options="doughnutChartOptions" />
     </div>
@@ -7,7 +7,7 @@
     <div class="card-admin-body w-full">
       <div class="flex flex-row w-full md:h-2rem sm:h-3rem">
         <div class="flex-grow-1 pr-3 mr-2 p-0 m-0">
-          <h2 data-cy="h2-card-admin-title" class="sm:text-lg lg:text-lx m-0">{{ title }}</h2>
+          <h2 data-cy="administration-card__title" class="sm:text-lg lg:text-lx m-0">{{ title }}</h2>
         </div>
         <div v-if="isSuperAdmin" class="flex justify-content-end w-3 pl-5 pb-5 ml-2 mb-6">
           <PvSpeedDial

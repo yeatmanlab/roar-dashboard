@@ -93,7 +93,7 @@
               :sort-field="sortField"
             >
               <template #list="slotProps">
-                <div class="mb-2 w-full">
+                <div class="mb-2 w-full" data-cy="administrations-list">
                   <CardAdministration
                     v-for="item in slotProps.items"
                     :id="item.id"
