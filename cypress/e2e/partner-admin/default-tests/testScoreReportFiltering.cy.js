@@ -62,22 +62,21 @@
 //   cy.wait(0.05 * timeout);
 // }
 
-//
-function checkTableColumn(headers, value) {
-  cy.get('[data-cy="roar-data-table"] thead th').then(($header) => {
-    const tableHeaders = $header.map((index, elem) => Cypress.$(elem).text()).get();
+// function checkTableColumn(headers, value) {
+//   cy.get('[data-cy="roar-data-table"] thead th').then(($header) => {
+//     const tableHeaders = $header.map((index, elem) => Cypress.$(elem).text()).get();
 
-    headers.forEach((header) => {
-      const headerIndex = tableHeaders.indexOf(header);
+//     headers.forEach((header) => {
+//       const headerIndex = tableHeaders.indexOf(header);
 
-      if (headerIndex !== -1) {
-        cy.get('[data-cy="roar-data-table"] tbody').each(($row) => {
-          cy.wrap($row).find('tr').should('contain', value);
-        });
-      }
-    });
-  });
-}
+//       if (headerIndex !== -1) {
+//         cy.get('[data-cy="roar-data-table"] tbody').each(($row) => {
+//           cy.wrap($row).find('tr').should('contain', value);
+//         });
+//       }
+//     });
+//   });
+// }
 
 // describe('The partner admin can view score reports for a given administration and filter by school.', () => {
 //   it('Selects an administration and views its score report, then accesses the filter bar to filter by school.', () => {

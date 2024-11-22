@@ -5,12 +5,18 @@
   </div>
 
   <div v-else class="container flex flex-column align-items-around">
-    <div id="individual-report-header" class="flex flex-column md:flex-row align-items-center my-2">
+    <div
+      id="individual-report-header"
+      class="flex flex-column md:flex-row align-items-center my-2"
+      data-cy="report__header"
+    >
       <div class="student-name text-center md:text-left my-3">
-        <div class="text-lg uppercase text-gray-400">{{ $t('scoreReports.pageTitle') }}</div>
-        <div class="text-5xl">
+        <h1 class="text-lg uppercase text-gray-400">
+          {{ $t('scoreReports.pageTitle') }}
+        </h1>
+        <h2 class="text-5xl">
           <strong>{{ studentFirstName }} {{ studentLastName }}</strong>
-        </div>
+        </h2>
       </div>
 
       <div class="student-info bg-gray-200">
@@ -37,6 +43,7 @@
           icon-pos="right"
           data-html2canvas-ignore="true"
           @click="setExpand"
+          data-cy="report__expand-btn"
         />
         <PvButton
           outlined
@@ -47,6 +54,7 @@
           icon-pos="right"
           data-html2canvas-ignore="true"
           @click="exportToPdf"
+          data-cy="report__pdf-export-btn"
         />
       </div>
     </div>
