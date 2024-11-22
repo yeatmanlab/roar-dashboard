@@ -15,7 +15,6 @@ const props = {
   groupheaders: true,
 };
 
-const timeout = Cypress.env('timeout');
 const tableHeaderOffset = 4;
 
 // Use this data to compare against the data being filtered by the component

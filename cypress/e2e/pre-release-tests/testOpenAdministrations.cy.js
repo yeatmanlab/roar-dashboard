@@ -12,7 +12,6 @@
 // import { getOpenAdministrations } from '../../support/query';
 // import { getDevFirebase } from '../../support/devFirebase';
 //
-// const timeout = Cypress.env('timeout');
 // const testSpecs = [
 //   {
 //     name: 'ROAR - Picture Vocabulary',
@@ -140,7 +139,7 @@
 // }
 //
 // function testGame(spec, admin) {
-//   cy.wait(0.1 * timeout);
+//   cy.wait(0.1 * Cypress.env('timeout'));
 //   cy.get('.p-tabview')
 //     .invoke('text')
 //     .then((text) => {
@@ -182,7 +181,7 @@
 //     // Clear all saved sessions and log in as a participant
 //     Cypress.session.clearAllSavedSessions();
 //     cy.login(Cypress.env('PARTICIPANT_USERNAME'), Cypress.env('PARTICIPANT_PASSWORD'));
-//     cy.visit('/', { timeout: 2 * timeout });
+//     cy.visit('/');
 //
 //     cy.get('@openAdmins').then((openAdmins) => {
 //       openAdmins.forEach((admin) => {
