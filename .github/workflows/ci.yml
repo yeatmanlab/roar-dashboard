@@ -91,8 +91,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        browser: [chrome]
-        containers: [1]
+        browser: [chrome, edge]
+        containers: [1, 2]
     container:
       image: cypress/browsers:node-20.18.0-chrome-129.0.6668.89-1-ff-131.0.2-edge-129.0.2792.65-1
       options: --user 1001
@@ -101,23 +101,11 @@ jobs:
       DOTENV_PRIVATE_KEY_TEST: ${{ secrets.DOTENV_PRIVATE_KEY_TEST }}
 
     steps:
-      - name: Debug
-        run: |
-          pwd
-          ls -la
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           submodules: 'true'
           token: ${{ secrets.CI_GITHUB_PAT }}
-
-      - name: Debug
-        run: |
-          pwd
-          ls -la
-          cd env-configs
-          pwd
-          ls -la
 
       - name: Execute Cypress tests
         uses: cypress-io/github-action@v6
@@ -150,7 +138,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        browser: [chrome]
+        browser: [chrome, edge]
     container:
       image: cypress/browsers:node-20.18.0-chrome-129.0.6668.89-1-ff-131.0.2-edge-129.0.2792.65-1
       options: --user 1001
