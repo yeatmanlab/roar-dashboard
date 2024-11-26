@@ -16,4 +16,5 @@ export const APP_ROUTES = {
   ACCOUNT_PROFILE: '/profile',
   ORGS_LIST: '/list-orgs',
   ORGS_CREATE: '/create-orgs',
+  REGISTER: '/register',
 };
