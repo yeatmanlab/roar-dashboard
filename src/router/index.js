@@ -297,7 +297,7 @@ const routes = [
     meta: { pageTitle: 'Create an administrator account', requireAdmin: true },
   },
   {
-    path: ORGS_LIST.ORGS_CREATE,
+    path: APP_ROUTES.ORGS_CREATE,
     name: 'CreateOrgs',
     component: () => import('../components/CreateOrgs.vue'),
     meta: { pageTitle: 'Create an organization', requireAdmin: true, requireSuperAdmin: true },
