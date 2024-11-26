@@ -524,7 +524,7 @@
                   :label="col.buttonLabel"
                   :aria-label="col.buttonTooltip"
                   :icon="col.buttonIcon"
-                  data-cy="event-button"
+                  :data-cy="`data-table__event-btn__${col.eventName}`"
                   size="small"
                   @click="$emit(col.eventName, colData)"
                 />
