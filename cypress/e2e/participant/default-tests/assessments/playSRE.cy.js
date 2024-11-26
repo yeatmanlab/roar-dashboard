@@ -1,27 +1,48 @@
-import { playSRE } from '../../../support/helper-functions/roar-sre/sreHelpers';
-import { isCurrentVersion } from '../../../support/utils';
+import { playSRE } from '../../../../support/helper-functions/roar-sre/sreHelpers';
+import { isCurrentVersion } from '../../../../support/utils';
 
 const app = '@bdelab/roar-sre';
+let isCurrentAppVersion;
 
-describe('ROAR - Sentence Play Through', () => {
-  it('Plays SRE with Clever auth', () => {
-    cy.wrap(isCurrentVersion(app)).then((isCurrentVersion) => {
-      if (isCurrentVersion) {
+describe('Participant Assessment: ROAR SRE', () => {
+  before(async () => {
+    isCurrentAppVersion = await isCurrentVersion(app);
+  });
+
+  describe('EN', () => {
+    it('Completes assessment with username/password authentication', () => {
+      if (isCurrentAppVersion) {
         cy.log(`Did not detect a new version of ${app}, skipping test.`);
-      } else {
-        cy.log(`Detected a new version of ${app}, running test.`);
-        playSRE({ auth: 'clever' });
+        return;
       }
+
+      playSRE({ auth: 'username' });
+    });
+
+    it('Completes assessment with Clever authentication', () => {
+      if (isCurrentAppVersion) {
+        cy.log(`Did not detect a new version of ${app}, skipping test.`);
+        return;
+      }
+
+      playSRE({ auth: 'clever' });
     });
   });
-  it('Plays SRE with username auth', () => {
-    cy.wrap(isCurrentVersion(app)).then((isCurrentVersion) => {
-      if (isCurrentVersion) {
+
+  describe('ES', () => {
+    const administration = Cypress.env('testSpanishRoarAppsAdministration');
+    const language = 'es';
+
+    it('Completes assessment with username/password authentication', () => {
+      if (isCurrentAppVersion) {
         cy.log(`Did not detect a new version of ${app}, skipping test.`);
-      } else {
-        cy.log(`Detected a new version of ${app}, running test.`);
-        playSRE({ auth: 'username' });
+        return;
       }
+
+      playSRE({
+        administration: administration,
+        language: language,
+      });
     });
   });
 });

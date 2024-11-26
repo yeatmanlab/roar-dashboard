@@ -1,27 +1,48 @@
-import { playSWR } from '../../../support/helper-functions/roar-swr/swrHelpers.js';
-import { isCurrentVersion } from '../../../support/utils';
+import { playSWR } from '../../../../support/helper-functions/roar-swr/swrHelpers.js';
+import { isCurrentVersion } from '../../../../support/utils';
 
 const app = '@bdelab/roar-swr';
+let isCurrentAppVersion;
 
-describe('ROAR - Word Play Through', () => {
-  it('Plays Word with Clever auth', () => {
-    cy.wrap(isCurrentVersion(app)).then((isCurrentVersion) => {
-      if (isCurrentVersion) {
+describe('Participant Assessment: ROAR SWR', () => {
+  before(async () => {
+    isCurrentAppVersion = await isCurrentVersion(app);
+  });
+
+  describe('EN', () => {
+    it('Completes assessment with username/password authentication', () => {
+      if (isCurrentAppVersion) {
         cy.log(`Did not detect a new version of ${app}, skipping test.`);
-      } else {
-        cy.log(`Detected a new version of ${app}, running test.`);
-        playSWR({ auth: 'clever' });
+        return;
       }
+
+      playSWR({ auth: 'username' });
+    });
+
+    it('Completes assessment with Clever authentication', () => {
+      if (isCurrentAppVersion) {
+        cy.log(`Did not detect a new version of ${app}, skipping test.`);
+        return;
+      }
+
+      playSWR({ auth: 'clever' });
     });
   });
-  it('Plays Word with username auth', () => {
-    cy.wrap(isCurrentVersion(app)).then((isCurrentVersion) => {
-      if (isCurrentVersion) {
+
+  describe('ES', () => {
+    const administration = Cypress.env('testSpanishRoarAppsAdministration');
+    const language = 'es';
+
+    it('Completes assessment with username/password authentication', () => {
+      if (isCurrentAppVersion) {
         cy.log(`Did not detect a new version of ${app}, skipping test.`);
-      } else {
-        cy.log(`Detected a new version of ${app}, running test.`);
-        playSWR({ auth: 'username' });
+        return;
       }
+
+      playSWR({
+        administration: administration,
+        language: language,
+      });
     });
   });
 });

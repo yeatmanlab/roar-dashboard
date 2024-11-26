@@ -1,24 +1,26 @@
-import { optionalGames } from '../../../fixtures/participant/optionalGamesList.js';
-import { isCurrentVersion } from '../../../support/utils';
+import { optionalGames } from '../../../../fixtures/participant/optionalGamesList.js';
+import { isCurrentVersion } from '../../../../support/utils';
 
-const administration = Cypress.env('testOptionalRoarAppsAdministration');
-const language = 'en';
-const optional = true;
+optionalGames.forEach((game) => {
+  let isCurrentAppVersion;
 
-function playOptionalGame(game, administration, language, optional) {
-  game.testSpec({ administration: administration, language: language, optional: optional });
-}
+  describe(`Optional Participant Assessment: ${game.name}`, () => {
+    before(async () => {
+      isCurrentAppVersion = await isCurrentVersion(game.app);
+    });
 
-describe('Play Optional Games', () => {
-  optionalGames.forEach((game) => {
-    it(`Plays ${game.name}`, () => {
-      cy.wrap(isCurrentVersion(game.app)).then((isCurrentVersion) => {
-        if (isCurrentVersion) {
+    describe('EN', () => {
+      const administration = Cypress.env('testOptionalRoarAppsAdministration');
+      const language = 'en';
+      const optional = true;
+
+      it(`Completes assessment with username/password authentication`, () => {
+        if (isCurrentAppVersion) {
           cy.log(`Did not detect a new version of ${game.app}, skipping test.`);
-        } else {
-          cy.log(`Detected a new version of ${game.app}, running test.`);
-          playOptionalGame(game, administration, language, optional);
+          return;
         }
+
+        game.testSpec({ administration, language, optional });
       });
     });
   });
