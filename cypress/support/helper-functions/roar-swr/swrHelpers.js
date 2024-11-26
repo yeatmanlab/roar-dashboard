@@ -65,7 +65,7 @@ function playSWRGame(administration, language, optional = false) {
 
   // check if game completed
   cy.visit('/');
-  cy.wait(0.2 * Cypress.env('timeout'));
+  cy.wait(1);
   cy.selectAdministration(administration);
 
   if (optional === true) {
@@ -78,11 +78,11 @@ function playSWRGame(administration, language, optional = false) {
 function playIntro(language) {
   for (let i = 0; i <= 5; i++) {
     cy.log(i);
-    cy.wait(0.2 * Cypress.env('timeout'));
+    cy.wait(1);
     cy.get('body').type('{leftarrow}{rightarrow}');
-    cy.wait(0.2 * Cypress.env('timeout'));
+    cy.wait(1);
     cy.get('body').type('{leftarrow}{rightarrow}');
-    cy.wait(0.2 * Cypress.env('timeout'));
+    cy.wait(1);
   }
   cy.get('.jspsych-btn').contains(languageOptions[language].continue).click();
   Cypress.on('uncaught:exception', () => {
@@ -113,11 +113,11 @@ function finishSWR(block_termination_phrase) {
   cy.get('body').then((body) => {
     if (!body.find('.stimulus').length > 0) {
       assert(cy.contains(block_termination_phrase));
-      cy.wait(0.2 * Cypress.env('timeout'));
+      cy.wait(1);
       cy.get('body').type('{leftarrow}');
     } else {
       // cy.get(".stimulus").should("be.visible");
-      cy.wait(0.2 * Cypress.env('timeout'));
+      cy.wait(1);
       cy.get('body').type('{rightarrow}');
       finishSWR(block_termination_phrase);
     }
