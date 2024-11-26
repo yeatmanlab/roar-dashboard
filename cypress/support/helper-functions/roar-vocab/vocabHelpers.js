@@ -11,7 +11,7 @@ function checkGameTab(language) {
 }
 
 function makeChoiceOrContinue(gameCompleteText) {
-  cy.wait(0.2 * Cypress.env('timeout'));
+  cy.wait(1);
   cy.get('body').then((body) => {
     //   If a go button is found, click it and then return to playMultichoice loop
     if (body.find('.continue').length > 0) {
@@ -93,7 +93,7 @@ export function playVocabulary({
   cy.log('Game finished successfully.');
 
   cy.visit('/');
-  cy.wait(0.2 * Cypress.env('timeout'));
+  cy.wait(1);
   cy.selectAdministration(administration);
 
   if (optional === true) {

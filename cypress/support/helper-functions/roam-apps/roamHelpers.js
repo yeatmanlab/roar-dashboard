@@ -194,7 +194,7 @@ export function playARF({
 
   //  Check if game is marked as complete on the dashboard
   cy.visit('/');
-  cy.wait(0.2 * Cypress.env('timeout'));
+  cy.wait(1);
   cy.selectAdministration(administration);
 <<<<<<< HEAD
   cy.get('.p-tablist-tab-list', { timeout: timeout }).contains(languageOptions[language][task].gameTab).should('exist');
@@ -242,7 +242,7 @@ export function playCALF({
 
   //  Check if game is marked as complete on the dashboard
   cy.visit('/');
-  cy.wait(0.2 * Cypress.env('timeout'));
+  cy.wait(1);
   cy.selectAdministration(administration);
 
   if (optional === true) {

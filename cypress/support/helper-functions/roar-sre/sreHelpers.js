@@ -40,10 +40,10 @@ export const playSRE = ({
 
   cy.get('.jspsych-btn').should('be.visible').click();
 
-  cy.wait(0.2 * Cypress.env('timeout'));
+  cy.wait(1);
 
   // handles error where full screen throws a permissions error
-  cy.wait(0.2 * Cypress.env('timeout'));
+  cy.wait(1);
 
   cy.get('body').type('{enter}');
   cy.get('body').type('{1}');

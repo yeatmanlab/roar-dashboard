@@ -19,7 +19,7 @@ function checkGameTab(language, task) {
 }
 
 function makeChoiceOrContinue(gameCompleteText) {
-  cy.wait(0.2 * Cypress.env('timeout'));
+  cy.wait(1);
   cy.get('body').then((body) => {
     const text = body.text().replace(/\s\s+/g, ' ').trim();
     cy.log('Found text: ', text);
@@ -84,7 +84,7 @@ export function playMorphology({
   cy.log('Game finished successfully.');
 
   cy.visit('/');
-  cy.wait(0.2 * Cypress.env('timeout'));
+  cy.wait(1);
   cy.selectAdministration(administration);
 
   if (optional === true) {
@@ -110,7 +110,7 @@ export function playWrittenVocabulary({
   cy.log('Game finished successfully.');
 
   cy.visit('/');
-  cy.wait(0.2 * Cypress.env('timeout'));
+  cy.wait(1);
   cy.selectAdministration(administration);
 
   if (optional === true) {
