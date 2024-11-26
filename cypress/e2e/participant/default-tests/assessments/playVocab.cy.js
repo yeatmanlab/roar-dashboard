@@ -1,26 +1,31 @@
-import { playVocabulary } from '../../../support/helper-functions/roar-vocab/vocabHelpers';
-import { isCurrentVersion } from '../../../support/utils';
+import { playVocabulary } from '../../../../support/helper-functions/roar-vocab/vocabHelpers';
+import { isCurrentVersion } from '../../../../support/utils';
 
 const app = '@bdelab/roar-vocab';
-describe('ROAR - Vocabulary Play Through', () => {
-  it('Plays Vocabulary with username auth', () => {
-    cy.wrap(isCurrentVersion(app)).then((isCurrentVersion) => {
-      if (isCurrentVersion) {
-        cy.log(`Did not detect a new version of ${app}, skipping test.`);
-      } else {
-        cy.log(`Detected a new version of ${app}, running test.`);
-        playVocabulary({ auth: 'username' });
-      }
-    });
+let isCurrentAppVersion;
+
+describe('Participant Assessment: ROAR Vocab', () => {
+  before(async () => {
+    isCurrentAppVersion = await isCurrentVersion(app);
   });
-  it('Plays Vocabulary with Clever auth', () => {
-    cy.wrap(isCurrentVersion(app)).then((isCurrentVersion) => {
-      if (isCurrentVersion) {
+
+  describe('EN', () => {
+    it('Completes assessment with username/password authentication', () => {
+      if (isCurrentAppVersion) {
         cy.log(`Did not detect a new version of ${app}, skipping test.`);
-      } else {
-        cy.log(`Detected a new version of ${app}, running test.`);
-        playVocabulary({ auth: 'clever' });
+        return;
       }
+
+      playVocabulary({ auth: 'username' });
+    });
+
+    it('Completes assessment with Clever authentication', () => {
+      if (isCurrentAppVersion) {
+        cy.log(`Did not detect a new version of ${app}, skipping test.`);
+        return;
+      }
+
+      playVocabulary({ auth: 'clever' });
     });
   });
 });

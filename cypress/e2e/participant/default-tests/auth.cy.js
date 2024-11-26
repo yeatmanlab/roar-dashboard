@@ -30,6 +30,7 @@ describe('Participant: Auth', () => {
 
   it('Logs out', () => {
     cy.login(PARTICIPANT_USERNAME, PARTICIPANT_PASSWORD);
+    cy.waitForParticipantHomepage();
     cy.logout();
   });
 });

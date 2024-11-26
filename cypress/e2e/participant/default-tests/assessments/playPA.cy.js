@@ -1,27 +1,57 @@
-import { playPA } from '../../../support/helper-functions/roar-pa/paHelpers';
-import { isCurrentVersion } from '../../../support/utils';
+import { playPA } from '../../../../support/helper-functions/roar-pa/paHelpers';
+import { isCurrentVersion } from '../../../../support/utils';
 
 const app = '@bdelab/roar-pa';
+let isCurrentAppVersion;
 
-describe('Testing playthrough of ROAR-Phoneme as a participant', () => {
-  it(`ROAR-Phoneme Playthrough Test with username auth`, () => {
-    cy.wrap(isCurrentVersion(app)).then((isCurrentVersion) => {
-      if (isCurrentVersion) {
+describe('Participant Assessment: ROAR Phoneme', () => {
+  before(async () => {
+    isCurrentAppVersion = await isCurrentVersion(app);
+  });
+
+  describe('EN', () => {
+    it('Completes assessment with username/password authentication', () => {
+      if (isCurrentAppVersion) {
         cy.log(`Did not detect a new version of ${app}, skipping test.`);
-      } else {
-        cy.log(`Detected a new version of ${app}, running test.`);
-        playPA({ auth: 'username' });
+        return;
       }
+
+      playPA({ auth: 'username' });
+    });
+
+    it('Completes assessment with Clever authentication', () => {
+      if (isCurrentAppVersion) {
+        cy.log(`Did not detect a new version of ${app}, skipping test.`);
+        return;
+      }
+
+      playPA({ auth: 'clever' });
     });
   });
-  it(`ROAR-Phoneme Playthrough Test with Clever auth`, () => {
-    cy.wrap(isCurrentVersion(app)).then((isCurrentVersion) => {
-      if (isCurrentVersion) {
+
+  describe('ES', () => {
+    it('Completes assessment with username/password authentication', () => {
+      if (isCurrentAppVersion) {
         cy.log(`Did not detect a new version of ${app}, skipping test.`);
-      } else {
-        cy.log(`Detected a new version of ${app}, running test.`);
-        playPA({ auth: 'clever' });
+        return;
       }
+
+      playPA({
+        language: 'es',
+        auth: 'username',
+      });
+    });
+
+    it('Completes assessment with Clever authentication', () => {
+      if (isCurrentAppVersion) {
+        cy.log(`Did not detect a new version of ${app}, skipping test.`);
+        return;
+      }
+
+      playPA({
+        language: 'es',
+        auth: 'clever',
+      });
     });
   });
 });
