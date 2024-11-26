@@ -125,6 +125,7 @@ jobs:
           browser: ${{ matrix.browser }}
           ci-build-id: ${{ github.run_id }}-e2e-${{ matrix.browser }}
           spec: |
+            cypress/e2e/parent/default-tests/**/*.cy.js
             cypress/e2e/participant/default-tests/**/*.cy.js
             cypress/e2e/partner-admin/default-tests/**/*.cy.js
 
