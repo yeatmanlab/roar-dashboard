@@ -2,19 +2,40 @@
   <div id="register-container">
     <section id="register">
       <header>
-        <div class="signin-logo">
-          <ROARLogoShort />
+        <div class="flex flex-wrap p-3 justify-content-around align-items-center gap-3">
+          <div class="signin-logo">
+            <ROARLogoShort />
+          </div>
+          <div v-if="activeIndex === 0" class="flex flex-wrap flex-column align-items-start gap-2">
+            <div class="flex">
+              <div class="text-center font-bold text-3xl text-red-800 mb-1 italic">ROAR@Home</div>
+              <div class="text-sm font-bold text-red-800 ml-1 uppercase">beta</div>
+            </div>
+            <div class="bg-gray-100 rounded p-2">
+              <div class="flex flex-wrap text-gray-600 text-md font-bold">Register a parent or guardian account.</div>
+              <div class="flex flex-wrap text-gray-400 text-sm">
+                This account will be used to manage your family's accounts.
+              </div>
+              <div class="flex flex-wrap text-gray-400 text-sm">
+                You will be able to add children to your family in the next step.
+              </div>
+            </div>
+          </div>
+          <div v-else class="flex flex-wrap flex-column align-items-start gap-2">
+            <div class="flex">
+              <div class="text-center font-bold text-3xl text-red-800 mb-1 italic">ROAR@Home</div>
+              <div class="text-sm font-bold text-red-800 ml-1 uppercase">beta</div>
+            </div>
+            <div class="bg-gray-100 rounded p-2">
+              <div class="flex flex-wrap text-gray-600 text-md font-bold">Register children or students.</div>
+              <div class="flex flex-wrap text-gray-400 text-sm">
+                These accounts will be linked to your parent/guardian account.
+              </div>
+            </div>
+          </div>
         </div>
       </header>
       <div>
-        <div v-if="activeIndex === 0" class="register-title">
-          <h1 align="center">Register for ROAR</h1>
-          <p align="center">Enter your information to create an account.</p>
-        </div>
-        <div v-else class="register-title">
-          <h1 align="center">Register your child</h1>
-          <p align="center">Enter your child's information to create their ROAR account.</p>
-        </div>
         <div v-if="spinner === false">
           <KeepAlive>
             <component :is="activeComp()" :code="code" @submit="handleSubmit($event)" />
@@ -64,7 +85,7 @@ import { useAuthStore } from '@/store/auth';
 import router from '../router';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import Register from '../components/auth/RegisterParent.vue';
-import RegisterStudent from '../components/auth/RegisterStudent.vue';
+import RegisterStudent from '../components/auth/RegisterChildren.vue';
 import ROARLogoShort from '@/assets/RoarLogo-Short.vue';
 
 const authStore = useAuthStore();

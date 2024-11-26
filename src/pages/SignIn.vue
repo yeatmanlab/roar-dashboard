@@ -20,10 +20,6 @@
           <SignIn :invalid="incorrect" @submit="authWithEmail" @update:email="email = $event" />
         </section>
         <section v-if="isLevante" class="w-full mb-2">
-          <!-- <p class="text-center m-auto">
-            Are you an Admin? Click
-            <span class="underline text-red-700 cursor-pointer" @click="toggleAdminSignIn">Here</span> to Sign In
-          </p> -->
           <i18n-t keypath="pageSignIn.adminPrompt" tag="p" class="text-center m-auto">
             <template #action>
               <span class="underline text-red-700 cursor-pointer" @click="toggleAdminSignIn">{{
@@ -63,7 +59,7 @@
               <span>ClassLink</span>
             </PvButton>
           </div>
-          <p class="text-xs">*{{ $t('pageSignIn.adminInfoPrompt') }}</p>
+          <p v-if="isLevante" class="text-xs">*{{ $t('pageSignIn.adminInfoPrompt') }}</p>
         </section>
         <!-- <section class="signin-option-container signin-option-providers">
           <div class="flex flex-row justify-content-center w-full">

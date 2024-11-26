@@ -115,7 +115,7 @@ async function checkConsent() {
   }
 
   const legalDocs = consentStatus?.[consentDoc.version] || [];
-  // if (!Array.isArray(legalDocs)) return; // Remove once we know it doesnet break anything
+  if (!Array.isArray(legalDocs)) return; // Remove once we know it doesnet break anything
   const signedBeforeAugFirst = legalDocs.some((doc) => isSignedBeforeAugustFirst(doc.dateSigned));
 
   if (signedBeforeAugFirst) {
