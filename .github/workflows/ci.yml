@@ -92,7 +92,7 @@ jobs:
       fail-fast: false
       matrix:
         browser: [chrome]
-        containers: [1]
+        containers: [1, 2, 3, 4]
     container:
       image: cypress/browsers:node-20.18.0-chrome-129.0.6668.89-1-ff-131.0.2-edge-129.0.2792.65-1
       options: --user 1001
