@@ -106,7 +106,6 @@
                     :public-name="item.publicName ?? item.name"
                     :show-params="isSuperAdmin"
                     :is-super-admin="isSuperAdmin"
-                    data-cy="h2-card-admin-title"
                   />
                 </div>
               </template>
