@@ -197,7 +197,7 @@ const routes = [
     meta: { pageTitle: 'Manage Tasks', requireAdmin: true, requireSuperAdmin: true },
   },
   {
-    path: '/register',
+    path: APP_ROUTES.REGISTER,
     name: 'Register',
     component: () => import('../pages/RegisterFamilyUsers.vue'),
     props: (route) => ({ code: route.query.code }),

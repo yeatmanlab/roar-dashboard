@@ -135,6 +135,20 @@ Cypress.Commands.add('waitForAdministrationsList', () => {
 });
 
 /**
+ * Waits for the organisations list to load.
+ */
+Cypress.Commands.add('waitForOrganisationsList', () => {
+  cy.waitUntil(
+    () => {
+      return Cypress.$('main [data-cy="orgs-list"] ').length;
+    },
+    {
+      errorMsg: 'Failed to load the orgs list page before timeout',
+    },
+  );
+});
+
+/**
  * Wait for the participant homepage to load.
  */
 Cypress.Commands.add('waitForParticipantHomepage', () => {
@@ -386,7 +400,8 @@ Cypress.Commands.add('playOptionalGame', (game, administration, optional) => {
 
 /**
  * Create a mock store for the user type specified.
- * @param {string} userType - The type of user to create a mock store for. One of 'superAdmin', 'partnerAdmin', or 'participant'. Defaults to 'participant'.
+ * @param {string} userType - The type of user to create a mock store for. One of 'superAdmin', 'partnerAdmin', or
+ * 'participant'. Defaults to 'participant'.
  * @returns {void}
  */
 Cypress.Commands.add('setAuthStore', (userType = 'participant') => {
@@ -401,4 +416,41 @@ Cypress.Commands.add('setAuthStore', (userType = 'participant') => {
   cy.log('Created mock store for user type:', userType, ' with state:', authStore.$state);
   // Store the mock store in the Cypress context as an alias
   return cy.wrap(authStore.$state).as('authStore');
+});
+
+/**
+ * Retrieve activation code
+ *
+ * @TODO: Move this to a programmatic utility function for faster activation code retrieval.
+ *
+ * @param {string} orgType - The type of the organization.
+ * @param {string} orgName - The name of the organization.
+ * @returns {string} - The activation code.
+ */
+Cypress.Commands.add('getActivationCode', (orgType, orgName) => {
+  cy.login(Cypress.env('PARTNER_ADMIN_USERNAME'), Cypress.env('PARTNER_ADMIN_PASSWORD'));
+
+  // Wait to ensure that the login is successful.
+  // @NOTE: This is currently required as the app is not immediately ready to navigate to the orgs list page.
+  // @TODO: Remove this arbitrary wait once the app initialisation has been refactored and is stable.
+  cy.wait(2000);
+
+  cy.visit(APP_ROUTES.ORGS_LIST);
+
+  // Wait for the orgs list page to load.
+  cy.waitForOrganisationsList();
+
+  // Navigate to the org tab.
+  cy.get('ul > li').contains(orgType, { matchCase: false }).click();
+
+  // Invoke the activation code retrieval button for the given org.
+  cy.contains('td', orgName).parents('tr').find('[data-cy="data-table__event-btn__show-activation-code"]').click();
+
+  // Invoke the activation code input field to get and return the value.
+  cy.get('[data-cy="activation-code__input"]')
+    .invoke('attr', 'value')
+    .then((value) => {
+      expect(value).to.not.be.empty;
+      return value;
+    });
 });

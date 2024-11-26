@@ -67,7 +67,7 @@
             :loading="isLoading || isFetching"
             :allow-filtering="false"
             @export-all="exportAll"
-            @selected-org-id="showCode"
+            @show-activation-code="showCode"
             @export-org-users="(orgId) => exportOrgUsers(orgId)"
             @edit-button="onEditButtonClick($event)"
           />
@@ -107,12 +107,12 @@
             style="width: 70%"
             :value="activationCode"
             autocomplete="off"
-            data-cy="input-text-activation-code"
+            data-cy="activation-code__input"
             readonly
           />
           <PvButton
             class="bg-primary border-none p-2 text-white hover:bg-red-900"
-            data-cy="button-copy-invitation"
+            data-cy="activation-code__copy"
             @click="copyToClipboard(activationCode)"
           >
             <i class="pi pi-copy p-2"></i>
@@ -444,7 +444,7 @@ const tableColumns = computed(() => {
       header: 'SignUp Code',
       buttonLabel: 'Invite Users',
       button: true,
-      eventName: 'selected-org-id',
+      eventName: 'show-activation-code',
       buttonIcon: 'pi pi-send mr-2',
       sort: false,
     },
