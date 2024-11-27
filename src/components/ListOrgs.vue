@@ -171,6 +171,7 @@ import PvInputText from 'primevue/inputtext';
 import PvTabPanel from 'primevue/tabpanel';
 import PvTabView from 'primevue/tabview';
 import PvToast from 'primevue/toast';
+import PvToggleButton from 'primevue/togglebutton';
 import _get from 'lodash/get';
 import _head from 'lodash/head';
 import _kebabCase from 'lodash/kebabCase';
@@ -188,7 +189,6 @@ import RoarModal from './modals/RoarModal.vue';
 import { CSV_EXPORT_MAX_RECORD_COUNT } from '@/constants/csvExport';
 import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts.js';
 import RoarDataTable from '@/components/RoarDataTable.vue';
-import PvToggleButton from 'primevue/togglebutton';
 import { ORG_TYPES } from '../constants/orgTypes';
 
 const initialized = ref(false);
@@ -473,7 +473,6 @@ const tableData = computed(() => {
       },
     };
   });
-
   if (activeOrgType.value === ORG_TYPES.GROUPS && !hideSubgroups.value) {
     return tableData.filter((org) => !org.parentOrgId && !org.parentOrgType);
   }
