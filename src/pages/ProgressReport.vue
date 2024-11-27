@@ -296,6 +296,10 @@ const {
   enabled: initialized,
 });
 
+watch(assignmentData, (newVal) => {
+  console.log('assignmentData: ', newVal);
+});
+
 const schoolNameDictionary = computed(() => {
   if (districtSchoolsData.value) {
     return districtSchoolsData.value.reduce((acc, school) => {

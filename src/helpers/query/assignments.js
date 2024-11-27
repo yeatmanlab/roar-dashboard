@@ -9,7 +9,7 @@ import _uniq from 'lodash/uniq';
 import _without from 'lodash/without';
 import _isEmpty from 'lodash/isEmpty';
 import { convertValues, getAxiosInstance, getProjectId, mapFields } from './utils';
-import { pluralizeFirestoreCollection } from '@/helpers';
+import { pluralizeFirestoreCollection, isLevante } from '@/helpers';
 
 const userSelectFields = ['name', 'assessmentPid', 'username', 'studentData', 'schools', 'classes'];
 
@@ -902,14 +902,51 @@ export const assignmentPageFetcher = async (
           );
         });
 
-      // But the order of batchGet is not guaranteed, so we need to match the user
-      // docs back with their assignments.
-      const scoresObj = assignmentData.map((assignment) => {
+      let batchSurveyDocs = [];
+      if (isLevante) {
+        // After getting user docs, fetch survey responses
+        const surveyResponsePaths = userDocPaths.map((userDocPath) => {
+          return `${userDocPath}/surveyResponses`;
+        });
+
+        // Batch get survey response docs
+        batchSurveyDocs = await Promise.all(
+          surveyResponsePaths.map(async (path) => {
+            const surveyQuery = {
+              structuredQuery: {
+                from: [{ collectionId: 'surveyResponses' }],
+                where: {
+                  fieldFilter: {
+                    field: { fieldPath: 'administrationId' },
+                    op: 'EQUAL',
+                    value: { stringValue: adminId }
+                  }
+                }
+              }
+            };
+
+            const response = await adminAxiosInstance.post(`${path}:runQuery`, surveyQuery);
+            const surveyData = mapFields(response.data, true);
+            return surveyData.length > 0 ? surveyData[0] : null;
+          })
+        );
+      }
+
+      // Merge assignments, users, and survey data
+      const scoresObj = assignmentData.map((assignment, index) => {
         const user = batchUserDocs.find((userDoc) => userDoc.name.includes(assignment.parentDoc));
+        const surveyResponse = isLevante ? batchSurveyDocs[index] : null;
+        
         return {
           assignment,
           user: user.data,
           roarUid: user.name.split('/users/')[1],
+          ...(isLevante && {
+            survey: {
+              isComplete: surveyResponse ? surveyResponse.general?.isComplete || false : false,
+              ...surveyResponse
+            }
+          })
         };
       });
 
