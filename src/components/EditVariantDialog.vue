@@ -264,9 +264,9 @@ const computedValueOptions = (field) => {
     ];
   } else if (selectedField === 'School Level') {
     return [
-      { label: 'Elementary', value: 'Elementary' },
-      { label: 'Middle', value: 'Middle' },
-      { label: 'High', value: 'High' },
+      { label: 'Elementary', value: 'elementary' },
+      { label: 'Middle', value: 'middle' },
+      { label: 'High', value: 'high' },
     ];
   } else if (selectedField === 'User Type') {
     return [
