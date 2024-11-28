@@ -23,7 +23,6 @@ const MOCK_MENU_ITEMS = [
 describe('<NavBar />', () => {
   describe('Desktop', () => {
     it('Renders the default component', () => {
-      cy.viewport('macbook-16');
       cy.mount(NavBar, {
         props: {
           displayName: MOCK_USERNAME,
@@ -40,8 +39,6 @@ describe('<NavBar />', () => {
     });
 
     it('Renders the menu items', () => {
-      cy.viewport('macbook-16');
-
       cy.mount(NavBar, {
         props: {
           displayName: MOCK_USERNAME,
@@ -82,7 +79,6 @@ describe('<NavBar />', () => {
     });
 
     it('Renders without account settings button', () => {
-      cy.viewport('macbook-16');
       cy.mount(NavBar, {
         props: {
           displayName: MOCK_USERNAME,
@@ -96,7 +92,6 @@ describe('<NavBar />', () => {
     });
 
     it('Renders with a logo override', () => {
-      cy.viewport('macbook-16');
       cy.mount(NavBar, {
         props: {
           displayName: MOCK_USERNAME,
@@ -110,8 +105,6 @@ describe('<NavBar />', () => {
     });
 
     it('Allows users to navigate to the homepage', () => {
-      cy.viewport('macbook-16');
-
       cy.mount(NavBar, {
         props: {
           displayName: MOCK_USERNAME,
@@ -123,8 +116,6 @@ describe('<NavBar />', () => {
     });
 
     it('Allows users to navigate using the menu item dropdowns', () => {
-      cy.viewport('macbook-16');
-
       const menuItemSpy = cy.spy().as('menuItemSpy');
 
       cy.mount(NavBar, {
@@ -157,8 +148,6 @@ describe('<NavBar />', () => {
     });
 
     it('Allows users to navigate to their account settings', () => {
-      cy.viewport('macbook-16');
-
       cy.mount(NavBar, {
         props: {
           displayName: MOCK_USERNAME,
@@ -172,8 +161,6 @@ describe('<NavBar />', () => {
     });
 
     it('Allows user to sign-out', () => {
-      cy.viewport('macbook-16');
-
       const onSignOutSpy = cy.spy().as('onSignOutSpy');
 
       cy.mount(NavBar, {
