@@ -1,11 +1,11 @@
 <template>
   <NavBar
     v-if="displayNavbar"
-    :displayName
-    :menuItems
+    :display-name
+    :menu-items
     :logo="logoOverride"
-    :onSignOut="signOut"
-    :showAccountSettingsLink="isAdmin.value"
+    :on-sign-out="signOut"
+    :show-account-settings-link="isAdmin.value"
   />
 </template>
 

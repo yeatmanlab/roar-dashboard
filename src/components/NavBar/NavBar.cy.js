@@ -51,9 +51,9 @@ describe('<NavBar />', () => {
 
       MOCK_MENU_ITEMS.forEach((menuItem, index) => {
         // Check if the menu item is rendered correctly.
-        cy.get(`.p-menubar-root-list > .p-menuitem:nth-child(${index + 1})`)
-          .should('contain', menuItem.label)
-          .click()
+        cy.get(`.p-menubar-root-list > .p-menuitem:nth-child(${index + 1})`).as('menuItemEl');
+        cy.get('@menuItemEl').should('contain', menuItem.label).click();
+        cy.get('@menuItemEl')
           .find('.p-submenu-list')
           .should('be.visible')
           .within(() => {
@@ -136,9 +136,9 @@ describe('<NavBar />', () => {
         },
       });
 
-      cy.get('.p-menubar-root-list > .p-menuitem')
-        .should('contain', 'Administrations')
-        .click()
+      cy.get('.p-menubar-root-list > .p-menuitem').as('menuItemEl');
+      cy.get('@menuItemEl').should('contain', 'Administrations').click();
+      cy.get('@menuItemEl')
         .find('.p-submenu-list')
         .should('be.visible')
         .within(() => {
