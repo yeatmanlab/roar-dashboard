@@ -5,10 +5,10 @@
         <div class="flex align-items-center justify-content-center w-full">
           <PvMenubar :model="menuItems" class="w-full">
             <template #start>
-              <router-link :to="{ path: APP_ROUTES.HOME }">
+              <router-link :to="{ path: APP_ROUTES.HOME }" data-cy="navbar__logo">
                 <div class="navbar-logo mx-3">
-                  <ROARLogo v-if="!logo" data-cy="navbar__logo" />
-                  <PvImage v-else :src="logo" alt="Logo" width="200" height="auto" data-cy="navbar__logo" />
+                  <ROARLogo v-if="!logo" />
+                  <PvImage v-else :src="logo" alt="Logo" width="200" height="auto" />
                 </div>
               </router-link>
             </template>
@@ -33,7 +33,7 @@
                     text
                     data-cy="navbar__signout-btn-desktop"
                     class="no-underline h-2 p-1 m-0 text-primary border-none border-round h-2rem text-sm hover:bg-red-900 hover:text-white"
-                    @click="() => onSignOut()"
+                    @click="handleSignOut"
                     >{{ $t('navBar.signOut') }}
                   </PvButton>
                 </div>
@@ -42,15 +42,14 @@
                   v-else
                   data-cy="navbar__signout-btn-mobile"
                   class="no-underline m-0 bg-primary text-white border-none border-round h-2rem text-sm hover:bg-red-900"
-                  @click="() => onSignOut()"
+                  @click="handleSignOut"
                 >
                   {{ $t('navBar.signOut') }}
                 </PvButton>
 
                 <div v-if="showAccountSettingsLink" class="nav-user-wrapper bg-gray-100">
-                  <router-link :to="{ path: APP_ROUTES.ACCOUNT_PROFILE }">
+                  <router-link :to="{ path: APP_ROUTES.ACCOUNT_PROFILE }" data-cy="navbar__account-settings-btn">
                     <button
-                      data-cy="navbar__account-settings-btn"
                       class="no-underline p-1 m-0 text-primary border-none border-round cursor-pointer h-2rem w-2rem text-sm hover:bg-red-900 hover:text-white"
                     >
                       <i class="pi pi-cog"></i></button
@@ -79,7 +78,7 @@ import { APP_ROUTES } from '@/constants/routes';
 import ROARLogo from '@/assets/RoarLogo.vue';
 
 // Define props
-defineProps({
+const props = defineProps({
   displayName: {
     type: String,
     required: true,
@@ -113,6 +112,10 @@ const isWideScreen = computed(() => {
 
 const handleResize = () => {
   screenWidth.value = window.innerWidth;
+};
+
+const handleSignOut = () => {
+  props.onSignOut();
 };
 
 onMounted(() => {

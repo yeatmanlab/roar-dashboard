@@ -18,7 +18,7 @@ import useUserType from '@/composables/useUserType';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useSignOutMutation from '@/composables/mutations/useSignOutMutation';
 import { getSidebarActions } from '@/router/sidebarActions';
-import NavBar from '@/components/NavBar.vue';
+import NavBar from '@/components/NavBar';
 
 const router = useRouter();
 const route = useRoute();
