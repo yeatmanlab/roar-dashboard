@@ -1,6 +1,6 @@
 <template>
   <div id="games" class="game-tab-container">
-    <PvTabView v-model:activeIndex="displayGameIndex" :scrollable="true" class="flex flex-column">
+    <PvTabView v-model:active-index="displayGameIndex" :scrollable="true" class="flex flex-column">
       <PvTabPanel
         v-for="(game, index) in games"
         :key="game.taskId"
@@ -11,21 +11,27 @@
         "
       >
         <template #header>
-          <!--Complete Game-->
-          <i v-if="game.completedOn" class="pi pi-check-circle mr-2" data-game-status="complete" />
-          <!--Current Game-->
-          <i
-            v-else-if="game.taskId == currentGameId || !sequential"
-            class="pi pi-circle mr-2"
-            data-game-status="current"
-          />
-          <!--Locked Game-->
-          <i v-else-if="sequential" class="pi pi-lock mr-2" data-game-status="incomplete" />
-          <span class="tabview-nav-link-label" :data-game-status="`${game.completedOn ? 'complete' : 'incomplete'}`">{{
-            getTaskName(game.taskId, game.taskData.name)
-          }}</span>
+          <div class="flex align-items-start">
+            <!--Complete Game-->
+            <i v-if="game.completedOn" class="pi pi-check-circle mr-2" data-game-status="complete" />
+            <!--Current Game-->
+            <i
+              v-else-if="game.taskId == currentGameId || !sequential"
+              class="pi pi-circle mr-2"
+              data-game-status="current"
+            />
+            <!--Locked Game-->
+            <i v-else-if="sequential" class="pi pi-lock mr-2" data-game-status="incomplete" />
+            <div class="flex min-w-full">
+              <span
+                class="tabview-nav-link-label flex-shrink-1"
+                :data-game-status="`${game.completedOn ? 'complete' : 'incomplete'}`"
+                >{{ getTaskName(game.taskId, game.taskData.name) }}</span
+              >
+            </div>
+          </div>
         </template>
-        <div class="roar-tabview-game pointer flex">
+        <div class="roar-tabview-game pointer">
           <div class="roar-game-content" @click="routeExternalTask(game)">
             <div class="roar-game-title">{{ getTaskName(game.taskId, game.taskData.name) }}</div>
             <div class="roar-game-description">
@@ -111,6 +117,7 @@ const levanteTasks = [
   'trog',
   'survey',
   'mefs',
+  'roarInference',
 ];
 
 const levantifiedRoarTasks = [

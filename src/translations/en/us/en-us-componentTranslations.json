@@ -26,7 +26,8 @@
     "classLinkLoading": "Loading your data from ClassLink..."
   },
   "consentModal": {
-    "title": "Consent",
+    "consentTitle": "Consent",
+    "assentTitle": "Assent",
     "acceptButton": "Continue",
     "toastHeader": "Confirmed"
   },
@@ -67,9 +68,12 @@
     "mefsName": "Lion and Monkey Game",
     "mefsDescription": "Match the shapes and colors.",
     "vocabName": "Vocabulary Game",
-    "vocabDescription": "Listen to the word and choose the matching image."
+    "vocabDescription": "Listen to the word and choose the matching image.",
+    "roarInferenceName": "Roar - Inference",
+    "roarInferenceDescription": "Read the stories and answer the questions."
   },
   "navBar": {
+    "greeting": "Hi",
     "signOut": "Sign Out"
   },
   "notFound": {

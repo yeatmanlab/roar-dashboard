@@ -26,7 +26,7 @@
               <div class="flex gap-2 align-items-center justify-content-center mr-3">
                 <div v-if="isWideScreen" class="nav-user-wrapper flex align-items-center gap-2 bg-gray-100">
                   <div class="text-lg font-bold text-gray-600" data-cy="user-display-name">
-                    {{ userDisplayName }}
+                    {{ $t('navBar.greeting') }}, {{ userDisplayName }}!
                   </div>
                   <PvButton
                     text
@@ -167,7 +167,7 @@ const userDisplayName = computed(() => {
     const username = authStore?.userData?.username;
     const firstName = authStore?.userData?.name?.first;
     const userType = isAdmin.value ? 'Admin' : 'User';
-    return `Hi, ${firstName || displayName || username || email || userType}!`;
+    return ` ${firstName || displayName || username || email || userType}`;
   }
 });
 

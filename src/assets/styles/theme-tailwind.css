@@ -961,6 +961,7 @@
   box-shadow:
     1px 0 1px 0 rgba(0, 0, 0, 0.2),
     0 1px 1px 0 rgba(0, 0, 0, 0.19);
+  display: contents;
 }
 .p-tabview .p-tabview-nav li .p-tabview-nav-link {
   border: solid var(--surface-d);
@@ -994,10 +995,11 @@
     0 10px 2px 0 rgba(0, 0, 0, 0.2);
 }
 .p-tabview .p-tabview-nav-btn.p-link {
-  background: var(--surface-a);
+  background-color: var(--surface-d);
   color: var(--primary-color);
-  width: 3rem;
+  width: 1rem;
   border-radius: 0;
+  border: 1px solid var(--surface-d);
 }
 .p-tabview .p-tabview-nav-btn.p-link:focus {
   outline: 0 none;
