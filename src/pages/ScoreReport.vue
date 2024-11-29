@@ -309,7 +309,7 @@ import {
   tasksToDisplayCorrectIncorrectDifference,
   includedValidityFlags,
 } from '@/helpers/reports';
-import FilterBar from '@/components/slots/FilterBar.vue';
+import FilterBar from '@/components/FilterBar';
 import RoarDataTable from '@/components/RoarDataTable';
 import { APP_ROUTES } from '@/constants/routes';
 import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
