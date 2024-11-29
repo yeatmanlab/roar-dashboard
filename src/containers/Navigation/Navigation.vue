@@ -78,6 +78,7 @@ const navbarBlacklist = [
 ];
 
 const displayNavbar = computed(() => {
+  if (!route.name) return false;
   return !navbarBlacklist.includes(route.name);
 });
 
@@ -140,6 +141,6 @@ const menuItems = computed(() => {
 });
 
 onMounted(() => {
-  if (roarfirekit.value.restConfig) init();
+  if (roarfirekit?.value?.restConfig) init();
 });
 </script>
