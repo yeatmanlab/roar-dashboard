@@ -5,7 +5,7 @@
     :menu-items
     :logo="logoOverride"
     :on-sign-out="signOut"
-    :show-account-settings-link="isAdmin.value"
+    :show-account-settings-link
   />
 </template>
 
@@ -42,7 +42,7 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
 
 const { mutate: signOut } = useSignOutMutation();
 
-const { isLoading: isLoadingClaims, data: userClaims } = useUserClaimsQuery({
+const { data: userClaims } = useUserClaimsQuery({
   enabled: initialized,
 });
 
@@ -77,6 +77,10 @@ const navbarBlacklist = [
   'MEP',
 ];
 
+const showAccountSettingsLink = computed(() => {
+  return !!isAdmin.value || !!isSuperAdmin.value;
+});
+
 const displayNavbar = computed(() => {
   if (!route.name) return false;
   return !navbarBlacklist.includes(route.name);
@@ -87,22 +91,20 @@ const logoOverride = computed(() => {
 });
 
 const displayName = computed(() => {
-  if (!isLoadingClaims) {
-    return '';
-  } else {
-    let email = authStore?.userData?.email;
+  if (!userClaims) return;
 
-    if (email && email.split('@')[1] === 'roar-auth.com') {
-      email = email.split('@')[0];
-    }
-    const displayName = authStore?.userData?.displayName;
-    const username = authStore?.userData?.username;
-    const firstName = authStore?.userData?.name?.first;
+  let email = authStore?.userData?.email;
 
-    const userType = isAdmin.value ? 'Admin' : 'User';
-
-    return `${firstName || displayName || username || email || userType}`;
+  if (email && email.split('@')[1] === 'roar-auth.com') {
+    email = email.split('@')[0];
   }
+
+  const displayName = authStore?.userData?.displayName;
+  const username = authStore?.userData?.username;
+  const firstName = authStore?.userData?.name?.first;
+  const userType = isAdmin.value ? 'Admin' : 'User';
+
+  return `${firstName || displayName || username || email || userType}`;
 });
 
 const defaultMenuActions = computed(() => {
