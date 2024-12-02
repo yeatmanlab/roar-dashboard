@@ -22,17 +22,7 @@ vi.mock('vue-router', async (getModule) => {
   };
 });
 
-vi.mock('@tanstack/vue-query', async (getModule) => {
-  const original = await getModule();
-  return {
-    ...original,
-  };
-});
-
 vi.mock('@/composables/queries/useUserClaimsQuery');
-
-const testingPinia = createTestingPinia();
-const authStore = useAuthStore();
 
 const firstName = faker.person.firstName();
 const lastName = faker.person.lastName();
@@ -40,23 +30,26 @@ const displayName = faker.internet.username({ firstName, lastName });
 const username = faker.internet.username({ firstName });
 const email = faker.internet.email({ firstName, provider: 'roar-auth.com' });
 
+const testingPinia = createTestingPinia();
+const authStore = useAuthStore();
+
+authStore.roarfirekit = {
+  restConfig: true,
+};
+
+authStore.userData = {
+  name: {
+    first: firstName,
+    last: lastName,
+  },
+  username: username,
+  displayName: displayName,
+  email: email,
+};
+
 describe('<Navigation />', () => {
   let wrapper;
   let mockRoute;
-
-  authStore.roarfirekit = {
-    restConfig: true,
-  };
-
-  authStore.userData = {
-    name: {
-      first: firstName,
-      last: lastName,
-    },
-    username: username,
-    displayName: displayName,
-    email: email,
-  };
 
   const mockRouter = {
     push: vi.fn(),
