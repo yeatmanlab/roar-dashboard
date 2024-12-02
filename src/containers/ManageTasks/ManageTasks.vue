@@ -180,7 +180,7 @@
               </div>
               <div class="flex flex-row align-items-center">
                 <PvCheckbox v-model="taskCheckboxData" input-id="chbx-registeredTask" value="isRegisteredTask" />
-                <label class="ml-1 mr-3" for="chbx-externalTask">Mark as <b>Registered Task</b> </label>
+                <label class="ml-1 mr-3" for="chbx-registeredTask">Mark as <b>Registered Task</b> </label>
               </div>
             </fieldset>
 
