@@ -48,3 +48,7 @@ fieldset {
   margin-top: 0;
   margin-block-start: 0;
 }
+
+.leading-7 {
+  line-height: 1.75rem;
+}
