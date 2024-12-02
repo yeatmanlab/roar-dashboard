@@ -82,7 +82,6 @@ onMounted(() => {
 
         dialogVisible.value = false;
       } catch (error) {
-        console.log('error', error);
         toast.add({
           severity: TOAST_SEVERITIES.ERROR,
           summary: 'Error',
