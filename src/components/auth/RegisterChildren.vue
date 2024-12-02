@@ -326,25 +326,17 @@
           <div class="field-checkbox terms-checkbox">
             <PvCheckbox
               :id="`accept-${isRegistering ? 'register' : 'login'}`"
-              v-model="v$.students.$each.$response.$data[outerIndex].accept.$model"
+              v-model="student.accept"
               binary
               :disabled="showConsent"
-              :class="[{ 'p-invalid': v$.students.$each.$response.$data[outerIndex].accept.$invalid && submitted }]"
+              :class="[{ 'p-invalid': student.accept.$invalid && submitted }]"
               @change="getConsent"
             />
-            <label
-              for="accept"
-              :class="{ 'p-error': v$.students.$each.$response.$data[outerIndex].accept.$invalid && submitted }"
+            <label for="accept" :class="{ 'p-error': student.accept.$invalid && submitted }"
               >I agree to the terms and conditions<span class="required">*</span></label
             >
           </div>
-          <small
-            v-if="
-              (v$.students.$each.$response.$data[outerIndex].accept.$invalid && submitted) ||
-              v$.students.$each.$response.$data[outerIndex].accept.$pending
-            "
-            class="p-error"
-          >
+          <small v-if="(student.accept.$invalid && submitted) || student.accept.$pending" class="p-error">
             You must agree to the terms and conditions
           </small>
         </ChallengeV3>
@@ -352,7 +344,7 @@
           v-if="showConsent"
           :consent-text="consentText"
           consent-type="consent"
-          :on-confirm="handleConsentAccept()"
+          :on-confirm="() => handleConsentAccept(outerIndex)"
         />
       </div>
     </form>
@@ -550,6 +542,7 @@ function addStudent() {
     noActivationCode: noActivationCodeRef.value,
     yearOnlyCheck: yearOnlyCheckRef.value,
     orgName: '',
+    accept: false,
   });
   if (props.code) {
     validateCode(props.code, state.students.length - 1);
