@@ -137,7 +137,7 @@ import { singularizeFirestoreCollection } from '@/helpers';
 import AppSpinner from './AppSpinner.vue';
 import EditUsersForm from './EditUsersForm.vue';
 import RoarModal from './modals/RoarModal.vue';
-import RoarDataTable from '@/components/RoarDataTable.vue';
+import RoarDataTable from '@/components/RoarDataTable';
 
 const authStore = useAuthStore();
 

@@ -1,48 +1,60 @@
-import './commands';
-import plugins from '../../src/plugins';
-import { createAppInstance } from '../../src/setup';
 import { mount } from 'cypress/vue';
+import { createMemoryHistory, createRouter } from 'vue-router';
+import PrimeVue from 'primevue/config';
+import ConfirmationService from 'primevue/confirmationservice';
+import ToastService from 'primevue/toastservice';
+import { i18n } from '@/translations/i18n.js';
+import { routes } from '@/router';
+
+// Import global styles.
+import '@/styles.css';
 
 /**
- * Custom Cypress command to mount a Vue component with the application's full context.
+ * Mount Command
  *
- * This command initializes the Vue app instance, adds the necessary plugins, components,
- * and directives to the Cypress context, and mounts the specified component for testing.
+ * This command adds a custom cy.mount() command to mount Vue components for testing.
  *
- * The command ensures that all global plugins, components, and other context-specific
- * items from the Vue app are available in the Cypress testing environment. This includes
- * handling potential context duplication to ensure features like i18n work correctly.
+ * As the existing codebase uses a certain set of plugins and component libraries, the following are loaded into the
+ * Cypress test runner context to ensure compatibility:
+ * - i18n: The internationalization plugin for resolving translations.
+ * - PrimeVue: The PrimeVue plugin for using PrimeVue components.
+ * - Vue Router: The Vue Router plugin for resolving in-component router links.
+ *
+ * Important: we do not load the complete set of plugins loaded by the main application, as components tests should test
+ * components in isolation. We make an exception for the above plugins as those are tightly integrated with the
+ * components. Before adding more plugins, consider whether they are truly necessary for testing the component in
+ * isolation. If a component requires a plugin to function correctly, it may indicate a violation of the separation of
+ * concerns principle and a refactoring would be beneficial.
  *
  * @param {VueComponent} component - The Vue component to mount.
  * @param {object} [options={}] - Optional configuration for mounting, including global plugins and components.
  * @returns {Cypress.Chainable} - The chainable Cypress object for further commands.
  */
 Cypress.Commands.add('mount', (component, options = {}) => {
-  const app = createAppInstance();
-
   options.global = options.global || {};
   options.global.plugins = options.global.plugins || [];
-  options.global.components = options.global.components || {};
 
-  // Add the Vue app plugins to the Cypress context
-  plugins.forEach((plugin) => {
-    if (Array.isArray(plugin)) {
-      options.global.plugins.push(...plugin);
-    } else {
-      options.global.plugins.push(plugin);
-    }
-  });
+  // Load the i18n plugin to resolve in-component translations.
+  options.global.plugins.push(i18n);
 
-  // There is some context duplication between loop above and this loop
-  // But without this redundancy, some app context is not available in the Cypress context (namely i18n)
-  // Unsure why, need to investigate further
+  // Load the PrimeVue plugin to enable the use of PrimeVue components.
+  options.global.plugins.push(PrimeVue, { ripple: true });
+  options.global.plugins.push(ConfirmationService);
+  options.global.plugins.push(ToastService);
 
-  // Add the Vue app components, directives, and plugins to the Cypress context
+  // Load the Vue Router plugin to resolve in-component router links.
+  // Important: Only create a new router if one is not already provided by the test itself.
+  if (!options.router) {
+    options.router = createRouter({
+      routes,
+      history: createMemoryHistory(),
+    });
+  }
+
+  // Add router plugin
   options.global.plugins.push({
-    install(appInstance) {
-      appInstance._context.components = app._context.components;
-      appInstance._context.directives = app._context.directives;
-      appInstance._context.provides = app._context.provides;
+    install(app) {
+      app.use(options.router);
     },
   });
 
