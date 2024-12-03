@@ -1,13 +1,11 @@
 <template>
-  <div class="flex flex-row align-items-center">
+  <label :for="id" class="flex flex-row align-items-center gap-2 p-3 lg:p-0 lg:py-1 lg:bg-white bg-gray-100 rounded">
     <PvCheckbox v-model="model" :input-id="id" :binary="true" />
-    <label :for="id" class="ml-1 mr-3">
-      <slot v-if="$slots.default">
-        <slot></slot>
-      </slot>
-      <template v-else>{{ label }}</template>
-    </label>
-  </div>
+    <slot v-if="$slots.default">
+      <slot />
+    </slot>
+    <template v-else>{{ label }}</template>
+  </label>
 </template>
 
 <script setup>
@@ -28,7 +26,7 @@ const props = defineProps({
 </script>
 
 <style scoped>
-.p-checkbox + label {
+label {
   cursor: pointer;
 }
 </style>

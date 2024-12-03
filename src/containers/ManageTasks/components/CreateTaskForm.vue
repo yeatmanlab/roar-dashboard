@@ -138,19 +138,24 @@
     </fieldset>
 
     <div class="flex flex-column gap-4 lg:align-items-center">
-      <!-- <fieldset class="flex flex-row align-items-center justify-content-center gap-2 flex-order-0 my-3"> -->
       <fieldset
-        class="flex flex-column lg:flex-row lg:align-items-center lg:justify-content-center gap-2 flex-order-0 my-3"
+        class="flex flex-column lg:flex-row lg:align-items-center lg:justify-content-center gap-1 lg:gap-4 flex-order-0 my-3"
       >
         <legend class="sr-only">Task Options</legend>
-        <CheckboxInput v-model="v$.demoData.$model" id="demoTask"> Mark as <b>Demo Task</b> </CheckboxInput>
+        <CheckboxInput v-model="v$.demoData.$model" id="demoTask">
+          <span>Mark as <b>Demo Task</b></span>
+        </CheckboxInput>
 
-        <CheckboxInput v-model="v$.testData.$model" id="testTask"> Mark as <b>Test Task</b> </CheckboxInput>
+        <CheckboxInput v-model="v$.testData.$model" id="testTask">
+          <span>Mark as <b>Test Task</b></span>
+        </CheckboxInput>
 
-        <CheckboxInput v-model="v$.external.$model" id="externalTask"> Mark as <b>External Task</b> </CheckboxInput>
+        <CheckboxInput v-model="v$.external.$model" id="externalTask">
+          <span>Mark as <b>External Task</b></span>
+        </CheckboxInput>
 
         <CheckboxInput v-model="v$.registered.$model" id="registeredTask">
-          Mark as <b>Registered Task</b>
+          <span>Mark as <b>Registered Task</b></span>
         </CheckboxInput>
       </fieldset>
 

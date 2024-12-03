@@ -52,3 +52,7 @@ fieldset {
 .leading-7 {
   line-height: 1.75rem;
 }
+
+.bg-transparent {
+  background-color: transparent;
+}
