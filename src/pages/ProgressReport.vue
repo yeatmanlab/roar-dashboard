@@ -122,7 +122,7 @@
           >
             <template #filterbar>
               <div v-if="districtSchoolsData" class="flex flex-row gap-2">
-                <span class="p-float-label">
+                <PvFloatLabel>
                   <PvMultiSelect
                     id="ms-school-filter"
                     v-model="filterSchools"
@@ -135,10 +135,10 @@
                     data-cy="filter-by-school"
                   />
                   <label for="ms-school-filter">Filter by School</label>
-                </span>
+                </PvFloatLabel>
               </div>
               <div class="flex flex-row gap-2">
-                <span class="p-float-label">
+                <PvFloatLabel>
                   <PvMultiSelect
                     id="ms-grade-filter"
                     v-model="filterGrades"
@@ -151,7 +151,7 @@
                     data-cy="filter-by-grade"
                   />
                   <label for="ms-school-filter">Filter by Grade</label>
-                </span>
+                </PvFloatLabel>
               </div>
             </template>
           </RoarDataTable>
@@ -168,6 +168,7 @@ import { useRouter } from 'vue-router';
 import _get from 'lodash/get';
 import _kebabCase from 'lodash/kebabCase';
 import _map from 'lodash/map';
+import PvFloatLabel from 'primevue/floatlabel';
 import PvChart from 'primevue/chart';
 import PvMultiSelect from 'primevue/multiselect';
 import PvSelectButton from 'primevue/selectbutton';

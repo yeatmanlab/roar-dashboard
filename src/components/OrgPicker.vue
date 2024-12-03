@@ -9,8 +9,8 @@
                 v-if="activeOrgType === 'schools' || activeOrgType === 'classes'"
                 class="col-6 md:col-5 lg:col-5 xl:col-5 mt-3"
               >
-                <span class="p-float-label">
-                  <PvDropdown
+                <PvFloatLabel>
+                  <PvSelect
                     id="district"
                     v-model="selectedDistrict"
                     input-id="district"
@@ -23,11 +23,11 @@
                     data-cy="dropdown-selected-district"
                   />
                   <label for="district">Select from district</label>
-                </span>
+                </PvFloatLabel>
               </div>
               <div v-if="orgType.id === 'classes'" class="col-6 md:col-5 lg:col-5 xl:col-5 mt-3">
-                <span class="p-float-label">
-                  <PvDropdown
+                <PvFloatLabel>
+                  <PvSelect
                     id="school"
                     v-model="selectedSchool"
                     input-id="school"
@@ -40,7 +40,7 @@
                     data-cy="dropdown-selected-school"
                   />
                   <label for="school">Select from school</label>
-                </span>
+                </PvFloatLabel>
               </div>
             </div>
             <div class="card flex justify-content-center">
@@ -94,9 +94,10 @@ import { storeToRefs } from 'pinia';
 import _capitalize from 'lodash/capitalize';
 import _get from 'lodash/get';
 import _head from 'lodash/head';
+import PvFloatLabel from 'primevue/floatlabel';
 import PvCheckbox from 'primevue/checkbox';
 import PvChip from 'primevue/chip';
-import PvDropdown from 'primevue/dropdown';
+import PvSelect from 'primevue/select';
 import PvListbox from 'primevue/listbox';
 import PvPanel from 'primevue/panel';
 import PvScrollPanel from 'primevue/scrollpanel';

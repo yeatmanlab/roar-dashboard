@@ -36,7 +36,7 @@
                 >Date of Birth
                 <span v-if="localUserType === 'student'" v-tooltip.top="'Required'" class="required">*</span></label
               >
-              <PvCalendar
+              <PvDatePicker
                 v-model="localUserData.studentData.dob"
                 :class="{ 'p-invalid': errorMessage.includes('Date of birth') }"
               />
@@ -81,7 +81,7 @@
 
             <div class="form-field">
               <label>English as a Second Language</label>
-              <PvDropdown
+              <PvSelect
                 v-model="localUserData.studentData.ell_status"
                 option-label="label"
                 option-value="value"
@@ -90,7 +90,7 @@
             </div>
             <div class="form-field">
               <label>IEP Status</label>
-              <PvDropdown
+              <PvSelect
                 v-model="localUserData.studentData.iep_status"
                 option-label="label"
                 option-value="value"
@@ -99,7 +99,7 @@
             </div>
             <div class="form-field">
               <label>Free-Reduced Lunch</label>
-              <PvDropdown
+              <PvSelect
                 v-model="localUserData.studentData.frl_status"
                 option-label="label"
                 option-value="value"
@@ -119,7 +119,7 @@
             </div>
             <div class="form-field">
               <label>Hispanic or Latino Ethnicity</label>
-              <PvDropdown
+              <PvSelect
                 v-model="localUserData.studentData.hispanic_ethnicity"
                 option-label="label"
                 option-value="value"
@@ -205,10 +205,10 @@ import { storeToRefs } from 'pinia';
 import { useAuthStore } from '@/store/auth';
 import PvAutoComplete from 'primevue/autocomplete';
 import PvButton from 'primevue/button';
-import PvCalendar from 'primevue/calendar';
+import PvDatePicker from 'primevue/datepicker';
 import PvCheckbox from 'primevue/checkbox';
 import PvDialog from 'primevue/dialog';
-import PvDropdown from 'primevue/dropdown';
+import PvSelect from 'primevue/select';
 import PvInputText from 'primevue/inputtext';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 

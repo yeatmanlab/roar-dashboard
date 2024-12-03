@@ -5,7 +5,7 @@
   <div v-else>
     <div class="w-full gap-1 pt-1 flex justify-content-center align-items-center flex-wrap mt-3">
       <slot name="filterbar"></slot>
-      <span class="p-float-label my-3">
+      <PvFloatLabel>
         <PvMultiSelect
           id="ms-columns"
           v-tooltip.top="'Show and hide columns'"
@@ -18,8 +18,8 @@
           @update:model-value="onColumnToggle"
         />
         <label for="ms-columns" class="view-label2">Select Columns</label>
-      </span>
-      <span class="p-float-label my-3">
+      </PvFloatLabel>
+      <PvFloatLabel>
         <PvMultiSelect
           id="ms-freeze"
           :model-value="frozenColumns"
@@ -32,7 +32,7 @@
           @update:model-value="onFreezeToggle"
         />
         <label for="ms-columns" class="view-label2">Freeze Columns</label>
-      </span>
+      </PvFloatLabel>
       <span class="flex flex-row flex-wrap justify-content-end gap-2 max-h-3 export-wrapper">
         <PvButton
           v-tooltip.bottom="'Expand or Compress table rows'"
@@ -283,19 +283,26 @@
                     :show-toggle-all="false"
                     class="p-column-filter"
                   />
-                  <PvCalendar
+                  <PvDatePicker
                     v-if="col.dataType === 'date' && !col.useMultiSelect"
                     v-model="filterModel.value"
                     date-format="mm/dd/yy"
                     placeholder="mm/dd/yyyy"
                   />
-                  <div v-if="col.dataType === 'boolean' && !col.useMultiSelect" class="flex flex-row gap-2">
-                    <PvTriStateCheckbox v-model="filterModel.value" input-id="booleanFilter" style="padding-top: 2px" />
-                    <label for="booleanFilter">{{ col.header + '?' }}</label>
+                  <div v-if="col.dataType === 'boolean' && !col.useMultiSelect" class="flex flex-column gap-2">
+                    <PvSelect
+                      v-model="filterModel.value"
+                      :options="[
+                        { label: 'Yes', value: true },
+                        { label: 'No', value: false },
+                      ]"
+                      class="p-column-filter"
+                      placeholder="Select"
+                    />
                   </div>
 
                   <div v-if="col.dataType === 'score'">
-                    <PvDropdown
+                    <PvSelect
                       v-model="filterModel.value"
                       option-label="label"
                       option-group-label="label"
@@ -346,10 +353,10 @@
                           <span class="tooltiptext">{{ value }}</span>
                         </div>
                       </template>
-                    </PvDropdown>
+                    </PvSelect>
                   </div>
                   <div v-if="col.dataType === 'progress'">
-                    <PvDropdown
+                    <PvSelect
                       v-model="filterModel.value"
                       :options="['Assigned', 'Started', 'Completed', 'Optional']"
                       style="margin-bottom: 0.5rem"
@@ -376,13 +383,13 @@
                           rounded
                         />
                       </template>
-                    </PvDropdown>
+                    </PvSelect>
                   </div>
                 </template>
               </PvColumn>
             </PvRow>
           </PvColumnGroup>
-          <PvOverlayPanel ref="op" append-to="body" class="overflow-y-scroll" style="width: 60vh; max-height: 30vh">
+          <PvPopover ref="op" append-to="body" class="overflow-y-scroll" style="width: 60vh; max-height: 30vh">
             <template v-if="selectedColumn === 'primary'">
               <h3 class="font-bold">Foundational Reading Skills</h3>
               <div>
@@ -452,7 +459,7 @@
                 These scores will be included in the development of national norms and support categories.
               </div>
             </template>
-          </PvOverlayPanel>
+          </PvPopover>
           <PvColumn
             selection-mode="multiple"
             header-style="background-color: var(--primary-color); border:none;"
@@ -565,21 +572,21 @@
 <script setup>
 import { ref, computed } from 'vue';
 import { useToast } from 'primevue/usetoast';
+import PvFloatLabel from 'primevue/floatlabel';
 import PvButton from 'primevue/button';
-import PvCalendar from 'primevue/calendar';
+import PvDatePicker from 'primevue/datepicker';
 import PvChip from 'primevue/chip';
 import PvColumn from 'primevue/column';
 import PvColumnGroup from 'primevue/columngroup';
 import PvDataTable from 'primevue/datatable';
-import PvDropdown from 'primevue/dropdown';
+import PvSelect from 'primevue/select';
 import PvInputNumber from 'primevue/inputnumber';
 import PvInputText from 'primevue/inputtext';
 import PvMultiSelect from 'primevue/multiselect';
-import PvOverlayPanel from 'primevue/overlaypanel';
+import PvPopover from 'primevue/popover';
 import PvTag from 'primevue/tag';
-import PvTriStateCheckbox from 'primevue/tristatecheckbox';
 import PvRow from 'primevue/row';
-import { FilterMatchMode, FilterOperator } from 'primevue/api';
+import { FilterMatchMode, FilterOperator } from '@primevue/core/api';
 import _get from 'lodash/get';
 import _map from 'lodash/map';
 import _forEach from 'lodash/forEach';

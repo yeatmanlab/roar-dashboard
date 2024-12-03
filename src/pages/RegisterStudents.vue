@@ -79,7 +79,7 @@
           <PvColumn v-for="col of tableColumns" :key="col.field" :field="col.field">
             <template #header>
               <div class="col-header">
-                <PvDropdown
+                <PvSelect
                   v-model="dropdown_model[col.field]"
                   :options="dropdown_options"
                   option-label="label"
@@ -156,7 +156,7 @@ import PvCheckbox from 'primevue/checkbox';
 import PvColumn from 'primevue/column';
 import PvDataTable from 'primevue/datatable';
 import PvDivider from 'primevue/divider';
-import PvDropdown from 'primevue/dropdown';
+import PvSelect from 'primevue/select';
 import PvFileUpload from 'primevue/fileupload';
 import PvMessage from 'primevue/message';
 import PvPanel from 'primevue/panel';

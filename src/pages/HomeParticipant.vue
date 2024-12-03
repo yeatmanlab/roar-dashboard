@@ -20,9 +20,11 @@
     </div>
 
     <div v-else>
-      <h2 v-if="userAssignments?.length == 1" class="p-float-label dropdown-container">
-        {{ userAssignments.at(0).publicName || userAssignments.at(0).name }}
-      </h2>
+      <PvFloatLabel>
+        <h2 v-if="userAssignments?.length == 1" class="dropdown-container">
+          {{ userAssignments.at(0).publicName || userAssignments.at(0).name }}
+        </h2>
+      </PvFloatLabel>
       <div class="flex flex-row-reverse align-items-end gap-2 justify-content-between">
         <div
           v-if="optionalAssessments.length !== 0"
@@ -37,26 +39,28 @@
             $t('homeParticipant.showOptionalAssignments')
           }}</label>
         </div>
-        <div
-          v-if="userAssignments?.length > 0"
-          class="flex flex-row justify-center align-items-center p-float-label dropdown-container gap-4 w-full"
-        >
-          <div class="assignment-select-container flex flex-row justify-content-between justify-content-start">
-            <div class="flex flex-column align-content-start justify-content-start w-3">
-              <PvDropdown
-                v-model="selectedAdmin"
-                :options="sortedUserAdministrations ?? []"
-                :option-label="
-                  userAssignments.every((administration) => administration.publicName) ? 'publicName' : 'name'
-                "
-                input-id="dd-assignment"
-                data-cy="dropdown-select-administration"
-                @change="toggleShowOptionalAssessments"
-              />
-              <label for="dd-assignment">{{ $t('homeParticipant.selectAssignment') }}</label>
+        <PvFloatLabel>
+          <div
+            v-if="userAssignments?.length > 0"
+            class="flex flex-row justify-center align-items-center dropdown-container gap-4 w-full"
+          >
+            <div class="assignment-select-container flex flex-row justify-content-between justify-content-start">
+              <div class="flex flex-column align-content-start justify-content-start w-3">
+                <PvSelect
+                  v-model="selectedAdmin"
+                  :options="sortedUserAdministrations ?? []"
+                  :option-label="
+                    userAssignments.every((administration) => administration.publicName) ? 'publicName' : 'name'
+                  "
+                  input-id="dd-assignment"
+                  data-cy="dropdown-select-administration"
+                  @change="toggleShowOptionalAssessments"
+                />
+                <label for="dd-assignment">{{ $t('homeParticipant.selectAssignment') }}</label>
+              </div>
             </div>
           </div>
-        </div>
+        </PvFloatLabel>
       </div>
       <div class="tabs-container">
         <ParticipantSidebar :total-games="totalGames" :completed-games="completeGames" :student-info="studentInfo" />
@@ -94,8 +98,9 @@ import _find from 'lodash/find';
 import _without from 'lodash/without';
 import _isEmpty from 'lodash/isEmpty';
 import { storeToRefs } from 'pinia';
+import PvFloatLabel from 'primevue/floatlabel';
 import PvButton from 'primevue/button';
-import PvDropdown from 'primevue/dropdown';
+import PvSelect from 'primevue/select';
 import PvInputSwitch from 'primevue/inputswitch';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';

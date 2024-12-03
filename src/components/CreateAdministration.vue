@@ -15,7 +15,7 @@
       <div class="bg-gray-100 rounded p-5">
         <div class="formgrid grid mt-5">
           <div class="field col-12 xl:col-6 mb-5">
-            <span class="p-float-label">
+            <PvFloatLabel>
               <PvInputText
                 id="administration-name"
                 v-model="state.administrationName"
@@ -28,11 +28,11 @@
                 class="p-error white-space-nowrap overflow-hidden text-overflow-ellipsis"
                 >Please name your administration</small
               >
-            </span>
+            </PvFloatLabel>
           </div>
 
           <div class="field col-12 xl:col-6 mb-5">
-            <span class="p-float-label">
+            <PvFloatLabel>
               <PvInputText
                 id="administration-public-name"
                 v-model="state.administrationPublicName"
@@ -45,13 +45,13 @@
                 class="p-error white-space-nowrap overflow-hidden text-overflow-ellipsis"
                 >Please provide a public-facing name for this administration</small
               >
-            </span>
+            </PvFloatLabel>
           </div>
         </div>
         <div class="formgrid grid">
           <div class="field col-12 md:col-6 mb-5">
-            <span class="p-float-label">
-              <PvCalendar
+            <PvFloatLabel>
+              <PvDatePicker
                 v-model="state.dateStarted"
                 class="w-full"
                 :min-date="minStartDate"
@@ -66,11 +66,11 @@
               <small v-if="v$.dateStarted.required.$invalid && submitted" class="p-error"
                 >Please select a start date.</small
               >
-            </span>
+            </PvFloatLabel>
           </div>
           <div class="field col-12 md:col-6">
-            <span class="p-float-label">
-              <PvCalendar
+            <PvFloatLabel>
+              <PvDatePicker
                 v-model="state.dateClosed"
                 class="w-full"
                 :min-date="minEndDate"
@@ -85,7 +85,7 @@
               <small v-if="v$.dateClosed.required.$invalid && submitted" class="p-error"
                 >Please select an end date.</small
               >
-            </span>
+            </PvFloatLabel>
           </div>
         </div>
 
@@ -176,8 +176,9 @@ import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useToast } from 'primevue/usetoast';
 import { useConfirm } from 'primevue/useconfirm';
+import PvFloatLabel from 'primevue/floatlabel';
 import PvButton from 'primevue/button';
-import PvCalendar from 'primevue/calendar';
+import PvDatePicker from 'primevue/datepicker';
 import PvCheckbox from 'primevue/checkbox';
 import PvConfirmDialog from 'primevue/confirmdialog';
 import PvDivider from 'primevue/divider';

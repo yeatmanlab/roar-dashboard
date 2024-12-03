@@ -8,7 +8,7 @@
       Reset Filters
     </button>
     <div v-if="props.schools" class="flex flex-row my-3">
-      <span class="p-float-label">
+      <PvFloatLabel>
         <PvMultiSelect
           id="ms-school-filter"
           v-model="filterSchools"
@@ -21,10 +21,10 @@
           data-cy="filter-by-school"
         />
         <label for="ms-school-filter">Filter by School</label>
-      </span>
+      </PvFloatLabel>
     </div>
     <div class="flex flex-row gap-2 my-3">
-      <span class="p-float-label">
+      <PvFloatLabel>
         <PvMultiSelect
           id="ms-grade-filter"
           v-model="filterGrades"
@@ -37,13 +37,14 @@
           data-cy="filter-by-grade"
         />
         <label for="ms-school-filter">Filter by Grade</label>
-      </span>
+      </PvFloatLabel>
     </div>
   </div>
 </template>
 
 <script setup>
 import { ref, watch } from 'vue';
+import PvFloatLabel from 'primevue/floatlabel';
 import PvMultiSelect from 'primevue/multiselect';
 
 const props = defineProps({

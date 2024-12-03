@@ -1,27 +1,24 @@
 <template>
-  <div class="flex align-items-center gap-1">
-    <PvDropdown
-      v-model="$i18n.locale"
-      class=""
+  <div class="card flex justify-center">
+    <PvSelect
+      v-model="selectedLanguage"
+      class="w-full md:w-56 bg-white"
       :options="languageDropdownOptions"
       option-label="name"
       option-value="value"
-      placeholder="Select Language"
+      :placeholder="$t('authSignIn.selectLanguage')"
       :highlight-on-select="true"
     >
-      <template #header>
-        <small class="m-2 font-bold uppercase text-gray-400">
-          {{ $t('authSignIn.selectLanguage') }}
-        </small>
-      </template>
-    </PvDropdown>
+    </PvSelect>
   </div>
 </template>
 
 <script setup>
-import { computed } from 'vue';
-import PvDropdown from 'primevue/dropdown';
+import { computed, ref } from 'vue';
+import PvSelect from 'primevue/select';
 import { languageOptions } from '@/translations/i18n.js';
+
+const selectedLanguage = ref();
 
 // Convert the object to an array of [key, value] pairs
 let languageOptionsArray = Object.entries(languageOptions);

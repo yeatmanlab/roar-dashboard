@@ -7,6 +7,9 @@ import App from '@/App.vue';
 import AppSpinner from '@/components/AppSpinner.vue';
 import plugins from './plugins';
 import './styles.css';
+import Aura from '@primevue/themes/aura';
+import { definePreset } from '@primevue/themes';
+import PrimeVue from 'primevue/config';
 
 /**
  * Create Vue App
@@ -42,6 +45,38 @@ export const createAppInstance = () => {
   // Register global variables.
   // eslint-disable-next-line no-undef
   globalThis.Buffer = Buffer;
+
+  const MyPreset = definePreset(Aura, {
+    primitive: {
+      red: { 500: '#8c1515', 700: '#5b0c0f', 400: '#5b0c0f', 600: '#5b0c0f' },
+      surface: { 100: '#adb5bd', 500: '#8c1515' },
+    },
+    semantic: {
+      primary: {
+        50: '{surface.200}',
+        100: '{surface.300}',
+        200: '{red.200}',
+        300: '{red.300}',
+        400: '{red.400}',
+        500: '{red.500}',
+        600: '{red.600}',
+        700: '{red.700}',
+        800: '{red.800}',
+        900: '{red.900}',
+        950: '{red.950}',
+      },
+    },
+  });
+
+  app.use(PrimeVue, {
+    theme: {
+      preset: MyPreset,
+      options: {
+        darkModeSelector: 'dark-mode',
+      },
+    },
+    ripple: true,
+  });
 
   if (process.env.NODE_ENV === 'production') {
     initSentry(app);
