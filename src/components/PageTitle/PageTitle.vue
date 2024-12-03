@@ -2,7 +2,7 @@
   <header class="flex flex-row gap-3 mb-5">
     <i :class="`pi pi-${icon} text-gray-400 leading-7`" style="font-size: 1.625rem" />
 
-    <div class="">
+    <div>
       <h1 class="m-0 mb-1 font-bold text-gray-600">{{ title }}</h1>
       <div class="text-md text-gray-500">{{ description }}</div>
     </div>
@@ -17,7 +17,7 @@ defineProps({
   },
   description: {
     type: String,
-    required: false,
+    required: true,
   },
   icon: {
     type: String,

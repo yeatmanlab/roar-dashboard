@@ -11,9 +11,9 @@
 <script setup>
 import PvCheckbox from 'primevue/checkbox';
 
-const model = defineModel();
+const model = defineModel({ required: true, type: Boolean });
 
-const props = defineProps({
+defineProps({
   id: {
     type: String,
     required: true,
@@ -21,6 +21,7 @@ const props = defineProps({
   label: {
     type: String,
     required: false,
+    default: null,
   },
 });
 </script>

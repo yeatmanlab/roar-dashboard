@@ -50,6 +50,7 @@ const typeOptions = Object.values(TASK_PARAMETER_TYPES);
 
 const model = defineModel({
   required: true,
+  type: Array,
 });
 
 /**

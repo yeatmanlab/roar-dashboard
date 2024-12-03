@@ -7,8 +7,8 @@
       </label>
 
       <PvInputText
-        v-model="model"
         :id="id"
+        v-model="model"
         :type="type"
         :class="{ 'p-invalid border-red-500': isInvalid || hasErrors }"
         :aria-describedby="ariaDescribedBy"
@@ -26,7 +26,7 @@
 import PvInputText from 'primevue/inputtext';
 import { computed } from 'vue';
 
-const model = defineModel();
+const model = defineModel({ required: true, type: String });
 
 const props = defineProps({
   id: {
@@ -40,7 +40,7 @@ const props = defineProps({
   type: {
     type: String,
     default: 'text',
-    validator(value, props) {
+    validator(value) {
       return ['text', 'url'].includes(value);
     },
   },

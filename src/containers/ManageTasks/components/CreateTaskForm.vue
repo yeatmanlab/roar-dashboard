@@ -4,52 +4,52 @@
       <legend class="sr-only">Task Details</legend>
       <TextInput
         id="taskName"
-        label="Task Name"
         v-model="v$.taskName.$model"
-        :isInvalid="v$.taskName.$invalid && v$.taskName.$dirty"
+        label="Task Name"
+        :is-invalid="v$.taskName.$invalid && v$.taskName.$dirty"
         :errors="v$.taskName.$errors"
         :required="true"
-        ariaDescribedBy="activation-code-error"
+        aria-described-by="activation-code-error"
       />
 
       <TextInput
         id="taskId"
-        label="Task ID"
         v-model="v$.taskId.$model"
-        :isInvalid="v$.taskId.$invalid && v$.taskId.$dirty"
+        label="Task ID"
+        :is-invalid="v$.taskId.$invalid && v$.taskId.$dirty"
         :errors="v$.taskId.$errors"
         :required="true"
-        ariaDescribedBy="activation-code-error"
+        aria-described-by="activation-code-error"
       />
 
       <TextInput
         id="coverImage"
-        label="Cover Image URL"
         v-model="v$.coverImage.$model"
-        :isInvalid="v$.coverImage.$invalid && v$.coverImage.$dirty"
+        label="Cover Image URL"
+        :is-invalid="v$.coverImage.$invalid && v$.coverImage.$dirty"
         :errors="v$.coverImage.$errors"
-        ariaDescribedBy="activation-code-error"
+        aria-described-by="activation-code-error"
       />
 
       <TextInput
         id="taskDescription"
-        label="Description"
         v-model="v$.taskDescription.$model"
-        :isInvalid="v$.taskDescription.$invalid && v$.taskDescription.$dirty"
+        label="Description"
+        :is-invalid="v$.taskDescription.$invalid && v$.taskDescription.$dirty"
         :errors="v$.taskDescription.$errors"
-        ariaDescribedBy="activation-code-error"
+        aria-described-by="activation-code-error"
       />
 
       <TextInput
         v-if="v$.external.$model"
         id="taskURL"
+        v-model="v$.taskURL.$model"
         label="Task URL"
         type="url"
-        v-model="v$.taskURL.$model"
-        :isInvalid="v$.taskURL.$invalid && v$.taskURL.$dirty"
+        :is-invalid="v$.taskURL.$invalid && v$.taskURL.$dirty"
         :errors="v$.taskURL.$errors"
         :required="true"
-        ariaDescribedBy="activation-code-error"
+        aria-described-by="activation-code-error"
       />
     </fieldset>
 
@@ -78,19 +78,19 @@
         class="flex flex-column lg:flex-row lg:align-items-center lg:justify-content-center gap-1 lg:gap-4 flex-order-0 my-3"
       >
         <legend class="sr-only">Task Options</legend>
-        <CheckboxInput v-model="v$.demoData.$model" id="demoTask">
+        <CheckboxInput id="demoTask" v-model="v$.demoData.$model">
           <span>Mark as <b>Demo Task</b></span>
         </CheckboxInput>
 
-        <CheckboxInput v-model="v$.testData.$model" id="testTask">
+        <CheckboxInput id="testTask" v-model="v$.testData.$model">
           <span>Mark as <b>Test Task</b></span>
         </CheckboxInput>
 
-        <CheckboxInput v-model="v$.external.$model" id="externalTask">
+        <CheckboxInput id="externalTask" v-model="v$.external.$model">
           <span>Mark as <b>External Task</b></span>
         </CheckboxInput>
 
-        <CheckboxInput v-model="v$.registered.$model" id="registeredTask">
+        <CheckboxInput id="registeredTask" v-model="v$.registered.$model">
           <span>Mark as <b>Registered Task</b></span>
         </CheckboxInput>
       </fieldset>
