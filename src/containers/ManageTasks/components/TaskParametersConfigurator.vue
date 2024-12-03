@@ -20,7 +20,7 @@
         <PvButton
           icon="pi pi-trash"
           text
-          class="delete-btn bg-primary text-white border-none border-round p-2 hover:bg-red-900"
+          class="delete-btn bg-primary text-white border-none border-round p-2 px-3 hover:bg-red-900"
           @click="removeField(model, index)"
         />
       </div>
