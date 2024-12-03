@@ -21,7 +21,7 @@
           icon="pi pi-trash"
           text
           class="delete-btn bg-primary text-white border-none border-round p-2 px-3 hover:bg-red-900"
-          @click="removeField(model, index)"
+          @click="removeRow(index)"
         />
       </div>
     </div>
@@ -29,7 +29,7 @@
     <PvButton
       text
       class="p-3 text-primary border-none border-round transition-colors bg-gray-100 hover:bg-red-900 hover:text-white"
-      @click="addField(model)"
+      @click="addRow()"
     >
       <div class="w-full flex justify-content-center gap-2 text-md">
         <i class="pi pi-plus" />
@@ -53,23 +53,21 @@ const model = defineModel({
 });
 
 /**
- * Add a new field to the gameConfig or taskParams array.
+ * Add a new row to the configurator.
  *
- * @param {Object} type – The array of objects to which the new field will be added (gameConfig or taskParams).
  * @returns {void}
  */
-function addField(type) {
-  type.push(TASK_PARAMETER_DEFAULT_SHAPE);
+function addRow() {
+  model.value.push(Object.assign({}, TASK_PARAMETER_DEFAULT_SHAPE));
 }
 
 /**
- * Remove a field from the gameConfig or taskParams array.
+ * Remove a row from the configurator.
  *
- * @param {Object} type – The array of objects to which the new field will be added (gameConfig or taskParams).
  * @param {Int} index – The index of the field to be removed.
  * @returns {void}
  */
-function removeField(type, index) {
-  type.splice(index, 1);
+function removeRow(index) {
+  model.value.splice(index, 1);
 }
 </script>

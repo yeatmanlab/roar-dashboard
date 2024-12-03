@@ -108,7 +108,7 @@
 </template>
 
 <script setup>
-import { reactive, ref, watch } from 'vue';
+import { reactive } from 'vue';
 import { required, requiredIf, url } from '@vuelidate/validators';
 import { useVuelidate } from '@vuelidate/core';
 import { useToast } from 'primevue/usetoast';
@@ -142,10 +142,10 @@ const initialFormState = {
 let taskModel = reactive({ ...initialFormState });
 
 // Game parameters model for the task form.
-const gameParamsModel = reactive([TASK_PARAMETER_DEFAULT_SHAPE]);
+const gameParamsModel = reactive([Object.assign({}, TASK_PARAMETER_DEFAULT_SHAPE)]);
 
 // Task parameters model for the task form.
-const taskParamsModel = reactive([TASK_PARAMETER_DEFAULT_SHAPE]);
+const taskParamsModel = reactive([Object.assign({}, TASK_PARAMETER_DEFAULT_SHAPE)]);
 
 // Validation rules for the task form model.
 const taskRules = {
