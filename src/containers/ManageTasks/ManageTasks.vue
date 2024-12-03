@@ -166,22 +166,21 @@
           <div class="flex flex-column gap-4 align-items-center">
             <fieldset class="flex flex-row align-items-center justify-content-center gap-2 flex-order-0 my-3">
               <legend class="sr-only">Task Options</legend>
-              <div class="flex flex-row align-items-center">
-                <PvCheckbox v-model="taskCheckboxData" input-id="chbx-demoTask" value="isDemoTask" />
-                <label class="ml-1 mr-3" for="chbx-demoTask">Mark as <b>Demo Task</b></label>
-              </div>
-              <div class="flex flex-row align-items-center">
-                <PvCheckbox v-model="taskCheckboxData" input-id="chbx-testTask" value="isTestTask" />
-                <label class="ml-1 mr-3" for="chbx-testTask">Mark as <b>Test Task</b></label>
-              </div>
-              <div class="flex flex-row align-items-center">
-                <PvCheckbox v-model="taskCheckboxData" input-id="chbx-externalTask" value="isExternalTask" />
-                <label class="ml-1 mr-3" for="chbx-externalTask">Mark as <b>External Task</b> </label>
-              </div>
-              <div class="flex flex-row align-items-center">
-                <PvCheckbox v-model="taskCheckboxData" input-id="chbx-registeredTask" value="isRegisteredTask" />
-                <label class="ml-1 mr-3" for="chbx-registeredTask">Mark as <b>Registered Task</b> </label>
-              </div>
+              <CheckboxInput v-model="taskCheckboxData" id="chbx-demoTask" value="isDemoTask">
+                Mark as <b>Demo Task</b>
+              </CheckboxInput>
+
+              <CheckboxInput v-model="taskCheckboxData" id="chbx-testTask" value="isTestTask">
+                Mark as <b>Test Task</b>
+              </CheckboxInput>
+
+              <CheckboxInput v-model="taskCheckboxData" id="chbx-externalTask" value="isExternalTask">
+                Mark as <b>External Task</b>
+              </CheckboxInput>
+
+              <CheckboxInput v-model="taskCheckboxData" id="chbx-registeredTask" value="isRegisteredTask">
+                Mark as <b>Registered Task</b>
+              </CheckboxInput>
             </fieldset>
 
             <PvButton
@@ -425,7 +424,6 @@ import { useVuelidate } from '@vuelidate/core';
 import { storeToRefs } from 'pinia';
 import { useToast } from 'primevue/usetoast';
 import PvButton from 'primevue/button';
-import PvCheckbox from 'primevue/checkbox';
 import PvDropdown from 'primevue/dropdown';
 import PvInputNumber from 'primevue/inputnumber';
 import PvInputText from 'primevue/inputtext';
@@ -437,11 +435,12 @@ import useTasksQuery from '@/composables/queries/useTasksQuery';
 import useAddTaskMutation from '@/composables/mutations/useAddTaskMutation';
 import useUpdateTaskMutation from '@/composables/mutations/useUpdateTaskMutation';
 import TextInput from '@/components/Form/TextInput';
+import CheckboxInput from '@/components/Form/CheckboxInput';
 
 const toast = useToast();
 const initialized = ref(false);
 const registeredTasksOnly = ref(true);
-const taskCheckboxData = ref();
+const taskCheckboxData = ref([]);
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
 
