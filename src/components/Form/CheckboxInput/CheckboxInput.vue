@@ -30,3 +30,9 @@ const props = defineProps({
   },
 });
 </script>
+
+<style scoped>
+.p-checkbox + label {
+  cursor: pointer;
+}
+</style>

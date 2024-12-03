@@ -7,10 +7,9 @@
       </label>
 
       <PvInputText
+        v-model="model"
         :id="id"
         :type="type"
-        :value="modelValue"
-        @input="$emit('update:modelValue', $event.target.value)"
         :class="{ 'p-invalid border-red-500': isInvalid || hasErrors }"
         :aria-describedby="ariaDescribedBy"
       />
@@ -27,6 +26,8 @@
 import PvInputText from 'primevue/inputtext';
 import { computed } from 'vue';
 
+const model = defineModel();
+
 const props = defineProps({
   id: {
     type: String,
@@ -42,10 +43,6 @@ const props = defineProps({
     validator(value, props) {
       return ['text', 'url'].includes(value);
     },
-  },
-  modelValue: {
-    type: String,
-    required: true,
   },
   isInvalid: {
     type: Boolean,
@@ -64,8 +61,6 @@ const props = defineProps({
     default: false,
   },
 });
-
-const emit = defineEmits(['update:modelValue']);
 
 const hasErrors = computed(() => props.errors.length > 0);
 </script>
