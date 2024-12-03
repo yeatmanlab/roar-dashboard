@@ -1,6 +1,6 @@
 <template>
   <div class="flex flex-row align-items-center">
-    <PvCheckbox v-model="model" :input-id="id" :value="value" />
+    <PvCheckbox v-model="model" :input-id="id" :binary="true" />
     <label :for="id" class="ml-1 mr-3">
       <slot v-if="$slots.default">
         <slot></slot>
@@ -18,10 +18,6 @@ const model = defineModel();
 const props = defineProps({
   id: {
     type: String,
-    required: true,
-  },
-  value: {
-    type: [String, Boolean],
     required: true,
   },
   label: {

@@ -1,7 +1,7 @@
 <template>
   <PvToast />
 
-  <div class="p-4">
+  <div class="p-4 pt-0">
     <div class="flex justify-between">
       <h1 class="text-center font-bold">
         <template v-if="viewModel === MODEL_VIEWS.CREATE_TASK">Create a Task</template>
@@ -17,191 +17,7 @@
     </div>
 
     <div v-show="viewModel === MODEL_VIEWS.CREATE_TASK">
-      <template v-if="!created">
-        <form class="p-fluid flex flex-column row-gap-8" @submit.prevent="handleNewTaskSubmit(!v$.$invalid)">
-          <fieldset class="flex flex-column row-gap-4">
-            <legend class="sr-only">Task Details</legend>
-            <TextInput
-              id="taskName"
-              label="Task Name"
-              v-model="v$.taskName.$model"
-              :isInvalid="v$.taskName.$invalid && submitted"
-              :errors="v$.taskName.$errors"
-              :required="true"
-              ariaDescribedBy="activation-code-error"
-            />
-
-            <TextInput
-              id="taskId"
-              label="Task ID"
-              v-model="v$.taskId.$model"
-              :isInvalid="v$.taskId.$invalid && submitted"
-              :errors="v$.taskId.$errors"
-              :required="true"
-              ariaDescribedBy="activation-code-error"
-            />
-
-            <TextInput
-              id="coverImage"
-              label="Cover Image URL"
-              v-model="v$.coverImage.$model"
-              :isInvalid="v$.coverImage.$invalid && submitted"
-              :errors="v$.coverImage.$errors"
-              ariaDescribedBy="activation-code-error"
-            />
-
-            <TextInput
-              id="description"
-              label="Description"
-              v-model="v$.description.$model"
-              :isInvalid="v$.description.$invalid && submitted"
-              :errors="v$.description.$errors"
-              ariaDescribedBy="activation-code-error"
-            />
-
-            <TextInput
-              v-if="isExternalTask"
-              id="taskURL"
-              label="Task URL"
-              type="url"
-              v-model="v$.taskURL.$model"
-              :isInvalid="v$.taskURL.$invalid && submitted"
-              :errors="v$.taskURL.$errors"
-              :required="true"
-              ariaDescribedBy="activation-code-error"
-            />
-          </fieldset>
-
-          <fieldset v-if="!isExternalTask">
-            <div>
-              <legend class="text-lg font-medium mb-0">Configure Game Parameters</legend>
-              <p class="text-md text-gray-500 mt-2">
-                Create the configurable game parameters for variants of this task.
-              </p>
-            </div>
-
-            <div class="flex flex-column row-gap-4">
-              <div v-for="(param, index) in gameConfig" :key="index">
-                <div class="flex gap-2 align-content-start flex-grow-0 params-container">
-                  <PvInputText v-model="param.name" placeholder="Name" />
-
-                  <PvDropdown v-model="param.type" :options="typeOptions" />
-
-                  <PvInputText v-if="param.type === 'string'" v-model="param.value" placeholder="Value" />
-
-                  <PvDropdown v-else-if="param.type === 'boolean'" v-model="param.value" :options="[true, false]" />
-
-                  <PvInputNumber v-else-if="param.type === 'number'" v-model="param.value" />
-
-                  <PvButton
-                    icon="pi pi-trash"
-                    class="delete-btn my-1 bg-primary text-white border-none border-round p-2 hover:bg-red-900"
-                    text
-                    @click="removeField(gameConfig, index)"
-                  />
-                </div>
-              </div>
-
-              <PvButton
-                text
-                class="p-3 text-primary border-none border-round transition-colors bg-gray-100 hover:bg-red-900 hover:text-white"
-                @click="addField(gameConfig)"
-              >
-                <div class="w-full flex justify-content-center gap-2 text-md">
-                  <i class="pi pi-plus" />
-                  <span>Add Parameter</span>
-                </div>
-              </PvButton>
-            </div>
-          </fieldset>
-
-          <fieldset v-else>
-            <div>
-              <legend class="text-lg font-medium mb-0">Configure URL Parameters</legend>
-              <p class="text-md text-gray-500 mt-2">
-                These parameters will be appended to the task URL to generate the variant URL for this task.
-              </p>
-            </div>
-
-            <div class="flex flex-column row-gap-4">
-              <div v-for="(param, index) in taskParams" :key="index">
-                <div class="flex gap-2 align-content-start flex-grow-0 params-container">
-                  <PvInputText v-model="param.name" placeholder="Name" />
-
-                  <PvDropdown v-model="param.type" :options="typeOptions" />
-
-                  <PvInputText v-if="param.type === 'string'" v-model="param.value" placeholder="Value" />
-
-                  <PvDropdown v-else-if="param.type === 'boolean'" v-model="param.value" :options="[true, false]" />
-
-                  <PvInputNumber v-else-if="param.type === 'number'" v-model="param.value" />
-
-                  <PvButton
-                    icon="pi pi-trash"
-                    text
-                    class="delete-btn bg-primary text-white border-none border-round p-2 hover:bg-red-900"
-                    @click="removeField(taskParams, index)"
-                  />
-                </div>
-              </div>
-
-              <PvButton
-                text
-                class="p-3 text-primary border-none border-round transition-colors bg-gray-100 hover:bg-red-900 hover:text-white"
-                @click="addField(taskParams)"
-              >
-                <div class="w-full flex justify-content-center gap-2 text-md">
-                  <i class="pi pi-plus" />
-                  <span>Add Parameter</span>
-                </div>
-              </PvButton>
-            </div>
-          </fieldset>
-
-          <div class="flex flex-column gap-4 align-items-center">
-            <fieldset class="flex flex-row align-items-center justify-content-center gap-2 flex-order-0 my-3">
-              <legend class="sr-only">Task Options</legend>
-              <CheckboxInput v-model="taskCheckboxData" id="chbx-demoTask" value="isDemoTask">
-                Mark as <b>Demo Task</b>
-              </CheckboxInput>
-
-              <CheckboxInput v-model="taskCheckboxData" id="chbx-testTask" value="isTestTask">
-                Mark as <b>Test Task</b>
-              </CheckboxInput>
-
-              <CheckboxInput v-model="taskCheckboxData" id="chbx-externalTask" value="isExternalTask">
-                Mark as <b>External Task</b>
-              </CheckboxInput>
-
-              <CheckboxInput v-model="taskCheckboxData" id="chbx-registeredTask" value="isRegisteredTask">
-                Mark as <b>Registered Task</b>
-              </CheckboxInput>
-            </fieldset>
-
-            <PvButton
-              type="submit"
-              label="Submit"
-              class="self-center w-4 bg-primary align-right text-white border-none border-round p-3 hover:bg-red-900"
-              severity="primary"
-            />
-          </div>
-        </form>
-      </template>
-
-      <template v-else>
-        <div class="bg-gray-50 p-4 py-8 rounded text-center">
-          <h2 class="text-lg font-medium">Your task has been created!</h2>
-          <p>
-            Redirect to this URL upon task completion. ParticipantId can be any string, completed should be set to true.
-          </p>
-          <p>roar.education/?participantId=[$PARTICIPANT_ID]&completed=[$BOOLEAN]</p>
-          <PvButton
-            label="Create Another Task"
-            class="bg-primary text-white border-none border-round p-2 hover:bg-red-900"
-            @click="created = false"
-          />
-        </div>
-      </template>
+      <CreateTaskForm />
     </div>
 
     <div v-show="viewModel === MODEL_VIEWS.UPDATE_TASK">
@@ -429,8 +245,7 @@ import { useAuthStore } from '@/store/auth';
 import useTasksQuery from '@/composables/queries/useTasksQuery';
 import useAddTaskMutation from '@/composables/mutations/useAddTaskMutation';
 import useUpdateTaskMutation from '@/composables/mutations/useUpdateTaskMutation';
-import TextInput from '@/components/Form/TextInput';
-import CheckboxInput from '@/components/Form/CheckboxInput';
+import CreateTaskForm from './components/CreateTaskForm.vue';
 
 const toast = useToast();
 const initialized = ref(false);
