@@ -192,9 +192,13 @@ function resetForm() {
   v$.value.$reset();
 }
 
+/**
+ * Convert the task parameters array to a key-value object.
+ *
+ * @param {Array} paramType – The array of task parameters to be converted to an object.
+ * @returns {Object} – The object representation of the task parameters.
+ */
 function convertParamsToObj(paramType) {
-  // If the paramType is an array of objects with a key called "value", convert it to an object
-  // Otherwise, just use the paramType object
   const target = paramType.value !== undefined ? paramType.value : paramType;
 
   return target.reduce((acc, item) => {
@@ -205,24 +209,17 @@ function convertParamsToObj(paramType) {
   }, {});
 }
 
-function buildTaskURL(url, params) {
-  const baseURL = url;
-
-  let queryParams = url.includes('/?') ? '' : '/?';
-
-  params.value.forEach((param, i) => {
-    if (param.name) {
-      if (i === 0) {
-        queryParams += `${param.name}=${param.value}`;
-      } else {
-        queryParams += `&${param.name}=${param.value}`;
-      }
-    }
-  });
-
-  const completeURL = baseURL + queryParams;
-
-  return completeURL;
+/**
+ * Build external Task URL
+ *
+ * @param {String} url – The base URL to which the task parameters will be appended.
+ * @param {Array} paramsObject – The object of task parameters to be appended to the URL.
+ */
+function buildTaskURL(url, paramsObject) {
+  const baseUrl = new URL(url);
+  const searchParams = new URLSearchParams(paramsObject);
+  baseUrl.search = searchParams.toString();
+  return baseUrl.toString();
 }
 
 /**
@@ -237,7 +234,7 @@ const handleSubmit = async () => {
   const isFormValid = await v$.value.$validate();
   if (!isFormValid) return;
 
-  let taskObject = reactive({
+  let taskObject = {
     taskId: taskModel.taskId,
     taskName: taskModel.taskName,
     taskDescription: taskModel.description,
@@ -245,11 +242,11 @@ const handleSubmit = async () => {
     demoData: taskModel.demoData,
     testData: taskModel.testData,
     registered: taskModel.registered,
-  });
+  };
 
   if (taskModel.external) {
-    taskObject.taskURL = buildTaskURL(taskModel.taskURL, taskParamsModel);
     taskObject.taskParams = convertParamsToObj(taskParamsModel);
+    taskObject.taskURL = buildTaskURL(taskModel.taskURL, taskObject.taskParams);
   } else {
     taskObject.gameParams = convertParamsToObj(gameParamsModel) ?? {};
   }
