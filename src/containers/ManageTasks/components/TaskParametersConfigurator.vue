@@ -15,7 +15,7 @@
           placeholder="Select"
         />
 
-        <PvInputNumber v-else-if="param.type === TASK_PARAMETER_TYPES.NUMBER" v-model="param.value" />
+        <PvInputNumber v-else-if="param.type === TASK_PARAMETER_TYPES.NUMBER" v-model="param.value" placeholder="0" />
 
         <PvButton
           icon="pi pi-trash"
