@@ -59,39 +59,7 @@
         <p class="text-md text-gray-500 mt-2">Create the configurable game parameters for variants of this task.</p>
       </div>
 
-      <div class="flex flex-column row-gap-4">
-        <div v-for="(param, index) in gameConfig" :key="index">
-          <div class="flex gap-2 align-content-start flex-grow-0 params-container">
-            <PvInputText v-model="param.name" placeholder="Name" />
-
-            <PvDropdown v-model="param.type" :options="typeOptions" />
-
-            <PvInputText v-if="param.type === 'string'" v-model="param.value" placeholder="Value" />
-
-            <PvDropdown v-else-if="param.type === 'boolean'" v-model="param.value" :options="[true, false]" />
-
-            <PvInputNumber v-else-if="param.type === 'number'" v-model="param.value" />
-
-            <PvButton
-              icon="pi pi-trash"
-              class="delete-btn my-1 bg-primary text-white border-none border-round p-2 hover:bg-red-900"
-              text
-              @click="removeField(gameConfig, index)"
-            />
-          </div>
-        </div>
-
-        <PvButton
-          text
-          class="p-3 text-primary border-none border-round transition-colors bg-gray-100 hover:bg-red-900 hover:text-white"
-          @click="addField(gameConfig)"
-        >
-          <div class="w-full flex justify-content-center gap-2 text-md">
-            <i class="pi pi-plus" />
-            <span>Add Parameter</span>
-          </div>
-        </PvButton>
-      </div>
+      <TaskParametersConfigurator v-model="gameParamsModel" />
     </fieldset>
 
     <fieldset v-else>
@@ -102,39 +70,7 @@
         </p>
       </div>
 
-      <div class="flex flex-column row-gap-4">
-        <div v-for="(param, index) in taskParams" :key="index">
-          <div class="flex gap-2 align-content-start flex-grow-0 params-container">
-            <PvInputText v-model="param.name" placeholder="Name" />
-
-            <PvDropdown v-model="param.type" :options="typeOptions" />
-
-            <PvInputText v-if="param.type === 'string'" v-model="param.value" placeholder="Value" />
-
-            <PvDropdown v-else-if="param.type === 'boolean'" v-model="param.value" :options="[true, false]" />
-
-            <PvInputNumber v-else-if="param.type === 'number'" v-model="param.value" />
-
-            <PvButton
-              icon="pi pi-trash"
-              text
-              class="delete-btn bg-primary text-white border-none border-round p-2 hover:bg-red-900"
-              @click="removeField(taskParams, index)"
-            />
-          </div>
-        </div>
-
-        <PvButton
-          text
-          class="p-3 text-primary border-none border-round transition-colors bg-gray-100 hover:bg-red-900 hover:text-white"
-          @click="addField(taskParams)"
-        >
-          <div class="w-full flex justify-content-center gap-2 text-md">
-            <i class="pi pi-plus" />
-            <span>Add Parameter</span>
-          </div>
-        </PvButton>
-      </div>
+      <TaskParametersConfigurator v-model="taskParamsModel" />
     </fieldset>
 
     <div class="flex flex-column gap-4 lg:align-items-center">
@@ -172,31 +108,22 @@
 </template>
 
 <script setup>
-import { reactive, ref } from 'vue';
+import { reactive, ref, watch } from 'vue';
 import { required, requiredIf, url } from '@vuelidate/validators';
 import { useVuelidate } from '@vuelidate/core';
 import { useToast } from 'primevue/usetoast';
 import PvButton from 'primevue/button';
-import PvDropdown from 'primevue/dropdown';
-import PvInputNumber from 'primevue/inputnumber';
-import PvInputText from 'primevue/inputtext';
 import PvToast from 'primevue/toast';
 import { camelCase } from 'lodash';
 import useAddTaskMutation from '@/composables/mutations/useAddTaskMutation';
 import TextInput from '@/components/Form/TextInput';
 import CheckboxInput from '@/components/Form/CheckboxInput';
+import TaskParametersConfigurator from './TaskParametersConfigurator.vue';
 import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
+import { TASK_PARAMETER_DEFAULT_SHAPE } from '@/constants/tasks';
 
 const toast = useToast();
-
 const { mutate: addTask } = useAddTaskMutation();
-
-const typeOptions = ['string', 'number', 'boolean'];
-
-const booleanDropDownOptions = [
-  { label: 'true', value: true },
-  { label: 'false', value: false },
-];
 
 // Initial form state for the task form.
 const initialFormState = {
@@ -205,7 +132,6 @@ const initialFormState = {
   taskId: '',
   coverImage: '',
   taskDescription: '',
-  gameConfig: {},
   demoData: false,
   testData: false,
   registered: false,
@@ -214,6 +140,12 @@ const initialFormState = {
 
 // Form model for creating a new task document.
 let taskModel = reactive({ ...initialFormState });
+
+// Game parameters model for the task form.
+const gameParamsModel = reactive([TASK_PARAMETER_DEFAULT_SHAPE]);
+
+// Task parameters model for the task form.
+const taskParamsModel = reactive([TASK_PARAMETER_DEFAULT_SHAPE]);
 
 // Validation rules for the task form model.
 const taskRules = {
@@ -249,50 +181,6 @@ const taskRules = {
 };
 
 const v$ = useVuelidate(taskRules, taskModel);
-
-// Array of objects which models the game configuration fields
-// This array of objects is later converted back into an object and spread into the task object
-const gameConfig = ref([
-  {
-    name: '',
-    value: '',
-    type: 'String',
-  },
-]);
-
-// Array of objects which models the task parameters and is used to build the task URL
-const taskParams = ref([
-  {
-    name: '',
-    value: '',
-    type: 'String',
-  },
-]);
-
-/**
- * Add a new field to the gameConfig or taskParams array.
- *
- * @param {Object} type – The array of objects to which the new field will be added (gameConfig or taskParams).
- * @returns {void}
- */
-function addField(type) {
-  type.push({
-    name: '',
-    value: '',
-    type: 'String',
-  });
-}
-
-/**
- * Remove a field from the gameConfig or taskParams array.
- *
- * @param {Object} type – The array of objects to which the new field will be added (gameConfig or taskParams).
- * @param {Int} index – The index of the field to be removed.
- * @returns {void}
- */
-function removeField(type, index) {
-  type.splice(index, 1);
-}
 
 /**
  * Reset the form to its initial state.
@@ -349,9 +237,6 @@ const handleSubmit = async () => {
   const isFormValid = await v$.value.$validate();
   if (!isFormValid) return;
 
-  const convertedGameConfig = convertParamsToObj(gameConfig) ?? {};
-  const convertedTaskParams = taskModel.external ? convertParamsToObj(taskParams) : null;
-
   let taskObject = reactive({
     taskId: taskModel.taskId,
     taskName: taskModel.taskName,
@@ -363,13 +248,13 @@ const handleSubmit = async () => {
   });
 
   if (taskModel.external) {
-    taskObject.taskURL = buildTaskURL(taskModel.taskURL, taskParams);
-    taskObject.taskParams = convertParamsToObj(taskParams);
+    taskObject.taskURL = buildTaskURL(taskModel.taskURL, taskParamsModel);
+    taskObject.taskParams = convertParamsToObj(taskParamsModel);
   } else {
-    taskObject.gameConfig = convertParamsToObj(gameConfig) ?? {};
+    taskObject.gameParams = convertParamsToObj(gameParamsModel) ?? {};
   }
 
-  await addTask(newTaskObject, {
+  await addTask(taskObject, {
     onSuccess: () => {
       toast.add({
         severity: TOAST_SEVERITIES.SUCCESS,
