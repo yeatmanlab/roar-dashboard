@@ -179,8 +179,22 @@ export const useAuthStore = () => {
           return false;
         }
       },
-      async createNewFamily(careTakerEmail, careTakerPassword, careTakerData, students, isTestData = false) {
-        return this.roarfirekit.createNewFamily(careTakerEmail, careTakerPassword, careTakerData, students, isTestData);
+      async createNewFamily(
+        careTakerEmail,
+        careTakerPassword,
+        careTakerData,
+        students,
+        consentData,
+        isTestData = false,
+      ) {
+        return this.roarfirekit.createNewFamily(
+          careTakerEmail,
+          careTakerPassword,
+          careTakerData,
+          students,
+          consentData,
+          isTestData,
+        );
       },
 
       // ------------------ LEVANTE ------------------

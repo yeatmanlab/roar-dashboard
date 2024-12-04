@@ -113,6 +113,7 @@ const dialogMessage = ref('');
 
 const isDialogVisible = ref(false);
 const consent = ref(null);
+const consentName = ref('consent-behavioral-eye-tracking');
 
 const showDialog = () => {
   isDialogVisible.value = true;
@@ -176,7 +177,6 @@ watch([parentInfo, studentInfo], ([newParentInfo, newStudentInfo]) => {
         first: rawParentInfo.firstName,
         last: rawParentInfo.lastName,
       },
-      consent: consent,
     };
     const studentSendObject = rawStudentInfo.map((student) => {
       return {
@@ -199,16 +199,17 @@ watch([parentInfo, studentInfo], ([newParentInfo, newStudentInfo]) => {
           hispanic_ethnicity: student.hispanicEthnicity,
           home_language: student.homeLanguage,
           accept: student.accept,
-          consent: consent,
         },
       };
     });
+    const consentData = { ...consent, name: consentName };
     authStore
       .createNewFamily(
         rawParentInfo.ParentEmail,
         rawParentInfo.password,
         parentUserData,
         studentSendObject,
+        consentData,
         isTestData.value,
       )
       .then(() => {
