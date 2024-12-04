@@ -6,6 +6,7 @@
     class="confirm"
     :draggable="false"
     :close-on-escape="false"
+    data-cy="consent-modal"
   >
     <template #message>
       <div class="scrolling-box">

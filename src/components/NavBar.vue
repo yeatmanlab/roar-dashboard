@@ -167,7 +167,7 @@ const userDisplayName = computed(() => {
     const username = authStore?.userData?.username;
     const firstName = authStore?.userData?.name?.first;
     const userType = isAdmin.value ? 'Admin' : 'User';
-    return ` ${firstName || displayName || username || email || userType}`;
+    return `${firstName || displayName || username || email || userType}`;
   }
 });
 

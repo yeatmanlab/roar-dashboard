@@ -8,11 +8,11 @@ export const generatedSpecTemplate = (adminName) => {
       if ($body.find('[data-cy="switch-show-optional-assessments"]').length > 0) {
         cy.log('Optional assessments button found, switching to optional assessments');
         cy.switchToOptionalAssessments();
-        cy.wait(0.1 * timeout);
+        cy.wait(0.1 * Cypress.env('timeout'));
         cy.get('.p-tabview').invoke('text').then((text) => {
             if (text.includes(spec.name)) {
               cy.log(\`Initializing test for optional game: \${spec.name}\`);
-              cy.wait(0.1 * timeout);
+              cy.wait(0.1 * Cypress.env('timeout'));
               spec.spec({
                 administration: admin,
                 language: spec.language,
@@ -30,7 +30,7 @@ export const generatedSpecTemplate = (adminName) => {
   }
 
   function testGame(spec, admin) {
-    cy.wait(0.1 * timeout);
+    cy.wait(0.1 * Cypress.env('timeout'));
     cy.get('.p-tabview')
       .invoke('text')
       .then((text) => {
@@ -43,15 +43,15 @@ export const generatedSpecTemplate = (adminName) => {
         } else {
           cy.log('No game found for game:', spec.name, 'checking for optional assessments.');
           checkOptionalGame(spec, admin);
-          cy.wait(0.1 * timeout);
+          cy.wait(0.1 * Cypress.env('timeout'));
         }
       });
   }
 
   describe('Testing synced administration: ${adminName}', () => {
     it('Tests a synced administration', () => {
-      cy.login(Cypress.env('participantUsername'), Cypress.env('participantPassword'));
-      cy.visit('/', { timeout: 2 * timeout });
+      cy.login(Cypress.env('PARTICIPANT_USERNAME'), Cypress.env('PARTICIPANT_PASSWORD'));
+      cy.visit('/');
       cy.selectAdministration('${adminName}');
       testSpecs.forEach((spec) => {
         cy.get('body').then(($body) => {

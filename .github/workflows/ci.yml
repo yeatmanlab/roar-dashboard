@@ -92,7 +92,7 @@ jobs:
       fail-fast: false
       matrix:
         browser: [chrome, edge]
-        containers: [1, 2]
+        containers: [1, 2, 3, 4]
     container:
       image: cypress/browsers:node-20.18.0-chrome-129.0.6668.89-1-ff-131.0.2-edge-129.0.2792.65-1
       options: --user 1001
@@ -125,12 +125,13 @@ jobs:
           browser: ${{ matrix.browser }}
           ci-build-id: ${{ github.run_id }}-e2e-${{ matrix.browser }}
           spec: |
+            cypress/e2e/parent/default-tests/**/*.cy.js
             cypress/e2e/participant/default-tests/**/*.cy.js
             cypress/e2e/partner-admin/default-tests/**/*.cy.js
 
-  # # ––––––––––––––––––––––––––––––––––––––––––––––– #
-  # # Component Tests
-  # # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  # Component Tests
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
   # component-tests:
   #   name: Component tests
   #   runs-on: ubuntu-latest

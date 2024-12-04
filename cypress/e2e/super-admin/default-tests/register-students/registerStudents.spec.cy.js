@@ -9,7 +9,7 @@ describe(
       'Navigates to the RegisterStudents component, uploads a .csv of test student data,' +
         'assigns the data to the appropriate field, and submits the data for registration.',
       () => {
-        cy.login(Cypress.env('superAdminUsername'), Cypress.env('superAdminPassword'));
+        cy.login(Cypress.env('SUPER_ADMIN_USERNAME'), Cypress.env('SUPER_ADMIN_PASSWORD'));
         cy.navigateTo('/register-students');
 
         cy.get('input[type=file]').selectFile('cypress/fixtures/testStudentData.csv', { force: true, timeout: 10000 });
