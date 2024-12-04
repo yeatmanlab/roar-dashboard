@@ -38,7 +38,7 @@
       <div>
         <div v-if="spinner === false">
           <KeepAlive>
-            <component :is="activeComp()" :code="code" @submit="handleSubmit($event)" />
+            <component :is="activeComp()" :code="code" @submit="handleSubmit($event)" :consent="consent" />
           </KeepAlive>
           <div
             v-if="isSuperAdmin"
@@ -112,6 +112,7 @@ const dialogHeader = ref('');
 const dialogMessage = ref('');
 
 const isDialogVisible = ref(false);
+const consent = ref(null);
 
 const showDialog = () => {
   isDialogVisible.value = true;
@@ -175,6 +176,7 @@ watch([parentInfo, studentInfo], ([newParentInfo, newStudentInfo]) => {
         first: rawParentInfo.firstName,
         last: rawParentInfo.lastName,
       },
+      consent: consent,
     };
     const studentSendObject = rawStudentInfo.map((student) => {
       return {
@@ -197,6 +199,7 @@ watch([parentInfo, studentInfo], ([newParentInfo, newStudentInfo]) => {
           hispanic_ethnicity: student.hispanicEthnicity,
           home_language: student.homeLanguage,
           accept: student.accept,
+          consent: consent,
         },
       };
     });
@@ -217,8 +220,10 @@ watch([parentInfo, studentInfo], ([newParentInfo, newStudentInfo]) => {
   }
 });
 
-onMounted(() => {
+onMounted(async () => {
   document.body.classList.add('page-register');
+  const consentDoc = await authStore.getLegalDoc('consent-behavioral-eye-tracking');
+  consent.value = consentDoc;
 });
 
 onBeforeUnmount(() => {

@@ -342,7 +342,7 @@
         </ChallengeV3>
         <ConsentModal
           v-if="showConsent"
-          :consent-text="consentText"
+          :consent-text="consent?.text"
           consent-type="consent"
           :on-confirm="() => handleConsentAccept(outerIndex)"
         />
@@ -417,6 +417,7 @@ const activationCodeRef = ref('');
 const props = defineProps({
   isRegistering: { type: Boolean, default: true },
   code: { type: String, default: null },
+  consent: { type: Object, default: {} },
 });
 
 const isDialogVisible = ref(false);
@@ -446,9 +447,6 @@ async function handleCheckCaptcha() {
 }
 
 async function getConsent() {
-  const consentDoc = await authStore.getLegalDoc('consent-behavioral-eye-tracking');
-  consentText.value = consentDoc.text;
-  // consentVersion = consentDoc.version;
   showConsent.value = true;
   handleCheckCaptcha();
 }
