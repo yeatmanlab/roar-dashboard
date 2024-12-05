@@ -9,8 +9,8 @@ export const useSurveyStore = () => {
         requireRefresh: false,
         // the survey instance
         survey: null,
-        numGeneralPages:0,
-        numSpecificPages:0,
+        numGeneralPages: 0,
+        numSpecificPages: 0,
         currentSurveyAudioSource: null,
         isSavingSurveyResponses: false,
         surveyAudioPlayerBuffers: {},

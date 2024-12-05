@@ -10,22 +10,18 @@ import { onBeforeRouteLeave } from 'vue-router';
 import { isLevante } from '@/helpers';
 import PvButton from 'primevue/button';
 
-
 const authStore = useAuthStore();
 const surveyStore = useSurveyStore();
 const { locale } = useI18n();
 const context = new AudioContext();
 
-
 onBeforeRouteLeave((to, from) => {
   const surveyStore = useSurveyStore();
-  
-  if (isLevante && surveyStore.currentSurveyAudioSource) {
-        surveyStore.currentSurveyAudioSource.stop();
-    }
-  }
-);
 
+  if (isLevante && surveyStore.currentSurveyAudioSource) {
+    surveyStore.currentSurveyAudioSource.stop();
+  }
+});
 
 async function playAudio(name) {
   const currentLocale = getParsedLocale(locale.value);
@@ -39,19 +35,36 @@ async function playAudio(name) {
   source.start(0);
 }
 
-console.log('specificSurveyRelationData', surveyStore.specificSurveyRelationData)
-console.log('specificSurveyRelationIndex', surveyStore.specificSurveyRelationIndex)
-console.log('specific relation:', surveyStore.specificSurveyRelationData[surveyStore.specificSurveyRelationIndex])
-
-
+console.log('specificSurveyRelationData', surveyStore.specificSurveyRelationData);
+console.log('specificSurveyRelationIndex', surveyStore.specificSurveyRelationIndex);
+console.log('specific relation:', surveyStore.specificSurveyRelationData[surveyStore.specificSurveyRelationIndex]);
 </script>
 
 <template>
-  <div v-if="surveyStore.survey && !surveyStore.isSavingSurveyResponses && (!surveyStore.surveyAudioLoading || authStore.userData.userType === 'student')">
-    <h1 v-if="authStore.userData.userType !== 'student' && surveyStore.isGeneralSurveyComplete" class="text-2xl font-bold text-black text-center">
-      {{ authStore.userData.userType === 'parent' ? `${$t('userSurvey.specificRelationDescriptionChildA')} ${surveyStore.specificSurveyRelationData[surveyStore.specificSurveyRelationIndex].birthMonth} ${$t('userSurvey.specificRelationDescriptionChildB')} ${surveyStore.specificSurveyRelationData[surveyStore.specificSurveyRelationIndex].birthYear}` : `${$t('userSurvey.specificRelationDescriptionClass')} ${surveyStore.specificSurveyRelationData[surveyStore.specificSurveyRelationIndex].name}` }}
+  <div
+    v-if="
+      surveyStore.survey &&
+      !surveyStore.isSavingSurveyResponses &&
+      (!surveyStore.surveyAudioLoading || authStore.userData.userType === 'student')
+    "
+  >
+    <h1
+      v-if="authStore.userData.userType !== 'student' && surveyStore.isGeneralSurveyComplete"
+      class="text-2xl font-bold text-black text-center"
+    >
+      {{
+        authStore.userData.userType === 'parent'
+          ? `${$t('userSurvey.specificRelationDescriptionChildA')} ${
+              surveyStore.specificSurveyRelationData[surveyStore.specificSurveyRelationIndex].birthMonth
+            } ${$t('userSurvey.specificRelationDescriptionChildB')} ${
+              surveyStore.specificSurveyRelationData[surveyStore.specificSurveyRelationIndex].birthYear
+            }`
+          : `${$t('userSurvey.specificRelationDescriptionClass')} ${
+              surveyStore.specificSurveyRelationData[surveyStore.specificSurveyRelationIndex].name
+            }`
+      }}
     </h1>
-    
+
     <SurveyComponent :model="surveyStore.survey" />
 
     <div v-if="authStore.userData.userType === 'student'">
@@ -68,24 +81,30 @@ console.log('specific relation:', surveyStore.specificSurveyRelationData[surveyS
     </div>
   </div>
 
-  <AppSpinner v-if="!surveyStore.survey || surveyStore.isSavingSurveyResponses || (surveyStore.surveyAudioLoading && authStore.userData.userType !== 'student')" />
+  <AppSpinner
+    v-if="
+      !surveyStore.survey ||
+      surveyStore.isSavingSurveyResponses ||
+      (surveyStore.surveyAudioLoading && authStore.userData.userType !== 'student')
+    "
+  />
 </template>
 
 <style>
-  .play-button-visible {
-    display: flex;
-    position: absolute;
-    right: 0;
-    top: 0;
-    margin-top: -36px;
-    margin-right: -36px;
-    width: 40px;
-    height: 40px;
-    background-color: var(--primary-color);
-    border: none;
-    border-radius: 25%;
-  }
-  .play-button-visible:hover {
-    background-color: var(--primary-color-hover);
-  }
+.play-button-visible {
+  display: flex;
+  position: absolute;
+  right: 0;
+  top: 0;
+  margin-top: -36px;
+  margin-right: -36px;
+  width: 40px;
+  height: 40px;
+  background-color: var(--primary-color);
+  border: none;
+  border-radius: 25%;
+}
+.play-button-visible:hover {
+  background-color: var(--primary-color-hover);
+}
 </style>

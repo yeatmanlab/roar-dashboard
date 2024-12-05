@@ -364,16 +364,13 @@ function addChildDefaultCondition(variant) {
   if (variant.task.id === 'survey') return variant;
 
   const defaultedVariant = _cloneDeep(variant);
-  defaultedVariant.variant['conditions'] = {}
+  defaultedVariant.variant['conditions'] = {};
   defaultedVariant.variant['conditions']['assigned'] = {
     op: 'AND',
-    conditions: [
-      { field: 'userType', op: 'EQUAL', value: 'student' },
-    ],
+    conditions: [{ field: 'userType', op: 'EQUAL', value: 'student' }],
   };
   return defaultedVariant;
 }
-
 </script>
 <style lang="scss">
 .task-tab {

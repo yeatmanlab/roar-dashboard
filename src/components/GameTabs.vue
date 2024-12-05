@@ -61,42 +61,53 @@
               </div>
             </div>
           </div>
-          
+
           <div v-if="game.taskId === 'survey'" class="mt-4 px-4">
             <div class="flex align-items-center mb-2">
-              <span class="mr-2 w-4"><b>{{ $t('gameTabs.surveyProgressGeneral') }} </b> - {{ 
-                props.userData.userType === 'teacher' || props.userData.userType === 'parent' ? 
-                props.userData.userType === 'teacher' ? $t('gameTabs.surveyProgressGeneralTeacher') : $t('gameTabs.surveyProgressGeneralParent') : '' }}
+              <span class="mr-2 w-4"
+                ><b>{{ $t('gameTabs.surveyProgressGeneral') }} </b> -
+                {{
+                  props.userData.userType === 'teacher' || props.userData.userType === 'parent'
+                    ? props.userData.userType === 'teacher'
+                      ? $t('gameTabs.surveyProgressGeneralTeacher')
+                      : $t('gameTabs.surveyProgressGeneralParent')
+                    : ''
+                }}
               </span>
-              <PvProgressBar 
-                :value="getGeneralSurveyProgress" 
-                class="flex-grow-1" 
-              />
+              <PvProgressBar :value="getGeneralSurveyProgress" class="flex-grow-1" />
             </div>
 
             <div v-if="props.userData.userType === 'parent'">
-              <div v-for="(child, i) in props.userData?.childIds" :key="child" class="flex flex-wrap align-items-center mb-2">
+              <div
+                v-for="(child, i) in props.userData?.childIds"
+                :key="child"
+                class="flex flex-wrap align-items-center mb-2"
+              >
                 <span class="mr-2 w-full sm:w-4 mb-1 sm:mb-0">
-                  <b>{{ $t('gameTabs.surveyProgressSpecificParent') }} - </b> {{ $t('gameTabs.surveyProgressSpecificParentMonth') }}: {{ surveyStore.specificSurveyRelationData[i]?.birthMonth }} 
+                  <b>{{ $t('gameTabs.surveyProgressSpecificParent') }} - </b>
+                  {{ $t('gameTabs.surveyProgressSpecificParentMonth') }}:
+                  {{ surveyStore.specificSurveyRelationData[i]?.birthMonth }}
                   <br class="sm:hidden" />
-                  {{ $t('gameTabs.surveyProgressSpecificParentYear') }}: {{ surveyStore.specificSurveyRelationData[i]?.birthYear }}
+                  {{ $t('gameTabs.surveyProgressSpecificParentYear') }}:
+                  {{ surveyStore.specificSurveyRelationData[i]?.birthYear }}
                 </span>
-                <PvProgressBar 
-                  :value="getSpecificSurveyProgress(i)" 
+                <PvProgressBar
+                  :value="getSpecificSurveyProgress(i)"
                   class="flex-grow-1 w-full sm:w-auto incomplete-progress-bar"
                 />
               </div>
             </div>
 
             <div v-if="props.userData.userType === 'teacher'">
-              <div v-for="(classroom, i) in props.userData?.classes?.current" :key="classroom" class="flex flex-wrap align-items-center mb-2">
+              <div
+                v-for="(classroom, i) in props.userData?.classes?.current"
+                :key="classroom"
+                class="flex flex-wrap align-items-center mb-2"
+              >
                 <span class="mr-2 w-full sm:w-4 mb-1 sm:mb-0">
                   <b>Classroom - </b> {{ surveyStore.specificSurveyRelationData[i]?.name }}
                 </span>
-                <PvProgressBar 
-                  :value="getSpecificSurveyProgress(i)" 
-                  class="flex-grow-1 w-full sm:w-auto"
-                />
+                <PvProgressBar :value="getSpecificSurveyProgress(i)" class="flex-grow-1 w-full sm:w-auto" />
               </div>
             </div>
           </div>
@@ -169,22 +180,21 @@ const getSpecificSurveyProgress = computed(() => (loopIndex) => {
     const specificIdFromServer = surveyStore.specificSurveyRelationData[loopIndex].id;
 
     if (specificIdFromServer === localStorageData.specificId) {
+      if (localStorageData.isComplete) return 100;
 
-        if (localStorageData.isComplete) return 100;
+      const currentPage = localStorageData.pageNo || 0;
+      const totalPages = surveyStore.numSpecificPages || 1;
 
-        const currentPage = localStorageData.pageNo || 0;
-        const totalPages = surveyStore.numSpecificPages || 1;
-
-        return Math.round((currentPage / totalPages) * 100);
+      return Math.round((currentPage / totalPages) * 100);
     }
   }
 
   // If data not found in localStorage, use surveyData from server
   if (!surveyData || !Array.isArray(surveyData)) return 0;
 
-  const currentSurvey = surveyData.find(doc => doc.administrationId === selectedAdmin.value.id);
+  const currentSurvey = surveyData.find((doc) => doc.administrationId === selectedAdmin.value.id);
   if (!currentSurvey || !currentSurvey.specific || !currentSurvey.specific[loopIndex]) return 0;
-  
+
   const specificSurvey = currentSurvey.specific[loopIndex];
   if (specificSurvey.isComplete) return 100;
 
@@ -236,7 +246,7 @@ const getTaskName = (taskId, taskName) => {
   }
 
   if (levanteTasks.includes(camelize(taskIdLowercased))) {
-    return t(`gameTabs.${camelize(taskIdLowercased)}Name`); 
+    return t(`gameTabs.${camelize(taskIdLowercased)}Name`);
   }
   return taskName;
 };
@@ -422,5 +432,4 @@ const returnVideoOptions = (videoURL) => {
     margin-right: 0; // Add this line
   }
 }
-
 </style>

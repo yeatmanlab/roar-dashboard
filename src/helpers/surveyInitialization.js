@@ -1,8 +1,8 @@
-import { 
-  getParsedLocale, 
-  fetchBuffer, 
-  showAndPlaceAudioButton, 
-  restoreSurveyData, 
+import {
+  getParsedLocale,
+  fetchBuffer,
+  showAndPlaceAudioButton,
+  restoreSurveyData,
   saveFinalSurveyData,
   saveSurveyData,
 } from '@/helpers/survey';
@@ -35,7 +35,6 @@ export async function initializeSurvey({
   const numSpecificPages = allSpecificPages.length;
   surveyStore.setNumberOfSurveyPages(numGeneralPages, numSpecificPages);
 
-
   if (userType === 'student') {
     await setupStudentAudio(surveyInstance, locale, audioLinkMap, surveyStore);
   }
@@ -43,15 +42,14 @@ export async function initializeSurvey({
   surveyStore.setNumberOfSurveyPages(numGeneralPages, numSpecificPages);
 }
 
-
 export async function setupStudentAudio(surveyInstance, locale, audioLinkMap, surveyStore) {
   const parsedLocale = getParsedLocale(locale);
-  await fetchBuffer({ 
-    parsedLocale, 
-    setSurveyAudioLoading: surveyStore.setSurveyAudioLoading, 
-    audioLinks: audioLinkMap, 
-    surveyAudioBuffers: surveyStore.surveyAudioPlayerBuffers, 
-    setSurveyAudioPlayerBuffers: surveyStore.setSurveyAudioPlayerBuffers 
+  await fetchBuffer({
+    parsedLocale,
+    setSurveyAudioLoading: surveyStore.setSurveyAudioLoading,
+    audioLinks: audioLinkMap,
+    surveyAudioBuffers: surveyStore.surveyAudioPlayerBuffers,
+    setSurveyAudioPlayerBuffers: surveyStore.setSurveyAudioPlayerBuffers,
   });
 
   surveyInstance.onAfterRenderPage.add((__, { htmlElement }) => {
@@ -61,7 +59,7 @@ export async function setupStudentAudio(surveyInstance, locale, audioLinkMap, su
     }
     questionElements.forEach((el) => {
       const playAudioButton = document.getElementById('audio-button-' + el.dataset.name);
-      showAndPlaceAudioButton({playAudioButton, el});
+      showAndPlaceAudioButton({ playAudioButton, el });
     });
   });
 }
@@ -86,39 +84,36 @@ export function setupSurveyEventHandlers({
     specificIds = userData.classes.current;
   }
 
-  
-  surveyInstance.onValueChanged.add((sender, options) => 
-    saveSurveyData({ 
-      survey: sender, 
-      roarfirekit, 
-      uid, 
-      selectedAdmin: selectedAdminId, 
-      questionName: options.name, 
+  surveyInstance.onValueChanged.add((sender, options) =>
+    saveSurveyData({
+      survey: sender,
+      roarfirekit,
+      uid,
+      selectedAdmin: selectedAdminId,
+      questionName: options.name,
       responseValue: options.value,
       userType,
       numGeneralPages: surveyStore.numGeneralPages,
       numSpecificPages: surveyStore.numSpecificPages,
       surveyStore,
       specificIds: specificIds,
-      saveSurveyResponses: roarfirekit.saveSurveyResponses
-    })
+      saveSurveyResponses: roarfirekit.saveSurveyResponses,
+    }),
   );
 
-
-  surveyInstance.onComplete.add((sender) => 
-    saveFinalSurveyData({ 
-      sender, 
-      roarfirekit, 
-      uid, 
-      surveyStore, 
-      router, 
-      toast, 
+  surveyInstance.onComplete.add((sender) =>
+    saveFinalSurveyData({
+      sender,
+      roarfirekit,
+      uid,
+      surveyStore,
+      router,
+      toast,
       queryClient,
       specificIds: specificIds,
       selectedAdmin: selectedAdminId,
       userType,
       gameStore,
-    })
+    }),
   );
-
 }

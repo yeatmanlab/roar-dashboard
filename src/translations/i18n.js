@@ -5,7 +5,8 @@ import {
   enIndividualScoreReport,
   enUSIndividualScoreReport,
   esTranslations,
-  esCOTranslations, deTranslations,
+  esCOTranslations,
+  deTranslations,
   esIndividualScoreReport,
   esCOIndividualScoreReport,
 } from './exports';

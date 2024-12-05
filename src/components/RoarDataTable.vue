@@ -3,7 +3,10 @@
     <SkeletonTable />
   </div>
   <div v-else>
-    <div v-if="props.allowFiltering || props.allowColumnSelection || props.allowExport" class="w-full gap-1 pt-1 flex justify-content-center align-items-center flex-wrap mt-3">
+    <div
+      v-if="props.allowFiltering || props.allowColumnSelection || props.allowExport"
+      class="w-full gap-1 pt-1 flex justify-content-center align-items-center flex-wrap mt-3"
+    >
       <slot name="filterbar"></slot>
       <span v-if="props.allowColumnSelection" class="p-float-label my-3">
         <PvMultiSelect

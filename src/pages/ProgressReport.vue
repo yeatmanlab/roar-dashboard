@@ -116,14 +116,14 @@
             data-cy="roar-data-table"
             :allow-filtering="!isLevante"
             :reset-filters="resetFilters"
-          :allow-export="!isLevante"
-          :allow-column-selection="!isLevante"
+            :allow-export="!isLevante"
+            :allow-column-selection="!isLevante"
             :lazy-pre-sorting="orderBy"
             @export-selected="exportSelected"
             @export-all="exportAll"
           >
             <template #filterbar>
-            <div v-if="!isLevante">
+              <div v-if="!isLevante">
                 <div v-if="districtSchoolsData" class="flex flex-row gap-2">
                   <span class="p-float-label">
                     <PvMultiSelect
@@ -155,7 +155,7 @@
                     />
                     <label for="ms-school-filter">Filter by Grade</label>
                   </span>
-              </div>
+                </div>
               </div>
             </template>
           </RoarDataTable>
@@ -322,7 +322,6 @@ const computedProgressData = computed(() => {
       schoolName = schoolNameDictionary.value[schoolId];
     }
 
-
     const currRow = {
       user: {
         username: user.username,
@@ -451,19 +450,19 @@ const progressReportColumns = computed(() => {
     { field: 'user.username', header: 'Username', pinned: true },
     { field: 'user.email', header: 'Email', pinned: true },
     { field: 'user.firstName', header: 'First Name' },
-    { field: 'user.lastName', header: 'Last Name' }
+    { field: 'user.lastName', header: 'Last Name' },
   ];
 
   columnDefinitions.forEach(({ field, header, pinned }) => {
     const path = field.split('.');
-    if (assignmentData.value.find(assignment => _get(assignment, path))) {
+    if (assignmentData.value.find((assignment) => _get(assignment, path))) {
       tableColumns.push({
         field,
         header,
         dataType: 'text',
         sort: true,
         filter: true,
-        ...(pinned && { pinned: true })
+        ...(pinned && { pinned: true }),
       });
     }
   });

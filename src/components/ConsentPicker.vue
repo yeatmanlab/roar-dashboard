@@ -397,7 +397,6 @@ onMounted(() => {
   }
 });
 
-
 watch(
   () => props.legal,
   // eslint-disable-next-line no-unused-vars

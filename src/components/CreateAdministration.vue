@@ -144,8 +144,8 @@
               </span>
             </div>
             <small v-if="v$.sequential.$invalid && submitted" class="p-error mt-2"
-                >Please specify sequential behavior.</small
-              >
+              >Please specify sequential behavior.</small
+            >
             <div v-if="!isLevante" class="mt-2 mb-2">
               <PvCheckbox v-model="isTestData" :binary="true" data-cy="checkbutton-test-data" input-id="isTestData" />
               <label for="isTestData" class="ml-2">Mark As <b>Test Administration</b></label>

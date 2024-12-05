@@ -25,13 +25,13 @@
   "classLinkLanding": {
     "classLinkLoading": "Loading your data from ClassLink..."
   },
-"consentModal": {
-  "header": "Zustimmung",
-  "title": "Zustimmung",
-  "acceptButton": "Akzeptieren",
-  "rejectButton": "Nein, mich abmelden",
-  "toastHeader": "Bestätigt",
-  "consentUpdatedStatus": "Zustimmungsstatus aktualisiert"
+  "consentModal": {
+    "header": "Zustimmung",
+    "title": "Zustimmung",
+    "acceptButton": "Akzeptieren",
+    "rejectButton": "Nein, mich abmelden",
+    "toastHeader": "Bestätigt",
+    "consentUpdatedStatus": "Zustimmungsstatus aktualisiert"
   },
   "homeParticipant": {
     "showOptionalAssignments": "Optionale Zuordnungen anzeigen",

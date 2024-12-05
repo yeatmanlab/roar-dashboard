@@ -172,8 +172,6 @@ const warningModalOpen = ref(false);
 
 authStore.$subscribe(() => {
   if (authStore.uid) {
-
-
     if (ssoProvider.value) {
       router.push({ path: APP_ROUTES.SSO });
     } else if (routeToProfile.value) {

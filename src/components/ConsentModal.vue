@@ -64,93 +64,92 @@ onMounted(() => {
 
   if (isLevante) {
     confirm.require({
-    group: 'consent', 
-    header: i18n.t(`consentModal.header`, props.consentType.toUpperCase()),
-    icon: 'pi pi-question-circle',
-    acceptLabel: i18n.t('consentModal.acceptButton', 'Accept'),
-    rejectLabel: i18n.t('consentModal.rejectButton', 'Reject'),
-    acceptClass: 'bg-green-600 text-white border-none border-round p-2 hover:bg-green-800',
-    acceptIcon: 'pi pi-check mr-2',
-    rejectClass: 'bg-red-600 text-white border-none border-round p-2 hover:bg-red-800',
-    rejectIcon: 'pi pi-times mr-2',
-    accept: async () => {
-      try {
-        isSubmitting.value = true;
+      group: 'consent',
+      header: i18n.t(`consentModal.header`, props.consentType.toUpperCase()),
+      icon: 'pi pi-question-circle',
+      acceptLabel: i18n.t('consentModal.acceptButton', 'Accept'),
+      rejectLabel: i18n.t('consentModal.rejectButton', 'Reject'),
+      acceptClass: 'bg-green-600 text-white border-none border-round p-2 hover:bg-green-800',
+      acceptIcon: 'pi pi-check mr-2',
+      rejectClass: 'bg-red-600 text-white border-none border-round p-2 hover:bg-red-800',
+      rejectIcon: 'pi pi-times mr-2',
+      accept: async () => {
+        try {
+          isSubmitting.value = true;
 
-        await new Promise((resolve) => setTimeout(resolve, 600));
-        await props.onConfirm();
+          await new Promise((resolve) => setTimeout(resolve, 600));
+          await props.onConfirm();
 
-        toast.add({
-          severity: TOAST_SEVERITIES.INFO,
-          summary: i18n.t('consentModal.toastHeader'),
-          detail: i18n.t(`consentModal.${_lowerCase(props.consentType)}UpdatedStatus`),
-          life: TOAST_DEFAULT_LIFE_DURATION,
-        });
+          toast.add({
+            severity: TOAST_SEVERITIES.INFO,
+            summary: i18n.t('consentModal.toastHeader'),
+            detail: i18n.t(`consentModal.${_lowerCase(props.consentType)}UpdatedStatus`),
+            life: TOAST_DEFAULT_LIFE_DURATION,
+          });
 
-        dialogVisible.value = false;
-      } catch (error) {
-        toast.add({
-          severity: TOAST_SEVERITIES.ERROR,
-          summary: 'Error',
-          detail: 'An error occurred while updating the consent status, please try again.',
-          life: TOAST_DEFAULT_LIFE_DURATION,
-        });
+          dialogVisible.value = false;
+        } catch (error) {
+          toast.add({
+            severity: TOAST_SEVERITIES.ERROR,
+            summary: 'Error',
+            detail: 'An error occurred while updating the consent status, please try again.',
+            life: TOAST_DEFAULT_LIFE_DURATION,
+          });
 
-        Sentry.captureException(error);
+          Sentry.captureException(error);
 
-        return Promise.resolve(false);
-      } finally {
-        isSubmitting.value = false;
-      }
-    },
-    reject: () => {
-      authStore.signOut();
-      router.push({ name: 'SignOut' });
-    },
-  });
+          return Promise.resolve(false);
+        } finally {
+          isSubmitting.value = false;
+        }
+      },
+      reject: () => {
+        authStore.signOut();
+        router.push({ name: 'SignOut' });
+      },
+    });
   } else {
     confirm.require({
-    group: 'consent',
-    header: header,
-    icon: 'pi pi-question-circle',
-    acceptLabel: i18n.t('consentModal.acceptButton'),
-    acceptClass: 'bg-primary text-white border-none border-round p-2 hover:bg-red-900',
-    acceptIcon,
-    accept: async () => {
-      try {
-        isSubmitting.value = true;
+      group: 'consent',
+      header: header,
+      icon: 'pi pi-question-circle',
+      acceptLabel: i18n.t('consentModal.acceptButton'),
+      acceptClass: 'bg-primary text-white border-none border-round p-2 hover:bg-red-900',
+      acceptIcon,
+      accept: async () => {
+        try {
+          isSubmitting.value = true;
 
-        await new Promise((resolve) => setTimeout(resolve, 600));
-        await props.onConfirm();
+          await new Promise((resolve) => setTimeout(resolve, 600));
+          await props.onConfirm();
 
-        toast.add({
-          severity: TOAST_SEVERITIES.INFO,
-          summary: i18n.t('consentModal.toastHeader'),
-          detail: props.consentType.includes('-es')
-            ? `ESTADO DE ${_lowerCase(props.consentType).toUpperCase()} ACTUALIZADO`
-            : `${_lowerCase(props.consentType).toUpperCase()} STATUS UPDATED.`,
-          life: TOAST_DEFAULT_LIFE_DURATION,
-        });
+          toast.add({
+            severity: TOAST_SEVERITIES.INFO,
+            summary: i18n.t('consentModal.toastHeader'),
+            detail: props.consentType.includes('-es')
+              ? `ESTADO DE ${_lowerCase(props.consentType).toUpperCase()} ACTUALIZADO`
+              : `${_lowerCase(props.consentType).toUpperCase()} STATUS UPDATED.`,
+            life: TOAST_DEFAULT_LIFE_DURATION,
+          });
 
-        dialogVisible.value = false;
-      } catch (error) {
-        toast.add({
-          severity: TOAST_SEVERITIES.ERROR,
-          summary: 'Error',
-          detail: 'An error occurred while updating the consent status, please try again.',
-          life: TOAST_DEFAULT_LIFE_DURATION,
-        });
+          dialogVisible.value = false;
+        } catch (error) {
+          toast.add({
+            severity: TOAST_SEVERITIES.ERROR,
+            summary: 'Error',
+            detail: 'An error occurred while updating the consent status, please try again.',
+            life: TOAST_DEFAULT_LIFE_DURATION,
+          });
 
-        Sentry.captureException(error);
+          Sentry.captureException(error);
 
-        return Promise.resolve(false);
-      } finally {
-        isSubmitting.value = false;
-      }
-    },
-  });
+          return Promise.resolve(false);
+        } finally {
+          isSubmitting.value = false;
+        }
+      },
+    });
   }
-  
 });
 </script>
 

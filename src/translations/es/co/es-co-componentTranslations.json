@@ -26,13 +26,13 @@
   "classLinkLanding": {
     "classLinkLoading": "Cargando tus datos desde ClassLink..."
   },
-"consentModal": {
-  "header": "Consentimiento",
-  "consentTitle": "Consentimiento",
+  "consentModal": {
+    "header": "Consentimiento",
+    "consentTitle": "Consentimiento",
     "assentTitle": "Asentimiento",
-  "acceptButton": "Aceptar",
-  "rejectButton": "No, cerrar sesión",
-  "toastHeader": "Confirmado"
+    "acceptButton": "Aceptar",
+    "rejectButton": "No, cerrar sesión",
+    "toastHeader": "Confirmado"
   },
   "homeParticipant": {
     "showOptionalAssignments": "Mostrar actividades opcionales",

@@ -50,7 +50,7 @@
                 :options="sortedUserAdministrations ?? []"
                 :option-label="
                   userAssignments.every((administration) => administration.publicName) ? 'publicName' : 'name'
-                " 
+                "
                 input-id="dd-assignment"
                 data-cy="dropdown-select-administration"
                 @change="toggleShowOptionalAssessments"
@@ -59,7 +59,6 @@
             </div>
           </div>
         </div>
-
       </div>
 
       <div class="tabs-container">
@@ -118,7 +117,7 @@ import axios from 'axios';
 import { LEVANTE_BUCKET_URL } from '@/constants/bucket';
 import { Model, settings } from 'survey-core';
 import { Converter } from 'showdown';
-import { fetchAudioLinks, } from '@/helpers/survey';
+import { fetchAudioLinks } from '@/helpers/survey';
 import { useRouter } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
 import { useQueryClient, useQuery } from '@tanstack/vue-query';
@@ -136,7 +135,6 @@ const router = useRouter();
 const toast = useToast();
 const queryClient = useQueryClient();
 const surveyStore = useSurveyStore();
-
 
 const { mutateAsync: updateConsentStatus } = useUpdateConsentMutation();
 const { mutate: signOut } = useSignOutMutation();
@@ -177,7 +175,6 @@ const {
 } = useUserAssignmentsQuery({
   enabled: initialized,
 });
-
 
 const sortedUserAdministrations = computed(() => {
   return [...(userAssignments.value ?? [])].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
@@ -223,17 +220,17 @@ async function checkConsent() {
     const currentDate = new Date();
     const age = currentDate.getFullYear() - dob.getFullYear();
 
-  if (!legal?.consent) {
-    // Always show consent form for this test student when running Cypress tests
-    // @TODO: Remove this once we update the E2E tests to handle the consent form without persisting state. This would
-    // improve the test relability as enforcing the below condition defeats parts of the test purpose.
-    if (userData.value?.id === 'O75V6IcVeiTwW8TRjXb76uydlwV2') {
-      consentType.value = 'consent';
-      confirmText.value = 'This is a test student. Please do not accept this form.';
-      showConsent.value = true;
+    if (!legal?.consent) {
+      // Always show consent form for this test student when running Cypress tests
+      // @TODO: Remove this once we update the E2E tests to handle the consent form without persisting state. This would
+      // improve the test relability as enforcing the below condition defeats parts of the test purpose.
+      if (userData.value?.id === 'O75V6IcVeiTwW8TRjXb76uydlwV2') {
+        consentType.value = 'consent';
+        confirmText.value = 'This is a test student. Please do not accept this form.';
+        showConsent.value = true;
+      }
+      return;
     }
-    return;
-  }
 
     const isAdult = age >= 18;
     const isSeniorGrade = grade >= 12;
@@ -246,45 +243,45 @@ async function checkConsent() {
 
     consentType.value = docType;
 
-  const consentStatus = userData.value?.legal?.[consentType.value];
-  const consentDoc = await authStore.getLegalDoc(docType);
-  consentVersion.value = consentDoc.version;
+    const consentStatus = userData.value?.legal?.[consentType.value];
+    const consentDoc = await authStore.getLegalDoc(docType);
+    consentVersion.value = consentDoc.version;
 
-  if (consentStatus?.[consentDoc.version]) {
-    const legalDocs = consentStatus?.[consentDoc.version];
+    if (consentStatus?.[consentDoc.version]) {
+      const legalDocs = consentStatus?.[consentDoc.version];
 
-    let found = false;
-    let signedBeforeAugFirst = false;
+      let found = false;
+      let signedBeforeAugFirst = false;
 
-    const augustFirstThisYear = new Date(currentDate.getFullYear(), 7, 1); // August 1st of the current year
+      const augustFirstThisYear = new Date(currentDate.getFullYear(), 7, 1); // August 1st of the current year
 
-    for (const document of legalDocs) {
-      const signedDate = new Date(document.dateSigned);
+      for (const document of legalDocs) {
+        const signedDate = new Date(document.dateSigned);
 
-      if (document.amount === docAmount && document.expectedTime === docExpectedTime) {
-        found = true;
+        if (document.amount === docAmount && document.expectedTime === docExpectedTime) {
+          found = true;
 
-        if (signedDate < augustFirstThisYear && currentDate >= augustFirstThisYear) {
+          if (signedDate < augustFirstThisYear && currentDate >= augustFirstThisYear) {
+            signedBeforeAugFirst = true;
+            break;
+          }
+        }
+
+        if (isNaN(new Date(document.dateSigned)) && currentDate >= augustFirstThisYear) {
           signedBeforeAugFirst = true;
           break;
         }
       }
 
-      if (isNaN(new Date(document.dateSigned)) && currentDate >= augustFirstThisYear) {
-        signedBeforeAugFirst = true;
-        break;
+      // If any document is signed after August 1st, do not show the consent form
+      if (!found || signedBeforeAugFirst) {
+        if (docAmount !== '' || docExpectedTime !== '' || signedBeforeAugFirst) {
+          confirmText.value = consentDoc.text;
+          showConsent.value = true;
+          return;
+        }
       }
-    }
-
-    // If any document is signed after August 1st, do not show the consent form
-    if (!found || signedBeforeAugFirst) {
-      if (docAmount !== '' || docExpectedTime !== '' || signedBeforeAugFirst) {
-        confirmText.value = consentDoc.text;
-        showConsent.value = true;
-        return;
-      }
-    }
-  } else if (age > 7 || grade > 1) {
+    } else if (age > 7 || grade > 1) {
       confirmText.value = consentDoc.text;
       showConsent.value = true;
       return;
@@ -299,9 +296,9 @@ async function checkConsent() {
     }
 
     try {
-      const consentDoc = await authStore.getLegalDoc(`${locale.value}Consent`); 
-      
-      if (!consentDoc) return
+      const consentDoc = await authStore.getLegalDoc(`${locale.value}Consent`);
+
+      if (!consentDoc) return;
 
       consentType.value = toRaw(legal).consent[0].type;
       confirmText.value = consentDoc.text;
@@ -464,10 +461,10 @@ watch(
   { immediate: true },
 );
 
-const {  data: surveyData } = useQuery({
+const { data: surveyData } = useQuery({
   queryKey: ['surveys'],
   queryFn: async () => {
-    const userType = userData.value.userType; 
+    const userType = userData.value.userType;
 
     if (userType === 'student') {
       const resSurvey = await axios.get(`${LEVANTE_BUCKET_URL}/child_survey.json`);
@@ -497,9 +494,8 @@ const {  data: surveyData } = useQuery({
   staleTime: 24 * 60 * 60 * 1000, // 24 hours
 });
 
-
 const surveyDependenciesLoaded = computed(() => {
-  return surveyData.value && userData.value && selectedAdmin.value && surveyResponsesData.value
+  return surveyData.value && userData.value && selectedAdmin.value && surveyResponsesData.value;
 });
 
 const specificSurveyData = computed(() => {
@@ -524,105 +520,112 @@ function setupMarkdownConverter(surveyInstance) {
   });
 }
 
+watch(
+  surveyDependenciesLoaded,
+  async (isLoaded) => {
+    const isAssessment = selectedAdmin.value?.assessments.some((task) => task.taskId === 'survey');
+    if (!isLoaded || !isAssessment || surveyStore.survey) return;
 
-watch(surveyDependenciesLoaded, async (isLoaded) => {
-  const isAssessment = selectedAdmin.value?.assessments.some((task) => task.taskId === 'survey');
-  if (!isLoaded || !isAssessment || surveyStore.survey) return;
+    const surveyResponseDoc = surveyResponsesData.value.find((doc) => doc?.administrationId === selectedAdmin.value.id);
 
-  const surveyResponseDoc = surveyResponsesData.value.find((doc) => doc?.administrationId === selectedAdmin.value.id);
-  
-  if (surveyResponseDoc) {
-    if (userType.value === 'student') {
-      const isComplete = surveyResponseDoc.general.isComplete;
-      surveyStore.setIsGeneralSurveyComplete(isComplete);
-      if (isComplete) return;
-    } else {
-      surveyStore.setIsGeneralSurveyComplete(surveyResponseDoc.general.isComplete);
+    if (surveyResponseDoc) {
+      if (userType.value === 'student') {
+        const isComplete = surveyResponseDoc.general.isComplete;
+        surveyStore.setIsGeneralSurveyComplete(isComplete);
+        if (isComplete) return;
+      } else {
+        surveyStore.setIsGeneralSurveyComplete(surveyResponseDoc.general.isComplete);
 
-      const numOfSpecificSurveys = userType.value === 'parent' ? userData.value.childIds.length : userData.value.classes.current.length;
-      
-      if (surveyResponseDoc.specific && surveyResponseDoc.specific.length > 0) {
-        if (surveyResponseDoc.specific.length === numOfSpecificSurveys && surveyResponseDoc.specific.every(relation => relation.isComplete)) {
-          surveyStore.setIsSpecificSurveyComplete(true);
-        } else {
-          const incompleteIndex = surveyResponseDoc.specific.findIndex(relation => !relation.isComplete);
-          if (incompleteIndex > -1) {
-            surveyStore.setSpecificSurveyRelationIndex(incompleteIndex);
+        const numOfSpecificSurveys =
+          userType.value === 'parent' ? userData.value.childIds.length : userData.value.classes.current.length;
+
+        if (surveyResponseDoc.specific && surveyResponseDoc.specific.length > 0) {
+          if (
+            surveyResponseDoc.specific.length === numOfSpecificSurveys &&
+            surveyResponseDoc.specific.every((relation) => relation.isComplete)
+          ) {
+            surveyStore.setIsSpecificSurveyComplete(true);
           } else {
-            surveyStore.setSpecificSurveyRelationIndex(surveyResponseDoc.specific.length);
+            const incompleteIndex = surveyResponseDoc.specific.findIndex((relation) => !relation.isComplete);
+            if (incompleteIndex > -1) {
+              surveyStore.setSpecificSurveyRelationIndex(incompleteIndex);
+            } else {
+              surveyStore.setSpecificSurveyRelationIndex(surveyResponseDoc.specific.length);
+            }
           }
         }
       }
     }
-  }
 
-
-  if (userType.value === 'student' && surveyStore.isGeneralSurveyComplete) {
-    return
-  } else if (userType.value === 'teacher' || userType.value === 'parent') {
-    if (surveyStore.isGeneralSurveyComplete && surveyStore.isSpecificSurveyComplete) {
-      return
+    if (userType.value === 'student' && surveyStore.isGeneralSurveyComplete) {
+      return;
+    } else if (userType.value === 'teacher' || userType.value === 'parent') {
+      if (surveyStore.isGeneralSurveyComplete && surveyStore.isSpecificSurveyComplete) {
+        return;
+      }
     }
-  }
 
+    const surveyDataToStartAt =
+      userType.value === 'student' || !surveyStore.isGeneralSurveyComplete
+        ? surveyData.value.general
+        : surveyData.value.specific;
 
-  const surveyDataToStartAt = userType.value === 'student' || !surveyStore.isGeneralSurveyComplete
-    ? surveyData.value.general
-    : surveyData.value.specific;
+    // Fetch child docs for parent or class docs for teacher
+    if (userType.value === 'parent' || userType.value === 'teacher') {
+      try {
+        const fetchConfig =
+          userType.value === 'parent'
+            ? userData.value.childIds.map((childId) => ({
+                collection: 'users',
+                docId: childId,
+                select: ['birthMonth', 'birthYear'],
+              }))
+            : userData.value.classes.current.map((classId) => ({
+                collection: 'classes',
+                docId: classId,
+                select: ['name'],
+              }));
 
-  // Fetch child docs for parent or class docs for teacher
-  if ((userType.value === 'parent' || userType.value === 'teacher')) {
-    try {
-      const fetchConfig = userType.value === 'parent'
-        ? userData.value.childIds.map(childId => ({
-            collection: 'users',
-            docId: childId,
-            select: ['birthMonth', 'birthYear'],
-          }))
-        : userData.value.classes.current.map(classId => ({
-            collection: 'classes',
-            docId: classId,
-            select: ['name'],
-          }));
-      
-      const res = await fetchDocsById(fetchConfig);
-      console.log('res', res)
-      surveyStore.setSpecificSurveyRelationData(res);
-    } catch (error) {
-      console.error('Error fetching relation data:', error);
+        const res = await fetchDocsById(fetchConfig);
+        console.log('res', res);
+        surveyStore.setSpecificSurveyRelationData(res);
+      } catch (error) {
+        console.error('Error fetching relation data:', error);
+      }
     }
-  }
 
-  const surveyInstance = createSurveyInstance(surveyDataToStartAt);
-  setupMarkdownConverter(surveyInstance);
+    const surveyInstance = createSurveyInstance(surveyDataToStartAt);
+    setupMarkdownConverter(surveyInstance);
 
-  await initializeSurvey({
-    surveyInstance,
-    userType: userType.value,
-    specificSurveyData: specificSurveyData.value,
-    userData: userData.value,
-    surveyStore,
-    locale: locale.value,
-    audioLinkMap: surveyStore.audioLinkMap,
-    generalSurveyData: surveyData.value.general,
-  });
+    await initializeSurvey({
+      surveyInstance,
+      userType: userType.value,
+      specificSurveyData: specificSurveyData.value,
+      userData: userData.value,
+      surveyStore,
+      locale: locale.value,
+      audioLinkMap: surveyStore.audioLinkMap,
+      generalSurveyData: surveyData.value.general,
+    });
 
-  setupSurveyEventHandlers({
-    surveyInstance,
-    userType: userType.value,
-    roarfirekit: roarfirekit.value,
-    uid: userData.value.id,
-    selectedAdminId: selectedAdmin.value.id,
-    surveyStore,
-    router,
-    toast,
-    queryClient,
-    userData: userData.value,
-    gameStore,
-  });
+    setupSurveyEventHandlers({
+      surveyInstance,
+      userType: userType.value,
+      roarfirekit: roarfirekit.value,
+      uid: userData.value.id,
+      selectedAdminId: selectedAdmin.value.id,
+      surveyStore,
+      router,
+      toast,
+      queryClient,
+      userData: userData.value,
+      gameStore,
+    });
 
-  surveyStore.setSurvey(surveyInstance);
-}, { immediate: true });
+    surveyStore.setSurvey(surveyInstance);
+  },
+  { immediate: true },
+);
 </script>
 <style scoped>
 .tabs-container {

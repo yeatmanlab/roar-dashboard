@@ -11,7 +11,16 @@ import _isEmpty from 'lodash/isEmpty';
 import { convertValues, getAxiosInstance, getProjectId, mapFields } from './utils';
 import { pluralizeFirestoreCollection } from '@/helpers';
 
-const userSelectFields = ['name', 'assessmentPid', 'username', 'studentData', 'schools', 'classes', 'email', 'userType'];
+const userSelectFields = [
+  'name',
+  'assessmentPid',
+  'username',
+  'studentData',
+  'schools',
+  'classes',
+  'email',
+  'userType',
+];
 
 const assignmentSelectFields = [
   'assessments',

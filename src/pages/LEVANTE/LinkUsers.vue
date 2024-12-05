@@ -14,7 +14,7 @@
           :show-cancel-button="false"
           @uploader="onFileUpload($event)"
         >
-        <template #empty>
+          <template #empty>
             <div class="flex justify-center items-center text-gray-500">
               <p>Click choose or drag and drop files to here to upload.</p>
             </div>
@@ -104,12 +104,12 @@ const requiredFields = ['id', 'parentId', 'teacherId'];
 
 const onFileUpload = async (event) => {
   rawUserFile.value = await csvFileToJson(event.files[0]);
-  columns.value = Object.keys(rawUserFile.value[0]).map(key => ({
+  columns.value = Object.keys(rawUserFile.value[0]).map((key) => ({
     field: key,
     header: key,
   }));
 
-  const missingColumns = requiredFields.filter(field => !columns.value.some(col => col.field === field));
+  const missingColumns = requiredFields.filter((field) => !columns.value.some((col) => col.field === field));
   if (missingColumns.length > 0) {
     toast.add({
       severity: 'error',
@@ -135,14 +135,14 @@ const onFileUpload = async (event) => {
 
 const validateUsers = () => {
   errorUsers.value = [];
-  const userMap = new Map(toRaw(rawUserFile.value).map(user => [user.id.toString(), user]));
+  const userMap = new Map(toRaw(rawUserFile.value).map((user) => [user.id.toString(), user]));
 
-  rawUserFile.value.forEach(user => {
+  rawUserFile.value.forEach((user) => {
     const errors = [];
     const requiredFields = ['id', 'userType', 'uid'];
-    
+
     // Check for required fields
-    requiredFields.forEach(field => {
+    requiredFields.forEach((field) => {
       if (!user[field]) {
         errors.push(`Missing required field: ${field}`);
       }
@@ -154,8 +154,11 @@ const validateUsers = () => {
         errors.push('Child must have either parentId or teacherId');
       }
       if (user.parentId) {
-        const parentIds = typeof user.parentId === 'string' ? user.parentId.split(',').map(id => id.trim()) : [user.parentId.toString()];
-        parentIds.forEach(parentId => {
+        const parentIds =
+          typeof user.parentId === 'string'
+            ? user.parentId.split(',').map((id) => id.trim())
+            : [user.parentId.toString()];
+        parentIds.forEach((parentId) => {
           console.log('parentId in loop:', parentId);
 
           if (!userMap.has(parentId)) {
@@ -166,8 +169,11 @@ const validateUsers = () => {
         });
       }
       if (user.teacherId) {
-        const teacherIds = typeof user.teacherId === 'string' ? user.teacherId.split(',').map(id => id.trim()) : [user.teacherId.toString()];
-        teacherIds.forEach(teacherId => {
+        const teacherIds =
+          typeof user.teacherId === 'string'
+            ? user.teacherId.split(',').map((id) => id.trim())
+            : [user.teacherId.toString()];
+        teacherIds.forEach((teacherId) => {
           if (!userMap.has(teacherId)) {
             errors.push(`Teacher with ID ${teacherId} not found`);
           } else if (userMap.get(teacherId).userType !== 'teacher') {
@@ -204,7 +210,7 @@ const submitUsers = async () => {
   try {
     const result = await authStore.roarfirekit.linkUsers(rawUserFile.value);
     console.log('user link result:', result);
-    
+
     toast.add({
       severity: 'success',
       summary: 'Success',

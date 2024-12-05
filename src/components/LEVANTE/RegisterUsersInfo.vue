@@ -24,13 +24,15 @@
 
     <p class="mb-6"><span class="required">*</span> = Required only for child users</p>
 
-    <p>Below is an example of what your CSV/spreadsheet could look like. Only the necessary columns will be processed.</p>
+    <p>
+      Below is an example of what your CSV/spreadsheet could look like. Only the necessary columns will be processed.
+    </p>
 
     <img
       id="example-image"
       src="https://storage.googleapis.com/road-dashboard/example_researcher_csv.png"
       alt="CSV upload example"
-      style="width: 100%; max-width: 600px; height: auto;"
+      style="width: 100%; max-width: 600px; height: auto"
     />
   </PvPanel>
 </template>

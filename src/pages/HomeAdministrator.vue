@@ -161,7 +161,6 @@ const search = ref('');
 const filteredAdministrations = ref([]);
 const fetchTestAdministrations = ref(false);
 
-
 const authStore = useAuthStore();
 
 const { roarfirekit } = storeToRefs(authStore);
