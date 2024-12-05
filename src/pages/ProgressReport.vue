@@ -316,7 +316,7 @@ const computedProgressData = computed(() => {
   // assignmentTableData is an array of objects, each representing a row in the table
   const assignmentTableDataAcc = [];
 
-  for (const { assignment, user } of assignmentData.value) {
+  for (const { assignment, user, survey } of assignmentData.value) {
     // for each row, compute: username, firstName, lastName, assessmentPID, grade, school, all the scores, and routeParams for report link
     const grade = user.studentData?.grade;
     // compute schoolName
@@ -331,6 +331,7 @@ const computedProgressData = computed(() => {
       user: {
         username: user.username,
         email: user.email || assignment.userData.email,
+        userType: user.userType,
         userId: user.userId,
         firstName: user?.name?.first || '',
         lastName: user?.name?.last || '',
@@ -342,39 +343,67 @@ const computedProgressData = computed(() => {
     };
 
     const currRowProgress = {};
+
+
+    // console.log('assignment: ', assignment);
     for (const assessment of assignment.assessments) {
       // General Logic to grab support level, scores, etc
       let progressFilterTags = '';
       const taskId = assessment.taskId;
 
-      if (assessment?.optional) {
-        currRowProgress[taskId] = {
-          value: 'optional',
-          icon: 'pi pi-question',
-          severity: 'info',
-        };
-        progressFilterTags += ' Optional ';
-      } else if (assessment?.completedOn !== undefined) {
-        currRowProgress[taskId] = {
-          value: 'completed',
-          icon: 'pi pi-check',
-          severity: 'success',
-        };
-        progressFilterTags += ' Completed ';
-      } else if (assessment?.startedOn !== undefined) {
-        currRowProgress[taskId] = {
-          value: 'started',
-          icon: 'pi pi-exclamation-triangle',
-          severity: 'warning',
-        };
-        progressFilterTags += ' Started ';
+      // console.log('assessment: ', assessment);
+      // console.log('survey data: ', survey);
+      
+      if (taskId == 'survey') {
+        if (survey?.progress === 'completed') {
+          currRowProgress[taskId] = {
+            value: survey?.progress,
+            icon: 'pi pi-check',
+            severity: 'success',
+          };
+        } else if (survey?.progress === 'started') {
+          currRowProgress[taskId] = {
+            value: survey?.progress,
+            icon: 'pi pi-exclamation-triangle',
+            severity: 'warning',
+          };
+        } else {
+          currRowProgress[taskId] = {
+            value: survey?.progress,
+            icon: 'pi pi-times',
+            severity: 'danger',
+          };
+        }
       } else {
-        currRowProgress[taskId] = {
-          value: 'assigned',
-          icon: 'pi pi-times',
-          severity: 'danger',
-        };
-        progressFilterTags += ' Assigned ';
+        if (assessment?.optional) {
+          currRowProgress[taskId] = {
+            value: 'optional',
+            icon: 'pi pi-question',
+            severity: 'info',
+          };
+          progressFilterTags += ' Optional ';
+        } else if (assessment?.completedOn !== undefined) {
+          currRowProgress[taskId] = {
+            value: 'completed',
+            icon: 'pi pi-check',
+            severity: 'success',
+          };
+          progressFilterTags += ' Completed ';
+        } else if (assessment?.startedOn !== undefined) {
+          currRowProgress[taskId] = {
+            value: 'started',
+            icon: 'pi pi-exclamation-triangle',
+            severity: 'warning',
+          };
+          progressFilterTags += ' Started ';
+        } else {
+          currRowProgress[taskId] = {
+            value: 'assigned',
+            icon: 'pi pi-times',
+            severity: 'danger',
+          };
+          progressFilterTags += ' Assigned ';
+        }
       }
       currRowProgress[taskId].tags = progressFilterTags;
 
@@ -540,9 +569,12 @@ const progressReportColumns = computed(() => {
 
 const filteredTableData = ref(computedProgressData.value);
 
+
+
 watch(computedProgressData, (newValue) => {
   // Update filteredTableData when computedProgressData changes
   filteredTableData.value = newValue;
+  console.log('filteredTableData: ', filteredTableData.value);
 });
 
 watch([filterSchools, filterGrades], ([newSchools, newGrades]) => {

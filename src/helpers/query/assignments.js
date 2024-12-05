@@ -11,7 +11,7 @@ import _isEmpty from 'lodash/isEmpty';
 import { convertValues, getAxiosInstance, getProjectId, mapFields } from './utils';
 import { pluralizeFirestoreCollection, isLevante } from '@/helpers';
 
-const userSelectFields = ['name', 'assessmentPid', 'username', 'studentData', 'schools', 'classes'];
+const userSelectFields = ['name', 'assessmentPid', 'username', 'studentData', 'schools', 'classes', 'userType'];
 
 const assignmentSelectFields = [
   'assessments',
@@ -859,6 +859,7 @@ export const assignmentPageFetcher = async (
       grades: gradeFilter,
       orderBy: toRaw(orderBy),
     });
+
     console.log(`Fetching page ${page.value} for ${adminId}`);
     return adminAxiosInstance.post(':runQuery', requestBody).then(async ({ data }) => {
       const assignmentData = mapFields(data, true);
@@ -904,30 +905,41 @@ export const assignmentPageFetcher = async (
 
       let batchSurveyDocs = [];
       if (isLevante) {
-        // After getting user docs, fetch survey responses
-        const surveyResponsePaths = userDocPaths.map((userDocPath) => {
-          return `${userDocPath}/surveyResponses`;
-        });
-
+        console.log('adminId: ', adminId);
         // Batch get survey response docs
         batchSurveyDocs = await Promise.all(
-          surveyResponsePaths.map(async (path) => {
+          userDocPaths.map(async (userDocPath) => {
+            const userId = userDocPath.split('/users/')[1];
             const surveyQuery = {
               structuredQuery: {
-                from: [{ collectionId: 'surveyResponses' }],
+                from: [{ 
+                  collectionId: 'surveyResponses',
+                }],
                 where: {
                   fieldFilter: {
                     field: { fieldPath: 'administrationId' },
                     op: 'EQUAL',
                     value: { stringValue: adminId }
                   }
-                }
+                },
               }
             };
 
-            const response = await adminAxiosInstance.post(`${path}:runQuery`, surveyQuery);
-            const surveyData = mapFields(response.data, true);
-            return surveyData.length > 0 ? surveyData[0] : null;
+            try {
+              const { data } = await adminAxiosInstance.post(`users/${userId}:runQuery`, surveyQuery);
+
+              const validResponses = data
+                .filter(doc => doc.document)
+                .map(doc => ({
+                  name: doc.document.name,
+                  ..._mapValues(doc.document.fields, (value) => convertValues(value))
+                }));
+      
+              return validResponses.length > 0 ? validResponses[0] : null;
+            } catch (error) {
+              console.error('Error fetching survey response: ', error);
+              return null;
+            }
           })
         );
       }
@@ -936,6 +948,26 @@ export const assignmentPageFetcher = async (
       const scoresObj = assignmentData.map((assignment, index) => {
         const user = batchUserDocs.find((userDoc) => userDoc.name.includes(assignment.parentDoc));
         const surveyResponse = isLevante ? batchSurveyDocs[index] : null;
+
+        let progress = 'assigned';
+        if (surveyResponse) {
+          // Check completion based on user type
+          if (user.data.userType === 'student') {
+            progress = surveyResponse.general?.isComplete ? 'completed' : 'started';
+          } else if (['parent', 'teacher'].includes(user.data.userType)) {
+            // For parent/teacher, check both general and specific parts
+            const specificItems = surveyResponse?.specific || [];
+            const generalComplete = surveyResponse.general?.isComplete || false;
+            
+            if (specificItems.length > 0) {
+              const allSpecificComplete = specificItems.every(item => item.isComplete === true);
+              // Both general and all specific items must be complete
+              progress = (generalComplete && allSpecificComplete) ? 'completed' : 'started';
+            } else {
+              progress = 'started';
+            }
+          }
+        }
         
         return {
           assignment,
@@ -943,7 +975,7 @@ export const assignmentPageFetcher = async (
           roarUid: user.name.split('/users/')[1],
           ...(isLevante && {
             survey: {
-              isComplete: surveyResponse ? surveyResponse.general?.isComplete || false : false,
+              progress,
               ...surveyResponse
             }
           })
