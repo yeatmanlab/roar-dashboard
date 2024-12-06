@@ -153,6 +153,5 @@ module.exports = defineConfig({
     roarDemoDistrictId: 'dfyDUItJNf3wEoG6Mf8H',
     roarDemoAdministrationName: 'ROAR demo administration',
     roarDemoAdministrationId: 'EWC9corgcnipev7ZnmuN',
-    appCheckDebugToken: process.env.VITE_APPCHECK_DEBUG_TOKEN,
   },
 });
