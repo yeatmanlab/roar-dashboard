@@ -1,9 +1,11 @@
-name: Deploy to Staging
+name: Deploy to Production
 
 on:
   push:
-    branches:
-      - main
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+-alpha.[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+-beta.[0-9]+'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.run_id }}
@@ -19,7 +21,7 @@ jobs:
   deploy-app:
     name: Deploy Firebase app
     runs-on: ubuntu-latest
-    environment: staging
+    environment: production
     timeout-minutes: 15
     steps:
       - name: Checkout repository
@@ -28,7 +30,7 @@ jobs:
       - name: Build app
         uses: ./.github/actions/build
         with:
-          environment: staging
+          environment: production
           github-pat: ${{ secrets.CI_GITHUB_PAT }}
 
       - name: Deploy app
@@ -47,7 +49,7 @@ jobs:
     name: Deploy Firestore config
     needs: [deploy-app]
     runs-on: ubuntu-latest
-    environment: staging
+    environment: production
     timeout-minutes: 15
     steps:
       - name: Checkout repository

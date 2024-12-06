@@ -55,7 +55,7 @@ jobs:
 
       - name: Deploy Firestore config to Admin instance
         if: steps.deployment.outcome == 'success'
-        uses: ./.github/actions/deploy-firestore-config@121306f5985136950481ef94c10e675e31d6f6f4
+        uses: ./.github/actions/deploy-firestore-config
         with:
           firebase-project-id: ${{ secrets.FIREBASE_PROJECT_ID_ADMIN }}
           gcp-workload-identity-provider: ${{ secrets.FIREBASE_WORKLOAD_IDENTITY_PROVIDER_ADMIN }}
@@ -64,7 +64,7 @@ jobs:
 
       - name: Deploy Firestore config to Assessment instance
         if: steps.deployment.outcome == 'success'
-        uses: ./.github/actions/deploy-firestore-config@121306f5985136950481ef94c10e675e31d6f6f4
+        uses: ./.github/actions/deploy-firestore-config
         with:
           firebase-project-id: ${{ secrets.FIREBASE_PROJECT_ID_ASSESSMENT }}
           gcp-workload-identity-provider: ${{ secrets.FIREBASE_WORKLOAD_IDENTITY_PROVIDER_ASSESSMENT }}
