@@ -54,7 +54,7 @@
           </PvScrollPanel>
         </div>
         <div v-if="searchTerm.length < 3">
-          <PvDropdown
+          <PvSelect
             v-model="currentTask"
             :options="taskOptions"
             option-label="label"
@@ -148,7 +148,7 @@ import _union from 'lodash/union';
 import { VueDraggableNext } from 'vue-draggable-next';
 import { useToast } from 'primevue/usetoast';
 import PvButton from 'primevue/button';
-import PvDropdown from 'primevue/dropdown';
+import PvSelect from 'primevue/select';
 import PvInputSwitch from 'primevue/inputswitch';
 import PvInputText from 'primevue/inputtext';
 import PvPanel from 'primevue/panel';

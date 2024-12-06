@@ -29,7 +29,7 @@
             <span class="font-bold">Variant id: </span>{{ variant.id }}
           </p>
         </div>
-        <PvOverlayPanel ref="op" append-to="body" style="width: 40vh">
+        <PvPopover ref="op" append-to="body" style="width: 40vh">
           <div class="flex justify-content-end mt-0 mb-2">
             <PvButton
               class="p-0 surface-hover border-none border-circle -rotate-45 hover:text-100 hover:bg-primary"
@@ -62,7 +62,7 @@
               </PvColumn>
             </PvDataTable>
           </div>
-        </PvOverlayPanel>
+        </PvPopover>
       </div>
     </div>
     <div class="mr-0 pl-0 flex flex-column">
@@ -117,7 +117,7 @@
           </p>
         </div>
       </div>
-      <PvOverlayPanel ref="op" append-to="body" class="border-1 surface-border" style="width: 40vh">
+      <PvPopover ref="op" append-to="body" class="border-1 surface-border" style="width: 40vh">
         <div class="flex justify-content-end mt-0 mb-2">
           <PvButton
             class="p-0 surface-hover border-none border-circle -rotate-45 hover:text-100 hover:bg-primary"
@@ -150,7 +150,7 @@
             </PvColumn>
           </PvDataTable>
         </div>
-      </PvOverlayPanel>
+      </PvPopover>
     </div>
     <div class="mr-0 pl-0 flex flex-column">
       <EditVariantDialog
@@ -260,7 +260,7 @@ import PvButton from 'primevue/button';
 import PvColumn from 'primevue/column';
 import PvDataTable from 'primevue/datatable';
 import PvDialog from 'primevue/dialog';
-import PvOverlayPanel from 'primevue/overlaypanel';
+import PvPopover from 'primevue/popover';
 import PvTag from 'primevue/tag';
 import EditVariantDialog from '@/components/EditVariantDialog.vue';
 

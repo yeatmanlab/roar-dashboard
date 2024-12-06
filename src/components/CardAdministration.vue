@@ -47,7 +47,7 @@
         </template>
 
         <div v-if="showParams">
-          <PvOverlayPanel v-for="assessmentId in assessmentIds" :key="assessmentId" :ref="paramPanelRefs[assessmentId]">
+          <PvPopover v-for="assessmentId in assessmentIds" :key="assessmentId" :ref="paramPanelRefs[assessmentId]">
             <div v-if="getAssessment(assessmentId).variantId">
               Variant ID: {{ getAssessment(assessmentId).variantId }}
             </div>
@@ -63,7 +63,7 @@
               <PvColumn field="key" header="Parameter" style="width: 50%"></PvColumn>
               <PvColumn field="value" header="Value" style="width: 50%"></PvColumn>
             </PvDataTable>
-          </PvOverlayPanel>
+          </PvPopover>
         </div>
       </div>
 
@@ -165,7 +165,7 @@ import PvColumn from 'primevue/column';
 import PvChart from 'primevue/chart';
 import PvConfirmPopup from 'primevue/confirmpopup';
 import PvDataTable from 'primevue/datatable';
-import PvOverlayPanel from 'primevue/overlaypanel';
+import PvPopover from 'primevue/popover';
 import PvSpeedDial from 'primevue/speeddial';
 import PvTreeTable from 'primevue/treetable';
 import { batchGetDocs } from '@/helpers/query/utils';
