@@ -342,8 +342,12 @@ async function routeExternalTask(game) {
     await authStore.completeAssessment(selectedAdmin.value.id, game.taskId);
   } else {
     url += `&participant=${props.userData.assessmentPid}${
-      props.userData.schools.length ? '&schoolId=' + props.userData.schools.current.join('“%2C”') : ''
-    }${props.userData.classes.current.length ? '&classId=' + props.userData.classes.current.join('“%2C”') : ''}`;
+      (props?.userData?.schools?.current ?? []).length
+        ? '&schoolId=' + props.userData.schools.current.join('“%2C”')
+        : ''
+    }${
+      (props.userData?.classes?.current ?? []).length ? '&classId=' + props.userData.classes.current.join('“%2C”') : ''
+    }`;
 
     await authStore.completeAssessment(selectedAdmin.value.id, game.taskId);
     window.location.href = url;
