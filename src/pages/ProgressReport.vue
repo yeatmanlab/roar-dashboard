@@ -632,7 +632,6 @@ const filteredTableData = ref(computedProgressData.value);
 watch(computedProgressData, (newValue) => {
   // Update filteredTableData when computedProgressData changes
   filteredTableData.value = newValue;
-  console.log('filteredTableData: ', filteredTableData.value);
 });
 
 watch([filterSchools, filterGrades], ([newSchools, newGrades]) => {
