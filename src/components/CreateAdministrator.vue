@@ -153,21 +153,22 @@ const submit = async () => {
   };
 
   const adminOrgs = {
-    districts: selectedOrgs.value.districts.map((o) => o.id),
-    schools: selectedOrgs.value.schools.map((o) => o.id),
-    classes: selectedOrgs.value.classes.map((o) => o.id),
-    groups: selectedOrgs.value.groups.map((o) => o.id),
-    families: selectedOrgs.value.families.map((o) => o.id),
+    districts: selectedOrgs.value?.districts?.map((o) => o.id) ?? [],
+    schools: selectedOrgs.value?.schools?.map((o) => o.id) ?? [],
+    classes: selectedOrgs.value?.classes?.map((o) => o.id) ?? [],
+    groups: selectedOrgs.value?.groups?.map((o) => o.id) ?? [],
+    families: selectedOrgs.value?.families?.map((o) => o.id) ?? [],
   };
 
   // Build orgs from admin orgs. Orgs should contain all of the admin orgs. And
   // also their parents.
   const orgs = _cloneDeep(adminOrgs);
-  for (const school of selectedOrgs.value.schools) {
+
+  for (const school of selectedOrgs.value?.schools ?? []) {
     orgs.districts = _union(orgs.districts, [school.districtId]);
   }
 
-  for (const _class of selectedOrgs.value.classes) {
+  for (const _class of selectedOrgs.value?.classes ?? []) {
     orgs.districts = _union(orgs.districts, [_class.districtId]);
     orgs.schools = _union(orgs.schools, [_class.schoolId]);
   }

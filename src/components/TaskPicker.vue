@@ -154,7 +154,7 @@ import PvInputText from 'primevue/inputtext';
 import PvPanel from 'primevue/panel';
 import PvScrollPanel from 'primevue/scrollpanel';
 import VariantCard from './VariantCard.vue';
-
+import _cloneDeep from 'lodash/cloneDeep';
 const toast = useToast();
 
 const props = defineProps({
@@ -212,6 +212,7 @@ const updateVariant = (variantId, conditions) => {
       return variant;
     }
   });
+
   selectedVariants.value = updatedVariants;
   return;
 };
@@ -336,7 +337,9 @@ const selectCard = (variant) => {
         life: 3000,
       });
     }
-    selectedVariants.value.push(variant);
+
+    const defaultedVariant = addChildDefaultCondition(variant);
+    selectedVariants.value.push(defaultedVariant);
   } else {
     debounceToast();
   }
@@ -355,6 +358,19 @@ const moveCardDown = (variant) => {
   selectedVariants.value.splice(index, 1);
   selectedVariants.value.splice(index + 1, 0, item);
 };
+
+// Default all tasks to child only, unless it is the survey (for LEVANTE).
+function addChildDefaultCondition(variant) {
+  if (variant.task.id === 'survey') return variant;
+
+  const defaultedVariant = _cloneDeep(variant);
+  defaultedVariant.variant['conditions'] = {};
+  defaultedVariant.variant['conditions']['assigned'] = {
+    op: 'AND',
+    conditions: [{ field: 'userType', op: 'EQUAL', value: 'student' }],
+  };
+  return defaultedVariant;
+}
 </script>
 <style lang="scss">
 .task-tab {
