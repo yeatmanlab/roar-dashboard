@@ -57,6 +57,7 @@ jobs:
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_GSE_ROAR_ADMIN }}
           projectId: gse-roar-admin
           target: staging
+          channelId: ''
 
       - name: Set Output Deploy URL
         id: set-deploy-url
