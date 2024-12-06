@@ -89,6 +89,7 @@
     "zipson": "^0.2.12"
   },
   "devDependencies": {
+    "@faker-js/faker": "^9.2.0",
     "@pinia/testing": "^0.1.5",
     "@testing-library/vue": "^8.1.0",
     "@types/lodash": "^4.14.196",
