@@ -40,7 +40,7 @@
 
         <div v-if="assignmentData?.length">
           <div
-            v-if="adminStats != null"
+            v-if="!isEmpty(adminStatsWithSurvey)"
             class="flex flex-column align-items-around flex-wrap gap-3 rounded bg-gray-100 p-5"
           >
             <div class="flex flex-column gap-1 mx-5 mb-5">
@@ -61,8 +61,8 @@
                 </div>
                 <PvChart
                   type="bar"
-                  :data="setBarChartData(adminStats[taskId])"
-                  :options="setBarChartOptions(adminStats[taskId])"
+                  :data="setBarChartData(adminStatsWithSurvey[taskId])"
+                  :options="setBarChartOptions(adminStatsWithSurvey[taskId])"
                   class="h-2rem lg:w-full"
                 />
               </div>
@@ -76,8 +76,8 @@
                 </div>
                 <PvChart
                   type="bar"
-                  :data="setBarChartData(adminStats.assignment)"
-                  :options="setBarChartOptions(adminStats.assignment)"
+                  :data="setBarChartData(adminStatsWithSurvey.assignment)"
+                  :options="setBarChartOptions(adminStatsWithSurvey.assignment)"
                   class="h-3rem lg:w-full"
                 />
               </div>
@@ -193,7 +193,7 @@ import { isLevante } from '@/helpers';
 import { APP_ROUTES } from '@/constants/routes';
 import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
 import RoarDataTable from '@/components/RoarDataTable.vue';
-
+import { isEmpty } from 'lodash';
 const router = useRouter();
 const authStore = useAuthStore();
 
@@ -296,9 +296,6 @@ const {
   enabled: initialized,
 });
 
-watch(assignmentData, (newVal) => {
-  console.log('assignmentData: ', newVal);
-});
 
 const schoolNameDictionary = computed(() => {
   if (districtSchoolsData.value) {
@@ -311,21 +308,87 @@ const schoolNameDictionary = computed(() => {
   }
 });
 
+// ------------------------------------------------------------------- Move this to the server, temporarily on client for quicker fix
+const surveyStats = ref({
+  assigned: 0,
+  started: 0,
+  completed: 0
+});
+
+const adminStatsWithSurvey = ref({});
+
+// to incorporate survey stats
+watch([adminStats, surveyStats], ([newAdminStats, newSurveyStats]) => {
+  if (newAdminStats && Object.keys(newSurveyStats).length) {
+    // Create a new object to avoid mutating the original
+    const updatedStats = { ...newAdminStats };
+    
+    // Add survey stats if they exist
+    if (surveyStats.value.assigned > 0) {
+      updatedStats.survey = {
+        assigned: newSurveyStats.assigned,
+        started: newSurveyStats.started,
+        completed: newSurveyStats.completed
+      };
+
+      updatedStats.assignment = {
+        assigned: updatedStats.assignment.assigned || 0,
+        started: updatedStats.assignment.started || 0,
+        completed: updatedStats.assignment.completed || 0
+      };
+ 
+      // Update the values instead of reassigning
+      updatedStats.assignment.started += newSurveyStats.started;
+      updatedStats.assignment.completed += newSurveyStats.completed;
+    }
+
+    // Update adminStats with the new data
+    adminStatsWithSurvey.value = updatedStats;
+  }
+}, { deep: true });
+
+// Move survey stats counting logic out of computed property
+watch(assignmentData, (newAssignmentData) => {
+  if (!newAssignmentData) return;
+  
+  // Reset survey stats
+  surveyStats.value = {
+    assigned: 0,
+    started: 0,
+    completed: 0
+  };
+
+  // Count survey stats
+  newAssignmentData.forEach(({ assignment, survey }) => {
+    let surveyAssigned = false;
+    for (const task of assignment.assessments) {
+      if (task.taskId === 'survey') {
+        surveyAssigned = true;
+      }
+    }
+
+    if (surveyAssigned) {
+      if (survey?.progress) {
+      surveyStats.value[survey.progress]++;
+      }
+    }
+  });
+});
+
+// -------------------------------------------------------------------
+
 const computedProgressData = computed(() => {
   if (!assignmentData.value) return [];
   // assignmentTableData is an array of objects, each representing a row in the table
   const assignmentTableDataAcc = [];
 
   for (const { assignment, user, survey } of assignmentData.value) {
-    // for each row, compute: username, firstName, lastName, assessmentPID, grade, school, all the scores, and routeParams for report link
-    const grade = user.studentData?.grade;
     // compute schoolName
     let schoolName = '';
     const schoolId = user?.schools?.current[0];
     if (schoolId) {
       schoolName = schoolNameDictionary.value[schoolId];
     }
-
 
     const currRow = {
       user: {
@@ -335,7 +398,7 @@ const computedProgressData = computed(() => {
         userId: user.userId,
         firstName: user?.name?.first || '',
         lastName: user?.name?.last || '',
-        grade: grade,
+        grade: user.studentData?.grade,
         assessmentPid: user.assessmentPid,
         schoolName: schoolName,
       },
@@ -344,15 +407,10 @@ const computedProgressData = computed(() => {
 
     const currRowProgress = {};
 
-
-    // console.log('assignment: ', assignment);
     for (const assessment of assignment.assessments) {
       // General Logic to grab support level, scores, etc
       let progressFilterTags = '';
       const taskId = assessment.taskId;
-
-      // console.log('assessment: ', assessment);
-      // console.log('survey data: ', survey);
       
       if (taskId == 'survey') {
         if (survey?.progress === 'completed') {
@@ -406,11 +464,11 @@ const computedProgressData = computed(() => {
         }
       }
       currRowProgress[taskId].tags = progressFilterTags;
-
-      // update progress for current row with computed object
-      currRow.progress = currRowProgress;
-      // push currRow to assignmentTableDataAcc
     }
+
+    // update progress for current row with computed object
+    currRow.progress = currRowProgress;
+    // push currRow to assignmentTableDataAcc
     assignmentTableDataAcc.push(currRow);
   }
 
