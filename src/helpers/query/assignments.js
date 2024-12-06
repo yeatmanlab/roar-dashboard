@@ -9,9 +9,9 @@ import _uniq from 'lodash/uniq';
 import _without from 'lodash/without';
 import _isEmpty from 'lodash/isEmpty';
 import { convertValues, getAxiosInstance, getProjectId, mapFields } from './utils';
-import { pluralizeFirestoreCollection } from '@/helpers';
+import { pluralizeFirestoreCollection, isLevante } from '@/helpers';
 
-const userSelectFields = ['name', 'assessmentPid', 'username', 'studentData', 'schools', 'classes'];
+const userSelectFields = ['name', 'assessmentPid', 'username', 'studentData', 'schools', 'classes', 'userType'];
 
 const assignmentSelectFields = [
   'assessments',
@@ -859,6 +859,7 @@ export const assignmentPageFetcher = async (
       grades: gradeFilter,
       orderBy: toRaw(orderBy),
     });
+
     console.log(`Fetching page ${page.value} for ${adminId}`);
     return adminAxiosInstance.post(':runQuery', requestBody).then(async ({ data }) => {
       const assignmentData = mapFields(data, true);
@@ -902,14 +903,82 @@ export const assignmentPageFetcher = async (
           );
         });
 
-      // But the order of batchGet is not guaranteed, so we need to match the user
-      // docs back with their assignments.
-      const scoresObj = assignmentData.map((assignment) => {
+      let batchSurveyDocs = [];
+      if (isLevante) {
+        console.log('adminId: ', adminId);
+        // Batch get survey response docs
+        batchSurveyDocs = await Promise.all(
+          userDocPaths.map(async (userDocPath) => {
+            const userId = userDocPath.split('/users/')[1];
+            const surveyQuery = {
+              structuredQuery: {
+                from: [{ 
+                  collectionId: 'surveyResponses',
+                }],
+                where: {
+                  fieldFilter: {
+                    field: { fieldPath: 'administrationId' },
+                    op: 'EQUAL',
+                    value: { stringValue: adminId }
+                  }
+                },
+              }
+            };
+
+            try {
+              const { data } = await adminAxiosInstance.post(`users/${userId}:runQuery`, surveyQuery);
+
+              const validResponses = data
+                .filter(doc => doc.document)
+                .map(doc => ({
+                  name: doc.document.name,
+                  ..._mapValues(doc.document.fields, (value) => convertValues(value))
+                }));
+      
+              return validResponses.length > 0 ? validResponses[0] : null;
+            } catch (error) {
+              console.error('Error fetching survey response: ', error);
+              return null;
+            }
+          })
+        );
+      }
+
+      // Merge assignments, users, and survey data
+      const scoresObj = assignmentData.map((assignment, index) => {
         const user = batchUserDocs.find((userDoc) => userDoc.name.includes(assignment.parentDoc));
+        const surveyResponse = isLevante ? batchSurveyDocs[index] : null;
+
+        let progress = 'assigned';
+        if (surveyResponse) {
+          // Check completion based on user type
+          if (user.data.userType === 'student') {
+            progress = surveyResponse.general?.isComplete ? 'completed' : 'started';
+          } else if (['parent', 'teacher'].includes(user.data.userType)) {
+            // For parent/teacher, check both general and specific parts
+            const specificItems = surveyResponse?.specific || [];
+            const generalComplete = surveyResponse.general?.isComplete || false;
+            
+            if (specificItems.length > 0) {
+              const allSpecificComplete = specificItems.every(item => item.isComplete === true);
+              // Both general and all specific items must be complete
+              progress = (generalComplete && allSpecificComplete) ? 'completed' : 'started';
+            } else {
+              progress = 'started';
+            }
+          }
+        }
+        
         return {
           assignment,
           user: user.data,
           roarUid: user.name.split('/users/')[1],
+          ...(isLevante && {
+            survey: {
+              progress,
+              ...surveyResponse
+            }
+          })
         };
       });
 
