@@ -134,7 +134,7 @@
         </section>
         <ConsentModal
           v-if="showConsent"
-          :consent-text="consentText"
+          :consent-text="consent?.text"
           consent-type="consent"
           :on-confirm="handleConsentAccept"
         />
@@ -196,6 +196,7 @@ const closeErrorDialog = () => {
 
 defineProps({
   isRegistering: { type: Boolean, default: true },
+  consent: { type: Object, default: {} },
 });
 
 const emit = defineEmits(['submit']);
@@ -270,15 +271,13 @@ function handleCaptcha() {
 
 const showConsent = ref(false);
 const consentText = ref('');
+const consentVersion = ref('');
 
 async function handleConsentAccept() {
   state.accept = true;
 }
 
 async function getConsent() {
-  const consentDoc = await authStore.getLegalDoc('consent-behavioral-eye-tracking');
-  consentText.value = consentDoc.text;
-  // consentVersion = consentDoc.version;
   showConsent.value = true;
   handleCheckCaptcha();
 }
