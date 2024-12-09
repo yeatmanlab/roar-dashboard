@@ -6,21 +6,21 @@
 
       <PvDivider />
 
-      <div v-if="!isFileUploaded">
+      <div v-if="!isFileUploaded" class="text-gray-500 mb-2 surface-100 border-round p-2">
         <PvFileUpload
           v-if="!isFileUploaded"
           name="massUploader[]"
           custom-upload
           accept=".csv"
-          class="bg-primary text-white border-none border-round w-1 h-2rem m-0 pl-2 hover:bg-red-900"
+          class="bg-primary mb-2 p-3 w-2 text-white border-none border-round h-3rem m-0 hover:bg-red-900"
           auto
           :show-upload-button="false"
           :show-cancel-button="false"
           @uploader="onFileUpload($event)"
         >
           <template #empty>
-            <div class="extra-height">
-              <p>Drag and drop files here <b>or</b> click choose to upload.</p>
+            <div class="flex justify-center items-center text-gray-500">
+              <p>Click choose or drag and drop files to here to upload.</p>
             </div>
           </template>
         </PvFileUpload>
@@ -48,13 +48,20 @@
         </PvDataTable>
 
         <div class="submit-container">
-          <PvButton v-if="registeredUsers.length" label="Download Registered Users" @click="downloadCSV" />
+          <PvButton
+            v-if="registeredUsers.length"
+            label="Download Users"
+            @click="downloadCSV"
+            class="bg-primary mb-2 p-3 w-2 text-white border-none border-round h-3rem m-0 hover:bg-red-900"
+            icon="pi pi-download"
+          />
           <PvButton
             v-else
             :label="activeSubmit ? 'Registering Users' : 'Start Registration'"
             :icon="activeSubmit ? 'pi pi-spin pi-spinner' : ''"
             :disabled="activeSubmit"
             @click="submitUsers"
+            class="bg-primary mb-2 p-3 w-2 text-white border-none border-round h-3rem m-0 hover:bg-red-900"
           />
         </div>
       </div>
@@ -94,16 +101,17 @@ import _cloneDeep from 'lodash/cloneDeep';
 import _forEach from 'lodash/forEach';
 import _isEmpty from 'lodash/isEmpty';
 import _startCase from 'lodash/startCase';
+import _chunk from 'lodash/chunk';
 import { useToast } from 'primevue/usetoast';
+import RegisterUsersInfo from '@/components/LEVANTE/RegisterUsersInfo.vue';
+import { useAuthStore } from '@/store/auth';
+import { pluralizeFirestoreCollection } from '@/helpers';
+import { fetchOrgByName } from '@/helpers/query/orgs';
 import PvButton from 'primevue/button';
 import PvColumn from 'primevue/column';
 import PvDataTable from 'primevue/datatable';
 import PvDivider from 'primevue/divider';
 import PvFileUpload from 'primevue/fileupload';
-import RegisterUsersInfo from '@/components/LEVANTE/RegisterUsersInfo.vue';
-import { useAuthStore } from '@/store/auth';
-import { pluralizeFirestoreCollection } from '@/helpers';
-import { fetchOrgByName } from '@/helpers/query/orgs';
 
 const authStore = useAuthStore();
 const toast = useToast();
@@ -114,32 +122,16 @@ const registeredUsers = ref([]);
 // Primary Table & Dropdown refs
 const dataTable = ref();
 
-const requiredFields = ['id', 'userType', 'month', 'year', 'group'];
+// One or the other of the following columns is required:
+// 'group', | 'district', 'school', 'class'
+
+// Month and Year are required only for 'child' or 'student' users
+const requiredColumns = ['userType', 'month', 'year'];
 const allFields = [
-  {
-    field: 'id',
-    header: 'ID',
-    dataType: 'number',
-  },
   {
     field: 'userType',
     header: 'User Type',
     dataType: 'string',
-  },
-  {
-    field: 'parentId',
-    header: 'Parent ID',
-    dataType: 'number',
-  },
-  {
-    field: 'childId',
-    header: 'Child ID',
-    dataType: 'number',
-  },
-  {
-    field: 'teacherId',
-    header: 'Teacher ID',
-    dataType: 'number',
   },
   {
     field: 'month',
@@ -154,6 +146,21 @@ const allFields = [
   {
     field: 'group',
     header: 'Group',
+    dataType: 'string',
+  },
+  {
+    field: 'district',
+    header: 'District',
+    dataType: 'string',
+  },
+  {
+    field: 'school',
+    header: 'School',
+    dataType: 'string',
+  },
+  {
+    field: 'class',
+    header: 'Class',
     dataType: 'string',
   },
 ];
@@ -195,45 +202,62 @@ const onFileUpload = async (event) => {
   rawUserFile.value = await csvFileToJson(event.files[0]);
 
   // Check uploaded CSV has required columns
-  // eslint-disable-next-line no-prototype-builtins
-  const missingColumns = requiredFields.filter((col) => !rawUserFile.value[0].hasOwnProperty(col));
+  const missingColumns = requiredColumns.filter((col) => !(col in toRaw(rawUserFile.value[0])));
+
+  const columns = toRaw(rawUserFile.value[0]);
+  if (!('group' in columns) && !('district' in columns && 'school' in columns)) {
+    missingColumns.push('group OR district and school');
+  }
+
   if (missingColumns.length > 0) {
     toast.add({
       severity: 'error',
-      summary: 'Error: Missing Columns: ' + missingColumns.join(', '),
+      summary: 'ERROR: Missing Columns: ' + missingColumns.join(', '),
       life: 5000,
     });
     errorMissingColumns.value = true;
     return;
   }
 
-  const careGiverRequiredFields = ['id', 'userType', 'group'];
+  const childRequiredInfo = ['userType', 'month', 'year'];
+  const careGiverRequiredInfo = ['userType'];
 
-  // check each user's required fields are not empty
   rawUserFile.value.forEach((user) => {
-    // If user is not a child we dont need to check for month and year
-    if (user.userType?.toLowerCase() === 'parent' || user.userType?.toLowerCase() === 'teacher') {
-      const missingFields = careGiverRequiredFields.filter((field) => !user[field]);
-      if (missingFields.length > 0) {
-        addErrorUser(user, `Missing Field(s): ${missingFields.join(', ')}`);
+    const missingFields = [];
+
+    if (user.userType.toLowerCase() === 'child') {
+      childRequiredInfo.forEach((field) => {
+        if (!user[field]) {
+          missingFields.push(field);
+        }
+      });
+    } else if (user.userType.toLowerCase() === 'parent' || user.userType.toLowerCase() === 'teacher') {
+      careGiverRequiredInfo.forEach((field) => {
+        if (!user[field]) {
+          missingFields.push(field);
+        }
+      });
+    }
+    // Check for group or district and school
+    if (!user.group) {
+      if (!user.district || !user.school) {
+        missingFields.push('group OR district and school');
       }
-    } else {
-      const missingFields = requiredFields.filter((field) => !user[field]);
-      if (missingFields.length > 0) {
-        addErrorUser(user, `Missing Field(s): ${missingFields.join(', ')}`);
-      }
+    }
+
+    // Add error if any required fields are missing
+    if (missingFields.length > 0) {
+      addErrorUser(user, `Missing Field(s): ${missingFields.join(', ')}`);
     }
   });
 
   if (errorUsers.value.length) {
     toast.add({
       severity: 'error',
-      summary: 'Error: Missing Fields. See below for details.',
+      summary: 'ERROR: Missing Fields. See below for details.',
       life: 5000,
     });
   }
-
-  // TODO: Check that links are correct if parent / teacher users exist
 
   if (!missingColumns.length && !errorUsers.value.length) {
     isFileUploaded.value = true;
@@ -270,62 +294,147 @@ async function submitUsers() {
 
   // Group needs to be an array of strings
 
-  const usersToBeRegistered = _cloneDeep(rawUserFile.value);
+  const usersToBeRegistered = _cloneDeep(toRaw(rawUserFile.value));
 
+  // Check orgs exist
   for (const user of usersToBeRegistered) {
-    const groupNames = user.group.split(',');
+    const { district, school, class: _class, group: groups } = user;
+    console.log('user: ', user);
 
-    for (const groupName of groupNames) {
-      const groupInfo = await getOrgId(
-        pluralizeFirestoreCollection('group'),
-        groupName,
-        ref(undefined),
-        ref(undefined),
-      );
-      // TODO: Check this logic
-      if (_isEmpty(groupInfo)) {
-        addErrorUser(user, `Error: Group '${groupName}' does not exist`);
-      } else {
-        user.group = groupInfo.map((group) => group.id);
+    const orgNameMap = {
+      district: district ?? '',
+      school: school ?? '',
+      class: _class ?? '',
+      group: groups?.split(',') ?? [],
+    };
+
+    console.log('orgNameMap: ', orgNameMap);
+
+    // console.log('orgNameMap', orgNameMap);
+
+    let orgInfo = {
+      district: '',
+      school: '',
+      class: '',
+      group: [],
+    };
+
+    // If orgType is a given column, check if the name is
+    //   associated with a valid id. If so, add the id to
+    //   the sendObject. If not, reject user
+    for (const [orgType, orgName] of Object.entries(orgNameMap)) {
+      if (orgName) {
+        if (orgType === 'school') {
+          const districtId = await getOrgId('districts', district);
+          console.log('districtId: ', districtId);
+          const schoolId = await getOrgId(
+            pluralizeFirestoreCollection(orgType),
+            orgName,
+            ref(districtId),
+            ref(undefined),
+          );
+          console.log('schoolId: ', orgIds);
+          // Need to Raw it because a large amount of users causes this to become a proxy object
+          orgInfo.school = schoolId;
+        } else if (orgType === 'class') {
+          const districtId = await getOrgId('districts', district);
+          const schoolId = await getOrgId('schools', school);
+          const classId = await getOrgId(
+            pluralizeFirestoreCollection(orgType),
+            orgName,
+            ref(districtId),
+            ref(schoolId),
+          );
+          console.log('classId: ', classId);
+          orgInfo.class = classId;
+        } else if (orgType === 'group') {
+          for (const group of orgNameMap.group) {
+            console.log('Fetching orgId for', group);
+            const groupId = await getOrgId(
+              pluralizeFirestoreCollection(orgType),
+              group,
+              ref(undefined),
+              ref(undefined),
+            );
+            console.log('OrgIds fetched:', groupId);
+            orgInfo.group.push(groupId);
+          }
+        } else {
+          console.log('Fetching orgId for', orgType, orgName);
+          const districtId = await getOrgId(
+            pluralizeFirestoreCollection(orgType),
+            orgName,
+            ref(undefined),
+            ref(undefined),
+          );
+          console.log('District Id: ', districtId);
+          orgInfo.district = districtId;
+        }
+
+        if (!_isEmpty(orgInfo)) {
+          user.orgIds = orgInfo;
+        } else {
+          addErrorUser(user, `Error: ${orgType} '${orgName}' is invalid`);
+          if (processedUsers >= totalUsers) {
+            activeSubmit.value = false;
+          }
+          return;
+        }
       }
     }
+
+    console.log('org ids:', user.orgIds);
+    console.log('user after orgIds: ', user);
   }
 
-  const submitUsersList = [...toRaw(usersToBeRegistered)];
+  // TODO: Figure out deadline-exceeded error with 700+ users. (Registration works fine, creates all documents but the client recieves the error)
+  // Spit users into chunks of 1000
+  const chunkedUsersToBeRegistered = _chunk(usersToBeRegistered, 700);
+
+  console.log('chunkedUsersToBeRegistered', chunkedUsersToBeRegistered);
 
   // Begin submit process
   // Org must be created before users can be created
+  let processedUserCount = 0;
+  for (const users of chunkedUsersToBeRegistered) {
+    try {
+      const res = await authStore.createUsers(users);
+      const currentRegisteredUsers = res.data.data;
 
-  try {
-    const res = await authStore.createLevanteUsers(submitUsersList);
-    toast.add({
-      severity: 'success',
-      summary: 'User Creation Success',
-      life: 9000,
-    });
+      // Update only the newly registered users
+      currentRegisteredUsers.forEach((registeredUser, index) => {
+        const rawUserIndex = processedUserCount + index;
+        if (rawUserIndex < rawUserFile.value.length) {
+          rawUserFile.value[rawUserIndex].email = registeredUser.email;
+          rawUserFile.value[rawUserIndex].password = registeredUser.password;
+          rawUserFile.value[rawUserIndex].uid = registeredUser.uid;
+        }
+      });
 
-    activeSubmit.value = false;
-    registeredUsers.value = res.data.data;
+      registeredUsers.value.push(...currentRegisteredUsers);
 
-    // add the account info to the existing csv data
-    rawUserFile.value.forEach((user, index) => {
-      user.email = registeredUsers.value[index].user.email;
-      user.password = registeredUsers.value[index].user.password;
-      user.uid = registeredUsers.value[index].uid;
-    });
+      // Update the count of processed users
+      processedUserCount += currentRegisteredUsers.length;
+    } catch (error) {
+      // TODO: Show users that failed to register
+      console.error(error);
 
-    convertUsersToCSV();
-  } catch (error) {
-    console.error(error);
-
-    toast.add({
-      severity: 'error',
-      summary: 'Error registering users: ' + error.message,
-      life: 9000,
-    });
-
-    activeSubmit.value = false;
+      toast.add({
+        severity: 'error',
+        summary: 'Error registering users: ' + error.message,
+        life: 9000,
+      });
+    }
   }
+
+  activeSubmit.value = false;
+  toast.add({
+    severity: 'success',
+    summary: 'User Creation Success',
+    life: 9000,
+  });
+
+  convertUsersToCSV();
 }
 
 const csvBlob = ref(null);
@@ -397,18 +506,39 @@ function addErrorUser(user, error) {
 }
 
 // TODO: Refactor this to be a single call
-
-const orgIds = ref({
+const orgIds = {
   districts: {},
   schools: {},
   classes: {},
   groups: {},
-});
+};
 
+/**
+ * Retrieves the ID of an organization based on its type and name.
+ * If the ID is not already cached, it fetches it from the server.
+ *
+ * @async
+ * @function getOrgId
+ * @param {string} orgType - The type of organization (e.g., 'districts', 'schools', 'classes', 'groups').
+ * @param {string} orgName - The name of the organization.
+ * @param {Object|undefined} parentDistrict - The parent district reference, if applicable.
+ * @param {Object|undefined} parentSchool - The parent school reference, if applicable.
+ * @returns {Promise<String>} A promise that resolves to a string representing the organization ID.
+ * @throws {Error} Throws an error if no organizations are found for the given type and name.
+ *
+ * @example
+ * // Get the ID for a school
+ * const schoolInfo = await getOrgId('schools', 'High School A', districtRef, undefined);
+ *
+ * @description
+ * This function first checks if the organization ID is already cached in the `orgIds.value` object.
+ * If not, it calls the `fetchOrgByName` function to retrieve the organization details from the server.
+ * The fetched data is then cached for future use.
+ * If no organizations are found, it throws an error.
+ */
 const getOrgId = async (orgType, orgName, parentDistrict, parentSchool) => {
-  if (orgIds.value[orgType][orgName]) return orgIds.value[orgType][orgName];
+  if (orgIds[orgType][orgName]) return orgIds[orgType][orgName];
 
-  // Currently we don't supply selectedDistrict or selectedSchool
   // Array of objects. Ex: [{abbreviation: 'LVT', id: 'lut54353jkler'}]
   const orgs = await fetchOrgByName(orgType, orgName, parentDistrict, parentSchool);
 
@@ -416,11 +546,9 @@ const getOrgId = async (orgType, orgName, parentDistrict, parentSchool) => {
     throw new Error(`No organizations found for ${orgType} '${orgName}'`);
   }
 
-  orgIds.value[orgType][orgName] = orgs;
+  orgIds[orgType][orgName] = orgs[0].id;
 
-  console.log('orgs: ', orgs);
-
-  return orgs;
+  return orgs[0].id;
 };
 </script>
 

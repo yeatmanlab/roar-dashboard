@@ -133,7 +133,7 @@ Cypress.Commands.add('agreeToConsent', () => {
             text.toLowerCase().includes('tos')
           ) {
             cy.log('Consent required, agreeing...');
-            cy.get('button').contains('Continue').click();
+            cy.get('button').contains('Accept').click();
           }
         });
     } else {
