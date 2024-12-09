@@ -11,7 +11,6 @@
     <meta name="twitter:title" content="ROAR Web Query" />
     <meta name="twitter:description" content="A web-based tool to query ROAR assessment data!" />
   </Head>
-
   <div>
     <PvToast />
     <NavBar v-if="!navbarBlacklist.includes($route.name) && isAuthStoreReady" />
@@ -39,8 +38,8 @@ const VueQueryDevtools = defineAsyncComponent(() =>
 import { useAuthStore } from '@/store/auth';
 import { fetchDocById } from '@/helpers/query/utils';
 import { i18n } from '@/translations/i18n';
+import { isLevante } from '@/helpers';
 
-const isLevante = import.meta.env.MODE === 'LEVANTE';
 const isAuthStoreReady = ref(false);
 const showDevtools = ref(false);
 
@@ -54,6 +53,7 @@ const pageTitle = computed(() => {
 });
 
 const loadSessionTimeoutHandler = computed(() => isAuthStoreReady.value && authStore.isAuthenticated);
+const project = computed(() => (isLevante ? 'levante' : 'roar'));
 
 useRecaptchaProvider();
 

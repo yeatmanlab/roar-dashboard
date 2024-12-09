@@ -1,215 +1,93 @@
 <script setup>
 import 'survey-core/defaultV2.min.css';
-import { Model } from 'survey-core';
-import { onMounted, ref, toRaw, watch } from 'vue';
-import axios from 'axios';
 import { useAuthStore } from '@/store/auth';
-import { storeToRefs } from 'pinia';
 import AppSpinner from '@/components/AppSpinner.vue';
-import { useRouter } from 'vue-router';
-import { useGameStore } from '@/store/game';
-import { Converter } from 'showdown';
+import { useSurveyStore } from '@/store/survey';
 import { useI18n } from 'vue-i18n';
-import { BufferLoader, AudioContext } from '@/helpers/audio';
-import { useToast } from 'primevue/usetoast';
+import { AudioContext } from '@/helpers/audio';
+import { getParsedLocale } from '@/helpers/survey';
+import { onBeforeRouteLeave } from 'vue-router';
+import { isLevante } from '@/helpers';
 import PvButton from 'primevue/button';
 
-const fetchAudioLinks = async (surveyType) => {
-  const response = await axios.get('https://storage.googleapis.com/storage/v1/b/road-dashboard/o/');
-  const files = response.data || { items: [] };
-  const audioLinkMap = {};
-  files.items.forEach((item) => {
-    if (item.contentType === 'audio/mpeg' && item.name.startsWith(surveyType)) {
-      const splitParts = item.name.split('/');
-      const fileLocale = splitParts[1];
-      const fileName = splitParts.at(-1).split('.')[0];
-      if (!audioLinkMap[fileLocale]) {
-        audioLinkMap[fileLocale] = {};
-      }
-      audioLinkMap[fileLocale][fileName] = `https://storage.googleapis.com/road-dashboard/${item.name}`;
-    }
-  });
-  return audioLinkMap;
-};
-
 const authStore = useAuthStore();
-const { roarfirekit } = storeToRefs(authStore);
-const fetchedSurvey = ref(null);
-const survey = ref(null);
-const isSavingResponses = ref(false);
-const gameStore = useGameStore();
-const converter = new Converter();
+const surveyStore = useSurveyStore();
 const { locale } = useI18n();
-const audioPlayerBuffers = ref({});
-const audioLoading = ref(false);
-const router = useRouter();
 const context = new AudioContext();
-const audioLinks = ref({});
-const toast = useToast();
 
-let currentAudioSource = null;
+onBeforeRouteLeave((to, from) => {
+  const surveyStore = useSurveyStore();
 
-function getParsedLocale() {
-  return (locale.value || '').split('-')?.[0] || 'en';
-}
-
-function finishedLoading(bufferList, parsedLocale) {
-  audioPlayerBuffers.value[parsedLocale] = bufferList;
-  audioLoading.value = false;
-}
-
-// Function to fetch buffer or return from the cache
-const fetchBuffer = (parsedLocale) => {
-  // buffer already exists for the given local
-  if (audioPlayerBuffers.value[parsedLocale]) {
-    return;
+  if (isLevante && surveyStore.currentSurveyAudioSource) {
+    surveyStore.currentSurveyAudioSource.stop();
   }
-  audioLoading.value = true;
-  const bufferLoader = new BufferLoader(context, audioLinks.value[parsedLocale], (bufferList) =>
-    finishedLoading(bufferList, parsedLocale),
-  );
-
-  bufferLoader.load();
-};
-
-// Fetch the survey on component mount
-onMounted(async () => {
-  await getSurvey();
 });
-
-const showAndPlaceAudioButton = (playAudioButton, el) => {
-  if (playAudioButton) {
-    playAudioButton.classList.add('play-button-visible');
-    playAudioButton.style.display = 'flex';
-    el.appendChild(playAudioButton);
-  }
-};
-
-async function getSurvey() {
-  let userType = toRaw(authStore.userData.userType.toLowerCase());
-  if (userType === 'student') userType = 'child';
-
-  try {
-    const response = await axios.get(`https://storage.googleapis.com/road-dashboard/${userType}_survey.json`);
-    const audioLinkMap = await fetchAudioLinks('child-survey');
-    audioLinks.value = audioLinkMap;
-    fetchedSurvey.value = response.data;
-    // Create the survey model with the fetched data
-    const surveyInstance = new Model(fetchedSurvey.value);
-
-    surveyInstance.locale = locale.value;
-
-    fetchBuffer(getParsedLocale(locale.value));
-
-    survey.value = surveyInstance;
-    survey.value.onTextMarkdown.add(function (survey, options) {
-      // Convert Markdown to HTML
-      let str = converter.makeHtml(options.text);
-      // Remove root paragraphs <p></p>
-      str = str.substring(3);
-      str = str.substring(0, str.length - 4);
-      // Set HTML markup to render
-      options.html = str;
-    });
-
-    survey.value.onComplete.add(saveResults);
-    survey.value.onAfterRenderPage.add((__, { htmlElement }) => {
-      const questionElements = htmlElement.querySelectorAll('div[id^=sq_]');
-      if (currentAudioSource) {
-        currentAudioSource.stop();
-      }
-      questionElements.forEach((el) => {
-        const playAudioButton = document.getElementById('audio-button-' + el.dataset.name);
-        showAndPlaceAudioButton(playAudioButton, el);
-      });
-    });
-  } catch (error) {
-    console.error(error);
-  }
-}
-
-// Watch for changes in vue-i18n locale and update SurveyJS
-watch(
-  () => locale.value,
-  (newLocale) => {
-    survey.value.locale = newLocale;
-    // stop any current audio playing
-    if (currentAudioSource) {
-      currentAudioSource.stop();
-    }
-    fetchBuffer(getParsedLocale(newLocale));
-  },
-);
 
 async function playAudio(name) {
   const currentLocale = getParsedLocale(locale.value);
-  if (currentAudioSource) {
-    await currentAudioSource.stop();
+  if (surveyStore.currentSurveyAudioSource) {
+    await surveyStore.currentSurveyAudioSource.stop();
   }
   const source = context.createBufferSource();
-  currentAudioSource = source;
-  source.buffer = audioPlayerBuffers.value[currentLocale][name];
+  surveyStore.currentSurveyAudioSource = source;
+  source.buffer = surveyStore.surveyAudioPlayerBuffers[currentLocale][name];
   source.connect(context.destination);
   source.start(0);
 }
 
-async function saveResults(sender) {
-  console.log('sender.data: ', sender.data);
-
-  // If user did not fill out the survey, do not save the results
-  if (Object.keys(sender.data).length === 0) {
-    console.log('No data to save');
-    // update game store to let game tabs know
-    gameStore.requireHomeRefresh();
-    gameStore.setSurveyCompleted();
-    router.push({ name: 'Home' });
-    return;
-  }
-
-  // turn on loading state
-  isSavingResponses.value = true;
-
-  // call cloud function to save the survey results
-  // TODO: Use tanstack-query mutation for automaitic retries.
-  try {
-    const res = await roarfirekit.value.saveSurveyResponses(sender.data);
-    console.log('response: ', res);
-
-    // update game store to let game tabs know
-    gameStore.setSurveyCompleted();
-
-    // route back to game tabs (HomeParticipant)
-    gameStore.requireHomeRefresh();
-    router.push({ name: 'Home' });
-  } catch (error) {
-    isSavingResponses.value = false;
-    console.error(error);
-    toast.add({
-      severity: 'error',
-      summary: 'Error saving survey responses: ' + error.message,
-      life: 3000,
-    });
-  }
-}
+console.log('specificSurveyRelationData', surveyStore.specificSurveyRelationData);
+console.log('specificSurveyRelationIndex', surveyStore.specificSurveyRelationIndex);
+console.log('specific relation:', surveyStore.specificSurveyRelationData[surveyStore.specificSurveyRelationIndex]);
 </script>
 
 <template>
-  <div v-if="survey && !isSavingResponses && !audioLoading">
-    <!-- eslint-disable-next-line vue/no-undef-components -->
-    <SurveyComponent :model="survey" />
+  <div
+    v-if="
+      surveyStore.survey &&
+      !surveyStore.isSavingSurveyResponses &&
+      (!surveyStore.surveyAudioLoading || authStore.userData.userType === 'student')
+    "
+  >
+    <h1
+      v-if="authStore.userData.userType !== 'student' && surveyStore.isGeneralSurveyComplete"
+      class="text-2xl font-bold text-black text-center"
+    >
+      {{
+        authStore.userData.userType === 'parent'
+          ? `${$t('userSurvey.specificRelationDescriptionChildA')} ${
+              surveyStore.specificSurveyRelationData[surveyStore.specificSurveyRelationIndex].birthMonth
+            } ${$t('userSurvey.specificRelationDescriptionChildB')} ${
+              surveyStore.specificSurveyRelationData[surveyStore.specificSurveyRelationIndex].birthYear
+            }`
+          : `${$t('userSurvey.specificRelationDescriptionClass')} ${
+              surveyStore.specificSurveyRelationData[surveyStore.specificSurveyRelationIndex].name
+            }`
+      }}
+    </h1>
 
-    <div v-for="page in fetchedSurvey.pages" :key="page.name">
-      <div v-for="item in page.elements[0].elements || page.elements" :key="item.name">
-        <PvButton
-          :id="'audio-button-' + item.name"
-          icon="pi pi-volume-up text-white"
-          style="display: none"
-          @click="playAudio(item.name)"
-        />
+    <SurveyComponent :model="surveyStore.survey" />
+
+    <div v-if="authStore.userData.userType === 'student'">
+      <div v-for="page in surveyStore.survey.pages" :key="page.name">
+        <div v-for="item in page.elements[0].elements || page.elements" :key="item.name">
+          <PvButton
+            :id="'audio-button-' + item.name"
+            icon="pi pi-volume-up text-white"
+            style="display: none"
+            @click="playAudio(item.name)"
+          />
+        </div>
       </div>
     </div>
   </div>
-  <AppSpinner v-if="!survey || isSavingResponses || audioLoading" />
+
+  <AppSpinner
+    v-if="
+      !surveyStore.survey ||
+      surveyStore.isSavingSurveyResponses ||
+      (surveyStore.surveyAudioLoading && authStore.userData.userType !== 'student')
+    "
+  />
 </template>
 
 <style>

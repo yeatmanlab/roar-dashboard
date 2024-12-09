@@ -10,3 +10,5 @@ export { default as pageTitlesEN } from './en/pageTitles.json';
 export { default as pageTitlesUS } from './en/us/pageTitles.json';
 export { default as pageTitlesES } from './es/pageTitles.json';
 export { default as pageTitlesCO } from './es/co/pageTitles.json';
+export { default as deTranslations } from './de/de-componentTranslations.json';
+export { default as pageTitlesDE } from './de/pageTitles.json';

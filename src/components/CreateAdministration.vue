@@ -142,11 +142,11 @@
                 />
                 <label for="No">No</label>
               </span>
-              <small v-if="v$.sequential.$invalid && submitted" class="p-error mt-2"
-                >Please specify sequential behavior.</small
-              >
             </div>
-            <div class="mt-2 mb-2">
+            <small v-if="v$.sequential.$invalid && submitted" class="p-error mt-2"
+              >Please specify sequential behavior.</small
+            >
+            <div v-if="!isLevante" class="mt-2 mb-2">
               <PvCheckbox v-model="isTestData" :binary="true" data-cy="checkbutton-test-data" input-id="isTestData" />
               <label for="isTestData" class="ml-2">Mark As <b>Test Administration</b></label>
             </div>
@@ -209,8 +209,7 @@ import ConsentPicker from './ConsentPicker.vue';
 import OrgPicker from '@/components/OrgPicker.vue';
 import { APP_ROUTES } from '@/constants/routes';
 import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
-
-const isLevante = import.meta.env.MODE === 'LEVANTE';
+import { isLevante } from '@/helpers';
 
 const initialized = ref(false);
 const router = useRouter();
