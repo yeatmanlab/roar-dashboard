@@ -142,6 +142,7 @@ import { isLevante } from '@/helpers';
 import _capitalize from 'lodash/capitalize';
 import { useQueryClient } from '@tanstack/vue-query';
 import { LEVANTE_SURVEY_RESPONSES_KEY } from '@/constants/bucket';
+import PvProgressBar from 'primevue/progressbar';
 
 const props = defineProps({
   games: { type: Array, required: true },
