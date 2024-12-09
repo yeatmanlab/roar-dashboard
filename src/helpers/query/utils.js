@@ -286,23 +286,21 @@ export const fetchSubcollection = async (
   const queryParams = select.map((field) => `mask.fieldPaths=${field}`).join('&');
   const queryString = queryParams ? `?${queryParams}` : '';
 
-  return axiosInstance
-    .get(subcollectionPath + queryString)
-    .then(({ data }) => {
-      // Assuming the API returns an array of document data in the subcollection
-      return data.documents
-        ? data.documents.map((doc) => {
-            return {
-              id: doc.name.split('/').pop(), // Extract document ID from the document name/path
-              ..._mapValues(doc.fields, (value) => convertValues(value)),
-            };
-          })
-        : [];
-    })
-    .catch((error) => {
-      console.error(error);
-      return {
-        error: `${error.response?.status === 404 ? 'Subcollection not found' : error.message}`,
-      };
-    });
+  try {
+    const response = await axiosInstance.get(subcollectionPath + queryString);
+
+    // Check if the API returns an array of document data in the subcollection
+    const documents = response.data.documents ?? [];
+
+    // Map and return the documents with the required format
+    return documents.map((doc) => ({
+      id: doc.name.split('/').pop(), // Extract document ID from the document name/path
+      ..._mapValues(doc.fields, (value) => convertValues(value)),
+    }));
+  } catch (error) {
+    console.error('Failed to fetch subcollection: ', error);
+    return {
+      error: error.response?.status === 404 ? 'Subcollection not found' : error.message,
+    };
+  }
 };

@@ -169,7 +169,7 @@
             </span>
           </div>
         </div>
-        <div class="flex flex-row align-items-center justify-content-stagap-2 flex-order-0 my-3">
+        <div v-if="!isLevante" class="flex flex-row align-items-center justify-content-stagap-2 flex-order-0 my-3">
           <div class="flex flex-row align-items-center">
             <PvCheckbox v-model="isDemoData" input-id="chbx-demodata" :binary="true" />
             <label class="ml-1 mr-3" for="chbx-demodata">Mark as <b>Demo Organization</b></label>
@@ -220,6 +220,7 @@ import useDistrictsListQuery from '@/composables/queries/useDistrictsListQuery';
 import useDistrictSchoolsQuery from '@/composables/queries/useDistrictSchoolsQuery';
 import useSchoolClassesQuery from '@/composables/queries/useSchoolClassesQuery';
 import useGroupsListQuery from '@/composables/queries/useGroupsListQuery';
+import { isLevante } from '@/helpers';
 
 const initialized = ref(false);
 const isTestData = ref(false);
@@ -227,7 +228,6 @@ const isDemoData = ref(false);
 const toast = useToast();
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
-const isLevante = import.meta.env.MODE === 'LEVANTE';
 
 const state = reactive({
   orgName: '',
@@ -483,6 +483,10 @@ button.p-button.p-component.p-button-icon-only.p-autocomplete-dropdown {
   border: none;
   border-radius: 20%;
   width: 3rem;
+}
+
+button.p-autocomplete-dropdown {
+  margin-left: 0.3rem;
 }
 
 #rectangle {

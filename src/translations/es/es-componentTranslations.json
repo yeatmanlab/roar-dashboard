@@ -27,10 +27,13 @@
     "classLinkLoading": "Cargando tus datos desde ClassLink..."
   },
   "consentModal": {
+    "header": "Consentimiento",
     "consentTitle": "Consentimiento",
     "assentTitle": "Asentimiento",
-    "acceptButton": "Continuar",
-    "toastHeader": "Confirmado"
+    "acceptButton": "Aceptar",
+    "rejectButton": "No, cerrar sesión",
+    "toastHeader": "Confirmado",
+    "consentUpdatedStatus": "Estado de consentimiento actualizado"
   },
   "homeParticipant": {
     "showOptionalAssignments": "Mostrar actividades opcionales",
@@ -47,28 +50,44 @@
   "gameTabs": {
     "clickToStart": "Haz clic para empezar",
     "taskCompleted": "¡Tarea completada!",
-    "LEVANTE TRANSLATIONS--------------------------": "",
+    "introName": "Introducción",
+    "introDescription": "Aprende a jugar a nuestros juegos.",
     "heartsAndFlowersDescription": "Haz coincidir el lado correcto con los corazones y las flores.",
-    "heartsAndFlowersName": "Juego de Corazones y Flores",
+    "heartsAndFlowersName": "Corazones y Flores",
     "egmaMathDescription": "Resuelve los problemas matemáticos.",
-    "egmaMathName": "Juego de Matemáticas",
+    "egmaMathName": "Matemáticas",
     "matrixReasoningDescription": "Encuentra la pieza que falta para completar el rompecabeza.",
-    "matrixReasoningName": "Juego de Rompecabezas",
+    "matrixReasoningName": "Razonamiento Matricial",
     "memoryGameDescription": "Observa cómo se iluminan los cuadrados. Recuerda el orden y haz el mismo patrón.",
-    "memoryGameName": "Juego de Memoria",
+    "memoryGameName": "Memoria",
     "mentalRotationDescription": "Empareja las imágenes.",
-    "mentalRotationName": "Juego de Parejas",
+    "mentalRotationName": "Rotación Mental",
     "sameDifferentSelectionDescription": "Encuentra cosas iguales en las formas.",
-    "sameDifferentSelectionName": "Juego de Formas",
+    "sameDifferentSelectionName": "Iguales y Diferentes",
     "theoryOfMindDescription": "Escucha las historias y responde a las preguntas.",
-    "theoryOfMindName": "Juego de Historias",
+    "theoryOfMindName": "Historias",
     "trogDescription": "Escucha las palabras y elige la imagen correspondiente.",
-    "trogName": "Juego de Palabras y Dibujos",
-    "surveyName": "Pensamientos y Sentimientos",
-    "surveyDescription": "Responde a las preguntas sobre tu estancia en el colegio.",
-    "mefsName": "Juego del León y el Mono",
+    "trogName": "Comprensión de Frases",
+    "surveyNameChild": "Pensamientos y Sentimientos",
+    "surveyDescriptionChild": "Responde a las preguntas sobre tu estancia en el colegio.",
+    "surveyNameParentPart1": "Encuesta para cuidadores",
+    "surveyDescriptionParentPart1": "Estimamos que diligenciar la siguiente encuesta le tomará aproximadamente 20-30 minutos y se le harán preguntas sobre su niño(a).",
+    "surveyNameParentPart2": "Encuesta para cuidadores",
+    "surveyDescriptionParentPart2": "Estimamos que diligenciar la siguiente encuesta le tomará aproximadamente 20-30 minutos y se le harán preguntas sobre su hogar y usted mismo(a).",
+    "surveyNameTeacherPart1": "Encuesta de profesores - General",
+    "surveyDescriptionTeacherPart1": "Estimamos que diligenciar la siguiente encuesta le tomará aproximadamente 5-10 minutos. Las preguntas indagan por sus antecedentes y creencias sobre la enseñanza.",
+    "surveyNameTeacherPart2": "Encuesta de profesores - Salón",
+    "surveyDescriptionTeacherPart2": "Estimamos que diligenciar la siguiente encuesta le tomará aproximadamente 5-10 minutos y se le hará preguntas sobre el salón o los salones en los que imparte.",
+    "surveyProgressGeneral": "General",
+    "surveyProgressGeneralParent": "Familia",
+    "surveyProgressSpecificParent": "Niño",
+    "surveyProgressSpecificParentMonth": "Mes",
+    "surveyProgressSpecificParentYear": "Año",
+    "surveyProgressGeneralTeacher": "Profesor",
+    "surveyProgressSpecificTeacher": "Aula",
+    "mefsName": "El León y El Mono",
     "mefsDescription": "Empareja las formas y los colores.",
-    "vocabName": "Juego de Vocabulario",
+    "vocabName": "Vocabulario",
     "vocabDescription": "Escucha la palabra y elige la imagen correspondiente.",
     "roarInferenceName": "Roar - Inferencia",
     "roarInferenceDescription": "Lee las historias y responde a las preguntas."
@@ -91,7 +110,10 @@
     "havingTrouble": "¿Tienes problemas?",
     "login": "Inicia sesión para acceder a tu panel de control",
     "loginWith": "Inicia sesión con",
-    "welcome": "¡Bienvenido a ROAR!"
+    "welcome": "¡Bienvenido a ROAR!",
+    "adminPrompt": "¿Eres administrador? Haz clic {action} para iniciar sesión.",
+    "adminAction": "aquí",
+    "adminInfoPrompt": "Si te registraste con un correo de Google o tu proveedor de correo utiliza Google SSO."
   },
   "tasks": {
     "preparing": "¡Preparando tu juego!",
@@ -106,5 +128,17 @@
     "emailPlaceholder": "tu.email@example.org (opcional)",
     "messageLabel": "Descripción",
     "messagePlaceholder": "¿Cuál es el problema? ¿Qué querías experimentar en su lugar? Gracias por compartir."
+  },
+  "userSurvey": {
+    "specificRelationDescriptionChildA": "Para niño(a) con mes de nacimiento",
+    "specificRelationDescriptionChildB": "y año de nacimiento",
+    "specificRelationDescriptionClass": "Para la clase"
+  },
+  "profile": {
+    "settings": {
+      "settings": "Configuraciones",
+      "language": "Idioma",
+      "languageDescription": "Selecciona el idioma que deseas usar en el panel. Esto SOLO cambiará el idioma del panel y las encuestas, no las tareas."
+    }
   }
 }

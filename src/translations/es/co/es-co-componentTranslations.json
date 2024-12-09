@@ -27,9 +27,11 @@
     "classLinkLoading": "Cargando tus datos desde ClassLink..."
   },
   "consentModal": {
+    "header": "Consentimiento",
     "consentTitle": "Consentimiento",
     "assentTitle": "Asentimiento",
-    "acceptButton": "Continuar",
+    "acceptButton": "Aceptar",
+    "rejectButton": "No, cerrar sesión",
     "toastHeader": "Confirmado"
   },
   "homeParticipant": {
@@ -37,7 +39,8 @@
     "loadingAssignments": "Cargando actividades",
     "selectAssignment": "Selecciona una actividad",
     "noAssignments": "¡No tienes actividades!",
-    "contactAdministrator": "Por favor, contacta a tu administrador para que agregue a una actividad."
+    "contactAdministrator": "Por favor, contacta a tu administrador para que agregue a una actividad.",
+    "consentUpdatedStatus": "Estado de consentimiento actualizado"
   },
   "homeSelector": {
     "loading": "Cargando...",
@@ -66,7 +69,10 @@
     "havingTrouble": "¿Tienes problemas?",
     "login": "Inicia sesión para acceder a tus actividades",
     "loginWith": "Inicia sesión con",
-    "welcome": "¡Bienvenido a ROAR!"
+    "welcome": "¡Bienvenido a ROAR!",
+    "adminPrompt": "¿Eres administrador? Haz clic {action} para iniciar sesión.",
+    "adminAction": "aquí",
+    "adminInfoPrompt": "Si te registraste con un correo de Google o tu proveedor de correo utiliza Google SSO."
   },
   "tasks": {
     "preparing": "¡Preparando tu juego!",

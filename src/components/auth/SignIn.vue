@@ -113,7 +113,7 @@
         class="mt-5 flex w-5 p-3 border-none border-round hover:bg-black-alpha-20"
         :label="$t('authSignIn.buttonLabel') + ' &rarr;'"
       />
-      <hr class="opacity-20 mt-5" />
+      <hr v-if="isLevante" class="opacity-20 mt-5" />
     </form>
   </div>
   <RoarModal
@@ -161,6 +161,7 @@ import PvPassword from 'primevue/password';
 import PvSkeleton from 'primevue/skeleton';
 import { useAuthStore } from '@/store/auth';
 import RoarModal from '../modals/RoarModal.vue';
+import { isLevante } from '@/helpers';
 
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);

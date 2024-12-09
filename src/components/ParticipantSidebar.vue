@@ -7,7 +7,7 @@
         <p>{{ $t('participantSidebar.tasksCompleted') }}</p>
       </div>
     </div>
-    <ul v-if="!!studentInfo" class="sidebar-info">
+    <ul v-if="!_isEmpty(studentInfo)" class="sidebar-info">
       <li class="sidebar-title">
         <strong>{{ $t('participantSidebar.studentInfo') }}</strong>
       </li>
@@ -19,6 +19,7 @@
 </template>
 <script setup>
 import { ref, computed } from 'vue';
+import _isEmpty from 'lodash/isEmpty';
 import PvChart from 'primevue/chart';
 
 const props = defineProps({

@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 import { useAuthStore } from '@/store/auth';
 import _get from 'lodash/get';
 import { pageTitlesEN, pageTitlesUS, pageTitlesES, pageTitlesCO } from '@/translations/exports';
+import { isLevante } from '@/helpers';
 import { APP_ROUTES } from '@/constants/routes';
 
 function removeQueryParams(to) {
@@ -41,6 +42,13 @@ const routes = [
     meta: { pageTitle: 'SWR (ES)' },
   },
   {
+    path: '/game/swr-de',
+    name: 'SWR-DE',
+    component: () => import('../components/tasks/TaskSWR.vue'),
+    props: { taskId: 'swr-de', language: 'de' },
+    meta: { pageTitle: 'SWR (DE)' },
+  },
+  {
     path: '/game/pa',
     name: 'PA',
     component: () => import('../components/tasks/TaskPA.vue'),
@@ -55,6 +63,13 @@ const routes = [
     meta: { pageTitle: 'PA-ES' },
   },
   {
+    path: '/game/pa-de',
+    name: 'PA-DE',
+    component: () => import('../components/tasks/TaskPA.vue'),
+    props: { taskId: 'pa-de', language: 'de' },
+    meta: { pageTitle: 'PA-DE' },
+  },
+  {
     path: '/game/sre',
     name: 'SRE',
     component: () => import('../components/tasks/TaskSRE.vue'),
@@ -67,6 +82,13 @@ const routes = [
     component: () => import('../components/tasks/TaskSRE.vue'),
     props: { taskId: 'sre-es', language: 'es' },
     meta: { pageTitle: 'SRE-ES' },
+  },
+  {
+    path: '/game/sre-de',
+    name: 'SRE-DE',
+    component: () => import('../components/tasks/TaskSRE.vue'),
+    props: { taskId: 'sre-de', language: 'de' },
+    meta: { pageTitle: 'SRE-DE' },
   },
   {
     path: '/game/letter',
@@ -189,7 +211,6 @@ const routes = [
     props: { taskId: 'roav-mep', language: 'en' },
     meta: { pageTitle: 'MEP' },
   },
-
   {
     path: '/manage-tasks-variants',
     name: 'ManageTasksVariants',
@@ -358,6 +379,11 @@ const routes = [
         component: () => import('../components/views/LinkAccountsView.vue'),
         meta: { requireAdmin: true },
       },
+      {
+        path: 'settings',
+        name: 'ProfileSettings',
+        component: () => import('../components/views/Settings.vue'),
+      },
     ],
     meta: { pageTitle: 'Profile' },
   },
@@ -379,6 +405,12 @@ const routes = [
     name: 'Register Users',
     component: () => import('../pages/LEVANTE/RegisterUsers.vue'),
     meta: { pageTitle: 'Register Users', requireAdmin: true, project: 'LEVANTE' },
+  },
+  {
+    path: '/link-users',
+    name: 'Link Users',
+    component: () => import('../pages/LEVANTE/LinkUsers.vue'),
+    meta: { pageTitle: 'Link Users', requireAdmin: true, project: 'LEVANTE' },
   },
   {
     path: '/survey',
@@ -406,7 +438,6 @@ export const router = createRouter({
 });
 
 router.beforeEach(async (to, from, next) => {
-  const isLevante = import.meta.env.MODE === 'LEVANTE';
   // Don't allow routing to LEVANTE pages if not in LEVANTE instance
   if (!isLevante && to.meta?.project === 'LEVANTE') {
     next({ name: 'Home' });

@@ -4,6 +4,7 @@
     v-model:visible="dialogVisible"
     group="consent"
     class="confirm"
+    :class="{ 'reject-btn': !isLevante }"
     :draggable="false"
     :close-on-escape="false"
   >
@@ -29,9 +30,13 @@ import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import _lowerCase from 'lodash/lowerCase';
 import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
+import { useRouter } from 'vue-router';
+import { useAuthStore } from '@/store/auth';
+import { isLevante } from '@/helpers';
 
 const i18n = useI18n();
-
+const router = useRouter();
+const authStore = useAuthStore();
 const props = defineProps({
   consentText: { type: String, required: true, default: 'Text Here' },
   consentType: { type: String, required: true, default: 'Consent' },
@@ -57,46 +62,94 @@ onMounted(() => {
     ? i18n.t('consentModal.consentTitle')
     : i18n.t('consentModal.assentTitle');
 
-  confirm.require({
-    group: 'consent',
-    header: header,
-    icon: 'pi pi-question-circle',
-    acceptLabel: i18n.t('consentModal.acceptButton'),
-    acceptClass: 'bg-primary text-white border-none border-round p-2 hover:bg-red-900',
-    acceptIcon,
-    accept: async () => {
-      try {
-        isSubmitting.value = true;
+  if (isLevante) {
+    confirm.require({
+      group: 'consent',
+      header: i18n.t(`consentModal.header`, props.consentType.toUpperCase()),
+      icon: 'pi pi-question-circle',
+      acceptLabel: i18n.t('consentModal.acceptButton', 'Accept'),
+      rejectLabel: i18n.t('consentModal.rejectButton', 'Reject'),
+      acceptClass: 'bg-green-600 text-white border-none border-round p-2 hover:bg-green-800',
+      acceptIcon: 'pi pi-check mr-2',
+      rejectClass: 'bg-red-600 text-white border-none border-round p-2 hover:bg-red-800',
+      rejectIcon: 'pi pi-times mr-2',
+      accept: async () => {
+        try {
+          isSubmitting.value = true;
 
-        await new Promise((resolve) => setTimeout(resolve, 600));
-        await props.onConfirm();
+          await new Promise((resolve) => setTimeout(resolve, 600));
+          await props.onConfirm();
 
-        toast.add({
-          severity: TOAST_SEVERITIES.INFO,
-          summary: i18n.t('consentModal.toastHeader'),
-          detail: props.consentType.includes('-es')
-            ? `ESTADO DE ${_lowerCase(props.consentType).toUpperCase()} ACTUALIZADO`
-            : `${_lowerCase(props.consentType).toUpperCase()} STATUS UPDATED.`,
-          life: TOAST_DEFAULT_LIFE_DURATION,
-        });
+          toast.add({
+            severity: TOAST_SEVERITIES.INFO,
+            summary: i18n.t('consentModal.toastHeader'),
+            detail: i18n.t(`consentModal.${_lowerCase(props.consentType)}UpdatedStatus`),
+            life: TOAST_DEFAULT_LIFE_DURATION,
+          });
 
-        dialogVisible.value = false;
-      } catch (error) {
-        toast.add({
-          severity: TOAST_SEVERITIES.ERROR,
-          summary: 'Error',
-          detail: 'An error occurred while updating the consent status, please try again.',
-          life: TOAST_DEFAULT_LIFE_DURATION,
-        });
+          dialogVisible.value = false;
+        } catch (error) {
+          toast.add({
+            severity: TOAST_SEVERITIES.ERROR,
+            summary: 'Error',
+            detail: 'An error occurred while updating the consent status, please try again.',
+            life: TOAST_DEFAULT_LIFE_DURATION,
+          });
 
-        Sentry.captureException(error);
+          Sentry.captureException(error);
 
-        return Promise.resolve(false);
-      } finally {
-        isSubmitting.value = false;
-      }
-    },
-  });
+          return Promise.resolve(false);
+        } finally {
+          isSubmitting.value = false;
+        }
+      },
+      reject: () => {
+        authStore.signOut();
+        router.push({ name: 'SignOut' });
+      },
+    });
+  } else {
+    confirm.require({
+      group: 'consent',
+      header: header,
+      icon: 'pi pi-question-circle',
+      acceptLabel: i18n.t('consentModal.acceptButton'),
+      acceptClass: 'bg-primary text-white border-none border-round p-2 hover:bg-red-900',
+      acceptIcon,
+      accept: async () => {
+        try {
+          isSubmitting.value = true;
+
+          await new Promise((resolve) => setTimeout(resolve, 600));
+          await props.onConfirm();
+
+          toast.add({
+            severity: TOAST_SEVERITIES.INFO,
+            summary: i18n.t('consentModal.toastHeader'),
+            detail: props.consentType.includes('-es')
+              ? `ESTADO DE ${_lowerCase(props.consentType).toUpperCase()} ACTUALIZADO`
+              : `${_lowerCase(props.consentType).toUpperCase()} STATUS UPDATED.`,
+            life: TOAST_DEFAULT_LIFE_DURATION,
+          });
+
+          dialogVisible.value = false;
+        } catch (error) {
+          toast.add({
+            severity: TOAST_SEVERITIES.ERROR,
+            summary: 'Error',
+            detail: 'An error occurred while updating the consent status, please try again.',
+            life: TOAST_DEFAULT_LIFE_DURATION,
+          });
+
+          Sentry.captureException(error);
+
+          return Promise.resolve(false);
+        } finally {
+          isSubmitting.value = false;
+        }
+      },
+    });
+  }
 });
 </script>
 
@@ -112,8 +165,22 @@ onMounted(() => {
   border-radius: 5px;
 }
 
-.confirm .p-confirm-dialog-reject {
+.reject-btn .p-confirm-dialog-reject {
   display: none !important;
+}
+
+.p-dialog .p-dialog-content {
+  padding: 1rem;
+}
+
+.confirm .p-dialog-footer {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+}
+
+.p-dialog .p-dialog-footer {
+  padding: 1rem;
 }
 
 .confirm .p-dialog-header-close {
