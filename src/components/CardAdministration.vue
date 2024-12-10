@@ -94,7 +94,7 @@
               type="bar"
               :data="setBarChartData(node.data.stats?.assignment)"
               :options="setBarChartOptions(node.data.stats?.assignment)"
-              class="h-3rem"
+              class="h-3rem w-full"
             />
           </template>
         </PvColumn>

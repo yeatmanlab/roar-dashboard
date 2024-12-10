@@ -11,3 +11,6 @@ button.p-button.p-component.p-button-icon-only.p-button-secondary.p-button-round
   color: white;
   margin-left: 3px !important;
 }
+input.p-inputtext.p-component.p-password-input {
+  width: 100%;
+}

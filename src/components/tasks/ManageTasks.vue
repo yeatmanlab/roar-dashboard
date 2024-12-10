@@ -22,7 +22,7 @@
               <PvInputText
                 v-model="v$.taskName.$model"
                 name="taskName"
-                :class="{ 'p-invalid': v$.taskName.$invalid && submitted }"
+                :class="['ml-4', 'w-5', { 'p-invalid': v$.taskName.$invalid && submitted }]"
                 aria-describedby="activation-code-error"
               />
             </div>
@@ -45,7 +45,7 @@
               <PvInputText
                 v-model="v$.taskId.$model"
                 name="taskId"
-                :class="{ 'p-invalid': v$.taskId.$invalid && submitted }"
+                :class="['ml-6', 'w-5', { 'p-invalid': v$.taskId.$invalid && submitted }]"
                 aria-describedby="activation-code-error"
               />
             </div>
@@ -62,9 +62,9 @@
           <section class="form-section">
             <div>
               <label for="coverImage">
-                <small class="text-gray-400 font-bold">Cover Image (URL)</small>
+                <small class="text-gray-400 font-bold">Cover img (URL)</small>
               </label>
-              <PvInputText v-model="taskFields.coverImage" name="coverImage" />
+              <PvInputText v-model="taskFields.coverImage" name="coverImage" class="ml-1 w-5" />
             </div>
           </section>
           <!--Description-->
@@ -73,7 +73,7 @@
               <label for="description">
                 <small class="text-gray-400 font-bold">Description</small>
               </label>
-              <PvInputText v-model="taskFields.description" name="description" />
+              <PvInputText v-model="taskFields.description" name="description" class="ml-5 w-5" />
             </div>
           </section>
           <!--Task URL-->
@@ -107,7 +107,7 @@
           </h3>
           <h4 class="text-center">Create the configurable game parameters for variants of this task.</h4>
           <div v-for="(param, index) in gameConfig" :key="index">
-            <div class="flex gap-2 align-content-start flex-grow-0 params-container">
+            <div class="flex gap-2 align-content-start flex-grow-0 params-container justify-content-center mt-2">
               <PvInputText v-model="param.name" placeholder="Name" />
 
               <PvSelect v-model="param.type" :options="typeOptions" />

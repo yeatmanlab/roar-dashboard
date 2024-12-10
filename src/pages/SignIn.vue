@@ -47,7 +47,7 @@
             <PvButton
               v-if="!isLevante"
               class="flex surface-0 p-1 mr-1 border-black-alpha-10 text-black justify-content-center hover:border-primary hover:surface-ground"
-              style="border-radius: 3rem; height: 3rem"
+              style="border-radius: 3rem; height: 3rem; color: black !important"
               @click="authWithClassLink"
             >
               <img src="../assets/provider-classlink-logo.png" alt="The ClassLink Logo" class="flex mr-2 w-2" />

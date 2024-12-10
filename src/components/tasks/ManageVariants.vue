@@ -32,7 +32,7 @@
               option-label="name"
               placeholder="Select a Game"
               :loading="isFetchingTasks"
-              :class="{ 'p-invalid': v$.variantName.$invalid && submitted }"
+              :class="['w-full', { 'p-invalid': v$.variantName.$invalid && submitted }]"
               name="variant-fields"
               @click="clearFieldParamArrays()"
             ></PvSelect>
@@ -58,7 +58,7 @@
               <PvInputText
                 v-model="v$.variantName.$model"
                 name="variantName"
-                :class="{ 'p-invalid': v$.variantName.$invalid && submitted }"
+                :class="['w-full', { 'p-invalid': v$.variantName.$invalid && submitted }]"
                 aria-describedby="activation-code-error"
               />
             </div>

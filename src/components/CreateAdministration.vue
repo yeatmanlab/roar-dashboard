@@ -54,10 +54,11 @@
               <PvDatePicker
                 v-model="state.dateStarted"
                 class="w-full"
+                show-icon
                 :min-date="minStartDate"
                 :number-of-months="1"
                 :manual-input="false"
-                icon="pi pi-calendar text-white p-1"
+                icon="pi pi-calendar text-primary p-1"
                 input-id="start-date"
                 show-button-bar
                 data-cy="input-start-date"
@@ -73,11 +74,12 @@
               <PvDatePicker
                 v-model="state.dateClosed"
                 class="w-full"
+                show-icon
                 :min-date="minEndDate"
                 input-id="end-date"
                 :number-of-months="1"
                 :manual-input="false"
-                icon="pi pi-calendar text-white p-1"
+                icon="pi pi-calendar text-primary p-1"
                 show-button-bar
                 data-cy="input-end-date"
               />
@@ -124,19 +126,11 @@
             <div class="flex">
               <label style="font-weight: bold" class="mb-2 mx-2">Sequential?</label>
               <span class="flex gap-2">
-                <PvRadioButton
-                  v-model="state.sequential"
-                  class="border-2 border-circle border-300"
-                  style="width: 15px; height: 15px"
-                  input-id="Yes"
-                  :value="true"
-                />
+                <PvRadioButton v-model="state.sequential" input-id="Yes" :value="true" />
                 <label for="Yes">Yes</label>
                 <PvRadioButton
                   v-model="state.sequential"
                   data-cy="radio-button-not-sequential"
-                  class="border-2 border-circle border-300"
-                  style="width: 15px; height: 15px"
                   input-id="No"
                   :value="false"
                 />

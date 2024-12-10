@@ -3,27 +3,11 @@
     <div class="card flex justify-content-center">
       <div class="flex flex-wrap gap-3">
         <div class="flex align-items-center">
-          <PvRadioButton
-            v-model="decision"
-            input-id="helpChoose"
-            class="border-2 border-circle border-300"
-            style="width: 15px; height: 15px"
-            name="help"
-            value="help"
-            @change="whatDecision"
-          />
+          <PvRadioButton v-model="decision" input-id="helpChoose" name="help" value="help" @change="whatDecision" />
           <label for="helpChoose" class="ml-2">Help me choose</label>
         </div>
         <div class="flex align-items-center">
-          <PvRadioButton
-            v-model="decision"
-            input-id="iKnow"
-            class="border-2 border-circle border-300"
-            style="width: 15px; height: 15px"
-            name="know"
-            value="know"
-            @change="whatDecision"
-          />
+          <PvRadioButton v-model="decision" input-id="iKnow" name="know" value="know" @change="whatDecision" />
           <label for="iKnow" class="ml-2">I know what to select</label>
         </div>
       </div>

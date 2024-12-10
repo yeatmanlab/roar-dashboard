@@ -1,5 +1,5 @@
 <template>
-  <div class="card flex justify-center">
+  <div class="card flex justify-center w-7">
     <PvSelect
       v-model="selectedLanguage"
       class="w-full md:w-56 bg-white"
