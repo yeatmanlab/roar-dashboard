@@ -25,7 +25,7 @@
         </div>
         <div class="pl-2 w-full">
           <p class="m-0"><span class="font-semibold">Variant name:</span> {{ variant.variant.name }}</p>
-          <p class="m-0" v-if="isDev"><span class="font-semibold">Variant id: </span>{{ variant.id }}</p>
+          <p v-if="isDev" class="m-0"><span class="font-semibold">Variant id: </span>{{ variant.id }}</p>
         </div>
         <PvOverlayPanel ref="op" append-to="body" style="width: 40vh">
           <div class="flex justify-content-end mt-0 mb-2">

@@ -15,6 +15,7 @@ const surveyStore = useSurveyStore();
 const { locale } = useI18n();
 const context = new AudioContext();
 
+// eslint-disable-next-line no-unused-vars
 onBeforeRouteLeave((to, from) => {
   const surveyStore = useSurveyStore();
 

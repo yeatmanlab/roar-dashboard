@@ -53,7 +53,6 @@ const pageTitle = computed(() => {
 });
 
 const loadSessionTimeoutHandler = computed(() => isAuthStoreReady.value && authStore.isAuthenticated);
-const project = computed(() => (isLevante ? 'levante' : 'roar'));
 
 useRecaptchaProvider();
 

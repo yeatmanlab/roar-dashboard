@@ -51,17 +51,17 @@
           <PvButton
             v-if="registeredUsers.length"
             label="Download Users"
-            @click="downloadCSV"
             class="bg-primary mb-2 p-3 w-2 text-white border-none border-round h-3rem m-0 hover:bg-red-900"
             icon="pi pi-download"
+            @click="downloadCSV"
           />
           <PvButton
             v-else
             :label="activeSubmit ? 'Registering Users' : 'Start Registration'"
             :icon="activeSubmit ? 'pi pi-spin pi-spinner' : ''"
             :disabled="activeSubmit"
-            @click="submitUsers"
             class="bg-primary mb-2 p-3 w-2 text-white border-none border-round h-3rem m-0 hover:bg-red-900"
+            @click="submitUsers"
           />
         </div>
       </div>
@@ -375,6 +375,7 @@ async function submitUsers() {
           user.orgIds = orgInfo;
         } else {
           addErrorUser(user, `Error: ${orgType} '${orgName}' is invalid`);
+          // eslint-disable-next-line no-undef
           if (processedUsers >= totalUsers) {
             activeSubmit.value = false;
           }

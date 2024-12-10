@@ -144,6 +144,7 @@ import _findIndex from 'lodash/findIndex';
 import { camelize, getAgeData } from '@bdelab/roar-utils';
 import PvTabPanel from 'primevue/tabpanel';
 import PvTabView from 'primevue/tabview';
+import PvProgressBar from 'primevue/progressbar';
 import PvTag from 'primevue/tag';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';

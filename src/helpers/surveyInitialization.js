@@ -17,6 +17,7 @@ export async function initializeSurvey({
   audioLinkMap,
   generalSurveyData,
 }) {
+  // eslint-disable-next-line no-unused-vars
   const { isRestored, pageNo } = restoreSurveyData({
     surveyInstance,
     uid: userData.id,
