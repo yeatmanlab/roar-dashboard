@@ -100,366 +100,6 @@
           @row-select="onSelectionChange"
           @row-unselect="onSelectionChange"
         >
-          <PvColumnGroup type="header" class="mt-2">
-            <PvRow v-if="groupheaders" class="flex mt-2">
-              <!-- Spacer Header -->
-              <!-- colspan = getSpacerHeaderWidth-->
-              <PvColumn
-                header="Student Information"
-                :colspan="getSpacerColumnWidth"
-                header-style="background-color: var(--primary-color); color:white; border:1px border-left-none solid white; justify-content:center; margin-top:1rem; text-align: center;"
-              />
-              <!-- Foundations -->
-              <!-- v-if="primarySpacerColumns" :colspan="primarySpacerColumns" -->
-              <PvColumn
-                v-if="primarySpacerColumns"
-                :colspan="primarySpacerColumns"
-                header-style="background-color: var(--primary-color); color:white; border:1px solid white; justify-content:center; margin-top:1rem; text-align: center;"
-              >
-                <template #header>
-                  <div class="flex flex-row">
-                    <div>Foundational Reading Skills</div>
-                    <div class="ml-2">
-                      <PvButton class="p-0 border-none border-circle bg-primary" @click="toggle($event, 'primary')"
-                        ><i v-tooltip.top="'Learn more'" class="pi pi-info-circle text-white p-1 border-circle"></i
-                      ></PvButton>
-                    </div>
-                  </div>
-                </template>
-              </PvColumn>
-              <!-- Spanish -->
-              <!-- v-if="spanishColumns" :colspan="spanishColumns" -->
-              <PvColumn
-                v-if="spanishSpacerColumns"
-                :colspan="spanishSpacerColumns"
-                header-style="background-color: var(--primary-color); color:white; border:1px solid white; justify-content:center; margin-top:1rem; text-align: center;"
-              >
-                <template #header>
-                  <div class="flex flex-row">
-                    <div>Spanish</div>
-                    <div class="ml-2">
-                      <PvButton class="p-0 border-none border-circle bg-primary" @click="toggle($event, 'spanish')"
-                        ><i v-tooltip.top="'Learn more'" class="pi pi-info-circle text-white p-1 border-circle"></i
-                      ></PvButton>
-                    </div>
-                  </div>
-                </template>
-              </PvColumn>
-              <!-- Spanish  Math-->
-              <!-- v-if="spanishMathColumns" :colspan="spanishMathColumns" -->
-              <PvColumn
-                v-if="spanishMathSpacerColumns"
-                :colspan="spanishMathSpacerColumns"
-                header-style="background-color: var(--primary-color); color:white; border:1px solid white; justify-content:center; margin-top:1rem; text-align: center;"
-              >
-                <template #header>
-                  <div class="flex flex-row">
-                    <div>Spanish Math</div>
-                    <div class="ml-2">
-                      <PvButton class="p-0 border-none border-circle bg-primary" @click="toggle($event, 'spanishmath')"
-                        ><i v-tooltip.top="'Learn more'" class="pi pi-info-circle text-white p-1 border-circle"></i
-                      ></PvButton>
-                    </div>
-                  </div>
-                </template>
-              </PvColumn>
-              <!-- inDev -->
-              <!-- v-if="supplemenaryColumns" :colspan="supplementaryColumns" -->
-              <PvColumn
-                v-if="supplementarySpacerColumns"
-                :colspan="supplementarySpacerColumns"
-                header-style="background-color: var(--primary-color); color:white; border:1px solid white; justify-content:center; margin-top:1rem; text-align: center;"
-              >
-                <template #header>
-                  <div class="flex flex-row">
-                    <div>Supplementary<br />(In Development)</div>
-                    <div class="mt-1 ml-2">
-                      <PvButton
-                        class="p-0 border-none border-circle bg-primary"
-                        @click="toggle($event, 'supplementary')"
-                        ><i v-tooltip.top="'Learn more'" class="pi pi-info-circle text-white p-1 border-circle"></i
-                      ></PvButton>
-                    </div>
-                  </div>
-                </template>
-              </PvColumn>
-              <!-- inRoam -->
-              <!-- v-if="mathSpacerColumns" :colspan="supplementaryColumns" -->
-              <PvColumn
-                v-if="mathSpacerColumns"
-                :colspan="mathSpacerColumns"
-                header-style="background-color: var(--primary-color); color:white; border:1px solid white; justify-content:center; margin-top:1rem; text-align: center;"
-              >
-                <template #header>
-                  <div class="flex flex-row">
-                    <div>Mathematics<br />(In Development)</div>
-                    <div class="mt-1 ml-2">
-                      <PvButton class="p-0 border-none border-circle bg-primary" @click="toggle($event, 'math')"
-                        ><i v-tooltip.top="'Learn more'" class="pi pi-info-circle text-white p-1 border-circle"></i
-                      ></PvButton>
-                    </div>
-                  </div>
-                </template>
-              </PvColumn>
-              <!-- inRoav -->
-              <!-- v-if="visionSpacerColumns" :colspan="supplementaryColumns" -->
-              <PvColumn
-                v-if="visionSpacerColumns"
-                :colspan="visionSpacerColumns"
-                header-style="background-color: var(--primary-color); color:white; border:1px solid white; justify-content:center; margin-top:1rem; text-align: center;"
-              >
-                <template #header>
-                  <div class="flex flex-row">
-                    <div>Vision<br />(In Development)</div>
-                    <div class="mt-1">
-                      <PvButton class="p-0 border-none border-circle bg-primary" @click="toggle($event, 'vision')"
-                        ><i v-tooltip.top="'Learn more'" class="pi pi-info-circle text-white p-1 border-circle"></i
-                      ></PvButton>
-                    </div>
-                  </div>
-                </template>
-              </PvColumn>
-            </PvRow>
-            <PvRow>
-              <PvColumn
-                selection-mode="multiple"
-                header-style="background-color: var(--primary-color); border:none;"
-                :reorderable-column="false"
-                frozen
-              />
-              <PvColumn
-                v-for="(col, index) of computedColumns"
-                :key="col.field + '_' + index"
-                :field="col.field"
-                :data-type="col.dataType"
-                :sortable="col.sort !== false"
-                :show-filter-match-modes="
-                  !col.useMultiSelect && col.dataType !== 'score' && col.dataType !== 'progress'
-                "
-                :show-filter-operator="col.allowMultipleFilters === true"
-                :filter-field="col?.filterField ? col.filterField : col.field"
-                :show-add-button="col.allowMultipleFilters === true"
-                :frozen="col.pinned"
-                :style="col.style"
-                align-frozen="left"
-                :header-style="
-                  col.headerStyle ||
-                  `background:var(--primary-color); color:white; padding-top:0; margin-top:0; padding-bottom:0; margin-bottom:0; border:0; margin-left:0`
-                "
-              >
-                <template #header>
-                  <div
-                    v-tooltip.top="`${toolTipByHeader(col.header)}`"
-                    :style="[
-                      toolTipByHeader(col.header).length > 0
-                        ? 'text-decoration: underline dotted #0000CD; text-underline-offset: 3px'
-                        : null,
-                    ]"
-                  >
-                    {{ col.header }}
-                  </div>
-                </template>
-                <template v-if="col.dataType" #filter="{ filterModel }">
-                  <div v-if="col.dataType === 'text' && !col.useMultiSelect" class="filter-content">
-                    <PvInputText
-                      v-model="filterModel.value"
-                      type="text"
-                      class="p-column-filter p-3"
-                      placeholder="Filter"
-                    />
-                  </div>
-                  <PvInputNumber
-                    v-if="col.dataType === 'number' && !col.useMultiSelect"
-                    v-model="filterModel.value"
-                    type="text"
-                    class="p-column-filter"
-                    placeholder="Search"
-                  />
-                  <PvMultiSelect
-                    v-if="col.useMultiSelect"
-                    v-model="filterModel.value"
-                    :options="_get(refOptions, col.field)"
-                    placeholder="Any"
-                    :show-toggle-all="false"
-                    class="p-column-filter"
-                  />
-                  <PvDatePicker
-                    v-if="col.dataType === 'date' && !col.useMultiSelect"
-                    v-model="filterModel.value"
-                    date-format="mm/dd/yy"
-                    placeholder="mm/dd/yyyy"
-                  />
-                  <div v-if="col.dataType === 'boolean' && !col.useMultiSelect" class="flex flex-column gap-2">
-                    <PvSelect
-                      v-model="filterModel.value"
-                      :options="[
-                        { label: 'Yes', value: true },
-                        { label: 'No', value: false },
-                      ]"
-                      class="p-column-filter"
-                      placeholder="Select"
-                    />
-                  </div>
-
-                  <div v-if="col.dataType === 'score'">
-                    <PvSelect
-                      v-model="filterModel.value"
-                      option-label="label"
-                      option-group-label="label"
-                      option-group-children="items"
-                      :options="taskFilterOptions"
-                      data-cy="score-filter-dropdown"
-                      style="margin-bottom: 0.5rem"
-                    >
-                      <template #option="{ option }">
-                        <div class="flex align-items-center">
-                          <div v-if="supportLevelColors[option]" class="flex gap-2">
-                            <div
-                              class="small-circle tooltip"
-                              :style="`background-color: ${supportLevelColors[option]};`"
-                            />
-                            <span class="tooltiptext">{{ option }}</span>
-                          </div>
-                          <div v-else-if="progressTags[option]">
-                            <PvTag
-                              :severity="progressTags[option]?.severity"
-                              :value="progressTags[option]?.value"
-                              :icon="progressTags[option]?.icon"
-                              class="p-0.5 m-0 font-bold"
-                            />
-                          </div>
-                          <div v-else>
-                            <span class="tooltiptext">{{ option }}</span>
-                          </div>
-                        </div>
-                      </template>
-                      <template #value="{ value }">
-                        <div v-if="supportLevelColors[value]" class="flex gap-2">
-                          <div
-                            class="small-circle tooltip"
-                            :style="`background-color: ${supportLevelColors[value]};`"
-                          />
-                          <span class="tooltiptext">{{ value }}</span>
-                        </div>
-                        <div v-else-if="progressTags[value]">
-                          <PvTag
-                            :severity="progressTags[value]?.severity"
-                            :value="progressTags[value]?.value"
-                            :icon="progressTags[value]?.icon"
-                            class="p-0.5 m-0 font-bold"
-                          />
-                        </div>
-                        <div v-else>
-                          <span class="tooltiptext">{{ value }}</span>
-                        </div>
-                      </template>
-                    </PvSelect>
-                  </div>
-                  <div v-if="col.dataType === 'progress'">
-                    <PvSelect
-                      v-model="filterModel.value"
-                      :options="['Assigned', 'Started', 'Completed', 'Optional']"
-                      style="margin-bottom: 0.5rem"
-                      data-cy="progress-filter-dropdown"
-                    >
-                      <template #option="{ option }">
-                        <div v-if="progressTags[option]" class="flex align-items-center">
-                          <PvTag
-                            :severity="progressTags[option]?.severity"
-                            :value="progressTags[option]?.value"
-                            :icon="progressTags[option]?.icon"
-                            :style="`min-width: 2rem; font-weight: bold`"
-                            rounded
-                          />
-                        </div>
-                      </template>
-                      <template #value="{ value }">
-                        <PvTag
-                          v-if="progressTags[value]"
-                          :severity="progressTags[value]?.severity"
-                          :value="progressTags[value]?.value"
-                          :icon="progressTags[value]?.icon"
-                          :style="`min-width: 2rem; font-weight: bold`"
-                          rounded
-                        />
-                      </template>
-                    </PvSelect>
-                  </div>
-                </template>
-              </PvColumn>
-            </PvRow>
-          </PvColumnGroup>
-          <PvPopover ref="op" append-to="body" class="overflow-y-scroll" style="width: 60vh; max-height: 30vh">
-            <template v-if="selectedColumn === 'primary'">
-              <h3 class="font-bold">Foundational Reading Skills</h3>
-              <div>
-                <h4 class="font-bold">Word</h4>
-                Word indicates which students are in need of support in word-level decoding and automaticity. Word has
-                been validated, and national norms are provided.<br />
-                <h4 class="font-bold">Sentence</h4>
-                Sentence indicates which students are in need of support in sentence-level fluency. Sentence has been
-                validated, and national norms are provided.<br />
-                <h4 class="font-bold">Phoneme</h4>
-                Phoneme indicates which students are in need of support in phonological awareness. Below this student
-                table, in the Phoneme tab, you will find scores for subdomains of phonological awareness skills that can
-                guide instruction. Phoneme has been validated, and national norms are provided. <br />
-                <h4 class="font-bold">Letter</h4>
-                Letter indicates which students are in need of support in letter names and sounds. Below this student
-                table, in the Letter tab, you will find scores for subdomains of letter skills that can guide
-                instruction. Letter has been validated, and raw scores are provided.
-              </div>
-            </template>
-            <template v-if="selectedColumn === 'spanish'">
-              <h3 class="font-bold">Spanish</h3>
-              <div>
-                Spanish-language versions of the assessments provide additional information for Spanish-speaking
-                students. <br />
-                <br />
-                Spanish assessments are undergoing validation, and raw scores are provided. <br /><br />
-                These scores will be included in the development of national norms and support categories.
-              </div>
-            </template>
-            <template v-if="selectedColumn === 'spanishmath'">
-              <h3 class="font-bold">Spanish Mathematics</h3>
-              <div>
-                Spanish-language mathematics assessments provide additional insight into areas such as arithmetic
-                fluency, calculation ability, and mathematical procedures based on common core standards <br />
-                <br />
-                Mathematics assessments are undergoing validation, and raw scores are provided. <br /><br />
-                These scores will be included in the development of national norms and support categories.
-              </div>
-            </template>
-            <template v-else-if="selectedColumn === 'supplementary'">
-              <h3 class="font-bold">Supplementary</h3>
-              <div>
-                Supplementary assessments provide additional insight into areas such as morphology, syntax, language
-                comprehension, and rapid automatized naming. <br />
-                <br />
-                Supplementary assessments are undergoing validation, and raw scores are provided. <br /><br />
-                These scores will be included in the development of national norms and support categories.
-              </div>
-            </template>
-            <template v-else-if="selectedColumn === 'math'">
-              <h3 class="font-bold">Mathematics</h3>
-              <div>
-                Mathematics assessments provide additional insight into areas such as arithmetic fluency, calculation
-                ability, and mathematical procedures based on common core standards<br />
-                <br />
-                Mathematics assessments are undergoing validation, and raw scores are provided. <br /><br />
-                These scores will be included in the development of national norms and support categories.
-              </div>
-            </template>
-            <template v-else-if="selectedColumn === 'vision'">
-              <h3 class="font-bold">Vision</h3>
-              <div>
-                Vision assessments provide additional insight into areas such as visual acuity and visual crowding.
-                <br />
-                <br />
-                Vision assessments are undergoing validation, and raw scores are provided. <br /><br />
-                These scores will be included in the development of national norms and support categories.
-              </div>
-            </template>
-          </PvPopover>
           <PvColumn
             selection-mode="multiple"
             header-style="background-color: var(--primary-color); border:none;"
@@ -481,6 +121,18 @@
             align-frozen="left"
             header-style="background:var(--primary-color); color:white; padding-top:0; margin-top:0; padding-bottom:0; margin-bottom:0; border:0; margin-left:0"
           >
+            <template #header>
+              <div
+                v-tooltip.top="`${toolTipByHeader(col.header)}`"
+                :style="[
+                  toolTipByHeader(col.header).length > 0
+                    ? 'text-decoration: underline dotted #0000CD; text-underline-offset: 3px'
+                    : null,
+                ]"
+              >
+                {{ col.header }}
+              </div>
+            </template>
             <template #body="{ data: colData }">
               <!-- If column is a score field, use a dedicated component to render tags and scores -->
               <div v-if="col.field && col.field?.split('.')[0] === 'scores'">
@@ -512,7 +164,7 @@
                     v-tooltip.right="colData.tooltip"
                     severity="secondary"
                     text
-                    class="border-none border-round bg-white text-primary p-2 hover:surface-200"
+                    class="border-none border-round bg-white text-primary pl-2 p-2 hover:surface-200"
                     :label="colData.routeParams.buttonLabel"
                     :aria-label="col.routeTooltip"
                     :icon="col.routeIcon"
@@ -550,6 +202,136 @@
               <i v-if="sorted && sortOrder === 1" class="pi pi-sort-amount-down-alt ml-2" />
               <i v-else-if="sorted && sortOrder === -1" class="pi pi-sort-amount-up-alt ml-2" />
             </template>
+            <template v-if="col.dataType" #filter="{ filterModel }">
+              <div v-if="col.dataType === 'text' && !col.useMultiSelect" class="filter-content">
+                <PvInputText v-model="filterModel.value" type="text" class="p-column-filter" placeholder="Filter" />
+              </div>
+              <PvInputNumber
+                v-if="col.dataType === 'number' && !col.useMultiSelect"
+                v-model="filterModel.value"
+                type="text"
+                class="p-column-filter"
+                placeholder="Search"
+              />
+              <PvMultiSelect
+                v-if="col.useMultiSelect"
+                v-model="filterModel.value"
+                :options="_get(refOptions, col.field)"
+                placeholder="Any"
+                :show-toggle-all="false"
+                class="p-column-filter"
+              />
+              <PvDatePicker
+                v-if="col.dataType === 'date' && !col.useMultiSelect"
+                v-model="filterModel.value"
+                date-format="mm/dd/yy"
+                placeholder="mm/dd/yyyy"
+              />
+              <div v-if="col.dataType === 'boolean'" class="flex flex-row gap-2">
+                <PvSelect v-model="filterModel.value" :options="['True', 'False']" style="margin-bottom: 0.5rem" />
+              </div>
+              <div v-if="col.dataType === 'score'">
+                <PvSelect
+                  v-model="filterModel.value"
+                  option-label="label"
+                  option-group-label="label"
+                  option-group-children="items"
+                  :options="taskFilterOptions"
+                  data-cy="score-filter-dropdown"
+                  style="margin-bottom: 0.5rem; width: 17vh; height: 4vh"
+                >
+                  <template #option="{ option }">
+                    <div class="flex align-items-center p-0">
+                      <div v-if="supportLevelColors[option]" class="flex gap-2 p-0">
+                        <div class="small-circle tooltip" :style="`background-color: ${supportLevelColors[option]};`" />
+                        <span class="tooltiptext">{{ option }}</span>
+                      </div>
+                      <div v-else-if="progressTags[option]">
+                        <PvTag
+                          :severity="progressTags[option]?.severity"
+                          :value="progressTags[option]?.value"
+                          :icon="progressTags[option]?.icon"
+                          class="p-0.5 m-0 font-bold"
+                        />
+                      </div>
+                      <div v-else>
+                        <span class="tooltiptext">{{ option }}</span>
+                      </div>
+                    </div>
+                  </template>
+                  <template #value="{ value }">
+                    <div v-if="supportLevelColors[value]" class="flex gap-2">
+                      <div class="small-circle tooltip" :style="`background-color: ${supportLevelColors[value]};`" />
+                      <span class="tooltiptext">{{ value }}</span>
+                    </div>
+                    <div v-else-if="progressTags[value]">
+                      <PvTag
+                        :severity="progressTags[value]?.severity"
+                        :value="progressTags[value]?.value"
+                        :icon="progressTags[value]?.icon"
+                        class="p-0.5 m-0 font-bold"
+                      />
+                    </div>
+                    <div v-else>
+                      <span class="tooltiptext">{{ value }}</span>
+                    </div>
+                  </template>
+                </PvSelect>
+              </div>
+              <div v-if="col.dataType === 'progress'">
+                <PvSelect
+                  v-model="filterModel.value"
+                  :options="['Assigned', 'Started', 'Completed', 'Optional']"
+                  style="margin-bottom: 0.5rem"
+                  data-cy="progress-filter-dropdown"
+                >
+                  <template #option="{ option }">
+                    <div v-if="progressTags[option]" class="flex align-items-center">
+                      <PvTag
+                        :severity="progressTags[option]?.severity"
+                        :value="progressTags[option]?.value"
+                        :icon="progressTags[option]?.icon"
+                        :style="`min-width: 2rem; font-weight: bold`"
+                        rounded
+                      />
+                    </div>
+                  </template>
+                  <template #value="{ value }">
+                    <PvTag
+                      v-if="progressTags[value]"
+                      :severity="progressTags[value]?.severity"
+                      :value="progressTags[value]?.value"
+                      :icon="progressTags[value]?.icon"
+                      :style="`min-width: 2rem; font-weight: bold`"
+                      rounded
+                    />
+                  </template>
+                </PvSelect>
+              </div>
+            </template>
+            <template #filterclear="{ filterCallback }">
+              <div class="flex flex-row-reverse">
+                <PvButton
+                  type="button"
+                  text
+                  icon="pi pi-times"
+                  class="pl-5 pr-5 bg-primary text-white border-round border-none hover:bg-red-900"
+                  severity="primary"
+                  @click="filterCallback()"
+                  >Clear</PvButton
+                >
+              </div>
+            </template>
+            <template #filterapply="{ filterCallback }">
+              <PvButton
+                type="button"
+                icon="pi pi-times"
+                class="pl-5 pr-5 bg-primary text-white border-round border-none hover:bg-red-900"
+                severity="primary"
+                @click="filterCallback()"
+                >Apply
+              </PvButton>
+            </template>
           </PvColumn>
           <template #empty>
             <div class="flex flex-column align-items-center align-text-left my-8">
@@ -577,15 +359,12 @@ import PvButton from 'primevue/button';
 import PvDatePicker from 'primevue/datepicker';
 import PvChip from 'primevue/chip';
 import PvColumn from 'primevue/column';
-import PvColumnGroup from 'primevue/columngroup';
 import PvDataTable from 'primevue/datatable';
 import PvSelect from 'primevue/select';
 import PvInputNumber from 'primevue/inputnumber';
 import PvInputText from 'primevue/inputtext';
 import PvMultiSelect from 'primevue/multiselect';
-import PvPopover from 'primevue/popover';
 import PvTag from 'primevue/tag';
-import PvRow from 'primevue/row';
 import { FilterMatchMode, FilterOperator } from '@primevue/core/api';
 import _get from 'lodash/get';
 import _map from 'lodash/map';
@@ -709,7 +488,7 @@ const exportCSV = (exportSelected) => {
 };
 
 const compressedRows = ref(false);
-const padding = '1rem 1rem';
+const padding = '0rem 0.5rem 0rem 0.5rem';
 
 function increasePadding() {
   if (!countForVisualize.value) {
@@ -717,7 +496,7 @@ function increasePadding() {
     rowViewMode.value = 'Compact View';
   } else {
     rowViewMode.value = 'Expand View';
-    document.documentElement?.style.setProperty('--padding-value', '0 1.5rem 0 1.5rem');
+    document.documentElement?.style.setProperty('--padding-value', '0.5rem 1.5rem 0.5rem 1.5rem');
   }
   countForVisualize.value = !countForVisualize.value;
 }
@@ -804,146 +583,6 @@ function getUniqueOptions(column) {
   return options;
 }
 
-const primaryTasks = [
-  'scores.letter.percentCorrect',
-  'scores.letter.percentile',
-  'scores.letter-en-ca.percentCorrect',
-  'scores.letter-en-ca.percentile',
-  'scores.letter-en-ca.rawScore',
-  'scores.pa.percentile',
-  'scores.swr.percentile',
-  'scores.sre.percentile',
-  'scores.pa.standardScore',
-  'scores.swr.standardScore',
-  'scores.sre.standardScore',
-  'scores.sre.rawScore',
-  'scores.pa.rawScore',
-  'scores.swr.rawScore',
-  'scores.sre.rawScore',
-];
-
-const spanishTasks = [
-  'scores.letter-es.percentCorrect',
-  'scores.letter-es.percentile',
-  'scores.pa-es.percentCorrect',
-  'scores.swr-es.percentCorrect',
-  'scores.sre-es.correctIncorrectDifference',
-  'scores.pa-es.percentile',
-  'scores.swr-es.percentile',
-  'scores.sre-es.percentile',
-  'scores.letter-es.rawScore',
-  'scores.pa-es.rawScore',
-  'scores.swr-es.rawScore',
-  'scores.sre-es.rawScore',
-];
-
-const spanishMathTasks = [
-  'scores.fluency-arf-es.numCorrect',
-  'scores.fluency-calf-es.numCorrect',
-  'scores.fluency-arf-es.percentile',
-  'scores.fluency-calf-es.percentile',
-];
-
-const supplementaryTasks = [
-  'scores.morphology.percentCorrect',
-  'scores.cva.percentCorrect',
-  'scores.vocab.percentCorrect',
-  'scores.trog.percentCorrect',
-  'scores.roar-inference.percentCorrect',
-  'scores.phonics.percentCorrect',
-  'scores.morphology.percentile',
-  'scores.cva.percentile',
-  'scores.vocab.percentile',
-  'scores.trog.percentile',
-  'scores.roar-inference.percentile',
-  'scores.phonics.percentile',
-];
-
-const roamTasks = [
-  'scores.fluency-arf.numCorrect',
-  'scores.fluency-calf.numCorrect',
-  'scores.roam-alpaca.percentile',
-  'scores.egma-math.percentile',
-  'scores.fluency-arf.numCorrect',
-  'scores.fluency-calf.numCorrect',
-  'scores.roam-alpaca.percentCorrect',
-  'scores.egma-math.percentCorrect',
-  'scores.fluency-calf.percentile',
-  'scores.fluency-arf.percentile',
-];
-
-const roavTasks = [
-  'scores.ran.percentile',
-  'scores.crowding.percentile',
-  'scores.roav-mep.percentile',
-  'scores.mep.percentile',
-  'scores.mep-pseudo.percentile',
-  'scores.ran.percentCorrect',
-  'scores.crowding.percentCorrect',
-  'scores.roav-mep.percentCorrect',
-  'scores.mep.percentCorrect',
-  'scores.mep-pseudo.percentCorrect',
-];
-const getSpacerColumnWidth = computed(() => {
-  // Look through computedColumns.value
-  // Find first instance of a Spanish or supplementary or math or vision column
-  // If found, return the index of that first column, return that as the length of the spacer row
-  const columns = computedColumns.value;
-  const allTasks = [
-    ...primaryTasks,
-    ...spanishTasks,
-    ...spanishMathTasks,
-    ...supplementaryTasks,
-    ...roamTasks,
-    ...roavTasks,
-  ];
-  for (let i = 0; i < columns.length; i++) {
-    if (allTasks.includes(columns[i].field)) {
-      return i + 1;
-    }
-  }
-  return columns.length;
-});
-
-const primarySpacerColumns = computed(() => {
-  // Return the number of the primary columns in computedColumns.value
-  // Return 0 if no Spanish columns
-  const columns = computedColumns.value;
-  return columns.filter((column) => primaryTasks.includes(column.field)).length;
-});
-
-const spanishSpacerColumns = computed(() => {
-  // Return the number of the spanish columns in computedColumns.value
-  // Return 0 if no Spanish columns
-  const columns = computedColumns.value;
-  return columns.filter((column) => spanishTasks.includes(column.field)).length;
-});
-
-const spanishMathSpacerColumns = computed(() => {
-  // Return the number of the spanish columns in computedColumns.value
-  // Return 0 if no Spanish columns
-  const columns = computedColumns.value;
-  return columns.filter((column) => spanishMathTasks.includes(column.field)).length;
-});
-
-const supplementarySpacerColumns = computed(() => {
-  // Return the number of supplementary columns in computedColumns.value
-  const columns = computedColumns.value;
-  return columns.filter((column) => supplementaryTasks.includes(column.field)).length;
-});
-
-const mathSpacerColumns = computed(() => {
-  // Return the number of math columns in computedColumns.value
-  const columns = computedColumns.value;
-  return columns.filter((column) => roamTasks.includes(column.field)).length;
-});
-
-const visionSpacerColumns = computed(() => {
-  // Return the number of vision columns in computedColumns.value
-  const columns = computedColumns.value;
-  return columns.filter((column) => roavTasks.includes(column.field)).length;
-});
-
 function getFormattedDate(date) {
   if (date instanceof Date) {
     return date.toLocaleDateString('en-us', { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' });
@@ -976,13 +615,6 @@ const onFreezeToggle = (selected) => {
   });
 };
 
-const op = ref();
-const selectedColumn = ref(null);
-
-const toggle = (event, column) => {
-  selectedColumn.value = column;
-  op.value.toggle(event);
-};
 // Pass through data table events
 const emit = defineEmits(['export-all', 'selection', 'reset-filters', 'export-selected', 'export-org-users']);
 </script>
@@ -1109,5 +741,12 @@ button.p-column-filter-menu-button.p-link:hover {
 
 .scrollable-container {
   scrollbar-color: var(--primary-color) white;
+}
+.p-datatable-gridlines .p-datatable-paginator-top,
+.p-datatable-gridlines .p-datatable-paginator-bottom {
+  border: none !important;
+}
+.p-button-text.p-button-secondary {
+  color: white !important;
 }
 </style>

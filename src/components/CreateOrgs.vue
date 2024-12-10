@@ -22,11 +22,10 @@
                 :options="isLevante ? levanteOrgTypes : orgTypes"
                 show-clear
                 option-label="singular"
-                placeholder="Select an org type"
                 class="w-full"
                 data-cy="dropdown-org-type"
               />
-              <label for="org-type">Org Type<span id="required-asterisk">*</span></label>
+              <label for="org-type">Select an Org Type<span id="required-asterisk">*</span></label>
             </PvFloatLabel>
           </div>
         </div>
