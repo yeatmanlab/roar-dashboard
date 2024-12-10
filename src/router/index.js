@@ -382,7 +382,7 @@ const routes = [
       {
         path: 'settings',
         name: 'ProfileSettings',
-        component: () => import('../components/views/Settings.vue'),
+        component: () => import('../components/views/SettingsView.vue'),
       },
     ],
     meta: { pageTitle: 'Profile' },
