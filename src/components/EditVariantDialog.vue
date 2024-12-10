@@ -437,6 +437,7 @@ const handleSave = () => {
 
   // Check if any emppty fields in Assigned Conditions
   for (const condition of assignedConditions.value) {
+    // eslint-disable-next-line no-unused-vars
     for (const [key, value] of Object.entries(condition)) {
       if (value == '') {
         errorSubmitText.value = 'Missing fields in Assigned Conditions';
@@ -447,6 +448,7 @@ const handleSave = () => {
 
   // Check if any emppty fields in Optional Conditions
   for (const condition of optionalConditions.value) {
+    // eslint-disable-next-line no-unused-vars
     for (const [key, value] of Object.entries(condition)) {
       if (value == '') {
         errorSubmitText.value = 'Missing fields in Optional Conditions';
