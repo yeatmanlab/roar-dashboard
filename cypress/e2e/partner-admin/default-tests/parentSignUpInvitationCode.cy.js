@@ -25,7 +25,6 @@ function inputLoginValues() {
 function completeParentSignUp(org) {
   cy.get('div.p-checkbox-box').click();
   cy.get('button').contains('Continue').click();
-  cy.get('button').contains('Next').click();
   cy.get('div').should('contain.text', org.orgVerified);
 }
 
