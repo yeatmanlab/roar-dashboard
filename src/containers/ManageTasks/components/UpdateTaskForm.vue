@@ -53,12 +53,13 @@ import { storeToRefs } from 'pinia';
 import { useToast } from 'primevue/usetoast';
 import PvButton from 'primevue/button';
 import PvToast from 'primevue/toast';
-import { camelCase } from 'lodash';
 import { useAuthStore } from '@/store/auth';
 import useTasksQuery from '@/composables/queries/useTasksQuery';
 import useUpdateTaskMutation from '@/composables/mutations/useUpdateTaskMutation';
 import Dropdown from '@/components/Form/Dropdown';
 import TaskParametersConfigurator from './TaskParametersConfigurator.vue';
+import { convertParamArrayToObject } from '@/helpers/convertParamArrayToObject';
+import { convertObjectToParamArray } from '@/helpers/convertObjectToParamArray';
 import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
 
 const toast = useToast();
@@ -88,38 +89,8 @@ let taskData = computed(() => {
 let taskCoreConfig = reactive([]);
 let taskGameParameters = reactive([]);
 
-/**
- * Convert an object to an array of objects with name and value properties.
- *
- * @param {Object} obj - The object to be converted.
- * @returns {Array} - An array of objects with name and value properties.
- */
-function convertObjToParams(obj) {
-  return Object.entries(obj).map(([name, value]) => ({
-    name,
-    value,
-    type: typeof value,
-  }));
-}
-
-/**
- * Convert the task parameters array to a key-value object.
- *
- * @param {Array} paramType – The array of task parameters to be converted to an object.
- * @returns {Object} – The object representation of the task parameters.
- */
-function convertParamsToObj(paramType) {
-  const target = paramType.value !== undefined ? paramType.value : paramType;
-
-  return target.reduce((acc, item) => {
-    if (item.name) {
-      acc[camelCase(item.name)] = item.value;
-    }
-    return acc;
-  }, {});
-}
-
 let unsubscribe;
+
 const init = () => {
   if (unsubscribe) unsubscribe();
   initialized.value = true;
@@ -157,8 +128,8 @@ watch(
 
     // When tasks are created, params are stored as an key-value object. To edit tasks, revert to an array of objects
     // compatible with the TaskParametersConfigurator component, requiring a name, value, and type property.
-    let taskParams = convertObjToParams(newVal);
-    let taskGameConfigParams = newVal.gameConfig ? convertObjToParams(newVal.gameConfig) : [];
+    let taskParams = convertObjectToParamArray(newVal);
+    let taskGameConfigParams = newVal.gameConfig ? convertObjectToParamArray(newVal.gameConfig) : [];
 
     // Remove ignore fields from the task data
     taskParams = taskParams.filter((item) => !ignoreFields.includes(item.name));
@@ -202,8 +173,8 @@ const handleSubmit = async () => {
     return;
   }
 
-  const taskCoreConfigObject = convertParamsToObj(taskCoreConfig);
-  const taskGameParametersObject = convertParamsToObj(taskGameParameters);
+  const taskCoreConfigObject = convertParamArrayToObject(taskCoreConfig);
+  const taskGameParametersObject = convertParamArrayToObject(taskGameParameters);
 
   // Construct the task object to be submitted.
   let taskObject = {

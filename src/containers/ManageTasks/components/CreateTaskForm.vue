@@ -109,11 +109,11 @@ import { useVuelidate } from '@vuelidate/core';
 import { useToast } from 'primevue/usetoast';
 import PvButton from 'primevue/button';
 import PvToast from 'primevue/toast';
-import { camelCase } from 'lodash';
 import useAddTaskMutation from '@/composables/mutations/useAddTaskMutation';
 import TextInput from '@/components/Form/TextInput';
 import CheckboxInput from '@/components/Form/CheckboxInput';
 import TaskParametersConfigurator from './TaskParametersConfigurator.vue';
+import { convertParamArrayToObject } from '@/helpers/convertParamArrayToObject';
 import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
 import { TASK_PARAMETER_DEFAULT_SHAPE } from '@/constants/tasks';
 
@@ -188,23 +188,6 @@ function resetForm() {
 }
 
 /**
- * Convert the task parameters array to a key-value object.
- *
- * @param {Array} paramType – The array of task parameters to be converted to an object.
- * @returns {Object} – The object representation of the task parameters.
- */
-function convertParamsToObj(paramType) {
-  const target = paramType.value !== undefined ? paramType.value : paramType;
-
-  return target.reduce((acc, item) => {
-    if (item.name) {
-      acc[camelCase(item.name)] = item.value;
-    }
-    return acc;
-  }, {});
-}
-
-/**
  * Build external Task URL
  *
  * @param {String} url – The base URL to which the task parameters will be appended.
@@ -250,10 +233,10 @@ const handleSubmit = async () => {
   };
 
   if (taskModel.external) {
-    taskObject.taskParams = convertParamsToObj(taskParamsModel);
+    taskObject.taskParams = convertParamArrayToObject(taskParamsModel);
     taskObject.taskURL = buildTaskURL(taskModel.taskURL, taskObject.taskParams);
   } else {
-    taskObject.gameParams = convertParamsToObj(gameParamsModel) ?? {};
+    taskObject.gameParams = convertParamArrayToObject(gameParamsModel) ?? {};
   }
 
   await addTask(taskObject, {
