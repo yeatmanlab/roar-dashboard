@@ -6,6 +6,6 @@ export const TASK_PARAMETER_TYPES = Object.freeze({
 
 export const TASK_PARAMETER_DEFAULT_SHAPE = {
   name: '',
-  value: null,
+  value: '',
   type: TASK_PARAMETER_TYPES.STRING,
 };

@@ -23,15 +23,16 @@
 </template>
 
 <script setup>
+import { nanoid } from 'nanoid';
 import PvInputNumber from 'primevue/inputnumber';
 import { computed } from 'vue';
 
-const model = defineModel({ required: true, type: String });
+const model = defineModel({ required: true, type: Number });
 
 const props = defineProps({
   id: {
     type: String,
-    required: true,
+    default: () => `input-${nanoid()}`,
   },
   label: {
     type: String,
@@ -47,11 +48,11 @@ const props = defineProps({
   },
   isInvalid: {
     type: Boolean,
-    required: true,
+    default: false,
   },
   errors: {
     type: Array,
-    required: true,
+    default: () => [],
   },
   required: {
     type: Boolean,

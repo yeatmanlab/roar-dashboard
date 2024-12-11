@@ -6,6 +6,7 @@
     </label>
 
     <PvDropdown
+      :id="id"
       v-model="model"
       class="w-full"
       :options="data"
@@ -13,6 +14,7 @@
       :option-value="valueKey || null"
       :placeholder="loadingData ? 'Loading…' : placeholder"
       :disabled="loadingData || disabled"
+      :loading="loadingData"
     />
 
     <span v-if="hasErrors" class="absolute">
@@ -24,15 +26,16 @@
 </template>
 
 <script setup>
+import { nanoid } from 'nanoid';
 import { computed } from 'vue';
 import PvDropdown from 'primevue/dropdown';
 
-const model = defineModel({ required: true, type: String });
+const model = defineModel({ required: true, type: [String, Array, Boolean] });
 
 const props = defineProps({
   id: {
     type: String,
-    required: true,
+    default: () => `dropdown-${nanoid()}`,
   },
   label: {
     type: String,
@@ -52,28 +55,30 @@ const props = defineProps({
   },
   loadingData: {
     type: Boolean,
-    required: false,
     default: false,
   },
   labelKey: {
     type: String,
-    required: true,
+    default: null,
   },
   valueKey: {
     type: String,
-    required: true,
+    default: null,
   },
   isInvalid: {
     type: Boolean,
-    required: true,
+    default: false,
   },
   errors: {
     type: Array,
-    required: true,
+    default: () => [],
   },
   disabled: {
     type: Boolean,
-    required: false,
+    default: false,
+  },
+  required: {
+    type: Boolean,
     default: false,
   },
 });

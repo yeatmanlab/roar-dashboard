@@ -25,6 +25,11 @@ fieldset {
   min-width: 0;
 }
 
+legend {
+  padding: 0;
+  padding-inline: 0;
+}
+
 .transition-colors {
   transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
@@ -33,6 +38,10 @@ fieldset {
 
 .justify-between {
   justify-content: space-between;
+}
+
+.border {
+  border-width: 1px;
 }
 
 .rounded {
@@ -47,6 +56,22 @@ fieldset {
 .mt-0 {
   margin-top: 0;
   margin-block-start: 0;
+}
+
+.max-w-xs {
+  max-width: 20rem;
+}
+
+.min-w-32 {
+  min-width: 8rem;
+}
+
+.w-32 {
+  width: 8rem;
+}
+
+.w-1\/4 {
+  width: 25%;
 }
 
 .leading-7 {

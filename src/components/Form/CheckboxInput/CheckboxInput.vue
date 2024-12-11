@@ -9,6 +9,7 @@
 </template>
 
 <script setup>
+import { nanoid } from 'nanoid';
 import PvCheckbox from 'primevue/checkbox';
 
 const model = defineModel({ required: true, type: Boolean });
@@ -16,11 +17,10 @@ const model = defineModel({ required: true, type: Boolean });
 defineProps({
   id: {
     type: String,
-    required: true,
+    default: () => `checkbox-${nanoid()}`,
   },
   label: {
     type: String,
-    required: false,
     default: null,
   },
 });

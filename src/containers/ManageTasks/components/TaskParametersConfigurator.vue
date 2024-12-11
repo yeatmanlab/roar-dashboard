@@ -1,30 +1,8 @@
 <template>
   <div class="flex flex-column row-gap-4">
-    <div v-for="(param, index) in model" :key="index">
-      <div class="flex gap-2 align-content-start flex-grow-0 params-container">
-        <PvInputText v-model="param.name" placeholder="Name" />
-
-        <PvDropdown v-model="param.type" :options="typeOptions" />
-
-        <PvInputText v-if="param.type === TASK_PARAMETER_TYPES.STRING" v-model="param.value" placeholder="Value" />
-
-        <PvDropdown
-          v-else-if="param.type === TASK_PARAMETER_TYPES.BOOLEAN"
-          v-model="param.value"
-          :options="[true, false]"
-          placeholder="Select"
-        />
-
-        <PvInputNumber v-else-if="param.type === TASK_PARAMETER_TYPES.NUMBER" v-model="param.value" placeholder="0" />
-
-        <PvButton
-          icon="pi pi-trash"
-          text
-          class="delete-btn bg-primary text-white border-none border-round p-2 px-3 hover:bg-red-900"
-          @click="removeRow(index)"
-        />
-      </div>
-    </div>
+    <template v-for="(param, index) in model" :key="index">
+      <TaskParametersConfiguratorRow v-model="model" :row-index="index" :edit-mode="editMode" @remove-row="removeRow" />
+    </template>
 
     <PvButton
       text
@@ -40,18 +18,36 @@
 </template>
 
 <script setup>
+import { watch } from 'vue';
+import useVuelidate from '@vuelidate/core';
 import PvButton from 'primevue/button';
-import PvDropdown from 'primevue/dropdown';
-import PvInputNumber from 'primevue/inputnumber';
-import PvInputText from 'primevue/inputtext';
-import { TASK_PARAMETER_TYPES, TASK_PARAMETER_DEFAULT_SHAPE } from '@/constants/tasks';
-
-const typeOptions = Object.values(TASK_PARAMETER_TYPES);
+import TaskParametersConfiguratorRow from './TaskParametersConfiguratorRow.vue';
+import { TASK_PARAMETER_DEFAULT_SHAPE } from '@/constants/tasks';
 
 const model = defineModel({
   required: true,
   type: Array,
 });
+
+defineProps({
+  editMode: {
+    type: Boolean,
+    required: false,
+    default: false,
+  },
+});
+
+const v$ = useVuelidate({}, { model });
+
+// watch model value changes
+watch(
+  model.value,
+  async () => {
+    const isFormValid = await v$.value.$validate();
+    console.log('model valid', isFormValid);
+  },
+  { deep: true },
+);
 
 /**
  * Add a new row to the configurator.
@@ -59,7 +55,7 @@ const model = defineModel({
  * @returns {void}
  */
 function addRow() {
-  model.value.push(Object.assign({}, TASK_PARAMETER_DEFAULT_SHAPE));
+  model.value.push(Object.assign({}, TASK_PARAMETER_DEFAULT_SHAPE, { isNew: true }));
 }
 
 /**

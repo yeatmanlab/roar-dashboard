@@ -9,7 +9,6 @@
         :is-invalid="v$.taskName.$invalid && v$.taskName.$dirty"
         :errors="v$.taskName.$errors"
         :required="true"
-        aria-described-by="activation-code-error"
       />
 
       <TextInput
@@ -19,7 +18,6 @@
         :is-invalid="v$.taskId.$invalid && v$.taskId.$dirty"
         :errors="v$.taskId.$errors"
         :required="true"
-        aria-described-by="activation-code-error"
       />
 
       <TextInput
@@ -28,7 +26,6 @@
         label="Cover Image URL"
         :is-invalid="v$.coverImage.$invalid && v$.coverImage.$dirty"
         :errors="v$.coverImage.$errors"
-        aria-described-by="activation-code-error"
       />
 
       <TextInput
@@ -37,7 +34,6 @@
         label="Description"
         :is-invalid="v$.taskDescription.$invalid && v$.taskDescription.$dirty"
         :errors="v$.taskDescription.$errors"
-        aria-described-by="activation-code-error"
       />
 
       <TextInput
@@ -49,7 +45,6 @@
         :is-invalid="v$.taskURL.$invalid && v$.taskURL.$dirty"
         :errors="v$.taskURL.$errors"
         :required="true"
-        aria-described-by="activation-code-error"
       />
     </fieldset>
 
@@ -232,7 +227,17 @@ function buildTaskURL(url, paramsObject) {
  */
 const handleSubmit = async () => {
   const isFormValid = await v$.value.$validate();
-  if (!isFormValid) return;
+
+  if (!isFormValid) {
+    toast.add({
+      severity: TOAST_SEVERITIES.WARNING,
+      summary: 'Not so fast!',
+      detail: 'Invalid input, please check errors.',
+      life: TOAST_DEFAULT_LIFE_DURATION,
+    });
+
+    return;
+  }
 
   let taskObject = {
     taskId: taskModel.taskId,
@@ -266,7 +271,7 @@ const handleSubmit = async () => {
       toast.add({
         severity: TOAST_SEVERITIES.ERROR,
         summary: 'Error',
-        detail: 'Unable to create task, please try again.',
+        detail: 'Failed to create task, please try again.',
         life: TOAST_DEFAULT_LIFE_DURATION,
       });
 
