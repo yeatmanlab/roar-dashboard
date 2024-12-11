@@ -143,7 +143,7 @@
             </template>
             <span>
               <label for="view-columns" class="view-label">View</label>
-              <PvDropdown
+              <PvSelect
                 id="view-columns"
                 v-model="viewMode"
                 :options="viewOptions"
@@ -277,7 +277,7 @@ import _lowerCase from 'lodash/lowerCase';
 import { getGrade } from '@bdelab/roar-utils';
 import PvButton from 'primevue/button';
 import PvConfirmDialog from 'primevue/confirmdialog';
-import PvDropdown from 'primevue/dropdown';
+import PvSelect from 'primevue/select';
 import PvSelectButton from 'primevue/selectbutton';
 import PvTabPanel from 'primevue/tabpanel';
 import PvTabView from 'primevue/tabview';

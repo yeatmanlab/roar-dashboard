@@ -17,13 +17,14 @@
               <PvButton
                 icon="pi pi-bars mr-2"
                 class="bg-primary text-white p-2 mr-2 border-none border-round hover:bg-red-900"
+                style="min-width: 10vh; margin-left: 5vh"
                 label="Menu"
                 @click="toggleMenu"
               />
             </template>
 
             <template #end>
-              <div class="flex gap-2 align-items-center justify-content-center mr-3">
+              <div class="flex gap-2 align-items-center justify-content-center mr-2">
                 <div v-if="isWideScreen" class="nav-user-wrapper flex align-items-center gap-2 bg-gray-100">
                   <div class="text-lg font-bold text-gray-600" data-cy="user-display-name">
                     {{ $t('navBar.greeting') }}, {{ userDisplayName }}!
@@ -45,11 +46,11 @@
                   >{{ $t('navBar.signOut') }}
                 </PvButton>
 
-                <div v-if="authStore.isUserAdmin" class="nav-user-wrapper bg-gray-100">
+                <div v-if="authStore.isUserAdmin" class="nav-user-wrapper p-0">
                   <router-link :to="{ path: APP_ROUTES.ACCOUNT_PROFILE }">
                     <button
                       data-cy="button-profile-info"
-                      class="no-underline p-1 m-0 text-primary border-none border-round cursor-pointer h-2rem w-2rem text-sm hover:bg-red-900 hover:text-white"
+                      class="no-underline m-0 p-0 text-primary border-none border-round cursor-pointer h-3rem w-3rem text-sm hover:bg-red-900 hover:text-white"
                     >
                       <i class="pi pi-cog"></i></button
                   ></router-link>

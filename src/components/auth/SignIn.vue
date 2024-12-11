@@ -6,7 +6,7 @@
           <PvInputText
             :id="$t('authSignIn.emailId')"
             v-model="v$.email.$model"
-            :class="{ 'p-invalid': invalid }"
+            :class="['w-full', { 'p-invalid': invalid }]"
             aria-describedby="email-error"
             :placeholder="$t('authSignIn.emailPlaceholder')"
             data-cy="input-username-email"
@@ -27,7 +27,7 @@
             <PvPassword
               :id="$t('authSignIn.passwordId')"
               v-model="v$.password.$model"
-              :class="{ 'p-invalid': invalid }"
+              :class="['w-full', { 'p-invalid': invalid }]"
               toggle-mask
               show-icon="pi pi-eye-slash"
               hide-icon="pi pi-eye"
