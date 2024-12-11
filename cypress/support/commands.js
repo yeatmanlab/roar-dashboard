@@ -54,7 +54,7 @@ Cypress.Commands.add('loginWithEmail', (username, password) => {
  * Logs out the current user and verifies redirection to the sign-in page.
  */
 Cypress.Commands.add('logout', () => {
-  cy.get('[data-cy="button-sign-out"]', { timeout: Cypress.env('timeout') }).click();
+  cy.get('[data-cy="navbar__signout-btn-desktop"]', { timeout: Cypress.env('timeout') }).click();
   cy.get('h1', { timeout: Cypress.env('timeout') }).should('contain.text', 'Welcome to ROAR!');
   cy.url({ timeout: Cypress.env('timeout') }).should('eq', `${Cypress.env('baseUrl')}/signin`);
   cy.log('Logout successful.');
