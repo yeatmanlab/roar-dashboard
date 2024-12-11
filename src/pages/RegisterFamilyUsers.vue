@@ -38,7 +38,7 @@
       <div>
         <div v-if="spinner === false">
           <KeepAlive>
-            <component :is="activeComp()" :code="code" @submit="handleSubmit($event)" :consent="consent" />
+            <component :is="activeComp()" :code="code" :consent="consent" @submit="handleSubmit($event)" />
           </KeepAlive>
           <div
             v-if="isSuperAdmin"
@@ -202,7 +202,7 @@ watch([parentInfo, studentInfo], ([newParentInfo, newStudentInfo]) => {
         },
       };
     });
-    const consentData = { ...consent, name: consentName };
+    const consentData = { version: consent.value?.version, name: consentName.value };
     authStore
       .createNewFamily(
         rawParentInfo.ParentEmail,

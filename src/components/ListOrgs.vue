@@ -53,8 +53,8 @@
           <div v-if="activeOrgType === ORG_TYPES.GROUPS" class="mx-2">
             <PvToggleButton
               v-model="hideSubgroups"
-              offLabel="Hide Subgroups"
-              onLabel="Show Subgroups"
+              off-label="Hide Subgroups"
+              on-label="Show Subgroups"
               class="p-2 rounded"
             />
           </div>

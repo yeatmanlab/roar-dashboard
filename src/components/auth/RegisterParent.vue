@@ -270,8 +270,6 @@ function handleCaptcha() {
 }
 
 const showConsent = ref(false);
-const consentText = ref('');
-const consentVersion = ref('');
 
 async function handleConsentAccept() {
   state.accept = true;
