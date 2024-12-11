@@ -168,8 +168,6 @@ const getSpecificSurveyProgress = computed(() => (loopIndex) => {
   const localStorageKey = `${LEVANTE_SURVEY_RESPONSES_KEY}-${props.userData.id}`;
   const localStorageData = JSON.parse(localStorage.getItem(localStorageKey) || '{}');
 
-  console.log('surveyStore.specificSurveyRelationData: ', surveyStore.specificSurveyRelationData)
-
   if (localStorageData && surveyStore.specificSurveyRelationData[loopIndex]) {
     const specificIdFromServer = surveyStore.specificSurveyRelationData[loopIndex].id;
 
@@ -185,11 +183,9 @@ const getSpecificSurveyProgress = computed(() => (loopIndex) => {
   }
 
   // If data is not found in localStorage, use surveyData from server
-  console.log('surveyData: ', surveyData)
   if (!surveyData || !Array.isArray(surveyData)) return 0;
 
   const currentSurvey = surveyData.find(doc => doc.administrationId === selectedAdmin.value.id);
-  console.log('currentSurvey: ', currentSurvey)
   if (!currentSurvey || !currentSurvey.specific || !currentSurvey.specific[loopIndex]) return 0;
   
   // Specific survey is complete

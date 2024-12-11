@@ -554,20 +554,6 @@ watch(surveyDependenciesLoaded, async (isLoaded) => {
     }
   }
 
-
-  if (userType.value === 'student' && surveyStore.isGeneralSurveyComplete) {
-    return
-  } else if (userType.value === 'teacher' || userType.value === 'parent') {
-    if (surveyStore.isGeneralSurveyComplete && surveyStore.isSpecificSurveyComplete) {
-      return
-    }
-  }
-
-
-  const surveyDataToStartAt = userType.value === 'student' || !surveyStore.isGeneralSurveyComplete
-    ? surveyData.value.general
-    : surveyData.value.specific;
-
   // Fetch child docs for parent or class docs for teacher
   if ((userType.value === 'parent' || userType.value === 'teacher')) {
     try {
@@ -584,12 +570,24 @@ watch(surveyDependenciesLoaded, async (isLoaded) => {
           }));
       
       const res = await fetchDocsById(fetchConfig);
-      console.log('res', res)
       surveyStore.setSpecificSurveyRelationData(res);
     } catch (error) {
       console.error('Error fetching relation data:', error);
     }
   }
+
+  if (userType.value === 'student' && surveyStore.isGeneralSurveyComplete) {
+    return
+  } else if (userType.value === 'teacher' || userType.value === 'parent') {
+    if (surveyStore.isGeneralSurveyComplete && surveyStore.isSpecificSurveyComplete) {
+      return
+    }
+  }
+
+
+  const surveyDataToStartAt = userType.value === 'student' || !surveyStore.isGeneralSurveyComplete
+    ? surveyData.value.general
+    : surveyData.value.specific;
 
   const surveyInstance = createSurveyInstance(surveyDataToStartAt);
   setupMarkdownConverter(surveyInstance);
