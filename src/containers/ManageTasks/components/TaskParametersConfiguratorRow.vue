@@ -77,7 +77,7 @@ import { computed } from 'vue';
 import { required } from '@vuelidate/validators';
 import useVuelidate from '@vuelidate/core';
 import PvButton from 'primevue/button';
-import { hasNoDuplicates } from '@/helpers/formValidators';
+import { hasNoDuplicates, notInBlacklist } from '@/helpers/formValidators';
 import TextInput from '@/components/Form/TextInput';
 import NumberInput from '@/components/Form/NumberInput';
 import Dropdown from '@/components/Form/Dropdown';
@@ -103,8 +103,11 @@ const props = defineProps({
   },
   editMode: {
     type: Boolean,
-    required: false,
     default: false,
+  },
+  validationKeyBlacklist: {
+    type: Array,
+    default: () => [],
   },
 });
 
@@ -112,7 +115,11 @@ const row = computed(() => model.value[props.rowIndex]);
 
 const rules = {
   row: {
-    name: { required, noDuplicates: hasNoDuplicates(model.value, 'name', 'Parameter names should be unique') },
+    name: {
+      required,
+      noDuplicates: hasNoDuplicates(model.value, 'name', 'Parameter names should be unique'),
+      notInBlacklist: notInBlacklist(props.validationKeyBlacklist, 'Parameter name is reserved'),
+    },
     type: { required },
     value: { required },
   },

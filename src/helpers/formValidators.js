@@ -24,3 +24,23 @@ export const hasNoDuplicates = (collection, propertyName, errorMessage) => {
     }),
   );
 };
+
+/**
+ * Validator to check if a value is not present in a given array.
+ *
+ * @param {Array} blacklist - The array to check against.
+ * @param {String} errorMessage - The error message to display if the value is present in the blacklist.
+ * @returns {Function} A validator function that can be used with Vuelidate.
+ */
+export const notInBlacklist = (blacklist, errorMessage) => {
+  return helpers.withParams(
+    { type: 'notInBlacklist', blacklist, errorMessage },
+    helpers.withMessage(errorMessage, (value) => {
+      // Ignore empty values as other validators will handle this.
+      if (value === '') return true;
+
+      // Check if the value is present in the blacklist.
+      return !blacklist.includes(value);
+    }),
+  );
+};

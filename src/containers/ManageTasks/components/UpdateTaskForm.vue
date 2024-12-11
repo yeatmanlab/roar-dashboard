@@ -20,7 +20,7 @@
           <p class="text-md text-gray-500 mt-2">Adjust the core configuration for this task.</p>
         </div>
 
-        <TaskParametersConfigurator v-model="taskCoreConfig" :edit-mode="true" />
+        <TaskParametersConfigurator v-model="taskCoreConfig" :edit-mode :validation-key-blacklist="ignoreFields" />
       </fieldset>
 
       <fieldset class="flex flex-column row-gap-2">
@@ -29,7 +29,7 @@
           <p class="text-md text-gray-500 mt-2">Create the game parameters for variants of this task.</p>
         </div>
 
-        <TaskParametersConfigurator v-model="taskGameParameters" :edit-mode="true" />
+        <TaskParametersConfigurator v-model="taskGameParameters" :edit-mode :validation-key-blacklist="ignoreFields" />
       </fieldset>
 
       <div class="flex flex-column gap-4 lg:align-items-center">

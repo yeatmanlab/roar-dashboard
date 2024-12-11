@@ -1,7 +1,13 @@
 <template>
   <div class="flex flex-column row-gap-4">
     <template v-for="(param, index) in model" :key="index">
-      <TaskParametersConfiguratorRow v-model="model" :row-index="index" :edit-mode="editMode" @remove-row="removeRow" />
+      <TaskParametersConfiguratorRow
+        v-model="model"
+        :row-index="index"
+        :edit-mode="editMode"
+        :validation-key-blacklist="validationKeyBlacklist"
+        @remove-row="removeRow"
+      />
     </template>
 
     <PvButton
@@ -18,8 +24,6 @@
 </template>
 
 <script setup>
-import { watch } from 'vue';
-import useVuelidate from '@vuelidate/core';
 import PvButton from 'primevue/button';
 import TaskParametersConfiguratorRow from './TaskParametersConfiguratorRow.vue';
 import { TASK_PARAMETER_DEFAULT_SHAPE } from '@/constants/tasks';
@@ -32,22 +36,13 @@ const model = defineModel({
 defineProps({
   editMode: {
     type: Boolean,
-    required: false,
     default: false,
   },
-});
-
-const v$ = useVuelidate({}, { model });
-
-// watch model value changes
-watch(
-  model.value,
-  async () => {
-    const isFormValid = await v$.value.$validate();
-    console.log('model valid', isFormValid);
+  validationKeyBlacklist: {
+    type: Array,
+    default: () => [],
   },
-  { deep: true },
-);
+});
 
 /**
  * Add a new row to the configurator.
