@@ -178,8 +178,6 @@ const {
   enabled: initialized,
 });
 
-console.log('userAssignments', userAssignments.value)
-
 const sortedUserAdministrations = computed(() => {
   return [...(userAssignments.value ?? [])].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 });
@@ -437,8 +435,6 @@ watch(
   [userData, selectedAdmin, userAssignments],
   async ([newUserData, isSelectedAdminChanged]) => {
     // If the assignments are still loading, abort.
-    console.log('userAssignments in watcher: ', userAssignments.value)
-
     if (isLoadingAssignments.value || isFetchingAssignments.value || !userAssignments.value?.length) return;
 
     // If the selected admin changed, ensure consent was given before proceeding.
