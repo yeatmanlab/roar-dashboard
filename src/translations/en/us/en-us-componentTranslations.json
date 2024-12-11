@@ -87,9 +87,9 @@
     "surveyProgressSpecificTeacher": "Classroom",
     "mefsName": "Lion and Monkey",
     "mefsDescription": "Match the shapes and colors.",
-    "vocabName": "Vocabulary",
-    "vocabDescription": "Listen to the word and choose the matching picture.",
-    "roarInferenceName": "Roar - Inference",
+    "vocabName": "Vocabulary Game",
+    "vocabDescription": "Listen to the word and choose the matching image.",
+    "roarInferenceName": "ROAR - Inference",
     "roarInferenceDescription": "Read the stories and answer the questions."
   },
   "navBar": {

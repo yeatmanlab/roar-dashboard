@@ -192,7 +192,7 @@ import { setBarChartData, setBarChartOptions } from '@/helpers/plotting';
 import { isLevante } from '@/helpers';
 import { APP_ROUTES } from '@/constants/routes';
 import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
-import RoarDataTable from '@/components/RoarDataTable.vue';
+import RoarDataTable from '@/components/RoarDataTable';
 
 const router = useRouter();
 const authStore = useAuthStore();

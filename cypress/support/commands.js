@@ -1,5 +1,3 @@
-import { createMockStore } from './utils.js';
-
 /**
  * Logs in a user using the provided username and password.
  * Utilizes Cypress sessions to persist login state across tests.
@@ -54,7 +52,7 @@ Cypress.Commands.add('loginWithEmail', (username, password) => {
  * Logs out the current user and verifies redirection to the sign-in page.
  */
 Cypress.Commands.add('logout', () => {
-  cy.get('[data-cy="button-sign-out"]', { timeout: Cypress.env('timeout') }).click();
+  cy.get('[data-cy="navbar__signout-btn-desktop"]', { timeout: Cypress.env('timeout') }).click();
   cy.get('h1', { timeout: Cypress.env('timeout') }).should('contain.text', 'Welcome to ROAR!');
   cy.url({ timeout: Cypress.env('timeout') }).should('eq', `${Cypress.env('baseUrl')}/signin`);
   cy.log('Logout successful.');
@@ -324,23 +322,4 @@ Cypress.Commands.add('checkOrgExists', (org, timeout = 10000) => {
 
   // Log the district name exists
   cy.log(`${Cypress.env('testPartnerDistrictName')} exists.`);
-});
-
-/**
- * Create a mock store for the user type specified.
- * @param {string} userType - The type of user to create a mock store for. One of 'superAdmin', 'partnerAdmin', or 'participant'. Defaults to 'participant'.
- * @returns {void}
- */
-Cypress.Commands.add('setAuthStore', (userType = 'participant') => {
-  const authStore = createMockStore(userType);
-  const serializedStore = JSON.stringify(authStore.$state);
-
-  // Store the mock store in sessionStorage
-  cy.window().then((window) => {
-    window.sessionStorage.setItem('authStore', serializedStore);
-  });
-
-  cy.log('Created mock store for user type:', userType, ' with state:', authStore.$state);
-  // Store the mock store in the Cypress context as an alias
-  return cy.wrap(authStore.$state).as('authStore');
 });
