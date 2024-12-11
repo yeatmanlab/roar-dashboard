@@ -360,6 +360,7 @@ export const tasksToDisplayPercentCorrect = [
   'mep',
   'roav-mep',
   'mep-pseudo',
+  'roar-inference',
 ];
 
 /*
