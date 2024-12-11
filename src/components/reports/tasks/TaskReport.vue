@@ -62,6 +62,17 @@
       :computed-table-data="computedTableData"
     />
     <SubscoreTable
+      v-if="taskId === 'letter-en-ca' && !isLoadingTasksDictionary"
+      task-id="letter-en-ca"
+      :task-name="tasksDictionary['letter-en-ca'].publicName"
+      :administration-id="administrationId"
+      :org-type="orgType"
+      :org-id="orgId"
+      :administration-name="administrationInfo.name ?? undefined"
+      :org-name="orgInfo.name ?? undefined"
+      :computed-table-data="computedTableData"
+    />
+    <SubscoreTable
       v-if="taskId === 'pa' && !isLoadingTasksDictionary"
       task-id="pa"
       :task-name="tasksDictionary['pa'].publicName"
