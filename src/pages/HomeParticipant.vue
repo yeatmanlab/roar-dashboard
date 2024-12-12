@@ -26,19 +26,6 @@
         </h2>
       </PvFloatLabel>
       <div class="flex flex-row ml-5 align-items-end gap-2 justify-content-between">
-        <div
-          v-if="optionalAssessments.length !== 0"
-          class="switch-container flex flex-row align-items-center justify-content-end mr-6 gap-2"
-        >
-          <PvToggleSwitch
-            v-model="showOptionalAssessments"
-            input-id="switch-optional"
-            data-cy="switch-show-optional-assessments"
-          />
-          <label for="switch-optional" class="mr-2 text-gray-500">{{
-            $t('homeParticipant.showOptionalAssignments')
-          }}</label>
-        </div>
         <PvFloatLabel class="mt-3 mr-3">
           <div v-if="userAssignments?.length > 0" class="flex flex-row align-items-start w-full mt-4">
             <div class="assignment-select-container">
@@ -58,6 +45,19 @@
             </div>
           </div>
         </PvFloatLabel>
+        <div
+          v-if="optionalAssessments.length !== 0"
+          class="switch-container flex flex-row align-items-center justify-content-end mr-6 gap-2"
+        >
+          <PvToggleSwitch
+            v-model="showOptionalAssessments"
+            input-id="switch-optional"
+            data-cy="switch-show-optional-assessments"
+          />
+          <label for="switch-optional" class="mr-2 text-gray-500">{{
+            $t('homeParticipant.showOptionalAssignments')
+          }}</label>
+        </div>
       </div>
       <div class="tabs-container">
         <ParticipantSidebar :total-games="totalGames" :completed-games="completeGames" :student-info="studentInfo" />

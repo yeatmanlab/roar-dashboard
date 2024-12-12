@@ -157,7 +157,7 @@ Cypress.Commands.add('selectAdministration', function selectAdministration(testA
     .invoke('text')
     .then((text) => {
       if (text.includes(testAdministration)) {
-        cy.get('.p-dropdown-item', { timeout: 2 * Cypress.env('timeout') })
+        cy.get('.p-select-list-container', { timeout: 2 * Cypress.env('timeout') })
           .contains(testAdministration)
           .click();
         cy.log('Selected administration:', testAdministration);
@@ -275,7 +275,7 @@ Cypress.Commands.add(
 Cypress.Commands.add('checkUserList', (userList) => {
   cy.get('[data-cy="roar-data-table"] tbody tr', { timeout: Cypress.env('timeout') }).each((row) => {
     cy.wrap(row)
-      .find('td.p-frozen-column')
+      .find('td.p-datatable-frozen-column')
       .then((cell) => {
         // The following cleans the non-breaking space character and any whitespace from the cell text
         const cellText = cell
