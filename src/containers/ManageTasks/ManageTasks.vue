@@ -35,7 +35,7 @@ const MODEL_VIEWS = Object.freeze({
   UPDATE_TASK: 'Update Task',
 });
 
-const viewModel = ref(MODEL_VIEWS.UPDATE_TASK);
+const viewModel = ref(MODEL_VIEWS.CREATE_TASK);
 
 const handleViewChange = (value) => {
   const selectedView = Object.values(MODEL_VIEWS).find((view) => view === value);
