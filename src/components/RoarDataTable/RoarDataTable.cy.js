@@ -55,7 +55,7 @@ function setFilterByCategory(header, category) {
     .find('button')
     .click();
   cy.get('[data-cy="score-filter-dropdown"]', { timeout: timeout }).click();
-  cy.get('ul>li').find('span.p-tag-label', { timeout: timeout }).contains(category).click();
+  cy.get('.p-select-list-container > .p-select-list', { timeout: timeout }).contains(category).click();
   cy.get('button').contains('Apply').click();
 }
 
