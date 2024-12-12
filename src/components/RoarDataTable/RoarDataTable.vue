@@ -710,10 +710,6 @@ button.p-column-filter-menu-button.p-link:hover {
   padding: 1px 1.5rem 2px 1.5rem;
 }
 
-.filter-content {
-  width: 12rem;
-}
-
 .filter-button-override .p-column-filter-menu-button:not(.p-column-filter-menu-button-active) {
   display: none;
 }
