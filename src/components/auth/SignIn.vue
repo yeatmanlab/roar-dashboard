@@ -55,7 +55,7 @@
             v-else-if="allowPassword"
             :id="$t('authSignIn.passwordId')"
             v-model="v$.password.$model"
-            :class="{ 'p-invalid': invalid }"
+            :class="['w-full', { 'p-invalid': invalid }]"
             toggle-mask
             show-icon="pi pi-eye-slash"
             hide-icon="pi pi-eye"
@@ -84,6 +84,7 @@
           <div v-else-if="allowLink">
             <PvPassword
               :placeholder="$t('authSignIn.signInWithEmailLinkPlaceHolder')"
+              class="w-full"
               disabled
               data-cy="password-disabled-for-email"
             />
@@ -101,7 +102,7 @@
           <div v-else>
             <PvPassword
               disabled
-              class="p-invalid text-red-600"
+              class="p-invalid text-red-600 w-full"
               :placeholder="$t('authSignIn.invalidEmailPlaceholder')"
             />
           </div>

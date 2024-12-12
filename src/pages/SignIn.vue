@@ -15,7 +15,7 @@
         <section class="signin-option-container signin-option-userpass">
           <h4 class="signin-option-title">{{ $t('pageSignIn.login') }}</h4>
           <div id="languageSelect" class="m-4 flex justify-content-center">
-            <LanguageSelector />
+            <LanguageSelector class="w-7" />
           </div>
           <SignIn :invalid="incorrect" @submit="authWithEmail" @update:email="email = $event" />
         </section>
@@ -46,7 +46,7 @@
             </PvButton>
             <PvButton
               v-if="!isLevante"
-              class="flex surface-0 p-1 mr-1 border-black-alpha-10 text-black justify-content-center hover:border-primary hover:surface-ground"
+              class="flex surface-0 p-1 border-black-alpha-10 w-3 ml-2 mr-2 text-black justify-content-center hover:border-primary hover:surface-ground"
               style="border-radius: 3rem; height: 3rem; color: black !important"
               @click="authWithClassLink"
             >

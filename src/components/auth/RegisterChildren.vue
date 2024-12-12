@@ -103,7 +103,7 @@
         <section class="form-section flex lg:flex-row">
           <div>
             <div>
-              <label for="password">Password (Minimum 6 characters) <span class="required">*</span></label>
+              <label for="password">Password (Minimum 6 characters)<span class="required">*</span></label>
               <PvPassword
                 v-model="student.password"
                 name="password"

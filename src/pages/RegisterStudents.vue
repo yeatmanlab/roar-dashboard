@@ -14,7 +14,7 @@
               <li>username</li>
               <li>date of birth</li>
               <li>grade</li>
-              <li>password</li>
+              <li>password (min 6 characters)</li>
               <li>Either a group OR a district and school</li>
             </ul>
             Upload or drag-and-drop a student list below to begin!
@@ -44,7 +44,7 @@
       <!--DataTable with raw Student-->
       <div v-if="isFileUploaded">
         <!-- <RoarDataTable :columns="tableColumns" :data="rawStudentFile" :allowExport="false" /> -->
-        <PvPanel header="Assigning participant data" class="mb-4">
+        <PvPanel header="Assigning participant data" class="mb-4 mt-2">
           <p>Use the dropdowns below to properly assign each column.</p>
           <p>
             Columns that are not assigned will not be imported. But please note that a column has to be assigned for
@@ -54,7 +54,7 @@
             <li>email</li>
             <li>date of birth</li>
             <li>grade</li>
-            <li>password</li>
+            <li>password (min 6 characters)</li>
             <li>Either a group OR a district and school</li>
           </ul>
 
