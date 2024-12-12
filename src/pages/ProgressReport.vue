@@ -448,7 +448,7 @@ const progressReportColumns = computed(() => {
   const tableColumns = [];
   const columnDefinitions = [
     { field: 'user.username', header: 'Username', pinned: true },
-    { field: 'user.email', header: 'Email', pinned: true },
+    { field: 'user.email', header: 'Email' },
     { field: 'user.firstName', header: 'First Name' },
     { field: 'user.lastName', header: 'Last Name' },
   ];
