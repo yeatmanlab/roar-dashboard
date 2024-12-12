@@ -2,7 +2,6 @@ import axios from 'axios';
 import _merge from 'lodash/merge';
 import { BufferLoader, AudioContext } from '@/helpers/audio';
 import { LEVANTE_SURVEY_RESPONSES_KEY } from '@/constants/bucket';
-const context = new AudioContext();
 
 export const fetchAudioLinks = async (surveyType) => {
   const response = await axios.get('https://storage.googleapis.com/storage/v1/b/road-dashboard/o/');
@@ -39,6 +38,7 @@ export const fetchBuffer = ({
   surveyAudioBuffers,
   setSurveyAudioPlayerBuffers,
 }) => {
+  const context = new AudioContext();
   // buffer already exists for the given local
   if (surveyAudioBuffers[parsedLocale]) {
     return;
