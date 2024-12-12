@@ -31,7 +31,7 @@ function clickResetFilters() {
 
 function checkFiltersSelected(selector, item) {
   cy.get(selector).click();
-  cy.get('.p-multiselect-option .p-highlight').get('span').contains(item);
+  cy.get('.p-multiselect-option').contains(item);
   cy.get(selector).click();
 }
 
