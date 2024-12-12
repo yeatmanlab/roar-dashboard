@@ -6,6 +6,7 @@
     :logo="logoOverride"
     :on-sign-out="signOut"
     :show-account-settings-link
+    @language-change="onLanguageChange"
   />
 </template>
 
@@ -14,15 +15,19 @@ import { ref, computed, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '@/store/auth';
+import { useSurveyStore } from '@/store/survey';
 import useUserType from '@/composables/useUserType';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useSignOutMutation from '@/composables/mutations/useSignOutMutation';
 import { getSidebarActions } from '@/router/sidebarActions';
+import { setupStudentAudio } from '@/helpers/surveyInitialization';
+
 import NavBar from '@/components/NavBar';
 
 const router = useRouter();
 const route = useRoute();
 const authStore = useAuthStore();
+const surveyStore = useSurveyStore();
 const { roarfirekit } = storeToRefs(authStore);
 
 const initialized = ref(false);
@@ -141,6 +146,16 @@ const menuItems = computed(() => {
 
   return items;
 });
+
+async function onLanguageChange(event) {
+  sessionStorage.setItem(`${isLevante ? 'levante' : 'roar'}PlatformLocale`, event.value);
+
+  if (isLevante && surveyStore.survey) {
+    console.log('setting survey locale');
+    surveyStore.survey.locale = event.value;
+    await setupStudentAudio(surveyStore.survey, event.value, surveyStore.audioLinkMap, surveyStore);
+  }
+}
 
 onMounted(() => {
   if (roarfirekit?.value?.restConfig) init();
