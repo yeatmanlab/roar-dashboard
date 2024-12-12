@@ -1,6 +1,6 @@
 <template>
-  <div class="form-section">
-    <label :for="id" class="block mb-1" :class="{ 'sr-only': labelHidden }">
+  <div class="form-section" data-testid="dropdown">
+    <label :for="id" class="block mb-1" :class="{ 'sr-only': labelHidden }" data-testid="dropdown__label">
       <small class="text-gray-500 font-bold">{{ label }}</small>
       <span v-if="required" class="ml-1 text-gray-500">*</span>
     </label>
@@ -9,17 +9,26 @@
       :id="id"
       v-model="model"
       class="w-full"
+      :class="{ 'p-invalid border-red-500': hasErrors }"
       :options="data"
       :option-label="labelKey || null"
       :option-value="valueKey || null"
       :placeholder="loadingData ? 'Loading…' : placeholder"
       :disabled="loadingData || disabled"
       :loading="loadingData"
+      :pt="{
+        root: {
+          'data-testid': 'dropdown__input-wrapper',
+        },
+        item: {
+          'data-testid': 'dropdown__item',
+        },
+      }"
     />
 
-    <span v-if="hasErrors" class="absolute">
+    <span v-if="hasErrors" class="absolute" data-testid="dropdown__error">
       <span v-for="(error, index) of errors" :key="index">
-        <small class="text-xs p-error">{{ error.$message }}</small>
+        <small class="text-xs p-error" data-testid="dropdown__error-item">{{ error.$message }}</small>
       </span>
     </span>
   </div>
@@ -64,10 +73,6 @@ const props = defineProps({
   valueKey: {
     type: String,
     default: null,
-  },
-  isInvalid: {
-    type: Boolean,
-    default: false,
   },
   errors: {
     type: Array,

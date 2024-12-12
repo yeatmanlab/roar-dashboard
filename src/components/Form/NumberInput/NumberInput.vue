@@ -1,7 +1,7 @@
 <template>
-  <div class="form-section">
+  <div class="form-section" data-testid="numberinput">
     <div class="p-input-icon-right">
-      <label :for="id" class="block mb-1" :class="{ 'sr-only': labelHidden }">
+      <label :for="id" class="block mb-1" :class="{ 'sr-only': labelHidden }" data-testid="numberinput__label">
         <small class="text-gray-500 font-bold">{{ label }}</small>
         <span v-if="required" class="ml-1 text-gray-500">*</span>
       </label>
@@ -12,11 +12,16 @@
         :class="{ 'p-invalid border-red-500': isInvalid || hasErrors }"
         :placeholder="placeholder"
         :disabled="disabled"
+        :pt="{
+          root: {
+            'data-testid': 'numberinput__input-wrapper',
+          },
+        }"
       />
     </div>
-    <span v-if="hasErrors" class="absolute">
+    <span v-if="hasErrors" class="absolute" data-testid="numberinput__error">
       <span v-for="(error, index) of errors" :key="index">
-        <small class="text-xs p-error">{{ error.$message }}</small>
+        <small class="text-xs p-error" data-testid="numberinput__error-item">{{ error.$message }}</small>
       </span>
     </span>
   </div>
