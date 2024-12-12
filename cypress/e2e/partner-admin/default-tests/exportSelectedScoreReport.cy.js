@@ -10,7 +10,7 @@ describe('The partner admin can select and export progress reports for a given a
     cy.get('button').contains('Score').first().click();
 
     // make a selection
-    cy.get('..p-checkbox-input').first().click();
+    cy.get('.p-checkbox-input').first().click();
 
     cy.get('button').contains('Export Selected').click();
     cy.readFile(
