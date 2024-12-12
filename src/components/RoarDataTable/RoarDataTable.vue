@@ -164,10 +164,11 @@
                     v-tooltip.right="colData.tooltip"
                     severity="secondary"
                     text
-                    class="border-none border-round bg-white text-primary pl-2 p-2 hover:surface-200"
+                    class="border border-round surface-200 p-2 hover:surface-500"
                     :label="colData.routeParams.buttonLabel"
                     :aria-label="col.routeTooltip"
                     :icon="col.routeIcon"
+                    style="color: black !important"
                     data-cy="route-button"
                     size="small"
                   />
@@ -177,10 +178,11 @@
                 <PvButton
                   severity="secondary"
                   text
-                  class="border-none border-round bg-white text-primary p-2 hover:surface-200"
+                  class="border border-round surface-200 text-primary p-2 hover:surface-500 hover:text-white"
                   :label="col.buttonLabel"
                   :aria-label="col.buttonTooltip"
                   :icon="col.buttonIcon"
+                  style="color: black !important"
                   data-cy="event-button"
                   size="small"
                   @click="$emit(col.eventName, colData)"

@@ -313,7 +313,7 @@ Cypress.Commands.add('playOptionalGame', (game, administration, optional) => {
  */
 Cypress.Commands.add('checkOrgExists', (org, timeout = 10000) => {
   // Click on the 'Districts' item in the list
-  cy.get('.p-tablist-tab-list', { timeout: timeout }).contains(org.tabName, { timeout: timeout }).click();
+  cy.get('.p-tabview-tablist', { timeout: timeout }).contains(org.tabName, { timeout: timeout }).click();
 
   // Verify the partner district name is present in the div
   cy.get('div', { timeout }).should('contain.text', Cypress.env('testPartnerDistrictName'), {
