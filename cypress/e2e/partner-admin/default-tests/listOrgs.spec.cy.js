@@ -9,7 +9,7 @@ const orgs = [
 const listOrgsUrl = '/list-orgs';
 
 function checkOrgExists(org) {
-  cy.get('ul > li', { timeout: timeout }).contains(org.tabName, { timeout: timeout }).click();
+  cy.get('.p-tabview-tablist', { timeout: timeout }).contains(org.tabName, { timeout: timeout }).click();
   cy.log('Tab ' + org.tabName + ' found.');
 
   cy.get('div', { timeout: timeout }).should('contain.text', org.orgName, {

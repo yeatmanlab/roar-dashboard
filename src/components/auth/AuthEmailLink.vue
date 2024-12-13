@@ -1,10 +1,10 @@
 <template>
   <AppSpinner v-if="localStorageEmail" />
   <div v-else class="field col">
-    <span class="p-float-label">
+    <PvFloatLabel>
       <PvInputText id="email" v-model="formEmail" />
       <label for="email">Email</label>
-    </span>
+    </PvFloatLabel>
     <div class="col-12 mb-3">
       <PvButton label="Finish signing in" @click="loginFromEmailLink(formEmail)" />
     </div>
@@ -18,6 +18,7 @@
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
+import PvFloatLabel from 'primevue/floatlabel';
 import PvButton from 'primevue/button';
 import PvInputText from 'primevue/inputtext';
 import PvMessage from 'primevue/message';

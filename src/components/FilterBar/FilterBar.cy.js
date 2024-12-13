@@ -15,13 +15,13 @@ const gradeSelector = '[data-cy="filter-by-grade"]';
 
 function selectFilters() {
   cy.get('[data-cy="filter-by-school"]').click();
-  cy.get('.p-multiselect-item').contains('School A').click();
-  cy.get('.p-multiselect-item').contains('School B').click();
+  cy.get('.p-multiselect-option').contains('School A').click();
+  cy.get('.p-multiselect-option').contains('School B').click();
   cy.get('[data-cy="filter-by-school"]').click();
 
   cy.get('[data-cy="filter-by-grade"]').click();
-  cy.get('.p-multiselect-item').contains('1st Grade').click();
-  cy.get('.p-multiselect-item').contains('2nd Grade').click();
+  cy.get('.p-multiselect-option').contains('1st Grade').click();
+  cy.get('.p-multiselect-option').contains('2nd Grade').click();
   cy.get('[data-cy="filter-by-grade"]').click();
 }
 
@@ -31,13 +31,13 @@ function clickResetFilters() {
 
 function checkFiltersSelected(selector, item) {
   cy.get(selector).click();
-  cy.get('.p-multiselect-item .p-highlight').get('span').contains(item);
+  cy.get('.p-multiselect-option').contains(item);
   cy.get(selector).click();
 }
 
 function checkFiltersUnselected(selector, item) {
   cy.get(selector).click();
-  cy.get('.p-multiselect-item').get('span').contains(item);
+  cy.get('.p-multiselect-option').get('span').contains(item);
   cy.get(selector).click();
 }
 

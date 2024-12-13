@@ -47,18 +47,18 @@ describe('<NavBar />', () => {
       });
 
       cy.get('nav').should('exist');
-      cy.get('.p-menubar-root-list > .p-menuitem').should('have.length', MOCK_MENU_ITEMS.length);
+      cy.get('.p-menubar-root-list > .p-menubar-item').should('have.length', MOCK_MENU_ITEMS.length);
 
       MOCK_MENU_ITEMS.forEach((menuItem, index) => {
         // Check if the menu item is rendered correctly.
-        cy.get(`.p-menubar-root-list > .p-menuitem:nth-child(${index + 1})`).as('menuItemEl');
+        cy.get(`.p-menubar-root-list > .p-menubar-item:nth-child(${index + 1})`).as('menuItemEl');
         cy.get('@menuItemEl').should('contain', menuItem.label).click();
         cy.get('@menuItemEl')
-          .find('.p-submenu-list')
+          .find('.p-menubar-submenu')
           .should('be.visible')
           .within(() => {
             // Count the number of submenu items.
-            cy.get('.p-menuitem').should('have.length', menuItem.items.length);
+            cy.get('.p-menubar-item').should('have.length', menuItem.items.length);
 
             // Validate each submenu item.
             menuItem.items.forEach((subMenuItem, subIndex) => {
@@ -66,15 +66,15 @@ describe('<NavBar />', () => {
                 ? [...subMenuItem.icon.split(' ').map((cls) => `.${cls}`)].join('')
                 : '';
 
-              cy.get(`.p-menuitem:nth-child(${subIndex + 1})`)
+              cy.get(`.p-menubar-item:nth-child(${subIndex + 1})`)
                 .should('contain', subMenuItem.label)
-                .find(`.p-menuitem-icon${iconClassSelector}`)
+                .find(`.p-menubar-item-icon${iconClassSelector}`)
                 .should('exist');
             });
           });
 
         // Close the menu item.
-        cy.get(`.p-menubar-root-list > .p-menuitem:nth-child(${index + 1})`).click();
+        cy.get(`.p-menubar-root-list > .p-menubar-item:nth-child(${index + 1})`).click();
       });
     });
 
@@ -136,13 +136,13 @@ describe('<NavBar />', () => {
         },
       });
 
-      cy.get('.p-menubar-root-list > .p-menuitem').as('menuItemEl');
+      cy.get('.p-menubar-root-list > .p-menubar-item').as('menuItemEl');
       cy.get('@menuItemEl').should('contain', 'Administrations').click();
       cy.get('@menuItemEl')
-        .find('.p-submenu-list')
+        .find('.p-menubar-submenu')
         .should('be.visible')
         .within(() => {
-          cy.get('.p-menuitem').should('have.length', 1).first().should('be.visible').click();
+          cy.get('.p-menubar-item').should('have.length', 1).first().should('be.visible').click();
           cy.get('@menuItemSpy').should('have.been.calledOnce');
         });
     });

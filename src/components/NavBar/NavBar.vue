@@ -47,12 +47,12 @@
                   {{ $t('navBar.signOut') }}
                 </PvButton>
 
-                <div v-if="showAccountSettingsLink" class="nav-user-wrapper bg-gray-100">
+                <div v-if="showAccountSettingsLink" class="nav-user-wrapper bg-gray-100 p-0">
                   <router-link :to="{ path: APP_ROUTES.ACCOUNT_PROFILE }" data-cy="navbar__account-settings-btn">
-                    <button
-                      class="no-underline p-1 m-0 text-primary border-none border-round cursor-pointer h-2rem w-2rem text-sm hover:bg-red-900 hover:text-white"
+                    <PvButton
+                      class="no-underline m-0 p-0 text-primary bg-gray-100 border-none border-round cursor-pointer h-3rem w-3rem text-sm hover:bg-red-900 hover:text-white"
                     >
-                      <i class="pi pi-cog"></i></button
+                      <i class="pi pi-cog"></i></PvButton
                   ></router-link>
                 </div>
 

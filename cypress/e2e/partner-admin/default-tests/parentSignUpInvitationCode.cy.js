@@ -15,15 +15,16 @@ function visitSignUpPage(activationCode) {
 }
 
 function inputLoginValues() {
-  cy.get('input[name="firstName"]').type(Cypress.env('parentFirstName'));
-  cy.get('input[name="lastName"]').type(Cypress.env('parentLastName'));
-  cy.get('input[name="ParentEmail"]').type(Cypress.env('parentEmail'));
-  cy.get('input[type="password"]').first().type(Cypress.env('parentPassword'));
-  cy.get('input[type="password"]').eq(1).type(Cypress.env('parentPassword'));
+  cy.get('[data-cy="parent-first-name"]').type(Cypress.env('parentFirstName')); // First Name
+  cy.get('[data-cy="parent-last-name"]').type(Cypress.env('parentLastName')); // Last Name
+  cy.get('[data-cy="parent-email"]').type(Cypress.env('parentEmail')); // Email
+  cy.get('[data-cy="parent-password"]').first().type(Cypress.env('parentPassword')); // Password
+  cy.get('[data-cy="parent-password-confirm"]').type(Cypress.env('parentPassword')); // Confirm Password
+  cy.get('.p-checkbox-input').click(); // Terms and Conditions
 }
 
 function completeParentSignUp(org) {
-  cy.get('div.p-checkbox-box').click();
+  cy.get('.p-checkbox-input').click();
   cy.get('button').contains('Continue').click();
   cy.get('button').contains('Next').click();
   cy.get('div').should('contain.text', org.orgVerified);
