@@ -169,7 +169,9 @@ describe('<TaskParametersConfiguratorRow />', () => {
         },
       });
 
-      cy.findByTestId('task-parameters-row__name').type('mock-name').type('{selectAll}').type('{backspace}');
+      cy.findByTestId('task-parameters-row__name').type('mock-name');
+      cy.findByTestId('task-parameters-row__name').type('{selectAll}');
+      cy.findByTestId('task-parameters-row__name').type('{backspace}');
       cy.findByTestId('task-parameters-row__name')
         .siblings('[data-testid="textinput__errors"]')
         .eq(0)
@@ -185,7 +187,8 @@ describe('<TaskParametersConfiguratorRow />', () => {
         },
       });
 
-      cy.findByTestId('task-parameters-row__value-string').type('{selectAll}').type('{backspace}');
+      cy.findByTestId('task-parameters-row__value-string').type('{selectAll}');
+      cy.findByTestId('task-parameters-row__value-string').type('{backspace}');
       cy.findByTestId('task-parameters-row__value-string')
         .siblings('[data-testid="textinput__errors"]')
         .eq(0)
@@ -201,7 +204,8 @@ describe('<TaskParametersConfiguratorRow />', () => {
         },
       });
 
-      cy.findByTestId('task-parameters-row__name').type('{selectAll}').type('{backspace}');
+      cy.findByTestId('task-parameters-row__name').type('{selectAll}');
+      cy.findByTestId('task-parameters-row__name').type('{backspace}');
       cy.findByTestId('task-parameters-row__name')
         .siblings('[data-testid="textinput__errors"]')
         .eq(0)
@@ -211,7 +215,8 @@ describe('<TaskParametersConfiguratorRow />', () => {
       cy.findByTestId('task-parameters-row__name').type('mock-name');
       cy.findByTestId('task-parameters-row__name').siblings('[data-testid="textinput__errors"]').should('not.exist');
 
-      cy.findByTestId('task-parameters-row__value-string').type('{selectAll}').type('{backspace}');
+      cy.findByTestId('task-parameters-row__value-string').type('{selectAll}');
+      cy.findByTestId('task-parameters-row__value-string').type('{backspace}');
       cy.findByTestId('task-parameters-row__value-string')
         .siblings('[data-testid="textinput__errors"]')
         .eq(0)

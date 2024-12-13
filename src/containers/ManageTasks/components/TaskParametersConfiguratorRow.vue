@@ -10,7 +10,7 @@
         :disabled="editMode && !row.isNew"
         :is-invalid="v$.row.name.$invalid && v$.row.name.$dirty"
         :errors="v$.row.name.$errors"
-        testId="task-parameters-row__name"
+        test-id="task-parameters-row__name"
       />
     </div>
 
@@ -23,7 +23,7 @@
         placeholder="Select"
         :required="true"
         :disabled="editMode && !row.isNew"
-        testId="task-parameters-row__type"
+        test-id="task-parameters-row__type"
       />
     </div>
 
@@ -37,7 +37,7 @@
         :required="true"
         :is-invalid="v$.row.value.$invalid && v$.row.value.$dirty"
         :errors="v$.row.value.$errors"
-        testId="task-parameters-row__value-string"
+        test-id="task-parameters-row__value-string"
       />
 
       <Dropdown
@@ -52,7 +52,7 @@
         :required="true"
         :is-invalid="v$.row.value.$invalid && v$.row.value.$dirty"
         :errors="v$.row.value.$errors"
-        testId="task-parameters-row__value-bool"
+        test-id="task-parameters-row__value-bool"
       />
 
       <NumberInput
@@ -64,7 +64,7 @@
         :required="true"
         :is-invalid="v$.row.value.$invalid && v$.row.value.$dirty"
         :errors="v$.row.value.$errors"
-        testId="task-parameters-row__value-number"
+        test-id="task-parameters-row__value-number"
       />
     </div>
 
@@ -72,8 +72,8 @@
       icon="pi pi-trash"
       text
       class="delete-btn bg-primary text-white border-none border-round p-2 px-3 hover:bg-red-900 flex-shrink-0"
-      @click="$emit('removeRow', rowIndex)"
       :pt="{ root: { 'data-testid': 'task-parameters-row__delete-button' } }"
+      @click="$emit('removeRow', rowIndex)"
     />
   </fieldset>
 </template>
