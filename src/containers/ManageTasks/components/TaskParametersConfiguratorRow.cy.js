@@ -147,6 +147,24 @@ describe('<TaskParametersConfiguratorRow />', () => {
         .click({ force: true });
       cy.findAllByTestId('dropdown__item').should('not.exist');
     });
+
+    it('Does not emit deletion event when feature is disabled', () => {
+      const removeRowSpy = cy.spy().as('removeRowSpy');
+
+      cy.mount(TaskParametersConfiguratorRow, {
+        props: {
+          modelValue: mockModel.value,
+          rowIndex: 0,
+          onRemoveRow: removeRowSpy,
+          editMode: true,
+          disableDeletingExistingRows: true,
+        },
+      });
+
+      cy.findByTestId('task-configurator-row__delete-btn').should('be.disabled');
+      cy.findByTestId('task-configurator-row__delete-btn').click({ force: true });
+      cy.get('@removeRowSpy').should('not.have.been.calledOnce');
+    });
   });
 
   describe('Form Validation', () => {

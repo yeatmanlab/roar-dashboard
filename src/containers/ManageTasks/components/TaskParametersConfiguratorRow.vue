@@ -73,8 +73,8 @@
       text
       class="delete-btn bg-primary text-white border-none border-round p-2 px-3 hover:bg-red-900 flex-shrink-0"
       :pt="{ root: { 'data-testid': 'task-configurator-row__delete-btn' } }"
-      @click="handleDeleteRow"
       :disabled="isRowDeletionDisabled"
+      @click="handleDeleteRow"
     />
   </fieldset>
 </template>

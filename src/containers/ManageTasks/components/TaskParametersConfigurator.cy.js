@@ -74,7 +74,7 @@ describe('<TaskParametersConfigurator />', () => {
   });
 
   describe('Edit mode', () => {
-    it('Passes the edit mode to the row component', () => {
+    it('Passes the edit mode flag to the row component', () => {
       mockModel = ref([mockData[0]]);
 
       cy.mount(TaskParametersConfigurator, {
@@ -93,6 +93,21 @@ describe('<TaskParametersConfigurator />', () => {
         .should('have.css', 'pointer-events', 'none')
         .click({ force: true });
       cy.findAllByTestId('dropdown__item').should('not.exist');
+    });
+
+    it('Passes the row deletion flag to the component', () => {
+      cy.mount(TaskParametersConfigurator, {
+        props: {
+          modelValue: mockModel.value,
+          editMode: true,
+          disableDeletingExistingRows: true,
+        },
+      });
+
+      cy.findAllByTestId('task-configurator-row__delete-btn').should('be.disabled');
+
+      cy.findByTestId('task-configurator__add-row-btn').click();
+      cy.findAllByTestId('task-configurator-row__delete-btn').eq(3).should('not.be.disabled');
     });
   });
 
