@@ -57,7 +57,7 @@
                 </div>
 
                 <div class="my-2">
-                  <LanguageSelector />
+                  <LanguageSelector @language-change="onLanguageChange" />
                 </div>
               </div>
             </template>
@@ -104,6 +104,8 @@ const props = defineProps({
 const menu = ref();
 const screenWidth = ref(window.innerWidth);
 
+const emit = defineEmits(['language-change']);
+
 // @TODO: Replace screen-size handlers with Tailwind/CSS media queries. Currently not possible due to an outdated
 // PrimeVue and Tailwind version. If we cannot update PrimeVue/Tailwind, we should throttle the resize events.
 const isWideScreen = computed(() => {
@@ -128,6 +130,10 @@ onUnmounted(() => {
 
 const toggleMenu = (event) => {
   menu.value.toggle(event);
+};
+
+const onLanguageChange = (event) => {
+  emit('language-change', event);
 };
 </script>
 

@@ -59,7 +59,6 @@ const columns = computed(() => {
       field: 'user.email',
       header: 'Email',
       dataType: 'text',
-      pinned: true,
       sort: true,
       filter: true,
     });
