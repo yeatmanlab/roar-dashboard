@@ -3,6 +3,16 @@ import { useAuthStore } from '@/store/auth';
 import _get from 'lodash/get';
 import { pageTitlesEN, pageTitlesUS, pageTitlesES, pageTitlesCO } from '@/translations/exports';
 import { APP_ROUTES } from '@/constants/routes';
+import {
+  SCORE_REPORT_PERMISSIONS,
+  INDIVIDUAL_REPORT_PERMISSIONS,
+  REGISTER_STUDENT_PERMISSIONS,
+  UNAUTHENTICATED_PERMISSIONS,
+  TASK_MANAGER_PERMISSIONS,
+  TASK_PERMISSIONS,
+  SETTINGS_PERMISSIONS,
+} from '../constants/permissions';
+import usePermissionsManager from '../composables/usePermissionsManager';
 
 function removeQueryParams(to) {
   if (Object.keys(to.query).length) return { path: to.path, query: {}, hash: to.hash };
@@ -31,133 +41,133 @@ const routes = [
     name: 'SWR',
     component: () => import('../components/tasks/TaskSWR.vue'),
     props: { taskId: 'swr', language: 'en' },
-    meta: { pageTitle: 'SWR' },
+    meta: { pageTitle: 'SWR', permission: TASK_PERMISSIONS.LAUNCH_TASK },
   },
   {
     path: '/game/swr-es',
     name: 'SWR-ES',
     component: () => import('../components/tasks/TaskSWR.vue'),
     props: { taskId: 'swr-es', language: 'es' },
-    meta: { pageTitle: 'SWR (ES)' },
+    meta: { pageTitle: 'SWR (ES)', permission: TASK_PERMISSIONS.LAUNCH_TASK },
   },
   {
     path: '/game/pa',
     name: 'PA',
     component: () => import('../components/tasks/TaskPA.vue'),
     props: { taskId: 'pa', language: 'en' },
-    meta: { pageTitle: 'PA' },
+    meta: { pageTitle: 'PA', permission: TASK_PERMISSIONS.LAUNCH_TASK },
   },
   {
     path: '/game/pa-es',
     name: 'PA-ES',
     component: () => import('../components/tasks/TaskPA.vue'),
     props: { taskId: 'pa-es', language: 'es' },
-    meta: { pageTitle: 'PA-ES' },
+    meta: { pageTitle: 'PA-ES', permission: TASK_PERMISSIONS.LAUNCH_TASK },
   },
   {
     path: '/game/sre',
     name: 'SRE',
     component: () => import('../components/tasks/TaskSRE.vue'),
     props: { taskId: 'sre', language: 'en' },
-    meta: { pageTitle: 'SRE' },
+    meta: { pageTitle: 'SRE', permission: TASK_PERMISSIONS.LAUNCH_TASK },
   },
   {
     path: '/game/sre-es',
     name: 'SRE-ES',
     component: () => import('../components/tasks/TaskSRE.vue'),
     props: { taskId: 'sre-es', language: 'es' },
-    meta: { pageTitle: 'SRE-ES' },
+    meta: { pageTitle: 'SRE-ES', permission: TASK_PERMISSIONS.LAUNCH_TASK },
   },
   {
     path: '/game/letter',
     name: 'Letter',
     component: () => import('../components/tasks/TaskLetter.vue'),
     props: { taskId: 'letter', language: 'en' },
-    meta: { pageTitle: 'Letter' },
+    meta: { pageTitle: 'Letter', permission: TASK_PERMISSIONS.LAUNCH_TASK },
   },
   {
     path: '/game/letter-es',
     name: 'Letter-ES',
     component: () => import('../components/tasks/TaskLetter.vue'),
     props: { taskId: 'letter-es', language: 'es' },
-    meta: { pageTitle: 'Letter-ES' },
+    meta: { pageTitle: 'Letter-ES', permission: TASK_PERMISSIONS.LAUNCH_TASK },
   },
   {
     path: '/game/letter-en-ca',
     name: 'Letter-EN-CA',
     component: () => import('../components/tasks/TaskLetter.vue'),
     props: { taskId: 'letter-en-ca', language: 'en-CA' },
-    meta: { pageTitle: 'Letter-EN-CA' },
+    meta: { pageTitle: 'Letter-EN-CA', permission: TASK_PERMISSIONS.LAUNCH_TASK },
   },
   {
     path: '/game/multichoice',
     name: 'Multichoice',
     component: () => import('../components/tasks/TaskMultichoice.vue'),
     props: { taskId: 'multichoice', language: 'en' },
-    meta: { pageTitle: 'Multichoice' },
+    meta: { pageTitle: 'Multichoice', permission: TASK_PERMISSIONS.LAUNCH_TASK },
   },
   {
     path: '/game/morphology',
     name: 'Morphology',
     component: () => import('../components/tasks/TaskMultichoice.vue'),
     props: { taskId: 'morphology', language: 'en' },
-    meta: { pageTitle: 'Morphology' },
+    meta: { pageTitle: 'Morphology', permission: TASK_PERMISSIONS.LAUNCH_TASK },
   },
   {
     path: '/game/cva',
     name: 'Cva',
     component: () => import('../components/tasks/TaskMultichoice.vue'),
     props: { taskId: 'cva', language: 'en' },
-    meta: { pageTitle: 'CVA' },
+    meta: { pageTitle: 'CVA', permission: TASK_PERMISSIONS.LAUNCH_TASK },
   },
   {
     path: '/game/vocab',
     name: 'Vocab',
     component: () => import('../components/tasks/TaskVocab.vue'),
     props: { taskId: 'vocab', language: 'en' },
-    meta: { pageTitle: 'Vocab' },
+    meta: { pageTitle: 'Vocab', permission: TASK_PERMISSIONS.LAUNCH_TASK },
   },
   {
     path: '/game/fluency-arf',
     name: 'Fluency-ARF',
     component: () => import('../components/tasks/TaskRoam.vue'),
     props: { taskId: 'fluency-arf', language: 'en' },
-    meta: { pageTitle: 'ROAM-ARF' },
+    meta: { pageTitle: 'ROAM-ARF', permission: TASK_PERMISSIONS.LAUNCH_TASK },
   },
   {
     path: '/game/fluency-arf-es',
     name: 'Fluency-ARF-ES',
     component: () => import('../components/tasks/TaskRoam.vue'),
     props: { taskId: 'fluency-arf-es', language: 'es' },
-    meta: { pageTitle: 'ROAM-ARF ES' },
+    meta: { pageTitle: 'ROAM-ARF ES', permission: TASK_PERMISSIONS.LAUNCH_TASK },
   },
   {
     path: '/game/fluency-calf',
     name: 'Fluency-CALF',
     component: () => import('../components/tasks/TaskRoam.vue'),
     props: { taskId: 'fluency-calf', language: 'en' },
-    meta: { pageTitle: 'ROAM-CALF' },
+    meta: { pageTitle: 'ROAM-CALF', permission: TASK_PERMISSIONS.LAUNCH_TASK },
   },
   {
     path: '/game/fluency-calf-es',
     name: 'Fluency-CALF-ES',
     component: () => import('../components/tasks/TaskRoam.vue'),
     props: { taskId: 'fluency-calf-es', language: 'es' },
-    meta: { pageTitle: 'ROAM-CALF ES' },
+    meta: { pageTitle: 'ROAM-CALF ES', permission: TASK_PERMISSIONS.LAUNCH_TASK },
   },
   {
     path: '/game/fluency-alpaca',
     name: 'Fluency-Alpaca',
     component: () => import('../components/tasks/TaskRoam.vue'),
     props: { taskId: 'fluency-alpaca', language: 'en' },
-    meta: { pageTitle: 'ROAM-Alpaca' },
+    meta: { pageTitle: 'ROAM-Alpaca', permission: TASK_PERMISSIONS.LAUNCH_TASK },
   },
   {
     path: '/game/fluency-alpaca-es',
     name: 'Fluency-Alpaca-ES',
     component: () => import('../components/tasks/TaskRoam.vue'),
     props: { taskId: 'fluency-alpaca-es', language: 'es' },
-    meta: { pageTitle: 'ROAM-Alpaca ES' },
+    meta: { pageTitle: 'ROAM-Alpaca ES', permission: TASK_PERMISSIONS.LAUNCH_TASK },
   },
   {
     path: '/game/core-tasks/:taskId',
@@ -166,35 +176,35 @@ const routes = [
     props: true,
     // Add which specific task?
     // Code in App.vue overwrites updating it programmatically
-    meta: { pageTitle: 'Core Tasks' },
+    meta: { pageTitle: 'Core Tasks', permission: TASK_PERMISSIONS.LAUNCH_TASK },
   },
   {
     path: '/game/ran',
     name: 'RAN',
     component: () => import('../components/tasks/TaskRan.vue'),
     props: { taskId: 'ran', language: 'en' },
-    meta: { pageTitle: 'RAN' },
+    meta: { pageTitle: 'RAN', permission: TASK_PERMISSIONS.LAUNCH_TASK },
   },
   {
     path: '/game/crowding',
     name: 'Crowding',
     component: () => import('../components/tasks/TaskCrowding.vue'),
     props: { taskId: 'crowding', language: 'en' },
-    meta: { pageTitle: 'Crowding' },
+    meta: { pageTitle: 'Crowding', permission: TASK_PERMISSIONS.LAUNCH_TASK },
   },
   {
     path: '/game/roav-mep',
     name: 'MEP',
     component: () => import('../components/tasks/TaskMEP.vue'),
     props: { taskId: 'roav-mep', language: 'en' },
-    meta: { pageTitle: 'MEP' },
+    meta: { pageTitle: 'MEP', permission: TASK_PERMISSIONS.LAUNCH_TASK },
   },
 
   {
     path: '/manage-tasks-variants',
     name: 'ManageTasksVariants',
     component: () => import('../pages/ManageTasksVariants.vue'),
-    meta: { pageTitle: 'Manage Tasks', requireAdmin: true, requireSuperAdmin: true },
+    meta: { pageTitle: 'Manage Tasks', permission: TASK_MANAGER_PERMISSIONS.VIEW },
   },
   {
     path: '/register',
@@ -213,13 +223,18 @@ const routes = [
         component: () => import('../components/auth/RegisterChildren.vue'),
       },
     ],
-    meta: { requiresGuest: true },
+    meta: { requiresGuest: true, permission: UNAUTHENTICATED_PERMISSIONS.VIEW_REGISTER },
   },
   {
     path: '/register-students',
     name: 'RegisterStudents',
     component: () => import('../pages/RegisterStudents.vue'),
-    meta: { pageTitle: 'Register Students', requireAdmin: true, requireSuperAdmin: true },
+    meta: {
+      pageTitle: 'Register Students',
+      requireAdmin: true,
+      requireSuperAdmin: true,
+      permission: REGISTER_STUDENT_PERMISSIONS.VIEW,
+    },
   },
   {
     path: APP_ROUTES.SIGN_IN,
@@ -232,6 +247,7 @@ const routes = [
         es: pageTitlesES['signIn'],
         'es-CO': pageTitlesCO['signIn'],
       },
+      permission: UNAUTHENTICATED_PERMISSIONS.VIEW_SIGNIN,
     },
   },
   {
@@ -240,7 +256,7 @@ const routes = [
     beforeRouteLeave: [removeQueryParams, removeHash],
     component: () => import('../pages/SSOAuthPage.vue'),
     props: (route) => ({ code: route.query.code }), // @TODO: Isn't the code processed by the sign-in page?
-    meta: { pageTitle: 'Signing you in…' },
+    meta: { pageTitle: 'Signing you in…', permission: UNAUTHENTICATED_PERMISSIONS.VIEW_SSO },
   },
   {
     path: '/auth-clever',
@@ -263,13 +279,13 @@ const routes = [
     name: 'AuthEmailLink',
     beforeRouteLeave: [removeQueryParams, removeHash],
     component: () => import('../components/auth/AuthEmailLink.vue'),
-    meta: { pageTitle: 'Email Link Authentication' },
+    meta: { pageTitle: 'Email Link Authentication', permission: UNAUTHENTICATED_PERMISSIONS.VIEW_EMAIL_LINK },
   },
   {
     path: '/auth-email-sent',
     name: 'AuthEmailSent',
     component: () => import('../components/auth/AuthEmailSent.vue'),
-    meta: { pageTitle: 'Authentication Email Sent' },
+    meta: { pageTitle: 'Authentication Email Sent', permission: UNAUTHENTICATED_PERMISSIONS.VIEW_EMAIL_SENT },
   },
   {
     path: '/administrator',
@@ -327,14 +343,14 @@ const routes = [
     name: 'ScoreReport',
     props: true,
     component: () => import('../pages/ScoreReport.vue'),
-    meta: { pageTitle: 'View Scores', requireAdmin: true },
+    meta: { pageTitle: 'View Scores', permission: SCORE_REPORT_PERMISSIONS.VIEW },
   },
   {
     path: APP_ROUTES.STUDENT_REPORT,
     name: 'StudentReport',
     props: true,
     component: () => import('../pages/StudentReport.vue'),
-    meta: { pageTitle: 'Student Score Report', requireAdmin: true },
+    meta: { pageTitle: 'Student Score Report', permission: INDIVIDUAL_REPORT_PERMISSIONS.VIEW },
   },
   {
     path: APP_ROUTES.ACCOUNT_PROFILE,
@@ -350,16 +366,16 @@ const routes = [
         path: 'password',
         name: 'ProfilePassword',
         component: () => import('../components/views/PasswordView.vue'),
-        meta: { requireAdmin: true },
+        meta: { permission: SETTINGS_PERMISSIONS.CHANGE_PASSWORD },
       },
       {
         path: 'accounts',
         name: 'ProfileAccounts',
         component: () => import('../components/views/LinkAccountsView.vue'),
-        meta: { requireAdmin: true },
+        meta: { permission: SETTINGS_PERMISSIONS.LINK_ACCOUNTS },
       },
     ],
-    meta: { pageTitle: 'Profile' },
+    meta: { pageTitle: 'Profile', permission: SETTINGS_PERMISSIONS.VIEW },
   },
   {
     path: '/enable-cookies',
@@ -390,7 +406,13 @@ const routes = [
     path: '/maintenance',
     name: 'Maintenance',
     component: () => import('../pages/MaintenancePage.vue'),
-    meta: { pageTitle: 'Down for Maintenance' },
+    meta: { pageTitle: 'Down for Maintenance', permission: UNAUTHENTICATED_PERMISSIONS.VIEW_MAINTENANCE },
+  },
+  {
+    path: '/unauthorized',
+    name: 'Unauthorized',
+    component: () => import('../pages/Unauthorized.vue'),
+    meta: { pageTitle: 'Unauthorized' },
   },
 ];
 
@@ -415,6 +437,7 @@ router.beforeEach(async (to, from, next) => {
   }
 
   const store = useAuthStore();
+  const { canUser } = usePermissionsManager();
 
   const allowedUnauthenticatedRoutes = [
     'SignIn',
@@ -444,6 +467,20 @@ router.beforeEach(async (to, from, next) => {
   ) {
     next({ name: 'SignIn' });
     return;
+  }
+
+  // Check the user's permission to access the route
+  console.log('Route: checking permission', _get(to, 'meta.permission', null));
+  if (_get(to, 'meta.permission', null) && to.name !== 'Unauthorized') {
+    const canUserRoute = await canUser(to.meta.permission);
+    console.log('Route: permission check result', canUserRoute);
+    if (!canUserRoute) {
+      next({ name: 'Unauthorized' });
+      return;
+    } else {
+      next();
+      return;
+    }
   }
 
   // Check if the route requires admin rights and the user is an admin.
