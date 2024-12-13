@@ -188,7 +188,7 @@ import EditOrgsForm from './EditOrgsForm.vue';
 import RoarModal from './modals/RoarModal.vue';
 import { CSV_EXPORT_MAX_RECORD_COUNT } from '@/constants/csvExport';
 import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts.js';
-import RoarDataTable from '@/components/RoarDataTable.vue';
+import RoarDataTable from '@/components/RoarDataTable';
 import { ORG_TYPES } from '../constants/orgTypes';
 
 const initialized = ref(false);
