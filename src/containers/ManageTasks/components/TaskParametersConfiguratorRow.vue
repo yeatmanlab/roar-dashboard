@@ -1,5 +1,5 @@
 <template>
-  <fieldset class="flex gap-2 align-content-start flex-grow-0 params-container">
+  <fieldset class="flex gap-2 align-content-start flex-grow-0 params-container" data-testId="task-parameters-row">
     <div class="relative w-1/4 min-w-32">
       <TextInput
         v-model="v$.row.name.$model"
@@ -10,6 +10,7 @@
         :disabled="editMode && !row.isNew"
         :is-invalid="v$.row.name.$invalid && v$.row.name.$dirty"
         :errors="v$.row.name.$errors"
+        testId="task-parameters-row__name"
       />
     </div>
 
@@ -22,6 +23,7 @@
         placeholder="Select"
         :required="true"
         :disabled="editMode && !row.isNew"
+        testId="task-parameters-row__type"
       />
     </div>
 
@@ -35,6 +37,7 @@
         :required="true"
         :is-invalid="v$.row.value.$invalid && v$.row.value.$dirty"
         :errors="v$.row.value.$errors"
+        testId="task-parameters-row__value-string"
       />
 
       <Dropdown
@@ -49,6 +52,7 @@
         :required="true"
         :is-invalid="v$.row.value.$invalid && v$.row.value.$dirty"
         :errors="v$.row.value.$errors"
+        testId="task-parameters-row__value-bool"
       />
 
       <NumberInput
@@ -60,6 +64,7 @@
         :required="true"
         :is-invalid="v$.row.value.$invalid && v$.row.value.$dirty"
         :errors="v$.row.value.$errors"
+        testId="task-parameters-row__value-number"
       />
     </div>
 
@@ -68,6 +73,7 @@
       text
       class="delete-btn bg-primary text-white border-none border-round p-2 px-3 hover:bg-red-900 flex-shrink-0"
       @click="$emit('removeRow', rowIndex)"
+      :pt="{ root: { 'data-testid': 'task-parameters-row__delete-button' } }"
     />
   </fieldset>
 </template>

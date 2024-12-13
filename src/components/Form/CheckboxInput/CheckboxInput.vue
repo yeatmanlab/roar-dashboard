@@ -2,7 +2,7 @@
   <label
     :for="id"
     class="flex flex-row align-items-center gap-2 p-3 lg:p-0 lg:py-1 lg:bg-white bg-gray-100 rounded"
-    data-testid="checkboxinput"
+    :data-testid="testId"
   >
     <PvCheckbox
       v-model="model"
@@ -40,6 +40,10 @@ defineProps({
   label: {
     type: String,
     default: null,
+  },
+  testId: {
+    type: String,
+    default: 'checkboxinput',
   },
 });
 </script>

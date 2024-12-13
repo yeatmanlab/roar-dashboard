@@ -1,5 +1,5 @@
 <template>
-  <div class="form-section" data-testid="numberinput">
+  <div class="form-section" :data-testid="testId">
     <div class="p-input-icon-right">
       <label :for="id" class="block mb-1" :class="{ 'sr-only': labelHidden }" data-testid="numberinput__label">
         <small class="text-gray-500 font-bold">{{ label }}</small>
@@ -66,6 +66,10 @@ const props = defineProps({
   disabled: {
     type: Boolean,
     default: false,
+  },
+  testId: {
+    type: String,
+    default: 'numberinput',
   },
 });
 

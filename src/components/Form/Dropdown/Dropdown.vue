@@ -1,5 +1,5 @@
 <template>
-  <div class="form-section" data-testid="dropdown">
+  <div class="form-section" :data-testid="testId">
     <label :for="id" class="block mb-1" :class="{ 'sr-only': labelHidden }" data-testid="dropdown__label">
       <small class="text-gray-500 font-bold">{{ label }}</small>
       <span v-if="required" class="ml-1 text-gray-500">*</span>
@@ -85,6 +85,10 @@ const props = defineProps({
   required: {
     type: Boolean,
     default: false,
+  },
+  testId: {
+    type: String,
+    default: 'dropdown',
   },
 });
 
