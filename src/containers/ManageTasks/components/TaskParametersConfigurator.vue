@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-column row-gap-4">
+  <div class="flex flex-column row-gap-4" data-testid="task-configurator">
     <template v-for="(param, index) in model" :key="index">
       <TaskParametersConfiguratorRow
         v-model="model"
@@ -13,6 +13,7 @@
     <PvButton
       text
       class="p-3 text-primary border-none border-round transition-colors bg-gray-100 hover:bg-red-900 hover:text-white"
+      :pt="{ root: { 'data-testid': 'task-configurator__add-row-btn' } }"
       @click="addRow()"
     >
       <div class="w-full flex justify-content-center gap-2 text-md">
