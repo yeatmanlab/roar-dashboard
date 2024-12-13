@@ -20,6 +20,7 @@ export const useAuthStore = () => {
         roarfirekit: null,
         userData: null,
         userClaims: null,
+        role: null, // User's role object
         cleverOAuthRequested: false,
         classLinkOAuthRequested: false,
         routeToProfile: false,
@@ -50,6 +51,9 @@ export const useAuthStore = () => {
       },
       isFirekitInit: (state) => {
         return state.roarfirekit?.initialized;
+      },
+      userRole: (state) => {
+        return state.role ?? state.userData?.role;
       },
       isUserAdmin: (state) => {
         if (state.userClaims?.claims?.super_admin || state.userClaims?.claims?.admin) return true;

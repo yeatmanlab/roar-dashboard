@@ -99,6 +99,7 @@ onBeforeMount(async () => {
     if (authStore.roarUid) {
       const userData = await fetchDocById('users', authStore.roarUid);
       authStore.userData = userData;
+      // authStore.userRole = userData.role ?? 'none found..';
     }
   });
 
