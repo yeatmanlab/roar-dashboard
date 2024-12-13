@@ -73,7 +73,8 @@
       text
       class="delete-btn bg-primary text-white border-none border-round p-2 px-3 hover:bg-red-900 flex-shrink-0"
       :pt="{ root: { 'data-testid': 'task-configurator-row__delete-btn' } }"
-      @click="$emit('removeRow', rowIndex)"
+      @click="handleDeleteRow"
+      :disabled="isRowDeletionDisabled"
     />
   </fieldset>
 </template>
@@ -95,7 +96,7 @@ const booleanDropdownOptions = [
   { label: 'false', value: false },
 ];
 
-defineEmits(['removeRow']);
+const emit = defineEmits(['removeRow']);
 
 const model = defineModel({
   required: true,
@@ -115,9 +116,14 @@ const props = defineProps({
     type: Array,
     default: () => [],
   },
+  disableDeletingExistingRows: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 const row = computed(() => model.value[props.rowIndex]);
+const isRowDeletionDisabled = computed(() => props.editMode && props.disableDeletingExistingRows && !row.value.isNew);
 
 const rules = {
   row: {
@@ -132,4 +138,14 @@ const rules = {
 };
 
 const v$ = useVuelidate(rules, { row });
+
+/**
+ * Row deletion handler.
+ *
+ * @returns {void}
+ */
+const handleDeleteRow = () => {
+  if (isRowDeletionDisabled.value) return;
+  emit('removeRow', props.rowIndex);
+};
 </script>

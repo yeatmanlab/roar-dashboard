@@ -5,6 +5,7 @@
         v-model="model"
         :row-index="index"
         :edit-mode="editMode"
+        :disable-deleting-existing-rows="disableDeletingExistingRows"
         :validation-key-blacklist="validationKeyBlacklist"
         @remove-row="removeRow"
       />
@@ -36,6 +37,10 @@ const model = defineModel({
 
 defineProps({
   editMode: {
+    type: Boolean,
+    default: false,
+  },
+  disableDeletingExistingRows: {
     type: Boolean,
     default: false,
   },
