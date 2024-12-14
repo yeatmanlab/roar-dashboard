@@ -109,12 +109,24 @@ const onFileUpload = async (event) => {
     header: key,
   }));
 
-  const missingColumns = requiredFields.filter(field => !columns.value.some(col => col.field === field));
-  if (missingColumns.length > 0) {
+  const hasParentId = columns.value.some(col => col.field === 'parentId');
+  const hasTeacherId = columns.value.some(col => col.field === 'teacherId');
+  
+  if (!hasParentId && !hasTeacherId) {
     toast.add({
       severity: 'error',
       summary: 'Error: Missing Columns',
-      detail: `Missing columns: ${missingColumns.join(', ')}`,
+      detail: 'File must contain either parentId or teacherId column (or both)',
+      life: 5000,
+    });
+    return;
+  }
+
+  if (!columns.value.some(col => col.field === 'id')) {
+    toast.add({
+      severity: 'error',
+      summary: 'Error: Missing Column',
+      detail: 'Missing required column: id',
       life: 5000,
     });
     return;
