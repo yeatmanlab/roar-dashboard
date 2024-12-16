@@ -218,12 +218,12 @@ const authWithGoogle = () => {
 const modalPassword = ref('');
 
 const authWithClever = () => {
-  console.log('---> authWithClever');
-  if (process.env.NODE_ENV === 'development' && !window.Cypress) {
-    authStore.signInWithCleverPopup();
-  } else {
-    authStore.signInWithCleverRedirect();
-  }
+  // console.log('---> authWithClever');
+  // if (process.env.NODE_ENV === 'development' && !window.Cypress) {
+  //   authStore.signInWithCleverPopup();
+  // } else {
+  authStore.signInWithCleverRedirect();
+  // }
   spinner.value = true;
 };
 
