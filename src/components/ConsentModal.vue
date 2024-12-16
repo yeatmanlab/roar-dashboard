@@ -82,10 +82,11 @@ onMounted(() => {
 
         dialogVisible.value = false;
       } catch (error) {
+        console.log('error');
         toast.add({
           severity: TOAST_SEVERITIES.ERROR,
           summary: 'Error',
-          detail: 'An error occurred while updating the consent status, please try again.',
+          detail: `An error occurred while updating the consent status, please try again. error: ${error}`,
           life: TOAST_DEFAULT_LIFE_DURATION,
         });
 
