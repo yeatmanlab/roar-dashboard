@@ -1,5 +1,5 @@
 <template>
-  <div class="p-4 pt-0">
+  <div class="p-4 pt-0" data-testid="manage-tasks">
     <div class="flex justify-between">
       <h1 class="text-center font-bold">
         <template v-if="viewModel === MODEL_VIEWS.CREATE_TASK">Create a Task</template>
@@ -11,6 +11,7 @@
         :options="Object.values(MODEL_VIEWS)"
         class="flex my-2 select-button p-2"
         @change="handleViewChange($event.value)"
+        :pt="{ root: { 'data-testid': 'manage-tasks__view-select' } }"
       />
     </div>
 
