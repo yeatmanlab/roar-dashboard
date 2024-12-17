@@ -46,7 +46,7 @@
     "@bdelab/roav-crowding": "1.1.23",
     "@bdelab/roav-mep": "1.1.28",
     "@bdelab/roav-ran": "1.0.30",
-    "@levante-framework/core-tasks": "^1.0.0-beta.27",
+    "@levante-framework/core-tasks": "^1.0.0-beta.28",
     "@sentry/browser": "^8.0.0",
     "@sentry/integrations": "^7.114.0",
     "@sentry/vite-plugin": "^2.16.1",
