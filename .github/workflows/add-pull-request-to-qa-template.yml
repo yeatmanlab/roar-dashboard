@@ -1,20 +1,20 @@
-name: Add Pull Request to QA Project
-on:
-  pull_request:
-    branches:
-      - main
-    types:
-      - labeled
+# name: Add Pull Request to QA Project
+# on:
+#   pull_request:
+#     branches:
+#       - main
+#     types:
+#       - labeled
 
-jobs:
-  add-to-project:
-    name: Add to GitHub Project
-    runs-on: ubuntu-latest
-    steps:
-      - name: Add to QA Project
-        uses: actions/add-to-project@v1.0.2
-        with:
-          project-url: ${{ secrets.QA_PROJECT_URL }}
-          github-token: ${{ secrets.ADD_PRS_TO_QA_PROJECTS_TOKEN }}
-          labeled: '[qa] low priority, [qa] medium priority, [qa] high priority'
-          label-operator: OR
+# jobs:
+#   add-to-project:
+#     name: Add to GitHub Project
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Add to QA Project
+#         uses: actions/add-to-project@v1.0.2
+#         with:
+#           project-url: ${{ secrets.QA_PROJECT_URL }}
+#           github-token: ${{ secrets.ADD_PRS_TO_QA_PROJECTS_TOKEN }}
+#           labeled: '[qa] low priority, [qa] medium priority, [qa] high priority'
+#           label-operator: OR
