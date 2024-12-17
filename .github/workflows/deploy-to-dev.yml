@@ -22,3 +22,13 @@ jobs:
           channelId: live
           projectId: '${{ secrets.FIREBASE_PROJECT }}'
           target: production
+      - name: Create Sentry release and upload source maps
+        uses: getsentry/action-release@v1.7.0
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+        with:
+          environment: production
+          sourcemaps: ./dist/assets/*.js.map
+          version: ${{ github.ref }}
