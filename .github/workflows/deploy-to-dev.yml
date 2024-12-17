@@ -31,4 +31,5 @@ jobs:
         with:
           environment: production
           sourcemaps: ./dist/assets/*.js.map
-          version: ${{ github.ref }}
+          version: ${{ github.ref_name }}-${{ github.sha }}
+
