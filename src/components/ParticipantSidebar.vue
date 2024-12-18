@@ -1,5 +1,5 @@
 <template>
-  <div class="sidebar-container">
+  <div class="sidebar-container flex flex-column">
     <div class="sidebar-progress">
       <PvChart type="doughnut" :data="chartData" :options="chartOptions" />
       <div>

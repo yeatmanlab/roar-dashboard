@@ -1,12 +1,12 @@
 <template>
-  <div class="flex align-items-center gap-1">
-    <PvDropdown
+  <div class="card flex justify-center w-full">
+    <PvSelect
       v-model="$i18n.locale"
-      class=""
+      class="w-full md:w-56 bg-white"
       :options="languageDropdownOptions"
       option-label="name"
       option-value="value"
-      placeholder="Select Language"
+      :placeholder="$t('authSignIn.selectLanguage')"
       :highlight-on-select="true"
       @change="onLanguageChange"
     >
@@ -15,13 +15,13 @@
           {{ $t('authSignIn.selectLanguage') }}
         </small>
       </template>
-    </PvDropdown>
+    </PvSelect>
   </div>
 </template>
 
 <script setup>
 import { computed } from 'vue';
-import PvDropdown from 'primevue/dropdown';
+import PvSelect from 'primevue/select';
 import { languageOptions } from '@/translations/i18n.js';
 import { isLevante } from '@/helpers';
 import { useSurveyStore } from '@/store/survey';

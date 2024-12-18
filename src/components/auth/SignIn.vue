@@ -6,7 +6,7 @@
           <PvInputText
             :id="$t('authSignIn.emailId')"
             v-model="v$.email.$model"
-            :class="{ 'p-invalid': invalid }"
+            :class="{ 'w-full': true, 'p-invalid': invalid }"
             aria-describedby="email-error"
             :placeholder="$t('authSignIn.emailPlaceholder')"
             data-cy="input-username-email"
@@ -27,7 +27,7 @@
             <PvPassword
               :id="$t('authSignIn.passwordId')"
               v-model="v$.password.$model"
-              :class="{ 'p-invalid': invalid }"
+              :class="{ 'w-full': true, 'p-invalid': invalid }"
               toggle-mask
               show-icon="pi pi-eye-slash"
               hide-icon="pi pi-eye"
@@ -55,7 +55,7 @@
             v-else-if="allowPassword"
             :id="$t('authSignIn.passwordId')"
             v-model="v$.password.$model"
-            :class="{ 'p-invalid': invalid }"
+            :class="{ 'w-full': true, 'p-invalid': invalid }"
             toggle-mask
             show-icon="pi pi-eye-slash"
             hide-icon="pi pi-eye"
@@ -86,6 +86,7 @@
               :placeholder="$t('authSignIn.signInWithEmailLinkPlaceHolder')"
               disabled
               data-cy="password-disabled-for-email"
+              class="w-full"
             />
             <small
               class="text-link sign-in-method-link"
@@ -101,7 +102,7 @@
           <div v-else>
             <PvPassword
               disabled
-              class="p-invalid text-red-600"
+              class="p-invalid text-red-600 w-full"
               :placeholder="$t('authSignIn.invalidEmailPlaceholder')"
             />
           </div>

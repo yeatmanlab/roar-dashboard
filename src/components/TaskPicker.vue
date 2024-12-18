@@ -11,8 +11,15 @@
       <div v-if="tasksPaneOpen" class="w-full lg:w-6">
         <div class="flex flex-row mb-2">
           <div class="flex flex-column flex-grow-1 p-input-icon-left">
-            <i class="pi pi-search" />
-            <PvInputText v-model="searchTerm" placeholder="Variant name, ID, or Task ID" data-cy="input-variant-name" />
+            <PvIconField class="w-full">
+              <PvInputIcon class="pi pi-search"></PvInputIcon>
+              <PvInputText
+                v-model="searchTerm"
+                class="w-full"
+                placeholder="Variant name, ID, or Task ID"
+                data-cy="input-variant-name"
+              />
+            </PvIconField>
           </div>
           <PvButton
             v-if="searchTerm"
@@ -54,7 +61,7 @@
           </PvScrollPanel>
         </div>
         <div v-if="searchTerm.length < 3">
-          <PvDropdown
+          <PvSelect
             v-model="currentTask"
             :options="taskOptions"
             option-label="label"
@@ -96,7 +103,7 @@
       </div>
       <div class="divider"></div>
       <div class="w-full lg:w-6" data-cy="panel-droppable-zone">
-        <div class="panel-title mb-2">Selected Variants</div>
+        <div class="panel-title mb-2 text-base">Selected Variants</div>
         <PvScrollPanel style="height: 32rem; width: 100%; overflow-y: auto">
           <!-- Draggable Zone 2 -->
           <VueDraggableNext
@@ -148,13 +155,17 @@ import _union from 'lodash/union';
 import { VueDraggableNext } from 'vue-draggable-next';
 import { useToast } from 'primevue/usetoast';
 import PvButton from 'primevue/button';
-import PvDropdown from 'primevue/dropdown';
+import PvSelect from 'primevue/select';
 import PvInputSwitch from 'primevue/inputswitch';
 import PvInputText from 'primevue/inputtext';
 import PvPanel from 'primevue/panel';
 import PvScrollPanel from 'primevue/scrollpanel';
 import VariantCard from './VariantCard.vue';
 import _cloneDeep from 'lodash/cloneDeep';
+import PvIconField from 'primevue/iconfield';
+import PvInputIcon from 'primevue/inputicon';
+
+
 const toast = useToast();
 
 const props = defineProps({
