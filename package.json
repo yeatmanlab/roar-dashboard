@@ -12,6 +12,7 @@
     "dev:live": "export VITE_FIREBASE_DATA_SOURCE=live && vite --force --host",
     "dev:levante": "export VITE_LEVANTE=TRUE && export VITE_FIREBASE_PROJECT=DEV && vite --force --host",
     "dev:levante-prod": "export VITE_LEVANTE=TRUE && export VITE_FIREBASE_PROJECT=PROD && vite --force --host",
+    "dev:levante-pc": "powershell -Command \"$env:VITE_LEVANTE='TRUE'; $env:VITE_FIREBASE_PROJECT='DEV'; vite --force --host\"",
     "dev:emulate": "export VITE_FIREBASE_EMULATOR=true && vite --force --host",
     "deploy:levante-dev": "npm run build:levante-dev && npx firebase use levante-admin-dev && npx firebase deploy --only hosting --config levante-firebase.json",
     "deploy:levante-prod": "npm run build:levante-prod && npx firebase use levante-admin-prod && npx firebase deploy --only hosting --config levante-firebase.json",
