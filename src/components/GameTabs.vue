@@ -142,6 +142,7 @@ import { isLevante } from '@/helpers';
 import _capitalize from 'lodash/capitalize';
 import { useQueryClient } from '@tanstack/vue-query';
 import { LEVANTE_SURVEY_RESPONSES_KEY } from '@/constants/bucket';
+import PvProgressBar from 'primevue/progressbar';
 
 const props = defineProps({
   games: { type: Array, required: true },
@@ -162,6 +163,8 @@ const getGeneralSurveyProgress = computed(() => {
 });
 
 const getSpecificSurveyProgress = computed(() => (loopIndex) => {
+  if (surveyStore.isSpecificSurveyComplete) return 100;
+  
   const localStorageKey = `${LEVANTE_SURVEY_RESPONSES_KEY}-${props.userData.id}`;
   const localStorageData = JSON.parse(localStorage.getItem(localStorageKey) || '{}');
 
@@ -179,15 +182,17 @@ const getSpecificSurveyProgress = computed(() => (loopIndex) => {
     }
   }
 
-  // If data not found in localStorage, use surveyData from server
+  // If data is not found in localStorage, use surveyData from server
   if (!surveyData || !Array.isArray(surveyData)) return 0;
 
   const currentSurvey = surveyData.find(doc => doc.administrationId === selectedAdmin.value.id);
   if (!currentSurvey || !currentSurvey.specific || !currentSurvey.specific[loopIndex]) return 0;
   
+  // Specific survey is complete
   const specificSurvey = currentSurvey.specific[loopIndex];
   if (specificSurvey.isComplete) return 100;
 
+  // Specific survey is incomplete
   const currentPage = currentSurvey.pageNo || 0;
   const totalPages = surveyStore.numSpecificPages || 1;
 

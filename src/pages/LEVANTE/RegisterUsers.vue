@@ -108,10 +108,10 @@
   import { pluralizeFirestoreCollection } from '@/helpers';
   import { fetchOrgByName } from '@/helpers/query/orgs';
   import PvButton from 'primevue/button';
-import PvColumn from 'primevue/column';
-import PvDataTable from 'primevue/datatable';
-import PvDivider from 'primevue/divider';
-import PvFileUpload from 'primevue/fileupload';
+  import PvColumn from 'primevue/column';
+  import PvDataTable from 'primevue/datatable';
+  import PvDivider from 'primevue/divider';
+  import PvFileUpload from 'primevue/fileupload';
   
   const authStore = useAuthStore();
   const toast = useToast();
