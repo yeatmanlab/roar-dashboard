@@ -25,6 +25,14 @@ export const taskDisplayNames = {
     extendedName: 'Letter Names and Sounds',
     order: 2,
   },
+  'letter-en-ca': {
+    name: 'Letter',
+    publicName: 'ROAR - Letter',
+    studentFacingName: 'Letter',
+    extendedTitle: 'ROAR - Letter',
+    extendedName: 'Letter Names and Sounds',
+    order: 27,
+  },
   pa: {
     name: 'Phoneme',
     publicName: 'ROAR - Phoneme',
@@ -257,6 +265,8 @@ export const extendedDescriptions = {
   cva: 'This test measures your students’ knowledge of words that are often used in the books they read at school',
   letter:
     'This test measures how well your student knows the names of letters and which letters are used to spell each sound',
+  'letter-en-ca':
+    'This test measures how well your student knows the names of letters and which letters are used to spell each sound',
   'letter-es.':
     'This test measures how well your student knows the names of letters and which letters are used to spell each sound.',
   comp: 'Temporary description for comp',
@@ -331,7 +341,7 @@ export const tasksToDisplayGraphs = ['swr', 'sre', 'pa'];
  *  Raw Only Tasks
  *  A list of tasks to only display raw scores when included in a RoarDataTable.
  */
-export const rawOnlyTasks = ['letter', 'cva', 'morphology', 'vocab', 'fluency', 'letter-es'];
+export const rawOnlyTasks = ['letter', 'cva', 'morphology', 'vocab', 'fluency', 'letter-es', 'letter-en-ca'];
 
 /*
  *  Tasks to Display Percent Correct
@@ -339,6 +349,7 @@ export const rawOnlyTasks = ['letter', 'cva', 'morphology', 'vocab', 'fluency', 
 export const tasksToDisplayPercentCorrect = [
   'letter',
   'letter-es',
+  'letter-en-ca',
   'cva',
   'swr-es',
   'pa-es',
@@ -349,6 +360,7 @@ export const tasksToDisplayPercentCorrect = [
   'mep',
   'roav-mep',
   'mep-pseudo',
+  'roar-inference',
 ];
 
 /*
@@ -569,7 +581,7 @@ export function getScoreKeys(taskId, grade) {
     }
     rawScoreKey = 'sreScore';
   }
-  if (taskId === 'letter' || taskId === 'letter-es') {
+  if (taskId === 'letter' || taskId === 'letter-es' || taskId === 'letter-en-ca') {
     rawScoreKey = 'totalPercentCorrect';
   }
   return {
@@ -717,6 +729,21 @@ export const taskInfoById = {
     ],
   },
   letter: {
+    color: '#E19834',
+    header: 'ROAR-LETTER NAMES AND SOUNDS',
+    subheader: 'Letter Names and Sounds',
+    desc:
+      "ROAR-Letter assesses a student's knowledge of letter " +
+      'names and letter sounds. Knowing letter names supports the learning of ' +
+      'letter sounds, and knowing letter sounds supports the learning of letter ' +
+      'names. Initial knowledge of letter names and letter sounds on entry to ' +
+      'kindergarten has been shown to predict success in learning to read. Learning ' +
+      'the connection between letters and the sounds they represent is fundamental ' +
+      'for learning to decode and spell words. This assessment provides educators ' +
+      'with valuable insights to customize instruction and address any gaps in ' +
+      'these foundational skills.',
+  },
+  'letter-en-ca': {
     color: '#E19834',
     header: 'ROAR-LETTER NAMES AND SOUNDS',
     subheader: 'Letter Names and Sounds',

@@ -309,8 +309,8 @@ import {
   tasksToDisplayCorrectIncorrectDifference,
   includedValidityFlags,
 } from '@/helpers/reports';
-import FilterBar from '@/components/slots/FilterBar.vue';
-import RoarDataTable from '@/components/RoarDataTable.vue';
+import FilterBar from '@/components/FilterBar';
+import RoarDataTable from '@/components/RoarDataTable';
 import { APP_ROUTES } from '@/constants/routes';
 import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
 
@@ -750,7 +750,7 @@ const computeAssignmentAndRunData = computed(() => {
             numAttempted === undefined || numAttempted === 0 ? '#EEEEF0' : numAttempted !== 0 ? tagColor : '#EEEEF0';
           scoreFilterTags += ' Assessed ';
         }
-        if (taskId === 'letter' && assessment.scores) {
+        if ((taskId === 'letter' || taskId === 'letter-en-ca') && assessment.scores) {
           currRowScores[taskId].lowerCaseScore = assessment.scores.computed.LowercaseNames?.subScore;
           currRowScores[taskId].upperCaseScore = assessment.scores.computed.UppercaseNames?.subScore;
           currRowScores[taskId].phonemeScore = assessment.scores.computed.Phonemes?.subScore;
@@ -1203,7 +1203,7 @@ const scoreReportColumns = computed(() => {
     }
   });
 
-  const priorityTasks = ['swr', 'sre', 'pa', 'letter'];
+  const priorityTasks = ['swr', 'sre', 'pa', 'letter', 'letter-en-ca'];
   const spanishTasks = ['letter-es', 'pa-es', 'swr-es', 'sre-es'];
   const spanishMathTasks = ['fluency-arf-es', 'fluency-calf-es'];
   const supplementaryTasks = ['morphology', 'cva', 'vocab', 'trog', 'phonics', 'roar-inference'];
@@ -1322,7 +1322,7 @@ const sortedTaskIds = computed(() => {
   });
 
   const sortedIds = specialTaskIds.concat(remainingTaskIds);
-  return sortedIds;
+  return sortedIds.filter((taskId) => allTasks.value.includes(taskId));
 });
 
 const sortedAndFilteredTaskIds = computed(() => {

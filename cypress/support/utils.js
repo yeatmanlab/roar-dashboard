@@ -1,5 +1,4 @@
 import axios from 'axios';
-import { createPinia, setActivePinia } from 'pinia';
 import { useAuthStore } from '../../src/store/auth.js';
 import featurePackageJson from '../../package.json';
 
@@ -42,72 +41,4 @@ export const isCurrentVersion = async (app) => {
     console.error(`Failed to check if ${app} is the current version: ${error}`);
     return false;
   }
-};
-
-/**
- * Create a mock store for the user type specified.
- * @param {string} userType - The type of user to create a mock store for. One of 'superAdmin', 'partnerAdmin', or 'participant'. Defaults to 'participant'.
- * @returns {object} - The mock store object
- */
-export const createMockStore = (userType = 'participant') => {
-  const userTypes = {
-    // Add user data as needed here
-    superAdmin: {},
-    partnerAdmin: {},
-    participant: {
-      uid: Cypress.env('participantUid'),
-      username: Cypress.env('participantUsername'),
-      password: Cypress.env('participantPassword'),
-      email: Cypress.env('participantEmail'),
-      name: {
-        first: 'Cypress',
-        last: 'Student',
-      },
-    },
-  };
-
-  setActivePinia(createPinia());
-  const authStore = useAuthStore();
-
-  // Patch the store with the user data as needed here
-  authStore.$patch({
-    firebaseUser: {
-      adminFirebaseUser: {
-        uid: userTypes[userType].uid,
-        email: userTypes[userType].email,
-        isUserAuthedAdmin: true,
-        isUserAuthedApp: true,
-        isAuthenticated: true,
-      },
-      appFirebaseUser: {
-        uid: userTypes[userType].uid,
-        email: userTypes[userType].email,
-        isUserAuthedAdmin: true,
-        isUserAuthedApp: true,
-        isAuthenticated: true,
-      },
-    },
-    roarfirekit: {
-      initialized: true,
-      restConfig: {
-        admin: {
-          baseURL: Cypress.env('firestoreAdminUrl'),
-        },
-        app: {
-          baseURL: Cypress.env('firestoreAppUrl'),
-        },
-      },
-    },
-    userData: {
-      uid: userTypes[userType].uid,
-      email: userTypes[userType].email,
-      username: userTypes[userType].username,
-      name: {
-        first: userTypes[userType].name.first,
-        last: userTypes[userType].name.last,
-      },
-    },
-  });
-
-  return authStore;
 };

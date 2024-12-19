@@ -114,7 +114,7 @@
             </PvAccordionTab>
           </PvAccordion>
         </div>
-        <div v-if="task.taskId === 'letter'">
+        <div v-if="task.taskId === 'letter' || task.taskId === 'letter-en-ca'">
           <PvAccordion class="my-2 w-full" :active-index="expanded ? 0 : null">
             <PvAccordionTab :header="$t('scoreReports.scoreBreakdown')">
               <div v-for="[key, rawScore, rangeMin, rangeMax] in task.scoresArray" :key="key">
@@ -309,7 +309,7 @@ const computedTaskData = computed(() => {
         formattedScoresArray.push([t('scoreReports.lastSoundMatching'), last]);
         formattedScoresArray.push([t('scoreReports.deletion'), deletion]);
         formattedScoresArray.push([t('scoreReports.skillsToWorkOn'), skillsString]);
-      } else if (taskId === 'letter') {
+      } else if (taskId === 'letter' || taskId === 'letter-en-ca') {
         formattedScoresArray;
         const incorrectLetters = [
           scores?.UppercaseNames?.upperIncorrect ?? ''.split(','),
