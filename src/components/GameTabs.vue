@@ -17,7 +17,7 @@
           {{ getTaskName(game.taskId, game.taskData.name) }}
         </PvTab>
       </PvTabList>
-      <PvTabPanels style="width: 120vh">
+      <PvTabPanels style="width: 80vw; min-width: 800px; max-width: 1200px; margin-top: 0.5rem; padding: 0">
         <PvTabPanel
           v-for="(game, index) in games"
           :key="game.taskId"
@@ -27,7 +27,7 @@
               (allGamesComplete && currentGameId !== game.taskId && !game.completedOn))
           "
           :value="String(index)"
-          class="p-0"
+          class="p-0 "
         >
           <template #header>
             <!--Complete Game-->
@@ -47,118 +47,124 @@
             >
           </template>
           <div class="roar-tabview-game pointer flex flex-row p-5 surface-100 w-full">
-            <div class="roar-game-content flex flex-column" style="width: 70%" @click="routeExternalTask(game)">
-              <div class="roar-game-title font-bold">{{ getTaskName(game.taskId, game.taskData.name) }}</div>
-              <div class="roar-game-description mr-2">
-                <p>{{ getTaskDescription(game.taskId, game.taskData.description) }}</p>
-              </div>
-              <div class="flex flex-column">
-                <div class="roar-game-meta">
-                  <PvTag
-                    v-for="(items, metaIndex) in game.taskData.meta"
-                    :key="metaIndex"
-                    :value="metaIndex + ': ' + items"
-                  />
+            <div class="roar-game-content flex flex-column" style="width: 65%">
+              <div class="flex flex-column h-full">
+                <div class="roar-game-title font-bold">{{ getTaskName(game.taskId, game.taskData.name) }}</div>
+                <div class="roar-game-description mr-2 flex-grow-1">
+                  <p>{{ getTaskDescription(game.taskId, game.taskData.description) }}</p>
                 </div>
-                <div class="roar-game-footer p-3 mr-5 hover:surface-200">
-                  <div class="flex align-items-center justify-content-center text-xl font-bold mt-2">
-                    <router-link
-                      v-if="
-                        !allGamesComplete && !game.completedOn && !game.taskData?.taskURL && !game.taskData?.variantURL
-                      "
-                      :to="{ path: getRoutePath(game.taskId) }"
-                      class="no-underline text-900"
-                    >
-                      <div class="flex align-items-center justify-content-center">
-                        <i v-if="!allGamesComplete" class="pi"
-                          ><svg
-                            width="100"
-                            height="100"
-                            viewBox="0 0 42 42"
-                            fill="none"
-                            class="mr-3"
-                            xmlns="http://www.w3.org/2000/svg"
-                          >
-                            <rect width="42" height="42" rx="21" fill="#A80532" />
-                            <path
-                              d="M26.1858 19.6739L17.4823 14.1736C16.7751 13.7269 15.6921 14.1604 15.6921 15.2652V26.2632C15.6921 27.2544 16.6985 27.8518 17.4823 27.3549L26.1858 21.8572C26.9622 21.3682 26.9647 20.1629 26.1858 19.6739Z"
-                              fill="white"
-                            />
-                          </svg>
-                        </i>
-                      </div>
-                      <span v-if="!allGamesComplete && !game.completedOn">{{ $t('gameTabs.clickToStart') }}</span>
-                      <span v-else>{{ taskCompletedMessage }} </span>
-                    </router-link>
-                    <div v-else>
-                      <div class="flex align-items-center justify-content-center text-green-500">
-                        <i v-if="game.completedOn" class="pi pi-check-circle mr-3" />
-                        <span>{{ taskCompletedMessage }} </span>
+                
+                <div v-if="game.taskId === 'survey'" class="mt-4 mb-4">
+                  <div class="flex align-items-center mb-2">
+                    <span class="mr-2 w-4"><b>{{ $t('gameTabs.surveyProgressGeneral') }} </b> - {{ 
+                      props.userData.userType === 'teacher' || props.userData.userType === 'parent' ? 
+                      props.userData.userType === 'teacher' ? $t('gameTabs.surveyProgressGeneralTeacher') : $t('gameTabs.surveyProgressGeneralParent') : '' }}
+                    </span>
+                    <PvProgressBar 
+                      :value="getGeneralSurveyProgress" 
+                      class="flex-grow-1" 
+                    />
+                  </div>
+
+                  <div v-if="props.userData.userType === 'parent'">
+                    <div v-for="(child, i) in props.userData?.childIds" :key="child" class="flex flex-wrap align-items-center mb-2">
+                      <span class="mr-2 w-full sm:w-4 mb-1 sm:mb-0">
+                        <b>{{ $t('gameTabs.surveyProgressSpecificParent') }} - </b> {{ $t('gameTabs.surveyProgressSpecificParentMonth') }}: {{ surveyStore.specificSurveyRelationData[i]?.birthMonth }} 
+                        <br class="sm:hidden" />
+                        {{ $t('gameTabs.surveyProgressSpecificParentYear') }}: {{ surveyStore.specificSurveyRelationData[i]?.birthYear }}
+                      </span>
+                      <PvProgressBar 
+                        :value="getSpecificSurveyProgress(i)" 
+                        class="flex-grow-1 w-full sm:w-auto incomplete-progress-bar"
+                      />
+                    </div>
+                  </div>
+
+                  <div v-if="props.userData.userType === 'teacher'">
+                    <div v-for="(classroom, i) in props.userData?.classes?.current" :key="classroom" class="flex flex-wrap align-items-center mb-2">
+                      <span class="mr-2 w-full sm:w-4 mb-1 sm:mb-0">
+                        <b>Classroom - </b> {{ surveyStore.specificSurveyRelationData[i]?.name }}
+                      </span>
+                      <PvProgressBar 
+                        :value="getSpecificSurveyProgress(i)" 
+                        class="flex-grow-1 w-full sm:w-auto"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div class="flex flex-column mt-auto">
+                  <div class="roar-game-meta">
+                    <PvTag
+                      v-for="(items, metaIndex) in game.taskData.meta"
+                      :key="metaIndex"
+                      :value="metaIndex + ': ' + items"
+                    />
+                  </div>
+                  <div class="roar-game-footer p-3 hover:surface-200">
+                    <div class="flex align-items-center justify-content-center text-xl font-bold mt-2">
+                      <router-link
+                        v-if="
+                          !allGamesComplete && !game.completedOn && !game.taskData?.taskURL && !game.taskData?.variantURL
+                        "
+                        :to="{ path: getRoutePath(game.taskId) }"
+                        class="no-underline text-900"
+                      >
+                        <div class="flex align-items-center">
+                          <i v-if="!allGamesComplete" class="pi"
+                            ><svg
+                              width="24"
+                              height="24"
+                              viewBox="0 0 42 42"
+                              fill="none"
+                              class="mr-3"
+                              xmlns="http://www.w3.org/2000/svg"
+                            >
+                              <rect width="42" height="42" rx="21" fill="#A80532" />
+                              <path
+                                d="M26.1858 19.6739L17.4823 14.1736C16.7751 13.7269 15.6921 14.1604 15.6921 15.2652V26.2632C15.6921 27.2544 16.6985 27.8518 17.4823 27.3549L26.1858 21.8572C26.9622 21.3682 26.9647 20.1629 26.1858 19.6739Z"
+                                fill="white"
+                              />
+                            </svg>
+                          </i>
+                          <span v-if="!allGamesComplete && !game.completedOn">{{ $t('gameTabs.clickToStart') }}</span>
+                          <span v-else>{{ taskCompletedMessage }} </span>
+                        </div>
+                      </router-link>
+                      <div v-else>
+                        <div class="flex align-items-center justify-content-center text-green-500">
+                          <i v-if="game.completedOn" class="pi pi-check-circle mr-3" />
+                          <span>{{ taskCompletedMessage }} </span>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-            <div class="roar-game-image">
+            <div class="roar-game-image" style="width: 35%">
               <div v-if="game.taskData?.tutorialVideo" class="video-player-wrapper">
                 <VideoPlayer
                   :options="returnVideoOptions(game.taskData?.tutorialVideo)"
                   :on-video-end="updateVideoCompleted"
                   :on-video-start="updateVideoStarted"
                   :task-id="game.taskId"
-                  style="width: 40vh"
+                  style="width: 100%"
                 />
               </div>
               <div v-else>
-                <img v-if="game.taskData.image" :src="game.taskData.image" style="width: 40vh" />
-                <!-- TODO: Get real backup image -->
+                <img 
+                  v-if="game.taskData.image" 
+                  :src="game.taskData.image" 
+                  style="width: 100%; object-fit: contain; height: 300px"
+                />
                 <img
                   v-else
                   src="https://reading.stanford.edu/wp-content/uploads/2021/10/PA-1024x512.png"
-                  style="width: 40vh"
+                  style="width: 100%; object-fit: contain; height: 300px"
                 />
               </div>
             </div>
-
-            <div v-if="game.taskId === 'survey'" class="mt-4 px-4">
-            <div class="flex align-items-center mb-2">
-              <span class="mr-2 w-4"><b>{{ $t('gameTabs.surveyProgressGeneral') }} </b> - {{ 
-                props.userData.userType === 'teacher' || props.userData.userType === 'parent' ? 
-                props.userData.userType === 'teacher' ? $t('gameTabs.surveyProgressGeneralTeacher') : $t('gameTabs.surveyProgressGeneralParent') : '' }}
-              </span>
-              <PvProgressBar 
-                :value="getGeneralSurveyProgress" 
-                class="flex-grow-1" 
-              />
-            </div>
-
-            <div v-if="props.userData.userType === 'parent'">
-              <div v-for="(child, i) in props.userData?.childIds" :key="child" class="flex flex-wrap align-items-center mb-2">
-                <span class="mr-2 w-full sm:w-4 mb-1 sm:mb-0">
-                  <b>{{ $t('gameTabs.surveyProgressSpecificParent') }} - </b> {{ $t('gameTabs.surveyProgressSpecificParentMonth') }}: {{ surveyStore.specificSurveyRelationData[i]?.birthMonth }} 
-                  <br class="sm:hidden" />
-                  {{ $t('gameTabs.surveyProgressSpecificParentYear') }}: {{ surveyStore.specificSurveyRelationData[i]?.birthYear }}
-                </span>
-                <PvProgressBar 
-                  :value="getSpecificSurveyProgress(i)" 
-                  class="flex-grow-1 w-full sm:w-auto incomplete-progress-bar"
-                />
-              </div>
-            </div>
-
-            <div v-if="props.userData.userType === 'teacher'">
-              <div v-for="(classroom, i) in props.userData?.classes?.current" :key="classroom" class="flex flex-wrap align-items-center mb-2">
-                <span class="mr-2 w-full sm:w-4 mb-1 sm:mb-0">
-                  <b>Classroom - </b> {{ surveyStore.specificSurveyRelationData[i]?.name }}
-                </span>
-                <PvProgressBar 
-                  :value="getSpecificSurveyProgress(i)" 
-                  class="flex-grow-1 w-full sm:w-auto"
-                />
-              </div>
-            </div>
-          </div>
           </div>
         </PvTabPanel>
       </PvTabPanels>
@@ -409,7 +415,9 @@ const returnVideoOptions = (videoURL) => {
 
 <style scoped lang="scss">
 .game-tab-container {
-  max-width: 75vw;
+  width: 80vw;
+  min-width: 800px;
+  max-width: 1200px;
 }
 
 .pointer {
@@ -417,61 +425,74 @@ const returnVideoOptions = (videoURL) => {
 }
 
 .video-player-wrapper {
-  min-width: 350px;
+  width: 100%;
+  height: 300px;
+  display: flex;
   align-items: center;
-  min-height: 100%;
-}
-@media screen and (max-width: 768px) {
-  .video-player-wrapper {
-    min-width: 250px;
-  }
+  justify-content: center;
 }
 
 .roar-tabview-game {
   display: flex;
-  flex-direction: column;
-}
-
-.roar-tabview-game > .flex {
-  display: flex;
   flex-direction: row;
+  width: 100%;
+  min-height: 400px;
+  border-radius: 10px;
 }
 
 .roar-game-image {
-  width: 350px;
-  flex-shrink: 0;
+  flex: 0 0 35%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .roar-game-content {
-  flex-grow: 1;
+  flex: 0 0 65%;
+  padding-right: 2rem;
   display: flex;
   flex-direction: column;
-  margin-right: 1rem; // Add this line
+}
+
+.roar-game-description {
+  margin-bottom: 1rem;
+  flex-grow: 1;
 }
 
 .roar-game-footer {
-  margin-top: 1rem;
+  margin-top: auto;
   width: 100%;
   text-align: center;
   background-color: #f0f0f0;
-  padding: 0.5rem;
   border-radius: 4px;
   cursor: pointer;
 }
 
-@media screen and (max-width: 768px) {
-  .roar-tabview-game > .flex {
+@media screen and (max-width: 800px) {
+  .game-tab-container {
+    width: 100%;
+    min-width: 100%;
+  }
+
+  .roar-tabview-game {
     flex-direction: column;
+    min-height: auto;
+  }
+
+  .roar-game-image,
+  .roar-game-content {
+    flex: 0 0 100%;
+    width: 100%;
+    padding-right: 0;
   }
 
   .roar-game-image {
-    width: 100%;
-    margin-top: 1rem; // Add this line
+    margin-top: 1rem;
   }
 
-  .roar-game-content {
-    margin-right: 0; // Add this line
+  .video-player-wrapper {
+    width: 100%;
+    height: 250px;
   }
 }
-
 </style>

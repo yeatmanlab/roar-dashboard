@@ -12,6 +12,7 @@
 <script setup>
 import LanguageSelector from '../LanguageSelector.vue';
 import { useI18n } from 'vue-i18n';
+import PvCard from 'primevue/card';
 
 const { t } = useI18n();
 </script>

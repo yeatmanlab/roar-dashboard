@@ -17,7 +17,6 @@
                     :options="allDistricts"
                     option-label="name"
                     option-value="id"
-                    :placeholder="districtPlaceholder"
                     :loading="isLoadingDistricts"
                     class="w-full"
                     data-cy="dropdown-selected-district"
@@ -34,7 +33,6 @@
                     :options="allSchools"
                     option-label="name"
                     option-value="id"
-                    :placeholder="schoolPlaceholder"
                     :loading="isLoadingSchools"
                     class="w-full"
                     data-cy="dropdown-selected-school"
@@ -192,20 +190,6 @@ const orgHeaders = computed(() => {
     result.groups = { header: 'Groups', id: 'groups' };
   }
   return result;
-});
-
-const districtPlaceholder = computed(() => {
-  if (isLoadingDistricts.value) {
-    return 'Loading...';
-  }
-  return 'Select a district';
-});
-
-const schoolPlaceholder = computed(() => {
-  if (isLoadingSchools.value) {
-    return 'Loading...';
-  }
-  return 'Select a school';
 });
 
 const activeIndex = ref(0);

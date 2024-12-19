@@ -23,11 +23,11 @@
           {{ userAssignments.at(0).publicName || userAssignments.at(0).name }}
         </h2>
       </PvFloatLabel>
-      <div class="flex flex-row ml-5 align-items-end gap-2 justify-content-between">
-        <PvFloatLabel class="mt-3 mr-3">
+      <div class="ml-5 mt-5">
+        <PvFloatLabel >
           <div v-if="userAssignments?.length > 0" class="flex flex-row align-items-start w-full mt-4">
-            <div class="assignment-select-container">
-              <div class="flex align-content-start w-full">
+            <div class="assignment-select-container ">
+              <div class="flex w-full ">
                 <PvSelect
                   v-model="selectedAdmin"
                   :options="sortedUserAdministrations ?? []"
@@ -38,7 +38,7 @@
                   data-cy="dropdown-select-administration"
                   @change="toggleShowOptionalAssessments"
                 />
-                <label for="dd-assignment" class="mt-4">{{ $t('homeParticipant.selectAssignment') }}</label>
+                <label for="dd-assignment" class="p-0 m-0">{{ $t('homeParticipant.selectAssignment') }}</label>
               </div>
             </div>
           </div>
