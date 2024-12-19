@@ -6,6 +6,9 @@ import ToastService from 'primevue/toastservice';
 import { i18n } from '@/translations/i18n.js';
 import { routes } from '@/router';
 
+// Extend Cypress with additional commands.
+import '@testing-library/cypress/add-commands';
+
 // Import global styles.
 import '@/styles.css';
 
@@ -58,5 +61,7 @@ Cypress.Commands.add('mount', (component, options = {}) => {
     },
   });
 
-  return mount(component, options);
+  return mount(component, options).then(({ wrapper }) => {
+    return cy.wrap(wrapper).as('vue');
+  });
 });
