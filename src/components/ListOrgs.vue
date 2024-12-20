@@ -18,8 +18,8 @@
               v-if="activeOrgType === 'schools' || activeOrgType === 'classes'"
               class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3"
             >
-              <span class="p-float-label">
-                <PvDropdown
+              <PvFloatLabel>
+                <PvSelect
                   v-model="selectedDistrict"
                   input-id="district"
                   :options="allDistricts"
@@ -31,11 +31,11 @@
                   data-cy="dropdown-parent-district"
                 />
                 <label for="district">District</label>
-              </span>
+              </PvFloatLabel>
             </div>
             <div v-if="orgType.id === 'classes'" class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3">
-              <span class="p-float-label">
-                <PvDropdown
+              <PvFloatLabel>
+                <PvSelect
                   v-model="selectedSchool"
                   input-id="school"
                   :options="allSchools"
@@ -47,7 +47,7 @@
                   data-cy="dropdown-parent-school"
                 />
                 <label for="school">School</label>
-              </span>
+              </PvFloatLabel>
             </div>
           </div>
           <RoarDataTable
@@ -157,7 +157,7 @@ import { storeToRefs } from 'pinia';
 import { useToast } from 'primevue/usetoast';
 import PvButton from 'primevue/button';
 import PvDialog from 'primevue/dialog';
-import PvDropdown from 'primevue/dropdown';
+import PvSelect from 'primevue/select';
 import PvInputGroup from 'primevue/inputgroup';
 import PvInputText from 'primevue/inputtext';
 import PvTabPanel from 'primevue/tabpanel';
@@ -180,6 +180,7 @@ import RoarModal from './modals/RoarModal.vue';
 import { CSV_EXPORT_MAX_RECORD_COUNT } from '@/constants/csvExport';
 import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts.js';
 import RoarDataTable from '@/components/RoarDataTable.vue';
+import PvFloatLabel from 'primevue/floatlabel';
 
 const initialized = ref(false);
 const selectedDistrict = ref(undefined);

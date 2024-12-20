@@ -142,4 +142,5 @@ async function startTask(selectedAdmin) {
 .game-target:focus {
   outline: none;
 }
+
 </style>

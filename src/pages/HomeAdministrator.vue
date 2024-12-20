@@ -42,7 +42,7 @@
 
               <div class="flex flex-column gap-1">
                 <small for="dd-sort" class="text-gray-400">Sort by</small>
-                <PvDropdown
+                <PvSelect
                   v-model="sortKey"
                   input-id="dd-sort"
                   :options="sortOptions"
@@ -136,7 +136,7 @@ import PvAutoComplete from 'primevue/autocomplete';
 import PvBlockUI from 'primevue/blockui';
 import PvButton from 'primevue/button';
 import PvDataView from 'primevue/dataview';
-import PvDropdown from 'primevue/dropdown';
+import PvSelect from 'primevue/select';
 import PvInputGroup from 'primevue/inputgroup';
 import PvInputSwitch from 'primevue/inputswitch';
 import { useAuthStore } from '@/store/auth';

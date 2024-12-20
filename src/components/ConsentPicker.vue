@@ -6,8 +6,6 @@
           <PvRadioButton
             v-model="decision"
             input-id="helpChoose"
-            class="border-2 border-circle border-300"
-            style="width: 15px; height: 15px"
             name="help"
             value="help"
             @change="whatDecision"
@@ -18,8 +16,6 @@
           <PvRadioButton
             v-model="decision"
             input-id="iKnow"
-            class="border-2 border-circle border-300"
-            style="width: 15px; height: 15px"
             name="know"
             value="know"
             @change="whatDecision"
@@ -148,23 +144,23 @@
           <h3 class="mb-4 mt-4">Compensation Amount and Expected Time</h3>
           <div class="flex flex-row">
             <div class="mr-1">
-              <span class="p-float-label">
+              <PvFloatLabel>
                 <PvInputText id="consent-amount" v-model="amount" class="w-full" disabled="true" />
                 <label for="consent-amount" class="text-sm w-full">Payment Amount $$</label>
-              </span>
+              </PvFloatLabel>
             </div>
             <div class="ml-3">
-              <span class="p-float-label">
+              <PvFloatLabel>
                 <PvInputText id="consent-time" v-model="expectedTime" class="w-full" disabled="true" />
                 <label for="consent-time" class="text-sm w-full">Expected Time Amount</label>
-              </span>
+              </PvFloatLabel>
             </div>
           </div>
         </div>
       </div>
       <div v-if="knowWhatIWant && !noConsent" class="flex flex-column pl-3" style="width: 50%">
         <h3>Select a Consent Form</h3>
-        <PvDropdown
+        <PvSelect
           v-model="selectedConsent"
           :options="listOfDocs.consent"
           option-label="fileName"
@@ -174,7 +170,7 @@
         />
         <div v-if="!isLevante">
           <h3 class="pt-3">Select an Assent Form</h3>
-          <PvDropdown
+          <PvSelect
             v-model="selectedAssent"
             :options="listOfDocs.assent"
             option-label="fileName"
@@ -187,16 +183,16 @@
           <h3 class="mb-4 mt-5">Consent Amount and Expected Time</h3>
           <div class="flex flex-row">
             <div class="mr-1">
-              <span class="p-float-label">
+              <PvFloatLabel>
                 <PvInputText id="consent-amount" v-model="amount" class="w-full" disabled="true" />
                 <label for="consent-amount" class="text-sm w-full">Payment Amount $$</label>
-              </span>
+              </PvFloatLabel>
             </div>
             <div class="ml-3">
-              <span class="p-float-label">
+              <PvFloatLabel>
                 <PvInputText id="consent-time" v-model="expectedTime" class="w-full" disabled="true" />
                 <label for="consent-time" class="text-sm w-full">Expected Time Amount</label>
-              </span>
+              </PvFloatLabel>
             </div>
           </div>
         </div>
@@ -283,10 +279,11 @@ import { ref, onMounted, watch, computed } from 'vue';
 import { marked } from 'marked';
 import _forEach from 'lodash/forEach';
 import { isLevante } from '@/helpers';
+import PvFloatLabel from 'primevue/floatlabel';
 import PvButton from 'primevue/button';
 import PvCheckbox from 'primevue/checkbox';
 import PvDialog from 'primevue/dialog';
-import PvDropdown from 'primevue/dropdown';
+import PvSelect from 'primevue/select';
 import PvInputText from 'primevue/inputtext';
 import PvPanel from 'primevue/panel';
 import PvRadioButton from 'primevue/radiobutton';
