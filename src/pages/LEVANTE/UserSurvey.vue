@@ -1,5 +1,6 @@
 <script setup>
 import 'survey-core/defaultV2.min.css';
+import { SurveyComponent } from 'survey-vue3-ui';
 import { useAuthStore } from '@/store/auth';
 import AppSpinner from '@/components/AppSpinner.vue';
 import { useSurveyStore } from '@/store/survey';
@@ -76,9 +77,7 @@ console.log('specific relation:', surveyStore.specificSurveyRelationData[surveyS
     display: flex;
     position: absolute;
     right: 0;
-    top: 0;
-    margin-top: -36px;
-    margin-right: -36px;
+    left: 500px;
     width: 40px;
     height: 40px;
     background-color: var(--primary-color);
