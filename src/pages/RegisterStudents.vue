@@ -270,6 +270,10 @@ function checkUniqueStudents(students, field) {
   return students.length === uniqueStudents.length;
 }
 
+function isValidDate(date) {
+  return new Date(date).toString() !== 'Invalid Date';
+}
+
 async function submitStudents() {
   // Reset error users
   errorUsers.value = [];
@@ -359,18 +363,62 @@ async function submitStudents() {
   const usersToSend = [];
   for (const user of submitObject) {
     // Handle Email Registration
-    const { email, username, password, firstName, middleName, lastName, district, school, uClass, group, ...userData } =
-      user;
-    const computedEmail = email || `${username}@roar-auth.com`;
-    let sendObject = {
-      email: computedEmail,
+    const {
+      email,
+      username,
       password,
+      firstName,
+      middleName,
+      lastName,
+      district,
+      school,
+      uClass,
+      group,
+      grade,
+      dob,
+      ...userData
+    } = user;
+
+    let sendObject = {
       userData,
     };
     if (username) _set(sendObject, 'userData.username', username);
     if (firstName) _set(sendObject, 'userData.name.first', firstName);
     if (middleName) _set(sendObject, 'userData.name.middle', middleName);
     if (lastName) _set(sendObject, 'userData.name.last', lastName);
+
+    if (email || username) {
+      const computedEmail = email || `${username}@roar-auth.com`;
+      _set(sendObject, 'email', computedEmail);
+    } else {
+      addErrorUser(user, 'Error: Username or Email is required');
+      continue;
+    }
+
+    // Check validity of required fields
+    if (password && password.length >= 6) {
+      _set(sendObject, 'password', password);
+    } else {
+      // Users cannot be created without a password
+      addErrorUser(user, 'Error: Password must be at least 6 characters long');
+      continue;
+    }
+
+    if (grade) {
+      _set(sendObject, 'userData.grade', grade);
+    } else {
+      // Users cannot be created without a grade
+      addErrorUser(user, 'Error: Grade is required');
+      continue;
+    }
+
+    if (dob && isValidDate(dob)) {
+      _set(sendObject, 'userData.dob', dob);
+    } else {
+      // Users cannot be created without a valid date of birth
+      addErrorUser(user, 'Error: Date of Birth is required and should be a valid date');
+      continue;
+    }
 
     const orgNameMap = {
       district: district,
