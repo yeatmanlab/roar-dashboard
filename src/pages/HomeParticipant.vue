@@ -223,13 +223,16 @@ async function checkConsent() {
   const consentDoc = await authStore.getLegalDoc(docType);
   consentVersion.value = consentDoc.version;
 
+  const latestAugust =
+    currentDate.getMonth() < 7
+      ? new Date(currentDate.getFullYear() - 1, 7, 1)
+      : new Date(currentDate.getFullYear(), 7, 1);
+
   if (consentStatus?.[consentDoc.version]) {
     const legalDocs = consentStatus?.[consentDoc.version];
 
     let found = false;
     let signedBeforeAugFirst = false;
-
-    const augustFirstThisYear = new Date(currentDate.getFullYear(), 7, 1); // August 1st of the current year
 
     for (const document of legalDocs) {
       const signedDate = new Date(document.dateSigned);
@@ -237,13 +240,13 @@ async function checkConsent() {
       if (document.amount === docAmount && document.expectedTime === docExpectedTime) {
         found = true;
 
-        if (signedDate < augustFirstThisYear && currentDate >= augustFirstThisYear) {
+        if (signedDate < latestAugust) {
           signedBeforeAugFirst = true;
           break;
         }
       }
 
-      if (isNaN(new Date(document.dateSigned)) && currentDate >= augustFirstThisYear) {
+      if (isNaN(new Date(document.dateSigned)) && currentDate >= latestAugust) {
         signedBeforeAugFirst = true;
         break;
       }
