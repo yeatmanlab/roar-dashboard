@@ -1,7 +1,7 @@
 <template>
   <div class="card flex justify-center w-full">
     <PvSelect
-      v-model="selectedLanguage"
+      v-model="$i18n.locale"
       class="w-full md:w-56 bg-white"
       :options="languageDropdownOptions"
       option-label="name"
@@ -14,11 +14,9 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue';
+import { computed } from 'vue';
 import PvSelect from 'primevue/select';
 import { languageOptions } from '@/translations/i18n.js';
-
-const selectedLanguage = ref();
 
 // Convert the object to an array of [key, value] pairs
 let languageOptionsArray = Object.entries(languageOptions);
