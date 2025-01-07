@@ -413,7 +413,6 @@ const showConsent = ref(false);
 const isCaptchaverified = ref(null);
 
 async function handleConsentAccept(outerIndex) {
-  console.log('handle consent accept for student: ', outerIndex);
   state.students[outerIndex].accept = true;
 }
 
