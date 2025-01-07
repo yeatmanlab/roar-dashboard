@@ -125,8 +125,12 @@ async function checkConsent() {
 
 function isSignedBeforeAugustFirst(signedDate) {
   const currentDate = new Date();
-  const augustFirstThisYear = new Date(currentDate.getFullYear(), 7, 1); // August 1st of the current year
-  return new Date(signedDate) < augustFirstThisYear;
+  // If the current date is before August 1st of the current year, we need to consider the previous year's August 1st.
+  const latestAugust =
+    currentDate.getMonth() < 7
+      ? new Date(currentDate.getFullYear() - 1, 7, 1)
+      : new Date(currentDate.getFullYear(), 7, 1);
+  return new Date(signedDate) < latestAugust;
 }
 
 watch(
