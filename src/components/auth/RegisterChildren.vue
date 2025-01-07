@@ -403,14 +403,13 @@ const activationCodeRef = ref('');
 const props = defineProps({
   isRegistering: { type: Boolean, default: true },
   code: { type: String, default: null },
-  consent: { type: Object, default: {} },
+  consent: { type: Object, default: null },
 });
 
 const isDialogVisible = ref(false);
 const submitted = ref(false);
 
 const showConsent = ref(false);
-const consentText = ref('');
 const isCaptchaverified = ref(null);
 
 async function handleConsentAccept(outerIndex) {
@@ -538,15 +537,6 @@ onMounted(async () => {
     validateCode(props.code);
   }
 });
-
-function updateActivationCode() {
-  toRaw(state).students.forEach((student) => {
-    if (student.noActivationCode) {
-      student.activationCode = null;
-      student.orgName = 'ROAR families';
-    }
-  });
-}
 
 function codeNotRight(index) {
   state.students[index].orgName = '';

@@ -196,7 +196,7 @@ const closeErrorDialog = () => {
 
 defineProps({
   isRegistering: { type: Boolean, default: true },
-  consent: { type: Object, default: {} },
+  consent: { type: Object, default: null },
 });
 
 const emit = defineEmits(['submit']);
