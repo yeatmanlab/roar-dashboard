@@ -1,6 +1,6 @@
-import RoarDataTable from '../../../src/components/RoarDataTable.vue';
-import columns from '../../fixtures/component/roar-data-table/props/columns.js';
-import dataRandomized from '../../fixtures/component/roar-data-table/props/dataRandomized.js';
+import RoarDataTable from './RoarDataTable.vue';
+import columns from '../../../cypress/fixtures/component/roar-data-table/props/columns';
+import dataRandomized from '../../../cypress/fixtures/component/roar-data-table/props/dataRandomized';
 
 const props = {
   columns: columns,
