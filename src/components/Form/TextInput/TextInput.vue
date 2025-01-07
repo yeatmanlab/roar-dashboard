@@ -1,5 +1,5 @@
 <template>
-  <div class="form-section" :data-testid="testId">
+  <div class="flex flex-wrap" :data-testid="testId">
     <label :for="id" class="block mb-1" :class="{ 'sr-only': labelHidden }" data-testid="textinput__label">
       <small class="text-gray-500 font-bold">{{ label }}</small>
       <span v-if="required" class="ml-1 text-gray-500">*</span>
@@ -20,9 +20,10 @@
       }"
     />
   </div>
+
   <span v-if="hasErrors" class="absolute" data-testid="textinput__errors">
     <span v-for="(error, index) of errors" :key="index">
-      <small class="text-xs p-error" data-testid="textinput__error-item">{{ error.$message }}</small>
+      <small class="text-xs text-red-500" data-testid="textinput__error-item">{{ error.$message }}</small>
     </span>
   </span>
 </template>
