@@ -133,7 +133,7 @@ const toggleMenu = (event) => {
 };
 
 const onLanguageChange = (event) => {
-  emit('language-change', event);
+  emit('languageChange', event);
 };
 </script>
 
