@@ -188,7 +188,6 @@ export async function saveFinalSurveyData({
     userType: userType,
   };
 
-  console.log('structuredResponses: ', structuredResponses);
 
   // Update specificId if it's a specific survey
   if (surveyStore.isGeneralSurveyComplete) {
