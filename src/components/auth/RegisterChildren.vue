@@ -179,7 +179,7 @@
         <section class="form-section">
           <!--Grade-->
         </section>
-        <PvAccordion>
+        <PvAccordion expand-icon="pi pi-angle-down">
           <PvAccordionTab header="Optional Info">
             <!--First / Last Name-->
             <section class="form-section">
@@ -300,7 +300,7 @@
         <section class="form-section-button">
           <PvButton
             v-if="outerIndex !== 0"
-            class="bg-primary border-none border-round p-3 text-white hover:surface-300 hover:text-black-alpha-90"
+            class="bg-primary border-none border-round p-3 w-5 text-white hover:surface-300 hover:text-black-alpha-90"
             icon="pi pi-trash"
             @click="deleteStudentForm(outerIndex)"
           >

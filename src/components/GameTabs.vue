@@ -60,7 +60,7 @@
                     :value="metaIndex + ': ' + items"
                   />
                 </div>
-                <div class="roar-game-footer p-3 mr-5 hover:surface-200">
+                <div class="roar-game-footer p-3 mr-5" :class="{ 'hover:surface-200': !game.completedOn }">
                   <div class="flex align-items-center justify-content-center text-xl font-bold mt-2">
                     <router-link
                       v-if="

@@ -198,14 +198,14 @@ const districtPlaceholder = computed(() => {
   if (isLoadingDistricts.value) {
     return 'Loading...';
   }
-  return 'Select a district';
+  return '';
 });
 
 const schoolPlaceholder = computed(() => {
   if (isLoadingSchools.value) {
     return 'Loading...';
   }
-  return 'Select a school';
+  return '';
 });
 
 const activeIndex = ref(0);
