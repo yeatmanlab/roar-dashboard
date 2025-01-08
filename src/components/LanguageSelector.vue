@@ -46,7 +46,7 @@ const languageDropdownOptions = computed(() => {
 });
 
 function onLanguageChange(value) {
-  emit('language-change', value);
+  emit('languageChange', value);
 }
 </script>
 
