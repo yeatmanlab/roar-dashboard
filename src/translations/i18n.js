@@ -37,7 +37,6 @@ const getFallbackLocale = () => {
   const localeFromStorage = sessionStorage.getItem(`${isLevante ? 'levante' : 'roar'}PlatformLocale`);
 
   if (localeFromStorage.includes('es')) {
-    console.log('Setting fallback local to es');
     return 'es';
   } else if (localeFromStorage.includes('de')) {
     console.log('Setting fallback local to de');
