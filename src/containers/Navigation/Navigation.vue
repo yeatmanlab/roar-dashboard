@@ -21,6 +21,7 @@ import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useSignOutMutation from '@/composables/mutations/useSignOutMutation';
 import { getSidebarActions } from '@/router/sidebarActions';
 import { setupStudentAudio } from '@/helpers/surveyInitialization';
+import { LEVANTE_PLATFORM_LOCALE, ROAR_PLATFORM_LOCALE } from '../../constants/locale';
 
 import NavBar from '@/components/NavBar';
 
@@ -148,7 +149,8 @@ const menuItems = computed(() => {
 });
 
 async function onLanguageChange(event) {
-  sessionStorage.setItem(`${isLevante ? 'levante' : 'roar'}PlatformLocale`, event.value);
+  // Store locale in session storage for persistence across users in the same tab.
+  sessionStorage.setItem(isLevante ? LEVANTE_PLATFORM_LOCALE : ROAR_PLATFORM_LOCALE, event.value);
 
   if (isLevante && surveyStore.survey) {
     surveyStore.survey.locale = event.value;
