@@ -39,7 +39,6 @@ const getFallbackLocale = () => {
   if (localeFromStorage.includes('es')) {
     return 'es';
   } else if (localeFromStorage.includes('de')) {
-    console.log('Setting fallback local to de');
     return 'de';
   } else {
     console.log('Setting fallback local to en-US');
