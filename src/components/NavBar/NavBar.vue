@@ -104,7 +104,7 @@ const props = defineProps({
 const menu = ref();
 const screenWidth = ref(window.innerWidth);
 
-const emit = defineEmits(['language-change']);
+const emit = defineEmits(['languageChange']);
 
 // @TODO: Replace screen-size handlers with Tailwind/CSS media queries. Currently not possible due to an outdated
 // PrimeVue and Tailwind version. If we cannot update PrimeVue/Tailwind, we should throttle the resize events.
