@@ -142,7 +142,6 @@ export function saveSurveyData({
       newData.isGeneral = false;
     }
 
-    console.log('newData after adding responses: ', newData);
 
     window.localStorage.setItem(`${LEVANTE_SURVEY_RESPONSES_KEY}-${uid}`, JSON.stringify(newData));
 
