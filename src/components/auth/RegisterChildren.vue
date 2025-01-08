@@ -29,15 +29,6 @@
                   @click="validateCode(student.activationCode, outerIndex)"
                 />
               </PvInputGroup>
-              <div class="flex align-items-center">
-                <PvCheckbox
-                  v-model="student.noActivationCode"
-                  :binary="true"
-                  name="noActivationCode"
-                  @change="updateActivationCode"
-                />
-                <label for="noActivationCode" class="ml-2">I don't have a code</label>
-              </div>
             </div>
             <span
               v-if="
@@ -60,11 +51,6 @@
                 <div class="text-xs text-gray-500 font-light uppercase">Registering under</div>
                 <div class="flex gap-2 rounded bg-gray-200 p-2">
                   <div class="text-sm text-gray-600 font-bold">{{ student.orgName }}</div>
-                </div>
-                <div>
-                  <small class="text-xs text-gray-500 font-light"
-                    >This is the default ROAR@Home registration group.</small
-                  >
                 </div>
                 <div>
                   <PvButton
@@ -322,6 +308,30 @@
             Delete Student
           </PvButton>
         </section>
+        <ChallengeV3 v-model="response" action="submit">
+          <div class="field-checkbox terms-checkbox">
+            <PvCheckbox
+              :id="`accept-${isRegistering ? 'register' : 'login'}`"
+              v-model="student.accept"
+              binary
+              :disabled="showConsent"
+              :class="[{ 'p-invalid': student.accept.$invalid && submitted }]"
+              @change="getConsent"
+            />
+            <label for="accept" :class="{ 'p-error': student.accept.$invalid && submitted }"
+              >I agree to the terms and conditions<span class="required">*</span></label
+            >
+          </div>
+          <small v-if="(student.accept.$invalid && submitted) || student.accept.$pending" class="p-error">
+            You must agree to the terms and conditions
+          </small>
+        </ChallengeV3>
+        <ConsentModal
+          v-if="showConsent"
+          :consent-text="consent?.text"
+          consent-type="consent"
+          :on-confirm="() => handleConsentAccept(outerIndex)"
+        />
       </div>
     </form>
     <div class="form-section-button2">
@@ -360,7 +370,7 @@
 
 <script setup>
 import { reactive, ref, onMounted, toRaw } from 'vue';
-import { required, minLength, helpers } from '@vuelidate/validators';
+import { required, minLength, helpers, sameAs } from '@vuelidate/validators';
 import PvAccordion from 'primevue/accordion';
 import PvAccordionTab from 'primevue/accordiontab';
 import PvButton from 'primevue/button';
@@ -371,12 +381,14 @@ import PvSelect from 'primevue/select';
 import PvInputGroup from 'primevue/inputgroup';
 import PvInputText from 'primevue/inputtext';
 import PvPassword from 'primevue/password';
+import ConsentModal from '../ConsentModal.vue';
 import { fetchDocById } from '@/helpers/query/utils';
 import { useVuelidate } from '@vuelidate/core';
 import { useAuthStore } from '@/store/auth';
 import { storeToRefs } from 'pinia';
 import _capitalize from 'lodash/capitalize';
 import PvAutoComplete from 'primevue/autocomplete';
+import { ChallengeV3 } from 'vue-recaptcha';
 
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
@@ -391,10 +403,37 @@ const activationCodeRef = ref('');
 const props = defineProps({
   isRegistering: { type: Boolean, default: true },
   code: { type: String, default: null },
+  consent: { type: Object, default: null },
 });
 
 const isDialogVisible = ref(false);
 const submitted = ref(false);
+
+const showConsent = ref(false);
+const isCaptchaverified = ref(null);
+
+async function handleConsentAccept(outerIndex) {
+  state.students[outerIndex].accept = true;
+}
+
+function handleCaptcha() {
+  isCaptchaverified.value = response.value;
+}
+
+async function handleCheckCaptcha() {
+  await new Promise((resolve) => {
+    // Simulate a delay to ensure the reCAPTCHA value is updated
+    setTimeout(() => {
+      resolve();
+      handleCaptcha();
+    }, 500); // You might adjust the delay time if needed
+  });
+}
+
+async function getConsent() {
+  showConsent.value = true;
+  handleCheckCaptcha();
+}
 
 const showErrorDialog = () => {
   isDialogVisible.value = true;
@@ -430,6 +469,7 @@ const state = reactive({
       noActivationCode: noActivationCodeRef.value,
       yearOnlyCheck: yearOnlyCheckRef.value,
       orgName: '',
+      accept: false,
     },
   ],
 });
@@ -456,9 +496,12 @@ const rules = {
       noActivationCode: {},
       yearOnlyCheck: {},
       orgName: {},
+      accept: { sameAs: sameAs(true) },
     }),
   },
 };
+
+const response = ref(null);
 
 function addStudent() {
   state.students.push({
@@ -481,6 +524,7 @@ function addStudent() {
     noActivationCode: noActivationCodeRef.value,
     yearOnlyCheck: yearOnlyCheckRef.value,
     orgName: '',
+    accept: false,
   });
   if (props.code) {
     validateCode(props.code, state.students.length - 1);
@@ -492,15 +536,6 @@ onMounted(async () => {
     validateCode(props.code);
   }
 });
-
-function updateActivationCode() {
-  toRaw(state).students.forEach((student) => {
-    if (student.noActivationCode) {
-      student.activationCode = null;
-      student.orgName = 'ROAR families';
-    }
-  });
-}
 
 function codeNotRight(index) {
   state.students[index].orgName = '';
