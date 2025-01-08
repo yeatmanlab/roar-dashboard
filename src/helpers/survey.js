@@ -129,7 +129,6 @@ export function saveSurveyData({
       userType: userType,
     };
 
-    console.log('selectedAdmin: ', selectedAdmin);
 
     if (!surveyStore.isGeneralSurveyComplete) {
       newData.responses[questionName] = responseValue;
