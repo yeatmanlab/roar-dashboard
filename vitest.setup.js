@@ -1,12 +1,5 @@
 import { vi } from 'vitest';
-import { config } from '@vue/test-utils';
-import { languageOptions } from '@/translations/i18n';
-
-const locale = 'en';
-
-config.global.mocks = {
-  $t: (msg) => translations[locale][msg],
-};
+import { config, DOMWrapper } from '@vue/test-utils';
 
 vi.mock('vue-recaptcha', () => ({
   default: {},
@@ -19,10 +12,16 @@ vi.mock('vue-google-maps-community-fork', () => ({
   VueGoogleMaps: vi.fn(),
 }));
 
-// Mock the $t function based on the logic in i18n.js
-config.global.mocks = {
-  $t: (key) => {
-    const locale = 'en-US';
-    return languageOptions[locale]?.translations[key];
-  },
+const DataTestIdPlugin = (wrapper) => {
+  function findByTestId(selector) {
+    const dataSelector = `[data-testid='${selector}']`;
+    const element = wrapper.element.querySelector(dataSelector);
+    return new DOMWrapper(element);
+  }
+
+  return {
+    findByTestId,
+  };
 };
+
+config.plugins.VueWrapper.install(DataTestIdPlugin);
