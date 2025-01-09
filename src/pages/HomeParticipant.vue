@@ -105,7 +105,7 @@ import { useGameStore } from '@/store/game';
 import useUserDataQuery from '@/composables/queries/useUserDataQuery';
 import useUserAssignmentsQuery from '@/composables/queries/useUserAssignmentsQuery';
 import useTasksQuery from '@/composables/queries/useTasksQuery';
-import useSurveyResponsesQuery from '@/composables/useSurveyResponses/useSurveyResponses';
+import useSurveyResponsesQuery from '@/composables/queries/useSurveyResponsesQuery';
 import useUpdateConsentMutation from '@/composables/mutations/useUpdateConsentMutation';
 import useSignOutMutation from '@/composables/mutations/useSignOutMutation';
 import ConsentModal from '@/components/ConsentModal.vue';
