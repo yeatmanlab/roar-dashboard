@@ -11,7 +11,7 @@ describe('<Dropdown />', () => {
     cy.mount(Dropdown);
     cy.findByTestId('dropdown__input-wrapper').should('exist');
     cy.findByTestId('dropdown__input-wrapper').should('be.visible').click();
-    cy.get('.p-dropdown-empty-message').should('be.visible').and('contain.text', 'No available options');
+    cy.get('.p-select-empty-message').should('be.visible').and('contain.text', 'No available options');
   });
 
   it('Renders the label', () => {
@@ -63,8 +63,8 @@ describe('<Dropdown />', () => {
   it('Renders the dropdown options', () => {
     cy.mount(Dropdown, { props: { data: mockData } });
     cy.findByTestId('dropdown__input-wrapper').should('be.visible').click();
-    cy.findAllByTestId('dropdown__item').should('have.length', mockData.length);
-    cy.findAllByTestId('dropdown__item').each(($el, index) => {
+    cy.get('.p-select-option').should('have.length', mockData.length);
+    cy.get('.p-select-option').each(($el, index) => {
       cy.wrap($el).should('contain.text', mockData[index].label).and('contain.text', mockData[index].value);
     });
   });
@@ -72,8 +72,8 @@ describe('<Dropdown />', () => {
   it('Renders the dropdown options with custom label and value keys', () => {
     cy.mount(Dropdown, { props: { data: mockData, labelKey: 'label', valueKey: 'value' } });
     cy.findByTestId('dropdown__input-wrapper').should('be.visible').click();
-    cy.findAllByTestId('dropdown__item').should('have.length', mockData.length);
-    cy.findAllByTestId('dropdown__item').each(($el, index) => {
+    cy.get('.p-select-option').should('have.length', mockData.length);
+    cy.get('.p-select-option').each(($el, index) => {
       cy.wrap($el).should('contain.text', mockData[index].label);
     });
   });
