@@ -554,7 +554,7 @@ function codeNotRight(index) {
 function deleteStudentForm(student) {
   if (state.students.length > 1) {
     state.students.splice(student, 1); // Remove the student at the specified index
-    showConsent.value.splice(index, 1);
+    showConsent.value.splice(student, 1);
   } else {
     alert('At least one student is required.'); // Prevent deleting the last student form
     submitted.value = false;
