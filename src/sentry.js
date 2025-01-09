@@ -7,7 +7,6 @@ import { isLevante } from '@/helpers';
 const language = i18n.global.locale.value;
 
 export function initSentry(app) {
-  // skip if levante instance
   let dsn;
   let regex;
   let tracePropagationTargets;

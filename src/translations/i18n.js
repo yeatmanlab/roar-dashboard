@@ -11,6 +11,7 @@ import {
   esCOIndividualScoreReport,
 } from './exports';
 import { isLevante } from '@/helpers';
+import { LEVANTE_PLATFORM_LOCALE, ROAR_PLATFORM_LOCALE } from '@/constants/locale';
 
 export const languageOptions = {
   'en-US': { translations: enUSTranslations, language: 'English (United States)', code: 'usa' },
@@ -23,26 +24,21 @@ export const languageOptions = {
 const browserLocale = window.navigator.language;
 
 const getLocale = (localeFromBrowser) => {
-  const localeFromStorage = sessionStorage.getItem(`${isLevante ? 'levante' : 'roar'}PlatformLocale`);
+  const localeFromStorage = sessionStorage.getItem(isLevante ? LEVANTE_PLATFORM_LOCALE : ROAR_PLATFORM_LOCALE);
 
   if (localeFromStorage) {
     return localeFromStorage;
-  } else {
-    sessionStorage.setItem(`${isLevante ? 'levante' : 'roar'}PlatformLocale`, localeFromBrowser);
+  } else if (localeFromBrowser) {
     return localeFromBrowser;
+  } else {
+    return 'en-US';
   }
 };
 
 const getFallbackLocale = () => {
-  const localeFromStorage = sessionStorage.getItem(`${isLevante ? 'levante' : 'roar'}PlatformLocale`);
+  const localeFromStorage = sessionStorage.getItem(isLevante ? LEVANTE_PLATFORM_LOCALE : ROAR_PLATFORM_LOCALE);
 
-  if (localeFromStorage.includes('es')) {
-    return 'es';
-  } else if (localeFromStorage.includes('de')) {
-    return 'de';
-  } else {
-    return 'en-US';
-  }
+  return localeFromStorage || 'en-US';
 };
 
 export const i18n = createI18n({

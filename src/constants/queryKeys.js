@@ -24,6 +24,3 @@ export const USER_ASSIGNMENTS_QUERY_KEY = 'user-assignments';
 export const USER_CLAIMS_QUERY_KEY = 'user-claims';
 export const USER_STUDENT_DATA_QUERY_KEY = 'user-student';
 export const USER_RUN_PAGE_QUERY_KEY = 'user-run-page';
-export const GOOGLE_STORAGE_API_BASE_URL = 'https://storage.googleapis.com';
-export const ROAD_DASHBOARD_BUCKET = 'road-dashboard';
-export const GOOGLE_STORAGE_API_BUCKET_LIST_ENDPOINT = '/storage/v1/b/';
