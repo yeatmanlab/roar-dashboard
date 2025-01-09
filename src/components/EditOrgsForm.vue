@@ -13,7 +13,9 @@
       </div>
     </div>
     <div class="form-field">
-      <label :class="{ 'font-light uppercase text-sm': !editMode }">Address</label>
+      <label :class="{ 'font-light uppercase text-sm': !editMode }">
+        <span> <i class="pi pi-map"></i></span> Address
+      </label>
       <div class="p-inputgroup">
         <GMapAutocomplete
           :placeholder="localOrgData.address?.formattedAddress ?? 'Enter an address'"

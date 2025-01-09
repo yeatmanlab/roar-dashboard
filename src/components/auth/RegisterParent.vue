@@ -11,7 +11,7 @@
               name="firstName"
               :class="{ 'p-invalid': v$.firstName.$invalid && submitted }"
               aria-describedby="first-name-error"
-              data-cy="parent-first-name"
+              data-cy="input-parent-first-name"
             />
             <span v-if="v$.firstName.$error && submitted">
               <span v-for="(error, index) of v$.firstName.$errors" :key="index">
@@ -29,7 +29,7 @@
               name="lastName"
               :class="{ 'p-invalid': v$.firstName.$invalid && submitted }"
               aria-describedby="first-name-error"
-              data-cy="parent-last-name"
+              data-cy="input-parent-last-name"
             />
             <span v-if="v$.lastName.$error && submitted">
               <span v-for="(error, index) of v$.lastName.$errors" :key="index">
@@ -51,7 +51,7 @@
               type="email"
               :class="{ 'p-invalid': v$.ParentEmail.$invalid && submitted }"
               aria-describedby="username-or-email-error"
-              data-cy="parent-email"
+              data-cy="input-parent-email"
             />
           </div>
           <span v-if="v$.ParentEmail.$error && submitted">
@@ -77,7 +77,7 @@
                 show-icon="pi pi-eye-slash"
                 hide-icon="pi pi-eye"
                 :feedback="false"
-                data-cy="parent-password"
+                data-cy="password-parent-password"
               ></PvPassword>
             </div>
             <span v-if="v$.password.$error && submitted">
@@ -101,7 +101,7 @@
                 toggle-mask
                 show-icon="pi pi-eye-slash"
                 hide-icon="pi pi-eye"
-                data-cy="parent-password-confirm"
+                data-cy="password-parent-password-confirm"
                 :feedback="false"
               >
               </PvPassword>
@@ -126,7 +126,6 @@
                 binary
                 :disabled="showConsent"
                 :class="[{ 'p-invalid': v$.accept.$invalid && submitted }]"
-                data-cy="parent-check"
                 @change="getConsent"
               />
               <label for="accept" :class="{ 'p-error': v$.accept.$invalid && submitted }"

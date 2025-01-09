@@ -15,11 +15,11 @@ function visitSignUpPage(activationCode) {
 }
 
 function inputLoginValues() {
-  cy.get('[data-cy="parent-first-name"]').type(Cypress.env('parentFirstName')); // First Name
-  cy.get('[data-cy="parent-last-name"]').type(Cypress.env('parentLastName')); // Last Name
-  cy.get('[data-cy="parent-email"]').type(Cypress.env('parentEmail')); // Email
-  cy.get('[data-cy="parent-password"]').first().type(Cypress.env('parentPassword')); // Password
-  cy.get('[data-cy="parent-password-confirm"]').type(Cypress.env('parentPassword')); // Confirm Password
+  cy.get('[data-cy="input-parent-first-name"]').type(Cypress.env('parentFirstName')); // First Name
+  cy.get('[data-cy="input-parent-last-name"]').type(Cypress.env('parentLastName')); // Last Name
+  cy.get('[data-cy="input-parent-email"]').type(Cypress.env('parentEmail')); // Email
+  cy.get('[data-cy="password-parent-password"]').first().type(Cypress.env('parentPassword')); // Password
+  cy.get('[data-cy="password-parent-password-confirm"]').type(Cypress.env('parentPassword')); // Confirm Password
   cy.get('.p-checkbox-input').click(); // Terms and Conditions
 }
 

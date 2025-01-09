@@ -121,7 +121,9 @@
             </div>
           </div>
           <div class="grid mt-3">
-            <div class="col-12">Search for a {{ orgType.singular }} address:</div>
+            <div class="col-12">
+              <span> <i class="pi pi-map"></i></span> Search for a {{ orgType.singular }} address:
+            </div>
             <div class="col-12 md:col-6 lg:col-6 xl:col-6 p-inputgroup">
               <GMapAutocomplete
                 :options="{

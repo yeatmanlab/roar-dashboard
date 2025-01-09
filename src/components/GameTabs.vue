@@ -12,7 +12,7 @@
           "
           :value="String(index)"
           :class="['p3 mr-1 text-base hover:bg-black-alpha-10', { 'text-green-500': game.completedOn }]"
-          style="border: solid 2px #00000014 !important; border-radius: 10px"
+          style="border: solid 2px #00000014; border-radius: 10px"
         >
           {{ getTaskName(game.taskId, game.taskData.name) }}
         </PvTab>
@@ -111,12 +111,12 @@
                 />
               </div>
               <div v-else>
-                <img v-if="game.taskData.image" :src="game.taskData.image" style="width: 40vh" />
+                <img v-if="game.taskData.image" :src="game.taskData.image" style="width: 44vh" />
                 <!-- TODO: Get real backup image -->
                 <img
                   v-else
                   src="https://reading.stanford.edu/wp-content/uploads/2021/10/PA-1024x512.png"
-                  style="width: 40vh"
+                  style="width: 44vh"
                 />
               </div>
             </div>
@@ -315,6 +315,13 @@ const returnVideoOptions = (videoURL) => {
   align-items: center;
   min-height: 100%;
 }
+
+.p-tab-active {
+  background: var(--p-tabs-tab-active-background);
+  border-color: var(--p-tabs-tab-active-border-color) !important;
+  color: var(--p-tabs-tab-active-color);
+}
+
 @media screen and (max-width: 768px) {
   .video-player-wrapper {
     min-width: 250px;
