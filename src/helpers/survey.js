@@ -151,7 +151,6 @@ export function saveSurveyData({
       newData.responses[questionName] = responseValue;
     } else {
       const specificIndex = surveyStore.specificSurveyRelationIndex;
-      console.log('specificIndex in saveSurveyData: ', specificIndex);
       newData.specificId = specificIds[specificIndex];
       newData.responses[questionName] = responseValue;
       newData.isComplete = false;
@@ -163,7 +162,7 @@ export function saveSurveyData({
     try {
       roarfirekit.saveSurveyResponses({
         surveyData: newData,
-        administrationId: selectedAdmin ?? null,
+        administrationId: selectedAdmin,
       });
     } catch (error) {
       console.error('Error saving survey responses: ', error);

@@ -5,3 +5,4 @@ export const TOAST_SEVERITIES = Object.freeze({
 });
 
 export const TOAST_DEFAULT_LIFE_DURATION = 3000;
+export const TOAST_LONG_LIFE_DURATION = 5000;

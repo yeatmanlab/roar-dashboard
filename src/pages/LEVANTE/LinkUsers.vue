@@ -90,6 +90,7 @@ import PvButton from 'primevue/button';
 import PvColumn from 'primevue/column';
 import PvDataTable from 'primevue/datatable';
 import PvFileUpload from 'primevue/fileupload';
+import { TOAST_DEFAULT_LIFE_DURATION, TOAST_LONG_LIFE_DURATION, TOAST_SEVERITIES } from '../../constants/toasts';
 
 const authStore = useAuthStore();
 const toast = useToast();
@@ -112,10 +113,10 @@ const onFileUpload = async (event) => {
   const missingColumns = requiredFields.filter((field) => !columns.value.some((col) => col.field === field));
   if (missingColumns.length > 0) {
     toast.add({
-      severity: 'error',
+      severity: TOAST_SEVERITIES.ERROR,
       summary: 'Error: Missing Columns',
       detail: `Missing columns: ${missingColumns.join(', ')}`,
-      life: 5000,
+      life: TOAST_LONG_LIFE_DURATION,
     });
     return;
   }
@@ -125,10 +126,10 @@ const onFileUpload = async (event) => {
   if (errorUsers.value.length === 0) {
     isFileUploaded.value = true;
     toast.add({
-      severity: 'success',
+      severity: TOAST_SEVERITIES.SUCCESS,
       summary: 'Success',
       detail: 'File Successfully Uploaded',
-      life: 3000,
+      life: TOAST_DEFAULT_LIFE_DURATION,
     });
   }
 };
@@ -197,10 +198,10 @@ const validateUsers = () => {
   if (errorUsers.value.length > 0) {
     errorColumns.value = [...columns.value, { field: 'errors', header: 'Errors' }];
     toast.add({
-      severity: 'error',
+      severity: TOAST_SEVERITIES.ERROR,
       summary: 'Validation Errors',
       detail: 'See error table for details.',
-      life: 5000,
+      life: TOAST_LONG_LIFE_DURATION,
     });
   }
 };
@@ -212,18 +213,18 @@ const submitUsers = async () => {
     console.log('user link result:', result);
 
     toast.add({
-      severity: 'success',
+      severity: TOAST_SEVERITIES.SUCCESS,
       summary: 'Success',
       detail: 'Users linked successfully',
-      life: 5000,
+      life: TOAST_LONG_LIFE_DURATION,
     });
   } catch (error) {
     console.error(error);
     toast.add({
-      severity: 'error',
+      severity: TOAST_SEVERITIES.ERROR,
       summary: 'Error',
       detail: `Failed to link users: ${error.message}. Please try again.`,
-      life: 5000,
+      life: TOAST_LONG_LIFE_DURATION,
     });
   } finally {
     activeSubmit.value = false;
