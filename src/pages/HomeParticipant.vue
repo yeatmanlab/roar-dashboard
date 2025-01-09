@@ -247,13 +247,19 @@ async function checkConsent() {
     const consentDoc = await authStore.getLegalDoc(docType);
     consentVersion.value = consentDoc.version;
 
+    // Determine the start of the school year (August 1st).
+    // If the current date is before August 1st, use the previous year's date.
+    // @NOTE: We consider the school year to start on August 1st
+    const latestAugust =
+      currentDate.getMonth() < 7
+        ? new Date(currentDate.getFullYear() - 1, 7, 1)
+        : new Date(currentDate.getFullYear(), 7, 1);
+
     if (consentStatus?.[consentDoc.version]) {
       const legalDocs = consentStatus?.[consentDoc.version];
 
       let found = false;
       let signedBeforeAugFirst = false;
-
-      const augustFirstThisYear = new Date(currentDate.getFullYear(), 7, 1); // August 1st of the current year
 
       for (const document of legalDocs) {
         const signedDate = new Date(document.dateSigned);
@@ -261,19 +267,27 @@ async function checkConsent() {
         if (document.amount === docAmount && document.expectedTime === docExpectedTime) {
           found = true;
 
-          if (signedDate < augustFirstThisYear && currentDate >= augustFirstThisYear) {
+          /**
+           * Checks if a given date is before the start of the current school year.
+           *
+           * @param {string} signedDate - The date to check, in the format 'YYYY-MM-DD'.
+           * @set {boolean} signedBeforeAugFirst to True if the given date is before the start of the current school year.
+           */
+          if (signedDate < latestAugust) {
             signedBeforeAugFirst = true;
             break;
           }
         }
 
-        if (isNaN(new Date(document.dateSigned)) && currentDate >= augustFirstThisYear) {
+        // If the signedDate is invalid (e.g., an invalid date string), mark the document as needing resigning.
+        // This is because it's not possible to determine whether it was signed before the school year start date.
+        if (isNaN(new Date(document.dateSigned)) && currentDate >= latestAugust) {
           signedBeforeAugFirst = true;
           break;
         }
       }
 
-      // If any document is signed after August 1st, do not show the consent form
+      // Show the consent form if no document is found or if a document was signed before August 1st.
       if (!found || signedBeforeAugFirst) {
         if (docAmount !== '' || docExpectedTime !== '' || signedBeforeAugFirst) {
           confirmText.value = consentDoc.text;
@@ -281,13 +295,7 @@ async function checkConsent() {
           return;
         }
       }
-    } else if (age > 7 || grade > 1) {
-      confirmText.value = consentDoc.text;
-      showConsent.value = true;
-      return;
     }
-
-    // LEVANTE
   } else {
     // Check if the user has already consented to the Levante consent form
     const consentStatus = userData.value?.legal?.consent;
