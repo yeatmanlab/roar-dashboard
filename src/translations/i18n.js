@@ -38,7 +38,7 @@ const getLocale = (localeFromBrowser) => {
 const getFallbackLocale = () => {
   const localeFromStorage = sessionStorage.getItem(isLevante ? LEVANTE_PLATFORM_LOCALE : ROAR_PLATFORM_LOCALE);
 
-  return localeFromStorage || 'en-US';
+  return localeFromStorage ?? 'en-US';
 };
 
 export const i18n = createI18n({
