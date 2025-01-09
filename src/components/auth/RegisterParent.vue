@@ -134,7 +134,7 @@
         </section>
         <ConsentModal
           v-if="showConsent"
-          :consent-text="consentText"
+          :consent-text="consent?.text"
           consent-type="consent"
           :on-confirm="handleConsentAccept"
         />
@@ -207,6 +207,7 @@ const closeErrorDialog = () => {
 const props = defineProps({
   isRegistering: { type: Boolean, default: true },
   isAdobeSign: { type: Boolean, default: false },
+  consent: { type: Object, default: null },
 });
 
 const emit = defineEmits(['submit']);
@@ -287,7 +288,6 @@ function handleCaptcha() {
 }
 
 const showConsent = ref(false);
-const consentText = ref('');
 
 async function handleConsentAccept() {
   state.accept = true;
