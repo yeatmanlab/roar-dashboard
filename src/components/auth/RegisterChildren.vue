@@ -432,10 +432,15 @@ async function handleCheckCaptcha() {
 }
 
 async function getConsent(outerIndex) {
-  const consentDoc = await authStore.getLegalDoc('consent-behavioral-eye-tracking');
-  consentText.value = consentDoc.text;
-  showConsent.value[outerIndex] = true;
-  handleCheckCaptcha();
+  try {
+    const consentDoc = await authStore.getLegalDoc('consent-behavioral-eye-tracking');
+    consentText.value = consentDoc.text;
+    showConsent.value[outerIndex] = true;
+    handleCheckCaptcha();
+  } catch (error) {
+    console.error('Failed to fetch consent form: ', error);
+    throw new Error('Could not fetch consent form');
+  }
 }
 
 const showErrorDialog = () => {
@@ -549,7 +554,7 @@ function codeNotRight(index) {
 function deleteStudentForm(student) {
   if (state.students.length > 1) {
     state.students.splice(student, 1); // Remove the student at the specified index
-    showConsent.value.pop();
+    showConsent.value.splice(index, 1);
   } else {
     alert('At least one student is required.'); // Prevent deleting the last student form
     submitted.value = false;

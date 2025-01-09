@@ -277,10 +277,15 @@ async function handleConsentAccept() {
 }
 
 async function getConsent() {
-  const consentDoc = await authStore.getLegalDoc('consent-behavioral-eye-tracking');
-  consentText.value = consentDoc.text;
-  showConsent.value = true;
-  handleCheckCaptcha();
+  try {
+    const consentDoc = await authStore.getLegalDoc('consent-behavioral-eye-tracking');
+    consentText.value = consentDoc.text;
+    showConsent.value = true;
+    handleCheckCaptcha();
+  } catch (error) {
+    console.error('Failed to fetch consent form: ', error);
+    throw new Error('Could not fetch consent form');
+  }
 }
 
 const isNextButtonDisabled = computed(() => {
