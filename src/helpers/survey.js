@@ -1,7 +1,7 @@
 import axios from 'axios';
 import _merge from 'lodash/merge';
 import { BufferLoader, AudioContext } from '@/helpers/audio';
-import { TOAST_SEVERITIES } from '../constants/toasts';
+import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '../constants/toasts';
 import { LEVANTE_SURVEY_RESPONSES_KEY } from '@/constants/bucket';
 import { SURVEY_RESPONSES_QUERY_KEY } from '@/constants/queryKeys';
 import {

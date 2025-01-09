@@ -63,10 +63,10 @@
               <PvDropdown
                 v-model="condtion.field"
                 :options="computedFieldOptions"
-                optionLabel="label"
+                option-label="label"
                 class="w-full"
                 placeholder="Select a Field"
-                inputId="Field"
+                input-id="Field"
               />
             </div>
 
@@ -74,10 +74,10 @@
               <PvDropdown
                 v-model="condtion.op"
                 :options="computedConditionOptions(condtion.field)"
-                optionLabel="label"
+                option-label="label"
                 class="w-full"
                 placeholder="Condition"
-                inputId="Condition"
+                input-id="Condition"
               />
             </div>
 
@@ -85,7 +85,7 @@
               <PvDropdown
                 v-model="condtion.value"
                 :options="computedValueOptions(condtion.field)"
-                optionLabel="label"
+                option-label="label"
                 class="w-full"
                 placeholder="Value"
               />
@@ -146,10 +146,10 @@
                   <PvDropdown
                     v-model="condtion.field"
                     :options="computedFieldOptions"
-                    optionLabel="label"
+                    option-label="label"
                     class="w-full"
                     placeholder="Select a Field"
-                    inputId="Field"
+                    input-id="Field"
                   />
                 </div>
 
@@ -157,10 +157,10 @@
                   <PvDropdown
                     v-model="condtion.op"
                     :options="computedConditionOptions(condtion.field)"
-                    optionLabel="label"
+                    option-label="label"
                     class="w-full"
                     placeholder="Condition"
-                    inputId="Condition"
+                    input-id="Condition"
                   />
                 </div>
 
@@ -168,7 +168,7 @@
                   <PvDropdown
                     v-model="condtion.value"
                     :options="computedValueOptions(condtion.field)"
-                    optionLabel="label"
+                    option-label="label"
                     class="w-full"
                     placeholder="Value"
                   />
@@ -200,8 +200,8 @@
                   icon="pi pi-plus mr-2"
                   class="bg-primary text-white border-none border-round p-2 hover:bg-red-900"
                   :disabled="isOptionalForAll === true"
-                  @click="addOptionalCondition"
                   data-cy="button-optional-condition"
+                  @click="addOptionalCondition"
                 />
               </div>
             </div>
