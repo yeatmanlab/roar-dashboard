@@ -36,10 +36,6 @@ async function playAudio(name) {
   source.connect(context.destination);
   source.start(0);
 }
-
-console.log('specificSurveyRelationData', surveyStore.specificSurveyRelationData);
-console.log('specificSurveyRelationIndex', surveyStore.specificSurveyRelationIndex);
-console.log('specific relation:', surveyStore.specificSurveyRelationData[surveyStore.specificSurveyRelationIndex]);
 </script>
 
 <template>
