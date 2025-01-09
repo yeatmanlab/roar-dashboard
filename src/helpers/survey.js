@@ -1,10 +1,18 @@
 import axios from 'axios';
 import _merge from 'lodash/merge';
 import { BufferLoader, AudioContext } from '@/helpers/audio';
+import { TOAST_SEVERITIES } from '../constants/toasts';
 import { LEVANTE_SURVEY_RESPONSES_KEY } from '@/constants/bucket';
+import { SURVEY_RESPONSES_QUERY_KEY } from '@/constants/queryKeys';
+import {
+  GOOGLE_STORAGE_API_BASE_URL,
+  ROAD_DASHBOARD_BUCKET,
+  GOOGLE_STORAGE_API_BUCKET_LIST_ENDPOINT,
+} from '@/constants/bucket';
 
 export const fetchAudioLinks = async (surveyType) => {
-  const response = await axios.get('https://storage.googleapis.com/storage/v1/b/road-dashboard/o/');
+  const bucketUrl = `${GOOGLE_STORAGE_API_BASE_URL}/${ROAD_DASHBOARD_BUCKET}${GOOGLE_STORAGE_API_BUCKET_LIST_ENDPOINT}`;
+  const response = await axios.get(bucketUrl);
   const files = response.data || { items: [] };
   const audioLinkMap = {};
   files.items.forEach((item) => {
@@ -59,14 +67,24 @@ export const showAndPlaceAudioButton = ({ playAudioButton, el }) => {
   }
 };
 
+// Retrieve survey responses data from localStorage
+const getSurveyResponsesData = (userId) => {
+  const surveyResponsesData = window.localStorage.getItem(`${SURVEY_RESPONSES_QUERY_KEY}-${userId}`);
+  return surveyResponsesData ? JSON.parse(surveyResponsesData) : null;
+};
+
+// Set survey responses data to localStorage
+const setSurveyResponseData = (userId, data) => {
+  window.localStorage.setItem(`${LEVANTE_SURVEY_RESPONSES_KEY}-${userId}`, JSON.stringify(data));
+};
+
 export function restoreSurveyData({ surveyInstance, uid, selectedAdmin, surveyResponsesData, surveyStore }) {
   // Try to get data from localStorage first
-  const prevData = window.localStorage.getItem(`${LEVANTE_SURVEY_RESPONSES_KEY}-${uid}`);
+  const prevData = getSurveyResponsesData(uid);
   if (prevData) {
-    const parsedData = JSON.parse(prevData);
-    surveyInstance.data = parsedData.responses;
-    surveyInstance.currentPageNo = parsedData.pageNo;
-    return { isRestored: true, pageNo: parsedData.pageNo };
+    surveyInstance.data = prevData.responses;
+    surveyInstance.currentPageNo = prevData.pageNo;
+    return { isRestored: true, pageNo: prevData.pageNo };
   } else if (surveyResponsesData) {
     // If not in localStorage, try to find data from the server
     const surveyResponse = surveyResponsesData.find((doc) => doc?.administrationId === selectedAdmin);
@@ -101,14 +119,14 @@ export function saveSurveyData({
 }) {
   const currentPageNo = survey.currentPageNo;
 
-  if (window.localStorage.getItem(`${LEVANTE_SURVEY_RESPONSES_KEY}-${uid}`)) {
-    const prevData = JSON.parse(window.localStorage.getItem(`${LEVANTE_SURVEY_RESPONSES_KEY}-${uid}`));
-
+  const prevData = getSurveyResponsesData(uid);
+  if (prevData) {
     // Update the page number at the top level
     prevData.pageNo = currentPageNo;
     prevData.responses[questionName] = responseValue;
 
-    window.localStorage.setItem(`${LEVANTE_SURVEY_RESPONSES_KEY}-${uid}`, JSON.stringify(prevData));
+    // Save the update data to localStorage
+    setSurveyResponseData(uid, prevData);
 
     try {
       roarfirekit.saveSurveyResponses({
@@ -129,7 +147,6 @@ export function saveSurveyData({
       userType: userType,
     };
 
-
     if (!surveyStore.isGeneralSurveyComplete) {
       newData.responses[questionName] = responseValue;
     } else {
@@ -141,8 +158,7 @@ export function saveSurveyData({
       newData.isGeneral = false;
     }
 
-
-    window.localStorage.setItem(`${LEVANTE_SURVEY_RESPONSES_KEY}-${uid}`, JSON.stringify(newData));
+    setSurveyResponseData(uid, newData);
 
     try {
       roarfirekit.saveSurveyResponses({
@@ -186,7 +202,6 @@ export async function saveFinalSurveyData({
     userType: userType,
   };
 
-
   // Update specificId if it's a specific survey
   if (surveyStore.isGeneralSurveyComplete) {
     structuredResponses.isGeneral = false;
@@ -220,7 +235,7 @@ export async function saveFinalSurveyData({
 
     surveyStore.setSpecificSurveyRelationIndex(surveyStore.specificSurveyRelationIndex + 1);
 
-    queryClient.invalidateQueries({ queryKey: ['surveyResponses', uid] });
+    queryClient.invalidateQueries({ queryKey: [SURVEY_RESPONSES_QUERY_KEY] });
 
     gameStore.requireHomeRefresh();
     router.push({ name: 'Home' });
@@ -228,9 +243,9 @@ export async function saveFinalSurveyData({
     surveyStore.setIsSavingSurveyResponses(false);
     console.error(error);
     toast.add({
-      severity: 'error',
+      severity: TOAST_SEVERITIES.ERROR,
       summary: 'Error saving survey responses: ' + error.message,
-      life: 3000,
+      life: TOAST_DEFAULT_LIFE_DURATION,
     });
   }
 }
