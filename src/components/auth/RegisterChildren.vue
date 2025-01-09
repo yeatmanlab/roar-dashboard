@@ -328,7 +328,7 @@
         </ChallengeV3>
         <ConsentModal
           v-if="showConsent[outerIndex]"
-          :consent-text="consent?.text"
+          :consent-text="consentText"
           consent-type="consent"
           :on-confirm="() => handleConsentAccept(outerIndex)"
         />
@@ -398,6 +398,7 @@ const today = new Date();
 today.setFullYear(today.getFullYear() - 2);
 const maxDoB = ref(today);
 const orgName = ref('');
+const consentText = ref('');
 const activationCodeRef = ref('');
 
 const props = defineProps({
@@ -431,6 +432,8 @@ async function handleCheckCaptcha() {
 }
 
 async function getConsent(outerIndex) {
+  const consentDoc = await authStore.getLegalDoc('consent-behavioral-eye-tracking');
+  consentText.value = consentDoc.text;
   showConsent.value[outerIndex] = true;
   handleCheckCaptcha();
 }

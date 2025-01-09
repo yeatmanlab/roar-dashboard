@@ -103,7 +103,7 @@ const { data: userClaims } = useUserClaimsQuery({
 
 const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
 
-const activeIndex = ref(1); // Current active step
+const activeIndex = ref(0); // Current active step
 const isTestData = ref(false);
 
 const parentInfo = ref(null);
@@ -223,8 +223,6 @@ watch([parentInfo, studentInfo], ([newParentInfo, newStudentInfo]) => {
 
 onMounted(async () => {
   document.body.classList.add('page-register');
-  const consentDoc = await authStore.getLegalDoc('consent-behavioral-eye-tracking');
-  consent.value = consentDoc;
 });
 
 onBeforeUnmount(() => {
