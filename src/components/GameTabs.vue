@@ -11,7 +11,10 @@
               (allGamesComplete && currentGameId !== game.taskId && !game.completedOn))
           "
           :value="String(index)"
-          :class="['p3 mr-1 text-base hover:bg-black-alpha-10', { 'text-green-500': game.completedOn }]"
+          :class="[
+            'p3 mr-1 text-base hover:bg-black-alpha-10',
+            { 'text-green-500': game.completedOn, 'bg-white': game.completedOn },
+          ]"
           style="border: solid 2px #00000014; border-radius: 10px"
         >
           {{ getTaskName(game.taskId, game.taskData.name) }}
@@ -317,7 +320,7 @@ const returnVideoOptions = (videoURL) => {
 }
 
 .p-tab-active {
-  background: var(--p-tabs-tab-active-background);
+  background: var(--surface-100);
   border-color: var(--p-tabs-tab-active-border-color) !important;
   color: var(--p-tabs-tab-active-color);
 }
