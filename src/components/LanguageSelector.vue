@@ -8,6 +8,7 @@
       option-value="value"
       placeholder="Select Language"
       :highlight-on-select="true"
+      @change="onLanguageChange"
     >
       <template #header>
         <small class="m-2 font-bold uppercase text-gray-400">
@@ -22,6 +23,8 @@
 import { computed } from 'vue';
 import PvDropdown from 'primevue/dropdown';
 import { languageOptions } from '@/translations/i18n.js';
+
+const emit = defineEmits(['languageChange']);
 
 // Convert the object to an array of [key, value] pairs
 let languageOptionsArray = Object.entries(languageOptions);
@@ -41,6 +44,10 @@ const languageDropdownOptions = computed(() => {
     };
   });
 });
+
+function onLanguageChange(value) {
+  emit('languageChange', value);
+}
 </script>
 
 <style scoped></style>

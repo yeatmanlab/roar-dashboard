@@ -1,3 +1,5 @@
+import { isLevante } from '../helpers';
+
 const sidebarActionOptions = [
   {
     title: 'Back to Dashboard',
@@ -66,7 +68,6 @@ const sidebarActionOptions = [
     icon: 'pi pi-pencil',
     buttonLink: { name: 'ManageTasksVariants' },
     requiresSuperAdmin: true,
-    requiresAdmin: true,
     project: 'ALL',
     category: 'Administrations',
   },
@@ -74,6 +75,15 @@ const sidebarActionOptions = [
     title: 'Register Users',
     icon: 'pi pi-user-plus',
     buttonLink: { name: 'Register Users' },
+    requiresSuperAdmin: true,
+    requiresAdmin: true,
+    project: 'LEVANTE',
+    category: 'Users',
+  },
+  {
+    title: 'Link Users',
+    icon: 'pi pi-link',
+    buttonLink: { name: 'Link Users' },
     requiresSuperAdmin: true,
     requiresAdmin: true,
     project: 'LEVANTE',
@@ -90,7 +100,7 @@ const sidebarActionOptions = [
 ];
 
 export const getSidebarActions = ({ isSuperAdmin = false, isAdmin = false }) => {
-  if (import.meta.env.MODE === 'LEVANTE') {
+  if (isLevante) {
     return sidebarActionOptions.filter((action) => {
       if (action.project === 'LEVANTE' || action.project === 'ALL') {
         // If the action requires admin and the user is an admin, or if the action

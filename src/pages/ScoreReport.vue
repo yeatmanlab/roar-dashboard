@@ -1147,7 +1147,6 @@ const scoreReportColumns = computed(() => {
       field: 'user.email',
       header: 'Email',
       dataType: 'text',
-      pinned: true,
       sort: true,
       filter: true,
     });
@@ -1160,7 +1159,6 @@ const scoreReportColumns = computed(() => {
         dataType: 'text',
         sort: true,
         filter: true,
-        pinned: true,
       });
     } else {
       tableColumns.push({ field: 'user.firstName', header: 'First Name', dataType: 'text', sort: true, filter: true });
