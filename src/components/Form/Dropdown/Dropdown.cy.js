@@ -63,8 +63,8 @@ describe('<Dropdown />', () => {
   it('Renders the dropdown options', () => {
     cy.mount(Dropdown, { props: { data: mockData } });
     cy.findByTestId('dropdown__input-wrapper').should('be.visible').click();
-    cy.get('.p-select-option').should('have.length', mockData.length);
-    cy.get('.p-select-option').each(($el, index) => {
+    cy.findAllByTestId('dropdown__item').should('have.length', mockData.length);
+    cy.findAllByTestId('dropdown__item').each(($el, index) => {
       cy.wrap($el).should('contain.text', mockData[index].label).and('contain.text', mockData[index].value);
     });
   });
