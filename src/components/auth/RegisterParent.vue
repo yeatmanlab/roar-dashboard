@@ -134,7 +134,7 @@
         </section>
         <ConsentModal
           v-if="showConsent"
-          :consent-text="consent?.text"
+          :consent-text="consentText"
           consent-type="consent"
           :on-confirm="handleConsentAccept"
         />
@@ -182,6 +182,7 @@ import ConsentModal from '../ConsentModal.vue';
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
 const isCaptchaverified = ref(null);
+const consentText = ref(null);
 const dialogMessage = ref('');
 
 const isDialogVisible = ref(false);
@@ -276,8 +277,15 @@ async function handleConsentAccept() {
 }
 
 async function getConsent() {
-  showConsent.value = true;
-  handleCheckCaptcha();
+  try {
+    const consentDoc = await authStore.getLegalDoc('consent-behavioral-eye-tracking');
+    consentText.value = consentDoc.text;
+    showConsent.value = true;
+    handleCheckCaptcha();
+  } catch (error) {
+    console.error('Failed to fetch consent form: ', error);
+    throw new Error('Could not fetch consent form');
+  }
 }
 
 const isNextButtonDisabled = computed(() => {

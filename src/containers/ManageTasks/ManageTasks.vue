@@ -10,8 +10,8 @@
         v-model="viewModel"
         :options="Object.values(MODEL_VIEWS)"
         class="flex my-2 select-button p-2"
-        @change="handleViewChange($event.value)"
         :pt="{ root: { 'data-testid': 'manage-tasks__view-select' } }"
+        @change="handleViewChange($event.value)"
       />
     </div>
 
