@@ -47,7 +47,7 @@
         </template>
 
         <div v-if="showParams">
-          <PvOverlayPanel v-for="assessmentId in assessmentIds" :key="assessmentId" :ref="paramPanelRefs[assessmentId]">
+          <PvPopover v-for="assessmentId in assessmentIds" :key="assessmentId" :ref="paramPanelRefs[assessmentId]">
             <div v-if="getAssessment(assessmentId).variantId">
               Variant ID: {{ getAssessment(assessmentId).variantId }}
             </div>
@@ -63,7 +63,7 @@
               <PvColumn field="key" header="Parameter" style="width: 50%"></PvColumn>
               <PvColumn field="value" header="Value" style="width: 50%"></PvColumn>
             </PvDataTable>
-          </PvOverlayPanel>
+          </PvPopover>
         </div>
       </div>
 
@@ -94,7 +94,7 @@
               type="bar"
               :data="setBarChartData(node.data.stats?.assignment)"
               :options="setBarChartOptions(node.data.stats?.assignment)"
-              class="h-3rem"
+              class="h-3rem w-full"
             />
           </template>
         </PvColumn>
@@ -106,11 +106,11 @@
                   name: 'ProgressReport',
                   params: { administrationId: props.id, orgId: node.data.id, orgType: node.data.orgType },
                 }"
-                class="no-underline"
+                class="no-underline text-black"
               >
                 <PvButton
                   v-tooltip.top="'See completion details'"
-                  class="m-0 mr-1 surface-0 text-bluegray-500 shadow-1 border-none p-2 border-round hover:surface-100"
+                  class="m-0 mr-1 surface-0 text-primary shadow-1 border-none p-2 border-round hover:surface-100"
                   style="height: 2.5rem"
                   severity="secondary"
                   text
@@ -130,7 +130,7 @@
               >
                 <PvButton
                   v-tooltip.top="'See Scores'"
-                  class="m-0 mr-1 surface-0 text-bluegray-500 shadow-1 border-none p-2 border-round hover:surface-100"
+                  class="m-0 mr-1 surface-0 text-primary shadow-1 border-none p-2 border-round hover:surface-100"
                   style="height: 2.5rem"
                   severity="secondary"
                   text
@@ -165,7 +165,7 @@ import PvColumn from 'primevue/column';
 import PvChart from 'primevue/chart';
 import PvConfirmPopup from 'primevue/confirmpopup';
 import PvDataTable from 'primevue/datatable';
-import PvOverlayPanel from 'primevue/overlaypanel';
+import PvPopover from 'primevue/popover';
 import PvSpeedDial from 'primevue/speeddial';
 import PvTreeTable from 'primevue/treetable';
 import { batchGetDocs } from '@/helpers/query/utils';

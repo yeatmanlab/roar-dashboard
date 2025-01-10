@@ -5,7 +5,7 @@
       <span v-if="required" class="ml-1 text-gray-500">*</span>
     </label>
 
-    <PvDropdown
+    <PvSelect
       :id="id"
       v-model="model"
       class="w-full"
@@ -20,7 +20,7 @@
         root: {
           'data-testid': 'dropdown__input-wrapper',
         },
-        item: {
+        option: {
           'data-testid': 'dropdown__item',
         },
       }"
@@ -37,7 +37,7 @@
 <script setup>
 import { nanoid } from 'nanoid';
 import { computed } from 'vue';
-import PvDropdown from 'primevue/dropdown';
+import PvSelect from 'primevue/select';
 
 const model = defineModel({ required: true, type: [String, Array, Boolean] });
 

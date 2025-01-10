@@ -15,19 +15,21 @@
         <section class="signin-option-container signin-option-userpass">
           <h4 class="signin-option-title">{{ $t('pageSignIn.login') }}</h4>
           <div id="languageSelect" class="m-4 flex justify-content-center">
-            <LanguageSelector />
+            <LanguageSelector class="w-7" />
           </div>
           <SignIn :invalid="incorrect" @submit="authWithEmail" @update:email="email = $event" />
         </section>
-        <section class="flex flex-row align-content-center">
-          <h4 class="flex m-0 align-content-center justify-content-center mr-3 flex-wrap-reverse">
+        <section class="flex flex-column w-full">
+          <h4
+            class="flex mb-3 mt-1 align-content-center justify-content-center flex-wrap-reverse font-bold text-md text-500"
+          >
             {{ $t('pageSignIn.loginWith') }}
           </h4>
-          <div class="flex">
+          <div class="flex flex-row align-content-center justify-content-center w-full">
             <PvButton
               label="Sign in with Google"
-              class="flex surface-0 p-1 mr-1 border-black-alpha-10 w-full text-center justify-content-center hover:border-primary hover:surface-ground"
-              style="border-radius: 3rem; height: 3rem"
+              class="flex surface-0 p-1 border-black-alpha-10 w-3 ml-2 mr-2 text-center text-black justify-content-center hover:border-primary hover:surface-ground"
+              style="border-radius: 3rem; height: 3rem; color: black"
               @click="authWithGoogle"
             >
               <img src="../assets/provider-google-logo.svg" alt="The Google Logo" class="flex mr-2 w-2" />
@@ -35,8 +37,8 @@
             </PvButton>
             <PvButton
               v-if="!isLevante"
-              class="flex surface-0 p-1 mr-1 border-black-alpha-10 w-full justify-content-center hover:border-primary hover:surface-ground"
-              style="border-radius: 3rem; height: 3rem"
+              class="flex surface-0 p-1 border-black-alpha-10 w-3 ml-2 mr-2 justify-content-center hover:border-primary hover:surface-ground"
+              style="border-radius: 3rem; height: 3rem; color: black"
               @click="authWithClever"
             >
               <img src="../assets/provider-clever-logo.svg" alt="The Clever Logo" class="flex mr-2 w-2" />
@@ -44,8 +46,8 @@
             </PvButton>
             <PvButton
               v-if="!isLevante"
-              class="flex surface-0 p-1 mr-1 border-black-alpha-10 w-full justify-content-center hover:border-primary hover:surface-ground"
-              style="border-radius: 3rem; height: 3rem"
+              class="flex surface-0 p-1 border-black-alpha-10 w-3 ml-2 mr-2 text-black justify-content-center hover:border-primary hover:surface-ground"
+              style="border-radius: 3rem; height: 3rem; color: black"
               @click="authWithClassLink"
             >
               <img src="../assets/provider-classlink-logo.png" alt="The ClassLink Logo" class="flex mr-2 w-2" />
@@ -327,5 +329,11 @@ onBeforeUnmount(() => {
   z-index: 10;
   background-color: rgba(255, 255, 255, 0.7);
   padding-top: 21vh;
+}
+input.p-inputtext.p-component.p-password-input {
+  width: 100%;
+}
+div#password {
+  width: 100%;
 }
 </style>

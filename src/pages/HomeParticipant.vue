@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div v-if="!initialized || isLoading || isFetching" class="loading-container py-8">
+    <div v-if="!initialized || isLoading || isFetching" class="loading-container bg-white-alpha-90">
       <AppSpinner style="margin-bottom: 1rem" />
       <span>{{ $t('homeParticipant.loadingAssignments') }}</span>
     </div>
@@ -20,15 +20,36 @@
     </div>
 
     <div v-else>
-      <h2 v-if="userAssignments?.length == 1" class="p-float-label dropdown-container">
-        {{ userAssignments.at(0).publicName || userAssignments.at(0).name }}
-      </h2>
-      <div class="flex flex-row-reverse align-items-end gap-2 justify-content-between">
+      <PvFloatLabel>
+        <h2 v-if="userAssignments?.length == 1" class="dropdown-container">
+          {{ userAssignments.at(0).publicName || userAssignments.at(0).name }}
+        </h2>
+      </PvFloatLabel>
+      <div class="flex flex-row ml-5 align-items-end gap-2 justify-content-between">
+        <PvFloatLabel class="mt-3 mr-3">
+          <div v-if="userAssignments?.length > 0" class="flex flex-row align-items-start w-full mt-4">
+            <div class="assignment-select-container">
+              <div class="flex align-content-start w-full">
+                <PvSelect
+                  v-model="selectedAdmin"
+                  :options="sortedUserAdministrations ?? []"
+                  :option-label="
+                    userAssignments.every((administration) => administration.publicName) ? 'publicName' : 'name'
+                  "
+                  input-id="dd-assignment"
+                  data-cy="dropdown-select-administration"
+                  @change="toggleShowOptionalAssessments"
+                />
+                <label for="dd-assignment" class="mt-4">{{ $t('homeParticipant.selectAssignment') }}</label>
+              </div>
+            </div>
+          </div>
+        </PvFloatLabel>
         <div
           v-if="optionalAssessments.length !== 0"
           class="switch-container flex flex-row align-items-center justify-content-end mr-6 gap-2"
         >
-          <PvInputSwitch
+          <PvToggleSwitch
             v-model="showOptionalAssessments"
             input-id="switch-optional"
             data-cy="switch-show-optional-assessments"
@@ -36,26 +57,6 @@
           <label for="switch-optional" class="mr-2 text-gray-500">{{
             $t('homeParticipant.showOptionalAssignments')
           }}</label>
-        </div>
-        <div
-          v-if="userAssignments?.length > 0"
-          class="flex flex-row justify-center align-items-center p-float-label dropdown-container gap-4 w-full"
-        >
-          <div class="assignment-select-container flex flex-row justify-content-between justify-content-start">
-            <div class="flex flex-column align-content-start justify-content-start w-3">
-              <PvDropdown
-                v-model="selectedAdmin"
-                :options="sortedUserAdministrations ?? []"
-                :option-label="
-                  userAssignments.every((administration) => administration.publicName) ? 'publicName' : 'name'
-                "
-                input-id="dd-assignment"
-                data-cy="dropdown-select-administration"
-                @change="toggleShowOptionalAssessments"
-              />
-              <label for="dd-assignment">{{ $t('homeParticipant.selectAssignment') }}</label>
-            </div>
-          </div>
         </div>
       </div>
       <div class="tabs-container">
@@ -94,9 +95,10 @@ import _find from 'lodash/find';
 import _without from 'lodash/without';
 import _isEmpty from 'lodash/isEmpty';
 import { storeToRefs } from 'pinia';
+import PvFloatLabel from 'primevue/floatlabel';
 import PvButton from 'primevue/button';
-import PvDropdown from 'primevue/dropdown';
-import PvInputSwitch from 'primevue/inputswitch';
+import PvSelect from 'primevue/select';
+import PvToggleSwitch from 'primevue/toggleswitch';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
 import useUserDataQuery from '@/composables/queries/useUserDataQuery';
