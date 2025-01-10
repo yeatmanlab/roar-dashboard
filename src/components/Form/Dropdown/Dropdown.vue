@@ -20,7 +20,7 @@
         root: {
           'data-testid': 'dropdown__input-wrapper',
         },
-        item: {
+        option: {
           'data-testid': 'dropdown__item',
         },
       }"

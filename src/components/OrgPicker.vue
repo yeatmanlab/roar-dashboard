@@ -55,7 +55,7 @@
               >
                 <template #option="slotProps">
                   <div class="flex align-items-center">
-                    <PvCheckbox :binary="true" :model-value="isSelected(activeOrgType, slotProps.option.id)" />
+                    <PvCheckbox :binary="true" :v-model="isSelected(activeOrgType, slotProps.option.id)" />
                     <div class="ml-2">{{ slotProps.option.name }}</div>
                   </div>
                 </template>

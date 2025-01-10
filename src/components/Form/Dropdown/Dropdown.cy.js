@@ -72,8 +72,8 @@ describe('<Dropdown />', () => {
   it('Renders the dropdown options with custom label and value keys', () => {
     cy.mount(Dropdown, { props: { data: mockData, labelKey: 'label', valueKey: 'value' } });
     cy.findByTestId('dropdown__input-wrapper').should('be.visible').click();
-    cy.get('.p-select-option').should('have.length', mockData.length);
-    cy.get('.p-select-option').each(($el, index) => {
+    cy.findAllByTestId('dropdown__item').should('have.length', mockData.length);
+    cy.findAllByTestId('dropdown__item').each(($el, index) => {
       cy.wrap($el).should('contain.text', mockData[index].label);
     });
   });

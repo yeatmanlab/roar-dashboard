@@ -17,7 +17,7 @@ const pinia = createPinia().use(piniaPluginPersistedState);
 const head = createHead();
 
 // Define the custom PrimeVue theme preset
-const MyPreset = definePreset(Aura, {
+const RoarPreset = definePreset(Aura, {
   primitive: {
     red: { 500: '#8c1515', 700: '#5b0c0f', 400: '#5b0c0f', 600: '#5b0c0f' },
     surface: { 100: '#adb5bd', 500: '#8c1515' },
@@ -44,8 +44,11 @@ const plugins = [
     PrimeVue,
     {
       theme: {
-        preset: MyPreset,
+        preset: RoarPreset,
         options: {
+          // Setting the `darkModeSelector` to 'dark-mode' ensures that PrimeVue's browser dark mode detection is disabled.
+          // This selector does not exist in our project, as we do not curently support dark mode.
+          // By doing this, we enforce the light mode for all users, regardless of their system settings.
           darkModeSelector: 'dark-mode',
         },
       },
