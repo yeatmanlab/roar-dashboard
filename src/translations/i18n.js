@@ -20,23 +20,18 @@ export let browserLocale = window.navigator.language;
 
 const getLocale = (locale) => {
   if (Object.keys(languageOptions).includes(locale)) {
-    console.log('Locale found in languageOptions: ', locale);
     return locale;
   } else if (locale.includes('es')) {
-    console.log('Spanish dialect not supported, using default es.');
     return 'es';
   } else {
-    console.log('Language not supported, using default en-US.');
     return 'en-US';
   }
 };
 
 const getFallbackLocale = (locale) => {
   if (locale.includes('es')) {
-    console.log('Setting fallback local to es');
     return 'es';
   } else {
-    console.log('Setting fallback local to en-US');
     return 'en-US';
   }
 };

@@ -1,3 +1,6 @@
+// Extend Cypress with additional commands.
+import '@testing-library/cypress/add-commands';
+
 /**
  * Logs in a user using the provided username and password.
  * Utilizes Cypress sessions to persist login state across tests.
