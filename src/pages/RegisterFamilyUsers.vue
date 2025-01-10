@@ -223,8 +223,6 @@ watch([parentInfo, studentInfo], ([newParentInfo, newStudentInfo]) => {
 
 onMounted(async () => {
   document.body.classList.add('page-register');
-  const consentDoc = await authStore.getLegalDoc('consent-behavioral-eye-tracking');
-  consent.value = consentDoc;
 });
 
 onBeforeUnmount(() => {

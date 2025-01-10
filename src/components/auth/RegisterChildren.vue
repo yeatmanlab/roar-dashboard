@@ -314,9 +314,9 @@
               :id="`accept-${isRegistering ? 'register' : 'login'}`"
               v-model="student.accept"
               binary
-              :disabled="showConsent"
+              :disabled="showConsent[outerIndex]"
               :class="[{ 'p-invalid': student.accept.$invalid && submitted }]"
-              @change="getConsent"
+              @change="getConsent(outerIndex)"
             />
             <label for="accept" :class="{ 'p-error': student.accept.$invalid && submitted }"
               >I agree to the terms and conditions<span class="required">*</span></label
@@ -327,8 +327,8 @@
           </small>
         </ChallengeV3>
         <ConsentModal
-          v-if="showConsent"
-          :consent-text="consent?.text"
+          v-if="showConsent[outerIndex]"
+          :consent-text="consentText"
           consent-type="consent"
           :on-confirm="() => handleConsentAccept(outerIndex)"
         />
@@ -398,6 +398,7 @@ const today = new Date();
 today.setFullYear(today.getFullYear() - 2);
 const maxDoB = ref(today);
 const orgName = ref('');
+const consentText = ref('');
 const activationCodeRef = ref('');
 
 const props = defineProps({
@@ -409,7 +410,7 @@ const props = defineProps({
 const isDialogVisible = ref(false);
 const submitted = ref(false);
 
-const showConsent = ref(false);
+const showConsent = ref([false]);
 const isCaptchaverified = ref(null);
 
 async function handleConsentAccept(outerIndex) {
@@ -430,9 +431,16 @@ async function handleCheckCaptcha() {
   });
 }
 
-async function getConsent() {
-  showConsent.value = true;
-  handleCheckCaptcha();
+async function getConsent(outerIndex) {
+  try {
+    const consentDoc = await authStore.getLegalDoc('consent-behavioral-eye-tracking');
+    consentText.value = consentDoc.text;
+    showConsent.value[outerIndex] = true;
+    handleCheckCaptcha();
+  } catch (error) {
+    console.error('Failed to fetch consent form: ', error);
+    throw new Error('Could not fetch consent form');
+  }
 }
 
 const showErrorDialog = () => {
@@ -526,6 +534,7 @@ function addStudent() {
     orgName: '',
     accept: false,
   });
+  showConsent.value.push(false);
   if (props.code) {
     validateCode(props.code, state.students.length - 1);
   }
@@ -545,6 +554,7 @@ function codeNotRight(index) {
 function deleteStudentForm(student) {
   if (state.students.length > 1) {
     state.students.splice(student, 1); // Remove the student at the specified index
+    showConsent.value.splice(student, 1);
   } else {
     alert('At least one student is required.'); // Prevent deleting the last student form
     submitted.value = false;
