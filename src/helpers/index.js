@@ -106,7 +106,7 @@ export const flattenObj = (obj) => {
 export const csvFileToJson = async (file) => {
   const results = await Papa.parse(await file.text(), {
     header: true,
-    skipEmptyLines: true,
+    skipEmptyLines: 'greedy',
     transformHeader: (header) => header.trim(),
     transform: (value, field) => {
       if (field === 'id') {

@@ -51,17 +51,17 @@
             <PvButton
             v-if="registeredUsers.length"
             label="Download Users"
-            @click="downloadCSV"
             class="bg-primary mb-2 p-3 w-2 text-white border-none border-round h-3rem m-0 hover:bg-red-900"
             icon="pi pi-download"
+            @click="downloadCSV"
           />
             <PvButton
               v-else
               :label="activeSubmit ? 'Registering Users' : 'Start Registration'"
               :icon="activeSubmit ? 'pi pi-spin pi-spinner' : ''"
               :disabled="activeSubmit"
-              @click="submitUsers"
               class="bg-primary mb-2 p-3 w-2 text-white border-none border-round h-3rem m-0 hover:bg-red-900"
+              @click="submitUsers"
           />
           </div>
         </div>
@@ -126,7 +126,6 @@
   // 'group', | 'district', 'school', 'class'
 
   // Month and Year are required only for 'child' or 'student' users
-  const requiredColumns = ['userType', 'month', 'year'];
   const allFields = [
     {
       field: 'userType',
@@ -198,30 +197,82 @@
     errorMessage.value = '';
     errorTable.value = null;
     errorMissingColumns.value = false;
-  
-    rawUserFile.value = await csvFileToJson(event.files[0]);
-  
-    // Check uploaded CSV has required columns
-    const missingColumns = requiredColumns.filter((col) => !(col in toRaw(rawUserFile.value[0])));
 
-    const columns = toRaw(rawUserFile.value[0])
-    if (
-      !('group' in columns) && 
-      !('district' in columns && 'school' in columns)
-    ) {
-      missingColumns.push('group OR district and school');
-    }
+    // Read the file as text first
+    const file = event.files[0];
+    const text = await file.text();
+    
+    // Split into lines
+    const lines = text.split('\n');
+    
+    // Lowercase all columns in header except 'userType'
+    const headers = lines[0].split(',');
+    lines[0] = headers.map(header => 
+      header.trim() === 'userType' ? header : header.toLowerCase()
+    ).join(',');
+    
+    // Create a new Blob with modified content
+    const modifiedFile = new Blob([lines.join('\n')], { type: file.type });
+    
+    // Parse the modified file
+    rawUserFile.value = await csvFileToJson(modifiedFile);
 
-    if (missingColumns.length > 0) {
+    // REGISTRATION
+    // Required: userType 
+    // Conditional (child): Month, Year 
+    // Conditional (Either): Group OR District + School 
+
+    const allColumns = Object.keys(toRaw(rawUserFile.value[0])).map((col) => col !== 'userType' ? col.toLowerCase() : col);
+
+    // Check the only required column is present
+    const hasUserType = allColumns.includes('userType');
+    if (!hasUserType) {
       toast.add({
         severity: 'error',
-        summary: 'ERROR: Missing Columns: ' + missingColumns.join(', '),
+        summary: 'Error: Missing Column',
+        detail: 'Missing required column(s): userType',
         life: 5000,
       });
       errorMissingColumns.value = true;
       return;
     }
 
+    // Check conditional columns are present
+    const hasChild = rawUserFile.value.forEach((user) => {
+      if (user.userType.toLowerCase() === 'child') {
+        return true;
+      }
+    });
+
+    if (hasChild) {
+      const hasMonth = allColumns.includes('month');
+      const hasYear = allColumns.includes('year');
+      if (!hasMonth || !hasYear) {
+        toast.add({
+          severity: 'error',
+          summary: 'Error: Missing Column',
+          detail: 'Missing required column(s): Month or Year',
+          life: 5000,
+        });
+        errorMissingColumns.value = true;
+        return;
+      }
+    }
+
+    // Conditional (Either): Group OR District + School
+    const hasGroup = allColumns.includes('group');
+    const hasDistrict = allColumns.includes('district');
+    const hasSchool = allColumns.includes('school');
+    if (!hasGroup && (!hasDistrict || !hasSchool)) {
+      toast.add({
+        severity: 'error',
+        summary: 'Error: Missing Column',
+        detail: 'Missing required column(s): Group OR District and School',
+        life: 5000,
+      });
+    }
+  
+    // Check required fields are not empty
     const childRequiredInfo = ['userType', 'month', 'year'];
     const careGiverRequiredInfo = ['userType',];
 
@@ -257,13 +308,13 @@
     if (errorUsers.value.length) {
       toast.add({
         severity: 'error',
-        summary: 'ERROR: Missing Fields. See below for details.',
+        summary: 'Missing Fields. See below for details.',
         life: 5000,
       });
     }
 
   
-    if (!missingColumns.length && !errorUsers.value.length) {
+    if (!errorUsers.value.length) {
       isFileUploaded.value = true;
       errorMissingColumns.value = false;
       showErrorTable.value = false;
@@ -315,7 +366,6 @@
 
       console.log('orgNameMap: ', orgNameMap);
 
-      // console.log('orgNameMap', orgNameMap);
 
       let orgInfo = {
             district: '',
@@ -360,16 +410,12 @@
             user.orgIds = orgInfo;
           } else {
             addErrorUser(user, `Error: ${orgType} '${orgName}' is invalid`);
-            if (processedUsers >= totalUsers) {
-              activeSubmit.value = false;
-            }
+            activeSubmit.value = false;
             return;
           }
         }
       }
 
-      console.log('org ids:', user.orgIds)
-      console.log('user after orgIds: ', user);
     }
 
 
