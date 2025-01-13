@@ -56,7 +56,6 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Deploy Firestore config to Admin instance
-        if: steps.deployment.outcome == 'success'
         uses: ./.github/actions/deploy-firestore-config
         with:
           firebase-project-id: ${{ secrets.FIREBASE_PROJECT_ID_ADMIN }}
@@ -65,7 +64,6 @@ jobs:
           config-directory: firebase/admin
 
       - name: Deploy Firestore config to Assessment instance
-        if: steps.deployment.outcome == 'success'
         uses: ./.github/actions/deploy-firestore-config
         with:
           firebase-project-id: ${{ secrets.FIREBASE_PROJECT_ID_ASSESSMENT }}
