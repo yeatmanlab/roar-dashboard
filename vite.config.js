@@ -5,6 +5,14 @@ import Vue from '@vitejs/plugin-vue';
 import mkcert from 'vite-plugin-mkcert';
 import { nodePolyfills } from 'vite-plugin-node-polyfills';
 import UnheadVite from '@unhead/addons/vite';
+import { default as FirebaseConfig } from './firebase.json';
+
+// Parse headers from firebase.json
+const stagingHostingConfig = FirebaseConfig.hosting.find((entry) => entry.target === 'staging');
+const parsedStagingResponseHeaders = stagingHostingConfig.headers[0].headers.reduce((acc, header) => {
+  acc[header.key] = header.value;
+  return acc;
+}, {});
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -38,6 +46,9 @@ export default defineConfig({
   server: {
     fs: {
       allow: ['..'],
+    },
+    headers: {
+      ...parsedStagingResponseHeaders,
     },
   },
 
