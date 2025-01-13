@@ -10,11 +10,23 @@ import { default as FirebaseConfig } from './firebase.json';
 // Parse headers from firebase.json
 const stagingHostingConfig = FirebaseConfig.hosting.find((entry) => entry.target === 'staging');
 const parsedStagingResponseHeaders = stagingHostingConfig.headers[0].headers.reduce((acc, header) => {
-  acc[header.key] = header.value;
+  // Modify the Content-Security-Policy header as follows:
+  // - Drop the default CSP in favour of the strict CSP from the Report-Only header for local development
+  // - Drop the report-uri and report-to CSP directives to prevent Sentry logging for local development
+  // - Drop the Report-To header to prevent Sentry logging for local development
+  if (header.key === 'Content-Security-Policy-Report-Only') {
+    acc['Content-Security-Policy'] = header.value
+      .replace(/report-uri\s*[^;]+;/, '')
+      .replace(/report-to\s*[^;]+/, '')
+      .trim();
+  } else if (header.key !== 'Report-To') {
+    acc[header.key] = header.value;
+  }
   return acc;
 }, {});
 
-// https://vitejs.dev/config/
+// Vite configuration
+// @see https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
     Vue({
