@@ -6,6 +6,50 @@
   "hosting": [
     {
       "public": "dist",
+      "target": "staging",
+      "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+      "rewrites": [
+        {
+          "source": "**",
+          "destination": "/index.html",
+          "headers": [
+            {
+              "key": "Cross-Origin-Opener-Policy",
+              "value": "restrict-properties"
+            }
+          ]
+        }
+      ],
+      "headers": [
+        {
+          "source": "**",
+          "headers": [
+            {
+              "key": "Content-Security-Policy",
+              "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.googletagmanager.com https://googletagmanager.com https://tagmanager.google.com https://*.googleapis.com https://apis.google.com https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/ https://browser.sentry-cdn.com https://js.sentry-cdn.com blob:; style-src 'self' 'unsafe-inline' https://googletagmanager.com https://tagmanager.google.com https://fonts.googleapis.com; img-src 'self' data: https://*.googletagmanager.com https://googletagmanager.com https://ssl.gstatic.com https://www.gstatic.com https://*.google-analytics.com; font-src 'self' https://fonts.gstatic.com data:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://raw.githubusercontent.com/yeatmanlab/ https://us-central1-gse-roar-admin-dev.cloudfunctions.net https://*.googleapis.com https://*.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com https://*.sentry.io; frame-src 'self' https://roar.education https://gse-roar-admin-dev.firebaseapp.com/ https://gse-roar-assessment-dev.firebaseapp.com https://www.google.com/recaptcha/ https://recaptcha.google.com/recaptcha/; frame-ancestors 'none'; upgrade-insecure-requests"
+            },
+            {
+              "key": "Cross-Origin-Opener-Policy",
+              "value": "restrict-properties"
+            },
+            {
+              "key": "X-Content-Type-Options",
+              "value": "nosniff"
+            },
+            {
+              "key": "Referrer-Policy",
+              "value": "no-referrer"
+            },
+            {
+              "key": "Strict-Transport-Security",
+              "value": "max-age=63072000; includeSubDomains; preload"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "public": "dist",
       "target": "production",
       "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
       "rewrites": [
@@ -25,60 +69,24 @@
           "source": "**",
           "headers": [
             {
+              "key": "Content-Security-Policy",
+              "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.googletagmanager.com https://googletagmanager.com https://tagmanager.google.com https://*.googleapis.com https://apis.google.com https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/ https://browser.sentry-cdn.com https://js.sentry-cdn.com blob:; style-src 'self' 'unsafe-inline' https://googletagmanager.com https://tagmanager.google.com https://fonts.googleapis.com; img-src 'self' data: https://*.googletagmanager.com https://googletagmanager.com https://ssl.gstatic.com https://www.gstatic.com https://*.google-analytics.com; font-src 'self' https://fonts.gstatic.com data:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://raw.githubusercontent.com/yeatmanlab/ https://us-central1-gse-roar-admin.cloudfunctions.net https://*.googleapis.com https://*.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com https://*.sentry.io; frame-src 'self' https://roar.education https://gse-roar-admin.firebaseapp.com/ https://gse-roar-assessment.firebaseapp.com https://www.google.com/recaptcha/ https://recaptcha.google.com/recaptcha/; frame-ancestors 'none'; upgrade-insecure-requests"
+            },
+            {
               "key": "Cross-Origin-Opener-Policy",
               "value": "same-origin-allow-popups"
-            },
-            {
-              "key": "Content-Security-Policy",
-              "value": "script-src 'self'"
-            },
-            {
-              "key": "Content-Security-Policy",
-              "value": "frame-ancestors 'self'"
             },
             {
               "key": "X-Content-Type-Options",
               "value": "nosniff"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "public": "dist",
-      "target": "staging",
-      "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
-      "rewrites": [
-        {
-          "source": "**",
-          "destination": "/index.html",
-          "headers": [
-            {
-              "key": "Cross-Origin-Opener-Policy",
-              "value": "same-origin-allow-popups"
-            }
-          ]
-        }
-      ],
-      "headers": [
-        {
-          "source": "**",
-          "headers": [
-            {
-              "key": "Cross-Origin-Opener-Policy",
-              "value": "same-origin-allow-popups"
             },
             {
-              "key": "Content-Security-Policy",
-              "value": "script-src 'self'"
+              "key": "Referrer-Policy",
+              "value": "no-referrer"
             },
             {
-              "key": "Content-Security-Policy",
-              "value": "frame-ancestors 'self'"
-            },
-            {
-              "key": "X-Content-Type-Options",
-              "value": "nosniff"
+              "key": "Strict-Transport-Security",
+              "value": "max-age=63072000; includeSubDomains; preload"
             }
           ]
         }
