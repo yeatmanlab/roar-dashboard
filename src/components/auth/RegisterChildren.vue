@@ -89,7 +89,7 @@
         <section class="form-section flex lg:flex-row">
           <div>
             <div>
-              <label for="password">Password (Minimum 6 characters) <span class="required">*</span></label>
+              <label for="password">Password (Minimum 6 characters)<span class="required">*</span></label>
               <PvPassword
                 v-model="student.password"
                 name="password"
@@ -141,7 +141,7 @@
               </div>
             </div>
             <div v-if="!student.yearOnlyCheckRef">
-              <PvCalendar
+              <PvDatePicker
                 v-model="student.dob"
                 :max-date="maxDoB"
                 class="w-full"
@@ -151,7 +151,7 @@
               />
             </div>
             <div v-else>
-              <PvCalendar
+              <PvDatePicker
                 v-model="student.dob"
                 :max-date="maxDoB"
                 class="w-full"
@@ -166,7 +166,7 @@
           </div>
           <div class="flex flex-column">
             <label for="grade">Grade <span class="required">*</span></label>
-            <PvDropdown
+            <PvSelect
               v-model="student.grade"
               :options="gradeOptions"
               option-label="label"
@@ -179,7 +179,7 @@
         <section class="form-section">
           <!--Grade-->
         </section>
-        <PvAccordion>
+        <PvAccordion expand-icon="pi pi-angle-down">
           <PvAccordionTab header="Optional Info">
             <!--First / Last Name-->
             <section class="form-section">
@@ -217,7 +217,7 @@
               <!--English Language Level-->
               <div class="mt-2 mb-3">
                 <label for="ell">English as a Second Language</label>
-                <PvDropdown
+                <PvSelect
                   v-model="student.ell"
                   :options="ellOptions"
                   option-label="label"
@@ -228,7 +228,7 @@
               <!--Sex-->
               <div class="flex flex-column mt-2 mb-3">
                 <label for="sex">Gender </label>
-                <PvDropdown
+                <PvSelect
                   v-model="student.gender"
                   :options="genderOptions"
                   option-label="label"
@@ -241,7 +241,7 @@
               <!-- Free-Reduced Lunch -->
               <div class="flex flex-column">
                 <label for="stateId">Free-Reduced Lunch </label>
-                <PvDropdown
+                <PvSelect
                   v-model="student.freeReducedLunch"
                   :options="frlOptions"
                   option-label="label"
@@ -252,7 +252,7 @@
               <!-- IEP Status -->
               <div class="flex flex-column">
                 <label for="stateId">IEP Status</label>
-                <PvDropdown
+                <PvSelect
                   v-model="student.IEPStatus"
                   :options="IEPOptions"
                   option-label="label"
@@ -276,7 +276,7 @@
               <!-- Hispanic Ethinicity -->
               <div class="flex flex-column">
                 <label for="hispanicEthnicity">Hispanic or Latino Ethnicity </label>
-                <PvDropdown
+                <PvSelect
                   v-model="student.hispanicEthnicity"
                   :options="ethnicityOptions"
                   option-label="label"
@@ -300,7 +300,7 @@
         <section class="form-section-button">
           <PvButton
             v-if="outerIndex !== 0"
-            class="bg-primary border-none border-round p-3 text-white hover:surface-300 hover:text-black-alpha-90"
+            class="bg-primary border-none border-round p-3 w-5 text-white hover:surface-300 hover:text-black-alpha-90"
             icon="pi pi-trash"
             @click="deleteStudentForm(outerIndex)"
           >
@@ -374,10 +374,10 @@ import { required, minLength, helpers, sameAs } from '@vuelidate/validators';
 import PvAccordion from 'primevue/accordion';
 import PvAccordionTab from 'primevue/accordiontab';
 import PvButton from 'primevue/button';
-import PvCalendar from 'primevue/calendar';
+import PvDatePicker from 'primevue/datepicker';
 import PvCheckbox from 'primevue/checkbox';
 import PvDialog from 'primevue/dialog';
-import PvDropdown from 'primevue/dropdown';
+import PvSelect from 'primevue/select';
 import PvInputGroup from 'primevue/inputgroup';
 import PvInputText from 'primevue/inputtext';
 import PvPassword from 'primevue/password';

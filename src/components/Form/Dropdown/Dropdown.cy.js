@@ -11,7 +11,7 @@ describe('<Dropdown />', () => {
     cy.mount(Dropdown);
     cy.findByTestId('dropdown__input-wrapper').should('exist');
     cy.findByTestId('dropdown__input-wrapper').should('be.visible').click();
-    cy.get('.p-dropdown-empty-message').should('be.visible').and('contain.text', 'No available options');
+    cy.get('.p-select-empty-message').should('be.visible').and('contain.text', 'No available options');
   });
 
   it('Renders the label', () => {

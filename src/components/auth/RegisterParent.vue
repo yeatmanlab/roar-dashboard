@@ -11,6 +11,7 @@
               name="firstName"
               :class="{ 'p-invalid': v$.firstName.$invalid && submitted }"
               aria-describedby="first-name-error"
+              data-cy="input-parent-first-name"
             />
             <span v-if="v$.firstName.$error && submitted">
               <span v-for="(error, index) of v$.firstName.$errors" :key="index">
@@ -28,6 +29,7 @@
               name="lastName"
               :class="{ 'p-invalid': v$.firstName.$invalid && submitted }"
               aria-describedby="first-name-error"
+              data-cy="input-parent-last-name"
             />
             <span v-if="v$.lastName.$error && submitted">
               <span v-for="(error, index) of v$.lastName.$errors" :key="index">
@@ -49,6 +51,7 @@
               type="email"
               :class="{ 'p-invalid': v$.ParentEmail.$invalid && submitted }"
               aria-describedby="username-or-email-error"
+              data-cy="input-parent-email"
             />
           </div>
           <span v-if="v$.ParentEmail.$error && submitted">
@@ -74,6 +77,7 @@
                 show-icon="pi pi-eye-slash"
                 hide-icon="pi pi-eye"
                 :feedback="false"
+                data-cy="password-parent-password"
               ></PvPassword>
             </div>
             <span v-if="v$.password.$error && submitted">
@@ -97,6 +101,7 @@
                 toggle-mask
                 show-icon="pi pi-eye-slash"
                 hide-icon="pi pi-eye"
+                data-cy="password-parent-password-confirm"
                 :feedback="false"
               >
               </PvPassword>

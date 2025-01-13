@@ -16,6 +16,8 @@ describe('Test to maintain that assent form shows in when signing in with an un-
     cy.get('.p-dialog-title', { timeout: timeout })
       .contains(translations.consentModal.consentTitle)
       .should('be.visible');
-    cy.get('.p-confirm-dialog-accept').contains('Continue').should('be.visible');
+    cy.wait(1000);
+    cy.get('.p-dialog-title', { timeout: timeout }).contains('Consent').should('be.visible');
+    cy.get('.p-dialog-footer').contains('Continue').should('be.visible');
   });
 });

@@ -23,7 +23,7 @@
           <span v-if="localUserType === 'student'" v-tooltip.top="'Required'" class="required">*</span></label
         >
         <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ userDobString }}</div>
-        <PvCalendar
+        <PvDatePicker
           v-else
           v-model="localUserData.studentData.dob"
           :class="{ 'p-invalid': errorMessage.includes('Date of birth') }"
@@ -66,7 +66,7 @@
       <div class="form-field">
         <label :class="{ 'font-light uppercase text-sm': !editMode }">English as a Second Language</label>
         <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ userData?.studentData?.ell_status ?? false }}</div>
-        <PvDropdown
+        <PvSelect
           v-else
           v-model="localUserData.studentData.ell_status"
           option-label="label"
@@ -77,7 +77,7 @@
       <div class="form-field">
         <label :class="{ 'font-light uppercase text-sm': !editMode }">IEP Status</label>
         <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ userData?.studentData?.iep_status ?? false }}</div>
-        <PvDropdown
+        <PvSelect
           v-else
           v-model="localUserData.studentData.iep_status"
           option-label="label"
@@ -88,7 +88,7 @@
       <div class="form-field">
         <label :class="{ 'font-light uppercase text-sm': !editMode }">Free-Reduced Lunch</label>
         <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ userData?.studentData?.frl_status ?? false }}</div>
-        <PvDropdown
+        <PvSelect
           v-else
           v-model="localUserData.studentData.frl_status"
           option-label="label"
@@ -116,7 +116,7 @@
         <div v-if="!editMode" :class="{ 'text-xl': !editMode }">
           {{ userData?.studentData?.hispanic_ethnicity ?? false }}
         </div>
-        <PvDropdown
+        <PvSelect
           v-else
           v-model="localUserData.studentData.hispanic_ethnicity"
           option-label="label"
@@ -170,7 +170,7 @@
         <div v-if="!editMode" :class="{ 'text-xl': !editMode }">
           {{ userDobString }}
         </div>
-        <PvCalendar
+        <PvDatePicker
           v-else
           v-model="localUserData.studentData.dob"
           :class="{ 'p-invalid': errorMessage.includes('Date of birth') }"
@@ -192,7 +192,7 @@
           >English as a Second Language <span v-if="editMode" class="optional">(optional)</span></label
         >
         <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ userData?.studentData?.ell_status ?? false }}</div>
-        <PvDropdown
+        <PvSelect
           v-else
           v-model="localUserData.studentData.ell_status"
           option-label="label"
@@ -210,9 +210,9 @@ import { storeToRefs } from 'pinia';
 import _isEmpty from 'lodash/isEmpty';
 import _get from 'lodash/get';
 import PvAutoComplete from 'primevue/autocomplete';
-import PvCalendar from 'primevue/calendar';
+import PvDatePicker from 'primevue/datepicker';
 import PvCheckbox from 'primevue/checkbox';
-import PvDropdown from 'primevue/dropdown';
+import PvSelect from 'primevue/select';
 import PvInputText from 'primevue/inputtext';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 
