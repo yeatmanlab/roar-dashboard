@@ -15,7 +15,7 @@
           "headers": [
             {
               "key": "Cross-Origin-Opener-Policy",
-              "value": "restrict-properties"
+              "value": "same-origin-allow-popups"
             }
           ]
         }
@@ -34,7 +34,7 @@
             },
             {
               "key": "Cross-Origin-Opener-Policy",
-              "value": "restrict-properties"
+              "value": "same-origin-allow-popups"
             },
             {
               "key": "X-Content-Type-Options",
