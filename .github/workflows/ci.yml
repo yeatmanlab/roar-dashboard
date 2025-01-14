@@ -15,71 +15,71 @@ permissions:
   id-token: write
 
 jobs:
-  # # ––––––––––––––––––––––––––––––––––––––––––––––– #
-  # # Lint & Format
-  # # ––––––––––––––––––––––––––––––––––––––––––––––– #
-  # lint:
-  #   name: Lint
-  #   runs-on: ubuntu-latest
-  #   timeout-minutes: 5
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  # Lint & Format
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
 
-  #   steps:
-  #     - name: Checkout repository
-  #       uses: actions/checkout@v4
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-  #     - name: Setup environment
-  #       uses: ./.github/actions/setup-node-environment
+      - name: Setup environment
+        uses: ./.github/actions/setup-node-environment
 
-  #     - name: Run linter
-  #       run: npm run lint
+      - name: Run linter
+        run: npm run lint
 
-  #     - name: Check format
-  #       run: npm run format:check
+      - name: Check format
+        run: npm run format:check
 
-  # # ––––––––––––––––––––––––––––––––––––––––––––––– #
-  # # Test
-  # # ––––––––––––––––––––––––––––––––––––––––––––––– #
-  # test:
-  #   name: Unit tests
-  #   runs-on: ubuntu-latest
-  #   timeout-minutes: 5
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  # Test
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  test:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
 
-  #   steps:
-  #     - name: Checkout repository
-  #       uses: actions/checkout@v4
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-  #     - name: Setup environment
-  #       uses: ./.github/actions/setup-node-environment
+      - name: Setup environment
+        uses: ./.github/actions/setup-node-environment
 
-  #     - name: Run unit tests
-  #       run: npm run test
+      - name: Run unit tests
+        run: npm run test
 
-  #     - name: Report coverage
-  #       if: success()
-  #       uses: davelosert/vitest-coverage-report-action@v2
+      - name: Report coverage
+        if: success()
+        uses: davelosert/vitest-coverage-report-action@v2
 
-  # # ––––––––––––––––––––––––––––––––––––––––––––––– #
-  # # Build the application
-  # # ––––––––––––––––––––––––––––––––––––––––––––––– #
-  # build:
-  #   name: Build
-  #   runs-on: ubuntu-latest
-  #   timeout-minutes: 5
-  #   env:
-  #     DOTENV_PRIVATE_KEY_DEVELOPMENT: ${{ secrets.DOTENV_PRIVATE_KEY_DEVELOPMENT }}
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  # Build the application
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      DOTENV_PRIVATE_KEY_DEVELOPMENT: ${{ secrets.DOTENV_PRIVATE_KEY_DEVELOPMENT }}
 
-  #   steps:
-  #     - name: Checkout repository
-  #       uses: actions/checkout@v4
-  #       with:
-  #         submodules: true
-  #         token: ${{ secrets.CI_GITHUB_PAT }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+          token: ${{ secrets.CI_GITHUB_PAT }}
 
-  #     - name: Setup environment
-  #       uses: ./.github/actions/setup-node-environment
+      - name: Setup environment
+        uses: ./.github/actions/setup-node-environment
 
-  #     - name: Build application
-  #       run: npm run build
+      - name: Build application
+        run: npm run build
 
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
   # End-to-end tests
@@ -181,7 +181,7 @@ jobs:
   deploy:
     name: Deploy
     runs-on: ubuntu-latest
-    # needs: [lint, test, build]
+    needs: [lint, test, build]
     timeout-minutes: 5
     env:
       DOTENV_PRIVATE_KEY_STAGING: ${{ secrets.DOTENV_PRIVATE_KEY_STAGING }}
