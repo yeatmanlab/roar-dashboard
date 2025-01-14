@@ -59,15 +59,24 @@ runs:
         cd app && pwd && ls -la
 
     # Deploy application
-    # Note: When invoking this action with 'pr' as environment, the channelId is set to an empty string to deploy to an
-    # ephemeral preview environment in Firebase Hosting.
-    - name: Deploy application
+    # Note: Due to a bug in the FirebaseExtended/action-hosting-deploy action, it is not possible to use a conditional
+    # expression on the channelId parameter. As a workaround, we use two separate steps to deploy the application.
+    - name: Deploy application to ephemeral environment
+      if: ${{ inputs.firebase-channel == 'preview' }}
       uses: FirebaseExtended/action-hosting-deploy@v0.9.0
       id: firebase-deploy
       with:
         firebaseServiceAccount: '${{ env.GCP_HOSTING_SERVICE_ACCOUNT_KEY }}'
         projectId: '${{ inputs.firebase-project-id }}'
-        channelId: ${{ inputs.firebase-channel == 'preview' && '' || 'live' }}
+        entryPoint: ./app
+
+    - name: Deploy application
+      if: ${{ inputs.firebase-channel == 'default' }}
+      uses: FirebaseExtended/action-hosting-deploy@v0.9.0
+      with:
+        firebaseServiceAccount: '${{ env.GCP_HOSTING_SERVICE_ACCOUNT_KEY }}'
+        projectId: '${{ inputs.firebase-project-id }}'
+        channelId: 'live'
         entryPoint: ./app
 
     # Output deployment URL

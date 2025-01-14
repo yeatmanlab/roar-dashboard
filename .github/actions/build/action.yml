@@ -35,11 +35,6 @@ runs:
         submodules: ${{ inputs.override-env-configs == 'false' }}
         path: roar-dashboard
 
-    - name: Debug
-      shell: bash
-      run: |
-        ls -R roar-dashboard
-
     - name: Inspect changes
       if: ${{ inputs.diff-base-sha != 'false' }}
       working-directory: roar-dashboard
