@@ -48,7 +48,7 @@
           </template>
           <div class="roar-tabview-game pointer flex flex-row p-5 surface-100 w-full">
             <div class="roar-game-content flex flex-column" style="width: 65%">
-              <div class="flex flex-column h-full">
+              <div class="flex flex-column h-full" >
                 <div class="roar-game-title font-bold">{{ getTaskName(game.taskId, game.taskData.name) }}</div>
                 <div class="roar-game-description mr-2 flex-grow-1">
                   <p>{{ getTaskDescription(game.taskId, game.taskData.description) }}</p>
@@ -101,42 +101,37 @@
                       :value="metaIndex + ': ' + items"
                     />
                   </div>
-                  <div class="roar-game-footer p-3 hover:surface-200">
+                  <router-link 
+                    v-if="!game.completedOn" 
+                    class="roar-game-footer p-3 hover:surface-200 no-underline text-900"
+                    :to="{ path: getRoutePath(game.taskId, game.taskData?.variantURL, game.taskData?.taskURL) }"
+                    @click="routeExternalTask(game)">
                     <div class="flex align-items-center justify-content-center text-xl font-bold mt-2">
-                      <router-link
-                        v-if="
-                          !allGamesComplete && !game.completedOn && !game.taskData?.taskURL && !game.taskData?.variantURL
-                        "
-                        :to="{ path: getRoutePath(game.taskId) }"
-                        class="no-underline text-900"
-                      >
-                        <div class="flex align-items-center">
-                          <i v-if="!allGamesComplete" class="pi"
-                            ><svg
-                              width="24"
-                              height="24"
-                              viewBox="0 0 42 42"
-                              fill="none"
-                              class="mr-3"
-                              xmlns="http://www.w3.org/2000/svg"
-                            >
-                              <rect width="42" height="42" rx="21" fill="#A80532" />
-                              <path
-                                d="M26.1858 19.6739L17.4823 14.1736C16.7751 13.7269 15.6921 14.1604 15.6921 15.2652V26.2632C15.6921 27.2544 16.6985 27.8518 17.4823 27.3549L26.1858 21.8572C26.9622 21.3682 26.9647 20.1629 26.1858 19.6739Z"
-                                fill="white"
-                              />
-                            </svg>
-                          </i>
-                          <span v-if="!allGamesComplete && !game.completedOn">{{ $t('gameTabs.clickToStart') }}</span>
-                          <span v-else>{{ taskCompletedMessage }} </span>
-                        </div>
-                      </router-link>
-                      <div v-else>
-                        <div class="flex align-items-center justify-content-center text-green-500">
-                          <i v-if="game.completedOn" class="pi pi-check-circle mr-3" />
-                          <span>{{ taskCompletedMessage }} </span>
-                        </div>
-                      </div>
+                        <i class="pi">
+                          <svg
+                            width="24"
+                            height="24"
+                            viewBox="0 0 42 42"
+                            fill="none"
+                            class="mr-3"
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <rect width="42" height="42" rx="21" fill="#A80532" />
+                            <path
+                              d="M26.1858 19.6739L17.4823 14.1736C16.7751 13.7269 15.6921 14.1604 15.6921 15.2652V26.2632C15.6921 27.2544 16.6985 27.8518 17.4823 27.3549L26.1858 21.8572C26.9622 21.3682 26.9647 20.1629 26.1858 19.6739Z"
+                              fill="white"
+                            />
+                          </svg>
+                        </i>
+                        <span v-if="!game.completedOn">{{ $t('gameTabs.clickToStart') }}</span>
+                        <span v-else>{{ taskCompletedMessage }} </span>
+                    </div>
+                  </router-link>
+
+                  <div v-if="game.completedOn">
+                    <div class="flex align-items-center justify-content-center text-green-500 roar-game-footer p-3 hover:surface-200 no-underline text-900 text-xl font-bold">
+                      <i v-if="game.completedOn" class="pi pi-check-circle mr-3" />
+                      <span>{{ taskCompletedMessage }} </span>
                     </div>
                   </div>
                 </div>
@@ -201,6 +196,7 @@ const props = defineProps({
   sequential: { type: Boolean, required: false, default: true },
   userData: { type: Object, required: true },
 });
+
 
 const authStore = useAuthStore();
 const gameStore = useGameStore();
@@ -316,7 +312,10 @@ const getTaskDescription = (taskId, taskDescription) => {
   return taskDescription;
 };
 
-const getRoutePath = (taskId) => {
+const getRoutePath = (taskId, variantURL, taskURL) => {
+  // do not navigate if the task is external
+  if (variantURL || taskURL) return '/';
+
   const lowerCasedAndCamelizedTaskId = camelize(taskId.toLowerCase());
 
   if (lowerCasedAndCamelizedTaskId === 'survey') {
@@ -374,11 +373,12 @@ const { selectedAdmin } = storeToRefs(gameStore);
 async function routeExternalTask(game) {
   let url;
 
-  if (!allGamesComplete.value && game.taskData?.variantURL) {
+  if (game.taskData?.variantURL) {
     url = game.taskData.variantURL;
-  } else if (!allGamesComplete.value && game.taskData?.taskURL) {
+  } else if (game.taskData?.taskURL) {
     url = game.taskData.taskURL;
   } else {
+    // Not an external task
     return;
   }
 
