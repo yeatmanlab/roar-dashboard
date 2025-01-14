@@ -10,6 +10,7 @@ button.p-button.p-component.p-button-icon-only.p-button-secondary.p-button-round
   background: var(--primary-color) !important;
   color: white;
   margin-left: 3px !important;
+  border-radius: 50%;
 }
 input.p-inputtext.p-component.p-password-input {
   width: 100%;

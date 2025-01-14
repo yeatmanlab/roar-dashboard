@@ -15,8 +15,9 @@
             direction="left"
             :transition-delay="80"
             show-icon="pi pi-cog text-primary"
-            hide-icon="pi pi-times"
+            hide-icon="pi pi-times text-primary"
             button-class="p-button-outlined p-button-sm w-3rem h-3rem border-primary border-1 border-circle bg-transparent hover:surface-300"
+            style="color: var(---primary-color) !important"
             :tooltip-options="{ position: 'top' }"
             :pt="{ button: { size: 'small' } }"
           />
@@ -111,7 +112,7 @@
                 <PvButton
                   v-tooltip.top="'See completion details'"
                   class="m-0 mr-1 surface-0 text-primary shadow-1 border-none p-2 border-round hover:surface-100"
-                  style="height: 2.5rem"
+                  style="height: 2.5rem; color: var(--primary-color) !important; border: none !important"
                   severity="secondary"
                   text
                   raised
@@ -131,7 +132,7 @@
                 <PvButton
                   v-tooltip.top="'See Scores'"
                   class="m-0 mr-1 surface-0 text-primary shadow-1 border-none p-2 border-round hover:surface-100"
-                  style="height: 2.5rem"
+                  style="height: 2.5rem; color: var(--primary-color) !important; border: none !important"
                   severity="secondary"
                   text
                   raised
@@ -459,6 +460,12 @@ onMounted(() => {
   padding-right: 0.5rem;
   color: white;
 }
+
+.button.p-button.p-component.p-button-outlined.p-button-sm.p-button-outlined.p-button-sm,
+button.p-button.p-component.p-button-sm.p-button-sm {
+  border: 1px solid var(--primary-color) !important;
+}
+
 .p-confirm-popup .p-confirm-popup-footer button:hover {
   background-color: var(--red-900);
 }
