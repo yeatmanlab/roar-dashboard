@@ -11,6 +11,7 @@
               name="firstName"
               :class="{ 'p-invalid': v$.firstName.$invalid && submitted }"
               aria-describedby="first-name-error"
+              data-cy="input-parent-first-name"
             />
             <span v-if="v$.firstName.$error && submitted">
               <span v-for="(error, index) of v$.firstName.$errors" :key="index">
@@ -28,6 +29,7 @@
               name="lastName"
               :class="{ 'p-invalid': v$.firstName.$invalid && submitted }"
               aria-describedby="first-name-error"
+              data-cy="input-parent-last-name"
             />
             <span v-if="v$.lastName.$error && submitted">
               <span v-for="(error, index) of v$.lastName.$errors" :key="index">
@@ -49,6 +51,7 @@
               type="email"
               :class="{ 'p-invalid': v$.ParentEmail.$invalid && submitted }"
               aria-describedby="username-or-email-error"
+              data-cy="input-parent-email"
             />
           </div>
           <span v-if="v$.ParentEmail.$error && submitted">
@@ -74,6 +77,7 @@
                 show-icon="pi pi-eye-slash"
                 hide-icon="pi pi-eye"
                 :feedback="false"
+                data-cy="password-parent-password"
               ></PvPassword>
             </div>
             <span v-if="v$.password.$error && submitted">
@@ -97,6 +101,7 @@
                 toggle-mask
                 show-icon="pi pi-eye-slash"
                 hide-icon="pi pi-eye"
+                data-cy="password-parent-password-confirm"
                 :feedback="false"
               >
               </PvPassword>
@@ -134,7 +139,7 @@
         </section>
         <ConsentModal
           v-if="showConsent"
-          :consent-text="consent?.text"
+          :consent-text="consentText"
           consent-type="consent"
           :on-confirm="handleConsentAccept"
         />
@@ -191,6 +196,7 @@ import AdobeSignDialog from '../AdobeSignDialog.vue';
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
 const isCaptchaverified = ref(null);
+const consentText = ref(null);
 const dialogMessage = ref('');
 const isAdobe = ref(false);
 
@@ -294,17 +300,22 @@ async function handleConsentAccept() {
 }
 
 async function getConsent(isFormValid) {
-  if (props.isAdobeSign === true) {
-    isAdobe.value = props.isAdobeSign;
-  } else {
-    const consentDoc = await authStore.getLegalDoc('consent-video-audio-eye-tracking');
-    consentText.value = consentDoc.text;
-    // consentVersion = consentDoc.version;
-    showConsent.value = true;
-    handleCheckCaptcha();
-  }
-  if (isFormValid) {
-    handleFormSubmit(isFormValid);
+  try {
+    if (props.isAdobeSign) {
+      isAdobe.value = props.isAdobeSign;
+    } else {
+      const consentDoc = await authStore.getLegalDoc('consent-video-audio-eye-tracking');
+      consentText.value = consentDoc.text;
+      showConsent.value = true;
+      handleCheckCaptcha();
+    }
+
+    if (isFormValid) {
+      handleFormSubmit(isFormValid);
+    }
+  } catch (error) {
+    console.error('Failed to fetch consent form: ', error);
+    throw new Error('Could not fetch consent form');
   }
 }
 

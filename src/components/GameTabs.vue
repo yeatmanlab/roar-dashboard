@@ -1,17 +1,38 @@
 <template>
-  <div id="games" class="game-tab-container">
-    <PvTabView v-model:active-index="displayGameIndex" :scrollable="true" class="flex flex-column">
-      <PvTabPanel
-        v-for="(game, index) in games"
-        :key="game.taskId"
-        :disabled="
-          sequential &&
-          ((index > 0 && !games[index - 1].completedOn) ||
-            (allGamesComplete && currentGameId !== game.taskId && !game.completedOn))
-        "
-      >
-        <template #header>
-          <div class="flex align-items-start">
+  <div id="games">
+    <PvTabs v-model:active-index="displayGameIndex" scrollable value="0">
+      <PvTabList>
+        <PvTab
+          v-for="(game, index) in games"
+          :key="game.taskId"
+          :disabled="
+            sequential &&
+            ((index > 0 && !games[index - 1].completedOn) ||
+              (allGamesComplete && currentGameId !== game.taskId && !game.completedOn))
+          "
+          :value="String(index)"
+          :class="[
+            'p3 mr-1 text-base hover:bg-black-alpha-10',
+            { 'text-green-500': game.completedOn, 'bg-white': game.completedOn },
+          ]"
+          style="border: solid 2px #00000014; border-radius: 10px"
+        >
+          {{ getTaskName(game.taskId, game.taskData.name) }}
+        </PvTab>
+      </PvTabList>
+      <PvTabPanels style="width: 120vh">
+        <PvTabPanel
+          v-for="(game, index) in games"
+          :key="game.taskId"
+          :disabled="
+            sequential &&
+            ((index > 0 && !games[index - 1].completedOn) ||
+              (allGamesComplete && currentGameId !== game.taskId && !game.completedOn))
+          "
+          :value="String(index)"
+          class="p-0"
+        >
+          <template #header>
             <!--Complete Game-->
             <i v-if="game.completedOn" class="pi pi-check-circle mr-2" data-game-status="complete" />
             <!--Current Game-->
@@ -22,64 +43,88 @@
             />
             <!--Locked Game-->
             <i v-else-if="sequential" class="pi pi-lock mr-2" data-game-status="incomplete" />
-            <div class="flex min-w-full">
-              <span
-                class="tabview-nav-link-label flex-shrink-1"
-                :data-game-status="`${game.completedOn ? 'complete' : 'incomplete'}`"
-                >{{ getTaskName(game.taskId, game.taskData.name) }}</span
-              >
-            </div>
-          </div>
-        </template>
-        <div class="roar-tabview-game pointer">
-          <div class="roar-game-content" @click="routeExternalTask(game)">
-            <div class="roar-game-title">{{ getTaskName(game.taskId, game.taskData.name) }}</div>
-            <div class="roar-game-description">
-              <p>{{ getTaskDescription(game.taskId, game.taskData.description) }}</p>
-            </div>
-            <div class="roar-game-meta">
-              <PvTag
-                v-for="(items, metaIndex) in game.taskData.meta"
-                :key="metaIndex"
-                :value="metaIndex + ': ' + items"
-              />
-            </div>
-            <div class="roar-game-footer">
-              <i v-if="!allGamesComplete" class="pi"
-                ><svg width="42" height="42" viewBox="0 0 42 42" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <rect width="42" height="42" rx="21" fill="#A80532" />
-                  <path
-                    d="M26.1858 19.6739L17.4823 14.1736C16.7751 13.7269 15.6921 14.1604 15.6921 15.2652V26.2632C15.6921 27.2544 16.6985 27.8518 17.4823 27.3549L26.1858 21.8572C26.9622 21.3682 26.9647 20.1629 26.1858 19.6739Z"
-                    fill="white"
+            <span
+              class="tabview-nav-link-label"
+              :data-game-status="`${game.completedOn ? 'complete' : 'incomplete'}`"
+              >{{ getTaskName(game.taskId, game.taskData.name) }}</span
+            >
+          </template>
+          <div class="roar-tabview-game pointer flex flex-row p-5 surface-100 w-full">
+            <div class="roar-game-content flex flex-column" style="width: 70%" @click="routeExternalTask(game)">
+              <div class="roar-game-title font-bold">{{ getTaskName(game.taskId, game.taskData.name) }}</div>
+              <div class="roar-game-description mr-2">
+                <p>{{ getTaskDescription(game.taskId, game.taskData.description) }}</p>
+              </div>
+              <div class="flex flex-column h-full">
+                <div class="roar-game-meta">
+                  <PvTag
+                    v-for="(items, metaIndex) in game.taskData.meta"
+                    :key="metaIndex"
+                    :value="metaIndex + ': ' + items"
                   />
-                </svg>
-              </i>
-              <span v-if="!allGamesComplete && !game.completedOn">{{ $t('gameTabs.clickToStart') }}</span>
-              <span v-else>{{ taskCompletedMessage }}</span>
-              <router-link
-                v-if="!allGamesComplete && !game.completedOn && !game.taskData?.taskURL && !game.taskData?.variantURL"
-                :to="{ path: getRoutePath(game.taskId) }"
-              ></router-link>
+                </div>
+                <div class="roar-game-footer p-3 h-full mr-5" :class="{ 'hover:surface-200': !game.completedOn }">
+                  <div class="flex align-items-center justify-content-center font-bold mt-2 h-full responsive-text">
+                    <router-link
+                      v-if="
+                        !allGamesComplete && !game.completedOn && !game.taskData?.taskURL && !game.taskData?.variantURL
+                      "
+                      :to="{ path: getRoutePath(game.taskId) }"
+                      class="no-underline text-900 text-center"
+                    >
+                      <div class="flex align-items-center justify-content-center h-full w-full">
+                        <i v-if="!allGamesComplete" class="pi"
+                          ><svg
+                            viewBox="0 0 42 42"
+                            fill="none"
+                            class="responsive-icon"
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <rect width="42" height="42" rx="21" fill="#A80532" />
+                            <path
+                              d="M26.1858 19.6739L17.4823 14.1736C16.7751 13.7269 15.6921 14.1604 15.6921 15.2652V26.2632C15.6921 27.2544 16.6985 27.8518 17.4823 27.3549L26.1858 21.8572C26.9622 21.3682 26.9647 20.1629 26.1858 19.6739Z"
+                              fill="white"
+                            />
+                          </svg>
+                        </i>
+                      </div>
+                      <span v-if="!allGamesComplete && !game.completedOn">{{ $t('gameTabs.clickToStart') }}</span>
+                      <span v-else>{{ taskCompletedMessage }} </span>
+                    </router-link>
+                    <div v-else>
+                      <div class="flex align-items-center justify-content-center text-green-500">
+                        <i v-if="game.completedOn" class="pi pi-check-circle mr-3" />
+                        <span>{{ taskCompletedMessage }} </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="roar-game-image">
+              <div v-if="game.taskData?.tutorialVideo" class="video-player-wrapper">
+                <VideoPlayer
+                  :options="returnVideoOptions(game.taskData?.tutorialVideo)"
+                  :on-video-end="updateVideoCompleted"
+                  :on-video-start="updateVideoStarted"
+                  :task-id="game.taskId"
+                  style="width: 28vw"
+                />
+              </div>
+              <div v-else>
+                <img v-if="game.taskData.image" :src="game.taskData.image" style="width: 28vw" />
+                <!-- TODO: Get real backup image -->
+                <img
+                  v-else
+                  src="https://reading.stanford.edu/wp-content/uploads/2021/10/PA-1024x512.png"
+                  style="width: 28vw"
+                />
+              </div>
             </div>
           </div>
-          <div class="roar-game-image">
-            <div v-if="game.taskData?.tutorialVideo" class="video-player-wrapper">
-              <VideoPlayer
-                :options="returnVideoOptions(game.taskData?.tutorialVideo)"
-                :on-video-end="updateVideoCompleted"
-                :on-video-start="updateVideoStarted"
-                :task-id="game.taskId"
-              />
-            </div>
-            <div v-else>
-              <img v-if="game.taskData.image" :src="game.taskData.image" />
-              <!-- TODO: Get real backup image -->
-              <img v-else src="https://reading.stanford.edu/wp-content/uploads/2021/10/PA-1024x512.png" />
-            </div>
-          </div>
-        </div>
-      </PvTabPanel>
-    </PvTabView>
+        </PvTabPanel>
+      </PvTabPanels>
+    </PvTabs>
   </div>
 </template>
 <script setup>
@@ -91,7 +136,10 @@ import _find from 'lodash/find';
 import _findIndex from 'lodash/findIndex';
 import { camelize, getAgeData } from '@bdelab/roar-utils';
 import PvTabPanel from 'primevue/tabpanel';
-import PvTabView from 'primevue/tabview';
+import PvTabs from 'primevue/tabs';
+import PvTabList from 'primevue/tablist';
+import PvTab from 'primevue/tab';
+import PvTabPanels from 'primevue/tabpanels';
 import PvTag from 'primevue/tag';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
@@ -268,9 +316,32 @@ const returnVideoOptions = (videoURL) => {
   align-items: center;
   min-height: 100%;
 }
+
+.p-tab-active {
+  background: var(--surface-100);
+  border-color: var(--p-tabs-tab-active-border-color) !important;
+  color: var(--p-tabs-tab-active-color);
+}
+
+.responsive-icon {
+  width: 4vw;
+  height: auto;
+}
+.responsive-text {
+  font-size: 1.5vw;
+}
+
+@media (min-width: 1200px) {
+  .responsive-icon {
+    width: 6vw;
+  }
+}
 @media screen and (max-width: 768px) {
   .video-player-wrapper {
     min-width: 250px;
+  }
+  .responsive-text {
+    font-size: 2vw;
   }
 }
 </style>

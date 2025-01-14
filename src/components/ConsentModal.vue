@@ -6,6 +6,7 @@
     class="confirm"
     :draggable="false"
     :close-on-escape="false"
+    :closable="false"
   >
     <template #message>
       <div class="scrolling-box">

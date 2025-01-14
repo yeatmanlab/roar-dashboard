@@ -1,5 +1,6 @@
 import { vi } from 'vitest';
 import { config, DOMWrapper } from '@vue/test-utils';
+import PrimeVue from 'primevue/config';
 
 vi.mock('vue-recaptcha', () => ({
   default: {},
@@ -25,3 +26,7 @@ const DataTestIdPlugin = (wrapper) => {
 };
 
 config.plugins.VueWrapper.install(DataTestIdPlugin);
+
+// Load PrimeVue config
+// @NOTE: This is required for unit tests to correctly mount and render components that leverage a PrimeVue component.
+config.global.plugins.push(PrimeVue);
