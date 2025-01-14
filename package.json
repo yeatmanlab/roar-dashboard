@@ -42,7 +42,7 @@
     "@bdelab/roar-vocab": "1.8.0",
     "@bdelab/roav-crowding": "1.1.31",
     "@bdelab/roav-mep": "1.1.35",
-    "@bdelab/roav-ran": "1.0.31",
+    "@bdelab/roav-ran": "1.0.32",
     "@primevue/core": "^4.2.4",
     "@primevue/themes": "^4.2.4",
     "@levante-framework/core-tasks": "1.0.0-beta.27",
