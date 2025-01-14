@@ -108,16 +108,16 @@
                   :on-video-end="updateVideoCompleted"
                   :on-video-start="updateVideoStarted"
                   :task-id="game.taskId"
-                  style="width: 25vw"
+                  style="width: 28vw"
                 />
               </div>
               <div v-else>
-                <img v-if="game.taskData.image" :src="game.taskData.image" style="width: 25vw" />
+                <img v-if="game.taskData.image" :src="game.taskData.image" style="width: 28vw" />
                 <!-- TODO: Get real backup image -->
                 <img
                   v-else
                   src="https://reading.stanford.edu/wp-content/uploads/2021/10/PA-1024x512.png"
-                  style="width: 25vw"
+                  style="width: 28vw"
                 />
               </div>
             </div>
