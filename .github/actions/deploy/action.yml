@@ -85,5 +85,5 @@ runs:
       id: output-deployment-url
       shell: bash
       run: |
-        deployment_url=$(echo "${{ steps.firebase-deploy.outputs.urls }}" | jq -r '.[0]')
+        deployment_url="${{ fromJson(steps.firebase-deploy.outputs.urls)[0] }}"
         echo "deployment-url=$deployment_url" >> $GITHUB_OUTPUT
