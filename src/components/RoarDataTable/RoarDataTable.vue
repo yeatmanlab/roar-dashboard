@@ -747,4 +747,7 @@ button.p-column-filter-menu-button.p-link:hover {
 .p-button-text.p-button-secondary {
   color: white !important;
 }
+.p-tag {
+  margin: 5px;
+}
 </style>
