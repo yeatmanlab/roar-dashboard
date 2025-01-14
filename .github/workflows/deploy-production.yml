@@ -42,6 +42,17 @@ jobs:
           gcp-workload-identity-provider: ${{ secrets.FIREBASE_WORKLOAD_IDENTITY_PROVIDER_ADMIN }}
           gcp-service-account-id: ${{ secrets.FIREBASE_HOSTING_SERVICE_ACCOUNT_ID_ADMIN }}
 
+      - name: Create Sentry release
+        uses: getsentry/action-release@v1.8.0
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+        with:
+          environment: production
+          sourcemaps: ./app/dist/assets/*.js.map
+          version: ${{ github.ref }}
+
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
   # Deploy Firestore config
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
