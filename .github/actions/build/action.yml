@@ -1,0 +1,77 @@
+# –––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––– #
+# roar-dashboard/build
+# –––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––– #
+
+name: Build
+description: Builds the ROAR Dashboard application.
+inputs:
+  github-pat:
+    description: 'The GitHub PAT to access the repository.'
+    required: true
+  commit-sha:
+    description: 'The commit SHA to deploy.'
+    required: false
+  diff-base-sha:
+    description: 'The commit SHA to run the diff against, optional.'
+    required: false
+    default: 'false'
+  environment:
+    description: 'The environment to deploy to, staging or production.'
+    required: true
+  override-env-configs:
+    description: 'Whether to override the environment configurations.'
+    required: false
+    default: 'false'
+
+runs:
+  using: composite
+  steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ inputs.commit-sha }}
+        repository: yeatmanlab/roar-dashboard
+        token: ${{ inputs.github-pat }}
+        submodules: ${{ inputs.override-env-configs == 'false' }}
+        path: roar-dashboard
+
+    - name: Inspect changes
+      if: ${{ inputs.diff-base-sha != 'false' }}
+      working-directory: roar-dashboard
+      shell: bash
+      run: |
+        echo "Current: roar-dashboard/${{ inputs.environment }}@${{ inputs.diff-base-sha }}"
+        echo "Target: roar-dashboard/${{ inputs.environment }}@${{ inputs.commit-sha }}"
+        echo "---------------------------------------------"
+        echo "Changes:"
+        git diff --name-only ${{ inputs.diff-base-sha }} ${{ inputs.commit-sha }} || echo "No changes"
+
+    # Install Node.js and cache global npm modules
+    - name: Install Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version-file: 'roar-dashboard/.nvmrc'
+        cache-dependency-path: 'roar-dashboard/package-lock.json'
+        cache: 'npm'
+
+    # Install npm dependencies
+    - name: Install dependencies
+      working-directory: roar-dashboard
+      shell: bash
+      run: npm ci
+
+    # Inject dotenv configuration
+    - name: Inject environment configuration
+      if: ${{ inputs.override-env-configs != 'false' }}
+      shell: bash
+      run: |
+        rm -rf roar-dashboard/env-configs
+        cp -r ${{ github.event.repository.name }}/env-configs roar-dashboard/env-configs
+
+    # Build the application
+    - name: Build application
+      working-directory: roar-dashboard
+      env:
+        NODE_OPTIONS: '--max_old_space_size=8192'
+      shell: bash
+      run: npm run build -- --mode ${{ inputs.environment }}

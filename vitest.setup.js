@@ -19,6 +19,11 @@ vi.mock('vue-google-maps-community-fork', () => ({
   VueGoogleMaps: vi.fn(),
 }));
 
+// Mock the Firekit initialization function
+vi.mock('./src/firekit.js', () => ({
+  initializeFirekit: vi.fn(),
+}));
+
 // Mock the $t function based on the logic in i18n.js
 config.global.mocks = {
   $t: (key) => {
