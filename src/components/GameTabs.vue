@@ -55,7 +55,7 @@
               <div class="roar-game-description mr-2">
                 <p>{{ getTaskDescription(game.taskId, game.taskData.description) }}</p>
               </div>
-              <div class="flex flex-column">
+              <div class="flex flex-column h-full">
                 <div class="roar-game-meta">
                   <PvTag
                     v-for="(items, metaIndex) in game.taskData.meta"
@@ -63,23 +63,21 @@
                     :value="metaIndex + ': ' + items"
                   />
                 </div>
-                <div class="roar-game-footer p-3 mr-5" :class="{ 'hover:surface-200': !game.completedOn }">
-                  <div class="flex align-items-center justify-content-center text-xl font-bold mt-2">
+                <div class="roar-game-footer p-3 h-full mr-5" :class="{ 'hover:surface-200': !game.completedOn }">
+                  <div class="flex align-items-center justify-content-center font-bold mt-2 h-full responsive-text">
                     <router-link
                       v-if="
                         !allGamesComplete && !game.completedOn && !game.taskData?.taskURL && !game.taskData?.variantURL
                       "
                       :to="{ path: getRoutePath(game.taskId) }"
-                      class="no-underline text-900"
+                      class="no-underline text-900 text-center"
                     >
-                      <div class="flex align-items-center justify-content-center">
+                      <div class="flex align-items-center justify-content-center h-full w-full">
                         <i v-if="!allGamesComplete" class="pi"
                           ><svg
-                            width="100"
-                            height="100"
                             viewBox="0 0 42 42"
                             fill="none"
-                            class="mr-3"
+                            class="responsive-icon"
                             xmlns="http://www.w3.org/2000/svg"
                           >
                             <rect width="42" height="42" rx="21" fill="#A80532" />
@@ -110,16 +108,16 @@
                   :on-video-end="updateVideoCompleted"
                   :on-video-start="updateVideoStarted"
                   :task-id="game.taskId"
-                  style="width: 40vh"
+                  style="width: 28vw"
                 />
               </div>
               <div v-else>
-                <img v-if="game.taskData.image" :src="game.taskData.image" style="width: 44vh" />
+                <img v-if="game.taskData.image" :src="game.taskData.image" style="width: 28vw" />
                 <!-- TODO: Get real backup image -->
                 <img
                   v-else
                   src="https://reading.stanford.edu/wp-content/uploads/2021/10/PA-1024x512.png"
-                  style="width: 44vh"
+                  style="width: 28vw"
                 />
               </div>
             </div>
@@ -325,9 +323,25 @@ const returnVideoOptions = (videoURL) => {
   color: var(--p-tabs-tab-active-color);
 }
 
+.responsive-icon {
+  width: 4vw;
+  height: auto;
+}
+.responsive-text {
+  font-size: 1.5vw;
+}
+
+@media (min-width: 1200px) {
+  .responsive-icon {
+    width: 6vw;
+  }
+}
 @media screen and (max-width: 768px) {
   .video-player-wrapper {
     min-width: 250px;
+  }
+  .responsive-text {
+    font-size: 2vw;
   }
 }
 </style>
