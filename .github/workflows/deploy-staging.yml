@@ -79,7 +79,7 @@ jobs:
     timeout-minutes: 5
     strategy:
       matrix:
-        projects: ${{ fromJSON(vars.ROAR_PROJECTS) }}
+        projects: ${{ fromJSON(vars.ROAR_PROJECTS) || [] }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
