@@ -182,6 +182,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: [lint, test, build]
     timeout-minutes: 5
+    env:
+      DOTENV_PRIVATE_KEY_STAGING: ${{ secrets.DOTENV_PRIVATE_KEY_STAGING }}
 
     steps:
       - name: Checkout repository
@@ -201,9 +203,6 @@ jobs:
           firebase-project-id: ${{ secrets.CI_FIREBASE_PROJECT_ID_ADMIN_STAGING }}
           gcp-workload-identity-provider: ${{ secrets.CI_FIREBASE_WORKLOAD_IDENTITY_PROVIDER_ADMIN_STAGING }}
           gcp-service-account-id: ${{ secrets.CI_FIREBASE_HOSTING_SERVICE_ACCOUNT_ID_ADMIN_STAGING }}
-
-      - name: Debug
-        run: echo ${{ steps.deployment.outputs.deployment-url }}
 
       # - name: Whitelist AppCheck admin environment
       #   if: ${{ success() }}
