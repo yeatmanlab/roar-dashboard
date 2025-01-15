@@ -27,7 +27,7 @@ export const playSRE = ({
     cy.switchToOptionalAssessments();
   }
 
-  cy.get('.p-tabview', { timeout: 2 * timeout })
+  cy.get('.p-tablist-tab-list', { timeout: 2 * timeout })
     .contains(languageOptions[language].gameTab)
     .should('exist');
   cy.visit(languageOptions[language].url);
