@@ -33,7 +33,6 @@ jobs:
 
       - name: Deploy app
         uses: ./.github/actions/deploy
-        id: deployment
         with:
           firebase-channel: default
           firebase-project-id: ${{ secrets.FIREBASE_PROJECT_ID_ADMIN }}
@@ -54,7 +53,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Deploy Firestore config to Admin instance
-        uses: ./.github/actions/deploy-firestore-config
+        uses: ./.github/actions/deploy-firestore-config@121306f5985136950481ef94c10e675e31d6f6f4
         with:
           firebase-project-id: ${{ secrets.FIREBASE_PROJECT_ID_ADMIN }}
           gcp-workload-identity-provider: ${{ secrets.FIREBASE_WORKLOAD_IDENTITY_PROVIDER_ADMIN }}
@@ -62,7 +61,7 @@ jobs:
           config-directory: firebase/admin
 
       - name: Deploy Firestore config to Assessment instance
-        uses: ./.github/actions/deploy-firestore-config
+        uses: ./.github/actions/deploy-firestore-config@121306f5985136950481ef94c10e675e31d6f6f4
         with:
           firebase-project-id: ${{ secrets.FIREBASE_PROJECT_ID_ASSESSMENT }}
           gcp-workload-identity-provider: ${{ secrets.FIREBASE_WORKLOAD_IDENTITY_PROVIDER_ASSESSMENT }}

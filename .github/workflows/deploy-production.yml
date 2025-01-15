@@ -35,7 +35,6 @@ jobs:
 
       - name: Deploy app
         uses: ./.github/actions/deploy
-        id: deployment
         with:
           firebase-channel: default
           firebase-project-id: ${{ secrets.FIREBASE_PROJECT_ID_ADMIN }}

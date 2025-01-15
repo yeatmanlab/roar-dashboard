@@ -7,10 +7,9 @@
 // const roarTestAdministrationName = Cypress.env('testRoarAppsAdministration');
 // const roarTestAdministrationId = Cypress.env('testRoarAppsAdministrationId');
 // const roarDemoAdministrationId = Cypress.env('testPartnerAdministrationId');
-// const testPartnerAdminUsername = Cypress.env('partnerAdminUsername');
-// const testPartnerAdminPassword = Cypress.env('partnerAdminPassword');
-// const timeout = Cypress.env('timeout');
-// const baseUrl = Cypress.env('baseUrl');
+// const testPartnerAdminUsername = Cypress.env('PARTNER_ADMIN_USERNAME');
+// const testPartnerAdminPassword = Cypress.env('PARTNER_ADMIN_PASSWORD');
+// const baseUrl = Cypress.config().baseUrl;
 // const headers = ['School'];
 
 //
@@ -18,66 +17,65 @@
 // function checkUrl() {
 //   cy.login(testPartnerAdminUsername, testPartnerAdminPassword);
 //   cy.navigateTo('/');
-//   cy.url({ timeout: timeout }).should('eq', `${baseUrl}/`);
+//   cy.url().should('eq', `${baseUrl}/`);
 // }
 
 //
 
 // function clickScoreButton(adminId) {
-//   cy.get('button', { timeout: timeout }).contains('Scores').first().click();
-//   cy.url({ timeout: timeout }).should('eq', `${baseUrl}/scores/${adminId}/district/${roarDemoDistrictId}`);
+//   cy.get('button').contains('Scores').first().click();
+//   cy.url().should('eq', `${baseUrl}/scores/${adminId}/district/${roarDemoDistrictId}`);
 // }
 
 //
 
 // function setFilterBySchool(school) {
-//   cy.get('[data-cy="filter-by-school"]', { timeout: timeout }).click();
-//   cy.get('ul > li', { timeout: timeout }).contains(school).click();
-//   cy.wait(0.05 * timeout);
+//   cy.get('[data-cy="filter-by-school"]').click();
+//   cy.get('ul > li').contains(school).click();
+//   cy.wait(0.05 * Cypress.env('timeout'));
 // }
 
 //
 
 // function setFilterByGrade(grade) {
-//   cy.get('[data-cy="filter-by-grade"]', { timeout: timeout }).click();
-//   cy.get('ul > li', { timeout: timeout }).contains(grade).click();
-//   cy.wait(0.05 * timeout);
+//   cy.get('[data-cy="filter-by-grade"]').click();
+//   cy.get('ul > li').contains(grade).click();
+//   cy.wait(0.05 * Cypress.env('timeout'));
 // }
 
 // function setFilterByProgressCategory(header, category) {
 //   cy.contains('div.p-column-header-content', header).find('button').click();
-//   cy.get('[data-cy="score-filter-dropdown"]', { timeout: timeout }).click();
-//   cy.get('ul>li').find('.p-tag-value', { timeout: timeout }).contains(category).click();
+//   cy.get('[data-cy="score-filter-dropdown"]').click();
+//   cy.get('ul>li').find('.p-tag-value').contains(category).click();
 //   cy.get('button').contains('Apply').click();
-//   cy.wait(0.05 * timeout);
+//   cy.wait(0.05 * Cypress.env('timeout'));
 // }
 
 //
 
 // function setFilterByScoreCategory(header, category) {
 //   cy.contains('div.p-column-header-content', header).find('button').click();
-//   cy.get('[data-cy="score-filter-dropdown"]', { timeout: timeout }).click();
-//   cy.get('ul > li', { timeout: timeout }).contains(category).click();
+//   cy.get('[data-cy="score-filter-dropdown"]').click();
+//   cy.get('ul > li').contains(category).click();
 //   cy.get('button').contains('Apply').click();
-//   cy.wait(0.05 * timeout);
+//   cy.wait(0.05 * Cypress.env('timeout'));
 // }
 
-//
-function checkTableColumn(headers, value) {
-  cy.get('[data-cy="roar-data-table"] thead th').then(($header) => {
-    const tableHeaders = $header.map((index, elem) => Cypress.$(elem).text()).get();
+// function checkTableColumn(headers, value) {
+//   cy.get('[data-cy="roar-data-table"] thead th').then(($header) => {
+//     const tableHeaders = $header.map((index, elem) => Cypress.$(elem).text()).get();
 
-    headers.forEach((header) => {
-      const headerIndex = tableHeaders.indexOf(header);
+//     headers.forEach((header) => {
+//       const headerIndex = tableHeaders.indexOf(header);
 
-      if (headerIndex !== -1) {
-        cy.get('[data-cy="roar-data-table"] tbody').each(($row) => {
-          cy.wrap($row).find('tr').should('contain', value);
-        });
-      }
-    });
-  });
-}
+//       if (headerIndex !== -1) {
+//         cy.get('[data-cy="roar-data-table"] tbody').each(($row) => {
+//           cy.wrap($row).find('tr').should('contain', value);
+//         });
+//       }
+//     });
+//   });
+// }
 
 // describe('The partner admin can view score reports for a given administration and filter by school.', () => {
 //   it('Selects an administration and views its score report, then accesses the filter bar to filter by school.', () => {
