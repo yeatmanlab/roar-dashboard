@@ -73,6 +73,7 @@ function startGame(administration, language, optional, task, auth) {
   checkGameTab(language, task);
   cy.visit(languageOptions[language][task].url);
 
+  cy.waitForAssessmentReadyState();
   cy.get('.jspsych-btn').should('be.visible').click();
 
   cy.wait(0.1 * Cypress.env('timeout'));

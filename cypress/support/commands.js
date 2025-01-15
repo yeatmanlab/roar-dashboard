@@ -167,6 +167,22 @@ Cypress.Commands.add('waitForParticipantHomepage', () => {
 });
 
 /**
+ * Wait for the assessment to load.
+ */
+Cypress.Commands.add('waitForAssessmentReadyState', () => {
+  cy.waitUntil(
+    () => {
+      return Cypress.$('.jspsych-btn').length > 0;
+    },
+    {
+      errorMsg: 'Failed to load the assessment before timeout',
+      timeout: 120000,
+      interval: 1000,
+    },
+  );
+});
+
+/**
  * Selects a test district, school, class, and group within a multi-level dropdown.
  *
  * @param {string} [testDistrictName=Cypress.env('testDistrictName')] - Name of the district to select.

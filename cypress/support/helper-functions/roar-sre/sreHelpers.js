@@ -38,6 +38,7 @@ export const playSRE = ({
     .should('exist');
   cy.visit(languageOptions[language].url);
 
+  cy.waitForAssessmentReadyState();
   cy.get('.jspsych-btn').should('be.visible').click();
 
   cy.wait(1);

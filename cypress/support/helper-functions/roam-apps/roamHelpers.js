@@ -186,7 +186,7 @@ export function playARF({
 >>>>>>> ff30ee22 (Remove arbitrary timeout overrides)
   cy.visit(`/game/${task}`);
 
-  //   Click jspsych button to begin
+  cy.waitForAssessmentReadyState();
   cy.get('.jspsych-btn').should('be.visible').click();
 
   playARFIntro();
@@ -234,7 +234,7 @@ export function playCALF({
   cy.get('.p-tablist-tab-list', { timeout: timeout }).contains(languageOptions[language][task].gameTab).should('exist');
   cy.visit(`/game/${task}`);
 
-  //   Click jspsych button to begin
+  cy.waitForAssessmentReadyState();
   cy.get('.jspsych-btn').should('be.visible').click();
 
   playCALFIntro();

@@ -76,6 +76,7 @@ const playTrial = (targetText) => {
 function playIntro(startText) {
   cy.get('.instructionCanvasNS').should('be.visible').click();
 
+  cy.waitForAssessmentReadyState();
   cy.get('.jspsych-btn').should('be.visible').click();
 
   cy.get('.continue').should('be.visible').click();

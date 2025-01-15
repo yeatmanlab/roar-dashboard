@@ -32,9 +32,9 @@ export const playSWR = ({
   cy.get('.p-tablist-tab-list', { timeout: timeout }).contains(languageOptions[language].gameTab).should('exist');
   cy.visit(languageOptions[language].url);
 
-  cy.get('.jspsych-btn').should('be.visible').click();
+  cy.waitForAssessmentReadyState();
+  cy.get('.jspsych-btn').click();
 
-  cy.wait(0.1 * Cypress.env('timeout'));
   Cypress.on('uncaught:exception', () => {
     return false;
   });
@@ -48,7 +48,10 @@ function playSWRGame(administration, language, optional = false) {
   for (let i = 0; i < 3; i++) {
     cy.get('body').type('{leftarrow}');
   }
-  cy.get('.jspsych-btn').should('be.visible').click();
+
+  cy.waitUntil(() => cy.get('.jspsych-btn').should('be.visible'));
+  cy.get('.jspsych-btn').click();
+
   Cypress.on('uncaught:exception', () => {
     return false;
   });

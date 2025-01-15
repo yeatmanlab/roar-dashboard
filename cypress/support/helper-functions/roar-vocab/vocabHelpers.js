@@ -74,6 +74,7 @@ function startGame(administration, language, optional, auth) {
   checkGameTab(language);
   cy.visit(languageOptions[language].url);
 
+  cy.waitForAssessmentReadyState();
   cy.get('.jspsych-btn').should('be.visible').click();
 
   selectAlienAvatar();
