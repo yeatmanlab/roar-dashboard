@@ -42,8 +42,8 @@
           :icon="!expanded ? 'pi pi-plus ml-2' : 'pi pi-minus ml-2'"
           icon-pos="right"
           data-html2canvas-ignore="true"
-          @click="setExpand"
           data-cy="report__expand-btn"
+          @click="setExpand"
         />
         <PvButton
           outlined
@@ -53,8 +53,8 @@
           :disabled="exportLoading"
           icon-pos="right"
           data-html2canvas-ignore="true"
-          @click="exportToPdf"
           data-cy="report__pdf-export-btn"
+          @click="exportToPdf"
         />
       </div>
     </div>
