@@ -8,7 +8,7 @@ import { config } from '@dotenvx/dotenvx';
 import { fileURLToPath, URL } from 'url';
 import path from 'path';
 import fs from 'fs';
-import { default as FirebaseConfig } from './firebase.json';
+import { default as FirebaseConfig } from './firebase/admin/firebase.json';
 
 /**
  * Parse server response headers
@@ -22,8 +22,7 @@ import { default as FirebaseConfig } from './firebase.json';
  * @returns {Object} The parsed response headers
  */
 function getResponseHeaders() {
-  const stagingHostingConfig = FirebaseConfig.hosting.find((entry) => entry.target === 'staging');
-  const parsedStagingResponseHeaders = stagingHostingConfig.headers[0].headers.reduce((acc, header) => {
+  const parsedStagingResponseHeaders = FirebaseConfig.hosting.headers[0].headers.reduce((acc, header) => {
     // Modify the Content-Security-Policy header as follows:
     // - Drop the default CSP in favour of the strict CSP from the Report-Only header for local development
     // - Drop the report-uri and report-to CSP directives to prevent Sentry logging for local development
