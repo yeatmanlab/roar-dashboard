@@ -1,0 +1,20 @@
+# –––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––– #
+# roar-dashboard/setup-node-environment
+# –––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––– #
+
+name: Setup Node.js environment
+description: Sets up environment by installing Node.js and the application's npm dependencies.
+runs:
+  using: composite
+  steps:
+    # Install Node.js and cache global npm modules
+    - name: Install Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version-file: '.nvmrc'
+        cache: 'npm'
+
+    # Install npm dependencies
+    - name: Install dependencies
+      run: npm ci
+      shell: bash

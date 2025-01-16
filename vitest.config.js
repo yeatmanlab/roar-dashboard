@@ -5,8 +5,10 @@ import viteConfig from './vite.config';
 
 const isCI = process.env.CI === 'true';
 
+const viteConfigObject = viteConfig({ mode: process.env.NODE_ENV || 'test' });
+
 export default mergeConfig(
-  viteConfig,
+  viteConfigObject,
   defineConfig({
     test: {
       globals: true,
