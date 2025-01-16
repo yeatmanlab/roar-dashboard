@@ -143,7 +143,7 @@
             </template>
             <span>
               <label for="view-columns" class="view-label">View</label>
-              <PvDropdown
+              <PvSelect
                 id="view-columns"
                 v-model="viewMode"
                 :options="viewOptions"
@@ -277,7 +277,7 @@ import _lowerCase from 'lodash/lowerCase';
 import { getGrade } from '@bdelab/roar-utils';
 import PvButton from 'primevue/button';
 import PvConfirmDialog from 'primevue/confirmdialog';
-import PvDropdown from 'primevue/dropdown';
+import PvSelect from 'primevue/select';
 import PvSelectButton from 'primevue/selectbutton';
 import PvTabPanel from 'primevue/tabpanel';
 import PvTabView from 'primevue/tabview';
@@ -309,8 +309,8 @@ import {
   tasksToDisplayCorrectIncorrectDifference,
   includedValidityFlags,
 } from '@/helpers/reports';
-import FilterBar from '@/components/slots/FilterBar.vue';
-import RoarDataTable from '@/components/RoarDataTable.vue';
+import FilterBar from '@/components/FilterBar';
+import RoarDataTable from '@/components/RoarDataTable';
 import { APP_ROUTES } from '@/constants/routes';
 import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
 

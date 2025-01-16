@@ -29,15 +29,6 @@
                   @click="validateCode(student.activationCode, outerIndex)"
                 />
               </PvInputGroup>
-              <div class="flex align-items-center">
-                <PvCheckbox
-                  v-model="student.noActivationCode"
-                  :binary="true"
-                  name="noActivationCode"
-                  @change="updateActivationCode"
-                />
-                <label for="noActivationCode" class="ml-2">I don't have a code</label>
-              </div>
             </div>
             <span
               v-if="
@@ -60,11 +51,6 @@
                 <div class="text-xs text-gray-500 font-light uppercase">Registering under</div>
                 <div class="flex gap-2 rounded bg-gray-200 p-2">
                   <div class="text-sm text-gray-600 font-bold">{{ student.orgName }}</div>
-                </div>
-                <div>
-                  <small class="text-xs text-gray-500 font-light"
-                    >This is the default ROAR@Home registration group.</small
-                  >
                 </div>
                 <div>
                   <PvButton
@@ -103,7 +89,7 @@
         <section class="form-section flex lg:flex-row">
           <div>
             <div>
-              <label for="password">Password (Minimum 6 characters) <span class="required">*</span></label>
+              <label for="password">Password (Minimum 6 characters)<span class="required">*</span></label>
               <PvPassword
                 v-model="student.password"
                 name="password"
@@ -155,7 +141,7 @@
               </div>
             </div>
             <div v-if="!student.yearOnlyCheckRef">
-              <PvCalendar
+              <PvDatePicker
                 v-model="student.dob"
                 :max-date="maxDoB"
                 class="w-full"
@@ -165,7 +151,7 @@
               />
             </div>
             <div v-else>
-              <PvCalendar
+              <PvDatePicker
                 v-model="student.dob"
                 :max-date="maxDoB"
                 class="w-full"
@@ -180,7 +166,7 @@
           </div>
           <div class="flex flex-column">
             <label for="grade">Grade <span class="required">*</span></label>
-            <PvDropdown
+            <PvSelect
               v-model="student.grade"
               :options="gradeOptions"
               option-label="label"
@@ -193,7 +179,7 @@
         <section class="form-section">
           <!--Grade-->
         </section>
-        <PvAccordion>
+        <PvAccordion expand-icon="pi pi-angle-down">
           <PvAccordionTab header="Optional Info">
             <!--First / Last Name-->
             <section class="form-section">
@@ -231,7 +217,7 @@
               <!--English Language Level-->
               <div class="mt-2 mb-3">
                 <label for="ell">English as a Second Language</label>
-                <PvDropdown
+                <PvSelect
                   v-model="student.ell"
                   :options="ellOptions"
                   option-label="label"
@@ -242,7 +228,7 @@
               <!--Sex-->
               <div class="flex flex-column mt-2 mb-3">
                 <label for="sex">Gender </label>
-                <PvDropdown
+                <PvSelect
                   v-model="student.gender"
                   :options="genderOptions"
                   option-label="label"
@@ -255,7 +241,7 @@
               <!-- Free-Reduced Lunch -->
               <div class="flex flex-column">
                 <label for="stateId">Free-Reduced Lunch </label>
-                <PvDropdown
+                <PvSelect
                   v-model="student.freeReducedLunch"
                   :options="frlOptions"
                   option-label="label"
@@ -266,7 +252,7 @@
               <!-- IEP Status -->
               <div class="flex flex-column">
                 <label for="stateId">IEP Status</label>
-                <PvDropdown
+                <PvSelect
                   v-model="student.IEPStatus"
                   :options="IEPOptions"
                   option-label="label"
@@ -290,7 +276,7 @@
               <!-- Hispanic Ethinicity -->
               <div class="flex flex-column">
                 <label for="hispanicEthnicity">Hispanic or Latino Ethnicity </label>
-                <PvDropdown
+                <PvSelect
                   v-model="student.hispanicEthnicity"
                   :options="ethnicityOptions"
                   option-label="label"
@@ -314,7 +300,7 @@
         <section class="form-section-button">
           <PvButton
             v-if="outerIndex !== 0"
-            class="bg-primary border-none border-round p-3 text-white hover:surface-300 hover:text-black-alpha-90"
+            class="bg-primary border-none border-round p-3 w-5 text-white hover:surface-300 hover:text-black-alpha-90"
             icon="pi pi-trash"
             @click="deleteStudentForm(outerIndex)"
           >
@@ -322,6 +308,30 @@
             Delete Student
           </PvButton>
         </section>
+        <ChallengeV3 v-model="response" action="submit">
+          <div class="field-checkbox terms-checkbox">
+            <PvCheckbox
+              :id="`accept-${isRegistering ? 'register' : 'login'}`"
+              v-model="student.accept"
+              binary
+              :disabled="showConsent[outerIndex]"
+              :class="[{ 'p-invalid': student.accept.$invalid && submitted }]"
+              @change="getConsent(outerIndex)"
+            />
+            <label for="accept" :class="{ 'p-error': student.accept.$invalid && submitted }"
+              >I agree to the terms and conditions<span class="required">*</span></label
+            >
+          </div>
+          <small v-if="(student.accept.$invalid && submitted) || student.accept.$pending" class="p-error">
+            You must agree to the terms and conditions
+          </small>
+        </ChallengeV3>
+        <ConsentModal
+          v-if="showConsent[outerIndex]"
+          :consent-text="consentText"
+          consent-type="consent"
+          :on-confirm="() => handleConsentAccept(outerIndex)"
+        />
       </div>
     </form>
     <div class="form-section-button2">
@@ -360,23 +370,25 @@
 
 <script setup>
 import { reactive, ref, onMounted, toRaw } from 'vue';
-import { required, minLength, helpers } from '@vuelidate/validators';
+import { required, minLength, helpers, sameAs } from '@vuelidate/validators';
 import PvAccordion from 'primevue/accordion';
 import PvAccordionTab from 'primevue/accordiontab';
 import PvButton from 'primevue/button';
-import PvCalendar from 'primevue/calendar';
+import PvDatePicker from 'primevue/datepicker';
 import PvCheckbox from 'primevue/checkbox';
 import PvDialog from 'primevue/dialog';
-import PvDropdown from 'primevue/dropdown';
+import PvSelect from 'primevue/select';
 import PvInputGroup from 'primevue/inputgroup';
 import PvInputText from 'primevue/inputtext';
 import PvPassword from 'primevue/password';
+import ConsentModal from '../ConsentModal.vue';
 import { fetchDocById } from '@/helpers/query/utils';
 import { useVuelidate } from '@vuelidate/core';
 import { useAuthStore } from '@/store/auth';
 import { storeToRefs } from 'pinia';
 import _capitalize from 'lodash/capitalize';
 import PvAutoComplete from 'primevue/autocomplete';
+import { ChallengeV3 } from 'vue-recaptcha';
 
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
@@ -386,15 +398,50 @@ const today = new Date();
 today.setFullYear(today.getFullYear() - 2);
 const maxDoB = ref(today);
 const orgName = ref('');
+const consentText = ref('');
 const activationCodeRef = ref('');
 
 const props = defineProps({
   isRegistering: { type: Boolean, default: true },
   code: { type: String, default: null },
+  consent: { type: Object, default: null },
 });
 
 const isDialogVisible = ref(false);
 const submitted = ref(false);
+
+const showConsent = ref([false]);
+const isCaptchaverified = ref(null);
+
+async function handleConsentAccept(outerIndex) {
+  state.students[outerIndex].accept = true;
+}
+
+function handleCaptcha() {
+  isCaptchaverified.value = response.value;
+}
+
+async function handleCheckCaptcha() {
+  await new Promise((resolve) => {
+    // Simulate a delay to ensure the reCAPTCHA value is updated
+    setTimeout(() => {
+      resolve();
+      handleCaptcha();
+    }, 500); // You might adjust the delay time if needed
+  });
+}
+
+async function getConsent(outerIndex) {
+  try {
+    const consentDoc = await authStore.getLegalDoc('consent-behavioral-eye-tracking');
+    consentText.value = consentDoc.text;
+    showConsent.value[outerIndex] = true;
+    handleCheckCaptcha();
+  } catch (error) {
+    console.error('Failed to fetch consent form: ', error);
+    throw new Error('Could not fetch consent form');
+  }
+}
 
 const showErrorDialog = () => {
   isDialogVisible.value = true;
@@ -430,6 +477,7 @@ const state = reactive({
       noActivationCode: noActivationCodeRef.value,
       yearOnlyCheck: yearOnlyCheckRef.value,
       orgName: '',
+      accept: false,
     },
   ],
 });
@@ -456,9 +504,12 @@ const rules = {
       noActivationCode: {},
       yearOnlyCheck: {},
       orgName: {},
+      accept: { sameAs: sameAs(true) },
     }),
   },
 };
+
+const response = ref(null);
 
 function addStudent() {
   state.students.push({
@@ -481,7 +532,9 @@ function addStudent() {
     noActivationCode: noActivationCodeRef.value,
     yearOnlyCheck: yearOnlyCheckRef.value,
     orgName: '',
+    accept: false,
   });
+  showConsent.value.push(false);
   if (props.code) {
     validateCode(props.code, state.students.length - 1);
   }
@@ -493,15 +546,6 @@ onMounted(async () => {
   }
 });
 
-function updateActivationCode() {
-  toRaw(state).students.forEach((student) => {
-    if (student.noActivationCode) {
-      student.activationCode = null;
-      student.orgName = 'ROAR families';
-    }
-  });
-}
-
 function codeNotRight(index) {
   state.students[index].orgName = '';
   state.students[index].noActivationCode = false;
@@ -510,6 +554,7 @@ function codeNotRight(index) {
 function deleteStudentForm(student) {
   if (state.students.length > 1) {
     state.students.splice(student, 1); // Remove the student at the specified index
+    showConsent.value.splice(student, 1);
   } else {
     alert('At least one student is required.'); // Prevent deleting the last student form
     submitted.value = false;

@@ -4,7 +4,7 @@ import { signInWithClever } from '../participant/participant-helpers';
 const timeout = Cypress.env('timeout');
 
 function checkGameTab(language) {
-  cy.get('.p-tabview', { timeout: timeout }).contains(languageOptions[language].gameTab).should('exist');
+  cy.get('.p-tablist-tab-list', { timeout: timeout }).contains(languageOptions[language].gameTab).should('exist');
 }
 
 function makeChoiceOrContinue(gameCompleteText) {
