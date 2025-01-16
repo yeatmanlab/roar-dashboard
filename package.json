@@ -31,7 +31,7 @@
     "version": "npm run format && git add -A"
   },
   "dependencies": {
-    "@bdelab/roam-apps": "1.0.0",
+    "@bdelab/roam-apps": "1.0.9",
     "@bdelab/roar-firekit": "9.1.0",
     "@bdelab/roar-letter": "1.11.9",
     "@bdelab/roar-multichoice": "1.11.7",
@@ -40,9 +40,9 @@
     "@bdelab/roar-swr": "1.12.13",
     "@bdelab/roar-utils": "^1.2.1",
     "@bdelab/roar-vocab": "1.8.0",
-    "@bdelab/roav-crowding": "1.1.31",
-    "@bdelab/roav-mep": "1.1.35",
-    "@bdelab/roav-ran": "1.0.31",
+    "@bdelab/roav-crowding": "1.1.34",
+    "@bdelab/roav-mep": "1.1.37",
+    "@bdelab/roav-ran": "1.0.33",
     "@levante-framework/core-tasks": "1.0.0-beta.30",
     "@primevue/core": "^4.2.4",
     "@primevue/themes": "^4.2.4",
