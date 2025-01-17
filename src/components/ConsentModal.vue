@@ -6,6 +6,7 @@
     class="confirm"
     :draggable="false"
     :close-on-escape="false"
+    :closable="false"
   >
     <template #message>
       <div class="scrolling-box">
@@ -85,7 +86,7 @@ onMounted(() => {
         toast.add({
           severity: TOAST_SEVERITIES.ERROR,
           summary: 'Error',
-          detail: 'An error occurred while updating the consent status, please try again.',
+          detail: 'An error occurred while updating the consent status, please reload the page and try again.',
           life: TOAST_DEFAULT_LIFE_DURATION,
         });
 

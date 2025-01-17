@@ -36,9 +36,17 @@
         </div>
       </header>
       <div>
+        <div v-if="activeIndex === 1">
+          <PvButton
+            class="justify-start z-1 bg-white text-primary text-center justify-content-center border-none border-round p-2 h-3rem hover:surface-300 hover:text-900 border-none"
+            style="width: 8rem; margin-left: 1rem"
+            @click="activeIndex = 0"
+            ><i class="pi pi-arrow-left mr-2"></i> Back
+          </PvButton>
+        </div>
         <div v-if="spinner === false">
           <KeepAlive>
-            <component :is="activeComp()" :code="code" @submit="handleSubmit($event)" />
+            <component :is="activeComp()" :code="code" :consent="consent" @submit="handleSubmit($event)" />
           </KeepAlive>
           <div
             v-if="isSuperAdmin"
@@ -47,14 +55,6 @@
           >
             <PvCheckbox :model-value="isTestData" :binary="true" name="isTestDatalabel" @change="updateState" />
             <label for="isTestDatalabel" class="ml-2">This is test data</label>
-          </div>
-          <div v-if="activeIndex === 1">
-            <PvButton
-              class="justify-start z-1 bg-primary text-white text-center justify-content-center border-none border-round p-2 h-3rem hover:surface-300 hover:text-900 border-none"
-              style="margin-top: -3.2rem; width: 11rem; margin-left: 2rem"
-              @click="activeIndex = 0"
-              ><i class="pi pi-arrow-left mr-2"></i> Back
-            </PvButton>
           </div>
         </div>
         <div v-else class="loading-container flex flex-column text-center justify-content-center align-content-center">
@@ -112,6 +112,8 @@ const dialogHeader = ref('');
 const dialogMessage = ref('');
 
 const isDialogVisible = ref(false);
+const consent = ref(null);
+const consentName = ref('consent-behavioral-eye-tracking');
 
 const showDialog = () => {
   isDialogVisible.value = true;
@@ -196,15 +198,18 @@ watch([parentInfo, studentInfo], ([newParentInfo, newStudentInfo]) => {
           race: student.race,
           hispanic_ethnicity: student.hispanicEthnicity,
           home_language: student.homeLanguage,
+          accept: student.accept,
         },
       };
     });
+    const consentData = { version: consent.value?.version, name: consentName.value };
     authStore
       .createNewFamily(
         rawParentInfo.ParentEmail,
         rawParentInfo.password,
         parentUserData,
         studentSendObject,
+        consentData,
         isTestData.value,
       )
       .then(() => {
@@ -216,7 +221,7 @@ watch([parentInfo, studentInfo], ([newParentInfo, newStudentInfo]) => {
   }
 });
 
-onMounted(() => {
+onMounted(async () => {
   document.body.classList.add('page-register');
 });
 

@@ -6,7 +6,10 @@
     <PvTag
       :value="_get(colData, col.field)"
       :style="`background-color: ${_get(colData, col.tagColor)}; min-width: 2rem; 
-      ${returnScoreTooltip(colData, col.field)?.length > 0 && 'outline: 1px dotted #0000CD; outline-offset: 3px'};
+      ${
+        returnScoreTooltip(colData, col.field)?.length > 0 &&
+        'outline: 1px dotted #0000CD; outline-offset: 3px; margin: 7px'
+      };
       font-weight: bold;
       color: ${_get(colData, col.tagColor) === '#A4DDED' ? 'black' : 'white'};
       `"

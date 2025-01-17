@@ -8,6 +8,38 @@ import { config } from '@dotenvx/dotenvx';
 import { fileURLToPath, URL } from 'url';
 import path from 'path';
 import fs from 'fs';
+import { default as FirebaseConfig } from './firebase/admin/firebase.json';
+
+/**
+ * Parse server response headers
+ *
+ * The function parses the response headers configured in the Firebase hosting configuration in order to inject those
+ * headers into the Vite dev server configuration. Additionally, we modify the Content-Security-Policy header to:
+ * - Drop the default CSP in favour of the strict CSP from the Report-Only header for local development
+ * - Drop the report-uri and report-to CSP directives to prevent Sentry logging for local development
+ * - Drop the Report-To header to prevent Sentry logging for local development
+ *
+ * @returns {Object} The parsed response headers
+ */
+function getResponseHeaders() {
+  const parsedStagingResponseHeaders = FirebaseConfig.hosting.headers[0].headers.reduce((acc, header) => {
+    // Modify the Content-Security-Policy header as follows:
+    // - Drop the default CSP in favour of the strict CSP from the Report-Only header for local development
+    // - Drop the report-uri and report-to CSP directives to prevent Sentry logging for local development
+    // - Drop the Report-To header to prevent Sentry logging for local development
+    if (header.key === 'Content-Security-Policy-Report-Only') {
+      acc['Content-Security-Policy'] = header.value
+        .replace(/report-uri\s*[^;]+;/, '')
+        .replace(/report-to\s*[^;]+/, '')
+        .trim();
+    } else if (header.key !== 'Report-To') {
+      acc[header.key] = header.value;
+    }
+    return acc;
+  }, {});
+
+  return parsedStagingResponseHeaders;
+}
 
 /**
  * Load dotenv files
@@ -82,6 +114,9 @@ export default defineConfig(({ mode }) => {
     server: {
       fs: {
         allow: ['..'],
+      },
+      headers: {
+        ...getResponseHeaders(),
       },
     },
 

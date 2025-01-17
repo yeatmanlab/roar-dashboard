@@ -9,7 +9,7 @@ export const generatedSpecTemplate = (adminName) => {
         cy.log('Optional assessments button found, switching to optional assessments');
         cy.switchToOptionalAssessments();
         cy.wait(0.1 * timeout);
-        cy.get('.p-tabview').invoke('text').then((text) => {
+        cy.get('.p-tablist-tab-list').invoke('text').then((text) => {
             if (text.includes(spec.name)) {
               cy.log(\`Initializing test for optional game: \${spec.name}\`);
               cy.wait(0.1 * timeout);
@@ -31,7 +31,7 @@ export const generatedSpecTemplate = (adminName) => {
 
   function testGame(spec, admin) {
     cy.wait(0.1 * timeout);
-    cy.get('.p-tabview')
+    cy.get('.p-tablist-tab-list')
       .invoke('text')
       .then((text) => {
         if (text.includes(spec.name)) {
