@@ -94,7 +94,7 @@ jobs:
         browser: [chrome, edge]
         containers: [1, 2, 3, 4]
     container:
-      image: cypress/browsers:node-20.18.0-chrome-129.0.6668.89-1-ff-131.0.2-edge-129.0.2792.65-1
+      image: docker pull cypress/browsers:node-20.18.0-chrome-130.0.6723.69-1-ff-131.0.3-edge-130.0.2849.52-1
       options: --user 1001
     env:
       DOTENV_PRIVATE_KEY_DEVELOPMENT: ${{ secrets.DOTENV_PRIVATE_KEY_DEVELOPMENT }}
@@ -140,9 +140,6 @@ jobs:
   #     fail-fast: false
   #     matrix:
   #       browser: [chrome, edge]
-  #   container:
-  #     image: cypress/browsers:node-20.18.0-chrome-129.0.6668.89-1-ff-131.0.2-edge-129.0.2792.65-1
-  #     options: --user 1001
   #   env:
   #     DOTENV_PRIVATE_KEY_DEVELOPMENT: ${{ secrets.DOTENV_PRIVATE_KEY_DEVELOPMENT }}
   #     DOTENV_PRIVATE_KEY_TEST: ${{ secrets.DOTENV_PRIVATE_KEY_TEST }}
