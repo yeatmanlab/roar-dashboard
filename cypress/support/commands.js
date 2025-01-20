@@ -1,6 +1,5 @@
 import 'cypress-wait-until';
 import '@testing-library/cypress/add-commands';
-import { createMockStore } from './utils.js';
 import { APP_ROUTES } from '../../src/constants/routes.js';
 
 const baseUrl = Cypress.config().baseUrl;
@@ -409,26 +408,6 @@ Cypress.Commands.add('playOptionalGame', (game, administration, optional) => {
   return cy.wrap(null).then(() => {
     return game?.testSpec(administration, optional);
   });
-});
-
-/**
- * Create a mock store for the user type specified.
- * @param {string} userType - The type of user to create a mock store for. One of 'superAdmin', 'partnerAdmin', or
- * 'participant'. Defaults to 'participant'.
- * @returns {void}
- */
-Cypress.Commands.add('setAuthStore', (userType = 'participant') => {
-  const authStore = createMockStore(userType);
-  const serializedStore = JSON.stringify(authStore.$state);
-
-  // Store the mock store in sessionStorage
-  cy.window().then((window) => {
-    window.sessionStorage.setItem('authStore', serializedStore);
-  });
-
-  cy.log('Created mock store for user type:', userType, ' with state:', authStore.$state);
-  // Store the mock store in the Cypress context as an alias
-  return cy.wrap(authStore.$state).as('authStore');
 });
 
 /**
