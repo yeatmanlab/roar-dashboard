@@ -10,6 +10,7 @@ describe('Partner Admin: Auth', () => {
 
   it('Logs out', () => {
     cy.login(PARTNER_ADMIN_USERNAME, PARTNER_ADMIN_PASSWORD);
+    cy.waitForAdministrationsList();
     cy.logout();
   });
 });

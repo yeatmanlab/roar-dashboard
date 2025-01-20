@@ -14,7 +14,7 @@ describe('Participant: Legal Docs', () => {
     // Validate that the mock assent form is shown.
     // @TODO: Replace this with an actual legal document using cy.intercept once the legal document is available.
     cy.get('.p-dialog-title').contains(translations.consentModal.consentTitle).should('be.visible');
-    cy.get('.p-confirm-dialog-accept').contains('Continue').should('be.visible');
+    cy.get('.p-dialog-footer').contains('Continue').should('be.visible');
     cy.get('button').contains('Continue').should('be.visible');
   });
 });

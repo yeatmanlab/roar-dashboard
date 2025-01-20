@@ -53,7 +53,7 @@ function setFilterByCategory(header, category) {
   )
     .find('button')
     .click();
-  cy.get('[data-cy="score-filter-dropdown"]').click();
+  cy.get('[data-cy="data-table__score-filter-dropdown"]').click();
   cy.get('.p-select-list-container > .p-select-list').contains(category).click();
   cy.get('button').contains('Apply').click();
 }

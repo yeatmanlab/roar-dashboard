@@ -169,7 +169,7 @@
                     :aria-label="col.routeTooltip"
                     :icon="col.routeIcon"
                     style="color: black !important"
-                    data-cy="route-button"
+                    data-cy="data-table__entry-details-btn"
                     size="small"
                   />
                 </router-link>
@@ -183,8 +183,8 @@
                   :aria-label="col.buttonTooltip"
                   :icon="col.buttonIcon"
                   style="color: black !important"
-                  data-cy="event-button"
                   size="small"
+                  :data-cy="`data-table__event-btn__${col.eventName}`"
                   @click="$emit(col.eventName, colData)"
                 />
               </div>
@@ -239,7 +239,7 @@
                   option-group-label="label"
                   option-group-children="items"
                   :options="taskFilterOptions"
-                  data-cy="score-filter-dropdown"
+                  data-cy="data-table__score-filter-dropdown"
                   style="margin-bottom: 0.5rem; width: 17vh; height: 4vh"
                 >
                   <template #option="{ option }">
@@ -285,7 +285,7 @@
                   v-model="filterModel.value"
                   :options="['Assigned', 'Started', 'Completed', 'Optional']"
                   style="margin-bottom: 0.5rem"
-                  data-cy="progress-filter-dropdown"
+                  data-cy="data-table__progress-filter-dropdown"
                 >
                   <template #option="{ option }">
                     <div v-if="progressTags[option]" class="flex align-items-center">

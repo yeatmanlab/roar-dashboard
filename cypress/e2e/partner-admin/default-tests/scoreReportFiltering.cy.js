@@ -45,7 +45,7 @@
 
 // function setFilterByProgressCategory(header, category) {
 //   cy.contains('div.p-column-header-content', header).find('button').click();
-//   cy.get('[data-cy="score-filter-dropdown"]').click();
+//   cy.get('[data-cy="data-table__score-filter-dropdown"]').click();
 //   cy.get('ul>li').find('.p-tag-value').contains(category).click();
 //   cy.get('button').contains('Apply').click();
 //   cy.wait(0.05 * Cypress.env('timeout'));
@@ -55,7 +55,7 @@
 
 // function setFilterByScoreCategory(header, category) {
 //   cy.contains('div.p-column-header-content', header).find('button').click();
-//   cy.get('[data-cy="score-filter-dropdown"]').click();
+//   cy.get('[data-cy="data-table__score-filter-dropdown"]').click();
 //   cy.get('ul > li').contains(category).click();
 //   cy.get('button').contains('Apply').click();
 //   cy.wait(0.05 * Cypress.env('timeout'));

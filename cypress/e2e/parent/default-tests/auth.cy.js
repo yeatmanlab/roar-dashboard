@@ -14,14 +14,14 @@ describe('Parent: Auth', () => {
     cy.visit(`${APP_ROUTES.REGISTER}/?code=${invalidActivationCode}`);
 
     // Fill out parent form.
-    cy.get('input[name="firstName"]').type(PARENT_FIRST_NAME);
-    cy.get('input[name="lastName"]').type(PARENT_LAST_NAME);
-    cy.get('input[name="ParentEmail"]').type(PARENT_USERNAME);
-    cy.get('input[type="password"]').first().type(PARENT_PASSWORD);
-    cy.get('input[type="password"]').eq(1).type(PARENT_PASSWORD);
+    cy.get('[data-cy="input-parent-first-name"]').type(PARENT_FIRST_NAME);
+    cy.get('[data-cy="input-parent-last-name"]').type(PARENT_LAST_NAME);
+    cy.get('[data-cy="input-parent-email"]').type(PARENT_USERNAME);
+    cy.get('[data-cy="password-parent-password"]').type(PARENT_PASSWORD);
+    cy.get('[data-cy="password-parent-password-confirm"]').type(PARENT_PASSWORD);
 
     // Accept terms and conditions.
-    cy.get('div.p-checkbox-input').click();
+    cy.get('.p-checkbox-input').click();
 
     // Verify consent dialog.
     cy.get('[data-cy="consent-modal"]').should('be.visible').find('button').contains('Continue').click();
@@ -52,7 +52,7 @@ describe('Parent: Auth', () => {
       cy.get('[data-cy="password-parent-password-confirm"]').type(PARENT_PASSWORD);
 
       // Accept terms and conditions.
-      cy.get('div.p-checkbox-input').click();
+      cy.get('.p-checkbox-input').click();
 
       // Verify consent dialog.
       cy.get('[data-cy="consent-modal"]').should('be.visible').find('button').contains('Continue').click();

@@ -51,7 +51,7 @@
 
 // function setFilterByProgressCategory(header, category) {
 //   cy.contains('div.p-column-header-content', header).find('button').click();
-//   cy.get('[data-cy="progress-filter-dropdown"]').click();
+//   cy.get('[data-cy="data-table__progress-filter-dropdown"]').click();
 //   cy.get('ul>li').find('.p-tag-value').contains(category).click();
 //   // Click off the dropdown to prevent it from hiding other elements
 //   cy.get('button').contains('Apply').click();
