@@ -8,13 +8,13 @@ const CLEVER_PASSWORD = Cypress.env('CLEVER_PASSWORD');
 describe('Participant: Auth', () => {
   it('Logs in as participant using username and password', () => {
     cy.login(PARTICIPANT_USERNAME, PARTICIPANT_PASSWORD);
-    cy.get('[data-cy="user-display-name"]').should('contain', 'Hi, Cypress!');
+    cy.get('[data-cy="navbar__display-name"]').should('contain', 'Hi, Cypress!');
   });
 
   // @TODO: Enable test once test account is properly provisioned on test environment.
   it.skip('Logs in as participant using email and password', () => {
     // cy.login(PARTICIPANT_EMAIL, PARTICIPANT_EMAIL_PASSWORD);
-    // cy.get('[data-cy="user-display-name"]').should('contain', PARTICIPANT_USERNAME);
+    // cy.get('[data-cy="navbar__display-name"]').should('contain', PARTICIPANT_USERNAME);
   });
 
   it('Logs in as participant using Clever SSO', () => {
