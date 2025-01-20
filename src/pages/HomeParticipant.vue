@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div 
+    <div
       v-if="!initialized || isLoading || isFetching"
       class="loading-container bg-white-alpha-90"
       data-cy="home-participant__administration-loadingstate"

@@ -1,4 +1,3 @@
-
 import 'cypress-wait-until';
 import '@testing-library/cypress/add-commands';
 import { createMockStore } from './utils.js';
@@ -269,9 +268,7 @@ Cypress.Commands.add('selectAdministration', function selectAdministration(testA
     .invoke('text')
     .then((text) => {
       if (text.includes(testAdministration)) {
-        cy.get('.p-select-list-container')
-          .contains(testAdministration)
-          .click();
+        cy.get('.p-select-list-container').contains(testAdministration).click();
         cy.log('Selected administration:', testAdministration);
         cy.agreeToConsent();
       } else {

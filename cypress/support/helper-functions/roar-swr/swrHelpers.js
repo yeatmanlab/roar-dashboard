@@ -32,11 +32,7 @@ export const playSWR = ({
     cy.switchToOptionalAssessments();
   }
 
-<<<<<<< HEAD
   cy.get('.p-tablist-tab-list', { timeout: timeout }).contains(languageOptions[language].gameTab).should('exist');
-=======
-  cy.get('.p-tabview', { timeout: baseTimeout }).contains(languageOptions[language].gameTab).should('exist');
->>>>>>> 4b8c1d46 (Restore SWR test timeouts)
   cy.visit(languageOptions[language].url);
 
   cy.waitForAssessmentReadyState();
@@ -86,11 +82,7 @@ function playSWRGame(administration, language, optional = false) {
     cy.log('Switching to optional assessments.');
     cy.switchToOptionalAssessments();
   }
-<<<<<<< HEAD
   cy.get('.p-tablist-tab-list', { timeout: timeout }).contains(languageOptions[language].gameTab).should('exist');
-=======
-  cy.get('.p-tabview', { timeout: baseTimeout }).contains(languageOptions[language].gameTab).should('exist');
->>>>>>> 4b8c1d46 (Restore SWR test timeouts)
 }
 
 function playIntro(language) {

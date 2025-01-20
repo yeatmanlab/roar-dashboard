@@ -179,11 +179,7 @@ export function playARF({
 
   cy.selectAdministration(administration);
 
-<<<<<<< HEAD
   cy.get('.p-tablist-tab-list', { timeout: timeout }).contains(languageOptions[language][task].gameTab).should('exist');
-=======
-  cy.get('.p-tabview').contains(languageOptions[language][task].gameTab).should('exist');
->>>>>>> ff30ee22 (Remove arbitrary timeout overrides)
   cy.visit(`/game/${task}`);
 
   cy.waitForAssessmentReadyState();
@@ -196,11 +192,7 @@ export function playARF({
   cy.visit('/');
   cy.wait(1);
   cy.selectAdministration(administration);
-<<<<<<< HEAD
   cy.get('.p-tablist-tab-list', { timeout: timeout }).contains(languageOptions[language][task].gameTab).should('exist');
-=======
-  cy.get('.p-tabview').contains(languageOptions[language][task].gameTab).should('exist');
->>>>>>> ff30ee22 (Remove arbitrary timeout overrides)
 }
 
 export function playCALF({

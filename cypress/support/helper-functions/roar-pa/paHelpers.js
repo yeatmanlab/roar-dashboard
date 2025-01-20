@@ -13,11 +13,7 @@ function handleFullScreenError() {
 }
 
 function checkGameTab(language) {
-<<<<<<< HEAD
   cy.get('.p-tablist-tab-list', { timeout: timeout }).contains(languageOptions[language].gameTab).should('exist');
-=======
-  cy.get('.p-tabview').contains(languageOptions[language].gameTab).should('exist');
->>>>>>> ff30ee22 (Remove arbitrary timeout overrides)
 }
 
 const playTrial = (targetText) => {

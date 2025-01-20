@@ -15,11 +15,7 @@ function clickButton(selector) {
 }
 
 function checkGameTab(language, task) {
-<<<<<<< HEAD
   cy.get('.p-tablist-tab-list', { timeout: timeout }).contains(languageOptions[language][task].gameTab).should('exist');
-=======
-  cy.get('.p-tabview').contains(languageOptions[language][task].gameTab).should('exist');
->>>>>>> ff30ee22 (Remove arbitrary timeout overrides)
 }
 
 function clickThroughInstructions() {
