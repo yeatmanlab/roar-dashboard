@@ -17,8 +17,8 @@ Cypress.Commands.add('login', (username, password) => {
     () => {
       cy.visit(APP_ROUTES.HOME);
 
-      cy.get('[data-cy="input-username-email"]').type(username, { log: false });
-      cy.get('[data-cy="input-password"]').type(password, { log: false });
+      cy.get('[data-cy="sign-in__username"]').type(username, { log: false });
+      cy.get('[data-cy="sign-in__password"]').type(password, { log: false });
 
       cy.get('button').contains('Go!').click();
 

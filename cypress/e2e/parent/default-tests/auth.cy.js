@@ -14,11 +14,11 @@ describe('Parent: Auth', () => {
     cy.visit(`${APP_ROUTES.REGISTER}/?code=${invalidActivationCode}`);
 
     // Fill out parent form.
-    cy.get('[data-cy="input-parent-first-name"]').type(PARENT_FIRST_NAME);
-    cy.get('[data-cy="input-parent-last-name"]').type(PARENT_LAST_NAME);
-    cy.get('[data-cy="input-parent-email"]').type(PARENT_USERNAME);
-    cy.get('[data-cy="password-parent-password"]').type(PARENT_PASSWORD);
-    cy.get('[data-cy="password-parent-password-confirm"]').type(PARENT_PASSWORD);
+    cy.get('[data-cy="signup__parent-first-name"]').type(PARENT_FIRST_NAME);
+    cy.get('[data-cy="signup__parent-last-name"]').type(PARENT_LAST_NAME);
+    cy.get('[data-cy="signup__parent-email"]').type(PARENT_USERNAME);
+    cy.get('[data-cy="signup__parent-password"]').type(PARENT_PASSWORD);
+    cy.get('[data-cy="signup__parent-password-confirm"]').type(PARENT_PASSWORD);
 
     // Accept terms and conditions.
     cy.get('.p-checkbox-input').click();
@@ -45,11 +45,11 @@ describe('Parent: Auth', () => {
       cy.visit(`${APP_ROUTES.REGISTER}/?code=${activationCode}`);
 
       // Fill out parent form.
-      cy.get('[data-cy="input-parent-first-name"]').type(PARENT_FIRST_NAME);
-      cy.get('[data-cy="input-parent-last-name"]').type(PARENT_LAST_NAME);
-      cy.get('[data-cy="input-parent-email"]').type(PARENT_USERNAME);
-      cy.get('[data-cy="password-parent-password"]').first().type(PARENT_PASSWORD);
-      cy.get('[data-cy="password-parent-password-confirm"]').type(PARENT_PASSWORD);
+      cy.get('[data-cy="signup__parent-first-name"]').type(PARENT_FIRST_NAME);
+      cy.get('[data-cy="signup__parent-last-name"]').type(PARENT_LAST_NAME);
+      cy.get('[data-cy="signup__parent-email"]').type(PARENT_USERNAME);
+      cy.get('[data-cy="signup__parent-password"]').first().type(PARENT_PASSWORD);
+      cy.get('[data-cy="signup__parent-password-confirm"]').type(PARENT_PASSWORD);
 
       // Accept terms and conditions.
       cy.get('.p-checkbox-input').click();
