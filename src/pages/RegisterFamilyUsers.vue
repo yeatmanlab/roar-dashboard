@@ -16,7 +16,7 @@
                 Register a parent or guardian account for ROAR Research Portal
               </div>
               <div class="flex flex-wrap text-gray-400 text-sm">
-                This account allow your family to participate in ROAR research studies!
+                This account allows your family to participate in ROAR research studies!
               </div>
               <div class="flex flex-wrap text-gray-400 text-sm">
                 You will be able to add children to your family in the next step.
