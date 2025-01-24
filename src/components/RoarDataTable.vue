@@ -820,7 +820,6 @@ g {
   text-align: left;
   border: 1px solid var(--surface-c);
   border-width: 0 0 1px 0;
-  padding: var(--padding-value, '1px 1.5rem 2px 1.5rem');
   margin-top: 5px;
   margin-bottom: 5px;
 }
@@ -854,7 +853,6 @@ button.p-column-filter-menu-button.p-link:hover {
   text-align: left;
   border: 1px solid var(--surface-c);
   border-width: 0 0 3px 0;
-  padding: 1px 1.5rem 2px 1.5rem;
 }
 
 .filter-content {
