@@ -355,7 +355,6 @@
     // Check orgs exist
     for (const user of usersToBeRegistered) {
       const { district, school, class: _class, group: groups, } = user;
-      console.log('user: ', user);
 
       const orgNameMap = {
         district: district ?? '',
@@ -364,14 +363,14 @@
         group: groups?.split(',') ?? [],
       };
 
-      console.log('orgNameMap: ', orgNameMap);
-
-
+      // Pluralized because of a ROAR change to the createUsers function. 
+      // Only groups are allowed to be an array however, we've only been using one group per user.
+      // TODO: Figure out if we want to allow multiple orgs
       let orgInfo = {
-            district: '',
-            school: '',
-            class: '',
-            group: [],
+            districts: '',
+            schools: '',
+            classes: '',
+            groups: [],
       };
 
       // If orgType is a given column, check if the name is
@@ -381,29 +380,22 @@
         if (orgName) {
           if (orgType === 'school') {
               const districtId = await getOrgId('districts', district);
-              console.log('districtId: ', districtId);
               const schoolId = await getOrgId(pluralizeFirestoreCollection(orgType), orgName, ref(districtId), ref(undefined))
-              console.log('schoolId: ', orgIds);
               // Need to Raw it because a large amount of users causes this to become a proxy object
-              orgInfo.school = schoolId;
+              orgInfo.schools = schoolId;
           } else if (orgType === 'class') {
               const districtId = await getOrgId('districts', district);
               const schoolId = await getOrgId('schools', school);
               const classId = await getOrgId(pluralizeFirestoreCollection(orgType), orgName, ref(districtId), ref(schoolId));
-              console.log('classId: ', classId);
-              orgInfo.class = classId;
+              orgInfo.classes = classId;
           } else if (orgType === 'group') {
             for (const group of orgNameMap.group) {
-              console.log('Fetching orgId for', group);
               const groupId = await getOrgId(pluralizeFirestoreCollection(orgType), group, ref(undefined), ref(undefined));
-              console.log('OrgIds fetched:', groupId);
-              orgInfo.group.push(groupId);
+              orgInfo.groups.push(groupId);
             }
           } else {
-            console.log('Fetching orgId for', orgType, orgName);
             const districtId = await getOrgId(pluralizeFirestoreCollection(orgType), orgName, ref(undefined), ref(undefined));
-            console.log('District Id: ', districtId);
-            orgInfo.district = districtId;
+            orgInfo.districts = districtId;
           }
 
           if (!_isEmpty(orgInfo)) {
@@ -424,7 +416,7 @@
     const chunkedUsersToBeRegistered = _chunk(usersToBeRegistered, 700);
 
     console.log('chunkedUsersToBeRegistered', chunkedUsersToBeRegistered);
-  
+
     // Begin submit process
     // Org must be created before users can be created
     let processedUserCount = 0;
