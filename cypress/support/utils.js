@@ -1,5 +1,4 @@
 import axios from 'axios';
-import { useAuthStore } from '../../src/store/auth.js';
 import featurePackageJson from '../../package.json';
 
 /**

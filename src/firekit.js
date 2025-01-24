@@ -28,7 +28,7 @@ const requiredEnvVars = import.meta.env.VITE_FIREBASE_EMULATOR_ENABLED
 
 // Check if all required environment variables are set
 const missingEnvVars = requiredEnvVars.filter((envVar) => !import.meta.env[envVar]);
-if (missingEnvVars.length > 0) throw new Error(`Missing required environment variables: ${missingEnvVars.join(', ')}`);
+if (missingEnvVars.length > 0) console.error(`Missing required environment variables: ${missingEnvVars.join(', ')}`);
 
 const {
   VITE_FIREBASE_ADMIN_PROJECT_ID,

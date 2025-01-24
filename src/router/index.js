@@ -197,7 +197,7 @@ const routes = [
     meta: { pageTitle: 'Manage Tasks', requireAdmin: true, requireSuperAdmin: true },
   },
   {
-    path: '/register',
+    path: APP_ROUTES.REGISTER,
     name: 'Register',
     component: () => import('../pages/RegisterFamilyUsers.vue'),
     props: (route) => ({ code: route.query.code }),
@@ -297,13 +297,13 @@ const routes = [
     meta: { pageTitle: 'Create an administrator account', requireAdmin: true },
   },
   {
-    path: '/create-orgs',
+    path: APP_ROUTES.ORGS_CREATE,
     name: 'CreateOrgs',
     component: () => import('../components/CreateOrgs.vue'),
     meta: { pageTitle: 'Create an organization', requireAdmin: true, requireSuperAdmin: true },
   },
   {
-    path: '/list-orgs',
+    path: APP_ROUTES.ORGS_LIST,
     name: 'ListOrgs',
     component: () => import('../components/ListOrgs.vue'),
     meta: { pageTitle: 'List organizations', requireAdmin: true },
@@ -418,7 +418,6 @@ router.beforeEach(async (to, from, next) => {
 
   const allowedUnauthenticatedRoutes = [
     'SignIn',
-    'SSO', //@TODO: Remove before merging
     'Maintenance',
     'AuthClever',
     'AuthClassLink',
