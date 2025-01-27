@@ -614,7 +614,18 @@ const validateCode = async (studentCode, outerIndex = 0) => {
 
   try {
     const activationCode = await fetchDocById('activationCodes', studentCode, undefined, 'admin', true, true);
-
+    // If two months have elapsed since creation, activation should be expired
+    if (activationCode.dateCreated) {
+      const dateCreated = new Date(activationCode.dateCreated);
+      const twoMonthsAgo = new Date();
+      twoMonthsAgo.setMonth(twoMonthsAgo.getMonth() - 2);
+      if (dateCreated < twoMonthsAgo) {
+        dialogMessage.value = 'The code has expired. Please enter a valid code."';
+        showErrorDialog();
+        submitted.value = false;
+        return;
+      }
+    }
     if (activationCode.orgId) {
       state.students[outerIndex].orgName = `${_capitalize(activationCode.orgType)} - ${
         activationCode.orgName ?? activationCode.orgId
