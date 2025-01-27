@@ -614,7 +614,7 @@ const validateCode = async (studentCode, outerIndex = 0) => {
 
   try {
     const activationCode = await fetchDocById('activationCodes', studentCode, undefined, 'admin', true, true);
-    // If two months have elapsed since creation, activation should be expired
+    // If two months have elapsed since creation, we should invalidate the code as expired
     if (activationCode.dateCreated) {
       const dateCreated = new Date(activationCode.dateCreated);
       const twoMonthsAgo = new Date();
