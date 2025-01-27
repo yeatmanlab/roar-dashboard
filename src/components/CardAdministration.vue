@@ -8,8 +8,8 @@
       <div class="flex flex-row w-full md:h-2rem sm:h-3rem">
         <div class="flex-grow-1 pr-3 mr-2 p-0 m-0">
           <h2 data-cy="h2-card-admin-title" class="sm:text-lg lg:text-lx m-0 h2-card-admin-title">{{ title }}</h2>
-          <span :class="['status-tag', isClosed(props.stats.total) ? 'closed' : 'open']">
-            {{ isClosed(props.stats.total) ? 'CLOSED' : 'OPEN' }}
+          <span :class="['status-tag', getStatus(props.dates) === 'CLOSED' ? 'closed' : getStatus(props.dates) === 'IN PROGRESS' ? 'progress' : 'open']">
+            {{ getStatus(props.dates) }}
           </span>
         </div>
         <div v-if="isSuperAdmin" class="flex justify-content-end w-3 pl-5 pb-5 ml-2 mb-6">
@@ -203,14 +203,13 @@ const toast = useToast();
 
 const { mutateAsync: deleteAdministration } = useDeleteAdministrationMutation();
 
-const isClosed = stats => {
-  for (const key in stats) {
-    const section = stats[key]
-    if (section.assigned > 0 && section.assigned == section.completed) {
-      return true
-    }
-  }
-  return false
+const getStatus = dates => {
+  const now = new Date();
+  const dateClosed = new Date(dates.end);
+
+  if (now > dateClosed) return 'CLOSED';
+  if (now >= new Date(dates.start) && now <= dateClosed) return 'IN PROGRESS';
+  return 'OPEN';
 };
 
 const speedDialItems = ref([
@@ -546,6 +545,10 @@ onMounted(() => {
 
   &.open {
     background-color: var(--green-700);
+  }
+
+  &.progress {
+    background-color: var(--yellow-700);
   }
 
   &.closed {
