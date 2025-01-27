@@ -91,7 +91,6 @@ import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import Register from '../components/auth/RegisterParent.vue';
 import RegisterStudent from '../components/auth/RegisterChildren.vue';
 import ROARLogoShort from '@/assets/RoarLogo-Short.vue';
-import { error } from 'vega';
 
 const authStore = useAuthStore();
 const initialized = ref(false);
