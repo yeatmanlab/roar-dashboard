@@ -91,6 +91,7 @@ import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import Register from '../components/auth/RegisterParent.vue';
 import RegisterStudent from '../components/auth/RegisterChildren.vue';
 import ROARLogoShort from '@/assets/RoarLogo-Short.vue';
+import { error } from 'vega';
 
 const authStore = useAuthStore();
 const initialized = ref(false);
@@ -220,6 +221,12 @@ watch([parentInfo, studentInfo], ([newParentInfo, newStudentInfo]) => {
         spinner.value = false;
         dialogHeader.value = 'Success!';
         dialogMessage.value = 'Your family has been created!';
+        showDialog();
+      })
+      .catch((error) => {
+        spinner.value = false;
+        dialogHeader.value = 'Error!';
+        dialogMessage.value = error.message;
         showDialog();
       });
   }
