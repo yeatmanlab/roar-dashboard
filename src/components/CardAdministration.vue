@@ -537,22 +537,25 @@ onMounted(() => {
 
 .status-tag {
   font-weight: bold;
+  font-family: var(--font-family);
   padding: 0.2rem 0.5rem;
   border-radius: var(--p-border-radius-xl);
   font-size: 0.8rem;
   margin-left: 0.8rem;
-  color: var(--surface-0);
 
   &.open {
-    background-color: var(--green-700);
+    background-color: var(--green-100);
+    color: var(--green-800);
   }
 
   &.progress {
-    background-color: var(--yellow-700);
+    background-color: var(--red-100);
+    color: var(--red-900);
   }
 
   &.closed {
-    background-color: var(--red-700);
+    background-color: var(--gray-300);
+    color: var(--red-900);
   }
 }
 
