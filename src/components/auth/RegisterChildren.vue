@@ -103,7 +103,8 @@
                 :feedback="false"
               ></PvPassword>
             </div>
-            <span v-if="v$.students.$each.$response.$data[outerIndex].password.$invalid && submitted">
+            <!-- <span v-if="submitted"> -->
+            <span v-if="v$.students.$each.$response.$errors[outerIndex].password">
               <span
                 v-for="(error, innerIndex2) in v$.students.$each.$response.$errors[outerIndex].password"
                 :key="`error-${outerIndex}-${innerIndex2}`"
@@ -127,7 +128,7 @@
                 :feedback="false"
               ></PvPassword>
             </div>
-            <span v-if="isPasswordMismatch(outerIndex) && submitted" class="p-error"> Passwords must match </span>
+            <span v-if="isPasswordMismatch(outerIndex)" class="p-error"> Passwords must match </span>
           </div>
         </section>
         <section class="form-section">
