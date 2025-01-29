@@ -12,7 +12,6 @@
 // import { getOpenAdministrations } from '../../support/query';
 // import { getDevFirebase } from '../../support/devFirebase';
 //
-// const timeout = Cypress.env('timeout');
 // const testSpecs = [
 //   {
 //     name: 'ROAR - Picture Vocabulary',
@@ -181,8 +180,8 @@
 //   it('Tests the open administrations', () => {
 //     // Clear all saved sessions and log in as a participant
 //     Cypress.session.clearAllSavedSessions();
-//     cy.login(Cypress.env('participantUsername'), Cypress.env('participantPassword'));
-//     cy.visit('/', { timeout: 2 * timeout });
+//     cy.login(Cypress.env('PARTICIPANT_USERNAME'), Cypress.env('PARTICIPANT_PASSWORD'));
+//     cy.visit('/');
 //
 //     cy.get('@openAdmins').then((openAdmins) => {
 //       openAdmins.forEach((admin) => {

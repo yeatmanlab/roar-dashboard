@@ -15,7 +15,6 @@ const props = {
   groupheaders: true,
 };
 
-const timeout = Cypress.env('timeout');
 const tableHeaderOffset = 4;
 
 // Use this data to compare against the data being filtered by the component
@@ -54,8 +53,8 @@ function setFilterByCategory(header, category) {
   )
     .find('button')
     .click();
-  cy.get('[data-cy="score-filter-dropdown"]', { timeout: timeout }).click();
-  cy.get('.p-select-list-container > .p-select-list', { timeout: timeout }).contains(category).click();
+  cy.get('[data-cy="data-table__score-filter-dropdown"]').click();
+  cy.get('.p-select-list-container > .p-select-list').contains(category).click();
   cy.get('button').contains('Apply').click();
 }
 
