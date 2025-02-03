@@ -77,6 +77,7 @@ export default defineConfig({
           roam: ['@bdelab/roam-apps'],
           firekit: ['@bdelab/roar-firekit'],
           letter: ['@bdelab/roar-letter'],
+          phonics: ['@bdelab/roar-letter'],
           multichoice: ['@bdelab/roar-multichoice'],
           phoneme: ['@bdelab/roar-pa'],
           sre: ['@bdelab/roar-sre'],
