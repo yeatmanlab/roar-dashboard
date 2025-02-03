@@ -90,6 +90,13 @@ const routes = [
     meta: { pageTitle: 'Letter-EN-CA' },
   },
   {
+    path: '/game/phonics',
+    name: 'Phonics',
+    component: () => import('../components/tasks/TaskLetter.vue'),
+    props: { taskId: 'phonics', language: 'en' },
+    meta: { pageTitle: 'Phonics' },
+  },
+  {
     path: '/game/multichoice',
     name: 'Multichoice',
     component: () => import('../components/tasks/TaskMultichoice.vue'),

@@ -55,6 +55,7 @@ const navbarBlacklist = [
   'Maintenance',
   'PlayApp',
   'SWR',
+  'Phonics',
   'SWR-ES',
   'SRE',
   'SRE-ES',
