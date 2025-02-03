@@ -8,9 +8,9 @@
       <div class="flex flex-row w-full md:h-2rem sm:h-3rem">
         <div class="flex-grow-1 pr-3 mr-2 p-0 m-0">
           <h2 data-cy="h2-card-admin-title" class="sm:text-lg lg:text-lx m-0 h2-card-admin-title">{{ title }}</h2>
-          <span :class="['status-tag', getStatusClass(props.dates)]">
-            {{ getStatus(props.dates) }}
-          </span>
+         <span :class="['status-tag', statusClass]">
+          {{ status }}
+        </span>
         </div>
         <div v-if="isSuperAdmin" class="flex justify-content-end w-3 pl-5 pb-5 ml-2 mb-6">
           <PvSpeedDial
@@ -203,20 +203,17 @@ const toast = useToast();
 
 const { mutateAsync: deleteAdministration } = useDeleteAdministrationMutation();
 
-const getStatus = (dates) => {
+const status = computed(() => {
   const now = new Date();
-  const dateStart = new Date(dates.start);
-  const dateClosed = new Date(dates.end);
+  const dateStart = new Date(props.dates.start);
+  const dateClosed = new Date(props.dates.end);
 
   if (now > dateClosed) return 'CLOSED';
   if (now >= dateStart && now <= dateClosed) return 'IN PROGRESS';
   return 'OPEN';
-};
+});
 
-const getStatusClass = (dates) => {
-  const status = getStatus(dates);
-  return status.toLowerCase().replace(' ', '-');
-};
+const statusClass = computed(() => status.value.toLowerCase().replace(' ', '-'));
 
 const speedDialItems = ref([
   {
