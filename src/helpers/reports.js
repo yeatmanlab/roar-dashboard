@@ -341,7 +341,7 @@ export const tasksToDisplayGraphs = ['swr', 'sre', 'pa'];
  *  Raw Only Tasks
  *  A list of tasks to only display raw scores when included in a RoarDataTable.
  */
-export const rawOnlyTasks = ['letter', 'cva', 'morphology', 'vocab', 'fluency', 'letter-es', 'letter-en-ca'];
+export const rawOnlyTasks = ['letter', 'cva', 'morphology', 'vocab', 'fluency', 'letter-es', 'letter-en-ca', 'phonics'];
 
 /*
  *  Tasks to Display Percent Correct
@@ -350,6 +350,7 @@ export const tasksToDisplayPercentCorrect = [
   'letter',
   'letter-es',
   'letter-en-ca',
+  'phonics',
   'cva',
   'swr-es',
   'pa-es',
@@ -623,6 +624,11 @@ export const getRawScoreRange = (taskId) => {
     return {
       min: 0,
       max: 90,
+    };
+  } else if (taskId.includes('phonics')) {
+    return {
+      min: 0,
+      max: 150,
     };
   } else if (taskId.includes('pa')) {
     return {
