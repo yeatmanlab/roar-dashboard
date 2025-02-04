@@ -6,6 +6,7 @@
     class="confirm"
     :draggable="false"
     :close-on-escape="false"
+    :closable="false"
   >
     <template #message>
       <div class="scrolling-box">
@@ -23,6 +24,8 @@ import { useI18n } from 'vue-i18n';
 import * as Sentry from '@sentry/vue';
 import { useConfirm } from 'primevue/useconfirm';
 import { useToast } from 'primevue/usetoast';
+import PvConfirmDialog from 'primevue/confirmdialog';
+import PvToast from 'primevue/toast';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import _lowerCase from 'lodash/lowerCase';
@@ -51,12 +54,13 @@ onMounted(() => {
   dialogVisible.value = true;
 
   const acceptIcon = computed(() => (isSubmitting.value ? 'pi pi-spin pi-spinner mr-2' : 'pi pi-check mr-2'));
+  const header = props.consentType.includes('consent')
+    ? i18n.t('consentModal.consentTitle')
+    : i18n.t('consentModal.assentTitle');
 
   confirm.require({
     group: 'consent',
-    header: props.consentType.includes('-es')
-      ? `FORMULARIO DE ${_lowerCase(props.consentType).toUpperCase()}`
-      : `${_lowerCase(props.consentType).toUpperCase()} FORM`,
+    header: header,
     icon: 'pi pi-question-circle',
     acceptLabel: i18n.t('consentModal.acceptButton'),
     acceptClass: 'bg-primary text-white border-none border-round p-2 hover:bg-red-900',
@@ -82,7 +86,7 @@ onMounted(() => {
         toast.add({
           severity: TOAST_SEVERITIES.ERROR,
           summary: 'Error',
-          detail: 'An error occurred while updating the consent status, please try again.',
+          detail: 'An error occurred while updating the consent status, please reload the page and try again.',
           life: TOAST_DEFAULT_LIFE_DURATION,
         });
 

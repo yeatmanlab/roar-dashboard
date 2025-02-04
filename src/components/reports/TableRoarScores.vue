@@ -114,7 +114,12 @@
 
 <script setup>
 import { ref } from 'vue';
-import { FilterMatchMode, FilterOperator } from 'primevue/api';
+import { FilterMatchMode, FilterOperator } from '@primevue/core/api';
+import PvButton from 'primevue/button';
+import PvColumn from 'primevue/column';
+import PvDataTable from 'primevue/datatable';
+import PvInputText from 'primevue/inputtext';
+import PvMultiSelect from 'primevue/multiselect';
 import { storeToRefs } from 'pinia';
 import Papa from 'papaparse';
 import { flattenObj } from '@/helpers';

@@ -30,6 +30,17 @@
           "some": ["nesting", "id"]
         },
         "allowChildren": false
+    "vue/multi-word-component-names": "off",
+    "vue/no-undef-components": [
+      "error",
+      {
+        "ignorePatterns": [
+          "AppSpinner",
+          "GMapAutocomplete", // vue-google-maps-community-fork
+          "i18n-t", // vue-i18n
+          "router-link", // vue-router
+          "router-view" // vue-router
+        ]
       }
     ]
   },

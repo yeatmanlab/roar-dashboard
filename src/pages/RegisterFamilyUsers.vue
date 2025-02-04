@@ -2,22 +2,55 @@
   <div id="register-container">
     <section id="register">
       <header>
-        <div class="signin-logo">
-          <ROARLogoShort />
+        <div class="flex flex-wrap p-3 justify-content-around align-items-center gap-3">
+          <div class="signin-logo">
+            <ROARLogoShort />
+          </div>
+          <div v-if="activeIndex === 0" class="flex flex-wrap flex-column align-items-start gap-2">
+            <div class="flex">
+              <div class="text-center font-bold text-3xl text-red-800 mb-1 italic">ROAR@Home</div>
+              <div class="text-sm font-bold text-red-800 ml-1 uppercase">beta</div>
+            </div>
+            <div class="bg-gray-100 rounded p-2">
+              <div class="flex flex-wrap text-gray-600 text-md font-bold">
+                Register a parent or guardian account for ROAR Research Portal
+              </div>
+              <div class="flex flex-wrap text-gray-400 text-sm">
+                This account allows your family to participate in ROAR research studies!
+              </div>
+              <div class="flex flex-wrap text-gray-400 text-sm">
+                You will be able to add children to your family in the next step.
+              </div>
+            </div>
+          </div>
+          <div v-else class="flex flex-wrap flex-column align-items-start gap-2">
+            <div class="flex">
+              <div class="text-center font-bold text-3xl text-red-800 mb-1 italic">ROAR@Home</div>
+              <div class="text-sm font-bold text-red-800 ml-1 uppercase">beta</div>
+            </div>
+            <div class="bg-gray-100 rounded p-2">
+              <div class="flex flex-wrap text-gray-600 text-md font-bold">
+                Register children or students for ROAR Research Portal
+              </div>
+              <div class="flex flex-wrap text-gray-400 text-sm">
+                These accounts will be linked to your parent/guardian account.
+              </div>
+            </div>
+          </div>
         </div>
       </header>
       <div>
-        <div v-if="activeIndex === 0" class="register-title">
-          <h1 align="center">Register for ROAR</h1>
-          <p align="center">Enter your information to create an account.</p>
-        </div>
-        <div v-else class="register-title">
-          <h1 align="center">Register your child</h1>
-          <p align="center">Enter your child's information to create their ROAR account.</p>
+        <div v-if="activeIndex === 1">
+          <PvButton
+            class="justify-start z-1 bg-white text-primary text-center justify-content-center border-none border-round p-2 h-3rem hover:surface-300 hover:text-900 border-none"
+            style="width: 8rem; margin-left: 1rem"
+            @click="activeIndex = 0"
+            ><i class="pi pi-arrow-left mr-2"></i> Back
+          </PvButton>
         </div>
         <div v-if="spinner === false">
           <KeepAlive>
-            <component :is="activeComp()" :code="code" @submit="handleSubmit($event)" />
+            <component :is="activeComp()" :code="code" :consent="consent" @submit="handleSubmit($event)" />
           </KeepAlive>
           <div
             v-if="isSuperAdmin"
@@ -26,14 +59,6 @@
           >
             <PvCheckbox :model-value="isTestData" :binary="true" name="isTestDatalabel" @change="updateState" />
             <label for="isTestDatalabel" class="ml-2">This is test data</label>
-          </div>
-          <div v-if="activeIndex === 1">
-            <PvButton
-              class="justify-start z-1 bg-primary text-white text-center justify-content-center border-none border-round p-2 h-3rem hover:surface-300 hover:text-900 border-none"
-              style="margin-top: -3.2rem; width: 11rem; margin-left: 2rem"
-              @click="activeIndex = 0"
-              ><i class="pi pi-arrow-left mr-2"></i> Back
-            </PvButton>
           </div>
         </div>
         <div v-else class="loading-container flex flex-column text-center justify-content-center align-content-center">
@@ -56,13 +81,16 @@
 </template>
 
 <script setup>
-import Register from '../components/auth/RegisterParent.vue';
-import RegisterStudent from '../components/auth/RegisterStudent.vue';
-import ROARLogoShort from '@/assets/RoarLogo-Short.vue';
 import { ref, onMounted, onBeforeUnmount, watch, toRaw, computed } from 'vue';
+import PvButton from 'primevue/button';
+import PvCheckbox from 'primevue/checkbox';
+import PvDialog from 'primevue/dialog';
 import { useAuthStore } from '@/store/auth';
 import router from '../router';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
+import Register from '../components/auth/RegisterParent.vue';
+import RegisterStudent from '../components/auth/RegisterChildren.vue';
+import ROARLogoShort from '@/assets/RoarLogo-Short.vue';
 
 const authStore = useAuthStore();
 const initialized = ref(false);
@@ -88,6 +116,8 @@ const dialogHeader = ref('');
 const dialogMessage = ref('');
 
 const isDialogVisible = ref(false);
+const consent = ref(null);
+const consentName = ref('consent-behavioral-eye-tracking');
 
 const showDialog = () => {
   isDialogVisible.value = true;
@@ -172,15 +202,18 @@ watch([parentInfo, studentInfo], ([newParentInfo, newStudentInfo]) => {
           race: student.race,
           hispanic_ethnicity: student.hispanicEthnicity,
           home_language: student.homeLanguage,
+          accept: student.accept,
         },
       };
     });
+    const consentData = { version: consent.value?.version, name: consentName.value };
     authStore
       .createNewFamily(
         rawParentInfo.ParentEmail,
         rawParentInfo.password,
         parentUserData,
         studentSendObject,
+        consentData,
         isTestData.value,
       )
       .then(() => {
@@ -188,11 +221,17 @@ watch([parentInfo, studentInfo], ([newParentInfo, newStudentInfo]) => {
         dialogHeader.value = 'Success!';
         dialogMessage.value = 'Your family has been created!';
         showDialog();
+      })
+      .catch((error) => {
+        spinner.value = false;
+        dialogHeader.value = 'Error!';
+        dialogMessage.value = error.message;
+        showDialog();
       });
   }
 });
 
-onMounted(() => {
+onMounted(async () => {
   document.body.classList.add('page-register');
 });
 

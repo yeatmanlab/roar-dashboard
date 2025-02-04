@@ -28,9 +28,11 @@
   </PvDialog>
 </template>
 <script setup>
-import { useAuthStore } from '@/store/auth';
-import { storeToRefs } from 'pinia';
 import { watch, ref, onMounted } from 'vue';
+import { storeToRefs } from 'pinia';
+import PvDialog from 'primevue/dialog';
+import { useAuthStore } from '@/store/auth';
+
 const props = defineProps({
   isEnabled: {
     type: Boolean,

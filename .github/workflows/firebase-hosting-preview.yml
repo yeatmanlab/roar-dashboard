@@ -39,7 +39,9 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 'lts/*'
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+          cache-dependency-path: 'package-lock.json'
 
       - name: Install dependencies
         run: npm ci
@@ -55,6 +57,7 @@ jobs:
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_GSE_ROAR_ADMIN }}
           projectId: gse-roar-admin
           target: staging
+          channelId: ''
 
       - name: Set Output Deploy URL
         id: set-deploy-url

@@ -1,11 +1,83 @@
-/*// ****************************************/
-/*// | Use this file to import shared styles for  |*/
-/*// | both the main app and testing.              |*/
-/*// ***************************************/
-
-@import 'primevue/resources/primevue.css';
 @import 'primeicons/primeicons.css';
 @import 'primeflex/primeflex.scss';
 
 @import './assets/styles/theme-tailwind.css';
 @import './assets/styles/theme.scss';
+
+/* Tailwind CSS classes */
+/* @TODO: Remove once yeatmanlab/roar-project-management/issues/321 is resolved */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+fieldset {
+  border: 0;
+  padding: 0.01em 0 0 0;
+  margin: 0;
+  min-width: 0;
+}
+
+legend {
+  padding: 0;
+  padding-inline: 0;
+}
+
+.transition-colors {
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+.justify-between {
+  justify-content: space-between;
+}
+
+.border {
+  border-width: 1px;
+}
+
+.rounded {
+  border-radius: 0.25rem;
+}
+
+.mb-0 {
+  margin-bottom: 0;
+  margin-block-end: 0;
+}
+
+.mt-0 {
+  margin-top: 0;
+  margin-block-start: 0;
+}
+
+.max-w-xs {
+  max-width: 20rem;
+}
+
+.min-w-32 {
+  min-width: 8rem;
+}
+
+.w-32 {
+  width: 8rem;
+}
+
+.w-1\/4 {
+  width: 25%;
+}
+
+.leading-7 {
+  line-height: 1.75rem;
+}
+
+.bg-transparent {
+  background-color: transparent;
+}

@@ -15,8 +15,9 @@
             direction="left"
             :transition-delay="80"
             show-icon="pi pi-cog text-primary"
-            hide-icon="pi pi-times"
+            hide-icon="pi pi-times text-primary"
             button-class="p-button-outlined p-button-sm w-3rem h-3rem border-primary border-1 border-circle bg-transparent hover:surface-300"
+            style="color: var(---primary-color) !important"
             :tooltip-options="{ position: 'top' }"
             :pt="{ button: { size: 'small' } }"
           />
@@ -47,7 +48,7 @@
         </template>
 
         <div v-if="showParams">
-          <PvOverlayPanel v-for="assessmentId in assessmentIds" :key="assessmentId" :ref="paramPanelRefs[assessmentId]">
+          <PvPopover v-for="assessmentId in assessmentIds" :key="assessmentId" :ref="paramPanelRefs[assessmentId]">
             <div v-if="getAssessment(assessmentId).variantId">
               Variant ID: {{ getAssessment(assessmentId).variantId }}
             </div>
@@ -63,7 +64,7 @@
               <PvColumn field="key" header="Parameter" style="width: 50%"></PvColumn>
               <PvColumn field="value" header="Value" style="width: 50%"></PvColumn>
             </PvDataTable>
-          </PvOverlayPanel>
+          </PvPopover>
         </div>
       </div>
 
@@ -94,7 +95,7 @@
               type="bar"
               :data="setBarChartData(node.data.stats?.assignment)"
               :options="setBarChartOptions(node.data.stats?.assignment)"
-              class="h-3rem"
+              class="h-3rem w-full"
             />
           </template>
         </PvColumn>
@@ -106,12 +107,12 @@
                   name: 'ProgressReport',
                   params: { administrationId: props.id, orgId: node.data.id, orgType: node.data.orgType },
                 }"
-                class="no-underline"
+                class="no-underline text-black"
               >
                 <PvButton
                   v-tooltip.top="'See completion details'"
-                  class="m-0 mr-1 surface-0 text-bluegray-500 shadow-1 border-none p-2 border-round hover:surface-100"
-                  style="height: 2.5rem"
+                  class="m-0 mr-1 surface-0 text-primary shadow-1 border-none p-2 border-round hover:surface-100"
+                  style="height: 2.5rem; color: var(--primary-color) !important; border: none !important"
                   severity="secondary"
                   text
                   raised
@@ -130,8 +131,8 @@
               >
                 <PvButton
                   v-tooltip.top="'See Scores'"
-                  class="m-0 mr-1 surface-0 text-bluegray-500 shadow-1 border-none p-2 border-round hover:surface-100"
-                  style="height: 2.5rem"
+                  class="m-0 mr-1 surface-0 text-primary shadow-1 border-none p-2 border-round hover:surface-100"
+                  style="height: 2.5rem; color: var(--primary-color) !important; border: none !important"
                   severity="secondary"
                   text
                   raised
@@ -160,6 +161,14 @@ import _mapValues from 'lodash/mapValues';
 import _toPairs from 'lodash/toPairs';
 import _without from 'lodash/without';
 import _zip from 'lodash/zip';
+import PvButton from 'primevue/button';
+import PvColumn from 'primevue/column';
+import PvChart from 'primevue/chart';
+import PvConfirmPopup from 'primevue/confirmpopup';
+import PvDataTable from 'primevue/datatable';
+import PvPopover from 'primevue/popover';
+import PvSpeedDial from 'primevue/speeddial';
+import PvTreeTable from 'primevue/treetable';
 import { batchGetDocs } from '@/helpers/query/utils';
 import { taskDisplayNames } from '@/helpers/reports';
 import { removeEmptyOrgs } from '@/helpers';
@@ -451,6 +460,12 @@ onMounted(() => {
   padding-right: 0.5rem;
   color: white;
 }
+
+.button.p-button.p-component.p-button-outlined.p-button-sm.p-button-outlined.p-button-sm,
+button.p-button.p-component.p-button-sm.p-button-sm {
+  border: 1px solid var(--primary-color) !important;
+}
+
 .p-confirm-popup .p-confirm-popup-footer button:hover {
   background-color: var(--red-900);
 }

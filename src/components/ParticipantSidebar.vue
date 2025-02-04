@@ -1,5 +1,5 @@
 <template>
-  <div class="sidebar-container">
+  <div class="sidebar-container flex flex-column min-w-min md:min-w-max">
     <div class="sidebar-progress">
       <PvChart type="doughnut" :data="chartData" :options="chartOptions" />
       <div>
@@ -19,6 +19,7 @@
 </template>
 <script setup>
 import { ref, computed } from 'vue';
+import PvChart from 'primevue/chart';
 
 const props = defineProps({
   totalGames: { type: Number, required: true, default: 0 },

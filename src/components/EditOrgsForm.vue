@@ -13,11 +13,10 @@
       </div>
     </div>
     <div class="form-field">
-      <label :class="{ 'font-light uppercase text-sm': !editMode }">Address</label>
+      <label :class="{ 'font-light uppercase text-sm': !editMode }">
+        <span> <i class="pi pi-map"></i></span> Address
+      </label>
       <div class="p-inputgroup">
-        <span class="p-inputgroup-addon">
-          <i class="pi pi-map"></i>
-        </span>
         <GMapAutocomplete
           :placeholder="localOrgData.address?.formattedAddress ?? 'Enter an address'"
           :options="{
@@ -50,12 +49,14 @@
   </div>
 </template>
 <script setup>
-import { ref, defineProps, onMounted, watch } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { useAuthStore } from '@/store/auth';
 import { storeToRefs } from 'pinia';
 import { fetchDocById } from '@/helpers/query/utils';
 import { useQuery } from '@tanstack/vue-query';
 import PvChips from 'primevue/chips';
+import PvCheckbox from 'primevue/checkbox';
+import PvInputText from 'primevue/inputtext';
 import _isEmpty from 'lodash/isEmpty';
 const props = defineProps({
   orgType: { type: String, required: true },

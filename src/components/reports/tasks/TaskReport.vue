@@ -1,15 +1,15 @@
 <template>
   <div :id="'tab-view-description-' + taskId" class="flex flex-col items-center justify-center mx-2">
-    <Accordion v-if="taskInfoById[taskId]" class="mb-5 w-full" :active-index="0">
-      <AccordionTab :header="('About ' + taskInfoById[taskId]?.subheader).toUpperCase()">
+    <PvAccordion v-if="taskInfoById[taskId]" class="mb-5 w-full" :active-index="0">
+      <PvAccordionTab :header="('About ' + taskInfoById[taskId]?.subheader).toUpperCase()">
         <div>
           <div style="text-transform: uppercase" class="text-2xl font-bold">{{ taskInfoById[taskId]?.subheader }}</div>
           <!-- The following HTML is from a hard-coded source (below) -->
           <!-- eslint-disable-next-line vue/no-v-html -->
           <p class="mt-1 text-md font-light" v-html="taskInfoById[taskId]?.desc"></p>
         </div>
-      </AccordionTab>
-    </Accordion>
+      </PvAccordionTab>
+    </PvAccordion>
   </div>
   <!-- <div class="grid grid-cols-2 w-full space-around items-center p-3"> -->
   <div v-if="tasksToDisplayGraphs.includes(taskId)" :id="'tab-view-chart-' + taskId" class="chart-toggle-wrapper">
@@ -62,6 +62,17 @@
       :computed-table-data="computedTableData"
     />
     <SubscoreTable
+      v-if="taskId === 'letter-en-ca' && !isLoadingTasksDictionary"
+      task-id="letter-en-ca"
+      :task-name="tasksDictionary['letter-en-ca'].publicName"
+      :administration-id="administrationId"
+      :org-type="orgType"
+      :org-id="orgId"
+      :administration-name="administrationInfo.name ?? undefined"
+      :org-name="orgInfo.name ?? undefined"
+      :computed-table-data="computedTableData"
+    />
+    <SubscoreTable
       v-if="taskId === 'pa' && !isLoadingTasksDictionary"
       task-id="pa"
       :task-name="tasksDictionary['pa'].publicName"
@@ -76,8 +87,9 @@
 </template>
 <script setup>
 import { ref, computed } from 'vue';
-import Accordion from 'primevue/accordion';
-import AccordionTab from 'primevue/accordiontab';
+import PvAccordion from 'primevue/accordion';
+import PvAccordionTab from 'primevue/accordiontab';
+import PvSelectButton from 'primevue/selectbutton';
 import { tasksToDisplayGraphs, taskInfoById } from '@/helpers/reports.js';
 import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery.js';
 import SubscoreTable from '@/components/reports/SubscoreTable.vue';

@@ -12,6 +12,7 @@ import { Converter } from 'showdown';
 import { useI18n } from 'vue-i18n';
 import { BufferLoader, AudioContext } from '@/helpers/audio';
 import { useToast } from 'primevue/usetoast';
+import PvButton from 'primevue/button';
 
 const fetchAudioLinks = async (surveyType) => {
   const response = await axios.get('https://storage.googleapis.com/storage/v1/b/road-dashboard/o/');
@@ -194,6 +195,7 @@ async function saveResults(sender) {
 
 <template>
   <div v-if="survey && !isSavingResponses && !audioLoading">
+    <!-- eslint-disable-next-line vue/no-undef-components -->
     <SurveyComponent :model="survey" />
 
     <div v-for="page in fetchedSurvey.pages" :key="page.name">

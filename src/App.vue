@@ -14,7 +14,9 @@
 
   <div>
     <PvToast />
-    <NavBar v-if="!navbarBlacklist.includes($route.name) && isAuthStoreReady" />
+
+    <Navigation />
+
     <router-view :key="$route.fullPath" />
 
     <SessionTimer v-if="loadSessionTimeoutHandler" />
@@ -28,7 +30,8 @@ import { computed, onBeforeMount, onMounted, ref, defineAsyncComponent } from 'v
 import { useRoute } from 'vue-router';
 import { useRecaptchaProvider } from 'vue-recaptcha';
 import { Head } from '@unhead/vue/components';
-import NavBar from '@/components/NavBar.vue';
+import PvToast from 'primevue/toast';
+import Navigation from '@/containers/Navigation/Navigation.vue';
 
 const SessionTimer = defineAsyncComponent(() => import('@/containers/SessionTimer/SessionTimer.vue'));
 const VueQueryDevtools = defineAsyncComponent(() =>
@@ -55,34 +58,6 @@ const pageTitle = computed(() => {
 const loadSessionTimeoutHandler = computed(() => isAuthStoreReady.value && authStore.isAuthenticated);
 
 useRecaptchaProvider();
-
-const navbarBlacklist = ref([
-  'SignIn',
-  'Register',
-  'Maintenance',
-  'PlayApp',
-  'SWR',
-  'SWR-ES',
-  'SRE',
-  'SRE-ES',
-  'PA',
-  'PA-ES',
-  'Letter',
-  'Letter-ES',
-  'Vocab',
-  'Multichoice',
-  'Morphology',
-  'Cva',
-  'Fluency-ARF',
-  'Fluency-ARF-ES',
-  'Fluency-CALF',
-  'Fluency-CALF-ES',
-  'Fluency-Alpaca',
-  'Fluency-Alpaca-ES',
-  'RAN',
-  'Crowding',
-  'MEP',
-]);
 
 onBeforeMount(async () => {
   await authStore.initFirekit();

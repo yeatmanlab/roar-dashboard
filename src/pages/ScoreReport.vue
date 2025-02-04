@@ -143,7 +143,7 @@
             </template>
             <span>
               <label for="view-columns" class="view-label">View</label>
-              <PvDropdown
+              <PvSelect
                 id="view-columns"
                 v-model="viewMode"
                 :options="viewOptions"
@@ -263,7 +263,6 @@
 
 <script setup>
 import { computed, ref, onMounted, watch } from 'vue';
-import FilterBar from '@/components/slots/FilterBar.vue';
 import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router';
 import { jsPDF } from 'jspdf';
@@ -275,6 +274,13 @@ import _map from 'lodash/map';
 import _kebabCase from 'lodash/kebabCase';
 import _pickBy from 'lodash/pickBy';
 import _lowerCase from 'lodash/lowerCase';
+import { getGrade } from '@bdelab/roar-utils';
+import PvButton from 'primevue/button';
+import PvConfirmDialog from 'primevue/confirmdialog';
+import PvSelect from 'primevue/select';
+import PvSelectButton from 'primevue/selectbutton';
+import PvTabPanel from 'primevue/tabpanel';
+import PvTabView from 'primevue/tabview';
 import { useAuthStore } from '@/store/auth';
 import { getDynamicRouterPath } from '@/helpers/getDynamicRouterPath';
 import useUserType from '@/composables/useUserType';
@@ -284,10 +290,9 @@ import useOrgQuery from '@/composables/queries/useOrgQuery';
 import useDistrictSchoolsQuery from '@/composables/queries/useDistrictSchoolsQuery';
 import useAdministrationAssignmentsQuery from '@/composables/queries/useAdministrationAssignmentsQuery';
 import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery';
-import { getGrade } from '@bdelab/roar-utils';
+import { useFilteredTableData } from '@/composables/useFilteredTableData.js';
 import { exportCsv } from '@/helpers/query/utils';
-import { getTitle } from '../helpers/query/administrations';
-import { useFilteredTableData } from '../composables/useFilteredTableData.js';
+import { getTitle } from '@/helpers/query/administrations';
 import {
   taskDisplayNames,
   taskInfoById,
@@ -304,6 +309,8 @@ import {
   tasksToDisplayCorrectIncorrectDifference,
   includedValidityFlags,
 } from '@/helpers/reports';
+import FilterBar from '@/components/FilterBar';
+import RoarDataTable from '@/components/RoarDataTable';
 import { APP_ROUTES } from '@/constants/routes';
 import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
 
@@ -727,7 +734,7 @@ const computeAssignmentAndRunData = computed(() => {
           currRowScores[taskId].percentCorrect = percentCorrect;
           currRowScores[taskId].numAttempted = numAttempted;
           currRowScores[taskId].numCorrect = numCorrect;
-          currRowScores[taskId].tagColor = percentCorrect === null ? '#EEEEF0' : tagColor;
+          currRowScores[taskId].tagColor = percentCorrect === null ? 'transparent' : tagColor;
           scoreFilterTags += ' Assessed ';
         } else if (tasksToDisplayTotalCorrect.includes(taskId)) {
           const numAttempted = assessment.scores?.raw?.composite?.test?.numAttempted;
@@ -743,7 +750,7 @@ const computeAssignmentAndRunData = computed(() => {
             numAttempted === undefined || numAttempted === 0 ? '#EEEEF0' : numAttempted !== 0 ? tagColor : '#EEEEF0';
           scoreFilterTags += ' Assessed ';
         }
-        if (taskId === 'letter' && assessment.scores) {
+        if ((taskId === 'letter' || taskId === 'letter-en-ca') && assessment.scores) {
           currRowScores[taskId].lowerCaseScore = assessment.scores.computed.LowercaseNames?.subScore;
           currRowScores[taskId].upperCaseScore = assessment.scores.computed.UppercaseNames?.subScore;
           currRowScores[taskId].phonemeScore = assessment.scores.computed.Phonemes?.subScore;
@@ -1070,7 +1077,7 @@ const getTaskStyle = (taskId, backgroundColor, tasks) => {
   const taskGroups = {
     spanish: ['letter-es', 'pa-es', 'swr-es', 'sre-es'],
     spanishmath: ['fluency-arf-es', 'fluency-calf-es'],
-    supplementary: ['morphology', 'cva', 'vocab', 'trog', 'phonics'],
+    supplementary: ['morphology', 'cva', 'vocab', 'trog', 'phonics', 'roar-inference'],
     roam: ['fluency-arf', 'fluency-calf', 'roam-alpaca', 'egma-math'],
     roav: ['ran', 'crowding', 'roav-mep', 'mep', 'mep-pseudo'],
   };
@@ -1196,10 +1203,10 @@ const scoreReportColumns = computed(() => {
     }
   });
 
-  const priorityTasks = ['swr', 'sre', 'pa', 'letter'];
+  const priorityTasks = ['swr', 'sre', 'pa', 'letter', 'letter-en-ca'];
   const spanishTasks = ['letter-es', 'pa-es', 'swr-es', 'sre-es'];
   const spanishMathTasks = ['fluency-arf-es', 'fluency-calf-es'];
-  const supplementaryTasks = ['morphology', 'cva', 'vocab', 'trog', 'phonics'];
+  const supplementaryTasks = ['morphology', 'cva', 'vocab', 'trog', 'phonics', 'roar-inference'];
   const roamTasks = ['fluency-arf', 'fluency-calf', 'roam-alpaca', 'egma-math'];
   const roavTasks = ['ran', 'crowding', 'roav-mep', 'mep', 'mep-pseudo'];
   const orderedTasks = [];
@@ -1315,7 +1322,7 @@ const sortedTaskIds = computed(() => {
   });
 
   const sortedIds = specialTaskIds.concat(remainingTaskIds);
-  return sortedIds;
+  return sortedIds.filter((taskId) => allTasks.value.includes(taskId));
 });
 
 const sortedAndFilteredTaskIds = computed(() => {

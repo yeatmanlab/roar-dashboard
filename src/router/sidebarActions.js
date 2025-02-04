@@ -9,7 +9,7 @@ const sidebarActionOptions = [
     category: 'Home',
   },
   {
-    title: 'List organizations',
+    title: 'List Organizations',
     icon: 'pi pi-folder-open',
     buttonLink: { name: 'ListOrgs' },
     requiresSuperAdmin: false,
@@ -18,7 +18,7 @@ const sidebarActionOptions = [
     category: 'Organizations',
   },
   {
-    title: 'Create organization',
+    title: 'Create Organization',
     icon: 'pi pi-sliders-h',
     buttonLink: { name: 'CreateOrgs' },
     requiresSuperAdmin: true,
@@ -27,7 +27,7 @@ const sidebarActionOptions = [
     category: 'Organizations',
   },
   {
-    title: 'Register students',
+    title: 'Register Students',
     icon: 'pi pi-users',
     buttonLink: { name: 'RegisterStudents' },
     requiresSuperAdmin: true,
@@ -36,7 +36,7 @@ const sidebarActionOptions = [
     category: 'Users',
   },
   {
-    title: 'Register administrator',
+    title: 'Register Administrator',
     icon: 'pi pi-user-plus',
     buttonLink: { name: 'CreateAdministrator' },
     requiresSuperAdmin: true,
@@ -44,7 +44,7 @@ const sidebarActionOptions = [
     category: 'Users',
   },
   {
-    title: 'View administrations',
+    title: 'View Administrations',
     icon: 'pi pi-list',
     buttonLink: { name: 'Home' },
     requiresSuperAdmin: false,
@@ -53,7 +53,7 @@ const sidebarActionOptions = [
     category: 'Administrations',
   },
   {
-    title: 'Create administration',
+    title: 'Create Administration',
     icon: 'pi pi-sliders-h',
     buttonLink: { name: 'CreateAdministration' },
     requiresSuperAdmin: true,

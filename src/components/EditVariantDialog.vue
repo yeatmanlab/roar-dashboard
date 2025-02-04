@@ -50,7 +50,7 @@
         </div>
         <PvDataTable
           v-if="assignedConditions.length > 0"
-          v-model:editingRows="assignedEditingRows"
+          v-model:editing-rows="assignedEditingRows"
           :value="assignedConditions"
           edit-mode="row"
           data-key="id"
@@ -67,7 +67,7 @@
         >
           <PvColumn field="field" header="Field" style="width: 20%; min-width: 8rem" body-style="text-align:center">
             <template #editor="{ data, field }">
-              <PvDropdown
+              <PvSelect
                 v-model="data[field]"
                 :options="fieldExamples"
                 option-label="label"
@@ -76,12 +76,12 @@
                 placeholder="Type or choose field"
                 data-cy="dropdown-assigned-field"
               >
-              </PvDropdown>
+              </PvSelect>
             </template>
           </PvColumn>
           <PvColumn field="op" header="Operator" style="width: 5%" body-style="text-align:center">
             <template #editor="{ data, field }">
-              <PvDropdown
+              <PvSelect
                 v-model="data[field]"
                 :options="operators"
                 option-label="label"
@@ -92,7 +92,7 @@
                 <template #option="slotProps">
                   <PvTag :value="slotProps.option.label" severity="warning" />
                 </template>
-              </PvDropdown>
+              </PvSelect>
             </template>
             <template #body="slotProps">
               <PvTag :value="slotProps.data.op" severity="warning" />
@@ -146,7 +146,7 @@
           </div>
           <PvDataTable
             v-if="optionalConditions.length > 0"
-            v-model:editingRows="optionalEditingRows"
+            v-model:editing-rows="optionalEditingRows"
             :value="optionalConditions"
             edit-mode="row"
             data-key="id"
@@ -162,7 +162,7 @@
           >
             <PvColumn field="field" header="Field" style="width: 20%; min-width: 8rem" body-style="text-align:center">
               <template #editor="{ data, field }">
-                <PvDropdown
+                <PvSelect
                   v-model="data[field]"
                   :options="fieldExamples"
                   option-label="label"
@@ -171,12 +171,12 @@
                   placeholder="Type or choose field"
                   data-cy="dropdown-optional-field"
                 >
-                </PvDropdown>
+                </PvSelect>
               </template>
             </PvColumn>
             <PvColumn field="op" header="Operator" style="width: 5%" body-style="text-align:center">
               <template #editor="{ data, field }">
-                <PvDropdown
+                <PvSelect
                   v-model="data[field]"
                   :options="operators"
                   option-label="label"
@@ -187,7 +187,7 @@
                   <template #option="slotProps">
                     <PvTag :value="slotProps.option.label" severity="warning" />
                   </template>
-                </PvDropdown>
+                </PvSelect>
               </template>
               <template #body="slotProps">
                 <PvTag :value="slotProps.data.op" severity="warning" />
@@ -266,6 +266,15 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import _isEmpty from 'lodash/isEmpty';
+import PvButton from 'primevue/button';
+import PvColumn from 'primevue/column';
+import PvDataTable from 'primevue/datatable';
+import PvDialog from 'primevue/dialog';
+import PvDivider from 'primevue/divider';
+import PvSelect from 'primevue/select';
+import PvInputSwitch from 'primevue/inputswitch';
+import PvInputText from 'primevue/inputtext';
+import PvTag from 'primevue/tag';
 
 const visible = ref(false);
 const props = defineProps({

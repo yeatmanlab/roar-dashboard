@@ -26,16 +26,16 @@
                 </div>
               </div>
             </div>
-            <PvDropdown
+            <PvSelect
               v-model="v$.selectedGame.$model"
               :options="formattedTasks"
               option-label="name"
               placeholder="Select a Game"
               :loading="isFetchingTasks"
-              :class="{ 'p-invalid': v$.variantName.$invalid && submitted }"
+              :class="['w-full', { 'p-invalid': v$.variantName.$invalid && submitted }]"
               name="variant-fields"
               @click="clearFieldParamArrays()"
-            ></PvDropdown>
+            ></PvSelect>
             <span v-if="v$.selectedGame.$error && submitted">
               <span v-for="(error, index) of v$.selectedGame.$errors" :key="index">
                 <small class="p-error">{{ error.$message }}</small>
@@ -58,7 +58,7 @@
               <PvInputText
                 v-model="v$.variantName.$model"
                 name="variantName"
-                :class="{ 'p-invalid': v$.variantName.$invalid && submitted }"
+                :class="['w-full', { 'p-invalid': v$.variantName.$invalid && submitted }]"
                 aria-describedby="activation-code-error"
               />
             </div>
@@ -118,7 +118,7 @@
                   placeholder="Set game parameter to desired value"
                   class="flex-grow-1"
                 />
-                <PvDropdown
+                <PvSelect
                   v-else-if="param.type === 'boolean'"
                   id="inputParamValue"
                   v-model="variantParams[param.name]"
@@ -151,7 +151,7 @@
             <div v-if="newParams.length > 0" class="w-full">
               <div v-for="(field, index) in newParams" :key="index" class="flex align-items-center column-gap-2 mb-1">
                 <PvInputText v-model="field.name" placeholder="Field Name" />
-                <PvDropdown
+                <PvSelect
                   v-model="field.type"
                   :options="['string', 'number', 'boolean']"
                   placeholder="Field Type"
@@ -170,7 +170,7 @@
                   placeholder="Field Value"
                   class="w-full"
                 />
-                <PvDropdown
+                <PvSelect
                   v-if="field.type === 'boolean'"
                   v-model="field.value"
                   placeholder="Field Value"
@@ -248,7 +248,7 @@
           <small class="text-gray-400 font-bold">Select an Existing Task </small>
           <span class="required">*</span></label
         >
-        <PvDropdown
+        <PvSelect
           v-model="selectedTask"
           :options="formattedTasks"
           option-label="name"
@@ -260,7 +260,7 @@
           <small class="text-gray-400 font-bold">Select an Existing Variant </small>
           <span class="required">*</span></label
         >
-        <PvDropdown
+        <PvSelect
           v-model="selectedVariant"
           :options="filteredVariants"
           :option-label="(data) => (data.variant.name ? data.variant.name : data.variant.id)"
@@ -296,7 +296,7 @@
                   v-model="updatedVariantData[key]"
                   class="flex-grow-1"
                 />
-                <PvDropdown
+                <PvSelect
                   v-else-if="typeof value === 'boolean'"
                   v-model="updatedVariantData[key]"
                   :options="booleanDropDownOptions"
@@ -318,7 +318,7 @@
           <div v-if="addedFields.length > 0" class="w-full">
             <div v-for="(field, index) in addedFields" :key="index" class="flex align-items-center column-gap-2 mb-1">
               <PvInputText v-model="field.name" placeholder="Field Name" />
-              <PvDropdown v-model="field.type" :options="['string', 'number', 'boolean']" placeholder="Field Type" />
+              <PvSelect v-model="field.type" :options="['string', 'number', 'boolean']" placeholder="Field Type" />
 
               <PvInputText
                 v-if="field.type === 'string'"
@@ -332,7 +332,7 @@
                 placeholder="Field Value"
                 class="flex-grow-1"
               />
-              <PvDropdown
+              <PvSelect
                 v-if="field.type === 'boolean'"
                 v-model="field.value"
                 placeholder="Field Value"
@@ -440,6 +440,13 @@ import { required } from '@vuelidate/validators';
 import { useVuelidate } from '@vuelidate/core';
 import { storeToRefs } from 'pinia';
 import { useToast } from 'primevue/usetoast';
+import PvButton from 'primevue/button';
+import PvCheckbox from 'primevue/checkbox';
+import PvSelect from 'primevue/select';
+import PvInputNumber from 'primevue/inputnumber';
+import PvInputText from 'primevue/inputtext';
+import PvSelectButton from 'primevue/selectbutton';
+import PvToast from 'primevue/toast';
 import { cloneDeep, camelCase } from 'lodash';
 import { useAuthStore } from '@/store/auth';
 import useTasksQuery from '@/composables/queries/useTasksQuery';

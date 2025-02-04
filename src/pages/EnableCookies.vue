@@ -9,6 +9,7 @@
   </router-link>
 </template>
 
-<script></script>
-
-<style scoped></style>
+<script setup>
+import PvButton from 'primevue/button';
+import PvMessage from 'primevue/message';
+</script>

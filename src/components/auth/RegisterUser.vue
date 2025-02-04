@@ -43,7 +43,7 @@
           </div>
         </div>
         <div v-if="!yearOnlyCheck">
-          <PvCalendar
+          <PvDatePicker
             v-model="v$.dob.$model"
             view="date"
             date-format="mm/dd/yy"
@@ -53,7 +53,7 @@
           />
         </div>
         <div v-else>
-          <PvCalendar
+          <PvDatePicker
             v-model="v$.dob.$model"
             view="year"
             date-format="yy"
@@ -69,7 +69,7 @@
       <!--Grade-->
       <div class="mt-4 mb-5">
         <label for="grade">Grade <span class="required">*</span></label>
-        <PvDropdown
+        <PvSelect
           v-model="v$.grade.$model"
           :options="gradeOptions"
           option-label="label"
@@ -84,24 +84,12 @@
       <!--English Language Level-->
       <div class="mt-4 mb-5">
         <label for="ell">English Language Level</label>
-        <PvDropdown
-          v-model="v$.ell.$model"
-          :options="eLLOptions"
-          option-label="label"
-          option-value="value"
-          name="ell"
-        />
+        <PvSelect v-model="v$.ell.$model" :options="eLLOptions" option-label="label" option-value="value" name="ell" />
       </div>
       <!--Sex-->
       <div class="mt-4 mb-5">
         <label for="sex">Gender</label>
-        <PvDropdown
-          v-model="v$.sex.$model"
-          :options="sexOptions"
-          option-label="label"
-          option-value="value"
-          name="sex"
-        />
+        <PvSelect v-model="v$.sex.$model" :options="sexOptions" option-label="label" option-value="value" name="sex" />
       </div>
       <!--Password-->
       <div class="field mt-4 mb-5">
@@ -177,6 +165,13 @@
 import { computed, reactive, ref } from 'vue';
 import { required, sameAs } from '@vuelidate/validators';
 import { useVuelidate } from '@vuelidate/core';
+import PvButton from 'primevue/button';
+import PvDatePicker from 'primevue/datepicker';
+import PvCheckbox from 'primevue/checkbox';
+import PvDivider from 'primevue/divider';
+import PvSelect from 'primevue/select';
+import PvInputText from 'primevue/inputtext';
+import PvPassword from 'primevue/password';
 
 // TODO: Include middle
 const state = reactive({
