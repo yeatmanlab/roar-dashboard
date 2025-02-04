@@ -1,6 +1,12 @@
 <template>
   <div :id="'tab-view-description-' + taskId" class="flex flex-col items-center justify-center mx-2">
-    <PvAccordion v-if="taskInfoById[taskId]" class="mb-5 w-full" :active-index="0">
+    <PvAccordion
+      v-if="taskInfoById[taskId]"
+      class="mb-5 w-full"
+      :active-index="0"
+      expand-icon="pi pi-plus ml-2"
+      collapse-icon="pi pi-minus ml-2"
+    >
       <PvAccordionTab :header="('About ' + taskInfoById[taskId]?.subheader).toUpperCase()">
         <div>
           <div style="text-transform: uppercase" class="text-2xl font-bold">{{ taskInfoById[taskId]?.subheader }}</div>
