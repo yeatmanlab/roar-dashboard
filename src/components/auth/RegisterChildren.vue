@@ -103,7 +103,7 @@
                 :feedback="false"
               ></PvPassword>
             </div>
-            <span v-if="v$.students.$each.$response.$data[outerIndex].password.$invalid && submitted">
+            <span v-if="v$.students.$each.$response.$errors[outerIndex].password.length > 0 && submitted">
               <span
                 v-for="(error, innerIndex2) in v$.students.$each.$response.$errors[outerIndex].password"
                 :key="`error-${outerIndex}-${innerIndex2}`"
@@ -127,7 +127,7 @@
                 :feedback="false"
               ></PvPassword>
             </div>
-            <span v-if="isPasswordMismatch(outerIndex) && submitted" class="p-error"> Passwords must match </span>
+            <span v-if="isPasswordMismatch(outerIndex)" class="p-error"> Passwords must match </span>
           </div>
         </section>
         <section class="form-section">
@@ -348,7 +348,7 @@
         type="submit"
         label="Submit"
         class="bg-primary text-white border-none border-round w-4 p-2 h-3rem mr-3 hover:surface-300 hover:text-black-alpha-90"
-        @click.prevent="handleFormSubmit(!v$.$invalid)"
+        @click.prevent="handleFormSubmit(!v$.$invalid && !anyPasswordsMismatched())"
       />
       <PvDialog
         v-model:visible="isDialogVisible"
@@ -564,15 +564,18 @@ function isPasswordMismatch(index) {
   return state.students[index].password !== state.students[index]?.confirmPassword;
 }
 
+function anyPasswordsMismatched() {
+  return state.students.some((student) => student.password !== student.confirmPassword);
+}
+
 const v$ = useVuelidate(rules, state);
 
 const handleFormSubmit = async (isFormValid) => {
   submitted.value = true;
 
   if (!isFormValid) {
-    dialogMessage.value = 'Please fill out all the required fields.';
+    dialogMessage.value = 'There is an error with the form input, please correct and re-try.';
     showErrorDialog();
-    submitted.value = false;
     return;
   }
 
@@ -614,7 +617,29 @@ const validateCode = async (studentCode, outerIndex = 0) => {
 
   try {
     const activationCode = await fetchDocById('activationCodes', studentCode, undefined, 'admin', true, true);
-
+    // If two months have elapsed since creation, we should invalidate the code as expired
+    if (activationCode.dateExpired) {
+      const dateExpired = new Date(activationCode.dateExpired);
+      const today = new Date();
+      if (dateExpired < today) {
+        dialogMessage.value = 'The code has expired. Please enter a valid code."';
+        showErrorDialog();
+        submitted.value = false;
+        return;
+      }
+    }
+    // if no dateExpired, fallback to dateCreated to check for validity
+    else if (activationCode.dateCreated) {
+      const dateCreated = new Date(activationCode.dateCreated);
+      const twoMonthsAgo = new Date();
+      twoMonthsAgo.setMonth(twoMonthsAgo.getMonth() - 2);
+      if (dateCreated < twoMonthsAgo) {
+        dialogMessage.value = 'The code has expired. Please enter a valid code."';
+        showErrorDialog();
+        submitted.value = false;
+        return;
+      }
+    }
     if (activationCode.orgId) {
       state.students[outerIndex].orgName = `${_capitalize(activationCode.orgType)} - ${
         activationCode.orgName ?? activationCode.orgId

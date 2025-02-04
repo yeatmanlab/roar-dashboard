@@ -175,7 +175,7 @@ export function playARF({
 
   cy.selectAdministration(administration);
 
-  cy.get('.p-tabview', { timeout: timeout }).contains(languageOptions[language][task].gameTab).should('exist');
+  cy.get('.p-tablist-tab-list', { timeout: timeout }).contains(languageOptions[language][task].gameTab).should('exist');
   cy.visit(`/game/${task}`);
 
   //   Click jspsych button to begin
@@ -190,7 +190,7 @@ export function playARF({
   cy.visit('/');
   cy.wait(0.2 * timeout);
   cy.selectAdministration(administration);
-  cy.get('.p-tabview', { timeout: timeout }).contains(languageOptions[language][task].gameTab).should('exist');
+  cy.get('.p-tablist-tab-list', { timeout: timeout }).contains(languageOptions[language][task].gameTab).should('exist');
 }
 
 export function playCALF({
@@ -221,7 +221,7 @@ export function playCALF({
     cy.switchToOptionalAssessments();
   }
 
-  cy.get('.p-tabview', { timeout: timeout }).contains(languageOptions[language][task].gameTab).should('exist');
+  cy.get('.p-tablist-tab-list', { timeout: timeout }).contains(languageOptions[language][task].gameTab).should('exist');
   cy.visit(`/game/${task}`);
 
   //   Click jspsych button to begin
@@ -242,5 +242,5 @@ export function playCALF({
     cy.switchToOptionalAssessments();
   }
 
-  cy.get('.p-tabview', { timeout: timeout }).contains(languageOptions[language][task].gameTab).should('exist');
+  cy.get('.p-tablist-tab-list', { timeout: timeout }).contains(languageOptions[language][task].gameTab).should('exist');
 }
