@@ -1,8 +1,10 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { useAuthStore } from '@/store/auth';
+import { storeToRefs } from 'pinia';
 import _get from 'lodash/get';
 import { pageTitlesEN, pageTitlesUS, pageTitlesES, pageTitlesCO } from '@/translations/exports';
 import { APP_ROUTES } from '@/constants/routes';
+import { canUser } from '@bdelab/roar-firekit';
 
 function removeQueryParams(to) {
   if (Object.keys(to.query).length) return { path: to.path, query: {}, hash: to.hash };
@@ -194,7 +196,12 @@ const routes = [
     path: '/manage-tasks-variants',
     name: 'ManageTasksVariants',
     component: () => import('../pages/ManageTasksVariants.vue'),
-    meta: { pageTitle: 'Manage Tasks', requireAdmin: true, requireSuperAdmin: true },
+    meta: {
+      pageTitle: 'Manage Tasks',
+      requireAdmin: true,
+      requireSuperAdmin: true,
+      permission: 'dashboard.admin_forms.tasks_variants',
+    },
   },
   {
     path: '/register',
@@ -219,7 +226,12 @@ const routes = [
     path: '/register-students',
     name: 'RegisterStudents',
     component: () => import('../pages/RegisterStudents.vue'),
-    meta: { pageTitle: 'Register Students', requireAdmin: true, requireSuperAdmin: true },
+    meta: {
+      pageTitle: 'Register Students',
+      requireAdmin: true,
+      requireSuperAdmin: true,
+      permission: 'dashboard.admin_forms.create_students',
+    },
   },
   {
     path: APP_ROUTES.SIGN_IN,
@@ -275,66 +287,85 @@ const routes = [
     path: '/administrator',
     name: 'Administrator',
     component: () => import('../pages/HomeAdministrator.vue'),
-    meta: { pageTitle: 'Administrator', requireAdmin: true },
+    meta: { pageTitle: 'Administrator', requireAdmin: true, permission: 'dashboard.administrator.view' },
   },
   {
     path: '/create-administration',
     name: 'CreateAdministration',
     component: () => import('../components/CreateAdministration.vue'),
-    meta: { pageTitle: 'Create an administration', requireAdmin: true, requireSuperAdmin: true },
+    meta: {
+      pageTitle: 'Create an administration',
+      requireAdmin: true,
+      requireSuperAdmin: true,
+      permission: 'dashboard.admin_forms.create_administration',
+    },
   },
   {
     path: '/edit-administration/:adminId',
     name: 'EditAdministration',
     props: true,
     component: () => import('../components/CreateAdministration.vue'),
-    meta: { pageTitle: 'Edit an Administration', requireAdmin: true, requireSuperAdmin: true },
+    meta: {
+      pageTitle: 'Edit an Administration',
+      requireAdmin: true,
+      requireSuperAdmin: true,
+      permission: 'dashboard.admin_forms.edit_administration',
+    },
   },
   {
     path: '/create-administrator',
     name: 'CreateAdministrator',
     component: () => import('../components/CreateAdministrator.vue'),
-    meta: { pageTitle: 'Create an administrator account', requireAdmin: true },
+    meta: {
+      pageTitle: 'Create an administrator account',
+      requireAdmin: true,
+      permission: 'dashboard.admin_forms.create_administrator',
+    },
   },
   {
     path: '/create-orgs',
     name: 'CreateOrgs',
     component: () => import('../components/CreateOrgs.vue'),
-    meta: { pageTitle: 'Create an organization', requireAdmin: true, requireSuperAdmin: true },
+    meta: {
+      pageTitle: 'Create an organization',
+      requireAdmin: true,
+      requireSuperAdmin: true,
+      permission: 'dashboard.admin_forms.create_orgs',
+    },
   },
   {
     path: '/list-orgs',
     name: 'ListOrgs',
     component: () => import('../components/ListOrgs.vue'),
-    meta: { pageTitle: 'List organizations', requireAdmin: true },
+    meta: { pageTitle: 'List organizations', requireAdmin: true, permission: 'dashboard.admin_forms.list_orgs' },
   },
   {
     path: '/list-users/:orgType/:orgId/:orgName',
     name: 'ListUsers',
     props: true,
     component: () => import('../components/ListUsers.vue'),
-    meta: { pageTitle: 'List users', requireAdmin: true },
+    meta: { pageTitle: 'List users', requireAdmin: true, permission: 'dashboard.admin_forms.list_users' },
   },
   {
     path: '/administration/:administrationId/:orgType/:orgId',
     name: 'ProgressReport',
     props: true,
     component: () => import('../pages/ProgressReport.vue'),
-    meta: { pageTitle: 'View Administration', requireAdmin: true },
+    meta: { pageTitle: 'View Administration', requireAdmin: true, permission: 'dashboard.progress_report.view' },
   },
   {
     path: APP_ROUTES.SCORE_REPORT,
     name: 'ScoreReport',
     props: true,
     component: () => import('../pages/ScoreReport.vue'),
-    meta: { pageTitle: 'View Scores', requireAdmin: true },
+    meta: { pageTitle: 'View Scores', requireAdmin: true, permission: 'dashboard.score_report.view' },
   },
   {
     path: APP_ROUTES.STUDENT_REPORT,
     name: 'StudentReport',
     props: true,
     component: () => import('../pages/StudentReport.vue'),
-    meta: { pageTitle: 'Student Score Report', requireAdmin: true },
+    meta: { pageTitle: 'Student Score Report', requireAdmin: true, permission: 'dashboard.student_report.view' },
   },
   {
     path: APP_ROUTES.ACCOUNT_PROFILE,
@@ -359,7 +390,7 @@ const routes = [
         meta: { requireAdmin: true },
       },
     ],
-    meta: { pageTitle: 'Profile' },
+    meta: { pageTitle: 'Profile', permission: 'dashboard.profile.view' },
   },
   {
     path: '/enable-cookies',
@@ -372,6 +403,12 @@ const routes = [
     name: 'NotFound',
     component: () => import('../pages/NotFound.vue'),
     meta: { pageTitle: 'Whoops! 404 Page!' },
+  },
+  {
+    path: '/unauthorized',
+    name: 'Unauthorized',
+    component: () => import('../pages/Unauthorized.vue'),
+    meta: { pageTitle: 'Unauthorized' },
   },
   // LEVANTE
   {
@@ -415,6 +452,7 @@ router.beforeEach(async (to, from, next) => {
   }
 
   const store = useAuthStore();
+  const { accessToken } = storeToRefs(store);
 
   const allowedUnauthenticatedRoutes = [
     'SignIn',
@@ -453,6 +491,20 @@ router.beforeEach(async (to, from, next) => {
   // Check user roles
   const isUserAdmin = store.isUserAdmin;
   const isUserSuperAdmin = store.isUserSuperAdmin;
+
+  const routePermission = _get(to, 'meta.permission', null);
+  if (routePermission) {
+    console.log('[router] Checking route permission:', routePermission);
+    const hasPermission = canUser(accessToken.value, routePermission);
+    console.log('[router] Permission check result:', hasPermission);
+    if (hasPermission) {
+      next();
+      return;
+    } else {
+      next({ name: 'Unauthorized' });
+      return;
+    }
+  }
 
   // All current conditions:
   // 1. Super Admin: true, Admin: true

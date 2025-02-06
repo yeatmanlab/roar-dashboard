@@ -36,6 +36,9 @@ export const useAuthStore = () => {
       roarUid: (state) => {
         return state.userClaims?.claims?.roarUid;
       },
+      accessToken: (state) => {
+        return state.firebaseUser?.adminFirebaseUser?.accessToken;
+      },
       email: (state) => {
         return state.firebaseUser.adminFirebaseUser?.email;
       },
