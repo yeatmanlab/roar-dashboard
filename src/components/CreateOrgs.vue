@@ -184,7 +184,12 @@
           <div class="col-12">
             <PvButton
               :label="submitted ? `Creating ${orgTypeLabel}` : `Create ${orgTypeLabel}`"
-              :disabled="orgTypeLabel === 'Org' || v$.$invalid || submitted"
+              :disabled="
+                orgTypeLabel === 'Org' ||
+                v$.$invalid ||
+                submitted ||
+                !canUser(accessToken, 'dashboard.admin_forms.create_orgs')
+              "
               :icon="submitted ? 'pi pi-spin pi-spinner' : ''"
               class="bg-primary text-white border-none border-round h-3rem w-3 hover:bg-red-900"
               data-cy="button-create-org"
@@ -219,13 +224,14 @@ import useDistrictsListQuery from '@/composables/queries/useDistrictsListQuery';
 import useDistrictSchoolsQuery from '@/composables/queries/useDistrictSchoolsQuery';
 import useSchoolClassesQuery from '@/composables/queries/useSchoolClassesQuery';
 import useGroupsListQuery from '@/composables/queries/useGroupsListQuery';
+import { canUser } from '@bdelab/roar-firekit';
 
 const initialized = ref(false);
 const isTestData = ref(false);
 const isDemoData = ref(false);
 const toast = useToast();
 const authStore = useAuthStore();
-const { roarfirekit } = storeToRefs(authStore);
+const { roarfirekit, accessToken } = storeToRefs(authStore);
 const isLevante = import.meta.env.MODE === 'LEVANTE';
 
 const state = reactive({

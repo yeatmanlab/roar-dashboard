@@ -414,7 +414,10 @@
         />
       </section>
 
-      <PvButton type="submit" class="my-4 bg-primary text-white border-none border-round p-2 hover:bg-red-900"
+      <PvButton
+        :disabled="!canUser(accessToken, 'dashboard.admin_forms.tasks_variants')"
+        type="submit"
+        class="my-4 bg-primary text-white border-none border-round p-2 hover:bg-red-900"
         >Update Task</PvButton
       >
     </form>
@@ -439,13 +442,14 @@ import { useAuthStore } from '@/store/auth';
 import useTasksQuery from '@/composables/queries/useTasksQuery';
 import useAddTaskMutation from '@/composables/mutations/useAddTaskMutation';
 import useUpdateTaskMutation from '@/composables/mutations/useUpdateTaskMutation';
+import { canUser } from '@bdelab/roar-firekit';
 
 const toast = useToast();
 const initialized = ref(false);
 const registeredTasksOnly = ref(true);
 const taskCheckboxData = ref();
 const authStore = useAuthStore();
-const { roarfirekit } = storeToRefs(authStore);
+const { roarfirekit, accessToken } = storeToRefs(authStore);
 
 const { mutate: addTask } = useAddTaskMutation();
 const { mutate: updateTask } = useUpdateTaskMutation();
