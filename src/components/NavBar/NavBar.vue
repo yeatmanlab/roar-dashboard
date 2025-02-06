@@ -47,7 +47,7 @@
                   {{ $t('navBar.signOut') }}
                 </PvButton>
 
-                <div v-if="showAccountSettingsLink" class="nav-user-wrapper bg-gray-100 p-0">
+                <div v-if="canSeeAccountSettingsLink" class="nav-user-wrapper bg-gray-100 p-0">
                   <router-link :to="{ path: APP_ROUTES.ACCOUNT_PROFILE }" data-cy="navbar__account-settings-btn">
                     <PvButton
                       class="no-underline m-0 p-0 text-primary bg-gray-100 border-none border-round cursor-pointer h-3rem w-3rem text-sm hover:bg-red-900 hover:text-white"
@@ -76,6 +76,9 @@ import PvMenubar from 'primevue/menubar';
 import LanguageSelector from '@/components/LanguageSelector.vue';
 import { APP_ROUTES } from '@/constants/routes';
 import ROARLogo from '@/assets/RoarLogo.vue';
+import { useAuthStore } from '@/store/auth';
+import { storeToRefs } from 'pinia';
+import { canUser } from '@bdelab/roar-firekit';
 
 // Define props
 const props = defineProps({
@@ -103,6 +106,13 @@ const props = defineProps({
 
 const menu = ref();
 const screenWidth = ref(window.innerWidth);
+
+const authStore = useAuthStore();
+const { accessToken } = storeToRefs(authStore);
+const canSeeAccountSettingsLink = computed(() => {
+  if (!props.showAccountSettingsLink) return false;
+  else return canUser(accessToken.value, 'dashboard.profile.view');
+});
 
 // @TODO: Replace screen-size handlers with Tailwind/CSS media queries. Currently not possible due to an outdated
 // PrimeVue and Tailwind version. If we cannot update PrimeVue/Tailwind, we should throttle the resize events.
