@@ -62,6 +62,7 @@ const navbarBlacklist = [
   'PA-ES',
   'Letter',
   'Letter-ES',
+  'Phonics',
   'Vocab',
   'Multichoice',
   'Morphology',
