@@ -6,7 +6,7 @@
     <PvTag
       :value="_get(colData, col.field)"
       :style="`background-color: ${
-        _get(colData, col.tagColor) ? _get(colData, col.tagColor) : '#74797f'
+        _get(colData, col.tagColor, '#74797f')
       }; min-width: 2rem; 
       ${
         returnScoreTooltip(colData, col.field)?.length > 0 &&
