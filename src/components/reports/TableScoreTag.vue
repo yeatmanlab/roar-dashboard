@@ -37,6 +37,7 @@ import {
   rawOnlyTasks,
   scoredTasks,
 } from '@/helpers/reports.js';
+import { taskDisplayNames } from '@/helpers/reports';
 import { includedValidityFlags } from '@/helpers/reports';
 
 defineProps({
@@ -114,9 +115,11 @@ function getFlags(colData, taskId) {
   const flags = colData.scores[taskId]?.engagementFlags;
   const flagMessages = {
     accuracyTooLow: 'Responses were inaccurate',
-    notEnoughResponses: 'Assessment has not enough responses',
+    notEnoughResponses: `Incomplete. This student may retake ${
+      taskDisplayNames[taskId]?.extendedTitle || 'the assessment'
+    }`,
     responseTimeTooFast: 'Responses were too fast',
-    incomplete: 'Incomplete',
+    incomplete: `Incomplete. This student may retake ${taskDisplayNames[taskId]?.extendedTitle || 'the assessment'}`,
   };
 
   // If there are flags and the assessment is not reliable, return the flags
