@@ -41,6 +41,11 @@
       </div>
       <AppSpinner v-else />
       <RoarModal
+        v-if="
+          canUser(accessToken, 'dashboard.users.edit') ||
+          canUser(accessToken, 'dashboard.users.edit_administrator') ||
+          canUser(accessToken, 'dashboard.users.change_password')
+        "
         title="Edit User Information"
         subtitle="Modify, add, or remove user information"
         :is-enabled="isModalEnabled"
@@ -71,7 +76,10 @@
             </div>
           </div>
         </div>
-        <div class="flex justify-content-center mt-3 w-full">
+        <div
+          v-if="canUser(accessToken, 'dashboard.users.change_password')"
+          class="flex justify-content-center mt-3 w-full"
+        >
           <PvButton
             v-if="!showPassword"
             class="border-none border-round bg-primary text-white p-2 hover:surface-400 mr-auto ml-auto"
@@ -92,6 +100,7 @@
                 @click="closeModal"
               ></PvButton>
               <PvButton
+                v-if="canUserEdit"
                 tabindex="0"
                 class="border-none border-round bg-primary text-white p-2 hover:surface-400"
                 label="Save"
@@ -138,10 +147,11 @@ import AppSpinner from './AppSpinner.vue';
 import EditUsersForm from './EditUsersForm.vue';
 import RoarModal from './modals/RoarModal.vue';
 import RoarDataTable from '@/components/RoarDataTable';
+import { canUser } from '@bdelab/roar-firekit';
 
 const authStore = useAuthStore();
 
-const { roarfirekit } = storeToRefs(authStore);
+const { roarfirekit, accessToken } = storeToRefs(authStore);
 const initialized = ref(false);
 const toast = useToast();
 
@@ -226,17 +236,38 @@ const columns = ref([
     dataType: 'boolean',
     sort: false,
   },
-  {
+]);
+
+if (
+  canUser(accessToken.value, 'dashboard.users.edit') ||
+  canUser(accessToken.value, 'dashboard.users.change_password') ||
+  canUser(accessToken.value, 'dashboard.users.edit_administrator')
+) {
+  columns.value.push({
     header: 'Edit',
     button: true,
     eventName: 'edit-button',
     buttonIcon: 'pi pi-user-edit',
     sort: false,
-  },
-]);
+  });
+} else {
+  console.log('User does not have edit permissions');
+}
 
 const currentEditUser = ref(null);
 const isModalEnabled = ref(false);
+
+// +----------------------+
+// | Permissions Handling |
+// +----------------------+
+const canUserEdit = computed(() => {
+  const userType = currentEditUser.value?.userType;
+  if (userType === 'admin') {
+    return canUser(accessToken.value, 'dashboard.users.edit_administrator');
+  } else {
+    return canUser(accessToken.value, 'dashboard.users.edit');
+  }
+});
 
 // +-----------------+
 // | Edit User Modal |
