@@ -116,6 +116,7 @@ function getFlags(colData, taskId) {
     accuracyTooLow: 'Responses were inaccurate',
     notEnoughResponses: 'Assessment has not enough responses',
     responseTimeTooFast: 'Responses were too fast',
+    incomplete: 'Incomplete',
   };
 
   // If there are flags and the assessment is not reliable, return the flags
