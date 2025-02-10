@@ -395,7 +395,7 @@ export const tasksToDisplayPercentCorrect = [
  */
 export const tasksToDisplayTotalCorrect = [
   'fluency',
-  'roam-arf',
+  'fluency-arf',
   'fluency-calf',
   'fluency-arf-es',
   'fluency-calf-es',
