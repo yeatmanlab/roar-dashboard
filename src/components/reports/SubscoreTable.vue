@@ -185,7 +185,4 @@ onMounted(async () => {
   font-weight: bold;
   text-align: center;
 }
-.p-tag {
-  background: #74797f !important;
-}
 </style>
