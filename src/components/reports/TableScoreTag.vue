@@ -113,9 +113,9 @@ function handleToolTip(_taskId, _toolTip, _colData) {
 function getFlags(colData, taskId) {
   const flags = colData.scores[taskId]?.engagementFlags;
   const flagMessages = {
-    accuracyTooLow: '- Responses were inaccurate',
-    notEnoughResponses: '- Assessment was incomplete',
-    responseTimeTooFast: '- Responses were too fast',
+    accuracyTooLow: 'Responses were inaccurate',
+    notEnoughResponses: 'Assessment has not enough responses',
+    responseTimeTooFast: 'Responses were too fast',
   };
 
   // If there are flags and the assessment is not reliable, return the flags
@@ -127,7 +127,7 @@ function getFlags(colData, taskId) {
         return flagMessages[flag] || _lowerCase(flag);
       });
       if (reliabilityFlags.length === 0) return '';
-      return 'Unreliable Score' + '\n' + reliabilityFlags.join('\n') + '\n\n';
+      return 'Unreliable Score' + '\n' + ' - ' + reliabilityFlags.join('\n - ') + '\n\n';
     } else {
       const reliabilityFlags = Object.keys(flags).map((flag) => {
         return flagMessages[flag] || _lowerCase(flag);

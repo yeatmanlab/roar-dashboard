@@ -343,8 +343,8 @@ export const includedValidityFlags = {
   'pa-es': ['incomplete'],
   sre: ['incomplete', 'responseTimeTooFast'],
   'sre-es': ['incomplete', 'responseTimeTooFast'],
-  swr: ['responseTimeTooFast'],
-  'swr-es': ['responseTimeTooFast'],
+  swr: ['responseTimeTooFast', 'notEnoughResponses'], // adding 'notEnoughResponses' for SWR since there is no current flag in the game to mark as incomplete like SRE does
+  'swr-es': ['responseTimeTooFast', 'notEnoughResponses'],
 };
 
 /*
