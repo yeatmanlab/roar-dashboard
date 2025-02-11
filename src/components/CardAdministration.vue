@@ -208,11 +208,11 @@ const administrationStatus = computed(() => {
   const dateStart = new Date(props.dates.start);
   const dateClosed = new Date(props.dates.end);
   
-  let status = 'OPEN';
-  if (now > dateClosed) status = 'CLOSED';
-  else if (now >= dateStart && now <= dateClosed) status = 'IN PROGRESS';
-
-  return status;
+  let untransformedStatus = 'OPEN'
+  if (now > dateClosed) untransformedStatus = 'CLOSED';
+  if (now >= dateStart && now <= dateClosed) untransformedStatus =  'IN PROGRESS';
+  
+  return untransformedStatus
 });
 
 const administrationStatusClass = computed(() => {
