@@ -8,7 +8,7 @@
       <div class="flex flex-row w-full md:h-2rem sm:h-3rem">
         <div class="flex-grow-1 pr-3 mr-2 p-0 m-0">
           <h2 data-cy="h2-card-admin-title" class="sm:text-lg lg:text-lx m-0 h2-card-admin-title">{{ title }}</h2>
-         <span :class="['status-tag', administrationStatusClass]">
+         <span :class="['status-tag', administrationStatusTag]">
           {{ administrationStatus }}
         </span>
         </div>
@@ -210,12 +210,12 @@ const administrationStatus = computed(() => {
   
   let untransformedStatus = 'OPEN'
   if (now > dateClosed) untransformedStatus = 'CLOSED';
-  if (now >= dateStart && now <= dateClosed) untransformedStatus =  'IN PROGRESS';
+  if (now >= dateStart && now <= dateClosed) untransformedStatus = 'IN PROGRESS';
   
   return untransformedStatus
 });
 
-const administrationStatusClass = computed(() => {
+const administrationStatusTag = computed(() => {
   const status = administrationStatus.value;
   return status.toLowerCase().replace(' ', '-');
 });
