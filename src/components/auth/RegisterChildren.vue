@@ -653,7 +653,7 @@ const validateCode = async (studentCode, outerIndex = 0) => {
     if (!state.students[outerIndex].noActivationCode || props.code) {
       dialogMessage.value = `The code ${studentCode} does not belong to any organization. Please enter a valid code.`;
     } else {
-      dialogMessage.value = 'The code does not belong to any organization \n Please enter a valid code"';
+      dialogMessage.value = 'The code does not belong to any organization. Please enter a valid code."';
     }
 
     showErrorDialog();
