@@ -8,7 +8,7 @@
       <div class="flex flex-row w-full md:h-2rem sm:h-3rem">
         <div class="flex-grow-1 pr-3 mr-2 p-0 m-0">
           <h2 data-cy="h2-card-admin-title" class="sm:text-lg lg:text-lx m-0 h2-card-admin-title">{{ title }}</h2>
-         <span :class="['status-tag', administrationStatus.toLowerCase()]">
+         <span :class="['status-badge', administrationStatusBadge]">
           {{ administrationStatus }}
         </span>
         </div>
@@ -206,12 +206,12 @@ const { mutateAsync: deleteAdministration } = useDeleteAdministrationMutation();
 const administrationStatus = computed(() => {
   const now = new Date();
   const dateClosed = new Date(props.dates.end);
-  
   let status = 'OPEN'
   if (now > dateClosed) status = 'CLOSED';
-  
   return status
 });
+const administrationStatusBadge = computed(() => administrationStatus.value.toLowerCase()); 
+
 
 const speedDialItems = ref([
   {
@@ -536,7 +536,7 @@ onMounted(() => {
   }
 }
 
-.status-tag {
+.status-badge {
   font-weight: bold;
   font-family: var(--font-family);
   padding: 0.2rem 0.5rem;
