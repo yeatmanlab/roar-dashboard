@@ -101,7 +101,12 @@
       />
     </div>
     <div id="support-graphic" class="support-wrapper">
-      <PvAccordion class="my-2 w-full" :active-index="expanded ? 0 : null">
+      <PvAccordion
+        class="my-2 w-full"
+        :active-index="expanded ? 0 : null"
+        expand-icon="pi pi-plus ml-2"
+        collapse-icon="pi pi-minus ml-2"
+      >
         <PvAccordionTab :header="$t('scoreReports.taskTabHeader')">
           <div class="flex flex-column align-items-center text-lg">
             <img v-if="!(studentData?.studentData?.grade >= 6)" src="../assets/support-distribution.png" width="650" />
@@ -165,7 +170,12 @@
         </PvAccordionTab>
       </PvAccordion>
       <div data-html2canvas-ignore="true" class="w-full mb-7">
-        <PvAccordion class="my-2 w-full" :active-index="expanded ? 0 : null">
+        <PvAccordion
+          class="my-2 w-full"
+          :active-index="expanded ? 0 : null"
+          expand-icon="pi pi-plus ml-2"
+          collapse-icon="pi pi-minus ml-2"
+        >
           <PvAccordionTab :header="$t('scoreReports.nextStepsTabHeader')">
             <i18n-t keypath="scoreReports.nextSteps" tag="div" class="text-lg">
               <template #link>
