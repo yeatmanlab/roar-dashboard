@@ -45,6 +45,7 @@
             class="justify-start z-1 bg-white text-primary text-center justify-content-center border-none border-round p-2 h-3rem hover:surface-300 hover:text-900 border-none"
             style="width: 8rem; margin-left: 1rem"
             @click="activeIndex = 0"
+            :disabled="spinner"
             ><i class="pi pi-arrow-left mr-2"></i> Back
           </PvButton>
         </div>
