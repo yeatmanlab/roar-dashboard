@@ -67,12 +67,14 @@
             :games="optionalAssessments"
             :sequential="isSequential"
             :user-data="userData"
+            :launchId="launchId"
           />
           <GameTabs
             v-else-if="requiredAssessments && userData"
             :games="requiredAssessments"
             :sequential="isSequential"
             :user-data="userData"
+            :launchId="launchId"
           />
         </Transition>
       </div>
