@@ -18,7 +18,7 @@ const useUserAssignmentsQuery = (queryOptions = undefined, userId = null) => {
   const uid = computed(() => userId || roarUid.value);
   console.log('queryuid', uid.value);
 
-  const queryConditions = [() => !!roarUid.value];
+  const queryConditions = [() => !!uid.value];
   const { isQueryEnabled, options } = computeQueryOverrides(queryConditions, queryOptions);
 
   return useQuery({
