@@ -200,8 +200,8 @@ const routes = [
   {
     path: '/launch/:participantId',
     name: 'LaunchHome',
-    component: () => import('../pages/HomeParticipant.vue'),
-    props: { language: 'en' },
+    component: () => import('../pages/LaunchedHomeParticipant.vue'),
+    props: true,
     meta: { pageTitle: 'TaskLauncher Home' },
   },
   {
