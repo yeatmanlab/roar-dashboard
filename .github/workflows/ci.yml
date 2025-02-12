@@ -200,6 +200,7 @@ jobs:
         uses: ./.github/actions/deploy
         id: deployment
         with:
+          firebase-target: 'staging'
           firebase-channel: preview
           firebase-project-id: ${{ secrets.CI_FIREBASE_PROJECT_ID_ADMIN_STAGING }}
           gcp-workload-identity-provider: ${{ secrets.CI_FIREBASE_WORKLOAD_IDENTITY_PROVIDER_ADMIN_STAGING }}
