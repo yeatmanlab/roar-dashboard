@@ -11,7 +11,6 @@
 </template>
 <script setup>
 import PvButton from 'primevue/button';
-import ROARLogoShort from '@/assets/RoarLogo-Short.vue';
 import { useRouter } from 'vue-router';
 
 const router = useRouter();
