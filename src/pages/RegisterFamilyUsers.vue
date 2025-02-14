@@ -12,9 +12,11 @@
               <div class="text-sm font-bold text-red-800 ml-1 uppercase">beta</div>
             </div>
             <div class="bg-gray-100 rounded p-2">
-              <div class="flex flex-wrap text-gray-600 text-md font-bold">Register a parent or guardian account.</div>
+              <div class="flex flex-wrap text-gray-600 text-md font-bold">
+                Register a parent or guardian account for ROAR Research Portal
+              </div>
               <div class="flex flex-wrap text-gray-400 text-sm">
-                This account will be used to manage your family's accounts.
+                This account allows your family to participate in ROAR research studies!
               </div>
               <div class="flex flex-wrap text-gray-400 text-sm">
                 You will be able to add children to your family in the next step.
@@ -27,7 +29,9 @@
               <div class="text-sm font-bold text-red-800 ml-1 uppercase">beta</div>
             </div>
             <div class="bg-gray-100 rounded p-2">
-              <div class="flex flex-wrap text-gray-600 text-md font-bold">Register children or students.</div>
+              <div class="flex flex-wrap text-gray-600 text-md font-bold">
+                Register children or students for ROAR Research Portal
+              </div>
               <div class="flex flex-wrap text-gray-400 text-sm">
                 These accounts will be linked to your parent/guardian account.
               </div>
@@ -40,6 +44,7 @@
           <PvButton
             class="justify-start z-1 bg-white text-primary text-center justify-content-center border-none border-round p-2 h-3rem hover:surface-300 hover:text-900 border-none"
             style="width: 8rem; margin-left: 1rem"
+            :disabled="spinner"
             @click="activeIndex = 0"
             ><i class="pi pi-arrow-left mr-2"></i> Back
           </PvButton>
@@ -216,6 +221,12 @@ watch([parentInfo, studentInfo], ([newParentInfo, newStudentInfo]) => {
         spinner.value = false;
         dialogHeader.value = 'Success!';
         dialogMessage.value = 'Your family has been created!';
+        showDialog();
+      })
+      .catch((error) => {
+        spinner.value = false;
+        dialogHeader.value = 'Error!';
+        dialogMessage.value = error.message;
         showDialog();
       });
   }

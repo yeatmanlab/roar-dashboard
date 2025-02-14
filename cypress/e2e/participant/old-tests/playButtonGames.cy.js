@@ -9,7 +9,7 @@ describe('Testing play through of vocab, cva, letter, and multichoice games as a
       cy.visit('/', { timeout: 2 * timeout });
 
       cy.selectAdministration(Cypress.env('testRoarAppsAdministration'));
-      cy.get('.tabview-nav-link-label', { timeout: 2 * timeout }).contains(game.name);
+      cy.get('.p-tablist-tab-list', { timeout: 2 * timeout }).contains(game.name);
 
       cy.visit(`/game/${game.id}`, { timeout: 2 * timeout });
 
@@ -46,7 +46,7 @@ describe('Testing play through of vocab, cva, letter, and multichoice games as a
       cy.visit('/');
       cy.wait(0.2 * timeout);
       cy.selectAdministration(Cypress.env('testRoarAppsAdministration'));
-      cy.get('.tabview-nav-link-label', { timeout: 5 * timeout })
+      cy.get('.p-tablist-tab-list', { timeout: 5 * timeout })
         .contains(game.name)
         .should('exist');
     });
