@@ -1,6 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { useAuthStore } from '@/store/auth';
-import { storeToRefs } from 'pinia';
 import _get from 'lodash/get';
 import { pageTitlesEN, pageTitlesUS, pageTitlesES, pageTitlesCO } from '@/translations/exports';
 import { APP_ROUTES } from '@/constants/routes';
@@ -468,7 +467,7 @@ router.beforeEach(async (to, from, next) => {
   }
 
   const store = useAuthStore();
-  const { userCan, Permissions } = usePermissions();
+  const { userCan } = usePermissions();
 
   const allowedUnauthenticatedRoutes = [
     'SignIn',

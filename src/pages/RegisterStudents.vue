@@ -164,7 +164,8 @@ import { useAuthStore } from '@/store/auth';
 import { csvFileToJson } from '@/helpers';
 import { pluralizeFirestoreCollection } from '@/helpers';
 import { fetchOrgByName } from '@/helpers/query/orgs';
-import { PermissionsService } from '@bdelab/roar-firekit';
+import { usePermissions } from '@/composables/usePermissions';
+const { userCan, Permissions } = usePermissions();
 
 const authStore = useAuthStore();
 const toast = useToast();
@@ -172,7 +173,7 @@ const isFileUploaded = ref(false);
 const rawStudentFile = ref({});
 const isAllTestData = ref(false);
 
-const { roarfirekit, accessToken } = storeToRefs(authStore);
+const { roarfirekit } = storeToRefs(authStore);
 
 // Primary Table & Dropdown refs
 const dataTable = ref();
