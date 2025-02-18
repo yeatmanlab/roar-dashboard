@@ -1,5 +1,5 @@
 <template>
-  <div v-if="localUserType === 'student' && canUser(accessToken, 'dashboard.users.edit')" class="form-container">
+  <div v-if="localUserType === 'student' && userCan(Permissions.Dashbaord.Users.EDIT)" class="form-container">
     <div class="form-column">
       <div class="form-field">
         <label :class="{ 'font-light uppercase text-sm': !editMode }">First Name</label>
@@ -127,7 +127,7 @@
     </div>
   </div>
   <div
-    v-else-if="localUserType === 'admin' && canUser(accessToken, 'dashboard.users.edit_administrator')"
+    v-else-if="localUserType === 'admin' && userCan(Permissions.Dashboard.Administrators.EDIT)"
     class="form-container"
   >
     <div class="form-column">
@@ -224,7 +224,8 @@ import PvCheckbox from 'primevue/checkbox';
 import PvSelect from 'primevue/select';
 import PvInputText from 'primevue/inputtext';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
-import { canUser } from '@bdelab/roar-firekit';
+import { usePermissions } from '@/composables/usePermissions';
+const { userCan, Permissions } = usePermissions();
 
 const props = defineProps({
   userData: {
@@ -245,7 +246,7 @@ const props = defineProps({
 const emit = defineEmits(['modalClosed', 'update:userData']);
 
 const authStore = useAuthStore();
-const { roarfirekit, accessToken } = storeToRefs(authStore);
+const { roarfirekit } = storeToRefs(authStore);
 const initialized = ref(false);
 
 watch(

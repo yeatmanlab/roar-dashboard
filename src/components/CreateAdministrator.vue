@@ -66,7 +66,7 @@
           <div class="flex w-full align-items-center justify-content-center">
             <div>
               <PvButton
-                :disabled="!canUser(accessToken, 'dashboard.admin_forms.create_administrator')"
+                :disabled="!userCan(Permissions.Dashboard.Administrators.CREATE)"
                 class="bg-primary text-white border-none border-round p-2 h-3rem hover:bg-red-900"
                 label="Create Administrator"
                 data-cy="button-create-administrator"
@@ -99,7 +99,8 @@ import _cloneDeep from 'lodash/cloneDeep';
 import _union from 'lodash/union';
 import { useAuthStore } from '@/store/auth';
 import OrgPicker from '@/components/OrgPicker.vue';
-import { canUser } from '@bdelab/roar-firekit';
+import { usePermissions } from '@/composables/usePermissions';
+const { userCan, Permissions } = usePermissions();
 
 const router = useRouter();
 const toast = useToast();
@@ -113,7 +114,7 @@ const email = ref();
 const isTestData = ref(false);
 
 const authStore = useAuthStore();
-const { roarfirekit, accessToken } = storeToRefs(authStore);
+const { roarfirekit } = storeToRefs(authStore);
 
 let unsubscribe;
 const init = () => {

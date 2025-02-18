@@ -4,7 +4,8 @@ import { storeToRefs } from 'pinia';
 import _get from 'lodash/get';
 import { pageTitlesEN, pageTitlesUS, pageTitlesES, pageTitlesCO } from '@/translations/exports';
 import { APP_ROUTES } from '@/constants/routes';
-import { canUser } from '@bdelab/roar-firekit';
+import { usePermissions } from '@/composables/usePermissions';
+const { userCan, Permissions } = usePermissions();
 
 function removeQueryParams(to) {
   if (Object.keys(to.query).length) return { path: to.path, query: {}, hash: to.hash };
@@ -207,7 +208,7 @@ const routes = [
       pageTitle: 'Manage Tasks',
       requireAdmin: true,
       requireSuperAdmin: true,
-      permission: 'dashboard.admin_forms.tasks_variants',
+      permission: Permissions.Dashboard.Tasks.MANAGE,
     },
   },
   {
@@ -237,7 +238,7 @@ const routes = [
       pageTitle: 'Register Students',
       requireAdmin: true,
       requireSuperAdmin: true,
-      permission: 'dashboard.admin_forms.create_students',
+      permission: Permissions.Dashboard.Users.CREATE,
     },
   },
   {
@@ -294,7 +295,7 @@ const routes = [
     path: '/administrator',
     name: 'Administrator',
     component: () => import('../pages/HomeAdministrator.vue'),
-    meta: { pageTitle: 'Administrator', requireAdmin: true, permission: 'dashboard.administrator.view' },
+    meta: { pageTitle: 'Administrator', requireAdmin: true, permission: Permissions.Dashboard.Administrators.VIEW },
   },
   {
     path: '/create-administration',
@@ -304,7 +305,7 @@ const routes = [
       pageTitle: 'Create an administration',
       requireAdmin: true,
       requireSuperAdmin: true,
-      permission: 'dashboard.admin_forms.create_administration',
+      permission: Permissions.Dashboard.Administrations.CREATE,
     },
   },
   {
@@ -316,7 +317,7 @@ const routes = [
       pageTitle: 'Edit an Administration',
       requireAdmin: true,
       requireSuperAdmin: true,
-      permission: 'dashboard.admin_forms.edit_administration',
+      permission: Permissions.Dashboard.Administrations.EDIT,
     },
   },
   {
@@ -326,7 +327,7 @@ const routes = [
     meta: {
       pageTitle: 'Create an administrator account',
       requireAdmin: true,
-      permission: 'dashboard.admin_forms.create_administrator',
+      permission: Permissions.Dashboard.Administrators.CREATE,
     },
   },
   {
@@ -337,42 +338,50 @@ const routes = [
       pageTitle: 'Create an organization',
       requireAdmin: true,
       requireSuperAdmin: true,
-      permission: 'dashboard.admin_forms.create_orgs',
+      permission: Permissions.Dashboard.Organizations.CREATE,
     },
   },
   {
     path: '/list-orgs',
     name: 'ListOrgs',
     component: () => import('../components/ListOrgs.vue'),
-    meta: { pageTitle: 'List organizations', requireAdmin: true, permission: 'dashboard.admin_forms.list_orgs' },
+    meta: { pageTitle: 'List organizations', requireAdmin: true, permission: Permissions.Dashboard.Organizations.LIST },
   },
   {
     path: '/list-users/:orgType/:orgId/:orgName',
     name: 'ListUsers',
     props: true,
     component: () => import('../components/ListUsers.vue'),
-    meta: { pageTitle: 'List users', requireAdmin: true, permission: 'dashboard.admin_forms.list_users' },
+    meta: { pageTitle: 'List users', requireAdmin: true, permission: Permissions.Dashboard.Users.LIST },
   },
   {
     path: '/administration/:administrationId/:orgType/:orgId',
     name: 'ProgressReport',
     props: true,
     component: () => import('../pages/ProgressReport.vue'),
-    meta: { pageTitle: 'View Administration', requireAdmin: true, permission: 'dashboard.progress_report.view' },
+    meta: {
+      pageTitle: 'View Administration',
+      requireAdmin: true,
+      permission: Permissions.Dashboard.ProgressReport.VIEW,
+    },
   },
   {
     path: APP_ROUTES.SCORE_REPORT,
     name: 'ScoreReport',
     props: true,
     component: () => import('../pages/ScoreReport.vue'),
-    meta: { pageTitle: 'View Scores', requireAdmin: true, permission: 'dashboard.score_report.view' },
+    meta: { pageTitle: 'View Scores', requireAdmin: true, permission: Permissions.Dashboard.ScoreReport.VIEW },
   },
   {
     path: APP_ROUTES.STUDENT_REPORT,
     name: 'StudentReport',
     props: true,
     component: () => import('../pages/StudentReport.vue'),
-    meta: { pageTitle: 'Student Score Report', requireAdmin: true, permission: 'dashboard.student_report.view' },
+    meta: {
+      pageTitle: 'Student Score Report',
+      requireAdmin: true,
+      permission: Permissions.Dashboard.StudentReport.VIEW,
+    },
   },
   {
     path: APP_ROUTES.ACCOUNT_PROFILE,
@@ -397,7 +406,7 @@ const routes = [
         meta: { requireAdmin: true },
       },
     ],
-    meta: { pageTitle: 'Profile', permission: 'dashboard.profile.view' },
+    meta: { pageTitle: 'Profile', permission: Permissions.Dashboard.Profile.VIEW },
   },
   {
     path: '/enable-cookies',
@@ -501,9 +510,7 @@ router.beforeEach(async (to, from, next) => {
 
   const routePermission = _get(to, 'meta.permission', null);
   if (routePermission) {
-    console.log('[router] Checking route permission:', routePermission);
-    const hasPermission = canUser(accessToken.value, routePermission);
-    console.log('[router] Permission check result:', hasPermission);
+    const hasPermission = userCan(routePermission);
     if (hasPermission) {
       next();
       return;

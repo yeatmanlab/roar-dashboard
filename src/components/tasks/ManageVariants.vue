@@ -428,7 +428,7 @@
       </section>
 
       <PvButton
-        :disabled="!canUser(accessToken, 'dashboard.admin_forms.tasks_variants')"
+        :disabled="!userCan(Permissions.Dashboard.Tasks.MANAGE)"
         type="submit"
         class="my-4 bg-primary text-white border-none border-round p-2 hover:bg-red-900"
         >Update Variant</PvButton
@@ -456,14 +456,15 @@ import useTasksQuery from '@/composables/queries/useTasksQuery';
 import useTaskVariantsQuery from '@/composables/queries/useTaskVariantsQuery';
 import useAddTaskVariantMutation from '@/composables/mutations/useAddTaskVariantMutation';
 import useUpdateTaskVariantMutation from '@/composables/mutations/useUpdateTaskVariantMutation';
-import { canUser } from '@bdelab/roar-firekit';
+import { usePermissions } from '@/composables/usePermissions';
+const { userCan, Permissions } = usePermissions();
 
 const toast = useToast();
 const initialized = ref(false);
 const registeredTasksOnly = ref(true);
 const variantCheckboxData = ref();
 const authStore = useAuthStore();
-const { roarfirekit, accessToken } = storeToRefs(authStore);
+const { roarfirekit } = storeToRefs(authStore);
 
 const { mutate: addVariant } = useAddTaskVariantMutation();
 const { mutate: updateVariant } = useUpdateTaskVariantMutation();

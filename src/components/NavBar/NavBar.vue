@@ -76,9 +76,8 @@ import PvMenubar from 'primevue/menubar';
 import LanguageSelector from '@/components/LanguageSelector.vue';
 import { APP_ROUTES } from '@/constants/routes';
 import ROARLogo from '@/assets/RoarLogo.vue';
-import { useAuthStore } from '@/store/auth';
-import { storeToRefs } from 'pinia';
-import { canUser } from '@bdelab/roar-firekit';
+import { usePermissions } from '@/composables/usePermissions';
+const { userCan, Permissions } = usePermissions();
 
 // Define props
 const props = defineProps({
@@ -107,11 +106,9 @@ const props = defineProps({
 const menu = ref();
 const screenWidth = ref(window.innerWidth);
 
-const authStore = useAuthStore();
-const { accessToken } = storeToRefs(authStore);
 const canSeeAccountSettingsLink = computed(() => {
   if (!props.showAccountSettingsLink) return false;
-  else return canUser(accessToken.value, 'dashboard.profile.view');
+  else return userCan(Permissions.Dashboard.Profile.VIEW);
 });
 
 // @TODO: Replace screen-size handlers with Tailwind/CSS media queries. Currently not possible due to an outdated

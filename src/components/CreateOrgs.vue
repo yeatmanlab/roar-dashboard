@@ -188,7 +188,7 @@
                 orgTypeLabel === 'Org' ||
                 v$.$invalid ||
                 submitted ||
-                !canUser(accessToken, 'dashboard.admin_forms.create_orgs')
+                !userCan(accessToken, Permissions.Dashbaord.Organizations.CREATE)
               "
               :icon="submitted ? 'pi pi-spin pi-spinner' : ''"
               class="bg-primary text-white border-none border-round h-3rem w-3 hover:bg-red-900"
@@ -224,7 +224,8 @@ import useDistrictsListQuery from '@/composables/queries/useDistrictsListQuery';
 import useDistrictSchoolsQuery from '@/composables/queries/useDistrictSchoolsQuery';
 import useSchoolClassesQuery from '@/composables/queries/useSchoolClassesQuery';
 import useGroupsListQuery from '@/composables/queries/useGroupsListQuery';
-import { canUser } from '@bdelab/roar-firekit';
+import { usePermissions } from '@/composables/usePermissions';
+const { userCan, Permissions } = usePermissions();
 
 const initialized = ref(false);
 const isTestData = ref(false);

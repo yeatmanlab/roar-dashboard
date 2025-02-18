@@ -101,7 +101,7 @@
             label="Start Registration"
             class="bg-primary text-white border-none border-round p-2 hover:bg-red-900"
             :icon="activeSubmit ? 'pi pi-spin pi-spinner' : ''"
-            :disabled="activeSubmit || !canUser(accessToken, 'dashboard.admin_forms.create_students')"
+            :disabled="activeSubmit || !userCan(Permissions.Dashboard.Users.CREATE)"
             style="margin-bottom: 4rem"
             data-cy="button-start-registration"
             @click="submitStudents"
@@ -164,7 +164,7 @@ import { useAuthStore } from '@/store/auth';
 import { csvFileToJson } from '@/helpers';
 import { pluralizeFirestoreCollection } from '@/helpers';
 import { fetchOrgByName } from '@/helpers/query/orgs';
-import { canUser } from '@bdelab/roar-firekit';
+import { PermissionsService } from '@bdelab/roar-firekit';
 
 const authStore = useAuthStore();
 const toast = useToast();

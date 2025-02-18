@@ -42,9 +42,9 @@
       <AppSpinner v-else />
       <RoarModal
         v-if="
-          canUser(accessToken, 'dashboard.users.edit') ||
-          canUser(accessToken, 'dashboard.users.edit_administrator') ||
-          canUser(accessToken, 'dashboard.users.change_password')
+          userCan(Permissions.Dashboard.Users.EDIT) ||
+          userCan(Permissions.Dashboard.Administrators.EDIT) ||
+          userCan(Permissions.Dashboard.Users.CHANGE_PASSWORD)
         "
         title="Edit User Information"
         subtitle="Modify, add, or remove user information"
@@ -77,7 +77,7 @@
           </div>
         </div>
         <div
-          v-if="canUser(accessToken, 'dashboard.users.change_password')"
+          v-if="userCan(Permissions.Dashboard.Users.CHANGE_PASSWORD)"
           class="flex justify-content-center mt-3 w-full"
         >
           <PvButton
@@ -147,11 +147,12 @@ import AppSpinner from './AppSpinner.vue';
 import EditUsersForm from './EditUsersForm.vue';
 import RoarModal from './modals/RoarModal.vue';
 import RoarDataTable from '@/components/RoarDataTable';
-import { canUser } from '@bdelab/roar-firekit';
+import { usePermissions } from '@/composables/usePermissions';
+const { userCan, Permissions } = usePermissions();
 
 const authStore = useAuthStore();
 
-const { roarfirekit, accessToken } = storeToRefs(authStore);
+const { roarfirekit } = storeToRefs(authStore);
 const initialized = ref(false);
 const toast = useToast();
 
@@ -239,9 +240,9 @@ const columns = ref([
 ]);
 
 if (
-  canUser(accessToken.value, 'dashboard.users.edit') ||
-  canUser(accessToken.value, 'dashboard.users.change_password') ||
-  canUser(accessToken.value, 'dashboard.users.edit_administrator')
+  userCan(Permissions.Dashboard.Users.EDIT) ||
+  userCan(Permissions.Dashbaord.Users.CHANGE_PASSWORD) ||
+  userCan(Permissions.Dashboard.Administrators.EDIT)
 ) {
   columns.value.push({
     header: 'Edit',
@@ -263,9 +264,9 @@ const isModalEnabled = ref(false);
 const canUserEdit = computed(() => {
   const userType = currentEditUser.value?.userType;
   if (userType === 'admin') {
-    return canUser(accessToken.value, 'dashboard.users.edit_administrator');
+    return userCan(Permissions.Dashboard.Administrators.EDIT);
   } else {
-    return canUser(accessToken.value, 'dashboard.users.edit');
+    return userCan(Permissions.Dashboard.Users.EDIT);
   }
 });
 

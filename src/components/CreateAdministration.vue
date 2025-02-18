@@ -152,7 +152,7 @@
               class="text-white bg-primary border-none border-round h-3rem p-3 hover:bg-red-900"
               data-cy="button-create-administration"
               style="margin: 0"
-              :disabled="isSubmitting || !canUser(accessToken, submitPermission)"
+              :disabled="isSubmitting || !userCan(accessToken, submitPermission)"
               @click="submit"
             >
               <i v-if="isSubmitting" class="pi pi-spinner pi-spin mr-2"></i> {{ submitLabel }}
@@ -204,7 +204,8 @@ import ConsentPicker from './ConsentPicker.vue';
 import OrgPicker from '@/components/OrgPicker.vue';
 import { APP_ROUTES } from '@/constants/routes';
 import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
-import { canUser } from '@bdelab/roar-firekit';
+import { usePermissions } from '@/composables/usePermissions';
+const { userCan, Permissions } = usePermissions();
 
 const isLevante = import.meta.env.MODE === 'LEVANTE';
 
@@ -216,7 +217,7 @@ const confirm = useConfirm();
 const { mutate: upsertAdministration, isPending: isSubmitting } = useUpsertAdministrationMutation();
 
 const authStore = useAuthStore();
-const { roarfirekit, accessToken } = storeToRefs(authStore);
+const { roarfirekit } = storeToRefs(authStore);
 
 const props = defineProps({
   adminId: { type: String, required: false, default: null },
@@ -247,10 +248,10 @@ const submitLabel = computed(() => {
 
 const submitPermission = computed(() => {
   if (props.adminId) {
-    return 'dashboard.admin_forms.edit_administration';
+    return Permissions.Dashboard.Administrations.EDIT;
   }
 
-  return 'dashboard.admin_forms.create_administration';
+  return Permissions.Dashboard.Administrations.CREATE;
 });
 
 // +------------------------------------------------------------------------------------------------------------------+
