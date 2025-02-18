@@ -3,10 +3,9 @@ import { useAuthStore } from '@/store/auth';
 import { storeToRefs } from 'pinia';
 
 export function usePermissions() {
-  const authStore = useAuthStore();
-  const { accessToken } = storeToRefs(authStore);
-
   const userCan = (permission) => {
+    const authStore = useAuthStore();
+    const { accessToken } = storeToRefs(authStore);
     return PermissionsService.canUser(accessToken.value, permission);
   };
 

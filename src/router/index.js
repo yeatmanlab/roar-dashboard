@@ -5,7 +5,7 @@ import _get from 'lodash/get';
 import { pageTitlesEN, pageTitlesUS, pageTitlesES, pageTitlesCO } from '@/translations/exports';
 import { APP_ROUTES } from '@/constants/routes';
 import { usePermissions } from '@/composables/usePermissions';
-const { userCan, Permissions } = usePermissions();
+const { Permissions } = usePermissions();
 
 function removeQueryParams(to) {
   if (Object.keys(to.query).length) return { path: to.path, query: {}, hash: to.hash };
@@ -468,7 +468,7 @@ router.beforeEach(async (to, from, next) => {
   }
 
   const store = useAuthStore();
-  const { accessToken } = storeToRefs(store);
+  const { userCan, Permissions } = usePermissions();
 
   const allowedUnauthenticatedRoutes = [
     'SignIn',
