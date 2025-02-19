@@ -27,6 +27,7 @@ export const useAuthStore = () => {
         showOptionalAssessments: false,
         adminAuthStateListener: null,
         appAuthStateListener: null,
+        accessToken: null,
       };
     },
     getters: {
@@ -35,9 +36,6 @@ export const useAuthStore = () => {
       },
       roarUid: (state) => {
         return state.userClaims?.claims?.roarUid;
-      },
-      accessToken: (state) => {
-        return state.firebaseUser?.adminFirebaseUser?.accessToken;
       },
       email: (state) => {
         return state.firebaseUser.adminFirebaseUser?.email;
@@ -80,6 +78,7 @@ export const useAuthStore = () => {
           if (user) {
             this.localFirekitInit = true;
             this.firebaseUser.adminFirebaseUser = user;
+            this.accessToken = user.accessToken;
           } else {
             this.firebaseUser.adminFirebaseUser = null;
           }
