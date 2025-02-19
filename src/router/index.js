@@ -205,10 +205,10 @@ const routes = [
     meta: { pageTitle: 'TaskLauncher Home' },
   },
   {
-    path: '/launch/:participantId/game/swr',
+    path: '/launch/:launchId/game/swr',
     name: 'Launch SWR',
     component: () => import('../components/tasks/TaskSWR.vue'),
-    props: { taskId: 'swr', language: 'en' },
+    props: true,
     meta: { pageTitle: 'SWR' },
   },
   {

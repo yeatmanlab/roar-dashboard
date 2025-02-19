@@ -4,6 +4,14 @@
       <div>
         <div class="flex flex-column">
           <div class="flex flex-row flex-wrap align-items-center justify-content-between mb-3 gap-3">
+            <div v-if="isCaregiverWithStudents" class="flex flex-column">
+              <div class="text-2xl font-bold font-gray-500">Your students</div>
+              <div v-for="uid in authStore.userData.childrenUids">
+                <a :href="'/launch/' + uid">
+                  {{ uid }}
+                </a>
+              </div>
+            </div>
             <div class="flex flex-column gap-2">
               <div class="flex align-items-center flex-wrap gap-3 mb-2">
                 <i class="pi pi-list text-gray-400 rounded" style="font-size: 1.6rem" />
@@ -128,7 +136,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref, watch } from 'vue';
+import { onMounted, ref, watch, computed } from 'vue';
 import { storeToRefs } from 'pinia';
 import PvAutoComplete from 'primevue/autocomplete';
 import PvBlockUI from 'primevue/blockui';
@@ -143,6 +151,7 @@ import { getTitle } from '@/helpers/query/administrations';
 import useUserType from '@/composables/useUserType';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useAdministrationsListQuery from '@/composables/queries/useAdministrationsListQuery';
+import useUsersDataQuery from '@/composables/queries/useUsersDataQuery';
 import CardAdministration from '@/components/CardAdministration.vue';
 
 const initialized = ref(false);
@@ -161,6 +170,10 @@ const fetchTestAdministrations = ref(false);
 const isLevante = import.meta.env.MODE === 'LEVANTE';
 
 const authStore = useAuthStore();
+
+const isCaregiverWithStudents = computed(
+  () => authStore?.userData?.isCaregiver && authStore?.userData?.childrenUids.length > 0,
+);
 
 const { roarfirekit } = storeToRefs(authStore);
 
@@ -210,6 +223,14 @@ const {
   isFetching: isFetchingAdministrations,
   data: administrations,
 } = useAdministrationsListQuery(orderBy, fetchTestAdministrations, {
+  enabled: initialized,
+});
+
+const {
+  isLoading: isLoadingChildUserData,
+  isFetching: isFetchingChildUserData,
+  data: childUsers,
+} = useUsersDataQuery(authStore.userData.childrenUids, {
   enabled: initialized,
 });
 

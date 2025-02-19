@@ -18,6 +18,7 @@ import packageLockJson from '../../../package-lock.json';
 const props = defineProps({
   taskId: { type: String, required: true, default: 'swr' },
   language: { type: String, required: true, default: 'en' },
+  launchId: { type: String, required: false, default: null },
 });
 
 let TaskLauncher;
@@ -95,31 +96,68 @@ async function startTask(selectedAdmin) {
         clearInterval(checkGameStarted);
       }
     }, 100);
+    if (!props.launchId) {
+      const appKit = await authStore.roarfirekit.startAssessment(selectedAdmin.value.id, taskId, version);
 
-    const appKit = await authStore.roarfirekit.startAssessment(selectedAdmin.value.id, taskId, version);
+      const userDob = _get(userData.value, 'studentData.dob');
+      const userDateObj = new Date(userDob);
 
-    const userDob = _get(userData.value, 'studentData.dob');
-    const userDateObj = new Date(userDob);
+      const userParams = {
+        grade: _get(userData.value, 'studentData.grade'),
+        birthMonth: userDateObj.getMonth() + 1,
+        birthYear: userDateObj.getFullYear(),
+        language: props.language,
+      };
 
-    const userParams = {
-      grade: _get(userData.value, 'studentData.grade'),
-      birthMonth: userDateObj.getMonth() + 1,
-      birthYear: userDateObj.getFullYear(),
-      language: props.language,
-    };
+      const gameParams = { ...appKit._taskInfo.variantParams };
 
-    const gameParams = { ...appKit._taskInfo.variantParams };
+      const roarApp = new TaskLauncher(appKit, gameParams, userParams, 'jspsych-target');
 
-    const roarApp = new TaskLauncher(appKit, gameParams, userParams, 'jspsych-target');
+      await roarApp.run().then(async () => {
+        // Handle any post-game actions.
+        await authStore.completeAssessment(selectedAdmin.value.id, taskId);
 
-    await roarApp.run().then(async () => {
-      // Handle any post-game actions.
-      await authStore.completeAssessment(selectedAdmin.value.id, taskId);
+        // Navigate to home, but first set the refresh flag to true.
+        gameStore.requireHomeRefresh();
+        router.push({ name: 'Home' });
+      });
+    }
+    // Case where the assessment is externally launched (e.g. parent launching child)
+    else {
+      console.log('launched participant');
 
-      // Navigate to home, but first set the refresh flag to true.
-      gameStore.requireHomeRefresh();
-      router.push({ name: 'Home' });
-    });
+      // todo: add additional parameters to allow startAssessment for an external participant,
+      // only if the participant is a user under the parent
+      const appKit = await authStore.roarfirekit.startAssessment(
+        selectedAdmin.value.id,
+        taskId,
+        version,
+        props.launchId,
+      );
+
+      // const userDob = _get(userData.value, 'studentData.dob');
+      // const userDateObj = new Date(userDob);
+      // console.log(appKit)
+
+      // const userParams = {
+      //   grade: _get(userData.value, 'studentData.grade'),
+      //   birthMonth: userDateObj.getMonth() + 1,
+      //   birthYear: userDateObj.getFullYear(),
+      //   language: props.language,
+      // };
+
+      // const gameParams = { ...appKit._taskInfo.variantParams };
+      // const roarApp = new TaskLauncher(appKit, gameParams, userParams, 'jspsych-target');
+
+      // await roarApp.run().then(async () => {
+      //   // Handle any post-game actions.
+      //   await authStore.completeAssessment(selectedAdmin.value.id, taskId);
+
+      //   // Navigate to home, but first set the refresh flag to true.
+      //   gameStore.requireHomeRefresh();
+      //   router.push({ name: 'Home' });
+      // });
+    }
   } catch (error) {
     console.error('An error occurred while starting the task:', error);
     alert(
