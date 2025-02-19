@@ -82,7 +82,6 @@ const navbarBlacklist = [
 
 const showAccountSettingsLink = computed(() => {
   return userCan(Permissions.Dashboard.Profile.VIEW);
-  // return !!isAdmin.value || !!isSuperAdmin.value;
 });
 
 const displayNavbar = computed(() => {
