@@ -101,7 +101,7 @@
     "@vitest/coverage-istanbul": "^2.0.5",
     "@vue/test-utils": "^2.4.6",
     "cypress": "^13.14.1",
-    "cypress-fs": "^0.2.5",
+    "cypress-fs": "^0.2.6",
     "cypress-vite": "^1.5.0",
     "eslint": "^8.53.0",
     "eslint-config-prettier": "^9.0.0",
