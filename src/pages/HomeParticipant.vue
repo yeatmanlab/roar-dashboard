@@ -67,12 +67,14 @@
             :games="optionalAssessments"
             :sequential="isSequential"
             :user-data="userData"
+            :launchId="launchId"
           />
           <GameTabs
             v-else-if="requiredAssessments && userData"
             :games="requiredAssessments"
             :sequential="isSequential"
             :user-data="userData"
+            :launchId="launchId"
           />
         </Transition>
       </div>
@@ -117,6 +119,10 @@ const confirmText = ref('');
 const consentType = ref('');
 const consentParams = ref({});
 
+const props = defineProps({
+  launchId: { type: String, required: false, default: null },
+});
+
 const isLevante = import.meta.env.MODE === 'LEVANTE';
 
 const { mutateAsync: updateConsentStatus } = useUpdateConsentMutation();
@@ -125,6 +131,7 @@ const { mutate: signOut } = useSignOutMutation();
 let unsubscribe;
 const initialized = ref(false);
 const init = () => {
+  console.log('routepoarams', props.launchId);
   if (unsubscribe) unsubscribe();
   initialized.value = true;
 };
@@ -147,7 +154,7 @@ const {
   isLoading: isLoadingUserData,
   isFetching: isFetchingUserData,
   data: userData,
-} = useUserDataQuery(null, {
+} = useUserDataQuery(props.launchId, {
   enabled: initialized,
 });
 
@@ -155,9 +162,14 @@ const {
   isLoading: isLoadingAssignments,
   isFetching: isFetchingAssignments,
   data: userAssignments,
-} = useUserAssignmentsQuery({
-  enabled: initialized,
-});
+} = useUserAssignmentsQuery(
+  {
+    enabled: initialized,
+  },
+  props.launchId,
+  'families',
+  'eUXqr9NuBrQaPIVjacS4',
+);
 
 const sortedUserAdministrations = computed(() => {
   return [...(userAssignments.value ?? [])].sort((a, b) => (a.name || '').localeCompare(b.name || ''));

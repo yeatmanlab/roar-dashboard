@@ -164,6 +164,7 @@ const props = defineProps({
   games: { type: Array, required: true },
   sequential: { type: Boolean, required: false, default: true },
   userData: { type: Object, required: true },
+  launchId: { type: String, required: false, default: null },
 });
 const isLevante = import.meta.env.MODE === 'LEVANTE';
 
@@ -215,16 +216,29 @@ const getTaskDescription = (taskId, taskDescription) => {
 
 const getRoutePath = (taskId) => {
   const lowerCasedAndCamelizedTaskId = camelize(taskId.toLowerCase());
-
-  if (lowerCasedAndCamelizedTaskId === 'survey') {
-    return '/survey';
-  } else if (
-    levanteTasks.includes(lowerCasedAndCamelizedTaskId) ||
-    (isLevante && levantifiedRoarTasks.includes(lowerCasedAndCamelizedTaskId))
-  ) {
-    return '/game/core-tasks/' + taskId;
+  // For externally launched participants, prepend the launch route to the task path
+  if (props.launchId) {
+    if (lowerCasedAndCamelizedTaskId === 'survey') {
+      return `/launch/${props.launchId}/survey`;
+    } else if (
+      levanteTasks.includes(lowerCasedAndCamelizedTaskId) ||
+      (isLevante && levantifiedRoarTasks.includes(lowerCasedAndCamelizedTaskId))
+    ) {
+      return `/launch/${props.launchId}/game/core-tasks/` + taskId;
+    } else {
+      return `/launch/${props.launchId}/game/` + taskId;
+    }
   } else {
-    return '/game/' + taskId;
+    if (lowerCasedAndCamelizedTaskId === 'survey') {
+      return '/survey';
+    } else if (
+      levanteTasks.includes(lowerCasedAndCamelizedTaskId) ||
+      (isLevante && levantifiedRoarTasks.includes(lowerCasedAndCamelizedTaskId))
+    ) {
+      return '/game/core-tasks/' + taskId;
+    } else {
+      return '/game/' + taskId;
+    }
   }
 };
 

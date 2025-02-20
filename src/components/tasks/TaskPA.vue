@@ -96,6 +96,7 @@ async function startTask(selectedAdmin) {
       }
     }, 100);
 
+    // todo: modify startAssessment to allow passing in an external userId to start
     const appKit = await authStore.roarfirekit.startAssessment(selectedAdmin.value.id, taskId, version);
 
     const userDob = _get(userData.value, 'studentData.dob');
