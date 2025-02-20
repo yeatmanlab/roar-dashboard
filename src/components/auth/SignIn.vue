@@ -228,10 +228,9 @@ const validateRoarEmail = _debounce(
         return;
       }
 
-      // Set authentication options based on email type
+      // If they get this far, User is a an admin or using username/password
       allowPassword.value = true;  // Password is always allowed
-      allowLink.value = true;  // Link only for existing non-Roar emails
-      
+      allowLink.value = true;
       state.useLink = allowLink.value;
       evaluatingEmail.value = false;
     } catch (error) {
@@ -276,13 +275,6 @@ watch(
       evaluatingEmail.value = true;
       validateRoarEmail(email);
     }
-  },
-);
-
-watch(
-  () => evaluatingEmail.value,
-  (value) => {
-    console.log('evaluatingEmail', value);
   },
 );
 
