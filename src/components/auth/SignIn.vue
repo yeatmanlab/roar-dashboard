@@ -210,32 +210,34 @@ const allowLink = ref(true);
 
 const validateRoarEmail = _debounce(
   async (email) => {
-    await roarfirekit.value.isEmailAvailable(email).then(async (emailAvail) => {
-      if (email.includes('levante')) {
-        allowLink.value = false;
+    // Don't evaluate empty emails or obviously invalid ones
+    if (!email || !email.includes('@')) {
+      evaluatingEmail.value = false;
+      return;
+    }
+
+    const isRoarAuth = roarfirekit.value.isRoarAuthEmail(email);
+
+    try {
+      // First handle levante emails
+      if (email.includes('levante') || isRoarAuth) {
         allowPassword.value = true;
-        state.useLink = allowLink.value;
+        allowLink.value = false;
+        state.useLink = false;
         evaluatingEmail.value = false;
         return;
       }
 
-      if (emailAvail) {
-        console.log(`Email ${email} is available`);
-        allowPassword.value = true;
-        allowLink.value = false;
-      } else {
-        if (roarfirekit.value.isRoarAuthEmail(email)) {
-          // Roar auth email are made up, so sign-in link is not allowed.
-          allowLink.value = false;
-          allowPassword.value = true;
-        } else {
-          allowLink.value = true;
-          allowPassword.value = true;
-        }
-      }
+      // Set authentication options based on email type
+      allowPassword.value = true;  // Password is always allowed
+      allowLink.value = true;  // Link only for existing non-Roar emails
+      
       state.useLink = allowLink.value;
       evaluatingEmail.value = false;
-    });
+    } catch (error) {
+      console.error('Error evaluating email:', error);
+      evaluatingEmail.value = false;
+    }
   },
   250,
   { maxWait: 1000 },
@@ -273,15 +275,17 @@ watch(
     if (isValidEmail(email)) {
       evaluatingEmail.value = true;
       validateRoarEmail(email);
-    } else {
-      // In this case, assume that the input is a username
-      // Password is allowed. Sign-in link is not allowed.
-      allowPassword.value = true;
-      allowLink.value = false;
-      state.useLink = allowLink.value;
     }
   },
 );
+
+watch(
+  () => evaluatingEmail.value,
+  (value) => {
+    console.log('evaluatingEmail', value);
+  },
+);
+
 </script>
 <style scoped>
 .submit-button {
