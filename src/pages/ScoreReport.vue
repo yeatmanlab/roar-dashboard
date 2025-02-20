@@ -1197,6 +1197,21 @@ const scoreReportColumns = computed(() => {
     });
   }
 
+  if (authStore.isUserSuperAdmin) {
+    tableColumns.push({
+      header: 'Launchstudent',
+      link: true,
+      routeName: 'LaunchStudent',
+      routeTooltip: 'Launch Student Assessment',
+      routeIcon: 'pi pi-arrow-right border-none text-primary hover:text-white',
+      sort: false,
+      pinned: true,
+      orgType: props.orgType,
+      orgId: props.orgId,
+      administrationId: props.administrationId,
+    });
+  }
+
   const sortedTasks = allTasks.value.toSorted((p1, p2) => {
     if (Object.keys(taskDisplayNames).includes(p1) && Object.keys(taskDisplayNames).includes(p2)) {
       return taskDisplayNames[p1].order - taskDisplayNames[p2].order;
