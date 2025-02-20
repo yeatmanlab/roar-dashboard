@@ -41,6 +41,11 @@
       </div>
       <AppSpinner v-else />
       <RoarModal
+        v-if="
+          userCan(Permissions.Dashboard.Users.EDIT) ||
+          userCan(Permissions.Dashboard.Administrators.EDIT) ||
+          userCan(Permissions.Dashboard.Users.CHANGE_PASSWORD)
+        "
         title="Edit User Information"
         subtitle="Modify, add, or remove user information"
         :is-enabled="isModalEnabled"
@@ -71,7 +76,10 @@
             </div>
           </div>
         </div>
-        <div class="flex justify-content-center mt-3 w-full">
+        <div
+          v-if="userCan(Permissions.Dashboard.Users.CHANGE_PASSWORD)"
+          class="flex justify-content-center mt-3 w-full"
+        >
           <PvButton
             v-if="!showPassword"
             class="border-none border-round bg-primary text-white p-2 hover:surface-400 mr-auto ml-auto"
@@ -92,6 +100,7 @@
                 @click="closeModal"
               ></PvButton>
               <PvButton
+                v-if="canUserEdit"
                 tabindex="0"
                 class="border-none border-round bg-primary text-white p-2 hover:surface-400"
                 label="Save"
@@ -138,6 +147,8 @@ import AppSpinner from './AppSpinner.vue';
 import EditUsersForm from './EditUsersForm.vue';
 import RoarModal from './modals/RoarModal.vue';
 import RoarDataTable from '@/components/RoarDataTable';
+import { usePermissions } from '@/composables/usePermissions';
+const { userCan, Permissions } = usePermissions();
 
 const authStore = useAuthStore();
 
@@ -226,17 +237,38 @@ const columns = ref([
     dataType: 'boolean',
     sort: false,
   },
-  {
+]);
+
+if (
+  userCan(Permissions.Dashboard.Users.EDIT) ||
+  userCan(Permissions.Dashbaord.Users.CHANGE_PASSWORD) ||
+  userCan(Permissions.Dashboard.Administrators.EDIT)
+) {
+  columns.value.push({
     header: 'Edit',
     button: true,
     eventName: 'edit-button',
     buttonIcon: 'pi pi-user-edit',
     sort: false,
-  },
-]);
+  });
+} else {
+  console.log('User does not have edit permissions');
+}
 
 const currentEditUser = ref(null);
 const isModalEnabled = ref(false);
+
+// +----------------------+
+// | Permissions Handling |
+// +----------------------+
+const canUserEdit = computed(() => {
+  const userType = currentEditUser.value?.userType;
+  if (userType === 'admin') {
+    return userCan(Permissions.Dashboard.Administrators.EDIT);
+  } else {
+    return userCan(Permissions.Dashboard.Users.EDIT);
+  }
+});
 
 // +-----------------+
 // | Edit User Modal |

@@ -1,5 +1,5 @@
 <template>
-  <div v-if="localUserType === 'student'" class="form-container">
+  <div v-if="localUserType === 'student' && userCan(Permissions.Dashbaord.Users.EDIT)" class="form-container">
     <div class="form-column">
       <div class="form-field">
         <label :class="{ 'font-light uppercase text-sm': !editMode }">First Name</label>
@@ -126,7 +126,10 @@
       </div>
     </div>
   </div>
-  <div v-else-if="localUserType === 'admin'" class="form-container">
+  <div
+    v-else-if="localUserType === 'admin' && userCan(Permissions.Dashboard.Administrators.EDIT)"
+    class="form-container"
+  >
     <div class="form-column">
       <div class="form-field">
         <label :class="{ 'font-light uppercase text-sm': !editMode }">First Name</label>
@@ -202,6 +205,12 @@
       </div>
     </div>
   </div>
+  <div v-else class="form-container">
+    <p class="p-text-center">
+      You do not have permission to edit this user's data. Please contact your administrator if you feel this is
+      incorrect.
+    </p>
+  </div>
 </template>
 <script setup>
 import { watch, ref, onMounted, computed } from 'vue';
@@ -215,6 +224,8 @@ import PvCheckbox from 'primevue/checkbox';
 import PvSelect from 'primevue/select';
 import PvInputText from 'primevue/inputtext';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
+import { usePermissions } from '@/composables/usePermissions';
+const { userCan, Permissions } = usePermissions();
 
 const props = defineProps({
   userData: {
