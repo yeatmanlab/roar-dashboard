@@ -490,13 +490,16 @@ const schoolOptions = computed(() => {
 // Return a faded color if assessment is not reliable
 function returnColorByReliability(assessment, rawScore, support_level, tag_color) {
   if (assessment.reliable !== undefined && !assessment.reliable && assessment.engagementFlags !== undefined) {
+    const engagementFlagExists = Object.keys(assessment.engagementFlags).some((flag) =>
+      includedValidityFlags[assessment.taskId]?.includes(flag),
+    );
     if (support_level === 'Optional') {
       return '#a1d8e3';
-    } else if (support_level === 'Needs Extra Support') {
+    } else if (support_level === 'Needs Extra Support' && engagementFlagExists) {
       return '#d6b8c7';
-    } else if (support_level === 'Developing Skill') {
+    } else if (support_level === 'Developing Skill' && engagementFlagExists) {
       return '#e8dbb5';
-    } else if (support_level === 'Achieved Skill') {
+    } else if (support_level === 'Achieved Skill' && engagementFlagExists) {
       return '#c0d9bd';
     } else if (
       tasksToDisplayCorrectIncorrectDifference.includes(assessment.taskId) ||

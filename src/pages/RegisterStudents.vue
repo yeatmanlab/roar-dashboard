@@ -445,7 +445,7 @@ async function submitStudents() {
         }
 
         if (!_isEmpty(orgInfo)) {
-          _set(sendObject, `userData.${orgType}`, orgInfo);
+          _set(sendObject, `userData.${pluralizeFirestoreCollection(orgType)}`, orgInfo);
         } else {
           addErrorUser(user, `Error: ${orgType} '${orgName}' is invalid`);
           return;
