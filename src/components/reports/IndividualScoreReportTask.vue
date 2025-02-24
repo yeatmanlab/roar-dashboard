@@ -97,7 +97,12 @@
           </i18n-t>
         </div>
         <div v-if="!rawOnlyTasks.includes(task.taskId)">
-          <PvAccordion class="my-2 w-full" :active-index="expanded ? 0 : null">
+          <PvAccordion
+            class="my-2 w-full"
+            :active-index="expanded ? 0 : null"
+            expand-icon="pi pi-plus ml-2"
+            collapse-icon="pi pi-minus ml-2"
+          >
             <PvAccordionTab :header="$t('scoreReports.scoreBreakdown')">
               <div v-for="[key, rawScore, rangeMin, rangeMax] in task.scoresArray" :key="key">
                 <div class="flex justify-content-between score-table">
@@ -115,7 +120,12 @@
           </PvAccordion>
         </div>
         <div v-if="task.taskId === 'letter' || task.taskId === 'letter-en-ca'">
-          <PvAccordion class="my-2 w-full" :active-index="expanded ? 0 : null">
+          <PvAccordion
+            class="my-2 w-full"
+            :active-index="expanded ? 0 : null"
+            expand-icon="pi pi-plus ml-2"
+            collapse-icon="pi pi-minus ml-2"
+          >
             <PvAccordionTab :header="$t('scoreReports.scoreBreakdown')">
               <div v-for="[key, rawScore, rangeMin, rangeMax] in task.scoresArray" :key="key">
                 <div v-if="!isNaN(rawScore)" class="flex justify-content-between score-table">
@@ -324,11 +334,11 @@ const computedTaskData = computed(() => {
         const lowerCaseScore = scores?.LowercaseNames?.subScore;
         const upperCaseScore = scores?.UppercaseNames?.subScore;
         const letterSoundsScore = scores?.Phonemes?.subScore;
-        formattedScoresArray.push([t('lowerCase'), lowerCaseScore, 0, 26]);
-        formattedScoresArray.push([t('upperCase'), upperCaseScore, 0, 26]);
-        formattedScoresArray.push([t('letterSounds'), letterSoundsScore, 0, 38]);
-        formattedScoresArray.push([t('letterToWorkOn'), incorrectLetters]);
-        formattedScoresArray.push([t('letterSoundsToWorkOn'), incorrectPhonemes]);
+        formattedScoresArray.push([t('Lower Case'), lowerCaseScore, 0, 26]);
+        formattedScoresArray.push([t('Upper Case'), upperCaseScore, 0, 26]);
+        formattedScoresArray.push([t('Letter Sounds'), letterSoundsScore, 0, 38]);
+        formattedScoresArray.push([t('Letter To Work On'), incorrectLetters]);
+        formattedScoresArray.push([t('Letter Sounds To Work On'), incorrectPhonemes]);
       }
 
       // Ensure scores are in consistent order

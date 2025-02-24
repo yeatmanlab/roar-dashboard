@@ -22,7 +22,15 @@ import { default as FirebaseConfig } from './firebase/admin/firebase.json';
  * @returns {Object} The parsed response headers
  */
 function getResponseHeaders() {
-  const parsedStagingResponseHeaders = FirebaseConfig.hosting.headers[0].headers.reduce((acc, header) => {
+  // Find the staging hosting config
+  const stagingHostingConfig = FirebaseConfig.hosting.find((config) => config.target === 'staging');
+
+  if (!stagingHostingConfig) {
+    console.warn('No staging configuration found in firebase.json');
+    return {};
+  }
+
+  const parsedStagingResponseHeaders = stagingHostingConfig.headers[0].headers.reduce((acc, header) => {
     // Modify the Content-Security-Policy header as follows:
     // - Drop the default CSP in favour of the strict CSP from the Report-Only header for local development
     // - Drop the report-uri and report-to CSP directives to prevent Sentry logging for local development
