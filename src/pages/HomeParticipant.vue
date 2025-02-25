@@ -131,7 +131,6 @@ const { mutate: signOut } = useSignOutMutation();
 let unsubscribe;
 const initialized = ref(false);
 const init = () => {
-  console.log('routepoarams', props.launchId);
   if (unsubscribe) unsubscribe();
   initialized.value = true;
 };

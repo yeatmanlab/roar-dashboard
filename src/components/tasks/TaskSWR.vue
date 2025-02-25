@@ -80,7 +80,6 @@ watch(
     if (newFirekitInitValue && !newLoadingUserData && !taskStarted.value) {
       taskStarted.value = true;
       const { selectedAdmin } = storeToRefs(gameStore);
-      console.log('selectedAdmin', selectedAdmin.value);
       await startTask(selectedAdmin);
     }
   },
