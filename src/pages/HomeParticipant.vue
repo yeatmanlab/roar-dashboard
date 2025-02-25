@@ -20,6 +20,17 @@
     </div>
 
     <div v-else>
+      <div v-if="props.launchId" class="w-100 flex items-center justify-content-center bg-gray-100 p-2">
+        <div class="font-bold text-lg text-gray-600">
+          Currently in <span class="text-red-700 mr-4"> external launch mode </span>
+          <router-link to="/">
+            <PvButton>
+              <i class="pi pi-arrow-left"></i>
+              Return to administrator account</PvButton
+            >
+          </router-link>
+        </div>
+      </div>
       <PvFloatLabel>
         <h2 v-if="userAssignments?.length == 1" class="dropdown-container">
           {{ userAssignments.at(0).publicName || userAssignments.at(0).name }}
