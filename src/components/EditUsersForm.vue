@@ -203,10 +203,11 @@
     </div>
   </div>
   <div v-else class="form-container">
-    <p class="p-text-center">
+    <p v-if="!['student', 'admin'].includes(localUserType)" class="p-text-center">
       You do not have permission to edit this user's data. Please contact your administrator if you feel this is
       incorrect.
     </p>
+    <p v-else class="form-container">Editing users of this user type is not yet supported.</p>
   </div>
 </template>
 <script setup>
