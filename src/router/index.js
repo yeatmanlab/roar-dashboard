@@ -366,7 +366,6 @@ const routes = [
     component: () => import('../pages/StudentReport.vue'),
     meta: {
       pageTitle: 'Student Score Report',
-      requireAdmin: true,
       permission: Permissions.Reports.Student.READ,
     },
   },
@@ -488,7 +487,7 @@ router.beforeEach(async (to, from, next) => {
     return;
   }
 
-  const routePermission = _get(to, 'meta.permission', null);
+  const routePermission = to?.meta?.permission ?? null;
   if (routePermission) {
     const hasPermission = userCan(routePermission);
     if (hasPermission) {
