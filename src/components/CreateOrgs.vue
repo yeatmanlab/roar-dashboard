@@ -188,7 +188,7 @@
                 orgTypeLabel === 'Org' ||
                 v$.$invalid ||
                 submitted ||
-                !userCan(accessToken, Permissions.Dashbaord.Organizations.CREATE)
+                !userCan(accessToken, Permissions.Organizations.CREATE)
               "
               :icon="submitted ? 'pi pi-spin pi-spinner' : ''"
               class="bg-primary text-white border-none border-round h-3rem w-3 hover:bg-red-900"

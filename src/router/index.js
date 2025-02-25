@@ -205,7 +205,7 @@ const routes = [
     component: () => import('../pages/ManageTasksVariants.vue'),
     meta: {
       pageTitle: 'Manage Tasks',
-      permission: Permissions.Dashboard.Tasks.MANAGE,
+      permission: Permissions.Tasks.MANAGE,
     },
   },
   {
@@ -233,7 +233,7 @@ const routes = [
     component: () => import('../pages/RegisterStudents.vue'),
     meta: {
       pageTitle: 'Register Students',
-      permission: Permissions.Dashboard.Users.CREATE,
+      permission: Permissions.Users.CREATE,
     },
   },
   {
@@ -290,7 +290,7 @@ const routes = [
     path: '/administrator',
     name: 'Administrator',
     component: () => import('../pages/HomeAdministrator.vue'),
-    meta: { pageTitle: 'Administrator', permission: Permissions.Dashboard.Administrators.VIEW },
+    meta: { pageTitle: 'Administrator', permission: Permissions.Administrators.UPDATE },
   },
   {
     path: '/create-administration',
@@ -298,7 +298,7 @@ const routes = [
     component: () => import('../components/CreateAdministration.vue'),
     meta: {
       pageTitle: 'Create an administration',
-      permission: Permissions.Dashboard.Administrations.CREATE,
+      permission: Permissions.Administrations.CREATE,
     },
   },
   {
@@ -308,7 +308,7 @@ const routes = [
     component: () => import('../components/CreateAdministration.vue'),
     meta: {
       pageTitle: 'Edit an Administration',
-      permission: Permissions.Dashboard.Administrations.EDIT,
+      permission: Permissions.Administrations.UPDATE,
     },
   },
   {
@@ -317,7 +317,7 @@ const routes = [
     component: () => import('../components/CreateAdministrator.vue'),
     meta: {
       pageTitle: 'Create an administrator account',
-      permission: Permissions.Dashboard.Administrators.CREATE,
+      permission: Permissions.Administrators.CREATE,
     },
   },
   {
@@ -326,21 +326,21 @@ const routes = [
     component: () => import('../components/CreateOrgs.vue'),
     meta: {
       pageTitle: 'Create an organization',
-      permission: Permissions.Dashboard.Organizations.CREATE,
+      permission: Permissions.Organizations.CREATE,
     },
   },
   {
     path: '/list-orgs',
     name: 'ListOrgs',
     component: () => import('../components/ListOrgs.vue'),
-    meta: { pageTitle: 'List organizations', permission: Permissions.Dashboard.Organizations.LIST },
+    meta: { pageTitle: 'List organizations', permission: Permissions.Organizations.LIST },
   },
   {
     path: '/list-users/:orgType/:orgId/:orgName',
     name: 'ListUsers',
     props: true,
     component: () => import('../components/ListUsers.vue'),
-    meta: { pageTitle: 'List users', permission: Permissions.Dashboard.Users.LIST },
+    meta: { pageTitle: 'List users', permission: Permissions.Users.LIST },
   },
   {
     path: '/administration/:administrationId/:orgType/:orgId',
@@ -349,7 +349,7 @@ const routes = [
     component: () => import('../pages/ProgressReport.vue'),
     meta: {
       pageTitle: 'View Administration',
-      permission: Permissions.Dashboard.ProgressReport.VIEW,
+      permission: Permissions.Reports.Progress.READ,
     },
   },
   {
@@ -357,7 +357,7 @@ const routes = [
     name: 'ScoreReport',
     props: true,
     component: () => import('../pages/ScoreReport.vue'),
-    meta: { pageTitle: 'View Scores', permission: Permissions.Dashboard.ScoreReport.VIEW },
+    meta: { pageTitle: 'View Scores', permission: Permissions.Reports.Score.READ },
   },
   {
     path: APP_ROUTES.STUDENT_REPORT,
@@ -367,7 +367,7 @@ const routes = [
     meta: {
       pageTitle: 'Student Score Report',
       requireAdmin: true,
-      permission: Permissions.Dashboard.StudentReport.VIEW,
+      permission: Permissions.Report.Student.READ,
     },
   },
   {
@@ -393,7 +393,7 @@ const routes = [
         meta: { requireAdmin: true },
       },
     ],
-    meta: { pageTitle: 'Profile', permission: Permissions.Dashboard.Profile.VIEW },
+    meta: { pageTitle: 'Profile', permission: Permissions.Profile.READ },
   },
   {
     path: '/enable-cookies',

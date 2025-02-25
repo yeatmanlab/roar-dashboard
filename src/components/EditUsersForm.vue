@@ -1,5 +1,5 @@
 <template>
-  <div v-if="localUserType === 'student' && userCan(Permissions.Dashbaord.Users.EDIT)" class="form-container">
+  <div v-if="localUserType === 'student' && userCan(Permissions.Users.EDIT)" class="form-container">
     <div class="form-column">
       <div class="form-field">
         <label :class="{ 'font-light uppercase text-sm': !editMode }">First Name</label>
@@ -126,10 +126,7 @@
       </div>
     </div>
   </div>
-  <div
-    v-else-if="localUserType === 'admin' && userCan(Permissions.Dashboard.Administrators.EDIT)"
-    class="form-container"
-  >
+  <div v-else-if="localUserType === 'admin' && userCan(Permissions.Administrators.UPDATE)" class="form-container">
     <div class="form-column">
       <div class="form-field">
         <label :class="{ 'font-light uppercase text-sm': !editMode }">First Name</label>

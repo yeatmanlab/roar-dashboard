@@ -248,10 +248,10 @@ const submitLabel = computed(() => {
 
 const submitPermission = computed(() => {
   if (props.adminId) {
-    return Permissions.Dashboard.Administrations.EDIT;
+    return Permissions.Administrations.UPDATE;
   }
 
-  return Permissions.Dashboard.Administrations.CREATE;
+  return Permissions.Administrations.CREATE;
 });
 
 // +------------------------------------------------------------------------------------------------------------------+

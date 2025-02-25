@@ -42,9 +42,9 @@
       <AppSpinner v-else />
       <RoarModal
         v-if="
-          userCan(Permissions.Dashboard.Users.EDIT) ||
-          userCan(Permissions.Dashboard.Administrators.EDIT) ||
-          userCan(Permissions.Dashboard.Users.CHANGE_PASSWORD)
+          userCan(Permissions.Users.UPDATE) ||
+          userCan(Permissions.Administrators.UPDATE) ||
+          userCan(Permissions.Users.CHANGE_PASSWORD)
         "
         title="Edit User Information"
         subtitle="Modify, add, or remove user information"
@@ -76,10 +76,7 @@
             </div>
           </div>
         </div>
-        <div
-          v-if="userCan(Permissions.Dashboard.Users.CHANGE_PASSWORD)"
-          class="flex justify-content-center mt-3 w-full"
-        >
+        <div v-if="userCan(Permissions.Users.Credentials.UPDATE)" class="flex justify-content-center mt-3 w-full">
           <PvButton
             v-if="!showPassword"
             class="border-none border-round bg-primary text-white p-2 hover:surface-400 mr-auto ml-auto"
@@ -240,9 +237,9 @@ const columns = ref([
 ]);
 
 if (
-  userCan(Permissions.Dashboard.Users.EDIT) ||
-  userCan(Permissions.Dashbaord.Users.CHANGE_PASSWORD) ||
-  userCan(Permissions.Dashboard.Administrators.EDIT)
+  userCan(Permissions.Users.UPDATE) ||
+  userCan(Permissions.Users.Credentials.UPDATE) ||
+  userCan(Permissions.Administrators.UPDATE)
 ) {
   columns.value.push({
     header: 'Edit',
@@ -264,9 +261,9 @@ const isModalEnabled = ref(false);
 const canUserEdit = computed(() => {
   const userType = currentEditUser.value?.userType;
   if (userType === 'admin') {
-    return userCan(Permissions.Dashboard.Administrators.EDIT);
+    return userCan(Permissions.Administrators.UPDATE);
   } else {
-    return userCan(Permissions.Dashboard.Users.EDIT);
+    return userCan(Permissions.Users.UPDATE);
   }
 });
 

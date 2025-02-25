@@ -66,7 +66,7 @@
           <div class="flex w-full align-items-center justify-content-center">
             <div>
               <PvButton
-                :disabled="!userCan(Permissions.Dashboard.Administrators.CREATE)"
+                :disabled="!userCan(Permissions.Administrators.CREATE)"
                 class="bg-primary text-white border-none border-round p-2 h-3rem hover:bg-red-900"
                 label="Create Administrator"
                 data-cy="button-create-administrator"
