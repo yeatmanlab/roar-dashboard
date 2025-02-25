@@ -18,6 +18,7 @@ import packageLockJson from '../../../package-lock.json';
 const props = defineProps({
   taskId: { type: String, default: 'pa' },
   language: { type: String, default: 'en' },
+  launchId: { type: String, default: null },
 });
 
 let TaskLauncher;
@@ -97,7 +98,7 @@ async function startTask(selectedAdmin) {
     }, 100);
 
     // todo: modify startAssessment to allow passing in an external userId to start
-    const appKit = await authStore.roarfirekit.startAssessment(selectedAdmin.value.id, taskId, version);
+    const appKit = await authStore.roarfirekit.startAssessment(selectedAdmin.value.id, taskId, version, props.launchId);
 
     const userDob = _get(userData.value, 'studentData.dob');
     const userDateObj = new Date(userDob);

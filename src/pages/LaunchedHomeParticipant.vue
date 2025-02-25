@@ -1,5 +1,5 @@
 <template>
-  <HomeParticipant :launchId="participantId" />
+  <HomeParticipant :launch-id="participantId" />
 </template>
 
 <script setup>

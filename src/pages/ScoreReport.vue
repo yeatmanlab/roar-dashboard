@@ -1133,6 +1133,19 @@ const scoreReportColumns = computed(() => {
     orgId: props.orgId,
     administrationId: props.administrationId,
   });
+
+  tableColumns.push({
+    header: 'Launch Student',
+    // link: true,
+    routeName: 'LaunchStudent',
+    routeTooltip: 'Launch Student Assessment',
+    routeIcon: 'pi pi-arrow-right border-none text-primary hover:text-white',
+    sort: false,
+    pinned: true,
+    orgType: props.orgType,
+    orgId: props.orgId,
+    administrationId: props.administrationId,
+  });
   let hasUsername = false;
   if (assignmentData.value.find((assignment) => assignment.user?.username)) {
     tableColumns.push({
@@ -1195,21 +1208,6 @@ const scoreReportColumns = computed(() => {
       dataType: 'text',
       sort: false,
       headerStyle: `background:var(--primary-color); color:white; padding-top:0; margin-top:0; padding-bottom:0; margin-bottom:0; border:0; margin-left:0; border-right-width:2px; border-right-style:solid; border-right-color:#ffffff;`,
-    });
-  }
-
-  if (authStore.isUserSuperAdmin) {
-    tableColumns.push({
-      header: 'Launchstudent',
-      link: true,
-      routeName: 'LaunchStudent',
-      routeTooltip: 'Launch Student Assessment',
-      routeIcon: 'pi pi-arrow-right border-none text-primary hover:text-white',
-      sort: false,
-      pinned: true,
-      orgType: props.orgType,
-      orgId: props.orgId,
-      administrationId: props.administrationId,
     });
   }
 
