@@ -97,82 +97,59 @@ async function startTask(selectedAdmin) {
         clearInterval(checkGameStarted);
       }
     }, 100);
-    // Case where assessment is launched normally
+
+    // todo: add additional parameters to allow startAssessment for an external participant,
+    // only if the participant is a user under the parent
+    const appKit = await authStore.roarfirekit.startAssessment(selectedAdmin.value.id, taskId, version, props.launchId);
+
+    // const userDob = _get(userData.value, 'studentData.dob');
+    // const userDateObj = new Date(userDob);
+
+    let userParams;
     if (!props.launchId) {
-      const appKit = await authStore.roarfirekit.startAssessment(selectedAdmin.value.id, taskId, version);
-
-      const userDob = _get(userData.value, 'studentData.dob');
-      const userDateObj = new Date(userDob);
-
-      const userParams = {
+      userParams = {
         grade: _get(userData.value, 'studentData.grade'),
         birthMonth: userDateObj.getMonth() + 1,
         birthYear: userDateObj.getFullYear(),
         language: props.language,
       };
-
-      const gameParams = { ...appKit._taskInfo.variantParams };
-
-      const roarApp = new TaskLauncher(appKit, gameParams, userParams, 'jspsych-target');
-
-      await roarApp.run().then(async () => {
-        // Handle any post-game actions.
-        await authStore.completeAssessment(selectedAdmin.value.id, taskId);
-
-        // Navigate to home, but first set the refresh flag to true.
-        gameStore.requireHomeRefresh();
-        router.push({ name: 'Home' });
-      });
+    } else {
+      userParams = {};
     }
-    // Case where the assessment is externally launched (e.g. parent launching child)
-    else {
-      console.log('launched participant');
 
-      // todo: add additional parameters to allow startAssessment for an external participant,
-      // only if the participant is a user under the parent
-      const appKit = await authStore.roarfirekit.startAssessment(
-        selectedAdmin.value.id,
-        taskId,
-        version,
-        props.launchId,
-      );
+    // const userParams = {
+    //   grade: _get(userData, 'studentData.grade'),
+    //   birthMonth: userDateObj.getMonth() + 1,
+    //   birthYear: userDateObj.getFullYear(),
+    //   language: props.language,
+    // };
+    // const userParams = {
+    //   grade: _get(userData.value, 'studentData.grade'),
+    //   birthMonth: userDateObj.getMonth() + 1,
+    //   birthYear: userDateObj.getFullYear(),
+    //   language: props.language,
+    // };
+    const userData = _get(appKit, '_userInfo');
+    console.log('userData', userData);
+    console.log('appkit', appKit._userData);
+    const userDob = _get(userData, 'studentData.dob');
+    // TODO: verify that this birth month calculation will work for all users (why is it different in ROAR-pa?)
+    // userData.dob here returns a .seconds object, while is usually returns a timestamp in non external launches... why?
+    const userDateObj = new Date(userDob.seconds * 1000);
 
-      // const userDob = _get(userData.value, 'studentData.dob');
-      // const userDateObj = new Date(userDob);
+    console.log('userparams', userParams);
 
-      // const userParams = {
-      //   grade: _get(userData.value, 'studentData.grade'),
-      //   birthMonth: userDateObj.getMonth() + 1,
-      //   birthYear: userDateObj.getFullYear(),
-      //   language: props.language,
-      // };
-      const userData = _get(appKit, '_userInfo');
-      console.log('userData', userData);
-      console.log('appkit', appKit._userData);
-      const userDob = _get(userData, 'studentData.dob');
-      // TODO: verify that this birth month calculation will work for all users (why is it different in ROAR-pa?)
-      const userDateObj = new Date(userDob.seconds * 1000);
+    const gameParams = { ...appKit._taskInfo.variantParams };
+    const roarApp = new TaskLauncher(appKit, gameParams, userParams, 'jspsych-target');
 
-      const userParams = {
-        grade: _get(userData, 'studentData.grade'),
-        birthMonth: userDateObj.getMonth() + 1,
-        birthYear: userDateObj.getFullYear(),
-        language: props.language,
-      };
-      console.log('userparams', userParams);
+    await roarApp.run().then(async () => {
+      // Handle any post-game actions.
+      await authStore.completeAssessment(selectedAdmin.value.id, taskId, props.launchId);
 
-      const gameParams = { ...appKit._taskInfo.variantParams };
-      const roarApp = new TaskLauncher(appKit, gameParams, userParams, 'jspsych-target');
-
-      await roarApp.run().then(async () => {
-        // Handle any post-game actions.
-        await authStore.completeAssessment(selectedAdmin.value.id, taskId, props.launchId);
-
-        // Navigate to home, but first set the refresh flag to true.
-        gameStore.requireHomeRefresh();
-        router.push({ name: 'Home' });
-      });
-    }
+      // Navigate to home, but first set the refresh flag to true.
+      gameStore.requireHomeRefresh();
+      router.push({ name: 'Home' });
+    });
   } catch (error) {
     console.error('An error occurred while starting the task:', error);
     // alert(
