@@ -81,7 +81,6 @@ service cloud.firestore {
         let classes = resource.data.get(['classes', orgStatus], []);
         let groups = resource.data.get(['groups', orgStatus], []);
         let families = resource.data.get(['families', orgStatus], []);
-        console.log("firestorerulesfamilies", families)
         let adminOrgs = get(/databases/$(database)/documents/userClaims/$(request.auth.uid)).data.get('claims', {}).get('adminOrgs', {});
         return districts.hasAny(adminOrgs.get('districts', ['..']))
         || schools.hasAny(adminOrgs.get('schools', ['..']))
