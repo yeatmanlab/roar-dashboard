@@ -137,8 +137,8 @@ async function startTask(selectedAdmin) {
         props.launchId,
       );
 
-      const userDob = _get(userData.value, 'studentData.dob');
-      const userDateObj = new Date(userDob);
+      // const userDob = _get(userData.value, 'studentData.dob');
+      // const userDateObj = new Date(userDob);
 
       // const userParams = {
       //   grade: _get(userData.value, 'studentData.grade'),
@@ -146,17 +146,22 @@ async function startTask(selectedAdmin) {
       //   birthYear: userDateObj.getFullYear(),
       //   language: props.language,
       // };
+      const userData = _get(appKit, '_userInfo');
+      console.log('userData', userData);
+      console.log('appkit', appKit._userData);
+      const userDob = _get(userData, 'studentData.dob');
+      // TODO: verify that this birth month calculation will work for all users (why is it different in ROAR-pa?)
+      const userDateObj = new Date(userDob.seconds * 1000);
+
       const userParams = {
-        grade: 1,
-        birthMonth: '1',
-        birthYear: '22',
-        language: 'en',
+        grade: _get(userData, 'studentData.grade'),
+        birthMonth: userDateObj.getMonth() + 1,
+        birthYear: userDateObj.getFullYear(),
+        language: props.language,
       };
+      console.log('userparams', userParams);
 
       const gameParams = { ...appKit._taskInfo.variantParams };
-      console.log('gameparam', gameParams);
-      console.log('appkit', appKit);
-      console.log('userparams', userParams);
       const roarApp = new TaskLauncher(appKit, gameParams, userParams, 'jspsych-target');
 
       await roarApp.run().then(async () => {
