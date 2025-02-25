@@ -367,7 +367,7 @@ const routes = [
     meta: {
       pageTitle: 'Student Score Report',
       requireAdmin: true,
-      permission: Permissions.Report.Student.READ,
+      permission: Permissions.Reports.Student.READ,
     },
   },
   {
