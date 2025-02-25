@@ -102,23 +102,12 @@ async function startTask(selectedAdmin) {
     const userDob = _get(userData.value, 'studentData.dob');
     const userDateObj = new Date(userDob);
 
-    let userParams;
-
-    if (!props.launchId) {
-      userParams = {
-        grade: _get(userData.value, 'studentData.grade'),
-        birthMonth: userDateObj.getMonth() + 1,
-        birthYear: userDateObj.getFullYear(),
-        language: props.language,
-      };
-    } else {
-      userParams = {
-        grade: _get(userData.value, 'studentData.grade'),
-        birthMonth: userDateObj.getMonth() + 1,
-        birthYear: userDateObj.getFullYear(),
-        language: props.language,
-      };
-    }
+    const userParams = {
+      grade: _get(userData.value, 'studentData.grade'),
+      birthMonth: userDateObj.getMonth() + 1,
+      birthYear: userDateObj.getFullYear(),
+      language: props.language,
+    };
 
     const gameParams = { ...appKit._taskInfo.variantParams };
 

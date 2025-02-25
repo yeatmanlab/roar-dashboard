@@ -103,20 +103,12 @@ async function startTask(selectedAdmin) {
     const userDob = _get(userData.value, 'studentData.dob');
     const userDateObj = new Date(userDob);
 
-    let userParams;
-    if (!props.launchId) {
-      // case for a non-launched participant: grab userParams from userData object
-      userParams = {
-        grade: _get(userData.value, 'studentData.grade'),
-        birthMonth: userDateObj.getMonth() + 1,
-        birthYear: userDateObj.getFullYear(),
-        language: props.language,
-      };
-    } else {
-      // case for an externally-launched participant: grab userParams from appkit user object
-      console.log('apoopkit', appKit._userInfo);
-      userParams = {};
-    }
+    const userParams = {
+      grade: _get(userData.value, 'studentData.grade'),
+      birthMonth: userDateObj.getMonth() + 1,
+      birthYear: userDateObj.getFullYear(),
+      language: props.language,
+    };
 
     const gameParams = { ...appKit._taskInfo.variantParams };
 
