@@ -46,9 +46,12 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.roarfirekit.restConfig) init();
 });
 
-const { isLoading: isLoadingUserData, data: userData } = useUserStudentDataQuery({
-  enabled: initialized,
-});
+const { isLoading: isLoadingUserData, data: userData } = useUserStudentDataQuery(
+  {
+    enabled: initialized,
+  },
+  props.launchId,
+);
 
 // The following code intercepts the back button and instead forces a refresh.
 // We add { once: true } to prevent an infinite loop.
@@ -101,42 +104,15 @@ async function startTask(selectedAdmin) {
     // only if the participant is a user under the parent
     const appKit = await authStore.roarfirekit.startAssessment(selectedAdmin.value.id, taskId, version, props.launchId);
 
-    // const userDob = _get(userData.value, 'studentData.dob');
-    // const userDateObj = new Date(userDob);
+    const userDob = _get(userData.value, 'studentData.dob');
+    const userDateObj = new Date(userDob);
 
-    let userParams;
-    if (!props.launchId) {
-      userParams = {
-        grade: _get(userData.value, 'studentData.grade'),
-        birthMonth: userDateObj.getMonth() + 1,
-        birthYear: userDateObj.getFullYear(),
-        language: props.language,
-      };
-    } else {
-      userParams = {};
-    }
-
-    // const userParams = {
-    //   grade: _get(userData, 'studentData.grade'),
-    //   birthMonth: userDateObj.getMonth() + 1,
-    //   birthYear: userDateObj.getFullYear(),
-    //   language: props.language,
-    // };
-    // const userParams = {
-    //   grade: _get(userData.value, 'studentData.grade'),
-    //   birthMonth: userDateObj.getMonth() + 1,
-    //   birthYear: userDateObj.getFullYear(),
-    //   language: props.language,
-    // };
-    const userData = _get(appKit, '_userInfo');
-    console.log('userData', userData);
-    console.log('appkit', appKit._userData);
-    const userDob = _get(userData, 'studentData.dob');
-    // TODO: verify that this birth month calculation will work for all users (why is it different in ROAR-pa?)
-    // userData.dob here returns a .seconds object, while is usually returns a timestamp in non external launches... why?
-    const userDateObj = new Date(userDob.seconds * 1000);
-
-    console.log('userparams', userParams);
+    const userParams = {
+      grade: _get(userData.value, 'studentData.grade'),
+      birthMonth: userDateObj.getMonth() + 1,
+      birthYear: userDateObj.getFullYear(),
+      language: props.language,
+    };
 
     const gameParams = { ...appKit._taskInfo.variantParams };
     const roarApp = new TaskLauncher(appKit, gameParams, userParams, 'jspsych-target');
