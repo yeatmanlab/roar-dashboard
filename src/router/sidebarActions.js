@@ -97,6 +97,15 @@ const sidebarActionOptions = [
     project: 'ROAR',
     category: 'Users',
   },
+  {
+    title: 'Sync Passwords',
+    icon: 'pi pi-arrows-h',
+    buttonLink: { name: 'Sync Passwords' },
+    requiresSuperAdmin: true,
+    requiresAdmin: true,
+    project: 'LEVANTE',
+    category: 'Users',
+  },
 ];
 
 export const getSidebarActions = ({ isSuperAdmin = false, isAdmin = false }) => {

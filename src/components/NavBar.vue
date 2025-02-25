@@ -13,13 +13,22 @@
               </router-link>
             </template>
 
-            <template #menubuttonicon>
+            <template #buttonicon>
               <PvButton
                 icon="pi pi-bars mr-2"
                 class="bg-primary text-white p-2 mr-2 border-none border-round hover:bg-red-900"
                 label="Menu"
                 @click="toggleMenu"
               />
+            </template>
+
+            <template #item="{ item, props, hasSubmenu, root }">
+              <a v-ripple class="flex items-center" v-bind="props.action">
+                <i v-if="item.icon" :class="['mr-2', item.icon]"></i>
+                <span>{{ item.label }}</span>
+                <Badge v-if="item.badge" :class="[item.badgeClass, { 'ml-auto': !root, 'ml-2': root }]" :value="item.badge" />
+                <i v-if="hasSubmenu" :class="['pi ml-auto', { 'pi-angle-down': root, 'pi-angle-right': !root }]"></i>
+              </a>
             </template>
 
             <template #end>
@@ -79,7 +88,7 @@ import useSignOutMutation from '@/composables/mutations/useSignOutMutation';
 import { isLevante } from '@/helpers';
 import { APP_ROUTES } from '@/constants/routes';
 import ROARLogo from '@/assets/RoarLogo.vue';
-import LanguageSelector from '@/components/LanguageSelector.vue';
+import Badge from 'primevue/badge';
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -132,6 +141,19 @@ const computedItems = computed(() => {
     const headerItems = rawActions.value
       .filter((action) => action.category === header)
       .map((action) => {
+        console.log('action', action.title);
+        if (action.title === 'Sync Passwords') {
+          return {
+          label: action.title,
+          icon: action.icon,
+          badge: 'Temporary',
+          badgeClass: 'bg-yellow-300',
+          command: () => {
+            router.push(action.buttonLink);
+          },
+        };
+        }
+
         return {
           label: action.title,
           icon: action.icon,
@@ -140,6 +162,7 @@ const computedItems = computed(() => {
           },
         };
       });
+
     if (headerItems.length > 0) {
       items.push({
         label: header,
@@ -147,6 +170,7 @@ const computedItems = computed(() => {
       });
     }
   }
+
   return items;
 });
 
