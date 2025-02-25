@@ -41,11 +41,6 @@
       </div>
       <AppSpinner v-else />
       <RoarModal
-        v-if="
-          userCan(Permissions.Users.UPDATE) ||
-          userCan(Permissions.Administrators.UPDATE) ||
-          userCan(Permissions.Users.CHANGE_PASSWORD)
-        "
         title="Edit User Information"
         subtitle="Modify, add, or remove user information"
         :is-enabled="isModalEnabled"
