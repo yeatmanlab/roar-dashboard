@@ -141,7 +141,6 @@ const computedItems = computed(() => {
     const headerItems = rawActions.value
       .filter((action) => action.category === header)
       .map((action) => {
-        console.log('action', action.title);
         if (action.title === 'Sync Passwords') {
           return {
           label: action.title,
