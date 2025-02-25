@@ -1,8 +1,6 @@
 const Permissions = {
-  Dashboard: {
-    Profile: {
-      VIEW: '',
-    },
+  Profile: {
+    VIEW: '',
   },
 };
 
