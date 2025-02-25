@@ -18,6 +18,7 @@ import packageLockJson from '../../../package-lock.json';
 const props = defineProps({
   taskId: { type: String, required: true, default: 'sre' },
   language: { type: String, required: true, default: 'en' },
+  launchId: { type: String, required: false, default: null },
 });
 
 let TaskLauncher;
@@ -96,25 +97,30 @@ async function startTask(selectedAdmin) {
       }
     }, 100);
 
-    const appKit = await authStore.roarfirekit.startAssessment(selectedAdmin.value.id, taskId, version);
+    const appKit = await authStore.roarfirekit.startAssessment(selectedAdmin.value.id, taskId, version, props.launchId);
 
     const userDob = _get(userData.value, 'studentData.dob');
     const userDateObj = new Date(userDob);
 
-    const userParams = {
-      grade: _get(userData.value, 'studentData.grade'),
-      birthMonth: userDateObj.getMonth() + 1,
-      birthYear: userDateObj.getFullYear(),
-      language: props.language,
-    };
+    let userParams;
+    if (!props.launchId) {
+      userParams = {
+        grade: _get(userData.value, 'studentData.grade'),
+        birthMonth: userDateObj.getMonth() + 1,
+        birthYear: userDateObj.getFullYear(),
+        language: props.language,
+      };
+    } else {
+      userParams = {};
+    }
 
     const gameParams = { ...appKit._taskInfo.variantParams };
 
-    const roarApp = new TaskLauncher(appKit, gameParams, userParams, 'jspsych-target');
+    const roarApp = new TaskLauncher(appKit, gameParams, userParams, 'jspsych-target', props.launchId);
 
     await roarApp.run().then(async () => {
       // Handle any post-game actions.
-      await authStore.completeAssessment(selectedAdmin.value.id, taskId);
+      await authStore.completeAssessment(selectedAdmin.value.id, taskId, props.launchId);
 
       // Navigate to home, but first set the refresh flag to true.
       gameStore.requireHomeRefresh();

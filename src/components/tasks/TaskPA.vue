@@ -103,12 +103,20 @@ async function startTask(selectedAdmin) {
     const userDob = _get(userData.value, 'studentData.dob');
     const userDateObj = new Date(userDob);
 
-    const userParams = {
-      grade: _get(userData.value, 'studentData.grade'),
-      birthMonth: userDateObj.getMonth() + 1,
-      birthYear: userDateObj.getFullYear(),
-      language: props.language,
-    };
+    let userParams;
+    if (!props.launchId) {
+      // case for a non-launched participant: grab userParams from userData object
+      userParams = {
+        grade: _get(userData.value, 'studentData.grade'),
+        birthMonth: userDateObj.getMonth() + 1,
+        birthYear: userDateObj.getFullYear(),
+        language: props.language,
+      };
+    } else {
+      // case for an externally-launched participant: grab userParams from appkit user object
+      console.log('apoopkit', appKit._userInfo);
+      userParams = {};
+    }
 
     const gameParams = { ...appKit._taskInfo.variantParams };
 
@@ -116,7 +124,7 @@ async function startTask(selectedAdmin) {
 
     await roarApp.run().then(async () => {
       // Handle any post-game actions.
-      await authStore.completeAssessment(selectedAdmin.value.id, taskId);
+      await authStore.completeAssessment(selectedAdmin.value.id, taskId), props.launchId;
 
       // Navigate to home, but first set the refresh flag to true.
       gameStore.requireHomeRefresh();
