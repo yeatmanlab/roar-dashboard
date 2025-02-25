@@ -152,7 +152,7 @@
               class="text-white bg-primary border-none border-round h-3rem p-3 hover:bg-red-900"
               data-cy="button-create-administration"
               style="margin: 0"
-              :disabled="isSubmitting || !userCan(accessToken, submitPermission)"
+              :disabled="isSubmitting || !userCan(submitPermission)"
               @click="submit"
             >
               <i v-if="isSubmitting" class="pi pi-spinner pi-spin mr-2"></i> {{ submitLabel }}

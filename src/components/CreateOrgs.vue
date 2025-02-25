@@ -185,10 +185,7 @@
             <PvButton
               :label="submitted ? `Creating ${orgTypeLabel}` : `Create ${orgTypeLabel}`"
               :disabled="
-                orgTypeLabel === 'Org' ||
-                v$.$invalid ||
-                submitted ||
-                !userCan(accessToken, Permissions.Organizations.CREATE)
+                orgTypeLabel === 'Org' || v$.$invalid || submitted || !userCan(Permissions.Organizations.CREATE)
               "
               :icon="submitted ? 'pi pi-spin pi-spinner' : ''"
               class="bg-primary text-white border-none border-round h-3rem w-3 hover:bg-red-900"
@@ -232,7 +229,7 @@ const isTestData = ref(false);
 const isDemoData = ref(false);
 const toast = useToast();
 const authStore = useAuthStore();
-const { roarfirekit, accessToken } = storeToRefs(authStore);
+const { roarfirekit } = storeToRefs(authStore);
 const isLevante = import.meta.env.MODE === 'LEVANTE';
 
 const state = reactive({
