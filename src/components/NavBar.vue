@@ -23,7 +23,7 @@
             </template>
 
             <template #item="{ item, props, hasSubmenu, root }">
-              <a v-ripple class="flex items-center" v-bind="props.action">
+              <a class="flex items-center" v-bind="props.action">
                 <i v-if="item.icon" :class="['mr-2', item.icon]"></i>
                 <span>{{ item.label }}</span>
                 <Badge v-if="item.badge" :class="[item.badgeClass, { 'ml-auto': !root, 'ml-2': root }]" :value="item.badge" />
