@@ -18,6 +18,7 @@ import packageLockJson from '../../../package-lock.json';
 const props = defineProps({
   taskId: { type: String, default: 'ran' },
   language: { type: String, default: 'en' },
+  launchId: { type: String, default: 'null' },
 });
 
 let TaskLauncher;
@@ -96,25 +97,36 @@ async function startTask(selectedAdmin) {
       }
     }, 100);
 
-    const appKit = await authStore.roarfirekit.startAssessment(selectedAdmin.value.id, taskId, version);
+    const appKit = await authStore.roarfirekit.startAssessment(selectedAdmin.value.id, taskId, version, props.launchId);
 
     const userDob = _get(userData.value, 'studentData.dob');
     const userDateObj = new Date(userDob);
 
-    const userParams = {
-      grade: _get(userData.value, 'studentData.grade'),
-      birthMonth: userDateObj.getMonth() + 1,
-      birthYear: userDateObj.getFullYear(),
-      language: props.language,
-    };
+    let userParams;
+
+    if (!props.launchId) {
+      userParams = {
+        grade: _get(userData.value, 'studentData.grade'),
+        birthMonth: userDateObj.getMonth() + 1,
+        birthYear: userDateObj.getFullYear(),
+        language: props.language,
+      };
+    } else {
+      userParams = {
+        grade: _get(userData.value, 'studentData.grade'),
+        birthMonth: userDateObj.getMonth() + 1,
+        birthYear: userDateObj.getFullYear(),
+        language: props.language,
+      };
+    }
 
     const gameParams = { ...appKit._taskInfo.variantParams };
 
-    const roarApp = new TaskLauncher(appKit, gameParams, userParams, 'card-title');
+    const roarApp = new TaskLauncher(appKit, gameParams, userParams, 'card-title', props.launchId);
 
     await roarApp.run().then(async () => {
       // Handle any post-game actions.
-      await authStore.completeAssessment(selectedAdmin.value.id, taskId);
+      await authStore.completeAssessment(selectedAdmin.value.id, taskId, props.launchId);
 
       // Navigate to home, but first set the refresh flag to true.
       gameStore.requireHomeRefresh();
