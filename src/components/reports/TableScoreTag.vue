@@ -5,7 +5,7 @@
   >
     <PvTag
       :value="_get(colData, col.field)"
-      :style="`background-color: ${_get(colData, col.tagColor)}; min-width: 2rem; 
+      :style="`background-color: ${_get(colData, col.tagColor, '#74797f')}; min-width: 2rem; 
       ${
         returnScoreTooltip(colData, col.field)?.length > 0 &&
         'outline: 1px dotted #0000CD; outline-offset: 3px; margin: 7px'
@@ -37,6 +37,7 @@ import {
   rawOnlyTasks,
   scoredTasks,
 } from '@/helpers/reports.js';
+import { taskDisplayNames } from '@/helpers/reports';
 import { includedValidityFlags } from '@/helpers/reports';
 
 defineProps({
@@ -113,9 +114,12 @@ function handleToolTip(_taskId, _toolTip, _colData) {
 function getFlags(colData, taskId) {
   const flags = colData.scores[taskId]?.engagementFlags;
   const flagMessages = {
-    accuracyTooLow: '- Responses were inaccurate',
-    notEnoughResponses: '- Assessment was incomplete',
-    responseTimeTooFast: '- Responses were too fast',
+    accuracyTooLow: 'Responses were inaccurate',
+    notEnoughResponses: `Incomplete. This student may retake ${
+      taskDisplayNames[taskId]?.extendedTitle || 'the assessment'
+    }`,
+    responseTimeTooFast: 'Responses were too fast',
+    incomplete: `Incomplete. This student may retake ${taskDisplayNames[taskId]?.extendedTitle || 'the assessment'}`,
   };
 
   // If there are flags and the assessment is not reliable, return the flags
@@ -127,7 +131,7 @@ function getFlags(colData, taskId) {
         return flagMessages[flag] || _lowerCase(flag);
       });
       if (reliabilityFlags.length === 0) return '';
-      return 'Unreliable Score' + '\n' + reliabilityFlags.join('\n') + '\n\n';
+      return 'Unreliable Score' + '\n' + ' - ' + reliabilityFlags.join('\n - ') + '\n\n';
     } else {
       const reliabilityFlags = Object.keys(flags).map((flag) => {
         return flagMessages[flag] || _lowerCase(flag);

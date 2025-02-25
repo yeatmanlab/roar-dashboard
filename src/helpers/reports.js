@@ -153,6 +153,22 @@ export const taskDisplayNames = {
     extendedName: 'Math Fluency - Multi Digit',
     order: 16,
   },
+  'roam-alpaca': {
+    name: 'Core - Math',
+    publicName: 'ROAM - Core Math',
+    studentFacingName: 'Core Math',
+    extendedTitle: 'ROAM - Core Math',
+    extendedName: 'Core Math - Alpaca',
+    order: 28,
+  },
+  'roam-alpaca-es': {
+    name: 'Matemáticas Centrales',
+    publicName: 'ROAM - Matematica Central',
+    studentFacingName: 'Matematica Central',
+    extendedTitle: 'ROAM - Matemática Central',
+    extendedName: 'Matemáticas Centrales',
+    order: 29,
+  },
   syntax: {
     name: 'Syntax',
     publicName: 'ROAR - Syntax',
@@ -327,8 +343,8 @@ export const includedValidityFlags = {
   'pa-es': ['incomplete'],
   sre: ['incomplete', 'responseTimeTooFast'],
   'sre-es': ['incomplete', 'responseTimeTooFast'],
-  swr: ['responseTimeTooFast'],
-  'swr-es': ['responseTimeTooFast'],
+  swr: ['responseTimeTooFast', 'notEnoughResponses'], // adding 'notEnoughResponses' for SWR since there is no current flag in the game to mark as incomplete like SRE does
+  'swr-es': ['responseTimeTooFast', 'notEnoughResponses'],
 };
 
 /*
@@ -341,7 +357,17 @@ export const tasksToDisplayGraphs = ['swr', 'sre', 'pa'];
  *  Raw Only Tasks
  *  A list of tasks to only display raw scores when included in a RoarDataTable.
  */
-export const rawOnlyTasks = ['letter', 'cva', 'morphology', 'vocab', 'fluency', 'letter-es', 'letter-en-ca'];
+export const rawOnlyTasks = [
+  'letter',
+  'cva',
+  'morphology',
+  'vocab',
+  'fluency',
+  'roam-alpaca',
+  'letter-es',
+  'letter-en-ca',
+  'phonics',
+];
 
 /*
  *  Tasks to Display Percent Correct
@@ -350,6 +376,7 @@ export const tasksToDisplayPercentCorrect = [
   'letter',
   'letter-es',
   'letter-en-ca',
+  'phonics',
   'cva',
   'swr-es',
   'pa-es',
@@ -372,6 +399,7 @@ export const tasksToDisplayTotalCorrect = [
   'fluency-calf',
   'fluency-arf-es',
   'fluency-calf-es',
+  'roam-alpaca',
 ];
 
 /*
@@ -623,6 +651,11 @@ export const getRawScoreRange = (taskId) => {
     return {
       min: 0,
       max: 90,
+    };
+  } else if (taskId.includes('phonics')) {
+    return {
+      min: 0,
+      max: 150,
     };
   } else if (taskId.includes('pa')) {
     return {

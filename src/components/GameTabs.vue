@@ -49,7 +49,7 @@
               >{{ getTaskName(game.taskId, game.taskData.name) }}</span
             >
           </template>
-          <div class="roar-tabview-game pointer flex flex-row p-5 surface-100 w-full">
+          <div class="roar-tabview-game flex flex-row p-5 surface-100 w-full">
             <div class="roar-game-content flex flex-column" style="width: 70%" @click="routeExternalTask(game)">
               <div class="roar-game-title font-bold">{{ getTaskName(game.taskId, game.taskData.name) }}</div>
               <div class="roar-game-description mr-2">
@@ -63,13 +63,20 @@
                     :value="metaIndex + ': ' + items"
                   />
                 </div>
-                <div class="roar-game-footer p-3 h-full mr-5" :class="{ 'hover:surface-200': !game.completedOn }">
+                <div
+                  class="roar-game-footer p-3 h-full mr-5"
+                  :class="{ 'hover:surface-200 pointer': !game.completedOn || game.taskData.external }"
+                >
                   <div class="flex align-items-center justify-content-center font-bold mt-2 h-full responsive-text">
                     <router-link
                       v-if="
-                        !allGamesComplete && !game.completedOn && !game.taskData?.taskURL && !game.taskData?.variantURL
+                        (!allGamesComplete &&
+                          !game.completedOn &&
+                          !game.taskData?.taskURL &&
+                          !game.taskData?.variantURL) ||
+                        game.taskData.external
                       "
-                      :to="{ path: getRoutePath(game.taskId) }"
+                      :to="game.taskData.external ? '' : { path: getRoutePath(game.taskId) }"
                       class="no-underline text-900 text-center"
                     >
                       <div class="flex align-items-center justify-content-center h-full w-full">
@@ -88,13 +95,21 @@
                           </svg>
                         </i>
                       </div>
-                      <span v-if="!allGamesComplete && !game.completedOn">{{ $t('gameTabs.clickToStart') }}</span>
-                      <span v-else>{{ taskCompletedMessage }} </span>
+                      <span v-if="game.taskData.external && game.completedOn">{{
+                        $t('gameTabs.externalTaskMessage')
+                      }}</span>
+                      <span
+                        v-else-if="
+                          (!allGamesComplete && !game.completedOn) || (game.taskData.external && !game.completedOn)
+                        "
+                        >{{ $t('gameTabs.clickToStart') }}</span
+                      >
+                      <span v-else style="cursor: default">{{ taskCompletedMessage }}</span>
                     </router-link>
                     <div v-else>
                       <div class="flex align-items-center justify-content-center text-green-500">
                         <i v-if="game.completedOn" class="pi pi-check-circle mr-3" />
-                        <span>{{ taskCompletedMessage }} </span>
+                        <span style="cursor: default">{{ taskCompletedMessage }} </span>
                       </div>
                     </div>
                   </div>
@@ -267,12 +282,22 @@ async function routeExternalTask(game) {
     return;
   }
 
-  if (game.taskData.name.toLowerCase() === 'mefs') {
+  // Mark the assessment as complete immediately if external roar task and clicked the button
+  if (game.taskData.external) {
+    await authStore.completeAssessment(selectedAdmin.value.id, game.taskId);
+    if (game.taskId === 'qualtrics-experience') {
+      // this was a request for this specific task
+      window.open(`${game.taskData.taskURL}/?participantID=${props?.userData?.username}`, '_blank').focus();
+    }
+    window.open(game.taskData.taskURL, '_blank').focus();
+  } else if (game.taskData.name.toLowerCase() === 'mefs') {
+    // this is a levante external task
     const ageInMonths = getAgeData(props.userData.birthMonth, props.userData.birthYear).ageMonths;
     url += `participantID=${props.userData.id}&participantAgeInMonths=${ageInMonths}&lng=${locale.value}`;
     window.open(url, '_blank').focus();
     await authStore.completeAssessment(selectedAdmin.value.id, game.taskId);
   } else {
+    // This is for no external tasks
     url += `&participant=${props.userData.assessmentPid}${
       (props?.userData?.schools?.current ?? []).length
         ? '&schoolId=' + props.userData.schools.current.join('“%2C”')
