@@ -91,6 +91,12 @@
       </fieldset>
 
       <PvButton
+        :disabled="!userCan(Permissions.Tasks.MANAGE)"
+        v-tooltip="
+          userCan(Permissions.Tasks.MANAGE)
+            ? false
+            : 'You do not have permission to create tasks. If you feel this is a mistake, please contact your administrator.'
+        "
         type="submit"
         label="Submit"
         class="self-center w-full lg:w-4 bg-primary align-right text-white border-none border-round p-3 hover:bg-red-900"
@@ -116,9 +122,11 @@ import TaskParametersConfigurator from './TaskParametersConfigurator.vue';
 import { convertParamArrayToObject } from '@/helpers/convertParamArrayToObject';
 import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
 import { TASK_PARAMETER_DEFAULT_SHAPE } from '@/constants/tasks';
+import { usePermissions } from '@/composables/usePermissions';
 
 const toast = useToast();
 const { mutate: addTask } = useAddTaskMutation();
+const { userCan, Permissions } = usePermissions();
 
 // Initial form state for the task form.
 const initialFormState = {
