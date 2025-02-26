@@ -151,7 +151,7 @@ import { getTitle } from '@/helpers/query/administrations';
 import useUserType from '@/composables/useUserType';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useAdministrationsListQuery from '@/composables/queries/useAdministrationsListQuery';
-import useUsersDataQuery from '@/composables/queries/useUsersDataQuery';
+// import useUsersDataQuery from '@/composables/queries/useUsersDataQuery';
 import CardAdministration from '@/components/CardAdministration.vue';
 
 const initialized = ref(false);
@@ -226,13 +226,13 @@ const {
   enabled: initialized,
 });
 
-const {
-  isLoading: isLoadingChildUserData,
-  isFetching: isFetchingChildUserData,
-  data: childUsers,
-} = useUsersDataQuery(authStore.userData.childrenUids, {
-  enabled: initialized,
-});
+// const {
+//   isLoading: isLoadingChildUserData,
+//   isFetching: isFetchingChildUserData,
+//   data: childUsers,
+// } = useUsersDataQuery(authStore.userData.childrenUids, {
+//   enabled: initialized,
+// });
 
 /**
  * Administration data watcher
