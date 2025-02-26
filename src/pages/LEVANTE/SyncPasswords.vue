@@ -81,7 +81,7 @@
   
           <div class="submit-container">
             <PvButton
-              :label="activeSubmit ? 'Linking Users' : 'Start Linking'"
+              :label="activeSubmit ? 'Syncing Passwords' : 'Sync Passwords'"
               :icon="activeSubmit ? 'pi pi-spin pi-spinner' : ''"
               :disabled="activeSubmit"
               class="bg-primary mb-2 p-3 w-2 text-white border-none border-round h-3rem m-0 hover:bg-red-900"
@@ -129,7 +129,7 @@
   import _forEach from 'lodash/forEach';
   import _startCase from 'lodash/startCase';
   import _isEmpty from 'lodash/isEmpty';
-  
+  import { storeToRefs } from 'pinia';
   const authStore = useAuthStore();
   const toast = useToast();
   const isFileUploaded = ref(false);
@@ -138,6 +138,8 @@
   const errorUserColumns = ref([]);
   const activeSubmit = ref(false);
   const showErrorTable = ref(false);
+
+  const { roarfirekit } = storeToRefs(authStore);
   
   const allFields = [
       {
@@ -177,7 +179,6 @@
     rawUserFile.value = await csvFileToJson(modifiedFile);
 
     const allColumns = Object.keys(toRaw(rawUserFile.value[0])).map(col => col.toLowerCase());
-    console.log('allColumns: ', allColumns);
 
     // Check if the required columns are present  
     const hasUid = allColumns.includes('uid');
@@ -224,7 +225,6 @@
     const requiredFields = ['uid', 'password', 'email'];
 
     rawUserFile.value.forEach(user => {
-      console.log('user: ', user);
       const missingFields = [];
 
       // Check for required fields
@@ -240,7 +240,6 @@
     });
 
     if (errorUsers.value.length > 0) {
-      console.log('errorUsers: ', errorUsers.value);
       toast.add({
         severity: 'error',
         summary: 'Missing or Empty Fields. See below for details.',
@@ -251,18 +250,37 @@
   
   const submitUsers = async () => {
     activeSubmit.value = true;
+    
     try {
-      const result = await authStore.roarfirekit.linkUsers(rawUserFile.value);
-      console.log('user link result:', result);
+      // Filter each user object to only include the required fields
+      // Handle case-insensitive column names
+      const filteredUsers = rawUserFile.value.map(user => {
+        // Get all keys from the user object
+        const userKeys = Object.keys(user);
+        
+        // Find the actual case of each required field
+        const uidKey = userKeys.find(key => key.toLowerCase() === 'uid');
+        const emailKey = userKeys.find(key => key.toLowerCase() === 'email');
+        const passwordKey = userKeys.find(key => key.toLowerCase() === 'password');
+        
+        // Create a new object with only the required fields
+        return {
+          uid: user[uidKey],
+          email: user[emailKey],
+          password: user[passwordKey]
+        };
+      });
+
+      const result = await roarfirekit.value.syncPasswords(filteredUsers);
       
       toast.add({
         severity: 'success',
         summary: 'Success',
-        detail: 'Users linked successfully',
+        detail: result.data.message,
         life: 5000,
       });
     } catch (error) {
-      console.error(error);
+      console.error(error.message);
       toast.add({
         severity: 'error',
         summary: 'Error',
