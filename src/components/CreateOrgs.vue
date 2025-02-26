@@ -22,7 +22,6 @@
                 :options="isLevante ? levanteOrgTypes : orgTypes"
                 show-clear
                 option-label="singular"
-                placeholder="Select an org type"
                 class="w-full"
                 data-cy="dropdown-org-type"
               />
