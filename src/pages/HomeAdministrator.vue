@@ -6,7 +6,7 @@
           <div class="flex flex-row flex-wrap align-items-center justify-content-between mb-3 gap-3">
             <div v-if="isCaregiverWithStudents" class="flex flex-column">
               <div class="text-2xl font-bold font-gray-500">Your students</div>
-              <div v-for="uid in authStore.userData.childrenUids">
+              <div v-for="uid in authStore.userData.childrenUids" :key="uid">
                 <a :href="'/launch/' + uid">
                   {{ uid }}
                 </a>
