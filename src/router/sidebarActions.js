@@ -1,3 +1,5 @@
+import { usePermissions } from '../composables/usePermissions';
+const { userCan, Permissions } = usePermissions();
 const sidebarActionOptions = [
   {
     title: 'Back to Dashboard',
@@ -14,6 +16,7 @@ const sidebarActionOptions = [
     buttonLink: { name: 'ListOrgs' },
     requiresSuperAdmin: false,
     requiresAdmin: true,
+    permission: Permissions.Organizations.LIST,
     project: 'ALL',
     category: 'Organizations',
   },
@@ -23,6 +26,7 @@ const sidebarActionOptions = [
     buttonLink: { name: 'CreateOrgs' },
     requiresSuperAdmin: true,
     requiresAdmin: true,
+    permission: Permissions.Organizations.CREATE,
     project: 'ALL',
     category: 'Organizations',
   },
@@ -32,6 +36,7 @@ const sidebarActionOptions = [
     buttonLink: { name: 'RegisterStudents' },
     requiresSuperAdmin: true,
     requiresAdmin: true,
+    permission: Permissions.Users.CREATE,
     project: 'ROAR',
     category: 'Users',
   },
@@ -40,6 +45,7 @@ const sidebarActionOptions = [
     icon: 'pi pi-user-plus',
     buttonLink: { name: 'CreateAdministrator' },
     requiresSuperAdmin: true,
+    permission: Permissions.Administrators.CREATE,
     project: 'ALL',
     category: 'Users',
   },
@@ -49,6 +55,7 @@ const sidebarActionOptions = [
     buttonLink: { name: 'Home' },
     requiresSuperAdmin: false,
     requiresAdmin: true,
+    permission: Permissions.Administrations.LIST,
     project: 'ALL',
     category: 'Administrations',
   },
@@ -58,6 +65,7 @@ const sidebarActionOptions = [
     buttonLink: { name: 'CreateAdministration' },
     requiresSuperAdmin: true,
     requiresAdmin: true,
+    permission: Permissions.Administrations.CREATE,
     project: 'ALL',
     category: 'Administrations',
   },
@@ -67,6 +75,7 @@ const sidebarActionOptions = [
     buttonLink: { name: 'ManageTasksVariants' },
     requiresSuperAdmin: true,
     requiresAdmin: true,
+    permission: Permissions.Tasks.UPDATE,
     project: 'ALL',
     category: 'Administrations',
   },
@@ -83,7 +92,7 @@ const sidebarActionOptions = [
     title: 'Register New Family',
     icon: 'pi pi-home',
     buttonLink: { name: 'Register' },
-    requiresSuperAdmin: true,
+    permission: 'This item is Super Admin Only.',
     project: 'ROAR',
     category: 'Users',
   },
@@ -111,11 +120,9 @@ export const getSidebarActions = ({ isSuperAdmin = false, isAdmin = false }) => 
   } else {
     const actions = sidebarActionOptions.filter((action) => {
       if (action.project === 'ROAR' || action.project === 'ALL') {
-        if (action.requiresSuperAdmin && !isSuperAdmin) {
-          return false;
-        }
-        if (action.requiresAdmin && !isAdmin) {
-          return false;
+        const permission = action.permission;
+        if (permission) {
+          return userCan(permission);
         }
         return true;
       }
