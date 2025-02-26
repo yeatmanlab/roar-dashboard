@@ -638,6 +638,7 @@ const computeAssignmentAndRunData = computed(() => {
           schoolName: schoolName,
         },
         tooltip: `View ${firstNameOrUsername}'s Score Report`,
+        launchTooltip: `View assessment portal for ${firstNameOrUsername}`,
         routeParams: {
           administrationId: props.administrationId,
           orgId: props.orgId,

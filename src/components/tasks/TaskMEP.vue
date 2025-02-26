@@ -50,7 +50,7 @@ const { isLoading: isLoadingUserData, data: userData } = useUserStudentDataQuery
   {
     enabled: initialized,
   },
-  launchId,
+  props.launchId,
 );
 
 // The following code intercepts the back button and instead forces a refresh.
@@ -100,7 +100,7 @@ async function startTask(selectedAdmin) {
       }
     }, 100);
 
-    const appKit = await authStore.roarfirekit.startAssessment(selectedAdmin.value.id, taskId, version, launchId);
+    const appKit = await authStore.roarfirekit.startAssessment(selectedAdmin.value.id, taskId, version, props.launchId);
 
     const userDob = _get(userData.value, 'studentData.dob');
     const userDateObj = new Date(userDob);
@@ -114,11 +114,11 @@ async function startTask(selectedAdmin) {
 
     const gameParams = { ...appKit._taskInfo.variantParams };
 
-    const roarApp = new TaskLauncher(appKit, gameParams, userParams, 'card-title', launchId);
+    const roarApp = new TaskLauncher(appKit, gameParams, userParams, 'card-title', props.launchId);
 
     await roarApp.run().then(async () => {
       // Handle any post-game actions.
-      await authStore.completeAssessment(selectedAdmin.value.id, taskId, launchId);
+      await authStore.completeAssessment(selectedAdmin.value.id, taskId, props.launchId);
 
       // Navigate to home, but first set the refresh flag to true.
       gameStore.requireHomeRefresh();
