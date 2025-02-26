@@ -1,5 +1,5 @@
 <template>
-  <div v-if="localUserType === 'student' && userCan(Permissions.Users.EDIT)" class="form-container">
+  <div v-if="localUserType === UserRoles.STUDENT && userCan(Permissions.Users.EDIT)" class="form-container">
     <div class="form-column">
       <div class="form-field">
         <label :class="{ 'font-light uppercase text-sm': !editMode }">First Name</label>
@@ -126,7 +126,10 @@
       </div>
     </div>
   </div>
-  <div v-else-if="localUserType === 'admin' && userCan(Permissions.Administrators.UPDATE)" class="form-container">
+  <div
+    v-else-if="localUserType === UserRoles.ADMIN && userCan(Permissions.Administrators.UPDATE)"
+    class="form-container"
+  >
     <div class="form-column">
       <div class="form-field">
         <label :class="{ 'font-light uppercase text-sm': !editMode }">First Name</label>
@@ -223,7 +226,7 @@ import PvSelect from 'primevue/select';
 import PvInputText from 'primevue/inputtext';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import { usePermissions } from '@/composables/usePermissions';
-const { userCan, Permissions } = usePermissions();
+const { userCan, Permissions, UserRoles } = usePermissions();
 
 const props = defineProps({
   userData: {
