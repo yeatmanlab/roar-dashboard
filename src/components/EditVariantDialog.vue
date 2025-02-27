@@ -57,15 +57,15 @@
         <div v-for="(condtion, index) in assignedConditions" :key="index">
             <div class="flex gap-2 align-content-start flex-grow-0 params-container mb-2">
                <div class="flex flex-row flex-wrap justify-content-between align-content-center gap-2 w-full">
-                <PvDropdown v-model="condtion.field" :options="computedFieldOptions" optionLabel="label" class="w-full" placeholder="Select a Field" inputId="Field"/>
+                <PvSelect v-model="condtion.field" :options="computedFieldOptions" optionLabel="label" class="w-full" placeholder="Select a Field" inputId="Field"/>
               </div>
 
               <div class="flex flex-row flex-wrap justify-content-between align-content-center gap-2 w-full">
-                <PvDropdown v-model="condtion.op" :options="computedConditionOptions(condtion.field)" optionLabel="label" class="w-full" placeholder="Condition" inputId="Condition"/>
+                <PvSelect v-model="condtion.op" :options="computedConditionOptions(condtion.field)" optionLabel="label" class="w-full" placeholder="Condition" inputId="Condition"/>
               </div>
 
               <div class="flex flex-row flex-wrap justify-content-between align-content-center gap-2 w-full">
-                <PvDropdown v-model="condtion.value" :options="computedValueOptions(condtion.field)" optionLabel="label" class="w-full" placeholder="Value"/>
+                <PvSelect v-model="condtion.value" :options="computedValueOptions(condtion.field)" optionLabel="label" class="w-full" placeholder="Value"/>
               </div>
 
               <PvButton
@@ -117,15 +117,15 @@
           <div v-for="(condtion, index) in optionalConditions" :key="index">
             <div class="flex gap-2 align-content-start flex-grow-0 params-container mb-2">
                <div class="flex flex-row flex-wrap justify-content-between align-content-center gap-2 w-full">
-                <PvDropdown v-model="condtion.field" :options="computedFieldOptions" optionLabel="label" class="w-full" placeholder="Select a Field" inputId="Field"/>
+                <PvSelect v-model="condtion.field" :options="computedFieldOptions" optionLabel="label" class="w-full" placeholder="Select a Field" inputId="Field"/>
               </div>
 
               <div class="flex flex-row flex-wrap justify-content-between align-content-center gap-2 w-full">
-                <PvDropdown v-model="condtion.op" :options="computedConditionOptions(condtion.field)" optionLabel="label" class="w-full" placeholder="Condition" inputId="Condition"/>
+                <PvSelect v-model="condtion.op" :options="computedConditionOptions(condtion.field)" optionLabel="label" class="w-full" placeholder="Condition" inputId="Condition"/>
               </div>
 
               <div class="flex flex-row flex-wrap justify-content-between align-content-center gap-2 w-full">
-                <PvDropdown v-model="condtion.value" :options="computedValueOptions(condtion.field)" optionLabel="label" class="w-full" placeholder="Value"/>
+                <PvSelect v-model="condtion.value" :options="computedValueOptions(condtion.field)" optionLabel="label" class="w-full" placeholder="Value"/>
               </div>
 
               <PvButton
@@ -193,14 +193,14 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, toRaw, watch } from 'vue';
+import { ref, onMounted, computed, toRaw } from 'vue';
 import _isEmpty from 'lodash/isEmpty';
 import _cloneDeep from 'lodash/cloneDeep';
 import { isLevante } from '@/helpers';
 import PvButton from 'primevue/button';
 import PvDialog from 'primevue/dialog';
 import PvDivider from 'primevue/divider';
-import PvDropdown from 'primevue/dropdown';
+import PvSelect from 'primevue/select';
 import PvInputSwitch from 'primevue/inputswitch';
 import PvTag from 'primevue/tag';
 

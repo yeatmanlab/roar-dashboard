@@ -34,7 +34,7 @@
           :rows="10"
           class="datatable"
         >
-          <PvColumn v-for="col of columns" :key="col.field" :field="col.field">
+          <PvColumn v-for="col of allFields" :key="col.field" :field="col.field">
             <template #header>
               <div class="col-header">
                 <b>{{ col.header }}</b>
@@ -54,7 +54,7 @@
         </div>
       </div>
 
-      <div v-if="errorUsers.length" class="error-container">
+      <div v-if="showErrorTable" class="error-container">
         <div class="error-header">
           <h3>Rows with Errors</h3>
         </div>
@@ -69,7 +69,7 @@
           :rows="10"
           class="datatable"
         >
-          <PvColumn v-for="col of errorColumns" :key="col.field" :field="col.field">
+          <PvColumn v-for="col of errorUserColumns" :key="col.field" :field="col.field">
             <template #header>
               {{ col.header }}
             </template>
@@ -90,6 +90,9 @@ import PvButton from 'primevue/button';
 import PvColumn from 'primevue/column';
 import PvDataTable from 'primevue/datatable';
 import PvFileUpload from 'primevue/fileupload';
+import _forEach from 'lodash/forEach';
+import _startCase from 'lodash/startCase';
+import _isEmpty from 'lodash/isEmpty';
 
 const authStore = useAuthStore();
 const toast = useToast();
@@ -97,36 +100,127 @@ const isFileUploaded = ref(false);
 const rawUserFile = ref([]);
 const columns = ref([]);
 const errorUsers = ref([]);
-const errorColumns = ref([]);
+const errorUserColumns = ref([]);
 const activeSubmit = ref(false);
+const showErrorTable = ref(false);
 
-const requiredFields = ['id', 'parentId', 'teacherId'];
+
+// LINKING
+// Required: id, userType, uid
+// Conditional: (Child + Either): parentId, teacherId
+// Conditional (Either): Group OR District + School
+
+const camelCaseColumns = ['userType', 'parentId', 'teacherId'];
+
+const allFields = [
+    {
+      field: 'id',
+      header: 'ID',
+      dataType: 'string',
+    },
+    {
+      field: 'userType',
+      header: 'User Type',
+      dataType: 'string',
+    },
+    {
+      field: 'parentId',
+      header: 'Parent ID',
+      dataType: 'string',
+    },
+    {
+      field: 'teacherId',
+      header: 'Teacher ID',
+      dataType: 'string',
+    },
+    {
+      field: 'uid',
+      header: 'UID',
+      dataType: 'string',
+    },
+    {
+      field: 'group',
+      header: 'Group',
+      dataType: 'string',
+    },
+    {
+      field: 'district',
+      header: 'District',
+      dataType: 'string',
+    },
+    {
+      field: 'school',
+      header: 'School',
+      dataType: 'string',
+    },
+    {
+      field: 'class',
+      header: 'Class',
+      dataType: 'string',
+    },
+  ];
 
 const onFileUpload = async (event) => {
-  rawUserFile.value = await csvFileToJson(event.files[0]);
-  columns.value = Object.keys(rawUserFile.value[0]).map(key => ({
-    field: key,
-    header: key,
-  }));
-
-  const hasParentId = columns.value.some(col => col.field === 'parentId');
-  const hasTeacherId = columns.value.some(col => col.field === 'teacherId');
+  showErrorTable.value = false;
+  // Read the file as text first
+  const file = event.files[0];
+  const text = await file.text();
   
-  if (!hasParentId && !hasTeacherId) {
+  // Split into lines
+  const lines = text.split('\n');
+  
+  // Lowercase all columns in header except 'userType'
+  const headers = lines[0].split(',');
+  lines[0] = headers.map(header => 
+    camelCaseColumns.includes(header) ? header : header.toLowerCase()
+  ).join(',');
+  
+  // Create a new Blob with modified content
+  const modifiedFile = new Blob([lines.join('\n')], { type: file.type });
+  
+  // Parse the modified file
+  rawUserFile.value = await csvFileToJson(modifiedFile);
+
+
+  const allColumns = Object.keys(toRaw(rawUserFile.value[0])).map((col) => camelCaseColumns.includes(col) ? col : col.toLowerCase());
+  console.log('allColumns: ', allColumns);
+
+  // First check if the required columns are present  
+  const hasId = allColumns.includes('id');
+  const hasUserType = allColumns.includes('userType');
+  const hasUid = allColumns.includes('uid');
+
+  const missingColumns = [];
+
+  if (!hasId) {
+    missingColumns.push('id');
+  }
+  if (!hasUserType) {
+    missingColumns.push('userType');
+  }
+  if (!hasUid) {
+    missingColumns.push('uid');
+  }
+
+  if (missingColumns.length > 0) {
     toast.add({
       severity: 'error',
-      summary: 'Error: Missing Columns',
-      detail: 'File must contain either parentId or teacherId column (or both)',
+      summary: 'Error: Missing Column',
+      detail: `Missing required column(s): ${missingColumns.join(', ')}`,
       life: 5000,
     });
     return;
   }
 
-  if (!columns.value.some(col => col.field === 'id')) {
+
+  const hasParentId = allColumns.includes('parentId');
+  const hasTeacherId = allColumns.includes('teacherId');
+  
+  if (!hasParentId && !hasTeacherId) {
     toast.add({
       severity: 'error',
-      summary: 'Error: Missing Column',
-      detail: 'Missing required column: id',
+      summary: 'Error: Missing Columns',
+      detail: 'Missing required column(s): parentId or teacherId',
       life: 5000,
     });
     return;
@@ -149,21 +243,31 @@ const validateUsers = () => {
   errorUsers.value = [];
   const userMap = new Map(toRaw(rawUserFile.value).map(user => [user.id.toString(), user]));
 
+  const requiredFields = ['id', 'userType', 'uid',];
+
   rawUserFile.value.forEach(user => {
-    const errors = [];
-    const requiredFields = ['id', 'userType', 'uid'];
-    
+    console.log('user: ', user);
+    const missingFields = [];
+
     // Check for required fields
     requiredFields.forEach(field => {
-      if (!user[field]) {
-        errors.push(`Missing required field: ${field}`);
-      }
+        if (!user[field]) {
+          missingFields.push(field);
+        }
     });
 
-    // Validate based on userType
-    if (user.userType === 'child') {
+    // Check for group or district and school
+    if (!user.group) {
+      if (!user.district || !user.school) {
+        missingFields.push('group OR district and school');
+      }
+    }
+
+    // Check for parentId or teacherId
+    if (user.userType.toLowerCase() === 'child') {
+
       if (!user.parentId && !user.teacherId) {
-        errors.push('Child must have either parentId or teacherId');
+        missingFields.push('parentId or teacherId');
       }
       if (user.parentId) {
         const parentIds = typeof user.parentId === 'string' ? user.parentId.split(',').map(id => id.trim()) : [user.parentId.toString()];
@@ -171,9 +275,9 @@ const validateUsers = () => {
           console.log('parentId in loop:', parentId);
 
           if (!userMap.has(parentId)) {
-            errors.push(`Parent with ID ${parentId} not found`);
-          } else if (userMap.get(parentId).userType !== 'parent') {
-            errors.push(`User with ID ${parentId} is not a parent`);
+            missingFields.push(`Parent with ID ${parentId} not found`);
+          } else if (userMap.get(parentId).userType.toLowerCase() !== 'parent') {
+            missingFields.push(`User with ID ${parentId} is not a parent`);
           }
         });
       }
@@ -181,31 +285,24 @@ const validateUsers = () => {
         const teacherIds = typeof user.teacherId === 'string' ? user.teacherId.split(',').map(id => id.trim()) : [user.teacherId.toString()];
         teacherIds.forEach(teacherId => {
           if (!userMap.has(teacherId)) {
-            errors.push(`Teacher with ID ${teacherId} not found`);
-          } else if (userMap.get(teacherId).userType !== 'teacher') {
-            errors.push(`User with ID ${teacherId} is not a teacher`);
+            missingFields.push(`Teacher with ID ${teacherId} not found`);
+          } else if (userMap.get(teacherId).userType.toLowerCase() !== 'teacher') {
+            missingFields.push(`User with ID ${teacherId} is not a teacher`);
           }
         });
       }
-    } else if (user.userType.toLowerCase() === 'parent' || user.userType.toLowerCase() === 'teacher') {
-      if (user.parentId || user.teacherId) {
-        errors.push(`${user.userType} should not have parentId or teacherId`);
-      }
-    } else {
-      errors.push('Invalid userType');
     }
 
-    if (errors.length > 0) {
-      errorUsers.value.push({ ...user, errors: errors.join(', ') });
+    if (missingFields.length > 0) {
+      addErrorUser(user, `Missing Field(s): ${missingFields.join(', ')}`);
     }
   });
 
   if (errorUsers.value.length > 0) {
-    errorColumns.value = [...columns.value, { field: 'errors', header: 'Errors' }];
+    console.log('errorUsers: ', errorUsers.value);
     toast.add({
       severity: 'error',
-      summary: 'Validation Errors',
-      detail: 'See error table for details.',
+      summary: 'Missing Fields. See below for details.',
       life: 5000,
     });
   }
@@ -235,6 +332,42 @@ const submitUsers = async () => {
     activeSubmit.value = false;
   }
 };
+
+function generateColumns(rawJson) {
+    let columns = [];
+    const columnValues = Object.keys(rawJson);
+    _forEach(columnValues, (col) => {
+      let dataType = typeof rawJson[col];
+      if (dataType === 'object') {
+        if (rawJson[col] instanceof Date) dataType = 'date';
+      }
+      columns.push({
+        field: col,
+        header: _startCase(col),
+        dataType: dataType,
+      });
+    });
+    return columns;
+  }
+
+function addErrorUser(user, error) {
+    // If there are no error users yet, generate the
+    //  columns before displaying the table.
+    if (_isEmpty(errorUserColumns.value)) {
+      errorUserColumns.value = generateColumns(user);
+      errorUserColumns.value.unshift({
+        dataType: 'string',
+        field: 'error',
+        header: 'Cause of Error',
+      });
+      showErrorTable.value = true;
+    }
+    // Concat the userObject with the error reason.
+    errorUsers.value.push({
+      ...user,
+      error,
+    });
+  }
 </script>
 
 <style scoped>

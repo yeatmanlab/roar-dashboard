@@ -32,6 +32,8 @@ const getLocale = (localeFromBrowser) => {
   }
 };
 
+export const formattedLocale = getLocale(browserLocale);
+
 const getFallbackLocale = () => {
   const localeFromStorage = sessionStorage.getItem(`${isLevante ? 'levante' : 'roar'}PlatformLocale`);
 

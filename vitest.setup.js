@@ -5,7 +5,7 @@ import { languageOptions } from '@/translations/i18n';
 const locale = 'en';
 
 config.global.mocks = {
-  $t: (msg) => translations[locale][msg],
+  $t: (msg) => languageOptions[locale]?.translations[msg],
 };
 
 vi.mock('vue-recaptcha', () => ({

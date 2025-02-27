@@ -16,7 +16,7 @@
               <div class="flex gap-3 align-items-stretch justify-content-start">
                 <div v-if="isSuperAdmin" class="flex flex-column gap-1">
                   <small class="text-gray-400">Show test administrations</small>
-                  <PvInputSwitch v-model="fetchTestAdministrations" class="align-self-center my-auto" />
+                  <PvToggleSwitch v-model="fetchTestAdministrations" class="align-self-center my-auto" />
                 </div>
                 <div class="flex flex-column gap-1">
                   <small id="search-help" class="text-gray-400">Search by administration name</small>
@@ -42,7 +42,7 @@
 
               <div class="flex flex-column gap-1">
                 <small for="dd-sort" class="text-gray-400">Sort by</small>
-                <PvDropdown
+                <PvSelect
                   v-model="sortKey"
                   input-id="dd-sort"
                   :options="sortOptions"
@@ -136,9 +136,9 @@ import PvAutoComplete from 'primevue/autocomplete';
 import PvBlockUI from 'primevue/blockui';
 import PvButton from 'primevue/button';
 import PvDataView from 'primevue/dataview';
-import PvDropdown from 'primevue/dropdown';
+import PvSelect from 'primevue/select';
 import PvInputGroup from 'primevue/inputgroup';
-import PvInputSwitch from 'primevue/inputswitch';
+import PvToggleSwitch from 'primevue/toggleswitch';
 import { useAuthStore } from '@/store/auth';
 import { orderByDefault } from '@/helpers/query/utils';
 import { getTitle } from '@/helpers/query/administrations';

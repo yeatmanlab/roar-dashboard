@@ -1,10 +1,10 @@
 <template>
   <AppSpinner v-if="localStorageEmail" />
   <div v-else class="field col">
-    <span class="p-float-label">
+    <PvFloatLabel>
       <PvInputText id="email" v-model="formEmail" />
       <label for="email">Email</label>
-    </span>
+    </PvFloatLabel>
     <div class="col-12 mb-3">
       <PvButton label="Finish signing in" @click="loginFromEmailLink(formEmail)" />
     </div>
@@ -23,6 +23,7 @@ import PvInputText from 'primevue/inputtext';
 import PvMessage from 'primevue/message';
 import { useAuthStore } from '@/store/auth';
 import { fetchDocById } from '@/helpers/query/utils';
+import PvFloatLabel from 'primevue/floatlabel';
 
 const router = useRouter();
 const authStore = useAuthStore();

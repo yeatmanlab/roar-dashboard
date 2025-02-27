@@ -6,7 +6,7 @@
           <PvInputText
             :id="$t('authSignIn.emailId')"
             v-model="v$.email.$model"
-            :class="{ 'p-invalid': invalid }"
+            :class="{ 'w-full': true, 'p-invalid': invalid }"
             aria-describedby="email-error"
             :placeholder="$t('authSignIn.emailPlaceholder')"
             data-cy="input-username-email"
@@ -27,7 +27,7 @@
             <PvPassword
               :id="$t('authSignIn.passwordId')"
               v-model="v$.password.$model"
-              :class="{ 'p-invalid': invalid }"
+              :class="{ 'w-full': true, 'p-invalid': invalid }"
               toggle-mask
               show-icon="pi pi-eye-slash"
               hide-icon="pi pi-eye"
@@ -55,7 +55,7 @@
             v-else-if="allowPassword"
             :id="$t('authSignIn.passwordId')"
             v-model="v$.password.$model"
-            :class="{ 'p-invalid': invalid }"
+            :class="{ 'w-full': true, 'p-invalid': invalid }"
             toggle-mask
             show-icon="pi pi-eye-slash"
             hide-icon="pi pi-eye"
@@ -86,6 +86,7 @@
               :placeholder="$t('authSignIn.signInWithEmailLinkPlaceHolder')"
               disabled
               data-cy="password-disabled-for-email"
+              class="w-full"
             />
             <small
               class="text-link sign-in-method-link"
@@ -101,7 +102,7 @@
           <div v-else>
             <PvPassword
               disabled
-              class="p-invalid text-red-600"
+              class="p-invalid text-red-600 w-full"
               :placeholder="$t('authSignIn.invalidEmailPlaceholder')"
             />
           </div>
@@ -209,32 +210,33 @@ const allowLink = ref(true);
 
 const validateRoarEmail = _debounce(
   async (email) => {
-    await roarfirekit.value.isEmailAvailable(email).then(async (emailAvail) => {
-      if (email.includes('levante')) {
-        allowLink.value = false;
+    // Don't evaluate empty emails or obviously invalid ones
+    if (!email || !email.includes('@')) {
+      evaluatingEmail.value = false;
+      return;
+    }
+
+    const isRoarAuth = roarfirekit.value.isRoarAuthEmail(email);
+
+    try {
+      // First handle levante emails
+      if (email.includes('levante') || isRoarAuth) {
         allowPassword.value = true;
-        state.useLink = allowLink.value;
+        allowLink.value = false;
+        state.useLink = false;
         evaluatingEmail.value = false;
         return;
       }
 
-      if (emailAvail) {
-        console.log(`Email ${email} is available`);
-        allowPassword.value = true;
-        allowLink.value = false;
-      } else {
-        if (roarfirekit.value.isRoarAuthEmail(email)) {
-          // Roar auth email are made up, so sign-in link is not allowed.
-          allowLink.value = false;
-          allowPassword.value = true;
-        } else {
-          allowLink.value = true;
-          allowPassword.value = true;
-        }
-      }
+      // If they get this far, User is a an admin or using username/password
+      allowPassword.value = true;  // Password is always allowed
+      allowLink.value = true;
       state.useLink = allowLink.value;
       evaluatingEmail.value = false;
-    });
+    } catch (error) {
+      console.error('Error evaluating email:', error);
+      evaluatingEmail.value = false;
+    }
   },
   250,
   { maxWait: 1000 },
@@ -272,15 +274,10 @@ watch(
     if (isValidEmail(email)) {
       evaluatingEmail.value = true;
       validateRoarEmail(email);
-    } else {
-      // In this case, assume that the input is a username
-      // Password is allowed. Sign-in link is not allowed.
-      allowPassword.value = true;
-      allowLink.value = false;
-      state.useLink = allowLink.value;
     }
   },
 );
+
 </script>
 <style scoped>
 .submit-button {

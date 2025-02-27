@@ -1,4 +1,4 @@
-import { RoarFirekit } from '@bdelab/roar-firekit';
+import { RoarFirekit } from '@levante-framework/firekit';
 import roarFirebaseConfig from './config/firebaseRoar';
 import levanteFirebaseConfig from './config/firebaseLevante';
 import { isLevante } from './helpers';

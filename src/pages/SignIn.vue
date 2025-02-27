@@ -15,7 +15,7 @@
         <section class="signin-option-container signin-option-userpass">
           <h4 class="signin-option-title">{{ $t('pageSignIn.login') }}</h4>
           <div id="languageSelect" class="m-4 flex justify-content-center">
-            <LanguageSelector />
+            <LanguageSelector class="w-7" />
           </div>
           <SignIn :invalid="incorrect" @submit="authWithEmail" @update:email="email = $event" />
         </section>
@@ -32,13 +32,15 @@
             </template>
           </i18n-t>
         </section>
-        <section v-if="adminSignIn || !isLevante" class="signin-option-container signin-option-providers">
-          <h4 class="signin-option-title">{{ $t('pageSignIn.loginWith') }}</h4>
-          <div class="flex">
+        <section v-if="adminSignIn || !isLevante" class="flex flex-column w-full">
+          <h4 class="flex mb-3 mt-1 align-content-center justify-content-center flex-wrap-reverse font-bold text-md text-500">
+            {{ $t('pageSignIn.loginWith') }}
+          </h4>
+          <div class="flex flex-row align-content-center justify-content-center w-full">
             <PvButton
               label="Sign in with Google"
-              class="flex surface-0 p-1 mr-1 border-black-alpha-10 w-full text-center justify-content-center hover:border-primary hover:surface-ground"
-              style="border-radius: 3rem; height: 3rem"
+              class="flex surface-0 p-1 border-black-alpha-10 w-3 ml-2 mr-2 text-center text-black justify-content-center hover:border-primary hover:surface-ground"
+              style="border-radius: 3rem; height: 3rem; color: black !important"
               @click="authWithGoogle"
             >
               <img src="../assets/provider-google-logo.svg" alt="The Google Logo" class="flex mr-2 w-2" />
@@ -336,5 +338,12 @@ onBeforeUnmount(() => {
   z-index: 10;
   background-color: rgba(255, 255, 255, 0.7);
   padding-top: 21vh;
+}
+
+input.p-inputtext.p-component.p-password-input {
+  width: 100% !important;
+}
+div#password {
+  width: 100% !important;
 }
 </style>

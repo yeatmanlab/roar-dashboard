@@ -79,7 +79,7 @@
           <PvColumn v-for="col of tableColumns" :key="col.field" :field="col.field">
             <template #header>
               <div class="col-header">
-                <PvDropdown
+                <PvSelect
                   v-model="dropdownModel[col.field]"
                   :options="dropdownOptions"
                   option-label="label"
@@ -143,21 +143,17 @@ import { storeToRefs } from 'pinia';
 import _cloneDeep from 'lodash/cloneDeep';
 import _compact from 'lodash/compact';
 import _forEach from 'lodash/forEach';
-import _includes from 'lodash/includes';
 import _isEmpty from 'lodash/isEmpty';
 import _omit from 'lodash/omit';
-import _set from 'lodash/set';
-import _uniqBy from 'lodash/uniqBy';
 import _startCase from 'lodash/startCase';
 import _sortBy from 'lodash/orderBy';
-import _find from 'lodash/find';
 import { useToast } from 'primevue/usetoast';
 import PvButton from 'primevue/button';
 import PvCheckbox from 'primevue/checkbox';
 import PvColumn from 'primevue/column';
 import PvDataTable from 'primevue/datatable';
 import PvDivider from 'primevue/divider';
-import PvDropdown from 'primevue/dropdown';
+import PvSelect from 'primevue/select';
 import PvFileUpload from 'primevue/fileupload';
 import PvMessage from 'primevue/message';
 import PvPanel from 'primevue/panel';

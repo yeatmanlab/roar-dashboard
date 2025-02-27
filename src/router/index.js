@@ -407,6 +407,12 @@ const routes = [
     meta: { pageTitle: 'Register Users', requireAdmin: true, project: 'LEVANTE' },
   },
   {
+    path: '/sync-passwords',
+    name: 'Sync Passwords',
+    component: () => import('../pages/LEVANTE/SyncPasswords.vue'),
+    meta: { pageTitle: 'Sync Passwords', requireAdmin: true, project: 'LEVANTE' },
+  },
+  {
     path: '/link-users',
     name: 'Link Users',
     component: () => import('../pages/LEVANTE/LinkUsers.vue'),
