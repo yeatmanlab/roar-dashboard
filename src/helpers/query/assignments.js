@@ -43,10 +43,12 @@ export const getAssignmentsRequestBody = ({
   orderBy = [],
   grades = [],
   isCollectionGroupQuery = true,
+  restrictToOpenAssignments = false,
 }) => {
   const requestBody = {
     structuredQuery: {},
   };
+  console.log('orgtypeorgid ', orgType, orgId);
 
   if (!aggregationQuery) {
     if (paginate) {
@@ -68,23 +70,19 @@ export const getAssignmentsRequestBody = ({
     },
   ];
 
-  if (adminId && (orgId || orgArray)) {
-    requestBody.structuredQuery.where = {
-      compositeFilter: {
-        op: 'AND',
-        filters: [
-          {
-            fieldFilter: {
-              field: { fieldPath: 'id' },
-              op: 'EQUAL',
-              value: { stringValue: adminId },
-            },
-          },
-        ],
-      },
-    };
+  requestBody.structuredQuery.where = { compositeFilter: { op: 'AND', filters: [] } };
+  if (adminId || orgId || orgArray) {
+    if (adminId) {
+      requestBody.structuredQuery.where.compositeFilter.filters.push({
+        fieldFilter: {
+          field: { fieldPath: 'id' },
+          op: 'EQUAL',
+          value: { stringValue: adminId },
+        },
+      });
+    }
 
-    if (!_isEmpty(orgArray)) {
+    if (orgType && !_isEmpty(orgArray)) {
       requestBody.structuredQuery.where.compositeFilter.filters.push({
         fieldFilter: {
           field: { fieldPath: `readOrgs.${pluralizeFirestoreCollection(orgType)}` },
@@ -100,7 +98,8 @@ export const getAssignmentsRequestBody = ({
           },
         },
       });
-    } else {
+    }
+    if (orgType && orgId) {
       requestBody.structuredQuery.where.compositeFilter.filters.push({
         fieldFilter: {
           field: { fieldPath: `readOrgs.${pluralizeFirestoreCollection(orgType)}` },
@@ -145,15 +144,16 @@ export const getAssignmentsRequestBody = ({
         },
       });
     }
-  } else {
+  }
+  if (restrictToOpenAssignments) {
     const currentDate = new Date().toISOString();
-    requestBody.structuredQuery.where = {
+    requestBody.structuredQuery.where.compositeFilter.filters.push({
       fieldFilter: {
         field: { fieldPath: 'dateClosed' },
         op: 'GREATER_THAN_OR_EQUAL',
         value: { timestampValue: currentDate },
       },
-    };
+    });
   }
 
   if (!_isEmpty(orderBy)) {
@@ -613,6 +613,7 @@ export const assignmentPageFetcher = async (
   paginate = true,
   filters = [],
   orderBy = [],
+  restrictToOpenAssignments = false,
 ) => {
   const adminAxiosInstance = getAxiosInstance();
   const appAxiosInstance = getAxiosInstance('app');
@@ -858,6 +859,7 @@ export const assignmentPageFetcher = async (
       filter: userFilter || nonOrgFilter,
       grades: gradeFilter,
       orderBy: toRaw(orderBy),
+      restrictToOpenAssignments: restrictToOpenAssignments,
     });
     console.log(`Fetching page ${page.value} for ${adminId}`);
     return adminAxiosInstance.post(':runQuery', requestBody).then(async ({ data }) => {
