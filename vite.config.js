@@ -52,7 +52,7 @@ export default defineConfig({
           chartJs: ['chart.js'],
           sentry: ['@sentry/browser', '@sentry/integrations', '@sentry/vue', '@sentry/wasm'],
           roam: ['@bdelab/roam-apps'],
-          firekit: ['@bdelab/roar-firekit'],
+          firekit: ['@levante-framework/firekit'],
           letter: ['@bdelab/roar-letter'],
           multichoice: ['@bdelab/roar-multichoice'],
           phoneme: ['@bdelab/roar-pa'],
@@ -65,11 +65,11 @@ export default defineConfig({
           'roav-mep': ['@bdelab/roav-mep'],
         },
       },
-    },
+    },  
   },
   optimizeDeps: {
     include: [
-      '@bdelab/roar-firekit',
+      '@levante-framework/firekit',
       'vue-google-maps-community-fork',
       'fast-deep-equal', // Required due to https://github.com/nathanap/vue-google-maps-community-fork/issues/4
     ],
