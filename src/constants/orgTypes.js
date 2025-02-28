@@ -6,6 +6,8 @@ export const ORG_TYPES = {
   FAMILIES: 'families',
 };
 
+export const ORG_TYPES_IN_ORDER = ['districts', 'schools', 'classes', 'families', 'groups'];
+
 export const SINGULAR_ORG_TYPES = {
   DISTRICTS: 'district',
   SCHOOLS: 'school',

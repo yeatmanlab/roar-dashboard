@@ -234,6 +234,8 @@ const {
   enabled: initialized,
 });
 
+console.log('childusers', childUsers);
+
 /**
  * Administration data watcher
  *
