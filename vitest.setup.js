@@ -1,6 +1,7 @@
 import { vi } from 'vitest';
 import { config, DOMWrapper } from '@vue/test-utils';
 import PrimeVue from 'primevue/config';
+import mockPermissions from '@/test-support/mocks/mockPermissions';
 
 vi.mock('vue-recaptcha', () => ({
   default: {},
@@ -11,6 +12,13 @@ vi.mock('vue-recaptcha', () => ({
 vi.mock('vue-google-maps-community-fork', () => ({
   default: {},
   VueGoogleMaps: vi.fn(),
+}));
+
+vi.mock('@/composables/usePermissions', () => ({
+  usePermissions: vi.fn().mockReturnValue({
+    canUser: vi.fn().mockReturnValue(false),
+    Permissions: mockPermissions,
+  }),
 }));
 
 const DataTestIdPlugin = (wrapper) => {

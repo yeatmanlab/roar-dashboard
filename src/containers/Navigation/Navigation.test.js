@@ -25,7 +25,7 @@ vi.mock('vue-router', async (getModule) => {
 });
 
 vi.mock('@/composables/queries/useUserClaimsQuery');
-vi.mock('@/composables/usePermissions');
+// vi.mock('@/composables/usePermissions');
 
 const firstName = faker.person.firstName();
 const lastName = faker.person.lastName();
@@ -67,10 +67,10 @@ describe('<Navigation />', () => {
       isLoading: false,
       data: mockUserClaims,
     });
-    vi.mocked(usePermissions).mockReturnValue({
-      userCan: vi.fn().mockReturnValue(false),
-      Permissions: mockPermissions,
-    });
+    // vi.mocked(usePermissions).mockReturnValue({
+    //   userCan: vi.fn().mockReturnValue(false),
+    //   Permissions: mockPermissions,
+    // });
 
     useRoute.mockReturnValue(mockRoute);
     useRouter.mockReturnValue(mockRouter);
