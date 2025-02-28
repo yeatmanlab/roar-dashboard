@@ -1,10 +1,11 @@
 import { useQuery } from '@tanstack/vue-query';
 import { computeQueryOverrides } from '@/helpers/computeQueryOverrides';
 import { fetchDocById } from '@/helpers/query/utils';
-import { USER_DATA_QUERY_KEY } from '@/constants/queryKeys';
+import { USERS_DATA_QUERY_KEY } from '@/constants/queryKeys';
 import { FIRESTORE_COLLECTIONS } from '@/constants/firebase';
 
 const fetchMultipleDocs = async (uids) => {
+  console.log('results ', results);
   const results = await Promise.all(uids.map((uid) => fetchDocById(FIRESTORE_COLLECTIONS.USERS, uid)));
   return results;
 };
@@ -19,12 +20,13 @@ const fetchMultipleDocs = async (uids) => {
 const useUsersDataQuery = (userIds = [], queryOptions = undefined) => {
   const queryConditions = [() => userIds.length > 0];
   const { isQueryEnabled, options } = computeQueryOverrides(queryConditions, queryOptions);
-  console.log('isquerhy enabled', userIds);
+  console.log('isqueryenabled', isQueryEnabled);
+  console.log('uid', userIds[0]);
 
   return useQuery({
-    queryKey: [USER_DATA_QUERY_KEY, userIds],
-    queryFn: () => fetchMultipleDocs(userIds),
-    enabled: isQueryEnabled.value,
+    queryKey: [USERS_DATA_QUERY_KEY, userIds],
+    queryFn: () => fetchDocById(FIRESTORE_COLLECTIONS.USERS, userIds[0]),
+    enabled: isQueryEnabled,
     ...options,
   });
 };

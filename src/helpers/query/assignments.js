@@ -10,6 +10,7 @@ import _without from 'lodash/without';
 import _isEmpty from 'lodash/isEmpty';
 import { convertValues, getAxiosInstance, getProjectId, mapFields } from './utils';
 import { pluralizeFirestoreCollection } from '@/helpers';
+import { ORG_TYPES, ORG_TYPES_IN_ORDER } from '@/constants/orgTypes';
 
 const userSelectFields = ['name', 'assessmentPid', 'username', 'studentData', 'schools', 'classes'];
 
@@ -48,7 +49,6 @@ export const getAssignmentsRequestBody = ({
   const requestBody = {
     structuredQuery: {},
   };
-  console.log('orgtypeorgid ', orgType, orgId);
 
   if (!aggregationQuery) {
     if (paginate) {
@@ -1019,4 +1019,27 @@ export const assignmentFetchAll = async (adminId, orgType, orgId, includeScores 
     true,
     true,
   );
+};
+
+// This function should take into two sets of IOrgslist (admin and student) and determine
+// the intersection of the two org lists with the highest juridiction
+export const adminOrgIntersection = (participantData, adminOrgs) => {
+  const userOrgs = _pick(participantData, Object.values(ORG_TYPES));
+
+  const orgIntersection = {};
+  for (const orgName of Object.values(ORG_TYPES)) {
+    orgIntersection[orgName] = _intersection(userOrgs[orgName]?.current, adminOrgs[orgName]);
+  }
+
+  return orgIntersection;
+};
+
+// return the orgj
+export const highestAdminOrgIntersection = (participantData, adminOrgs) => {
+  const orgIntersection = adminOrgIntersection(participantData, adminOrgs);
+  for (const orgType of ORG_TYPES_IN_ORDER) {
+    if (!_isEmpty(orgIntersection[orgType])) {
+      return { orgType, orgIds: orgIntersection[orgType] };
+    }
+  }
 };

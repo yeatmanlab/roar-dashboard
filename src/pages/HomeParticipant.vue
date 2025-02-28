@@ -123,6 +123,7 @@ import useSignOutMutation from '@/composables/mutations/useSignOutMutation';
 import ConsentModal from '@/components/ConsentModal.vue';
 import GameTabs from '@/components/GameTabs.vue';
 import ParticipantSidebar from '@/components/ParticipantSidebar.vue';
+import { highestAdminOrgIntersection } from '@/helpers/query/assignments';
 
 const showConsent = ref(false);
 const consentVersion = ref('');
@@ -160,6 +161,13 @@ onMounted(async () => {
 const gameStore = useGameStore();
 const { selectedAdmin } = storeToRefs(gameStore);
 
+const adminOrgIntersection = computed(() => {
+  const orgIntersection = highestAdminOrgIntersection(authStore?.userClaims?.claims?.adminOrgs, userData.value);
+  return orgIntersection;
+});
+
+console.log('inter', adminOrgIntersection);
+
 const {
   isLoading: isLoadingUserData,
   isFetching: isFetchingUserData,
@@ -168,6 +176,7 @@ const {
   enabled: initialized,
 });
 
+// TODO: remove hard coded orgtype, orgid... but where do i get it from?
 const {
   isLoading: isLoadingAssignments,
   isFetching: isFetchingAssignments,
