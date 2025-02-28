@@ -14,13 +14,6 @@ vi.mock('vue-google-maps-community-fork', () => ({
   VueGoogleMaps: vi.fn(),
 }));
 
-vi.mock('@/composables/usePermissions', () => ({
-  usePermissions: vi.fn().mockReturnValue({
-    canUser: vi.fn().mockReturnValue(false),
-    Permissions: mockPermissions,
-  }),
-}));
-
 const DataTestIdPlugin = (wrapper) => {
   function findByTestId(selector) {
     const dataSelector = `[data-testid='${selector}']`;
