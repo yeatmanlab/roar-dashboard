@@ -12,7 +12,7 @@ import { computed } from 'vue';
  * @param {QueryOptions|undefined} queryOptions – Optional TanStack query options.
  * @returns {UseQueryResult} The TanStack query result.
  */
-const useUserAssignmentsQuery = (queryOptions = undefined, userId = null, orgType = null, orgId = null) => {
+const useUserAssignmentsQuery = (queryOptions = undefined, userId = null, orgType = null, orgIds = null) => {
   const authStore = useAuthStore();
   const { roarUid } = storeToRefs(authStore);
   const uid = computed(() => userId || roarUid.value);
@@ -23,7 +23,7 @@ const useUserAssignmentsQuery = (queryOptions = undefined, userId = null, orgTyp
 
   return useQuery({
     queryKey: [USER_ASSIGNMENTS_QUERY_KEY, uid],
-    queryFn: () => getUserAssignments(uid.value, orgType, orgId),
+    queryFn: () => getUserAssignments(uid.value, orgType, orgIds),
     // Refetch on window focus for MEFS assessments as those are opened in a separate tab.
     refetchOnWindowFocus: 'always',
     enabled: isQueryEnabled,

@@ -101,7 +101,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref, watch, computed } from 'vue';
+import { onMounted, ref, watch, watchEffect, computed } from 'vue';
 import _filter from 'lodash/filter';
 import _get from 'lodash/get';
 import _find from 'lodash/find';
@@ -161,19 +161,26 @@ onMounted(async () => {
 const gameStore = useGameStore();
 const { selectedAdmin } = storeToRefs(gameStore);
 
-const adminOrgIntersection = computed(() => {
-  const orgIntersection = highestAdminOrgIntersection(authStore?.userClaims?.claims?.adminOrgs, userData.value);
-  return orgIntersection;
-});
-
-console.log('inter', adminOrgIntersection);
-
 const {
   isLoading: isLoadingUserData,
   isFetching: isFetchingUserData,
   data: userData,
 } = useUserDataQuery(props.launchId, {
   enabled: initialized,
+});
+
+const adminOrgIntersection = computed(() => {
+  const orgIntersection = highestAdminOrgIntersection(userData.value, authStore?.userClaims?.claims?.adminOrgs);
+  return orgIntersection;
+});
+console.log('calledhighestadmin', adminOrgIntersection.value);
+
+const isOrgIntersectionReady = ref(false);
+
+watchEffect(() => {
+  // Check if the orgIntersection has the necessary properties
+  isOrgIntersectionReady.value =
+    !!adminOrgIntersection.value?.orgType && adminOrgIntersection.value?.orgIds?.length > 0;
 });
 
 // TODO: remove hard coded orgtype, orgid... but where do i get it from?
@@ -183,11 +190,11 @@ const {
   data: userAssignments,
 } = useUserAssignmentsQuery(
   {
-    enabled: initialized,
+    enabled: isOrgIntersectionReady.value && initialized,
   },
-  props.launchId,
-  'families',
-  'eUXqr9NuBrQaPIVjacS4',
+  props.launchId && !authStore.isSuperAdmin ? adminOrgIntersection.value?.orgIds : null,
+  props.launchId && !authStore.isSuperAdmin ? adminOrgIntersection.value?.orgType : null,
+  adminOrgIntersection.value?.orgIds,
 );
 
 const sortedUserAdministrations = computed(() => {

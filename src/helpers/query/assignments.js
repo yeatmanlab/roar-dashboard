@@ -6,6 +6,8 @@ import _groupBy from 'lodash/groupBy';
 import _mapValues from 'lodash/mapValues';
 import _replace from 'lodash/replace';
 import _uniq from 'lodash/uniq';
+import _pick from 'lodash/pick';
+import _intersection from 'lodash/intersection';
 import _without from 'lodash/without';
 import _isEmpty from 'lodash/isEmpty';
 import { convertValues, getAxiosInstance, getProjectId, mapFields } from './utils';
@@ -987,12 +989,12 @@ export const assignmentPageFetcher = async (
  * @param {ref<String>} roarUid - A Vue ref containing the user's ROAR ID.
  * @returns {Promise<Array>} - A promise that resolves to an array of open assignments for the user.
  */
-export const getUserAssignments = async (roarUid, orgType = null, orgId = null) => {
+export const getUserAssignments = async (roarUid, orgType = null, orgIds = null) => {
   const adminAxiosInstance = getAxiosInstance();
-  console.log('inside getuserassignments', orgId, orgType);
+  console.log('inside getuserassignments', orgIds, orgType);
   const assignmentRequest = getAssignmentsRequestBody({
     orgType: orgType,
-    orgId: orgId,
+    orgArray: orgIds,
     aggregationQuery: false,
     paginate: false,
     isCollectionGroupQuery: false,
@@ -1028,7 +1030,9 @@ export const adminOrgIntersection = (participantData, adminOrgs) => {
 
   const orgIntersection = {};
   for (const orgName of Object.values(ORG_TYPES)) {
-    orgIntersection[orgName] = _intersection(userOrgs[orgName]?.current, adminOrgs[orgName]);
+    console.log('userOrg', _get(userOrgs, orgName)?.current);
+    console.log('adminOrg', adminOrgs);
+    orgIntersection[orgName] = _intersection(_get(userOrgs, orgName)?.current, _get(adminOrgs, orgName));
   }
 
   return orgIntersection;
@@ -1037,7 +1041,10 @@ export const adminOrgIntersection = (participantData, adminOrgs) => {
 // return the orgj
 export const highestAdminOrgIntersection = (participantData, adminOrgs) => {
   const orgIntersection = adminOrgIntersection(participantData, adminOrgs);
+  console.log('orgIntersection', orgIntersection);
+  console.log(ORG_TYPES_IN_ORDER, 'INORDER');
   for (const orgType of ORG_TYPES_IN_ORDER) {
+    console.log('orgType, ', orgType);
     if (!_isEmpty(orgIntersection[orgType])) {
       return { orgType, orgIds: orgIntersection[orgType] };
     }
