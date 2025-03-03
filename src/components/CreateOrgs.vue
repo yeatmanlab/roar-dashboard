@@ -205,6 +205,7 @@ import { storeToRefs } from 'pinia';
 import _capitalize from 'lodash/capitalize';
 import _union from 'lodash/union';
 import _without from 'lodash/without';
+import { useQueryClient } from '@tanstack/vue-query';
 import { useVuelidate } from '@vuelidate/core';
 import { required, requiredIf } from '@vuelidate/validators';
 import PvAutoComplete from 'primevue/autocomplete';
@@ -228,6 +229,7 @@ const isDemoData = ref(false);
 const toast = useToast();
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
+const queryClient = useQueryClient();
 
 const state = reactive({
   orgName: '',
@@ -414,6 +416,7 @@ const submit = async () => {
       await roarfirekit.value
         .createOrg(orgType.value.firestoreCollection, orgData, isTestData.value, isDemoData.value)
         .then(() => {
+          queryClient.invalidateQueries({ queryKey: ['orgs'], exact: false });
           toast.add({ severity: 'success', summary: 'Success', detail: 'Org created', life: 3000 });
           submitted.value = false;
           resetForm();
