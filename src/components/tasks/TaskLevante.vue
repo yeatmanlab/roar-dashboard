@@ -100,12 +100,12 @@ async function startTask(selectedAdmin) {
     const appKit = await authStore.roarfirekit.startAssessment(selectedAdmin.value.id, taskId, version);
 
     const userDob = _get(userData.value, 'studentData.dob');
-    const userDateObj = new Date(userDob);
+    const birthMonth = _get(userData.value, 'birthMonth'); 
+    const birthYear = _get(userData.value, 'birthYear');
 
     const userParams = {
-      grade: _get(userData.value, 'studentData.grade'),
-      birthMonth: userDateObj.getMonth() + 1,
-      birthYear: userDateObj.getFullYear(),
+      birthMonth: birthMonth,
+      birthYear: birthYear,
     };
 
     const gameParams = { ...appKit._taskInfo.variantParams };

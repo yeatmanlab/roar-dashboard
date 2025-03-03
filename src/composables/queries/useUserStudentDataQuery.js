@@ -24,7 +24,7 @@ const useUserStudentDataQuery = (queryOptions = undefined) => {
 
   return useQuery({
     queryKey: [USER_STUDENT_DATA_QUERY_KEY, roarUid],
-    queryFn: () => fetchDocById(FIRESTORE_COLLECTIONS.USERS, roarUid, ['studentData']),
+    queryFn: () => fetchDocById(FIRESTORE_COLLECTIONS.USERS, roarUid, ['studentData', 'birthMonth', 'birthYear']),
     enabled: isQueryEnabled,
     ...options,
   });
