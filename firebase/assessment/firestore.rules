@@ -361,7 +361,7 @@ service cloud.firestore {
           }
 
           function canWriteTrial() {
-            return myData();
+            return loggedIn() && (myData() || isAdminForAnyAssignedOrgWithDbRead() || isAdminForAnyReadOrgWithDbRead())
           }
 
           allow read: if canReadTrial();
