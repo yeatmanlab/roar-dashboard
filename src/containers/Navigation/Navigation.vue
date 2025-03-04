@@ -19,6 +19,8 @@ import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useSignOutMutation from '@/composables/mutations/useSignOutMutation';
 import { getSidebarActions } from '@/router/sidebarActions';
 import NavBar from '@/components/NavBar';
+import { usePermissions } from '@/composables/usePermissions';
+const { userCan, Permissions } = usePermissions();
 
 const router = useRouter();
 const route = useRoute();
@@ -79,7 +81,7 @@ const navbarBlacklist = [
 ];
 
 const showAccountSettingsLink = computed(() => {
-  return !!isAdmin.value || !!isSuperAdmin.value;
+  return userCan(Permissions.Profile.READ);
 });
 
 const displayNavbar = computed(() => {

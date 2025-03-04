@@ -66,6 +66,7 @@
           <div class="flex w-full align-items-center justify-content-center">
             <div>
               <PvButton
+                :disabled="!userCan(Permissions.Administrators.CREATE)"
                 class="bg-primary text-white border-none border-round p-2 h-3rem hover:bg-red-900"
                 label="Create Administrator"
                 data-cy="button-create-administrator"
@@ -98,6 +99,8 @@ import _cloneDeep from 'lodash/cloneDeep';
 import _union from 'lodash/union';
 import { useAuthStore } from '@/store/auth';
 import OrgPicker from '@/components/OrgPicker.vue';
+import { usePermissions } from '@/composables/usePermissions';
+const { userCan, Permissions } = usePermissions();
 
 const router = useRouter();
 const toast = useToast();

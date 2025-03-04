@@ -184,7 +184,9 @@
           <div class="col-12">
             <PvButton
               :label="submitted ? `Creating ${orgTypeLabel}` : `Create ${orgTypeLabel}`"
-              :disabled="orgTypeLabel === 'Org' || v$.$invalid || submitted"
+              :disabled="
+                orgTypeLabel === 'Org' || v$.$invalid || submitted || !userCan(Permissions.Organizations.CREATE)
+              "
               :icon="submitted ? 'pi pi-spin pi-spinner' : ''"
               class="bg-primary text-white border-none border-round h-3rem w-3 hover:bg-red-900"
               data-cy="button-create-org"
@@ -219,6 +221,8 @@ import useDistrictsListQuery from '@/composables/queries/useDistrictsListQuery';
 import useDistrictSchoolsQuery from '@/composables/queries/useDistrictSchoolsQuery';
 import useSchoolClassesQuery from '@/composables/queries/useSchoolClassesQuery';
 import useGroupsListQuery from '@/composables/queries/useGroupsListQuery';
+import { usePermissions } from '@/composables/usePermissions';
+const { userCan, Permissions } = usePermissions();
 
 const initialized = ref(false);
 const isTestData = ref(false);
