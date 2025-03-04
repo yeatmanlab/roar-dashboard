@@ -12,7 +12,7 @@
         />
       </div>
       <div>
-        <div class="flex flex-row">
+        <div class="flex align-items-center flex-row">
           <span class="font-bold text-lg pl-2" >{{ variant.task.name }}</span>
           <PvButton
             class="p-0 surface-hover border-none border-circle hover:text-100 hover:bg-primary ml-2"
@@ -22,6 +22,9 @@
               class="pi pi-info-circle text-primary p-1 border-circle hover:text-100"
             ></i
           ></PvButton>
+          <div v-if="variant?.variant?.params?.cat" class="flex ml-2">
+            <PvChip  class="bg-primary text-white h-2rem" label="CAT" />
+          </div>
         </div>
         <div class="pl-2 w-full">
           <p class="m-0"><span class="font-semibold">Variant name:</span> {{ variant.variant.name }}</p>
@@ -97,7 +100,8 @@
         <img class="w-4rem shadow-2 border-round" :src="variant.task.image || backupImage" :alt="variant.task.name" />
       </div>
       <div>
-        <div class="flex flex-row">
+        <!-- repeated code -->
+        <div class="flex align-items-center flex-row">
           <span class="font-bold" style="margin-left: 0.625rem">{{ variant.task.name }}</span>
           <PvButton
             class="p-0 surface-hover border-none border-circle hover:text-100 hover:bg-primary"
@@ -107,6 +111,9 @@
               class="pi pi-info-circle text-primary p-1 border-circle hover:text-100"
             ></i
           ></PvButton>
+          <div v-if="variant?.variant?.params?.cat" class="flex ml-2">
+            <PvChip  class="bg-primary text-white h-2rem" label="CAT" />
+          </div>
         </div>
         <div class="flex align-items-center gap-2">
           <p class="m-0 mt-1 ml-2">
@@ -256,6 +263,7 @@ import { ref } from 'vue';
 import _toPairs from 'lodash/toPairs';
 import PvButton from 'primevue/button';
 import PvColumn from 'primevue/column';
+import PvChip from 'primevue/chip';
 import PvDataTable from 'primevue/datatable';
 import PvDialog from 'primevue/dialog';
 import PvPopover from 'primevue/popover';
