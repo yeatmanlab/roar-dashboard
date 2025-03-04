@@ -71,7 +71,7 @@
             </div>
           </div>
         </div>
-        <div class="flex justify-content-center mt-3 w-full">
+        <div v-if="userCan(Permissions.Users.Credentials.UPDATE)" class="flex justify-content-center mt-3 w-full">
           <PvButton
             v-if="!showPassword"
             class="border-none border-round bg-primary text-white p-2 hover:surface-400 mr-auto ml-auto"
@@ -92,6 +92,7 @@
                 @click="closeModal"
               ></PvButton>
               <PvButton
+                v-if="canUserEdit"
                 tabindex="0"
                 class="border-none border-round bg-primary text-white p-2 hover:surface-400"
                 label="Save"
@@ -138,6 +139,8 @@ import AppSpinner from './AppSpinner.vue';
 import EditUsersForm from './EditUsersForm.vue';
 import RoarModal from './modals/RoarModal.vue';
 import RoarDataTable from '@/components/RoarDataTable';
+import { usePermissions } from '@/composables/usePermissions';
+const { userCan, Permissions } = usePermissions();
 
 const authStore = useAuthStore();
 
@@ -226,17 +229,38 @@ const columns = ref([
     dataType: 'boolean',
     sort: false,
   },
-  {
+]);
+
+if (
+  userCan(Permissions.Users.UPDATE) ||
+  userCan(Permissions.Users.Credentials.UPDATE) ||
+  userCan(Permissions.Administrators.UPDATE)
+) {
+  columns.value.push({
     header: 'Edit',
     button: true,
     eventName: 'edit-button',
     buttonIcon: 'pi pi-user-edit',
     sort: false,
-  },
-]);
+  });
+} else {
+  console.log('User does not have edit permissions');
+}
 
 const currentEditUser = ref(null);
 const isModalEnabled = ref(false);
+
+// +----------------------+
+// | Permissions Handling |
+// +----------------------+
+const canUserEdit = computed(() => {
+  const userType = currentEditUser.value?.userType;
+  if (userType === 'admin') {
+    return userCan(Permissions.Administrators.UPDATE);
+  } else {
+    return userCan(Permissions.Users.UPDATE);
+  }
+});
 
 // +-----------------+
 // | Edit User Modal |

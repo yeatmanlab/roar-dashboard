@@ -427,7 +427,10 @@
         <!--          <PvButton label="Add Param" text icon="pi pi-plus" class="my-4" @click="addParam" />-->
       </section>
 
-      <PvButton type="submit" class="my-4 bg-primary text-white border-none border-round p-2 hover:bg-red-900"
+      <PvButton
+        :disabled="!userCan(Permissions.Tasks.MANAGE)"
+        type="submit"
+        class="my-4 bg-primary text-white border-none border-round p-2 hover:bg-red-900"
         >Update Variant</PvButton
       >
     </form>
@@ -453,6 +456,8 @@ import useTasksQuery from '@/composables/queries/useTasksQuery';
 import useTaskVariantsQuery from '@/composables/queries/useTaskVariantsQuery';
 import useAddTaskVariantMutation from '@/composables/mutations/useAddTaskVariantMutation';
 import useUpdateTaskVariantMutation from '@/composables/mutations/useUpdateTaskVariantMutation';
+import { usePermissions } from '@/composables/usePermissions';
+const { userCan, Permissions } = usePermissions();
 
 const toast = useToast();
 const initialized = ref(false);
