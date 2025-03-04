@@ -171,6 +171,24 @@
           "order": "ASCENDING"
         },
         {
+          "fieldPath": "orgType",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "dateClosed",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "assignedOrgs",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "orgId",
+          "order": "ASCENDING"
+        },
+        {
           "fieldPath": "testData",
           "order": "ASCENDING"
         }
@@ -3453,10 +3471,6 @@
       "queryScope": "COLLECTION",
       "fields": [
         {
-          "fieldPath": "archived",
-          "order": "ASCENDING"
-        },
-        {
           "fieldPath": "districtId",
           "order": "ASCENDING"
         },
@@ -3470,116 +3484,6 @@
       "collectionGroup": "schools",
       "queryScope": "COLLECTION",
       "fields": [
-        {
-          "fieldPath": "archived",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "districtId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "name",
-          "order": "DESCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "schools",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "districtId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "abbreviation",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "schools",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "districtId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "abbreviation",
-          "order": "DESCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "schools",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "districtId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "address",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "schools",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "districtId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "address",
-          "order": "DESCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "schools",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "districtId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "lastRoarSync",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "schools",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "archived",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "districtId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "name",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "schools",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "archived",
-          "order": "ASCENDING"
-        },
         {
           "fieldPath": "districtId",
           "order": "ASCENDING"
@@ -3944,6 +3848,20 @@
         },
         {
           "fieldPath": "lastRoarSync",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "districts.current",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "legal",
           "order": "ASCENDING"
         }
       ]
@@ -4881,6 +4799,17 @@
       "fieldPath": "minimalOrgs",
       "ttl": false,
       "indexes": []
+    },
+    {
+      "collectionGroup": "administrations",
+      "fieldPath": "minimalOrgs.districts",
+      "ttl": false,
+      "indexes": [
+        {
+          "arrayConfig": "CONTAINS",
+          "queryScope": "COLLECTION"
+        }
+      ]
     },
     {
       "collectionGroup": "administrations",

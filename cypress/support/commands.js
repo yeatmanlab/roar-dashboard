@@ -1,4 +1,5 @@
-import { createMockStore } from './utils.js';
+// Extend Cypress with additional commands.
+import '@testing-library/cypress/add-commands';
 
 /**
  * Logs in a user using the provided username and password.
@@ -54,7 +55,7 @@ Cypress.Commands.add('loginWithEmail', (username, password) => {
  * Logs out the current user and verifies redirection to the sign-in page.
  */
 Cypress.Commands.add('logout', () => {
-  cy.get('[data-cy="button-sign-out"]', { timeout: Cypress.env('timeout') }).click();
+  cy.get('[data-cy="navbar__signout-btn-desktop"]', { timeout: Cypress.env('timeout') }).click();
   cy.get('h1', { timeout: Cypress.env('timeout') }).should('contain.text', 'Welcome to ROAR!');
   cy.url({ timeout: Cypress.env('timeout') }).should('eq', `${Cypress.env('baseUrl')}/signin`);
   cy.log('Logout successful.');
@@ -159,7 +160,7 @@ Cypress.Commands.add('selectAdministration', function selectAdministration(testA
     .invoke('text')
     .then((text) => {
       if (text.includes(testAdministration)) {
-        cy.get('.p-dropdown-item', { timeout: 2 * Cypress.env('timeout') })
+        cy.get('.p-select-list-container', { timeout: 2 * Cypress.env('timeout') })
           .contains(testAdministration)
           .click();
         cy.log('Selected administration:', testAdministration);
@@ -277,7 +278,7 @@ Cypress.Commands.add(
 Cypress.Commands.add('checkUserList', (userList) => {
   cy.get('[data-cy="roar-data-table"] tbody tr', { timeout: Cypress.env('timeout') }).each((row) => {
     cy.wrap(row)
-      .find('td.p-frozen-column')
+      .find('td.p-datatable-frozen-column')
       .then((cell) => {
         // The following cleans the non-breaking space character and any whitespace from the cell text
         const cellText = cell
@@ -315,7 +316,7 @@ Cypress.Commands.add('playOptionalGame', (game, administration, optional) => {
  */
 Cypress.Commands.add('checkOrgExists', (org, timeout = 10000) => {
   // Click on the 'Districts' item in the list
-  cy.get('ul > li', { timeout }).contains(org.tabName, { timeout }).click();
+  cy.get('.p-tabview-tablist', { timeout: timeout }).contains(org.tabName, { timeout: timeout }).click();
 
   // Verify the partner district name is present in the div
   cy.get('div', { timeout }).should('contain.text', Cypress.env('testPartnerDistrictName'), {
@@ -324,23 +325,4 @@ Cypress.Commands.add('checkOrgExists', (org, timeout = 10000) => {
 
   // Log the district name exists
   cy.log(`${Cypress.env('testPartnerDistrictName')} exists.`);
-});
-
-/**
- * Create a mock store for the user type specified.
- * @param {string} userType - The type of user to create a mock store for. One of 'superAdmin', 'partnerAdmin', or 'participant'. Defaults to 'participant'.
- * @returns {void}
- */
-Cypress.Commands.add('setAuthStore', (userType = 'participant') => {
-  const authStore = createMockStore(userType);
-  const serializedStore = JSON.stringify(authStore.$state);
-
-  // Store the mock store in sessionStorage
-  cy.window().then((window) => {
-    window.sessionStorage.setItem('authStore', serializedStore);
-  });
-
-  cy.log('Created mock store for user type:', userType, ' with state:', authStore.$state);
-  // Store the mock store in the Cypress context as an alias
-  return cy.wrap(authStore.$state).as('authStore');
 });

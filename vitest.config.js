@@ -19,7 +19,7 @@ export default mergeConfig(
       coverage: {
         enabled: true,
         provider: 'istanbul',
-        include: ['src/**/*'],
+        include: ['src/**/*.test.js'],
         exclude: ['**/test-support/**', ...coverageConfigDefaults.exclude],
         all: true,
         clean: true,

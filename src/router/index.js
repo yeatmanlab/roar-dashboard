@@ -90,6 +90,13 @@ const routes = [
     meta: { pageTitle: 'Letter-EN-CA' },
   },
   {
+    path: '/game/phonics',
+    name: 'Phonics',
+    component: () => import('../components/tasks/TaskLetter.vue'),
+    props: { taskId: 'phonics', language: 'en' },
+    meta: { pageTitle: 'Phonics' },
+  },
+  {
     path: '/game/multichoice',
     name: 'Multichoice',
     component: () => import('../components/tasks/TaskMultichoice.vue'),
@@ -146,17 +153,17 @@ const routes = [
     meta: { pageTitle: 'ROAM-CALF ES' },
   },
   {
-    path: '/game/fluency-alpaca',
+    path: '/game/roam-alpaca',
     name: 'Fluency-Alpaca',
     component: () => import('../components/tasks/TaskRoam.vue'),
-    props: { taskId: 'fluency-alpaca', language: 'en' },
+    props: { taskId: 'roam-alpaca', language: 'en' },
     meta: { pageTitle: 'ROAM-Alpaca' },
   },
   {
-    path: '/game/fluency-alpaca-es',
+    path: '/game/roam-alpaca-es',
     name: 'Fluency-Alpaca-ES',
     component: () => import('../components/tasks/TaskRoam.vue'),
-    props: { taskId: 'fluency-alpaca-es', language: 'es' },
+    props: { taskId: 'roam-alpaca-es', language: 'es' },
     meta: { pageTitle: 'ROAM-Alpaca ES' },
   },
   {
@@ -210,7 +217,7 @@ const routes = [
       {
         name: 'registerStudent',
         path: 'student',
-        component: () => import('../components/auth/RegisterStudent.vue'),
+        component: () => import('../components/auth/RegisterChildren.vue'),
       },
     ],
     meta: { requiresGuest: true },
@@ -489,3 +496,4 @@ router.beforeEach(async (to, from, next) => {
 });
 
 export default router;
+export { routes };

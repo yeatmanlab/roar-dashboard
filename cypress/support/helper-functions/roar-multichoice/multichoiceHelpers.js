@@ -12,7 +12,7 @@ function clickButton(selector) {
 }
 
 function checkGameTab(language, task) {
-  cy.get('.p-tabview', { timeout: timeout }).contains(languageOptions[language][task].gameTab).should('exist');
+  cy.get('.p-tablist-tab-list', { timeout: timeout }).contains(languageOptions[language][task].gameTab).should('exist');
 }
 
 function makeChoiceOrContinue(gameCompleteText) {

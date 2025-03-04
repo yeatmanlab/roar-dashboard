@@ -143,7 +143,7 @@
             </template>
             <span>
               <label for="view-columns" class="view-label">View</label>
-              <PvDropdown
+              <PvSelect
                 id="view-columns"
                 v-model="viewMode"
                 :options="viewOptions"
@@ -277,7 +277,7 @@ import _lowerCase from 'lodash/lowerCase';
 import { getGrade } from '@bdelab/roar-utils';
 import PvButton from 'primevue/button';
 import PvConfirmDialog from 'primevue/confirmdialog';
-import PvDropdown from 'primevue/dropdown';
+import PvSelect from 'primevue/select';
 import PvSelectButton from 'primevue/selectbutton';
 import PvTabPanel from 'primevue/tabpanel';
 import PvTabView from 'primevue/tabview';
@@ -309,8 +309,8 @@ import {
   tasksToDisplayCorrectIncorrectDifference,
   includedValidityFlags,
 } from '@/helpers/reports';
-import FilterBar from '@/components/slots/FilterBar.vue';
-import RoarDataTable from '@/components/RoarDataTable.vue';
+import FilterBar from '@/components/FilterBar';
+import RoarDataTable from '@/components/RoarDataTable';
 import { APP_ROUTES } from '@/constants/routes';
 import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
 
@@ -490,13 +490,16 @@ const schoolOptions = computed(() => {
 // Return a faded color if assessment is not reliable
 function returnColorByReliability(assessment, rawScore, support_level, tag_color) {
   if (assessment.reliable !== undefined && !assessment.reliable && assessment.engagementFlags !== undefined) {
+    const engagementFlagExists = Object.keys(assessment.engagementFlags).some((flag) =>
+      includedValidityFlags[assessment.taskId]?.includes(flag),
+    );
     if (support_level === 'Optional') {
       return '#a1d8e3';
-    } else if (support_level === 'Needs Extra Support') {
+    } else if (support_level === 'Needs Extra Support' && engagementFlagExists) {
       return '#d6b8c7';
-    } else if (support_level === 'Developing Skill') {
+    } else if (support_level === 'Developing Skill' && engagementFlagExists) {
       return '#e8dbb5';
-    } else if (support_level === 'Achieved Skill') {
+    } else if (support_level === 'Achieved Skill' && engagementFlagExists) {
       return '#c0d9bd';
     } else if (
       tasksToDisplayCorrectIncorrectDifference.includes(assessment.taskId) ||
@@ -750,7 +753,7 @@ const computeAssignmentAndRunData = computed(() => {
             numAttempted === undefined || numAttempted === 0 ? '#EEEEF0' : numAttempted !== 0 ? tagColor : '#EEEEF0';
           scoreFilterTags += ' Assessed ';
         }
-        if (taskId === 'letter' && assessment.scores) {
+        if ((taskId === 'letter' || taskId === 'letter-en-ca') && assessment.scores) {
           currRowScores[taskId].lowerCaseScore = assessment.scores.computed.LowercaseNames?.subScore;
           currRowScores[taskId].upperCaseScore = assessment.scores.computed.UppercaseNames?.subScore;
           currRowScores[taskId].phonemeScore = assessment.scores.computed.Phonemes?.subScore;
@@ -1203,7 +1206,7 @@ const scoreReportColumns = computed(() => {
     }
   });
 
-  const priorityTasks = ['swr', 'sre', 'pa', 'letter'];
+  const priorityTasks = ['swr', 'sre', 'pa', 'letter', 'letter-en-ca'];
   const spanishTasks = ['letter-es', 'pa-es', 'swr-es', 'sre-es'];
   const spanishMathTasks = ['fluency-arf-es', 'fluency-calf-es'];
   const supplementaryTasks = ['morphology', 'cva', 'vocab', 'trog', 'phonics', 'roar-inference'];
@@ -1322,7 +1325,7 @@ const sortedTaskIds = computed(() => {
   });
 
   const sortedIds = specialTaskIds.concat(remainingTaskIds);
-  return sortedIds;
+  return sortedIds.filter((taskId) => allTasks.value.includes(taskId));
 });
 
 const sortedAndFilteredTaskIds = computed(() => {

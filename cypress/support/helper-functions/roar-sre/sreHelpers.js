@@ -27,7 +27,7 @@ export const playSRE = ({
     cy.switchToOptionalAssessments();
   }
 
-  cy.get('.p-tabview', { timeout: 2 * timeout })
+  cy.get('.p-tablist-tab-list', { timeout: 2 * timeout })
     .contains(languageOptions[language].gameTab)
     .should('exist');
   cy.visit(languageOptions[language].url);
@@ -56,7 +56,7 @@ export const playSRE = ({
     cy.switchToOptionalAssessments();
   }
 
-  cy.get('.tabview-nav-link-label').contains(languageOptions[language].gameTab).should('exist');
+  cy.get('.p-tablist-tab-list').contains(languageOptions[language].gameTab).should('exist');
 };
 
 function playSREGame() {

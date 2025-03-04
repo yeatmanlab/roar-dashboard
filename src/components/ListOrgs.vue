@@ -18,8 +18,8 @@
               v-if="activeOrgType === 'schools' || activeOrgType === 'classes'"
               class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3"
             >
-              <span class="p-float-label">
-                <PvDropdown
+              <PvFloatLabel>
+                <PvSelect
                   v-model="selectedDistrict"
                   input-id="district"
                   :options="allDistricts"
@@ -31,11 +31,11 @@
                   data-cy="dropdown-parent-district"
                 />
                 <label for="district">District</label>
-              </span>
+              </PvFloatLabel>
             </div>
             <div v-if="orgType.id === 'classes'" class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3">
-              <span class="p-float-label">
-                <PvDropdown
+              <PvFloatLabel>
+                <PvSelect
                   v-model="selectedSchool"
                   input-id="school"
                   :options="allSchools"
@@ -47,8 +47,16 @@
                   data-cy="dropdown-parent-school"
                 />
                 <label for="school">School</label>
-              </span>
+              </PvFloatLabel>
             </div>
+          </div>
+          <div v-if="activeOrgType === ORG_TYPES.GROUPS" class="mx-2">
+            <PvToggleButton
+              v-model="hideSubgroups"
+              off-label="Hide Subgroups"
+              on-label="Show Subgroups"
+              class="p-2 rounded"
+            />
           </div>
           <RoarDataTable
             v-if="tableData"
@@ -155,14 +163,16 @@ import { ref, computed, onMounted, watch } from 'vue';
 import * as Sentry from '@sentry/vue';
 import { storeToRefs } from 'pinia';
 import { useToast } from 'primevue/usetoast';
+import PvFloatLabel from 'primevue/floatlabel';
 import PvButton from 'primevue/button';
 import PvDialog from 'primevue/dialog';
-import PvDropdown from 'primevue/dropdown';
+import PvSelect from 'primevue/select';
 import PvInputGroup from 'primevue/inputgroup';
 import PvInputText from 'primevue/inputtext';
 import PvTabPanel from 'primevue/tabpanel';
 import PvTabView from 'primevue/tabview';
 import PvToast from 'primevue/toast';
+import PvToggleButton from 'primevue/togglebutton';
 import _get from 'lodash/get';
 import _head from 'lodash/head';
 import _kebabCase from 'lodash/kebabCase';
@@ -179,7 +189,8 @@ import EditOrgsForm from './EditOrgsForm.vue';
 import RoarModal from './modals/RoarModal.vue';
 import { CSV_EXPORT_MAX_RECORD_COUNT } from '@/constants/csvExport';
 import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts.js';
-import RoarDataTable from '@/components/RoarDataTable.vue';
+import RoarDataTable from '@/components/RoarDataTable';
+import { ORG_TYPES } from '../constants/orgTypes';
 
 const initialized = ref(false);
 const selectedDistrict = ref(undefined);
@@ -192,6 +203,7 @@ const isEditModalEnabled = ref(false);
 const currentEditOrgId = ref(null);
 const localOrgData = ref(null);
 const isSubmitting = ref(false);
+const hideSubgroups = ref(false);
 
 const districtPlaceholder = computed(() => {
   if (isLoadingDistricts.value) {
@@ -451,7 +463,7 @@ const tableColumns = computed(() => {
 
 const tableData = computed(() => {
   if (isLoading.value) return [];
-  return orgData?.value?.map((org) => {
+  const tableData = orgData?.value?.map((org) => {
     return {
       ...org,
       routeParams: {
@@ -462,6 +474,11 @@ const tableData = computed(() => {
       },
     };
   });
+  if (activeOrgType.value === ORG_TYPES.GROUPS && !hideSubgroups.value) {
+    return tableData.filter((org) => !org.parentOrgId && !org.parentOrgType);
+  }
+
+  return tableData;
 });
 
 const showCode = async (selectedOrg) => {

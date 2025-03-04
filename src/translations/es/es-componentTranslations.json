@@ -46,6 +46,7 @@
   },
   "gameTabs": {
     "clickToStart": "Haz clic para empezar",
+    "externalTaskMessage": "La tarea se abrió en otra pestaña \n Haga clic aquí para abrir de nuevo",
     "taskCompleted": "¡Tarea completada!",
     "LEVANTE TRANSLATIONS--------------------------": "",
     "heartsAndFlowersDescription": "Haz coincidir el lado correcto con los corazones y las flores.",
@@ -70,7 +71,7 @@
     "mefsDescription": "Empareja las formas y los colores.",
     "vocabName": "Juego de Vocabulario",
     "vocabDescription": "Escucha la palabra y elige la imagen correspondiente.",
-    "roarInferenceName": "Roar - Inferencia",
+    "roarInferenceName": "ROAR - Inferencia",
     "roarInferenceDescription": "Lee las historias y responde a las preguntas."
   },
   "navBar": {

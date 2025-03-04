@@ -141,7 +141,7 @@
 //
 // function testGame(spec, admin) {
 //   cy.wait(0.1 * timeout);
-//   cy.get('.p-tabview')
+//   cy.get('.p-tablist-tab-list')
 //     .invoke('text')
 //     .then((text) => {
 //       if (text.includes(spec.name)) {
