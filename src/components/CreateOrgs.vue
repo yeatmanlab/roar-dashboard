@@ -19,7 +19,7 @@
               <PvSelect
                 v-model="orgType"
                 input-id="org-type"
-                :options="isLevante ? levanteOrgTypes : orgTypes"
+                :options="orgTypes"
                 show-clear
                 option-label="singular"
                 class="w-full"
@@ -39,7 +39,6 @@
                 :options="districts"
                 show-clear
                 option-label="name"
-                placeholder="Select a district"
                 :loading="isLoadingDistricts"
                 class="w-full"
                 data-cy="dropdown-parent-district"
@@ -57,7 +56,6 @@
                 :options="schools"
                 show-clear
                 option-label="name"
-                :placeholder="schoolDropdownEnabled ? 'Select a school' : 'Please select a district first'"
                 :loading="!schoolDropdownEnabled"
                 class="w-full"
                 data-cy="dropdown-parent-school"
@@ -93,7 +91,6 @@
                 :options="grades"
                 show-clear
                 option-label="name"
-                placeholder="Select a grade"
                 class="w-full"
                 data-cy="dropdown-grade"
               />
@@ -106,35 +103,24 @@
         <div class="mt-5 mb-0 pb-0">Optional fields:</div>
 
         <div v-if="['district', 'school', 'group'].includes(orgType?.singular)">
-          <div class="grid column-gap-3">
-            <div v-if="['district', 'school'].includes(orgType?.singular)" class="col-12 md:col-6 lg:col-4 mt-5">
-              <PvFloatLabel>
-                <PvInputText
-                  v-model="state.ncesId"
-                  v-tooltip="ncesTooltip"
-                  input-id="nces-id"
-                  class="w-full"
-                  data-cy="input-nces-id"
-                />
-                <label for="nces-id">NCES ID</label>
-              </PvFloatLabel>
-            </div>
-          </div>
           <div class="grid mt-3">
             <div class="col-12">Search for a {{ orgType.singular }} address:</div>
-            <div class="col-12 md:col-6 lg:col-6 xl:col-6 p-inputgroup">
-              <span class="p-inputgroup-addon">
-                <i class="pi pi-map"></i>
-              </span>
-              <GMapAutocomplete
-                :options="{
-                  fields: ['address_components', 'formatted_address', 'place_id', 'url'],
-                }"
-                class="p-inputtext p-component w-full"
-                data-cy="input-address"
-                @place_changed="setAddress"
-              >
-              </GMapAutocomplete>
+            <div class="col-12 md:col-6 lg:col-6 xl:col-6">
+              <div class="p-inputgroup flex align-items-center">
+                <span class="p-inputgroup-addon">
+                  <i class="pi pi-map"></i>
+                </span>
+                <GMapAutocomplete
+                  :options="{
+                    fields: ['address_components', 'formatted_address', 'place_id', 'url'],
+                  }"
+                  class="p-inputtext p-component w-full"
+                  style="height: 38px; display: flex; align-items: center;"
+                  data-cy="input-address"
+                  @place_changed="setAddress"
+                >
+                </GMapAutocomplete>
+              </div>
             </div>
           </div>
           <div v-if="state.address?.formattedAddress" class="grid">
@@ -234,7 +220,6 @@ const queryClient = useQueryClient();
 const state = reactive({
   orgName: '',
   orgInitials: '',
-  ncesId: undefined,
   address: undefined,
   parentDistrict: undefined,
   parentSchool: undefined,
@@ -306,8 +291,6 @@ const orgTypes = [
   { firestoreCollection: 'groups', singular: 'group' },
 ];
 
-const levanteOrgTypes = [{ firestoreCollection: 'groups', singular: 'group' }];
-
 const orgType = ref();
 const orgTypeLabel = computed(() => {
   if (orgType.value) {
@@ -344,15 +327,6 @@ const allTags = computed(() => {
   return _without(_union(...districtTags, ...schoolTags, ...classTags, ...groupTags), undefined) || [];
 });
 
-const ncesTooltip = computed(() => {
-  if (orgType.value?.singular === 'school') {
-    return '12 digit NCES school identification number';
-  } else if (orgType.value?.singular === 'district') {
-    return '7 digit NCES district identification number';
-  }
-  return '';
-});
-
 const tagSuggestions = ref([]);
 const searchTags = (event) => {
   const query = event.query.toLowerCase();
@@ -381,6 +355,7 @@ const removeAddress = () => {
 const submit = async () => {
   submitted.value = true;
   const isFormValid = await v$.value.$validate();
+
   if (isFormValid) {
     let orgData = {
       name: state.orgName,
@@ -388,7 +363,6 @@ const submit = async () => {
     };
 
     if (state.grade) orgData.grade = toRaw(state.grade).value;
-    if (state.ncesId) orgData.ncesId = state.ncesId;
     if (state.address) orgData.address = state.address;
     if (state.tags.length > 0) orgData.tags = state.tags;
 
@@ -399,35 +373,21 @@ const submit = async () => {
       orgData.districtId = toRaw(state.parentDistrict).id;
     }
 
-    if (isLevante) {
-      await roarfirekit.value
-        .createLevanteGroup(orgData)
-        .then(() => {
-          toast.add({ severity: 'success', summary: 'Success', detail: 'Org created', life: 3000 });
-          submitted.value = false;
-          resetForm();
-        })
-        .catch((error) => {
-          toast.add({ severity: 'error', summary: 'Error', detail: error.message, life: 3000 });
-          console.error('Error creating org:', error);
-          submitted.value = false;
-        });
-    } else {
-      await roarfirekit.value
-        .createOrg(orgType.value.firestoreCollection, orgData, isTestData.value, isDemoData.value)
-        .then(() => {
-          queryClient.invalidateQueries({ queryKey: ['orgs'], exact: false });
-          toast.add({ severity: 'success', summary: 'Success', detail: 'Org created', life: 3000 });
-          submitted.value = false;
-          resetForm();
-        })
-        .catch((error) => {
-          toast.add({ severity: 'error', summary: 'Error', detail: error.message, life: 3000 });
-          console.error('Error creating org:', error);
-          submitted.value = false;
-        });
-    }
+    await roarfirekit.value
+      .createOrg(orgType.value.firestoreCollection, orgData, isTestData.value, isDemoData.value)
+      .then(() => {
+        queryClient.invalidateQueries({ queryKey: ['orgs'], exact: false });
+        toast.add({ severity: 'success', summary: 'Success', detail: 'Org created', life: 3000 });
+        submitted.value = false;
+        resetForm();
+      })
+      .catch((error) => {
+        toast.add({ severity: 'error', summary: 'Error', detail: error.message, life: 3000 });
+        console.error('Error creating org:', error);
+        submitted.value = false;
+      });
   } else {
+    // TODO: Add error handling
     console.error('Form is invalid');
   }
 };
@@ -435,7 +395,6 @@ const submit = async () => {
 const resetForm = () => {
   state.orgName = '';
   state.orgInitials = '';
-  state.ncesId = undefined;
   state.address = undefined;
   state.grade = undefined;
   state.tags = [];
@@ -452,6 +411,23 @@ const resetForm = () => {
   background-color: var(--primary-color);
   border-color: var(--primary-color);
   color: white;
+}
+
+.p-inputgroup {
+  display: flex;
+  align-items: stretch;
+  
+  .p-inputgroup-addon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2.5rem;
+    height: auto;
+  }
+  
+  .p-inputtext {
+    flex: 1 1 auto;
+  }
 }
 
 .p-autocomplete-panel {
