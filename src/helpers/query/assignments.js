@@ -6,10 +6,13 @@ import _groupBy from 'lodash/groupBy';
 import _mapValues from 'lodash/mapValues';
 import _replace from 'lodash/replace';
 import _uniq from 'lodash/uniq';
+import _pick from 'lodash/pick';
+import _intersection from 'lodash/intersection';
 import _without from 'lodash/without';
 import _isEmpty from 'lodash/isEmpty';
 import { convertValues, getAxiosInstance, getProjectId, mapFields } from './utils';
 import { pluralizeFirestoreCollection } from '@/helpers';
+import { ORG_TYPES, ORG_TYPES_IN_ORDER } from '@/constants/orgTypes';
 
 const userSelectFields = ['name', 'assessmentPid', 'username', 'studentData', 'schools', 'classes'];
 
@@ -43,6 +46,7 @@ export const getAssignmentsRequestBody = ({
   orderBy = [],
   grades = [],
   isCollectionGroupQuery = true,
+  restrictToOpenAssignments = false,
 }) => {
   const requestBody = {
     structuredQuery: {},
@@ -68,23 +72,19 @@ export const getAssignmentsRequestBody = ({
     },
   ];
 
-  if (adminId && (orgId || orgArray)) {
-    requestBody.structuredQuery.where = {
-      compositeFilter: {
-        op: 'AND',
-        filters: [
-          {
-            fieldFilter: {
-              field: { fieldPath: 'id' },
-              op: 'EQUAL',
-              value: { stringValue: adminId },
-            },
-          },
-        ],
-      },
-    };
+  requestBody.structuredQuery.where = { compositeFilter: { op: 'AND', filters: [] } };
+  if (adminId || orgId || orgArray) {
+    if (adminId) {
+      requestBody.structuredQuery.where.compositeFilter.filters.push({
+        fieldFilter: {
+          field: { fieldPath: 'id' },
+          op: 'EQUAL',
+          value: { stringValue: adminId },
+        },
+      });
+    }
 
-    if (!_isEmpty(orgArray)) {
+    if (orgType && !_isEmpty(orgArray)) {
       requestBody.structuredQuery.where.compositeFilter.filters.push({
         fieldFilter: {
           field: { fieldPath: `readOrgs.${pluralizeFirestoreCollection(orgType)}` },
@@ -100,7 +100,8 @@ export const getAssignmentsRequestBody = ({
           },
         },
       });
-    } else {
+    }
+    if (orgType && orgId) {
       requestBody.structuredQuery.where.compositeFilter.filters.push({
         fieldFilter: {
           field: { fieldPath: `readOrgs.${pluralizeFirestoreCollection(orgType)}` },
@@ -145,15 +146,16 @@ export const getAssignmentsRequestBody = ({
         },
       });
     }
-  } else {
+  }
+  if (restrictToOpenAssignments) {
     const currentDate = new Date().toISOString();
-    requestBody.structuredQuery.where = {
+    requestBody.structuredQuery.where.compositeFilter.filters.push({
       fieldFilter: {
         field: { fieldPath: 'dateClosed' },
         op: 'GREATER_THAN_OR_EQUAL',
         value: { timestampValue: currentDate },
       },
-    };
+    });
   }
 
   if (!_isEmpty(orderBy)) {
@@ -613,6 +615,7 @@ export const assignmentPageFetcher = async (
   paginate = true,
   filters = [],
   orderBy = [],
+  restrictToOpenAssignments = false,
 ) => {
   const adminAxiosInstance = getAxiosInstance();
   const appAxiosInstance = getAxiosInstance('app');
@@ -858,6 +861,7 @@ export const assignmentPageFetcher = async (
       filter: userFilter || nonOrgFilter,
       grades: gradeFilter,
       orderBy: toRaw(orderBy),
+      restrictToOpenAssignments: restrictToOpenAssignments,
     });
     console.log(`Fetching page ${page.value} for ${adminId}`);
     return adminAxiosInstance.post(':runQuery', requestBody).then(async ({ data }) => {
@@ -985,13 +989,17 @@ export const assignmentPageFetcher = async (
  * @param {ref<String>} roarUid - A Vue ref containing the user's ROAR ID.
  * @returns {Promise<Array>} - A promise that resolves to an array of open assignments for the user.
  */
-export const getUserAssignments = async (roarUid) => {
+export const getUserAssignments = async (roarUid, orgType = null, orgIds = null) => {
   const adminAxiosInstance = getAxiosInstance();
+  console.log('inside getuserassignments', orgIds, orgType);
   const assignmentRequest = getAssignmentsRequestBody({
+    orgType: orgType,
+    orgArray: orgIds,
     aggregationQuery: false,
     paginate: false,
     isCollectionGroupQuery: false,
   });
+  console.log('assignmentsreq', assignmentRequest);
   const userId = toValue(roarUid);
   return await adminAxiosInstance
     .post(`/users/${toValue(userId)}:runQuery`, assignmentRequest)
@@ -1013,4 +1021,30 @@ export const assignmentFetchAll = async (adminId, orgType, orgId, includeScores 
     true,
     true,
   );
+};
+
+// This function should take into two sets of IOrgslist (admin and student) and determine
+// the intersection of the two org lists with the highest juridiction
+export const adminOrgIntersection = (participantData, adminOrgs) => {
+  const userOrgs = _pick(participantData, Object.values(ORG_TYPES));
+
+  const orgIntersection = {};
+  for (const orgName of Object.values(ORG_TYPES)) {
+    orgIntersection[orgName] = _intersection(_get(userOrgs, orgName)?.current, _get(adminOrgs, orgName));
+  }
+
+  return orgIntersection;
+};
+
+// return the orgj
+export const highestAdminOrgIntersection = (participantData, adminOrgs) => {
+  const orgIntersection = adminOrgIntersection(participantData, adminOrgs);
+  console.log('orgIntersection', orgIntersection);
+  console.log(ORG_TYPES_IN_ORDER, 'INORDER');
+  for (const orgType of ORG_TYPES_IN_ORDER) {
+    console.log('orgType, ', orgType);
+    if (!_isEmpty(orgIntersection[orgType])) {
+      return { orgType, orgIds: orgIntersection[orgType] };
+    }
+  }
 };

@@ -638,6 +638,7 @@ const computeAssignmentAndRunData = computed(() => {
           schoolName: schoolName,
         },
         tooltip: `View ${firstNameOrUsername}'s Score Report`,
+        launchTooltip: `View assessment portal for ${firstNameOrUsername}`,
         routeParams: {
           administrationId: props.administrationId,
           orgId: props.orgId,
@@ -1133,6 +1134,7 @@ const scoreReportColumns = computed(() => {
     orgId: props.orgId,
     administrationId: props.administrationId,
   });
+
   let hasUsername = false;
   if (assignmentData.value.find((assignment) => assignment.user?.username)) {
     tableColumns.push({
@@ -1195,6 +1197,18 @@ const scoreReportColumns = computed(() => {
       dataType: 'text',
       sort: false,
       headerStyle: `background:var(--primary-color); color:white; padding-top:0; margin-top:0; padding-bottom:0; margin-bottom:0; border:0; margin-left:0; border-right-width:2px; border-right-style:solid; border-right-color:#ffffff;`,
+    });
+  }
+
+  if (authStore.userData.canLaunch) {
+    tableColumns.push({
+      header: 'Launch Student',
+      launcher: true,
+      routeName: 'LaunchHome',
+      routeTooltip: 'Launch Student Assessment',
+      routeIcon: 'pi pi-arrow-right border-none text-primary hover:text-white',
+      sort: false,
+      pinned: true,
     });
   }
 
