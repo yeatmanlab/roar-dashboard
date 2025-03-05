@@ -191,6 +191,7 @@ import { CSV_EXPORT_MAX_RECORD_COUNT } from '@/constants/csvExport';
 import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts.js';
 import RoarDataTable from '@/components/RoarDataTable';
 import { ORG_TYPES } from '../constants/orgTypes';
+import { usePermissions } from '../composables/usePermissions';
 
 const initialized = ref(false);
 const selectedDistrict = ref(undefined);
@@ -204,6 +205,7 @@ const currentEditOrgId = ref(null);
 const localOrgData = ref(null);
 const isSubmitting = ref(false);
 const hideSubgroups = ref(false);
+const { userCan, Permissions } = usePermissions();
 
 const districtPlaceholder = computed(() => {
   if (isLoadingDistricts.value) {
@@ -423,8 +425,8 @@ const tableColumns = computed(() => {
     columns.push({ field: 'classlink', header: 'ClassLink', dataType: 'boolean', sort: false });
   }
 
-  columns.push(
-    {
+  if (userCan(Permissions.Users.LIST)) {
+    columns.push({
       header: 'Users',
       link: true,
       routeName: 'ListUsers',
@@ -432,14 +434,20 @@ const tableColumns = computed(() => {
       routeLabel: 'Users',
       routeIcon: 'pi pi-user',
       sort: false,
-    },
-    {
+    });
+  }
+
+  if (userCan(Permissions.Organizations.UPDATE)) {
+    columns.push({
       header: 'Edit',
       button: true,
       eventName: 'edit-button',
       buttonIcon: 'pi pi-pencil',
       sort: false,
-    },
+    });
+  }
+
+  columns.push(
     {
       header: 'SignUp Code',
       buttonLabel: 'Invite Users',
