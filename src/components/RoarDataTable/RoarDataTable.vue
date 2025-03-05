@@ -177,13 +177,13 @@
               <div v-else-if="col.launcher">
                 <a :href="'/launch/' + colData.routeParams.userId">
                   <PvButton
-                    v-tooltip.right="colData.launchTooltip"
+                    v-tooltip.right="colData?.launchTooltip"
                     severity="secondary"
                     text
                     class="border border-round surface-200 p-2 hover:surface-500"
-                    :label="colData.routeParams.buttonLabel"
-                    :aria-label="col.routeTooltip"
-                    :icon="col.routeIcon"
+                    :label="colData?.routeParams?.buttonLabel"
+                    :aria-label="col?.routeTooltip"
+                    :icon="col?.routeIcon"
                     style="color: black !important"
                     data-cy="route-button"
                     size="small"

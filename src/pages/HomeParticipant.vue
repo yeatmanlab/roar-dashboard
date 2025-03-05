@@ -192,8 +192,8 @@ const {
   {
     enabled: isOrgIntersectionReady.value && initialized,
   },
-  props.launchId && !authStore.isSuperAdmin ? adminOrgIntersection.value?.orgIds : null,
-  props.launchId && !authStore.isSuperAdmin ? adminOrgIntersection.value?.orgType : null,
+  props.launchId,
+  adminOrgIntersection.value?.orgType,
   adminOrgIntersection.value?.orgIds,
 );
 
