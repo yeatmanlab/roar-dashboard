@@ -1030,8 +1030,6 @@ export const adminOrgIntersection = (participantData, adminOrgs) => {
 
   const orgIntersection = {};
   for (const orgName of Object.values(ORG_TYPES)) {
-    console.log('userOrg', _get(userOrgs, orgName)?.current);
-    console.log('adminOrg', adminOrgs);
     orgIntersection[orgName] = _intersection(_get(userOrgs, orgName)?.current, _get(adminOrgs, orgName));
   }
 

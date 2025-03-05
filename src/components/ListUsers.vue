@@ -233,6 +233,13 @@ const columns = ref([
     buttonIcon: 'pi pi-user-edit',
     sort: false,
   },
+  // {
+  //   header: 'Launch',
+  //   launcher: true,
+  //   idPath: "id",
+  //   routeIcon: 'pi pi-arrow-right',
+  //   sort: false,
+  // },
 ]);
 
 const currentEditUser = ref(null);
