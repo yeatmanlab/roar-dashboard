@@ -92,7 +92,7 @@ const sidebarActionOptions = [
     title: 'Register New Family',
     icon: 'pi pi-home',
     buttonLink: { name: 'Register' },
-    permission: 'This item is Super Admin Only.',
+    requiresSuperAdmin: true,
     project: 'ROAR',
     category: 'Users',
   },
