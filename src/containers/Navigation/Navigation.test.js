@@ -8,10 +8,12 @@ import Navigation from './Navigation.vue';
 import NavBar from '@/components/NavBar';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import { useAuthStore } from '@/store/auth';
+import { usePermissions } from '@/composables/usePermissions';
 import mockUserClaims, {
   mockSuperAdminUserClaims,
   mockPartnerAdminUserClaims,
 } from '@/test-support/mocks/mockUserClaims';
+import mockPermissions from '@/test-support/mocks/mockPermissions';
 
 vi.mock('vue-router', async (getModule) => {
   const original = await getModule();
@@ -23,6 +25,7 @@ vi.mock('vue-router', async (getModule) => {
 });
 
 vi.mock('@/composables/queries/useUserClaimsQuery');
+vi.mock('@/composables/usePermissions');
 
 const firstName = faker.person.firstName();
 const lastName = faker.person.lastName();
@@ -63,6 +66,10 @@ describe('<Navigation />', () => {
     vi.mocked(useUserClaimsQuery).mockReturnValue({
       isLoading: false,
       data: mockUserClaims,
+    });
+    vi.mocked(usePermissions).mockReturnValue({
+      userCan: vi.fn().mockReturnValue(false),
+      Permissions: mockPermissions,
     });
 
     useRoute.mockReturnValue(mockRoute);
@@ -256,6 +263,10 @@ describe('<Navigation />', () => {
         isLoading: false,
         data: mockPartnerAdminUserClaims,
       });
+      vi.mocked(usePermissions).mockReturnValue({
+        userCan: vi.fn().mockReturnValue(true),
+        Permissions: mockPermissions,
+      });
 
       wrapper = mount(Navigation, {
         global: {
@@ -276,6 +287,10 @@ describe('<Navigation />', () => {
       vi.mocked(useUserClaimsQuery).mockReturnValue({
         isLoading: false,
         data: mockSuperAdminUserClaims,
+      });
+      vi.mocked(usePermissions).mockReturnValue({
+        userCan: vi.fn().mockReturnValue(true),
+        Permissions: mockPermissions,
       });
 
       wrapper = mount(Navigation, {

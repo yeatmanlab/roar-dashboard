@@ -39,6 +39,12 @@
 
       <div class="flex flex-column gap-4 lg:align-items-center">
         <PvButton
+          v-tooltip="
+            userCan(Permissions.Tasks.MANAGE)
+              ? false
+              : 'You do not have permission to update tasks. If you feel this is a mistake, please contact your administrator.'
+          "
+          :disabled="!userCan(Permissions.Tasks.MANAGE)"
           type="submit"
           label="Update Task"
           class="self-center w-full lg:w-4 bg-primary align-right text-white border-none border-round p-3 hover:bg-red-900"
@@ -66,12 +72,14 @@ import TaskParametersConfigurator from './TaskParametersConfigurator.vue';
 import { convertParamArrayToObject } from '@/helpers/convertParamArrayToObject';
 import { convertObjectToParamArray } from '@/helpers/convertObjectToParamArray';
 import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
+import { usePermissions } from '@/composables/usePermissions';
 
 const toast = useToast();
 const initialized = ref(false);
 const registeredTasksOnly = ref(true);
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
+const { userCan, Permissions } = usePermissions();
 
 const { mutate: updateTask } = useUpdateTaskMutation();
 

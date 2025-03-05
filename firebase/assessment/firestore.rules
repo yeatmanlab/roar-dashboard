@@ -482,5 +482,12 @@ service cloud.firestore {
         allow update: if canUpdateTask();
       }
     }
+
+    // Security rules for the collection **GROUP** variants
+    // We only need to specify read permissions, as write and update operations will
+    // require a specific taskId, therefore subject to the rules above.
+    match /{path=**}/variants/{variantId} {
+      allow read: if loggedIn();
+    }
   }
 }
