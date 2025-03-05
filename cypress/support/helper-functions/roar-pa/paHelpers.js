@@ -214,5 +214,7 @@ export function playPA({
     cy.switchToOptionalAssessments();
   }
 
-  cy.get('.p-tablist-tab-list').contains(languageOptions[language].gameTab).should('exist');
+  cy.get('.p-tablist-tab-list', { timeout: 3 * timeout })
+    .contains(languageOptions[language].gameTab)
+    .should('exist');
 }

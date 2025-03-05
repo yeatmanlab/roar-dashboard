@@ -653,10 +653,9 @@ const validateCode = async (studentCode, outerIndex = 0) => {
     console.error('Failed to validate activation code', error);
 
     if (!state.students[outerIndex].noActivationCode || props.code) {
-      dialogMessage.value = `The code ${studentCode} does not belong to any organization \n please enter a valid code or select: "I do not have a code"`;
+      dialogMessage.value = `The code ${studentCode} does not belong to any organization. Please enter a valid code.`;
     } else {
-      dialogMessage.value =
-        'The code does not belong to any organization \n Please enter a valid code or select: \n "I don\'t have a code"';
+      dialogMessage.value = 'The code does not belong to any organization. Please enter a valid code."';
     }
 
     showErrorDialog();
