@@ -171,30 +171,47 @@ const {
 
 const adminOrgIntersection = computed(() => {
   const orgIntersection = highestAdminOrgIntersection(userData.value, authStore?.userClaims?.claims?.adminOrgs);
+  orgType.value = orgIntersection?.orgType;
+  orgIds.value = orgIntersection?.orgIds;
   return orgIntersection;
 });
+
+const orgType = ref('');
+const orgIds = ref('');
 console.log('calledhighestadmin', adminOrgIntersection.value);
 
 const isOrgIntersectionReady = ref(false);
 
-watchEffect(() => {
-  // Check if the orgIntersection has the necessary properties
-  isOrgIntersectionReady.value =
-    !!adminOrgIntersection.value?.orgType && adminOrgIntersection.value?.orgIds?.length > 0;
+const userAssignmentsQueryEnabled = computed(() => {
+  return isOrgIntersectionReady.value && initialized.value;
 });
 
-// TODO: remove hard coded orgtype, orgid... but where do i get it from?
+const isSuperAdmin = computed(() => {
+  if (authStore?.userClaims.claims?.super_admin) return true;
+  return false;
+});
+
+watchEffect(() => {
+  // If user is superadmin, we won't need to compute the orgIntersection
+  if (isSuperAdmin.value) {
+    isOrgIntersectionReady.value = true;
+  } else {
+    isOrgIntersectionReady.value =
+      !!adminOrgIntersection.value?.orgType && adminOrgIntersection.value?.orgIds?.length > 0;
+  }
+});
+
 const {
   isLoading: isLoadingAssignments,
   isFetching: isFetchingAssignments,
   data: userAssignments,
 } = useUserAssignmentsQuery(
   {
-    enabled: isOrgIntersectionReady.value && initialized,
+    enabled: userAssignmentsQueryEnabled,
   },
   props.launchId,
-  adminOrgIntersection.value?.orgType,
-  adminOrgIntersection.value?.orgIds,
+  !isSuperAdmin.value ? orgType : null,
+  !isSuperAdmin.value ? orgIds : null,
 );
 
 const sortedUserAdministrations = computed(() => {
