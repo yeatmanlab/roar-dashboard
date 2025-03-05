@@ -46,9 +46,12 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.roarfirekit.restConfig) init();
 });
 
-const { isLoading: isLoadingUserData, data: userData } = useUserStudentDataQuery({
-  enabled: initialized,
-});
+const { isLoading: isLoadingUserData, data: userData } = useUserStudentDataQuery(
+  {
+    enabled: initialized,
+  },
+  props.launchId,
+);
 
 // The following code intercepts the back button and instead forces a refresh.
 // We add { once: true } to prevent an infinite loop.
@@ -112,6 +115,7 @@ async function startTask(selectedAdmin) {
     const gameParams = { ...appKit._taskInfo.variantParams };
 
     const roarApp = new TaskLauncher(appKit, gameParams, userParams, 'jspsych-target');
+    console.log('roarapp', roarApp);
 
     await roarApp.run().then(async () => {
       // Handle any post-game actions.
