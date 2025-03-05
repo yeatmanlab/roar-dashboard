@@ -1200,7 +1200,7 @@ const scoreReportColumns = computed(() => {
     });
   }
 
-  if (authStore.isUserSuperAdmin && authStore.userData.canLaunch) {
+  if (authStore.userData.canLaunch) {
     tableColumns.push({
       header: 'Launch Student',
       launcher: true,
