@@ -11,7 +11,7 @@ const sidebarActionOptions = [
     category: 'Home',
   },
   {
-    title: 'List organizations',
+    title: 'Audience',
     icon: 'pi pi-folder-open',
     buttonLink: { name: 'ListOrgs' },
     requiresSuperAdmin: false,

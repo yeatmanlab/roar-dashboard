@@ -3,7 +3,7 @@
     <SkeletonTable />
   </div>
   <div v-else>
-    <div v-if="props.allowFiltering || props.allowColumnSelection || props.allowExport" class="w-full gap-1 pt-1 flex justify-content-center align-items-center flex-wrap mt-3">
+    <!-- <div v-if="props.allowFiltering || props.allowColumnSelection || props.allowExport" class="w-full gap-1 pt-1 flex justify-content-center align-items-center flex-wrap mt-3">
       <slot name="filterbar"></slot>
       <PvFloatLabel v-if="props.allowColumnSelection" >
         <PvMultiSelect
@@ -62,7 +62,7 @@
           @click="exportCSV(false, $event)"
         />
       </span>
-    </div>
+    </div> -->
     <div class="flex flex-column">
       <span style="height: 10px">
         <div class="relative flex justify-content-end mt-0 mr-2 z-1" style="top: 25px; width: 20%; left: 80%">
