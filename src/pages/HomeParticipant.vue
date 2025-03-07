@@ -522,7 +522,7 @@ watch(surveyDependenciesLoaded, async (isLoaded) => {
   const isAssessment = selectedAdmin.value?.assessments.some((task) => task.taskId === 'survey');
   if (!isLoaded || !isAssessment || surveyStore.survey) return;
 
-  const surveyResponseDoc = (surveyResponsesData?.value || []).find((doc) => doc?.administrationId === selectedAdmin.value.id);
+  const surveyResponseDoc = (surveyResponsesData.value || []).find((doc) => doc?.administrationId === selectedAdmin.value.id);
   
   if (surveyResponseDoc) {
     if (userType.value === 'student') {
