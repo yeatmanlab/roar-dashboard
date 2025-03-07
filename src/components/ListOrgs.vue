@@ -425,7 +425,7 @@ const tableColumns = computed(() => {
     columns.push({ field: 'classlink', header: 'ClassLink', dataType: 'boolean', sort: false });
   }
 
-  if (userCan(Permissions.Users.LIST)) {
+  if (userCan(Permissions?.Users?.LIST)) {
     columns.push({
       header: 'Users',
       link: true,
@@ -437,7 +437,7 @@ const tableColumns = computed(() => {
     });
   }
 
-  if (userCan(Permissions.Organizations.UPDATE)) {
+  if (userCan(Permissions?.Organizations?.UPDATE)) {
     columns.push({
       header: 'Edit',
       button: true,

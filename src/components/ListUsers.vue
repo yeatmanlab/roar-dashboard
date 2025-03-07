@@ -71,7 +71,7 @@
             </div>
           </div>
         </div>
-        <div v-if="userCan(Permissions.Users.Credentials.UPDATE)" class="flex justify-content-center mt-3 w-full">
+        <div v-if="userCan(Permissions?.Users?.Credentials?.UPDATE)" class="flex justify-content-center mt-3 w-full">
           <PvButton
             v-if="!showPassword"
             class="border-none border-round bg-primary text-white p-2 hover:surface-400 mr-auto ml-auto"
@@ -232,9 +232,9 @@ const columns = ref([
 ]);
 
 if (
-  userCan(Permissions.Users.UPDATE) ||
-  userCan(Permissions.Users.Credentials.UPDATE) ||
-  userCan(Permissions.Administrators.UPDATE)
+  userCan(Permissions?.Users?.UPDATE) ||
+  userCan(Permissions?.Users?.Credentials?.UPDATE) ||
+  userCan(Permissions?.Administrators?.UPDATE)
 ) {
   columns.value.push({
     header: 'Edit',
@@ -256,9 +256,9 @@ const isModalEnabled = ref(false);
 const canUserEdit = computed(() => {
   const userType = currentEditUser.value?.userType;
   if (userType === 'admin') {
-    return userCan(Permissions.Administrators.UPDATE);
+    return userCan(Permissions?.Administrators?.UPDATE);
   } else {
-    return userCan(Permissions.Users.UPDATE);
+    return userCan(Permissions?.Users?.UPDATE);
   }
 });
 

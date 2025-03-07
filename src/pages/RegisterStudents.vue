@@ -99,14 +99,14 @@
           </div>
           <PvButton
             v-tooltip="
-              userCan(Permissions.Users.CREATE)
+              userCan(Permissions?.Users?.CREATE)
                 ? false
                 : 'You do not have permission to start registration. If you feel this is a mistake, please contact your administrator.'
             "
             label="Start Registration"
             class="bg-primary text-white border-none border-round p-2 hover:bg-red-900"
             :icon="activeSubmit ? 'pi pi-spin pi-spinner' : ''"
-            :disabled="activeSubmit || !userCan(Permissions.Users.CREATE)"
+            :disabled="activeSubmit || !userCan(Permissions?.Users?.CREATE)"
             style="margin-bottom: 4rem"
             data-cy="button-start-registration"
             @click="submitStudents"
