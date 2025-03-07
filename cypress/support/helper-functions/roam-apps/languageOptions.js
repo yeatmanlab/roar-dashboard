@@ -1,7 +1,7 @@
 export const languageOptions = {
   en: {
     'fluency-arf': {
-      gameTab: 'ROAM - Math Facts',
+      gameTab: 'ROAM - Math Facts Fluency',
       url: '/game/fluency-arf',
     },
     'fluency-calf': {

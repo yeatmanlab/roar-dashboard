@@ -77,7 +77,7 @@ export const testSpecs = [
     language: 'es',
   },
   {
-    name: 'ROAM - Math Facts',
+    name: 'ROAM - Math Facts Fluency',
     app: '@bdelab/roam-fluency',
     spec: playARF,
     language: 'en',
