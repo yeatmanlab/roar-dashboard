@@ -1,7 +1,6 @@
 import { vi } from 'vitest';
 import { config, DOMWrapper } from '@vue/test-utils';
 import PrimeVue from 'primevue/config';
-import mockPermissions from '@/test-support/mocks/mockPermissions';
 
 vi.mock('vue-recaptcha', () => ({
   default: {},
