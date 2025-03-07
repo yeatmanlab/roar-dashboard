@@ -1,11 +1,11 @@
 export const languageOptions = {
   en: {
     'fluency-arf': {
-      gameTab: 'ROAM - Math Facts Fluency',
+      gameTab: 'ROAM - Single Digit',
       url: '/game/fluency-arf',
     },
     'fluency-calf': {
-      gameTab: 'ROAM - Calculation Fluency',
+      gameTab: 'ROAM - Multi Digit',
       url: '/game/fluency-calf',
     },
   },
