@@ -5,10 +5,10 @@
         <div class="flex justify-content-between mb-2">
           <div class="flex align-items-center gap-3">
             <i class="pi pi-sliders-h text-gray-400 rounded" style="font-size: 1.6rem" />
-            <div class="admin-page-header">Create a new organization</div>
+            <div class="admin-page-header">Create a new Audeince</div>
           </div>
         </div>
-        <div class="text-md text-gray-500 ml-6">Use this form to create a new organization.</div>
+        <div class="text-md text-gray-500 ml-6">Use this form to create a new Audience.</div>
       </div>
 
       <PvDivider />
@@ -21,14 +21,47 @@
                 input-id="org-type"
                 :options="orgTypes"
                 show-clear
-                option-label="singular"
+                option-label="label"
                 class="w-full"
                 data-cy="dropdown-org-type"
               />
-              <label for="org-type">Org Type<span id="required-asterisk">*</span></label>
+              <label for="org-type">Org Type<span id="requiredgroupHasParentOrg-asterisk">*</span></label>
             </PvFloatLabel>
           </div>
         </div>
+
+        <div v-if="orgType?.singular === 'group'" class="flex flex-row align-items-center justify-content-start gap-2">
+          <PvCheckbox v-model="groupHasParentOrg" input-id="chbx-group-parent-org" :binary="true" />
+          <label for="chbx-group-parent-org">Belongs to an audience</label>
+        </div>
+
+        <OrgPicker
+          v-if="groupHasParentOrg"
+          :for-parent-org="true"
+          class="mt-4"
+          @selection="selection($event)"
+        />
+
+        <!-- <div v-if="groupHasParentOrg" class="grid mt-4">
+          <div class="col-12 md:col-6 lg:col-4">
+            <span class="p-float-label">
+              <PvDropdown
+                v-model="selectedTestOrg"
+                input-id="parent-org"
+                :options="testOrgs"
+                show-clear
+                option-label="label"
+                option-group-label="label"
+                option-group-children="items"
+                placeholder="Select a parent organization"
+                filter
+                class="w-full"
+                data-cy="dropdown-parent-org"
+              />
+              <label for="parent-org">Parent Organization<span id="required-asterisk">*</span></label>
+            </span>
+          </div>
+        </div> -->
 
         <div v-if="parentOrgRequired" class="grid mt-4">
           <div class="col-12 md:col-6 lg:col-4">
@@ -43,8 +76,8 @@
                 class="w-full"
                 data-cy="dropdown-parent-district"
               />
-              <label for="parent-district">District<span id="required-asterisk">*</span></label>
-              <small v-if="v$.parentDistrict.$invalid && submitted" class="p-error"> Please select a district. </small>
+              <label for="parent-district">Site<span id="required-asterisk">*</span></label>
+              <small v-if="v$.parentDistrict.$invalid && submitted" class="p-error"> Please select a site. </small>
             </PvFloatLabel>
           </div>
 
@@ -82,29 +115,13 @@
               <small v-if="v$.orgInitials.$invalid && submitted" class="p-error">Please supply an abbreviation</small>
             </PvFloatLabel>
           </div>
-
-          <div v-if="orgType?.singular === 'class'" class="col-12 md:col-6 lg:col-4 mt-3">
-            <PvFloatLabel>
-              <PvSelect
-                v-model="state.grade"
-                input-id="grade"
-                :options="grades"
-                show-clear
-                option-label="name"
-                class="w-full"
-                data-cy="dropdown-grade"
-              />
-              <label for="grade">Grade<span id="required-asterisk">*</span></label>
-              <small v-if="v$.grade.$invalid && submitted" class="p-error">Please select a grade</small>
-            </PvFloatLabel>
-          </div>
         </div>
 
         <div class="mt-5 mb-0 pb-0">Optional fields:</div>
 
         <div v-if="['district', 'school', 'group'].includes(orgType?.singular)">
           <div class="grid mt-3">
-            <div class="col-12">Search for a {{ orgType.singular }} address:</div>
+            <div class="col-12">Search for a {{ orgType.label }} address:</div>
             <div class="col-12 md:col-6 lg:col-6 xl:col-6">
               <div class="p-inputgroup flex align-items-center">
                 <span class="p-inputgroup-addon">
@@ -185,7 +202,7 @@
 </template>
 
 <script setup>
-import { computed, reactive, ref, toRaw, onMounted } from 'vue';
+import { computed, reactive, ref, toRaw, onMounted, watch } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import { storeToRefs } from 'pinia';
 import _capitalize from 'lodash/capitalize';
@@ -208,6 +225,8 @@ import useDistrictSchoolsQuery from '@/composables/queries/useDistrictSchoolsQue
 import useSchoolClassesQuery from '@/composables/queries/useSchoolClassesQuery';
 import useGroupsListQuery from '@/composables/queries/useGroupsListQuery';
 import { isLevante } from '@/helpers';
+import OrgPicker from '@/components/OrgPicker.vue';
+import _toPairs from 'lodash/toPairs';
 
 const initialized = ref(false);
 const isTestData = ref(false);
@@ -216,6 +235,11 @@ const toast = useToast();
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
 const queryClient = useQueryClient();
+const groupHasParentOrg = ref(false);
+
+watch(groupHasParentOrg, () => {
+  console.log('groupHasParentOrg: ', groupHasParentOrg.value);
+});
 
 const state = reactive({
   orgName: '',
@@ -223,8 +247,14 @@ const state = reactive({
   address: undefined,
   parentDistrict: undefined,
   parentSchool: undefined,
-  grade: undefined,
   tags: [],
+});
+
+const groupParentOrgs = reactive({
+  districts: [],
+  schools: [],
+  classes: [],
+  groups: [],
 });
 
 let unsubscribe;
@@ -278,46 +308,41 @@ const rules = {
   orgInitials: { required },
   parentDistrict: { required: requiredIf(() => ['school', 'class'].includes(orgType.value.singular)) },
   parentSchool: { required: requiredIf(() => orgType.value.singular === 'class') },
-  grade: { required: requiredIf(() => orgType.value.singular === 'class') },
 };
 
 const v$ = useVuelidate(rules, state);
 const submitted = ref(false);
 
 const orgTypes = [
-  { firestoreCollection: 'districts', singular: 'district' },
-  { firestoreCollection: 'schools', singular: 'school' },
-  { firestoreCollection: 'classes', singular: 'class' },
-  { firestoreCollection: 'groups', singular: 'group' },
+  { firestoreCollection: 'districts', singular: 'district', label: 'Site' },
+  { firestoreCollection: 'schools', singular: 'school', label: 'School' },
+  { firestoreCollection: 'classes', singular: 'class', label: 'Class' },
+  { firestoreCollection: 'groups', singular: 'group', label: 'Group' },
 ];
 
 const orgType = ref();
+
+// To hide the org picker when the org type is cleared (can't control the clear button)
+watch(orgType, () => {
+  if (!orgType.value) {
+    groupHasParentOrg.value = false;
+  }
+});
+
 const orgTypeLabel = computed(() => {
   if (orgType.value) {
-    return _capitalize(orgType.value.singular);
+    return _capitalize(orgType.value.label);
   }
   return 'Org';
 });
 
 const parentOrgRequired = computed(() => ['school', 'class'].includes(orgType.value?.singular));
 
-const grades = [
-  { name: 'Pre-K', value: 'PK' },
-  { name: 'Transitional Kindergarten', value: 'TK' },
-  { name: 'Kindergarten', value: 'K' },
-  { name: 'Grade 1', value: 1 },
-  { name: 'Grade 2', value: 2 },
-  { name: 'Grade 3', value: 3 },
-  { name: 'Grade 4', value: 4 },
-  { name: 'Grade 5', value: 5 },
-  { name: 'Grade 6', value: 6 },
-  { name: 'Grade 7', value: 7 },
-  { name: 'Grade 8', value: 8 },
-  { name: 'Grade 9', value: 9 },
-  { name: 'Grade 10', value: 10 },
-  { name: 'Grade 11', value: 11 },
-  { name: 'Grade 12', value: 12 },
-];
+const selection = (selected) => {
+  for (const [key, value] of _toPairs(toRaw(selected))) {
+    groupParentOrgs[key] = value;
+  }
+};
 
 const allTags = computed(() => {
   const districtTags = (districts.value ?? []).map((org) => org.tags);
@@ -362,7 +387,36 @@ const submit = async () => {
       abbreviation: state.orgInitials,
     };
 
-    if (state.grade) orgData.grade = toRaw(state.grade).value;
+    if (groupHasParentOrg.value) {
+      const singularMap = {
+        districts: 'district',
+        schools: 'school',
+        classes: 'class',
+        groups: 'group',
+        families: 'family',
+      };
+      const rawParentOrgs = toRaw(groupParentOrgs);
+      let parentOrg;
+      let parentOrgKey;
+      // Find first key with non-empty array or object value
+      parentOrgKey = Object.keys(rawParentOrgs).find(key => {
+        const value = rawParentOrgs[key];
+        return (Array.isArray(value) && value.length > 0) || 
+               (!Array.isArray(value) && typeof value === 'object' && value !== null);
+      });
+      if (parentOrgKey) {
+        const value = rawParentOrgs[parentOrgKey];
+        parentOrg = Array.isArray(value) ? value[0] : value;
+      }
+      if (!parentOrg || !parentOrgKey) {
+        toast.add({ severity: 'error', summary: 'Error', detail: 'Please select a parent organization', life: 3000 });
+        submitted.value = false;
+        return;
+      }
+      orgData.parentOrgId = parentOrg.id;
+      orgData.parentOrgType = singularMap[parentOrgKey];
+    }
+
     if (state.address) orgData.address = state.address;
     if (state.tags.length > 0) orgData.tags = state.tags;
 
@@ -377,7 +431,7 @@ const submit = async () => {
       .createOrg(orgType.value.firestoreCollection, orgData, isTestData.value, isDemoData.value)
       .then(() => {
         queryClient.invalidateQueries({ queryKey: ['orgs'], exact: false });
-        toast.add({ severity: 'success', summary: 'Success', detail: 'Org created', life: 3000 });
+        toast.add({ severity: 'success', summary: 'Success', detail: 'Audience created', life: 3000 });
         submitted.value = false;
         resetForm();
       })
@@ -396,7 +450,6 @@ const resetForm = () => {
   state.orgName = '';
   state.orgInitials = '';
   state.address = undefined;
-  state.grade = undefined;
   state.tags = [];
 };
 </script>

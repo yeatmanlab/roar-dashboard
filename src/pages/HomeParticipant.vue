@@ -173,6 +173,14 @@ const {
   enabled: initialized,
 });
 
+watch(userAssignments, () => {  
+  console.log('userAssignments', userAssignments.value);
+});
+
+watch(selectedAdmin, () => {
+  console.log('selectedAdmin', selectedAdmin.value);
+});
+
 const sortedUserAdministrations = computed(() => {
   return [...(userAssignments.value ?? [])].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 });
