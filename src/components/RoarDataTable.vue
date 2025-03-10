@@ -2,13 +2,13 @@
   <div v-if="!props.data">
     <SkeletonTable />
   </div>
-  <div v-else>
+  <div v-else class="options-container">
     <div class="flex justify-content-end mr-3 mt-2">
-      <a href="#" class="text-red-700 cursor-pointer" @click.prevent="toggleControls">
+      <a href="#" class="text-red-700 cursor-pointer options-toggle" @click.prevent="toggleControls">
         {{ showControls ? 'Hide Options' : 'Show Options' }}
       </a>
     </div>
-    <div v-if="showControls" class="w-full gap-1 pt-1 flex justify-content-center align-items-center flex-wrap mt-3">
+    <div v-if="showControls" class="w-full gap-1 pt-1 flex justify-content-center align-items-center flex-wrap mb-3">
       <div v-if="props.allowFiltering || props.allowColumnSelection || props.allowExport" class="w-full gap-1 pt-1 flex justify-content-center align-items-center flex-wrap mt-3">
         <slot name="filterbar"></slot>
         <PvFloatLabel v-if="props.allowColumnSelection" >
@@ -778,6 +778,16 @@ const toggle = (event, column) => {
 const emit = defineEmits(['export-all', 'selection', 'reset-filters', 'export-selected', 'export-org-users']);
 </script>
 <style>
+
+.options-container {
+    position: relative;
+
+  .options-toggle {
+    position: absolute;
+    top: -70px;
+  }
+}
+
 .small-circle {
   border-color: white;
   display: inline-block;
