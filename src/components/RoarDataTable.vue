@@ -3,66 +3,73 @@
     <SkeletonTable />
   </div>
   <div v-else>
-    <!-- <div v-if="props.allowFiltering || props.allowColumnSelection || props.allowExport" class="w-full gap-1 pt-1 flex justify-content-center align-items-center flex-wrap mt-3">
-      <slot name="filterbar"></slot>
-      <PvFloatLabel v-if="props.allowColumnSelection" >
-        <PvMultiSelect
-          id="ms-columns"
-          v-tooltip.top="'Show and hide columns'"
-          :model-value="selectedColumns"
-          :options="inputColumns"
-          option-label="header"
-          :max-selected-labels="3"
-          class="w-2 md:w-10rem"
-          selected-items-label="{0} columns selected"
-          @update:model-value="onColumnToggle"
-        />
-        <label for="ms-columns" class="view-label2">Select Columns</label>
-      </PvFloatLabel>
-      <PvFloatLabel v-if="props.allowColumnSelection">
-        <PvMultiSelect
-          id="ms-freeze"
-          :model-value="frozenColumns"
-          :options="inputColumns"
-          option-label="header"
-          :max-selected-labels="3"
-          class="w-2 md:w-10rem"
-          selected-items-label="{0} columns frozen"
-          :show-toggle-all="false"
-          @update:model-value="onFreezeToggle"
-        />
-        <label for="ms-columns" class="view-label2">Freeze Columns</label>
-      </PvFloatLabel>
-      <span v-if="props.allowExport" class="flex flex-row flex-wrap justify-content-end gap-2 max-h-3 export-wrapper">
-        <PvButton
-          v-tooltip.bottom="'Expand or Compress table rows'"
-          text
-          :label="rowViewMode"
-          class="my-1 m-1 h-3rem text-primary surface-ground border-none border-round h-2rem text-sm hover:bg-gray-300"
-          @click="toggleView"
-        />
-        <PvButton
-          v-if="allowExport"
-          v-tooltip.bottom="
-            `Export scores for ${selectedRows.length} student${
-              selectedRows.length > 1 ? 's' : ''
-            } to CSV file for spreadsheet import`
-          "
-          label="Export Selected"
-          :badge="selectedRows?.length?.toString()"
-          :disabled="selectedRows.length === 0"
-          class="m-1 m-1 h-3rem bg-primary text-white border-none border-round h-2rem text-sm hover:bg-red-900"
-          @click="exportCSV(true, $event)"
-        />
-        <PvButton
-          v-if="allowExport"
-          v-tooltip.bottom="'Export all scores for all students to a CSV file for spreadsheet import.'"
-          label="Export Whole Table"
-          class="m-1 h-3rem bg-primary text-white border-none border-round h-2rem text-sm hover:bg-red-900"
-          @click="exportCSV(false, $event)"
-        />
-      </span>
-    </div> -->
+    <div class="flex justify-content-end mr-3 mt-2">
+      <a href="#" class="text-red-700 cursor-pointer" @click.prevent="toggleControls">
+        {{ showControls ? 'Hide Options' : 'Show Options' }}
+      </a>
+    </div>
+    <div v-if="showControls" class="w-full gap-1 pt-1 flex justify-content-center align-items-center flex-wrap mt-3">
+      <div v-if="props.allowFiltering || props.allowColumnSelection || props.allowExport" class="w-full gap-1 pt-1 flex justify-content-center align-items-center flex-wrap mt-3">
+        <slot name="filterbar"></slot>
+        <PvFloatLabel v-if="props.allowColumnSelection" >
+          <PvMultiSelect
+            id="ms-columns"
+            v-tooltip.top="'Show and hide columns'"
+            :model-value="selectedColumns"
+            :options="inputColumns"
+            option-label="header"
+            :max-selected-labels="3"
+            class="w-2 md:w-10rem"
+            selected-items-label="{0} columns selected"
+            @update:model-value="onColumnToggle"
+          />
+          <label for="ms-columns" class="view-label2">Select Columns</label>
+        </PvFloatLabel>
+        <PvFloatLabel v-if="props.allowColumnSelection">
+          <PvMultiSelect
+            id="ms-freeze"
+            :model-value="frozenColumns"
+            :options="inputColumns"
+            option-label="header"
+            :max-selected-labels="3"
+            class="w-2 md:w-10rem"
+            selected-items-label="{0} columns frozen"
+            :show-toggle-all="false"
+            @update:model-value="onFreezeToggle"
+          />
+          <label for="ms-columns" class="view-label2">Freeze Columns</label>
+        </PvFloatLabel>
+        <span v-if="props.allowExport" class="flex flex-row flex-wrap justify-content-end gap-2 max-h-3 export-wrapper">
+          <PvButton
+            v-tooltip.bottom="'Expand or Compress table rows'"
+            text
+            :label="rowViewMode"
+            class="my-1 m-1 h-3rem text-primary surface-ground border-none border-round h-2rem text-sm hover:bg-gray-300"
+            @click="toggleView"
+          />
+          <PvButton
+            v-if="allowExport"
+            v-tooltip.bottom="
+              `Export scores for ${selectedRows.length} student${
+                selectedRows.length > 1 ? 's' : ''
+              } to CSV file for spreadsheet import`
+            "
+            label="Export Selected"
+            :badge="selectedRows?.length?.toString()"
+            :disabled="selectedRows.length === 0"
+            class="m-1 m-1 h-3rem bg-primary text-white border-none border-round h-2rem text-sm hover:bg-red-900"
+            @click="exportCSV(true, $event)"
+          />
+          <PvButton
+            v-if="allowExport"
+            v-tooltip.bottom="'Export all scores for all students to a CSV file for spreadsheet import.'"
+            label="Export Whole Table"
+            class="m-1 h-3rem bg-primary text-white border-none border-round h-2rem text-sm hover:bg-red-900"
+            @click="exportCSV(false, $event)"
+          />
+        </span>
+      </div>
+    </div>
     <div class="flex flex-column">
       <span style="height: 10px">
         <div class="relative flex justify-content-end mt-0 mr-2 z-1" style="top: 25px; width: 20%; left: 80%">
@@ -405,6 +412,11 @@ const countForVisualize = ref(false); //for starting compress
 const toggleView = () => {
   compressedRows.value = !compressedRows.value;
   increasePadding();
+};
+
+const showControls = ref(false);
+const toggleControls = () => {
+  showControls.value = !showControls.value;
 };
 
 const props = defineProps({
