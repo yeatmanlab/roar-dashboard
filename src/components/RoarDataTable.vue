@@ -8,7 +8,7 @@
         {{ showControls ? 'Hide Options' : 'Show Options' }}
       </a>
     </div>
-    <div v-if="showControls" class="w-full gap-1 pt-1 flex justify-content-center align-items-center flex-wrap mb-3">
+    <div v-if="showControls" class="w-full gap-1 pt-1 flex justify-content-center align-items-center flex-wrap mb-4">
       <div v-if="props.allowFiltering || props.allowColumnSelection || props.allowExport" class="w-full gap-1 pt-1 flex justify-content-center align-items-center flex-wrap mt-3">
         <slot name="filterbar"></slot>
         <PvFloatLabel v-if="props.allowColumnSelection" >
@@ -848,6 +848,10 @@ g {
   margin-bottom: 5px;
 }
 
+.p-datatable-popover-filter {
+  display: none!important;
+}
+
 .export-wrapper {
   max-height: 4rem;
 }
@@ -871,6 +875,10 @@ g {
 
 button.p-column-filter-menu-button.p-link:hover {
   background: var(--surface-500);
+}
+
+.p-datatable .p-datatable-tbody > tr > td {
+  padding: 0.2rem 1rem!important;
 }
 
 .compressed .p-datatable .p-datatable-tbody > tr > td {
