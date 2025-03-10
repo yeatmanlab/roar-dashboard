@@ -117,6 +117,7 @@ async function startTask(selectedAdmin) {
     const gameParams = { ...appKit._taskInfo.variantParams };
     const roarApp = new TaskLauncher(appKit, gameParams, userParams, 'jspsych-target');
 
+    console.log('outside run');
     await roarApp.run().then(async () => {
       // Handle any post-game actions.
       await authStore.completeAssessment(selectedAdmin.value.id, taskId, props.launchId);

@@ -9,7 +9,7 @@ export function usePermissions() {
     // Fixing this issue is a TODO.
     const authStore = useAuthStore();
     const { accessToken } = storeToRefs(authStore);
-    return PermissionsService.canUser(accessToken.value, permission);
+    return PermissionsService?.canUser(accessToken.value, permission);
   };
 
   return {
