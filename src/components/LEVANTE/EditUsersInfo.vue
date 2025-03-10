@@ -9,7 +9,7 @@
     <ul>
       <li><b>month</b> - The month to edit.</li>
       <li><b>year</b> - The year to edit.</li>
-      <li><b>district</b> - The district to edit.</li>
+      <li><b>site</b> - The site to edit.</li>
       <li><b>school</b> - The school to edit.</li>
       <li><b>class</b> - The class to edit.</li>
       <li><b>group</b> - The group to edit.</li>
@@ -31,6 +31,7 @@
           <li>User with specified UID does not exist</li>
           <li>Invalid format for a specific field</li>
           <li>Missing required data</li>
+          <li>Audience is not found</li>
         </ul>
       </div>
     </div>

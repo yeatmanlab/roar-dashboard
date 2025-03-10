@@ -45,11 +45,19 @@
 
         <div class="submit-container">
           <PvButton
+            v-if="!editSuccess"
             :label="activeSubmit ? 'Editing Users' : 'Start Editing'"
             :icon="activeSubmit ? 'pi pi-spin pi-spinner' : ''"
             :disabled="activeSubmit"
             class="bg-primary mb-2 p-3 w-2 text-white border-none border-round h-3rem m-0 hover:bg-red-900"
             @click="submitEdits"
+          />
+          <PvButton
+            v-if="editSuccess"
+            label="Reset Form"
+            icon="pi pi-refresh"
+            class="p-button-secondary mb-2 p-3 w-2 border-round h-3rem m-0"
+            @click="resetForm"
           />
         </div>
       </div>
@@ -57,6 +65,12 @@
       <div v-if="showErrorTable" class="error-container">
         <div class="error-header">
           <h3>Rows with Errors</h3>
+          <PvButton
+            label="Reset Form"
+            icon="pi pi-refresh"
+            class="p-button-secondary"
+            @click="resetForm"
+          />
         </div>
         <PvDataTable
           ref="errorTable"
@@ -102,6 +116,7 @@ const errorUsers = ref([]);
 const errorUserColumns = ref([]);
 const activeSubmit = ref(false);
 const showErrorTable = ref(false);
+const editSuccess = ref(false);
 
 // EDIT USERS
 // Required: uid
@@ -130,7 +145,7 @@ const allFields = [
     },
     {
       field: 'district',
-      header: 'District',
+      header: 'Site',
       dataType: 'string',
     },
     {
@@ -165,7 +180,6 @@ const onFileUpload = async (event) => {
   rawUserFile.value = await csvFileToJson(modifiedFile);
 
   const allColumns = Object.keys(toRaw(rawUserFile.value[0])).map(col => col.toLowerCase());
-  console.log('allColumns: ', allColumns);
 
   // Check if the required column is present  
   const hasUid = allColumns.includes('uid');
@@ -232,7 +246,6 @@ const validateUsers = () => {
   });
 
   if (errorUsers.value.length > 0) {
-    console.log('errorUsers: ', errorUsers.value);
     toast.add({
       severity: 'error',
       summary: 'Missing Fields. See below for details.',
@@ -246,15 +259,14 @@ const submitEdits = async () => {
   try {
 
     const result = await authStore.roarfirekit.editUsers(toRaw(rawUserFile.value));
-    console.log('user edit result:', result);
     
     // Check if there are errors in the result
-    if (result.errors && result.errors.length > 0) {
+    if (result.data.errors && result.data.errors.length > 0) {
       // Clear previous errors
       errorUsers.value = [];
       
       // Process each error and add to errorUsers
-      result.errors.forEach(error => {
+      result.data.errors.forEach(error => {
         // Find the original user data by uid
         const userData = rawUserFile.value.find(user => user.uid === error.uid);
         if (userData) {
@@ -264,24 +276,24 @@ const submitEdits = async () => {
             errorMessage += ` (Field: ${error.field})`;
           }
           
-          // Add to error users
-          addErrorUser(userData, errorMessage);
+          addErrorUser({uid: userData.uid}, errorMessage);
         }
       });
       
       // Show partial success message
       toast.add({
         severity: 'warn',
-        summary: 'Partial Success',
-        detail: `${result.successfulUpdates} of ${result.totalProcessed} users updated successfully. See errors below.`,
+        summary: 'Failed to edit some users',
+        detail: `${result.data.successfulUpdates} of ${result.data.totalProcessed} users updated successfully. See errors below.`,
         life: 5000,
       });
     } else {
       // All updates were successful
+      editSuccess.value = true;
       toast.add({
         severity: 'success',
         summary: 'Success',
-        detail: `${result.successfulUpdates} users edited successfully`,
+        detail: `${result.data.message}`,
         life: 5000,
       });
     }
@@ -319,12 +331,33 @@ function addErrorUser(user, error) {
     // If there are no error users yet, generate the
     //  columns before displaying the table.
     if (_isEmpty(errorUserColumns.value)) {
+      // Generate columns from user data
       errorUserColumns.value = generateColumns(user);
-      errorUserColumns.value.unshift({
+      
+      // Remove uid from its current position
+      const uidColumnIndex = errorUserColumns.value.findIndex(col => col.field === 'uid');
+      let uidColumn = null;
+      
+      if (uidColumnIndex !== -1) {
+        // Extract the uid column
+        uidColumn = errorUserColumns.value.splice(uidColumnIndex, 1)[0];
+      }
+      
+      const errorColumn = {
         dataType: 'string',
         field: 'error',
         header: 'Cause of Error',
-      });
+      };
+      
+      // Reorder columns: uid first, then error, then the rest
+      if (uidColumn) {
+        errorUserColumns.value.unshift(errorColumn); // Add error column first
+        errorUserColumns.value.unshift(uidColumn);   // Then add uid column at the very beginning
+      } else {
+        // If uid column wasn't found for some reason, just add error column
+        errorUserColumns.value.unshift(errorColumn);
+      }
+      
       showErrorTable.value = true;
     }
     // Concat the userObject with the error reason.
@@ -333,6 +366,16 @@ function addErrorUser(user, error) {
       error,
     });
   }
+
+const resetForm = () => {
+  isFileUploaded.value = false;
+  rawUserFile.value = [];
+  errorUsers.value = [];
+  errorUserColumns.value = [];
+  showErrorTable.value = false;
+  activeSubmit.value = false;
+  editSuccess.value = false;
+};
 </script>
 
 <style scoped>
@@ -356,5 +399,8 @@ function addErrorUser(user, error) {
 
 .error-header {
   margin-bottom: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 </style> 
