@@ -51,7 +51,7 @@ jobs:
 
       - name: Build (LEVANTE)
         if: ${{ contains(github.repository, 'levante') }}
-        run: npm ci && npm run build:levante-dev
+        run: npm ci && npm run build:dev
 
       - name: Deploy to Firebase Hosting Channel
         id: firebase-deploy
