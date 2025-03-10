@@ -780,11 +780,9 @@ const emit = defineEmits(['export-all', 'selection', 'reset-filters', 'export-se
 <style>
 
 .options-container {
-    position: relative;
-
   .options-toggle {
     position: absolute;
-    top: -70px;
+    top: 10px;
   }
 }
 
@@ -814,6 +812,10 @@ const emit = defineEmits(['export-all', 'selection', 'reset-filters', 'export-se
   margin-left: 10px;
   margin-top: 5px;
   margin-bottom: 5px;
+}
+
+.p-component {
+  position: relative;
 }
 
 button.p-button.p-component.softer {

@@ -39,7 +39,6 @@
                   :options="allSchools"
                   option-label="name"
                   option-value="id"
-                  :placeholder="schoolPlaceholder"
                   :loading="isLoadingSchools"
                   class="w-full"
                   data-cy="dropdown-parent-school"
