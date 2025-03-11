@@ -357,17 +357,7 @@ export const tasksToDisplayGraphs = ['swr', 'sre', 'pa'];
  *  Raw Only Tasks
  *  A list of tasks to only display raw scores when included in a RoarDataTable.
  */
-export const rawOnlyTasks = [
-  'letter',
-  'cva',
-  'morphology',
-  'vocab',
-  'fluency',
-  'roam-alpaca',
-  'letter-es',
-  'letter-en-ca',
-  'phonics',
-];
+export const rawOnlyTasks = ['letter', 'cva', 'morphology', 'vocab', 'fluency', 'letter-es', 'letter-en-ca', 'phonics'];
 
 /*
  *  Tasks to Display Percent Correct
@@ -399,8 +389,12 @@ export const tasksToDisplayTotalCorrect = [
   'fluency-calf',
   'fluency-arf-es',
   'fluency-calf-es',
-  'roam-alpaca',
 ];
+
+/*
+ *  Tasks to Display total numCorrect and theta scores
+ */
+export const tasksToDisplayThetaScore = ['roam-alpaca'];
 
 /*
  *  Tasks to Display numCorrect - numIncorrect
@@ -527,6 +521,7 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = 
     (tasksToDisplayPercentCorrect.includes(taskId) ||
       tasksToDisplayCorrectIncorrectDifference.includes(taskId) ||
       tasksToDisplayTotalCorrect.includes(taskId)) &&
+    tasksToDisplayThetaScore.includes(taskId) &&
     rawScore !== undefined
   ) {
     return {

@@ -303,6 +303,7 @@ import {
   rawOnlyTasks,
   tasksToDisplayPercentCorrect,
   tasksToDisplayTotalCorrect,
+  tasksToDisplayThetaScore,
   addElementToPdf,
   getScoreKeys,
   gradeOptions,
@@ -520,6 +521,13 @@ function returnColorByReliability(assessment, rawScore, support_level, tag_color
       } else {
         return '#A4DDED';
       }
+    } else if (tasksToDisplayThetaScore.includes(assessment.taskId)) {
+      const test = assessment.scores?.raw?.composite?.test;
+      if (test?.thetaEstimate === undefined || test?.thetaEstimate === '') {
+        return '#EEEEF0';
+      } else {
+        return '#A4DDED';
+      }
     } else if (rawOnlyTasks.includes(assessment.taskId) && rawScore) {
       return 'white';
     }
@@ -547,7 +555,8 @@ const getScoresAndSupportFromAssessment = ({
   if (
     tasksToDisplayCorrectIncorrectDifference.includes(assessment.taskId) ||
     tasksToDisplayPercentCorrect.includes(assessment.taskId) ||
-    tasksToDisplayTotalCorrect.includes(taskId)
+    tasksToDisplayTotalCorrect.includes(taskId) ||
+    tasksToDisplayThetaScore.includes(assessment.taskId)
   ) {
     if (assessment.scores === undefined) {
       support_level = null;
@@ -785,6 +794,15 @@ const computeAssignmentAndRunData = computed(() => {
           currRowScores[taskId].total = _get(assessment, 'scores.computed.composite.roarScore');
           currRowScores[taskId].skills = skills.length > 0 ? skills.join(', ') : 'None';
         }
+        if (tasksToDisplayThetaScore.includes(taskId)) {
+          const numCorrect = assessment.scores?.raw?.composite?.test?.numCorrect ?? 0;
+          const numIncorrect = assessment.scores?.raw?.composite?.test?.numIncorrect;
+          const thetaEstimate = _get(assessment, 'scores.computed.composite.thetaEstimate') ?? '';
+
+          currRowScores[taskId].numCorrect = numCorrect;
+          currRowScores[taskId].numIncorrect = numIncorrect;
+          currRowScores[taskId].thetaEstimate = thetaEstimate;
+        }
 
         // Logic to update runsByTaskIdAcc
         const run = {
@@ -934,6 +952,10 @@ const createExportData = ({ rows, includeProgress = false }) => {
         tableRow[`${taskName} - Num Attempted`] = score.numAttempted;
       } else if (rawOnlyTasks.includes(taskId)) {
         tableRow[`${taskName} - Raw`] = score.rawScore;
+      } else if (tasksToDisplayThetaScore.includes(taskId)) {
+        tableRow[`${taskName} - Num Correct`] = score.numCorrect;
+        tableRow[`${taskName} - Num Incorrect`] = score.numIncorrect;
+        tableRow[`${taskName} - Theta Score`] = score.thetaEstimate;
       } else {
         tableRow[`${taskName} - Percentile`] = score.percentileString;
         tableRow[`${taskName} - Standard`] = score.standardScore;
