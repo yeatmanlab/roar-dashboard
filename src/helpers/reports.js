@@ -123,7 +123,7 @@ export const taskDisplayNames = {
   },
   'fluency-arf': {
     name: 'Single Digit Fluency',
-    publicName: 'ROAM - Math Facts Fluency',
+    publicName: 'ROAM - Math Facts',
     studentFacingName: 'Math Facts Fluency',
     extendedTitle: 'ROAM - Single Digit',
     extendedName: 'Math Fluency - Single Digit',
