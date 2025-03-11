@@ -136,7 +136,8 @@ const { isLoading: isLoadingClaims, data: userClaims } = useUserClaimsQuery({
 
 const computedItems = computed(() => {
   const items = [];
-  const headers = ['Administrations', 'Organizations', 'Users'];
+  // TO DO: REMOVE USERS AFTER NAMING 3 TICKET IS COMPLETED
+  const headers = ['Assignments', 'Users'];
   for (const header of headers) {
     const headerItems = rawActions.value
       .filter((action) => action.category === header)
@@ -168,6 +169,17 @@ const computedItems = computed(() => {
         items: headerItems,
       });
     }
+  }
+  // Audience only has one assoicated page and therefore is not nested within items
+  const audienceAction = rawActions.value.find((action) => action.category === 'Audience');
+  if (audienceAction) {
+    items.push({
+      label: audienceAction.title,
+      icon: audienceAction.icon,
+      command: () => {
+        router.push(audienceAction.buttonLink);
+      },
+    });
   }
 
   return items;
