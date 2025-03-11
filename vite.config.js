@@ -8,7 +8,7 @@ import { config } from '@dotenvx/dotenvx';
 import { fileURLToPath, URL } from 'url';
 import path from 'path';
 import fs from 'fs';
-import { default as FirebaseConfig } from './firebase/admin/firebase.json';
+import { default as FirebaseConfig } from './firebase/admin/firebase.staging.json';
 
 /**
  * Parse server response headers
@@ -23,7 +23,7 @@ import { default as FirebaseConfig } from './firebase/admin/firebase.json';
  */
 function getResponseHeaders() {
   // Find the staging hosting config
-  const stagingHostingConfig = FirebaseConfig.hosting.find((config) => config.target === 'staging');
+  const stagingHostingConfig = FirebaseConfig.hosting;
 
   if (!stagingHostingConfig) {
     console.warn('No staging configuration found in firebase.json');
