@@ -1,8 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { useAuthStore } from '@/store/auth';
-import _get from 'lodash/get';
 import { pageTitlesEN, pageTitlesUS, pageTitlesES, pageTitlesCO } from '@/translations/exports';
 import { APP_ROUTES } from '@/constants/routes';
+import { usePermissions } from '@/composables/usePermissions';
+const { Permissions } = usePermissions();
 
 function removeQueryParams(to) {
   if (Object.keys(to.query).length) return { path: to.path, query: {}, hash: to.hash };
@@ -201,7 +202,10 @@ const routes = [
     path: '/manage-tasks-variants',
     name: 'ManageTasksVariants',
     component: () => import('../pages/ManageTasksVariants.vue'),
-    meta: { pageTitle: 'Manage Tasks', requireAdmin: true, requireSuperAdmin: true },
+    meta: {
+      pageTitle: 'Manage Tasks',
+      permission: Permissions.Tasks.MANAGE,
+    },
   },
   {
     path: APP_ROUTES.REGISTER,
@@ -226,7 +230,10 @@ const routes = [
     path: '/register-students',
     name: 'RegisterStudents',
     component: () => import('../pages/RegisterStudents.vue'),
-    meta: { pageTitle: 'Register Students', requireAdmin: true, requireSuperAdmin: true },
+    meta: {
+      pageTitle: 'Register Students',
+      permission: Permissions.Users.CREATE,
+    },
   },
   {
     path: APP_ROUTES.SIGN_IN,
@@ -282,66 +289,84 @@ const routes = [
     path: '/administrator',
     name: 'Administrator',
     component: () => import('../pages/HomeAdministrator.vue'),
-    meta: { pageTitle: 'Administrator', requireAdmin: true },
+    meta: { pageTitle: 'Administrator', permission: Permissions.Administrators.UPDATE },
   },
   {
     path: '/create-administration',
     name: 'CreateAdministration',
     component: () => import('../components/CreateAdministration.vue'),
-    meta: { pageTitle: 'Create an administration', requireAdmin: true, requireSuperAdmin: true },
+    meta: {
+      pageTitle: 'Create an administration',
+      permission: Permissions.Administrations.CREATE,
+    },
   },
   {
     path: '/edit-administration/:adminId',
     name: 'EditAdministration',
     props: true,
     component: () => import('../components/CreateAdministration.vue'),
-    meta: { pageTitle: 'Edit an Administration', requireAdmin: true, requireSuperAdmin: true },
+    meta: {
+      pageTitle: 'Edit an Administration',
+      permission: Permissions.Administrations.UPDATE,
+    },
   },
   {
     path: '/create-administrator',
     name: 'CreateAdministrator',
     component: () => import('../components/CreateAdministrator.vue'),
-    meta: { pageTitle: 'Create an administrator account', requireAdmin: true },
+    meta: {
+      pageTitle: 'Create an administrator account',
+      permission: Permissions.Administrators.CREATE,
+    },
   },
   {
     path: APP_ROUTES.ORGS_CREATE,
     name: 'CreateOrgs',
     component: () => import('../components/CreateOrgs.vue'),
-    meta: { pageTitle: 'Create an organization', requireAdmin: true, requireSuperAdmin: true },
+    meta: {
+      pageTitle: 'Create an organization',
+      permission: Permissions.Organizations.CREATE,
+    },
   },
   {
     path: APP_ROUTES.ORGS_LIST,
     name: 'ListOrgs',
     component: () => import('../components/ListOrgs.vue'),
-    meta: { pageTitle: 'List organizations', requireAdmin: true },
+    meta: { pageTitle: 'List organizations', permission: Permissions.Organizations.LIST },
   },
   {
     path: '/list-users/:orgType/:orgId/:orgName',
     name: 'ListUsers',
     props: true,
     component: () => import('../components/ListUsers.vue'),
-    meta: { pageTitle: 'List users', requireAdmin: true },
+    meta: { pageTitle: 'List users', permission: Permissions.Users.LIST },
   },
   {
     path: '/administration/:administrationId/:orgType/:orgId',
     name: 'ProgressReport',
     props: true,
     component: () => import('../pages/ProgressReport.vue'),
-    meta: { pageTitle: 'View Administration', requireAdmin: true },
+    meta: {
+      pageTitle: 'View Administration',
+      permission: Permissions.Reports.Progress.READ,
+    },
   },
   {
     path: APP_ROUTES.SCORE_REPORT,
     name: 'ScoreReport',
     props: true,
     component: () => import('../pages/ScoreReport.vue'),
-    meta: { pageTitle: 'View Scores', requireAdmin: true },
+    meta: { pageTitle: 'View Scores', permission: Permissions.Reports.Score.READ },
   },
   {
     path: APP_ROUTES.STUDENT_REPORT,
     name: 'StudentReport',
     props: true,
     component: () => import('../pages/StudentReport.vue'),
-    meta: { pageTitle: 'Student Score Report', requireAdmin: true },
+    meta: {
+      pageTitle: 'Student Score Report',
+      permission: Permissions.Reports.Student.READ,
+    },
   },
   {
     path: APP_ROUTES.ACCOUNT_PROFILE,
@@ -366,7 +391,7 @@ const routes = [
         meta: { requireAdmin: true },
       },
     ],
-    meta: { pageTitle: 'Profile' },
+    meta: { pageTitle: 'Profile', permission: Permissions.Profile.READ },
   },
   {
     path: '/enable-cookies',
@@ -380,7 +405,14 @@ const routes = [
     component: () => import('../pages/NotFound.vue'),
     meta: { pageTitle: 'Whoops! 404 Page!' },
   },
+  {
+    path: '/unauthorized',
+    name: 'Unauthorized',
+    component: () => import('../pages/Unauthorized.vue'),
+    meta: { pageTitle: 'Unauthorized' },
+  },
   // LEVANTE
+  // TODO: LEVANTE Needs to add permissions for their registerUser route.
   {
     path: '/register-users',
     name: 'Register Users',
@@ -422,6 +454,7 @@ router.beforeEach(async (to, from, next) => {
   }
 
   const store = useAuthStore();
+  const { userCan } = usePermissions();
 
   const allowedUnauthenticatedRoutes = [
     'SignIn',
@@ -452,42 +485,16 @@ router.beforeEach(async (to, from, next) => {
     return;
   }
 
-  // Check if the route requires admin rights and the user is an admin.
-  const requiresAdmin = _get(to, 'meta.requireAdmin', false);
-  const requiresSuperAdmin = _get(to, 'meta.requireSuperAdmin', false);
-
-  // Check user roles
-  const isUserAdmin = store.isUserAdmin;
-  const isUserSuperAdmin = store.isUserSuperAdmin;
-
-  // All current conditions:
-  // 1. Super Admin: true, Admin: true
-  // 2. Super Admin: false, Admin: true (Only exits because requiresSuperAdmin is not defined on every route)
-  // 3. Super Admin: false, Admin: false (Allowed routes for all users)
-  // (Also exists because requiresAdmin/requiresSuperAdmin is not defined on every route)
-
-  if (isUserSuperAdmin) {
-    next();
-    return;
-  } else if (isUserAdmin) {
-    // LEVANTE dashboard has opened some pages to administrators before the ROAR dashboard
-    // So if isLevante, then allow regular admins to access any route with requireAdmin = true.
-    // and if ROAR, then prohibit regular admins from accessing any route with requireSuperAdmin = true.
-    if (isLevante && requiresAdmin) {
+  const routePermission = to?.meta?.permission ?? null;
+  if (routePermission) {
+    const hasPermission = userCan(routePermission);
+    if (hasPermission) {
       next();
       return;
-    } else if (requiresSuperAdmin) {
-      next({ name: 'Home' });
+    } else {
+      next({ name: 'Unauthorized' });
       return;
     }
-    next();
-    return;
-  }
-
-  // If we get here, the user is a regular user
-  if (requiresSuperAdmin || requiresAdmin) {
-    next({ name: 'Home' });
-    return;
   }
 
   next();

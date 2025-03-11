@@ -414,7 +414,10 @@
         />
       </section>
 
-      <PvButton type="submit" class="my-4 bg-primary text-white border-none border-round p-2 hover:bg-red-900"
+      <PvButton
+        :disabled="!userCan(Permissions.Tasks.MANAGE)"
+        type="submit"
+        class="my-4 bg-primary text-white border-none border-round p-2 hover:bg-red-900"
         >Update Task</PvButton
       >
     </form>
@@ -439,6 +442,8 @@ import { useAuthStore } from '@/store/auth';
 import useTasksQuery from '@/composables/queries/useTasksQuery';
 import useAddTaskMutation from '@/composables/mutations/useAddTaskMutation';
 import useUpdateTaskMutation from '@/composables/mutations/useUpdateTaskMutation';
+import { usePermissions } from '@/composables/usePermissions';
+const { userCan, Permissions } = usePermissions();
 
 const toast = useToast();
 const initialized = ref(false);
