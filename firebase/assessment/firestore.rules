@@ -303,6 +303,20 @@ service cloud.firestore {
             || isAdminForAssigningOrg('families', adminOrgs));
         }
 
+        function isAdminForAnyUserOrg() {
+          let adminOrgs = get(/databases/$(database)/documents/userClaims/$(request.auth.uid)).data.get('claims', {}).get('adminOrgs', {});
+          return (isAdminForUserOrg('districts', adminOrgs)
+            || isAdminForUserOrg('schools', adminOrgs)
+            || isAdminForUserOrg('classes', adminOrgs)
+            || isAdminForgUserOrg('groups', adminOrgs)
+            || isAdminForUserOrg('families', adminOrgs));
+        }
+
+        function isAdminForUserOrg(orgType, adminOrgs) {
+          let userAssigningOrg = get(/databases/$(database)/documents/users/$(uid)).data.get(orgType, {}).get('current', []);
+          return userAssigningOrg.hasAny(adminOrgs.get(orgType, ['..']))
+        }
+
         function isAdminForReadOrg(orgType, adminOrgs) {
           return resource.data.get(['readOrgs', orgType], []).hasAny(adminOrgs.get(orgType, ['..']));
         }
@@ -321,11 +335,11 @@ service cloud.firestore {
         }
 
         function canCreateRun() {
-          return loggedIn() && (myData() || isAdminForAnyAssigningOrg() || isAdminForAnyReadOrg())
+          return loggedIn() && (myData() || isAdminForAnyUserOrg())
         }
 
         function canUpdateRun() {
-          return loggedIn() && ((myData() && keysNotUpdated(['assigningOrgs', 'readOrgs'])) || isAdminForAnyAssigningOrg() || isAdminForAnyReadOrg())
+          return loggedIn() && ((myData() && keysNotUpdated(['assigningOrgs', 'readOrgs'])) || isAdminForAnyUserOrg()) 
         }
 
         allow read: if canReadRun();
