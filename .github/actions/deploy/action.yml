@@ -57,28 +57,19 @@ runs:
       run: |
         mkdir app
         cp -r roar-dashboard/dist app/dist
-        cp -r roar-dashboard/firebase/admin/* app/
+        case "${{ inputs.firebase-target }}" in
+          "production")
+            cp roar-dashboard/firebase/admin/firebase.production.json app/firebase.json
+            ;;
+          "staging")
+            cp roar-dashboard/firebase/admin/firebase.staging.json app/firebase.json
+            ;;
+          "dev")
+            cp roar-dashboard/firebase/admin/firebase.dev.json app/firebase.json
+            ;;
+        esac
         rm -rf roar-dashboard
         cd app && pwd && ls -la
-
-    # Create Firebase config
-    # Note: This is required in order to use deploy targets. We use deploy target to apply different configurations to
-    # the dev, staging and production environments as defined in the firebase.json config.
-    - name: Create Firebase config
-      shell: bash
-      if: ${{ inputs.firebase-target != '' }}
-      run: |
-        echo '{
-          "projects": {},
-          "etags": {},
-          "targets": {
-            "${{ inputs.firebase-project-id }}": {
-              "hosting": {
-                "${{ inputs.firebase-target }}": ["${{ inputs.firebase-project-id }}"]
-              }
-            }
-          }
-        }' > .firebaserc
 
     # Deploy application
     # Note: Due to a bug in the FirebaseExtended/action-hosting-deploy action, it is not possible to use a conditional
