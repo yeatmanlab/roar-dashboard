@@ -46,7 +46,7 @@
     "@bdelab/roav-crowding": "1.1.23",
     "@bdelab/roav-mep": "1.1.28",
     "@bdelab/roav-ran": "1.0.30",
-    "@levante-framework/core-tasks": "^1.0.0-beta.32",
+    "@levante-framework/core-tasks": "^1.0.0-beta.33",
     "@levante-framework/firekit": "^9.2.1",
     "@primevue/core": "^4.2.4",
     "@primevue/themes": "^4.2.4",
