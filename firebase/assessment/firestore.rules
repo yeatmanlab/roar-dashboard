@@ -88,7 +88,7 @@ service cloud.firestore {
       // - the requestor is a group admin for the groupId of the target. No educational orgs can be set
 
       function commonKeys() {
-        return ['userType', 'birthMonth', 'birthYear', 'createdAt', 'assessmentPid', 'lastUpdated'];
+        return ['userType', 'birthMonth', 'birthYear', 'createdAt', 'assessmentPid', 'lastUpdated', 'lastUpdated', 'tasks', 'variants'];
       }
 
       function educationalOrgKeys() {
@@ -277,7 +277,7 @@ service cloud.firestore {
       }
 
       function isCurrentAdmin() {
-        return keysNotUpdated(readOnlyKeys().concat(userUpdateKeys())) && (isEduAdmin() || isFamilyAdmin() || isGroupAdmin())
+        return keysNotUpdated(readOnlyKeys()) && (isEduAdmin() || isFamilyAdmin() || isGroupAdmin())
       }
 
       function editingMyData() {
