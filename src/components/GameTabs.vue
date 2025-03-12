@@ -1,6 +1,6 @@
 <template>
   <div id="games">
-    <PvTabs v-model:active-index="displayGameIndex" scrollable value="0">
+    <PvTabs v-model:active-index="displayGameIndex" scrollable :value="String(displayGameIndex)">
       <PvTabList>
         <PvTab
           v-for="(game, index) in games"
@@ -143,7 +143,7 @@
   </div>
 </template>
 <script setup>
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import _get from 'lodash/get';
@@ -166,6 +166,7 @@ const props = defineProps({
   userData: { type: Object, required: true },
 });
 const isLevante = import.meta.env.MODE === 'LEVANTE';
+let displayGameIndex = ref(0);
 
 const { t, locale } = useI18n();
 
@@ -263,7 +264,7 @@ const gameIndex = computed(() =>
   }),
 );
 
-const displayGameIndex = computed(() => (gameIndex.value === -1 ? 0 : gameIndex.value));
+displayGameIndex.value = computed(() => (gameIndex.value === -1 ? 0 : gameIndex.value));
 const allGamesComplete = computed(() => gameIndex.value === -1);
 
 const authStore = useAuthStore();
