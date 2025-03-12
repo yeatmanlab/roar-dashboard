@@ -7,7 +7,6 @@
         <li><b>userType</b> - The type of user. Must be one of the following: child, parent, teacher.</li>
         <li><b>parentId<span class="required-field">*</span></b> - The unique identifier for the parent. Start from 1.</li>
         <li><b>teacherId<span class="required-field">*</span></b> - The unique identifier for the teacher. Start from 1.</li>
-        <li><b>Group or District and Class</b> - The name of the group or district and class.</li>
         <li><b>uid</b> - The unique identifier that is returned when the user was registered.</li>
       </ul>
   
