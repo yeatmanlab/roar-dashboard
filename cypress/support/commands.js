@@ -1,5 +1,8 @@
-// Extend Cypress with additional commands.
+import 'cypress-wait-until';
 import '@testing-library/cypress/add-commands';
+import { APP_ROUTES } from '../../src/constants/routes.js';
+
+const baseUrl = Cypress.config().baseUrl;
 
 /**
  * Logs in a user using the provided username and password.
@@ -9,68 +12,172 @@ import '@testing-library/cypress/add-commands';
  * @param {string} password - The password to log in with.
  */
 Cypress.Commands.add('login', (username, password) => {
-  cy.session([username, password], () => {
-    cy.visit('/', { timeout: Cypress.env('timeout') });
-    cy.get('[data-cy="input-username-email"]').type(username, { log: false, timeout: Cypress.env('timeout') });
-    cy.get('[data-cy="input-password"]').type(password, { log: false, timeout: Cypress.env('timeout') });
-    cy.get('button')
-      .contains('Go!', { timeout: Cypress.env('timeout') })
-      .click();
-    cy.log('Login successful.');
-    cy.wait(3000);
-  });
+  cy.session(
+    [username],
+    () => {
+      cy.visit(APP_ROUTES.HOME);
+
+      cy.get('[data-cy="sign-in__username"]').type(username, { log: false });
+      cy.get('[data-cy="sign-in__password"]').type(password, { log: false });
+
+      cy.get('button').contains('Go!').click();
+
+      cy.url().should('eq', `${baseUrl}/`);
+
+      cy.log('Login successful.');
+    },
+    {
+      validate: () => {
+        cy.window().then((win) => {
+          const sessionStorageKeys = Object.keys(win.sessionStorage);
+
+          const adminAuthUserKeyPattern = new RegExp('^firebase:authUser:.+:admin$');
+          const appAuthUserKeyPattern = new RegExp('^firebase:authUser:.+:app$');
+
+          const hasAdminAuthUserKey = sessionStorageKeys.some((key) => adminAuthUserKeyPattern.test(key));
+          const hasAppAuthUserKey = sessionStorageKeys.some((key) => appAuthUserKeyPattern.test(key));
+
+          expect(hasAdminAuthUserKey, 'Session storage should contain a firebase:authUser:{id}:admin key').to.be.true;
+          expect(hasAppAuthUserKey, 'Session storage should contain a firebase:authUser:{id}:app key').to.be.true;
+        });
+      },
+    },
+  );
+
+  cy.visit('/');
+  cy.url().should('eq', `${baseUrl}/`);
 });
 
 /**
- * Logs in a user using email-based authentication flow.
- * Handles different sign-in methods including email/password and magic link.
+ * Logs in a user using Clever SSO.
  *
- * @param {string} username - The email to log in with.
+ * @param {string} schoolName - The name of the school to log in with.
+ * @param {string} username - The username to log in with.
  * @param {string} password - The password to log in with.
  */
-Cypress.Commands.add('loginWithEmail', (username, password) => {
-  cy.session([username, password], () => {
-    cy.visit('/', { timeout: Cypress.env('timeout') });
-    // Set username to email, check for existence of 'sign in using password' button)
-    cy.get('[data-cy="input-username-email"]').type(username, { log: false, timeout: Cypress.env('timeout') });
-    cy.contains('Sign-in using password');
+Cypress.Commands.add('loginWithClever', (schoolName, username, password) => {
+  const CLEVER_SSO_URL = Cypress.env('cleverOAuthLink');
 
-    // Click button to switch to email / password sign in
-    cy.get('[data-cy="sign-in-with-password"]').click();
+  cy.visit(APP_ROUTES.HOME);
+  cy.url().should('eq', `${baseUrl}${APP_ROUTES.SIGN_IN}`);
 
-    // Click button to switch to email magic link sign in
-    cy.get('[data-cy="sign-in-with-email-link"]').click();
+  cy.get('[data-cy="sign-in__clever-sso"]').contains('Clever').click();
 
-    // Click button to switch to email / password sign in and log in
-    cy.get('[data-cy="sign-in-with-password"]').click();
-    cy.get('[data-cy="input-password"]').type(password, { log: false, timeout: Cypress.env('timeout') });
-    cy.get('button')
-      .contains('Go!', { timeout: Cypress.env('timeout') })
-      .click();
-    cy.log('Login successful.').wait(3000);
-  });
+  cy.origin(
+    CLEVER_SSO_URL,
+    {
+      args: {
+        schoolName,
+        username,
+        password,
+      },
+    },
+    ({ schoolName, username, password }) => {
+      cy.get('input[title="School name"]').type(schoolName);
+      cy.get('ul > li').contains(schoolName).click();
+
+      cy.get('input#username').type(username);
+      cy.get('input#password').type(password, { log: false });
+      cy.wait(1000); // Add a delay to simulate user input, as Clever SSO is sensitive to rapid input.
+      cy.get('button#UsernamePasswordForm--loginButton').click();
+    },
+  );
+
+  cy.url().should('include', `${baseUrl}/`);
+
+  cy.get('[data-cy="app-spinner"]').should('be.visible');
+
+  cy.waitForParticipantHomepage();
+
+  cy.url().should('eq', `${baseUrl}/`);
+
+  cy.log('SSO login successful.');
 });
 
 /**
  * Logs out the current user and verifies redirection to the sign-in page.
  */
 Cypress.Commands.add('logout', () => {
-  cy.get('[data-cy="navbar__signout-btn-desktop"]', { timeout: Cypress.env('timeout') }).click();
-  cy.get('h1', { timeout: Cypress.env('timeout') }).should('contain.text', 'Welcome to ROAR!');
-  cy.url({ timeout: Cypress.env('timeout') }).should('eq', `${Cypress.env('baseUrl')}/signin`);
+  cy.get('[data-cy="navbar__signout-btn-desktop"]').click();
+  cy.url().should('eq', `${baseUrl}/signin`);
+  cy.get('h1').should('contain.text', 'Welcome to ROAR!');
   cy.log('Logout successful.');
 });
 
 /**
- * Navigates to a specified page, optionally logging in first.
+ * Navigates to a specified page.
  *
  * @param {string} page - The path to navigate to.
- * @param {boolean} [login=false] - Whether to log in before navigating.
  */
 Cypress.Commands.add('navigateTo', (page) => {
-  cy.log(`Navigating to \`${Cypress.env('baseUrl')}${page}`);
-  cy.visit(page, { timeout: Cypress.env('timeout') });
-  cy.url().should('eq', `${Cypress.env('baseUrl')}${page}`);
+  cy.visit(page);
+  cy.url().should('eq', `${baseUrl}${page}`);
+});
+
+/**
+ * Waits for the administrations list to load.
+ */
+Cypress.Commands.add('waitForAdministrationsList', () => {
+  // Note: As the application currently does not support paginated fetching of administrations, we have to wait for
+  // the whole list to be loaded and that can take a while, hence the long timeout.
+  cy.waitUntil(
+    () => {
+      return Cypress.$('main [data-cy="administrations-list"] ').length;
+    },
+    {
+      errorMsg: 'Failed to find the administrations list before timeout',
+      timeout: 600000,
+      interval: 1000,
+    },
+  );
+});
+
+/**
+ * Waits for the organisations list to load.
+ */
+Cypress.Commands.add('waitForOrganisationsList', () => {
+  cy.waitUntil(
+    () => {
+      return Cypress.$('main [data-cy="orgs-list"] ').length;
+    },
+    {
+      errorMsg: 'Failed to load the orgs list page before timeout',
+    },
+  );
+});
+
+/**
+ * Wait for the participant homepage to load.
+ */
+Cypress.Commands.add('waitForParticipantHomepage', () => {
+  // Note: Especially during SSO auth flows, the application takes a while to load. Until this is resolved, we need to
+  // work with a slightly excessive timeout to ensure we allow the application to complete the auth flow.
+  cy.waitUntil(
+    () => {
+      return Cypress.$('[data-cy="home-participant__administration"]').length > 0;
+    },
+    {
+      errorMsg: 'Failed to load the participant home page before timeout',
+      timeout: 60000,
+      interval: 1000,
+    },
+  );
+});
+
+/**
+ * Wait for the assessment to load.
+ */
+Cypress.Commands.add('waitForAssessmentReadyState', () => {
+  cy.waitUntil(
+    () => {
+      return Cypress.$('.jspsych-btn').length > 0;
+    },
+    {
+      errorMsg: 'Failed to load the assessment before timeout',
+      timeout: 120000,
+      interval: 1000,
+    },
+  );
 });
 
 /**
@@ -155,14 +262,12 @@ Cypress.Commands.add('selectAdministration', function selectAdministration(testA
     cy.log('Retries exceeded, administration not found, exiting test...');
     return;
   }
-  cy.get('[data-cy="dropdown-select-administration"]', { timeout: 2 * Cypress.env('timeout') }).click();
-  cy.get('body', { timeout: 2 * Cypress.env('timeout') })
+  cy.get('[data-cy="dropdown-select-administration"]').click();
+  cy.get('body')
     .invoke('text')
     .then((text) => {
       if (text.includes(testAdministration)) {
-        cy.get('.p-select-list-container', { timeout: 2 * Cypress.env('timeout') })
-          .contains(testAdministration)
-          .click();
+        cy.get('.p-select-list-container').contains(testAdministration).click();
         cy.log('Selected administration:', testAdministration);
         cy.agreeToConsent();
       } else {
@@ -178,17 +283,17 @@ Cypress.Commands.add('selectAdministration', function selectAdministration(testA
  * @param {string} testAdministration - The name of the administration to search for.
  */
 Cypress.Commands.add('getAdministrationCard', (testAdministration) => {
-  cy.get('[data-cy=search-input]', { timeout: Cypress.env('timeout') }).type(`${testAdministration}{enter}`);
-  // cy.get('ul > li').contains(`Name (${sort})`).click();
+  cy.get('[data-cy=search-input]').type(`${testAdministration}{enter}`);
 
-  cy.get('[data-cy="h2-card-admin-title"]', { timeout: Cypress.env('timeout') })
+  cy.get('[data-cy="administration-card"]')
     .filter((index, element) => {
-      return Cypress.$(element).text().includes(testAdministration);
+      return Cypress.$(element).find('[data-cy="administration-card__title"]').text().includes(testAdministration);
     })
-    .should('have.length', 2)
-    .find('button', { timeout: Cypress.env('timeout') })
-    .contains('Show details')
-    .click();
+    .then(($cards) => {
+      cy.wrap($cards).should('have.length.greaterThan', 0);
+
+      cy.wrap($cards.get(0)).find('button').contains('Show details').click();
+    });
 });
 
 /**
@@ -276,15 +381,16 @@ Cypress.Commands.add(
  * @param {Array<string>} userList - The list of users to check.
  */
 Cypress.Commands.add('checkUserList', (userList) => {
-  cy.get('[data-cy="roar-data-table"] tbody tr', { timeout: Cypress.env('timeout') }).each((row) => {
+  cy.get('[data-cy="roar-data-table"] tbody tr').each((row) => {
     cy.wrap(row)
       .find('td.p-datatable-frozen-column')
       .then((cell) => {
-        // The following cleans the non-breaking space character and any whitespace from the cell text
+        // Clean the non-breaking space character and any whitespace from the cell text.
         const cellText = cell
           .text()
           .replace(/&nbsp;/g, '')
           .trim();
+
         expect(userList).to.include(cellText);
       });
   });
@@ -305,24 +411,38 @@ Cypress.Commands.add('playOptionalGame', (game, administration, optional) => {
 });
 
 /**
- * Custom command to check if a partner district exists in the organization list.
+ * Retrieve activation code
  *
- * This command performs the following actions:
- * 1. Locates and clicks on the 'Districts' option in a list.
- * 2. Verifies if the partner district name (retrieved from Cypress environment variables) exists in a specific `div` element.
- * 3. Logs a message confirming that the district exists.
+ * @TODO: Move this to a programmatic utility function for faster activation code retrieval.
  *
- * @param {number} [timeout=10000] - Optional timeout for each command, defaulting to 10 seconds.
+ * @param {string} orgType - The type of the organization.
+ * @param {string} orgName - The name of the organization.
+ * @returns {string} - The activation code.
  */
-Cypress.Commands.add('checkOrgExists', (org, timeout = 10000) => {
-  // Click on the 'Districts' item in the list
-  cy.get('.p-tabview-tablist', { timeout: timeout }).contains(org.tabName, { timeout: timeout }).click();
+Cypress.Commands.add('getActivationCode', (orgType, orgName) => {
+  cy.login(Cypress.env('PARTNER_ADMIN_USERNAME'), Cypress.env('PARTNER_ADMIN_PASSWORD'));
 
-  // Verify the partner district name is present in the div
-  cy.get('div', { timeout }).should('contain.text', Cypress.env('testPartnerDistrictName'), {
-    timeout,
-  });
+  // Wait to ensure that the login is successful.
+  // @NOTE: This is currently required as the app is not immediately ready to navigate to the orgs list page.
+  // @TODO: Remove this arbitrary wait once the app initialisation has been refactored and is stable.
+  cy.wait(2000);
 
-  // Log the district name exists
-  cy.log(`${Cypress.env('testPartnerDistrictName')} exists.`);
+  cy.visit(APP_ROUTES.ORGS_LIST);
+
+  // Wait for the orgs list page to load.
+  cy.waitForOrganisationsList();
+
+  // Navigate to the org tab.
+  cy.get('ul > li').contains(orgType, { matchCase: false }).click();
+
+  // Invoke the activation code retrieval button for the given org.
+  cy.contains('td', orgName).parents('tr').find('[data-cy="data-table__event-btn__show-activation-code"]').click();
+
+  // Invoke the activation code input field to get and return the value.
+  cy.get('[data-cy="activation-code__input"]')
+    .invoke('attr', 'value')
+    .then((value) => {
+      expect(value).to.not.be.empty;
+      return value;
+    });
 });

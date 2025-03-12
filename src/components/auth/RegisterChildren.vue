@@ -50,7 +50,9 @@
               <div class="flex-column gap-2">
                 <div class="text-xs text-gray-500 font-light uppercase">Registering under</div>
                 <div class="flex gap-2 rounded bg-gray-200 p-2">
-                  <div class="text-sm text-gray-600 font-bold">{{ student.orgName }}</div>
+                  <div class="text-sm text-gray-600 font-bold" data-cy="child-registration__org-name">
+                    {{ student.orgName }}
+                  </div>
                 </div>
                 <div>
                   <PvButton

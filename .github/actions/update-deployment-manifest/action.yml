@@ -1,0 +1,48 @@
+# –––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––– #
+# roar-dashboard/update-deployment-manifest
+# –––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––– #
+
+name: Update Deployment Manifest
+description: Updates the deployment manifests in additional ROAR project repositories.
+inputs:
+  project-name:
+    description: 'Name of the project'
+    required: true
+  project-repo:
+    description: 'Repository to update'
+    required: true
+  sha:
+    description: 'SHA to update the deployment manifest with'
+    required: true
+  token:
+    description: 'GitHub PAT to access the repository'
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        repository: ${{ inputs.project-repo }}
+        token: ${{ inputs.token }}
+        path: ${{ inputs.project-name }}
+
+    - name: Update deployment manifest
+      working-directory: ${{ inputs.project-name }}
+      shell: bash
+      run: |
+        yq e -i ".latest.dashboard = \"${{ inputs.sha }}\"" deployment-manifest.yml
+        yq e -i ".latest.firestore = \"${{ inputs.sha }}\"" deployment-manifest.yml
+
+    - name: Create Pull Request
+      uses: peter-evans/create-pull-request@v7
+      with:
+        token: ${{ inputs.token }}
+        path: ${{ inputs.project-name }}
+        commit-message: 'Bump yeatmanlab/roar-dashboard to ${{ inputs.sha }}'
+        add-paths: 'deployment-manifest.yml'
+        branch: 'devops/update-deployment-manifest'
+        title: 'Bump `dashboard` release target'
+        body: |
+          ## Summary
+          This automated PR updates the deployment manifest to the latest [yeatmanlab/roar-dashboard](https://github.com/yeatmanlab/roar-dashboard) target SHA [${{ inputs.sha }}](https://github.com/yeatmanlab/roar-dashboard/commit/${{ inputs.sha }}).

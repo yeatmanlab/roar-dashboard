@@ -1,7 +1,10 @@
 import { languageOptions } from './languageOptions';
-import { signInWithClever } from '../participant/participant-helpers';
 
-const timeout = Cypress.env('timeout');
+const CLEVER_SCHOOL_NAME = Cypress.env('CLEVER_SCHOOL_NAME');
+const CLEVER_USERNAME = Cypress.env('CLEVER_USERNAME');
+const CLEVER_PASSWORD = Cypress.env('CLEVER_PASSWORD');
+const PARTICIPANT_USERNAME = Cypress.env('PARTICIPANT_USERNAME');
+const PARTICIPANT_PASSWORD = Cypress.env('PARTICIPANT_PASSWORD');
 
 function clickButton(selector) {
   cy.get(selector).then(($btn) => {
@@ -16,7 +19,7 @@ function checkGameTab(language) {
 }
 
 function makeChoiceOrContinue(gameCompleteText) {
-  cy.wait(0.2 * timeout);
+  cy.wait(1);
   cy.get('body').then((body) => {
     const text = body.text().replace(/\s\s+/g, ' ').trim();
     cy.log('Found text: ', text);
@@ -38,13 +41,15 @@ function makeChoiceOrContinue(gameCompleteText) {
 
 export function startGame(administration, language, optional, auth) {
   Cypress.on('uncaught:exception', () => false);
-  cy.visit('/', { timeout: 2 * timeout });
+  cy.visit('/');
+
   if (auth === 'username') {
-    cy.login(Cypress.env('participantUsername'), Cypress.env('participantPassword'));
-    cy.visit('/', { timeout: 2 * timeout });
+    cy.login(PARTICIPANT_USERNAME, PARTICIPANT_PASSWORD);
+    cy.visit('/');
   }
+
   if (auth === 'clever') {
-    signInWithClever();
+    cy.loginWithClever(CLEVER_SCHOOL_NAME, CLEVER_USERNAME, CLEVER_PASSWORD);
   }
 
   cy.selectAdministration(administration);
@@ -57,16 +62,15 @@ export function startGame(administration, language, optional, auth) {
   checkGameTab(language);
   cy.visit(languageOptions[language].url);
 
-  cy.get('.jspsych-btn', { timeout: 18 * timeout })
-    .should('be.visible')
-    .click();
+  cy.waitForAssessmentReadyState();
+  cy.get('.jspsych-btn').should('be.visible').click();
 
-  cy.wait(0.1 * timeout);
+  cy.wait(0.1 * Cypress.env('timeout'));
   Cypress.on('uncaught:exception', () => {
     return false;
   });
 
-  cy.get('.go-button', { timeout: timeout }).should('be.visible').click();
+  cy.get('.go-button').should('be.visible').click();
 }
 
 export function playLetter({
@@ -82,7 +86,7 @@ export function playLetter({
   cy.log('Game finished successfully.');
 
   cy.visit('/');
-  cy.wait(0.2 * timeout);
+  cy.wait(1);
   cy.selectAdministration(administration);
 
   if (optional === true) {

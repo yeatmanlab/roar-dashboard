@@ -1,0 +1,61 @@
+# –––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––– #
+# roar-dashboard/deploy-firestore-config
+# –––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––– #
+
+name: Deploy Firestore Config
+description: Deploys the ROAR Firestore indexes and rules configuration to Firebase.
+inputs:
+  firebase-project-id:
+    description: 'The Firebase project ID to deploy to.'
+    required: true
+  gcp-workload-identity-provider:
+    description: 'The GCP workload identity provider to authenticate with.'
+    required: true
+  gcp-service-account-id:
+    description: 'The GCP service account ID to impersonate.'
+    required: true
+  config-directory:
+    description: 'The directory in which the Firestore indexes and rules are located.'
+    required: true
+  commit-sha:
+    description: 'The commit SHA to deploy.'
+    required: false
+
+runs:
+  using: composite
+  steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ inputs.commit-sha || github.sha }}
+        repository: yeatmanlab/roar-dashboard
+        path: roar-dashboard
+
+    # Install Firebase CLI (Bash Installer)
+    - name: Install Firebase CLI
+      shell: bash
+      run: |
+        curl -sL https://firebase.tools | bash
+
+    # Admin Project
+    # Authenticate with GCP using Workload Identity Federation
+    - name: Authenticate with GCP
+      uses: google-github-actions/auth@v2
+      with:
+        project_id: ${{ inputs.firebase-project-id }}
+        workload_identity_provider: ${{ inputs.gcp-workload-identity-provider }}
+        service_account: ${{ inputs.gcp-service-account-id }}
+
+    # Deploy Firestore Rules
+    - name: Deploy Firestore Rules
+      shell: bash
+      working-directory: roar-dashboard/${{ inputs.config-directory }}
+      run: |
+        firebase deploy --only firestore:rules --project ${{ inputs.firebase-project-id }}
+
+    # Deploy Firestore Indexes
+    - name: Deploy Firestore Indexes
+      shell: bash
+      working-directory: roar-dashboard/${{ inputs.config-directory }}
+      run: |
+        firebase deploy --only firestore:indexes --project ${{ inputs.firebase-project-id }}

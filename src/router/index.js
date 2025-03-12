@@ -208,7 +208,7 @@ const routes = [
     },
   },
   {
-    path: '/register',
+    path: APP_ROUTES.REGISTER,
     name: 'Register',
     component: () => import('../pages/RegisterFamilyUsers.vue'),
     props: (route) => ({ code: route.query.code }),
@@ -320,7 +320,7 @@ const routes = [
     },
   },
   {
-    path: '/create-orgs',
+    path: APP_ROUTES.ORGS_CREATE,
     name: 'CreateOrgs',
     component: () => import('../components/CreateOrgs.vue'),
     meta: {
@@ -329,7 +329,7 @@ const routes = [
     },
   },
   {
-    path: '/list-orgs',
+    path: APP_ROUTES.ORGS_LIST,
     name: 'ListOrgs',
     component: () => import('../components/ListOrgs.vue'),
     meta: { pageTitle: 'List organizations', permission: Permissions.Organizations.LIST },
@@ -458,7 +458,6 @@ router.beforeEach(async (to, from, next) => {
 
   const allowedUnauthenticatedRoutes = [
     'SignIn',
-    'SSO', //@TODO: Remove before merging
     'Maintenance',
     'AuthClever',
     'AuthClassLink',
