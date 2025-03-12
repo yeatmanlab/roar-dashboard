@@ -111,7 +111,7 @@ function handleToolTip(_taskId, _toolTip, _colData) {
         _toolTip += 'Num Incorrect: ' + _colData.scores?.[_taskId]?.numIncorrect + '\n';
       }
       if (_colData.scores?.[_taskId]?.thetaEstimate && _colData.scores?.[_taskId]?.thetaEstimate !== '') {
-        _toolTip += 'Theta Estimate: ' + _colData.scores?.[_taskId]?.thetaEstimate + '\n';
+        _toolTip += 'Grade Estimate: ' + _colData.scores?.[_taskId]?.thetaEstimate + '\n';
       }
     } else if (rawOnlyTasks.includes(_taskId) && _colData.scores?.[_taskId]?.rawScore !== undefined) {
       _toolTip += 'Raw Score: ' + _colData.scores?.[_taskId]?.rawScore + '\n';
