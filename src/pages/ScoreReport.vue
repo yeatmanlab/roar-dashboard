@@ -955,7 +955,7 @@ const createExportData = ({ rows, includeProgress = false }) => {
       } else if (tasksToDisplayThetaScore.includes(taskId)) {
         tableRow[`${taskName} - Num Correct`] = score.numCorrect;
         tableRow[`${taskName} - Num Incorrect`] = score.numIncorrect;
-        tableRow[`${taskName} - Theta Score`] = score.thetaEstimate;
+        tableRow[`${taskName} - Grade Estimate`] = score.thetaEstimate;
       } else {
         tableRow[`${taskName} - Percentile`] = score.percentileString;
         tableRow[`${taskName} - Standard`] = score.standardScore;
