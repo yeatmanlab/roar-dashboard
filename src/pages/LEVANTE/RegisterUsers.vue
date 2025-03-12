@@ -198,34 +198,37 @@ const onFileUpload = async (event) => {
   errorTable.value = null;
   errorMissingColumns.value = false;
 
-  // Read the file as text first
+  // Read the file
   const file = event.files[0];
-  const text = await file.text();
   
-  // Split into lines
-  const lines = text.split('\n');
+  // Parse the file directly with csvFileToJson
+  const parsedData = await csvFileToJson(file);
   
-  // Lowercase all columns in header except 'userType'
-  const headers = lines[0].split(',');
-  lines[0] = headers.map(header => 
-    header.trim() === 'userType' ? header : header.toLowerCase()
-  ).join(',');
+  // Check if there's any data
+  if (!parsedData || parsedData.length === 0) {
+    toast.add({
+      severity: 'error',
+      summary: 'Error: Empty File',
+      detail: 'The uploaded file contains no data',
+      life: 5000,
+    });
+    return;
+  }
   
-  // Create a new Blob with modified content
-  const modifiedFile = new Blob([lines.join('\n')], { type: file.type });
-  
-  // Parse the modified file
-  rawUserFile.value = await csvFileToJson(modifiedFile);
+  // Store the parsed data
+  rawUserFile.value = parsedData;
 
   // REGISTRATION
   // Required: userType 
   // Conditional (child): Month, Year 
   // Conditional (Either): Group OR District + School 
 
-  const allColumns = Object.keys(toRaw(rawUserFile.value[0])).map((col) => col !== 'userType' ? col.toLowerCase() : col);
+  // Get all column names from the first row, case-insensitive check for userType
+  const firstRow = toRaw(rawUserFile.value[0]);
+  const allColumns = Object.keys(firstRow).map(col => col.toLowerCase());
 
-  // Check the only required column is present
-  const hasUserType = allColumns.includes('userType');
+  // Check if userType column exists (case-insensitive)
+  const hasUserType = allColumns.includes('usertype');
   if (!hasUserType) {
     toast.add({
       severity: 'error',
@@ -238,10 +241,9 @@ const onFileUpload = async (event) => {
   }
 
   // Check conditional columns are present
-  const hasChild = rawUserFile.value.forEach((user) => {
-    if (user.userType.toLowerCase() === 'child') {
-      return true;
-    }
+  const hasChild = rawUserFile.value.some((user) => {
+    const userTypeValue = Object.keys(user).find(key => key.toLowerCase() === 'usertype');
+    return userTypeValue && user[userTypeValue].toLowerCase() === 'child';
   });
 
   if (hasChild) {
@@ -273,28 +275,42 @@ const onFileUpload = async (event) => {
   }
 
   // Check required fields are not empty
-  const childRequiredInfo = ['userType', 'month', 'year'];
-  const careGiverRequiredInfo = ['userType',];
+  const childRequiredInfo = ['usertype', 'month', 'year'];
+  const careGiverRequiredInfo = ['usertype'];
 
   rawUserFile.value.forEach((user) => {
     const missingFields = [];
-
-    if (user.userType.toLowerCase() === 'child') {
-      childRequiredInfo.forEach((field) => {
-        if (!user[field]) {
-          missingFields.push(field);
+    
+    // Get the actual userType field name (preserving original case)
+    const userTypeField = Object.keys(user).find(key => key.toLowerCase() === 'usertype');
+    
+    if (!userTypeField) {
+      missingFields.push('userType');
+    } else if (user[userTypeField].toLowerCase() === 'child') {
+      childRequiredInfo.forEach((requiredField) => {
+        // Find the actual field name in the user object (case-insensitive)
+        const actualField = Object.keys(user).find(key => key.toLowerCase() === requiredField);
+        if (!actualField || !user[actualField]) {
+          missingFields.push(requiredField === 'usertype' ? 'userType' : requiredField);
         }
       });
-    } else if (user.userType.toLowerCase() === 'parent' || user.userType.toLowerCase() === 'teacher') {
-      careGiverRequiredInfo.forEach((field) => {
-        if (!user[field]) {
-          missingFields.push(field);
+    } else if (user[userTypeField].toLowerCase() === 'parent' || user[userTypeField].toLowerCase() === 'teacher') {
+      careGiverRequiredInfo.forEach((requiredField) => {
+        // Find the actual field name in the user object (case-insensitive)
+        const actualField = Object.keys(user).find(key => key.toLowerCase() === requiredField);
+        if (!actualField || !user[actualField]) {
+          missingFields.push(requiredField === 'usertype' ? 'userType' : requiredField);
         }
       });
     }
-    // Check for group or district and school
-    if (!user.group) {
-      if (!user.district || !user.school) {
+    
+    // Check for group or district and school (case-insensitive)
+    const groupField = Object.keys(user).find(key => key.toLowerCase() === 'group');
+    const districtField = Object.keys(user).find(key => key.toLowerCase() === 'district');
+    const schoolField = Object.keys(user).find(key => key.toLowerCase() === 'school');
+    
+    if (!groupField || !user[groupField]) {
+      if (!districtField || !user[districtField] || !schoolField || !user[schoolField]) {
         missingFields.push('group OR district and school');
       }
     }
@@ -348,13 +364,21 @@ async function submitUsers() {
   errorMessage.value = '';
 
   // Group needs to be an array of strings
-
   const usersToBeRegistered = _cloneDeep(toRaw(rawUserFile.value));
-
 
   // Check orgs exist
   for (const user of usersToBeRegistered) {
-    const { district, school, class: _class, group: groups, } = user;
+    // Find fields case-insensitively
+    const districtField = Object.keys(user).find(key => key.toLowerCase() === 'district');
+    const schoolField = Object.keys(user).find(key => key.toLowerCase() === 'school');
+    const classField = Object.keys(user).find(key => key.toLowerCase() === 'class');
+    const groupField = Object.keys(user).find(key => key.toLowerCase() === 'group');
+    
+    // Get values using the actual field names
+    const district = districtField ? user[districtField] : '';
+    const school = schoolField ? user[schoolField] : '';
+    const _class = classField ? user[classField] : '';
+    const groups = groupField ? user[groupField] : '';
 
     const orgNameMap = {
       district: district ?? '',
@@ -422,10 +446,25 @@ async function submitUsers() {
   let processedUserCount = 0;
   for (const users of chunkedUsersToBeRegistered) {
     try {
+      // Ensure each user has the proper userType field name for the backend
+      const processedUsers = users.map(user => {
+        const processedUser = { ...user };
+        
+        // Find the userType field (case-insensitive)
+        const userTypeField = Object.keys(user).find(key => key.toLowerCase() === 'usertype');
+        
+        // If userType field exists but is not named exactly 'userType', rename it
+        if (userTypeField && userTypeField !== 'userType') {
+          processedUser.userType = user[userTypeField];
+          delete processedUser[userTypeField];
+        }
+        
+        return processedUser;
+      });
 
       // This is the most likely place for an error, due to 
       // permissions, etc. If so, drop to Catch block
-      const res = await authStore.createUsers(users);
+      const res = await authStore.createUsers(processedUsers);
       const currentRegisteredUsers = res.data.data;
       
       // Update only the newly registered users
