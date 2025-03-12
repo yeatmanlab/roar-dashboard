@@ -108,7 +108,6 @@ async function checkConsent() {
 
   consentVersion.value = consentDoc.version;
 
-
   if (!consentStatus?.[consentDoc.version]) {
     confirmText.value = consentDoc.text;
     showConsent.value = true;
@@ -116,7 +115,8 @@ async function checkConsent() {
   }
 
   const legalDocs = consentStatus?.[consentDoc.version] || [];
-  const allSignaturesBeforeAugFirst = legalDocs.length === legalDocs.filter((doc) => isSignedBeforeAugustFirst(doc.dateSigned)).length;
+  const allSignaturesBeforeAugFirst =
+    legalDocs.length === legalDocs.filter((doc) => isSignedBeforeAugustFirst(doc.dateSigned)).length;
 
   if (allSignaturesBeforeAugFirst) {
     confirmText.value = consentDoc.text;
@@ -131,7 +131,6 @@ function isSignedBeforeAugustFirst(signedDate) {
     currentDate.getMonth() < 7
       ? new Date(currentDate.getFullYear() - 1, 7, 1)
       : new Date(currentDate.getFullYear(), 7, 1);
-  console.log('issigned', new Date(signedDate), latestAugust);
   return new Date(signedDate) < latestAugust;
 }
 
