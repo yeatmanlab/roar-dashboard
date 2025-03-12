@@ -217,6 +217,8 @@ const schoolPlaceholder = computed(() => {
   return 'Select a school';
 });
 
+
+// shoudl be a modal instead of a router / page change
 const createOrg = () => router.push({ name: 'CreateOrgs' });
 
 const authStore = useAuthStore();

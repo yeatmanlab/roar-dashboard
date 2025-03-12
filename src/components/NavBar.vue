@@ -32,38 +32,7 @@
             </template>
 
             <template #end>
-              <div class="flex gap-2 align-items-center justify-content-center mr-3">
-                <div v-if="isWideScreen" class="nav-user-wrapper flex align-items-center gap-2 bg-gray-100">
-                  <div class="text-lg font-bold text-gray-600" data-cy="user-display-name">
-                    {{ $t('navBar.greeting') }}, {{ userDisplayName }}!
-                  </div>
-                  <PvButton
-                    text
-                    data-cy="button-sign-out"
-                    class="no-underline h-2 p-1 m-0 text-primary border-none border-round h-2rem text-sm hover:bg-red-900 hover:text-white"
-                    @click="signOut"
-                    >{{ $t('navBar.signOut') }}
-                  </PvButton>
-                </div>
-
-                <PvButton
-                  v-else
-                  data-cy="button-sign-out"
-                  class="no-underline m-0 bg-primary text-white border-none border-round h-2rem text-sm hover:bg-red-900"
-                  @click="signOut"
-                  >{{ $t('navBar.signOut') }}
-                </PvButton>
-
-                <div v-if="authStore.isUserAdmin" class="nav-user-wrapper bg-gray-100">
-                  <router-link :to="{ path: APP_ROUTES.ACCOUNT_PROFILE }">
-                    <button
-                      data-cy="button-profile-info"
-                      class="no-underline p-1 m-0 text-primary border-none border-round cursor-pointer h-2rem w-2rem text-sm hover:bg-red-900 hover:text-white"
-                    >
-                      <i class="pi pi-cog"></i></button
-                  ></router-link>
-                </div>
-              </div>
+              <UserActions :userType="computedUserType"  :name="userDisplayName" :isAdmin="computedIsAdmin" :isSuperAdmin="computedIsSuperAdmin"/>
             </template>
           </PvMenubar>
         </div>
@@ -84,11 +53,14 @@ import PvMenubar from 'primevue/menubar';
 import { useAuthStore } from '@/store/auth';
 import { getSidebarActions } from '@/router/sidebarActions';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
-import useSignOutMutation from '@/composables/mutations/useSignOutMutation';
+// import useSignOutMutation from '@/composables/mutations/useSignOutMutation';
 import { isLevante } from '@/helpers';
 import { APP_ROUTES } from '@/constants/routes';
 import ROARLogo from '@/assets/RoarLogo.vue';
 import Badge from 'primevue/badge';
+import UserActions from './UserActions.vue';
+import useUserType from '@/composables/useUserType';
+
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -98,7 +70,7 @@ const initialized = ref(false);
 const menu = ref();
 const screenWidth = ref(window.innerWidth);
 
-const { mutate: signOut } = useSignOutMutation();
+// const { mutate: signOut } = useSignOutMutation();
 
 let unsubscribe;
 
@@ -113,9 +85,9 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
 
 // @TODO: Replace screen-size handlers with Tailwind/CSS media queries. Currently not possible due to an outdated
 // PrimeVue and Tailwind version. If we cannot update PrimeVue/Tailwind, we should throttle the resize events.
-const isWideScreen = computed(() => {
-  return screenWidth.value > 728;
-});
+// const isWideScreen = computed(() => {
+//   return screenWidth.value > 728;
+// });
 
 const handleResize = () => {
   screenWidth.value = window.innerWidth;
@@ -170,7 +142,7 @@ const computedItems = computed(() => {
       });
     }
   }
-  // Audience only has one assoicated page and therefore is not nested within items
+  // Audience only has one associated page and therefore is not nested within items
   const audienceAction = rawActions.value.find((action) => action.category === 'Audience');
   if (audienceAction) {
     items.push({
@@ -201,14 +173,41 @@ const userDisplayName = computed(() => {
   }
 });
 
-// @TODO: Replace isAdmin and isSuperAdmin with useUserType composable
-const isAdmin = computed(() => {
-  if (userClaims.value?.claims?.super_admin) return true;
-  if (_isEmpty(_union(...Object.values(userClaims.value?.claims?.minimalAdminOrgs ?? {})))) return false;
-  return true;
+const {userType, isAdmin, _ , isSuperAdmin} = useUserType(userClaims);
+
+const computedUserType = computed(() => {
+  if (!userClaims.value) {
+    return '';  // Return an empty string or a default value while loading
+  }
+  return userType.value;  
 });
 
-const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
+const computedIsAdmin = computed(() => {
+  if (!isAdmin.value) {
+    return false;  // Return an empty string or a default value while loading
+  }
+  return isAdmin.value;  
+});
+
+
+const computedIsSuperAdmin = computed(() => {
+  if (!isSuperAdmin.value) {
+    return false;  // Return an empty string or a default value while loading
+  }
+  return isSuperAdmin.value;  
+});
+
+
+
+
+// @TODO: Replace isAdmin and isSuperAdmin with useUserType composable
+// const isAdmin = computed(() => {
+//   if (userClaims.value?.claims?.super_admin) return true;
+//   if (_isEmpty(_union(...Object.values(userClaims.value?.claims?.minimalAdminOrgs ?? {})))) return false;
+//   return true;
+// });
+
+// const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
 
 const isAtHome = computed(() => {
   return router.currentRoute.value.fullPath === '/';
@@ -222,48 +221,50 @@ const rawActions = computed(() => {
   });
 });
 
-let dropdownItems = ref([
-  {
-    label: authStore.isAuthenticated ? 'Home' : 'Log in',
-    icon: authStore.isAuthenticated ? 'pi pi-user' : 'pi pi-sign-in',
-    command: () => {
-      authStore.isAuthenticated ? router.push({ path: APP_ROUTES.HOME }) : router.push({ path: APP_ROUTES.SIGN_IN });
-    },
-  },
-  {
-    label: 'Sign Out',
-    icon: 'pi pi-sign-out',
-    command: () => signOut(),
-  },
-]);
 
-if (authStore.isAuthenticated && roarfirekit.value?.userData?.userType === 'admin') {
-  dropdownItems.value.splice(
-    1,
-    0,
-    {
-      label: 'Student Upload',
-      icon: 'pi pi-users',
-      command: () => {
-        router.push({ name: 'RegisterStudents' });
-      },
-    },
-    {
-      label: 'Query',
-      icon: 'pi pi-cloud-download',
-      command: () => {
-        router.push({ name: 'Query' });
-      },
-    },
-    {
-      label: 'Score Report',
-      icon: 'pi pi-upload',
-      command: () => {
-        router.push({ name: 'UploadScores' });
-      },
-    },
-  );
-}
+// dropdownItems appear unused?
+// let dropdownItems = ref([
+//   {
+//     label: authStore.isAuthenticated ? 'Home' : 'Log in',
+//     icon: authStore.isAuthenticated ? 'pi pi-user' : 'pi pi-sign-in',
+//     command: () => {
+//       authStore.isAuthenticated ? router.push({ path: APP_ROUTES.HOME }) : router.push({ path: APP_ROUTES.SIGN_IN });
+//     },
+//   },
+//   {
+//     label: 'Sign Out',
+//     icon: 'pi pi-sign-out',
+//     command: () => signOut(),
+//   },
+// ]);
+
+// if (authStore.isAuthenticated && roarfirekit.value?.userData?.userType === 'admin') {
+//   dropdownItems.value.splice(
+//     1,
+//     0,
+//     {
+//       label: 'Student Upload',
+//       icon: 'pi pi-users',
+//       command: () => {
+//         router.push({ name: 'RegisterStudents' });
+//       },
+//     },
+//     {
+//       label: 'Query',
+//       icon: 'pi pi-cloud-download',
+//       command: () => {
+//         router.push({ name: 'Query' });
+//       },
+//     },
+//     {
+//       label: 'Score Report',
+//       icon: 'pi pi-upload',
+//       command: () => {
+//         router.push({ name: 'UploadScores' });
+//       },
+//     },
+//   );
+// }
 
 const toggleMenu = (event) => {
   menu.value.toggle(event);
@@ -275,11 +276,4 @@ nav {
   min-width: 100%;
 }
 
-.nav-user-wrapper {
-  display: flex;
-  align-items: center;
-  outline: 1.2px solid rgba(0, 0, 0, 0.1);
-  border-radius: 0.3rem;
-  padding: 0.5rem 0.8rem;
-}
 </style>
