@@ -12,22 +12,12 @@ const sidebarActionOptions = [
   },
   {
     title: 'Audience',
-    // icon: 'pi pi-folder-open',
     buttonLink: { name: 'ListOrgs' },
     requiresSuperAdmin: false,
     requiresAdmin: true,
     project: 'ALL',
     category: 'Audience',
   },
-  // {
-  //   title: 'Create organization',
-  //   icon: 'pi pi-sliders-h',
-  //   buttonLink: { name: 'CreateOrgs' },
-  //   requiresSuperAdmin: true,
-  //   requiresAdmin: true,
-  //   project: 'ALL',
-  //   category: 'Audience',
-  // },
   {
     title: 'View Assignments',
     icon: 'pi pi-list',
