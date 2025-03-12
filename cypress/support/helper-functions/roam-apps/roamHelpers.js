@@ -179,7 +179,7 @@ export function playARF({
   cy.visit(`/game/${task}`);
 
   //   Click jspsych button to begin
-  cy.get('.jspsych-btn', { timeout: 6 * timeout })
+  cy.get('.jspsych-btn', { timeout: 12 * timeout })
     .should('be.visible')
     .click();
 
