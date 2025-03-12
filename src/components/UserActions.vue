@@ -14,7 +14,6 @@
         </div>
         <div v-else class="flex gap-2">
             <!-- Help dropdown -->
-             
             <PvDropdown :options="helpOptions" :optionValue="(o) => o.value" :optionLabel="(o) => o.label"  @change="handleHelpChange">
                 <template #value>
                     <i class="pi pi-question-circle"></i>

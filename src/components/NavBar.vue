@@ -53,7 +53,6 @@ import PvMenubar from 'primevue/menubar';
 import { useAuthStore } from '@/store/auth';
 import { getSidebarActions } from '@/router/sidebarActions';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
-// import useSignOutMutation from '@/composables/mutations/useSignOutMutation';
 import { isLevante } from '@/helpers';
 import { APP_ROUTES } from '@/constants/routes';
 import ROARLogo from '@/assets/RoarLogo.vue';
@@ -69,9 +68,6 @@ const { roarfirekit } = storeToRefs(authStore);
 const initialized = ref(false);
 const menu = ref();
 const screenWidth = ref(window.innerWidth);
-
-// const { mutate: signOut } = useSignOutMutation();
-
 let unsubscribe;
 
 const init = () => {
@@ -82,12 +78,6 @@ const init = () => {
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.roarfirekit.restConfig) init();
 });
-
-// @TODO: Replace screen-size handlers with Tailwind/CSS media queries. Currently not possible due to an outdated
-// PrimeVue and Tailwind version. If we cannot update PrimeVue/Tailwind, we should throttle the resize events.
-// const isWideScreen = computed(() => {
-//   return screenWidth.value > 728;
-// });
 
 const handleResize = () => {
   screenWidth.value = window.innerWidth;
@@ -177,14 +167,14 @@ const {userType, isAdmin, _ , isSuperAdmin} = useUserType(userClaims);
 
 const computedUserType = computed(() => {
   if (!userClaims.value) {
-    return '';  // Return an empty string or a default value while loading
+    return ''; 
   }
   return userType.value;  
 });
 
 const computedIsAdmin = computed(() => {
   if (!isAdmin.value) {
-    return false;  // Return an empty string or a default value while loading
+    return false;  
   }
   return isAdmin.value;  
 });
@@ -192,22 +182,10 @@ const computedIsAdmin = computed(() => {
 
 const computedIsSuperAdmin = computed(() => {
   if (!isSuperAdmin.value) {
-    return false;  // Return an empty string or a default value while loading
+    return false;  
   }
   return isSuperAdmin.value;  
 });
-
-
-
-
-// @TODO: Replace isAdmin and isSuperAdmin with useUserType composable
-// const isAdmin = computed(() => {
-//   if (userClaims.value?.claims?.super_admin) return true;
-//   if (_isEmpty(_union(...Object.values(userClaims.value?.claims?.minimalAdminOrgs ?? {})))) return false;
-//   return true;
-// });
-
-// const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
 
 const isAtHome = computed(() => {
   return router.currentRoute.value.fullPath === '/';
@@ -220,51 +198,6 @@ const rawActions = computed(() => {
     includeHomeLink: !isAtHome.value,
   });
 });
-
-
-// dropdownItems appear unused?
-// let dropdownItems = ref([
-//   {
-//     label: authStore.isAuthenticated ? 'Home' : 'Log in',
-//     icon: authStore.isAuthenticated ? 'pi pi-user' : 'pi pi-sign-in',
-//     command: () => {
-//       authStore.isAuthenticated ? router.push({ path: APP_ROUTES.HOME }) : router.push({ path: APP_ROUTES.SIGN_IN });
-//     },
-//   },
-//   {
-//     label: 'Sign Out',
-//     icon: 'pi pi-sign-out',
-//     command: () => signOut(),
-//   },
-// ]);
-
-// if (authStore.isAuthenticated && roarfirekit.value?.userData?.userType === 'admin') {
-//   dropdownItems.value.splice(
-//     1,
-//     0,
-//     {
-//       label: 'Student Upload',
-//       icon: 'pi pi-users',
-//       command: () => {
-//         router.push({ name: 'RegisterStudents' });
-//       },
-//     },
-//     {
-//       label: 'Query',
-//       icon: 'pi pi-cloud-download',
-//       command: () => {
-//         router.push({ name: 'Query' });
-//       },
-//     },
-//     {
-//       label: 'Score Report',
-//       icon: 'pi pi-upload',
-//       command: () => {
-//         router.push({ name: 'UploadScores' });
-//       },
-//     },
-//   );
-// }
 
 const toggleMenu = (event) => {
   menu.value.toggle(event);
