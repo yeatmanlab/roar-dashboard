@@ -18,6 +18,7 @@ import packageLockJson from '../../../package-lock.json';
 const props = defineProps({
   taskId: { type: String, default: 'fluency-arf' },
   language: { type: String, default: 'en' },
+  launchId: { type: String, default: null },
 });
 
 let TaskLauncher;
@@ -45,9 +46,12 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.roarfirekit.restConfig) init();
 });
 
-const { isLoading: isLoadingUserData, data: userData } = useUserStudentDataQuery({
-  enabled: initialized,
-});
+const { isLoading: isLoadingUserData, data: userData } = useUserStudentDataQuery(
+  {
+    enabled: initialized,
+  },
+  props.launchId,
+);
 
 // The following code intercepts the back button and instead forces a refresh.
 // We add { once: true } to prevent an infinite loop.
@@ -96,7 +100,7 @@ async function startTask(selectedAdmin) {
       }
     }, 100);
 
-    const appKit = await authStore.roarfirekit.startAssessment(selectedAdmin.value.id, taskId, version);
+    const appKit = await authStore.roarfirekit.startAssessment(selectedAdmin.value.id, taskId, version, props.launchId);
 
     const userDob = _get(userData.value, 'studentData.dob');
     const userDateObj = new Date(userDob);
@@ -110,11 +114,11 @@ async function startTask(selectedAdmin) {
 
     const gameParams = { ...appKit._taskInfo.variantParams };
 
-    const roarApp = new TaskLauncher(appKit, gameParams, userParams, 'jspsych-target');
+    const roarApp = new TaskLauncher(appKit, gameParams, userParams, 'jspsych-target', props.launchId);
 
     await roarApp.run().then(async () => {
       // Handle any post-game actions.
-      await authStore.completeAssessment(selectedAdmin.value.id, taskId);
+      await authStore.completeAssessment(selectedAdmin.value.id, taskId, props.launchId);
 
       // Navigate to home, but first set the refresh flag to true.
       gameStore.requireHomeRefresh();

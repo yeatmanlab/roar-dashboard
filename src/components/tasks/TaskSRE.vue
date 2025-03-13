@@ -46,9 +46,12 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.roarfirekit.restConfig) init();
 });
 
-const { isLoading: isLoadingUserData, data: userData } = useUserStudentDataQuery({
-  enabled: initialized,
-});
+const { isLoading: isLoadingUserData, data: userData } = useUserStudentDataQuery(
+  {
+    enabled: initialized,
+  },
+  props.launchId,
+);
 
 // The following code intercepts the back button and instead forces a refresh.
 // We add { once: true } to prevent an infinite loop.
