@@ -100,8 +100,6 @@ async function startTask(selectedAdmin) {
       }
     }, 100);
 
-    // todo: add additional parameters to allow startAssessment for an external participant,
-    // only if the participant is a user under the parent
     const appKit = await authStore.roarfirekit.startAssessment(selectedAdmin.value.id, taskId, version, props.launchId);
 
     const userDob = _get(userData.value, 'studentData.dob');
@@ -117,7 +115,6 @@ async function startTask(selectedAdmin) {
     const gameParams = { ...appKit._taskInfo.variantParams };
     const roarApp = new TaskLauncher(appKit, gameParams, userParams, 'jspsych-target');
 
-    console.log('outside run');
     await roarApp.run().then(async () => {
       // Handle any post-game actions.
       await authStore.completeAssessment(selectedAdmin.value.id, taskId, props.launchId);
@@ -128,9 +125,9 @@ async function startTask(selectedAdmin) {
     });
   } catch (error) {
     console.error('An error occurred while starting the task:', error);
-    // alert(
-    //   'An error occurred while starting the task. Please refresh the page and try again. If the error persists, please submit an issue report.',
-    // );
+    alert(
+      'An error occurred while starting the task. Please refresh the page and try again. If the error persists, please submit an issue report.',
+    );
   }
 }
 </script>

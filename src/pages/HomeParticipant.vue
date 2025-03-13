@@ -178,7 +178,6 @@ const adminOrgIntersection = computed(() => {
 
 const orgType = ref('');
 const orgIds = ref('');
-console.log('calledhighestadmin', adminOrgIntersection.value);
 
 const isOrgIntersectionReady = ref(false);
 
