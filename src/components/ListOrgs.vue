@@ -392,21 +392,11 @@ const exportOrgUsers = async (orgType) => {
 const tableColumns = computed(() => {
   const columns = [
     { field: 'name', header: 'Name', dataType: 'string', pinned: true, sort: true },
-    { field: 'abbreviation', header: 'Abbreviation', dataType: 'string', sort: true },
-    { field: 'address.formattedAddress', header: 'Address', dataType: 'string', sort: true },
-    { field: 'tags', header: 'Tags', dataType: 'array', chip: true, sort: false },
   ];
 
   if (['districts', 'schools'].includes(activeOrgType.value)) {
     columns.push(
-      { field: 'mdrNumber', header: 'MDR Number', dataType: 'string', sort: false },
-      { field: 'ncesId', header: 'NCES ID', dataType: 'string', sort: false },
     );
-  }
-
-  if (['districts', 'schools', 'classes'].includes(activeOrgType.value)) {
-    columns.push({ field: 'clever', header: 'Clever', dataType: 'boolean', sort: false });
-    columns.push({ field: 'classlink', header: 'ClassLink', dataType: 'boolean', sort: false });
   }
 
   columns.push(
@@ -424,14 +414,6 @@ const tableColumns = computed(() => {
       button: true,
       eventName: 'edit-button',
       buttonIcon: 'pi pi-pencil',
-      sort: false,
-    },
-    {
-      header: 'SignUp Code',
-      buttonLabel: 'Invite Users',
-      button: true,
-      eventName: 'selected-org-id',
-      buttonIcon: 'pi pi-send mr-2',
       sort: false,
     },
     {
