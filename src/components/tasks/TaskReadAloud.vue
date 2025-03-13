@@ -129,7 +129,7 @@ async function startTask(selectedAdmin) {
 }
 </script>
 <style>
-@import '@bdelab/roar-readaloud/lib/resources/roar-readloud.css';
+@import '@bdelab/roar-readaloud/lib/resources/roar-readaloud.css';
 
 .game-target {
   position: absolute;
