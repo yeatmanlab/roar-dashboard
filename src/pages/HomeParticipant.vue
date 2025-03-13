@@ -552,20 +552,26 @@ watch(surveyDependenciesLoaded, async (isLoaded) => {
   // Fetch child docs for parent or class docs for teacher
   if ((userType.value === 'parent' || userType.value === 'teacher')) {
     try {
-      const fetchConfig = userType.value === 'parent'
-        ? userData.value.childIds.map(childId => ({
-            collection: 'users',
-            docId: childId,
-            select: ['birthMonth', 'birthYear'],
-          }))
-        : userData.value.classes.current.map(classId => ({
-            collection: 'classes',
-            docId: classId,
-            select: ['name'],
-          }));
+      let fetchConfig = [];
+      // Only fetch docs if the user has children or classes. It's possible the user has no children or classes linked yet.
+      if (userType.value === 'parent' && userData.value.childIds) {
+        fetchConfig = userData.value.childIds.map(childId => ({
+          collection: 'users',
+          docId: childId,
+          select: ['birthMonth', 'birthYear'],
+        }));
+      } else if (userType.value === 'teacher' && userData.value.classes?.current) {
+        fetchConfig = userData.value.classes.current.map(classId => ({
+          collection: 'classes',
+          docId: classId,
+          select: ['name'],
+        }));
+      }
       
-      const res = await fetchDocsById(fetchConfig);
-      surveyStore.setSpecificSurveyRelationData(res);
+      if (fetchConfig.length > 0) {
+        const res = await fetchDocsById(fetchConfig);
+        surveyStore.setSpecificSurveyRelationData(res);
+      }
     } catch (error) {
       console.error('Error fetching relation data:', error);
     }
