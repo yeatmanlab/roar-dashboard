@@ -6,6 +6,12 @@
         <div class="flex justify-content-between mb-2">
           <div class="flex align-items-center gap-3">
             <div class="admin-page-header">Audience</div>
+             <PvButton
+              class="bg-primary text-white border-none p-2 ml-auto"
+              @click="addUsers"
+            >
+              Add Users
+            </PvButton>
           </div>
         </div>
       </div>
@@ -178,6 +184,7 @@ import { CSV_EXPORT_MAX_RECORD_COUNT } from '@/constants/csvExport';
 import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts.js';
 import RoarDataTable from '@/components/RoarDataTable.vue';
 import PvFloatLabel from 'primevue/floatlabel';
+import { useRouter } from 'vue-router';
 
 const initialized = ref(false);
 const selectedDistrict = ref(undefined);
@@ -190,6 +197,7 @@ const isEditModalEnabled = ref(false);
 const currentEditOrgId = ref(null);
 const localOrgData = ref(null);
 const isSubmitting = ref(false);
+const router = useRouter();
 
 const districtPlaceholder = computed(() => {
   if (isLoadingDistricts.value) {
@@ -197,6 +205,10 @@ const districtPlaceholder = computed(() => {
   }
   return 'Select a district';
 });
+
+const addUsers = () => {
+  router.push({ name: 'Register Users' });
+};
 
 const schoolPlaceholder = computed(() => {
   if (isLoadingSchools.value) {
