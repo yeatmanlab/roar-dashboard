@@ -143,6 +143,14 @@
           consent-type="consent"
           :on-confirm="handleConsentAccept"
         />
+        <div v-if="isAdobe">
+          <AdobeSignDialog
+            :is-adobe="isAdobe"
+            :is-adult="true"
+            :parent-email="state.ParentEmail"
+            @consent-signed="updateAdobe"
+          />
+        </div>
         <div class="form-submit2">
           <PvButton
             type="submit"
@@ -183,12 +191,14 @@ import PvInputText from 'primevue/inputtext';
 import PvPassword from 'primevue/password';
 import { useAuthStore } from '@/store/auth';
 import ConsentModal from '../ConsentModal.vue';
+import AdobeSignDialog from '../AdobeSignDialog.vue';
 
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
 const isCaptchaverified = ref(null);
 const consentText = ref(null);
 const dialogMessage = ref('');
+const isAdobe = ref(false);
 
 const isDialogVisible = ref(false);
 
@@ -200,12 +210,17 @@ const closeErrorDialog = () => {
   isDialogVisible.value = false;
 };
 
-defineProps({
+const props = defineProps({
   isRegistering: { type: Boolean, default: true },
+  isAdobeSign: { type: Boolean, default: false },
   consent: { type: Object, default: null },
 });
 
 const emit = defineEmits(['submit']);
+
+function updateAdobe() {
+  isAdobe.value = false;
+}
 
 const state = reactive({
   // activationCode: "",
@@ -257,6 +272,9 @@ const handleFormSubmit = (isFormValid) => {
     return;
   }
   validateRoarEmail();
+  if (submitted.value) {
+    emit('submit', state);
+  }
 };
 
 const validateRoarEmail = async () => {
@@ -281,12 +299,20 @@ async function handleConsentAccept() {
   state.accept = true;
 }
 
-async function getConsent() {
+async function getConsent(isFormValid) {
   try {
-    const consentDoc = await authStore.getLegalDoc('consent-behavioral-eye-tracking');
-    consentText.value = consentDoc.text;
-    showConsent.value = true;
-    handleCheckCaptcha();
+    if (props.isAdobeSign) {
+      isAdobe.value = props.isAdobeSign;
+    } else {
+      const consentDoc = await authStore.getLegalDoc('consent-video-audio-eye-tracking');
+      consentText.value = consentDoc.text;
+      showConsent.value = true;
+      handleCheckCaptcha();
+    }
+
+    if (isFormValid) {
+      handleFormSubmit(isFormValid);
+    }
   } catch (error) {
     console.error('Failed to fetch consent form: ', error);
     throw new Error('Could not fetch consent form');
@@ -295,6 +321,9 @@ async function getConsent() {
 
 const isNextButtonDisabled = computed(() => {
   // Return true (button disabled) if isCaptchaverified is null or undefined
+  if (props.isAdobeSign === true) {
+    return false;
+  }
   return isCaptchaverified.value === null || isCaptchaverified.value === undefined;
 });
 </script>
