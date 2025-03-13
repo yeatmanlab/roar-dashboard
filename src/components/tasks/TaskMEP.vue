@@ -114,7 +114,7 @@ async function startTask(selectedAdmin) {
 
     const gameParams = { ...appKit._taskInfo.variantParams };
 
-    const roarApp = new TaskLauncher(appKit, gameParams, userParams, 'card-title', props.launchId);
+    const roarApp = new TaskLauncher(appKit, gameParams, userParams, 'card-title');
 
     await roarApp.run().then(async () => {
       // Handle any post-game actions.

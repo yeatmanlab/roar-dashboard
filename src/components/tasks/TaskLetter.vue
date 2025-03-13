@@ -114,11 +114,11 @@ async function startTask(selectedAdmin) {
 
     const gameParams = { ...appKit._taskInfo.variantParams };
 
-    const roarApp = new TaskLauncher(appKit, gameParams, userParams, 'jspsych-target', props.launchId);
+    const roarApp = new TaskLauncher(appKit, gameParams, userParams, 'jspsych-target');
 
     await roarApp.run().then(async () => {
       // Handle any post-game actions.
-      await authStore.completeAssessment(selectedAdmin.value.id, taskId, props.launchiI);
+      await authStore.completeAssessment(selectedAdmin.value.id, taskId, props.launchId);
 
       // Navigate to home, but first set the refresh flag to true.
       gameStore.requireHomeRefresh();

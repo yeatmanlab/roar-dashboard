@@ -114,7 +114,7 @@ async function startTask(selectedAdmin) {
 
     const gameParams = { ...appKit._taskInfo.variantParams };
 
-    const levanteTask = new levanteTaskLauncher(appKit, gameParams, userParams, 'jspsych-target', props.launchId);
+    const levanteTask = new levanteTaskLauncher(appKit, gameParams, userParams, 'jspsych-target');
 
     await levanteTask.run().then(async () => {
       // Handle any post-game actions.
