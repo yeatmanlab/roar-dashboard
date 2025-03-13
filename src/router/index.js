@@ -216,6 +216,17 @@ const routes = [
     meta: { pageTitle: 'SWR' },
   },
   {
+    path: '/game/swr-es',
+    name: 'SWR-ES',
+    component: () => import('../components/tasks/TaskSWR.vue'),
+    props: (route) => ({
+      taskId: 'swr-es',
+      language: 'es',
+      launchId: route.params.launchId, // Accessing the launchId prop
+    }),
+    meta: { pageTitle: 'SWR (ES)' },
+  },
+  {
     path: '/launch/:launchId/game/pa',
     name: 'Launch PA',
     component: () => import('../components/tasks/TaskPA.vue'),
@@ -225,6 +236,17 @@ const routes = [
       launchId: route.params.launchId, // Accessing the launchId prop
     }),
     meta: { pageTitle: 'PA' },
+  },
+  {
+    path: '/game/pa-es',
+    name: 'PA-ES',
+    component: () => import('../components/tasks/TaskPA.vue'),
+    props: (route) => ({
+      taskId: 'pa-es',
+      language: 'es',
+      launchId: route.params.launchId, // Accessing the launchId prop
+    }),
+    meta: { pageTitle: 'PA-ES' },
   },
   {
     path: '/launch/:launchId/game/sre',
@@ -249,8 +271,52 @@ const routes = [
     meta: { pageTitle: 'Letter' },
   },
   {
-    path: '/launch/:launchId/game/cva',
-    name: 'Launch Cva',
+    path: '/game/letter-es',
+    name: 'Letter-ES',
+    component: () => import('../components/tasks/TaskLetter.vue'),
+    props: (route) => ({
+      taskId: 'letter-es',
+      language: 'es',
+      launchId: route.params.launchId, // Accessing the launchId prop
+    }),
+    meta: { pageTitle: 'Letter-ES' },
+  },
+  {
+    path: '/game/letter-en-ca',
+    name: 'Letter-EN-CA',
+    component: () => import('../components/tasks/TaskLetter.vue'),
+    props: (route) => ({
+      taskId: 'letter-en-ca',
+      language: 'en-ca',
+      launchId: route.params.launchId, // Accessing the launchId prop
+    }),
+    meta: { pageTitle: 'Letter-EN-CA' },
+  },
+  {
+    path: '/game/multichoice',
+    name: 'Multichoice',
+    component: () => import('../components/tasks/TaskMultichoice.vue'),
+    props: (route) => ({
+      taskId: 'multichoice',
+      language: 'en',
+      launchId: route.params.launchId, // Accessing the launchId prop
+    }),
+    meta: { pageTitle: 'Multichoice' },
+  },
+  {
+    path: '/game/morphology',
+    name: 'Morphology',
+    component: () => import('../components/tasks/TaskMultichoice.vue'),
+    props: (route) => ({
+      taskId: 'morphology',
+      language: 'en',
+      launchId: route.params.launchId, // Accessing the launchId prop
+    }),
+    meta: { pageTitle: 'Morphology' },
+  },
+  {
+    path: '/game/cva',
+    name: 'Cva',
     component: () => import('../components/tasks/TaskMultichoice.vue'),
     props: (route) => ({
       taskId: 'cva',
