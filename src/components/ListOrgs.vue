@@ -12,6 +12,12 @@
             >
               Add Users
             </PvButton>
+            <PvButton
+              class="bg-primary text-white border-none p-2 ml-auto"
+              @click="newGroup"
+            >
+              New Group
+            </PvButton>
           </div>
         </div>
       </div>
@@ -208,6 +214,10 @@ const districtPlaceholder = computed(() => {
 
 const addUsers = () => {
   router.push({ name: 'Register Users' });
+};
+
+const newGroup = () => {
+  router.push({ name: 'CreateOrgs' });
 };
 
 const schoolPlaceholder = computed(() => {
