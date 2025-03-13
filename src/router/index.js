@@ -217,7 +217,7 @@ const routes = [
   },
   {
     path: '/game/swr-es',
-    name: 'SWR-ES',
+    name: 'Launch SWR-ES',
     component: () => import('../components/tasks/TaskSWR.vue'),
     props: (route) => ({
       taskId: 'swr-es',
@@ -239,7 +239,7 @@ const routes = [
   },
   {
     path: '/game/pa-es',
-    name: 'PA-ES',
+    name: 'Launch PA-ES',
     component: () => import('../components/tasks/TaskPA.vue'),
     props: (route) => ({
       taskId: 'pa-es',
@@ -271,8 +271,8 @@ const routes = [
     meta: { pageTitle: 'Letter' },
   },
   {
-    path: '/game/letter-es',
-    name: 'Letter-ES',
+    path: '/launch/:launchId/game/letter-es',
+    name: 'Launch Letter-ES',
     component: () => import('../components/tasks/TaskLetter.vue'),
     props: (route) => ({
       taskId: 'letter-es',
@@ -282,7 +282,7 @@ const routes = [
     meta: { pageTitle: 'Letter-ES' },
   },
   {
-    path: '/game/letter-en-ca',
+    path: '/launch/:launchId/game/letter-en-ca',
     name: 'Letter-EN-CA',
     component: () => import('../components/tasks/TaskLetter.vue'),
     props: (route) => ({
@@ -293,8 +293,8 @@ const routes = [
     meta: { pageTitle: 'Letter-EN-CA' },
   },
   {
-    path: '/game/multichoice',
-    name: 'Multichoice',
+    path: '/launch/:launchId/game/multichoice',
+    name: 'Launch Multichoice',
     component: () => import('../components/tasks/TaskMultichoice.vue'),
     props: (route) => ({
       taskId: 'multichoice',
@@ -304,8 +304,8 @@ const routes = [
     meta: { pageTitle: 'Multichoice' },
   },
   {
-    path: '/game/morphology',
-    name: 'Morphology',
+    path: '/launch/:launchId/game/morphology',
+    name: 'Launch Morphology',
     component: () => import('../components/tasks/TaskMultichoice.vue'),
     props: (route) => ({
       taskId: 'morphology',
@@ -315,8 +315,8 @@ const routes = [
     meta: { pageTitle: 'Morphology' },
   },
   {
-    path: '/game/cva',
-    name: 'Cva',
+    path: '/launch/:launchId/game/cva',
+    name: 'Launch Cva',
     component: () => import('../components/tasks/TaskMultichoice.vue'),
     props: (route) => ({
       taskId: 'cva',
@@ -370,6 +370,17 @@ const routes = [
     meta: { pageTitle: 'ROAM-CALF' },
   },
   {
+    path: '/game/fluency-calf-es',
+    name: 'Launch Fluency-CALF-ES',
+    component: () => import('../components/tasks/TaskRoam.vue'),
+    props: (route) => ({
+      taskId: 'fluency-calf-es',
+      language: 'es',
+      launchId: route.params.launchId, // Accessing the launchId prop
+    }),
+    meta: { pageTitle: 'ROAM-CALF ES' },
+  },
+  {
     path: '/launch/:launchId/game/roam-alpaca',
     name: 'Launch Fluency-Alpaca',
     component: () => import('../components/tasks/TaskRoam.vue'),
@@ -406,7 +417,7 @@ const routes = [
   },
   {
     path: '/launch/:launchId/game/ran',
-    name: 'RAN',
+    name: 'Launch RAN',
     component: () => import('../components/tasks/TaskRan.vue'),
     props: (route) => ({
       taskId: 'ran',
@@ -417,7 +428,7 @@ const routes = [
   },
   {
     path: '/launch/:launchId/game/crowding',
-    name: 'Crowding',
+    name: 'Launch Crowding',
     component: () => import('../components/tasks/TaskCrowding.vue'),
     props: (route) => ({
       taskId: 'crowding',
@@ -428,7 +439,7 @@ const routes = [
   },
   {
     path: '/launch/:launchId/game/roav-mep',
-    name: 'MEP',
+    name: 'Launch MEP',
     component: () => import('../components/tasks/TaskMEP.vue'),
     props: (route) => ({
       taskId: 'roav-mep',
