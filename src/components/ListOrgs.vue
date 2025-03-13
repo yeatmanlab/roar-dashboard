@@ -5,7 +5,7 @@
       <div class="flex flex-column mb-5">
         <div class="flex justify-content-between mb-2">
           <div class="flex align-items-center gap-3">
-            <div class="admin-page-header">Audience</div>
+            <div class="admin-page-header mr-4">Audience</div>
              <PvButton
               class="bg-primary text-white border-none p-2 ml-auto"
               @click="addUsers"
@@ -35,7 +35,6 @@
                   :options="allDistricts"
                   option-label="name"
                   option-value="id"
-                  :placeholder="districtPlaceholder"
                   :loading="isLoadingDistricts"
                   class="w-full"
                   data-cy="dropdown-parent-district"
