@@ -27,6 +27,7 @@ export const useAuthStore = () => {
         showOptionalAssessments: false,
         adminAuthStateListener: null,
         appAuthStateListener: null,
+        accessToken: null,
       };
     },
     getters: {
@@ -77,6 +78,7 @@ export const useAuthStore = () => {
           if (user) {
             this.localFirekitInit = true;
             this.firebaseUser.adminFirebaseUser = user;
+            this.accessToken = user.accessToken;
           } else {
             this.firebaseUser.adminFirebaseUser = null;
           }

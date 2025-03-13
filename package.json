@@ -1,7 +1,7 @@
 {
   "name": "roar-dashboard",
   "private": true,
-  "version": "3.5.1",
+  "version": "3.6.0",
   "type": "module",
   "scripts": {
     "build": "export VITE_FIREBASE_DATA_SOURCE=live && vite build",
@@ -31,8 +31,8 @@
     "version": "npm run format && git add -A"
   },
   "dependencies": {
-    "@bdelab/roam-apps": "1.0.11",
-    "@bdelab/roar-firekit": "^9.2.0",
+    "@bdelab/roam-apps": "1.0.14",
+    "@bdelab/roar-firekit": "^9.3.0",
     "@bdelab/roar-letter": "2.0.4",
     "@bdelab/roar-multichoice": "1.11.7",
     "@bdelab/roar-pa": "2.2.4",
@@ -101,7 +101,7 @@
     "@vitest/coverage-istanbul": "^2.0.5",
     "@vue/test-utils": "^2.4.6",
     "cypress": "^13.14.1",
-    "cypress-fs": "^0.2.5",
+    "cypress-fs": "^0.2.6",
     "cypress-vite": "^1.5.0",
     "eslint": "^8.53.0",
     "eslint-config-prettier": "^9.0.0",
