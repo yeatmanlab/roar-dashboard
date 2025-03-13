@@ -121,8 +121,9 @@ export const getSidebarActions = ({ isSuperAdmin = false, isAdmin = false }) => 
   } else {
     const actions = sidebarActionOptions.filter((action) => {
       if (action.project === 'ROAR' || action.project === 'ALL') {
+        // If the action requires a permission, check user's permissions.
         const permission = action.permission;
-        if (permission) {
+        if (Object.keys(action).includes('permission')) {
           return userCan(permission);
         }
         return true;

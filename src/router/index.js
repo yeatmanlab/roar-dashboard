@@ -486,16 +486,10 @@ router.beforeEach(async (to, from, next) => {
     return;
   }
 
-  const routePermission = to?.meta?.permission ?? null;
-  if (routePermission) {
-    const hasPermission = userCan(routePermission);
-    if (hasPermission) {
-      next();
-      return;
-    } else {
-      next({ name: 'Unauthorized' });
-      return;
-    }
+  // Prevent routing to routes that the user does not have permission to access.
+  if (Object.keys(to?.meta).includes('permission') && !userCan(to.meta.permission)) {
+    next({ name: 'Unauthorized' });
+    return;
   }
 
   next();
