@@ -5,7 +5,7 @@
         <div class="flex justify-content-between mb-2">
           <div class="flex align-items-center gap-3">
             <i class="pi pi-sliders-h text-gray-400 rounded" style="font-size: 1.6rem" />
-            <div class="admin-page-header">Create a new Audeince</div>
+            <div class="admin-page-header">Create a new Audience</div>
           </div>
         </div>
         <div class="text-md text-gray-500 ml-6">Use this form to create a new Audience.</div>
@@ -32,7 +32,7 @@
 
         <div v-if="orgType?.singular === 'group'" class="flex flex-row align-items-center justify-content-start gap-2">
           <PvCheckbox v-model="groupHasParentOrg" input-id="chbx-group-parent-org" :binary="true" />
-          <label for="chbx-group-parent-org">Belongs to an audience</label>
+          <label for="chbx-group-parent-org">Belongs to an Audience</label>
         </div>
 
         <OrgPicker
