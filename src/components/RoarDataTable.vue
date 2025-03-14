@@ -41,13 +41,6 @@
         </PvFloatLabel>
         <span v-if="props.allowExport" class="flex flex-row flex-wrap justify-content-end gap-2 max-h-3 export-wrapper">
           <PvButton
-            v-tooltip.bottom="'Expand or Compress table rows'"
-            text
-            :label="rowViewMode"
-            class="my-1 m-1 h-3rem text-primary surface-ground border-none border-round h-2rem text-sm hover:bg-gray-300"
-            @click="toggleView"
-          />
-          <PvButton
             v-if="allowExport"
             v-tooltip.bottom="
               `Export scores for ${selectedRows.length} student${
@@ -410,13 +403,6 @@ Array of objects consisting of a field and header at minimum.
       scrolled left-to-right. It is suggested that this only be used on
       the leftmost column.
 */
-const rowViewMode = ref('Expand View');
-const countForVisualize = ref(false); //for starting compress
-const toggleView = () => {
-  compressedRows.value = !compressedRows.value;
-  increasePadding();
-};
-
 const showControls = ref(false);
 const toggleControls = () => {
   showControls.value = !showControls.value;
@@ -506,18 +492,6 @@ const exportCSV = (exportSelected) => {
 };
 
 const compressedRows = ref(false);
-const padding = '1rem 1rem';
-
-function increasePadding() {
-  if (!countForVisualize.value) {
-    document.documentElement?.style.setProperty('--padding-value', padding);
-    rowViewMode.value = 'Compact View';
-  } else {
-    rowViewMode.value = 'Expand View';
-    document.documentElement?.style.setProperty('--padding-value', '0 1.5rem 0 1.5rem');
-  }
-  countForVisualize.value = !countForVisualize.value;
-}
 
 // Generate filters and options objects
 const dataTypesToFilterMatchMode = {
