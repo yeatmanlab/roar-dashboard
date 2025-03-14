@@ -1,6 +1,6 @@
 <template>
   <div id="games">
-    <PvTabs v-model:active-index="displayGameIndex" scrollable value="0">
+    <PvTabs v-model:value="displayGameIndex" scrollable>
       <PvTabList>
         <PvTab
           v-for="(game, index) in games"
@@ -263,7 +263,8 @@ const gameIndex = computed(() =>
   }),
 );
 
-const displayGameIndex = computed(() => (gameIndex.value === -1 ? 0 : gameIndex.value));
+// We need to set display index to String as it is required by primevue to set the tabs
+const displayGameIndex = computed(() => String(gameIndex.value === -1 ? 0 : gameIndex.value));
 const allGamesComplete = computed(() => gameIndex.value === -1);
 
 const authStore = useAuthStore();
