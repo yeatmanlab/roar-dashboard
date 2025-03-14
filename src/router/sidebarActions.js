@@ -47,9 +47,9 @@ const sidebarActionOptions = [
   },
   // TO DO: REMOVE USER "ACTIONS" AFTER NAMING 3 IS COMPLETE
   {
-    title: 'Register Users',
+    title: 'Add Users',
     icon: 'pi pi-user-plus',
-    buttonLink: { name: 'Register Users' },
+    buttonLink: { name: 'Add Users' },
     requiresSuperAdmin: true,
     requiresAdmin: true,
     project: 'LEVANTE',
