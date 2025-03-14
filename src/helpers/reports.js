@@ -294,6 +294,7 @@ export const extendedDescriptions = {
   ran: 'Temporary description for ran',
   crowding: 'Temporary description for crowding',
   'roav-mep': 'Temporary description for mep',
+  'roar-readaloud': 'Temporary description for readaloud',
 };
 
 /*
@@ -357,7 +358,17 @@ export const tasksToDisplayGraphs = ['swr', 'sre', 'pa'];
  *  Raw Only Tasks
  *  A list of tasks to only display raw scores when included in a RoarDataTable.
  */
-export const rawOnlyTasks = ['letter', 'cva', 'morphology', 'vocab', 'fluency', 'letter-es', 'letter-en-ca', 'phonics'];
+export const rawOnlyTasks = [
+  'letter',
+  'cva',
+  'morphology',
+  'vocab',
+  'fluency',
+  'letter-es',
+  'letter-en-ca',
+  'phonics',
+  'roar-readaloud',
+];
 
 /*
  *  Tasks to Display Percent Correct
@@ -785,5 +796,11 @@ export const taskInfoById = {
       'for learning to decode and spell words. This assessment provides educators ' +
       'with valuable insights to customize instruction and address any gaps in ' +
       'these foundational skills.',
+  },
+  'roar-readaloud': {
+    color: '#E19834',
+    header: 'ROAR-ReadAloud',
+    subheader: 'ReadAloud',
+    desc: 'ROAR-ReadAloud',
   },
 };

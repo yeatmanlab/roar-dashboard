@@ -1260,6 +1260,7 @@ const scoreReportColumns = computed(() => {
   }
 
   for (const taskId of orderedTasks) {
+    if (taskId === 'roar-readaloud') continue; // Skip adding this column
     let colField;
     const isOptional = `scores.${taskId}.optional`;
 
