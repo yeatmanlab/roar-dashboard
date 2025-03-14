@@ -32,7 +32,7 @@
             </template>
 
             <template #end>
-              <UserActions :userType="computedUserType"  :name="userDisplayName" :isAdmin="computedIsAdmin" :isSuperAdmin="computedIsSuperAdmin"/>
+              <UserActions :isBasicView="computedIsBasicView"  :name="userDisplayName" />
             </template>
           </PvMenubar>
         </div>
@@ -165,26 +165,11 @@ const userDisplayName = computed(() => {
 
 const {userType, isAdmin, _ , isSuperAdmin} = useUserType(userClaims);
 
-const computedUserType = computed(() => {
+const computedIsBasicView = computed(() => {
   if (!userClaims.value) {
-    return ''; 
+    return false; 
   }
-  return userType.value;  
-});
-
-const computedIsAdmin = computed(() => {
-  if (!isAdmin.value) {
-    return false;  
-  }
-  return isAdmin.value;  
-});
-
-
-const computedIsSuperAdmin = computed(() => {
-  if (!isSuperAdmin.value) {
-    return false;  
-  }
-  return isSuperAdmin.value;  
+  return !isSuperAdmin.value && !isAdmin.value  
 });
 
 const isAtHome = computed(() => {

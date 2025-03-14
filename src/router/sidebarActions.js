@@ -28,7 +28,7 @@ const sidebarActionOptions = [
     category: 'Assignments',
   },
   {
-    title: 'Create Assignments',
+    title: 'Create Assignment',
     icon: 'pi pi-sliders-h',
     buttonLink: { name: 'CreateAdministration' },
     requiresSuperAdmin: true,

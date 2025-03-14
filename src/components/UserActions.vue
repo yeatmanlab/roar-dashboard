@@ -1,7 +1,7 @@
 <template>
     <div>
-        <div v-if="userType === AUTH_USER_TYPE.STUDENT" class="nav-user-wrapper flex align-items-center gap-2 bg-gray-100">
-            <div class="flex gap-2 align-items-center justify-content-center mr-3">
+        <div v-if="props.isBasicView" class="nav-user-wrapper flex align-items-center gap-2 bg-gray-100">
+            <div class="flex gap-2 align-items-center justify-content-center">
                 <PvButton
                     text
                     data-cy="button-sign-out"
@@ -19,9 +19,11 @@
                     <i class="pi pi-question-circle"></i>
                 </template>
             </PvDropdown>
+            <button ref="feedbackButton" style="display: none">Give me feedback</button>
+
 
             <!-- Profile dropdown -->
-            <PvDropdown :options="filteredProfileOptions" :optionValue="(o) => o.value" :optionLabel="(o) => o.label"  @change="handleProfileChange">
+            <PvDropdown :options="profileOptions" :optionValue="(o) => o.value" :optionLabel="(o) => o.label"  @change="handleProfileChange">
                 <template #value>
                     <i class="pi pi-user"></i>
                 </template>
@@ -31,48 +33,68 @@
 </template>
 
 <script setup>
-    import { computed } from 'vue';
+    import {ref} from 'vue';
     import useSignOutMutation from '@/composables/mutations/useSignOutMutation';
     import PvButton from 'primevue/button';
     import PvDropdown from 'primevue/dropdown';
-    import * as Sentry from '@sentry/vue';
     import { useRouter } from 'vue-router';
     import { useI18n } from 'vue-i18n';
     import { APP_ROUTES } from '@/constants/routes';
-    import { AUTH_USER_TYPE } from '../constants/auth';
 
 
     const i18n = useI18n();
     const router = useRouter();
     const { mutate: signOut } = useSignOutMutation();
 
+    const feedbackButton = ref(null);
+
     const props = defineProps({
-        userType: {type: String, required: true},
+        isBasicView: {type: Boolean, required: true},
         name: {type: String, required: true},
-        isAdmin: {type: Boolean, required: true},
-        isSuperAdmin: {type: Boolean, required: true}
     })
+
+
+    // BACKED OUT: getting access to feedback button
+    // onMounted(() => {
+    //     // Depreacted in latest version of Sentry and replaced with getFeedback()
+    //     const feedbackInstance = Sentry.getClient()?.getIntegration(Sentry.Feedback);
+
+    //     if (feedbackInstance && feedbackButton.value) {
+    //         feedbackInstance.attachTo(feedbackButton.value);
+    //     }
+    // });
+
+
+
+    // BACKED OUT: update styling of feedback modal based on view type to center
+    // watchEffect(() => {
+    //     const feedbackElement = document.getElementById('sentry-feedback');
+    //     if (feedbackElement) {
+    //         if (!props.isBasicView) {
+    //             feedbackElement.style.setProperty('--bottom', '28%');
+    //             feedbackElement.style.setProperty('--left', '40%');
+    //         }
+    //     }
+    // });
+
 
     const helpOptions = [
         { label: 'Researcher Documentation', value: 'researcherDocumentation' },
-        { label: 'Report an Issue', value: 'reportAnIssue' }
+        // BACKED OUT: Nav Bar Report an Issue
+        // { label: 'Report an Issue', value: 'reportAnIssue' }
     ];
 
     const profileOptions = [
-        {label: "Your Settings", value: 'settings', adminsOnly: true},
-        {label: i18n.t('navBar.signOut'), value: 'signout', adminsOnly: false}
+        {label: "Settings", value: 'settings'},
+        {label: i18n.t('navBar.signOut'), value: 'signout'}
     ]
-
-    const filteredProfileOptions = computed(() => {
-        return profileOptions.filter(option => !option.adminsOnly || (props.isAdmin || props.isSuperAdmin));
-    });
 
     const handleHelpChange = (e) => {
         if (e.value === 'researcherDocumentation') {
-            window.open('https://watery-wrench-dee.notion.site/', '_blank');
+            window.open('https://levante-researcher.super.site/', '_blank');
         } else if (e.value === 'reportAnIssue') {
-            const eventId = Sentry.captureException(new Error('Dummy error to trigger Sentry dialog'));
-            Sentry.showReportDialog({ eventId });      
+            // BACKED OUT: opens feedback modal
+            // feedbackButton.value.click();
         }
     };
 
