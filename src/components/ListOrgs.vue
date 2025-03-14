@@ -204,13 +204,6 @@ const localOrgData = ref(null);
 const isSubmitting = ref(false);
 const router = useRouter();
 
-const districtPlaceholder = computed(() => {
-  if (isLoadingDistricts.value) {
-    return 'Loading...';
-  }
-  return 'Select a district';
-});
-
 const addUsers = () => {
   router.push({ name: 'Register Users' });
 };
@@ -218,13 +211,6 @@ const addUsers = () => {
 const newGroup = () => {
   router.push({ name: 'CreateOrgs' });
 };
-
-const schoolPlaceholder = computed(() => {
-  if (isLoadingSchools.value) {
-    return 'Loading...';
-  }
-  return 'Select a school';
-});
 
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
@@ -450,19 +436,31 @@ const tableColumns = computed(() => {
   return columns;
 });
 
-const tableData = computed(() => {
-  if (isLoading.value) return [];
-  return orgData?.value?.map((org) => {
-    return {
-      ...org,
-      routeParams: {
-        orgType: activeOrgType.value,
-        orgId: org.id,
-        orgName: org.name,
-        tooltip: 'View Users in ' + org.name,
-      },
-    };
-  });
+const tableData = ref([]);
+
+watch(async () => {
+  if (isLoading.value) {
+    tableData.value = [];
+    return;
+  }
+
+  const mappedData = await Promise.all(
+    orgData?.value?.map(async (org) => {
+      const userCount = await countUsersByOrg(activeOrgType.value, org.id);
+      return {
+        ...org,
+        userCount,
+        routeParams: {
+          orgType: activeOrgType.value,
+          orgId: org.id,
+          orgName: org.name,
+          tooltip: 'View Users in ' + org.name,
+        },
+      };
+    }) || []
+  );
+
+  tableData.value = mappedData;
 });
 
 const showCode = async (selectedOrg) => {

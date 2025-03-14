@@ -180,6 +180,9 @@
                     size="small"
                   />
                 </router-link>
+                <span v-if="colData.userCount !== undefined && colData.userCount !== null" class="font-semibold text-sm ml-2">
+                  {{ colData.userCount }}
+                </span>
               </div>
               <div v-else-if="col.button">
                 <PvButton
@@ -598,143 +601,6 @@ function getUniqueOptions(column) {
   return options;
 }
 
-const primaryTasks = [
-  'scores.letter.percentCorrect',
-  'scores.letter.percentile',
-  'scores.pa.percentile',
-  'scores.swr.percentile',
-  'scores.sre.percentile',
-  'scores.pa.standardScore',
-  'scores.swr.standardScore',
-  'scores.sre.standardScore',
-  'scores.sre.rawScore',
-  'scores.pa.rawScore',
-  'scores.swr.rawScore',
-  'scores.sre.rawScore',
-];
-
-const spanishTasks = [
-  'scores.letter-es.percentCorrect',
-  'scores.letter-es.percentile',
-  'scores.pa-es.percentCorrect',
-  'scores.swr-es.percentCorrect',
-  'scores.sre-es.correctIncorrectDifference',
-  'scores.pa-es.percentile',
-  'scores.swr-es.percentile',
-  'scores.sre-es.percentile',
-  'scores.letter-es.rawScore',
-  'scores.pa-es.rawScore',
-  'scores.swr-es.rawScore',
-  'scores.sre-es.rawScore',
-];
-
-const spanishMathTasks = [
-  'scores.fluency-arf-es.numCorrect',
-  'scores.fluency-calf-es.numCorrect',
-  'scores.fluency-arf-es.percentile',
-  'scores.fluency-calf-es.percentile',
-];
-
-const supplementaryTasks = [
-  'scores.morphology.percentCorrect',
-  'scores.cva.percentCorrect',
-  'scores.vocab.percentCorrect',
-  'scores.trog.percentCorrect',
-  'scores.roar-inference.percentCorrect',
-  'scores.phonics.percentCorrect',
-  'scores.morphology.percentile',
-  'scores.cva.percentile',
-  'scores.vocab.percentile',
-  'scores.trog.percentile',
-  'scores.roar-inference.percentile',
-  'scores.phonics.percentile',
-];
-
-const roamTasks = [
-  'scores.fluency-arf.numCorrect',
-  'scores.fluency-calf.numCorrect',
-  'scores.roam-alpaca.percentile',
-  'scores.egma-math.percentile',
-  'scores.fluency-arf.numCorrect',
-  'scores.fluency-calf.numCorrect',
-  'scores.roam-alpaca.percentCorrect',
-  'scores.egma-math.percentCorrect',
-  'scores.fluency-calf.percentile',
-  'scores.fluency-arf.percentile',
-];
-
-const roavTasks = [
-  'scores.ran.percentile',
-  'scores.crowding.percentile',
-  'scores.roav-mep.percentile',
-  'scores.mep.percentile',
-  'scores.mep-pseudo.percentile',
-  'scores.ran.percentCorrect',
-  'scores.crowding.percentCorrect',
-  'scores.roav-mep.percentCorrect',
-  'scores.mep.percentCorrect',
-  'scores.mep-pseudo.percentCorrect',
-];
-const getSpacerColumnWidth = computed(() => {
-  // Look through computedColumns.value
-  // Find first instance of a Spanish or supplementary or math or vision column
-  // If found, return the index of that first column, return that as the length of the spacer row
-  const columns = computedColumns.value;
-  const allTasks = [
-    ...primaryTasks,
-    ...spanishTasks,
-    ...spanishMathTasks,
-    ...supplementaryTasks,
-    ...roamTasks,
-    ...roavTasks,
-  ];
-  for (let i = 0; i < columns.length; i++) {
-    if (allTasks.includes(columns[i].field)) {
-      return i + 1;
-    }
-  }
-  return columns.length;
-});
-
-const primarySpacerColumns = computed(() => {
-  // Return the number of the primary columns in computedColumns.value
-  // Return 0 if no Spanish columns
-  const columns = computedColumns.value;
-  return columns.filter((column) => primaryTasks.includes(column.field)).length;
-});
-
-const spanishSpacerColumns = computed(() => {
-  // Return the number of the spanish columns in computedColumns.value
-  // Return 0 if no Spanish columns
-  const columns = computedColumns.value;
-  return columns.filter((column) => spanishTasks.includes(column.field)).length;
-});
-
-const spanishMathSpacerColumns = computed(() => {
-  // Return the number of the spanish columns in computedColumns.value
-  // Return 0 if no Spanish columns
-  const columns = computedColumns.value;
-  return columns.filter((column) => spanishMathTasks.includes(column.field)).length;
-});
-
-const supplementarySpacerColumns = computed(() => {
-  // Return the number of supplementary columns in computedColumns.value
-  const columns = computedColumns.value;
-  return columns.filter((column) => supplementaryTasks.includes(column.field)).length;
-});
-
-const mathSpacerColumns = computed(() => {
-  // Return the number of math columns in computedColumns.value
-  const columns = computedColumns.value;
-  return columns.filter((column) => roamTasks.includes(column.field)).length;
-});
-
-const visionSpacerColumns = computed(() => {
-  // Return the number of vision columns in computedColumns.value
-  const columns = computedColumns.value;
-  return columns.filter((column) => roavTasks.includes(column.field)).length;
-});
-
 function getFormattedDate(date) {
   if (date instanceof Date) {
     return date.toLocaleDateString('en-us', { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' });
@@ -767,13 +633,6 @@ const onFreezeToggle = (selected) => {
   });
 };
 
-const op = ref();
-const selectedColumn = ref(null);
-
-const toggle = (event, column) => {
-  selectedColumn.value = column;
-  op.value.toggle(event);
-};
 // Pass through data table events
 const emit = defineEmits(['export-all', 'selection', 'reset-filters', 'export-selected', 'export-org-users']);
 </script>
