@@ -1,6 +1,23 @@
 const Permissions = {
+  Organizations: {
+    LIST: '',
+    CREATE: '',
+  },
+  Administrations: {
+    LIST: '',
+    CREATE: '',
+  },
+  Administrators: {
+    CREATE: '',
+  },
   Profile: {
-    VIEW: '',
+    READ: '',
+  },
+  Users: {
+    CREATE: '',
+  },
+  Tasks: {
+    UPDATE: '',
   },
 };
 
