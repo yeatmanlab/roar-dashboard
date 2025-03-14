@@ -5,6 +5,7 @@ import * as Sentry from '@sentry/vue';
 
 export function usePermissions() {
   const userCan = (permission) => {
+    console.log('[RPM] Eval Permission:', permission);
     if (permission === undefined || permission === null) {
       Sentry.captureException(new Error('Tried to evaluate a permission that is undefined or null.'));
       return false;

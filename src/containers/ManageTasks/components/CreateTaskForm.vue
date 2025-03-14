@@ -92,11 +92,11 @@
 
       <PvButton
         v-tooltip="
-          userCan(Permissions?.Tasks?.MANAGE)
+          userCan(Permissions.Tasks.MANAGE)
             ? false
             : 'You do not have permission to create tasks. If you feel this is a mistake, please contact your administrator.'
         "
-        :disabled="!userCan(Permissions?.Tasks?.MANAGE)"
+        :disabled="!userCan(Permissions.Tasks.MANAGE)"
         type="submit"
         label="Submit"
         class="self-center w-full lg:w-4 bg-primary align-right text-white border-none border-round p-3 hover:bg-red-900"
