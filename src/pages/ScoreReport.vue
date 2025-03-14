@@ -609,8 +609,7 @@ const computeAssignmentAndRunData = computed(() => {
 
     for (const { assignment, user } of assignmentData.value) {
       // for each row, compute: username, firstName, lastName, assessmentPID, grade, school, all the scores, and routeParams for report link
-      const grade = user.studentData?.grade;
-
+      const grade = String(user.studentData?.grade);
       // compute schoolName. Use the schoolId from the assignment's assigningOrgs, as this should be correct even when the
       //   user is unenrolled. The assigningOrgs should be up to date and persistant. Fallback to the student's current schools.
       let schoolName = '';
