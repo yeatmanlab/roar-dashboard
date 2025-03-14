@@ -3,13 +3,20 @@
   <main class="container main">
     <section class="main-body">
       <div class="flex flex-column mb-5">
-        <div class="flex justify-content-between mb-2">
-          <div class="flex align-items-center gap-3">
-            <i class="pi pi-folder-open text-gray-400 rounded" style="font-size: 1.6rem" />
-            <div class="admin-page-header">List Organizations</div>
+        <div class="flex justify-content-between">
+          <div class="flex flex-column items-center mb-2">
+            <div class="flex align-items-center gap-3">
+              <i class="pi pi-folder-open text-gray-400 rounded" style="font-size: 1.6rem" />
+              <div class="admin-page-header">List Organizations</div>
+            </div>
+          
+            <div class="text-md text-gray-500 ml-6">View organizations asssigned to your account.</div>
+          </div>
+          
+          <div>
+            <PvButton label="Add a Group" @click="createOrg"/>
           </div>
         </div>
-        <div class="text-md text-gray-500 ml-6">View organizations asssigned to your account.</div>
       </div>
       <PvTabView v-if="claimsLoaded" v-model:active-index="activeIndex" lazy class="mb-7">
         <PvTabPanel v-for="orgType in orgHeaders" :key="orgType" :header="orgType.header">
@@ -155,6 +162,7 @@ import { ref, computed, onMounted, watch } from 'vue';
 import * as Sentry from '@sentry/vue';
 import { storeToRefs } from 'pinia';
 import { useToast } from 'primevue/usetoast';
+import { useRouter } from 'vue-router';
 import PvButton from 'primevue/button';
 import PvDialog from 'primevue/dialog';
 import PvSelect from 'primevue/select';
@@ -182,6 +190,7 @@ import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toast
 import RoarDataTable from '@/components/RoarDataTable.vue';
 import PvFloatLabel from 'primevue/floatlabel';
 
+const router = useRouter();
 const initialized = ref(false);
 const selectedDistrict = ref(undefined);
 const selectedSchool = ref(undefined);
@@ -207,6 +216,10 @@ const schoolPlaceholder = computed(() => {
   }
   return 'Select a school';
 });
+
+
+// shoudl be a modal instead of a router / page change
+const createOrg = () => router.push({ name: 'CreateOrgs' });
 
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
