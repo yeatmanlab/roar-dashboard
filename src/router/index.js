@@ -197,14 +197,264 @@ const routes = [
     props: { taskId: 'roav-mep', language: 'en' },
     meta: { pageTitle: 'MEP' },
   },
-
+  {
+    path: '/launch/:participantId',
+    name: 'LaunchHome',
+    component: () => import('../pages/LaunchedHomeParticipant.vue'),
+    props: true,
+    meta: { pageTitle: 'TaskLauncher Home' },
+  },
+  {
+    path: '/launch/:launchId/game/swr',
+    name: 'Launch SWR',
+    component: () => import('../components/tasks/TaskSWR.vue'),
+    props: (route) => ({
+      taskId: 'swr',
+      language: 'en',
+      launchId: route.params.launchId, // Accessing the launchId prop
+    }),
+    meta: { pageTitle: 'SWR' },
+  },
+  {
+    path: '/game/swr-es',
+    name: 'Launch SWR-ES',
+    component: () => import('../components/tasks/TaskSWR.vue'),
+    props: (route) => ({
+      taskId: 'swr-es',
+      language: 'es',
+      launchId: route.params.launchId, // Accessing the launchId prop
+    }),
+    meta: { pageTitle: 'SWR (ES)' },
+  },
+  {
+    path: '/launch/:launchId/game/pa',
+    name: 'Launch PA',
+    component: () => import('../components/tasks/TaskPA.vue'),
+    props: (route) => ({
+      taskId: 'pa',
+      language: 'en',
+      launchId: route.params.launchId, // Accessing the launchId prop
+    }),
+    meta: { pageTitle: 'PA' },
+  },
+  {
+    path: '/game/pa-es',
+    name: 'Launch PA-ES',
+    component: () => import('../components/tasks/TaskPA.vue'),
+    props: (route) => ({
+      taskId: 'pa-es',
+      language: 'es',
+      launchId: route.params.launchId, // Accessing the launchId prop
+    }),
+    meta: { pageTitle: 'PA-ES' },
+  },
+  {
+    path: '/launch/:launchId/game/sre',
+    name: 'Launch SRE',
+    component: () => import('../components/tasks/TaskSRE.vue'),
+    props: (route) => ({
+      taskId: 'sre',
+      language: 'en',
+      launchId: route.params.launchId, // Accessing the launchId prop
+    }),
+    meta: { pageTitle: 'SRE' },
+  },
+  {
+    path: '/launch/:launchId/game/letter',
+    name: 'Launch Letter',
+    component: () => import('../components/tasks/TaskLetter.vue'),
+    props: (route) => ({
+      taskId: 'letter',
+      language: 'en',
+      launchId: route.params.launchId, // Accessing the launchId prop
+    }),
+    meta: { pageTitle: 'Letter' },
+  },
+  {
+    path: '/launch/:launchId/game/letter-es',
+    name: 'Launch Letter-ES',
+    component: () => import('../components/tasks/TaskLetter.vue'),
+    props: (route) => ({
+      taskId: 'letter-es',
+      language: 'es',
+      launchId: route.params.launchId, // Accessing the launchId prop
+    }),
+    meta: { pageTitle: 'Letter-ES' },
+  },
+  {
+    path: '/launch/:launchId/game/letter-en-ca',
+    name: 'Letter-EN-CA',
+    component: () => import('../components/tasks/TaskLetter.vue'),
+    props: (route) => ({
+      taskId: 'letter-en-ca',
+      language: 'en-ca',
+      launchId: route.params.launchId, // Accessing the launchId prop
+    }),
+    meta: { pageTitle: 'Letter-EN-CA' },
+  },
+  {
+    path: '/launch/:launchId/game/multichoice',
+    name: 'Launch Multichoice',
+    component: () => import('../components/tasks/TaskMultichoice.vue'),
+    props: (route) => ({
+      taskId: 'multichoice',
+      language: 'en',
+      launchId: route.params.launchId, // Accessing the launchId prop
+    }),
+    meta: { pageTitle: 'Multichoice' },
+  },
+  {
+    path: '/launch/:launchId/game/morphology',
+    name: 'Launch Morphology',
+    component: () => import('../components/tasks/TaskMultichoice.vue'),
+    props: (route) => ({
+      taskId: 'morphology',
+      language: 'en',
+      launchId: route.params.launchId, // Accessing the launchId prop
+    }),
+    meta: { pageTitle: 'Morphology' },
+  },
+  {
+    path: '/launch/:launchId/game/cva',
+    name: 'Launch Cva',
+    component: () => import('../components/tasks/TaskMultichoice.vue'),
+    props: (route) => ({
+      taskId: 'cva',
+      language: 'en',
+      launchId: route.params.launchId, // Accessing the launchId prop
+    }),
+    meta: { pageTitle: 'CVA' },
+  },
+  {
+    path: '/launch/:launchId/game/vocab',
+    name: 'Launch Vocab',
+    component: () => import('../components/tasks/TaskVocab.vue'),
+    props: (route) => ({
+      taskId: 'vocab',
+      language: 'en',
+      launchId: route.params.launchId, // Accessing the launchId prop
+    }),
+    meta: { pageTitle: 'Vocab' },
+  },
+  {
+    path: '/launch/:launchId/game/fluency-arf',
+    name: 'Launch Fluency-ARF',
+    component: () => import('../components/tasks/TaskRoam.vue'),
+    props: (route) => ({
+      taskId: 'fluency-arf',
+      language: 'en',
+      launchId: route.params.launchId, // Accessing the launchId prop
+    }),
+    meta: { pageTitle: 'ROAM-ARF' },
+  },
+  {
+    path: '/launch/:launchId/game/fluency-arf-es',
+    name: 'Launch Fluency-ARF-ES',
+    component: () => import('../components/tasks/TaskRoam.vue'),
+    props: (route) => ({
+      taskId: 'fluency-arf-es',
+      language: 'es',
+      launchId: route.params.launchId, // Accessing the launchId prop
+    }),
+    meta: { pageTitle: 'ROAM-ARF ES' },
+  },
+  {
+    path: '/launch/:launchId/game/fluency-calf',
+    name: 'Launch Fluency-CALF',
+    component: () => import('../components/tasks/TaskRoam.vue'),
+    props: (route) => ({
+      taskId: 'fluency-calf',
+      language: 'en',
+      launchId: route.params.launchId, // Accessing the launchId prop
+    }),
+    meta: { pageTitle: 'ROAM-CALF' },
+  },
+  {
+    path: '/game/fluency-calf-es',
+    name: 'Launch Fluency-CALF-ES',
+    component: () => import('../components/tasks/TaskRoam.vue'),
+    props: (route) => ({
+      taskId: 'fluency-calf-es',
+      language: 'es',
+      launchId: route.params.launchId, // Accessing the launchId prop
+    }),
+    meta: { pageTitle: 'ROAM-CALF ES' },
+  },
+  {
+    path: '/launch/:launchId/game/roam-alpaca',
+    name: 'Launch Fluency-Alpaca',
+    component: () => import('../components/tasks/TaskRoam.vue'),
+    props: (route) => ({
+      taskId: 'roam-alpaca',
+      language: 'en',
+      launchId: route.params.launchId, // Accessing the launchId prop
+    }),
+    meta: { pageTitle: 'ROAM-Alpaca' },
+  },
+  {
+    path: '/launch/:launchId/game/roam-alpaca-es',
+    name: 'Launch Fluency-Alpaca-ES',
+    component: () => import('../components/tasks/TaskRoam.vue'),
+    props: (route) => ({
+      taskId: 'roam-alpaca-es',
+      language: 'es',
+      launchId: route.params.launchId, // Accessing the launchId prop
+    }),
+    meta: { pageTitle: 'ROAM-Alpaca ES' },
+  },
+  {
+    path: '/launch/:launchId/game/core-tasks/:taskId',
+    name: 'Launch Core Tasks',
+    component: () => import('../components/tasks/TaskLevante.vue'),
+    props: (route) => ({
+      taskId: 'core-tasks',
+      language: 'en',
+      launchId: route.params.launchId, // Accessing the launchId prop
+    }),
+    // Add which specific task?
+    // Code in App.vue overwrites updating it programmatically
+    meta: { pageTitle: 'Core Tasks' },
+  },
+  {
+    path: '/launch/:launchId/game/ran',
+    name: 'Launch RAN',
+    component: () => import('../components/tasks/TaskRan.vue'),
+    props: (route) => ({
+      taskId: 'ran',
+      language: 'en',
+      launchId: route.params.launchId, // Accessing the launchId prop
+    }),
+    meta: { pageTitle: 'RAN' },
+  },
+  {
+    path: '/launch/:launchId/game/crowding',
+    name: 'Launch Crowding',
+    component: () => import('../components/tasks/TaskCrowding.vue'),
+    props: (route) => ({
+      taskId: 'crowding',
+      language: 'en',
+      launchId: route.params.launchId, // Accessing the launchId prop
+    }),
+    meta: { pageTitle: 'Crowding' },
+  },
+  {
+    path: '/launch/:launchId/game/roav-mep',
+    name: 'Launch MEP',
+    component: () => import('../components/tasks/TaskMEP.vue'),
+    props: (route) => ({
+      taskId: 'roav-mep',
+      language: 'en',
+      launchId: route.params.launchId, // Accessing the launchId prop
+    }),
+    meta: { pageTitle: 'MEP' },
+  },
   {
     path: '/manage-tasks-variants',
     name: 'ManageTasksVariants',
     component: () => import('../pages/ManageTasksVariants.vue'),
     meta: {
       pageTitle: 'Manage Tasks',
-      permission: Permissions.Tasks.MANAGE,
+      permission: Permissions?.Tasks?.MANAGE,
     },
   },
   {
@@ -232,7 +482,7 @@ const routes = [
     component: () => import('../pages/RegisterStudents.vue'),
     meta: {
       pageTitle: 'Register Students',
-      permission: Permissions.Users.CREATE,
+      permission: Permissions?.Users?.CREATE,
     },
   },
   {
@@ -289,7 +539,7 @@ const routes = [
     path: '/administrator',
     name: 'Administrator',
     component: () => import('../pages/HomeAdministrator.vue'),
-    meta: { pageTitle: 'Administrator', permission: Permissions.Administrators.UPDATE },
+    meta: { pageTitle: 'Administrator', permission: Permissions?.Administrators?.UPDATE },
   },
   {
     path: '/create-administration',
@@ -297,7 +547,7 @@ const routes = [
     component: () => import('../components/CreateAdministration.vue'),
     meta: {
       pageTitle: 'Create an administration',
-      permission: Permissions.Administrations.CREATE,
+      permission: Permissions?.Administrations?.CREATE,
     },
   },
   {
@@ -307,7 +557,7 @@ const routes = [
     component: () => import('../components/CreateAdministration.vue'),
     meta: {
       pageTitle: 'Edit an Administration',
-      permission: Permissions.Administrations.UPDATE,
+      permission: Permissions?.Administrations?.UPDATE,
     },
   },
   {
@@ -316,7 +566,7 @@ const routes = [
     component: () => import('../components/CreateAdministrator.vue'),
     meta: {
       pageTitle: 'Create an administrator account',
-      permission: Permissions.Administrators.CREATE,
+      permission: Permissions?.Administrators?.CREATE,
     },
   },
   {
@@ -325,21 +575,21 @@ const routes = [
     component: () => import('../components/CreateOrgs.vue'),
     meta: {
       pageTitle: 'Create an organization',
-      permission: Permissions.Organizations.CREATE,
+      permission: Permissions?.Organizations?.CREATE,
     },
   },
   {
     path: '/list-orgs',
     name: 'ListOrgs',
     component: () => import('../components/ListOrgs.vue'),
-    meta: { pageTitle: 'List organizations', permission: Permissions.Organizations.LIST },
+    meta: { pageTitle: 'List organizations', permission: Permissions?.Organizations?.LIST },
   },
   {
     path: '/list-users/:orgType/:orgId/:orgName',
     name: 'ListUsers',
     props: true,
     component: () => import('../components/ListUsers.vue'),
-    meta: { pageTitle: 'List users', permission: Permissions.Users.LIST },
+    meta: { pageTitle: 'List users', permission: Permissions?.Users?.LIST },
   },
   {
     path: '/administration/:administrationId/:orgType/:orgId',
@@ -348,7 +598,7 @@ const routes = [
     component: () => import('../pages/ProgressReport.vue'),
     meta: {
       pageTitle: 'View Administration',
-      permission: Permissions.Reports.Progress.READ,
+      permission: Permissions?.Reports?.Progress?.READ,
     },
   },
   {
@@ -356,7 +606,7 @@ const routes = [
     name: 'ScoreReport',
     props: true,
     component: () => import('../pages/ScoreReport.vue'),
-    meta: { pageTitle: 'View Scores', permission: Permissions.Reports.Score.READ },
+    meta: { pageTitle: 'View Scores', permission: Permissions?.Reports?.Score?.READ },
   },
   {
     path: APP_ROUTES.STUDENT_REPORT,
@@ -365,7 +615,7 @@ const routes = [
     component: () => import('../pages/StudentReport.vue'),
     meta: {
       pageTitle: 'Student Score Report',
-      permission: Permissions.Reports.Student.READ,
+      permission: Permissions?.Reports?.Student?.READ,
     },
   },
   {
@@ -391,7 +641,7 @@ const routes = [
         meta: { requireAdmin: true },
       },
     ],
-    meta: { pageTitle: 'Profile', permission: Permissions.Profile.READ },
+    meta: { pageTitle: 'Profile', permission: Permissions?.Profile?.READ },
   },
   {
     path: '/enable-cookies',
