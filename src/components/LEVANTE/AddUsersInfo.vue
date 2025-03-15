@@ -58,7 +58,7 @@
 import PvPanel from 'primevue/panel';
 
 const downloadTemplate = () => {
-  const headers = ['id', 'userType', 'month', 'year', 'site', 'school', 'class', 'group'];
+  const headers = ['id', 'userType', 'month', 'year', 'parentId', 'teacherId', 'site', 'school', 'class', 'group'];
   const csvContent = headers.join(',') + '\n';
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   const link = document.createElement('a');
