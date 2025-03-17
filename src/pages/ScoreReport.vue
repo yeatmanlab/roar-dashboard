@@ -796,7 +796,7 @@ const computeAssignmentAndRunData = computed(() => {
           currRowScores[taskId].skills = skills.length > 0 ? skills.join(', ') : 'None';
         }
         if (tasksToDisplayThetaScore.includes(taskId)) {
-          const numCorrect = assessment.scores?.raw?.composite?.test?.numCorrect ?? 0;
+          const numCorrect = assessment.scores?.raw?.composite?.test?.numCorrect;
           const numIncorrect = assessment.scores?.raw?.composite?.test?.numIncorrect;
           const thetaEstimate = _get(assessment, 'scores.computed.composite.thetaEstimate') ?? '';
 
@@ -1284,14 +1284,16 @@ const scoreReportColumns = computed(() => {
       viewMode.value === 'standard' &&
       !tasksToDisplayCorrectIncorrectDifference.includes(taskId) &&
       !tasksToDisplayPercentCorrect.includes(taskId) &&
-      !tasksToDisplayTotalCorrect.includes(taskId)
+      !tasksToDisplayTotalCorrect.includes(taskId) &&
+      !tasksToDisplayThetaScore.includes(taskId)
     ) {
       colField = `scores.${taskId}.standardScore`;
     } else if (
       viewMode.value === 'raw' &&
       !tasksToDisplayCorrectIncorrectDifference.includes(taskId) &&
       !tasksToDisplayPercentCorrect.includes(taskId) &&
-      !tasksToDisplayTotalCorrect.includes(taskId)
+      !tasksToDisplayTotalCorrect.includes(taskId) &&
+      !tasksToDisplayThetaScore.includes(taskId)
     ) {
       colField = `scores.${taskId}.rawScore`;
     } else {
@@ -1301,6 +1303,8 @@ const scoreReportColumns = computed(() => {
         colField = `scores.${taskId}.numCorrect`;
       } else if (tasksToDisplayPercentCorrect.includes(taskId) && viewMode.value === 'raw') {
         colField = `scores.${taskId}.percentCorrect`;
+      } else if (tasksToDisplayThetaScore.includes(taskId) && viewMode.value === 'raw') {
+        colField = `scores.${taskId}.numCorrect`;
       } else if (rawOnlyTasks.includes(taskId) && viewMode.value === 'raw') {
         colField = `scores.${taskId}.rawScore`;
       } else {

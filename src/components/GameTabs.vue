@@ -302,7 +302,7 @@ async function routeExternalTask(game) {
     await authStore.completeAssessment(selectedAdmin.value.id, game.taskId);
     if (game.taskId === 'qualtrics-experience') {
       // this was a request for this specific task
-      window.open(`${game.taskData.taskURL}/?participantID=${props?.userData?.username}`, '_blank').focus();
+      window.open(`${game.taskData.taskURL}/?participantID=${props?.userData?.assessmentPid}`, '_blank').focus();
     }
     window.open(game.taskData.taskURL, '_blank').focus();
   } else if (game.taskData.name.toLowerCase() === 'mefs') {
