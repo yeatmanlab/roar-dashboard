@@ -163,6 +163,7 @@ import { ref, computed, onMounted, watch } from 'vue';
 import * as Sentry from '@sentry/vue';
 import { storeToRefs } from 'pinia';
 import { useToast } from 'primevue/usetoast';
+import { useRouter } from 'vue-router';
 import PvButton from 'primevue/button';
 import PvDialog from 'primevue/dialog';
 import PvSelect from 'primevue/select';
@@ -189,8 +190,8 @@ import { CSV_EXPORT_MAX_RECORD_COUNT } from '@/constants/csvExport';
 import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts.js';
 import RoarDataTable from '@/components/RoarDataTable.vue';
 import PvFloatLabel from 'primevue/floatlabel';
-import { useRouter } from 'vue-router';
 
+const router = useRouter();
 const initialized = ref(false);
 const selectedDistrict = ref(undefined);
 const selectedSchool = ref(undefined);
@@ -202,7 +203,6 @@ const isEditModalEnabled = ref(false);
 const currentEditOrgId = ref(null);
 const localOrgData = ref(null);
 const isSubmitting = ref(false);
-const router = useRouter();
 
 const addUsers = () => {
   router.push({ name: 'Register Users' });

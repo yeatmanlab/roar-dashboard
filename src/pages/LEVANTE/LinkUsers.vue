@@ -98,7 +98,6 @@ const authStore = useAuthStore();
 const toast = useToast();
 const isFileUploaded = ref(false);
 const rawUserFile = ref([]);
-const columns = ref([]);
 const errorUsers = ref([]);
 const errorUserColumns = ref([]);
 const activeSubmit = ref(false);
@@ -107,10 +106,8 @@ const showErrorTable = ref(false);
 
 // LINKING
 // Required: id, userType, uid
-// Conditional: (Child + Either): parentId, teacherId
-// Conditional (Either): Group OR District + School
+// Optional: parentId, teacherId
 
-const camelCaseColumns = ['userType', 'parentId', 'teacherId'];
 
 const allFields = [
     {
@@ -137,57 +134,39 @@ const allFields = [
       field: 'uid',
       header: 'UID',
       dataType: 'string',
-    },
-    {
-      field: 'group',
-      header: 'Group',
-      dataType: 'string',
-    },
-    {
-      field: 'district',
-      header: 'District',
-      dataType: 'string',
-    },
-    {
-      field: 'school',
-      header: 'School',
-      dataType: 'string',
-    },
-    {
-      field: 'class',
-      header: 'Class',
-      dataType: 'string',
-    },
+    }
   ];
 
 const onFileUpload = async (event) => {
   showErrorTable.value = false;
-  // Read the file as text first
+  // Read the file
   const file = event.files[0];
-  const text = await file.text();
   
-  // Split into lines
-  const lines = text.split('\n');
+  // Parse the file directly with csvFileToJson
+  const parsedData = await csvFileToJson(file);
   
-  // Lowercase all columns in header except 'userType'
-  const headers = lines[0].split(',');
-  lines[0] = headers.map(header => 
-    camelCaseColumns.includes(header) ? header : header.toLowerCase()
-  ).join(',');
+  // Check if there's any data
+  if (!parsedData || parsedData.length === 0) {
+    toast.add({
+      severity: 'error',
+      summary: 'Error: Empty File',
+      detail: 'The uploaded file contains no data',
+      life: 5000,
+    });
+    return;
+  }
   
-  // Create a new Blob with modified content
-  const modifiedFile = new Blob([lines.join('\n')], { type: file.type });
-  
-  // Parse the modified file
-  rawUserFile.value = await csvFileToJson(modifiedFile);
+  // Store the parsed data
+  rawUserFile.value = parsedData;
 
-
-  const allColumns = Object.keys(toRaw(rawUserFile.value[0])).map((col) => camelCaseColumns.includes(col) ? col : col.toLowerCase());
+  // Get all column names from the first row, case-insensitive check
+  const firstRow = toRaw(rawUserFile.value[0]);
+  const allColumns = Object.keys(firstRow).map(col => col.toLowerCase());
   console.log('allColumns: ', allColumns);
 
-  // First check if the required columns are present  
+  // First check if the required columns are present (case-insensitive)
   const hasId = allColumns.includes('id');
-  const hasUserType = allColumns.includes('userType');
+  const hasUserType = allColumns.includes('usertype');
   const hasUid = allColumns.includes('uid');
 
   const missingColumns = [];
@@ -212,19 +191,7 @@ const onFileUpload = async (event) => {
     return;
   }
 
-
-  const hasParentId = allColumns.includes('parentId');
-  const hasTeacherId = allColumns.includes('teacherId');
-  
-  if (!hasParentId && !hasTeacherId) {
-    toast.add({
-      severity: 'error',
-      summary: 'Error: Missing Columns',
-      detail: 'Missing required column(s): parentId or teacherId',
-      life: 5000,
-    });
-    return;
-  }
+  // parentId and teacherId are now optional, so we don't check for them here
 
   validateUsers();
 
@@ -243,51 +210,72 @@ const validateUsers = () => {
   errorUsers.value = [];
   const userMap = new Map(toRaw(rawUserFile.value).map(user => [user.id.toString(), user]));
 
-  const requiredFields = ['id', 'userType', 'uid',];
+  const requiredFields = ['id', 'usertype', 'uid'];
 
   rawUserFile.value.forEach(user => {
     console.log('user: ', user);
     const missingFields = [];
 
-    // Check for required fields
-    requiredFields.forEach(field => {
-        if (!user[field]) {
-          missingFields.push(field);
-        }
+    // Check for required fields (case-insensitive)
+    requiredFields.forEach(requiredField => {
+      // Find the actual field name in the user object (case-insensitive)
+      const actualField = Object.keys(user).find(key => key.toLowerCase() === requiredField);
+      if (!actualField || !user[actualField]) {
+        missingFields.push(requiredField === 'usertype' ? 'userType' : requiredField);
+      }
     });
 
-    // Check for group or district and school
-    if (!user.group) {
-      if (!user.district || !user.school) {
-        missingFields.push('group OR district and school');
-      }
-    }
 
-    // Check for parentId or teacherId
-    if (user.userType.toLowerCase() === 'child') {
-
-      if (!user.parentId && !user.teacherId) {
-        missingFields.push('parentId or teacherId');
-      }
-      if (user.parentId) {
-        const parentIds = typeof user.parentId === 'string' ? user.parentId.split(',').map(id => id.trim()) : [user.parentId.toString()];
+    // Check parentId and teacherId if they exist (now optional)
+    // Find userType field (case-insensitive)
+    const userTypeField = Object.keys(user).find(key => key.toLowerCase() === 'usertype');
+    
+    if (userTypeField && user[userTypeField].toLowerCase() === 'child') {
+      
+      // Find parentId field (case-insensitive)
+      const parentIdField = Object.keys(user).find(key => key.toLowerCase() === 'parentid');
+      
+      // Only validate parentId if it exists
+      if (parentIdField && user[parentIdField] && user[parentIdField].trim() !== '') {
+        const parentIds = typeof user[parentIdField] === 'string' ? 
+          user[parentIdField].split(',').map(id => id.trim()) : 
+          [user[parentIdField].toString()];
+          
         parentIds.forEach(parentId => {
           console.log('parentId in loop:', parentId);
 
           if (!userMap.has(parentId)) {
             missingFields.push(`Parent with ID ${parentId} not found`);
-          } else if (userMap.get(parentId).userType.toLowerCase() !== 'parent') {
-            missingFields.push(`User with ID ${parentId} is not a parent`);
+          } else {
+            // Find userType field in parent (case-insensitive)
+            const parentUserTypeField = Object.keys(userMap.get(parentId)).find(key => key.toLowerCase() === 'usertype');
+            
+            if (!parentUserTypeField || userMap.get(parentId)[parentUserTypeField].toLowerCase() !== 'parent') {
+              missingFields.push(`User with ID ${parentId} is not a parent`);
+            }
           }
         });
       }
-      if (user.teacherId) {
-        const teacherIds = typeof user.teacherId === 'string' ? user.teacherId.split(',').map(id => id.trim()) : [user.teacherId.toString()];
+      
+      // Find teacherId field (case-insensitive)
+      const teacherIdField = Object.keys(user).find(key => key.toLowerCase() === 'teacherid');
+      
+      // Only validate teacherId if it exists
+      if (teacherIdField && user[teacherIdField] && user[teacherIdField].trim() !== '') {
+        const teacherIds = typeof user[teacherIdField] === 'string' ? 
+          user[teacherIdField].split(',').map(id => id.trim()) : 
+          [user[teacherIdField].toString()];
+          
         teacherIds.forEach(teacherId => {
           if (!userMap.has(teacherId)) {
             missingFields.push(`Teacher with ID ${teacherId} not found`);
-          } else if (userMap.get(teacherId).userType.toLowerCase() !== 'teacher') {
-            missingFields.push(`User with ID ${teacherId} is not a teacher`);
+          } else {
+            // Find userType field in teacher (case-insensitive)
+            const teacherUserTypeField = Object.keys(userMap.get(teacherId)).find(key => key.toLowerCase() === 'usertype');
+            
+            if (!teacherUserTypeField || userMap.get(teacherId)[teacherUserTypeField].toLowerCase() !== 'teacher') {
+              missingFields.push(`User with ID ${teacherId} is not a teacher`);
+            }
           }
         });
       }
@@ -311,7 +299,39 @@ const validateUsers = () => {
 const submitUsers = async () => {
   activeSubmit.value = true;
   try {
-    const result = await authStore.roarfirekit.linkUsers(rawUserFile.value);
+    // Normalize field names for the backend
+    const normalizedUsers = toRaw(rawUserFile.value).map(user => {
+      const normalizedUser = {};
+      
+      // Process required fields
+      const idField = Object.keys(user).find(key => key.toLowerCase() === 'id');
+      const userTypeField = Object.keys(user).find(key => key.toLowerCase() === 'usertype');
+      const uidField = Object.keys(user).find(key => key.toLowerCase() === 'uid');
+      
+      if (idField) normalizedUser.id = user[idField];
+      if (userTypeField) normalizedUser.userType = user[userTypeField];
+      if (uidField) normalizedUser.uid = user[uidField];
+      
+      // Process optional fields
+      const parentIdField = Object.keys(user).find(key => key.toLowerCase() === 'parentid');
+      const teacherIdField = Object.keys(user).find(key => key.toLowerCase() === 'teacherid');
+      
+      if (parentIdField && user[parentIdField]) normalizedUser.parentId = user[parentIdField];
+      if (teacherIdField && user[teacherIdField]) normalizedUser.teacherId = user[teacherIdField];
+      
+      // Include any other fields that might be in the original data
+      Object.keys(user).forEach(key => {
+        if (!['id', 'userType', 'uid', 'parentId', 'teacherId'].includes(key) && 
+            !['id', 'usertype', 'uid', 'parentid', 'teacherid'].includes(key.toLowerCase())) {
+          normalizedUser[key] = user[key];
+        }
+      });
+      
+      return normalizedUser;
+    });
+    
+    console.log('Normalized users:', normalizedUsers);
+    const result = await authStore.roarfirekit.linkUsers(normalizedUsers);
     console.log('user link result:', result);
     
     toast.add({
