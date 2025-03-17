@@ -65,6 +65,15 @@ const sidebarActionOptions = [
     category: 'Users',
   },
   {
+    title: 'Edit Users',
+    icon: 'pi pi-pencil',
+    buttonLink: { name: 'Edit Users' },
+    requiresSuperAdmin: true,
+    requiresAdmin: true,
+    project: 'LEVANTE',
+    category: 'Users',
+  },
+  {
     title: 'Register New Family',
     icon: 'pi pi-home',
     buttonLink: { name: 'Register' },
