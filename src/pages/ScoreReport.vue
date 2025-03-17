@@ -138,9 +138,6 @@
             @export-all="exportData({ selectedRows: $event })"
             @export-selected="exportData({ selectedRows: $event })"
           >
-            <template #filterbar>
-              <FilterBar :schools="schoolOptions" :grades="gradeOptions" :update-filters="updateFilters" />
-            </template>
             <span>
               <label for="view-columns" class="view-label">View</label>
               <PvSelect
@@ -310,7 +307,6 @@ import {
   tasksToDisplayCorrectIncorrectDifference,
   includedValidityFlags,
 } from '@/helpers/reports';
-import FilterBar from '@/components/FilterBar';
 import RoarDataTable from '@/components/RoarDataTable';
 import { APP_ROUTES } from '@/constants/routes';
 import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';

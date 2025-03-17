@@ -119,42 +119,7 @@
             :lazy-pre-sorting="orderBy"
             @export-selected="exportSelected"
             @export-all="exportAll"
-          >
-            <template #filterbar>
-              <div v-if="districtSchoolsData" class="flex flex-row gap-2">
-                <PvFloatLabel>
-                  <PvMultiSelect
-                    id="ms-school-filter"
-                    v-model="filterSchools"
-                    style="width: 20rem; max-width: 25rem"
-                    :options="districtSchoolsData"
-                    option-label="name"
-                    option-value="name"
-                    :show-toggle-all="false"
-                    selected-items-label="{0} schools selected"
-                    data-cy="filter-by-school"
-                  />
-                  <label for="ms-school-filter">Filter by School</label>
-                </PvFloatLabel>
-              </div>
-              <div class="flex flex-row gap-2">
-                <PvFloatLabel>
-                  <PvMultiSelect
-                    id="ms-grade-filter"
-                    v-model="filterGrades"
-                    style="width: 20rem; max-width: 25rem"
-                    :options="gradeOptions"
-                    option-label="label"
-                    option-value="value"
-                    :show-toggle-all="false"
-                    selected-items-label="{0} grades selected"
-                    data-cy="filter-by-grade"
-                  />
-                  <label for="ms-school-filter">Filter by Grade</label>
-                </PvFloatLabel>
-              </div>
-            </template>
-          </RoarDataTable>
+          />
         </div>
       </template>
     </section>
