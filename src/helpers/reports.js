@@ -371,6 +371,13 @@ export const rawOnlyTasks = [
 ];
 
 /*
+ *  Excluded from Score Report Apps
+ *  A list of tasks to be excluded from a RoarDataTable because they do not have scores.
+ *  However, these tasks will still be included in the progress report.
+ */
+export const excludeFromScoringTasks = ['roar-readaloud'];
+
+/*
  *  Tasks to Display Percent Correct
  */
 export const tasksToDisplayPercentCorrect = [
