@@ -3,18 +3,21 @@
   <main class="container main">
     <section class="main-body">
       <div class="flex flex-column mb-5">
-        <div class="flex justify-content-between">
-          <div class="flex flex-column items-center mb-2">
-            <div class="flex align-items-center gap-3">
-              <i class="pi pi-folder-open text-gray-400 rounded" style="font-size: 1.6rem" />
-              <div class="admin-page-header">List Organizations</div>
-            </div>
-          
-            <div class="text-md text-gray-500 ml-6">View organizations asssigned to your account.</div>
-          </div>
-          
-          <div>
-            <PvButton label="Add a Group" @click="createOrg"/>
+        <div class="flex justify-content-between mb-2">
+          <div class="flex align-items-center gap-3">
+            <div class="admin-page-header mr-4">Audience</div>
+             <PvButton
+              class="bg-primary text-white border-none p-2 ml-auto"
+              @click="addUsers"
+            >
+              Add Users
+            </PvButton>
+            <PvButton
+              class="bg-primary text-white border-none p-2 ml-auto"
+              @click="newGroup"
+            >
+              New Group
+            </PvButton>
           </div>
         </div>
       </div>
@@ -32,7 +35,6 @@
                   :options="allDistricts"
                   option-label="name"
                   option-value="id"
-                  :placeholder="districtPlaceholder"
                   :loading="isLoadingDistricts"
                   class="w-full"
                   data-cy="dropdown-parent-district"
@@ -48,7 +50,6 @@
                   :options="allSchools"
                   option-label="name"
                   option-value="id"
-                  :placeholder="schoolPlaceholder"
                   :loading="isLoadingSchools"
                   class="w-full"
                   data-cy="dropdown-parent-school"
@@ -203,23 +204,13 @@ const currentEditOrgId = ref(null);
 const localOrgData = ref(null);
 const isSubmitting = ref(false);
 
-const districtPlaceholder = computed(() => {
-  if (isLoadingDistricts.value) {
-    return 'Loading...';
-  }
-  return 'Select a district';
-});
+const addUsers = () => {
+  router.push({ name: 'Register Users' });
+};
 
-const schoolPlaceholder = computed(() => {
-  if (isLoadingSchools.value) {
-    return 'Loading...';
-  }
-  return 'Select a school';
-});
-
-
-// shoudl be a modal instead of a router / page change
-const createOrg = () => router.push({ name: 'CreateOrgs' });
+const newGroup = () => {
+  router.push({ name: 'CreateOrgs' });
+};
 
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
@@ -408,21 +399,11 @@ const exportOrgUsers = async (orgType) => {
 const tableColumns = computed(() => {
   const columns = [
     { field: 'name', header: 'Name', dataType: 'string', pinned: true, sort: true },
-    { field: 'abbreviation', header: 'Abbreviation', dataType: 'string', sort: true },
-    { field: 'address.formattedAddress', header: 'Address', dataType: 'string', sort: true },
-    { field: 'tags', header: 'Tags', dataType: 'array', chip: true, sort: false },
   ];
 
   if (['districts', 'schools'].includes(activeOrgType.value)) {
     columns.push(
-      { field: 'mdrNumber', header: 'MDR Number', dataType: 'string', sort: false },
-      { field: 'ncesId', header: 'NCES ID', dataType: 'string', sort: false },
     );
-  }
-
-  if (['districts', 'schools', 'classes'].includes(activeOrgType.value)) {
-    columns.push({ field: 'clever', header: 'Clever', dataType: 'boolean', sort: false });
-    columns.push({ field: 'classlink', header: 'ClassLink', dataType: 'boolean', sort: false });
   }
 
   columns.push(
@@ -443,14 +424,6 @@ const tableColumns = computed(() => {
       sort: false,
     },
     {
-      header: 'SignUp Code',
-      buttonLabel: 'Invite Users',
-      button: true,
-      eventName: 'selected-org-id',
-      buttonIcon: 'pi pi-send mr-2',
-      sort: false,
-    },
-    {
       header: 'Export Users',
       buttonLabel: 'Export Users',
       button: true,
@@ -463,19 +436,31 @@ const tableColumns = computed(() => {
   return columns;
 });
 
-const tableData = computed(() => {
-  if (isLoading.value) return [];
-  return orgData?.value?.map((org) => {
-    return {
-      ...org,
-      routeParams: {
-        orgType: activeOrgType.value,
-        orgId: org.id,
-        orgName: org.name,
-        tooltip: 'View Users in ' + org.name,
-      },
-    };
-  });
+const tableData = ref([]);
+
+watch(async () => {
+  if (isLoading.value) {
+    tableData.value = [];
+    return;
+  }
+
+  const mappedData = await Promise.all(
+    orgData?.value?.map(async (org) => {
+      const userCount = await countUsersByOrg(activeOrgType.value, org.id);
+      return {
+        ...org,
+        userCount,
+        routeParams: {
+          orgType: activeOrgType.value,
+          orgId: org.id,
+          orgName: org.name,
+          tooltip: 'View Users in ' + org.name,
+        },
+      };
+    }) || []
+  );
+
+  tableData.value = mappedData;
 });
 
 const showCode = async (selectedOrg) => {

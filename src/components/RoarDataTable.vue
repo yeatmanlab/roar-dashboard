@@ -2,66 +2,66 @@
   <div v-if="!props.data">
     <SkeletonTable />
   </div>
-  <div v-else>
-    <div v-if="props.allowFiltering || props.allowColumnSelection || props.allowExport" class="w-full gap-1 pt-1 flex justify-content-center align-items-center flex-wrap mt-3">
-      <slot name="filterbar"></slot>
-      <PvFloatLabel v-if="props.allowColumnSelection" >
-        <PvMultiSelect
-          id="ms-columns"
-          v-tooltip.top="'Show and hide columns'"
-          :model-value="selectedColumns"
-          :options="inputColumns"
-          option-label="header"
-          :max-selected-labels="3"
-          class="w-2 md:w-10rem"
-          selected-items-label="{0} columns selected"
-          @update:model-value="onColumnToggle"
-        />
-        <label for="ms-columns" class="view-label2">Select Columns</label>
-      </PvFloatLabel>
-      <PvFloatLabel v-if="props.allowColumnSelection">
-        <PvMultiSelect
-          id="ms-freeze"
-          :model-value="frozenColumns"
-          :options="inputColumns"
-          option-label="header"
-          :max-selected-labels="3"
-          class="w-2 md:w-10rem"
-          selected-items-label="{0} columns frozen"
-          :show-toggle-all="false"
-          @update:model-value="onFreezeToggle"
-        />
-        <label for="ms-columns" class="view-label2">Freeze Columns</label>
-      </PvFloatLabel>
-      <span v-if="props.allowExport" class="flex flex-row flex-wrap justify-content-end gap-2 max-h-3 export-wrapper">
-        <PvButton
-          v-tooltip.bottom="'Expand or Compress table rows'"
-          text
-          :label="rowViewMode"
-          class="my-1 m-1 h-3rem text-primary surface-ground border-none border-round h-2rem text-sm hover:bg-gray-300"
-          @click="toggleView"
-        />
-        <PvButton
-          v-if="allowExport"
-          v-tooltip.bottom="
-            `Export scores for ${selectedRows.length} student${
-              selectedRows.length > 1 ? 's' : ''
-            } to CSV file for spreadsheet import`
-          "
-          label="Export Selected"
-          :badge="selectedRows?.length?.toString()"
-          :disabled="selectedRows.length === 0"
-          class="m-1 m-1 h-3rem bg-primary text-white border-none border-round h-2rem text-sm hover:bg-red-900"
-          @click="exportCSV(true, $event)"
-        />
-        <PvButton
-          v-if="allowExport"
-          v-tooltip.bottom="'Export all scores for all students to a CSV file for spreadsheet import.'"
-          label="Export Whole Table"
-          class="m-1 h-3rem bg-primary text-white border-none border-round h-2rem text-sm hover:bg-red-900"
-          @click="exportCSV(false, $event)"
-        />
-      </span>
+  <div v-else class="options-container">
+    <div class="flex justify-content-end mr-3 mt-2">
+      <button type="button" class="text-red-700 cursor-pointer options-toggle" @click.prevent="toggleControls">
+        {{ showControls ? 'Hide Options' : 'Show Options' }}
+      </button>
+    </div>
+    <div v-if="showControls" class="w-full gap-1 pt-1 flex justify-content-center align-items-center flex-wrap mb-4">
+      <div v-if="props.allowFiltering || props.allowColumnSelection || props.allowExport" class="w-full gap-1 pt-1 flex justify-content-center align-items-center flex-wrap mt-3">
+        <slot name="filterbar"></slot>
+        <PvFloatLabel v-if="props.allowColumnSelection" >
+          <PvMultiSelect
+            id="ms-columns"
+            v-tooltip.top="'Show and hide columns'"
+            :model-value="selectedColumns"
+            :options="inputColumns"
+            option-label="header"
+            :max-selected-labels="3"
+            class="w-2 md:w-10rem"
+            selected-items-label="{0} columns selected"
+            @update:model-value="onColumnToggle"
+          />
+          <label for="ms-columns" class="view-label2">Select Columns</label>
+        </PvFloatLabel>
+        <PvFloatLabel v-if="props.allowColumnSelection">
+          <PvMultiSelect
+            id="ms-freeze"
+            :model-value="frozenColumns"
+            :options="inputColumns"
+            option-label="header"
+            :max-selected-labels="3"
+            class="w-2 md:w-10rem"
+            selected-items-label="{0} columns frozen"
+            :show-toggle-all="false"
+            @update:model-value="onFreezeToggle"
+          />
+          <label for="ms-columns" class="view-label2">Freeze Columns</label>
+        </PvFloatLabel>
+        <span v-if="props.allowExport" class="flex flex-row flex-wrap justify-content-end gap-2 max-h-3 export-wrapper">
+          <PvButton
+            v-if="allowExport"
+            v-tooltip.bottom="
+              `Export scores for ${selectedRows.length} student${
+                selectedRows.length > 1 ? 's' : ''
+              } to CSV file for spreadsheet import`
+            "
+            label="Export Selected"
+            :badge="selectedRows?.length?.toString()"
+            :disabled="selectedRows.length === 0"
+            class="m-1 m-1 h-3rem bg-primary text-white border-none border-round h-2rem text-sm hover:bg-red-900"
+            @click="exportCSV(true, $event)"
+          />
+          <PvButton
+            v-if="allowExport"
+            v-tooltip.bottom="'Export all scores for all students to a CSV file for spreadsheet import.'"
+            label="Export Whole Table"
+            class="m-1 h-3rem bg-primary text-white border-none border-round h-2rem text-sm hover:bg-red-900"
+            @click="exportCSV(false, $event)"
+          />
+        </span>
+      </div>
     </div>
     <div class="flex flex-column">
       <span style="height: 10px">
@@ -173,6 +173,9 @@
                     size="small"
                   />
                 </router-link>
+                <span v-if="colData.userCount !== undefined && colData.userCount !== null" class="font-semibold text-sm ml-2">
+                  {{ colData.userCount }}
+                </span>
               </div>
               <div v-else-if="col.button">
                 <PvButton
@@ -400,11 +403,9 @@ Array of objects consisting of a field and header at minimum.
       scrolled left-to-right. It is suggested that this only be used on
       the leftmost column.
 */
-const rowViewMode = ref('Expand View');
-const countForVisualize = ref(false); //for starting compress
-const toggleView = () => {
-  compressedRows.value = !compressedRows.value;
-  increasePadding();
+const showControls = ref(false);
+const toggleControls = () => {
+  showControls.value = !showControls.value;
 };
 
 const props = defineProps({
@@ -491,18 +492,6 @@ const exportCSV = (exportSelected) => {
 };
 
 const compressedRows = ref(false);
-const padding = '1rem 1rem';
-
-function increasePadding() {
-  if (!countForVisualize.value) {
-    document.documentElement?.style.setProperty('--padding-value', padding);
-    rowViewMode.value = 'Compact View';
-  } else {
-    rowViewMode.value = 'Expand View';
-    document.documentElement?.style.setProperty('--padding-value', '0 1.5rem 0 1.5rem');
-  }
-  countForVisualize.value = !countForVisualize.value;
-}
 
 // Generate filters and options objects
 const dataTypesToFilterMatchMode = {
@@ -586,143 +575,6 @@ function getUniqueOptions(column) {
   return options;
 }
 
-const primaryTasks = [
-  'scores.letter.percentCorrect',
-  'scores.letter.percentile',
-  'scores.pa.percentile',
-  'scores.swr.percentile',
-  'scores.sre.percentile',
-  'scores.pa.standardScore',
-  'scores.swr.standardScore',
-  'scores.sre.standardScore',
-  'scores.sre.rawScore',
-  'scores.pa.rawScore',
-  'scores.swr.rawScore',
-  'scores.sre.rawScore',
-];
-
-const spanishTasks = [
-  'scores.letter-es.percentCorrect',
-  'scores.letter-es.percentile',
-  'scores.pa-es.percentCorrect',
-  'scores.swr-es.percentCorrect',
-  'scores.sre-es.correctIncorrectDifference',
-  'scores.pa-es.percentile',
-  'scores.swr-es.percentile',
-  'scores.sre-es.percentile',
-  'scores.letter-es.rawScore',
-  'scores.pa-es.rawScore',
-  'scores.swr-es.rawScore',
-  'scores.sre-es.rawScore',
-];
-
-const spanishMathTasks = [
-  'scores.fluency-arf-es.numCorrect',
-  'scores.fluency-calf-es.numCorrect',
-  'scores.fluency-arf-es.percentile',
-  'scores.fluency-calf-es.percentile',
-];
-
-const supplementaryTasks = [
-  'scores.morphology.percentCorrect',
-  'scores.cva.percentCorrect',
-  'scores.vocab.percentCorrect',
-  'scores.trog.percentCorrect',
-  'scores.roar-inference.percentCorrect',
-  'scores.phonics.percentCorrect',
-  'scores.morphology.percentile',
-  'scores.cva.percentile',
-  'scores.vocab.percentile',
-  'scores.trog.percentile',
-  'scores.roar-inference.percentile',
-  'scores.phonics.percentile',
-];
-
-const roamTasks = [
-  'scores.fluency-arf.numCorrect',
-  'scores.fluency-calf.numCorrect',
-  'scores.roam-alpaca.percentile',
-  'scores.egma-math.percentile',
-  'scores.fluency-arf.numCorrect',
-  'scores.fluency-calf.numCorrect',
-  'scores.roam-alpaca.percentCorrect',
-  'scores.egma-math.percentCorrect',
-  'scores.fluency-calf.percentile',
-  'scores.fluency-arf.percentile',
-];
-
-const roavTasks = [
-  'scores.ran.percentile',
-  'scores.crowding.percentile',
-  'scores.roav-mep.percentile',
-  'scores.mep.percentile',
-  'scores.mep-pseudo.percentile',
-  'scores.ran.percentCorrect',
-  'scores.crowding.percentCorrect',
-  'scores.roav-mep.percentCorrect',
-  'scores.mep.percentCorrect',
-  'scores.mep-pseudo.percentCorrect',
-];
-const getSpacerColumnWidth = computed(() => {
-  // Look through computedColumns.value
-  // Find first instance of a Spanish or supplementary or math or vision column
-  // If found, return the index of that first column, return that as the length of the spacer row
-  const columns = computedColumns.value;
-  const allTasks = [
-    ...primaryTasks,
-    ...spanishTasks,
-    ...spanishMathTasks,
-    ...supplementaryTasks,
-    ...roamTasks,
-    ...roavTasks,
-  ];
-  for (let i = 0; i < columns.length; i++) {
-    if (allTasks.includes(columns[i].field)) {
-      return i + 1;
-    }
-  }
-  return columns.length;
-});
-
-const primarySpacerColumns = computed(() => {
-  // Return the number of the primary columns in computedColumns.value
-  // Return 0 if no Spanish columns
-  const columns = computedColumns.value;
-  return columns.filter((column) => primaryTasks.includes(column.field)).length;
-});
-
-const spanishSpacerColumns = computed(() => {
-  // Return the number of the spanish columns in computedColumns.value
-  // Return 0 if no Spanish columns
-  const columns = computedColumns.value;
-  return columns.filter((column) => spanishTasks.includes(column.field)).length;
-});
-
-const spanishMathSpacerColumns = computed(() => {
-  // Return the number of the spanish columns in computedColumns.value
-  // Return 0 if no Spanish columns
-  const columns = computedColumns.value;
-  return columns.filter((column) => spanishMathTasks.includes(column.field)).length;
-});
-
-const supplementarySpacerColumns = computed(() => {
-  // Return the number of supplementary columns in computedColumns.value
-  const columns = computedColumns.value;
-  return columns.filter((column) => supplementaryTasks.includes(column.field)).length;
-});
-
-const mathSpacerColumns = computed(() => {
-  // Return the number of math columns in computedColumns.value
-  const columns = computedColumns.value;
-  return columns.filter((column) => roamTasks.includes(column.field)).length;
-});
-
-const visionSpacerColumns = computed(() => {
-  // Return the number of vision columns in computedColumns.value
-  const columns = computedColumns.value;
-  return columns.filter((column) => roavTasks.includes(column.field)).length;
-});
-
 function getFormattedDate(date) {
   if (date instanceof Date) {
     return date.toLocaleDateString('en-us', { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' });
@@ -755,17 +607,24 @@ const onFreezeToggle = (selected) => {
   });
 };
 
-const op = ref();
-const selectedColumn = ref(null);
-
-const toggle = (event, column) => {
-  selectedColumn.value = column;
-  op.value.toggle(event);
-};
 // Pass through data table events
 const emit = defineEmits(['export-all', 'selection', 'reset-filters', 'export-selected', 'export-org-users']);
 </script>
 <style>
+
+.options-container {
+  .options-toggle {
+    position: absolute;
+    top: 10px;
+    background: transparent;
+    border: 1px solid transparent;
+    padding: 0;
+    margin: 0;
+    font: inherit;
+    cursor: pointer;
+  }
+}
+
 .small-circle {
   border-color: white;
   display: inline-block;
@@ -792,6 +651,10 @@ const emit = defineEmits(['export-all', 'selection', 'reset-filters', 'export-se
   margin-left: 10px;
   margin-top: 5px;
   margin-bottom: 5px;
+}
+
+.p-component {
+  position: relative;
 }
 
 button.p-button.p-component.softer {
@@ -824,6 +687,10 @@ g {
   margin-bottom: 5px;
 }
 
+.p-datatable-popover-filter {
+  display: none!important;
+}
+
 .export-wrapper {
   max-height: 4rem;
 }
@@ -847,6 +714,10 @@ g {
 
 button.p-column-filter-menu-button.p-link:hover {
   background: var(--surface-500);
+}
+
+.p-datatable .p-datatable-tbody > tr > td {
+  padding: 0.2rem 1rem!important;
 }
 
 .compressed .p-datatable .p-datatable-tbody > tr > td {

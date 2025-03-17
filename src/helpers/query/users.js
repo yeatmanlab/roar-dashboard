@@ -169,3 +169,4 @@ export const countUsersByOrg = async (orgType, orgId, orderBy, restrictToActiveU
     return Number(convertValues(data[0].result?.aggregateFields?.count));
   });
 };
+

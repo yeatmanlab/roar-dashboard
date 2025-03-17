@@ -57,7 +57,6 @@
                 :options="schools"
                 show-clear
                 option-label="name"
-                :placeholder="schoolDropdownEnabled ? 'Select a school' : 'Please select a district first'"
                 :loading="!schoolDropdownEnabled"
                 class="w-full"
                 data-cy="dropdown-parent-school"
