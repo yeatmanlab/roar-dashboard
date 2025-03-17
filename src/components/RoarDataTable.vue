@@ -4,9 +4,9 @@
   </div>
   <div v-else class="options-container">
     <div class="flex justify-content-end mr-3 mt-2">
-      <a href="#" class="text-red-700 cursor-pointer options-toggle" @click.prevent="toggleControls">
+      <button type="button" class="text-red-700 cursor-pointer options-toggle" @click.prevent="toggleControls">
         {{ showControls ? 'Hide Options' : 'Show Options' }}
-      </a>
+      </button>
     </div>
     <div v-if="showControls" class="w-full gap-1 pt-1 flex justify-content-center align-items-center flex-wrap mb-4">
       <div v-if="props.allowFiltering || props.allowColumnSelection || props.allowExport" class="w-full gap-1 pt-1 flex justify-content-center align-items-center flex-wrap mt-3">
@@ -616,6 +616,12 @@ const emit = defineEmits(['export-all', 'selection', 'reset-filters', 'export-se
   .options-toggle {
     position: absolute;
     top: 10px;
+    background: transparent;
+    border: 1px solid transparent;
+    padding: 0;
+    margin: 0;
+    font: inherit;
+    cursor: pointer;
   }
 }
 
