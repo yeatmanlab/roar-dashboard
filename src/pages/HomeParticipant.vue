@@ -171,9 +171,12 @@ const {
 
 const adminOrgIntersection = computed(() => {
   const orgIntersection = highestAdminOrgIntersection(userData.value, authStore?.userClaims?.claims?.adminOrgs);
-  orgType.value = orgIntersection?.orgType;
-  orgIds.value = orgIntersection?.orgIds;
   return orgIntersection;
+});
+
+watch(adminOrgIntersection, (newOrgIntersection) => {
+  orgType.value = newOrgIntersection?.orgType;
+  orgIds.value = newOrgIntersection?.orgIds;
 });
 
 const orgType = ref('');

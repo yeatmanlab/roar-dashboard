@@ -128,7 +128,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref, watch, computed } from 'vue';
+import { onMounted, ref, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import PvAutoComplete from 'primevue/autocomplete';
 import PvBlockUI from 'primevue/blockui';
@@ -143,7 +143,6 @@ import { getTitle } from '@/helpers/query/administrations';
 import useUserType from '@/composables/useUserType';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useAdministrationsListQuery from '@/composables/queries/useAdministrationsListQuery';
-import useUsersDataQuery from '@/composables/queries/useUsersDataQuery';
 import CardAdministration from '@/components/CardAdministration.vue';
 
 const initialized = ref(false);
@@ -162,10 +161,6 @@ const fetchTestAdministrations = ref(false);
 const isLevante = import.meta.env.MODE === 'LEVANTE';
 
 const authStore = useAuthStore();
-
-const isCaregiverWithStudents = computed(
-  () => authStore?.userData?.isCaregiver && authStore?.userData?.childrenUids.length > 0,
-);
 
 const { roarfirekit } = storeToRefs(authStore);
 
@@ -217,16 +212,6 @@ const {
 } = useAdministrationsListQuery(orderBy, fetchTestAdministrations, {
   enabled: initialized,
 });
-
-const {
-  isLoading: isLoadingChildUserData,
-  isFetching: isFetchingChildUserData,
-  data: childUsers,
-} = useUsersDataQuery(authStore.userData.childrenUids, {
-  enabled: initialized,
-});
-
-console.log('childusers', childUsers);
 
 /**
  * Administration data watcher

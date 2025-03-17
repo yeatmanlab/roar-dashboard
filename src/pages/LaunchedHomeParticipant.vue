@@ -5,7 +5,7 @@
 <script setup>
 import HomeParticipant from '@/pages/HomeParticipant.vue';
 
-const props = defineProps({
+defineProps({
   participantId: { type: String, required: false, default: null },
 });
 </script>
