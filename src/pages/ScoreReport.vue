@@ -304,6 +304,7 @@ import {
   tasksToDisplayPercentCorrect,
   tasksToDisplayTotalCorrect,
   tasksToDisplayThetaScore,
+  excludeFromScoringTasks,
   addElementToPdf,
   getScoreKeys,
   gradeOptions,
@@ -1274,6 +1275,7 @@ const scoreReportColumns = computed(() => {
   }
 
   for (const taskId of orderedTasks) {
+    if (excludeFromScoringTasks.includes(taskId)) continue; // Skip adding this column
     let colField;
     const isOptional = `scores.${taskId}.optional`;
 

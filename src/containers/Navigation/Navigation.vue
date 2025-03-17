@@ -100,6 +100,7 @@ const navbarBlacklist = [
   'Launch RAN',
   'Launch Crowding',
   'Launch MEP',
+  'ReadAloud',
 ];
 
 const showAccountSettingsLink = computed(() => {

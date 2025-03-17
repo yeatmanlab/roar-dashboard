@@ -448,6 +448,13 @@ const routes = [
     }),
     meta: { pageTitle: 'MEP' },
   },
+    {
+    path: '/game/roar-readaloud',
+    name: 'ReadAloud',
+    component: () => import('../components/tasks/TaskReadAloud.vue'),
+    props: { taskId: 'roar-readaloud', language: 'en' },
+    meta: { pageTitle: 'ReadAloud' },
+  },
   {
     path: '/manage-tasks-variants',
     name: 'ManageTasksVariants',
