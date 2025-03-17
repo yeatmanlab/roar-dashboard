@@ -448,7 +448,7 @@ const routes = [
     }),
     meta: { pageTitle: 'MEP' },
   },
-    {
+  {
     path: '/game/roar-readaloud',
     name: 'ReadAloud',
     component: () => import('../components/tasks/TaskReadAloud.vue'),
