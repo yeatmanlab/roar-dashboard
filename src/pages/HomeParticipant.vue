@@ -191,8 +191,8 @@ const isSuperAdmin = computed(() => {
 });
 
 watchEffect(() => {
-  // If user is superadmin, we won't need to compute the orgIntersection
-  if (isSuperAdmin.value) {
+  // If user is superadmin, or is a non-externally launched participant we won't need to compute the orgIntersection
+  if (isSuperAdmin.value || !props.launchId) {
     isOrgIntersectionReady.value = true;
   } else {
     isOrgIntersectionReady.value =
