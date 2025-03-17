@@ -49,7 +49,7 @@
       id="example-image"
       src="https://storage.googleapis.com/road-dashboard/example_researcher_csv.png"
       alt="CSV upload example"
-      style="width: 100%; max-width: 600px; height: auto;"
+      style="width: 100%; max-width: 1400px; height: auto;"
     />
   </PvPanel>
 </template>
