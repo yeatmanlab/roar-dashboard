@@ -77,7 +77,7 @@ export const testSpecs = [
     language: 'es',
   },
   {
-    name: 'ROAM - Single Digit',
+    name: 'ROAM - Math Facts',
     app: '@bdelab/roam-fluency',
     spec: playARF,
     language: 'en',
@@ -89,7 +89,7 @@ export const testSpecs = [
     language: 'es',
   },
   {
-    name: 'ROAM - Multi Digit',
+    name: 'ROAM - Calculation Fluency',
     app: '@bdelab/roam-fluency',
     spec: playCALF,
     language: 'en',
