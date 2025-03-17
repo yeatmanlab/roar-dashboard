@@ -12,7 +12,7 @@ const sidebarActionOptions = [
   },
   {
     title: 'Audience',
-    icon: 'pi pi-folder-open',
+    // icon: 'pi pi-folder-open',
     buttonLink: { name: 'ListOrgs' },
     requiresSuperAdmin: false,
     requiresAdmin: true,
