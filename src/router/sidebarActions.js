@@ -1,3 +1,5 @@
+import { usePermissions } from '../composables/usePermissions';
+import { Permissions } from '@bdelab/roar-firekit';
 const sidebarActionOptions = [
   {
     title: 'Back to Dashboard',
@@ -14,6 +16,7 @@ const sidebarActionOptions = [
     buttonLink: { name: 'ListOrgs' },
     requiresSuperAdmin: false,
     requiresAdmin: true,
+    permission: Permissions.Organizations.LIST,
     project: 'ALL',
     category: 'Organizations',
   },
@@ -23,6 +26,7 @@ const sidebarActionOptions = [
     buttonLink: { name: 'CreateOrgs' },
     requiresSuperAdmin: true,
     requiresAdmin: true,
+    permission: Permissions.Organizations.CREATE,
     project: 'ALL',
     category: 'Organizations',
   },
@@ -32,6 +36,7 @@ const sidebarActionOptions = [
     buttonLink: { name: 'RegisterStudents' },
     requiresSuperAdmin: true,
     requiresAdmin: true,
+    permission: Permissions.Users.CREATE,
     project: 'ROAR',
     category: 'Users',
   },
@@ -40,6 +45,7 @@ const sidebarActionOptions = [
     icon: 'pi pi-user-plus',
     buttonLink: { name: 'CreateAdministrator' },
     requiresSuperAdmin: true,
+    permission: Permissions.Administrators.CREATE,
     project: 'ALL',
     category: 'Users',
   },
@@ -49,6 +55,7 @@ const sidebarActionOptions = [
     buttonLink: { name: 'Home' },
     requiresSuperAdmin: false,
     requiresAdmin: true,
+    permission: Permissions.Administrations.LIST,
     project: 'ALL',
     category: 'Administrations',
   },
@@ -58,6 +65,7 @@ const sidebarActionOptions = [
     buttonLink: { name: 'CreateAdministration' },
     requiresSuperAdmin: true,
     requiresAdmin: true,
+    permission: Permissions.Administrations.CREATE,
     project: 'ALL',
     category: 'Administrations',
   },
@@ -67,6 +75,7 @@ const sidebarActionOptions = [
     buttonLink: { name: 'ManageTasksVariants' },
     requiresSuperAdmin: true,
     requiresAdmin: true,
+    permission: Permissions.Tasks.UPDATE,
     project: 'ALL',
     category: 'Administrations',
   },
@@ -90,6 +99,7 @@ const sidebarActionOptions = [
 ];
 
 export const getSidebarActions = ({ isSuperAdmin = false, isAdmin = false }) => {
+  const { userCan } = usePermissions();
   if (import.meta.env.MODE === 'LEVANTE') {
     return sidebarActionOptions.filter((action) => {
       if (action.project === 'LEVANTE' || action.project === 'ALL') {
@@ -111,11 +121,10 @@ export const getSidebarActions = ({ isSuperAdmin = false, isAdmin = false }) => 
   } else {
     const actions = sidebarActionOptions.filter((action) => {
       if (action.project === 'ROAR' || action.project === 'ALL') {
-        if (action.requiresSuperAdmin && !isSuperAdmin) {
-          return false;
-        }
-        if (action.requiresAdmin && !isAdmin) {
-          return false;
+        // If the action requires a permission, check user's permissions.
+        const permission = action.permission;
+        if (Object.keys(action).includes('permission')) {
+          return userCan(permission);
         }
         return true;
       }
