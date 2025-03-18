@@ -1199,6 +1199,9 @@ const scoreReportColumns = computed(() => {
       dataType: 'text',
       sort: true,
       filter: true,
+      useMultiSelect: true,
+      multiSelectOptions: districtSchoolsData.value.map((school) => school.name),
+      multiSelectPlaceholder: 'Filter by School',
       headerStyle: authStore.isUserSuperAdmin
         ? `background:var(--primary-color); color:white; padding-top:0; margin-top:0; padding-bottom:0; margin-bottom:0; border:0; margin-left:0 `
         : `background:var(--primary-color); color:white; padding-top:0; margin-top:0; padding-bottom:0; margin-bottom:0; border:0; margin-left:0; border-right-width:2px; border-right-style:solid; border-right-color:#ffffff;`,

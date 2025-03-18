@@ -445,6 +445,9 @@ const progressReportColumns = computed(() => {
       dataType: 'text',
       sort: true,
       filter: false,
+      useMultiSelect: true,
+      multiSelectOptions: districtSchoolsData.value.map((school) => school.name),
+      multiSelectPlaceholder: 'Filter by School',
       schoolsMap: schoolsMap,
     });
   }

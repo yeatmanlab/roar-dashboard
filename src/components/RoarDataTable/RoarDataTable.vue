@@ -215,14 +215,19 @@
                 class="p-column-filter"
                 placeholder="Search"
               />
+              <div v-if="col.useMultiSelect" style="max-width: 12rem">
               <PvMultiSelect
                 v-if="col.useMultiSelect"
                 v-model="filterModel.value"
                 :options="_get(refOptions, col.field)"
-                placeholder="Any"
+                  :placeholder="_get(col, 'multiSelectPlaceholder', 'Any')"
                 :show-toggle-all="false"
+                  :maxSelectedLabels="1"
                 class="p-column-filter"
+                  style="width: 12rem"
+                  @change="filterCallback()"
               />
+              </div>
               <PvDatePicker
                 v-if="col.dataType === 'date' && !col.useMultiSelect"
                 v-model="filterModel.value"
