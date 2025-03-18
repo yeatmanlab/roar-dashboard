@@ -6,8 +6,7 @@
     <section id="signin">
       <header>
         <div class="signin-logo">
-          <PvImage v-if="isLevante" src="/LEVANTE/Levante_Logo.png" alt="LEVANTE Logo" width="200" />
-          <ROARLogoShort v-else />
+          <PvImage src="/LEVANTE/Levante_Logo.png" alt="LEVANTE Logo" width="200" />
         </div>
       </header>
       <h1 v-if="!isLevante">{{ $t('pageSignIn.welcome') }}</h1>
@@ -52,7 +51,6 @@
               style="border-radius: 3rem; height: 3rem"
               @click="authWithClever"
             >
-              <img src="../assets/provider-clever-logo.svg" alt="The Clever Logo" class="flex mr-2 w-2" />
               <span>Clever</span>
             </PvButton>
             <PvButton
@@ -61,7 +59,6 @@
               style="border-radius: 3rem; height: 3rem"
               @click="authWithClassLink"
             >
-              <img src="../assets/provider-classlink-logo.png" alt="The ClassLink Logo" class="flex mr-2 w-2" />
               <span>ClassLink</span>
             </PvButton>
           </div>
@@ -111,7 +108,6 @@
             style="border-radius: 3rem; height: 3rem"
             @click="authWithClever"
           >
-            <img src="../assets/provider-clever-logo.svg" alt="The Clever Logo" class="flex mr-2 w-2" />
             <span>Clever</span>
           </PvButton>
         </div>
@@ -122,7 +118,6 @@
             style="border-radius: 3rem; height: 3rem"
             @click="authWithClassLink"
           >
-            <img src="../assets/provider-classlink-logo.png" alt="The ClassLink Logo" class="flex mr-2 w-2" />
             <span>ClassLink</span>
           </PvButton>
         </div>
@@ -157,7 +152,6 @@ import { useRouter } from 'vue-router';
 import PvButton from 'primevue/button';
 import PvImage from 'primevue/image';
 import PvPassword from 'primevue/password';
-import ROARLogoShort from '@/assets/RoarLogo-Short.vue';
 import { useAuthStore } from '@/store/auth';
 import { isMobileBrowser } from '@/helpers';
 import { fetchDocById } from '@/helpers/query/utils';
