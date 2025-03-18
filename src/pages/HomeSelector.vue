@@ -115,9 +115,10 @@ async function checkConsent() {
   }
 
   const legalDocs = consentStatus?.[consentDoc.version] || [];
-  const signedBeforeAugFirst = legalDocs.some((doc) => isSignedBeforeAugustFirst(doc.dateSigned));
+  const allSignaturesBeforeAugFirst =
+    legalDocs.length === legalDocs.filter((doc) => isSignedBeforeAugustFirst(doc.dateSigned)).length;
 
-  if (signedBeforeAugFirst) {
+  if (allSignaturesBeforeAugFirst) {
     confirmText.value = consentDoc.text;
     showConsent.value = true;
   }

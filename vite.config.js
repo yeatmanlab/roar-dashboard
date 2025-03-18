@@ -155,6 +155,7 @@ export default defineConfig(({ mode }) => {
             ran: ['@bdelab/roav-ran'],
             crowding: ['@bdelab/roav-crowding'],
             'roav-mep': ['@bdelab/roav-mep'],
+            'roar-readaloud': ['@bdelab/roar-readaloud'],
           },
         },
       },
