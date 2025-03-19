@@ -7,8 +7,7 @@
             <template #start>
               <router-link :to="{ path: APP_ROUTES.HOME }">
                 <div class="navbar-logo mx-3">
-                  <PvImage v-if="isLevante" src="/LEVANTE/Levante_Logo.png" alt="LEVANTE Logo" width="200" />
-                  <ROARLogo v-else />
+                  <PvImage src="/LEVANTE/Levante_Logo.png" alt="LEVANTE Logo" width="200" />
                 </div>
               </router-link>
             </template>
@@ -45,17 +44,13 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
-import _isEmpty from 'lodash/isEmpty';
-import _union from 'lodash/union';
 import PvButton from 'primevue/button';
 import PvImage from 'primevue/image';
 import PvMenubar from 'primevue/menubar';
 import { useAuthStore } from '@/store/auth';
 import { getSidebarActions } from '@/router/sidebarActions';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
-import { isLevante } from '@/helpers';
 import { APP_ROUTES } from '@/constants/routes';
-import ROARLogo from '@/assets/RoarLogo.vue';
 import Badge from 'primevue/badge';
 import UserActions from './UserActions.vue';
 import useUserType from '@/composables/useUserType';
@@ -163,7 +158,7 @@ const userDisplayName = computed(() => {
   }
 });
 
-const {userType, isAdmin, _ , isSuperAdmin} = useUserType(userClaims);
+const {isAdmin, isSuperAdmin} = useUserType(userClaims);
 
 const computedIsBasicView = computed(() => {
   if (!userClaims.value) {
