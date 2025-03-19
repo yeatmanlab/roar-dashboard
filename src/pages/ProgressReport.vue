@@ -50,14 +50,8 @@
                 :key="taskId"
                 class="flex justify-content-between align-items-center"
               >
-                <div v-if="tasksDictionary[taskId]" class="text-lg font-bold text-gray-600 w-full">
-                  {{ tasksDictionary[taskId]?.technicalName ?? taskId }}
-                  <span v-if="tasksDictionary[taskId]?.publicName" class="font-light uppercase text-sm">
-                    ({{ tasksDictionary[taskId].publicName }})
-                  </span>
-                </div>
-                <div v-else class="text-lg font-bold text-gray-600 w-full">
-                  {{ taskId }}
+                <div class="text-lg font-bold text-gray-600 w-full">
+                  {{ tasksDictionary[taskId]?.name || taskId }}
                 </div>
                 <PvChart
                   type="bar"
@@ -265,6 +259,7 @@ const { data: tasksDictionary, isLoading: isLoadingTasksDictionary } = useTasksD
   enabled: initialized,
 });
 
+
 const { data: userClaims } = useUserClaimsQuery({
   enabled: initialized,
 });
@@ -274,12 +269,6 @@ const { isSuperAdmin } = useUserType(userClaims);
 const { data: administrationData } = useAdministrationsQuery([props.administrationId], {
   enabled: initialized,
   select: (data) => data[0],
-});
-
-watch(administrationData, (newAdministrationData) => {
-  if (newAdministrationData) {
-    console.log('administrationData: ', newAdministrationData);
-  }
 });
 
 const { data: adminStats } = useAdministrationsStatsQuery([props.administrationId], {
@@ -544,8 +533,6 @@ const progressReportColumns = computed(() => {
   const tableColumns = [];
   const columnDefinitions = [
     { field: 'user.email', header: 'Email', pinned: true },
-    { field: 'user.firstName', header: 'First Name' },
-    { field: 'user.lastName', header: 'Last Name' }
   ];
 
   columnDefinitions.forEach(({ field, header, pinned }) => {
@@ -562,14 +549,8 @@ const progressReportColumns = computed(() => {
     }
   });
 
-  if (!isLevante) {
-    tableColumns.push({ field: 'user.grade', header: 'Grade', dataType: 'text', sort: true, filter: true });
-  }
-
-  if (isLevante) {
-    tableColumns.push({ field: 'user.userId', header: 'UID', dataType: 'text', sort: true, filter: true });
-    tableColumns.push({ field: 'user.email', header: 'Email', dataType: 'text', sort: true, filter: true });
-  }
+  tableColumns.push({ field: 'user.userId', header: 'UID', dataType: 'text', sort: true, filter: true });
+  tableColumns.push({ field: 'user.email', header: 'Email', dataType: 'text', sort: true, filter: true });
 
   if (props.orgType === 'district') {
     const schoolsMap = districtSchoolsData.value?.reduce((acc, school) => {
@@ -584,10 +565,6 @@ const progressReportColumns = computed(() => {
       filter: false,
       schoolsMap: schoolsMap,
     });
-  }
-
-  if (authStore.isUserSuperAdmin && !isLevante) {
-    tableColumns.push({ field: 'user.assessmentPid', header: 'PID', dataType: 'text', sort: false });
   }
 
   const allTaskIds = administrationData.value.assessments?.map((assessment) => assessment.taskId);
@@ -618,7 +595,7 @@ const progressReportColumns = computed(() => {
     tableColumns.push({
       field: `progress.${taskId}.value`,
       filterField: `progress.${taskId}.tags`,
-      header: tasksDictionary.value[taskId]?.publicName ?? taskId,
+      header: tasksDictionary.value[taskId]?.name ?? taskId,
       dataType: 'progress',
       tag: true,
       severityField: `progress.${taskId}.severity`,
