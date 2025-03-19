@@ -5,9 +5,13 @@ import Vue from '@vitejs/plugin-vue';
 import mkcert from 'vite-plugin-mkcert';
 import { nodePolyfills } from 'vite-plugin-node-polyfills';
 import UnheadVite from '@unhead/addons/vite';
+import * as child from 'child_process';
+
+const commitHash = child.execSync("git rev-parse --short HEAD").toString();
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  define: {'import.meta.env.VITE_APP_VERSION': JSON.stringify(commitHash)},
   plugins: [
     Vue({
       include: [/\.vue$/, /\.md$/],
