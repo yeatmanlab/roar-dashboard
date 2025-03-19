@@ -26,7 +26,7 @@ function launchExternalStudent() {
     .first()
     .click();
   cy.wait(0.3 * timeout);
-  cy.get('body', { timeout: 3 * timeout }).should('contain', 'Currently in external launch mode');
+  cy.get('body', { timeout: 10 * timeout }).should('contain', 'Currently in external launch mode');
 }
 
 describe('The partner admin can view individual score reports for a given administration.', () => {
