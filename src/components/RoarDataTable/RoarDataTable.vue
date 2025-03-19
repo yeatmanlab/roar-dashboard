@@ -102,7 +102,7 @@
         >
           <PvColumn
             selection-mode="multiple"
-            header-style="background-color: var(--primary-color); border:none;"
+            header-style="background:color-mix(in srgb, var(--primary-color) 80%, white); border-left:4px solid var(--primary-color); border-right: 2px solid var(--primary-color); border-top:4px solid var(--primary-color); border-bottom: 4px solid var(--primary-color);"
             :reorderable-column="false"
             frozen
           />
@@ -119,7 +119,7 @@
             :frozen="col.pinned"
             :style="col.style"
             align-frozen="left"
-            header-style="background:var(--primary-color); color:white; padding-top:0; margin-top:0; padding-bottom:0; margin-bottom:0; border:0; margin-left:0"
+            header-style="background:color-mix(in srgb, var(--primary-color) 80%, white); color: white; padding-top:0; margin-top:0; padding-bottom:0; margin-bottom:0; border-left:2px solid var(--primary-color); border-right: 2px solid var(--primary-color); border-top:4px solid var(--primary-color); border-bottom: 4px solid var(--primary-color); margin-left:0"
           >
             <template #header>
               <div
@@ -195,7 +195,7 @@
               <div v-else-if="col.field === 'user.lastName'">
                 {{ _get(colData, col.field) }}
               </div>
-              <div v-else>
+              <div v-else class="px-4">
                 {{ _get(colData, col.field) }}
               </div>
             </template>
@@ -204,7 +204,10 @@
               <i v-if="sorted && sortOrder === 1" class="pi pi-sort-amount-down-alt ml-2" />
               <i v-else-if="sorted && sortOrder === -1" class="pi pi-sort-amount-up-alt ml-2" />
             </template>
-            <template v-if="col.dataType" #filter="{ filterModel }">
+            <template #filtericon>
+              <i class="pi pi-filter" v-tooltip.top="'Filter Column'" />
+            </template>
+            <template v-if="col.dataType" #filter="{ filterModel, filterCallback }">
               <div v-if="col.dataType === 'text' && !col.useMultiSelect" class="filter-content">
                 <PvInputText v-model="filterModel.value" type="text" class="p-column-filter" placeholder="Filter" />
               </div>
@@ -216,17 +219,17 @@
                 placeholder="Search"
               />
               <div v-if="col.useMultiSelect" style="max-width: 12rem">
-              <PvMultiSelect
-                v-if="col.useMultiSelect"
-                v-model="filterModel.value"
-                :options="_get(refOptions, col.field)"
+                <PvMultiSelect
+                  v-if="col.useMultiSelect"
+                  v-model="filterModel.value"
+                  :options="_get(refOptions, col.field)"
                   :placeholder="_get(col, 'multiSelectPlaceholder', 'Any')"
-                :show-toggle-all="false"
+                  :show-toggle-all="false"
                   :maxSelectedLabels="1"
-                class="p-column-filter"
+                  class="p-column-filter"
                   style="width: 12rem"
                   @change="filterCallback()"
-              />
+                />
               </div>
               <PvDatePicker
                 v-if="col.dataType === 'date' && !col.useMultiSelect"
@@ -289,7 +292,7 @@
                 <PvSelect
                   v-model="filterModel.value"
                   :options="['Assigned', 'Started', 'Completed', 'Optional']"
-                  style="margin-bottom: 0.5rem"
+                  style="margin-bottom: 0.5rem; width: 12rem"
                   data-cy="progress-filter-dropdown"
                 >
                   <template #option="{ option }">
@@ -726,6 +729,10 @@ button.p-column-filter-menu-button.p-link:hover {
   display: none;
 }
 
+.p-datatable-column-filter-button.p-button-text.p-button-secondary:not(:disabled):hover {
+  background: var(--primary-color) !important;
+}
+
 .p-column-filter-matchmode-dropdown {
   /* Our current filtering queries do not support options other than equals
      for strings. To reduce confusion for end users, remove the dropdown
@@ -756,6 +763,9 @@ button.p-column-filter-menu-button.p-link:hover {
 }
 .p-button-text.p-button-secondary {
   color: white !important;
+}
+.p-button-text.p-button-secondary:hover {
+  color: var(--gray-300) !important;
 }
 .p-tag {
   margin: 5px;
