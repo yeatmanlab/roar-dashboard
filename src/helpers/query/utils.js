@@ -187,6 +187,8 @@ export const fetchDocumentsById = async (collection, docIds, select = [], db = F
 
   const response = await axiosInstance.post(':batchGet', requestBody);
 
+  console.log('response: ', response);
+
   return response.data
     .filter(({ found }) => found)
     .map(({ found }) => {

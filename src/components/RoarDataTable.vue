@@ -144,7 +144,7 @@
                   :severity="_get(colData, col.severityField)"
                   :value="_get(colData, col.field)"
                   :icon="_get(colData, col.iconField)"
-                  :style="`min-width: 2rem; font-weight: bold;`"
+                  class="progress-tag"
                   rounded
                 />
               </div>
@@ -295,7 +295,7 @@
                         :severity="progressTags[option]?.severity"
                         :value="progressTags[option]?.value"
                         :icon="progressTags[option]?.icon"
-                        :style="`min-width: 2rem; font-weight: bold`"
+                        class="progress-tag"
                         rounded
                       />
                     </div>
@@ -306,7 +306,7 @@
                       :severity="progressTags[value]?.severity"
                       :value="progressTags[value]?.value"
                       :icon="progressTags[value]?.icon"
-                      :style="`min-width: 2rem; font-weight: bold`"
+                      class="progress-tag"
                       rounded
                     />
                   </template>
@@ -685,6 +685,7 @@ g {
   border-width: 0 0 1px 0;
   margin-top: 5px;
   margin-bottom: 5px;
+  padding: 0.6rem 1rem !important;
 }
 
 .p-datatable-popover-filter {
@@ -716,14 +717,11 @@ button.p-column-filter-menu-button.p-link:hover {
   background: var(--surface-500);
 }
 
-.p-datatable .p-datatable-tbody > tr > td {
-  padding: 0.2rem 1rem!important;
-}
-
 .compressed .p-datatable .p-datatable-tbody > tr > td {
   text-align: left;
   border: 1px solid var(--surface-c);
   border-width: 0 0 3px 0;
+  padding: 0.6rem 1rem !important;
 }
 
 .filter-content {
@@ -757,5 +755,18 @@ button.p-column-filter-menu-button.p-link:hover {
 
 .scrollable-container {
   scrollbar-color: var(--primary-color) white;
+}
+
+/* Add standardized styling for progress tags */
+.progress-tag {
+  min-width: 7rem !important;
+  display: inline-block !important;
+  text-align: center !important;
+  font-weight: bold !important;
+}
+
+/* Add spacing between icon and text in tags */
+.progress-tag .p-tag-icon {
+  margin-right: 0.5rem !important;
 }
 </style>
