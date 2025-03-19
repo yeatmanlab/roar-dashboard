@@ -16,11 +16,12 @@ const useUserAssignmentsQuery = (queryOptions = undefined, userId = null, orgTyp
   const authStore = useAuthStore();
   const { roarUid } = storeToRefs(authStore);
   const uid = computed(() => userId || roarUid.value);
-  console.log('queryuid', uid.value);
+  const isSuperAdmin = authStore?.userClaims?.claims?.super_admin;
+  const isExternalCallWithoutSuperAdmin = !isSuperAdmin && userId !== null;
 
-  const queryConditions = [() => !!uid.value && (userId ? orgType && orgIds : true)];
+  // We need to have the orgId and orgType for a non-superadmin call of an external fetch
+  const queryConditions = [() => !!uid.value && (isExternalCallWithoutSuperAdmin ? orgType && orgIds : true)];
   const { isQueryEnabled, options } = computeQueryOverrides(queryConditions, queryOptions);
-  console.log('query conditions', isQueryEnabled.value, orgType, orgIds);
 
   return useQuery({
     queryKey: [USER_ASSIGNMENTS_QUERY_KEY, uid, orgType, orgIds],

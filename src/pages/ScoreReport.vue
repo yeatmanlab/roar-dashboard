@@ -1222,6 +1222,7 @@ const scoreReportColumns = computed(() => {
     });
   }
 
+  // For now, only add the launch component if the user has a custom `canLaunch` boolean set in their userData
   if (authStore.userData.canLaunch) {
     tableColumns.push({
       header: 'Launch Student',

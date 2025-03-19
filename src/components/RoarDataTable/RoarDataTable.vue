@@ -185,7 +185,7 @@
                     :aria-label="col?.routeTooltip"
                     :icon="col?.routeIcon"
                     style="color: black !important"
-                    data-cy="route-button"
+                    data-cy="route-button-launch"
                     size="small"
                   />
                 </a>
