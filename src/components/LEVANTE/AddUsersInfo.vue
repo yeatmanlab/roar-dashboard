@@ -11,7 +11,7 @@
         <li><span class="step-number">1</span>Download the template below or create your own CSV with the required columns</li>
         <li><span class="step-number">2</span>Fill in CSV with the user data</li>
         <li><span class="step-number">3</span>Upload the file and click "Start Adding"</li>
-        <li><span class="step-number">4</span>Double check the users were downloaded</li>
+        <li><span class="step-number">4</span>Once finished, a file called "registered_users.csv" will be downloaded. If it is not in your downloads folder, click the "Download Users" button.</li>
         <li><span class="step-number">5</span>Click "Continue to Link Users"</li>
       </ol>
     </div>
@@ -21,8 +21,8 @@
     <ul>
       <!-- <li><b>id</b> - The unique identifier for the user. Start from 1.</li> -->
       <li><b>userType</b> - The type of user. Must be one of the following: child, parent, or teacher.</li>
-      <li><b>month</b><span class="required">*</span> - The month the child was born. Leave blank for parent or teacher users. (one digit)</li>
-      <li><b>year</b><span class="required">*</span> - The year the child was born. Leave blank for parent or teacher users. (four digits) </li>
+      <li><b>month</b><span class="required">*</span> - The month the child was born. Leave blank for parent or teacher users. (Ex. 1 for January)</li>
+      <li><b>year</b><span class="required">*</span> - The year the child was born. Leave blank for parent or teacher users. (Ex. 2020)</li>
       <li><b>group OR Site AND school</b> - The name of the group or site and school.</li>
     </ul>
 
