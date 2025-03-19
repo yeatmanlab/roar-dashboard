@@ -133,9 +133,7 @@ import { useRouter } from 'vue-router';
 import _get from 'lodash/get';
 import _kebabCase from 'lodash/kebabCase';
 import _map from 'lodash/map';
-import PvFloatLabel from 'primevue/floatlabel';
 import PvChart from 'primevue/chart';
-import PvMultiSelect from 'primevue/multiselect';
 import PvSelectButton from 'primevue/selectbutton';
 import { useAuthStore } from '@/store/auth';
 import useUserType from '@/composables/useUserType';
@@ -148,7 +146,7 @@ import useAdministrationAssignmentsQuery from '@/composables/queries/useAdminist
 import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery';
 import { getDynamicRouterPath } from '@/helpers/getDynamicRouterPath';
 import { exportCsv } from '@/helpers/query/utils';
-import { taskDisplayNames, gradeOptions } from '@/helpers/reports.js';
+import { taskDisplayNames } from '@/helpers/reports.js';
 import { getTitle } from '@/helpers/query/administrations';
 import { setBarChartData, setBarChartOptions } from '@/helpers/plotting';
 import { APP_ROUTES } from '@/constants/routes';

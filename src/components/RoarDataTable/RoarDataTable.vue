@@ -205,7 +205,7 @@
               <i v-else-if="sorted && sortOrder === -1" class="pi pi-sort-amount-up-alt ml-2" />
             </template>
             <template #filtericon>
-              <i class="pi pi-filter" v-tooltip.top="'Filter Column'" />
+              <i v-tooltip.top="'Filter Column'" class="pi pi-filter" />
             </template>
             <template v-if="col.dataType" #filter="{ filterModel, filterCallback }">
               <div v-if="col.dataType === 'text' && !col.useMultiSelect" class="filter-content">
@@ -225,7 +225,7 @@
                   :options="_get(refOptions, col.field)"
                   :placeholder="_get(col, 'multiSelectPlaceholder', 'Any')"
                   :show-toggle-all="false"
-                  :maxSelectedLabels="1"
+                  :max-selected-labels="1"
                   class="p-column-filter"
                   style="width: 12rem"
                   @change="filterCallback()"

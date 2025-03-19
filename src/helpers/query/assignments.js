@@ -4,7 +4,6 @@ import _flatten from 'lodash/flatten';
 import _get from 'lodash/get';
 import _groupBy from 'lodash/groupBy';
 import _mapValues from 'lodash/mapValues';
-import _replace from 'lodash/replace';
 import _uniq from 'lodash/uniq';
 import _without from 'lodash/without';
 import _isEmpty from 'lodash/isEmpty';

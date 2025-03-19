@@ -287,7 +287,6 @@ import useOrgQuery from '@/composables/queries/useOrgQuery';
 import useDistrictSchoolsQuery from '@/composables/queries/useDistrictSchoolsQuery';
 import useAdministrationAssignmentsQuery from '@/composables/queries/useAdministrationAssignmentsQuery';
 import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery';
-import { useFilteredTableData } from '@/composables/useFilteredTableData.js';
 import { exportCsv } from '@/helpers/query/utils';
 import { getTitle } from '@/helpers/query/administrations';
 import {
@@ -303,7 +302,6 @@ import {
   tasksToDisplayThetaScore,
   addElementToPdf,
   getScoreKeys,
-  gradeOptions,
   tasksToDisplayCorrectIncorrectDifference,
   includedValidityFlags,
 } from '@/helpers/reports';
@@ -478,10 +476,6 @@ const schoolNameDictionary = computed(() => {
       return acc;
     }, {}) || {}
   );
-});
-
-const schoolOptions = computed(() => {
-  return Object.values(schoolNameDictionary.value).map((name) => ({ name: name, label: name }));
 });
 
 // Return a faded color if assessment is not reliable
@@ -869,7 +863,6 @@ const computeAssignmentAndRunData = computed(() => {
 
 // This composable manages the data which is passed into the FilterBar component slot for filtering
 const filteredTableData = ref([]);
-const { updateFilters } = useFilteredTableData(filteredTableData);
 
 watch(
   computeAssignmentAndRunData,
