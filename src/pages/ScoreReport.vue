@@ -1095,6 +1095,7 @@ const refreshing = ref(false);
 
 const getTaskStyle = (taskId, backgroundColor, tasks) => {
   const taskGroups = {
+    primary: ['swr', 'sre', 'pa', 'letter', 'letter-en-ca'],
     spanish: ['letter-es', 'pa-es', 'swr-es', 'sre-es'],
     spanishmath: ['fluency-arf-es', 'fluency-calf-es'],
     supplementary: ['morphology', 'cva', 'vocab', 'trog', 'phonics', 'roar-inference'],
@@ -1118,17 +1119,22 @@ const getTaskStyle = (taskId, backgroundColor, tasks) => {
   const isCurrentTask = tasksList.includes(taskId);
   const firstMissingTask = tasksList.find((task) => tasks.includes(task));
 
-  if (taskId === tasksList[tasksList.length - 1] && firstMissingTask !== taskId) {
-    borderStyle = 'border-right: 5px solid var(--primary-color);';
+  const taskIndex = tasks.indexOf(taskId);
+  const nextTask = tasks[taskIndex + 1] ?? null;
+
+  if (nextTask && !taskGroups[taskGroup].includes(nextTask)) {
+    borderStyle = 'border-right: 2px solid var(--primary-color);;';
+  } else if (taskId === tasksList[tasksList.length - 1] && firstMissingTask !== taskId) {
+    borderStyle = 'border-right: 5px solid var(--primary-color);;';
   } else if (
     isCurrentTask &&
     firstMissingTask &&
     taskId === firstMissingTask &&
     firstMissingTask !== tasksList[tasksList.length - 1]
   ) {
-    borderStyle = 'border-left: 5px solid var(--primary-color);';
+    borderStyle = 'border-left: 2px solid var(--primary-color);;';
   } else if (firstMissingTask === tasksList[tasksList.length - 1]) {
-    borderStyle = 'border-right: 5px solid var(--primary-color); border-left: 5px solid var(--primary-color);';
+    borderStyle = 'border-right: 5px solid var(--primary-color); border-left: 5px solid var(--primary-color);;';
   }
   return `background-color: ${backgroundColor}; justify-content: center; margin: 0; text-align: center; ${borderStyle}`;
 };
@@ -1218,6 +1224,11 @@ const scoreReportColumns = computed(() => {
     });
   }
 
+  // Apply a border-right to the last column currently in the tableColumns object
+  tableColumns[tableColumns.length - 1].style = (() => {
+    return `border-right: 2px solid var(--primary-color);`;
+  })();
+
   const sortedTasks = allTasks.value.toSorted((p1, p2) => {
     if (Object.keys(taskDisplayNames).includes(p1) && Object.keys(taskDisplayNames).includes(p2)) {
       return taskDisplayNames[p1].order - taskDisplayNames[p2].order;
@@ -1306,7 +1317,6 @@ const scoreReportColumns = computed(() => {
     } else {
       backgroundColor = '#EEEEF0';
     }
-
     tableColumns.push({
       field: colField,
       header: tasksDictionary.value[taskId]?.publicName ?? taskId,
@@ -1319,9 +1329,6 @@ const scoreReportColumns = computed(() => {
       emptyTag: viewMode.value === 'color' || isOptional,
       tagColor: `scores.${taskId}.tagColor`,
       style: (() => {
-        if (taskId === orderedTasks[0]) {
-          return `background-color: ${backgroundColor}; justify-content: center; margin: 0; text-align: center; border-left: 5px solid var(--primary-color);`;
-        }
         return `text-align: center; ${getTaskStyle(taskId, backgroundColor, orderedTasks)}`;
       })(),
     });
