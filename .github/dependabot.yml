@@ -8,8 +8,8 @@ updates:
   - package-ecosystem: 'npm' # See documentation for possible values
     directory: '/' # Location of package manifests
     schedule:
-      interval: 'daily'
+      interval: 'weekly'
     groups:
-      bdelab-packages:
+      levante-packages:
         patterns:
-          - '@bdelab/roar-*'
+          - '@levante-framework/levante-*'
