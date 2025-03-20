@@ -126,15 +126,13 @@
             }"
           >
             <template #header>
-              <div
-                v-tooltip.top="`${toolTipByHeader(col.header)}`"
-                :style="[
-                  toolTipByHeader(col.header).length > 0
-                    ? 'text-decoration: underline dotted #0000CD; text-underline-offset: 3px'
-                    : null,
-                ]"
-              >
+              <div>
                 {{ col.header }}
+                <i
+                  v-if="toolTipByHeader(col.header).length > 0"
+                  v-tooltip.top="`${toolTipByHeader(col.header)}`"
+                  class="pi pi-info-circle"
+                />
               </div>
             </template>
             <template #body="{ data: colData }">
