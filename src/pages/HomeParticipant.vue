@@ -123,6 +123,7 @@ import useSignOutMutation from '@/composables/mutations/useSignOutMutation';
 import ConsentModal from '@/components/ConsentModal.vue';
 import GameTabs from '@/components/GameTabs.vue';
 import ParticipantSidebar from '@/components/ParticipantSidebar.vue';
+import useUserType from '@/composables/useUserType';
 import { highestAdminOrgIntersection } from '@/helpers/query/assignments';
 
 const showConsent = ref(false);
@@ -188,10 +189,7 @@ const userAssignmentsQueryEnabled = computed(() => {
   return isOrgIntersectionReady.value && initialized.value;
 });
 
-const isSuperAdmin = computed(() => {
-  if (authStore?.userClaims.claims?.super_admin) return true;
-  return false;
-});
+const { isSuperAdmin } = useUserType(userClaims);
 
 watchEffect(() => {
   // If user is superadmin, or is a non-externally launched participant we won't need to compute the orgIntersection
