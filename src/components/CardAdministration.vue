@@ -3,7 +3,6 @@
     <div v-if="props.stats && isSuperAdmin" class="card-admin-chart">
       <PvChart type="doughnut" :data="doughnutChartData" :options="doughnutChartOptions" />
     </div>
-
     <div class="card-admin-body w-full">
       <div class="flex flex-row w-full md:h-2rem sm:h-3rem">
         <div class="flex-grow-1 pr-3 mr-2 p-0 m-0">
@@ -23,7 +22,6 @@
           <PvConfirmPopup />
         </div>
       </div>
-
       <div class="card-admin-details">
         <span class="mr-1"><strong>Availability</strong>:</span>
         <span class="mr-1">
@@ -33,7 +31,6 @@
           {{ administrationStatus }}
         </span>
       </div>
-
       <div class="card-admin-assessments">
         <span class="mr-1"><strong>Tasks</strong>:</span>
         <template v-if="!isLoadingTasksDictionary">
@@ -69,16 +66,6 @@
           </PvPopover>
         </div>
       </div>
-
-        <!-- <PvButton
-          class="mt-2 m-0 bg-primary text-white border-none border-round h-2rem text-sm hover:bg-red-900"
-          :icon="toggleIcon"
-          style="padding: 1rem; padding-top: 1.2rem; padding-bottom: 1.2rem"
-          size="small"
-          :label="toggleLabel"
-          @click="toggleTable"
-        /> -->
-
       <PvTreeTable
         class="mt-3"
         lazy
@@ -172,7 +159,6 @@ import PvSpeedDial from 'primevue/speeddial';
 import PvTreeTable from 'primevue/treetable';
 import { batchGetDocs } from '@/helpers/query/utils';
 import { taskDisplayNames } from '@/helpers/reports';
-// import { removeEmptyOrgs } from '@/helpers';
 import { setBarChartData, setBarChartOptions } from '@/helpers/plotting';
 import useDsgfOrgQuery from '@/composables/queries/useDsgfOrgQuery';
 import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery';
@@ -209,7 +195,6 @@ const administrationStatus = computed(() => {
   return status
 });
 const administrationStatusBadge = computed(() => administrationStatus.value.toLowerCase()); 
-
 
 const speedDialItems = ref([
   {
@@ -277,25 +262,8 @@ function getAssessment(assessmentId) {
   return props.assessments.find((assessment) => assessment.taskId.toLowerCase() === assessmentId);
 }
 
-// const displayOrgs = removeEmptyOrgs(props.assignees);
-// const isAssigned = !_isEmpty(Object.values(displayOrgs));
-
 const showTable = ref(false);
 const enableQueries = ref(false);
-
-// const toggleIcon = computed(() => {
-//   if (showTable.value) {
-//     return 'pi pi-chevron-down mr-1';
-//   }
-//   return 'pi pi-chevron-right mr-2';
-// });
-
-// const toggleLabel = computed(() => {
-//   if (showTable.value) {
-//     return 'Hide details';
-//   }
-//   return ' Show details';
-// });
 
 onMounted(() => {
   enableQueries.value = true;
