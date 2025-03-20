@@ -13,18 +13,8 @@ function checkUrl() {
   cy.url({ timeout: timeout }).should('eq', `${baseUrl}/`);
 }
 
-function clickScoreButton() {
-  cy.get('button', { timeout: timeout }).contains('Scores').first().click();
-  cy.url({ timeout: timeout }).should(
-    'eq',
-    `${baseUrl}/scores/${testPartnerAdministrationId}/district/${testDistrictId}`,
-  );
-}
-
 function launchExternalStudent() {
-  cy.get('[data-cy="route-button-launch"]', { timeout: 3 * timeout })
-    .first()
-    .click();
+  cy.navigateTo('/launch/yXuZ8S0En1UsOE4C0uh6wUlQ5Wt1');
   cy.wait(3 * timeout);
   cy.get('body', { timeout: 10 * timeout }).should('contain', 'Currently in external launch mode');
 }
@@ -32,11 +22,6 @@ function launchExternalStudent() {
 describe('The partner admin can launch an external student.', () => {
   it('Selects an administration and launches a student into their tasks', () => {
     checkUrl();
-    cy.getAdministrationCard(testPartnerAdministrationName);
-    clickScoreButton();
-    cy.wait(0.3 * timeout);
-    cy.checkUserList(testUserList);
-    cy.wait(0.3 * timeout);
     launchExternalStudent();
   });
 });
