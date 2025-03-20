@@ -16,12 +16,18 @@ function checkUrl() {
 function launchExternalStudent() {
   cy.navigateTo('/launch/yXuZ8S0En1UsOE4C0uh6wUlQ5Wt1');
   cy.wait(3 * timeout);
-  cy.get('body', { timeout: 10 * timeout }).should('contain', 'Currently in external launch mode');
+  cy.get('body', { timeout: 10 * timeout }).should('contain', 'external launch mode');
+}
+
+function returnToAdmin() {
+  cy.get('button').contains('Return to administrator account').click();
+  cy.get('body').should('contain', 'View Administrations');
 }
 
 describe('The partner admin can launch an external student.', () => {
   it('Selects an administration and launches a student into their tasks', () => {
     checkUrl();
     launchExternalStudent();
+    returnToAdmin();
   });
 });
