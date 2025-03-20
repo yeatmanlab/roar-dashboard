@@ -46,14 +46,14 @@ describe('useUserStudentDataQuery', () => {
     });
 
     expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: ['user-student', mockUserRoarId, null],
+      queryKey: ['user-student', mockUserRoarId],
       queryFn: expect.any(Function),
       enabled: expect.objectContaining({
         _value: true,
       }),
     });
 
-    expect(fetchDocById).toHaveBeenCalledWith('users', mockUserRoarId, ['studentData']);
+    expect(fetchDocById).toHaveBeenCalledWith('users', mockUserRoarId.value, ['studentData']);
   });
 
   // it('should correctly control the enabled state of the query', async () => {

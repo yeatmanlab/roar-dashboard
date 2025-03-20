@@ -179,8 +179,8 @@ watch(adminOrgIntersection, (newOrgIntersection) => {
   orgIds.value = newOrgIntersection?.orgIds;
 });
 
-const orgType = ref('');
-const orgIds = ref('');
+const orgType = ref(null);
+const orgIds = ref(null);
 
 const isOrgIntersectionReady = ref(false);
 

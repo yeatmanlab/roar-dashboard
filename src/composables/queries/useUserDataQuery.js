@@ -24,7 +24,7 @@ const useUserDataQuery = (userId = undefined, queryOptions = undefined) => {
 
   return useQuery({
     queryKey: [USER_DATA_QUERY_KEY, uid],
-    queryFn: () => fetchDocById(FIRESTORE_COLLECTIONS.USERS, uid.value),
+    queryFn: () => fetchDocById(FIRESTORE_COLLECTIONS.USERS, uid),
     enabled: isQueryEnabled,
     ...options,
   });

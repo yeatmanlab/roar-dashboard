@@ -23,6 +23,7 @@ const useUserAssignmentsQuery = (queryOptions = undefined, userId = null, orgTyp
   const queryConditions = [() => !!uid.value && (isExternalCallWithoutSuperAdmin ? orgType && orgIds : true)];
   const { isQueryEnabled, options } = computeQueryOverrides(queryConditions, queryOptions);
 
+  console.log('enabled', isQueryEnabled.value);
   return useQuery({
     queryKey: [USER_ASSIGNMENTS_QUERY_KEY, uid, orgType, orgIds],
     queryFn: () => getUserAssignments(uid.value, orgType?.value, orgIds?.value),

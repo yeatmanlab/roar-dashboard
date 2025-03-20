@@ -15,7 +15,7 @@ import { computed } from 'vue';
  * @param {QueryOptions|undefined} queryOptions – Optional TanStack query options.
  * @returns {UseQueryResult} The TanStack query result.
  */
-const useUserStudentDataQuery = (queryOptions = undefined, launchId = null) => {
+const useUserStudentDataQuery = (launchId = undefined, queryOptions = undefined) => {
   const authStore = useAuthStore();
   const { roarUid } = storeToRefs(authStore);
   const uid = computed(() => launchId || roarUid.value);
@@ -26,7 +26,7 @@ const useUserStudentDataQuery = (queryOptions = undefined, launchId = null) => {
 
   return useQuery({
     queryKey: [USER_STUDENT_DATA_QUERY_KEY, uid],
-    queryFn: () => fetchDocById(FIRESTORE_COLLECTIONS.USERS, uid, ['studentData']),
+    queryFn: () => fetchDocById(FIRESTORE_COLLECTIONS.USERS, uid.value, ['studentData']),
     enabled: isQueryEnabled,
     ...options,
   });
