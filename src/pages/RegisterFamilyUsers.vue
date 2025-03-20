@@ -3,7 +3,6 @@
     <section id="register">
       <header>
         <div class="signin-logo">
-          <ROARLogoShort />
         </div>
       </header>
       <div>
@@ -65,7 +64,6 @@ import router from '../router';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import Register from '../components/auth/RegisterParent.vue';
 import RegisterStudent from '../components/auth/RegisterStudent.vue';
-import ROARLogoShort from '@/assets/RoarLogo-Short.vue';
 
 const authStore = useAuthStore();
 const initialized = ref(false);

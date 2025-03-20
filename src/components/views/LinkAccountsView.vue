@@ -30,7 +30,6 @@
     <!-- Clever -->
     <div class="flex flex-row justify-content-between w-full">
       <div class="flex flex-row h-3rem p-2 gap-2">
-        <img src="../../assets/provider-clever-logo.svg" alt="The Clever Logo" class="mr-2" />
         <span style="line-height: 30px" class="text-lg">Clever</span>
         <div class="chip-container">
           <PvChip v-if="providerIds.includes('oidc.clever')" icon="pi pi-check" label="Linked" class="linked-chip" />
@@ -55,7 +54,6 @@
     <!-- ClassLink -->
     <div class="flex flex-row justify-content-between w-full" style="background-color: var(--surface-d)">
       <div class="flex flex-row h-3rem p-2 gap-2">
-        <img src="../../assets/provider-classlink-logo.png" alt="The ClassLink Logo" class="mr-2" />
         <span style="line-height: 30px" class="text-lg">ClassLink</span>
         <div class="chip-container">
           <PvChip v-if="providerIds.includes('oidc.classlink')" icon="pi pi-check" label="Linked" class="linked-chip" />

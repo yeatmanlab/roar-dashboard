@@ -1,9 +1,8 @@
 import { RoarFirekit } from '@levante-framework/firekit';
-import roarFirebaseConfig from './config/firebaseRoar';
 import levanteFirebaseConfig from './config/firebaseLevante';
 import { isLevante } from './helpers';
 
-const roarConfig = isLevante ? levanteFirebaseConfig : roarFirebaseConfig;
+const roarConfig = levanteFirebaseConfig;
 
 export async function initNewFirekit() {
   const firekit = new RoarFirekit({
@@ -18,7 +17,7 @@ export async function initNewFirekit() {
 
     // The site key is used for app check token verification
     // The debug token is used to bypass app check for local development
-    siteKey: roarConfig.siteKey,
+    siteKey: roarConfig?.siteKey,
     debugToken: roarConfig?.debugToken,
   });
   return await firekit.init();

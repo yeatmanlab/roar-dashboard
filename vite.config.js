@@ -5,9 +5,13 @@ import Vue from '@vitejs/plugin-vue';
 import mkcert from 'vite-plugin-mkcert';
 import { nodePolyfills } from 'vite-plugin-node-polyfills';
 import UnheadVite from '@unhead/addons/vite';
+import * as child from 'child_process';
+
+const commitHash = child.execSync("git rev-parse --short HEAD").toString();
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  define: {'import.meta.env.VITE_APP_VERSION': JSON.stringify(commitHash)},
   plugins: [
     Vue({
       include: [/\.vue$/, /\.md$/],
@@ -50,19 +54,12 @@ export default defineConfig({
           lodash: ['lodash'],
           tanstack: ['@tanstack/vue-query'],
           chartJs: ['chart.js'],
-          sentry: ['@sentry/browser', '@sentry/integrations', '@sentry/vue', '@sentry/wasm'],
-          roam: ['@bdelab/roam-apps'],
+          sentry: ['@sentry/browser', '@sentry/integrations', '@sentry/vue'],
           firekit: ['@levante-framework/firekit'],
-          letter: ['@bdelab/roar-letter'],
-          multichoice: ['@bdelab/roar-multichoice'],
           phoneme: ['@bdelab/roar-pa'],
           sre: ['@bdelab/roar-sre'],
           swr: ['@bdelab/roar-swr'],
           utils: ['@bdelab/roar-utils'],
-          vocab: ['@bdelab/roar-vocab'],
-          ran: ['@bdelab/roav-ran'],
-          crowding: ['@bdelab/roav-crowding'],
-          'roav-mep': ['@bdelab/roav-mep'],
         },
       },
     },  
