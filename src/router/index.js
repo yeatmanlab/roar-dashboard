@@ -198,6 +198,13 @@ const routes = [
     meta: { pageTitle: 'MEP' },
   },
   {
+    path: '/game/roar-readaloud',
+    name: 'ReadAloud',
+    component: () => import('../components/tasks/TaskReadAloud.vue'),
+    props: { taskId: 'roar-readaloud', language: 'en' },
+    meta: { pageTitle: 'ReadAloud' },
+  },
+  {
     path: '/launch/:participantId',
     name: 'LaunchHome',
     component: () => import('../pages/LaunchedHomeParticipant.vue'),
@@ -216,7 +223,7 @@ const routes = [
     meta: { pageTitle: 'SWR' },
   },
   {
-    path: '/game/swr-es',
+    path: '/launch/:launchId/game/swr-es',
     name: 'Launch SWR-ES',
     component: () => import('../components/tasks/TaskSWR.vue'),
     props: (route) => ({
@@ -238,7 +245,7 @@ const routes = [
     meta: { pageTitle: 'PA' },
   },
   {
-    path: '/game/pa-es',
+    path: '/launch/:launchId/game/pa-es',
     name: 'Launch PA-ES',
     component: () => import('../components/tasks/TaskPA.vue'),
     props: (route) => ({
@@ -370,7 +377,7 @@ const routes = [
     meta: { pageTitle: 'ROAM-CALF' },
   },
   {
-    path: '/game/fluency-calf-es',
+    path: '/launch/:launchId/game/fluency-calf-es',
     name: 'Launch Fluency-CALF-ES',
     component: () => import('../components/tasks/TaskRoam.vue'),
     props: (route) => ({
@@ -447,13 +454,6 @@ const routes = [
       launchId: route.params.launchId, // Accessing the launchId prop
     }),
     meta: { pageTitle: 'MEP' },
-  },
-  {
-    path: '/game/roar-readaloud',
-    name: 'ReadAloud',
-    component: () => import('../components/tasks/TaskReadAloud.vue'),
-    props: { taskId: 'roar-readaloud', language: 'en' },
-    meta: { pageTitle: 'ReadAloud' },
   },
   {
     path: '/manage-tasks-variants',
