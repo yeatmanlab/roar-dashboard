@@ -5,7 +5,7 @@
   <div v-else>
     <div class="w-full gap-1 pt-1 flex justify-content-center align-items-center flex-wrap mt-3">
       <slot name="filterbar"></slot>
-      <PvButton type="button" icon="pi pi-filter-slash" label="Clear" outlined @click="resetFilters" />
+      <PvButton type="button" icon="pi pi-filter-slash" label="Clear Filters" @click="resetFilters" />
       <PvFloatLabel>
         <PvMultiSelect
           id="ms-columns"
@@ -121,6 +121,9 @@
             :style="col.style"
             align-frozen="left"
             header-style="background:color-mix(in srgb, var(--primary-color) 80%, white); color: white; padding-top:0; margin-top:0; padding-bottom:0; margin-bottom:0; border-left:2px solid var(--primary-color); border-right: 2px solid var(--primary-color); border-top:4px solid var(--primary-color); border-bottom: 4px solid var(--primary-color); margin-left:0"
+            :pt="{
+              pcColumnFilterButton: pcColumnFilterButton,
+            }"
           >
             <template #header>
               <div
@@ -210,9 +213,9 @@
                 class="pi pi-sort-amount-up-alt ml-2"
               />
             </template>
-            <template #filtericon>
+            <!-- <template #filtericon>
               <i v-tooltip.top="'Filter Column'" class="pi pi-filter" />
-            </template>
+            </template> -->
             <template v-if="col.dataType" #filter="{ filterModel, filterCallback }">
               <div v-if="col.dataType === 'text' && !col.useMultiSelect" class="filter-content">
                 <PvInputText v-model="filterModel.value" type="text" class="p-column-filter" placeholder="Filter" />
@@ -637,6 +640,12 @@ const onFreezeToggle = (selected) => {
     return col;
   });
 };
+
+function pcColumnFilterButton({ context }) {
+  return {
+    style: context.active ? 'background-color: var(--primary-color)' : '',
+  };
+}
 
 // Pass through data table events
 const emit = defineEmits(['export-all', 'selection', 'reset-filters', 'export-selected', 'export-org-users']);
