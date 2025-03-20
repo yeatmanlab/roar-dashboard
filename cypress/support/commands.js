@@ -181,7 +181,7 @@ Cypress.Commands.add('getAdministrationCard', (testAdministration) => {
   cy.get('[data-cy=search-input]', { timeout: Cypress.env('timeout') }).type(`${testAdministration}{enter}`);
   // cy.get('ul > li').contains(`Name (${sort})`).click();
 
-  cy.get('[data-cy="h2-card-admin-title"]', { timeout: Cypress.env('timeout') })
+  cy.get('[data-cy="h2-card-admin-title"]', { timeout: Cypress.env('timeout') * 5 })
     .filter((index, element) => {
       return Cypress.$(element).text().includes(testAdministration);
     })

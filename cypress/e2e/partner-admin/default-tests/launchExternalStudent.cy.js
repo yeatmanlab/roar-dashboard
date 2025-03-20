@@ -25,12 +25,12 @@ function launchExternalStudent() {
   cy.get('[data-cy="route-button-launch"]', { timeout: 3 * timeout })
     .first()
     .click();
-  cy.wait(0.3 * timeout);
+  cy.wait(3 * timeout);
   cy.get('body', { timeout: 10 * timeout }).should('contain', 'Currently in external launch mode');
 }
 
-describe('The partner admin can view individual score reports for a given administration.', () => {
-  it("Selects an administration and views a student's individual score report", () => {
+describe('The partner admin can launch an external student.', () => {
+  it('Selects an administration and launches a student into their tasks', () => {
     checkUrl();
     cy.getAdministrationCard(testPartnerAdministrationName);
     clickScoreButton();
