@@ -20,7 +20,7 @@
         >
           <template #empty>
             <div class="flex justify-center items-center text-gray-500">
-              <p>Click choose or drag and drop files to here to upload.</p>
+              <p>Click choose or drag your CSV file here to upload.</p>
             </div>
           </template>
         </PvFileUpload>
