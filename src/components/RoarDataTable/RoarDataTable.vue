@@ -51,7 +51,8 @@
           label="Export Selected"
           :badge="selectedRows?.length?.toString()"
           :disabled="selectedRows.length === 0"
-          class="m-1 m-1 h-3rem bg-primary text-white border-none border-round h-2rem text-sm hover:bg-red-900"
+          class="m-1 h-3rem bg-primary text-white border-none border-round h-2rem text-sm hover:bg-red-900"
+          data-cy="data-table__export-selected-btn"
           @click="exportCSV(true, $event)"
         />
         <PvButton
@@ -59,6 +60,7 @@
           v-tooltip.bottom="'Export all scores for all students to a CSV file for spreadsheet import.'"
           label="Export Whole Table"
           class="m-1 h-3rem bg-primary text-white border-none border-round h-2rem text-sm hover:bg-red-900"
+          data-cy="data-table__export-table-btn"
           @click="exportCSV(false, $event)"
         />
       </span>
@@ -169,7 +171,7 @@
                     :aria-label="col.routeTooltip"
                     :icon="col.routeIcon"
                     style="color: black !important"
-                    data-cy="route-button"
+                    data-cy="data-table__entry-details-btn"
                     size="small"
                   />
                 </router-link>
@@ -183,8 +185,8 @@
                   :aria-label="col.buttonTooltip"
                   :icon="col.buttonIcon"
                   style="color: black !important"
-                  data-cy="event-button"
                   size="small"
+                  :data-cy="`data-table__event-btn__${col.eventName}`"
                   @click="$emit(col.eventName, colData)"
                 />
               </div>
@@ -239,7 +241,7 @@
                   option-group-label="label"
                   option-group-children="items"
                   :options="taskFilterOptions"
-                  data-cy="score-filter-dropdown"
+                  data-cy="data-table__score-filter-dropdown"
                   style="margin-bottom: 0.5rem; width: 17vh; height: 4vh"
                 >
                   <template #option="{ option }">
@@ -285,7 +287,7 @@
                   v-model="filterModel.value"
                   :options="['Assigned', 'Started', 'Completed', 'Optional']"
                   style="margin-bottom: 0.5rem"
-                  data-cy="progress-filter-dropdown"
+                  data-cy="data-table__progress-filter-dropdown"
                 >
                   <template #option="{ option }">
                     <div v-if="progressTags[option]" class="flex align-items-center">

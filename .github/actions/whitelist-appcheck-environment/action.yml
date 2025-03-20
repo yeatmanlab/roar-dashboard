@@ -1,0 +1,44 @@
+# –––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––– #
+# roar-dashboard/whitelist-appcheck-environment
+# –––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––– #
+
+name: Whitelist AppCheck environment
+description: Whitelists a preview environment for AppCheck.
+inputs:
+  project-id:
+    description: 'The Firebase project ID to whitelist the domain for.'
+    required: true
+  service-account-key:
+    description: 'The Firebase service account key to authenticate with.'
+    required: true
+  appcheck-site-key:
+    description: 'The Firebase AppCheck site key to update the domain for.'
+    required: true
+  environment-url:
+    description: 'The URL of the preview environment to whitelist.'
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Authenticate with Google Cloud
+      uses: google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ inputs.service-account-key }}
+
+    - name: Set up Google Cloud CLI
+      uses: google-github-actions/setup-gcloud@v2
+      with:
+        project_id: gse-roar-assessment
+
+    - name: Add environment URL to AppCheck whitelist
+      shell: bash
+      run: |
+        CURRENT_DOMAINS=$(gcloud recaptcha keys describe ${{ inputs.appcheck-site-key }} --format="value(webSettings.allowedDomains)" | tr ';' '\n')
+        NEW_DOMAIN=$(echo ${{ inputs.environment-url }} | sed 's|https://||')
+        ALL_DOMAINS=$(echo -e "${CURRENT_DOMAINS}\n${NEW_DOMAIN}")
+        UPDATED_DOMAINS=$(echo "$ALL_DOMAINS" | sort | uniq | paste -sd ',' -)
+        gcloud recaptcha keys update ${{ inputs.appcheck-site-key }} --domains="$UPDATED_DOMAINS" --web
