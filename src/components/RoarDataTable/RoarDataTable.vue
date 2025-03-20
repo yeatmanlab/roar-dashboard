@@ -213,9 +213,9 @@
                 class="pi pi-sort-amount-up-alt ml-2"
               />
             </template>
-            <!-- <template #filtericon>
+            <template #filtericon>
               <i v-tooltip.top="'Filter Column'" class="pi pi-filter" />
-            </template> -->
+            </template>
             <template v-if="col.dataType" #filter="{ filterModel, filterCallback }">
               <div v-if="col.dataType === 'text' && !col.useMultiSelect" class="filter-content">
                 <PvInputText v-model="filterModel.value" type="text" class="p-column-filter" placeholder="Filter" />
