@@ -35,7 +35,7 @@
         <span class="mr-1"><strong>Tasks</strong>:</span>
         <template v-if="!isLoadingTasksDictionary">
           <span v-for="assessmentId in assessmentIds" :key="assessmentId" class="card-inline-list-item">
-            <span>{{ tasksDictionary[assessmentId]?.publicName ?? assessmentId }}</span>
+            <span>{{ tasksDictionary[assessmentId]?.name ?? assessmentId }}</span>
             <span
               v-if="showParams"
               v-tooltip.top="'Click to view params'"
