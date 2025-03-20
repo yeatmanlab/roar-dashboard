@@ -1180,13 +1180,34 @@ const scoreReportColumns = computed(() => {
         sort: true,
         filter: true,
         pinned: true,
+        style: (() => {
+          return `text-align: left`;
+        })(),
       });
     } else {
-      tableColumns.push({ field: 'user.firstName', header: 'First Name', dataType: 'text', sort: true, filter: true });
+      tableColumns.push({
+        field: 'user.firstName',
+        header: 'First Name',
+        dataType: 'text',
+        sort: true,
+        filter: true,
+        style: (() => {
+          return `text-align: left`;
+        })(),
+      });
     }
   }
   if (assignmentData.value.find((assignment) => assignment.user?.name?.last)) {
-    tableColumns.push({ field: 'user.lastName', header: 'Last Name', dataType: 'text', sort: true, filter: true });
+    tableColumns.push({
+      field: 'user.lastName',
+      header: 'Last Name',
+      dataType: 'text',
+      sort: true,
+      filter: true,
+      style: (() => {
+        return `text-align: left`;
+      })(),
+    });
   }
 
   tableColumns.push({ field: 'user.grade', header: 'Grade', dataType: 'text', sort: true, filter: true });

@@ -5,6 +5,7 @@
   <div v-else>
     <div class="w-full gap-1 pt-1 flex justify-content-center align-items-center flex-wrap mt-3">
       <slot name="filterbar"></slot>
+      <PvButton type="button" icon="pi pi-filter-slash" label="Clear" outlined @click="resetFilters" />
       <PvFloatLabel>
         <PvMultiSelect
           id="ms-columns"
@@ -17,7 +18,7 @@
           selected-items-label="{0} columns selected"
           @update:model-value="onColumnToggle"
         />
-        <label for="ms-columns" class="view-label2">Select Columns</label>
+        <label for="ms-columns" class="view-label2">Show/Hide Columns</label>
       </PvFloatLabel>
       <PvFloatLabel>
         <PvMultiSelect
@@ -192,17 +193,22 @@
               <div v-else-if="col.dataType === 'date'">
                 {{ getFormattedDate(_get(colData, col.field)) }}
               </div>
-              <div v-else-if="col.field === 'user.lastName'">
-                {{ _get(colData, col.field) }}
-              </div>
               <div v-else class="px-4">
                 {{ _get(colData, col.field) }}
               </div>
             </template>
             <template v-if="col.dataType" #sorticon="{ sorted, sortOrder }">
-              <i v-if="!sorted && currentSort.length === 0" class="pi pi-sort-alt ml-2" />
-              <i v-if="sorted && sortOrder === 1" class="pi pi-sort-amount-down-alt ml-2" />
-              <i v-else-if="sorted && sortOrder === -1" class="pi pi-sort-amount-up-alt ml-2" />
+              <i v-if="!sorted && currentSort.length === 0" v-tooltip.top="'Sort'" class="pi pi-sort-alt ml-2" />
+              <i
+                v-if="sorted && sortOrder === 1"
+                v-tooltip.top="'Sort Desecending'"
+                class="pi pi-sort-amount-down-alt ml-2"
+              />
+              <i
+                v-else-if="sorted && sortOrder === -1"
+                v-tooltip.top="'Sort Ascending'"
+                class="pi pi-sort-amount-up-alt ml-2"
+              />
             </template>
             <template #filtericon>
               <i v-tooltip.top="'Filter Column'" class="pi pi-filter" />
@@ -577,15 +583,17 @@ const resetFilters = () => {
 
 let toolTipByHeader = (header) => {
   const headerToTooltipMap = {
-    Word: 'Assesses decoding skills at the word level. \n\n  Percentile ranges from 0-99 \n Raw Score ranges from 100-900',
-    Letter:
+    'ROAR - Word':
+      'Assesses decoding skills at the word level. \n\n  Percentile ranges from 0-99 \n Raw Score ranges from 100-900',
+    'ROAR - Letter':
       'Assesses decoding skills at the word level. \n\n Percentile ranges from 0-99 \n Raw Score ranges from 0-90',
-    Phoneme:
+    'ROAR - Phoneme':
       'Assesses phonological awareness: sound matching and elision. \n\n Percentile ranges from 0-99 \n Raw Score ranges from 0-57',
-    Sentence:
+    'ROAR - Sentence':
       'Assesses reading fluency at the sentence level. \n\n Percentile ranges from 0-99 \n Raw Score ranges from 0-130 ',
-    Palabra:
+    'ROAR - Palabra':
       'Assesses decoding skills at the word level in Spanish. This test is still in the research phase. \n\n  Percentile ranges from 0-99 \n Raw Score ranges from 100-900',
+    Report: 'Individual Score Report',
   };
 
   return headerToTooltipMap[header] || '';
@@ -711,7 +719,7 @@ g {
   z-index: 1;
   font-size: smaller;
   color: var(--surface-500);
-  width: 110px;
+  width: 120px;
 }
 
 button.p-column-filter-menu-button.p-link:hover {
