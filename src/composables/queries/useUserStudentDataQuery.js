@@ -5,6 +5,7 @@ import { computeQueryOverrides } from '@/helpers/computeQueryOverrides';
 import { fetchDocById } from '@/helpers/query/utils';
 import { USER_STUDENT_DATA_QUERY_KEY } from '@/constants/queryKeys';
 import { FIRESTORE_COLLECTIONS } from '@/constants/firebase';
+import { computed } from 'vue';
 
 /**
  * User student data query.
@@ -17,14 +18,14 @@ import { FIRESTORE_COLLECTIONS } from '@/constants/firebase';
 const useUserStudentDataQuery = (queryOptions = undefined, launchId = null) => {
   const authStore = useAuthStore();
   const { roarUid } = storeToRefs(authStore);
-  const uid = launchId ?? roarUid.value;
+  const uid = computed(() => launchId || roarUid.value);
 
   // Ensure all necessary data is loaded before enabling the query.
-  const queryConditions = [() => !!uid];
+  const queryConditions = [() => !!uid.value];
   const { isQueryEnabled, options } = computeQueryOverrides(queryConditions, queryOptions);
 
   return useQuery({
-    queryKey: [USER_STUDENT_DATA_QUERY_KEY, roarUid],
+    queryKey: [USER_STUDENT_DATA_QUERY_KEY, uid],
     queryFn: () => fetchDocById(FIRESTORE_COLLECTIONS.USERS, uid, ['studentData']),
     enabled: isQueryEnabled,
     ...options,
