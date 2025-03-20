@@ -104,7 +104,7 @@ const navbarBlacklist = [
 ];
 
 const showAccountSettingsLink = computed(() => {
-  return userCan(Permissions?.Profile?.READ);
+  return userCan(Permissions.Profile.READ);
 });
 
 const displayNavbar = computed(() => {
