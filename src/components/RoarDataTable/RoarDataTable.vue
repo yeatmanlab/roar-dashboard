@@ -128,12 +128,12 @@
             <template #header>
               <div>
                 {{ col.header }}
-                <i
-                  v-if="toolTipByHeader(col.header).length > 0"
-                  v-tooltip.top="`${toolTipByHeader(col.header)}`"
-                  class="pi pi-info-circle"
-                />
               </div>
+              <i
+                v-if="toolTipByHeader(col.header).length > 0"
+                v-tooltip.top="`${toolTipByHeader(col.header)}`"
+                class="pi pi-info-circle"
+              />
             </template>
             <template #body="{ data: colData }">
               <!-- If column is a score field, use a dedicated component to render tags and scores -->
