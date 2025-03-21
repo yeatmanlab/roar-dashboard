@@ -193,6 +193,10 @@ const userAssignmentsQueryEnabled = computed(() => {
   return isOrgIntersectionReady.value && initialized.value;
 });
 
+const { data: userClaims } = useUserClaimsQuery({
+  enabled: initialized,
+});
+
 const { isSuperAdmin } = useUserType(userClaims);
 
 watchEffect(() => {
