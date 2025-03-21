@@ -1,7 +1,11 @@
 import { languageOptions } from './languageOptions';
-import { signInWithClever } from '../participant/participant-helpers';
 
-const timeout = Cypress.env('timeout');
+const CLEVER_SCHOOL_NAME = Cypress.env('CLEVER_SCHOOL_NAME');
+const CLEVER_USERNAME = Cypress.env('CLEVER_USERNAME');
+const CLEVER_PASSWORD = Cypress.env('CLEVER_PASSWORD');
+const PARTICIPANT_USERNAME = Cypress.env('PARTICIPANT_USERNAME');
+const PARTICIPANT_PASSWORD = Cypress.env('PARTICIPANT_PASSWORD');
+
 const participantId = '123456789';
 const questionInput = '42';
 
@@ -10,14 +14,14 @@ function typeEnter() {
 }
 
 function waitTimeout() {
-  cy.wait(0.1 * timeout);
+  cy.wait(0.1 * Cypress.env('timeout'));
 }
 
 function playARFIntro() {
   waitTimeout();
 
   //   Click textbox and enter random participantId
-  cy.get('#input-0', { timeout: timeout }).type(`${participantId} {enter}`);
+  cy.get('#input-0').type(`${participantId} {enter}`);
   waitTimeout();
   typeEnter();
   waitTimeout();
@@ -72,7 +76,7 @@ function playCALFIntro() {
   waitTimeout();
 
   //   Click textbox and enter random participantId
-  cy.get('#input-0', { timeout: timeout }).type(`${participantId} {enter}`);
+  cy.get('#input-0').type(`${participantId} {enter}`);
   waitTimeout();
   typeEnter();
   waitTimeout();
@@ -143,7 +147,7 @@ function checkGameComplete(endText, continueText = null) {
         cy.log('Game complete.');
       } else if (continueText && text.includes(continueText)) {
         cy.log('Game break found with text', continueText);
-        cy.get('body', { timeout: timeout }).type('{enter}');
+        cy.get('body').type('{enter}');
       } else {
         cy.log('Continuing game...');
         playFluencyLoop();
@@ -167,9 +171,9 @@ export function playARF({
 
   cy.visit('/');
   if (auth === 'clever') {
-    signInWithClever();
+    cy.loginWithClever(CLEVER_SCHOOL_NAME, CLEVER_USERNAME, CLEVER_PASSWORD);
   } else if (auth === 'username') {
-    cy.login(Cypress.env('participantUsername'), Cypress.env('participantPassword'));
+    cy.login(PARTICIPANT_USERNAME, PARTICIPANT_PASSWORD);
     cy.visit('/');
   }
 
@@ -178,17 +182,15 @@ export function playARF({
   cy.get('.p-tablist-tab-list', { timeout: timeout }).contains(languageOptions[language][task].gameTab).should('exist');
   cy.visit(`/game/${task}`);
 
-  //   Click jspsych button to begin
-  cy.get('.jspsych-btn', { timeout: 12 * timeout })
-    .should('be.visible')
-    .click();
+  cy.waitForAssessmentReadyState();
+  cy.get('.jspsych-btn').should('be.visible').click();
 
   playARFIntro();
   checkGameComplete(endText, continueText);
 
   //  Check if game is marked as complete on the dashboard
   cy.visit('/');
-  cy.wait(0.2 * timeout);
+  cy.wait(1);
   cy.selectAdministration(administration);
   cy.get('.p-tablist-tab-list', { timeout: timeout }).contains(languageOptions[language][task].gameTab).should('exist');
 }
@@ -208,9 +210,9 @@ export function playCALF({
 
   cy.visit('/');
   if (auth === 'clever') {
-    signInWithClever();
+    cy.loginWithClever(CLEVER_SCHOOL_NAME, CLEVER_USERNAME, CLEVER_PASSWORD);
   } else if (auth === 'username') {
-    cy.login(Cypress.env('participantUsername'), Cypress.env('participantPassword'));
+    cy.login(PARTICIPANT_USERNAME, PARTICIPANT_PASSWORD);
     cy.visit('/');
   }
 
@@ -224,17 +226,15 @@ export function playCALF({
   cy.get('.p-tablist-tab-list', { timeout: timeout }).contains(languageOptions[language][task].gameTab).should('exist');
   cy.visit(`/game/${task}`);
 
-  //   Click jspsych button to begin
-  cy.get('.jspsych-btn', { timeout: 12 * timeout })
-    .should('be.visible')
-    .click();
+  cy.waitForAssessmentReadyState();
+  cy.get('.jspsych-btn').should('be.visible').click();
 
   playCALFIntro();
   checkGameComplete(endText, continueText);
 
   //  Check if game is marked as complete on the dashboard
   cy.visit('/');
-  cy.wait(0.2 * timeout);
+  cy.wait(1);
   cy.selectAdministration(administration);
 
   if (optional === true) {
