@@ -67,7 +67,6 @@
 
     const helpOptions = [
         { label: 'Researcher Documentation', value: 'researcherDocumentation' },
-        // BACKED OUT: Nav Bar Report an Issue
         { label: 'Report an Issue', value: 'reportAnIssue' }
     ];
 
