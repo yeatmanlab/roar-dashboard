@@ -301,7 +301,7 @@
                 <PvSelect
                   v-model="filterModel.value"
                   :options="['Assigned', 'Started', 'Completed', 'Optional']"
-                  style="margin-bottom: 0.5rem; width: 12rem;"
+                  style="margin-bottom: 0.5rem; width: 12rem"
                   data-cy="data-table__progress-filter-dropdown"
                 >
                   <template #option="{ option }">
