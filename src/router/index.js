@@ -204,7 +204,257 @@ const routes = [
     props: { taskId: 'roar-readaloud', language: 'en' },
     meta: { pageTitle: 'ReadAloud' },
   },
-
+  {
+    path: '/launch/:participantId',
+    name: 'LaunchHome',
+    component: () => import('../pages/LaunchedHomeParticipant.vue'),
+    props: true,
+    meta: { pageTitle: 'TaskLauncher Home' },
+  },
+  {
+    path: '/launch/:launchId/game/swr',
+    name: 'Launch SWR',
+    component: () => import('../components/tasks/TaskSWR.vue'),
+    props: (route) => ({
+      taskId: 'swr',
+      language: 'en',
+      launchId: route.params.launchId, // Accessing the launchId prop
+    }),
+    meta: { pageTitle: 'SWR' },
+  },
+  {
+    path: '/launch/:launchId/game/swr-es',
+    name: 'Launch SWR-ES',
+    component: () => import('../components/tasks/TaskSWR.vue'),
+    props: (route) => ({
+      taskId: 'swr-es',
+      language: 'es',
+      launchId: route.params.launchId, // Accessing the launchId prop
+    }),
+    meta: { pageTitle: 'SWR (ES)' },
+  },
+  {
+    path: '/launch/:launchId/game/pa',
+    name: 'Launch PA',
+    component: () => import('../components/tasks/TaskPA.vue'),
+    props: (route) => ({
+      taskId: 'pa',
+      language: 'en',
+      launchId: route.params.launchId, // Accessing the launchId prop
+    }),
+    meta: { pageTitle: 'PA' },
+  },
+  {
+    path: '/launch/:launchId/game/pa-es',
+    name: 'Launch PA-ES',
+    component: () => import('../components/tasks/TaskPA.vue'),
+    props: (route) => ({
+      taskId: 'pa-es',
+      language: 'es',
+      launchId: route.params.launchId, // Accessing the launchId prop
+    }),
+    meta: { pageTitle: 'PA-ES' },
+  },
+  {
+    path: '/launch/:launchId/game/sre',
+    name: 'Launch SRE',
+    component: () => import('../components/tasks/TaskSRE.vue'),
+    props: (route) => ({
+      taskId: 'sre',
+      language: 'en',
+      launchId: route.params.launchId, // Accessing the launchId prop
+    }),
+    meta: { pageTitle: 'SRE' },
+  },
+  {
+    path: '/launch/:launchId/game/letter',
+    name: 'Launch Letter',
+    component: () => import('../components/tasks/TaskLetter.vue'),
+    props: (route) => ({
+      taskId: 'letter',
+      language: 'en',
+      launchId: route.params.launchId, // Accessing the launchId prop
+    }),
+    meta: { pageTitle: 'Letter' },
+  },
+  {
+    path: '/launch/:launchId/game/letter-es',
+    name: 'Launch Letter-ES',
+    component: () => import('../components/tasks/TaskLetter.vue'),
+    props: (route) => ({
+      taskId: 'letter-es',
+      language: 'es',
+      launchId: route.params.launchId, // Accessing the launchId prop
+    }),
+    meta: { pageTitle: 'Letter-ES' },
+  },
+  {
+    path: '/launch/:launchId/game/letter-en-ca',
+    name: 'Letter-EN-CA',
+    component: () => import('../components/tasks/TaskLetter.vue'),
+    props: (route) => ({
+      taskId: 'letter-en-ca',
+      language: 'en-ca',
+      launchId: route.params.launchId, // Accessing the launchId prop
+    }),
+    meta: { pageTitle: 'Letter-EN-CA' },
+  },
+  {
+    path: '/launch/:launchId/game/multichoice',
+    name: 'Launch Multichoice',
+    component: () => import('../components/tasks/TaskMultichoice.vue'),
+    props: (route) => ({
+      taskId: 'multichoice',
+      language: 'en',
+      launchId: route.params.launchId, // Accessing the launchId prop
+    }),
+    meta: { pageTitle: 'Multichoice' },
+  },
+  {
+    path: '/launch/:launchId/game/morphology',
+    name: 'Launch Morphology',
+    component: () => import('../components/tasks/TaskMultichoice.vue'),
+    props: (route) => ({
+      taskId: 'morphology',
+      language: 'en',
+      launchId: route.params.launchId, // Accessing the launchId prop
+    }),
+    meta: { pageTitle: 'Morphology' },
+  },
+  {
+    path: '/launch/:launchId/game/cva',
+    name: 'Launch Cva',
+    component: () => import('../components/tasks/TaskMultichoice.vue'),
+    props: (route) => ({
+      taskId: 'cva',
+      language: 'en',
+      launchId: route.params.launchId, // Accessing the launchId prop
+    }),
+    meta: { pageTitle: 'CVA' },
+  },
+  {
+    path: '/launch/:launchId/game/vocab',
+    name: 'Launch Vocab',
+    component: () => import('../components/tasks/TaskVocab.vue'),
+    props: (route) => ({
+      taskId: 'vocab',
+      language: 'en',
+      launchId: route.params.launchId, // Accessing the launchId prop
+    }),
+    meta: { pageTitle: 'Vocab' },
+  },
+  {
+    path: '/launch/:launchId/game/fluency-arf',
+    name: 'Launch Fluency-ARF',
+    component: () => import('../components/tasks/TaskRoam.vue'),
+    props: (route) => ({
+      taskId: 'fluency-arf',
+      language: 'en',
+      launchId: route.params.launchId, // Accessing the launchId prop
+    }),
+    meta: { pageTitle: 'ROAM-ARF' },
+  },
+  {
+    path: '/launch/:launchId/game/fluency-arf-es',
+    name: 'Launch Fluency-ARF-ES',
+    component: () => import('../components/tasks/TaskRoam.vue'),
+    props: (route) => ({
+      taskId: 'fluency-arf-es',
+      language: 'es',
+      launchId: route.params.launchId, // Accessing the launchId prop
+    }),
+    meta: { pageTitle: 'ROAM-ARF ES' },
+  },
+  {
+    path: '/launch/:launchId/game/fluency-calf',
+    name: 'Launch Fluency-CALF',
+    component: () => import('../components/tasks/TaskRoam.vue'),
+    props: (route) => ({
+      taskId: 'fluency-calf',
+      language: 'en',
+      launchId: route.params.launchId, // Accessing the launchId prop
+    }),
+    meta: { pageTitle: 'ROAM-CALF' },
+  },
+  {
+    path: '/launch/:launchId/game/fluency-calf-es',
+    name: 'Launch Fluency-CALF-ES',
+    component: () => import('../components/tasks/TaskRoam.vue'),
+    props: (route) => ({
+      taskId: 'fluency-calf-es',
+      language: 'es',
+      launchId: route.params.launchId, // Accessing the launchId prop
+    }),
+    meta: { pageTitle: 'ROAM-CALF ES' },
+  },
+  {
+    path: '/launch/:launchId/game/roam-alpaca',
+    name: 'Launch Fluency-Alpaca',
+    component: () => import('../components/tasks/TaskRoam.vue'),
+    props: (route) => ({
+      taskId: 'roam-alpaca',
+      language: 'en',
+      launchId: route.params.launchId, // Accessing the launchId prop
+    }),
+    meta: { pageTitle: 'ROAM-Alpaca' },
+  },
+  {
+    path: '/launch/:launchId/game/roam-alpaca-es',
+    name: 'Launch Fluency-Alpaca-ES',
+    component: () => import('../components/tasks/TaskRoam.vue'),
+    props: (route) => ({
+      taskId: 'roam-alpaca-es',
+      language: 'es',
+      launchId: route.params.launchId, // Accessing the launchId prop
+    }),
+    meta: { pageTitle: 'ROAM-Alpaca ES' },
+  },
+  {
+    path: '/launch/:launchId/game/core-tasks/:taskId',
+    name: 'Launch Core Tasks',
+    component: () => import('../components/tasks/TaskLevante.vue'),
+    props: (route) => ({
+      taskId: 'core-tasks',
+      language: 'en',
+      launchId: route.params.launchId, // Accessing the launchId prop
+    }),
+    // Add which specific task?
+    // Code in App.vue overwrites updating it programmatically
+    meta: { pageTitle: 'Core Tasks' },
+  },
+  {
+    path: '/launch/:launchId/game/ran',
+    name: 'Launch RAN',
+    component: () => import('../components/tasks/TaskRan.vue'),
+    props: (route) => ({
+      taskId: 'ran',
+      language: 'en',
+      launchId: route.params.launchId, // Accessing the launchId prop
+    }),
+    meta: { pageTitle: 'RAN' },
+  },
+  {
+    path: '/launch/:launchId/game/crowding',
+    name: 'Launch Crowding',
+    component: () => import('../components/tasks/TaskCrowding.vue'),
+    props: (route) => ({
+      taskId: 'crowding',
+      language: 'en',
+      launchId: route.params.launchId, // Accessing the launchId prop
+    }),
+    meta: { pageTitle: 'Crowding' },
+  },
+  {
+    path: '/launch/:launchId/game/roav-mep',
+    name: 'Launch MEP',
+    component: () => import('../components/tasks/TaskMEP.vue'),
+    props: (route) => ({
+      taskId: 'roav-mep',
+      language: 'en',
+      launchId: route.params.launchId, // Accessing the launchId prop
+    }),
+    meta: { pageTitle: 'MEP' },
+  },
   {
     path: '/manage-tasks-variants',
     name: 'ManageTasksVariants',

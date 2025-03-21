@@ -24,6 +24,17 @@
     </div>
 
     <div v-else data-cy="home-participant__administration">
+      <div v-if="props.launchId" class="w-100 flex items-center justify-content-center bg-gray-100 p-2">
+        <div class="font-bold text-lg text-gray-600">
+          Currently in <span class="text-red-700 mr-4" data-cy="participant-launch-mode"> external launch mode </span>
+          <router-link to="/">
+            <PvButton>
+              <i class="pi pi-arrow-left"></i>
+              Return to administrator account</PvButton
+            >
+          </router-link>
+        </div>
+      </div>
       <PvFloatLabel>
         <h2 v-if="userAssignments?.length == 1" class="dropdown-container">
           {{ userAssignments.at(0).publicName || userAssignments.at(0).name }}
@@ -71,12 +82,14 @@
             :games="optionalAssessments"
             :sequential="isSequential"
             :user-data="userData"
+            :launch-id="launchId"
           />
           <GameTabs
             v-else-if="requiredAssessments && userData"
             :games="requiredAssessments"
             :sequential="isSequential"
             :user-data="userData"
+            :launch-id="launchId"
           />
         </Transition>
       </div>
@@ -92,7 +105,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref, watch, computed } from 'vue';
+import { onMounted, ref, watch, watchEffect, computed } from 'vue';
 import _filter from 'lodash/filter';
 import _get from 'lodash/get';
 import _find from 'lodash/find';
@@ -114,12 +127,19 @@ import useSignOutMutation from '@/composables/mutations/useSignOutMutation';
 import ConsentModal from '@/components/ConsentModal.vue';
 import GameTabs from '@/components/GameTabs.vue';
 import ParticipantSidebar from '@/components/ParticipantSidebar.vue';
+import useUserType from '@/composables/useUserType';
+import { highestAdminOrgIntersection } from '@/helpers/query/assignments';
+import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 
 const showConsent = ref(false);
 const consentVersion = ref('');
 const confirmText = ref('');
 const consentType = ref('');
 const consentParams = ref({});
+
+const props = defineProps({
+  launchId: { type: String, required: false, default: null },
+});
 
 const isLevante = import.meta.env.MODE === 'LEVANTE';
 
@@ -151,17 +171,57 @@ const {
   isLoading: isLoadingUserData,
   isFetching: isFetchingUserData,
   data: userData,
-} = useUserDataQuery(null, {
+} = useUserDataQuery(props.launchId, {
   enabled: initialized,
+});
+
+const adminOrgIntersection = computed(() => {
+  const orgIntersection = highestAdminOrgIntersection(userData.value, authStore?.userClaims?.claims?.adminOrgs);
+  return orgIntersection;
+});
+
+watch(adminOrgIntersection, (newOrgIntersection) => {
+  orgType.value = newOrgIntersection?.orgType;
+  orgIds.value = newOrgIntersection?.orgIds;
+});
+
+const orgType = ref(null);
+const orgIds = ref(null);
+
+const isOrgIntersectionReady = ref(false);
+
+const userAssignmentsQueryEnabled = computed(() => {
+  return isOrgIntersectionReady.value && initialized.value;
+});
+
+const { data: userClaims } = useUserClaimsQuery({
+  enabled: initialized,
+});
+
+const { isSuperAdmin } = useUserType(userClaims);
+
+watchEffect(() => {
+  // If user is superadmin, or is a non-externally launched participant we won't need to compute the orgIntersection
+  if (isSuperAdmin.value || !props.launchId) {
+    isOrgIntersectionReady.value = true;
+  } else {
+    isOrgIntersectionReady.value =
+      !!adminOrgIntersection.value?.orgType && adminOrgIntersection.value?.orgIds?.length > 0;
+  }
 });
 
 const {
   isLoading: isLoadingAssignments,
   isFetching: isFetchingAssignments,
   data: userAssignments,
-} = useUserAssignmentsQuery({
-  enabled: initialized,
-});
+} = useUserAssignmentsQuery(
+  {
+    enabled: userAssignmentsQueryEnabled,
+  },
+  props.launchId,
+  !isSuperAdmin.value ? orgType : null,
+  !isSuperAdmin.value ? orgIds : null,
+);
 
 const sortedUserAdministrations = computed(() => {
   return [...(userAssignments.value ?? [])].sort((a, b) => (a.name || '').localeCompare(b.name || ''));

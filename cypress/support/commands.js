@@ -284,7 +284,6 @@ Cypress.Commands.add('selectAdministration', function selectAdministration(testA
  */
 Cypress.Commands.add('getAdministrationCard', (testAdministration) => {
   cy.get('[data-cy=search-input]').type(`${testAdministration}{enter}`);
-
   cy.get('[data-cy="administration-card"]')
     .filter((index, element) => {
       return Cypress.$(element).find('[data-cy="administration-card__title"]').text().includes(testAdministration);
