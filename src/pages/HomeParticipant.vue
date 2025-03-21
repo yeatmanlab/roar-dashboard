@@ -129,6 +129,7 @@ import GameTabs from '@/components/GameTabs.vue';
 import ParticipantSidebar from '@/components/ParticipantSidebar.vue';
 import useUserType from '@/composables/useUserType';
 import { highestAdminOrgIntersection } from '@/helpers/query/assignments';
+import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 
 const showConsent = ref(false);
 const consentVersion = ref('');
