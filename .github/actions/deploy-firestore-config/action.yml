@@ -51,11 +51,11 @@ runs:
       shell: bash
       working-directory: roar-dashboard/${{ inputs.config-directory }}
       run: |
-        firebase deploy --only firestore:rules --project ${{ inputs.firebase-project-id }}
+        firebase deploy --only firestore:rules --project ${{ inputs.firebase-project-id }} --force
 
     # Deploy Firestore Indexes
     - name: Deploy Firestore Indexes
       shell: bash
       working-directory: roar-dashboard/${{ inputs.config-directory }}
       run: |
-        firebase deploy --only firestore:indexes --project ${{ inputs.firebase-project-id }}
+        firebase deploy --only firestore:indexes --project ${{ inputs.firebase-project-id }} --force
