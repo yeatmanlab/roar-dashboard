@@ -525,7 +525,7 @@
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "progress.roar-readaloud",
+          "fieldPath": "progress.roar_readaloud",
           "order": "ASCENDING"
         }
       ]
@@ -1135,7 +1135,7 @@
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "progress.roar-readaloud",
+          "fieldPath": "progress.roar_readaloud",
           "order": "ASCENDING"
         }
       ]
@@ -2133,7 +2133,7 @@
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "progress.roar-readaloud",
+          "fieldPath": "progress.roar_readaloud",
           "order": "ASCENDING"
         }
       ]
@@ -2775,7 +2775,7 @@
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "progress.roar-readaloud",
+          "fieldPath": "progress.roar_readaloud",
           "order": "ASCENDING"
         }
       ]
