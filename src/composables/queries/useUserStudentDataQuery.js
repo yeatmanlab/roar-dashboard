@@ -13,12 +13,14 @@ import { computed } from 'vue';
  * @TODO: Evaluate wether this query can be replaced by the existing useUserDataQuery composable.
  *
  * @param {QueryOptions|undefined} queryOptions – Optional TanStack query options.
+ * @param {String|undefined} userId – If this is passed in, return the studentData for the student under this adminUid.
+ *                                    If undefined, query will return the data for the current authenticated user
  * @returns {UseQueryResult} The TanStack query result.
  */
-const useUserStudentDataQuery = (launchId = undefined, queryOptions = undefined) => {
+const useUserStudentDataQuery = (userId = undefined, queryOptions = undefined) => {
   const authStore = useAuthStore();
   const { roarUid } = storeToRefs(authStore);
-  const uid = computed(() => launchId || roarUid.value);
+  const uid = computed(() => userId || roarUid.value);
 
   // Ensure all necessary data is loaded before enabling the query.
   const queryConditions = [() => !!uid.value];
