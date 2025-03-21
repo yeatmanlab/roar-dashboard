@@ -1,11 +1,15 @@
 <template>
   <div>
-    <div v-if="!initialized || isLoading || isFetching" class="loading-container bg-white-alpha-90">
+    <div
+      v-if="!initialized || isLoading || isFetching"
+      class="loading-container bg-white-alpha-90"
+      data-cy="home-participant__administration-loadingstate"
+    >
       <AppSpinner style="margin-bottom: 1rem" />
       <span>{{ $t('homeParticipant.loadingAssignments') }}</span>
     </div>
 
-    <div v-else-if="!hasAssignments">
+    <div v-else-if="!hasAssignments" data-cy="home-participant__administration-emptystate">
       <div class="col-full text-center py-8">
         <h1>{{ $t('homeParticipant.noAssignments') }}</h1>
         <p class="text-center">{{ $t('homeParticipant.contactAdministrator') }}</p>
@@ -19,7 +23,7 @@
       </div>
     </div>
 
-    <div v-else>
+    <div v-else data-cy="home-participant__administration">
       <div v-if="props.launchId" class="w-100 flex items-center justify-content-center bg-gray-100 p-2">
         <div class="font-bold text-lg text-gray-600">
           Currently in <span class="text-red-700 mr-4"> external launch mode </span>

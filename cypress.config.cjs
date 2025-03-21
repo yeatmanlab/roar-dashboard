@@ -4,27 +4,75 @@ const { nodePolyfills } = require('vite-plugin-node-polyfills');
 const vitePreprocessor = require('cypress-vite');
 const UnheadVite = require('@unhead/addons/vite');
 const path = require('path');
+const fs = require('fs');
 
-// Load environment variables from .env.test located in the root of the project
-require('dotenv').config({ path: path.resolve(__dirname, '.env.test') });
+/**
+ * Injects environment variables parsed by dotenvx into the Cypress environment.
+ *
+ * This is necessary as Cypress itself does not load environment variables from .env files. The dotenvx package is used
+ * to load the .env files. To mimick the default Cypress behaviour, only inject the parsed variables that start with
+ * CYPRESS_ and remove that prefix before setting them in the Cypress environment.
+ *
+ * @param {Object} config – The Cypress configuration object.
+ * @returns {Object} The modified Cypress configuration object.
+ */
+const injectEnvVars = (config, envVars) => {
+  // Inject environment variables parsed by dotenvx into the Cypress environment. This is necessary as Cypress
+  // itself does not load environment variables from .env files. The dotenvx package is used to load the .env files
+  // Note: To mimick the default Cypress behaviour, only inject the parsed variables that start with CYPRESS_ and
+  // remove that prefix before setting them in the Cypress environment.
+  for (const [key, value] of Object.entries(envVars)) {
+    if (key.startsWith('CYPRESS_')) {
+      config.env[key.replace('CYPRESS_', '')] = value;
+    }
+  }
+
+  return config;
+};
+
+// Load environment variables
+// Using a similar approach as in vite.config.js, we conditionally load the .env.test files from the env-configs/
+// directory and the root of the project. This is done to properly support dotenvx.
+let envFilePaths = [];
+const mainTestEnv = path.resolve(__dirname, './env-configs/.env.test');
+const fallbackTestEnv = path.resolve(__dirname, './.env.test');
+
+if (fs.existsSync(mainTestEnv)) envFilePaths.push(mainTestEnv);
+if (fs.existsSync(fallbackTestEnv)) envFilePaths.push(fallbackTestEnv);
+
+const envConfig = require('@dotenvx/dotenvx').config({ path: envFilePaths });
 
 module.exports = defineConfig({
-  projectId: 'cobw62',
+  projectId: process.env.CYPRESS_PROJECT_ID,
 
   e2e: {
     baseUrl: process.env.CYPRESS_BASE_URL ?? 'https://localhost:5173',
     experimentalRunAllSpecs: true,
     experimentalMemoryManagement: true,
-    retries: 2,
+    retries: {
+      runMode: 2,
+      openMode: 0,
+    },
     setupNodeEvents(on, config) {
+      injectEnvVars(config, envConfig.parsed);
+
       on('task', {
         log(message) {
           console.log(message);
           return null;
         },
       });
-      on('file:preprocessor', vitePreprocessor());
-      return require('./node_modules/cypress-fs/plugins/index.js')(on, config);
+
+      on(
+        'file:preprocessor',
+        vitePreprocessor({
+          mode: 'development',
+        }),
+      );
+
+      require('cypress-fs/plugins')(on);
+
+      return config;
     },
   },
 
@@ -63,7 +111,9 @@ module.exports = defineConfig({
       },
     },
     setupNodeEvents(on, config) {
-      return require('./node_modules/cypress-fs/plugins/index.js')(on, config);
+      injectEnvVars(config, envConfig.parsed);
+      require('cypress-fs/plugins')(on);
+      return config;
     },
   },
 
@@ -74,23 +124,8 @@ module.exports = defineConfig({
     firestoreAppUrl:
       'https://firestore.googleapis.com/v1/projects/gse-roar-assessment-dev/databases/(default)/documents',
     timeout: 10000,
-    sessionCookieName: process.env.SESSION_COOKIE_NAME,
-    sessionCookieValue: process.env.SESSION_COOKIE_VALUE,
-    superAdminUsername: process.env.SUPER_ADMIN_USERNAME,
-    superAdminPassword: process.env.SUPER_ADMIN_PASSWORD,
-    superAdminId: process.env.SUPER_ADMIN_ID,
-    partnerAdminUsername: process.env.PARTNER_ADMIN_USERNAME,
-    partnerAdminPassword: process.env.PARTNER_ADMIN_PASSWORD,
-    partnerAdminId: process.env.PARTNER_ADMIN_ID,
-    participantUsername: process.env.PARTICIPANT_USERNAME,
-    participantPassword: process.env.PARTICIPANT_PASSWORD,
-    participantUid: process.env.PARTICIPANT_UID,
-    participantEmail: process.env.PARTICIPANT_EMAIL,
-    participantEmailPassword: process.env.PARTICIPANT_EMAIL_PASSWORD,
     cleverOAuthLink: 'https://clever.com/oauth/authorize',
     cleverSchoolName: '61e8aee84cf0e71b14295d45',
-    cleverUsername: process.env.CLEVER_USERNAME,
-    cleverPassword: process.env.CLEVER_PASSWORD,
     testAdministrationName: 'Cypress Test Administration',
     testAdministrationId: 'kKUSypkMc36mPEzleDE6',
     testAdministratorFirstName: 'Cypress Test Administrator First Name',
@@ -141,11 +176,6 @@ module.exports = defineConfig({
     testOptionalRoarAppsAdministrationId: 'Fuy4nQaMu6YmfNg1eBYH',
     testSpanishRoarAppsAdministration: 'Cypress Test Spanish Roar Apps Administration',
     testSpanishRoarAppsAdministrationId: '',
-    parentFirstName: process.env.PARENT_FIRST_NAME,
-    parentLastName: process.env.PARENT_LAST_NAME,
-    parentEmail: process.env.PARENT_EMAIL,
-    parentPassword: process.env.PARENT_PASSWORD,
-    // Generate a list of test users CypressTestStudent0, CypressTestStudent1, ..., CypressTestStudent50 and push the test_legal_doc user
     testUserList: (() => {
       const list = Array.from({ length: 51 }, (_, i) => `CypressTestStudent${i}`);
       list.push('test_legal_doc');
@@ -155,6 +185,5 @@ module.exports = defineConfig({
     roarDemoDistrictId: 'dfyDUItJNf3wEoG6Mf8H',
     roarDemoAdministrationName: 'ROAR demo administration',
     roarDemoAdministrationId: 'EWC9corgcnipev7ZnmuN',
-    appCheckDebugToken: process.env.VITE_APPCHECK_DEBUG_TOKEN,
   },
 });

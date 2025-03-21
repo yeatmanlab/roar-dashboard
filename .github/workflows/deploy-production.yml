@@ -1,0 +1,109 @@
+name: Deploy to Production
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+-alpha.[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+-beta.[0-9]+'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.run_id }}
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  # Deploy app
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  deploy-app:
+    name: Deploy Firebase app
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build app
+        uses: ./.github/actions/build
+        with:
+          environment: production
+          github-pat: ${{ secrets.CI_GITHUB_PAT }}
+
+      - name: Deploy app
+        uses: ./.github/actions/deploy
+        id: deployment
+        with:
+          firebase-target: production
+          firebase-channel: default
+          firebase-project-id: ${{ secrets.FIREBASE_PROJECT_ID_ADMIN }}
+          gcp-workload-identity-provider: ${{ secrets.FIREBASE_WORKLOAD_IDENTITY_PROVIDER_ADMIN }}
+          gcp-service-account-id: ${{ secrets.FIREBASE_HOSTING_SERVICE_ACCOUNT_ID_ADMIN }}
+
+      - name: Create Sentry release
+        uses: getsentry/action-release@v1.8.0
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+        with:
+          environment: production
+          sourcemaps: ./app/dist/assets/*.js.map
+          version: ${{ github.ref }}
+
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  # Deploy Firestore config
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  deploy-firestore-config:
+    name: Deploy Firestore config
+    needs: [deploy-app]
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Deploy Firestore config to Admin instance
+        uses: ./.github/actions/deploy-firestore-config
+        with:
+          firebase-project-id: ${{ secrets.FIREBASE_PROJECT_ID_ADMIN }}
+          gcp-workload-identity-provider: ${{ secrets.FIREBASE_WORKLOAD_IDENTITY_PROVIDER_ADMIN }}
+          gcp-service-account-id: ${{ secrets.FIREBASE_FIRESTORE_SERVICE_ACCOUNT_ID_ADMIN }}
+          config-directory: firebase/admin
+
+      - name: Deploy Firestore config to Assessment instance
+        uses: ./.github/actions/deploy-firestore-config
+        with:
+          firebase-project-id: ${{ secrets.FIREBASE_PROJECT_ID_ASSESSMENT }}
+          gcp-workload-identity-provider: ${{ secrets.FIREBASE_WORKLOAD_IDENTITY_PROVIDER_ASSESSMENT }}
+          gcp-service-account-id: ${{ secrets.FIREBASE_FIRESTORE_SERVICE_ACCOUNT_ID_ASSESSMENT }}
+          config-directory: firebase/assessment
+
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  # Update project manifests
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  update-manifests:
+    name: Update manifests
+    needs: [deploy-app, deploy-firestore-config]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    strategy:
+      matrix:
+        projects: ${{ fromJSON(vars.ROAR_PROJECTS || '[]') }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          path: 'roar-dashboard'
+
+      - name: Update ${{ matrix.projects.name }} deployment manifest
+        uses: ./roar-dashboard/.github/actions/update-deployment-manifest
+        with:
+          project-repo: ${{ matrix.projects.repo }}
+          project-name: ${{ matrix.projects.name }}
+          token: ${{ secrets.CI_GITHUB_PAT }}
+          sha: ${{ github.event.pull_request.head.sha }}

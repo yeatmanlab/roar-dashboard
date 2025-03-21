@@ -11,7 +11,7 @@
               name="firstName"
               :class="{ 'p-invalid': v$.firstName.$invalid && submitted }"
               aria-describedby="first-name-error"
-              data-cy="input-parent-first-name"
+              data-cy="signup__parent-first-name"
             />
             <span v-if="v$.firstName.$error && submitted">
               <span v-for="(error, index) of v$.firstName.$errors" :key="index">
@@ -29,7 +29,7 @@
               name="lastName"
               :class="{ 'p-invalid': v$.firstName.$invalid && submitted }"
               aria-describedby="first-name-error"
-              data-cy="input-parent-last-name"
+              data-cy="signup__parent-last-name"
             />
             <span v-if="v$.lastName.$error && submitted">
               <span v-for="(error, index) of v$.lastName.$errors" :key="index">
@@ -51,7 +51,7 @@
               type="email"
               :class="{ 'p-invalid': v$.ParentEmail.$invalid && submitted }"
               aria-describedby="username-or-email-error"
-              data-cy="input-parent-email"
+              data-cy="signup__parent-email"
             />
           </div>
           <span v-if="v$.ParentEmail.$error && submitted">
@@ -77,7 +77,7 @@
                 show-icon="pi pi-eye-slash"
                 hide-icon="pi pi-eye"
                 :feedback="false"
-                data-cy="password-parent-password"
+                data-cy="signup__parent-password"
               ></PvPassword>
             </div>
             <span v-if="v$.password.$error && submitted">
@@ -101,7 +101,7 @@
                 toggle-mask
                 show-icon="pi pi-eye-slash"
                 hide-icon="pi pi-eye"
-                data-cy="password-parent-password-confirm"
+                data-cy="signup__parent-password-confirm"
                 :feedback="false"
               >
               </PvPassword>

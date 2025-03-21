@@ -9,7 +9,7 @@
             :class="['w-full', { 'p-invalid': invalid }]"
             aria-describedby="email-error"
             :placeholder="$t('authSignIn.emailPlaceholder')"
-            data-cy="input-username-email"
+            data-cy="sign-in__username"
             @keyup="checkForCapsLock"
             @click="checkForCapsLock"
           />
@@ -33,22 +33,19 @@
               hide-icon="pi pi-eye"
               :feedback="false"
               :placeholder="$t('authSignIn.passwordPlaceholder')"
-              data-cy="input-password"
+              data-cy="sign-in__password"
               @keyup="checkForCapsLock"
               @click="checkForCapsLock"
             />
             <small
               class="text-link sign-in-method-link"
-              data-cy="sign-in-with-email-link"
               @click="
                 allowPassword = false;
                 state.usePassword = false;
               "
               >{{ $t('authSignIn.signInWithEmailLinkInstead') }}</small
             >
-            <small class="text-link sign-in-method-link" data-cy="sign-in-with-password" @click="handleForgotPassword"
-              >Forgot password?</small
-            >
+            <small class="text-link sign-in-method-link" @click="handleForgotPassword">Forgot password?</small>
           </div>
           <!-- Username is entered, Password is desired -->
           <PvPassword
@@ -61,7 +58,7 @@
             hide-icon="pi pi-eye"
             :feedback="false"
             :placeholder="$t('authSignIn.passwordPlaceholder')"
-            data-cy="input-password"
+            data-cy="sign-in__password"
             @keyup="checkForCapsLock"
             @click="checkForCapsLock"
           >
@@ -82,15 +79,9 @@
           </PvPassword>
           <!-- Email is entered, MagicLink is desired login -->
           <div v-else-if="allowLink">
-            <PvPassword
-              :placeholder="$t('authSignIn.signInWithEmailLinkPlaceHolder')"
-              class="w-full"
-              disabled
-              data-cy="password-disabled-for-email"
-            />
+            <PvPassword :placeholder="$t('authSignIn.signInWithEmailLinkPlaceHolder')" class="w-full" disabled />
             <small
               class="text-link sign-in-method-link"
-              data-cy="sign-in-with-password"
               @click="
                 allowPassword = true;
                 state.usePassword = true;

@@ -119,42 +119,7 @@
             :lazy-pre-sorting="orderBy"
             @export-selected="exportSelected"
             @export-all="exportAll"
-          >
-            <template #filterbar>
-              <div v-if="districtSchoolsData" class="flex flex-row gap-2">
-                <PvFloatLabel>
-                  <PvMultiSelect
-                    id="ms-school-filter"
-                    v-model="filterSchools"
-                    style="width: 20rem; max-width: 25rem"
-                    :options="districtSchoolsData"
-                    option-label="name"
-                    option-value="name"
-                    :show-toggle-all="false"
-                    selected-items-label="{0} schools selected"
-                    data-cy="filter-by-school"
-                  />
-                  <label for="ms-school-filter">Filter by School</label>
-                </PvFloatLabel>
-              </div>
-              <div class="flex flex-row gap-2">
-                <PvFloatLabel>
-                  <PvMultiSelect
-                    id="ms-grade-filter"
-                    v-model="filterGrades"
-                    style="width: 20rem; max-width: 25rem"
-                    :options="gradeOptions"
-                    option-label="label"
-                    option-value="value"
-                    :show-toggle-all="false"
-                    selected-items-label="{0} grades selected"
-                    data-cy="filter-by-grade"
-                  />
-                  <label for="ms-school-filter">Filter by Grade</label>
-                </PvFloatLabel>
-              </div>
-            </template>
-          </RoarDataTable>
+          />
         </div>
       </template>
     </section>
@@ -168,9 +133,7 @@ import { useRouter } from 'vue-router';
 import _get from 'lodash/get';
 import _kebabCase from 'lodash/kebabCase';
 import _map from 'lodash/map';
-import PvFloatLabel from 'primevue/floatlabel';
 import PvChart from 'primevue/chart';
-import PvMultiSelect from 'primevue/multiselect';
 import PvSelectButton from 'primevue/selectbutton';
 import { useAuthStore } from '@/store/auth';
 import useUserType from '@/composables/useUserType';
@@ -183,7 +146,7 @@ import useAdministrationAssignmentsQuery from '@/composables/queries/useAdminist
 import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery';
 import { getDynamicRouterPath } from '@/helpers/getDynamicRouterPath';
 import { exportCsv } from '@/helpers/query/utils';
-import { taskDisplayNames, gradeOptions } from '@/helpers/reports.js';
+import { taskDisplayNames } from '@/helpers/reports.js';
 import { getTitle } from '@/helpers/query/administrations';
 import { setBarChartData, setBarChartOptions } from '@/helpers/plotting';
 import { APP_ROUTES } from '@/constants/routes';
@@ -480,6 +443,9 @@ const progressReportColumns = computed(() => {
       dataType: 'text',
       sort: true,
       filter: false,
+      useMultiSelect: true,
+      multiSelectOptions: districtSchoolsData.value.map((school) => school.name),
+      multiSelectPlaceholder: 'Filter by School',
       schoolsMap: schoolsMap,
     });
   }

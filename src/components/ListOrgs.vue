@@ -11,7 +11,7 @@
         </div>
         <div class="text-md text-gray-500 ml-6">View organizations asssigned to your account.</div>
       </div>
-      <PvTabView v-if="claimsLoaded" v-model:active-index="activeIndex" lazy class="mb-7">
+      <PvTabView v-if="claimsLoaded" v-model:active-index="activeIndex" lazy class="mb-7" data-cy="orgs-list">
         <PvTabPanel v-for="orgType in orgHeaders" :key="orgType" :header="orgType.header">
           <div class="grid column-gap-3 mt-2">
             <div
@@ -67,7 +67,7 @@
             :loading="isLoading || isFetching"
             :allow-filtering="false"
             @export-all="exportAll"
-            @selected-org-id="showCode"
+            @show-activation-code="showCode"
             @export-org-users="(orgId) => exportOrgUsers(orgId)"
             @edit-button="onEditButtonClick($event)"
           />
@@ -107,12 +107,12 @@
             style="width: 70%"
             :value="activationCode"
             autocomplete="off"
-            data-cy="input-text-activation-code"
+            data-cy="activation-code__input"
             readonly
           />
           <PvButton
             class="bg-primary border-none p-2 text-white hover:bg-red-900"
-            data-cy="button-copy-invitation"
+            data-cy="activation-code__copy"
             @click="copyToClipboard(activationCode)"
           >
             <i class="pi pi-copy p-2"></i>
@@ -452,7 +452,7 @@ const tableColumns = computed(() => {
       header: 'SignUp Code',
       buttonLabel: 'Invite Users',
       button: true,
-      eventName: 'selected-org-id',
+      eventName: 'show-activation-code',
       buttonIcon: 'pi pi-send mr-2',
       sort: false,
     },

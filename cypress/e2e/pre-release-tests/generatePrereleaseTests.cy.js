@@ -2,7 +2,6 @@ import { generatedSpecTemplate } from '../../fixtures/super-admin/generatedTestT
 import { getDevFirebase } from '../../support/devFirebase';
 import { getOpenAdministrations } from '../../support/query';
 
-const timeout = Cypress.env('timeout');
 const testDirName = 'cypress/e2e/pre-release-tests/generated-tests';
 async function getOpenAdmins() {
   const adminFirestore = getDevFirebase('admin').db;
@@ -61,8 +60,8 @@ describe('Fetches all open administrations and generates test spec files for eac
   it('Creates a test spec for each open administration.', () => {
     cy.log('Clearing all saved sessions...');
     Cypress.session.clearAllSavedSessions();
-    cy.login(Cypress.env('participantUsername'), Cypress.env('participantPassword'));
-    cy.visit('/', { timeout: 2 * timeout });
+    cy.login(Cypress.env('PARTICIPANT_USERNAME'), Cypress.env('PARTICIPANT_PASSWORD'));
+    cy.visit('/');
 
     cy.log('Getting open admins...');
     cy.get('@openAdmins').then((openAdmins) => {
