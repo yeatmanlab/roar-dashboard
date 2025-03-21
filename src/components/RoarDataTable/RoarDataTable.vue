@@ -5,6 +5,7 @@
   <div v-else>
     <div class="w-full gap-1 pt-1 flex justify-content-center align-items-center flex-wrap mt-3">
       <slot name="filterbar"></slot>
+      <PvButton type="button" icon="pi pi-filter-slash" label="Clear Filters" @click="resetFilters" />
       <PvFloatLabel>
         <PvMultiSelect
           id="ms-columns"
@@ -17,7 +18,7 @@
           selected-items-label="{0} columns selected"
           @update:model-value="onColumnToggle"
         />
-        <label for="ms-columns" class="view-label2">Select Columns</label>
+        <label for="ms-columns" class="view-label2">Show/Hide Columns</label>
       </PvFloatLabel>
       <PvFloatLabel>
         <PvMultiSelect
@@ -104,7 +105,7 @@
         >
           <PvColumn
             selection-mode="multiple"
-            header-style="background-color: var(--primary-color); border:none;"
+            header-style="background:color-mix(in srgb, var(--primary-color) 80%, white); border-left:4px solid var(--primary-color); border-right: 2px solid var(--primary-color); border-top:4px solid var(--primary-color); border-bottom: 4px solid var(--primary-color);"
             :reorderable-column="false"
             frozen
           />
@@ -121,19 +122,20 @@
             :frozen="col.pinned"
             :style="col.style"
             align-frozen="left"
-            header-style="background:var(--primary-color); color:white; padding-top:0; margin-top:0; padding-bottom:0; margin-bottom:0; border:0; margin-left:0"
+            header-style="background:color-mix(in srgb, var(--primary-color) 80%, white); color: white; padding-top:0; margin-top:0; padding-bottom:0; margin-bottom:0; border-left:2px solid var(--primary-color); border-right: 2px solid var(--primary-color); border-top:4px solid var(--primary-color); border-bottom: 4px solid var(--primary-color); margin-left:0"
+            :pt="{
+              pcColumnFilterButton: pcColumnFilterButton,
+            }"
           >
             <template #header>
-              <div
-                v-tooltip.top="`${toolTipByHeader(col.header)}`"
-                :style="[
-                  toolTipByHeader(col.header).length > 0
-                    ? 'text-decoration: underline dotted #0000CD; text-underline-offset: 3px'
-                    : null,
-                ]"
-              >
+              <div>
                 {{ col.header }}
               </div>
+              <i
+                v-if="toolTipByHeader(col.header).length > 0"
+                v-tooltip.top="`${toolTipByHeader(col.header)}`"
+                class="pi pi-info-circle"
+              />
             </template>
             <template #body="{ data: colData }">
               <!-- If column is a score field, use a dedicated component to render tags and scores -->
@@ -194,19 +196,27 @@
               <div v-else-if="col.dataType === 'date'">
                 {{ getFormattedDate(_get(colData, col.field)) }}
               </div>
-              <div v-else-if="col.field === 'user.lastName'">
-                {{ _get(colData, col.field) }}
-              </div>
-              <div v-else>
+              <div v-else class="px-4">
                 {{ _get(colData, col.field) }}
               </div>
             </template>
             <template v-if="col.dataType" #sorticon="{ sorted, sortOrder }">
-              <i v-if="!sorted && currentSort.length === 0" class="pi pi-sort-alt ml-2" />
-              <i v-if="sorted && sortOrder === 1" class="pi pi-sort-amount-down-alt ml-2" />
-              <i v-else-if="sorted && sortOrder === -1" class="pi pi-sort-amount-up-alt ml-2" />
+              <i v-if="!sorted && currentSort.length === 0" v-tooltip.top="'Sort'" class="pi pi-sort-alt ml-2" />
+              <i
+                v-if="sorted && sortOrder === 1"
+                v-tooltip.top="'Sort Desecending'"
+                class="pi pi-sort-amount-down-alt ml-2"
+              />
+              <i
+                v-else-if="sorted && sortOrder === -1"
+                v-tooltip.top="'Sort Ascending'"
+                class="pi pi-sort-amount-up-alt ml-2"
+              />
             </template>
-            <template v-if="col.dataType" #filter="{ filterModel }">
+            <template #filtericon>
+              <i v-tooltip.top="'Filter Column'" class="pi pi-filter" />
+            </template>
+            <template v-if="col.dataType" #filter="{ filterModel, filterCallback }">
               <div v-if="col.dataType === 'text' && !col.useMultiSelect" class="filter-content">
                 <PvInputText v-model="filterModel.value" type="text" class="p-column-filter" placeholder="Filter" />
               </div>
@@ -217,14 +227,19 @@
                 class="p-column-filter"
                 placeholder="Search"
               />
-              <PvMultiSelect
-                v-if="col.useMultiSelect"
-                v-model="filterModel.value"
-                :options="_get(refOptions, col.field)"
-                placeholder="Any"
-                :show-toggle-all="false"
-                class="p-column-filter"
-              />
+              <div v-if="col.useMultiSelect" style="max-width: 12rem">
+                <PvMultiSelect
+                  v-if="col.useMultiSelect"
+                  v-model="filterModel.value"
+                  :options="_get(refOptions, col.field)"
+                  :placeholder="_get(col, 'multiSelectPlaceholder', 'Any')"
+                  :show-toggle-all="false"
+                  :max-selected-labels="1"
+                  class="p-column-filter"
+                  style="width: 12rem"
+                  @change="filterCallback()"
+                />
+              </div>
               <PvDatePicker
                 v-if="col.dataType === 'date' && !col.useMultiSelect"
                 v-model="filterModel.value"
@@ -286,7 +301,7 @@
                 <PvSelect
                   v-model="filterModel.value"
                   :options="['Assigned', 'Started', 'Completed', 'Optional']"
-                  style="margin-bottom: 0.5rem"
+                  style="margin-bottom: 0.5rem; width: 12rem"
                   data-cy="data-table__progress-filter-dropdown"
                 >
                   <template #option="{ option }">
@@ -374,8 +389,10 @@ import _get from 'lodash/get';
 import _map from 'lodash/map';
 import _forEach from 'lodash/forEach';
 import _find from 'lodash/find';
+import _isEmpty from 'lodash/isEmpty';
 import _toUpper from 'lodash/toUpper';
 import _startCase from 'lodash/startCase';
+import _uniq from 'lodash/uniq';
 import { supportLevelColors, progressTags } from '@/helpers/reports';
 import SkeletonTable from '@/components/SkeletonTable.vue';
 import TableScoreTag from '@/components/reports/TableScoreTag.vue';
@@ -397,8 +414,11 @@ Array of objects consisting of a field and header at minimum.
 - allowMultipleFilters (optional) is a boolean field that determines whether
       users have the option of apply multiple filters.
 - useMultiSelect is an optional boolean field that determines whether the
-      filter will be a multi-select dropdown. options are generated by the
-      given data.
+      filter will be a multi-select dropdown. options are passed in or generated
+      by the given data.
+- multiSelectOptions (optional) is an array of strings that will be used for
+      the multi-select dropdown. If not provided, options will be generated from
+      the given data.
 - Pinned (optional) is a boolean field allowing the column to persist when
       scrolled left-to-right. It is suggested that this only be used on
       the leftmost column.
@@ -535,10 +555,15 @@ const computedFilters = computed(() => {
       returnMatchMode = { value: null, matchMode: dataTypesToFilterMatchMode[dataType] };
     }
 
-    // case for where multiselect ( can affect any type of data type)
+    // For multiselect columns, populate options
     if (_get(column, 'useMultiSelect')) {
       returnMatchMode = { value: null, matchMode: FilterMatchMode.IN };
-      options[column.field] = getUniqueOptions(column);
+      const suppliedOptions = _get(column, 'multiSelectOptions');
+      if (suppliedOptions && !_isEmpty(suppliedOptions)) {
+        options[column.field] = suppliedOptions;
+      } else {
+        options[column.field] = getUniqueOptions(column);
+      }
     }
 
     if (returnMatchMode) {
@@ -561,15 +586,17 @@ const resetFilters = () => {
 
 let toolTipByHeader = (header) => {
   const headerToTooltipMap = {
-    Word: 'Assesses decoding skills at the word level. \n\n  Percentile ranges from 0-99 \n Raw Score ranges from 100-900',
-    Letter:
+    'ROAR - Word':
+      'Assesses decoding skills at the word level. \n\n  Percentile ranges from 0-99 \n Raw Score ranges from 100-900',
+    'ROAR - Letter':
       'Assesses decoding skills at the word level. \n\n Percentile ranges from 0-99 \n Raw Score ranges from 0-90',
-    Phoneme:
+    'ROAR - Phoneme':
       'Assesses phonological awareness: sound matching and elision. \n\n Percentile ranges from 0-99 \n Raw Score ranges from 0-57',
-    Sentence:
+    'ROAR - Sentence':
       'Assesses reading fluency at the sentence level. \n\n Percentile ranges from 0-99 \n Raw Score ranges from 0-130 ',
-    Palabra:
+    'ROAR - Palabra':
       'Assesses decoding skills at the word level in Spanish. This test is still in the research phase. \n\n  Percentile ranges from 0-99 \n Raw Score ranges from 100-900',
+    Report: 'Individual Score Report',
   };
 
   return headerToTooltipMap[header] || '';
@@ -578,13 +605,8 @@ let toolTipByHeader = (header) => {
 // Generate list of options given a column
 function getUniqueOptions(column) {
   const field = _get(column, 'field');
-  let options = [];
-  _forEach(props.data, (entry) => {
-    if (!options.includes(_get(entry, field))) {
-      options.push(_get(entry, field));
-    }
-  });
-  return options;
+  const values = props.data.map((item) => _get(item, field));
+  return _uniq(values);
 }
 
 function getFormattedDate(date) {
@@ -618,6 +640,12 @@ const onFreezeToggle = (selected) => {
     return col;
   });
 };
+
+function pcColumnFilterButton({ context }) {
+  return {
+    style: context.active ? 'background-color: var(--primary-color)' : '',
+  };
+}
 
 // Pass through data table events
 const emit = defineEmits(['export-all', 'selection', 'reset-filters', 'export-selected', 'export-org-users']);
@@ -700,7 +728,7 @@ g {
   z-index: 1;
   font-size: smaller;
   color: var(--surface-500);
-  width: 110px;
+  width: 120px;
 }
 
 button.p-column-filter-menu-button.p-link:hover {
@@ -716,6 +744,10 @@ button.p-column-filter-menu-button.p-link:hover {
 
 .filter-button-override .p-column-filter-menu-button:not(.p-column-filter-menu-button-active) {
   display: none;
+}
+
+.p-datatable-column-filter-button.p-button-text.p-button-secondary:not(:disabled):hover {
+  background: var(--primary-color) !important;
 }
 
 .p-column-filter-matchmode-dropdown {
@@ -748,6 +780,9 @@ button.p-column-filter-menu-button.p-link:hover {
 }
 .p-button-text.p-button-secondary {
   color: white !important;
+}
+.p-button-text.p-button-secondary:hover {
+  color: var(--gray-300) !important;
 }
 .p-tag {
   margin: 5px;
