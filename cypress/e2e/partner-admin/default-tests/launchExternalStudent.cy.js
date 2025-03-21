@@ -1,33 +1,30 @@
+const baseUrl = Cypress.config().baseUrl;
 const testDistrictId = Cypress.env('testDistrictId');
 const testPartnerAdministrationName = Cypress.env('testPartnerAdministrationName');
 const testPartnerAdministrationId = Cypress.env('testPartnerAdministrationId');
-const testPartnerAdminUsername = Cypress.env('partnerAdminUsername');
-const testPartnerAdminPassword = Cypress.env('partnerAdminPassword');
-const timeout = Cypress.env('timeout');
-const baseUrl = Cypress.env('baseUrl');
+const testPartnerAdminUsername = Cypress.env('PARTNER_ADMIN_USERNAME');
+const testPartnerAdminPassword = Cypress.env('PARTNER_ADMIN_PASSWORD');
 const testUserList = Cypress.env('testUserList');
 
-function checkUrl() {
-  cy.login(testPartnerAdminUsername, testPartnerAdminPassword);
-  cy.navigateTo('/');
-  cy.url({ timeout: timeout }).should('eq', `${baseUrl}/`);
-}
+describe('Partner Admin: Individual Reports', () => {
+  it("Selects an administration and views a student's individual score report", () => {
+    // Login as a partner admin.
+    cy.login(testPartnerAdminUsername, testPartnerAdminPassword);
 
-function launchExternalStudent() {
-  cy.navigateTo('/launch/yXuZ8S0En1UsOE4C0uh6wUlQ5Wt1');
-  cy.wait(3 * timeout);
-  cy.get('body', { timeout: 10 * timeout }).should('contain', 'external launch mode');
-}
+    // Wait until the administrations list is loaded.
+    // Note: As the application currently does not support paginated fetching of administrations, we have to wait for
+    // the whole list to be loaded and that can take a while, hence the long timeout.
+    cy.waitForAdministrationsList();
 
-function returnToAdmin() {
-  cy.get('button').contains('Return to administrator account').click();
-  cy.get('body').should('contain', 'View Administrations');
-}
+    // Select the test administration and open the details page.
+    cy.getAdministrationCard(testPartnerAdministrationName);
 
-describe('The partner admin can launch an external student.', () => {
-  it('Selects an administration and launches a student into their tasks', () => {
-    checkUrl();
-    launchExternalStudent();
-    returnToAdmin();
+    // Open the score report.
+    cy.get('button').contains('Scores').first().click();
+    cy.url().should('eq', `${baseUrl}/scores/${testPartnerAdministrationId}/district/${testDistrictId}`);
+
+    // Validate the individual score report.
+    cy.get('[data-cy="route-button-launch"]').first().click();
+    cy.get('[data-cy="participant-launch-mode"]').should('contain', 'external launch mode');
   });
 });
