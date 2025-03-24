@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { useAuthStore } from '@/store/auth';
 import { pageTitlesEN, pageTitlesUS, pageTitlesES, pageTitlesCO } from '@/translations/exports';
-import { APP_ROUTES } from '@/constants/routes';
+import { APP_ROUTES, GAME_ROUTES } from '@/constants/routes';
 import { usePermissions } from '@/composables/usePermissions';
 const { Permissions } = usePermissions();
 
@@ -28,147 +28,147 @@ const routes = [
     },
   },
   {
-    path: '/game/swr',
+    path: GAME_ROUTES.SWR,
     name: 'SWR',
     component: () => import('../components/tasks/TaskSWR.vue'),
     props: { taskId: 'swr', language: 'en' },
     meta: { pageTitle: 'SWR' },
   },
   {
-    path: '/game/swr-es',
+    path: GAME_ROUTES.SWR_ES,
     name: 'SWR-ES',
     component: () => import('../components/tasks/TaskSWR.vue'),
     props: { taskId: 'swr-es', language: 'es' },
     meta: { pageTitle: 'SWR (ES)' },
   },
   {
-    path: '/game/pa',
+    path: GAME_ROUTES.PA,
     name: 'PA',
     component: () => import('../components/tasks/TaskPA.vue'),
     props: { taskId: 'pa', language: 'en' },
     meta: { pageTitle: 'PA' },
   },
   {
-    path: '/game/pa-es',
+    path: GAME_ROUTES.PA_ES,
     name: 'PA-ES',
     component: () => import('../components/tasks/TaskPA.vue'),
     props: { taskId: 'pa-es', language: 'es' },
     meta: { pageTitle: 'PA-ES' },
   },
   {
-    path: '/game/sre',
+    path: GAME_ROUTES.SRE,
     name: 'SRE',
     component: () => import('../components/tasks/TaskSRE.vue'),
     props: { taskId: 'sre', language: 'en' },
     meta: { pageTitle: 'SRE' },
   },
   {
-    path: '/game/sre-es',
+    path: GAME_ROUTES.SRE_ES,
     name: 'SRE-ES',
     component: () => import('../components/tasks/TaskSRE.vue'),
     props: { taskId: 'sre-es', language: 'es' },
     meta: { pageTitle: 'SRE-ES' },
   },
   {
-    path: '/game/letter',
+    path: GAME_ROUTES.LETTER,
     name: 'Letter',
     component: () => import('../components/tasks/TaskLetter.vue'),
     props: { taskId: 'letter', language: 'en' },
     meta: { pageTitle: 'Letter' },
   },
   {
-    path: '/game/letter-es',
+    path: GAME_ROUTES.LETTER_ES,
     name: 'Letter-ES',
     component: () => import('../components/tasks/TaskLetter.vue'),
     props: { taskId: 'letter-es', language: 'es' },
     meta: { pageTitle: 'Letter-ES' },
   },
   {
-    path: '/game/letter-en-ca',
+    path: GAME_ROUTES.LETTER_EN_CA,
     name: 'Letter-EN-CA',
     component: () => import('../components/tasks/TaskLetter.vue'),
     props: { taskId: 'letter-en-ca', language: 'en-CA' },
     meta: { pageTitle: 'Letter-EN-CA' },
   },
   {
-    path: '/game/phonics',
+    path: GAME_ROUTES.PHONICS,
     name: 'Phonics',
     component: () => import('../components/tasks/TaskLetter.vue'),
     props: { taskId: 'phonics', language: 'en' },
     meta: { pageTitle: 'Phonics' },
   },
   {
-    path: '/game/multichoice',
+    path: GAME_ROUTES.MULTICHOICE,
     name: 'Multichoice',
     component: () => import('../components/tasks/TaskMultichoice.vue'),
     props: { taskId: 'multichoice', language: 'en' },
     meta: { pageTitle: 'Multichoice' },
   },
   {
-    path: '/game/morphology',
+    path: GAME_ROUTES.MORPHOLOGY,
     name: 'Morphology',
     component: () => import('../components/tasks/TaskMultichoice.vue'),
     props: { taskId: 'morphology', language: 'en' },
     meta: { pageTitle: 'Morphology' },
   },
   {
-    path: '/game/cva',
+    path: GAME_ROUTES.CVA,
     name: 'Cva',
     component: () => import('../components/tasks/TaskMultichoice.vue'),
     props: { taskId: 'cva', language: 'en' },
     meta: { pageTitle: 'CVA' },
   },
   {
-    path: '/game/vocab',
+    path: GAME_ROUTES.VOCAB,
     name: 'Vocab',
     component: () => import('../components/tasks/TaskVocab.vue'),
     props: { taskId: 'vocab', language: 'en' },
     meta: { pageTitle: 'Vocab' },
   },
   {
-    path: '/game/fluency-arf',
+    path: GAME_ROUTES.FLUENCY_ARF,
     name: 'Fluency-ARF',
     component: () => import('../components/tasks/TaskRoam.vue'),
     props: { taskId: 'fluency-arf', language: 'en' },
     meta: { pageTitle: 'ROAM-ARF' },
   },
   {
-    path: '/game/fluency-arf-es',
+    path: GAME_ROUTES.FLUENCY_ARF_ES,
     name: 'Fluency-ARF-ES',
     component: () => import('../components/tasks/TaskRoam.vue'),
     props: { taskId: 'fluency-arf-es', language: 'es' },
     meta: { pageTitle: 'ROAM-ARF ES' },
   },
   {
-    path: '/game/fluency-calf',
+    path: GAME_ROUTES.FLUENCY_CALF,
     name: 'Fluency-CALF',
     component: () => import('../components/tasks/TaskRoam.vue'),
     props: { taskId: 'fluency-calf', language: 'en' },
     meta: { pageTitle: 'ROAM-CALF' },
   },
   {
-    path: '/game/fluency-calf-es',
+    path: GAME_ROUTES.FLUENCY_CALF_ES,
     name: 'Fluency-CALF-ES',
     component: () => import('../components/tasks/TaskRoam.vue'),
     props: { taskId: 'fluency-calf-es', language: 'es' },
     meta: { pageTitle: 'ROAM-CALF ES' },
   },
   {
-    path: '/game/roam-alpaca',
+    path: GAME_ROUTES.ROAM_ALPACA,
     name: 'Fluency-Alpaca',
     component: () => import('../components/tasks/TaskRoam.vue'),
     props: { taskId: 'roam-alpaca', language: 'en' },
     meta: { pageTitle: 'ROAM-Alpaca' },
   },
   {
-    path: '/game/roam-alpaca-es',
+    path: GAME_ROUTES.ROAM_ALPACA_ES,
     name: 'Fluency-Alpaca-ES',
     component: () => import('../components/tasks/TaskRoam.vue'),
     props: { taskId: 'roam-alpaca-es', language: 'es' },
     meta: { pageTitle: 'ROAM-Alpaca ES' },
   },
   {
-    path: '/game/core-tasks/:taskId',
+    path: GAME_ROUTES.CORE_TASKS,
     name: 'Core Tasks',
     component: () => import('../components/tasks/TaskLevante.vue'),
     props: true,
@@ -177,283 +177,287 @@ const routes = [
     meta: { pageTitle: 'Core Tasks' },
   },
   {
-    path: '/game/ran',
+    path: GAME_ROUTES.RAN,
     name: 'RAN',
     component: () => import('../components/tasks/TaskRan.vue'),
     props: { taskId: 'ran', language: 'en' },
     meta: { pageTitle: 'RAN' },
   },
   {
-    path: '/game/crowding',
+    path: GAME_ROUTES.CROWDING,
     name: 'Crowding',
     component: () => import('../components/tasks/TaskCrowding.vue'),
     props: { taskId: 'crowding', language: 'en' },
     meta: { pageTitle: 'Crowding' },
   },
   {
-    path: '/game/roav-mep',
+    path: GAME_ROUTES.ROAV_MEP,
     name: 'MEP',
     component: () => import('../components/tasks/TaskMEP.vue'),
     props: { taskId: 'roav-mep', language: 'en' },
     meta: { pageTitle: 'MEP' },
   },
   {
-    path: '/game/roar-readaloud',
+    path: GAME_ROUTES.ROAR_READALOUD,
     name: 'ReadAloud',
     component: () => import('../components/tasks/TaskReadAloud.vue'),
     props: { taskId: 'roar-readaloud', language: 'en' },
     meta: { pageTitle: 'ReadAloud' },
   },
   {
-    path: '/launch/:participantId',
-    name: 'LaunchHome',
+    path: APP_ROUTES.LAUNCH,
     component: () => import('../pages/LaunchedHomeParticipant.vue'),
-    props: true,
-    meta: { pageTitle: 'TaskLauncher Home' },
-  },
-  {
-    path: '/launch/:launchId/game/swr',
-    name: 'Launch SWR',
-    component: () => import('../components/tasks/TaskSWR.vue'),
-    props: (route) => ({
-      taskId: 'swr',
-      language: 'en',
-      launchId: route.params.launchId, // Accessing the launchId prop
-    }),
-    meta: { pageTitle: 'SWR' },
-  },
-  {
-    path: '/launch/:launchId/game/swr-es',
-    name: 'Launch SWR-ES',
-    component: () => import('../components/tasks/TaskSWR.vue'),
-    props: (route) => ({
-      taskId: 'swr-es',
-      language: 'es',
-      launchId: route.params.launchId, // Accessing the launchId prop
-    }),
-    meta: { pageTitle: 'SWR (ES)' },
-  },
-  {
-    path: '/launch/:launchId/game/pa',
-    name: 'Launch PA',
-    component: () => import('../components/tasks/TaskPA.vue'),
-    props: (route) => ({
-      taskId: 'pa',
-      language: 'en',
-      launchId: route.params.launchId, // Accessing the launchId prop
-    }),
-    meta: { pageTitle: 'PA' },
-  },
-  {
-    path: '/launch/:launchId/game/pa-es',
-    name: 'Launch PA-ES',
-    component: () => import('../components/tasks/TaskPA.vue'),
-    props: (route) => ({
-      taskId: 'pa-es',
-      language: 'es',
-      launchId: route.params.launchId, // Accessing the launchId prop
-    }),
-    meta: { pageTitle: 'PA-ES' },
-  },
-  {
-    path: '/launch/:launchId/game/sre',
-    name: 'Launch SRE',
-    component: () => import('../components/tasks/TaskSRE.vue'),
-    props: (route) => ({
-      taskId: 'sre',
-      language: 'en',
-      launchId: route.params.launchId, // Accessing the launchId prop
-    }),
-    meta: { pageTitle: 'SRE' },
-  },
-  {
-    path: '/launch/:launchId/game/letter',
-    name: 'Launch Letter',
-    component: () => import('../components/tasks/TaskLetter.vue'),
-    props: (route) => ({
-      taskId: 'letter',
-      language: 'en',
-      launchId: route.params.launchId, // Accessing the launchId prop
-    }),
-    meta: { pageTitle: 'Letter' },
-  },
-  {
-    path: '/launch/:launchId/game/letter-es',
-    name: 'Launch Letter-ES',
-    component: () => import('../components/tasks/TaskLetter.vue'),
-    props: (route) => ({
-      taskId: 'letter-es',
-      language: 'es',
-      launchId: route.params.launchId, // Accessing the launchId prop
-    }),
-    meta: { pageTitle: 'Letter-ES' },
-  },
-  {
-    path: '/launch/:launchId/game/letter-en-ca',
-    name: 'Letter-EN-CA',
-    component: () => import('../components/tasks/TaskLetter.vue'),
-    props: (route) => ({
-      taskId: 'letter-en-ca',
-      language: 'en-ca',
-      launchId: route.params.launchId, // Accessing the launchId prop
-    }),
-    meta: { pageTitle: 'Letter-EN-CA' },
-  },
-  {
-    path: '/launch/:launchId/game/multichoice',
-    name: 'Launch Multichoice',
-    component: () => import('../components/tasks/TaskMultichoice.vue'),
-    props: (route) => ({
-      taskId: 'multichoice',
-      language: 'en',
-      launchId: route.params.launchId, // Accessing the launchId prop
-    }),
-    meta: { pageTitle: 'Multichoice' },
-  },
-  {
-    path: '/launch/:launchId/game/morphology',
-    name: 'Launch Morphology',
-    component: () => import('../components/tasks/TaskMultichoice.vue'),
-    props: (route) => ({
-      taskId: 'morphology',
-      language: 'en',
-      launchId: route.params.launchId, // Accessing the launchId prop
-    }),
-    meta: { pageTitle: 'Morphology' },
-  },
-  {
-    path: '/launch/:launchId/game/cva',
-    name: 'Launch Cva',
-    component: () => import('../components/tasks/TaskMultichoice.vue'),
-    props: (route) => ({
-      taskId: 'cva',
-      language: 'en',
-      launchId: route.params.launchId, // Accessing the launchId prop
-    }),
-    meta: { pageTitle: 'CVA' },
-  },
-  {
-    path: '/launch/:launchId/game/vocab',
-    name: 'Launch Vocab',
-    component: () => import('../components/tasks/TaskVocab.vue'),
-    props: (route) => ({
-      taskId: 'vocab',
-      language: 'en',
-      launchId: route.params.launchId, // Accessing the launchId prop
-    }),
-    meta: { pageTitle: 'Vocab' },
-  },
-  {
-    path: '/launch/:launchId/game/fluency-arf',
-    name: 'Launch Fluency-ARF',
-    component: () => import('../components/tasks/TaskRoam.vue'),
-    props: (route) => ({
-      taskId: 'fluency-arf',
-      language: 'en',
-      launchId: route.params.launchId, // Accessing the launchId prop
-    }),
-    meta: { pageTitle: 'ROAM-ARF' },
-  },
-  {
-    path: '/launch/:launchId/game/fluency-arf-es',
-    name: 'Launch Fluency-ARF-ES',
-    component: () => import('../components/tasks/TaskRoam.vue'),
-    props: (route) => ({
-      taskId: 'fluency-arf-es',
-      language: 'es',
-      launchId: route.params.launchId, // Accessing the launchId prop
-    }),
-    meta: { pageTitle: 'ROAM-ARF ES' },
-  },
-  {
-    path: '/launch/:launchId/game/fluency-calf',
-    name: 'Launch Fluency-CALF',
-    component: () => import('../components/tasks/TaskRoam.vue'),
-    props: (route) => ({
-      taskId: 'fluency-calf',
-      language: 'en',
-      launchId: route.params.launchId, // Accessing the launchId prop
-    }),
-    meta: { pageTitle: 'ROAM-CALF' },
-  },
-  {
-    path: '/launch/:launchId/game/fluency-calf-es',
-    name: 'Launch Fluency-CALF-ES',
-    component: () => import('../components/tasks/TaskRoam.vue'),
-    props: (route) => ({
-      taskId: 'fluency-calf-es',
-      language: 'es',
-      launchId: route.params.launchId, // Accessing the launchId prop
-    }),
-    meta: { pageTitle: 'ROAM-CALF ES' },
-  },
-  {
-    path: '/launch/:launchId/game/roam-alpaca',
-    name: 'Launch Fluency-Alpaca',
-    component: () => import('../components/tasks/TaskRoam.vue'),
-    props: (route) => ({
-      taskId: 'roam-alpaca',
-      language: 'en',
-      launchId: route.params.launchId, // Accessing the launchId prop
-    }),
-    meta: { pageTitle: 'ROAM-Alpaca' },
-  },
-  {
-    path: '/launch/:launchId/game/roam-alpaca-es',
-    name: 'Launch Fluency-Alpaca-ES',
-    component: () => import('../components/tasks/TaskRoam.vue'),
-    props: (route) => ({
-      taskId: 'roam-alpaca-es',
-      language: 'es',
-      launchId: route.params.launchId, // Accessing the launchId prop
-    }),
-    meta: { pageTitle: 'ROAM-Alpaca ES' },
-  },
-  {
-    path: '/launch/:launchId/game/core-tasks/:taskId',
-    name: 'Launch Core Tasks',
-    component: () => import('../components/tasks/TaskLevante.vue'),
-    props: (route) => ({
-      taskId: 'core-tasks',
-      language: 'en',
-      launchId: route.params.launchId, // Accessing the launchId prop
-    }),
-    // Add which specific task?
-    // Code in App.vue overwrites updating it programmatically
-    meta: { pageTitle: 'Core Tasks' },
-  },
-  {
-    path: '/launch/:launchId/game/ran',
-    name: 'Launch RAN',
-    component: () => import('../components/tasks/TaskRan.vue'),
-    props: (route) => ({
-      taskId: 'ran',
-      language: 'en',
-      launchId: route.params.launchId, // Accessing the launchId prop
-    }),
-    meta: { pageTitle: 'RAN' },
-  },
-  {
-    path: '/launch/:launchId/game/crowding',
-    name: 'Launch Crowding',
-    component: () => import('../components/tasks/TaskCrowding.vue'),
-    props: (route) => ({
-      taskId: 'crowding',
-      language: 'en',
-      launchId: route.params.launchId, // Accessing the launchId prop
-    }),
-    meta: { pageTitle: 'Crowding' },
-  },
-  {
-    path: '/launch/:launchId/game/roav-mep',
-    name: 'Launch MEP',
-    component: () => import('../components/tasks/TaskMEP.vue'),
-    props: (route) => ({
-      taskId: 'roav-mep',
-      language: 'en',
-      launchId: route.params.launchId, // Accessing the launchId prop
-    }),
-    meta: { pageTitle: 'MEP' },
+    children: [
+      {
+        path: ':participantId',
+        name: 'LaunchHome',
+        component: () => import('../pages/LaunchedHomeParticipant.vue'),
+        props: true,
+        meta: { pageTitle: 'TaskLauncher Home' },
+      },
+      {
+        path: ':launchId' + GAME_ROUTES.SWR,
+        name: 'Launch SWR',
+        component: () => import('../components/tasks/TaskSWR.vue'),
+        props: (route) => ({
+          taskId: 'swr',
+          language: 'en',
+          launchId: route.params.launchId,
+        }),
+        meta: { pageTitle: 'SWR' },
+      },
+      {
+        path: ':launchId' + GAME_ROUTES.SWR_ES,
+        name: 'Launch SWR-ES',
+        component: () => import('../components/tasks/TaskSWR.vue'),
+        props: (route) => ({
+          taskId: 'swr-es',
+          language: 'es',
+          launchId: route.params.launchId,
+        }),
+        meta: { pageTitle: 'SWR (ES)' },
+      },
+      {
+        path: ':launchId' + GAME_ROUTES.PA,
+        name: 'Launch PA',
+        component: () => import('../components/tasks/TaskPA.vue'),
+        props: (route) => ({
+          taskId: 'pa',
+          language: 'en',
+          launchId: route.params.launchId,
+        }),
+        meta: { pageTitle: 'PA' },
+      },
+      {
+        path: ':launchId' + GAME_ROUTES.PA_ES,
+        name: 'Launch PA-ES',
+        component: () => import('../components/tasks/TaskPA.vue'),
+        props: (route) => ({
+          taskId: 'pa-es',
+          language: 'es',
+          launchId: route.params.launchId,
+        }),
+        meta: { pageTitle: 'PA-ES' },
+      },
+      {
+        path: ':launchId' + GAME_ROUTES.SRE,
+        name: 'Launch SRE',
+        component: () => import('../components/tasks/TaskSRE.vue'),
+        props: (route) => ({
+          taskId: 'sre',
+          language: 'en',
+          launchId: route.params.launchId,
+        }),
+        meta: { pageTitle: 'SRE' },
+      },
+      {
+        path: ':launchId' + GAME_ROUTES.LETTER,
+        name: 'Launch Letter',
+        component: () => import('../components/tasks/TaskLetter.vue'),
+        props: (route) => ({
+          taskId: 'letter',
+          language: 'en',
+          launchId: route.params.launchId,
+        }),
+        meta: { pageTitle: 'Letter' },
+      },
+      {
+        path: ':launchId' + GAME_ROUTES.LETTER_ES,
+        name: 'Launch Letter-ES',
+        component: () => import('../components/tasks/TaskLetter.vue'),
+        props: (route) => ({
+          taskId: 'letter-es',
+          language: 'es',
+          launchId: route.params.launchId,
+        }),
+        meta: { pageTitle: 'Letter-ES' },
+      },
+      {
+        path: ':launchId' + GAME_ROUTES.LETTER_EN_CA,
+        name: 'Launch Letter-EN-CA',
+        component: () => import('../components/tasks/TaskLetter.vue'),
+        props: (route) => ({
+          taskId: 'letter-en-ca',
+          language: 'en-CA',
+          launchId: route.params.launchId,
+        }),
+        meta: { pageTitle: 'Letter-EN-CA' },
+      },
+      {
+        path: ':launchId' + GAME_ROUTES.MULTICHOICE,
+        name: 'Launch Multichoice',
+        component: () => import('../components/tasks/TaskMultichoice.vue'),
+        props: (route) => ({
+          taskId: 'multichoice',
+          language: 'en',
+          launchId: route.params.launchId,
+        }),
+        meta: { pageTitle: 'Multichoice' },
+      },
+      {
+        path: ':launchId' + GAME_ROUTES.MORPHOLOGY,
+        name: 'Launch Morphology',
+        component: () => import('../components/tasks/TaskMultichoice.vue'),
+        props: (route) => ({
+          taskId: 'morphology',
+          language: 'en',
+          launchId: route.params.launchId,
+        }),
+        meta: { pageTitle: 'Morphology' },
+      },
+      {
+        path: ':launchId' + GAME_ROUTES.CVA,
+        name: 'Launch CVA',
+        component: () => import('../components/tasks/TaskMultichoice.vue'),
+        props: (route) => ({
+          taskId: 'cva',
+          language: 'en',
+          launchId: route.params.launchId,
+        }),
+        meta: { pageTitle: 'CVA' },
+      },
+      {
+        path: ':launchId' + GAME_ROUTES.VOCAB,
+        name: 'Launch Vocab',
+        component: () => import('../components/tasks/TaskVocab.vue'),
+        props: (route) => ({
+          taskId: 'vocab',
+          language: 'en',
+          launchId: route.params.launchId,
+        }),
+        meta: { pageTitle: 'Vocab' },
+      },
+      {
+        path: ':launchId' + GAME_ROUTES.FLUENCY_ARF,
+        name: 'Launch Fluency-ARF',
+        component: () => import('../components/tasks/TaskRoam.vue'),
+        props: (route) => ({
+          taskId: 'fluency-arf',
+          language: 'en',
+          launchId: route.params.launchId,
+        }),
+        meta: { pageTitle: 'ROAM-ARF' },
+      },
+      {
+        path: ':launchId' + GAME_ROUTES.FLUENCY_ARF_ES,
+        name: 'Launch Fluency-ARF-ES',
+        component: () => import('../components/tasks/TaskRoam.vue'),
+        props: (route) => ({
+          taskId: 'fluency-arf-es',
+          language: 'es',
+          launchId: route.params.launchId,
+        }),
+        meta: { pageTitle: 'ROAM-ARF ES' },
+      },
+      {
+        path: ':launchId' + GAME_ROUTES.FLUENCY_CALF,
+        name: 'Launch Fluency-CALF',
+        component: () => import('../components/tasks/TaskRoam.vue'),
+        props: (route) => ({
+          taskId: 'fluency-calf',
+          language: 'en',
+          launchId: route.params.launchId,
+        }),
+        meta: { pageTitle: 'ROAM-CALF' },
+      },
+      {
+        path: ':launchId' + GAME_ROUTES.FLUENCY_CALF_ES,
+        name: 'Launch Fluency-CALF-ES',
+        component: () => import('../components/tasks/TaskRoam.vue'),
+        props: (route) => ({
+          taskId: 'fluency-calf-es',
+          language: 'es',
+          launchId: route.params.launchId,
+        }),
+        meta: { pageTitle: 'ROAM-CALF ES' },
+      },
+      {
+        path: ':launchId' + GAME_ROUTES.ROAM_ALPACA,
+        name: 'Launch Fluency-Alpaca',
+        component: () => import('../components/tasks/TaskRoam.vue'),
+        props: (route) => ({
+          taskId: 'roam-alpaca',
+          language: 'en',
+          launchId: route.params.launchId,
+        }),
+        meta: { pageTitle: 'ROAM-Alpaca' },
+      },
+      {
+        path: ':launchId' + GAME_ROUTES.ROAM_ALPACA_ES,
+        name: 'Launch Fluency-Alpaca-ES',
+        component: () => import('../components/tasks/TaskRoam.vue'),
+        props: (route) => ({
+          taskId: 'roam-alpaca-es',
+          language: 'es',
+          launchId: route.params.launchId,
+        }),
+        meta: { pageTitle: 'ROAM-Alpaca ES' },
+      },
+      {
+        path: ':launchId' + GAME_ROUTES.CORE_TASKS,
+        name: 'Launch Core Tasks',
+        component: () => import('../components/tasks/TaskLevante.vue'),
+        props: (route) => ({
+          taskId: 'core-tasks',
+          language: 'en',
+          launchId: route.params.launchId,
+        }),
+        meta: { pageTitle: 'Core Tasks' },
+      },
+      {
+        path: ':launchId' + GAME_ROUTES.RAN,
+        name: 'Launch RAN',
+        component: () => import('../components/tasks/TaskRan.vue'),
+        props: (route) => ({
+          taskId: 'ran',
+          language: 'en',
+          launchId: route.params.launchId,
+        }),
+        meta: { pageTitle: 'RAN' },
+      },
+      {
+        path: ':launchId' + GAME_ROUTES.CROWDING,
+        name: 'Launch Crowding',
+        component: () => import('../components/tasks/TaskCrowding.vue'),
+        props: (route) => ({
+          taskId: 'crowding',
+          language: 'en',
+          launchId: route.params.launchId,
+        }),
+        meta: { pageTitle: 'Crowding' },
+      },
+      {
+        path: ':launchId' + GAME_ROUTES.ROAV_MEP,
+        name: 'Launch MEP',
+        component: () => import('../components/tasks/TaskMEP.vue'),
+        props: (route) => ({
+          taskId: 'roav-mep',
+          language: 'en',
+          launchId: route.params.launchId,
+        }),
+        meta: { pageTitle: 'MEP' },
+      },
+    ],
   },
   {
     path: '/manage-tasks-variants',
