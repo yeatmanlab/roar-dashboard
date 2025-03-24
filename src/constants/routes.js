@@ -45,5 +45,5 @@ export const APP_ROUTES = {
   ORGS_LIST: '/list-orgs',
   ORGS_CREATE: '/create-orgs',
   REGISTER: '/register',
-  LAUNCH: '/launch',
+  LAUNCH: '/launch/:launchId',
 };
