@@ -8,7 +8,7 @@ import { config } from '@dotenvx/dotenvx';
 import { fileURLToPath, URL } from 'url';
 import path from 'path';
 import fs from 'fs';
-import { default as FirebaseConfig } from './firebase/admin/firebase.staging.json';
+import { default as FirebaseConfig } from './firebase/admin/firebase.dev.json';
 
 /**
  * Parse server response headers
