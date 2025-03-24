@@ -31,7 +31,7 @@ export const GAME_ROUTES = {
   RAN: '/game/ran',
   CROWDING: '/game/crowding',
   ROAV_MEP: '/game/roav-mep',
-  ROAR_READALOUD: '/game/roar-readaloud'
+  ROAR_READALOUD: '/game/roar-readaloud',
 };
 
 export const APP_ROUTES = {
