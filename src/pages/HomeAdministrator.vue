@@ -8,15 +8,11 @@
               <div class="flex align-items-center flex-wrap gap-3 mb-2">
                 <div class="admin-page-header">All Assignments</div>
               </div>
-              <div class="text-md text-gray-500">This page lists all the assignments that are administered to your users. You can view and monitor completion and create new bundles of tasks, surveys, and questionnaires to be administered as assignments.</div>
+              <div class="text-md text-gray-500">This page lists all the assignments that are administered to your users.</div>
+              <div class="text-md text-gray-500">You can view and monitor completion and create new bundles of tasks, surveys, and questionnaires to be administered as assignments.</div>
             </div>
-
-            <div class="flex align-items-center gap-2">
+            <div class="flex align-items-center gap-2 mt-2">
               <div class="flex gap-3 align-items-stretch justify-content-start">
-                <div v-if="isSuperAdmin" class="flex flex-column gap-1">
-                  <small class="text-gray-400">Show test administrations</small>
-                  <PvToggleSwitch v-model="fetchTestAdministrations" class="align-self-center my-auto" />
-                </div>
                 <div class="flex flex-column gap-1">
                   <small id="search-help" class="text-gray-400">Search by name</small>
                   <div class="flex align-items-center">
@@ -137,7 +133,6 @@ import PvButton from 'primevue/button';
 import PvDataView from 'primevue/dataview';
 import PvSelect from 'primevue/select';
 import PvInputGroup from 'primevue/inputgroup';
-import PvToggleSwitch from 'primevue/toggleswitch';
 import { useAuthStore } from '@/store/auth';
 import { orderByDefault } from '@/helpers/query/utils';
 import { getTitle } from '@/helpers/query/administrations';
