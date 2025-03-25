@@ -11,7 +11,7 @@
       "redirects": [
         {
           "source": "**",
-          "destination": "https://hs-levante-admin-prod.web.app/",
+          "destination": "https://platform.levante-network.org",
           "type": 302
         }
       ],
