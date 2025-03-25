@@ -1,3 +1,6 @@
+// This test file tests the FilterBar component which provides filtering functionality
+// It imports the FilterBar component from the source code and Vue's ref function
+// for creating reactive references used in the test data
 import FilterBar from '../../../../src/components/slots/FilterBar.vue';
 import { ref } from 'vue';
 

@@ -1,3 +1,15 @@
+// This test file imports dependencies needed to test the SSO account readiness verification functionality:
+// - Vue utilities (ref, nextTick) for reactivity and component updates
+// - Vitest testing utilities for running tests, mocks, and lifecycle hooks
+// - Pinia testing utilities to mock the store
+// - Vue Query for data fetching
+// - Vue Router for navigation
+// - nanoid for generating unique IDs
+// - Custom test helper for component setup
+// - Auth store for managing authentication state
+// - User data query hook for fetching user information
+// - The main composable being tested for SSO account verification
+
 import { ref, nextTick } from 'vue';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createTestingPinia } from '@pinia/testing';

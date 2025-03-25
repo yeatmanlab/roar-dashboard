@@ -1,3 +1,18 @@
+/**
+ * Utility functions for Cypress tests
+ * 
+ * This module provides helper functions for common testing operations like:
+ * - Generating random names for test data
+ * - Checking package versions against main branch
+ * - Creating mock stores for different user types
+ * 
+ * Dependencies:
+ * - axios: For making HTTP requests to GitHub API
+ * - pinia: Vue state management library for mocking stores
+ * - auth store: Application authentication store
+ * - package.json: For version comparison functionality
+ */
+
 import axios from 'axios';
 import { createPinia, setActivePinia } from 'pinia';
 import { useAuthStore } from '../../src/store/auth.js';

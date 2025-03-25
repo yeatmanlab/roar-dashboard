@@ -1,3 +1,9 @@
+// This script sets up component testing in Cypress for Vue components
+// It imports:
+// - Custom Cypress commands from './commands'
+// - Application plugins from the src/plugins directory 
+// - A function to create the Vue app instance from src/setup
+// - The mount helper from Cypress's Vue integration
 import './commands';
 import plugins from '../../src/plugins';
 import { createAppInstance } from '../../src/setup';

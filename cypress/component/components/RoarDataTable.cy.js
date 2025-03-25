@@ -1,6 +1,31 @@
 import RoarDataTable from '../../../src/components/RoarDataTable.vue';
 import columns from '../../fixtures/component/roar-data-table/props/columns.js';
 import dataRandomized from '../../fixtures/component/roar-data-table/props/dataRandomized.js';
+// This test file tests the RoarDataTable component functionality
+// The component appears to be a data table for displaying ROAR (Reading assessment) data
+// with filtering, sorting and export capabilities
+
+// Key test elements:
+// 1. Props setup with mock data, columns config and table settings
+// 2. Helper functions to mock filtering behavior:
+//    - resetData(): Resets the data to original state
+//    - mockFilterBySchool(): Filters data by school name
+//    - mockFilterByGrade(): Filters by student grade
+//    - mockFilterByCategory(): Filters by task category
+//    - mockFilterBySupportLevelCategory(): Filters by support level
+
+// The test appears to validate:
+// - Table rendering with mock data
+// - Filtering functionality 
+// - Export capabilities
+// - Pagination behavior
+// - Loading states
+// - Group headers display
+
+// Mock data includes:
+// - Student/user information (school, grade etc)
+// - Assessment scores and categories
+// - Support level classifications
 
 const props = {
   columns: columns,
