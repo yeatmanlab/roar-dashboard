@@ -1,16 +1,12 @@
 <template>
-  <div class="p-card card-administration mb-1 w-full">
+  <div class="p-card card-administration mb-4 w-full">
     <div v-if="props.stats && isSuperAdmin" class="card-admin-chart">
       <PvChart type="doughnut" :data="doughnutChartData" :options="doughnutChartOptions" />
     </div>
-
     <div class="card-admin-body w-full">
       <div class="flex flex-row w-full md:h-2rem sm:h-3rem">
         <div class="flex-grow-1 pr-3 mr-2 p-0 m-0">
           <h2 data-cy="h2-card-admin-title" class="sm:text-lg lg:text-lx m-0 h2-card-admin-title">{{ title }}</h2>
-         <span :class="['status-badge', administrationStatusBadge]">
-          {{ administrationStatus }}
-        </span>
         </div>
         <div v-if="isSuperAdmin" class="flex justify-content-end w-3 pl-5 pb-5 ml-2 mb-6">
           <PvSpeedDial
@@ -26,19 +22,20 @@
           <PvConfirmPopup />
         </div>
       </div>
-
       <div class="card-admin-details">
-        <span class="mr-1"><strong>Dates</strong>:</span>
+        <span class="mr-1"><strong>Availability</strong>:</span>
         <span class="mr-1">
           {{ processedDates.start.toLocaleDateString() }} — {{ processedDates.end.toLocaleDateString() }}
         </span>
+        <span :class="['status-badge', administrationStatusBadge]">
+          {{ administrationStatus }}
+        </span>
       </div>
-
       <div class="card-admin-assessments">
-        <span class="mr-1"><strong>Assessments</strong>:</span>
+        <span class="mr-1"><strong>Tasks</strong>:</span>
         <template v-if="!isLoadingTasksDictionary">
           <span v-for="assessmentId in assessmentIds" :key="assessmentId" class="card-inline-list-item">
-            <span>{{ tasksDictionary[assessmentId]?.publicName ?? assessmentId }}</span>
+            <span>{{ tasksDictionary[assessmentId]?.name ?? assessmentId }}</span>
             <span
               v-if="showParams"
               v-tooltip.top="'Click to view params'"
@@ -69,29 +66,17 @@
           </PvPopover>
         </div>
       </div>
-
-      <div v-if="isAssigned">
-        <PvButton
-          class="mt-2 m-0 bg-primary text-white border-none border-round h-2rem text-sm hover:bg-red-900"
-          :icon="toggleIcon"
-          style="padding: 1rem; padding-top: 1.2rem; padding-bottom: 1.2rem"
-          size="small"
-          :label="toggleLabel"
-          @click="toggleTable"
-        />
-      </div>
-
       <PvTreeTable
-        v-if="showTable"
         class="mt-3"
         lazy
         row-hover
         :loading="loadingTreeTable"
         :value="treeTableOrgs"
         @node-expand="onExpand"
+        
       >
-        <PvColumn field="name" header="Name" expander style="width: 20rem"></PvColumn>
-        <PvColumn v-if="props.stats && isWideScreen" field="id" header="Completion">
+        <PvColumn field="name" expander style="width: 20rem"></PvColumn>
+        <PvColumn v-if="props.stats && isWideScreen" field="id">
           <template #body="{ node }">
             <PvChart
               type="bar"
@@ -118,7 +103,7 @@
                   severity="secondary"
                   text
                   raised
-                  label="Progress"
+                  label="See Details"
                   aria-label="Completion details"
                   size="small"
                   data-cy="button-progress"
@@ -174,7 +159,6 @@ import PvSpeedDial from 'primevue/speeddial';
 import PvTreeTable from 'primevue/treetable';
 import { batchGetDocs } from '@/helpers/query/utils';
 import { taskDisplayNames } from '@/helpers/reports';
-import { removeEmptyOrgs } from '@/helpers';
 import { setBarChartData, setBarChartOptions } from '@/helpers/plotting';
 import useDsgfOrgQuery from '@/composables/queries/useDsgfOrgQuery';
 import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery';
@@ -211,7 +195,6 @@ const administrationStatus = computed(() => {
   return status
 });
 const administrationStatusBadge = computed(() => administrationStatus.value.toLowerCase()); 
-
 
 const speedDialItems = ref([
   {
@@ -279,30 +262,13 @@ function getAssessment(assessmentId) {
   return props.assessments.find((assessment) => assessment.taskId.toLowerCase() === assessmentId);
 }
 
-const displayOrgs = removeEmptyOrgs(props.assignees);
-const isAssigned = !_isEmpty(Object.values(displayOrgs));
-
 const showTable = ref(false);
 const enableQueries = ref(false);
 
-const toggleIcon = computed(() => {
-  if (showTable.value) {
-    return 'pi pi-chevron-down mr-1';
-  }
-  return 'pi pi-chevron-right mr-2';
-});
-
-const toggleLabel = computed(() => {
-  if (showTable.value) {
-    return 'Hide details';
-  }
-  return ' Show details';
-});
-
-const toggleTable = () => {
+onMounted(() => {
   enableQueries.value = true;
   showTable.value = !showTable.value;
-};
+});
 
 const isWideScreen = computed(() => {
   return window.innerWidth > 768;
@@ -465,6 +431,9 @@ onMounted(() => {
 </script>
 
 <style lang="scss">
+.p-treetable-header-cell {
+  display: none;
+}
 .p-confirm-popup .p-confirm-popup-footer button {
   background-color: var(--primary-color);
   border: none;
@@ -478,11 +447,19 @@ onMounted(() => {
   background-color: var(--red-900);
 }
 
+.card-admin-assessments {
+  margin-top: 10px;
+}
+
+.p-dataview-paginator-top {
+  border-bottom: 0px solid transparent!important;
+}
+
 .card-administration {
   text-align: left;
   width: 100%;
   background: var(--surface-b);
-  border: 1px solid var(--surface-d);
+  border: 1px solid var(--gray-300);
   border-radius: var(--border-radius);
   display: flex;
   flex-direction: row;

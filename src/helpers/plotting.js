@@ -61,7 +61,7 @@ export const setBarChartData = (orgStats) => {
       },
       {
         type: 'bar',
-        label: 'Assigned',
+        label: 'Not Started',
         backgroundColor: documentStyle.getPropertyValue('--surface-d'),
         data: [assigned],
         borderWidth: borderWidth,
