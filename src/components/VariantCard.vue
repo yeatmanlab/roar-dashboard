@@ -324,7 +324,6 @@ function iconClass() {
 }
 
 const parseConditions = (variant) => {
-  console.log(variant);
   return variant?.conditions;
 };
 

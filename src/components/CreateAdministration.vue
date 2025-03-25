@@ -14,40 +14,24 @@
       <PvDivider />
       <div class="bg-gray-100 rounded p-5">
         <div class="formgrid grid mt-5">
-          <div class="field col-12 xl:col-6 mb-5">
-            <PvFloatLabel>
-              <PvInputText
+        <div class="field col-12 xl:col-6 mb-5">
+          <PvFloatLabel>
+            <PvInputText
                 id="administration-name"
                 v-model="state.administrationName"
                 class="w-full"
                 data-cy="input-administration-name"
-              />
-              <label for="administration-name" class="w-full">Your new assignment name</label>
-              <small
-                v-if="v$.administrationName.$invalid && submitted"
-                class="p-error white-space-nowrap overflow-hidden text-overflow-ellipsis"
-                >Please name your administration</small
-              >
+            />
+            <label for="administration-name" class="w-full">Your new assignment name</label>
+            <small
+              v-if="v$.administrationName.$invalid && submitted"
+              class="p-error white-space-nowrap overflow-hidden text-overflow-ellipsis"
+            >
+              Please name your administration
+            </small>
             </PvFloatLabel>
             <p class="mt-1 ml-1 text-sm text-gray-500">This name is visible to participants</p>
           </div>
-
-          <!-- <div class="field col-12 xl:col-6 mb-5">
-            <PvFloatLabel>
-              <PvInputText
-                id="administration-public-name"
-                v-model="state.administrationPublicName"
-                class="w-full"
-                data-cy="input-administration-name-public"
-              />
-              <label for="administration-public-name" class="w-full">Public Administration Name</label>
-              <small
-                v-if="v$.administrationPublicName.$invalid && submitted"
-                class="p-error white-space-nowrap overflow-hidden text-overflow-ellipsis"
-                >Please provide a public-facing name for this administration</small
-              >
-            </PvFloatLabel>
-          </div> -->
         </div>
         <div class="formgrid grid">
           <div class="field col-12 md:col-6 mb-5">
@@ -232,9 +216,6 @@ const header = computed(() => {
 });
 
 const description = computed(() => {
-  // if (props.adminId) {
-  //   return 'Use this form to edit an existing assignment.';
-  // }
   return 'Assignments are bundles of tasks, surveys, and questionnaires that are sent to your users';
 });
 

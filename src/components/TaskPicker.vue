@@ -70,14 +70,6 @@
               </div>
             </template>
           </PvSelect>
-          <!-- <PvSelect
-            v-model="currentTask"
-            :options="taskOptions"
-            option-label="label"
-            option-value="value"
-            class="w-full mb-2"
-            placeholder="Select TaskID"
-          /> -->
           <PvScrollPanel style="height: 27.75rem; width: 100%; overflow-y: auto">
             <div v-if="!currentTask">Select a TaskID to display a list of variants.</div>
             <div v-else-if="!currentVariants.length">
@@ -212,8 +204,6 @@ const groupedTasks = {
 const taskOptions = computed(() => {
 
   let remainingTasks = new Set(Object.keys(props.allVariants));
-
-  // Transform groupedTasks into the desired nested format
   let groupedOptions = Object.entries(groupedTasks).map(([groupName, tasks]) => {
     let groupItems = [];
 
@@ -259,17 +249,6 @@ const taskOptions = computed(() => {
   }
   return groupedOptions;
 });
-
-// const taskOptions = computed(() => {
-//   return Object.entries(props.allVariants).map((entry) => {
-//     const key = entry[0];
-//     const value = entry[1];
-//     return {
-//       label: value[0].task.name ?? key,
-//       value: key,
-//     };
-//   });
-// });
 
 watch(
   () => props.inputVariants,
