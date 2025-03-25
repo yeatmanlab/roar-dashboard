@@ -218,10 +218,8 @@ const taskOptions = computed(() => {
     let groupItems = [];
 
     tasks.forEach((task) => {
-      console.log(task);
       const taskKey = Object.keys(props.allVariants).find(
         (entry) => {
-          console.log(props.allVariants[entry][0].task.name === task, props.allVariants[entry][0].task.name, task)
           return props.allVariants[entry][0].task.name === task
         }
       );
@@ -259,9 +257,6 @@ const taskOptions = computed(() => {
       items: otherItems,
     });
   }
-
-  console.log(otherItems);
-
   return groupedOptions;
 });
 
