@@ -209,7 +209,10 @@ const routes = [
     component: () => import('../pages/HomeParticipant.vue'),
     props: true,
     name: 'LaunchParticipant',
-    meta: { pageTitle: 'TaskLauncher Home' },
+    meta: {
+      pageTitle: 'TaskLauncher Home',
+      // permission: Permissions.Tasks.LAUNCH,
+    },
   },
   {
     path: '/launch/:launchId' + GAME_ROUTES.SWR,
@@ -220,7 +223,10 @@ const routes = [
       language: 'en',
       launchId: route.params.launchId,
     }),
-    meta: { pageTitle: 'SWR' },
+    meta: {
+      pageTitle: 'SWR',
+      // permission: Permissions.Tasks.LAUNCH,
+    },
   },
   {
     path: '/launch/:launchId' + GAME_ROUTES.SWR_ES,
@@ -231,7 +237,7 @@ const routes = [
       language: 'es',
       launchId: route.params.launchId,
     }),
-    meta: { pageTitle: 'SWR (ES)' },
+    meta: { pageTitle: 'SWR (ES)', permission: Permissions.Tasks.LAUNCH },
   },
   {
     path: '/launch/:launchId' + GAME_ROUTES.PA,
@@ -242,7 +248,10 @@ const routes = [
       language: 'en',
       launchId: route.params.launchId,
     }),
-    meta: { pageTitle: 'PA' },
+    meta: {
+      pageTitle: 'PA',
+      // permission: Permissions.Tasks.LAUNCH,
+    },
   },
   {
     path: '/launch/:launchId' + GAME_ROUTES.PA_ES,
@@ -253,7 +262,7 @@ const routes = [
       language: 'es',
       launchId: route.params.launchId,
     }),
-    meta: { pageTitle: 'PA-ES' },
+    meta: { pageTitle: 'PA-ES', permission: Permissions.Tasks.LAUNCH },
   },
   {
     path: '/launch/:launchId' + GAME_ROUTES.SRE,
@@ -264,7 +273,7 @@ const routes = [
       language: 'en',
       launchId: route.params.launchId,
     }),
-    meta: { pageTitle: 'SRE' },
+    meta: { pageTitle: 'SRE', permission: Permissions.Tasks.LAUNCH },
   },
   {
     path: '/launch/:launchId' + GAME_ROUTES.LETTER,
@@ -275,7 +284,7 @@ const routes = [
       language: 'en',
       launchId: route.params.launchId,
     }),
-    meta: { pageTitle: 'Letter' },
+    meta: { pageTitle: 'Letter', permission: Permissions.Tasks.LAUNCH },
   },
   {
     path: '/launch/:launchId' + GAME_ROUTES.LETTER_ES,
@@ -286,7 +295,7 @@ const routes = [
       language: 'es',
       launchId: route.params.launchId,
     }),
-    meta: { pageTitle: 'Letter-ES' },
+    meta: { pageTitle: 'Letter-ES', permission: Permissions.Tasks.LAUNCH },
   },
   {
     path: '/launch/:launchId' + GAME_ROUTES.LETTER_EN_CA,
@@ -297,7 +306,7 @@ const routes = [
       language: 'en-CA',
       launchId: route.params.launchId,
     }),
-    meta: { pageTitle: 'Letter-EN-CA' },
+    meta: { pageTitle: 'Letter-EN-CA', permission: Permissions.Tasks.LAUNCH },
   },
   {
     path: '/launch/:launchId' + GAME_ROUTES.MULTICHOICE,
@@ -308,7 +317,7 @@ const routes = [
       language: 'en',
       launchId: route.params.launchId,
     }),
-    meta: { pageTitle: 'Multichoice' },
+    meta: { pageTitle: 'Multichoice', permission: Permissions.Tasks.LAUNCH },
   },
   {
     path: '/launch/:launchId' + GAME_ROUTES.MORPHOLOGY,
@@ -319,7 +328,7 @@ const routes = [
       language: 'en',
       launchId: route.params.launchId,
     }),
-    meta: { pageTitle: 'Morphology' },
+    meta: { pageTitle: 'Morphology', permission: Permissions.Tasks.LAUNCH },
   },
   {
     path: '/launch/:launchId' + GAME_ROUTES.CVA,
@@ -330,7 +339,7 @@ const routes = [
       language: 'en',
       launchId: route.params.launchId,
     }),
-    meta: { pageTitle: 'CVA' },
+    meta: { pageTitle: 'CVA', permission: Permissions.Tasks.LAUNCH },
   },
   {
     path: '/launch/:launchId' + GAME_ROUTES.VOCAB,
@@ -341,7 +350,7 @@ const routes = [
       language: 'en',
       launchId: route.params.launchId,
     }),
-    meta: { pageTitle: 'Vocab' },
+    meta: { pageTitle: 'Vocab', permission: Permissions.Tasks.LAUNCH },
   },
   {
     path: '/launch/:launchId' + GAME_ROUTES.FLUENCY_ARF,
@@ -352,7 +361,7 @@ const routes = [
       language: 'en',
       launchId: route.params.launchId,
     }),
-    meta: { pageTitle: 'ROAM-ARF' },
+    meta: { pageTitle: 'ROAM-ARF', permission: Permissions.Tasks.LAUNCH },
   },
   {
     path: '/launch/:launchId' + GAME_ROUTES.FLUENCY_ARF_ES,
@@ -363,7 +372,7 @@ const routes = [
       language: 'es',
       launchId: route.params.launchId,
     }),
-    meta: { pageTitle: 'ROAM-ARF ES' },
+    meta: { pageTitle: 'ROAM-ARF ES', permission: Permissions.Tasks.LAUNCH },
   },
   {
     path: '/launch/:launchId' + GAME_ROUTES.FLUENCY_CALF,
@@ -374,7 +383,7 @@ const routes = [
       language: 'en',
       launchId: route.params.launchId,
     }),
-    meta: { pageTitle: 'ROAM-CALF' },
+    meta: { pageTitle: 'ROAM-CALF', permission: Permissions.Tasks.LAUNCH },
   },
   {
     path: '/launch/:launchId' + GAME_ROUTES.FLUENCY_CALF_ES,
@@ -385,7 +394,7 @@ const routes = [
       language: 'es',
       launchId: route.params.launchId,
     }),
-    meta: { pageTitle: 'ROAM-CALF ES' },
+    meta: { pageTitle: 'ROAM-CALF ES', permission: Permissions.Tasks.LAUNCH },
   },
   {
     path: '/launch/:launchId' + GAME_ROUTES.ROAM_ALPACA,
@@ -396,7 +405,7 @@ const routes = [
       language: 'en',
       launchId: route.params.launchId,
     }),
-    meta: { pageTitle: 'ROAM-Alpaca' },
+    meta: { pageTitle: 'ROAM-Alpaca', permission: Permissions.Tasks.LAUNCH },
   },
   {
     path: '/launch/:launchId' + GAME_ROUTES.ROAM_ALPACA_ES,
@@ -407,7 +416,7 @@ const routes = [
       language: 'es',
       launchId: route.params.launchId,
     }),
-    meta: { pageTitle: 'ROAM-Alpaca ES' },
+    meta: { pageTitle: 'ROAM-Alpaca ES', permission: Permissions.Tasks.LAUNCH },
   },
   {
     path: '/launch/:launchId' + GAME_ROUTES.CORE_TASKS,
@@ -418,7 +427,7 @@ const routes = [
       language: 'en',
       launchId: route.params.launchId,
     }),
-    meta: { pageTitle: 'Core Tasks' },
+    meta: { pageTitle: 'Core Tasks', permission: Permissions.Tasks.LAUNCH },
   },
   {
     path: '/launch/:launchId' + GAME_ROUTES.RAN,
@@ -429,7 +438,10 @@ const routes = [
       language: 'en',
       launchId: route.params.launchId,
     }),
-    meta: { pageTitle: 'RAN' },
+    meta: {
+      pageTitle: 'RAN',
+      permission: Permissions.Tasks.LAUNCH,
+    },
   },
   {
     path: '/launch/:launchId' + GAME_ROUTES.CROWDING,
@@ -440,7 +452,7 @@ const routes = [
       language: 'en',
       launchId: route.params.launchId,
     }),
-    meta: { pageTitle: 'Crowding' },
+    meta: { pageTitle: 'Crowding', permission: Permissions.Tasks.LAUNCH },
   },
   {
     path: '/launch/:launchId' + GAME_ROUTES.ROAV_MEP,
@@ -451,7 +463,7 @@ const routes = [
       language: 'en',
       launchId: route.params.launchId,
     }),
-    meta: { pageTitle: 'MEP' },
+    meta: { pageTitle: 'MEP', permission: Permissions.Tasks.LAUNCH },
   },
   {
     path: '/manage-tasks-variants',
@@ -742,6 +754,7 @@ router.beforeEach(async (to, from, next) => {
 
   // Prevent routing to routes that the user does not have permission to access.
   if (Object.keys(to?.meta).includes('permission') && !userCan(to.meta.permission)) {
+    console.log('permissions', to.meta.permission);
     next({ name: 'Unauthorized' });
     return;
   }
