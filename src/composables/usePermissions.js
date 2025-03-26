@@ -15,7 +15,6 @@ export function usePermissions() {
     // Fixing this issue is a TODO.
     const authStore = useAuthStore();
     const { accessToken } = storeToRefs(authStore);
-    console.log('accessToken', accessToken.value, permission);
     return PermissionsService.canUser(accessToken.value, permission);
   };
 

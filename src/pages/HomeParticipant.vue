@@ -130,9 +130,6 @@ import ParticipantSidebar from '@/components/ParticipantSidebar.vue';
 import useUserType from '@/composables/useUserType';
 import { highestAdminOrgIntersection } from '@/helpers/query/assignments';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
-import { usePermissions } from '@/composables/usePermissions';
-const { userCan, Permissions } = usePermissions();
-console.log('usercan', userCan(Permissions.Profile.READ));
 
 const showConsent = ref(false);
 const consentVersion = ref('');

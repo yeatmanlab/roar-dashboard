@@ -309,6 +309,8 @@ import {
 import RoarDataTable from '@/components/RoarDataTable';
 import { APP_ROUTES } from '@/constants/routes';
 import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
+import { usePermissions } from '@/composables/usePermissions';
+const { userCan, Permissions } = usePermissions();
 
 let TaskReport, DistributionChartOverview, NextSteps;
 
@@ -1241,8 +1243,7 @@ const scoreReportColumns = computed(() => {
     });
   }
 
-  // For now, only add the launch component if the user has a custom `canLaunch` boolean set in their userData
-  if (authStore.userData.canLaunch) {
+  if (userCan(Permissions.Tasks.LAUNCH)) {
     tableColumns.push({
       header: 'Launch Student',
       launcher: true,

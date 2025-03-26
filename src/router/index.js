@@ -211,7 +211,7 @@ const routes = [
     name: 'LaunchParticipant',
     meta: {
       pageTitle: 'TaskLauncher Home',
-      // permission: Permissions.Tasks.LAUNCH,
+      permission: Permissions.Tasks.LAUNCH,
     },
   },
   {
@@ -225,7 +225,7 @@ const routes = [
     }),
     meta: {
       pageTitle: 'SWR',
-      // permission: Permissions.Tasks.LAUNCH,
+      permission: Permissions.Tasks.LAUNCH,
     },
   },
   {
@@ -250,7 +250,7 @@ const routes = [
     }),
     meta: {
       pageTitle: 'PA',
-      // permission: Permissions.Tasks.LAUNCH,
+      permission: Permissions.Tasks.LAUNCH,
     },
   },
   {
