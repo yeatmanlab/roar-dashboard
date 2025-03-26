@@ -48,9 +48,7 @@
                 <PvSelect
                   v-model="selectedAdmin"
                   :options="sortedUserAdministrations ?? []"
-                  :option-label="
-                    userAssignments.every((administration) => administration.publicName) ? 'publicName' : 'name'
-                  "
+                  :option-label="getOptionLabel"
                   input-id="dd-assignment"
                   data-cy="dropdown-select-administration"
                   @change="toggleShowOptionalAssessments"
@@ -162,6 +160,13 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
 
 onMounted(async () => {
   if (roarfirekit.value.restConfig) init();
+});
+
+const getOptionLabel = computed(() => {
+  return (option) => {
+    // Check if 'name' exists, otherwise fallback to 'publicName' or 'id'
+    return option.publicName || option.name || option.id || '';
+  };
 });
 
 const gameStore = useGameStore();

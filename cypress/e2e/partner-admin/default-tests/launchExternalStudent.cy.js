@@ -7,7 +7,7 @@ const testPartnerAdminPassword = Cypress.env('PARTNER_ADMIN_PASSWORD');
 const testUserList = Cypress.env('testUserList');
 
 describe('Partner Admin: Individual Reports', () => {
-  it("Selects an administration and views a student's individual score report", () => {
+  it('Selects an administration and launches a student in thier assessment portal', () => {
     // Login as a partner admin.
     cy.login(testPartnerAdminUsername, testPartnerAdminPassword);
 
@@ -25,6 +25,6 @@ describe('Partner Admin: Individual Reports', () => {
 
     // Validate the individual score report.
     cy.get('[data-cy="route-button-launch"]').first().click();
-    // cy.get('[data-cy="participant-launch-mode"]').should('contain', 'external launch mode');
+    cy.get('[data-cy="participant-launch-mode"]').should('contain', 'external launch mode');
   });
 });
