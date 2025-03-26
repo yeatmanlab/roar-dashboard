@@ -25,8 +25,8 @@
 
     <div v-else data-cy="home-participant__administration">
       <div v-if="props.launchId" class="w-100 flex items-center justify-content-center bg-gray-100 p-2">
-        <div class="font-bold text-lg text-gray-600">
-          Currently in <span class="text-red-700 mr-4" data-cy="participant-launch-mode"> external launch mode </span>
+        <div class="font-bold text-lg text-gray-600" data-cy="participant-launch-mode">
+          Currently in <span class="text-red-700 mr-4"> external launch mode </span>
           <router-link to="/">
             <PvButton>
               <i class="pi pi-arrow-left"></i>
