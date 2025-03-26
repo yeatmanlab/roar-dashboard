@@ -1,9 +1,7 @@
 import { useQuery } from '@tanstack/vue-query';
 import { computeQueryOverrides } from '@/helpers/computeQueryOverrides';
-import { fetchDocumentsById } from '@/helpers/query/utils';
-import { hasArrayEntries } from '@/helpers/hasArrayEntries';
-import { FIRESTORE_COLLECTIONS } from '@/constants/firebase';
-import { ACTIVATION_CODE_QUERY_KEY } from '../../constants/queryKeys';
+import { ACTIVATION_CODE_QUERY_KEY } from '@/constants/queryKeys';
+import { activationCodeFetcher } from '@/helpers/query/activationCodes';
 
 /**
  * Classes query.
@@ -14,7 +12,7 @@ import { ACTIVATION_CODE_QUERY_KEY } from '../../constants/queryKeys';
  */
 const useActivationCodeQuery = (orgId, queryOptions = undefined) => {
   // Ensure all necessary data is loaded before enabling the query.
-  const conditions = [() => orgId];
+  const conditions = [() => true];
   const { isQueryEnabled, options } = computeQueryOverrides(conditions, queryOptions);
 
   return useQuery({

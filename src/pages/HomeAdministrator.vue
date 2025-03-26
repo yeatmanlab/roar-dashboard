@@ -143,6 +143,7 @@ import useUserType from '@/composables/useUserType';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useAdministrationsListQuery from '@/composables/queries/useAdministrationsListQuery';
 import CardAdministration from '@/components/CardAdministration.vue';
+import useActivationCodeQuery from '@/composables/queries/useActivationCodeQuery.js';
 
 const initialized = ref(false);
 const pageLimit = ref(10);
