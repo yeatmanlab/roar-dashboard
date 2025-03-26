@@ -12,14 +12,10 @@ import { activationCodeFetcher } from '@/helpers/query/activationCodes';
  */
 const useActivationCodeQuery = (orgId, queryOptions = undefined) => {
   // Ensure all necessary data is loaded before enabling the query.
-  const conditions = [() => true];
-  const { isQueryEnabled, options } = computeQueryOverrides(conditions, queryOptions);
-
   return useQuery({
     queryKey: [ACTIVATION_CODE_QUERY_KEY, orgId],
     queryFn: () => activationCodeFetcher(orgId),
-    enabled: isQueryEnabled,
-    ...options,
+    ...queryOptions,
   });
 };
 

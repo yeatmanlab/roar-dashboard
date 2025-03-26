@@ -1,0 +1,65 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import * as VueQuery from '@tanstack/vue-query';
+import { withSetup } from '@/test-support/withSetup.js';
+import { activationCodeFetcher } from '@/helpers/query/activationCodes';
+import useActivationCodeQuery from './useActivationCodeQuery';
+import { ACTIVATION_CODE_QUERY_KEY } from '@/constants/queryKeys';
+
+vi.mock('@/helpers/query/activationCodes', () => ({
+  activationCodeFetcher: vi.fn().mockImplementation(() => []),
+}));
+
+vi.mock('@tanstack/vue-query', async (getModule) => {
+  const original = await getModule();
+  return {
+    ...original,
+    useQuery: vi.fn().mockImplementation(original.useQuery),
+  };
+});
+
+describe('useActivationCodeQuery', () => {
+  let queryClient;
+
+  beforeEach(() => {
+    queryClient = new VueQuery.QueryClient();
+  });
+
+  afterEach(() => {
+    queryClient?.clear();
+  });
+
+  it('should call query with correct parameters', () => {
+    const orgId = 'test-org-id';
+    vi.spyOn(VueQuery, 'useQuery');
+
+    withSetup(() => useActivationCodeQuery(orgId), {
+      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
+    });
+
+    expect(VueQuery.useQuery).toHaveBeenCalledWith({
+      queryKey: [ACTIVATION_CODE_QUERY_KEY, orgId],
+      queryFn: expect.any(Function),
+    });
+
+    expect(activationCodeFetcher).toHaveBeenCalledWith(orgId);
+  });
+
+  it('should allow the query to be disabled via the passed query options', () => {
+    const orgId = 'test-org-id';
+    const queryOptions = { enabled: false };
+
+    vi.spyOn(VueQuery, 'useQuery');
+
+    withSetup(() => useActivationCodeQuery(orgId, queryOptions), {
+      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
+    });
+
+    expect(VueQuery.useQuery).toHaveBeenCalledWith({
+      queryKey: [ACTIVATION_CODE_QUERY_KEY, orgId],
+      queryFn: expect.any(Function),
+      enabled: false,
+    });
+
+    expect(activationCodeFetcher).not.toHaveBeenCalled();
+  });
+});
