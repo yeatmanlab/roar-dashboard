@@ -1,3 +1,9 @@
+// This script defines custom Cypress commands for authentication flows:
+// - 'login' command: Handles basic username/password login
+// - 'loginWithEmail' command: Handles email-based authentication with options for
+//   password login or magic link login
+// The commands use cy.session for test optimization by persisting login state
+// This import is used for mocking store state in tests
 import { createMockStore } from './utils.js';
 
 /**

@@ -1,4 +1,27 @@
 import NavBar from '../../../src/components/NavBar.vue';
+// This test file tests the NavBar component functionality
+// It uses Cypress component testing to mount and test the NavBar in isolation
+
+// The test suite:
+// 1. Sets up authentication state before each test using cy.setAuthStore()
+// 2. Mocks Firestore responses for user claims data
+// 3. Tests that the NavBar renders correctly in different viewports
+
+// The mock data represents a Firestore document containing user claims/permissions
+// These claims determine what features the user can access (admin, assessment, roar etc)
+
+// The beforeEach block:
+// - Sets up auth state
+// - Intercepts Firestore requests and returns mock claims data
+// - Uses cy.intercept() to mock network calls with a 1 second delay
+
+// The first test checks:
+// - NavBar mounts successfully 
+// - The Firestore request completes with mock data
+// - Critical UI elements like nav and sign out button exist
+
+// The second test appears to check desktop viewport rendering
+// (Though the test implementation is truncated)
 
 // Fetch documents from this Firestore endpoint
 const endPoint = 'userClaims/**/*';

@@ -1,3 +1,8 @@
+// This test configuration imports required dependencies:
+// - fileURLToPath: Converts file URLs to file paths
+// - mergeConfig: Merges Vite configurations
+// - defineConfig/coverageConfigDefaults: Vitest configuration utilities
+// - viteConfig: Base Vite configuration to extend
 import { fileURLToPath } from 'node:url';
 import { mergeConfig } from 'vite';
 import { defineConfig, coverageConfigDefaults } from 'vitest/config';

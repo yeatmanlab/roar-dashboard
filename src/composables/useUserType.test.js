@@ -1,3 +1,9 @@
+// This test file verifies the useUserType composable functionality:
+// - Tests user type determination based on claims (super admin, admin, participant)
+// - Validates computed boolean flags for each user type
+// - Checks edge cases like missing claims
+// - Uses Vue's computed refs to simulate reactive user claims data
+// - Imports required testing utilities from Vitest
 import { describe, it, expect } from 'vitest';
 import { computed } from 'vue';
 import { AUTH_USER_TYPE } from '@/constants/auth';
