@@ -19,7 +19,6 @@ const useActivationCodeQuery = (orgId, queryOptions = undefined) => {
     queryKey: [ACTIVATION_CODE_QUERY_KEY, orgId],
     queryFn: () => activationCodeFetcher(orgId),
     enabled: isQueryEnabled,
-    staleTime: 5 * 60 * 1000, // 5 minutes
     refetchOnWindowFocus: 'always',
     ...options,
   });

@@ -86,7 +86,6 @@ describe('useActivationCodeQuery', () => {
       enabled: expect.objectContaining({
         _value: false,
       }),
-      staleTime: 5 * 60 * 1000,
       refetchOnWindowFocus: 'always',
     });
 
