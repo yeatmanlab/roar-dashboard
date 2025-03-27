@@ -19,7 +19,7 @@ import { computed } from 'vue';
 const useUserAssignmentsQuery = (queryOptions = undefined, userId = null, orgType = null, orgIds = null) => {
   const authStore = useAuthStore();
   const { roarUid } = storeToRefs(authStore);
-  const uid = computed(() => userId || roarUid.value);
+  const uid = computed(() => userId ?? roarUid.value);
   const isSuperAdmin = authStore?.userClaims?.claims?.super_admin;
   const isExternalCallWithoutSuperAdmin = !isSuperAdmin && userId !== null;
 
