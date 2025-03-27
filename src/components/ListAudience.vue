@@ -14,9 +14,9 @@
             </PvButton>
             <PvButton
               class="bg-primary text-white border-none p-2 ml-auto"
-              @click="newGroup"
+              @click="newAudience"
             >
-              New Group
+              New Audience
             </PvButton>
           </div>
         </div>
@@ -208,8 +208,8 @@ const addUsers = () => {
   router.push({ name: 'Register Users' });
 };
 
-const newGroup = () => {
-  router.push({ name: 'CreateOrgs' });
+const newAudience = () => {
+  router.push({ name: 'CreateAudience' });
 };
 
 const authStore = useAuthStore();

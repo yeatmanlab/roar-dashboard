@@ -206,15 +206,15 @@ const routes = [
     meta: { pageTitle: 'Create an administrator account', requireAdmin: true },
   },
   {
-    path: '/create-orgs',
-    name: 'CreateOrgs',
-    component: () => import('../components/CreateOrgs.vue'),
-    meta: { pageTitle: 'Create an organization', requireAdmin: true, requireSuperAdmin: true },
+    path: '/create-audience',
+    name: 'CreateAudience',
+    component: () => import('../components/CreateAudience.vue'),
+    meta: { pageTitle: 'Create an audience', requireAdmin: true, requireSuperAdmin: true },
   },
   {
     path: '/audience',
-    name: 'ListOrgs',
-    component: () => import('../components/ListOrgs.vue'),
+    name: 'ListAudience',
+    component: () => import('../components/ListAudience.vue'),
     meta: { pageTitle: 'Audience', requireAdmin: true },
   },
   {
