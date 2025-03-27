@@ -6,6 +6,34 @@
  *
  * @constant {Object} APP_ROUTES – The individual routes of the application.
  */
+export const GAME_ROUTES = {
+  SWR: '/game/swr',
+  SWR_ES: '/game/swr-es',
+  PA: '/game/pa',
+  PA_ES: '/game/pa-es',
+  SRE: '/game/sre',
+  SRE_ES: '/game/sre-es',
+  LETTER: '/game/letter',
+  LETTER_ES: '/game/letter-es',
+  LETTER_EN_CA: '/game/letter-en-ca',
+  PHONICS: '/game/phonics',
+  MULTICHOICE: '/game/multichoice',
+  MORPHOLOGY: '/game/morphology',
+  CVA: '/game/cva',
+  VOCAB: '/game/vocab',
+  FLUENCY_ARF: '/game/fluency-arf',
+  FLUENCY_ARF_ES: '/game/fluency-arf-es',
+  FLUENCY_CALF: '/game/fluency-calf',
+  FLUENCY_CALF_ES: '/game/fluency-calf-es',
+  ROAM_ALPACA: '/game/roam-alpaca',
+  ROAM_ALPACA_ES: '/game/roam-alpaca-es',
+  CORE_TASKS: '/game/core-tasks/:taskId',
+  RAN: '/game/ran',
+  CROWDING: '/game/crowding',
+  ROAV_MEP: '/game/roav-mep',
+  ROAR_READALOUD: '/game/roar-readaloud',
+};
+
 export const APP_ROUTES = {
   HOME: '/',
   SIGN_IN: '/signin',
@@ -17,4 +45,5 @@ export const APP_ROUTES = {
   ORGS_LIST: '/list-orgs',
   ORGS_CREATE: '/create-orgs',
   REGISTER: '/register',
+  LAUNCH: '/launch/:launchId',
 };
