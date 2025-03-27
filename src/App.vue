@@ -28,7 +28,6 @@
 <script setup>
 import { computed, onBeforeMount, onMounted, ref, defineAsyncComponent } from 'vue';
 import { useRoute } from 'vue-router';
-import { useRecaptchaProvider } from 'vue-recaptcha';
 import { Head } from '@unhead/vue/components';
 import PvToast from 'primevue/toast';
 import NavBar from '@/components/NavBar.vue';
@@ -57,8 +56,6 @@ const pageTitle = computed(() => {
 
 const loadSessionTimeoutHandler = computed(() => isAuthStoreReady.value && authStore.isAuthenticated);
 const project = computed(() => isLevante ? 'levante' : 'roar');
-
-useRecaptchaProvider();
 
 const navbarBlacklist = ref([
   'SignIn',
