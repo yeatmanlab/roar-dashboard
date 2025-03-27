@@ -7,7 +7,7 @@ const testPartnerAdminPassword = Cypress.env('PARTNER_ADMIN_PASSWORD');
 const testUserList = Cypress.env('testUserList');
 
 describe('Partner Admin: Individual Reports', () => {
-  it('Selects an administration and launches a student in thier assessment portal', () => {
+  it('Selects an administration and launches a student in their assessment portal', () => {
     // Login as a partner admin.
     cy.login(testPartnerAdminUsername, testPartnerAdminPassword);
 
