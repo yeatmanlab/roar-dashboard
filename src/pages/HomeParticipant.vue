@@ -121,6 +121,7 @@ import { initializeSurvey, setupSurveyEventHandlers } from '@/helpers/surveyInit
 import { useSurveyStore } from '@/store/survey';
 import { fetchDocsById } from '@/helpers/query/utils';
 
+
 const showConsent = ref(false);
 const consentVersion = ref('');
 const confirmText = ref('');
@@ -532,7 +533,7 @@ watch(surveyDependenciesLoaded, async (isLoaded) => {
     } else {
       surveyStore.setIsGeneralSurveyComplete(surveyResponseDoc.general.isComplete);
 
-      const numOfSpecificSurveys = userType.value === 'parent' ? userData.value.childIds.length : userData.value.classes.current.length;
+      const numOfSpecificSurveys = userType.value === 'parent' ? userData.value?.childIds?.length : userData.value?.classes?.current?.length;
       
       if (surveyResponseDoc.specific && surveyResponseDoc.specific.length > 0) {
         if (surveyResponseDoc.specific.length === numOfSpecificSurveys && surveyResponseDoc.specific.every(relation => relation.isComplete)) {
