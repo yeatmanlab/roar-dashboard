@@ -1,10 +1,10 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`Add Users Page > should render the add users page 1`] = `
+exports[`Add Users Page > AddUsers Component > should render correctly 1`] = `
 "<main data-v-5b9496c9="" class="container main">
   <section data-v-5b9496c9="" class="main-body">
     <!--Upload file section-->
-    <div data-v-a95b63e0="" data-v-5b9496c9="" class="p-panel p-component add-users-panel" data-pc-name="panel" pc1="" data-pc-section="root">
+    <div data-v-a95b63e0="" data-v-5b9496c9="" class="p-panel p-component add-users-panel" data-pc-name="panel" pc2="" data-pc-section="root">
       <div class="p-panel-header" data-pc-section="header"><span id="undefined_header" class="p-panel-title" data-pc-section="title">Add users</span>
         <div class="p-panel-header-actions" data-pc-section="headeractions">
           <!---->
@@ -36,19 +36,19 @@ exports[`Add Users Page > should render the add users page 1`] = `
             </ul>
             <p data-v-a95b63e0="">Parents and Teachers need to have the same Audiences as their children / students.</p>
             <p data-v-a95b63e0="" class="mb-6"><span data-v-a95b63e0="" class="required">*</span> = Required only for child users</p>
-            <div data-v-a95b63e0="" class="download-button-container"><button data-v-a95b63e0="" class="download-csv-btn"><i data-v-a95b63e0="" class="pi pi-download"></i> Download CSV Template </button></div>
+            <div data-v-a95b63e0="" class="download-button-container"><button data-v-a95b63e0="" class="download-csv-btn" data-testid="download-template"><i data-v-a95b63e0="" class="pi pi-download"></i> Download CSV Template </button></div>
             <p data-v-a95b63e0="">Below is an example of what your CSV/spreadsheet should look like. Only the required columns will be processed.</p><img data-v-a95b63e0="" id="example-image" src="https://storage.googleapis.com/road-dashboard/example_researcher_csv.png" alt="CSV upload example" style="width: 100%; max-width: 1400px; height: auto;">
           </div>
           <!---->
         </div>
       </transition-stub>
     </div>
-    <div data-v-5b9496c9="" class="p-divider p-component p-divider-horizontal p-divider-solid p-divider-left" style="justify-content: center;" role="separator" aria-orientation="horizontal" data-pc-name="divider" pc2="" data-pc-section="root">
+    <div data-v-5b9496c9="" class="p-divider p-component p-divider-horizontal p-divider-solid p-divider-left" style="justify-content: center;" role="separator" aria-orientation="horizontal" data-pc-name="divider" pc3="" data-pc-section="root">
       <!---->
     </div>
     <div data-v-5b9496c9="" class="text-gray-500 mb-2 surface-100 border-round p-2">
-      <div data-v-5b9496c9="" class="p-fileupload p-fileupload-advanced p-component" data-pc-name="fileupload" pc3="" data-pc-section="root"><input type="file" accept=".csv" data-pc-section="input">
-        <div class="p-fileupload-header" data-pc-section="header"><button class="p-button p-component p-fileupload-choose-button bg-primary mb-2 p-3 w-2 text-white border-none border-round h-3rem m-0 hover:bg-red-900" type="button" aria-label="Choose" data-pc-name="pcchoosebutton" data-p-disabled="false" data-pc-extend="button" pc4="" data-pc-section="root"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg" class="p-icon p-button-icon p-button-icon-left" aria-hidden="true">
+      <div data-v-5b9496c9="" class="p-fileupload p-fileupload-advanced p-component" data-pc-name="fileupload" pc4="" data-pc-section="root"><input type="file" accept=".csv" data-pc-section="input">
+        <div class="p-fileupload-header" data-pc-section="header"><button class="p-button p-component p-fileupload-choose-button bg-primary mb-2 p-3 w-2 text-white border-none border-round h-3rem m-0 hover:bg-red-900" type="button" aria-label="Choose" data-pc-name="pcchoosebutton" data-p-disabled="false" data-pc-extend="button" pc5="" data-pc-section="root"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg" class="p-icon p-button-icon p-button-icon-left" aria-hidden="true">
               <path d="M7.67742 6.32258V0.677419C7.67742 0.497757 7.60605 0.325452 7.47901 0.198411C7.35197 0.0713707 7.17966 0 7 0C6.82034 0 6.64803 0.0713707 6.52099 0.198411C6.39395 0.325452 6.32258 0.497757 6.32258 0.677419V6.32258H0.677419C0.497757 6.32258 0.325452 6.39395 0.198411 6.52099C0.0713707 6.64803 0 6.82034 0 7C0 7.17966 0.0713707 7.35197 0.198411 7.47901C0.325452 7.60605 0.497757 7.67742 0.677419 7.67742H6.32258V13.3226C6.32492 13.5015 6.39704 13.6725 6.52358 13.799C6.65012 13.9255 6.82106 13.9977 7 14C7.17966 14 7.35197 13.9286 7.47901 13.8016C7.60605 13.6745 7.67742 13.5022 7.67742 13.3226V7.67742H13.3226C13.5022 7.67742 13.6745 7.60605 13.8016 7.47901C13.9286 7.35197 14 7.17966 14 7C13.9977 6.82106 13.9255 6.65012 13.799 6.52358C13.6725 6.39704 13.5015 6.32492 13.3226 6.32258H7.67742Z" fill="currentColor"></path>
             </svg><span class="p-button-label" data-pc-section="label">Choose</span>
             <!---->
