@@ -1,3 +1,4 @@
+export const ACTIVATION_CODE_QUERY_KEY = 'activation-code';
 export const ADMINISTRATIONS_QUERY_KEY = 'administrations';
 export const ADMINISTRATIONS_LIST_QUERY_KEY = 'administrations-list';
 export const ADMINISTRATIONS_STATS_QUERY_KEY = 'administrations-stats';
