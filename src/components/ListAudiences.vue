@@ -205,7 +205,7 @@ const localOrgData = ref(null);
 const isSubmitting = ref(false);
 
 const addUsers = () => {
-  router.push({ name: 'Register Users' });
+  router.push({ name: 'Add Users' });
 };
 
 const newAudience = () => {

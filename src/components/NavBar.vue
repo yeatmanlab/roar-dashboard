@@ -48,7 +48,7 @@ import PvButton from 'primevue/button';
 import PvImage from 'primevue/image';
 import PvMenubar from 'primevue/menubar';
 import { useAuthStore } from '@/store/auth';
-import { getSidebarActions } from '@/router/sidebarActions';
+import { getNavbarActions } from '@/router/navbarActions';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import { APP_ROUTES } from '@/constants/routes';
 import Badge from 'primevue/badge';
@@ -172,7 +172,7 @@ const isAtHome = computed(() => {
 });
 
 const rawActions = computed(() => {
-  return getSidebarActions({
+  return getNavbarActions({
     isSuperAdmin: isSuperAdmin.value,
     isAdmin: authStore.isUserAdmin,
     includeHomeLink: !isAtHome.value,

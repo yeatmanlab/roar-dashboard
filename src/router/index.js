@@ -212,10 +212,10 @@ const routes = [
     meta: { pageTitle: 'Create an audience', requireAdmin: true, requireSuperAdmin: true },
   },
   {
-    path: '/audience',
-    name: 'ListAudience',
-    component: () => import('../components/ListAudience.vue'),
-    meta: { pageTitle: 'Audience', requireAdmin: true },
+    path: '/list-audiences',
+    name: 'ListAudiences',
+    component: () => import('../components/ListAudiences.vue'),
+    meta: { pageTitle: 'Audiences', requireAdmin: true },
   },
   {
     path: '/list-users/:orgType/:orgId/:orgName',

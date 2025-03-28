@@ -1,6 +1,6 @@
 import { isLevante } from '../helpers';
 
-const sidebarActionOptions = [
+const navbarActionOptions = [
   {
     title: 'Back to Dashboard',
     icon: 'pi pi-arrow-left',
@@ -11,9 +11,8 @@ const sidebarActionOptions = [
     category: 'Home',
   },
   {
-    title: 'Audience',
-    // icon: 'pi pi-folder-open',
-    buttonLink: { name: 'ListAudience' },
+    title: 'Audiences',
+    buttonLink: { name: 'ListAudiences' },
     requiresSuperAdmin: false,
     requiresAdmin: true,
     project: 'ALL',
@@ -109,9 +108,9 @@ const sidebarActionOptions = [
   },
 ];
 
-export const getSidebarActions = ({ isSuperAdmin = false, isAdmin = false }) => {
+export const getNavbarActions = ({ isSuperAdmin = false, isAdmin = false }) => {
   if (isLevante) {
-    return sidebarActionOptions.filter((action) => {
+    return navbarActionOptions.filter((action) => {
       if (action.project === 'LEVANTE' || action.project === 'ALL') {
         // If the action requires admin and the user is an admin, or if the action
         // requires super admin and the user is a super admin,
@@ -129,7 +128,7 @@ export const getSidebarActions = ({ isSuperAdmin = false, isAdmin = false }) => 
       }
     });
   } else {
-    const actions = sidebarActionOptions.filter((action) => {
+    const actions = navbarActionOptions.filter((action) => {
       if (action.project === 'ROAR' || action.project === 'ALL') {
         if (action.requiresSuperAdmin && !isSuperAdmin) {
           return false;
