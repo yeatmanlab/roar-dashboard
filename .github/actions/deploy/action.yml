@@ -80,6 +80,7 @@ runs:
       id: firebase-deploy
       with:
         firebaseServiceAccount: '${{ env.GCP_HOSTING_SERVICE_ACCOUNT_KEY }}'
+        repoToken: '${{ secrets.GITHUB_TOKEN }}'
         projectId: '${{ inputs.firebase-project-id }}'
         entryPoint: ./app
 
