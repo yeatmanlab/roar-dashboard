@@ -1,18 +1,18 @@
 <template>
   <Head>
-    <title>{{ isLevante ? '' : 'ROAR:' }} {{ pageTitle }}</title>
-    <meta name="description" content="The Rapid Online Assessment of Reading" />
+    <title>{{ pageTitle }}</title>
+    <meta name="description" content="The LEVANTE Platform" />
 
     <!-- Social -->
-    <meta property="og:title" content="ROAR Web Query" />
-    <meta property="og:description" content="A web-based tool to query ROAR assessment data!" />
+    <meta property="og:title" content="LEVANTE" />
+    <meta property="og:description" content="The LEVANTE Platform" />
 
     <!-- Twitter -->
-    <meta name="twitter:title" content="ROAR Web Query" />
-    <meta name="twitter:description" content="A web-based tool to query ROAR assessment data!" />
+    <meta name="twitter:title" content="LEVANTE" />
+    <meta name="twitter:description" content="The LEVANTE Platform" />
 
     <!-- Dynamic Favicon -->
-    <link rel="icon" :href="`/favicon-${project}.ico`" />
+    <link rel="icon" :href="`/favicon-levante.ico`" />
   </Head>
   <div>
     <PvToast />
@@ -41,7 +41,6 @@ const VueQueryDevtools = defineAsyncComponent(() =>
 import { useAuthStore } from '@/store/auth';
 import { fetchDocById } from '@/helpers/query/utils';
 import { i18n } from '@/translations/i18n';
-import { isLevante } from '@/helpers';
 
 const isAuthStoreReady = ref(false);
 const showDevtools = ref(false);
@@ -56,7 +55,6 @@ const pageTitle = computed(() => {
 });
 
 const loadSessionTimeoutHandler = computed(() => isAuthStoreReady.value && authStore.isAuthenticated);
-const project = computed(() => isLevante ? 'levante' : 'roar');
 
 useRecaptchaProvider();
 

@@ -282,10 +282,10 @@ const routes = [
   },
   // LEVANTE
   {
-    path: '/register-users',
-    name: 'Register Users',
-    component: () => import('../pages/LEVANTE/RegisterUsers.vue'),
-    meta: { pageTitle: 'Register Users', requireAdmin: true, project: 'LEVANTE' },
+    path: '/add-users',
+    name: 'Add Users',
+    component: () => import('../pages/LEVANTE/AddUsers.vue'),
+    meta: { pageTitle: 'Add Users', requireAdmin: true, project: 'LEVANTE' },
   },
   {
     path: '/sync-passwords',

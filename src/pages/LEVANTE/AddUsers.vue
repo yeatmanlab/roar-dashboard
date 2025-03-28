@@ -2,7 +2,7 @@
   <main class="container main">
     <section class="main-body">
       <!--Upload file section-->
-      <RegisterUsersInfo />
+      <AddUsersInfo />
 
       <PvDivider />
 
@@ -20,7 +20,7 @@
         >
           <template #empty>
             <div class="flex justify-center items-center text-gray-500">
-              <p>Click choose or drag and drop files to here to upload.</p>
+              <p>Click choose or drag your CSV file here to upload.</p>
             </div>
           </template>
         </PvFileUpload>
@@ -48,21 +48,29 @@
         </PvDataTable>
 
         <div class="submit-container">
-          <PvButton
-          v-if="registeredUsers.length"
-          label="Download Users"
-          class="bg-primary mb-2 p-3 w-2 text-white border-none border-round h-3rem m-0 hover:bg-red-900"
-          icon="pi pi-download"
-          @click="downloadCSV"
-        />
+          <div v-if="registeredUsers.length" class="button-group">
+            <PvButton
+              label="Continue to Link Users"
+              class="continue-button"
+              icon="pi pi-link"
+              @click="router.push({ name: 'Link Users' })"
+            />
+            <PvButton
+              label="Download Users"
+              class="download-button"
+              icon="pi pi-download"
+              @click="downloadCSV"
+            />
+
+          </div>
           <PvButton
             v-else
-            :label="activeSubmit ? 'Registering Users' : 'Start Registration'"
+            :label="activeSubmit ? 'Adding Users' : 'Start Adding'"
             :icon="activeSubmit ? 'pi pi-spin pi-spinner' : ''"
             :disabled="activeSubmit"
             class="bg-primary mb-2 p-3 w-2 text-white border-none border-round h-3rem m-0 hover:bg-red-900"
             @click="submitUsers"
-        />
+          />
         </div>
       </div>
 
@@ -103,7 +111,7 @@ import _isEmpty from 'lodash/isEmpty';
 import _startCase from 'lodash/startCase';
 import _chunk from 'lodash/chunk';
 import { useToast } from 'primevue/usetoast';
-import RegisterUsersInfo from '@/components/LEVANTE/RegisterUsersInfo.vue';
+import AddUsersInfo from '@/components/LEVANTE/AddUsersInfo.vue';
 import { useAuthStore } from '@/store/auth';
 import { pluralizeFirestoreCollection } from '@/helpers';
 import { fetchOrgByName } from '@/helpers/query/orgs';
@@ -112,6 +120,7 @@ import PvColumn from 'primevue/column';
 import PvDataTable from 'primevue/datatable';
 import PvDivider from 'primevue/divider';
 import PvFileUpload from 'primevue/fileupload';
+import { useRouter } from 'vue-router';
 
 const authStore = useAuthStore();
 const toast = useToast();
@@ -173,6 +182,8 @@ const showErrorTable = ref(false);
 const errorMissingColumns = ref(false);
 
 const activeSubmit = ref(false);
+
+const router = useRouter();
 
 watch(
   errorUsers,
@@ -483,7 +494,7 @@ async function submitUsers() {
       processedUserCount += currentRegisteredUsers.length;
       toast.add({
         severity: 'success',
-        summary: 'User Creation Success',
+        summary: 'User Creation Successful',
         life: 9000})
       convertUsersToCSV();
     } catch (error) {
@@ -647,8 +658,42 @@ const getOrgId = async (orgType, orgName, parentDistrict, parentSchool) => {
 .submit-container {
   display: flex;
   flex-direction: column;
+  width: 100%;
+  margin-top: 2rem;
   align-items: flex-start;
-  margin-top: 1rem;
+}
+
+.button-group {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 1rem;
+  width: auto;
+}
+
+.download-button {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  height: 2.5rem;
+  width: auto;
+}
+
+
+.continue-button {
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  height: 3.5rem;
+  width: auto;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .error {
