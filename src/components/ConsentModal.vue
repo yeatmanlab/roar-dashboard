@@ -114,7 +114,7 @@ onMounted(() => {
   border-radius: 5px;
 }
 
-.confirm .p-confirm-dialog-reject {
+.confirm .p-confirmdialog-reject-button {
   display: none !important;
 }
 
