@@ -16,7 +16,7 @@
               </div>
             </div>
             <div>
-              <div class="uppercase font-light text-gray-500 text-md">Administration</div>
+              <div class="uppercase font-light text-gray-500 text-md">Assignment</div>
               <div class="administration-name uppercase">
                 {{ displayName }}
               </div>
@@ -44,20 +44,14 @@
             class="flex flex-column align-items-around flex-wrap gap-3 rounded bg-gray-100 p-5"
           >
             <div class="flex flex-column gap-1 mx-5 mb-5">
-              <div class="text-sm uppercase text-gray-500">Progress by Assessment</div>
+              <div class="text-sm uppercase text-gray-500">Progress by Task</div>
               <div
                 v-for="{ taskId } of administrationData.assessments"
                 :key="taskId"
                 class="flex justify-content-between align-items-center"
               >
-                <div v-if="tasksDictionary[taskId]" class="text-lg font-bold text-gray-600 w-full">
-                  {{ tasksDictionary[taskId]?.technicalName ?? taskId }}
-                  <span v-if="tasksDictionary[taskId]?.publicName" class="font-light uppercase text-sm">
-                    ({{ tasksDictionary[taskId].publicName }})
-                  </span>
-                </div>
-                <div v-else class="text-lg font-bold text-gray-600 w-full">
-                  {{ taskId }}
+                <div class="text-lg font-bold text-gray-600 w-full">
+                  {{ tasksDictionary[taskId]?.name || taskId }}
                 </div>
                 <PvChart
                   type="bar"
@@ -68,11 +62,11 @@
               </div>
             </div>
             <div class="flex flex-column mx-5">
-              <div class="text-sm uppercase text-gray-500">Total Assessment Progress</div>
+              <div class="text-sm uppercase text-gray-500">Total Progress</div>
               <div class="flex justify-content-between align-items-center">
                 <div class="text-xl font-bold text-gray-600 w-full">
                   Total
-                  <span class="font-light text-sm"> ({{ adminStats.assignment.assigned }} total assignments) </span>
+                  <span class="font-light text-sm"> (Assigned to {{ adminStats.assignment.assigned }} users) </span>
                 </div>
                 <PvChart
                   type="bar"
@@ -99,7 +93,7 @@
                 <div class="legend-entry">
                   <div class="circle" style="background-color: var(--surface-d)" />
                   <div>
-                    <div>Assigned</div>
+                    <div>Not Started</div>
                   </div>
                 </div>
               </div>
@@ -265,6 +259,7 @@ const { data: tasksDictionary, isLoading: isLoadingTasksDictionary } = useTasksD
   enabled: initialized,
 });
 
+
 const { data: userClaims } = useUserClaimsQuery({
   enabled: initialized,
 });
@@ -394,7 +389,6 @@ const computedProgressData = computed(() => {
 
     const currRow = {
       user: {
-        username: user.username,
         email: user.email || assignment.userData.email,
         userType: user.userType,
         userId: user.userId,
@@ -445,24 +439,24 @@ const computedProgressData = computed(() => {
         } else if (assessment?.completedOn !== undefined) {
           currRowProgress[taskId] = {
             value: 'completed',
-            icon: 'pi pi-check',
+            icon: 'pi pi-check-circle',
             severity: 'success',
           };
           progressFilterTags += ' Completed ';
         } else if (assessment?.startedOn !== undefined) {
           currRowProgress[taskId] = {
             value: 'started',
-            icon: 'pi pi-exclamation-triangle',
-            severity: 'warning',
+            icon: 'pi pi-clock',
+            severity: 'warn',
           };
           progressFilterTags += ' Started ';
         } else {
           currRowProgress[taskId] = {
-            value: 'assigned',
-            icon: 'pi pi-times',
-            severity: 'danger',
+            value: 'not started',
+            icon: 'pi pi-minus-circle',
+            severity: 'warning',
           };
-          progressFilterTags += ' Assigned ';
+          progressFilterTags += ' Not Started ';
         }
       }
       currRowProgress[taskId].tags = progressFilterTags;
@@ -485,7 +479,6 @@ const resetFilters = () => {
 const exportSelected = (selectedRows) => {
   const computedExportData = _map(selectedRows, ({ user, progress }) => {
     let tableRow = {
-      Username: _get(user, 'username'),
       Email: _get(user, 'email'),
       First: _get(user, 'firstName'),
       Last: _get(user, 'lastName'),
@@ -509,7 +502,6 @@ const exportSelected = (selectedRows) => {
 const exportAll = async () => {
   const computedExportData = _map(computedProgressData.value, ({ user, progress }) => {
     let tableRow = {
-      Username: _get(user, 'username'),
       Email: _get(user, 'email'),
       First: _get(user, 'firstName'),
       Last: _get(user, 'lastName'),
@@ -540,10 +532,7 @@ const progressReportColumns = computed(() => {
 
   const tableColumns = [];
   const columnDefinitions = [
-    { field: 'user.username', header: 'Username', pinned: true },
     { field: 'user.email', header: 'Email', pinned: true },
-    { field: 'user.firstName', header: 'First Name' },
-    { field: 'user.lastName', header: 'Last Name' }
   ];
 
   columnDefinitions.forEach(({ field, header, pinned }) => {
@@ -560,14 +549,8 @@ const progressReportColumns = computed(() => {
     }
   });
 
-  if (!isLevante) {
-    tableColumns.push({ field: 'user.grade', header: 'Grade', dataType: 'text', sort: true, filter: true });
-  }
-
-  if (isLevante) {
-    tableColumns.push({ field: 'user.userId', header: 'UID', dataType: 'text', sort: true, filter: true });
-    tableColumns.push({ field: 'user.email', header: 'Email', dataType: 'text', sort: true, filter: true });
-  }
+  tableColumns.push({ field: 'user.userId', header: 'UID', dataType: 'text', sort: true, filter: true });
+  tableColumns.push({ field: 'user.email', header: 'Email', dataType: 'text', sort: true, filter: true });
 
   if (props.orgType === 'district') {
     const schoolsMap = districtSchoolsData.value?.reduce((acc, school) => {
@@ -582,10 +565,6 @@ const progressReportColumns = computed(() => {
       filter: false,
       schoolsMap: schoolsMap,
     });
-  }
-
-  if (authStore.isUserSuperAdmin && !isLevante) {
-    tableColumns.push({ field: 'user.assessmentPid', header: 'PID', dataType: 'text', sort: false });
   }
 
   const allTaskIds = administrationData.value.assessments?.map((assessment) => assessment.taskId);
@@ -616,7 +595,7 @@ const progressReportColumns = computed(() => {
     tableColumns.push({
       field: `progress.${taskId}.value`,
       filterField: `progress.${taskId}.tags`,
-      header: tasksDictionary.value[taskId]?.publicName ?? taskId,
+      header: tasksDictionary.value[taskId]?.name ?? taskId,
       dataType: 'progress',
       tag: true,
       severityField: `progress.${taskId}.severity`,
