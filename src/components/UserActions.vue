@@ -33,7 +33,7 @@
 </template>
 
 <script setup>
-    import {ref} from 'vue';
+    import {ref, watchEffect} from 'vue';
     import useSignOutMutation from '@/composables/mutations/useSignOutMutation';
     import PvButton from 'primevue/button';
     import PvDropdown from 'primevue/dropdown';
@@ -54,34 +54,20 @@
     })
 
 
-    // BACKED OUT: getting access to feedback button
-    // onMounted(() => {
-    //     // Depreacted in latest version of Sentry and replaced with getFeedback()
-    //     const feedbackInstance = Sentry.getClient()?.getIntegration(Sentry.Feedback);
 
-    //     if (feedbackInstance && feedbackButton.value) {
-    //         feedbackInstance.attachTo(feedbackButton.value);
-    //     }
-    // });
-
-
-
-    // BACKED OUT: update styling of feedback modal based on view type to center
-    // watchEffect(() => {
-    //     const feedbackElement = document.getElementById('sentry-feedback');
-    //     if (feedbackElement) {
-    //         if (!props.isBasicView) {
-    //             feedbackElement.style.setProperty('--bottom', '28%');
-    //             feedbackElement.style.setProperty('--left', '40%');
-    //         }
-    //     }
-    // });
+    watchEffect(() => {
+        const feedbackElement = document.getElementById('sentry-feedback');
+        if (feedbackElement) {
+            if (!props.isBasicView) {
+                feedbackElement.style.setProperty('display', 'none');
+            }
+        }
+    });
 
 
     const helpOptions = [
         { label: 'Researcher Documentation', value: 'researcherDocumentation' },
-        // BACKED OUT: Nav Bar Report an Issue
-        // { label: 'Report an Issue', value: 'reportAnIssue' }
+        { label: 'Report an Issue', value: 'reportAnIssue' }
     ];
 
     const profileOptions = [
@@ -93,8 +79,7 @@
         if (e.value === 'researcherDocumentation') {
             window.open('https://levante-researcher.super.site/', '_blank');
         } else if (e.value === 'reportAnIssue') {
-            // BACKED OUT: opens feedback modal
-            // feedbackButton.value.click();
+            window.open('https://watery-wrench-dee.notion.site/13c244e26d9b8005adbde4522455edfd', '_blank');
         }
     };
 
