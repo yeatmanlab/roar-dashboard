@@ -5,7 +5,7 @@
       <div class="flex flex-column mb-5">
         <div class="flex justify-content-between mb-2">
           <div class="flex align-items-center gap-3">
-            <div class="admin-page-header mr-4">Audience</div>
+            <div class="admin-page-header mr-4">Audiences</div>
              <PvButton
               class="bg-primary text-white border-none p-2 ml-auto"
               @click="addUsers"
