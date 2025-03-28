@@ -8,7 +8,7 @@
         <div class="flex-grow-1 pr-3 mr-2 p-0 m-0">
           <h2 data-cy="h2-card-admin-title" class="sm:text-lg lg:text-lx m-0 h2-card-admin-title">{{ title }}</h2>
         </div>
-        <div v-if="isSuperAdmin" class="flex justify-content-end w-3 pl-5 pb-5 ml-2 mb-6">
+        <div class="flex justify-content-end w-3 pl-5 pb-5 ml-2 mb-6">
           <PvSpeedDial
             :model="speedDialItems"
             direction="left"
