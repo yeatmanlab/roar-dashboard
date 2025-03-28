@@ -1,35 +1,39 @@
+import { FIRESTORE_COLLECTIONS } from '../../constants/firebase';
 import { getAxiosInstance } from './utils';
+import { toValue } from 'vue';
 /**
- * Fetches Activation Codes for an orgId.
+ * Helper function for generating request body to fetch Activation Codes for an orgId.
  * @param orgId The target orgId for which activation codes we want to return
- * @returns {Promise<Array<Object>>} A promise that resolves to an array of legal document objects.
+ *  @returns {Promise<Array<Object>>} A promise that resolves to an array of activation codes.
  */
 export const getActivationCodesRequestBody = ({ orgId }) => {
   const requestBody = {
     structuredQuery: {
       from: [
         {
-          collectionId: 'activationCodes',
+          collectionId: FIRESTORE_COLLECTIONS.ACTIVATION_CODES,
           allDescendants: false,
         },
       ],
+      where: {
+        fieldFilter: {
+          field: { fieldPath: 'orgId' },
+          op: 'EQUAL',
+          value: { stringValue: toValue(orgId) },
+        },
+      },
     },
   };
-
-  if (orgId) {
-    requestBody.structuredQuery.where = {
-      fieldFilter: {
-        field: { fieldPath: 'orgId' },
-        op: 'EQUAL',
-        value: { stringValue: orgId },
-      },
-    };
-  }
 
   return requestBody;
 };
 
-export const activationCodeFetcher = async (orgId) => {
+/**
+ *  Fetches activation code for an orgId
+ *  @param orgId The target orgId for which activation codes we want to return
+ *  @returns {Promise<Array<Object>>} A promise that resolves to an array of activation codes.
+ * */
+export const getActivationCodeByOrgId = async (orgId) => {
   const axiosInstance = getAxiosInstance('admin');
   const requestBody = getActivationCodesRequestBody({ orgId });
   const response = await axiosInstance.post('/:runQuery', requestBody);

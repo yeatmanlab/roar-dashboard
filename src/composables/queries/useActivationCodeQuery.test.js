@@ -1,12 +1,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import * as VueQuery from '@tanstack/vue-query';
 import { withSetup } from '@/test-support/withSetup.js';
-import { activationCodeFetcher } from '@/helpers/query/activationCodes';
+import { getActivationCodeByOrgId } from '@/helpers/query/activationCodes';
 import useActivationCodeQuery from './useActivationCodeQuery';
 import { ACTIVATION_CODE_QUERY_KEY } from '@/constants/queryKeys';
 
 vi.mock('@/helpers/query/activationCodes', () => ({
-  activationCodeFetcher: vi.fn().mockImplementation(() => []),
+  getActivationCodeByOrgId: vi.fn().mockImplementation(() => []),
 }));
 
 vi.mock('@tanstack/vue-query', async (getModule) => {
@@ -42,10 +42,9 @@ describe('useActivationCodeQuery', () => {
       enabled: expect.objectContaining({
         _value: true,
       }),
-      refetchOnWindowFocus: 'always',
     });
 
-    expect(activationCodeFetcher).toHaveBeenCalledWith(orgId);
+    expect(getActivationCodeByOrgId).toHaveBeenCalledWith(orgId);
   });
 
   it('should disable query when orgId is not a string', () => {
@@ -62,10 +61,9 @@ describe('useActivationCodeQuery', () => {
       enabled: expect.objectContaining({
         _value: false,
       }),
-      refetchOnWindowFocus: 'always',
     });
 
-    expect(activationCodeFetcher).not.toHaveBeenCalled();
+    expect(getActivationCodeByOrgId).not.toHaveBeenCalled();
   });
 
   it('should allow the query to be disabled via the passed query options', () => {
@@ -84,9 +82,8 @@ describe('useActivationCodeQuery', () => {
       enabled: expect.objectContaining({
         _value: false,
       }),
-      refetchOnWindowFocus: 'always',
     });
 
-    expect(activationCodeFetcher).not.toHaveBeenCalled();
+    expect(getActivationCodeByOrgId).not.toHaveBeenCalled();
   });
 });
