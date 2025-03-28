@@ -24,6 +24,9 @@ inputs:
   gcp-service-account-id:
     description: 'The GCP service account ID to impersonate.'
     required: true
+  github-token:
+    description: 'The GitHub token to use for authentication.'
+    required: false
 
 runs:
   using: composite
@@ -80,7 +83,7 @@ runs:
       id: firebase-deploy
       with:
         firebaseServiceAccount: '${{ env.GCP_HOSTING_SERVICE_ACCOUNT_KEY }}'
-        repoToken: '${{ secrets.GITHUB_TOKEN }}'
+        repoToken: '${{ inputs.github-token }}'
         projectId: '${{ inputs.firebase-project-id }}'
         entryPoint: ./app
 
