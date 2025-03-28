@@ -42,27 +42,6 @@
           @selection="selection($event)"
         />
 
-        <!-- <div v-if="groupHasParentOrg" class="grid mt-4">
-          <div class="col-12 md:col-6 lg:col-4">
-            <span class="p-float-label">
-              <PvDropdown
-                v-model="selectedTestOrg"
-                input-id="parent-org"
-                :options="testOrgs"
-                show-clear
-                option-label="label"
-                option-group-label="label"
-                option-group-children="items"
-                placeholder="Select a parent organization"
-                filter
-                class="w-full"
-                data-cy="dropdown-parent-org"
-              />
-              <label for="parent-org">Parent Organization<span id="required-asterisk">*</span></label>
-            </span>
-          </div>
-        </div> -->
-
         <div v-if="parentOrgRequired" class="grid mt-4">
           <div class="col-12 md:col-6 lg:col-4">
             <PvFloatLabel>
