@@ -39,7 +39,7 @@ jobs:
         run: |
           mkdir app
           cp -r roar-dashboard/dist app/dist
-          cp roar-dashboard/firebase/admin/firebase.production.json app/firebase.json
+          cp roar-dashboard/firebase/admin/firebase.staging-legacy.json app/firebase.json
           rm -rf roar-dashboard
           cd app && pwd && ls -la
 
