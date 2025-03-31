@@ -1,0 +1,54 @@
+name: Deploy to Staging (Legacy)
+
+# on:
+#   push:
+#     branches:
+#       - main
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.run_id }}
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  # Deploy app
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  deploy-app:
+    name: Deploy Firebase app
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build app
+        uses: ./.github/actions/build
+        with:
+          environment: production
+          github-pat: ${{ secrets.CI_GITHUB_PAT }}
+
+      - name: Prepare deployment
+        shell: bash
+        run: |
+          mkdir app
+          cp -r roar-dashboard/dist app/dist
+          cp roar-dashboard/firebase/admin/firebase.production.json app/firebase.json
+          rm -rf roar-dashboard
+          cd app && pwd && ls -la
+
+      - name: Deploy application
+        uses: FirebaseExtended/action-hosting-deploy@v0.9.0
+        with:
+          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_GSE_ROAR_ADMIN }}'
+          projectId: '${{ secrets.FIREBASE_PROJECT_ID_ADMIN }}'
+          channelId: 'live'
+          target: 'staging'
+          entryPoint: ./app
