@@ -23,7 +23,6 @@ jobs:
   deploy-app:
     name: Deploy Firebase app
     runs-on: ubuntu-latest
-    environment: production
     timeout-minutes: 15
     steps:
       - name: Checkout repository
