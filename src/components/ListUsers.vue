@@ -11,7 +11,7 @@
             <div class="bg-gray-100 px-5 py-2 rounded flex flex-column gap-3">
               <div class="flex flex-wrap align-items-center gap-2 justify-content-between">
                 <div class="uppercase font-light font-sm text-gray-400 mb-1">
-                  {{ singularizeFirestoreCollection(orgType) }}
+                  {{ i18n.t('listUsers.districtTitle') }}
                 </div>
                 <div class="text-xl text-gray-600">
                   <b> {{ orgName }} </b>
@@ -125,6 +125,7 @@
 <script setup>
 import { ref, reactive, onMounted, computed } from 'vue';
 import { storeToRefs } from 'pinia';
+import { useI18n } from 'vue-i18n';
 import { useVuelidate } from '@vuelidate/core';
 import { required, sameAs, minLength } from '@vuelidate/validators';
 import { useToast } from 'primevue/usetoast';
@@ -140,6 +141,7 @@ import RoarModal from './modals/RoarModal.vue';
 import RoarDataTable from '@/components/RoarDataTable.vue';
 
 const authStore = useAuthStore();
+const i18n = useI18n();
 
 const { roarfirekit } = storeToRefs(authStore);
 const initialized = ref(false);

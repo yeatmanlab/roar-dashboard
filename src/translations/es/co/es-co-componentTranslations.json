@@ -78,6 +78,9 @@
     "preparing": "¡Preparando tu juego!",
     "loading": "cargando"
   },
+  "listUsers": {
+    "districtTitle": "Organization"
+  },
   "sentryForm": {
     "formTitle": "Reportar un problema a LEVANTE",
     "buttonLabel": "Reportar un problema",

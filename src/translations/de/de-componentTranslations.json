@@ -115,6 +115,9 @@
     "preparing": "Bereite Ihr Spiel vor!",
     "loading": "Laden"
   },
+   "listUsers": {
+    "districtTitle": "Organization"
+  },
   "sentryForm": {
     "formTitle": "Ein Problem bei LEVANTE melden",
     "buttonLabel": "Ein Problem melden",
