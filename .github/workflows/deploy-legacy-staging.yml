@@ -40,7 +40,6 @@ jobs:
           mkdir app
           cp -r roar-dashboard/dist app/dist
           cp roar-dashboard/firebase/admin/firebase.staging-legacy.json app/firebase.json
-          cp .firebaserc.staging-legacy .firebaserc
           echo "${{ secrets.FIREBASE_RC_LEGACY }}" > app/.firebaserc
           rm -rf roar-dashboard
           cd app && pwd && ls -la
