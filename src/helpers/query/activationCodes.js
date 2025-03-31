@@ -33,9 +33,9 @@ export const getActivationCodesRequestBody = ({ orgId }) => {
  *  @param orgId The target orgId for which activation codes we want to return
  *  @returns {Promise<Array<Object>>} A promise that resolves to an array of activation codes.
  * */
-export const getActivationCodeByOrgId = async (orgId) => {
+export const getActivationCodesByOrgId = async (orgId) => {
   const axiosInstance = getAxiosInstance('admin');
-  const requestBody = getActivationCodesRequestBody({ orgId });
+  const requestBody = getActivationCodesRequestBody({ orgId: toValue(orgId) });
   const response = await axiosInstance.post('/:runQuery', requestBody);
   return response.data;
 };
