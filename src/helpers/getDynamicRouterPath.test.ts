@@ -35,14 +35,14 @@ describe('getDynamicRouterPath', () => {
   });
 
   it('should throw an error when route is not a string', () => {
-    const route = 123;
+    const route = 123 as unknown as string;
     const mapping = { userId: '123' };
     expect(() => getDynamicRouterPath(route, mapping)).toThrow('Route must be a string');
   });
 
   it('should throw an error when mapping is not an object', () => {
     const route = '/users/:userId';
-    const mapping = 'invalid';
+    const mapping = 'invalid' as unknown as Record<string, string>;
     expect(() => getDynamicRouterPath(route, mapping)).toThrow('Mapping must be an object');
   });
-});
+}); 

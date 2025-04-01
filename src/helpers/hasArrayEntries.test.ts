@@ -20,22 +20,22 @@ describe('hasArrayEntries', () => {
   });
 
   it('should return true for non-empty Vue ref with arrays', () => {
-    const refWithArray = ref([1, 2, 3]);
+    const refWithArray = ref<number[]>([1, 2, 3]);
     expect(hasArrayEntries(refWithArray)).toBe(true);
   });
 
   it('should return false for empty Vue ref with arrays', () => {
-    const emptyRefWithArray = ref([]);
+    const emptyRefWithArray = ref<number[]>([]);
     expect(hasArrayEntries(emptyRefWithArray)).toBe(false);
   });
 
   it('should return false for Vue ref with null', () => {
-    const refWithNull = ref(null);
+    const refWithNull = ref<number[] | null>(null);
     expect(hasArrayEntries(refWithNull)).toBe(false);
   });
 
   it('should return false for Vue ref with undefined', () => {
-    const refWithUndefined = ref(undefined);
+    const refWithUndefined = ref<number[] | undefined>(undefined);
     expect(hasArrayEntries(refWithUndefined)).toBe(false);
   });
-});
+}); 

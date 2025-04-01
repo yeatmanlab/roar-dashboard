@@ -1,4 +1,4 @@
-import { query, where, getDocs } from 'firebase/firestore';
+import { query, where, getDocs, CollectionReference, DocumentData } from 'firebase/firestore';
 import _fromPairs from 'lodash/fromPairs';
 import _invert from 'lodash/invert';
 import _toPairs from 'lodash/toPairs';
@@ -6,8 +6,8 @@ import * as Papa from 'papaparse';
 
 export const isLevante = import.meta.env.VITE_LEVANTE === 'TRUE';
 
-export const isMobileBrowser = () => {
-  const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+export const isMobileBrowser = (): boolean => {
+  const userAgent = navigator.userAgent || navigator.vendor || (window as any).opera;
   if (
     /(android|bb\d+|meego).+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|iris|kindle|lge |maemo|midp|mmp|mobile.+firefox|netfront|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|series(4|6)0|symbian|treo|up\.(browser|link)|vodafone|wap|windows ce|xda|xiino/i.test(
       userAgent,
@@ -21,38 +21,47 @@ export const isMobileBrowser = () => {
   return false;
 };
 
-export const getDocsFromQuery = async (collection, field, value) => {
+export const getDocsFromQuery = async (
+  collection: CollectionReference,
+  field: string,
+  value: any
+): Promise<DocumentData | DocumentData[] | null> => {
   const q = query(collection, where(field, '==', value));
   const querySnapshot = await getDocs(q);
 
   if (querySnapshot.empty) {
     return null;
-  } else if (querySnapshot.size == 1) {
+  } else if (querySnapshot.size === 1) {
     return querySnapshot.docs[0].data();
   } else {
     return querySnapshot.docs.map((doc) => doc.data());
   }
 };
 
+interface Resource {
+  id: string;
+  [key: string]: any;
+}
+
 /**
  * Find an object in an array of objects by specifying its ID.
- * @param {Array} resources - Array of resource objects
- * @param {String} id - Resource ID
- * @returns
+ * @param resources - Array of resource objects
+ * @param id - Resource ID
+ * @returns The found resource or null if not found
  */
-export const findById = (resources, id) => {
+export const findById = (resources: Resource[] | null, id: string): Resource | null => {
   if (!resources) return null;
-  return resources.find((r) => r.id === id);
+  return resources.find((r) => r.id === id) || null;
 };
 
 /**
  * Upsert resource object into a resource array.
- * Upsert is a portmanteau of update/insert.  So if `resource` already exists in
+ * Upsert is a portmanteau of update/insert. So if `resource` already exists in
  * `resources`, update it. Otherwise, insert it.
- * @param {Array} resources - Array of existing resource objects
- * @param {Object} resource - New object to either update or insert
+ * @param resources - Array of existing resource objects
+ * @param resource - New object to either update or insert
  */
-export const upsert = (resources, resource) => {
+export const upsert = (resources: Resource[], resource: Resource): void => {
   const index = resources.findIndex((r) => r.id === resource.id);
   if (resource.id && index !== -1) {
     resources[index] = resource;
@@ -61,17 +70,17 @@ export const upsert = (resources, resource) => {
   }
 };
 
-export const arrayRandom = (array) => {
+export const arrayRandom = <T>(array: T[]): T => {
   const randomIndex = Math.floor(Math.random() * array.length);
   return array[randomIndex];
 };
 
-export const getUniquePropsFromUsers = (users, prop) => {
+export const getUniquePropsFromUsers = (users: any[], prop: string): { id: string }[] => {
   const propArrays = users.map((user) => user[prop]).flat();
   return [...new Set(propArrays)].map((item) => ({ id: item }));
 };
 
-export const userHasSelectedOrgs = (userArray, selections) => {
+export const userHasSelectedOrgs = (userArray: string[], selections: { id: string }[]): boolean => {
   // If the selected org list is empty, return all users
   if (selections.length === 0) {
     return true;
@@ -80,17 +89,20 @@ export const userHasSelectedOrgs = (userArray, selections) => {
   return Boolean(userArray.filter((value) => selectionArray.includes(value)).length);
 };
 
-export const formatDate = (date) => date?.toLocaleString('en-US');
+export const formatDate = (date: Date | null | undefined): string | undefined => 
+  date?.toLocaleString('en-US');
 
-const camelCase = (string) => string.replace(/_([a-z])/g, (groups) => groups[1].toUpperCase());
+const camelCase = (string: string): string => 
+  string.replace(/_([a-z])/g, (groups) => groups[1].toUpperCase());
 
-export const flattenObj = (obj) => {
-  const result = {};
+interface FlattenedObject {
+  [key: string]: any;
+}
+
+export const flattenObj = (obj: Record<string, any>): FlattenedObject => {
+  const result: FlattenedObject = {};
 
   for (const i in obj) {
-    // We check the type of the i using
-    // typeof() function and recursively
-    // call the function again
     if (typeof obj[i] === 'object' && !Array.isArray(obj[i]) && obj[i] !== null) {
       const temp = flattenObj(obj[i]);
       for (const j in temp) {
@@ -103,12 +115,12 @@ export const flattenObj = (obj) => {
   return result;
 };
 
-export const csvFileToJson = async (file) => {
+export const csvFileToJson = async (file: File): Promise<any[]> => {
   const results = await Papa.parse(await file.text(), {
     header: true,
     skipEmptyLines: 'greedy',
-    transformHeader: (header) => header.trim(),
-    transform: (value, field) => {
+    transformHeader: (header: string) => header.trim(),
+    transform: (value: string, field: string) => {
       if (field === 'id') {
         return value.trim();
       }
@@ -118,18 +130,27 @@ export const csvFileToJson = async (file) => {
   return results.data;
 };
 
-export const standardDeviation = (arr, usePopulation = false) => {
+export const standardDeviation = (arr: number[], usePopulation = false): number => {
   // prevent divide by 0
   if (arr.length === 0) return Infinity;
 
   const mean = arr.reduce((acc, val) => acc + val, 0) / arr.length;
+  const squaredDiffs = arr.map((val) => (val - mean) ** 2);
   return Math.sqrt(
-    arr.reduce((acc, val) => acc.concat((val - mean) ** 2), []).reduce((acc, val) => acc + val, 0) /
+    squaredDiffs.reduce((acc, val) => acc + val, 0) /
       (arr.length - (usePopulation ? 0 : 1)),
   );
 };
 
-export const filterAdminOrgs = (adminOrgs, filters) => {
+interface AdminOrgs {
+  [key: string]: string[];
+}
+
+interface Filters {
+  [key: string]: string[];
+}
+
+export const filterAdminOrgs = (adminOrgs: AdminOrgs, filters: Filters): AdminOrgs => {
   const filteredOrgPairs = _toPairs(adminOrgs).map(([orgType, orgs]) => [
     orgType,
     orgs.filter((org) => filters[orgType]?.includes(org)),
@@ -138,12 +159,15 @@ export const filterAdminOrgs = (adminOrgs, filters) => {
   return _fromPairs(filteredOrgPairs);
 };
 
-export const removeEmptyOrgs = (orgs) => {
-  // eslint-disable-next-line no-unused-vars
-  return _fromPairs(_toPairs(orgs).filter(([orgType, orgs]) => orgs.length > 0));
+export const removeEmptyOrgs = (orgs: AdminOrgs): AdminOrgs => {
+  return _fromPairs(_toPairs(orgs).filter(([_, orgs]) => orgs.length > 0));
 };
 
-const plurals = {
+interface Plurals {
+  [key: string]: string;
+}
+
+const plurals: Plurals = {
   group: 'groups',
   district: 'districts',
   school: 'schools',
@@ -156,7 +180,7 @@ const plurals = {
   trial: 'trials',
 };
 
-export const pluralizeFirestoreCollection = (singular) => {
+export const pluralizeFirestoreCollection = (singular: string): string => {
   if (Object.values(plurals).includes(singular)) return singular;
 
   const plural = plurals[singular];
@@ -165,11 +189,11 @@ export const pluralizeFirestoreCollection = (singular) => {
   throw new Error(`There is no plural Firestore collection for the ${singular}`);
 };
 
-export const singularizeFirestoreCollection = (plural) => {
+export const singularizeFirestoreCollection = (plural: string): string => {
   if (Object.values(_invert(plurals)).includes(plural)) return plural;
 
   const singular = _invert(plurals)[plural];
   if (singular) return singular;
 
   throw new Error(`There is no Firestore collection ${plural}`);
-};
+}; 

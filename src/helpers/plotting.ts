@@ -1,8 +1,85 @@
+interface BorderRadius {
+  topLeft: number;
+  topRight: number;
+  bottomLeft: number;
+  bottomRight: number;
+}
+
+interface BorderRadii {
+  left: BorderRadius;
+  middle: BorderRadius;
+  right: BorderRadius;
+}
+
+interface OrgStats {
+  assigned?: number;
+  started?: number;
+  completed?: number;
+}
+
+interface ChartDataset {
+  type: string;
+  label: string;
+  backgroundColor: string;
+  data: number[];
+  borderWidth: number;
+  borderSkipped: boolean;
+  borderRadius: BorderRadius;
+}
+
+interface ChartData {
+  labels: string[];
+  datasets: ChartDataset[];
+}
+
+interface ChartOptions {
+  indexAxis: string;
+  maintainAspectRatio: boolean;
+  aspectRatio: number;
+  plugins: {
+    tooltips: {
+      mode: string;
+      intersect: boolean;
+    };
+    legend: boolean;
+  };
+  scales: {
+    x: {
+      stacked: boolean;
+      ticks: {
+        display: boolean;
+      };
+      grid: {
+        display: boolean;
+      };
+      border: {
+        display: boolean;
+      };
+      min: number;
+      max: number;
+    };
+    y: {
+      stacked: boolean;
+      ticks: {
+        display: boolean;
+      };
+      grid: {
+        display: boolean;
+      };
+      border: {
+        display: boolean;
+      };
+      min: number;
+      max: number;
+    };
+  };
+}
+
 export const chart = {};
 
-const getBorderRadii = (left, middle, right) => {
-  const defaultRadius = { topLeft: 0, topRight: 0, bottomLeft: 0, bottomRight: 0 };
-  const borderRadii = { left: { ...defaultRadius }, middle: { ...defaultRadius }, right: { ...defaultRadius } };
+const getBorderRadii = (left: number, middle: number, right: number): BorderRadii => {
+  const defaultRadius: BorderRadius = { topLeft: 0, topRight: 0, bottomLeft: 0, bottomRight: 0 };
+  const borderRadii: BorderRadii = { left: { ...defaultRadius }, middle: { ...defaultRadius }, right: { ...defaultRadius } };
   if (left > 0) {
     borderRadii.left.topLeft = Number.MAX_VALUE;
     borderRadii.left.bottomLeft = Number.MAX_VALUE;
@@ -28,7 +105,7 @@ const getBorderRadii = (left, middle, right) => {
   return borderRadii;
 };
 
-export const setBarChartData = (orgStats) => {
+export const setBarChartData = (orgStats?: OrgStats): ChartData => {
   let { assigned = 0, started = 0, completed = 0 } = orgStats || {};
   const documentStyle = getComputedStyle(document.documentElement);
 
@@ -38,7 +115,7 @@ export const setBarChartData = (orgStats) => {
   const borderRadii = getBorderRadii(completed, started, assigned);
   const borderWidth = 0;
 
-  const chartData = {
+  const chartData: ChartData = {
     labels: [''],
     datasets: [
       {
@@ -74,7 +151,7 @@ export const setBarChartData = (orgStats) => {
   return chartData;
 };
 
-export const setBarChartOptions = (orgStats) => {
+export const setBarChartOptions = (orgStats?: OrgStats): ChartOptions => {
   let { assigned = 0 } = orgStats || {};
 
   const min = 0;
@@ -122,4 +199,4 @@ export const setBarChartOptions = (orgStats) => {
       },
     },
   };
-};
+}; 

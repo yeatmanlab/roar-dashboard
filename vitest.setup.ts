@@ -5,7 +5,7 @@ import { languageOptions } from '@/translations/i18n';
 const locale = 'en';
 
 config.global.mocks = {
-  $t: (msg) => languageOptions[locale]?.translations[msg],
+  $t: (msg: string): string | undefined => languageOptions[locale]?.translations[msg],
 };
 
 vi.mock('vue-recaptcha', () => ({
@@ -21,8 +21,8 @@ vi.mock('vue-google-maps-community-fork', () => ({
 
 // Mock the $t function based on the logic in i18n.js
 config.global.mocks = {
-  $t: (key) => {
+  $t: (key: string): string | undefined => {
     const locale = 'en-US';
     return languageOptions[locale]?.translations[key];
   },
-};
+}; 
