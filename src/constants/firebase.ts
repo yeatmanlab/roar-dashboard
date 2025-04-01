@@ -4,7 +4,9 @@
 export const FIRESTORE_DATABASES = Object.freeze({
   ADMIN: 'admin',
   APP: 'app',
-});
+} as const);
+
+export type FirestoreDatabase = typeof FIRESTORE_DATABASES[keyof typeof FIRESTORE_DATABASES];
 
 /**
  * Firestore database collections
@@ -21,4 +23,6 @@ export const FIRESTORE_COLLECTIONS = Object.freeze({
   TASKS: 'tasks',
   USER_CLAIMS: 'userClaims',
   USERS: 'users',
-});
+} as const);
+
+export type FirestoreCollection = typeof FIRESTORE_COLLECTIONS[keyof typeof FIRESTORE_COLLECTIONS]; 

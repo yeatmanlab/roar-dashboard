@@ -6,7 +6,7 @@
  *
  * @constant {Object} APP_ROUTES – The individual routes of the application.
  */
-export const APP_ROUTES = {
+export const APP_ROUTES = Object.freeze({
   HOME: '/',
   SIGN_IN: '/signin',
   SSO: '/sso',
@@ -15,4 +15,6 @@ export const APP_ROUTES = {
   STUDENT_REPORT: '/scores/:administrationId/:orgType/:orgId/user/:userId',
   ACCOUNT_PROFILE: '/profile',
   LIST_ORGS: '/list-orgs',
-};
+} as const);
+
+export type AppRoute = typeof APP_ROUTES[keyof typeof APP_ROUTES]; 

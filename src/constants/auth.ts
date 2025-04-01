@@ -1,4 +1,4 @@
-import { oneMinuteInMs, oneSecondInMs } from './time.js';
+import { oneMinuteInMs, oneSecondInMs } from './time';
 
 /**
  * Auth Session
@@ -22,7 +22,9 @@ export const AUTH_USER_TYPE = Object.freeze({
   PARTICIPANT: 'participant',
   STUDENT: 'student',
   SUPER_ADMIN: 'super-admin',
-});
+} as const);
+
+export type AuthUserType = typeof AUTH_USER_TYPE[keyof typeof AUTH_USER_TYPE];
 
 /**
  * Auth SSO Providers
@@ -33,4 +35,6 @@ export const AUTH_SSO_PROVIDERS = Object.freeze({
   CLEVER: 'clever',
   CLASSLINK: 'classlink',
   GOOGLE: 'google',
-});
+} as const);
+
+export type AuthSSOProvider = typeof AUTH_SSO_PROVIDERS[keyof typeof AUTH_SSO_PROVIDERS]; 

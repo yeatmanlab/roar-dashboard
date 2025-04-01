@@ -23,4 +23,4 @@ export const USER_ADMINISTRATION_ASSIGNMENTS_QUERY_KEY = 'user-administration-as
 export const USER_ASSIGNMENTS_QUERY_KEY = 'user-assignments';
 export const USER_CLAIMS_QUERY_KEY = 'user-claims';
 export const USER_STUDENT_DATA_QUERY_KEY = 'user-student';
-export const USER_RUN_PAGE_QUERY_KEY = 'user-run-page';
+export const USER_RUN_PAGE_QUERY_KEY = 'user-run-page'; 
