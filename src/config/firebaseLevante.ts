@@ -1,5 +1,19 @@
-let appConfig; // assessment project
-let adminConfig;
+interface FirebaseConfig {
+  apiKey: string;
+  authDomain: string;
+  projectId: string;
+  storageBucket: string;
+  messagingSenderId: string;
+  appId: string;
+}
+
+interface LevanteConfig {
+  app: FirebaseConfig;
+  admin: FirebaseConfig;
+}
+
+let appConfig: FirebaseConfig;
+let adminConfig: FirebaseConfig;
 
 if (import.meta.env.VITE_FIREBASE_PROJECT === 'DEV') {
   appConfig = {
@@ -40,7 +54,9 @@ if (import.meta.env.VITE_FIREBASE_PROJECT === 'DEV') {
   };
 }
 
-export default {
+const config: LevanteConfig = {
   app: appConfig,
   admin: adminConfig,
 };
+
+export default config; 

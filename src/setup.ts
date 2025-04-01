@@ -1,25 +1,33 @@
-import { createApp } from 'vue';
+import { createApp, type App, type Plugin } from 'vue';
 import { VueRecaptchaPlugin } from 'vue-recaptcha';
 import { Buffer } from 'buffer';
-import { initSentry } from '@/sentry';
+import { initSentry } from './sentry';
 import PvTooltip from 'primevue/tooltip';
-import App from '@/App.vue';
-import AppSpinner from '@/components/AppSpinner.vue';
+import AppComponent from './App.vue';
+import AppSpinner from './components/AppSpinner.vue';
 import plugins from './plugins';
 import './styles.css';
+
+declare global {
+  var Buffer: typeof Buffer;
+}
+
+type PluginWithOptions = [Plugin, Record<string, unknown>];
+type AppPlugin = Plugin | PluginWithOptions;
 
 /**
  * Create Vue App
  *
  * @returns {App<Element>}
  */
-export const createAppInstance = () => {
-  const app = createApp(App);
+export const createAppInstance = (): App<Element> => {
+  const app = createApp(AppComponent);
 
   // Register all app plugins.
-  plugins.forEach((plugin) => {
+  plugins.forEach((plugin: AppPlugin) => {
     if (Array.isArray(plugin)) {
-      app.use(...plugin);
+      const [pluginInstance, options] = plugin as PluginWithOptions;
+      app.use(pluginInstance, options);
     } else {
       app.use(plugin);
     }
@@ -40,7 +48,6 @@ export const createAppInstance = () => {
   app.directive('tooltip', PvTooltip);
 
   // Register global variables.
-  // eslint-disable-next-line no-undef
   globalThis.Buffer = Buffer;
 
   if (process.env.NODE_ENV === 'production') {
@@ -55,7 +62,7 @@ export const createAppInstance = () => {
  *
  * @returns {void}
  */
-export const mountApp = () => {
+export const mountApp = (): void => {
   const app = createAppInstance();
   app.mount('#app');
-};
+}; 
