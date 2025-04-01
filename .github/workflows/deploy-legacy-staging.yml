@@ -20,6 +20,9 @@ jobs:
     name: Deploy Firebase app
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      DOTENV_PRIVATE_KEY_STAGING: ${{ secrets.DOTENV_PRIVATE_KEY_PRODUCTION }}
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
