@@ -10,8 +10,8 @@
             </div>
             <div class="bg-gray-100 px-5 py-2 rounded flex flex-column gap-3">
               <div class="flex flex-wrap align-items-center gap-2 justify-content-between">
-                <div class="uppercase font-light font-sm text-gray-400 mb-1">
-                  {{ i18n.t('listUsers.districtTitle') }}
+                <div class="uppercase font-light font-sm text-gray-400 mb-1 mr-2">
+                  Site
                 </div>
                 <div class="text-xl text-gray-600">
                   <b> {{ orgName }} </b>
@@ -25,7 +25,7 @@
               </div>
             </div>
           </div>
-          <div class="text-md text-gray-500 ml-6">View users for the selected organization.</div>
+          <div class="text-md text-gray-500 ml-6">View users for the selected audience.</div>
         </div>
 
         <RoarDataTable
