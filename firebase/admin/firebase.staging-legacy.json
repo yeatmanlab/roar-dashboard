@@ -1,7 +1,7 @@
 {
   "firestore": {
-    "rules": "firebase/admin/firestore.rules",
-    "indexes": "firebase/admin/firestore.indexes.json"
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
   },
   "hosting": [
     {
