@@ -125,7 +125,6 @@
 <script setup>
 import { ref, reactive, onMounted, computed } from 'vue';
 import { storeToRefs } from 'pinia';
-import { useI18n } from 'vue-i18n';
 import { useVuelidate } from '@vuelidate/core';
 import { required, sameAs, minLength } from '@vuelidate/validators';
 import { useToast } from 'primevue/usetoast';
@@ -134,14 +133,12 @@ import PvInputText from 'primevue/inputtext';
 import _isEmpty from 'lodash/isEmpty';
 import { useAuthStore } from '@/store/auth';
 import useOrgUsersQuery from '@/composables/queries/useOrgUsersQuery';
-import { singularizeFirestoreCollection } from '@/helpers';
 import AppSpinner from './AppSpinner.vue';
 import EditUsersForm from './EditUsersForm.vue';
 import RoarModal from './modals/RoarModal.vue';
 import RoarDataTable from '@/components/RoarDataTable.vue';
 
 const authStore = useAuthStore();
-const i18n = useI18n();
 
 const { roarfirekit } = storeToRefs(authStore);
 const initialized = ref(false);
