@@ -1,13 +1,9 @@
 name: Deploy to Staging (Legacy)
 
-# on:
-#   push:
-#     branches:
-#       - main
-
 on:
-  pull_request:
-    types: [opened, reopened, synchronize, ready_for_review]
+  push:
+    branches:
+      - main
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.run_id }}
