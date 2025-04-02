@@ -8,6 +8,8 @@ const CLEVER_PASSWORD = Cypress.env('CLEVER_PASSWORD');
 const PARTICIPANT_USERNAME = Cypress.env('PARTICIPANT_USERNAME');
 const PARTICIPANT_PASSWORD = Cypress.env('PARTICIPANT_PASSWORD');
 
+const timeout = Cypress.env('timeout');
+
 export const playSWR = ({
   administration = Cypress.env('testRoarAppsAdministration'),
   language = 'en',

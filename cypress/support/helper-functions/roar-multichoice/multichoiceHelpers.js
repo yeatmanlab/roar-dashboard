@@ -14,6 +14,8 @@ function clickButton(selector) {
   });
 }
 
+const timeout = Cypress.env('timeout');
+
 function checkGameTab(language, task) {
   cy.get('.p-tablist-tab-list', { timeout: timeout }).contains(languageOptions[language][task].gameTab).should('exist');
 }
