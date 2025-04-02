@@ -1,18 +1,33 @@
-import { useQuery } from '@tanstack/vue-query';
+import { useQuery, UseQueryReturnType } from '@tanstack/vue-query';
 import { computeQueryOverrides } from '@/helpers/computeQueryOverrides.ts';
 import { hasArrayEntries } from '@/helpers/hasArrayEntries.ts';
 import { fetchDocumentsById } from '@/helpers/query/utils';
 import { DISTRICTS_QUERY_KEY } from '@/constants/queryKeys';
 import { FIRESTORE_COLLECTIONS } from '@/constants/firebase';
+import { MaybeRef } from 'vue';
+
+interface QueryOptions {
+  enabled?: MaybeRef<boolean>;
+  [key: string]: any;
+}
+
+interface District {
+  id: string;
+  name: string;
+  [key: string]: any;
+}
 
 /**
  * Districts query.
  *
- * @param {Array} districtIds – The array of class IDs to fetch.
+ * @param {string[]} districtIds – The array of district IDs to fetch.
  * @param {QueryOptions|undefined} queryOptions – Optional TanStack query options.
- * @returns {UseQueryResult} The TanStack query result.
+ * @returns {UseQueryReturnType} The TanStack query result.
  */
-const useDistrictsQuery = (districtIds, queryOptions = undefined) => {
+const useDistrictsQuery = (
+  districtIds: string[], 
+  queryOptions?: QueryOptions
+): UseQueryReturnType<District[], Error> => {
   // Ensure all necessary data is available before enabling the query.
   const conditions = [() => hasArrayEntries(districtIds)];
   const { isQueryEnabled, options } = computeQueryOverrides(conditions, queryOptions);

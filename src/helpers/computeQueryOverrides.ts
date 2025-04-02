@@ -1,14 +1,14 @@
-import { ref } from 'vue';
+import { ref, Ref, MaybeRef } from 'vue';
 
 interface QueryOptions {
-  enabled?: boolean;
+  enabled?: MaybeRef<boolean>;
   [key: string]: any;
 }
 
 type Condition = boolean | (() => boolean);
 
 interface QueryOverrides {
-  isQueryEnabled: { value: boolean };
+  isQueryEnabled: Ref<boolean>;
   options: QueryOptions;
 }
 
