@@ -21,6 +21,8 @@ jobs:
     runs-on: ubuntu-latest
     environment: development
     timeout-minutes: 15
+    env:
+      DOTENV_PRIVATE_KEY_DEVELOPMENT: ${{ secrets.DOTENV_PRIVATE_KEY }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
