@@ -5,7 +5,7 @@
   </div>
 </template>
 <script setup>
-import { useAuthStore } from '@/store/auth.js';
+import { useAuthStore } from '@/store/auth.ts';
 import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router';
 import _get from 'lodash/get';

@@ -1,7 +1,7 @@
 import { computed, toValue } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
 import _isEmpty from 'lodash/isEmpty';
-import { computeQueryOverrides } from '@/helpers/computeQueryOverrides';
+import { computeQueryOverrides } from '@/helpers/computeQueryOverrides.ts';
 import { orgFetcher } from '@/helpers/query/orgs';
 import useUserType from '@/composables/useUserType';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';

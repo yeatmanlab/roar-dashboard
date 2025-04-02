@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createTestingPinia } from '@pinia/testing';
 import * as VueQuery from '@tanstack/vue-query';
 import { nanoid } from 'nanoid';
-import { withSetup } from '@/test-support/withSetup.js';
+import { withSetup } from '@/test-support/withSetup.ts';
 import { useAuthStore } from '@/store/auth';
 import { fetchSubcollection } from '@/helpers/query/utils';
 import useSurveyResponsesQuery from './useSurveyResponsesQuery';

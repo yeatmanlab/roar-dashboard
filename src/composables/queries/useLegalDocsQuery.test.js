@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import * as VueQuery from '@tanstack/vue-query';
-import { withSetup } from '@/test-support/withSetup.js';
+import { withSetup } from '@/test-support/withSetup.ts';
 import { fetchLegalDocs } from '@/helpers/query/legal';
 import useLegalDocsQuery from './useLegalDocsQuery';
 

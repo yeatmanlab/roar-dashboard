@@ -2,7 +2,7 @@ import { computed, toValue } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
 import _isEmpty from 'lodash/isEmpty';
 import { orgFetcher } from '@/helpers/query/orgs';
-import { computeQueryOverrides } from '@/helpers/computeQueryOverrides';
+import { computeQueryOverrides } from '@/helpers/computeQueryOverrides.ts';
 import useUserType from '@/composables/useUserType';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import { DISTRICT_SCHOOLS_QUERY_KEY } from '@/constants/queryKeys';

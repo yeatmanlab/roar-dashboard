@@ -178,7 +178,7 @@ import useOrgQuery from '@/composables/queries/useOrgQuery';
 import useDistrictSchoolsQuery from '@/composables/queries/useDistrictSchoolsQuery';
 import useAdministrationAssignmentsQuery from '@/composables/queries/useAdministrationAssignmentsQuery';
 import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery';
-import { getDynamicRouterPath } from '@/helpers/getDynamicRouterPath';
+import { getDynamicRouterPath } from '@/helpers/getDynamicRouterPath.ts';
 import { exportCsv } from '@/helpers/query/utils';
 import { taskDisplayNames, gradeOptions } from '@/helpers/reports.ts';
 import { getTitle } from '@/helpers/query/administrations';

@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/vue-query';
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '@/store/auth';
-import { computeQueryOverrides } from '@/helpers/computeQueryOverrides';
+import { computeQueryOverrides } from '@/helpers/computeQueryOverrides.ts';
 import { fetchDocById } from '@/helpers/query/utils';
 import { USER_DATA_QUERY_KEY } from '@/constants/queryKeys';
 import { FIRESTORE_COLLECTIONS } from '@/constants/firebase';

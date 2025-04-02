@@ -1,7 +1,7 @@
 import { nextTick, ref } from 'vue';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import * as VueQuery from '@tanstack/vue-query';
-import { withSetup } from '@/test-support/withSetup.js';
+import { withSetup } from '@/test-support/withSetup.ts';
 import { orgFetcher } from '@/helpers/query/orgs';
 import useGroupsListQuery from './useGroupsListQuery';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
