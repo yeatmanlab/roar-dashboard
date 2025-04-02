@@ -485,4 +485,234 @@ export const includedValidityFlags: Record<string, string[]> = {
   theoryOfMind: ['accuracyTooLow', 'notEnoughResponses', 'responseTimeTooFast'],
   trog: ['accuracyTooLow', 'notEnoughResponses', 'responseTimeTooFast'],
   mefs: ['accuracyTooLow', 'notEnoughResponses', 'responseTimeTooFast'],
-}; 
+};
+
+/**
+ * Colors for different support levels in the score report.
+ */
+export const supportLevelColors: Record<string, string> = {
+  Advanced: '#4CAF50',
+  Proficient: '#2196F3',
+  Basic: '#FFC107',
+  'Below Basic': '#F44336',
+};
+
+/**
+ * Tags for different progress levels in the score report.
+ */
+export const progressTags: Record<string, { color: string; severity: string }> = {
+  'Significant Progress': { color: '#4CAF50', severity: 'success' },
+  'Moderate Progress': { color: '#2196F3', severity: 'info' },
+  'Limited Progress': { color: '#FFC107', severity: 'warning' },
+  'No Progress': { color: '#F44336', severity: 'danger' },
+};
+
+/**
+ * Grade options for filtering in the progress report.
+ */
+export const gradeOptions = [
+  { label: 'Pre-K', value: -1 },
+  { label: 'Kindergarten', value: 0 },
+  { label: '1st Grade', value: 1 },
+  { label: '2nd Grade', value: 2 },
+  { label: '3rd Grade', value: 3 },
+  { label: '4th Grade', value: 4 },
+  { label: '5th Grade', value: 5 },
+  { label: '6th Grade', value: 6 },
+  { label: '7th Grade', value: 7 },
+  { label: '8th Grade', value: 8 },
+  { label: '9th Grade', value: 9 },
+  { label: '10th Grade', value: 10 },
+  { label: '11th Grade', value: 11 },
+  { label: '12th Grade', value: 12 },
+];
+
+/**
+ * Task information by task ID.
+ */
+export const taskInfoById: Record<string, { name: string; description: string }> = {
+  letter: {
+    name: 'Letter Names and Sounds',
+    description: 'Measures knowledge of letter names and sounds',
+  },
+  'letter-es': {
+    name: 'Nombres y Sonidos de Letras',
+    description: 'Mide el conocimiento de los nombres y sonidos de las letras',
+  },
+  pa: {
+    name: 'Phonological Awareness',
+    description: 'Measures ability to identify and manipulate sounds in spoken language',
+  },
+  'pa-es': {
+    name: 'Conciencia Fonológica',
+    description: 'Mide la capacidad de identificar y manipular sonidos en el lenguaje hablado',
+  },
+  swr: {
+    name: 'Single Word Recognition',
+    description: 'Measures ability to read individual words accurately',
+  },
+  'swr-es': {
+    name: 'Reconocimiento de Palabras',
+    description: 'Mide la capacidad de leer palabras individuales con precisión',
+  },
+  sre: {
+    name: 'Sentence Reading Efficiency',
+    description: 'Measures ability to read sentences quickly and accurately',
+  },
+  'sre-es': {
+    name: 'Eficiencia en la Lectura de Frases',
+    description: 'Mide la capacidad de leer frases rápida y precisamente',
+  },
+  morphology: {
+    name: 'Morphological Awareness',
+    description: 'Measures understanding of word structure and formation',
+  },
+  cva: {
+    name: 'Written Vocabulary',
+    description: 'Measures written vocabulary knowledge',
+  },
+  multichoice: {
+    name: 'Multiple Choice Vocabulary',
+    description: 'Measures vocabulary through multiple choice questions',
+  },
+  vocab: {
+    name: 'Picture Vocabulary',
+    description: 'Measures vocabulary through picture recognition',
+  },
+  fluency: {
+    name: 'Math Fluency',
+    description: 'Measures speed and accuracy in basic math operations',
+  },
+  'fluency-arf': {
+    name: 'Single Digit Math Facts',
+    description: 'Measures fluency with single-digit arithmetic',
+  },
+  'fluency-arf-es': {
+    name: 'Operaciones de Un Dígito',
+    description: 'Mide la fluidez con aritmética de un dígito',
+  },
+  'fluency-calf': {
+    name: 'Multi-Digit Calculation',
+    description: 'Measures fluency with multi-digit arithmetic',
+  },
+  'fluency-calf-es': {
+    name: 'Cálculos de Varios Dígitos',
+    description: 'Mide la fluidez con aritmética de varios dígitos',
+  },
+  syntax: {
+    name: 'Syntax',
+    description: 'Measures understanding of sentence structure',
+  },
+  trog: {
+    name: 'Syntax',
+    description: 'Measures understanding of grammatical structures',
+  },
+  roarInference: {
+    name: 'Inference',
+    description: 'Measures ability to make inferences from text',
+  },
+  phonics: {
+    name: 'Phonics',
+    description: 'Measures understanding of letter-sound relationships',
+  },
+  comp: {
+    name: 'Reading Comprehension',
+    description: 'Measures understanding of written text',
+  },
+  mep: {
+    name: 'Multi-Element Processing',
+    description: 'Measures ability to process multiple visual elements',
+  },
+  'mep-pseudo': {
+    name: 'MEP with Pseudo-Words',
+    description: 'Measures processing of multiple elements using non-words',
+  },
+  ExternalTask: {
+    name: 'External Task',
+    description: 'External assessment task',
+  },
+  ran: {
+    name: 'Rapid Automatized Naming',
+    description: 'Measures speed of naming familiar objects',
+  },
+  crowding: {
+    name: 'Visual Crowding',
+    description: 'Measures visual processing in crowded displays',
+  },
+  'roav-mep': {
+    name: 'Visual Multi-Element Processing',
+    description: 'Measures processing of multiple visual elements',
+  },
+  ExternalTest: {
+    name: 'External Test',
+    description: 'External assessment test',
+  },
+};
+
+/**
+ * Task descriptions by task ID.
+ */
+export const descriptionsByTaskId: Record<string, string> = {
+  letter: 'Measures knowledge of letter names and sounds',
+  'letter-es': 'Mide el conocimiento de los nombres y sonidos de las letras',
+  pa: 'Measures ability to identify and manipulate sounds in spoken language',
+  'pa-es': 'Mide la capacidad de identificar y manipular sonidos en el lenguaje hablado',
+  swr: 'Measures ability to read individual words accurately',
+  'swr-es': 'Mide la capacidad de leer palabras individuales con precisión',
+  sre: 'Measures ability to read sentences quickly and accurately',
+  'sre-es': 'Mide la capacidad de leer frases rápida y precisamente',
+  morphology: 'Measures understanding of word structure and formation',
+  cva: 'Measures written vocabulary knowledge',
+  multichoice: 'Measures vocabulary through multiple choice questions',
+  vocab: 'Measures vocabulary through picture recognition',
+  fluency: 'Measures speed and accuracy in basic math operations',
+  'fluency-arf': 'Measures fluency with single-digit arithmetic',
+  'fluency-arf-es': 'Mide la fluidez con aritmética de un dígito',
+  'fluency-calf': 'Measures fluency with multi-digit arithmetic',
+  'fluency-calf-es': 'Mide la fluidez con aritmética de varios dígitos',
+  syntax: 'Measures understanding of sentence structure',
+  trog: 'Measures understanding of grammatical structures',
+  roarInference: 'Measures ability to make inferences from text',
+  phonics: 'Measures understanding of letter-sound relationships',
+  comp: 'Measures understanding of written text',
+  mep: 'Measures ability to process multiple visual elements',
+  'mep-pseudo': 'Measures processing of multiple elements using non-words',
+  ExternalTask: 'External assessment task',
+  ran: 'Measures speed of naming familiar objects',
+  crowding: 'Measures visual processing in crowded displays',
+  'roav-mep': 'Measures processing of multiple visual elements',
+  ExternalTest: 'External assessment test',
+};
+
+/**
+ * Tasks that should display graphs in the score report.
+ */
+export const tasksToDisplayGraphs = [
+  'letter',
+  'letter-es',
+  'pa',
+  'pa-es',
+  'swr',
+  'swr-es',
+  'sre',
+  'sre-es',
+  'morphology',
+  'cva',
+  'multichoice',
+  'vocab',
+  'fluency',
+  'fluency-arf',
+  'fluency-arf-es',
+  'fluency-calf',
+  'fluency-calf-es',
+  'syntax',
+  'trog',
+  'roarInference',
+  'phonics',
+  'comp',
+  'mep',
+  'mep-pseudo',
+  'ran',
+  'crowding',
+  'roav-mep',
+]; 

@@ -1,29 +1,29 @@
 <template>
   <div
     v-if="(_get(colData, col.field) != undefined || _get(colData, 'optional')) && col.emptyTag !== true"
-    v-tooltip.right="`${returnScoreTooltip(colData, col.field)}`"
+    v-tooltip.right="`${returnScoreTooltip(colData as ColData, col.field)}`"
   >
     <PvTag
       :value="_get(colData, col.field)"
-      :style="`background-color: ${_get(colData, col.tagColor)}; min-width: 2rem; 
-      ${returnScoreTooltip(colData, col.field)?.length > 0 && 'outline: 1px dotted #0000CD; outline-offset: 3px'};
+      :style="`background-color: ${_get(colData, col.tagColor || '')}; min-width: 2rem; 
+      ${returnScoreTooltip(colData as ColData, col.field)?.length > 0 && 'outline: 1px dotted #0000CD; outline-offset: 3px'};
       font-weight: bold;
-      color: ${_get(colData, col.tagColor) === '#A4DDED' ? 'black' : 'white'};
+      color: ${_get(colData, col.tagColor || '') === '#A4DDED' ? 'black' : 'white'};
       `"
       rounded
     />
   </div>
-  <div v-else-if="col.emptyTag" v-tooltip.right="`${returnScoreTooltip(colData, col.field)}`">
+  <div v-else-if="col.emptyTag" v-tooltip.right="`${returnScoreTooltip(colData as ColData, col.field)}`">
     <div
       class="circle"
-      :style="`background-color: ${_get(colData, col.tagColor)}; color: ${
-        _get(colData, col.tagColor) === '#A4DDED' ? 'black' : 'white'
-      }; ${returnScoreTooltip(colData, col.field)?.length > 0 && 'outline: 1px dotted #0000CD; outline-offset: 3px'}`"
+      :style="`background-color: ${_get(colData, col.tagColor || '')}; color: ${
+        _get(colData, col.tagColor || '') === '#A4DDED' ? 'black' : 'white'
+      }; ${returnScoreTooltip(colData as ColData, col.field)?.length > 0 && 'outline: 1px dotted #0000CD; outline-offset: 3px'}`"
     />
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import _get from 'lodash/get';
 import _lowerCase from 'lodash/lowerCase';
 import PvTag from 'primevue/tag';
@@ -33,8 +33,8 @@ import {
   tasksToDisplayTotalCorrect,
   rawOnlyTasks,
   scoredTasks,
-} from '@/helpers/reports.ts';
-import { includedValidityFlags } from '@/helpers/reports.ts';
+  includedValidityFlags,
+} from '@/helpers/reports';
 
 interface Score {
   supportLevel?: string;
@@ -43,6 +43,7 @@ interface Score {
   correctIncorrectDifference?: number;
   numAttempted?: number;
   numCorrect?: number;
+  numIncorrect?: number;
   percentile?: number;
   standardScore?: number;
   engagementFlags?: {
@@ -68,24 +69,21 @@ interface Col {
   [key: string]: any;
 }
 
-defineProps({
-  colData: {
-    type: Object as () => ColData,
-    default: () => ({}),
-    required: false,
-  },
-  col: {
-    type: Object as () => Col,
-    default: () => ({}),
-    required: false,
-  },
-});
+const props = defineProps<{
+  colData: ColData;
+  col: Col;
+}>();
 
+/**
+ * @param {ColData} colData
+ * @param {string} fieldPath
+ * @returns {string}
+ */
 let returnScoreTooltip = (colData: ColData, fieldPath: string): string => {
   const taskId = fieldPath.split('.')[0] === 'scores' ? fieldPath.split('.')[1] : null;
   let toolTip = '';
 
-  if (colData.scores[taskId]?.supportLevel) {
+  if (taskId && colData.scores[taskId]?.supportLevel) {
     // Handle scored tasks
     return handleToolTip(taskId, toolTip, colData);
     // Handle raw only tasks
@@ -95,43 +93,49 @@ let returnScoreTooltip = (colData: ColData, fieldPath: string): string => {
   return toolTip;
 };
 
-function handleToolTip(_taskId: string | null, _toolTip: string, _colData: ColData): string {
+/**
+ * @param {string} _taskId
+ * @param {string} _toolTip
+ * @param {ColData} _colData
+ * @returns {string}
+ */
+function handleToolTip(_taskId: string, _toolTip: string, _colData: ColData): string {
   // Get the support level and flags, if they exist
-  if (_colData.scores?.[_taskId]?.supportLevel) {
-    _toolTip += _colData.scores?.[_taskId]?.supportLevel + '\n' + '\n';
+  if (_colData.scores[_taskId]?.supportLevel) {
+    _toolTip += _colData.scores[_taskId]?.supportLevel + '\n' + '\n';
     _toolTip += getFlags(_colData, _taskId);
   }
 
   // If the task does not have a raw score, then display no scores
   // if score exists
   if (
-    _colData.scores?.[_taskId]?.rawScore != undefined ||
-    _colData.scores?.[_taskId]?.percentCorrect ||
-    _colData.scores?.[_taskId]?.correctIncorrectDifference ||
-    _colData.scores?.[_taskId]?.numAttempted
+    _colData.scores[_taskId]?.rawScore != undefined ||
+    _colData.scores[_taskId]?.percentCorrect ||
+    _colData.scores[_taskId]?.correctIncorrectDifference ||
+    _colData.scores[_taskId]?.numAttempted
   ) {
     if (tasksToDisplayCorrectIncorrectDifference.includes(_taskId)) {
-      _toolTip += 'Num Correct: ' + _colData.scores?.[_taskId]?.numCorrect + '\n';
-      _toolTip += 'Num Incorrect: ' + _colData.scores?.[_taskId]?.numIncorrect + '\n';
-      _toolTip += 'Correct - Incorrect: ' + _colData.scores?.[_taskId]?.correctIncorrectDifference + '\n';
+      _toolTip += 'Num Correct: ' + _colData.scores[_taskId]?.numCorrect + '\n';
+      _toolTip += 'Num Incorrect: ' + _colData.scores[_taskId]?.numIncorrect + '\n';
+      _toolTip += 'Correct - Incorrect: ' + _colData.scores[_taskId]?.correctIncorrectDifference + '\n';
     } else if (tasksToDisplayTotalCorrect.includes(_taskId)) {
-      if (_colData.scores?.[_taskId]?.numCorrect === undefined) {
+      if (_colData.scores[_taskId]?.numCorrect === undefined) {
         _toolTip += 'Num Correct: ' + 0 + '\n';
-        _toolTip += 'Num Attempted: ' + _colData.scores?.[_taskId]?.numAttempted + '\n';
+        _toolTip += 'Num Attempted: ' + _colData.scores[_taskId]?.numAttempted + '\n';
       } else {
-        _toolTip += 'Num Correct: ' + _colData.scores?.[_taskId]?.numCorrect + '\n';
-        _toolTip += 'Num Attempted: ' + _colData.scores?.[_taskId]?.numAttempted + '\n';
+        _toolTip += 'Num Correct: ' + _colData.scores[_taskId]?.numCorrect + '\n';
+        _toolTip += 'Num Attempted: ' + _colData.scores[_taskId]?.numAttempted + '\n';
       }
     } else if (tasksToDisplayPercentCorrect.includes(_taskId)) {
-      _toolTip += 'Num Correct: ' + _colData.scores?.[_taskId]?.numCorrect + '\n';
-      _toolTip += 'Num Attempted: ' + _colData.scores?.[_taskId]?.numAttempted + '\n';
-      _toolTip += 'Percent Correct: ' + _colData.scores?.[_taskId]?.percentCorrect + '\n';
-    } else if (rawOnlyTasks.includes(_taskId) && _colData.scores?.[_taskId]?.rawScore !== undefined) {
-      _toolTip += 'Raw Score: ' + _colData.scores?.[_taskId]?.rawScore + '\n';
+      _toolTip += 'Num Correct: ' + _colData.scores[_taskId]?.numCorrect + '\n';
+      _toolTip += 'Num Attempted: ' + _colData.scores[_taskId]?.numAttempted + '\n';
+      _toolTip += 'Percent Correct: ' + _colData.scores[_taskId]?.percentCorrect + '\n';
+    } else if (rawOnlyTasks.includes(_taskId) && _colData.scores[_taskId]?.rawScore !== undefined) {
+      _toolTip += 'Raw Score: ' + _colData.scores[_taskId]?.rawScore + '\n';
     } else {
-      _toolTip += 'Raw Score: ' + _colData.scores?.[_taskId]?.rawScore + '\n';
-      _toolTip += 'Percentile: ' + _colData.scores?.[_taskId]?.percentile + '\n';
-      _toolTip += 'Standardized Score: ' + _colData.scores?.[_taskId]?.standardScore + '\n';
+      _toolTip += 'Raw Score: ' + _colData.scores[_taskId]?.rawScore + '\n';
+      _toolTip += 'Percentile: ' + _colData.scores[_taskId]?.percentile + '\n';
+      _toolTip += 'Standardized Score: ' + _colData.scores[_taskId]?.standardScore + '\n';
     }
   }
   // If the task is in the rawOnlyTasks list, display only the raw score and that the scores are under development
@@ -139,7 +143,12 @@ function handleToolTip(_taskId: string | null, _toolTip: string, _colData: ColDa
   return _toolTip;
 }
 
-function getFlags(colData: ColData, taskId: string | null): string {
+/**
+ * @param {ColData} colData
+ * @param {string} taskId
+ * @returns {string}
+ */
+function getFlags(colData: ColData, taskId: string): string {
   const flags = colData.scores[taskId]?.engagementFlags;
   const flagMessages: Record<string, string> = {
     accuracyTooLow: '- Responses were inaccurate',
