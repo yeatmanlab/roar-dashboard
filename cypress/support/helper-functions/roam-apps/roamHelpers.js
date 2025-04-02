@@ -17,6 +17,8 @@ function waitTimeout() {
   cy.wait(0.1 * Cypress.env('timeout'));
 }
 
+const timeout = Cypress.env('timeout');
+
 function playARFIntro() {
   waitTimeout();
 
