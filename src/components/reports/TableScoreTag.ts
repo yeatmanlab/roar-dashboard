@@ -33,23 +33,55 @@ import {
   tasksToDisplayTotalCorrect,
   rawOnlyTasks,
   scoredTasks,
-} from '@/helpers/reports.js';
-import { includedValidityFlags } from '@/helpers/reports';
+} from '@/helpers/reports.ts';
+import { includedValidityFlags } from '@/helpers/reports.ts';
+
+interface Score {
+  supportLevel?: string;
+  rawScore?: number;
+  percentCorrect?: number;
+  correctIncorrectDifference?: number;
+  numAttempted?: number;
+  numCorrect?: number;
+  percentile?: number;
+  standardScore?: number;
+  engagementFlags?: {
+    accuracyTooLow?: boolean;
+    notEnoughResponses?: boolean;
+    responseTimeTooFast?: boolean;
+    [key: string]: boolean | undefined;
+  };
+  reliable?: boolean;
+}
+
+interface ColData {
+  scores: {
+    [key: string]: Score;
+  };
+  [key: string]: any;
+}
+
+interface Col {
+  field: string;
+  tagColor?: string;
+  emptyTag?: boolean;
+  [key: string]: any;
+}
 
 defineProps({
   colData: {
-    type: Object,
+    type: Object as () => ColData,
     default: () => ({}),
     required: false,
   },
   col: {
-    type: Object,
+    type: Object as () => Col,
     default: () => ({}),
     required: false,
   },
 });
 
-let returnScoreTooltip = (colData, fieldPath) => {
+let returnScoreTooltip = (colData: ColData, fieldPath: string): string => {
   const taskId = fieldPath.split('.')[0] === 'scores' ? fieldPath.split('.')[1] : null;
   let toolTip = '';
 
@@ -63,7 +95,7 @@ let returnScoreTooltip = (colData, fieldPath) => {
   return toolTip;
 };
 
-function handleToolTip(_taskId, _toolTip, _colData) {
+function handleToolTip(_taskId: string | null, _toolTip: string, _colData: ColData): string {
   // Get the support level and flags, if they exist
   if (_colData.scores?.[_taskId]?.supportLevel) {
     _toolTip += _colData.scores?.[_taskId]?.supportLevel + '\n' + '\n';
@@ -107,9 +139,9 @@ function handleToolTip(_taskId, _toolTip, _colData) {
   return _toolTip;
 }
 
-function getFlags(colData, taskId) {
+function getFlags(colData: ColData, taskId: string | null): string {
   const flags = colData.scores[taskId]?.engagementFlags;
-  const flagMessages = {
+  const flagMessages: Record<string, string> = {
     accuracyTooLow: '- Responses were inaccurate',
     notEnoughResponses: '- Assessment was incomplete',
     responseTimeTooFast: '- Responses were too fast',

@@ -1,18 +1,29 @@
-import { ref, watch } from 'vue';
+import { ref, watch, Ref } from 'vue';
 import _once from 'lodash/once';
 import _cloneDeep from 'lodash/cloneDeep';
 
-let initialTableData = null;
-const setInitialTableData = _once((data) => {
+interface User {
+  schoolName: string;
+  grade: number;
+  [key: string]: any;
+}
+
+interface TableItem {
+  user: User;
+  [key: string]: any;
+}
+
+let initialTableData: TableItem[] | null = null;
+const setInitialTableData = _once((data: TableItem[]) => {
   initialTableData = data;
 });
 
 /**
  * A composable function that manages filtered table data based on provided school and grade filters.
  *
- * @param {Ref<Array>} tableData - A reactive reference to the table data that will be filtered.
+ * @param {Ref<TableItem[]>} tableData - A reactive reference to the table data that will be filtered.
  * @returns {Object} - An object containing the filtered table data and a function to update the filters.
- * @property {Ref<Array>} filteredTableData - A reactive reference to the filtered table data.
+ * @property {Ref<TableItem[]>} filteredTableData - A reactive reference to the filtered table data.
  * @property {Function} updateFilters - A function to update the filters applied to the table data.
  *
  * The `updateFilters` function expects two arrays as arguments:
@@ -26,11 +37,11 @@ const setInitialTableData = _once((data) => {
  * The `watch` function observes changes to the `tableData` and updates the `filteredTableData` accordingly.
  * It also snapshots the data once before any filters are applied if the table data is not empty.
  */
-export function useFilteredTableData(tableData) {
-  const filteredTableData = ref(tableData);
+export function useFilteredTableData(tableData: Ref<TableItem[]>) {
+  const filteredTableData = ref<TableItem[]>(tableData.value);
 
-  const updateFilters = (filterSchools = [], filterGrades = []) => {
-    const filteredData = ref(_cloneDeep(initialTableData) ?? []);
+  const updateFilters = (filterSchools: string[] = [], filterGrades: string[] = []) => {
+    const filteredData = ref<TableItem[]>(_cloneDeep(initialTableData) ?? []);
 
     if (filterSchools.length) {
       filteredData.value = filteredData.value.filter((item) => filterSchools.includes(item?.user.schoolName));
@@ -50,4 +61,4 @@ export function useFilteredTableData(tableData) {
   });
 
   return { filteredTableData, updateFilters };
-}
+} 

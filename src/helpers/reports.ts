@@ -416,4 +416,73 @@ export const getRawScoreRange = (taskId: string): RawScoreRange => {
 
   // Add your range logic here
   return { min: 0, max: 0 };
+};
+
+/**
+ * Tasks that should display percent correct in the score report.
+ */
+export const tasksToDisplayPercentCorrect = [
+  'vocab',
+  'roarInference',
+  'matrixReasoning',
+  'mentalRotation',
+  'sameDifferentSelection',
+  'theoryOfMind',
+  'trog',
+  'mefs',
+];
+
+/**
+ * Tasks that should display correct/incorrect difference in the score report.
+ */
+export const tasksToDisplayCorrectIncorrectDifference = [
+  'heartsAndFlowers',
+  'egmaMath',
+  'memoryGame',
+];
+
+/**
+ * Tasks that should display total correct in the score report.
+ */
+export const tasksToDisplayTotalCorrect = [
+  'heartsAndFlowers',
+  'egmaMath',
+  'memoryGame',
+];
+
+/**
+ * Tasks that should only display raw scores in the score report.
+ */
+export const rawOnlyTasks = [
+  'heartsAndFlowers',
+  'egmaMath',
+  'memoryGame',
+];
+
+/**
+ * Tasks that have scored results in the score report.
+ */
+export const scoredTasks = [
+  'vocab',
+  'roarInference',
+  'matrixReasoning',
+  'mentalRotation',
+  'sameDifferentSelection',
+  'theoryOfMind',
+  'trog',
+  'mefs',
+];
+
+/**
+ * Flags that should be included in the score report for each task.
+ */
+export const includedValidityFlags: Record<string, string[]> = {
+  vocab: ['accuracyTooLow', 'notEnoughResponses', 'responseTimeTooFast'],
+  roarInference: ['accuracyTooLow', 'notEnoughResponses', 'responseTimeTooFast'],
+  matrixReasoning: ['accuracyTooLow', 'notEnoughResponses', 'responseTimeTooFast'],
+  mentalRotation: ['accuracyTooLow', 'notEnoughResponses', 'responseTimeTooFast'],
+  sameDifferentSelection: ['accuracyTooLow', 'notEnoughResponses', 'responseTimeTooFast'],
+  theoryOfMind: ['accuracyTooLow', 'notEnoughResponses', 'responseTimeTooFast'],
+  trog: ['accuracyTooLow', 'notEnoughResponses', 'responseTimeTooFast'],
+  mefs: ['accuracyTooLow', 'notEnoughResponses', 'responseTimeTooFast'],
 }; 

@@ -5,13 +5,24 @@ import {
   enIndividualScoreReport,
   enUSIndividualScoreReport,
   esTranslations,
-  esCOTranslations, deTranslations,
+  esCOTranslations,
+  deTranslations,
   esIndividualScoreReport,
   esCOIndividualScoreReport,
 } from './exports';
 import { isLevante } from '@/helpers';
 
-export const languageOptions = {
+interface TranslationOption {
+  translations: Record<string, any>;
+  language: string;
+  code: string;
+}
+
+interface LanguageOptions {
+  [key: string]: TranslationOption;
+}
+
+export const languageOptions: LanguageOptions = {
   'en-US': { translations: enUSTranslations, language: 'English (United States)', code: 'usa' },
   en: { translations: enTranslations, language: 'English (United Kingdom)', code: 'gb' },
   es: { translations: esTranslations, language: 'Español (Spain)', code: 'es' },
@@ -19,9 +30,9 @@ export const languageOptions = {
   de: { translations: deTranslations, language: 'Deutsch', code: 'de' },
 };
 
-const browserLocale = window.navigator.language;
+const browserLocale: string = window.navigator.language;
 
-const getLocale = (localeFromBrowser) => {
+const getLocale = (localeFromBrowser: string): string => {
   const localeFromStorage = sessionStorage.getItem(`${isLevante ? 'levante' : 'roar'}PlatformLocale`);
 
   if (localeFromStorage) {
@@ -34,13 +45,13 @@ const getLocale = (localeFromBrowser) => {
 
 export const formattedLocale = getLocale(browserLocale);
 
-const getFallbackLocale = () => {
+const getFallbackLocale = (): string => {
   const localeFromStorage = sessionStorage.getItem(`${isLevante ? 'levante' : 'roar'}PlatformLocale`);
 
-  if (localeFromStorage.includes('es')) {
+  if (localeFromStorage?.includes('es')) {
     console.log('Setting fallback local to es');
     return 'es';
-  } else if (localeFromStorage.includes('de')) {
+  } else if (localeFromStorage?.includes('de')) {
     console.log('Setting fallback local to de');
     return 'de';
   } else {
@@ -61,4 +72,4 @@ export const i18n = createI18n({
   },
   legacy: false,
   globalInjection: true,
-});
+}); 
