@@ -4,7 +4,12 @@
 /*// ***************************************/
 
 @import 'primeicons/primeicons.css';
-@import 'primeflex/primeflex.scss';
+@import 'primeflex/primeflex.css';
 
 @import './assets/styles/theme-tailwind.css';
 @import './assets/styles/theme.scss';
+@import './assets/styles/root/variables.scss';
+@import './assets/styles/root/typography.scss';
+@import './assets/styles/root/base.scss';
+@import './assets/styles/root/container.scss';
+@import './assets/styles/root/main.scss';

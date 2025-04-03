@@ -376,7 +376,7 @@ import _forEach from 'lodash/forEach';
 import _find from 'lodash/find';
 import _toUpper from 'lodash/toUpper';
 import _startCase from 'lodash/startCase';
-import { supportLevelColors, progressTags } from '@/helpers/reports';
+import { supportLevelColors, progressTags } from '@/helpers/reports.ts';
 import SkeletonTable from '@/components/SkeletonTable.vue';
 import TableScoreTag from '@/components/reports/TableScoreTag.vue';
 

@@ -110,15 +110,20 @@ export const useAuthStore = defineStore('authStore', {
       await this.roarfirekit.completeAssessment(adminId, taskId);
     },
     async initFirekit(): Promise<void> {
+      console.log('Auth store: Initializing Firekit');
       try {
         this.roarfirekit = await initNewFirekit();
+        console.log('Auth store: Firekit initialized successfully');
         this.setAuthStateListeners();
+        console.log('Auth store: Auth state listeners set');
       } catch (error) {
         console.error('Error initializing Firekit:', error);
       }
     },
     setAuthStateListeners(): void {
+      console.log('Setting up auth state listeners');
       this.adminAuthStateListener = onAuthStateChanged(this.roarfirekit?.admin.auth, async (user: User | null) => {
+        console.log('Admin auth state changed:', user ? 'User logged in' : 'User logged out');
         if (user) {
           this.firebaseUser.adminFirebaseUser = user;
         } else {
@@ -126,6 +131,7 @@ export const useAuthStore = defineStore('authStore', {
         }
       });
       this.appAuthStateListener = onAuthStateChanged(this.roarfirekit?.app.auth, async (user: User | null) => {
+        console.log('App auth state changed:', user ? 'User logged in' : 'User logged out');
         if (user) {
           this.firebaseUser.appFirebaseUser = user;
         } else {

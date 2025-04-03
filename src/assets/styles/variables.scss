@@ -1,0 +1,34 @@
+// Theme colors
+$primary-color: #4CAF50;
+$secondary-color: #2196F3;
+$accent-color: #FFC107;
+$error-color: #F44336;
+$success-color: #4CAF50;
+$warning-color: #FF9800;
+$info-color: #2196F3;
+
+// Typography
+$font-family-base: 'Roboto', sans-serif;
+$font-size-base: 16px;
+$line-height-base: 1.5;
+
+// Spacing
+$spacing-unit: 8px;
+$spacing-small: $spacing-unit;
+$spacing-medium: $spacing-unit * 2;
+$spacing-large: $spacing-unit * 3;
+
+// Breakpoints
+$breakpoint-sm: 576px;
+$breakpoint-md: 768px;
+$breakpoint-lg: 992px;
+$breakpoint-xl: 1200px;
+
+// Border radius
+$border-radius-small: 4px;
+$border-radius-medium: 8px;
+$border-radius-large: 16px;
+
+// Transitions
+$transition-duration: 0.3s;
+$transition-timing: ease-in-out; 

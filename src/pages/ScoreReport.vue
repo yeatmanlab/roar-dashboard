@@ -308,7 +308,7 @@ import {
   gradeOptions,
   tasksToDisplayCorrectIncorrectDifference,
   includedValidityFlags,
-} from '@/helpers/reports';
+} from '@/helpers/reports.ts';
 import FilterBar from '@/components/slots/FilterBar.vue';
 import RoarDataTable from '@/components/RoarDataTable.vue';
 import { APP_ROUTES } from '@/constants/routes';

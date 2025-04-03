@@ -157,7 +157,7 @@ import {
   getSupportLevel,
   getRawScoreRange,
   getScoreKeys,
-} from '@/helpers/reports';
+} from '@/helpers/reports.ts';
 
 const props = defineProps({
   studentData: {
@@ -189,11 +189,16 @@ const grade = computed(() => getGrade(props.studentData?.studentData?.grade));
 const tasksBlacklist = ['vocab', 'cva'];
 // compute standard score, raw score, and percentile score for each of the tasks
 const computedTaskData = computed(() => {
+  /** @type {Object.<string, any>} */
   const computedTaskAcc = {};
 
   for (const { taskId, scores, reliable, optional, engagementFlags } of props.taskData) {
-    const { percentileScoreKey, standardScoreKey, rawScoreKey } = getScoreKeys(taskId, grade.value);
+    const scoreKeys = getScoreKeys(taskId, grade.value);
+    const percentileScoreKey = scoreKeys.find(key => key.key === 'percentile')?.key ?? 'percentile';
+    const standardScoreKey = scoreKeys.find(key => key.key === 'standardScore')?.key ?? 'standardScore';
+    const rawScoreKey = scoreKeys.find(key => key.key === 'rawScore')?.key ?? 'rawScore';
     const compositeScores = scores?.composite;
+    /** @type {number | null} */
     let rawScore = null;
     if (!taskId.includes('vocab') && !taskId.includes('es')) {
       // letter's raw score is a percentage expressed as a float, so we need to multiply by 100.
@@ -209,7 +214,8 @@ const computedTaskData = computed(() => {
       const percentileScore = _get(compositeScores, percentileScoreKey);
       const standardScore = _get(compositeScores, standardScoreKey);
       const rawScoreRange = getRawScoreRange(taskId);
-      const supportColor = getSupportLevel(grade.value, percentileScore, rawScore, taskId).tag_color;
+      const supportLevel = getSupportLevel(Number(grade.value), percentileScore, rawScore, taskId);
+      const supportColor = supportLevel.color;
 
       const scoresForTask = {
         standardScore: {
@@ -273,7 +279,7 @@ const computedTaskData = computed(() => {
       }
 
       // determine which score to display in the card based on grade
-      let scoreToDisplay = grade.value >= 6 ? 'standardScore' : 'percentileScore';
+      let scoreToDisplay = Number(grade.value) >= 6 ? 'standardScore' : 'percentileScore';
       if (rawOnlyTasks.includes(taskId)) {
         scoreToDisplay = 'rawScore';
       }
@@ -286,13 +292,14 @@ const computedTaskData = computed(() => {
       };
 
       // initialize array with precomputed raw, std, percentile scores
+      /** @type {Array<[string, number, number, number]>} */
       let formattedScoresArray = Object.keys(scoresForTask).map((key) => {
         const score = computedTaskAcc[taskId][key];
         if (score.name != undefined) {
           return [score.name, score.value, score.min, score.max];
         }
-        return;
-      });
+        return undefined;
+      }).filter(Boolean);
 
       if (taskId === 'pa') {
         const first = scores?.FSM?.roarScore;
@@ -315,7 +322,7 @@ const computedTaskData = computed(() => {
           scores?.UppercaseNames?.upperIncorrect ?? ''.split(','),
           scores?.LowercaseNames?.lowerIncorrect ?? ''.split(','),
         ]
-          .sort((a, b) => _toUpper(a) - _toUpper(b))
+          .sort((a, b) => _toUpper(a).localeCompare(_toUpper(b)))
           .filter(Boolean)
           .join(', ');
 
@@ -334,12 +341,13 @@ const computedTaskData = computed(() => {
       // Ensure scores are in consistent order
       const order = { 'Raw Score': 2, 'Percentile Score': 1, 'Standard Score': 0 };
       // remove percentile score from datatable for grades at and over sixth
-      if (grade.value >= 6) {
+      if (Number(grade.value) >= 6) {
         formattedScoresArray = formattedScoresArray.filter(([key]) => key !== 'Percentile Score');
       }
 
       const sortedScoresArray = formattedScoresArray.sort((first, second) => {
-        return order[first[0]] - order[second[0]];
+        if (!first || !second) return 0;
+        return (order[first[0]] || 0) - (order[second[0]] || 0);
       });
 
       computedTaskAcc[taskId].scoresArray = sortedScoresArray;
@@ -353,13 +361,13 @@ const computedTaskData = computed(() => {
 });
 
 function getSupportLevelLanguage(grade, percentile, rawScore, taskId) {
-  const { support_level } = getSupportLevel(grade, percentile, rawScore, taskId);
-  if (support_level) {
-    if (support_level === 'Achieved Skill') {
+  const { level } = getSupportLevel(grade, percentile, rawScore, taskId);
+  if (level) {
+    if (level === 'Advanced') {
       return t('scoreReports.achievedText');
-    } else if (support_level === 'Developing Skill') {
+    } else if (level === 'Proficient') {
       return t('scoreReports.developingText');
-    } else if (support_level === 'Needs Extra Support') {
+    } else if (level === 'Basic' || level === 'Below Basic') {
       return t('scoreReports.extraSupportText');
     }
   }

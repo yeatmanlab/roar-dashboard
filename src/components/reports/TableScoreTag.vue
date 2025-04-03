@@ -34,7 +34,7 @@ import {
   rawOnlyTasks,
   scoredTasks,
   includedValidityFlags,
-} from '@/helpers/reports';
+} from '@/helpers/reports.ts';
 
 interface Score {
   supportLevel?: string;

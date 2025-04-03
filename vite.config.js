@@ -33,6 +33,15 @@ export default defineConfig({
       : []),
   ],
 
+  css: {
+    preprocessorOptions: {
+      scss: {
+        additionalData: `@import "@/assets/styles/variables.scss";`,
+        includePaths: ['node_modules', 'src/assets/styles']
+      }
+    }
+  },
+
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
