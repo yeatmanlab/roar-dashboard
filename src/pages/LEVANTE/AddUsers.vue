@@ -69,6 +69,7 @@
             :icon="activeSubmit ? 'pi pi-spin pi-spinner' : ''"
             :disabled="activeSubmit"
             class="bg-primary mb-2 p-3 w-2 text-white border-none border-round h-3rem m-0 hover:bg-red-900"
+            data-testid="start-adding-button"
             @click="submitUsers"
           />
         </div>
