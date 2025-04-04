@@ -619,7 +619,7 @@ const emit = defineEmits(['export-all', 'selection', 'reset-filters', 'export-se
   }
   
   .options-toggle {
-    position: absolute;
+    position: absolute; 
     top: 10px;
     background: transparent;
     border: 1px solid transparent;

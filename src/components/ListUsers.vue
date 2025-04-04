@@ -11,7 +11,7 @@
             <div class="bg-gray-100 px-5 py-2 rounded flex flex-column gap-3">
               <div class="flex flex-wrap align-items-center gap-2 justify-content-between">
                 <div class="uppercase font-light font-sm text-gray-400 mr-2">
-                  {{ singularizeFirestoreCollection(orgType) }}
+                  {{ orgType === 'districts' ? 'site' : singularizeFirestoreCollection(orgType) }}
                 </div>
                 <div class="text-xl text-gray-600">
                   <b> {{ orgName }} </b>
