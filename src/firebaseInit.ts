@@ -1,4 +1,5 @@
-import { RoarFirekit, RoarConfig, AuthPersistence } from '@levante-framework/firekit';
+import { RoarFirekit, RoarConfig } from '@levante-framework/firekit';
+import { AuthPersistence } from '@levante-framework/firekit/lib/firestore/util';
 import levanteFirebaseConfig from './config/firebaseLevante';
 import { isLevante } from './helpers';
 
