@@ -104,7 +104,7 @@
       </div>
       <div class="divider"></div>
       <div class="w-full lg:w-6" data-cy="panel-droppable-zone">
-        <div class="panel-title mb-2 text-base">Selected</div>
+        <div class="panel-title mb-2 text-base">Selected Tasks</div>
         <PvScrollPanel style="height: 32rem; width: 100%; overflow-y: auto">
           <!-- Draggable Zone 2 -->
           <VueDraggableNext

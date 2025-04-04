@@ -1,7 +1,7 @@
 <template>
   <div class="grid">
     <div class="col-12 md:col-8">
-      <PvPanel class="m-0 p-0 h-full" :header="`Select ${forParentOrg ? 'your parent audience' : 'your audience'}`">
+      <PvPanel class="m-0 p-0 h-full" :header="`Select ${forParentOrg ? 'Parent Audience' : 'Audience'}`">
         <PvTabView v-if="claimsLoaded" v-model:active-index="activeIndex" class="m-0 p-0 org-tabs" lazy>
           <PvTabPanel v-for="orgType in orgHeaders" :key="orgType" :header="orgType.header">
             <div class="grid column-gap-3">

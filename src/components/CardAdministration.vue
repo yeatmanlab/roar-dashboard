@@ -41,7 +41,7 @@
             <span>{{ tasksDictionary[assessmentId]?.publicName ?? assessmentId }}</span>
             <span
               v-if="showParams"
-              v-tooltip.top="'View params'"
+              v-tooltip.top="'View parameters'"
               class="pi pi-info-circle cursor-pointer ml-1"
               style="font-size: 1rem"
               @click="toggleParams($event, assessmentId)"

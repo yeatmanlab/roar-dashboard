@@ -18,7 +18,7 @@
             class="p-0 surface-hover border-none border-circle hover:text-100 hover:bg-primary ml-2"
             @click="toggle($event)"
             ><i
-              v-tooltip.top="'View params'"
+              v-tooltip.top="'View parameters'"
               class="pi pi-info-circle text-primary p-1 border-circle hover:text-100"
             ></i
           ></PvButton>
@@ -106,7 +106,7 @@
             class="p-0 surface-hover border-none border-circle hover:text-100 hover:bg-primary"
             @click="toggle($event)"
             ><i
-              v-tooltip.top="'View params'"
+              v-tooltip.top="'View parameters'"
               class="pi pi-info-circle text-primary p-1 border-circle hover:text-100"
             ></i
           ></PvButton>

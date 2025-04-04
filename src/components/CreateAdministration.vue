@@ -22,7 +22,7 @@
                 class="w-full"
                 data-cy="input-administration-name"
             />
-            <label for="administration-name" class="w-full">Your new assignment name</label>
+            <label for="administration-name" class="w-full">Assignment Name</label>
             <small
               v-if="v$.administrationName.$invalid && submitted"
               class="p-error white-space-nowrap overflow-hidden text-overflow-ellipsis"
@@ -212,7 +212,7 @@ const header = computed(() => {
     return 'Edit an assignment';
   }
 
-  return 'Create new Assignment';
+  return 'Create New Assignment';
 });
 
 const description = computed(() => {
