@@ -4,48 +4,32 @@
       <div class="flex flex-column mb-5">
         <div class="flex justify-content-between mb-2">
           <div class="flex align-items-center gap-3">
-            <i class="pi pi-sliders-h text-gray-400 rounded" style="font-size: 1.6rem" />
             <div class="admin-page-header">{{ header }}</div>
           </div>
         </div>
-        <div class="text-md text-gray-500 ml-6">{{ description }}</div>
+        <div class="text-md text-gray-500">{{ description }}</div>
       </div>
 
       <PvDivider />
       <div class="bg-gray-100 rounded p-5">
         <div class="formgrid grid mt-5">
-          <div class="field col-12 xl:col-6 mb-5">
-            <PvFloatLabel>
-              <PvInputText
+        <div class="field col-12 xl:col-6 mb-5">
+          <PvFloatLabel>
+            <PvInputText
                 id="administration-name"
                 v-model="state.administrationName"
                 class="w-full"
                 data-cy="input-administration-name"
-              />
-              <label for="administration-name" class="w-full">Administration Name</label>
-              <small
-                v-if="v$.administrationName.$invalid && submitted"
-                class="p-error white-space-nowrap overflow-hidden text-overflow-ellipsis"
-                >Please name your administration</small
-              >
+            />
+            <label for="administration-name" class="w-full">Assignment Name</label>
+            <small
+              v-if="v$.administrationName.$invalid && submitted"
+              class="p-error white-space-nowrap overflow-hidden text-overflow-ellipsis"
+            >
+              Please name your administration
+            </small>
             </PvFloatLabel>
-          </div>
-
-          <div class="field col-12 xl:col-6 mb-5">
-            <PvFloatLabel>
-              <PvInputText
-                id="administration-public-name"
-                v-model="state.administrationPublicName"
-                class="w-full"
-                data-cy="input-administration-name-public"
-              />
-              <label for="administration-public-name" class="w-full">Public Administration Name</label>
-              <small
-                v-if="v$.administrationPublicName.$invalid && submitted"
-                class="p-error white-space-nowrap overflow-hidden text-overflow-ellipsis"
-                >Please provide a public-facing name for this administration</small
-              >
-            </PvFloatLabel>
+            <p class="mt-1 ml-1 text-sm text-gray-500">This name is visible to participants</p>
           </div>
         </div>
         <div class="formgrid grid">
@@ -224,25 +208,22 @@ const props = defineProps({
 
 const header = computed(() => {
   if (props.adminId) {
-    return 'Edit an administration';
+    return 'Edit an assignment';
   }
 
-  return 'Create a new administration';
+  return 'Create New Assignment';
 });
 
 const description = computed(() => {
-  if (props.adminId) {
-    return 'Use this form to edit an existing administration.';
-  }
-  return 'Use this form to create a new administration and assign it to organizations.';
+  return 'Assignments are bundles of tasks, surveys, and questionnaires that are sent to your users';
 });
 
 const submitLabel = computed(() => {
   if (props.adminId) {
-    return 'Update Administration';
+    return 'Update Assignment';
   }
 
-  return 'Create Administration';
+  return 'Create Assignment';
 });
 
 // +------------------------------------------------------------------------------------------------------------------+
@@ -579,6 +560,14 @@ watch([existingAdministrationData, allVariants], ([adminInfo, allVariantInfo]) =
 </script>
 
 <style lang="scss">
+.p-datepicker-today span {
+  background-color: var(--blue-100) !important; /* Change to your desired color */
+}
+
+.p-datepicker-today .p-datepicker-day-selected,.p-datepicker-day-selected span {
+  background-color: var(--primary-color) !important; /* Change to your selected date color */
+}
+
 .return-button {
   display: block;
   margin: 1rem 1.75rem;

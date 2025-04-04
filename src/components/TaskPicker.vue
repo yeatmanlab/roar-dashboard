@@ -1,12 +1,5 @@
 <template>
-  <PvPanel header="Task Picker">
-    <template #icons>
-      <div class="flex flex-row">
-        <span>Show only named variants</span>
-        <PvInputSwitch v-model="namedOnly" class="ml-2" />
-        <!-- <button @click="tasksPaneOpen = !tasksPaneOpen">toggle pane</button> -->
-      </div>
-    </template>
+  <PvPanel header="Select tasks">
     <div class="w-full flex flex-column lg:flex-row gap-2">
       <div v-if="tasksPaneOpen" class="w-full lg:w-6">
         <div class="flex flex-row mb-2">
@@ -64,11 +57,19 @@
           <PvSelect
             v-model="currentTask"
             :options="taskOptions"
+            optionGroupLabel="label"
+            optionGroupChildren="items"
             option-label="label"
             option-value="value"
             class="w-full mb-2"
             placeholder="Select TaskID"
-          />
+          >
+            <template #optiongroup="slotProps">
+              <div class="flex items-center">
+                <div className="select-group-name">{{ slotProps.option.label }}</div>
+              </div>
+            </template>
+          </PvSelect>
           <PvScrollPanel style="height: 27.75rem; width: 100%; overflow-y: auto">
             <div v-if="!currentTask">Select a TaskID to display a list of variants.</div>
             <div v-else-if="!currentVariants.length">
@@ -103,7 +104,7 @@
       </div>
       <div class="divider"></div>
       <div class="w-full lg:w-6" data-cy="panel-droppable-zone">
-        <div class="panel-title mb-2 text-base">Selected Variants</div>
+        <div class="panel-title mb-2 text-base">Selected tasks</div>
         <PvScrollPanel style="height: 32rem; width: 100%; overflow-y: auto">
           <!-- Draggable Zone 2 -->
           <VueDraggableNext
@@ -185,15 +186,68 @@ const props = defineProps({
 
 const emit = defineEmits(['variants-changed']);
 
+const groupedTasks = {
+  "Introduction": ['Instructions'],
+  "Language and Literacy": [
+    "Vocabulary",
+    "Sentence Understanding",
+    "Language Sounds",
+    "Word Reading",
+    "Sentence Reading",
+  ],
+  "Executive Function": ["Hearts and Flowers", "Same & Different", "Memory"],
+  "Math": ["Math"],
+  "Spatial Cognition": ["Shape Rotation"],
+  "Social Cognition": ["Stories"],
+};
+
 const taskOptions = computed(() => {
-  return Object.entries(props.allVariants).map((entry) => {
-    const key = entry[0];
-    const value = entry[1];
-    return {
-      label: value[0].task.name ?? key,
-      value: key,
-    };
+
+  let remainingTasks = new Set(Object.keys(props.allVariants));
+  let groupedOptions = Object.entries(groupedTasks).map(([groupName, tasks]) => {
+    let groupItems = [];
+
+    tasks.forEach((task) => {
+      const taskKey = Object.keys(props.allVariants).find(
+        (entry) => {
+          return props.allVariants[entry][0].task.name === task
+        }
+      );
+
+      if (taskKey) {
+        groupItems.push({
+          label: task,
+          value: taskKey,
+        });
+        remainingTasks.delete(taskKey);
+      }
+      
+    });
+
+    groupItems.sort((a, b) => a.label.localeCompare(b.label));
+
+  
+      return {
+        label: groupName,
+        items: groupItems,
+      };
   });
+
+  // Handle any remaining tasks that don't fit into predefined groups
+  let otherItems = Array.from(remainingTasks).map((taskKey) => ({
+    label: props.allVariants[taskKey][0].task.name ?? taskKey,
+    value: taskKey,
+  }));
+
+  if (otherItems.length > 0) {
+    otherItems.sort((a, b) => a.label.localeCompare(b.label));
+
+    groupedOptions.push({
+      label: "Other",
+      items: otherItems,
+    });
+  }
+  return groupedOptions;
 });
 
 watch(
@@ -387,6 +441,9 @@ function addChildDefaultCondition(variant) {
 
 </script>
 <style lang="scss">
+.select-group-name {
+  font-style: italic;
+}
 .task-tab {
   height: 100%;
   overflow: auto;
