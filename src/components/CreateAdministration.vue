@@ -7,7 +7,6 @@
             <div class="admin-page-header">{{ header }}</div>
           </div>
         </div>
-        <!-- do we need a margin here? -->
         <div class="text-md text-gray-500">{{ description }}</div>
       </div>
 
