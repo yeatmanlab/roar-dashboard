@@ -6,6 +6,7 @@ import {
   saveFinalSurveyData,
   saveSurveyData,
 } from '@/helpers/survey';
+import { LEVANTE_SURVEY_RESPONSES_KEY } from '@/constants/bucket';
 
 export async function initializeSurvey({
   surveyInstance,
@@ -17,7 +18,7 @@ export async function initializeSurvey({
   audioLinkMap,
   generalSurveyData,
 }) {
-  const { isRestored, pageNo } = restoreSurveyData({
+  restoreSurveyData({
     surveyInstance,
     uid: userData.id,
     selectedAdmin: userData.selectedAdminId,
@@ -96,13 +97,39 @@ export function setupSurveyEventHandlers({
       questionName: options.name, 
       responseValue: options.value,
       userType,
-      numGeneralPages: surveyStore.numGeneralPages,
-      numSpecificPages: surveyStore.numSpecificPages,
       surveyStore,
       specificIds: specificIds,
-      saveSurveyResponses: roarfirekit.saveSurveyResponses
     })
   );
+
+  surveyInstance.onCurrentPageChanged.add((sender, options) => {
+    const previousPage = options.oldCurrentPage;
+
+    if (previousPage) {
+      const previousPageQuestions = previousPage.questions;
+      const prevData = window.localStorage.getItem(`${LEVANTE_SURVEY_RESPONSES_KEY}-${uid}`);
+
+      if (prevData) {
+        const parsedData = JSON.parse(prevData);
+        const previousPageResponses = {...parsedData};
+        
+        previousPageQuestions.forEach(question => {
+          if (parsedData.responses[question.name] !== undefined) {
+            previousPageResponses[question.name] = parsedData.responses[question.name];
+          }
+        });
+
+        try {
+          roarfirekit.saveSurveyResponses({
+            surveyData: previousPageResponses,
+            administrationId: selectedAdminId,
+          });
+        } catch (error) {
+          console.error('Error saving previous page responses: ', error);
+        }
+      }
+    }
+  });
 
 
   surveyInstance.onComplete.add((sender) => 

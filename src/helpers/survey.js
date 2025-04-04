@@ -28,13 +28,24 @@ export function getParsedLocale(locale) {
     return (locale || '').split('-')?.[0] || 'en';
   }
   
-  function finishedLoading({ bufferList, parsedLocale, setSurveyAudioLoading, setSurveyAudioPlayerBuffers }) {
+  function finishedLoading({ 
+    bufferList, 
+    parsedLocale, 
+    setSurveyAudioLoading, 
+    setSurveyAudioPlayerBuffers 
+  }) {
     setSurveyAudioPlayerBuffers(parsedLocale, bufferList);
     setSurveyAudioLoading(false);
   }
   
   // Function to fetch buffer or return from the cache
-  export const fetchBuffer = ({ parsedLocale, setSurveyAudioLoading, audioLinks, surveyAudioBuffers, setSurveyAudioPlayerBuffers }) => {
+  export const fetchBuffer = ({ 
+    parsedLocale, 
+    setSurveyAudioLoading, 
+    audioLinks, 
+    surveyAudioBuffers, 
+    setSurveyAudioPlayerBuffers 
+  }) => {
     // buffer already exists for the given local
     if (surveyAudioBuffers[parsedLocale]) {
       return;
@@ -56,7 +67,13 @@ export function getParsedLocale(locale) {
     }
   };
 
-  export function restoreSurveyData({ surveyInstance, uid, selectedAdmin, surveyResponsesData, surveyStore }) {
+  export function restoreSurveyData({ 
+    surveyInstance, 
+    uid, 
+    selectedAdmin, 
+    surveyResponsesData, 
+    surveyStore 
+  }) {
     // Try to get data from localStorage first
     const prevData = window.localStorage.getItem(`${LEVANTE_SURVEY_RESPONSES_KEY}-${uid}`);
     if (prevData) {
@@ -87,9 +104,7 @@ export function getParsedLocale(locale) {
   
   export function saveSurveyData({ 
     survey, 
-    roarfirekit, 
     uid, 
-    selectedAdmin, 
     questionName, 
     responseValue, 
     specificIds,
@@ -106,15 +121,6 @@ export function getParsedLocale(locale) {
       prevData.responses[questionName] = responseValue;
 
       window.localStorage.setItem(`${LEVANTE_SURVEY_RESPONSES_KEY}-${uid}`, JSON.stringify(prevData));
-
-      try {
-        roarfirekit.saveSurveyResponses({
-          surveyData: prevData,
-          administrationId: selectedAdmin ?? null,
-        });
-      } catch (error) {
-        console.error('Error saving survey responses: ', error);
-      }
     } else {
       // Initialize the structure if it doesn't exist
       const newData = {
@@ -126,33 +132,17 @@ export function getParsedLocale(locale) {
         userType: userType,
       };
 
-
-      console.log('selectedAdmin: ', selectedAdmin);
-
-
       if (!surveyStore.isGeneralSurveyComplete) {
         newData.responses[questionName] = responseValue;
       } else {
         const specificIndex = surveyStore.specificSurveyRelationIndex;
-        console.log('specificIndex in saveSurveyData: ', specificIndex);
         newData.specificId = specificIds[specificIndex];
         newData.responses[questionName] = responseValue;
         newData.isComplete = false;
         newData.isGeneral = false;
       }
 
-      console.log('newData after adding responses: ', newData);
-
-        window.localStorage.setItem(`${LEVANTE_SURVEY_RESPONSES_KEY}-${uid}`, JSON.stringify(newData));
-
-      try {
-        roarfirekit.saveSurveyResponses({
-          surveyData: newData,
-          administrationId: selectedAdmin ?? null,
-      });
-      } catch (error) {
-        console.error('Error saving survey responses: ', error);
-      }
+      window.localStorage.setItem(`${LEVANTE_SURVEY_RESPONSES_KEY}-${uid}`, JSON.stringify(newData));
     }
   }
   

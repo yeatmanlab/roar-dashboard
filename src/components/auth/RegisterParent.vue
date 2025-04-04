@@ -107,25 +107,6 @@
       <!--Accept Checkbox-->
       <section class="form-section flex lg:flex-row">
         <!-- Recaptcha + consent -->
-        <ChallengeV3 v-model="response" action="submit">
-          <div class="field-checkbox terms-checkbox">
-            <PvCheckbox
-              :id="`accept-${isRegistering ? 'register' : 'login'}`"
-              v-model="v$.accept.$model"
-              name="accept"
-              binary
-              :disabled="showConsent"
-              :class="[{ 'p-invalid': v$.accept.$invalid && submitted }]"
-              @change="getConsent"
-            />
-            <label for="accept" :class="{ 'p-error': v$.accept.$invalid && submitted }"
-              >I agree to the terms and conditions<span class="required">*</span></label
-            >
-          </div>
-          <small v-if="(v$.accept.$invalid && submitted) || v$.accept.$pending.$response" class="p-error">
-            You must agree to the terms and conditions
-          </small>
-        </ChallengeV3>
       </section>
       <ConsentModal
         v-if="showConsent"
@@ -161,12 +142,10 @@
 
 <script setup>
 import { computed, reactive, ref } from 'vue';
-import { ChallengeV3 } from 'vue-recaptcha';
 import { storeToRefs } from 'pinia';
 import { required, sameAs, minLength } from '@vuelidate/validators';
 import { useVuelidate } from '@vuelidate/core';
 import PvButton from 'primevue/button';
-import PvCheckbox from 'primevue/checkbox';
 import PvDialog from 'primevue/dialog';
 import PvInputText from 'primevue/inputtext';
 import PvPassword from 'primevue/password';
@@ -269,13 +248,6 @@ async function handleConsentAccept() {
   state.accept = true;
 }
 
-async function getConsent() {
-  const consentDoc = await authStore.getLegalDoc('consent-behavioral-eye-tracking');
-  consentText.value = consentDoc.text;
-  // consentVersion = consentDoc.version;
-  showConsent.value = true;
-  handleCheckCaptcha();
-}
 
 const isNextButtonDisabled = computed(() => {
   // Return true (button disabled) if isCaptchaverified is null or undefined

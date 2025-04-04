@@ -1,5 +1,4 @@
 import { createApp } from 'vue';
-import { VueRecaptchaPlugin } from 'vue-recaptcha';
 import { Buffer } from 'buffer';
 import { initSentry } from '@/sentry';
 import PvTooltip from 'primevue/tooltip';
@@ -26,12 +25,6 @@ export const createAppInstance = () => {
   });
 
   // Register plugins.
-  // @NOTE: This plugin is intentionally loaded outside of the plugins.js file to prevent the reCAPTCHA from being
-  // loaded inside the Cypress component tests. As Cypress component tests currently load the plugins.js file directly,
-  // any other plugins that should not be loaded in the Cypress tests should be loaded below.
-  app.use(VueRecaptchaPlugin, {
-    v3SiteKey: '6Lc-LXsnAAAAAHGha6zgn0DIzgulf3TbGDhnZMAd',
-  });
 
   // Register global components.
   app.component('AppSpinner', AppSpinner);
