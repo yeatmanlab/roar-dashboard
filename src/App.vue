@@ -1,6 +1,6 @@
 <template>
   <Head>
-    <title>{{ pageTitle }}</title>
+    <title>Levante - {{ pageTitle }}</title>
     <meta name="description" content="The LEVANTE Platform" />
 
     <!-- Social -->
