@@ -21,31 +21,13 @@
                 class="w-full"
                 data-cy="input-administration-name"
               />
-              <label for="administration-name" class="w-full">Assignment Name</label>
+              <label for="administration-name" class="w-full">Assignment Name<span id="required-asterisk">*</span></label>
               <small
                 v-if="v$.administrationName.$invalid && submitted"
                 class="p-error white-space-nowrap overflow-hidden text-overflow-ellipsis"
                 >Please name your assignment</small
               >
             </PvFloatLabel>
-          </div>
-
-          <div class="field col-12 xl:col-6 mb-5">
-            <PvFloatLabel>
-              <PvInputText
-                id="administration-public-name"
-                v-model="state.administrationPublicName"
-                class="w-full"
-                data-cy="input-administration-name-public"
-              />
-              <label for="administration-public-name" class="w-full">Public Assignment Name<span id="required-asterisk">*</span></label>
-              <small
-                v-if="v$.administrationPublicName.$invalid && submitted"
-                class="p-error white-space-nowrap overflow-hidden text-overflow-ellipsis"
-                >Please provide a public-facing name for this assignment</small
-              >
-            </PvFloatLabel>
-            <p class="mt-1 ml-1 text-sm text-gray-500">This name is visible to participants</p>
           </div>
         </div>
         <div class="formgrid grid">
@@ -157,7 +139,7 @@
               class="text-white bg-primary border-none border-round h-3rem p-3 hover:bg-red-900"
               data-cy="button-create-administration"
               style="margin: 0"
-              :disabled="!state.administrationPublicName || isSubmitting"
+              :disabled="!state.administrationName || isSubmitting"
               @click="submit"
             >
               <i v-if="isSubmitting" class="pi pi-spinner pi-spin mr-2"></i> {{ submitLabel }}
@@ -492,7 +474,7 @@ const submit = async () => {
 
   const args = {
     name: toRaw(state).administrationName,
-    publicName: toRaw(state).administrationPublicName,
+    publicName: toRaw(state).administrationName,
     assessments: submittedAssessments,
     dateOpen: toRaw(state).dateStarted,
     dateClose,
@@ -553,7 +535,7 @@ onMounted(async () => {
 watch([existingAdministrationData, allVariants], ([adminInfo, allVariantInfo]) => {
   if (adminInfo && !_isEmpty(allVariantInfo)) {
     state.administrationName = adminInfo.name;
-    state.administrationPublicName = adminInfo.publicName;
+    state.administrationPublicName = adminInfo.name;
     state.dateStarted = new Date(adminInfo.dateOpened);
     state.dateClosed = new Date(adminInfo.dateClosed);
     state.sequential = adminInfo.sequential;
