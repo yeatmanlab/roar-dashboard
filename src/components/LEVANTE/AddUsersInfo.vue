@@ -37,7 +37,7 @@
     <p class="mb-6"><span class="required">*</span> = Required only for child users</p>
 
     <div class="download-button-container">
-      <button class="download-csv-btn" @click="downloadTemplate">
+      <button class="download-csv-btn" @click="downloadTemplate" data-testid="download-template">
         <i class="pi pi-download"></i>
         Download CSV Template
       </button>
@@ -57,10 +57,14 @@
 <script setup>
 import PvPanel from 'primevue/panel';
 
-const downloadTemplate = () => {
+const generateTemplateFile = () => {
   const headers = ['id', 'userType', 'month', 'year', 'parentId', 'teacherId', 'site', 'school', 'class', 'group'];
   const csvContent = headers.join(',') + '\n';
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  return new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+};
+
+const downloadTemplate = () => {
+  const blob = generateTemplateFile();
   const link = document.createElement('a');
   const url = URL.createObjectURL(blob);
   link.setAttribute('href', url);

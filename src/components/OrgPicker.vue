@@ -1,7 +1,7 @@
 <template>
   <div class="grid">
     <div class="col-12 md:col-8">
-      <PvPanel class="m-0 p-0 h-full" :header="`Select ${forParentOrg ? 'parent audience' : 'audience'}`">
+      <PvPanel class="m-0 p-0 h-full" :header="`Select ${forParentOrg ? 'Parent Audience' : 'Audience'}`">
         <PvTabView v-if="claimsLoaded" v-model:active-index="activeIndex" class="m-0 p-0 org-tabs" lazy>
           <PvTabPanel v-for="orgType in orgHeaders" :key="orgType" :header="orgType.header">
             <div class="grid column-gap-3">
@@ -64,7 +64,7 @@
       </PvPanel>
     </div>
     <div v-if="!forParentOrg" class="col-12 md:col-4">
-      <PvPanel class="h-full" header="Selected organizations">
+      <PvPanel class="h-full" header="Selected audience">
         <PvScrollPanel style="width: 100%; height: 26rem">
           <div v-for="orgKey in Object.keys(selectedOrgs)" :key="orgKey">
             <div v-if="selectedOrgs[orgKey].length > 0">

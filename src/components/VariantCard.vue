@@ -18,7 +18,7 @@
             class="p-0 surface-hover border-none border-circle hover:text-100 hover:bg-primary ml-2"
             @click="toggle($event)"
             ><i
-              v-tooltip.top="'Click to view params'"
+              v-tooltip.top="'View parameters'"
               class="pi pi-info-circle text-primary p-1 border-circle hover:text-100"
             ></i
           ></PvButton>
@@ -28,7 +28,6 @@
         </div>
         <div class="pl-2 w-full">
           <p class="m-0"><span class="font-semibold">Variant name:</span> {{ variant.variant.name }}</p>
-          <p class="m-0" v-if="isDev"><span  class="font-semibold">Variant id: </span>{{ variant.id }}</p>
         </div>
         <PvPopover ref="op" append-to="body" style="width: 40vh">
           <div class="flex justify-content-end mt-0 mb-2">
@@ -107,7 +106,7 @@
             class="p-0 surface-hover border-none border-circle hover:text-100 hover:bg-primary"
             @click="toggle($event)"
             ><i
-              v-tooltip.top="'Click to view params'"
+              v-tooltip.top="'View parameters'"
               class="pi pi-info-circle text-primary p-1 border-circle hover:text-100"
             ></i
           ></PvButton>
@@ -118,7 +117,11 @@
         <div class="flex align-items-center gap-2">
           <p class="m-0 mt-1 ml-2">
             <span class="font-bold">Variant name:</span> {{ variant.variant.name }} <br />
-            <span class="font-bold">Variant id: </span>{{ variant.id }}
+            <div
+              v-if="variant.variant?.conditions?.assigned?.conditions?.length > 0"
+            >
+              <span class="font-bold">Assigned to:</span> {{parseConditions(variant.variant?.conditions?.assigned).map(entry => entry.op === "EQUAL" ? `${entry.value}s` : `not ${entry.value}s`).join(", ")}}<br/>
+            </div>
           </p>
         </div>
       </div>
