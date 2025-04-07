@@ -39,7 +39,7 @@
                 class="w-full"
                 data-cy="input-administration-name-public"
               />
-              <label for="administration-public-name" class="w-full">Public Administration Name</label>
+              <label for="administration-public-name" class="w-full">Public Administration Name<span id="required-asterisk">*</span></label>
               <small
                 v-if="v$.administrationPublicName.$invalid && submitted"
                 class="p-error white-space-nowrap overflow-hidden text-overflow-ellipsis"
@@ -86,6 +86,9 @@
                 >Please select an end date.</small
               >
             </PvFloatLabel>
+            <div class="text-sm text-gray-500 mt-4 required">
+              <i>* Required</i>
+            </div>
           </div>
         </div>
 
@@ -154,7 +157,7 @@
               class="text-white bg-primary border-none border-round h-3rem p-3 hover:bg-red-900"
               data-cy="button-create-administration"
               style="margin: 0"
-              :disabled="isSubmitting"
+              :disabled="!state.administrationPublicName || isSubmitting"
               @click="submit"
             >
               <i v-if="isSubmitting" class="pi pi-spinner pi-spin mr-2"></i> {{ submitLabel }}
@@ -579,6 +582,12 @@ watch([existingAdministrationData, allVariants], ([adminInfo, allVariantInfo]) =
 </script>
 
 <style lang="scss">
+.required {
+  i {
+    float: right;
+  }
+}
+
 .return-button {
   display: block;
   margin: 1rem 1.75rem;
@@ -702,5 +711,7 @@ watch([existingAdministrationData, allVariants], ([adminInfo, allVariantInfo]) =
     display: none;
   }
 }
-
+ #required-asterisk {
+  color: #ff0000;
+}
 </style>
