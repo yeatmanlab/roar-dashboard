@@ -3,7 +3,7 @@
     <SkeletonTable />
   </div>
   <div v-else class="options-container">
-    <div class="flex justify-content-end mr-3 mt-2">
+    <div class="flex justify-content-end mr-3 mt-2 button-container">
       <button type="button" class="text-red-700 cursor-pointer options-toggle" @click.prevent="toggleControls">
         {{ showControls ? 'Hide Options' : 'Show Options' }}
       </button>
@@ -613,8 +613,13 @@ const emit = defineEmits(['export-all', 'selection', 'reset-filters', 'export-se
 <style>
 
 .options-container {
+  .button-container {
+    position: relative;
+    min-height: 34px;
+  }
+  
   .options-toggle {
-    position: absolute;
+    position: absolute; 
     top: 10px;
     background: transparent;
     border: 1px solid transparent;
