@@ -25,7 +25,7 @@
               <small
                 v-if="v$.administrationName.$invalid && submitted"
                 class="p-error white-space-nowrap overflow-hidden text-overflow-ellipsis"
-                >Please name your administration</small
+                >Please name your assignment</small
               >
             </PvFloatLabel>
           </div>
