@@ -21,7 +21,7 @@
                 class="w-full"
                 data-cy="input-administration-name"
               />
-              <label for="administration-name" class="w-full">Administration Name</label>
+              <label for="administration-name" class="w-full">Assignment Name</label>
               <small
                 v-if="v$.administrationName.$invalid && submitted"
                 class="p-error white-space-nowrap overflow-hidden text-overflow-ellipsis"
@@ -38,11 +38,11 @@
                 class="w-full"
                 data-cy="input-administration-name-public"
               />
-              <label for="administration-public-name" class="w-full">Public Administration Name<span id="required-asterisk">*</span></label>
+              <label for="administration-public-name" class="w-full">Public Assignment Name<span id="required-asterisk">*</span></label>
               <small
                 v-if="v$.administrationPublicName.$invalid && submitted"
                 class="p-error white-space-nowrap overflow-hidden text-overflow-ellipsis"
-                >Please provide a public-facing name for this administration</small
+                >Please provide a public-facing name for this assignment</small
               >
             </PvFloatLabel>
             <p class="mt-1 ml-1 text-sm text-gray-500">This name is visible to participants</p>
