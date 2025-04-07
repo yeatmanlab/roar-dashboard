@@ -447,24 +447,25 @@ const tableColumns = computed(() => {
     });
   }
 
-  columns.push(
-    {
+  if (isSuperAdmin.value) {
+    columns.push({
       header: 'SignUp Code',
       buttonLabel: 'Invite Users',
       button: true,
       eventName: 'show-activation-code',
       buttonIcon: 'pi pi-send mr-2',
       sort: false,
-    },
-    {
-      header: 'Export Users',
-      buttonLabel: 'Export Users',
-      button: true,
-      eventName: 'export-org-users',
-      buttonIcon: 'pi pi-download mr-2',
-      sort: false,
-    },
-  );
+    });
+  }
+
+  columns.push({
+    header: 'Export Users',
+    buttonLabel: 'Export Users',
+    button: true,
+    eventName: 'export-org-users',
+    buttonIcon: 'pi pi-download mr-2',
+    sort: false,
+  });
 
   return columns;
 });

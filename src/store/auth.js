@@ -189,7 +189,7 @@ export const useAuthStore = () => {
         consentData,
         isTestData = false,
       ) {
-        return this.roarfirekit.createNewFamily(
+        return await this.roarfirekit.createNewFamily(
           careTakerEmail,
           careTakerPassword,
           careTakerData,
