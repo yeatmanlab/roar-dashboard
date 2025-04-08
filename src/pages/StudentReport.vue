@@ -326,7 +326,6 @@ const formattedTasks = computed(() => {
   );
 });
 
-
 const studentFirstName = computed(() => {
   if (!studentData?.value) return '';
   // Using == instead of === to catch both undefined and null values
