@@ -22,6 +22,7 @@ export const AUTH_USER_TYPE = Object.freeze({
   PARTICIPANT: 'participant',
   STUDENT: 'student',
   SUPER_ADMIN: 'super-admin',
+  LAUNCH_ADMIN: 'launch-admin',
 });
 
 /**
