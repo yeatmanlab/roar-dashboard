@@ -68,8 +68,8 @@
                 >Please select an end date.</small
               >
             </PvFloatLabel>
-            <div class="text-sm text-gray-500 mt-4 required">
-              <i>* Required</i>
+            <div class="text-sm text-gray-500 mt-4 required text-right">
+              * Required
             </div>
           </div>
         </div>
