@@ -21,7 +21,7 @@
                 class="w-full"
                 data-cy="input-administration-name"
               />
-              <label for="administration-name" class="w-full">Assignment Name<span id="required-asterisk">*</span></label>
+              <label for="administration-name" class="w-full">Assignment Name<span class="required-asterisk">*</span></label>
               <small
                 v-if="v$.administrationName.$invalid && submitted"
                 class="p-error white-space-nowrap overflow-hidden text-overflow-ellipsis"
@@ -696,7 +696,7 @@ watch([existingAdministrationData, allVariants], ([adminInfo, allVariantInfo]) =
     display: none;
   }
 }
-#required-asterisk {
-  color: #ff0000;
+.required-asterisk {
+  color: var(--red-500);
 }
 </style>
