@@ -320,7 +320,6 @@ const state = reactive({
 
 const rules = {
   administrationName: { required },
-  administrationPublicName: { required },
   dateStarted: { required },
   dateClosed: { required },
   sequential: { required },
