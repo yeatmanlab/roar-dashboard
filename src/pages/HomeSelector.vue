@@ -77,7 +77,6 @@ const { isLoading: isLoadingClaims, data: userClaims } = useUserClaimsQuery({
 });
 
 const { isAdmin, isSuperAdmin, isParticipant, isLaunchAdmin } = useUserType(userClaims);
-console.log('islaunchadmin', isLaunchAdmin);
 
 const isAdminUser = computed(() => isAdmin.value || isSuperAdmin.value);
 const isLoading = computed(() => {
