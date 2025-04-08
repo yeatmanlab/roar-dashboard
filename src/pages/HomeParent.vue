@@ -13,7 +13,7 @@
         <AppSpinner class="mb-4" />
       </div>
       <div v-for="assignment in assignmentData" v-else :key="assignment.id">
-        <UserCard :assignment="assignment" :orgType="orgType" :orgId="orgId" :administrationId="administrationId" />
+        <UserCard :assignment="assignment" :org-type="orgType" :org-id="orgId" :administration-id="administrationId" />
       </div>
     </div>
   </div>
