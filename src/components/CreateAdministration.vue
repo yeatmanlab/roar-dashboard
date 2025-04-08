@@ -561,9 +561,7 @@ watch([existingAdministrationData, allVariants], ([adminInfo, allVariantInfo]) =
 
 <style lang="scss">
 .required {
-  i {
     float: right;
-  }
 }
 .p-datepicker-today span {
   background-color: var(--blue-100) !important; /* Change to your desired color */
