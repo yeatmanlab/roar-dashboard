@@ -18,7 +18,6 @@ export default function useUserType(userClaims) {
     if (!userClaims.value) return;
 
     const claims = userClaims.value.claims;
-    console.log('claims', claims);
 
     // Check if the user is a super admin.
     if (claims?.super_admin) {

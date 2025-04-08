@@ -12,7 +12,7 @@
       <div v-if="isLoadingAssignments || isLoadingAdministrations">
         <AppSpinner class="mb-4" />
       </div>
-      <div v-else v-for="assignment in assignmentData">
+      <div v-for="assignment in assignmentData" v-else :key="assignment.id">
         <UserCard :assignment="assignment" />
       </div>
     </div>

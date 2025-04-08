@@ -31,7 +31,7 @@
     <!-- Task specific Data -->
     <div class="bg-gray-100 flex flex-column p-3 gap-1">
       <div class="text-xs font-light">Tasks</div>
-      <div v-for="(status, task) in assignment.progress">
+      <div v-for="(status, task) in assignment.progress" :key="task">
         <div class="flex text-sm justify-between">
           <div class="flex flex-column">
             <div>{{ taskDisplayNames[task].publicName }}</div>
