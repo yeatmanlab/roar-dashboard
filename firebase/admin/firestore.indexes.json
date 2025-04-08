@@ -5103,6 +5103,10 @@
       "indexes": [
         {
           "arrayConfig": "CONTAINS",
+          "queryScope": "COLLECTION"
+        },
+        {
+          "arrayConfig": "CONTAINS",
           "queryScope": "COLLECTION_GROUP"
         }
       ]
@@ -5112,6 +5116,10 @@
       "fieldPath": "readOrgs.districts",
       "ttl": false,
       "indexes": [
+        {
+          "arrayConfig": "CONTAINS",
+          "queryScope": "COLLECTION"
+        },
         {
           "arrayConfig": "CONTAINS",
           "queryScope": "COLLECTION_GROUP"
@@ -5125,6 +5133,10 @@
       "indexes": [
         {
           "arrayConfig": "CONTAINS",
+          "queryScope": "COLLECTION"
+        },
+        {
+          "arrayConfig": "CONTAINS",
           "queryScope": "COLLECTION_GROUP"
         }
       ]
@@ -5136,6 +5148,10 @@
       "indexes": [
         {
           "arrayConfig": "CONTAINS",
+          "queryScope": "COLLECTION"
+        },
+        {
+          "arrayConfig": "CONTAINS",
           "queryScope": "COLLECTION_GROUP"
         }
       ]
@@ -5145,6 +5161,10 @@
       "fieldPath": "readOrgs.schools",
       "ttl": false,
       "indexes": [
+        {
+          "arrayConfig": "CONTAINS",
+          "queryScope": "COLLECTION"
+        },
         {
           "arrayConfig": "CONTAINS",
           "queryScope": "COLLECTION_GROUP"
