@@ -7,8 +7,8 @@ import { initNewFirekit } from '../firebaseInit';
 import { AUTH_SSO_PROVIDERS } from '../constants/auth';
 
 interface FirebaseUser {
-  adminFirebaseUser: User | null;
-  appFirebaseUser: User | null;
+  adminFirebaseUser: Pick<User, 'uid' | 'email' | 'displayName' | 'photoURL' | 'stsTokenManager'> | null;
+  appFirebaseUser: Pick<User, 'uid' | 'email' | 'displayName' | 'photoURL' | 'stsTokenManager'> | null;
 }
 
 interface UserClaims {
@@ -125,7 +125,13 @@ export const useAuthStore = defineStore('authStore', {
       this.adminAuthStateListener = onAuthStateChanged(this.roarfirekit?.admin.auth, async (user: User | null) => {
         console.log('Admin auth state changed:', user ? 'User logged in' : 'User logged out');
         if (user) {
-          this.firebaseUser.adminFirebaseUser = user;
+          this.firebaseUser.adminFirebaseUser = {
+            uid: user.uid,
+            email: user.email,
+            displayName: user.displayName,
+            photoURL: user.photoURL,
+            stsTokenManager: user.stsTokenManager,
+          };
         } else {
           this.firebaseUser.adminFirebaseUser = null;
         }
@@ -133,7 +139,13 @@ export const useAuthStore = defineStore('authStore', {
       this.appAuthStateListener = onAuthStateChanged(this.roarfirekit?.app.auth, async (user: User | null) => {
         console.log('App auth state changed:', user ? 'User logged in' : 'User logged out');
         if (user) {
-          this.firebaseUser.appFirebaseUser = user;
+          this.firebaseUser.appFirebaseUser = {
+            uid: user.uid,
+            email: user.email,
+            displayName: user.displayName,
+            photoURL: user.photoURL,
+            stsTokenManager: user.stsTokenManager,
+          };
         } else {
           this.firebaseUser.appFirebaseUser = null;
         }
