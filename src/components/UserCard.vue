@@ -19,12 +19,15 @@
     </div>
     <!-- Administration Header -->
     <div class="flex flex-column p-3 gap-2">
-      <div class="flex flex-wrap justify-between">
+      <div class="flex flex-wrap justify-between align-center">
         <div class="flex flex-column">
           <div class="text-lg">{{ assignment.name }}</div>
           <div class="text-xs font-light">Administration</div>
         </div>
-        <div class="text-sm">{{ parseDate(assignment.dateOpened) }} - {{ parseDate(assignment.dateClosed) }}</div>
+        <div class="flex flex-column">
+          <div class="text-sm">{{ parseDate(assignment.dateOpened) }} - {{ parseDate(assignment.dateClosed) }}</div>
+          <div class="text-xs font-light">Dates Active</div>
+        </div>
       </div>
     </div>
     <div></div>
@@ -52,7 +55,9 @@
         <a :href="'/launch/' + roarUid">
           <PvButton label="Play Assessments" />
         </a>
-        <PvButton label="View Score Report" icon="" text />
+        <a :href="'/scores/' + props.administrationId + '/' + props.orgType + '/' + props.orgId + '/user/' + roarUid">
+          <PvButton label="View Score Report" icon="" text />
+        </a>
       </div>
     </div>
     <!-- view Score Report and Task Launching-->
@@ -69,6 +74,9 @@ import PvButton from 'primevue/button';
 
 const props = defineProps({
   assignment: { type: Object, required: true },
+  orgType: { type: String, required: true },
+  orgId: { type: String, required: true },
+  administrationId: { type: String, required: true },
 });
 
 const { user, assignment, roarUid } = props.assignment;
