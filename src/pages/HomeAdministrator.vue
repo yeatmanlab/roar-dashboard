@@ -69,8 +69,8 @@
         <div v-if="!initialized || isLoadingAdministrations" class="loading-container">
           <AppSpinner class="mb-4" />
           <span class="uppercase font-light text-sm text-gray-600">
-            <template v-if="fetchTestAdministrations">Fetching Test Administrations</template>
-            <template v-else>Fetching Administrations</template>
+            <template v-if="fetchTestAdministrations">Fetching Test Assignments</template>
+            <template v-else>Fetching Assignments</template>
           </span>
         </div>
         <div v-else>
@@ -109,10 +109,10 @@
                 <div>
                   {{
                     isLevante
-                      ? 'There are no administrations to display. You can create an administration by navigating to the' +
-                        ' Create administration page from the dropdown menu.'
-                      : 'There are no administrations to display. Please contact a lab administrator to add you as an admin' +
-                        ' to an administration.'
+                      ? 'There are no assignments to display. You can create an assignment by navigating to the' +
+                        ' Create assignment page from the dropdown menu.'
+                      : 'There are no assignments to display. Please contact a lab administrator to add you as an admin' +
+                        ' to an assignments.'
                   }}
                 </div>
               </template>
