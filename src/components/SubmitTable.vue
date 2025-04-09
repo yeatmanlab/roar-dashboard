@@ -19,9 +19,17 @@
       :rows="10"
       class="datatable"
       v-model:editingRows="editingRows"
-      editMode="row"
-      @row-edit-save="onRowEditSave"
+      editMode="cell"
+      @cell-edit-complete="onCellEditSave"
       dataKey="id"
+      :pt="{
+        table: { style: 'min-width: 50rem' },
+        column: {
+          bodycell: ({ state }) => ({
+            class: [{ '!py-0': state['d_editing'] }],
+          }),
+        },
+      }"
     >
       <PvColumn field="validity" header="Validity" :editor="false">
         <template #body="{ data }">
@@ -34,6 +42,9 @@
           <div :class="{ 'invalid-cell': !isFieldValid(data, field) }">
             {{ data[field] }}
           </div>
+        </template>
+        <template #editor="{ data, field }">
+          <InputText v-model="data[field]" autofocus fluid />
         </template>
       </PvColumn>
       <PvColumn :row-editor="true" style="width: 10%; min-width: 8rem" bodyStyle="text-align:center" />
@@ -53,6 +64,7 @@ import _forEach from 'lodash/forEach';
 import _startCase from 'lodash/startCase';
 import _isEmpty from 'lodash/isEmpty';
 import _get from 'lodash/get';
+import InputText from 'primevue/inputtext';
 const props = defineProps({
   students: {
     type: Object,
@@ -160,10 +172,32 @@ function isFieldValid(data, field) {
 }
 
 // Handle row edit save
-function onRowEditSave(event) {
+function onCellEditSave(event) {
+  let { data, newValue, field } = event;
+  console.log('onCellEditSave', event);
+
+  const mappedField = findMappedColumnByField(field);
+  if (!mappedField) event.preventDefault();
+
+  if (mappedField === 'password') {
+    if (isPasswordValid(newValue)) data[field] = newValue;
+    else event.preventDefault();
+  }
+
+  // switch (field) {
+  //   case 'password':
+  //   case 'price':
+  //     if (isPositiveInteger(newValue)) data[field] = newValue;
+  //     else event.preventDefault();
+  //     break;
+
+  //   default:
+  //     if (newValue.trim().length > 0) data[field] = newValue;
+  //     else event.preventDefault();
+  //     break;
+  // }
   // console.log('onRowEditSave', event);
-  const { newData } = event;
-  validateStudent(newData);
+  // validateStudent(newData);
 }
 
 function validityCheck(row) {
