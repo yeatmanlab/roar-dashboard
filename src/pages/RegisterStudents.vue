@@ -287,7 +287,15 @@
           <div class="flex py-3 justify-between">
             <Button label="Back" severity="secondary" icon="pi pi-arrow-left" @click="activateCallback('6')" />
             <h2 class="step-header">Review</h2>
-            <Button label="Submit" severity="primary" icon="pi pi-check" @click="activateCallback('8')" />
+            <Button
+              label="Submit"
+              severity="primary"
+              icon="pi pi-check"
+              @click="
+                activateCallback('8');
+                showSubmitTable = true;
+              "
+            />
           </div>
           <div class="step-container">
             <div
@@ -366,9 +374,10 @@
           </div>
           <div class="step-container">
             <SubmitTable
-              v-if="rawStudentFile"
+              v-if="showSubmitTable"
               :students="rawStudentFile"
-              :key-field="usingEmail ? 'email' : 'username'"
+              :mappings="mappedColumns"
+              :key-field="usingEmail ? mappedColumns.required.email : mappedColumns.required.username"
             />
           </div>
         </StepPanel>
@@ -401,6 +410,7 @@ const csv_columns = ref([]);
 const usingEmail = ref(false);
 const usingOrgPicker = ref(true);
 const isFileUploaded = ref(false);
+const showSubmitTable = ref(false);
 const nameFields = ref([
   { field: 'firstName', label: 'First Name', description: 'First name of the student' },
   { field: 'middleName', label: 'Middle Name', description: 'Middle name of the student' },

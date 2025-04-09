@@ -25,7 +25,7 @@
     >
       <PvColumn field="validity" header="Validity" :editor="false">
         <template #body="{ data }">
-          {{ validationResults[data.username].valid ? 'Valid' : 'Invalid' }}
+          {{ validationResults[data[props.keyField]]?.valid ? 'Valid' : 'Invalid' }}
         </template>
       </PvColumn>
       <PvColumn v-for="col of tableColumns" :key="col.field" :field="col.field" :editor="true">
@@ -55,6 +55,10 @@ import _isEmpty from 'lodash/isEmpty';
 import _get from 'lodash/get';
 const props = defineProps({
   students: {
+    type: Object,
+    required: true,
+  },
+  mappings: {
     type: Object,
     required: true,
   },
@@ -92,37 +96,37 @@ watch(
 
 // {valid: true, errors: []}
 
-// Function to validate a single student
-function validateStudent(student) {
-  console.log('validating student', student);
-  try {
-    const result = validityCheck(student);
-    validationResults.value[student.username] = result;
-    return result;
-  } catch (error) {
-    console.error('Validation error:', error);
-    validationResults.value[student.username] = { valid: false, errors: [error.message] };
-    return { valid: false, errors: [error.message] };
-  }
-}
-
 function generateColumns(rawJson) {
-  console.log('genColumns rawJson', rawJson);
   let columns = [];
   const columnValues = Object.keys(rawJson);
   _forEach(columnValues, (col) => {
+    const mappedCol = findMappedColumnByField(col) ?? 'Not Incl.';
     let dataType = typeof rawJson[col];
     if (dataType === 'object') {
       if (rawJson[col] instanceof Date) dataType = 'date';
     }
     columns.push({
       field: col,
-      header: _startCase(col),
+      header: _startCase(mappedCol),
       dataType: dataType,
     });
   });
-  console.log('genColumns columns', columns);
   return columns;
+}
+
+/**
+ * Given a column in the CSV, this function will return
+ * the corresponding ROAR column name. If the column is not mapped, it will return null.
+ * @param field The field to find
+ * @returns {string|null} The mapped column name or null if not found
+ */
+function findMappedColumnByField(field) {
+  for (const category in props.mappings) {
+    for (const column in props.mappings[category]) {
+      if (props.mappings[category][column] === field) return column;
+    }
+  }
+  return null;
 }
 
 // Function to validate all students
@@ -133,20 +137,37 @@ function validateAllStudents() {
   });
 }
 
+// Function to validate a single student
+function validateStudent(student) {
+  // console.log('validating student', student);
+  try {
+    const result = validityCheck(student);
+    validationResults.value[student[props.keyField]] = result;
+    return result;
+  } catch (error) {
+    console.error('Validation error:', error);
+    validationResults.value[student[props.keyField]] = {
+      valid: false,
+      errors: [error.message],
+    };
+    return { valid: false, errors: [error.message] };
+  }
+}
+
 // Function to check if a specific field is valid
 function isFieldValid(data, field) {
-  return validationResults.value[data.username] ?? true;
+  return validationResults.value[data[props.keyField]] ?? true;
 }
 
 // Handle row edit save
 function onRowEditSave(event) {
-  console.log('onRowEditSave', event);
+  // console.log('onRowEditSave', event);
   const { newData } = event;
   validateStudent(newData);
 }
 
 function validityCheck(row) {
-  console.log('validityCheck row', row);
+  // console.log('validityCheck row', row);
   if (!isPasswordValid(row.password)) {
     return { valid: false, errors: ['Password must be at least 6 characters long and contain at least one letter'] };
   }
