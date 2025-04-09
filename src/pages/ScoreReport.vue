@@ -1244,7 +1244,7 @@ const scoreReportColumns = computed(() => {
   }
 
   const isAdministrationOpen = administrationData.value?.dateClosed
-    ? new Date(administrationData.value?.dateClosed) <= new Date()
+    ? new Date(administrationData.value?.dateClosed) > new Date()
     : false;
   if (userCan(Permissions.Tasks.LAUNCH) && isAdministrationOpen) {
     tableColumns.push({
