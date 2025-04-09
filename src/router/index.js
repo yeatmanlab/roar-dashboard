@@ -190,7 +190,7 @@ const routes = [
     path: '/create-administration',
     name: 'CreateAdministration',
     component: () => import('../components/CreateAdministration.vue'),
-    meta: { pageTitle: 'Create an administration', requireAdmin: true, requireSuperAdmin: true },
+    meta: { pageTitle: 'Create Assignment', requireAdmin: true, requireSuperAdmin: true },
   },
   {
     path: '/edit-administration/:adminId',
