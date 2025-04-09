@@ -1243,7 +1243,10 @@ const scoreReportColumns = computed(() => {
     });
   }
 
-  if (userCan(Permissions.Tasks.LAUNCH)) {
+  const isAdministrationOpen = administrationData.value?.dateClosed
+    ? new Date(administrationData.value?.dateClosed) <= new Date()
+    : false;
+  if (userCan(Permissions.Tasks.LAUNCH) && isAdministrationOpen) {
     tableColumns.push({
       header: 'Launch Student',
       launcher: true,
