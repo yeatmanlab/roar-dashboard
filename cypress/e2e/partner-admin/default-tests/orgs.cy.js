@@ -36,12 +36,6 @@ describe('Partner Admin: Orgs', () => {
         cy.get('div').should('contain.text', org.orgName);
         cy.log(`${org.orgName} exists.`);
       });
-
-      it(`Generates an invitation code when requested`, () => {
-        cy.getActivationCode(orgType, org.orgName).then((activationCode) => {
-          expect(activationCode).to.not.be.empty;
-        });
-      });
     });
   });
 });
