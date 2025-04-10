@@ -53,10 +53,10 @@
       </div>
       <div class="flex flex-wrap justify-between mt-2">
         <a :href="'/launch/' + roarUid">
-          <PvButton label="Play Assessments" />
+          <PvButton :label="'Play Assessments for ' + userName" data-cy="play-assessments-btn" />
         </a>
         <a :href="'/scores/' + props.administrationId + '/' + props.orgType + '/' + props.orgId + '/user/' + roarUid">
-          <PvButton label="View Score Report" icon="" text />
+          <PvButton label="View Score Report" icon="" text data-cy="view-score-report-btn" />
         </a>
       </div>
     </div>
@@ -80,7 +80,6 @@ const props = defineProps({
 });
 
 const { user, assignment, roarUid } = props.assignment;
-console.log('progrsstag', progressTags['Started']);
 
 const parseDate = (date) => {
   const d = new Date(date);
@@ -93,7 +92,6 @@ const userName = computed(() => {
   } else if (user?.name?.first) {
     return user?.name?.first;
   }
-  console.log('props.user', props.user);
   return props.assignment.user?.username;
 });
 </script>
