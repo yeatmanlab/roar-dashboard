@@ -97,11 +97,6 @@ const userName = computed(() => {
 </script>
 
 <style>
-@media (min-width: 1200px) {
-  .card-container {
-    max-width: 400px;
-  }
-}
 .card-container {
   max-width: 400px;
 }
