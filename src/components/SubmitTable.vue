@@ -10,7 +10,7 @@
     </div>
     <PvDataTable
       ref="dataTable"
-      :value="props.students"
+      :value="sortedStudents"
       show-gridlines
       :row-hover="true"
       :resizable-columns="true"
@@ -36,8 +36,13 @@
           {{ validationResults[data[props.keyField]]?.valid ? 'Valid' : 'Invalid' }}
         </template>
       </PvColumn>
-      <PvColumn v-for="col of tableColumns" :key="col.field" :field="col.field" :editor="true">
-        <template #header> <b></b>{{ col.header }}</template>
+      <PvColumn
+        v-for="col of tableColumns"
+        :key="col.field"
+        :header="col.header"
+        :field="col.field"
+        :editor="isColumnEditable(col.field)"
+      >
         <template #body="{ data, field }">
           <div :class="{ 'invalid-cell': !isFieldValid(data, field) }">
             {{ data[field] }}
@@ -85,6 +90,16 @@ const validationResults = ref({});
 
 // Computed properties for validation stats
 const totalCount = computed(() => (_isEmpty(props.students) ? 0 : props.students.length));
+// Computed property for sorted students data
+const sortedStudents = computed(() => {
+  if (!props.students) return [];
+  return [...props.students].sort((a, b) => {
+    const aValid = validationResults.value[a[props.keyField]]?.valid ?? false;
+    const bValid = validationResults.value[b[props.keyField]]?.valid ?? false;
+    return aValid - bValid; // Sort invalid entries first
+  });
+});
+
 const validCount = computed(() => {
   if (_isEmpty(validationResults.value)) return 0;
   let count = 0;
@@ -141,6 +156,24 @@ function findMappedColumnByField(field) {
   return null;
 }
 
+function isColumnEditable(column) {
+  return column !== props.keyField;
+}
+
+// Handle row edit save
+function onCellEditSave(event) {
+  let { data, newValue, field } = event;
+
+  // Prevent the user from changing the key field
+  if (!isColumnEditable(field)) {
+    return;
+  }
+
+  data[field] = newValue;
+
+  validateStudent(data);
+}
+
 // Function to validate all students
 function validateAllStudents() {
   if (_isEmpty(props.students)) return;
@@ -151,7 +184,6 @@ function validateAllStudents() {
 
 // Function to validate a single student
 function validateStudent(student) {
-  // console.log('validating student', student);
   try {
     const result = validityCheck(student);
     validationResults.value[student[props.keyField]] = result;
@@ -171,38 +203,9 @@ function isFieldValid(data, field) {
   return validationResults.value[data[props.keyField]] ?? true;
 }
 
-// Handle row edit save
-function onCellEditSave(event) {
-  let { data, newValue, field } = event;
-  console.log('onCellEditSave', event);
-
-  const mappedField = findMappedColumnByField(field);
-  if (!mappedField) event.preventDefault();
-
-  if (mappedField === 'password') {
-    if (isPasswordValid(newValue)) data[field] = newValue;
-    else event.preventDefault();
-  }
-
-  // switch (field) {
-  //   case 'password':
-  //   case 'price':
-  //     if (isPositiveInteger(newValue)) data[field] = newValue;
-  //     else event.preventDefault();
-  //     break;
-
-  //   default:
-  //     if (newValue.trim().length > 0) data[field] = newValue;
-  //     else event.preventDefault();
-  //     break;
-  // }
-  // console.log('onRowEditSave', event);
-  // validateStudent(newData);
-}
-
 function validityCheck(row) {
-  // console.log('validityCheck row', row);
-  if (!isPasswordValid(row.password)) {
+  const passwordField = props.mappings.required.password;
+  if (!isPasswordValid(row[passwordField])) {
     return { valid: false, errors: ['Password must be at least 6 characters long and contain at least one letter'] };
   }
   return { valid: true, errors: [] };
