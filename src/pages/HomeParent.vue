@@ -12,8 +12,15 @@
       <div v-if="isLoadingAssignments || isLoadingAdministrations">
         <AppSpinner class="mb-4" />
       </div>
-      <div v-for="assignment in assignmentData" v-else :key="assignment.id">
-        <UserCard :assignment="assignment" :org-type="orgType" :org-id="orgId" :administration-id="administrationId" />
+      <div class="flex flex-row">
+        <div v-for="assignment in assignmentData" :key="assignment.id">
+          <UserCard
+            :assignment="assignment"
+            :org-type="orgType"
+            :org-id="orgId"
+            :administration-id="administrationId"
+          />
+        </div>
       </div>
     </div>
   </div>
@@ -27,11 +34,12 @@ import { ref, watch } from 'vue';
 import UserCard from '@/components/UserCard.vue';
 import { pluralizeFirestoreCollection } from '@/helpers';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
+import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes.js';
 
 const initialized = ref(true);
 const administrationId = ref(null);
 // TODO: Set this dynamically in cases where this component is used for non-family adminstrators
-const orgType = ref('family');
+const orgType = ref(SINGULAR_ORG_TYPES.families);
 const orgId = ref(null);
 
 const orderBy = ref(orderByDefault);
