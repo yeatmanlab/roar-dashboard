@@ -349,6 +349,7 @@ export const getUserAssignments = async (roarUid, orgType = null, orgIds = null)
     aggregationQuery: false,
     paginate: false,
     isCollectionGroupQuery: false,
+    restrictToOpenAssignments: true,
   });
   const userId = toValue(roarUid);
   return await adminAxiosInstance
