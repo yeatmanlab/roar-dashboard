@@ -33,7 +33,14 @@
     >
       <PvColumn field="validity" header="Validity" :editor="false">
         <template #body="{ data }">
-          {{ validationResults[data[props.keyField]]?.valid ? 'Valid' : 'Invalid' }}
+          <span
+            v-tooltip.top="validationResults[data[props.keyField]]?.errors.join('\n')"
+            :class="{
+              'text-green-500': validationResults[data[props.keyField]]?.valid,
+              'text-red-500': !validationResults[data[props.keyField]]?.valid,
+            }"
+            >{{ validationResults[data[props.keyField]]?.valid ? 'Valid' : 'Invalid' }}</span
+          >
         </template>
       </PvColumn>
       <PvColumn
@@ -52,7 +59,6 @@
           <InputText v-model="data[field]" autofocus fluid />
         </template>
       </PvColumn>
-      <PvColumn :row-editor="true" style="width: 10%; min-width: 8rem" bodyStyle="text-align:center" />
     </PvDataTable>
   </div>
   <div v-else>

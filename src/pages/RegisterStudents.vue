@@ -370,9 +370,14 @@
           <div class="flex py-3 justify-between">
             <Button label="Back" severity="secondary" icon="pi pi-arrow-left" @click="activateCallback('7')" />
             <h2 class="step-header">Preview & Submit</h2>
-            <Button label="" />
+            <Button label="Submit" severity="primary" icon="pi pi-check" @click="submit()" />
           </div>
-          <div class="step-container">
+          <div class="step-container flex flex-column">
+            <div v-if="submitting">
+              <div class="flex flex-column gap-3">
+                <h3 class="step-header">Submitting...</h3>
+              </div>
+            </div>
             <SubmitTable
               v-if="showSubmitTable"
               :students="rawStudentFile"
@@ -386,7 +391,7 @@
   </div>
 </template>
 <script setup>
-import { ref, toRaw } from 'vue';
+import { ref, toRaw, computed } from 'vue';
 import Dropdown from 'primevue/dropdown';
 import Stepper from 'primevue/stepper';
 import Step from 'primevue/step';
@@ -402,6 +407,7 @@ import OrgPicker from '@/components/OrgPicker.vue';
 import PvDataTable from 'primevue/datatable';
 import PvColumn from 'primevue/column';
 import _forEach from 'lodash/forEach';
+import _chunk from 'lodash/chunk';
 import SubmitTable from '@/components/SubmitTable.vue';
 
 const rawStudentFile = ref({});
@@ -411,6 +417,7 @@ const usingEmail = ref(false);
 const usingOrgPicker = ref(true);
 const isFileUploaded = ref(false);
 const showSubmitTable = ref(false);
+const submitting = ref(false);
 const nameFields = ref([
   { field: 'firstName', label: 'First Name', description: 'First name of the student' },
   { field: 'middleName', label: 'Middle Name', description: 'Middle name of the student' },
@@ -517,8 +524,46 @@ const readyToProgress = (targetStep) => {
   }
 };
 
+/**
+ * Submission handlers
+ */
+const totalUsers = computed(() => rawStudentFile.value.length);
+const submittedUsers = ref(0);
+
+const transformStudentData = (rawStudent) => {
+  const transformedStudent = {};
+
+  // Handle required fields
+  Object.entries(mappedColumns.value.required).forEach(([key, csvField]) => {
+    if (csvField) transformedStudent[key] = rawStudent[csvField];
+  });
+
+  // Handle name fields
+  Object.entries(mappedColumns.value.names).forEach(([key, csvField]) => {
+    if (csvField) transformedStudent[key] = rawStudent[csvField];
+  });
+
+  // Handle demographic fields
+  Object.entries(mappedColumns.value.demographic).forEach(([key, csvField]) => {
+    if (csvField) transformedStudent[key] = rawStudent[csvField];
+  });
+
+  // Handle optional fields
+  Object.entries(mappedColumns.value.optional).forEach(([key, csvField]) => {
+    if (csvField) transformedStudent[key] = rawStudent[csvField];
+  });
+
+  return transformedStudent;
+};
+
 const submit = () => {
-  console.log('submit', mappedColumns.value);
+  submitting.value = true;
+
+  // Transform each student's data according to the mappings
+  const transformedStudents = rawStudentFile.value.map(transformStudentData);
+
+  console.log('Transformed students:', transformedStudents);
+  // TODO: Submit transformed students
 };
 </script>
 <style>
