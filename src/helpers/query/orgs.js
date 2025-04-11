@@ -412,19 +412,29 @@ export const orgFetchAll = async (
   });
 
   if (isSuperAdmin.value) {
-    return await axiosInstance.post(':runQuery', requestBody).then(({ data }) => mapFields(data));
+    try {
+      return await axiosInstance.post(':runQuery', requestBody).then(({ data }) => mapFields(data));
+    } catch (error) {
+      console.error('orgFetchAll: Error fetching all orgs for super admin:', error);
+      return [];
+    }
   } else {
-    return orgPageFetcher(
-      activeOrgType,
-      selectedDistrict,
-      selectedSchool,
-      orderBy,
-      // Set page limit to max array length in javascript.
-      { value: 2 ** 31 - 1 },
-      { value: 0 },
-      isSuperAdmin,
-      adminOrgs,
-    );
+    try {
+      return await orgPageFetcher(
+        activeOrgType,
+        selectedDistrict,
+        selectedSchool,
+        orderBy,
+        // Set page limit to max array length in javascript.
+        { value: 2 ** 31 - 1 },
+        { value: 0 },
+        isSuperAdmin,
+        adminOrgs,
+      );
+    } catch (error) {
+      console.error('orgFetchAll: Error fetching all orgs for non-super admin:', error);
+      return [];
+    }
   }
 };
 
