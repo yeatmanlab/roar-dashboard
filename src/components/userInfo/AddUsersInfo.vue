@@ -20,9 +20,9 @@
 
     <ul>
       <!-- <li><b>id</b> - The unique identifier for the user. Start from 1.</li> -->
-      <li><b>userType</b> - The type of user. Must be one of the following: child, parent, or teacher.</li>
-      <li><b>month</b><span class="required">*</span> - The month the child was born. Leave blank for parent or teacher users. (Ex. 1 for January)</li>
-      <li><b>year</b><span class="required">*</span> - The year the child was born. Leave blank for parent or teacher users. (Ex. 2020)</li>
+      <li><b>userType</b> - The type of user. Must be one of the following: child, caregiver, or teacher.</li>
+      <li><b>month</b><span class="required">*</span> - The month the child was born. Leave blank for caregiver or teacher users. (Ex. 1 for January)</li>
+      <li><b>year</b><span class="required">*</span> - The year the child was born. Leave blank for caregiver or teacher users. (Ex. 2020)</li>
       <li><b>group OR Site AND school</b> - The name of the group or site and school.</li>
     </ul>
 
