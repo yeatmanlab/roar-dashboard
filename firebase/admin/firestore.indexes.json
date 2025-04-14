@@ -5098,16 +5098,15 @@
     },
     {
       "collectionGroup": "assignments",
-      "fieldPath": "readOrgs.classes",
-      "ttl": false,
-      "indexes": [
+      "queryScope": "COLLECTION",
+      "fields": [
         {
-          "arrayConfig": "CONTAINS",
-          "queryScope": "COLLECTION"
+          "fieldPath": "readOrgs.classes",
+          "arrayConfig": "CONTAINS"
         },
         {
-          "arrayConfig": "CONTAINS",
-          "queryScope": "COLLECTION_GROUP"
+          "fieldPath": "dateClosed",
+          "order": "ASCENDING"
         }
       ]
     },
@@ -5128,46 +5127,43 @@
     },
     {
       "collectionGroup": "assignments",
-      "fieldPath": "readOrgs.families",
-      "ttl": false,
-      "indexes": [
+      "queryScope": "COLLECTION",
+      "fields": [
         {
-          "arrayConfig": "CONTAINS",
-          "queryScope": "COLLECTION"
+          "fieldPath": "readOrgs.families",
+          "arrayConfig": "CONTAINS"
         },
         {
-          "arrayConfig": "CONTAINS",
-          "queryScope": "COLLECTION_GROUP"
+          "fieldPath": "dateClosed",
+          "order": "ASCENDING"
         }
       ]
     },
     {
       "collectionGroup": "assignments",
-      "fieldPath": "readOrgs.groups",
-      "ttl": false,
-      "indexes": [
+      "queryScope": "COLLECTION",
+      "fields": [
         {
-          "arrayConfig": "CONTAINS",
-          "queryScope": "COLLECTION"
+          "fieldPath": "readOrgs.groups",
+          "arrayConfig": "CONTAINS"
         },
         {
-          "arrayConfig": "CONTAINS",
-          "queryScope": "COLLECTION_GROUP"
+          "fieldPath": "dateClosed",
+          "order": "ASCENDING"
         }
       ]
     },
     {
       "collectionGroup": "assignments",
-      "fieldPath": "readOrgs.schools",
-      "ttl": false,
-      "indexes": [
+      "queryScope": "COLLECTION",
+      "fields": [
         {
-          "arrayConfig": "CONTAINS",
-          "queryScope": "COLLECTION"
+          "fieldPath": "readOrgs.schools",
+          "arrayConfig": "CONTAINS"
         },
         {
-          "arrayConfig": "CONTAINS",
-          "queryScope": "COLLECTION_GROUP"
+          "fieldPath": "dateClosed",
+          "order": "ASCENDING"
         }
       ]
     },
