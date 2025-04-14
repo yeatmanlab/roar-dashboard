@@ -252,7 +252,7 @@ const validateUsers = () => {
           if (!userMap.has(parentId)) {
             missingFields.push(`Caregiver with ID ${parentId} not found`);
           } else {
-            // Find userType field in parent (case-insensitive)
+            // Find userType field in caregiver (case-insensitive)
             const parentUserTypeField = Object.keys(userMap.get(parentId)).find(key => key.toLowerCase() === 'usertype');
             
             if (!parentUserTypeField || userMap.get(parentId)[parentUserTypeField].toLowerCase() !== 'parent') {
