@@ -210,7 +210,7 @@
                     showClear
                     class="w-full dropdown"
                     :options="csv_columns"
-                    v-model="mappedColumns.optional[value.field]"
+                    v-model="mappedColumns.demographics[value.field]"
                   />
                 </div>
               </div>
@@ -262,7 +262,7 @@
                 <PvToggleSwitch binary v-model="usingOrgPicker" />
               </div>
               <div v-if="usingOrgPicker">
-                <OrgPicker @selection="selection($event)" />
+                <OrgPicker @selection="orgSelection($event)" />
               </div>
               <div v-else>
                 <div class="flex flex-column gap-3 p-4">
@@ -330,7 +330,7 @@
                       <span>ROAR Fields</span>
                       <span>Your CSV Fields</span>
                     </div>
-                    <div v-for="(value, key) in mappedColumns.demographic" class="review-section-item">
+                    <div v-for="(value, key) in mappedColumns.demographics" class="review-section-item">
                       <span>{{ _startCase(key) }}</span>
                       <span class="text-gray-500">{{ value ?? '--' }}</span>
                     </div>
@@ -366,16 +366,30 @@
             </div>
           </div>
         </StepPanel>
+        <!-- Preview & Submit -->
         <StepPanel v-slot="{ activateCallback }" value="8">
           <div class="flex py-3 justify-between">
             <Button label="Back" severity="secondary" icon="pi pi-arrow-left" @click="activateCallback('7')" />
             <h2 class="step-header">Preview & Submit</h2>
-            <Button label="Submit" severity="primary" icon="pi pi-check" @click="submit()" />
+            <Button
+              label="Submit"
+              severity="primary"
+              icon="pi pi-check"
+              @click="submit()"
+              :disabled="!allStudentsValid"
+              v-tooltip.left="!allStudentsValid ? 'Please fix validation errors before submitting' : ''"
+            />
           </div>
           <div class="step-container flex flex-column">
-            <div v-if="submitting">
+            <div v-if="submitting !== SubmitStatus.IDLE">
               <div class="flex flex-column gap-3">
-                <h3 class="step-header">Submitting...</h3>
+                <h3 v-if="submitting === SubmitStatus.TRANSFORMING" class="step-header">
+                  <i class="pi pi-spinner pi-spin mr-2"></i>Formatting Students...
+                </h3>
+                <h3 v-if="submitting === SubmitStatus.SUBMITTING" class="step-header">
+                  <i class="pi pi-spinner pi-spin mr-2"></i>Submitting...
+                </h3>
+                <h3 v-if="submitting === SubmitStatus.COMPLETE" class="step-header">Upload Complete.</h3>
               </div>
             </div>
             <SubmitTable
@@ -383,6 +397,7 @@
               :students="rawStudentFile"
               :mappings="mappedColumns"
               :key-field="usingEmail ? mappedColumns.required.email : mappedColumns.required.username"
+              @validation-update="handleValidationUpdate"
             />
           </div>
         </StepPanel>
@@ -401,6 +416,7 @@ import Button from 'primevue/button';
 import PvFileUpload from 'primevue/fileupload';
 import PvToggleSwitch from 'primevue/toggleswitch';
 import { csvFileToJson } from '@/helpers';
+import { fetchOrgByName } from '@/helpers/query/orgs';
 import _isEmpty from 'lodash/isEmpty';
 import _startCase from 'lodash/startCase';
 import OrgPicker from '@/components/OrgPicker.vue';
@@ -408,6 +424,7 @@ import PvDataTable from 'primevue/datatable';
 import PvColumn from 'primevue/column';
 import _forEach from 'lodash/forEach';
 import _chunk from 'lodash/chunk';
+import _set from 'lodash/set';
 import SubmitTable from '@/components/SubmitTable.vue';
 
 const rawStudentFile = ref({});
@@ -417,11 +434,20 @@ const usingEmail = ref(false);
 const usingOrgPicker = ref(true);
 const isFileUploaded = ref(false);
 const showSubmitTable = ref(false);
-const submitting = ref(false);
+const allStudentsValid = ref(true);
+
+const SubmitStatus = {
+  IDLE: 'idle',
+  TRANSFORMING: 'transforming',
+  SUBMITTING: 'submitting',
+  COMPLETE: 'complete',
+};
+const submitting = ref(SubmitStatus.IDLE);
+
 const nameFields = ref([
-  { field: 'firstName', label: 'First Name', description: 'First name of the student' },
-  { field: 'middleName', label: 'Middle Name', description: 'Middle name of the student' },
-  { field: 'lastName', label: 'Last Name', description: 'Last name of the student' },
+  { field: 'first', label: 'First Name', description: 'First name of the student' },
+  { field: 'middle', label: 'Middle Name', description: 'Middle name of the student' },
+  { field: 'last', label: 'Last Name', description: 'Last name of the student' },
 ]);
 const demographicFields = ref([
   { field: 'gender', label: 'Gender', description: 'Gender of the student' },
@@ -449,19 +475,28 @@ const mappedColumns = ref({
   },
   names: Object.fromEntries(nameFields.value.map((field) => [field.field, null])),
   optional: Object.fromEntries(optionalFields.value.map((field) => [field.field, null])),
-  demographic: Object.fromEntries(demographicFields.value.map((field) => [field.field, null])),
+  demographics: Object.fromEntries(demographicFields.value.map((field) => [field.field, null])),
   organizations: {
-    districts: [],
-    schools: [],
-    classes: [],
-    groups: [],
-    families: [],
+    districts: null,
+    schools: null,
+    classes: null,
+    groups: null,
+    families: null,
   },
 });
-const selection = (selected) => {
-  console.log('selected', selected);
-  // selectedOrgs.value = selected;
-  mappedColumns.value.organizations = selected;
+const selectedOrgs = ref({
+  districts: [],
+  schools: [],
+  classes: [],
+  groups: [],
+  families: [],
+});
+const orgSelection = (selected) => {
+  selectedOrgs.value = selected;
+};
+
+const handleValidationUpdate = (isValid) => {
+  allStudentsValid.value = isValid;
 };
 
 function resetUpload() {
@@ -525,45 +560,167 @@ const readyToProgress = (targetStep) => {
 };
 
 /**
+ * Organization handling
+ */
+// Cache for organization IDs to avoid repeated API calls
+const orgCache = ref({
+  districts: new Map(),
+  schools: new Map(),
+  classes: new Map(),
+  groups: new Map(),
+  families: new Map(),
+});
+
+// Helper function to get org ID (uses cache if available)
+const getOrgId = async (orgType, orgName, selectedDistrict = null, selectedSchool = null) => {
+  console.log('invoking getOrgId', orgType, orgName, selectedDistrict, selectedSchool);
+  if (!orgName) return null;
+
+  const cacheKey =
+    orgType === 'schools'
+      ? `${orgName}-${selectedDistrict}`
+      : orgType === 'classes'
+      ? `${orgName}-${selectedSchool}`
+      : orgName;
+
+  // Check cache first
+  if (orgCache.value[orgType].has(cacheKey)) {
+    return orgCache.value[orgType].get(cacheKey);
+  }
+
+  // If not in cache, fetch and cache the result
+  try {
+    const org = await fetchOrgByName(orgType, orgName, { value: selectedDistrict }, { value: selectedSchool });
+    console.log('Fetched org:', org);
+
+    if (org[0]?.id) {
+      orgCache.value[orgType].set(cacheKey, org[0].id);
+      return org[0].id;
+    }
+  } catch (error) {
+    console.error(`Error fetching ${orgType} ID for ${orgName}:`, error);
+  }
+  return null;
+};
+
+/**
  * Submission handlers
  */
-const totalUsers = computed(() => rawStudentFile.value.length);
-const submittedUsers = ref(0);
-
-const transformStudentData = (rawStudent) => {
+const transformStudentData = async (rawStudent) => {
   const transformedStudent = {};
 
   // Handle required fields
   Object.entries(mappedColumns.value.required).forEach(([key, csvField]) => {
-    if (csvField) transformedStudent[key] = rawStudent[csvField];
+    if (csvField) {
+      if (['username', 'email', 'password'].includes(key)) {
+        _set(transformedStudent, key, rawStudent[csvField]);
+      } else {
+        _set(transformedStudent, `userData.${key}`, rawStudent[csvField]);
+      }
+    }
   });
 
   // Handle name fields
   Object.entries(mappedColumns.value.names).forEach(([key, csvField]) => {
-    if (csvField) transformedStudent[key] = rawStudent[csvField];
+    if (csvField) _set(transformedStudent, `userData.name.${key}`, rawStudent[csvField]);
   });
 
   // Handle demographic fields
-  Object.entries(mappedColumns.value.demographic).forEach(([key, csvField]) => {
-    if (csvField) transformedStudent[key] = rawStudent[csvField];
+  Object.entries(mappedColumns.value.demographics).forEach(([key, csvField]) => {
+    if (csvField) _set(transformedStudent, `userData.${key}`, rawStudent[csvField]);
   });
 
   // Handle optional fields
   Object.entries(mappedColumns.value.optional).forEach(([key, csvField]) => {
-    if (csvField) transformedStudent[key] = rawStudent[csvField];
+    if (csvField) {
+      _set(transformedStudent, `userData.${key}`, rawStudent[csvField]);
+    }
   });
+
+  // Handle organizations
+  if (!usingOrgPicker.value) {
+    // If the org picker is not being used, we are given the names of the orgs as values.
+    // To submit, we need to send orgIds. Education orgs, districts, schools, and classes
+    // are fetched on order. First district, then school, then class. If any of these are not
+    // found, it will skip the rest as they are required to find the class.
+    let studentDistrictId = null;
+    let studentSchoolId = null;
+    const orgFields = mappedColumns.value.organizations;
+
+    // First check for non-educational orgs
+    if (orgFields.groups && rawStudent[orgFields.groups]) {
+      const groupName = rawStudent[orgFields.groups];
+      const groupId = await getOrgId('groups', groupName);
+      if (groupId) {
+        _set(transformedStudent, 'userData.groups', { id: groupId });
+      }
+    } else {
+      // Process district -> school -> class hierarchy
+      if (orgFields.districts && rawStudent[orgFields.districts]) {
+        const districtName = rawStudent[orgFields.districts];
+        studentDistrictId = await getOrgId('districts', districtName);
+        console.log('Fetched district ID:', studentDistrictId);
+        if (studentDistrictId) {
+          _set(transformedStudent, 'userData.districts', { id: studentDistrictId });
+        } else {
+          console.log(`District ${districtName} not found.`);
+        }
+      }
+
+      if (studentDistrictId && orgFields.schools && rawStudent[orgFields.schools]) {
+        const schoolName = rawStudent[orgFields.schools];
+        studentSchoolId = await getOrgId('schools', schoolName, studentDistrictId);
+        console.log('Fetched school ID:', studentSchoolId);
+        if (studentSchoolId) {
+          _set(transformedStudent, 'userData.schools', { id: studentSchoolId });
+        } else {
+          console.log(`School ${schoolName} not found.`);
+        }
+      }
+
+      if (studentSchoolId && orgFields.classes && rawStudent[orgFields.classes]) {
+        const className = rawStudent[orgFields.classes];
+        const classId = await getOrgId('classes', className, studentDistrictId, studentSchoolId);
+        console.log('Fetched class ID:', classId);
+        if (classId) {
+          _set(transformedStudent, 'userData.classes', { id: classId });
+        } else {
+          console.log(`Class ${className} not found.`);
+        }
+      }
+    }
+  } else {
+    // Take input from the org picker
+    Object.entries(selectedOrgs.value).forEach(([key, orgs]) => {
+      if (orgs.length) {
+        console.log('orgs', orgs);
+        _set(transformedStudent, `userData.${key}`, { id: orgs[0].id });
+      }
+    });
+  }
 
   return transformedStudent;
 };
 
-const submit = () => {
-  submitting.value = true;
+const submit = async () => {
+  submitting.value = SubmitStatus.TRANSFORMING;
 
   // Transform each student's data according to the mappings
-  const transformedStudents = rawStudentFile.value.map(transformStudentData);
+  const transformedStudents = [];
+  // const transformedStudents = rawStudentFile.value.map(transformStudentData);
+  for (const student of rawStudentFile.value) {
+    const tStudent = await transformStudentData(student);
+    transformedStudents.push(tStudent);
+  }
+  submitting.value = SubmitStatus.SUBMITTING;
 
   console.log('Transformed students:', transformedStudents);
-  // TODO: Submit transformed students
+  const chunkedUsers = _chunk(transformedStudents, 10);
+  // TODO: submit users
+  for (const chunk of chunkedUsers) {
+    console.log('submitting chunk to publish function', chunk);
+  }
+  submitting.value = SubmitStatus.COMPLETE;
 };
 </script>
 <style>
