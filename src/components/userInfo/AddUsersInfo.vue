@@ -9,14 +9,14 @@
       <h3>How to Add Users</h3>
       <ol class="numbered-steps">
         <li><span class="step-number">1</span>Download the template below or create your own CSV with the required columns</li>
-        <li><span class="step-number">2</span>Fill in CSV with the user data</li>
-        <li><span class="step-number">3</span>Upload the file and click "Start Adding"</li>
-        <li><span class="step-number">4</span>Once finished, a file called "registered_users.csv" will be downloaded. If it is not in your downloads folder, click the "Download Users" button.</li>
-        <li><span class="step-number">5</span>Click "Continue to Link Users"</li>
+        <li><span class="step-number">2</span>Fill in the CSV with the user data</li>
+        <li><span class="step-number">3</span>Upload the CSV file and click "Start Adding"</li>
+        <li><span class="step-number">4</span>When finished, a file called "registered_users.csv" will be downloaded. If it is not in your downloads folder, click the "Download Users" button.</li>
+        <li><span class="step-number">5</span>Click "Continue to Link Users and get their login information."</li>
       </ol>
     </div>
 
-    These fields are <b>REQUIRED</b> for adding users:
+    These fields (columns)are <b>REQUIRED</b> for adding users:
 
     <ul>
       <!-- <li><b>id</b> - The unique identifier for the user. Start from 1.</li> -->
@@ -26,7 +26,7 @@
       <li><b>group OR Site AND school</b> - The name of the group or site and school.</li>
     </ul>
 
-    These fields are optional:
+    These fields (columns) are optional:
 
     <ul class="optional-fields">
       <li><b>Class</b> - The name of the class.</li>
@@ -47,7 +47,7 @@
 
     <img
       id="example-image"
-      src="https://storage.googleapis.com/road-dashboard/example_researcher_csv.png"
+      src="/public/images/add_users_example.png"
       alt="CSV upload example"
       style="width: 100%; max-width: 1400px; height: auto;"
     />
