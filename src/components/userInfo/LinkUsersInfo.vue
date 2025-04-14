@@ -2,7 +2,7 @@
     <PvPanel header="Link Users" class="link-users-panel">
       <div class="info-message-container">
         <i class="pi pi-exclamation-circle"></i>
-        <p>Make sure you are editing the downloaded file from adding users. This new file contains all of your information and LEVANTE UIDs.</p>
+        <p>Make sure you are editing the downloaded file you got after adding users. This new file contains all of your information and LEVANTE UIDs.</p>
       </div>
 
       <div class="how-to-section">
