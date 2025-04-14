@@ -47,7 +47,7 @@
 
     <img
       id="example-image"
-      src="/public/link_users_example.png"
+      src="/link_users_example.png"
       alt="CSV upload example"
       style="width: 100%; max-width: 1400px; height: auto;"
     />
