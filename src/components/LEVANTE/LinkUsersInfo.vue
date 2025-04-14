@@ -18,8 +18,8 @@
       <ul>
         <li><b>id</b> - A unique identifier for the user in your CSV. Start from 1.</li>
         <li><b>userType</b> - The type of user. Must be one of the following: child, parent, teacher.</li>
-        <li><b>parentId</b><span class="required">*</span> - The unique identifier for the parent. Start from 1.</li>
-        <li><b>teacherId</b><span class="required">*</span> - The unique identifier for the teacher. Start from 1.</li>
+        <li><b>parentId</b><span class="required">*</span> - The unique identifier for the child's caregiver. Start from 1.</li>
+        <li><b>teacherId</b><span class="required">*</span> - The unique identifier for the child's teacher. Start from the next available number.</li>
         <li><b>uid</b> - The unique identifier that is returned when the user was added.</li>
       </ul>
   
@@ -32,7 +32,7 @@
   
       <img
         id="example-image"
-        src="https://storage.googleapis.com/road-dashboard/link-users-example.png"
+        src="/public/levante-link-users-example.png"
         alt="CSV upload example"
         style="width: 100%; max-width: 1400px; height: auto;"
       />

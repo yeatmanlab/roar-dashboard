@@ -122,7 +122,12 @@ const allFields = [
     },
     {
       field: 'parentId',
-      header: 'Parent ID',
+      header: 'Caregiver ID',
+      dataType: 'string',
+    },
+    {
+      field: 'caregiverId',
+      header: 'Caregiver ID',
       dataType: 'string',
     },
     {
@@ -245,7 +250,7 @@ const validateUsers = () => {
           console.log('parentId in loop:', parentId);
 
           if (!userMap.has(parentId)) {
-            missingFields.push(`Parent with ID ${parentId} not found`);
+            missingFields.push(`Caregiver with ID ${parentId} not found`);
           } else {
             // Find userType field in parent (case-insensitive)
             const parentUserTypeField = Object.keys(userMap.get(parentId)).find(key => key.toLowerCase() === 'usertype');

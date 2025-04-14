@@ -32,7 +32,7 @@
       <li><b>Class</b> - The name of the class.</li>
     </ul>
 
-    <p>Parents and Teachers need to have the same Audiences as their children / students.</p>
+    <p>Caregivers and Teachers need to have the same Audiences as their children / students.</p>
 
     <p class="mb-6"><span class="required">*</span> = Required only for child users</p>
 
