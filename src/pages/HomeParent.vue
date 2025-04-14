@@ -39,7 +39,7 @@ import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes.js';
 const initialized = ref(true);
 const administrationId = ref(null);
 // TODO: Set this dynamically in cases where this component is used for non-family adminstrators
-const orgType = ref(SINGULAR_ORG_TYPES.families);
+const orgType = ref(SINGULAR_ORG_TYPES.FAMILIES);
 const orgId = ref(null);
 
 const orderBy = ref(orderByDefault);
