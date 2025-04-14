@@ -47,7 +47,7 @@
 
     <img
       id="example-image"
-      src="/link_users_example.png"
+      :src="linkUsersExampleImage"
       alt="CSV upload example"
       style="width: 100%; max-width: 1400px; height: auto;"
     />
@@ -56,9 +56,10 @@
 
 <script setup>
 import PvPanel from 'primevue/panel';
+import linkUsersExampleImage from '@/assets/images/levante-add-users-example.png';
 
 const generateTemplateFile = () => {
-  const headers = ['id', 'userType', 'month', 'year', 'parentId', 'teacherId', 'site', 'school', 'class', 'group'];
+  const headers = ['id', 'userType', 'month', 'year', 'caregiverId', 'teacherId', 'site', 'school', 'class', 'group'];
   const csvContent = headers.join(',') + '\n';
   return new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
 };
