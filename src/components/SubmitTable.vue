@@ -60,10 +60,6 @@
         </template>
       </PvColumn>
     </PvDataTable>
-    <div v-if="unusedColumns.length > 0" class="flex flex-column">
-      <h2>Unused Columns</h2>
-      {{ unusedColumns.join(', ') }}
-    </div>
   </div>
   <div v-else>
     <h2>No data available</h2>
@@ -95,7 +91,6 @@ const props = defineProps({
   },
 });
 const tableColumns = ref([]);
-const unusedColumns = ref([]);
 const editingRows = ref([]);
 const validationResults = ref({});
 
@@ -117,7 +112,6 @@ watch(
 
 function generateColumns(rawJson) {
   let columns = [];
-  unusedColumns.value = [];
   const columnValues = Object.keys(rawJson);
   _forEach(columnValues, (col) => {
     const mappedCol = findMappedColumnByField(col) ?? null;
@@ -125,9 +119,7 @@ function generateColumns(rawJson) {
     if (dataType === 'object') {
       if (rawJson[col] instanceof Date) dataType = 'date';
     }
-    if (!mappedCol) {
-      unusedColumns.value.push(col);
-    } else {
+    if (mappedCol) {
       columns.push({
         field: col,
         header: _startCase(mappedCol),

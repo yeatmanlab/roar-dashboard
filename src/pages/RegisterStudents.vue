@@ -362,11 +362,19 @@
                   <div class="review-section-container">
                     <div class="flex flex-row justify-between mb-2">
                       <span>ROAR Fields</span>
-                      <span>Your CSV Fields</span>
+                      <span>{{ usingOrgPicker ? 'Selected Organizations' : 'Your CSV Fields' }}</span>
                     </div>
-                    <div v-for="(value, key) in mappedColumns.organizations" class="review-section-item">
-                      <span>{{ _startCase(key) }}</span>
-                      <span class="text-gray-500">{{ value ?? '--' }}</span>
+                    <div v-if="usingOrgPicker">
+                      <div v-for="(value, key) in selectedOrgs" class="review-section-item">
+                        <span>{{ _startCase(key) }}</span>
+                        <span class="text-gray-500">{{ value.map((org) => org.name).join(', ') ?? '--' }}</span>
+                      </div>
+                    </div>
+                    <div v-else>
+                      <div v-for="(value, key) in mappedColumns.organizations" class="review-section-item">
+                        <span class="mr-2">{{ _startCase(key) }}</span>
+                        <span class="text-gray-500 pl-2">{{ value ?? '--' }}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
