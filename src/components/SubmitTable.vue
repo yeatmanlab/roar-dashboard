@@ -34,7 +34,7 @@
       <PvColumn field="validity" header="Validity" :editor="false">
         <template #body="{ data }">
           <span
-            v-tooltip.top="validationResults[data[props.keyField]]?.errors.join('\n')"
+            v-tooltip.top="validationResults[data[props.keyField]]?.errors.join(',\n')"
             :class="{
               'text-green-500': validationResults[data[props.keyField]]?.valid,
               'text-red-500': !validationResults[data[props.keyField]]?.valid,
@@ -51,7 +51,7 @@
         :editor="isColumnEditable(col.field)"
       >
         <template #body="{ data, field }">
-          <div :class="{ 'invalid-cell': !isFieldValid(data, field) }">
+          <div>
             {{ data[field] }}
           </div>
         </template>
@@ -60,6 +60,10 @@
         </template>
       </PvColumn>
     </PvDataTable>
+    <div v-if="unusedColumns.length > 0" class="flex flex-column">
+      <h2>Unused Columns</h2>
+      {{ unusedColumns.join(', ') }}
+    </div>
   </div>
   <div v-else>
     <h2>No data available</h2>
@@ -91,30 +95,14 @@ const props = defineProps({
   },
 });
 const tableColumns = ref([]);
+const unusedColumns = ref([]);
 const editingRows = ref([]);
 const validationResults = ref({});
 
-// Computed properties for validation stats
-const totalCount = computed(() => (_isEmpty(props.students) ? 0 : props.students.length));
-// Computed property for sorted students data
-const sortedStudents = computed(() => {
-  if (!props.students) return [];
-  return [...props.students].sort((a, b) => {
-    const aValid = validationResults.value[a[props.keyField]]?.valid ?? false;
-    const bValid = validationResults.value[b[props.keyField]]?.valid ?? false;
-    return aValid - bValid; // Sort invalid entries first
-  });
-});
-
-const validCount = computed(() => {
-  if (_isEmpty(validationResults.value)) return 0;
-  let count = 0;
-  Object.values(validationResults.value).forEach((result) => {
-    if (result.valid) count++;
-  });
-  return count;
-});
-
+/**
+ * Utilities for the DataTable
+ */
+//#region DataTable
 // Watch for changes in students data
 watch(
   () => props.students,
@@ -127,22 +115,25 @@ watch(
   { immediate: true, deep: true },
 );
 
-// {valid: true, errors: []}
-
 function generateColumns(rawJson) {
   let columns = [];
+  unusedColumns.value = [];
   const columnValues = Object.keys(rawJson);
   _forEach(columnValues, (col) => {
-    const mappedCol = findMappedColumnByField(col) ?? 'Not Incl.';
+    const mappedCol = findMappedColumnByField(col) ?? null;
     let dataType = typeof rawJson[col];
     if (dataType === 'object') {
       if (rawJson[col] instanceof Date) dataType = 'date';
     }
-    columns.push({
-      field: col,
-      header: _startCase(mappedCol),
-      dataType: dataType,
-    });
+    if (!mappedCol) {
+      unusedColumns.value.push(col);
+    } else {
+      columns.push({
+        field: col,
+        header: _startCase(mappedCol),
+        dataType: dataType,
+      });
+    }
   });
   return columns;
 }
@@ -170,15 +161,46 @@ function isColumnEditable(column) {
 function onCellEditSave(event) {
   let { data, newValue, field } = event;
 
-  // Prevent the user from changing the key field
-  if (!isColumnEditable(field)) {
-    return;
-  }
-
   data[field] = newValue;
 
   validateStudent(data);
 }
+//#endregion DataTable
+
+/**
+ * Handle student validation
+ */
+//#region Validation
+const emit = defineEmits(['validationUpdate']);
+const totalCount = computed(() => (_isEmpty(props.students) ? 0 : props.students.length));
+const sortedStudents = computed(() => {
+  if (!props.students) return [];
+  return [...props.students].sort((a, b) => {
+    const aValid = validationResults.value[a[props.keyField]]?.valid ?? false;
+    const bValid = validationResults.value[b[props.keyField]]?.valid ?? false;
+    return aValid - bValid; // Sort invalid entries first
+  });
+});
+
+const validCount = computed(() => {
+  if (_isEmpty(validationResults.value)) return 0;
+  let count = 0;
+  Object.values(validationResults.value).forEach((result) => {
+    if (result.valid) count++;
+  });
+  return count;
+});
+
+// Watch validation results and emit status
+watch(
+  [validCount, totalCount],
+  ([newCount, total]) => {
+    console.log('validation watcher', newCount, total);
+    const allValid = newCount === total;
+    emit('validationUpdate', allValid);
+  },
+  { immediate: true },
+);
 
 // Function to validate all students
 function validateAllStudents() {
@@ -204,21 +226,33 @@ function validateStudent(student) {
   }
 }
 
-// Function to check if a specific field is valid
-function isFieldValid(data, field) {
-  return validationResults.value[data[props.keyField]] ?? true;
-}
-
 function validityCheck(row) {
+  const keyField = props.keyField;
   const passwordField = props.mappings.required.password;
-  if (!isPasswordValid(row[passwordField])) {
-    return { valid: false, errors: ['Password must be at least 6 characters long and contain at least one letter'] };
+  const gradeField = props.mappings.required.grade;
+  const dobField = props.mappings.required.dob;
+  const errors = [];
+  // check that required fields are filled out
+  if (!_get(row, keyField)) {
+    errors.push('Username/Email is required');
   }
-  return { valid: true, errors: [] };
+  if (!_get(row, gradeField)) {
+    errors.push('Grade is required');
+  }
+  if (!_get(row, dobField)) {
+    errors.push('Date of Birth is required');
+  }
+  // check that password is valid
+  if (!isPasswordValid(row[passwordField])) {
+    errors.push('Password must be at least 6 characters long and contain at least one letter');
+  }
+  return { valid: _isEmpty(errors), errors };
 }
 function isPasswordValid(password) {
+  if (!password) return false;
   return password.length >= 6 && /[a-zA-Z]/.test(password);
 }
+//#endregion Validation
 </script>
 
 <style>
