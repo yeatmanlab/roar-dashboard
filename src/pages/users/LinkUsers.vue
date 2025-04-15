@@ -126,11 +126,6 @@ const allFields = [
       dataType: 'string',
     },
     {
-      field: 'caregiverId',
-      header: 'Caregiver ID',
-      dataType: 'string',
-    },
-    {
       field: 'teacherId',
       header: 'Teacher ID',
       dataType: 'string',
@@ -254,9 +249,11 @@ const validateUsers = () => {
           } else {
             // Find userType field in caregiver (case-insensitive)
             const parentUserTypeField = Object.keys(userMap.get(parentId)).find(key => key.toLowerCase() === 'usertype');
+            const parentUserTypeValue = parentUserTypeField ? userMap.get(parentId)[parentUserTypeField].toLowerCase() : null;
             
-            if (!parentUserTypeField || userMap.get(parentId)[parentUserTypeField].toLowerCase() !== 'parent') {
-              missingFields.push(`User with ID ${parentId} is not a parent`);
+            // Accept either 'parent' or 'caregiver' as valid during linking validation
+            if (!parentUserTypeField || (parentUserTypeValue !== 'parent' && parentUserTypeValue !== 'caregiver')) {
+              missingFields.push(`User with ID ${parentId} is not a parent/caregiver`);
             }
           }
         });
