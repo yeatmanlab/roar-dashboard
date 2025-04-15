@@ -44,6 +44,10 @@
                 <b>{{ col.header }}</b>
               </div>
             </template>
+            <template #body="{ data, field }">
+              <span v-if="field === 'userType' && data[field] === 'parent'">Parent/Caregiver</span>
+              <span v-else>{{ data[field] }}</span>
+            </template>
           </PvColumn>
         </PvDataTable>
 
@@ -95,6 +99,10 @@
           <PvColumn v-for="col of errorUserColumns" :key="col.field" :field="col.field">
             <template #header>
               {{ col.header }}
+            </template>
+            <template #body="{ data, field }">
+              <span v-if="field === 'userType' && data[field] === 'parent'">Parent/Caregiver</span>
+              <span v-else>{{ data[field] }}</span>
             </template>
           </PvColumn>
         </PvDataTable>
