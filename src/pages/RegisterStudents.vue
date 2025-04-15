@@ -90,7 +90,7 @@
               <div v-if="usingEmail" class="step-field-item">
                 <div>
                   <span class="font-bold">Email<span class="text-red-500">*</span></span>
-                  <p class="text-gray-500">The email address of the student.</p>
+                  <p class="text-gray-500">The student's email address</p>
                 </div>
                 <Dropdown
                   showClear
@@ -102,7 +102,7 @@
               <div v-else class="step-field-item">
                 <div>
                   <span class="font-bold">Username<span class="text-red-500">*</span></span>
-                  <p class="text-gray-500">The username of the student.</p>
+                  <p class="text-gray-500">The student's username</p>
                 </div>
                 <Dropdown
                   showClear
@@ -114,7 +114,7 @@
               <div class="step-field-item">
                 <div>
                   <span class="font-bold">Password<span class="text-red-500">*</span></span>
-                  <p class="text-gray-500">The password of the student.</p>
+                  <p class="text-gray-500">The student's password</p>
                 </div>
                 <Dropdown
                   showClear
@@ -126,7 +126,7 @@
               <div class="step-field-item">
                 <div>
                   <span class="font-bold">Date of Birth<span class="text-red-500">*</span></span>
-                  <p class="text-gray-500">The date of birth of the student.</p>
+                  <p class="text-gray-500">The student's date of birth</p>
                 </div>
                 <Dropdown
                   showClear
@@ -138,7 +138,7 @@
               <div class="step-field-item">
                 <div>
                   <span class="font-bold">Grade<span class="text-red-500">*</span></span>
-                  <p class="text-gray-500">The grade of the student.</p>
+                  <p class="text-gray-500">The student's grade</p>
                 </div>
                 <Dropdown
                   showClear
@@ -461,24 +461,28 @@ const SubmitStatus = {
 const submitting = ref(SubmitStatus.IDLE);
 
 const nameFields = ref([
-  { field: 'first', label: 'First Name', description: 'First name of the student' },
-  { field: 'middle', label: 'Middle Name', description: 'Middle name of the student' },
-  { field: 'last', label: 'Last Name', description: 'Last name of the student' },
+  { field: 'first', label: 'First Name', description: "The student's first name" },
+  { field: 'middle', label: 'Middle Name', description: "The student's middle name" },
+  { field: 'last', label: 'Last Name', description: "The student's last name" },
 ]);
 const demographicFields = ref([
-  { field: 'gender', label: 'Gender', description: 'Gender of the student' },
-  { field: 'race', label: 'Race', description: 'Race of the student' },
-  { field: 'ellStatus', label: 'English Language Learner', description: 'English Language Learner of the student' },
-  { field: 'frlStatus', label: 'Free-Reduced Lunch', description: 'Free-Reduced Lunch of the student' },
-  { field: 'iepStatus', label: 'IEP Status', description: 'IEP Status of the student' },
-  { field: 'hispanicEthnicity', label: 'Hispanic Ethinicity', description: 'Hispanic Ethinicity of the student' },
-  { field: 'homeLanguage', label: 'Home Language', description: 'Home Language of the student' },
+  { field: 'gender', label: 'Gender', description: "The student's gender" },
+  { field: 'race', label: 'Race', description: "The student's race(s)" },
+  {
+    field: 'ellStatus',
+    label: 'English Language Learner Status',
+    description: "The student's English Language Learner status",
+  },
+  { field: 'frlStatus', label: 'Free-Reduced Lunch Status', description: "The student's Free-Reduced Lunch status" },
+  { field: 'iepStatus', label: 'IEP Status', description: "The student's IEP status" },
+  { field: 'hispanicEthnicity', label: 'Hispanic Ethinicity', description: "The student's Hispanic ethnicity" },
+  { field: 'homeLanguage', label: 'Home Language', description: "The student's home language" },
 ]);
 const optionalFields = ref([
-  { field: 'testData', label: 'Test Data', description: 'Test data of the student' },
-  { field: 'unenroll', label: 'Unenroll', description: 'Unenroll of the student' },
-  { field: 'stateId', label: 'State ID', description: 'State ID of the student' },
-  { field: 'pid', label: 'PID', description: 'PID of the student' },
+  { field: 'testData', label: 'Test Data', description: 'Is this student a test user?' },
+  { field: 'unenroll', label: 'Unenroll', description: 'Should this student be unenrolled?' },
+  { field: 'stateId', label: 'State ID', description: "The student's state ID" },
+  { field: 'pid', label: 'PID', description: "The student's PID" },
 ]);
 
 const mappedColumns = ref({
