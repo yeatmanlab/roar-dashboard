@@ -45,7 +45,7 @@
                   auto
                   :show-upload-button="false"
                   :show-cancel-button="false"
-                  @uploader="onFileUpload($event, activateCallback)"
+                  @uploader="onFileUpload($event)"
                 >
                   <template #empty>
                     <div class="extra-height ml-6 text-gray-500">
@@ -68,7 +68,9 @@
                   class="datatable"
                 >
                   <PvColumn v-for="col of tableColumns" :key="col.field" :field="col.field">
-                    <template #header> <b></b>{{ col.header }}</template>
+                    <template #header>
+                      <b>{{ col.header }}</b>
+                    </template>
                   </PvColumn>
                 </PvDataTable>
               </div>
@@ -251,7 +253,13 @@
           <div class="py-3 flex justify-between">
             <Button label="Back" severity="secondary" icon="pi pi-arrow-left" @click="activateCallback('5')" />
             <h2 class="step-header">Organizations</h2>
-            <Button label="Next" icon="pi pi-arrow-right" iconPos="right" @click="activateCallback('7')" />
+            <Button
+              :disabled="!readyToProgress('7')"
+              label="Next"
+              icon="pi pi-arrow-right"
+              iconPos="right"
+              @click="activateCallback('7')"
+            />
           </div>
           <div class="step-container">
             <div
@@ -399,6 +407,7 @@
               :key-field="usingEmail ? mappedColumns.required.email : mappedColumns.required.username"
               @validation-update="handleValidationUpdate"
             />
+            <Button label="Add User" icon="pi pi-plus" severity="secondary" class="mt-3" @click="addUser" />
           </div>
         </StepPanel>
       </StepPanels>
@@ -406,7 +415,7 @@
   </div>
 </template>
 <script setup>
-import { ref, toRaw, computed } from 'vue';
+import { ref, toRaw, onMounted } from 'vue';
 import Dropdown from 'primevue/dropdown';
 import Stepper from 'primevue/stepper';
 import Step from 'primevue/step';
@@ -417,6 +426,9 @@ import PvFileUpload from 'primevue/fileupload';
 import PvToggleSwitch from 'primevue/toggleswitch';
 import { csvFileToJson } from '@/helpers';
 import { fetchOrgByName } from '@/helpers/query/orgs';
+import { useToast } from 'primevue/usetoast';
+import { useAuthStore } from '@/store/auth';
+import { storeToRefs } from 'pinia';
 import _isEmpty from 'lodash/isEmpty';
 import _startCase from 'lodash/startCase';
 import OrgPicker from '@/components/OrgPicker.vue';
@@ -425,16 +437,17 @@ import PvColumn from 'primevue/column';
 import _forEach from 'lodash/forEach';
 import _chunk from 'lodash/chunk';
 import _set from 'lodash/set';
+import _remove from 'lodash/remove';
 import SubmitTable from '@/components/SubmitTable.vue';
 
-const rawStudentFile = ref({});
+const rawStudentFile = ref([]);
 const tableColumns = ref([]);
 const csv_columns = ref([]);
 const usingEmail = ref(false);
 const usingOrgPicker = ref(true);
 const isFileUploaded = ref(false);
 const showSubmitTable = ref(false);
-const allStudentsValid = ref(true);
+const allStudentsValid = ref(false);
 
 const SubmitStatus = {
   IDLE: 'idle',
@@ -511,6 +524,7 @@ function generateColumns(rawJson) {
   let columns = [];
   const columnValues = Object.keys(rawJson);
   _forEach(columnValues, (col) => {
+    if (col === 'rowKey') return;
     let dataType = typeof rawJson[col];
     if (dataType === 'object') {
       if (rawJson[col] instanceof Date) dataType = 'date';
@@ -525,15 +539,24 @@ function generateColumns(rawJson) {
   return columns;
 }
 
-const onFileUpload = async (event, activateCallback) => {
-  rawStudentFile.value = await csvFileToJson(event.files[0]);
+const onFileUpload = async (event) => {
+  const rawFile = await csvFileToJson(event.files[0]);
+  rawStudentFile.value = rawFile.map((row, index) => {
+    return {
+      rowKey: index,
+      ...row,
+    };
+  });
   console.log('rawStudentFile', rawStudentFile.value);
   tableColumns.value = generateColumns(rawStudentFile.value[0]);
-  csv_columns.value = Object.keys(toRaw(rawStudentFile.value[0]));
-  // activateCallback('2');
+  csv_columns.value = _remove(Object.keys(toRaw(rawStudentFile.value[0])), (col) => col !== 'rowKey');
 };
 
-// This function will return a boolean, true if the user has filled out the information required to proceed to the targetStep.
+/**
+ * Checks if the user has filled out the information required to proceed to the targetStep.
+ * @param {string} targetStep - The step to check.
+ * @returns {boolean} True if the user has filled out the information required to proceed to the targetStep, false otherwise.
+ */
 const readyToProgress = (targetStep) => {
   console.log('invoking readyToProgress', targetStep);
   if (targetStep === '2') return !_isEmpty(rawStudentFile.value);
@@ -548,15 +571,29 @@ const readyToProgress = (targetStep) => {
     );
   }
 
-  if (targetStep === '5') {
-    return (
-      (!_isEmpty(mappedColumns.value.organizations.districts) &&
-        !_isEmpty(mappedColumns.value.organizations.schools) &&
-        !_isEmpty(mappedColumns.value.organizations.classes)) ||
-      !_isEmpty(mappedColumns.value.organizations.groups) ||
-      !_isEmpty(mappedColumns.value.organizations.families)
-    );
+  if (targetStep === '7') {
+    if (usingOrgPicker.value) {
+      // Check that selectedOrgs has district, school and class populated OR group OR family populated
+      return (
+        (!_isEmpty(selectedOrgs.value.districts) &&
+          !_isEmpty(selectedOrgs.value.schools) &&
+          !_isEmpty(selectedOrgs.value.classes)) ||
+        !_isEmpty(selectedOrgs.value.groups) ||
+        !_isEmpty(selectedOrgs.value.families)
+      );
+    } else {
+      // Check that mappedColumns.organizations has all the required fields not null
+      return (
+        (mappedColumns.value.organizations.districts &&
+          mappedColumns.value.organizations.schools &&
+          mappedColumns.value.organizations.classes) ||
+        mappedColumns.value.organizations.groups ||
+        mappedColumns.value.organizations.families
+      );
+    }
   }
+
+  return true;
 };
 
 /**
@@ -606,13 +643,19 @@ const getOrgId = async (orgType, orgName, selectedDistrict = null, selectedSchoo
 /**
  * Submission handlers
  */
+const toast = useToast();
+const authStore = useAuthStore();
+const { roarfirekit } = storeToRefs(authStore);
+
 const transformStudentData = async (rawStudent) => {
   const transformedStudent = {};
 
   // Handle required fields
   Object.entries(mappedColumns.value.required).forEach(([key, csvField]) => {
     if (csvField) {
-      if (['username', 'email', 'password'].includes(key)) {
+      if (key === 'username') {
+        _set(transformedStudent, 'email', `${rawStudent[csvField]}@roar-auth.com`);
+      } else if (['email', 'password'].includes(key)) {
         _set(transformedStudent, key, rawStudent[csvField]);
       } else {
         _set(transformedStudent, `userData.${key}`, rawStudent[csvField]);
@@ -718,10 +761,81 @@ const submit = async () => {
   const chunkedUsers = _chunk(transformedStudents, 10);
   // TODO: submit users
   for (const chunk of chunkedUsers) {
-    console.log('submitting chunk to publish function', chunk);
+    await roarfirekit.value.createUpdateUsers(chunk).then((results) => {
+      for (const result of results.data) {
+        if (result?.status === 'rejected') {
+          const email = result.email;
+          const username = email.split('@')[0];
+          console.log('Error processing user:', username, result.reason);
+          // const usernameKey = getKeyByValue(dropdown_model.value, 'username');
+          // const user = _find(rawStudentFile.value, (record) => {
+          //   return record[usernameKey] === username;
+          // });
+          // addErrorUser(user, result.reason);
+        } else if (result?.status === 'fulfilled') {
+          const email = result.email;
+          toast.add({ severity: 'success', summary: 'Success', detail: `User ${email} processed!`, life: 3000 });
+        }
+      }
+    });
   }
   submitting.value = SubmitStatus.COMPLETE;
 };
+
+// +-----------------------------------+
+// | Handle roarfirekit initialization |
+// +-----------------------------------+
+
+const refreshing = ref(false);
+const initialized = ref(false);
+let unsubscribe;
+const refresh = () => {
+  refreshing.value = true;
+  if (unsubscribe) unsubscribe();
+
+  refreshing.value = false;
+  initialized.value = true;
+};
+
+/**
+ * Add a new empty user to the table
+ */
+const addUser = () => {
+  if (_isEmpty(rawStudentFile.value)) return;
+
+  // Get the structure from the first user
+  const template = rawStudentFile.value[0];
+
+  // Create a new user with all the same keys but null values
+  const newUser = Object.keys(template).reduce((acc, key) => {
+    if (key === 'rowKey') {
+      acc[key] = rawStudentFile.value.length;
+    } else {
+      acc[key] = null;
+    }
+    return acc;
+  }, {});
+
+  // Add the new user to the array
+  rawStudentFile.value.push(newUser);
+
+  toast.add({
+    severity: 'info',
+    summary: 'New User Added',
+    detail: 'A new empty user has been added to the table.',
+    life: 3000,
+  });
+};
+
+unsubscribe = authStore.$subscribe(async (mutation, state) => {
+  if (state.roarfirekit.createUpdateUser) refresh();
+});
+
+onMounted(async () => {
+  if (roarfirekit.value.createUpdateUser) {
+    refresh();
+  }
+});
 </script>
 <style>
 .page-container {
