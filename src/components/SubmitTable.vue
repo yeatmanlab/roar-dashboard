@@ -6,6 +6,7 @@
         <span :class="{ 'text-green-500': validCount === totalCount, 'text-red-500': validCount !== totalCount }">
           {{ validCount }}/{{ totalCount }}
         </span>
+        <slot />
       </div>
     </div>
     <PvDataTable

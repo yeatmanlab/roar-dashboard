@@ -2,15 +2,8 @@
   <div class="page-container">
     <div>
       <h2>Register Students</h2>
-      <!-- Notes: -->
-      <!-- <ul>
-        <li>Maybe need to work in a data preview</li>
-        <li>Additional enhancement, add a way to create students via editable table</li>
-        <li>After review , during after submit, have a view that shows some summery / next steps</li>
-        <li>Move Optional step to before Org selection</li>
-      </ul> -->
     </div>
-    <Stepper value="1" class="w-full">
+    <Stepper linear value="1" class="w-full">
       <StepList>
         <Step value="1">Upload</Step>
         <Step value="2">Required</Step>
@@ -24,7 +17,8 @@
       <StepPanels>
         <!-- Upload CSV -->
         <StepPanel v-slot="{ activateCallback }" value="1">
-          <div v-if="!_isEmpty(rawStudentFile)" class="flex py-3 justify-content-end">
+          <div v-if="!_isEmpty(rawStudentFile)" class="flex py-3 justify-between">
+            <Button v-if="!_isEmpty(rawStudentFile)" label="Upload a different File" @click="resetUpload()" />
             <Button
               label="Next"
               :disabled="!readyToProgress('2')"
@@ -33,9 +27,7 @@
             />
           </div>
           <div class="step-container">
-            <div
-              class="border-2 border-dashed border-surface-200 dark:border-surface-700 rounded bg-surface-50 dark:bg-surface-950 flex-auto flex justify-center items-center font-medium w-full"
-            >
+            <div class="w-full">
               <div v-if="_isEmpty(rawStudentFile)" class="text-gray-500 surface-100 border-round-top-md">
                 <PvFileUpload
                   name="massUploader[]"
@@ -55,7 +47,6 @@
                 </PvFileUpload>
               </div>
               <div v-else>
-                <Button label="Upload a different File" @click="resetUpload()" />
                 <PvDataTable
                   ref="dataTable"
                   :value="rawStudentFile"
@@ -91,74 +82,70 @@
             />
           </div>
           <div class="step-container">
-            <div
-              class="border-2 border-dashed border-surface-200 dark:border-surface-700 rounded bg-surface-50 dark:bg-surface-950 flex justify-center items-center font-medium w-full"
-            >
-              <div class="flex flex-column gap-3 p-4">
+            <div class="flex flex-column gap-3 p-4 w-full">
+              <div class="flex align-items-center">
+                <label class="mr-2">Use Email</label>
+                <PvToggleSwitch v-model="usingEmail" />
+              </div>
+              <div v-if="usingEmail" class="step-field-item">
                 <div>
-                  <label class="mr-2">Use Email</label>
-                  <PvToggleSwitch v-model="usingEmail" />
+                  <span class="font-bold">Email<span class="text-red-500">*</span></span>
+                  <p class="text-gray-500">The email address of the student.</p>
                 </div>
-                <div v-if="usingEmail" class="flex flex-row gap-2">
-                  <div>
-                    <span>Email</span>
-                    <p>The email address of the student.</p>
-                  </div>
-                  <Dropdown
-                    showClear
-                    class="w-full dropdown"
-                    :options="csv_columns"
-                    v-model="mappedColumns.required.email"
-                  />
+                <Dropdown
+                  showClear
+                  class="w-full dropdown"
+                  :options="csv_columns"
+                  v-model="mappedColumns.required.email"
+                />
+              </div>
+              <div v-else class="step-field-item">
+                <div>
+                  <span class="font-bold">Username<span class="text-red-500">*</span></span>
+                  <p class="text-gray-500">The username of the student.</p>
                 </div>
-                <div v-else class="flex flex-row gap-2">
-                  <div>
-                    <span>Username</span>
-                    <p>The username of the student.</p>
-                  </div>
-                  <Dropdown
-                    showClear
-                    class="w-full dropdown"
-                    :options="csv_columns"
-                    v-model="mappedColumns.required.username"
-                  />
+                <Dropdown
+                  showClear
+                  class="w-full dropdown"
+                  :options="csv_columns"
+                  v-model="mappedColumns.required.username"
+                />
+              </div>
+              <div class="step-field-item">
+                <div>
+                  <span class="font-bold">Password<span class="text-red-500">*</span></span>
+                  <p class="text-gray-500">The password of the student.</p>
                 </div>
-                <div class="flex flex-row gap-2">
-                  <div>
-                    <span>Password</span>
-                    <p>The password of the student.</p>
-                  </div>
-                  <Dropdown
-                    showClear
-                    class="w-full dropdown"
-                    :options="csv_columns"
-                    v-model="mappedColumns.required.password"
-                  />
+                <Dropdown
+                  showClear
+                  class="w-full dropdown"
+                  :options="csv_columns"
+                  v-model="mappedColumns.required.password"
+                />
+              </div>
+              <div class="step-field-item">
+                <div>
+                  <span class="font-bold">Date of Birth<span class="text-red-500">*</span></span>
+                  <p class="text-gray-500">The date of birth of the student.</p>
                 </div>
-                <div class="flex flex-row gap-2">
-                  <div>
-                    <span>Date of Birth</span>
-                    <p>The date of birth of the student.</p>
-                  </div>
-                  <Dropdown
-                    showClear
-                    class="w-full dropdown"
-                    :options="csv_columns"
-                    v-model="mappedColumns.required.dob"
-                  />
+                <Dropdown
+                  showClear
+                  class="w-full dropdown"
+                  :options="csv_columns"
+                  v-model="mappedColumns.required.dob"
+                />
+              </div>
+              <div class="step-field-item">
+                <div>
+                  <span class="font-bold">Grade<span class="text-red-500">*</span></span>
+                  <p class="text-gray-500">The grade of the student.</p>
                 </div>
-                <div class="flex flex-row gap-2">
-                  <div>
-                    <span>Grade</span>
-                    <p>The grade of the student.</p>
-                  </div>
-                  <Dropdown
-                    showClear
-                    class="w-full dropdown"
-                    :options="csv_columns"
-                    v-model="mappedColumns.required.grade"
-                  />
-                </div>
+                <Dropdown
+                  showClear
+                  class="w-full dropdown"
+                  :options="csv_columns"
+                  v-model="mappedColumns.required.grade"
+                />
               </div>
             </div>
           </div>
@@ -171,22 +158,18 @@
             <Button label="Next" icon="pi pi-arrow-right" iconPos="right" @click="activateCallback('4')" />
           </div>
           <div class="step-container">
-            <div
-              class="border-2 border-dashed border-surface-200 dark:border-surface-700 rounded bg-surface-50 dark:bg-surface-950 flex justify-center items-center font-medium w-full"
-            >
-              <div class="flex flex-column gap-3 p-4">
-                <div v-for="(value, key) in nameFields" class="flex flex-row gap-2">
-                  <div>
-                    <span> {{ value.label }}</span>
-                    <p>{{ value.description }}</p>
-                  </div>
-                  <Dropdown
-                    showClear
-                    class="w-full dropdown"
-                    :options="csv_columns"
-                    v-model="mappedColumns.names[value.field]"
-                  />
+            <div class="flex flex-column gap-3 p-4 w-full">
+              <div v-for="(value, key) in nameFields" class="step-field-item">
+                <div>
+                  <span class="font-bold"> {{ value.label }}</span>
+                  <p class="text-gray-500">{{ value.description }}</p>
                 </div>
+                <Dropdown
+                  showClear
+                  class="w-full dropdown"
+                  :options="csv_columns"
+                  v-model="mappedColumns.names[value.field]"
+                />
               </div>
             </div>
           </div>
@@ -199,22 +182,18 @@
             <Button label="Next" icon="pi pi-arrow-right" iconPos="right" @click="activateCallback('5')" />
           </div>
           <div class="step-container">
-            <div
-              class="border-2 border-dashed border-surface-200 dark:border-surface-700 rounded bg-surface-50 dark:bg-surface-950 flex justify-center items-center font-medium w-full"
-            >
-              <div class="flex flex-column gap-3 p-4">
-                <div v-for="(value, key) in demographicFields" class="flex flex-row gap-2">
-                  <div class="flex flex-row">
-                    <span> {{ value.label }}</span>
-                    <p>{{ value.description }}</p>
-                  </div>
-                  <Dropdown
-                    showClear
-                    class="w-full dropdown"
-                    :options="csv_columns"
-                    v-model="mappedColumns.demographics[value.field]"
-                  />
+            <div class="flex flex-column gap-3 p-4 w-full">
+              <div v-for="(value, key) in demographicFields" class="step-field-item">
+                <div>
+                  <span class="font-bold"> {{ value.label }}</span>
+                  <p class="text-gray-500">{{ value.description }}</p>
                 </div>
+                <Dropdown
+                  showClear
+                  class="w-full dropdown"
+                  :options="csv_columns"
+                  v-model="mappedColumns.demographics[value.field]"
+                />
               </div>
             </div>
           </div>
@@ -227,32 +206,34 @@
             <Button label="Next" icon="pi pi-arrow-right" iconPos="right" @click="activateCallback('6')" />
           </div>
           <div class="step-container">
-            <div
-              class="border-2 border-dashed border-surface-200 dark:border-surface-700 rounded bg-surface-50 dark:bg-surface-950 flex justify-center items-center font-medium w-full"
-            >
-              <div class="flex flex-column gap-3 p-4">
-                <div v-for="(value, key) in optionalFields" class="flex flex-row gap-2">
-                  <div>
-                    <span> {{ value.label }}</span>
-                    <p>{{ value.description }}</p>
-                  </div>
-                  <Dropdown
-                    showClear
-                    class="w-full dropdown"
-                    :options="csv_columns"
-                    v-model="mappedColumns.optional[value.field]"
-                  />
+            <div class="flex flex-column gap-3 p-4 w-full">
+              <div v-for="(value, key) in optionalFields" class="step-field-item">
+                <div>
+                  <span class="font-bold"> {{ value.label }}</span>
+                  <p class="text-gray-500">{{ value.description }}</p>
                 </div>
+                <Dropdown
+                  showClear
+                  class="w-full dropdown"
+                  :options="csv_columns"
+                  v-model="mappedColumns.optional[value.field]"
+                />
               </div>
             </div>
           </div>
         </StepPanel>
-
         <!-- Organizations -->
         <StepPanel v-slot="{ activateCallback }" value="6">
           <div class="py-3 flex justify-between">
             <Button label="Back" severity="secondary" icon="pi pi-arrow-left" @click="activateCallback('5')" />
-            <h2 class="step-header">Organizations</h2>
+            <h2 class="step-header">
+              Organizations<i
+                class="pi pi-info-circle ml-2"
+                v-tooltip.top="
+                  'Students are required to meet ONE of the following criteria: \n\n- Enrolled in at least one district, school, and class\n- Enrolled in at least one group'
+                "
+              />
+            </h2>
             <Button
               :disabled="!readyToProgress('7')"
               label="Next"
@@ -262,11 +243,9 @@
             />
           </div>
           <div class="step-container">
-            <div
-              class="flex flex-column gap-3 border-2 border-dashed border-surface-200 dark:border-surface-700 rounded bg-surface-50 dark:bg-surface-950 flex justify-center items-center font-medium w-full"
-            >
-              <div>
-                <label class="mr-2">All students to same org</label>
+            <div class="flex flex-column gap-3 w-full">
+              <div class="flex align-items-center">
+                <label class="mr-2">Enroll all students to same organizations</label>
                 <PvToggleSwitch binary v-model="usingOrgPicker" />
               </div>
               <div v-if="usingOrgPicker">
@@ -274,9 +253,9 @@
               </div>
               <div v-else>
                 <div class="flex flex-column gap-3 p-4">
-                  <div v-for="(value, key) in mappedColumns.organizations" class="flex flex-row gap-2">
+                  <div v-for="(value, key) in mappedColumns.organizations" class="step-field-item">
                     <div>
-                      <span> {{ _startCase(key) }}</span>
+                      <span class="font-bold"> {{ _startCase(key) }}</span>
                     </div>
                     <Dropdown
                       showClear
@@ -306,76 +285,91 @@
             />
           </div>
           <div class="step-container">
-            <div
-              class="border-2 border-dashed border-surface-200 dark:border-surface-700 rounded bg-surface-50 dark:bg-surface-950 flex flex-column justify-center items-center font-medium w-full"
-            >
-              <div class="flex flex-row w-full gap-2">
-                <div class="flex-flex-column w-full">
-                  <!-- Required Fields -->
-                  <div class="review-section-container">
-                    <div class="flex flex-row justify-between mb-2">
-                      <h3 class="step-header">Required Fields</h3>
-                      <Button
-                        label="Edit"
-                        severity="secondary"
-                        icon="pi pi-arrow-left"
-                        @click="activateCallback('2')"
-                      />
-                    </div>
-                    <div class="flex flex-row justify-between">
-                      <span>ROAR Fields</span>
-                      <span>Your CSV Fields</span>
-                    </div>
-                    <div v-for="(value, key) in mappedColumns.required" class="review-section-item">
+            <div class="flex flex-row w-full gap-2">
+              <div class="flex-flex-column w-full">
+                <!-- Required Fields -->
+                <div class="review-section-container mb-2">
+                  <div class="flex flex-row justify-between mb-2">
+                    <h3 class="step-header">Required Fields</h3>
+                    <Button label="Edit" severity="secondary" icon="pi pi-arrow-left" @click="activateCallback('2')" />
+                  </div>
+                  <div class="flex flex-row justify-between">
+                    <span>ROAR Fields</span>
+                    <span>Your CSV Fields</span>
+                  </div>
+                  <div v-for="(value, key) in mappedColumns.required" class="review-section-item">
+                    <span>{{ _startCase(key) }}</span>
+                    <span class="text-gray-500">{{ value ?? '--' }}</span>
+                  </div>
+                </div>
+                <!-- Demographic Fields -->
+                <div class="review-section-container mb-2">
+                  <div class="flex flex-row justify-between mb-2">
+                    <h3 class="step-header">Demographic Fields</h3>
+                    <Button label="Edit" severity="secondary" icon="pi pi-arrow-left" @click="activateCallback('4')" />
+                  </div>
+                  <div class="flex flex-row justify-between">
+                    <span>ROAR Fields</span>
+                    <span>Your CSV Fields</span>
+                  </div>
+                  <div v-for="(value, key) in mappedColumns.demographics" class="review-section-item">
+                    <span>{{ _startCase(key) }}</span>
+                    <span class="text-gray-500">{{ value ?? '--' }}</span>
+                  </div>
+                </div>
+              </div>
+              <div class="flex-flex-column w-full">
+                <!-- Names Fields -->
+                <div class="review-section-container mb-2">
+                  <div class="flex flex-row justify-between mb-2">
+                    <h3 class="step-header">Names Fields</h3>
+                    <Button label="Edit" severity="secondary" icon="pi pi-arrow-left" @click="activateCallback('3')" />
+                  </div>
+                  <div class="flex flex-row justify-between">
+                    <span>ROAR Fields</span>
+                    <span>Your CSV Fields</span>
+                  </div>
+                  <div v-for="(value, key) in mappedColumns.names" class="review-section-item">
+                    <span>{{ _startCase(key) }}</span>
+                    <span class="text-gray-500">{{ value ?? '--' }}</span>
+                  </div>
+                </div>
+                <!-- Organizations Fields -->
+                <div class="review-section-container mb-2">
+                  <div class="flex flex-row justify-between mb-2">
+                    <h3 class="step-header">Organizations Fields</h3>
+                    <Button label="Edit" severity="secondary" icon="pi pi-arrow-left" @click="activateCallback('6')" />
+                  </div>
+                  <div class="flex flex-row justify-between">
+                    <span>ROAR Fields</span>
+                    <span>{{ usingOrgPicker ? 'Selected Organizations' : 'Your CSV Fields' }}</span>
+                  </div>
+                  <div v-if="usingOrgPicker">
+                    <div v-for="(value, key) in selectedOrgs" class="review-section-item">
                       <span>{{ _startCase(key) }}</span>
-                      <span class="text-gray-500">{{ value ?? '--' }}</span>
+                      <span class="text-gray-500">{{ value.map((org) => org.name).join(', ') ?? '--' }}</span>
                     </div>
                   </div>
-                  <!-- Demographic Fields -->
-                  <h3>Demographic Fields</h3>
-                  <div class="review-section-container">
-                    <div class="flex flex-row justify-between mb-2">
-                      <span>ROAR Fields</span>
-                      <span>Your CSV Fields</span>
-                    </div>
-                    <div v-for="(value, key) in mappedColumns.demographics" class="review-section-item">
-                      <span>{{ _startCase(key) }}</span>
-                      <span class="text-gray-500">{{ value ?? '--' }}</span>
+                  <div v-else>
+                    <div v-for="(value, key) in mappedColumns.organizations" class="review-section-item">
+                      <span class="mr-2">{{ _startCase(key) }}</span>
+                      <span class="text-gray-500 pl-2">{{ value ?? '--' }}</span>
                     </div>
                   </div>
                 </div>
-                <div class="flex-flex-column w-full">
-                  <!-- Names Fields -->
-                  <h3>Names Fields</h3>
-                  <div class="review-section-container">
-                    <div class="flex flex-row justify-between mb-2">
-                      <span>ROAR Fields</span>
-                      <span>Your CSV Fields</span>
-                    </div>
-                    <div v-for="(value, key) in mappedColumns.names" class="review-section-item">
-                      <span>{{ _startCase(key) }}</span>
-                      <span class="text-gray-500">{{ value ?? '--' }}</span>
-                    </div>
+                <!-- Optional Fields -->
+                <div class="review-section-container mb-2">
+                  <div class="flex flex-row justify-between mb-2">
+                    <h3 class="step-header">Optional Fields</h3>
+                    <Button label="Edit" severity="secondary" icon="pi pi-arrow-left" @click="activateCallback('5')" />
                   </div>
-                  <!-- Organizations Fields -->
-                  <h3>Organizations Fields</h3>
-                  <div class="review-section-container">
-                    <div class="flex flex-row justify-between mb-2">
-                      <span>ROAR Fields</span>
-                      <span>{{ usingOrgPicker ? 'Selected Organizations' : 'Your CSV Fields' }}</span>
-                    </div>
-                    <div v-if="usingOrgPicker">
-                      <div v-for="(value, key) in selectedOrgs" class="review-section-item">
-                        <span>{{ _startCase(key) }}</span>
-                        <span class="text-gray-500">{{ value.map((org) => org.name).join(', ') ?? '--' }}</span>
-                      </div>
-                    </div>
-                    <div v-else>
-                      <div v-for="(value, key) in mappedColumns.organizations" class="review-section-item">
-                        <span class="mr-2">{{ _startCase(key) }}</span>
-                        <span class="text-gray-500 pl-2">{{ value ?? '--' }}</span>
-                      </div>
-                    </div>
+                  <div class="flex flex-row justify-between">
+                    <span>ROAR Fields</span>
+                    <span>Your CSV Fields</span>
+                  </div>
+                  <div v-for="(value, key) in mappedColumns.optional" class="review-section-item">
+                    <span>{{ _startCase(key) }}</span>
+                    <span class="text-gray-500">{{ value ?? '--' }}</span>
                   </div>
                 </div>
               </div>
@@ -414,8 +408,9 @@
               :mappings="mappedColumns"
               :key-field="usingEmail ? mappedColumns.required.email : mappedColumns.required.username"
               @validation-update="handleValidationUpdate"
-            />
-            <Button label="Add User" icon="pi pi-plus" severity="secondary" class="mt-3" @click="addUser" />
+            >
+              <Button label="Add User" icon="pi pi-plus" severity="secondary" @click="addUser" />
+            </SubmitTable>
           </div>
         </StepPanel>
       </StepPanels>
@@ -539,7 +534,7 @@ function generateColumns(rawJson) {
     }
     columns.push({
       field: col,
-      header: _startCase(col),
+      header: col,
       dataType: dataType,
     });
   });
@@ -862,8 +857,17 @@ onMounted(async () => {
 .step-header {
   margin: 0;
 }
+.step-field-item {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
 .dropdown {
   height: 2.5rem;
+  width: 30rem;
+  max-width: 30rem;
 }
 .datatable {
   border: 1px solid var(--surface-d);
