@@ -473,10 +473,20 @@ async function submitUsers() {
         // Find the userType field (case-insensitive)
         const userTypeField = Object.keys(user).find(key => key.toLowerCase() === 'usertype');
         
-        // If userType field exists but is not named exactly 'userType', rename it
-        if (userTypeField && userTypeField !== 'userType') {
-          processedUser.userType = user[userTypeField];
-          delete processedUser[userTypeField];
+        // Ensure the key is exactly 'userType' and handle potential casing issues
+        if (userTypeField) {
+          const userTypeValue = user[userTypeField];
+          // Set the key to 'userType' regardless of original casing
+          processedUser.userType = userTypeValue;
+          // Remove the original field if the casing was different
+          if (userTypeField !== 'userType') {
+            delete processedUser[userTypeField];
+          }
+          
+          // *** Add check to convert 'caregiver' value to 'parent' ***
+          if (typeof userTypeValue === 'string' && userTypeValue.toLowerCase() === 'caregiver') {
+            processedUser.userType = 'parent';
+          }
         }
         
         return processedUser;
