@@ -44,13 +44,7 @@
           >
         </template>
       </PvColumn>
-      <PvColumn
-        v-for="col of tableColumns"
-        :key="col.field"
-        :header="col.header"
-        :field="col.field"
-        :editor="isColumnEditable(col.field)"
-      >
+      <PvColumn v-for="col of tableColumns" :key="col.field" :header="col.header" :field="col.field" :editor="true">
         <template #body="{ data, field }">
           <div>
             {{ data[field] }}
@@ -96,9 +90,9 @@ const editingRows = ref([]);
 const validationResults = ref({});
 
 /**
- * Utilities for the DataTable
+ * DataTable utilities
  */
-//#region DataTable
+
 // Watch for changes in students data
 watch(
   () => props.students,
@@ -146,10 +140,6 @@ function findMappedColumnByField(field) {
   return null;
 }
 
-function isColumnEditable(column) {
-  return column !== props.keyField;
-}
-
 // Handle row edit save
 function onCellEditSave(event) {
   let { data, newValue, field } = event;
@@ -158,12 +148,10 @@ function onCellEditSave(event) {
 
   validateStudent(data);
 }
-//#endregion DataTable
 
 /**
  * Handle student validation
  */
-//#region Validation
 const emit = defineEmits(['validationUpdate']);
 const totalCount = computed(() => (_isEmpty(props.students) ? 0 : props.students.length));
 const sortedStudents = computed(() => {
@@ -219,6 +207,7 @@ function validateStudent(student) {
   }
 }
 
+// Validate a given row
 function validityCheck(row) {
   const keyField = props.keyField;
   const passwordField = props.mappings.required.password;
@@ -245,12 +234,4 @@ function isPasswordValid(password) {
   if (!password) return false;
   return password.length >= 6 && /[a-zA-Z]/.test(password);
 }
-//#endregion Validation
 </script>
-
-<style>
-.invalid-cell {
-  background-color: var(--red-50);
-  color: var(--red-900);
-}
-</style>

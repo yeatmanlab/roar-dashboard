@@ -452,6 +452,10 @@ const isFileUploaded = ref(false);
 const showSubmitTable = ref(false);
 const allStudentsValid = ref(false);
 
+const toast = useToast();
+const authStore = useAuthStore();
+const { roarfirekit } = storeToRefs(authStore);
+
 const SubmitStatus = {
   IDLE: 'idle',
   TRANSFORMING: 'transforming',
@@ -527,7 +531,6 @@ function resetUpload() {
 }
 
 function generateColumns(rawJson) {
-  console.log('genColumns rawJson', rawJson);
   let columns = [];
   const columnValues = Object.keys(rawJson);
   _forEach(columnValues, (col) => {
@@ -542,7 +545,6 @@ function generateColumns(rawJson) {
       dataType: dataType,
     });
   });
-  console.log('genColumns columns', columns);
   return columns;
 }
 
@@ -554,9 +556,38 @@ const onFileUpload = async (event) => {
       ...row,
     };
   });
-  console.log('rawStudentFile', rawStudentFile.value);
   tableColumns.value = generateColumns(rawStudentFile.value[0]);
   csv_columns.value = _remove(Object.keys(toRaw(rawStudentFile.value[0])), (col) => col !== 'rowKey');
+};
+
+/**
+ * Add a new empty user to the table
+ */
+const addUser = () => {
+  if (_isEmpty(rawStudentFile.value)) return;
+
+  // Get the structure from the first user
+  const template = rawStudentFile.value[0];
+
+  // Create a new user with all the same keys but null values
+  const newUser = Object.keys(template).reduce((acc, key) => {
+    if (key === 'rowKey') {
+      acc[key] = rawStudentFile.value.length;
+    } else {
+      acc[key] = null;
+    }
+    return acc;
+  }, {});
+
+  // Add the new user to the array
+  rawStudentFile.value.push(newUser);
+
+  toast.add({
+    severity: 'info',
+    summary: 'New User Added',
+    detail: 'A new empty user has been added to the table.',
+    life: 3000,
+  });
 };
 
 /**
@@ -565,11 +596,11 @@ const onFileUpload = async (event) => {
  * @returns {boolean} True if the user has filled out the information required to proceed to the targetStep, false otherwise.
  */
 const readyToProgress = (targetStep) => {
-  console.log('invoking readyToProgress', targetStep);
+  // Step 1: Check if a file has been uploaded
   if (targetStep === '2') return !_isEmpty(rawStudentFile.value);
 
+  // Step 2: check if the required columns have been mapped
   if (targetStep === '3') {
-    // Check that mappedColumns has all the required fields not null
     return (
       (mappedColumns.value.required.username || mappedColumns.value.required.email) &&
       mappedColumns.value.required.password &&
@@ -578,6 +609,7 @@ const readyToProgress = (targetStep) => {
     );
   }
 
+  // Step 6: check that organization requirements have been met
   if (targetStep === '7') {
     if (usingOrgPicker.value) {
       // Check that selectedOrgs has district, school and class populated OR group OR family populated
@@ -617,7 +649,6 @@ const orgCache = ref({
 
 // Helper function to get org ID (uses cache if available)
 const getOrgId = async (orgType, orgName, selectedDistrict = null, selectedSchool = null) => {
-  console.log('invoking getOrgId', orgType, orgName, selectedDistrict, selectedSchool);
   if (!orgName) return null;
 
   const cacheKey =
@@ -635,8 +666,6 @@ const getOrgId = async (orgType, orgName, selectedDistrict = null, selectedSchoo
   // If not in cache, fetch and cache the result
   try {
     const org = await fetchOrgByName(orgType, orgName, { value: selectedDistrict }, { value: selectedSchool });
-    console.log('Fetched org:', org);
-
     if (org[0]?.id) {
       orgCache.value[orgType].set(cacheKey, org[0].id);
       return org[0].id;
@@ -650,10 +679,6 @@ const getOrgId = async (orgType, orgName, selectedDistrict = null, selectedSchoo
 /**
  * Submission handlers
  */
-const toast = useToast();
-const authStore = useAuthStore();
-const { roarfirekit } = storeToRefs(authStore);
-
 const transformStudentData = async (rawStudent) => {
   const transformedStudent = {};
 
@@ -691,7 +716,7 @@ const transformStudentData = async (rawStudent) => {
   if (!usingOrgPicker.value) {
     // If the org picker is not being used, we are given the names of the orgs as values.
     // To submit, we need to send orgIds. Education orgs, districts, schools, and classes
-    // are fetched on order. First district, then school, then class. If any of these are not
+    // are fetched in order. First district, then school, then class. If any of these are not
     // found, it will skip the rest as they are required to find the class.
     let studentDistrictId = null;
     let studentSchoolId = null;
@@ -709,10 +734,10 @@ const transformStudentData = async (rawStudent) => {
       if (orgFields.districts && rawStudent[orgFields.districts]) {
         const districtName = rawStudent[orgFields.districts];
         studentDistrictId = await getOrgId('districts', districtName);
-        console.log('Fetched district ID:', studentDistrictId);
         if (studentDistrictId) {
           _set(transformedStudent, 'userData.districts', { id: studentDistrictId });
         } else {
+          // TODO: display this gracefully on the UI.
           console.log(`District ${districtName} not found.`);
         }
       }
@@ -720,10 +745,10 @@ const transformStudentData = async (rawStudent) => {
       if (studentDistrictId && orgFields.schools && rawStudent[orgFields.schools]) {
         const schoolName = rawStudent[orgFields.schools];
         studentSchoolId = await getOrgId('schools', schoolName, studentDistrictId);
-        console.log('Fetched school ID:', studentSchoolId);
         if (studentSchoolId) {
           _set(transformedStudent, 'userData.schools', { id: studentSchoolId });
         } else {
+          // TODO: display this gracefully on the UI.
           console.log(`School ${schoolName} not found.`);
         }
       }
@@ -731,10 +756,10 @@ const transformStudentData = async (rawStudent) => {
       if (studentSchoolId && orgFields.classes && rawStudent[orgFields.classes]) {
         const className = rawStudent[orgFields.classes];
         const classId = await getOrgId('classes', className, studentDistrictId, studentSchoolId);
-        console.log('Fetched class ID:', classId);
         if (classId) {
           _set(transformedStudent, 'userData.classes', { id: classId });
         } else {
+          // TODO: display this gracefully on the UI.
           console.log(`Class ${className} not found.`);
         }
       }
@@ -743,7 +768,6 @@ const transformStudentData = async (rawStudent) => {
     // Take input from the org picker
     Object.entries(selectedOrgs.value).forEach(([key, orgs]) => {
       if (orgs.length) {
-        console.log('orgs', orgs);
         _set(transformedStudent, `userData.${key}`, { id: orgs[0].id });
       }
     });
@@ -757,28 +781,25 @@ const submit = async () => {
 
   // Transform each student's data according to the mappings
   const transformedStudents = [];
-  // const transformedStudents = rawStudentFile.value.map(transformStudentData);
   for (const student of rawStudentFile.value) {
-    const tStudent = await transformStudentData(student);
-    transformedStudents.push(tStudent);
+    const transformedStudent = await transformStudentData(student);
+    transformedStudents.push(transformedStudent);
   }
   submitting.value = SubmitStatus.SUBMITTING;
 
-  console.log('Transformed students:', transformedStudents);
-  const chunkedUsers = _chunk(transformedStudents, 10);
-  // TODO: submit users
+  // Chunk users into chunks of 50 for submission
+  const chunkedUsers = _chunk(transformedStudents, 50);
   for (const chunk of chunkedUsers) {
     await roarfirekit.value.createUpdateUsers(chunk).then((results) => {
       for (const result of results.data) {
         if (result?.status === 'rejected') {
           const email = result.email;
-          const username = email.split('@')[0];
-          console.log('Error processing user:', username, result.reason);
-          // const usernameKey = getKeyByValue(dropdown_model.value, 'username');
-          // const user = _find(rawStudentFile.value, (record) => {
-          //   return record[usernameKey] === username;
-          // });
-          // addErrorUser(user, result.reason);
+          toast.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: `User ${email} failed to process: ${result.reason}`,
+            life: 5000,
+          });
         } else if (result?.status === 'fulfilled') {
           const email = result.email;
           toast.add({ severity: 'success', summary: 'Success', detail: `User ${email} processed!`, life: 3000 });
@@ -789,10 +810,9 @@ const submit = async () => {
   submitting.value = SubmitStatus.COMPLETE;
 };
 
-// +-----------------------------------+
-// | Handle roarfirekit initialization |
-// +-----------------------------------+
-
+/**
+ * Handles firekit initialization
+ */
 const refreshing = ref(false);
 const initialized = ref(false);
 let unsubscribe;
@@ -802,36 +822,6 @@ const refresh = () => {
 
   refreshing.value = false;
   initialized.value = true;
-};
-
-/**
- * Add a new empty user to the table
- */
-const addUser = () => {
-  if (_isEmpty(rawStudentFile.value)) return;
-
-  // Get the structure from the first user
-  const template = rawStudentFile.value[0];
-
-  // Create a new user with all the same keys but null values
-  const newUser = Object.keys(template).reduce((acc, key) => {
-    if (key === 'rowKey') {
-      acc[key] = rawStudentFile.value.length;
-    } else {
-      acc[key] = null;
-    }
-    return acc;
-  }, {});
-
-  // Add the new user to the array
-  rawStudentFile.value.push(newUser);
-
-  toast.add({
-    severity: 'info',
-    summary: 'New User Added',
-    detail: 'A new empty user has been added to the table.',
-    life: 3000,
-  });
 };
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
