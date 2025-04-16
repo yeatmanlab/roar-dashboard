@@ -36,7 +36,7 @@
         </div>
 
         <OrgPicker
-          v-if="groupHasParentOrg"
+          v-if="groupHasParentOrg && orgType?.singular === 'group'"
           :for-parent-org="true"
           class="mt-4"
           @selection="selection($event)"
