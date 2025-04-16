@@ -3,8 +3,8 @@ import { mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import PrimeVue from 'primevue/config';
 import ToastService from 'primevue/toastservice';
-import AddUsers from '@/pages/users/AddUsers.vue';
-import AddUsersInfo from '@/components/LEVANTE/AddUsersInfo.vue';
+import AddUsers from '../users/AddUsers.vue';
+import AddUsersInfo from '../../components/LEVANTE/AddUsersInfo.vue';
 
 // Create a mock router
 const mockRouter = {
