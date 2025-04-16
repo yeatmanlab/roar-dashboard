@@ -106,31 +106,6 @@ const routes = [
     meta: { pageTitle: 'Manage Tasks', requireAdmin: true, requireSuperAdmin: true },
   },
   {
-    path: '/register',
-    name: 'Register',
-    component: () => import('../pages/RegisterFamilyUsers.vue'),
-    props: (route) => ({ code: route.query.code }),
-    children: [
-      {
-        name: 'registerParent',
-        path: '',
-        component: () => import('../components/auth/RegisterParent.vue'),
-      },
-      {
-        name: 'registerStudent',
-        path: 'student',
-        component: () => import('../components/auth/RegisterStudent.vue'),
-      },
-    ],
-    meta: { requiresGuest: true },
-  },
-  {
-    path: '/register-students',
-    name: 'RegisterStudents',
-    component: () => import('../pages/RegisterStudents.vue'),
-    meta: { pageTitle: 'Register Students', requireAdmin: true, requireSuperAdmin: true },
-  },
-  {
     path: APP_ROUTES.SIGN_IN,
     name: 'SignIn',
     component: () => import('../pages/SignIn.vue'),
@@ -152,22 +127,6 @@ const routes = [
     meta: { pageTitle: 'Signing you in…' },
   },
   {
-    path: '/auth-clever',
-    name: 'AuthClever',
-    beforeRouteLeave: [removeQueryParams, removeHash],
-    component: () => import('../components/auth/AuthClever.vue'),
-    props: (route) => ({ code: route.query.code }),
-    meta: { pageTitle: 'Clever Authentication' },
-  },
-  {
-    path: '/auth-classlink',
-    name: 'AuthClassLink',
-    beforeRouteLeave: [removeQueryParams, removeHash],
-    component: () => import('../components/auth/AuthClassLink.vue'),
-    props: (route) => ({ code: route.query.code }),
-    meta: { pageTitle: 'ClassLink Authentication' },
-  },
-  {
     path: '/auth-email-link',
     name: 'AuthEmailLink',
     beforeRouteLeave: [removeQueryParams, removeHash],
@@ -187,41 +146,41 @@ const routes = [
     meta: { pageTitle: 'Administrator', requireAdmin: true },
   },
   {
-    path: '/create-administration',
-    name: 'CreateAdministration',
-    component: () => import('../components/CreateAdministration.vue'),
+    path: '/create-assignment',
+    name: 'CreateAssignment',
+    component: () => import('../pages/CreateAssignment.vue'),
     meta: { pageTitle: 'Create Assignment', requireAdmin: true, requireSuperAdmin: true },
   },
   {
-    path: '/edit-administration/:adminId',
-    name: 'EditAdministration',
+    path: '/edit-assignment/:adminId',
+    name: 'EditAssignment',
     props: true,
-    component: () => import('../components/CreateAdministration.vue'),
-    meta: { pageTitle: 'Edit an Administration', requireAdmin: true, requireSuperAdmin: true },
+    component: () => import('../pages/CreateAssignment.vue'),
+    meta: { pageTitle: 'Edit an Assignment', requireAdmin: true, requireSuperAdmin: true },
   },
   {
     path: '/create-administrator',
     name: 'CreateAdministrator',
-    component: () => import('../components/CreateAdministrator.vue'),
+    component: () => import('../pages/CreateAdministrator.vue'),
     meta: { pageTitle: 'Create an administrator account', requireAdmin: true },
   },
   {
     path: '/create-audience',
     name: 'CreateAudience',
-    component: () => import('../components/CreateAudience.vue'),
+    component: () => import('../pages/audience/CreateAudience.vue'),
     meta: { pageTitle: 'Create an audience', requireAdmin: true, requireSuperAdmin: true },
   },
   {
     path: '/list-audiences',
     name: 'ListAudiences',
-    component: () => import('../components/ListAudiences.vue'),
+    component: () => import('../pages/audience/ListAudiences.vue'),
     meta: { pageTitle: 'Audiences', requireAdmin: true },
   },
   {
     path: '/list-users/:orgType/:orgId/:orgName',
     name: 'ListUsers',
     props: true,
-    component: () => import('../components/ListUsers.vue'),
+    component: () => import('../pages/users/ListUsers.vue'),
     meta: { pageTitle: 'List users', requireAdmin: true },
   },
   {
@@ -230,13 +189,6 @@ const routes = [
     props: true,
     component: () => import('../pages/ProgressReport.vue'),
     meta: { pageTitle: 'View Administration', requireAdmin: true },
-  },
-  {
-    path: APP_ROUTES.SCORE_REPORT,
-    name: 'ScoreReport',
-    props: true,
-    component: () => import('../pages/ScoreReport.vue'),
-    meta: { pageTitle: 'View Scores', requireAdmin: true },
   },
   {
     path: APP_ROUTES.ACCOUNT_PROFILE,
@@ -280,35 +232,34 @@ const routes = [
     component: () => import('../pages/NotFound.vue'),
     meta: { pageTitle: 'Whoops! 404 Page!' },
   },
-  // LEVANTE
   {
     path: '/add-users',
     name: 'Add Users',
-    component: () => import('../pages/LEVANTE/AddUsers.vue'),
+    component: () => import('../pages/users/AddUsers.vue'),
     meta: { pageTitle: 'Add Users', requireAdmin: true, project: 'LEVANTE' },
   },
   {
     path: '/sync-passwords',
     name: 'Sync Passwords',
-    component: () => import('../pages/LEVANTE/SyncPasswords.vue'),
+    component: () => import('../pages/users/SyncPasswords.vue'),
     meta: { pageTitle: 'Sync Passwords', requireAdmin: true, project: 'LEVANTE' },
   },
   {
     path: '/link-users',
     name: 'Link Users',
-    component: () => import('../pages/LEVANTE/LinkUsers.vue'),
+    component: () => import('../pages/users/LinkUsers.vue'),
     meta: { pageTitle: 'Link Users', requireAdmin: true, project: 'LEVANTE' },
   },
   {
     path: '/edit-users',
     name: 'Edit Users',
-    component: () => import('../pages/LEVANTE/EditUsers.vue'),
+    component: () => import('../pages/users/EditUsers.vue'),
     meta: { pageTitle: 'Edit Users', requireAdmin: true, project: 'LEVANTE' },
   },
   {
     path: '/survey',
     name: 'Survey',
-    component: () => import('../pages/LEVANTE/UserSurvey.vue'),
+    component: () => import('../pages/UserSurvey.vue'),
     meta: { pageTitle: 'Survey', project: 'LEVANTE' },
   },
   {
@@ -348,7 +299,6 @@ router.beforeEach(async (to, from, next) => {
     'AuthClassLink',
     'AuthEmailLink',
     'AuthEmailSent',
-    'Register',
   ];
 
   const inMaintenanceMode = false;

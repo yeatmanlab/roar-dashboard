@@ -99,7 +99,7 @@ import { ref, toRaw } from 'vue';
 import { csvFileToJson } from '@/helpers';
 import { useToast } from 'primevue/usetoast';
 import { useAuthStore } from '@/store/auth';
-import EditUsersInfo from '@/components/LEVANTE/EditUsersInfo.vue';
+import EditUsersInfo from '@/components/userInfo/EditUsersInfo.vue';
 import PvButton from 'primevue/button';
 import PvColumn from 'primevue/column';
 import PvDataTable from 'primevue/datatable';

@@ -407,7 +407,7 @@ const submit = async () => {
     }
 
     await roarfirekit.value
-      .createOrg(orgType.value.firestoreCollection, orgData, isTestData.value, isDemoData.value)
+      .upsertOrg({type: orgType.value.firestoreCollection, ...orgData})
       .then(() => {
         queryClient.invalidateQueries({ queryKey: ['orgs'], exact: false });
         toast.add({ severity: 'success', summary: 'Success', detail: 'Audience created', life: 3000 });
