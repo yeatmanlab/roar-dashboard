@@ -11,6 +11,7 @@
     </div>
     <PvDataTable
       ref="dataTable"
+      v-model:editing-rows="editingRows"
       :value="sortedStudents"
       show-gridlines
       :row-hover="true"
@@ -19,10 +20,8 @@
       :always-show-paginator="false"
       :rows="10"
       class="datatable"
-      v-model:editingRows="editingRows"
-      editMode="cell"
-      @cell-edit-complete="onCellEditSave"
-      dataKey="id"
+      edit-mode="cell"
+      data-key="id"
       :pt="{
         table: { style: 'min-width: 50rem' },
         column: {
@@ -31,6 +30,7 @@
           }),
         },
       }"
+      @cell-edit-complete="onCellEditSave"
     >
       <PvColumn field="validity" header="Validity" :editor="false">
         <template #body="{ data }">
