@@ -157,6 +157,7 @@ module.exports = defineConfig({
     testPartnerAdministrationName: 'Partner Test Administration',
     testPartnerAdministrationId: 'kKUSypkMc36mPEzleDE6',
     testPartnerDistrictName: 'Cypress Test District',
+    testPartnerDistrictCode: '8afeb5f9',
     testPartnerDistrictInitials: 'CTD',
     testPartnerDistrictNcesId: '0123456789',
     testPartnerSchoolName: 'Cypress Test School',

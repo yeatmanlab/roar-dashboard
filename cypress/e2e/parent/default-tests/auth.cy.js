@@ -1,5 +1,4 @@
 import { APP_ROUTES } from '../../../../src/constants/routes';
-import { ORG_TYPES } from '../../../../src/constants/orgTypes';
 
 const PARENT_USERNAME = Cypress.env('PARENT_EMAIL');
 const PARENT_PASSWORD = Cypress.env('PARENT_PASSWORD');
@@ -37,31 +36,28 @@ describe('Parent: Auth', () => {
   });
 
   it('Validates invitation codes during sign-up', () => {
-    const ORG_TYPE = ORG_TYPES.DISTRICTS;
+    const ORG_CODE = Cypress.env('testPartnerDistrictCode');
     const ORG_NAME = Cypress.env('testPartnerDistrictName');
 
-    cy.getActivationCode(ORG_TYPE, ORG_NAME).then((activationCode) => {
-      // Visit the sign-up page with the activation code.
-      cy.visit(`${APP_ROUTES.REGISTER}/?code=${activationCode}`);
+    cy.visit(`${APP_ROUTES.REGISTER}/?code=${ORG_CODE}`);
 
-      // Fill out parent form.
-      cy.get('[data-cy="signup__parent-first-name"]').type(PARENT_FIRST_NAME);
-      cy.get('[data-cy="signup__parent-last-name"]').type(PARENT_LAST_NAME);
-      cy.get('[data-cy="signup__parent-email"]').type(PARENT_USERNAME);
-      cy.get('[data-cy="signup__parent-password"]').first().type(PARENT_PASSWORD);
-      cy.get('[data-cy="signup__parent-password-confirm"]').type(PARENT_PASSWORD);
+    // Fill out parent form.
+    cy.get('[data-cy="signup__parent-first-name"]').type(PARENT_FIRST_NAME);
+    cy.get('[data-cy="signup__parent-last-name"]').type(PARENT_LAST_NAME);
+    cy.get('[data-cy="signup__parent-email"]').type(PARENT_USERNAME);
+    cy.get('[data-cy="signup__parent-password"]').first().type(PARENT_PASSWORD);
+    cy.get('[data-cy="signup__parent-password-confirm"]').type(PARENT_PASSWORD);
 
-      // Accept terms and conditions.
-      cy.get('.p-checkbox-input').click();
+    // Accept terms and conditions.
+    cy.get('.p-checkbox-input').click();
 
-      // Verify consent dialog.
-      cy.get('[data-cy="consent-modal"]').should('be.visible').find('button').contains('Continue').click();
+    // Verify consent dialog.
+    cy.get('[data-cy="consent-modal"]').should('be.visible').find('button').contains('Continue').click();
 
-      // Submit parent form.
-      cy.get('button').contains('Next').click();
+    // Submit parent form.
+    cy.get('button').contains('Next').click();
 
-      // Validate success message.
-      cy.get('[data-cy="child-registration__org-name"]').should('contain.text', ORG_NAME);
-    });
+    // Validate success message.
+    cy.get('[data-cy="child-registration__org-name"]').should('contain.text', ORG_NAME);
   });
 });
