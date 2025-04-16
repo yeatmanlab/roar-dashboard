@@ -35,16 +35,20 @@
       <PvColumn field="validity" header="Validity" :editor="false">
         <template #body="{ data }">
           <span
-            v-tooltip.top="validationResults[data[props.keyField]]?.errors.join(',\n')"
+            v-tooltip.top="validationResults[data['rowKey']]?.errors.join(',\n')"
             :class="{
-              'text-green-500': validationResults[data[props.keyField]]?.valid,
-              'text-red-500': !validationResults[data[props.keyField]]?.valid,
+              'text-green-500': validationResults[data['rowKey']]?.valid,
+              'text-red-500': !validationResults[data['rowKey']]?.valid,
             }"
-            >{{ validationResults[data[props.keyField]]?.valid ? 'Valid' : 'Invalid' }}</span
+            >{{ validationResults[data['rowKey']]?.valid ? 'Valid' : 'Invalid' }}</span
           >
         </template>
       </PvColumn>
-      <PvColumn v-for="col of tableColumns" :key="col.field" :header="col.header" :field="col.field" :editor="true">
+      <PvColumn v-for="col of tableColumns" :key="col.field" :field="col.field" :editor="true">
+        <template #header>
+          <b>{{ col.header }}</b>
+          <i class="pi pi-pen-to-square" v-tooltip.top="'Click on a cell to edit its value.'" />
+        </template>
         <template #body="{ data, field }">
           <div>
             {{ data[field] }}
@@ -78,10 +82,6 @@ const props = defineProps({
   },
   mappings: {
     type: Object,
-    required: true,
-  },
-  keyField: {
-    type: String,
     required: true,
   },
 });
@@ -157,8 +157,8 @@ const totalCount = computed(() => (_isEmpty(props.students) ? 0 : props.students
 const sortedStudents = computed(() => {
   if (!props.students) return [];
   return [...props.students].sort((a, b) => {
-    const aValid = validationResults.value[a[props.keyField]]?.valid ?? false;
-    const bValid = validationResults.value[b[props.keyField]]?.valid ?? false;
+    const aValid = validationResults.value[a['rowKey']]?.valid ?? false;
+    const bValid = validationResults.value[b['rowKey']]?.valid ?? false;
     return aValid - bValid; // Sort invalid entries first
   });
 });
@@ -195,11 +195,11 @@ function validateAllStudents() {
 function validateStudent(student) {
   try {
     const result = validityCheck(student);
-    validationResults.value[student[props.keyField]] = result;
+    validationResults.value[student['rowKey']] = result;
     return result;
   } catch (error) {
     console.error('Validation error:', error);
-    validationResults.value[student[props.keyField]] = {
+    validationResults.value[student['rowKey']] = {
       valid: false,
       errors: [error.message],
     };
@@ -209,13 +209,14 @@ function validateStudent(student) {
 
 // Validate a given row
 function validityCheck(row) {
-  const keyField = props.keyField;
+  const usernameField = props.mappings.required.username;
+  const emailField = props.mappings.required.email;
   const passwordField = props.mappings.required.password;
   const gradeField = props.mappings.required.grade;
   const dobField = props.mappings.required.dob;
   const errors = [];
   // check that required fields are filled out
-  if (!_get(row, keyField)) {
+  if (!_get(row, usernameField) && !_get(row, emailField)) {
     errors.push('Username/Email is required');
   }
   if (!_get(row, gradeField)) {

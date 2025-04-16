@@ -406,7 +406,6 @@
               v-if="showSubmitTable"
               :students="rawStudentFile"
               :mappings="mappedColumns"
-              :key-field="usingEmail ? mappedColumns.required.email : mappedColumns.required.username"
               @validation-update="handleValidationUpdate"
             >
               <Button label="Add User" icon="pi pi-plus" severity="secondary" @click="addUser" />
