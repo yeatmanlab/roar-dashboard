@@ -1,28 +1,11 @@
 <template>
   <div class="flex flex-column bg-gray-200 m-4 border-gray-800 w-lg card-container rounded">
-    <!-- User Header -->
-    <div class="flex flex-column bg-red-800 text-white p-3 gap-2">
-      <div class="font-bold bg-red-800">
-        {{ userName }}
-        <div class="font-light text-sm text-red-200">User</div>
-      </div>
-      <div class="flex gap-2">
-        <div class="text-sm">
-          {{ user.studentData.grade }}
-          <div class="font-light text-xs text-red-200">Grade</div>
-        </div>
-        <div class="text-sm">
-          {{ _capitalize(user.studentData.schoolLevel) }}
-          <div class="font-light text-xs text-red-200">School Level</div>
-        </div>
-      </div>
-    </div>
     <!-- Administration Header -->
-    <div class="flex flex-column p-3 gap-2">
-      <div class="flex flex-wrap justify-between align-center">
+    <div class="flex flex-column p-3 gap-2 bg-red-800 text-white">
+      <div class="flex gap-2 flex-wrap justify-between align-center">
         <div class="flex flex-column">
           <div class="text-lg">{{ assignment.name }}</div>
-          <div class="text-xs font-light">Administration</div>
+          <div class="text-xs font-light">Assignment</div>
         </div>
         <div class="flex flex-column">
           <div class="text-sm">{{ parseDate(assignment.dateOpened) }} - {{ parseDate(assignment.dateClosed) }}</div>
@@ -30,7 +13,32 @@
         </div>
       </div>
     </div>
-    <div></div>
+    <!-- User Header -->
+    <div class="flex flex-wrap items-center justify-center">
+      <div class="flex flex-column bg-gray-200 p-3 gap-2">
+        <div class="font-bold bg-gray-200 text-lg">
+          {{ userName }}
+          <div class="font-light text-sm text-gray-600">User</div>
+        </div>
+        <div class="flex gap-2">
+          <div class="text-sm">
+            {{ user.studentData.grade }}
+            <div class="font-light text-xs text-gray-600">Grade</div>
+          </div>
+          <div class="text-sm">
+            {{ _capitalize(user.studentData.schoolLevel) }}
+            <div class="font-light text-xs text-gray-600">School Level</div>
+          </div>
+        </div>
+      </div>
+      <div class="flex items-center justify-center">
+        <div class="flex m-2 items-center justify-center">
+          <a :href="'/launch/' + roarUid">
+            <PvButton :label="'Play Games'" data-cy="play-assessments-btn" />
+          </a>
+        </div>
+      </div>
+    </div>
     <!-- Task specific Data -->
     <div class="bg-gray-100 flex flex-column p-3 gap-1">
       <div class="text-xs font-light">Tasks</div>
@@ -52,11 +60,8 @@
         </div>
       </div>
       <div class="flex flex-wrap justify-between mt-2">
-        <a :href="'/launch/' + roarUid">
-          <PvButton :label="'Play Assessments for ' + userName" data-cy="play-assessments-btn" />
-        </a>
         <a :href="'/scores/' + props.administrationId + '/' + props.orgType + '/' + props.orgId + '/user/' + roarUid">
-          <PvButton label="View Score Report" icon="" text data-cy="view-score-report-btn" />
+          <PvButton label="View Scores" icon="" text data-cy="view-score-report-btn" />
         </a>
       </div>
     </div>
