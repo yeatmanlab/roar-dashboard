@@ -4,7 +4,7 @@ import { createPinia, setActivePinia } from 'pinia';
 import PrimeVue from 'primevue/config';
 import ToastService from 'primevue/toastservice';
 import AddUsers from '../users/AddUsers.vue';
-import AddUsersInfo from '../../components/LEVANTE/AddUsersInfo.vue';
+import AddUsersInfo from '../../components/userInfo/AddUsersInfo.vue';
 
 // Create a mock router
 const mockRouter = {
