@@ -30,7 +30,7 @@ const navbarActionOptions = [
   {
     title: 'Create Assignment',
     icon: 'pi pi-sliders-h',
-    buttonLink: { name: 'CreateAdministration' },
+    buttonLink: { name: 'CreateAssignment' },
     requiresSuperAdmin: true,
     requiresAdmin: true,
     project: 'ALL',
@@ -73,29 +73,12 @@ const navbarActionOptions = [
     category: 'Users',
   },
   {
-    title: 'Register New Family',
-    icon: 'pi pi-home',
-    buttonLink: { name: 'Register' },
-    requiresSuperAdmin: true,
-    project: 'ROAR',
-    category: 'Users',
-  },
-  {
     title: 'Sync Passwords',
     icon: 'pi pi-arrows-h',
     buttonLink: { name: 'Sync Passwords' },
     requiresSuperAdmin: true,
     requiresAdmin: true,
     project: 'LEVANTE',
-    category: 'Users',
-  },
-  {
-    title: 'Register students',
-    icon: 'pi pi-users',
-    buttonLink: { name: 'RegisterStudents' },
-    requiresSuperAdmin: true,
-    requiresAdmin: true,
-    project: 'ROAR',
     category: 'Users',
   },
   {
@@ -109,6 +92,7 @@ const navbarActionOptions = [
 ];
 
 export const getNavbarActions = ({ isSuperAdmin = false, isAdmin = false }) => {
+  // TODO: Remove ROAR logic 
   if (isLevante) {
     return navbarActionOptions.filter((action) => {
       if (action.project === 'LEVANTE' || action.project === 'ALL') {

@@ -112,7 +112,7 @@ import _isEmpty from 'lodash/isEmpty';
 import _startCase from 'lodash/startCase';
 import _chunk from 'lodash/chunk';
 import { useToast } from 'primevue/usetoast';
-import AddUsersInfo from '@/components/LEVANTE/AddUsersInfo.vue';
+import AddUsersInfo from '@/components/userInfo/AddUsersInfo.vue';
 import { useAuthStore } from '@/store/auth';
 import { pluralizeFirestoreCollection } from '@/helpers';
 import { fetchOrgByName } from '@/helpers/query/orgs';

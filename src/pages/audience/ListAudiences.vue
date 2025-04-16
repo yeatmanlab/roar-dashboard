@@ -159,7 +159,7 @@
   </RoarModal>
 </template>
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, watchEffect } from 'vue';
 import * as Sentry from '@sentry/vue';
 import { storeToRefs } from 'pinia';
 import { useToast } from 'primevue/usetoast';
@@ -184,8 +184,8 @@ import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useDistrictsListQuery from '@/composables/queries/useDistrictsListQuery';
 import useDistrictSchoolsQuery from '@/composables/queries/useDistrictSchoolsQuery';
 import useOrgsTableQuery from '@/composables/queries/useOrgsTableQuery';
-import EditOrgsForm from './EditOrgsForm.vue';
-import RoarModal from './modals/RoarModal.vue';
+import EditOrgsForm from '@/components/EditOrgsForm.vue';
+import RoarModal from '@/components/modals/RoarModal.vue';
 import { CSV_EXPORT_MAX_RECORD_COUNT } from '@/constants/csvExport';
 import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts.js';
 import RoarDataTable from '@/components/RoarDataTable.vue';
@@ -438,7 +438,7 @@ const tableColumns = computed(() => {
 
 const tableData = ref([]);
 
-watch(async () => {
+watchEffect(async () => {
   if (isLoading.value) {
     tableData.value = [];
     return;
@@ -453,8 +453,8 @@ watch(async () => {
         routeParams: {
           orgType: activeOrgType.value,
           orgId: org.id,
-          orgName: org.name,
-          tooltip: 'View Users in ' + org.name,
+          orgName: org?.name || '',
+          tooltip: 'View Users in ' + org?.name || '',
         },
       };
     }) || []
@@ -532,16 +532,16 @@ onMounted(() => {
   if (roarfirekit.value.restConfig) initTable();
 });
 
-watch(allDistricts, (newValue) => {
-  selectedDistrict.value = _get(_head(newValue), 'id');
+watchEffect(() => {
+  selectedDistrict.value = _get(_head(allDistricts.value), 'id');
 });
 
-watch(allSchools, (newValue) => {
+watchEffect(allSchools, (newValue) => {
   selectedSchool.value = _get(_head(newValue), 'id');
 });
 
 const tableKey = ref(0);
-watch([selectedDistrict, selectedSchool], () => {
+watchEffect([selectedDistrict, selectedSchool], () => {
   tableKey.value += 1;
 });
 </script>
