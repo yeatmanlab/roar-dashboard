@@ -6,6 +6,8 @@ const CLEVER_PASSWORD = Cypress.env('CLEVER_PASSWORD');
 const PARTICIPANT_USERNAME = Cypress.env('PARTICIPANT_USERNAME');
 const PARTICIPANT_PASSWORD = Cypress.env('PARTICIPANT_PASSWORD');
 
+const timeout = Cypress.env('timeout');
+
 function checkGameTab(language) {
   cy.get('.p-tablist-tab-list', { timeout: timeout }).contains(languageOptions[language].gameTab).should('exist');
 }

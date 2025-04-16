@@ -309,6 +309,8 @@ import {
 import RoarDataTable from '@/components/RoarDataTable';
 import { APP_ROUTES } from '@/constants/routes';
 import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
+import { usePermissions } from '@/composables/usePermissions';
+const { userCan, Permissions } = usePermissions();
 
 let TaskReport, DistributionChartOverview, NextSteps;
 
@@ -637,6 +639,7 @@ const computeAssignmentAndRunData = computed(() => {
           schoolName: schoolName,
         },
         tooltip: `View ${firstNameOrUsername}'s Score Report`,
+        launchTooltip: `View assessment portal for ${firstNameOrUsername}`,
         routeParams: {
           administrationId: props.administrationId,
           orgId: props.orgId,
@@ -1150,6 +1153,7 @@ const scoreReportColumns = computed(() => {
     orgId: props.orgId,
     administrationId: props.administrationId,
   });
+
   let hasUsername = false;
   if (assignmentData.value.find((assignment) => assignment.user?.username)) {
     tableColumns.push({
@@ -1239,6 +1243,20 @@ const scoreReportColumns = computed(() => {
     });
   }
 
+  const isAdministrationOpen = administrationData.value?.dateClosed
+    ? new Date(administrationData.value?.dateClosed) > new Date()
+    : false;
+  if (userCan(Permissions.Tasks.LAUNCH) && isAdministrationOpen) {
+    tableColumns.push({
+      header: 'Launch Student',
+      launcher: true,
+      routeName: 'LaunchHome',
+      routeTooltip: 'Launch Student Assessment',
+      routeIcon: 'pi pi-arrow-right border-none text-primary hover:text-white',
+      sort: false,
+      pinned: true,
+    });
+  }
   // Apply a border-right to the last column currently in the tableColumns object
   tableColumns[tableColumns.length - 1].style = (() => {
     return `border-right: 2px solid var(--primary-color);`;

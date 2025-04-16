@@ -1,4 +1,4 @@
-import { ref, nextTick } from 'vue';
+import { ref, nextTick, isRef, isReadonly } from 'vue';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createTestingPinia } from '@pinia/testing';
 import * as VueQuery from '@tanstack/vue-query';
@@ -7,6 +7,8 @@ import { withSetup } from '@/test-support/withSetup.js';
 import { useAuthStore } from '@/store/auth';
 import { fetchDocById } from '@/helpers/query/utils';
 import useUserStudentDataQuery from './useUserStudentDataQuery';
+import { USER_STUDENT_DATA_QUERY_KEY } from '@/constants/queryKeys';
+import { FIRESTORE_COLLECTIONS } from '@/constants/firebase';
 
 vi.mock('@/helpers/query/utils', () => ({
   fetchDocById: vi.fn().mockImplementation(() => []),
@@ -45,15 +47,15 @@ describe('useUserStudentDataQuery', () => {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
-    expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: ['user-student', mockUserRoarId],
-      queryFn: expect.any(Function),
-      enabled: expect.objectContaining({
-        _value: true,
-      }),
-    });
+    const call = vi.mocked(VueQuery.useQuery).mock.calls[0][0];
+    expect(call.queryKey[0]).toBe(USER_STUDENT_DATA_QUERY_KEY);
+    expect(call.queryKey[1].value).toBe(mockUserRoarId.value);
+    expect(call.queryFn).toBeInstanceOf(Function);
+    expect(isRef(call.enabled)).toBe(true);
+    expect(isReadonly(call.enabled)).toBe(true);
+    expect(call.enabled.value).toBe(true);
 
-    expect(fetchDocById).toHaveBeenCalledWith('users', mockUserRoarId, ['studentData']);
+    expect(fetchDocById).toHaveBeenCalledWith(FIRESTORE_COLLECTIONS.USERS, mockUserRoarId.value, ['studentData']);
   });
 
   it('should correctly control the enabled state of the query', async () => {
@@ -68,25 +70,24 @@ describe('useUserStudentDataQuery', () => {
       enabled: enableQuery,
     };
 
-    withSetup(() => useUserStudentDataQuery(queryOptions), {
+    withSetup(() => useUserStudentDataQuery(null, queryOptions), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
-    expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: ['user-student', mockUserRoarId],
-      queryFn: expect.any(Function),
-      enabled: expect.objectContaining({
-        _value: false,
-        __v_isRef: true,
-      }),
-    });
+    const call = vi.mocked(VueQuery.useQuery).mock.calls[0][0];
+    expect(call.queryKey[0]).toBe(USER_STUDENT_DATA_QUERY_KEY);
+    expect(call.queryKey[1].value).toBe(mockUserRoarId.value);
+    expect(call.queryFn).toBeInstanceOf(Function);
+    expect(isRef(call.enabled)).toBe(true);
+    expect(isReadonly(call.enabled)).toBe(true);
+    expect(call.enabled.value).toBe(false);
 
     expect(fetchDocById).not.toHaveBeenCalled();
 
     enableQuery.value = true;
     await nextTick();
 
-    expect(fetchDocById).toHaveBeenCalledWith('users', mockUserRoarId, ['studentData']);
+    expect(fetchDocById).toHaveBeenCalledWith(FIRESTORE_COLLECTIONS.USERS, mockUserRoarId.value, ['studentData']);
   });
 
   it('should only fetch data once the roarUid is available', async () => {
@@ -95,55 +96,50 @@ describe('useUserStudentDataQuery', () => {
     const authStore = useAuthStore(piniaInstance);
     authStore.roarUid = mockUserRoarId;
 
-    const queryOptions = { enabled: true };
-
-    withSetup(() => useUserStudentDataQuery(queryOptions), {
+    withSetup(() => useUserStudentDataQuery(), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
-    expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: ['user-student', mockUserRoarId],
-      queryFn: expect.any(Function),
-      enabled: expect.objectContaining({
-        _value: false,
-        __v_isRef: true,
-      }),
-    });
+    const call = vi.mocked(VueQuery.useQuery).mock.calls[0][0];
+    expect(call.queryKey[0]).toBe(USER_STUDENT_DATA_QUERY_KEY);
+    expect(call.queryKey[1].value).toBe(null);
+    expect(call.queryFn).toBeInstanceOf(Function);
+    expect(isRef(call.enabled)).toBe(true);
+    expect(isReadonly(call.enabled)).toBe(true);
+    expect(call.enabled.value).toBe(false);
 
     expect(fetchDocById).not.toHaveBeenCalled();
 
-    mockUserRoarId.value = nanoid();
+    const newId = nanoid();
+    mockUserRoarId.value = newId;
     await nextTick();
 
-    expect(VueQuery.useQuery).toHaveBeenCalledWith(
-      expect.objectContaining({
-        queryKey: ['user-student', mockUserRoarId],
-      }),
-    );
-
-    expect(fetchDocById).toHaveBeenCalledWith('users', mockUserRoarId, ['studentData']);
+    expect(fetchDocById).toHaveBeenCalledWith(FIRESTORE_COLLECTIONS.USERS, newId, ['studentData']);
   });
 
-  it('should not let queryOptions override the internally computed value', async () => {
+  it('should not let queryOptions override the internally computed value', () => {
     const mockUserRoarId = ref(null);
 
     const authStore = useAuthStore(piniaInstance);
     authStore.roarUid = mockUserRoarId;
 
-    const queryOptions = { enabled: true };
+    const queryOptions = {
+      enabled: true,
+    };
 
-    withSetup(() => useUserStudentDataQuery(queryOptions), {
+    withSetup(() => useUserStudentDataQuery(null, queryOptions), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
-    expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: ['user-student', mockUserRoarId],
-      queryFn: expect.any(Function),
-      enabled: expect.objectContaining({
-        _value: false,
-        __v_isRef: true,
-      }),
-    });
+    const call = vi.mocked(VueQuery.useQuery).mock.calls[0][0];
+    expect(call.queryKey[0]).toBe(USER_STUDENT_DATA_QUERY_KEY);
+    expect(call.queryKey[1].value).toBe(null);
+    expect(call.queryFn).toBeInstanceOf(Function);
+    expect(isRef(call.enabled)).toBe(true);
+    expect(isReadonly(call.enabled)).toBe(true);
+    // Even though queryOptions.enabled is true, the internal computed value should be false
+    // because roarUid is null
+    expect(call.enabled.value).toBe(false);
 
     expect(fetchDocById).not.toHaveBeenCalled();
   });

@@ -5,10 +5,13 @@ import _get from 'lodash/get';
 import _groupBy from 'lodash/groupBy';
 import _mapValues from 'lodash/mapValues';
 import _uniq from 'lodash/uniq';
+import _pick from 'lodash/pick';
+import _intersection from 'lodash/intersection';
 import _without from 'lodash/without';
 import _isEmpty from 'lodash/isEmpty';
 import { convertValues, getAxiosInstance, mapFields } from './utils';
 import { pluralizeFirestoreCollection } from '@/helpers';
+import { ORG_TYPES, ORG_TYPES_IN_ORDER } from '@/constants/orgTypes';
 
 const userSelectFields = ['name', 'assessmentPid', 'username', 'studentData', 'schools', 'classes'];
 
@@ -32,13 +35,17 @@ export const getAssignmentsRequestBody = ({
   adminId,
   orgType,
   orgId,
+  orgArray = [],
   aggregationQuery,
   pageLimit,
   page,
   paginate = true,
   select = assignmentSelectFields,
+  filter = {},
   orderBy = [],
+  grades = [],
   isCollectionGroupQuery = true,
+  restrictToOpenAssignments = false,
 }) => {
   const requestBody = {
     structuredQuery: {},
@@ -64,38 +71,90 @@ export const getAssignmentsRequestBody = ({
     },
   ];
 
-  if (adminId && orgId) {
-    requestBody.structuredQuery.where = {
-      compositeFilter: {
-        op: 'AND',
-        filters: [
-          {
-            fieldFilter: {
-              field: { fieldPath: 'id' },
-              op: 'EQUAL',
-              value: { stringValue: adminId },
+  requestBody.structuredQuery.where = { compositeFilter: { op: 'AND', filters: [] } };
+  if (adminId || orgId || orgArray) {
+    if (adminId) {
+      requestBody.structuredQuery.where.compositeFilter.filters.push({
+        fieldFilter: {
+          field: { fieldPath: 'id' },
+          op: 'EQUAL',
+          value: { stringValue: adminId },
+        },
+      });
+    }
+
+    if (orgType && !_isEmpty(orgArray)) {
+      requestBody.structuredQuery.where.compositeFilter.filters.push({
+        fieldFilter: {
+          field: { fieldPath: `readOrgs.${pluralizeFirestoreCollection(orgType)}` },
+          op: 'ARRAY_CONTAINS_ANY',
+          value: {
+            arrayValue: {
+              values: [
+                orgArray.map((orgId) => {
+                  return { stringValue: orgId };
+                }),
+              ],
             },
           },
-        ],
-      },
-    };
+        },
+      });
+    }
+    if (orgType && orgId) {
+      requestBody.structuredQuery.where.compositeFilter.filters.push({
+        fieldFilter: {
+          field: { fieldPath: `readOrgs.${pluralizeFirestoreCollection(orgType)}` },
+          op: 'ARRAY_CONTAINS',
+          value: { stringValue: orgId },
+        },
+      });
+    }
 
-    requestBody.structuredQuery.where.compositeFilter.filters.push({
-      fieldFilter: {
-        field: { fieldPath: `readOrgs.${pluralizeFirestoreCollection(orgType)}` },
-        op: 'ARRAY_CONTAINS',
-        value: { stringValue: orgId },
-      },
-    });
-  } else {
+    if (!_isEmpty(grades)) {
+      requestBody.structuredQuery.where.compositeFilter.filters.push({
+        fieldFilter: {
+          field: { fieldPath: `userData.grade` },
+          op: 'IN',
+          value: {
+            arrayValue: {
+              values: [
+                ...grades.map((grade) => {
+                  return { stringValue: grade };
+                }),
+              ],
+            },
+          },
+        },
+      });
+    }
+
+    if (['Completed', 'Started', 'Assigned'].includes(filter?.value)) {
+      requestBody.structuredQuery.where.compositeFilter.filters.push({
+        fieldFilter: {
+          field: { fieldPath: `progress.${filter.taskId.replace(/-/g, '_')}` },
+          op: 'EQUAL',
+          value: { stringValue: filter.value.toLowerCase() },
+        },
+      });
+    } else if (!_isEmpty(filter)) {
+      requestBody.structuredQuery.where.compositeFilter.filters.push({
+        fieldFilter: {
+          field: { fieldPath: `userData.${filter.field}` },
+          op: 'EQUAL',
+          value: { stringValue: filter.value },
+        },
+      });
+    }
+  }
+  if (restrictToOpenAssignments) {
     const currentDate = new Date().toISOString();
-    requestBody.structuredQuery.where = {
+    requestBody.structuredQuery.where.compositeFilter.filters.push({
       fieldFilter: {
         field: { fieldPath: 'dateClosed' },
         op: 'GREATER_THAN_OR_EQUAL',
         value: { timestampValue: currentDate },
       },
-    };
+    });
   }
 
   if (!_isEmpty(orderBy)) {
@@ -282,12 +341,15 @@ export const assignmentPageFetcher = async (
  * @param {ref<String>} roarUid - A Vue ref containing the user's ROAR ID.
  * @returns {Promise<Array>} - A promise that resolves to an array of open assignments for the user.
  */
-export const getUserAssignments = async (roarUid) => {
+export const getUserAssignments = async (roarUid, orgType = null, orgIds = null) => {
   const adminAxiosInstance = getAxiosInstance();
   const assignmentRequest = getAssignmentsRequestBody({
+    orgType: orgType,
+    orgArray: orgIds,
     aggregationQuery: false,
     paginate: false,
     isCollectionGroupQuery: false,
+    restrictToOpenAssignments: true,
   });
   const userId = toValue(roarUid);
   return await adminAxiosInstance
@@ -310,4 +372,27 @@ export const assignmentFetchAll = async (adminId, orgType, orgId, includeScores 
     true,
     true,
   );
+};
+
+// This function should take into two sets of IOrgslist (admin and student) and determine
+// the intersection of the two org lists with the highest juridiction
+export const adminOrgIntersection = (participantData, adminOrgs) => {
+  const userOrgs = _pick(participantData, Object.values(ORG_TYPES));
+
+  const orgIntersection = {};
+  for (const orgName of Object.values(ORG_TYPES)) {
+    orgIntersection[orgName] = _intersection(_get(userOrgs, orgName)?.current, _get(adminOrgs, orgName));
+  }
+
+  return orgIntersection;
+};
+
+// return the orgj
+export const highestAdminOrgIntersection = (participantData, adminOrgs) => {
+  const orgIntersection = adminOrgIntersection(participantData, adminOrgs);
+  for (const orgType of ORG_TYPES_IN_ORDER) {
+    if (!_isEmpty(orgIntersection[orgType])) {
+      return { orgType, orgIds: orgIntersection[orgType] };
+    }
+  }
 };
