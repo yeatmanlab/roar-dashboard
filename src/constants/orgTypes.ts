@@ -4,7 +4,7 @@ export const ORG_TYPES = {
   CLASSES: 'classes',
   GROUPS: 'groups',
   FAMILIES: 'families',
-};
+} as const;
 
 export const SINGULAR_ORG_TYPES = {
   DISTRICTS: 'district',
@@ -12,4 +12,4 @@ export const SINGULAR_ORG_TYPES = {
   CLASSES: 'class',
   GROUPS: 'group',
   FAMILIES: 'family',
-};
+} as const;

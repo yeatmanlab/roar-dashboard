@@ -1,15 +1,15 @@
 /**
  * Firestore databases
  */
-export const FIRESTORE_DATABASES = Object.freeze({
+export const FIRESTORE_DATABASES = {
   ADMIN: 'admin',
   APP: 'app',
-});
+} as const;
 
 /**
  * Firestore database collections
  */
-export const FIRESTORE_COLLECTIONS = Object.freeze({
+export const FIRESTORE_COLLECTIONS = {
   ACTIVATION_CODES: 'activationCodes',
   ADMINISTRATIONS: 'administrations',
   CLASSES: 'classes',
@@ -21,4 +21,4 @@ export const FIRESTORE_COLLECTIONS = Object.freeze({
   TASKS: 'tasks',
   USER_CLAIMS: 'userClaims',
   USERS: 'users',
-});
+} as const;

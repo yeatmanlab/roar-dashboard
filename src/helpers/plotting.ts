@@ -1,8 +1,37 @@
 export const chart = {};
 
-const getBorderRadii = (left, middle, right) => {
-  const defaultRadius = { topLeft: 0, topRight: 0, bottomLeft: 0, bottomRight: 0 };
-  const borderRadii = { left: { ...defaultRadius }, middle: { ...defaultRadius }, right: { ...defaultRadius } };
+// Define interfaces for clarity
+interface BorderRadiusValue {
+  topLeft: number;
+  topRight: number;
+  bottomLeft: number;
+  bottomRight: number;
+}
+
+interface BorderRadii {
+  left: BorderRadiusValue;
+  middle: BorderRadiusValue;
+  right: BorderRadiusValue;
+}
+
+interface OrgStats {
+  assigned?: number;
+  started?: number;
+  completed?: number;
+}
+
+// Define a simplified type for Chart.js data/options, 
+// or import specific types from 'chart.js' if needed
+type ChartJsData = any; 
+type ChartJsOptions = any;
+
+const getBorderRadii = (left: number, middle: number, right: number): BorderRadii => {
+  const defaultRadius: BorderRadiusValue = { topLeft: 0, topRight: 0, bottomLeft: 0, bottomRight: 0 };
+  const borderRadii: BorderRadii = { 
+    left: { ...defaultRadius }, 
+    middle: { ...defaultRadius }, 
+    right: { ...defaultRadius } 
+  };
   if (left > 0) {
     borderRadii.left.topLeft = Number.MAX_VALUE;
     borderRadii.left.bottomLeft = Number.MAX_VALUE;
@@ -28,9 +57,14 @@ const getBorderRadii = (left, middle, right) => {
   return borderRadii;
 };
 
-export const setBarChartData = (orgStats) => {
+export const setBarChartData = (orgStats: OrgStats | null | undefined): ChartJsData => {
   let { assigned = 0, started = 0, completed = 0 } = orgStats || {};
   const documentStyle = getComputedStyle(document.documentElement);
+
+  // Ensure these are numbers before subtraction
+  started = Number(started) || 0;
+  completed = Number(completed) || 0;
+  assigned = Number(assigned) || 0;
 
   started -= completed;
   assigned -= started + completed;
@@ -74,8 +108,10 @@ export const setBarChartData = (orgStats) => {
   return chartData;
 };
 
-export const setBarChartOptions = (orgStats) => {
+export const setBarChartOptions = (orgStats: OrgStats | null | undefined): ChartJsOptions => {
   let { assigned = 0 } = orgStats || {};
+  
+  assigned = Number(assigned) || 0;
 
   const min = 0;
   const max = assigned;

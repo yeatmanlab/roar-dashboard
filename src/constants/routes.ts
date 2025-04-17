@@ -15,4 +15,4 @@ export const APP_ROUTES = {
   STUDENT_REPORT: '/scores/:administrationId/:orgType/:orgId/user/:userId',
   ACCOUNT_PROFILE: '/profile',
   LIST_ORGS: '/list-orgs',
-};
+} as const;
