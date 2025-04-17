@@ -4,7 +4,7 @@ import { isLevante } from './helpers';
 
 const roarConfig = levanteFirebaseConfig;
 
-export async function initNewFirekit() {
+export async function initNewFirekit(): Promise<RoarFirekit> {
   const firekit = new RoarFirekit({
     roarConfig,
     authPersistence: 'session',

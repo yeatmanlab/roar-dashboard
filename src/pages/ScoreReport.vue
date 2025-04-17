@@ -183,7 +183,7 @@
         <div class="legend-description">
           Students are classified into three support groups based on nationally-normed percentiles. Blank spaces
           indicate that the assessment was not completed. <br />
-          Pale colors indicate that the score may not reflect the reader’s ability because responses were made too
+          Pale colors indicate that the score may not reflect the reader's ability because responses were made too
           quickly or the assessment was incomplete.
         </div>
 
@@ -290,7 +290,7 @@ import useOrgQuery from '@/composables/queries/useOrgQuery';
 import useDistrictSchoolsQuery from '@/composables/queries/useDistrictSchoolsQuery';
 import useAdministrationAssignmentsQuery from '@/composables/queries/useAdministrationAssignmentsQuery';
 import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery';
-import { useFilteredTableData } from '@/composables/useFilteredTableData.js';
+import { useFilteredTableData } from '@/composables/useFilteredTableData';
 import { exportCsv } from '@/helpers/query/utils';
 import { getTitle } from '@/helpers/query/administrations';
 import {

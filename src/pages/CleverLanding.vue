@@ -5,15 +5,17 @@
   </div>
 </template>
 <script setup>
-import { useAuthStore } from '@/store/auth.js';
+import { useAuthStore } from '@/store/auth';
 import { storeToRefs } from 'pinia';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import _get from 'lodash/get';
 import _union from 'lodash/union';
 import AppSpinner from '@/components/AppSpinner.vue';
 import { fetchDocById } from '@/helpers/query/utils';
+import { computed, onMounted, ref } from 'vue';
 
 const router = useRouter();
+const route = useRoute();
 const authStore = useAuthStore();
 const { roarUid, authFromClever } = storeToRefs(authStore);
 

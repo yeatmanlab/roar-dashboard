@@ -58,8 +58,8 @@ const plugins = [
       queryClientConfig: {
         defaultOptions: {
           queries: {
-            staleTime: window.Cypress ? 0 : 10 * 60 * 1000,
-            gcTime: window.Cypress ? 0 : 15 * 60 * 1000,
+            staleTime: (window as any).Cypress ? 0 : 10 * 60 * 1000,
+            gcTime: (window as any).Cypress ? 0 : 15 * 60 * 1000,
           },
         },
       },

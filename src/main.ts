@@ -1,3 +1,3 @@
-import { mountApp } from './setup.js';
+import { mountApp } from './setup';
 
 mountApp();

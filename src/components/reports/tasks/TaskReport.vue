@@ -79,8 +79,8 @@ import { ref, computed } from 'vue';
 import PvAccordion from 'primevue/accordion';
 import PvAccordionTab from 'primevue/accordiontab';
 import PvSelectButton from 'primevue/selectbutton';
-import { tasksToDisplayGraphs, taskInfoById } from '@/helpers/reports.js';
-import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery.js';
+// import { tasksToDisplayGraphs, taskInfoById } from '@/helpers/reports.ts'; // Commented out
+import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery'; // Removed .js extension
 import SubscoreTable from '@/components/reports/SubscoreTable.vue';
 import DistributionChartFacet from '@/components/reports/DistributionChartFacet.vue';
 import DistributionChartSupport from '@/components/reports/DistributionChartSupport.vue';

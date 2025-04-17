@@ -193,6 +193,12 @@ export const useAuthStore = () => {
     },
     persist: {
       storage: sessionStorage,
+      paths: [
+        'firebaseUser', 
+        'ssoProvider',
+        'cleverOAuthRequested', 
+        'classLinkOAuthRequested'
+      ],
       debug: false,
     },
   })();

@@ -2,13 +2,14 @@ import * as Sentry from '@sentry/vue';
 import { captureConsoleIntegration, contextLinesIntegration, extraErrorDataIntegration } from '@sentry/integrations';
 import { formattedLocale, languageOptions } from './translations/i18n';
 import { isLevante } from '@/helpers';
+import { App } from 'vue';
 
 const language = formattedLocale;
 
-export function initSentry(app) {
+export function initSentry(app: App) {
   // skip if levante instance
-  let dsn;
-  let regex;
+  let dsn: string;
+  let regex: RegExp;
   let tracePropagationTargets;
   if (isLevante) {
     dsn = 'https://458fd3b1207c12df79f554b94f22833f@o4507250485035008.ingest.us.sentry.io/4508480347832320';

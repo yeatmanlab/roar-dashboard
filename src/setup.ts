@@ -1,4 +1,4 @@
-import { createApp } from 'vue';
+import { createApp, App as VueApp, Plugin } from 'vue';
 import { Buffer } from 'buffer';
 import { initSentry } from '@/sentry';
 import PvTooltip from 'primevue/tooltip';
@@ -12,11 +12,11 @@ import './styles.css';
  *
  * @returns {App<Element>}
  */
-export const createAppInstance = () => {
+export const createAppInstance = (): VueApp<Element> => {
   const app = createApp(App);
 
   // Register all app plugins.
-  plugins.forEach((plugin) => {
+  plugins.forEach((plugin: Plugin | [Plugin, ...any[]]) => {
     if (Array.isArray(plugin)) {
       app.use(...plugin);
     } else {
@@ -36,7 +36,7 @@ export const createAppInstance = () => {
   // eslint-disable-next-line no-undef
   globalThis.Buffer = Buffer;
 
-  if (process.env.NODE_ENV === 'production') {
+  if (import.meta.env.MODE === 'production') {
     initSentry(app);
   }
 
@@ -48,7 +48,7 @@ export const createAppInstance = () => {
  *
  * @returns {void}
  */
-export const mountApp = () => {
+export const mountApp = (): void => {
   const app = createAppInstance();
   app.mount('#app');
 };

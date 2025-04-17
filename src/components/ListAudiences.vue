@@ -187,9 +187,11 @@ import useOrgsTableQuery from '@/composables/queries/useOrgsTableQuery';
 import EditOrgsForm from './EditOrgsForm.vue';
 import RoarModal from './modals/RoarModal.vue';
 import { CSV_EXPORT_MAX_RECORD_COUNT } from '@/constants/csvExport';
-import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts.js';
+import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
 import RoarDataTable from '@/components/RoarDataTable.vue';
 import PvFloatLabel from 'primevue/floatlabel';
+// import useDeleteGroupMutation from '@/composables/mutations/useDeleteGroupMutation'; // File does not exist
+import useGroupsQuery from '@/composables/queries/useGroupsQuery';
 
 const router = useRouter();
 const initialized = ref(false);
