@@ -47,6 +47,7 @@
       <PvColumn v-for="col of tableColumns" :key="col.field" :field="col.field" :editor="true">
         <template #header>
           <b>{{ col.header }}</b>
+          {{ col.field }}
           <i class="pi pi-pen-to-square" v-tooltip.top="'Click on a cell to edit its value.'" />
         </template>
         <template #body="{ data, field }">
@@ -83,6 +84,10 @@ const props = defineProps({
   mappings: {
     type: Object,
     required: true,
+  },
+  usingOrgPicker: {
+    type: Boolean,
+    default: true,
   },
 });
 const tableColumns = ref([]);
@@ -228,6 +233,17 @@ function validityCheck(row) {
   // check that password is valid
   if (!isPasswordValid(row[passwordField])) {
     errors.push('Password must be at least 6 characters long and contain at least one letter');
+  }
+
+  // If not using the org picker, check that a district and school, or a group are selected
+  if (!props.usingOrgPicker) {
+    const districtField = props.mappings.organizations.districts;
+    const schoolField = props.mappings.organizations.schools;
+    const groupField = props.mappings.organizations.groups;
+
+    if (!(_get(row, districtField) && _get(row, schoolField)) && !_get(row, groupField)) {
+      errors.push('District, School, or Group is required');
+    }
   }
   return { valid: _isEmpty(errors), errors };
 }
