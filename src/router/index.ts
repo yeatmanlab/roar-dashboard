@@ -1,19 +1,26 @@
-import { createRouter, createWebHistory } from 'vue-router';
+import { 
+  createRouter, 
+  createWebHistory, 
+  RouteRecordRaw, 
+  NavigationGuardNext, 
+  RouteLocationNormalized, 
+  RouterScrollBehavior 
+} from 'vue-router';
 import { useAuthStore } from '@/store/auth';
 import _get from 'lodash/get';
 import { pageTitlesEN, pageTitlesUS, pageTitlesES, pageTitlesCO } from '@/translations/exports';
 import { isLevante } from '@/helpers';
 import { APP_ROUTES } from '@/constants/routes';
 
-function removeQueryParams(to) {
+function removeQueryParams(to: RouteLocationNormalized) {
   if (Object.keys(to.query).length) return { path: to.path, query: {}, hash: to.hash };
 }
 
-function removeHash(to) {
+function removeHash(to: RouteLocationNormalized) {
   if (to.hash) return { path: to.path, query: to.query, hash: '' };
 }
 
-const routes = [
+const routes: Array<RouteRecordRaw> = [
   {
     path: '/',
     name: 'Home',
@@ -270,18 +277,26 @@ const routes = [
   },
 ];
 
-export const router = createRouter({
-  history: createWebHistory(),
+const scrollBehavior: RouterScrollBehavior = (to, from, savedPosition) => {
+  if (savedPosition) {
+    return savedPosition;
+  } else if (to.hash) {
+    return {
+      el: to.hash,
+      behavior: 'smooth',
+    };
+  } else {
+    return { left: 0, top: 0 };
+  }
+};
+
+const router = createRouter({
+  history: createWebHistory(import.meta.env.BASE_URL),
   routes,
-  scrollBehavior(to) {
-    const scroll = {};
-    if (to.meta.toTop) scroll.top = 0;
-    if (to.meta.smoothScroll) scroll.behavior = 'smooth';
-    return scroll;
-  },
+  scrollBehavior,
 });
 
-router.beforeEach(async (to, from, next) => {
+router.beforeEach(async (to: RouteLocationNormalized, from: RouteLocationNormalized, next: NavigationGuardNext) => {
   // Don't allow routing to LEVANTE pages if not in LEVANTE instance
   if (!isLevante && to.meta?.project === 'LEVANTE') {
     next({ name: 'Home' });
