@@ -181,21 +181,30 @@
             <h2 class="step-header">Demographics Fields</h2>
             <Button label="Next" icon="pi pi-arrow-right" icon-pos="right" @click="activateCallback('5')" />
           </div>
-          <div class="step-container">
-            <div class="flex flex-column gap-3 p-4 w-full">
-              <div v-for="(value, key) in demographicFields" :key="key" class="step-field-item">
-                <div>
-                  <span class="font-bold"> {{ value.label }}</span>
-                  <p class="text-gray-500">{{ value.description }}</p>
+          <div class="step-container" style="max-height: calc(100vh - 375px)">
+            <ScrollPanel
+              class="w-full"
+              :dt="{
+                bar: {
+                  background: '{primary.color}',
+                },
+              }"
+            >
+              <div class="flex flex-column gap-3 p-4 w-full">
+                <div v-for="(value, key) in demographicFields" :key="key" class="step-field-item">
+                  <div>
+                    <span class="font-bold"> {{ value.label }}</span>
+                    <p class="text-gray-500">{{ value.description }}</p>
+                  </div>
+                  <Dropdown
+                    v-model="mappedColumns.demographics[value.field]"
+                    show-clear
+                    class="w-full dropdown"
+                    :options="csv_columns"
+                  />
                 </div>
-                <Dropdown
-                  v-model="mappedColumns.demographics[value.field]"
-                  show-clear
-                  class="w-full dropdown"
-                  :options="csv_columns"
-                />
               </div>
-            </div>
+            </ScrollPanel>
           </div>
         </StepPanel>
         <!-- Optional Fields -->
@@ -406,6 +415,7 @@
               v-if="showSubmitTable"
               :students="rawStudentFile"
               :mappings="mappedColumns"
+              :usingOrgPicker="usingOrgPicker"
               @validation-update="handleValidationUpdate"
             >
               <Button label="Add User" icon="pi pi-plus" severity="secondary" @click="addUser" />
@@ -442,7 +452,7 @@ import _chunk from 'lodash/chunk';
 import _set from 'lodash/set';
 import _remove from 'lodash/remove';
 import SubmitTable from '@/components/SubmitTable.vue';
-
+import ScrollPanel from 'primevue/scrollpanel';
 const rawStudentFile = ref([]);
 const tableColumns = ref([]);
 const csv_columns = ref([]);
