@@ -185,22 +185,27 @@ export const fetchDocumentsById = async (collection, docIds, select = [], db = F
     requestBody.mask = { fieldPaths: select };
   }
 
-  const response = await axiosInstance.post(':batchGet', requestBody);
+  try {
+    const response = await axiosInstance.post(':batchGet', requestBody);
 
-  return response.data
-    .filter(({ found }) => found)
-    .map(({ found }) => {
-      // Deconstruct the document path as Firebase conveniently doesn't return basic information like the record ID as
-      // part of the documentation data. Whilst this is a bit hacky, it works.
-      const pathParts = found.name.split('/');
-      const documentId = pathParts.pop();
-      const collectionName = pathParts.pop();
-      return {
-        id: documentId,
-        collection: collectionName,
-        ..._mapValues(found.fields, (value) => convertValues(value)),
-      };
-    });
+    return response.data
+      .filter(({ found }) => found)
+      .map(({ found }) => {
+        // Deconstruct the document path as Firebase conveniently doesn't return basic information like the record ID as
+        // part of the documentation data. Whilst this is a bit hacky, it works.
+        const pathParts = found.name.split('/');
+        const documentId = pathParts.pop();
+        const collectionName = pathParts.pop();
+        return {
+          id: documentId,
+          collection: collectionName,
+          ..._mapValues(found.fields, (value) => convertValues(value)),
+        };
+      });
+  } catch (error) {
+    console.error('fetchDocumentsById: Error fetching documents by ID:', error);
+    return [];
+  }
 };
 
 // @TODO: Depreceate fetchDocsById and use fetchDocumentsById instead once the last queries are updated as well. This

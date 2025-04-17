@@ -20,16 +20,14 @@
                 v-model="state.administrationName"
                 class="w-full"
                 data-cy="input-administration-name"
-            />
-            <label for="administration-name" class="w-full">Assignment Name</label>
-            <small
-              v-if="v$.administrationName.$invalid && submitted"
-              class="p-error white-space-nowrap overflow-hidden text-overflow-ellipsis"
-            >
-              Please name your administration
-            </small>
+              />
+              <label for="administration-name" class="w-full">Assignment Name<span class="required-asterisk">*</span></label>
+              <small
+                v-if="v$.administrationName.$invalid && submitted"
+                class="p-error white-space-nowrap overflow-hidden text-overflow-ellipsis"
+                >Please name your assignment</small
+              >
             </PvFloatLabel>
-            <p class="mt-1 ml-1 text-sm text-gray-500">This name is visible to participants</p>
           </div>
         </div>
         <div class="formgrid grid">
@@ -70,6 +68,9 @@
                 >Please select an end date.</small
               >
             </PvFloatLabel>
+            <div class="text-sm text-gray-500 mt-4 required text-right">
+              * Required
+            </div>
           </div>
         </div>
 
@@ -138,7 +139,7 @@
               class="text-white bg-primary border-none border-round h-3rem p-3 hover:bg-red-900"
               data-cy="button-create-administration"
               style="margin: 0"
-              :disabled="isSubmitting"
+              :disabled="!state.administrationName || isSubmitting"
               @click="submit"
             >
               <i v-if="isSubmitting" class="pi pi-spinner pi-spin mr-2"></i> {{ submitLabel }}
@@ -185,8 +186,8 @@ import useGroupsQuery from '@/composables/queries/useGroupsQuery';
 import useFamiliesQuery from '@/composables/queries/useFamiliesQuery';
 import useTaskVariantsQuery from '@/composables/queries/useTaskVariantsQuery';
 import useUpsertAdministrationMutation from '@/composables/mutations/useUpsertAdministrationMutation';
-import TaskPicker from './TaskPicker.vue';
-import ConsentPicker from './ConsentPicker.vue';
+import TaskPicker from '@/components/TaskPicker.vue';
+import ConsentPicker from '@/components/ConsentPicker.vue';
 import OrgPicker from '@/components/OrgPicker.vue';
 import { APP_ROUTES } from '@/constants/routes';
 import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
@@ -488,7 +489,7 @@ const submit = async () => {
 
   const args = {
     name: toRaw(state).administrationName,
-    publicName: toRaw(state).administrationPublicName,
+    publicName: toRaw(state).administrationName,
     assessments: submittedAssessments,
     dateOpen: toRaw(state).dateStarted,
     dateClose,
@@ -556,7 +557,7 @@ onMounted(async () => {
 watch([existingAdministrationData, allVariants], ([adminInfo, allVariantInfo]) => {
   if (adminInfo && !_isEmpty(allVariantInfo)) {
     state.administrationName = adminInfo.name;
-    state.administrationPublicName = adminInfo.publicName;
+    state.administrationPublicName = adminInfo.name;
     state.dateStarted = new Date(adminInfo.dateOpened);
     state.dateClosed = new Date(adminInfo.dateClosed);
     state.sequential = adminInfo.sequential;
@@ -582,6 +583,9 @@ watch([existingAdministrationData, allVariants], ([adminInfo, allVariantInfo]) =
 </script>
 
 <style lang="scss">
+.required {
+    float: right;
+}
 .p-datepicker-today span {
   background-color: var(--blue-100) !important; /* Change to your desired color */
 }
@@ -713,5 +717,7 @@ watch([existingAdministrationData, allVariants], ([adminInfo, allVariantInfo]) =
     display: none;
   }
 }
-
+.required-asterisk {
+  color: var(--red-500);
+}
 </style>

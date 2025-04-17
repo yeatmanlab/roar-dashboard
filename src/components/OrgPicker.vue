@@ -50,13 +50,8 @@
                 option-label="name"
                 class="w-full"
                 list-style="max-height:20rem"
+                checkmark
               >
-                <template #option="slotProps">
-                  <div class="flex align-items-center">
-                    <PvCheckbox :binary="true" :model-value="isSelected(activeOrgType, slotProps.option.id)" />
-                    <div class="ml-2">{{ slotProps.option.name }}</div>
-                  </div>
-                </template>
               </PvListbox>
             </div>
           </PvTabPanel>
@@ -92,7 +87,6 @@ import { storeToRefs } from 'pinia';
 import _capitalize from 'lodash/capitalize';
 import _get from 'lodash/get';
 import _head from 'lodash/head';
-import PvCheckbox from 'primevue/checkbox';
 import PvChip from 'primevue/chip';
 import PvSelect from 'primevue/select';
 import PvListbox from 'primevue/listbox';
@@ -252,23 +246,6 @@ watch(activeOrgType, () => {
     });
   }
 });
-
-// Modify the isSelected function to handle single selection
-const isSelected = (orgType, orgId) => {
-  const rawSelectedOrgs = toRaw(selectedOrgs);
-  
-  // ensure only one item can be selected across all org types
-  if (props.forParentOrg) {
-    const allSelections = Object.values(rawSelectedOrgs).flat();
-    return allSelections.some(org => org.id === orgId);
-  }
-  
-  if (Array.isArray(rawSelectedOrgs[orgType])) {
-    return rawSelectedOrgs[orgType].map((org) => org.id).includes(orgId);
-  } else {
-    return rawSelectedOrgs[orgType].id === orgId;
-  }
-};
 
 const remove = (org, orgKey) => {
   const rawSelectedOrgs = toRaw(selectedOrgs);

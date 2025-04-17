@@ -13,6 +13,7 @@ import _get from 'lodash/get';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
 import useUserStudentDataQuery from '@/composables/queries/useUserStudentDataQuery';
+import useCompleteAssessmentMutation from '@/composables/mutations/useCompleteAssessmentMutation';
 import packageLockJson from '../../../package-lock.json';
 
 const props = defineProps({
@@ -30,6 +31,8 @@ const gameStarted = ref(false);
 const authStore = useAuthStore();
 const gameStore = useGameStore();
 const { isFirekitInit, roarfirekit } = storeToRefs(authStore);
+
+const { mutateAsync: completeAssessmentMutate } = useCompleteAssessmentMutation();
 
 const initialized = ref(false);
 let unsubscribe;
@@ -114,7 +117,7 @@ async function startTask(selectedAdmin) {
 
     await roarApp.run().then(async () => {
       // Handle any post-game actions.
-      await authStore.completeAssessment(selectedAdmin.value.id, taskId);
+      await completeAssessmentMutate({ adminId: selectedAdmin.value.id, taskId });
 
       // Navigate to home, but first set the refresh flag to true.
       gameStore.requireHomeRefresh();

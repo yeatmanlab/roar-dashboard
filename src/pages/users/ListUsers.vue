@@ -134,9 +134,9 @@ import _isEmpty from 'lodash/isEmpty';
 import { singularizeFirestoreCollection } from '@/helpers';
 import { useAuthStore } from '@/store/auth';
 import useOrgUsersQuery from '@/composables/queries/useOrgUsersQuery';
-import AppSpinner from './AppSpinner.vue';
-import EditUsersForm from './EditUsersForm.vue';
-import RoarModal from './modals/RoarModal.vue';
+import AppSpinner from '@/components/AppSpinner.vue';
+import EditUsersForm from '@/components/EditUsersForm.vue';
+import RoarModal from '@/components/modals/RoarModal.vue';
 import RoarDataTable from '@/components/RoarDataTable.vue';
 
 const authStore = useAuthStore();

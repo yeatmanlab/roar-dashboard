@@ -30,9 +30,11 @@ import DOMPurify from 'dompurify';
 import _lowerCase from 'lodash/lowerCase';
 import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
 import { useRouter } from 'vue-router';
+import { useAuthStore } from '@/store/auth';
 
 const i18n = useI18n();
 const router = useRouter();
+const authStore = useAuthStore();
 
 const props = defineProps({
   consentText: { type: String, required: true, default: 'Text Here' },
