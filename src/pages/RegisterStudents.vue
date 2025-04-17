@@ -235,14 +235,7 @@
         <StepPanel v-slot="{ activateCallback }" value="6">
           <div class="py-3 flex justify-between">
             <Button label="Back" severity="secondary" icon="pi pi-arrow-left" @click="activateCallback('5')" />
-            <h2 class="step-header">
-              Organizations<i
-                v-tooltip.top="
-                  'Students are required to meet ONE of the following criteria: \n\n- Enrolled in at least one district, school, and class\n- Enrolled in at least one group'
-                "
-                class="pi pi-info-circle ml-2"
-              />
-            </h2>
+            <h2 class="step-header">Organizations</h2>
             <Button
               :disabled="!readyToProgress('7')"
               label="Next"
@@ -253,23 +246,42 @@
           </div>
           <div class="step-container">
             <div class="flex flex-column gap-3 w-full">
-              <div class="flex align-items-center gap-2 flex-column justify-content-">
-                <SelectButton
-                  v-model="usingOrgPicker"
-                  :options="[
-                    { label: 'Same for all students', value: true },
-                    { label: 'From CSV columns', value: false },
-                  ]"
-                  optionLabel="label"
-                  optionValue="value"
-                />
-                <small class="text-gray-500">
-                  {{
-                    usingOrgPicker
-                      ? 'Select organizations to assign to all students'
-                      : 'Map CSV columns to organizations'
-                  }}
-                </small>
+              <div class="flex justify-between">
+                <div class="flex align-items-center gap-2 flex-column justify-content-">
+                  <SelectButton
+                    v-model="usingOrgPicker"
+                    :options="[
+                      { label: 'Same for all students', value: true },
+                      { label: 'From CSV columns', value: false },
+                    ]"
+                    optionLabel="label"
+                    optionValue="value"
+                  />
+                  <small class="text-gray-500">
+                    {{
+                      usingOrgPicker
+                        ? 'Select organizations to assign to all students'
+                        : 'Map CSV columns to organizations'
+                    }}
+                  </small>
+                </div>
+                <div>
+                  <div style="margin-left: -25px">One of the following required:</div>
+                  <div :class="{ 'text-green-500': eduOrgsSelected }">
+                    <i v-if="eduOrgsSelected" class="pi pi-check mr-2" style="margin-left: -25px" /><i
+                      v-else
+                      class="pi pi-circle mr-2"
+                      style="margin-left: -25px"
+                    />At least one district and one school
+                  </div>
+                  <div :class="{ 'text-green-500': nonEduOrgsSelected }">
+                    <i v-if="nonEduOrgsSelected" class="pi pi-check mr-2" style="margin-left: -25px" /><i
+                      v-else
+                      class="pi pi-circle mr-2"
+                      style="margin-left: -25px"
+                    />At least one group
+                  </div>
+                </div>
               </div>
               <div v-if="usingOrgPicker">
                 <OrgPicker @selection="orgSelection($event)" />
@@ -441,7 +453,7 @@
   </div>
 </template>
 <script setup>
-import { ref, toRaw, onMounted } from 'vue';
+import { ref, toRaw, onMounted, computed } from 'vue';
 import Dropdown from 'primevue/dropdown';
 import Stepper from 'primevue/stepper';
 import Step from 'primevue/step';
@@ -640,18 +652,14 @@ const readyToProgress = (targetStep) => {
     if (usingOrgPicker.value) {
       // Check that selectedOrgs has district, school and class populated OR group OR family populated
       return (
-        (!_isEmpty(selectedOrgs.value.districts) &&
-          !_isEmpty(selectedOrgs.value.schools) &&
-          !_isEmpty(selectedOrgs.value.classes)) ||
+        (!_isEmpty(selectedOrgs.value.districts) && !_isEmpty(selectedOrgs.value.schools)) ||
         !_isEmpty(selectedOrgs.value.groups) ||
         !_isEmpty(selectedOrgs.value.families)
       );
     } else {
       // Check that mappedColumns.organizations has all the required fields not null
       return (
-        (mappedColumns.value.organizations.districts &&
-          mappedColumns.value.organizations.schools &&
-          mappedColumns.value.organizations.classes) ||
+        (mappedColumns.value.organizations.districts && mappedColumns.value.organizations.schools) ||
         mappedColumns.value.organizations.groups ||
         mappedColumns.value.organizations.families
       );
@@ -701,6 +709,24 @@ const getOrgId = async (orgType, orgName, selectedDistrict = null, selectedSchoo
   }
   return null;
 };
+
+const eduOrgsSelected = computed(() => {
+  if (usingOrgPicker.value) {
+    return !_isEmpty(selectedOrgs.value.districts) && !_isEmpty(selectedOrgs.value.schools);
+  } else {
+    return (
+      !_isEmpty(mappedColumns.value.organizations.districts) && !_isEmpty(mappedColumns.value.organizations.schools)
+    );
+  }
+});
+
+const nonEduOrgsSelected = computed(() => {
+  if (usingOrgPicker.value) {
+    return !_isEmpty(selectedOrgs.value.groups) || !_isEmpty(selectedOrgs.value.families);
+  } else {
+    return !_isEmpty(mappedColumns.value.organizations.groups) || !_isEmpty(mappedColumns.value.organizations.families);
+  }
+});
 
 /**
  * Submission handlers
