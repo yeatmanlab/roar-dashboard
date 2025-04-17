@@ -253,9 +253,23 @@
           </div>
           <div class="step-container">
             <div class="flex flex-column gap-3 w-full">
-              <div class="flex align-items-center">
-                <label class="mr-2">Enroll all students to same organizations</label>
-                <PvToggleSwitch v-model="usingOrgPicker" binary />
+              <div class="flex align-items-center gap-2 flex-column justify-content-">
+                <SelectButton
+                  v-model="usingOrgPicker"
+                  :options="[
+                    { label: 'Same for all students', value: true },
+                    { label: 'From CSV columns', value: false },
+                  ]"
+                  optionLabel="label"
+                  optionValue="value"
+                />
+                <small class="text-gray-500">
+                  {{
+                    usingOrgPicker
+                      ? 'Select organizations to assign to all students'
+                      : 'Map CSV columns to organizations'
+                  }}
+                </small>
               </div>
               <div v-if="usingOrgPicker">
                 <OrgPicker @selection="orgSelection($event)" />
@@ -453,6 +467,8 @@ import _set from 'lodash/set';
 import _remove from 'lodash/remove';
 import SubmitTable from '@/components/SubmitTable.vue';
 import ScrollPanel from 'primevue/scrollpanel';
+import SelectButton from 'primevue/selectbutton';
+
 const rawStudentFile = ref([]);
 const tableColumns = ref([]);
 const csv_columns = ref([]);
