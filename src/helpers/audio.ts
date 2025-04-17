@@ -1,4 +1,4 @@
-interface BufferList { 
+export interface BufferList {
   [key: string]: AudioBuffer;
 }
 
