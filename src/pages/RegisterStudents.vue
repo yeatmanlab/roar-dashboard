@@ -11,8 +11,7 @@
         <Step value="4">Demographics</Step>
         <Step value="5">Optional</Step>
         <Step value="6">Organizations</Step>
-        <Step value="7">Review</Step>
-        <Step value="8">Preview</Step>
+        <Step value="7">Preview</Step>
       </StepList>
       <StepPanels>
         <!-- Upload CSV -->
@@ -241,7 +240,10 @@
               label="Next"
               icon="pi pi-arrow-right"
               icon-pos="right"
-              @click="activateCallback('7')"
+              @click="
+                activateCallback('7');
+                showSubmitTable = true;
+              "
             />
           </div>
           <div class="step-container">
@@ -304,115 +306,8 @@
             </div>
           </div>
         </StepPanel>
-        <!-- Review -->
-        <StepPanel v-slot="{ activateCallback }" value="7">
-          <div class="flex py-3 justify-between">
-            <Button label="Back" severity="secondary" icon="pi pi-arrow-left" @click="activateCallback('6')" />
-            <h2 class="step-header">Review</h2>
-            <Button
-              label="Submit"
-              severity="primary"
-              icon="pi pi-check"
-              @click="
-                activateCallback('8');
-                showSubmitTable = true;
-              "
-            />
-          </div>
-          <div class="step-container">
-            <div class="flex flex-row w-full gap-2">
-              <div class="flex-flex-column w-full">
-                <!-- Required Fields -->
-                <div class="review-section-container mb-2">
-                  <div class="flex flex-row justify-between mb-2">
-                    <h3 class="step-header">Required Fields</h3>
-                    <Button label="Edit" severity="secondary" icon="pi pi-arrow-left" @click="activateCallback('2')" />
-                  </div>
-                  <div class="flex flex-row justify-between">
-                    <span>ROAR Fields</span>
-                    <span>Your CSV Fields</span>
-                  </div>
-                  <div v-for="(value, key) in mappedColumns.required" :key="key" class="review-section-item">
-                    <span>{{ _startCase(key) }}</span>
-                    <span class="text-gray-500">{{ value ?? '--' }}</span>
-                  </div>
-                </div>
-                <!-- Demographic Fields -->
-                <div class="review-section-container mb-2">
-                  <div class="flex flex-row justify-between mb-2">
-                    <h3 class="step-header">Demographic Fields</h3>
-                    <Button label="Edit" severity="secondary" icon="pi pi-arrow-left" @click="activateCallback('4')" />
-                  </div>
-                  <div class="flex flex-row justify-between">
-                    <span>ROAR Fields</span>
-                    <span>Your CSV Fields</span>
-                  </div>
-                  <div v-for="(value, key) in mappedColumns.demographics" :key="key" class="review-section-item">
-                    <span>{{ _startCase(key) }}</span>
-                    <span class="text-gray-500">{{ value ?? '--' }}</span>
-                  </div>
-                </div>
-              </div>
-              <div class="flex-flex-column w-full">
-                <!-- Names Fields -->
-                <div class="review-section-container mb-2">
-                  <div class="flex flex-row justify-between mb-2">
-                    <h3 class="step-header">Names Fields</h3>
-                    <Button label="Edit" severity="secondary" icon="pi pi-arrow-left" @click="activateCallback('3')" />
-                  </div>
-                  <div class="flex flex-row justify-between">
-                    <span>ROAR Fields</span>
-                    <span>Your CSV Fields</span>
-                  </div>
-                  <div v-for="(value, key) in mappedColumns.names" :key="key" class="review-section-item">
-                    <span>{{ _startCase(key) }}</span>
-                    <span class="text-gray-500">{{ value ?? '--' }}</span>
-                  </div>
-                </div>
-                <!-- Organizations Fields -->
-                <div class="review-section-container mb-2">
-                  <div class="flex flex-row justify-between mb-2">
-                    <h3 class="step-header">Organizations Fields</h3>
-                    <Button label="Edit" severity="secondary" icon="pi pi-arrow-left" @click="activateCallback('6')" />
-                  </div>
-                  <div class="flex flex-row justify-between">
-                    <span>ROAR Fields</span>
-                    <span>{{ usingOrgPicker ? 'Selected Organizations' : 'Your CSV Fields' }}</span>
-                  </div>
-                  <div v-if="usingOrgPicker">
-                    <div v-for="(value, key) in selectedOrgs" :key="key" class="review-section-item">
-                      <span>{{ _startCase(key) }}</span>
-                      <span class="text-gray-500">{{ value.map((org) => org.name).join(', ') ?? '--' }}</span>
-                    </div>
-                  </div>
-                  <div v-else>
-                    <div v-for="(value, key) in mappedColumns.organizations" :key="key" class="review-section-item">
-                      <span class="mr-2">{{ _startCase(key) }}</span>
-                      <span class="text-gray-500 pl-2">{{ value ?? '--' }}</span>
-                    </div>
-                  </div>
-                </div>
-                <!-- Optional Fields -->
-                <div class="review-section-container mb-2">
-                  <div class="flex flex-row justify-between mb-2">
-                    <h3 class="step-header">Optional Fields</h3>
-                    <Button label="Edit" severity="secondary" icon="pi pi-arrow-left" @click="activateCallback('5')" />
-                  </div>
-                  <div class="flex flex-row justify-between">
-                    <span>ROAR Fields</span>
-                    <span>Your CSV Fields</span>
-                  </div>
-                  <div v-for="(value, key) in mappedColumns.optional" :key="key" class="review-section-item">
-                    <span>{{ _startCase(key) }}</span>
-                    <span class="text-gray-500">{{ value ?? '--' }}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </StepPanel>
         <!-- Preview & Submit -->
-        <StepPanel v-slot="{ activateCallback }" value="8">
+        <StepPanel v-slot="{ activateCallback }" value="7">
           <div class="flex py-3 justify-between">
             <Button label="Back" severity="secondary" icon="pi pi-arrow-left" @click="activateCallback('7')" />
             <h2 class="step-header">Preview & Submit</h2>
