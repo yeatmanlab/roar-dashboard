@@ -7,7 +7,7 @@ import VueGoogleMaps from 'vue-google-maps-community-fork';
 import { createHead } from '@unhead/vue';
 import { VueQueryPlugin } from '@tanstack/vue-query';
 import { surveyPlugin } from 'survey-vue3-ui';
-import { i18n } from '@/translations/i18n.js';
+import { i18n } from '@/translations/i18n';
 import { createPinia } from 'pinia';
 import piniaPluginPersistedState from 'pinia-plugin-persistedstate';
 import { definePreset } from '@primevue/themes';
