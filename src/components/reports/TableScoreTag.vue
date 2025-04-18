@@ -27,14 +27,6 @@
   import _get from 'lodash/get';
   import _lowerCase from 'lodash/lowerCase';
   import PvTag from 'primevue/tag';
-  import {
-    tasksToDisplayPercentCorrect,
-    tasksToDisplayCorrectIncorrectDifference,
-    tasksToDisplayTotalCorrect,
-    rawOnlyTasks,
-    scoredTasks,
-  } from '@/helpers/reports.js';
-  import { includedValidityFlags } from '@/helpers/reports';
   
   defineProps({
     colData: {

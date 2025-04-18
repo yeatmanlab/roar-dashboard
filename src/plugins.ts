@@ -1,12 +1,14 @@
 import PrimeVue from 'primevue/config';
 import ConfirmationService from 'primevue/confirmationservice';
 import ToastService from 'primevue/toastservice';
+// @ts-ignore - Linter struggles with resolving .js file via alias here, but build works
 import router from '@/router/index.js';
 import TextClamp from 'vue3-text-clamp';
 import VueGoogleMaps from 'vue-google-maps-community-fork';
 import { createHead } from '@unhead/vue';
 import { VueQueryPlugin } from '@tanstack/vue-query';
 import { surveyPlugin } from 'survey-vue3-ui';
+// @ts-ignore - Linter struggles with resolving .ts file via alias here, but build works
 import { i18n } from '@/translations/i18n';
 import { createPinia } from 'pinia';
 import piniaPluginPersistedState from 'pinia-plugin-persistedstate';

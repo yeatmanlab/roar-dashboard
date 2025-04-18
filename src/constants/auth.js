@@ -1,4 +1,4 @@
-import { oneMinuteInMs, oneSecondInMs } from './time.js';
+import { oneMinuteInMs, oneSecondInMs } from './time';
 
 /**
  * Auth Session
