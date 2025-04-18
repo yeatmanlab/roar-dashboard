@@ -1,13 +1,13 @@
-import { query, where, getDocs } from 'firebase/firestore';
+import { query, where, getDocs, CollectionReference, DocumentData, Query } from 'firebase/firestore';
 import _fromPairs from 'lodash/fromPairs';
 import _invert from 'lodash/invert';
 import _toPairs from 'lodash/toPairs';
 import * as Papa from 'papaparse';
 
-export const isLevante = import.meta.env.VITE_LEVANTE === 'TRUE';
+export const isLevante: boolean = import.meta.env.VITE_LEVANTE === 'TRUE';
 
-export const isMobileBrowser = () => {
-  const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+export const isMobileBrowser = (): boolean => {
+  const userAgent: string = navigator.userAgent || navigator.vendor || (window as any).opera;
   if (
     /(android|bb\d+|meego).+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|iris|kindle|lge |maemo|midp|mmp|mobile.+firefox|netfront|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|series(4|6)0|symbian|treo|up\.(browser|link)|vodafone|wap|windows ce|xda|xiino/i.test(
       userAgent,
@@ -21,7 +21,7 @@ export const isMobileBrowser = () => {
   return false;
 };
 
-export const getDocsFromQuery = async (collection, field, value) => {
+export const getDocsFromQuery = async (collection: CollectionReference | Query, field: string, value: any): Promise<any | null | any[]> => {
   const q = query(collection, where(field, '==', value));
   const querySnapshot = await getDocs(q);
 
@@ -34,25 +34,28 @@ export const getDocsFromQuery = async (collection, field, value) => {
   }
 };
 
+interface ResourceWithId {
+  id: string | number;
+  [key: string]: any; // Allow other properties
+}
+
 /**
  * Find an object in an array of objects by specifying its ID.
- * @param {Array} resources - Array of resource objects
- * @param {String} id - Resource ID
- * @returns
+ * @param {ResourceWithId[]} resources - Array of resource objects
+ * @param {string | number} id - Resource ID
+ * @returns {ResourceWithId | null} The found resource or null
  */
-export const findById = (resources, id) => {
+export const findById = <T extends ResourceWithId>(resources: T[] | null | undefined, id: string | number): T | null => {
   if (!resources) return null;
-  return resources.find((r) => r.id === id);
+  return resources.find((r) => r.id === id) ?? null;
 };
 
 /**
  * Upsert resource object into a resource array.
- * Upsert is a portmanteau of update/insert.  So if `resource` already exists in
- * `resources`, update it. Otherwise, insert it.
- * @param {Array} resources - Array of existing resource objects
- * @param {Object} resource - New object to either update or insert
+ * @param {ResourceWithId[]} resources - Array of existing resource objects
+ * @param {ResourceWithId} resource - New object to either update or insert
  */
-export const upsert = (resources, resource) => {
+export const upsert = <T extends ResourceWithId>(resources: T[], resource: T): void => {
   const index = resources.findIndex((r) => r.id === resource.id);
   if (resource.id && index !== -1) {
     resources[index] = resource;
@@ -61,75 +64,91 @@ export const upsert = (resources, resource) => {
   }
 };
 
-export const arrayRandom = (array) => {
+export const arrayRandom = <T>(array: T[]): T | undefined => {
+  if (!array || array.length === 0) return undefined;
   const randomIndex = Math.floor(Math.random() * array.length);
   return array[randomIndex];
 };
 
-export const getUniquePropsFromUsers = (users, prop) => {
+export const getUniquePropsFromUsers = (users: any[], prop: string): { id: any }[] => {
   const propArrays = users.map((user) => user[prop]).flat();
   return [...new Set(propArrays)].map((item) => ({ id: item }));
 };
 
-export const userHasSelectedOrgs = (userArray, selections) => {
+interface SelectionItem {
+  id: any;
+}
+
+export const userHasSelectedOrgs = (userArray: any[], selections: SelectionItem[]): boolean => {
   // If the selected org list is empty, return all users
   if (selections.length === 0) {
     return true;
   }
   const selectionArray = selections.map((item) => item.id);
-  return Boolean(userArray.filter((value) => selectionArray.includes(value)).length);
+  return Boolean(userArray.filter((value) => selectionArray.includes(value)).length > 0); // Check length > 0
 };
 
-export const formatDate = (date) => date?.toLocaleString('en-US');
+export const formatDate = (date: Date | number | string | undefined | null): string | undefined => date?.toLocaleString('en-US');
 
-const camelCase = (string) => string.replace(/_([a-z])/g, (groups) => groups[1].toUpperCase());
+const camelCase = (str: string): string => str.replace(/_([a-z])/g, (_match, group1) => group1.toUpperCase());
 
-export const flattenObj = (obj) => {
-  const result = {};
+export const flattenObj = (obj: any): Record<string, any> => {
+  const result: Record<string, any> = {};
 
   for (const i in obj) {
-    // We check the type of the i using
-    // typeof() function and recursively
-    // call the function again
-    if (typeof obj[i] === 'object' && !Array.isArray(obj[i]) && obj[i] !== null) {
-      const temp = flattenObj(obj[i]);
-      for (const j in temp) {
-        result[camelCase(i + '.' + j)] = temp[j] || '';
+    if (Object.prototype.hasOwnProperty.call(obj, i)) { // Add hasOwnProperty check
+      if (typeof obj[i] === 'object' && !Array.isArray(obj[i]) && obj[i] !== null) {
+        const temp = flattenObj(obj[i]);
+        for (const j in temp) {
+          if (Object.prototype.hasOwnProperty.call(temp, j)) { // Add hasOwnProperty check
+             result[camelCase(i + '.' + j)] = temp[j] === undefined || temp[j] === null ? '' : temp[j]; // More robust empty check
+          }
+        }
+      } else {
+        result[i] = obj[i] === undefined || obj[i] === null ? '' : obj[i]; // More robust empty check
       }
-    } else {
-      result[i] = obj[i] || obj[i] === 0 ? obj[i] : '';
     }
   }
   return result;
 };
 
-export const csvFileToJson = async (file) => {
-  const results = await Papa.parse(await file.text(), {
-    header: true,
-    skipEmptyLines: 'greedy',
-    transformHeader: (header) => header.trim(),
-    transform: (value, field) => {
-      if (field === 'id') {
-        return value.trim();
-      }
-      return value;
-    }
+interface CsvResult {
+  data: any[];
+  // Add other PapaParse result properties if needed
+}
+
+export const csvFileToJson = async (file: File): Promise<any[]> => {
+  const text = await file.text();
+  const results: CsvResult = await new Promise((resolve, reject) => {
+      Papa.parse(text, {
+        header: true,
+        skipEmptyLines: 'greedy',
+        transformHeader: (header: string): string => header.trim(),
+        transform: (value: string, field: string | number): string => {
+          // Ensure field is treated as string if it's a number (column index)
+          if (typeof field === 'number') field = String(field); 
+          if (field === 'id') {
+            return value.trim();
+          }
+          return value;
+        },
+        complete: (res) => resolve(res as CsvResult),
+        error: (err) => reject(err),
+      });
   });
   return results.data;
 };
 
-export const standardDeviation = (arr, usePopulation = false) => {
+export const standardDeviation = (arr: number[], usePopulation: boolean = false): number => {
   // prevent divide by 0
   if (arr.length === 0) return Infinity;
 
   const mean = arr.reduce((acc, val) => acc + val, 0) / arr.length;
-  return Math.sqrt(
-    arr.reduce((acc, val) => acc.concat((val - mean) ** 2), []).reduce((acc, val) => acc + val, 0) /
-      (arr.length - (usePopulation ? 0 : 1)),
-  );
+  const variance = arr.reduce((acc, val) => acc + (val - mean) ** 2, 0) / (arr.length - (usePopulation ? 0 : 1));
+  return Math.sqrt(variance);
 };
 
-export const filterAdminOrgs = (adminOrgs, filters) => {
+export const filterAdminOrgs = (adminOrgs: Record<string, string[]>, filters: Record<string, string[]>): Record<string, string[]> => {
   const filteredOrgPairs = _toPairs(adminOrgs).map(([orgType, orgs]) => [
     orgType,
     orgs.filter((org) => filters[orgType]?.includes(org)),
@@ -138,12 +157,12 @@ export const filterAdminOrgs = (adminOrgs, filters) => {
   return _fromPairs(filteredOrgPairs);
 };
 
-export const removeEmptyOrgs = (orgs) => {
+export const removeEmptyOrgs = (orgs: Record<string, any[]>): Record<string, any[]> => {
   // eslint-disable-next-line no-unused-vars
-  return _fromPairs(_toPairs(orgs).filter(([orgType, orgs]) => orgs.length > 0));
+  return _fromPairs(_toPairs(orgs).filter(([_, orgArray]) => orgArray.length > 0));
 };
 
-const plurals = {
+const plurals: Record<string, string> = {
   group: 'groups',
   district: 'districts',
   school: 'schools',
@@ -156,7 +175,7 @@ const plurals = {
   trial: 'trials',
 };
 
-export const pluralizeFirestoreCollection = (singular) => {
+export const pluralizeFirestoreCollection = (singular: string): string => {
   if (Object.values(plurals).includes(singular)) return singular;
 
   const plural = plurals[singular];
@@ -165,7 +184,7 @@ export const pluralizeFirestoreCollection = (singular) => {
   throw new Error(`There is no plural Firestore collection for the ${singular}`);
 };
 
-export const singularizeFirestoreCollection = (plural) => {
+export const singularizeFirestoreCollection = (plural: string): string => {
   if (Object.values(_invert(plurals)).includes(plural)) return plural;
 
   const singular = _invert(plurals)[plural];

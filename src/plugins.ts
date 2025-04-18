@@ -2,7 +2,7 @@ import PrimeVue from 'primevue/config';
 import ConfirmationService from 'primevue/confirmationservice';
 import ToastService from 'primevue/toastservice';
 // @ts-ignore - Linter struggles with resolving .js file via alias here, but build works
-import router from '@/router/index.js';
+import router from '@/router/index';
 import TextClamp from 'vue3-text-clamp';
 import VueGoogleMaps from 'vue-google-maps-community-fork';
 import { createHead } from '@unhead/vue';

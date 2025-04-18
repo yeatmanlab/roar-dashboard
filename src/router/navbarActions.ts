@@ -1,6 +1,17 @@
 import { isLevante } from '../helpers';
 
-const navbarActionOptions = [
+// Define an interface for the action options
+interface NavbarAction {
+  title: string;
+  icon?: string; // Optional icon
+  buttonLink: { name: string; params?: Record<string, any> }; // Define buttonLink structure
+  requiresSuperAdmin: boolean;
+  requiresAdmin?: boolean; // Optional requiresAdmin
+  project: 'ALL' | 'LEVANTE' | 'ROAR'; // Use literal types for project
+  category: string;
+}
+
+const navbarActionOptions: Readonly<NavbarAction>[] = [
   {
     title: 'Back to Dashboard',
     icon: 'pi pi-arrow-left',
@@ -89,9 +100,18 @@ const navbarActionOptions = [
     project: 'ALL',
     category: 'Users',
   },
-];
+] as const; // Use 'as const' for strong typing
 
-export const getNavbarActions = ({ isSuperAdmin = false, isAdmin = false }) => {
+// Define the type for the function parameters
+interface GetNavbarActionsParams {
+  isSuperAdmin?: boolean;
+  isAdmin?: boolean;
+}
+
+export const getNavbarActions = ({ 
+  isSuperAdmin = false, 
+  isAdmin = false 
+}: GetNavbarActionsParams): Readonly<NavbarAction>[] => {
   // TODO: Remove ROAR logic 
   if (isLevante) {
     return navbarActionOptions.filter((action) => {
@@ -110,6 +130,7 @@ export const getNavbarActions = ({ isSuperAdmin = false, isAdmin = false }) => {
           return false;
         }
       }
+      return false; // Added default return
     });
   } else {
     const actions = navbarActionOptions.filter((action) => {
@@ -122,6 +143,7 @@ export const getNavbarActions = ({ isSuperAdmin = false, isAdmin = false }) => {
         }
         return true;
       }
+      return false; // Added default return
     });
 
     return actions;

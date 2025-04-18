@@ -3,7 +3,7 @@
  *
  * @constant {Object} CONSENT_TYPES – The types of consent.
  */
-export const CONSENT_TYPES = Object.freeze({
+export const CONSENT_TYPES = {
   TOS: 'tos',
   ASSENT: 'assent',
   ASSENT_ES: 'assent-es',
@@ -21,4 +21,4 @@ export const CONSENT_TYPES = Object.freeze({
   CONSENT_VIDEO_AUDIO_EYE_TRACKING_ES: 'consent-video-audio-eye-tracking-es',
   CONSENT_VIDEO_AUDIO_RECORDING: 'consent-video-audio-recording',
   CONSENT_VIDEO_AUDIO_RECORDING_ES: 'consent-video-audio-recording-es',
-});
+} as const;
