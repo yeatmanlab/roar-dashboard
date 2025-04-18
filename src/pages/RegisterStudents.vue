@@ -9,7 +9,7 @@
         <Step value="2">Required</Step>
         <Step value="3">Names</Step>
         <Step value="4">Demographics</Step>
-        <Step value="5">Optional</Step>
+        <Step value="5">Other</Step>
         <Step value="6">Organizations</Step>
         <Step value="7">Preview</Step>
       </StepList>
@@ -71,7 +71,7 @@
         <StepPanel v-slot="{ activateCallback }" value="2">
           <div class="flex py-3 justify-between">
             <Button label="Back" severity="secondary" icon="pi pi-arrow-left" @click="activateCallback('1')" />
-            <h2 class="step-header">Required Fields</h2>
+            <h2 class="step-header">Required</h2>
             <Button
               label="Next"
               :disabled="!readyToProgress('3')"
@@ -89,7 +89,7 @@
               <div v-if="usingEmail" class="step-field-item">
                 <div>
                   <span class="font-bold">Email<span class="text-red-500">*</span></span>
-                  <p class="text-gray-500">The student's email address</p>
+                  <p class="text-gray-500 my-2">The student's email address</p>
                 </div>
                 <Dropdown
                   v-model="mappedColumns.required.email"
@@ -101,7 +101,7 @@
               <div v-else class="step-field-item">
                 <div>
                   <span class="font-bold">Username<span class="text-red-500">*</span></span>
-                  <p class="text-gray-500">The student's username</p>
+                  <p class="text-gray-500 my-2">The student's username</p>
                 </div>
                 <Dropdown
                   v-model="mappedColumns.required.username"
@@ -113,7 +113,7 @@
               <div class="step-field-item">
                 <div>
                   <span class="font-bold">Password<span class="text-red-500">*</span></span>
-                  <p class="text-gray-500">The student's password</p>
+                  <p class="text-gray-500 my-2">The student's password</p>
                 </div>
                 <Dropdown
                   v-model="mappedColumns.required.password"
@@ -125,7 +125,7 @@
               <div class="step-field-item">
                 <div>
                   <span class="font-bold">Date of Birth<span class="text-red-500">*</span></span>
-                  <p class="text-gray-500">The student's date of birth</p>
+                  <p class="text-gray-500 my-2">The student's date of birth</p>
                 </div>
                 <Dropdown
                   v-model="mappedColumns.required.dob"
@@ -137,7 +137,7 @@
               <div class="step-field-item">
                 <div>
                   <span class="font-bold">Grade<span class="text-red-500">*</span></span>
-                  <p class="text-gray-500">The student's grade</p>
+                  <p class="text-gray-500 my-2">The student's grade</p>
                 </div>
                 <Dropdown
                   v-model="mappedColumns.required.grade"
@@ -161,7 +161,7 @@
               <div v-for="(value, key) in nameFields" :key="key" class="step-field-item">
                 <div>
                   <span class="font-bold"> {{ value.label }}</span>
-                  <p class="text-gray-500">{{ value.description }}</p>
+                  <p class="text-gray-500 my-2">{{ value.description }}</p>
                 </div>
                 <Dropdown
                   v-model="mappedColumns.names[value.field]"
@@ -175,9 +175,9 @@
         </StepPanel>
         <!-- Demographic Fields -->
         <StepPanel v-slot="{ activateCallback }" value="4">
-          <div class="flex py-3 justify-between">
+          <div class="flex justify-between py-3">
             <Button label="Back" severity="secondary" icon="pi pi-arrow-left" @click="activateCallback('3')" />
-            <h2 class="step-header">Demographics Fields</h2>
+            <h2 class="step-header">Demographics</h2>
             <Button label="Next" icon="pi pi-arrow-right" icon-pos="right" @click="activateCallback('5')" />
           </div>
           <div class="step-container" style="max-height: calc(100vh - 375px)">
@@ -189,13 +189,21 @@
                 },
               }"
             >
-              <div class="flex flex-column gap-3 p-4 w-full">
+              <div class="flex flex-column gap-3 pt-2 w-full">
                 <div v-for="(value, key) in demographicFields" :key="key" class="step-field-item">
                   <div>
                     <span class="font-bold"> {{ value.label }}</span>
-                    <p class="text-gray-500">{{ value.description }}</p>
+                    <p class="text-gray-500 my-2">{{ value.description }}</p>
                   </div>
+                  <MultiSelect
+                    v-if="value.field === 'race'"
+                    v-model="mappedColumns.demographics[value.field]"
+                    :options="csv_columns"
+                    show-clear
+                    class="w-full dropdown"
+                  />
                   <Dropdown
+                    v-else
                     v-model="mappedColumns.demographics[value.field]"
                     show-clear
                     class="w-full dropdown"
@@ -206,26 +214,28 @@
             </ScrollPanel>
           </div>
         </StepPanel>
-        <!-- Optional Fields -->
+        <!-- Other Fields -->
         <StepPanel v-slot="{ activateCallback }" value="5">
           <div class="flex py-3 justify-between">
             <Button label="Back" severity="secondary" icon="pi pi-arrow-left" @click="activateCallback('4')" />
-            <h2 class="step-header">Optional Fields</h2>
+            <h2 class="step-header">Other</h2>
             <Button label="Next" icon="pi pi-arrow-right" icon-pos="right" @click="activateCallback('6')" />
           </div>
           <div class="step-container">
             <div class="flex flex-column gap-3 p-4 w-full">
-              <div v-for="(value, key) in optionalFields" :key="key" class="step-field-item">
-                <div>
-                  <span class="font-bold"> {{ value.label }}</span>
-                  <p class="text-gray-500">{{ value.description }}</p>
+              <div v-for="(value, key) in optionalFields" :key="key">
+                <div v-if="!value?.permission || userCan(value?.permission)" class="step-field-item">
+                  <div>
+                    <span class="font-bold"> {{ value.label }}</span>
+                    <p class="text-gray-500 my-2">{{ value.description }}</p>
+                  </div>
+                  <Dropdown
+                    v-model="mappedColumns.optional[value.field]"
+                    show-clear
+                    class="w-full dropdown"
+                    :options="csv_columns"
+                  />
                 </div>
-                <Dropdown
-                  v-model="mappedColumns.optional[value.field]"
-                  show-clear
-                  class="w-full dropdown"
-                  :options="csv_columns"
-                />
               </div>
             </div>
           </div>
@@ -243,6 +253,7 @@
               @click="
                 activateCallback('7');
                 showSubmitTable = true;
+                preTransformStudents();
               "
             />
           </div>
@@ -309,7 +320,7 @@
         <!-- Preview & Submit -->
         <StepPanel v-slot="{ activateCallback }" value="7">
           <div class="flex py-3 justify-between">
-            <Button label="Back" severity="secondary" icon="pi pi-arrow-left" @click="activateCallback('7')" />
+            <Button label="Back" severity="secondary" icon="pi pi-arrow-left" @click="activateCallback('6')" />
             <h2 class="step-header">Preview & Submit</h2>
             <Button
               v-tooltip.left="!allStudentsValid ? 'Please fix validation errors before submitting' : ''"
@@ -340,6 +351,7 @@
               @validation-update="handleValidationUpdate"
             >
               <Button label="Add User" icon="pi pi-plus" severity="secondary" @click="addUser" />
+              <Button label="Download" icon="pi pi-download" severity="secondary" @click="download" />
             </SubmitTable>
           </div>
         </StepPanel>
@@ -375,6 +387,8 @@ import _remove from 'lodash/remove';
 import SubmitTable from '@/components/SubmitTable.vue';
 import ScrollPanel from 'primevue/scrollpanel';
 import SelectButton from 'primevue/selectbutton';
+import MultiSelect from 'primevue/multiselect';
+import { usePermissions } from '../composables/usePermissions';
 
 const rawStudentFile = ref([]);
 const tableColumns = ref([]);
@@ -388,6 +402,7 @@ const allStudentsValid = ref(false);
 const toast = useToast();
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
+const { userCan, Permissions } = usePermissions();
 
 const SubmitStatus = {
   IDLE: 'idle',
@@ -410,16 +425,30 @@ const demographicFields = ref([
     label: 'English Language Learner Status',
     description: "The student's English Language Learner status",
   },
-  { field: 'frlStatus', label: 'Free-Reduced Lunch Status', description: "The student's Free-Reduced Lunch status" },
+  {
+    field: 'frlStatus',
+    label: 'Free and Reduced Lunch Status',
+    description: "The student's Free and Reduced Lunch status",
+  },
   { field: 'iepStatus', label: 'IEP Status', description: "The student's IEP status" },
-  { field: 'hispanicEthnicity', label: 'Hispanic Ethinicity', description: "The student's Hispanic ethnicity" },
-  { field: 'homeLanguage', label: 'Home Language', description: "The student's home language" },
+  { field: 'hispanicEthnicity', label: 'Hispanic Ethnicity', description: "The student's Hispanic ethnicity" },
+  { field: 'homeLanguage', label: 'Home Language', description: "The student's home language(s)" },
 ]);
 const optionalFields = ref([
-  { field: 'testData', label: 'Test Data', description: 'Is this student a test user?' },
-  { field: 'unenroll', label: 'Unenroll', description: 'Should this student be unenrolled?' },
+  {
+    field: 'testData',
+    label: 'Test Data',
+    description: 'Is this student a test user?',
+    permission: Permissions.TestData.CREATE,
+  },
+  {
+    field: 'unenroll',
+    label: 'Unenroll',
+    description: 'Should this student be unenrolled?',
+    permission: Permissions.Users.UNENROLL,
+  },
   { field: 'stateId', label: 'State ID', description: "The student's state ID" },
-  { field: 'pid', label: 'PID', description: "The student's PID" },
+  { field: 'pid', label: 'PID', description: "The student's PID", permission: Permissions.Users.SET_PID },
 ]);
 
 const mappedColumns = ref({

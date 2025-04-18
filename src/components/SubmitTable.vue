@@ -32,7 +32,7 @@
       }"
       @cell-edit-complete="onCellEditSave"
     >
-      <PvColumn field="validity" header="Validity" :editor="false">
+      <PvColumn field="validity" header="Ready to Submit?" :editor="false">
         <template #body="{ data }">
           <span
             v-tooltip.top="validationResults[data['rowKey']]?.errors.join(',\n')"
@@ -40,15 +40,24 @@
               'text-green-500': validationResults[data['rowKey']]?.valid,
               'text-red-500': !validationResults[data['rowKey']]?.valid,
             }"
-            >{{ validationResults[data['rowKey']]?.valid ? 'Valid' : 'Invalid' }}</span
+            >{{ validationResults[data['rowKey']]?.valid ? 'Ready to Submit!' : 'Not Ready' }}</span
           >
+          <i
+            v-if="!validationResults[data['rowKey']]?.valid"
+            class="pi pi-question-circle ml-2 text-red-500"
+            v-tooltip.top="validationResults[data['rowKey']]?.errors.join(',\n')"
+          />
         </template>
       </PvColumn>
       <PvColumn v-for="col of tableColumns" :key="col.field" :field="col.field" :editor="true">
         <template #header>
-          <b>{{ col.header }}</b>
-          {{ col.field }}
-          <i class="pi pi-pen-to-square" v-tooltip.top="'Click on a cell to edit its value.'" />
+          <div class="flex flex-column">
+            <div class="flex gap-2 font-bold">
+              {{ col.header }}
+              <i class="pi pi-pen-to-square" v-tooltip.top="'Click on a cell below to edit its value.'" />
+            </div>
+            <span class="text-gray-500">{{ col.field }}</span>
+          </div>
         </template>
         <template #body="{ data, field }">
           <div>
@@ -62,9 +71,7 @@
     </PvDataTable>
   </div>
   <div v-else>
-    <h2>No data available</h2>
-    {{ props.students }}
-    {{ tableColumns }}
+    <h2>No data available.</h2>
   </div>
 </template>
 <script setup>
@@ -114,7 +121,9 @@ function generateColumns(rawJson) {
   let columns = [];
   const columnValues = Object.keys(rawJson);
   _forEach(columnValues, (col) => {
+    console.log('column', col);
     const mappedCol = findMappedColumnByField(col) ?? null;
+    console.log('mappedCol', mappedCol);
     let dataType = typeof rawJson[col];
     if (dataType === 'object') {
       if (rawJson[col] instanceof Date) dataType = 'date';
@@ -140,6 +149,7 @@ function findMappedColumnByField(field) {
   for (const category in props.mappings) {
     for (const column in props.mappings[category]) {
       if (props.mappings[category][column] === field) return column;
+      // if (props.mappings[category][column].includes(field)) return column;
     }
   }
   return null;
