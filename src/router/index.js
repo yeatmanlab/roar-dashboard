@@ -207,7 +207,9 @@ const routes = [
   {
     path: APP_ROUTES.LAUNCH,
     component: () => import('../pages/HomeParticipant.vue'),
-    props: true,
+    props: (route) => ({
+      launchId: route.params.launchId
+    }),
     name: 'LaunchParticipant',
     meta: {
       pageTitle: 'TaskLauncher Home',
@@ -476,7 +478,7 @@ const routes = [
   },
   {
     path: APP_ROUTES.REGISTER,
-    name: 'Register',
+    name: 'RegisterHome',
     component: () => import('../pages/RegisterFamilyUsers.vue'),
     props: (route) => ({ code: route.query.code }),
     children: [

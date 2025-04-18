@@ -33,9 +33,15 @@
       </div>
       <div class="flex items-center justify-center">
         <div class="flex m-2 items-center justify-center">
-          <a :href="'/launch/' + roarUid">
+          <router-link
+            :to="{
+              name: 'LaunchParticipant',
+              params: { launchId: roarUid },
+            }"
+            class="no-underline text-black"
+          >
             <PvButton :label="'Play Games'" data-cy="play-assessments-btn" />
-          </a>
+          </router-link>
         </div>
       </div>
     </div>
@@ -60,9 +66,20 @@
         </div>
       </div>
       <div class="flex flex-wrap justify-between mt-2">
-        <a :href="'/scores/' + props.administrationId + '/' + props.orgType + '/' + props.orgId + '/user/' + roarUid">
+        <router-link
+          :to="{
+            name: 'StudentReport',
+            params: {
+              administrationId: props.administrationId,
+              orgType: props.orgType,
+              orgId: props.orgId,
+              userId: roarUid,
+            },
+          }"
+          class="no-underline text-black"
+        >
           <PvButton label="View Scores" icon="" text data-cy="view-score-report-btn" />
-        </a>
+        </router-link>
       </div>
     </div>
     <!-- view Score Report and Task Launching-->
