@@ -17,8 +17,9 @@
   </PvConfirmDialog>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
+import type { Ref, ComputedRef } from 'vue';
 import { useI18n } from 'vue-i18n';
 import * as Sentry from '@sentry/vue';
 import { useConfirm } from 'primevue/useconfirm';
@@ -36,34 +37,33 @@ const i18n = useI18n();
 const router = useRouter();
 const authStore = useAuthStore();
 
-const props = defineProps({
-  consentText: { type: String, required: true, default: 'Text Here' },
-  consentType: { type: String, required: true, default: 'Consent' },
-  onConfirm: { type: Function, required: true },
-});
+interface Props {
+  consentText: string;
+  consentType: string;
+  onConfirm: () => Promise<void> | void;
+}
+
+const props = defineProps<Props>();
 
 const confirm = useConfirm();
 const toast = useToast();
 
-const dialogVisible = ref(false);
-const isSubmitting = ref(false);
+const dialogVisible: Ref<boolean> = ref(false);
+const isSubmitting: Ref<boolean> = ref(false);
 
-const markdownToHtml = computed(() => {
-  const sanitizedHtml = DOMPurify.sanitize(marked(props.consentText));
-  return sanitizedHtml;
+const markdownToHtml: ComputedRef<string> = computed(() => {
+  const textToMark = typeof props.consentText === 'string' ? props.consentText : '';
+  const sanitizedHtml = DOMPurify.sanitize(marked(textToMark));
+  return typeof sanitizedHtml === 'string' ? sanitizedHtml : '';
 });
 
 onMounted(() => {
   dialogVisible.value = true;
 
-  const acceptIcon = computed(() => (isSubmitting.value ? 'pi pi-spin pi-spinner mr-2' : 'pi pi-check mr-2'));
-  const header = props.consentType.includes('consent')
-    ? i18n.t('consentModal.consentTitle')
-    : i18n.t('consentModal.assentTitle');
-
   confirm.require({
-    group: 'templating',
-    header: i18n.t(`consentModal.header`, props.consentType.toUpperCase()),
+    group: 'consent',
+    header: i18n.t(`consentModal.header`, { type: props.consentType.toUpperCase() }),
+    message: '',
     icon: 'pi pi-question-circle',
     acceptLabel: i18n.t('consentModal.acceptButton', 'Accept'),
     rejectLabel: i18n.t('consentModal.rejectButton', 'Reject'),
@@ -71,7 +71,7 @@ onMounted(() => {
     acceptIcon: 'pi pi-check mr-2',
     rejectClass: 'bg-red-600 text-white border-none border-round p-2 hover:bg-red-800',
     rejectIcon: 'pi pi-times mr-2',
-    accept: async () => {
+    accept: async (): Promise<void> => {
       try {
         isSubmitting.value = true;
 
@@ -95,16 +95,17 @@ onMounted(() => {
         });
 
         Sentry.captureException(error);
-
-        return Promise.resolve(false);
       } finally {
         isSubmitting.value = false;
       }
     },
-    reject: () => {
-      authStore.signOut();
+    reject: (): void => {
+      (authStore as any).signOut();
       router.push({ name: 'SignOut' });
     },
+    onHide: () => {
+      dialogVisible.value = false;
+    }
   });
 });
 </script>

@@ -32,50 +32,57 @@
     </div>
 </template>
 
-<script setup>
-    import {ref, watchEffect} from 'vue';
+<script setup lang="ts">
+    import { ref, watchEffect } from 'vue';
+    import type { Ref } from 'vue';
     import useSignOutMutation from '@/composables/mutations/useSignOutMutation';
     import PvButton from 'primevue/button';
     import PvDropdown from 'primevue/dropdown';
+    import type { DropdownChangeEvent } from 'primevue/dropdown';
     import { useRouter } from 'vue-router';
     import { useI18n } from 'vue-i18n';
     import { APP_ROUTES } from '@/constants/routes';
 
+    interface DropdownOption {
+      label: string;
+      value: string;
+    }
 
     const i18n = useI18n();
     const router = useRouter();
     const { mutate: signOut } = useSignOutMutation();
 
-    const feedbackButton = ref(null);
+    const feedbackButton: Ref<HTMLButtonElement | null> = ref(null);
 
-    const props = defineProps({
-        isBasicView: {type: Boolean, required: true},
-        name: {type: String, required: true},
-    })
-
-
+    interface Props {
+      isBasicView: boolean;
+      name: string;
+    }
+    const props = defineProps<Props>();
 
     watchEffect(() => {
         const feedbackElement = document.getElementById('sentry-feedback');
         if (feedbackElement) {
             if (!props.isBasicView) {
                 feedbackElement.style.setProperty('display', 'none');
+            } else {
+                feedbackElement.style.removeProperty('display');
             }
         }
     });
 
 
-    const helpOptions = [
+    const helpOptions: DropdownOption[] = [
         { label: 'Researcher Documentation', value: 'researcherDocumentation' },
         { label: 'Report an Issue', value: 'reportAnIssue' }
     ];
 
-    const profileOptions = [
+    const profileOptions: DropdownOption[] = [
         {label: "Settings", value: 'settings'},
         {label: i18n.t('navBar.signOut'), value: 'signout'}
     ]
 
-    const handleHelpChange = (e) => {
+    const handleHelpChange = (e: DropdownChangeEvent): void => {
         if (e.value === 'researcherDocumentation') {
             window.open('https://levante-researcher.super.site/', '_blank');
         } else if (e.value === 'reportAnIssue') {
@@ -83,7 +90,7 @@
         }
     };
 
-    const handleProfileChange = (e) => {
+    const handleProfileChange = (e: DropdownChangeEvent): void => {
         if (e.value === 'settings') {
             router.push({ path: APP_ROUTES.ACCOUNT_PROFILE });
         } else if (e.value === 'signout') {

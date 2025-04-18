@@ -49,49 +49,80 @@
     </div>
   </div>
 </template>
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted, watch } from 'vue';
+import type { Ref } from 'vue';
 import { useAuthStore } from '@/store/auth';
 import { storeToRefs } from 'pinia';
 import { fetchDocById } from '@/helpers/query/utils';
 import { useQuery } from '@tanstack/vue-query';
+import type { UseQueryResult } from '@tanstack/vue-query';
 import PvChips from 'primevue/chips';
 import PvCheckbox from 'primevue/checkbox';
 import PvInputText from 'primevue/inputtext';
 import _isEmpty from 'lodash/isEmpty';
 
-// NOT BEING USED
+// Interfaces
+interface AddressComponent {
+  long_name: string;
+  short_name: string;
+  types: string[];
+}
 
-const props = defineProps({
-  orgType: { type: String, required: true },
-  orgId: { type: String, required: true },
-  editMode: { type: Boolean, default: true },
+interface Address {
+  addressComponents?: AddressComponent[];
+  formattedAddress?: string;
+  googlePlacesId?: string;
+  googleMapsUrl?: string;
+}
+
+interface OrgData {
+  id?: string; // Assuming an ID might exist
+  name: string | null;
+  abbreviation: string | null;
+  address: Address | null;
+  ncesId: string | null;
+  tags: string[];
+  testData: boolean;
+  demoData: boolean;
+}
+
+interface Props {
+  orgType: string;
+  orgId: string;
+  editMode?: boolean;
+}
+
+// Define Props with defaults
+const props = withDefaults(defineProps<Props>(), {
+  editMode: true,
 });
 
 // +------------+
 // | Initialize |
 // +------------+
-const initialized = ref(false);
-const authStore = useAuthStore();
+const initialized: Ref<boolean> = ref(false);
+const authStore = useAuthStore(); // Assuming useAuthStore returns typed store or needs assertion
 const { roarfirekit } = storeToRefs(authStore);
 
-const emit = defineEmits(['modalClosed', 'update:orgData']);
+const emit = defineEmits<{ (e: 'modalClosed'): void; (e: 'update:orgData', orgData: OrgData): void }>();
 
 // +----------------------------+
 // | Query for existing orgData |
 // +----------------------------+
-const { data: serverOrgData } = useQuery({
+// Specify the expected return type for useQuery
+const { data: serverOrgData }: UseQueryResult<OrgData, Error> = useQuery({
   queryKey: ['org', props.orgType, props.orgId],
-  queryFn: () => fetchDocById(props.orgType, props.orgId),
+  queryFn: () => fetchDocById<OrgData>(props.orgType, props.orgId), // Assume fetchDocById is generic
   keepPreviousData: true,
-  enabled: initialized,
+  enabled: initialized, // Query runs when initialized becomes true
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
 // +-------------+
 // | Local State |
 // +-------------+
-const localOrgData = ref({
+const localOrgData: Ref<OrgData> = ref({
   name: null,
   abbreviation: null,
   address: null,
@@ -101,20 +132,38 @@ const localOrgData = ref({
   demoData: false,
 });
 
-const setupOrgData = (orgData) => {
-  let org = {
-    name: orgData?.name ?? '',
-    abbreviation: orgData?.abbreviation ?? '',
-    address: orgData?.address ?? '',
-    ncesId: orgData?.ncesId ?? '',
-    tags: orgData?.tags ?? [],
-    testData: orgData?.testData ?? false,
-    demoData: orgData?.demoData ?? false,
+// Explicitly type the orgData parameter
+const setupOrgData = (orgData: OrgData | null | undefined): void => {
+  // Ensure we handle null/undefined gracefully
+  const defaultOrg: OrgData = {
+    name: '',
+    abbreviation: '',
+    address: null,
+    ncesId: '',
+    tags: [],
+    testData: false,
+    demoData: false,
   };
-  localOrgData.value = org;
+  localOrgData.value = {
+    name: orgData?.name ?? defaultOrg.name,
+    abbreviation: orgData?.abbreviation ?? defaultOrg.abbreviation,
+    address: orgData?.address ?? defaultOrg.address,
+    ncesId: orgData?.ncesId ?? defaultOrg.ncesId,
+    tags: orgData?.tags ?? defaultOrg.tags,
+    testData: orgData?.testData ?? defaultOrg.testData,
+    demoData: orgData?.demoData ?? defaultOrg.demoData,
+  };
 };
 
-const setAddress = (place) => {
+// Type the place parameter (assuming structure from Google Places API)
+interface PlaceResult {
+  address_components?: AddressComponent[];
+  formatted_address?: string;
+  place_id?: string;
+  url?: string;
+}
+
+const setAddress = (place: PlaceResult): void => {
   localOrgData.value.address = {
     addressComponents: place.address_components || [],
     formattedAddress: place.formatted_address,
@@ -123,41 +172,48 @@ const setAddress = (place) => {
   };
 };
 
+// Watcher for server data changes
 watch(
-  () => serverOrgData,
-  (orgData) => {
-    if (!_isEmpty(orgData)) {
-      setupOrgData(orgData.value);
+  serverOrgData, // Directly watch the ref returned by useQuery
+  (newOrgData) => {
+    if (!_isEmpty(newOrgData)) {
+      setupOrgData(newOrgData);
     }
   },
-  { deep: true, immediate: false },
+  { deep: true, immediate: false }, // immediate might be needed if setupOrgData should run on mount
 );
 
 // +--------------------+
 // | Initialize firekit |
 // +--------------------+
-let unsubscribe;
-const init = () => {
+let unsubscribe: (() => void) | undefined;
+const init = (): void => {
   if (unsubscribe) unsubscribe();
   initialized.value = true;
 };
 
-unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit?.restConfig) init();
+// Use type assertion for potentially untyped store state
+unsubscribe = authStore.$subscribe((mutation, state) => {
+  if ((state as any).roarfirekit?.restConfig) init();
 });
 
 onMounted(() => {
-  if (roarfirekit.value?.restConfig) init();
-  if (!_isEmpty(serverOrgData.value)) setupOrgData(serverOrgData.value);
+  // Use type assertion for potentially untyped ref value
+  if ((roarfirekit.value as any)?.restConfig) init();
+  // Run setupOrgData on mount if data is already available
+  if (!_isEmpty(serverOrgData.value)) {
+      setupOrgData(serverOrgData.value);
+  }
 });
 
 // +---------------------+
 // | Handle update event |
 // +---------------------+
 watch(
-  () => localOrgData,
-  (orgData) => {
-    emit('update:orgData', orgData.value);
+  localOrgData, // Watch the ref directly
+  (newOrgData) => {
+    // Emit the value of the ref
+    emit('update:orgData', newOrgData);
   },
   { deep: true, immediate: false },
 );

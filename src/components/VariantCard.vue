@@ -118,7 +118,7 @@
           <p class="m-0 mt-1 ml-2">
             <span class="font-bold">Variant name:</span> {{ variant.variant.name }} <br />
             <div
-              v-if="variant.variant?.conditions?.assigned?.conditions?.length > 0"
+              v-if="variant.variant?.conditions?.assigned?.conditions && variant.variant?.conditions?.assigned.conditions.length > 0"
             >
               <span class="font-bold">Assigned to:</span> {{parseConditions(variant.variant?.conditions?.assigned).map(entry => entry.op === "EQUAL" ? `${entry.value}s` : `not ${entry.value}s`).join(", ")}}<br/>
             </div>
@@ -180,7 +180,7 @@
     style="margin-top: -25px"
   >
     <div
-      v-if="variant.variant?.conditions?.assigned?.conditions?.length > 0"
+      v-if="variant.variant?.conditions?.assigned?.conditions && variant.variant?.conditions?.assigned.conditions.length > 0"
       class="flex gap-2 mt-2 flex-column w-full pr-3"
     >
       <p class="font-bold mt-3 mb-1 ml-3">Assigned Conditions:</p>
@@ -206,7 +206,7 @@
       <PvTag severity="success"> Assignment optional for all students </PvTag>
     </div>
     <div
-      v-else-if="variant.variant?.conditions?.optional?.conditions?.length > 0"
+      v-else-if="typeof variant.variant?.conditions?.optional === 'object' && variant.variant.conditions.optional?.conditions && variant.variant.conditions.optional.conditions.length > 0"
       class="flex mt-2 flex-column w-full pr-3"
     >
       <p class="font-bold mt-3 mb-1 ml-3">Optional Conditions:</p>
@@ -261,83 +261,164 @@
   </PvDialog>
 </template>
 
-<script setup>
-import { ref } from 'vue';
-import _toPairs from 'lodash/toPairs';
+<script setup lang="ts">
+import { ref, computed } from 'vue';
+import type { Ref, ComputedRef } from 'vue';
 import PvButton from 'primevue/button';
-import PvColumn from 'primevue/column';
 import PvChip from 'primevue/chip';
 import PvDataTable from 'primevue/datatable';
+import PvColumn from 'primevue/column';
 import PvDialog from 'primevue/dialog';
 import PvPopover from 'primevue/popover';
 import PvTag from 'primevue/tag';
-import EditVariantDialog from '@/components/EditVariantDialog.vue';
+import EditVariantDialog from '@/components/modals/EditVariantDialog.vue'; // Assuming path
+import _isEmpty from 'lodash/isEmpty';
 
-const props = defineProps({
-  variant: {
-    required: true,
-    type: Object,
-  },
-  hasControls: {
-    required: false,
-    type: Boolean,
-    default: false,
-  },
-  updateVariant: {
-    type: Function,
-    required: true,
-  },
-  preExistingAssessmentInfo: {
-    type: Array,
-    default: () => [],
-  },
-});
-
-const isDev = import.meta.env.MODE === 'development';
-const backupImage = '/src/assets/roar-logo.png';
-const showContent = ref(false);
-const op = ref(null);
-const visible = ref(false);
-const emit = defineEmits(['remove', 'select', 'moveUp', 'moveDown']);
-
-const handleRemove = () => {
-  emit('remove', props.variant);
-};
-const handleSelect = () => {
-  emit('select', props.variant);
-};
-const handleMoveUp = () => {
-  emit('moveUp', props.variant);
-};
-const handleMoveDown = () => {
-  emit('moveDown', props.variant);
-};
-
-function toggleShowContent() {
-  showContent.value = !showContent.value;
+// Interfaces
+interface Task {
+  id: string;
+  name: string;
+  image?: string | null;
+  // Add other task properties if they exist
 }
 
-function iconClass() {
+// Structure for displayParamList output
+interface ParamListItem {
+  key: string;
+  value: string;
+}
+
+// Simplified Condition structure
+interface Condition {
+  field: string;
+  op: string; // e.g., "EQUAL", "NOT EQUAL"
+  value: string | number | boolean;
+}
+
+// Structure for variant conditions
+interface AssignmentConditions {
+  conditions?: Condition[];
+  conjunction?: 'AND' | 'OR'; // Assuming possible conjunctions
+}
+
+interface OptionalConditions extends AssignmentConditions {}
+
+interface Variant {
+  id: string;
+  name: string;
+  params?: Record<string, any>; // Generic params object
+  conditions?: {
+    assigned?: AssignmentConditions;
+    optional?: OptionalConditions | boolean; // Can be boolean true or conditions object
+  };
+  // Add other variant properties if they exist
+}
+
+interface VariantData {
+  id: string; // Assuming top-level ID exists for the whole item
+  task: Task;
+  variant: Variant;
+}
+
+// Prop type for preExistingAssessmentInfo (adjust based on actual structure)
+interface PreExistingAssessmentInfo {
+  id: string;
+  name: string;
+  // Add other necessary properties
+}
+
+interface Props {
+  variant: VariantData;
+  index?: number;
+  hasControls?: boolean;
+  activeId?: string | null;
+  updateVariant?: (updatedVariant: VariantData) => void; // Function prop type
+  preExistingAssessmentInfo?: PreExistingAssessmentInfo;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  index: 0,
+  hasControls: false,
+  activeId: null,
+  updateVariant: () => { console.warn('updateVariant function not provided'); },
+  preExistingAssessmentInfo: undefined,
+});
+
+const emit = defineEmits<{ 
+  (e: 'select', variant: VariantData): void;
+  (e: 'remove', index: number): void;
+  (e: 'moveUp', index: number): void;
+  (e: 'moveDown', index: number): void;
+}>();
+
+const op: Ref<InstanceType<typeof PvPopover> | null> = ref(null);
+const visible: Ref<boolean> = ref(false);
+const showContent: Ref<boolean> = ref(false);
+
+const backupImage: ComputedRef<string> = computed(() => '/img/placeholders/task.png');
+
+const displayParamList = (params: Record<string, any> | undefined): ParamListItem[] => {
+  if (!params) return [];
+  return Object.entries(params).map(([key, value]) => ({
+    key,
+    // Handle non-string values gracefully
+    value: typeof value === 'object' ? JSON.stringify(value) : String(value),
+  }));
+};
+
+// Type the event parameter
+const toggle = (event: Event): void => {
+  op.value?.toggle(event);
+};
+
+const toggleShowContent = (): void => {
+  showContent.value = !showContent.value;
+};
+
+const handleSelect = (): void => {
+  emit('select', props.variant);
+};
+
+const handleRemove = (): void => {
+  emit('remove', props.index);
+};
+
+const handleMoveUp = (): void => {
+  emit('moveUp', props.index);
+};
+
+const handleMoveDown = (): void => {
+  emit('moveDown', props.index);
+};
+
+const isActive = (): string => {
+  return props.variant.id === props.activeId
+    ? 'flex flex-1 flex-row gap-0 border-1 border-round surface-border mb-2 surface-ground'
+    : 'flex flex-1 flex-row gap-0 border-1 border-round surface-border mb-2 surface-card';
+};
+
+const iconClass = (): string => {
   return showContent.value
     ? 'pi pi-chevron-up text-primary hover:text-white-alpha-90 p-2'
     : 'pi pi-chevron-down text-primary hover:text-white-alpha-90 p-2';
-}
-
-const parseConditions = (variant) => {
-  return variant?.conditions;
 };
 
-const isActive = () => {
-  return !showContent.value
-    ? 'flex-1 flex flex-row gap-2 border-1 border-round surface-border bg-white-alpha-90 mb-2 hover:surface-hover z-1 relative'
-    : 'flex-1 flex flex-row gap-2 border-1 border-round surface-border bg-white-alpha-90 mb-2 hover:surface-hover z-1 relative shadow-2';
+// Type the conditions parameter
+const parseConditions = (conditions: AssignmentConditions | OptionalConditions | boolean | undefined): Condition[] => {
+  if (!conditions || typeof conditions === 'boolean') {
+      return [];
+  }
+  return conditions.conditions ?? [];
 };
 
-const displayParamList = (inputObj) => {
-  return _toPairs(inputObj).map(([key, value]) => ({ key, value }));
-};
-
-const toggle = (event) => {
-  op.value.toggle(event);
-};
 </script>
+
+<style scoped>
+/* Styles specific to VariantCard */
+.hover\:surface-hover:hover {
+  background-color: var(--surface-hover);
+}
+.hover\:surface-ground:hover {
+  background-color: var(--surface-ground);
+}
+</style>

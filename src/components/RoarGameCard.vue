@@ -29,23 +29,35 @@
   </PvCard>
 </template>
 
-<script setup>
-import { ref } from 'vue';
+<script setup lang="ts">
+import { ref, computed } from 'vue';
+import type { Ref, ComputedRef } from 'vue';
 import PvButton from 'primevue/button';
 import PvCard from 'primevue/card';
 import PvInlineMessage from 'primevue/inlinemessage';
 import PvTag from 'primevue/tag';
 
-const props = defineProps({
-  gameId: { type: String, required: true },
-  title: { type: String, required: true },
-  description: { type: String, required: true },
-  metadata: { type: Object, default: () => {} },
-  imgSrc: { type: String, default: '' },
-  completed: { type: Boolean, default: false, required: true },
-  statusText: { type: String, default: '', required: false },
+// Define Props interface
+interface Props {
+  gameId: string;
+  title: string;
+  description: string;
+  metadata?: string[]; // Assuming metadata is an array of strings
+  imgSrc?: string;
+  completed: boolean;
+  statusText?: string;
+}
+
+// Use withDefaults for optional props with default values
+const props = withDefaults(defineProps<Props>(), {
+  metadata: () => [], // Default to empty array
+  imgSrc: '',
+  statusText: '',
+  // `completed` is required, so no default needed here if defineProps handles it
 });
-const playLabel = ref(props.completed ? 'Play again' : 'Play');
+
+// Use computed for reactive label changes based on props.completed
+const playLabel: ComputedRef<string> = computed(() => (props.completed ? 'Play again' : 'Play'));
 </script>
 
 <style lang="scss">

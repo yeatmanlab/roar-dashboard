@@ -17,36 +17,61 @@
     </ul>
   </div>
 </template>
-<script setup>
+
+<script setup lang="ts">
 import { ref, computed } from 'vue';
+import type { Ref, ComputedRef } from 'vue';
 import _isEmpty from 'lodash/isEmpty';
 import PvChart from 'primevue/chart';
+import type { ChartData, ChartOptions } from 'chart.js'; // Import Chart.js types
 
-const props = defineProps({
-  totalGames: { type: Number, required: true, default: 0 },
-  completedGames: { type: Number, required: true, default: 0 },
-  studentInfo: { type: Object, required: true },
+// Basic interface for studentInfo, refine as needed
+interface StudentInfo {
+  grade?: string | number; // Allow string or number, make optional if sometimes absent
+  // Add other known properties here
+}
+
+// Define props with TypeScript
+interface Props {
+  totalGames: number;
+  completedGames: number;
+  studentInfo: StudentInfo;
+}
+
+// Using withDefaults to handle default values is preferred with <script setup>
+// Note: The original defaults were 0, but required: true was also set.
+// If they are truly required, defaults aren't strictly necessary, but good practice.
+const props = withDefaults(defineProps<Props>(), {
+  totalGames: 0,
+  completedGames: 0,
+  studentInfo: () => ({}), // Default to an empty object for studentInfo
 });
 
-const chartData = computed(() => {
+// Type for ChartData (adjust based on actual structure if different)
+const chartData: ComputedRef<ChartData<'doughnut', number[], string>> = computed(() => {
   const completed = props.completedGames;
   const incomplete = props.totalGames - props.completedGames;
   return setChartData(completed, incomplete);
 });
-const chartOptions = ref({
+
+// Type for ChartOptions
+const chartOptions: Ref<ChartOptions<'doughnut'>> = ref({
   cutout: '60%',
-  showToolTips: false,
+  // showToolTips: false, // Deprecated in Chart.js 3+? Use tooltip options instead
   plugins: {
     legend: {
       display: false,
     },
     tooltip: {
-      enabled: false,
+      enabled: false, // Replaces showToolTips
     },
   },
+  // Remove interaction options if chart should be static
+  events: [], // Disable all events like hover, click
 });
 
-const setChartData = (completed, incomplete) => {
+// Type the function signature
+const setChartData = (completed: number, incomplete: number): ChartData<'doughnut', number[], string> => {
   let docStyle = getComputedStyle(document.documentElement);
 
   return {
@@ -55,12 +80,13 @@ const setChartData = (completed, incomplete) => {
       {
         data: [completed, incomplete],
         backgroundColor: [docStyle.getPropertyValue('--bright-green'), docStyle.getPropertyValue('--surface-d')],
-        // hoverBackgroundColor: ['green', docStyle.getPropertyValue('--surface-d')]
+        // hoverBackgroundColor: ['green', docStyle.getPropertyValue('--surface-d')] // Hover effects disabled by events: []
       },
     ],
   };
 };
 </script>
+
 <style scoped lang="scss">
 .sidebar-container {
   margin-bottom: auto;
