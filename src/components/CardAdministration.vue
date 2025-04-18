@@ -16,7 +16,7 @@
             show-icon="pi pi-cog text-primary"
             hide-icon="pi pi-times"
             button-class="p-button-outlined p-button-sm w-3rem h-3rem border-primary border-1 border-circle bg-transparent hover:surface-300"
-            :tooltip-options="{ position: 'top' }"
+            :tooltip-options="{ position: 'top', event: 'hover' }"
             :pt="{ button: { size: 'small' } }"
           />
           <PvConfirmPopup />
@@ -35,7 +35,7 @@
         <span class="mr-1"><strong>Tasks</strong>:</span>
         <template v-if="!isLoadingTasksDictionary">
           <span v-for="assessmentId in assessmentIds" :key="assessmentId" class="card-inline-list-item">
-            <span>{{ tasksDictionary[assessmentId]?.name ?? assessmentId }}</span>
+            <span>{{ tasksDictionary?.[assessmentId]?.name ?? assessmentId }}</span>
             <span
               v-if="showParams"
               v-tooltip.top="'View parameters'"
@@ -47,12 +47,12 @@
         </template>
 
         <div v-if="showParams">
-          <PvPopover v-for="assessmentId in assessmentIds" :key="assessmentId" :ref="paramPanelRefs[assessmentId]">
-            <div v-if="getAssessment(assessmentId).variantId">
-              Variant ID: {{ getAssessment(assessmentId).variantId }}
+          <PvPopover v-for="assessmentId in assessmentIds" :key="assessmentId" :ref="(el) => { paramPanelRefs[assessmentId].value = el }">
+            <div v-if="getAssessment(assessmentId)?.variantId">
+              Variant ID: {{ getAssessment(assessmentId)?.variantId }}
             </div>
-            <div v-if="getAssessment(assessmentId).variantName">
-              Variant Name: {{ getAssessment(assessmentId).variantName }}
+            <div v-if="getAssessment(assessmentId)?.variantName">
+              Variant Name: {{ getAssessment(assessmentId)?.variantName }}
             </div>
             <PvDataTable
               striped-rows
@@ -73,7 +73,6 @@
         :loading="loadingTreeTable"
         :value="treeTableOrgs"
         @node-expand="onExpand"
-        
       >
         <PvColumn field="name" expander style="width: 20rem"></PvColumn>
         <PvColumn v-if="props.stats && isWideScreen" field="id">
@@ -138,8 +137,8 @@
   </div>
 </template>
 
-<script setup>
-import { computed, onMounted, ref, watch } from 'vue';
+<script setup lang="ts">
+import { computed, onMounted, ref, watch, Ref } from 'vue';
 import { useConfirm } from 'primevue/useconfirm';
 import { useToast } from 'primevue/usetoast';
 import { useRouter } from 'vue-router';
@@ -157,8 +156,14 @@ import PvDataTable from 'primevue/datatable';
 import PvPopover from 'primevue/popover';
 import PvSpeedDial from 'primevue/speeddial';
 import PvTreeTable from 'primevue/treetable';
+import type { TreeNode } from 'primevue/treenode';
+import type { MenuItem } from 'primevue/menuitem';
+import type { ChartData, ChartOptions } from 'chart.js';
+// @ts-ignore
 import { batchGetDocs } from '@/helpers/query/utils';
+// @ts-ignore
 import { taskDisplayNames } from '@/helpers/reports';
+// @ts-ignore
 import { setBarChartData, setBarChartOptions } from '@/helpers/plotting';
 import useDsgfOrgQuery from '@/composables/queries/useDsgfOrgQuery';
 import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery';
@@ -166,62 +171,132 @@ import useDeleteAdministrationMutation from '@/composables/mutations/useDeleteAd
 import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
 import { FIRESTORE_COLLECTIONS } from '@/constants/firebase';
 import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
+// @ts-ignore
 import { isLevante } from '@/helpers';
 
+interface TaskDisplayInfo {
+  name: string;
+  order: number;
+}
+
+interface AssessmentParam {
+  key: string;
+  value: any;
+}
+
+interface Assessment {
+  taskId: string;
+  variantId?: string;
+  variantName?: string;
+  params: Record<string, any>;
+}
+
+interface Dates {
+  start: string | number | Date;
+  end: string | number | Date;
+}
+
+type OrgTypeValue = typeof SINGULAR_ORG_TYPES[keyof typeof SINGULAR_ORG_TYPES];
+
+interface OrgNodeData {
+  id: string;
+  name: string;
+  orgType: OrgTypeValue;
+  stats?: {
+    assignment?: {
+      assigned?: number;
+      started?: number;
+      completed?: number;
+    };
+  };
+  districtId?: string;
+  expanded?: boolean;
+  [key: string]: any;
+}
+
+interface OrgTreeNode extends TreeNode {
+  key: string;
+  data?: OrgNodeData;
+  children?: OrgTreeNode[];
+}
+
+interface CardAdministrationProps {
+  id: string;
+  title: string;
+  publicName: string;
+  stats?: {
+    total?: {
+      assignment?: {
+        assigned?: number;
+        started?: number;
+        completed?: number;
+      };
+    };
+  };
+  dates: Dates;
+  assignees: Record<string, any>;
+  assessments: Assessment[];
+  showParams: boolean;
+  isSuperAdmin: boolean;
+}
+
+const props = defineProps<CardAdministrationProps>();
+
 const router = useRouter();
-
-const props = defineProps({
-  id: { type: String, required: true },
-  title: { type: String, required: true },
-  publicName: { type: String, required: true },
-  stats: { type: Object, required: false, default: () => ({}) },
-  dates: { type: Object, required: true },
-  assignees: { type: Object, required: true },
-  assessments: { type: Array, required: true },
-  showParams: { type: Boolean, required: true },
-  isSuperAdmin: { type: Boolean, required: true },
-});
-
 const confirm = useConfirm();
 const toast = useToast();
 
 const { mutateAsync: deleteAdministration } = useDeleteAdministrationMutation();
 
-const administrationStatus = computed(() => {
+const showTable = ref<boolean>(false);
+const enableQueries = ref<boolean>(false);
+const expanding = ref<boolean>(false);
+const treeTableOrgs = ref<OrgTreeNode[]>([]);
+const doughnutChartData = ref<ChartData<'doughnut'> | undefined>();
+const doughnutChartOptions = ref<ChartOptions<'doughnut'> | undefined>();
+
+const paramPanelRefs: Record<string, Ref<any>> = _fromPairs(
+  props.assessments.map((assessment) => [assessment.taskId.toLowerCase(), ref<any>(null)])
+);
+
+const administrationStatus = computed<string>(() => {
   const now = new Date();
   const dateClosed = new Date(props.dates.end);
-  let status = 'OPEN'
-  if (now > dateClosed) status = 'CLOSED';
-  return status
+  if (isNaN(dateClosed.getTime())) return 'INVALID DATE';
+  return now > dateClosed ? 'CLOSED' : 'OPEN';
 });
-const administrationStatusBadge = computed(() => administrationStatus.value.toLowerCase()); 
 
-const speedDialItems = ref([
+const administrationStatusBadge = computed<string>(() => administrationStatus.value.toLowerCase());
+
+const speedDialItems = computed<MenuItem[]>(() => [
   {
     label: 'Delete',
     icon: 'pi pi-trash',
-    command: (event) => {
+    command: (event: { originalEvent: Event }) => {
       confirm.require({
-        target: event.originalEvent.currentTarget,
+        target: event.originalEvent.currentTarget as HTMLElement,
         message: 'Are you sure you want to delete this administration?',
         icon: 'pi pi-exclamation-triangle',
         accept: async () => {
-          await deleteAdministration(props.id);
-
-          toast.add({
-            severity: TOAST_SEVERITIES.INFO,
-            summary: 'Confirmed',
-            detail: `Deleted administration ${props.title}`,
-            life: TOAST_DEFAULT_LIFE_DURATION,
-          });
+          try {
+            await deleteAdministration(props.id);
+            toast.add({
+              severity: TOAST_SEVERITIES.INFO,
+              summary: 'Confirmed',
+              detail: `Deleted administration ${props.title}`,
+              life: TOAST_DEFAULT_LIFE_DURATION,
+            });
+          } catch (error: any) {
+            console.error("Failed to delete administration:", error);
+            toast.add({
+              severity: TOAST_SEVERITIES.ERROR,
+              summary: 'Error',
+              detail: `Failed to delete administration ${props.title}.`,
+              life: TOAST_DEFAULT_LIFE_DURATION,
+            });
+          }
         },
         reject: () => {
-          toast.add({
-            severity: TOAST_SEVERITIES.ERROR,
-            summary: 'Rejected',
-            detail: `Failed to delete administration ${props.title}`,
-            life: TOAST_DEFAULT_LIFE_DURATION,
-          });
         },
       });
     },
@@ -235,160 +310,172 @@ const speedDialItems = ref([
   },
 ]);
 
-const processedDates = computed(() => {
-  return _mapValues(props.dates, (date) => {
-    return new Date(date);
-  });
+const processedDates = computed<{ start: Date; end: Date }>(() => {
+  const startDate = props.dates.start ? new Date(props.dates.start) : new Date(NaN);
+  const endDate = props.dates.end ? new Date(props.dates.end) : new Date(NaN);
+  return { start: startDate, end: endDate };
 });
 
-const assessmentIds = props.assessments
+const typedTaskDisplayNames = taskDisplayNames as Record<string, TaskDisplayInfo>;
+
+const assessmentIds = computed<string[]>(() => props.assessments
   .map((assessment) => assessment.taskId.toLowerCase())
   .sort((p1, p2) => {
-    return (taskDisplayNames[p1]?.order ?? 0) - (taskDisplayNames[p2]?.order ?? 0);
-  });
+    const order1 = typedTaskDisplayNames[p1 as keyof typeof typedTaskDisplayNames]?.order ?? Infinity;
+    const order2 = typedTaskDisplayNames[p2 as keyof typeof typedTaskDisplayNames]?.order ?? Infinity;
+    return order1 - order2;
+  }));
 
-const paramPanelRefs = _fromPairs(props.assessments.map((assessment) => [assessment.taskId.toLowerCase(), ref()]));
-const params = _fromPairs(props.assessments.map((assessment) => [assessment.taskId.toLowerCase(), assessment.params]));
+const params = computed<Record<string, Record<string, any>>>(() =>
+  _fromPairs(props.assessments.map((assessment) => [assessment.taskId.toLowerCase(), assessment.params]))
+);
 
-const toEntryObjects = (inputObj) => {
-  return _toPairs(inputObj).map(([key, value]) => ({ key, value }));
-};
-
-const toggleParams = (event, id) => {
-  paramPanelRefs[id].value[0].toggle(event);
-};
-
-function getAssessment(assessmentId) {
-  return props.assessments.find((assessment) => assessment.taskId.toLowerCase() === assessmentId);
-}
-
-const showTable = ref(false);
-const enableQueries = ref(false);
-
-onMounted(() => {
-  enableQueries.value = true;
-  showTable.value = !showTable.value;
-});
-
-const isWideScreen = computed(() => {
-  return window.innerWidth > 768;
+const isWideScreen = computed<boolean>(() => {
+  if (typeof window !== 'undefined') {
+    return window.innerWidth > 768;
+  }
+  return false;
 });
 
 const { data: tasksDictionary, isLoading: isLoadingTasksDictionary } = useTasksDictionaryQuery();
 
 const { data: orgs, isLoading: isLoadingDsgfOrgs } = useDsgfOrgQuery(props.id, props.assignees, {
   enabled: enableQueries,
-});
+}) as { data: Ref<OrgTreeNode[] | undefined>; isLoading: Ref<boolean> };
 
-const loadingTreeTable = computed(() => {
+const loadingTreeTable = computed<boolean>(() => {
   return isLoadingDsgfOrgs.value || expanding.value;
 });
 
-const treeTableOrgs = ref([]);
 watch(orgs, (newValue) => {
-  treeTableOrgs.value = newValue;
+  if (newValue) {
+    treeTableOrgs.value = newValue;
+  } else {
+    treeTableOrgs.value = [];
+  }
 });
 
 watch(showTable, (newValue) => {
-  if (newValue) treeTableOrgs.value = orgs.value;
+  if (newValue && orgs.value) {
+    treeTableOrgs.value = orgs.value;
+  }
 });
 
-const expanding = ref(false);
-const onExpand = async (node) => {
-  if (node.data.orgType === SINGULAR_ORG_TYPES.SCHOOLS && node.children?.length > 0 && !node.data.expanded) {
-    expanding.value = true;
+const toEntryObjects = (inputObj: Record<string, any> | undefined | null): AssessmentParam[] => {
+  if (!inputObj) return [];
+  return _toPairs(inputObj).map(([key, value]) => ({ key, value }));
+};
 
-    const classPaths = node.children.map(({ data }) => `classes/${data.id}`);
-    const statPaths = node.children.map(({ data }) => `administrations/${props.id}/stats/${data.id}`);
-
-    const classPromises = [batchGetDocs(classPaths, ['name', 'schoolId']), batchGetDocs(statPaths)];
-
-    const [classDocs, classStats] = await Promise.all(classPromises);
-
-    // Lazy node is a copy of the expanding node. We will insert more detailed
-    // children nodes later.
-    const lazyNode = {
-      key: node.key,
-      data: {
-        ...node.data,
-        expanded: true,
-      },
-    };
-
-    const childNodes = _without(
-      _zip(classDocs, classStats).map(([orgDoc, stats], index) => {
-        const { collection = FIRESTORE_COLLECTIONS.CLASSES, ...nodeData } = orgDoc ?? {};
-
-        if (_isEmpty(nodeData)) return undefined;
-
-        return {
-          key: `${node.key}-${index}`,
-          data: {
-            orgType: SINGULAR_ORG_TYPES[collection.toUpperCase()],
-            ...(stats && { stats }),
-            ...nodeData,
-          },
-        };
-      }),
-      undefined,
-    );
-
-    lazyNode.children = childNodes;
-
-    // Replace the existing nodes with a map that inserts the child nodes at the
-    // appropriate position
-    const newNodes = treeTableOrgs.value.map((n) => {
-      // First, match on the districtId if the expanded school is part of a district
-      if (n.data.id === node.data.districtId) {
-        const newNode = {
-          ...n,
-          // Replace the existing school child nodes with a map that inserts the
-          // classes at the appropriate position
-          children: n.children.map((child) => {
-            if (child.data.id === node.data.id) {
-              return lazyNode;
-            }
-            return child;
-          }),
-        };
-        return newNode;
-        // Next check to see if the expanded node was the school node itself
-      } else if (n.data.id === node.data.id) {
-        return lazyNode;
-      }
-
-      return n;
-    });
-
-    // Sort the classes by existence of stats then alphabetically
-    // TODO: This fails currently as it tries to set a read only reactive handler
-    // Specifically, setting the `children` key fails because the
-    // schoolNode target is read-only.
-    // Also, I'm pretty sure this is useless now because all classes will have stats
-    // due to preallocation of accounts.
-    for (const districtNode of newNodes ?? []) {
-      for (const schoolNode of districtNode?.children ?? []) {
-        if (schoolNode.children) {
-          schoolNode.children = schoolNode.children.toSorted((a, b) => {
-            if (!a.data.stats) return 1;
-            if (!b.data.stats) return -1;
-            return a.data.name.localeCompare(b.data.name);
-          });
-        }
-      }
-    }
-
-    treeTableOrgs.value = newNodes;
-    expanding.value = false;
+const toggleParams = (event: Event, id: string) => {
+  const popoverInstance = paramPanelRefs[id]?.value;
+  if (popoverInstance) {
+    (popoverInstance as any).toggle(event);
+  } else {
+    console.warn(`Popover ref for id '${id}' not found or missing toggle method.`);
   }
 };
 
-const doughnutChartData = ref();
-const doughnutChartOptions = ref();
+function getAssessment(assessmentId: string): Assessment | undefined {
+  return props.assessments.find((assessment) => assessment.taskId.toLowerCase() === assessmentId);
+}
 
-const setDoughnutChartOptions = () => ({
+const onExpand = async (event: any) => {
+  const node = event.node as OrgTreeNode;
+  if (!node.data || !node.key) return;
+
+  if (node.data.orgType === SINGULAR_ORG_TYPES.SCHOOLS && node.children?.length && !node.data.expanded) {
+    expanding.value = true;
+
+    const validChildren = (node.children || []).filter((child): child is OrgTreeNode & { data: { id: string } } => !!child?.data?.id);
+    const classPaths = validChildren.map(({ data }) => `classes/${data!.id}`);
+    const statPaths = validChildren.map(({ data }) => `administrations/${props.id}/stats/${data!.id}`);
+
+    try {
+      const classPromises = [
+        batchGetDocs(classPaths, ['name', 'schoolId']),
+        batchGetDocs(statPaths)
+      ];
+
+      const [classDocs, classStats] = await Promise.all(classPromises);
+
+      const lazyNode: OrgTreeNode = {
+        ...node,
+        key: String(node.key),
+        data: {
+          ...node.data,
+          expanded: true,
+        },
+        children: [],
+      };
+
+      const zippedData: [any | undefined, any | undefined][] = _zip(classDocs, classStats);
+
+      const childNodes: OrgTreeNode[] = _without(
+        zippedData.map(([orgDoc, stats], index): OrgTreeNode | undefined => {
+          const { collection = FIRESTORE_COLLECTIONS.CLASSES, ...nodeData } = orgDoc ?? {};
+
+          if (_isEmpty(nodeData) || !nodeData.id) return undefined;
+
+          const orgTypeKey = String(collection).toUpperCase() as keyof typeof SINGULAR_ORG_TYPES;
+          const childData: OrgNodeData = {
+            id: nodeData.id,
+            name: nodeData.name ?? 'Unknown Class',
+            orgType: SINGULAR_ORG_TYPES[orgTypeKey] ?? 'UNKNOWN',
+            stats: stats ?? undefined,
+            districtId: nodeData.schoolId,
+          };
+
+          return {
+            key: `${String(node.key)}-${index}`,
+            data: childData,
+          };
+        }),
+        undefined
+      ).filter((n): n is OrgTreeNode => n !== undefined);
+
+      lazyNode.children = childNodes;
+
+      if (lazyNode.children) {
+        lazyNode.children = [...lazyNode.children].sort((a, b) => {
+          const statsA = a.data?.stats;
+          const statsB = b.data?.stats;
+          const nameA = a.data?.name ?? '';
+          const nameB = b.data?.name ?? '';
+
+          if (!statsA && statsB) return 1;
+          if (statsA && !statsB) return -1;
+          return nameA.localeCompare(nameB);
+        });
+      }
+
+      treeTableOrgs.value = treeTableOrgs.value.map((n) => {
+        if (!n.data) return n;
+
+        if (n.data.id === node.data?.districtId && n.children) {
+          const newChildren = n.children.map((child) => {
+            if (child.data?.id === node.data?.id) {
+              return lazyNode;
+            }
+            return child;
+          });
+          return { ...n, children: newChildren };
+        } else if (n.data.id === node.data?.id) {
+          return lazyNode;
+        }
+        return n;
+      });
+
+    } catch (error: any) {
+      console.error("Error expanding node:", error);
+      toast.add({ severity: 'error', summary: 'Error', detail: 'Could not load data.', life: 3000 });
+    } finally {
+      expanding.value = false;
+    }
+  }
+};
+
+const setDoughnutChartOptions = (): ChartOptions<'doughnut'> => ({
   cutout: '60%',
-  showToolTips: true,
   plugins: {
     legend: {
       display: false,
@@ -397,33 +484,45 @@ const setDoughnutChartOptions = () => ({
       enabled: true,
     },
   },
+  responsive: true,
+  maintainAspectRatio: false,
 });
 
-const setDoughnutChartData = () => {
-  const docStyle = getComputedStyle(document.documentElement);
-  let { assigned = 0, started = 0, completed = 0 } = props.stats.total?.assignment || {};
+const setDoughnutChartData = (): ChartData<'doughnut'> | undefined => {
+  const statsTotalAssignment = props.stats?.total?.assignment;
+  if (!statsTotalAssignment) {
+    return undefined;
+  }
 
-  started -= completed;
-  assigned -= started + completed;
+  const docStyle = getComputedStyle(document.documentElement);
+  let { assigned = 0, started = 0, completed = 0 } = statsTotalAssignment;
+
+  const numCompleted = Number(completed);
+  let numStarted = Number(started) - numCompleted;
+  let numAssigned = Number(assigned) - numStarted - numCompleted;
+
+  numStarted = Math.max(0, numStarted);
+  numAssigned = Math.max(0, numAssigned);
 
   return {
     labels: ['Completed', 'Started', 'Assigned'],
     datasets: [
       {
-        data: [completed, started, assigned],
+        data: [numCompleted, numStarted, numAssigned],
         backgroundColor: [
-          docStyle.getPropertyValue('--bright-green'),
-          docStyle.getPropertyValue('--yellow-100'),
-          docStyle.getPropertyValue('--surface-d'),
+          docStyle.getPropertyValue('--bright-green') || '#22C55E',
+          docStyle.getPropertyValue('--yellow-100') || '#FFF9C4',
+          docStyle.getPropertyValue('--surface-d') || '#dee2e6',
         ],
-        // hoverBackgroundColor: ['green', docStyle.getPropertyValue('--surface-d')]
       },
     ],
   };
 };
 
 onMounted(() => {
-  if (props.stats) {
+  enableQueries.value = true;
+
+  if (props.stats?.total?.assignment) {
     doughnutChartData.value = setDoughnutChartData();
     doughnutChartOptions.value = setDoughnutChartOptions();
   }

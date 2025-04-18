@@ -1,7 +1,21 @@
-let appConfig; // assessment project
-let adminConfig;
+// Define the interface for Firebase configuration objects
+interface FirebaseConfig {
+  apiKey: string;
+  authDomain: string;
+  projectId: string;
+  storageBucket: string;
+  messagingSenderId: string;
+  appId: string;
+}
 
-if (import.meta.env.VITE_FIREBASE_PROJECT === 'DEV') {
+let appConfig: FirebaseConfig; // assessment project
+let adminConfig: FirebaseConfig;
+
+// Access environment variable provided by Vite
+// Ensure VITE_FIREBASE_PROJECT is defined in your .env files
+const firebaseProjectEnv: string | undefined = import.meta.env.VITE_FIREBASE_PROJECT;
+
+if (firebaseProjectEnv === 'DEV') {
   appConfig = {
     apiKey: 'AIzaSyC9IoJBEyN-BxHobeoMQRuEu0CtyQDOg8k',
     authDomain: 'hs-levante-assessment-dev.firebaseapp.com',
@@ -40,7 +54,16 @@ if (import.meta.env.VITE_FIREBASE_PROJECT === 'DEV') {
   };
 }
 
-export default {
+// Explicitly type the exported object for clarity
+interface FirebaseConfigs {
+    app: FirebaseConfig;
+    admin: FirebaseConfig;
+}
+
+
+const firebaseConfigs: FirebaseConfigs = {
   app: appConfig,
   admin: adminConfig,
 };
+
+export default firebaseConfigs; 

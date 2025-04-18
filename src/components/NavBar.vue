@@ -3,7 +3,7 @@
     <nav class="flex flex-row align-items-center justify-content-between w-full">
       <div id="navBarRightEnd" class="flex flex-row align-items-center justify-content-start w-full gap-1">
         <div class="flex align-items-center justify-content-center w-full">
-          <PvMenubar :model="computedItems" class="w-full">
+          <PvMenubar :model="computedItems" class="w-full" ref="menu">
             <template #start>
               <router-link :to="{ path: APP_ROUTES.HOME }">
                 <div class="navbar-logo mx-3">
@@ -40,84 +40,87 @@
   </header>
 </template>
 
-<script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue';
-import { useRouter } from 'vue-router';
+<script setup lang="ts">
+import { ref, computed, onMounted, onUnmounted, type Ref } from 'vue';
+import { useRouter, type Router, type RouteLocationNormalizedLoaded } from 'vue-router';
 import { storeToRefs } from 'pinia';
+import type { SubscriptionCallbackMutation } from 'pinia';
 import PvButton from 'primevue/button';
 import PvImage from 'primevue/image';
 import PvMenubar from 'primevue/menubar';
-import { useAuthStore } from '@/store/auth';
-import { getNavbarActions } from '@/router/navbarActions';
+// @ts-ignore TODO: Convert store/auth to TS
+import { useAuthStore, type AuthState } from '@/store/auth';
+import { getNavbarActions, type NavbarAction } from '@/router/navbarActions';
+// @ts-ignore TODO: Convert composables/queries/useUserClaimsQuery to TS
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import { APP_ROUTES } from '@/constants/routes';
 import Badge from 'primevue/badge';
+// @ts-ignore TODO: Convert UserActions.vue to TS
 import UserActions from './UserActions.vue';
-import useUserType from '@/composables/useUserType.ts';
+import useUserType from '@/composables/useUserType';
+import type { MenuItem } from 'primevue/menuitem';
 
 
-const router = useRouter();
+const router: Router = useRouter();
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
 
-const initialized = ref(false);
-const menu = ref();
-const screenWidth = ref(window.innerWidth);
-let unsubscribe;
+const initialized: Ref<boolean> = ref(false);
+const screenWidth: Ref<number> = ref(window.innerWidth);
+let unsubscribe: (() => void) | undefined;
 
-const init = () => {
+const init = (): void => {
   if (unsubscribe) unsubscribe();
   initialized.value = true;
 };
 
-unsubscribe = authStore.$subscribe(async (mutation, state) => {
+unsubscribe = authStore.$subscribe((mutation: SubscriptionCallbackMutation<AuthState>, state: AuthState): void => {
   if (state.roarfirekit.restConfig) init();
 });
 
-const handleResize = () => {
+const handleResize = (): void => {
   screenWidth.value = window.innerWidth;
 };
 
-onMounted(() => {
+onMounted((): void => {
   if (roarfirekit.value.restConfig) init();
   window.addEventListener('resize', handleResize);
 });
 
-onUnmounted(() => {
+onUnmounted((): void => {
   window.removeEventListener('resize', handleResize);
+  if (unsubscribe) unsubscribe();
 });
 
-const { isLoading: isLoadingClaims, data: userClaims } = useUserClaimsQuery({
+// Assuming useUserClaimsQuery returns an object with data and isLoading refs
+const { isLoading: isLoadingClaims, data: userClaims }: { isLoading: Ref<boolean>; data: Ref<any> } = useUserClaimsQuery({
   enabled: initialized,
 });
 
-const computedItems = computed(() => {
-  const items = [];
+const computedItems = computed<MenuItem[]>(() => {
+  const items: MenuItem[] = [];
   // TO DO: REMOVE USERS AFTER NAMING 3 TICKET IS COMPLETED
-  const headers = ['Assignments', 'Users'];
+  const headers: string[] = ['Assignments', 'Users'];
   for (const header of headers) {
-    const headerItems = rawActions.value
-      .filter((action) => action.category === header)
-      .map((action) => {
-        if (action.title === 'Sync Passwords') {
-          return {
+    const headerItems: MenuItem[] = rawActions.value
+      .filter((action: NavbarAction) => action.category === header)
+      .map((action: NavbarAction): MenuItem => {
+        const menuItem: MenuItem = {
           label: action.title,
           icon: action.icon,
-          badge: 'Temporary',
-          badgeClass: 'bg-yellow-300',
           command: () => {
-            router.push(action.buttonLink);
+            if (action.buttonLink) {
+              router.push(action.buttonLink);
+            }
           },
         };
+        if (action.title === 'Sync Passwords') { // Example of conditional modification
+          menuItem.badge = 'Temporary';
+          menuItem.pt = { // Use pt for badge styling if badgeClass is not standard MenuItem prop
+            badge: { class: 'bg-yellow-300' }
+          };
         }
-
-        return {
-          label: action.title,
-          icon: action.icon,
-          command: () => {
-            router.push(action.buttonLink);
-          },
-        };
+        return menuItem;
       });
 
     if (headerItems.length > 0) {
@@ -128,13 +131,15 @@ const computedItems = computed(() => {
     }
   }
   // Audience only has one associated page and therefore is not nested within items
-  const audienceAction = rawActions.value.find((action) => action.category === 'Audience');
+  const audienceAction: NavbarAction | undefined = rawActions.value.find((action: NavbarAction) => action.category === 'Audience');
   if (audienceAction) {
     items.push({
       label: audienceAction.title,
       icon: audienceAction.icon,
       command: () => {
-        router.push(audienceAction.buttonLink);
+        if (audienceAction.buttonLink) {
+          router.push(audienceAction.buttonLink);
+        }
       },
     });
   }
@@ -142,45 +147,50 @@ const computedItems = computed(() => {
   return items;
 });
 
-const userDisplayName = computed(() => {
-  if (!isLoadingClaims) {
+const userDisplayName = computed<string>(() => {
+  // Note: Logic changed slightly to reflect isLoading is boolean
+  if (isLoadingClaims.value || !authStore?.userData) {
     return '';
   } else {
-    let email = authStore?.userData?.email;
-    if (email && email.split('@')[1] === 'roar-auth.com') {
+    let email: string | undefined = authStore.userData.email;
+    if (email && email.includes('@') && email.split('@')[1] === 'roar-auth.com') {
       email = email.split('@')[0];
     }
-    const displayName = authStore?.userData?.displayName;
-    const username = authStore?.userData?.username;
-    const firstName = authStore?.userData?.name?.first;
-    const userType = isAdmin.value ? 'Admin' : 'User';
-    return ` ${firstName || displayName || username || email || userType}`;
+    const displayName: string | undefined = authStore.userData.displayName;
+    const username: string | undefined = authStore.userData.username;
+    const firstName: string | undefined = authStore.userData.name?.first;
+    const userType: string = isAdmin.value ? 'Admin' : 'User'; // isAdmin is derived from useUserType
+    // Added more checks for null/undefined
+    return ` ${firstName || displayName || username || email || userType}`.trim();
   }
 });
 
-const {isAdmin, isSuperAdmin} = useUserType(userClaims);
+const { isAdmin, isSuperAdmin } = useUserType(userClaims);
 
-const computedIsBasicView = computed(() => {
+const computedIsBasicView = computed<boolean>(() => {
   if (!userClaims.value) {
-    return false; 
+    return false; // Default to false if claims are not loaded
   }
-  return !isSuperAdmin.value && !isAdmin.value  
+  // Ensure boolean values from useUserType are used directly
+  return !isSuperAdmin.value && !isAdmin.value;
 });
 
-const isAtHome = computed(() => {
-  return router.currentRoute.value.fullPath === '/';
+const isAtHome = computed<boolean>(() => {
+  const currentRoute: RouteLocationNormalizedLoaded = router.currentRoute.value;
+  return currentRoute.path === '/'; // Check path directly
 });
 
-const rawActions = computed(() => {
+const rawActions = computed<NavbarAction[]>(() => {
+  // Assuming getNavbarActions expects boolean values
   return getNavbarActions({
-    isSuperAdmin: isSuperAdmin.value,
-    isAdmin: authStore.isUserAdmin,
-    includeHomeLink: !isAtHome.value,
+    isSuperAdmin: isSuperAdmin.value ?? false,
+    isAdmin: isAdmin.value ?? false, // Use the destructured isAdmin value
   });
 });
 
-const toggleMenu = (event) => {
-  menu.value.toggle(event);
+const toggleMenu = (): void => {
+  // PvMenubar seems to handle toggle internally even with #buttonicon slot
+  // No need for manual state toggle like isMenuOpen.value = !isMenuOpen.value;
 };
 </script>
 

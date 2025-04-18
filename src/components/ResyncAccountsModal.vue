@@ -35,15 +35,16 @@
   </PvDialog>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref } from 'vue';
+import type { Ref } from 'vue';
 import PvDialog from 'primevue/dialog';
 import PvButton from 'primevue/button';
 
-const visible = ref(true);
-const emit = defineEmits(['confirm']);
+const visible: Ref<boolean> = ref(true);
+const emit = defineEmits<{ (e: 'confirm'): void }>();
 
-const onConfirm = () => {
+const onConfirm = (): void => {
   visible.value = false;
   emit('confirm');
 };

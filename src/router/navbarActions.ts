@@ -1,7 +1,7 @@
 import { isLevante } from '../helpers';
 
 // Define an interface for the action options
-interface NavbarAction {
+export interface NavbarAction {
   title: string;
   icon?: string; // Optional icon
   buttonLink: { name: string; params?: Record<string, any> }; // Define buttonLink structure

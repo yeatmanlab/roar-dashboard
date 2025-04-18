@@ -19,26 +19,48 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed } from 'vue';
 import PvSelect from 'primevue/select';
+// Assuming SelectChangeEvent is the correct type or create a local interface
+// import type { SelectChangeEvent } from 'primevue/select';
 import { languageOptions } from '@/translations/i18n';
 import { isLevante } from '@/helpers';
 import { useSurveyStore } from '@/store/survey';
 import { setupStudentAudio } from '@/helpers/surveyInitialization';
 
+// Define an interface for the expected event structure if the import is not available
+interface SelectChangeEvent {
+  originalEvent: Event; // The original browser event
+  value: string; // The new value
+}
+
 const surveyStore = useSurveyStore();
 
 // Convert the object to an array of [key, value] pairs
-let languageOptionsArray = Object.entries(languageOptions);
+// Assuming languageOptions has a structure like { [key: string]: { language: string, code: string } }
+// Let's add a type for clarity
+interface LanguageOption {
+  language: string;
+  code: string;
+}
+
+let languageOptionsArray: [string, LanguageOption][] = Object.entries(languageOptions);
 
 // Sort the array by the key (language code)
-languageOptionsArray.sort((a, b) => a[0].localeCompare(b[1]));
+languageOptionsArray.sort((a, b) => a[0].localeCompare(b[0])); // Sort by key (e.g., 'en', 'es')
 
 // Convert it back to an object
-let sortedLanguageOptions = Object.fromEntries(languageOptionsArray);
+let sortedLanguageOptions: { [key: string]: LanguageOption } = Object.fromEntries(languageOptionsArray);
 
-const languageDropdownOptions = computed(() => {
+// Define an interface for the dropdown options
+interface DropdownOption {
+  name: string;
+  code: string;
+  value: string;
+}
+
+const languageDropdownOptions = computed<DropdownOption[]>(() => {
   return Object.entries(sortedLanguageOptions).map(([key, value]) => {
     return {
       name: value.language,
@@ -48,7 +70,7 @@ const languageDropdownOptions = computed(() => {
   });
 });
 
-async function onLanguageChange(event) {
+async function onLanguageChange(event: SelectChangeEvent): Promise<void> {
   sessionStorage.setItem(`${isLevante ? 'levante' : 'roar'}PlatformLocale`, event.value);
 
   console.log('event', event.value);

@@ -6,6 +6,8 @@
   </div>
 </template>
 
+<script setup lang="ts"></script>
+
 <style scoped>
 .spinner {
   margin: 100px auto 0;
