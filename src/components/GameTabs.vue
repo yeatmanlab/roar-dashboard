@@ -166,9 +166,10 @@
     </PvTabs>
   </div>
 </template>
-<script setup>
 
-import { computed } from 'vue';
+<script setup lang="ts">
+import { computed, ref, watch } from 'vue';
+import type { Ref, ComputedRef } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import _get from 'lodash/get';
@@ -185,65 +186,125 @@ import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
 import { useSurveyStore } from '@/store/survey';
 import VideoPlayer from '@/components/VideoPlayer.vue';
+import type { PlayerOptions as VideoJsPlayerOptions } from 'video.js';
 import { isLevante } from '@/helpers';
 import _capitalize from 'lodash/capitalize';
 import { useQueryClient } from '@tanstack/vue-query';
 import { LEVANTE_SURVEY_RESPONSES_KEY } from '@/constants/bucket';
 import PvProgressBar from 'primevue/progressbar';
 
-const props = defineProps({
-  games: { type: Array, required: true },
-  sequential: { type: Boolean, required: false, default: true },
-  userData: { type: Object, required: true },
-});
+// Interfaces
+interface TaskData {
+  name: string;
+  description?: string;
+  variantURL?: string;
+  taskURL?: string;
+  meta?: Record<string, any>;
+  image?: string | null;
+  tutorialVideo?: string | null;
+}
 
+interface Game {
+  taskId: string;
+  completedOn?: Date | string | null;
+  taskData: TaskData;
+}
+
+interface UserData {
+  id: string;
+  userType: 'teacher' | 'parent' | 'student' | string;
+  assessmentPid?: string;
+  childIds?: string[];
+  classes?: { current?: string[] };
+  schools?: { current?: string[] };
+}
+
+interface Props {
+  games: Game[];
+  sequential?: boolean;
+  userData: UserData;
+}
+
+interface SurveyRelationData {
+    id: string;
+    birthMonth?: string;
+    birthYear?: string;
+    name?: string;
+}
+
+interface SurveyDoc {
+    administrationId: string;
+    specific?: Array<{ isComplete?: boolean }>;
+    pageNo?: number;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  sequential: true,
+});
 
 const authStore = useAuthStore();
 const gameStore = useGameStore();
 const surveyStore = useSurveyStore();
 const queryClient = useQueryClient();
-const surveyData = queryClient.getQueryData(['surveyResponses', props.userData.id]);
 
-const getGeneralSurveyProgress = computed(() => {
-  if (surveyStore.isGeneralSurveyComplete) return 100;
-  if (!surveyStore.survey) return 0;
-  return Math.round(((surveyStore.survey.currentPageNo - 1) / (surveyStore.numGeneralPages - 1)) * 100);
+const { selectedAdmin } = storeToRefs(gameStore);
+
+const surveyData: Ref<SurveyDoc[] | undefined> = ref(queryClient.getQueryData(['surveyResponses', props.userData.id]));
+
+const specificSurveyRelationData = computed(() => (surveyStore as any).specificSurveyRelationData as SurveyRelationData[] || []);
+
+const initialIndex = props.games.findIndex(game => !game.completedOn);
+const displayGameIndex: Ref<number> = ref(initialIndex === -1 ? 0 : initialIndex);
+
+const currentGameId: ComputedRef<string | undefined> = computed(() => {
+    if (!props.sequential) return undefined;
+    const firstIncomplete = props.games.find(game => !game.completedOn);
+    return firstIncomplete?.taskId;
 });
 
-const getSpecificSurveyProgress = computed(() => (loopIndex) => {
-  if (surveyStore.isSpecificSurveyComplete) return 100;
-  
+const allGamesComplete: ComputedRef<boolean> = computed(() => {
+  return props.games.every(game => game.completedOn);
+});
+
+const taskCompletedMessage: ComputedRef<string> = computed(() => t('gameTabs.taskCompleted'));
+
+const getGeneralSurveyProgress: ComputedRef<number> = computed(() => {
+  if ((surveyStore as any).isGeneralSurveyComplete) return 100;
+  if (!(surveyStore as any).survey) return 0;
+  const survey = (surveyStore as any).survey;
+  const numPages = (surveyStore as any).numGeneralPages || 1;
+  return Math.round(((survey.currentPageNo - 1) / (numPages > 1 ? numPages -1 : 1)) * 100);
+});
+
+const getSpecificSurveyProgress = computed(() => (loopIndex: number): number => {
+  if ((surveyStore as any).isSpecificSurveyComplete) return 100;
+
   const localStorageKey = `${LEVANTE_SURVEY_RESPONSES_KEY}-${props.userData.id}`;
   const localStorageData = JSON.parse(localStorage.getItem(localStorageKey) || '{}');
 
-  if (localStorageData && surveyStore.specificSurveyRelationData[loopIndex]) {
-    const specificIdFromServer = surveyStore.specificSurveyRelationData[loopIndex].id;
+  const relationData = specificSurveyRelationData.value[loopIndex];
 
+  if (localStorageData && relationData) {
+    const specificIdFromServer = relationData.id;
     if (specificIdFromServer === localStorageData.specificId) {
-
         if (localStorageData.isComplete) return 100;
-
         const currentPage = localStorageData.pageNo || 0;
-        const totalPages = surveyStore.numSpecificPages || 1;
-
+        const totalPages = (surveyStore as any).numSpecificPages || 1;
         return Math.round((currentPage / totalPages) * 100);
     }
   }
 
-  // If data is not found in localStorage, use surveyData from server
-  if (!surveyData || !Array.isArray(surveyData)) return 0;
+  const adminId = selectedAdmin.value?.id;
+  if (!adminId) return 0;
 
-  const currentSurvey = surveyData.find(doc => doc.administrationId === selectedAdmin.value.id);
-  if (!currentSurvey || !currentSurvey.specific || !currentSurvey.specific[loopIndex]) return 0;
-  
-  // Specific survey is complete
+  const currentSurvey = surveyData.value?.find(doc => doc.administrationId === adminId);
+  if (!currentSurvey?.specific?.[loopIndex]) return 0;
+
   const specificSurvey = currentSurvey.specific[loopIndex];
   if (specificSurvey.isComplete) return 100;
 
-  // Specific survey is incomplete
   const currentPage = currentSurvey.pageNo || 0;
-  const totalPages = surveyStore.numSpecificPages || 1;
-
+  const totalPages = (surveyStore as any).numSpecificPages || 1;
   return Math.round((currentPage / totalPages) * 100);
 });
 
@@ -266,24 +327,15 @@ const levanteTasks = [
 
 const levantifiedRoarTasks = [
   'vocab',
-  // Not yet implemented
-  // 'swr',
-  // 'swr-es',
-  // 'sre',
-  // 'sre-es',
-  // 'pa',
-  // 'pa-es',
 ];
 
-const getTaskName = (taskId, taskName) => {
-  // Translate Levante task names. The task name is not the same as the taskId.
+function getTaskName(taskId: string, name: string): string {
   const taskIdLowercased = taskId.toLowerCase();
 
   if (taskIdLowercased === 'survey') {
     if (props.userData.userType === 'teacher' || props.userData.userType === 'parent') {
       return t(`gameTabs.surveyName${_capitalize(props.userData.userType)}Part1`);
     } else {
-      // child
       return t(`gameTabs.surveyNameChild`);
     }
   }
@@ -291,17 +343,16 @@ const getTaskName = (taskId, taskName) => {
   if (levanteTasks.includes(camelize(taskIdLowercased))) {
     return t(`gameTabs.${camelize(taskIdLowercased)}Name`); 
   }
-  return taskName;
-};
-const getTaskDescription = (taskId, taskDescription) => {
-  // Translate Levante task descriptions if not in English
+  return name;
+}
+
+function getTaskDescription(taskId: string, description?: string): string {
   const taskIdLowercased = taskId.toLowerCase();
 
   if (taskIdLowercased === 'survey') {
     if (props.userData.userType === 'teacher' || props.userData.userType === 'parent') {
       return t(`gameTabs.surveyDescription${_capitalize(props.userData.userType)}Part1`);
     } else {
-      // child
       return t(`gameTabs.surveyDescriptionChild`);
     }
   }
@@ -309,108 +360,84 @@ const getTaskDescription = (taskId, taskDescription) => {
   if (levanteTasks.includes(camelize(taskIdLowercased))) {
     return t(`gameTabs.${camelize(taskIdLowercased)}Description`);
   }
-  return taskDescription;
-};
+  return description || '';
+}
 
-const getRoutePath = (taskId, variantURL, taskURL) => {
-  // do not navigate if the task is external
-  if (variantURL || taskURL) return '/';
+function getRoutePath(taskId: string, variantURL?: string, taskURL?: string): string {
+  if (variantURL) return variantURL;
+  if (taskURL) return taskURL;
+  return `/game/${taskId}`;
+}
 
-  const lowerCasedAndCamelizedTaskId = camelize(taskId.toLowerCase());
-
-  if (lowerCasedAndCamelizedTaskId === 'survey') {
-    return '/survey';
-  } else if (
-    levanteTasks.includes(lowerCasedAndCamelizedTaskId) ||
-    (isLevante && levantifiedRoarTasks.includes(lowerCasedAndCamelizedTaskId))
-  ) {
-    return '/game/core-tasks/' + taskId;
-  } else {
-    return '/game/' + taskId;
-  }
-};
-
-const taskCompletedMessage = computed(() => {
-  return t('gameTabs.taskCompleted');
-});
-
-const updateVideoStarted = async (taskId) => {
-  try {
-    await authStore.roarfirekit.updateVideoMetadata(selectedAdmin.value.id, taskId, 'started');
-  } catch (e) {
-    console.error('Error while updating video completion', e);
-  }
-};
-
-const updateVideoCompleted = async (taskId) => {
-  try {
-    await authStore.roarfirekit.updateVideoMetadata(selectedAdmin.value.id, taskId, 'completed');
-  } catch (e) {
-    console.error('Error while updating video completion', e);
-  }
-};
-
-const currentGameId = computed(() => {
-  return _get(
-    _find(props.games, (game) => {
-      return game.completedOn === undefined;
-    }),
-    'taskId',
-  );
-});
-
-const gameIndex = computed(() =>
-  _findIndex(props.games, (game) => {
-    return game.taskId === currentGameId.value;
-  }),
-);
-
-const displayGameIndex = computed(() => (gameIndex.value === -1 ? 0 : gameIndex.value));
-const allGamesComplete = computed(() => gameIndex.value === -1);
-
-const { selectedAdmin } = storeToRefs(gameStore);
-
-async function routeExternalTask(game) {
+async function routeExternalTask(game: Game): Promise<void> {
   let url;
+  const path = getRoutePath(game.taskId, game.taskData?.variantURL, game.taskData?.taskURL);
 
-  if (game.taskData?.variantURL) {
-    url = game.taskData.variantURL;
-  } else if (game.taskData?.taskURL) {
-    url = game.taskData.taskURL;
+  if (path.startsWith('http') || !path.startsWith('/')) {
+    url = path;
+  } else if (game.taskData?.variantURL || game.taskData?.taskURL) {
+    url = game.taskData.variantURL || game.taskData.taskURL;
   } else {
-    // Not an external task
     return;
   }
 
-  if (game.taskData.name.toLowerCase() === 'mefs') {
-    const ageInMonths = getAgeData(props.userData.birthMonth, props.userData.birthYear).ageMonths;
-    url += `participantID=${props.userData.id}&participantAgeInMonths=${ageInMonths}&lng=${locale.value}`;
-    window.open(url, '_blank').focus();
-    await authStore.completeAssessment(selectedAdmin.value.id, game.taskId);
-  } else {
-    url += `&participant=${props.userData.assessmentPid}${
-      props.userData.schools.length ? '&schoolId=' + props.userData.schools.current.join('“%2C”') : ''
-    }${props.userData.classes.current.length ? '&classId=' + props.userData.classes.current.join('“%2C”') : ''}`;
+  const ageData = getAgeData(props.userData as any);
+  const ageInMonths = ageData?.ageInMonths;
 
-    await authStore.completeAssessment(selectedAdmin.value.id, game.taskId);
-    window.location.href = url;
+  const adminId = selectedAdmin.value?.id;
+  if (!adminId) {
+      console.error('Selected admin ID is missing.');
+      return;
+  }
+
+  if (url) {
+    if (url.includes('childassessment.web.app')) {
+      url += `?adminId=${adminId}`;
+      url += `&participantID=${props.userData.id}&participantAgeInMonths=${ageInMonths ?? ''}&lng=${locale.value}`;
+      window.open(url, '_blank')?.focus();
+      await (authStore as any).completeAssessment(adminId, game.taskId);
+    } else {
+      url += `&participant=${props.userData.assessmentPid ?? ''}${
+        props.userData.schools?.current?.length ? '&schoolId=' + props.userData.schools.current.join('"%2C"') : ''
+      }${props.userData.classes?.current?.length ? '&classId=' + props.userData.classes.current.join('"%2C"') : ''}`;
+  
+      await (authStore as any).completeAssessment(adminId, game.taskId);
+      window.location.href = url;
+    }
   }
 }
 
-const returnVideoOptions = (videoURL) => {
+function updateVideoCompleted(taskId: string | null): void {
+  if (taskId) {
+    (gameStore as any).updateVideoCompletionStatus(taskId, true);
+  }
+}
+
+function updateVideoStarted(taskId: string | null): void {
+    if (taskId) {
+        (gameStore as any).updateVideoStartedStatus(taskId, true);
+    }
+}
+
+function returnVideoOptions(tutorialVideoUrl: string | null | undefined): object {
+  if (!tutorialVideoUrl) {
+    return { autoplay: false, controls: true, sources: [] };
+  }
   return {
     autoplay: false,
     controls: true,
-    preload: true,
-    fluid: true,
     sources: [
       {
-        src: videoURL,
+        src: tutorialVideoUrl,
         type: 'video/mp4',
       },
     ],
   };
-};
+}
+
+watch(displayGameIndex, (newIndex, oldIndex) => {
+    console.log(`Switched tab from ${oldIndex} to ${newIndex}`);
+});
 </script>
 
 <style scoped lang="scss">

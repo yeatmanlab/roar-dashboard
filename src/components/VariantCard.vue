@@ -262,7 +262,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, defineAsyncComponent } from 'vue';
 import type { Ref, ComputedRef } from 'vue';
 import PvButton from 'primevue/button';
 import PvChip from 'primevue/chip';
@@ -271,7 +271,6 @@ import PvColumn from 'primevue/column';
 import PvDialog from 'primevue/dialog';
 import PvPopover from 'primevue/popover';
 import PvTag from 'primevue/tag';
-import EditVariantDialog from '@/components/modals/EditVariantDialog.vue'; // Assuming path
 import _isEmpty from 'lodash/isEmpty';
 
 // Interfaces
@@ -351,6 +350,14 @@ const emit = defineEmits<{
   (e: 'moveDown', index: number): void;
 }>();
 
+export type {
+  VariantData,
+  PreExistingAssessmentInfo,
+  Condition,
+  AssignmentConditions,
+  OptionalConditions
+}; // Export types needed by EditVariantDialog
+
 const op: Ref<InstanceType<typeof PvPopover> | null> = ref(null);
 const visible: Ref<boolean> = ref(false);
 const showContent: Ref<boolean> = ref(false);
@@ -410,6 +417,9 @@ const parseConditions = (conditions: AssignmentConditions | OptionalConditions |
   }
   return conditions.conditions ?? [];
 };
+
+// @ts-ignore - TS struggles with inferring types from Vue SFC imports here
+const EditVariantDialog = defineAsyncComponent(() => import('@/components/EditVariantDialog.vue'));
 
 </script>
 

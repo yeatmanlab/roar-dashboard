@@ -229,6 +229,8 @@ const props = withDefaults(defineProps<Props>(), {
   preExistingAssessmentInfo: () => [],
 });
 
+export type { Props as EditVariantDialogProps };
+
 const isVisible: Ref<boolean> = ref(false);
 const assignedConditions: Ref<ConditionInput[]> = ref([]);
 const optionalConditions: Ref<ConditionInput[]> = ref([]);

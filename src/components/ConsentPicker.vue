@@ -25,17 +25,17 @@
       </div>
     </div>
     <div class="flex justify-content-center mt-2">
-      <PvCheckbox v-model="noConsent" :binary="true" input-id="no-consent" class="flex" value="noConsent" />
+      <PvCheckbox v-model="noConsent" :binary="true" input-id="no-consent" class="flex" @change="handleNoConsentChange" />
       <label class="ml-2 flex text-center" for="no-consent"
         >This administration does not require consent {{ isLevante ? '' : 'or assent' }} forms</label
       >
     </div>
     <div class="flex flex-row">
-      <div v-if="userDrivenFlow && !noConsent" class="align-content-center" style="width: 50%">
+      <div v-if="userDrivenFlow && !noConsent" class="align-content-center pr-3" style="width: 50%">
         <h3>Default Data Collection</h3>
-        <div class="border-solid border-round border-1 border-black-alpha-30" style="width: 70%">
-          <div style="width: 70%; cursor: pointer">
-            <div class="mt-1 mb-1 ml-2 text-center flex cursor-pointer" style="width: 100%">
+        <div class="border-solid border-round border-1 border-black-alpha-30" style="width: 100%">
+          <div style="cursor: pointer">
+            <div class="mt-1 mb-1 ml-2 text-center flex cursor-pointer">
               <div class="flex flex-row w-full cursor-pointer mt-1">
                 <PvCheckbox
                   v-model="paramCheckboxData"
@@ -43,7 +43,7 @@
                   value="hasDefault"
                   @change="checkBoxStatus"
                 />
-                <i class="pi pi-align-justify" style="font-size: 1rem; width: 8%"></i>
+                <i class="pi pi-align-justify ml-2" style="font-size: 1rem; width: 8%"></i>
                 <label class="mr-3 p-0 ml-1 flex cursor-pointer" style="width: 80%" for="default-params"
                   >Default Data Collection Values</label
                 >
@@ -51,8 +51,8 @@
             </div>
           </div>
           <hr />
-          <div class="ml-5" style="width: 70%">
-            <div v-for="param in defaultParams" :key="param" class="mt-1 mb-1 ml-3 mr-0 p-0 text-center flex">
+          <div class="ml-5">
+            <div v-for="param in defaultParams" :key="param.name" class="mt-1 mb-1 ml-3 mr-0 p-0 text-center flex">
               <i :class="param.icon" style="font-size: 1rem; width: 10%"></i>
               <div class="mr-3 ml-0 p-0 flex" style="width: 80%">{{ param.name }}</div>
             </div>
@@ -65,7 +65,7 @@
             'border-solid border-round border-1 border-black-alpha-30 mt-2',
             { 'opacity-80 surface-200 mt-2': !disableIfNotDefault },
           ]"
-          style="width: 70%; cursor: pointer"
+          style="width: 100%; cursor: pointer"
         >
           <div class="mt-1 mb-1 ml-2 text-center flex cursor-pointer">
             <div class="flex flex-row w-full cursor-pointer">
@@ -73,12 +73,13 @@
                 v-model="specialParam"
                 input-id="video-recording"
                 value="hasVideo"
-                :class="['cursor-pointer', { 'pointer-events-none': !disableIfNotDefault }]"
+                :disabled="!disableIfNotDefault"
+                :class="['cursor-pointer', { 'cursor-not-allowed': !disableIfNotDefault }]"
                 @change="checkBoxStatus"
               />
-              <i class="pi pi-video" style="font-size: 1rem; width: 8%"></i>
+              <i class="pi pi-video ml-2" style="font-size: 1rem; width: 8%"></i>
               <label
-                :class="['mr-3 p-0 flex cursor-pointer', { 'pointer-events-none': !disableIfNotDefault }]"
+                :class="['mr-3 p-0 flex cursor-pointer', { 'opacity-50': !disableIfNotDefault }]"
                 style="width: 80%"
                 for="video-recording"
                 >Video Recording</label
@@ -92,7 +93,7 @@
             'border-solid border-round border-1 border-black-alpha-30 mt-2',
             { 'opacity-80 surface-200 mt-2': !disableIfNotDefault },
           ]"
-          style="width: 70%; cursor: pointer"
+          style="width: 100%; cursor: pointer"
         >
           <div class="mt-1 mb-1 ml-2 text-center flex cursor-pointer">
             <div class="flex flex-row w-full cursor-pointer">
@@ -100,12 +101,13 @@
                 v-model="specialParam"
                 input-id="audio-recording"
                 value="hasAudio"
-                :class="['cursor-pointer', { 'pointer-events-none': !disableIfNotDefault }]"
+                :disabled="!disableIfNotDefault"
+                :class="['cursor-pointer', { 'cursor-not-allowed': !disableIfNotDefault }]"
                 @change="checkBoxStatus"
               />
-              <i class="pi pi-phone" style="font-size: 1rem; width: 8%"></i>
+              <i class="pi pi-phone ml-2" style="font-size: 1rem; width: 8%"></i>
               <label
-                :class="['mr-3 p-0 flex cursor-pointer', { 'pointer-events-none': !disableIfNotDefault }]"
+                :class="['mr-3 p-0 flex cursor-pointer', { 'opacity-50': !disableIfNotDefault }]"
                 style="width: 80%"
                 for="audio-recording"
                 >Audio Recording</label
@@ -119,7 +121,7 @@
             'border-solid border-round border-1 border-black-alpha-30 mt-2',
             { 'opacity-80 surface-200 mt-2': !disableIfNotDefault },
           ]"
-          style="width: 70%; cursor: pointer"
+          style="width: 100%; cursor: pointer"
         >
           <div class="mt-1 mb-1 ml-2 text-center flex cursor-pointer">
             <div class="flex flex-row w-full cursor-pointer">
@@ -127,33 +129,17 @@
                 v-model="specialParam"
                 input-id="eye-tracking"
                 value="hasEyeTracking"
-                :class="['cursor-pointer', { 'pointer-events-none': !disableIfNotDefault }]"
+                :disabled="!disableIfNotDefault"
+                :class="['cursor-pointer', { 'cursor-not-allowed': !disableIfNotDefault }]"
                 @change="checkBoxStatus"
               />
-              <i class="pi pi-eye" style="font-size: 1rem; width: 8%"></i>
+              <i class="pi pi-eye ml-2" style="font-size: 1rem; width: 8%"></i>
               <label
-                :class="['mr-3 p-0 flex cursor-pointer', { 'pointer-events-none': !disableIfNotDefault }]"
+                :class="['mr-3 p-0 flex cursor-pointer', { 'opacity-50': !disableIfNotDefault }]"
                 style="width: 80%"
                 for="eye-tracking"
                 >Eye - Tracking</label
               >
-            </div>
-          </div>
-        </div>
-        <div class="hidden">
-          <h3 class="mb-4 mt-4">Compensation Amount and Expected Time</h3>
-          <div class="flex flex-row">
-            <div class="mr-1">
-              <PvFloatLabel>
-                <PvInputText id="consent-amount" v-model="amount" class="w-full" disabled="true" />
-                <label for="consent-amount" class="text-sm w-full">Payment Amount $$</label>
-              </PvFloatLabel>
-            </div>
-            <div class="ml-3">
-              <PvFloatLabel>
-                <PvInputText id="consent-time" v-model="expectedTime" class="w-full" disabled="true" />
-                <label for="consent-time" class="text-sm w-full">Expected Time Amount</label>
-              </PvFloatLabel>
             </div>
           </div>
         </div>
@@ -164,9 +150,10 @@
           v-model="selectedConsent"
           :options="listOfDocs.consent"
           option-label="fileName"
-          style="width: 70%"
-          :placeholder="props.legal?.consent[0]?.fileName || 'Select a Consent Form'"
+          class="w-full"
+          :placeholder="props.legal?.consent?.[0]?.fileName || 'Select a Consent Form'"
           @change="updateConsent"
+          :loading="isLoading"
         />
         <div v-if="!isLevante">
           <h3 class="pt-3">Select an Assent Form</h3>
@@ -174,45 +161,27 @@
             v-model="selectedAssent"
             :options="listOfDocs.assent"
             option-label="fileName"
-            style="width: 70%"
-            :placeholder="props.legal?.assent[0]?.fileName || 'Select an Assent Form'"
+            class="w-full"
+            :placeholder="props.legal?.assent?.[0]?.fileName || 'Select an Assent Form'"
             @change="updateAssent"
+            :loading="isLoading"
             />
         </div>
-        <div class="hidden">
-          <h3 class="mb-4 mt-5">Consent Amount and Expected Time</h3>
-          <div class="flex flex-row">
-            <div class="mr-1">
-              <PvFloatLabel>
-                <PvInputText id="consent-amount" v-model="amount" class="w-full" disabled="true" />
-                <label for="consent-amount" class="text-sm w-full">Payment Amount $$</label>
-              </PvFloatLabel>
-            </div>
-            <div class="ml-3">
-              <PvFloatLabel>
-                <PvInputText id="consent-time" v-model="expectedTime" class="w-full" disabled="true" />
-                <label for="consent-time" class="text-sm w-full">Expected Time Amount</label>
-              </PvFloatLabel>
-            </div>
-          </div>
-        </div>
       </div>
-      <div v-if="(knowWhatIWant || userDrivenFlow) && !noConsent" class="flex-column" style="width: 50%">
-        <h3 class="font-bold text-center text-xl">Suggested Forms</h3>
-        <div class="w-full">
-          <PvFieldset v-if="consents && consents.length > 0" legend="Consent">
+      <div v-if="(knowWhatIWant || userDrivenFlow) && !noConsent && !isLoading" class="flex-column pl-3" style="width: 50%">
+        <h3 class="font-bold text-center text-xl">Suggested/Selected Forms</h3>
+        <div class="w-full mb-3">
+          <PvFieldset v-if="result.consent && result.consent.length > 0" legend="Consent">
             <div class="flex flex-row w-full">
               <div style="width: 80%">
                 <p class="m-0">
                   <span class="font-bold">Name: </span>{{ result.consent[0]?.fileName }} <br />
-                  <div v-if="!isLevante">
-                    <span class="font-bold">Current Commit: </span>{{ result.consent[0]?.currentCommit }}
-                    <br />
-                    <span class="font-bold">GitHub Org: </span>{{ result.consent[0]?.gitHubOrg }} <br />
-                    <span class="font-bold">GitHub Repository: </span>{{ result.consent[0]?.gitHubRepository }}
-                    <br />
-                    <span class="font-bold">Last Updated: </span>{{ result.consent[0]?.lastUpdated }} <br />
-                  </div>
+                  <template v-if="!isLevante">
+                    <span class="font-bold">Current Commit: </span>{{ result.consent[0]?.currentCommit }}<br />
+                    <span class="font-bold">GitHub Org: </span>{{ result.consent[0]?.gitHubOrg }}<br />
+                    <span class="font-bold">GitHub Repository: </span>{{ result.consent[0]?.gitHubRepository }}<br />
+                  </template>
+                   <span class="font-bold">Last Updated: </span>{{ formatDate(result.consent[0]?.lastUpdated) }} <br />
                 </p>
               </div>
               <div class="flex align-items-center justify-content-center">
@@ -220,389 +189,335 @@
                   class="border-circle w-6rem h-6rem m-2 surface-hover text-primary border-none font-bold flex align-items-center justify-content-center hover:text-100 hover:bg-primary"
                   label="Show Consent"
                   @click="seeConsent(result.consent[0])"
+                  :disabled="!result.consent[0]"
                 />
               </div>
             </div>
           </PvFieldset>
           <div v-else>
-            <p>No consent available.</p>
+            <PvTag severity="warn" class="w-full">No suitable Consent form found based on criteria.</PvTag>
           </div>
         </div>
-        <div class="w-full mt-2">
-          <div v-if="!isLevante">
-            <PvFieldset v-if="consents && consents.length > 0" legend="Assent">
-              <div class="flex flex-row w-full">
-                <div style="width: 80%">
-                  <p class="m-0">
-                    <span class="font-bold">Name: </span>{{ result.assent[0]?.fileName }} <br />
-                    <span class="font-bold">Current Commit: </span>{{ result.assent[0]?.currentCommit }}
-                    <br />
-                    <span class="font-bold">GitHub Org: </span>{{ result.assent[0]?.gitHubOrg }} <br />
-                    <span class="font-bold">GitHub Repository: </span>{{ result.assent[0]?.gitHubRepository }}
-                    <br />
-                    <span class="font-bold">Last Updated: </span>{{ result.assent[0]?.lastUpdated }} <br />
-                  </p>
-                </div>
-                <div class="flex align-items-center justify-content-center">
-                  <PvButton
-                    class="border-circle w-6rem h-6rem m-2 surface-hover text-primary border-none font-bold flex align-items-center justify-content-center hover:text-100 hover:bg-primary"
-                    label="Show Assent"
-                    @click="seeConsent(result.assent[0])"
-                  />
-                </div>
+        <div v-if="!isLevante" class="w-full mt-2">
+          <PvFieldset v-if="result.assent && result.assent.length > 0" legend="Assent">
+            <div class="flex flex-row w-full">
+              <div style="width: 80%">
+                <p class="m-0">
+                  <span class="font-bold">Name: </span>{{ result.assent[0]?.fileName }} <br />
+                  <template v-if="!isLevante">
+                    <span class="font-bold">Current Commit: </span>{{ result.assent[0]?.currentCommit }}<br />
+                    <span class="font-bold">GitHub Org: </span>{{ result.assent[0]?.gitHubOrg }}<br />
+                    <span class="font-bold">GitHub Repository: </span>{{ result.assent[0]?.gitHubRepository }}<br />
+                  </template>
+                   <span class="font-bold">Last Updated: </span>{{ formatDate(result.assent[0]?.lastUpdated) }} <br />
+                </p>
               </div>
-            </PvFieldset>
-            <div v-else>
-              <p>No assent available.</p>
+              <div class="flex align-items-center justify-content-center">
+                <PvButton
+                  class="border-circle w-6rem h-6rem m-2 surface-hover text-primary border-none font-bold flex align-items-center justify-content-center hover:text-100 hover:bg-primary"
+                  label="Show Assent"
+                  @click="seeConsent(result.assent[0])"
+                  :disabled="!result.assent[0]"
+                />
+              </div>
             </div>
+          </PvFieldset>
+           <div v-else>
+            <PvTag severity="warn" class="w-full">No suitable Assent form found based on criteria.</PvTag>
           </div>
         </div>
       </div>
+      <div v-if="(knowWhatIWant || userDrivenFlow) && !noConsent && isLoading" class="flex-column align-items-center justify-content-center pl-3" style="width: 50%">
+         <PvSkeleton width="100%" height="10rem" class="mb-2"></PvSkeleton>
+         <PvSkeleton v-if="!isLevante" width="100%" height="10rem"></PvSkeleton>
+      </div>
     </div>
+    <ConsentModal
+      v-if="currentConsentText"
+      :consent-text="currentConsentText"
+      :consent-type="currentConsentType || 'Consent'"
+      :on-confirm="onDialogConfirm"
+    />
   </PvPanel>
-  <PvDialog
-    v-if="showConsent"
-    v-model:visible="showConsent"
-    :draggable="false"
-    modal
-    :close-on-escape="false"
-    :style="{ width: '65vw' }"
-    :breakpoints="{ '1199px': '85vw', '575px': '95vw' }"
-  >
-    <!-- eslint-disable-next-line vue/no-v-html -->
-    <div v-html="confirmText"></div>
-  </PvDialog>
 </template>
 
-<script setup>
-import { ref, onMounted, watch, computed } from 'vue';
-import { marked } from 'marked';
+<script setup lang="ts">
+import { ref, reactive, computed, onMounted, watch } from 'vue';
+import type { Ref, ComputedRef, Reactive } from 'vue';
+import { useQuery } from '@tanstack/vue-query';
+import type { UseQueryReturnType } from '@tanstack/vue-query';
+import _filter from 'lodash/filter';
 import _forEach from 'lodash/forEach';
-import { isLevante } from '@/helpers';
-import PvFloatLabel from 'primevue/floatlabel';
+import _includes from 'lodash/includes';
+import _cloneDeep from 'lodash/cloneDeep';
 import PvButton from 'primevue/button';
 import PvCheckbox from 'primevue/checkbox';
-import PvDialog from 'primevue/dialog';
-import PvSelect from 'primevue/select';
+import PvFieldset from 'primevue/fieldset';
+import PvFloatLabel from 'primevue/floatlabel';
 import PvInputText from 'primevue/inputtext';
 import PvPanel from 'primevue/panel';
 import PvRadioButton from 'primevue/radiobutton';
-import PvFieldset from 'primevue/fieldset';
-import { useAuthStore } from '@/store/auth';
+import PvSelect from 'primevue/select';
+import PvSkeleton from 'primevue/skeleton';
+import PvTag from 'primevue/tag';
+import ConsentModal from '@/components/ConsentModal.vue';
 import useLegalDocsQuery from '@/composables/queries/useLegalDocsQuery';
+import { isLevante } from '@/helpers';
 
-const props = defineProps({
-  legal: { type: Object, required: false, default: null },
-});
-
-const defaultParams = [
-  {
-    name: 'Mouse and click',
-    icon: 'pi pi-check',
-  },
-  {
-    name: 'Questionnaire responses',
-    icon: 'pi pi-list',
-  },
-  {
-    name: 'Scrolling behavior',
-    icon: 'pi pi-arrows-v',
-  },
-  {
-    name: 'Button presses',
-    icon: 'pi pi-plus-circle',
-  },
-];
-
-const specialParams = [
-  {
-    name: 'eye-tracking',
-  },
-  {
-    name: 'video recording',
-  },
-  {
-    name: 'audio recording',
-  },
-];
-
-const initialized = ref(false);
-const showConsent = ref(false);
-const consentVersion = ref('');
-const confirmText = ref('');
-const paramCheckboxData = ref(false);
-const specialParam = ref(false);
-const amount = ref('');
-const expectedTime = ref('');
-const userDrivenFlow = ref(null);
-const noConsent = ref(false);
-let selectedConsent = ref(null);
-let selectedAssent = ref(null);
-const knowWhatIWant = ref(false);
-const decision = ref('');
-const disableIfNotDefault = ref(false);
-const tooltip = ref('Please check the "Default Data Collection Values" first');
-
-let result = {
-  consent: [],
-  assent: [],
-  amount: amount.value,
-  expectedTime: expectedTime.value,
-};
-
-function whatDecision() {
-  if (decision.value === 'know') {
-    knowWhatIWant.value = true;
-    userDrivenFlow.value = false;
-  }
-  if (decision.value === 'help') {
-    knowWhatIWant.value = false;
-    userDrivenFlow.value = true;
-  }
-  specialParam.value = false;
-  paramCheckboxData.value = false;
-  selectedConsent.value = null;
-  selectedAssent.value = null;
-  amount.value = '';
-  expectedTime.value = '';
-  result = {
-    consent: [],
-    assent: [],
-    amount: amount.value,
-    expectedTime: expectedTime.value,
-  };
+interface ConsentDocument {
+  id: string;
+  fileName: string;
+  currentCommit?: string;
+  gitHubOrg?: string;
+  gitHubRepository?: string;
+  lastUpdated?: any;
+  project?: 'roar' | 'levante' | 'default';
+  text?: string;
+  tags?: string[];
+  type: 'consent' | 'assent';
 }
 
-const authStore = useAuthStore();
-const emit = defineEmits(['consent-selected']);
+interface LegalProp {
+  consent?: ConsentDocument[];
+  assent?: ConsentDocument[];
+}
 
-onMounted(() => {
-  initialized.value = true;
-  if (!props.legal || Object.keys(props.legal).length === 0) {
-    decision.value = 'know';
-    knowWhatIWant.value = true;
-  } else {
-    result.consent[0] = props.legal.consent[0];
-    result.assent[0] = props.legal.assent[0];
-    result.amount = props.legal.amount;
-    result.expectedTime = props.legal.expectedTime;
-    selectedConsent.value = props.legal.consent[0];
-    selectedAssent.value = props.legal.assent[0];
-  }
-});
+interface Props {
+  legal?: LegalProp | null;
+}
 
+interface DefaultParam {
+  name: string;
+  icon: string;
+}
 
-watch(
-  () => props.legal,
-  // eslint-disable-next-line no-unused-vars
-  (newValue, _) => {
-    if (newValue) {
-      result.consent[0] = newValue.consent[0];
-      result.assent[0] = newValue.assent[0];
-      result.amount = newValue.amount;
-      result.expectedTime = newValue.expectedTime;
-      selectedConsent.value = newValue.consent[0];
-      selectedAssent.value = newValue.assent[0];
-    }
-  },
+interface ListOfDocs {
+  consent: ConsentDocument[];
+  assent: ConsentDocument[];
+}
+
+const props = defineProps<Props>();
+
+const emit = defineEmits<{ (e: 'consents-changed', result: LegalProp | null): void }>();
+
+const decision: Ref<'help' | 'know' | null> = ref(null);
+const noConsent: Ref<boolean> = ref(false);
+const paramCheckboxData: Ref<string[]> = ref([]);
+const specialParam: Ref<string[]> = ref([]);
+const userDrivenFlow: Ref<boolean> = ref(false);
+const knowWhatIWant: Ref<boolean> = ref(false);
+const selectedConsent: Ref<ConsentDocument | null> = ref(null);
+const selectedAssent: Ref<ConsentDocument | null> = ref(null);
+const listOfDocs: Reactive<ListOfDocs> = reactive({ consent: [], assent: [] });
+const result: Reactive<LegalProp> = reactive({ consent: [], assent: [] });
+const consents: Ref<ConsentDocument[]> = ref([]);
+const currentConsentText: Ref<string | null> = ref(null);
+const currentConsentType: Ref<string | null> = ref(null);
+
+const { isLoading, data: legalDocuments }: UseQueryReturnType<ConsentDocument[], Error> = (useLegalDocsQuery as any)();
+
+const defaultParams: DefaultParam[] = [
+  { name: 'Task completion and performance data', icon: 'pi pi-chart-line' },
+  { name: 'Participant browser & OS Information', icon: 'pi pi-desktop' },
+  { name: 'IP Address', icon: 'pi pi-map-marker' },
+  { name: 'Participant ID', icon: 'pi pi-user' },
+];
+
+const tooltip: string = 'Select \'Default Data Collection Values\' to enable this option.';
+
+const disableIfNotDefault: ComputedRef<boolean> = computed(() =>
+  _includes(paramCheckboxData.value, 'hasDefault')
 );
 
-function checkBoxStatus() {
-  result = {
-    consent: [],
-    assent: [],
-    amount: amount.value,
-    expectedTime: expectedTime.value,
-  };
-  if (
-    paramCheckboxData.value &&
-    paramCheckboxData.value?.find((item) => item === 'hasDefault') &&
-    (!specialParam.value || specialParam.value.length === 0)
-  ) {
-    disableIfNotDefault.value = true;
-    getDefaults();
-  } else if (
-    paramCheckboxData.value &&
-    paramCheckboxData.value?.find((item) => item === 'hasDefault') &&
-    specialParam.value &&
-    specialParam.value?.find((item) => item === 'hasVideo' || item === 'hasAudio' || item === 'hasEyeTracking')
-  ) {
-    getConsentAssent();
+const whatDecision = (): void => {
+  userDrivenFlow.value = decision.value === 'help';
+  knowWhatIWant.value = decision.value === 'know';
+  selectedConsent.value = null;
+  selectedAssent.value = null;
+  paramCheckboxData.value = [];
+  specialParam.value = [];
+  result.consent = [];
+  result.assent = [];
+  emitSelection();
+};
+
+const checkBoxStatus = (): void => {
+  consentByData();
+};
+
+const updateConsent = (event: { value: ConsentDocument | null }): void => {
+  selectedConsent.value = event.value;
+  if (event.value) {
+      result.consent = [event.value];
+      if (isLevante || !listOfDocs.assent.length) {
+          result.assent = [];
+          selectedAssent.value = null;
+      }
+      emitSelection();
   } else {
-    disableIfNotDefault.value = false;
-    specialParam.value = false;
+      result.consent = [];
+      emitSelection();
   }
-}
+};
 
-const { data: consents } = useLegalDocsQuery({
-  enabled: initialized,
-});
-
-const listOfDocs = computed(() => {
-  let consent = [];
-  let assent = [];
-
-  _forEach(consents.value, (doc) => {
-    if (doc.type.toLowerCase().includes('consent')) {
-      consent.push(doc);
-    } else if (!doc.type.toLowerCase().includes('tos')) {
-      assent.push(doc);
+const updateAssent = (event: { value: ConsentDocument | null }): void => {
+    selectedAssent.value = event.value;
+    if (event.value) {
+        result.assent = [event.value];
+        emitSelection();
+    } else {
+        result.assent = [];
+        emitSelection();
     }
-  });
-  return { consent, assent };
-});
+};
 
-async function seeConsent(consent) {
-  let consentDoc;
-  if (consent?.type === 'Assent-es') {
-    consentDoc = await authStore.getLegalDoc('assent-es');
+const seeConsent = (consentDoc: ConsentDocument | null | undefined): void => {
+  if (consentDoc) {
+      currentConsentText.value = consentDoc.text || 'No text available.';
+      currentConsentType.value = consentDoc.type;
   } else {
-    consentDoc = await authStore.getLegalDoc(consent?.type.toLowerCase());
+      currentConsentText.value = 'Document not available.';
+      currentConsentType.value = 'Error';
+  }
+};
+
+const onDialogConfirm = (): void => {
+  currentConsentText.value = null;
+  currentConsentType.value = null;
+};
+
+const getAllLegalDocs = (docs: ConsentDocument[] | undefined): void => {
+  if (!docs) return;
+  consents.value = docs;
+  listOfDocs.consent = _filter(docs, { type: 'consent' });
+  listOfDocs.assent = _filter(docs, { type: 'assent' });
+
+  const initialConsentId = props.legal?.consent?.[0]?.id;
+  const initialAssentId = props.legal?.assent?.[0]?.id;
+
+  if (initialConsentId) {
+      selectedConsent.value = listOfDocs.consent.find(doc => doc.id === initialConsentId) ?? null;
+      if (selectedConsent.value) result.consent = [selectedConsent.value];
+  }
+  if (initialAssentId) {
+      selectedAssent.value = listOfDocs.assent.find(doc => doc.id === initialAssentId) ?? null;
+      if (selectedAssent.value) result.assent = [selectedAssent.value];
   }
 
-  consentVersion.value = consentDoc.version;
-  confirmText.value = marked(consentDoc.text);
-  showConsent.value = true;
-}
-
-function updateConsent() {
-  result.consent[0] = selectedConsent.value;
-  if (selectedAssent.value && selectedConsent.value) {
-    emit('consent-selected', result);
+  if (selectedConsent.value || selectedAssent.value) {
+      decision.value = 'know';
+      knowWhatIWant.value = true;
+      userDrivenFlow.value = false;
+  } else if (props.legal === null) {
+       noConsent.value = true;
+  } else {
+      decision.value = null;
+      knowWhatIWant.value = false;
+      userDrivenFlow.value = false;
   }
-}
+};
 
-function updateAssent() {
-  result.assent[0] = selectedAssent.value;
-  if (selectedAssent.value && selectedConsent.value) {
-    emit('consent-selected', result);
+const consentByData = (): void => {
+  const platform = isLevante ? 'levante' : 'roar';
+  const requiredTags: string[] = [];
+
+  if (_includes(paramCheckboxData.value, 'hasDefault')) requiredTags.push('default');
+  else {
+      specialParam.value = [];
+      result.consent = [];
+      result.assent = [];
+      emitSelection();
+      return;
   }
-}
 
-function getDefaults() {
-  if (consents.value !== undefined) {
-    _forEach(consents.value, (consent) => {
-      if (consent.type.toLowerCase().includes('consent') && !consent.type.toLowerCase().includes('es')) {
-        processConsentAssentDefault(consent, result.consent);
-      } else if (consent.type.toLowerCase().includes('assent') && !consent.type.toLowerCase().includes('es')) {
-        processConsentAssentDefault(consent, result.assent);
-      }
-    });
-    emit('consent-selected', result);
-    return result;
-  }
-}
+  if (_includes(specialParam.value, 'hasVideo')) requiredTags.push('video');
+  if (_includes(specialParam.value, 'hasAudio')) requiredTags.push('audio');
+  if (_includes(specialParam.value, 'hasEyeTracking')) requiredTags.push('eye-tracking');
 
-function processConsentAssentDefault(consent, targetArray) {
-  if (consent.params) {
-    const params = consent.params;
-    let hasSpecialParams = false;
-    _forEach(params, (param) => {
-      const paramName = param;
-      if (specialParams.some((param) => param.name === paramName)) {
-        hasSpecialParams = true;
-        return false;
-      }
-    });
-
-    if (!hasSpecialParams) {
-      _forEach(params, (param) => {
-        const paramName = param;
-        if (defaultParams.some((param) => param.name === paramName) || paramName === 'default') {
-          targetArray.push(consent);
-          return false;
-        }
+  const filterDocs = (docType: 'consent' | 'assent'): ConsentDocument[] => {
+      return _filter(listOfDocs[docType], (doc) => {
+          const docTags = doc.tags || [];
+          const hasAllTags = requiredTags.every(tag => docTags.includes(tag));
+          const platformMatch = doc.project === platform || doc.project === 'default' || !doc.project;
+          const tagCountMatch = requiredTags.length > 0 ? docTags.length === requiredTags.length : true;
+          return platformMatch && hasAllTags && tagCountMatch;
       });
-    }
+  };
+
+  const filteredConsents = filterDocs('consent');
+  let filteredAssents: ConsentDocument[] = [];
+  if (!isLevante) {
+      filteredAssents = filterDocs('assent');
   }
-}
 
-function getConsentAssent() {
-  let foundConsent = false;
-  let foundAssent = false;
-  if (consents.value !== undefined) {
-    _forEach(consents.value, (consent) => {
-      if (
-        consent.type.toLowerCase().includes('consent') &&
-        !foundConsent &&
-        !consent.type.toLowerCase().includes('es')
-      ) {
-        foundConsent = processConsentAssent(consent, result.consent);
-      } else if (
-        consent.type.toLowerCase().includes('assent') &&
-        !foundAssent &&
-        !consent.type.toLowerCase().includes('es')
-      ) {
-        foundAssent = processConsentAssent(consent, result.assent);
-      }
-    });
-    emit('consent-selected', result);
-    return result;
-  }
-}
+  result.consent = filteredConsents.length > 0 ? [filteredConsents[0]] : [];
+  result.assent = filteredAssents.length > 0 ? [filteredAssents[0]] : [];
 
-function processConsentAssent(consent, targetArray) {
-  const params = consent.params;
+  emitSelection();
+};
 
-  _forEach(params, (param) => {
-    const paramName = param;
-    if (
-      specialParam.value?.every((item) => item !== 'hasAudio') &&
-      specialParam.value?.every((item) => item !== 'hasVideo') &&
-      paramName === 'eye-tracking' &&
-      params.length === 1
-    ) {
-      targetArray[0] = consent;
-      return true;
-    } else if (
-      specialParam.value?.every((item) => item !== 'hasEyeTracking') &&
-      (paramName === 'video recording' || paramName === 'audio recording')
-    ) {
-      targetArray[0] = consent;
-      return true;
-    } else if (params.length === 3) {
-      const requiredElements = ['hasVideo', 'hasAudio', 'hasEyeTracking'];
-      const matchingElements = specialParam.value?.filter((item) => requiredElements.includes(item)) || [];
-      if (matchingElements.length >= 2) {
-        targetArray[0] = consent;
-        return true;
-      }
-    }
-  });
-}
-
-// Declare a computed property to watch the legal prop
-const computedLegalProps = computed(() => {
-  return props.legal ?? {};
-});
-
-// Watch the computed property and set the noConsent value accordingly
-watch(computedLegalProps, (newValue) => {
-  if (newValue.consent === 'No Consent') {
-    noConsent.value = true;
-  } else {
-    noConsent.value = false;
-  }
-});
-
-watch(amount, (newValue) => {
-  result.amount = newValue;
-  emit('consent-selected', result);
-});
-
-watch(expectedTime, (newValue) => {
-  result.expectedTime = newValue;
-  emit('consent-selected', result);
-});
-
-watch(noConsent, () => {
+const emitSelection = (): void => {
   if (noConsent.value) {
-    emit('consent-selected', 'No Consent');
+      emit('consents-changed', null);
+      return;
+  }
+
+  const hasConsent = result.consent && result.consent.length > 0;
+  const hasAssent = result.assent && result.assent.length > 0;
+
+  if (hasConsent && (isLevante || hasAssent)) {
+      emit('consents-changed', { consent: result.consent, assent: result.assent });
+  } else if (hasConsent && !isLevante && !hasAssent) {
+      emit('consents-changed', null);
+  } else if (!hasConsent) {
+       emit('consents-changed', null);
   } else {
-    emit('consent-selected', '');
-    noConsent.value = false;
+       emit('consents-changed', null);
+  }
+};
+
+const handleNoConsentChange = (): void => {
+    if (noConsent.value) {
+        decision.value = null;
+        userDrivenFlow.value = false;
+        knowWhatIWant.value = false;
+        selectedConsent.value = null;
+        selectedAssent.value = null;
+        paramCheckboxData.value = [];
+        specialParam.value = [];
+        result.consent = [];
+        result.assent = [];
+    }
+    emitSelection();
+};
+
+const formatDate = (date: any): string => {
+    if (!date) return 'N/A';
+    try {
+        const d = date.toDate ? date.toDate() : new Date(date);
+        if (isNaN(d.getTime())) return 'Invalid Date';
+        return d.toLocaleDateString();
+    } catch (e) {
+        return 'Invalid Date';
+    }
+};
+
+watch(legalDocuments, (newDocs) => {
+  if (newDocs) {
+      getAllLegalDocs(newDocs);
   }
 });
+
+watch(() => props.legal, (newLegal) => {
+    getAllLegalDocs(legalDocuments.value);
+}, { deep: true });
+
+onMounted(() => {
+  if (legalDocuments.value) {
+      getAllLegalDocs(legalDocuments.value);
+  }
+});
+
 </script>
 
 <style scoped>
@@ -613,11 +528,11 @@ watch(noConsent, () => {
 }
 .p-radiobutton.p-component.p-radiobutton-checked {
   position: relative;
-  width: 20px; /* adjust as needed */
-  height: 20px; /* adjust as needed */
+  width: 20px;
+  height: 20px;
   background-color: var(--primary-color);
   border-color: var(--primary-color) !important;
-  border-radius: 50%; /* make the element itself circular */
+  border-radius: 50%;
 }
 
 .p-radiobutton.p-component.p-radiobutton-checked::before {
@@ -625,10 +540,10 @@ watch(noConsent, () => {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 5px; /* adjust size of the inner circle as needed */
-  height: 5px; /* adjust size of the inner circle as needed */
-  background-color: white; /* color of the inner circle */
-  border-radius: 50%; /* make the inner element circular */
-  transform: translate(-50%, -50%); /* center the inner circle */
+  width: 5px;
+  height: 5px;
+  background-color: white;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
 }
 </style>
