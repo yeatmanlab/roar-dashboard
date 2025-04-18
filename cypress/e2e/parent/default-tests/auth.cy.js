@@ -36,7 +36,7 @@ describe('Parent: Auth', () => {
   });
 
   it('Validates invitation codes during sign-up', () => {
-    const ORG_CODE = Cypress.env('testPartnerDistrictCode');
+    const ORG_CODE = Cypress.env('ACTIVATION_CODE');
     const ORG_NAME = Cypress.env('testPartnerDistrictName');
 
     cy.visit(`${APP_ROUTES.REGISTER}/?code=${ORG_CODE}`);
