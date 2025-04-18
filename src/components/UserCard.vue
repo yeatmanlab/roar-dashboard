@@ -14,7 +14,7 @@
       </div>
     </div>
     <!-- User Header -->
-    <div class="flex flex-wrap items-center justify-center">
+    <div class="flex flex-wrap items-center justify-between">
       <div class="flex flex-column bg-gray-200 p-3 gap-2">
         <div class="font-bold bg-gray-200 text-lg">
           {{ userName }}
@@ -31,18 +31,16 @@
           </div>
         </div>
       </div>
-      <div class="flex items-center justify-center">
-        <div class="flex m-2 items-center justify-center">
-          <router-link
-            :to="{
-              name: 'LaunchParticipant',
-              params: { launchId: roarUid },
-            }"
-            class="no-underline text-black"
-          >
-            <PvButton :label="'Play Games'" data-cy="play-assessments-btn" />
-          </router-link>
-        </div>
+      <div class="flex align-items-end p-2">
+        <router-link
+          :to="{
+            name: 'LaunchParticipant',
+            params: { launchId: roarUid },
+          }"
+          class="no-underline text-black"
+        >
+          <PvButton :label="'Play Games'" data-cy="play-assessments-btn" />
+        </router-link>
       </div>
     </div>
     <!-- Task specific Data -->
@@ -65,7 +63,7 @@
           </div>
         </div>
       </div>
-      <div class="flex flex-wrap justify-between mt-2">
+      <div class="flex flex-wrap justify-content-end mt-2">
         <router-link
           :to="{
             name: 'StudentReport',
