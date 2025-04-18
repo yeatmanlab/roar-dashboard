@@ -208,7 +208,7 @@ const routes = [
     path: APP_ROUTES.LAUNCH,
     component: () => import('../pages/HomeParticipant.vue'),
     props: (route) => ({
-      launchId: route.params.launchId
+      launchId: route.params.launchId,
     }),
     name: 'LaunchParticipant',
     meta: {
