@@ -476,7 +476,7 @@ const routes = [
   },
   {
     path: APP_ROUTES.REGISTER,
-    name: 'Register',
+    name: 'RegisterHome',
     component: () => import('../pages/RegisterFamilyUsers.vue'),
     props: (route) => ({ code: route.query.code }),
     children: [
