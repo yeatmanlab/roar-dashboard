@@ -9,24 +9,23 @@
       <h3>How to Add Users</h3>
       <ol class="numbered-steps">
         <li><span class="step-number">1</span>Download the template below or create your own CSV with the required columns</li>
-        <li><span class="step-number">2</span>Fill in CSV with the user data</li>
-        <li><span class="step-number">3</span>Upload the file and click "Start Adding"</li>
-        <li><span class="step-number">4</span>Once finished, a file called "registered_users.csv" will be downloaded. If it is not in your downloads folder, click the "Download Users" button.</li>
-        <li><span class="step-number">5</span>Click "Continue to Link Users"</li>
+        <li><span class="step-number">2</span>Fill in the CSV with the user data</li>
+        <li><span class="step-number">3</span>Upload the CSV file and click "Start Adding"</li>
+        <li><span class="step-number">4</span>When finished, a file called "registered_users.csv" will be downloaded. If it is not in your downloads folder, click the "Download Users" button.</li>
+        <li><span class="step-number">5</span>Click "Continue to Link Users" and get their login information.</li>
       </ol>
     </div>
 
-    These fields are <b>REQUIRED</b> for adding users:
+    These fields (columns) are <b>REQUIRED</b> for adding users:
 
     <ul>
-      <!-- <li><b>id</b> - The unique identifier for the user. Start from 1.</li> -->
       <li><b>userType</b> - The type of user. Must be one of the following: child, parent, or teacher.</li>
-      <li><b>month</b><span class="required">*</span> - The month the child was born. Leave blank for parent or teacher users. (Ex. 1 for January)</li>
-      <li><b>year</b><span class="required">*</span> - The year the child was born. Leave blank for parent or teacher users. (Ex. 2020)</li>
-      <li><b>group OR Site AND school</b> - The name of the group or site and school.</li>
+      <li><b>month</b><span class="required">*</span> - The month the child was born. (numeric birth month, e.g. 5 for May)</li>
+      <li><b>year</b><span class="required">*</span> - The year the child was born. (four-digit birth year, e.g. 2017)</li>
+      <li><b>group</b> OR <b>site</b> AND <b>school</b> - You must specify either a group name OR both a site name and school name for each user.</li>
     </ul>
 
-    These fields are optional:
+    These fields (columns) are optional:
 
     <ul class="optional-fields">
       <li><b>Class</b> - The name of the class.</li>
@@ -34,7 +33,7 @@
 
     <p>Parents and Teachers need to have the same Audiences as their children / students.</p>
 
-    <p class="mb-6"><span class="required">*</span> = Required only for child users</p>
+    <p class="mb-6"><span class="required">*</span> = Required only for child users. Leave blank for parent or teacher users.</p>
 
     <div class="download-button-container">
       <button class="download-csv-btn" @click="downloadTemplate" data-testid="download-template">

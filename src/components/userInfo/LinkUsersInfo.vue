@@ -2,13 +2,13 @@
     <PvPanel header="Link Users" class="link-users-panel">
       <div class="info-message-container">
         <i class="pi pi-exclamation-circle"></i>
-        <p>Make sure you are editing the downloaded file from adding users. This new file contains all of your information and LEVANTE UIDs.</p>
+        <p>Make sure you are editing the downloaded file you got after adding users. This new file contains all of your information and LEVANTE UIDs.</p>
       </div>
 
       <div class="how-to-section">
         <h3>How to Link Users</h3>
         <ol class="numbered-steps">
-          <li><span class="step-number">1</span>Fill in CSV with the user linking data</li>
+          <li><span class="step-number">1</span>Fill in CSV with the user linking data from below. Users need to be linked so we can keep track of their relationships, like assigning the proper specific survey sections to parent and teacher users.</li>
           <li><span class="step-number">2</span>Upload the file and click "Start Linking"</li>
         </ol>
       </div>
@@ -16,10 +16,10 @@
       These fields are <b>REQUIRED</b> to link users:
   
       <ul>
-        <li><b>id</b> - A unique identifier for the user in your CSV. Start from 1.</li>
+        <li><b>id</b> - A unique identifier for the user in your CSV file. Start from 1.</li>
         <li><b>userType</b> - The type of user. Must be one of the following: child, parent, teacher.</li>
-        <li><b>parentId</b><span class="required">*</span> - The unique identifier for the parent. Start from 1.</li>
-        <li><b>teacherId</b><span class="required">*</span> - The unique identifier for the teacher. Start from 1.</li>
+        <li><b>parentId</b><span class="required">*</span> - The unique identifier for the child's parent </li>
+        <li><b>teacherId</b><span class="required">*</span> - The unique identifier for the child's teacher.</li>
         <li><b>uid</b> - The unique identifier that is returned when the user was added.</li>
       </ul>
   
@@ -32,7 +32,7 @@
   
       <img
         id="example-image"
-        src="https://storage.googleapis.com/road-dashboard/link-users-example.png"
+        :src="LEVANTE_BUCKET_URL + '/link_users_example.png'"
         alt="CSV upload example"
         style="width: 100%; max-width: 1400px; height: auto;"
       />
@@ -41,6 +41,7 @@
 
 <script setup>
   import PvPanel from 'primevue/panel';
+  import { LEVANTE_BUCKET_URL } from '@/constants/bucket';
 </script>
 
 <style scoped>

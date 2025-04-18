@@ -329,16 +329,15 @@ const submitUsers = async () => {
       
       return normalizedUser;
     });
-    
-    console.log('Normalized users:', normalizedUsers);
-    const result = await authStore.roarfirekit.linkUsers(normalizedUsers);
-    console.log('user link result:', result);
+
+    await authStore.roarfirekit.linkUsers(normalizedUsers);
+    isFileUploaded.value = false;
     
     toast.add({
       severity: 'success',
       summary: 'Success',
       detail: 'Users linked successfully',
-      life: 5000,
+      life: 7000,
     });
   } catch (error) {
     console.error(error);
