@@ -79,6 +79,7 @@
     "@pinia/testing": "^0.1.5",
     "@testing-library/vue": "^8.1.0",
     "@types/lodash": "^4.14.196",
+    "@types/papaparse": "^5.3.15",
     "@unhead/addons": "^1.9.16",
     "@vitejs/plugin-vue": "^5.1.2",
     "@vitest/coverage-istanbul": "^2.0.5",

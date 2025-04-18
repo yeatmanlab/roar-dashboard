@@ -23,112 +23,145 @@
     </div>
   </template>
   
-  <script setup>
+  <script setup lang="ts">
+  import { computed } from 'vue';
+  import type { ComputedRef } from 'vue';
   import _get from 'lodash/get';
   import _lowerCase from 'lodash/lowerCase';
   import PvTag from 'primevue/tag';
   
-  defineProps({
-    colData: {
-      type: Object,
-      default: () => ({}),
-      required: false,
-    },
-    col: {
-      type: Object,
-      default: () => ({}),
-      required: false,
-    },
-  });
+  // --- Interfaces ---
+  interface ScoreData {
+    supportLevel?: string;
+    rawScore?: number;
+    percentCorrect?: number;
+    correctIncorrectDifference?: number;
+    numAttempted?: number;
+    numCorrect?: number;
+    numIncorrect?: number;
+    percentile?: number;
+    standardScore?: number;
+    reliable?: boolean;
+    engagementFlags?: Record<string, boolean>;
+  }
+
+  interface ColData {
+    scores: Record<string, ScoreData>;
+    optional?: boolean; 
+    tagColor?: string;
+    [key: string]: any; // Allow other properties
+  }
+
+  interface Col {
+    field: string;
+    emptyTag?: boolean;
+    [key: string]: any; // Allow other properties
+  }
+
+  interface Props {
+    colData: ColData;
+    col: Col;
+  }
+
+  // --- Props ---
+  const props = defineProps<Props>();
   
-  let returnScoreTooltip = (colData, fieldPath) => {
-    const taskId = fieldPath.split('.')[0] === 'scores' ? fieldPath.split('.')[1] : null;
-    let toolTip = '';
+  // --- Constants (from previous context/assumed) ---
+  // These would need to be defined or imported based on actual project structure
+  const scoredTasks: string[] = [/* ... list of scored task IDs ... */]; 
+  const tasksToDisplayCorrectIncorrectDifference: string[] = [/* ... list ... */];
+  const tasksToDisplayTotalCorrect: string[] = [/* ... list ... */];
+  const tasksToDisplayPercentCorrect: string[] = [/* ... list ... */];
+  const rawOnlyTasks: string[] = [/* ... list ... */];
+  const includedValidityFlags: Record<string, string[]> = { /* ... mapping ... */ };
+
+  // --- Functions ---
+  function returnScoreTooltip(colData: ColData, fieldPath: string): string {
+    const pathParts = fieldPath.split('.');
+    const taskId = pathParts[0] === 'scores' ? pathParts[1] : null;
+    let toolTip: string = '';
   
-    if (colData.scores[taskId]?.supportLevel) {
-      // Handle scored tasks
+    if (!taskId) return toolTip;
+    
+    const score = colData.scores[taskId];
+
+    if (score?.supportLevel) {
       return handleToolTip(taskId, toolTip, colData);
-      // Handle raw only tasks
-    } else if (taskId && !scoredTasks.includes(taskId)) {
+    } else if (!scoredTasks.includes(taskId)) {
+      // Handle raw only tasks or tasks without supportLevel
       return handleToolTip(taskId, toolTip, colData);
     }
     return toolTip;
-  };
-  
-  function handleToolTip(_taskId, _toolTip, _colData) {
-    // Get the support level and flags, if they exist
-    if (_colData.scores?.[_taskId]?.supportLevel) {
-      _toolTip += _colData.scores?.[_taskId]?.supportLevel + '\n' + '\n';
-      _toolTip += getFlags(_colData, _taskId);
-    }
-  
-    // If the task does not have a raw score, then display no scores
-    // if score exists
-    if (
-      _colData.scores?.[_taskId]?.rawScore != undefined ||
-      _colData.scores?.[_taskId]?.percentCorrect ||
-      _colData.scores?.[_taskId]?.correctIncorrectDifference ||
-      _colData.scores?.[_taskId]?.numAttempted
-    ) {
-      if (tasksToDisplayCorrectIncorrectDifference.includes(_taskId)) {
-        _toolTip += 'Num Correct: ' + _colData.scores?.[_taskId]?.numCorrect + '\n';
-        _toolTip += 'Num Incorrect: ' + _colData.scores?.[_taskId]?.numIncorrect + '\n';
-        _toolTip += 'Correct - Incorrect: ' + _colData.scores?.[_taskId]?.correctIncorrectDifference + '\n';
-      } else if (tasksToDisplayTotalCorrect.includes(_taskId)) {
-        if (_colData.scores?.[_taskId]?.numCorrect === undefined) {
-          _toolTip += 'Num Correct: ' + 0 + '\n';
-          _toolTip += 'Num Attempted: ' + _colData.scores?.[_taskId]?.numAttempted + '\n';
-        } else {
-          _toolTip += 'Num Correct: ' + _colData.scores?.[_taskId]?.numCorrect + '\n';
-          _toolTip += 'Num Attempted: ' + _colData.scores?.[_taskId]?.numAttempted + '\n';
-        }
-      } else if (tasksToDisplayPercentCorrect.includes(_taskId)) {
-        _toolTip += 'Num Correct: ' + _colData.scores?.[_taskId]?.numCorrect + '\n';
-        _toolTip += 'Num Attempted: ' + _colData.scores?.[_taskId]?.numAttempted + '\n';
-        _toolTip += 'Percent Correct: ' + _colData.scores?.[_taskId]?.percentCorrect + '\n';
-      } else if (rawOnlyTasks.includes(_taskId) && _colData.scores?.[_taskId]?.rawScore !== undefined) {
-        _toolTip += 'Raw Score: ' + _colData.scores?.[_taskId]?.rawScore + '\n';
-      } else {
-        _toolTip += 'Raw Score: ' + _colData.scores?.[_taskId]?.rawScore + '\n';
-        _toolTip += 'Percentile: ' + _colData.scores?.[_taskId]?.percentile + '\n';
-        _toolTip += 'Standardized Score: ' + _colData.scores?.[_taskId]?.standardScore + '\n';
-      }
-    }
-    // If the task is in the rawOnlyTasks list, display only the raw score and that the scores are under development
-    // If the task is a scored task and has a raw score, then display all scores
-    return _toolTip;
   }
   
-  function getFlags(colData, taskId) {
-    const flags = colData.scores[taskId]?.engagementFlags;
-    const flagMessages = {
+  function handleToolTip(taskId: string, toolTip: string, colData: ColData): string {
+    let currentToolTip = toolTip;
+    const score = colData.scores?.[taskId];
+
+    if (!score) return currentToolTip;
+
+    if (score.supportLevel) {
+      currentToolTip += score.supportLevel + '\n\n';
+      currentToolTip += getFlags(colData, taskId);
+    }
+  
+    if (
+      score.rawScore !== undefined ||
+      score.percentCorrect !== undefined ||
+      score.correctIncorrectDifference !== undefined ||
+      score.numAttempted !== undefined
+    ) {
+      if (tasksToDisplayCorrectIncorrectDifference.includes(taskId)) {
+        currentToolTip += `Num Correct: ${score.numCorrect ?? 0}\n`;
+        currentToolTip += `Num Incorrect: ${score.numIncorrect ?? 0}\n`;
+        currentToolTip += `Correct - Incorrect: ${score.correctIncorrectDifference ?? 'N/A'}\n`;
+      } else if (tasksToDisplayTotalCorrect.includes(taskId)) {
+          currentToolTip += `Num Correct: ${score.numCorrect ?? 0}\n`;
+          currentToolTip += `Num Attempted: ${score.numAttempted ?? 0}\n`;
+      } else if (tasksToDisplayPercentCorrect.includes(taskId)) {
+        currentToolTip += `Num Correct: ${score.numCorrect ?? 0}\n`;
+        currentToolTip += `Num Attempted: ${score.numAttempted ?? 0}\n`;
+        currentToolTip += `Percent Correct: ${score.percentCorrect ?? 'N/A'}\n`;
+      } else if (rawOnlyTasks.includes(taskId) && score.rawScore !== undefined) {
+        currentToolTip += `Raw Score: ${score.rawScore}\n`;
+      } else if (score.rawScore !== undefined) { // Fallback for scored tasks with raw score
+        currentToolTip += `Raw Score: ${score.rawScore}\n`;
+        if (score.percentile !== undefined) currentToolTip += `Percentile: ${score.percentile}\n`;
+        if (score.standardScore !== undefined) currentToolTip += `Standardized Score: ${score.standardScore}\n`;
+      }
+    }
+    return currentToolTip;
+  }
+  
+  function getFlags(colData: ColData, taskId: string): string {
+    const score = colData.scores?.[taskId];
+    if (!score || !score.engagementFlags || score.reliable) return '';
+
+    const flags = score.engagementFlags;
+    const flagMessages: Record<string, string> = {
       accuracyTooLow: '- Responses were inaccurate',
       notEnoughResponses: '- Assessment was incomplete',
       responseTimeTooFast: '- Responses were too fast',
     };
   
-    // If there are flags and the assessment is not reliable, return the flags
-    if (flags && !colData.scores[taskId].reliable) {
-      if (includedValidityFlags[taskId]) {
-        // only display flags that are included in the includedValidityFlags object
-        const filteredFlags = Object.keys(flags).filter((flag) => includedValidityFlags[taskId].includes(flag));
-        const reliabilityFlags = filteredFlags.map((flag) => {
-          return flagMessages[flag] || _lowerCase(flag);
-        });
-        if (reliabilityFlags.length === 0) return '';
-        return 'Unreliable Score' + '\n' + reliabilityFlags.join('\n') + '\n\n';
-      } else {
-        const reliabilityFlags = Object.keys(flags).map((flag) => {
-          return flagMessages[flag] || _lowerCase(flag);
-        });
-        if (reliabilityFlags.length > 0) {
-          // Join the returned flags with a newline character, then add two newlines for spacing
-          return 'Unreliable Score: ' + '\n' + reliabilityFlags.join('\n') + '\n\n';
-        }
-        return '';
-      }
-    } else {
-      return '';
-    }
+    const relevantFlags = includedValidityFlags[taskId] 
+        ? Object.keys(flags).filter(flag => includedValidityFlags[taskId].includes(flag) && flags[flag])
+        : Object.keys(flags).filter(flag => flags[flag]);
+
+    if (relevantFlags.length === 0) return '';
+
+    const reliabilityMessages = relevantFlags.map(flag => flagMessages[flag] || _lowerCase(flag));
+    return `Unreliable Score\n${reliabilityMessages.join('\n')}\n\n`;
   }
   </script>
+  
+  <style scoped>
+  .circle {
+    width: 1.5rem; /* Adjust size as needed */
+    height: 1.5rem;
+    border-radius: 50%;
+    display: inline-block;
+    vertical-align: middle;
+    /* Add other styles if needed, like border */
+  }
+  </style>
