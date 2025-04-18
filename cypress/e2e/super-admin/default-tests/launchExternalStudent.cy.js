@@ -4,7 +4,7 @@ const testPartnerAdministrationName = Cypress.env('testPartnerAdministrationName
 const testPartnerAdministrationId = Cypress.env('testPartnerAdministrationId');
 const testUserList = Cypress.env('testUserList');
 
-describe('Partner Admin: Launching Students', () => {
+describe('Super Admin: Launching Students', () => {
   it('Selects an administration and launches a student in their assessment portal', () => {
     // Login as a partner admin.
     cy.login(Cypress.env('SUPER_ADMIN_USERNAME'), Cypress.env('SUPER_ADMIN_PASSWORD'));
