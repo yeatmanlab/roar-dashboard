@@ -53,7 +53,7 @@ import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import { APP_ROUTES } from '@/constants/routes';
 import Badge from 'primevue/badge';
 import UserActions from './UserActions.vue';
-import useUserType from '@/composables/useUserType';
+import useUserType from '@/composables/useUserType.ts';
 
 
 const router = useRouter();

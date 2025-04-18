@@ -1,14 +1,33 @@
-import { ref, onUnmounted } from 'vue';
+import { ref, onUnmounted, type Ref } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router';
 import { useQueryClient } from '@tanstack/vue-query';
 import { StatusCodes } from 'http-status-codes';
+// @ts-ignore - Store file is JS
 import { useAuthStore } from '@/store/auth.js';
+// @ts-ignore - Query composable file is JS
 import useUserDataQuery from '@/composables/queries/useUserDataQuery';
 import { AUTH_USER_TYPE } from '@/constants/auth';
 import { APP_ROUTES } from '@/constants/routes';
 
 const POLLING_INTERVAL = 600;
+
+// Define expected structure for userData.value
+interface UserData {
+  userType: string | undefined | null;
+  // Add other properties if known
+}
+
+// Define structure for errors caught, assuming a status property
+interface ApiError extends Error {
+  status?: number;
+}
+
+// Define return type for the composable
+interface UseSSOAccountReadinessVerificationReturn {
+  retryCount: Ref<number>;
+  startPolling: () => void;
+}
 
 /**
  * Verify account readiness after SSO authentication.
@@ -22,9 +41,9 @@ const POLLING_INTERVAL = 600;
  * @TODO: Consider refactoring this function to leverage an alternative mechanism such as realtime updates from
  * Firestore instead of the current polling logic.
  */
-const useSSOAccountReadinessVerification = () => {
-  const retryCount = ref(1);
-  let userDataCheckInterval = null;
+const useSSOAccountReadinessVerification = (): UseSSOAccountReadinessVerificationReturn => {
+  const retryCount: Ref<number> = ref(1);
+  let userDataCheckInterval: NodeJS.Timeout | null = null;
 
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -32,7 +51,11 @@ const useSSOAccountReadinessVerification = () => {
   const authStore = useAuthStore();
   const { roarUid } = storeToRefs(authStore);
 
-  const { data: userData, refetch: refetchUserData, isFetchedAfterMount } = useUserDataQuery();
+  const { data: userData, refetch: refetchUserData, isFetchedAfterMount }: {
+    data: Ref<UserData | null | undefined>;
+    refetch: () => Promise<any>;
+    isFetchedAfterMount: Ref<boolean>;
+  } = useUserDataQuery();
 
   /**
    * Verify account readiness after SSO authentication.
@@ -43,7 +66,7 @@ const useSSOAccountReadinessVerification = () => {
    * @returns {Promise<void>}
    * @throws {Error} Throws any but ERR_BAD_REQUEST errors.
    */
-  const verifyAccountReadiness = async () => {
+  const verifyAccountReadiness = async (): Promise<void> => {
     try {
       // Skip the first fetch after mount as data is fetched on mount in the useUserDataQuery composable.
       if (isFetchedAfterMount.value) {
@@ -69,19 +92,22 @@ const useSSOAccountReadinessVerification = () => {
       console.log(`[SSO] User ${roarUid.value} successfully identified as ${userType} user. Routing to home page...`);
 
       // Stop the polling mechanism.
-      clearInterval(userDataCheckInterval);
+      if (userDataCheckInterval) clearInterval(userDataCheckInterval);
 
       // Invalidate all queries to ensure data is fetched freshly after the user document is ready.
       // @TODO: Check if this is actually necessary and if so, if we should only invalidate specific queries.
-      queryClient.invalidateQueries();
+      await queryClient.invalidateQueries();
 
       // Redirect to the home page.
-      router.push({ path: APP_ROUTES.HOME });
-    } catch (error) {
+      await router.push({ path: APP_ROUTES.HOME });
+    } catch (error: unknown) {
+      // Type cast error to check status property
+      const apiError = error as ApiError;
       // If the error is a 401, we assume the backend is still processing the user document setup and we should retry.
-      if (error.status == StatusCodes.UNAUTHORIZED) return;
+      if (apiError.status === StatusCodes.UNAUTHORIZED) return;
 
       // Otherwise throw the error as it's unexpected.
+      console.error("[SSO] Unexpected error during account readiness check:", error);
       throw error;
     }
   };
@@ -91,7 +117,8 @@ const useSSOAccountReadinessVerification = () => {
    *
    * @returns {void}
    */
-  const startPolling = () => {
+  const startPolling = (): void => {
+    if (userDataCheckInterval) clearInterval(userDataCheckInterval);
     userDataCheckInterval = setInterval(verifyAccountReadiness, POLLING_INTERVAL);
   };
 
@@ -100,8 +127,8 @@ const useSSOAccountReadinessVerification = () => {
    *
    * @returns {void}
    */
-  const stopPolling = () => {
-    clearInterval(userDataCheckInterval);
+  const stopPolling = (): void => {
+    if (userDataCheckInterval) clearInterval(userDataCheckInterval);
   };
 
   onUnmounted(() => {
