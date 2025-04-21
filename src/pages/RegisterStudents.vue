@@ -252,7 +252,6 @@
               icon-pos="right"
               @click="
                 activateCallback('7');
-                showSubmitTable = true;
                 preTransformStudents();
               "
             />
@@ -345,13 +344,13 @@
             </div>
             <SubmitTable
               v-if="showSubmitTable"
-              :students="rawStudentFile"
+              :students="mappedStudents"
               :mappings="mappedColumns"
               :usingOrgPicker="usingOrgPicker"
               @validation-update="handleValidationUpdate"
             >
               <Button label="Add User" icon="pi pi-plus" severity="secondary" @click="addUser" />
-              <Button label="Download" icon="pi pi-download" severity="secondary" @click="download" />
+              <Button label="Download" icon="pi pi-download" severity="secondary" @click="exportTransformedStudents" />
             </SubmitTable>
           </div>
         </StepPanel>
@@ -389,6 +388,7 @@ import ScrollPanel from 'primevue/scrollpanel';
 import SelectButton from 'primevue/selectbutton';
 import MultiSelect from 'primevue/multiselect';
 import { usePermissions } from '../composables/usePermissions';
+import { exportCsv } from '@/helpers/query/utils';
 
 const rawStudentFile = ref([]);
 const tableColumns = ref([]);
@@ -526,15 +526,15 @@ const onFileUpload = async (event) => {
  * Add a new empty user to the table
  */
 const addUser = () => {
-  if (_isEmpty(rawStudentFile.value)) return;
+  if (_isEmpty(mappedStudents.value)) return;
 
   // Get the structure from the first user
-  const template = rawStudentFile.value[0];
+  const template = mappedStudents.value[0];
 
   // Create a new user with all the same keys but null values
   const newUser = Object.keys(template).reduce((acc, key) => {
     if (key === 'rowKey') {
-      acc[key] = rawStudentFile.value.length;
+      acc[key] = mappedStudents.value.length;
     } else {
       acc[key] = null;
     }
@@ -542,7 +542,7 @@ const addUser = () => {
   }, {});
 
   // Add the new user to the array
-  rawStudentFile.value.push(newUser);
+  mappedStudents.value.push(newUser);
 
   toast.add({
     severity: 'info',
@@ -550,6 +550,17 @@ const addUser = () => {
     detail: 'A new empty user has been added to the table.',
     life: 3000,
   });
+};
+
+const exportTransformedStudents = () => {
+  const exportData = mappedStudents.value;
+  // Filter out rowKey
+  const filteredData = exportData.map((row) => {
+    const { rowKey, ...rest } = row;
+    return rest;
+  });
+
+  exportCsv(filteredData, 'roar-students.csv');
 };
 
 /**
@@ -655,36 +666,80 @@ const nonEduOrgsSelected = computed(() => {
 /**
  * Submission handlers
  */
+const mappedStudents = ref([]);
+const preTransformStudents = () => {
+  const transformedStudents = [];
+  for (const rawStudent of rawStudentFile.value) {
+    const transformedStudent = {};
+    transformedStudent['rowKey'] = rawStudent['rowKey'];
+    // Handle required fields
+    Object.entries(mappedColumns.value.required).forEach(([key, csvField]) => {
+      if (csvField) {
+        _set(transformedStudent, key, rawStudent[csvField]);
+      }
+    });
+
+    // Handle name fields
+    Object.entries(mappedColumns.value.names).forEach(([key, csvField]) => {
+      if (csvField) _set(transformedStudent, key, rawStudent[csvField]);
+    });
+
+    // Handle demographic fields
+    Object.entries(mappedColumns.value.demographics).forEach(([key, csvField]) => {
+      if (csvField) _set(transformedStudent, key, rawStudent[csvField]);
+    });
+
+    // Handle optional fields
+    Object.entries(mappedColumns.value.optional).forEach(([key, csvField]) => {
+      if (csvField) {
+        _set(transformedStudent, key, rawStudent[csvField]);
+      }
+    });
+
+    if (!usingOrgPicker.value) {
+      // Handle organizations
+      Object.entries(mappedColumns.value.organizations).forEach(([key, csvField]) => {
+        if (csvField) {
+          _set(transformedStudent, key, rawStudent[csvField]);
+        }
+      });
+    }
+    transformedStudents.push(transformedStudent);
+  }
+  console.log('all transformed students', transformedStudents);
+  mappedStudents.value = transformedStudents;
+  showSubmitTable.value = true;
+};
 const transformStudentData = async (rawStudent) => {
   const transformedStudent = {};
 
   // Handle required fields
-  Object.entries(mappedColumns.value.required).forEach(([key, csvField]) => {
-    if (csvField) {
+  Object.keys(mappedColumns.value.required).forEach((key) => {
+    if (rawStudent[key]) {
       if (key === 'username') {
-        _set(transformedStudent, 'email', `${rawStudent[csvField]}@roar-auth.com`);
+        _set(transformedStudent, 'email', `${rawStudent[key]}@roar-auth.com`);
       } else if (['email', 'password'].includes(key)) {
-        _set(transformedStudent, key, rawStudent[csvField]);
+        _set(transformedStudent, key, rawStudent[key]);
       } else {
-        _set(transformedStudent, `userData.${key}`, rawStudent[csvField]);
+        _set(transformedStudent, `userData.${key}`, rawStudent[key]);
       }
     }
   });
 
   // Handle name fields
-  Object.entries(mappedColumns.value.names).forEach(([key, csvField]) => {
-    if (csvField) _set(transformedStudent, `userData.name.${key}`, rawStudent[csvField]);
+  Object.keys(mappedColumns.value.names).forEach((key) => {
+    if (rawStudent[key]) _set(transformedStudent, `userData.name.${key}`, rawStudent[key]);
   });
 
   // Handle demographic fields
-  Object.entries(mappedColumns.value.demographics).forEach(([key, csvField]) => {
-    if (csvField) _set(transformedStudent, `userData.${key}`, rawStudent[csvField]);
+  Object.keys(mappedColumns.value.demographics).forEach((key) => {
+    if (rawStudent[key]) _set(transformedStudent, `userData.${key}`, rawStudent[key]);
   });
 
   // Handle optional fields
-  Object.entries(mappedColumns.value.optional).forEach(([key, csvField]) => {
-    if (csvField) {
-      _set(transformedStudent, `userData.${key}`, rawStudent[csvField]);
+  Object.keys(mappedColumns.value.optional).forEach((key) => {
+    if (rawStudent[key]) {
+      _set(transformedStudent, `userData.${key}`, rawStudent[key]);
     }
   });
 
@@ -699,16 +754,16 @@ const transformStudentData = async (rawStudent) => {
     const orgFields = mappedColumns.value.organizations;
 
     // First check for non-educational orgs
-    if (orgFields.groups && rawStudent[orgFields.groups]) {
-      const groupName = rawStudent[orgFields.groups];
+    if (orgFields.groups && rawStudent['groups']) {
+      const groupName = rawStudent['groups'];
       const groupId = await getOrgId('groups', groupName);
       if (groupId) {
         _set(transformedStudent, 'userData.groups', { id: groupId });
       }
     } else {
       // Process district -> school -> class hierarchy
-      if (orgFields.districts && rawStudent[orgFields.districts]) {
-        const districtName = rawStudent[orgFields.districts];
+      if (orgFields.districts && rawStudent['districts']) {
+        const districtName = rawStudent['districts'];
         studentDistrictId = await getOrgId('districts', districtName);
         if (studentDistrictId) {
           _set(transformedStudent, 'userData.districts', { id: studentDistrictId });
@@ -718,8 +773,8 @@ const transformStudentData = async (rawStudent) => {
         }
       }
 
-      if (studentDistrictId && orgFields.schools && rawStudent[orgFields.schools]) {
-        const schoolName = rawStudent[orgFields.schools];
+      if (studentDistrictId && orgFields.schools && rawStudent['schools']) {
+        const schoolName = rawStudent['schools'];
         studentSchoolId = await getOrgId('schools', schoolName, studentDistrictId);
         if (studentSchoolId) {
           _set(transformedStudent, 'userData.schools', { id: studentSchoolId });
@@ -729,8 +784,8 @@ const transformStudentData = async (rawStudent) => {
         }
       }
 
-      if (studentSchoolId && orgFields.classes && rawStudent[orgFields.classes]) {
-        const className = rawStudent[orgFields.classes];
+      if (studentSchoolId && orgFields.classes && rawStudent['classes']) {
+        const className = rawStudent['classes'];
         const classId = await getOrgId('classes', className, studentDistrictId, studentSchoolId);
         if (classId) {
           _set(transformedStudent, 'userData.classes', { id: classId });
@@ -742,9 +797,9 @@ const transformStudentData = async (rawStudent) => {
     }
   } else {
     // Take input from the org picker
-    Object.entries(selectedOrgs.value).forEach(([key, orgs]) => {
-      if (orgs.length) {
-        _set(transformedStudent, `userData.${key}`, { id: orgs[0].id });
+    Object.keys(selectedOrgs.value).forEach((key) => {
+      if (selectedOrgs.value[key].length) {
+        _set(transformedStudent, `userData.${key}`, { id: selectedOrgs.value[key][0].id });
       }
     });
   }
@@ -757,33 +812,34 @@ const submit = async () => {
 
   // Transform each student's data according to the mappings
   const transformedStudents = [];
-  for (const student of rawStudentFile.value) {
+  for (const student of mappedStudents.value) {
     const transformedStudent = await transformStudentData(student);
     transformedStudents.push(transformedStudent);
   }
   submitting.value = SubmitStatus.SUBMITTING;
+  console.log(transformedStudents);
 
   // Chunk users into chunks of 50 for submission
-  const chunkedUsers = _chunk(transformedStudents, 50);
-  for (const chunk of chunkedUsers) {
-    await roarfirekit.value.createUpdateUsers(chunk).then((results) => {
-      for (const result of results.data) {
-        if (result?.status === 'rejected') {
-          const email = result.email;
-          toast.add({
-            severity: 'error',
-            summary: 'Error',
-            detail: `User ${email} failed to process: ${result.reason}`,
-            life: 5000,
-          });
-        } else if (result?.status === 'fulfilled') {
-          const email = result.email;
-          toast.add({ severity: 'success', summary: 'Success', detail: `User ${email} processed!`, life: 3000 });
-        }
-      }
-    });
-  }
-  submitting.value = SubmitStatus.COMPLETE;
+  // const chunkedUsers = _chunk(transformedStudents, 50);
+  // for (const chunk of chunkedUsers) {
+  //   await roarfirekit.value.createUpdateUsers(chunk).then((results) => {
+  //     for (const result of results.data) {
+  //       if (result?.status === 'rejected') {
+  //         const email = result.email;
+  //         toast.add({
+  //           severity: 'error',
+  //           summary: 'Error',
+  //           detail: `User ${email} failed to process: ${result.reason}`,
+  //           life: 5000,
+  //         });
+  //       } else if (result?.status === 'fulfilled') {
+  //         const email = result.email;
+  //         toast.add({ severity: 'success', summary: 'Success', detail: `User ${email} processed!`, life: 3000 });
+  //       }
+  //     }
+  //   });
+  // }
+  // submitting.value = SubmitStatus.COMPLETE;
 };
 
 /**

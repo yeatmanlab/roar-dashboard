@@ -56,7 +56,7 @@
               {{ col.header }}
               <i class="pi pi-pen-to-square" v-tooltip.top="'Click on a cell below to edit its value.'" />
             </div>
-            <span class="text-gray-500">{{ col.field }}</span>
+            <span class="text-gray-500">{{ findMappedColumn(col.field) }}</span>
           </div>
         </template>
         <template #body="{ data, field }">
@@ -101,6 +101,17 @@ const tableColumns = ref([]);
 const editingRows = ref([]);
 const validationResults = ref({});
 
+const headerOverrides = {
+  dob: 'Date of Birth',
+  first: 'First Name',
+  middle: 'Middle Name',
+  last: 'Last Name',
+  ellStatus: 'English Language Learner Status',
+  frlStatus: 'Free and Reduced Lunch Status',
+  iepStatus: 'IEP Status',
+  pid: 'PID',
+};
+
 /**
  * DataTable utilities
  */
@@ -121,17 +132,11 @@ function generateColumns(rawJson) {
   let columns = [];
   const columnValues = Object.keys(rawJson);
   _forEach(columnValues, (col) => {
-    console.log('column', col);
-    const mappedCol = findMappedColumnByField(col) ?? null;
-    console.log('mappedCol', mappedCol);
     let dataType = typeof rawJson[col];
-    if (dataType === 'object') {
-      if (rawJson[col] instanceof Date) dataType = 'date';
-    }
-    if (mappedCol) {
+    if (col !== 'rowKey') {
       columns.push({
         field: col,
-        header: _startCase(mappedCol),
+        header: headerOverrides[col] || _startCase(col),
         dataType: dataType,
       });
     }
@@ -139,18 +144,10 @@ function generateColumns(rawJson) {
   return columns;
 }
 
-/**
- * Given a column in the CSV, this function will return
- * the corresponding ROAR column name. If the column is not mapped, it will return null.
- * @param field The field to find
- * @returns {string|null} The mapped column name or null if not found
- */
-function findMappedColumnByField(field) {
+function findMappedColumn(column) {
   for (const category in props.mappings) {
-    for (const column in props.mappings[category]) {
-      if (props.mappings[category][column] === field) return column;
-      // if (props.mappings[category][column].includes(field)) return column;
-    }
+    const csvColumn = props.mappings[category][column];
+    if (csvColumn) return csvColumn;
   }
   return null;
 }
@@ -224,34 +221,25 @@ function validateStudent(student) {
 
 // Validate a given row
 function validityCheck(row) {
-  const usernameField = props.mappings.required.username;
-  const emailField = props.mappings.required.email;
-  const passwordField = props.mappings.required.password;
-  const gradeField = props.mappings.required.grade;
-  const dobField = props.mappings.required.dob;
   const errors = [];
   // check that required fields are filled out
-  if (!_get(row, usernameField) && !_get(row, emailField)) {
+  if (!_get(row, 'username') && !_get(row, 'email')) {
     errors.push('Username/Email is required');
   }
-  if (!_get(row, gradeField)) {
+  if (!_get(row, 'grade')) {
     errors.push('Grade is required');
   }
-  if (!_get(row, dobField)) {
+  if (!_get(row, 'dob')) {
     errors.push('Date of Birth is required');
   }
   // check that password is valid
-  if (!isPasswordValid(row[passwordField])) {
+  if (!isPasswordValid(row['password'])) {
     errors.push('Password must be at least 6 characters long and contain at least one letter');
   }
 
   // If not using the org picker, check that a district and school, or a group are selected
   if (!props.usingOrgPicker) {
-    const districtField = props.mappings.organizations.districts;
-    const schoolField = props.mappings.organizations.schools;
-    const groupField = props.mappings.organizations.groups;
-
-    if (!(_get(row, districtField) && _get(row, schoolField)) && !_get(row, groupField)) {
+    if (!(_get(row, 'districts') && _get(row, 'schools')) && !_get(row, 'groups')) {
       errors.push('District, School, or Group is required');
     }
   }
