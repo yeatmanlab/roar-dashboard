@@ -20,7 +20,6 @@
       {
         "ignorePatterns": [
           "AppSpinner",
-          "GMapAutocomplete", // vue-google-maps-community-fork
           "i18n-t", // vue-i18n
           "router-link", // vue-router
           "router-view" // vue-router
