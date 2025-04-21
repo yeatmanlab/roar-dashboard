@@ -16,7 +16,7 @@ import useUserStudentDataQuery from '@/composables/queries/useUserStudentDataQue
 import packageLockJson from '../../../package-lock.json';
 
 const props = defineProps({
-  taskId: { type: String, default: 'roar-readoud' },
+  taskId: { type: String, default: 'roar-readaloud' },
   language: { type: String, default: 'en' },
 });
 
