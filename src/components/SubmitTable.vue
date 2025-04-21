@@ -147,6 +147,7 @@ function generateColumns(rawJson) {
 function findMappedColumn(column) {
   for (const category in props.mappings) {
     const csvColumn = props.mappings[category][column];
+    if (csvColumn && Array.isArray(csvColumn)) return csvColumn.join(', ');
     if (csvColumn) return csvColumn;
   }
   return null;

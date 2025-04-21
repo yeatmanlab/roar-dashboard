@@ -389,6 +389,7 @@ import SelectButton from 'primevue/selectbutton';
 import MultiSelect from 'primevue/multiselect';
 import { usePermissions } from '../composables/usePermissions';
 import { exportCsv } from '@/helpers/query/utils';
+import _without from 'lodash/without';
 
 const rawStudentFile = ref([]);
 const tableColumns = ref([]);
@@ -686,7 +687,19 @@ const preTransformStudents = () => {
 
     // Handle demographic fields
     Object.entries(mappedColumns.value.demographics).forEach(([key, csvField]) => {
-      if (csvField) _set(transformedStudent, key, rawStudent[csvField]);
+      if (csvField) {
+        // In the case of race, which is a multiselect field, we need to
+        // concat the values from each field into one comma separated string
+        if (key === 'race') {
+          const races = _without(
+            csvField.map((item) => rawStudent[item] ?? null),
+            null,
+          );
+          _set(transformedStudent, key, races.join(', '));
+        } else {
+          _set(transformedStudent, key, rawStudent[csvField]);
+        }
+      }
     });
 
     // Handle optional fields
@@ -733,7 +746,11 @@ const transformStudentData = async (rawStudent) => {
 
   // Handle demographic fields
   Object.keys(mappedColumns.value.demographics).forEach((key) => {
-    if (rawStudent[key]) _set(transformedStudent, `userData.${key}`, rawStudent[key]);
+    if (rawStudent[key] && key === 'race') {
+      _set(transformedStudent, `userData.${key}`, rawStudent[key].split(', '));
+    } else if (rawStudent[key]) {
+      _set(transformedStudent, `userData.${key}`, rawStudent[key]);
+    }
   });
 
   // Handle optional fields
