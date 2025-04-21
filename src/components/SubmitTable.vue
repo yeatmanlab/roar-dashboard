@@ -44,8 +44,8 @@
           >
           <i
             v-if="!validationResults[data['rowKey']]?.valid"
-            class="pi pi-question-circle ml-2 text-red-500"
             v-tooltip.top="validationResults[data['rowKey']]?.errors.join(',\n')"
+            class="pi pi-question-circle ml-2 text-red-500"
           />
         </template>
       </PvColumn>
@@ -54,7 +54,7 @@
           <div class="flex flex-column">
             <div class="flex gap-2 font-bold">
               {{ col.header }}
-              <i class="pi pi-pen-to-square" v-tooltip.top="'Click on a cell below to edit its value.'" />
+              <i v-tooltip.top="'Click on a cell below to edit its value.'" class="pi pi-pen-to-square" />
             </div>
             <span class="text-gray-500">{{ findMappedColumn(col.field) }}</span>
           </div>

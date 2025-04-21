@@ -266,8 +266,8 @@
                       { label: 'Same for all students', value: true },
                       { label: 'From CSV columns', value: false },
                     ]"
-                    optionLabel="label"
-                    optionValue="value"
+                    option-label="label"
+                    option-value="value"
                   />
                   <small class="text-gray-500">
                     {{
@@ -346,7 +346,7 @@
               v-if="showSubmitTable"
               :students="mappedStudents"
               :mappings="mappedColumns"
-              :usingOrgPicker="usingOrgPicker"
+              :using-org-picker="usingOrgPicker"
               @validation-update="handleValidationUpdate"
             >
               <Button label="Add User" icon="pi pi-plus" severity="secondary" @click="addUser" />
@@ -557,6 +557,7 @@ const exportTransformedStudents = () => {
   const exportData = mappedStudents.value;
   // Filter out rowKey
   const filteredData = exportData.map((row) => {
+    // eslint-disable-next-line no-unused-vars
     const { rowKey, ...rest } = row;
     return rest;
   });
@@ -837,26 +838,26 @@ const submit = async () => {
   console.log(transformedStudents);
 
   // Chunk users into chunks of 50 for submission
-  // const chunkedUsers = _chunk(transformedStudents, 50);
-  // for (const chunk of chunkedUsers) {
-  //   await roarfirekit.value.createUpdateUsers(chunk).then((results) => {
-  //     for (const result of results.data) {
-  //       if (result?.status === 'rejected') {
-  //         const email = result.email;
-  //         toast.add({
-  //           severity: 'error',
-  //           summary: 'Error',
-  //           detail: `User ${email} failed to process: ${result.reason}`,
-  //           life: 5000,
-  //         });
-  //       } else if (result?.status === 'fulfilled') {
-  //         const email = result.email;
-  //         toast.add({ severity: 'success', summary: 'Success', detail: `User ${email} processed!`, life: 3000 });
-  //       }
-  //     }
-  //   });
-  // }
-  // submitting.value = SubmitStatus.COMPLETE;
+  const chunkedUsers = _chunk(transformedStudents, 50);
+  for (const chunk of chunkedUsers) {
+    await roarfirekit.value.createUpdateUsers(chunk).then((results) => {
+      for (const result of results.data) {
+        if (result?.status === 'rejected') {
+          const email = result.email;
+          toast.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: `User ${email} failed to process: ${result.reason}`,
+            life: 5000,
+          });
+        } else if (result?.status === 'fulfilled') {
+          const email = result.email;
+          toast.add({ severity: 'success', summary: 'Success', detail: `User ${email} processed!`, life: 3000 });
+        }
+      }
+    });
+  }
+  submitting.value = SubmitStatus.COMPLETE;
 };
 
 /**
