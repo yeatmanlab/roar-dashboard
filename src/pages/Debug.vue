@@ -17,6 +17,14 @@ interface UserInfo {
   isSuperAdmin: boolean;
 }
 
+// Environment information
+const envInfo = {
+  mode: import.meta.env.MODE,
+  baseUrl: import.meta.env.BASE_URL,
+  isLevante: import.meta.env.VITE_LEVANTE === 'TRUE',
+  firebaseProject: import.meta.env.VITE_FIREBASE_PROJECT || 'Not set'
+};
+
 // Get auth store
 const authStore = useAuthStore();
 
@@ -155,134 +163,262 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="debug-page p-4">
-    <h1 class="text-3xl font-bold mb-6">Debug Information</h1>
+  <div class="debug-page p-3">
+    <h1 class="text-xl font-bold mb-2">Debug Information</h1>
 
-    <div class="card mb-4">
-      <div class="card-header bg-blue-50 p-3">
-        <h2 class="text-xl font-bold">Application Information</h2>
-      </div>
-      <div class="card-body p-3">
-        <div class="grid">
-          <div class="col-4 font-bold">App Version:</div>
-          <div class="col-8">{{ appVersion }}</div>
-
-          <div class="col-4 font-bold">Core Tasks Version:</div>
-          <div class="col-8">{{ coreTasksVersion }}</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="card mb-4">
-      <div class="card-header bg-blue-50 p-3">
-        <h2 class="text-xl font-bold">Device & Browser Information</h2>
-      </div>
-      <div class="card-body p-3">
-        <div class="grid">
-          <div class="col-4 font-bold">Device Type:</div>
-          <div class="col-8">{{ deviceType }}</div>
-
-          <div class="col-4 font-bold">Screen Resolution:</div>
-          <div class="col-8">{{ screenResolution }} pixels</div>
-
-          <div class="col-4 font-bold">Browser Zoom Level:</div>
-          <div class="col-8">{{ Math.round(zoomLevel * 100) }}%</div>
-
-          <div class="col-4 font-bold">Browser:</div>
-          <div class="col-8 text-wrap">{{ browserInfo.appName }}</div>
-
-          <div class="col-4 font-bold">Browser Version:</div>
-          <div class="col-8 text-wrap">{{ browserInfo.appVersion }}</div>
-
-          <div class="col-4 font-bold">Platform:</div>
-          <div class="col-8">{{ browserInfo.platform }}</div>
-
-          <div class="col-4 font-bold">Language:</div>
-          <div class="col-8">{{ browserInfo.language }}</div>
-
-          <div class="col-4 font-bold">Cookies Enabled:</div>
-          <div class="col-8">{{ browserInfo.cookiesEnabled ? 'Yes' : 'No' }}</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="card mb-4">
-      <div class="card-header bg-blue-50 p-3">
-        <h2 class="text-xl font-bold">Network Information</h2>
-      </div>
-      <div class="card-body p-3">
-        <div class="grid" v-if="connectionInfo.effectiveType">
-          <div class="col-4 font-bold">Connection Type:</div>
-          <div class="col-8">{{ connectionInfo.effectiveType }}</div>
-
-          <div class="col-4 font-bold">Downlink:</div>
-          <div class="col-8">{{ connectionInfo.downlink }} Mbps</div>
-
-          <div class="col-4 font-bold">Round Trip Time:</div>
-          <div class="col-8">{{ connectionInfo.rtt }} ms</div>
-
-          <div class="col-4 font-bold">Data Saver:</div>
-          <div class="col-8">{{ connectionInfo.saveData ? 'Enabled' : 'Disabled' }}</div>
-        </div>
-        <div v-else>Network information not available</div>
-      </div>
-    </div>
-
-    <div class="card mb-4">
-      <div class="card-header bg-blue-50 p-3">
-        <h2 class="text-xl font-bold">Performance Metrics</h2>
-      </div>
-      <div class="card-body p-3">
-        <div class="grid">
-          <template v-if="performanceInfo.memory.totalJSHeapSize > 0">
-            <div class="col-4 font-bold">Memory Usage:</div>
-            <div class="col-8">{{ performanceInfo.memory.usedJSHeapSize }}MB / {{ performanceInfo.memory.totalJSHeapSize }}MB</div>
-
-            <div class="col-4 font-bold">Memory Limit:</div>
-            <div class="col-8">{{ performanceInfo.memory.jsHeapSizeLimit }}MB</div>
-          </template>
-
-          <template v-if="performanceInfo.timing.loadTime > 0">
-            <div class="col-4 font-bold">Page Load Time:</div>
-            <div class="col-8">{{ performanceInfo.timing.loadTime }}ms</div>
-
-            <div class="col-4 font-bold">DOM Content Loaded:</div>
-            <div class="col-8">{{ performanceInfo.timing.domContentLoaded }}ms</div>
-          </template>
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-header bg-blue-50 p-3">
-        <h2 class="text-xl font-bold">Authentication Status</h2>
-      </div>
-      <div class="card-body p-3">
-        <div v-if="authStore.isAuthenticated">
-          <div class="grid">
-            <div class="col-4 font-bold">Login Status:</div>
-            <div class="col-8">Logged In</div>
-
-            <div class="col-4 font-bold">Display Name:</div>
-            <div class="col-8">{{ userInfo?.displayName || 'N/A' }}</div>
-
-            <div class="col-4 font-bold">Email:</div>
-            <div class="col-8">{{ userInfo?.email || 'N/A' }}</div>
-
-            <div class="col-4 font-bold">User ID:</div>
-            <div class="col-8">{{ userInfo?.uid || 'N/A' }}</div>
-
-            <div class="col-4 font-bold">Admin:</div>
-            <div class="col-8">{{ userInfo?.isAdmin ? 'Yes' : 'No' }}</div>
-
-            <div class="col-4 font-bold">Super Admin:</div>
-            <div class="col-8">{{ userInfo?.isSuperAdmin ? 'Yes' : 'No' }}</div>
+    <div class="grid">
+      <!-- Left Column -->
+      <div class="col-12 md:col-6 lg:col-4 pr-2">
+        <!-- App Info -->
+        <div class="card mb-2 shadow-1">
+          <div class="card-header bg-blue-50 py-1 px-2">
+            <h2 class="text-sm font-bold">Application</h2>
+          </div>
+          <div class="card-body p-2">
+            <table class="w-full text-sm">
+              <tbody>
+                <tr>
+                  <td class="font-semibold pr-2">App Version:</td>
+                  <td>{{ appVersion }}</td>
+                </tr>
+                <tr>
+                  <td class="font-semibold pr-2">Core Tasks:</td>
+                  <td>{{ coreTasksVersion }}</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
-        <div v-else>
-          <p>Not logged in</p>
+
+        <!-- Device Info -->
+        <div class="card mb-2 shadow-1">
+          <div class="card-header bg-blue-50 py-1 px-2">
+            <h2 class="text-sm font-bold">Device & Display</h2>
+          </div>
+          <div class="card-body p-2">
+            <table class="w-full text-sm">
+              <tbody>
+                <tr>
+                  <td class="font-semibold pr-2">Device Type:</td>
+                  <td>{{ deviceType }}</td>
+                </tr>
+                <tr>
+                  <td class="font-semibold pr-2">Resolution:</td>
+                  <td>{{ screenResolution }} px</td>
+                </tr>
+                <tr>
+                  <td class="font-semibold pr-2">Zoom Level:</td>
+                  <td>{{ Math.round(zoomLevel * 100) }}%</td>
+                </tr>
+                <tr>
+                  <td class="font-semibold pr-2">Platform:</td>
+                  <td>{{ browserInfo.platform }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Browser Info -->
+        <div class="card mb-2 shadow-1">
+          <div class="card-header bg-blue-50 py-1 px-2">
+            <h2 class="text-sm font-bold">Browser</h2>
+          </div>
+          <div class="card-body p-2">
+            <table class="w-full text-sm">
+              <tbody>
+                <tr>
+                  <td class="font-semibold pr-2">Name:</td>
+                  <td class="truncate">{{ browserInfo.appName }}</td>
+                </tr>
+                <tr>
+                  <td class="font-semibold pr-2">Version:</td>
+                  <td class="truncate">{{ browserInfo.appVersion }}</td>
+                </tr>
+                <tr>
+                  <td class="font-semibold pr-2">Language:</td>
+                  <td>{{ browserInfo.language }}</td>
+                </tr>
+                <tr>
+                  <td class="font-semibold pr-2">Cookies:</td>
+                  <td>{{ browserInfo.cookiesEnabled ? 'Enabled' : 'Disabled' }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Middle Column -->
+      <div class="col-12 md:col-6 lg:col-4 px-1">
+        <!-- Network Info -->
+        <div class="card mb-2 shadow-1">
+          <div class="card-header bg-blue-50 py-1 px-2">
+            <h2 class="text-sm font-bold">Network</h2>
+          </div>
+          <div class="card-body p-2">
+            <table class="w-full text-sm" v-if="connectionInfo.effectiveType">
+              <tbody>
+                <tr>
+                  <td class="font-semibold pr-2">Connection:</td>
+                  <td>{{ connectionInfo.effectiveType }}</td>
+                </tr>
+                <tr>
+                  <td class="font-semibold pr-2">Downlink:</td>
+                  <td>{{ connectionInfo.downlink }} Mbps</td>
+                </tr>
+                <tr>
+                  <td class="font-semibold pr-2">RTT:</td>
+                  <td>{{ connectionInfo.rtt }} ms</td>
+                </tr>
+                <tr>
+                  <td class="font-semibold pr-2">Data Saver:</td>
+                  <td>{{ connectionInfo.saveData ? 'On' : 'Off' }}</td>
+                </tr>
+              </tbody>
+            </table>
+            <p v-else class="text-sm p-2">Network information not available</p>
+          </div>
+        </div>
+
+        <!-- Performance -->
+        <div class="card mb-2 shadow-1">
+          <div class="card-header bg-blue-50 py-1 px-2">
+            <h2 class="text-sm font-bold">Performance</h2>
+          </div>
+          <div class="card-body p-2">
+            <table class="w-full text-sm">
+              <tbody>
+                <tr v-if="performanceInfo.memory.totalJSHeapSize > 0">
+                  <td class="font-semibold pr-2">Memory Usage:</td>
+                  <td>{{ performanceInfo.memory.usedJSHeapSize }}MB / {{ performanceInfo.memory.totalJSHeapSize }}MB</td>
+                </tr>
+                <tr v-if="performanceInfo.memory.jsHeapSizeLimit > 0">
+                  <td class="font-semibold pr-2">Memory Limit:</td>
+                  <td>{{ performanceInfo.memory.jsHeapSizeLimit }}MB</td>
+                </tr>
+                <tr v-if="performanceInfo.timing.loadTime > 0">
+                  <td class="font-semibold pr-2">Load Time:</td>
+                  <td>{{ performanceInfo.timing.loadTime }}ms</td>
+                </tr>
+                <tr v-if="performanceInfo.timing.domContentLoaded > 0">
+                  <td class="font-semibold pr-2">DOM Loaded:</td>
+                  <td>{{ performanceInfo.timing.domContentLoaded }}ms</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- User Agent -->
+        <div class="card mb-2 shadow-1">
+          <div class="card-header bg-blue-50 py-1 px-2">
+            <h2 class="text-sm font-bold">User Agent</h2>
+          </div>
+          <div class="card-body p-2">
+            <p class="text-xs text-wrap break-all">{{ browserInfo.userAgent }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column -->
+      <div class="col-12 md:col-6 lg:col-4 pl-2">
+        <!-- Auth Status -->
+        <div class="card mb-2 shadow-1">
+          <div class="card-header bg-blue-50 py-1 px-2">
+            <h2 class="text-sm font-bold">Authentication Status</h2>
+          </div>
+          <div class="card-body p-2">
+            <table v-if="authStore.isAuthenticated" class="w-full text-sm">
+              <tbody>
+                <tr>
+                  <td class="font-semibold pr-2">Status:</td>
+                  <td>Logged In</td>
+                </tr>
+                <tr>
+                  <td class="font-semibold pr-2">Name:</td>
+                  <td>{{ userInfo?.displayName || 'N/A' }}</td>
+                </tr>
+                <tr>
+                  <td class="font-semibold pr-2">Email:</td>
+                  <td>{{ userInfo?.email || 'N/A' }}</td>
+                </tr>
+                <tr>
+                  <td class="font-semibold pr-2">User ID:</td>
+                  <td class="truncate">{{ userInfo?.uid || 'N/A' }}</td>
+                </tr>
+                <tr>
+                  <td class="font-semibold pr-2">Admin:</td>
+                  <td>{{ userInfo?.isAdmin ? 'Yes' : 'No' }}</td>
+                </tr>
+                <tr>
+                  <td class="font-semibold pr-2">Super Admin:</td>
+                  <td>{{ userInfo?.isSuperAdmin ? 'Yes' : 'No' }}</td>
+                </tr>
+              </tbody>
+            </table>
+            <p v-else class="text-sm p-2">Not logged in</p>
+          </div>
+        </div>
+        
+        <!-- Environment -->
+        <div class="card mb-2 shadow-1">
+          <div class="card-header bg-blue-50 py-1 px-2">
+            <h2 class="text-sm font-bold">Environment</h2>
+          </div>
+          <div class="card-body p-2">
+            <table class="w-full text-sm">
+              <tbody>
+                <tr>
+                  <td class="font-semibold pr-2">Mode:</td>
+                  <td>{{ envInfo.mode }}</td>
+                </tr>
+                <tr>
+                  <td class="font-semibold pr-2">Base URL:</td>
+                  <td>{{ envInfo.baseUrl }}</td>
+                </tr>
+                <tr>
+                  <td class="font-semibold pr-2">Levante:</td>
+                  <td>{{ envInfo.isLevante ? 'Yes' : 'No' }}</td>
+                </tr>
+                <tr>
+                  <td class="font-semibold pr-2">Firebase Project:</td>
+                  <td>{{ envInfo.firebaseProject }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
   </div>
-</template> 
+</template>
+
+<style scoped>
+.card {
+  border-radius: 4px;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+}
+
+.card-header {
+  border-bottom: 1px solid #e2e8f0;
+}
+
+tr:not(:last-child) td {
+  border-bottom: 1px solid #f0f4f8;
+  padding: 4px 0;
+}
+
+tr:last-child td {
+  padding: 4px 0;
+}
+
+table {
+  border-spacing: 0;
+}
+
+.shadow-1 {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+</style> 
