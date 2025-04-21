@@ -49,7 +49,7 @@
       <div v-for="(status, task) in assignment.progress" :key="task">
         <div class="flex text-sm justify-between">
           <div class="flex flex-column">
-            <div>{{ taskDisplayNames[task].publicName }}</div>
+            <div>{{ taskDisplayNames[task]?.publicName }}</div>
           </div>
           <div>
             <PvTag
