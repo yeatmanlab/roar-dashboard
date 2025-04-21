@@ -72,16 +72,15 @@ const playTrial = (targetText) => {
 };
 
 function playIntro(startText) {
-  cy.get('.instructionCanvasNS').should('be.visible').click();
-
   cy.waitForAssessmentReadyState();
+  cy.get('.instructionCanvasNS').should('be.visible').click();
   cy.get('.jspsych-btn').should('be.visible').click();
 
   cy.get('.continue').should('be.visible').click();
 
   handleFullScreenError();
-
-  cy.get('div').contains(startText).should('be.visible');
+  cy.wait(0.5 * Cypress.env('timeout'));
+  cy.get('div').contains(startText).should('be.visible').click();
   cy.get('.continue').should('be.visible').click();
 }
 
