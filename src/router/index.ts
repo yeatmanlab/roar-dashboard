@@ -35,6 +35,12 @@ const routes: Array<RouteRecordRaw> = [
     },
   },
   {
+    path: '/debug',
+    name: 'Debug',
+    component: () => import('../pages/Debug.vue'),
+    meta: { pageTitle: 'Debug Information' },
+  },
+  {
     path: '/game/swr',
     name: 'SWR',
     component: () => import('../components/tasks/TaskSWR.vue'),
@@ -314,6 +320,7 @@ router.beforeEach(async (to: RouteLocationNormalized, from: RouteLocationNormali
     'AuthClassLink',
     'AuthEmailLink',
     'AuthEmailSent',
+    'Debug',
   ];
 
   const inMaintenanceMode = false;
