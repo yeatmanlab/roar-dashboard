@@ -2,14 +2,12 @@ const baseUrl = Cypress.config().baseUrl;
 const testDistrictId = Cypress.env('testDistrictId');
 const testPartnerAdministrationName = Cypress.env('testPartnerAdministrationName');
 const testPartnerAdministrationId = Cypress.env('testPartnerAdministrationId');
-const testPartnerAdminUsername = Cypress.env('PARTNER_ADMIN_USERNAME');
-const testPartnerAdminPassword = Cypress.env('PARTNER_ADMIN_PASSWORD');
 const testUserList = Cypress.env('testUserList');
 
-describe('Partner Admin: Individual Reports', () => {
+describe('Super Admin: Launching Students', () => {
   it('Selects an administration and launches a student in their assessment portal', () => {
     // Login as a partner admin.
-    cy.login(testPartnerAdminUsername, testPartnerAdminPassword);
+    cy.login(Cypress.env('SUPER_ADMIN_USERNAME'), Cypress.env('SUPER_ADMIN_PASSWORD'));
 
     // Wait until the administrations list is loaded.
     // Note: As the application currently does not support paginated fetching of administrations, we have to wait for
