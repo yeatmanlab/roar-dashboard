@@ -175,13 +175,12 @@ const orgHeaders = computed(() => {
   const result = {};
 
   if (props.forParentOrg) {
-    result.districts = { header: 'Districts', id: 'districts' };
-    result.groups = { header: 'Groups', id: 'groups' };
+    result.districts = { header: 'Sites', id: 'districts' };
     return result;
   }
 
   if ((adminOrgs.value?.districts ?? []).length > 0) {
-    result.districts = { header: 'Districts', id: 'districts' };
+    result.districts = { header: 'Sites', id: 'districts' };
     result.schools = { header: 'Schools', id: 'schools' };
     result.classes = { header: 'Classes', id: 'classes' };
   }

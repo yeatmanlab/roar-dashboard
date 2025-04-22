@@ -98,40 +98,6 @@
 
         <div class="mt-5 mb-0 pb-0">Optional fields:</div>
 
-        <div v-if="['district', 'school', 'group'].includes(orgType?.singular)">
-          <div class="grid mt-3">
-            <div class="col-12">Search for a {{ orgType.label }} address:</div>
-            <div class="col-12 md:col-6 lg:col-6 xl:col-6">
-              <div class="p-inputgroup flex align-items-center">
-                <span class="p-inputgroup-addon">
-                  <i class="pi pi-map"></i>
-                </span>
-                <GMapAutocomplete
-                  :options="{
-                    fields: ['address_components', 'formatted_address', 'place_id', 'url'],
-                  }"
-                  class="p-inputtext p-component w-full"
-                  style="height: 38px; display: flex; align-items: center;"
-                  data-cy="input-address"
-                  @place_changed="setAddress"
-                >
-                </GMapAutocomplete>
-              </div>
-            </div>
-          </div>
-          <div v-if="state.address?.formattedAddress" class="grid">
-            <div class="col-12 mt-3" data-cy="chip-address">
-              {{ orgTypeLabel }} Address:
-              <PvChip
-                :label="state.address.formattedAddress"
-                removable
-                data-cy="chip-address"
-                @remove="removeAddress"
-              />
-            </div>
-          </div>
-        </div>
-
         <div class="grid mt-3">
           <div class="col-12 md:col-6 lg:col-4 mt-3" data-cy="div-auto-complete">
             <PvFloatLabel>
@@ -193,7 +159,6 @@ import { required, requiredIf } from '@vuelidate/validators';
 import PvAutoComplete from 'primevue/autocomplete';
 import PvButton from 'primevue/button';
 import PvCheckbox from 'primevue/checkbox';
-import PvChip from 'primevue/chip';
 import PvDivider from 'primevue/divider';
 import PvSelect from 'primevue/select';
 import PvInputText from 'primevue/inputtext';
@@ -223,7 +188,6 @@ watch(groupHasParentOrg, () => {
 const state = reactive({
   orgName: '',
   orgInitials: '',
-  address: undefined,
   parentDistrict: undefined,
   parentSchool: undefined,
   tags: [],
@@ -343,19 +307,6 @@ const searchTags = (event) => {
   tagSuggestions.value = filteredOptions;
 };
 
-const setAddress = (place) => {
-  state.address = {
-    addressComponents: place.address_components || [],
-    formattedAddress: place.formatted_address,
-    googlePlacesId: place.place_id,
-    googleMapsUrl: place.url,
-  };
-};
-
-const removeAddress = () => {
-  state.address = undefined;
-};
-
 const submit = async () => {
   submitted.value = true;
   const isFormValid = await v$.value.$validate();
@@ -396,7 +347,6 @@ const submit = async () => {
       orgData.parentOrgType = singularMap[parentOrgKey];
     }
 
-    if (state.address) orgData.address = state.address;
     if (state.tags.length > 0) orgData.tags = state.tags;
 
     if (orgType.value?.singular === 'class') {
@@ -428,7 +378,6 @@ const submit = async () => {
 const resetForm = () => {
   state.orgName = '';
   state.orgInitials = '';
-  state.address = undefined;
   state.tags = [];
 };
 </script>

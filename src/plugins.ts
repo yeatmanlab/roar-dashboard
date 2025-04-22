@@ -4,7 +4,6 @@ import ToastService from 'primevue/toastservice';
 // @ts-ignore - Linter struggles with resolving .js file via alias here, but build works
 import router from '@/router/index';
 import TextClamp from 'vue3-text-clamp';
-import VueGoogleMaps from 'vue-google-maps-community-fork';
 import { createHead } from '@unhead/vue';
 import { VueQueryPlugin } from '@tanstack/vue-query';
 import { surveyPlugin } from 'survey-vue3-ui';
@@ -64,15 +63,6 @@ const plugins = [
             gcTime: (window as any).Cypress ? 0 : 15 * 60 * 1000,
           },
         },
-      },
-    },
-  ],
-  [
-    VueGoogleMaps,
-    {
-      load: {
-        key: 'AIzaSyA2Q2Wq5na79apugFwoTXKyj-RTDDR1U34',
-        libraries: 'places',
       },
     },
   ],

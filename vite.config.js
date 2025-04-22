@@ -67,8 +67,6 @@ export default defineConfig({
   optimizeDeps: {
     include: [
       '@levante-framework/firekit',
-      'vue-google-maps-community-fork',
-      'fast-deep-equal', // Required due to https://github.com/nathanap/vue-google-maps-community-fork/issues/4
     ],
   },
 });

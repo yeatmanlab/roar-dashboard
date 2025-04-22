@@ -14,11 +14,6 @@ vi.mock('vue-recaptcha', () => ({
   VueRecaptchaPlugin: vi.fn(),
 }));
 
-vi.mock('vue-google-maps-community-fork', () => ({
-  default: {},
-  VueGoogleMaps: vi.fn(),
-}));
-
 // Mock the $t function based on the logic in i18n.js
 config.global.mocks = {
   $t: (key) => {
