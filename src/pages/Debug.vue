@@ -4,7 +4,6 @@ import { ref, onMounted, computed } from 'vue';
 // @ts-ignore
 import { useAuthStore } from '@/store/auth';
 import { useWindowSize } from '@vueuse/core';
-
 // Get package info
 import packageJson from '../../package.json';
 
@@ -15,6 +14,7 @@ interface UserInfo {
   uid: string | null;
   isAdmin: boolean;
   isSuperAdmin: boolean;
+  userType: string | null;
 }
 
 // Environment information
@@ -31,9 +31,23 @@ const authStore = useAuthStore();
 // Get app and core-tasks versions
 const appVersion = ref(packageJson.version);
 const coreTasksVersion = ref(packageJson.dependencies['@levante-framework/core-tasks'].replace('^', ''));
+const commitHash = import.meta.env.VITE_APP_VERSION;
 
-// User information
-const userInfo = ref<UserInfo | null>(null);
+// User information - Use computed property
+const userInfo = computed<UserInfo | null>(() => {
+  if (authStore.isAuthenticated) {
+    const { userData } = authStore;
+    return {
+      displayName: userData?.username || userData?.displayName || null,
+      email: authStore?.email || null,
+      uid: authStore?.uid || null,
+      isAdmin: authStore.isUserAdmin,
+      userType: userData?.userType || null,
+      isSuperAdmin: authStore.isUserSuperAdmin
+    };
+  }
+  return null;
+});
 
 // System information
 const browserInfo = ref({
@@ -94,16 +108,6 @@ function calculateZoomLevel() {
 }
 
 onMounted(() => {
-  if (authStore.isAuthenticated) {
-    userInfo.value = {
-      displayName: authStore.userDisplayName,
-      email: authStore.userEmail,
-      uid: authStore.userId,
-      isAdmin: authStore.isUserAdmin,
-      isSuperAdmin: authStore.isUserSuperAdmin
-    };
-  }
-
   // Gather browser info
   if (typeof navigator !== 'undefined') {
     browserInfo.value = {
@@ -184,6 +188,10 @@ onMounted(() => {
                 <tr>
                   <td class="font-semibold pr-2">Core Tasks:</td>
                   <td>{{ coreTasksVersion }}</td>
+                </tr>
+                <tr>
+                  <td class="font-semibold pr-2">Commit Hash:</td>
+                  <td>{{ commitHash }}</td>
                 </tr>
               </tbody>
             </table>
@@ -354,6 +362,10 @@ onMounted(() => {
                 <tr>
                   <td class="font-semibold pr-2">Super Admin:</td>
                   <td>{{ userInfo?.isSuperAdmin ? 'Yes' : 'No' }}</td>
+                </tr>
+                <tr>
+                  <td class="font-semibold pr-2">User Type:</td>
+                  <td>{{ userInfo?.userType || 'N/A' }}</td>
                 </tr>
               </tbody>
             </table>
