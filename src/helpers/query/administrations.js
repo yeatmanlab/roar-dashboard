@@ -13,7 +13,7 @@ export function getTitle(item, isSuperAdmin) {
     return item.name;
   } else {
     // Check if publicName exists, otherwise fallback to name
-    return item.publicName ?? item.name;
+    return item?.publicName ?? item.name;
   }
 }
 
@@ -62,7 +62,7 @@ const mapAdministrations = async ({ isSuperAdmin, data, adminOrgs }) => {
       return {
         id: a.id,
         name: a.name,
-        publicName: a.publicName,
+        publicName: a?.publicName,
         dates: {
           start: a.dateOpened,
           end: a.dateClosed,
