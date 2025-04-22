@@ -96,6 +96,10 @@ const props = defineProps({
     type: Boolean,
     default: true,
   },
+  usingEmail: {
+    type: Boolean,
+    default: false,
+  },
 });
 const tableColumns = ref([]);
 const editingRows = ref([]);
@@ -224,8 +228,16 @@ function validateStudent(student) {
 function validityCheck(row) {
   const errors = [];
   // check that required fields are filled out
-  if (!_get(row, 'username') && !_get(row, 'email')) {
-    errors.push('Username/Email is required');
+  if (props.usingEmail) {
+    if (!_get(row, 'email')) {
+      errors.push('Email is required');
+    } else if (!isEmailValid(row['email'])) {
+      errors.push('Email is improperly formatted');
+    }
+  } else {
+    if (!_get(row, 'username')) {
+      errors.push('Username is required');
+    }
   }
   if (!_get(row, 'grade')) {
     errors.push('Grade is required');
@@ -245,6 +257,11 @@ function validityCheck(row) {
     }
   }
   return { valid: _isEmpty(errors), errors };
+}
+function isEmailValid(email) {
+  if (!email) return false;
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
 }
 function isPasswordValid(password) {
   if (!password) return false;

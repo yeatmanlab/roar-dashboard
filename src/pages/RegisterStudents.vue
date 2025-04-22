@@ -347,6 +347,7 @@
               :students="mappedStudents"
               :mappings="mappedColumns"
               :using-org-picker="usingOrgPicker"
+              :using-email="usingEmail"
               @validation-update="handleValidationUpdate"
             >
               <Button label="Add User" icon="pi pi-plus" severity="secondary" @click="addUser" />
