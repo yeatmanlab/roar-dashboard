@@ -13,7 +13,7 @@
         <AppSpinner class="mb-4" />
       </div>
       <div class="flex flex-row">
-        <div v-if="assignmentData.length == 0">
+        <div v-if="assignmentData?.length == 0">
           <div class="text-lg font-bold text-gray-600">No assignments available</div>
           <div class="text-sm font-light text-gray-800">Please check back later.</div>
         </div>
