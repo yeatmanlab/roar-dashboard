@@ -300,12 +300,12 @@
               </div>
               <div v-else>
                 <div class="flex flex-column gap-3 p-4">
-                  <div v-for="(value, key) in mappedColumns.organizations" :key="key" class="step-field-item">
+                  <div v-for="(value, key) in orgFields" :key="key" class="step-field-item">
                     <div>
-                      <span class="font-bold"> {{ _startCase(key) }}</span>
+                      <span class="font-bold"> {{ value.label }}</span>
                     </div>
                     <Dropdown
-                      v-model="mappedColumns.organizations[key]"
+                      v-model="mappedColumns.organizations[value.field]"
                       show-clear
                       class="w-full dropdown"
                       :options="csv_columns"
@@ -452,6 +452,13 @@ const optionalFields = ref([
   { field: 'stateId', label: 'State ID', description: "The student's state ID" },
   { field: 'pid', label: 'PID', description: "The student's PID", permission: Permissions.Users.SET_PID },
 ]);
+const orgFields = ref([
+  { field: 'districts', label: 'District', description: '' },
+  { field: 'schools', label: 'School', description: '' },
+  { field: 'classes', label: 'Class', description: '' },
+  { field: 'groups', label: 'Group', description: '' },
+  { field: 'families', label: 'Family', description: '' },
+]);
 
 const mappedColumns = ref({
   required: {
@@ -464,13 +471,7 @@ const mappedColumns = ref({
   names: Object.fromEntries(nameFields.value.map((field) => [field.field, null])),
   optional: Object.fromEntries(optionalFields.value.map((field) => [field.field, null])),
   demographics: Object.fromEntries(demographicFields.value.map((field) => [field.field, null])),
-  organizations: {
-    districts: null,
-    schools: null,
-    classes: null,
-    groups: null,
-    families: null,
-  },
+  organizations: Object.fromEntries(orgFields.value.map((field) => [field.field, null])),
 });
 const selectedOrgs = ref({
   districts: [],
