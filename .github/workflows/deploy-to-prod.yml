@@ -1,0 +1,101 @@
+name: Deploy to Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_type:
+        description: 'Version type (patch, minor, major)'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+        - patch
+        - minor
+        - major
+
+jobs:
+  version_build_deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate token
+        id: generate_token
+        uses: tibdex/github-app-token@v1 # Use v1 for consistency with other workflows
+        with:
+          app_id: ${{ secrets.LEVANTE_BOT_APP_ID }}
+          private_key: ${{ secrets.LEVANTE_BOT_APP_PRIVATE_KEY }}
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          # Use the generated token for checkout to allow pushing later
+          token: ${{ steps.generate_token.outputs.token }}
+          # Fetch all history and tags for versioning
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x' # Match other workflows
+          registry-url: 'https://registry.npmjs.org' # Good practice
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Configure Git
+        run: |
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+
+      - name: Bump version
+        id: version
+        run: |
+          # Ensure we are on the main branch or default branch
+          # git checkout main # Or your default branch if different
+          npm version ${{ github.event.inputs.version_type }} -m "chore(release): %s"
+          echo "new_version=$(git describe --tags --abbrev=0)" >> $GITHUB_OUTPUT
+
+      - name: Build for production
+        env:
+          NODE_OPTIONS: '--max_old_space_size=8192' # Match dev build options
+        run: npm run build:prod
+
+      - name: Create Sentry release
+        uses: getsentry/action-release@v1 # Match dev workflow
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+        with:
+          environment: production
+          sourcemaps: ./dist/assets # Point to directory for recursive search
+          version: ${{ steps.version.outputs.new_version }}
+          finalize: false # Don't finalize yet if deploy might fail
+
+      - name: Deploy to Firebase Production
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          # Use the App token here as well, or a dedicated deploy token if preferred
+          repoToken: ${{ steps.generate_token.outputs.token }}
+          # Assuming a production service account secret exists
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DEV_ADMIN }}
+          channelId: live
+          projectId: hs-levante-admin-prod # Explicitly set production project ID
+          target: production # Optional if you have defined targets in firebase.json
+
+      - name: Finalize Sentry Release
+        uses: getsentry/action-release@v1
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+        with:
+          environment: production
+          version: ${{ steps.version.outputs.new_version }}
+          finalize: true # Finalize now that deploy succeeded
+
+      - name: Push changes and tags
+        env:
+          # Use the App token for pushing
+          GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
+        run: |
+          git push origin HEAD --follow-tags 
