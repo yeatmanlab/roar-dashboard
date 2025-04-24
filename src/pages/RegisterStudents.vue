@@ -1,546 +1,869 @@
 <template>
-  <main class="container main">
-    <section class="main-body">
-      <div class="flex flex-column gap-2">
-        <div class="flex align-items-center flex-wrap gap-3 mb-2">
-          <i class="pi pi-users text-gray-400 rounded" style="font-size: 1.6rem" />
-          <div class="admin-page-header">Add Participants</div>
-        </div>
-        <div class="flex flex-column text-md text-gray-500 ml-6 gap-2">
-          <div>Add participants by uploading a CSV.</div>
-          <div>
-            The following fields are required for registering a student:
-            <ul>
-              <li>username</li>
-              <li>date of birth</li>
-              <li>grade</li>
-              <li>password (min 6 characters)</li>
-              <li>Either a group OR a district and school</li>
-            </ul>
-            Upload or drag-and-drop a student list below to begin!
+  <div class="page-container">
+    <div>
+      <h2>Register Students</h2>
+    </div>
+    <Stepper linear value="1" class="w-full">
+      <StepList>
+        <Step value="1">Upload</Step>
+        <Step value="2">Required</Step>
+        <Step value="3">Names</Step>
+        <Step value="4">Demographics</Step>
+        <Step value="5">Other</Step>
+        <Step value="6">Organizations</Step>
+        <Step value="7">Preview</Step>
+      </StepList>
+      <StepPanels>
+        <!-- Upload CSV -->
+        <StepPanel v-slot="{ activateCallback }" value="1">
+          <div v-if="!_isEmpty(rawStudentFile)" class="flex py-3 justify-between">
+            <Button v-if="!_isEmpty(rawStudentFile)" label="Upload a different File" @click="resetUpload()" />
+            <Button
+              label="Next"
+              :disabled="!readyToProgress('2')"
+              icon="pi pi-arrow-right"
+              @click="activateCallback('2')"
+            />
           </div>
-        </div>
-      </div>
-      <!--Upload file section-->
-      <div v-if="!isFileUploaded" class="text-gray-500 mb-7 surface-100 border-round-top-md">
-        <PvDivider />
-        <PvFileUpload
-          name="massUploader[]"
-          class="bg-primary mb-2 ml-2 p-3 w-1 text-white border-none border-round h-3rem m-0 hover:bg-red-900"
-          custom-upload
-          accept=".csv"
-          auto
-          :show-upload-button="false"
-          :show-cancel-button="false"
-          @uploader="onFileUpload($event)"
-        >
-          <template #empty>
-            <div class="extra-height ml-6 text-gray-500">
-              <p>Drag and drop files to here to upload.</p>
+          <div class="step-container">
+            <div class="w-full">
+              <div v-if="_isEmpty(rawStudentFile)" class="text-gray-500 surface-100 border-round-top-md">
+                <PvFileUpload
+                  name="massUploader[]"
+                  class="bg-primary text-white border-none border-round hover:bg-red-900"
+                  custom-upload
+                  accept=".csv"
+                  auto
+                  :show-upload-button="false"
+                  :show-cancel-button="false"
+                  @uploader="onFileUpload($event)"
+                >
+                  <template #empty>
+                    <div class="extra-height ml-6 text-gray-500">
+                      <p>Drag and drop files to here to upload.</p>
+                    </div>
+                  </template>
+                </PvFileUpload>
+              </div>
+              <div v-else>
+                <PvDataTable
+                  ref="dataTable"
+                  :value="rawStudentFile"
+                  show-gridlines
+                  :row-hover="true"
+                  :resizable-columns="true"
+                  paginator
+                  :always-show-paginator="false"
+                  :rows="10"
+                  class="datatable"
+                >
+                  <PvColumn v-for="col of tableColumns" :key="col.field" :field="col.field">
+                    <template #header>
+                      <b>{{ col.header }}</b>
+                    </template>
+                  </PvColumn>
+                </PvDataTable>
+              </div>
             </div>
-          </template>
-        </PvFileUpload>
-      </div>
-      <!--DataTable with raw Student-->
-      <div v-if="isFileUploaded">
-        <!-- <RoarDataTable :columns="tableColumns" :data="rawStudentFile" :allowExport="false" /> -->
-        <PvPanel header="Assigning participant data" class="mb-4 mt-2">
-          <p>Use the dropdowns below to properly assign each column.</p>
-          <p>
-            Columns that are not assigned will not be imported. But please note that a column has to be assigned for
-            each of the required fields:
-          </p>
-          <ul>
-            <li>email</li>
-            <li>date of birth</li>
-            <li>grade</li>
-            <li>password (min 6 characters)</li>
-            <li>Either a group OR a district and school</li>
-          </ul>
-
-          <PvMessage severity="info" :closable="false">You can scroll left-to-right to see more columns</PvMessage>
-        </PvPanel>
-
-        <div v-if="errorMessage" class="error-box">
-          {{ errorMessage }}
-        </div>
-        <!-- Can't use RoarDataTable to accomodate header dropdowns -->
-        <PvDataTable
-          ref="dataTable"
-          :value="rawStudentFile"
-          show-gridlines
-          :row-hover="true"
-          :resizable-columns="true"
-          paginator
-          :always-show-paginator="false"
-          :rows="10"
-          class="datatable"
-        >
-          <PvColumn v-for="col of tableColumns" :key="col.field" :field="col.field">
-            <template #header>
-              <div class="col-header">
-                <PvSelect
-                  v-model="dropdown_model[col.field]"
-                  :options="dropdown_options"
-                  option-label="label"
-                  option-value="value"
-                  option-group-label="label"
-                  option-group-children="items"
-                  placeholder="What does this column describe?"
+          </div>
+        </StepPanel>
+        <!-- Required Fields -->
+        <StepPanel v-slot="{ activateCallback }" value="2">
+          <div class="flex py-3 justify-between">
+            <Button label="Back" severity="secondary" icon="pi pi-arrow-left" @click="activateCallback('1')" />
+            <h2 class="step-header">Required</h2>
+            <Button
+              label="Next"
+              :disabled="!readyToProgress('3')"
+              icon="pi pi-arrow-right"
+              icon-pos="right"
+              @click="activateCallback('3')"
+            />
+          </div>
+          <div class="step-container">
+            <div class="flex flex-column gap-3 p-4 w-full">
+              <div class="flex align-items-center">
+                <label class="mr-2">Use Email</label>
+                <PvToggleSwitch v-model="usingEmail" />
+              </div>
+              <div v-if="usingEmail" class="step-field-item">
+                <div>
+                  <span class="font-bold">Email<span class="text-red-500">*</span></span>
+                  <p class="text-gray-500 my-2">The student's email address</p>
+                </div>
+                <Dropdown
+                  v-model="mappedColumns.required.email"
+                  show-clear
+                  class="w-full dropdown"
+                  :options="csv_columns"
                 />
               </div>
-            </template>
-          </PvColumn>
-        </PvDataTable>
-        <div class="submit-container">
-          <div class="m-2">
-            <PvCheckbox v-model="isAllTestData" :binary="true" input-id="isTestData" />
-            <label for="isTestData" class="ml-2">All users are test accounts</label>
+              <div v-else class="step-field-item">
+                <div>
+                  <span class="font-bold">Username<span class="text-red-500">*</span></span>
+                  <p class="text-gray-500 my-2">The student's username</p>
+                </div>
+                <Dropdown
+                  v-model="mappedColumns.required.username"
+                  show-clear
+                  class="w-full dropdown"
+                  :options="csv_columns"
+                />
+              </div>
+              <div class="step-field-item">
+                <div>
+                  <span class="font-bold">Password<span class="text-red-500">*</span></span>
+                  <p class="text-gray-500 my-2">The student's password</p>
+                </div>
+                <Dropdown
+                  v-model="mappedColumns.required.password"
+                  show-clear
+                  class="w-full dropdown"
+                  :options="csv_columns"
+                />
+              </div>
+              <div class="step-field-item">
+                <div>
+                  <span class="font-bold">Date of Birth<span class="text-red-500">*</span></span>
+                  <p class="text-gray-500 my-2">The student's date of birth</p>
+                </div>
+                <Dropdown
+                  v-model="mappedColumns.required.dob"
+                  show-clear
+                  class="w-full dropdown"
+                  :options="csv_columns"
+                />
+              </div>
+              <div class="step-field-item">
+                <div>
+                  <span class="font-bold">Grade<span class="text-red-500">*</span></span>
+                  <p class="text-gray-500 my-2">The student's grade</p>
+                </div>
+                <Dropdown
+                  v-model="mappedColumns.required.grade"
+                  show-clear
+                  class="w-full dropdown"
+                  :options="csv_columns"
+                />
+              </div>
+            </div>
           </div>
-          <PvButton
-            v-tooltip="
-              userCan(Permissions.Users.CREATE)
-                ? false
-                : 'You do not have permission to start registration. If you feel this is a mistake, please contact your administrator.'
-            "
-            label="Start Registration"
-            class="bg-primary text-white border-none border-round p-2 hover:bg-red-900"
-            :icon="activeSubmit ? 'pi pi-spin pi-spinner' : ''"
-            :disabled="activeSubmit || !userCan(Permissions.Users.CREATE)"
-            style="margin-bottom: 4rem"
-            data-cy="button-start-registration"
-            @click="submitStudents"
-          />
-        </div>
-        <!-- Datatable of error students -->
-        <div v-if="showErrorTable" class="error-container">
-          <div class="error-header">
-            <h3>Error Users</h3>
-            <PvButton @click="downloadErrorTable($event)"> Download Table </PvButton>
+        </StepPanel>
+        <!-- Names Fields -->
+        <StepPanel v-slot="{ activateCallback }" value="3">
+          <div class="flex py-3 justify-between">
+            <Button label="Back" severity="secondary" icon="pi pi-arrow-left" @click="activateCallback('2')" />
+            <h2 class="step-header">Names</h2>
+            <Button label="Next" icon="pi pi-arrow-right" icon-pos="right" @click="activateCallback('4')" />
           </div>
-          <!-- Temporary until I move RoarDataTable's data preprocessing to computed hooks -->
-          <PvDataTable
-            ref="errorTable"
-            :value="errorUsers"
-            show-gridlines
-            export-filename="error-datatable-export"
-            :row-hover="true"
-            :resizable-columns="true"
-            paginator
-            :always-show-paginator="false"
-            :rows="10"
-            class="datatable"
-          >
-            <PvColumn v-for="col of errorUserColumns" :key="col.field" :field="col.field">
-              <template #header>
-                {{ col.header }}
-              </template>
-            </PvColumn>
-          </PvDataTable>
-        </div>
-      </div>
-    </section>
-  </main>
+          <div class="step-container">
+            <div class="flex flex-column gap-3 p-4 w-full">
+              <div v-for="(value, key) in nameFields" :key="key" class="step-field-item">
+                <div>
+                  <span class="font-bold"> {{ value.label }}</span>
+                  <p class="text-gray-500 my-2">{{ value.description }}</p>
+                </div>
+                <Dropdown
+                  v-model="mappedColumns.names[value.field]"
+                  show-clear
+                  class="w-full dropdown"
+                  :options="csv_columns"
+                />
+              </div>
+            </div>
+          </div>
+        </StepPanel>
+        <!-- Demographic Fields -->
+        <StepPanel v-slot="{ activateCallback }" value="4">
+          <div class="flex justify-between py-3">
+            <Button label="Back" severity="secondary" icon="pi pi-arrow-left" @click="activateCallback('3')" />
+            <h2 class="step-header">Demographics</h2>
+            <Button label="Next" icon="pi pi-arrow-right" icon-pos="right" @click="activateCallback('5')" />
+          </div>
+          <div class="step-container" style="max-height: calc(100vh - 375px)">
+            <ScrollPanel
+              class="w-full"
+              :dt="{
+                bar: {
+                  background: '{primary.color}',
+                },
+              }"
+            >
+              <div class="flex flex-column gap-3 pt-2 w-full">
+                <div v-for="(value, key) in demographicFields" :key="key" class="step-field-item">
+                  <div>
+                    <span class="font-bold"> {{ value.label }}</span>
+                    <p class="text-gray-500 my-2">{{ value.description }}</p>
+                  </div>
+                  <MultiSelect
+                    v-if="value.field === 'race'"
+                    v-model="mappedColumns.demographics[value.field]"
+                    :options="csv_columns"
+                    show-clear
+                    class="w-full dropdown"
+                  />
+                  <Dropdown
+                    v-else
+                    v-model="mappedColumns.demographics[value.field]"
+                    show-clear
+                    class="w-full dropdown"
+                    :options="csv_columns"
+                  />
+                </div>
+              </div>
+            </ScrollPanel>
+          </div>
+        </StepPanel>
+        <!-- Other Fields -->
+        <StepPanel v-slot="{ activateCallback }" value="5">
+          <div class="flex py-3 justify-between">
+            <Button label="Back" severity="secondary" icon="pi pi-arrow-left" @click="activateCallback('4')" />
+            <h2 class="step-header">Other</h2>
+            <Button label="Next" icon="pi pi-arrow-right" icon-pos="right" @click="activateCallback('6')" />
+          </div>
+          <div class="step-container">
+            <div class="flex flex-column gap-3 p-4 w-full">
+              <div v-for="(value, key) in optionalFields" :key="key">
+                <div v-if="!value?.permission || userCan(value?.permission)" class="step-field-item">
+                  <div>
+                    <span class="font-bold"> {{ value.label }}</span>
+                    <p class="text-gray-500 my-2">{{ value.description }}</p>
+                  </div>
+                  <Dropdown
+                    v-model="mappedColumns.optional[value.field]"
+                    show-clear
+                    class="w-full dropdown"
+                    :options="csv_columns"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </StepPanel>
+        <!-- Organizations -->
+        <StepPanel v-slot="{ activateCallback }" value="6">
+          <div class="py-3 flex justify-between">
+            <Button label="Back" severity="secondary" icon="pi pi-arrow-left" @click="activateCallback('5')" />
+            <h2 class="step-header">Organizations</h2>
+            <Button
+              :disabled="!readyToProgress('7')"
+              label="Next"
+              icon="pi pi-arrow-right"
+              icon-pos="right"
+              @click="
+                activateCallback('7');
+                preTransformStudents();
+              "
+            />
+          </div>
+          <div class="step-container">
+            <div class="flex flex-column gap-3 w-full">
+              <div class="flex justify-between">
+                <div class="flex align-items-center gap-2 flex-column justify-content-">
+                  <SelectButton
+                    v-model="usingOrgPicker"
+                    :options="[
+                      { label: 'Same for all students', value: true },
+                      { label: 'From CSV columns', value: false },
+                    ]"
+                    option-label="label"
+                    option-value="value"
+                  />
+                  <small class="text-gray-500">
+                    {{
+                      usingOrgPicker
+                        ? 'Select organizations to assign to all students'
+                        : 'Map CSV columns to organizations'
+                    }}
+                  </small>
+                </div>
+                <div>
+                  <div style="margin-left: -25px">One of the following required:</div>
+                  <div :class="{ 'text-green-500': eduOrgsSelected }">
+                    <i v-if="eduOrgsSelected" class="pi pi-check mr-2" style="margin-left: -25px" /><i
+                      v-else
+                      class="pi pi-circle mr-2"
+                      style="margin-left: -25px"
+                    />At least one district and one school
+                  </div>
+                  <div :class="{ 'text-green-500': nonEduOrgsSelected }">
+                    <i v-if="nonEduOrgsSelected" class="pi pi-check mr-2" style="margin-left: -25px" /><i
+                      v-else
+                      class="pi pi-circle mr-2"
+                      style="margin-left: -25px"
+                    />At least one group
+                  </div>
+                </div>
+              </div>
+              <div v-if="usingOrgPicker">
+                <OrgPicker @selection="orgSelection($event)" />
+              </div>
+              <div v-else>
+                <div class="flex flex-column gap-3 p-4">
+                  <div v-for="(value, key) in orgFields" :key="key" class="step-field-item">
+                    <div>
+                      <span class="font-bold"> {{ value.label }}</span>
+                    </div>
+                    <Dropdown
+                      v-model="mappedColumns.organizations[value.field]"
+                      show-clear
+                      class="w-full dropdown"
+                      :options="csv_columns"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </StepPanel>
+        <!-- Preview & Submit -->
+        <StepPanel v-slot="{ activateCallback }" value="7">
+          <div class="flex py-3 justify-between">
+            <Button label="Back" severity="secondary" icon="pi pi-arrow-left" @click="activateCallback('6')" />
+            <h2 class="step-header">Preview & Submit</h2>
+            <Button
+              v-tooltip.left="!allStudentsValid ? 'Please fix validation errors before submitting' : ''"
+              label="Submit"
+              severity="primary"
+              icon="pi pi-check"
+              :disabled="!allStudentsValid"
+              @click="submit()"
+            />
+          </div>
+          <div class="step-container flex flex-column">
+            <div v-if="submitting !== SubmitStatus.IDLE">
+              <div class="flex flex-column gap-3">
+                <h3 v-if="submitting === SubmitStatus.TRANSFORMING" class="step-header">
+                  <i class="pi pi-spinner pi-spin mr-2"></i>Formatting Students...
+                </h3>
+                <h3 v-if="submitting === SubmitStatus.SUBMITTING" class="step-header">
+                  <i class="pi pi-spinner pi-spin mr-2"></i>Submitting...
+                </h3>
+                <h3 v-if="submitting === SubmitStatus.COMPLETE" class="step-header">Upload Complete.</h3>
+              </div>
+            </div>
+            <SubmitTable
+              v-if="showSubmitTable"
+              :students="mappedStudents"
+              :mappings="mappedColumns"
+              :using-org-picker="usingOrgPicker"
+              :using-email="usingEmail"
+              @validation-update="handleValidationUpdate"
+            >
+              <Button label="Add User" icon="pi pi-plus" severity="secondary" @click="addUser" />
+              <Button label="Download" icon="pi pi-download" severity="secondary" @click="exportTransformedStudents" />
+            </SubmitTable>
+          </div>
+        </StepPanel>
+      </StepPanels>
+    </Stepper>
+  </div>
 </template>
 <script setup>
-import { ref, toRaw, onMounted } from 'vue';
-import { storeToRefs } from 'pinia';
-import _cloneDeep from 'lodash/cloneDeep';
-import _compact from 'lodash/compact';
-import _forEach from 'lodash/forEach';
-import _includes from 'lodash/includes';
-import _isEmpty from 'lodash/isEmpty';
-import _omit from 'lodash/omit';
-import _set from 'lodash/set';
-import _uniqBy from 'lodash/uniqBy';
-import _startCase from 'lodash/startCase';
-import _find from 'lodash/find';
-import { useToast } from 'primevue/usetoast';
-import PvButton from 'primevue/button';
-import PvCheckbox from 'primevue/checkbox';
-import PvColumn from 'primevue/column';
-import PvDataTable from 'primevue/datatable';
-import PvDivider from 'primevue/divider';
-import PvSelect from 'primevue/select';
+import { ref, toRaw, onMounted, computed } from 'vue';
+import Dropdown from 'primevue/dropdown';
+import Stepper from 'primevue/stepper';
+import Step from 'primevue/step';
+import StepList from 'primevue/steplist';
+import StepPanel from 'primevue/steppanel';
+import StepPanels from 'primevue/steppanels';
+import Button from 'primevue/button';
 import PvFileUpload from 'primevue/fileupload';
-import PvMessage from 'primevue/message';
-import PvPanel from 'primevue/panel';
-import { useAuthStore } from '@/store/auth';
+import PvToggleSwitch from 'primevue/toggleswitch';
 import { csvFileToJson } from '@/helpers';
-import { pluralizeFirestoreCollection } from '@/helpers';
 import { fetchOrgByName } from '@/helpers/query/orgs';
-import { usePermissions } from '@/composables/usePermissions';
+import { useToast } from 'primevue/usetoast';
+import { useAuthStore } from '@/store/auth';
+import { storeToRefs } from 'pinia';
+import _isEmpty from 'lodash/isEmpty';
+import OrgPicker from '@/components/OrgPicker.vue';
+import PvDataTable from 'primevue/datatable';
+import PvColumn from 'primevue/column';
+import _forEach from 'lodash/forEach';
+import _chunk from 'lodash/chunk';
+import _set from 'lodash/set';
+import _remove from 'lodash/remove';
+import SubmitTable from '@/components/SubmitTable.vue';
+import ScrollPanel from 'primevue/scrollpanel';
+import SelectButton from 'primevue/selectbutton';
+import MultiSelect from 'primevue/multiselect';
+import { usePermissions } from '../composables/usePermissions';
+import { exportCsv } from '@/helpers/query/utils';
+import _without from 'lodash/without';
+
+const rawStudentFile = ref([]);
+const tableColumns = ref([]);
+const csv_columns = ref([]);
+const usingEmail = ref(false);
+const usingOrgPicker = ref(true);
+const isFileUploaded = ref(false);
+const showSubmitTable = ref(false);
+const allStudentsValid = ref(false);
+
+const toast = useToast();
+const authStore = useAuthStore();
+const { roarfirekit } = storeToRefs(authStore);
 const { userCan, Permissions } = usePermissions();
 
-const authStore = useAuthStore();
-const toast = useToast();
-const isFileUploaded = ref(false);
-const rawStudentFile = ref({});
-const isAllTestData = ref(false);
+const SubmitStatus = {
+  IDLE: 'idle',
+  TRANSFORMING: 'transforming',
+  SUBMITTING: 'submitting',
+  COMPLETE: 'complete',
+};
+const submitting = ref(SubmitStatus.IDLE);
 
-const { roarfirekit } = storeToRefs(authStore);
-
-// Primary Table & Dropdown refs
-const dataTable = ref();
-const tableColumns = ref([]);
-const dropdown_model = ref({});
-const dropdown_options = ref([
+const nameFields = ref([
+  { field: 'first', label: 'First Name', description: "The student's first name" },
+  { field: 'middle', label: 'Middle Name', description: "The student's middle name" },
+  { field: 'last', label: 'Last Name', description: "The student's last name" },
+]);
+const demographicFields = ref([
+  { field: 'gender', label: 'Gender', description: "The student's gender" },
+  { field: 'race', label: 'Race', description: "The student's race(s)" },
   {
-    label: 'Required',
-    items: [
-      { label: 'Student Username', value: 'username' },
-      { label: 'Student Email', value: 'email' },
-      { label: 'Grade', value: 'grade' },
-      { label: 'Password', value: 'password' },
-      { label: 'Student Date of Birth', value: 'dob' },
-    ],
+    field: 'ellStatus',
+    label: 'English Language Learner Status',
+    description: "The student's English Language Learner status",
   },
   {
-    label: 'Optional',
-    items: [
-      { label: 'Ignore this column', value: 'ignore' },
-      { label: 'TestData', value: 'testData' },
-      { label: 'First Name', value: 'firstName' },
-      { label: 'Middle Name', value: 'middleName' },
-      { label: 'Last Name', value: 'lastName' },
-      { label: 'Unenroll', value: 'unenroll' },
-      { label: 'State ID', value: 'state_id' },
-      { label: 'Gender', value: 'gender' },
-      { label: 'English Language Learner', value: 'ell_status' },
-      { label: 'Free-Reduced Lunch', value: 'frl_status' },
-      { label: 'IEP Status', value: 'iep_status' },
-      { label: 'Hispanic Ethinicity', value: 'hispanic_ethnicity' },
-      { label: 'Race', value: 'race' },
-      { label: 'Home Language', value: 'home_language' },
-      { label: 'Pid', value: 'pid' },
-    ],
+    field: 'frlStatus',
+    label: 'Free and Reduced Lunch Status',
+    description: "The student's Free and Reduced Lunch status",
+  },
+  { field: 'iepStatus', label: 'IEP Status', description: "The student's IEP status" },
+  { field: 'hispanicEthnicity', label: 'Hispanic Ethnicity', description: "The student's Hispanic ethnicity" },
+  { field: 'homeLanguage', label: 'Home Language', description: "The student's home language(s)" },
+]);
+const optionalFields = ref([
+  {
+    field: 'testData',
+    label: 'Test Data',
+    description: 'Is this student a test user?',
+    permission: Permissions.TestData.CREATE,
   },
   {
-    label: 'Organizations',
-    items: [
-      { label: 'District', value: 'district' },
-      { label: 'School', value: 'school' },
-      { label: 'Class', value: 'uClass' }, // 'class' is a javascript keyword.
-      { label: 'Group', value: 'group' },
-    ],
+    field: 'unenroll',
+    label: 'Unenroll',
+    description: 'Should this student be unenrolled?',
+    permission: Permissions.Users.UNENROLL,
   },
+  { field: 'stateId', label: 'State ID', description: "The student's state ID" },
+  { field: 'pid', label: 'PID', description: "The student's PID", permission: Permissions.Users.SET_PID },
+]);
+const orgFields = ref([
+  { field: 'districts', label: 'District', description: '' },
+  { field: 'schools', label: 'School', description: '' },
+  { field: 'classes', label: 'Class', description: '' },
+  { field: 'groups', label: 'Group', description: '' },
+  { field: 'families', label: 'Family', description: '' },
 ]);
 
-// Error Users Table refs
-const errorTable = ref();
-const errorUsers = ref([]);
-const errorUserColumns = ref([]);
-const errorMessage = ref('');
-const showErrorTable = ref(false);
-
-const activeSubmit = ref(false);
-let processedUsers = 0;
-
-// Functions supporting the uploader
-const onFileUpload = async (event) => {
-  rawStudentFile.value = await csvFileToJson(event.files[0]);
-  tableColumns.value = generateColumns(toRaw(rawStudentFile.value[0]));
-  populateDropdown(tableColumns.value);
-  isFileUploaded.value = true;
-  toast.add({ severity: 'success', summary: 'Success', detail: 'File Successfully Uploaded', life: 3000 });
+const mappedColumns = ref({
+  required: {
+    username: null,
+    email: null,
+    password: null,
+    dob: null,
+    grade: null,
+  },
+  names: Object.fromEntries(nameFields.value.map((field) => [field.field, null])),
+  optional: Object.fromEntries(optionalFields.value.map((field) => [field.field, null])),
+  demographics: Object.fromEntries(demographicFields.value.map((field) => [field.field, null])),
+  organizations: Object.fromEntries(orgFields.value.map((field) => [field.field, null])),
+});
+const selectedOrgs = ref({
+  districts: [],
+  schools: [],
+  classes: [],
+  groups: [],
+  families: [],
+});
+const orgSelection = (selected) => {
+  selectedOrgs.value = selected;
 };
 
-function populateDropdown(columns) {
-  _forEach(columns, (col) => {
-    dropdown_model.value[col.field] = '';
-  });
+const handleValidationUpdate = (isValid) => {
+  allStudentsValid.value = isValid;
+};
+
+function resetUpload() {
+  rawStudentFile.value = {};
+  tableColumns.value = [];
+  csv_columns.value = [];
+  isFileUploaded.value = false;
 }
 
 function generateColumns(rawJson) {
   let columns = [];
   const columnValues = Object.keys(rawJson);
   _forEach(columnValues, (col) => {
+    if (col === 'rowKey') return;
     let dataType = typeof rawJson[col];
     if (dataType === 'object') {
       if (rawJson[col] instanceof Date) dataType = 'date';
     }
     columns.push({
       field: col,
-      header: _startCase(col),
+      header: col,
       dataType: dataType,
     });
   });
   return columns;
 }
 
-function getKeyByValue(object, value) {
-  return Object.keys(object).find((key) => object[key] === value);
-}
-
-function checkUniqueStudents(students, field) {
-  const uniqueStudents = _uniqBy(students, (student) => student[field]);
-  return students.length === uniqueStudents.length;
-}
-
-function isValidDate(date) {
-  return new Date(date).toString() !== 'Invalid Date';
-}
-
-async function submitStudents() {
-  // Reset error users
-  errorUsers.value = [];
-  errorUserColumns.value = [];
-  showErrorTable.value = false;
-  errorMessage.value = '';
-  activeSubmit.value = true;
-  const modelValues = _compact(Object.values(dropdown_model.value));
-  // Check that all required values are filled in
-  if (!_includes(modelValues, 'email') && !_includes(modelValues, 'username')) {
-    // Username / email needs to be filled in
-    errorMessage.value = "Please select a column to be user's username or email.";
-    activeSubmit.value = false;
-    return;
-  }
-  if (!_includes(modelValues, 'dob')) {
-    // Date needs to be filled in
-    errorMessage.value = "Please select a column to be user's date of birth.";
-    activeSubmit.value = false;
-    return;
-  }
-  if (!_includes(modelValues, 'grade')) {
-    // Grade needs to be filled in
-    errorMessage.value = "Please select a column to be user's grade.";
-    activeSubmit.value = false;
-    return;
-  }
-  if (!_includes(modelValues, 'password')) {
-    // Password needs to be filled in
-    errorMessage.value = "Please select a column to be user's password.";
-    activeSubmit.value = false;
-    return;
-  }
-  if (
-    ((!_includes(modelValues, 'district') && !_includes(modelValues, 'school')) ||
-      (!_includes(modelValues, 'district') && _includes(modelValues, 'school')) ||
-      (_includes(modelValues, 'district') && !_includes(modelValues, 'school'))) &&
-    !_includes(modelValues, 'group')
-  ) {
-    // Requires either district and school, OR group
-    errorMessage.value = 'Please assign columns to be either a group OR a pair of district and school.';
-    activeSubmit.value = false;
-    return;
-  }
-  let submitObject = [];
-  // Construct list of student objects, handle special columns
-  _forEach(rawStudentFile.value, (student) => {
-    let studentObj = {};
-    if (isAllTestData.value) studentObj['testData'] = true;
-    let dropdownMap = _cloneDeep(dropdown_model.value);
-    _forEach(modelValues, (col) => {
-      const columnMap = getKeyByValue(dropdownMap, col);
-      if (['ignore'].includes(col)) {
-        return;
-      }
-      // Special fields will accept multiple columns, and concat the values in each column
-      if (['race', 'home_language'].includes(col)) {
-        if (!studentObj[col] && student[columnMap]) {
-          studentObj[col] = [student[columnMap]];
-          dropdownMap = _omit(dropdownMap, columnMap);
-        } else if (student[columnMap]) {
-          studentObj[col].push(student[columnMap]);
-          dropdownMap = _omit(dropdownMap, columnMap);
-        }
-      } else if (['testData'].includes(col)) {
-        if (student[columnMap]) {
-          studentObj['testData'] = true;
-        }
-      } else {
-        studentObj[col] = student[columnMap];
-      }
-    });
-    submitObject.push(studentObj);
-  });
-  // Check for duplicate username / emails
-  let authField;
-  if (_includes(modelValues, 'username')) authField = 'username';
-  else authField = 'email';
-  const areUnique = checkUniqueStudents(submitObject, authField);
-  if (!areUnique) {
-    errorMessage.value = `One or more of the ${authField}s in this CSV are not unique.`;
-    activeSubmit.value = false;
-    return;
-  }
-
-  // Send the bulk user data to sorting
-  const usersToSend = [];
-  for (const user of submitObject) {
-    // Handle Email Registration
-    const {
-      email,
-      username,
-      password,
-      firstName,
-      middleName,
-      lastName,
-      district,
-      school,
-      uClass,
-      group,
-      grade,
-      dob,
-      ...userData
-    } = user;
-
-    let sendObject = {
-      userData,
+const onFileUpload = async (event) => {
+  const rawFile = await csvFileToJson(event.files[0]);
+  rawStudentFile.value = rawFile.map((row, index) => {
+    return {
+      rowKey: index,
+      ...row,
     };
-    if (username) _set(sendObject, 'userData.username', username);
-    if (firstName) _set(sendObject, 'userData.name.first', firstName);
-    if (middleName) _set(sendObject, 'userData.name.middle', middleName);
-    if (lastName) _set(sendObject, 'userData.name.last', lastName);
-
-    if (email || username) {
-      const computedEmail = email || `${username}@roar-auth.com`;
-      _set(sendObject, 'email', computedEmail);
-    } else {
-      addErrorUser(user, 'Error: Username or Email is required');
-      continue;
-    }
-
-    // Check validity of required fields
-    if (password && password.length >= 6) {
-      _set(sendObject, 'password', password);
-    } else {
-      // Users cannot be created without a password
-      addErrorUser(user, 'Error: Password must be at least 6 characters long');
-      continue;
-    }
-
-    if (grade) {
-      _set(sendObject, 'userData.grade', grade);
-    } else {
-      // Users cannot be created without a grade
-      addErrorUser(user, 'Error: Grade is required');
-      continue;
-    }
-
-    if (dob && isValidDate(dob)) {
-      _set(sendObject, 'userData.dob', dob);
-    } else {
-      // Users cannot be created without a valid date of birth
-      addErrorUser(user, 'Error: Date of Birth is required and should be a valid date');
-      continue;
-    }
-
-    const orgNameMap = {
-      district: district,
-      school: school,
-      class: uClass,
-      group: group,
-    };
-
-    // If orgType is a given column, check if the name is
-    //   associated with a valid id. If so, add the id to
-    //   the sendObject. If not, reject user
-    for (const [orgType, orgName] of Object.entries(orgNameMap)) {
-      if (orgName) {
-        let orgInfo;
-        if (orgType === 'school') {
-          const { id: districtId } = await getOrgId('districts', district);
-          orgInfo = await getOrgId(pluralizeFirestoreCollection(orgType), orgName, ref(districtId), ref(undefined));
-        } else if (orgType === 'class') {
-          const { id: districtId } = await getOrgId('districts', district);
-          const { id: schoolId } = await getOrgId('schools', school);
-          orgInfo = await getOrgId(pluralizeFirestoreCollection(orgType), orgName, ref(districtId), ref(schoolId));
-        } else {
-          orgInfo = await getOrgId(pluralizeFirestoreCollection(orgType), orgName, ref(undefined), ref(undefined));
-        }
-
-        if (!_isEmpty(orgInfo)) {
-          _set(sendObject, `userData.${pluralizeFirestoreCollection(orgType)}`, orgInfo);
-        } else {
-          addErrorUser(user, `Error: ${orgType} '${orgName}' is invalid`);
-          return;
-        }
-      }
-    }
-
-    usersToSend.push(sendObject);
-  }
-  await roarfirekit.value.createUpdateUsers(usersToSend).then((results) => {
-    activeSubmit.value = false;
-    for (const result of results.data) {
-      if (result?.status === 'rejected') {
-        const email = result.email;
-        const username = email.split('@')[0];
-        const usernameKey = getKeyByValue(dropdown_model.value, 'username');
-        const user = _find(rawStudentFile.value, (record) => {
-          return record[usernameKey] === username;
-        });
-        addErrorUser(user, result.reason);
-      } else if (result?.status === 'fulfilled') {
-        const email = result.email;
-        toast.add({ severity: 'success', summary: 'Success', detail: `User ${email} processed!`, life: 3000 });
-      }
-    }
   });
-}
-
-// Support functions for submitStudents process
-function addErrorUser(user, error) {
-  // If there are no error users yet, generate the
-  //  columns before displaying the table.
-  if (_isEmpty(errorUserColumns.value)) {
-    errorUserColumns.value = generateColumns(user);
-    errorUserColumns.value.unshift({
-      dataType: 'string',
-      field: 'error',
-      header: 'Cause of Error',
-    });
-    showErrorTable.value = true;
-  }
-  // Concat the userObject with the error reason.
-  errorUsers.value.push({
-    ...user,
-    error,
-  });
-  processedUsers = processedUsers + 1;
-}
-
-const orgIds = ref({
-  districts: {},
-  schools: {},
-  classes: {},
-  groups: {},
-});
-
-const getOrgId = async (orgType, orgName, parentDistrict, parentSchool) => {
-  if (orgIds.value[orgType][orgName]) return orgIds.value[orgType][orgName];
-
-  // Currently we don't supply selectedDistrict or selectedSchool
-  const orgs = await fetchOrgByName(orgType, orgName, parentDistrict, parentSchool);
-  // TODO: If multiple orgs are returned display an org selection modal to the user.
-  if (orgs.length > 1) {
-    throw new Error(`Multiple organizations found for ${orgType} '${orgName}'`);
-  }
-  if (orgs.length === 0) {
-    throw new Error(`No organizations found for ${orgType} '${orgName}'`);
-  }
-
-  orgIds.value[orgType][orgName] = orgs[0];
-  return orgs[0];
+  tableColumns.value = generateColumns(rawStudentFile.value[0]);
+  csv_columns.value = _remove(Object.keys(toRaw(rawStudentFile.value[0])), (col) => col !== 'rowKey');
 };
 
-// Functions supporting error table
-function downloadErrorTable() {
-  errorTable.value.exportCSV();
-}
+/**
+ * Add a new empty user to the table
+ */
+const addUser = () => {
+  if (_isEmpty(mappedStudents.value)) return;
 
-// Event listener for the 'beforeunload' event
-// window.addEventListener('beforeunload', (e) => {
-//   console.log('handler for beforeunload')
-//   e.preventDefault();
-// });
+  // Get the structure from the first user
+  const template = mappedStudents.value[0];
 
-// +-----------------------------------+
-// | Handle roarfirekit initialization |
-// +-----------------------------------+
+  // Create a new user with all the same keys but null values
+  const newUser = Object.keys(template).reduce((acc, key) => {
+    if (key === 'rowKey') {
+      acc[key] = mappedStudents.value.length;
+    } else {
+      acc[key] = null;
+    }
+    return acc;
+  }, {});
 
+  // Add the new user to the array
+  mappedStudents.value.push(newUser);
+
+  toast.add({
+    severity: 'info',
+    summary: 'New User Added',
+    detail: 'A new empty user has been added to the table.',
+    life: 3000,
+  });
+};
+
+const exportTransformedStudents = () => {
+  const exportData = mappedStudents.value;
+  // Filter out rowKey
+  const filteredData = exportData.map((row) => {
+    // eslint-disable-next-line no-unused-vars
+    const { rowKey, ...rest } = row;
+    return rest;
+  });
+
+  exportCsv(filteredData, 'roar-students.csv');
+};
+
+/**
+ * Checks if the user has filled out the information required to proceed to the targetStep.
+ * @param {string} targetStep - The step to check.
+ * @returns {boolean} True if the user has filled out the information required to proceed to the targetStep, false otherwise.
+ */
+const readyToProgress = (targetStep) => {
+  // Step 1: Check if a file has been uploaded
+  if (targetStep === '2') return !_isEmpty(rawStudentFile.value);
+
+  // Step 2: check if the required columns have been mapped
+  if (targetStep === '3') {
+    return (
+      (mappedColumns.value.required.username || mappedColumns.value.required.email) &&
+      mappedColumns.value.required.password &&
+      mappedColumns.value.required.dob &&
+      mappedColumns.value.required.grade
+    );
+  }
+
+  // Step 6: check that organization requirements have been met
+  if (targetStep === '7') {
+    if (usingOrgPicker.value) {
+      // Check that selectedOrgs has district, school and class populated OR group OR family populated
+      return (
+        (!_isEmpty(selectedOrgs.value.districts) && !_isEmpty(selectedOrgs.value.schools)) ||
+        !_isEmpty(selectedOrgs.value.groups) ||
+        !_isEmpty(selectedOrgs.value.families)
+      );
+    } else {
+      // Check that mappedColumns.organizations has all the required fields not null
+      return (
+        (mappedColumns.value.organizations.districts && mappedColumns.value.organizations.schools) ||
+        mappedColumns.value.organizations.groups ||
+        mappedColumns.value.organizations.families
+      );
+    }
+  }
+
+  return true;
+};
+
+/**
+ * Organization handling
+ */
+// Cache for organization IDs to avoid repeated API calls
+const orgCache = ref({
+  districts: new Map(),
+  schools: new Map(),
+  classes: new Map(),
+  groups: new Map(),
+  families: new Map(),
+});
+
+// Helper function to get org ID (uses cache if available)
+const getOrgId = async (orgType, orgName, selectedDistrict = null, selectedSchool = null) => {
+  if (!orgName) return null;
+
+  const cacheKey =
+    orgType === 'schools'
+      ? `${orgName}-${selectedDistrict}`
+      : orgType === 'classes'
+      ? `${orgName}-${selectedSchool}`
+      : orgName;
+
+  // Check cache first
+  if (orgCache.value[orgType].has(cacheKey)) {
+    return orgCache.value[orgType].get(cacheKey);
+  }
+
+  // If not in cache, fetch and cache the result
+  try {
+    const org = await fetchOrgByName(orgType, orgName, { value: selectedDistrict }, { value: selectedSchool });
+    if (org[0]?.id) {
+      orgCache.value[orgType].set(cacheKey, org[0].id);
+      return org[0].id;
+    }
+  } catch (error) {
+    console.error(`Error fetching ${orgType} ID for ${orgName}:`, error);
+  }
+  return null;
+};
+
+const eduOrgsSelected = computed(() => {
+  if (usingOrgPicker.value) {
+    return !_isEmpty(selectedOrgs.value.districts) && !_isEmpty(selectedOrgs.value.schools);
+  } else {
+    return (
+      !_isEmpty(mappedColumns.value.organizations.districts) && !_isEmpty(mappedColumns.value.organizations.schools)
+    );
+  }
+});
+
+const nonEduOrgsSelected = computed(() => {
+  if (usingOrgPicker.value) {
+    return !_isEmpty(selectedOrgs.value.groups) || !_isEmpty(selectedOrgs.value.families);
+  } else {
+    return !_isEmpty(mappedColumns.value.organizations.groups) || !_isEmpty(mappedColumns.value.organizations.families);
+  }
+});
+
+/**
+ * Submission handlers
+ */
+const mappedStudents = ref([]);
+const preTransformStudents = () => {
+  const transformedStudents = [];
+  for (const rawStudent of rawStudentFile.value) {
+    const transformedStudent = {};
+    transformedStudent['rowKey'] = rawStudent['rowKey'];
+    // Handle required fields
+    Object.entries(mappedColumns.value.required).forEach(([key, csvField]) => {
+      if (csvField) {
+        _set(transformedStudent, key, rawStudent[csvField]);
+      }
+    });
+
+    // Handle name fields
+    Object.entries(mappedColumns.value.names).forEach(([key, csvField]) => {
+      if (csvField) _set(transformedStudent, key, rawStudent[csvField]);
+    });
+
+    // Handle demographic fields
+    Object.entries(mappedColumns.value.demographics).forEach(([key, csvField]) => {
+      if (csvField) {
+        // In the case of race, which is a multiselect field, we need to
+        // concat the values from each field into one comma separated string
+        if (key === 'race') {
+          const races = _without(
+            csvField.map((item) => rawStudent[item] ?? null),
+            null,
+          );
+          _set(transformedStudent, key, races.join(', '));
+        } else {
+          _set(transformedStudent, key, rawStudent[csvField]);
+        }
+      }
+    });
+
+    // Handle optional fields
+    Object.entries(mappedColumns.value.optional).forEach(([key, csvField]) => {
+      if (csvField) {
+        _set(transformedStudent, key, rawStudent[csvField]);
+      }
+    });
+
+    if (!usingOrgPicker.value) {
+      // Handle organizations
+      Object.entries(mappedColumns.value.organizations).forEach(([key, csvField]) => {
+        if (csvField) {
+          _set(transformedStudent, key, rawStudent[csvField]);
+        }
+      });
+    }
+    transformedStudents.push(transformedStudent);
+  }
+  console.log('all transformed students', transformedStudents);
+  mappedStudents.value = transformedStudents;
+  showSubmitTable.value = true;
+};
+const transformStudentData = async (rawStudent) => {
+  const transformedStudent = {};
+
+  // Handle required fields
+  Object.keys(mappedColumns.value.required).forEach((key) => {
+    if (rawStudent[key]) {
+      if (key === 'username') {
+        _set(transformedStudent, 'email', `${rawStudent[key]}@roar-auth.com`);
+      } else if (['email', 'password'].includes(key)) {
+        _set(transformedStudent, key, rawStudent[key]);
+      } else {
+        _set(transformedStudent, `userData.${key}`, rawStudent[key]);
+      }
+    }
+  });
+
+  // Handle name fields
+  Object.keys(mappedColumns.value.names).forEach((key) => {
+    if (rawStudent[key]) _set(transformedStudent, `userData.name.${key}`, rawStudent[key]);
+  });
+
+  // Handle demographic fields
+  Object.keys(mappedColumns.value.demographics).forEach((key) => {
+    if (rawStudent[key] && key === 'race') {
+      _set(transformedStudent, `userData.${key}`, rawStudent[key].split(', '));
+    } else if (rawStudent[key]) {
+      _set(transformedStudent, `userData.${key}`, rawStudent[key]);
+    }
+  });
+
+  // Handle optional fields
+  Object.keys(mappedColumns.value.optional).forEach((key) => {
+    if (rawStudent[key]) {
+      _set(transformedStudent, `userData.${key}`, rawStudent[key]);
+    }
+  });
+
+  // Handle organizations
+  if (!usingOrgPicker.value) {
+    // If the org picker is not being used, we are given the names of the orgs as values.
+    // To submit, we need to send orgIds. Education orgs, districts, schools, and classes
+    // are fetched in order. First district, then school, then class. If any of these are not
+    // found, it will skip the rest as they are required to find the class.
+    let studentDistrictId = null;
+    let studentSchoolId = null;
+    const orgFields = mappedColumns.value.organizations;
+
+    // First check for non-educational orgs
+    if (orgFields.groups && rawStudent['groups']) {
+      const groupName = rawStudent['groups'];
+      const groupId = await getOrgId('groups', groupName);
+      if (groupId) {
+        _set(transformedStudent, 'userData.groups', { id: groupId });
+      }
+    } else {
+      // Process district -> school -> class hierarchy
+      if (orgFields.districts && rawStudent['districts']) {
+        const districtName = rawStudent['districts'];
+        studentDistrictId = await getOrgId('districts', districtName);
+        if (studentDistrictId) {
+          _set(transformedStudent, 'userData.districts', { id: studentDistrictId });
+        } else {
+          // TODO: display this gracefully on the UI.
+          console.log(`District ${districtName} not found.`);
+        }
+      }
+
+      if (studentDistrictId && orgFields.schools && rawStudent['schools']) {
+        const schoolName = rawStudent['schools'];
+        studentSchoolId = await getOrgId('schools', schoolName, studentDistrictId);
+        if (studentSchoolId) {
+          _set(transformedStudent, 'userData.schools', { id: studentSchoolId });
+        } else {
+          // TODO: display this gracefully on the UI.
+          console.log(`School ${schoolName} not found.`);
+        }
+      }
+
+      if (studentSchoolId && orgFields.classes && rawStudent['classes']) {
+        const className = rawStudent['classes'];
+        const classId = await getOrgId('classes', className, studentDistrictId, studentSchoolId);
+        if (classId) {
+          _set(transformedStudent, 'userData.classes', { id: classId });
+        } else {
+          // TODO: display this gracefully on the UI.
+          console.log(`Class ${className} not found.`);
+        }
+      }
+    }
+  } else {
+    // Take input from the org picker
+    Object.keys(selectedOrgs.value).forEach((key) => {
+      if (selectedOrgs.value[key].length) {
+        _set(transformedStudent, `userData.${key}`, { id: selectedOrgs.value[key][0].id });
+      }
+    });
+  }
+
+  return transformedStudent;
+};
+
+const submit = async () => {
+  submitting.value = SubmitStatus.TRANSFORMING;
+
+  // Transform each student's data according to the mappings
+  const transformedStudents = [];
+  for (const student of mappedStudents.value) {
+    const transformedStudent = await transformStudentData(student);
+    transformedStudents.push(transformedStudent);
+  }
+  submitting.value = SubmitStatus.SUBMITTING;
+  console.log(transformedStudents);
+
+  // Chunk users into chunks of 50 for submission
+  const chunkedUsers = _chunk(transformedStudents, 50);
+  for (const chunk of chunkedUsers) {
+    await roarfirekit.value.createUpdateUsers(chunk).then((results) => {
+      for (const result of results.data) {
+        if (result?.status === 'rejected') {
+          const email = result.email;
+          toast.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: `User ${email} failed to process: ${result.reason}`,
+            life: 5000,
+          });
+        } else if (result?.status === 'fulfilled') {
+          const email = result.email;
+          toast.add({ severity: 'success', summary: 'Success', detail: `User ${email} processed!`, life: 3000 });
+        }
+      }
+    });
+  }
+  submitting.value = SubmitStatus.COMPLETE;
+};
+
+/**
+ * Handles firekit initialization
+ */
 const refreshing = ref(false);
 const initialized = ref(false);
 let unsubscribe;
@@ -562,88 +885,50 @@ onMounted(async () => {
   }
 });
 </script>
-<style scoped>
-.extra-height {
-  min-height: 33vh;
-}
-.p-checkbox-box.p-highlight {
-  background-color: var(--primary-color);
-  border-color: var(--primary-color);
-  color: white;
-}
-
-.p-fileupload-buttonbar {
-  padding: 1.5rem !important;
-  background-color: gainsboro !important;
-  border-radius: 20px !important;
-}
-
-.info-box {
-  padding: 0.5rem;
-  margin-top: 0.5rem;
-  margin-bottom: 0.5rem;
-  background-color: var(--surface-b);
-  border-radius: 5px;
-  border: 1px solid var(--surface-d);
-}
-
-.error-box {
-  padding: 0.5rem;
-  margin-top: 0.5rem;
-  margin-bottom: 0.5rem;
-  background-color: var(--red-300);
-  border-radius: 5px;
-  border: 1px solid var(--red-600);
-  color: var(--red-600);
-  font-weight: bold;
-}
-
-.col-header {
+<style>
+.page-container {
+  width: 100%;
+  height: 100%;
   display: flex;
   flex-direction: column;
+  padding: 0 2rem;
 }
-
-.submit-container {
+.step-container {
+  width: 100%;
+  height: 100%;
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  margin-top: 1rem;
+  padding: 0 2rem;
+}
+.step-header {
+  margin: 0;
+}
+.step-field-item {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  gap: 0.5rem;
 }
 
-.error {
-  color: red;
+.dropdown {
+  height: 2.5rem;
+  width: 30rem;
+  max-width: 30rem;
 }
-
 .datatable {
   border: 1px solid var(--surface-d);
   border-radius: 5px;
 }
-
-.error-container {
-  margin-top: 1rem;
+.review-section-container {
+  border: 1px solid var(--surface-d);
+  border-radius: 5px;
+  padding: 1rem;
+  gap: 0.5rem;
 }
-
-.error-header {
+.review-section-item {
+  width: 100%;
   display: flex;
   flex-direction: row;
   justify-content: space-between;
-  padding-bottom: 0.5rem;
-}
-
-.orgs-container {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  margin-top: -1rem;
-  margin-bottom: 1rem;
-}
-
-.org-dropdown {
-  margin-right: 3rem;
-  margin-top: 2rem;
-}
-g {
-  margin-left: 0.5rem;
-  color: white;
+  align-items: center;
 }
 </style>
