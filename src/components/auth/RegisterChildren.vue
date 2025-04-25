@@ -546,17 +546,15 @@ const initialized = ref(false);
 const init = () => {
   if (unsubscribe) unsubscribe();
   initialized.value = true;
+  validateCode(props.code);
 };
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.roarfirekit.restConfig) init();
 });
 
-onMounted(async () => {
+onMounted(() => {
   if (roarfirekit.value.restConfig) init();
-  if (props.code && initialized.value) {
-    validateCode(props.code);
-  }
 });
 
 function codeNotRight(index) {
