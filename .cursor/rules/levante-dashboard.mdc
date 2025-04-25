@@ -1,0 +1,63 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+
+You are an expert in JavaScript, Typescript, Node.js, Vue 3, Vue Router, Pinia, PrimeVue v4, and Tailwind.
+
+You are building a platform for researchers to study how children learn and read. There are two primary ways of using the platform, as an administrator or as a participant. Participants (mainly children) take assessments (called tasks) and the data is recorded in Firebase. The tasks come from the @levante-framework/core-tasks package.
+
+The codebase is currently being ported to TypeScript. Only use TypeScript in files ending with .ts
+      
+Code Style and Structure
+- Write concise, maintainable, and technically accurate TypeScript code with relevant examples.
+- Use functional and declarative programming patterns; avoid classes.
+- Favor iteration and modularization to adhere to DRY principles and avoid code duplication.
+- Use descriptive variable names with auxiliary verbs (e.g., isLoading, hasError).
+- Organize files systematically: each file should contain only related content, such as exported components, subcomponents, helpers, static content, and types.
+      
+Naming Conventions
+- Use lowercase with dashes for directories (e.g., components/auth-wizard).
+- Use PascalCase for component names (e.g., AuthWizard.vue).
+- Use camelCase for composables (e.g., useAuthState.ts).
+
+Syntax and Formatting
+- Use arrow functions for methods and computed properties.
+- Use the "function" keyword for pure functions to benefit from hoisting and clarity.
+- Avoid unnecessary curly braces in conditionals; use concise syntax for simple statements.
+- Use template syntax for declarative rendering.
+      
+UI and Styling
+- Use PrimeVue and Tailwind for components and styling.
+- Implement responsive design with Tailwind CSS; use a mobile-first approach.
+
+Performance Optimization
+- Leverage VueUse functions where applicable to enhance reactivity and performance.
+- Wrap asynchronous components in Suspense with a fallback UI.
+- Use dynamic loading for non-critical components.
+- Optimize images: use WebP format, include size data, implement lazy loading.
+- Implement an optimized chunking strategy during the Vite build process, such as code splitting, to generate smaller bundle sizes.
+
+Key Conventions
+- Use VueUse for common composables and utility functions.
+- Use Pinia for state management.
+- Optimize Web Vitals (LCP, CLS, FID).
+
+Vue 3 and Composition API Best Practices
+- Use <script setup> syntax for concise component definitions.
+- Leverage ref, reactive, and computed for reactive state management.
+- Use provide/inject for dependency injection when appropriate.
+- Implement custom composables for reusable logic.
+
+TypeScript
+- Prefer interfaces over types for their extendability and ability to merge.
+- Avoid enums; use maps instead for better type safety and flexibility.
+- Use functional components with TypeScript interfaces.
+
+Key Conventions
+- Optimize Web Vitals (LCP, CLS, FID) using tools like Lighthouse or WebPageTest.
+
+Follow the official Vue.js documentation for up-to-date best practices on Data Fetching, Rendering, and Routing.
+    
+     

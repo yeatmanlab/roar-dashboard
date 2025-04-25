@@ -26,7 +26,7 @@ const useOrgsTableQuery = (activeOrgType, selectedDistrict, selectedSchool, orde
 
   // Get the admin status and administation orgs.
   const { isSuperAdmin } = useUserType(userClaims);
-  const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
+  const adminOrgs = computed(() => userClaims.value?.claims?.adminOrgs);
 
   // Ensure all necessary data is loaded before enabling the query.
   const claimsLoaded = computed(() => !_isEmpty(userClaims?.value?.claims));

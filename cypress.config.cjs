@@ -56,7 +56,7 @@ module.exports = defineConfig({
           },
         },
         optimizeDeps: {
-          include: ['@bdelab/roar-firekit', 'vue-google-maps-community-fork', 'fast-deep-equal'],
+          include: ['@bdelab/roar-firekit', 'fast-deep-equal'],
         },
       },
     },

@@ -59,10 +59,6 @@ export const useAuthStore = () => {
       isUserSuperAdmin: (state) => Boolean(state.userClaims?.claims?.super_admin),
     },
     actions: {
-      async completeAssessment(adminId, taskId) {
-        //@TODO: Move to mutation since we cannot rotate query keys anymore.
-        await this.roarfirekit.completeAssessment(adminId, taskId);
-      },
       async initFirekit() {
         try {
           this.roarfirekit = await initNewFirekit();
@@ -88,6 +84,9 @@ export const useAuthStore = () => {
             this.firebaseUser.appFirebaseUser = null;
           }
         });
+      },
+      async completeAssessment(adminId, taskId) {
+        await this.roarfirekit.completeAssessment(adminId, taskId);
       },
       async getLegalDoc(docName) {
         return await this.roarfirekit.getLegalDoc(docName);
@@ -193,6 +192,12 @@ export const useAuthStore = () => {
     },
     persist: {
       storage: sessionStorage,
+      paths: [
+        'firebaseUser', 
+        'ssoProvider',
+        'cleverOAuthRequested', 
+        'classLinkOAuthRequested'
+      ],
       debug: false,
     },
   })();

@@ -180,7 +180,7 @@ import useAdministrationAssignmentsQuery from '@/composables/queries/useAdminist
 import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery';
 import { getDynamicRouterPath } from '@/helpers/getDynamicRouterPath';
 import { exportCsv } from '@/helpers/query/utils';
-import { taskDisplayNames, gradeOptions } from '@/helpers/reports.js';
+import { taskDisplayNames, gradeOptions } from '@/helpers/reports';
 import { getTitle } from '@/helpers/query/administrations';
 import { setBarChartData, setBarChartOptions } from '@/helpers/plotting';
 import { isLevante } from '@/helpers';
@@ -189,6 +189,8 @@ import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
 import RoarDataTable from '@/components/RoarDataTable.vue';
 import { isEmpty } from 'lodash';
 import PvFloatLabel from 'primevue/floatlabel';
+// import ProgressChartLegend from '@/components/reports/ProgressChartLegend.vue'; // File does not exist
+// import ProgressChart from '@/components/reports/ProgressChart.vue'; // File does not exist
 
 const router = useRouter();
 const authStore = useAuthStore();

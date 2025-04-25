@@ -16,7 +16,7 @@
   </Head>
   <div>
     <PvToast />
-    <NavBar v-if="!navbarBlacklist.includes($route.name) && isAuthStoreReady" />
+    <NavBar v-if="typeof $route.name === 'string' && !navbarBlacklist.includes($route.name) && isAuthStoreReady" />
     <router-view :key="$route.fullPath" />
 
     <SessionTimer v-if="loadSessionTimeoutHandler" />
@@ -50,7 +50,18 @@ const route = useRoute();
 const pageTitle = computed(() => {
   const locale = i18n.global.locale.value;
   const fallbackLocale = i18n.global.fallbackLocale.value;
-  return route.meta?.pageTitle?.[locale] || route.meta?.pageTitle?.[fallbackLocale] || route.meta?.pageTitle;
+  const titles = route.meta?.pageTitle;
+
+  if (typeof titles === 'object' && titles !== null) {
+    const localeTitle = titles[locale];
+    const fallbackTitle = titles[fallbackLocale];
+    if (typeof localeTitle === 'string') return localeTitle;
+    if (typeof fallbackTitle === 'string') return fallbackTitle;
+  }
+  if (typeof titles === 'string') {
+    return titles;
+  }
+  return 'Levante';
 });
 
 const loadSessionTimeoutHandler = computed(() => isAuthStoreReady.value && authStore.isAuthenticated);

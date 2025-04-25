@@ -362,13 +362,14 @@ export const orgPageFetcher = async (
     page: page.value,
   });
 
-  console.log(`Fetching page ${page.value} for ${activeOrgType.value}`);
-
   if (isSuperAdmin.value) {
     return axiosInstance.post(':runQuery', requestBody).then(({ data }) => mapFields(data));
   } else {
     if (activeOrgType.value === 'schools' && (adminOrgs.value['districts'] ?? []).includes(selectedDistrict.value)) {
-      return axiosInstance.post(':runQuery', requestBody).then(({ data }) => mapFields(data));
+      const query = axiosInstance.post(':runQuery', requestBody).then(({ data }) => {
+        return mapFields(data);
+      });
+      return query
     } else if (
       activeOrgType.value === 'classes' &&
       ((adminOrgs.value['schools'] ?? []).includes(selectedSchool.value) ||
@@ -412,19 +413,29 @@ export const orgFetchAll = async (
   });
 
   if (isSuperAdmin.value) {
-    return await axiosInstance.post(':runQuery', requestBody).then(({ data }) => mapFields(data));
+    try {
+      return await axiosInstance.post(':runQuery', requestBody).then(({ data }) => mapFields(data));
+    } catch (error) {
+      console.error('orgFetchAll: Error fetching all orgs for super admin:', error);
+      return [];
+    }
   } else {
-    return orgPageFetcher(
-      activeOrgType,
-      selectedDistrict,
-      selectedSchool,
-      orderBy,
-      // Set page limit to max array length in javascript.
-      { value: 2 ** 31 - 1 },
-      { value: 0 },
-      isSuperAdmin,
-      adminOrgs,
-    );
+    try {
+      return await orgPageFetcher(
+        activeOrgType,
+        selectedDistrict,
+        selectedSchool,
+        orderBy,
+        // Set page limit to max array length in javascript.
+        { value: 2 ** 31 - 1 },
+        { value: 0 },
+        isSuperAdmin,
+        adminOrgs,
+      );
+    } catch (error) {
+      console.error('orgFetchAll: Error fetching all orgs for non-super admin:', error);
+      return [];
+    }
   }
 };
 
