@@ -110,13 +110,13 @@ jobs:
       - name: Execute Cypress tests
         uses: cypress-io/github-action@v6
         env:
-          CYPRESS_BASE_URL: 'http://127.0.0.1:4173'
+          CYPRESS_BASE_URL: 'http://127.0.0.1:5173'
           CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
           COMMIT_INFO_MESSAGE: '${{ github.event.pull_request.title }} (#${{ github.event.pull_request.number }})'
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           build: npm run build
-          start: npm run preview -- --host
+          start: npm run dev 
           tag: ${{ github.event_name }},e2e,${{ matrix.browser }}
           wait-on: ${{ env.CYPRESS_BASE_URL }}
           wait-on-timeout: 120
