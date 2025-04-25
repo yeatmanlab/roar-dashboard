@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { BufferLoader, AudioContext } from './audio';
+import { BufferLoader } from './audio';
 
 describe('audio', () => {
   global.XMLHttpRequest = vi.fn(() => ({

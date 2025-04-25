@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { getRunsRequestBody, runCounter, runPageFetcher } from '../runs';
 import { convertValues, getAxiosInstance, mapFields } from '../utils';
-import { pluralizeFirestoreCollection } from '@/helpers';
 
 vi.mock('vue', () => ({
   toValue: vi.fn((val) => val),
@@ -63,7 +62,7 @@ vi.mock('../utils', () => ({
     return val;
   }),
   mapFields: vi.fn((data) => {
-    return data.map((item) => ({
+    return data.map(() => ({
       id: 'run1',
       parentDoc: 'user1',
       taskId: 'task1',

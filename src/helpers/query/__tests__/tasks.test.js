@@ -9,7 +9,7 @@ vi.mock('vue', () => ({
 const mockPost = vi.fn().mockResolvedValue({ data: 'mockData' });
 
 vi.mock('../utils', () => ({
-  getAxiosInstance: vi.fn((db) => ({
+  getAxiosInstance: vi.fn(() => ({
     post: mockPost,
     get: vi.fn().mockResolvedValue({ data: { fields: {} } }),
   })),

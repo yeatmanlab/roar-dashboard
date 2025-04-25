@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { getTitle, administrationPageFetcher } from '../administrations';
-import { getAxiosInstance, convertValues, orderByDefault } from '../utils';
-import { filterAdminOrgs } from '@/helpers';
+import { getAxiosInstance, convertValues } from '../utils';
 
 vi.mock('vue', () => ({
   toValue: vi.fn((val) => val),

@@ -9,8 +9,6 @@ import {
   formatDate,
   csvFileToJson,
   standardDeviation,
-  filterAdminOrgs,
-  removeEmptyOrgs,
   pluralizeFirestoreCollection,
   singularizeFirestoreCollection,
 } from './index';

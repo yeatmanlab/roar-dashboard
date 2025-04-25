@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fetchLegalDocs } from '../legal';
-import { convertValues, getAxiosInstance } from '../utils';
+import { getAxiosInstance } from '../utils';
 
 vi.mock('lodash/capitalize', () => ({
   default: vi.fn((str) => str.charAt(0).toUpperCase() + str.slice(1).toLowerCase()),
