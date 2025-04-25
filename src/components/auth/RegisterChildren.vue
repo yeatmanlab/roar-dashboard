@@ -541,9 +541,20 @@ function addStudent() {
     validateCode(props.code, state.students.length - 1);
   }
 }
+let unsubscribe;
+const initialized = ref(false);
+const init = () => {
+  if (unsubscribe) unsubscribe();
+  initialized.value = true;
+};
+
+unsubscribe = authStore.$subscribe(async (mutation, state) => {
+  if (state.roarfirekit.restConfig) init();
+});
 
 onMounted(async () => {
-  if (props.code) {
+  if (roarfirekit.value.restConfig) init();
+  if (props.code && initialized.value) {
     validateCode(props.code);
   }
 });
