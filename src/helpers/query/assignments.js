@@ -46,6 +46,7 @@ export const getAssignmentsRequestBody = ({
   grades = [],
   isCollectionGroupQuery = true,
   restrictToOpenAssignments = false,
+  excludeTestData = false,
 }) => {
   const requestBody = {
     structuredQuery: {},
@@ -153,6 +154,18 @@ export const getAssignmentsRequestBody = ({
         field: { fieldPath: 'dateClosed' },
         op: 'GREATER_THAN_OR_EQUAL',
         value: { timestampValue: currentDate },
+      },
+    });
+  }
+
+  // N.B. The create administration form writes the testData key regardless of the value being set.
+  // Therefore this value should be present in all assignment docs.
+  if (excludeTestData) {
+    requestBody.structuredQuery.where.compositeFilter.filters.push({
+      fieldFilter: {
+        field: { fieldPath: 'testData' },
+        op: 'EQUAL',
+        value: { stringValue: 'false' },
       },
     });
   }
@@ -350,6 +363,7 @@ export const getUserAssignments = async (roarUid, orgType = null, orgIds = null)
     paginate: false,
     isCollectionGroupQuery: false,
     restrictToOpenAssignments: true,
+    excludeTestData: true,
   });
   const userId = toValue(roarUid);
   return await adminAxiosInstance
