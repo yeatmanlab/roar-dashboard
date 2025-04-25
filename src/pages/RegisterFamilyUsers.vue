@@ -92,10 +92,27 @@ import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import Register from '../components/auth/RegisterParent.vue';
 import RegisterStudent from '../components/auth/RegisterChildren.vue';
 import ROARLogoShort from '@/assets/RoarLogo-Short.vue';
+import { storeToRefs } from 'pinia';
 
 const authStore = useAuthStore();
 const initialized = ref(false);
 const spinner = ref(false);
+
+let unsubscribe;
+const { roarfirekit } = storeToRefs(authStore);
+
+const init = () => {
+  if (unsubscribe) unsubscribe();
+  initialized.value = true;
+};
+
+unsubscribe = authStore.$subscribe(async (mutation, state) => {
+  if (state.roarfirekit?.restConfig) init();
+});
+
+onMounted(() => {
+  if (roarfirekit.value?.restConfig) init();
+});
 
 // eslint-disable-next-line no-unused-vars
 const props = defineProps({
