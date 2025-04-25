@@ -542,10 +542,8 @@ function addStudent() {
   }
 }
 let unsubscribe;
-const initialized = ref(false);
 const init = () => {
   if (unsubscribe) unsubscribe();
-  initialized.value = true;
   validateCode(props.code);
 };
 
