@@ -117,7 +117,10 @@
               </div>
             </div>
             <div class="roar-game-image">
-              <div v-if="game.taskData?.tutorialVideo" class="video-player-wrapper">
+              <div
+                v-if="game.taskData?.tutorialVideo && userData?.studentData?.grade <= 3"
+                class="video-player-wrapper"
+              >
                 <VideoPlayer
                   :options="returnVideoOptions(game.taskData?.tutorialVideo)"
                   :on-video-end="updateVideoCompleted"
