@@ -165,7 +165,7 @@ export const getAssignmentsRequestBody = ({
       fieldFilter: {
         field: { fieldPath: 'testData' },
         op: 'EQUAL',
-        value: { stringValue: 'false' },
+        value: { booleanValue: false },
       },
     });
   }
