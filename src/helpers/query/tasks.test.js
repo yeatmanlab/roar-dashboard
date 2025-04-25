@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { getTasksRequestBody, taskFetcher, fetchByTaskId, getVariantsRequestBody, variantsFetcher } from '../tasks';
-import { getAxiosInstance, mapFields, convertValues } from '../utils';
+import { getTasksRequestBody, taskFetcher, fetchByTaskId, getVariantsRequestBody, variantsFetcher } from './tasks';
+import { getAxiosInstance, mapFields, convertValues } from './utils';
 
 vi.mock('vue', () => ({
   toValue: vi.fn((val) => val),
@@ -8,7 +8,7 @@ vi.mock('vue', () => ({
 
 const mockPost = vi.fn().mockResolvedValue({ data: 'mockData' });
 
-vi.mock('../utils', () => ({
+vi.mock('./utils', () => ({
   getAxiosInstance: vi.fn(() => ({
     post: mockPost,
     get: vi.fn().mockResolvedValue({ data: { fields: {} } }),

@@ -7,8 +7,8 @@ import {
   assignmentFetchAll,
   adminOrgIntersection,
   highestAdminOrgIntersection,
-} from '../assignments';
-import { getAxiosInstance, mapFields, convertValues } from '../utils';
+} from './assignments';
+import { getAxiosInstance, mapFields, convertValues } from './utils';
 
 vi.mock('vue', () => ({
   toValue: vi.fn((val) => val),
@@ -17,7 +17,7 @@ vi.mock('vue', () => ({
 
 const mockPost = vi.fn().mockResolvedValue({ data: 'mockData' });
 
-vi.mock('../utils', () => ({
+vi.mock('./utils', () => ({
   getAxiosInstance: vi.fn(() => ({
     post: mockPost,
     defaults: {

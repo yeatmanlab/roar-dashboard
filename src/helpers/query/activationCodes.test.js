@@ -1,12 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { getActivationCodesRequestBody, getActivationCodesByOrgId } from '../activationCodes';
-import { getAxiosInstance } from '../utils';
+import { getActivationCodesRequestBody, getActivationCodesByOrgId } from './activationCodes';
+import { getAxiosInstance } from './utils';
 
 vi.mock('vue', () => ({
   toValue: vi.fn((val) => val),
 }));
 
-vi.mock('../../../constants/firebase', () => ({
+vi.mock('./../../constants/firebase', () => ({
   FIRESTORE_COLLECTIONS: {
     ACTIVATION_CODES: 'activationCodes',
   },
@@ -27,7 +27,7 @@ const mockPost = vi.fn().mockResolvedValue({
   ],
 });
 
-vi.mock('../utils', () => ({
+vi.mock('./utils', () => ({
   getAxiosInstance: vi.fn(() => ({
     post: mockPost,
   })),

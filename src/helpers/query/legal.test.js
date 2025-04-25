@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fetchLegalDocs } from '../legal';
-import { getAxiosInstance } from '../utils';
+import { fetchLegalDocs } from './legal';
+import { getAxiosInstance } from './utils';
 
 vi.mock('lodash/capitalize', () => ({
   default: vi.fn((str) => str.charAt(0).toUpperCase() + str.slice(1).toLowerCase()),
@@ -8,7 +8,7 @@ vi.mock('lodash/capitalize', () => ({
 
 const mockGet = vi.fn();
 
-vi.mock('../utils', () => ({
+vi.mock('./utils', () => ({
   getAxiosInstance: vi.fn(() => ({
     get: mockGet,
   })),

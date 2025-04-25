@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { getTitle, administrationPageFetcher } from '../administrations';
-import { getAxiosInstance, convertValues } from '../utils';
+import { getTitle, administrationPageFetcher } from './administrations';
+import { getAxiosInstance, convertValues } from './utils';
 
 vi.mock('vue', () => ({
   toValue: vi.fn((val) => val),
@@ -40,7 +40,7 @@ vi.mock('@/store/auth', () => ({
 
 const mockPost = vi.fn();
 
-vi.mock('../utils', () => ({
+vi.mock('./utils', () => ({
   getAxiosInstance: vi.fn(() => ({
     post: mockPost,
     defaults: {

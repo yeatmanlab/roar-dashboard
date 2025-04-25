@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { convertValues, mapFields, exportCsv, matchMode2Op } from '../utils';
+import { convertValues, mapFields, exportCsv, matchMode2Op } from './utils';
 import Papa from 'papaparse';
 
 vi.mock('vue', () => ({

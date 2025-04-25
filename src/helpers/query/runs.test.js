@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { getRunsRequestBody, runCounter, runPageFetcher } from '../runs';
-import { convertValues, getAxiosInstance, mapFields } from '../utils';
+import { getRunsRequestBody, runCounter, runPageFetcher } from './runs';
+import { convertValues, getAxiosInstance, mapFields } from './utils';
 
 vi.mock('vue', () => ({
   toValue: vi.fn((val) => val),
@@ -50,7 +50,7 @@ vi.mock('lodash/without', () => ({
 
 const mockPost = vi.fn();
 
-vi.mock('../utils', () => ({
+vi.mock('./utils', () => ({
   getAxiosInstance: vi.fn(() => ({
     post: mockPost,
     defaults: {
