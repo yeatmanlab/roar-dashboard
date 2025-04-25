@@ -23,10 +23,10 @@ function playARFIntro() {
   waitTimeout();
 
   //   Click textbox and enter random participantId
-  cy.get('#input-0').type(`${participantId} {enter}`);
-  waitTimeout();
-  typeEnter();
-  waitTimeout();
+  // cy.get('#input-0').type(`${participantId} {enter}`);
+  // waitTimeout();
+  // typeEnter();
+  // waitTimeout();
 
   //   Click enter
   cy.get('body').type('1 {enter}');
@@ -78,10 +78,10 @@ function playCALFIntro() {
   waitTimeout();
 
   //   Click textbox and enter random participantId
-  cy.get('#input-0').type(`${participantId} {enter}`);
-  waitTimeout();
-  typeEnter();
-  waitTimeout();
+  // cy.get('#input-0').type(`${participantId} {enter}`);
+  // waitTimeout();
+  // typeEnter();
+  // waitTimeout();
 
   //   Click enter
   cy.get('body').type('1 {enter}');
