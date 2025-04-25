@@ -89,7 +89,7 @@ describe('query/legal', () => {
       expect(result[0].gitHubOrg).toBe('yeatmanlab');
       expect(result[0].gitHubRepository).toBe('roar-legal');
       expect(result[0].currentCommit).toBe('abc123');
-      expect(result[0].lastUpdated).toBe('1/1/2023, 12:00:00 PM');
+      expect(result[0].lastUpdated).toBe(new Date('2023-01-02T00:00:00Z').toLocaleString());
       expect(result[0].params).toEqual({ version: '1.0' });
 
       expect(result[1].type).toBe('Terms');
