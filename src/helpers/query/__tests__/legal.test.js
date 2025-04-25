@@ -31,6 +31,8 @@ describe('query/legal', () => {
 
     const mockDate = new Date('2023-01-01T12:00:00Z');
     vi.spyOn(global, 'Date').mockImplementation(() => mockDate);
+
+    vi.spyOn(Date.prototype, 'toLocaleString').mockImplementation(() => '1/1/2023, 12:00:00 PM');
   });
 
   describe('fetchLegalDocs', () => {
