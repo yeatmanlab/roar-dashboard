@@ -39,6 +39,7 @@ describe('Participant Assessment: ROAR Phoneme', () => {
       playPA({
         language: 'es',
         auth: 'username',
+        administration: Cypress.env('testSpanishRoarAppsAdministration'),
       });
     });
 
@@ -51,6 +52,7 @@ describe('Participant Assessment: ROAR Phoneme', () => {
       playPA({
         language: 'es',
         auth: 'clever',
+        administration: Cypress.env('testSpanishRoarAppsAdministration'),
       });
     });
   });
