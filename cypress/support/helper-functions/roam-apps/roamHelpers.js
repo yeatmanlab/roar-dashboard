@@ -74,6 +74,57 @@ function playARFIntro() {
   typeEnter();
 }
 
+function playARFIntroES() {
+  waitTimeout();
+  typeEnter();
+
+  cy.get('#practice_number').type('1');
+  waitTimeout();
+
+  //   Click enter
+  cy.get('#practice_number').type('{enter}');
+  waitTimeout();
+
+  //   Click backspace
+  cy.get('#practice_number').type('{backspace}');
+  waitTimeout();
+
+  // Input example number, enter x1
+
+  cy.get('#practice_number').type('10');
+  waitTimeout();
+
+  cy.get('#practice_number').type('{enter}');
+  typeEnter();
+  waitTimeout();
+
+  //   Enter x2
+  //cy.get("body").type("x2 {enter}");
+  typeEnter();
+  typeEnter();
+  //waitTimeout();
+
+  //   Type 4, enter x2
+  cy.get('#question_input_key').type('4');
+  waitTimeout();
+  cy.get('#question_input_key').type('{enter}');
+  typeEnter();
+  waitTimeout();
+  typeEnter();
+
+  //   Type 2, enter x2
+  cy.get('#question_input_key').type('2');
+  waitTimeout();
+  cy.get('#question_input_key').type('{enter}');
+  typeEnter();
+  waitTimeout();
+  typeEnter();
+
+  // Proceed to main game loop
+  typeEnter();
+  typeEnter();
+}
+
 function playCALFIntro() {
   waitTimeout();
 
@@ -129,6 +180,57 @@ function playCALFIntro() {
   typeEnter();
 }
 
+function playCALFIntroES() {
+  waitTimeout();
+  typeEnter();
+
+  cy.get('#practice_number').type('1');
+  waitTimeout();
+
+  //   Click enter
+  cy.get('#practice_number').type('{enter}');
+  waitTimeout();
+
+  //   Click backspace
+  cy.get('#practice_number').type('{backspace}');
+  waitTimeout();
+
+  // Input example number, enter x1
+
+  cy.get('#practice_number').type('10');
+  waitTimeout();
+
+  cy.get('#practice_number').type('{enter}');
+  typeEnter();
+  waitTimeout();
+
+  //   Enter x2
+  //cy.get("body").type("x2 {enter}");
+  typeEnter();
+  typeEnter();
+  //waitTimeout();
+
+  //   Type 4, enter x2
+  cy.get('#question_input_key').type('46');
+  waitTimeout();
+  cy.get('#question_input_key').type('{enter}');
+  typeEnter();
+  waitTimeout();
+  typeEnter();
+
+  //   Type 2, enter x2
+  cy.get('#question_input_key').type('37');
+  waitTimeout();
+  cy.get('#question_input_key').type('{enter}');
+  typeEnter();
+  waitTimeout();
+  typeEnter();
+
+  // Proceed to main game loop
+  typeEnter();
+  typeEnter();
+}
+
 function playFluencyLoop() {
   cy.get('#question_input_key').type(questionInput);
   waitTimeout();
@@ -147,6 +249,7 @@ function checkGameComplete(endText, continueText = null) {
             cy.get('body').type('{enter}');
           });
         cy.log('Game complete.');
+        waitTimeout();
       } else if (continueText && text.includes(continueText)) {
         cy.log('Game break found with text', continueText);
         cy.get('body').type('{enter}');
@@ -187,7 +290,11 @@ export function playARF({
   cy.waitForAssessmentReadyState();
   cy.get('.jspsych-btn').should('be.visible').click();
 
-  playARFIntro();
+  if (language === 'en') {
+    playARFIntro();
+  } else {
+    playARFIntroES();
+  }
   checkGameComplete(endText, continueText);
 
   //  Check if game is marked as complete on the dashboard
@@ -231,7 +338,12 @@ export function playCALF({
   cy.waitForAssessmentReadyState();
   cy.get('.jspsych-btn').should('be.visible').click();
 
-  playCALFIntro();
+  if (language === 'en') {
+    playCALFIntro();
+  } else {
+    playCALFIntroES();
+  }
+
   checkGameComplete(endText, continueText);
 
   //  Check if game is marked as complete on the dashboard
