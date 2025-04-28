@@ -29,7 +29,17 @@ describe('Parent: Auth', () => {
     cy.get('button').contains('Next').click();
 
     // Validate failure message.
-    cy.get('.p-dialog-header').should('be.visible').contains('Error');
+    cy.waitUntil(
+      () => {
+        return Cypress.$('[data-cy="error-dialog"] ').length;
+      },
+      {
+        errorMsg: 'Failed to find the error modal before timeout',
+        timeout: 60000,
+        interval: 1000,
+      },
+    );
+    cy.get('[data-cy="error-dialog"').should('be.visible').contains('Error');
     cy.get('.p-dialog-content')
       .should('be.visible')
       .contains(`The code ${invalidActivationCode} does not belong to any organization`);
@@ -58,6 +68,16 @@ describe('Parent: Auth', () => {
     cy.get('button').contains('Next').click();
 
     // Validate success message.
+    cy.waitUntil(
+      () => {
+        return Cypress.$('[data-cy="child-registration__org-name"] ').length;
+      },
+      {
+        errorMsg: 'Failed to find the org name before timeout',
+        timeout: 60000,
+        interval: 1000,
+      },
+    );
     cy.get('[data-cy="child-registration__org-name"]').should('contain.text', ORG_NAME);
   });
 });

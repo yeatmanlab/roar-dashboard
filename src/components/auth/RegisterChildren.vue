@@ -358,6 +358,7 @@
         :style="{ width: '25rem' }"
         :modal="true"
         :draggable="false"
+        data-cy="error-dialog"
       >
         <p>{{ dialogMessage }}</p>
         <PvButton
