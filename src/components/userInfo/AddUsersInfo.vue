@@ -2,7 +2,7 @@
   <PvPanel header="Add users" class="add-users-panel">
     <div class="info-message-container">
       <i class="pi pi-exclamation-circle"></i>
-      <p>Audiences must be created before adding users. You cannot add users otherwise.</p>
+      <p>Groupss must be created before adding users. You cannot add users otherwise.</p>
     </div>
 
     <div class="how-to-section">
@@ -22,7 +22,7 @@
       <li><b>userType</b> - The type of user. Must be one of the following: child, caregiver, or teacher.</li>
       <li><b>month</b><span class="required">*</span> - The month the child was born. (numeric birth month, For example: 5 for May)</li>
       <li><b>year</b><span class="required">*</span> - The year the child was born. (four-digit birth year, For example: 2017)</li>
-      <li><b>group</b> OR <b>site</b> AND <b>school</b> - You must specify either a group name OR both a site name and school name for each user.</li>
+      <li><b>cohort</b> OR <b>site</b> AND <b>school</b> - You must specify either a cohort name OR both a site name and school name for each user.</li>
     </ul>
 
     These fields (columns) are optional:
@@ -31,7 +31,7 @@
       <li><b>Class</b> - The name of the class.</li>
     </ul>
 
-    <p>Caregivers and Teachers need to have the same Audiences as their children / students.</p>
+    <p>Caregivers and Teachers need to have the same Groups as their children / students.</p>
 
     <p class="mb-6"><span class="required">*</span> = Required only for child users. Leave blank for caregiver or teacher users.</p>
 
@@ -59,7 +59,7 @@ import PvPanel from 'primevue/panel';
 
 
 const generateTemplateFile = () => {
-  const headers = ['id', 'userType', 'month', 'year', 'caregiverId', 'teacherId', 'site', 'school', 'class', 'group'];
+  const headers = ['id', 'userType', 'month', 'year', 'caregiverId', 'teacherId', 'site', 'school', 'class', 'cohort'];
   const csvContent = headers.join(',') + '\n';
   return new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
 };

@@ -12,7 +12,7 @@
       <li><b>site</b> - The site to edit.</li>
       <li><b>school</b> - The school to edit.</li>
       <li><b>class</b> - The class to edit.</li>
-      <li><b>group</b> - The group to edit.</li>
+      <li><b>cohort</b> - The cohort to edit.</li>
     </ul>
 
     <div class="warning-message">
@@ -31,7 +31,7 @@
           <li>User with specified UID does not exist</li>
           <li>Invalid format for a specific field</li>
           <li>Missing required data</li>
-          <li>Audience is not found</li>
+          <li>Group is not found</li>
         </ul>
       </div>
     </div>
