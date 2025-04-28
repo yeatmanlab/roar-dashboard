@@ -271,7 +271,7 @@ const computedValueOptions = (field) => {
   } else if (selectedField === 'User Type') {
     return [
       { label: 'Child', value: 'student' },
-      { label: 'Parent', value: 'parent' },
+      { label: 'Caregiver', value: 'parent' },
       { label: 'Teacher', value: 'teacher' },
     ];
   }

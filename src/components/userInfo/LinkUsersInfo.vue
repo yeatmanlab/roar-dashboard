@@ -3,6 +3,7 @@
       <div class="info-message-container">
         <i class="pi pi-exclamation-circle"></i>
         <p>Make sure you are editing the downloaded file you got after adding users. This new file contains all of your information and LEVANTE UIDs.</p>
+        <p>Make sure you are editing the downloaded file you got after adding users. This new file contains all of your information and LEVANTE UIDs.</p>
       </div>
 
       <div class="how-to-section">
@@ -27,13 +28,15 @@
         <span class="required">*</span> = These fields are ONLY required for child users.
       </p>
   
-      <p>Below is an example of what your CSV should look like. Note that you may upload a CSV with any columns
-      you need, but those not required for linking will be ignored during processing.</p>
+      <p>Below is an example of what your CSV/spreadsheet should look like. Only the required columns will be processed.</p>
   
       <img
         id="example-image"
         :src="LEVANTE_BUCKET_URL + '/link_users_example.png'"
         alt="CSV upload example"
+        id="link-users-example-image"
+        :src="linkUsersExampleImage"
+        alt="Link Users CSV example"
         style="width: 100%; max-width: 1400px; height: auto;"
       />
     </PvPanel>
@@ -41,7 +44,7 @@
 
 <script setup>
   import PvPanel from 'primevue/panel';
-  import { LEVANTE_BUCKET_URL } from '@/constants/bucket';
+  import linkUsersExampleImage from '@/assets/images/levante-link-users-example.png';
 </script>
 
 <style scoped>

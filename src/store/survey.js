@@ -19,7 +19,7 @@ export const useSurveyStore = () => {
         allSpecificPages: [],
         currentPageIndex: 0,
         specificSurveyRelationData: [],
-        // the index of the specific survey relation that is currently being displayed. IE. which class or child of a parent or teacher.
+        // the index of the specific survey relation that is currently being displayed. IE. which class or child of a caregiver or teacher.
         specificSurveyRelationIndex: 0,
         isGeneralSurveyComplete: false,
         isSpecificSurveyComplete: false,

@@ -122,7 +122,7 @@ const allFields = [
     },
     {
       field: 'parentId',
-      header: 'Parent ID',
+      header: 'Caregiver ID',
       dataType: 'string',
     },
     {
@@ -245,13 +245,15 @@ const validateUsers = () => {
           console.log('parentId in loop:', parentId);
 
           if (!userMap.has(parentId)) {
-            missingFields.push(`Parent with ID ${parentId} not found`);
+            missingFields.push(`Caregiver with ID ${parentId} not found`);
           } else {
-            // Find userType field in parent (case-insensitive)
+            // Find userType field in caregiver (case-insensitive)
             const parentUserTypeField = Object.keys(userMap.get(parentId)).find(key => key.toLowerCase() === 'usertype');
+            const parentUserTypeValue = parentUserTypeField ? userMap.get(parentId)[parentUserTypeField].toLowerCase() : null;
             
-            if (!parentUserTypeField || userMap.get(parentId)[parentUserTypeField].toLowerCase() !== 'parent') {
-              missingFields.push(`User with ID ${parentId} is not a parent`);
+            // Accept either 'parent' or 'caregiver' as valid during linking validation
+            if (!parentUserTypeField || (parentUserTypeValue !== 'parent' && parentUserTypeValue !== 'caregiver')) {
+              missingFields.push(`User with ID ${parentId} is not a parent/caregiver`);
             }
           }
         });

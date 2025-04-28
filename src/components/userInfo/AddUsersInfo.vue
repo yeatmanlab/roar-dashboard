@@ -31,7 +31,7 @@
       <li><b>Class</b> - The name of the class.</li>
     </ul>
 
-    <p>Parents and Teachers need to have the same Audiences as their children / students.</p>
+    <p>Caregivers and Teachers need to have the same Audiences as their children / students.</p>
 
     <p class="mb-6"><span class="required">*</span> = Required only for child users. Leave blank for parent or teacher users.</p>
 
@@ -46,7 +46,7 @@
 
     <img
       id="example-image"
-      src="https://storage.googleapis.com/road-dashboard/example_researcher_csv.png"
+      :src="linkUsersExampleImage"
       alt="CSV upload example"
       style="width: 100%; max-width: 1400px; height: auto;"
     />
@@ -55,9 +55,10 @@
 
 <script setup>
 import PvPanel from 'primevue/panel';
+import linkUsersExampleImage from '@/assets/images/levante-add-users-example.png';
 
 const generateTemplateFile = () => {
-  const headers = ['id', 'userType', 'month', 'year', 'parentId', 'teacherId', 'site', 'school', 'class', 'group'];
+  const headers = ['id', 'userType', 'month', 'year', 'caregiverId', 'teacherId', 'site', 'school', 'class', 'group'];
   const csvContent = headers.join(',') + '\n';
   return new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
 };
