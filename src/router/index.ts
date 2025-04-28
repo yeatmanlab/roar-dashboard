@@ -11,6 +11,7 @@ import _get from 'lodash/get';
 import { pageTitlesEN, pageTitlesUS, pageTitlesES, pageTitlesCO } from '@/translations/exports';
 import { isLevante } from '@/helpers';
 import { APP_ROUTES } from '@/constants/routes';
+import posthogInstance from '@/plugins/posthog';
 
 function removeQueryParams(to: RouteLocationNormalized) {
   if (Object.keys(to.query).length) return { path: to.path, query: {}, hash: to.hash };
@@ -371,6 +372,15 @@ router.beforeEach(async (to: RouteLocationNormalized, from: RouteLocationNormali
 
   next();
   return;
+});
+
+// PostHog pageview tracking
+router.afterEach((to, from) => {
+  // Check if PostHog is initialized (i.e., not the mock)
+  // The instance check isn't strictly necessary due to the mock, but provides clarity
+  if (typeof posthogInstance.capture === 'function') {
+    posthogInstance.capture('$pageview');
+  }
 });
 
 export default router;

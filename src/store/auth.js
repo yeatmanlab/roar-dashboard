@@ -5,9 +5,10 @@ import _isEmpty from 'lodash/isEmpty';
 import _union from 'lodash/union';
 import { initNewFirekit } from '../firebaseInit';
 import { AUTH_SSO_PROVIDERS } from '../constants/auth';
+import posthogInstance from '@/plugins/posthog';
 
 export const useAuthStore = () => {
-  return defineStore('authStore', {
+  const store = defineStore('authStore', {
     id: 'authStore',
     state: () => {
       return {
@@ -67,20 +68,63 @@ export const useAuthStore = () => {
         }
       },
       setAuthStateListeners() {
+        let wasAuthenticated = Boolean(this.firebaseUser.adminFirebaseUser) && Boolean(this.firebaseUser.appFirebaseUser);
+
         this.adminAuthStateListener = onAuthStateChanged(this.roarfirekit?.admin.auth, async (user) => {
+          const previousAdminUser = this.firebaseUser.adminFirebaseUser;
           if (user) {
             this.localFirekitInit = true;
             this.firebaseUser.adminFirebaseUser = user;
           } else {
             this.firebaseUser.adminFirebaseUser = null;
           }
+          if (previousAdminUser !== this.firebaseUser.adminFirebaseUser) {
+             const nowAuthenticated = Boolean(this.firebaseUser.adminFirebaseUser) && Boolean(this.firebaseUser.appFirebaseUser);
+             if (!wasAuthenticated && nowAuthenticated) {
+               const identifyUser = this.firebaseUser.adminFirebaseUser;
+               if (identifyUser) {
+                  console.log('PostHog Identify:', identifyUser.uid);
+                  posthogInstance.identify(
+                    identifyUser.uid,
+                    {
+                      email: identifyUser.email,
+                    }
+                  );
+               }
+             } else if (wasAuthenticated && !nowAuthenticated) {
+               console.log('PostHog Reset');
+               posthogInstance.reset();
+             }
+             wasAuthenticated = nowAuthenticated;
+          }
         });
+
         this.appAuthStateListener = onAuthStateChanged(this.roarfirekit?.app.auth, async (user) => {
+          const previousAppUser = this.firebaseUser.appFirebaseUser;
           if (user) {
             this.firebaseUser.appFirebaseUser = user;
           } else {
             this.firebaseUser.appFirebaseUser = null;
           }
+          if (previousAppUser !== this.firebaseUser.appFirebaseUser) {
+             const nowAuthenticated = Boolean(this.firebaseUser.adminFirebaseUser) && Boolean(this.firebaseUser.appFirebaseUser);
+             if (!wasAuthenticated && nowAuthenticated) {
+               const identifyUser = this.firebaseUser.appFirebaseUser;
+                if (identifyUser) {
+                  console.log('PostHog Identify:', identifyUser.uid);
+                  posthogInstance.identify(
+                    identifyUser.uid,
+                    {
+                      email: identifyUser.email,
+                    }
+                  );
+               }
+             } else if (wasAuthenticated && !nowAuthenticated) {
+               console.log('PostHog Reset');
+               posthogInstance.reset();
+             }
+             wasAuthenticated = nowAuthenticated;
+           }
         });
       },
       async completeAssessment(adminId, taskId) {
@@ -159,13 +203,21 @@ export const useAuthStore = () => {
       async createUsers(userData) {
         return this.roarfirekit.createUsers(userData);
       },
+      async signOut() {
+         console.log('PostHog Reset (explicit signOut)');
+         posthogInstance.reset();
+         if (this.isFirekitInit) {
+           return this.roarfirekit.signOut();
+         }
+      },
     },
     persist: {
       storage: sessionStorage,
       paths: ['firebaseUser', 'ssoProvider'],
       debug: false,
     },
-  })();
+  });
+  return store();
 };
 
 if (import.meta.hot) {
