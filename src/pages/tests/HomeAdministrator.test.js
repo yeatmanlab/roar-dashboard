@@ -114,12 +114,12 @@ describe('HomeAdministrator', () => {
                 components: {
                   AppSpinner: { template: '<div class="mocked-spinner" />' },
                   CardAdministration: { template: '<div class="mocked-card-administration" />' },
-                  PvAutoComplete: { template: '<div class="mocked-card-administration" />' },
-                  PvBlockUI: { template: '<div class="mocked-card-administration" />' },
-                  PvButton: { template: '<div class="mocked-card-administration" />' }, 
-                  PvDataView: { template: '<div class="mocked-card-administration" />' },
-                  PvSelect: { template: '<div class="mocked-card-administration" />' },
-                  PvInputGroup: { template: '<div class="mocked-card-administration" />' },
+                  PvAutoComplete: { template: '<div class="mocked-auto-complete" />' },
+                  PvBlockUI: { template: '<div class="mocked-bock-ui" />' },
+                  PvButton: { template: '<div class="mocked-button" />' }, 
+                  PvDataView: { template: '<div class="mocked-data-view" />' },
+                  PvSelect: { template: '<div class="mocked-select" />' },
+                  PvInputGroup: { template: '<div class="mocked-input" />' },
                 }
             },
             setup() {
@@ -168,20 +168,18 @@ describe('HomeAdministrator', () => {
         isError: false,
       });
 
-      console.log("mocked user administrations", mockedUseAdministrationsListQuery);
-    
       const wrapper = mount(HomeAdministrator, { 
         global: { 
           plugins: [VueQuery.VueQueryPlugin, PrimeVue], 
           components: {
             AppSpinner: { template: '<div class="mocked-spinner" />' },
             CardAdministration: { template: '<div class="mocked-card-administration" />' },
-            PvAutoComplete: { template: '<div class="mocked-card-administration" />' },
-            PvBlockUI: { template: '<div class="mocked-card-administration" />' },
-            PvButton: { template: '<div class="mocked-card-administration" />' }, 
-            PvDataView: { template: '<div class="mocked-card-administration" />' },
-            PvSelect: { template: '<div class="mocked-card-administration" />' },
-            PvInputGroup: { template: '<div class="mocked-card-administration" />' },
+            PvAutoComplete: { template: '<div class="mocked-auto-complete" />' },
+            PvBlockUI: { template: '<div class="mocked-bock-ui" />' },
+            PvButton: { template: '<div class="mocked-button" />' }, 
+            PvDataView: { template: '<div class="mocked-data-view" />' },
+            PvSelect: { template: '<div class="mocked-select" />' },
+            PvInputGroup: { template: '<div class="mocked-input" />' },
           }
         },
         setup() {
