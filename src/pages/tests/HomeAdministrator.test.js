@@ -1,24 +1,26 @@
-// Mock the module before individual tests since vi.mock is hoisted to the top of the file
-// closer to how code is actually executed
-vi.mock('@/composables/queries/useAdministrationsListQuery', () => ({
-  useAdministrationsListQuery: vi.fn().mockReturnValue({
-    data: { value: [] },
-    isLoading: true,
-    isFetching: false,
-    isError: false,
-  }),
-}));
-
-
+import { describe, it, expect, vi } from 'vitest';
 import { ref } from 'vue';
 import { mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
-import { describe, it, expect, vi } from 'vitest';
 import * as VueQuery from '@tanstack/vue-query';
-import HomeAdministrator from '../HomeAdministrator.vue'
+import HomeAdministrator from '@/pages/HomeAdministrator.vue'
 import PrimeVue from 'primevue/config';
+
+// Mock the module before individual tests since vi.mock is hoisted to the top of the file
+// closer to how code is actually executed
+vi.mock('@/composables/queries/useAdministrationsListQuery', () => ({
+  useAdministrationsListQuery: vi.fn(() => ({
+    data: ref([]),
+    isLoading: ref(true),
+    isFetching: ref(true),
+    isError: ref(false),
+  })),
+}));
+
 import {useAdministrationsListQuery} from '@/composables/queries/useAdministrationsListQuery'; 
-import {useUserClaimsQuery} from '../../composables/queries/useUserClaimsQuery';
+
+// check if it's the orginal query or the mocked one
+console.log('useAdministrationsListQuery in test file:', useAdministrationsListQuery);
 
 
 
@@ -74,7 +76,6 @@ describe('HomeAdministrator', () => {
           })),
       }));
       
-
       vi.mock('@/helpers/query/utils', () => ({
         orderByDefault: [
           {
@@ -90,8 +91,9 @@ describe('HomeAdministrator', () => {
           error: null,
         })),
       }));
-    });
 
+      vi.mocked(useAdministrationsListQuery).mockClear()
+    });
 
     afterEach(() => {
         vi.resetAllMocks();
@@ -99,19 +101,26 @@ describe('HomeAdministrator', () => {
 
 
     it('renders static elements before data loads', () => {
-        vi.mocked(useAdministrationsListQuery).mockReturnValueOnce({
-            data: { value: [] },
-            isLoading: false,
-            isFetching: false,
-            isError: false,
-        });
+      vi.mocked(useAdministrationsListQuery).mockReturnValue({
+        data: { value: [] },
+        isLoading: true,
+        isFetching: false,
+        isError: false,
+      });
 
-        const wrapper = mount(HomeAdministrator, { 
+      const wrapper = mount(HomeAdministrator, { 
             global: { 
                 plugins: [VueQuery.VueQueryPlugin, PrimeVue], 
                 components: {
-                    AppSpinner: { template: '<div class="mocked-spinner" />' },
-                },
+                  AppSpinner: { template: '<div class="mocked-spinner" />' },
+                  CardAdministration: { template: '<div class="mocked-card-administration" />' },
+                  PvAutoComplete: { template: '<div class="mocked-card-administration" />' },
+                  PvBlockUI: { template: '<div class="mocked-card-administration" />' },
+                  PvButton: { template: '<div class="mocked-card-administration" />' }, 
+                  PvDataView: { template: '<div class="mocked-card-administration" />' },
+                  PvSelect: { template: '<div class="mocked-card-administration" />' },
+                  PvInputGroup: { template: '<div class="mocked-card-administration" />' },
+                }
             },
             setup() {
                 return {
@@ -149,74 +158,84 @@ describe('HomeAdministrator', () => {
         expect(wrapper.text()).toContain('Sort by');
     });
 
-    it('renders loading state when data is loading', () => {
-        // vi.mocked documentation https://vitest.dev/guide/mocking.html
-        vi.mocked(useAdministrationsListQuery).mockReturnValueOnce({
-            data: { value: [] },
-            isLoading: true,
-            isFetching: false,
-            isError: false,
-        });
+    it('renders loading state when data is loading', () => {  
+      const mockedUseAdministrationsListQuery = vi.mocked(useAdministrationsListQuery);
 
-        const wrapper = mount(HomeAdministrator, { 
-            global: { 
-                plugins: [VueQuery.VueQueryPlugin, PrimeVue], 
-                components: {
-                    AppSpinner: { template: '<div class="mocked-spinner" />' },
-                },
-            },
-            setup() {
-                return {
-                    sortOptions: ref([
-                        {
-                            label: 'Name (ascending)',
-                            value: [
-                                {
-                                    field: { fieldPath: 'name' },
-                                    direction: 'ASCENDING',
-                                },
-                            ],
-                        }
-                    ]),
-                    sortKey: ref({ value: [{ field: { fieldPath: 'name' }, direction: 'ASCENDING' }] }),
-                    sortOrder: ref(1),
-                    sortField: ref('name'),
-                    dataViewKey: ref(0),
-                    search: ref(''),
-                    searchInput: ref(''),
-                    filteredAdministrations: ref([mockAdministration]),
-                    initialized: ref(true),
-                    pageLimit: ref(10),
-                    page: ref(0),
-                    orderBy: ref([{ field: { fieldPath: 'name' }, direction: 'ASCENDING' }]),
-                    searchSuggestions: ref([]),
-                    searchTokens: ref([]),
-                    fetchTestAdministrations: ref(false)
-                }
-            }
-        });
+      mockedUseAdministrationsListQuery.mockReturnValue({
+        data: { value: [] },
+        isLoading: true,
+        isFetching: false,
+        isError: false,
+      });
 
-        // Log the values to debug
-        console.log('Checks', {
-            '!initialized || isLoadingAdministrations': !wrapper.vm.initialized || wrapper.vm.isLoadingAdministrations,
-            '!initialized': !wrapper.vm.initialized,
-            'isLoadingAdministrations': wrapper.vm.isLoadingAdministrations,
-            'isLoading': wrapper.vm.isLoading,
-            'useUserClaimsQuery was called': vi.mocked(useUserClaimsQuery).mock.calls,
-            'mock calls': vi.mocked(useAdministrationsListQuery).mock.calls,
-            'mock results': vi.mocked(useAdministrationsListQuery).mock.results
-        });
-        
-        expect(wrapper.find('.loading-container').exists()).toBe(true);
-        expect(wrapper.find('.mocked-spinner').exists()).toBe(true);
-        expect(wrapper.text()).toContain('Fetching Assignments');
+      console.log("mocked user administrations", mockedUseAdministrationsListQuery);
+    
+      const wrapper = mount(HomeAdministrator, { 
+        global: { 
+          plugins: [VueQuery.VueQueryPlugin, PrimeVue], 
+          components: {
+            AppSpinner: { template: '<div class="mocked-spinner" />' },
+            CardAdministration: { template: '<div class="mocked-card-administration" />' },
+            PvAutoComplete: { template: '<div class="mocked-card-administration" />' },
+            PvBlockUI: { template: '<div class="mocked-card-administration" />' },
+            PvButton: { template: '<div class="mocked-card-administration" />' }, 
+            PvDataView: { template: '<div class="mocked-card-administration" />' },
+            PvSelect: { template: '<div class="mocked-card-administration" />' },
+            PvInputGroup: { template: '<div class="mocked-card-administration" />' },
+          }
+        },
+        setup() {
+          return {
+            sortOptions: ref([
+              {
+                label: 'Name (ascending)',
+                value: [
+                  {
+                    field: { fieldPath: 'name' },
+                    direction: 'ASCENDING',
+                  },
+                ],
+              }
+            ]),
+            sortKey: ref({ value: [{ field: { fieldPath: 'name' }, direction: 'ASCENDING' }] }),
+            sortOrder: ref(1),
+            sortField: ref('name'),
+            dataViewKey: ref(0),
+            search: ref(''),
+            searchInput: ref(''),
+            filteredAdministrations: ref([mockAdministration]),
+            initialized: ref(true),
+            pageLimit: ref(10),
+            page: ref(0),
+            orderBy: ref([{ field: { fieldPath: 'name' }, direction: 'ASCENDING' }]),
+            searchSuggestions: ref([]),
+            searchTokens: ref([]),
+            fetchTestAdministrations: ref(false)
+          };
+        }
+      });
+
+      // Log the values to debug
+      console.log('Checks', {
+        '!initialized || isLoadingAdministrations': !wrapper.vm.initialized || wrapper.vm.isLoadingAdministrations,
+        '!initialized': !wrapper.vm.initialized,
+        'isLoadingAdministrations': wrapper.vm.isLoadingAdministrations,
+        'isLoading': wrapper.vm.isLoading,
+        'UseAdministrationsListQuery mock calls': mockedUseAdministrationsListQuery.mock.calls,
+        'UseAdministrationsListQuery mock results': mockedUseAdministrationsListQuery.mock.results
+      });
+      
+      expect(wrapper.find('.loading-container').exists()).toBe(true);
+      expect(wrapper.find('.mocked-spinner').exists()).toBe(true);
+      expect(wrapper.text()).toContain('Fetching Assignments');
     });
+
+    // Empty data table
+
+    // Data table with administrations data
+
+    // Search functionality
+
+    // Sort functionality
+
 });
-
-// Empty data table
-
-// Data table with administrations data
-
-// Search functionality
-
-// Sort functionality
