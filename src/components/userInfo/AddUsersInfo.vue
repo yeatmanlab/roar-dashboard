@@ -19,9 +19,9 @@
     These fields (columns) are <b>REQUIRED</b> for adding users:
 
     <ul>
-      <li><b>userType</b> - The type of user. Must be one of the following: child, parent, or teacher.</li>
-      <li><b>month</b><span class="required">*</span> - The month the child was born. (numeric birth month, e.g. 5 for May)</li>
-      <li><b>year</b><span class="required">*</span> - The year the child was born. (four-digit birth year, e.g. 2017)</li>
+      <li><b>userType</b> - The type of user. Must be one of the following: child, caregiver, or teacher.</li>
+      <li><b>month</b><span class="required">*</span> - The month the child was born. (numeric birth month, For example: 5 for May)</li>
+      <li><b>year</b><span class="required">*</span> - The year the child was born. (four-digit birth year, For example: 2017)</li>
       <li><b>group</b> OR <b>site</b> AND <b>school</b> - You must specify either a group name OR both a site name and school name for each user.</li>
     </ul>
 
@@ -33,7 +33,7 @@
 
     <p>Caregivers and Teachers need to have the same Audiences as their children / students.</p>
 
-    <p class="mb-6"><span class="required">*</span> = Required only for child users. Leave blank for parent or teacher users.</p>
+    <p class="mb-6"><span class="required">*</span> = Required only for child users. Leave blank for caregiver or teacher users.</p>
 
     <div class="download-button-container">
       <button class="download-csv-btn" @click="downloadTemplate" data-testid="download-template">
@@ -45,17 +45,18 @@
     <p>Below is an example of what your CSV/spreadsheet should look like. Only the required columns will be processed.</p>
 
     <img
-      id="example-image"
-      :src="linkUsersExampleImage"
-      alt="CSV upload example"
+      id="add-users-example-image"
+      :src="`${LEVANTE_BUCKET_URL}/add_users_example.png`"
+      alt="Add Users CSV Example "
       style="width: 100%; max-width: 1400px; height: auto;"
     />
   </PvPanel>
 </template>
 
 <script setup>
+import { LEVANTE_BUCKET_URL } from '@/constants/bucket';
 import PvPanel from 'primevue/panel';
-import linkUsersExampleImage from '@/assets/images/levante-add-users-example.png';
+
 
 const generateTemplateFile = () => {
   const headers = ['id', 'userType', 'month', 'year', 'caregiverId', 'teacherId', 'site', 'school', 'class', 'group'];

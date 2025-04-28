@@ -45,8 +45,7 @@
               </div>
             </template>
             <template #body="{ data, field }">
-              <span v-if="field === 'userType' && data[field] === 'parent'">Parent/Caregiver</span>
-              <span v-else>{{ data[field] }}</span>
+              <span>{{ data[field] }}</span>
             </template>
           </PvColumn>
         </PvDataTable>
@@ -101,8 +100,7 @@
               {{ col.header }}
             </template>
             <template #body="{ data, field }">
-              <span v-if="field === 'userType' && data[field] === 'parent'">Parent/Caregiver</span>
-              <span v-else>{{ data[field] }}</span>
+              <span>{{ data[field] }}</span>
             </template>
           </PvColumn>
         </PvDataTable>
@@ -314,7 +312,7 @@ const onFileUpload = async (event) => {
           missingFields.push(requiredField === 'usertype' ? 'userType' : requiredField);
         }
       });
-    } else if (user[userTypeField].toLowerCase() === 'parent' || user[userTypeField].toLowerCase() === 'teacher') {
+    } else if (user[userTypeField].toLowerCase() === 'caregiver' || user[userTypeField].toLowerCase() === 'teacher') {
       careGiverRequiredInfo.forEach((requiredField) => {
         // Find the actual field name in the user object (case-insensitive)
         const actualField = Object.keys(user).find(key => key.toLowerCase() === requiredField);

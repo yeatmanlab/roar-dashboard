@@ -198,7 +198,7 @@
                 {{ _get(colData, col.field) }}
               </div>
               <div v-else-if="col.field === 'userType' && _get(colData, col.field) === 'parent'">
-                Parent/Caregiver
+                Caregiver
               </div>
               <div v-else>
                 {{ _capitalize(_get(colData, col.field)) }}
