@@ -28,6 +28,7 @@ describe('Parent: Auth', () => {
     // Submit parent form.
     cy.get('button').contains('Next').click();
 
+    cy.wait(1000)
     // Validate failure message.
     cy.waitUntil(
       () => {
@@ -66,6 +67,7 @@ describe('Parent: Auth', () => {
 
     // Submit parent form.
     cy.get('button').contains('Next').click();
+    cy.wait(1000)
 
     // Validate success message.
     cy.waitUntil(
