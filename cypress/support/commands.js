@@ -170,7 +170,7 @@ Cypress.Commands.add('waitForParticipantHomepage', () => {
 Cypress.Commands.add('waitForAssessmentReadyState', () => {
   cy.waitUntil(
     () => {
-      return Cypress.$('.jspsych-btn').length > 0;
+      return Cypress.$('.jspsych-btn').length > 0 || Cypress.$('.instructionCanvasNS').length > 0;
     },
     {
       errorMsg: 'Failed to load the assessment before timeout',
@@ -267,7 +267,7 @@ Cypress.Commands.add('selectAdministration', function selectAdministration(testA
     .invoke('text')
     .then((text) => {
       if (text.includes(testAdministration)) {
-        cy.get('.p-select-list-container').contains(testAdministration).click();
+        cy.get('.p-select-list-container').find('li').contains(testAdministration).click();
         cy.log('Selected administration:', testAdministration);
         cy.agreeToConsent();
       } else {
