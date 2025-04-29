@@ -127,14 +127,14 @@ const computedItems = computed(() => {
       });
     }
   }
-  // Audience only has one associated page and therefore is not nested within items
-  const audienceAction = rawActions.value.find((action) => action.category === 'Audience');
-  if (audienceAction) {
+  // Groups only has one associated page and therefore is not nested within items
+  const groupsAction = rawActions.value.find((action) => action.category === 'Groups');
+  if (groupsAction) {
     items.push({
-      label: audienceAction.title,
-      icon: audienceAction.icon,
+      label: groupsAction.title,
+      icon: groupsAction.icon,
       command: () => {
-        router.push(audienceAction.buttonLink);
+        router.push(groupsAction.buttonLink);
       },
     });
   }

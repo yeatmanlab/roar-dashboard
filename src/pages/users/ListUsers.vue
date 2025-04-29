@@ -11,7 +11,7 @@
             <div class="bg-gray-100 px-5 py-2 rounded flex flex-column gap-3">
               <div class="flex flex-wrap align-items-center gap-2 justify-content-between">
                 <div class="uppercase font-light font-sm text-gray-400 mr-2">
-                  {{ orgType === 'districts' ? 'site' : singularizeFirestoreCollection(orgType) }}
+                  {{ displayOrgType }}
                 </div>
                 <div class="text-xl text-gray-600">
                   <b> {{ orgName }} </b>
@@ -25,7 +25,7 @@
               </div>
             </div>
           </div>
-          <div class="text-md text-gray-500 ml-6">View users for the selected audience.</div>
+          <div class="text-md text-gray-500 ml-6">View users for the selected Group.</div>
         </div>
 
         <RoarDataTable
@@ -139,15 +139,6 @@ import EditUsersForm from '@/components/EditUsersForm.vue';
 import RoarModal from '@/components/modals/RoarModal.vue';
 import RoarDataTable from '@/components/RoarDataTable.vue';
 
-const authStore = useAuthStore();
-
-const { roarfirekit } = storeToRefs(authStore);
-const initialized = ref(false);
-const toast = useToast();
-
-const page = ref(0);
-const orderBy = ref(null);
-
 const props = defineProps({
   orgType: {
     type: String,
@@ -162,6 +153,31 @@ const props = defineProps({
     required: true,
   },
 });
+
+const authStore = useAuthStore();
+const { roarfirekit } = storeToRefs(authStore);
+const initialized = ref(false);
+
+let unsubscribe;
+const init = () => {
+  if (unsubscribe) unsubscribe();
+  initialized.value = true;
+};
+
+unsubscribe = authStore.$subscribe(async (mutation, state) => {
+  if (state.roarfirekit.restConfig) init();
+});
+
+onMounted(() => {
+  if (roarfirekit.value.restConfig) init();
+  isModalEnabled.value = false;
+});
+
+const toast = useToast();
+
+const page = ref(0);
+const orderBy = ref(null);
+
 
 const {
   isLoading,
@@ -185,26 +201,8 @@ const columns = ref([
     sort: false,
   },
   {
-    field: 'name.first',
-    header: 'First Name',
-    dataType: 'string',
-    sort: false,
-  },
-  {
-    field: 'name.last',
-    header: 'Last Name',
-    dataType: 'string',
-    sort: false,
-  },
-  {
     field: 'studentData.grade',
     header: 'Grade',
-    dataType: 'string',
-    sort: false,
-  },
-  {
-    field: 'studentData.gender',
-    header: 'Gender',
     dataType: 'string',
     sort: false,
   },
@@ -221,12 +219,6 @@ const columns = ref([
     sort: false,
   },
   {
-    field: 'archived',
-    header: 'Archived',
-    dataType: 'boolean',
-    sort: false,
-  },
-  {
     header: 'Edit',
     button: true,
     eventName: 'edit-button',
@@ -234,6 +226,16 @@ const columns = ref([
     sort: false,
   },
 ]);
+
+const displayOrgType = computed(() => {
+  if (props.orgType === 'districts') {
+    return 'Site';
+  } else if (props.orgType === 'groups') {
+    return 'Cohort';
+  } else {
+    return singularizeFirestoreCollection(props.orgType);
+  }
+});
 
 const currentEditUser = ref(null);
 const isModalEnabled = ref(false);
@@ -324,18 +326,5 @@ async function updatePassword() {
   }
 }
 
-let unsubscribe;
-const init = () => {
-  if (unsubscribe) unsubscribe();
-  initialized.value = true;
-};
 
-unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit.restConfig) init();
-});
-
-onMounted(() => {
-  if (roarfirekit.value.restConfig) init();
-  isModalEnabled.value = false;
-});
 </script>

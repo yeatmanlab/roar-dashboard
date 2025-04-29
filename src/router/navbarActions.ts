@@ -22,12 +22,12 @@ const navbarActionOptions: Readonly<NavbarAction>[] = [
     category: 'Home',
   },
   {
-    title: 'Audiences',
-    buttonLink: { name: 'ListAudiences' },
+    title: 'Groups',
+    buttonLink: { name: 'ListGroups' },
     requiresSuperAdmin: false,
     requiresAdmin: true,
     project: 'ALL',
-    category: 'Audience',
+    category: 'Groups',
   },
   {
     title: 'View Assignments',

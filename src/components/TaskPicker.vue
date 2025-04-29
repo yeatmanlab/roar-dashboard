@@ -1,5 +1,10 @@
 <template>
-  <PvPanel header="Select tasks">
+  <PvPanel>
+    <template #header>
+      <div class="flex align-items-center font-bold">
+        Select Tasks <span class='required-asterisk text-red-500 ml-1'>*</span>
+      </div>
+    </template>
     <div class="w-full flex flex-column lg:flex-row gap-2">
       <div v-if="tasksPaneOpen" class="w-full lg:w-6">
         <div class="flex flex-row mb-2">
@@ -104,7 +109,7 @@
       </div>
       <div class="divider"></div>
       <div class="w-full lg:w-6" data-cy="panel-droppable-zone">
-        <div class="panel-title mb-2 text-base">Selected tasks</div>
+        <div class="panel-title mb-2 text-base">Selected Tasks <span class='required-asterisk text-red-500 ml-1'>*</span></div>
         <PvScrollPanel style="height: 32rem; width: 100%; overflow-y: auto">
           <!-- Draggable Zone 2 -->
           <VueDraggableNext
@@ -157,7 +162,6 @@ import { VueDraggableNext } from 'vue-draggable-next';
 import { useToast } from 'primevue/usetoast';
 import PvButton from 'primevue/button';
 import PvSelect from 'primevue/select';
-import PvInputSwitch from 'primevue/inputswitch';
 import PvInputText from 'primevue/inputtext';
 import PvPanel from 'primevue/panel';
 import PvScrollPanel from 'primevue/scrollpanel';
