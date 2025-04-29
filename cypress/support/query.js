@@ -20,13 +20,12 @@ async function getUserId(user, adminFirestore) {
   const userQuery = query(adminUsersRef, where('username', '==', user));
   const userSnapshot = await getDocs(userQuery);
   const userIds = userSnapshot.docs.map((doc) => doc.id);
-  console.log(user, userIds);
+  console.log('userId for user', user, 'is', userIds[0]);
   return userIds[0]; // return the first user ID
 }
 
 async function resetAssignmentDoc(assignmentRef, assignmentData) {
   for (const assessment of assignmentData.assessments) {
-    console.log('Deleting assessment data for task', assessment.taskId);
     delete assessment.allRunIds;
     delete assessment.runId;
     delete assessment.startedOn;
@@ -76,7 +75,7 @@ export async function deleteTestRuns(user, adminFirestore, assessmentFirestore) 
             const assignmentRef = doc(adminFirestore, 'users', id, 'assignments', assignmentId);
             await getDoc(assignmentRef).then(async (assignmentDoc) => {
               if (!assignmentDoc.exists()) {
-                console.log('assignmentDoc does not exist');
+                console.log('Assignment document does not exist');
                 return;
               }
               const assignmentData = assignmentDoc.data();
@@ -87,7 +86,7 @@ export async function deleteTestRuns(user, adminFirestore, assessmentFirestore) 
                   await deleteCollectionDocs(assessmentFirestore, `users/${id}/runs/${runId}/trials`);
                 })
                 .then(async () => {
-                  console.log(`Delete run: users/${id}/runs/${runId}`);
+                  console.log(`Deleting run: users/${id}/runs/${runId}`);
 
                   await deleteDoc(doc(assessmentFirestore, 'users', id, 'runs', runId));
                 });
