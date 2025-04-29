@@ -25,6 +25,13 @@ const buildCollectionRequestPayload = (id) => {
   };
 };
 
+const buildCollectionRequestPayloadWithOrgId = (id, orgId) => {
+  return {
+    collection: 'administrations',
+    docId: `${id}/stats/${orgId}`,
+  };
+};
+
 describe('useAdministrationsStatsQuery', () => {
   let queryClient;
 
@@ -36,11 +43,11 @@ describe('useAdministrationsStatsQuery', () => {
     queryClient?.clear();
   });
 
-  it('should call query with correct parameters', () => {
+  it('should call query with correct parameters when no orgId is passed in', () => {
     const mockAdministrationIds = ref([nanoid(), nanoid(), nanoid()]);
     vi.spyOn(VueQuery, 'useQuery');
 
-    withSetup(() => useAdministrationsStatsQuery(mockAdministrationIds), {
+    withSetup(() => useAdministrationsStatsQuery(mockAdministrationIds, null), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
@@ -56,6 +63,28 @@ describe('useAdministrationsStatsQuery', () => {
 
     expect(fetchDocsById).toHaveBeenCalledWith(expectedPayload);
   });
+  it('should call query with correct parameters when an orgId is passed in', () => {
+    const mockAdministrationIds = ref([nanoid(), nanoid(), nanoid()]);
+    vi.spyOn(VueQuery, 'useQuery');
+
+    const orgId = ref('123456');
+
+    withSetup(() => useAdministrationsStatsQuery(mockAdministrationIds, orgId), {
+      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
+    });
+
+    expect(VueQuery.useQuery).toHaveBeenCalledWith({
+      queryKey: ['administrations-stats', mockAdministrationIds],
+      queryFn: expect.any(Function),
+      enabled: expect.objectContaining({
+        _value: true,
+      }),
+    });
+
+    const expectedPayload = mockAdministrationIds.value.map((id) => buildCollectionRequestPayloadWithOrgId(id, orgId.value));
+
+    expect(fetchDocsById).toHaveBeenCalledWith(expectedPayload);
+  });
 
   it('should allow the query to be disabled via the passed query options', () => {
     const mockAdministrationIds = ref([nanoid(), nanoid(), nanoid()]);
@@ -63,7 +92,7 @@ describe('useAdministrationsStatsQuery', () => {
 
     vi.spyOn(VueQuery, 'useQuery');
 
-    withSetup(() => useAdministrationsStatsQuery(mockAdministrationIds, queryOptions), {
+    withSetup(() => useAdministrationsStatsQuery(mockAdministrationIds, null, queryOptions), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
@@ -84,7 +113,7 @@ describe('useAdministrationsStatsQuery', () => {
 
     vi.spyOn(VueQuery, 'useQuery');
 
-    withSetup(() => useAdministrationsStatsQuery(mockAdministrationIds, queryOptions), {
+    withSetup(() => useAdministrationsStatsQuery(mockAdministrationIds, null, queryOptions), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
@@ -112,7 +141,7 @@ describe('useAdministrationsStatsQuery', () => {
 
     vi.spyOn(VueQuery, 'useQuery');
 
-    withSetup(() => useAdministrationsStatsQuery(mockAdministrationIds, queryOptions), {
+    withSetup(() => useAdministrationsStatsQuery(mockAdministrationIds, null, queryOptions), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
