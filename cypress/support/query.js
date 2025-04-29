@@ -20,15 +20,13 @@ async function getUserId(user, adminFirestore) {
   const userQuery = query(adminUsersRef, where('username', '==', user));
   const userSnapshot = await getDocs(userQuery);
   const userIds = userSnapshot.docs.map((doc) => doc.id);
-  cy.log(user, userIds);
+  console.log(user, userIds);
   return userIds[0]; // return the first user ID
 }
 
 async function resetAssignmentDoc(assignmentRef, assignmentData) {
-  console.log('resetting assignment doc');
-  console.log('assessmentData', assignmentData);
   for (const assessment of assignmentData.assessments) {
-    cy.log('Deleting assessment data for task', assessment.taskId);
+    console.log('Deleting assessment data for task', assessment.taskId);
     delete assessment.allRunIds;
     delete assessment.runId;
     delete assessment.startedOn;
@@ -61,41 +59,36 @@ export async function deleteCollectionDocs(db, path) {
 export async function deleteTestRuns(user, adminFirestore, assessmentFirestore) {
   cy.then({ timeout: 7200000 }, async () => {
     await getUserId(user, adminFirestore).then(async (id) => {
-      console.log('id', id);
-
       const runsCollectionRef = collection(assessmentFirestore, 'users', id, 'runs');
       await getDocs(runsCollectionRef).then(async (runsSnapshot) => {
         console.log('Found', runsSnapshot.size, 'runs for user', user);
-
         const seenAssignmentIds = new Set();
 
         //   Loop through each run, get the assignmentId, and reset the assignment
         for (const run of runsSnapshot.docs) {
           const runData = run.data();
-          console.log('runData', runData);
           const runId = run.id;
-          console.log('runId', runId);
 
           const assignmentId = runData.assignmentId;
           // Check if the assignmentId has already been seen in order to preserve a single run per assignment
           // This will allow CI tests based on score reports to continue to pass
           if (seenAssignmentIds.has(assignmentId)) {
             const assignmentRef = doc(adminFirestore, 'users', id, 'assignments', assignmentId);
-            console.log('assignmentRef', assignmentRef);
             await getDoc(assignmentRef).then(async (assignmentDoc) => {
               if (!assignmentDoc.exists()) {
                 console.log('assignmentDoc does not exist');
                 return;
               }
               const assignmentData = assignmentDoc.data();
-              console.log('Resetting assignment doc');
+              console.log(`Resetting assignment doc: users/${id}/assignments/${assignmentId}`);
               await resetAssignmentDoc(assignmentRef, assignmentData)
                 .then(async () => {
-                  console.log('Deleting trials');
+                  console.log(`Deleting trials: users/${id}/runs/${runId}/trials`);
                   await deleteCollectionDocs(assessmentFirestore, `users/${id}/runs/${runId}/trials`);
                 })
                 .then(async () => {
-                  console.log('Deleting run');
+                  console.log(`Delete run: users/${id}/runs/${runId}`);
+
                   await deleteDoc(doc(assessmentFirestore, 'users', id, 'runs', runId));
                 });
             });
