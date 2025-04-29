@@ -2,7 +2,7 @@
   <PvPanel header="Add users" class="add-users-panel">
     <div class="info-message-container">
       <i class="pi pi-exclamation-circle"></i>
-      <p>Groupss must be created before adding users. You cannot add users otherwise.</p>
+      <p>Groups must be created before adding users. You cannot add users otherwise.</p>
     </div>
 
     <div class="how-to-section">
