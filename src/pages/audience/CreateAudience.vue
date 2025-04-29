@@ -32,7 +32,7 @@
 
         <div v-if="orgType?.singular === 'group'" class="flex flex-row align-items-center justify-content-start gap-2">
           <PvCheckbox v-model="groupHasParentOrg" input-id="chbx-group-parent-org" :binary="true" />
-          <label for="chbx-group-parent-org">Belongs to an Audience</label>
+          <label for="chbx-group-parent-org">Belongs to a Site</label>
         </div>
 
         <OrgPicker

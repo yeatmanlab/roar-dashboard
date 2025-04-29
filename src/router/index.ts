@@ -211,24 +211,24 @@ const routes: Array<RouteRecordRaw> = [
       {
         path: '',
         name: 'ProfileInfo',
-        component: () => import('../components/views/UserInfoView.vue'),
+        component: () => import('../components/adminSettings/UserInfoView.vue'),
       },
       {
         path: 'password',
         name: 'ProfilePassword',
-        component: () => import('../components/views/PasswordView.vue'),
+        component: () => import('../components/adminSettings/PasswordView.vue'),
         meta: { requireAdmin: true },
       },
       {
         path: 'accounts',
         name: 'ProfileAccounts',
-        component: () => import('../components/views/LinkAccountsView.vue'),
+        component: () => import('../components/adminSettings/LinkAccountsView.vue'),
         meta: { requireAdmin: true },
       },
       {
         path: 'settings',
         name: 'ProfileSettings',
-        component: () => import('../components/views/Settings.vue'),
+        component: () => import('../components/adminSettings/Settings.vue'),
       },
     ],
     meta: { pageTitle: 'Profile' },
