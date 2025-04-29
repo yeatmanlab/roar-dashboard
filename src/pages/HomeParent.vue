@@ -12,12 +12,12 @@
       <div v-if="isLoadingAssignments || isLoadingAdministrations">
         <AppSpinner class="mb-4" />
       </div>
-      <div class="flex flex-row">
+      <div class="flex flex-row align-items-center justify-content-center w-full flex-wrap">
         <div v-if="assignmentData?.length == 0">
           <div class="text-lg font-bold text-gray-600">No assignments available</div>
           <div class="text-sm font-light text-gray-800">Please check back later.</div>
         </div>
-        <div v-for="assignment in assignmentData" :key="assignment.id">
+        <div v-for="assignment in assignmentData" :key="assignment.id" class="flex items-center">
           <UserCard
             :assignment="assignment"
             :org-type="orgType"
@@ -34,12 +34,18 @@
 import useAdministrationsListQuery from '@/composables/queries/useAdministrationsListQuery';
 import useAdministrationAssignmentsQuery from '@/composables/queries/useAdministrationAssignmentsQuery';
 import { orderByDefault } from '@/helpers/query/utils';
-import { ref, watch } from 'vue';
+import { ref, watch, onMounted } from 'vue';
 import UserCard from '@/components/UserCard.vue';
 import { pluralizeFirestoreCollection } from '@/helpers';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes.js';
+import { useAuthStore } from '@/store/auth';
+import { storeToRefs } from 'pinia';
 
+const authStore = useAuthStore();
+const { roarfirekit } = storeToRefs(authStore);
+
+const parentRegistrationComplete = ref(false);
 const initialized = ref(true);
 const administrationId = ref(null);
 // TODO: Set this dynamically in cases where this component is used for non-family adminstrators
@@ -49,6 +55,12 @@ const orgId = ref(null);
 const orderBy = ref(orderByDefault);
 const { isLoading: isLoadingAdministrations, data: administrations } = useAdministrationsListQuery(orderBy, false, {
   enabled: initialized,
+});
+
+onMounted(async () => {
+  parentRegistrationComplete.value = await authStore.verifyParentRegistration();
+  console.log('roarfirekit.valu', roarfirekit.value);
+  console.log('Parent Registration Complete:', parentRegistrationComplete.value);
 });
 
 watch(
