@@ -1,18 +1,6 @@
-import {
-  collection,
-  deleteDoc,
-  doc,
-  getDoc,
-  getDocs,
-  query,
-  Timestamp,
-  updateDoc,
-  where,
-  writeBatch,
-} from 'firebase/firestore';
+import { collection, deleteDoc, doc, getDoc, getDocs, query, Timestamp, updateDoc, where } from 'firebase/firestore';
 import { getDevFirebase } from './devFirebase';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
-import _chunk from 'lodash/chunk';
 
 async function getUserId(user, adminFirestore) {
   console.log('Grabbing userId for user', user);
@@ -37,54 +25,26 @@ async function resetAssignmentDoc(assignmentRef, assignmentData) {
   await updateDoc(assignmentRef, assignmentData);
 }
 
-export async function deleteCollectionDocs(db, path) {
-  const collectionRef = collection(db, path);
-  const snapshot = await getDocs(collectionRef);
-
-  if (snapshot.empty) {
-    return;
-  }
-
-  const batchSize = 500;
-  const documentsToDelete = snapshot.docs;
-  const chunks = _chunk(documentsToDelete, batchSize);
-
-  for (const chunk of chunks) {
-    const batch = writeBatch(db);
-    chunk.forEach((doc) => batch.delete(doc.ref));
-    await batch.commit();
-  }
-}
-
 export async function deleteTestRuns(user, adminFirestore, assessmentFirestore) {
   cy.then(async () => {
     const userId = await getUserId(user, adminFirestore);
     cy.log('Found user', user, 'with userId', userId);
 
-    const runsCollectionRef = collection(assessmentFirestore, 'users', userId, 'runs');
+    const runsCollectionRef = await collection(assessmentFirestore, 'users', userId, 'runs');
     const runsSnapshot = await getDocs(runsCollectionRef);
     cy.log('Found', runsSnapshot.size, 'runs for user', user);
-
-    const seenAssignmentIds = new Set();
 
     //   Loop through each run, get the assignmentId, and reset the assignment
     for (const run of runsSnapshot.docs) {
       const runData = run.data();
-      const runId = run.id;
+      const runDataId = run.id;
 
       const assignmentId = runData.assignmentId;
-      // Check if the assignmentId has already been seen in order to preserve a single run per assignment
-      // This will allow CI tests based on score reports to continue to pass
-      if (seenAssignmentIds.has(assignmentId)) {
-        const assignmentRef = doc(adminFirestore, 'users', userId, 'assignments', assignmentId);
-        const assignmentDoc = await getDoc(assignmentRef);
-        const assignmentData = assignmentDoc.data();
-        await resetAssignmentDoc(assignmentRef, assignmentData);
-        await deleteCollectionDocs(assessmentFirestore, `users/${userId}/runs/${runId}/trials`);
-        await deleteDoc(doc(assessmentFirestore, 'users', userId, 'runs', runId));
-      } else {
-        seenAssignmentIds.add(assignmentId);
-      }
+      const assignmentRef = await doc(adminFirestore, 'users', userId, 'assignments', assignmentId);
+      const assignmentDoc = await getDoc(assignmentRef);
+      const assignmentData = assignmentDoc.data();
+      await resetAssignmentDoc(assignmentRef, assignmentData);
+      await deleteDoc(doc(assessmentFirestore, 'users', userId, 'runs', runDataId));
     }
   });
 }
