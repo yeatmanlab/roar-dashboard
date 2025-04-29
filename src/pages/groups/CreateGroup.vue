@@ -5,15 +5,16 @@
         <div class="flex justify-content-between mb-2">
           <div class="flex align-items-center gap-3">
             <i class="pi pi-sliders-h text-gray-400 rounded" style="font-size: 1.6rem" />
-            <div class="admin-page-header">Create a new Audience</div>
+            <div class="admin-page-header">Create a new Group</div>
           </div>
         </div>
-        <div class="text-md text-gray-500 ml-6">Use this form to create a new Audience.</div>
+        <div class="text-md text-gray-500 ml-6">Use this form to create a new Group.</div>
       </div>
 
       <PvDivider />
       <div class="bg-gray-100 rounded p-4">
-        <div class="grid column-gap-3 mt-5 rounded">
+        <p class="text-sm text-gray-500 text-right">required <span class="text-red-500">*</span></p>
+        <div class="grid column-gap-3 mt-1 rounded">
           <div class="col-12 md:col-6 lg:col-3 xl:col-3">
             <PvFloatLabel>
               <PvSelect
@@ -25,7 +26,7 @@
                 class="w-full"
                 data-cy="dropdown-org-type"
               />
-              <label for="org-type">Org Type<span id="requiredgroupHasParentOrg-asterisk">*</span></label>
+              <label for="org-type">Org Type<span id="required-asterisk">*</span></label>
             </PvFloatLabel>
           </div>
         </div>
