@@ -29,6 +29,7 @@ const assignmentSelectFields = [
   'readOrgs',
   'sequential',
   'started',
+  'compositeScore',
 ];
 
 export const getAssignmentsRequestBody = ({
