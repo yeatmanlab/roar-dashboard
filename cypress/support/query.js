@@ -77,7 +77,6 @@ export async function deleteTestRuns(user, adminFirestore, assessmentFirestore) 
           console.log('runId', runId);
 
           const assignmentId = runData.assignmentId;
-          console.log('assignmentId', assignmentId);
           // Check if the assignmentId has already been seen in order to preserve a single run per assignment
           // This will allow CI tests based on score reports to continue to pass
           if (seenAssignmentIds.has(assignmentId)) {
@@ -86,15 +85,19 @@ export async function deleteTestRuns(user, adminFirestore, assessmentFirestore) 
             await getDoc(assignmentRef).then(async (assignmentDoc) => {
               if (!assignmentDoc.exists()) {
                 console.log('assignmentDoc does not exist');
-
                 return;
               }
-              console.log('assignmentDoc', assignmentDoc);
-              console.log('assignmentData', assignmentDoc.data());
               const assignmentData = assignmentDoc.data();
-              await resetAssignmentDoc(assignmentRef, assignmentData);
-              await deleteCollectionDocs(assessmentFirestore, `users/${id}/runs/${runId}/trials`);
-              await deleteDoc(doc(assessmentFirestore, 'users', id, 'runs', runId));
+              console.log('Resetting assignment doc');
+              await resetAssignmentDoc(assignmentRef, assignmentData)
+                .then(async () => {
+                  console.log('Deleting trials');
+                  await deleteCollectionDocs(assessmentFirestore, `users/${id}/runs/${runId}/trials`);
+                })
+                .then(async () => {
+                  console.log('Deleting run');
+                  await deleteDoc(doc(assessmentFirestore, 'users', id, 'runs', runId));
+                });
             });
           } else {
             seenAssignmentIds.add(assignmentId);
