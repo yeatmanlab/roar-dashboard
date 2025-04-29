@@ -233,7 +233,7 @@ const { data: administrationData } = useAdministrationsQuery([props.administrati
   select: (data) => data[0],
 });
 
-const { data: adminStats } = useAdministrationsStatsQuery([props.administrationId], {
+const { data: adminStats } = useAdministrationsStatsQuery([props.administrationId], props.orgId, {
   enabled: initialized,
   select: (data) => data[0],
 });
