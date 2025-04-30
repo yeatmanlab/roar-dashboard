@@ -75,7 +75,7 @@ export const getProjectId = (project = 'admin') => {
 export const getAxiosInstance = (db = FIRESTORE_DATABASES.ADMIN, unauthenticated = false) => {
   const authStore = useAuthStore();
   const { roarfirekit } = storeToRefs(authStore);
-  const axiosOptions = _get(roarfirekit.value.restConfig, db) ?? {};
+  const axiosOptions = _get(roarfirekit.value.restConfig(unauthenticated), db) ?? {};
 
   // // Add appCheckToken to the headers if it exists in the firekit config
   // const appCheckToken = roarfirekit.value[db]?.appCheckToken;
@@ -86,10 +86,6 @@ export const getAxiosInstance = (db = FIRESTORE_DATABASES.ADMIN, unauthenticated
   //     'X-Firebase-AppCheck': appCheckToken,
   //   };
   // }
-
-  if (unauthenticated) {
-    delete axiosOptions.headers;
-  }
 
   // Throw error when the Axios baseUrl is not set.
   // This is a temporary solution to ensure the Axios base URL is set before making requests. This is a workaround that
