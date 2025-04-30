@@ -39,7 +39,7 @@ const init = () => {
 };
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit.restConfig) init();
+  if (state.roarfirekit.restConfig?.()) init();
 });
 
 const { mutate: signOut } = useSignOutMutation();
@@ -169,6 +169,6 @@ const menuItems = computed(() => {
 });
 
 onMounted(() => {
-  if (roarfirekit?.value?.restConfig) init();
+  if (roarfirekit?.value?.restConfig?.()) init();
 });
 </script>
