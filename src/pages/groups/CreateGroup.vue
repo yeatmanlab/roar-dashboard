@@ -182,9 +182,6 @@ const { roarfirekit } = storeToRefs(authStore);
 const queryClient = useQueryClient();
 const groupHasParentOrg = ref(false);
 
-watch(groupHasParentOrg, () => {
-  console.log('groupHasParentOrg: ', groupHasParentOrg.value);
-});
 
 const state = reactive({
   orgName: '',

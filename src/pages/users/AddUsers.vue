@@ -652,27 +652,27 @@ const orgIds = {
 };
 
   /**
- * Retrieves the ID of an Groups based on its type and name.
+ * Retrieves the ID of an Group based on its type and name.
  * If the ID is not already cached, it fetches it from the server.
  *
  * @async
  * @function getOrgId
- * @param {string} orgType - The type of Groups (e.g., 'districts', 'schools', 'classes', 'groups').
- * @param {string} orgName - The name of the Groups.
+ * @param {string} orgType - The type of Group (e.g., 'districts', 'schools', 'classes', 'groups').
+ * @param {string} orgName - The name of the Group.
  * @param {Object|undefined} parentDistrict - The parent district reference, if applicable.
  * @param {Object|undefined} parentSchool - The parent school reference, if applicable.
- * @returns {Promise<String>} A promise that resolves to a string representing the Groups ID.
- * @throws {Error} Throws an error if no Groupss are found for the given type and name.
+ * @returns {Promise<String>} A promise that resolves to a string representing the Group ID.
+ * @throws {Error} Throws an error if no Group is found for the given type and name.
  *
  * @example
  * // Get the ID for a school
  * const schoolInfo = await getOrgId('schools', 'High School A', districtRef, undefined);
  *
  * @description
- * This function first checks if the Groups ID is already cached in the `orgIds.value` object.
- * If not, it calls the `fetchOrgByName` function to retrieve the Groups details from the server.
+ * This function first checks if the Group ID is already cached in the `orgIds.value` object.
+ * If not, it calls the `fetchOrgByName` function to retrieve the Group details from the server.
  * The fetched data is then cached for future use.
- * If no Groupss are found, it throws an error.
+ * If no Group is found, it throws an error.
  */
 const getOrgId = async (orgType, orgName, parentDistrict, parentSchool) => {
   if (orgIds[orgType][orgName]) return orgIds[orgType][orgName];
