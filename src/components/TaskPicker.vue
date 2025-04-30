@@ -201,10 +201,10 @@ const groupedTasks = {
   ],
   "Executive Function": ["Hearts & Flowers", "Same & Different", "Memory"],
   "Math": ["Math"],
-  "Reasoning": ["Pattern Matching"]
+  "Reasoning": ["Pattern Matching"],
   "Spatial Cognition": ["Shape Rotation"],
   "Social Cognition": ["Stories"],
-  // "Attitudes": ["Thoughts & Feelings"]
+  "Attitudes": ["Thoughts & Feelings"]
 };
 
 const taskOptions = computed(() => {
@@ -232,11 +232,14 @@ const taskOptions = computed(() => {
 
     groupItems.sort((a, b) => a.label.localeCompare(b.label));
 
-  
+    if (groupItems.length > 0){
       return {
         label: groupName,
         items: groupItems,
       };
+    } else {
+      return null;
+    }
   });
 
   // Handle any remaining tasks that don't fit into predefined groups
@@ -253,7 +256,7 @@ const taskOptions = computed(() => {
       items: otherItems,
     });
   }
-  return groupedOptions;
+  return groupedOptions.filter((group) => group !== null);
 });
 
 watch(
