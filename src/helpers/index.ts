@@ -192,3 +192,19 @@ export const singularizeFirestoreCollection = (plural: string): string => {
 
   throw new Error(`There is no Firestore collection ${plural}`);
 };
+
+const groupNameMap: Record<string, string> = {
+  group: 'cohort',
+  groups: 'cohorts',
+  district: 'site',
+  districts: 'sites',
+  school: 'school',
+  schools: 'schools',
+  class: 'class',
+  classes: 'classes',
+};
+
+export const convertToGroupName = (groupName: string): string => {
+  const lowerCaseGroupName = groupName.toLowerCase();
+  return groupNameMap[lowerCaseGroupName] || groupName;
+};
