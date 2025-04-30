@@ -552,11 +552,11 @@ const initTable = () => {
 };
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit.restConfig) initTable();
+  if (state.roarfirekit.restConfig?.()) initTable();
 });
 
 onMounted(() => {
-  if (roarfirekit.value.restConfig) initTable();
+  if (roarfirekit.value.restConfig?.()) initTable();
 });
 
 watch(allDistricts, (newValue) => {

@@ -37,7 +37,7 @@ const testingPinia = createTestingPinia();
 const authStore = useAuthStore();
 
 authStore.roarfirekit = {
-  restConfig: true,
+  restConfig: vi.fn().mockReturnValue(true),
 };
 
 authStore.userData = {

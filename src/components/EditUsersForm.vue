@@ -357,12 +357,12 @@ const init = () => {
 };
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit?.restConfig) init();
+  if (state.roarfirekit?.restConfig?.()) init();
 });
 
 onMounted(() => {
   console.log('onMounted hook called');
-  if (roarfirekit.value?.restConfig) init();
+  if (roarfirekit.value?.restConfig?.()) init();
   if (props.userData) setupUserData();
 });
 
