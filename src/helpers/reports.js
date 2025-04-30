@@ -384,6 +384,8 @@ export const excludeFromScoringTasks = [
   'qualtrics-experience',
 ];
 
+export const includeReliabilityFlagsOnExport = ['Word', 'Letter', 'Phoneme', 'Sentence'];
+
 /*
  *  Tasks to Display Percent Correct
  */
