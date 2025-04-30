@@ -81,7 +81,9 @@ describe('useAdministrationsStatsQuery', () => {
       }),
     });
 
-    const expectedPayload = mockAdministrationIds.value.map((id) => buildCollectionRequestPayloadWithOrgId(id, orgId.value));
+    const expectedPayload = mockAdministrationIds.value.map((id) =>
+      buildCollectionRequestPayloadWithOrgId(id, orgId.value),
+    );
 
     expect(fetchDocsById).toHaveBeenCalledWith(expectedPayload);
   });
