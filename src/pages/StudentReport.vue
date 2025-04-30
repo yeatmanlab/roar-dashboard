@@ -366,11 +366,11 @@ const refresh = () => {
 };
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit.restConfig) refresh();
+  if (state.roarfirekit.restConfig?.()) refresh();
 });
 
 onMounted(async () => {
-  if (roarfirekit.value.restConfig) {
+  if (roarfirekit.value.restConfig?.()) {
     refresh();
   }
 });
