@@ -1419,14 +1419,14 @@ const refresh = () => {
 };
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit.restConfig) refresh();
+  if (state.roarfirekit.restConfig?.()) refresh();
 });
 
 onMounted(async () => {
   TaskReport = (await import('@/components/reports/tasks/TaskReport.vue')).default;
   DistributionChartOverview = (await import('@/components/reports/DistributionChartOverview.vue')).default;
   NextSteps = (await import('@/assets/NextSteps.pdf')).default;
-  if (roarfirekit.value.restConfig) refresh();
+  if (roarfirekit.value.restConfig?.()) refresh();
 });
 </script>
 
