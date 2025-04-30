@@ -120,7 +120,10 @@
             <div
               v-if="variant.variant?.conditions?.assigned?.conditions?.length > 0"
             >
-              <span class="font-bold">Assigned to:</span> {{parseConditions(variant.variant?.conditions?.assigned).map(entry => entry.op === "EQUAL" ? `${entry.value}s` : `not ${entry.value}s`).join(", ")}}<br/>
+              <span class="font-bold">Assigned to:</span> {{parseConditions(variant.variant?.conditions?.assigned).map((entry) => {
+                  const capitalizedValue = entry.value.charAt(0).toUpperCase() + entry.value.slice(1);
+                  return entry.op === "EQUAL" ? `${capitalizedValue}s` : `Not ${capitalizedValue}s`
+                }).join(", ")}}<br/>
             </div>
           </p>
         </div>
