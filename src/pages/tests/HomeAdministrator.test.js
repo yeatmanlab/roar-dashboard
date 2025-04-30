@@ -18,11 +18,6 @@ vi.mock('@/composables/queries/useAdministrationsListQuery', () => ({
 }));
 
 import useAdministrationsListQuery from '@/composables/queries/useAdministrationsListQuery';
-import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery'; 
-
-// check if it's the orginal query or the mocked one
-console.log('useAdministrationsListQuery in test file:', useAdministrationsListQuery);
-
 
 
 const mockAdministration = {
@@ -92,7 +87,6 @@ describe('HomeAdministrator', () => {
       }));
 
       vi.mocked(useAdministrationsListQuery).mockClear()
-      vi.mocked(useUserClaimsQuery).mockClear();
     });
 
     afterEach(() => {
@@ -103,7 +97,7 @@ describe('HomeAdministrator', () => {
     it('renders static elements before data loads', () => {
       vi.mocked(useAdministrationsListQuery).mockReturnValue({
         data: ref({ value: [] }),
-        isLoading: ref(true),
+        isLoading: ref(false),
         isFetching: ref(false),
         isError: ref(false),
       });
@@ -122,35 +116,6 @@ describe('HomeAdministrator', () => {
                   PvInputGroup: { template: '<div class="mocked-input" />' },
                 }
             },
-            // setup() {
-            //     return {
-            //         sortOptions: ref([
-            //             {
-            //                 label: 'Name (ascending)',
-            //                 value: [
-            //                     {
-            //                         field: { fieldPath: 'name' },
-            //                         direction: 'ASCENDING',
-            //                     },
-            //                 ],
-            //             }
-            //         ]),
-            //         sortKey: ref({ value: [{ field: { fieldPath: 'name' }, direction: 'ASCENDING' }] }),
-            //         sortOrder: ref(1),
-            //         sortField: ref('name'),
-            //         dataViewKey: ref(0),
-            //         search: ref(''),
-            //         searchInput: ref(''),
-            //         filteredAdministrations: ref([mockAdministration]),
-            //         initialized: ref(true),
-            //         pageLimit: ref(10),
-            //         page: ref(0),
-            //         orderBy: ref([{ field: { fieldPath: 'name' }, direction: 'ASCENDING' }]),
-            //         searchSuggestions: ref([]),
-            //         searchTokens: ref([]),
-            //         fetchTestAdministrations: ref(false)
-            //     }
-            // }
         });
 
         expect(wrapper.text()).toContain('All Assignments');
@@ -182,45 +147,6 @@ describe('HomeAdministrator', () => {
             PvInputGroup: { template: '<div class="mocked-input" />' },
           }
         },
-        // setup() {
-        //   return {
-        //     sortOptions: ref([
-        //       {
-        //         label: 'Name (ascending)',
-        //         value: [
-        //           {
-        //             field: { fieldPath: 'name' },
-        //             direction: 'ASCENDING',
-        //           },
-        //         ],
-        //       }
-        //     ]),
-        //     sortKey: ref({ value: [{ field: { fieldPath: 'name' }, direction: 'ASCENDING' }] }),
-        //     sortOrder: ref(1),
-        //     sortField: ref('name'),
-        //     dataViewKey: ref(0),
-        //     search: ref(''),
-        //     searchInput: ref(''),
-        //     filteredAdministrations: ref([mockAdministration]),
-        //     initialized: ref(true),
-        //     pageLimit: ref(10),
-        //     page: ref(0),
-        //     orderBy: ref([{ field: { fieldPath: 'name' }, direction: 'ASCENDING' }]),
-        //     searchSuggestions: ref([]),
-        //     searchTokens: ref([]),
-        //     fetchTestAdministrations: ref(false)
-        //   };
-        // }
-      });
-
-      // Log the values to debug
-      console.log('Checks', {
-        '!initialized || isLoadingAdministrations': !wrapper.vm.initialized || wrapper.vm.isLoadingAdministrations,
-        '!initialized': !wrapper.vm.initialized,
-        'isLoadingAdministrations': wrapper.vm.isLoadingAdministrations,
-        'isLoading': wrapper.vm.isLoading,
-        'UseAdministrationsListQuery mock calls': mockedUseAdministrationsListQuery.mock.calls,
-        'UseAdministrationsListQuery mock results': mockedUseAdministrationsListQuery.mock.results
       });
       
       expect(wrapper.find('.loading-container').exists()).toBe(true);
