@@ -377,6 +377,8 @@ export const rawOnlyTasks = [
  */
 export const excludeFromScoringTasks = ['roar-readaloud'];
 
+export const includeReliabilityFlagsOnExport = ['Word', 'Letter', 'Phoneme', 'Sentence'];
+
 /*
  *  Tasks to Display Percent Correct
  */

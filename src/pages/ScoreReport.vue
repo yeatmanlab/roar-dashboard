@@ -301,6 +301,7 @@ import {
   tasksToDisplayTotalCorrect,
   tasksToDisplayThetaScore,
   excludeFromScoringTasks,
+  includeReliabilityFlagsOnExport,
   addElementToPdf,
   getScoreKeys,
   tasksToDisplayCorrectIncorrectDifference,
@@ -1053,11 +1054,20 @@ const exportData = async ({ selectedRows = null, includeProgress = false }) => {
     ...staticColumns,
     ...taskBases.reduce((acc, taskBase) => {
       const taskCols = allColumnsArray.filter(
-        (col) => col.includes(` - ${taskBase} -`) && !col.endsWith('Reliability') && !col.endsWith('Progress'),
+        (col) =>
+          col.includes(` - ${taskBase} -`) &&
+          !col.endsWith('Reliability') &&
+          !col.endsWith('Progress') &&
+          !col.endsWith('Reliable'),
       );
-      const reliabilityCol = allColumnsArray.filter(
-        (col) => col.includes(` - ${taskBase} -`) && col.endsWith('Reliability'),
-      );
+
+      // Include reliability columns ONLY if task is in includeReliabilityFlagsOnExport
+      const reliabilityCol = includeReliabilityFlagsOnExport.includes(taskBase)
+        ? allColumnsArray.filter(
+            (col) => col.includes(` - ${taskBase} -`) && (col.endsWith('Reliability') || col.endsWith('Reliable')),
+          )
+        : [];
+
       const progressCol = allColumnsArray.filter((col) => col.includes(` - ${taskBase} -`) && col.endsWith('Progress'));
       return [...acc, ...taskCols, ...reliabilityCol, ...progressCol];
     }, []),
