@@ -542,7 +542,7 @@ function addStudent() {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
   if (props.code) {
     validateCode(props.code);
   }
