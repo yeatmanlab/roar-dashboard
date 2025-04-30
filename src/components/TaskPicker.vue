@@ -201,9 +201,10 @@ const groupedTasks = {
   ],
   "Executive Function": ["Hearts & Flowers", "Same & Different", "Memory"],
   "Math": ["Math"],
+  "Reasoning": ["Pattern Matching"]
   "Spatial Cognition": ["Shape Rotation"],
   "Social Cognition": ["Stories"],
-  "Reasoning": ["Pattern Matching"]
+  // "Attitudes": ["Thoughts & Feelings"]
 };
 
 const taskOptions = computed(() => {
