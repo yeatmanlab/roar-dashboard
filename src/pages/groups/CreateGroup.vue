@@ -26,7 +26,7 @@
                 class="w-full"
                 data-cy="dropdown-org-type"
               />
-              <label for="org-type">Org Type<span id="required-asterisk">*</span></label>
+              <label for="org-type">Group Type<span id="required-asterisk">*</span></label>
             </PvFloatLabel>
           </div>
         </div>
@@ -182,9 +182,6 @@ const { roarfirekit } = storeToRefs(authStore);
 const queryClient = useQueryClient();
 const groupHasParentOrg = ref(false);
 
-watch(groupHasParentOrg, () => {
-  console.log('groupHasParentOrg: ', groupHasParentOrg.value);
-});
 
 const state = reactive({
   orgName: '',
@@ -261,7 +258,7 @@ const orgTypes = [
   { firestoreCollection: 'districts', singular: 'district', label: 'Site' },
   { firestoreCollection: 'schools', singular: 'school', label: 'School' },
   { firestoreCollection: 'classes', singular: 'class', label: 'Class' },
-  { firestoreCollection: 'groups', singular: 'group', label: 'Group' },
+  { firestoreCollection: 'groups', singular: 'group', label: 'Cohort' },
 ];
 
 const orgType = ref();
@@ -361,7 +358,7 @@ const submit = async () => {
       .upsertOrg({type: orgType.value.firestoreCollection, ...orgData})
       .then(() => {
         queryClient.invalidateQueries({ queryKey: ['orgs'], exact: false });
-        toast.add({ severity: 'success', summary: 'Success', detail: 'Audience created', life: 3000 });
+        toast.add({ severity: 'success', summary: 'Success', detail: 'Group created', life: 3000 });
         submitted.value = false;
         resetForm();
       })

@@ -437,13 +437,13 @@ async function submitUsers() {
     const site = siteField ? user[siteField] : '';
     const school = schoolField ? user[schoolField] : '';
     const _class = classField ? user[classField] : '';
-    const cohort = cohortField ? user[cohortField] : '';
+    const cohorts = cohortField ? user[cohortField] : '';
 
     const orgNameMap = {
       site: site ?? '',
       school: school ?? '',
       class: _class ?? '',
-      cohort: cohort ?? '',
+      cohort: cohorts.split(',') ?? [],
     };
 
     // Pluralized because of a ROAR change to the createUsers function. 
@@ -495,9 +495,7 @@ async function submitUsers() {
         }
       }
     }
-
   }
-
 
   // TODO: Figure out deadline-exceeded error with 700+ users. (Registration works fine, creates all documents but the client recieves the error)
   // Spit users into chunks of 1000
@@ -654,27 +652,27 @@ const orgIds = {
 };
 
   /**
- * Retrieves the ID of an organization based on its type and name.
+ * Retrieves the ID of an Group based on its type and name.
  * If the ID is not already cached, it fetches it from the server.
  *
  * @async
  * @function getOrgId
- * @param {string} orgType - The type of organization (e.g., 'districts', 'schools', 'classes', 'groups').
- * @param {string} orgName - The name of the organization.
+ * @param {string} orgType - The type of Group (e.g., 'districts', 'schools', 'classes', 'groups').
+ * @param {string} orgName - The name of the Group.
  * @param {Object|undefined} parentDistrict - The parent district reference, if applicable.
  * @param {Object|undefined} parentSchool - The parent school reference, if applicable.
- * @returns {Promise<String>} A promise that resolves to a string representing the organization ID.
- * @throws {Error} Throws an error if no organizations are found for the given type and name.
+ * @returns {Promise<String>} A promise that resolves to a string representing the Group ID.
+ * @throws {Error} Throws an error if no Group is found for the given type and name.
  *
  * @example
  * // Get the ID for a school
  * const schoolInfo = await getOrgId('schools', 'High School A', districtRef, undefined);
  *
  * @description
- * This function first checks if the organization ID is already cached in the `orgIds.value` object.
- * If not, it calls the `fetchOrgByName` function to retrieve the organization details from the server.
+ * This function first checks if the Group ID is already cached in the `orgIds.value` object.
+ * If not, it calls the `fetchOrgByName` function to retrieve the Group details from the server.
  * The fetched data is then cached for future use.
- * If no organizations are found, it throws an error.
+ * If no Group is found, it throws an error.
  */
 const getOrgId = async (orgType, orgName, parentDistrict, parentSchool) => {
   if (orgIds[orgType][orgName]) return orgIds[orgType][orgName];
@@ -684,11 +682,11 @@ const getOrgId = async (orgType, orgName, parentDistrict, parentSchool) => {
 
   if (orgs.length === 0) {
     if (orgType === 'districts') {
-      throw new Error(`No organizations found for site '${orgName}'`);
+      throw new Error(`No Groups found for site '${orgName}'`);
     } else if (orgType === 'groups') {
-      throw new Error(`No organizations found for cohort '${orgName}'`);
+      throw new Error(`No Groups found for cohort '${orgName}'`);
     } else {
-      throw new Error(`No organizations found for ${orgType} '${orgName}'`);
+      throw new Error(`No Groups found for ${orgType} '${orgName}'`);
     }
   }
 

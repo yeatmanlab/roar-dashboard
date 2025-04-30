@@ -73,7 +73,7 @@
         <PvScrollPanel style="width: 100%; height: 26rem">
           <div v-for="orgKey in Object.keys(selectedOrgs)" :key="orgKey">
             <div v-if="selectedOrgs[orgKey].length > 0">
-              <b>{{ _capitalize(orgKey) }}:</b>
+              <b>{{ _capitalize(convertToGroupName(orgKey)) }}:</b>
               <PvChip
                 v-for="org in selectedOrgs[orgKey]"
                 :key="org.id"
@@ -110,6 +110,7 @@ import { orderByDefault } from '@/helpers/query/utils';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useDistrictsListQuery from '@/composables/queries/useDistrictsListQuery';
 import PvFloatLabel from 'primevue/floatlabel';
+import { convertToGroupName } from '@/helpers';
 
 const initialized = ref(false);
 const authStore = useAuthStore();
@@ -173,6 +174,12 @@ const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admi
 const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
 
 const orgHeaders = computed(() => {
+  if (props.forParentOrg) {
+    return {
+      districts: { header: 'Sites', id: 'districts' },
+    };
+  }
+
   return {
     districts: { header: 'Sites', id: 'districts' },
     schools: { header: 'Schools', id: 'schools' },
