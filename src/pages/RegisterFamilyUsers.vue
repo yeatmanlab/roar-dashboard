@@ -97,22 +97,6 @@ const authStore = useAuthStore();
 const initialized = ref(false);
 const spinner = ref(false);
 
-let unsubscribe;
-const { roarfirekit } = storeToRefs(authStore);
-
-const init = () => {
-  if (unsubscribe) unsubscribe();
-  initialized.value = true;
-};
-
-unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit?.restConfig?.()) init();
-});
-
-onMounted(() => {
-  if (roarfirekit.value?.restConfig?.()) init();
-});
-
 // eslint-disable-next-line no-unused-vars
 const props = defineProps({
   code: { type: String, default: null },

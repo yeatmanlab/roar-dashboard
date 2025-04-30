@@ -542,12 +542,10 @@ function addStudent() {
   }
 }
 
-unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit?.restConfig?.()) init();
-});
-
 onMounted(() => {
-  if (roarfirekit.value?.restConfig?.()) init();
+  if (props.code) {
+    validateCode(props.code);
+  }
 });
 
 function codeNotRight(index) {
