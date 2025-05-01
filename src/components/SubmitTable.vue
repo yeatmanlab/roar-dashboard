@@ -68,6 +68,16 @@
           <InputText v-model="data[field]" autofocus fluid />
         </template>
       </PvColumn>
+      <PvColumn field="remove" header="Remove Student">
+        <template #body="{ data }">
+          <PvButton
+            icon="pi pi-trash"
+            :disabled="submitStatus !== 'idle'"
+            severity="danger"
+            @click="deleteStudent(data)"
+          />
+        </template>
+      </PvColumn>
     </PvDataTable>
   </div>
   <div v-else>
@@ -83,6 +93,7 @@ import _startCase from 'lodash/startCase';
 import _isEmpty from 'lodash/isEmpty';
 import _get from 'lodash/get';
 import InputText from 'primevue/inputtext';
+import PvButton from 'primevue/button';
 const props = defineProps({
   students: {
     type: Object,
@@ -99,6 +110,10 @@ const props = defineProps({
   usingEmail: {
     type: Boolean,
     default: false,
+  },
+  submitStatus: {
+    type: String,
+    default: 'idle',
   },
 });
 const tableColumns = ref([]);
@@ -166,10 +181,15 @@ function onCellEditSave(event) {
   validateStudent(data);
 }
 
+function deleteStudent(data) {
+  emit('deleteStudent', data);
+  delete validationResults.value[data['rowKey']];
+}
+
 /**
  * Handle student validation
  */
-const emit = defineEmits(['validationUpdate']);
+const emit = defineEmits(['validationUpdate', 'deleteStudent']);
 const totalCount = computed(() => (_isEmpty(props.students) ? 0 : props.students.length));
 const sortedStudents = computed(() => {
   if (!props.students) return [];
