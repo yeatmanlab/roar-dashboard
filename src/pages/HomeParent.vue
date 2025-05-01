@@ -9,8 +9,13 @@
       <div class="text-sm font-light text-gray-800">Manage your children and view their assessments.</div>
     </div>
     <div class="text-2xl font-bold text-gray-600">
-      <div v-if="isLoadingAssignments || isLoadingAdministrations">
+      <div v-if="isLoadingAssignments || isLoadingAdministrations" class="flex items-center justify-center">
         <AppSpinner class="mb-4" />
+        Loading Assignments
+      </div>
+      <div v-if="!parentRegistrationComplete" class="flex items-center justify-center">
+        <AppSpinner class="mb-4" />
+        Administration enrollment in progress - check back in a few minutes.
       </div>
       <div class="flex flex-row align-items-center justify-content-center w-full flex-wrap">
         <div v-if="assignmentData?.length == 0">
@@ -57,10 +62,27 @@ const { isLoading: isLoadingAdministrations, data: administrations } = useAdmini
   enabled: initialized,
 });
 
+let unsubscribeInitializer;
+const init = () => {
+  if (unsubscribeInitializer) unsubscribeInitializer();
+  initialized.value = true;
+};
+
+unsubscribeInitializer = authStore.$subscribe(async (mutation, state) => {
+  if (state.roarfirekit.restConfig) init();
+});
+
 onMounted(async () => {
-  parentRegistrationComplete.value = await authStore.verifyParentRegistration();
-  console.log('roarfirekit.valu', roarfirekit.value);
-  console.log('Parent Registration Complete:', parentRegistrationComplete.value);
+  if (authStore.isAuthenticated) {
+    // check first if initialized value in userStore is true, if so, registration is complete
+    if (authStore.userData.initialized) {
+      parentRegistrationComplete.value = true;
+    } else {
+      parentRegistrationComplete.value = await authStore.verifyParentRegistration();
+    }
+    console.log('roarfirekit.valu', roarfirekit.value);
+    console.log('Parent Registration Complete:', parentRegistrationComplete.value);
+  }
 });
 
 watch(
