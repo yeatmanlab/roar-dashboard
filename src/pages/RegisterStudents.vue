@@ -733,6 +733,7 @@ const transformStudentData = async (rawStudent) => {
     if (rawStudent[key]) {
       if (key === 'username') {
         _set(transformedStudent, 'email', `${rawStudent[key]}@roar-auth.com`);
+        _set(transformedStudent, 'userData.username', rawStudent[key]);
       } else if (['email', 'password'].includes(key)) {
         _set(transformedStudent, key, rawStudent[key]);
       } else {
