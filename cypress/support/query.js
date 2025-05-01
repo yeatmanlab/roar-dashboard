@@ -56,11 +56,13 @@ export async function deleteCollectionDocs(db, path) {
 }
 
 export async function deleteTestRuns(user, adminFirestore, assessmentFirestore) {
-  cy.then({ timeout: 7200000 }, async () => {
+  // Allow 3 hours for this operation to complete
+  cy.then({ timeout: 10_800_000 }, async () => {
     await getUserId(user, adminFirestore).then(async (id) => {
       const runsCollectionRef = collection(assessmentFirestore, 'users', id, 'runs');
       await getDocs(runsCollectionRef).then(async (runsSnapshot) => {
         console.log('Found', runsSnapshot.size, 'runs for user', user);
+
         const seenAssignmentIds = new Set();
 
         //   Loop through each run, get the assignmentId, and reset the assignment
@@ -87,7 +89,6 @@ export async function deleteTestRuns(user, adminFirestore, assessmentFirestore) 
                 })
                 .then(async () => {
                   console.log(`Deleting run: users/${id}/runs/${runId}`);
-
                   await deleteDoc(doc(assessmentFirestore, 'users', id, 'runs', runId));
                 });
             });
