@@ -856,26 +856,26 @@ const submit = async () => {
   console.log(transformedStudents);
 
   // Chunk users into chunks of 50 for submission
-  // const chunkedUsers = _chunk(transformedStudents, 50);
-  // for (const chunk of chunkedUsers) {
-  //   await roarfirekit.value.createUpdateUsers(chunk).then((results) => {
-  //     for (const result of results.data) {
-  //       if (result?.status === 'rejected') {
-  //         const email = result.email;
-  //         toast.add({
-  //           severity: 'error',
-  //           summary: 'Error',
-  //           detail: `User ${email} failed to process: ${result.reason}`,
-  //           life: 5000,
-  //         });
-  //       } else if (result?.status === 'fulfilled') {
-  //         const email = result.email;
-  //         toast.add({ severity: 'success', summary: 'Success', detail: `User ${email} processed!`, life: 3000 });
-  //       }
-  //     }
-  //   });
-  // }
-  // submitting.value = SubmitStatus.COMPLETE;
+  const chunkedUsers = _chunk(transformedStudents, 50);
+  for (const chunk of chunkedUsers) {
+    await roarfirekit.value.createUpdateUsers(chunk).then((results) => {
+      for (const result of results.data) {
+        if (result?.status === 'rejected') {
+          const email = result.email;
+          toast.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: `User ${email} failed to process: ${result.reason}`,
+            life: 5000,
+          });
+        } else if (result?.status === 'fulfilled') {
+          const email = result.email;
+          toast.add({ severity: 'success', summary: 'Success', detail: `User ${email} processed!`, life: 3000 });
+        }
+      }
+    });
+  }
+  submitting.value = SubmitStatus.COMPLETE;
 };
 
 /**
