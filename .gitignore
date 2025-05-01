@@ -41,7 +41,6 @@ coverage
 # Other
 .vite/*
 .firebase/
-cypress/downloads
 
 # Sentry Config File
 .env.sentry-build-plugin
