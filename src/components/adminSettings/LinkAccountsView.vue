@@ -27,54 +27,6 @@
         Link
       </button>
     </div>
-    <!-- Clever -->
-    <div class="flex flex-row justify-content-between w-full">
-      <div class="flex flex-row h-3rem p-2 gap-2">
-        <span style="line-height: 30px" class="text-lg">Clever</span>
-        <div class="chip-container">
-          <PvChip v-if="providerIds.includes('oidc.clever')" icon="pi pi-check" label="Linked" class="linked-chip" />
-          <PvChip v-else label="Linked" icon="pi pi-times" class="unlinked-chip" />
-        </div>
-      </div>
-      <button
-        v-if="providerIds.includes('oidc.clever')"
-        class="border-none border-round bg-primary text-white p-2 my-2 hover:surface-400 mr-2"
-        @click="unlinkAccount(AUTH_SSO_PROVIDERS.CLEVER)"
-      >
-        Unlink
-      </button>
-      <button
-        v-else
-        class="border-none border-round bg-primary text-white p-2 my-2 hover:surface-400 mr-2"
-        @click="linkAccount(AUTH_SSO_PROVIDERS.CLEVER)"
-      >
-        Link
-      </button>
-    </div>
-    <!-- ClassLink -->
-    <div class="flex flex-row justify-content-between w-full" style="background-color: var(--surface-d)">
-      <div class="flex flex-row h-3rem p-2 gap-2">
-        <span style="line-height: 30px" class="text-lg">ClassLink</span>
-        <div class="chip-container">
-          <PvChip v-if="providerIds.includes('oidc.classlink')" icon="pi pi-check" label="Linked" class="linked-chip" />
-          <PvChip v-else label="Linked" icon="pi pi-times" class="unlinked-chip" />
-        </div>
-      </div>
-      <button
-        v-if="providerIds.includes('oidc.classlink')"
-        class="border-none border-round bg-primary text-white p-2 my-2 hover:surface-400 mr-2"
-        @click="unlinkAccount(AUTH_SSO_PROVIDERS.CLASSLINK)"
-      >
-        Unlink
-      </button>
-      <button
-        v-else
-        class="border-none border-round bg-primary text-white p-2 my-2 hover:surface-400 mr-2"
-        @click="linkAccount(AUTH_SSO_PROVIDERS.CLASSLINK)"
-      >
-        Link
-      </button>
-    </div>
   </div>
   <div>
     <h2 style="margin-top: 3.5rem">Delete Password</h2>
@@ -102,7 +54,6 @@ import { storeToRefs } from 'pinia';
 import PvChip from 'primevue/chip';
 import PvConfirmDialog from 'primevue/confirmdialog';
 import { useAuthStore } from '@/store/auth';
-import { AUTH_SSO_PROVIDERS } from '@/constants/auth';
 
 // +----------------+
 // | Initialization |

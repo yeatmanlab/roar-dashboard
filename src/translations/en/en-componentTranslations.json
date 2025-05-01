@@ -19,12 +19,6 @@
     "signInWithPasswordInstead": "Sign-in using password",
     "suggestions": "Suggestions"
   },
-  "cleverLanding": {
-    "cleverLoading": "Loading your data from Clever..."
-  },
-  "classLinkLanding": {
-    "classLinkLoading": "Loading your data from ClassLink..."
-  },
   "consentModal": {
     "header": "Consent",
     "consentTitle": "Consent",

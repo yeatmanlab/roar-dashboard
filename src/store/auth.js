@@ -20,8 +20,6 @@ export const useAuthStore = () => {
         roarfirekit: null,
         userData: null,
         userClaims: null,
-        cleverOAuthRequested: false,
-        classLinkOAuthRequested: false,
         routeToProfile: false,
         ssoProvider: null,
         showOptionalAssessments: false,
@@ -128,26 +126,6 @@ export const useAuthStore = () => {
       async signInWithGoogleRedirect() {
         return this.roarfirekit.initiateRedirect(AUTH_SSO_PROVIDERS.GOOGLE);
       },
-      async signInWithCleverPopup() {
-        this.ssoProvider = AUTH_SSO_PROVIDERS.CLEVER;
-        if (this.isFirekitInit) {
-          return this.roarfirekit.signInWithPopup(AUTH_SSO_PROVIDERS.CLEVER);
-        }
-      },
-      async signInWithCleverRedirect() {
-        this.ssoProvider = AUTH_SSO_PROVIDERS.CLEVER;
-        return this.roarfirekit.initiateRedirect(AUTH_SSO_PROVIDERS.CLEVER);
-      },
-      async signInWithClassLinkPopup() {
-        this.ssoProvider = AUTH_SSO_PROVIDERS.CLASSLINK;
-        if (this.isFirekitInit) {
-          return this.roarfirekit.signInWithPopup(AUTH_SSO_PROVIDERS.CLASSLINK);
-        }
-      },
-      async signInWithClassLinkRedirect() {
-        this.ssoProvider = AUTH_SSO_PROVIDERS.CLASSLINK;
-        return this.roarfirekit.initiateRedirect(AUTH_SSO_PROVIDERS.CLASSLINK);
-      },
       async initStateFromRedirect() {
         this.spinner = true;
         const enableCookiesCallback = () => {
@@ -178,26 +156,13 @@ export const useAuthStore = () => {
           return false;
         }
       },
-      async createNewFamily(careTakerEmail, careTakerPassword, careTakerData, students, isTestData = false) {
-        return this.roarfirekit.createNewFamily(careTakerEmail, careTakerPassword, careTakerData, students, isTestData);
-      },
-
-      // ------------------ LEVANTE ------------------
-      async createLevanteUsers(userData) {
-        return this.roarfirekit.createLevanteUsersWithEmailPassword(userData);
-      },
       async createUsers(userData) {
         return this.roarfirekit.createUsers(userData);
       },
     },
     persist: {
       storage: sessionStorage,
-      paths: [
-        'firebaseUser', 
-        'ssoProvider',
-        'cleverOAuthRequested', 
-        'classLinkOAuthRequested'
-      ],
+      paths: ['firebaseUser', 'ssoProvider'],
       debug: false,
     },
   })();

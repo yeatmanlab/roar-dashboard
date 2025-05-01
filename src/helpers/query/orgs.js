@@ -28,14 +28,8 @@ export const getOrgsRequestBody = ({
   paginate = true,
   select = [
     'abbreviation',
-    'address',
-    'clever',
-    'classlink',
-    'districtContact',
     'id',
-    'mdrNumber',
     'name',
-    'ncesId',
     'tags',
   ],
 }) => {

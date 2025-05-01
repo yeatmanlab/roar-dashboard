@@ -132,14 +132,6 @@ const routes: Array<RouteRecordRaw> = [
     },
   },
   {
-    path: APP_ROUTES.SSO,
-    name: 'SSO',
-    beforeRouteLeave: [removeQueryParams, removeHash],
-    component: () => import('../pages/SSOAuthPage.vue'),
-    props: (route) => ({ code: route.query.code }), // @TODO: Isn't the code processed by the sign-in page?
-    meta: { pageTitle: 'Signing you in…' },
-  },
-  {
     path: '/auth-email-link',
     name: 'AuthEmailLink',
     beforeRouteLeave: [removeQueryParams, removeHash],
@@ -314,10 +306,7 @@ router.beforeEach(async (to: RouteLocationNormalized, from: RouteLocationNormali
 
   const allowedUnauthenticatedRoutes = [
     'SignIn',
-    'SSO', //@TODO: Remove before merging
     'Maintenance',
-    'AuthClever',
-    'AuthClassLink',
     'AuthEmailLink',
     'AuthEmailSent',
     'Debug',
