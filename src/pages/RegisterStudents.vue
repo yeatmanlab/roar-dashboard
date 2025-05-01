@@ -348,7 +348,9 @@
               :mappings="mappedColumns"
               :using-org-picker="usingOrgPicker"
               :using-email="usingEmail"
+              :submit-status="submitting"
               @validation-update="handleValidationUpdate"
+              @delete-student="removeUser"
             >
               <Button label="Add User" icon="pi pi-plus" severity="secondary" @click="addUser" />
               <Button label="Download" icon="pi pi-download" severity="secondary" @click="exportTransformedStudents" />
@@ -552,6 +554,20 @@ const addUser = () => {
     detail: 'A new empty user has been added to the table.',
     life: 3000,
   });
+};
+
+const removeUser = (student) => {
+  if (submitting.value !== SubmitStatus.IDLE) {
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'Cannot remove user while submitting.',
+      life: 3000,
+    });
+    return;
+  } else {
+    mappedStudents.value = mappedStudents.value.filter((s) => s.rowKey !== student.rowKey);
+  }
 };
 
 const exportTransformedStudents = () => {
@@ -840,26 +856,26 @@ const submit = async () => {
   console.log(transformedStudents);
 
   // Chunk users into chunks of 50 for submission
-  const chunkedUsers = _chunk(transformedStudents, 50);
-  for (const chunk of chunkedUsers) {
-    await roarfirekit.value.createUpdateUsers(chunk).then((results) => {
-      for (const result of results.data) {
-        if (result?.status === 'rejected') {
-          const email = result.email;
-          toast.add({
-            severity: 'error',
-            summary: 'Error',
-            detail: `User ${email} failed to process: ${result.reason}`,
-            life: 5000,
-          });
-        } else if (result?.status === 'fulfilled') {
-          const email = result.email;
-          toast.add({ severity: 'success', summary: 'Success', detail: `User ${email} processed!`, life: 3000 });
-        }
-      }
-    });
-  }
-  submitting.value = SubmitStatus.COMPLETE;
+  // const chunkedUsers = _chunk(transformedStudents, 50);
+  // for (const chunk of chunkedUsers) {
+  //   await roarfirekit.value.createUpdateUsers(chunk).then((results) => {
+  //     for (const result of results.data) {
+  //       if (result?.status === 'rejected') {
+  //         const email = result.email;
+  //         toast.add({
+  //           severity: 'error',
+  //           summary: 'Error',
+  //           detail: `User ${email} failed to process: ${result.reason}`,
+  //           life: 5000,
+  //         });
+  //       } else if (result?.status === 'fulfilled') {
+  //         const email = result.email;
+  //         toast.add({ severity: 'success', summary: 'Success', detail: `User ${email} processed!`, life: 3000 });
+  //       }
+  //     }
+  //   });
+  // }
+  // submitting.value = SubmitStatus.COMPLETE;
 };
 
 /**
