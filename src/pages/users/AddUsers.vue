@@ -401,6 +401,9 @@ function generateColumns(rawJson) {
   let columns = [];
   const columnValues = Object.keys(rawJson);
   _forEach(columnValues, (col) => {
+    // Hide orgIds column
+    if (col === 'orgIds') return;
+
     let dataType = typeof rawJson[col];
     if (dataType === 'object') {
       if (rawJson[col] instanceof Date) dataType = 'date';
