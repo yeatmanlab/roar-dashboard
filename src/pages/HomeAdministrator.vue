@@ -113,7 +113,6 @@
                   </p>
                   <PvButton
                     label="Create Assignment"
-                    icon="pi pi-plus"
                     class="bg-primary border-none text-white"
                     @click="$router.push({ name: 'CreateAssignment' })"
                   />
