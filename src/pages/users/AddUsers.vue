@@ -480,20 +480,19 @@ async function submitUsers() {
           const siteId = await getOrgId(pluralizeFirestoreCollection('districts'), orgName, ref(undefined), ref(undefined));
           orgInfo.sites = siteId;
         }
+      }
+    }
 
-        if (!_isEmpty(orgInfo)) {
+    if (!_isEmpty(orgInfo)) {
           // The backend expects districts and groups for site and cohort respectively
           orgInfo.districts = orgInfo.sites;
           delete orgInfo.sites;
           orgInfo.groups = orgInfo.cohorts;
           delete orgInfo.cohorts;
           user.orgIds = orgInfo;
-        } else {
-          addErrorUser(user, `Error: ${orgType} '${orgName}' is invalid`);
-          activeSubmit.value = false;
-          return;
-        }
-      }
+    } else {
+      // The orgs could not be found
+      return
     }
   }
 
