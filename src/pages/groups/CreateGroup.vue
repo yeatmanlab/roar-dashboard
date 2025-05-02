@@ -170,7 +170,7 @@ import useDistrictSchoolsQuery from '@/composables/queries/useDistrictSchoolsQue
 import useSchoolClassesQuery from '@/composables/queries/useSchoolClassesQuery';
 import useGroupsListQuery from '@/composables/queries/useGroupsListQuery';
 import { isLevante } from '@/helpers';
-import OrgPicker from '@/components/OrgPicker.vue';
+import GroupPicker from '@/components/GroupPicker.vue';
 import _toPairs from 'lodash/toPairs';
 import { TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
 const initialized = ref(false);

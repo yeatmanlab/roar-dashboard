@@ -51,9 +51,9 @@
                 <label for="email">Email</label>
               </PvFloatLabel>
             </div>
-          </div>
+          </div>  
 
-          <OrgPicker @selection="selection($event)" />
+          <GroupPicker @selection="selection($event)" />
           <div class="flex flex-row align-items-center justify-content-center gap-2 flex-order-0 my-3">
             <div class="flex flex-row align-items-center">
               <PvCheckbox v-model="isTestData" input-id="chbx-externalTask" :binary="true" />
@@ -96,7 +96,7 @@ import PvInputText from 'primevue/inputtext';
 import _cloneDeep from 'lodash/cloneDeep';
 import _union from 'lodash/union';
 import { useAuthStore } from '@/store/auth';
-import OrgPicker from '@/components/OrgPicker.vue';
+import GroupPicker from '@/components/GroupPicker.vue';
 import PvFloatLabel from 'primevue/floatlabel';
 import { TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
 const router = useRouter();

@@ -74,7 +74,7 @@
           </div>
         </div>
 
-        <OrgPicker :orgs="orgsList" @selection="selection($event)" />
+        <GroupPicker :orgs="orgsList" @selection="selection($event)" />
 
         <PvConfirmDialog group="errors" class="confirm" :draggable="false">
           <template #message>
@@ -188,7 +188,7 @@ import useTaskVariantsQuery from '@/composables/queries/useTaskVariantsQuery';
 import useUpsertAdministrationMutation from '@/composables/mutations/useUpsertAdministrationMutation';
 import TaskPicker from '@/components/TaskPicker.vue';
 import ConsentPicker from '@/components/ConsentPicker.vue';
-import OrgPicker from '@/components/OrgPicker.vue';
+import GroupPicker from '@/components/GroupPicker.vue';
 import { APP_ROUTES } from '@/constants/routes';
 import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
 import { isLevante } from '@/helpers';
