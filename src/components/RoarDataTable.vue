@@ -201,7 +201,7 @@
                 Caregiver
               </div>
               <div v-else>
-                {{ _capitalize(_get(colData, col.field)) }}
+                {{ _get(colData, col.field) }}
               </div>
             </template>
             <template v-if="col.dataType" #sorticon="{ sorted, sortOrder }">
@@ -382,8 +382,6 @@ import _startCase from 'lodash/startCase';
 import { supportLevelColors, progressTags } from '@/helpers/reports';
 import SkeletonTable from '@/components/SkeletonTable.vue';
 import TableScoreTag from '@/components/reports/TableScoreTag.vue';
-import _isEmpty from 'lodash/isEmpty';
-import _capitalize from 'lodash/capitalize';
 
 /*
 Using the DataTable

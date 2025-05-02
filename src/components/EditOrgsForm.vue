@@ -6,11 +6,6 @@
         <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ serverOrgData.name ?? 'None' }}</div>
         <PvInputText v-else v-model="localOrgData.name" />
       </div>
-      <div class="form-field w-full">
-        <label :class="{ 'font-light uppercase text-sm': !editMode }">Abbreviation</label>
-        <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ serverOrgData.abbreviation ?? 'None' }}</div>
-        <PvInputText v-else v-model="localOrgData.abbreviation" />
-      </div>
     </div>
     <div class="form-field">
       <label :class="{ 'font-light uppercase text-sm': !editMode }">Tags</label>
