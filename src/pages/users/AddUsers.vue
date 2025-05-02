@@ -6,9 +6,9 @@
 
       <PvDivider />
 
-      <div v-if="!isFileUploaded" class="text-gray-500 mb-2 surface-100 border-round p-2">
+      <div v-if="!isFileUploaded || errorUsers.length" class="text-gray-500 mb-2 surface-100 border-round p-2">
         <PvFileUpload
-          v-if="!isFileUploaded"
+          v-if="!isFileUploaded || errorUsers.length"
           name="massUploader[]"
           custom-upload
           accept=".csv"
@@ -114,6 +114,7 @@ import { ref, toRaw, watch, nextTick } from 'vue';
 import { csvFileToJson } from '@/helpers';
 import _cloneDeep from 'lodash/cloneDeep';
 import _forEach from 'lodash/forEach';
+import _capitalize from 'lodash/capitalize';
 import _isEmpty from 'lodash/isEmpty';
 import _startCase from 'lodash/startCase';
 import _chunk from 'lodash/chunk';
@@ -207,7 +208,7 @@ watch(
 
 // Functions supporting the uploader
 const onFileUpload = async (event) => {
-  // Reset in case of previous error
+  // Reset all error states and data
   rawUserFile.value = {};
   errorUsers.value = [];
   errorUserColumns.value = [];
@@ -215,6 +216,9 @@ const onFileUpload = async (event) => {
   errorMessage.value = '';
   errorTable.value = null;
   errorMissingColumns.value = false;
+  isFileUploaded.value = false; // Reset the file uploaded state
+  registeredUsers.value = []; // Clear any previously registered users
+  activeSubmit.value = false; // Reset the submit flag
 
   // Read the file
   const file = event.files[0];
@@ -418,6 +422,17 @@ function generateColumns(rawJson) {
 }
 
 async function submitUsers() {
+  // Check if there are any errors before proceeding
+  if (errorUsers.value.length > 0) {
+    toast.add({
+      severity: 'error',
+      summary: 'Cannot Submit',
+      detail: 'Please fix the errors in your CSV file before submitting',
+      life: 5000,
+    });
+    return;
+  }
+
   // Reset error users
   activeSubmit.value = true;
   errorUsers.value = [];
@@ -464,24 +479,30 @@ async function submitUsers() {
     //   the sendObject. If not, reject user
     for (const [orgType, orgName] of Object.entries(orgNameMap)) {
       if (orgName) {
-        if (orgType === 'school') {
-            const siteId = await getOrgId('districts', site);
-            const schoolId = await getOrgId(pluralizeFirestoreCollection(orgType), orgName, ref(siteId), ref(undefined))
-            // Need to Raw it because a large amount of users causes this to become a proxy object
-            orgInfo.schools = schoolId;
-        } else if (orgType === 'class') {
-            const siteId = await getOrgId('districts', site);
-            const schoolId = await getOrgId('schools', school);
-            const classId = await getOrgId(pluralizeFirestoreCollection(orgType), orgName, ref(siteId), ref(schoolId));
-            orgInfo.classes = classId;
-        } else if (orgType === 'cohort') {
-          for (const cohort of orgNameMap.cohort) {
-            const cohortId = await getOrgId(pluralizeFirestoreCollection('groups'), cohort, ref(undefined), ref(undefined));
-            orgInfo.cohorts.push(cohortId);
+        try {
+          if (orgType === 'school') {
+              const siteId = await getOrgId('districts', site);
+              const schoolId = await getOrgId(pluralizeFirestoreCollection(orgType), orgName, ref(siteId), ref(undefined))
+              // Need to Raw it because a large amount of users causes this to become a proxy object
+              orgInfo.schools = schoolId;
+          } else if (orgType === 'class') {
+              const siteId = await getOrgId('districts', site);
+              const schoolId = await getOrgId('schools', school);
+              const classId = await getOrgId(pluralizeFirestoreCollection(orgType), orgName, ref(siteId), ref(schoolId));
+              orgInfo.classes = classId;
+          } else if (orgType === 'cohort') {
+            for (const cohort of orgNameMap.cohort) {
+              const cohortId = await getOrgId(pluralizeFirestoreCollection('groups'), cohort, ref(undefined), ref(undefined));
+              orgInfo.cohorts.push(cohortId);
+            }
+          } else {
+            const siteId = await getOrgId(pluralizeFirestoreCollection('districts'), orgName, ref(undefined), ref(undefined));
+            orgInfo.sites = siteId;
           }
-        } else {
-          const siteId = await getOrgId(pluralizeFirestoreCollection('districts'), orgName, ref(undefined), ref(undefined));
-          orgInfo.sites = siteId;
+        } catch (error) {
+          // Add the user to the error table with the specific organization error
+          addErrorUser(user, `Invalid ${_capitalize(orgType)}: ${error.message}`);
+          return; // Skip this user and move to the next one
         }
       }
     }
