@@ -98,7 +98,7 @@ import _union from 'lodash/union';
 import { useAuthStore } from '@/store/auth';
 import OrgPicker from '@/components/OrgPicker.vue';
 import PvFloatLabel from 'primevue/floatlabel';
-
+import { TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
 const router = useRouter();
 const toast = useToast();
 const initialized = ref(false);
@@ -140,7 +140,7 @@ const submit = async () => {
       severity: 'error',
       summary: 'Error',
       detail: `Email ${email.value} is already in use. Please enter a different email address.`,
-      life: 5000,
+      life: TOAST_DEFAULT_LIFE_DURATION,
     });
     return;
   }

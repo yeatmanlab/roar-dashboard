@@ -93,6 +93,7 @@ import PvFileUpload from 'primevue/fileupload';
 import _forEach from 'lodash/forEach';
 import _startCase from 'lodash/startCase';
 import _isEmpty from 'lodash/isEmpty';
+import { TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
 
 const authStore = useAuthStore();
 const toast = useToast();
@@ -151,7 +152,7 @@ const onFileUpload = async (event) => {
       severity: 'error',
       summary: 'Error: Empty File',
       detail: 'The uploaded file contains no data',
-      life: 5000,
+      life: TOAST_DEFAULT_LIFE_DURATION,
     });
     return;
   }
@@ -186,7 +187,7 @@ const onFileUpload = async (event) => {
       severity: 'error',
       summary: 'Error: Missing Column',
       detail: `Missing required column(s): ${missingColumns.join(', ')}`,
-      life: 5000,
+      life: TOAST_DEFAULT_LIFE_DURATION,
     });
     return;
   }
@@ -201,7 +202,7 @@ const onFileUpload = async (event) => {
       severity: 'success',
       summary: 'Success',
       detail: 'File Successfully Uploaded',
-      life: 3000,
+      life: TOAST_DEFAULT_LIFE_DURATION,
     });
   }
 };
@@ -292,7 +293,7 @@ const validateUsers = () => {
     toast.add({
       severity: 'error',
       summary: 'Missing Fields. See below for details.',
-      life: 5000,
+      life: TOAST_DEFAULT_LIFE_DURATION,
     });
   }
 };
@@ -344,7 +345,7 @@ const submitUsers = async () => {
       severity: 'success',
       summary: 'Success',
       detail: 'Users linked successfully',
-      life: 7000,
+      life: TOAST_DEFAULT_LIFE_DURATION,
     });
   } catch (error) {
     console.error(error);
@@ -352,7 +353,7 @@ const submitUsers = async () => {
       severity: 'error',
       summary: 'Error',
       detail: `Failed to link users: ${error.message}. Please try again.`,
-      life: 5000,
+      life: TOAST_DEFAULT_LIFE_DURATION,
     });
   } finally {
     activeSubmit.value = false;

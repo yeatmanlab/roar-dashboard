@@ -172,7 +172,7 @@ import useGroupsListQuery from '@/composables/queries/useGroupsListQuery';
 import { isLevante } from '@/helpers';
 import OrgPicker from '@/components/OrgPicker.vue';
 import _toPairs from 'lodash/toPairs';
-
+import { TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
 const initialized = ref(false);
 const isTestData = ref(false);
 const isDemoData = ref(false);
@@ -337,7 +337,7 @@ const submit = async () => {
         parentOrg = Array.isArray(value) ? value[0] : value;
       }
       if (!parentOrg || !parentOrgKey) {
-        toast.add({ severity: 'error', summary: 'Error', detail: 'Please select a parent organization', life: 3000 });
+        toast.add({ severity: 'error', summary: 'Error', detail: 'Please select a parent organization', life: TOAST_DEFAULT_LIFE_DURATION });
         submitted.value = false;
         return;
       }
@@ -358,12 +358,12 @@ const submit = async () => {
       .upsertOrg({type: orgType.value.firestoreCollection, ...orgData})
       .then(() => {
         queryClient.invalidateQueries({ queryKey: ['orgs'], exact: false });
-        toast.add({ severity: 'success', summary: 'Success', detail: 'Group created', life: 3000 });
+        toast.add({ severity: 'success', summary: 'Success', detail: 'Group created', life: TOAST_DEFAULT_LIFE_DURATION });
         submitted.value = false;
         resetForm();
       })
       .catch((error) => {
-        toast.add({ severity: 'error', summary: 'Error', detail: error.message, life: 3000 });
+        toast.add({ severity: 'error', summary: 'Error', detail: error.message, life: TOAST_DEFAULT_LIFE_DURATION });
         console.error('Error creating org:', error);
         submitted.value = false;
       });

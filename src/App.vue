@@ -15,7 +15,7 @@
     <link rel="icon" :href="`/favicon-levante.ico`" />
   </Head>
   <div>
-    <PvToast />
+    <PvToast position="bottom-center" />
     <NavBar v-if="typeof $route.name === 'string' && !navbarBlacklist.includes($route.name) && isAuthStoreReady" />
     <router-view :key="$route.fullPath" />
 

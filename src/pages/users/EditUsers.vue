@@ -107,7 +107,7 @@ import PvFileUpload from 'primevue/fileupload';
 import _forEach from 'lodash/forEach';
 import _startCase from 'lodash/startCase';
 import _isEmpty from 'lodash/isEmpty';
-
+import { TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
 const authStore = useAuthStore();
 const toast = useToast();
 const isFileUploaded = ref(false);
@@ -189,7 +189,7 @@ const onFileUpload = async (event) => {
       severity: 'error',
       summary: 'Error: Missing Column',
       detail: 'Missing required column: uid',
-      life: 5000,
+      life: TOAST_DEFAULT_LIFE_DURATION,
     });
     return;
   }
@@ -203,7 +203,7 @@ const onFileUpload = async (event) => {
       severity: 'error',
       summary: 'Error: Missing Editable Fields',
       detail: 'At least one editable field must be present: month, year, district, school, class, or group',
-      life: 5000,
+      life: TOAST_DEFAULT_LIFE_DURATION,
     });
     return;
   }
@@ -216,7 +216,7 @@ const onFileUpload = async (event) => {
       severity: 'success',
       summary: 'Success',
       detail: 'File Successfully Uploaded',
-      life: 3000,
+      life: TOAST_DEFAULT_LIFE_DURATION,
     });
   }
 };
@@ -249,7 +249,7 @@ const validateUsers = () => {
     toast.add({
       severity: 'error',
       summary: 'Missing Fields. See below for details.',
-      life: 5000,
+      life: TOAST_DEFAULT_LIFE_DURATION,
     });
   }
 };
@@ -285,7 +285,7 @@ const submitEdits = async () => {
         severity: 'warn',
         summary: 'Failed to edit some users',
         detail: `${result.data.successfulUpdates} of ${result.data.totalProcessed} users updated successfully. See errors below.`,
-        life: 5000,
+        life: TOAST_DEFAULT_LIFE_DURATION,
       });
     } else {
       // All updates were successful
@@ -294,7 +294,7 @@ const submitEdits = async () => {
         severity: 'success',
         summary: 'Success',
         detail: `${result.data.message}`,
-        life: 5000,
+        life: TOAST_DEFAULT_LIFE_DURATION,
       });
     }
   } catch (error) {
@@ -303,7 +303,7 @@ const submitEdits = async () => {
       severity: 'error',
       summary: 'Error',
       detail: `Failed to edit users: ${error.message}. Please try again.`,
-      life: 5000,
+      life: TOAST_DEFAULT_LIFE_DURATION,
     });
   } finally {
     activeSubmit.value = false;

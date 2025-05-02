@@ -4,4 +4,4 @@ export const TOAST_SEVERITIES = {
   ERROR: 'error',
 } as const;
 
-export const TOAST_DEFAULT_LIFE_DURATION: number = 3000;
+export const TOAST_DEFAULT_LIFE_DURATION: number = 5000;

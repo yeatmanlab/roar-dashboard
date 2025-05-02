@@ -130,6 +130,7 @@
   import _startCase from 'lodash/startCase';
   import _isEmpty from 'lodash/isEmpty';
   import { storeToRefs } from 'pinia';
+  import { TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
   
   const authStore = useAuthStore();
   const toast = useToast();
@@ -203,7 +204,7 @@
         severity: 'error',
         summary: 'Error: Missing Column',
         detail: `Missing required column(s): ${missingColumns.join(', ')}`,
-        life: 5000,
+        life: TOAST_DEFAULT_LIFE_DURATION,
       });
       return;
     }
@@ -216,7 +217,7 @@
         severity: 'success',
         summary: 'Success',
         detail: 'File Successfully Uploaded',
-        life: 3000,
+        life: TOAST_DEFAULT_LIFE_DURATION,
       });
     }
   };
@@ -244,7 +245,7 @@
       toast.add({
         severity: 'error',
         summary: 'Missing or Empty Fields. See below for details.',
-        life: 5000,
+        life: TOAST_DEFAULT_LIFE_DURATION,
       });
     }
   };
@@ -278,7 +279,7 @@
         severity: 'success',
         summary: 'Success',
         detail: result.data.message,
-        life: 5000,
+        life: TOAST_DEFAULT_LIFE_DURATION,
       });
     } catch (error) {
       console.error(error.message);
@@ -286,7 +287,7 @@
         severity: 'error',
         summary: 'Error',
         detail: `Failed to link users: ${error.message}. Please try again.`,
-        life: 5000,
+        life: TOAST_DEFAULT_LIFE_DURATION,
       });
     } finally {
       activeSubmit.value = false;

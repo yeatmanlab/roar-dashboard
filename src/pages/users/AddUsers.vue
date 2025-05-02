@@ -129,7 +129,7 @@ import PvDataTable from 'primevue/datatable';
 import PvDivider from 'primevue/divider';
 import PvFileUpload from 'primevue/fileupload';
 import { useRouter } from 'vue-router';
-
+import { TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
 const authStore = useAuthStore();
 const toast = useToast();
 const isFileUploaded = ref(false);
@@ -232,7 +232,7 @@ const onFileUpload = async (event) => {
       severity: 'error',
       summary: 'Error: Empty File',
       detail: 'The uploaded file contains no data',
-      life: 5000,
+      life: TOAST_DEFAULT_LIFE_DURATION,
     });
     return;
   }
@@ -258,7 +258,7 @@ const onFileUpload = async (event) => {
       severity: 'error',
       summary: 'Error: Missing Column',
       detail: 'Missing required column(s): userType',
-      life: 5000,
+      life: TOAST_DEFAULT_LIFE_DURATION,
     });
     errorMissingColumns.value = true;
     return;
@@ -278,7 +278,7 @@ const onFileUpload = async (event) => {
         severity: 'error',
         summary: 'Error: Missing Column',
         detail: 'Missing required column(s): Month or Year',
-        life: 5000,
+        life: TOAST_DEFAULT_LIFE_DURATION,
       });
       errorMissingColumns.value = true;
       return;
@@ -294,7 +294,7 @@ const onFileUpload = async (event) => {
       severity: 'error',
       summary: 'Error: Missing Column',
       detail: 'Missing required column(s): Cohort OR Site and School',
-      life: 5000,
+      life: TOAST_DEFAULT_LIFE_DURATION,
     });
     return;
   }
@@ -390,14 +390,14 @@ const onFileUpload = async (event) => {
     toast.add({
       severity: 'error',
       summary: 'Validation Errors. See below for details.', // Updated summary
-      life: 5000,
+      life: TOAST_DEFAULT_LIFE_DURATION,
     });
   } else {
     // Only set isFileUploaded to true if there are NO errors at all
     isFileUploaded.value = true;
     errorMissingColumns.value = false;
     showErrorTable.value = false;
-    toast.add({ severity: 'success', summary: 'Success', detail: 'File Successfully Uploaded', life: 3000 });
+    toast.add({ severity: 'success', summary: 'Success', detail: 'File Successfully Uploaded', life: TOAST_DEFAULT_LIFE_DURATION });
   }
 };
 
@@ -615,7 +615,8 @@ async function submitUsers() {
       toast.add({
         severity: 'success',
         summary: 'User Creation Successful',
-        life: 9000})
+        life: TOAST_DEFAULT_LIFE_DURATION
+      })
       convertUsersToCSV();
     } catch (error) {
       // TODO: Show users that failed to register
@@ -624,7 +625,7 @@ async function submitUsers() {
       toast.add({
         severity: 'error',
         summary: 'Error registering users: ' + error.message,
-        life: 9000,
+        life: TOAST_DEFAULT_LIFE_DURATION,
       });
     }
   }
