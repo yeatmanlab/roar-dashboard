@@ -1,21 +1,6 @@
 <template>
   <div v-if="localUserType === 'student'" class="form-container">
     <div class="form-column">
-      <div class="form-field">
-        <label :class="{ 'font-light uppercase text-sm': !editMode }">First Name</label>
-        <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ userData?.name?.first ?? 'None' }}</div>
-        <PvInputText v-else v-model="localUserData.name.first" />
-      </div>
-      <div class="form-field">
-        <label :class="{ 'font-light uppercase text-sm': !editMode }">Middle Name</label>
-        <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ userData?.name?.middle ?? 'None' }}</div>
-        <PvInputText v-else v-model="localUserData.name.middle" />
-      </div>
-      <div class="form-field">
-        <label :class="{ 'font-light uppercase text-sm': !editMode }">Last Name</label>
-        <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ userData?.name?.last ?? 'None' }}</div>
-        <PvInputText v-else v-model="localUserData.name.last" />
-      </div>
 
       <div class="form-field">
         <label :class="{ 'font-light uppercase text-sm': !editMode }"

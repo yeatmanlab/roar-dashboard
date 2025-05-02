@@ -30,7 +30,5 @@ export const AUTH_USER_TYPE = {
  * @constant {Object} AUTH_SSO_PROVIDERS - The sources of SSO authentication.
  */
 export const AUTH_SSO_PROVIDERS = {
-  CLEVER: 'clever',
-  CLASSLINK: 'classlink',
   GOOGLE: 'google',
 } as const;

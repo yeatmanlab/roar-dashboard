@@ -44,6 +44,9 @@
                 <b>{{ col.header }}</b>
               </div>
             </template>
+            <template #body="{ data, field }">
+              <span>{{ data[field] }}</span>
+            </template>
           </PvColumn>
         </PvDataTable>
 
@@ -96,6 +99,9 @@
             <template #header>
               {{ col.header }}
             </template>
+            <template #body="{ data, field }">
+              <span>{{ data[field] }}</span>
+            </template>
           </PvColumn>
         </PvDataTable>
       </div>
@@ -133,7 +139,7 @@ const registeredUsers = ref([]);
 const dataTable = ref();
 
 // One or the other of the following columns is required:
-// 'group', | 'district', 'school', 'class'
+// 'cohort', | 'site', 'school', 'class'
 
 // Month and Year are required only for 'child' or 'student' users
 const allFields = [
@@ -153,13 +159,13 @@ const allFields = [
     dataType: 'number',
   },
   {
-    field: 'group',
-    header: 'Group',
+    field: 'cohort',
+    header: 'Cohort',
     dataType: 'string',
   },
   {
-    field: 'district',
-    header: 'District',
+    field: 'site',
+    header: 'Site',
     dataType: 'string',
   },
   {
@@ -233,11 +239,13 @@ const onFileUpload = async (event) => {
   // REGISTRATION
   // Required: userType 
   // Conditional (child): Month, Year 
-  // Conditional (Either): Group OR District + School 
+  // Conditional (Either): Cohort OR Site + School 
 
   // Get all column names from the first row, case-insensitive check for userType
   const firstRow = toRaw(rawUserFile.value[0]);
   const allColumns = Object.keys(firstRow).map(col => col.toLowerCase());
+  
+  console.log('allColumns:', allColumns);
 
   // Check if userType column exists (case-insensitive)
   const hasUserType = allColumns.includes('usertype');
@@ -273,17 +281,18 @@ const onFileUpload = async (event) => {
     }
   }
 
-  // Conditional (Either): Group OR District + School
-  const hasGroup = allColumns.includes('group');
-  const hasDistrict = allColumns.includes('district');
+  // Conditional (Either): Cohort OR Site + School
+  const hasCohort = allColumns.includes('cohort');
+  const hasSite = allColumns.includes('site');
   const hasSchool = allColumns.includes('school');
-  if (!hasGroup && (!hasDistrict || !hasSchool)) {
+  if (!hasCohort && (!hasSite || !hasSchool)) {
     toast.add({
       severity: 'error',
       summary: 'Error: Missing Column',
-      detail: 'Missing required column(s): Group OR District and School',
+      detail: 'Missing required column(s): Cohort OR Site and School',
       life: 5000,
     });
+    return;
   }
 
   // Check required fields are not empty
@@ -292,57 +301,95 @@ const onFileUpload = async (event) => {
 
   rawUserFile.value.forEach((user) => {
     const missingFields = [];
+    const invalidFields = []; // Store fields with invalid format/value
     
     // Get the actual userType field name (preserving original case)
     const userTypeField = Object.keys(user).find(key => key.toLowerCase() === 'usertype');
-    
-    if (!userTypeField) {
+    const userTypeValue = userTypeField ? user[userTypeField]?.toLowerCase() : null;
+
+    // --- Field Presence Checks ---
+    if (!userTypeField || !userTypeValue) {
       missingFields.push('userType');
-    } else if (user[userTypeField].toLowerCase() === 'child') {
-      childRequiredInfo.forEach((requiredField) => {
-        // Find the actual field name in the user object (case-insensitive)
-        const actualField = Object.keys(user).find(key => key.toLowerCase() === requiredField);
-        if (!actualField || !user[actualField]) {
-          missingFields.push(requiredField === 'usertype' ? 'userType' : requiredField);
+    } else {
+        // --- Field Value/Format Validation ---
+        const validUserTypes = ['child', 'teacher', 'caregiver'];
+        if (!validUserTypes.includes(userTypeValue)) {
+            invalidFields.push(`userType must be one of: ${validUserTypes.join(', ')}`);
         }
-      });
-    } else if (user[userTypeField].toLowerCase() === 'parent' || user[userTypeField].toLowerCase() === 'teacher') {
-      careGiverRequiredInfo.forEach((requiredField) => {
-        // Find the actual field name in the user object (case-insensitive)
-        const actualField = Object.keys(user).find(key => key.toLowerCase() === requiredField);
-        if (!actualField || !user[actualField]) {
-          missingFields.push(requiredField === 'usertype' ? 'userType' : requiredField);
+
+        // --- Child Specific Checks ---
+        if (userTypeValue === 'child') {
+            // Check required fields for child
+            childRequiredInfo.forEach((requiredField) => {
+                const actualField = Object.keys(user).find(key => key.toLowerCase() === requiredField);
+                if (!actualField || !user[actualField]) {
+                  missingFields.push(requiredField === 'usertype' ? 'userType' : requiredField);
+                } else {
+                    // Validate month and year format if present
+                    if (requiredField === 'month') {
+                        const monthField = Object.keys(user).find(key => key.toLowerCase() === 'month');
+                        const monthValue = monthField ? parseInt(user[monthField], 10) : NaN;
+                        if (isNaN(monthValue) || monthValue < 1 || monthValue > 12) {
+                            invalidFields.push('month must be a number between 1 and 12');
+                        }
+                    }
+                    if (requiredField === 'year') {
+                        const yearField = Object.keys(user).find(key => key.toLowerCase() === 'year');
+                        const yearValue = yearField ? user[yearField] : '';
+                        if (!/^\d{4}$/.test(yearValue)) { // Check if it's exactly 4 digits
+                            invalidFields.push('year must be a four-digit number');
+                        }
+                    }
+                }
+            });
+        } else if (userTypeValue === 'caregiver' || userTypeValue === 'teacher') {
+             // Check required fields for caregiver/teacher
+            careGiverRequiredInfo.forEach((requiredField) => {
+                const actualField = Object.keys(user).find(key => key.toLowerCase() === requiredField);
+                if (!actualField || !user[actualField]) {
+                  missingFields.push(requiredField === 'usertype' ? 'userType' : requiredField);
+                }
+            });
         }
-      });
     }
     
-    // Check for group or district and school (case-insensitive)
-    const groupField = Object.keys(user).find(key => key.toLowerCase() === 'group');
-    const districtField = Object.keys(user).find(key => key.toLowerCase() === 'district');
+    // --- Org Presence Checks (Cohort OR Site+School) ---
+    const cohortField = Object.keys(user).find(key => key.toLowerCase() === 'cohort');
+    const siteField = Object.keys(user).find(key => key.toLowerCase() === 'site');
     const schoolField = Object.keys(user).find(key => key.toLowerCase() === 'school');
     
-    if (!groupField || !user[groupField]) {
-      if (!districtField || !user[districtField] || !schoolField || !user[schoolField]) {
-        missingFields.push('group OR district and school');
-      }
+    const hasCohort = cohortField && user[cohortField];
+    const hasSite = siteField && user[siteField];
+    const hasSchool = schoolField && user[schoolField];
+
+
+    if (!hasCohort && !(hasSite && hasSchool)) {
+      missingFields.push('Cohort OR Site and School');
     }
 
-    // Add error if any required fields are missing
+    // --- Aggregate Errors and Add User to Error List if Needed ---
+    let errorMessages = [];
     if (missingFields.length > 0) {
-      addErrorUser(user, `Missing Field(s): ${missingFields.join(', ')}`);
+      errorMessages.push(`Missing Field(s): ${missingFields.join(', ')}`);
+    }
+    if (invalidFields.length > 0) {
+      errorMessages.push(`Invalid Field(s): ${invalidFields.join('; ')}`);
+    }
+
+    if (errorMessages.length > 0) {
+      addErrorUser(user, errorMessages.join('. '));
     }
   });
 
+  // --- Post-Loop Error Handling & Success Notification ---
   if (errorUsers.value.length) {
     toast.add({
       severity: 'error',
-      summary: 'Missing Fields. See below for details.',
+      summary: 'Validation Errors. See below for details.', // Updated summary
       life: 5000,
     });
-  }
-
-
-  if (!errorUsers.value.length) {
+  } else {
+    // Only set isFileUploaded to true if there are NO errors at all
     isFileUploaded.value = true;
     errorMissingColumns.value = false;
     showErrorTable.value = false;
@@ -381,32 +428,32 @@ async function submitUsers() {
   // Check orgs exist
   for (const user of usersToBeRegistered) {
     // Find fields case-insensitively
-    const districtField = Object.keys(user).find(key => key.toLowerCase() === 'district');
+    const siteField = Object.keys(user).find(key => key.toLowerCase() === 'site');
     const schoolField = Object.keys(user).find(key => key.toLowerCase() === 'school');
     const classField = Object.keys(user).find(key => key.toLowerCase() === 'class');
-    const groupField = Object.keys(user).find(key => key.toLowerCase() === 'group');
+    const cohortField = Object.keys(user).find(key => key.toLowerCase() === 'cohort');
     
     // Get values using the actual field names
-    const district = districtField ? user[districtField] : '';
+    const site = siteField ? user[siteField] : '';
     const school = schoolField ? user[schoolField] : '';
     const _class = classField ? user[classField] : '';
-    const groups = groupField ? user[groupField] : '';
+    const cohorts = cohortField ? user[cohortField] : '';
 
     const orgNameMap = {
-      district: district ?? '',
+      site: site ?? '',
       school: school ?? '',
       class: _class ?? '',
-      group: groups?.split(',') ?? [],
+      cohort: cohorts.split(',') ?? [],
     };
 
     // Pluralized because of a ROAR change to the createUsers function. 
     // Only groups are allowed to be an array however, we've only been using one group per user.
     // TODO: Figure out if we want to allow multiple orgs
-    let orgInfo = {
-          districts: '',
-          schools: '',
-          classes: '',
-          groups: [],
+    const orgInfo = {
+      sites: '',
+      schools: '',
+      classes: '',
+      cohorts: [],
     };
 
     // If orgType is a given column, check if the name is
@@ -415,37 +462,39 @@ async function submitUsers() {
     for (const [orgType, orgName] of Object.entries(orgNameMap)) {
       if (orgName) {
         if (orgType === 'school') {
-            const districtId = await getOrgId('districts', district);
-            const schoolId = await getOrgId(pluralizeFirestoreCollection(orgType), orgName, ref(districtId), ref(undefined))
+            const siteId = await getOrgId('districts', site);
+            const schoolId = await getOrgId(pluralizeFirestoreCollection(orgType), orgName, ref(siteId), ref(undefined))
             // Need to Raw it because a large amount of users causes this to become a proxy object
             orgInfo.schools = schoolId;
         } else if (orgType === 'class') {
-            const districtId = await getOrgId('districts', district);
+            const siteId = await getOrgId('districts', site);
             const schoolId = await getOrgId('schools', school);
-            const classId = await getOrgId(pluralizeFirestoreCollection(orgType), orgName, ref(districtId), ref(schoolId));
+            const classId = await getOrgId(pluralizeFirestoreCollection(orgType), orgName, ref(siteId), ref(schoolId));
             orgInfo.classes = classId;
-        } else if (orgType === 'group') {
-          for (const group of orgNameMap.group) {
-            const groupId = await getOrgId(pluralizeFirestoreCollection(orgType), group, ref(undefined), ref(undefined));
-            orgInfo.groups.push(groupId);
+        } else if (orgType === 'cohort') {
+          for (const cohort of orgNameMap.cohort) {
+            const cohortId = await getOrgId(pluralizeFirestoreCollection('groups'), cohort, ref(undefined), ref(undefined));
+            orgInfo.cohorts.push(cohortId);
           }
         } else {
-          const districtId = await getOrgId(pluralizeFirestoreCollection(orgType), orgName, ref(undefined), ref(undefined));
-          orgInfo.districts = districtId;
-        }
-
-        if (!_isEmpty(orgInfo)) {
-          user.orgIds = orgInfo;
-        } else {
-          addErrorUser(user, `Error: ${orgType} '${orgName}' is invalid`);
-          activeSubmit.value = false;
-          return;
+          const siteId = await getOrgId(pluralizeFirestoreCollection('districts'), orgName, ref(undefined), ref(undefined));
+          orgInfo.sites = siteId;
         }
       }
     }
 
+    if (!_isEmpty(orgInfo)) {
+          // The backend expects districts and groups for site and cohort respectively
+          orgInfo.districts = orgInfo.sites;
+          delete orgInfo.sites;
+          orgInfo.groups = orgInfo.cohorts;
+          delete orgInfo.cohorts;
+          user.orgIds = orgInfo;
+    } else {
+      // The orgs could not be found
+      return
+    }
   }
-
 
   // TODO: Figure out deadline-exceeded error with 700+ users. (Registration works fine, creates all documents but the client recieves the error)
   // Spit users into chunks of 1000
@@ -465,10 +514,20 @@ async function submitUsers() {
         // Find the userType field (case-insensitive)
         const userTypeField = Object.keys(user).find(key => key.toLowerCase() === 'usertype');
         
-        // If userType field exists but is not named exactly 'userType', rename it
-        if (userTypeField && userTypeField !== 'userType') {
-          processedUser.userType = user[userTypeField];
-          delete processedUser[userTypeField];
+        // Ensure the key is exactly 'userType' and handle potential casing issues
+        if (userTypeField) {
+          const userTypeValue = user[userTypeField];
+          // Set the key to 'userType' regardless of original casing
+          processedUser.userType = userTypeValue;
+          // Remove the original field if the casing was different
+          if (userTypeField !== 'userType') {
+            delete processedUser[userTypeField];
+          }
+          
+          // *** Add check to convert 'caregiver' value to 'parent' ***
+          if (typeof userTypeValue === 'string' && userTypeValue.toLowerCase() === 'caregiver') {
+            processedUser.userType = 'parent';
+          }
         }
         
         return processedUser;
@@ -592,27 +651,27 @@ const orgIds = {
 };
 
   /**
- * Retrieves the ID of an organization based on its type and name.
+ * Retrieves the ID of an Group based on its type and name.
  * If the ID is not already cached, it fetches it from the server.
  *
  * @async
  * @function getOrgId
- * @param {string} orgType - The type of organization (e.g., 'districts', 'schools', 'classes', 'groups').
- * @param {string} orgName - The name of the organization.
+ * @param {string} orgType - The type of Group (e.g., 'districts', 'schools', 'classes', 'groups').
+ * @param {string} orgName - The name of the Group.
  * @param {Object|undefined} parentDistrict - The parent district reference, if applicable.
  * @param {Object|undefined} parentSchool - The parent school reference, if applicable.
- * @returns {Promise<String>} A promise that resolves to a string representing the organization ID.
- * @throws {Error} Throws an error if no organizations are found for the given type and name.
+ * @returns {Promise<String>} A promise that resolves to a string representing the Group ID.
+ * @throws {Error} Throws an error if no Group is found for the given type and name.
  *
  * @example
  * // Get the ID for a school
  * const schoolInfo = await getOrgId('schools', 'High School A', districtRef, undefined);
  *
  * @description
- * This function first checks if the organization ID is already cached in the `orgIds.value` object.
- * If not, it calls the `fetchOrgByName` function to retrieve the organization details from the server.
+ * This function first checks if the Group ID is already cached in the `orgIds.value` object.
+ * If not, it calls the `fetchOrgByName` function to retrieve the Group details from the server.
  * The fetched data is then cached for future use.
- * If no organizations are found, it throws an error.
+ * If no Group is found, it throws an error.
  */
 const getOrgId = async (orgType, orgName, parentDistrict, parentSchool) => {
   if (orgIds[orgType][orgName]) return orgIds[orgType][orgName];
@@ -621,7 +680,13 @@ const getOrgId = async (orgType, orgName, parentDistrict, parentSchool) => {
   const orgs = await fetchOrgByName(orgType, orgName, parentDistrict, parentSchool);
 
   if (orgs.length === 0) {
-    throw new Error(`No organizations found for ${orgType} '${orgName}'`);
+    if (orgType === 'districts') {
+      throw new Error(`No Groups found for site '${orgName}'`);
+    } else if (orgType === 'groups') {
+      throw new Error(`No Groups found for cohort '${orgName}'`);
+    } else {
+      throw new Error(`No Groups found for ${orgType} '${orgName}'`);
+    }
   }
 
   orgIds[orgType][orgName] = orgs[0].id;

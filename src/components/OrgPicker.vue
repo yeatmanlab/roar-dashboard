@@ -1,7 +1,12 @@
 <template>
   <div class="grid">
     <div class="col-12 md:col-8">
-      <PvPanel class="m-0 p-0 h-full" :header="`Select ${forParentOrg ? 'Parent Audience' : 'Audience'}`">
+      <PvPanel class="m-0 p-0 h-full">
+        <template #header>
+          <div class="flex align-items-center font-bold">
+            Select {{ forParentOrg ? 'Parent Site' : 'Group(s)' }} <span class='required-asterisk text-red-500 ml-1'>*</span>
+          </div>
+        </template>
         <PvTabView v-if="claimsLoaded" v-model:active-index="activeIndex" class="m-0 p-0 org-tabs" lazy>
           <PvTabPanel v-for="orgType in orgHeaders" :key="orgType" :header="orgType.header">
             <div class="grid column-gap-3">
@@ -59,11 +64,16 @@
       </PvPanel>
     </div>
     <div v-if="!forParentOrg" class="col-12 md:col-4">
-      <PvPanel class="h-full" header="Selected audience">
+      <PvPanel class="h-full">
+        <template #header>
+          <div class="flex align-items-center font-bold">
+            Selected Groups <span class='required-asterisk text-red-500 ml-1'>*</span>
+          </div>
+        </template>
         <PvScrollPanel style="width: 100%; height: 26rem">
           <div v-for="orgKey in Object.keys(selectedOrgs)" :key="orgKey">
             <div v-if="selectedOrgs[orgKey].length > 0">
-              <b>{{ _capitalize(orgKey) }}:</b>
+              <b>{{ _capitalize(convertToGroupName(orgKey)) }}:</b>
               <PvChip
                 v-for="org in selectedOrgs[orgKey]"
                 :key="org.id"
@@ -100,6 +110,7 @@ import { orderByDefault } from '@/helpers/query/utils';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useDistrictsListQuery from '@/composables/queries/useDistrictsListQuery';
 import PvFloatLabel from 'primevue/floatlabel';
+import { convertToGroupName } from '@/helpers';
 
 const initialized = ref(false);
 const authStore = useAuthStore();
@@ -163,38 +174,18 @@ const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admi
 const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
 
 const orgHeaders = computed(() => {
-  const headers = {
+  if (props.forParentOrg) {
+    return {
+      districts: { header: 'Sites', id: 'districts' },
+    };
+  }
+
+  return {
     districts: { header: 'Sites', id: 'districts' },
     schools: { header: 'Schools', id: 'schools' },
     classes: { header: 'Classes', id: 'classes' },
-    groups: { header: 'Groups', id: 'groups' },
+    groups: { header: 'Cohorts', id: 'groups' },
   };
-
-  if (isSuperAdmin.value) return headers;
-
-  const result = {};
-
-  if (props.forParentOrg) {
-    result.districts = { header: 'Sites', id: 'districts' };
-    return result;
-  }
-
-  if ((adminOrgs.value?.districts ?? []).length > 0) {
-    result.districts = { header: 'Sites', id: 'districts' };
-    result.schools = { header: 'Schools', id: 'schools' };
-    result.classes = { header: 'Classes', id: 'classes' };
-  }
-  if ((adminOrgs.value?.schools ?? []).length > 0) {
-    result.schools = { header: 'Schools', id: 'schools' };
-    result.classes = { header: 'Classes', id: 'classes' };
-  }
-  if ((adminOrgs.value?.classes ?? []).length > 0) {
-    result.classes = { header: 'Classes', id: 'classes' };
-  }
-  if ((adminOrgs.value?.groups ?? []).length > 0) {
-    result.groups = { header: 'Groups', id: 'groups' };
-  }
-  return result;
 });
 
 const activeIndex = ref(0);

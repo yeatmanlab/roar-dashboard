@@ -45,22 +45,6 @@
               <img src="../assets/provider-google-logo.svg" alt="The Google Logo" class="flex mr-2 w-2" />
               <span>Google</span>
             </PvButton>
-            <PvButton
-              v-if="!isLevante"
-              class="flex surface-0 p-1 mr-1 border-black-alpha-10 w-full justify-content-center hover:border-primary hover:surface-ground"
-              style="border-radius: 3rem; height: 3rem"
-              @click="authWithClever"
-            >
-              <span>Clever</span>
-            </PvButton>
-            <PvButton
-              v-if="!isLevante"
-              class="flex surface-0 p-1 mr-1 border-black-alpha-10 w-full justify-content-center hover:border-primary hover:surface-ground"
-              style="border-radius: 3rem; height: 3rem"
-              @click="authWithClassLink"
-            >
-              <span>ClassLink</span>
-            </PvButton>
           </div>
           <p class="text-xs">*{{ $t('pageSignIn.adminInfoPrompt') }}</p>
         </section>
@@ -99,26 +83,6 @@
           >
             <img src="../assets/provider-google-logo.svg" alt="The Google Logo" class="flex mr-2 w-2" />
             <span>Google</span>
-          </PvButton>
-        </div>
-        <div v-if="signInMethods.includes(AUTH_SSO_PROVIDERS.CLEVER)">
-          <PvButton
-            v-if="!isLevante"
-            class="flex surface-0 p-1 mr-1 border-black-alpha-10 justify-content-center hover:border-primary hover:surface-ground"
-            style="border-radius: 3rem; height: 3rem"
-            @click="authWithClever"
-          >
-            <span>Clever</span>
-          </PvButton>
-        </div>
-        <div v-if="signInMethods.includes(AUTH_SSO_PROVIDERS.CLASSLINK)">
-          <PvButton
-            v-if="!isLevante"
-            class="flex surface-0 p-1 mr-1 border-black-alpha-10 justify-content-center hover:border-primary hover:surface-ground"
-            style="border-radius: 3rem; height: 3rem"
-            @click="authWithClassLink"
-          >
-            <span>ClassLink</span>
           </PvButton>
         </div>
         <div v-if="signInMethods.includes('password')" class="flex flex-row gap-2">
@@ -222,26 +186,6 @@ const authWithGoogle = () => {
 
 const modalPassword = ref('');
 
-const authWithClever = () => {
-  console.log('---> authWithClever');
-  if (process.env.NODE_ENV === 'development' && !window.Cypress) {
-    authStore.signInWithCleverPopup();
-  } else {
-    authStore.signInWithCleverRedirect();
-  }
-  spinner.value = true;
-};
-
-const authWithClassLink = () => {
-  console.log('---> authWithClassLink');
-  if (isMobileBrowser()) {
-    authStore.signInWithClassLinkRedirect();
-    spinner.value = true;
-  } else {
-    authStore.signInWithClassLinkRedirect();
-    spinner.value = true;
-  }
-};
 
 const authWithEmail = async (state) => {
   // If username is supplied instead of email
@@ -300,21 +244,11 @@ const displaySignInMethods = computed(() => {
   return signInMethods.value.map((method) => {
     if (method === 'password') return 'Password';
     if (method === AUTH_SSO_PROVIDERS.GOOGLE) return 'Google';
-    if (method === AUTH_SSO_PROVIDERS.CLEVER) return 'Clever';
-    if (method === AUTH_SSO_PROVIDERS.CLASSLINK) return 'ClassLink';
   });
 });
 
 onMounted(() => {
   document.body.classList.add('page-signin');
-  if (authStore.cleverOAuthRequested) {
-    authStore.cleverOAuthRequested = false;
-    authWithClever();
-  }
-  if (authStore.classLinkOAuthRequested) {
-    authStore.classLinkOAuthRequested = false;
-    authWithClassLink();
-  }
 });
 
 onBeforeUnmount(() => {

@@ -20,12 +20,6 @@
     "signInWithPasswordInstead": "Iniciar sesión con contraseña",
     "suggestions": "Sugerencias"
   },
-  "cleverLanding": {
-    "cleverLoading": "Cargando tus datos desde Clever..."
-  },
-  "classLinkLanding": {
-    "classLinkLoading": "Cargando tus datos desde ClassLink..."
-  },
 "consentModal": {
   "header": "Consentimiento",
   "consentTitle": "Consentimiento",

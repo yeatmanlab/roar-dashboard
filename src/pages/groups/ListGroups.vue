@@ -5,7 +5,7 @@
       <div class="flex flex-column mb-5">
         <div class="flex justify-content-between mb-2">
           <div class="flex align-items-center gap-3">
-            <div class="admin-page-header mr-4">Audiences</div>
+            <div class="admin-page-header mr-4">Groups</div>
              <PvButton
               class="bg-primary text-white border-none p-2 ml-auto"
               @click="addUsers"
@@ -14,9 +14,9 @@
             </PvButton>
             <PvButton
               class="bg-primary text-white border-none p-2 ml-auto"
-              @click="newAudience"
+              @click="newGroup"
             >
-              New Audience
+              New Group
             </PvButton>
           </div>
         </div>
@@ -190,8 +190,7 @@ import { CSV_EXPORT_MAX_RECORD_COUNT } from '@/constants/csvExport';
 import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
 import RoarDataTable from '@/components/RoarDataTable.vue';
 import PvFloatLabel from 'primevue/floatlabel';
-// import useDeleteGroupMutation from '@/composables/mutations/useDeleteGroupMutation'; // File does not exist
-import useGroupsQuery from '@/composables/queries/useGroupsQuery';
+
 
 const router = useRouter();
 const initialized = ref(false);
@@ -210,8 +209,8 @@ const addUsers = () => {
   router.push({ name: 'Add Users' });
 };
 
-const newAudience = () => {
-  router.push({ name: 'CreateAudience' });
+const newGroup = () => {
+  router.push({ name: 'CreateGroup' });
 };
 
 const authStore = useAuthStore();
@@ -225,36 +224,12 @@ const { isSuperAdmin } = useUserType(userClaims);
 const adminOrgs = computed(() => userClaims?.value?.claims?.minimalAdminOrgs);
 
 const orgHeaders = computed(() => {
-  const headers = {
-    districts: { header: 'Districts', id: 'districts' },
+  return {
+    districts: { header: 'Sites', id: 'districts' },
     schools: { header: 'Schools', id: 'schools' },
     classes: { header: 'Classes', id: 'classes' },
-    groups: { header: 'Groups', id: 'groups' },
-    families: { header: 'Families', id: 'families' },
+    groups: { header: 'Cohorts', id: 'groups' },
   };
-
-  if (isSuperAdmin.value) return headers;
-
-  const result = {};
-  if ((adminOrgs.value?.districts ?? []).length > 0) {
-    result.districts = { header: 'Districts', id: 'districts' };
-    result.schools = { header: 'Schools', id: 'schools' };
-    result.classes = { header: 'Classes', id: 'classes' };
-  }
-  if ((adminOrgs.value?.schools ?? []).length > 0) {
-    result.schools = { header: 'Schools', id: 'schools' };
-    result.classes = { header: 'Classes', id: 'classes' };
-  }
-  if ((adminOrgs.value?.classes ?? []).length > 0) {
-    result.classes = { header: 'Classes', id: 'classes' };
-  }
-  if ((adminOrgs.value?.groups ?? []).length > 0) {
-    result.groups = { header: 'Groups', id: 'groups' };
-  }
-  if ((adminOrgs.value?.families ?? []).length > 0) {
-    result.families = { header: 'Families', id: 'families' };
-  }
-  return result;
 });
 
 const activeIndex = ref(0);

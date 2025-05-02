@@ -13,29 +13,6 @@
       </div>
     </div>
     <div class="form-field">
-      <label :class="{ 'font-light uppercase text-sm': !editMode }">Address</label>
-      <div class="p-inputgroup">
-        <span class="p-inputgroup-addon">
-          <i class="pi pi-map"></i>
-        </span>
-        <GMapAutocomplete
-          :placeholder="localOrgData.address?.formattedAddress ?? 'Enter an address'"
-          :options="{
-            fields: ['address_components', 'formatted_address', 'place_id', 'url'],
-          }"
-          class="p-inputtext p-component w-full"
-          data-cy="input-address"
-          @place_changed="setAddress"
-        >
-        </GMapAutocomplete>
-      </div>
-    </div>
-    <div v-if="orgType === 'districts'" class="form-field">
-      <label :class="{ 'font-light uppercase text-sm': !editMode }">NCES ID</label>
-      <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ serverOrgData.ncesId ?? 'None' }}</div>
-      <PvInputText v-else v-model="localOrgData.ncesId" />
-    </div>
-    <div class="form-field">
       <label :class="{ 'font-light uppercase text-sm': !editMode }">Tags</label>
       <PvChips v-model="localOrgData.tags" />
     </div>
@@ -60,7 +37,6 @@ import PvCheckbox from 'primevue/checkbox';
 import PvInputText from 'primevue/inputtext';
 import _isEmpty from 'lodash/isEmpty';
 
-// NOT BEING USED
 
 const props = defineProps({
   orgType: { type: String, required: true },
@@ -94,8 +70,6 @@ const { data: serverOrgData } = useQuery({
 const localOrgData = ref({
   name: null,
   abbreviation: null,
-  address: null,
-  ncesId: null,
   tags: [],
   testData: false,
   demoData: false,
@@ -105,22 +79,11 @@ const setupOrgData = (orgData) => {
   let org = {
     name: orgData?.name ?? '',
     abbreviation: orgData?.abbreviation ?? '',
-    address: orgData?.address ?? '',
-    ncesId: orgData?.ncesId ?? '',
     tags: orgData?.tags ?? [],
     testData: orgData?.testData ?? false,
     demoData: orgData?.demoData ?? false,
   };
   localOrgData.value = org;
-};
-
-const setAddress = (place) => {
-  localOrgData.value.address = {
-    addressComponents: place.address_components || [],
-    formattedAddress: place.formatted_address,
-    googlePlacesId: place.place_id,
-    googleMapsUrl: place.url,
-  };
 };
 
 watch(
@@ -201,11 +164,4 @@ g {
   color: white;
 }
 
-/*
-  Puts the google places autocomplete dropdown results above modal.
-  Modal: 1101, Google places autocomplete: 1150
-*/
-.pac-container {
-  z-index: 1150 !important;
-}
 </style>

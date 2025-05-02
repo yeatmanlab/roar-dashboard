@@ -196,8 +196,11 @@ const administrationStatus = computed(() => {
 });
 const administrationStatusBadge = computed(() => administrationStatus.value.toLowerCase()); 
 
-const speedDialItems = ref([
-  {
+const speedDialItems = computed( () => {
+  const items = [];
+
+  if (props.isSuperAdmin) {
+    items.push({
     label: 'Delete',
     icon: 'pi pi-trash',
     command: (event) => {
@@ -224,16 +227,20 @@ const speedDialItems = ref([
           });
         },
       });
-    },
-  },
-  {
+    },})
+  }
+
+  items.push({
     label: 'Edit',
     icon: 'pi pi-pencil',
     command: () => {
       router.push({ name: 'EditAdministration', params: { adminId: props.id } });
     },
-  },
-]);
+  })
+
+  return items;
+
+});
 
 const processedDates = computed(() => {
   return _mapValues(props.dates, (date) => {
