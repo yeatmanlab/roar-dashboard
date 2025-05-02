@@ -31,18 +31,6 @@
           </div>
         </div>
 
-        <div v-if="orgType?.singular === 'group'" class="flex flex-row align-items-center justify-content-start gap-2">
-          <PvCheckbox v-model="groupHasParentOrg" input-id="chbx-group-parent-org" :binary="true" />
-          <label for="chbx-group-parent-org">Belongs to a Site</label>
-        </div>
-
-        <OrgPicker
-          v-if="groupHasParentOrg && orgType?.singular === 'group'"
-          :for-parent-org="true"
-          class="mt-4"
-          @selection="selection($event)"
-        />
-
         <div v-if="parentOrgRequired" class="grid mt-4">
           <div class="col-12 md:col-6 lg:col-4">
             <PvFloatLabel>
@@ -180,7 +168,6 @@ const toast = useToast();
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
 const queryClient = useQueryClient();
-const groupHasParentOrg = ref(false);
 
 
 const state = reactive({
@@ -189,13 +176,6 @@ const state = reactive({
   parentDistrict: undefined,
   parentSchool: undefined,
   tags: [],
-});
-
-const groupParentOrgs = reactive({
-  districts: [],
-  schools: [],
-  classes: [],
-  groups: [],
 });
 
 let unsubscribe;
@@ -210,6 +190,7 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
 
 onMounted(() => {
   if (roarfirekit.value.restConfig) initTable();
+  console.log('firekit', roarfirekit.value.upsertOrg);
 });
 
 const { isLoading: isLoadingDistricts, data: districts } = useDistrictsListQuery({
@@ -247,7 +228,7 @@ const { data: classes } = useSchoolClassesQuery(selectedSchool, {
 const rules = {
   orgName: { required },
   orgInitials: { required },
-  parentDistrict: { required: requiredIf(() => ['school', 'class'].includes(orgType.value.singular)) },
+  parentDistrict: { required: requiredIf(() => ['school', 'class', 'group'].includes(orgType.value.singular)) },
   parentSchool: { required: requiredIf(() => orgType.value.singular === 'class') },
 };
 
@@ -263,27 +244,16 @@ const orgTypes = [
 
 const orgType = ref();
 
-// To hide the org picker when the org type is cleared (can't control the clear button)
-watch(orgType, () => {
-  if (!orgType.value) {
-    groupHasParentOrg.value = false;
-  }
-});
 
 const orgTypeLabel = computed(() => {
   if (orgType.value) {
     return _capitalize(orgType.value.label);
   }
-  return 'Org';
+  return 'Group';
 });
 
-const parentOrgRequired = computed(() => ['school', 'class'].includes(orgType.value?.singular));
+const parentOrgRequired = computed(() => ['school', 'class', 'group'].includes(orgType.value?.singular));
 
-const selection = (selected) => {
-  for (const [key, value] of _toPairs(toRaw(selected))) {
-    groupParentOrgs[key] = value;
-  }
-};
 
 const allTags = computed(() => {
   const districtTags = (districts.value ?? []).map((org) => org.tags);
@@ -315,36 +285,6 @@ const submit = async () => {
       abbreviation: state.orgInitials,
     };
 
-    if (groupHasParentOrg.value) {
-      const singularMap = {
-        districts: 'district',
-        schools: 'school',
-        classes: 'class',
-        groups: 'group',
-        families: 'family',
-      };
-      const rawParentOrgs = toRaw(groupParentOrgs);
-      let parentOrg;
-      let parentOrgKey;
-      // Find first key with non-empty array or object value
-      parentOrgKey = Object.keys(rawParentOrgs).find(key => {
-        const value = rawParentOrgs[key];
-        return (Array.isArray(value) && value.length > 0) || 
-               (!Array.isArray(value) && typeof value === 'object' && value !== null);
-      });
-      if (parentOrgKey) {
-        const value = rawParentOrgs[parentOrgKey];
-        parentOrg = Array.isArray(value) ? value[0] : value;
-      }
-      if (!parentOrg || !parentOrgKey) {
-        toast.add({ severity: 'error', summary: 'Error', detail: 'Please select a parent organization', life: TOAST_DEFAULT_LIFE_DURATION });
-        submitted.value = false;
-        return;
-      }
-      orgData.parentOrgId = parentOrg.id;
-      orgData.parentOrgType = singularMap[parentOrgKey];
-    }
-
     if (state.tags.length > 0) orgData.tags = state.tags;
 
     if (orgType.value?.singular === 'class') {
@@ -352,6 +292,9 @@ const submit = async () => {
       orgData.districtId = toRaw(state.parentDistrict).id;
     } else if (orgType.value?.singular === 'school') {
       orgData.districtId = toRaw(state.parentDistrict).id;
+    } else if (orgType.value?.singular === 'group') {
+      orgData.parentOrgId = toRaw(state.parentDistrict).id;
+      orgData.parentOrgType = 'district';
     }
 
     await roarfirekit.value
