@@ -223,9 +223,6 @@ watch(
   (updatedAdministrationsData) => {
     if (!updatedAdministrationsData) return;
 
-    // Test empty state
-    // updatedAdministrationsData = [];
-
     // Generate auto-complete search tokens based on the data.
     generateAutoCompleteSearchTokens();
 
