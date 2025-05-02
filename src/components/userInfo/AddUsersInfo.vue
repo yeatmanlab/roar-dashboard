@@ -46,7 +46,7 @@
 
     <img
       id="add-users-example-image"
-      :src="`${LEVANTE_BUCKET_URL}/add_users_example.png`"
+      :src="LEVANTE_BUCKET_URL + '/add_users_example.png'"
       alt="Add Users CSV Example "
       style="width: 100%; max-width: 1400px; height: auto;"
     />

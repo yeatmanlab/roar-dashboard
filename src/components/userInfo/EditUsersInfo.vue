@@ -38,15 +38,16 @@
 
     <img
       id="example-image"
-      src="https://storage.googleapis.com/road-dashboard/example_researcher_csv.png"
-      alt="CSV upload example"
-      style="width: 100%; max-width: 600px; height: auto;"
+      :src="LEVANTE_BUCKET_URL + '/edit_users_example.png'"
+      alt="Edit Users CSV Example"
+      style="width: 100%; max-width: 1400px; height: auto;"
     />
   </PvPanel>
 </template>
 
 <script setup>
 import PvPanel from 'primevue/panel';
+import { LEVANTE_BUCKET_URL } from '@/constants/bucket';
 </script>
 
 <style scoped>
