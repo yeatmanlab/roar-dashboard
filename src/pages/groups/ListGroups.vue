@@ -6,17 +6,17 @@
         <div class="flex justify-content-between mb-2">
           <div class="flex align-items-center gap-3">
             <div class="admin-page-header mr-4">Groups</div>
-             <PvButton
-              class="bg-primary text-white border-none p-2 ml-auto"
-              @click="addUsers"
-            >
-              Add Users
-            </PvButton>
             <PvButton
               class="bg-primary text-white border-none p-2 ml-auto"
               @click="newGroup"
             >
               New Group
+            </PvButton>
+             <PvButton
+              class="bg-primary text-white border-none p-2 ml-auto"
+              @click="addUsers"
+            >
+              Add Users
             </PvButton>
           </div>
         </div>
@@ -39,7 +39,7 @@
                   class="w-full"
                   data-cy="dropdown-parent-district"
                 />
-                <label for="district">District</label>
+                <label for="district">Sites</label>
               </PvFloatLabel>
             </div>
             <div v-if="orgType.id === 'classes'" class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3">
