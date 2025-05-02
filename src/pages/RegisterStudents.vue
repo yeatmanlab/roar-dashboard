@@ -348,7 +348,9 @@
               :mappings="mappedColumns"
               :using-org-picker="usingOrgPicker"
               :using-email="usingEmail"
+              :submit-status="submitting"
               @validation-update="handleValidationUpdate"
+              @delete-student="removeUser"
             >
               <Button label="Add User" icon="pi pi-plus" severity="secondary" @click="addUser" />
               <Button label="Download" icon="pi pi-download" severity="secondary" @click="exportTransformedStudents" />
@@ -554,6 +556,20 @@ const addUser = () => {
   });
 };
 
+const removeUser = (student) => {
+  if (submitting.value !== SubmitStatus.IDLE) {
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'Cannot remove user while submitting.',
+      life: 3000,
+    });
+    return;
+  } else {
+    mappedStudents.value = mappedStudents.value.filter((s) => s.rowKey !== student.rowKey);
+  }
+};
+
 const exportTransformedStudents = () => {
   const exportData = mappedStudents.value;
   // Filter out rowKey
@@ -733,6 +749,7 @@ const transformStudentData = async (rawStudent) => {
     if (rawStudent[key]) {
       if (key === 'username') {
         _set(transformedStudent, 'email', `${rawStudent[key]}@roar-auth.com`);
+        _set(transformedStudent, 'userData.username', rawStudent[key]);
       } else if (['email', 'password'].includes(key)) {
         _set(transformedStudent, key, rawStudent[key]);
       } else {
