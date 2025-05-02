@@ -480,7 +480,12 @@ const submit = async () => {
   console.log('Orgs valid result:', orgsValid);
   if (!orgsValid) {
     console.log('Org check failed, exiting submit.');
-    toast.add({ severity: TOAST_SEVERITIES.WARN, summary: 'Missing Selection', detail: 'Please select at least one organization (District, School, Class, Group, or Family).', life: 5000 });
+    toast.add({ 
+      severity: TOAST_SEVERITIES.WARN, 
+      summary: 'Missing Selection', 
+      detail: 'Please select at least one Group (Site, School, Class, or Cohort).', 
+      life: TOAST_DEFAULT_LIFE_DURATION 
+    });
     return;
   }
 
