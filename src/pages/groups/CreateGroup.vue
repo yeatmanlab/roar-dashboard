@@ -190,7 +190,6 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
 
 onMounted(() => {
   if (roarfirekit.value.restConfig) initTable();
-  console.log('firekit', roarfirekit.value.upsertOrg);
 });
 
 const { isLoading: isLoadingDistricts, data: districts } = useDistrictsListQuery({
