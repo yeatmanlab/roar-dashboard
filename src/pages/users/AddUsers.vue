@@ -6,9 +6,9 @@
 
       <PvDivider />
 
-      <div v-if="!isFileUploaded" class="text-gray-500 mb-2 surface-100 border-round p-2">
+      <div v-if="!isFileUploaded || errorUsers.length" class="text-gray-500 mb-2 surface-100 border-round p-2">
         <PvFileUpload
-          v-if="!isFileUploaded"
+          v-if="!isFileUploaded || errorUsers.length"
           name="massUploader[]"
           custom-upload
           accept=".csv"
@@ -114,6 +114,7 @@ import { ref, toRaw, watch, nextTick } from 'vue';
 import { csvFileToJson } from '@/helpers';
 import _cloneDeep from 'lodash/cloneDeep';
 import _forEach from 'lodash/forEach';
+import _capitalize from 'lodash/capitalize';
 import _isEmpty from 'lodash/isEmpty';
 import _startCase from 'lodash/startCase';
 import _chunk from 'lodash/chunk';
@@ -207,7 +208,7 @@ watch(
 
 // Functions supporting the uploader
 const onFileUpload = async (event) => {
-  // Reset in case of previous error
+  // Reset all error states and data
   rawUserFile.value = {};
   errorUsers.value = [];
   errorUserColumns.value = [];
@@ -215,6 +216,9 @@ const onFileUpload = async (event) => {
   errorMessage.value = '';
   errorTable.value = null;
   errorMissingColumns.value = false;
+  isFileUploaded.value = false; // Reset the file uploaded state
+  registeredUsers.value = []; // Clear any previously registered users
+  activeSubmit.value = false; // Reset the submit flag
 
   // Read the file
   const file = event.files[0];
@@ -401,6 +405,9 @@ function generateColumns(rawJson) {
   let columns = [];
   const columnValues = Object.keys(rawJson);
   _forEach(columnValues, (col) => {
+    // Hide orgIds column
+    if (col === 'orgIds') return;
+
     let dataType = typeof rawJson[col];
     if (dataType === 'object') {
       if (rawJson[col] instanceof Date) dataType = 'date';
@@ -415,6 +422,17 @@ function generateColumns(rawJson) {
 }
 
 async function submitUsers() {
+  // Check if there are any errors before proceeding
+  if (errorUsers.value.length > 0) {
+    toast.add({
+      severity: 'error',
+      summary: 'Cannot Submit',
+      detail: 'Please fix the errors in your CSV file before submitting',
+      life: 5000,
+    });
+    return;
+  }
+
   // Reset error users
   activeSubmit.value = true;
   errorUsers.value = [];
@@ -424,76 +442,118 @@ async function submitUsers() {
 
   // Group needs to be an array of strings
   const usersToBeRegistered = _cloneDeep(toRaw(rawUserFile.value));
+  const usersWithErrors = [];
 
   // Check orgs exist
   for (const user of usersToBeRegistered) {
-    // Find fields case-insensitively
-    const siteField = Object.keys(user).find(key => key.toLowerCase() === 'site');
-    const schoolField = Object.keys(user).find(key => key.toLowerCase() === 'school');
-    const classField = Object.keys(user).find(key => key.toLowerCase() === 'class');
-    const cohortField = Object.keys(user).find(key => key.toLowerCase() === 'cohort');
-    
-    // Get values using the actual field names
-    const site = siteField ? user[siteField] : '';
-    const school = schoolField ? user[schoolField] : '';
-    const _class = classField ? user[classField] : '';
-    const cohorts = cohortField ? user[cohortField] : '';
+    try {
+      // Find fields case-insensitively
+      const siteField = Object.keys(user).find(key => key.toLowerCase() === 'site');
+      const schoolField = Object.keys(user).find(key => key.toLowerCase() === 'school');
+      const classField = Object.keys(user).find(key => key.toLowerCase() === 'class');
+      const cohortField = Object.keys(user).find(key => key.toLowerCase() === 'cohort');
+      
+      // Get values using the actual field names
+      const site = siteField ? user[siteField] : '';
+      const school = schoolField ? user[schoolField] : '';
+      const _class = classField ? user[classField] : '';
+      const cohorts = cohortField ? user[cohortField] : '';
 
-    const orgNameMap = {
-      site: site ?? '',
-      school: school ?? '',
-      class: _class ?? '',
-      cohort: cohorts.split(',') ?? [],
-    };
+      const orgNameMap = {
+        site: site ?? '',
+        school: school ?? '',
+        class: _class ?? '',
+        cohort: cohorts.split(',') ?? [],
+      };
 
-    // Pluralized because of a ROAR change to the createUsers function. 
-    // Only groups are allowed to be an array however, we've only been using one group per user.
-    // TODO: Figure out if we want to allow multiple orgs
-    const orgInfo = {
-      sites: '',
-      schools: '',
-      classes: '',
-      cohorts: [],
-    };
+      // Pluralized because of a ROAR change to the createUsers function. 
+      // Only groups are allowed to be an array however, we've only been using one group per user.
+      // TODO: Figure out if we want to allow multiple orgs
+      const orgInfo = {
+        sites: '',
+        schools: '',
+        classes: '',
+        cohorts: [],
+      };
 
-    // If orgType is a given column, check if the name is
-    //   associated with a valid id. If so, add the id to
-    //   the sendObject. If not, reject user
-    for (const [orgType, orgName] of Object.entries(orgNameMap)) {
-      if (orgName) {
-        if (orgType === 'school') {
-            const siteId = await getOrgId('districts', site);
-            const schoolId = await getOrgId(pluralizeFirestoreCollection(orgType), orgName, ref(siteId), ref(undefined))
-            // Need to Raw it because a large amount of users causes this to become a proxy object
-            orgInfo.schools = schoolId;
-        } else if (orgType === 'class') {
-            const siteId = await getOrgId('districts', site);
-            const schoolId = await getOrgId('schools', school);
-            const classId = await getOrgId(pluralizeFirestoreCollection(orgType), orgName, ref(siteId), ref(schoolId));
-            orgInfo.classes = classId;
-        } else if (orgType === 'cohort') {
-          for (const cohort of orgNameMap.cohort) {
-            const cohortId = await getOrgId(pluralizeFirestoreCollection('groups'), cohort, ref(undefined), ref(undefined));
-            orgInfo.cohorts.push(cohortId);
+      // If orgType is a given column, check if the name is
+      //   associated with a valid id. If so, add the id to
+      //   the sendObject. If not, reject user
+      for (const [orgType, orgName] of Object.entries(orgNameMap)) {
+        if (orgName) {
+          try {
+            if (orgType === 'school') {
+                const siteId = await getOrgId('districts', site);
+                const schoolId = await getOrgId(pluralizeFirestoreCollection(orgType), orgName, ref(siteId), ref(undefined))
+                // Need to Raw it because a large amount of users causes this to become a proxy object
+                orgInfo.schools = schoolId;
+            } else if (orgType === 'class') {
+                const siteId = await getOrgId('districts', site);
+                const schoolId = await getOrgId('schools', school);
+                const classId = await getOrgId(pluralizeFirestoreCollection(orgType), orgName, ref(siteId), ref(schoolId));
+                orgInfo.classes = classId;
+            } else if (orgType === 'cohort') {
+              for (const cohort of orgNameMap.cohort) {
+                const cohortId = await getOrgId(pluralizeFirestoreCollection('groups'), cohort, ref(undefined), ref(undefined));
+                orgInfo.cohorts.push(cohortId);
+              }
+            } else {
+              const siteId = await getOrgId(pluralizeFirestoreCollection('districts'), orgName, ref(undefined), ref(undefined));
+              orgInfo.sites = siteId;
+            }
+          } catch (error) {
+            // Add the user to the error list with the specific organization error
+            usersWithErrors.push({
+              user,
+              error: `Invalid ${_capitalize(orgType)}: ${error.message}`
+            });
+            break; // Break out of the orgType loop for this user
           }
-        } else {
-          const siteId = await getOrgId(pluralizeFirestoreCollection('districts'), orgName, ref(undefined), ref(undefined));
-          orgInfo.sites = siteId;
         }
       }
-    }
 
-    if (!_isEmpty(orgInfo)) {
-          // The backend expects districts and groups for site and cohort respectively
-          orgInfo.districts = orgInfo.sites;
-          delete orgInfo.sites;
-          orgInfo.groups = orgInfo.cohorts;
-          delete orgInfo.cohorts;
-          user.orgIds = orgInfo;
-    } else {
-      // The orgs could not be found
-      return
+      if (!_isEmpty(orgInfo)) {
+        // The backend expects districts and groups for site and cohort respectively
+        orgInfo.districts = orgInfo.sites;
+        delete orgInfo.sites;
+        orgInfo.groups = orgInfo.cohorts;
+        delete orgInfo.cohorts;
+        user.orgIds = orgInfo;
+      } else if (!usersWithErrors.some(err => err.user === user)) {
+        // Only add this error if the user doesn't already have an error
+        usersWithErrors.push({
+          user,
+          error: 'No valid organization information found'
+        });
+      }
+    } catch (error) {
+      usersWithErrors.push({
+        user,
+        error: error.message
+      });
     }
+  }
+
+  // If there are any errors, display them and return
+  if (usersWithErrors.length > 0) {
+    // Generate columns from the first user if needed
+    if (_isEmpty(errorUserColumns.value)) {
+      errorUserColumns.value = generateColumns(usersWithErrors[0].user);
+      errorUserColumns.value.unshift({
+        dataType: 'string',
+        field: 'error',
+        header: 'Cause of Error',
+      });
+    }
+    
+    // Add all users with errors to the error table
+    usersWithErrors.forEach(({ user, error }) => {
+      addErrorUser(user, error);
+    });
+    
+    showErrorTable.value = true;
+    activeSubmit.value = false;
+    return;
   }
 
   // TODO: Figure out deadline-exceeded error with 700+ users. (Registration works fine, creates all documents but the client recieves the error)
