@@ -24,6 +24,7 @@
               </div>
             </div>
             <PvKnob
+              disabled
               :value-template="
                 task.scoreToDisplay == 'percentileScore' ? getPercentileSuffix(task.percentileScore.value) : undefined
               "
@@ -445,5 +446,9 @@ function getPercentileSuffix(percentile) {
     margin-top: 156px;
     right: 50%;
   }
+}
+.p-knob.p-disabled {
+  opacity: 1;
+  background: none;
 }
 </style>
