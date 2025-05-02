@@ -22,7 +22,8 @@
       <li><b>userType</b> - The type of user. Must be one of the following: child, caregiver, or teacher.</li>
       <li><b>month</b><span class="required">*</span> - The month the child was born. (numeric birth month, For example: 5 for May)</li>
       <li><b>year</b><span class="required">*</span> - The year the child was born. (four-digit birth year, For example: 2017)</li>
-      <li><b>cohort</b> OR <br><b>site</b> AND <b>school</b> - You must specify either a cohort name OR both a site name and school name for each user.</li>
+      <li><b>cohort</b> OR</li>
+      <li><b>site</b> AND <b>school</b> - You must specify either a cohort name OR both a site name and school name for each user.</li>
     </ul>
 
     These fields (columns) are optional:
