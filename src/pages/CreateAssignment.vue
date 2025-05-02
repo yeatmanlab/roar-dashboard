@@ -214,11 +214,11 @@ const header = computed(() => {
     return 'Edit an assignment';
   }
 
-  return 'Create New Assignment';
+  return 'Create Assignment';
 });
 
 const description = computed(() => {
-  return 'Assignments are bundles of tasks, surveys, and questionnaires that are sent to your users';
+  return 'An assignment is a collection of tasks assigned to users who are members of a group';
 });
 
 const submitLabel = computed(() => {
