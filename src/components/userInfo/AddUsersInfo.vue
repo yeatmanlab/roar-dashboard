@@ -10,7 +10,7 @@
       <ol class="numbered-steps">
         <li><span class="step-number">1</span>Download the template below or create your own CSV with the required columns</li>
         <li><span class="step-number">2</span>Fill in the CSV with the user data</li>
-        <li><span class="step-number">3</span>Upload the CSV file and click "Start Adding"</li>
+        <li><span class="step-number">3</span>Upload the CSV file and click "Start Adding Users"</li>
         <li><span class="step-number">4</span>When finished, a file called "registered_users.csv" will be downloaded. If it is not in your downloads folder, click the "Download Users" button.</li>
         <li><span class="step-number">5</span>Click "Continue to Link Users" and get their login information.</li>
       </ol>
@@ -22,13 +22,14 @@
       <li><b>userType</b> - The type of user. Must be one of the following: child, caregiver, or teacher.</li>
       <li><b>month</b><span class="required">*</span> - The month the child was born. (numeric birth month, For example: 5 for May)</li>
       <li><b>year</b><span class="required">*</span> - The year the child was born. (four-digit birth year, For example: 2017)</li>
-      <li><b>cohort</b> OR <b>site</b> AND <b>school</b> - You must specify either a cohort name OR both a site name and school name for each user.</li>
+      <li><b>cohort</b> OR</li>
+      <li><b>site</b> AND <b>school</b> - You must specify either a cohort name OR both a site name and school name for each user.</li>
     </ul>
 
     These fields (columns) are optional:
 
     <ul class="optional-fields">
-      <li><b>Class</b> - The name of the class.</li>
+      <li><b>Class</b> - The name of the class. This is required if assigning the teacher survey.</li>
     </ul>
 
     <p>Caregivers and Teachers need to have the same Groups as their children / students.</p>
