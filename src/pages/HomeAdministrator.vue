@@ -106,14 +106,16 @@
                 </div>
               </template>
               <template #empty>
-                <div>
-                  {{
-                    isLevante
-                      ? 'There are no assignments to display. You can create an assignment by navigating to the' +
-                        ' Create assignment page from the dropdown menu.'
-                      : 'There are no assignments to display. Please contact a lab administrator to add you as an admin' +
-                        ' to an assignments.'
-                  }}
+                <div class="flex flex-column align-items-center justify-content-center py-8">
+                  <h1 class="text-xl font-bold mb-4">No Assignments Yet</h1>
+                  <p class="text-center text-gray-500 mb-4">
+                    Go create your first assignment to get started.
+                  </p>
+                  <PvButton
+                    label="Create Assignment"
+                    class="bg-primary border-none text-white"
+                    @click="$router.push({ name: 'CreateAssignment' })"
+                  />
                 </div>
               </template>
             </PvDataView>
@@ -140,7 +142,6 @@ import useUserType from '@/composables/useUserType';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useAdministrationsListQuery from '@/composables/queries/useAdministrationsListQuery';
 import CardAdministration from '@/components/CardAdministration.vue';
-import { isLevante } from '@/helpers';
 
 const initialized = ref(false);
 const pageLimit = ref(10);
@@ -154,7 +155,6 @@ const search = ref('');
 
 const filteredAdministrations = ref([]);
 const fetchTestAdministrations = ref(false);
-
 
 const authStore = useAuthStore();
 
