@@ -1,54 +1,115 @@
 import { describe, it, expect, vi } from 'vitest';
-import { ref } from 'vue';
+import { ref, nextTick } from 'vue';
 import { mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import * as VueQuery from '@tanstack/vue-query';
 import HomeAdministrator from '@/pages/HomeAdministrator.vue'
 import PrimeVue from 'primevue/config';
+import ConfirmService from 'primevue/confirmationservice';
+import ToastService from 'primevue/toastservice';
+
 
 // Mock the module before individual tests since vi.mock is hoisted to the top of the file
 // closer to how code is actually executed
 vi.mock('@/composables/queries/useAdministrationsListQuery', () => ({
-  default: vi.fn(() => ({
-    data: ref([]),
-    isLoading: ref(true),
-    isFetching: ref(true),
-    isError: ref(false),
-  })),
+  default: vi.fn(),
 }));
 
 import useAdministrationsListQuery from '@/composables/queries/useAdministrationsListQuery';
 
 
 const mockAdministration = {
-    id: "DlAhRnbOFDnCF5AwEkhB",
-    name: "Newest assignment",
-    publicName: "Newest assignment",
-    assessments: [
-      { id: "assessment1", title: "Math Assessment" },
-      { id: "assessment2", title: "Reading Assessment" },
-    ],
-    assignedOrgs: {
-      districts: [],
-      schools: [],
-      classes: [],
-      groups: ["group1", "group2", "group3"],
-      families: [],
+  id: "DlAhRnbOFDnCF5AwEkhB",
+  name: "Newest assignment",
+  publicName: "Newest assignment",
+  dates: {
+    start: "2025-01-13T23:36:25.121Z",
+    end: "2025-01-16T07:59:59.999Z",
+    created: "2025-04-14T23:49:03.756Z"
+  },
+  assessments: [
+    {
+      variantId: "DRjLxIQsFrgj4VJapHbz",
+      variantName: "es-CO",
+      taskId: "hearts-and-flowers",
+      params: {
+        storeItemId: false,
+        maxTime: 8,
+        sequentialStimulus: true,
+        numberOfTrials: 21,
+        keyHelpers: true,
+        stimulusBlocks: 3,
+        corpus: null,
+        numOfPracticeTrials: 3,
+        sequentialPractice: true,
+        skipInstructions: true,
+        taskName: "hearts-and-flowers",
+        buttonLayout: "default",
+        age: null,
+        language: "es",
+        maxIncorrect: 100
+      }
     },
-    dates: {
-      start: "2025-01-13T23:36:25.121Z",
-      end: "2025-01-16T07:59:59.999Z",
-      created: "2025-04-14T23:49:03.756Z",
-    },
-    stats: {
-      total: {
-        students: 120,
-        completed: 90,
-        pending: 30,
+    {
+      variantId: "Z6Cbf1V6CFGR2pg2iJDA",
+      variantName: "math-default",
+      taskId: "egma-math",
+      params: {
+        sequentialStimulus: true,
+        stimulusBlocks: 3,
+        corpus: "math-item-bank",
+        numOfPracticeTrials: 2,
+        language: "en",
+        sequentialPractice: true,
+        skipInstructions: true,
+        taskName: "egma-math",
+        buttonLayout: "default",
+        age: null,
+        numberOfTrials: 200,
+        maxIncorrect: 6,
+        maxTime: 15,
+        keyHelpers: false
       },
-    },
-    testData: false,
-  };
+      conditions: {
+        assigned: {
+          op: "AND",
+          conditions: [
+            {
+              field: "userType",
+              op: "EQUAL",
+              value: "student"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  assignedOrgs: {
+    districts: [],
+    schools: [],
+    classes: [],
+    groups: ["CInb348Nz7LcPlylblKv", "6m00OVq4zEQIWOrmBqez", "flVb1sDVG5gTroczTi1m"],
+    families: []
+  },
+  testData: false,
+  stats: {
+    total: {
+      assignment: {
+        started: 2,
+        completed: 1,
+        assigned: 597
+      },
+      "hearts-and-flowers": {
+        assigned: 592
+      },
+      "egma-math": {
+        started: 2,
+        completed: 1,
+        assigned: 219
+      }
+    }
+  }
+};
 
 describe('HomeAdministrator', () => {
     beforeEach(() => {
@@ -86,6 +147,13 @@ describe('HomeAdministrator', () => {
         })),
       }));
 
+      vi.mock('vue-router', () => ({
+        useRouter: () => ({
+          push: vi.fn(),
+          replace: vi.fn()
+        })
+      }));
+
       vi.mocked(useAdministrationsListQuery).mockClear()
     });
 
@@ -93,10 +161,10 @@ describe('HomeAdministrator', () => {
         vi.restoreAllMocks();
     });
 
+    it('renders static elements before data loads and empty table', async () => {
 
-    it('renders static elements before data loads', () => {
       vi.mocked(useAdministrationsListQuery).mockReturnValue({
-        data: ref({ value: [] }),
+        data: ref([]),
         isLoading: ref(false),
         isFetching: ref(false),
         isError: ref(false),
@@ -107,20 +175,25 @@ describe('HomeAdministrator', () => {
                 plugins: [VueQuery.VueQueryPlugin, PrimeVue], 
                 components: {
                   AppSpinner: { template: '<div class="mocked-spinner" />' },
-                  CardAdministration: { template: '<div class="mocked-card-administration" />' },
-                  PvAutoComplete: { template: '<div class="mocked-auto-complete" />' },
-                  PvBlockUI: { template: '<div class="mocked-bock-ui" />' },
-                  PvButton: { template: '<div class="mocked-button" />' }, 
-                  PvDataView: { template: '<div class="mocked-data-view" />' },
-                  PvSelect: { template: '<div class="mocked-select" />' },
-                  PvInputGroup: { template: '<div class="mocked-input" />' },
                 }
             },
         });
 
+        await nextTick() // ensure DOM reflects updated state
+
+        expect(wrapper.vm.isLevante).toBe(true);
         expect(wrapper.text()).toContain('All Assignments');
+        expect(wrapper.text()).toContain(
+          "This page lists all the assignments that are administered to your users." +
+          "You can view and monitor completion and create new bundles of tasks, surveys, and questionnaires to be administered as assignments."
+        );
         expect(wrapper.text()).toContain('Search by name');
         expect(wrapper.text()).toContain('Sort by');
+        expect(wrapper.text()).not.toContain('Fetching Assignments')
+        expect(wrapper.text()).toContain(
+          'There are no assignments to display. You can create an assignment by navigating to the' +
+          ' Create assignment page from the dropdown menu.'
+        );
     });
 
     it('renders loading state when data is loading', () => {  
@@ -138,13 +211,6 @@ describe('HomeAdministrator', () => {
           plugins: [VueQuery.VueQueryPlugin, PrimeVue], 
           components: {
             AppSpinner: { template: '<div class="mocked-spinner" />' },
-            CardAdministration: { template: '<div class="mocked-card-administration" />' },
-            PvAutoComplete: { template: '<div class="mocked-auto-complete" />' },
-            PvBlockUI: { template: '<div class="mocked-bock-ui" />' },
-            PvButton: { template: '<div class="mocked-button" />' }, 
-            PvDataView: { template: '<div class="mocked-data-view" />' },
-            PvSelect: { template: '<div class="mocked-select" />' },
-            PvInputGroup: { template: '<div class="mocked-input" />' },
           }
         },
       });
@@ -154,12 +220,116 @@ describe('HomeAdministrator', () => {
       expect(wrapper.text()).toContain('Fetching Assignments');
     });
 
-    // Empty data table
 
-    // Data table with administrations data
+    it('Data table renders with administrations data', async() => {
+      vi.mocked(useAdministrationsListQuery).mockReturnValue({
+        data: ref([mockAdministration]),
+        isLoading: ref(false),
+        isFetching: ref(false),
+        isError: ref(false),
+      });
 
-    // Search functionality
+      const wrapper = mount(HomeAdministrator, { 
+        global: { 
+          plugins: [VueQuery.VueQueryPlugin, PrimeVue, ConfirmService, ToastService], 
+          components: {
+            AppSpinner: { template: '<div class="mocked-spinner" />' },
+            'router-link': { template: '<a></a>' },
+          },
+          directives: {
+            tooltip: {
+            },
+          },
+        },
+      });
 
-    // Sort functionality
+      await nextTick();
+
+      const card = wrapper.find('[data-cy="h2-card-admin-title"]');
+      expect(card.exists()).toBe(true);
+      expect(card.text()).toContain('Newest assignment');
+    });
+
+    it('Data table search functionality', async () => {
+      vi.mocked(useAdministrationsListQuery).mockReturnValue({
+        data: ref([mockAdministration]),
+        isLoading: ref(false),
+        isFetching: ref(false),
+        isError: ref(false),
+      });
+
+      const wrapper = mount(HomeAdministrator, { 
+        global: { 
+          plugins: [VueQuery.VueQueryPlugin, PrimeVue, ConfirmService, ToastService], 
+          components: {
+            AppSpinner: { template: '<div class="mocked-spinner" />' },
+            'router-link': { template: '<a></a>' },
+          },
+          directives: {
+            tooltip: {},
+          },
+        },
+      });
+
+      await nextTick();
+
+      const searchInput = wrapper.find('[data-cy="search-input"] input');
+      expect(searchInput.exists()).toBe(true);
+
+      await searchInput.setValue('New');
+      await searchInput.trigger('keyup.enter');
+      expect(wrapper.find('[data-cy="h2-card-admin-title"]').text()).toContain("Newest assignment");
+
+      await searchInput.setValue('Fake');
+      await searchInput.trigger('keyup.enter');
+      expect(wrapper.find('[data-cy="h2-card-admin-title"]').exists()).toBe(false);
+      
+    });
+
+    it('Data table sort functionality', async () => {
+      const mockData = [
+        { ...mockAdministration, id:'1', name: 'B Assignment', publicName: "B Assignment" },
+        { ...mockAdministration, id: '2', name: 'A Assignment', publicName: "A Assignment" },
+      ];
+
+      vi.mocked(useAdministrationsListQuery).mockReturnValue({
+        data: ref(mockData),
+        isLoading: ref(false),
+        isFetching: ref(false),
+        isError: ref(false),
+      });
+
+      const wrapper = mount(HomeAdministrator, { 
+        global: { 
+          plugins: [VueQuery.VueQueryPlugin, PrimeVue, ConfirmService, ToastService], 
+          components: {
+            AppSpinner: { template: '<div class="mocked-spinner" />' },
+            'router-link': { template: '<a></a>' },
+          },
+          directives: {
+            tooltip: {},
+          },
+        },
+      });
+
+      await nextTick();
+
+      const sortSelect = wrapper.findComponent('[data-cy="dropdown-sort-administrations"]');
+      expect(sortSelect.exists()).toBe(true);
+
+      // Test ascending sort
+      await sortSelect.setValue('Name (ascending)');
+      const titlesAscend = wrapper.findAll('[data-cy="h2-card-admin-title"]');
+      console.log("ascending", titlesAscend.length, "title 1", titlesAscend[0].text(), "___", titlesAscend[1].text(),"title 2", titlesAscend[2].text(), "____",  titlesAscend[3].text());
+      // expect(titles[0].text()).toContain('A Assignment');
+      // expect(titles[1].text()).toContain('B Assignment');
+
+      // Test descending sort
+      // await sortSelect.setValue('name-desc');
+      // const titlesDesc = wrapper.findAll('[data-cy="h2-card-admin-title"]');
+      // console.log("descending", titlesDesc);
+      // expect(titlesDesc[0].text()).toContain('B Assignment');
+      // expect(titlesDesc[1].text()).toContain('A Assignment');
+    });
 
 });

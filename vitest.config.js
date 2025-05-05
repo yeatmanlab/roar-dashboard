@@ -13,6 +13,9 @@ const isCI = process.env.CI === 'true';
 export default mergeConfig(
   viteConfig,
   defineConfig({
+    define: {
+      'import.meta.env.VITE_LEVANTE': JSON.stringify('TRUE'),  // Mock your env variable
+    },
     test: {
       globals: true,
       environment: 'happy-dom',
