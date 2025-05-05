@@ -63,7 +63,7 @@
             :columns="tableColumns"
             :data="tableData ?? []"
             sortable
-            :loading="isLoading || isFetching || testLoading"
+            :loading="isLoading || isFetching"
             :allow-filtering="false"
             @export-all="exportAll"
             @selected-org-id="showCode"
