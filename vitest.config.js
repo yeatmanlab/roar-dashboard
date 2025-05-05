@@ -14,7 +14,7 @@ export default mergeConfig(
   viteConfig,
   defineConfig({
     define: {
-      'import.meta.env.VITE_LEVANTE': JSON.stringify('TRUE'),  // Mock your env variable
+      'import.meta.env.VITE_LEVANTE': JSON.stringify('TRUE'),  // ensures isLevante is true for all tests
     },
     test: {
       globals: true,
