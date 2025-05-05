@@ -69,6 +69,17 @@ export const useAuthStore = () => {
           console.error('Failed to initialize Firekit:', error);
         }
       },
+
+      async verifyParentRegistration() {
+        try {
+          if (this.isFirekitInit) {
+            return await this.roarfirekit.verifyParentRegistration();
+          }
+        } catch (error) {
+          console.error('Error verifying parent registration:', error);
+          throw error;
+        }
+      },
       setAuthStateListeners() {
         this.adminAuthStateListener = onAuthStateChanged(this.roarfirekit?.admin.auth, async (user) => {
           if (user) {
