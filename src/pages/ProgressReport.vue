@@ -10,7 +10,7 @@
         <div class="flex justify-content-between align-items-center">
           <div class="flex flex-column align-items-start mb-4 gap-2">
             <div>
-              <div class="uppercase font-light text-gray-500 text-md">{{ props.orgType }} Progress Report</div>
+              <div class="uppercase font-light text-gray-500 text-md">{{ displayOrgType }} Progress Report</div>
               <div class="report-title uppercase">
                 {{ orgData?.name }}
               </div>
@@ -213,6 +213,15 @@ const props = defineProps({
 });
 
 const initialized = ref(false);
+
+const displayOrgType = computed(() => {
+  if (props.orgType === 'district') {
+    return 'Site';
+  } else if (props.orgType === 'group') {
+    return 'Cohort';
+  }
+  return props.orgType;
+});
 
 const isLoading = computed(() => isLoadingAssignments.value || isLoadingTasksDictionary.value);
 

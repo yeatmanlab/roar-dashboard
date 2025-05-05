@@ -132,14 +132,6 @@ const routes: Array<RouteRecordRaw> = [
     },
   },
   {
-    path: APP_ROUTES.SSO,
-    name: 'SSO',
-    beforeRouteLeave: [removeQueryParams, removeHash],
-    component: () => import('../pages/SSOAuthPage.vue'),
-    props: (route) => ({ code: route.query.code }), // @TODO: Isn't the code processed by the sign-in page?
-    meta: { pageTitle: 'Signing you in…' },
-  },
-  {
     path: '/auth-email-link',
     name: 'AuthEmailLink',
     beforeRouteLeave: [removeQueryParams, removeHash],
@@ -178,16 +170,16 @@ const routes: Array<RouteRecordRaw> = [
     meta: { pageTitle: 'Create an administrator account', requireAdmin: true },
   },
   {
-    path: '/create-audience',
-    name: 'CreateAudience',
-    component: () => import('../pages/audience/CreateAudience.vue'),
-    meta: { pageTitle: 'Create an audience', requireAdmin: true, requireSuperAdmin: true },
+    path: '/create-group',
+    name: 'CreateGroup',
+    component: () => import('../pages/groups/CreateGroup.vue'),
+    meta: { pageTitle: 'Create a group', requireAdmin: true, requireSuperAdmin: true },
   },
   {
-    path: '/list-audiences',
-    name: 'ListAudiences',
-    component: () => import('../pages/audience/ListAudiences.vue'),
-    meta: { pageTitle: 'Audiences', requireAdmin: true },
+    path: '/list-groups',
+    name: 'ListGroups',
+    component: () => import('../pages/groups/ListGroups.vue'),
+    meta: { pageTitle: 'Groups', requireAdmin: true },
   },
   {
     path: '/list-users/:orgType/:orgId/:orgName',
@@ -211,24 +203,24 @@ const routes: Array<RouteRecordRaw> = [
       {
         path: '',
         name: 'ProfileInfo',
-        component: () => import('../components/views/UserInfoView.vue'),
+        component: () => import('../components/adminSettings/UserInfoView.vue'),
       },
       {
         path: 'password',
         name: 'ProfilePassword',
-        component: () => import('../components/views/PasswordView.vue'),
+        component: () => import('../components/adminSettings/PasswordView.vue'),
         meta: { requireAdmin: true },
       },
       {
         path: 'accounts',
         name: 'ProfileAccounts',
-        component: () => import('../components/views/LinkAccountsView.vue'),
+        component: () => import('../components/adminSettings/LinkAccountsView.vue'),
         meta: { requireAdmin: true },
       },
       {
         path: 'settings',
         name: 'ProfileSettings',
-        component: () => import('../components/views/Settings.vue'),
+        component: () => import('../components/adminSettings/Settings.vue'),
       },
     ],
     meta: { pageTitle: 'Profile' },
@@ -314,10 +306,7 @@ router.beforeEach(async (to: RouteLocationNormalized, from: RouteLocationNormali
 
   const allowedUnauthenticatedRoutes = [
     'SignIn',
-    'SSO', //@TODO: Remove before merging
     'Maintenance',
-    'AuthClever',
-    'AuthClassLink',
     'AuthEmailLink',
     'AuthEmailSent',
     'Debug',

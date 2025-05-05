@@ -11,6 +11,9 @@
       </div>
 
       <PvDivider />
+      <div class="text-sm text-gray-500 mt-3 mr-3 required">
+          <span class="required-asterisk">*</span> Required
+        </div>
       <div class="bg-gray-100 rounded p-5">
         <div class="formgrid grid mt-5">
         <div class="field col-12 xl:col-6 mb-5">
@@ -44,7 +47,7 @@
                 show-button-bar
                 data-cy="input-start-date"
               />
-              <label for="start-date">Start Date</label>
+              <label for="start-date">Start Date <span class="required-asterisk">*</span></label>
               <small v-if="v$.dateStarted.required.$invalid && submitted" class="p-error"
                 >Please select a start date.</small
               >
@@ -63,18 +66,15 @@
                 show-button-bar
                 data-cy="input-end-date"
               />
-              <label for="end-date">End Date</label>
+              <label for="end-date">End Date <span class="required-asterisk">*</span></label>
               <small v-if="v$.dateClosed.required.$invalid && submitted" class="p-error"
                 >Please select an end date.</small
               >
             </PvFloatLabel>
-            <div class="text-sm text-gray-500 mt-4 required text-right">
-              * Required
-            </div>
           </div>
         </div>
 
-        <OrgPicker :orgs="orgsList" @selection="selection($event)" />
+        <GroupPicker :orgs="orgsList" @selection="selection($event)" />
 
         <PvConfirmDialog group="errors" class="confirm" :draggable="false">
           <template #message>
@@ -107,7 +107,7 @@
         <div class="flex flex-column justify-content-center mt-5">
           <div class="flex flex-column mt-2 align-items-center justify-content-center">
             <div class="flex">
-              <label style="font-weight: bold" class="mb-2 mx-2">Sequential?</label>
+              <label style="font-weight: bold" class="mb-2 mx-2">Sequential Task Order<span class="required-asterisk">*</span></label>
               <span class="flex gap-2">
                 <PvRadioButton
                   v-model="state.sequential"
@@ -188,7 +188,7 @@ import useTaskVariantsQuery from '@/composables/queries/useTaskVariantsQuery';
 import useUpsertAdministrationMutation from '@/composables/mutations/useUpsertAdministrationMutation';
 import TaskPicker from '@/components/TaskPicker.vue';
 import ConsentPicker from '@/components/ConsentPicker.vue';
-import OrgPicker from '@/components/OrgPicker.vue';
+import GroupPicker from '@/components/GroupPicker.vue';
 import { APP_ROUTES } from '@/constants/routes';
 import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
 import { isLevante } from '@/helpers';
@@ -214,11 +214,11 @@ const header = computed(() => {
     return 'Edit an assignment';
   }
 
-  return 'Create New Assignment';
+  return 'Create Assignment';
 });
 
 const description = computed(() => {
-  return 'Assignments are bundles of tasks, surveys, and questionnaires that are sent to your users';
+  return 'An assignment is a collection of tasks assigned to users who are members of a group';
 });
 
 const submitLabel = computed(() => {
@@ -480,7 +480,12 @@ const submit = async () => {
   console.log('Orgs valid result:', orgsValid);
   if (!orgsValid) {
     console.log('Org check failed, exiting submit.');
-    toast.add({ severity: TOAST_SEVERITIES.WARN, summary: 'Missing Selection', detail: 'Please select at least one organization (District, School, Class, Group, or Family).', life: 5000 });
+    toast.add({ 
+      severity: TOAST_SEVERITIES.WARN, 
+      summary: 'Missing Selection', 
+      detail: 'Please select at least one Group (Site, School, Class, or Cohort).', 
+      life: TOAST_DEFAULT_LIFE_DURATION 
+    });
     return;
   }
 

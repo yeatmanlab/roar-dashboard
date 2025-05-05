@@ -31,7 +31,7 @@
             </template>
 
             <template #end>
-              <UserActions :isBasicView="computedIsBasicView"  :name="userDisplayName" />
+              <UserActions :isBasicView="computedIsBasicView" />
             </template>
           </PvMenubar>
         </div>
@@ -87,7 +87,7 @@ onUnmounted(() => {
   window.removeEventListener('resize', handleResize);
 });
 
-const { isLoading: isLoadingClaims, data: userClaims } = useUserClaimsQuery({
+const { data: userClaims } = useUserClaimsQuery({
   enabled: initialized,
 });
 
@@ -127,14 +127,14 @@ const computedItems = computed(() => {
       });
     }
   }
-  // Audience only has one associated page and therefore is not nested within items
-  const audienceAction = rawActions.value.find((action) => action.category === 'Audience');
-  if (audienceAction) {
+  // Groups only has one associated page and therefore is not nested within items
+  const groupsAction = rawActions.value.find((action) => action.category === 'Groups');
+  if (groupsAction) {
     items.push({
-      label: audienceAction.title,
-      icon: audienceAction.icon,
+      label: groupsAction.title,
+      icon: groupsAction.icon,
       command: () => {
-        router.push(audienceAction.buttonLink);
+        router.push(groupsAction.buttonLink);
       },
     });
   }
@@ -142,23 +142,7 @@ const computedItems = computed(() => {
   return items;
 });
 
-const userDisplayName = computed(() => {
-  if (!isLoadingClaims) {
-    return '';
-  } else {
-    let email = authStore?.userData?.email;
-    if (email && email.split('@')[1] === 'roar-auth.com') {
-      email = email.split('@')[0];
-    }
-    const displayName = authStore?.userData?.displayName;
-    const username = authStore?.userData?.username;
-    const firstName = authStore?.userData?.name?.first;
-    const userType = isAdmin.value ? 'Admin' : 'User';
-    return ` ${firstName || displayName || username || email || userType}`;
-  }
-});
-
-const {isAdmin, isSuperAdmin} = useUserType(userClaims);
+const { isAdmin, isSuperAdmin } = useUserType(userClaims);
 
 const computedIsBasicView = computed(() => {
   if (!userClaims.value) {

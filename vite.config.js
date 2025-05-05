@@ -55,7 +55,6 @@ export default defineConfig({
           tanstack: ['@tanstack/vue-query'],
           chartJs: ['chart.js'],
           sentry: ['@sentry/browser', '@sentry/integrations', '@sentry/vue'],
-          firekit: ['@levante-framework/firekit'],
           phoneme: ['@bdelab/roar-pa'],
           sre: ['@bdelab/roar-sre'],
           swr: ['@bdelab/roar-swr'],
@@ -68,5 +67,9 @@ export default defineConfig({
     include: [
       '@levante-framework/firekit',
     ],
+    esbuildOptions: {
+      mainFields: ['module', 'main'],
+      resolveExtensions: ['.js', '.mjs', '.cjs'],
+    }
   },
 });

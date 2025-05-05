@@ -197,6 +197,9 @@
               <div v-else-if="col.field === 'user.lastName'">
                 {{ _get(colData, col.field) }}
               </div>
+              <div v-else-if="col.field === 'userType' && _get(colData, col.field) === 'parent'">
+                Caregiver
+              </div>
               <div v-else>
                 {{ _get(colData, col.field) }}
               </div>
