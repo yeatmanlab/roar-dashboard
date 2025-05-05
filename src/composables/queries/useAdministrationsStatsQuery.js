@@ -10,13 +10,15 @@ import { FIRESTORE_COLLECTIONS } from '@/constants/firebase';
  * Administrations stats query.
  *
  * @param {ref<Array<String>>} administrationIds – A Vue ref containing an array of administration IDs to fetch.
+ * @param {ref<String>} orgId – A Vue ref containing the org ID  .
  * @param {QueryOptions|undefined} queryOptions – Optional TanStack query options.
  * @returns {UseQueryResult} The TanStack query result.
  */
-const useAdministrationsStatsQuery = (administrationIds, queryOptions = undefined) => {
+const useAdministrationsStatsQuery = (administrationIds, orgId, queryOptions = undefined) => {
   // Ensure all necessary data is available before enabling the query.
   const conditions = [() => hasArrayEntries(administrationIds)];
   const { isQueryEnabled, options } = computeQueryOverrides(conditions, queryOptions);
+  const statsKey = toValue(orgId) ? toValue(orgId) : 'total';
 
   return useQuery({
     queryKey: [ADMINISTRATIONS_STATS_QUERY_KEY, administrationIds],
@@ -25,7 +27,7 @@ const useAdministrationsStatsQuery = (administrationIds, queryOptions = undefine
         toValue(administrationIds)?.map((administrationId) => {
           return {
             collection: FIRESTORE_COLLECTIONS.ADMINISTRATIONS,
-            docId: `${administrationId}/stats/total`,
+            docId: `${administrationId}/stats/${statsKey}`,
           };
         }),
       ),
