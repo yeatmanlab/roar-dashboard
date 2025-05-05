@@ -58,16 +58,12 @@
               </PvFloatLabel>
             </div>
           </div>
-          <div v-if="isLoading || isFetching" class="flex justify-content-center align-items-center" style="min-height: 200px">
-            <AppSpinner />
-          </div>
           <RoarDataTable
-            v-else
             :key="tableKey"
             :columns="tableColumns"
             :data="tableData ?? []"
             sortable
-            :loading="false"
+            :loading="isLoading || isFetching"
             :allow-filtering="false"
             @export-all="exportAll"
             @selected-org-id="showCode"
@@ -76,7 +72,6 @@
           />
         </PvTabPanel>
       </PvTabView>
-      <AppSpinner v-else />
     </section>
     <section class="flex mt-8 justify-content-end">
       <PvDialog
