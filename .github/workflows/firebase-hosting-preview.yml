@@ -22,8 +22,6 @@ permissions:
 jobs:
   test:
     name: Run Tests
-    env:
-      VITE_LEVANTE: TRUE
     runs-on: ubuntu-latest
     steps:
       # For workflows triggered by pull requests
@@ -51,7 +49,7 @@ jobs:
         run: npm ci
 
       - name: Run tests
-        run: npm test
+        run: VITE_LEVANTE=TRUE npm test
 
       - name: Update PR status
         if: github.event_name == 'pull_request'
