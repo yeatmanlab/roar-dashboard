@@ -296,7 +296,6 @@ const props = defineProps({
   },
 });
 
-const isDev = import.meta.env.MODE === 'development';
 const backupImage = '/src/assets/roar-logo.png';
 const showContent = ref(false);
 const op = ref(null);
