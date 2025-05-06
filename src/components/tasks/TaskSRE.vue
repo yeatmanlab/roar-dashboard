@@ -18,7 +18,6 @@ import packageLockJson from '../../../package-lock.json';
 
 const props = defineProps({
   taskId: { type: String, required: true, default: 'sre' },
-  language: { type: String, required: true, default: 'en' },
 });
 
 let TaskLauncher;
