@@ -17,9 +17,10 @@ describe('Delete Test Runs', () => {
   });
 
   it('should delete all test runs for all test users', () => {
-    for (const testUser of testUsers) {
-      cy.log('Deleting test runs for user:', testUser);
-      deleteTestRuns(testUser, adminFirestore, assessmentFirestore);
-    }
+    cy.wrap(testUsers).each(async (testUser) => {
+      await deleteTestRuns(testUser, adminFirestore, assessmentFirestore).then(() => {
+        cy.log('Deleted test runs for user', testUser);
+      });
+    });
   });
 });
