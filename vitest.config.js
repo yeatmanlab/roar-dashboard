@@ -16,7 +16,7 @@ export default mergeConfig(
   viteConfig,
   defineConfig({
     define: {
-      'import.meta.env.VITE_LEVANTE': JSON.stringify(process.env.VITE_LEVANTE || 'TRUE'),
+      'import.meta.env.VITE_LEVANTE': JSON.stringify('TRUE'),
     },
     test: {
       globals: true,
