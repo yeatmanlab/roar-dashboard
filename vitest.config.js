@@ -10,11 +10,13 @@ import viteConfig from './vite.config';
 
 const isCI = process.env.CI === 'true';
 
+console.log('>>> VITE_LEVANTE in config:', process.env.VITE_LEVANTE);
+
 export default mergeConfig(
   viteConfig,
   defineConfig({
     define: {
-      'import.meta.env.VITE_LEVANTE': JSON.stringify('TRUE'),  // ensures isLevante is true for all tests
+      'import.meta.env.VITE_LEVANTE': JSON.stringify(process.env.VITE_LEVANTE || 'TRUE'),
     },
     test: {
       globals: true,
