@@ -13,9 +13,9 @@
         <AppSpinner class="mb-4" />
         Loading Assignments
       </div>
-      <div v-if="!parentRegistrationComplete" class="flex items-center justify-center">
+      <div v-if="parentRegistrationComplete" class="flex items-center justify-content-center w-full">
+        <div class="">Administration enrollment in progress - check back in a few minutes.</div>
         <AppSpinner class="mb-4" />
-        Administration enrollment in progress - check back in a few minutes.
       </div>
       <div class="flex flex-row align-items-center justify-content-center w-full flex-wrap">
         <div v-if="assignmentData?.length == 0">
@@ -39,7 +39,7 @@
 import useAdministrationsListQuery from '@/composables/queries/useAdministrationsListQuery';
 import useAdministrationAssignmentsQuery from '@/composables/queries/useAdministrationAssignmentsQuery';
 import { orderByDefault } from '@/helpers/query/utils';
-import { ref, watch, onMounted } from 'vue';
+import { ref, watch, onMounted, onBeforeUnmount } from 'vue';
 import UserCard from '@/components/UserCard.vue';
 import { pluralizeFirestoreCollection } from '@/helpers';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
@@ -51,7 +51,7 @@ const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
 
 const parentRegistrationComplete = ref(false);
-const initialized = ref(true);
+const initialized = ref(false);
 const administrationId = ref(null);
 // TODO: Set this dynamically in cases where this component is used for non-family adminstrators
 const orgType = ref(SINGULAR_ORG_TYPES.FAMILIES);
@@ -65,23 +65,39 @@ const { isLoading: isLoadingAdministrations, data: administrations } = useAdmini
 let unsubscribeInitializer;
 const init = () => {
   if (unsubscribeInitializer) unsubscribeInitializer();
-  initialized.value = true;
 };
 
 unsubscribeInitializer = authStore.$subscribe(async (mutation, state) => {
   if (state.roarfirekit.restConfig) init();
 });
 
+let parentRegistrationTimer = undefined;
+
 onMounted(async () => {
   if (authStore.isAuthenticated) {
     // check first if initialized value in userStore is true, if so, registration is complete
     if (authStore.userData.initialized) {
       parentRegistrationComplete.value = true;
+      initialized.value = true;
     } else {
-      parentRegistrationComplete.value = await authStore.verifyParentRegistration();
+      parentRegistrationTimer = setInterval(async function () {
+        console.log('calling parentRegistrationTimer');
+        // Poll for the preload trials progress bar to exist and then begin the game
+        parentRegistrationComplete.value = await authStore.verifyParentRegistration();
+        // if parentRegistration has completed, break out of the loop
+        if (parentRegistrationComplete.value) {
+          initialized.value = true;
+          console.log('parent registration complete');
+          clearInterval(parentRegistrationTimer);
+        }
+      }, 5000);
     }
-    console.log('roarfirekit.valu', roarfirekit.value);
-    console.log('Parent Registration Complete:', parentRegistrationComplete.value);
+  }
+});
+
+onBeforeUnmount(() => {
+  if (parentRegistrationTimer) {
+    clearInterval(parentRegistrationTimer);
   }
 });
 
