@@ -919,6 +919,7 @@ const createExportData = ({ rows, includeProgress = false }) => {
       First: user?.firstName,
       Last: user?.lastName,
       Grade: user?.grade,
+      state: user?.stateId,
     };
 
     if (authStore.isUserSuperAdmin) {
@@ -928,6 +929,12 @@ const createExportData = ({ rows, includeProgress = false }) => {
     if (props.orgType === 'district') {
       tableRow['School'] = user?.schoolName;
     }
+
+    // if org is from clever, include stateId
+    // if (orgData.value?.clever === true) {
+    console.log('user', user.stateId);
+    tableRow['State Id'] = user.stateId;
+    // }
 
     for (const taskId in scores) {
       const score = scores[taskId];
@@ -1042,6 +1049,10 @@ const exportData = async ({ selectedRows = null, includeProgress = false }) => {
 
   // Define the static columns
   const staticColumns = ['Username', 'Email', 'First', 'Last', 'Grade', 'PID', 'School'];
+
+  if (orgData.value?.clever === true) {
+    staticColumns.push('State Id');
+  }
 
   // Automatically detect task names by splitting column names and excluding static columns
   const taskBases = Array.from(
