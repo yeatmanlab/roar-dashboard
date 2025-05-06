@@ -12,7 +12,7 @@ const commitHash = child.execSync("git rev-parse --short HEAD").toString();
 // https://vitejs.dev/config/
 export default defineConfig({
   define: {'import.meta.env.VITE_APP_VERSION': JSON.stringify(commitHash),
-    'import.meta.env.VITE_LEVANTE': 'TRUE'
+    'import.meta.env.VITE_LEVANTE': JSON.stringify('TRUE'),
   },
   plugins: [
     Vue({
