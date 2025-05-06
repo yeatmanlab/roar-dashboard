@@ -166,8 +166,9 @@ describe('HomeAdministrator', () => {
         }))
       }));
 
-      // mocking PvChart. It is used within CardAdministration and throwing errors.
-      // will evenutally want to either add to the intergation test or do a unit test of CardAdministration
+      // mocking PvChart since it is used within CardAdministration and throwing errors.
+      // if we do want to test the chart's functionality we should revisit or test in 
+      // CardAdministration's unit test
       vi.mock('primevue/chart', () => ({
         default: {
           template: '<div />',
