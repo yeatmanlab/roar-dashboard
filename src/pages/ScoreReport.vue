@@ -647,6 +647,7 @@ const computeAssignmentAndRunData = computed(() => {
           orgType: props.orgType,
           userId: user.userId,
         },
+        compositeScore: assignment.compositeScore ?? null,
         // compute and add scores data in next step as so
         // swr: { support_level: 'Needs Extra Support', percentile: 10, raw: 10, reliable: true, engagementFlags: {}},
       };
@@ -1265,6 +1266,15 @@ const scoreReportColumns = computed(() => {
       routeIcon: 'pi pi-arrow-right border-none text-primary hover:text-white',
       sort: false,
       pinned: true,
+    });
+  }
+  if (userCan(Permissions.Reports.Score.READ_COMPOSITE)) {
+    tableColumns.push({
+      field: 'compositeScore',
+      header: 'Composite Score',
+      dataType: 'text',
+      sort: true,
+      headerStyle: `background:var(--primary-color); color:white; padding-top:0; margin-top:0; padding-bottom:0; margin-bottom:0; border:0; margin-left:0; border-right-width:2px; border-right-style:solid; border-right-color:#ffffff;`,
     });
   }
   // Apply a border-right to the last column currently in the tableColumns object
