@@ -15,7 +15,9 @@ console.log('>>> VITE_LEVANTE in config:', process.env.VITE_LEVANTE);
 export default mergeConfig(
   viteConfig,
   defineConfig({
+    ...viteConfig,
     define: {
+      ...(viteConfig.define || {}),
       'import.meta.env.VITE_LEVANTE': JSON.stringify(process.env.VITE_LEVANTE || 'TRUE'),
     },
     test: {
