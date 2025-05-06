@@ -110,7 +110,7 @@
                 />
               </router-link>
               <router-link
-                v-if="!isLevante"
+                v-if="!(isLevante())"
                 :to="{
                   name: 'ScoreReport',
                   params: { administrationId: props.id, orgId: node.data.id, orgType: node.data.orgType },

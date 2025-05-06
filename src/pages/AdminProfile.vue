@@ -3,7 +3,7 @@
     <!-- Sidebar -->
     <div :class="sidebarOpen ? 'sidebar-container-open' : 'sidebar-container-collapsed'">
       <div class="flex flex-column">
-        <router-link v-if="!isLevante" to="/profile">
+        <router-link v-if="!isLevante()" to="/profile">
           <div class="sidebar-button">
             <i class="pi pi-user" /><span v-if="sidebarOpen">Your Info</span>
           </div></router-link

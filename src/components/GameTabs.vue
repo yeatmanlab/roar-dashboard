@@ -322,7 +322,7 @@ const getRoutePath = (taskId, variantURL, taskURL) => {
     return '/survey';
   } else if (
     levanteTasks.includes(lowerCasedAndCamelizedTaskId) ||
-    (isLevante && levantifiedRoarTasks.includes(lowerCasedAndCamelizedTaskId))
+    (isLevante() && levantifiedRoarTasks.includes(lowerCasedAndCamelizedTaskId))
   ) {
     return '/game/core-tasks/' + taskId;
   } else {

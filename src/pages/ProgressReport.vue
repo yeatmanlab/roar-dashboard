@@ -22,7 +22,7 @@
               </div>
             </div>
           </div>
-          <div v-if="!isLevante" class="flex flex-row align-items-center gap-4">
+          <div v-if="!isLevante()" class="flex flex-row align-items-center gap-4">
             <div class="uppercase text-sm text-gray-600">VIEW</div>
             <PvSelectButton
               v-model="reportView"
@@ -97,7 +97,7 @@
                   </div>
                 </div>
               </div>
-              <div v-if="!isLevante" class="font-light uppercase text-xs text-gray-500 my-1">Legend</div>
+              <div v-if="!isLevante()" class="font-light uppercase text-xs text-gray-500 my-1">Legend</div>
             </div>
           </div>
           <RoarDataTable
@@ -108,16 +108,16 @@
             :loading="isLoadingAssignments || isFetchingAssignments"
             :page-limit="pageLimit"
             data-cy="roar-data-table"
-            :allow-filtering="!isLevante"
+            :allow-filtering="!isLevante()"
             :reset-filters="resetFilters"
-            :allow-export="!isLevante"
-            :allow-column-selection="!isLevante"
+            :allow-export="!isLevante()"
+            :allow-column-selection="!isLevante()"
             :lazy-pre-sorting="orderBy"
             @export-selected="exportSelected"
             @export-all="exportAll"
           >
             <template #filterbar>
-            <div v-if="!isLevante">
+            <div v-if="!isLevante()">
                 <div v-if="districtSchoolsData" class="flex flex-row gap-2">
                   <PvFloatLabel>
                     <PvMultiSelect

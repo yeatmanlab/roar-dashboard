@@ -10,7 +10,7 @@ export function initSentry(app) {
   let dsn;
   let regex;
   let tracePropagationTargets;
-  if (isLevante) {
+  if (isLevante()) {
     dsn = 'https://458fd3b1207c12df79f554b94f22833f@o4507250485035008.ingest.us.sentry.io/4508480347832320';
     regex = /https:\/\/hs-levante-admin-dev(--pr\d+-\w+)?\.web\.app/;
     tracePropagationTargets = ['https://hs-levante-admin-prod.web.app/**/*', 'https://hs-levante-admin-dev.web.app/**/*', regex];

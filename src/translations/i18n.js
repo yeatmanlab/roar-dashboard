@@ -22,12 +22,12 @@ export const languageOptions = {
 const browserLocale = window.navigator.language;
 
 const getLocale = (localeFromBrowser) => {
-  const localeFromStorage = sessionStorage.getItem(`${isLevante ? 'levante' : 'roar'}PlatformLocale`);
+  const localeFromStorage = sessionStorage.getItem(`${isLevante() ? 'levante' : 'roar'}PlatformLocale`);
 
   if (localeFromStorage) {
     return localeFromStorage;
   } else {
-    sessionStorage.setItem(`${isLevante ? 'levante' : 'roar'}PlatformLocale`, localeFromBrowser);
+    sessionStorage.setItem(`${isLevante() ? 'levante' : 'roar'}PlatformLocale`, localeFromBrowser);
     return localeFromBrowser;
   }
 };
@@ -35,7 +35,7 @@ const getLocale = (localeFromBrowser) => {
 export const formattedLocale = getLocale(browserLocale);
 
 const getFallbackLocale = () => {
-  const localeFromStorage = sessionStorage.getItem(`${isLevante ? 'levante' : 'roar'}PlatformLocale`);
+  const localeFromStorage = sessionStorage.getItem(`${isLevante() ? 'levante' : 'roar'}PlatformLocale`);
 
   if (localeFromStorage.includes('es')) {
     console.log('Setting fallback local to es');

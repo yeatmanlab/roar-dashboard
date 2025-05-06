@@ -13,7 +13,7 @@ export async function initNewFirekit() {
       db: false,
       functions: false,
     },
-    verboseLogging: isLevante ? false : true,
+    verboseLogging: isLevante() ? false : true,
 
     // The site key is used for app check token verification
     // The debug token is used to bypass app check for local development

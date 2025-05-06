@@ -49,7 +49,7 @@
         >
           <div class="text-xl uppercase font-bold">No Conditions Added</div>
           <div class="text-sm uppercase text-gray-700">
-            Assignment will be <PvTag severity="warning" class="mx-1">ASSIGNED</PvTag> to all {{ isLevante ? 'users' : 'students' }} in the
+            Assignment will be <PvTag severity="warning" class="mx-1">ASSIGNED</PvTag> to all {{ isLevante() ? 'users' : 'students' }} in the
             administration.
           </div>
         </div>
@@ -105,11 +105,11 @@
           >
             <div class="text-xl uppercase font-bold">No Conditions Added</div>
             <div v-if="isOptionalForAll" class="text-sm uppercase text-gray-700">
-              Assignment will be <PvTag severity="success" class="mx-1">OPTIONAL</PvTag> for all {{ isLevante ? 'users' : 'students' }} in the
+              Assignment will be <PvTag severity="success" class="mx-1">OPTIONAL</PvTag> for all {{ isLevante() ? 'users' : 'students' }} in the
               administration.
             </div>
             <div v-else class="text-sm uppercase text-gray-700">
-              Assignment will <PvTag severity="danger" class="mx-1">NOT BE OPTIONAL</PvTag> for any {{ isLevante ? 'users' : 'students' }} in the
+              Assignment will <PvTag severity="danger" class="mx-1">NOT BE OPTIONAL</PvTag> for any {{ isLevante() ? 'users' : 'students' }} in the
               administration.
             </div>
           </div>
@@ -139,7 +139,7 @@
 
           <div class="flex flex-row justify-content-between align-items-center">
             <div class="flex flex-row justify-content-end align-items-center gap-2 mr-2">
-              <div class="uppercase text-md font-bold text-gray-600">Make Assessment Optional For All {{ isLevante ? 'Users' : 'Students' }}</div>
+              <div class="uppercase text-md font-bold text-gray-600">Make Assessment Optional For All {{ isLevante() ? 'Users' : 'Students' }}</div>
               <PvInputSwitch
                 v-model="isOptionalForAll"
                 data-cy="switch-optional-for-everyone"
@@ -224,7 +224,7 @@ onMounted(() => {
   getAllConditions(props.assessment.task.id);
   // LEVANTE assigns surveys as assessments, so we add a defualt for child only so researchers
   // do not accidently assign tasks to parents and teachers
-  if (isLevante && props.assessment.task.id !== 'survey') {
+  if (isLevante() && props.assessment.task.id !== 'survey') {
     assignedConditions.value.push({ 
       field: { label: 'User Type', value: 'userType', project: 'LEVANTE' },
       op: { label: 'Equal', value: 'EQUAL' },
@@ -469,7 +469,7 @@ const fieldOptions = [
 ];
 
 const computedFieldOptions = computed(() => {
-  if (isLevante) {
+  if (isLevante()) {
     return fieldOptions.filter((option) => option.project === 'LEVANTE' || option.project === 'ALL');
   } else {
     return fieldOptions.filter((option) => option.project === 'ROAR' || option.project === 'ALL');
