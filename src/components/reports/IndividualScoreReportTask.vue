@@ -24,6 +24,7 @@
               </div>
             </div>
             <PvKnob
+              readonly
               :value-template="
                 task.scoreToDisplay == 'percentileScore' ? getPercentileSuffix(task.percentileScore.value) : undefined
               "
