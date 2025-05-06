@@ -59,10 +59,9 @@
             </div>
           </div>
           <RoarDataTable
-            v-if="tableData"
             :key="tableKey"
             :columns="tableColumns"
-            :data="tableData"
+            :data="tableData ?? []"
             sortable
             :loading="isLoading || isFetching"
             :allow-filtering="false"
@@ -71,10 +70,8 @@
             @export-org-users="(orgId) => exportOrgUsers(orgId)"
             @edit-button="onEditButtonClick($event)"
           />
-          <AppSpinner v-else />
         </PvTabPanel>
       </PvTabView>
-      <AppSpinner v-else />
     </section>
     <section class="flex mt-8 justify-content-end">
       <PvDialog
