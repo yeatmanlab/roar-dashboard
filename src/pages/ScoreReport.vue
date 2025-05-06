@@ -638,6 +638,7 @@ const computeAssignmentAndRunData = computed(() => {
           grade: grade,
           assessmentPid: user.assessmentPid,
           schoolName: schoolName,
+          stateId: user.studentData?.state_id,
         },
         tooltip: `View ${firstNameOrUsername}'s Score Report`,
         launchTooltip: `View assessment portal for ${firstNameOrUsername}`,
@@ -1252,6 +1253,14 @@ const scoreReportColumns = computed(() => {
       headerStyle: `background:var(--primary-color); color:white; padding-top:0; margin-top:0; padding-bottom:0; margin-bottom:0; border:0; margin-left:0; border-right-width:2px; border-right-style:solid; border-right-color:#ffffff;`,
     });
   }
+
+  tableColumns.push({
+    field: 'user.stateId',
+    header: 'State Id',
+    dataType: 'text',
+    sort: false,
+    headerStyle: `background:var(--primary-color); color:white; padding-top:0; margin-top:0; padding-bottom:0; margin-bottom:0; border:0; margin-left:0; border-right-width:2px; border-right-style:solid; border-right-color:#ffffff;`,
+  });
 
   const isAdministrationOpen = administrationData.value?.dateClosed
     ? new Date(administrationData.value?.dateClosed) > new Date()
