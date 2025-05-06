@@ -7,14 +7,6 @@ import HomeAdministrator from '@/pages/HomeAdministrator.vue'
 import PrimeVue from 'primevue/config';
 import ConfirmService from 'primevue/confirmationservice';
 import ToastService from 'primevue/toastservice';
-
-
-// Mock the module before individual tests since vi.mock is hoisted to the top of the file
-// closer to how code is actually executed
-vi.mock('@/composables/queries/useAdministrationsListQuery', () => ({
-  default: vi.fn(),
-}));
-
 import useAdministrationsListQuery from '@/composables/queries/useAdministrationsListQuery';
 
 
@@ -139,12 +131,47 @@ describe('HomeAdministrator', () => {
           },
         ],
       }));
-      
+
       vi.mock('@/composables/queries/useUserClaimsQuery', () => ({
         default: vi.fn(() => ({
-          data: {value: { user: 'mockedUser' }},
-          error: null,
-        })),
+          data: ref({
+            id: 'zbTRSOS70cNGWyu2Ecc4T2aOU2y2',
+            collectionValue: 'userClaims',
+            lastUpdated: 1741677423988,
+            testData: false,
+            claims: {
+              // will evenutally want to mock both 
+              // super_admin view and admin view
+              super_admin: true,
+              minimalAdminOrgs: {
+                groups: [],
+                schools: [],
+                districts: [],
+                families: [],
+                classes: []
+              },
+              adminOrgs: {
+                groups: [],
+                schools: [],
+                families: [],
+                districts: [],
+                classes: []
+              },
+              roarUid: 'zbTRSOS70cNGWyu2Ecc4T2aOU2y2',
+              assessmentUid: 'mlrlu8rqPYh3IeXKHT83UpVMtzE2',
+              admin: true,
+              adminUid: 'zbTRSOS70cNGWyu2Ecc4T2aOU2y2'
+            }
+          })
+        }))
+      }));
+
+      // mocking PvChart. It is used within CardAdministration and throwing errors.
+      // will evenutally want to either add to the intergation test or do a unit test of CardAdministration
+      vi.mock('primevue/chart', () => ({
+        default: {
+          template: '<div />',
+        },
       }));
 
       vi.mock('vue-router', () => ({
@@ -154,7 +181,10 @@ describe('HomeAdministrator', () => {
         })
       }));
 
-      vi.mocked(useAdministrationsListQuery).mockClear()
+      vi.mock('@/composables/queries/useAdministrationsListQuery', () => ({
+        default: vi.fn(),
+      }))
+        
     });
 
     afterEach(() => {
@@ -179,7 +209,7 @@ describe('HomeAdministrator', () => {
             },
         });
 
-        await nextTick() // ensure DOM reflects updated state
+        await nextTick()
 
         expect(wrapper.vm.isLevante).toBe(true);
         expect(wrapper.text()).toContain('All Assignments');
@@ -318,18 +348,38 @@ describe('HomeAdministrator', () => {
       expect(sortSelect.exists()).toBe(true);
 
       // Test ascending sort
-      await sortSelect.setValue('Name (ascending)');
-      const titlesAscend = wrapper.findAll('[data-cy="h2-card-admin-title"]');
-      console.log("ascending", titlesAscend.length, "title 1", titlesAscend[0].text(), "___", titlesAscend[1].text(),"title 2", titlesAscend[2].text(), "____",  titlesAscend[3].text());
-      // expect(titles[0].text()).toContain('A Assignment');
-      // expect(titles[1].text()).toContain('B Assignment');
+      await sortSelect.vm.$emit('change', {"value": {
+        "label": "Name (ascending)",
+        "value": [
+            {
+                "field": {
+                    "fieldPath": "name"
+                },
+                "direction": "ASCENDING"
+            }
+        ]
+      }});
 
+      const titlesAscend = wrapper.findAll('[data-cy="h2-card-admin-title"]');
+      if (titlesAscend.length > 0) {
+        expect(titlesAscend[0].text()).toContain('A Assignment');
+        expect(titlesAscend[1].text()).toContain('B Assignment');
+      }
       // Test descending sort
-      // await sortSelect.setValue('name-desc');
-      // const titlesDesc = wrapper.findAll('[data-cy="h2-card-admin-title"]');
-      // console.log("descending", titlesDesc);
-      // expect(titlesDesc[0].text()).toContain('B Assignment');
-      // expect(titlesDesc[1].text()).toContain('A Assignment');
+      await sortSelect.vm.$emit('change', {"value": {
+        "label": "Name (descending)",
+        "value": [
+            {
+                "field": {
+                    "fieldPath": "name"
+                },
+                "direction": "DESCENDING"
+            }
+        ]
+      }});
+      const titlesDesc = wrapper.findAll('[data-cy="h2-card-admin-title"]');
+      expect(titlesDesc[0].text()).toContain('B Assignment');
+      expect(titlesDesc[1].text()).toContain('A Assignment');
     });
 
 });

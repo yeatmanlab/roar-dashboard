@@ -101,7 +101,7 @@
                     :public-name="item.publicName ?? item.name"
                     :show-params="isSuperAdmin"
                     :is-super-admin="isSuperAdmin"
-                    data-cy="h2-card-admin-title"
+                    data-cy="h2-card-admin"
                   />
                 </div>
               </template>
@@ -376,6 +376,7 @@ const onSortChange = (event) => {
   }
 
   sortKey.value = sortValue;
+
 };
 </script>
 
