@@ -9,13 +9,23 @@
       <div class="text-sm font-light text-gray-800">Manage your children and view their assessments.</div>
     </div>
     <div class="text-2xl font-bold text-gray-600">
-      <div v-if="isLoadingAssignments || isLoadingAdministrations" class="flex items-center justify-center">
-        <AppSpinner class="mb-4" />
-        Loading Assignments
+      <div
+        v-if="isLoadingAssignments || isLoadingAdministrations"
+        class="flex flex-column items-center justify-content-center w-full text-center"
+      >
+        <div>
+          <AppSpinner class="mb-4" />
+        </div>
+        <div class="w-64 text-lg font-light">Loading Assignments</div>
       </div>
-      <div v-if="parentRegistrationComplete" class="flex items-center justify-content-center w-full">
-        <div class="">Administration enrollment in progress - check back in a few minutes.</div>
-        <AppSpinner class="mb-4" />
+      <div
+        v-else-if="!parentRegistrationComplete"
+        class="flex flex-column items-center justify-content-center w-full text-center"
+      >
+        <div>
+          <AppSpinner class="mb-4" />
+        </div>
+        <div class="w-64 text-lg font-light">Administration enrollment in progress</div>
       </div>
       <div class="flex flex-row align-items-center justify-content-center w-full flex-wrap">
         <div v-if="assignmentData?.length == 0">
@@ -76,7 +86,7 @@ let parentRegistrationTimer = undefined;
 onMounted(async () => {
   if (authStore.isAuthenticated) {
     // check first if initialized value in userStore is true, if so, registration is complete
-    if (authStore.userData.initialized) {
+    if (authStore.userData.initialized || !authStore.userData.registrations) {
       parentRegistrationComplete.value = true;
       initialized.value = true;
     } else {
