@@ -86,9 +86,17 @@ watch(
   { immediate: true },
 );
 
+let checkGameStarted = undefined;
+
+beforeDestroy(() => {
+  if (checkGameStarted) {
+    clearInterval(checkGameStarted);
+  }
+});
+
 async function startTask(selectedAdmin) {
   try {
-    let checkGameStarted = setInterval(function () {
+    checkGameStarted = setInterval(function () {
       // Poll for the preload trials progress bar to exist and then begin the game
       let gameLoading = document.querySelector('.card-title');
       if (gameLoading) {
