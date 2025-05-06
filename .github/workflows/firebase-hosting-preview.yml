@@ -22,6 +22,8 @@ permissions:
 jobs:
   test:
     name: Run Tests
+    env:
+      VITE_LEVANTE: TRUE
     runs-on: ubuntu-latest
     steps:
       # For workflows triggered by pull requests
