@@ -8,6 +8,7 @@
 
   <div v-else>
     <HomeParticipant v-if="isParticipant" />
+    <HomeParent v-else-if="isLaunchAdmin" />
     <HomeAdministrator v-else-if="isAdminUser" />
   </div>
 
@@ -36,6 +37,7 @@ import { APP_ROUTES } from '@/constants/routes';
 
 const HomeParticipant = defineAsyncComponent(() => import('@/pages/HomeParticipant.vue'));
 const HomeAdministrator = defineAsyncComponent(() => import('@/pages/HomeAdministrator.vue'));
+const HomeParent = defineAsyncComponent(() => import('@/pages/HomeParent.vue'));
 const ConsentModal = defineAsyncComponent(() => import('@/components/ConsentModal.vue'));
 
 const isLevante = import.meta.env.MODE === 'LEVANTE';
@@ -74,9 +76,9 @@ const { isLoading: isLoadingClaims, data: userClaims } = useUserClaimsQuery({
   enabled: initialized,
 });
 
-const { isAdmin, isSuperAdmin, isParticipant } = useUserType(userClaims);
+const { isAdmin, isSuperAdmin, isParticipant, isLaunchAdmin } = useUserType(userClaims);
 
-const isAdminUser = computed(() => isAdmin.value || isSuperAdmin.value);
+const isAdminUser = computed(() => isAdmin.value || isSuperAdmin.value || isLaunchAdmin.value);
 const isLoading = computed(() => {
   // @NOTE: In addition to the loading states, we also check if user data and user claims are loaded as due to the
   // current application initialization flow, the userData and userClaims queries initially reset. Once this is improved

@@ -196,7 +196,6 @@ import { computed, onMounted, ref } from 'vue';
 import { storeToRefs } from 'pinia';
 import jsPDF from 'jspdf';
 import _startCase from 'lodash/startCase';
-import { getGrade } from '@bdelab/roar-utils';
 import PvAccordion from 'primevue/accordion';
 import PvAccordionTab from 'primevue/accordiontab';
 import PvButton from 'primevue/button';
@@ -209,6 +208,7 @@ import { taskDisplayNames, addElementToPdf } from '@/helpers/reports';
 import IndividualScoreReportTask from '@/components/reports/IndividualScoreReportTask.vue'; // @TODO: Not used?
 import AppSpinner from '@/components/AppSpinner.vue';
 import NextSteps from '@/assets/NextSteps.pdf';
+import { getGradeWithSuffix } from '@/helpers/reports.js';
 
 const authStore = useAuthStore();
 
@@ -328,31 +328,13 @@ const formattedTasks = computed(() => {
 
 const studentFirstName = computed(() => {
   if (!studentData?.value) return '';
-  // Using == instead of === to catch both undefined and null values
-  if (studentData.value.name?.first == undefined) return studentData.value.username;
-  return studentData.value.name.first;
+  return studentData.value.name?.first || studentData.value.username;
 });
 
 const studentLastName = computed(() => {
   if (!studentData?.value?.name) return '';
   return studentData.value.name.last;
 });
-
-function getGradeWithSuffix(grade) {
-  if (getGrade(grade) < 1) {
-    return grade;
-  } else if (getGrade(grade) === 1) {
-    return grade + 'st';
-  } else if (getGrade(grade) === 2) {
-    return grade + 'nd';
-  } else if (getGrade(grade) === 3) {
-    return grade + 'rd';
-  } else if (getGrade(grade) >= 4 && getGrade(grade) <= 13) {
-    return grade + 'th';
-  } else {
-    return 'Invalid grade';
-  }
-}
 
 const refreshing = ref(false);
 let unsubscribe;

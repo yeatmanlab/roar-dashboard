@@ -98,7 +98,7 @@ const sidebarActionOptions = [
   },
 ];
 
-export const getSidebarActions = ({ isSuperAdmin = false, isAdmin = false }) => {
+export const getSidebarActions = ({ isSuperAdmin = false, isAdmin = false, isLaunchAdmin = false }) => {
   const { userCan } = usePermissions();
   if (import.meta.env.MODE === 'LEVANTE') {
     return sidebarActionOptions.filter((action) => {
@@ -119,6 +119,10 @@ export const getSidebarActions = ({ isSuperAdmin = false, isAdmin = false }) => 
       }
     });
   } else {
+    if (isLaunchAdmin) {
+      // Disable showing menu items for launch admins
+      return [];
+    }
     const actions = sidebarActionOptions.filter((action) => {
       if (action.project === 'ROAR' || action.project === 'ALL') {
         // If the action requires a permission, check user's permissions.
