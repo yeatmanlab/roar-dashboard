@@ -49,7 +49,7 @@ jobs:
         run: npm ci
 
       - name: Run tests
-        run: VITE_LEVANTE=TRUE npm test
+        run: npm test
 
       - name: Update PR status
         if: github.event_name == 'pull_request'

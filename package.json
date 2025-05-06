@@ -19,7 +19,7 @@
     "postversion": "GIT_REMOTE=$(git remote -v | grep \"yeatmanlab/roar-dashboard.git \\(push\\)\" | cut -f 1) && git push $GIT_REMOTE && git push $GIT_REMOTE --tags",
     "preversion": "npm run lint",
     "preview": "vite preview",
-    "test": "vitest",
+    "test": "vitest --config vitest.config.js",
     "test:watch": "vitest --watch",
     "version": "npm run format && git add -A"
   },
