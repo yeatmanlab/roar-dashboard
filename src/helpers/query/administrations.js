@@ -13,7 +13,7 @@ export function getTitle(item, isSuperAdmin) {
     return item.name;
   } else {
     // Check if publicName exists, otherwise fallback to name
-    return item?.publicName ?? item.name;
+    return item.publicName ?? item.name;
   }
 }
 

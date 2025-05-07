@@ -144,8 +144,6 @@ Cypress.Commands.add('waitForStudentReportList', () => {
     },
     {
       errorMsg: 'Failed to find the score report button before timeout',
-      timeout: 600000,
-      interval: 1000,
     },
   );
 });
@@ -162,8 +160,6 @@ Cypress.Commands.add('waitForPlayAssessmentsBtn', () => {
     },
     {
       errorMsg: 'Failed to find the play assessments button before timeout',
-      timeout: 600000,
-      interval: 1000,
     },
   );
 });

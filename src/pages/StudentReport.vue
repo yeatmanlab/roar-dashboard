@@ -328,9 +328,7 @@ const formattedTasks = computed(() => {
 
 const studentFirstName = computed(() => {
   if (!studentData?.value) return '';
-  // Using == instead of === to catch both undefined and null values
-  if (studentData.value.name?.first == null || studentData.value.name?.first == '') return studentData.value.username;
-  return studentData.value.name.first;
+  return studentData.value.name?.first || studentData.value.username;
 });
 
 const studentLastName = computed(() => {
