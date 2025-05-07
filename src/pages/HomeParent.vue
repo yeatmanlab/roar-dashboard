@@ -1,5 +1,3 @@
-<!-- component for parent view - cards  -->
-
 <template>
   <!-- default to showing students from the first administration -->
   <div class="flex flex-column m-4 gap-2">
@@ -49,16 +47,15 @@
 <script setup>
 import useAdministrationsListQuery from '@/composables/queries/useAdministrationsListQuery';
 import useAdministrationAssignmentsQuery from '@/composables/queries/useAdministrationAssignmentsQuery';
-import { orderByDefault } from '@/helpers/query/utils';
-import { ref, watch, onMounted, onBeforeUnmount } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { pluralizeFirestoreCollection } from '@/helpers';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes.js';
 import { useAuthStore } from '@/store/auth';
-import { storeToRefs } from 'pinia';
 import PvSelectButton from 'primevue/selectbutton';
 import HomeAdministrator from '@/pages/HomeAdministrator.vue';
 import HomeParentStudentView from '@/components/HomeParentStudentView.vue';
+import { orderByDefault } from '@/helpers/query/utils';
 
 const authStore = useAuthStore();
 
@@ -70,15 +67,16 @@ const parentViews = [
 
 const parentRegistrationComplete = ref(false);
 const initialized = ref(false);
-const administrationId = ref(null);
 // TODO: Set this dynamically in cases where this component is used for non-family adminstrators
 const orgType = ref(SINGULAR_ORG_TYPES.FAMILIES);
-const orgId = ref(null);
 
-const orderBy = ref(orderByDefault);
-const { isLoading: isLoadingAdministrations, data: administrations } = useAdministrationsListQuery(orderBy, false, {
-  enabled: initialized,
-});
+const { isLoading: isLoadingAdministrations, data: administrations } = useAdministrationsListQuery(
+  orderByDefault,
+  false,
+  {
+    enabled: initialized,
+  },
+);
 
 let unsubscribeInitializer;
 const init = () => {
@@ -99,13 +97,11 @@ onMounted(async () => {
       initialized.value = true;
     } else {
       parentRegistrationTimer = setInterval(async function () {
-        console.log('calling parentRegistrationTimer');
         // Poll for the preload trials progress bar to exist and then begin the game
         parentRegistrationComplete.value = await authStore.verifyParentRegistration();
         // if parentRegistration has completed, break out of the loop
         if (parentRegistrationComplete.value) {
           initialized.value = true;
-          console.log('parent registration complete');
           clearInterval(parentRegistrationTimer);
         }
       }, 5000);
@@ -119,31 +115,11 @@ onBeforeUnmount(() => {
   }
 });
 
-watch(
-  administrations,
-  (updatedAdministrationsData) => {
-    if (!updatedAdministrationsData) return;
-    // set administrationId, orgType, and orgId to first administration
-    if (updatedAdministrationsData.length > 0) {
-      // sets administrationId from administrationsListQuery, defaulting to the first administration return
-      // ROAR@Home families should only have one administration at most (?)
-      // TODO: Determine a more robust/dynamic method to toggle between administrations
-      administrationId.value = updatedAdministrationsData[0].id;
-    }
-  },
-  { immediate: true },
-);
+const administrationId = computed(() => administrations.value?.[0]?.id ?? null);
 const { data: userClaims } = useUserClaimsQuery();
 
-watch(
-  userClaims,
-  (updatedUserClaims) => {
-    // sets orgId from the user's adminOrgs families array, defaulting to the first family in the collection
-    // TODO: Determine a more robust/dynamic method to return orgId
-    if (!updatedUserClaims) return;
-    orgId.value = updatedUserClaims?.claims?.adminOrgs[pluralizeFirestoreCollection(orgType.value)][0];
-  },
-  { immediate: true },
+const orgId = computed(
+  () => userClaims.value?.claims?.adminOrgs[pluralizeFirestoreCollection(orgType.value)]?.[0] ?? null,
 );
 
 const { isLoading: isLoadingAssignments, data: assignmentData } = useAdministrationAssignmentsQuery(

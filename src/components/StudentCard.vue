@@ -1,5 +1,6 @@
 <template>
   <div class="flex flex-column bg-gray-200 m-4 bg-red-800 card-container rounded">
+    <!-- StudentCard component for displaying individual student information -->
     <!-- User Header -->
     <div class="flex flex-column bg-red-800 text-white p-3 gap-2">
       <div class="font-bold text-2xl">
@@ -121,24 +122,13 @@ const parseDate = (date) => {
 };
 
 const userName = computed(() => {
-  if (user?.name?.first && props.user?.name?.last) {
-    return user?.name?.first + props.user?.name?.last;
-  } else if (user?.name?.first) {
-    return user?.name?.first;
+  const { first, last } = user?.name || {};
+  const { username } = props.assignment?.user || {};
+
+  if (first && last) {
+    return `${first} ${last}`;
   }
-  return props.assignment.user?.username;
+
+  return first || username;
 });
 </script>
-
-<style>
-@media (max-width: 468px) {
-  .card-container {
-    min-width: 300px;
-  }
-}
-@media (min-width: 800px) {
-  .card-container {
-    min-width: 600px;
-  }
-}
-</style>

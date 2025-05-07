@@ -25,7 +25,12 @@
         <div class="text-sm font-light text-gray-800">Please check back later.</div>
       </div>
       <div v-for="assignment in assignmentData" :key="assignment.id" class="flex items-center">
-        <UserCard :assignment="assignment" :org-type="orgType" :org-id="orgId" :administration-id="administrationId" />
+        <StudentCard
+          :assignment="assignment"
+          :org-type="orgType"
+          :org-id="orgId"
+          :administration-id="administrationId"
+        />
       </div>
     </div>
   </div>
@@ -33,7 +38,7 @@
 
 <script setup>
 import AppSpinner from '@/components/AppSpinner.vue';
-import UserCard from '@/components/UserCard.vue';
+import StudentCard from '@/components/StudentCard.vue';
 
 defineOptions({
   name: 'HomeParentStudentView',

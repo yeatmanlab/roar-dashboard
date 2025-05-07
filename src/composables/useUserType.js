@@ -1,6 +1,7 @@
 import { computed } from 'vue';
 import { AUTH_USER_TYPE } from '@/constants/auth';
 import _isEmpty from 'lodash/isEmpty';
+import { UserRoles } from '@bdelab/roar-firekit';
 
 /**
  * Get user type
@@ -24,7 +25,7 @@ export default function useUserType(userClaims) {
       return AUTH_USER_TYPE.SUPER_ADMIN;
     }
 
-    if (claims?.role === 'launch_admin') {
+    if (claims?.role === UserRoles.LAUNCH_ADMIN) {
       return AUTH_USER_TYPE.LAUNCH_ADMIN;
     }
 

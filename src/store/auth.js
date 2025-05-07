@@ -210,11 +210,7 @@ export const useAuthStore = () => {
         );
       },
       async verifyParentRegistration() {
-        console.log('authenticated', this.isAuthenticated, this.roarfirekit.restConfig?.());
-        const x = this.roarfirekit?.verifyParentRegistration();
-        console.log('authstoremethod', this.roarfirekit.verifyParentRegistration);
-        console.log('calling verifyParent Registration', x);
-        return await x;
+        return await this.roarfirekit?.verifyParentRegistration();
       },
 
       // ------------------ LEVANTE ------------------
