@@ -47,11 +47,11 @@
                 show-button-bar
                 data-cy="input-start-date"
               />
-              <label for="start-date">Start Date <span class="required-asterisk">*</span></label>
-              <small v-if="v$.dateStarted.required.$invalid && submitted" class="p-error"
-                >Please select a start date.</small
-              >
+              <label for="start-date">Start Date <span class="required-asterisk">*</span></label> 
             </PvFloatLabel>
+            <small v-if="v$.dateStarted.required.$invalid && submitted" class="p-error">
+              Please select a start date.
+            </small>
           </div>
           <div class="field col-12 md:col-6">
             <PvFloatLabel>
@@ -67,15 +67,17 @@
                 data-cy="input-end-date"
               />
               <label for="end-date">End Date <span class="required-asterisk">*</span></label>
-              <small v-if="v$.dateClosed.required.$invalid && submitted" class="p-error"
-                >Please select an end date.</small
-              >
             </PvFloatLabel>
+            <small v-if="v$.dateClosed.required.$invalid && submitted" class="p-error">
+              Please select an end date.
+            </small>
           </div>
         </div>
 
         <GroupPicker :orgs="orgsList" @selection="selection($event)" />
-
+        <small v-if="submitted && !checkForRequiredOrgs({ districts: state.districts, schools: state.schools, classes: state.classes, groups: state.groups, families: state.families })" class="p-error mb-8">
+          Please select at least one Group (Site, School, Class, or Cohort).
+        </small>
         <PvConfirmDialog group="errors" class="confirm" :draggable="false">
           <template #message>
             <span class="flex flex-column">
@@ -92,11 +94,18 @@
         </PvConfirmDialog>
 
         <TaskPicker
+          class="mt-3"
           :all-variants="variantsByTaskId"
           :input-variants="preSelectedVariants"
           :pre-existing-assessment-info="existingAssessments"
           @variants-changed="handleVariantsChanged"
         />
+        <small v-if="submitted && _isEmpty(variants)" class="p-error mb-3">
+          Please select at least one task variant.
+        </small>
+        <small v-if="submitted && !_isEmpty(variants) && !checkForUniqueTasks(variants)" class="p-error mb-3">
+          Task selections must be unique. Please select different tasks.
+        </small>
 
         <div v-if="!isLevante" class="mt-2 flex w-full">
           <ConsentPicker :legal="state.legal" @consent-selected="handleConsentSelected" />
