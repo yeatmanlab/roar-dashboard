@@ -83,17 +83,10 @@ export const useAuthStore = () => {
              if (!wasAuthenticated && nowAuthenticated) {
                const identifyUser = this.firebaseUser.adminFirebaseUser;
                if (identifyUser) {
-                  console.log('PostHog Identify:', identifyUser.uid);
-                  posthogInstance.identify(
-                    identifyUser.uid,
-                    {
-                      email: identifyUser.email,
-                    }
-                  );
+                  logger.setUser(identifyUser);
                }
              } else if (wasAuthenticated && !nowAuthenticated) {
-               console.log('PostHog Reset');
-               posthogInstance.reset();
+               logger.setUser(null);
              }
              wasAuthenticated = nowAuthenticated;
           }
@@ -111,17 +104,10 @@ export const useAuthStore = () => {
              if (!wasAuthenticated && nowAuthenticated) {
                const identifyUser = this.firebaseUser.appFirebaseUser;
                 if (identifyUser) {
-                  console.log('PostHog Identify:', identifyUser.uid);
-                  posthogInstance.identify(
-                    identifyUser.uid,
-                    {
-                      email: identifyUser.email,
-                    }
-                  );
+                  logger.setUser(identifyUser);
                }
              } else if (wasAuthenticated && !nowAuthenticated) {
-               console.log('PostHog Reset');
-               posthogInstance.reset();
+               logger.setUser(null);
              }
              wasAuthenticated = nowAuthenticated;
            }

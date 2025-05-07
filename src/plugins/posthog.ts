@@ -12,19 +12,19 @@ interface PostHogMock {
   // Add other PostHog methods you might use if needed
 }
 
-const posthogKey = import.meta.env.VITE_POSTHOG_KEY;
-const posthogHost = import.meta.env.VITE_POSTHOG_HOST || 'https://app.posthog.com';
+const posthogKey = 'phc_td8viDO0LP7PZsn7nZrV9bJBYgEMSHE9WeVTlW2CGh5';
+const posthogHost = 'https://us.i.posthog.com';
 
 let posthogInstance: typeof posthog | PostHogMock;
 
-if (import.meta.env.PROD && posthogKey) {
+if (posthogKey) { // Can be later conditioned to environment
   posthog.init(posthogKey, {
     api_host: posthogHost,
     capture_pageview: false, // We will capture pageviews manually using the router
     autocapture: false, // Disable autocapture for now, can be enabled later if needed
   });
   posthogInstance = posthog;
-  console.log('PostHog initialized for production.');
+  console.log('PostHog initialized');
 } else {
   posthogInstance = {
     identify: (...args: unknown[]) => console.info('PostHog Identify:', ...args),
