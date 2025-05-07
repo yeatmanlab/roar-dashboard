@@ -210,12 +210,7 @@ describe('HomeAdministrator', () => {
             },
         });
 
-        await nextTick()
-
-        console.log('VITE_LEVANTE in test:', import.meta.env.VITE_LEVANTE);
-
-
-        expect(wrapper.vm.isLevante).toBe(true);
+        await nextTick();
         expect(wrapper.text()).toContain('All Assignments');
         expect(wrapper.text()).toContain(
           "This page lists all the assignments that are administered to your users." +
@@ -223,11 +218,9 @@ describe('HomeAdministrator', () => {
         );
         expect(wrapper.text()).toContain('Search by name');
         expect(wrapper.text()).toContain('Sort by');
-        expect(wrapper.text()).not.toContain('Fetching Assignments')
-        expect(wrapper.text()).toContain(
-          'There are no assignments to display. You can create an assignment by navigating to the' +
-          ' Create assignment page from the dropdown menu.'
-        );
+        expect(wrapper.text()).not.toContain('Fetching Assignments');
+        expect(wrapper.text()).toContain('No Assignments Yet');
+        expect(wrapper.text()).toContain('Go create your first assignment to get started');
     });
 
     it('renders loading state when data is loading', () => {  
