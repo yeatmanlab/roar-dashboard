@@ -78,20 +78,19 @@
         <small v-if="submitted && !checkForRequiredOrgs({ districts: state.districts, schools: state.schools, classes: state.classes, groups: state.groups, families: state.families })" class="p-error mb-8">
           Please select at least one Group (Site, School, Class, or Cohort).
         </small>
-        <PvConfirmDialog group="errors" class="confirm" :draggable="false">
-          <template #message>
-            <span class="flex flex-column">
-              <span v-if="nonUniqueTasks.length > 0" class="flex flex-column">
-                <span>Task selections must be unique.</span>
-                <span class="mt-2">The following tasks are not unique:</span>
-                <span class="mt-2 font-bold">{{ nonUniqueTasks.join(', ') }}</span>
-              </span>
-              <span v-else>
-                <span>No variants selected. You must select at least one variant to be assigned.</span>
-              </span>
-            </span>
+
+        <PvDialog v-model:visible="showError" :modal="true" :closable="true" :draggable="false" class="confirm">
+          <template #header>
+            <h3>{{ errorHeader }}</h3>
           </template>
-        </PvConfirmDialog>
+          <span class="flex flex-column">
+            <span>{{ errorMessage }}</span>
+            <span v-if="nonUniqueTasks.length > 0" class="mt-2 font-bold">{{ nonUniqueTasks.join(', ') }}</span>
+          </span>
+          <template #footer>
+            <PvButton label="Close" icon="pi pi-times" @click="showError = false" class="p-button-text" />
+          </template>
+        </PvDialog>
 
         <TaskPicker
           class="mt-3"
@@ -165,12 +164,11 @@ import { computed, onMounted, reactive, ref, toRaw, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useToast } from 'primevue/usetoast';
-import { useConfirm } from 'primevue/useconfirm';
 import PvFloatLabel from 'primevue/floatlabel';
 import PvButton from 'primevue/button';
 import PvDatePicker from 'primevue/datepicker';
 import PvCheckbox from 'primevue/checkbox';
-import PvConfirmDialog from 'primevue/confirmdialog';
+import PvDialog from 'primevue/dialog';
 import PvDivider from 'primevue/divider';
 import PvInputText from 'primevue/inputtext';
 import PvRadioButton from 'primevue/radiobutton';
@@ -206,7 +204,6 @@ import { useQueryClient } from '@tanstack/vue-query';
 const initialized = ref(false);
 const router = useRouter();
 const toast = useToast();
-const confirm = useConfirm();
 const queryClient = useQueryClient();
 
 const { mutate: upsertAdministration, isPending: isSubmitting } = useUpsertAdministrationMutation();
@@ -434,22 +431,52 @@ const removeUndefined = (obj) => {
   return Object.fromEntries(Object.entries(obj).filter(([_, v]) => v !== undefined));
 };
 
+const errorMessage = ref('');
+const showError = ref(false);
+const errorHeader = ref('');
+
 const submit = async () => {
   console.log('Submit function called');
   submitted.value = true;
 
   // Set publicName automatically based on administrationName
   state.administrationPublicName = state.administrationName;
-  console.log('Set administrationPublicName:', state.administrationPublicName); // <-- Log for confirmation
+  console.log('Set administrationPublicName:', state.administrationPublicName);
 
-  console.log('Validating form...');
-  const isFormValid = await v$.value.$validate();
-  console.log('Form validation result:', isFormValid);
-  if (!isFormValid) {
-    console.log('Form validation failed, exiting submit.');
+  // First check dates
+  if (!state.dateStarted || !state.dateClosed) {
+    if (!state.dateStarted) {
+      errorMessage.value = 'Please select a start date';
+      errorHeader.value = 'Required Field Missing';
+    } else {
+      errorMessage.value = 'Please select an end date';
+      errorHeader.value = 'Required Field Missing';
+    }
+    showError.value = true;
     return;
   }
 
+  // Then check groups
+  const orgs = {
+    districts: toRaw(state.districts).map((org) => org.id),
+    schools: toRaw(state.schools).map((org) => org.id),
+    classes: toRaw(state.classes).map((org) => org.id),
+    groups: toRaw(state.groups).map((org) => org.id),
+    families: toRaw(state.families).map((org) => org.id),
+  };
+
+  console.log('Checking required orgs...', orgs);
+  const orgsValid = checkForRequiredOrgs(orgs);
+  console.log('Orgs valid result:', orgsValid);
+  if (!orgsValid) {
+    console.log('Org check failed, showing dialog.');
+    errorMessage.value = 'Please select at least one Group (Site, School, Class, or Cohort).';
+    errorHeader.value = 'Missing Selection';
+    showError.value = true;
+    return;
+  }
+
+  // Then check tasks
   const submittedAssessments = variants.value.map((assessment) =>
     removeUndefined({
       variantId: assessment.variant.id,
@@ -466,35 +493,21 @@ const submit = async () => {
   if (!tasksUnique || _isEmpty(submittedAssessments)) {
     console.log('Task check failed (not unique or empty), showing dialog.');
     getNonUniqueTasks(submittedAssessments);
-    confirm.require({
-      group: 'errors',
-      header: 'Task Selections',
-      icon: 'pi pi-question-circle',
-      acceptLabel: 'Close',
-      acceptIcon: 'pi pi-times',
-    });
+    if (_isEmpty(submittedAssessments)) {
+      errorMessage.value = 'No variants selected. You must select at least one variant to be assigned.';
+    } else {
+      errorMessage.value = 'Task selections must be unique.';
+    }
+    errorHeader.value = 'Task Selections';
+    showError.value = true;
     return;
   }
 
-  const orgs = {
-    districts: toRaw(state.districts).map((org) => org.id),
-    schools: toRaw(state.schools).map((org) => org.id),
-    classes: toRaw(state.classes).map((org) => org.id),
-    groups: toRaw(state.groups).map((org) => org.id),
-    families: toRaw(state.families).map((org) => org.id),
-  };
-
-  console.log('Checking required orgs...', orgs);
-  const orgsValid = checkForRequiredOrgs(orgs);
-  console.log('Orgs valid result:', orgsValid);
-  if (!orgsValid) {
-    console.log('Org check failed, exiting submit.');
-    toast.add({ 
-      severity: TOAST_SEVERITIES.WARN, 
-      summary: 'Missing Selection', 
-      detail: 'Please select at least one Group (Site, School, Class, or Cohort).', 
-      life: TOAST_DEFAULT_LIFE_DURATION 
-    });
+  // Finally check sequential
+  if (v$.value.sequential.$invalid) {
+    errorMessage.value = 'Please specify whether tasks should be completed sequentially or not';
+    errorHeader.value = 'Required Field Missing';
+    showError.value = true;
     return;
   }
 
@@ -662,6 +675,15 @@ watch([existingAdministrationData, allVariants], ([adminInfo, allVariantInfo]) =
 
 .confirm .p-dialog-header-close {
   display: none !important;
+}
+
+.confirm .p-dialog-footer {
+  display: flex;
+  justify-content: center;
+}
+
+.confirm .p-dialog-footer .p-button {
+  min-width: 100px;
 }
 
 #rectangle {
