@@ -200,6 +200,12 @@ const columns = ref([
     sort: false,
   },
   {
+    field: 'studentData.state_id',
+    header: 'State Id',
+    dataType: 'string',
+    sort: false,
+  },
+  {
     field: 'studentData.grade',
     header: 'Grade',
     dataType: 'string',
