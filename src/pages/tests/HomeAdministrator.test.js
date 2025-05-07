@@ -212,6 +212,9 @@ describe('HomeAdministrator', () => {
 
         await nextTick()
 
+        console.log('VITE_LEVANTE in test:', import.meta.env.VITE_LEVANTE);
+
+
         expect(wrapper.vm.isLevante).toBe(true);
         expect(wrapper.text()).toContain('All Assignments');
         expect(wrapper.text()).toContain(

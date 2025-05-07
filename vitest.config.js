@@ -10,8 +10,6 @@ import viteConfig from './vite.config';
 
 const isCI = process.env.CI === 'true';
 
-console.log('>>> VITE_LEVANTE in config:', process.env.VITE_LEVANTE);
-
 export default mergeConfig(
   viteConfig,
   defineConfig({
