@@ -1,0 +1,73 @@
+[
+<template>
+  <div class="text-2xl font-bold text-gray-600">
+    <div
+      v-if="isLoadingAssignments || isLoadingAdministrations"
+      class="flex flex-column items-center justify-content-center w-full text-center"
+    >
+      <div>
+        <AppSpinner class="mb-4" />
+      </div>
+      <div class="w-64 text-lg font-light">Loading Assignments</div>
+    </div>
+    <div
+      v-else-if="!parentRegistrationComplete"
+      class="flex flex-column items-center justify-content-center w-full text-center"
+    >
+      <div>
+        <AppSpinner class="mb-4" />
+      </div>
+      <div class="w-64 text-lg font-light">Administration enrollment in progress</div>
+    </div>
+    <div class="flex flex-row align-items-center justify-content-center w-full flex-wrap">
+      <div v-if="!isLoadingAssignments && !isLoadingAdministrations && assignmentData?.length == 0">
+        <div class="text-lg font-bold text-gray-600">No assignments available</div>
+        <div class="text-sm font-light text-gray-800">Please check back later.</div>
+      </div>
+      <div v-for="assignment in assignmentData" :key="assignment.id" class="flex items-center">
+        <UserCard :assignment="assignment" :org-type="orgType" :org-id="orgId" :administration-id="administrationId" />
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import AppSpinner from '@/components/AppSpinner.vue';
+import UserCard from '@/components/UserCard.vue';
+
+defineOptions({
+  name: 'HomeParentStudentView',
+});
+
+defineProps({
+  isLoadingAssignments: {
+    type: Boolean,
+    required: true,
+  },
+  isLoadingAdministrations: {
+    type: Boolean,
+    required: true,
+  },
+  parentRegistrationComplete: {
+    type: Boolean,
+    required: true,
+  },
+  assignmentData: {
+    type: Array,
+    required: true,
+  },
+  orgType: {
+    type: String,
+    required: true,
+  },
+  orgId: {
+    type: String,
+    required: true,
+  },
+  administrationId: {
+    type: String,
+    required: true,
+  },
+});
+</script>
+]]>

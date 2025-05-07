@@ -2,63 +2,71 @@
 
 <template>
   <!-- default to showing students from the first administration -->
-
   <div class="flex flex-column m-4 gap-2">
-    <div class="flex flex-column">
-      <div class="text-2xl font-bold text-gray-600">Parent Dashboard</div>
-      <div class="text-sm font-light text-gray-800">Manage your children and view their assessments.</div>
+    <div class="flex align-items-center justify-content-between p-4">
+      <div class="flex flex-column">
+        <div class="text-2xl font-bold text-gray-600">Parent Dashboard</div>
+        <div class="text-sm font-light text-gray-800">Manage your children and view their assessments.</div>
+      </div>
+
+      <div class="flex flex-row align-items-center gap-4">
+        <div class="uppercase text-sm text-gray-600 flex flex-row">VIEW BY</div>
+        <PvSelectButton
+          v-model="parentView"
+          :options="parentViews"
+          option-disabled="constant"
+          :allow-empty="false"
+          option-label="name"
+          class="flex my-2 select-button"
+          @change="handleViewChange"
+        >
+        </PvSelectButton>
+      </div>
     </div>
-    <div class="text-2xl font-bold text-gray-600">
-      <div
-        v-if="isLoadingAssignments || isLoadingAdministrations"
-        class="flex flex-column items-center justify-content-center w-full text-center"
-      >
-        <div>
-          <AppSpinner class="mb-4" />
-        </div>
-        <div class="w-64 text-lg font-light">Loading Assignments</div>
-      </div>
-      <div
-        v-else-if="!parentRegistrationComplete"
-        class="flex flex-column items-center justify-content-center w-full text-center"
-      >
-        <div>
-          <AppSpinner class="mb-4" />
-        </div>
-        <div class="w-64 text-lg font-light">Administration enrollment in progress</div>
-      </div>
-      <div class="flex flex-row align-items-center justify-content-center w-full flex-wrap">
-        <div v-if="assignmentData?.length == 0">
-          <div class="text-lg font-bold text-gray-600">No assignments available</div>
-          <div class="text-sm font-light text-gray-800">Please check back later.</div>
-        </div>
-        <div v-for="assignment in assignmentData" :key="assignment.id" class="flex items-center">
-          <UserCard
-            :assignment="assignment"
-            :org-type="orgType"
-            :org-id="orgId"
-            :administration-id="administrationId"
-          />
-        </div>
-      </div>
+    <HomeParentStudentView
+      v-if="parentView.name === 'Student'"
+      :is-loading-assignments="isLoadingAssignments"
+      :is-loading-administrations="isLoadingAdministrations"
+      :parent-registration-complete="parentRegistrationComplete"
+      :assignment-data="assignmentData || []"
+      :org-type="orgType"
+      :org-id="orgId"
+      :administration-id="administrationId"
+    />
+    <div v-else class="home-administrator-wrapper">
+      <HomeAdministrator />
     </div>
   </div>
 </template>
+
+<style scoped>
+.home-administrator-wrapper :deep(.main) {
+  padding: 0;
+  width: 90vw;
+}
+</style>
 
 <script setup>
 import useAdministrationsListQuery from '@/composables/queries/useAdministrationsListQuery';
 import useAdministrationAssignmentsQuery from '@/composables/queries/useAdministrationAssignmentsQuery';
 import { orderByDefault } from '@/helpers/query/utils';
 import { ref, watch, onMounted, onBeforeUnmount } from 'vue';
-import UserCard from '@/components/UserCard.vue';
 import { pluralizeFirestoreCollection } from '@/helpers';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes.js';
 import { useAuthStore } from '@/store/auth';
 import { storeToRefs } from 'pinia';
+import PvSelectButton from 'primevue/selectbutton';
+import HomeAdministrator from '@/pages/HomeAdministrator.vue';
+import HomeParentStudentView from '@/components/HomeParentStudentView.vue';
 
 const authStore = useAuthStore();
-const { roarfirekit } = storeToRefs(authStore);
+
+const parentView = ref({ name: 'Student', constant: false });
+const parentViews = [
+  { name: 'Student', constant: false },
+  { name: 'Administration', constant: false },
+];
 
 const parentRegistrationComplete = ref(false);
 const initialized = ref(false);
