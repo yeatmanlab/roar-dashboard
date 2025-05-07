@@ -932,7 +932,6 @@ const createExportData = ({ rows, includeProgress = false }) => {
 
     // if org is from clever, include stateId
     // if (orgData.value?.clever === true) {
-    console.log('user', user.stateId);
     tableRow['State Id'] = user.stateId;
     // }
 
