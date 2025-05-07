@@ -1,7 +1,13 @@
 import posthogInstance from '@/plugins/posthog';
 import * as Sentry from '@sentry/vue';
+// Get package info
+import packageJson from '../package.json';
 
 const isProduction = import.meta.env.VITE_FIREBASE_PROJECT==='PROD';
+// Get app and core-tasks versions
+const appVersion = packageJson.version;
+const coreTasksVersion = packageJson.dependencies['@levante-framework/core-tasks'].replace('^', '');
+const commitHash = import.meta.env.VITE_APP_VERSION;
 
 interface UserData {
   uid: string;
@@ -19,13 +25,19 @@ interface UserData {
  * @param properties - Optional properties associated with the event.
  */
 function capture(name: string, properties?: Record<string, any>, force: boolean = false): void {
+  const extra = {
+    appVersion,
+    coreTasksVersion,
+    commitHash,
+    ...properties
+  };
   if (isProduction || force) {
     // Assuming posthogInstance might be the mock object in dev, check for capture existence
     if (typeof posthogInstance.capture === 'function') {
-      posthogInstance.capture(name, properties);
+      posthogInstance.capture(name, extra);
     }
   } else {
-    console.info('[Logger Event]', name, properties ?? '');
+    console.info('[Logger Event]', name, extra ?? '');
   }
 }
 
@@ -38,10 +50,16 @@ function capture(name: string, properties?: Record<string, any>, force: boolean 
  * @param context - Optional additional context for Sentry.
  */
 function error(error: Error | unknown, context?: Record<string, any>, force: boolean = false): void {
+  const extra = {
+    appVersion,
+    coreTasksVersion,
+    commitHash,
+    ...context
+  };
   if (isProduction || force) {
-    Sentry.captureException(error, { extra: context });
+    Sentry.captureException(error, { extra });
   } else {
-    console.error('[Logger Error]', error, context ?? '');
+    console.error('[Logger Error]', error, extra ?? '');
   }
 }
 
