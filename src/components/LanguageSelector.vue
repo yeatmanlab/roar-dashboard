@@ -49,11 +49,11 @@ const languageDropdownOptions = computed(() => {
 });
 
 async function onLanguageChange(event) {
-  sessionStorage.setItem(`${isLevante() ? 'levante' : 'roar'}PlatformLocale`, event.value);
+  sessionStorage.setItem(`${isLevante ? 'levante' : 'roar'}PlatformLocale`, event.value);
 
   console.log('event', event.value);
 
-  if (isLevante() && surveyStore.survey) {
+  if (isLevante && surveyStore.survey) {
     console.log('setting survey locale');
     surveyStore.survey.locale = event.value;
     await setupStudentAudio(surveyStore.survey, event.value, surveyStore.audioLinkMap, surveyStore);

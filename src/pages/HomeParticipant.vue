@@ -190,7 +190,7 @@ const {
 });
 
 const { data: surveyResponsesData } = useSurveyResponsesQuery({
-  enabled: isLevante() && initialized,
+  enabled: isLevante && initialized,
 });
 
 const isLoading = computed(() => {
@@ -212,7 +212,7 @@ async function checkConsent() {
   const legal = selectedAdmin.value?.legal;
   if (!legal) return;
 
-  if (!isLevante()) {
+  if (!isLevante) {
     const dob = new Date(userData.value?.studentData.dob);
     const grade = userData.value?.studentData.grade;
     const currentDate = new Date();
@@ -361,7 +361,7 @@ const assessments = computed(() => {
       undefined,
     );
 
-    if (isLevante()) {
+    if (isLevante) {
       // Mark the survey as complete as if it was a task
       if (userType.value === 'student') {
         if (surveyStore.isGeneralSurveyComplete) {
@@ -419,7 +419,7 @@ let completeGames = computed(() => {
 
 // Set up studentInfo for sidebar
 const studentInfo = computed(() => {
-  if (isLevante()) {
+  if (isLevante) {
     return {};
   }
   return {
@@ -487,7 +487,7 @@ const {  data: surveyData } = useQuery({
       };
     }
   },
-  enabled: isLevante() && userData?.value?.userType !== 'admin' && initialized,
+  enabled: isLevante && userData?.value?.userType !== 'admin' && initialized,
   staleTime: 24 * 60 * 60 * 1000, // 24 hours
 });
 

@@ -904,7 +904,7 @@ export const assignmentPageFetcher = async (
         });
 
       let batchSurveyDocs = [];
-      if (isLevante()) {
+      if (isLevante) {
         console.log('adminId: ', adminId);
         // Batch get survey response docs
         batchSurveyDocs = await Promise.all(
@@ -947,7 +947,7 @@ export const assignmentPageFetcher = async (
       // Merge assignments, users, and survey data
       const scoresObj = assignmentData.map((assignment, index) => {
         const user = batchUserDocs.find((userDoc) => userDoc.name.includes(assignment.parentDoc));
-        const surveyResponse = (isLevante()) ? batchSurveyDocs[index] : null;
+        const surveyResponse = isLevante ? batchSurveyDocs[index] : null;
 
         let progress = 'assigned';
         if (surveyResponse) {
@@ -973,7 +973,7 @@ export const assignmentPageFetcher = async (
           assignment,
           user: user.data,
           roarUid: user.name.split('/users/')[1],
-          ...(isLevante() && {
+          ...(isLevante && {
             survey: {
               progress,
               ...surveyResponse

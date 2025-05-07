@@ -283,7 +283,7 @@ export const router = createRouter({
 
 router.beforeEach(async (to, from, next) => {
   // Don't allow routing to LEVANTE pages if not in LEVANTE instance
-  if (!isLevante() && to.meta?.project === 'LEVANTE') {
+  if (!isLevante && to.meta?.project === 'LEVANTE') {
     next({ name: 'Home' });
     // next function can only be called once per route
     return;
@@ -341,7 +341,7 @@ router.beforeEach(async (to, from, next) => {
     // LEVANTE dashboard has opened some pages to administrators before the ROAR dashboard
     // So if isLevante, then allow regular admins to access any route with requireAdmin = true.
     // and if ROAR, then prohibit regular admins from accessing any route with requireSuperAdmin = true.
-    if (isLevante() && requiresAdmin) {
+    if (isLevante && requiresAdmin) {
       next();
       return;
     } else if (requiresSuperAdmin) {

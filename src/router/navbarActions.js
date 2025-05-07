@@ -93,7 +93,7 @@ const navbarActionOptions = [
 
 export const getNavbarActions = ({ isSuperAdmin = false, isAdmin = false }) => {
   // TODO: Remove ROAR logic 
-  if (isLevante()) {
+  if (isLevante) {
     return navbarActionOptions.filter((action) => {
       if (action.project === 'LEVANTE' || action.project === 'ALL') {
         // If the action requires admin and the user is an admin, or if the action

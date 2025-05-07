@@ -27,7 +27,7 @@
     <div class="flex justify-content-center mt-2">
       <PvCheckbox v-model="noConsent" :binary="true" input-id="no-consent" class="flex" value="noConsent" />
       <label class="ml-2 flex text-center" for="no-consent"
-        >This administration does not require consent {{ isLevante() ? '' : 'or assent' }} forms</label
+        >This administration does not require consent {{ isLevante ? '' : 'or assent' }} forms</label
       >
     </div>
     <div class="flex flex-row">
@@ -168,7 +168,7 @@
           :placeholder="props.legal?.consent[0]?.fileName || 'Select a Consent Form'"
           @change="updateConsent"
         />
-        <div v-if="!isLevante()">
+        <div v-if="!isLevante">
           <h3 class="pt-3">Select an Assent Form</h3>
           <PvSelect
             v-model="selectedAssent"
@@ -205,7 +205,7 @@
               <div style="width: 80%">
                 <p class="m-0">
                   <span class="font-bold">Name: </span>{{ result.consent[0]?.fileName }} <br />
-                  <div v-if="!isLevante()">
+                  <div v-if="!isLevante">
                     <span class="font-bold">Current Commit: </span>{{ result.consent[0]?.currentCommit }}
                     <br />
                     <span class="font-bold">GitHub Org: </span>{{ result.consent[0]?.gitHubOrg }} <br />
@@ -229,7 +229,7 @@
           </div>
         </div>
         <div class="w-full mt-2">
-          <div v-if="!isLevante()">
+          <div v-if="!isLevante">
             <PvFieldset v-if="consents && consents.length > 0" legend="Assent">
               <div class="flex flex-row w-full">
                 <div style="width: 80%">

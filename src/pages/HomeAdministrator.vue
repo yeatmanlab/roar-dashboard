@@ -108,7 +108,7 @@
               <template #empty>
                 <div>
                   {{
-                    isLevante()
+                    isLevante
                       ? 'There are no assignments to display. You can create an assignment by navigating to the' +
                         ' Create assignment page from the dropdown menu.'
                       : 'There are no assignments to display. Please contact a lab administrator to add you as an admin' +

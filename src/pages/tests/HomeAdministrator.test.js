@@ -212,7 +212,7 @@ describe('HomeAdministrator', () => {
 
         await nextTick()
 
-        expect(wrapper.vm.isLevante()).toBe(true);
+        expect(wrapper.vm.isLevante).toBe(true);
         expect(wrapper.text()).toContain('All Assignments');
         expect(wrapper.text()).toContain(
           "This page lists all the assignments that are administered to your users." +

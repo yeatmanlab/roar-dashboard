@@ -9,7 +9,7 @@
           <PvImage src="/LEVANTE/Levante_Logo.png" alt="LEVANTE Logo" width="200" />
         </div>
       </header>
-      <h1 v-if="!(isLevante())">{{ $t('pageSignIn.welcome') }}</h1>
+      <h1 v-if="!isLevante">{{ $t('pageSignIn.welcome') }}</h1>
       <section class="signin-options">
         <section class="signin-option-container signin-option-userpass">
           <h4 class="signin-option-title">{{ $t('pageSignIn.login') }}</h4>
@@ -18,7 +18,7 @@
           </div>
           <SignIn :invalid="incorrect" @submit="authWithEmail" @update:email="email = $event" />
         </section>
-        <section v-if="isLevante()" class="w-full mb-2">
+        <section v-if="isLevante" class="w-full mb-2">
           <!-- <p class="text-center m-auto">
             Are you an Admin? Click
             <span class="underline text-red-700 cursor-pointer" @click="toggleAdminSignIn">Here</span> to Sign In
@@ -31,7 +31,7 @@
             </template>
           </i18n-t>
         </section>
-        <section v-if="adminSignIn || !isLevante()" class="flex flex-column w-full">
+        <section v-if="adminSignIn || !isLevante" class="flex flex-column w-full">
           <h4 class="flex mb-3 mt-1 align-content-center justify-content-center flex-wrap-reverse font-bold text-md text-500">
             {{ $t('pageSignIn.loginWith') }}
           </h4>
@@ -46,7 +46,7 @@
               <span>Google</span>
             </PvButton>
             <PvButton
-              v-if="!isLevante()"
+              v-if="!isLevante"
               class="flex surface-0 p-1 mr-1 border-black-alpha-10 w-full justify-content-center hover:border-primary hover:surface-ground"
               style="border-radius: 3rem; height: 3rem"
               @click="authWithClever"
@@ -54,7 +54,7 @@
               <span>Clever</span>
             </PvButton>
             <PvButton
-              v-if="!isLevante()"
+              v-if="!isLevante"
               class="flex surface-0 p-1 mr-1 border-black-alpha-10 w-full justify-content-center hover:border-primary hover:surface-ground"
               style="border-radius: 3rem; height: 3rem"
               @click="authWithClassLink"
@@ -103,7 +103,7 @@
         </div>
         <div v-if="signInMethods.includes(AUTH_SSO_PROVIDERS.CLEVER)">
           <PvButton
-            v-if="!isLevante()"
+            v-if="!isLevante"
             class="flex surface-0 p-1 mr-1 border-black-alpha-10 justify-content-center hover:border-primary hover:surface-ground"
             style="border-radius: 3rem; height: 3rem"
             @click="authWithClever"
@@ -113,7 +113,7 @@
         </div>
         <div v-if="signInMethods.includes(AUTH_SSO_PROVIDERS.CLASSLINK)">
           <PvButton
-            v-if="!isLevante()"
+            v-if="!isLevante"
             class="flex surface-0 p-1 mr-1 border-black-alpha-10 justify-content-center hover:border-primary hover:surface-ground"
             style="border-radius: 3rem; height: 3rem"
             @click="authWithClassLink"

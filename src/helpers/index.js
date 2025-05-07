@@ -4,7 +4,7 @@ import _invert from 'lodash/invert';
 import _toPairs from 'lodash/toPairs';
 import * as Papa from 'papaparse';
 
-export const isLevante = () => import.meta.env.VITE_LEVANTE === 'TRUE';
+export const isLevante = import.meta.env.VITE_LEVANTE === 'TRUE';
 
 export const isMobileBrowser = () => {
   const userAgent = navigator.userAgent || navigator.vendor || window.opera;

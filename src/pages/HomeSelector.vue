@@ -107,7 +107,7 @@ async function updateConsent() {
 }
 
 async function checkConsent() {
-  if (isLevante() || !isAdminUser.value) return;
+  if (isLevante || !isAdminUser.value) return;
 
   const consentStatus = userData.value?.legal?.[consentType.value];
   const consentDoc = await authStore.getLegalDoc(consentType.value);

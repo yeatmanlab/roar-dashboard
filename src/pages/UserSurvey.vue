@@ -21,7 +21,7 @@ const context = new AudioContext();
 onBeforeRouteLeave((to, from) => {
   const surveyStore = useSurveyStore();
   
-  if (isLevante() && surveyStore.currentSurveyAudioSource) {
+  if (isLevante && surveyStore.currentSurveyAudioSource) {
         surveyStore.currentSurveyAudioSource.stop();
     }
   }

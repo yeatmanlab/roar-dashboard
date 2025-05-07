@@ -98,7 +98,7 @@
           @variants-changed="handleVariantsChanged"
         />
 
-        <div v-if="!isLevante()" class="mt-2 flex w-full">
+        <div v-if="!isLevante" class="mt-2 flex w-full">
           <ConsentPicker :legal="state.legal" @consent-selected="handleConsentSelected" />
           <small v-if="submitted && v$.consent.$invalid && v$.consent.$invalid" class="p-error mt-2"
             >Please select a consent/assent form.</small
@@ -127,7 +127,7 @@
             <small v-if="v$.sequential.$invalid && submitted" class="p-error mt-2"
                 >Please specify sequential behavior.</small
               >
-            <div v-if="!isLevante()" class="mt-2 mb-2">
+            <div v-if="!isLevante" class="mt-2 mb-2">
               <PvCheckbox v-model="isTestData" :binary="true" data-cy="checkbutton-test-data" input-id="isTestData" />
               <label for="isTestData" class="ml-2">Mark As <b>Test Administration</b></label>
             </div>
@@ -323,8 +323,8 @@ const rules = {
   dateStarted: { required },
   dateClosed: { required },
   sequential: { required },
-  consent: { requiredIf: requiredIf(!isLevante() && noConsent.value === '') },
-  assent: { requiredIf: requiredIf(!isLevante() && noConsent.value === '') },
+  consent: { requiredIf: requiredIf(!isLevante && noConsent.value === '') },
+  assent: { requiredIf: requiredIf(!isLevante && noConsent.value === '') },
 };
 
 const v$ = useVuelidate(rules, state);
