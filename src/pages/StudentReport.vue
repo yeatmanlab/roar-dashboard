@@ -109,7 +109,27 @@
       >
         <PvAccordionTab :header="$t('scoreReports.taskTabHeader')">
           <div class="flex flex-column align-items-center text-lg">
-            <img v-if="!(studentData?.studentData?.grade >= 6)" src="../assets/support-distribution.png" width="650" />
+            <img
+              v-if="!(studentData?.studentData?.grade >= 6)"
+              src="../assets/support-distribution.png"
+              alt="Image showing a graph of score distribution from the ROAR
+              reading assessment, plotted as a canonical normal distribution
+              curve. The x-axis is labeled 'Percentile (compared to other
+              students who have taken the ROAR),' while the y-axis is unlabeled.
+              Below the distribution curve, there is a note categorizing
+              students' performance: 'Students below the 25th percentile need
+              extra support with this skill. Compared to students who have taken
+              the ROAR, their scores are much lower than most students in their
+              grade. Students between the 25th and 50th percentile are still
+              developing this skill. Compared to students who have taken the
+              ROAR, their scores are lower than the average student in their
+              grade. Students above the 50th percentile have achieved this
+              skill. Compared to students who have taken the ROAR, their scores
+              are at or above the average score for students in their grade.'
+              This illustrates the range of student scores and defines three
+              support categories."
+              width="650"
+            />
             <div class="text-xl font-bold mt-2">{{ $t('scoreReports.taskIntro') }}</div>
             <ul>
               <i18n-t keypath="scoreReports.standardScoreDescription" tag="li">
