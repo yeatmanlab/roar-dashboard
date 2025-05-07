@@ -40,11 +40,11 @@
       <div class="flex flex-column gap-4 lg:align-items-center">
         <PvButton
           v-tooltip="
-            userCan(Permissions.Tasks.MANAGE)
+            userCan(Permissions.Tasks.UPDATE)
               ? false
               : 'You do not have permission to update tasks. If you feel this is a mistake, please contact your administrator.'
           "
-          :disabled="!userCan(Permissions.Tasks.MANAGE)"
+          :disabled="!userCan(Permissions.Tasks.UPDATE)"
           type="submit"
           label="Update Task"
           class="self-center w-full lg:w-4 bg-primary align-right text-white border-none border-round p-3 hover:bg-red-900"
