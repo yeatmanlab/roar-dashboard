@@ -638,6 +638,7 @@ const computeAssignmentAndRunData = computed(() => {
           grade: grade,
           assessmentPid: user.assessmentPid,
           schoolName: schoolName,
+          stateId: user.studentData?.state_id,
         },
         tooltip: `View ${firstNameOrUsername}'s Score Report`,
         launchTooltip: `View assessment portal for ${firstNameOrUsername}`,
@@ -919,6 +920,7 @@ const createExportData = ({ rows, includeProgress = false }) => {
       First: user?.firstName,
       Last: user?.lastName,
       Grade: user?.grade,
+      state: user?.stateId,
     };
 
     if (authStore.isUserSuperAdmin) {
@@ -928,6 +930,11 @@ const createExportData = ({ rows, includeProgress = false }) => {
     if (props.orgType === 'district') {
       tableRow['School'] = user?.schoolName;
     }
+
+    // if org is from clever, include stateId
+    // if (orgData.value?.clever === true) {
+    tableRow['State Id'] = user.stateId;
+    // }
 
     for (const taskId in scores) {
       const score = scores[taskId];
@@ -1042,6 +1049,10 @@ const exportData = async ({ selectedRows = null, includeProgress = false }) => {
 
   // Define the static columns
   const staticColumns = ['Username', 'Email', 'First', 'Last', 'Grade', 'PID', 'School'];
+
+  if (orgData.value?.clever === true) {
+    staticColumns.push('State Id');
+  }
 
   // Automatically detect task names by splitting column names and excluding static columns
   const taskBases = Array.from(
@@ -1253,6 +1264,14 @@ const scoreReportColumns = computed(() => {
       headerStyle: `background:var(--primary-color); color:white; padding-top:0; margin-top:0; padding-bottom:0; margin-bottom:0; border:0; margin-left:0; border-right-width:2px; border-right-style:solid; border-right-color:#ffffff;`,
     });
   }
+
+  tableColumns.push({
+    field: 'user.stateId',
+    header: 'State Id',
+    dataType: 'text',
+    sort: false,
+    headerStyle: `background:var(--primary-color); color:white; padding-top:0; margin-top:0; padding-bottom:0; margin-bottom:0; border:0; margin-left:0; border-right-width:2px; border-right-style:solid; border-right-color:#ffffff;`,
+  });
 
   const isAdministrationOpen = administrationData.value?.dateClosed
     ? new Date(administrationData.value?.dateClosed) > new Date()
