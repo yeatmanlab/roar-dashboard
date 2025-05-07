@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
+import Button from 'primevue/button';
 // Using non-type-checked import to bypass TS error
 // @ts-ignore
 import { useAuthStore } from '@/store/auth';

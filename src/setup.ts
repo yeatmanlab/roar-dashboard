@@ -4,8 +4,12 @@ import { initSentry } from '@/sentry';
 import PvTooltip from 'primevue/tooltip';
 import App from '@/App.vue';
 import AppSpinner from '@/components/AppSpinner.vue';
+import plugins from './plugins';
 import { PostHogPlugin } from './plugins/posthog';
 import './styles.css';
+
+type PluginWithOptions = [Plugin, Record<string, any>];
+type PluginOrPluginWithOptions = Plugin | PluginWithOptions;
 
 /**
  * Create Vue App
@@ -16,13 +20,13 @@ export const createAppInstance = (): VueApp<Element> => {
   const app = createApp(App);
 
   // Register all app plugins.
-  // plugins.forEach((plugin: Plugin | [Plugin, ...any[]]) => {
-  //   if (Array.isArray(plugin)) {
-  //     app.use(...plugin);
-  //   } else {
-  //     app.use(plugin);
-  //   }
-  // });
+  (plugins as (Plugin | [Plugin, any])[]).forEach((plugin) => {
+    if (Array.isArray(plugin)) {
+      app.use(...plugin);
+    } else {
+      app.use(plugin);
+    }
+  });
 
   // Register plugins.
   app.use(PostHogPlugin);
