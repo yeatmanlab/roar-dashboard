@@ -415,7 +415,7 @@
       </section>
 
       <PvButton
-        :disabled="!userCan(Permissions.Tasks.MANAGE)"
+        :disabled="!userCan(Permissions.Tasks.UPDATE)"
         type="submit"
         class="my-4 bg-primary text-white border-none border-round p-2 hover:bg-red-900"
         >Update Task</PvButton
