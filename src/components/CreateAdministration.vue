@@ -221,25 +221,31 @@ const { roarfirekit } = storeToRefs(authStore);
 
 const props = defineProps({
   adminId: { type: String, required: false, default: null },
+  mode: { type: String, required: false, default: 'create' },
 });
 
 const header = computed(() => {
-  if (props.adminId) {
+  if (props.mode === 'edit') {
     return 'Edit an administration';
+  } else if (props.mode === 'duplicate') {
+    return 'Duplicate an administration';
   }
 
   return 'Create a new administration';
 });
 
 const description = computed(() => {
-  if (props.adminId) {
+  if (props.mode === 'edit') {
     return 'Use this form to edit an existing administration.';
+  } else if (props.mode === 'duplicate') {
+    return 'Use this form to duplicate an existing administration.';
   }
+
   return 'Use this form to create a new administration and assign it to organizations.';
 });
 
 const submitLabel = computed(() => {
-  if (props.adminId) {
+  if (props.mode === 'edit') {
     return 'Update Administration';
   }
 
@@ -247,7 +253,7 @@ const submitLabel = computed(() => {
 });
 
 const submitPermission = computed(() => {
-  if (props.adminId) {
+  if (props.mode === 'edit') {
     return Permissions.Administrations.UPDATE;
   }
 
@@ -452,8 +458,10 @@ const removeUndefined = (obj) => {
 };
 
 const submit = async () => {
+  submitted.value = true;
   const isFormValid = await v$.value.$validate();
   if (!isFormValid) {
+    console.log('form is invalid');
     return;
   }
 
@@ -516,7 +524,7 @@ const submit = async () => {
     },
   };
 
-  if (props.adminId) args.administrationId = props.adminId;
+  if (props.mode === 'edit' && props.adminId) args.administrationId = props.adminId;
 
   await upsertAdministration(args, {
     onSuccess: () => {
@@ -561,8 +569,11 @@ onMounted(async () => {
 
 watch([existingAdministrationData, allVariants], ([adminInfo, allVariantInfo]) => {
   if (adminInfo && !_isEmpty(allVariantInfo)) {
-    state.administrationName = adminInfo.name;
-    state.administrationPublicName = adminInfo.publicName;
+    // Exclude name and publicName from duplicate mode
+    if (props.mode !== 'duplicate') {
+      state.administrationName = adminInfo.name;
+      state.administrationPublicName = adminInfo.publicName;
+    }
     state.dateStarted = new Date(adminInfo.dateOpened);
     state.dateClosed = new Date(adminInfo.dateClosed);
     state.sequential = adminInfo.sequential;

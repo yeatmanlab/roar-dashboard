@@ -559,7 +559,7 @@ const routes = [
     meta: { pageTitle: 'Administrator', permission: Permissions.Administrators.UPDATE },
   },
   {
-    path: '/create-administration',
+    path: '/administration/create',
     name: 'CreateAdministration',
     component: () => import('../components/CreateAdministration.vue'),
     meta: {
@@ -568,13 +568,24 @@ const routes = [
     },
   },
   {
-    path: '/edit-administration/:adminId',
+    // TODO: Figure out a variable name other than mode
+    path: '/administration/:mode/:adminId',
     name: 'EditAdministration',
     props: true,
     component: () => import('../components/CreateAdministration.vue'),
     meta: {
       pageTitle: 'Edit an Administration',
       permission: Permissions.Administrations.UPDATE,
+    },
+  },
+  {
+    path: '/administration/:mode/:adminId',
+    name: 'DuplicateAdministration',
+    props: true,
+    component: () => import('../components/CreateAdministration.vue'),
+    meta: {
+      pageTitle: 'Duplicate an Administration',
+      permission: Permissions.Administrations.CREATE,
     },
   },
   {

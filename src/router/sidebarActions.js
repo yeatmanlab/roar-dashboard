@@ -62,7 +62,7 @@ const sidebarActionOptions = [
   {
     title: 'Create Administration',
     icon: 'pi pi-sliders-h',
-    buttonLink: { name: 'CreateAdministration' },
+    buttonLink: { name: 'CreateAdministration', mode: 'create' },
     requiresSuperAdmin: true,
     requiresAdmin: true,
     permission: Permissions.Administrations.CREATE,
