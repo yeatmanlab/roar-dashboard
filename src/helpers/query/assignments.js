@@ -956,8 +956,8 @@ export const assignmentPageFetcher = async (
             progress = surveyResponse.general?.isComplete ? 'completed' : 'started';
           } else if (['parent', 'teacher'].includes(user.data.userType)) {
             // For parent/teacher, check both general and specific parts
-            const specificItems = surveyResponse?.specific || [];
             const generalComplete = surveyResponse.general?.isComplete || false;
+            const specificItems = surveyResponse?.specific || [];
             
             if (specificItems.length > 0) {
               const allSpecificComplete = specificItems.every(item => item.isComplete === true);

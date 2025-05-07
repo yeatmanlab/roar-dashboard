@@ -28,14 +28,8 @@ export const getOrgsRequestBody = ({
   paginate = true,
   select = [
     'abbreviation',
-    'address',
-    'clever',
-    'classlink',
-    'districtContact',
     'id',
-    'mdrNumber',
     'name',
-    'ncesId',
     'tags',
   ],
 }) => {
@@ -362,13 +356,14 @@ export const orgPageFetcher = async (
     page: page.value,
   });
 
-  console.log(`Fetching page ${page.value} for ${activeOrgType.value}`);
-
   if (isSuperAdmin.value) {
     return axiosInstance.post(':runQuery', requestBody).then(({ data }) => mapFields(data));
   } else {
     if (activeOrgType.value === 'schools' && (adminOrgs.value['districts'] ?? []).includes(selectedDistrict.value)) {
-      return axiosInstance.post(':runQuery', requestBody).then(({ data }) => mapFields(data));
+      const query = axiosInstance.post(':runQuery', requestBody).then(({ data }) => {
+        return mapFields(data);
+      });
+      return query
     } else if (
       activeOrgType.value === 'classes' &&
       ((adminOrgs.value['schools'] ?? []).includes(selectedSchool.value) ||

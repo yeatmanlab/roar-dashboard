@@ -93,6 +93,7 @@ import PvFileUpload from 'primevue/fileupload';
 import _forEach from 'lodash/forEach';
 import _startCase from 'lodash/startCase';
 import _isEmpty from 'lodash/isEmpty';
+import { TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
 
 const authStore = useAuthStore();
 const toast = useToast();
@@ -121,8 +122,8 @@ const allFields = [
       dataType: 'string',
     },
     {
-      field: 'parentId',
-      header: 'Parent ID',
+      field: 'caregiverId',
+      header: 'Caregiver ID',
       dataType: 'string',
     },
     {
@@ -151,7 +152,7 @@ const onFileUpload = async (event) => {
       severity: 'error',
       summary: 'Error: Empty File',
       detail: 'The uploaded file contains no data',
-      life: 5000,
+      life: TOAST_DEFAULT_LIFE_DURATION,
     });
     return;
   }
@@ -186,7 +187,7 @@ const onFileUpload = async (event) => {
       severity: 'error',
       summary: 'Error: Missing Column',
       detail: `Missing required column(s): ${missingColumns.join(', ')}`,
-      life: 5000,
+      life: TOAST_DEFAULT_LIFE_DURATION,
     });
     return;
   }
@@ -201,7 +202,7 @@ const onFileUpload = async (event) => {
       severity: 'success',
       summary: 'Success',
       detail: 'File Successfully Uploaded',
-      life: 3000,
+      life: TOAST_DEFAULT_LIFE_DURATION,
     });
   }
 };
@@ -233,25 +234,26 @@ const validateUsers = () => {
     if (userTypeField && user[userTypeField].toLowerCase() === 'child') {
       
       // Find parentId field (case-insensitive)
-      const parentIdField = Object.keys(user).find(key => key.toLowerCase() === 'parentid');
+      const caregiverIdField = Object.keys(user).find(key => key.toLowerCase() === 'caregiverid');
       
       // Only validate parentId if it exists
-      if (parentIdField && user[parentIdField] && user[parentIdField].trim() !== '') {
-        const parentIds = typeof user[parentIdField] === 'string' ? 
-          user[parentIdField].split(',').map(id => id.trim()) : 
-          [user[parentIdField].toString()];
+      if (caregiverIdField && user[caregiverIdField] && user[caregiverIdField].trim() !== '') {
+        const caregiverIds = typeof user[caregiverIdField] === 'string' ? 
+          user[caregiverIdField].split(',').map(id => id.trim()) : 
+          [user[caregiverIdField].toString()];
           
-        parentIds.forEach(parentId => {
-          console.log('parentId in loop:', parentId);
+        caregiverIds.forEach(caregiverId => {
+          console.log('caregiverId in loop:', caregiverId);
 
-          if (!userMap.has(parentId)) {
-            missingFields.push(`Parent with ID ${parentId} not found`);
+          if (!userMap.has(caregiverId)) {
+            missingFields.push(`Caregiver with ID ${caregiverId} not found`);
           } else {
-            // Find userType field in parent (case-insensitive)
-            const parentUserTypeField = Object.keys(userMap.get(parentId)).find(key => key.toLowerCase() === 'usertype');
+            // Find userType field in caregiver (case-insensitive)
+            const caregiverUserTypeField = Object.keys(userMap.get(caregiverId)).find(key => key.toLowerCase() === 'usertype');
+            const caregiverUserTypeValue = caregiverUserTypeField ? userMap.get(caregiverId)[caregiverUserTypeField].toLowerCase() : null;
             
-            if (!parentUserTypeField || userMap.get(parentId)[parentUserTypeField].toLowerCase() !== 'parent') {
-              missingFields.push(`User with ID ${parentId} is not a parent`);
+            if (!caregiverUserTypeField || caregiverUserTypeValue !== 'caregiver') {
+              missingFields.push(`User with ID ${caregiverId} is not a caregiver`);
             }
           }
         });
@@ -291,7 +293,7 @@ const validateUsers = () => {
     toast.add({
       severity: 'error',
       summary: 'Missing Fields. See below for details.',
-      life: 5000,
+      life: TOAST_DEFAULT_LIFE_DURATION,
     });
   }
 };
@@ -309,36 +311,41 @@ const submitUsers = async () => {
       const uidField = Object.keys(user).find(key => key.toLowerCase() === 'uid');
       
       if (idField) normalizedUser.id = user[idField];
-      if (userTypeField) normalizedUser.userType = user[userTypeField];
+      if (userTypeField) {
+        const userTypeValue = user[userTypeField];
+        // Change 'caregiver' to 'parent' before sending to backend
+        normalizedUser.userType = userTypeValue.toLowerCase() === 'caregiver' ? 'parent' : userTypeValue;
+      }
       if (uidField) normalizedUser.uid = user[uidField];
       
       // Process optional fields
-      const parentIdField = Object.keys(user).find(key => key.toLowerCase() === 'parentid');
+      const caregiverIdField = Object.keys(user).find(key => key.toLowerCase() === 'caregiverid');
       const teacherIdField = Object.keys(user).find(key => key.toLowerCase() === 'teacherid');
       
-      if (parentIdField && user[parentIdField]) normalizedUser.parentId = user[parentIdField];
+      // Rename caregiverId to parentId
+      if (caregiverIdField && user[caregiverIdField]) normalizedUser.parentId = user[caregiverIdField];
       if (teacherIdField && user[teacherIdField]) normalizedUser.teacherId = user[teacherIdField];
       
       // Include any other fields that might be in the original data
       Object.keys(user).forEach(key => {
-        if (!['id', 'userType', 'uid', 'parentId', 'teacherId'].includes(key) && 
-            !['id', 'usertype', 'uid', 'parentid', 'teacherid'].includes(key.toLowerCase())) {
+        const lowerCaseKey = key.toLowerCase();
+        // Ensure original fields (case-insensitive) and already processed fields are not copied again
+        if (!['id', 'usertype', 'uid', 'caregiverid', 'teacherid', 'parentid'].includes(lowerCaseKey)) {
           normalizedUser[key] = user[key];
         }
       });
       
       return normalizedUser;
     });
-    
-    console.log('Normalized users:', normalizedUsers);
-    const result = await authStore.roarfirekit.linkUsers(normalizedUsers);
-    console.log('user link result:', result);
+
+    await authStore.roarfirekit.linkUsers(normalizedUsers);
+    isFileUploaded.value = false;
     
     toast.add({
       severity: 'success',
       summary: 'Success',
       detail: 'Users linked successfully',
-      life: 5000,
+      life: TOAST_DEFAULT_LIFE_DURATION,
     });
   } catch (error) {
     console.error(error);
@@ -346,7 +353,7 @@ const submitUsers = async () => {
       severity: 'error',
       summary: 'Error',
       detail: `Failed to link users: ${error.message}. Please try again.`,
-      life: 5000,
+      life: TOAST_DEFAULT_LIFE_DURATION,
     });
   } finally {
     activeSubmit.value = false;

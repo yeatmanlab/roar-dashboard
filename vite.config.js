@@ -57,7 +57,6 @@ export default defineConfig({
           tanstack: ['@tanstack/vue-query'],
           chartJs: ['chart.js'],
           sentry: ['@sentry/browser', '@sentry/integrations', '@sentry/vue'],
-          firekit: ['@levante-framework/firekit'],
           phoneme: ['@bdelab/roar-pa'],
           sre: ['@bdelab/roar-sre'],
           swr: ['@bdelab/roar-swr'],
@@ -69,8 +68,10 @@ export default defineConfig({
   optimizeDeps: {
     include: [
       '@levante-framework/firekit',
-      'vue-google-maps-community-fork',
-      'fast-deep-equal', // Required due to https://github.com/nathanap/vue-google-maps-community-fork/issues/4
     ],
+    esbuildOptions: {
+      mainFields: ['module', 'main'],
+      resolveExtensions: ['.js', '.mjs', '.cjs'],
+    }
   },
 });

@@ -11,6 +11,9 @@
       </div>
 
       <PvDivider />
+      <div class="text-sm text-gray-500 mt-3 mr-3 required">
+          <span class="required-asterisk">*</span> Required
+        </div>
       <div class="bg-gray-100 rounded p-5">
         <div class="formgrid grid mt-5">
         <div class="field col-12 xl:col-6 mb-5">
@@ -44,7 +47,7 @@
                 show-button-bar
                 data-cy="input-start-date"
               />
-              <label for="start-date">Start Date</label>
+              <label for="start-date">Start Date <span class="required-asterisk">*</span></label>
               <small v-if="v$.dateStarted.required.$invalid && submitted" class="p-error"
                 >Please select a start date.</small
               >
@@ -63,18 +66,15 @@
                 show-button-bar
                 data-cy="input-end-date"
               />
-              <label for="end-date">End Date</label>
+              <label for="end-date">End Date <span class="required-asterisk">*</span></label>
               <small v-if="v$.dateClosed.required.$invalid && submitted" class="p-error"
                 >Please select an end date.</small
               >
             </PvFloatLabel>
-            <div class="text-sm text-gray-500 mt-4 required text-right">
-              * Required
-            </div>
           </div>
         </div>
 
-        <OrgPicker :orgs="orgsList" @selection="selection($event)" />
+        <GroupPicker :orgs="orgsList" @selection="selection($event)" />
 
         <PvConfirmDialog group="errors" class="confirm" :draggable="false">
           <template #message>
@@ -107,7 +107,7 @@
         <div class="flex flex-column justify-content-center mt-5">
           <div class="flex flex-column mt-2 align-items-center justify-content-center">
             <div class="flex">
-              <label style="font-weight: bold" class="mb-2 mx-2">Sequential?</label>
+              <label style="font-weight: bold" class="mb-2 mx-2">Sequential Task Order<span class="required-asterisk">*</span></label>
               <span class="flex gap-2">
                 <PvRadioButton
                   v-model="state.sequential"
@@ -188,15 +188,17 @@ import useTaskVariantsQuery from '@/composables/queries/useTaskVariantsQuery';
 import useUpsertAdministrationMutation from '@/composables/mutations/useUpsertAdministrationMutation';
 import TaskPicker from '@/components/TaskPicker.vue';
 import ConsentPicker from '@/components/ConsentPicker.vue';
-import OrgPicker from '@/components/OrgPicker.vue';
+import GroupPicker from '@/components/GroupPicker.vue';
 import { APP_ROUTES } from '@/constants/routes';
 import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
 import { isLevante } from '@/helpers';
+import { useQueryClient } from '@tanstack/vue-query';
 
 const initialized = ref(false);
 const router = useRouter();
 const toast = useToast();
 const confirm = useConfirm();
+const queryClient = useQueryClient();
 
 const { mutate: upsertAdministration, isPending: isSubmitting } = useUpsertAdministrationMutation();
 
@@ -212,11 +214,11 @@ const header = computed(() => {
     return 'Edit an assignment';
   }
 
-  return 'Create New Assignment';
+  return 'Create Assignment';
 });
 
 const description = computed(() => {
-  return 'Assignments are bundles of tasks, surveys, and questionnaires that are sent to your users';
+  return 'An assignment is a collection of tasks assigned to users who are members of a group';
 });
 
 const submitLabel = computed(() => {
@@ -424,8 +426,18 @@ const removeUndefined = (obj) => {
 };
 
 const submit = async () => {
+  console.log('Submit function called');
+  submitted.value = true;
+
+  // Set publicName automatically based on administrationName
+  state.administrationPublicName = state.administrationName;
+  console.log('Set administrationPublicName:', state.administrationPublicName); // <-- Log for confirmation
+
+  console.log('Validating form...');
   const isFormValid = await v$.value.$validate();
+  console.log('Form validation result:', isFormValid);
   if (!isFormValid) {
+    console.log('Form validation failed, exiting submit.');
     return;
   }
 
@@ -435,14 +447,15 @@ const submit = async () => {
       variantName: assessment.variant.name,
       taskId: assessment.task.id,
       params: toRaw(assessment.variant.params),
-      // Exclude conditions key if there are no conditions to be set.
       ...(toRaw(assessment.variant.conditions || undefined) && { conditions: toRaw(assessment.variant.conditions) }),
     }),
   );
 
+  console.log('Checking task uniqueness...', submittedAssessments);
   const tasksUnique = checkForUniqueTasks(submittedAssessments);
-
+  console.log('Tasks unique result:', tasksUnique);
   if (!tasksUnique || _isEmpty(submittedAssessments)) {
+    console.log('Task check failed (not unique or empty), showing dialog.');
     getNonUniqueTasks(submittedAssessments);
     confirm.require({
       group: 'errors',
@@ -462,9 +475,17 @@ const submit = async () => {
     families: toRaw(state.families).map((org) => org.id),
   };
 
+  console.log('Checking required orgs...', orgs);
   const orgsValid = checkForRequiredOrgs(orgs);
+  console.log('Orgs valid result:', orgsValid);
   if (!orgsValid) {
-    // @TODO: Add error handling, i.e. confirmation dialog like the one for non-unique tasks?
+    console.log('Org check failed, exiting submit.');
+    toast.add({ 
+      severity: TOAST_SEVERITIES.WARN, 
+      summary: 'Missing Selection', 
+      detail: 'Please select at least one Group (Site, School, Class, or Cohort).', 
+      life: TOAST_DEFAULT_LIFE_DURATION 
+    });
     return;
   }
 
@@ -490,8 +511,10 @@ const submit = async () => {
 
   if (props.adminId) args.administrationId = props.adminId;
 
+  console.log('Calling upsertAdministration with args:', args);
   await upsertAdministration(args, {
     onSuccess: () => {
+      console.log('upsertAdministration onSuccess');
       toast.add({
         severity: TOAST_SEVERITIES.SUCCESS,
         summary: 'Success',
@@ -499,9 +522,13 @@ const submit = async () => {
         life: TOAST_DEFAULT_LIFE_DURATION,
       });
 
+      queryClient.invalidateQueries({ queryKey: ['administrations-list'] });
+      console.log('Invalidated administrations list query cache.')
+
       router.push({ path: APP_ROUTES.HOME });
     },
     onError: (error) => {
+      console.error('upsertAdministration onError:', error);
       toast.add({
         severity: TOAST_SEVERITIES.ERROR,
         summary: 'Error',
@@ -512,6 +539,7 @@ const submit = async () => {
       console.error('Error creating administration:', error.message);
     },
   });
+  console.log('After upsertAdministration call');
 };
 
 // +------------------------------------------------------------------------------------------------------------------+

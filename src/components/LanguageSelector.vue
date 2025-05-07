@@ -22,7 +22,7 @@
 <script setup>
 import { computed } from 'vue';
 import PvSelect from 'primevue/select';
-import { languageOptions } from '@/translations/i18n.js';
+import { languageOptions } from '@/translations/i18n';
 import { isLevante } from '@/helpers';
 import { useSurveyStore } from '@/store/survey';
 import { setupStudentAudio } from '@/helpers/surveyInitialization';

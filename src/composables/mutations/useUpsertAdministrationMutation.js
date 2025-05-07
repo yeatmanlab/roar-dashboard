@@ -9,9 +9,9 @@ import {
 
 /**
  * Upsert Administration mutation.
- *
+ * 
  * TanStack mutation to update or insert an administration and automatically invalidate the corresponding queries.
- *
+ * 
  * @returns {Object} The mutation object returned by `useMutation`.
  */
 const useUpsertAdministrationMutation = () => {
@@ -21,7 +21,7 @@ const useUpsertAdministrationMutation = () => {
   return useMutation({
     mutationKey: ADMINISTRATION_UPSERT_MUTATION_KEY,
     mutationFn: async (data) => {
-      await authStore.roarfirekit.createAdministration(data);
+      await authStore.roarfirekit.upsertAdministration(data);
     },
     onSuccess: () => {
       // Invalidate the queries to refetch the administration data.

@@ -25,7 +25,7 @@ const useDistrictSchoolsQuery = (districtId, queryOptions = undefined) => {
 
   // Get admin status and administation orgs.
   const { isSuperAdmin } = useUserType(userClaims);
-  const administrationOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
+  const administrationOrgs = computed(() => userClaims.value?.claims?.adminOrgs);
 
   // Ensure all necessary data is loaded before enabling the query.
   const claimsLoaded = computed(() => !_isEmpty(userClaims?.value?.claims));

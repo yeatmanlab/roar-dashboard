@@ -50,7 +50,6 @@
 
     const props = defineProps({
         isBasicView: {type: Boolean, required: true},
-        name: {type: String, required: true},
     })
 
 
@@ -77,7 +76,7 @@
 
     const handleHelpChange = (e) => {
         if (e.value === 'researcherDocumentation') {
-            window.open('https://levante-researcher.super.site/', '_blank');
+            window.open('https://researcher.levante-network.org/', '_blank');
         } else if (e.value === 'reportAnIssue') {
             window.open('https://watery-wrench-dee.notion.site/13c244e26d9b8005adbde4522455edfd', '_blank');
         }
