@@ -18,7 +18,7 @@
             <PvFloatLabel>
               <PvInputText
                 id="administration-name"
-                v-formTypel="state.administrationName"
+                v-model="state.administrationName"
                 class="w-full"
                 data-cy="input-administration-name"
               />
@@ -35,7 +35,7 @@
             <PvFloatLabel>
               <PvInputText
                 id="administration-public-name"
-                v-formTypel="state.administrationPublicName"
+                v-model="state.administrationPublicName"
                 class="w-full"
                 data-cy="input-administration-name-public"
               />
