@@ -19,11 +19,19 @@
       </div>
       <div class="w-64 text-lg font-light">Administration enrollment in progress</div>
     </div>
-    <div v-else-if="assignmentData?.length == 0">
-      <div class="text-lg font-bold text-gray-600">No assignments available</div>
-      <div class="text-sm font-light text-gray-800">Please check back later.</div>
+    <div v-else-if="registrationError?.length > 0" class="p-3">
+      <PvMessage severity="error">
+        <div class="text-lg font-bold text-gray-600">Error while fetching registrations status:</div>
+        <div class="text-sm font-light text-gray-800">{{ registrationError }}</div>
+      </PvMessage>
     </div>
-    <div class="flex flex-row align-items-center justify-content-center w-full flex-wrap">
+    <div v-else-if="assignmentData?.length == 0" class="p-3">
+      <PvMessage severity="info">
+        <div class="text-lg font-bold text-gray-600">No assignments available</div>
+        <div class="text-sm font-light text-gray-800">Please check back later.</div>
+      </PvMessage>
+    </div>
+    <div v-else class="flex flex-row align-items-center justify-content-center w-full flex-wrap">
       <div v-for="assignment in assignmentData" :key="assignment.id" class="flex items-center">
         <StudentCard
           :assignment="assignment"
@@ -39,6 +47,7 @@
 <script setup>
 import AppSpinner from '@/components/AppSpinner.vue';
 import StudentCard from '@/components/StudentCard.vue';
+import PvMessage from 'primevue/message';
 
 defineOptions({
   name: 'HomeParentStudentView',
@@ -73,6 +82,9 @@ defineProps({
     type: String,
     required: true,
   },
+  registrationError: {
+    type: String,
+    required: false,
+  },
 });
 </script>
-]]>
