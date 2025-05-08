@@ -18,7 +18,7 @@
             <PvFloatLabel>
               <PvInputText
                 id="administration-name"
-                v-model="state.administrationName"
+                v-formTypel="state.administrationName"
                 class="w-full"
                 data-cy="input-administration-name"
               />
@@ -35,7 +35,7 @@
             <PvFloatLabel>
               <PvInputText
                 id="administration-public-name"
-                v-model="state.administrationPublicName"
+                v-formTypel="state.administrationPublicName"
                 class="w-full"
                 data-cy="input-administration-name-public"
               />
@@ -221,13 +221,13 @@ const { roarfirekit } = storeToRefs(authStore);
 
 const props = defineProps({
   adminId: { type: String, required: false, default: null },
-  mode: { type: String, required: false, default: 'create' },
+  formType: { type: String, required: false, default: 'create' },
 });
 
 const header = computed(() => {
-  if (props.mode === 'edit') {
+  if (props.formType === 'edit') {
     return 'Edit an administration';
-  } else if (props.mode === 'duplicate') {
+  } else if (props.formType === 'duplicate') {
     return 'Duplicate an administration';
   }
 
@@ -235,9 +235,9 @@ const header = computed(() => {
 });
 
 const description = computed(() => {
-  if (props.mode === 'edit') {
+  if (props.formType === 'edit') {
     return 'Use this form to edit an existing administration.';
-  } else if (props.mode === 'duplicate') {
+  } else if (props.formType === 'duplicate') {
     return 'Use this form to duplicate an existing administration.';
   }
 
@@ -245,7 +245,7 @@ const description = computed(() => {
 });
 
 const submitLabel = computed(() => {
-  if (props.mode === 'edit') {
+  if (props.formType === 'edit') {
     return 'Update Administration';
   }
 
@@ -253,7 +253,7 @@ const submitLabel = computed(() => {
 });
 
 const submitPermission = computed(() => {
-  if (props.mode === 'edit') {
+  if (props.formType === 'edit') {
     return Permissions.Administrations.UPDATE;
   }
 
@@ -524,7 +524,7 @@ const submit = async () => {
     },
   };
 
-  if (props.mode === 'edit' && props.adminId) args.administrationId = props.adminId;
+  if (props.formType === 'edit' && props.adminId) args.administrationId = props.adminId;
 
   await upsertAdministration(args, {
     onSuccess: () => {
@@ -569,8 +569,8 @@ onMounted(async () => {
 
 watch([existingAdministrationData, allVariants], ([adminInfo, allVariantInfo]) => {
   if (adminInfo && !_isEmpty(allVariantInfo)) {
-    // Exclude name and publicName from duplicate mode
-    if (props.mode !== 'duplicate') {
+    // Exclude name and publicName from duplicate formType
+    if (props.formType !== 'duplicate') {
       state.administrationName = adminInfo.name;
       state.administrationPublicName = adminInfo.publicName;
     }

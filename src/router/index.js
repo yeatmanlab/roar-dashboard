@@ -568,8 +568,7 @@ const routes = [
     },
   },
   {
-    // TODO: Figure out a variable name other than mode
-    path: '/administration/:mode/:adminId',
+    path: '/administration/:formType/:adminId',
     name: 'EditAdministration',
     props: true,
     component: () => import('../components/CreateAdministration.vue'),
@@ -579,7 +578,7 @@ const routes = [
     },
   },
   {
-    path: '/administration/:mode/:adminId',
+    path: '/administration/:formType/:adminId',
     name: 'DuplicateAdministration',
     props: true,
     component: () => import('../components/CreateAdministration.vue'),

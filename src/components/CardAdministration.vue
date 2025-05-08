@@ -233,14 +233,14 @@ const speedDialItems = ref([
     label: 'Edit',
     icon: 'pi pi-pencil',
     command: () => {
-      router.push({ name: 'EditAdministration', params: { adminId: props.id, mode: 'edit' } });
+      router.push({ name: 'EditAdministration', params: { adminId: props.id, formType: 'edit' } });
     },
   },
   {
     label: 'Duplicate',
     icon: 'pi pi-copy',
     command: () => {
-      router.push({ name: 'DuplicateAdministration', params: { adminId: props.id, mode: 'duplicate' } });
+      router.push({ name: 'DuplicateAdministration', params: { adminId: props.id, formType: 'duplicate' } });
     },
   },
 ]);
