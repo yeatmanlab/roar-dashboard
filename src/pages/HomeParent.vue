@@ -30,6 +30,7 @@
       :org-type="orgType"
       :org-id="orgId"
       :administration-id="administrationId"
+      :registrationError="registrationError"
     />
     <div v-else class="home-administrator-wrapper">
       <HomeAdministrator />
@@ -72,12 +73,28 @@ const { isLoading: isLoadingAdministrations, data: administrations } = useAdmini
   },
 );
 
+const registrationError = ref(null);
+const registrationRetryCount = ref(0);
+const MAX_RETRIES = 3;
 const { isActive, pause, resume } = useTimeoutPoll(
   async () => {
-    parentRegistrationComplete.value = await authStore.verifyParentRegistration();
-    if (parentRegistrationComplete.value) {
-      initialized.value = true;
-      pause();
+    try {
+      parentRegistrationComplete.value = await authStore.verifyParentRegistration();
+
+      if (parentRegistrationComplete.value) {
+        initialized.value = true;
+        registrationError.value = null;
+        pause();
+      }
+    } catch (error) {
+      console.error('Registration verification failed:', error);
+      registrationRetryCount.value++;
+
+      if (retryCount.value >= MAX_RETRIES) {
+        console.error('Registration verification failed, maximum retries reached:', error);
+        registrationError.value = error;
+        pause();
+      }
     }
   },
   5000,
