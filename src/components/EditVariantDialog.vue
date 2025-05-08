@@ -57,7 +57,7 @@
         <div v-for="(condtion, index) in assignedConditions" :key="index">
             <div class="flex gap-2 align-content-start flex-grow-0 params-container mb-2">
                <div class="flex flex-row flex-wrap justify-content-between align-content-center gap-2 w-full">
-                <PvSelect v-model="condtion.field" :options="computedFieldOptions" optionLabel="label" class="w-full" placeholder="Select a Field" inputId="Field"/>
+                <PvSelect v-model="condtion.field" :options="fieldOptions" optionLabel="label" class="w-full" placeholder="Select a Field" inputId="Field"/>
               </div>
 
               <div class="flex flex-row flex-wrap justify-content-between align-content-center gap-2 w-full">
@@ -117,7 +117,7 @@
           <div v-for="(condtion, index) in optionalConditions" :key="index">
             <div class="flex gap-2 align-content-start flex-grow-0 params-container mb-2">
                <div class="flex flex-row flex-wrap justify-content-between align-content-center gap-2 w-full">
-                <PvSelect v-model="condtion.field" :options="computedFieldOptions" optionLabel="label" class="w-full" placeholder="Select a Field" inputId="Field"/>
+                <PvSelect v-model="condtion.field" :options="fieldOptions" optionLabel="label" class="w-full" placeholder="Select a Field" inputId="Field"/>
               </div>
 
               <div class="flex flex-row flex-wrap justify-content-between align-content-center gap-2 w-full">
@@ -152,8 +152,8 @@
                 icon="pi pi-plus mr-2"
                 class="bg-primary text-white border-none border-round p-2 hover:bg-red-900"
                 :disabled="isOptionalForAll === true"
-                @click="addOptionalCondition"
                 data-cy="button-optional-condition"
+                @click="addOptionalCondition"
               />
             </div>
           </div>
@@ -244,13 +244,8 @@ const computedValueOptions = (field) => {
   if (!processedField) return 
   const selectedField = processedField.label;
 
-  if (selectedField === 'Grade') {
+  if (selectedField === 'Age') {
     return [
-      { label: 'PK', value: 'PK' },
-      { label: 'TK', value: 'TK' },
-      { label: 'K', value: 'K' },
-      { label: '1', value: '1' },
-      { label: '2', value: '2' },
       { label: '3', value: '3' },
       { label: '4', value: '4' },
       { label: '5', value: '5' },
@@ -261,12 +256,6 @@ const computedValueOptions = (field) => {
       { label: '10', value: '10' },
       { label: '11', value: '11' },
       { label: '12', value: '12' },
-    ];
-  } else if (selectedField === 'School Level') {
-    return [
-      { label: 'Elementary', value: 'Elementary' },
-      { label: 'Middle', value: 'Middle' },
-      { label: 'High', value: 'High' },
     ];
   } else if (selectedField === 'User Type') {
     return [
@@ -282,17 +271,12 @@ const computedConditionOptions = (field) => {
   if (!processedField) return 
   const selectedField = processedField.label;
   
-  if (selectedField === 'Grade') {
+  if (selectedField === 'Age') {
     return [
       { label: 'Less Than', value: 'LESS_THAN' },
       { label: 'Greater Than', value: 'GREATER_THAN' },
       { label: 'Less Than or Equal', value: 'LESS_THAN_OR_EQUAL' },
       { label: 'Greater Than or Equal', value: 'GREATER_THAN_OR_EQUAL' },
-      { label: 'Equal', value: 'EQUAL' },
-      { label: 'Not Equal', value: 'NOT_EQUAL' },
-    ];
-  } else if (selectedField === 'School Level') {
-    return [
       { label: 'Equal', value: 'EQUAL' },
       { label: 'Not Equal', value: 'NOT_EQUAL' },
     ];
@@ -463,16 +447,7 @@ const computedConditions = (assignedConditions, optionalConditions) => {
 
 
 const fieldOptions = [
-  { label: 'Grade', value: 'studentData.grade', project: 'ROAR' },
-  { label: 'School Level', value: 'studentData.schoolLevel', project: 'ROAR' },
   { label: 'User Type', value: 'userType', project: 'LEVANTE' },
+  { label: 'Age', value: 'age', project: 'LEVANTE' },
 ];
-
-const computedFieldOptions = computed(() => {
-  if (isLevante) {
-    return fieldOptions.filter((option) => option.project === 'LEVANTE' || option.project === 'ALL');
-  } else {
-    return fieldOptions.filter((option) => option.project === 'ROAR' || option.project === 'ALL');
-  }
-});
 </script>
