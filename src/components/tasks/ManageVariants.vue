@@ -461,7 +461,7 @@ const { userCan, Permissions } = usePermissions();
 
 const toast = useToast();
 const initialized = ref(false);
-const registeredTasksOnly = ref(true);
+const registeredTasksOnly = ref(false);
 const variantCheckboxData = ref();
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
@@ -521,7 +521,7 @@ onMounted(() => {
   if (roarfirekit.value.restConfig?.()) init();
 });
 
-const { isFetching: isFetchingTasks, data: tasks } = useTasksQuery({
+const { isFetching: isFetchingTasks, data: tasks } = useTasksQuery(registeredTasksOnly, null, {
   enabled: initialized,
 });
 
@@ -606,7 +606,6 @@ const deletedParams = ref([]);
 const moveToDeletedParams = (param) => {
   for (const _param of mappedGameConfig.value) {
     if (_param.name === param) {
-      console.log(mappedGameConfig.value.indexOf(_param));
       const index = mappedGameConfig.value.indexOf(_param);
       mappedGameConfig.value = mappedGameConfig.value.splice(index, 1);
       delete variantParams.value[_param.name];
