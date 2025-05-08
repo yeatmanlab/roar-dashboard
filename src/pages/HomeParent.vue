@@ -47,6 +47,7 @@
 <script setup>
 import useAdministrationsListQuery from '@/composables/queries/useAdministrationsListQuery';
 import useAdministrationAssignmentsQuery from '@/composables/queries/useAdministrationAssignmentsQuery';
+import { useTimeoutPoll } from '@vueuse/core';
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { pluralizeFirestoreCollection } from '@/helpers';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
@@ -78,41 +79,45 @@ const { isLoading: isLoadingAdministrations, data: administrations } = useAdmini
   },
 );
 
-let unsubscribeInitializer;
+const { isActive, pause, resume } = useTimeoutPoll(
+  async () => {
+    parentRegistrationComplete.value = await authStore.verifyParentRegistration();
+    if (parentRegistrationComplete.value) {
+      initialized.value = true;
+      pause();
+    }
+  },
+  5000,
+  { immediate: false },
+);
+
+let unsubscribe;
 const init = () => {
-  if (unsubscribeInitializer) unsubscribeInitializer();
+  if (unsubscribe) unsubscribe();
+  initialized.value = true;
+
+  // Only start polling if registration check is needed
+  if (!authStore.userData.initialized && authStore.userData.registrations) {
+    resume();
+  }
 };
 
-unsubscribeInitializer = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit.restConfig) init();
+unsubscribe = authStore.$subscribe(async (mutation, state) => {
+  if (state.roarfirekit.restConfig?.()) init();
 });
 
-let parentRegistrationTimer = undefined;
+onMounted(() => {
+  if (authStore.roarfirekit.restConfig?.()) init();
 
-onMounted(async () => {
-  if (authStore.isAuthenticated) {
-    // check first if initialized value in userStore is true, if so, registration is complete
-    if (authStore.userData.initialized || !authStore.userData.registrations) {
-      parentRegistrationComplete.value = true;
-      initialized.value = true;
-    } else {
-      parentRegistrationTimer = setInterval(async function () {
-        // Poll for the preload trials progress bar to exist and then begin the game
-        parentRegistrationComplete.value = await authStore.verifyParentRegistration();
-        // if parentRegistration has completed, break out of the loop
-        if (parentRegistrationComplete.value) {
-          initialized.value = true;
-          clearInterval(parentRegistrationTimer);
-        }
-      }, 5000);
-    }
+  // Set registration complete if already initialized
+  if (authStore.userData.initialized || !authStore.userData.registrations) {
+    parentRegistrationComplete.value = true;
   }
 });
 
 onBeforeUnmount(() => {
-  if (parentRegistrationTimer) {
-    clearInterval(parentRegistrationTimer);
-  }
+  if (isActive.value) pause();
+  if (unsubscribe) unsubscribe();
 });
 
 const administrationId = computed(() => administrations.value?.[0]?.id ?? null);

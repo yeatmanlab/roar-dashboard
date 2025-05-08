@@ -19,11 +19,11 @@
       </div>
       <div class="w-64 text-lg font-light">Administration enrollment in progress</div>
     </div>
+    <div v-else-if="assignmentData?.length == 0">
+      <div class="text-lg font-bold text-gray-600">No assignments available</div>
+      <div class="text-sm font-light text-gray-800">Please check back later.</div>
+    </div>
     <div class="flex flex-row align-items-center justify-content-center w-full flex-wrap">
-      <div v-if="!isLoadingAssignments && !isLoadingAdministrations && assignmentData?.length == 0">
-        <div class="text-lg font-bold text-gray-600">No assignments available</div>
-        <div class="text-sm font-light text-gray-800">Please check back later.</div>
-      </div>
       <div v-for="assignment in assignmentData" :key="assignment.id" class="flex items-center">
         <StudentCard
           :assignment="assignment"
