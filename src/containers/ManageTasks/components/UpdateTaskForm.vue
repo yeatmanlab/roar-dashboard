@@ -76,7 +76,7 @@ import { usePermissions } from '@/composables/usePermissions';
 
 const toast = useToast();
 const initialized = ref(false);
-const registeredTasksOnly = ref(true);
+const registeredTasksOnly = ref(false);
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
 const { userCan, Permissions } = usePermissions();

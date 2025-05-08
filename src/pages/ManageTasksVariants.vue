@@ -22,6 +22,6 @@
 import PvTabPanel from 'primevue/tabpanel';
 import PvTabView from 'primevue/tabview';
 import PageTitle from '@/components/PageTitle';
-import ManageTasks from '@/containers/ManageTasks';
+import ManageTasks from '@/containers/ManageTasks/ManageTasks.vue';
 import ManageVariants from '@/components/tasks/ManageVariants.vue';
 </script>
