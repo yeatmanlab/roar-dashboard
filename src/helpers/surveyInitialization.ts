@@ -176,7 +176,7 @@ export function setupSurveyEventHandlers({
 
       if (prevDataStr) {
         const parsedData: LocalStorageSurveyData = JSON.parse(prevDataStr);
-        const previousPageResponses: Record<string, any> = {...parsedData.responses}; 
+        const previousPageResponses: Record<string, { responseValue: string; responseTime: string }> = {...parsedData.responses}; 
         
         previousPageQuestions.forEach(question => {
           if (parsedData.responses[question.name] !== undefined) {
@@ -195,8 +195,8 @@ export function setupSurveyEventHandlers({
 
         try {
           roarfirekit.saveSurveyResponses({
-            surveyData: JSON.stringify(dataToSave),
-            administrationId: selectedAdminId ?? '',
+            surveyData: dataToSave,
+            administrationId: selectedAdminId,
           });
         } catch (error: unknown) {
           console.error('Error saving previous page responses: ', error instanceof Error ? error.message : String(error));
