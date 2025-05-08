@@ -85,6 +85,7 @@ defineProps({
   registrationError: {
     type: String,
     required: false,
+    default: '',
   },
 });
 </script>
