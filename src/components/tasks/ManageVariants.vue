@@ -242,6 +242,7 @@
 
   <div v-show="viewModel === 'Update Variant'">
     <h1 class="text-center font-bold">Update a Variant</h1>
+
     <form @submit.prevent="handleUpdateVariant()">
       <section class="flex flex-column gap-2 mb-4 p-4">
         <label for="task-select" class="my-2">
@@ -438,7 +439,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref, watch } from 'vue';
+import { computed, onMounted, reactive, ref, toRefs, watch } from 'vue';
 import { required } from '@vuelidate/validators';
 import { useVuelidate } from '@vuelidate/core';
 import { storeToRefs } from 'pinia';
@@ -456,18 +457,36 @@ import useTasksQuery from '@/composables/queries/useTasksQuery';
 import useTaskVariantsQuery from '@/composables/queries/useTaskVariantsQuery';
 import useAddTaskVariantMutation from '@/composables/mutations/useAddTaskVariantMutation';
 import useUpdateTaskVariantMutation from '@/composables/mutations/useUpdateTaskVariantMutation';
+import useToggleRegisteredTasksMutation from '@/composables/mutations/useToggleRegisteredTasksMutation';
+import useToggleRegisteredVariantsMutation from '@/composables/mutations/useToggleRegisteredVariantsMutation';
 import { usePermissions } from '@/composables/usePermissions';
 const { userCan, Permissions } = usePermissions();
 
+const props = defineProps({
+  registeredTasksOnly: {
+    type: Boolean,
+    default: true,
+  },
+  registeredVariantsOnly: {
+    type: Boolean,
+    default: true,
+  },
+});
+
+const { registeredTasksOnly, registeredVariantsOnly } = toRefs(props);
+
 const toast = useToast();
 const initialized = ref(false);
-const registeredTasksOnly = ref(false);
+// const registeredTasksOnly = ref(props.registeredTasksOnly);
+// const registeredVariantsOnly = ref(props.registeredVariantsOnly);
 const variantCheckboxData = ref();
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
 
 const { mutate: addVariant } = useAddTaskVariantMutation();
 const { mutate: updateVariant } = useUpdateTaskVariantMutation();
+const { mutate: toggleRegisteredVariants } = useToggleRegisteredVariantsMutation();
+const { mutate: toggleRegisteredTasks } = useToggleRegisteredTasksMutation();
 
 const selectedTask = ref(null);
 const selectedVariant = ref(null);
@@ -507,6 +526,20 @@ watch(selectedVariant, (newVal) => {
   updatedVariantData = reactive(cloneDeep(newVal));
 });
 
+watch(
+  [registeredTasksOnly, registeredVariantsOnly],
+  ([newTasksOnly, newVariantsOnly], [oldTasksOnly, oldVariantsOnly]) => {
+    if (newTasksOnly !== oldTasksOnly) {
+      toggleRegisteredTasks(newTasksOnly, null);
+    }
+
+    if (newVariantsOnly !== oldVariantsOnly) {
+      toggleRegisteredVariants(newVariantsOnly);
+    }
+  },
+  { immediate: true },
+);
+
 let unsubscribe;
 const init = () => {
   if (unsubscribe) unsubscribe();
@@ -525,7 +558,7 @@ const { isFetching: isFetchingTasks, data: tasks } = useTasksQuery(registeredTas
   enabled: initialized,
 });
 
-const { data: variants } = useTaskVariantsQuery(registeredTasksOnly, {
+const { data: variants } = useTaskVariantsQuery(registeredVariantsOnly, {
   enabled: initialized,
 });
 
