@@ -15,10 +15,10 @@
 
       <p>The following fields define the columns for your CSV file when linking users. Please refer to the legend below for specific requirements on each field.</p>
       <ul>
-        <li><b>id</b><span class="field-marker">*</span> - A site-specific unique identifier for the user in CSV file.</li>
+        <li><b>id</b><span class="field-marker">*</span> - A unique identifier for the user in CSV file.</li>
         <li><b>userType</b><span class="field-marker">*</span> - The type of user: child, caregiver, teacher.</li>
-        <li><b>caregiverId</b><span class="field-marker">*</span><span class="field-marker">†</span> - The unique identifier (id) for the child's caregiver.</li>
-        <li><b>teacherId</b><span class="field-marker">*</span><span class="field-marker">†</span> - The unique identifier (id) for the child's teacher. (*only required if administering teacher survey)</li>
+        <li><b>caregiverId</b><span class="field-marker">*</span><span class="field-marker">†</span> - A unique identifier (id) for the child's caregiver.</li>
+        <li><b>teacherId</b><span class="field-marker">*</span><span class="field-marker">†</span> - A unique identifier (id) for the child's teacher. (*only required if administering teacher survey)</li>
         <li><b>uid</b><span class="field-marker">*</span><span class="field-marker">‡</span> - The unique LEVANTE identifier that is returned after user is added to dashboard.</li>
       </ul>
 

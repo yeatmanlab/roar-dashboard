@@ -19,13 +19,13 @@
     <p>The following fields define the columns for your CSV file when adding users. Please refer to the legend below for specific requirements on each field.</p>
     <p>Caregivers and Teachers need to have the same Groups as the children they relate to.</p>
     <ul>
-      <li><b>id</b><span class="field-marker">*</span> - A site-specific unique identifier for the user in CSV file.</li>
+      <li><b>id</b><span class="field-marker">*</span> - A unique identifier for the user in CSV file.</li>
       <li><b>userType</b><span class="field-marker">*</span> - The type of user: child, caregiver, teacher.</li>
       <li><b>month</b><span class="field-marker">*</span><span class="field-marker">†</span> - The month a child user was born (numeric; For Example, 5 for May).</li>
       <li><b>year</b><span class="field-marker">*</span><span class="field-marker">†</span> - The year a child user was born (four-digit; For Example, 2017).</li>
-      <li><b>caregiverId</b> - The unique identifier (id) for the child's caregiver.</li>
-      <li><b>teacherId</b> - The unique identifier (id) for the child's teacher.</li>
-      <li><b>site</b><span class="field-marker">*</span> - The name of the site.</li>
+      <li><b>caregiverId</b> - A unique identifier (id) for the child's caregiver.</li>
+      <li><b>teacherId</b> - A unique identifier (id) for the child's teacher.</li>
+      <li><b>site</b><span class="field-marker">*</span> - The name of the site you created from the Add Groups page.</li>
       <li>
         One of the following<span class="field-marker">*</span>:
         <ul class="nested-list">
@@ -33,7 +33,7 @@
           <li>
             <b>school</b> - The name of the school.
             <ul class="nested-list">
-              <li><b>class</b> - The name of the class.</li>
+              <li><b>class</b> - The name of the class. Must have a school as well. (Optional)</li>
             </ul>
           </li>
         </ul>
