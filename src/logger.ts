@@ -71,11 +71,12 @@ function error(error: Error | unknown, context?: Record<string, any>, force: boo
  *
  * @param userData - An object containing user information (e.g., uid, email) or null to reset.
  */
-function setUser(userData: UserData | null): void {
-  if (isProduction) {
+function setUser(userData: UserData | null, force: boolean = false): void {
+  if (isProduction || force) {
     if (userData) {
       // Check for identify existence on posthogInstance due to mock in dev
       if (typeof posthogInstance.identify === 'function') {
+        console.log('posthogInstance.identify', {userData, uid: userData.uid});
         posthogInstance.identify(userData.uid, {
           email: userData.email,
           // You can spread other userData properties if needed

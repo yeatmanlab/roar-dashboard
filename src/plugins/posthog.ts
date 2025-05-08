@@ -22,6 +22,7 @@ if (posthogKey) { // Can be later conditioned to environment
     api_host: posthogHost,
     capture_pageview: false, // We will capture pageviews manually using the router
     autocapture: false, // Disable autocapture for now, can be enabled later if needed
+    capture_heatmaps: false,
   });
   posthogInstance = posthog;
   console.log('PostHog initialized');

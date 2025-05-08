@@ -8,9 +8,6 @@ import plugins from './plugins';
 import { PostHogPlugin } from './plugins/posthog';
 import './styles.css';
 
-type PluginWithOptions = [Plugin, Record<string, any>];
-type PluginOrPluginWithOptions = Plugin | PluginWithOptions;
-
 /**
  * Create Vue App
  *

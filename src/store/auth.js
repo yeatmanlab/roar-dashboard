@@ -6,6 +6,7 @@ import _union from 'lodash/union';
 import { initNewFirekit } from '../firebaseInit';
 import { AUTH_SSO_PROVIDERS } from '../constants/auth';
 import posthogInstance from '@/plugins/posthog';
+import { logger } from '@/logger';
 
 export const useAuthStore = () => {
   const store = defineStore('authStore', {
@@ -86,7 +87,7 @@ export const useAuthStore = () => {
                   logger.setUser(identifyUser);
                }
              } else if (wasAuthenticated && !nowAuthenticated) {
-               logger.setUser(null);
+               logger.setUser(null, true);
              }
              wasAuthenticated = nowAuthenticated;
           }
@@ -107,7 +108,7 @@ export const useAuthStore = () => {
                   logger.setUser(identifyUser);
                }
              } else if (wasAuthenticated && !nowAuthenticated) {
-               logger.setUser(null);
+               logger.setUser(null, true);
              }
              wasAuthenticated = nowAuthenticated;
            }
