@@ -69,7 +69,7 @@ const { isLoading: isLoadingAdministrations, data: administrations } = useAdmini
   orderByDefault,
   false,
   {
-    enabled: initialized,
+    enabled: initialized && parentRegistrationComplete,
   },
 );
 
@@ -142,7 +142,7 @@ const { isLoading: isLoadingAssignments, data: assignmentData } = useAdministrat
   orgType,
   orgId,
   {
-    enabled: initialized,
+    enabled: initialized && parentRegistrationComplete,
   },
 );
 </script>
