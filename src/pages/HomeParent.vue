@@ -37,13 +37,6 @@
   </div>
 </template>
 
-<style scoped>
-.home-administrator-wrapper :deep(.main) {
-  padding: 0;
-  width: 90vw;
-}
-</style>
-
 <script setup>
 import useAdministrationsListQuery from '@/composables/queries/useAdministrationsListQuery';
 import useAdministrationAssignmentsQuery from '@/composables/queries/useAdministrationAssignmentsQuery';
@@ -136,3 +129,10 @@ const { isLoading: isLoadingAssignments, data: assignmentData } = useAdministrat
   },
 );
 </script>
+
+<style scoped>
+.home-administrator-wrapper :deep(.main) {
+  padding: 0;
+  width: 90vw;
+}
+</style>

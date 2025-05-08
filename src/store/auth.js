@@ -209,9 +209,6 @@ export const useAuthStore = () => {
           isTestData,
         );
       },
-      async verifyParentRegistration() {
-        return await this.roarfirekit?.verifyParentRegistration();
-      },
 
       // ------------------ LEVANTE ------------------
       async createLevanteUsers(userData) {
