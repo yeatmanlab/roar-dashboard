@@ -3,7 +3,9 @@ import * as Sentry from '@sentry/vue';
 // Get package info
 import packageJson from '../package.json';
 
-const isProduction = import.meta.env.VITE_FIREBASE_PROJECT==='PROD';
+const isProduction = import.meta.env.MODE === 'production';
+// const isProduction = import.meta.env.VITE_FIREBASE_PROJECT==='PROD'; // can be used for more accurate logging
+
 // Get app and core-tasks versions
 const appVersion = packageJson.version;
 const coreTasksVersion = packageJson.dependencies['@levante-framework/core-tasks'].replace('^', '');
