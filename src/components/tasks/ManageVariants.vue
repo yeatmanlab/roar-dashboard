@@ -477,8 +477,6 @@ const { registeredTasksOnly, registeredVariantsOnly } = toRefs(props);
 
 const toast = useToast();
 const initialized = ref(false);
-// const registeredTasksOnly = ref(props.registeredTasksOnly);
-// const registeredVariantsOnly = ref(props.registeredVariantsOnly);
 const variantCheckboxData = ref();
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
