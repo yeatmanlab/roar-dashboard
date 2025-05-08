@@ -30,7 +30,7 @@
       :org-type="orgType"
       :org-id="orgId"
       :administration-id="administrationId"
-      :registrationError="registrationError"
+      :registration-error="registrationError"
     />
     <div v-else class="home-administrator-wrapper">
       <HomeAdministrator />
@@ -69,7 +69,7 @@ const { isLoading: isLoadingAdministrations, data: administrations } = useAdmini
   orderByDefault,
   false,
   {
-    enabled: initialized && parentRegistrationComplete,
+    enabled: initialized.value && parentRegistrationComplete,
   },
 );
 
@@ -90,7 +90,7 @@ const { isActive, pause, resume } = useTimeoutPoll(
       console.error('Registration verification failed:', error);
       registrationRetryCount.value++;
 
-      if (retryCount.value >= MAX_RETRIES) {
+      if (registrationRetryCount.value >= MAX_RETRIES) {
         console.error('Registration verification failed, maximum retries reached:', error);
         registrationError.value = error;
         pause();
@@ -142,7 +142,7 @@ const { isLoading: isLoadingAssignments, data: assignmentData } = useAdministrat
   orgType,
   orgId,
   {
-    enabled: initialized && parentRegistrationComplete,
+    enabled: initialized.value && parentRegistrationComplete,
   },
 );
 </script>
