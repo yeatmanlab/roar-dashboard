@@ -10,7 +10,7 @@
               class="bg-primary text-white border-none p-2 ml-auto"
               @click="newGroup"
             >
-              New Group
+              Add Group
             </PvButton>
              <PvButton
               class="bg-primary text-white border-none p-2 ml-auto"
