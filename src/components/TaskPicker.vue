@@ -286,7 +286,6 @@ const updateVariant = (variantId, conditions) => {
       return variant;
     }
   });
-  console.log('updatedVariants', updatedVariants);
 
   selectedVariants.value = updatedVariants;
   return;
