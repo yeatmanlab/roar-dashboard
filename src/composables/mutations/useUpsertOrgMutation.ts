@@ -6,40 +6,45 @@ import {
   SCHOOL_CLASSES_QUERY_KEY,
   GROUPS_LIST_QUERY_KEY,
   ORG_MUTATION_KEY,
+  ORGS_TABLE_QUERY_KEY
 } from '@/constants/queryKeys';
 import { FIRESTORE_COLLECTIONS } from '@/constants/firebase';
 
-/**
- * Type definition for Organization Data.
- * @property {string} type - The Firestore collection name (e.g., 'districts', 'schools').
- * @property {string} name - The name of the organization.
- * @property {string} abbreviation - The abbreviation of the organization.
- * @property {string} [id] - Optional ID, usually present for existing orgs.
- * @property {string[]} [tags] - Optional tags for the organization.
- * @property {string} [schoolId] - The ID of the parent school (if applicable).
- * @property {string} [districtId] - The ID of the parent district (if applicable).
- * @property {string} [parentOrgId] - The ID of the parent organization (if applicable for groups).
- * @property {string} [parentOrgType] - The type of the parent organization (if applicable for groups).
- */
-type OrgData = {
-  type: string;
-  name: string;
-  abbreviation: string;
-  id?: string;
-  tags?: string[];
-  schoolId?: string;
-  districtId?: string;
-  parentOrgId?: string;
-  parentOrgType?: string;
-};
 
-/**
- * Type definition for the context object used in the upsert org mutation.
- */
+interface OrgDataBase {
+  name: string;
+  id?: string; // Optional for new orgs, assigned by backend
+  tags?: string[];
+}
+
+interface DistrictOrg extends OrgDataBase {
+  type: typeof FIRESTORE_COLLECTIONS.DISTRICTS;
+}
+
+interface SchoolOrg extends OrgDataBase {
+  type: typeof FIRESTORE_COLLECTIONS.SCHOOLS;
+  districtId: string; 
+}
+
+interface ClassOrg extends OrgDataBase {
+  type: typeof FIRESTORE_COLLECTIONS.CLASSES;
+  schoolId: string;  
+  districtId: string; 
+}
+
+interface GroupOrg extends OrgDataBase {
+  type: typeof FIRESTORE_COLLECTIONS.GROUPS;
+  parentOrgId: string; 
+  parentOrgType?: string; 
+}
+
+type OrgData = DistrictOrg | SchoolOrg | ClassOrg | GroupOrg;
+
+
 type UpsertOrgMutationContext = {
   previousData: OrgData[] | undefined;
-  queryKey: string[] | undefined;
-  parentId: string | undefined;
+  queryKey: string[];
+  parentId: string | undefined; // parentId can still be undefined if it's a district
 };
 
 /**
@@ -60,43 +65,38 @@ const useUpsertOrgMutation = () => {
       return data;
     },
     onMutate: async (newOrgData: OrgData) => {
-      let queryKey: string[] | undefined;
+      let queryKey: string[];
       let parentId: string | undefined;
 
-      switch (newOrgData.type) {
-        case FIRESTORE_COLLECTIONS.DISTRICTS:
-          queryKey = [DISTRICTS_LIST_QUERY_KEY];
-          break;
-        case FIRESTORE_COLLECTIONS.SCHOOLS:
-          queryKey = newOrgData.districtId ? [DISTRICT_SCHOOLS_QUERY_KEY, newOrgData.districtId] : undefined;
-          parentId = newOrgData.districtId;
-          break;
-        case FIRESTORE_COLLECTIONS.CLASSES:
-          queryKey = newOrgData.schoolId ? [SCHOOL_CLASSES_QUERY_KEY, newOrgData.schoolId] : undefined;
-          parentId = newOrgData.schoolId;
-          break;
-        case FIRESTORE_COLLECTIONS.GROUPS:
-          queryKey = newOrgData.parentOrgId
-            ? [GROUPS_LIST_QUERY_KEY, newOrgData.parentOrgId]
-            : [GROUPS_LIST_QUERY_KEY];
-          parentId = newOrgData.parentOrgId;
-          break;
-        default:
-          console.error('Unknown org type for optimistic update:', newOrgData.type);
-          return { previousData: undefined, queryKey: undefined, parentId: undefined };
-      }
-
-      if (!queryKey) {
-        console.warn('Query key could not be determined for optimistic update. Org Type:', newOrgData.type);
-        return { previousData: undefined, queryKey: undefined, parentId: undefined };
+      if (newOrgData.type === FIRESTORE_COLLECTIONS.DISTRICTS) {
+        queryKey = [DISTRICTS_LIST_QUERY_KEY];
+        // parentId remains undefined for districts
+      } else if (newOrgData.type === FIRESTORE_COLLECTIONS.SCHOOLS) {
+        queryKey = [DISTRICT_SCHOOLS_QUERY_KEY, newOrgData.districtId]; 
+        parentId = newOrgData.districtId;
+      } else if (newOrgData.type === FIRESTORE_COLLECTIONS.CLASSES) {
+        queryKey = [SCHOOL_CLASSES_QUERY_KEY, newOrgData.schoolId]; 
+        parentId = newOrgData.schoolId;
+        // Note: newOrgData.districtId is also available here if needed for context
+      } else if (newOrgData.type === FIRESTORE_COLLECTIONS.GROUPS) {
+        queryKey = [GROUPS_LIST_QUERY_KEY, newOrgData.parentOrgId]; 
+        parentId = newOrgData.parentOrgId;
+      } else {
+        // This case should ideally not be hit if OrgData is correctly typed
+        // and all cases are handled. Adding an exhaustive check:
+        const _exhaustiveCheck: never = newOrgData;
+        console.error('Unknown org type for optimistic update:', _exhaustiveCheck);
+        return { previousData: undefined, queryKey: [] as string[], parentId: undefined } as unknown as UpsertOrgMutationContext;
+        // Returning a compatible type to satisfy onMutate's expected return, though this path is an error.
+        // The [] as string[] for queryKey is a placeholder for the error case.
       }
 
       await queryClient.cancelQueries({ queryKey });
       const previousData = queryClient.getQueryData<OrgData[]>(queryKey);
-      const optimisticOrg = { ...newOrgData, id: newOrgData.id || `temp-${Date.now()}` };
+      const optimisticOrg = { ...newOrgData, id: newOrgData.id }; 
 
-      queryClient.setQueryData<OrgData[] | undefined>(queryKey, (oldData) => {
-        if (Array.isArray(oldData)) {
+      queryClient.setQueryData<OrgData[]>(queryKey, (oldData) => {
+          if (Array.isArray(oldData)) {
           const existingIndex = newOrgData.id ? oldData.findIndex(org => org.id === newOrgData.id) : -1;
           if (existingIndex > -1) {
             const updatedData = [...oldData];
@@ -106,7 +106,7 @@ const useUpsertOrgMutation = () => {
             return [...oldData, optimisticOrg];
           }
         }
-        return [optimisticOrg];
+        return [optimisticOrg]; // If oldData is undefined or not an array
       });
 
       return { previousData, queryKey, parentId };
@@ -120,23 +120,31 @@ const useUpsertOrgMutation = () => {
     onSettled: (data, error, variables, context) => {
       if (context?.queryKey) {
         queryClient.invalidateQueries({ queryKey: context.queryKey });
+
+        // We need to invalidate this query otherwise a site will not show up right away in the list groups table.
+        if (variables.type === FIRESTORE_COLLECTIONS.DISTRICTS) {
+          console.log('invalidating orgs-table');
+          queryClient.invalidateQueries({ queryKey: [ORGS_TABLE_QUERY_KEY], exact: false });
+        }
       } else {
+        // Fallback invalidation logic (should be less common if onMutate always provides context.queryKey)
         const orgType = variables.type;
         if (orgType === FIRESTORE_COLLECTIONS.DISTRICTS) {
           queryClient.invalidateQueries({ queryKey: [DISTRICTS_LIST_QUERY_KEY] });
         }
-        if (orgType === FIRESTORE_COLLECTIONS.SCHOOLS && variables.districtId) {
-          queryClient.invalidateQueries({ queryKey: [DISTRICT_SCHOOLS_QUERY_KEY, variables.districtId] });
+        // Added type checks for variables before accessing parent IDs
+        if (orgType === FIRESTORE_COLLECTIONS.SCHOOLS && (variables as SchoolOrg).districtId) {
+          queryClient.invalidateQueries({ queryKey: [DISTRICT_SCHOOLS_QUERY_KEY, (variables as SchoolOrg).districtId] });
         } else if (orgType === FIRESTORE_COLLECTIONS.SCHOOLS) {
           queryClient.invalidateQueries({ queryKey: [DISTRICT_SCHOOLS_QUERY_KEY] });
         }
-        if (orgType === FIRESTORE_COLLECTIONS.CLASSES && variables.schoolId) {
-          queryClient.invalidateQueries({ queryKey: [SCHOOL_CLASSES_QUERY_KEY, variables.schoolId] });
+        if (orgType === FIRESTORE_COLLECTIONS.CLASSES && (variables as ClassOrg).schoolId) {
+          queryClient.invalidateQueries({ queryKey: [SCHOOL_CLASSES_QUERY_KEY, (variables as ClassOrg).schoolId] });
         } else if (orgType === FIRESTORE_COLLECTIONS.CLASSES) {
            queryClient.invalidateQueries({ queryKey: [SCHOOL_CLASSES_QUERY_KEY] });
         }
-        if (orgType === FIRESTORE_COLLECTIONS.GROUPS && variables.parentOrgId) {
-          queryClient.invalidateQueries({ queryKey: [GROUPS_LIST_QUERY_KEY, variables.parentOrgId] });
+        if (orgType === FIRESTORE_COLLECTIONS.GROUPS && (variables as GroupOrg).parentOrgId) {
+          queryClient.invalidateQueries({ queryKey: [GROUPS_LIST_QUERY_KEY, (variables as GroupOrg).parentOrgId] });
         } else if (orgType === FIRESTORE_COLLECTIONS.GROUPS) {
           queryClient.invalidateQueries({ queryKey: [GROUPS_LIST_QUERY_KEY] });
         }
