@@ -3,6 +3,7 @@ import { captureConsoleIntegration, contextLinesIntegration, extraErrorDataInteg
 import { formattedLocale, languageOptions } from './translations/i18n';
 import { isLevante } from '@/helpers';
 import { App } from 'vue';
+import { useAuthStore } from '@/store/auth';
 
 const language = formattedLocale;
 
@@ -22,9 +23,11 @@ export function initSentry(app: App) {
     tracePropagationTargets = ['localhost:5173', 'https://roar.education/**/*', regex];
   }
 
+  const authStore = useAuthStore();
+
   Sentry.init({
     app,
-    dsn: dsn,
+    dsn,
     integrations: [
       Sentry.replayIntegration({
         maskAllText: true,
@@ -54,7 +57,7 @@ export function initSentry(app: App) {
     attachStacktrace: true,
     // Performance Monitoring
     tracesSampleRate: 0.2, // Capture 20% of the transactions
-    tracePropagationTargets: tracePropagationTargets,
+    tracePropagationTargets,
     // Session Replay
     replaysSessionSampleRate: 0.1,
     replaysOnErrorSampleRate: 1.0,
@@ -66,4 +69,15 @@ export function initSentry(app: App) {
 
   console.log('mark:// Sentry initialized with DSN:', dsn);
   Sentry.setTag('commitSHA', import.meta.env.VITE_APP_VERSION);
+
+  // Set the user's language as a tag
+  Sentry.setTag('user.language', language);
+
+  // Set user information if authenticated
+  if (authStore.isAuthenticated && authStore.userData) {
+    Sentry.setUser({
+      id: authStore.userData.uid,
+      email: authStore.userData.email,
+    });
+  }
 }
