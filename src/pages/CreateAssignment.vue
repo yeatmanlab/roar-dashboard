@@ -25,12 +25,12 @@
                 data-cy="input-administration-name"
               />
               <label for="administration-name" class="w-full">Assignment Name<span class="required-asterisk">*</span></label>
-              <small
+            </PvFloatLabel>
+            <small
                 v-if="v$.administrationName.$invalid && submitted"
                 class="p-error white-space-nowrap overflow-hidden text-overflow-ellipsis"
                 >Please name your assignment</small
               >
-            </PvFloatLabel>
           </div>
         </div>
         <div class="formgrid grid">
