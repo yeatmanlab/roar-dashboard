@@ -85,7 +85,8 @@ function setUser(userData: UserData | null, force: boolean = false): void {
           // ...userData
         });
       }
-      const { uid, ...otherUserData } = userData; // Destructure uid and get the rest
+      const { uid, ...otherUserData } = userData;
+      console.log('mark:// calling Sentry.setUser', { id: uid, ...otherUserData, SentrySetUser: Sentry.setUser }); // Destructure uid and get the rest
       Sentry.setUser({ id: uid, ...otherUserData });
     } else {
       // Check for reset existence on posthogInstance due to mock in dev
