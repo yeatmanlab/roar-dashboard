@@ -133,6 +133,38 @@ Cypress.Commands.add('waitForAdministrationsList', () => {
 });
 
 /**
+ * Waits for the student report button to load.
+ */
+Cypress.Commands.add('waitForStudentReportList', () => {
+  // Note: As the application currently does not support paginated fetching of administrations, we have to wait for
+  // the whole list to be loaded and that can take a while, hence the long timeout.
+  cy.waitUntil(
+    () => {
+      return Cypress.$('[data-cy="view-score-report-btn"] ').length;
+    },
+    {
+      errorMsg: 'Failed to find the score report button before timeout',
+    },
+  );
+});
+
+/**
+ * Waits for the launch student button to load.
+ */
+Cypress.Commands.add('waitForPlayAssessmentsBtn', () => {
+  // Note: As the application currently does not support paginated fetching of administrations, we have to wait for
+  // the whole list to be loaded and that can take a while, hence the long timeout.
+  cy.waitUntil(
+    () => {
+      return Cypress.$('[data-cy="play-assessments-btn"] ').length;
+    },
+    {
+      errorMsg: 'Failed to find the play assessments button before timeout',
+    },
+  );
+});
+
+/**
  * Waits for the organisations list to load.
  */
 Cypress.Commands.add('waitForOrganisationsList', () => {

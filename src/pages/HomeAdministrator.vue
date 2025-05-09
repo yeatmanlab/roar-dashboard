@@ -148,7 +148,6 @@ const initialized = ref(false);
 const pageLimit = ref(10);
 const page = ref(0);
 
-const orderBy = ref(orderByDefault);
 const searchSuggestions = ref([]);
 const searchTokens = ref([]);
 const searchInput = ref('');
@@ -208,7 +207,7 @@ const {
   isLoading: isLoadingAdministrations,
   isFetching: isFetchingAdministrations,
   data: administrations,
-} = useAdministrationsListQuery(orderBy, fetchTestAdministrations, {
+} = useAdministrationsListQuery(orderByDefault, fetchTestAdministrations, {
   enabled: initialized,
 });
 

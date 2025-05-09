@@ -62,7 +62,7 @@ const mapAdministrations = async ({ isSuperAdmin, data, adminOrgs }) => {
       return {
         id: a.id,
         name: a.name,
-        publicName: a.publicName,
+        publicName: a?.publicName,
         dates: {
           start: a.dateOpened,
           end: a.dateClosed,
