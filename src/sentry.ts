@@ -72,9 +72,10 @@ export function initSentry(app: App) {
 
   // Set the user's language as a tag
   Sentry.setTag('user.language', language);
-
+  console.log('mark:// authstore user data', authStore.userData);
   // Set user information if authenticated
   if (authStore.isAuthenticated && authStore.userData) {
+    console.log('mark:// Sentry SetUser:', authStore.userData);
     Sentry.setUser({
       id: authStore.userData.uid,
       email: authStore.userData.email,

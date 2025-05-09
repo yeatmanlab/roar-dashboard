@@ -69,49 +69,27 @@ export const useAuthStore = () => {
         }
       },
       setAuthStateListeners() {
-        let wasAuthenticated = Boolean(this.firebaseUser.adminFirebaseUser) && Boolean(this.firebaseUser.appFirebaseUser);
-
         this.adminAuthStateListener = onAuthStateChanged(this.roarfirekit?.admin.auth, async (user) => {
-          const previousAdminUser = this.firebaseUser.adminFirebaseUser;
           if (user) {
             this.localFirekitInit = true;
             this.firebaseUser.adminFirebaseUser = user;
+            console.log('mark:// admin auth state listener', {user});
+            logger.setUser(user);
           } else {
             this.firebaseUser.adminFirebaseUser = null;
-          }
-          if (previousAdminUser !== this.firebaseUser.adminFirebaseUser) {
-             const nowAuthenticated = Boolean(this.firebaseUser.adminFirebaseUser) && Boolean(this.firebaseUser.appFirebaseUser);
-             if (!wasAuthenticated && nowAuthenticated) {
-               const identifyUser = this.firebaseUser.adminFirebaseUser;
-               if (identifyUser) {
-                  logger.setUser(identifyUser);
-               }
-             } else if (wasAuthenticated && !nowAuthenticated) {
-               logger.setUser(null, true);
-             }
-             wasAuthenticated = nowAuthenticated;
+            logger.setUser(null);
           }
         });
 
         this.appAuthStateListener = onAuthStateChanged(this.roarfirekit?.app.auth, async (user) => {
-          const previousAppUser = this.firebaseUser.appFirebaseUser;
           if (user) {
             this.firebaseUser.appFirebaseUser = user;
+            console.log('mark:// app auth state listener', {user});
+            logger.setUser(user);
           } else {
             this.firebaseUser.appFirebaseUser = null;
+            logger.setUser(null);
           }
-          if (previousAppUser !== this.firebaseUser.appFirebaseUser) {
-             const nowAuthenticated = Boolean(this.firebaseUser.adminFirebaseUser) && Boolean(this.firebaseUser.appFirebaseUser);
-             if (!wasAuthenticated && nowAuthenticated) {
-               const identifyUser = this.firebaseUser.appFirebaseUser;
-                if (identifyUser) {
-                  logger.setUser(identifyUser);
-               }
-             } else if (wasAuthenticated && !nowAuthenticated) {
-               logger.setUser(null, true);
-             }
-             wasAuthenticated = nowAuthenticated;
-           }
         });
       },
       async completeAssessment(adminId, taskId) {
