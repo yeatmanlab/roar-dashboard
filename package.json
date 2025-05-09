@@ -30,7 +30,7 @@
   "dependencies": {
     "@bdelab/roam-apps": "1.2.8",
     "@bdelab/roar-firekit": "^9.7.1",
-    "@bdelab/roar-letter": "3.0.1",
+    "@bdelab/roar-letter": "2.1.0",
     "@bdelab/roar-multichoice": "1.11.8",
     "@bdelab/roar-pa": "3.0.0",
     "@bdelab/roar-readaloud": "1.2.1",
