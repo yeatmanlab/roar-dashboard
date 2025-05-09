@@ -85,9 +85,10 @@ function setUser(userData: UserData | null, force: boolean = false): void {
           // ...userData
         });
       }
-      const { uid, ...otherUserData } = userData;
-      console.log('mark:// calling Sentry.setUser', { id: uid, ...otherUserData, SentrySetUser: Sentry.setUser }); // Destructure uid and get the rest
-      Sentry.setUser({ id: uid, ...otherUserData });
+      const { uid, email } = userData;
+      Sentry.setUser({ id: uid, email });
+      console.log('mark:// calling Sentry.setUser', { id: uid, email, SentrySetUser: Sentry.getCurrentScope().getUser() }); // Destructure uid and get the rest
+
     } else {
       // Check for reset existence on posthogInstance due to mock in dev
       if (typeof posthogInstance.reset === 'function') {
