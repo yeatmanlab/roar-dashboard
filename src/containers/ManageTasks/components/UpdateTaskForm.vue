@@ -58,7 +58,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref, watch } from 'vue';
+import { computed, onMounted, reactive, ref, toRefs, watch } from 'vue';
 import { useVuelidate } from '@vuelidate/core';
 import { storeToRefs } from 'pinia';
 import { useToast } from 'primevue/usetoast';
@@ -67,6 +67,7 @@ import PvToast from 'primevue/toast';
 import { useAuthStore } from '@/store/auth';
 import useTasksQuery from '@/composables/queries/useTasksQuery';
 import useUpdateTaskMutation from '@/composables/mutations/useUpdateTaskMutation';
+import useToggleRegisteredTasksMutation from '@/composables/mutations/useToggleRegisteredTasksMutation';
 import Dropdown from '@/components/Form/Dropdown';
 import TaskParametersConfigurator from './TaskParametersConfigurator.vue';
 import { convertParamArrayToObject } from '@/helpers/convertParamArrayToObject';
@@ -74,14 +75,24 @@ import { convertObjectToParamArray } from '@/helpers/convertObjectToParamArray';
 import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
 import { usePermissions } from '@/composables/usePermissions';
 
+const props = defineProps({
+  registeredTasksOnly: {
+    type: Boolean,
+    default: true,
+  },
+});
+
+const { registeredTasksOnly } = toRefs(props);
+
 const toast = useToast();
 const initialized = ref(false);
-const registeredTasksOnly = ref(true);
+// const registeredTasksOnly = ref(props.registeredTasksOnly);
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
 const { userCan, Permissions } = usePermissions();
 
 const { mutate: updateTask } = useUpdateTaskMutation();
+const { mutate: toggleRegisteredTasks } = useToggleRegisteredTasksMutation();
 
 // The selected task to be updated.
 const selectedTask = ref('');
@@ -153,7 +164,13 @@ watch(
   },
   { immediate: true },
 );
-
+watch(
+  registeredTasksOnly,
+  () => {
+    toggleRegisteredTasks(registeredTasksOnly, null);
+  },
+  { immediate: true },
+);
 /**
  * Reset the form to its initial state.
  *
