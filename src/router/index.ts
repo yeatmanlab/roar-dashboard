@@ -213,12 +213,12 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import('../pages/users/LinkUsers.vue'),
     meta: { pageTitle: 'Link Users', requireAdmin: true, project: 'LEVANTE' },
   },
-  {
-    path: '/edit-users',
-    name: 'Edit Users',
-    component: () => import('../pages/users/EditUsers.vue'),
-    meta: { pageTitle: 'Edit Users', requireAdmin: true, project: 'LEVANTE' },
-  },
+  // {
+  //   path: '/edit-users',
+  //   name: 'Edit Users',
+  //   component: () => import('../pages/users/EditUsers.vue'),
+  //   meta: { pageTitle: 'Edit Users', requireAdmin: true, project: 'LEVANTE' },
+  // },
   {
     path: '/survey',
     name: 'Survey',
