@@ -74,26 +74,14 @@
           </div>
         </div>
 
-        <GroupPicker :orgs="orgsList" @selection="selection($event)" />
+        <GroupPicker ref="groupPicker" class="group-picker-component" :orgs="orgsList" @selection="selection($event)" />
         <small v-if="submitted && !checkForRequiredOrgs({ districts: state.districts, schools: state.schools, classes: state.classes, groups: state.groups, families: state.families })" class="p-error mb-8">
           Please select at least one Group (Site, School, Class, or Cohort).
         </small>
 
-        <PvDialog v-model:visible="showError" :modal="true" :closable="true" :draggable="false" class="confirm">
-          <template #header>
-            <h3>{{ errorHeader }}</h3>
-          </template>
-          <span class="flex flex-column">
-            <span>{{ errorMessage }}</span>
-            <span v-if="nonUniqueTasks.length > 0" class="mt-2 font-bold">{{ nonUniqueTasks.join(', ') }}</span>
-          </span>
-          <template #footer>
-            <PvButton label="Close" icon="pi pi-times" @click="showError = false" class="p-button-text" />
-          </template>
-        </PvDialog>
-
         <TaskPicker
-          class="mt-3"
+          ref="taskPicker"
+          class="task-picker-component mt-3"
           :all-variants="variantsByTaskId"
           :input-variants="preSelectedVariants"
           :pre-existing-assessment-info="existingAssessments"
@@ -168,7 +156,6 @@ import PvFloatLabel from 'primevue/floatlabel';
 import PvButton from 'primevue/button';
 import PvDatePicker from 'primevue/datepicker';
 import PvCheckbox from 'primevue/checkbox';
-import PvDialog from 'primevue/dialog';
 import PvDivider from 'primevue/divider';
 import PvInputText from 'primevue/inputtext';
 import PvRadioButton from 'primevue/radiobutton';
@@ -431,9 +418,31 @@ const removeUndefined = (obj) => {
   return Object.fromEntries(Object.entries(obj).filter(([_, v]) => v !== undefined));
 };
 
-const errorMessage = ref('');
-const showError = ref(false);
-const errorHeader = ref('');
+const scrollToError = (elementId) => {
+  // Add a small delay to ensure the DOM is updated
+  setTimeout(() => {
+    const element = document.getElementById(elementId);
+    if (element) {
+      // Get the element's position relative to the viewport
+      const rect = element.getBoundingClientRect();
+      // Calculate the scroll position
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      const targetPosition = rect.top + scrollTop - 100; // Offset by 100px to account for any fixed headers
+
+      // Smooth scroll to the element
+      window.scrollTo({
+        top: targetPosition,
+        behavior: 'smooth'
+      });
+
+      // Add highlight effect
+      element.classList.add('error-highlight');
+      setTimeout(() => {
+        element.classList.remove('error-highlight');
+      }, 2000);
+    }
+  }, 100);
+};
 
 const submit = async () => {
   console.log('Submit function called');
@@ -446,13 +455,22 @@ const submit = async () => {
   // First check dates
   if (!state.dateStarted || !state.dateClosed) {
     if (!state.dateStarted) {
-      errorMessage.value = 'Please select a start date';
-      errorHeader.value = 'Required Field Missing';
+      toast.add({
+        severity: TOAST_SEVERITIES.ERROR,
+        summary: 'Required Field Missing',
+        detail: 'Please select a start date',
+        life: TOAST_DEFAULT_LIFE_DURATION,
+      });
+      scrollToError('start-date');
     } else {
-      errorMessage.value = 'Please select an end date';
-      errorHeader.value = 'Required Field Missing';
+      toast.add({
+        severity: TOAST_SEVERITIES.ERROR,
+        summary: 'Required Field Missing',
+        detail: 'Please select an end date',
+        life: TOAST_DEFAULT_LIFE_DURATION,
+      });
+      scrollToError('end-date');
     }
-    showError.value = true;
     return;
   }
 
@@ -469,10 +487,28 @@ const submit = async () => {
   const orgsValid = checkForRequiredOrgs(orgs);
   console.log('Orgs valid result:', orgsValid);
   if (!orgsValid) {
-    console.log('Org check failed, showing dialog.');
-    errorMessage.value = 'Please select at least one Group (Site, School, Class, or Cohort).';
-    errorHeader.value = 'Missing Selection';
-    showError.value = true;
+    console.log('Org check failed, showing toast.');
+    toast.add({
+      severity: TOAST_SEVERITIES.ERROR,
+      summary: 'Missing Selection',
+      detail: 'Please select at least one Group (Site, School, Class, or Cohort).',
+      life: TOAST_DEFAULT_LIFE_DURATION,
+    });
+    // Scroll to the GroupPicker component
+    const groupPickerElement = document.querySelector('.group-picker-component');
+    if (groupPickerElement) {
+      const rect = groupPickerElement.getBoundingClientRect();
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      const targetPosition = rect.top + scrollTop - 100;
+      window.scrollTo({
+        top: targetPosition,
+        behavior: 'smooth'
+      });
+      groupPickerElement.classList.add('error-highlight');
+      setTimeout(() => {
+        groupPickerElement.classList.remove('error-highlight');
+      }, 2000);
+    }
     return;
   }
 
@@ -491,23 +527,50 @@ const submit = async () => {
   const tasksUnique = checkForUniqueTasks(submittedAssessments);
   console.log('Tasks unique result:', tasksUnique);
   if (!tasksUnique || _isEmpty(submittedAssessments)) {
-    console.log('Task check failed (not unique or empty), showing dialog.');
+    console.log('Task check failed (not unique or empty), showing toast.');
     getNonUniqueTasks(submittedAssessments);
     if (_isEmpty(submittedAssessments)) {
-      errorMessage.value = 'No variants selected. You must select at least one variant to be assigned.';
+      toast.add({
+        severity: TOAST_SEVERITIES.ERROR,
+        summary: 'Task Selections',
+        detail: 'No variants selected. You must select at least one variant to be assigned.',
+        life: TOAST_DEFAULT_LIFE_DURATION,
+      });
     } else {
-      errorMessage.value = 'Task selections must be unique.';
+      toast.add({
+        severity: TOAST_SEVERITIES.ERROR,
+        summary: 'Task Selections',
+        detail: 'Task selections must be unique.',
+        life: TOAST_DEFAULT_LIFE_DURATION,
+      });
     }
-    errorHeader.value = 'Task Selections';
-    showError.value = true;
+    // Scroll to the TaskPicker component
+    const taskPickerElement = document.querySelector('.task-picker-component');
+    if (taskPickerElement) {
+      const rect = taskPickerElement.getBoundingClientRect();
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      const targetPosition = rect.top + scrollTop - 100;
+      window.scrollTo({
+        top: targetPosition,
+        behavior: 'smooth'
+      });
+      taskPickerElement.classList.add('error-highlight');
+      setTimeout(() => {
+        taskPickerElement.classList.remove('error-highlight');
+      }, 2000);
+    }
     return;
   }
 
   // Finally check sequential
   if (v$.value.sequential.$invalid) {
-    errorMessage.value = 'Please specify whether tasks should be completed sequentially or not';
-    errorHeader.value = 'Required Field Missing';
-    showError.value = true;
+    toast.add({
+      severity: TOAST_SEVERITIES.ERROR,
+      summary: 'Required Field Missing',
+      detail: 'Please specify whether tasks should be completed sequentially or not',
+      life: TOAST_DEFAULT_LIFE_DURATION,
+    });
+    scrollToError('radio-button-not-sequential');
     return;
   }
 
@@ -755,5 +818,18 @@ watch([existingAdministrationData, allVariants], ([adminInfo, allVariantInfo]) =
 }
 .required-asterisk {
   color: var(--red-500);
+}
+
+.error-highlight {
+  animation: highlight 2s ease-out;
+}
+
+@keyframes highlight {
+  0% {
+    background-color: var(--red-100);
+  }
+  100% {
+    background-color: transparent;
+  }
 }
 </style>
