@@ -7,6 +7,7 @@ import { App } from 'vue';
 const language = formattedLocale;
 
 export function initSentry(app: App) {
+  console.log('mark:// Initializing Sentry...');
   // skip if levante instance
   let dsn: string;
   let regex: RegExp;
@@ -55,9 +56,14 @@ export function initSentry(app: App) {
     tracesSampleRate: 0.2, // Capture 20% of the transactions
     tracePropagationTargets: tracePropagationTargets,
     // Session Replay
-    replaysSessionSampleRate: 0.1, // This sets the sample rate at 10%. You may want to change it to 100% while in development and then sample at a lower rate in production.
-    replaysOnErrorSampleRate: 1.0, // If you're not already sampling the entire session, change the sample rate to 100% when sampling sessions where errors occur.
+    replaysSessionSampleRate: 0.1,
+    replaysOnErrorSampleRate: 1.0,
+    beforeSend(event) {
+      console.log('mark:// Sentry beforeSend:', { event, user: event.user });
+      return event;
+    },
   });
 
+  console.log('mark:// Sentry initialized with DSN:', dsn);
   Sentry.setTag('commitSHA', import.meta.env.VITE_APP_VERSION);
 }

@@ -4,6 +4,7 @@ import * as Sentry from '@sentry/vue';
 import packageJson from '../package.json';
 
 const isProduction = import.meta.env.MODE === 'production';
+console.log('mark:// isProduction:', isProduction, 'MODE:', import.meta.env.MODE);
 // const isProduction = import.meta.env.VITE_FIREBASE_PROJECT==='PROD'; // can be used for more accurate logging
 
 // Get app and core-tasks versions
@@ -74,11 +75,12 @@ function error(error: Error | unknown, context?: Record<string, any>, force: boo
  * @param userData - An object containing user information (e.g., uid, email) or null to reset.
  */
 function setUser(userData: UserData | null, force: boolean = false): void {
+  console.log('mark:// setUser called with:', { userData, isProduction, force });
   if (isProduction || force) {
     if (userData) {
       // Check for identify existence on posthogInstance due to mock in dev
       if (typeof posthogInstance.identify === 'function') {
-        console.log('posthogInstance.identify', {userData, uid: userData.uid});
+        console.log('mark:// posthogInstance.identify', {userData, uid: userData.uid});
         posthogInstance.identify(userData.uid, {
           email: userData.email,
           // You can spread other userData properties if needed
@@ -87,8 +89,7 @@ function setUser(userData: UserData | null, force: boolean = false): void {
       }
       const { uid, email } = userData;
       Sentry.setUser({ id: uid, email });
-      console.log('mark:// calling Sentry.setUser', { id: uid, email, SentrySetUser: Sentry.getCurrentScope().getUser() }); // Destructure uid and get the rest
-
+      console.log('mark:// Sentry user set:', { id: uid, email, currentUser: Sentry.getCurrentScope().getUser() });
     } else {
       // Check for reset existence on posthogInstance due to mock in dev
       if (typeof posthogInstance.reset === 'function') {
