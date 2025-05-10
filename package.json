@@ -32,7 +32,7 @@
     "@bdelab/roar-firekit": "^9.7.1",
     "@bdelab/roar-letter": "2.1.0",
     "@bdelab/roar-multichoice": "1.11.8",
-    "@bdelab/roar-pa": "3.0.0",
+    "@bdelab/roar-pa": "2.2.5",
     "@bdelab/roar-readaloud": "1.2.1",
     "@bdelab/roar-sre": "1.16.1",
     "@bdelab/roar-swr": "1.13.1",
