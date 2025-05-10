@@ -3,7 +3,6 @@ description:
 globs: 
 alwaysApply: true
 ---
-
 You are an expert in JavaScript, Typescript, Node.js, Vue 3, Vue Router, Pinia, PrimeVue v4, and Tailwind.
 
 You are building a platform for researchers to study how children learn and read. There are two primary ways of using the platform, as an administrator or as a participant. Participants (mainly children) take assessments (called tasks) and the data is recorded in Firebase. The tasks come from the @levante-framework/core-tasks package.
@@ -55,9 +54,49 @@ TypeScript
 - Avoid enums; use maps instead for better type safety and flexibility.
 - Use functional components with TypeScript interfaces.
 
-Key Conventions
-- Optimize Web Vitals (LCP, CLS, FID) using tools like Lighthouse or WebPageTest.
-
 Follow the official Vue.js documentation for up-to-date best practices on Data Fetching, Rendering, and Routing.
     
+## Cursor Rules
+
+```json
+[
+  {
+    "id": "levante-dashboard-model-persona",
+    "description": "Provides context about the Levante platform and coding standards",
+    "pattern": ".*",
+    "systemPrompt": "You are an expert in JavaScript, TypeScript, Vue 3, and Firebase, helping build the Levante platform, an educational assessment tool for researchers studying how children learn to read. Follow Vue 3 Composition API best practices with <script setup>, PrimeVue v4 for UI components, and Tailwind CSS for styling. Prioritize TypeScript for strong typing, prefer interfaces over types, and use functional programming patterns over classes. Use Pinia for state management and Vue Router for navigation."
+  },
+  {
+    "id": "firebase-emulator-setup",
+    "description": "Ensures proper connection to Firebase emulators",
+    "pattern": "firebase.*emulator|emulator.*firebase",
+    "systemPrompt": "When working with Firebase emulators in the Levante project, ensure: 1) Auth emulator connections happen FIRST before other services, 2) The correct ports are used (Auth: 9199, Firestore: 8180, Functions: 5102), 3) Environment variables are properly set, and 4) The connectAuthEmulator function is called with the full URL including 'http://' prefix."
+  },
+  {
+    "id": "vue-component-structure",
+    "description": "Enforces Vue 3 component structure",
+    "pattern": "\\.vue$",
+    "systemPrompt": "For Vue components in the Levante project: 1) Use <script setup> syntax, 2) Group related composables and utilities at the top, 3) Define reactive state with ref and reactive, 4) Add TypeScript interfaces/types for props and emits, 5) Use PrimeVue components with proper Tailwind styling, and 6) Follow the mobile-first approach for responsive design."
+  }
+]
+```
+
+## Additional Guidelines
+
+```json
+[
+  {
+    "id": "firebase-auth-best-practices",
+    "description": "Guidelines for Firebase Authentication",
+    "pattern": "auth.*firebase|firebase.*auth",
+    "systemPrompt": "When working with Firebase Authentication in the Levante project: 1) Always handle authentication errors with specific error messages for different error codes, 2) Use async/await patterns with proper error handling, 3) Implement proper user session management, 4) Consider the auth emulator configuration in development environments."
+  },
+  {
+    "id": "pinia-store-patterns",
+    "description": "Pinia store implementation guidelines",
+    "pattern": "defineStore|createPinia|use.*Store",
+    "systemPrompt": "For Pinia stores in Levante: 1) Organize by domain (e.g., authStore, taskStore), 2) Use the setup syntax with composables, 3) Implement proper TypeScript interfaces for state, 4) Separate actions for API calls from pure state mutations, 5) Use getters for derived state, and 6) Consider using persistedState for relevant stores."
+  }
+]
+```
      
