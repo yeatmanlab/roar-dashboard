@@ -3,6 +3,13 @@ import * as Sentry from '@sentry/vue';
 // Get package info
 import packageJson from '../package.json';
 
+interface UserData {
+  uid: string;
+  email: string;
+  // Add other user properties you might want to track
+  [key: string]: any; // Allow other properties
+}
+
 const isProduction = import.meta.env.MODE === 'production';
 console.log('mark:// isProduction:', isProduction, 'MODE:', import.meta.env.MODE);
 // const isProduction = import.meta.env.VITE_FIREBASE_PROJECT==='PROD'; // can be used for more accurate logging
@@ -11,13 +18,8 @@ console.log('mark:// isProduction:', isProduction, 'MODE:', import.meta.env.MODE
 const appVersion = packageJson.version;
 const coreTasksVersion = packageJson.dependencies['@levante-framework/core-tasks'].replace('^', '');
 const commitHash = import.meta.env.VITE_APP_VERSION;
+let currentUser: UserData | null = null;
 
-interface UserData {
-  uid: string;
-  email: string;
-  // Add other user properties you might want to track
-  [key: string]: any; // Allow other properties
-}
 
 /**
  * Logs an event for analytics.
@@ -79,23 +81,26 @@ function setUser(userData: UserData | null, force: boolean = false): void {
   if (isProduction || force) {
     if (userData) {
       // Check for identify existence on posthogInstance due to mock in dev
-      if (typeof posthogInstance.identify === 'function') {
+      // Only set identify if the user has changed since this is a backend call
+      if (typeof posthogInstance.identify === 'function' && currentUser?.uid !== userData.uid) {
         console.log('mark:// posthogInstance.identify', {userData, uid: userData.uid});
         posthogInstance.identify(userData.uid, {
           email: userData.email,
-          // You can spread other userData properties if needed
-          // ...userData
         });
       }
       const { uid, email } = userData;
       Sentry.setUser({ id: uid, email });
+      currentUser = userData;
       console.log('mark:// Sentry user set:', { id: uid, email, currentUser: Sentry.getCurrentScope().getUser() });
     } else {
       // Check for reset existence on posthogInstance due to mock in dev
-      if (typeof posthogInstance.reset === 'function') {
+      if (typeof posthogInstance.reset === 'function' && !!currentUser?.uid) {
+        console.log('mark:// posthogInstance.reset', {currentUser: currentUser.uid});
         posthogInstance.reset();
       }
       Sentry.setUser(null);
+      currentUser = null;
+      console.log('mark:// Sentry user reset:', { currentUser: Sentry.getCurrentScope().getUser() });
     }
   } else {
     if (userData) {
