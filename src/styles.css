@@ -81,3 +81,7 @@ legend {
 .bg-transparent {
   background-color: transparent;
 }
+
+.text-end {
+  text-align: end;
+}

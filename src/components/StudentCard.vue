@@ -1,40 +1,46 @@
 <template>
-  <div class="flex flex-column bg-gray-200 m-4 bg-red-800 card-container rounded">
+  <div class="flex flex-column bg-gray-100 bg-gray-100 rounded border-1 border-gray-300 m-2">
     <!-- StudentCard component for displaying individual student information -->
     <!-- User Header -->
-    <div class="flex flex-column bg-red-800 text-white p-3 gap-2">
-      <div class="font-bold text-2xl">
+    <div class="flex flex-column bg-gray-100 p-3 gap-2">
+      <div class="font-bold text-xl">
         {{ userName }}
-        <div class="font-light text-sm text-white">Student</div>
+        <div class="font-light text-sm">Student</div>
       </div>
-      <div class="flex gap-2">
+      <div class="flex font-normal gap-2 text-gray-500">
         <div class="text-sm">
-          {{ user.studentData.grade }}
-          <div class="font-light text-xs text-white">Grade</div>
+          {{ getGradeWithSuffix(user.studentData.grade) }}
+          <span class="">Grade</span>
         </div>
         <div class="text-sm">
           {{ _capitalize(user.studentData.schoolLevel) }}
-          <div class="font-light text-xs text-white">School Level</div>
+          <span class="">School</span>
         </div>
       </div>
     </div>
     <!-- Task specific Data -->
-    <div class="bg-gray-200 flex flex-column p-3 gap-1">
+    <div class="flex flex-column gap-1 border-t-1 border-gray-300">
       <PvAccordion value="0">
+        <template #collapseicon>
+          <i class="pi pi-chevron-up ml-4"></i>
+        </template>
+        <template #expandicon>
+          <i class="pi pi-chevron-down ml-4"></i>
+        </template>
         <PvAccordionPanel value="0">
-          <PvAccordionHeader>
+          <PvAccordionHeader class="border-1">
             <!-- Administration Header -->
-            <div class="flex flex-column p-3 gap-2 w-full">
+            <div class="flex flex-column gap-2 w-full">
               <div class="flex gap-2 flex-wrap justify-between align-center">
                 <div class="flex flex-column">
-                  <div class="text-lg">{{ assignment.name }}</div>
+                  <div class="text-md">{{ assignment.name }}</div>
                   <div class="text-xs font-light">Assignment</div>
                 </div>
                 <div class="flex flex-column">
                   <div class="text-sm">
                     {{ parseDate(assignment.dateOpened) }} - {{ parseDate(assignment.dateClosed) }}
                   </div>
-                  <div class="text-xs font-light">Dates Active</div>
+                  <div class="text-xs font-light text-end">Dates Active</div>
                 </div>
               </div>
               <div class="flex flex-wrap items-end justify-content-between mt-1">
@@ -62,14 +68,20 @@
                     }"
                     class="no-underline text-black"
                   >
-                    <PvButton label="View Scores" icon="" text data-cy="view-score-report-btn" />
+                    <PvButton
+                      label="View Scores"
+                      icon=""
+                      outlined
+                      severity="secondary"
+                      data-cy="view-score-report-btn"
+                    />
                   </router-link>
                 </div>
               </div>
             </div>
           </PvAccordionHeader>
           <PvAccordionContent>
-            <div class="text-md font-bold mb-2">Progress by Tasks</div>
+            <div class="text-md font-bold py-3">Progress by Tasks</div>
             <div v-for="(status, task) in assignment.progress" :key="task" class="flex flex-column">
               <div class="flex text-sm justify-between p-1">
                 <div class="flex flex-column">
@@ -106,6 +118,7 @@ import PvAccordion from 'primevue/accordion';
 import PvAccordionPanel from 'primevue/accordionpanel';
 import PvAccordionHeader from 'primevue/accordionheader';
 import PvAccordionContent from 'primevue/accordioncontent';
+import { getGradeWithSuffix } from '@/helpers/reports.js';
 
 const props = defineProps({
   assignment: { type: Object, required: true },

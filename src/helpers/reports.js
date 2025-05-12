@@ -1,6 +1,5 @@
 import html2canvas from 'html2canvas';
 import { getGrade } from '@bdelab/roar-utils';
-
 /*
  *  Task Display Names
  *  A map of all tasks, including their taskId, display name, and index for ordering
@@ -524,6 +523,24 @@ export const gradeOptions = [
     label: '12th Grade',
   },
 ];
+
+export function getGradeWithSuffix(grade) {
+  // add cases for kindergarten and prek
+
+  if (getGrade(grade) < 1) {
+    return grade;
+  } else if (getGrade(grade) === 1) {
+    return grade + 'st';
+  } else if (getGrade(grade) === 2) {
+    return grade + 'nd';
+  } else if (getGrade(grade) === 3) {
+    return grade + 'rd';
+  } else if (getGrade(grade) >= 4 && getGrade(grade) <= 13) {
+    return grade + 'th';
+  } else {
+    return 'Invalid grade';
+  }
+}
 
 /*
  *  Get Support Level
