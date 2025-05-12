@@ -21,7 +21,7 @@ jobs:
   product-owner-review:
     name: Request product owner review
     runs-on: ubuntu-latest
-    environment: production
+    environment: product-owner-review
     timeout-minutes: 15
     steps:
       - name: Approval granted
@@ -90,7 +90,7 @@ jobs:
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
   update-manifests:
     name: Update manifests
-    needs: [product-owner-review, deploy-app]
+    needs: [deploy-app]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     strategy:
