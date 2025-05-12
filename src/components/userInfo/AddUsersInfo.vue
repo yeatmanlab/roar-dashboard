@@ -175,6 +175,7 @@ const downloadTemplate = () => {
     margin-bottom: 1rem;
     color: var(--primary-color);
     font-size: 1.2rem;
+    font-weight: bold;
   }
 
   .numbered-steps {

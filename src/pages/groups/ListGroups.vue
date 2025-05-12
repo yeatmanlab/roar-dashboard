@@ -92,7 +92,7 @@
             readonly
           />
           <PvButton
-            class="bg-primary border-none p-2 text-white hover:bg-red-900"
+            class="bg-primary border-none p-2 text-white hover:bg-red-900 font-normal"
             @click="copyToClipboard(`https://roar.education/register/?code=${activationCode}`)"
           >
             <i class="pi pi-copy p-2"></i>
