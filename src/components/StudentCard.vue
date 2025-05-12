@@ -7,10 +7,9 @@
         {{ userName }}
         <div class="font-light text-sm">Student</div>
       </div>
-      <div class="flex font-normal gap-2 text-gray-500">
+      <div class="flex font-normal gap-2 text-gray-500 justify-content-between">
         <div class="text-sm">
-          {{ getGradeWithSuffix(user.studentData.grade) }}
-          <span class="">Grade</span>
+          {{ getGradeToDisplay(user.studentData.grade) }}
         </div>
         <div class="text-sm">
           {{ _capitalize(user.studentData.schoolLevel) }}
@@ -31,7 +30,7 @@
           <PvAccordionHeader class="border-1">
             <!-- Administration Header -->
             <div class="flex flex-column gap-2 w-full">
-              <div class="flex gap-2 flex-wrap justify-between align-center">
+              <div class="flex gap-4 flex-wrap justify-between align-center">
                 <div class="flex flex-column">
                   <div class="text-md">{{ assignment.name }}</div>
                   <div class="text-xs font-light">Assignment</div>
@@ -118,7 +117,7 @@ import PvAccordion from 'primevue/accordion';
 import PvAccordionPanel from 'primevue/accordionpanel';
 import PvAccordionHeader from 'primevue/accordionheader';
 import PvAccordionContent from 'primevue/accordioncontent';
-import { getGradeWithSuffix } from '@/helpers/reports.js';
+import { getGradeToDisplay } from '@/helpers/reports.js';
 
 const props = defineProps({
   assignment: { type: Object, required: true },

@@ -524,6 +524,33 @@ export const gradeOptions = [
   },
 ];
 
+// Given a grade, return a formatted string to display
+// 1 => 1st grade
+// 2 => 2nd grade
+// K => Kindergarten
+// Pre-K => Prekindergarten
+export function getGradeToDisplay(grade) {
+  // add cases for kindergarten and prek
+
+  if (grade === 'Pre-K') {
+    return 'Prekindergarten';
+  } else if (grade === 'K') {
+    return 'Kindergarten';
+  } else if (getGrade(grade) < 1) {
+    return grade + ' Grade';
+  } else if (getGrade(grade) === 1) {
+    return grade + 'st Grade';
+  } else if (getGrade(grade) === 2) {
+    return grade + 'nd Grade';
+  } else if (getGrade(grade) === 3) {
+    return grade + 'rd Grade';
+  } else if (getGrade(grade) >= 4 && getGrade(grade) <= 13) {
+    return grade + 'th Grade';
+  } else {
+    return 'Invalid grade';
+  }
+}
+
 export function getGradeWithSuffix(grade) {
   // add cases for kindergarten and prek
 
