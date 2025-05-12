@@ -536,7 +536,7 @@ const submit = async () => {
         detail: 'No variants selected. You must select at least one variant to be assigned.',
         life: TOAST_DEFAULT_LIFE_DURATION,
       });
-    } else {
+    } else if (!_isEmpty(nonUniqueTasks.value)) {
       toast.add({
         severity: TOAST_SEVERITIES.ERROR,
         summary: 'Task Selections',
