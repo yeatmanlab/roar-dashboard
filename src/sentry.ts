@@ -8,7 +8,6 @@ import { useAuthStore } from '@/store/auth';
 const language = formattedLocale;
 
 export function initSentry(app: App) {
-  console.log('mark:// Initializing Sentry...');
   // skip if levante instance
   let dsn: string;
   let regex: RegExp;
@@ -61,21 +60,14 @@ export function initSentry(app: App) {
     // Session Replay
     replaysSessionSampleRate: 0.1,
     replaysOnErrorSampleRate: 1.0,
-    beforeSend(event) {
-      console.log('mark:// Sentry beforeSend:', { event, user: event.user });
-      return event;
-    },
   });
 
-  console.log('mark:// Sentry initialized with DSN:', dsn);
   Sentry.setTag('commitSHA', import.meta.env.VITE_APP_VERSION);
 
   // Set the user's language as a tag
   Sentry.setTag('user.language', language);
-  console.log('mark:// authstore user data', authStore.userData);
   // Set user information if authenticated
   if (authStore.isAuthenticated && authStore.userData) {
-    console.log('mark:// Sentry SetUser:', authStore.userData);
     Sentry.setUser({
       id: authStore.userData.uid,
       email: authStore.userData.email,

@@ -73,7 +73,6 @@ export const useAuthStore = () => {
           if (user) {
             this.localFirekitInit = true;
             this.firebaseUser.adminFirebaseUser = user;
-            console.log('mark:// admin auth state listener', {user});
             logger.setUser(user);
           } else {
             this.firebaseUser.adminFirebaseUser = null;
@@ -84,7 +83,6 @@ export const useAuthStore = () => {
         this.appAuthStateListener = onAuthStateChanged(this.roarfirekit?.app.auth, async (user) => {
           if (user) {
             this.firebaseUser.appFirebaseUser = user;
-            console.log('mark:// app auth state listener', {user});
             logger.setUser(user);
           } else {
             this.firebaseUser.appFirebaseUser = null;

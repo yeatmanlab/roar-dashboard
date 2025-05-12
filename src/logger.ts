@@ -11,7 +11,6 @@ interface UserData {
 }
 
 const isProduction = import.meta.env.MODE === 'production';
-console.log('mark:// isProduction:', isProduction, 'MODE:', import.meta.env.MODE);
 // const isProduction = import.meta.env.VITE_FIREBASE_PROJECT==='PROD'; // can be used for more accurate logging
 
 // Get app and core-tasks versions
@@ -77,13 +76,11 @@ function error(error: Error | unknown, context?: Record<string, any>, force: boo
  * @param userData - An object containing user information (e.g., uid, email) or null to reset.
  */
 function setUser(userData: UserData | null, force: boolean = false): void {
-  console.log('mark:// setUser called with:', { userData, isProduction, force });
   if (isProduction || force) {
     if (userData) {
       // Check for identify existence on posthogInstance due to mock in dev
       // Only set identify if the user has changed since this is a backend call
       if (typeof posthogInstance.identify === 'function' && currentUser?.uid !== userData.uid) {
-        console.log('mark:// posthogInstance.identify', {userData, uid: userData.uid});
         posthogInstance.identify(userData.uid, {
           email: userData.email,
         });
@@ -91,16 +88,13 @@ function setUser(userData: UserData | null, force: boolean = false): void {
       const { uid, email } = userData;
       Sentry.setUser({ id: uid, email });
       currentUser = userData;
-      console.log('mark:// Sentry user set:', { id: uid, email, currentUser: Sentry.getCurrentScope().getUser() });
     } else {
       // Check for reset existence on posthogInstance due to mock in dev
       if (typeof posthogInstance.reset === 'function' && !!currentUser?.uid) {
-        console.log('mark:// posthogInstance.reset', {currentUser: currentUser.uid});
         posthogInstance.reset();
       }
       Sentry.setUser(null);
       currentUser = null;
-      console.log('mark:// Sentry user reset:', { currentUser: Sentry.getCurrentScope().getUser() });
     }
   } else {
     if (userData) {
