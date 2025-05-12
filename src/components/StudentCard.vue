@@ -45,15 +45,9 @@
               </div>
               <div class="flex flex-wrap items-end justify-content-between mt-1">
                 <div class="flex align-items-end">
-                  <router-link
-                    :to="{
-                      name: 'LaunchParticipant',
-                      params: { launchId: roarUid },
-                    }"
-                    class="no-underline text-black"
-                  >
+                  <a :href="'/launch/' + roarUid">
                     <PvButton :label="'Play Games'" data-cy="play-assessments-btn" />
-                  </router-link>
+                  </a>
                 </div>
                 <div class="flex flex-wrap justify-content-end">
                   <router-link
