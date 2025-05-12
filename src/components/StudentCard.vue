@@ -9,8 +9,7 @@
       </div>
       <div class="flex font-normal gap-2 text-gray-500">
         <div class="text-sm">
-          {{ getGradeWithSuffix(user.studentData.grade) }}
-          <span class="">Grade</span>
+          {{ getGradeToDisplay(user.studentData.grade) }}
         </div>
         <div class="text-sm">
           {{ _capitalize(user.studentData.schoolLevel) }}
@@ -112,7 +111,7 @@ import PvAccordion from 'primevue/accordion';
 import PvAccordionPanel from 'primevue/accordionpanel';
 import PvAccordionHeader from 'primevue/accordionheader';
 import PvAccordionContent from 'primevue/accordioncontent';
-import { getGradeWithSuffix } from '@/helpers/reports.js';
+import { getGradeToDisplay } from '@/helpers/reports.js';
 
 const props = defineProps({
   assignment: { type: Object, required: true },
