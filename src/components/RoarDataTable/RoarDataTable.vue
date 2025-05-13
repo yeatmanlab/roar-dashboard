@@ -464,7 +464,7 @@ const props = defineProps({
 });
 
 const inputColumns = ref(props.columns);
-const selectedColumns = ref(props.columns);
+const selectedColumns = ref(props.columns.filter((col) => !_get(col, 'hidden', false)));
 // Filter the live data (props.columns) with the selections of selectedColumns
 const computedColumns = computed(() => {
   return _map(selectedColumns.value, (col) => {

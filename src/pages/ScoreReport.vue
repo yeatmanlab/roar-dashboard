@@ -1275,6 +1275,7 @@ const scoreReportColumns = computed(() => {
     header: 'State Id',
     dataType: 'text',
     sort: false,
+    hidden: true, // Column is hidden by default, available via the Show/Hide Columns menu
     headerStyle: `background:var(--primary-color); color:white; padding-top:0; margin-top:0; padding-bottom:0; margin-bottom:0; border:0; margin-left:0; border-right-width:2px; border-right-style:solid; border-right-color:#ffffff;`,
   });
 
@@ -1284,6 +1285,7 @@ const scoreReportColumns = computed(() => {
     dataType: 'date',
     sort: true,
     filter: false,
+    hidden: true, // Column is hidden by default, available via the Show/Hide Columns menu
     headerStyle: `background:var(--primary-color); color:white; padding-top:0; margin-top:0; padding-bottom:0; margin-bottom:0; border:0; margin-left:0; border-right-width:2px; border-right-style:solid; border-right-color:#ffffff;`,
   });
 
