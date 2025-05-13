@@ -27,7 +27,6 @@ export const getOrgsRequestBody = ({
   page,
   paginate = true,
   select = [
-    'abbreviation',
     'id',
     'name',
     'tags',
@@ -238,7 +237,7 @@ export const fetchOrgByName = async (orgType, orgName, selectedDistrict, selecte
     aggregationQuery: false,
     orgName,
     paginate: false,
-    select: ['id', 'abbreviation'],
+    select: ['id'],
   });
 
   return axiosInstance.post(':runQuery', requestBody).then(({ data }) => mapFields(data));

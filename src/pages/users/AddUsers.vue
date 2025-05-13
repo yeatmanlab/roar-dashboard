@@ -737,7 +737,7 @@ const orgIds = {
 const getOrgId = async (orgType, orgName, parentDistrict, parentSchool) => {
   if (orgIds[orgType][orgName]) return orgIds[orgType][orgName];
 
-  // Array of objects. Ex: [{abbreviation: 'LVT', id: 'lut54353jkler'}]
+  // Array of objects. Ex: [{id: 'lut54353jkler'}]
   const orgs = await fetchOrgByName(orgType, orgName, parentDistrict, parentSchool);
 
   if (orgs.length === 0) {

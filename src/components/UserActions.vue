@@ -14,20 +14,20 @@
         </div>
         <div v-else class="flex gap-2">
             <!-- Help dropdown -->
-            <PvDropdown :options="helpOptions" :optionValue="(o) => o.value" :optionLabel="(o) => o.label"  @change="handleHelpChange">
+            <PvSelect :options="helpOptions" :optionValue="(o) => o.value" :optionLabel="(o) => o.label"  @change="handleHelpChange">
                 <template #value>
                     <i class="pi pi-question-circle"></i>
                 </template>
-            </PvDropdown>
+            </PvSelect>
             <button ref="feedbackButton" style="display: none">Give me feedback</button>
 
 
             <!-- Profile dropdown -->
-            <PvDropdown :options="profileOptions" :optionValue="(o) => o.value" :optionLabel="(o) => o.label"  @change="handleProfileChange">
+            <PvSelect :options="profileOptions" :optionValue="(o) => o.value" :optionLabel="(o) => o.label"  @change="handleProfileChange">
                 <template #value>
                     <i class="pi pi-user"></i>
                 </template>
-            </PvDropdown>
+            </PvSelect>
         </div>
     </div>
 </template>
@@ -36,7 +36,7 @@
     import {ref, watchEffect} from 'vue';
     import useSignOutMutation from '@/composables/mutations/useSignOutMutation';
     import PvButton from 'primevue/button';
-    import PvDropdown from 'primevue/dropdown';
+    import PvSelect from 'primevue/select';
     import { useRouter } from 'vue-router';
     import { useI18n } from 'vue-i18n';
     import { APP_ROUTES } from '@/constants/routes';

@@ -75,14 +75,6 @@
               <small v-if="v$.orgName.$invalid && submitted" class="p-error">Please supply a name</small>
             </PvFloatLabel>
           </div>
-
-          <div class="col-12 md:col-6 lg:col-4 mt-3">
-            <PvFloatLabel>
-              <PvInputText id="org-initial" v-model="state.orgInitials" class="w-full" data-cy="input-org-initials" />
-              <label for="org-initial">{{ orgTypeLabel }} Abbreviation<span id="required-asterisk">*</span></label>
-              <small v-if="v$.orgInitials.$invalid && submitted" class="p-error">Please supply an abbreviation</small>
-            </PvFloatLabel>
-          </div>
         </div>
 
         <div class="mt-5 mb-0 pb-0">Optional fields:</div>
@@ -103,16 +95,6 @@
               />
               <label for="tags">Tags</label>
             </PvFloatLabel>
-          </div>
-        </div>
-        <div v-if="!isLevante" class="flex flex-row align-items-center justify-content-stagap-2 flex-order-0 my-3">
-          <div class="flex flex-row align-items-center">
-            <PvCheckbox v-model="isDemoData" input-id="chbx-demodata" :binary="true" />
-            <label class="ml-1 mr-3" for="chbx-demodata">Mark as <b>Demo Organization</b></label>
-          </div>
-          <div class="flex flex-row align-items-center">
-            <PvCheckbox v-model="isTestData" input-id="chbx-testdata" :binary="true" />
-            <label class="ml-1 mr-3" for="chbx-testdata">Mark as <b>Test Organization</b></label>
           </div>
         </div>
 
@@ -147,7 +129,6 @@ import { useVuelidate } from '@vuelidate/core';
 import { required, requiredIf } from '@vuelidate/validators';
 import PvAutoComplete from 'primevue/autocomplete';
 import PvButton from 'primevue/button';
-import PvCheckbox from 'primevue/checkbox';
 import PvDivider from 'primevue/divider';
 import PvSelect from 'primevue/select';
 import PvInputText from 'primevue/inputtext';
@@ -157,13 +138,8 @@ import useDistrictsListQuery from '@/composables/queries/useDistrictsListQuery';
 import useDistrictSchoolsQuery from '@/composables/queries/useDistrictSchoolsQuery';
 import useSchoolClassesQuery from '@/composables/queries/useSchoolClassesQuery';
 import useGroupsListQuery from '@/composables/queries/useGroupsListQuery';
-import { isLevante } from '@/helpers';
-import GroupPicker from '@/components/GroupPicker.vue';
-import _toPairs from 'lodash/toPairs';
 import { TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
 const initialized = ref(false);
-const isTestData = ref(false);
-const isDemoData = ref(false);
 const toast = useToast();
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
@@ -172,7 +148,6 @@ const queryClient = useQueryClient();
 
 const state = reactive({
   orgName: '',
-  orgInitials: '',
   parentDistrict: undefined,
   parentSchool: undefined,
   tags: [],
@@ -226,7 +201,6 @@ const { data: classes } = useSchoolClassesQuery(selectedSchool, {
 
 const rules = {
   orgName: { required },
-  orgInitials: { required },
   parentDistrict: { required: requiredIf(() => ['school', 'class', 'group'].includes(orgType.value.singular)) },
   parentSchool: { required: requiredIf(() => orgType.value.singular === 'class') },
 };
@@ -281,7 +255,6 @@ const submit = async () => {
   if (isFormValid) {
     let orgData = {
       name: state.orgName,
-      abbreviation: state.orgInitials,
     };
 
     if (state.tags.length > 0) orgData.tags = state.tags;
@@ -317,7 +290,6 @@ const submit = async () => {
 
 const resetForm = () => {
   state.orgName = '';
-  state.orgInitials = '';
   state.tags = [];
 };
 </script>

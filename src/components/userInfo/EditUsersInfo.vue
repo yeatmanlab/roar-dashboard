@@ -1,19 +1,21 @@
 <template>
   <PvPanel header="Edit Users" class="users-edit-panel">
-
-
-    <p>The UID is <b>REQUIRED</b> to edit a user.</p>
-    
-    <p>These fields are <b>ALLOWED</b> to be edited:</p>
+    <p>The following fields define the columns for your CSV file when editing existing users. Please refer to the legend below for specific requirements on each field.</p>
 
     <ul>
-      <li><b>month</b> - The month to edit.</li>
-      <li><b>year</b> - The year to edit.</li>
-      <li><b>site</b> - The site to edit.</li>
-      <li><b>school</b> - The school to edit.</li>
-      <li><b>class</b> - The class to edit.</li>
-      <li><b>cohort</b> - The cohort to edit.</li>
+      <li><b>uid</b><span class="field-marker">*</span> - The unique LEVANTE identifier of the user to edit. This field is used to find the user and cannot be changed.</li>
+      <li><b>month</b><span class="field-marker">†</span> - The new month if editing a child user's birth month (numeric; For Example, 5 for May).</li>
+      <li><b>year</b><span class="field-marker">†</span> - The new year if editing a child user's birth year (four-digit; For Example, 2017).</li>
+      <li><b>site</b> - The new name of the site.</li>
+      <li><b>school</b> - The new name of the school.</li>
+      <li><b>class</b> - The new name of the class.</li>
+      <li><b>cohort</b> - The new name of the cohort.</li>
     </ul>
+
+    <p class="mb-6 legend">
+      <span class="field-marker">*</span> Required for this Step<br/>
+      <span class="field-marker">†</span> Editable only for child users. Leave blank if not editing or for caregiver/teacher users.
+    </p>
 
     <div class="warning-message">
       <i class="pi pi-exclamation-triangle"></i>
@@ -67,6 +69,19 @@ import { LEVANTE_BUCKET_URL } from '@/constants/bucket';
   i {
     margin: 1rem;
   }
+}
+
+.field-marker {
+  color: var(--bright-red);
+  font-weight: bold;
+  vertical-align: super;
+  font-size: 0.8em;
+  margin-left: 0.1em;
+}
+
+.legend {
+  line-height: 1.6;
+  margin-bottom: 1rem; /* Added for spacing after legend */
 }
 
 .warning-message {

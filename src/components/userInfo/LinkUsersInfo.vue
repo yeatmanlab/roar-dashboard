@@ -13,20 +13,21 @@
         </ol>
       </div>
 
-      These fields are <b>REQUIRED</b> to link users:
-  
+      <p>The following fields define the columns for your CSV file when linking users. Please refer to the legend below for specific requirements on each field.</p>
       <ul>
-        <li><b>id</b> - A unique identifier for the user in your CSV file. Start from 1.</li>
-        <li><b>userType</b> - The type of user. Must be one of the following: child, caregiver, teacher.</li>
-        <li><b>caregiverId</b><span class="required">*</span> - The unique identifier for the child's caregiver </li>
-        <li><b>teacherId</b><span class="required">*</span> - The unique identifier for the child's teacher.</li>
-        <li><b>uid</b> - The unique identifier that is returned when the user was added.</li>
+        <li><b>id</b><span class="field-marker">*</span> - A unique identifier for the user in CSV file.</li>
+        <li><b>userType</b><span class="field-marker">*</span> - The type of user: child, caregiver, teacher.</li>
+        <li><b>caregiverId</b><span class="field-marker">*</span><span class="field-marker">†</span> - A unique identifier (id) for the child's caregiver.</li>
+        <li><b>teacherId</b><span class="field-marker">*</span><span class="field-marker">†</span> - A unique identifier (id) for the child's teacher. (*only required if administering teacher survey)</li>
+        <li><b>uid</b><span class="field-marker">*</span><span class="field-marker">‡</span> - The unique LEVANTE identifier that is returned after user is added to dashboard.</li>
       </ul>
-  
-      <p class="mb-6">
-        <span class="required">*</span> = These fields are ONLY required for child users.
+
+      <p class="mb-6 legend">
+        <span class="field-marker">*</span> Required for this Step<br/>
+        <span class="field-marker">†</span> Required only for child users. Leave blank for caregiver or teacher users.<br/>
+        <span class="field-marker">‡</span> Created by the platform during Add Users step.
       </p>
-  
+
       <p>Below is an example of what your CSV/spreadsheet should look like. Only the required columns will be processed.</p>
   
       <img
@@ -68,8 +69,16 @@
   margin-top: 0.5rem;
 }
 
-.required {
+.field-marker {
   color: var(--bright-red);
+  font-weight: bold;
+  vertical-align: super;
+  font-size: 0.8em;
+  margin-left: 0.1em;
+}
+
+.legend {
+  line-height: 1.6;
 }
 
 .link-users-panel :deep(.p-panel-header) {
