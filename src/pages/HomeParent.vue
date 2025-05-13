@@ -1,30 +1,28 @@
 <template>
-  <!-- default to showing students from the first administration -->
-  <div class="flex flex-column m-4 gap-2">
-    <div class="flex align-items-center justify-content-between p-4">
-      <div class="flex flex-column">
-        <div class="text-2xl font-bold text-gray-600">Parent Dashboard</div>
+  <main class="container p-4">
+    <div class="flex mb-4 align-items-center justify-content-between">
+      <div>
+        <h1 class="text-2xl font-bold text-gray-600">Parent Dashboard</h1>
         <div class="text-sm font-light text-gray-800">Manage your children and view their assessments.</div>
       </div>
 
-      <div class="flex flex-row align-items-center gap-4">
-        <div class="uppercase text-sm text-gray-600 flex flex-row">VIEW BY</div>
+      <div class="flex flex-row gap-4 align-items-center">
+        <div class="flex flex-row text-sm text-gray-600 uppercase">View by</div>
         <PvSelectButton
-          v-model="parentView"
+          v-model="currentParentView"
           :options="parentViews"
           option-disabled="constant"
           :allow-empty="false"
           option-label="name"
-          class="flex my-2 select-button"
-          @change="handleViewChange"
+          class="flex my-2"
         >
         </PvSelectButton>
       </div>
     </div>
+
     <HomeParentStudentView
-      v-if="parentView.name === 'Student'"
-      :is-loading-assignments="isLoadingAssignments"
-      :is-loading-administrations="isLoadingAdministrations"
+      v-if="currentParentView.name === VIEWS.BY_STUDENT"
+      :is-loading="isLoadingAssignments || isLoadingAdministrations"
       :parent-registration-complete="parentRegistrationComplete"
       :assignment-data="assignmentData || []"
       :org-type="orgType"
@@ -32,10 +30,11 @@
       :administration-id="administrationId"
       :registration-error="registrationError"
     />
+
     <div v-else class="home-administrator-wrapper">
       <HomeAdministrator />
     </div>
-  </div>
+  </main>
 </template>
 
 <script setup>
@@ -54,11 +53,14 @@ import { orderByDefault } from '@/helpers/query/utils';
 
 const authStore = useAuthStore();
 
-const parentView = ref({ name: 'Student', constant: false });
-const parentViews = [
-  { name: 'Student', constant: false },
-  { name: 'Administration', constant: false },
-];
+const VIEWS = Object.freeze({
+  BY_STUDENT: 'Student',
+  BY_ADMINISTRATION: 'Administration',
+});
+
+const currentParentView = ref({ name: VIEWS.BY_STUDENT });
+
+const parentViews = [{ name: VIEWS.BY_STUDENT }, { name: VIEWS.BY_ADMINISTRATION }];
 
 const parentRegistrationComplete = ref(false);
 const initialized = ref(false);
@@ -143,14 +145,17 @@ const { isLoading: isLoadingAssignments, data: assignmentData } = useAdministrat
   orgId,
   {
     enabled: initialized && parentRegistrationComplete,
-    // enabled: initialized
   },
 );
 </script>
 
 <style scoped>
+/* @TODO: Remove once the administrations views is decoupled from the Administrator homepage */
+.home-administrator-wrapper {
+  padding: 1.5rem;
+}
 .home-administrator-wrapper :deep(.main) {
   padding: 0;
-  width: 90vw;
+  width: 100%;
 }
 </style>
