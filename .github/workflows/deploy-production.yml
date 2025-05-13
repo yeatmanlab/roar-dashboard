@@ -16,12 +16,25 @@ permissions:
 
 jobs:
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  # Product owner review
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  product-owner-review:
+    name: Request product owner review
+    runs-on: ubuntu-latest
+    environment: product-owner-review
+    timeout-minutes: 15
+    steps:
+      - name: Approval granted
+        run: echo "Approval granted, proceeding with deployment to production."
+
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
   # Deploy app
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
   deploy-app:
     name: Deploy Firebase app
     runs-on: ubuntu-latest
     environment: production
+    needs: product-owner-review
     timeout-minutes: 15
     env:
       DOTENV_PRIVATE_KEY_PRODUCTION: ${{ secrets.DOTENV_PRIVATE_KEY }}
@@ -56,19 +69,6 @@ jobs:
           sourcemaps: ./app/dist/assets/*.js.map
           version: ${{ github.ref }}
 
-  # ––––––––––––––––––––––––––––––––––––––––––––––– #
-  # Deploy Firestore config
-  # ––––––––––––––––––––––––––––––––––––––––––––––– #
-  deploy-firestore-config:
-    name: Deploy Firestore config
-    needs: [deploy-app]
-    runs-on: ubuntu-latest
-    environment: production
-    timeout-minutes: 15
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
       - name: Deploy Firestore config to Admin instance
         uses: ./.github/actions/deploy-firestore-config
         with:
@@ -90,7 +90,7 @@ jobs:
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
   update-manifests:
     name: Update manifests
-    needs: [deploy-app, deploy-firestore-config]
+    needs: [deploy-app]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     strategy:
