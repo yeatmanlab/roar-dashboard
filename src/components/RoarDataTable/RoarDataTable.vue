@@ -209,7 +209,7 @@
                 />
               </div>
 
-              <div v-else-if="col.dataType === 'date'">
+              <div v-else-if="col.dataType === 'date'" class="px-4">
                 {{ getFormattedDate(_get(colData, col.field)) }}
               </div>
               <div v-else class="px-4">
@@ -232,7 +232,7 @@
             <template #filtericon>
               <i v-tooltip.top="'Filter Column'" class="pi pi-filter" />
             </template>
-            <template v-if="col.dataType" #filter="{ filterModel, filterCallback }">
+            <template v-if="col.dataType && _get(col, 'filter', true)" #filter="{ filterModel, filterCallback }">
               <div v-if="col.dataType === 'text' && !col.useMultiSelect" class="filter-content">
                 <PvInputText v-model="filterModel.value" type="text" class="p-column-filter" placeholder="Filter" />
               </div>
@@ -547,7 +547,7 @@ const dataTypesToFilterMatchMode = {
   NUMBER: FilterMatchMode.EQUALS,
   TEXT: FilterMatchMode.CONTAINS,
   STRING: FilterMatchMode.CONTAINS,
-  DATE: FilterMatchMode.DATE_IS,
+  // DATE: FilterMatchMode.DATE_IS,
   BOOLEAN: FilterMatchMode.EQUALS,
   SCORE: FilterMatchMode.CONTAINS,
   PROGRESS: FilterMatchMode.CONTAINS,

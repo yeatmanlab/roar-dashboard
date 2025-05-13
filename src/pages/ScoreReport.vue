@@ -649,6 +649,11 @@ const computeAssignmentAndRunData = computed(() => {
           userId: user.userId,
         },
         compositeScore: assignment.compositeScore ?? null,
+        startDate:
+          assignment.assessments.reduce((earliest, assessment) => {
+            if (!earliest) return assessment.startedOn;
+            return assessment.startedOn < earliest ? assessment.startedOn : earliest;
+          }, null) ?? null,
         // compute and add scores data in next step as so
         // swr: { support_level: 'Needs Extra Support', percentile: 10, raw: 10, reliable: true, engagementFlags: {}},
       };
@@ -1270,6 +1275,15 @@ const scoreReportColumns = computed(() => {
     header: 'State Id',
     dataType: 'text',
     sort: false,
+    headerStyle: `background:var(--primary-color); color:white; padding-top:0; margin-top:0; padding-bottom:0; margin-bottom:0; border:0; margin-left:0; border-right-width:2px; border-right-style:solid; border-right-color:#ffffff;`,
+  });
+
+  tableColumns.push({
+    field: 'startDate',
+    header: 'Start Date',
+    dataType: 'date',
+    sort: true,
+    filter: false,
     headerStyle: `background:var(--primary-color); color:white; padding-top:0; margin-top:0; padding-bottom:0; margin-bottom:0; border:0; margin-left:0; border-right-width:2px; border-right-style:solid; border-right-color:#ffffff;`,
   });
 
