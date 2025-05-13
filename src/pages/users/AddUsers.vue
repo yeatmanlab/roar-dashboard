@@ -569,14 +569,19 @@ async function submitUsers() {
     try {
       // Ensure each user has the proper userType field name for the backend
       const processedUsers = users.map(user => {
-        const processedUser = { ...user };
+        // Create a new object without the uid field
+        const { 
+          // uid,  // TODO: Add back in if we want to show the uid in the CSV?
+          ...userWithoutUid 
+        } = user;
+        const processedUser = { ...userWithoutUid };
         
         // Find the userType field (case-insensitive)
-        const userTypeField = Object.keys(user).find(key => key.toLowerCase() === 'usertype');
+        const userTypeField = Object.keys(processedUser).find(key => key.toLowerCase() === 'usertype');
         
         // Ensure the key is exactly 'userType' and handle potential casing issues
         if (userTypeField) {
-          const userTypeValue = user[userTypeField];
+          const userTypeValue = processedUser[userTypeField];
           // Set the key to 'userType' regardless of original casing
           processedUser.userType = userTypeValue;
           // Remove the original field if the casing was different
@@ -639,11 +644,22 @@ const csvBlob = ref(null);
 const csvURL = ref(null);
 
 function convertUsersToCSV() {
+  // Get the first user to determine headers
   const headerObj = toRaw(rawUserFile.value[0]);
 
   // Convert Objects to CSV String
   const csvHeader = Object.keys(headerObj).join(',') + '\n';
-  const csvRows = rawUserFile.value
+  
+  // Get all existing users from the CSV file
+  const existingUsers = rawUserFile.value.filter(user => user.uid);
+  
+  // Get newly registered users (those without uid)
+  const newUsers = rawUserFile.value.filter(user => !user.uid);
+  
+  // Combine existing and new users
+  const allUsers = [...existingUsers, ...newUsers];
+
+  const csvRows = allUsers
     .map((obj) =>
       Object.values(obj)
         .map((value) => {
