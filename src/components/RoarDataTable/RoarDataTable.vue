@@ -547,7 +547,7 @@ const dataTypesToFilterMatchMode = {
   NUMBER: FilterMatchMode.EQUALS,
   TEXT: FilterMatchMode.CONTAINS,
   STRING: FilterMatchMode.CONTAINS,
-  // DATE: FilterMatchMode.DATE_IS,
+  DATE: FilterMatchMode.DATE_IS,
   BOOLEAN: FilterMatchMode.EQUALS,
   SCORE: FilterMatchMode.CONTAINS,
   PROGRESS: FilterMatchMode.CONTAINS,
