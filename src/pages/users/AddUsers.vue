@@ -440,9 +440,21 @@ async function submitUsers() {
   showErrorTable.value = false;
   errorMessage.value = '';
 
-  // Group needs to be an array of strings
-  const usersToBeRegistered = _cloneDeep(toRaw(rawUserFile.value));
+  // Filter out users that already have UIDs
+  const usersToBeRegistered = _cloneDeep(toRaw(rawUserFile.value)).filter(user => !user.uid);
   const usersWithErrors = [];
+
+  // If no users to register, show message and return
+  if (usersToBeRegistered.length === 0) {
+    toast.add({
+      severity: 'info',
+      summary: 'No New Users to Register',
+      detail: 'All users in the file have already been registered',
+      life: TOAST_DEFAULT_LIFE_DURATION,
+    });
+    activeSubmit.value = false;
+    return;
+  }
 
   // Check orgs exist
   for (const user of usersToBeRegistered) {
@@ -569,19 +581,14 @@ async function submitUsers() {
     try {
       // Ensure each user has the proper userType field name for the backend
       const processedUsers = users.map(user => {
-        // Create a new object without the uid field
-        const { 
-          // uid,  // TODO: Add back in if we want to show the uid in the CSV?
-          ...userWithoutUid 
-        } = user;
-        const processedUser = { ...userWithoutUid };
+        const processedUser = { ...user };
         
         // Find the userType field (case-insensitive)
-        const userTypeField = Object.keys(processedUser).find(key => key.toLowerCase() === 'usertype');
+        const userTypeField = Object.keys(user).find(key => key.toLowerCase() === 'usertype');
         
         // Ensure the key is exactly 'userType' and handle potential casing issues
         if (userTypeField) {
-          const userTypeValue = processedUser[userTypeField];
+          const userTypeValue = user[userTypeField];
           // Set the key to 'userType' regardless of original casing
           processedUser.userType = userTypeValue;
           // Remove the original field if the casing was different
