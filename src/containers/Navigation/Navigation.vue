@@ -48,7 +48,7 @@ const { data: userClaims } = useUserClaimsQuery({
   enabled: initialized,
 });
 
-const { isAdmin, isSuperAdmin } = useUserType(userClaims);
+const { isAdmin, isSuperAdmin, isLaunchAdmin } = useUserType(userClaims);
 
 // @TODO: Move the navbar blacklist to route meta definitions.
 const navbarBlacklist = [
@@ -137,6 +137,7 @@ const defaultMenuActions = computed(() => {
   return getSidebarActions({
     isSuperAdmin: isSuperAdmin.value,
     isAdmin: isSuperAdmin.value || isAdmin.value,
+    isLaunchAdmin: isLaunchAdmin.value,
   });
 });
 
