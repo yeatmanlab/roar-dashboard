@@ -8,6 +8,7 @@
 
   <div v-else>
     <HomeParticipant v-if="isParticipant" />
+    <HomeParent v-else-if="isLaunchAdmin" />
     <HomeAdministrator v-else-if="isAdminUser" />
   </div>
 
@@ -36,6 +37,7 @@ import { APP_ROUTES } from '@/constants/routes';
 
 const HomeParticipant = defineAsyncComponent(() => import('@/pages/HomeParticipant.vue'));
 const HomeAdministrator = defineAsyncComponent(() => import('@/pages/HomeAdministrator.vue'));
+const HomeParent = defineAsyncComponent(() => import('@/pages/HomeParent.vue'));
 const ConsentModal = defineAsyncComponent(() => import('@/components/ConsentModal.vue'));
 
 const isLevante = import.meta.env.MODE === 'LEVANTE';
@@ -74,7 +76,7 @@ const { isLoading: isLoadingClaims, data: userClaims } = useUserClaimsQuery({
   enabled: initialized,
 });
 
-const { isAdmin, isSuperAdmin, isParticipant } = useUserType(userClaims);
+const { isAdmin, isSuperAdmin, isParticipant, isLaunchAdmin } = useUserType(userClaims);
 
 const isAdminUser = computed(() => isAdmin.value || isSuperAdmin.value);
 const isLoading = computed(() => {
