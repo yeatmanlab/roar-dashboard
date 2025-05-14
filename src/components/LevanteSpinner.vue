@@ -205,8 +205,8 @@ const containerStyle = computed<StyleValue>(() => {
   position: fixed;
   top: 0;
   left: 0;
-  width: 100vw;
-  height: 100vh;
+  width: 100vw !important;
+  height: 100vh !important;
   z-index: 9999; /* Ensure it's on top of other content */
   /* background-color is applied via inline style for dynamic overlayColor prop */
 }

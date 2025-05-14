@@ -2,7 +2,6 @@
   <div v-if="isLoading">
     <div class="text-center col-full">
       <LevanteSpinner fullscreen />
-      <p class="text-center">{{ $t('homeSelector.loading') }}</p>
     </div>
   </div>
 

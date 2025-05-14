@@ -68,7 +68,7 @@
 
         <div v-if="!initialized || isLoadingAdministrations" class="loading-container">
           <div style="width: 100%; display: flex; justify-content: center; align-items: center; margin-top: 100px; margin-bottom: 50px;">
-            <LevanteSpinner :size="300" />
+            <LevanteSpinner :size="200" />
           </div>
           <span class="uppercase font-light text-sm text-gray-600">
             <template v-if="fetchTestAdministrations">Fetching Test Assignments</template>
