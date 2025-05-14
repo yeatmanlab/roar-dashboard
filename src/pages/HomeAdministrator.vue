@@ -67,7 +67,6 @@
         </div>
 
         <div v-if="!initialized || isLoadingAdministrations" class="loading-container">
-          <!-- <AppSpinner class="mb-4" /> -->
           <div style="width: 100%; display: flex; justify-content: center; align-items: center; margin-top: 100px; margin-bottom: 50px;">
             <LevanteSpinner :size="300" />
           </div>
@@ -146,6 +145,7 @@ import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useAdministrationsListQuery from '@/composables/queries/useAdministrationsListQuery';
 import CardAdministration from '@/components/CardAdministration.vue';
 import LevanteSpinner from '@/components/LevanteSpinner.vue';
+
 const initialized = ref(false);
 const pageLimit = ref(10);
 const page = ref(0);

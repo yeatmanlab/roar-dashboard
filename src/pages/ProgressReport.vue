@@ -2,7 +2,6 @@
   <main class="container main">
     <section class="main-body">
       <div v-if="isLoading" class="loading-wrapper">
-        <!-- <AppSpinner style="margin: 1rem 0rem" /> -->
         <LevanteSpinner fullscreen />
         <div class="uppercase text-sm text-gray-600 font-light">Loading Progress Datatable</div>
       </div>
