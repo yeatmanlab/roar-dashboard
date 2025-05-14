@@ -462,12 +462,12 @@ export const progressTags = {
   },
   Started: {
     value: 'started',
-    icon: 'pi pi-exclamation-triangle',
+    icon: 'pi pi-spinner-dotted',
     severity: 'warning',
   },
   Assigned: {
     value: 'assigned',
-    icon: 'pi pi-times',
+    icon: 'pi pi-book',
     severity: 'danger',
   },
 };
