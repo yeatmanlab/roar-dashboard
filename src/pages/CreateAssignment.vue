@@ -431,11 +431,8 @@ const submit = async () => {
 
   // Set publicName automatically based on administrationName
   state.administrationPublicName = state.administrationName;
-  console.log('Set administrationPublicName:', state.administrationPublicName); // <-- Log for confirmation
 
-  console.log('Validating form...');
   const isFormValid = await v$.value.$validate();
-  console.log('Form validation result:', isFormValid);
   if (!isFormValid) {
     console.log('Form validation failed, exiting submit.');
     return;
@@ -475,9 +472,7 @@ const submit = async () => {
     families: toRaw(state.families).map((org) => org.id),
   };
 
-  console.log('Checking required orgs...', orgs);
   const orgsValid = checkForRequiredOrgs(orgs);
-  console.log('Orgs valid result:', orgsValid);
   if (!orgsValid) {
     console.log('Org check failed, exiting submit.');
     toast.add({ 
@@ -511,10 +506,8 @@ const submit = async () => {
 
   if (props.adminId) args.administrationId = props.adminId;
 
-  console.log('Calling upsertAdministration with args:', args);
   await upsertAdministration(args, {
     onSuccess: () => {
-      console.log('upsertAdministration onSuccess');
       toast.add({
         severity: TOAST_SEVERITIES.SUCCESS,
         summary: 'Success',
@@ -528,7 +521,6 @@ const submit = async () => {
       router.push({ path: APP_ROUTES.HOME });
     },
     onError: (error) => {
-      console.error('upsertAdministration onError:', error);
       toast.add({
         severity: TOAST_SEVERITIES.ERROR,
         summary: 'Error',
@@ -539,7 +531,6 @@ const submit = async () => {
       console.error('Error creating administration:', error.message);
     },
   });
-  console.log('After upsertAdministration call');
 };
 
 // +------------------------------------------------------------------------------------------------------------------+
