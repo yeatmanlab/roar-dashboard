@@ -156,7 +156,7 @@
   </RoarModal>
 </template>
 <script setup>
-import { ref, computed, onMounted, watchEffect } from 'vue';
+import { ref, computed, onMounted, watch, watchEffect } from 'vue';
 import * as Sentry from '@sentry/vue';
 import { storeToRefs } from 'pinia';
 import { useToast } from 'primevue/usetoast';
@@ -511,12 +511,12 @@ watchEffect(() => {
   selectedDistrict.value = _get(_head(allDistricts.value), 'id');
 });
 
-watchEffect(allSchools, (newValue) => {
+watch(allSchools, (newValue) => {
   selectedSchool.value = _get(_head(newValue), 'id');
 });
 
 const tableKey = ref(0);
-watchEffect([selectedDistrict, selectedSchool], () => {
+watch([selectedDistrict, selectedSchool], () => {
   tableKey.value += 1;
 });
 </script>
