@@ -14,12 +14,15 @@
     <!-- Dynamic Favicon -->
     <link rel="icon" :href="`/favicon-levante.ico`" />
   </Head>
-  <div>
+  <div v-if="isAuthStoreReady">
     <PvToast position="bottom-center" />
-    <NavBar v-if="typeof $route.name === 'string' && !navbarBlacklist.includes($route.name) && isAuthStoreReady" />
+    <NavBar v-if="typeof $route.name === 'string' && !navbarBlacklist.includes($route.name)" />
     <router-view :key="$route.fullPath" />
 
     <SessionTimer v-if="loadSessionTimeoutHandler" />
+  </div>
+  <div v-else>
+    <LevanteSpinner fullscreen />
   </div>
 
   <VueQueryDevtools v-if="showDevtools" />
@@ -31,15 +34,17 @@ import { useRoute } from 'vue-router';
 import { Head } from '@unhead/vue/components';
 import PvToast from 'primevue/toast';
 import NavBar from '@/components/NavBar.vue';
+import { useAuthStore } from '@/store/auth';
+import { fetchDocById } from '@/helpers/query/utils';
+import { i18n } from '@/translations/i18n';
+import LevanteSpinner from '@/components/LevanteSpinner.vue';
+
 
 const SessionTimer = defineAsyncComponent(() => import('@/containers/SessionTimer/SessionTimer.vue'));
 const VueQueryDevtools = defineAsyncComponent(() =>
   import('@tanstack/vue-query-devtools').then((module) => module.VueQueryDevtools),
 );
 
-import { useAuthStore } from '@/store/auth';
-import { fetchDocById } from '@/helpers/query/utils';
-import { i18n } from '@/translations/i18n';
 
 const isAuthStoreReady = ref(false);
 const showDevtools = ref(false);
@@ -72,26 +77,8 @@ const navbarBlacklist = ref([
   'Maintenance',
   'PlayApp',
   'SWR',
-  'SWR-ES',
   'SRE',
-  'SRE-ES',
   'PA',
-  'PA-ES',
-  'Letter',
-  'Letter-ES',
-  'Vocab',
-  'Multichoice',
-  'Morphology',
-  'Cva',
-  'Fluency-ARF',
-  'Fluency-ARF-ES',
-  'Fluency-CALF',
-  'Fluency-CALF-ES',
-  'Fluency-Alpaca',
-  'Fluency-Alpaca-ES',
-  'RAN',
-  'Crowding',
-  'MEP',
 ]);
 
 onBeforeMount(async () => {
