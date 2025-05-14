@@ -639,7 +639,7 @@ const computeAssignmentAndRunData = computed(() => {
           assessmentPid: user.assessmentPid,
           schoolName: schoolName,
           stateId: user.studentData?.state_id,
-          studentId: user.studentData?.sis_id,
+          studentId: user.studentData?.student_number,
         },
         tooltip: `View ${firstNameOrUsername}'s Score Report`,
         launchTooltip: `View assessment portal for ${firstNameOrUsername}`,
