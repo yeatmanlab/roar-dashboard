@@ -28,8 +28,12 @@ const useAdministrationAssignmentsQuery = (administrationId, orgType, orgId, que
   const { isQueryEnabled, options } = computeQueryOverrides(queryConditions, queryOptions);
 
   return useQuery({
-    queryKey: [ADMINISTRATION_ASSIGNMENTS_QUERY_KEY, administrationId, `${orgType}-${orgId}`],
-    queryFn: () => assignmentFetchAll(administrationId, orgType, orgId, true),
+    queryKey: [
+      ADMINISTRATION_ASSIGNMENTS_QUERY_KEY,
+      toValue(administrationId),
+      `${toValue(orgType)}-${toValue(orgId)}`,
+    ],
+    queryFn: () => assignmentFetchAll(toValue(administrationId), toValue(orgType), toValue(orgId), true),
     enabled: isQueryEnabled,
     ...options,
   });
