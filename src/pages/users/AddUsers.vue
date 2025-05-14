@@ -6,9 +6,8 @@
 
       <PvDivider />
 
-      <div v-if="!isFileUploaded || errorUsers.length" class="text-gray-500 mb-2 surface-100 border-round p-2">
+      <div class="text-gray-500 mb-2 surface-100 border-round p-2">
         <PvFileUpload
-          v-if="!isFileUploaded || errorUsers.length"
           name="massUploader[]"
           custom-upload
           accept=".csv"
@@ -440,8 +439,8 @@ async function submitUsers() {
   showErrorTable.value = false;
   errorMessage.value = '';
 
-  // Filter out users that already have UIDs
-  const usersToBeRegistered = _cloneDeep(toRaw(rawUserFile.value)).filter(user => !user.uid);
+  // Get users to be registered (those with empty uid)
+  const usersToBeRegistered = _cloneDeep(toRaw(rawUserFile.value)).filter(user => !user.uid || user.uid === '');
   const usersWithErrors = [];
 
   // If no users to register, show message and return
@@ -614,9 +613,13 @@ async function submitUsers() {
       currentRegisteredUsers.forEach((registeredUser, index) => {
         const rawUserIndex = processedUserCount + index;
         if (rawUserIndex < rawUserFile.value.length) {
-          rawUserFile.value[rawUserIndex].email = registeredUser.email;
-          rawUserFile.value[rawUserIndex].password = registeredUser.password;
-          rawUserFile.value[rawUserIndex].uid = registeredUser.uid;
+          // Preserve all existing user data and update with new registration data
+          rawUserFile.value[rawUserIndex] = {
+            ...rawUserFile.value[rawUserIndex],
+            email: registeredUser.email,
+            password: registeredUser.password,
+            uid: registeredUser.uid
+          };
         }
       });
 
@@ -628,7 +631,7 @@ async function submitUsers() {
         severity: 'success',
         summary: 'User Creation Successful',
         life: TOAST_DEFAULT_LIFE_DURATION
-      })
+      });
       convertUsersToCSV();
     } catch (error) {
       // TODO: Show users that failed to register
@@ -657,14 +660,8 @@ function convertUsersToCSV() {
   // Convert Objects to CSV String
   const csvHeader = Object.keys(headerObj).join(',') + '\n';
   
-  // Get all existing users from the CSV file
-  const existingUsers = rawUserFile.value.filter(user => user.uid);
-  
-  // Get newly registered users (those without uid)
-  const newUsers = rawUserFile.value.filter(user => !user.uid);
-  
-  // Combine existing and new users
-  const allUsers = [...existingUsers, ...newUsers];
+  // Get all users from rawUserFile (which now contains updated data for newly registered users)
+  const allUsers = toRaw(rawUserFile.value);
 
   const csvRows = allUsers
     .map((obj) =>
