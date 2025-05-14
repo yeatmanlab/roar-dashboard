@@ -30,7 +30,7 @@
           <router-link to="/">
             <PvButton>
               <i class="pi pi-arrow-left"></i>
-              Return to administrator account</PvButton
+              Exit student mode</PvButton
             >
           </router-link>
         </div>

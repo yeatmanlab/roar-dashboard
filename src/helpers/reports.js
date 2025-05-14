@@ -1,6 +1,5 @@
 import html2canvas from 'html2canvas';
 import { getGrade } from '@bdelab/roar-utils';
-
 /*
  *  Task Display Names
  *  A map of all tasks, including their taskId, display name, and index for ordering
@@ -525,6 +524,62 @@ export const gradeOptions = [
   },
 ];
 
+function getOrdinalSuffix(n) {
+  if (n >= 11 && n <= 13) return 'th';
+
+  switch (n % 10) {
+    case 1:
+      return 'st';
+    case 2:
+      return 'nd';
+    case 3:
+      return 'rd';
+    default:
+      return 'th';
+  }
+}
+
+export function getGradeToDisplay(grade) {
+  const gradeValue = getGrade(grade);
+
+  if (grade === 'Pre-K') {
+    return 'Prekindergarten';
+  }
+
+  if (grade === 'K') {
+    return 'Kindergarten';
+  }
+
+  if (typeof gradeValue !== 'number' || gradeValue < 0) {
+    console.error('Invalid grade provided'); // For Sentry logging
+    return null;
+  }
+
+  const suffix = getOrdinalSuffix(gradeValue);
+  return `${gradeValue}${suffix} Grade`;
+}
+
+export function getGradeWithSuffix(grade) {
+  const gradeValue = getGrade(grade);
+
+  if (grade === 'Pre-K') {
+    return 'Pre-K';
+  }
+
+  if (grade === 'T-K') {
+    return 'Transitional-K';
+  }
+
+  if (grade === 'K') {
+    return 'K';
+  }
+
+  if (typeof gradeValue !== 'number' || gradeValue < 1) {
+    return grade;
+  }
+
+  return `${gradeValue}${getOrdinalSuffix(gradeValue)}`;
+}
 /*
  *  Get Support Level
  *  Function to take scores, taskId, and grade and return the proper support category for the run.
