@@ -524,51 +524,62 @@ export const gradeOptions = [
   },
 ];
 
-// Given a grade, return a formatted string to display
-// 1 => 1st grade
-// 2 => 2nd grade
-// K => Kindergarten
-// Pre-K => Prekindergarten
+function getOrdinalSuffix(n) {
+  if (n >= 11 && n <= 13) return 'th';
+
+  switch (n % 10) {
+    case 1:
+      return 'st';
+    case 2:
+      return 'nd';
+    case 3:
+      return 'rd';
+    default:
+      return 'th';
+  }
+}
+
 export function getGradeToDisplay(grade) {
-  // add cases for kindergarten and prek
+  const gradeValue = getGrade(grade);
 
   if (grade === 'Pre-K') {
     return 'Prekindergarten';
-  } else if (grade === 'K') {
-    return 'Kindergarten';
-  } else if (getGrade(grade) < 1) {
-    return grade + ' Grade';
-  } else if (getGrade(grade) === 1) {
-    return grade + 'st Grade';
-  } else if (getGrade(grade) === 2) {
-    return grade + 'nd Grade';
-  } else if (getGrade(grade) === 3) {
-    return grade + 'rd Grade';
-  } else if (getGrade(grade) >= 4 && getGrade(grade) <= 13) {
-    return grade + 'th Grade';
-  } else {
-    return 'Invalid grade';
   }
+
+  if (grade === 'K') {
+    return 'Kindergarten';
+  }
+
+  if (typeof gradeValue !== 'number' || gradeValue < 0) {
+    console.error('Invalid grade provided'); // For Sentry logging
+    return null;
+  }
+
+  const suffix = getOrdinalSuffix(gradeValue);
+  return `${gradeValue}${suffix} Grade`;
 }
 
 export function getGradeWithSuffix(grade) {
-  // add cases for kindergarten and prek
+  const gradeValue = getGrade(grade);
 
-  if (getGrade(grade) < 1) {
-    return grade;
-  } else if (getGrade(grade) === 1) {
-    return grade + 'st';
-  } else if (getGrade(grade) === 2) {
-    return grade + 'nd';
-  } else if (getGrade(grade) === 3) {
-    return grade + 'rd';
-  } else if (getGrade(grade) >= 4 && getGrade(grade) <= 13) {
-    return grade + 'th';
-  } else {
-    return 'Invalid grade';
+  if (grade === 'Pre-K') {
+    return 'Pre-K';
   }
-}
 
+  if (grade === 'T-K') {
+    return 'Transitional-K';
+  }
+
+  if (grade === 'K') {
+    return 'K';
+  }
+
+  if (typeof gradeValue !== 'number' || gradeValue < 1) {
+    return grade;
+  }
+
+  return `${gradeValue}${getOrdinalSuffix(gradeValue)}`;
+}
 /*
  *  Get Support Level
  *  Function to take scores, taskId, and grade and return the proper support category for the run.
