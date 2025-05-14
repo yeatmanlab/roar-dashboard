@@ -78,7 +78,7 @@ const { isLoading: isLoadingClaims, data: userClaims } = useUserClaimsQuery({
 
 const { isAdmin, isSuperAdmin, isParticipant, isLaunchAdmin } = useUserType(userClaims);
 
-const isAdminUser = computed(() => isAdmin.value || isSuperAdmin.value);
+const isAdminUser = computed(() => isAdmin.value || isSuperAdmin.value || isLaunchAdmin.value);
 const isLoading = computed(() => {
   // @NOTE: In addition to the loading states, we also check if user data and user claims are loaded as due to the
   // current application initialization flow, the userData and userClaims queries initially reset. Once this is improved

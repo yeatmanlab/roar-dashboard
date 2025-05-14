@@ -119,7 +119,12 @@ async function startTask(selectedAdmin) {
 
       // Navigate to home, but first set the refresh flag to true.
       gameStore.requireHomeRefresh();
-      router.push({ name: 'Home' });
+
+      if (props.launchId) {
+        router.push({ name: 'LaunchParticipant', params: { launchId: props.launchId } });
+      } else {
+        router.push({ name: 'Home' });
+      }
     });
   } catch (error) {
     console.error('An error occurred while starting the task:', error);
