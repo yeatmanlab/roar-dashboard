@@ -9,11 +9,9 @@ describe('Launch Admin: View student score report', () => {
     cy.waitForStudentReportList();
     cy.get('[data-cy="view-score-report-btn').first().click();
 
-    cy.get('body', { timeout: 3 * timeout }).should('contain', 'Individual Score Report');
-    cy.get('button', { timeout: 3 * timeout })
-      .contains('Expand All Sections')
-      .click();
-    cy.get('button', { timeout: 3 * timeout }).contains('Export to PDF');
-    cy.get('div', { timeout: 3 * timeout }).contains('The ROAR assessments return these kinds of scores');
+    cy.get('[data-cy="report__header"] h1').should('contain', 'Individual Score Report');
+    cy.get('[data-cy="report__expand-btn"]').contains('Expand All Sections').click();
+    cy.get('[data-cy="report__pdf-export-btn"]').contains('Export to PDF');
+    cy.get('div').contains('The ROAR assessments return these kinds of scores');
   });
 });
