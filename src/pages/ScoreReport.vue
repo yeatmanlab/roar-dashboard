@@ -939,7 +939,8 @@ const createExportData = ({ rows, includeProgress = false }) => {
 
     // if org is from clever, include stateId
     // if (orgData.value?.clever === true) {
-    tableRow['State Id'] = user.stateId;
+    tableRow['State ID'] = user.stateId;
+    tableRow['Student ID'] = user.studentId;
     // }
 
     for (const taskId in scores) {
@@ -1057,7 +1058,8 @@ const exportData = async ({ selectedRows = null, includeProgress = false }) => {
   const staticColumns = ['Username', 'Email', 'First', 'Last', 'Grade', 'PID', 'School'];
 
   if (orgData.value?.clever === true) {
-    staticColumns.push('State Id');
+    staticColumns.push('State ID');
+    staticColumns.unshift('Student ID');
   }
 
   // Automatically detect task names by splitting column names and excluding static columns
@@ -1273,7 +1275,7 @@ const scoreReportColumns = computed(() => {
 
   tableColumns.push({
     field: 'user.stateId',
-    header: 'State Id',
+    header: 'State ID',
     dataType: 'text',
     sort: false,
     hidden: true, // Column is hidden by default, available via the Show/Hide Columns menu
