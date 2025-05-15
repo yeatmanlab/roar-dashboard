@@ -1,9 +1,6 @@
 <template>
+  <LevanteSpinner v-if="!gameStarted" fullscreen/>
   <div id="jspsych-target" class="game-target" translate="no" />
-  <div v-if="!gameStarted" class="col-full text-center">
-    <h1>{{ $t('tasks.preparing') }}</h1>
-    <AppSpinner />
-  </div>
 </template>
 <script setup>
 import { onMounted, onBeforeUnmount, watch, ref } from 'vue';
@@ -15,6 +12,7 @@ import { useGameStore } from '@/store/game';
 import useUserChildDataQuery from '@/composables/queries/useUserChildDataQuery';
 import useCompleteAssessmentMutation from '@/composables/mutations/useCompleteAssessmentMutation';
 import packageLockJson from '../../../package-lock.json';
+import LevanteSpinner from '@/components/LevanteSpinner.vue';
 
 const props = defineProps({
   taskId: { type: String, required: true, default: 'swr' },

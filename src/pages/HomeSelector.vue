@@ -1,8 +1,7 @@
 <template>
   <div v-if="isLoading">
     <div class="text-center col-full">
-      <AppSpinner />
-      <p class="text-center">{{ $t('homeSelector.loading') }}</p>
+      <LevanteSpinner fullscreen />
     </div>
   </div>
 
@@ -39,7 +38,7 @@ import useUpdateConsentMutation from '@/composables/mutations/useUpdateConsentMu
 import { CONSENT_TYPES } from '@/constants/consentTypes';
 import { APP_ROUTES } from '@/constants/routes';
 import { isLevante } from '@/helpers';
-
+import LevanteSpinner from '@/components/LevanteSpinner.vue';
 const HomeParticipant = defineAsyncComponent(() => import('@/pages/HomeParticipant.vue'));
 const HomeAdministrator = defineAsyncComponent(() => import('@/pages/HomeAdministrator.vue'));
 const ConsentModal = defineAsyncComponent(() => import('@/components/ConsentModal.vue'));
