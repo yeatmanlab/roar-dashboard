@@ -49,7 +49,7 @@
         >
           <div class="text-xl uppercase font-bold">No Conditions Added</div>
           <div class="text-sm uppercase text-gray-700">
-            Assignment will be <PvTag severity="warning" class="mx-1">ASSIGNED</PvTag> to all {{ isLevante ? 'users' : 'children' }} in the
+            Assignment will be <PvTag severity="warning" class="mx-1">ASSIGNED</PvTag> to all {{ isLevante ? 'users' : 'participants' }} in the
             {{ selectedGroup }}
           </div>
         </div>

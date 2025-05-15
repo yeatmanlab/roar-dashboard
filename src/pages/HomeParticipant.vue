@@ -58,7 +58,7 @@
         </div>
       </div>
       <div class="tabs-container">
-        <ParticipantSidebar :total-games="totalGames" :completed-games="completeGames" :child-info="childInfo" />
+        <ParticipantSidebar :total-games="totalGames" :completed-games="completeGames" :student-info="childInfo" />
         <Transition name="fade" mode="out-in">
           <GameTabs
             v-if="showOptionalAssessments && userData"
