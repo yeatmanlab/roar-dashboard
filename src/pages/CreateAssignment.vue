@@ -90,9 +90,6 @@
         <small v-if="submitted && _isEmpty(variants)" class="p-error mb-3">
           Please select at least one task variant.
         </small>
-        <small v-if="submitted && !_isEmpty(variants) && !checkForUniqueTasks(variants)" class="p-error mb-3">
-          Task selections must be unique. Please select different tasks.
-        </small>
 
         <div v-if="!isLevante" class="mt-2 flex w-full">
           <ConsentPicker :legal="state.legal" @consent-selected="handleConsentSelected" />
@@ -524,26 +521,14 @@ const submit = async () => {
   );
 
   console.log('Checking task uniqueness...', submittedAssessments);
-  const tasksUnique = checkForUniqueTasks(submittedAssessments);
-  console.log('Tasks unique result:', tasksUnique);
-  if (!tasksUnique || _isEmpty(submittedAssessments)) {
-    console.log('Task check failed (not unique or empty), showing toast.');
-    getNonUniqueTasks(submittedAssessments);
-    if (_isEmpty(submittedAssessments)) {
-      toast.add({
-        severity: TOAST_SEVERITIES.ERROR,
-        summary: 'Task Selections',
-        detail: 'No variants selected. You must select at least one variant to be assigned.',
-        life: TOAST_DEFAULT_LIFE_DURATION,
-      });
-    } else if (!_isEmpty(nonUniqueTasks.value)) {
-      toast.add({
-        severity: TOAST_SEVERITIES.ERROR,
-        summary: 'Task Selections',
-        detail: 'Task selections must be unique.',
-        life: TOAST_DEFAULT_LIFE_DURATION,
-      });
-    }
+  if (_isEmpty(submittedAssessments)) {
+    console.log('Task check failed (empty), showing toast.');
+    toast.add({
+      severity: TOAST_SEVERITIES.ERROR,
+      summary: 'Task Selections',
+      detail: 'No variants selected. You must select at least one variant to be assigned.',
+      life: TOAST_DEFAULT_LIFE_DURATION,
+    });
     // Scroll to the TaskPicker component
     const taskPickerElement = document.querySelector('.task-picker-component');
     if (taskPickerElement) {
