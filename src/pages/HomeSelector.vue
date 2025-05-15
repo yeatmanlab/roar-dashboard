@@ -17,10 +17,7 @@
     :on-confirm="updateConsent"
   />
 
-  <ResyncAccountsModal
-    v-if="!isLoading && showResyncModal && isAdminUser"
-    @confirm="dismissResyncModal"
-  />
+
 </template>
 
 <script setup>
@@ -42,7 +39,6 @@ import LevanteSpinner from '@/components/LevanteSpinner.vue';
 const HomeParticipant = defineAsyncComponent(() => import('@/pages/HomeParticipant.vue'));
 const HomeAdministrator = defineAsyncComponent(() => import('@/pages/HomeAdministrator.vue'));
 const ConsentModal = defineAsyncComponent(() => import('@/components/ConsentModal.vue'));
-const ResyncAccountsModal = defineAsyncComponent(() => import('@/components/ResyncAccountsModal.vue'));
 
 const authStore = useAuthStore();
 const { roarfirekit, ssoProvider } = storeToRefs(authStore);
@@ -135,30 +131,11 @@ function isSignedBeforeAugustFirst(signedDate) {
   return new Date(signedDate) < augustFirstThisYear;
 }
 
-// ResyncAccounts Modal Logic
-const RESYNC_MODAL_KEY = 'resync_accounts_modal_viewed';
-const showResyncModal = ref(false);
-
-function checkResyncModalStatus() {
-  if (!isAdminUser.value) return;
-  
-  const modalViewed = localStorage.getItem(RESYNC_MODAL_KEY);
-  if (!modalViewed) {
-    showResyncModal.value = true;
-  }
-}
-
-function dismissResyncModal() {
-  showResyncModal.value = false;
-  localStorage.setItem(RESYNC_MODAL_KEY, 'true');
-}
-
 watch(
   [userData, isAdminUser],
   async ([updatedUserData, updatedAdminUserState]) => {
     if (!_isEmpty(updatedUserData) && updatedAdminUserState) {
       await checkConsent();
-      checkResyncModalStatus();
     }
   },
   { immediate: true },

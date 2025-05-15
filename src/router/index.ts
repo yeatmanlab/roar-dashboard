@@ -203,12 +203,7 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import('../pages/users/AddUsers.vue'),
     meta: { pageTitle: 'Add Users', requireAdmin: true, project: 'LEVANTE' },
   },
-  {
-    path: '/sync-passwords',
-    name: 'Sync Passwords',
-    component: () => import('../pages/users/SyncPasswords.vue'),
-    meta: { pageTitle: 'Sync Passwords', requireAdmin: true, project: 'LEVANTE' },
-  },
+
   {
     path: '/link-users',
     name: 'Link Users',
