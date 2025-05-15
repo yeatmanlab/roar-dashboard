@@ -323,14 +323,14 @@ const computedProgressData = computed(() => {
       } else if (assessment?.startedOn !== undefined) {
         currRowProgress[taskId] = {
           value: 'started',
-          icon: 'pi pi-exclamation-triangle',
+          icon: 'pi pi-spinner-dotted',
           severity: 'warning',
         };
         progressFilterTags += ' Started ';
       } else {
         currRowProgress[taskId] = {
           value: 'assigned',
-          icon: 'pi pi-times',
+          icon: 'pi pi-book',
           severity: 'danger',
         };
         progressFilterTags += ' Assigned ';

@@ -71,7 +71,7 @@ const { isLoading: isLoadingAdministrations, data: administrations } = useAdmini
   orderByDefault,
   false,
   {
-    enabled: initialized && parentRegistrationComplete,
+    enabled: initialized.value && parentRegistrationComplete,
   },
 );
 
@@ -109,7 +109,7 @@ const init = () => {
   initialized.value = true;
 
   // Only start polling if registration check is needed
-  if (!authStore.userData.initialized && authStore.userData.registrations) {
+  if (!authStore.userData?.initialized && authStore.userData?.registrations) {
     resume();
   }
 };
@@ -122,7 +122,7 @@ onMounted(() => {
   if (authStore.roarfirekit.restConfig?.()) init();
 
   // Set registration complete if already initialized
-  if (authStore.userData.initialized || !authStore.userData.registrations) {
+  if (authStore.userData?.initialized || !authStore.userData?.registrations) {
     parentRegistrationComplete.value = true;
   }
 });
@@ -144,7 +144,7 @@ const { isLoading: isLoadingAssignments, data: assignmentData } = useAdministrat
   orgType,
   orgId,
   {
-    enabled: initialized && parentRegistrationComplete,
+    enabled: initialized.value && parentRegistrationComplete,
   },
 );
 </script>
