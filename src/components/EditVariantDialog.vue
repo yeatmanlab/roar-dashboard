@@ -21,13 +21,13 @@
         <div>
           <div class="text-sm font-light uppercase text-gray-400">Task Name</div>
           <div class="text-3xl font-bold uppercase">
-            {{ assessment.task.id }}
+            {{ assessment.task.name }}
           </div>
         </div>
-        <div v-if="assessment.variant?.params?.taskName" class="gap-2">
+        <div v-if="assessment.variant?.name" class="gap-2">
           <div class="text-sm font-light uppercase text-gray-500">Variant Name</div>
-          <div class="text-xl uppercase">
-            {{ assessment.variant?.params?.taskName }}
+          <div class="text-xl">
+            {{ assessment.variant?.name }}
           </div>
         </div>
       </div>
@@ -140,7 +140,7 @@
           <div class="flex flex-row justify-content-between align-items-center">
             <div class="flex flex-row justify-content-end align-items-center gap-2 mr-2">
               <div class="uppercase text-md font-bold text-gray-600">Make Assessment Optional For All {{ isLevante ? 'Users' : 'Students' }}</div>
-              <PvInputSwitch
+              <PvToggleSwitch
                 v-model="isOptionalForAll"
                 data-cy="switch-optional-for-everyone"
                 @update:model-value="handleOptionalForAllSwitch"
@@ -201,7 +201,7 @@ import PvButton from 'primevue/button';
 import PvDialog from 'primevue/dialog';
 import PvDivider from 'primevue/divider';
 import PvSelect from 'primevue/select';
-import PvInputSwitch from 'primevue/inputswitch';
+import PvToggleSwitch from 'primevue/toggleswitch';
 import PvTag from 'primevue/tag';
 
 const props = defineProps({

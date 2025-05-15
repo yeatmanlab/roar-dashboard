@@ -1,8 +1,7 @@
 <template>
   <div>
-    <div v-if="!initialized || isLoading || isFetching" class="loading-container bg-white-alpha-90">
-      <AppSpinner style="margin-bottom: 1rem" />
-      <span>{{ $t('homeParticipant.loadingAssignments') }}</span>
+    <div v-if="!initialized || isLoading || isFetching">
+      <LevanteSpinner fullscreen/>
     </div>
     <div v-else-if="!hasAssignments">
       <div class="col-full text-center py-8">
@@ -120,7 +119,7 @@ import { useQueryClient, useQuery } from '@tanstack/vue-query';
 import { initializeSurvey, setupSurveyEventHandlers } from '@/helpers/surveyInitialization';
 import { useSurveyStore } from '@/store/survey';
 import { fetchDocsById } from '@/helpers/query/utils';
-
+import LevanteSpinner from '@/components/LevanteSpinner.vue';
 
 const showConsent = ref(false);
 const consentVersion = ref('');
@@ -660,8 +659,4 @@ watch(surveyDependenciesLoaded, async (isLoaded) => {
   }
 }
 
-.loading-container {
-  width: 100%;
-  text-align: center;
-}
 </style>

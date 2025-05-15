@@ -596,10 +596,8 @@ const submit = async () => {
 
   if (props.adminId) args.administrationId = props.adminId;
 
-  console.log('Calling upsertAdministration with args:', args);
   await upsertAdministration(args, {
     onSuccess: () => {
-      console.log('upsertAdministration onSuccess');
       toast.add({
         severity: TOAST_SEVERITIES.SUCCESS,
         summary: 'Success',
@@ -613,7 +611,6 @@ const submit = async () => {
       router.push({ path: APP_ROUTES.HOME });
     },
     onError: (error) => {
-      console.error('upsertAdministration onError:', error);
       toast.add({
         severity: TOAST_SEVERITIES.ERROR,
         summary: 'Error',
@@ -624,7 +621,6 @@ const submit = async () => {
       console.error('Error creating administration:', error.message);
     },
   });
-  console.log('After upsertAdministration call');
 };
 
 // +------------------------------------------------------------------------------------------------------------------+
