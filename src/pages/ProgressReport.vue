@@ -2,7 +2,7 @@
   <main class="container main">
     <section class="main-body">
       <div v-if="isLoading" class="loading-wrapper">
-        <AppSpinner style="margin: 1rem 0rem" />
+        <LevanteSpinner fullscreen />
         <div class="uppercase text-sm text-gray-600 font-light">Loading Progress Datatable</div>
       </div>
 
@@ -189,6 +189,7 @@ import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
 import RoarDataTable from '@/components/RoarDataTable.vue';
 import { isEmpty } from 'lodash';
 import PvFloatLabel from 'primevue/floatlabel';
+import LevanteSpinner from '@/components/LevanteSpinner.vue';
 // import ProgressChartLegend from '@/components/reports/ProgressChartLegend.vue'; // File does not exist
 // import ProgressChart from '@/components/reports/ProgressChart.vue'; // File does not exist
 
