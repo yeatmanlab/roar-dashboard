@@ -46,14 +46,14 @@ describe('useUserClaimsQuery', () => {
     });
 
     expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: ['user-claims', mockUserId],
+      queryKey: ['user-claims', expect.objectContaining({ _value: mockUserId.value })],
       queryFn: expect.any(Function),
       enabled: expect.objectContaining({
         _value: true,
       }),
     });
 
-    expect(fetchDocById).toHaveBeenCalledWith('userClaims', mockUserId);
+    expect(fetchDocById).toHaveBeenCalledWith('userClaims', expect.objectContaining({ _value: mockUserId.value }));
   });
 
   it('should correctly control the enabled state of the query', async () => {
@@ -73,7 +73,7 @@ describe('useUserClaimsQuery', () => {
     });
 
     expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: ['user-claims', mockUserId],
+      queryKey: ['user-claims', expect.objectContaining({ _value: mockUserId.value })],
       queryFn: expect.any(Function),
       enabled: expect.objectContaining({
         _value: false,
@@ -86,7 +86,7 @@ describe('useUserClaimsQuery', () => {
     enableQuery.value = true;
     await nextTick();
 
-    expect(fetchDocById).toHaveBeenCalledWith('userClaims', mockUserId);
+    expect(fetchDocById).toHaveBeenCalledWith('userClaims', expect.objectContaining({ _value: mockUserId.value }));
   });
 
   it('should only fetch data if once uid is available', async () => {
@@ -102,7 +102,7 @@ describe('useUserClaimsQuery', () => {
     });
 
     expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: ['user-claims', mockUserId],
+      queryKey: ['user-claims', expect.objectContaining({ _value: mockUserId.value })],
       queryFn: expect.any(Function),
       enabled: expect.objectContaining({
         _value: false,
@@ -115,7 +115,7 @@ describe('useUserClaimsQuery', () => {
     mockUserId.value = nanoid();
     await nextTick();
 
-    expect(fetchDocById).toHaveBeenCalledWith('userClaims', mockUserId);
+    expect(fetchDocById).toHaveBeenCalledWith('userClaims', expect.objectContaining({ _value: mockUserId.value }));
   });
 
   it('should not let queryOptions override the internally computed value', async () => {
@@ -131,7 +131,7 @@ describe('useUserClaimsQuery', () => {
     });
 
     expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: ['user-claims', mockUserId],
+      queryKey: ['user-claims', expect.objectContaining({ _value: mockUserId.value })],
       queryFn: expect.any(Function),
       enabled: expect.objectContaining({
         _value: false,
