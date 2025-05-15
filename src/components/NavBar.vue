@@ -31,6 +31,14 @@
             </template>
 
             <template #end>
+              <router-link :to="{ name: 'Debug' }" class="mr-3">
+                <PvButton
+                  icon="pi pi-bug"
+                  class="p-button-text p-button-rounded"
+                  aria-label="Debug"
+                  label="Debug"
+                />
+              </router-link>
               <UserActions :isBasicView="computedIsBasicView" />
             </template>
           </PvMenubar>

@@ -5,9 +5,11 @@ import _isEmpty from 'lodash/isEmpty';
 import _union from 'lodash/union';
 import { initNewFirekit } from '../firebaseInit';
 import { AUTH_SSO_PROVIDERS } from '../constants/auth';
+import posthogInstance from '@/plugins/posthog';
+import { logger } from '@/logger';
 
 export const useAuthStore = () => {
-  return defineStore('authStore', {
+  const store = defineStore('authStore', {
     id: 'authStore',
     state: () => {
       return {
@@ -71,15 +73,20 @@ export const useAuthStore = () => {
           if (user) {
             this.localFirekitInit = true;
             this.firebaseUser.adminFirebaseUser = user;
+            logger.setUser(user);
           } else {
             this.firebaseUser.adminFirebaseUser = null;
+            logger.setUser(null);
           }
         });
+
         this.appAuthStateListener = onAuthStateChanged(this.roarfirekit?.app.auth, async (user) => {
           if (user) {
             this.firebaseUser.appFirebaseUser = user;
+            logger.setUser(user);
           } else {
             this.firebaseUser.appFirebaseUser = null;
+            logger.setUser(null);
           }
         });
       },
@@ -159,13 +166,21 @@ export const useAuthStore = () => {
       async createUsers(userData) {
         return this.roarfirekit.createUsers(userData);
       },
+      async signOut() {
+         console.log('PostHog Reset (explicit signOut)');
+         posthogInstance.reset();
+         if (this.isFirekitInit) {
+           return this.roarfirekit.signOut();
+         }
+      },
     },
     persist: {
       storage: sessionStorage,
       paths: ['firebaseUser', 'ssoProvider'],
       debug: false,
     },
-  })();
+  });
+  return store();
 };
 
 if (import.meta.hot) {
