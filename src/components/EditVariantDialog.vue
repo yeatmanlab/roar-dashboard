@@ -105,11 +105,11 @@
           >
             <div class="text-xl uppercase font-bold">No Conditions Added</div>
             <div v-if="isOptionalForAll" class="text-sm uppercase text-gray-700">
-              Assignment will be <PvTag severity="success" class="mx-1">OPTIONAL</PvTag> for all {{ isLevante ? 'users' : 'children' }} in the
+              Assignment will be <PvTag severity="success" class="mx-1">OPTIONAL</PvTag> for all {{ isLevante ? 'users' : 'participants' }} in the
               {{ selectedGroup }}
             </div>
             <div v-else class="text-sm uppercase text-gray-700">
-              Assignment will <PvTag severity="danger" class="mx-1">NOT BE OPTIONAL</PvTag> for any {{ isLevante ? 'users' : 'children' }} in the
+              Assignment will <PvTag severity="danger" class="mx-1">NOT BE OPTIONAL</PvTag> for any {{ isLevante ? 'users' : 'participants' }} in the
               {{ selectedGroup }}
             </div>
           </div>
@@ -139,7 +139,7 @@
 
           <div class="flex flex-row justify-content-between align-items-center">
             <div class="flex flex-row justify-content-end align-items-center gap-2 mr-2">
-              <div class="uppercase text-md font-bold text-gray-600">Make Assessment Optional For All {{ isLevante ? 'Users' : 'Children' }}</div>
+              <div class="uppercase text-md font-bold text-gray-600">Make Assessment Optional For All {{ isLevante ? 'Users' : 'Participants' }}</div>
               <PvToggleSwitch
                 v-model="isOptionalForAll"
                 data-cy="switch-optional-for-everyone"
