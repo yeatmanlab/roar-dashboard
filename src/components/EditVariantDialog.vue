@@ -140,7 +140,7 @@
           <div class="flex flex-row justify-content-between align-items-center">
             <div class="flex flex-row justify-content-end align-items-center gap-2 mr-2">
               <div class="uppercase text-md font-bold text-gray-600">Make Assessment Optional For All {{ isLevante ? 'Users' : 'Children' }}</div>
-              <PvInputSwitch
+              <PvToggleSwitch
                 v-model="isOptionalForAll"
                 data-cy="switch-optional-for-everyone"
                 @update:model-value="handleOptionalForAllSwitch"
