@@ -92,15 +92,7 @@ const navbarActionOptions: Readonly<NavbarAction>[] = [
   //   project: 'LEVANTE',
   //   category: 'Users',
   // },
-  {
-    title: 'Sync Passwords',
-    icon: 'pi pi-arrows-h',
-    buttonLink: { name: 'Sync Passwords' },
-    requiresSuperAdmin: true,
-    requiresAdmin: true,
-    project: 'LEVANTE',
-    category: 'Users',
-  },
+
   {
     title: 'Register administrator',
     icon: 'pi pi-user-plus',
