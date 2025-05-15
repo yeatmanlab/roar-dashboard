@@ -22,6 +22,6 @@ export const USER_DATA_QUERY_KEY: string = 'user';
 export const USER_ADMINISTRATION_ASSIGNMENTS_QUERY_KEY: string = 'user-administration-assignments';
 export const USER_ASSIGNMENTS_QUERY_KEY: string = 'user-assignments';
 export const USER_CLAIMS_QUERY_KEY: string = 'user-claims';
-export const USER_STUDENT_DATA_QUERY_KEY: string = 'user-student';
+export const USER_CHILD_DATA_QUERY_KEY: string = 'user-student';
 export const USER_RUN_PAGE_QUERY_KEY: string = 'user-run-page';
 export const ORG_MUTATION_KEY: string = 'org-mutation';

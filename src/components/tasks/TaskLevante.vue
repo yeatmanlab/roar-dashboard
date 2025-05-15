@@ -13,7 +13,7 @@ import { storeToRefs } from 'pinia';
 import _get from 'lodash/get';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
-import useUserStudentDataQuery from '@/composables/queries/useUserStudentDataQuery';
+import useUserChildDataQuery from '@/composables/queries/useUserChildDataQuery';
 import useCompleteAssessmentMutation from '@/composables/mutations/useCompleteAssessmentMutation';
 import packageLockJson from '../../../package-lock.json';
 
@@ -48,7 +48,7 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.roarfirekit.restConfig) init();
 });
 
-const { isLoading: isLoadingUserData, data: userData } = useUserStudentDataQuery({
+const { isLoading: isLoadingUserData, data: userData } = useUserChildDataQuery({
   enabled: initialized,
 });
 
