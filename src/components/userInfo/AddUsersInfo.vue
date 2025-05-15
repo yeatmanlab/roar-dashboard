@@ -16,25 +16,34 @@
       </ol>
     </div>
 
-    These fields (columns) are <b>REQUIRED</b> for adding users:
-
+    <p>The following fields define the columns for your CSV file when adding users. Please refer to the legend below for specific requirements on each field.</p>
+    <p>Caregivers and Teachers need to have the same Groups as the children they relate to.</p>
     <ul>
-      <li><b>userType</b> - The type of user. Must be one of the following: child, caregiver, or teacher.</li>
-      <li><b>month</b><span class="required">*</span> - The month the child was born. (numeric birth month, For example: 5 for May)</li>
-      <li><b>year</b><span class="required">*</span> - The year the child was born. (four-digit birth year, For example: 2017)</li>
-      <li><b>cohort</b> OR</li>
-      <li><b>site</b> AND <b>school</b> - You must specify either a cohort name OR both a site name and school name for each user.</li>
+      <li><b>id</b><span class="field-marker">*</span> - A unique identifier for the user in CSV file.</li>
+      <li><b>userType</b><span class="field-marker">*</span> - The type of user: child, caregiver, teacher.</li>
+      <li><b>month</b><span class="field-marker">*</span><span class="field-marker">†</span> - The month a child user was born (numeric; For Example, 5 for May).</li>
+      <li><b>year</b><span class="field-marker">*</span><span class="field-marker">†</span> - The year a child user was born (four-digit; For Example, 2017).</li>
+      <li><b>caregiverId</b> - A unique identifier (id) for the child's caregiver.</li>
+      <li><b>teacherId</b> - A unique identifier (id) for the child's teacher.</li>
+      <li><b>site</b><span class="field-marker">*</span> - The name of the site you created from the Add Groups page.</li>
+      <li>
+        One of the following<span class="field-marker">*</span>:
+        <ul class="nested-list">
+          <li><b>cohort</b> - The name of the cohort.</li>
+          <li>
+            <b>school</b> - The name of the school.
+            <ul class="nested-list">
+              <li><b>class</b> - The name of the class. Must have a school as well. (Optional)</li>
+            </ul>
+          </li>
+        </ul>
+      </li>
     </ul>
 
-    These fields (columns) are optional:
-
-    <ul class="optional-fields">
-      <li><b>Class</b> - The name of the class. This is required if assigning the teacher survey.</li>
-    </ul>
-
-    <p>Caregivers and Teachers need to have the same Groups as their children / students.</p>
-
-    <p class="mb-6"><span class="required">*</span> = Required only for child users. Leave blank for caregiver or teacher users.</p>
+    <p class="mb-6 legend">
+      <span class="field-marker">*</span> Required for this Step<br/>
+      <span class="field-marker">†</span> Required only for child users. Leave blank for caregiver or teacher users.
+    </p>
 
     <div class="download-button-container">
       <button class="download-csv-btn" @click="downloadTemplate" data-testid="download-template">
@@ -97,6 +106,24 @@ const downloadTemplate = () => {
   }
 }
 
+.field-marker {
+  color: var(--bright-red);
+  font-weight: bold;
+  vertical-align: super;
+  font-size: 0.8em;
+  margin-left: 0.1em;
+}
+
+.legend {
+  line-height: 1.6;
+}
+
+.nested-list {
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+  padding-left: 1.5em; /* Indent nested lists */
+}
+
 .required {
   color: var(--bright-red);
 }
@@ -148,6 +175,7 @@ const downloadTemplate = () => {
     margin-bottom: 1rem;
     color: var(--primary-color);
     font-size: 1.2rem;
+    font-weight: bold;
   }
 
   .numbered-steps {

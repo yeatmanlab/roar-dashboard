@@ -11,6 +11,8 @@ import _get from 'lodash/get';
 import { pageTitlesEN, pageTitlesUS, pageTitlesES, pageTitlesCO } from '@/translations/exports';
 import { isLevante } from '@/helpers';
 import { APP_ROUTES } from '@/constants/routes';
+import posthogInstance from '@/plugins/posthog';
+import { logger } from '@/logger';
 
 function removeQueryParams(to: RouteLocationNormalized) {
   if (Object.keys(to.query).length) return { path: to.path, query: {}, hash: to.hash };
@@ -44,64 +46,22 @@ const routes: Array<RouteRecordRaw> = [
     path: '/game/swr',
     name: 'SWR',
     component: () => import('../components/tasks/TaskSWR.vue'),
-    props: { taskId: 'swr', language: 'en' },
+    props: { taskId: 'swr' },
     meta: { pageTitle: 'SWR' },
-  },
-  {
-    path: '/game/swr-es',
-    name: 'SWR-ES',
-    component: () => import('../components/tasks/TaskSWR.vue'),
-    props: { taskId: 'swr-es', language: 'es' },
-    meta: { pageTitle: 'SWR (ES)' },
-  },
-  {
-    path: '/game/swr-de',
-    name: 'SWR-DE',
-    component: () => import('../components/tasks/TaskSWR.vue'),
-    props: { taskId: 'swr-de', language: 'de' },
-    meta: { pageTitle: 'SWR (DE)' },
   },
   {
     path: '/game/pa',
     name: 'PA',
     component: () => import('../components/tasks/TaskPA.vue'),
-    props: { taskId: 'pa', language: 'en' },
+    props: { taskId: 'pa' },
     meta: { pageTitle: 'PA' },
-  },
-  {
-    path: '/game/pa-es',
-    name: 'PA-ES',
-    component: () => import('../components/tasks/TaskPA.vue'),
-    props: { taskId: 'pa-es', language: 'es' },
-    meta: { pageTitle: 'PA-ES' },
-  },
-  {
-    path: '/game/pa-de',
-    name: 'PA-DE',
-    component: () => import('../components/tasks/TaskPA.vue'),
-    props: { taskId: 'pa-de', language: 'de' },
-    meta: { pageTitle: 'PA-DE' },
   },
   {
     path: '/game/sre',
     name: 'SRE',
     component: () => import('../components/tasks/TaskSRE.vue'),
-    props: { taskId: 'sre', language: 'en' },
+    props: { taskId: 'sre' },
     meta: { pageTitle: 'SRE' },
-  },
-  {
-    path: '/game/sre-es',
-    name: 'SRE-ES',
-    component: () => import('../components/tasks/TaskSRE.vue'),
-    props: { taskId: 'sre-es', language: 'es' },
-    meta: { pageTitle: 'SRE-ES' },
-  },
-  {
-    path: '/game/sre-de',
-    name: 'SRE-DE',
-    component: () => import('../components/tasks/TaskSRE.vue'),
-    props: { taskId: 'sre-de', language: 'de' },
-    meta: { pageTitle: 'SRE-DE' },
   },
   {
     path: '/game/core-tasks/:taskId',
@@ -255,12 +215,12 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import('../pages/users/LinkUsers.vue'),
     meta: { pageTitle: 'Link Users', requireAdmin: true, project: 'LEVANTE' },
   },
-  {
-    path: '/edit-users',
-    name: 'Edit Users',
-    component: () => import('../pages/users/EditUsers.vue'),
-    meta: { pageTitle: 'Edit Users', requireAdmin: true, project: 'LEVANTE' },
-  },
+  // {
+  //   path: '/edit-users',
+  //   name: 'Edit Users',
+  //   component: () => import('../pages/users/EditUsers.vue'),
+  //   meta: { pageTitle: 'Edit Users', requireAdmin: true, project: 'LEVANTE' },
+  // },
   {
     path: '/survey',
     name: 'Survey',
@@ -371,6 +331,11 @@ router.beforeEach(async (to: RouteLocationNormalized, from: RouteLocationNormali
 
   next();
   return;
+});
+
+// PostHog pageview tracking
+router.afterEach((to, from) => {
+  logger.capture('pageview', { to, from });
 });
 
 export default router;

@@ -20,8 +20,8 @@ const head = createHead();
 // Define the custom PrimeVue theme preset
 const MyPreset = definePreset(Aura, {
   primitive: {
-    red: { 500: '#8c1515', 700: '#5b0c0f', 400: '#5b0c0f', 600: '#5b0c0f' },
-    surface: { 100: '#adb5bd', 500: '#8c1515' },
+    red: { 500: '#DA3D16', 700: '#A22D10', 400: '#A22D10', 600: '#A22D10' },
+    surface: { 100: '#adb5bd', 500: '#DA3D16' },
   },
   semantic: {
     primary: {

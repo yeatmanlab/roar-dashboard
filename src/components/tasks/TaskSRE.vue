@@ -18,7 +18,6 @@ import packageLockJson from '../../../package-lock.json';
 
 const props = defineProps({
   taskId: { type: String, required: true, default: 'sre' },
-  language: { type: String, required: true, default: 'en' },
 });
 
 let TaskLauncher;
@@ -101,14 +100,10 @@ async function startTask(selectedAdmin) {
 
     const appKit = await authStore.roarfirekit.startAssessment(selectedAdmin.value.id, taskId, version);
 
-    const userDob = _get(userData.value, 'studentData.dob');
-    const userDateObj = new Date(userDob);
-
     const userParams = {
-      grade: _get(userData.value, 'studentData.grade'),
-      birthMonth: userDateObj.getMonth() + 1,
-      birthYear: userDateObj.getFullYear(),
-      language: props.language,
+      grade: "",
+      birthMonth: _get(userData.value, 'birthMonth'),
+      birthYear: _get(userData.value, 'birthYear'),
     };
 
     const gameParams = { ...appKit._taskInfo.variantParams };

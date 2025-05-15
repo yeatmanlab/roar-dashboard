@@ -10,7 +10,7 @@
               class="bg-primary text-white border-none p-2 ml-auto"
               @click="newGroup"
             >
-              New Group
+              Add Group
             </PvButton>
              <PvButton
               class="bg-primary text-white border-none p-2 ml-auto"
@@ -59,10 +59,9 @@
             </div>
           </div>
           <RoarDataTable
-            v-if="tableData"
             :key="tableKey"
             :columns="tableColumns"
-            :data="tableData"
+            :data="tableData ?? []"
             sortable
             :loading="isLoading || isFetching"
             :allow-filtering="false"
@@ -71,10 +70,8 @@
             @export-org-users="(orgId) => exportOrgUsers(orgId)"
             @edit-button="onEditButtonClick($event)"
           />
-          <AppSpinner v-else />
         </PvTabPanel>
       </PvTabView>
-      <AppSpinner v-else />
     </section>
     <section class="flex mt-8 justify-content-end">
       <PvDialog
@@ -95,7 +92,7 @@
             readonly
           />
           <PvButton
-            class="bg-primary border-none p-2 text-white hover:bg-red-900"
+            class="bg-primary border-none p-2 text-white hover:bg-red-900 font-normal"
             @click="copyToClipboard(`https://roar.education/register/?code=${activationCode}`)"
           >
             <i class="pi pi-copy p-2"></i>
@@ -159,7 +156,7 @@
   </RoarModal>
 </template>
 <script setup>
-import { ref, computed, onMounted, watchEffect } from 'vue';
+import { ref, computed, onMounted, watch, watchEffect } from 'vue';
 import * as Sentry from '@sentry/vue';
 import { storeToRefs } from 'pinia';
 import { useToast } from 'primevue/usetoast';
@@ -514,12 +511,12 @@ watchEffect(() => {
   selectedDistrict.value = _get(_head(allDistricts.value), 'id');
 });
 
-watchEffect(allSchools, (newValue) => {
+watch(allSchools, (newValue) => {
   selectedSchool.value = _get(_head(newValue), 'id');
 });
 
 const tableKey = ref(0);
-watchEffect([selectedDistrict, selectedSchool], () => {
+watch([selectedDistrict, selectedSchool], () => {
   tableKey.value += 1;
 });
 </script>

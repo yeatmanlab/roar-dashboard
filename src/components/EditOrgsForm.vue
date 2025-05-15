@@ -11,14 +11,6 @@
       <label :class="{ 'font-light uppercase text-sm': !editMode }">Tags</label>
       <PvChips v-model="localOrgData.tags" />
     </div>
-    <div>
-      <PvCheckbox v-model="localOrgData.testData" binary />
-      <label class="ml-1">Test Data</label>
-    </div>
-    <div>
-      <PvCheckbox v-model="localOrgData.demoData" binary />
-      <label class="ml-1">Demo Data</label>
-    </div>
   </div>
 </template>
 <script setup>
@@ -28,7 +20,6 @@ import { storeToRefs } from 'pinia';
 import { fetchDocById } from '@/helpers/query/utils';
 import { useQuery } from '@tanstack/vue-query';
 import PvChips from 'primevue/chips';
-import PvCheckbox from 'primevue/checkbox';
 import PvInputText from 'primevue/inputtext';
 import _isEmpty from 'lodash/isEmpty';
 
@@ -64,19 +55,13 @@ const { data: serverOrgData } = useQuery({
 // +-------------+
 const localOrgData = ref({
   name: null,
-  abbreviation: null,
   tags: [],
-  testData: false,
-  demoData: false,
 });
 
 const setupOrgData = (orgData) => {
   let org = {
     name: orgData?.name ?? '',
-    abbreviation: orgData?.abbreviation ?? '',
     tags: orgData?.tags ?? [],
-    testData: orgData?.testData ?? false,
-    demoData: orgData?.demoData ?? false,
   };
   localOrgData.value = org;
 };

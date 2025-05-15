@@ -31,18 +31,6 @@
           </div>
         </div>
 
-        <div v-if="orgType?.singular === 'group'" class="flex flex-row align-items-center justify-content-start gap-2">
-          <PvCheckbox v-model="groupHasParentOrg" input-id="chbx-group-parent-org" :binary="true" />
-          <label for="chbx-group-parent-org">Belongs to a Site</label>
-        </div>
-
-        <OrgPicker
-          v-if="groupHasParentOrg && orgType?.singular === 'group'"
-          :for-parent-org="true"
-          class="mt-4"
-          @selection="selection($event)"
-        />
-
         <div v-if="parentOrgRequired" class="grid mt-4">
           <div class="col-12 md:col-6 lg:col-4">
             <PvFloatLabel>
@@ -87,14 +75,6 @@
               <small v-if="v$.orgName.$invalid && submitted" class="p-error">Please supply a name</small>
             </PvFloatLabel>
           </div>
-
-          <div class="col-12 md:col-6 lg:col-4 mt-3">
-            <PvFloatLabel>
-              <PvInputText id="org-initial" v-model="state.orgInitials" class="w-full" data-cy="input-org-initials" />
-              <label for="org-initial">{{ orgTypeLabel }} Abbreviation<span id="required-asterisk">*</span></label>
-              <small v-if="v$.orgInitials.$invalid && submitted" class="p-error">Please supply an abbreviation</small>
-            </PvFloatLabel>
-          </div>
         </div>
 
         <div class="mt-5 mb-0 pb-0">Optional fields:</div>
@@ -117,25 +97,15 @@
             </PvFloatLabel>
           </div>
         </div>
-        <div v-if="!isLevante" class="flex flex-row align-items-center justify-content-stagap-2 flex-order-0 my-3">
-          <div class="flex flex-row align-items-center">
-            <PvCheckbox v-model="isDemoData" input-id="chbx-demodata" :binary="true" />
-            <label class="ml-1 mr-3" for="chbx-demodata">Mark as <b>Demo Organization</b></label>
-          </div>
-          <div class="flex flex-row align-items-center">
-            <PvCheckbox v-model="isTestData" input-id="chbx-testdata" :binary="true" />
-            <label class="ml-1 mr-3" for="chbx-testdata">Mark as <b>Test Organization</b></label>
-          </div>
-        </div>
 
         <PvDivider />
 
         <div class="grid">
           <div class="col-12">
             <PvButton
-              :label="submitted ? `Creating ${orgTypeLabel}` : `Create ${orgTypeLabel}`"
-              :disabled="orgTypeLabel === 'Org' || v$.$invalid || submitted"
-              :icon="submitted ? 'pi pi-spin pi-spinner' : ''"
+              :label="isSubmittingOrg ? `Creating ${orgTypeLabel}` : `Create ${orgTypeLabel}`"
+              :disabled="orgTypeLabel === 'Org' || v$.$invalid || isSubmittingOrg"
+              :icon="isSubmittingOrg ? 'pi pi-spin pi-spinner' : ''"
               class="bg-primary text-white border-none border-round h-3rem w-3 hover:bg-red-900"
               data-cy="button-create-org"
               @click="submit"
@@ -148,18 +118,16 @@
 </template>
 
 <script setup>
-import { computed, reactive, ref, toRaw, onMounted, watch } from 'vue';
+import { computed, reactive, ref, toRaw, onMounted } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import { storeToRefs } from 'pinia';
 import _capitalize from 'lodash/capitalize';
 import _union from 'lodash/union';
 import _without from 'lodash/without';
-import { useQueryClient } from '@tanstack/vue-query';
 import { useVuelidate } from '@vuelidate/core';
 import { required, requiredIf } from '@vuelidate/validators';
 import PvAutoComplete from 'primevue/autocomplete';
 import PvButton from 'primevue/button';
-import PvCheckbox from 'primevue/checkbox';
 import PvDivider from 'primevue/divider';
 import PvSelect from 'primevue/select';
 import PvInputText from 'primevue/inputtext';
@@ -169,33 +137,18 @@ import useDistrictsListQuery from '@/composables/queries/useDistrictsListQuery';
 import useDistrictSchoolsQuery from '@/composables/queries/useDistrictSchoolsQuery';
 import useSchoolClassesQuery from '@/composables/queries/useSchoolClassesQuery';
 import useGroupsListQuery from '@/composables/queries/useGroupsListQuery';
-import { isLevante } from '@/helpers';
-import GroupPicker from '@/components/GroupPicker.vue';
-import _toPairs from 'lodash/toPairs';
+import useUpsertOrgMutation from '@/composables/mutations/useUpsertOrgMutation';
 import { TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
 const initialized = ref(false);
-const isTestData = ref(false);
-const isDemoData = ref(false);
 const toast = useToast();
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
-const queryClient = useQueryClient();
-const groupHasParentOrg = ref(false);
-
 
 const state = reactive({
   orgName: '',
-  orgInitials: '',
   parentDistrict: undefined,
   parentSchool: undefined,
   tags: [],
-});
-
-const groupParentOrgs = reactive({
-  districts: [],
-  schools: [],
-  classes: [],
-  groups: [],
 });
 
 let unsubscribe;
@@ -212,10 +165,12 @@ onMounted(() => {
   if (roarfirekit.value.restConfig) initTable();
 });
 
+// All districts belonging to user
 const { isLoading: isLoadingDistricts, data: districts } = useDistrictsListQuery({
   enabled: initialized,
 });
 
+// All groups belonging to user
 const { data: groups } = useGroupsListQuery({
   enabled: initialized,
 });
@@ -226,6 +181,7 @@ const schoolQueryEnabled = computed(() => {
 
 const selectedDistrict = computed(() => state.parentDistrict?.id);
 
+// The schools of a given district
 const { isFetching: isFetchingSchools, data: schools } = useDistrictSchoolsQuery(selectedDistrict, {
   enabled: schoolQueryEnabled,
 });
@@ -234,20 +190,22 @@ const classQueryEnabled = computed(() => {
   return initialized.value && state.parentSchool !== undefined;
 });
 
-const schoolDropdownEnabled = computed(() => {
-  return state.parentDistrict && !isFetchingSchools.value;
-});
-
 const selectedSchool = computed(() => state.parentSchool?.id);
 
+// The classes of a given school
 const { data: classes } = useSchoolClassesQuery(selectedSchool, {
   enabled: classQueryEnabled,
 });
 
+const { mutate: upsertOrg, isPending: isSubmittingOrg, error: upsertOrgError } = useUpsertOrgMutation();
+
+const schoolDropdownEnabled = computed(() => {
+  return state.parentDistrict && !isFetchingSchools.value;
+});
+
 const rules = {
   orgName: { required },
-  orgInitials: { required },
-  parentDistrict: { required: requiredIf(() => ['school', 'class'].includes(orgType.value.singular)) },
+  parentDistrict: { required: requiredIf(() => ['school', 'class', 'group'].includes(orgType.value.singular)) },
   parentSchool: { required: requiredIf(() => orgType.value.singular === 'class') },
 };
 
@@ -263,27 +221,16 @@ const orgTypes = [
 
 const orgType = ref();
 
-// To hide the org picker when the org type is cleared (can't control the clear button)
-watch(orgType, () => {
-  if (!orgType.value) {
-    groupHasParentOrg.value = false;
-  }
-});
 
 const orgTypeLabel = computed(() => {
   if (orgType.value) {
     return _capitalize(orgType.value.label);
   }
-  return 'Org';
+  return 'Group';
 });
 
-const parentOrgRequired = computed(() => ['school', 'class'].includes(orgType.value?.singular));
+const parentOrgRequired = computed(() => ['school', 'class', 'group'].includes(orgType.value?.singular));
 
-const selection = (selected) => {
-  for (const [key, value] of _toPairs(toRaw(selected))) {
-    groupParentOrgs[key] = value;
-  }
-};
 
 const allTags = computed(() => {
   const districtTags = (districts.value ?? []).map((org) => org.tags);
@@ -306,77 +253,47 @@ const searchTags = (event) => {
 };
 
 const submit = async () => {
-  submitted.value = true;
   const isFormValid = await v$.value.$validate();
 
   if (isFormValid) {
-    let orgData = {
+    let orgDataToSubmit = {
       name: state.orgName,
       abbreviation: state.orgInitials,
+      type: orgType.value.firestoreCollection,
     };
 
-    if (groupHasParentOrg.value) {
-      const singularMap = {
-        districts: 'district',
-        schools: 'school',
-        classes: 'class',
-        groups: 'group',
-        families: 'family',
-      };
-      const rawParentOrgs = toRaw(groupParentOrgs);
-      let parentOrg;
-      let parentOrgKey;
-      // Find first key with non-empty array or object value
-      parentOrgKey = Object.keys(rawParentOrgs).find(key => {
-        const value = rawParentOrgs[key];
-        return (Array.isArray(value) && value.length > 0) || 
-               (!Array.isArray(value) && typeof value === 'object' && value !== null);
-      });
-      if (parentOrgKey) {
-        const value = rawParentOrgs[parentOrgKey];
-        parentOrg = Array.isArray(value) ? value[0] : value;
-      }
-      if (!parentOrg || !parentOrgKey) {
-        toast.add({ severity: 'error', summary: 'Error', detail: 'Please select a parent organization', life: TOAST_DEFAULT_LIFE_DURATION });
-        submitted.value = false;
-        return;
-      }
-      orgData.parentOrgId = parentOrg.id;
-      orgData.parentOrgType = singularMap[parentOrgKey];
-    }
-
-    if (state.tags.length > 0) orgData.tags = state.tags;
+    if (state.tags.length > 0) orgDataToSubmit.tags = state.tags;
 
     if (orgType.value?.singular === 'class') {
-      orgData.schoolId = toRaw(state.parentSchool).id;
-      orgData.districtId = toRaw(state.parentDistrict).id;
+      orgDataToSubmit.schoolId = toRaw(state.parentSchool).id;
+      orgDataToSubmit.districtId = toRaw(state.parentDistrict).id;
     } else if (orgType.value?.singular === 'school') {
-      orgData.districtId = toRaw(state.parentDistrict).id;
+      orgDataToSubmit.districtId = toRaw(state.parentDistrict).id;
+    } else if (orgType.value?.singular === 'group') {
+      orgDataToSubmit.parentOrgId = toRaw(state.parentDistrict).id;
     }
 
-    await roarfirekit.value
-      .upsertOrg({type: orgType.value.firestoreCollection, ...orgData})
-      .then(() => {
-        queryClient.invalidateQueries({ queryKey: ['orgs'], exact: false });
-        toast.add({ severity: 'success', summary: 'Success', detail: 'Group created', life: TOAST_DEFAULT_LIFE_DURATION });
-        submitted.value = false;
+    upsertOrg(orgDataToSubmit, {
+      onSuccess: () => {
+        toast.add({ severity: 'success', summary: 'Success', detail: `Group created`, life: TOAST_DEFAULT_LIFE_DURATION });
         resetForm();
-      })
-      .catch((error) => {
+        v$.value.$reset();
+      },
+      onError: (error) => {
         toast.add({ severity: 'error', summary: 'Error', detail: error.message, life: TOAST_DEFAULT_LIFE_DURATION });
-        console.error('Error creating org:', error);
-        submitted.value = false;
-      });
+        console.error(`Error creating Group:`, error);
+      },
+    });
   } else {
-    // TODO: Add error handling
-    console.error('Form is invalid');
+    toast.add({ severity: 'warn', summary: 'Validation Error', detail: 'Please check the form for errors.', life: TOAST_DEFAULT_LIFE_DURATION });
   }
 };
 
 const resetForm = () => {
   state.orgName = '';
-  state.orgInitials = '';
   state.tags = [];
+  state.parentDistrict = undefined;
+  state.parentSchool = undefined;
 };
 </script>
 

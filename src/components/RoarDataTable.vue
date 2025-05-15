@@ -181,11 +181,10 @@
                 <PvButton
                   severity="secondary"
                   text
-                  class="border border-round surface-200 text-primary p-2 hover:surface-500 hover:text-white"
+                  class="column-button border border-round surface-200 text-primary p-2 hover:surface-500 hover:text-white"
                   :label="col.buttonLabel"
                   :aria-label="col.buttonTooltip"
                   :icon="col.buttonIcon"
-                  style="color: black !important"
                   data-cy="event-button"
                   size="small"
                   @click="$emit(col.eventName, colData)"
@@ -614,6 +613,14 @@ const onFreezeToggle = (selected) => {
 const emit = defineEmits(['export-all', 'selection', 'reset-filters', 'export-selected', 'export-org-users']);
 </script>
 <style>
+
+.column-button {
+  color: black !important;
+}
+
+.column-button > .p-button-label {
+  font-weight: normal !important;
+}
 
 .options-container {
   .button-container {

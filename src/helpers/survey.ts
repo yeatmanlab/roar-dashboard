@@ -90,12 +90,17 @@ export interface LocalStorageSurveyData {
   userType: string;
 }
 
+type SurveyResponse = {
+  responseValue: string;
+  responseTime: string;
+}
+
 interface StructuredSurveyResponse {
   pageNo: number;
   isGeneral: boolean;
   isComplete: boolean;
   specificId: string | number;
-  responses: Record<string, any>;
+  responses: Record<string, SurveyResponse | null>;
   userType: string;
 }
 
@@ -191,7 +196,13 @@ export function getParsedLocale(locale: string | undefined | null): string {
     const prevDataStr = window.localStorage.getItem(`${LEVANTE_SURVEY_RESPONSES_KEY}-${uid}`);
     if (prevDataStr) {
       const parsedData: LocalStorageSurveyData = JSON.parse(prevDataStr);
-      surveyInstance.data = parsedData.responses;
+      // The responses need to be formatted to be key value pairs with the question name as the key, and reponse as the value
+      // for the Survey instance to work.
+      const formattedResponses = Object.fromEntries(
+        Object.entries(parsedData.responses).map(([key, value]) => [key, value.responseValue])
+      );
+
+      surveyInstance.data = formattedResponses;
       surveyInstance.currentPageNo = parsedData.pageNo;
       return { isRestored: true, pageNo: parsedData.pageNo };
     } else if (surveyResponsesData) {
@@ -199,10 +210,17 @@ export function getParsedLocale(locale: string | undefined | null): string {
       const surveyResponse = surveyResponsesData.find((doc) => doc?.administrationId === selectedAdmin);
       if (surveyResponse) {
         if (!surveyStore.isGeneralSurveyComplete && surveyResponse.general) {
-          surveyInstance.data = surveyResponse.general.responses;
+          const formattedResponses = Object.fromEntries(
+            Object.entries(surveyResponse.general.responses).map(([key, value]) => [key, value.responseValue])
+          );
+
+          surveyInstance.data = formattedResponses;
         } else if (surveyResponse.specific) {
           const specificIndex = surveyStore.specificSurveyRelationIndex;
-          surveyInstance.data = surveyResponse.specific[specificIndex].responses;
+          const formattedResponses = Object.fromEntries(
+            Object.entries(surveyResponse.specific[specificIndex].responses).map(([key, value]) => [key, value.responseValue])
+          );
+          surveyInstance.data = formattedResponses;
         }
 
         surveyInstance.currentPageNo = surveyResponse.pageNo ?? 0;
@@ -233,7 +251,7 @@ export function getParsedLocale(locale: string | undefined | null): string {
 
       // Update the page number at the top level
       prevData.pageNo = currentPageNo;
-      prevData.responses[questionName] = responseValue;
+      prevData.responses[questionName] = { responseValue, responseTime: new Date().toISOString() };
 
       window.localStorage.setItem(storageKey, JSON.stringify(prevData));
     } else {
@@ -248,11 +266,11 @@ export function getParsedLocale(locale: string | undefined | null): string {
       };
 
       if (!surveyStore.isGeneralSurveyComplete) {
-        newData.responses[questionName] = responseValue;
+        newData.responses[questionName] = { responseValue, responseTime: new Date().toISOString() };
       } else {
         const specificIndex = surveyStore.specificSurveyRelationIndex;
         newData.specificId = specificIds[specificIndex];
-        newData.responses[questionName] = responseValue;
+        newData.responses[questionName] = { responseValue, responseTime: new Date().toISOString() };
         newData.isComplete = false;
         newData.isGeneral = false;
       }
@@ -274,13 +292,22 @@ export function getParsedLocale(locale: string | undefined | null): string {
     userType,
     gameStore 
   }: SaveFinalSurveyDataParams): Promise<void> {
+    const fromStorage = window.localStorage.getItem(`${LEVANTE_SURVEY_RESPONSES_KEY}-${uid}`);
+    
+    let questionsFromStorage: Question[] = [];
+    // TODO: Make this not reliant on local storage 
+    if (fromStorage) {
+      questionsFromStorage = JSON.parse(fromStorage).responses;
+    }
+
     const allQuestions = sender.getAllQuestions() as Question[];
+
     const unansweredQuestions: Record<string, null> = {};
 
     allQuestions.forEach((question) => (unansweredQuestions[question.name] = null));
 
     // NOTE: Values from the second object overwrite values from the first
-    const responsesWithAllQuestions = _merge({}, unansweredQuestions, sender.data);
+    const responsesWithAllQuestions = _merge({}, unansweredQuestions, questionsFromStorage);
 
     // Structure the data
     const structuredResponses: StructuredSurveyResponse = {
@@ -291,8 +318,6 @@ export function getParsedLocale(locale: string | undefined | null): string {
       responses: responsesWithAllQuestions,
       userType: userType,
     };
-
-    console.log('structuredResponses: ', structuredResponses);
 
     // Update specificId if it's a specific survey
     if (surveyStore.isGeneralSurveyComplete) {
@@ -307,8 +332,8 @@ export function getParsedLocale(locale: string | undefined | null): string {
     // call cloud function to save the survey results
     try {
       await roarfirekit.saveSurveyResponses({
-        surveyData: JSON.stringify(structuredResponses),
-        administrationId: selectedAdmin ?? '',
+        surveyData: structuredResponses,
+        administrationId: selectedAdmin!,
       });
 
       // Clear localStorage after successful submission
