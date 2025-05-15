@@ -204,7 +204,7 @@ const groupedTasks = {
   "Reasoning": ["Pattern Matching"],
   "Spatial Cognition": ["Shape Rotation"],
   "Social Cognition": ["Stories"],
-  "Attitudes": ["Thoughts & Feelings"]
+  "Attitudes": ["Survey"]
 };
 
 const taskOptions = computed(() => {
