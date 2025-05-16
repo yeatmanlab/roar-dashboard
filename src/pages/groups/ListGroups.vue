@@ -428,7 +428,7 @@ watchEffect(async () => {
         routeParams: {
           orgType: activeOrgType.value,
           orgId: org.id,
-          orgName: org?.name || '',
+          orgName: org?.name || '_',
           tooltip: 'View Users in ' + org?.name || '',
         },
       };
