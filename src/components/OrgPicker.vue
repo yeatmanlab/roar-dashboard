@@ -55,7 +55,7 @@
               >
                 <template #option="slotProps">
                   <div class="flex align-items-center">
-                    <PvCheckbox :binary="true" :v-model="isSelected(activeOrgType, slotProps.option.id)" />
+                    <PvCheckbox binary v-model="slotProps.selected" />
                     <div class="ml-2">{{ slotProps.option.name }}</div>
                   </div>
                 </template>
@@ -145,15 +145,32 @@ const computedOrgsProp = computed(() => {
   return props.orgs ?? {};
 });
 
+const filteredOrgData = (orgData, orgType) => {
+  if (!orgData) return [];
+  // return object that only has id, name, and schools or classes based on orgType
+  return orgData.map((org) => {
+    const filteredOrg = {
+      id: org.id,
+      name: org.name,
+    };
+    if (orgType === 'districts') {
+      filteredOrg.schools = org.schools;
+    }
+    if (orgType === 'schools') {
+      filteredOrg.classes = org.classes;
+    }
+    return filteredOrg;
+  });
+};
 // Watch for changes in computedOrgsProp and update selectedOrgs
 watch(
   () => computedOrgsProp.value,
   (orgs) => {
-    selectedOrgs.districts = orgs.districts ?? [];
-    selectedOrgs.schools = orgs.schools ?? [];
-    selectedOrgs.classes = orgs.classes ?? [];
-    selectedOrgs.groups = orgs.groups ?? [];
-    selectedOrgs.families = orgs.families ?? [];
+    selectedOrgs.districts = filteredOrgData(orgs.districts, 'districts');
+    selectedOrgs.schools = filteredOrgData(orgs.schools, 'schools');
+    selectedOrgs.classes = filteredOrgData(orgs.classes, 'classes');
+    selectedOrgs.groups = filteredOrgData(orgs.groups, 'groups');
+    selectedOrgs.families = filteredOrgData(orgs.families, 'families');
   },
   { immediate: true, deep: true },
 );
