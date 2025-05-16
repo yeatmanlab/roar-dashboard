@@ -77,6 +77,7 @@
         <div v-if="signInMethods.includes('google')" class="flex">
           <PvButton
             label="Sign in with Google"
+            data-cy="sign-in-with-google"
             class="flex surface-0 p-1 mr-1 border-black-alpha-10 text-center justify-content-center hover:border-primary hover:surface-ground"
             style="border-radius: 3rem; height: 3rem"
             @click="authWithGoogle"
@@ -89,6 +90,7 @@
           <PvPassword v-model="modalPassword" placeholder="Password" :feedback="false"></PvPassword>
           <PvButton
             class="flex p-3 border-none border-round hover:bg-black-alpha-20"
+            data-cy="sign-in-with-password"
             :label="$t('authSignIn.buttonLabel') + ' &rarr;'"
             @click="authWithEmail({ email, password: modalPassword, useLink: false, usePassword: true })"
           />
@@ -153,6 +155,7 @@ const toggleAdminSignIn = () => {
 };
 
 const authWithGoogle = () => {
+  console.log("GOOGLE!!");
   if (isMobileBrowser()) {
     authStore.signInWithGoogleRedirect();
   } else {
@@ -190,6 +193,8 @@ const modalPassword = ref('');
 const authWithEmail = async (state) => {
   // If username is supplied instead of email
   // turn it into our internal auth email
+
+  console.log("HERE!!!!!")
   incorrect.value = false;
   let creds = toRaw(state);
   if (creds.useLink && !creds.usePassword) {
