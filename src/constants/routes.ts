@@ -12,7 +12,7 @@ export const APP_ROUTES = {
   SSO: '/sso',
   PROGRESS_REPORT: '/administration/:administrationId/:orgType/:orgId',
   SCORE_REPORT: '/scores/:administrationId/:orgType/:orgId',
-  STUDENT_REPORT: '/scores/:administrationId/:orgType/:orgId/user/:userId',
+  CHILD_REPORT: '/scores/:administrationId/:orgType/:orgId/user/:userId',
   ACCOUNT_PROFILE: '/profile',
   LIST_ORGS: '/list-orgs',
 } as const;

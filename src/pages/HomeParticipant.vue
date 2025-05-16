@@ -57,7 +57,7 @@
         </div>
       </div>
       <div class="tabs-container">
-        <ParticipantSidebar :total-games="totalGames" :completed-games="completeGames" :student-info="studentInfo" />
+        <ParticipantSidebar :total-games="totalGames" :completed-games="completeGames" :student-info="childInfo" />
         <Transition name="fade" mode="out-in">
           <GameTabs
             v-if="showOptionalAssessments && userData"
@@ -416,8 +416,8 @@ let completeGames = computed(() => {
   return _filter(requiredAssessments.value, (task) => task.completedOn).length ?? 0;
 });
 
-// Set up studentInfo for sidebar
-const studentInfo = computed(() => {
+// Set up childInfo for sidebar
+const childInfo = computed(() => {
   if (isLevante) {
     return {};
   }
