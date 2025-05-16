@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
+import Button from 'primevue/button';
 // Using non-type-checked import to bypass TS error
 // @ts-ignore
 import { useAuthStore } from '@/store/auth';
 import { useWindowSize } from '@vueuse/core';
 // Get package info
 import packageJson from '../../package.json';
+import { logger } from '@/logger'; // Import the logger
 
 // Define user info interface
 interface UserInfo {
@@ -164,6 +166,24 @@ onMounted(() => {
     }
   }
 });
+
+// --- Logger Test Methods ---
+function sendTestEvent() {
+  logger.capture('test_event_from_debug_vue', undefined, true);
+  alert('Test event sent!');
+}
+
+function sendTestError() {
+  try {
+    // Create a new error to ensure it has a stack trace
+    throw new Error('Test error from Debug.vue');
+  } catch (e) {
+    logger.error(e, undefined, true);
+    alert('Test error sent!');
+  }
+}
+// -------------------------
+
 </script>
 
 <template>
@@ -403,6 +423,19 @@ onMounted(() => {
         </div>
       </div>
     </div>
+
+    <!-- Logger Test Buttons -->
+    <div class="card mt-3 shadow-1">
+      <div class="card-header bg-yellow-50 py-1 px-2">
+        <h2 class="text-sm font-bold">Logger Tests</h2>
+      </div>
+      <div class="card-body p-2 flex gap-2">
+        <Button label="Send Test Event (Force)" @click="sendTestEvent" severity="info" />
+        <Button label="Send Test Error (Force)" @click="sendTestError" severity="danger" />
+      </div>
+    </div>
+    <!-- End Logger Test Buttons -->
+
   </div>
 </template>
 
@@ -432,5 +465,24 @@ table {
 
 .shadow-1 {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.debug-page {
+  max-width: 1200px;
+  margin: auto;
+}
+
+.card {
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+}
+
+.card-header {
+  border-bottom: 1px solid #e0e0e0;
+}
+
+table td {
+  padding: 2px 0;
+  vertical-align: top;
 }
 </style> 

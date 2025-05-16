@@ -79,7 +79,7 @@ export const getOrgsRequestBody = ({
         value: { stringValue: orgName },
       },
     });
-  } else if (orgType === 'schools' && parentDistrict) {
+  } else if ( (orgType === 'schools' && parentDistrict) || (orgType === 'classes' && parentDistrict && !parentSchool)) {
     if (orgName) {
       requestBody.structuredQuery.where.compositeFilter.filters.push(
         {

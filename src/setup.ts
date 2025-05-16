@@ -5,6 +5,7 @@ import PvTooltip from 'primevue/tooltip';
 import App from '@/App.vue';
 import AppSpinner from '@/components/AppSpinner.vue';
 import plugins from './plugins';
+import { PostHogPlugin } from './plugins/posthog';
 import './styles.css';
 
 /**
@@ -16,7 +17,7 @@ export const createAppInstance = (): VueApp<Element> => {
   const app = createApp(App);
 
   // Register all app plugins.
-  plugins.forEach((plugin: Plugin | [Plugin, ...any[]]) => {
+  (plugins as (Plugin | [Plugin, any])[]).forEach((plugin) => {
     if (Array.isArray(plugin)) {
       app.use(...plugin);
     } else {
@@ -25,6 +26,7 @@ export const createAppInstance = (): VueApp<Element> => {
   });
 
   // Register plugins.
+  app.use(PostHogPlugin);
 
   // Register global components.
   app.component('AppSpinner', AppSpinner);

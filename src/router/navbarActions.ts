@@ -22,6 +22,15 @@ const navbarActionOptions: Readonly<NavbarAction>[] = [
     category: 'Home',
   },
   {
+    title: 'Debug',
+    icon: 'pi pi-bug',
+    buttonLink: { name: 'Debug' },
+    requiresSuperAdmin: false,
+    requiresAdmin: false,
+    project: 'ALL',
+    category: 'Home',
+  },
+  {
     title: 'Groups',
     buttonLink: { name: 'ListGroups' },
     requiresSuperAdmin: false,
@@ -83,15 +92,7 @@ const navbarActionOptions: Readonly<NavbarAction>[] = [
   //   project: 'LEVANTE',
   //   category: 'Users',
   // },
-  {
-    title: 'Sync Passwords',
-    icon: 'pi pi-arrows-h',
-    buttonLink: { name: 'Sync Passwords' },
-    requiresSuperAdmin: true,
-    requiresAdmin: true,
-    project: 'LEVANTE',
-    category: 'Users',
-  },
+
   {
     title: 'Register administrator',
     icon: 'pi pi-user-plus',

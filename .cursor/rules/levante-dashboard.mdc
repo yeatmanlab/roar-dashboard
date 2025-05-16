@@ -27,6 +27,7 @@ Syntax and Formatting
 - Use the "function" keyword for pure functions to benefit from hoisting and clarity.
 - Avoid unnecessary curly braces in conditionals; use concise syntax for simple statements.
 - Use template syntax for declarative rendering.
+- Use if else statements instead of switch statements.
       
 UI and Styling
 - Use PrimeVue and Tailwind for components and styling.

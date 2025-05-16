@@ -11,6 +11,8 @@ import _get from 'lodash/get';
 import { pageTitlesEN, pageTitlesUS, pageTitlesES, pageTitlesCO } from '@/translations/exports';
 import { isLevante } from '@/helpers';
 import { APP_ROUTES } from '@/constants/routes';
+import posthogInstance from '@/plugins/posthog';
+import { logger } from '@/logger';
 
 function removeQueryParams(to: RouteLocationNormalized) {
   if (Object.keys(to.query).length) return { path: to.path, query: {}, hash: to.hash };
@@ -201,12 +203,7 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import('../pages/users/AddUsers.vue'),
     meta: { pageTitle: 'Add Users', requireAdmin: true, project: 'LEVANTE' },
   },
-  {
-    path: '/sync-passwords',
-    name: 'Sync Passwords',
-    component: () => import('../pages/users/SyncPasswords.vue'),
-    meta: { pageTitle: 'Sync Passwords', requireAdmin: true, project: 'LEVANTE' },
-  },
+
   {
     path: '/link-users',
     name: 'Link Users',
@@ -329,6 +326,11 @@ router.beforeEach(async (to: RouteLocationNormalized, from: RouteLocationNormali
 
   next();
   return;
+});
+
+// PostHog pageview tracking
+router.afterEach((to, from) => {
+  logger.capture('pageview', { to, from });
 });
 
 export default router;

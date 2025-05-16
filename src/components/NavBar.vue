@@ -31,6 +31,14 @@
             </template>
 
             <template #end>
+              <router-link :to="{ name: 'Debug' }" class="mr-3">
+                <PvButton
+                  icon="pi pi-bug"
+                  class="p-button-text p-button-rounded"
+                  aria-label="Debug"
+                  label="Debug"
+                />
+              </router-link>
               <UserActions :isBasicView="computedIsBasicView" />
             </template>
           </PvMenubar>
@@ -112,17 +120,7 @@ const computedItems = computed(() => {
     const headerItems = rawActions.value
       .filter((action) => action.category === header)
       .map((action) => {
-        if (action.title === 'Sync Passwords') {
-          return {
-          label: action.title,
-          icon: action.icon,
-          badge: 'Temporary',
-          badgeClass: 'bg-yellow-300',
-          command: () => {
-            router.push(action.buttonLink);
-          },
-        };
-        }
+
 
         return {
           label: action.title,

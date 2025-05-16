@@ -18,7 +18,7 @@ const { locale } = useI18n();
 const context = new AudioContext();
 
 
-onBeforeRouteLeave((to, from) => {
+onBeforeRouteLeave(() => {
   const surveyStore = useSurveyStore();
   
   if (isLevante && surveyStore.currentSurveyAudioSource) {
