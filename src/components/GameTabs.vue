@@ -8,16 +8,23 @@
           :disabled="
             sequential &&
             ((index > 0 && !games[index - 1].completedOn) ||
-              (allGamesComplete && currentGameId !== game.taskId && !game.completedOn))
+              (allGamesComplete && currentGameId !== game.taskId && !game.completedOn && !game?.unsuitableForScoring))
           "
           :value="String(index)"
           :class="[
             'p3 mr-1 text-base hover:bg-black-alpha-10',
-            { 'text-green-500': game.completedOn, 'bg-white': game.completedOn },
+            {
+              'text-green-500': game.completedOn && !game?.unsuitableForScoring,
+              'text-yellow-600': game?.unsuitableForScoring === true,
+              'bg-white': game.completedOn && !game?.unsuitableForScoring,
+            },
           ]"
           style="border: solid 2px #00000014; border-radius: 10px"
         >
-          {{ getTaskName(game.taskId, game.taskData.name) }}
+          <span class="flex align-items-center gap-2">
+            {{ getTaskName(game.taskId, game.taskData.name) }}
+            <i v-if="game?.unsuitableForScoring" class="pi pi-exclamation-triangle text-yellow-600"></i>
+          </span>
         </PvTab>
       </PvTabList>
       <PvTabPanels style="width: 120vh">
@@ -27,14 +34,20 @@
           :disabled="
             sequential &&
             ((index > 0 && !games[index - 1].completedOn) ||
-              (allGamesComplete && currentGameId !== game.taskId && !game.completedOn))
+              (allGamesComplete && currentGameId !== game.taskId && !game.completedOn && !game?.unsuitableForScoring))
           "
           :value="String(index)"
           class="p-0"
         >
           <template #header>
+            <!--Unsuitable for Scoring-->
+            <i
+              v-if="game?.unsuitableForScoring === true"
+              class="pi pi-exclamation-circle mr-2 text-yellow-600"
+              data-game-status="unsuitable"
+            />
             <!--Complete Game-->
-            <i v-if="game.completedOn" class="pi pi-check-circle mr-2" data-game-status="complete" />
+            <i v-else-if="game.completedOn" class="pi pi-check-circle mr-2" data-game-status="complete" />
             <!--Current Game-->
             <i
               v-else-if="game.taskId == currentGameId || !sequential"
@@ -107,9 +120,31 @@
                       <span v-else style="cursor: default">{{ taskCompletedMessage }}</span>
                     </router-link>
                     <div v-else>
-                      <div class="flex align-items-center justify-content-center text-green-500">
-                        <i v-if="game.completedOn" class="pi pi-check-circle mr-3" />
-                        <span style="cursor: default">{{ taskCompletedMessage }} </span>
+                      <div
+                        :class="{
+                          'text-green-500': !game?.unsuitableForScoring,
+                          'text-yellow-600': game?.unsuitableForScoring === true,
+                        }"
+                        class="flex align-items-center justify-content-center"
+                      >
+                        <i v-if="!game?.unsuitableForScoring && game.completedOn" class="pi pi-check-circle mr-3" />
+                        <div class="flex flex-column align-items-center gap-2">
+                          <span v-if="!game?.unsuitableForScoring" style="cursor: default">{{
+                            taskCompletedMessage
+                          }}</span>
+                          <PvMessage v-else severity="warn" class="w-full">
+                            <div class="flex flex-column align-items-center gap-2">
+                              <span>{{ $t('gameTabs.unsuitableForScoring') }}</span>
+                              <router-link
+                                :to="game.taskData.external ? '' : { path: getRoutePath(game.taskId) }"
+                                class="no-underline text-yellow-900 hover:text-yellow-800 w-full flex align-items-center justify-content-center p-3 hover:bg-yellow-100"
+                                @click="game.taskData.external && routeExternalTask(game)"
+                              >
+                                <i class="pi pi-refresh mr-2"></i>{{ $t('gameTabs.retakeAssessment') }}
+                              </router-link>
+                            </div>
+                          </PvMessage>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -162,6 +197,7 @@ import PvTag from 'primevue/tag';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
 import VideoPlayer from '@/components/VideoPlayer.vue';
+import PvMessage from 'primevue/message';
 
 const props = defineProps({
   games: { type: Array, required: true },
@@ -169,6 +205,7 @@ const props = defineProps({
   userData: { type: Object, required: true },
   launchId: { type: String, required: false, default: null },
 });
+const unsuitableGames = computed(() => props.games.filter((g) => g?.unsuitableForScoring === true));
 const isLevante = import.meta.env.MODE === 'LEVANTE';
 
 const { t, locale } = useI18n();
