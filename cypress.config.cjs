@@ -2,7 +2,8 @@ const Vue = require('@vitejs/plugin-vue').default;
 const { defineConfig } = require('cypress');
 const { nodePolyfills } = require('vite-plugin-node-polyfills');
 const vitePreprocessor = require('cypress-vite');
-const UnheadVite = require('@unhead/addons/vite');
+// Commenting this out for now due to incompatibility with Cypress
+// const UnheadVite = require('@unhead/addons/vite');
 const path = require('path');
 const fs = require('fs');
 
@@ -97,7 +98,7 @@ module.exports = defineConfig({
               process: true,
             },
           }),
-          UnheadVite(),
+          // UnheadVite(),
         ],
         server: {
           port: 5173,
