@@ -20,16 +20,25 @@
     </div>
 
     <div v-show="viewModel === MODEL_VIEWS.UPDATE_TASK">
-      <UpdateTaskForm />
+      <UpdateTaskForm :registered-tasks-only="registeredTasksOnly" />
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, toRefs } from 'vue';
 import PvSelectButton from 'primevue/selectbutton';
 import CreateTaskForm from './components/CreateTaskForm.vue';
 import UpdateTaskForm from './components/UpdateTaskForm.vue';
+
+const props = defineProps({
+  registeredTasksOnly: {
+    type: Boolean,
+    default: true,
+  },
+});
+
+const { registeredTasksOnly } = toRefs(props);
 
 const MODEL_VIEWS = Object.freeze({
   CREATE_TASK: 'Create Task',

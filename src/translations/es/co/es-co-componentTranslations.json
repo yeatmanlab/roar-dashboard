@@ -46,7 +46,7 @@
   },
   "gameTabs": {
     "clickToStart": "Haz clic para empezar",
-    "externalTaskMessage": "La tarea se abrió en otra pestaña \n Haga clic aquí para abrir de nuevo",
+    "externalTaskMessage": "Haga clic aquí para abrir de nuevo",
     "taskCompleted": "¡Tarea completa!"
   },
   "navBar": {
