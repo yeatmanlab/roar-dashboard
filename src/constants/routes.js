@@ -46,4 +46,13 @@ export const APP_ROUTES = {
   ORGS_CREATE: '/create-orgs',
   REGISTER: '/register',
   LAUNCH: '/launch/:launchId',
+  CREATE_ADMINISTRATION: '/administration/create',
+  EDIT_ADMINISTRATION: '/administration/:formType/:adminId',
+  DUPLICATE_ADMINISTRATION: '/administration/:formType/:adminId',
+};
+
+export const ADMINISTRATION_FORM_TYPES = {
+  CREATE: 'create',
+  EDIT: 'edit',
+  DUPLICATE: 'duplicate',
 };
