@@ -109,7 +109,7 @@ const init = () => {
   initialized.value = true;
 
   // Only start polling if registration check is needed
-  if (!authStore.userData.initialized && authStore.userData.registrations) {
+  if (!authStore.userData?.initialized && authStore.userData?.registrations) {
     resume();
   }
 };
@@ -122,7 +122,7 @@ onMounted(() => {
   if (authStore.roarfirekit.restConfig?.()) init();
 
   // Set registration complete if already initialized
-  if (authStore.userData.initialized || !authStore.userData.registrations) {
+  if (authStore.userData?.initialized || !authStore.userData?.registrations) {
     parentRegistrationComplete.value = true;
   }
 });
