@@ -25,12 +25,12 @@
                 data-cy="input-administration-name"
               />
               <label for="administration-name" class="w-full">Assignment Name<span class="required-asterisk">*</span></label>
-              <small
+            </PvFloatLabel>
+            <small
                 v-if="v$.administrationName.$invalid && submitted"
                 class="p-error white-space-nowrap overflow-hidden text-overflow-ellipsis"
                 >Please name your assignment</small
               >
-            </PvFloatLabel>
           </div>
         </div>
         <div class="formgrid grid">
@@ -47,11 +47,11 @@
                 show-button-bar
                 data-cy="input-start-date"
               />
-              <label for="start-date">Start Date <span class="required-asterisk">*</span></label>
-              <small v-if="v$.dateStarted.required.$invalid && submitted" class="p-error"
-                >Please select a start date.</small
-              >
+              <label for="start-date">Start Date <span class="required-asterisk">*</span></label> 
             </PvFloatLabel>
+            <small v-if="v$.dateStarted.required.$invalid && submitted" class="p-error">
+              Please select a start date.
+            </small>
           </div>
           <div class="field col-12 md:col-6">
             <PvFloatLabel>
@@ -67,36 +67,29 @@
                 data-cy="input-end-date"
               />
               <label for="end-date">End Date <span class="required-asterisk">*</span></label>
-              <small v-if="v$.dateClosed.required.$invalid && submitted" class="p-error"
-                >Please select an end date.</small
-              >
             </PvFloatLabel>
+            <small v-if="v$.dateClosed.required.$invalid && submitted" class="p-error">
+              Please select an end date.
+            </small>
           </div>
         </div>
 
-        <GroupPicker :orgs="orgsList" @selection="selection($event)" />
-
-        <PvConfirmDialog group="errors" class="confirm" :draggable="false">
-          <template #message>
-            <span class="flex flex-column">
-              <span v-if="nonUniqueTasks.length > 0" class="flex flex-column">
-                <span>Task selections must be unique.</span>
-                <span class="mt-2">The following tasks are not unique:</span>
-                <span class="mt-2 font-bold">{{ nonUniqueTasks.join(', ') }}</span>
-              </span>
-              <span v-else>
-                <span>No variants selected. You must select at least one variant to be assigned.</span>
-              </span>
-            </span>
-          </template>
-        </PvConfirmDialog>
+        <GroupPicker ref="groupPicker" class="group-picker-component" :orgs="orgsList" @selection="selection($event)" />
+        <small v-if="submitted && !checkForRequiredOrgs({ districts: state.districts, schools: state.schools, classes: state.classes, groups: state.groups, families: state.families })" class="p-error mb-8">
+          Please select at least one Group (Site, School, Class, or Cohort).
+        </small>
 
         <TaskPicker
+          ref="taskPicker"
+          class="task-picker-component mt-3"
           :all-variants="variantsByTaskId"
           :input-variants="preSelectedVariants"
           :pre-existing-assessment-info="existingAssessments"
           @variants-changed="handleVariantsChanged"
         />
+        <small v-if="submitted && _isEmpty(variants)" class="p-error mb-3">
+          Please select at least one task variant.
+        </small>
 
         <div v-if="!isLevante" class="mt-2 flex w-full">
           <ConsentPicker :legal="state.legal" @consent-selected="handleConsentSelected" />
@@ -156,12 +149,10 @@ import { computed, onMounted, reactive, ref, toRaw, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useToast } from 'primevue/usetoast';
-import { useConfirm } from 'primevue/useconfirm';
 import PvFloatLabel from 'primevue/floatlabel';
 import PvButton from 'primevue/button';
 import PvDatePicker from 'primevue/datepicker';
 import PvCheckbox from 'primevue/checkbox';
-import PvConfirmDialog from 'primevue/confirmdialog';
 import PvDivider from 'primevue/divider';
 import PvInputText from 'primevue/inputtext';
 import PvRadioButton from 'primevue/radiobutton';
@@ -197,7 +188,6 @@ import { useQueryClient } from '@tanstack/vue-query';
 const initialized = ref(false);
 const router = useRouter();
 const toast = useToast();
-const confirm = useConfirm();
 const queryClient = useQueryClient();
 
 const { mutate: upsertAdministration, isPending: isSubmitting } = useUpsertAdministrationMutation();
@@ -425,19 +415,101 @@ const removeUndefined = (obj) => {
   return Object.fromEntries(Object.entries(obj).filter(([_, v]) => v !== undefined));
 };
 
+const scrollToError = (elementId) => {
+  // Add a small delay to ensure the DOM is updated
+  setTimeout(() => {
+    const element = document.getElementById(elementId);
+    if (element) {
+      // Get the element's position relative to the viewport
+      const rect = element.getBoundingClientRect();
+      // Calculate the scroll position
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      const targetPosition = rect.top + scrollTop - 100; // Offset by 100px to account for any fixed headers
+
+      // Smooth scroll to the element
+      window.scrollTo({
+        top: targetPosition,
+        behavior: 'smooth'
+      });
+
+      // Add highlight effect
+      element.classList.add('error-highlight');
+      setTimeout(() => {
+        element.classList.remove('error-highlight');
+      }, 2000);
+    }
+  }, 100);
+};
+
 const submit = async () => {
   console.log('Submit function called');
   submitted.value = true;
 
   // Set publicName automatically based on administrationName
   state.administrationPublicName = state.administrationName;
+  console.log('Set administrationPublicName:', state.administrationPublicName);
 
-  const isFormValid = await v$.value.$validate();
-  if (!isFormValid) {
-    console.log('Form validation failed, exiting submit.');
+  // First check dates
+  if (!state.dateStarted || !state.dateClosed) {
+    if (!state.dateStarted) {
+      toast.add({
+        severity: TOAST_SEVERITIES.ERROR,
+        summary: 'Required Field Missing',
+        detail: 'Please select a start date',
+        life: TOAST_DEFAULT_LIFE_DURATION,
+      });
+      scrollToError('start-date');
+    } else {
+      toast.add({
+        severity: TOAST_SEVERITIES.ERROR,
+        summary: 'Required Field Missing',
+        detail: 'Please select an end date',
+        life: TOAST_DEFAULT_LIFE_DURATION,
+      });
+      scrollToError('end-date');
+    }
     return;
   }
 
+  // Then check groups
+  const orgs = {
+    districts: toRaw(state.districts).map((org) => org.id),
+    schools: toRaw(state.schools).map((org) => org.id),
+    classes: toRaw(state.classes).map((org) => org.id),
+    groups: toRaw(state.groups).map((org) => org.id),
+    families: toRaw(state.families).map((org) => org.id),
+  };
+
+  console.log('Checking required orgs...', orgs);
+  const orgsValid = checkForRequiredOrgs(orgs);
+  console.log('Orgs valid result:', orgsValid);
+  if (!orgsValid) {
+    console.log('Org check failed, showing toast.');
+    toast.add({
+      severity: TOAST_SEVERITIES.ERROR,
+      summary: 'Missing Selection',
+      detail: 'Please select at least one Group (Site, School, Class, or Cohort).',
+      life: TOAST_DEFAULT_LIFE_DURATION,
+    });
+    // Scroll to the GroupPicker component
+    const groupPickerElement = document.querySelector('.group-picker-component');
+    if (groupPickerElement) {
+      const rect = groupPickerElement.getBoundingClientRect();
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      const targetPosition = rect.top + scrollTop - 100;
+      window.scrollTo({
+        top: targetPosition,
+        behavior: 'smooth'
+      });
+      groupPickerElement.classList.add('error-highlight');
+      setTimeout(() => {
+        groupPickerElement.classList.remove('error-highlight');
+      }, 2000);
+    }
+    return;
+  }
+
+  // Then check tasks
   const submittedAssessments = variants.value.map((assessment) =>
     removeUndefined({
       variantId: assessment.variant.id,
@@ -449,38 +521,41 @@ const submit = async () => {
   );
 
   console.log('Checking task uniqueness...', submittedAssessments);
-  const tasksUnique = checkForUniqueTasks(submittedAssessments);
-  console.log('Tasks unique result:', tasksUnique);
-  if (!tasksUnique || _isEmpty(submittedAssessments)) {
-    console.log('Task check failed (not unique or empty), showing dialog.');
-    getNonUniqueTasks(submittedAssessments);
-    confirm.require({
-      group: 'errors',
-      header: 'Task Selections',
-      icon: 'pi pi-question-circle',
-      acceptLabel: 'Close',
-      acceptIcon: 'pi pi-times',
+  if (_isEmpty(submittedAssessments)) {
+    console.log('Task check failed (empty), showing toast.');
+    toast.add({
+      severity: TOAST_SEVERITIES.ERROR,
+      summary: 'Task Selections',
+      detail: 'No variants selected. You must select at least one variant to be assigned.',
+      life: TOAST_DEFAULT_LIFE_DURATION,
     });
+    // Scroll to the TaskPicker component
+    const taskPickerElement = document.querySelector('.task-picker-component');
+    if (taskPickerElement) {
+      const rect = taskPickerElement.getBoundingClientRect();
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      const targetPosition = rect.top + scrollTop - 100;
+      window.scrollTo({
+        top: targetPosition,
+        behavior: 'smooth'
+      });
+      taskPickerElement.classList.add('error-highlight');
+      setTimeout(() => {
+        taskPickerElement.classList.remove('error-highlight');
+      }, 2000);
+    }
     return;
   }
 
-  const orgs = {
-    districts: toRaw(state.districts).map((org) => org.id),
-    schools: toRaw(state.schools).map((org) => org.id),
-    classes: toRaw(state.classes).map((org) => org.id),
-    groups: toRaw(state.groups).map((org) => org.id),
-    families: toRaw(state.families).map((org) => org.id),
-  };
-
-  const orgsValid = checkForRequiredOrgs(orgs);
-  if (!orgsValid) {
-    console.log('Org check failed, exiting submit.');
-    toast.add({ 
-      severity: TOAST_SEVERITIES.WARN, 
-      summary: 'Missing Selection', 
-      detail: 'Please select at least one Group (Site, School, Class, or Cohort).', 
-      life: TOAST_DEFAULT_LIFE_DURATION 
+  // Finally check sequential
+  if (v$.value.sequential.$invalid) {
+    toast.add({
+      severity: TOAST_SEVERITIES.ERROR,
+      summary: 'Required Field Missing',
+      detail: 'Please specify whether tasks should be completed sequentially or not',
+      life: TOAST_DEFAULT_LIFE_DURATION,
     });
+    scrollToError('radio-button-not-sequential');
     return;
   }
 
@@ -646,6 +721,15 @@ watch([existingAdministrationData, allVariants], ([adminInfo, allVariantInfo]) =
   display: none !important;
 }
 
+.confirm .p-dialog-footer {
+  display: flex;
+  justify-content: center;
+}
+
+.confirm .p-dialog-footer .p-button {
+  min-width: 100px;
+}
+
 #rectangle {
   background: #fcfcfc;
   border-radius: 0.3125rem;
@@ -715,5 +799,18 @@ watch([existingAdministrationData, allVariants], ([adminInfo, allVariantInfo]) =
 }
 .required-asterisk {
   color: var(--red-500);
+}
+
+.error-highlight {
+  animation: highlight 2s ease-out;
+}
+
+@keyframes highlight {
+  0% {
+    background-color: var(--red-100);
+  }
+  100% {
+    background-color: transparent;
+  }
 }
 </style>
