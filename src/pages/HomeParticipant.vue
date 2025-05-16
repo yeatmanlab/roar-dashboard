@@ -106,7 +106,6 @@ import useSignOutMutation from '@/composables/mutations/useSignOutMutation';
 import ConsentModal from '@/components/ConsentModal.vue';
 import GameTabs from '@/components/GameTabs.vue';
 import ParticipantSidebar from '@/components/ParticipantSidebar.vue';
-import { isLevante } from '@/helpers';
 import { useI18n } from 'vue-i18n';
 import axios from 'axios';
 import { LEVANTE_BUCKET_URL } from '@/constants/bucket';
@@ -188,8 +187,15 @@ const {
   enabled: tasksQueryEnabled,
 });
 
+// Computed didn't react to selected admin changes, so using a ref instead.
+let hasSurvey = ref(false);
+watch(selectedAdmin, (newAdmin) => {
+  hasSurvey.value = newAdmin?.assessments.some((task) => task.taskId === 'survey');
+});
+
+
 const { data: surveyResponsesData } = useSurveyResponsesQuery({
-  enabled: isLevante && initialized,
+  enabled: hasSurvey && initialized,
 });
 
 const isLoading = computed(() => {
@@ -211,84 +217,9 @@ async function checkConsent() {
   const legal = selectedAdmin.value?.legal;
   if (!legal) return;
 
-  if (!isLevante) {
-    const dob = new Date(userData.value?.studentData.dob);
-    const grade = userData.value?.studentData.grade;
-    const currentDate = new Date();
-    const age = currentDate.getFullYear() - dob.getFullYear();
-
-  if (!legal?.consent) {
-    // Always show consent form for this test student when running Cypress tests
-    // @TODO: Remove this once we update the E2E tests to handle the consent form without persisting state. This would
-    // improve the test relability as enforcing the below condition defeats parts of the test purpose.
-    if (userData.value?.id === 'O75V6IcVeiTwW8TRjXb76uydlwV2') {
-      consentType.value = 'consent';
-      confirmText.value = 'This is a test student. Please do not accept this form.';
-      showConsent.value = true;
-    }
-    return;
-  }
-
-    const isAdult = age >= 18;
-    const isSeniorGrade = grade >= 12;
-    const isOlder = isAdult || isSeniorGrade;
-
-    let docTypeKey = isOlder ? 'consent' : 'assent';
-    let docType = legal[docTypeKey][0]?.type.toLowerCase();
-    let docAmount = legal?.amount;
-    let docExpectedTime = legal?.expectedTime;
-
-    consentType.value = docType;
-
-  const consentStatus = userData.value?.legal?.[consentType.value];
-  const consentDoc = await authStore.getLegalDoc(docType);
-  consentVersion.value = consentDoc.version;
-
-  if (consentStatus?.[consentDoc.version]) {
-    const legalDocs = consentStatus?.[consentDoc.version];
-
-    let found = false;
-    let signedBeforeAugFirst = false;
-
-    const augustFirstThisYear = new Date(currentDate.getFullYear(), 7, 1); // August 1st of the current year
-
-    for (const document of legalDocs) {
-      const signedDate = new Date(document.dateSigned);
-
-      if (document.amount === docAmount && document.expectedTime === docExpectedTime) {
-        found = true;
-
-        if (signedDate < augustFirstThisYear && currentDate >= augustFirstThisYear) {
-          signedBeforeAugFirst = true;
-          break;
-        }
-      }
-
-      if (isNaN(new Date(document.dateSigned)) && currentDate >= augustFirstThisYear) {
-        signedBeforeAugFirst = true;
-        break;
-      }
-    }
-
-    // If any document is signed after August 1st, do not show the consent form
-    if (!found || signedBeforeAugFirst) {
-      if (docAmount !== '' || docExpectedTime !== '' || signedBeforeAugFirst) {
-        confirmText.value = consentDoc.text;
-        showConsent.value = true;
-        return;
-      }
-    }
-  } else if (age > 7 || grade > 1) {
-    confirmText.value = consentDoc.text;
-      showConsent.value = true;
-      return;
-      }
-
-    // LEVANTE
-  } else {
-    // Check if the user has already consented to the Levante consent form
-    const consentStatus = userData.value?.legal?.consent;
-    if (consentStatus) {
+  // Check if the user has already consented to the Levante consent form
+  const consentStatus = userData.value?.legal?.consent;
+  if (consentStatus) {
       return;
     }
 
@@ -302,8 +233,7 @@ async function checkConsent() {
       consentVersion.value = consentDoc.version;
       showConsent.value = true;
     } catch {
-      console.log('Error getting consent doc');
-    }
+    console.log('Error getting consent doc');
   }
 }
 
@@ -360,24 +290,22 @@ const assessments = computed(() => {
       undefined,
     );
 
-    if (isLevante) {
-      // Mark the survey as complete as if it was a task
-      if (userType.value === 'student') {
-        if (surveyStore.isGeneralSurveyComplete) {
-          fetchedAssessments.forEach((assessment) => {
-            if (assessment.taskId === 'survey') {
-              assessment.completedOn = new Date();
-            }
-          });
-        }
-      } else if (userType.value === 'teacher' || userType.value === 'parent') {
-        if (surveyStore.isGeneralSurveyComplete && surveyStore.isSpecificSurveyComplete) {
-          fetchedAssessments.forEach((assessment) => {
-            if (assessment.taskId === 'survey') {
-              assessment.completedOn = new Date();
-            }
-          });
-        }
+    // Mark the survey as complete as if it was a task
+    if (userType.value === 'student') {
+      if (surveyStore.isGeneralSurveyComplete) {
+        fetchedAssessments.forEach((assessment) => {
+          if (assessment.taskId === 'survey') {
+            assessment.completedOn = new Date();
+          }
+        });
+      }
+    } else if (userType.value === 'teacher' || userType.value === 'parent') {
+      if (surveyStore.isGeneralSurveyComplete && surveyStore.isSpecificSurveyComplete) {
+        fetchedAssessments.forEach((assessment) => {
+          if (assessment.taskId === 'survey') {
+            assessment.completedOn = new Date();
+          }
+        });
       }
     }
 
@@ -416,14 +344,9 @@ let completeGames = computed(() => {
   return _filter(requiredAssessments.value, (task) => task.completedOn).length ?? 0;
 });
 
-// Set up childInfo for sidebar
-const childInfo = computed(() => {
-  if (isLevante) {
+// Set up studentInfo for sidebar
+const studentInfo = computed(() => {
     return {};
-  }
-  return {
-    grade: userData.value?.studentData?.grade,
-  };
 });
 
 watch(
@@ -486,7 +409,7 @@ const {  data: surveyData } = useQuery({
       };
     }
   },
-  enabled: isLevante && userData?.value?.userType !== 'admin' && initialized,
+  enabled: userData?.value?.userType !== 'admin' && initialized && hasSurvey,
   staleTime: 24 * 60 * 60 * 1000, // 24 hours
 });
 

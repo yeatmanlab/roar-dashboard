@@ -7,10 +7,11 @@ import type { Router } from 'vue-router';
 import type { QueryClient } from '@tanstack/vue-query';
 import type { RoarFirekit as RoarfirekitType } from '@bdelab/roar-firekit';
 import type { ToastServiceMethods } from 'primevue/toastservice';
-// @ts-ignore - Will be resolved when store file is converted to TS
+// @ts-expect-error - Will be resolved when store file is converted to TS
 import type { UseSurveyStore } from '@/store/survey';
-// @ts-ignore - Will be resolved when store file is converted to TS
+// @ts-expect-error - Will be resolved when store file is converted to TS
 import type { UseGameStore } from '@/store/game';
+import { LEVANTE_BUCKET_SURVEY_AUDIO, LEVANTE_BUCKET_URL } from '@/constants/bucket';
 
 export interface AudioLinkMap {
   [locale: string]: {
@@ -120,8 +121,9 @@ interface SaveFinalSurveyDataParams {
 
 const context = new AudioContext();
 
+// TODO: Refactor to use LEVANTE_BUCKET_URL
 export const fetchAudioLinks = async (surveyType: string): Promise<AudioLinkMap> => {
-    const response = await axios.get<GCSResponse>('https://storage.googleapis.com/storage/v1/b/road-dashboard/o/');
+    const response = await axios.get<GCSResponse>(LEVANTE_BUCKET_SURVEY_AUDIO);
     const files = response.data || { items: [] };
     const audioLinkMap: AudioLinkMap = {};
     files.items.forEach((item: GCSFileItem) => {
@@ -133,10 +135,11 @@ export const fetchAudioLinks = async (surveyType: string): Promise<AudioLinkMap>
           if (!audioLinkMap[fileLocale]) {
             audioLinkMap[fileLocale] = {};
           }
-          audioLinkMap[fileLocale][fileName] = `https://storage.googleapis.com/road-dashboard/${item.name}`;
+          audioLinkMap[fileLocale][fileName] = LEVANTE_BUCKET_URL + `/${item.name}`;
         }
       }
     });
+
     return audioLinkMap;
   };
   
@@ -151,8 +154,8 @@ export function getParsedLocale(locale: string | undefined | null): string {
     setSurveyAudioLoading, 
     setSurveyAudioPlayerBuffers 
   }: FinishedLoadingParams): void {
-    const bufferArray = Object.values(bufferList) as AudioBuffer[];
-    setSurveyAudioPlayerBuffers(parsedLocale, bufferArray);
+    // @ts-expect-error - Will be resolved when store file is converted to TS
+    setSurveyAudioPlayerBuffers(parsedLocale, bufferList);
     setSurveyAudioLoading(false);
   }
   
