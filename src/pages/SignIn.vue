@@ -153,7 +153,6 @@ const toggleAdminSignIn = () => {
 };
 
 const authWithGoogle = () => {
-  console.log("GOOGLE!!");
   if (isMobileBrowser()) {
     authStore.signInWithGoogleRedirect();
   } else {
@@ -192,7 +191,6 @@ const authWithEmail = async (state) => {
   // If username is supplied instead of email
   // turn it into our internal auth email
 
-  console.log("HERE!!!!!")
   incorrect.value = false;
   let creds = toRaw(state);
   if (creds.useLink && !creds.usePassword) {
