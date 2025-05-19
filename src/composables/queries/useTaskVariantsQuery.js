@@ -23,7 +23,7 @@ const useTaskVariantsQuery = (registeredVariantsOnly = false, queryOptions = und
     }),
     refetch: () => {
       queryClient.invalidateQueries({ queryKey: [TASK_VARIANTS_QUERY_KEY, 'registered'] });
-      queryClient.invalidateQueries({ queryKey: [TASK_VARIANTS_QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: [TASK_VARIANTS_QUERY_KEY, 'all'] });
     },
   };
 };

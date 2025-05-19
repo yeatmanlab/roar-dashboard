@@ -29,7 +29,8 @@ const useTasksQuery = (registeredTasksOnly = false, taskIds = undefined, queryOp
     }),
     refetch: () => {
       queryClient.invalidateQueries({ queryKey: [TASKS_QUERY_KEY, 'registered'] });
-      queryClient.invalidateQueries({ queryKey: [TASKS_QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: [TASKS_QUERY_KEY, taskIds] });
+      queryClient.invalidateQueries({ queryKey: [TASKS_QUERY_KEY, 'all'] });
     },
   };
 };
