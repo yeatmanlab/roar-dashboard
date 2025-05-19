@@ -303,11 +303,14 @@ async function routeExternalTask(game) {
   // Mark the assessment as complete immediately if external roar task and clicked the button
   if (game.taskData.external) {
     await authStore.completeAssessment(selectedAdmin.value.id, game.taskId);
-    if (game.taskId === 'qualtrics-experience') {
-      // this was a request for this specific task
-      window.open(`${game.taskData.taskURL}/?participantID=${props?.userData?.assessmentPid}`, '_blank').focus();
+
+    let taskUrl = game.taskData.taskURL;
+    if (game.taskId.includes('qualtrics')) {
+      // this was a request for a qualtrics-based task
+      taskUrl += `/?participantID=${props?.userData?.assessmentPid}`;
     }
-    window.open(game.taskData.taskURL, '_blank').focus();
+
+    window.open(taskUrl, '_blank')?.focus();
   } else if (game.taskData.name.toLowerCase() === 'mefs') {
     // this is a levante external task
     const ageInMonths = getAgeData(props.userData.birthMonth, props.userData.birthYear).ageMonths;

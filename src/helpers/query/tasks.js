@@ -41,7 +41,7 @@ export const getTasksRequestBody = ({
     },
   ];
 
-  if (registered) {
+  if (toValue(registered)) {
     requestBody.structuredQuery.where = {
       fieldFilter: {
         field: { fieldPath: 'registered' },
@@ -113,7 +113,7 @@ export const getVariantsRequestBody = ({ registered = false, aggregationQuery, p
     },
   ];
 
-  if (registered) {
+  if (toValue(registered)) {
     requestBody.structuredQuery.where = {
       fieldFilter: {
         field: { fieldPath: 'registered' },
