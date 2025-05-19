@@ -12,7 +12,8 @@
       </div>
 
       <PvDivider />
-      <div class="bg-gray-100 rounded p-5">
+      <div v-if="formType !== 'create' && !statePopulated">Loading Existing Admin Info</div>
+      <div v-else class="bg-gray-100 rounded p-5">
         <div class="formgrid grid mt-5">
           <div class="field col-12 xl:col-6 mb-5">
             <PvFloatLabel>
@@ -332,6 +333,7 @@ let noConsent = ref('');
 
 const submitted = ref(false);
 const isTestData = ref(false);
+const statePopulated = ref(false);
 
 const state = reactive({
   administrationName: '',
@@ -594,6 +596,12 @@ watch([existingAdministrationData, allVariants], ([adminInfo, allVariantInfo]) =
     if (state.consent === 'No Consent') {
       noConsent.value = state.consent;
     }
+  }
+});
+
+watch(state, (newState) => {
+  if (newState.administrationName && newState.administrationPublicName && newState.dateStarted && newState.dateClosed) {
+    statePopulated.value = true;
   }
 });
 </script>
