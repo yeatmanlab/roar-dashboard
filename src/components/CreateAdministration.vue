@@ -753,8 +753,4 @@ watch(state, (newState) => {
   border-radius: 50%;
   transform: translate(-50%, -50%);
 }
-.loading-container {
-  width: 100%;
-  text-align: center;
-}
 </style>
