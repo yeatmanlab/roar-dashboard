@@ -55,7 +55,7 @@
               >
                 <template #option="slotProps">
                   <div class="flex align-items-center">
-                    <PvCheckbox binary v-model="slotProps.selected" />
+                    <PvCheckbox v-model="slotProps.selected" binary />
                     <div class="ml-2">{{ slotProps.option.name }}</div>
                   </div>
                 </template>
@@ -263,10 +263,6 @@ const { data: orgData } = useQuery({
   enabled: claimsLoaded,
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
-
-const isSelected = (orgType, orgId) => {
-  return selectedOrgs[orgType].map((org) => org.id).includes(orgId);
-};
 
 const remove = (org, orgKey) => {
   selectedOrgs[orgKey] = selectedOrgs[orgKey].filter((_org) => _org.id !== org.id);
