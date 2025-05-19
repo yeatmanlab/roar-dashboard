@@ -1,4 +1,4 @@
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import useTasksQuery from '@/composables/queries/useTasksQuery';
 import useTaskVariantsQuery from '@/composables/queries/useTaskVariantsQuery';
 
@@ -11,6 +11,14 @@ import useTaskVariantsQuery from '@/composables/queries/useTaskVariantsQuery';
 export function useTasksVariantsToggleRegistered() {
   const registeredTasksOnly = ref(localStorage.getItem('registeredTasksOnly') === 'false' ? false : true);
   const registeredVariantsOnly = ref(localStorage.getItem('registeredVariantsOnly') === 'false' ? false : true);
+
+  watch(registeredTasksOnly, (value) => {
+    localStorage.setItem('registeredTasksOnly', value);
+  });
+
+  watch(registeredVariantsOnly, (value) => {
+    localStorage.setItem('registeredVariantsOnly', value);
+  });
 
   const { refetch: toggleRegisteredTasks } = useTasksQuery(registeredTasksOnly.value);
   const { refetch: toggleRegisteredVariants } = useTaskVariantsQuery(registeredVariantsOnly.value);
