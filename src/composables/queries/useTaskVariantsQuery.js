@@ -11,11 +11,14 @@ import { TASK_VARIANTS_QUERY_KEY } from '@/constants/queryKeys';
  */
 const useTaskVariantsQuery = (registeredVariantsOnly = false, queryOptions = undefined) => {
   const queryClient = useQueryClient();
-
+  const queryKey = toValue(registeredVariantsOnly)
+    ? [TASK_VARIANTS_QUERY_KEY, 'registered']
+    : [TASK_VARIANTS_QUERY_KEY, 'all'];
+  const queryFn = () => variantsFetcher(registeredVariantsOnly);
   return {
     ...useQuery({
-      queryKey: [TASK_VARIANTS_QUERY_KEY, toValue(registeredVariantsOnly) ? 'registered' : 'all'],
-      queryFn: () => variantsFetcher(registeredVariantsOnly),
+      queryKey: queryKey,
+      queryFn: queryFn,
       ...queryOptions,
     }),
     refetch: () => {

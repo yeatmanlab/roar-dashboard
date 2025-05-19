@@ -14,11 +14,17 @@ import { TASKS_QUERY_KEY } from '@/constants/queryKeys';
  */
 const useTasksQuery = (registeredTasksOnly = false, taskIds = undefined, queryOptions = undefined) => {
   const queryClient = useQueryClient();
+  const queryKey = toValue(registeredTasksOnly)
+    ? [TASKS_QUERY_KEY, 'registered']
+    : !_isEmpty(taskIds)
+    ? [TASKS_QUERY_KEY, taskIds]
+    : [TASKS_QUERY_KEY, 'all'];
+  const queryFn = () => (!_isEmpty(taskIds) ? fetchByTaskId(taskIds) : taskFetcher(registeredTasksOnly, true));
 
   return {
     ...useQuery({
-      queryKey: [TASKS_QUERY_KEY, toValue(registeredTasksOnly) ? 'registered' : 'all', taskIds],
-      queryFn: () => (!_isEmpty(taskIds) ? fetchByTaskId(taskIds) : taskFetcher(registeredTasksOnly, true)),
+      queryKey: queryKey,
+      queryFn: queryFn,
       ...queryOptions,
     }),
     refetch: () => {
