@@ -12,7 +12,10 @@
       </div>
 
       <PvDivider />
-      <div v-if="formType !== 'create' && !statePopulated">Loading Existing Admin Info</div>
+      <div v-if="formType !== 'create' && !statePopulated" class="loading-container">
+        <AppSpinner class="mb-4" />
+        <span class="uppercase font-light text-sm text-gray-600"> Fetching Administration Data </span>
+      </div>
       <div v-else class="bg-gray-100 rounded p-5">
         <div class="formgrid grid mt-5">
           <div class="field col-12 xl:col-6 mb-5">
@@ -749,5 +752,9 @@ watch(state, (newState) => {
   background-color: white;
   border-radius: 50%;
   transform: translate(-50%, -50%);
+}
+.loading-container {
+  width: 100%;
+  text-align: center;
 }
 </style>
