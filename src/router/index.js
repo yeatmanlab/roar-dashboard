@@ -460,12 +460,27 @@ const routes = [
     path: '/launch/:launchId' + GAME_ROUTES.ROAV_MEP,
     name: 'Launch MEP',
     component: () => import('../components/tasks/TaskMEP.vue'),
-    props: (route) => ({
-      taskId: 'roav-mep',
-      language: 'en',
-      launchId: route.params.launchId,
-    }),
+    props(route) {
+      return {
+        taskId: 'roav-mep',
+        language: 'en',
+        launchId: route.params.launchId,
+      };
+    },
     meta: { pageTitle: 'MEP', permission: Permissions.Tasks.LAUNCH },
+  },
+  {
+    path: '/launch/:launchId' + GAME_ROUTES.ROAR_READALOUD,
+    name: 'Launch ReadAloud',
+    component: () => import('../components/tasks/TaskReadAloud.vue'),
+    props(route) {
+      return {
+        taskId: 'roar-readaloud',
+        language: 'en',
+        launchId: route.params.launchId,
+      };
+    },
+    meta: { pageTitle: 'ReadAloud', permission: Permissions.Tasks.LAUNCH },
   },
   {
     path: '/manage-tasks-variants',

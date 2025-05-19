@@ -84,6 +84,7 @@ const navbarBlacklist = [
   'Launch SRE-ES',
   'Launch PA',
   'Launch PA-ES',
+  'Launch ReadAloud',
   'Launch Letter',
   'Launch Letter-ES',
   'Launch Phonics',
