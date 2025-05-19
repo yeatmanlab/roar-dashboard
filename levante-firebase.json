@@ -8,13 +8,6 @@
       "public": "dist",
       "target": "production",
       "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
-      "redirects": [
-        {
-          "source": "**",
-          "destination": "https://platform.levante-network.org",
-          "type": 302
-        }
-      ],
       "rewrites": [
         {
           "source": "**",

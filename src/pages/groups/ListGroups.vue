@@ -126,8 +126,8 @@
     </section>
   </main>
   <RoarModal
-    title="Edit Organization"
-    subtitle="Modify or add organization information"
+    title="Edit Group"
+    subtitle="Modify or add Group information"
     :is-enabled="isEditModalEnabled"
     @modal-closed="closeEditModal"
   >
@@ -398,14 +398,14 @@ const tableColumns = computed(() => {
       buttonIcon: 'pi pi-pencil',
       sort: false,
     },
-    {
-      header: 'Export Users',
-      buttonLabel: 'Export Users',
-      button: true,
-      eventName: 'export-org-users',
-      buttonIcon: 'pi pi-download mr-2',
-      sort: false,
-    },
+    // {
+    //   header: 'Export Users',
+    //   buttonLabel: 'Export Users',
+    //   button: true,
+    //   eventName: 'export-org-users',
+    //   buttonIcon: 'pi pi-download mr-2',
+    //   sort: false,
+    // },
   );
 
   return columns;
@@ -428,7 +428,7 @@ watchEffect(async () => {
         routeParams: {
           orgType: activeOrgType.value,
           orgId: org.id,
-          orgName: org?.name || '',
+          orgName: org?.name || '_',
           tooltip: 'View Users in ' + org?.name || '',
         },
       };

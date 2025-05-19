@@ -20,7 +20,7 @@ export const AUTH_USER_TYPE = {
   ADMIN: 'admin',
   GUEST: 'guest',
   PARTICIPANT: 'participant',
-  STUDENT: 'student',
+  CHILD: 'student',
   SUPER_ADMIN: 'super-admin',
 } as const;
 

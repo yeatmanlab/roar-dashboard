@@ -77,7 +77,7 @@
         </div>
       </div>
 
-      <!-- Datatable of error students -->
+      <!-- Datatable of error children -->
       <div v-if="showErrorTable" class="error-container">
         <div class="error-header">
           <h3>Rows with Errors</h3>

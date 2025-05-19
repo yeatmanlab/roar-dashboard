@@ -39,7 +39,7 @@
           />
           <label for="ms-columns" class="view-label2">Freeze Columns</label>
         </PvFloatLabel>
-        <span v-if="props.allowExport" class="flex flex-row flex-wrap justify-content-end gap-2 max-h-3 export-wrapper">
+        <!-- <span v-if="props.allowExport" class="flex flex-row flex-wrap justify-content-end gap-2 max-h-3 export-wrapper">
           <PvButton
             v-if="allowExport"
             v-tooltip.bottom="
@@ -60,7 +60,7 @@
             class="m-1 h-3rem bg-primary text-white border-none border-round h-2rem text-sm hover:bg-red-900"
             @click="exportCSV(false, $event)"
           />
-        </span>
+        </span> -->
       </div>
     </div>
     <div class="flex flex-column">

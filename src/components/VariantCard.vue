@@ -202,7 +202,7 @@
       </PvDataTable>
     </div>
     <div v-if="variant.variant?.conditions?.optional === true" class="flex mt-3 flex-column w-full ml-3 pr-5">
-      <PvTag severity="success"> Assignment optional for all students </PvTag>
+      <PvTag severity="success"> Assignment optional for all participants </PvTag>
     </div>
     <div
       v-else-if="variant.variant?.conditions?.optional?.conditions?.length > 0"
@@ -231,7 +231,7 @@
       v-if="!variant.variant?.conditions?.assigned && !variant.variant?.conditions?.optional"
       class="flex mt-2 flex-column w-full px-3 ml-3"
     >
-      <PvTag severity="danger"> Assignment required for all students </PvTag>
+      <PvTag severity="danger"> Assignment required for all participants </PvTag>
     </div>
   </div>
   <PvDialog v-model:visible="visible" modal header="Parameters" :style="{ width: '50rem' }">
@@ -309,7 +309,18 @@ const formattedAssignedConditions = computed(() => {
     .map(entry => {
       const valueStr = String(entry.value ?? '');
       if (!valueStr) return ''; // Handle cases where value might be null, undefined, or already an empty string
-      const capitalizedValue = valueStr.charAt(0).toUpperCase() + valueStr.slice(1);
+      
+      // Replace "student" with "child" for display purposes
+      let displayValue = valueStr;
+      if (entry.field === 'userType' && valueStr.toLowerCase() === 'student') {
+        displayValue = 'child';
+      }
+      
+      const capitalizedValue = displayValue.charAt(0).toUpperCase() + displayValue.slice(1);
+      // Special case for 'child' to pluralize correctly as 'Children' instead of 'Childs'
+      if (entry.field === 'userType' && displayValue.toLowerCase() === 'child') {
+        return entry.op === "EQUAL" ? "Children" : "Not Children";
+      }
       return entry.op === "EQUAL" ? `${capitalizedValue}s` : `Not ${capitalizedValue}s`;
     })
     .filter(str => str !== ''); // Remove empty strings that might result from 'age' filter or empty values
