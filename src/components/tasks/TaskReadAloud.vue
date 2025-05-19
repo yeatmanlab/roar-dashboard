@@ -69,8 +69,12 @@ onMounted(async () => {
   if (roarfirekit.value.restConfig?.()) init();
 });
 
+// Declare interval at component scope
+let checkGameStarted;
+
 onBeforeUnmount(() => {
   window.removeEventListener('popstate', handlePopState);
+  if (checkGameStarted) clearInterval(checkGameStarted);
 });
 
 watch(
@@ -87,7 +91,9 @@ watch(
 
 async function startTask(selectedAdmin) {
   try {
-    let checkGameStarted = setInterval(function () {
+    // Move interval to component scope for cleanup
+    if (checkGameStarted) clearInterval(checkGameStarted);
+    checkGameStarted = setInterval(function () {
       // Poll for the preload trials progress bar to exist and then begin the game
       let gameLoading = document.querySelector('.card-title');
       if (gameLoading) {
