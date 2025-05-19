@@ -465,11 +465,11 @@ const routes = [
       language: 'en',
       launchId: route.params.launchId,
     }),
-    meta: { pageTitle: 'mep', permission: Permissions.tasks.launch },
+    meta: { pageTitle: 'MEP', permission: Permissions.tasks.launch },
   },
   {
     path: '/launch/:launchid' + GAME_ROUTES.roar_readaloud,
-    name: 'launch readaloud',
+    name: 'Launch ReadAloud',
     component: () => import('../components/tasks/TaskReadAloud.vue'),
     props(route) {
       return {
