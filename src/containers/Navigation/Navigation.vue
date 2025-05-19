@@ -69,6 +69,7 @@ const navbarBlacklist = [
   'Multichoice',
   'Morphology',
   'Cva',
+  'Read Aloud',
   'ROAM-ARF',
   'ROAM-ARF-ES',
   'ROAM-CALF',
@@ -101,7 +102,6 @@ const navbarBlacklist = [
   'Launch RAN',
   'Launch Crowding',
   'Launch MEP',
-  'ReadAloud',
 ];
 
 const showAccountSettingsLink = computed(() => {

@@ -199,7 +199,7 @@ const routes = [
   },
   {
     path: GAME_ROUTES.ROAR_READALOUD,
-    name: 'ReadAloud',
+    name: 'Read Aloud',
     component: () => import('../components/tasks/TaskReadAloud.vue'),
     props: { taskId: 'roar-readaloud', language: 'en' },
     meta: { pageTitle: 'ReadAloud' },
@@ -469,7 +469,7 @@ const routes = [
   },
   {
     path: '/launch/:launchid' + GAME_ROUTES.roar_readaloud,
-    name: 'Launch ReadAloud',
+    name: 'Launch Read Aloud',
     component: () => import('../components/tasks/TaskReadAloud.vue'),
     props(route) {
       return {
