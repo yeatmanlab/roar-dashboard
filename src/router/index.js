@@ -465,7 +465,7 @@ const routes = [
       language: 'en',
       launchId: route.params.launchId,
     }),
-    meta: { pageTitle: 'MEP', permission: Permissions.tasks.launch },
+    meta: { pageTitle: 'MEP', permission: Permissions.Tasks.LAUNCH },
   },
   {
     path: '/launch/:launchid' + GAME_ROUTES.roar_readaloud,
