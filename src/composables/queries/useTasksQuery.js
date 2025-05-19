@@ -1,5 +1,5 @@
 import { toValue } from 'vue';
-import { useQuery } from '@tanstack/vue-query';
+import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import _isEmpty from 'lodash/isEmpty';
 import { taskFetcher, fetchByTaskId } from '@/helpers/query/tasks';
 import { TASKS_QUERY_KEY } from '@/constants/queryKeys';
@@ -13,19 +13,19 @@ import { TASKS_QUERY_KEY } from '@/constants/queryKeys';
  * @returns {UseQueryResult} The TanStack query result.
  */
 const useTasksQuery = (registeredTasksOnly = false, taskIds = undefined, queryOptions = undefined) => {
-  const queryKey = toValue(registeredTasksOnly)
-    ? [TASKS_QUERY_KEY, 'registered']
-    : !_isEmpty(taskIds)
-    ? [TASKS_QUERY_KEY, taskIds]
-    : [TASKS_QUERY_KEY];
+  const queryClient = useQueryClient();
 
-  const queryFn = !_isEmpty(taskIds) ? () => fetchByTaskId(taskIds) : () => taskFetcher(registeredTasksOnly, true);
-
-  return useQuery({
-    queryKey,
-    queryFn,
-    ...queryOptions,
-  });
+  return {
+    ...useQuery({
+      queryKey: [TASKS_QUERY_KEY, toValue(registeredTasksOnly) ? 'registered' : 'all', taskIds],
+      queryFn: () => (!_isEmpty(taskIds) ? fetchByTaskId(taskIds) : taskFetcher(registeredTasksOnly, true)),
+      ...queryOptions,
+    }),
+    refetch: () => {
+      queryClient.invalidateQueries({ queryKey: [TASKS_QUERY_KEY, 'registered'] });
+      queryClient.invalidateQueries({ queryKey: [TASKS_QUERY_KEY] });
+    },
+  };
 };
 
 export default useTasksQuery;
