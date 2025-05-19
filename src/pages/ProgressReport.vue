@@ -151,6 +151,8 @@ import { getTitle } from '@/helpers/query/administrations';
 import { setBarChartData, setBarChartOptions } from '@/helpers/plotting';
 import { APP_ROUTES } from '@/constants/routes';
 import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
+import { usePermissions } from '@/composables/usePermissions';
+import { Permissions } from '@bdelab/roar-firekit';
 import RoarDataTable from '@/components/RoarDataTable';
 
 const router = useRouter();
@@ -233,7 +235,7 @@ const { data: administrationData } = useAdministrationsQuery([props.administrati
   select: (data) => data[0],
 });
 
-const { data: adminStats } = useAdministrationsStatsQuery([props.administrationId], {
+const { data: adminStats } = useAdministrationsStatsQuery([props.administrationId], props.orgId, {
   enabled: initialized,
   select: (data) => data[0],
 });
@@ -291,6 +293,10 @@ const computedProgressData = computed(() => {
         assessmentPid: user.assessmentPid,
         schoolName: schoolName,
       },
+      routeParams: {
+        userId: user.userId,
+      },
+      launchTooltip: `View assessment portal for ${user.name?.first || user.username}`,
       // compute and add progress data in next step
     };
 
@@ -317,14 +323,14 @@ const computedProgressData = computed(() => {
       } else if (assessment?.startedOn !== undefined) {
         currRowProgress[taskId] = {
           value: 'started',
-          icon: 'pi pi-exclamation-triangle',
+          icon: 'pi pi-spinner-dotted',
           severity: 'warning',
         };
         progressFilterTags += ' Started ';
       } else {
         currRowProgress[taskId] = {
           value: 'assigned',
-          icon: 'pi pi-times',
+          icon: 'pi pi-book',
           severity: 'danger',
         };
         progressFilterTags += ' Assigned ';
@@ -403,6 +409,24 @@ const progressReportColumns = computed(() => {
   if (isLoadingTasksDictionary.value || assignmentData.value === undefined) return [];
 
   const tableColumns = [];
+
+  // Add launch button if user has permission and administration is open
+  const { userCan } = usePermissions();
+  const isAdministrationOpen = administrationData.value?.dateClosed
+    ? new Date(administrationData.value?.dateClosed) > new Date()
+    : false;
+  if (userCan(Permissions.Tasks.LAUNCH) && isAdministrationOpen) {
+    tableColumns.push({
+      header: 'Launch Student',
+      launcher: true,
+      routeName: 'LaunchHome',
+      routeTooltip: 'Launch Student Assessment',
+      routeIcon: 'pi pi-arrow-right border-none text-primary hover:text-white',
+      sort: false,
+      pinned: true,
+    });
+  }
+
   if (assignmentData.value.find((assignment) => assignment.user?.username)) {
     tableColumns.push({
       field: 'user.username',
