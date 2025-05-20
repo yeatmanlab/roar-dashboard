@@ -479,7 +479,7 @@ const routes = [
     meta: { pageTitle: 'Phonics', permission: Permissions.Tasks.LAUNCH },
   },
   {
-    path: '/launch/:launchId' + GAME_ROUTES.roar_readaloud,
+    path: '/launch/:launchId' + GAME_ROUTES.ROAR_READALOUD,
     name: 'Launch Read Aloud',
     component: () => import('../components/tasks/TaskReadAloud.vue'),
     props(route) {
