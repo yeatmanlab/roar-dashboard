@@ -90,11 +90,11 @@ onBeforeMount(async () => {
     // in order for SSO to work and cannot currently be changed without significant refactoring.
     if (authStore.uid) {
       const userClaims = await fetchDocById('userClaims', authStore.uid);
-      authStore.userClaims = userClaims;
+      authStore.setUserClaims(userClaims);
     }
     if (authStore.roarUid) {
       const userData = await fetchDocById('users', authStore.roarUid);
-      authStore.userData = userData;
+      authStore.setUserData(userData);
     }
   });
 
