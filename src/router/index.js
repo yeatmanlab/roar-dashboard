@@ -468,6 +468,17 @@ const routes = [
     meta: { pageTitle: 'MEP', permission: Permissions.Tasks.LAUNCH },
   },
   {
+    path: '/launch/:launchId' + GAME_ROUTES.PHONICS,
+    name: 'Launch Phonics',
+    component: () => import('../components/tasks/TaskLetter.vue'),
+    props: (route) => ({
+      taskId: 'phonics',
+      language: 'en',
+      launchId: route.params.launchId,
+    }),
+    meta: { pageTitle: 'Phonics', permission: Permissions.Tasks.LAUNCH },
+  },
+  {
     path: '/launch/:launchId' + GAME_ROUTES.roar_readaloud,
     name: 'Launch Read Aloud',
     component: () => import('../components/tasks/TaskReadAloud.vue'),
