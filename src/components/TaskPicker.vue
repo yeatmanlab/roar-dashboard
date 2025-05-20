@@ -204,7 +204,7 @@ const groupedTasks = {
   "Reasoning": ["Pattern Matching"],
   "Spatial Cognition": ["Shape Rotation"],
   "Social Cognition": ["Stories"],
-  "Attitudes": ["Thoughts & Feelings"]
+  "Attitudes": ["Survey"]
 };
 
 const taskOptions = computed(() => {
@@ -356,20 +356,19 @@ const debounceToast = _debounce(
 
 const handleCardAdd = (card) => {
   // Check if the current task is already selected.
-  const taskIds = [];
-  // Add fires after the move is complete, so check if there is a duplicate task in the list.
-  for (const variant of selectedVariants.value) {
-    // If the duplicate task is also the current task, send a warn toast.
-    if (taskIds.includes(variant.task.id) && variant.task.id === card.item.dataset.taskId) {
-      toast.add({
-        severity: 'warn',
-        summary: 'Task Selected',
-        detail: 'There is a task with that Task ID already selected.',
-        life: 3000,
-      });
-    } else {
-      taskIds.push(variant.task.id);
-    }
+  const taskIds = selectedVariants.value.map(variant => variant.task.id);
+  
+  // If the task is already selected, remove the added card and show warning
+  if (taskIds.includes(card.item.dataset.taskId)) {
+    // Remove the last added card (which is the duplicate)
+    selectedVariants.value.pop();
+    
+    toast.add({
+      severity: 'warn',
+      summary: 'Task Selected',
+      detail: 'There is a task with that Task ID already selected.',
+      life: 3000,
+    });
   }
 };
 
@@ -399,10 +398,11 @@ const selectCard = (variant) => {
   // Check if this variant is already in the list
   const cardVariantId = variant.id;
   const index = _findIndex(selectedVariants.value, (element) => element.id === cardVariantId);
+  
+  // Check if the taskId is already selected
+  const selectedTasks = selectedVariants.value.map((selectedVariant) => selectedVariant.task.id);
+  
   if (index === -1) {
-    // If this variant is not already selected, check if the taskId is already selected.
-    // If so, warn but add regardless.
-    const selectedTasks = selectedVariants.value.map((selectedVariant) => selectedVariant.task.id);
     if (selectedTasks.includes(variant.task.id)) {
       toast.add({
         severity: 'warn',
@@ -410,6 +410,7 @@ const selectCard = (variant) => {
         detail: 'There is a task with that Task ID already selected.',
         life: 3000,
       });
+      return; // Don't add the card if task is already selected
     }
 
     const defaultedVariant = addChildDefaultCondition(variant);

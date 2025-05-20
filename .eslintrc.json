@@ -1,12 +1,24 @@
 {
   "env": {
-    "node": true
+    "node": true,
+    "vue/setup-compiler-macros": true
   },
-  "extends": ["eslint:recommended", "plugin:vue/vue3-recommended", "prettier"],
+  "extends": [
+    "eslint:recommended",
+    "plugin:@typescript-eslint/recommended",
+    "plugin:vue/vue3-recommended",
+    "prettier"
+  ],
+  "parser": "vue-eslint-parser",
   "parserOptions": {
+    "parser": "@typescript-eslint/parser",
     "ecmaVersion": "latest",
-    "sourceType": "module"
+    "sourceType": "module",
+    "extraFileExtensions": [".vue"]
   },
+  "plugins": [
+    "@typescript-eslint"
+  ],
   "rules": {
     "import/prefer-default-export": "off",
     "import/no-cycle": "off",
@@ -21,12 +33,16 @@
       {
         "ignorePatterns": [
           "AppSpinner",
-          "i18n-t", // vue-i18n
-          "router-link", // vue-router
-          "router-view" // vue-router
+          "LevanteSpinner",
+          "i18n-t",
+          "router-link",
+          "router-view"
         ]
       }
-    ]
+    ],
+    "no-unused-vars": "off",
+    "@typescript-eslint/no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
+    "@typescript-eslint/no-explicit-any": "warn"
   },
   "ignorePatterns": ["**/node_modules/**", "**/dist/**", "**/lib/**", "roar-firebase-functions"]
 }

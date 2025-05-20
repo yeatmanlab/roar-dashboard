@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { ref, nextTick } from 'vue';
 import { mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
@@ -204,9 +204,6 @@ describe('HomeAdministrator', () => {
       const wrapper = mount(HomeAdministrator, { 
             global: { 
                 plugins: [VueQuery.VueQueryPlugin, PrimeVue], 
-                components: {
-                  AppSpinner: { template: '<div class="mocked-spinner" />' },
-                }
             },
         });
 
@@ -223,27 +220,26 @@ describe('HomeAdministrator', () => {
         expect(wrapper.text()).toContain('Go create your first assignment to get started');
     });
 
-    it('renders loading state when data is loading', () => {  
+    it('renders loading state when data is loading', async () => {
       const mockedUseAdministrationsListQuery = vi.mocked(useAdministrationsListQuery);
 
       mockedUseAdministrationsListQuery.mockReturnValue({
-        data: ref({ value: [] }),
+        data: ref([]),
         isLoading: ref(true),
         isFetching: ref(false),
         isError: ref(false),
       });
 
-      const wrapper = mount(HomeAdministrator, { 
-        global: { 
-          plugins: [VueQuery.VueQueryPlugin, PrimeVue], 
-          components: {
-            AppSpinner: { template: '<div class="mocked-spinner" />' },
-          }
+      const wrapper = mount(HomeAdministrator, {
+        global: {
+          plugins: [VueQuery.VueQueryPlugin, PrimeVue],
         },
       });
+
+      await nextTick();
       
       expect(wrapper.find('.loading-container').exists()).toBe(true);
-      expect(wrapper.find('.mocked-spinner').exists()).toBe(true);
+      expect(wrapper.find('.levante-spinner-container').exists()).toBe(true);
       expect(wrapper.text()).toContain('Fetching Assignments');
     });
 
@@ -260,7 +256,6 @@ describe('HomeAdministrator', () => {
         global: { 
           plugins: [VueQuery.VueQueryPlugin, PrimeVue, ConfirmService, ToastService], 
           components: {
-            AppSpinner: { template: '<div class="mocked-spinner" />' },
             'router-link': { template: '<a></a>' },
           },
           directives: {
@@ -289,7 +284,6 @@ describe('HomeAdministrator', () => {
         global: { 
           plugins: [VueQuery.VueQueryPlugin, PrimeVue, ConfirmService, ToastService], 
           components: {
-            AppSpinner: { template: '<div class="mocked-spinner" />' },
             'router-link': { template: '<a></a>' },
           },
           directives: {
@@ -330,7 +324,6 @@ describe('HomeAdministrator', () => {
         global: { 
           plugins: [VueQuery.VueQueryPlugin, PrimeVue, ConfirmService, ToastService], 
           components: {
-            AppSpinner: { template: '<div class="mocked-spinner" />' },
             'router-link': { template: '<a></a>' },
           },
           directives: {

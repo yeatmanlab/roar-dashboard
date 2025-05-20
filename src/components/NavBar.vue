@@ -112,17 +112,7 @@ const computedItems = computed(() => {
     const headerItems = rawActions.value
       .filter((action) => action.category === header)
       .map((action) => {
-        if (action.title === 'Sync Passwords') {
-          return {
-          label: action.title,
-          icon: action.icon,
-          badge: 'Temporary',
-          badgeClass: 'bg-yellow-300',
-          command: () => {
-            router.push(action.buttonLink);
-          },
-        };
-        }
+
 
         return {
           label: action.title,

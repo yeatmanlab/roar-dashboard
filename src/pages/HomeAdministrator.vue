@@ -67,7 +67,9 @@
         </div>
 
         <div v-if="!initialized || isLoadingAdministrations" class="loading-container">
-          <AppSpinner class="mb-4" />
+          <div style="width: 100%; display: flex; justify-content: center; align-items: center; margin-top: 100px; margin-bottom: 50px;">
+            <LevanteSpinner :size="200" />
+          </div>
           <span class="uppercase font-light text-sm text-gray-600">
             <template v-if="fetchTestAdministrations">Fetching Test Assignments</template>
             <template v-else>Fetching Assignments</template>
@@ -142,6 +144,7 @@ import useUserType from '@/composables/useUserType';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useAdministrationsListQuery from '@/composables/queries/useAdministrationsListQuery';
 import CardAdministration from '@/components/CardAdministration.vue';
+import LevanteSpinner from '@/components/LevanteSpinner.vue';
 
 const initialized = ref(false);
 const pageLimit = ref(10);

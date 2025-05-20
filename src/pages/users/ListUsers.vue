@@ -200,31 +200,31 @@ const columns = ref([
     dataType: 'string',
     sort: false,
   },
-  {
-    field: 'studentData.grade',
-    header: 'Grade',
-    dataType: 'string',
-    sort: false,
-  },
-  {
-    field: 'studentData.dob',
-    header: 'Date of Birth',
-    dataType: 'date',
-    sort: false,
-  },
+  // {
+  //   field: 'studentData.grade',
+  //   header: 'Grade',
+  //   dataType: 'string',
+  //   sort: false,
+  // },
+  // {
+  //   field: 'studentData.dob',
+  //   header: 'Date of Birth',
+  //   dataType: 'date',
+  //   sort: false,
+  // },
   {
     field: 'userType',
     header: 'User Type',
     dataType: 'string',
     sort: false,
   },
-  {
-    header: 'Edit',
-    button: true,
-    eventName: 'edit-button',
-    buttonIcon: 'pi pi-user-edit',
-    sort: false,
-  },
+  // {
+  //   header: 'Edit',
+  //   button: true,
+  //   eventName: 'edit-button',
+  //   buttonIcon: 'pi pi-user-edit',
+  //   sort: false,
+  // },
 ]);
 
 const displayOrgType = computed(() => {

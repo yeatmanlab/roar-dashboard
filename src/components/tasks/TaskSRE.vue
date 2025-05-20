@@ -1,9 +1,6 @@
 <template>
+  <LevanteSpinner v-if="!gameStarted" fullscreen/>
   <div id="jspsych-target" class="game-target" translate="no" />
-  <div v-if="!gameStarted" class="col-full text-center">
-    <h1>{{ $t('tasks.preparing') }}</h1>
-    <AppSpinner />
-  </div>
 </template>
 <script setup>
 import { onMounted, watch, ref, onBeforeUnmount } from 'vue';
@@ -12,9 +9,10 @@ import { storeToRefs } from 'pinia';
 import _get from 'lodash/get';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
-import useUserStudentDataQuery from '@/composables/queries/useUserStudentDataQuery';
+import useUserChildDataQuery from '@/composables/queries/useUserChildDataQuery';
 import useCompleteAssessmentMutation from '@/composables/mutations/useCompleteAssessmentMutation';
 import packageLockJson from '../../../package-lock.json';
+import LevanteSpinner from '@/components/LevanteSpinner.vue';
 
 const props = defineProps({
   taskId: { type: String, required: true, default: 'sre' },
@@ -47,7 +45,7 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.roarfirekit.restConfig) init();
 });
 
-const { isLoading: isLoadingUserData, data: userData } = useUserStudentDataQuery({
+const { isLoading: isLoadingUserData, data: userData } = useUserChildDataQuery({
   enabled: initialized,
 });
 

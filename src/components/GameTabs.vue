@@ -11,10 +11,24 @@
               (allGamesComplete && currentGameId !== game.taskId && !game.completedOn))
           "
           :value="String(index)"
-          :class="['p3 mr-1 text-base hover:bg-black-alpha-10', { 'text-green-500': game.completedOn }]"
+          :class="['p3 mr-1 text-base hover:bg-black-alpha-10', { 'text-green-500': isTaskComplete(game.completedOn, game.taskId) }]"
           style="border: solid 2px #00000014 !important; border-radius: 10px"
         >
-          {{ getTaskName(game.taskId, game.taskData.name) }}
+          <!--Complete Game-->
+          <i v-if="isTaskComplete(game.completedOn, game.taskId)" class="pi pi-check-circle mr-2" data-game-status="complete" />
+          <!--Current Game-->
+          <i
+            v-else-if="game.taskId == currentGameId || !sequential"
+            class="pi pi-circle mr-2"
+            data-game-status="current"
+          />
+          <!--Locked Game-->
+          <i v-if="sequential" class="pi pi-lock mr-2" data-game-status="incomplete" />
+          <span
+            class="tabview-nav-link-label"
+            :data-game-status="`${isTaskComplete(game.completedOn, game.taskId) ? 'complete' : 'incomplete'}`"
+            >{{ getTaskName(game.taskId, game.taskData.name) }}</span
+          >
         </PvTab>
       </PvTabList>
       <PvTabPanels style="width: 80vw; min-width: 800px; max-width: 1200px; margin-top: 0.5rem; padding: 0">
@@ -29,23 +43,6 @@
           :value="String(index)"
           class="p-0 "
         >
-          <template #header>
-            <!--Complete Game-->
-            <i v-if="game.completedOn" class="pi pi-check-circle mr-2" data-game-status="complete" />
-            <!--Current Game-->
-            <i
-              v-else-if="game.taskId == currentGameId || !sequential"
-              class="pi pi-circle mr-2"
-              data-game-status="current"
-            />
-            <!--Locked Game-->
-            <i v-if="sequential" class="pi pi-lock mr-2" data-game-status="incomplete" />
-            <span
-              class="tabview-nav-link-label"
-              :data-game-status="`${game.completedOn ? 'complete' : 'incomplete'}`"
-              >{{ getTaskName(game.taskId, game.taskData.name) }}</span
-            >
-          </template>
           <div class="roar-tabview-game pointer flex flex-row p-5 surface-100 w-full">
             <div class="roar-game-content flex flex-column" style="width: 65%">
               <div class="flex flex-column h-full" >
@@ -102,10 +99,11 @@
                     />
                   </div>
                   <router-link 
-                    v-if="!game.completedOn" 
+                    v-if="!isTaskComplete(game.completedOn, game.taskId)" 
                     class="roar-game-footer p-3 hover:surface-200 no-underline text-900"
                     :to="{ path: getRoutePath(game.taskId, game.taskData?.variantURL, game.taskData?.taskURL) }"
-                    @click="routeExternalTask(game)">
+                    @click="routeExternalTask(game)"
+                  > 
                     <div class="flex align-items-center justify-content-center text-xl font-bold mt-2">
                         <i class="pi">
                           <svg
@@ -123,13 +121,11 @@
                             />
                           </svg>
                         </i>
-                        <span v-if="!game.completedOn">{{ $t('gameTabs.clickToStart') }}</span>
-                        <span v-else>{{ taskCompletedMessage }} </span>
+                        <span>{{ $t('gameTabs.clickToStart') }}</span>
                     </div>
                   </router-link>
-
-                  <div v-if="game.completedOn">
-                    <div class="flex align-items-center justify-content-center text-green-500 roar-game-footer p-3 hover:surface-200 no-underline text-900 text-xl font-bold">
+                  <div v-else>
+                    <div class="flex align-items-center justify-content-center text-green-500 roar-game-footer p-3 no-underline text-900 text-xl font-bold">
                       <i v-if="game.completedOn" class="pi pi-check-circle mr-3" />
                       <span>{{ taskCompletedMessage }} </span>
                     </div>
@@ -389,8 +385,8 @@ async function routeExternalTask(game) {
     await authStore.completeAssessment(selectedAdmin.value.id, game.taskId);
   } else {
     url += `&participant=${props.userData.assessmentPid}${
-      props.userData.schools.length ? '&schoolId=' + props.userData.schools.current.join('“%2C”') : ''
-    }${props.userData.classes.current.length ? '&classId=' + props.userData.classes.current.join('“%2C”') : ''}`;
+      props.userData.schools.length ? '&schoolId=' + props.userData.schools.current.join('"%2C"') : ''
+    }${props.userData.classes.current.length ? '&classId=' + props.userData.classes.current.join('"%2C"') : ''}`;
 
     await authStore.completeAssessment(selectedAdmin.value.id, game.taskId);
     window.location.href = url;
@@ -410,6 +406,33 @@ const returnVideoOptions = (videoURL) => {
       },
     ],
   };
+};
+
+const isTaskComplete = (gameCompletedTime, taskId) => {
+  if (taskId === 'survey') {
+    if (props.userData.userType === 'teacher' || props.userData.userType === 'parent') {
+      if (!surveyStore.isGeneralSurveyComplete) {
+        return false;
+      } else if (surveyStore.specificSurveyRelationData.length > 0 && !surveyStore.isSpecificSurveyComplete) {
+        return false;
+      } else {
+        return true;
+      }
+    } else {
+      // child
+      if (surveyStore.isGeneralSurveyComplete) {
+        return true;
+      } else {
+        return false;
+      }
+    }
+  }
+
+  if (gameCompletedTime) {
+    return true;
+  } else {
+    return false;
+  }
 };
 </script>
 
@@ -465,7 +488,6 @@ const returnVideoOptions = (videoURL) => {
   text-align: center;
   background-color: #f0f0f0;
   border-radius: 4px;
-  cursor: pointer;
 }
 
 @media screen and (max-width: 800px) {
