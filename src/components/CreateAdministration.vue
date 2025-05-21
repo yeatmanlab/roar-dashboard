@@ -529,6 +529,7 @@ const submit = async () => {
     },
   };
 
+  // Only overwrite the given adminId if we are in edit mode.
   if (props.formType === ADMINISTRATION_FORM_TYPES.EDIT && props.adminId) args.administrationId = props.adminId;
 
   await upsertAdministration(args, {
@@ -575,7 +576,10 @@ onMounted(async () => {
 watch([existingAdministrationData, allVariants], ([adminInfo, allVariantInfo]) => {
   if (adminInfo && !_isEmpty(allVariantInfo)) {
     // Exclude name and publicName from duplicate formType
-    if (props.formType !== ADMINISTRATION_FORM_TYPES.DUPLICATE) {
+    if (props.formType === ADMINISTRATION_FORM_TYPES.DUPLICATE) {
+      state.administrationName = `${adminInfo.name} - Copy`;
+      state.administrationPublicName = `${adminInfo.publicName} - Copy`;
+    } else {
       state.administrationName = adminInfo.name;
       state.administrationPublicName = adminInfo.publicName;
     }
