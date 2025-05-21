@@ -16,8 +16,9 @@ import useUserStudentDataQuery from '@/composables/queries/useUserStudentDataQue
 import packageLockJson from '../../../package-lock.json';
 
 const props = defineProps({
-  taskId: { type: String, default: 'roar-readoud' },
-  language: { type: String, default: 'en' },
+  taskId: { type: String, required: true, default: 'roar-readaloud' },
+  language: { type: String, required: true, default: 'en' },
+  launchId: { type: String, required: false, default: null },
 });
 
 let TaskLauncher;
@@ -45,7 +46,7 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.roarfirekit.restConfig?.()) init();
 });
 
-const { isLoading: isLoadingUserData, data: userData } = useUserStudentDataQuery({
+const { isLoading: isLoadingUserData, data: userData } = useUserStudentDataQuery(props.launchId, {
   enabled: initialized,
 });
 
@@ -102,7 +103,7 @@ async function startTask(selectedAdmin) {
       }
     }, 100);
 
-    const appKit = await authStore.roarfirekit.startAssessment(selectedAdmin.value.id, taskId, version);
+    const appKit = await authStore.roarfirekit.startAssessment(selectedAdmin.value.id, taskId, version, props.launchId);
 
     const userDob = _get(userData.value, 'studentData.dob');
     const userDateObj = new Date(userDob);
@@ -120,7 +121,7 @@ async function startTask(selectedAdmin) {
 
     await roarApp.run().then(async () => {
       // Handle any post-game actions.
-      await authStore.completeAssessment(selectedAdmin.value.id, taskId);
+      await authStore.completeAssessment(selectedAdmin.value.id, taskId, props.launchId);
 
       // Navigate to home, but first set the refresh flag to true.
       gameStore.requireHomeRefresh();
