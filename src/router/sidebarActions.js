@@ -1,5 +1,7 @@
 import { usePermissions } from '../composables/usePermissions';
 import { Permissions } from '@bdelab/roar-firekit';
+import { ADMINISTRATION_FORM_TYPES } from '../constants/routes';
+
 const sidebarActionOptions = [
   {
     title: 'Back to Dashboard',
@@ -62,7 +64,7 @@ const sidebarActionOptions = [
   {
     title: 'Create Administration',
     icon: 'pi pi-sliders-h',
-    buttonLink: { name: 'CreateAdministration' },
+    buttonLink: { name: 'CreateAdministration', formType: ADMINISTRATION_FORM_TYPES.CREATE },
     requiresSuperAdmin: true,
     requiresAdmin: true,
     permission: Permissions.Administrations.CREATE,
