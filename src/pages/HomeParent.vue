@@ -67,11 +67,13 @@ const initialized = ref(false);
 // TODO: Set this dynamically in cases where this component is used for non-family adminstrators
 const orgType = ref(SINGULAR_ORG_TYPES.FAMILIES);
 
+const administrationQueryEnabled = computed(() => initialized.value && parentRegistrationComplete);
+
 const { isLoading: isLoadingAdministrations, data: administrations } = useAdministrationsListQuery(
   orderByDefault,
   false,
   {
-    enabled: initialized && parentRegistrationComplete,
+    enabled: administrationQueryEnabled,
   },
 );
 
@@ -144,7 +146,7 @@ const { isLoading: isLoadingAssignments, data: assignmentData } = useAdministrat
   orgType,
   orgId,
   {
-    enabled: initialized && parentRegistrationComplete,
+    enabled: administrationQueryEnabled,
   },
 );
 </script>
