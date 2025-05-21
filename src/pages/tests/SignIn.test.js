@@ -14,6 +14,9 @@ const authStoreMock = {
   $subscribe: vi.fn()
 };
 
+// Mocking behavior setup - must be separate from the mock implementation
+let isMobileBrowserMock = false;
+
 // Mock all dependencies to avoid issues
 vi.mock('@/store/auth', () => ({
   useAuthStore: vi.fn(() => authStoreMock)
@@ -27,7 +30,7 @@ vi.mock('vue-router', () => ({
 
 vi.mock('@/helpers', () => ({
   isLevante: true,
-  isMobileBrowser: vi.fn(() => false)
+  isMobileBrowser: vi.fn(() => isMobileBrowserMock)
 }));
 
 vi.mock('@/helpers/query/utils', () => ({
@@ -108,8 +111,13 @@ describe('SignIn.vue', () => {
     // Reset mocks before each test
     vi.clearAllMocks();
     
+    // Reset mock implementations
+    isMobileBrowserMock = false; // Default to desktop browser
+    
     // Reset auth store mock's implementation for each test
     authStoreMock.logInWithEmailAndPassword.mockReset();
+    authStoreMock.signInWithGooglePopup.mockReset();
+    authStoreMock.signInWithGoogleRedirect.mockReset();
     
     // Mock console error to avoid test noise
     vi.spyOn(console, 'error').mockImplementation(() => {});
@@ -205,5 +213,63 @@ describe('SignIn.vue', () => {
         password: 'wrongPassword'
       })
     );
+  });
+  
+  it('initiates login with email link when useLink is true', async () => {
+    // Setup successful login response
+    authStoreMock.initiateLoginWithEmailLink.mockResolvedValue({});
+    
+    // Extract the authWithEmail method from wrapper's vm context
+    const instance = wrapper.vm;
+    
+    // Create test credentials for email link
+    const credentials = {
+      email: 'test@example.com',
+      usePassword: false,
+      useLink: true
+    };
+    
+    // Call the method directly
+    await instance.authWithEmail(credentials);
+    
+    // Verify the email link method was called
+    expect(authStoreMock.initiateLoginWithEmailLink).toHaveBeenCalledWith({
+      email: 'test@example.com'
+    });
+  });
+  
+  it('uses Google popup for desktop browser authentication', async () => {
+    // Setup successful Google popup login
+    authStoreMock.signInWithGooglePopup.mockResolvedValue({});
+    
+    // Ensure isMobileBrowser returns false (desktop)
+    isMobileBrowserMock = false;
+    
+    // Extract the authWithGoogle method from wrapper's vm context
+    const instance = wrapper.vm;
+    expect(typeof instance.authWithGoogle).toBe('function');
+    
+    // Call the method directly
+    await instance.authWithGoogle();
+    
+    // Verify the Google popup method was called
+    expect(authStoreMock.signInWithGooglePopup).toHaveBeenCalled();
+    expect(authStoreMock.signInWithGoogleRedirect).not.toHaveBeenCalled();
+  });
+  
+  it('uses Google redirect for mobile browser authentication', async () => {
+    // Setup mobile browser detection
+    isMobileBrowserMock = true;
+    
+    // Extract the authWithGoogle method from wrapper's vm context
+    const instance = wrapper.vm;
+    expect(typeof instance.authWithGoogle).toBe('function');
+    
+    // Call the method directly
+    await instance.authWithGoogle();
+    
+    // Verify the Google redirect method was called
+    expect(authStoreMock.signInWithGoogleRedirect).toHaveBeenCalled();
+    expect(authStoreMock.signInWithGooglePopup).not.toHaveBeenCalled();
   });
 });
