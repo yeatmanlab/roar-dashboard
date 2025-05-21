@@ -168,6 +168,22 @@ export const taskDisplayNames = {
     extendedName: 'Matemáticas Centrales',
     order: 29,
   },
+  roar_readaloud: {
+    name: 'Read Aloud',
+    publicName: 'ROAR - Read Aloud',
+    studentFacingName: 'Read Aloud',
+    extendedTitle: 'ROAR - Read Aloud',
+    extendedName: 'Read Aloud',
+    order: 30,
+  },
+  'roar-readaloud': {
+    name: 'Read Aloud',
+    publicName: 'ROAR - Read Aloud',
+    studentFacingName: 'Read Aloud',
+    extendedTitle: 'ROAR - Read Aloud',
+    extendedName: 'Read Aloud',
+    order: 30,
+  },
   syntax: {
     name: 'Syntax',
     publicName: 'ROAR - Syntax',

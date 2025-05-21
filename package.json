@@ -1,7 +1,7 @@
 {
   "name": "roar-dashboard",
   "private": true,
-  "version": "3.9.5",
+  "version": "3.9.6",
   "type": "module",
   "scripts": {
     "dev": "vite --host",
@@ -25,7 +25,7 @@
     "preview": "vite preview",
     "test": "vitest",
     "test:watch": "vitest --watch",
-    "version": "npm run format && git add -A"
+    "version": "npm run format:check && git add -A"
   },
   "dependencies": {
     "@bdelab/roam-apps": "1.2.8",
