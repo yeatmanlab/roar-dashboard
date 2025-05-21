@@ -203,7 +203,7 @@ import useGroupsQuery from '@/composables/queries/useGroupsQuery';
 import useFamiliesQuery from '@/composables/queries/useFamiliesQuery';
 import useTaskVariantsQuery from '@/composables/queries/useTaskVariantsQuery';
 import useUpsertAdministrationMutation from '@/composables/mutations/useUpsertAdministrationMutation';
-import TaskPicker from './TaskPicker.vue';
+import TaskPicker from './TaskPicker/TaskPicker.vue';
 import ConsentPicker from './ConsentPicker.vue';
 import OrgPicker from '@/components/OrgPicker.vue';
 import { APP_ROUTES, ADMINISTRATION_FORM_TYPES } from '@/constants/routes';
