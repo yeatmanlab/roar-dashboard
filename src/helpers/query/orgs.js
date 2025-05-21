@@ -56,23 +56,10 @@ export const getOrgsRequestBody = ({
     },
   ];
 
-  requestBody.structuredQuery.where = {
-    compositeFilter: {
-      op: 'AND',
-      filters: [
-        {
-          fieldFilter: {
-            field: { fieldPath: 'archived' },
-            op: 'EQUAL',
-            value: { booleanValue: false },
-          },
-        },
-      ],
-    },
-  };
+  const filters = [];
 
   if (orgName && !(parentDistrict || parentSchool)) {
-    requestBody.structuredQuery.where.compositeFilter.filters.push({
+    filters.push({
       fieldFilter: {
         field: { fieldPath: 'name' },
         op: 'EQUAL',
@@ -81,7 +68,7 @@ export const getOrgsRequestBody = ({
     });
   } else if ( (orgType === 'schools' && parentDistrict) || (orgType === 'classes' && parentDistrict && !parentSchool)) {
     if (orgName) {
-      requestBody.structuredQuery.where.compositeFilter.filters.push(
+      filters.push(
         {
           fieldFilter: {
             field: { fieldPath: 'name' },
@@ -98,7 +85,7 @@ export const getOrgsRequestBody = ({
         },
       );
     } else {
-      requestBody.structuredQuery.where.compositeFilter.filters.push({
+      filters.push({
         fieldFilter: {
           field: { fieldPath: 'districtId' },
           op: 'EQUAL',
@@ -108,7 +95,7 @@ export const getOrgsRequestBody = ({
     }
   } else if (orgType === 'classes' && parentSchool) {
     if (orgName) {
-      requestBody.structuredQuery.where.compositeFilter.filters.push(
+      filters.push(
         {
           fieldFilter: {
             field: { fieldPath: 'name' },
@@ -125,7 +112,7 @@ export const getOrgsRequestBody = ({
         },
       );
     } else {
-      requestBody.structuredQuery.where.compositeFilter.filters.push({
+      filters.push({
         fieldFilter: {
           field: { fieldPath: 'schoolId' },
           op: 'EQUAL',
@@ -133,6 +120,15 @@ export const getOrgsRequestBody = ({
         },
       });
     }
+  }
+
+  if (filters.length > 0) {
+    requestBody.structuredQuery.where = {
+      compositeFilter: {
+        op: 'AND',
+        filters,
+      },
+    };
   }
 
   if (aggregationQuery) {
