@@ -149,7 +149,7 @@
   </RoarModal>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { reactive, ref, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { required, requiredUnless } from '@vuelidate/validators';
@@ -163,16 +163,31 @@ import PvSkeleton from 'primevue/skeleton';
 import { useAuthStore } from '@/store/auth';
 import RoarModal from '../modals/RoarModal.vue';
 
+interface SignInState {
+  email: string;
+  password: string;
+  useLink: boolean;
+  usePassword: boolean;
+}
+
+interface Props {
+  invalid?: boolean;
+}
+
+interface Emits {
+  (e: 'submit', state: SignInState): void;
+  (e: 'update:email', email: string): void;
+}
+
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
 
-const emit = defineEmits(['submit', 'update:email']);
-// eslint-disable-next-line no-unused-vars
-const props = defineProps({
-  invalid: { type: Boolean, required: false, default: false },
+const emit = defineEmits<Emits>();
+const props = withDefaults(defineProps<Props>(), {
+  invalid: false,
 });
 
-const state = reactive({
+const state = reactive<SignInState>({
   email: '',
   password: '',
   useLink: false,
@@ -185,12 +200,12 @@ const rules = {
     requiredIf: requiredUnless(() => state.useLink),
   },
 };
-const submitted = ref(false);
+const submitted = ref<boolean>(false);
 const v$ = useVuelidate(rules, state);
-const capsLockEnabled = ref(false);
-const forgotPasswordModalOpen = ref(false);
+const capsLockEnabled = ref<boolean>(false);
+const forgotPasswordModalOpen = ref<boolean>(false);
 
-const handleFormSubmit = (isFormValid) => {
+const handleFormSubmit = (isFormValid: boolean): void => {
   submitted.value = true;
   if (!isFormValid) {
     return;
@@ -198,18 +213,18 @@ const handleFormSubmit = (isFormValid) => {
   emit('submit', state);
 };
 
-const isValidEmail = (email) => {
+const isValidEmail = (email: string): boolean => {
   var re =
     /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
   return re.test(email);
 };
 
-const evaluatingEmail = ref(false);
-const allowPassword = ref(true);
-const allowLink = ref(true);
+const evaluatingEmail = ref<boolean>(false);
+const allowPassword = ref<boolean>(true);
+const allowLink = ref<boolean>(true);
 
 const validateRoarEmail = _debounce(
-  async (email) => {
+  async (email: string): Promise<void> => {
     // Don't evaluate empty emails or obviously invalid ones
     if (!email || !email.includes('@')) {
       evaluatingEmail.value = false;
@@ -242,7 +257,7 @@ const validateRoarEmail = _debounce(
   { maxWait: 1000 },
 );
 
-function checkForCapsLock(e) {
+function checkForCapsLock(e: Event): void {
   // Make sure the event is a keyboard event.
   // Using password autofill will trigger a regular
   //   event which does not have a getModifierState method.
@@ -251,17 +266,17 @@ function checkForCapsLock(e) {
   }
 }
 
-const forgotEmail = ref('');
-function handleForgotPassword() {
+const forgotEmail = ref<string>('');
+function handleForgotPassword(): void {
   console.log('Opening modal for forgot password');
   forgotPasswordModalOpen.value = true;
   // e.preventDefault();
 }
-function closeForgotPasswordModal() {
+function closeForgotPasswordModal(): void {
   forgotPasswordModalOpen.value = false;
   forgotEmail.value = '';
 }
-function sendResetEmail() {
+function sendResetEmail(): void {
   console.log('Submitting forgot password with email', forgotEmail.value);
   roarfirekit.value.sendPasswordResetEmail(forgotEmail.value);
   closeForgotPasswordModal();
@@ -269,7 +284,7 @@ function sendResetEmail() {
 
 watch(
   () => state.email,
-  async (email) => {
+  async (email: string) => {
     emit('update:email', email);
     if (isValidEmail(email)) {
       evaluatingEmail.value = true;

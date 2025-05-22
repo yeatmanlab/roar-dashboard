@@ -14,7 +14,7 @@
   </transition-group>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
@@ -25,10 +25,16 @@ import { useAuthStore } from '@/store/auth';
 import { fetchDocById } from '@/helpers/query/utils';
 import PvFloatLabel from 'primevue/floatlabel';
 
+interface Message {
+  id: number;
+  severity: 'warn' | 'error' | 'info' | 'success';
+  content: string;
+}
+
 const router = useRouter();
 const authStore = useAuthStore();
 const { roarfirekit, roarUid, uid } = storeToRefs(authStore);
-const success = ref(false);
+const success = ref<boolean>(false);
 
 authStore.$subscribe(async () => {
   if (roarUid.value) {
@@ -41,11 +47,11 @@ authStore.$subscribe(async () => {
   }
 });
 
-const formEmail = ref();
-const localStorageEmail = ref();
-const messages = ref([]);
+const formEmail = ref<string>('');
+const localStorageEmail = ref<string | null>(null);
+const messages = ref<Message[]>([]);
 
-const addMessages = (errorCode) => {
+const addMessages = (errorCode: string): void => {
   if (errorCode === 'auth/invalid-action-code') {
     messages.value = [
       {
@@ -67,12 +73,12 @@ const addMessages = (errorCode) => {
   }
 };
 
-const loginFromEmailLink = async (email) => {
+const loginFromEmailLink = async (email: string): Promise<void> => {
   unsubscribe();
   const emailLink = window.location.href;
   await authStore
     .signInWithEmailLink({ email, emailLink })
-    .catch((error) => {
+    .catch((error: any) => {
       if (error.code === 'auth/invalid-action-code') {
         addMessages(error.code);
         setTimeout(() => {
@@ -94,7 +100,7 @@ const loginFromEmailLink = async (email) => {
     });
 };
 
-const unsubscribe = authStore.$subscribe(async (mutation, state) => {
+const unsubscribe = authStore.$subscribe(async (mutation: any, state: any) => {
   if (state.roarfirekit.isSignInWithEmailLink && state.roarfirekit.signInWithEmailLink) {
     if (!roarfirekit.value.isSignInWithEmailLink(window.location.href)) {
       router.replace({ name: 'Home' });
