@@ -639,6 +639,7 @@ const computeAssignmentAndRunData = computed(() => {
           assessmentPid: user.assessmentPid,
           schoolName: schoolName,
           stateId: user.studentData?.state_id,
+          studentId: user.studentData?.student_number,
         },
         tooltip: `View ${firstNameOrUsername}'s Score Report`,
         launchTooltip: `View assessment portal for ${firstNameOrUsername}`,
@@ -649,6 +650,11 @@ const computeAssignmentAndRunData = computed(() => {
           userId: user.userId,
         },
         compositeScore: assignment.compositeScore ?? null,
+        startDate:
+          assignment.assessments.reduce((earliest, assessment) => {
+            if (!earliest) return assessment.startedOn;
+            return assessment.startedOn < earliest ? assessment.startedOn : earliest;
+          }, null) ?? null,
         // compute and add scores data in next step as so
         // swr: { support_level: 'Needs Extra Support', percentile: 10, raw: 10, reliable: true, engagementFlags: {}},
       };
@@ -933,7 +939,8 @@ const createExportData = ({ rows, includeProgress = false }) => {
 
     // if org is from clever, include stateId
     // if (orgData.value?.clever === true) {
-    tableRow['State Id'] = user.stateId;
+    tableRow['State ID'] = user.stateId;
+    tableRow['Student ID'] = user.studentId;
     // }
 
     for (const taskId in scores) {
@@ -1051,7 +1058,8 @@ const exportData = async ({ selectedRows = null, includeProgress = false }) => {
   const staticColumns = ['Username', 'Email', 'First', 'Last', 'Grade', 'PID', 'School'];
 
   if (orgData.value?.clever === true) {
-    staticColumns.push('State Id');
+    staticColumns.push('State ID');
+    staticColumns.unshift('Student ID');
   }
 
   // Automatically detect task names by splitting column names and excluding static columns
@@ -1267,9 +1275,29 @@ const scoreReportColumns = computed(() => {
 
   tableColumns.push({
     field: 'user.stateId',
-    header: 'State Id',
+    header: 'State ID',
     dataType: 'text',
     sort: false,
+    hidden: true, // Column is hidden by default, available via the Show/Hide Columns menu
+    headerStyle: `background:var(--primary-color); color:white; padding-top:0; margin-top:0; padding-bottom:0; margin-bottom:0; border:0; margin-left:0; border-right-width:2px; border-right-style:solid; border-right-color:#ffffff;`,
+  });
+
+  tableColumns.push({
+    field: 'startDate',
+    header: 'Start Date',
+    dataType: 'date',
+    sort: true,
+    filter: false,
+    hidden: true, // Column is hidden by default, available via the Show/Hide Columns menu
+    headerStyle: `background:var(--primary-color); color:white; padding-top:0; margin-top:0; padding-bottom:0; margin-bottom:0; border:0; margin-left:0; border-right-width:2px; border-right-style:solid; border-right-color:#ffffff;`,
+  });
+
+  tableColumns.push({
+    field: 'user.studentId',
+    header: 'Student ID',
+    dataType: 'text',
+    sort: false,
+    hidden: true, // Column is hidden by default, available via the Show/Hide Columns menu
     headerStyle: `background:var(--primary-color); color:white; padding-top:0; margin-top:0; padding-bottom:0; margin-bottom:0; border:0; margin-left:0; border-right-width:2px; border-right-style:solid; border-right-color:#ffffff;`,
   });
 
@@ -1293,6 +1321,7 @@ const scoreReportColumns = computed(() => {
       header: 'Composite Score',
       dataType: 'text',
       sort: true,
+      hidden: true,
       headerStyle: `background:var(--primary-color); color:white; padding-top:0; margin-top:0; padding-bottom:0; margin-bottom:0; border:0; margin-left:0; border-right-width:2px; border-right-style:solid; border-right-color:#ffffff;`,
     });
   }
