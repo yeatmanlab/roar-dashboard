@@ -21,9 +21,10 @@ import { storeToRefs } from 'pinia';
 import PvButton from 'primevue/button';
 import PvInputText from 'primevue/inputtext';
 import PvMessage from 'primevue/message';
+import PvFloatLabel from 'primevue/floatlabel';
 import { useAuthStore } from '@/store/auth';
 import { fetchDocById } from '@/helpers/query/utils';
-import PvFloatLabel from 'primevue/floatlabel';
+import AppSpinner from '@/components/AppSpinner.vue';
 
 interface Message {
   id: number;
@@ -33,15 +34,15 @@ interface Message {
 
 const router = useRouter();
 const authStore = useAuthStore();
-const { roarfirekit, roarUid, uid } = storeToRefs(authStore);
+const { roarfirekit } = storeToRefs(authStore);
 const success = ref<boolean>(false);
 
 authStore.$subscribe(async () => {
-  if (roarUid.value) {
-    const userData = await fetchDocById('users', roarUid.value);
-    const userClaims = await fetchDocById('userClaims', uid.value);
-    authStore.userData = userData;
-    authStore.userClaims = userClaims;
+  if (authStore.roarUid) {
+    const userData = await fetchDocById('users', authStore.roarUid);
+    const userClaims = await fetchDocById('userClaims', authStore.uid);
+    authStore.setUserData(userData);
+    authStore.setUserClaims(userClaims);
     success.value = true;
     router.push({ name: 'Home' });
   }
@@ -89,11 +90,11 @@ const loginFromEmailLink = async (email: string): Promise<void> => {
       }
     })
     .then(async () => {
-      if (uid) {
-        const userData = await fetchDocById('users', uid.value);
-        const userClaims = await fetchDocById('userClaims', uid.value);
-        authStore.userData = userData;
-        authStore.userClaims = userClaims;
+      if (authStore.uid) {
+        const userData = await fetchDocById('users', authStore.roarUid);
+        const userClaims = await fetchDocById('userClaims', authStore.uid);
+        authStore.setUserData(userData);
+        authStore.setUserClaims(userClaims);
         success.value = true;
         router.push({ name: 'Home' });
       }
@@ -101,8 +102,8 @@ const loginFromEmailLink = async (email: string): Promise<void> => {
 };
 
 const unsubscribe = authStore.$subscribe(async (mutation: any, state: any) => {
-  if (state.roarfirekit.isSignInWithEmailLink && state.roarfirekit.signInWithEmailLink) {
-    if (!roarfirekit.value.isSignInWithEmailLink(window.location.href)) {
+  if (state.roarfirekit?.isSignInWithEmailLink && state.roarfirekit?.signInWithEmailLink) {
+    if (roarfirekit.value?.isSignInWithEmailLink && !roarfirekit.value.isSignInWithEmailLink(window.location.href)) {
       router.replace({ name: 'Home' });
     }
 

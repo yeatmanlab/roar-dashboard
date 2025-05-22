@@ -173,6 +173,12 @@ export const useAuthStore = () => {
            return this.roarfirekit.signOut();
          }
       },
+      setUserData(userData) {
+        this.userData = userData;
+      },
+      setUserClaims(userClaims) {
+        this.userClaims = userClaims;
+      },
     },
     persist: {
       storage: sessionStorage,
