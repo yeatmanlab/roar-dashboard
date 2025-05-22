@@ -1,7 +1,12 @@
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
+import type { UseMutationReturnType } from '@tanstack/vue-query';
 import { useAuthStore } from '@/store/auth';
 import { TASKS_QUERY_KEY } from '@/constants/queryKeys';
 import { TASK_UPDATE_MUTATION_KEY } from '@/constants/mutationKeys';
+
+interface TaskData {
+  [key: string]: any;
+}
 
 /**
  * Update Task mutation.
@@ -11,22 +16,22 @@ import { TASK_UPDATE_MUTATION_KEY } from '@/constants/mutationKeys';
  * @TODO: Consider merging this with `useAddTaskMutation` into a single `useUpsertTaskMutation`. Currently difficult to
  * achieve due to the underlaying firekit functions being different.
  *
- * @returns {Object} The mutation object returned by `useMutation`.
+ * @returns The mutation object returned by `useMutation`.
  */
 
-const useUpdateTaskMutation = () => {
+const useUpdateTaskMutation = (): UseMutationReturnType<void, Error, TaskData, unknown> => {
   const authStore = useAuthStore();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationKey: TASK_UPDATE_MUTATION_KEY,
-    mutationFn: async (task) => {
+    mutationFn: async (task: TaskData): Promise<void> => {
       await authStore.roarfirekit.updateTaskOrVariant(task);
     },
-    onSuccess: () => {
+    onSuccess: (): void => {
       queryClient.invalidateQueries({ queryKey: [TASKS_QUERY_KEY] });
     },
   });
 };
 
-export default useUpdateTaskMutation;
+export default useUpdateTaskMutation; 

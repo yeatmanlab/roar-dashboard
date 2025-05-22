@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
+import type { UseMutationReturnType } from '@tanstack/vue-query';
 import { useAuthStore } from '@/store/auth';
 import { ADMINISTRATION_UPSERT_MUTATION_KEY } from '@/constants/mutationKeys';
 import {
@@ -7,23 +8,27 @@ import {
   ADMINISTRATION_ASSIGNMENTS_QUERY_KEY,
 } from '@/constants/queryKeys';
 
+interface AdministrationData {
+  [key: string]: any;
+}
+
 /**
  * Upsert Administration mutation.
  * 
  * TanStack mutation to update or insert an administration and automatically invalidate the corresponding queries.
  * 
- * @returns {Object} The mutation object returned by `useMutation`.
+ * @returns The mutation object returned by `useMutation`.
  */
-const useUpsertAdministrationMutation = () => {
+const useUpsertAdministrationMutation = (): UseMutationReturnType<void, Error, AdministrationData, unknown> => {
   const authStore = useAuthStore();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationKey: ADMINISTRATION_UPSERT_MUTATION_KEY,
-    mutationFn: async (data) => {
+    mutationFn: async (data: AdministrationData): Promise<void> => {
       await authStore.roarfirekit.upsertAdministration(data);
     },
-    onSuccess: () => {
+    onSuccess: (): void => {
       // Invalidate the queries to refetch the administration data.
       // @NOTE: Usually we would apply a more granular invalidation strategy including updating the specific
       // adminitration record in the cache. However, unfortunately, given the nature of the data model and the data that
@@ -36,4 +41,4 @@ const useUpsertAdministrationMutation = () => {
   });
 };
 
-export default useUpsertAdministrationMutation;
+export default useUpsertAdministrationMutation; 
