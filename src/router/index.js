@@ -199,7 +199,7 @@ const routes = [
   },
   {
     path: GAME_ROUTES.ROAR_READALOUD,
-    name: 'ReadAloud',
+    name: 'Read Aloud',
     component: () => import('../components/tasks/TaskReadAloud.vue'),
     props: { taskId: 'roar-readaloud', language: 'en' },
     meta: { pageTitle: 'ReadAloud' },
@@ -468,6 +468,30 @@ const routes = [
     meta: { pageTitle: 'MEP', permission: Permissions.Tasks.LAUNCH },
   },
   {
+    path: '/launch/:launchId' + GAME_ROUTES.PHONICS,
+    name: 'Launch Phonics',
+    component: () => import('../components/tasks/TaskLetter.vue'),
+    props: (route) => ({
+      taskId: 'phonics',
+      language: 'en',
+      launchId: route.params.launchId,
+    }),
+    meta: { pageTitle: 'Phonics', permission: Permissions.Tasks.LAUNCH },
+  },
+  {
+    path: '/launch/:launchId' + GAME_ROUTES.ROAR_READALOUD,
+    name: 'Launch Read Aloud',
+    component: () => import('../components/tasks/TaskReadAloud.vue'),
+    props(route) {
+      return {
+        taskId: 'roar-readaloud',
+        language: 'en',
+        launchId: route.params.launchId,
+      };
+    },
+    meta: { pageTitle: 'ReadAloud', permission: Permissions.Tasks.LAUNCH },
+  },
+  {
     path: '/manage-tasks-variants',
     name: 'ManageTasksVariants',
     component: () => import('../pages/ManageTasksVariants.vue'),
@@ -561,7 +585,7 @@ const routes = [
     meta: { pageTitle: 'Administrator', permission: Permissions.Administrators.UPDATE },
   },
   {
-    path: '/create-administration',
+    path: APP_ROUTES.CREATE_ADMINISTRATION,
     name: 'CreateAdministration',
     component: () => import('../components/CreateAdministration.vue'),
     meta: {
@@ -570,13 +594,23 @@ const routes = [
     },
   },
   {
-    path: '/edit-administration/:adminId',
+    path: APP_ROUTES.EDIT_ADMINISTRATION,
     name: 'EditAdministration',
     props: true,
     component: () => import('../components/CreateAdministration.vue'),
     meta: {
       pageTitle: 'Edit an Administration',
       permission: Permissions.Administrations.UPDATE,
+    },
+  },
+  {
+    path: APP_ROUTES.DUPLICATE_ADMINISTRATION,
+    name: 'DuplicateAdministration',
+    props: true,
+    component: () => import('../components/CreateAdministration.vue'),
+    meta: {
+      pageTitle: 'Duplicate an Administration',
+      permission: Permissions.Administrations.CREATE,
     },
   },
   {
