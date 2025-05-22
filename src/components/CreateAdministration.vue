@@ -202,7 +202,7 @@ import useUpsertAdministrationMutation from '@/composables/mutations/useUpsertAd
 import TaskPicker from './TaskPicker.vue';
 import ConsentPicker from './ConsentPicker.vue';
 import OrgPicker from '@/components/OrgPicker.vue';
-import { APP_ROUTES } from '@/constants/routes';
+import { APP_ROUTES, ADMINISTRATION_FORM_TYPES } from '@/constants/routes';
 import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
 import { usePermissions } from '@/composables/usePermissions';
 const { userCan, Permissions } = usePermissions();
@@ -221,25 +221,31 @@ const { roarfirekit } = storeToRefs(authStore);
 
 const props = defineProps({
   adminId: { type: String, required: false, default: null },
+  formType: { type: String, required: false, default: ADMINISTRATION_FORM_TYPES.CREATE },
 });
 
 const header = computed(() => {
-  if (props.adminId) {
+  if (props.formType === ADMINISTRATION_FORM_TYPES.EDIT) {
     return 'Edit an administration';
+  } else if (props.formType === ADMINISTRATION_FORM_TYPES.DUPLICATE) {
+    return 'Duplicate an administration';
   }
 
   return 'Create a new administration';
 });
 
 const description = computed(() => {
-  if (props.adminId) {
+  if (props.formType === ADMINISTRATION_FORM_TYPES.EDIT) {
     return 'Use this form to edit an existing administration.';
+  } else if (props.formType === ADMINISTRATION_FORM_TYPES.DUPLICATE) {
+    return 'Use this form to duplicate an existing administration.';
   }
+
   return 'Use this form to create a new administration and assign it to organizations.';
 });
 
 const submitLabel = computed(() => {
-  if (props.adminId) {
+  if (props.formType === ADMINISTRATION_FORM_TYPES.EDIT) {
     return 'Update Administration';
   }
 
@@ -247,7 +253,7 @@ const submitLabel = computed(() => {
 });
 
 const submitPermission = computed(() => {
-  if (props.adminId) {
+  if (props.formType === ADMINISTRATION_FORM_TYPES.EDIT) {
     return Permissions.Administrations.UPDATE;
   }
 
@@ -452,8 +458,10 @@ const removeUndefined = (obj) => {
 };
 
 const submit = async () => {
+  submitted.value = true;
   const isFormValid = await v$.value.$validate();
   if (!isFormValid) {
+    console.log('form is invalid');
     return;
   }
 
@@ -516,7 +524,8 @@ const submit = async () => {
     },
   };
 
-  if (props.adminId) args.administrationId = props.adminId;
+  // Only overwrite the given adminId if we are in edit mode.
+  if (props.formType === ADMINISTRATION_FORM_TYPES.EDIT && props.adminId) args.administrationId = props.adminId;
 
   await upsertAdministration(args, {
     onSuccess: () => {
@@ -561,8 +570,14 @@ onMounted(async () => {
 
 watch([existingAdministrationData, allVariants], ([adminInfo, allVariantInfo]) => {
   if (adminInfo && !_isEmpty(allVariantInfo)) {
-    state.administrationName = adminInfo.name;
-    state.administrationPublicName = adminInfo.publicName;
+    // Exclude name and publicName from duplicate formType
+    if (props.formType === ADMINISTRATION_FORM_TYPES.DUPLICATE) {
+      state.administrationName = `${adminInfo.name} - Copy`;
+      state.administrationPublicName = `${adminInfo.publicName} - Copy`;
+    } else {
+      state.administrationName = adminInfo.name;
+      state.administrationPublicName = adminInfo.publicName;
+    }
     state.dateStarted = new Date(adminInfo.dateOpened);
     state.dateClosed = new Date(adminInfo.dateClosed);
     state.sequential = adminInfo.sequential;
