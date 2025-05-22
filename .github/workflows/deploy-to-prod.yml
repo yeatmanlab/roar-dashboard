@@ -19,7 +19,7 @@ jobs:
     steps:
       - name: Generate token
         id: generate_token
-        uses: tibdex/github-app-token@v1 # Use v1 for consistency with other workflows
+        uses: tibdex/github-app-token@v1
         with:
           app_id: ${{ secrets.LEVANTE_BOT_APP_ID }}
           private_key: ${{ secrets.LEVANTE_BOT_APP_PRIVATE_KEY }}
@@ -27,16 +27,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          # Use the generated token for checkout to allow pushing later
           token: ${{ steps.generate_token.outputs.token }}
-          # Fetch all history and tags for versioning
           fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20.x' # Match other workflows
-          registry-url: 'https://registry.npmjs.org' # Good practice
+          node-version: '20.x'
+          registry-url: 'https://registry.npmjs.org'
 
       - name: Install dependencies
         run: npm ci
@@ -46,41 +44,59 @@ jobs:
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git config --global user.name "github-actions[bot]"
 
-      - name: Bump version
+      - name: Read and process version
         id: version
         run: |
-          # Ensure we are on the main branch or default branch
-          # git checkout main # Or your default branch if different
-          npm version ${{ github.event.inputs.version_type }} -m "chore(release): %s"
-          echo "new_version=$(git describe --tags --abbrev=0)" >> $GITHUB_OUTPUT
+          # Read current version from package.json
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          # Remove -dev suffix if it exists
+          PROD_VERSION=${CURRENT_VERSION%-dev}
+          # Create new branch name
+          BRANCH_NAME="v${PROD_VERSION}"
+          # Store values for later use
+          echo "prod_version=${PROD_VERSION}" >> $GITHUB_OUTPUT
+          echo "branch_name=${BRANCH_NAME}" >> $GITHUB_OUTPUT
+          echo "current_version=${CURRENT_VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Create and switch to release branch
+        run: |
+          git checkout -b ${{ steps.version.outputs.branch_name }}
+          # Update package.json with production version
+          npm version ${{ steps.version.outputs.prod_version }} --no-git-tag-version
+          git add package.json
+          git commit -m "chore(release): prepare version ${{ steps.version.outputs.prod_version }}"
+          git push origin ${{ steps.version.outputs.branch_name }}
+
+      - name: Create and push tag
+        run: |
+          git tag -a "v${{ steps.version.outputs.prod_version }}" -m "Release v${{ steps.version.outputs.prod_version }}"
+          git push origin "v${{ steps.version.outputs.prod_version }}"
 
       - name: Build for production
         env:
-          NODE_OPTIONS: '--max_old_space_size=8192' # Match dev build options
+          NODE_OPTIONS: '--max_old_space_size=8192'
         run: npm run build:prod
 
       - name: Create Sentry release
-        uses: getsentry/action-release@v1 # Match dev workflow
+        uses: getsentry/action-release@v1
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
           SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
         with:
           environment: production
-          sourcemaps: ./dist/assets # Point to directory for recursive search
-          version: ${{ steps.version.outputs.new_version }}
-          finalize: false # Don't finalize yet if deploy might fail
+          sourcemaps: ./dist/assets
+          version: v${{ steps.version.outputs.prod_version }}
+          finalize: false
 
       - name: Deploy to Firebase Production
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
-          # Use the App token here as well, or a dedicated deploy token if preferred
           repoToken: ${{ steps.generate_token.outputs.token }}
-          # Assuming a production service account secret exists
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DEV_ADMIN }}
           channelId: live
-          projectId: hs-levante-admin-prod # Explicitly set production project ID
-          target: production # Optional if you have defined targets in firebase.json
+          projectId: hs-levante-admin-prod
+          target: production
 
       - name: Finalize Sentry Release
         uses: getsentry/action-release@v1
@@ -90,12 +106,19 @@ jobs:
           SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
         with:
           environment: production
-          version: ${{ steps.version.outputs.new_version }}
-          finalize: true # Finalize now that deploy succeeded
+          version: v${{ steps.version.outputs.prod_version }}
+          finalize: true
 
-      - name: Push changes and tags
-        env:
-          # Use the App token for pushing
-          GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
+      - name: Update main branch version
         run: |
-          git push origin HEAD --follow-tags 
+          git checkout main
+          # Increment version based on user selection
+          npm version ${{ github.event.inputs.version_type }} --no-git-tag-version
+          # Add -dev suffix
+          NEW_VERSION=$(node -p "require('./package.json').version")
+          NEW_VERSION="${NEW_VERSION}-dev"
+          # Update package.json with new version
+          npm version $NEW_VERSION --no-git-tag-version
+          git add package.json
+          git commit -m "chore: bump version to $NEW_VERSION"
+          git push origin main 
