@@ -1,4 +1,4 @@
-export const ADMINISTRATION_UPSERT_MUTATION_KEY: string = 'administration-upsert';
+export const ADMINISTRATION_UPSERT_MUTATION_KEY = ['administration-upsert'] as const;
 export const ADMINISTRATION_DELETE_MUTATION_KEY: string = 'administration-delete';
 export const CONSENT_UPDATE_MUTATION_KEY: string = 'consent-update';
 export const SIGN_OUT_MUTATION_KEY: string = 'sign-out';
