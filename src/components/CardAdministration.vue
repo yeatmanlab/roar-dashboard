@@ -177,6 +177,7 @@ import useDsgfOrgQuery from '@/composables/queries/useDsgfOrgQuery';
 import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery';
 import useDeleteAdministrationMutation from '@/composables/mutations/useDeleteAdministrationMutation';
 import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
+import { ADMINISTRATION_FORM_TYPES } from '@/constants/routes';
 import { FIRESTORE_COLLECTIONS } from '@/constants/firebase';
 import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
 
@@ -233,7 +234,20 @@ const speedDialItems = ref([
     label: 'Edit',
     icon: 'pi pi-pencil',
     command: () => {
-      router.push({ name: 'EditAdministration', params: { adminId: props.id } });
+      router.push({
+        name: 'EditAdministration',
+        params: { adminId: props.id, formType: ADMINISTRATION_FORM_TYPES.EDIT },
+      });
+    },
+  },
+  {
+    label: 'Duplicate',
+    icon: 'pi pi-copy',
+    command: () => {
+      router.push({
+        name: 'DuplicateAdministration',
+        params: { adminId: props.id, formType: ADMINISTRATION_FORM_TYPES.DUPLICATE },
+      });
     },
   },
 ]);
