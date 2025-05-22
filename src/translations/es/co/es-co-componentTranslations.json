@@ -47,7 +47,9 @@
   "gameTabs": {
     "clickToStart": "Haz clic para empezar",
     "externalTaskMessage": "Haga clic aquí para abrir de nuevo",
-    "taskCompleted": "¡Tarea completa!"
+    "taskCompleted": "¡Tarea completada!",
+    "unsuitableForScoring": "La evaluación debe repetirse",
+    "retakeAssessment": "Repetir evaluación"
   },
   "navBar": {
     "greeting": "¡Hola",
