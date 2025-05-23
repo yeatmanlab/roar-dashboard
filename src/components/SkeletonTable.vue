@@ -11,13 +11,20 @@
   </PvDataTable>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref } from 'vue';
 import PvColumn from 'primevue/column';
 import PvDataTable from 'primevue/datatable';
 import PvSkeleton from 'primevue/skeleton';
 
-const skeletonData = ref([
+interface SkeletonRow {
+  col0: string;
+  col1: string;
+  col2: string;
+  col3: string;
+}
+
+const skeletonData = ref<SkeletonRow[]>([
   { col0: '', col1: '', col2: '', col3: '' },
   { col0: '', col1: '', col2: '', col3: '' },
   { col0: '', col1: '', col2: '', col3: '' },

@@ -32,7 +32,7 @@
     </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
     import {ref, watchEffect} from 'vue';
     import useSignOutMutation from '@/composables/mutations/useSignOutMutation';
     import PvButton from 'primevue/button';
@@ -41,20 +41,28 @@
     import { useI18n } from 'vue-i18n';
     import { APP_ROUTES } from '@/constants/routes';
 
+    interface Props {
+        isBasicView: boolean;
+    }
+
+    interface DropdownOption {
+        label: string;
+        value: string;
+    }
+
+    interface DropdownChangeEvent {
+        value: string;
+    }
 
     const i18n = useI18n();
     const router = useRouter();
     const { mutate: signOut } = useSignOutMutation();
 
-    const feedbackButton = ref(null);
+    const feedbackButton = ref<HTMLButtonElement | null>(null);
 
-    const props = defineProps({
-        isBasicView: {type: Boolean, required: true},
-    })
+    const props = defineProps<Props>();
 
-
-
-    watchEffect(() => {
+    watchEffect((): void => {
         const feedbackElement = document.getElementById('sentry-feedback');
         if (feedbackElement) {
             if (!props.isBasicView) {
@@ -63,18 +71,17 @@
         }
     });
 
-
-    const helpOptions = [
+    const helpOptions: DropdownOption[] = [
         { label: 'Researcher Documentation', value: 'researcherDocumentation' },
         { label: 'Report an Issue', value: 'reportAnIssue' }
     ];
 
-    const profileOptions = [
+    const profileOptions: DropdownOption[] = [
         {label: "Settings", value: 'settings'},
         {label: i18n.t('navBar.signOut'), value: 'signout'}
     ]
 
-    const handleHelpChange = (e) => {
+    const handleHelpChange = (e: DropdownChangeEvent): void => {
         if (e.value === 'researcherDocumentation') {
             window.open('https://researcher.levante-network.org/', '_blank');
         } else if (e.value === 'reportAnIssue') {
@@ -82,7 +89,7 @@
         }
     };
 
-    const handleProfileChange = (e) => {
+    const handleProfileChange = (e: DropdownChangeEvent): void => {
         if (e.value === 'settings') {
             router.push({ path: APP_ROUTES.ACCOUNT_PROFILE });
         } else if (e.value === 'signout') {

@@ -17,22 +17,39 @@
     </ul>
   </div>
 </template>
-<script setup>
+<script setup lang="ts">
 import { ref, computed } from 'vue';
 import _isEmpty from 'lodash/isEmpty';
 import PvChart from 'primevue/chart';
 
-const props = defineProps({
-  totalGames: { type: Number, required: true, default: 0 },
-  completedGames: { type: Number, required: true, default: 0 },
-  studentInfo: { type: Object, required: true },
+interface Props {
+  totalGames: number;
+  completedGames: number;
+  studentInfo: {
+    grade?: string | number;
+    [key: string]: any;
+  };
+}
+
+interface ChartData {
+  labels: string[];
+  datasets: Array<{
+    data: number[];
+    backgroundColor: string[];
+  }>;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  totalGames: 0,
+  completedGames: 0,
 });
 
-const chartData = computed(() => {
+const chartData = computed((): ChartData => {
   const completed = props.completedGames;
   const incomplete = props.totalGames - props.completedGames;
   return setChartData(completed, incomplete);
 });
+
 const chartOptions = ref({
   cutout: '60%',
   showToolTips: false,
@@ -46,7 +63,7 @@ const chartOptions = ref({
   },
 });
 
-const setChartData = (completed, incomplete) => {
+const setChartData = (completed: number, incomplete: number): ChartData => {
   let docStyle = getComputedStyle(document.documentElement);
 
   return {

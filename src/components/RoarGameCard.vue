@@ -29,23 +29,30 @@
   </PvCard>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref } from 'vue';
 import PvButton from 'primevue/button';
 import PvCard from 'primevue/card';
 import PvInlineMessage from 'primevue/inlinemessage';
 import PvTag from 'primevue/tag';
 
-const props = defineProps({
-  gameId: { type: String, required: true },
-  title: { type: String, required: true },
-  description: { type: String, required: true },
-  metadata: { type: Object, default: () => {} },
-  imgSrc: { type: String, default: '' },
-  completed: { type: Boolean, default: false, required: true },
-  statusText: { type: String, default: '', required: false },
+interface Props {
+  gameId: string;
+  title: string;
+  description: string;
+  metadata?: Record<string, any>;
+  imgSrc?: string;
+  completed: boolean;
+  statusText?: string;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  metadata: () => ({}),
+  imgSrc: '',
+  statusText: '',
 });
-const playLabel = ref(props.completed ? 'Play again' : 'Play');
+
+const playLabel = ref<string>(props.completed ? 'Play again' : 'Play');
 </script>
 
 <style lang="scss">

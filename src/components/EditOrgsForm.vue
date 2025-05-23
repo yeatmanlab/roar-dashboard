@@ -13,7 +13,7 @@
     </div>
   </div>
 </template>
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted, watch } from 'vue';
 import { useAuthStore } from '@/store/auth';
 import { storeToRefs } from 'pinia';
@@ -23,28 +23,47 @@ import PvChips from 'primevue/chips';
 import PvInputText from 'primevue/inputtext';
 import _isEmpty from 'lodash/isEmpty';
 
+interface Props {
+  orgType: string;
+  orgId: string;
+  editMode?: boolean;
+}
 
-const props = defineProps({
-  orgType: { type: String, required: true },
-  orgId: { type: String, required: true },
-  editMode: { type: Boolean, default: true },
+interface Emits {
+  modalClosed: [];
+  'update:orgData': [orgData: OrgData];
+}
+
+interface OrgData {
+  name: string;
+  tags: string[];
+}
+
+interface ServerOrgData {
+  name?: string;
+  tags?: string[];
+  [key: string]: any;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  editMode: true,
 });
 
 // +------------+
 // | Initialize |
 // +------------+
-const initialized = ref(false);
+const initialized = ref<boolean>(false);
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
 
-const emit = defineEmits(['modalClosed', 'update:orgData']);
+const emit = defineEmits<Emits>();
 
 // +----------------------------+
 // | Query for existing orgData |
 // +----------------------------+
 const { data: serverOrgData } = useQuery({
   queryKey: ['org', props.orgType, props.orgId],
-  queryFn: () => fetchDocById(props.orgType, props.orgId),
+  queryFn: (): Promise<ServerOrgData> => fetchDocById(props.orgType, props.orgId),
   keepPreviousData: true,
   enabled: initialized,
   staleTime: 5 * 60 * 1000, // 5 minutes
@@ -53,13 +72,13 @@ const { data: serverOrgData } = useQuery({
 // +-------------+
 // | Local State |
 // +-------------+
-const localOrgData = ref({
-  name: null,
+const localOrgData = ref<OrgData>({
+  name: '',
   tags: [],
 });
 
-const setupOrgData = (orgData) => {
-  let org = {
+const setupOrgData = (orgData: ServerOrgData | null | undefined): void => {
+  let org: OrgData = {
     name: orgData?.name ?? '',
     tags: orgData?.tags ?? [],
   };
@@ -79,8 +98,8 @@ watch(
 // +--------------------+
 // | Initialize firekit |
 // +--------------------+
-let unsubscribe;
-const init = () => {
+let unsubscribe: (() => void) | undefined;
+const init = (): void => {
   if (unsubscribe) unsubscribe();
   initialized.value = true;
 };
@@ -89,7 +108,7 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.roarfirekit?.restConfig) init();
 });
 
-onMounted(() => {
+onMounted((): void => {
   if (roarfirekit.value?.restConfig) init();
   if (!_isEmpty(serverOrgData.value)) setupOrgData(serverOrgData.value);
 });
