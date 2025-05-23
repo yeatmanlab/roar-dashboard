@@ -276,7 +276,7 @@ const findVariantWithParams = (variants, params) => {
   });
 };
 
-const { data: allVariants } = useTaskVariantsQuery(true, {
+const { data: allVariants } = useTaskVariantsQuery(false, {
   enabled: initialized,
 });
 
