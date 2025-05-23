@@ -65,7 +65,7 @@ jobs:
           npm version ${{ steps.version.outputs.prod_version }} --no-git-tag-version
           git add package.json
           git commit -m "chore(release): prepare version ${{ steps.version.outputs.prod_version }}"
-          git push origin ${{ steps.version.outputs.branch_name }}
+          git push --set-upstream origin ${{ steps.version.outputs.branch_name }}
 
       - name: Create and push tag
         run: |
