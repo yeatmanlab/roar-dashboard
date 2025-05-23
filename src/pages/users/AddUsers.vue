@@ -236,7 +236,6 @@ const onFileUpload = async (event) => {
   // Parse the file directly with csvFileToJson
   const parsedData = await csvFileToJson(file);
 
-
   // Check if there's any data
   if (!parsedData || parsedData.length === 0) {
     toast.add({
@@ -259,7 +258,6 @@ const onFileUpload = async (event) => {
   // Get all column names from the first row, case-insensitive check for userType
   const firstRow = toRaw(rawUserFile.value[0]);
   const allColumns = Object.keys(firstRow).map((col) => col.toLowerCase());
-
 
   // Check if userType column exists (case-insensitive)
   const hasUserType = allColumns.includes("usertype");
@@ -402,12 +400,27 @@ const onFileUpload = async (event) => {
     );
 
     // Parse and check if arrays are non-empty after splitting and trimming
-    const hasCohort = cohortField && user[cohortField] && 
-      user[cohortField].split(",").map(s => s.trim()).filter(s => s).length > 0;
-    const hasSite = siteField && user[siteField] && 
-      user[siteField].split(",").map(s => s.trim()).filter(s => s).length > 0;
-    const hasSchool = schoolField && user[schoolField] && 
-      user[schoolField].split(",").map(s => s.trim()).filter(s => s).length > 0;
+    const hasCohort =
+      cohortField &&
+      user[cohortField] &&
+      user[cohortField]
+        .split(",")
+        .map((s) => s.trim())
+        .filter((s) => s).length > 0;
+    const hasSite =
+      siteField &&
+      user[siteField] &&
+      user[siteField]
+        .split(",")
+        .map((s) => s.trim())
+        .filter((s) => s).length > 0;
+    const hasSchool =
+      schoolField &&
+      user[schoolField] &&
+      user[schoolField]
+        .split(",")
+        .map((s) => s.trim())
+        .filter((s) => s).length > 0;
 
     if (!hasCohort && !(hasSite && hasSchool)) {
       missingFields.push("Cohort OR Site and School");
@@ -509,10 +522,30 @@ async function submitUsers() {
       );
 
       // Get values using the actual field names and parse as comma-separated arrays
-      const sites = siteField ? user[siteField].split(",").map(s => s.trim()).filter(s => s) : [];
-      const schools = schoolField ? user[schoolField].split(",").map(s => s.trim()).filter(s => s) : [];
-      const classes = classField ? user[classField].split(",").map(s => s.trim()).filter(s => s) : [];
-      const cohorts = cohortField ? user[cohortField].split(",").map(s => s.trim()).filter(s => s) : [];
+      const sites = siteField
+        ? user[siteField]
+            .split(",")
+            .map((s) => s.trim())
+            .filter((s) => s)
+        : [];
+      const schools = schoolField
+        ? user[schoolField]
+            .split(",")
+            .map((s) => s.trim())
+            .filter((s) => s)
+        : [];
+      const classes = classField
+        ? user[classField]
+            .split(",")
+            .map((s) => s.trim())
+            .filter((s) => s)
+        : [];
+      const cohorts = cohortField
+        ? user[cohortField]
+            .split(",")
+            .map((s) => s.trim())
+            .filter((s) => s)
+        : [];
 
       const orgNameMap = {
         site: sites,
@@ -562,13 +595,17 @@ async function submitUsers() {
                   }
                 }
                 if (!schoolFound) {
-                  throw new Error(`School '${schoolName}' not found in any of the specified sites`);
+                  throw new Error(
+                    `School '${schoolName}' not found in any of the specified sites`,
+                  );
                 }
               }
             } else if (orgType === "class") {
               // Need site and school for classes - try each class with each site/school combination
               if (sites.length === 0 || schools.length === 0) {
-                throw new Error("Classes specified but no site or school provided");
+                throw new Error(
+                  "Classes specified but no site or school provided",
+                );
               }
               for (const className of orgNames) {
                 let classFound = false;
@@ -594,7 +631,9 @@ async function submitUsers() {
                   if (classFound) break; // Break out of site loop if class was found
                 }
                 if (!classFound) {
-                  throw new Error(`Class '${className}' not found in any of the specified site/school combinations`);
+                  throw new Error(
+                    `Class '${className}' not found in any of the specified site/school combinations`,
+                  );
                 }
               }
             } else if (orgType === "cohort") {
