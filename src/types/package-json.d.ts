@@ -1,4 +1,4 @@
-declare module '../../package.json' {
+declare module "../../package.json" {
   interface PackageJson {
     name: string;
     version: string;
@@ -9,7 +9,7 @@ declare module '../../package.json' {
       [key: string]: string;
     };
   }
-  
+
   const packageJson: PackageJson;
   export default packageJson;
-} 
+}

@@ -1,5 +1,10 @@
 <template>
-  <PvDialog :visible="isOpen" modal style="width: 66vw" @update:visible="emit('modalClosed')">
+  <PvDialog
+    :visible="isOpen"
+    modal
+    style="width: 66vw"
+    @update:visible="emit('modalClosed')"
+  >
     <template #header>
       <div v-if="!small" class="modal-header gap-2">
         <i class="pi text-gray-400 modal-icon" :class="icon"></i>
@@ -28,10 +33,10 @@
   </PvDialog>
 </template>
 <script setup>
-import { watch, ref, onMounted } from 'vue';
-import { storeToRefs } from 'pinia';
-import PvDialog from 'primevue/dialog';
-import { useAuthStore } from '@/store/auth';
+import { watch, ref, onMounted } from "vue";
+import { storeToRefs } from "pinia";
+import PvDialog from "primevue/dialog";
+import { useAuthStore } from "@/store/auth";
 
 const props = defineProps({
   isEnabled: {
@@ -42,17 +47,17 @@ const props = defineProps({
   title: {
     type: String,
     required: true,
-    default: '',
+    default: "",
   },
   subtitle: {
     type: String,
     required: true,
-    default: '',
+    default: "",
   },
   icon: {
     type: String,
     required: false,
-    default: 'pi-pencil',
+    default: "pi-pencil",
   },
   small: {
     type: Boolean,
@@ -62,7 +67,7 @@ const props = defineProps({
 });
 
 // Handle modal opening / closing
-const emit = defineEmits(['modalClosed']);
+const emit = defineEmits(["modalClosed"]);
 
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
@@ -71,7 +76,7 @@ const initialized = ref(false);
 watch(
   () => props.isEnabled,
   (isEnabled) => {
-    console.log('isEnabled from watcher', isEnabled);
+    console.log("isEnabled from watcher", isEnabled);
     if (isEnabled) {
       isOpen.value = true;
     } else if (!isEnabled) {

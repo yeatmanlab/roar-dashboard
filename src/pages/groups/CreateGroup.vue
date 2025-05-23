@@ -4,16 +4,23 @@
       <div class="flex flex-column mb-5">
         <div class="flex justify-content-between mb-2">
           <div class="flex align-items-center gap-3">
-            <i class="pi pi-sliders-h text-gray-400 rounded" style="font-size: 1.6rem" />
+            <i
+              class="pi pi-sliders-h text-gray-400 rounded"
+              style="font-size: 1.6rem"
+            />
             <div class="admin-page-header">Create a new Group</div>
           </div>
         </div>
-        <div class="text-md text-gray-500 ml-6">Use this form to create a new Group.</div>
+        <div class="text-md text-gray-500 ml-6">
+          Use this form to create a new Group.
+        </div>
       </div>
 
       <PvDivider />
       <div class="bg-gray-100 rounded p-4">
-        <p class="text-sm text-gray-500 text-right">required <span class="text-red-500">*</span></p>
+        <p class="text-sm text-gray-500 text-right">
+          required <span class="text-red-500">*</span>
+        </p>
         <div class="grid column-gap-3 mt-1 rounded">
           <div class="col-12 md:col-6 lg:col-3 xl:col-3">
             <PvFloatLabel>
@@ -26,7 +33,9 @@
                 class="w-full"
                 data-cy="dropdown-org-type"
               />
-              <label for="org-type">Group Type<span id="required-asterisk">*</span></label>
+              <label for="org-type"
+                >Group Type<span id="required-asterisk">*</span></label
+              >
             </PvFloatLabel>
           </div>
         </div>
@@ -44,12 +53,22 @@
                 class="w-full"
                 data-cy="dropdown-parent-district"
               />
-              <label for="parent-district">Site<span id="required-asterisk">*</span></label>
-              <small v-if="v$.parentDistrict.$invalid && submitted" class="p-error"> Please select a site. </small>
+              <label for="parent-district"
+                >Site<span id="required-asterisk">*</span></label
+              >
+              <small
+                v-if="v$.parentDistrict.$invalid && submitted"
+                class="p-error"
+              >
+                Please select a site.
+              </small>
             </PvFloatLabel>
           </div>
 
-          <div v-if="orgType.singular === 'class'" class="col-12 md:col-6 lg:col-4">
+          <div
+            v-if="orgType.singular === 'class'"
+            class="col-12 md:col-6 lg:col-4"
+          >
             <PvFloatLabel>
               <PvSelect
                 v-model="state.parentSchool"
@@ -61,8 +80,15 @@
                 class="w-full"
                 data-cy="dropdown-parent-school"
               />
-              <label for="parent-school">School<span id="required-asterisk">*</span></label>
-              <small v-if="v$.parentSchool.$invalid && submitted" class="p-error"> Please select a district. </small>
+              <label for="parent-school"
+                >School<span id="required-asterisk">*</span></label
+              >
+              <small
+                v-if="v$.parentSchool.$invalid && submitted"
+                class="p-error"
+              >
+                Please select a district.
+              </small>
             </PvFloatLabel>
           </div>
         </div>
@@ -70,9 +96,20 @@
         <div class="grid mt-3">
           <div class="col-12 md:col-6 lg:col-4 mt-3">
             <PvFloatLabel>
-              <PvInputText id="org-name" v-model="state.orgName" class="w-full" data-cy="input-org-name" />
-              <label for="org-name">{{ orgTypeLabel }} Name<span id="required-asterisk">*</span></label>
-              <small v-if="v$.orgName.$invalid && submitted" class="p-error">Please supply a name</small>
+              <PvInputText
+                id="org-name"
+                v-model="state.orgName"
+                class="w-full"
+                data-cy="input-org-name"
+              />
+              <label for="org-name"
+                >{{ orgTypeLabel }} Name<span id="required-asterisk"
+                  >*</span
+                ></label
+              >
+              <small v-if="v$.orgName.$invalid && submitted" class="p-error"
+                >Please supply a name</small
+              >
             </PvFloatLabel>
           </div>
         </div>
@@ -80,7 +117,10 @@
         <div class="mt-5 mb-0 pb-0">Optional fields:</div>
 
         <div class="grid mt-3">
-          <div class="col-12 md:col-6 lg:col-4 mt-3" data-cy="div-auto-complete">
+          <div
+            class="col-12 md:col-6 lg:col-4 mt-3"
+            data-cy="div-auto-complete"
+          >
             <PvFloatLabel>
               <PvAutoComplete
                 v-model="state.tags"
@@ -103,8 +143,14 @@
         <div class="grid">
           <div class="col-12">
             <PvButton
-              :label="isSubmittingOrg ? `Creating ${orgTypeLabel}` : `Create ${orgTypeLabel}`"
-              :disabled="orgTypeLabel === 'Org' || v$.$invalid || isSubmittingOrg"
+              :label="
+                isSubmittingOrg
+                  ? `Creating ${orgTypeLabel}`
+                  : `Create ${orgTypeLabel}`
+              "
+              :disabled="
+                orgTypeLabel === 'Org' || v$.$invalid || isSubmittingOrg
+              "
               :icon="isSubmittingOrg ? 'pi pi-spin pi-spinner' : ''"
               class="bg-primary text-white border-none border-round h-3rem w-3 hover:bg-red-900"
               data-cy="button-create-org"
@@ -118,34 +164,34 @@
 </template>
 
 <script setup>
-import { computed, reactive, ref, toRaw, onMounted } from 'vue';
-import { useToast } from 'primevue/usetoast';
-import { storeToRefs } from 'pinia';
-import _capitalize from 'lodash/capitalize';
-import _union from 'lodash/union';
-import _without from 'lodash/without';
-import { useVuelidate } from '@vuelidate/core';
-import { required, requiredIf } from '@vuelidate/validators';
-import PvAutoComplete from 'primevue/autocomplete';
-import PvButton from 'primevue/button';
-import PvDivider from 'primevue/divider';
-import PvSelect from 'primevue/select';
-import PvInputText from 'primevue/inputtext';
-import PvFloatLabel from 'primevue/floatlabel';
-import { useAuthStore } from '@/store/auth';
-import useDistrictsListQuery from '@/composables/queries/useDistrictsListQuery';
-import useDistrictSchoolsQuery from '@/composables/queries/useDistrictSchoolsQuery';
-import useSchoolClassesQuery from '@/composables/queries/useSchoolClassesQuery';
-import useGroupsListQuery from '@/composables/queries/useGroupsListQuery';
-import useUpsertOrgMutation from '@/composables/mutations/useUpsertOrgMutation';
-import { TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
+import { computed, reactive, ref, toRaw, onMounted } from "vue";
+import { useToast } from "primevue/usetoast";
+import { storeToRefs } from "pinia";
+import _capitalize from "lodash/capitalize";
+import _union from "lodash/union";
+import _without from "lodash/without";
+import { useVuelidate } from "@vuelidate/core";
+import { required, requiredIf } from "@vuelidate/validators";
+import PvAutoComplete from "primevue/autocomplete";
+import PvButton from "primevue/button";
+import PvDivider from "primevue/divider";
+import PvSelect from "primevue/select";
+import PvInputText from "primevue/inputtext";
+import PvFloatLabel from "primevue/floatlabel";
+import { useAuthStore } from "@/store/auth";
+import useDistrictsListQuery from "@/composables/queries/useDistrictsListQuery";
+import useDistrictSchoolsQuery from "@/composables/queries/useDistrictSchoolsQuery";
+import useSchoolClassesQuery from "@/composables/queries/useSchoolClassesQuery";
+import useGroupsListQuery from "@/composables/queries/useGroupsListQuery";
+import useUpsertOrgMutation from "@/composables/mutations/useUpsertOrgMutation";
+import { TOAST_DEFAULT_LIFE_DURATION } from "@/constants/toasts";
 const initialized = ref(false);
 const toast = useToast();
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
 
 const state = reactive({
-  orgName: '',
+  orgName: "",
   parentDistrict: undefined,
   parentSchool: undefined,
   tags: [],
@@ -166,9 +212,10 @@ onMounted(() => {
 });
 
 // All districts belonging to user
-const { isLoading: isLoadingDistricts, data: districts } = useDistrictsListQuery({
-  enabled: initialized,
-});
+const { isLoading: isLoadingDistricts, data: districts } =
+  useDistrictsListQuery({
+    enabled: initialized,
+  });
 
 // All groups belonging to user
 const { data: groups } = useGroupsListQuery({
@@ -182,9 +229,10 @@ const schoolQueryEnabled = computed(() => {
 const selectedDistrict = computed(() => state.parentDistrict?.id);
 
 // The schools of a given district
-const { isFetching: isFetchingSchools, data: schools } = useDistrictSchoolsQuery(selectedDistrict, {
-  enabled: schoolQueryEnabled,
-});
+const { isFetching: isFetchingSchools, data: schools } =
+  useDistrictSchoolsQuery(selectedDistrict, {
+    enabled: schoolQueryEnabled,
+  });
 
 const classQueryEnabled = computed(() => {
   return initialized.value && state.parentSchool !== undefined;
@@ -197,7 +245,11 @@ const { data: classes } = useSchoolClassesQuery(selectedSchool, {
   enabled: classQueryEnabled,
 });
 
-const { mutate: upsertOrg, isPending: isSubmittingOrg, error: upsertOrgError } = useUpsertOrgMutation();
+const {
+  mutate: upsertOrg,
+  isPending: isSubmittingOrg,
+  error: upsertOrgError,
+} = useUpsertOrgMutation();
 
 const schoolDropdownEnabled = computed(() => {
   return state.parentDistrict && !isFetchingSchools.value;
@@ -205,45 +257,58 @@ const schoolDropdownEnabled = computed(() => {
 
 const rules = {
   orgName: { required },
-  parentDistrict: { required: requiredIf(() => ['school', 'class', 'group'].includes(orgType.value.singular)) },
-  parentSchool: { required: requiredIf(() => orgType.value.singular === 'class') },
+  parentDistrict: {
+    required: requiredIf(() =>
+      ["school", "class", "group"].includes(orgType.value.singular),
+    ),
+  },
+  parentSchool: {
+    required: requiredIf(() => orgType.value.singular === "class"),
+  },
 };
 
 const v$ = useVuelidate(rules, state);
 const submitted = ref(false);
 
 const orgTypes = [
-  { firestoreCollection: 'districts', singular: 'district', label: 'Site' },
-  { firestoreCollection: 'schools', singular: 'school', label: 'School' },
-  { firestoreCollection: 'classes', singular: 'class', label: 'Class' },
-  { firestoreCollection: 'groups', singular: 'group', label: 'Cohort' },
+  { firestoreCollection: "districts", singular: "district", label: "Site" },
+  { firestoreCollection: "schools", singular: "school", label: "School" },
+  { firestoreCollection: "classes", singular: "class", label: "Class" },
+  { firestoreCollection: "groups", singular: "group", label: "Cohort" },
 ];
 
 const orgType = ref();
-
 
 const orgTypeLabel = computed(() => {
   if (orgType.value) {
     return _capitalize(orgType.value.label);
   }
-  return 'Group';
+  return "Group";
 });
 
-const parentOrgRequired = computed(() => ['school', 'class', 'group'].includes(orgType.value?.singular));
-
+const parentOrgRequired = computed(() =>
+  ["school", "class", "group"].includes(orgType.value?.singular),
+);
 
 const allTags = computed(() => {
   const districtTags = (districts.value ?? []).map((org) => org.tags);
   const schoolTags = (districts.value ?? []).map((org) => org.tags);
   const classTags = (classes.value ?? []).map((org) => org.tags);
   const groupTags = (groups.value ?? []).map((org) => org.tags);
-  return _without(_union(...districtTags, ...schoolTags, ...classTags, ...groupTags), undefined) || [];
+  return (
+    _without(
+      _union(...districtTags, ...schoolTags, ...classTags, ...groupTags),
+      undefined,
+    ) || []
+  );
 });
 
 const tagSuggestions = ref([]);
 const searchTags = (event) => {
   const query = event.query.toLowerCase();
-  let filteredOptions = allTags.value.filter((opt) => opt.toLowerCase().includes(query));
+  let filteredOptions = allTags.value.filter((opt) =>
+    opt.toLowerCase().includes(query),
+  );
   if (filteredOptions.length === 0 && query) {
     filteredOptions.push(query);
   } else {
@@ -264,33 +329,48 @@ const submit = async () => {
 
     if (state.tags.length > 0) orgDataToSubmit.tags = state.tags;
 
-    if (orgType.value?.singular === 'class') {
+    if (orgType.value?.singular === "class") {
       orgDataToSubmit.schoolId = toRaw(state.parentSchool).id;
       orgDataToSubmit.districtId = toRaw(state.parentDistrict).id;
-    } else if (orgType.value?.singular === 'school') {
+    } else if (orgType.value?.singular === "school") {
       orgDataToSubmit.districtId = toRaw(state.parentDistrict).id;
-    } else if (orgType.value?.singular === 'group') {
+    } else if (orgType.value?.singular === "group") {
       orgDataToSubmit.parentOrgId = toRaw(state.parentDistrict).id;
     }
 
     upsertOrg(orgDataToSubmit, {
       onSuccess: () => {
-        toast.add({ severity: 'success', summary: 'Success', detail: `Group created`, life: TOAST_DEFAULT_LIFE_DURATION });
+        toast.add({
+          severity: "success",
+          summary: "Success",
+          detail: `Group created`,
+          life: TOAST_DEFAULT_LIFE_DURATION,
+        });
         resetForm();
         v$.value.$reset();
       },
       onError: (error) => {
-        toast.add({ severity: 'error', summary: 'Error', detail: error.message, life: TOAST_DEFAULT_LIFE_DURATION });
+        toast.add({
+          severity: "error",
+          summary: "Error",
+          detail: error.message,
+          life: TOAST_DEFAULT_LIFE_DURATION,
+        });
         console.error(`Error creating Group:`, error);
       },
     });
   } else {
-    toast.add({ severity: 'warn', summary: 'Validation Error', detail: 'Please check the form for errors.', life: TOAST_DEFAULT_LIFE_DURATION });
+    toast.add({
+      severity: "warn",
+      summary: "Validation Error",
+      detail: "Please check the form for errors.",
+      life: TOAST_DEFAULT_LIFE_DURATION,
+    });
   }
 };
 
 const resetForm = () => {
-  state.orgName = '';
+  state.orgName = "";
   state.tags = [];
   state.parentDistrict = undefined;
   state.parentSchool = undefined;
@@ -312,7 +392,7 @@ const resetForm = () => {
 .p-inputgroup {
   display: flex;
   align-items: stretch;
-  
+
   .p-inputgroup-addon {
     display: flex;
     align-items: center;
@@ -320,7 +400,7 @@ const resetForm = () => {
     min-width: 2.5rem;
     height: auto;
   }
-  
+
   .p-inputtext {
     flex: 1 1 auto;
   }
@@ -382,7 +462,7 @@ button.p-autocomplete-dropdown {
   }
 
   #heading {
-    font-family: 'Source Sans Pro', sans-serif;
+    font-family: "Source Sans Pro", sans-serif;
     font-weight: 400;
     color: #000000;
     font-size: 1.625rem;
@@ -390,7 +470,7 @@ button.p-autocomplete-dropdown {
   }
 
   #section-heading {
-    font-family: 'Source Sans Pro', sans-serif;
+    font-family: "Source Sans Pro", sans-serif;
     font-weight: 400;
     font-size: 1.125rem;
     line-height: 1.5681rem;
@@ -409,7 +489,7 @@ button.p-autocomplete-dropdown {
   }
 
   #section-content {
-    font-family: 'Source Sans Pro', sans-serif;
+    font-family: "Source Sans Pro", sans-serif;
     font-weight: 400;
     font-size: 0.875rem;
     line-height: 1.22rem;
@@ -418,7 +498,7 @@ button.p-autocomplete-dropdown {
   }
 
   ::placeholder {
-    font-family: 'Source Sans Pro', sans-serif;
+    font-family: "Source Sans Pro", sans-serif;
     color: #c4c4c4;
   }
 

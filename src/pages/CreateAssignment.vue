@@ -12,25 +12,27 @@
 
       <PvDivider />
       <div class="text-sm text-gray-500 mt-3 mr-3 required">
-          <span class="required-asterisk">*</span> Required
-        </div>
+        <span class="required-asterisk">*</span> Required
+      </div>
       <div class="bg-gray-100 rounded p-5">
         <div class="formgrid grid mt-5">
-        <div class="field col-12 xl:col-6 mb-5">
-          <PvFloatLabel>
-            <PvInputText
+          <div class="field col-12 xl:col-6 mb-5">
+            <PvFloatLabel>
+              <PvInputText
                 id="administration-name"
                 v-model="state.administrationName"
                 class="w-full"
                 data-cy="input-administration-name"
               />
-              <label for="administration-name" class="w-full">Assignment Name<span class="required-asterisk">*</span></label>
+              <label for="administration-name" class="w-full"
+                >Assignment Name<span class="required-asterisk">*</span></label
+              >
             </PvFloatLabel>
             <small
-                v-if="v$.administrationName.$invalid && submitted"
-                class="p-error white-space-nowrap overflow-hidden text-overflow-ellipsis"
-                >Please name your assignment</small
-              >
+              v-if="v$.administrationName.$invalid && submitted"
+              class="p-error white-space-nowrap overflow-hidden text-overflow-ellipsis"
+              >Please name your assignment</small
+            >
           </div>
         </div>
         <div class="formgrid grid">
@@ -47,9 +49,14 @@
                 show-button-bar
                 data-cy="input-start-date"
               />
-              <label for="start-date">Start Date <span class="required-asterisk">*</span></label> 
+              <label for="start-date"
+                >Start Date <span class="required-asterisk">*</span></label
+              >
             </PvFloatLabel>
-            <small v-if="v$.dateStarted.required.$invalid && submitted" class="p-error">
+            <small
+              v-if="v$.dateStarted.required.$invalid && submitted"
+              class="p-error"
+            >
               Please select a start date.
             </small>
           </div>
@@ -66,16 +73,38 @@
                 show-button-bar
                 data-cy="input-end-date"
               />
-              <label for="end-date">End Date <span class="required-asterisk">*</span></label>
+              <label for="end-date"
+                >End Date <span class="required-asterisk">*</span></label
+              >
             </PvFloatLabel>
-            <small v-if="v$.dateClosed.required.$invalid && submitted" class="p-error">
+            <small
+              v-if="v$.dateClosed.required.$invalid && submitted"
+              class="p-error"
+            >
               Please select an end date.
             </small>
           </div>
         </div>
 
-        <GroupPicker ref="groupPicker" class="group-picker-component" :orgs="orgsList" @selection="selection($event)" />
-        <small v-if="submitted && !checkForRequiredOrgs({ districts: state.districts, schools: state.schools, classes: state.classes, groups: state.groups, families: state.families })" class="p-error mb-8">
+        <GroupPicker
+          ref="groupPicker"
+          class="group-picker-component"
+          :orgs="orgsList"
+          @selection="selection($event)"
+        />
+        <small
+          v-if="
+            submitted &&
+            !checkForRequiredOrgs({
+              districts: state.districts,
+              schools: state.schools,
+              classes: state.classes,
+              groups: state.groups,
+              families: state.families,
+            })
+          "
+          class="p-error mb-8"
+        >
           Please select at least one Group (Site, School, Class, or Cohort).
         </small>
 
@@ -92,15 +121,26 @@
         </small>
 
         <div v-if="!isLevante" class="mt-2 flex w-full">
-          <ConsentPicker :legal="state.legal" @consent-selected="handleConsentSelected" />
-          <small v-if="submitted && v$.consent.$invalid && v$.consent.$invalid" class="p-error mt-2"
+          <ConsentPicker
+            :legal="state.legal"
+            @consent-selected="handleConsentSelected"
+          />
+          <small
+            v-if="submitted && v$.consent.$invalid && v$.consent.$invalid"
+            class="p-error mt-2"
             >Please select a consent/assent form.</small
           >
         </div>
         <div class="flex flex-column justify-content-center mt-5">
-          <div class="flex flex-column mt-2 align-items-center justify-content-center">
+          <div
+            class="flex flex-column mt-2 align-items-center justify-content-center"
+          >
             <div class="flex">
-              <label style="font-weight: bold" class="mb-2 mx-2">Sequential Task Order<span class="required-asterisk">*</span></label>
+              <label style="font-weight: bold" class="mb-2 mx-2"
+                >Sequential Task Order<span class="required-asterisk"
+                  >*</span
+                ></label
+              >
               <span class="flex gap-2">
                 <PvRadioButton
                   v-model="state.sequential"
@@ -117,12 +157,21 @@
                 <label for="No">No</label>
               </span>
             </div>
-            <small v-if="v$.sequential.$invalid && submitted" class="p-error mt-2"
-                >Please specify sequential behavior.</small
-              >
+            <small
+              v-if="v$.sequential.$invalid && submitted"
+              class="p-error mt-2"
+              >Please specify sequential behavior.</small
+            >
             <div v-if="!isLevante" class="mt-2 mb-2">
-              <PvCheckbox v-model="isTestData" :binary="true" data-cy="checkbutton-test-data" input-id="isTestData" />
-              <label for="isTestData" class="ml-2">Mark As <b>Test Administration</b></label>
+              <PvCheckbox
+                v-model="isTestData"
+                :binary="true"
+                data-cy="checkbutton-test-data"
+                input-id="isTestData"
+              />
+              <label for="isTestData" class="ml-2"
+                >Mark As <b>Test Administration</b></label
+              >
             </div>
           </div>
           <div class="divider mx-2 my-3" />
@@ -135,7 +184,8 @@
               :disabled="!state.administrationName || isSubmitting"
               @click="submit"
             >
-              <i v-if="isSubmitting" class="pi pi-spinner pi-spin mr-2"></i> {{ submitLabel }}
+              <i v-if="isSubmitting" class="pi pi-spinner pi-spin mr-2"></i>
+              {{ submitLabel }}
             </PvButton>
           </div>
         </div>
@@ -145,52 +195,56 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref, toRaw, watch } from 'vue';
-import { useRouter } from 'vue-router';
-import { storeToRefs } from 'pinia';
-import { useToast } from 'primevue/usetoast';
-import PvFloatLabel from 'primevue/floatlabel';
-import PvButton from 'primevue/button';
-import PvDatePicker from 'primevue/datepicker';
-import PvCheckbox from 'primevue/checkbox';
-import PvDivider from 'primevue/divider';
-import PvInputText from 'primevue/inputtext';
-import PvRadioButton from 'primevue/radiobutton';
-import _filter from 'lodash/filter';
-import _isEmpty from 'lodash/isEmpty';
-import _toPairs from 'lodash/toPairs';
-import _uniqBy from 'lodash/uniqBy';
-import _forEach from 'lodash/forEach';
-import _find from 'lodash/find';
-import _isEqual from 'lodash/isEqual';
-import _union from 'lodash/union';
-import _groupBy from 'lodash/groupBy';
-import _values from 'lodash/values';
-import { useVuelidate } from '@vuelidate/core';
-import { required, requiredIf } from '@vuelidate/validators';
-import { useAuthStore } from '@/store/auth';
-import useAdministrationsQuery from '@/composables/queries/useAdministrationsQuery';
-import useDistrictsQuery from '@/composables/queries/useDistrictsQuery';
-import useSchoolsQuery from '@/composables/queries/useSchoolsQuery';
-import useClassesQuery from '@/composables/queries/useClassesQuery';
-import useGroupsQuery from '@/composables/queries/useGroupsQuery';
-import useFamiliesQuery from '@/composables/queries/useFamiliesQuery';
-import useTaskVariantsQuery from '@/composables/queries/useTaskVariantsQuery';
-import useUpsertAdministrationMutation from '@/composables/mutations/useUpsertAdministrationMutation';
-import TaskPicker from '@/components/TaskPicker.vue';
-import ConsentPicker from '@/components/ConsentPicker.vue';
-import GroupPicker from '@/components/GroupPicker.vue';
-import { APP_ROUTES } from '@/constants/routes';
-import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
-import { isLevante } from '@/helpers';
-import { useQueryClient } from '@tanstack/vue-query';
+import { computed, onMounted, reactive, ref, toRaw, watch } from "vue";
+import { useRouter } from "vue-router";
+import { storeToRefs } from "pinia";
+import { useToast } from "primevue/usetoast";
+import PvFloatLabel from "primevue/floatlabel";
+import PvButton from "primevue/button";
+import PvDatePicker from "primevue/datepicker";
+import PvCheckbox from "primevue/checkbox";
+import PvDivider from "primevue/divider";
+import PvInputText from "primevue/inputtext";
+import PvRadioButton from "primevue/radiobutton";
+import _filter from "lodash/filter";
+import _isEmpty from "lodash/isEmpty";
+import _toPairs from "lodash/toPairs";
+import _uniqBy from "lodash/uniqBy";
+import _forEach from "lodash/forEach";
+import _find from "lodash/find";
+import _isEqual from "lodash/isEqual";
+import _union from "lodash/union";
+import _groupBy from "lodash/groupBy";
+import _values from "lodash/values";
+import { useVuelidate } from "@vuelidate/core";
+import { required, requiredIf } from "@vuelidate/validators";
+import { useAuthStore } from "@/store/auth";
+import useAdministrationsQuery from "@/composables/queries/useAdministrationsQuery";
+import useDistrictsQuery from "@/composables/queries/useDistrictsQuery";
+import useSchoolsQuery from "@/composables/queries/useSchoolsQuery";
+import useClassesQuery from "@/composables/queries/useClassesQuery";
+import useGroupsQuery from "@/composables/queries/useGroupsQuery";
+import useFamiliesQuery from "@/composables/queries/useFamiliesQuery";
+import useTaskVariantsQuery from "@/composables/queries/useTaskVariantsQuery";
+import useUpsertAdministrationMutation from "@/composables/mutations/useUpsertAdministrationMutation";
+import TaskPicker from "@/components/TaskPicker.vue";
+import ConsentPicker from "@/components/ConsentPicker.vue";
+import GroupPicker from "@/components/GroupPicker.vue";
+import { APP_ROUTES } from "@/constants/routes";
+import {
+  TOAST_SEVERITIES,
+  TOAST_DEFAULT_LIFE_DURATION,
+} from "@/constants/toasts";
+import { isLevante } from "@/helpers";
+import { useQueryClient } from "@tanstack/vue-query";
 
 const initialized = ref(false);
 const router = useRouter();
 const toast = useToast();
 const queryClient = useQueryClient();
 
-const { mutate: upsertAdministration, isPending: isSubmitting } = useUpsertAdministrationMutation();
+const { mutate: upsertAdministration, isPending: isSubmitting } =
+  useUpsertAdministrationMutation();
 
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
@@ -201,22 +255,22 @@ const props = defineProps({
 
 const header = computed(() => {
   if (props.adminId) {
-    return 'Edit an assignment';
+    return "Edit an assignment";
   }
 
-  return 'Create Assignment';
+  return "Create Assignment";
 });
 
 const description = computed(() => {
-  return 'An assignment is a collection of tasks assigned to users who are members of a group';
+  return "An assignment is a collection of tasks assigned to users who are members of a group";
 });
 
 const submitLabel = computed(() => {
   if (props.adminId) {
-    return 'Update Assignment';
+    return "Update Assignment";
   }
 
-  return 'Create Assignment';
+  return "Create Assignment";
 });
 
 // +------------------------------------------------------------------------------------------------------------------+
@@ -239,46 +293,61 @@ const { data: allVariants } = useTaskVariantsQuery(true, {
 // | Fetch pre-existing administration data when editing an administration
 // +------------------------------------------------------------------------------------------------------------------+
 // Fetch the data of the currently being edited administration, incl. its assigned assessments.
-const fetchAdminitrations = computed(() => initialized.value && !!props.adminId);
-const { data: existingAdministrationData } = useAdministrationsQuery([props.adminId], {
-  enabled: fetchAdminitrations,
-  select: (data) => data[0],
-});
+const fetchAdminitrations = computed(
+  () => initialized.value && !!props.adminId,
+);
+const { data: existingAdministrationData } = useAdministrationsQuery(
+  [props.adminId],
+  {
+    enabled: fetchAdminitrations,
+    select: (data) => data[0],
+  },
+);
 
 const existingAssessments = computed(() => {
   return existingAdministrationData?.value?.assessments ?? [];
 });
 
 // Fetch the districts assigned to the administration.
-const districtIds = computed(() => existingAdministrationData?.value?.minimalOrgs?.districts ?? []);
+const districtIds = computed(
+  () => existingAdministrationData?.value?.minimalOrgs?.districts ?? [],
+);
 
 const { data: existingDistrictsData } = useDistrictsQuery(districtIds, {
   enabled: initialized,
 });
 
 // Fetch the schools assigned to the administration.
-const schoolIds = computed(() => existingAdministrationData.value?.minimalOrgs?.schools ?? []);
+const schoolIds = computed(
+  () => existingAdministrationData.value?.minimalOrgs?.schools ?? [],
+);
 
 const { data: existingSchoolsData } = useSchoolsQuery(schoolIds, {
   enabled: initialized,
 });
 
 // Fetch the classes assigned to the administration.
-const classIds = computed(() => existingAdministrationData.value?.minimalOrgs?.classes ?? []);
+const classIds = computed(
+  () => existingAdministrationData.value?.minimalOrgs?.classes ?? [],
+);
 
 const { data: existingClassesData } = useClassesQuery(classIds, {
   enabled: initialized,
 });
 
 // Fetch the groups assigned to the administration.
-const groupIds = computed(() => existingAdministrationData.value?.minimalOrgs?.groups ?? []);
+const groupIds = computed(
+  () => existingAdministrationData.value?.minimalOrgs?.groups ?? [],
+);
 
 const { data: existingGroupData } = useGroupsQuery(groupIds, {
   enabled: initialized,
 });
 
 // Fetch the families assigned to the administration.
-const familyIds = computed(() => existingAdministrationData.value?.minimalOrgs?.families ?? []);
+const familyIds = computed(
+  () => existingAdministrationData.value?.minimalOrgs?.families ?? [],
+);
 
 const { data: existingFamiliesData } = useFamiliesQuery(familyIds, {
   enabled: initialized,
@@ -287,14 +356,14 @@ const { data: existingFamiliesData } = useFamiliesQuery(familyIds, {
 // +------------------------------------------------------------------------------------------------------------------+
 // | Form state and validation rules
 // +------------------------------------------------------------------------------------------------------------------+
-let noConsent = ref('');
+let noConsent = ref("");
 
 const submitted = ref(false);
 const isTestData = ref(false);
 
 const state = reactive({
-  administrationName: '',
-  administrationPublicName: '',
+  administrationName: "",
+  administrationPublicName: "",
   dateStarted: null,
   dateClosed: null,
   sequential: null,
@@ -306,8 +375,8 @@ const state = reactive({
   classes: [],
   groups: [],
   families: [],
-  amount: '',
-  expectedTime: '',
+  amount: "",
+  expectedTime: "",
 });
 
 const rules = {
@@ -315,8 +384,8 @@ const rules = {
   dateStarted: { required },
   dateClosed: { required },
   sequential: { required },
-  consent: { requiredIf: requiredIf(!isLevante && noConsent.value === '') },
-  assent: { requiredIf: requiredIf(!isLevante && noConsent.value === '') },
+  consent: { requiredIf: requiredIf(!isLevante && noConsent.value === "") },
+  assent: { requiredIf: requiredIf(!isLevante && noConsent.value === "") },
 };
 
 const v$ = useVuelidate(rules, state);
@@ -359,10 +428,10 @@ const selection = (selected) => {
 // +------------------------------------------------------------------------------------------------------------------+
 const variants = ref([]);
 const preSelectedVariants = ref([]);
-const nonUniqueTasks = ref('');
+const nonUniqueTasks = ref("");
 
 const variantsByTaskId = computed(() => {
-  return _groupBy(allVariants.value, 'task.id');
+  return _groupBy(allVariants.value, "task.id");
 });
 
 const handleVariantsChanged = (newVariants) => {
@@ -370,8 +439,8 @@ const handleVariantsChanged = (newVariants) => {
 };
 
 const handleConsentSelected = (newConsentAssent) => {
-  if (newConsentAssent !== 'No Consent') {
-    noConsent.value = '';
+  if (newConsentAssent !== "No Consent") {
+    noConsent.value = "";
     state.consent = newConsentAssent.consent;
     state.assent = newConsentAssent.assent;
     state.amount = newConsentAssent.amount;
@@ -412,7 +481,9 @@ const removeNull = (obj) => {
 
 const removeUndefined = (obj) => {
   // eslint-disable-next-line no-unused-vars
-  return Object.fromEntries(Object.entries(obj).filter(([_, v]) => v !== undefined));
+  return Object.fromEntries(
+    Object.entries(obj).filter(([_, v]) => v !== undefined),
+  );
 };
 
 const scrollToError = (elementId) => {
@@ -423,50 +494,51 @@ const scrollToError = (elementId) => {
       // Get the element's position relative to the viewport
       const rect = element.getBoundingClientRect();
       // Calculate the scroll position
-      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      const scrollTop =
+        window.pageYOffset || document.documentElement.scrollTop;
       const targetPosition = rect.top + scrollTop - 100; // Offset by 100px to account for any fixed headers
 
       // Smooth scroll to the element
       window.scrollTo({
         top: targetPosition,
-        behavior: 'smooth'
+        behavior: "smooth",
       });
 
       // Add highlight effect
-      element.classList.add('error-highlight');
+      element.classList.add("error-highlight");
       setTimeout(() => {
-        element.classList.remove('error-highlight');
+        element.classList.remove("error-highlight");
       }, 2000);
     }
   }, 100);
 };
 
 const submit = async () => {
-  console.log('Submit function called');
+  console.log("Submit function called");
   submitted.value = true;
 
   // Set publicName automatically based on administrationName
   state.administrationPublicName = state.administrationName;
-  console.log('Set administrationPublicName:', state.administrationPublicName);
+  console.log("Set administrationPublicName:", state.administrationPublicName);
 
   // First check dates
   if (!state.dateStarted || !state.dateClosed) {
     if (!state.dateStarted) {
       toast.add({
         severity: TOAST_SEVERITIES.ERROR,
-        summary: 'Required Field Missing',
-        detail: 'Please select a start date',
+        summary: "Required Field Missing",
+        detail: "Please select a start date",
         life: TOAST_DEFAULT_LIFE_DURATION,
       });
-      scrollToError('start-date');
+      scrollToError("start-date");
     } else {
       toast.add({
         severity: TOAST_SEVERITIES.ERROR,
-        summary: 'Required Field Missing',
-        detail: 'Please select an end date',
+        summary: "Required Field Missing",
+        detail: "Please select an end date",
         life: TOAST_DEFAULT_LIFE_DURATION,
       });
-      scrollToError('end-date');
+      scrollToError("end-date");
     }
     return;
   }
@@ -480,30 +552,34 @@ const submit = async () => {
     families: toRaw(state.families).map((org) => org.id),
   };
 
-  console.log('Checking required orgs...', orgs);
+  console.log("Checking required orgs...", orgs);
   const orgsValid = checkForRequiredOrgs(orgs);
-  console.log('Orgs valid result:', orgsValid);
+  console.log("Orgs valid result:", orgsValid);
   if (!orgsValid) {
-    console.log('Org check failed, showing toast.');
+    console.log("Org check failed, showing toast.");
     toast.add({
       severity: TOAST_SEVERITIES.ERROR,
-      summary: 'Missing Selection',
-      detail: 'Please select at least one Group (Site, School, Class, or Cohort).',
+      summary: "Missing Selection",
+      detail:
+        "Please select at least one Group (Site, School, Class, or Cohort).",
       life: TOAST_DEFAULT_LIFE_DURATION,
     });
     // Scroll to the GroupPicker component
-    const groupPickerElement = document.querySelector('.group-picker-component');
+    const groupPickerElement = document.querySelector(
+      ".group-picker-component",
+    );
     if (groupPickerElement) {
       const rect = groupPickerElement.getBoundingClientRect();
-      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      const scrollTop =
+        window.pageYOffset || document.documentElement.scrollTop;
       const targetPosition = rect.top + scrollTop - 100;
       window.scrollTo({
         top: targetPosition,
-        behavior: 'smooth'
+        behavior: "smooth",
       });
-      groupPickerElement.classList.add('error-highlight');
+      groupPickerElement.classList.add("error-highlight");
       setTimeout(() => {
-        groupPickerElement.classList.remove('error-highlight');
+        groupPickerElement.classList.remove("error-highlight");
       }, 2000);
     }
     return;
@@ -516,32 +592,36 @@ const submit = async () => {
       variantName: assessment.variant.name,
       taskId: assessment.task.id,
       params: toRaw(assessment.variant.params),
-      ...(toRaw(assessment.variant.conditions || undefined) && { conditions: toRaw(assessment.variant.conditions) }),
+      ...(toRaw(assessment.variant.conditions || undefined) && {
+        conditions: toRaw(assessment.variant.conditions),
+      }),
     }),
   );
 
-  console.log('Checking task uniqueness...', submittedAssessments);
+  console.log("Checking task uniqueness...", submittedAssessments);
   if (_isEmpty(submittedAssessments)) {
-    console.log('Task check failed (empty), showing toast.');
+    console.log("Task check failed (empty), showing toast.");
     toast.add({
       severity: TOAST_SEVERITIES.ERROR,
-      summary: 'Task Selections',
-      detail: 'No variants selected. You must select at least one variant to be assigned.',
+      summary: "Task Selections",
+      detail:
+        "No variants selected. You must select at least one variant to be assigned.",
       life: TOAST_DEFAULT_LIFE_DURATION,
     });
     // Scroll to the TaskPicker component
-    const taskPickerElement = document.querySelector('.task-picker-component');
+    const taskPickerElement = document.querySelector(".task-picker-component");
     if (taskPickerElement) {
       const rect = taskPickerElement.getBoundingClientRect();
-      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      const scrollTop =
+        window.pageYOffset || document.documentElement.scrollTop;
       const targetPosition = rect.top + scrollTop - 100;
       window.scrollTo({
         top: targetPosition,
-        behavior: 'smooth'
+        behavior: "smooth",
       });
-      taskPickerElement.classList.add('error-highlight');
+      taskPickerElement.classList.add("error-highlight");
       setTimeout(() => {
-        taskPickerElement.classList.remove('error-highlight');
+        taskPickerElement.classList.remove("error-highlight");
       }, 2000);
     }
     return;
@@ -551,11 +631,12 @@ const submit = async () => {
   if (v$.value.sequential.$invalid) {
     toast.add({
       severity: TOAST_SEVERITIES.ERROR,
-      summary: 'Required Field Missing',
-      detail: 'Please specify whether tasks should be completed sequentially or not',
+      summary: "Required Field Missing",
+      detail:
+        "Please specify whether tasks should be completed sequentially or not",
       life: TOAST_DEFAULT_LIFE_DURATION,
     });
-    scrollToError('radio-button-not-sequential');
+    scrollToError("radio-button-not-sequential");
     return;
   }
 
@@ -574,8 +655,8 @@ const submit = async () => {
     legal: {
       consent: toRaw(state).consent ?? null,
       assent: toRaw(state).assent ?? null,
-      amount: toRaw(state).amount ?? '',
-      expectedTime: toRaw(state).expectedTime ?? '',
+      amount: toRaw(state).amount ?? "",
+      expectedTime: toRaw(state).expectedTime ?? "",
     },
   };
 
@@ -585,25 +666,27 @@ const submit = async () => {
     onSuccess: () => {
       toast.add({
         severity: TOAST_SEVERITIES.SUCCESS,
-        summary: 'Success',
-        detail: props.adminId ? 'Administration updated' : 'Administration created',
+        summary: "Success",
+        detail: props.adminId
+          ? "Administration updated"
+          : "Administration created",
         life: TOAST_DEFAULT_LIFE_DURATION,
       });
 
-      queryClient.invalidateQueries({ queryKey: ['administrations-list'] });
-      console.log('Invalidated administrations list query cache.')
+      queryClient.invalidateQueries({ queryKey: ["administrations-list"] });
+      console.log("Invalidated administrations list query cache.");
 
       router.push({ path: APP_ROUTES.HOME });
     },
     onError: (error) => {
       toast.add({
         severity: TOAST_SEVERITIES.ERROR,
-        summary: 'Error',
+        summary: "Error",
         detail: error.message,
         life: TOAST_DEFAULT_LIFE_DURATION,
       });
 
-      console.error('Error creating administration:', error.message);
+      console.error("Error creating administration:", error.message);
     },
   });
 };
@@ -625,44 +708,60 @@ onMounted(async () => {
   if (roarfirekit.value.restConfig) init();
 });
 
-watch([existingAdministrationData, allVariants], ([adminInfo, allVariantInfo]) => {
-  if (adminInfo && !_isEmpty(allVariantInfo)) {
-    state.administrationName = adminInfo.name;
-    state.administrationPublicName = adminInfo.name;
-    state.dateStarted = new Date(adminInfo.dateOpened);
-    state.dateClosed = new Date(adminInfo.dateClosed);
-    state.sequential = adminInfo.sequential;
-    _forEach(adminInfo.assessments, (assessment) => {
-      const assessmentParams = assessment.params;
-      const taskId = assessment.taskId;
-      const allVariantsForThisTask = _filter(allVariantInfo, (variant) => variant.task.id === taskId);
-      const found = findVariantWithParams(allVariantsForThisTask, assessmentParams);
-      if (found) {
-        preSelectedVariants.value = _union(preSelectedVariants.value, [found]);
-      }
-    });
-    state.legal = adminInfo.legal;
-    state.consent = adminInfo?.legal?.consent ?? null;
-    state.assent = adminInfo?.legal?.assent ?? null;
-    isTestData.value = adminInfo.testData;
+watch(
+  [existingAdministrationData, allVariants],
+  ([adminInfo, allVariantInfo]) => {
+    if (adminInfo && !_isEmpty(allVariantInfo)) {
+      state.administrationName = adminInfo.name;
+      state.administrationPublicName = adminInfo.name;
+      state.dateStarted = new Date(adminInfo.dateOpened);
+      state.dateClosed = new Date(adminInfo.dateClosed);
+      state.sequential = adminInfo.sequential;
+      _forEach(adminInfo.assessments, (assessment) => {
+        const assessmentParams = assessment.params;
+        const taskId = assessment.taskId;
+        const allVariantsForThisTask = _filter(
+          allVariantInfo,
+          (variant) => variant.task.id === taskId,
+        );
+        const found = findVariantWithParams(
+          allVariantsForThisTask,
+          assessmentParams,
+        );
+        if (found) {
+          preSelectedVariants.value = _union(preSelectedVariants.value, [
+            found,
+          ]);
+        }
+      });
+      state.legal = adminInfo.legal;
+      state.consent = adminInfo?.legal?.consent ?? null;
+      state.assent = adminInfo?.legal?.assent ?? null;
+      isTestData.value = adminInfo.testData;
 
-    if (state.consent === 'No Consent') {
-      noConsent.value = state.consent;
+      if (state.consent === "No Consent") {
+        noConsent.value = state.consent;
+      }
     }
-  }
-});
+  },
+);
 </script>
 
 <style lang="scss">
 .required {
-    float: right;
+  float: right;
 }
 .p-datepicker-today span {
-  background-color: var(--blue-100) !important; /* Change to your desired color */
+  background-color: var(
+    --blue-100
+  ) !important; /* Change to your desired color */
 }
 
-.p-datepicker-today .p-datepicker-day-selected,.p-datepicker-day-selected span {
-  background-color: var(--primary-color) !important; /* Change to your selected date color */
+.p-datepicker-today .p-datepicker-day-selected,
+.p-datepicker-day-selected span {
+  background-color: var(
+    --primary-color
+  ) !important; /* Change to your selected date color */
 }
 
 .return-button {
@@ -748,7 +847,7 @@ watch([existingAdministrationData, allVariants], ([adminInfo, allVariantInfo]) =
   }
 
   #heading {
-    font-family: 'Source Sans Pro', sans-serif;
+    font-family: "Source Sans Pro", sans-serif;
     font-weight: 400;
     color: #000000;
     font-size: 1.625rem;
@@ -756,7 +855,7 @@ watch([existingAdministrationData, allVariants], ([adminInfo, allVariantInfo]) =
   }
 
   #section-heading {
-    font-family: 'Source Sans Pro', sans-serif;
+    font-family: "Source Sans Pro", sans-serif;
     font-weight: 400;
     font-size: 1.125rem;
     line-height: 1.5681rem;
@@ -775,7 +874,7 @@ watch([existingAdministrationData, allVariants], ([adminInfo, allVariantInfo]) =
   }
 
   #section-content {
-    font-family: 'Source Sans Pro', sans-serif;
+    font-family: "Source Sans Pro", sans-serif;
     font-weight: 400;
     font-size: 0.875rem;
     line-height: 1.22rem;
@@ -784,12 +883,12 @@ watch([existingAdministrationData, allVariants], ([adminInfo, allVariantInfo]) =
   }
 
   .p-dropdown-label {
-    font-family: 'Source Sans Pro', sans-serif;
+    font-family: "Source Sans Pro", sans-serif;
     color: #c4c4c4;
   }
 
   ::placeholder {
-    font-family: 'Source Sans Pro', sans-serif;
+    font-family: "Source Sans Pro", sans-serif;
     color: #c4c4c4;
   }
 

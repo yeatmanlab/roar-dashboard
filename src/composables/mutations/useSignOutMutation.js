@@ -1,11 +1,11 @@
-import { useMutation, useQueryClient } from '@tanstack/vue-query';
-import { useRouter } from 'vue-router';
-import * as Sentry from '@sentry/vue';
-import { useAuthStore } from '@/store/auth';
-import { SIGN_OUT_MUTATION_KEY } from '@/constants/mutationKeys';
-import { APP_ROUTES } from '@/constants/routes';
-import { useSurveyStore } from '@/store/survey';
-import { useGameStore } from '@/store/game';
+import { useMutation, useQueryClient } from "@tanstack/vue-query";
+import { useRouter } from "vue-router";
+import * as Sentry from "@sentry/vue";
+import { useAuthStore } from "@/store/auth";
+import { SIGN_OUT_MUTATION_KEY } from "@/constants/mutationKeys";
+import { APP_ROUTES } from "@/constants/routes";
+import { useSurveyStore } from "@/store/survey";
+import { useGameStore } from "@/store/game";
 /**
  * Sign-Out mutation.
  *
@@ -32,9 +32,9 @@ const useSignOutMutation = () => {
       authStore.$reset();
       gameStore.$reset();
       surveyStore.$reset();
-      sessionStorage.removeItem('authStore');
-      sessionStorage.removeItem('surveyStore');
-      sessionStorage.removeItem('gameStore');
+      sessionStorage.removeItem("authStore");
+      sessionStorage.removeItem("surveyStore");
+      sessionStorage.removeItem("gameStore");
 
       // Clear the query client to remove all cached data.
       queryClient.clear();
