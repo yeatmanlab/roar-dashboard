@@ -674,7 +674,6 @@ async function submitUsers() {
   }
 
   // TODO: Figure out deadline-exceeded error with 700+ users. (Registration works fine, creates all documents but the client recieves the error)
-  // Spit users into chunks of 1000
   const chunkedUsersToBeRegistered = _chunk(usersToBeRegistered, 700);
 
   // Begin submit process
