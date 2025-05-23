@@ -20,17 +20,10 @@
     </ul>
   </div>
 </template>
-<<<<<<< HEAD
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import _isEmpty from 'lodash/isEmpty';
 import PvChart from 'primevue/chart';
-=======
-<script setup>
-import { ref, computed } from "vue";
-import _isEmpty from "lodash/isEmpty";
-import PvChart from "primevue/chart";
->>>>>>> origin/main
 
 interface Props {
   totalGames: number;

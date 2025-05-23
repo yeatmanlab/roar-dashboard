@@ -2,12 +2,8 @@
   <div class="flex flex-column gap-3">
     <div class="form-container">
       <div class="form-field w-full">
-        <label :class="{ 'font-light uppercase text-sm': !editMode }"
-          >Name</label
-        >
-        <div v-if="!editMode" :class="{ 'text-xl': !editMode }">
-          {{ serverOrgData.name ?? "None" }}
-        </div>
+        <label :class="{ 'font-light uppercase text-sm': !editMode }">Name</label>
+        <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ serverOrgData?.name ?? 'None' }}</div>
         <PvInputText v-else v-model="localOrgData.name" />
       </div>
     </div>
@@ -17,7 +13,6 @@
     </div>
   </div>
 </template>
-<<<<<<< HEAD
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue';
 import { useAuthStore } from '@/store/auth';
@@ -33,17 +28,6 @@ interface Props {
   orgId: string;
   editMode?: boolean;
 }
-=======
-<script setup>
-import { ref, onMounted, watch } from "vue";
-import { useAuthStore } from "@/store/auth";
-import { storeToRefs } from "pinia";
-import { fetchDocById } from "@/helpers/query/utils";
-import { useQuery } from "@tanstack/vue-query";
-import PvChips from "primevue/chips";
-import PvInputText from "primevue/inputtext";
-import _isEmpty from "lodash/isEmpty";
->>>>>>> origin/main
 
 interface Emits {
   modalClosed: [];
@@ -72,24 +56,14 @@ const initialized = ref<boolean>(false);
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
 
-<<<<<<< HEAD
 const emit = defineEmits<Emits>();
-=======
-const emit = defineEmits(["modalClosed", "update:orgData"]);
->>>>>>> origin/main
 
 // +----------------------------+
 // | Query for existing orgData |
 // +----------------------------+
 const { data: serverOrgData } = useQuery({
-<<<<<<< HEAD
   queryKey: ['org', props.orgType, props.orgId],
   queryFn: (): Promise<ServerOrgData> => fetchDocById(props.orgType, props.orgId),
-=======
-  queryKey: ["org", props.orgType, props.orgId],
-  queryFn: () => fetchDocById(props.orgType, props.orgId),
->>>>>>> origin/main
-  keepPreviousData: true,
   enabled: initialized,
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
@@ -102,15 +76,9 @@ const localOrgData = ref<OrgData>({
   tags: [],
 });
 
-<<<<<<< HEAD
 const setupOrgData = (orgData: ServerOrgData | null | undefined): void => {
   const org: OrgData = {
     name: orgData?.name ?? '',
-=======
-const setupOrgData = (orgData) => {
-  let org = {
-    name: orgData?.name ?? "",
->>>>>>> origin/main
     tags: orgData?.tags ?? [],
   };
   localOrgData.value = org;
@@ -136,11 +104,11 @@ const init = (): void => {
 };
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit?.restConfig) init();
+  if ((state.roarfirekit as any)?.restConfig) init();
 });
 
 onMounted((): void => {
-  if (roarfirekit.value?.restConfig) init();
+  if ((roarfirekit.value as any)?.restConfig) init();
   if (!_isEmpty(serverOrgData.value)) setupOrgData(serverOrgData.value);
 });
 
@@ -150,7 +118,7 @@ onMounted((): void => {
 watch(
   () => localOrgData,
   (orgData) => {
-    emit("update:orgData", orgData.value);
+    emit('update:orgData', orgData.value);
   },
   { deep: true, immediate: false },
 );
@@ -193,4 +161,5 @@ g {
   margin-left: 0.5rem;
   color: white;
 }
+
 </style>
