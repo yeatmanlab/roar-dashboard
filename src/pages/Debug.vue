@@ -285,7 +285,7 @@ function sendTestError() {
             <h2 class="text-sm font-bold">Network</h2>
           </div>
           <div class="card-body p-2">
-            <table class="w-full text-sm" v-if="connectionInfo.effectiveType">
+            <table v-if="connectionInfo.effectiveType" class="w-full text-sm">
               <tbody>
                 <tr>
                   <td class="font-semibold pr-2">Connection:</td>
@@ -430,8 +430,8 @@ function sendTestError() {
         <h2 class="text-sm font-bold">Logger Tests</h2>
       </div>
       <div class="card-body p-2 flex gap-2">
-        <Button label="Send Test Event (Force)" @click="sendTestEvent" severity="info" />
-        <Button label="Send Test Error (Force)" @click="sendTestError" severity="danger" />
+        <Button label="Send Test Event (Force)" severity="info" @click="sendTestEvent" />
+        <Button label="Send Test Error (Force)" severity="danger" @click="sendTestError" />
       </div>
     </div>
     <!-- End Logger Test Buttons -->

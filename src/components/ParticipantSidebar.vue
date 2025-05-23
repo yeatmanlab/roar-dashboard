@@ -64,7 +64,7 @@ const chartOptions = ref({
 });
 
 const setChartData = (completed: number, incomplete: number): ChartData => {
-  let docStyle = getComputedStyle(document.documentElement);
+  const docStyle = getComputedStyle(document.documentElement);
 
   return {
     labels: ['Finished', 'Unfinished'],

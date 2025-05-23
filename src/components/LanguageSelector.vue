@@ -40,13 +40,13 @@ interface LanguageChangeEvent {
 const surveyStore = useSurveyStore();
 
 // Convert the object to an array of [key, value] pairs
-let languageOptionsArray: [string, any][] = Object.entries(languageOptions);
+const languageOptionsArray: [string, any][] = Object.entries(languageOptions);
 
 // Sort the array by the key (language code)
 languageOptionsArray.sort((a, b) => a[0].localeCompare(b[1]));
 
 // Convert it back to an object
-let sortedLanguageOptions: Record<string, any> = Object.fromEntries(languageOptionsArray);
+const sortedLanguageOptions: Record<string, any> = Object.fromEntries(languageOptionsArray);
 
 const languageDropdownOptions = computed((): LanguageOption[] => {
   return Object.entries(sortedLanguageOptions).map(([key, value]) => {
@@ -65,8 +65,8 @@ async function onLanguageChange(event: LanguageChangeEvent): Promise<void> {
 
   if (isLevante && surveyStore.survey) {
     console.log('setting survey locale');
-    surveyStore.survey.locale = event.value;
-    await setupStudentAudio(surveyStore.survey, event.value, surveyStore.audioLinkMap, surveyStore);
+    (surveyStore.survey as any).locale = event.value;
+    await setupStudentAudio(surveyStore.survey as any, event.value, surveyStore.audioLinkMap, surveyStore);
   }
 }
 </script>

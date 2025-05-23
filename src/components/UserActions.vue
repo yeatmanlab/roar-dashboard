@@ -33,7 +33,7 @@
 </template>
 
 <script setup lang="ts">
-    import {ref, watchEffect} from 'vue';
+    import { ref, watchEffect } from 'vue';
     import useSignOutMutation from '@/composables/mutations/useSignOutMutation';
     import PvButton from 'primevue/button';
     import PvSelect from 'primevue/select';
@@ -77,9 +77,9 @@
     ];
 
     const profileOptions: DropdownOption[] = [
-        {label: "Settings", value: 'settings'},
-        {label: i18n.t('navBar.signOut'), value: 'signout'}
-    ]
+        { label: 'Settings', value: 'settings' },
+        { label: i18n.t('navBar.signOut'), value: 'signout' },
+    ];
 
     const handleHelpChange = (e: DropdownChangeEvent): void => {
         if (e.value === 'researcherDocumentation') {

@@ -46,7 +46,7 @@
     </p>
 
     <div class="download-button-container">
-      <button class="download-csv-btn" @click="downloadTemplate" data-testid="download-template">
+      <button class="download-csv-btn" data-testid="download-template" @click="downloadTemplate">
         <i class="pi pi-download"></i>
         Download CSV Template
       </button>

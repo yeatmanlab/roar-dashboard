@@ -78,7 +78,7 @@ const localOrgData = ref<OrgData>({
 });
 
 const setupOrgData = (orgData: ServerOrgData | null | undefined): void => {
-  let org: OrgData = {
+  const org: OrgData = {
     name: orgData?.name ?? '',
     tags: orgData?.tags ?? [],
   };
