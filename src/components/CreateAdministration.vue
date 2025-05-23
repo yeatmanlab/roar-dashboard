@@ -52,7 +52,13 @@
             </PvFloatLabel>
           </div>
         </div>
-        <div class="formgrid grid">
+        <AdministrationDatePicker
+          :min-start-date="minStartDate"
+          :min-end-date="minEndDate"
+          v-model:start-date="state.dateStarted"
+          v-model:end-date="state.dateClosed"
+        />
+        <!-- <div class="formgrid grid">
           <div class="field col-12 md:col-6 mb-5">
             <PvFloatLabel>
               <PvDatePicker
@@ -93,7 +99,7 @@
               >
             </PvFloatLabel>
           </div>
-        </div>
+        </div> -->
 
         <OrgPicker :orgs="orgsList" @selection="selection($event)" />
 
@@ -150,6 +156,8 @@
             </div>
           </div>
           <div class="divider mx-2 my-3" />
+          {{ state.dateStarted }}
+          {{ state.dateClosed }}
           <div class="mb-2 w-full flex justify-content-center">
             <PvButton
               :label="submitLabel"
@@ -209,6 +217,7 @@ import OrgPicker from '@/components/OrgPicker.vue';
 import { APP_ROUTES, ADMINISTRATION_FORM_TYPES } from '@/constants/routes';
 import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
 import { usePermissions } from '@/composables/usePermissions';
+import AdministrationDatePicker from '@/components/AdministrationDatePicker/AdministrationDatePicker.vue';
 const { userCan, Permissions } = usePermissions();
 
 const isLevante = import.meta.env.MODE === 'LEVANTE';
