@@ -48,8 +48,8 @@ import {
     tasksToDisplayTotalCorrect,
     rawOnlyTasks,
     scoredTasks,
-  } from '@/helpers/reports.js';
-  import { includedValidityFlags } from '@/helpers/reports';
+  includedValidityFlags,
+} from "@/helpers/reports";
 
 defineProps({
   colData: {
