@@ -2,8 +2,12 @@
   <div class="flex flex-column gap-3">
     <div class="form-container">
       <div class="form-field w-full">
-        <label :class="{ 'font-light uppercase text-sm': !editMode }">Name</label>
-        <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ serverOrgData.name ?? 'None' }}</div>
+        <label :class="{ 'font-light uppercase text-sm': !editMode }"
+          >Name</label
+        >
+        <div v-if="!editMode" :class="{ 'text-xl': !editMode }">
+          {{ serverOrgData.name ?? "None" }}
+        </div>
         <PvInputText v-else v-model="localOrgData.name" />
       </div>
     </div>
@@ -14,15 +18,14 @@
   </div>
 </template>
 <script setup>
-import { ref, onMounted, watch } from 'vue';
-import { useAuthStore } from '@/store/auth';
-import { storeToRefs } from 'pinia';
-import { fetchDocById } from '@/helpers/query/utils';
-import { useQuery } from '@tanstack/vue-query';
-import PvChips from 'primevue/chips';
-import PvInputText from 'primevue/inputtext';
-import _isEmpty from 'lodash/isEmpty';
-
+import { ref, onMounted, watch } from "vue";
+import { useAuthStore } from "@/store/auth";
+import { storeToRefs } from "pinia";
+import { fetchDocById } from "@/helpers/query/utils";
+import { useQuery } from "@tanstack/vue-query";
+import PvChips from "primevue/chips";
+import PvInputText from "primevue/inputtext";
+import _isEmpty from "lodash/isEmpty";
 
 const props = defineProps({
   orgType: { type: String, required: true },
@@ -37,13 +40,13 @@ const initialized = ref(false);
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
 
-const emit = defineEmits(['modalClosed', 'update:orgData']);
+const emit = defineEmits(["modalClosed", "update:orgData"]);
 
 // +----------------------------+
 // | Query for existing orgData |
 // +----------------------------+
 const { data: serverOrgData } = useQuery({
-  queryKey: ['org', props.orgType, props.orgId],
+  queryKey: ["org", props.orgType, props.orgId],
   queryFn: () => fetchDocById(props.orgType, props.orgId),
   keepPreviousData: true,
   enabled: initialized,
@@ -60,7 +63,7 @@ const localOrgData = ref({
 
 const setupOrgData = (orgData) => {
   let org = {
-    name: orgData?.name ?? '',
+    name: orgData?.name ?? "",
     tags: orgData?.tags ?? [],
   };
   localOrgData.value = org;
@@ -100,7 +103,7 @@ onMounted(() => {
 watch(
   () => localOrgData,
   (orgData) => {
-    emit('update:orgData', orgData.value);
+    emit("update:orgData", orgData.value);
   },
   { deep: true, immediate: false },
 );
@@ -143,5 +146,4 @@ g {
   margin-left: 0.5rem;
   color: white;
 }
-
 </style>

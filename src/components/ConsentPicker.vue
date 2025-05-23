@@ -205,14 +205,14 @@
               <div style="width: 80%">
                 <p class="m-0">
                   <span class="font-bold">Name: </span>{{ result.consent[0]?.fileName }} <br />
-                  <div v-if="!isLevante">
+                  <span v-if="!isLevante">
                     <span class="font-bold">Current Commit: </span>{{ result.consent[0]?.currentCommit }}
                     <br />
                     <span class="font-bold">GitHub Org: </span>{{ result.consent[0]?.gitHubOrg }} <br />
                     <span class="font-bold">GitHub Repository: </span>{{ result.consent[0]?.gitHubRepository }}
                     <br />
                     <span class="font-bold">Last Updated: </span>{{ result.consent[0]?.lastUpdated }} <br />
-                  </div>
+                  </span>
                 </p>
               </div>
               <div class="flex align-items-center justify-content-center">

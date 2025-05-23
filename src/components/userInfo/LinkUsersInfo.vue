@@ -1,47 +1,85 @@
 <template>
-    <PvPanel header="Link Users" class="link-users-panel">
-      <div class="info-message-container">
-        <i class="pi pi-exclamation-circle"></i>
-        <p>Make sure you are editing the downloaded file you got after adding users. This new file contains all of your information and LEVANTE UIDs.</p>
-      </div>
-
-      <div class="how-to-section">
-        <h3>How to Link Users</h3>
-        <ol class="numbered-steps">
-          <li><span class="step-number">1</span>Fill in CSV with the user linking data from below. Users need to be linked so we can keep track of their relationships, like assigning the proper specific survey sections to caregiver and teacher users.</li>
-          <li><span class="step-number">2</span>Upload the file and click "Start Linking"</li>
-        </ol>
-      </div>
-
-      <p>The following fields define the columns for your CSV file when linking users. Please refer to the legend below for specific requirements on each field.</p>
-      <ul>
-        <li><b>id</b><span class="field-marker">*</span> - A unique identifier for the user in CSV file.</li>
-        <li><b>userType</b><span class="field-marker">*</span> - The type of user: child, caregiver, teacher.</li>
-        <li><b>caregiverId</b><span class="field-marker">*</span><span class="field-marker">†</span> - A unique identifier (id) for the child's caregiver.</li>
-        <li><b>teacherId</b><span class="field-marker">*</span><span class="field-marker">†</span> - A unique identifier (id) for the child's teacher. (*only required if administering teacher survey)</li>
-        <li><b>uid</b><span class="field-marker">*</span><span class="field-marker">‡</span> - The unique LEVANTE identifier that is returned after user is added to dashboard.</li>
-      </ul>
-
-      <p class="mb-6 legend">
-        <span class="field-marker">*</span> Required for this Step<br/>
-        <span class="field-marker">†</span> Required only for child users. Leave blank for caregiver or teacher users.<br/>
-        <span class="field-marker">‡</span> Created by the platform during Add Users step.
+  <PvPanel header="Link Users" class="link-users-panel">
+    <div class="info-message-container">
+      <i class="pi pi-exclamation-circle"></i>
+      <p>
+        Make sure you are editing the downloaded file you got after adding
+        users. This new file contains all of your information and LEVANTE UIDs.
       </p>
+    </div>
 
-      <p>Below is an example of what your CSV/spreadsheet should look like. Only the required columns will be processed.</p>
-  
-      <img
-        id="link-users-example-image"
-        :src="LEVANTE_BUCKET_URL + '/link_users_example.png'"
-        alt="Link Users CSV example"
-        style="width: 100%; max-width: 1400px; height: auto;"
-      />
-    </PvPanel>
-  </template>
+    <div class="how-to-section">
+      <h3>How to Link Users</h3>
+      <ol class="numbered-steps">
+        <li>
+          <span class="step-number">1</span>Fill in CSV with the user linking
+          data from below. Users need to be linked so we can keep track of their
+          relationships, like assigning the proper specific survey sections to
+          caregiver and teacher users.
+        </li>
+        <li>
+          <span class="step-number">2</span>Upload the file and click "Start
+          Linking"
+        </li>
+      </ol>
+    </div>
+
+    <p>
+      The following fields define the columns for your CSV file when linking
+      users. Please refer to the legend below for specific requirements on each
+      field.
+    </p>
+    <ul>
+      <li>
+        <b>id</b><span class="field-marker">*</span> - A unique identifier for
+        the user in CSV file.
+      </li>
+      <li>
+        <b>userType</b><span class="field-marker">*</span> - The type of user:
+        child, caregiver, teacher.
+      </li>
+      <li>
+        <b>caregiverId</b><span class="field-marker">*</span
+        ><span class="field-marker">†</span> - A unique identifier (id) for the
+        child's caregiver.
+      </li>
+      <li>
+        <b>teacherId</b><span class="field-marker">*</span
+        ><span class="field-marker">†</span> - A unique identifier (id) for the
+        child's teacher. (*only required if administering teacher survey)
+      </li>
+      <li>
+        <b>uid</b><span class="field-marker">*</span
+        ><span class="field-marker">‡</span> - The unique LEVANTE identifier
+        that is returned after user is added to dashboard.
+      </li>
+    </ul>
+
+    <p class="mb-6 legend">
+      <span class="field-marker">*</span> Required for this Step<br />
+      <span class="field-marker">†</span> Required only for child users. Leave
+      blank for caregiver or teacher users.<br />
+      <span class="field-marker">‡</span> Created by the platform during Add
+      Users step.
+    </p>
+
+    <p>
+      Below is an example of what your CSV/spreadsheet should look like. Only
+      the required columns will be processed.
+    </p>
+
+    <img
+      id="link-users-example-image"
+      :src="LEVANTE_BUCKET_URL + '/link_users_example.png'"
+      alt="Link Users CSV example"
+      style="width: 100%; max-width: 1400px; height: auto"
+    />
+  </PvPanel>
+</template>
 
 <script setup>
-  import PvPanel from 'primevue/panel';
-  import { LEVANTE_BUCKET_URL } from '@/constants/bucket';
+import PvPanel from "primevue/panel";
+import { LEVANTE_BUCKET_URL } from "@/constants/bucket";
 </script>
 
 <style scoped>
@@ -62,7 +100,7 @@
     margin: 1rem;
   }
 }
-  
+
 #example-image {
   width: 100%;
   border-radius: 0.5rem;
@@ -134,4 +172,3 @@
   }
 }
 </style>
-  

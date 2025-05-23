@@ -1,11 +1,11 @@
-import { computed, ref } from 'vue';
-import { useQuery } from '@tanstack/vue-query';
-import _isEmpty from 'lodash/isEmpty';
-import useUserType from '@/composables/useUserType';
-import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
-import { computeQueryOverrides } from '@/helpers/computeQueryOverrides';
-import { orgPageFetcher } from '@/helpers/query/orgs';
-import { ORGS_TABLE_QUERY_KEY } from '@/constants/queryKeys';
+import { computed, ref } from "vue";
+import { useQuery } from "@tanstack/vue-query";
+import _isEmpty from "lodash/isEmpty";
+import useUserType from "@/composables/useUserType";
+import useUserClaimsQuery from "@/composables/queries/useUserClaimsQuery";
+import { computeQueryOverrides } from "@/helpers/computeQueryOverrides";
+import { orgPageFetcher } from "@/helpers/query/orgs";
+import { ORGS_TABLE_QUERY_KEY } from "@/constants/queryKeys";
 /**
  * Orgs Table query.
  *
@@ -21,8 +21,16 @@ import { ORGS_TABLE_QUERY_KEY } from '@/constants/queryKeys';
  * @param {QueryOptions|undefined} queryOptions – Optional TanStack query options.
  * @returns {UseQueryResult} The TanStack query result.
  */
-const useOrgsTableQuery = (activeOrgType, selectedDistrict, selectedSchool, orderBy, queryOptions?: UseQueryOptions): UseQueryReturnType => {
-  const { data: userClaims } = useUserClaimsQuery({ enabled: queryOptions?.enabled ?? true });
+const useOrgsTableQuery = (
+  activeOrgType,
+  selectedDistrict,
+  selectedSchool,
+  orderBy,
+  queryOptions?: UseQueryOptions,
+): UseQueryReturnType => {
+  const { data: userClaims } = useUserClaimsQuery({
+    enabled: queryOptions?.enabled ?? true,
+  });
 
   // Get the admin status and administation orgs.
   const { isSuperAdmin } = useUserType(userClaims);
@@ -31,10 +39,19 @@ const useOrgsTableQuery = (activeOrgType, selectedDistrict, selectedSchool, orde
   // Ensure all necessary data is loaded before enabling the query.
   const claimsLoaded = computed(() => !_isEmpty(userClaims?.value?.claims));
   const queryConditions = [() => claimsLoaded.value];
-  const { isQueryEnabled, options } = computeQueryOverrides(queryConditions, queryOptions);
+  const { isQueryEnabled, options } = computeQueryOverrides(
+    queryConditions,
+    queryOptions,
+  );
 
   return useQuery({
-    queryKey: [ORGS_TABLE_QUERY_KEY, activeOrgType, selectedDistrict, selectedSchool, orderBy],
+    queryKey: [
+      ORGS_TABLE_QUERY_KEY,
+      activeOrgType,
+      selectedDistrict,
+      selectedSchool,
+      orderBy,
+    ],
     queryFn: () =>
       orgPageFetcher(
         activeOrgType,

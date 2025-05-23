@@ -1,6 +1,6 @@
-import { ref, watch, onMounted, onUnmounted } from 'vue';
-import { useIdle, useTimestamp } from '@vueuse/core';
-import { useThrottleFn } from '@vueuse/core';
+import { ref, watch, onMounted, onUnmounted } from "vue";
+import { useIdle, useTimestamp } from "@vueuse/core";
+import { useThrottleFn } from "@vueuse/core";
 
 /**
  * Inactivity timeout composable.
@@ -12,8 +12,16 @@ import { useThrottleFn } from '@vueuse/core';
  * @param {Function} options.onTimeout – The timeout callback function.
  * @returns {Object} Object containing the countdown timer and reset function.
  */
-export default function useInactivityTimeout({ idleThreshold, countdownDuration, onIdle, onTimeout }) {
-  const timeoutThreshold = Math.max(0, Math.floor(Number(idleThreshold) + Number(countdownDuration)));
+export default function useInactivityTimeout({
+  idleThreshold,
+  countdownDuration,
+  onIdle,
+  onTimeout,
+}) {
+  const timeoutThreshold = Math.max(
+    0,
+    Math.floor(Number(idleThreshold) + Number(countdownDuration)),
+  );
 
   const isTabActive = ref(true);
   const lastActiveInternal = ref(null);
@@ -21,7 +29,9 @@ export default function useInactivityTimeout({ idleThreshold, countdownDuration,
   const countdownTimer = ref(Math.floor(countdownDuration / 1000));
   const isCountdownTimerActive = ref(false);
 
-  const { idle, lastActive } = useIdle(idleThreshold, { listenForVisibilityChange: false });
+  const { idle, lastActive } = useIdle(idleThreshold, {
+    listenForVisibilityChange: false,
+  });
   const now = useTimestamp({ interval: 1000 });
 
   let countdownIntervalTimer = null;
@@ -127,7 +137,9 @@ export default function useInactivityTimeout({ idleThreshold, countdownDuration,
     clearInterval(countdownIntervalTimer);
     countdownIntervalTimer = null;
 
-    countdownTimer.value = resetToOriginalValue ? Math.floor(countdownDuration / 1000) : 0;
+    countdownTimer.value = resetToOriginalValue
+      ? Math.floor(countdownDuration / 1000)
+      : 0;
   };
 
   /**
@@ -193,12 +205,12 @@ export default function useInactivityTimeout({ idleThreshold, countdownDuration,
   onMounted(() => {
     resetTimer();
     lastActiveInternal.value = lastActive.value;
-    document.addEventListener('visibilitychange', handleVisibilityChange);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
   });
 
   onUnmounted(() => {
     resetTimer();
-    document.removeEventListener('visibilitychange', handleVisibilityChange);
+    document.removeEventListener("visibilitychange", handleVisibilityChange);
   });
 
   return {

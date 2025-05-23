@@ -1,12 +1,21 @@
 <template>
   <div class="p-card card-administration mb-4 w-full">
     <div v-if="props.stats && isSuperAdmin" class="card-admin-chart">
-      <PvChart type="doughnut" :data="doughnutChartData" :options="doughnutChartOptions" />
+      <PvChart
+        type="doughnut"
+        :data="doughnutChartData"
+        :options="doughnutChartOptions"
+      />
     </div>
     <div class="card-admin-body w-full">
       <div class="flex flex-row w-full md:h-2rem sm:h-3rem">
         <div class="flex-grow-1 pr-3 mr-2 p-0 m-0">
-          <h2 data-cy="h2-card-admin-title" class="sm:text-lg lg:text-lx m-0 h2-card-admin-title">{{ title }}</h2>
+          <h2
+            data-cy="h2-card-admin-title"
+            class="sm:text-lg lg:text-lx m-0 h2-card-admin-title"
+          >
+            {{ title }}
+          </h2>
         </div>
         <div class="flex justify-content-end w-3 pl-5 pb-5 ml-2 mb-6">
           <PvSpeedDial
@@ -25,7 +34,8 @@
       <div class="card-admin-details">
         <span class="mr-1"><strong>Availability</strong>:</span>
         <span class="mr-1">
-          {{ processedDates.start.toLocaleDateString() }} — {{ processedDates.end.toLocaleDateString() }}
+          {{ processedDates.start.toLocaleDateString() }} —
+          {{ processedDates.end.toLocaleDateString() }}
         </span>
         <span :class="['status-badge', administrationStatusBadge]">
           {{ administrationStatus }}
@@ -34,8 +44,14 @@
       <div class="card-admin-assessments">
         <span class="mr-1"><strong>Tasks</strong>:</span>
         <template v-if="!isLoadingTasksDictionary">
-          <span v-for="assessmentId in assessmentIds" :key="assessmentId" class="card-inline-list-item">
-            <span>{{ tasksDictionary[assessmentId]?.name ?? assessmentId }}</span>
+          <span
+            v-for="assessmentId in assessmentIds"
+            :key="assessmentId"
+            class="card-inline-list-item"
+          >
+            <span>{{
+              tasksDictionary[assessmentId]?.name ?? assessmentId
+            }}</span>
             <span
               v-if="showParams"
               v-tooltip.top="'View parameters'"
@@ -47,7 +63,11 @@
         </template>
 
         <div v-if="showParams">
-          <PvPopover v-for="assessmentId in assessmentIds" :key="assessmentId" :ref="paramPanelRefs[assessmentId]">
+          <PvPopover
+            v-for="assessmentId in assessmentIds"
+            :key="assessmentId"
+            :ref="paramPanelRefs[assessmentId]"
+          >
             <div v-if="getAssessment(assessmentId).variantId">
               Variant ID: {{ getAssessment(assessmentId).variantId }}
             </div>
@@ -60,8 +80,16 @@
               table-style="min-width: 30rem"
               :value="toEntryObjects(params[assessmentId])"
             >
-              <PvColumn field="key" header="Parameter" style="width: 50%"></PvColumn>
-              <PvColumn field="value" header="Value" style="width: 50%"></PvColumn>
+              <PvColumn
+                field="key"
+                header="Parameter"
+                style="width: 50%"
+              ></PvColumn>
+              <PvColumn
+                field="value"
+                header="Value"
+                style="width: 50%"
+              ></PvColumn>
             </PvDataTable>
           </PvPopover>
         </div>
@@ -73,7 +101,6 @@
         :loading="loadingTreeTable"
         :value="treeTableOrgs"
         @node-expand="onExpand"
-        
       >
         <PvColumn field="name" expander style="width: 20rem"></PvColumn>
         <PvColumn v-if="props.stats && isWideScreen" field="id">
@@ -92,7 +119,11 @@
               <router-link
                 :to="{
                   name: 'ProgressReport',
-                  params: { administrationId: props.id, orgId: node.data.id, orgType: node.data.orgType },
+                  params: {
+                    administrationId: props.id,
+                    orgId: node.data.id,
+                    orgType: node.data.orgType,
+                  },
                 }"
                 class="no-underline text-black"
               >
@@ -113,7 +144,11 @@
                 v-if="!isLevante"
                 :to="{
                   name: 'ScoreReport',
-                  params: { administrationId: props.id, orgId: node.data.id, orgType: node.data.orgType },
+                  params: {
+                    administrationId: props.id,
+                    orgId: node.data.id,
+                    orgType: node.data.orgType,
+                  },
                 }"
                 class="no-underline"
               >
@@ -139,34 +174,37 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue';
-import { useConfirm } from 'primevue/useconfirm';
-import { useToast } from 'primevue/usetoast';
-import { useRouter } from 'vue-router';
-import _fromPairs from 'lodash/fromPairs';
-import _isEmpty from 'lodash/isEmpty';
-import _mapValues from 'lodash/mapValues';
-import _toPairs from 'lodash/toPairs';
-import _without from 'lodash/without';
-import _zip from 'lodash/zip';
-import PvButton from 'primevue/button';
-import PvColumn from 'primevue/column';
-import PvChart from 'primevue/chart';
-import PvConfirmPopup from 'primevue/confirmpopup';
-import PvDataTable from 'primevue/datatable';
-import PvPopover from 'primevue/popover';
-import PvSpeedDial from 'primevue/speeddial';
-import PvTreeTable from 'primevue/treetable';
-import { batchGetDocs } from '@/helpers/query/utils';
-import { taskDisplayNames } from '@/helpers/reports';
-import { setBarChartData, setBarChartOptions } from '@/helpers/plotting';
-import useDsgfOrgQuery from '@/composables/queries/useDsgfOrgQuery';
-import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery';
-import useDeleteAdministrationMutation from '@/composables/mutations/useDeleteAdministrationMutation';
-import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
-import { FIRESTORE_COLLECTIONS } from '@/constants/firebase';
-import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
-import { isLevante } from '@/helpers';
+import { computed, onMounted, ref, watch } from "vue";
+import { useConfirm } from "primevue/useconfirm";
+import { useToast } from "primevue/usetoast";
+import { useRouter } from "vue-router";
+import _fromPairs from "lodash/fromPairs";
+import _isEmpty from "lodash/isEmpty";
+import _mapValues from "lodash/mapValues";
+import _toPairs from "lodash/toPairs";
+import _without from "lodash/without";
+import _zip from "lodash/zip";
+import PvButton from "primevue/button";
+import PvColumn from "primevue/column";
+import PvChart from "primevue/chart";
+import PvConfirmPopup from "primevue/confirmpopup";
+import PvDataTable from "primevue/datatable";
+import PvPopover from "primevue/popover";
+import PvSpeedDial from "primevue/speeddial";
+import PvTreeTable from "primevue/treetable";
+import { batchGetDocs } from "@/helpers/query/utils";
+import { taskDisplayNames } from "@/helpers/reports";
+import { setBarChartData, setBarChartOptions } from "@/helpers/plotting";
+import useDsgfOrgQuery from "@/composables/queries/useDsgfOrgQuery";
+import useTasksDictionaryQuery from "@/composables/queries/useTasksDictionaryQuery";
+import useDeleteAdministrationMutation from "@/composables/mutations/useDeleteAdministrationMutation";
+import { SINGULAR_ORG_TYPES } from "@/constants/orgTypes";
+import { FIRESTORE_COLLECTIONS } from "@/constants/firebase";
+import {
+  TOAST_SEVERITIES,
+  TOAST_DEFAULT_LIFE_DURATION,
+} from "@/constants/toasts";
+import { isLevante } from "@/helpers";
 
 const router = useRouter();
 
@@ -190,56 +228,61 @@ const { mutateAsync: deleteAdministration } = useDeleteAdministrationMutation();
 const administrationStatus = computed(() => {
   const now = new Date();
   const dateClosed = new Date(props.dates.end);
-  let status = 'OPEN'
-  if (now > dateClosed) status = 'CLOSED';
-  return status
+  let status = "OPEN";
+  if (now > dateClosed) status = "CLOSED";
+  return status;
 });
-const administrationStatusBadge = computed(() => administrationStatus.value.toLowerCase()); 
+const administrationStatusBadge = computed(() =>
+  administrationStatus.value.toLowerCase(),
+);
 
-const speedDialItems = computed( () => {
+const speedDialItems = computed(() => {
   const items = [];
 
   if (props.isSuperAdmin) {
     items.push({
-    label: 'Delete',
-    icon: 'pi pi-trash',
-    command: (event) => {
-      confirm.require({
-        target: event.originalEvent.currentTarget,
-        message: 'Are you sure you want to delete this administration?',
-        icon: 'pi pi-exclamation-triangle',
-        accept: async () => {
-          await deleteAdministration(props.id);
+      label: "Delete",
+      icon: "pi pi-trash",
+      command: (event) => {
+        confirm.require({
+          target: event.originalEvent.currentTarget,
+          message: "Are you sure you want to delete this administration?",
+          icon: "pi pi-exclamation-triangle",
+          accept: async () => {
+            await deleteAdministration(props.id);
 
-          toast.add({
-            severity: TOAST_SEVERITIES.INFO,
-            summary: 'Confirmed',
-            detail: `Deleted administration ${props.title}`,
-            life: TOAST_DEFAULT_LIFE_DURATION,
-          });
-        },
-        reject: () => {
-          toast.add({
-            severity: TOAST_SEVERITIES.ERROR,
-            summary: 'Rejected',
-            detail: `Failed to delete administration ${props.title}`,
-            life: TOAST_DEFAULT_LIFE_DURATION,
-          });
-        },
-      });
-    },})
+            toast.add({
+              severity: TOAST_SEVERITIES.INFO,
+              summary: "Confirmed",
+              detail: `Deleted administration ${props.title}`,
+              life: TOAST_DEFAULT_LIFE_DURATION,
+            });
+          },
+          reject: () => {
+            toast.add({
+              severity: TOAST_SEVERITIES.ERROR,
+              summary: "Rejected",
+              detail: `Failed to delete administration ${props.title}`,
+              life: TOAST_DEFAULT_LIFE_DURATION,
+            });
+          },
+        });
+      },
+    });
   }
 
   items.push({
-    label: 'Edit',
-    icon: 'pi pi-pencil',
+    label: "Edit",
+    icon: "pi pi-pencil",
     command: () => {
-      router.push({ name: 'EditAdministration', params: { adminId: props.id } });
+      router.push({
+        name: "EditAdministration",
+        params: { adminId: props.id },
+      });
     },
-  })
+  });
 
   return items;
-
 });
 
 const processedDates = computed(() => {
@@ -251,11 +294,23 @@ const processedDates = computed(() => {
 const assessmentIds = props.assessments
   .map((assessment) => assessment.taskId.toLowerCase())
   .sort((p1, p2) => {
-    return (taskDisplayNames[p1]?.order ?? 0) - (taskDisplayNames[p2]?.order ?? 0);
+    return (
+      (taskDisplayNames[p1]?.order ?? 0) - (taskDisplayNames[p2]?.order ?? 0)
+    );
   });
 
-const paramPanelRefs = _fromPairs(props.assessments.map((assessment) => [assessment.taskId.toLowerCase(), ref()]));
-const params = _fromPairs(props.assessments.map((assessment) => [assessment.taskId.toLowerCase(), assessment.params]));
+const paramPanelRefs = _fromPairs(
+  props.assessments.map((assessment) => [
+    assessment.taskId.toLowerCase(),
+    ref(),
+  ]),
+);
+const params = _fromPairs(
+  props.assessments.map((assessment) => [
+    assessment.taskId.toLowerCase(),
+    assessment.params,
+  ]),
+);
 
 const toEntryObjects = (inputObj) => {
   return _toPairs(inputObj).map(([key, value]) => ({ key, value }));
@@ -266,7 +321,9 @@ const toggleParams = (event, id) => {
 };
 
 function getAssessment(assessmentId) {
-  return props.assessments.find((assessment) => assessment.taskId.toLowerCase() === assessmentId);
+  return props.assessments.find(
+    (assessment) => assessment.taskId.toLowerCase() === assessmentId,
+  );
 }
 
 const showTable = ref(false);
@@ -281,11 +338,16 @@ const isWideScreen = computed(() => {
   return window.innerWidth > 768;
 });
 
-const { data: tasksDictionary, isLoading: isLoadingTasksDictionary } = useTasksDictionaryQuery();
+const { data: tasksDictionary, isLoading: isLoadingTasksDictionary } =
+  useTasksDictionaryQuery();
 
-const { data: orgs, isLoading: isLoadingDsgfOrgs } = useDsgfOrgQuery(props.id, props.assignees, {
-  enabled: enableQueries,
-});
+const { data: orgs, isLoading: isLoadingDsgfOrgs } = useDsgfOrgQuery(
+  props.id,
+  props.assignees,
+  {
+    enabled: enableQueries,
+  },
+);
 
 const loadingTreeTable = computed(() => {
   return isLoadingDsgfOrgs.value || expanding.value;
@@ -302,13 +364,22 @@ watch(showTable, (newValue) => {
 
 const expanding = ref(false);
 const onExpand = async (node) => {
-  if (node.data.orgType === SINGULAR_ORG_TYPES.SCHOOLS && node.children?.length > 0 && !node.data.expanded) {
+  if (
+    node.data.orgType === SINGULAR_ORG_TYPES.SCHOOLS &&
+    node.children?.length > 0 &&
+    !node.data.expanded
+  ) {
     expanding.value = true;
 
     const classPaths = node.children.map(({ data }) => `classes/${data.id}`);
-    const statPaths = node.children.map(({ data }) => `administrations/${props.id}/stats/${data.id}`);
+    const statPaths = node.children.map(
+      ({ data }) => `administrations/${props.id}/stats/${data.id}`,
+    );
 
-    const classPromises = [batchGetDocs(classPaths, ['name', 'schoolId']), batchGetDocs(statPaths)];
+    const classPromises = [
+      batchGetDocs(classPaths, ["name", "schoolId"]),
+      batchGetDocs(statPaths),
+    ];
 
     const [classDocs, classStats] = await Promise.all(classPromises);
 
@@ -324,7 +395,8 @@ const onExpand = async (node) => {
 
     const childNodes = _without(
       _zip(classDocs, classStats).map(([orgDoc, stats], index) => {
-        const { collection = FIRESTORE_COLLECTIONS.CLASSES, ...nodeData } = orgDoc ?? {};
+        const { collection = FIRESTORE_COLLECTIONS.CLASSES, ...nodeData } =
+          orgDoc ?? {};
 
         if (_isEmpty(nodeData)) return undefined;
 
@@ -394,7 +466,7 @@ const doughnutChartData = ref();
 const doughnutChartOptions = ref();
 
 const setDoughnutChartOptions = () => ({
-  cutout: '60%',
+  cutout: "60%",
   showToolTips: true,
   plugins: {
     legend: {
@@ -408,20 +480,24 @@ const setDoughnutChartOptions = () => ({
 
 const setDoughnutChartData = () => {
   const docStyle = getComputedStyle(document.documentElement);
-  let { assigned = 0, started = 0, completed = 0 } = props.stats.total?.assignment || {};
+  let {
+    assigned = 0,
+    started = 0,
+    completed = 0,
+  } = props.stats.total?.assignment || {};
 
   started -= completed;
   assigned -= started + completed;
 
   return {
-    labels: ['Completed', 'Started', 'Assigned'],
+    labels: ["Completed", "Started", "Assigned"],
     datasets: [
       {
         data: [completed, started, assigned],
         backgroundColor: [
-          docStyle.getPropertyValue('--bright-green'),
-          docStyle.getPropertyValue('--yellow-100'),
-          docStyle.getPropertyValue('--surface-d'),
+          docStyle.getPropertyValue("--bright-green"),
+          docStyle.getPropertyValue("--yellow-100"),
+          docStyle.getPropertyValue("--surface-d"),
         ],
         // hoverBackgroundColor: ['green', docStyle.getPropertyValue('--surface-d')]
       },
@@ -459,7 +535,7 @@ onMounted(() => {
 }
 
 .p-dataview-paginator-top {
-  border-bottom: 0px solid transparent!important;
+  border-bottom: 0px solid transparent !important;
 }
 
 .card-administration {
@@ -516,7 +592,7 @@ onMounted(() => {
   position: relative;
 
   &:not(:last-child):after {
-    content: ', ';
+    content: ", ";
   }
 }
 

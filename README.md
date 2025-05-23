@@ -3,10 +3,10 @@
 levante-dashboard serves as the participant and administrator dashboard for LEVANTE (LEarning VAriability NeTwork Exchange) platform.
 
 # LEVANTE Dashboard
+
 This project is a fork of ROAR, with additional support for the Levante environment.
 
 ## NPM Scripts for LEVANTE are listed in package.json
-
 
 ## Legacy Data Flow Diagram from ROAR
 
