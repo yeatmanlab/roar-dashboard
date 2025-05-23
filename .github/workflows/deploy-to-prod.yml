@@ -101,7 +101,7 @@ jobs:
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ steps.generate_token.outputs.token }}
-          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DEV_ADMIN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_PROD_ADMIN }}
           channelId: live
           projectId: hs-levante-admin-prod
           target: production
