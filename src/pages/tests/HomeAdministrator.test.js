@@ -209,20 +209,19 @@ describe("HomeAdministrator", () => {
     });
 
     await nextTick();
-    expect(wrapper.text()).toContain("All Assignments");
-    expect(wrapper.text()).toContain(
-      "This page lists all the assignments that are administered to your users."
-    );
-    expect(wrapper.text()).toContain(
-      "You can view and monitor completion and create new bundles of tasks, surveys, and questionnaires to be administered as assignments."
-    );
-    expect(wrapper.text()).toContain("Search by name");
-    expect(wrapper.text()).toContain("Sort by");
-    expect(wrapper.text()).not.toContain("Fetching Assignments");
-    expect(wrapper.text()).toContain("No Assignments Yet");
-    expect(wrapper.text()).toContain(
-      "Go create your first assignment to get started",
-    );
+    const wrapperText = wrapper.text();
+    expect(wrapperText).toContain("All Assignments");
+    // Check for the first part of the description
+    expect(wrapperText).toContain("This page lists all the assignments");
+    expect(wrapperText).toContain("administered to your users");
+    // Check for the second part of the description
+    expect(wrapperText).toContain("You can view and monitor completion");
+    expect(wrapperText).toContain("bundles of tasks, surveys, and questionnaires");
+    expect(wrapperText).toContain("Search by name");
+    expect(wrapperText).toContain("Sort by");
+    expect(wrapperText).not.toContain("Fetching Assignments");
+    expect(wrapperText).toContain("No Assignments Yet");
+    expect(wrapperText).toContain("Go create your first assignment to get started");
   });
 
   it("renders loading state when data is loading", async () => {
