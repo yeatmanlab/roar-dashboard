@@ -1,12 +1,14 @@
 <template>
   <div>
     <div v-if="!initialized || isLoading || isFetching">
-      <LevanteSpinner fullscreen/>
+      <LevanteSpinner fullscreen />
     </div>
     <div v-else-if="!hasAssignments">
       <div class="col-full text-center py-8">
-        <h1>{{ $t('homeParticipant.noAssignments') }}</h1>
-        <p class="text-center">{{ $t('homeParticipant.contactAdministrator') }}</p>
+        <h1>{{ $t("homeParticipant.noAssignments") }}</h1>
+        <p class="text-center">
+          {{ $t("homeParticipant.contactAdministrator") }}
+        </p>
         <PvButton
           :label="$t('navBar.signOut')"
           class="no-underline bg-primary border-none border-round p-2 text-white hover:bg-red-900"
@@ -23,21 +25,30 @@
         </h2>
       </PvFloatLabel>
       <div class="ml-5 mt-5">
-        <PvFloatLabel >
-          <div v-if="userAssignments?.length > 0" class="flex flex-row align-items-start w-full mt-4">
-            <div class="assignment-select-container ">
-              <div class="flex w-full ">
+        <PvFloatLabel>
+          <div
+            v-if="userAssignments?.length > 0"
+            class="flex flex-row align-items-start w-full mt-4"
+          >
+            <div class="assignment-select-container">
+              <div class="flex w-full">
                 <PvSelect
                   v-model="selectedAdmin"
                   :options="sortedUserAdministrations ?? []"
                   :option-label="
-                    userAssignments.every((administration) => administration.publicName) ? 'publicName' : 'name'
+                    userAssignments.every(
+                      (administration) => administration.publicName,
+                    )
+                      ? 'publicName'
+                      : 'name'
                   "
                   input-id="dd-assignment"
                   data-cy="dropdown-select-administration"
                   @change="toggleShowOptionalAssessments"
                 />
-                <label for="dd-assignment" class="p-0 m-0">{{ $t('homeParticipant.selectAssignment') }}</label>
+                <label for="dd-assignment" class="p-0 m-0">{{
+                  $t("homeParticipant.selectAssignment")
+                }}</label>
               </div>
             </div>
           </div>
@@ -52,12 +63,16 @@
             data-cy="switch-show-optional-assessments"
           />
           <label for="switch-optional" class="mr-2 text-gray-500">{{
-            $t('homeParticipant.showOptionalAssignments')
+            $t("homeParticipant.showOptionalAssignments")
           }}</label>
         </div>
       </div>
       <div class="tabs-container">
-        <ParticipantSidebar :total-games="totalGames" :completed-games="completeGames" :student-info="childInfo" />
+        <ParticipantSidebar
+          :total-games="totalGames"
+          :completed-games="completeGames"
+          :student-info="childInfo"
+        />
         <Transition name="fade" mode="out-in">
           <GameTabs
             v-if="showOptionalAssessments && userData"
@@ -84,53 +99,55 @@
 </template>
 
 <script setup>
-import { onMounted, ref, watch, computed, toRaw } from 'vue';
-import _filter from 'lodash/filter';
-import _get from 'lodash/get';
-import _find from 'lodash/find';
-import _without from 'lodash/without';
-import _isEmpty from 'lodash/isEmpty';
-import { storeToRefs } from 'pinia';
-import PvButton from 'primevue/button';
-import PvSelect from 'primevue/select';
-import PvToggleSwitch from 'primevue/toggleswitch';
-import PvFloatLabel from 'primevue/floatlabel';
-import { useAuthStore } from '@/store/auth';
-import { useGameStore } from '@/store/game';
-import useUserDataQuery from '@/composables/queries/useUserDataQuery';
-import useUserAssignmentsQuery from '@/composables/queries/useUserAssignmentsQuery';
-import useTasksQuery from '@/composables/queries/useTasksQuery';
-import useSurveyResponsesQuery from '@/composables/useSurveyResponses/useSurveyResponses';
-import useUpdateConsentMutation from '@/composables/mutations/useUpdateConsentMutation';
-import useSignOutMutation from '@/composables/mutations/useSignOutMutation';
-import ConsentModal from '@/components/ConsentModal.vue';
-import GameTabs from '@/components/GameTabs.vue';
-import ParticipantSidebar from '@/components/ParticipantSidebar.vue';
-import { useI18n } from 'vue-i18n';
-import axios from 'axios';
-import { LEVANTE_BUCKET_URL } from '@/constants/bucket';
-import { Model, settings } from 'survey-core';
-import { Converter } from 'showdown';
-import { fetchAudioLinks, } from '@/helpers/survey';
-import { useRouter } from 'vue-router';
-import { useToast } from 'primevue/usetoast';
-import { useQueryClient, useQuery } from '@tanstack/vue-query';
-import { initializeSurvey, setupSurveyEventHandlers } from '@/helpers/surveyInitialization';
-import { useSurveyStore } from '@/store/survey';
-import { fetchDocsById } from '@/helpers/query/utils';
-import LevanteSpinner from '@/components/LevanteSpinner.vue';
+import { onMounted, ref, watch, computed, toRaw } from "vue";
+import _filter from "lodash/filter";
+import _get from "lodash/get";
+import _find from "lodash/find";
+import _without from "lodash/without";
+import _isEmpty from "lodash/isEmpty";
+import { storeToRefs } from "pinia";
+import PvButton from "primevue/button";
+import PvSelect from "primevue/select";
+import PvToggleSwitch from "primevue/toggleswitch";
+import PvFloatLabel from "primevue/floatlabel";
+import { useAuthStore } from "@/store/auth";
+import { useGameStore } from "@/store/game";
+import useUserDataQuery from "@/composables/queries/useUserDataQuery";
+import useUserAssignmentsQuery from "@/composables/queries/useUserAssignmentsQuery";
+import useTasksQuery from "@/composables/queries/useTasksQuery";
+import useSurveyResponsesQuery from "@/composables/useSurveyResponses/useSurveyResponses";
+import useUpdateConsentMutation from "@/composables/mutations/useUpdateConsentMutation";
+import useSignOutMutation from "@/composables/mutations/useSignOutMutation";
+import ConsentModal from "@/components/ConsentModal.vue";
+import GameTabs from "@/components/GameTabs.vue";
+import ParticipantSidebar from "@/components/ParticipantSidebar.vue";
+import { useI18n } from "vue-i18n";
+import axios from "axios";
+import { LEVANTE_BUCKET_URL } from "@/constants/bucket";
+import { Model, settings } from "survey-core";
+import { Converter } from "showdown";
+import { fetchAudioLinks } from "@/helpers/survey";
+import { useRouter } from "vue-router";
+import { useToast } from "primevue/usetoast";
+import { useQueryClient, useQuery } from "@tanstack/vue-query";
+import {
+  initializeSurvey,
+  setupSurveyEventHandlers,
+} from "@/helpers/surveyInitialization";
+import { useSurveyStore } from "@/store/survey";
+import { fetchDocsById } from "@/helpers/query/utils";
+import LevanteSpinner from "@/components/LevanteSpinner.vue";
 
 const showConsent = ref(false);
-const consentVersion = ref('');
-const confirmText = ref('');
-const consentType = ref('');
+const consentVersion = ref("");
+const confirmText = ref("");
+const consentType = ref("");
 const consentParams = ref({});
 const { locale } = useI18n();
 const router = useRouter();
 const toast = useToast();
 const queryClient = useQueryClient();
 const surveyStore = useSurveyStore();
-
 
 const { mutateAsync: updateConsentStatus } = useUpdateConsentMutation();
 const { mutate: signOut } = useSignOutMutation();
@@ -173,11 +190,19 @@ const {
 });
 
 const sortedUserAdministrations = computed(() => {
-  return [...(userAssignments.value ?? [])].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+  return [...(userAssignments.value ?? [])].sort((a, b) =>
+    (a.name || "").localeCompare(b.name || ""),
+  );
 });
 
-const taskIds = computed(() => (selectedAdmin.value?.assessments ?? []).map((assessment) => assessment.taskId));
-const tasksQueryEnabled = computed(() => !isLoadingAssignments.value && !_isEmpty(taskIds.value));
+const taskIds = computed(() =>
+  (selectedAdmin.value?.assessments ?? []).map(
+    (assessment) => assessment.taskId,
+  ),
+);
+const tasksQueryEnabled = computed(
+  () => !isLoadingAssignments.value && !_isEmpty(taskIds.value),
+);
 
 const {
   isLoading: isLoadingTasks,
@@ -190,20 +215,29 @@ const {
 // Computed didn't react to selected admin changes, so using a ref instead.
 let hasSurvey = ref(false);
 watch(selectedAdmin, (newAdmin) => {
-  hasSurvey.value = newAdmin?.assessments.some((task) => task.taskId === 'survey');
+  hasSurvey.value = newAdmin?.assessments.some(
+    (task) => task.taskId === "survey",
+  );
 });
-
 
 const { data: surveyResponsesData } = useSurveyResponsesQuery({
   enabled: hasSurvey && initialized,
 });
 
 const isLoading = computed(() => {
-  return isLoadingUserData.value || isLoadingAssignments.value || isLoadingTasks.value;
+  return (
+    isLoadingUserData.value ||
+    isLoadingAssignments.value ||
+    isLoadingTasks.value
+  );
 });
 
 const isFetching = computed(() => {
-  return isFetchingUserData.value || isFetchingAssignments.value || isFetchingTasks.value;
+  return (
+    isFetchingUserData.value ||
+    isFetchingAssignments.value ||
+    isFetchingTasks.value
+  );
 });
 
 const hasAssignments = computed(() => {
@@ -220,20 +254,20 @@ async function checkConsent() {
   // Check if the user has already consented to the Levante consent form
   const consentStatus = userData.value?.legal?.consent;
   if (consentStatus) {
-      return;
-    }
+    return;
+  }
 
-    try {
-      const consentDoc = await authStore.getLegalDoc(`${locale.value}Consent`); 
-      
-      if (!consentDoc) return
+  try {
+    const consentDoc = await authStore.getLegalDoc(`${locale.value}Consent`);
 
-      consentType.value = toRaw(legal).consent[0].type;
-      confirmText.value = consentDoc.text;
-      consentVersion.value = consentDoc.version;
-      showConsent.value = true;
-    } catch {
-    console.log('Error getting consent doc');
+    if (!consentDoc) return;
+
+    consentType.value = toRaw(legal).consent[0].type;
+    confirmText.value = consentDoc.text;
+    consentVersion.value = consentDoc.version;
+    showConsent.value = true;
+  } catch {
+    console.log("Error getting consent doc");
   }
 }
 
@@ -263,19 +297,30 @@ const userType = computed(() => {
 // Assessments to populate the game tabs.
 // Generated based on the current selected administration Id
 const assessments = computed(() => {
-  if (!isFetching.value && selectedAdmin.value && (userTasks.value ?? []).length > 0) {
+  if (
+    !isFetching.value &&
+    selectedAdmin.value &&
+    (userTasks.value ?? []).length > 0
+  ) {
     const fetchedAssessments = _without(
       selectedAdmin.value.assessments.map((assessment) => {
         // Get the matching assessment from userAssignments
-        const matchingAssignment = _find(userAssignments.value, { id: selectedAdmin.value.id });
+        const matchingAssignment = _find(userAssignments.value, {
+          id: selectedAdmin.value.id,
+        });
         const matchingAssessments = matchingAssignment?.assessments ?? [];
-        const matchingAssessment = _find(matchingAssessments, { taskId: assessment.taskId });
+        const matchingAssessment = _find(matchingAssessments, {
+          taskId: assessment.taskId,
+        });
 
         // If no matching assessments were found, then this assessment is not assigned to the user.
         // It is in the administration but the user does not meet the conditional requirements for assignment.
         // Return undefined, which will be filtered out using lodash _without above.
         if (!matchingAssessment) return undefined;
-        const optionalAssessment = _find(matchingAssessments, { taskId: assessment.taskId, optional: true });
+        const optionalAssessment = _find(matchingAssessments, {
+          taskId: assessment.taskId,
+          optional: true,
+        });
         const combinedAssessment = {
           ...matchingAssessment,
           ...optionalAssessment,
@@ -291,18 +336,21 @@ const assessments = computed(() => {
     );
 
     // Mark the survey as complete as if it was a task
-    if (userType.value === 'student') {
+    if (userType.value === "student") {
       if (surveyStore.isGeneralSurveyComplete) {
         fetchedAssessments.forEach((assessment) => {
-          if (assessment.taskId === 'survey') {
+          if (assessment.taskId === "survey") {
             assessment.completedOn = new Date();
           }
         });
       }
-    } else if (userType.value === 'teacher' || userType.value === 'parent') {
-      if (surveyStore.isGeneralSurveyComplete && surveyStore.isSpecificSurveyComplete) {
+    } else if (userType.value === "teacher" || userType.value === "parent") {
+      if (
+        surveyStore.isGeneralSurveyComplete &&
+        surveyStore.isSpecificSurveyComplete
+      ) {
         fetchedAssessments.forEach((assessment) => {
-          if (assessment.taskId === 'survey') {
+          if (assessment.taskId === "survey") {
             assessment.completedOn = new Date();
           }
         });
@@ -329,7 +377,7 @@ const isSequential = computed(() => {
       _find(userAssignments.value, (administration) => {
         return administration.id === selectedAdmin.value.id;
       }),
-      'sequential',
+      "sequential",
     ) ?? true
   );
 });
@@ -341,19 +389,26 @@ let totalGames = computed(() => {
 
 // Total games included in the current assessment
 let completeGames = computed(() => {
-  return _filter(requiredAssessments.value, (task) => task.completedOn).length ?? 0;
+  return (
+    _filter(requiredAssessments.value, (task) => task.completedOn).length ?? 0
+  );
 });
 
 // Set up studentInfo for sidebar
 const studentInfo = computed(() => {
-    return {};
+  return {};
 });
 
 watch(
   [userData, selectedAdmin, userAssignments],
   async ([newUserData, isSelectedAdminChanged]) => {
     // If the assignments are still loading, abort.
-    if (isLoadingAssignments.value || isFetchingAssignments.value || !userAssignments.value?.length) return;
+    if (
+      isLoadingAssignments.value ||
+      isFetchingAssignments.value ||
+      !userAssignments.value?.length
+    )
+      return;
 
     // If the selected admin changed, ensure consent was given before proceeding.
     if (!_isEmpty(newUserData) && isSelectedAdminChanged) {
@@ -361,7 +416,8 @@ watch(
     }
 
     const selectedAdminId = selectedAdmin.value?.id;
-    const allAdminIds = userAssignments.value?.map((administration) => administration.id) ?? [];
+    const allAdminIds =
+      userAssignments.value?.map((administration) => administration.id) ?? [];
 
     // Verify that we have a selected administration and it is in the list of all assigned administrations.
     if (selectedAdminId && allAdminIds.includes(selectedAdminId)) {
@@ -380,47 +436,61 @@ watch(
   { immediate: true },
 );
 
-const {  data: surveyData } = useQuery({
-  queryKey: ['surveys'],
+const { data: surveyData } = useQuery({
+  queryKey: ["surveys"],
   queryFn: async () => {
-    const userType = userData.value.userType; 
+    const userType = userData.value.userType;
 
-    if (userType === 'student') {
-      const resSurvey = await axios.get(`${LEVANTE_BUCKET_URL}/child_survey.json`);
-      const resAudio = await fetchAudioLinks('child-survey');
+    if (userType === "student") {
+      const resSurvey = await axios.get(
+        `${LEVANTE_BUCKET_URL}/child_survey.json`,
+      );
+      const resAudio = await fetchAudioLinks("child-survey");
       surveyStore.setAudioLinkMap(resAudio);
       return {
         general: resSurvey.data,
       };
-    } else if (userType === 'teacher') {
-      const resGeneral = await axios.get(`${LEVANTE_BUCKET_URL}/teacher_survey_general.json`);
-      const resClassroom = await axios.get(`${LEVANTE_BUCKET_URL}/teacher_survey_classroom.json`);
+    } else if (userType === "teacher") {
+      const resGeneral = await axios.get(
+        `${LEVANTE_BUCKET_URL}/teacher_survey_general.json`,
+      );
+      const resClassroom = await axios.get(
+        `${LEVANTE_BUCKET_URL}/teacher_survey_classroom.json`,
+      );
       return {
         general: resGeneral.data,
         specific: resClassroom.data,
       };
     } else {
       // parent
-      const resFamily = await axios.get(`${LEVANTE_BUCKET_URL}/parent_survey_family.json`);
-      const resChild = await axios.get(`${LEVANTE_BUCKET_URL}/parent_survey_child.json`);
+      const resFamily = await axios.get(
+        `${LEVANTE_BUCKET_URL}/parent_survey_family.json`,
+      );
+      const resChild = await axios.get(
+        `${LEVANTE_BUCKET_URL}/parent_survey_child.json`,
+      );
       return {
         general: resFamily.data,
         specific: resChild.data,
       };
     }
   },
-  enabled: userData?.value?.userType !== 'admin' && initialized && hasSurvey,
+  enabled: userData?.value?.userType !== "admin" && initialized && hasSurvey,
   staleTime: 24 * 60 * 60 * 1000, // 24 hours
 });
 
-
 const surveyDependenciesLoaded = computed(() => {
-  return surveyData.value && userData.value && selectedAdmin.value && surveyResponsesData.value
+  return (
+    surveyData.value &&
+    userData.value &&
+    selectedAdmin.value &&
+    surveyResponsesData.value
+  );
 });
 
 const specificSurveyData = computed(() => {
   if (!surveyData.value) return null;
-  return userType.value === 'student' ? null : surveyData.value.specific;
+  return userType.value === "student" ? null : surveyData.value.specific;
 });
 
 function createSurveyInstance(surveyDataToStartAt) {
@@ -440,109 +510,137 @@ function setupMarkdownConverter(surveyInstance) {
   });
 }
 
+watch(
+  surveyDependenciesLoaded,
+  async (isLoaded) => {
+    const isAssessment = selectedAdmin.value?.assessments.some(
+      (task) => task.taskId === "survey",
+    );
+    if (!isLoaded || !isAssessment || surveyStore.survey) return;
 
-watch(surveyDependenciesLoaded, async (isLoaded) => {
-  const isAssessment = selectedAdmin.value?.assessments.some((task) => task.taskId === 'survey');
-  if (!isLoaded || !isAssessment || surveyStore.survey) return;
+    const surveyResponseDoc = (surveyResponsesData.value || []).find(
+      (doc) => doc?.administrationId === selectedAdmin.value.id,
+    );
 
-  const surveyResponseDoc = (surveyResponsesData.value || []).find((doc) => doc?.administrationId === selectedAdmin.value.id);
-  
-  if (surveyResponseDoc) {
-    if (userType.value === 'student') {
-      const isComplete = surveyResponseDoc.general.isComplete;
-      surveyStore.setIsGeneralSurveyComplete(isComplete);
-      if (isComplete) return;
-    } else {
-      surveyStore.setIsGeneralSurveyComplete(surveyResponseDoc.general.isComplete);
+    if (surveyResponseDoc) {
+      if (userType.value === "student") {
+        const isComplete = surveyResponseDoc.general.isComplete;
+        surveyStore.setIsGeneralSurveyComplete(isComplete);
+        if (isComplete) return;
+      } else {
+        surveyStore.setIsGeneralSurveyComplete(
+          surveyResponseDoc.general.isComplete,
+        );
 
-      const numOfSpecificSurveys = userType.value === 'parent' ? userData.value?.childIds?.length : userData.value?.classes?.current?.length;
-      
-      if (surveyResponseDoc.specific && surveyResponseDoc.specific.length > 0) {
-        if (surveyResponseDoc.specific.length === numOfSpecificSurveys && surveyResponseDoc.specific.every(relation => relation.isComplete)) {
-          surveyStore.setIsSpecificSurveyComplete(true);
-        } else {
-          const incompleteIndex = surveyResponseDoc.specific.findIndex(relation => !relation.isComplete);
-          if (incompleteIndex > -1) {
-            surveyStore.setSpecificSurveyRelationIndex(incompleteIndex);
+        const numOfSpecificSurveys =
+          userType.value === "parent"
+            ? userData.value?.childIds?.length
+            : userData.value?.classes?.current?.length;
+
+        if (
+          surveyResponseDoc.specific &&
+          surveyResponseDoc.specific.length > 0
+        ) {
+          if (
+            surveyResponseDoc.specific.length === numOfSpecificSurveys &&
+            surveyResponseDoc.specific.every((relation) => relation.isComplete)
+          ) {
+            surveyStore.setIsSpecificSurveyComplete(true);
           } else {
-            surveyStore.setSpecificSurveyRelationIndex(surveyResponseDoc.specific.length);
+            const incompleteIndex = surveyResponseDoc.specific.findIndex(
+              (relation) => !relation.isComplete,
+            );
+            if (incompleteIndex > -1) {
+              surveyStore.setSpecificSurveyRelationIndex(incompleteIndex);
+            } else {
+              surveyStore.setSpecificSurveyRelationIndex(
+                surveyResponseDoc.specific.length,
+              );
+            }
           }
         }
       }
     }
-  }
 
-  // Fetch child docs for parent or class docs for teacher
-  if ((userType.value === 'parent' || userType.value === 'teacher')) {
-    try {
-      let fetchConfig = [];
-      // Only fetch docs if the user has children or classes. It's possible the user has no children or classes linked yet.
-      if (userType.value === 'parent' && userData.value.childIds) {
-        fetchConfig = userData.value.childIds.map(childId => ({
-          collection: 'users',
-          docId: childId,
-          select: ['birthMonth', 'birthYear'],
-        }));
-      } else if (userType.value === 'teacher' && userData.value.classes?.current) {
-        fetchConfig = userData.value.classes.current.map(classId => ({
-          collection: 'classes',
-          docId: classId,
-          select: ['name'],
-        }));
+    // Fetch child docs for parent or class docs for teacher
+    if (userType.value === "parent" || userType.value === "teacher") {
+      try {
+        let fetchConfig = [];
+        // Only fetch docs if the user has children or classes. It's possible the user has no children or classes linked yet.
+        if (userType.value === "parent" && userData.value.childIds) {
+          fetchConfig = userData.value.childIds.map((childId) => ({
+            collection: "users",
+            docId: childId,
+            select: ["birthMonth", "birthYear"],
+          }));
+        } else if (
+          userType.value === "teacher" &&
+          userData.value.classes?.current
+        ) {
+          fetchConfig = userData.value.classes.current.map((classId) => ({
+            collection: "classes",
+            docId: classId,
+            select: ["name"],
+          }));
+        }
+
+        if (fetchConfig.length > 0) {
+          const res = await fetchDocsById(fetchConfig);
+          surveyStore.setSpecificSurveyRelationData(res);
+        }
+      } catch (error) {
+        console.error("Error fetching relation data:", error);
       }
-      
-      if (fetchConfig.length > 0) {
-        const res = await fetchDocsById(fetchConfig);
-        surveyStore.setSpecificSurveyRelationData(res);
+    }
+
+    if (userType.value === "student" && surveyStore.isGeneralSurveyComplete) {
+      return;
+    } else if (userType.value === "teacher" || userType.value === "parent") {
+      if (
+        surveyStore.isGeneralSurveyComplete &&
+        surveyStore.isSpecificSurveyComplete
+      ) {
+        return;
       }
-    } catch (error) {
-      console.error('Error fetching relation data:', error);
     }
-  }
 
-  if (userType.value === 'student' && surveyStore.isGeneralSurveyComplete) {
-    return
-  } else if (userType.value === 'teacher' || userType.value === 'parent') {
-    if (surveyStore.isGeneralSurveyComplete && surveyStore.isSpecificSurveyComplete) {
-      return
-    }
-  }
+    const surveyDataToStartAt =
+      userType.value === "student" || !surveyStore.isGeneralSurveyComplete
+        ? surveyData.value.general
+        : surveyData.value.specific;
 
+    const surveyInstance = createSurveyInstance(surveyDataToStartAt);
+    setupMarkdownConverter(surveyInstance);
 
-  const surveyDataToStartAt = userType.value === 'student' || !surveyStore.isGeneralSurveyComplete
-    ? surveyData.value.general
-    : surveyData.value.specific;
+    await initializeSurvey({
+      surveyInstance,
+      userType: userType.value,
+      specificSurveyData: specificSurveyData.value,
+      userData: userData.value,
+      surveyStore,
+      locale: locale.value,
+      audioLinkMap: surveyStore.audioLinkMap,
+      generalSurveyData: surveyData.value.general,
+    });
 
-  const surveyInstance = createSurveyInstance(surveyDataToStartAt);
-  setupMarkdownConverter(surveyInstance);
+    setupSurveyEventHandlers({
+      surveyInstance,
+      userType: userType.value,
+      roarfirekit: roarfirekit.value,
+      uid: userData.value.id,
+      selectedAdminId: selectedAdmin.value.id,
+      surveyStore,
+      router,
+      toast,
+      queryClient,
+      userData: userData.value,
+      gameStore,
+    });
 
-  await initializeSurvey({
-    surveyInstance,
-    userType: userType.value,
-    specificSurveyData: specificSurveyData.value,
-    userData: userData.value,
-    surveyStore,
-    locale: locale.value,
-    audioLinkMap: surveyStore.audioLinkMap,
-    generalSurveyData: surveyData.value.general,
-  });
-
-  setupSurveyEventHandlers({
-    surveyInstance,
-    userType: userType.value,
-    roarfirekit: roarfirekit.value,
-    uid: userData.value.id,
-    selectedAdminId: selectedAdmin.value.id,
-    surveyStore,
-    router,
-    toast,
-    queryClient,
-    userData: userData.value,
-    gameStore,
-  });
-
-  surveyStore.setSurvey(surveyInstance);
-}, { immediate: true });
+    surveyStore.setSurvey(surveyInstance);
+  },
+  { immediate: true },
+);
 </script>
 <style scoped>
 .tabs-container {
@@ -581,5 +679,4 @@ watch(surveyDependenciesLoaded, async (isLoaded) => {
     flex-direction: row;
   }
 }
-
 </style>
