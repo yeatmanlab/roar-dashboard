@@ -96,15 +96,11 @@
     </p>
 
     <div class="download-button-container">
-<<<<<<< HEAD
-      <button class="download-csv-btn" data-testid="download-template" @click="downloadTemplate">
-=======
       <button
         class="download-csv-btn"
         data-testid="download-template"
         @click="downloadTemplate"
       >
->>>>>>> origin/main
         <i class="pi pi-download"></i>
         Download CSV Template
       </button>

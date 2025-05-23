@@ -449,10 +449,6 @@ function sendTestError() {
         <h2 class="text-sm font-bold">Logger Tests</h2>
       </div>
       <div class="card-body p-2 flex gap-2">
-<<<<<<< HEAD
-        <Button label="Send Test Event (Force)" severity="info" @click="sendTestEvent" />
-        <Button label="Send Test Error (Force)" severity="danger" @click="sendTestError" />
-=======
         <Button
           label="Send Test Event (Force)"
           severity="info"
@@ -463,7 +459,6 @@ function sendTestError() {
           severity="danger"
           @click="sendTestError"
         />
->>>>>>> origin/main
       </div>
     </div>
     <!-- End Logger Test Buttons -->
