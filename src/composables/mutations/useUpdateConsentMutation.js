@@ -1,8 +1,8 @@
-import { toValue } from 'vue';
-import { useMutation, useQueryClient } from '@tanstack/vue-query';
-import { useAuthStore } from '@/store/auth';
-import { CONSENT_UPDATE_MUTATION_KEY } from '@/constants/mutationKeys';
-import { USER_DATA_QUERY_KEY } from '@/constants/queryKeys';
+import { toValue } from "vue";
+import { useMutation, useQueryClient } from "@tanstack/vue-query";
+import { useAuthStore } from "@/store/auth";
+import { CONSENT_UPDATE_MUTATION_KEY } from "@/constants/mutationKeys";
+import { USER_DATA_QUERY_KEY } from "@/constants/queryKeys";
 
 /**
  * Consent Update mutation.
@@ -22,7 +22,11 @@ const useUpdateConsentMutation = () => {
       const consentVersion = toValue(data.consentVersion);
       const consentParams = toValue(data.consentParams) || {};
 
-      await authStore.roarfirekit.updateConsentStatus(consentType, consentVersion, consentParams);
+      await authStore.roarfirekit.updateConsentStatus(
+        consentType,
+        consentVersion,
+        consentParams,
+      );
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [USER_DATA_QUERY_KEY] });

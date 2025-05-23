@@ -29,6 +29,7 @@
   </PvCard>
 </template>
 
+<<<<<<< HEAD
 <script setup lang="ts">
 import { ref } from 'vue';
 import PvButton from 'primevue/button';
@@ -53,6 +54,25 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const playLabel = ref<string>(props.completed ? 'Play again' : 'Play');
+=======
+<script setup>
+import { ref } from "vue";
+import PvButton from "primevue/button";
+import PvCard from "primevue/card";
+import PvInlineMessage from "primevue/inlinemessage";
+import PvTag from "primevue/tag";
+
+const props = defineProps({
+  gameId: { type: String, required: true },
+  title: { type: String, required: true },
+  description: { type: String, required: true },
+  metadata: { type: Object, default: () => {} },
+  imgSrc: { type: String, default: "" },
+  completed: { type: Boolean, default: false, required: true },
+  statusText: { type: String, default: "", required: false },
+});
+const playLabel = ref(props.completed ? "Play again" : "Play");
+>>>>>>> origin/main
 </script>
 
 <style lang="scss">
@@ -94,7 +114,7 @@ const playLabel = ref<string>(props.completed ? 'Play again' : 'Play');
     color: inherit;
 
     &:before {
-      content: ' ';
+      content: " ";
       position: absolute;
       top: 0;
       left: 0;
@@ -118,7 +138,7 @@ const playLabel = ref<string>(props.completed ? 'Play again' : 'Play');
   }
 
   // Not completed
-  &[data-completed='false'] {
+  &[data-completed="false"] {
     &:hover {
       border-color: var(--primary);
       color: var(--primary);
@@ -132,7 +152,7 @@ const playLabel = ref<string>(props.completed ? 'Play again' : 'Play');
   }
 
   // Completed
-  &[data-completed='true'] {
+  &[data-completed="true"] {
     .p-card-game-status {
       background: var(--green-50);
       color: var(--success);

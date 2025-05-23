@@ -1,11 +1,11 @@
-import { type MaybeRefOrGetter } from 'vue';
-import { toValue } from 'vue';
-import { useQuery } from '@tanstack/vue-query';
-import { storeToRefs } from 'pinia';
-import { useAuthStore } from '@/store/auth';
-import { computeQueryOverrides } from '@/helpers/computeQueryOverrides';
-import { assignmentFetchAll } from '@/helpers/query/assignments';
-import { ADMINISTRATION_ASSIGNMENTS_QUERY_KEY } from '@/constants/queryKeys';
+import { type MaybeRefOrGetter } from "vue";
+import { toValue } from "vue";
+import { useQuery } from "@tanstack/vue-query";
+import { storeToRefs } from "pinia";
+import { useAuthStore } from "@/store/auth";
+import { computeQueryOverrides } from "@/helpers/computeQueryOverrides";
+import { assignmentFetchAll } from "@/helpers/query/assignments";
+import { ADMINISTRATION_ASSIGNMENTS_QUERY_KEY } from "@/constants/queryKeys";
 
 /**
  * Administration assignments query.
@@ -16,7 +16,12 @@ import { ADMINISTRATION_ASSIGNMENTS_QUERY_KEY } from '@/constants/queryKeys';
  * @param {QueryOptions|undefined} queryOptions – Optional TanStack query options.
  * @returns {UseQueryResult} The TanStack query result.
  */
-const useAdministrationAssignmentsQuery = (administrationId, orgType, orgId, queryOptions?: UseQueryOptions): UseQueryReturnType => {
+const useAdministrationAssignmentsQuery = (
+  administrationId,
+  orgType,
+  orgId,
+  queryOptions?: UseQueryOptions,
+): UseQueryReturnType => {
   const authStore = useAuthStore();
   const { roarUid } = storeToRefs(authStore);
 
@@ -26,10 +31,17 @@ const useAdministrationAssignmentsQuery = (administrationId, orgType, orgId, que
     () => !!toValue(orgId),
     () => !!toValue(roarUid),
   ];
-  const { isQueryEnabled, options } = computeQueryOverrides(queryConditions, queryOptions);
+  const { isQueryEnabled, options } = computeQueryOverrides(
+    queryConditions,
+    queryOptions,
+  );
 
   return useQuery({
-    queryKey: [ADMINISTRATION_ASSIGNMENTS_QUERY_KEY, administrationId, `${orgType}-${orgId}`],
+    queryKey: [
+      ADMINISTRATION_ASSIGNMENTS_QUERY_KEY,
+      administrationId,
+      `${orgType}-${orgId}`,
+    ],
     queryFn: () => assignmentFetchAll(administrationId, orgType, orgId, true),
     enabled: isQueryEnabled,
     ...options,

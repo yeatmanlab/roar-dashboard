@@ -1,7 +1,10 @@
-import { useMutation, useQueryClient } from '@tanstack/vue-query';
-import { useAuthStore } from '@/store/auth';
-import { TASKS_QUERY_KEY, TASK_VARIANTS_QUERY_KEY } from '@/constants/queryKeys';
-import { TASK_VARIANT_UPDATE_MUTATION_KEY } from '@/constants/mutationKeys';
+import { useMutation, useQueryClient } from "@tanstack/vue-query";
+import { useAuthStore } from "@/store/auth";
+import {
+  TASKS_QUERY_KEY,
+  TASK_VARIANTS_QUERY_KEY,
+} from "@/constants/queryKeys";
+import { TASK_VARIANT_UPDATE_MUTATION_KEY } from "@/constants/mutationKeys";
 
 /**
  * Update Task Vairant mutation.

@@ -20,15 +20,14 @@
     "signInWithPasswordInstead": "Iniciar sesión con contraseña",
     "suggestions": "Sugerencias"
   },
-"consentModal": {
-  "header": "Consentimiento",
-  "consentTitle": "Consentimiento",
+  "consentModal": {
+    "header": "Consentimiento",
+    "consentTitle": "Consentimiento",
     "assentTitle": "Asentimiento",
-  "acceptButton": "Aceptar",
-  "rejectButton": "No, cerrar sesión",
-  "toastHeader": "Confirmado",
-  "consentUpdatedStatus": "Estado de consentimiento actualizado"
-
+    "acceptButton": "Aceptar",
+    "rejectButton": "No, cerrar sesión",
+    "toastHeader": "Confirmado",
+    "consentUpdatedStatus": "Estado de consentimiento actualizado"
   },
   "homeParticipant": {
     "showOptionalAssignments": "Mostrar actividades opcionales",

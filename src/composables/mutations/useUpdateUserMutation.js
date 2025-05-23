@@ -1,7 +1,7 @@
-import { useMutation, useQueryClient } from '@tanstack/vue-query';
-import { useAuthStore } from '@/store/auth';
-import { USER_DATA_QUERY_KEY } from '@/constants/queryKeys';
-import { USER_UPDATE_MUTATION_KEY } from '@/constants/mutationKeys';
+import { useMutation, useQueryClient } from "@tanstack/vue-query";
+import { useAuthStore } from "@/store/auth";
+import { USER_DATA_QUERY_KEY } from "@/constants/queryKeys";
+import { USER_UPDATE_MUTATION_KEY } from "@/constants/mutationKeys";
 
 /**
  * Update User mutation.
