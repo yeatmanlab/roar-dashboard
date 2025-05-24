@@ -18,10 +18,12 @@
 </template>
 
 <script setup>
+// Force git to detect changes
 import { onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import { storeToRefs } from "pinia";
 import PvButton from "primevue/button";
+import PvMessage from "primevue/message";
 import { useAuthStore } from "@/store/auth";
 import { fetchDocById } from "@/helpers/query/utils";
 import LevanteSpinner from "@/components/LevanteSpinner.vue";
@@ -29,8 +31,30 @@ import { logger } from "@/logger";
 
 const router = useRouter();
 const authStore = useAuthStore();
-const { roarfirekit } = storeToRefs(authStore);
-const success = ref<boolean>(false);
+const { roarfirekit, uid } = storeToRefs(authStore);
+const success = ref(false);
+const isError = ref(false);
+const messages = ref([]);
+
+const addMessages = (errorCode) => {
+  messages.value.push({
+    id: Date.now(),
+    severity: 'error',
+    content: `Error: ${errorCode}`
+  });
+};
+
+// Define unsubscribe function first
+const unsubscribe = authStore.$subscribe(async (mutation, state) => {
+  if (
+    state.roarfirekit.isSignInWithEmailLink &&
+    state.roarfirekit.signInWithEmailLink
+  ) {
+    if (!roarfirekit.value.isSignInWithEmailLink(window.location.href)) {
+      router.replace({ name: "Home" });
+    }
+  }
+});
 
 authStore.$subscribe(async () => {
   if (authStore.roarUid) {
@@ -48,7 +72,7 @@ const loginFromEmailLink = async (email) => {
   const emailLink = window.location.href;
   await authStore
     .signInWithEmailLink({ email, emailLink })
-    .catch((error: any) => {
+    .catch((error) => {
       if (error.code === 'auth/invalid-action-code') {
         addMessages(error.code);
         setTimeout(() => {
@@ -59,7 +83,7 @@ const loginFromEmailLink = async (email) => {
       }
     })
     .then(async () => {
-      if (uid) {
+      if (uid.value) {
         // Not sure why we need this since user data and claims are fetched in the HomeSelector.vue but otherwise won't load homepage.
         // TODO: Remove once we figure out why the homepage doesn't load without this.
         const userData = await fetchDocById("users", uid.value);
@@ -75,19 +99,6 @@ const loginFromEmailLink = async (email) => {
       console.error("error logging in:", error);
     });
 };
-
-// The user is on the email link authentication page (AuthEmailLink.vue), but:
-// The necessary email is missing from local storage (so the primary sign-in logic via loginFromEmailLink cannot proceed).
-// AND roarfirekit indicates it's expecting an email link sign-in process to be underway.
-// AND the current page's URL is not a valid email sign-in link (e.g., the token in the URL is missing, invalid, or expired, or the user navigated to the path without a token).
-const unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (
-    state.roarfirekit.isSignInWithEmailLink &&
-    state.roarfirekit.signInWithEmailLink
-  ) {
-    if (!roarfirekit.value.isSignInWithEmailLink(window.location.href)) {
-      router.replace({ name: "Home" });
-    }
 
 onMounted(async () => {
   const email = window.localStorage.getItem("emailForSignIn");
@@ -105,6 +116,7 @@ onMounted(async () => {
     logger.capture("No email in localStorage");
   }
 });
+</script>
 
 <style scoped>
 .center {
