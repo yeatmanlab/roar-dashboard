@@ -28,7 +28,7 @@ import PvChart from 'primevue/chart';
 interface Props {
   totalGames: number;
   completedGames: number;
-  studentInfo: {
+  studentInfo?: {
     grade?: string | number;
     [key: string]: any;
   };
@@ -45,6 +45,7 @@ interface ChartData {
 const props = withDefaults(defineProps<Props>(), {
   totalGames: 0,
   completedGames: 0,
+  studentInfo: () => ({}),
 });
 
 const chartData = computed((): ChartData => {
