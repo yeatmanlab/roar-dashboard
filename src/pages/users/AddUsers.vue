@@ -259,8 +259,6 @@ const onFileUpload = async (event) => {
   const firstRow = toRaw(rawUserFile.value[0]);
   const allColumns = Object.keys(firstRow).map((col) => col.toLowerCase());
 
-  console.log("allColumns:", allColumns);
-
   // Check if userType column exists (case-insensitive)
   const hasUserType = allColumns.includes("usertype");
   if (!hasUserType) {
@@ -401,9 +399,28 @@ const onFileUpload = async (event) => {
       (key) => key.toLowerCase() === "school",
     );
 
-    const hasCohort = cohortField && user[cohortField];
-    const hasSite = siteField && user[siteField];
-    const hasSchool = schoolField && user[schoolField];
+    // Parse and check if arrays are non-empty after splitting and trimming
+    const hasCohort =
+      cohortField &&
+      user[cohortField] &&
+      user[cohortField]
+        .split(",")
+        .map((s) => s.trim())
+        .filter((s) => s).length > 0;
+    const hasSite =
+      siteField &&
+      user[siteField] &&
+      user[siteField]
+        .split(",")
+        .map((s) => s.trim())
+        .filter((s) => s).length > 0;
+    const hasSchool =
+      schoolField &&
+      user[schoolField] &&
+      user[schoolField]
+        .split(",")
+        .map((s) => s.trim())
+        .filter((s) => s).length > 0;
 
     if (!hasCohort && !(hasSite && hasSchool)) {
       missingFields.push("Cohort OR Site and School");
@@ -504,73 +521,141 @@ async function submitUsers() {
         (key) => key.toLowerCase() === "cohort",
       );
 
-      // Get values using the actual field names
-      const site = siteField ? user[siteField] : "";
-      const school = schoolField ? user[schoolField] : "";
-      const _class = classField ? user[classField] : "";
-      const cohorts = cohortField ? user[cohortField] : "";
+      // Get values using the actual field names and parse as comma-separated arrays
+      const sites = siteField
+        ? user[siteField]
+            .split(",")
+            .map((s) => s.trim())
+            .filter((s) => s)
+        : [];
+      const schools = schoolField
+        ? user[schoolField]
+            .split(",")
+            .map((s) => s.trim())
+            .filter((s) => s)
+        : [];
+      const classes = classField
+        ? user[classField]
+            .split(",")
+            .map((s) => s.trim())
+            .filter((s) => s)
+        : [];
+      const cohorts = cohortField
+        ? user[cohortField]
+            .split(",")
+            .map((s) => s.trim())
+            .filter((s) => s)
+        : [];
 
       const orgNameMap = {
-        site: site ?? "",
-        school: school ?? "",
-        class: _class ?? "",
-        cohort: cohorts.split(",") ?? [],
+        site: sites,
+        school: schools,
+        class: classes,
+        cohort: cohorts,
       };
 
       // Pluralized because of a ROAR change to the createUsers function.
       // Only groups are allowed to be an array however, we've only been using one group per user.
       // TODO: Figure out if we want to allow multiple orgs
       const orgInfo = {
-        sites: "",
-        schools: "",
-        classes: "",
+        sites: [],
+        schools: [],
+        classes: [],
         cohorts: [],
       };
 
       // If orgType is a given column, check if the name is
       //   associated with a valid id. If so, add the id to
       //   the sendObject. If not, reject user
-      for (const [orgType, orgName] of Object.entries(orgNameMap)) {
-        if (orgName) {
+      for (const [orgType, orgNames] of Object.entries(orgNameMap)) {
+        if (orgNames && orgNames.length > 0) {
           try {
             if (orgType === "school") {
-              const siteId = await getOrgId("districts", site);
-              const schoolId = await getOrgId(
-                pluralizeFirestoreCollection(orgType),
-                orgName,
-                ref(siteId),
-                ref(undefined),
-              );
-              // Need to Raw it because a large amount of users causes this to become a proxy object
-              orgInfo.schools = schoolId;
+              // Need a site for schools - try each school with each site
+              if (sites.length === 0) {
+                throw new Error("Schools specified but no site provided");
+              }
+              for (const schoolName of orgNames) {
+                let schoolFound = false;
+                for (const siteName of sites) {
+                  try {
+                    const siteId = await getOrgId("districts", siteName);
+                    const schoolId = await getOrgId(
+                      pluralizeFirestoreCollection(orgType),
+                      schoolName,
+                      ref(siteId),
+                      ref(undefined),
+                    );
+                    orgInfo.schools.push(schoolId);
+                    schoolFound = true;
+                    break; // Found valid parent, move to next school
+                  } catch (error) {
+                    // Try next site
+                    continue;
+                  }
+                }
+                if (!schoolFound) {
+                  throw new Error(
+                    `School '${schoolName}' not found in any of the specified sites`,
+                  );
+                }
+              }
             } else if (orgType === "class") {
-              const siteId = await getOrgId("districts", site);
-              const schoolId = await getOrgId("schools", school);
-              const classId = await getOrgId(
-                pluralizeFirestoreCollection(orgType),
-                orgName,
-                ref(siteId),
-                ref(schoolId),
-              );
-              orgInfo.classes = classId;
+              // Need site and school for classes - try each class with each site/school combination
+              if (sites.length === 0 || schools.length === 0) {
+                throw new Error(
+                  "Classes specified but no site or school provided",
+                );
+              }
+              for (const className of orgNames) {
+                let classFound = false;
+                for (const siteName of sites) {
+                  for (const schoolName of schools) {
+                    try {
+                      const siteId = await getOrgId("districts", siteName);
+                      const schoolId = await getOrgId("schools", schoolName);
+                      const classId = await getOrgId(
+                        pluralizeFirestoreCollection(orgType),
+                        className,
+                        ref(siteId),
+                        ref(schoolId),
+                      );
+                      orgInfo.classes.push(classId);
+                      classFound = true;
+                      break; // Found valid parent, move to next class
+                    } catch (error) {
+                      // Try next site/school combination
+                      continue;
+                    }
+                  }
+                  if (classFound) break; // Break out of site loop if class was found
+                }
+                if (!classFound) {
+                  throw new Error(
+                    `Class '${className}' not found in any of the specified site/school combinations`,
+                  );
+                }
+              }
             } else if (orgType === "cohort") {
-              for (const cohort of orgNameMap.cohort) {
+              for (const cohortName of orgNames) {
                 const cohortId = await getOrgId(
                   pluralizeFirestoreCollection("groups"),
-                  cohort,
+                  cohortName,
                   ref(undefined),
                   ref(undefined),
                 );
                 orgInfo.cohorts.push(cohortId);
               }
-            } else {
-              const siteId = await getOrgId(
-                pluralizeFirestoreCollection("districts"),
-                orgName,
-                ref(undefined),
-                ref(undefined),
-              );
-              orgInfo.sites = siteId;
+            } else if (orgType === "site") {
+              for (const siteName of orgNames) {
+                const siteId = await getOrgId(
+                  pluralizeFirestoreCollection("districts"),
+                  siteName,
+                  ref(undefined),
+                  ref(undefined),
+                );
+                orgInfo.sites.push(siteId);
+              }
             }
           } catch (error) {
             // Add the user to the error list with the specific organization error
@@ -628,10 +713,7 @@ async function submitUsers() {
   }
 
   // TODO: Figure out deadline-exceeded error with 700+ users. (Registration works fine, creates all documents but the client recieves the error)
-  // Spit users into chunks of 1000
   const chunkedUsersToBeRegistered = _chunk(usersToBeRegistered, 700);
-
-  console.log("chunkedUsersToBeRegistered", chunkedUsersToBeRegistered);
 
   // Begin submit process
   // Org must be created before users can be created
