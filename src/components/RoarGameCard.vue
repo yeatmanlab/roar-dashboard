@@ -30,7 +30,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { computed } from 'vue';
 import PvButton from 'primevue/button';
 import PvCard from 'primevue/card';
 import PvInlineMessage from 'primevue/inlinemessage';
@@ -52,7 +52,7 @@ const props = withDefaults(defineProps<Props>(), {
   statusText: '',
 });
 
-const playLabel = ref<string>(props.completed ? 'Play again' : 'Play');
+const playLabel = computed((): string => props.completed ? 'Play again' : 'Play');
 </script>
 
 <style lang="scss">
