@@ -64,7 +64,7 @@ const emit = defineEmits<Emits>();
 const { data: serverOrgData } = useQuery({
   queryKey: ['org', props.orgType, props.orgId],
   queryFn: (): Promise<ServerOrgData> => fetchDocById(props.orgType, props.orgId),
-  keepPreviousData: true,
+  placeholderData: (previousData) => previousData,
   enabled: initialized,
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
