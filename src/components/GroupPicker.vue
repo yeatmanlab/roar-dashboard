@@ -4,14 +4,26 @@
       <PvPanel class="m-0 p-0 h-full">
         <template #header>
           <div class="flex align-items-center font-bold">
-            Select {{ forParentOrg ? 'Parent Site' : 'Group(s)' }} <span class='required-asterisk text-red-500 ml-1'>*</span>
+            Select {{ forParentOrg ? "Parent Site" : "Group(s)" }}
+            <span class="required-asterisk text-red-500 ml-1">*</span>
           </div>
         </template>
-        <PvTabView v-if="claimsLoaded" v-model:active-index="activeIndex" class="m-0 p-0 org-tabs" lazy>
-          <PvTabPanel v-for="orgType in orgHeaders" :key="orgType" :header="orgType.header">
+        <PvTabView
+          v-if="claimsLoaded"
+          v-model:active-index="activeIndex"
+          class="m-0 p-0 org-tabs"
+          lazy
+        >
+          <PvTabPanel
+            v-for="orgType in orgHeaders"
+            :key="orgType"
+            :header="orgType.header"
+          >
             <div class="grid column-gap-3">
               <div
-                v-if="activeOrgType === 'schools' || activeOrgType === 'classes'"
+                v-if="
+                  activeOrgType === 'schools' || activeOrgType === 'classes'
+                "
                 class="col-6 md:col-5 lg:col-5 xl:col-5 mt-3"
               >
                 <PvFloatLabel>
@@ -29,7 +41,10 @@
                   <label for="district">Select from Site</label>
                 </PvFloatLabel>
               </div>
-              <div v-if="orgType.id === 'classes'" class="col-6 md:col-5 lg:col-5 xl:col-5 mt-3">
+              <div
+                v-if="orgType.id === 'classes'"
+                class="col-6 md:col-5 lg:col-5 xl:col-5 mt-3"
+              >
                 <PvFloatLabel>
                   <PvSelect
                     id="school"
@@ -67,7 +82,8 @@
       <PvPanel class="h-full">
         <template #header>
           <div class="flex align-items-center font-bold">
-            Selected Groups <span class='required-asterisk text-red-500 ml-1'>*</span>
+            Selected Groups
+            <span class="required-asterisk text-red-500 ml-1">*</span>
           </div>
         </template>
         <PvScrollPanel style="width: 100%; height: 26rem">
@@ -91,26 +107,26 @@
 </template>
 
 <script setup>
-import { reactive, ref, computed, onMounted, watch, toRaw } from 'vue';
-import { useQuery } from '@tanstack/vue-query';
-import { storeToRefs } from 'pinia';
-import _capitalize from 'lodash/capitalize';
-import _get from 'lodash/get';
-import _head from 'lodash/head';
-import PvChip from 'primevue/chip';
-import PvSelect from 'primevue/select';
-import PvListbox from 'primevue/listbox';
-import PvPanel from 'primevue/panel';
-import PvScrollPanel from 'primevue/scrollpanel';
-import PvTabPanel from 'primevue/tabpanel';
-import PvTabView from 'primevue/tabview';
-import { useAuthStore } from '@/store/auth';
-import { orgFetcher, orgFetchAll } from '@/helpers/query/orgs';
-import { orderByDefault } from '@/helpers/query/utils';
-import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
-import useDistrictsListQuery from '@/composables/queries/useDistrictsListQuery';
-import PvFloatLabel from 'primevue/floatlabel';
-import { convertToGroupName } from '@/helpers';
+import { reactive, ref, computed, onMounted, watch, toRaw } from "vue";
+import { useQuery } from "@tanstack/vue-query";
+import { storeToRefs } from "pinia";
+import _capitalize from "lodash/capitalize";
+import _get from "lodash/get";
+import _head from "lodash/head";
+import PvChip from "primevue/chip";
+import PvSelect from "primevue/select";
+import PvListbox from "primevue/listbox";
+import PvPanel from "primevue/panel";
+import PvScrollPanel from "primevue/scrollpanel";
+import PvTabPanel from "primevue/tabpanel";
+import PvTabView from "primevue/tabview";
+import { useAuthStore } from "@/store/auth";
+import { orgFetcher, orgFetchAll } from "@/helpers/query/orgs";
+import { orderByDefault } from "@/helpers/query/utils";
+import useUserClaimsQuery from "@/composables/queries/useUserClaimsQuery";
+import useDistrictsListQuery from "@/composables/queries/useDistrictsListQuery";
+import PvFloatLabel from "primevue/floatlabel";
+import { convertToGroupName } from "@/helpers";
 
 const initialized = ref(false);
 const authStore = useAuthStore();
@@ -170,21 +186,23 @@ const { isLoading: isLoadingClaims, data: userClaims } = useUserClaimsQuery({
   enabled: initialized,
 });
 
-const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
+const isSuperAdmin = computed(() =>
+  Boolean(userClaims.value?.claims?.super_admin),
+);
 const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
 
 const orgHeaders = computed(() => {
   if (props.forParentOrg) {
     return {
-      districts: { header: 'Sites', id: 'districts' },
+      districts: { header: "Sites", id: "districts" },
     };
   }
 
   return {
-    districts: { header: 'Sites', id: 'districts' },
-    schools: { header: 'Schools', id: 'schools' },
-    classes: { header: 'Classes', id: 'classes' },
-    groups: { header: 'Cohorts', id: 'groups' },
+    districts: { header: "Sites", id: "districts" },
+    schools: { header: "Schools", id: "schools" },
+    classes: { header: "Classes", id: "classes" },
+    groups: { header: "Cohorts", id: "groups" },
   };
 });
 
@@ -193,35 +211,40 @@ const activeOrgType = computed(() => {
   return Object.keys(orgHeaders.value)[activeIndex.value];
 });
 
-const claimsLoaded = computed(() => initialized.value && !isLoadingClaims.value);
+const claimsLoaded = computed(
+  () => initialized.value && !isLoadingClaims.value,
+);
 
-const { isLoading: isLoadingDistricts, data: allDistricts } = useDistrictsListQuery({
-  enabled: claimsLoaded,
-});
+const { isLoading: isLoadingDistricts, data: allDistricts } =
+  useDistrictsListQuery({
+    enabled: claimsLoaded,
+  });
 
 const schoolQueryEnabled = computed(() => {
   return claimsLoaded.value && selectedDistrict.value !== undefined;
 });
 
 const { isLoading: isLoadingSchools, data: allSchools } = useQuery({
-  queryKey: ['schools', selectedDistrict],
-  queryFn: () => orgFetcher('schools', selectedDistrict, isSuperAdmin, adminOrgs),
+  queryKey: ["schools", selectedDistrict],
+  queryFn: () =>
+    orgFetcher("schools", selectedDistrict, isSuperAdmin, adminOrgs),
   keepPreviousData: true,
   enabled: schoolQueryEnabled,
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
 const { data: orgData } = useQuery({
-  queryKey: ['orgs', activeOrgType, selectedDistrict, selectedSchool],
+  queryKey: ["orgs", activeOrgType, selectedDistrict, selectedSchool],
   queryFn: () =>
-    orgFetchAll(activeOrgType, selectedDistrict, selectedSchool, ref(orderByDefault), isSuperAdmin, adminOrgs, [
-      'id',
-      'name',
-      'districtId',
-      'schoolId',
-      'schools',
-      'classes',
-    ]),
+    orgFetchAll(
+      activeOrgType,
+      selectedDistrict,
+      selectedSchool,
+      ref(orderByDefault),
+      isSuperAdmin,
+      adminOrgs,
+      ["id", "name", "districtId", "schoolId", "schools", "classes"],
+    ),
   keepPreviousData: true,
   enabled: claimsLoaded,
   staleTime: 5 * 60 * 1000, // 5 minutes
@@ -231,7 +254,7 @@ const { data: orgData } = useQuery({
 watch(activeOrgType, () => {
   if (props.forParentOrg) {
     // Reset all selections
-    Object.keys(selectedOrgs).forEach(key => {
+    Object.keys(selectedOrgs).forEach((key) => {
       selectedOrgs[key] = [];
     });
   }
@@ -240,7 +263,9 @@ watch(activeOrgType, () => {
 const remove = (org, orgKey) => {
   const rawSelectedOrgs = toRaw(selectedOrgs);
   if (Array.isArray(rawSelectedOrgs[orgKey])) {
-    selectedOrgs[orgKey] = selectedOrgs[orgKey].filter((_org) => _org.id !== org.id);
+    selectedOrgs[orgKey] = selectedOrgs[orgKey].filter(
+      (_org) => _org.id !== org.id,
+    );
   } else {
     selectedOrgs[orgKey] = undefined;
   }
@@ -261,17 +286,17 @@ onMounted(() => {
 });
 
 watch(allDistricts, (newValue) => {
-  selectedDistrict.value = _get(_head(newValue), 'id');
+  selectedDistrict.value = _get(_head(newValue), "id");
 });
 
 watch(allSchools, (newValue) => {
-  selectedSchool.value = _get(_head(newValue), 'id');
+  selectedSchool.value = _get(_head(newValue), "id");
 });
 
-const emit = defineEmits(['selection']);
+const emit = defineEmits(["selection"]);
 
 watch(selectedOrgs, (newValue) => {
-  emit('selection', newValue);
+  emit("selection", newValue);
 });
 </script>
 

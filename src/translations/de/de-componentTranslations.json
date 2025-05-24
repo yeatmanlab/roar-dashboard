@@ -19,13 +19,13 @@
     "signInWithPasswordInstead": "Mit Passwort anmelden",
     "suggestions": "Vorschläge"
   },
-"consentModal": {
-  "header": "Zustimmung",
-  "title": "Zustimmung",
-  "acceptButton": "Akzeptieren",
-  "rejectButton": "Nein, mich abmelden",
-  "toastHeader": "Bestätigt",
-  "consentUpdatedStatus": "Zustimmungsstatus aktualisiert"
+  "consentModal": {
+    "header": "Zustimmung",
+    "title": "Zustimmung",
+    "acceptButton": "Akzeptieren",
+    "rejectButton": "Nein, mich abmelden",
+    "toastHeader": "Bestätigt",
+    "consentUpdatedStatus": "Zustimmungsstatus aktualisiert"
   },
   "homeParticipant": {
     "showOptionalAssignments": "Optionale Zuordnungen anzeigen",
@@ -106,7 +106,7 @@
     "adminInfoPrompt": "Wenn Sie sich mit einer Google-E-Mail oder Ihr E-Mail-Anbieter Google SSO verwendet, registriert haben."
   },
   "tasks": {
-    "preparing":  "Gleich geht das Spiel los!",
+    "preparing": "Gleich geht das Spiel los!",
     "loading": "Laden"
   },
   "sentryForm": {
