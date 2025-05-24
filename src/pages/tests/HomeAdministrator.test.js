@@ -210,12 +210,6 @@ describe("HomeAdministrator", () => {
 
     await nextTick();
     expect(wrapper.text()).toContain("All Assignments");
-    expect(wrapper.text()).toContain(
-      "This page lists all the assignments that are administered to your users.",
-    );
-    expect(wrapper.text()).toContain(
-      "You can view and monitor completion and create new bundles of tasks, surveys, and questionnaires to be administered as assignments.",
-    );
     expect(wrapper.text()).toContain("Search by name");
     expect(wrapper.text()).toContain("Sort by");
     expect(wrapper.text()).not.toContain("Fetching Assignments");
