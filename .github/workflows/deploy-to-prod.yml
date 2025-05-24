@@ -65,12 +65,20 @@ jobs:
           npm version ${{ steps.version.outputs.prod_version }} --no-git-tag-version
           git add package.json
           git commit -m "chore(release): prepare version ${{ steps.version.outputs.prod_version }}"
-          git push origin ${{ steps.version.outputs.branch_name }}
+          git push --set-upstream origin ${{ steps.version.outputs.branch_name }}
 
       - name: Create and push tag
         run: |
-          git tag -a "v${{ steps.version.outputs.prod_version }}" -m "Release v${{ steps.version.outputs.prod_version }}"
-          git push origin "v${{ steps.version.outputs.prod_version }}"
+          # Check if tag already exists
+          if git rev-parse "v${{ steps.version.outputs.prod_version }}" >/dev/null 2>&1; then
+            echo "Tag v${{ steps.version.outputs.prod_version }} already exists, skipping tag creation"
+          else
+            # Create annotated tag with timestamp to ensure uniqueness
+            TIMESTAMP=$(date +%Y%m%d%H%M%S)
+            TAG_NAME="v${{ steps.version.outputs.prod_version }}-$TIMESTAMP"
+            git tag -a "$TAG_NAME" -m "Release v${{ steps.version.outputs.prod_version }}"
+            git push origin "$TAG_NAME"
+          fi
 
       - name: Build for production
         env:
@@ -93,7 +101,7 @@ jobs:
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ steps.generate_token.outputs.token }}
-          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DEV_ADMIN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_PROD_ADMIN }}
           channelId: live
           projectId: hs-levante-admin-prod
           target: production

@@ -16,7 +16,6 @@
     "generate-pwa-assets": "pwa-assets-generator",
     "check-format": "prettier . --check",
     "lint": "eslint --ext .js,.vue --ignore-path .gitignore --fix src",
-    "postversion": "GIT_REMOTE=$(git remote -v | grep \"yeatmanlab/roar-dashboard.git \\(push\\)\" | cut -f 1) && git push $GIT_REMOTE && git push $GIT_REMOTE --tags",
     "preversion": "npm run lint",
     "preview": "vite preview",
     "test": "vitest --config vitest.config.js",

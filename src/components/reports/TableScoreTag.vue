@@ -43,11 +43,11 @@ import _get from "lodash/get";
 import _lowerCase from "lodash/lowerCase";
 import PvTag from "primevue/tag";
 import {
-    tasksToDisplayPercentCorrect,
-    tasksToDisplayCorrectIncorrectDifference,
-    tasksToDisplayTotalCorrect,
-    rawOnlyTasks,
-    scoredTasks,
+  tasksToDisplayPercentCorrect,
+  tasksToDisplayCorrectIncorrectDifference,
+  tasksToDisplayTotalCorrect,
+  rawOnlyTasks,
+  scoredTasks,
   includedValidityFlags,
 } from "@/helpers/reports";
 
