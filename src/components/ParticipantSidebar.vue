@@ -3,24 +3,27 @@
     <div class="sidebar-progress">
       <PvChart type="doughnut" :data="chartData" :options="chartOptions" />
       <div>
-        <p class="sidebar-progress-totals">{{ completedGames }}/{{ totalGames }}</p>
-        <p>{{ $t('participantSidebar.tasksCompleted') }}</p>
+        <p class="sidebar-progress-totals">
+          {{ completedGames }}/{{ totalGames }}
+        </p>
+        <p>{{ $t("participantSidebar.tasksCompleted") }}</p>
       </div>
     </div>
     <ul v-if="!_isEmpty(studentInfo)" class="sidebar-info">
       <li class="sidebar-title">
-        <strong>{{ $t('participantSidebar.studentInfo') }}</strong>
+        <strong>{{ $t("participantSidebar.studentInfo") }}</strong>
       </li>
       <li>
-        {{ $t('participantSidebar.grade') }}: <span class="sidebar-info-item">{{ studentInfo.grade }}</span>
+        {{ $t("participantSidebar.grade") }}:
+        <span class="sidebar-info-item">{{ studentInfo.grade }}</span>
       </li>
     </ul>
   </div>
 </template>
 <script setup>
-import { ref, computed } from 'vue';
-import _isEmpty from 'lodash/isEmpty';
-import PvChart from 'primevue/chart';
+import { ref, computed } from "vue";
+import _isEmpty from "lodash/isEmpty";
+import PvChart from "primevue/chart";
 
 const props = defineProps({
   totalGames: { type: Number, required: true, default: 0 },
@@ -34,7 +37,7 @@ const chartData = computed(() => {
   return setChartData(completed, incomplete);
 });
 const chartOptions = ref({
-  cutout: '60%',
+  cutout: "60%",
   showToolTips: false,
   plugins: {
     legend: {
@@ -50,11 +53,14 @@ const setChartData = (completed, incomplete) => {
   let docStyle = getComputedStyle(document.documentElement);
 
   return {
-    labels: ['Finished', 'Unfinished'],
+    labels: ["Finished", "Unfinished"],
     datasets: [
       {
         data: [completed, incomplete],
-        backgroundColor: [docStyle.getPropertyValue('--bright-green'), docStyle.getPropertyValue('--surface-d')],
+        backgroundColor: [
+          docStyle.getPropertyValue("--bright-green"),
+          docStyle.getPropertyValue("--surface-d"),
+        ],
         // hoverBackgroundColor: ['green', docStyle.getPropertyValue('--surface-d')]
       },
     ],

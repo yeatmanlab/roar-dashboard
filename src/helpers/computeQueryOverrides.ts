@@ -1,16 +1,27 @@
-import { computed, reactive, toRefs, toRaw, toValue, ComputedRef, Ref, MaybeRefOrGetter } from 'vue';
-import type { UseQueryOptions, QueryKey } from '@tanstack/vue-query'; // Import relevant types
+import {
+  computed,
+  reactive,
+  toRefs,
+  toRaw,
+  toValue,
+  ComputedRef,
+  Ref,
+  MaybeRefOrGetter,
+} from "vue";
+import type { UseQueryOptions, QueryKey } from "@tanstack/vue-query"; // Import relevant types
 
 // Define a more specific type for conditions
 type Condition = MaybeRefOrGetter<boolean>;
 
 // Use a generic type for QueryOptions, assuming it at least might have 'enabled'
-type QueryOptionsWithEnabled = UseQueryOptions<any, Error, any, QueryKey> & { enabled?: Condition };
+type QueryOptionsWithEnabled = UseQueryOptions<any, Error, any, QueryKey> & {
+  enabled?: Condition;
+};
 
 // Define the return type
 interface ComputeQueryOverridesResult {
   isQueryEnabled: ComputedRef<boolean>;
-  options: Omit<QueryOptionsWithEnabled, 'enabled'>;
+  options: Omit<QueryOptionsWithEnabled, "enabled">;
 }
 
 /**
@@ -21,12 +32,17 @@ interface ComputeQueryOverridesResult {
  * @returns {ComputeQueryOverridesResult} The response object.
  */
 export const computeQueryOverrides = (
-  conditions: Condition[], 
-  queryOptions?: QueryOptionsWithEnabled
+  conditions: Condition[],
+  queryOptions?: QueryOptionsWithEnabled,
 ): ComputeQueryOverridesResult => {
   // Use reactive on a plain object copy if queryOptions exist, or an empty object
-  const reactiveQueryOptions = reactive(queryOptions ? { ...toRaw(queryOptions) } : {}); 
-  const enabled = 'enabled' in reactiveQueryOptions ? toRefs(reactiveQueryOptions).enabled : undefined;
+  const reactiveQueryOptions = reactive(
+    queryOptions ? { ...toRaw(queryOptions) } : {},
+  );
+  const enabled =
+    "enabled" in reactiveQueryOptions
+      ? toRefs(reactiveQueryOptions).enabled
+      : undefined;
 
   const isQueryEnabled = computed<boolean>(() => {
     // Check if all conditions are met.
@@ -42,7 +58,9 @@ export const computeQueryOverrides = (
 
   // Remove the enabled property from the query options to avoid overriding the computed value.
   // This options object will be passed to the useQuery function in the composable.
-  const options: Omit<QueryOptionsWithEnabled, 'enabled'> = queryOptions ? { ...queryOptions } : {};
+  const options: Omit<QueryOptionsWithEnabled, "enabled"> = queryOptions
+    ? { ...queryOptions }
+    : {};
   delete options.enabled;
 
   return { isQueryEnabled, options };

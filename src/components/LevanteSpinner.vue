@@ -153,7 +153,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, StyleValue } from 'vue';
+import { computed, StyleValue } from "vue";
 
 interface Props {
   fullscreen?: boolean;
@@ -174,8 +174,8 @@ const actualSvgSize = computed<number>(() => {
 });
 
 const containerClasses = computed(() => [
-  'levante-spinner-container',
-  { 'levante-spinner-container--fullscreen': props.fullscreen },
+  "levante-spinner-container",
+  { "levante-spinner-container--fullscreen": props.fullscreen },
 ]);
 
 const containerStyle = computed<StyleValue>(() => {
@@ -210,4 +210,4 @@ const containerStyle = computed<StyleValue>(() => {
   z-index: 9999; /* Ensure it's on top of other content */
   /* background-color is applied via inline style for dynamic overlayColor prop */
 }
-</style> 
+</style>
