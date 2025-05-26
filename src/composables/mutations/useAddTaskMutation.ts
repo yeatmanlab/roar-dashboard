@@ -1,8 +1,8 @@
-import { useMutation, useQueryClient } from '@tanstack/vue-query';
-import type { UseMutationReturnType } from '@tanstack/vue-query';
-import { useAuthStore } from '@/store/auth';
-import { TASKS_QUERY_KEY } from '@/constants/queryKeys';
-import { TASK_ADD_MUTATION_KEY } from '@/constants/mutationKeys';
+import { useMutation, useQueryClient } from "@tanstack/vue-query";
+import type { UseMutationReturnType } from "@tanstack/vue-query";
+import { useAuthStore } from "@/store/auth";
+import { TASKS_QUERY_KEY } from "@/constants/queryKeys";
+import { TASK_ADD_MUTATION_KEY } from "@/constants/mutationKeys";
 
 interface TaskData {
   [key: string]: any;
@@ -19,7 +19,12 @@ interface TaskData {
  * @returns The mutation object returned by `useMutation`.
  */
 
-const useAddTaskMutation = (): UseMutationReturnType<void, Error, TaskData, unknown> => {
+const useAddTaskMutation = (): UseMutationReturnType<
+  void,
+  Error,
+  TaskData,
+  unknown
+> => {
   const authStore = useAuthStore();
   const queryClient = useQueryClient();
 
@@ -34,4 +39,4 @@ const useAddTaskMutation = (): UseMutationReturnType<void, Error, TaskData, unkn
   });
 };
 
-export default useAddTaskMutation; 
+export default useAddTaskMutation;

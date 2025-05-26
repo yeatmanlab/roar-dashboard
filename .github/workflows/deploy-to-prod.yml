@@ -132,19 +132,19 @@ jobs:
           else
             COMMITS=$(git log --pretty=format:"- %s (%h)" --no-merges -n 10)
           fi
-          
+
           # Create release notes
           RELEASE_NOTES="## What's Changed\n\n$COMMITS\n\n"
           RELEASE_NOTES+="## Deployment Info\n"
           RELEASE_NOTES+="- Version: v${{ steps.version.outputs.prod_version }}\n"
           RELEASE_NOTES+="- Environment: Production\n"
           RELEASE_NOTES+="- Deployed by: ${{ github.actor }}\n\n"
-          
+
           # Add user description if provided
           if [ -n "${{ github.event.inputs.release_description }}" ]; then
             RELEASE_NOTES+="## Release Notes\n${{ github.event.inputs.release_description }}\n\n"
           fi
-          
+
           # Set output
           echo "notes<<EOF" >> $GITHUB_OUTPUT
           echo "$RELEASE_NOTES" >> $GITHUB_OUTPUT
