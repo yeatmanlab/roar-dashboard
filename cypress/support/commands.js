@@ -294,6 +294,7 @@ Cypress.Commands.add('selectAdministration', function selectAdministration(testA
     cy.log('Retries exceeded, administration not found, exiting test...');
     return;
   }
+  cy.agreeToConsent();
   cy.get('[data-cy="dropdown-select-administration"]').click();
   cy.get('body')
     .invoke('text')
