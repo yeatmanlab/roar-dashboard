@@ -238,7 +238,7 @@
     </PvTabs>
   </div>
 </template>
-<script setup>
+<script setup lang="ts">
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { storeToRefs } from "pinia";
@@ -262,10 +262,56 @@ import { useQueryClient } from "@tanstack/vue-query";
 import { LEVANTE_SURVEY_RESPONSES_KEY } from "@/constants/bucket";
 import PvProgressBar from "primevue/progressbar";
 
-const props = defineProps({
-  games: { type: Array, required: true },
-  sequential: { type: Boolean, required: false, default: true },
-  userData: { type: Object, required: true },
+interface TaskData {
+  name: string;
+  description: string;
+  image?: string;
+  tutorialVideo?: string;
+  variantURL?: string;
+  taskURL?: string;
+  meta?: Record<string, any>;
+}
+
+interface Game {
+  taskId: string;
+  completedOn?: string | Date;
+  taskData: TaskData;
+}
+
+interface UserData {
+  id: string;
+  userType: string;
+  birthMonth?: number;
+  birthYear?: number;
+  assessmentPid?: string;
+  childIds?: string[];
+  classes?: {
+    current: string[];
+  };
+  schools?: {
+    current: string[];
+  };
+}
+
+interface Props {
+  games: Game[];
+  sequential?: boolean;
+  userData: UserData;
+}
+
+interface VideoOptions {
+  autoplay: boolean;
+  controls: boolean;
+  preload: boolean;
+  fluid: boolean;
+  sources: Array<{
+    src: string;
+    type: string;
+  }>;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  sequential: true,
 });
 
 const authStore = useAuthStore();
@@ -277,7 +323,7 @@ const surveyData = queryClient.getQueryData([
   props.userData.id,
 ]);
 
-const getGeneralSurveyProgress = computed(() => {
+const getGeneralSurveyProgress = computed((): number => {
   if (surveyStore.isGeneralSurveyComplete) return 100;
   if (!surveyStore.survey) return 0;
   return Math.round(
@@ -287,7 +333,7 @@ const getGeneralSurveyProgress = computed(() => {
   );
 });
 
-const getSpecificSurveyProgress = computed(() => (loopIndex) => {
+const getSpecificSurveyProgress = computed(() => (loopIndex: number): number => {
   if (surveyStore.isSpecificSurveyComplete) return 100;
 
   const localStorageKey = `${LEVANTE_SURVEY_RESPONSES_KEY}-${props.userData.id}`;
@@ -312,7 +358,7 @@ const getSpecificSurveyProgress = computed(() => (loopIndex) => {
   // If data is not found in localStorage, use surveyData from server
   if (!surveyData || !Array.isArray(surveyData)) return 0;
 
-  const currentSurvey = surveyData.find(
+  const currentSurvey = (surveyData as any[]).find(
     (doc) => doc.administrationId === selectedAdmin.value.id,
   );
   if (
@@ -335,7 +381,7 @@ const getSpecificSurveyProgress = computed(() => (loopIndex) => {
 
 const { t, locale } = useI18n();
 
-const levanteTasks = [
+const levanteTasks: string[] = [
   "intro",
   "heartsAndFlowers",
   "egmaMath",
@@ -350,7 +396,7 @@ const levanteTasks = [
   "roarInference",
 ];
 
-const levantifiedRoarTasks = [
+const levantifiedRoarTasks: string[] = [
   "vocab",
   // Not yet implemented
   // 'swr',
@@ -361,7 +407,7 @@ const levantifiedRoarTasks = [
   // 'pa-es',
 ];
 
-const getTaskName = (taskId, taskName) => {
+const getTaskName = (taskId: string, taskName: string): string => {
   // Translate Levante task names. The task name is not the same as the taskId.
   const taskIdLowercased = taskId.toLowerCase();
 
@@ -384,7 +430,8 @@ const getTaskName = (taskId, taskName) => {
   }
   return taskName;
 };
-const getTaskDescription = (taskId, taskDescription) => {
+
+const getTaskDescription = (taskId: string, taskDescription: string): string => {
   // Translate Levante task descriptions if not in English
   const taskIdLowercased = taskId.toLowerCase();
 
@@ -410,7 +457,7 @@ const getTaskDescription = (taskId, taskDescription) => {
   return taskDescription;
 };
 
-const getRoutePath = (taskId, variantURL, taskURL) => {
+const getRoutePath = (taskId: string, variantURL?: string, taskURL?: string): string => {
   // do not navigate if the task is external
   if (variantURL || taskURL) return "/";
 
@@ -428,13 +475,13 @@ const getRoutePath = (taskId, variantURL, taskURL) => {
   }
 };
 
-const taskCompletedMessage = computed(() => {
+const taskCompletedMessage = computed((): string => {
   return t("gameTabs.taskCompleted");
 });
 
-const updateVideoStarted = async (taskId) => {
+const updateVideoStarted = async (taskId: string): Promise<void> => {
   try {
-    await authStore.roarfirekit.updateVideoMetadata(
+    await (authStore.roarfirekit as any).updateVideoMetadata(
       selectedAdmin.value.id,
       taskId,
       "started",
@@ -444,9 +491,9 @@ const updateVideoStarted = async (taskId) => {
   }
 };
 
-const updateVideoCompleted = async (taskId) => {
+const updateVideoCompleted = async (taskId: string): Promise<void> => {
   try {
-    await authStore.roarfirekit.updateVideoMetadata(
+    await (authStore.roarfirekit as any).updateVideoMetadata(
       selectedAdmin.value.id,
       taskId,
       "completed",
@@ -456,7 +503,7 @@ const updateVideoCompleted = async (taskId) => {
   }
 };
 
-const currentGameId = computed(() => {
+const currentGameId = computed((): string | undefined => {
   return _get(
     _find(props.games, (game) => {
       return game.completedOn === undefined;
@@ -465,21 +512,22 @@ const currentGameId = computed(() => {
   );
 });
 
-const gameIndex = computed(() =>
+const gameIndex = computed((): number =>
   _findIndex(props.games, (game) => {
     return game.taskId === currentGameId.value;
   }),
 );
 
-const displayGameIndex = computed(() =>
+const displayGameIndex = computed((): number =>
   gameIndex.value === -1 ? 0 : gameIndex.value,
 );
-const allGamesComplete = computed(() => gameIndex.value === -1);
+
+const allGamesComplete = computed((): boolean => gameIndex.value === -1);
 
 const { selectedAdmin } = storeToRefs(gameStore);
 
-async function routeExternalTask(game) {
-  let url;
+async function routeExternalTask(game: Game): Promise<void> {
+  let url: string;
 
   if (game.taskData?.variantURL) {
     url = game.taskData.variantURL;
@@ -496,25 +544,25 @@ async function routeExternalTask(game) {
       props.userData.birthYear,
     ).ageMonths;
     url += `participantID=${props.userData.id}&participantAgeInMonths=${ageInMonths}&lng=${locale.value}`;
-    window.open(url, "_blank").focus();
-    await authStore.completeAssessment(selectedAdmin.value.id, game.taskId);
+    window.open(url, "_blank")?.focus();
+    await (authStore as any).completeAssessment(selectedAdmin.value.id, game.taskId);
   } else {
     url += `&participant=${props.userData.assessmentPid}${
-      props.userData.schools.length
+      props.userData.schools?.current?.length
         ? "&schoolId=" + props.userData.schools.current.join('"%2C"')
         : ""
     }${
-      props.userData.classes.current.length
+      props.userData.classes?.current?.length
         ? "&classId=" + props.userData.classes.current.join('"%2C"')
         : ""
     }`;
 
-    await authStore.completeAssessment(selectedAdmin.value.id, game.taskId);
+    await (authStore as any).completeAssessment(selectedAdmin.value.id, game.taskId);
     window.location.href = url;
   }
 }
 
-const returnVideoOptions = (videoURL) => {
+const returnVideoOptions = (videoURL: string): VideoOptions => {
   return {
     autoplay: false,
     controls: true,
@@ -529,7 +577,7 @@ const returnVideoOptions = (videoURL) => {
   };
 };
 
-const isTaskComplete = (gameCompletedTime, taskId) => {
+const isTaskComplete = (gameCompletedTime: string | Date | undefined, taskId: string): boolean => {
   if (taskId === "survey") {
     if (
       props.userData.userType === "teacher" ||

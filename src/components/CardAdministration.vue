@@ -173,7 +173,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
 import { useConfirm } from "primevue/useconfirm";
 import { useToast } from "primevue/usetoast";
@@ -206,18 +206,89 @@ import {
 } from "@/constants/toasts";
 import { isLevante } from "@/helpers";
 
+interface Assessment {
+  taskId: string;
+  variantId?: string;
+  variantName?: string;
+  params: Record<string, any>;
+}
+
+interface Stats {
+  assignment?: {
+    assigned?: number;
+    started?: number;
+    completed?: number;
+  };
+}
+
+interface Dates {
+  start: string | Date;
+  end: string | Date;
+}
+
+interface Assignees {
+  [key: string]: any;
+}
+
+interface Props {
+  id: string;
+  title: string;
+  publicName: string;
+  stats?: {
+    total?: Stats;
+  };
+  dates: Dates;
+  assignees: Assignees;
+  assessments: Assessment[];
+  showParams: boolean;
+  isSuperAdmin: boolean;
+}
+
+interface SpeedDialItem {
+  label: string;
+  icon: string;
+  command: (event?: any) => void;
+}
+
+interface TreeNode {
+  key: string;
+  data: {
+    id?: string;
+    name?: string;
+    orgType?: string;
+    districtId?: string;
+    schoolId?: string;
+    stats?: Stats;
+    expanded?: boolean;
+  };
+  children?: TreeNode[];
+}
+
+interface ChartData {
+  labels: string[];
+  datasets: Array<{
+    data: number[];
+    backgroundColor: string[];
+  }>;
+}
+
+interface ChartOptions {
+  cutout: string;
+  showToolTips: boolean;
+  plugins: {
+    legend: {
+      display: boolean;
+    };
+    tooltip: {
+      enabled: boolean;
+    };
+  };
+}
+
 const router = useRouter();
 
-const props = defineProps({
-  id: { type: String, required: true },
-  title: { type: String, required: true },
-  publicName: { type: String, required: true },
-  stats: { type: Object, required: false, default: () => ({}) },
-  dates: { type: Object, required: true },
-  assignees: { type: Object, required: true },
-  assessments: { type: Array, required: true },
-  showParams: { type: Boolean, required: true },
-  isSuperAdmin: { type: Boolean, required: true },
+const props = withDefaults(defineProps<Props>(), {
+  stats: () => ({}),
 });
 
 const confirm = useConfirm();
@@ -225,19 +296,20 @@ const toast = useToast();
 
 const { mutateAsync: deleteAdministration } = useDeleteAdministrationMutation();
 
-const administrationStatus = computed(() => {
+const administrationStatus = computed((): string => {
   const now = new Date();
   const dateClosed = new Date(props.dates.end);
   let status = "OPEN";
   if (now > dateClosed) status = "CLOSED";
   return status;
 });
-const administrationStatusBadge = computed(() =>
+
+const administrationStatusBadge = computed((): string =>
   administrationStatus.value.toLowerCase(),
 );
 
-const speedDialItems = computed(() => {
-  const items = [];
+const speedDialItems = computed((): SpeedDialItem[] => {
+  const items: SpeedDialItem[] = [];
 
   if (props.isSuperAdmin) {
     items.push({
@@ -291,50 +363,51 @@ const processedDates = computed(() => {
   });
 });
 
-const assessmentIds = props.assessments
+const assessmentIds: string[] = props.assessments
   .map((assessment) => assessment.taskId.toLowerCase())
   .sort((p1, p2) => {
     return (
-      (taskDisplayNames[p1]?.order ?? 0) - (taskDisplayNames[p2]?.order ?? 0)
+      ((taskDisplayNames as any)[p1]?.order ?? 0) - ((taskDisplayNames as any)[p2]?.order ?? 0)
     );
   });
 
-const paramPanelRefs = _fromPairs(
+const paramPanelRefs: Record<string, any> = _fromPairs(
   props.assessments.map((assessment) => [
     assessment.taskId.toLowerCase(),
     ref(),
   ]),
 );
-const params = _fromPairs(
+
+const params: Record<string, Record<string, any>> = _fromPairs(
   props.assessments.map((assessment) => [
     assessment.taskId.toLowerCase(),
     assessment.params,
   ]),
 );
 
-const toEntryObjects = (inputObj) => {
+const toEntryObjects = (inputObj: Record<string, any>): Array<{ key: string; value: any }> => {
   return _toPairs(inputObj).map(([key, value]) => ({ key, value }));
 };
 
-const toggleParams = (event, id) => {
+const toggleParams = (event: Event, id: string): void => {
   paramPanelRefs[id].value[0].toggle(event);
 };
 
-function getAssessment(assessmentId) {
+function getAssessment(assessmentId: string): Assessment | undefined {
   return props.assessments.find(
     (assessment) => assessment.taskId.toLowerCase() === assessmentId,
   );
 }
 
-const showTable = ref(false);
-const enableQueries = ref(false);
+const showTable = ref<boolean>(false);
+const enableQueries = ref<boolean>(false);
 
-onMounted(() => {
+onMounted((): void => {
   enableQueries.value = true;
   showTable.value = !showTable.value;
 });
 
-const isWideScreen = computed(() => {
+const isWideScreen = computed((): boolean => {
   return window.innerWidth > 768;
 });
 
@@ -349,24 +422,25 @@ const { data: orgs, isLoading: isLoadingDsgfOrgs } = useDsgfOrgQuery(
   },
 );
 
-const loadingTreeTable = computed(() => {
+const loadingTreeTable = computed((): boolean => {
   return isLoadingDsgfOrgs.value || expanding.value;
 });
 
-const treeTableOrgs = ref([]);
+const treeTableOrgs = ref<TreeNode[]>([]);
 watch(orgs, (newValue) => {
-  treeTableOrgs.value = newValue;
+  treeTableOrgs.value = newValue || [];
 });
 
 watch(showTable, (newValue) => {
-  if (newValue) treeTableOrgs.value = orgs.value;
+  if (newValue) treeTableOrgs.value = orgs.value || [];
 });
 
-const expanding = ref(false);
-const onExpand = async (node) => {
+const expanding = ref<boolean>(false);
+const onExpand = async (node: TreeNode): Promise<void> => {
   if (
     node.data.orgType === SINGULAR_ORG_TYPES.SCHOOLS &&
-    node.children?.length > 0 &&
+    node.children &&
+    node.children.length > 0 &&
     !node.data.expanded
   ) {
     expanding.value = true;
@@ -385,7 +459,7 @@ const onExpand = async (node) => {
 
     // Lazy node is a copy of the expanding node. We will insert more detailed
     // children nodes later.
-    const lazyNode = {
+    const lazyNode: TreeNode = {
       key: node.key,
       data: {
         ...node.data,
@@ -395,22 +469,23 @@ const onExpand = async (node) => {
 
     const childNodes = _without(
       _zip(classDocs, classStats).map(([orgDoc, stats], index) => {
-        const { collection = FIRESTORE_COLLECTIONS.CLASSES, ...nodeData } =
-          orgDoc ?? {};
+        if (!orgDoc) return undefined;
+        
+        const { collection = FIRESTORE_COLLECTIONS.CLASSES, ...nodeData } = orgDoc;
 
         if (_isEmpty(nodeData)) return undefined;
 
         return {
           key: `${node.key}-${index}`,
           data: {
-            orgType: SINGULAR_ORG_TYPES[collection.toUpperCase()],
+            orgType: (SINGULAR_ORG_TYPES as any)[collection.toUpperCase()],
             ...(stats && { stats }),
             ...nodeData,
           },
         };
       }),
       undefined,
-    );
+    ).filter((node): node is TreeNode => node !== undefined);
 
     lazyNode.children = childNodes;
 
@@ -423,7 +498,7 @@ const onExpand = async (node) => {
           ...n,
           // Replace the existing school child nodes with a map that inserts the
           // classes at the appropriate position
-          children: n.children.map((child) => {
+          children: n.children?.map((child) => {
             if (child.data.id === node.data.id) {
               return lazyNode;
             }
@@ -451,7 +526,7 @@ const onExpand = async (node) => {
           schoolNode.children = schoolNode.children.toSorted((a, b) => {
             if (!a.data.stats) return 1;
             if (!b.data.stats) return -1;
-            return a.data.name.localeCompare(b.data.name);
+            return (a.data.name || '').localeCompare(b.data.name || '');
           });
         }
       }
@@ -462,10 +537,10 @@ const onExpand = async (node) => {
   }
 };
 
-const doughnutChartData = ref();
-const doughnutChartOptions = ref();
+const doughnutChartData = ref<ChartData>();
+const doughnutChartOptions = ref<ChartOptions>();
 
-const setDoughnutChartOptions = () => ({
+const setDoughnutChartOptions = (): ChartOptions => ({
   cutout: "60%",
   showToolTips: true,
   plugins: {
@@ -478,7 +553,7 @@ const setDoughnutChartOptions = () => ({
   },
 });
 
-const setDoughnutChartData = () => {
+const setDoughnutChartData = (): ChartData => {
   const docStyle = getComputedStyle(document.documentElement);
   let {
     assigned = 0,
@@ -505,7 +580,7 @@ const setDoughnutChartData = () => {
   };
 };
 
-onMounted(() => {
+onMounted((): void => {
   if (props.stats) {
     doughnutChartData.value = setDoughnutChartData();
     doughnutChartOptions.value = setDoughnutChartOptions();
