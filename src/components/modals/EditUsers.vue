@@ -236,47 +236,81 @@
     <!-- </template> -->
   </PvDialog>
 </template>
-<script setup>
-import { watch, ref, onMounted, computed } from "vue";
-import { useToast } from "primevue/usetoast";
-import { storeToRefs } from "pinia";
-import { useAuthStore } from "@/store/auth";
-import PvAutoComplete from "primevue/autocomplete";
-import PvButton from "primevue/button";
-import PvDatePicker from "primevue/datepicker";
-import PvCheckbox from "primevue/checkbox";
-import PvDialog from "primevue/dialog";
-import PvSelect from "primevue/select";
-import PvInputText from "primevue/inputtext";
-import useUserClaimsQuery from "@/composables/queries/useUserClaimsQuery";
+<script setup lang="ts">
+import { watch, ref, onMounted, computed } from 'vue';
+import { useToast } from 'primevue/usetoast';
+import { storeToRefs } from 'pinia';
+import { useAuthStore } from '@/store/auth';
+import PvAutoComplete from 'primevue/autocomplete';
+import PvButton from 'primevue/button';
+import PvDatePicker from 'primevue/datepicker';
+import PvCheckbox from 'primevue/checkbox';
+import PvDialog from 'primevue/dialog';
+import PvSelect from 'primevue/select';
+import PvInputText from 'primevue/inputtext';
+import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 
-const props = defineProps({
-  userData: {
-    type: Object,
-    required: true,
-  },
-  isEnabled: {
-    type: Boolean,
-    required: true,
-    default: false,
-  },
-  userType: {
-    type: String,
-    default: "student",
-  },
+interface StudentData {
+  dob: Date | null;
+  grade: string;
+  gender: string;
+  race: string[];
+  hispanic_ethnicity: boolean;
+  ell_status: boolean;
+  frl_status: boolean;
+  iep_status: boolean;
+}
+
+interface UserName {
+  first: string | null;
+  middle: string | null;
+  last: string | null;
+}
+
+interface UserData {
+  id?: string;
+  name: UserName;
+  studentData: StudentData;
+  testData: boolean;
+  demoData: boolean;
+  userType: string | null;
+}
+
+interface Props {
+  userData: UserData;
+  isEnabled: boolean;
+  userType?: string;
+}
+
+interface Emits {
+  (e: 'modalClosed'): void;
+}
+
+interface DropdownOption {
+  label: string;
+  value: boolean;
+}
+
+interface AutoCompleteEvent {
+  query: string;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  isEnabled: false,
+  userType: 'student',
 });
 
 // Handle modal opening / closing
-const emit = defineEmits(["modalClosed"]);
+const emit = defineEmits<Emits>();
 
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
-const initialized = ref(false);
+const initialized = ref<boolean>(false);
 
 watch(
   () => props.isEnabled,
-  (isEnabled) => {
-    console.log("isEnabled from watcher", isEnabled);
+  (isEnabled: boolean) => {
+    console.log('isEnabled from watcher', isEnabled);
     if (isEnabled) {
       localUserData.value = setupUserData();
       console.log("userData", localUserData.value);
@@ -288,17 +322,17 @@ watch(
 const toast = useToast();
 
 // Handle Modal Actions
-const closeModal = () => {
-  errorMessage.value = "";
-  newPassword.value = "";
-  confirmPassword.value = "";
+const closeModal = (): void => {
+  errorMessage.value = '';
+  newPassword.value = '';
+  confirmPassword.value = '';
   showPassword.value = false;
   isOpen.value = false;
   emit("modalClosed");
 };
 
-const onAccept = async () => {
-  errorMessage.value = "";
+const onAccept = async (): Promise<void> => {
+  errorMessage.value = '';
   isSubmitting.value = true;
   await roarfirekit.value
     .updateUserData(props.userData.id, { ...localUserData.value })
@@ -312,14 +346,14 @@ const onAccept = async () => {
         life: 3000,
       });
     })
-    .catch((error) => {
-      console.log("Error occurred during submission:", error);
+    .catch((error: any) => {
+      console.log('Error occurred during submission:', error);
       errorMessage.value = error.message;
       isSubmitting.value = false;
     });
 };
 
-const updatePassword = async () => {
+const updatePassword = async (): Promise<void> => {
   if (newPassword.value.length < 6) {
     errorMessage.value = "Password must be at least 6 characters";
     return;
@@ -342,39 +376,37 @@ const updatePassword = async () => {
         life: 3000,
       });
     })
-    .catch((error) => {
-      console.log("Error occurred during submission:", error);
+    .catch((error: any) => {
+      console.log('Error occurred during submission:', error);
       errorMessage.value = error.message;
       isSubmitting.value = false;
     });
 };
 
-const onReject = () => {
+const onReject = (): void => {
   closeModal();
 };
 
 // Utility functions
-const isOpen = ref(false);
-const localUserData = ref({});
-const newPassword = ref("");
-const confirmPassword = ref("");
-const isSubmitting = ref(false);
-const errorMessage = ref("");
-const showPassword = ref(false);
+const isOpen = ref<boolean>(false);
+const localUserData = ref<UserData>({} as UserData);
+const newPassword = ref<string>('');
+const confirmPassword = ref<string>('');
+const isSubmitting = ref<boolean>(false);
+const errorMessage = ref<string>('');
+const showPassword = ref<boolean>(false);
 
-const setupUserData = () => {
-  let user = {
+const setupUserData = (): UserData => {
+  let user: UserData = {
     name: {
       first: props.userData?.name?.first || null,
       middle: props.userData?.name?.middle || null,
       last: props.userData?.name?.last || null,
     },
     studentData: {
-      dob: !isNaN(new Date(props.userData?.studentData?.dob))
-        ? new Date(props.userData?.studentData?.dob)
-        : null,
-      grade: props.userData?.studentData?.grade || "",
-      gender: props.userData?.studentData?.gender || "",
+      dob: !isNaN(new Date(props.userData?.studentData?.dob).getTime()) ? new Date(props.userData?.studentData?.dob) : null,
+      grade: props.userData?.studentData?.grade || '',
+      gender: props.userData?.studentData?.gender || '',
       race: props.userData?.studentData?.race || [],
       hispanic_ethnicity:
         props.userData?.studentData?.hispanic_ethnicity || false,
@@ -389,27 +421,27 @@ const setupUserData = () => {
   return user;
 };
 
-const localUserType = computed(() => {
+const localUserType = computed<string | null>(() => {
   if (props.userData?.userType) return props.userData.userType;
   if (props.userType) return props.userType;
   return null;
 });
 
-const races = [
-  "american Indian or alaska Native",
-  "asian",
-  "black or african American",
-  "native hawaiian or other pacific islander",
-  "white",
+const races: string[] = [
+  'american Indian or alaska Native',
+  'asian',
+  'black or african American',
+  'native hawaiian or other pacific islander',
+  'white',
 ];
 
-const raceOptions = ref([...races]);
-const binaryDropdownOptions = [
-  { label: "Yes", value: true },
-  { label: "No", value: false },
+const raceOptions = ref<string[]>([...races]);
+const binaryDropdownOptions: DropdownOption[] = [
+  { label: 'Yes', value: true },
+  { label: 'No', value: false },
 ];
 
-const searchRaces = (event) => {
+const searchRaces = (event: AutoCompleteEvent): void => {
   const query = event.query.toLowerCase();
 
   let filteredOptions = races.filter((opt) =>
@@ -425,13 +457,13 @@ const searchRaces = (event) => {
   raceOptions.value = filteredOptions;
 };
 
-let unsubscribe;
-const init = () => {
+let unsubscribe: (() => void) | undefined;
+const init = (): void => {
   if (unsubscribe) unsubscribe();
   initialized.value = true;
 };
 
-unsubscribe = authStore.$subscribe(async (mutation, state) => {
+unsubscribe = authStore.$subscribe(async (mutation: any, state: any) => {
   if (state.roarfirekit.restConfig) init();
 });
 
@@ -444,7 +476,7 @@ const { data: userClaims } = useUserClaimsQuery({
   enabled: initialized,
 });
 
-const isSuperAdmin = computed(() => {
+const isSuperAdmin = computed<boolean>(() => {
   if (userClaims.value?.claims?.super_admin) return true;
   return false;
 });
