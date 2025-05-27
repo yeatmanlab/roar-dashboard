@@ -1,5 +1,5 @@
 <template>
-  <div class="formgrid grid">
+  <div class="flex flex-column">
     <div>
       <PvSelectButton
         v-model="decision"
@@ -11,20 +11,23 @@
         option-value="value"
       />
     </div>
-    <div v-if="decision === 'presets'">
+    <div v-if="decision === 'presets'" class="flex flex-row w-full justify-content-between">
       <div v-for="(preset, key) in datePresets" :key="key">
-        <PvRadioButton v-model="datePreset" :input-id="key" :value="key" @change="presetChange(key)" />
-        <label :for="key" class="ml-2">{{
-          `${_capitalize(key)} (${preset.start.toDateString()} - ${preset.end.toDateString()})`
-        }}</label>
+        <div class="flex flex-column align-items-center">
+          <PvRadioButton v-model="datePreset" :input-id="key" :value="key" @change="presetChange(key)" />
+          <label :for="key">{{ _capitalize(key) }}</label>
+          <span class="">
+            {{ `${preset.start.toDateString()} - ${preset.end.toDateString()}` }}
+          </span>
+        </div>
       </div>
     </div>
     <div v-if="decision === 'custom'">
       <DatePicker :min-date="minStartDate" label="Start Date" data-cy="input-start-date" v-model="startDate" />
       <DatePicker :min-date="minEndDate" label="End Date" data-cy="input-end-date" v-model="endDate" />
     </div>
-    {{ startDate }}
-    {{ endDate }}
+    <!-- {{ startDate }}
+    {{ endDate }} -->
   </div>
 </template>
 

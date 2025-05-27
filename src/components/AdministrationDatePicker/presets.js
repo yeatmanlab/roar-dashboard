@@ -1,26 +1,26 @@
 export const datePresets = Object.freeze({
   summer: {
-    // June 1st to August 31st
+    // June 16th to July 31st
     label: 'Summer',
-    start: new Date(new Date().getFullYear(), 5, 1),
-    end: new Date(new Date().getFullYear(), 8, 31),
+    start: new Date(new Date().getFullYear(), 5, 16),
+    end: new Date(new Date().getFullYear(), 6, 31),
   },
   fall: {
-    // September 1st to December 31st
+    // August 1st to November 30th
     label: 'Fall',
-    start: new Date(new Date().getFullYear(), 8, 1),
-    end: new Date(new Date().getFullYear(), 11, 31),
+    start: new Date(new Date().getFullYear(), 7, 1),
+    end: new Date(new Date().getFullYear(), 11, 30),
   },
   winter: {
-    // December 1st to February 28th
+    // December 1st to March 31st
     label: 'Winter',
     start: new Date(new Date().getFullYear(), 11, 1),
-    end: new Date(new Date().getFullYear() + 1, 2, 28),
+    end: new Date(new Date().getFullYear() + 1, 2, 31),
   },
   spring: {
-    // March 1st to May 31st
+    // April 1st to June 15th
     label: 'Spring',
-    start: new Date(new Date().getFullYear() + 1, 2, 29),
-    end: new Date(new Date().getFullYear() + 1, 5, 31),
+    start: new Date(new Date().getFullYear() + 1, 3, 1),
+    end: new Date(new Date().getFullYear() + 1, 5, 15),
   },
 });
