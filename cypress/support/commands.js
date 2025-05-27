@@ -46,6 +46,7 @@ Cypress.Commands.add('login', (username, password) => {
 
   cy.visit('/');
   cy.url().should('eq', `${baseUrl}/`);
+  cy.agreeToConsent();
 });
 
 /**
@@ -92,6 +93,7 @@ Cypress.Commands.add('loginWithClever', (schoolName, username, password) => {
   cy.url().should('eq', `${baseUrl}/`);
 
   cy.log('SSO login successful.');
+  cy.agreeToConsent();
 });
 
 /**
@@ -294,7 +296,6 @@ Cypress.Commands.add('selectAdministration', function selectAdministration(testA
     cy.log('Retries exceeded, administration not found, exiting test...');
     return;
   }
-  cy.agreeToConsent();
   cy.get('[data-cy="dropdown-select-administration"]').click();
   cy.get('body')
     .invoke('text')
