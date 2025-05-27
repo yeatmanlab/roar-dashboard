@@ -47,7 +47,7 @@
                 show-button-bar
                 data-cy="input-start-date"
               />
-              <label for="start-date">Start Date <span class="required-asterisk">*</span></label> 
+              <label for="start-date">Start Date <span class="required-asterisk">*</span></label>
             </PvFloatLabel>
             <small v-if="v$.dateStarted.required.$invalid && submitted" class="p-error">
               Please select a start date.
@@ -586,7 +586,7 @@ const submit = async () => {
       toast.add({
         severity: TOAST_SEVERITIES.SUCCESS,
         summary: 'Success',
-        detail: props.adminId ? 'Administration updated' : 'Administration created',
+        detail: props.adminId ? 'Assignment updated' : 'Assignment created',
         life: TOAST_DEFAULT_LIFE_DURATION,
       });
 
