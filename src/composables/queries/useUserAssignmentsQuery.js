@@ -30,7 +30,7 @@ const useUserAssignmentsQuery = (queryOptions = undefined, userId = null, orgTyp
 
   return useQuery({
     queryKey: [USER_ASSIGNMENTS_QUERY_KEY, uid, orgType, orgIds],
-    queryFn: () => getUserAssignments(uid.value, orgType, orgIds, isTestUser),
+    queryFn: () => getUserAssignments(uid.value, orgType?.value, orgIds?.value, isTestUser),
     // Refetch on window focus for MEFS assessments as those are opened in a separate tab.
     refetchOnWindowFocus: 'always',
     enabled: isQueryEnabled,
