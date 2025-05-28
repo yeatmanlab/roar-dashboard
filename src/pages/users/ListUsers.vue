@@ -5,11 +5,16 @@
         <div class="flex flex-column mb-5">
           <div class="flex justify-content-between">
             <div class="flex align-items-center gap-3">
-              <i class="pi pi-users text-gray-400 rounded" style="font-size: 1.6rem"></i>
+              <i
+                class="pi pi-users text-gray-400 rounded"
+                style="font-size: 1.6rem"
+              ></i>
               <div class="admin-page-header">List Users</div>
             </div>
             <div class="bg-gray-100 px-5 py-2 rounded flex flex-column gap-3">
-              <div class="flex flex-wrap align-items-center gap-2 justify-content-between">
+              <div
+                class="flex flex-wrap align-items-center gap-2 justify-content-between"
+              >
                 <div class="uppercase font-light font-sm text-gray-400 mr-2">
                   {{ displayOrgType }}
                 </div>
@@ -18,14 +23,18 @@
                 </div>
               </div>
               <div class="flex flex-wrap gap-2 justify-content-between">
-                <div class="uppercase font-light font-sm text-gray-400 mb-1">Student Count</div>
+                <div class="uppercase font-light font-sm text-gray-400 mb-1">
+                  Student Count
+                </div>
                 <div class="text-xl text-gray-600">
                   <b> {{ users?.length }} </b>
                 </div>
               </div>
             </div>
           </div>
-          <div class="text-md text-gray-500 ml-6">View users for the selected Group.</div>
+          <div class="text-md text-gray-500 ml-6">
+            View users for the selected Group.
+          </div>
         </div>
 
         <RoarDataTable
@@ -56,7 +65,10 @@
           <div class="flex" style="gap: 1rem">
             <div class="form-field" style="width: 100%">
               <label>New Password</label>
-              <PvInputText v-model="v$.password.$model" :class="{ 'p-invalid': v$.password.$invalid && submitted }" />
+              <PvInputText
+                v-model="v$.password.$model"
+                :class="{ 'p-invalid': v$.password.$invalid && submitted }"
+              />
               <small v-if="v$.password.$invalid && submitted" class="p-error"
                 >Password must be at least 6 characters long.</small
               >
@@ -65,9 +77,15 @@
               <label>Confirm New Password</label>
               <PvInputText
                 v-model="v$.confirmPassword.$model"
-                :class="{ 'p-invalid': v$.confirmPassword.$invalid && submitted }"
+                :class="{
+                  'p-invalid': v$.confirmPassword.$invalid && submitted,
+                }"
               />
-              <small v-if="v$.confirmPassword.$invalid && submitted" class="p-error">Passwords do not match.</small>
+              <small
+                v-if="v$.confirmPassword.$invalid && submitted"
+                class="p-error"
+                >Passwords do not match.</small
+              >
             </div>
           </div>
         </div>
@@ -123,21 +141,21 @@
   </main>
 </template>
 <script setup>
-import { ref, reactive, onMounted, computed } from 'vue';
-import { storeToRefs } from 'pinia';
-import { useVuelidate } from '@vuelidate/core';
-import { required, sameAs, minLength } from '@vuelidate/validators';
-import { useToast } from 'primevue/usetoast';
-import PvButton from 'primevue/button';
-import PvInputText from 'primevue/inputtext';
-import _isEmpty from 'lodash/isEmpty';
-import { singularizeFirestoreCollection } from '@/helpers';
-import { useAuthStore } from '@/store/auth';
-import useOrgUsersQuery from '@/composables/queries/useOrgUsersQuery';
-import AppSpinner from '@/components/AppSpinner.vue';
-import EditUsersForm from '@/components/EditUsersForm.vue';
-import RoarModal from '@/components/modals/RoarModal.vue';
-import RoarDataTable from '@/components/RoarDataTable.vue';
+import { ref, reactive, onMounted, computed } from "vue";
+import { storeToRefs } from "pinia";
+import { useVuelidate } from "@vuelidate/core";
+import { required, sameAs, minLength } from "@vuelidate/validators";
+import { useToast } from "primevue/usetoast";
+import PvButton from "primevue/button";
+import PvInputText from "primevue/inputtext";
+import _isEmpty from "lodash/isEmpty";
+import { singularizeFirestoreCollection } from "@/helpers";
+import { useAuthStore } from "@/store/auth";
+import useOrgUsersQuery from "@/composables/queries/useOrgUsersQuery";
+import AppSpinner from "@/components/AppSpinner.vue";
+import EditUsersForm from "@/components/EditUsersForm.vue";
+import RoarModal from "@/components/modals/RoarModal.vue";
+import RoarDataTable from "@/components/RoarDataTable.vue";
 
 const props = defineProps({
   orgType: {
@@ -178,7 +196,6 @@ const toast = useToast();
 const page = ref(0);
 const orderBy = ref(null);
 
-
 const {
   isLoading,
   isFetching,
@@ -189,15 +206,15 @@ const {
 
 const columns = ref([
   {
-    field: 'username',
-    header: 'Username',
-    dataType: 'string',
+    field: "username",
+    header: "Username",
+    dataType: "string",
     sort: false,
   },
   {
-    field: 'email',
-    header: 'Email',
-    dataType: 'string',
+    field: "email",
+    header: "Email",
+    dataType: "string",
     sort: false,
   },
   // {
@@ -213,9 +230,9 @@ const columns = ref([
   //   sort: false,
   // },
   {
-    field: 'userType',
-    header: 'User Type',
-    dataType: 'string',
+    field: "userType",
+    header: "User Type",
+    dataType: "string",
     sort: false,
   },
   // {
@@ -228,10 +245,10 @@ const columns = ref([
 ]);
 
 const displayOrgType = computed(() => {
-  if (props.orgType === 'districts') {
-    return 'Site';
-  } else if (props.orgType === 'groups') {
-    return 'Cohort';
+  if (props.orgType === "districts") {
+    return "Site";
+  } else if (props.orgType === "groups") {
+    return "Cohort";
   } else {
     return singularizeFirestoreCollection(props.orgType);
   }
@@ -262,10 +279,15 @@ const updateUserData = async () => {
     .then(() => {
       isSubmitting.value = false;
       closeModal();
-      toast.add({ severity: 'success', summary: 'Updated', detail: 'User has been updated', life: 3000 });
+      toast.add({
+        severity: "success",
+        summary: "Updated",
+        detail: "User has been updated",
+        life: 3000,
+      });
     })
     .catch((error) => {
-      console.log('Error occurred during submission:', error);
+      console.log("Error occurred during submission:", error);
       isSubmitting.value = false;
     });
 };
@@ -278,7 +300,7 @@ const closeModal = () => {
 const onSort = (event) => {
   const _orderBy = (event.multiSortMeta ?? []).map((item) => ({
     field: { fieldPath: item.field },
-    direction: item.order === 1 ? 'ASCENDING' : 'DESCENDING',
+    direction: item.order === 1 ? "ASCENDING" : "DESCENDING",
   }));
   orderBy.value = !_isEmpty(_orderBy) ? _orderBy : null;
 };
@@ -301,8 +323,8 @@ const rules = {
   },
 };
 const state = reactive({
-  password: '',
-  confirmPassword: '',
+  password: "",
+  confirmPassword: "",
 });
 const v$ = useVuelidate(rules, state);
 
@@ -315,16 +337,23 @@ async function updatePassword() {
       .then(() => {
         submitted.value = false;
         isSubmitting.value = false;
-        state.password = '';
-        state.confirmPassword = '';
+        state.password = "";
+        state.confirmPassword = "";
         showPassword.value = false;
-        toast.add({ severity: 'success', summary: 'Updated', detail: 'Password Updated!', life: 3000 });
+        toast.add({
+          severity: "success",
+          summary: "Updated",
+          detail: "Password Updated!",
+          life: 3000,
+        });
       })
       .catch(() => {
-        toast.add({ severity: 'error', summary: 'Error', detail: 'Unable to update password' });
+        toast.add({
+          severity: "error",
+          summary: "Error",
+          detail: "Unable to update password",
+        });
       });
   }
 }
-
-
 </script>

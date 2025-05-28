@@ -3,18 +3,29 @@
     <section class="main-body">
       <div>
         <div class="flex flex-column">
-          <div class="flex flex-row flex-wrap align-items-center justify-content-between mb-3 gap-3">
+          <div
+            class="flex flex-row flex-wrap align-items-center justify-content-between mb-3 gap-3"
+          >
             <div class="flex flex-column gap-2">
               <div class="flex align-items-center flex-wrap gap-3 mb-2">
                 <div class="admin-page-header">All Assignments</div>
               </div>
-              <div class="text-md text-gray-500">This page lists all the assignments that are administered to your users.</div>
-              <div class="text-md text-gray-500">You can view and monitor completion and create new bundles of tasks, surveys, and questionnaires to be administered as assignments.</div>
+              <div class="text-md text-gray-500">
+                This page lists all the assignments that are administered to
+                your users.
+              </div>
+              <div class="text-md text-gray-500">
+                You can view and monitor completion and create new bundles of
+                tasks, surveys, and questionnaires to be administered as
+                assignments.
+              </div>
             </div>
             <div class="flex align-items-center gap-2 mt-2">
               <div class="flex gap-3 align-items-stretch justify-content-start">
                 <div class="flex flex-column gap-1">
-                  <small id="search-help" class="text-gray-400">Search by name</small>
+                  <small id="search-help" class="text-gray-400"
+                    >Search by name</small
+                  >
                   <div class="flex align-items-center">
                     <PvInputGroup>
                       <PvAutoComplete
@@ -66,12 +77,26 @@
           </div>
         </div>
 
-        <div v-if="!initialized || isLoadingAdministrations" class="loading-container">
-          <div style="width: 100%; display: flex; justify-content: center; align-items: center; margin-top: 100px; margin-bottom: 50px;">
+        <div
+          v-if="!initialized || isLoadingAdministrations"
+          class="loading-container"
+        >
+          <div
+            style="
+              width: 100%;
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              margin-top: 100px;
+              margin-bottom: 50px;
+            "
+          >
             <LevanteSpinner :size="200" />
           </div>
           <span class="uppercase font-light text-sm text-gray-600">
-            <template v-if="fetchTestAdministrations">Fetching Test Assignments</template>
+            <template v-if="fetchTestAdministrations"
+              >Fetching Test Assignments</template
+            >
             <template v-else>Fetching Assignments</template>
           </span>
         </div>
@@ -108,7 +133,9 @@
                 </div>
               </template>
               <template #empty>
-                <div class="flex flex-column align-items-center justify-content-center py-8">
+                <div
+                  class="flex flex-column align-items-center justify-content-center py-8"
+                >
                   <h1 class="text-xl font-bold mb-4">No Assignments Yet</h1>
                   <p class="text-center text-gray-500 mb-4">
                     Go create your first assignment to get started.
@@ -129,22 +156,22 @@
 </template>
 
 <script setup>
-import { onMounted, ref, watch } from 'vue';
-import { storeToRefs } from 'pinia';
-import PvAutoComplete from 'primevue/autocomplete';
-import PvBlockUI from 'primevue/blockui';
-import PvButton from 'primevue/button';
-import PvDataView from 'primevue/dataview';
-import PvSelect from 'primevue/select';
-import PvInputGroup from 'primevue/inputgroup';
-import { useAuthStore } from '@/store/auth';
-import { orderByDefault } from '@/helpers/query/utils';
-import { getTitle } from '@/helpers/query/administrations';
-import useUserType from '@/composables/useUserType';
-import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
-import useAdministrationsListQuery from '@/composables/queries/useAdministrationsListQuery';
-import CardAdministration from '@/components/CardAdministration.vue';
-import LevanteSpinner from '@/components/LevanteSpinner.vue';
+import { onMounted, ref, watch } from "vue";
+import { storeToRefs } from "pinia";
+import PvAutoComplete from "primevue/autocomplete";
+import PvBlockUI from "primevue/blockui";
+import PvButton from "primevue/button";
+import PvDataView from "primevue/dataview";
+import PvSelect from "primevue/select";
+import PvInputGroup from "primevue/inputgroup";
+import { useAuthStore } from "@/store/auth";
+import { orderByDefault } from "@/helpers/query/utils";
+import { getTitle } from "@/helpers/query/administrations";
+import useUserType from "@/composables/useUserType";
+import useUserClaimsQuery from "@/composables/queries/useUserClaimsQuery";
+import useAdministrationsListQuery from "@/composables/queries/useAdministrationsListQuery";
+import CardAdministration from "@/components/CardAdministration.vue";
+import LevanteSpinner from "@/components/LevanteSpinner.vue";
 
 const initialized = ref(false);
 const pageLimit = ref(10);
@@ -153,8 +180,8 @@ const page = ref(0);
 const orderBy = ref(orderByDefault);
 const searchSuggestions = ref([]);
 const searchTokens = ref([]);
-const searchInput = ref('');
-const search = ref('');
+const searchInput = ref("");
+const search = ref("");
 
 const filteredAdministrations = ref([]);
 const fetchTestAdministrations = ref(false);
@@ -197,7 +224,7 @@ const generateAutoCompleteSearchTokens = () => {
 
   // Set search tokens based on each administration's name.
   for (const item of administrations.value) {
-    searchTokens.value.push(...item.name.toLowerCase().split(' '));
+    searchTokens.value.push(...item.name.toLowerCase().split(" "));
   }
 
   // Remove duplicates from array.
@@ -211,7 +238,6 @@ const {
 } = useAdministrationsListQuery(orderBy, fetchTestAdministrations, {
   enabled: initialized,
 });
-
 
 /**
  * Administration data watcher
@@ -233,8 +259,8 @@ watch(
     if (!search.value) {
       filteredAdministrations.value = updatedAdministrationsData;
     } else {
-      filteredAdministrations.value = updatedAdministrationsData?.filter((item) =>
-        item.name.toLowerCase().includes(search.value.toLowerCase()),
+      filteredAdministrations.value = updatedAdministrationsData?.filter(
+        (item) => item.name.toLowerCase().includes(search.value.toLowerCase()),
       );
     }
   },
@@ -244,74 +270,74 @@ watch(
 // Table sort options
 const sortOptions = ref([
   {
-    label: 'Name (ascending)',
+    label: "Name (ascending)",
     value: [
       {
-        field: { fieldPath: 'name' },
-        direction: 'ASCENDING',
+        field: { fieldPath: "name" },
+        direction: "ASCENDING",
       },
     ],
   },
   {
-    label: 'Name (descending)',
+    label: "Name (descending)",
     value: [
       {
-        field: { fieldPath: 'name' },
-        direction: 'DESCENDING',
+        field: { fieldPath: "name" },
+        direction: "DESCENDING",
       },
     ],
   },
   {
-    label: 'Start date (ascending)',
+    label: "Start date (ascending)",
     value: [
       {
-        field: { fieldPath: 'dates.start' },
-        direction: 'ASCENDING',
+        field: { fieldPath: "dates.start" },
+        direction: "ASCENDING",
       },
     ],
   },
   {
-    label: 'Start date (descending)',
+    label: "Start date (descending)",
     value: [
       {
-        field: { fieldPath: 'dates.start' },
-        direction: 'DESCENDING',
+        field: { fieldPath: "dates.start" },
+        direction: "DESCENDING",
       },
     ],
   },
   {
-    label: 'End date (ascending)',
+    label: "End date (ascending)",
     value: [
       {
-        field: { fieldPath: 'dates.end' },
-        direction: 'ASCENDING',
+        field: { fieldPath: "dates.end" },
+        direction: "ASCENDING",
       },
     ],
   },
   {
-    label: 'End date (descending)',
+    label: "End date (descending)",
     value: [
       {
-        field: { fieldPath: 'dates.end' },
-        direction: 'DESCENDING',
+        field: { fieldPath: "dates.end" },
+        direction: "DESCENDING",
       },
     ],
   },
   {
-    label: 'Creation date (ascending)',
+    label: "Creation date (ascending)",
     value: [
       {
-        field: { fieldPath: 'dates.created' },
-        direction: 'ASCENDING',
+        field: { fieldPath: "dates.created" },
+        direction: "ASCENDING",
       },
     ],
   },
   {
-    label: 'Creation date (descending)',
+    label: "Creation date (descending)",
     value: [
       {
-        field: { fieldPath: 'dates.created' },
-        direction: 'DESCENDING',
+        field: { fieldPath: "dates.created" },
+        direction: "DESCENDING",
       },
     ],
   },
@@ -326,8 +352,8 @@ const dataViewKey = ref(0);
  * @returns {void}
  */
 const clearSearch = () => {
-  search.value = '';
-  searchInput.value = '';
+  search.value = "";
+  searchInput.value = "";
   filteredAdministrations.value = administrations.value;
 };
 
@@ -366,20 +392,19 @@ const onSortChange = (event) => {
   const value = event.value.value;
   const sortValue = event.value;
 
-  if (!isSuperAdmin.value && sortValue[0].field.fieldPath === 'name') {
+  if (!isSuperAdmin.value && sortValue[0].field.fieldPath === "name") {
     // catches edge case where a partner admin should sort by the public name attribute
-    sortField.value = 'publicName';
+    sortField.value = "publicName";
   } else {
     sortField.value = value[0].field?.fieldPath;
   }
-  if (value[0].direction === 'DESCENDING') {
+  if (value[0].direction === "DESCENDING") {
     sortOrder.value = -1;
   } else {
     sortOrder.value = 1;
   }
 
   sortKey.value = sortValue;
-
 };
 </script>
 
