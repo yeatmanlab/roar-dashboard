@@ -288,23 +288,29 @@ const getGeneralSurveyProgress = computed(() => {
 });
 
 const getGeneralSurveyProgressClass = computed(() => {
-  if (getGeneralSurveyProgress.value > 0 && getGeneralSurveyProgress.value < 100) {
-    return 'p-progressbar--started';
+  if (
+    getGeneralSurveyProgress.value > 0 &&
+    getGeneralSurveyProgress.value < 100
+  ) {
+    return "p-progressbar--started";
   }
   if (getGeneralSurveyProgress.value === 100) {
-    return 'p-progressbar--completed';
+    return "p-progressbar--completed";
   }
-  return 'p-progressbar--empty'
+  return "p-progressbar--empty";
 });
 
 const getSpecificSurveyProgressClass = computed(() => {
-  if (getSpecificSurveyProgress.value > 0 && getSpecificSurveyProgress.value < 100) {
-    return 'p-progressbar--started';
+  if (
+    getSpecificSurveyProgress.value > 0 &&
+    getSpecificSurveyProgress.value < 100
+  ) {
+    return "p-progressbar--started";
   }
   if (getSpecificSurveyProgress.value === 100) {
-    return 'p-progressbar--completed';
+    return "p-progressbar--completed";
   }
-  return 'p-progressbar--empty'
+  return "p-progressbar--empty";
 });
 
 const getSpecificSurveyProgress = computed(() => (loopIndex) => {
