@@ -151,13 +151,16 @@ jobs:
           echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Create Release
-        uses: comnoco/create-release@v2
+        uses: softprops/action-gh-release@v1
         with:
           token: ${{ steps.generate_token.outputs.token }}
-          tag: v${{ steps.version.outputs.prod_version }}
+          tag_name: v${{ steps.version.outputs.prod_version }}
           name: Release v${{ steps.version.outputs.prod_version }}
           body: ${{ steps.release_notes.outputs.notes }}
           target_commitish: ${{ steps.version.outputs.branch_name }}
+
+      - name: Push Tags
+        run: git push origin --tags
 
       - name: Update main branch version
         run: |
