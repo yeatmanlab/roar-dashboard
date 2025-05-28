@@ -216,12 +216,16 @@ describe("HomeAdministrator", () => {
     expect(wrapperText).toContain("administered to your users");
     // Check for the second part of the description
     expect(wrapperText).toContain("You can view and monitor completion");
-    expect(wrapperText).toContain("bundles of tasks, surveys, and questionnaires");
+    expect(wrapperText).toContain(
+      "bundles of tasks, surveys, and questionnaires",
+    );
     expect(wrapperText).toContain("Search by name");
     expect(wrapperText).toContain("Sort by");
     expect(wrapperText).not.toContain("Fetching Assignments");
     expect(wrapperText).toContain("No Assignments Yet");
-    expect(wrapperText).toContain("Go create your first assignment to get started");
+    expect(wrapperText).toContain(
+      "Go create your first assignment to get started",
+    );
   });
 
   it("renders loading state when data is loading", async () => {

@@ -33,10 +33,10 @@
   </PvDialog>
 </template>
 <script setup lang="ts">
-import { watch, ref, onMounted } from 'vue';
-import { storeToRefs } from 'pinia';
-import PvDialog from 'primevue/dialog';
-import { useAuthStore } from '@/store/auth';
+import { watch, ref, onMounted } from "vue";
+import { storeToRefs } from "pinia";
+import PvDialog from "primevue/dialog";
+import { useAuthStore } from "@/store/auth";
 
 interface Props {
   isEnabled: boolean;
@@ -47,14 +47,14 @@ interface Props {
 }
 
 interface Emits {
-  (e: 'modalClosed'): void;
+  (e: "modalClosed"): void;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   isEnabled: false,
-  title: '',
-  subtitle: '',
-  icon: 'pi-pencil',
+  title: "",
+  subtitle: "",
+  icon: "pi-pencil",
   small: false,
 });
 
@@ -68,7 +68,7 @@ const initialized = ref<boolean>(false);
 watch(
   () => props.isEnabled,
   (isEnabled: boolean) => {
-    console.log('isEnabled from watcher', isEnabled);
+    console.log("isEnabled from watcher", isEnabled);
     if (isEnabled) {
       isOpen.value = true;
     } else if (!isEnabled) {

@@ -47,13 +47,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watchEffect } from 'vue';
-import useSignOutMutation from '@/composables/mutations/useSignOutMutation';
-import PvButton from 'primevue/button';
-import PvSelect from 'primevue/select';
-import { useRouter } from 'vue-router';
-import { useI18n } from 'vue-i18n';
-import { APP_ROUTES } from '@/constants/routes';
+import { ref, watchEffect } from "vue";
+import useSignOutMutation from "@/composables/mutations/useSignOutMutation";
+import PvButton from "primevue/button";
+import PvSelect from "primevue/select";
+import { useRouter } from "vue-router";
+import { useI18n } from "vue-i18n";
+import { APP_ROUTES } from "@/constants/routes";
 
 interface Props {
   isBasicView: boolean;
@@ -77,36 +77,39 @@ const feedbackButton = ref<HTMLButtonElement | null>(null);
 const props = defineProps<Props>();
 
 watchEffect((): void => {
-  const feedbackElement = document.getElementById('sentry-feedback');
+  const feedbackElement = document.getElementById("sentry-feedback");
   if (feedbackElement) {
     if (!props.isBasicView) {
-      feedbackElement.style.setProperty('display', 'none');
+      feedbackElement.style.setProperty("display", "none");
     }
   }
 });
 
 const helpOptions: DropdownOption[] = [
-  { label: 'Researcher Documentation', value: 'researcherDocumentation' },
-  { label: 'Report an Issue', value: 'reportAnIssue' },
+  { label: "Researcher Documentation", value: "researcherDocumentation" },
+  { label: "Report an Issue", value: "reportAnIssue" },
 ];
 
 const profileOptions: DropdownOption[] = [
-  { label: 'Settings', value: 'settings' },
-  { label: i18n.t('navBar.signOut'), value: 'signout' },
+  { label: "Settings", value: "settings" },
+  { label: i18n.t("navBar.signOut"), value: "signout" },
 ];
 
 const handleHelpChange = (e: DropdownChangeEvent): void => {
-  if (e.value === 'researcherDocumentation') {
-    window.open('https://researcher.levante-network.org/', '_blank');
-  } else if (e.value === 'reportAnIssue') {
-    window.open('https://watery-wrench-dee.notion.site/13c244e26d9b8005adbde4522455edfd', '_blank');
+  if (e.value === "researcherDocumentation") {
+    window.open("https://researcher.levante-network.org/", "_blank");
+  } else if (e.value === "reportAnIssue") {
+    window.open(
+      "https://watery-wrench-dee.notion.site/13c244e26d9b8005adbde4522455edfd",
+      "_blank",
+    );
   }
 };
 
 const handleProfileChange = (e: DropdownChangeEvent): void => {
-  if (e.value === 'settings') {
+  if (e.value === "settings") {
     router.push({ path: APP_ROUTES.ACCOUNT_PROFILE });
-  } else if (e.value === 'signout') {
+  } else if (e.value === "signout") {
     signOut();
   }
 };

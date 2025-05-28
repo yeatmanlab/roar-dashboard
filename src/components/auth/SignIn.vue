@@ -157,18 +157,18 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, watch } from 'vue';
-import { storeToRefs } from 'pinia';
-import { required, requiredUnless } from '@vuelidate/validators';
-import { useVuelidate } from '@vuelidate/core';
-import _debounce from 'lodash/debounce';
-import PvButton from 'primevue/button';
-import PvDivider from 'primevue/divider';
-import PvInputText from 'primevue/inputtext';
-import PvPassword from 'primevue/password';
-import PvSkeleton from 'primevue/skeleton';
-import { useAuthStore } from '@/store/auth';
-import RoarModal from '../modals/RoarModal.vue';
+import { reactive, ref, watch } from "vue";
+import { storeToRefs } from "pinia";
+import { required, requiredUnless } from "@vuelidate/validators";
+import { useVuelidate } from "@vuelidate/core";
+import _debounce from "lodash/debounce";
+import PvButton from "primevue/button";
+import PvDivider from "primevue/divider";
+import PvInputText from "primevue/inputtext";
+import PvPassword from "primevue/password";
+import PvSkeleton from "primevue/skeleton";
+import { useAuthStore } from "@/store/auth";
+import RoarModal from "../modals/RoarModal.vue";
 
 interface SignInState {
   email: string;
@@ -182,8 +182,8 @@ interface Props {
 }
 
 interface Emits {
-  (e: 'submit', state: SignInState): void;
-  (e: 'update:email', email: string): void;
+  (e: "submit", state: SignInState): void;
+  (e: "update:email", email: string): void;
 }
 
 const authStore = useAuthStore();
@@ -195,8 +195,8 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const state = reactive<SignInState>({
-  email: '',
-  password: '',
+  email: "",
+  password: "",
   useLink: false,
   usePassword: true,
 });
@@ -273,9 +273,9 @@ function checkForCapsLock(e: Event): void {
   }
 }
 
-const forgotEmail = ref<string>('');
+const forgotEmail = ref<string>("");
 function handleForgotPassword(): void {
-  console.log('Opening modal for forgot password');
+  console.log("Opening modal for forgot password");
   forgotPasswordModalOpen.value = true;
   // e.preventDefault();
 }
@@ -284,7 +284,7 @@ function closeForgotPasswordModal(): void {
   forgotEmail.value = "";
 }
 function sendResetEmail(): void {
-  console.log('Submitting forgot password with email', forgotEmail.value);
+  console.log("Submitting forgot password with email", forgotEmail.value);
   roarfirekit.value.sendPasswordResetEmail(forgotEmail.value);
   closeForgotPasswordModal();
 }
@@ -292,7 +292,7 @@ function sendResetEmail(): void {
 watch(
   () => state.email,
   async (email: string) => {
-    emit('update:email', email);
+    emit("update:email", email);
     if (isValidEmail(email)) {
       evaluatingEmail.value = true;
       validateRoarEmail(email);
