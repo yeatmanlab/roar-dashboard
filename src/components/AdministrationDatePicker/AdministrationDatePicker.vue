@@ -122,6 +122,6 @@ onMounted(() => {
 .card-icon {
   margin-top: 0.25rem;
   margin-right: 0.625rem;
-  margin-left: 0.625rem;
+  margin-left: 0.5rem;
 }
 </style>
