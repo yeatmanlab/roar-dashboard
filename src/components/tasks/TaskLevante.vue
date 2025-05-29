@@ -12,6 +12,7 @@ import { useGameStore } from "@/store/game";
 import useUserChildDataQuery from "@/composables/queries/useUserChildDataQuery";
 import useCompleteAssessmentMutation from "@/composables/mutations/useCompleteAssessmentMutation";
 import packageLockJson from "../../../package-lock.json";
+import { logger } from "@/logger";
 
 const props = defineProps({
   taskId: { type: String, default: "egma-math" },
@@ -118,7 +119,7 @@ async function startTask(selectedAdmin) {
       appKit,
       gameParams,
       userParams,
-      "jspsych-target",
+      logger,
     );
 
     await levanteTask.run().then(async () => {

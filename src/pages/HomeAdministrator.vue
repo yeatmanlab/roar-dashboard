@@ -101,7 +101,7 @@
           </span>
         </div>
         <div v-else>
-          <PvBlockUI :blocked="isFetchingAdministrations">
+          <PvBlockUI>
             <PvDataView
               :key="dataViewKey"
               :value="filteredAdministrations"
