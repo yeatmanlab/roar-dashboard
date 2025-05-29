@@ -1,6 +1,6 @@
 <template>
   <div>
-    <PvPanel header="Select Administration Dates" class="my-2">
+    <PvPanel header="Select Administration Dates" class="mb-2">
       <div class="flex justify-content-center mb-2">
         <PvSelectButton
           v-model="decision"
@@ -44,9 +44,8 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import DatePicker from '../RoarDatePicker/DatePicker.vue';
-import PvRadioButton from 'primevue/radiobutton';
 import PvSelectButton from 'primevue/selectbutton';
 import { datePresets } from './presets';
 import PvPanel from 'primevue/panel';
@@ -69,26 +68,39 @@ const props = defineProps({
 const decision = ref('presets');
 const selectedPreset = ref(null);
 
-// Handles the event of the
+// Handle user changing the input method
+// Always clear the selected preset. If the user switches away from custom, clear the current date inputs.
 const decisionChange = () => {
-  if (decision.value === 'custom') {
-    selectedPreset.value = null;
-  }
+  selectedPreset.value = null;
   if (decision.value === 'presets') {
-    selectedPreset.value = null;
     startDate.value = null;
     endDate.value = null;
   }
 };
 
+// Handle user selecting a preset
 const presetChange = (key) => {
   selectedPreset.value = key;
   startDate.value = datePresets[key].start;
   endDate.value = datePresets[key].end;
 };
+
+// Format a date to a string
 const getDateString = (date) => {
   return date.toLocaleString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 };
+
+onMounted(() => {
+  // If the start and end dates are already populated, set the decision to custom
+  if (startDate.value && endDate.value) {
+    // If the start and end dates are not equal to a preset, set the decision to custom
+    if (
+      !Object.values(datePresets).some((preset) => preset.start === startDate.value && preset.end === endDate.value)
+    ) {
+      decision.value = 'custom';
+    }
+  }
+});
 </script>
 <style scoped>
 .card {
