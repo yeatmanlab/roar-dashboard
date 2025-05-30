@@ -22,7 +22,7 @@
         :optionValue="(o) => o.value"
         :optionLabel="(o) => o.label"
         @change="handleHelpChange"
-        class="options-1"
+        class="options-help"
       >
         <template #value>
           <i class="pi pi-question-circle"></i>
@@ -38,7 +38,7 @@
         :optionValue="(o) => o.value"
         :optionLabel="(o) => o.label"
         @change="handleProfileChange"
-        class="options-2"
+        class="options-settings"
       >
         <template #value>
           <i class="pi pi-user"></i>
@@ -122,11 +122,11 @@ const handleProfileChange = (e: DropdownChangeEvent): void => {
   position: relative;
   top: -18px;
 
-  .options-2 {
+  .options-settings {
     position: absolute;
     right: 0;
   }
-  .options-1 {
+  .options-help {
     position: absolute;
     right: 5.4rem;
   }
