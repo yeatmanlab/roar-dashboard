@@ -23,8 +23,8 @@ Cypress.Commands.add('login', (username, password) => {
       cy.get('button').contains('Go!').click();
 
       cy.url().should('eq', `${baseUrl}/`);
-
       cy.log('Login successful.');
+      cy.agreeToConsent();
     },
     {
       validate: () => {
@@ -92,6 +92,7 @@ Cypress.Commands.add('loginWithClever', (schoolName, username, password) => {
   cy.url().should('eq', `${baseUrl}/`);
 
   cy.log('SSO login successful.');
+  cy.agreeToConsent();
 });
 
 /**
