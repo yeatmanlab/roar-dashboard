@@ -497,7 +497,11 @@ async function submitUsers() {
   errorMessage.value = "";
 
   // Get users to be registered (those with empty uid)
-  const usersToBeRegistered = _cloneDeep(toRaw(rawUserFile.value)).filter(user => !user.uid || user.uid === '');
+  const usersToBeRegistered = _cloneDeep(toRaw(rawUserFile.value)).map((user, index) => ({
+    user,
+    index
+  })).filter(({ user }) => !user.uid || user.uid === '');
+  debugger;
   const usersWithErrors = [];
 
   // If no users to register, show message and return
@@ -513,7 +517,7 @@ async function submitUsers() {
   }
 
   // Check orgs exist
-  for (const user of usersToBeRegistered) {
+  for (const { user, index } of usersToBeRegistered) {
     try {
       // Find fields case-insensitively
       const siteField = Object.keys(user).find(
@@ -669,6 +673,7 @@ async function submitUsers() {
             // Add the user to the error list with the specific organization error
             usersWithErrors.push({
               user,
+              index,
               error: `Invalid ${_capitalize(orgType)}: ${error.message}`,
             });
             break; // Break out of the orgType loop for this user
@@ -687,12 +692,14 @@ async function submitUsers() {
         // Only add this error if the user doesn't already have an error
         usersWithErrors.push({
           user,
+          index,
           error: "No valid organization information found",
         });
       }
     } catch (error) {
       usersWithErrors.push({
         user,
+        index,
         error: error.message,
       });
     }
@@ -729,7 +736,7 @@ async function submitUsers() {
   for (const users of chunkedUsersToBeRegistered) {
     try {
       // Ensure each user has the proper userType field name for the backend
-      const processedUsers = users.map((user) => {
+      const processedUsers = users.map(({ user }) => {
         const processedUser = { ...user };
 
         // Find the userType field (case-insensitive)
@@ -766,11 +773,11 @@ async function submitUsers() {
 
       // Update only the newly registered users
       currentRegisteredUsers.forEach((registeredUser, index) => {
-        const rawUserIndex = processedUserCount + index;
-        if (rawUserIndex < rawUserFile.value.length) {
+        const originalIndex = users[index].index;
+        if (originalIndex < rawUserFile.value.length) {
           // Preserve all existing user data and update with new registration data
-          rawUserFile.value[rawUserIndex] = {
-            ...rawUserFile.value[rawUserIndex],
+          rawUserFile.value[originalIndex] = {
+            ...rawUserFile.value[originalIndex],
             email: registeredUser.email,
             password: registeredUser.password,
             uid: registeredUser.uid
