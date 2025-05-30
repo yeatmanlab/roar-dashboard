@@ -605,8 +605,6 @@ watch(
       if (state.consent === 'No Consent') {
         noConsent.value = state.consent;
       }
-    } else {
-      console.log('no admin info or no variants');
     }
   },
   { immediate: true },
@@ -615,7 +613,6 @@ watch(
 watch(
   state,
   (newState) => {
-    console.log('state watcher triggered', newState, existingAdministrationData.value);
     if (
       newState?.administrationName &&
       newState?.administrationPublicName &&
