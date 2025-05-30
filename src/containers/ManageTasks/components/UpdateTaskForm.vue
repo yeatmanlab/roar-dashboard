@@ -67,7 +67,6 @@ import PvToast from 'primevue/toast';
 import { useAuthStore } from '@/store/auth';
 import useTasksQuery from '@/composables/queries/useTasksQuery';
 import useUpdateTaskMutation from '@/composables/mutations/useUpdateTaskMutation';
-import useToggleRegisteredTasksMutation from '@/composables/mutations/useToggleRegisteredTasksMutation';
 import Dropdown from '@/components/Form/Dropdown';
 import TaskParametersConfigurator from './TaskParametersConfigurator.vue';
 import { convertParamArrayToObject } from '@/helpers/convertParamArrayToObject';
@@ -86,13 +85,12 @@ const { registeredTasksOnly } = toRefs(props);
 
 const toast = useToast();
 const initialized = ref(false);
-// const registeredTasksOnly = ref(props.registeredTasksOnly);
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
 const { userCan, Permissions } = usePermissions();
 
 const { mutate: updateTask } = useUpdateTaskMutation();
-const { mutate: toggleRegisteredTasks } = useToggleRegisteredTasksMutation();
+const { refetch: toggleRegisteredTasks } = useTasksQuery(registeredTasksOnly.value);
 
 // The selected task to be updated.
 const selectedTask = ref('');
