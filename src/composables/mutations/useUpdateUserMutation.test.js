@@ -1,14 +1,14 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { withSetup } from "@/test-support/withSetup.js";
-import * as VueQuery from "@tanstack/vue-query";
-import { useAuthStore } from "@/store/auth";
-import useUpdateUserMutation from "./useUpdateUserMutation";
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { withSetup } from '@/test-support/withSetup.js';
+import * as VueQuery from '@tanstack/vue-query';
+import { useAuthStore } from '@/store/auth';
+import useUpdateUserMutation from './useUpdateUserMutation';
 
-vi.mock("@/store/auth", () => ({
+vi.mock('@/store/auth', () => ({
   useAuthStore: vi.fn(),
 }));
 
-vi.mock("@tanstack/vue-query", async (getModule) => {
+vi.mock('@tanstack/vue-query', async (getModule) => {
   const original = await getModule();
   return {
     ...original,
@@ -16,7 +16,7 @@ vi.mock("@tanstack/vue-query", async (getModule) => {
   };
 });
 
-describe("useUpdateUserMutation", () => {
+describe('useUpdateUserMutation', () => {
   let queryClient;
 
   beforeEach(() => {
@@ -30,11 +30,11 @@ describe("useUpdateUserMutation", () => {
   });
 
   const mockUser = {
-    userId: "mock-user-id",
-    userData: { email: "mock-user@stanford.edu" },
+    userId: 'mock-user-id',
+    userData: { email: 'mock-user@stanford.edu' },
   };
 
-  it("should call updateUserData when the mutation is triggered", async () => {
+  it('should call updateUserData when the mutation is triggered', async () => {
     const mockAuthStore = { roarfirekit: { updateUserData: vi.fn() } };
     useAuthStore.mockReturnValue(mockAuthStore);
 
@@ -45,19 +45,16 @@ describe("useUpdateUserMutation", () => {
     const { mutateAsync } = result;
     await mutateAsync(mockUser);
 
-    expect(mockAuthStore.roarfirekit.updateUserData).toHaveBeenCalledWith(
-      mockUser.userId,
-      mockUser.userData,
-    );
+    expect(mockAuthStore.roarfirekit.updateUserData).toHaveBeenCalledWith(mockUser.userId, mockUser.userData);
   });
 
-  it("should invalidate task queries upon mutation success", async () => {
+  it('should invalidate task queries upon mutation success', async () => {
     const mockInvalidateQueries = vi.fn();
     const mockAuthStore = { roarfirekit: { updateUserData: vi.fn() } };
 
     useAuthStore.mockReturnValue(mockAuthStore);
 
-    vi.spyOn(VueQuery, "useQueryClient").mockImplementation(() => ({
+    vi.spyOn(VueQuery, 'useQueryClient').mockImplementation(() => ({
       invalidateQueries: mockInvalidateQueries,
     }));
 
@@ -69,19 +66,19 @@ describe("useUpdateUserMutation", () => {
     await mutateAsync(mockUser);
 
     expect(isSuccess.value).toBe(true);
-    expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ["user"] });
+    expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['user'] });
   });
 
-  it("should not invalidate task queries upon mutation failure", async () => {
+  it('should not invalidate task queries upon mutation failure', async () => {
     const mockInvalidateQueries = vi.fn();
-    const mockError = new Error("Mock error");
+    const mockError = new Error('Mock error');
     const mockAuthStore = {
       roarfirekit: { updateUserData: vi.fn(() => Promise.reject(mockError)) },
     };
 
     useAuthStore.mockReturnValue(mockAuthStore);
 
-    vi.spyOn(VueQuery, "useQueryClient").mockImplementation(() => ({
+    vi.spyOn(VueQuery, 'useQueryClient').mockImplementation(() => ({
       invalidateQueries: mockInvalidateQueries,
     }));
 

@@ -1,19 +1,19 @@
-import { sentryVitePlugin } from "@sentry/vite-plugin";
-import { fileURLToPath, URL } from "url";
-import { defineConfig } from "vite";
-import Vue from "@vitejs/plugin-vue";
-import mkcert from "vite-plugin-mkcert";
-import { nodePolyfills } from "vite-plugin-node-polyfills";
-import UnheadVite from "@unhead/addons/vite";
-import * as child from "child_process";
+import { sentryVitePlugin } from '@sentry/vite-plugin';
+import { fileURLToPath, URL } from 'url';
+import { defineConfig } from 'vite';
+import Vue from '@vitejs/plugin-vue';
+import mkcert from 'vite-plugin-mkcert';
+import { nodePolyfills } from 'vite-plugin-node-polyfills';
+import UnheadVite from '@unhead/addons/vite';
+import * as child from 'child_process';
 
-const commitHash = child.execSync("git rev-parse --short HEAD").toString();
+const commitHash = child.execSync('git rev-parse --short HEAD').toString();
 
 // https://vitejs.dev/config/
 export default defineConfig({
   define: {
-    "import.meta.env.VITE_APP_VERSION": JSON.stringify(commitHash),
-    "import.meta.env.VITE_LEVANTE": JSON.stringify("TRUE"),
+    'import.meta.env.VITE_APP_VERSION': JSON.stringify(commitHash),
+    'import.meta.env.VITE_LEVANTE': JSON.stringify('TRUE'),
   },
   plugins: [
     Vue({
@@ -25,12 +25,12 @@ export default defineConfig({
       },
     }),
     UnheadVite(),
-    ...(process.env.NODE_ENV === "development" ? [mkcert()] : []),
-    ...(process.env.NODE_ENV !== "development"
+    ...(process.env.NODE_ENV === 'development' ? [mkcert()] : []),
+    ...(process.env.NODE_ENV !== 'development'
       ? [
           sentryVitePlugin({
-            org: "roar-89588e380",
-            project: "dashboard",
+            org: 'roar-89588e380',
+            project: 'dashboard',
           }),
         ]
       : []),
@@ -38,13 +38,13 @@ export default defineConfig({
 
   resolve: {
     alias: {
-      "@": fileURLToPath(new URL("./src", import.meta.url)),
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
 
   server: {
     fs: {
-      allow: [".."],
+      allow: ['..'],
     },
   },
 
@@ -54,23 +54,23 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          lodash: ["lodash"],
-          tanstack: ["@tanstack/vue-query"],
-          chartJs: ["chart.js"],
-          sentry: ["@sentry/browser", "@sentry/integrations", "@sentry/vue"],
-          phoneme: ["@bdelab/roar-pa"],
-          sre: ["@bdelab/roar-sre"],
-          swr: ["@bdelab/roar-swr"],
-          utils: ["@bdelab/roar-utils"],
+          lodash: ['lodash'],
+          tanstack: ['@tanstack/vue-query'],
+          chartJs: ['chart.js'],
+          sentry: ['@sentry/browser', '@sentry/integrations', '@sentry/vue'],
+          phoneme: ['@bdelab/roar-pa'],
+          sre: ['@bdelab/roar-sre'],
+          swr: ['@bdelab/roar-swr'],
+          utils: ['@bdelab/roar-utils'],
         },
       },
     },
   },
   optimizeDeps: {
-    include: ["@levante-framework/firekit"],
+    include: ['@levante-framework/firekit'],
     esbuildOptions: {
-      mainFields: ["module", "main"],
-      resolveExtensions: [".js", ".mjs", ".cjs"],
+      mainFields: ['module', 'main'],
+      resolveExtensions: ['.js', '.mjs', '.cjs'],
     },
   },
 });

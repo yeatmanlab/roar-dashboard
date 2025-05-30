@@ -4,24 +4,13 @@
   </div>
   <div v-else class="options-container">
     <div class="flex justify-content-end mr-3 mt-2 button-container">
-      <button
-        type="button"
-        class="text-red-700 cursor-pointer options-toggle"
-        @click.prevent="toggleControls"
-      >
-        {{ showControls ? "Hide Options" : "Show Options" }}
+      <button type="button" class="text-red-700 cursor-pointer options-toggle" @click.prevent="toggleControls">
+        {{ showControls ? 'Hide Options' : 'Show Options' }}
       </button>
     </div>
-    <div
-      v-if="showControls"
-      class="w-full gap-1 pt-1 flex justify-content-center align-items-center flex-wrap mb-4"
-    >
+    <div v-if="showControls" class="w-full gap-1 pt-1 flex justify-content-center align-items-center flex-wrap mb-4">
       <div
-        v-if="
-          props.allowFiltering ||
-          props.allowColumnSelection ||
-          props.allowExport
-        "
+        v-if="props.allowFiltering || props.allowColumnSelection || props.allowExport"
         class="w-full gap-1 pt-1 flex justify-content-center align-items-center flex-wrap mt-3"
       >
         <slot name="filterbar"></slot>
@@ -79,10 +68,7 @@
     </div>
     <div class="flex flex-column">
       <span style="height: 10px">
-        <div
-          class="relative flex justify-content-end mt-0 mr-2 z-1"
-          style="top: 25px; width: 20%; left: 80%"
-        >
+        <div class="relative flex justify-content-end mt-0 mr-2 z-1" style="top: 25px; width: 20%; left: 80%">
           <slot />
         </div>
       </span>
@@ -129,11 +115,7 @@
             :field="col.field"
             :data-type="col.dataType"
             :sortable="col.sort !== false"
-            :show-filter-match-modes="
-              !col.useMultiSelect &&
-              col.dataType !== 'score' &&
-              col.dataType !== 'progress'
-            "
+            :show-filter-match-modes="!col.useMultiSelect && col.dataType !== 'score' && col.dataType !== 'progress'"
             :show-filter-operator="col.allowMultipleFilters === true"
             :filter-field="col?.filterField ? col.filterField : col.field"
             :show-add-button="col.allowMultipleFilters === true"
@@ -172,30 +154,15 @@
               <div
                 v-else-if="col.tagOutlined && _get(colData, col.tagColor)"
                 class="circle"
-                :style="`border: 1px solid black; background-color: ${_get(
-                  colData,
-                  col.tagColor,
-                )}; color: ${
+                :style="`border: 1px solid black; background-color: ${_get(colData, col.tagColor)}; color: ${
                   _get(colData, col.tagColor) === 'white' ? 'black' : 'white'
                 }; outline: 1px dotted #0000CD; outline-offset: 3px`"
               />
-              <div
-                v-else-if="
-                  col.chip &&
-                  col.dataType === 'array' &&
-                  _get(colData, col.field) !== undefined
-                "
-              >
-                <PvChip
-                  v-for="chip in _get(colData, col.field)"
-                  :key="chip"
-                  :label="chip"
-                />
+              <div v-else-if="col.chip && col.dataType === 'array' && _get(colData, col.field) !== undefined">
+                <PvChip v-for="chip in _get(colData, col.field)" :key="chip" :label="chip" />
               </div>
               <div v-else-if="col.link">
-                <router-link
-                  :to="{ name: col.routeName, params: colData.routeParams }"
-                >
+                <router-link :to="{ name: col.routeName, params: colData.routeParams }">
                   <PvButton
                     v-tooltip.right="colData.tooltip"
                     severity="secondary"
@@ -210,10 +177,7 @@
                   />
                 </router-link>
                 <span
-                  v-if="
-                    colData.userCount !== undefined &&
-                    colData.userCount !== null
-                  "
+                  v-if="colData.userCount !== undefined && colData.userCount !== null"
                   class="font-semibold text-sm ml-2"
                 >
                   {{ colData.userCount }}
@@ -238,43 +202,19 @@
               <div v-else-if="col.field === 'user.lastName'">
                 {{ _get(colData, col.field) }}
               </div>
-              <div
-                v-else-if="
-                  col.field === 'userType' &&
-                  _get(colData, col.field) === 'parent'
-                "
-              >
-                Caregiver
-              </div>
+              <div v-else-if="col.field === 'userType' && _get(colData, col.field) === 'parent'">Caregiver</div>
               <div v-else>
                 {{ _get(colData, col.field) }}
               </div>
             </template>
             <template v-if="col.dataType" #sorticon="{ sorted, sortOrder }">
-              <i
-                v-if="!sorted && currentSort.length === 0"
-                class="pi pi-sort-alt ml-2"
-              />
-              <i
-                v-if="sorted && sortOrder === 1"
-                class="pi pi-sort-amount-down-alt ml-2"
-              />
-              <i
-                v-else-if="sorted && sortOrder === -1"
-                class="pi pi-sort-amount-up-alt ml-2"
-              />
+              <i v-if="!sorted && currentSort.length === 0" class="pi pi-sort-alt ml-2" />
+              <i v-if="sorted && sortOrder === 1" class="pi pi-sort-amount-down-alt ml-2" />
+              <i v-else-if="sorted && sortOrder === -1" class="pi pi-sort-amount-up-alt ml-2" />
             </template>
             <template v-if="col.dataType" #filter="{ filterModel }">
-              <div
-                v-if="col.dataType === 'text' && !col.useMultiSelect"
-                class="filter-content"
-              >
-                <PvInputText
-                  v-model="filterModel.value"
-                  type="text"
-                  class="p-column-filter"
-                  placeholder="Filter"
-                />
+              <div v-if="col.dataType === 'text' && !col.useMultiSelect" class="filter-content">
+                <PvInputText v-model="filterModel.value" type="text" class="p-column-filter" placeholder="Filter" />
               </div>
               <PvInputNumber
                 v-if="col.dataType === 'number' && !col.useMultiSelect"
@@ -297,15 +237,8 @@
                 date-format="mm/dd/yy"
                 placeholder="mm/dd/yyyy"
               />
-              <div
-                v-if="col.dataType === 'boolean'"
-                class="flex flex-row gap-2"
-              >
-                <PvSelect
-                  v-model="filterModel.value"
-                  :options="['True', 'False']"
-                  style="margin-bottom: 0.5rem"
-                />
+              <div v-if="col.dataType === 'boolean'" class="flex flex-row gap-2">
+                <PvSelect v-model="filterModel.value" :options="['True', 'False']" style="margin-bottom: 0.5rem" />
               </div>
               <div v-if="col.dataType === 'score'">
                 <PvSelect
@@ -319,14 +252,8 @@
                 >
                   <template #option="{ option }">
                     <div class="flex align-items-center p-0">
-                      <div
-                        v-if="supportLevelColors[option]"
-                        class="flex gap-2 p-0"
-                      >
-                        <div
-                          class="small-circle tooltip"
-                          :style="`background-color: ${supportLevelColors[option]};`"
-                        />
+                      <div v-if="supportLevelColors[option]" class="flex gap-2 p-0">
+                        <div class="small-circle tooltip" :style="`background-color: ${supportLevelColors[option]};`" />
                         <span class="tooltiptext">{{ option }}</span>
                       </div>
                       <div v-else-if="progressTags[option]">
@@ -344,10 +271,7 @@
                   </template>
                   <template #value="{ value }">
                     <div v-if="supportLevelColors[value]" class="flex gap-2">
-                      <div
-                        class="small-circle tooltip"
-                        :style="`background-color: ${supportLevelColors[value]};`"
-                      />
+                      <div class="small-circle tooltip" :style="`background-color: ${supportLevelColors[value]};`" />
                       <span class="tooltiptext">{{ value }}</span>
                     </div>
                     <div v-else-if="progressTags[value]">
@@ -372,10 +296,7 @@
                   data-cy="progress-filter-dropdown"
                 >
                   <template #option="{ option }">
-                    <div
-                      v-if="progressTags[option]"
-                      class="flex align-items-center"
-                    >
+                    <div v-if="progressTags[option]" class="flex align-items-center">
                       <PvTag
                         :severity="progressTags[option]?.severity"
                         :value="progressTags[option]?.value"
@@ -423,13 +344,9 @@
             </template>
           </PvColumn>
           <template #empty>
-            <div
-              class="flex flex-column align-items-center align-text-left my-8"
-            >
+            <div class="flex flex-column align-items-center align-text-left my-8">
               <div class="text-lg font-bold my-2">No results found</div>
-              <div class="font-light">
-                The filters applied have no matching results .
-              </div>
+              <div class="font-light">The filters applied have no matching results .</div>
               <PvButton
                 text
                 class="my-2 bg-primary p-2 border-none border-round text-white hover:bg-red-900"
@@ -445,29 +362,29 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
-import { useToast } from "primevue/usetoast";
-import PvButton from "primevue/button";
-import PvDatePicker from "primevue/datepicker";
-import PvChip from "primevue/chip";
-import PvColumn from "primevue/column";
-import PvDataTable from "primevue/datatable";
-import PvFloatLabel from "primevue/floatlabel";
-import PvSelect from "primevue/select";
-import PvInputNumber from "primevue/inputnumber";
-import PvInputText from "primevue/inputtext";
-import PvMultiSelect from "primevue/multiselect";
-import PvTag from "primevue/tag";
-import { FilterMatchMode, FilterOperator } from "@primevue/core/api";
-import _get from "lodash/get";
-import _map from "lodash/map";
-import _forEach from "lodash/forEach";
-import _find from "lodash/find";
-import _toUpper from "lodash/toUpper";
-import _startCase from "lodash/startCase";
-import { supportLevelColors, progressTags } from "@/helpers/reports";
-import SkeletonTable from "@/components/SkeletonTable.vue";
-import TableScoreTag from "@/components/reports/TableScoreTag.vue";
+import { ref, computed } from 'vue';
+import { useToast } from 'primevue/usetoast';
+import PvButton from 'primevue/button';
+import PvDatePicker from 'primevue/datepicker';
+import PvChip from 'primevue/chip';
+import PvColumn from 'primevue/column';
+import PvDataTable from 'primevue/datatable';
+import PvFloatLabel from 'primevue/floatlabel';
+import PvSelect from 'primevue/select';
+import PvInputNumber from 'primevue/inputnumber';
+import PvInputText from 'primevue/inputtext';
+import PvMultiSelect from 'primevue/multiselect';
+import PvTag from 'primevue/tag';
+import { FilterMatchMode, FilterOperator } from '@primevue/core/api';
+import _get from 'lodash/get';
+import _map from 'lodash/map';
+import _forEach from 'lodash/forEach';
+import _find from 'lodash/find';
+import _toUpper from 'lodash/toUpper';
+import _startCase from 'lodash/startCase';
+import { supportLevelColors, progressTags } from '@/helpers/reports';
+import SkeletonTable from '@/components/SkeletonTable.vue';
+import TableScoreTag from '@/components/reports/TableScoreTag.vue';
 
 /*
 Using the DataTable
@@ -501,7 +418,7 @@ const props = defineProps({
   columns: { type: Array, required: true },
   data: { type: Array, required: true },
   allowExport: { type: Boolean, default: true },
-  exportFilename: { type: String, default: "datatable-export" },
+  exportFilename: { type: String, default: 'datatable-export' },
   pageLimit: { type: Number, default: 15 },
   totalRecords: { type: Number, required: false, default: 0 },
   loading: { type: Boolean, default: false },
@@ -529,19 +446,19 @@ const selectedRows = ref([]);
 
 const taskFilterOptions = ref([
   {
-    label: "Support Categories",
-    code: "SupportCategories",
-    items: ["Green", "Yellow", "Pink"],
+    label: 'Support Categories',
+    code: 'SupportCategories',
+    items: ['Green', 'Yellow', 'Pink'],
   },
   {
-    label: "Progress Status",
-    code: "ProgressStatus",
-    items: ["Completed", "Started", "Assigned"],
+    label: 'Progress Status',
+    code: 'ProgressStatus',
+    items: ['Completed', 'Started', 'Assigned'],
   },
   {
-    label: "Other Filters",
-    code: "Other",
-    items: ["Optional", "Assessed", "Unreliable"],
+    label: 'Other Filters',
+    code: 'Other',
+    items: ['Optional', 'Assessed', 'Unreliable'],
   },
 ]);
 
@@ -552,8 +469,8 @@ const onSelectAll = () => {
   if (selectAll.value) {
     selectedRows.value = props.data;
     toast.add({
-      severity: "info",
-      summary: "Rows selected",
+      severity: 'info',
+      summary: 'Rows selected',
       detail: `You selected ${selectedRows.value.length} rows but there are
         ${props.totalRecords} total rows in all of this table's pages. If you
         would like to export all rows, please click the "Export Whole Table"
@@ -563,21 +480,21 @@ const onSelectAll = () => {
   } else {
     selectedRows.value = [];
   }
-  emit("selection", selectedRows.value);
+  emit('selection', selectedRows.value);
 };
 
 const onSelectionChange = () => {
-  emit("selection", selectedRows.value);
+  emit('selection', selectedRows.value);
 };
 
 const dataTable = ref();
 
 const exportCSV = (exportSelected) => {
   if (exportSelected) {
-    emit("export-selected", selectedRows.value);
+    emit('export-selected', selectedRows.value);
     return;
   }
-  emit("export-all");
+  emit('export-all');
 };
 
 const compressedRows = ref(false);
@@ -599,14 +516,12 @@ const computedFilters = computed(() => {
   let options = {};
   _forEach(computedColumns.value, (column) => {
     // Check if header text is supplied; if not, generate.
-    if (!_get(column, "header")) {
-      column["header"] = _startCase(_get(column, "field"));
+    if (!_get(column, 'header')) {
+      column['header'] = _startCase(_get(column, 'field'));
     }
     // Choose whether to default to field or a custom filterField (e.g. tag based filters)
-    const fieldOrFilterField = column?.filterField
-      ? column.filterField
-      : column.field;
-    const dataType = _toUpper(_get(column, "dataType"));
+    const fieldOrFilterField = column?.filterField ? column.filterField : column.field;
+    const dataType = _toUpper(_get(column, 'dataType'));
     let returnMatchMode = null;
 
     // generate return matchmode
@@ -618,7 +533,7 @@ const computedFilters = computed(() => {
     }
 
     // case for where multiselect ( can affect any type of data type)
-    if (_get(column, "useMultiSelect")) {
+    if (_get(column, 'useMultiSelect')) {
       returnMatchMode = { value: null, matchMode: FilterMatchMode.IN };
       options[column.field] = getUniqueOptions(column);
     }
@@ -643,23 +558,23 @@ const resetFilters = () => {
 
 let toolTipByHeader = (header) => {
   const headerToTooltipMap = {
-    Word: "Assesses decoding skills at the word level. \n\n  Percentile ranges from 0-99 \n Raw Score ranges from 100-900",
+    Word: 'Assesses decoding skills at the word level. \n\n  Percentile ranges from 0-99 \n Raw Score ranges from 100-900',
     Letter:
-      "Assesses decoding skills at the word level. \n\n Percentile ranges from 0-99 \n Raw Score ranges from 0-90",
+      'Assesses decoding skills at the word level. \n\n Percentile ranges from 0-99 \n Raw Score ranges from 0-90',
     Phoneme:
-      "Assesses phonological awareness: sound matching and elision. \n\n Percentile ranges from 0-99 \n Raw Score ranges from 0-57",
+      'Assesses phonological awareness: sound matching and elision. \n\n Percentile ranges from 0-99 \n Raw Score ranges from 0-57',
     Sentence:
-      "Assesses reading fluency at the sentence level. \n\n Percentile ranges from 0-99 \n Raw Score ranges from 0-130 ",
+      'Assesses reading fluency at the sentence level. \n\n Percentile ranges from 0-99 \n Raw Score ranges from 0-130 ',
     Palabra:
-      "Assesses decoding skills at the word level in Spanish. This test is still in the research phase. \n\n  Percentile ranges from 0-99 \n Raw Score ranges from 100-900",
+      'Assesses decoding skills at the word level in Spanish. This test is still in the research phase. \n\n  Percentile ranges from 0-99 \n Raw Score ranges from 100-900',
   };
 
-  return headerToTooltipMap[header] || "";
+  return headerToTooltipMap[header] || '';
 };
 
 // Generate list of options given a column
 function getUniqueOptions(column) {
-  const field = _get(column, "field");
+  const field = _get(column, 'field');
   let options = [];
   _forEach(props.data, (entry) => {
     if (!options.includes(_get(entry, field))) {
@@ -671,39 +586,35 @@ function getUniqueOptions(column) {
 
 function getFormattedDate(date) {
   if (date instanceof Date) {
-    return date.toLocaleDateString("en-us", {
-      weekday: "long",
-      year: "numeric",
-      month: "short",
-      day: "numeric",
+    return date.toLocaleDateString('en-us', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
     });
-  } else if (typeof date === "string") {
+  } else if (typeof date === 'string') {
     try {
       const dateObj = new Date(date);
-      return dateObj.toLocaleDateString("en-us", {
-        weekday: "long",
-        year: "numeric",
-        month: "short",
-        day: "numeric",
+      return dateObj.toLocaleDateString('en-us', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
       });
     } catch (error) {
-      return "";
+      return '';
     }
   }
-  return "";
+  return '';
 }
 
 const onColumnToggle = (selected) => {
-  selectedColumns.value = inputColumns.value.filter((col) =>
-    selected.includes(col),
-  );
+  selectedColumns.value = inputColumns.value.filter((col) => selected.includes(col));
 };
 
 const frozenColumns = ref(inputColumns.value.filter((col) => col.pinned));
 const onFreezeToggle = (selected) => {
-  frozenColumns.value = inputColumns.value.filter((col) =>
-    selected.includes(col),
-  );
+  frozenColumns.value = inputColumns.value.filter((col) => selected.includes(col));
   selectedColumns.value = selectedColumns.value.map((col) => {
     col.pinned = selected.includes(col);
     return col;
@@ -711,13 +622,7 @@ const onFreezeToggle = (selected) => {
 };
 
 // Pass through data table events
-const emit = defineEmits([
-  "export-all",
-  "selection",
-  "reset-filters",
-  "export-selected",
-  "export-org-users",
-]);
+const emit = defineEmits(['export-all', 'selection', 'reset-filters', 'export-selected', 'export-org-users']);
 </script>
 <style>
 .column-button {
@@ -849,8 +754,7 @@ button.p-column-filter-menu-button.p-link:hover {
   width: 12rem;
 }
 
-.filter-button-override
-  .p-column-filter-menu-button:not(.p-column-filter-menu-button-active) {
+.filter-button-override .p-column-filter-menu-button:not(.p-column-filter-menu-button-active) {
   display: none;
 }
 

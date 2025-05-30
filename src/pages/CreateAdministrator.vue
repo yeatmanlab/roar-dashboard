@@ -4,17 +4,11 @@
       <div class="flex flex-column">
         <div class="flex flex-column mb-5 gap-2">
           <div class="flex align-items-center flex-wrap gap-3 mb-2">
-            <i
-              class="pi pi-user-plus text-gray-400 rounded"
-              style="font-size: 1.6rem"
-            />
-            <div class="admin-page-header">
-              Create a new administrator account
-            </div>
+            <i class="pi pi-user-plus text-gray-400 rounded" style="font-size: 1.6rem" />
+            <div class="admin-page-header">Create a new administrator account</div>
           </div>
           <div class="text-md text-gray-500 ml-6">
-            Use this form to create a new user and give them administrator
-            access to selected organizations.
+            Use this form to create a new user and give them administrator access to selected organizations.
           </div>
         </div>
 
@@ -46,42 +40,24 @@
 
             <div class="col-12 md:col-6 lg:col-3 my-3">
               <PvFloatLabel>
-                <PvInputText
-                  id="last-name"
-                  v-model="lastName"
-                  class="w-full"
-                  data-cy="input-administrator-last-name"
-                />
+                <PvInputText id="last-name" v-model="lastName" class="w-full" data-cy="input-administrator-last-name" />
                 <label for="last-name">Last Name</label>
               </PvFloatLabel>
             </div>
 
             <div class="col-12 md:col-6 lg:col-3 my-3">
               <PvFloatLabel>
-                <PvInputText
-                  id="email"
-                  v-model="email"
-                  class="w-full"
-                  data-cy="input-administrator-email"
-                />
+                <PvInputText id="email" v-model="email" class="w-full" data-cy="input-administrator-email" />
                 <label for="email">Email</label>
               </PvFloatLabel>
             </div>
           </div>
 
           <GroupPicker @selection="selection($event)" />
-          <div
-            class="flex flex-row align-items-center justify-content-center gap-2 flex-order-0 my-3"
-          >
+          <div class="flex flex-row align-items-center justify-content-center gap-2 flex-order-0 my-3">
             <div class="flex flex-row align-items-center">
-              <PvCheckbox
-                v-model="isTestData"
-                input-id="chbx-externalTask"
-                :binary="true"
-              />
-              <label class="ml-1 mr-3" for="chbx-externalTask"
-                >Mark as <b>Test Administrator</b></label
-              >
+              <PvCheckbox v-model="isTestData" input-id="chbx-externalTask" :binary="true" />
+              <label class="ml-1 mr-3" for="chbx-externalTask">Mark as <b>Test Administrator</b></label>
             </div>
           </div>
 
@@ -109,20 +85,20 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
-import { useRouter } from "vue-router";
-import { storeToRefs } from "pinia";
-import { useToast } from "primevue/usetoast";
-import PvButton from "primevue/button";
-import PvCheckbox from "primevue/checkbox";
-import PvDivider from "primevue/divider";
-import PvInputText from "primevue/inputtext";
-import _cloneDeep from "lodash/cloneDeep";
-import _union from "lodash/union";
-import { useAuthStore } from "@/store/auth";
-import GroupPicker from "@/components/GroupPicker.vue";
-import PvFloatLabel from "primevue/floatlabel";
-import { TOAST_DEFAULT_LIFE_DURATION } from "@/constants/toasts";
+import { ref, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import { storeToRefs } from 'pinia';
+import { useToast } from 'primevue/usetoast';
+import PvButton from 'primevue/button';
+import PvCheckbox from 'primevue/checkbox';
+import PvDivider from 'primevue/divider';
+import PvInputText from 'primevue/inputtext';
+import _cloneDeep from 'lodash/cloneDeep';
+import _union from 'lodash/union';
+import { useAuthStore } from '@/store/auth';
+import GroupPicker from '@/components/GroupPicker.vue';
+import PvFloatLabel from 'primevue/floatlabel';
+import { TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
 const router = useRouter();
 const toast = useToast();
 const initialized = ref(false);
@@ -161,8 +137,8 @@ const submit = async () => {
   const validEmail = await roarfirekit.value.isEmailAvailable(email.value);
   if (!validEmail) {
     toast.add({
-      severity: "error",
-      summary: "Error",
+      severity: 'error',
+      summary: 'Error',
       detail: `Email ${email.value} is already in use. Please enter a different email address.`,
       life: TOAST_DEFAULT_LIFE_DURATION,
     });
@@ -202,17 +178,17 @@ const submit = async () => {
     .createAdministrator(email.value, name, orgs, adminOrgs, isTestData.value)
     .then(() => {
       toast.add({
-        severity: "success",
-        summary: "Success",
-        detail: "Administrator account created",
+        severity: 'success',
+        summary: 'Success',
+        detail: 'Administrator account created',
         life: 5000,
       });
-      router.push({ name: "Home" });
+      router.push({ name: 'Home' });
     })
     .catch((error) => {
       toast.add({
-        severity: "error",
-        summary: "Error",
+        severity: 'error',
+        summary: 'Error',
         detail: error.message,
         life: 5000,
       });
@@ -251,7 +227,7 @@ const submit = async () => {
   }
 
   #heading {
-    font-family: "Source Sans Pro", sans-serif;
+    font-family: 'Source Sans Pro', sans-serif;
     font-weight: 400;
     color: #000000;
     font-size: 1.625rem;
@@ -259,7 +235,7 @@ const submit = async () => {
   }
 
   #section-heading {
-    font-family: "Source Sans Pro", sans-serif;
+    font-family: 'Source Sans Pro', sans-serif;
     font-weight: 400;
     font-size: 1.125rem;
     line-height: 1.5681rem;
@@ -278,7 +254,7 @@ const submit = async () => {
   }
 
   #section-content {
-    font-family: "Source Sans Pro", sans-serif;
+    font-family: 'Source Sans Pro', sans-serif;
     font-weight: 400;
     font-size: 0.875rem;
     line-height: 1.22rem;
@@ -287,7 +263,7 @@ const submit = async () => {
   }
 
   ::placeholder {
-    font-family: "Source Sans Pro", sans-serif;
+    font-family: 'Source Sans Pro', sans-serif;
     color: #c4c4c4;
   }
 

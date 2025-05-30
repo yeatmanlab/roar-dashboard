@@ -1,4 +1,4 @@
-declare module "../../package.json" {
+declare module '../../package.json' {
   interface PackageJson {
     name: string;
     version: string;

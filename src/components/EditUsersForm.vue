@@ -4,12 +4,7 @@
       <div class="form-field">
         <label :class="{ 'font-light uppercase text-sm': !editMode }"
           >Date of Birth
-          <span
-            v-if="localUserType === 'student'"
-            v-tooltip.top="'Required'"
-            class="required"
-            >*</span
-          ></label
+          <span v-if="localUserType === 'student'" v-tooltip.top="'Required'" class="required">*</span></label
         >
         <div v-if="!editMode" :class="{ 'text-xl': !editMode }">
           {{ userDobString }}
@@ -26,62 +21,40 @@
 
       <div class="form-field">
         <label :class="{ 'font-light uppercase text-sm': !editMode }"
-          >Grade
-          <span
-            v-if="localUserType === 'student'"
-            v-tooltip.top="'Required'"
-            class="required"
-            >*</span
-          ></label
+          >Grade <span v-if="localUserType === 'student'" v-tooltip.top="'Required'" class="required">*</span></label
         >
         <div v-if="!editMode" :class="{ 'text-xl': !editMode }">
-          {{ userData?.studentData?.grade ?? "None" }}
+          {{ userData?.studentData?.grade ?? 'None' }}
         </div>
         <PvInputText
           v-else
           v-model="localUserData.studentData.grade"
           :class="{ 'p-invalid': errorMessage.includes('Grade') }"
         />
-        <small v-if="errorMessage.includes('Grade')" class="p-error"
-          >Grade must be a number 1-13, or K/PK/TK</small
-        >
+        <small v-if="errorMessage.includes('Grade')" class="p-error">Grade must be a number 1-13, or K/PK/TK</small>
       </div>
       <div v-if="isSuperAdmin">
         <div>
           <PvCheckbox v-model="localUserData.testData" binary />
-          <label class="ml-2"
-            >Test Data?
-            <span v-tooltip.top="'Super Admin Only'" class="admin-only"
-              >*</span
-            ></label
-          >
+          <label class="ml-2">Test Data? <span v-tooltip.top="'Super Admin Only'" class="admin-only">*</span></label>
         </div>
         <div>
           <PvCheckbox v-model="localUserData.demoData" binary />
-          <label class="ml-2"
-            >Demo Data?
-            <span v-tooltip.top="'Super Admin Only'" class="admin-only"
-              >*</span
-            ></label
-          >
+          <label class="ml-2">Demo Data? <span v-tooltip.top="'Super Admin Only'" class="admin-only">*</span></label>
         </div>
       </div>
     </div>
     <div class="form-column">
       <div class="form-field">
-        <label :class="{ 'font-light uppercase text-sm': !editMode }"
-          >Gender</label
-        >
+        <label :class="{ 'font-light uppercase text-sm': !editMode }">Gender</label>
         <div v-if="!editMode" :class="{ 'text-xl': !editMode }">
-          {{ userData?.studentData?.gender ?? "None" }}
+          {{ userData?.studentData?.gender ?? 'None' }}
         </div>
         <PvInputText v-else v-model="localUserData.studentData.gender" />
       </div>
 
       <div class="form-field">
-        <label :class="{ 'font-light uppercase text-sm': !editMode }"
-          >English as a Second Language</label
-        >
+        <label :class="{ 'font-light uppercase text-sm': !editMode }">English as a Second Language</label>
         <div v-if="!editMode" :class="{ 'text-xl': !editMode }">
           {{ userData?.studentData?.ell_status ?? false }}
         </div>
@@ -94,9 +67,7 @@
         />
       </div>
       <div class="form-field">
-        <label :class="{ 'font-light uppercase text-sm': !editMode }"
-          >IEP Status</label
-        >
+        <label :class="{ 'font-light uppercase text-sm': !editMode }">IEP Status</label>
         <div v-if="!editMode" :class="{ 'text-xl': !editMode }">
           {{ userData?.studentData?.iep_status ?? false }}
         </div>
@@ -109,9 +80,7 @@
         />
       </div>
       <div class="form-field">
-        <label :class="{ 'font-light uppercase text-sm': !editMode }"
-          >Free-Reduced Lunch</label
-        >
+        <label :class="{ 'font-light uppercase text-sm': !editMode }">Free-Reduced Lunch</label>
         <div v-if="!editMode" :class="{ 'text-xl': !editMode }">
           {{ userData?.studentData?.frl_status ?? false }}
         </div>
@@ -125,11 +94,9 @@
       </div>
 
       <div class="form-field">
-        <label for="race" :class="{ 'font-light uppercase text-sm': !editMode }"
-          >Race
-        </label>
+        <label for="race" :class="{ 'font-light uppercase text-sm': !editMode }">Race </label>
         <div v-if="!editMode" :class="{ 'text-xl': !editMode }">
-          {{ userData?.studentData?.race?.join(", ") ?? "None" }}
+          {{ userData?.studentData?.race?.join(', ') ?? 'None' }}
         </div>
         <PvAutoComplete
           v-else
@@ -141,9 +108,7 @@
         />
       </div>
       <div class="form-field">
-        <label :class="{ 'font-light uppercase text-sm': !editMode }"
-          >Hispanic or Latino Ethnicity</label
-        >
+        <label :class="{ 'font-light uppercase text-sm': !editMode }">Hispanic or Latino Ethnicity</label>
         <div v-if="!editMode" :class="{ 'text-xl': !editMode }">
           {{ userData?.studentData?.hispanic_ethnicity ?? false }}
         </div>
@@ -160,66 +125,44 @@
   <div v-else-if="localUserType === 'admin'" class="form-container">
     <div class="form-column">
       <div class="form-field">
-        <label :class="{ 'font-light uppercase text-sm': !editMode }"
-          >First Name</label
-        >
+        <label :class="{ 'font-light uppercase text-sm': !editMode }">First Name</label>
         <div v-if="!editMode" :class="{ 'text-xl': !editMode }">
-          {{ userData?.name?.first ?? "None" }}
+          {{ userData?.name?.first ?? 'None' }}
         </div>
         <PvInputText v-else v-model="localUserData.name.first" />
       </div>
       <div class="form-field">
-        <label :class="{ 'font-light uppercase text-sm': !editMode }"
-          >Middle Name</label
-        >
+        <label :class="{ 'font-light uppercase text-sm': !editMode }">Middle Name</label>
         <div v-if="!editMode" :class="{ 'text-xl': !editMode }">
-          {{ userData?.name?.middle ?? "None" }}
+          {{ userData?.name?.middle ?? 'None' }}
         </div>
         <PvInputText v-else v-model="localUserData.name.middle" />
       </div>
       <div class="form-field">
-        <label :class="{ 'font-light uppercase text-sm': !editMode }"
-          >Last Name</label
-        >
+        <label :class="{ 'font-light uppercase text-sm': !editMode }">Last Name</label>
         <div v-if="!editMode" :class="{ 'text-xl': !editMode }">
-          {{ userData?.name?.last ?? "None" }}
+          {{ userData?.name?.last ?? 'None' }}
         </div>
         <PvInputText v-else v-model="localUserData.name.last" />
       </div>
 
       <div v-if="isSuperAdmin">
         <div>
-          <PvCheckbox
-            v-if="editMode"
-            v-model="localUserData.testData"
-            binary
-            class="mr-2"
-          />
+          <PvCheckbox v-if="editMode" v-model="localUserData.testData" binary class="mr-2" />
           <label :class="{ 'font-light uppercase text-sm': !editMode }"
-            >Test Data?
-            <span v-tooltip.top="'Super Admin Only'" class="admin-only"
-              >*</span
-            ></label
+            >Test Data? <span v-tooltip.top="'Super Admin Only'" class="admin-only">*</span></label
           >
           <div v-if="!editMode" :class="{ 'text-xl': !editMode }">
-            {{ localUserData.testData ? "Yes" : "No" }}
+            {{ localUserData.testData ? 'Yes' : 'No' }}
           </div>
         </div>
         <div>
-          <PvCheckbox
-            v-if="editMode"
-            v-model="localUserData.demoData"
-            binary
-            class="mr-2"
-          />
+          <PvCheckbox v-if="editMode" v-model="localUserData.demoData" binary class="mr-2" />
           <label :class="{ 'font-light uppercase text-sm': !editMode }"
-            >Demo Data?
-            <span v-tooltip.top="'Super Admin Only'" class="admin-only"
-              >*</span
-            ></label
+            >Demo Data? <span v-tooltip.top="'Super Admin Only'" class="admin-only">*</span></label
           >
           <div v-if="!editMode" :class="{ 'text-xl': !editMode }">
-            {{ localUserData.demoData ? "Yes" : "No" }}
+            {{ localUserData.demoData ? 'Yes' : 'No' }}
           </div>
         </div>
       </div>
@@ -244,19 +187,17 @@
       </div>
       <div class="form-field">
         <label :class="{ 'font-light uppercase text-sm': !editMode }"
-          >Gender
-          <span v-if="editMode" class="optional">(optional)</span></label
+          >Gender <span v-if="editMode" class="optional">(optional)</span></label
         >
         <div v-if="!editMode" :class="{ 'text-xl': !editMode }">
-          {{ userData?.studentData?.gender ?? "None" }}
+          {{ userData?.studentData?.gender ?? 'None' }}
         </div>
         <PvInputText v-else v-model="localUserData.studentData.gender" />
       </div>
 
       <div class="form-field">
         <label :class="{ 'font-light uppercase text-sm': !editMode }"
-          >English as a Second Language
-          <span v-if="editMode" class="optional">(optional)</span></label
+          >English as a Second Language <span v-if="editMode" class="optional">(optional)</span></label
         >
         <div v-if="!editMode" :class="{ 'text-xl': !editMode }">
           {{ userData?.studentData?.ell_status ?? false }}
@@ -273,17 +214,17 @@
   </div>
 </template>
 <script setup lang="ts">
-import { watch, ref, onMounted, computed } from "vue";
-import { useAuthStore } from "@/store/auth";
-import { storeToRefs } from "pinia";
-import _isEmpty from "lodash/isEmpty";
-import _get from "lodash/get";
-import PvAutoComplete from "primevue/autocomplete";
-import PvDatePicker from "primevue/datepicker";
-import PvCheckbox from "primevue/checkbox";
-import PvSelect from "primevue/select";
-import PvInputText from "primevue/inputtext";
-import useUserClaimsQuery from "@/composables/queries/useUserClaimsQuery";
+import { watch, ref, onMounted, computed } from 'vue';
+import { useAuthStore } from '@/store/auth';
+import { storeToRefs } from 'pinia';
+import _isEmpty from 'lodash/isEmpty';
+import _get from 'lodash/get';
+import PvAutoComplete from 'primevue/autocomplete';
+import PvDatePicker from 'primevue/datepicker';
+import PvCheckbox from 'primevue/checkbox';
+import PvSelect from 'primevue/select';
+import PvInputText from 'primevue/inputtext';
+import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 
 interface Name {
   first?: string | null;
@@ -348,12 +289,12 @@ interface AutoCompleteEvent {
 }
 
 interface Emits {
-  'modalClosed': [];
+  modalClosed: [];
   'update:userData': [userData: LocalUserData];
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  userType: "student",
+  userType: 'student',
   editMode: false,
 });
 
@@ -368,10 +309,7 @@ watch(
   () => props.userData,
   (userData) => {
     // Set up localUserData object if it has not been initialized
-    if (
-      !_isEmpty(userData) &&
-      _get(localUserData, "dataInitialized", false) === false
-    ) {
+    if (!_isEmpty(userData) && _get(localUserData, 'dataInitialized', false) === false) {
       setupUserData();
     }
   },
@@ -386,8 +324,8 @@ const localUserData = ref<LocalUserData>({
   },
   studentData: {
     dob: null,
-    grade: "",
-    gender: "",
+    grade: '',
+    gender: '',
     race: [],
     hispanic_ethnicity: false,
     ell_status: false,
@@ -398,7 +336,7 @@ const localUserData = ref<LocalUserData>({
   demoData: false,
   dataInitialized: false,
 });
-const errorMessage = ref<string>("");
+const errorMessage = ref<string>('');
 
 // Create a local version of the userData to perform updates on
 const setupUserData = (): void => {
@@ -412,11 +350,10 @@ const setupUserData = (): void => {
       dob: !isNaN(new Date(props.userData?.studentData?.dob as string).getTime())
         ? new Date(props.userData?.studentData?.dob as string)
         : null,
-      grade: props.userData?.studentData?.grade || "",
-      gender: props.userData?.studentData?.gender || "",
+      grade: props.userData?.studentData?.grade || '',
+      gender: props.userData?.studentData?.gender || '',
       race: props.userData?.studentData?.race || [],
-      hispanic_ethnicity:
-        props.userData?.studentData?.hispanic_ethnicity || false,
+      hispanic_ethnicity: props.userData?.studentData?.hispanic_ethnicity || false,
       ell_status: props.userData?.studentData?.ell_status || false,
       frl_status: props.userData?.studentData?.frl_status || false,
       iep_status: props.userData?.studentData?.iep_status || false,
@@ -439,29 +376,27 @@ const localUserType = computed((): string | null => {
 const userDobString = computed((): string => {
   if (localUserData.value?.studentData?.dob instanceof Date) {
     return localUserData.value?.studentData?.dob.toDateString();
-  } else return "None";
+  } else return 'None';
 });
 
 const races: string[] = [
-  "american Indian or alaska Native",
-  "asian",
-  "black or african American",
-  "native hawaiian or other pacific islander",
-  "white",
+  'american Indian or alaska Native',
+  'asian',
+  'black or african American',
+  'native hawaiian or other pacific islander',
+  'white',
 ];
 
 const raceOptions = ref<string[]>([...races]);
 const binaryDropdownOptions: BinaryOption[] = [
-  { label: "Yes", value: true },
-  { label: "No", value: false },
+  { label: 'Yes', value: true },
+  { label: 'No', value: false },
 ];
 
 const searchRaces = (event: AutoCompleteEvent): void => {
   const query = event.query.toLowerCase();
 
-  let filteredOptions = races.filter((opt) =>
-    opt.toLowerCase().includes(query),
-  );
+  let filteredOptions = races.filter((opt) => opt.toLowerCase().includes(query));
 
   if (filteredOptions.length === 0 && query) {
     filteredOptions.push(query);
@@ -483,7 +418,7 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
 });
 
 onMounted((): void => {
-  console.log("onMounted hook called");
+  console.log('onMounted hook called');
   if ((roarfirekit.value as any)?.restConfig) init();
   if (props.userData) setupUserData();
 });
@@ -494,7 +429,7 @@ onMounted((): void => {
 watch(
   () => localUserData.value,
   (userData) => {
-    emit("update:userData", userData);
+    emit('update:userData', userData);
   },
   { deep: true, immediate: false },
 );

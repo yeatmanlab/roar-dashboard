@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from "vue";
-import Button from "primevue/button";
-import { useAuthStore } from "@/store/auth";
-import { useWindowSize } from "@vueuse/core";
+import { ref, onMounted, computed } from 'vue';
+import Button from 'primevue/button';
+import { useAuthStore } from '@/store/auth';
+import { useWindowSize } from '@vueuse/core';
 // Get package info
-import packageJson from "../../package.json";
-import { logger } from "@/logger"; // Import the logger
+import packageJson from '../../package.json';
+import { logger } from '@/logger'; // Import the logger
 
 // Define user info interface
 interface UserInfo {
@@ -21,8 +21,8 @@ interface UserInfo {
 const envInfo = {
   mode: import.meta.env.MODE,
   baseUrl: import.meta.env.BASE_URL,
-  isLevante: import.meta.env.VITE_LEVANTE === "TRUE",
-  firebaseProject: import.meta.env.VITE_FIREBASE_PROJECT || "Not set",
+  isLevante: import.meta.env.VITE_LEVANTE === 'TRUE',
+  firebaseProject: import.meta.env.VITE_FIREBASE_PROJECT || 'Not set',
 };
 
 // Get auth store
@@ -30,9 +30,7 @@ const authStore = useAuthStore();
 
 // Get app and core-tasks versions
 const appVersion = ref(packageJson.version);
-const coreTasksVersion = ref(
-  packageJson.dependencies["@levante-framework/core-tasks"].replace("^", ""),
-);
+const coreTasksVersion = ref(packageJson.dependencies['@levante-framework/core-tasks'].replace('^', ''));
 const commitHash = import.meta.env.VITE_APP_VERSION;
 
 // User information - Use computed property
@@ -53,12 +51,12 @@ const userInfo = computed<UserInfo | null>(() => {
 
 // System information
 const browserInfo = ref({
-  userAgent: "",
-  appName: "",
-  appVersion: "",
-  platform: "",
-  vendor: "",
-  language: "",
+  userAgent: '',
+  appName: '',
+  appVersion: '',
+  platform: '',
+  vendor: '',
+  language: '',
   cookiesEnabled: false,
 });
 
@@ -66,26 +64,26 @@ const { width, height } = useWindowSize();
 const screenResolution = computed(() => `${width.value} x ${height.value}`);
 
 const deviceType = computed(() => {
-  if (typeof navigator !== "undefined") {
+  if (typeof navigator !== 'undefined') {
     const userAgent = navigator.userAgent.toLowerCase();
     if (/(tablet|ipad|playbook|silk)|(android(?!.*mobi))/i.test(userAgent)) {
-      return "Tablet";
+      return 'Tablet';
     }
     if (
       /Mobile|Android|iP(hone|od)|IEMobile|BlackBerry|Kindle|Silk-Accelerated|(hpw|web)OS|Opera M(obi|ini)/.test(
         userAgent,
       )
     ) {
-      return "Mobile";
+      return 'Mobile';
     }
-    return "Desktop";
+    return 'Desktop';
   }
-  return "Unknown";
+  return 'Unknown';
 });
 
 const zoomLevel = ref(1);
 const connectionInfo = ref({
-  effectiveType: "",
+  effectiveType: '',
   downlink: 0,
   rtt: 0,
   saveData: false,
@@ -98,7 +96,7 @@ const performanceInfo = ref({
     usedJSHeapSize: 0,
   },
   navigation: {
-    type: "",
+    type: '',
     redirectCount: 0,
   },
   timing: {
@@ -115,7 +113,7 @@ function calculateZoomLevel() {
 
 onMounted(() => {
   // Gather browser info
-  if (typeof navigator !== "undefined") {
+  if (typeof navigator !== 'undefined') {
     browserInfo.value = {
       userAgent: navigator.userAgent,
       appName: navigator.appName,
@@ -129,7 +127,7 @@ onMounted(() => {
 
   // Calculate zoom level
   calculateZoomLevel();
-  window.addEventListener("resize", calculateZoomLevel);
+  window.addEventListener('resize', calculateZoomLevel);
 
   // Get connection info
   // @ts-expect-error - Navigator connection API might not be typed correctly
@@ -137,7 +135,7 @@ onMounted(() => {
     // @ts-expect-error - Navigator connection properties may not be fully typed
     const conn = navigator.connection;
     connectionInfo.value = {
-      effectiveType: conn.effectiveType || "unknown",
+      effectiveType: conn.effectiveType || 'unknown',
       downlink: conn.downlink || 0,
       rtt: conn.rtt || 0,
       saveData: conn.saveData || false,
@@ -147,34 +145,24 @@ onMounted(() => {
   // Performance info
   if (window.performance) {
     const perf = window.performance;
-    const navEntry = perf.getEntriesByType(
-      "navigation",
-    )[0] as PerformanceNavigationTiming;
+    const navEntry = perf.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
 
     // @ts-expect-error - Performance memory API might not be typed
     if (performance.memory) {
       performanceInfo.value.memory = {
         // @ts-expect-error - Performance memory property access
-        jsHeapSizeLimit: Math.round(
-          performance.memory.jsHeapSizeLimit / (1024 * 1024),
-        ),
+        jsHeapSizeLimit: Math.round(performance.memory.jsHeapSizeLimit / (1024 * 1024)),
         // @ts-expect-error - Performance memory property access
-        totalJSHeapSize: Math.round(
-          performance.memory.totalJSHeapSize / (1024 * 1024),
-        ),
+        totalJSHeapSize: Math.round(performance.memory.totalJSHeapSize / (1024 * 1024)),
         // @ts-expect-error - Performance memory property access
-        usedJSHeapSize: Math.round(
-          performance.memory.usedJSHeapSize / (1024 * 1024),
-        ),
+        usedJSHeapSize: Math.round(performance.memory.usedJSHeapSize / (1024 * 1024)),
       };
     }
 
     if (navEntry) {
       performanceInfo.value.timing = {
         loadTime: Math.round(navEntry.loadEventEnd - navEntry.startTime),
-        domContentLoaded: Math.round(
-          navEntry.domContentLoadedEventEnd - navEntry.startTime,
-        ),
+        domContentLoaded: Math.round(navEntry.domContentLoadedEventEnd - navEntry.startTime),
       };
     }
   }
@@ -182,17 +170,17 @@ onMounted(() => {
 
 // --- Logger Test Methods ---
 function sendTestEvent() {
-  logger.capture("test_event_from_debug_vue", undefined, true);
-  alert("Test event sent!");
+  logger.capture('test_event_from_debug_vue', undefined, true);
+  alert('Test event sent!');
 }
 
 function sendTestError() {
   try {
     // Create a new error to ensure it has a stack trace
-    throw new Error("Test error from Debug.vue");
+    throw new Error('Test error from Debug.vue');
   } catch (e) {
     logger.error(e, undefined, true);
-    alert("Test error sent!");
+    alert('Test error sent!');
   }
 }
 // -------------------------
@@ -282,7 +270,7 @@ function sendTestError() {
                 <tr>
                   <td class="font-semibold pr-2">Cookies:</td>
                   <td>
-                    {{ browserInfo.cookiesEnabled ? "Enabled" : "Disabled" }}
+                    {{ browserInfo.cookiesEnabled ? 'Enabled' : 'Disabled' }}
                   </td>
                 </tr>
               </tbody>
@@ -315,7 +303,7 @@ function sendTestError() {
                 </tr>
                 <tr>
                   <td class="font-semibold pr-2">Data Saver:</td>
-                  <td>{{ connectionInfo.saveData ? "On" : "Off" }}</td>
+                  <td>{{ connectionInfo.saveData ? 'On' : 'Off' }}</td>
                 </tr>
               </tbody>
             </table>
@@ -334,8 +322,7 @@ function sendTestError() {
                 <tr v-if="performanceInfo.memory.totalJSHeapSize > 0">
                   <td class="font-semibold pr-2">Memory Usage:</td>
                   <td>
-                    {{ performanceInfo.memory.usedJSHeapSize }}MB /
-                    {{ performanceInfo.memory.totalJSHeapSize }}MB
+                    {{ performanceInfo.memory.usedJSHeapSize }}MB / {{ performanceInfo.memory.totalJSHeapSize }}MB
                   </td>
                 </tr>
                 <tr v-if="performanceInfo.memory.jsHeapSizeLimit > 0">
@@ -384,27 +371,27 @@ function sendTestError() {
                 </tr>
                 <tr>
                   <td class="font-semibold pr-2">Name:</td>
-                  <td>{{ userInfo?.displayName || "N/A" }}</td>
+                  <td>{{ userInfo?.displayName || 'N/A' }}</td>
                 </tr>
                 <tr>
                   <td class="font-semibold pr-2">Email:</td>
-                  <td>{{ userInfo?.email || "N/A" }}</td>
+                  <td>{{ userInfo?.email || 'N/A' }}</td>
                 </tr>
                 <tr>
                   <td class="font-semibold pr-2">User ID:</td>
-                  <td class="truncate">{{ userInfo?.uid || "N/A" }}</td>
+                  <td class="truncate">{{ userInfo?.uid || 'N/A' }}</td>
                 </tr>
                 <tr>
                   <td class="font-semibold pr-2">Admin:</td>
-                  <td>{{ userInfo?.isAdmin ? "Yes" : "No" }}</td>
+                  <td>{{ userInfo?.isAdmin ? 'Yes' : 'No' }}</td>
                 </tr>
                 <tr>
                   <td class="font-semibold pr-2">Super Admin:</td>
-                  <td>{{ userInfo?.isSuperAdmin ? "Yes" : "No" }}</td>
+                  <td>{{ userInfo?.isSuperAdmin ? 'Yes' : 'No' }}</td>
                 </tr>
                 <tr>
                   <td class="font-semibold pr-2">User Type:</td>
-                  <td>{{ userInfo?.userType || "N/A" }}</td>
+                  <td>{{ userInfo?.userType || 'N/A' }}</td>
                 </tr>
               </tbody>
             </table>
@@ -430,7 +417,7 @@ function sendTestError() {
                 </tr>
                 <tr>
                   <td class="font-semibold pr-2">Levante:</td>
-                  <td>{{ envInfo.isLevante ? "Yes" : "No" }}</td>
+                  <td>{{ envInfo.isLevante ? 'Yes' : 'No' }}</td>
                 </tr>
                 <tr>
                   <td class="font-semibold pr-2">Firebase Project:</td>
@@ -449,16 +436,8 @@ function sendTestError() {
         <h2 class="text-sm font-bold">Logger Tests</h2>
       </div>
       <div class="card-body p-2 flex gap-2">
-        <Button
-          label="Send Test Event (Force)"
-          severity="info"
-          @click="sendTestEvent"
-        />
-        <Button
-          label="Send Test Error (Force)"
-          severity="danger"
-          @click="sendTestError"
-        />
+        <Button label="Send Test Event (Force)" severity="info" @click="sendTestEvent" />
+        <Button label="Send Test Error (Force)" severity="danger" @click="sendTestError" />
       </div>
     </div>
     <!-- End Logger Test Buttons -->

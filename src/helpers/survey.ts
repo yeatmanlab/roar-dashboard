@@ -1,20 +1,17 @@
-import axios from "axios";
-import _merge from "lodash/merge";
-import { BufferLoader, AudioContext, type BufferList } from "@/helpers/audio";
-import { LEVANTE_SURVEY_RESPONSES_KEY } from "@/constants/bucket";
-import type { SurveyModel, Question } from "survey-core";
-import type { Router } from "vue-router";
-import type { QueryClient } from "@tanstack/vue-query";
-import type { RoarFirekit as RoarfirekitType } from "@bdelab/roar-firekit";
-import type { ToastServiceMethods } from "primevue/toastservice";
+import axios from 'axios';
+import _merge from 'lodash/merge';
+import { BufferLoader, AudioContext, type BufferList } from '@/helpers/audio';
+import { LEVANTE_SURVEY_RESPONSES_KEY } from '@/constants/bucket';
+import type { SurveyModel, Question } from 'survey-core';
+import type { Router } from 'vue-router';
+import type { QueryClient } from '@tanstack/vue-query';
+import type { RoarFirekit as RoarfirekitType } from '@bdelab/roar-firekit';
+import type { ToastServiceMethods } from 'primevue/toastservice';
 // @ts-expect-error - Will be resolved when store file is converted to TS
-import type { UseSurveyStore } from "@/store/survey";
+import type { UseSurveyStore } from '@/store/survey';
 // @ts-expect-error - Will be resolved when store file is converted to TS
-import type { UseGameStore } from "@/store/game";
-import {
-  LEVANTE_BUCKET_SURVEY_AUDIO,
-  LEVANTE_BUCKET_URL,
-} from "@/constants/bucket";
+import type { UseGameStore } from '@/store/game';
+import { LEVANTE_BUCKET_SURVEY_AUDIO, LEVANTE_BUCKET_URL } from '@/constants/bucket';
 
 export interface AudioLinkMap {
   [locale: string]: {
@@ -125,23 +122,20 @@ interface SaveFinalSurveyDataParams {
 const context = new AudioContext();
 
 // TODO: Refactor to use LEVANTE_BUCKET_URL
-export const fetchAudioLinks = async (
-  surveyType: string,
-): Promise<AudioLinkMap> => {
+export const fetchAudioLinks = async (surveyType: string): Promise<AudioLinkMap> => {
   const response = await axios.get<GCSResponse>(LEVANTE_BUCKET_SURVEY_AUDIO);
   const files = response.data || { items: [] };
   const audioLinkMap: AudioLinkMap = {};
   files.items.forEach((item: GCSFileItem) => {
-    if (item.contentType === "audio/mpeg" && item.name.startsWith(surveyType)) {
-      const splitParts = item.name.split("/");
+    if (item.contentType === 'audio/mpeg' && item.name.startsWith(surveyType)) {
+      const splitParts = item.name.split('/');
       const fileLocale = splitParts[1];
-      const fileName = splitParts.at(-1)?.split(".")?.[0];
+      const fileName = splitParts.at(-1)?.split('.')?.[0];
       if (fileName) {
         if (!audioLinkMap[fileLocale]) {
           audioLinkMap[fileLocale] = {};
         }
-        audioLinkMap[fileLocale][fileName] =
-          LEVANTE_BUCKET_URL + `/${item.name}`;
+        audioLinkMap[fileLocale][fileName] = LEVANTE_BUCKET_URL + `/${item.name}`;
       }
     }
   });
@@ -150,7 +144,7 @@ export const fetchAudioLinks = async (
 };
 
 export function getParsedLocale(locale: string | undefined | null): string {
-  return (locale || "").split("-")?.[0] || "en";
+  return (locale || '').split('-')?.[0] || 'en';
 }
 
 function finishedLoading({
@@ -177,28 +171,22 @@ export const fetchBuffer = ({
     return;
   }
   setSurveyAudioLoading(true);
-  const bufferLoader = new BufferLoader(
-    context,
-    audioLinks[parsedLocale],
-    (bufferList: BufferList) =>
-      finishedLoading({
-        bufferList,
-        parsedLocale,
-        setSurveyAudioLoading,
-        setSurveyAudioPlayerBuffers,
-      }),
+  const bufferLoader = new BufferLoader(context, audioLinks[parsedLocale], (bufferList: BufferList) =>
+    finishedLoading({
+      bufferList,
+      parsedLocale,
+      setSurveyAudioLoading,
+      setSurveyAudioPlayerBuffers,
+    }),
   );
 
   bufferLoader.load();
 };
 
-export const showAndPlaceAudioButton = ({
-  playAudioButton,
-  el,
-}: ShowAndPlaceAudioButtonParams): void => {
+export const showAndPlaceAudioButton = ({ playAudioButton, el }: ShowAndPlaceAudioButtonParams): void => {
   if (playAudioButton) {
-    playAudioButton.classList.add("play-button-visible");
-    playAudioButton.style.display = "flex";
+    playAudioButton.classList.add('play-button-visible');
+    playAudioButton.style.display = 'flex';
     el.appendChild(playAudioButton);
   }
 };
@@ -211,18 +199,13 @@ export function restoreSurveyData({
   surveyStore,
 }: RestoreSurveyDataParams): RestoreSurveyDataResult {
   // Try to get data from localStorage first
-  const prevDataStr = window.localStorage.getItem(
-    `${LEVANTE_SURVEY_RESPONSES_KEY}-${uid}`,
-  );
+  const prevDataStr = window.localStorage.getItem(`${LEVANTE_SURVEY_RESPONSES_KEY}-${uid}`);
   if (prevDataStr) {
     const parsedData: LocalStorageSurveyData = JSON.parse(prevDataStr);
     // The responses need to be formatted to be key value pairs with the question name as the key, and reponse as the value
     // for the Survey instance to work.
     const formattedResponses = Object.fromEntries(
-      Object.entries(parsedData.responses).map(([key, value]) => [
-        key,
-        value.responseValue,
-      ]),
+      Object.entries(parsedData.responses).map(([key, value]) => [key, value.responseValue]),
     );
 
     surveyInstance.data = formattedResponses;
@@ -230,24 +213,21 @@ export function restoreSurveyData({
     return { isRestored: true, pageNo: parsedData.pageNo };
   } else if (surveyResponsesData) {
     // If not in localStorage, try to find data from the server
-    const surveyResponse = surveyResponsesData.find(
-      (doc) => doc?.administrationId === selectedAdmin,
-    );
+    const surveyResponse = surveyResponsesData.find((doc) => doc?.administrationId === selectedAdmin);
     if (surveyResponse) {
       if (!surveyStore.isGeneralSurveyComplete && surveyResponse.general) {
         const formattedResponses = Object.fromEntries(
-          Object.entries(surveyResponse.general.responses).map(
-            ([key, value]) => [key, value.responseValue],
-          ),
+          Object.entries(surveyResponse.general.responses).map(([key, value]) => [key, value.responseValue]),
         );
 
         surveyInstance.data = formattedResponses;
       } else if (surveyResponse.specific) {
         const specificIndex = surveyStore.specificSurveyRelationIndex;
         const formattedResponses = Object.fromEntries(
-          Object.entries(surveyResponse.specific[specificIndex].responses).map(
-            ([key, value]) => [key, value.responseValue],
-          ),
+          Object.entries(surveyResponse.specific[specificIndex].responses).map(([key, value]) => [
+            key,
+            value.responseValue,
+          ]),
         );
         surveyInstance.data = formattedResponses;
       }
@@ -330,9 +310,7 @@ export async function saveFinalSurveyData({
   userType,
   gameStore,
 }: SaveFinalSurveyDataParams): Promise<void> {
-  const fromStorage = window.localStorage.getItem(
-    `${LEVANTE_SURVEY_RESPONSES_KEY}-${uid}`,
-  );
+  const fromStorage = window.localStorage.getItem(`${LEVANTE_SURVEY_RESPONSES_KEY}-${uid}`);
 
   let questionsFromStorage: Question[] = [];
   // TODO: Make this not reliant on local storage
@@ -344,16 +322,10 @@ export async function saveFinalSurveyData({
 
   const unansweredQuestions: Record<string, null> = {};
 
-  allQuestions.forEach(
-    (question) => (unansweredQuestions[question.name] = null),
-  );
+  allQuestions.forEach((question) => (unansweredQuestions[question.name] = null));
 
   // NOTE: Values from the second object overwrite values from the first
-  const responsesWithAllQuestions = _merge(
-    {},
-    unansweredQuestions,
-    questionsFromStorage,
-  );
+  const responsesWithAllQuestions = _merge({}, unansweredQuestions, questionsFromStorage);
 
   // Structure the data
   const structuredResponses: StructuredSurveyResponse = {
@@ -386,35 +358,28 @@ export async function saveFinalSurveyData({
     window.localStorage.removeItem(`${LEVANTE_SURVEY_RESPONSES_KEY}-${uid}`);
 
     // update survey store to let survey tabs know
-    if (userType === "student") {
+    if (userType === 'student') {
       surveyStore.setIsGeneralSurveyComplete(true);
     } else {
       if (!surveyStore.isGeneralSurveyComplete) {
         surveyStore.setIsGeneralSurveyComplete(true);
-      } else if (
-        surveyStore.specificSurveyRelationIndex ===
-        surveyStore.specificSurveyRelationData.length - 1
-      ) {
+      } else if (surveyStore.specificSurveyRelationIndex === surveyStore.specificSurveyRelationData.length - 1) {
         surveyStore.setIsSpecificSurveyComplete(true);
       }
     }
 
-    surveyStore.setSpecificSurveyRelationIndex(
-      surveyStore.specificSurveyRelationIndex + 1,
-    );
+    surveyStore.setSpecificSurveyRelationIndex(surveyStore.specificSurveyRelationIndex + 1);
 
-    queryClient.invalidateQueries({ queryKey: ["surveyResponses", uid] });
+    queryClient.invalidateQueries({ queryKey: ['surveyResponses', uid] });
 
     gameStore.requireHomeRefresh();
-    router.push({ name: "Home" });
+    router.push({ name: 'Home' });
   } catch (error: unknown) {
     surveyStore.setIsSavingSurveyResponses(false);
     console.error(error);
     toast.add({
-      severity: "error",
-      summary:
-        "Error saving survey responses: " +
-        (error instanceof Error ? error.message : String(error)),
+      severity: 'error',
+      summary: 'Error saving survey responses: ' + (error instanceof Error ? error.message : String(error)),
       life: 3000,
     });
   } finally {
@@ -423,4 +388,4 @@ export async function saveFinalSurveyData({
   }
 }
 
-export type { RoarFirekit as RoarfirekitType } from "@bdelab/roar-firekit";
+export type { RoarFirekit as RoarfirekitType } from '@bdelab/roar-firekit';

@@ -1,19 +1,12 @@
 <template>
   <div class="p-card card-administration mb-4 w-full">
     <div v-if="props.stats && isSuperAdmin" class="card-admin-chart">
-      <PvChart
-        type="doughnut"
-        :data="doughnutChartData"
-        :options="doughnutChartOptions"
-      />
+      <PvChart type="doughnut" :data="doughnutChartData" :options="doughnutChartOptions" />
     </div>
     <div class="card-admin-body w-full">
       <div class="flex flex-row w-full md:h-2rem sm:h-3rem">
         <div class="flex-grow-1 pr-3 mr-2 p-0 m-0">
-          <h2
-            data-cy="h2-card-admin-title"
-            class="sm:text-lg lg:text-lx m-0 h2-card-admin-title"
-          >
+          <h2 data-cy="h2-card-admin-title" class="sm:text-lg lg:text-lx m-0 h2-card-admin-title">
             {{ title }}
           </h2>
         </div>
@@ -44,14 +37,8 @@
       <div class="card-admin-assessments">
         <span class="mr-1"><strong>Tasks</strong>:</span>
         <template v-if="!isLoadingTasksDictionary">
-          <span
-            v-for="assessmentId in assessmentIds"
-            :key="assessmentId"
-            class="card-inline-list-item"
-          >
-            <span>{{
-              tasksDictionary[assessmentId]?.name ?? assessmentId
-            }}</span>
+          <span v-for="assessmentId in assessmentIds" :key="assessmentId" class="card-inline-list-item">
+            <span>{{ tasksDictionary[assessmentId]?.name ?? assessmentId }}</span>
             <span
               v-if="showParams"
               v-tooltip.top="'View parameters'"
@@ -63,11 +50,7 @@
         </template>
 
         <div v-if="showParams">
-          <PvPopover
-            v-for="assessmentId in assessmentIds"
-            :key="assessmentId"
-            :ref="paramPanelRefs[assessmentId]"
-          >
+          <PvPopover v-for="assessmentId in assessmentIds" :key="assessmentId" :ref="paramPanelRefs[assessmentId]">
             <div v-if="getAssessment(assessmentId).variantId">
               Variant ID: {{ getAssessment(assessmentId).variantId }}
             </div>
@@ -80,16 +63,8 @@
               table-style="min-width: 30rem"
               :value="toEntryObjects(params[assessmentId])"
             >
-              <PvColumn
-                field="key"
-                header="Parameter"
-                style="width: 50%"
-              ></PvColumn>
-              <PvColumn
-                field="value"
-                header="Value"
-                style="width: 50%"
-              ></PvColumn>
+              <PvColumn field="key" header="Parameter" style="width: 50%"></PvColumn>
+              <PvColumn field="value" header="Value" style="width: 50%"></PvColumn>
             </PvDataTable>
           </PvPopover>
         </div>
@@ -174,37 +149,34 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from "vue";
-import { useConfirm } from "primevue/useconfirm";
-import { useToast } from "primevue/usetoast";
-import { useRouter } from "vue-router";
-import _fromPairs from "lodash/fromPairs";
-import _isEmpty from "lodash/isEmpty";
-import _mapValues from "lodash/mapValues";
-import _toPairs from "lodash/toPairs";
-import _without from "lodash/without";
-import _zip from "lodash/zip";
-import PvButton from "primevue/button";
-import PvColumn from "primevue/column";
-import PvChart from "primevue/chart";
-import PvConfirmPopup from "primevue/confirmpopup";
-import PvDataTable from "primevue/datatable";
-import PvPopover from "primevue/popover";
-import PvSpeedDial from "primevue/speeddial";
-import PvTreeTable from "primevue/treetable";
-import { batchGetDocs } from "@/helpers/query/utils";
-import { taskDisplayNames } from "@/helpers/reports";
-import { setBarChartData, setBarChartOptions } from "@/helpers/plotting";
-import useDsgfOrgQuery from "@/composables/queries/useDsgfOrgQuery";
-import useTasksDictionaryQuery from "@/composables/queries/useTasksDictionaryQuery";
-import useDeleteAdministrationMutation from "@/composables/mutations/useDeleteAdministrationMutation";
-import { SINGULAR_ORG_TYPES } from "@/constants/orgTypes";
-import { FIRESTORE_COLLECTIONS } from "@/constants/firebase";
-import {
-  TOAST_SEVERITIES,
-  TOAST_DEFAULT_LIFE_DURATION,
-} from "@/constants/toasts";
-import { isLevante } from "@/helpers";
+import { computed, onMounted, ref, watch } from 'vue';
+import { useConfirm } from 'primevue/useconfirm';
+import { useToast } from 'primevue/usetoast';
+import { useRouter } from 'vue-router';
+import _fromPairs from 'lodash/fromPairs';
+import _isEmpty from 'lodash/isEmpty';
+import _mapValues from 'lodash/mapValues';
+import _toPairs from 'lodash/toPairs';
+import _without from 'lodash/without';
+import _zip from 'lodash/zip';
+import PvButton from 'primevue/button';
+import PvColumn from 'primevue/column';
+import PvChart from 'primevue/chart';
+import PvConfirmPopup from 'primevue/confirmpopup';
+import PvDataTable from 'primevue/datatable';
+import PvPopover from 'primevue/popover';
+import PvSpeedDial from 'primevue/speeddial';
+import PvTreeTable from 'primevue/treetable';
+import { batchGetDocs } from '@/helpers/query/utils';
+import { taskDisplayNames } from '@/helpers/reports';
+import { setBarChartData, setBarChartOptions } from '@/helpers/plotting';
+import useDsgfOrgQuery from '@/composables/queries/useDsgfOrgQuery';
+import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery';
+import useDeleteAdministrationMutation from '@/composables/mutations/useDeleteAdministrationMutation';
+import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
+import { FIRESTORE_COLLECTIONS } from '@/constants/firebase';
+import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
+import { isLevante } from '@/helpers';
 
 interface Assessment {
   taskId: string;
@@ -299,33 +271,31 @@ const { mutateAsync: deleteAdministration } = useDeleteAdministrationMutation();
 const administrationStatus = computed((): string => {
   const now = new Date();
   const dateClosed = new Date(props.dates.end);
-  let status = "OPEN";
-  if (now > dateClosed) status = "CLOSED";
+  let status = 'OPEN';
+  if (now > dateClosed) status = 'CLOSED';
   return status;
 });
 
-const administrationStatusBadge = computed((): string =>
-  administrationStatus.value.toLowerCase(),
-);
+const administrationStatusBadge = computed((): string => administrationStatus.value.toLowerCase());
 
 const speedDialItems = computed((): SpeedDialItem[] => {
   const items: SpeedDialItem[] = [];
 
   if (props.isSuperAdmin) {
     items.push({
-      label: "Delete",
-      icon: "pi pi-trash",
+      label: 'Delete',
+      icon: 'pi pi-trash',
       command: (event) => {
         confirm.require({
           target: event.originalEvent.currentTarget,
-          message: "Are you sure you want to delete this administration?",
-          icon: "pi pi-exclamation-triangle",
+          message: 'Are you sure you want to delete this administration?',
+          icon: 'pi pi-exclamation-triangle',
           accept: async () => {
             await deleteAdministration(props.id);
 
             toast.add({
               severity: TOAST_SEVERITIES.INFO,
-              summary: "Confirmed",
+              summary: 'Confirmed',
               detail: `Deleted administration ${props.title}`,
               life: TOAST_DEFAULT_LIFE_DURATION,
             });
@@ -333,7 +303,7 @@ const speedDialItems = computed((): SpeedDialItem[] => {
           reject: () => {
             toast.add({
               severity: TOAST_SEVERITIES.ERROR,
-              summary: "Rejected",
+              summary: 'Rejected',
               detail: `Failed to delete administration ${props.title}`,
               life: TOAST_DEFAULT_LIFE_DURATION,
             });
@@ -344,11 +314,11 @@ const speedDialItems = computed((): SpeedDialItem[] => {
   }
 
   items.push({
-    label: "Edit",
-    icon: "pi pi-pencil",
+    label: 'Edit',
+    icon: 'pi pi-pencil',
     command: () => {
       router.push({
-        name: "EditAdministration",
+        name: 'EditAdministration',
         params: { adminId: props.id },
       });
     },
@@ -366,23 +336,15 @@ const processedDates = computed(() => {
 const assessmentIds: string[] = props.assessments
   .map((assessment) => assessment.taskId.toLowerCase())
   .sort((p1, p2) => {
-    return (
-      ((taskDisplayNames as any)[p1]?.order ?? 0) - ((taskDisplayNames as any)[p2]?.order ?? 0)
-    );
+    return ((taskDisplayNames as any)[p1]?.order ?? 0) - ((taskDisplayNames as any)[p2]?.order ?? 0);
   });
 
 const paramPanelRefs: Record<string, any> = _fromPairs(
-  props.assessments.map((assessment) => [
-    assessment.taskId.toLowerCase(),
-    ref(),
-  ]),
+  props.assessments.map((assessment) => [assessment.taskId.toLowerCase(), ref()]),
 );
 
 const params: Record<string, Record<string, any>> = _fromPairs(
-  props.assessments.map((assessment) => [
-    assessment.taskId.toLowerCase(),
-    assessment.params,
-  ]),
+  props.assessments.map((assessment) => [assessment.taskId.toLowerCase(), assessment.params]),
 );
 
 const toEntryObjects = (inputObj: Record<string, any>): Array<{ key: string; value: any }> => {
@@ -394,9 +356,7 @@ const toggleParams = (event: Event, id: string): void => {
 };
 
 function getAssessment(assessmentId: string): Assessment | undefined {
-  return props.assessments.find(
-    (assessment) => assessment.taskId.toLowerCase() === assessmentId,
-  );
+  return props.assessments.find((assessment) => assessment.taskId.toLowerCase() === assessmentId);
 }
 
 const showTable = ref<boolean>(false);
@@ -411,16 +371,11 @@ const isWideScreen = computed((): boolean => {
   return window.innerWidth > 768;
 });
 
-const { data: tasksDictionary, isLoading: isLoadingTasksDictionary } =
-  useTasksDictionaryQuery();
+const { data: tasksDictionary, isLoading: isLoadingTasksDictionary } = useTasksDictionaryQuery();
 
-const { data: orgs, isLoading: isLoadingDsgfOrgs } = useDsgfOrgQuery(
-  props.id,
-  props.assignees,
-  {
-    enabled: enableQueries,
-  },
-);
+const { data: orgs, isLoading: isLoadingDsgfOrgs } = useDsgfOrgQuery(props.id, props.assignees, {
+  enabled: enableQueries,
+});
 
 const loadingTreeTable = computed((): boolean => {
   return isLoadingDsgfOrgs.value || expanding.value;
@@ -446,14 +401,9 @@ const onExpand = async (node: TreeNode): Promise<void> => {
     expanding.value = true;
 
     const classPaths = node.children.map(({ data }) => `classes/${data.id}`);
-    const statPaths = node.children.map(
-      ({ data }) => `administrations/${props.id}/stats/${data.id}`,
-    );
+    const statPaths = node.children.map(({ data }) => `administrations/${props.id}/stats/${data.id}`);
 
-    const classPromises = [
-      batchGetDocs(classPaths, ["name", "schoolId"]),
-      batchGetDocs(statPaths),
-    ];
+    const classPromises = [batchGetDocs(classPaths, ['name', 'schoolId']), batchGetDocs(statPaths)];
 
     const [classDocs, classStats] = await Promise.all(classPromises);
 
@@ -470,7 +420,7 @@ const onExpand = async (node: TreeNode): Promise<void> => {
     const childNodes = _without(
       _zip(classDocs, classStats).map(([orgDoc, stats], index) => {
         if (!orgDoc) return undefined;
-        
+
         const { collection = FIRESTORE_COLLECTIONS.CLASSES, ...nodeData } = orgDoc;
 
         if (_isEmpty(nodeData)) return undefined;
@@ -541,7 +491,7 @@ const doughnutChartData = ref<ChartData>();
 const doughnutChartOptions = ref<ChartOptions>();
 
 const setDoughnutChartOptions = (): ChartOptions => ({
-  cutout: "60%",
+  cutout: '60%',
   showToolTips: true,
   plugins: {
     legend: {
@@ -555,24 +505,20 @@ const setDoughnutChartOptions = (): ChartOptions => ({
 
 const setDoughnutChartData = (): ChartData => {
   const docStyle = getComputedStyle(document.documentElement);
-  let {
-    assigned = 0,
-    started = 0,
-    completed = 0,
-  } = props.stats.total?.assignment || {};
+  let { assigned = 0, started = 0, completed = 0 } = props.stats.total?.assignment || {};
 
   started -= completed;
   assigned -= started + completed;
 
   return {
-    labels: ["Completed", "Started", "Assigned"],
+    labels: ['Completed', 'Started', 'Assigned'],
     datasets: [
       {
         data: [completed, started, assigned],
         backgroundColor: [
-          docStyle.getPropertyValue("--bright-green"),
-          docStyle.getPropertyValue("--yellow-100"),
-          docStyle.getPropertyValue("--surface-d"),
+          docStyle.getPropertyValue('--bright-green'),
+          docStyle.getPropertyValue('--yellow-100'),
+          docStyle.getPropertyValue('--surface-d'),
         ],
         // hoverBackgroundColor: ['green', docStyle.getPropertyValue('--surface-d')]
       },
@@ -667,7 +613,7 @@ onMounted((): void => {
   position: relative;
 
   &:not(:last-child):after {
-    content: ", ";
+    content: ', ';
   }
 }
 

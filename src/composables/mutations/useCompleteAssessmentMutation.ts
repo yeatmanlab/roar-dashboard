@@ -1,8 +1,8 @@
-import { useMutation, useQueryClient } from "@tanstack/vue-query";
-import type { UseMutationReturnType } from "@tanstack/vue-query";
-import { useAuthStore } from "@/store/auth";
-import { COMPLETE_ASSESSMENT_MUTATION_KEY } from "@/constants/mutationKeys";
-import { USER_ASSIGNMENTS_QUERY_KEY } from "@/constants/queryKeys";
+import { useMutation, useQueryClient } from '@tanstack/vue-query';
+import type { UseMutationReturnType } from '@tanstack/vue-query';
+import { useAuthStore } from '@/store/auth';
+import { COMPLETE_ASSESSMENT_MUTATION_KEY } from '@/constants/mutationKeys';
+import { USER_ASSIGNMENTS_QUERY_KEY } from '@/constants/queryKeys';
 
 interface CompleteAssessmentParams {
   adminId: string;
@@ -16,26 +16,16 @@ interface CompleteAssessmentParams {
  *
  * @returns The mutation object returned by `useMutation`.
  */
-const useCompleteAssessmentMutation = (): UseMutationReturnType<
-  void,
-  Error,
-  CompleteAssessmentParams,
-  unknown
-> => {
+const useCompleteAssessmentMutation = (): UseMutationReturnType<void, Error, CompleteAssessmentParams, unknown> => {
   const authStore = useAuthStore();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationKey: COMPLETE_ASSESSMENT_MUTATION_KEY,
-    mutationFn: async ({
-      adminId,
-      taskId,
-    }: CompleteAssessmentParams): Promise<void> => {
+    mutationFn: async ({ adminId, taskId }: CompleteAssessmentParams): Promise<void> => {
       // Check if roarfirekit is initialized before attempting to use it.
       if (!authStore.isFirekitInit || !authStore.roarfirekit) {
-        throw new Error(
-          "Roarfirekit is not initialized. Cannot complete assessment.",
-        );
+        throw new Error('Roarfirekit is not initialized. Cannot complete assessment.');
       }
       await authStore.roarfirekit.completeAssessment(adminId, taskId);
     },

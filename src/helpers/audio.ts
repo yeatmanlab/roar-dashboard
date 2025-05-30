@@ -9,11 +9,7 @@ export class BufferLoader {
   bufferList: BufferList;
   loadCount: number;
 
-  constructor(
-    context: AudioContext,
-    urlListMap: Record<string, string>,
-    callback: (bufferList: BufferList) => void,
-  ) {
+  constructor(context: AudioContext, urlListMap: Record<string, string>, callback: (bufferList: BufferList) => void) {
     this.context = context;
     this.urlListMap = urlListMap;
     this.onload = callback;
@@ -23,8 +19,8 @@ export class BufferLoader {
 
   loadBuffer(url: string, index: string): void {
     const request = new XMLHttpRequest();
-    request.open("GET", url, true);
-    request.responseType = "arraybuffer";
+    request.open('GET', url, true);
+    request.responseType = 'arraybuffer';
     request.onload = () => {
       // Asynchronously decode the audio file data in request.response
       this.context.decodeAudioData(
@@ -32,22 +28,21 @@ export class BufferLoader {
         (buffer: AudioBuffer) => {
           if (!buffer) {
             // Use console.error instead of alert for better DX
-            console.error("error decoding file data: " + url);
+            console.error('error decoding file data: ' + url);
             return;
           }
           this.bufferList[index] = buffer;
           this.loadCount += 1;
-          if (this.loadCount === Object.keys(this.urlListMap).length)
-            this.onload(this.bufferList);
+          if (this.loadCount === Object.keys(this.urlListMap).length) this.onload(this.bufferList);
         },
         (error: DOMException) => {
-          console.error("decodeAudioData error", error);
+          console.error('decodeAudioData error', error);
         },
       );
     };
 
     request.onerror = (error: ProgressEvent) => {
-      console.error("Request error", error);
+      console.error('Request error', error);
     };
 
     request.send();
@@ -61,6 +56,4 @@ export class BufferLoader {
 }
 
 // Ensure AudioContext is typed correctly
-export const AudioContext =
-  window.AudioContext ||
-  ((window as any).webkitAudioContext as { new (): AudioContext });
+export const AudioContext = window.AudioContext || ((window as any).webkitAudioContext as { new (): AudioContext });

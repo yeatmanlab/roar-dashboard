@@ -15,15 +15,11 @@
           <section class="form-section">
             <div class="flex justify-content-between align-items-center">
               <label for="variant-fields">
-                <small class="text-gray-400 font-bold"
-                  >Select an Existing Task
-                </small>
+                <small class="text-gray-400 font-bold">Select an Existing Task </small>
                 <span class="required">*</span></label
               >
               <div class="flex flex-column gap-2 align-items-end">
-                <div
-                  class="flex flex-row align-items-center justify-content-end gap-2 flex-order-1"
-                >
+                <div class="flex flex-row align-items-center justify-content-end gap-2 flex-order-1">
                   <!--                    This does not seemt to function properly, comming it out for now.-->
                   <!--                    <label class="ml-7" for="chbx-registeredTask">Search registered tasks only?</label>-->
                   <!--                    <PvCheckbox v-model="registeredTasksOnly" input-id="chbx-registeredTask" :binary="true" />-->
@@ -41,26 +37,15 @@
               @click="clearFieldParamArrays()"
             ></PvDropdown>
             <span v-if="v$.selectedGame.$error && submitted">
-              <span
-                v-for="(error, index) of v$.selectedGame.$errors"
-                :key="index"
-              >
+              <span v-for="(error, index) of v$.selectedGame.$errors" :key="index">
                 <small class="p-error">{{ error.$message }}</small>
               </span>
             </span>
             <small
-              v-else-if="
-                (v$.selectedGame.$invalid && submitted) ||
-                v$.selectedGame.$pending.$response
-              "
+              v-else-if="(v$.selectedGame.$invalid && submitted) || v$.selectedGame.$pending.$response"
               class="p-error"
             >
-              {{
-                v$.selectedGame.id.required.$message.replace(
-                  "Value",
-                  "Task selection",
-                )
-              }}
+              {{ v$.selectedGame.id.required.$message.replace('Value', 'Task selection') }}
             </small>
           </section>
 
@@ -78,26 +63,15 @@
               />
             </div>
             <span v-if="v$.variantName.$error && submitted">
-              <span
-                v-for="(error, index) of v$.variantName.$errors"
-                :key="index"
-              >
+              <span v-for="(error, index) of v$.variantName.$errors" :key="index">
                 <small class="p-error">{{ error.$message }}</small>
               </span>
             </span>
             <small
-              v-else-if="
-                (v$.variantName.$invalid && submitted) ||
-                v$.variantName.$pending.$response
-              "
+              v-else-if="(v$.variantName.$invalid && submitted) || v$.variantName.$pending.$response"
               class="p-error"
             >
-              {{
-                v$.variantName.required.$message.replace(
-                  "Value",
-                  "Variant Name",
-                )
-              }}
+              {{ v$.variantName.required.$message.replace('Value', 'Variant Name') }}
             </small>
           </section>
         </div>
@@ -125,28 +99,15 @@
               :key="index"
               class="flex align-items-center justify-content-center dynamic-param-container gap-4"
             >
-              <div
-                v-if="!deletedParams.includes(param.name)"
-                class="flex align-items-center"
-              >
+              <div v-if="!deletedParams.includes(param.name)" class="flex align-items-center">
                 <label for="inputParamName">Parameter:</label>
 
-                <PvInputText
-                  id="inputParamName"
-                  v-model="variantParams[param.name]"
-                  :value="param.name"
-                  disabled
-                />
+                <PvInputText id="inputParamName" v-model="variantParams[param.name]" :value="param.name" disabled />
               </div>
 
               <div class="flex align-items-center">
                 <label for="inputParamType">Type:</label>
-                <PvInputText
-                  id="inputParamType"
-                  v-model="param.type"
-                  :value="param.type"
-                  disabled
-                />
+                <PvInputText id="inputParamType" v-model="param.type" :value="param.type" disabled />
               </div>
 
               <div class="flex align-items-center gap-2 flex-grow-1">
@@ -189,11 +150,7 @@
             </div>
 
             <div v-if="newParams.length > 0" class="w-full">
-              <div
-                v-for="(field, index) in newParams"
-                :key="index"
-                class="flex align-items-center column-gap-2 mb-1"
-              >
+              <div v-for="(field, index) in newParams" :key="index" class="flex align-items-center column-gap-2 mb-1">
                 <PvInputText v-model="field.name" placeholder="Field Name" />
                 <PvDropdown
                   v-model="field.type"
@@ -241,9 +198,7 @@
             @click="newParam"
           />
         </div>
-        <div
-          class="flex flex-row align-items-center justify-content-center gap-2 flex-order-0 my-3"
-        >
+        <div class="flex flex-row align-items-center justify-content-center gap-2 flex-order-0 my-3">
           <div class="flex flex-row align-items-center">
             <PvCheckbox
               v-model="variantCheckboxData"
@@ -251,9 +206,7 @@
               name="variantCheckboxData"
               value="isDemoVariant"
             />
-            <label class="ml-1 mr-3" for="chbx-demoVariant"
-              >Mark as <b>Demo Variant</b></label
-            >
+            <label class="ml-1 mr-3" for="chbx-demoVariant">Mark as <b>Demo Variant</b></label>
           </div>
           <div class="flex flex-row align-items-center">
             <PvCheckbox
@@ -262,9 +215,7 @@
               name="variantCheckboxData"
               value="isTestVariant"
             />
-            <label class="ml-1 mr-3" for="chbx-testVariant"
-              >Mark as <b>Test Variant</b></label
-            >
+            <label class="ml-1 mr-3" for="chbx-testVariant">Mark as <b>Test Variant</b></label>
           </div>
           <div class="flex flex-row align-items-center">
             <div class="flex flex-row align-items-center">
@@ -274,9 +225,7 @@
                 name="variantCheckboxData"
                 value="isRegisteredVariant"
               />
-              <label class="ml-1 mr-3" for="chbx-externalVariant"
-                >Mark as <b>Registered Variant</b></label
-              >
+              <label class="ml-1 mr-3" for="chbx-externalVariant">Mark as <b>Registered Variant</b></label>
             </div>
           </div>
         </div>
@@ -297,9 +246,7 @@
     <form @submit.prevent="handleUpdateVariant()">
       <section class="flex flex-column gap-2 mb-4 p-4">
         <label for="task-select" class="my-2">
-          <small class="text-gray-400 font-bold"
-            >Select an Existing Task
-          </small>
+          <small class="text-gray-400 font-bold">Select an Existing Task </small>
           <span class="required">*</span></label
         >
         <PvDropdown
@@ -311,36 +258,25 @@
           @click="clearFieldParamArrays()"
         />
         <label for="variant-select" class="my-2">
-          <small class="text-gray-400 font-bold"
-            >Select an Existing Variant
-          </small>
+          <small class="text-gray-400 font-bold">Select an Existing Variant </small>
           <span class="required">*</span></label
         >
         <PvDropdown
           v-model="selectedVariant"
           :options="filteredVariants"
-          :option-label="
-            (data) => (data.variant.name ? data.variant.name : data.variant.id)
-          "
+          :option-label="(data) => (data.variant.name ? data.variant.name : data.variant.id)"
           option-value="variant"
           placeholder="Select a Variant"
           @click="clearFieldParamArrays()"
         />
       </section>
 
-      <section
-        v-if="selectedVariant"
-        class="flex flex-column align-items-start mt-4 p-4"
-      >
+      <section v-if="selectedVariant" class="flex flex-column align-items-start mt-4 p-4">
         <div class="flex flex-column w-full">
           <label for="fieldsOutput">
             <strong>Fields</strong>
           </label>
-          <div
-            v-for="(value, key) in selectedVariant"
-            id="fieldsOutput"
-            :key="key"
-          >
+          <div v-for="(value, key) in selectedVariant" id="fieldsOutput" :key="key">
             <div v-if="!ignoreFields.includes(key)">
               <div
                 v-if="updatedVariantData[key] !== undefined"
@@ -349,12 +285,7 @@
                 <label :for="key" class="w-1">
                   <em>{{ key }}</em>
                 </label>
-                <PvInputText
-                  id="inputEditVariantType"
-                  :placeholder="typeof value"
-                  disabled
-                  class="w-2 text-center"
-                />
+                <PvInputText id="inputEditVariantType" :placeholder="typeof value" disabled class="w-2 text-center" />
                 <PvInputText
                   v-if="typeof value === 'string'"
                   v-model="updatedVariantData[key]"
@@ -386,17 +317,9 @@
           </div>
 
           <div v-if="addedFields.length > 0" class="w-full">
-            <div
-              v-for="(field, index) in addedFields"
-              :key="index"
-              class="flex align-items-center column-gap-2 mb-1"
-            >
+            <div v-for="(field, index) in addedFields" :key="index" class="flex align-items-center column-gap-2 mb-1">
               <PvInputText v-model="field.name" placeholder="Field Name" />
-              <PvDropdown
-                v-model="field.type"
-                :options="['string', 'number', 'boolean']"
-                placeholder="Field Type"
-              />
+              <PvDropdown v-model="field.type" :options="['string', 'number', 'boolean']" placeholder="Field Type" />
 
               <PvInputText
                 v-if="field.type === 'string'"
@@ -505,9 +428,7 @@
         <!--          <PvButton label="Add Param" text icon="pi pi-plus" class="my-4" @click="addParam" />-->
       </section>
 
-      <PvButton
-        type="submit"
-        class="my-4 bg-primary text-white border-none border-round p-2 hover:bg-red-900"
+      <PvButton type="submit" class="my-4 bg-primary text-white border-none border-round p-2 hover:bg-red-900"
         >Update Variant</PvButton
       >
     </form>
@@ -515,24 +436,24 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref, watch } from "vue";
-import { required } from "@vuelidate/validators";
-import { useVuelidate } from "@vuelidate/core";
-import { storeToRefs } from "pinia";
-import { useToast } from "primevue/usetoast";
-import PvButton from "primevue/button";
-import PvCheckbox from "primevue/checkbox";
-import PvDropdown from "primevue/dropdown";
-import PvInputNumber from "primevue/inputnumber";
-import PvInputText from "primevue/inputtext";
-import PvSelectButton from "primevue/selectbutton";
-import PvToast from "primevue/toast";
-import { cloneDeep, camelCase } from "lodash";
-import { useAuthStore } from "@/store/auth";
-import useTasksQuery from "@/composables/queries/useTasksQuery";
-import useTaskVariantsQuery from "@/composables/queries/useTaskVariantsQuery";
-import useAddTaskVariantMutation from "@/composables/mutations/useAddTaskVariantMutation";
-import useUpdateTaskVariantMutation from "@/composables/mutations/useUpdateTaskVariantMutation";
+import { computed, onMounted, reactive, ref, watch } from 'vue';
+import { required } from '@vuelidate/validators';
+import { useVuelidate } from '@vuelidate/core';
+import { storeToRefs } from 'pinia';
+import { useToast } from 'primevue/usetoast';
+import PvButton from 'primevue/button';
+import PvCheckbox from 'primevue/checkbox';
+import PvDropdown from 'primevue/dropdown';
+import PvInputNumber from 'primevue/inputnumber';
+import PvInputText from 'primevue/inputtext';
+import PvSelectButton from 'primevue/selectbutton';
+import PvToast from 'primevue/toast';
+import { cloneDeep, camelCase } from 'lodash';
+import { useAuthStore } from '@/store/auth';
+import useTasksQuery from '@/composables/queries/useTasksQuery';
+import useTaskVariantsQuery from '@/composables/queries/useTaskVariantsQuery';
+import useAddTaskVariantMutation from '@/composables/mutations/useAddTaskVariantMutation';
+import useUpdateTaskVariantMutation from '@/composables/mutations/useUpdateTaskVariantMutation';
 
 const toast = useToast();
 const initialized = ref(false);
@@ -560,8 +481,8 @@ let addedFields = reactive([]);
 
 let newParams = reactive([]);
 
-const viewModel = ref("Create Variant");
-const modelViews = ["Create Variant", "Update Variant"];
+const viewModel = ref('Create Variant');
+const modelViews = ['Create Variant', 'Update Variant'];
 
 const handleViewChange = (value) => {
   const selectedView = modelViews.find((view) => view === value);
@@ -571,11 +492,11 @@ const handleViewChange = (value) => {
 };
 
 // Fields to ignore when displaying variant data
-const ignoreFields = ["id", "lastUpdated", "params", "parentDoc"];
+const ignoreFields = ['id', 'lastUpdated', 'params', 'parentDoc'];
 
 const booleanDropDownOptions = [
-  { label: "true", value: true },
-  { label: "false", value: false },
+  { label: 'true', value: true },
+  { label: 'false', value: false },
 ];
 
 watch(selectedVariant, (newVal) => {
@@ -620,14 +541,12 @@ const filteredVariants = computed(() => {
     return [];
   }
 
-  return variants.value.filter(
-    (variant) => variant.task.id === selectedTask.value,
-  );
+  return variants.value.filter((variant) => variant.task.id === selectedTask.value);
 });
 
 // Fields for modeling  a new variant
 const variantFields = reactive({
-  variantName: "",
+  variantName: '',
   selectedGame: {},
   // Based on type of account?
   external: true,
@@ -667,13 +586,11 @@ const mappedGameConfig = computed(() => {
     return [];
   }
 
-  return Object.entries(variantFields.selectedGame.gameConfig).map(
-    ([key, value]) => ({
-      name: key,
-      type: typeof value,
-      value: value,
-    }),
-  );
+  return Object.entries(variantFields.selectedGame.gameConfig).map(([key, value]) => ({
+    name: key,
+    type: typeof value,
+    value: value,
+  }));
 });
 
 // Keep track of params that are not needed for the particular variant when creating a new variant
@@ -696,15 +613,15 @@ const moveToDeletedParams = (param) => {
 
 // Delete the param from the updatedVariantData object when updating a variant
 const deleteParam = (param) => {
-  if (updatedVariantData["params"][param] !== undefined) {
-    delete updatedVariantData["params"][param];
+  if (updatedVariantData['params'][param] !== undefined) {
+    delete updatedVariantData['params'][param];
   }
   delete updatedVariantData[param];
 };
 
 // Add a new field to the updatedVariantData object when updating a variant
 const addField = () => {
-  addedFields.push({ name: "", value: "", type: "string" });
+  addedFields.push({ name: '', value: '', type: 'string' });
 };
 
 // Remove a field from the addedFields array when updating a variant
@@ -720,7 +637,7 @@ const removeField = (field, array) => {
 
 // Add a new param to the newParams array when creating a new variant
 const newParam = () => {
-  newParams.push({ name: "", value: "", type: "string" });
+  newParams.push({ name: '', value: '', type: 'string' });
 };
 
 // Convert an array of paramType objects into a single object
@@ -737,8 +654,7 @@ function convertParamsToObj(paramType) {
 // Takes the array of objects that will be added to the current data object in Firestore
 // and checks if any of the new fields are duplicates of existing fields to prevent overwriting data
 const checkForDuplicates = (newItemsArray, currentDataObject) => {
-  if (currentDataObject === undefined)
-    return { isDuplicate: false, duplicateField: "" };
+  if (currentDataObject === undefined) return { isDuplicate: false, duplicateField: '' };
 
   const keys = Object.keys(currentDataObject);
   for (const newItem of newItemsArray) {
@@ -746,15 +662,15 @@ const checkForDuplicates = (newItemsArray, currentDataObject) => {
       return { isDuplicate: true, duplicateField: newItem.name };
     }
   }
-  return { isDuplicate: false, duplicateField: "" };
+  return { isDuplicate: false, duplicateField: '' };
 };
 
 function checkVariantExists(value) {
   variants.value.forEach((item) => {
     if (value === item.variant?.name) {
       toast.add({
-        severity: "error",
-        summary: "Oops!",
+        severity: 'error',
+        summary: 'Oops!',
         detail: `Variant with name '${value}' already exists. Please choose a different name.`,
         life: 3000,
       });
@@ -768,14 +684,11 @@ function checkVariantExists(value) {
 // Returns true if there are errors, false if there are none
 const checkForErrors = () => {
   if (addedFields.length > 0) {
-    const { isDuplicate, duplicateField } = checkForDuplicates(
-      addedFields,
-      updatedVariantData,
-    );
+    const { isDuplicate, duplicateField } = checkForDuplicates(addedFields, updatedVariantData);
     if (isDuplicate) {
       toast.add({
-        severity: "error",
-        summary: "Oops!",
+        severity: 'error',
+        summary: 'Oops!',
         detail: `Duplicate field name detected: ${duplicateField}.`,
         life: 3000,
       });
@@ -784,14 +697,11 @@ const checkForErrors = () => {
   }
 
   if (newParams.length > 0) {
-    const { isDuplicate, duplicateField } = checkForDuplicates(
-      newParams,
-      variantParams.value,
-    );
+    const { isDuplicate, duplicateField } = checkForDuplicates(newParams, variantParams.value);
     if (isDuplicate) {
       toast.add({
-        severity: "error",
-        summary: "Oops!",
+        severity: 'error',
+        summary: 'Oops!',
         detail: `Duplicate field name detected: ${duplicateField}.`,
         life: 3000,
       });
@@ -808,9 +718,9 @@ const handleUpdateVariant = async () => {
   // With some additional logic
   if (!selectedTask.value) {
     toast.add({
-      severity: "error",
-      summary: "Invalid Form",
-      detail: "Please select a task.",
+      severity: 'error',
+      summary: 'Invalid Form',
+      detail: 'Please select a task.',
       life: 3000,
     });
     return;
@@ -818,9 +728,9 @@ const handleUpdateVariant = async () => {
 
   if (!selectedVariant.value) {
     toast.add({
-      severity: "error",
-      summary: "Invalid Form",
-      detail: "Please select a variant.",
+      severity: 'error',
+      summary: 'Invalid Form',
+      detail: 'Please select a variant.',
       life: 3000,
     });
     return;
@@ -845,21 +755,21 @@ const handleUpdateVariant = async () => {
   await updateVariant(variantData, {
     onSuccess: () => {
       toast.add({
-        severity: "success",
-        summary: "Hoorah!",
-        detail: "Variant successfully updated.",
+        severity: 'success',
+        summary: 'Hoorah!',
+        detail: 'Variant successfully updated.',
         life: 3000,
       });
       resetUpdateVariantForm();
     },
     onError: (error) => {
       toast.add({
-        severity: "error",
-        summary: "Error",
-        detail: "Unable to update variant, please try again.",
+        severity: 'error',
+        summary: 'Error',
+        detail: 'Unable to update variant, please try again.',
         life: 3000,
       });
-      console.error("Failed to update task.", error);
+      console.error('Failed to update task.', error);
     },
   });
 };
@@ -870,16 +780,10 @@ const handleVariantSubmit = async (isFormValid) => {
   if (checkVariantExists(variantFields.variantName)) return;
 
   submitted.value = true;
-  const isDemoData = !!variantCheckboxData.value?.find(
-    (item) => item === "isDemoVariant",
-  );
-  const isTestData = !!variantCheckboxData.value?.find(
-    (item) => item === "isTestVariant",
-  );
+  const isDemoData = !!variantCheckboxData.value?.find((item) => item === 'isDemoVariant');
+  const isTestData = !!variantCheckboxData.value?.find((item) => item === 'isTestVariant');
   // const isExternalVariant = !!variantCheckboxData.value?.find((item) => item === 'isExternalVariant');
-  const isRegisteredVariant = !!variantCheckboxData.value?.find(
-    (item) => item === "isRegisteredVariant",
-  );
+  const isRegisteredVariant = !!variantCheckboxData.value?.find((item) => item === 'isRegisteredVariant');
 
   if (!isFormValid) {
     return;
@@ -912,9 +816,9 @@ const handleVariantSubmit = async (isFormValid) => {
   await addVariant(newVariantObject, {
     onSuccess: () => {
       toast.add({
-        severity: "success",
-        summary: "Hoorah!",
-        detail: "Variant successfully created.",
+        severity: 'success',
+        summary: 'Hoorah!',
+        detail: 'Variant successfully created.',
         life: 3000,
       });
       submitted.value = false;
@@ -922,28 +826,28 @@ const handleVariantSubmit = async (isFormValid) => {
     },
     onError: (error) => {
       toast.add({
-        severity: "error",
-        summary: "Error",
-        detail: "Unable to create variant, please try again.",
+        severity: 'error',
+        summary: 'Error',
+        detail: 'Unable to create variant, please try again.',
         life: 3000,
       });
-      console.error("Failed to add variant.", error);
+      console.error('Failed to add variant.', error);
     },
   });
 };
 
 function resetCreateVariantForm() {
   Object.assign(variantFields, {
-    variantName: "",
+    variantName: '',
     selectedGame: {},
     external: true,
   });
 
   variantParams.value = [
     {
-      name: "",
-      value: "",
-      type: "String",
+      name: '',
+      value: '',
+      type: 'String',
     },
   ];
 

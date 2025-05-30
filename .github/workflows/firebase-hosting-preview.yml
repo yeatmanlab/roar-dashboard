@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       pr_branch:
-        description: "Checkout this branch from the LEVANTE repository and execute CI/CD tests on it."
+        description: 'Checkout this branch from the LEVANTE repository and execute CI/CD tests on it.'
         required: true
 
 concurrency:
@@ -24,7 +24,7 @@ jobs:
     name: Run Tests
     runs-on: ubuntu-latest
     env:
-      VITE_LEVANTE: "TRUE"
+      VITE_LEVANTE: 'TRUE'
     steps:
       # For workflows triggered by pull requests
       - name: Checkout PR code
@@ -43,9 +43,9 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version-file: ".nvmrc"
-          cache: "npm"
-          cache-dependency-path: "package-lock.json"
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+          cache-dependency-path: 'package-lock.json'
 
       - name: Install dependencies
         run: npm ci
@@ -60,7 +60,7 @@ jobs:
         if: github.event_name == 'pull_request'
         uses: ouzi-dev/commit-status-updater@v2
         with:
-          name: "Tests"
+          name: 'Tests'
           status: ${{ job.status }}
 
   build-and-preview:
@@ -86,9 +86,9 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version-file: ".nvmrc"
-          cache: "npm"
-          cache-dependency-path: "package-lock.json"
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+          cache-dependency-path: 'package-lock.json'
 
       - name: Build (ROAR)
         if: ${{ contains(github.repository, 'roar') }}
@@ -103,9 +103,9 @@ jobs:
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           firebaseToolsVersion: v13.3.1 # <- Locking version because the newest (13.13.0) does not add the deploy URL to auth whitelist
-          repoToken: "${{ secrets.GITHUB_TOKEN }}"
-          firebaseServiceAccount: "${{ secrets.FIREBASE_SERVICE_ACCOUNT_DEV_ADMIN }}"
-          projectId: "${{ secrets.FIREBASE_PROJECT }}"
+          repoToken: '${{ secrets.GITHUB_TOKEN }}'
+          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_DEV_ADMIN }}'
+          projectId: '${{ secrets.FIREBASE_PROJECT }}'
           target: ${{ contains(github.repository, 'levante') && 'production' || 'staging' }}
 
       - name: Output Deploy URL

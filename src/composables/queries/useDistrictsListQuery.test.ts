@@ -1,19 +1,19 @@
-import { ref, nextTick } from "vue";
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import * as VueQuery from "@tanstack/vue-query";
-import { type QueryClient } from "@tanstack/vue-query";
-import { withSetup } from "@/test-support/withSetup.js";
-import { orgFetcher } from "@/helpers/query/orgs";
-import useDistrictsListQuery from "./useDistrictsListQuery";
-import useUserClaimsQuery from "@/composables/queries/useUserClaimsQuery";
+import { ref, nextTick } from 'vue';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import * as VueQuery from '@tanstack/vue-query';
+import { type QueryClient } from '@tanstack/vue-query';
+import { withSetup } from '@/test-support/withSetup.js';
+import { orgFetcher } from '@/helpers/query/orgs';
+import useDistrictsListQuery from './useDistrictsListQuery';
+import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 
-vi.mock("@/helpers/query/orgs", () => ({
+vi.mock('@/helpers/query/orgs', () => ({
   orgFetcher: vi.fn().mockImplementation(() => []),
 }));
 
-vi.mock("@/composables/queries/useUserClaimsQuery");
+vi.mock('@/composables/queries/useUserClaimsQuery');
 
-vi.mock("@tanstack/vue-query", async (getModule) => {
+vi.mock('@tanstack/vue-query', async (getModule) => {
   const original = await getModule();
   return {
     ...original,
@@ -21,19 +21,19 @@ vi.mock("@tanstack/vue-query", async (getModule) => {
   };
 });
 
-describe("useDistrictsListQuery", () => {
+describe('useDistrictsListQuery', () => {
   let queryClient: QueryClient;
 
   const mockUserClaims = ref({
     claims: {
-      minimalAdminOrgs: ["mock-org-id-1", "mock-org-id-2"],
+      minimalAdminOrgs: ['mock-org-id-1', 'mock-org-id-2'],
       super_admin: false,
     },
   });
 
   const mockSuperAdminUserClaims = ref({
     claims: {
-      minimalAdminOrgs: ["mock-org-id-3"],
+      minimalAdminOrgs: ['mock-org-id-3'],
       super_admin: true,
     },
   });
@@ -47,16 +47,16 @@ describe("useDistrictsListQuery", () => {
     vi.clearAllMocks();
   });
 
-  it("should call query with correct parameters", () => {
+  it('should call query with correct parameters', () => {
     vi.mocked(useUserClaimsQuery).mockReturnValue({ data: mockUserClaims });
-    vi.spyOn(VueQuery, "useQuery");
+    vi.spyOn(VueQuery, 'useQuery');
 
     withSetup(() => useDistrictsListQuery(), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
     expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: ["districts-list"],
+      queryKey: ['districts-list'],
       queryFn: expect.any(Function),
       enabled: expect.objectContaining({
         _value: true,
@@ -64,14 +64,14 @@ describe("useDistrictsListQuery", () => {
     });
 
     expect(orgFetcher).toHaveBeenCalledWith(
-      "districts",
+      'districts',
       undefined,
       expect.objectContaining({ value: false }),
-      expect.objectContaining({ value: ["mock-org-id-1", "mock-org-id-2"] }),
+      expect.objectContaining({ value: ['mock-org-id-1', 'mock-org-id-2'] }),
     );
   });
 
-  it("should only fetch districts only once user claims are loaded", async () => {
+  it('should only fetch districts only once user claims are loaded', async () => {
     const mockClaimsData = ref({});
     const mockClaimsLoading = ref(true);
 
@@ -80,15 +80,15 @@ describe("useDistrictsListQuery", () => {
       isLoading: mockClaimsLoading,
     });
 
-    vi.spyOn(VueQuery, "useQuery");
-    vi.spyOn(orgFetcher, "mockImplementation");
+    vi.spyOn(VueQuery, 'useQuery');
+    vi.spyOn(orgFetcher, 'mockImplementation');
 
     withSetup(() => useDistrictsListQuery(), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
     expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: ["districts-list"],
+      queryKey: ['districts-list'],
       queryFn: expect.any(Function),
       enabled: expect.objectContaining({
         _value: false,
@@ -103,24 +103,24 @@ describe("useDistrictsListQuery", () => {
     await nextTick();
 
     expect(orgFetcher).toHaveBeenCalledWith(
-      "districts",
+      'districts',
       undefined,
       expect.objectContaining({ value: true }),
-      expect.objectContaining({ value: ["mock-org-id-3"] }),
+      expect.objectContaining({ value: ['mock-org-id-3'] }),
     );
   });
 
-  it("should allow the query to be disabled via the passed query options", () => {
+  it('should allow the query to be disabled via the passed query options', () => {
     const queryOptions = { enabled: false };
 
-    vi.spyOn(VueQuery, "useQuery");
+    vi.spyOn(VueQuery, 'useQuery');
 
     withSetup(() => useDistrictsListQuery(queryOptions), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
     expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: ["districts-list"],
+      queryKey: ['districts-list'],
       queryFn: expect.any(Function),
       enabled: expect.objectContaining({
         _value: false,

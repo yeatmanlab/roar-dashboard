@@ -1,21 +1,13 @@
-import {
-  query,
-  where,
-  getDocs,
-  CollectionReference,
-  DocumentData,
-  Query,
-} from "firebase/firestore";
-import _fromPairs from "lodash/fromPairs";
-import _invert from "lodash/invert";
-import _toPairs from "lodash/toPairs";
-import * as Papa from "papaparse";
+import { query, where, getDocs, CollectionReference, DocumentData, Query } from 'firebase/firestore';
+import _fromPairs from 'lodash/fromPairs';
+import _invert from 'lodash/invert';
+import _toPairs from 'lodash/toPairs';
+import * as Papa from 'papaparse';
 
-export const isLevante: boolean = import.meta.env.VITE_LEVANTE === "TRUE";
+export const isLevante: boolean = import.meta.env.VITE_LEVANTE === 'TRUE';
 
 export const isMobileBrowser = (): boolean => {
-  const userAgent: string =
-    navigator.userAgent || navigator.vendor || (window as any).opera;
+  const userAgent: string = navigator.userAgent || navigator.vendor || (window as any).opera;
   if (
     /(android|bb\d+|meego).+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|iris|kindle|lge |maemo|midp|mmp|mobile.+firefox|netfront|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|series(4|6)0|symbian|treo|up\.(browser|link)|vodafone|wap|windows ce|xda|xiino/i.test(
       userAgent,
@@ -34,7 +26,7 @@ export const getDocsFromQuery = async (
   field: string,
   value: any,
 ): Promise<any | null | any[]> => {
-  const q = query(collection, where(field, "==", value));
+  const q = query(collection, where(field, '==', value));
   const querySnapshot = await getDocs(q);
 
   if (querySnapshot.empty) {
@@ -70,10 +62,7 @@ export const findById = <T extends ResourceWithId>(
  * @param {ResourceWithId[]} resources - Array of existing resource objects
  * @param {ResourceWithId} resource - New object to either update or insert
  */
-export const upsert = <T extends ResourceWithId>(
-  resources: T[],
-  resource: T,
-): void => {
+export const upsert = <T extends ResourceWithId>(resources: T[], resource: T): void => {
   const index = resources.findIndex((r) => r.id === resource.id);
   if (resource.id && index !== -1) {
     resources[index] = resource;
@@ -88,10 +77,7 @@ export const arrayRandom = <T>(array: T[]): T | undefined => {
   return array[randomIndex];
 };
 
-export const getUniquePropsFromUsers = (
-  users: any[],
-  prop: string,
-): { id: any }[] => {
+export const getUniquePropsFromUsers = (users: any[], prop: string): { id: any }[] => {
   const propArrays = users.map((user) => user[prop]).flat();
   return [...new Set(propArrays)].map((item) => ({ id: item }));
 };
@@ -100,26 +86,19 @@ interface SelectionItem {
   id: any;
 }
 
-export const userHasSelectedOrgs = (
-  userArray: any[],
-  selections: SelectionItem[],
-): boolean => {
+export const userHasSelectedOrgs = (userArray: any[], selections: SelectionItem[]): boolean => {
   // If the selected org list is empty, return all users
   if (selections.length === 0) {
     return true;
   }
   const selectionArray = selections.map((item) => item.id);
-  return Boolean(
-    userArray.filter((value) => selectionArray.includes(value)).length > 0,
-  ); // Check length > 0
+  return Boolean(userArray.filter((value) => selectionArray.includes(value)).length > 0); // Check length > 0
 };
 
-export const formatDate = (
-  date: Date | number | string | undefined | null,
-): string | undefined => date?.toLocaleString("en-US");
+export const formatDate = (date: Date | number | string | undefined | null): string | undefined =>
+  date?.toLocaleString('en-US');
 
-const camelCase = (str: string): string =>
-  str.replace(/_([a-z])/g, (_match, group1) => group1.toUpperCase());
+const camelCase = (str: string): string => str.replace(/_([a-z])/g, (_match, group1) => group1.toUpperCase());
 
 export const flattenObj = (obj: any): Record<string, any> => {
   const result: Record<string, any> = {};
@@ -127,21 +106,16 @@ export const flattenObj = (obj: any): Record<string, any> => {
   for (const i in obj) {
     if (Object.prototype.hasOwnProperty.call(obj, i)) {
       // Add hasOwnProperty check
-      if (
-        typeof obj[i] === "object" &&
-        !Array.isArray(obj[i]) &&
-        obj[i] !== null
-      ) {
+      if (typeof obj[i] === 'object' && !Array.isArray(obj[i]) && obj[i] !== null) {
         const temp = flattenObj(obj[i]);
         for (const j in temp) {
           if (Object.prototype.hasOwnProperty.call(temp, j)) {
             // Add hasOwnProperty check
-            result[camelCase(i + "." + j)] =
-              temp[j] === undefined || temp[j] === null ? "" : temp[j]; // More robust empty check
+            result[camelCase(i + '.' + j)] = temp[j] === undefined || temp[j] === null ? '' : temp[j]; // More robust empty check
           }
         }
       } else {
-        result[i] = obj[i] === undefined || obj[i] === null ? "" : obj[i]; // More robust empty check
+        result[i] = obj[i] === undefined || obj[i] === null ? '' : obj[i]; // More robust empty check
       }
     }
   }
@@ -158,12 +132,12 @@ export const csvFileToJson = async (file: File): Promise<any[]> => {
   const results: CsvResult = await new Promise((resolve, reject) => {
     Papa.parse(text, {
       header: true,
-      skipEmptyLines: "greedy",
+      skipEmptyLines: 'greedy',
       transformHeader: (header: string): string => header.trim(),
       transform: (value: string, field: string | number): string => {
         // Ensure field is treated as string if it's a number (column index)
-        if (typeof field === "number") field = String(field);
-        if (field === "id") {
+        if (typeof field === 'number') field = String(field);
+        if (field === 'id') {
           return value.trim();
         }
         return value;
@@ -175,17 +149,12 @@ export const csvFileToJson = async (file: File): Promise<any[]> => {
   return results.data;
 };
 
-export const standardDeviation = (
-  arr: number[],
-  usePopulation: boolean = false,
-): number => {
+export const standardDeviation = (arr: number[], usePopulation: boolean = false): number => {
   // prevent divide by 0
   if (arr.length === 0) return Infinity;
 
   const mean = arr.reduce((acc, val) => acc + val, 0) / arr.length;
-  const variance =
-    arr.reduce((acc, val) => acc + (val - mean) ** 2, 0) /
-    (arr.length - (usePopulation ? 0 : 1));
+  const variance = arr.reduce((acc, val) => acc + (val - mean) ** 2, 0) / (arr.length - (usePopulation ? 0 : 1));
   return Math.sqrt(variance);
 };
 
@@ -201,26 +170,22 @@ export const filterAdminOrgs = (
   return _fromPairs(filteredOrgPairs);
 };
 
-export const removeEmptyOrgs = (
-  orgs: Record<string, any[]>,
-): Record<string, any[]> => {
+export const removeEmptyOrgs = (orgs: Record<string, any[]>): Record<string, any[]> => {
   // eslint-disable-next-line no-unused-vars
-  return _fromPairs(
-    _toPairs(orgs).filter(([_, orgArray]) => orgArray.length > 0),
-  );
+  return _fromPairs(_toPairs(orgs).filter(([_, orgArray]) => orgArray.length > 0));
 };
 
 const plurals: Record<string, string> = {
-  group: "groups",
-  district: "districts",
-  school: "schools",
-  class: "classes",
-  family: "families",
-  administration: "administrations",
-  user: "users",
-  assignment: "assignments",
-  run: "runs",
-  trial: "trials",
+  group: 'groups',
+  district: 'districts',
+  school: 'schools',
+  class: 'classes',
+  family: 'families',
+  administration: 'administrations',
+  user: 'users',
+  assignment: 'assignments',
+  run: 'runs',
+  trial: 'trials',
 };
 
 export const pluralizeFirestoreCollection = (singular: string): string => {
@@ -229,9 +194,7 @@ export const pluralizeFirestoreCollection = (singular: string): string => {
   const plural = plurals[singular];
   if (plural) return plural;
 
-  throw new Error(
-    `There is no plural Firestore collection for the ${singular}`,
-  );
+  throw new Error(`There is no plural Firestore collection for the ${singular}`);
 };
 
 export const singularizeFirestoreCollection = (plural: string): string => {
@@ -244,14 +207,14 @@ export const singularizeFirestoreCollection = (plural: string): string => {
 };
 
 const groupNameMap: Record<string, string> = {
-  group: "cohort",
-  groups: "cohorts",
-  district: "site",
-  districts: "sites",
-  school: "school",
-  schools: "schools",
-  class: "class",
-  classes: "classes",
+  group: 'cohort',
+  groups: 'cohorts',
+  district: 'site',
+  districts: 'sites',
+  school: 'school',
+  schools: 'schools',
+  class: 'class',
+  classes: 'classes',
 };
 
 export const convertToGroupName = (groupName: string): string => {
