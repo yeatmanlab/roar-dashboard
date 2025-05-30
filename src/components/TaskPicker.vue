@@ -164,7 +164,7 @@
     </div>
   </PvPanel>
 </template>
-<script setup>
+<script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import _filter from "lodash/filter";
 import _findIndex from "lodash/findIndex";
@@ -184,26 +184,87 @@ import _cloneDeep from "lodash/cloneDeep";
 import PvIconField from "primevue/iconfield";
 import PvInputIcon from "primevue/inputicon";
 
+// Import types from VariantCard
+type VariantObject = InstanceType<typeof VariantCard>['$props']['variant'];
+
+interface TaskData {
+  id: string;
+  name: string;
+  studentFacingName?: string;
+}
+
+interface VariantCondition {
+  field: string;
+  op: string;
+  value: any;
+}
+
+interface VariantConditions {
+  assigned?: {
+    op: string;
+    conditions: VariantCondition[];
+  };
+  optional?: boolean | {
+    op: string;
+    conditions: VariantCondition[];
+  };
+}
+
+interface VariantData {
+  name: string;
+  params?: Record<string, any>;
+  conditions?: VariantConditions;
+  [key: string]: any;
+}
+
+interface Variant {
+  id: string;
+  task: TaskData;
+  variant: VariantData;
+}
+
+interface PreExistingAssessmentInfo {
+  variantId: string;
+  conditions: VariantConditions;
+}
+
+interface TaskOption {
+  label: string;
+  value: string;
+}
+
+interface TaskGroup {
+  label: string;
+  items: TaskOption[];
+}
+
+interface Props {
+  allVariants: Record<string, VariantObject[]>;
+  inputVariants?: VariantObject[];
+  preExistingAssessmentInfo?: any[];
+}
+
+interface Emits {
+  'variants-changed': [variants: VariantObject[]];
+}
+
+interface DragEvent {
+  item: HTMLElement;
+  from: HTMLElement;
+  to: HTMLElement;
+  dragged: HTMLElement;
+}
+
 const toast = useToast();
 
-const props = defineProps({
-  allVariants: {
-    type: Object,
-    required: true,
-  },
-  inputVariants: {
-    type: Array,
-    default: () => [],
-  },
-  preExistingAssessmentInfo: {
-    type: Array,
-    default: () => [],
-  },
+const props = withDefaults(defineProps<Props>(), {
+  inputVariants: () => [],
+  preExistingAssessmentInfo: () => [],
 });
 
-const emit = defineEmits(["variants-changed"]);
+const emit = defineEmits<Emits>();
 
-const groupedTasks = {
+const groupedTasks: Record<string, string[]> = {
   Introduction: ["Instructions"],
   "Language and Literacy": [
     "Vocabulary",
@@ -220,15 +281,16 @@ const groupedTasks = {
   Attitudes: ["Survey"],
 };
 
-const taskOptions = computed(() => {
+const taskOptions = computed((): TaskGroup[] => {
   let remainingTasks = new Set(Object.keys(props.allVariants));
   let groupedOptions = Object.entries(groupedTasks).map(
     ([groupName, tasks]) => {
-      let groupItems = [];
+      let groupItems: TaskOption[] = [];
 
       tasks.forEach((task) => {
         const taskKey = Object.keys(props.allVariants).find((entry) => {
-          return props.allVariants[entry][0].task.name === task;
+          const variants = props.allVariants[entry];
+          return variants && variants.length > 0 && variants[0]?.task?.name === task;
         });
 
         if (taskKey) {
@@ -254,10 +316,14 @@ const taskOptions = computed(() => {
   );
 
   // Handle any remaining tasks that don't fit into predefined groups
-  let otherItems = Array.from(remainingTasks).map((taskKey) => ({
-    label: props.allVariants[taskKey][0].task.name ?? taskKey,
-    value: taskKey,
-  }));
+  let otherItems: TaskOption[] = Array.from(remainingTasks).map((taskKey) => {
+    const variants = props.allVariants[taskKey];
+    const taskName = variants && variants.length > 0 ? variants[0]?.task?.name : undefined;
+    return {
+      label: taskName ?? taskKey,
+      value: taskKey,
+    };
+  });
 
   if (otherItems.length > 0) {
     otherItems.sort((a, b) => a.label.localeCompare(b.label));
@@ -267,12 +333,13 @@ const taskOptions = computed(() => {
       items: otherItems,
     });
   }
-  return groupedOptions.filter((group) => group !== null);
+  return groupedOptions.filter((group): group is TaskGroup => group !== null);
 });
 
 watch(
   () => props.inputVariants,
   (newVariants) => {
+    if (!newVariants) return;
     // @TODO: Fix this as it's not working as expected. When updating the data set in the parent component, the data is
     // added twice to the selectedVariants array, despite the _union call.
     selectedVariants.value = _union(selectedVariants.value, newVariants);
@@ -297,7 +364,7 @@ watch(
   },
 );
 
-const updateVariant = (variantId, conditions) => {
+const updateVariant = (variantId: string, conditions: any): void => {
   const updatedVariants = selectedVariants.value.map((variant) => {
     if (variant.id === variantId) {
       return {
@@ -313,12 +380,16 @@ const updateVariant = (variantId, conditions) => {
   return;
 };
 
-const selectedVariants = ref([]);
-const namedOnly = ref(true);
+const selectedVariants = ref<VariantObject[]>([]);
+const namedOnly = ref<boolean>(true);
 
-const currentTask = ref(Object.keys(props.allVariants)[0]);
+const currentTask = ref<string>(Object.keys(props.allVariants)[0] || '');
 
-const currentVariants = computed(() => {
+const currentVariants = computed((): VariantObject[] => {
+  if (!currentTask.value || !props.allVariants[currentTask.value]) {
+    return [];
+  }
+  
   if (namedOnly.value) {
     return _filter(
       props.allVariants[currentTask.value],
@@ -329,14 +400,14 @@ const currentVariants = computed(() => {
 });
 
 // Pane handlers
-const tasksPaneOpen = ref(true);
+const tasksPaneOpen = ref<boolean>(true);
 
 // Search handlers
-const searchTerm = ref("");
-const searchResults = ref([]);
-const isSearching = ref(false);
+const searchTerm = ref<string>("");
+const searchResults = ref<VariantObject[]>([]);
+const isSearching = ref<boolean>(false);
 
-const searchCards = (term) => {
+const searchCards = (term: string): void => {
   isSearching.value = true;
   searchResults.value = [];
   Object.values(props.allVariants).forEach((variants) => {
@@ -345,7 +416,7 @@ const searchCards = (term) => {
         _toLower(variant.variant.name).includes(_toLower(term)) ||
         _toLower(variant.id).includes(_toLower(term)) ||
         _toLower(variant.task.id).includes(_toLower(term)) ||
-        _toLower(variant.task.studentFacingName).includes(_toLower(term))
+        _toLower(variant.task.studentFacingName || '').includes(_toLower(term))
       )
         return true;
       else return false;
@@ -355,14 +426,14 @@ const searchCards = (term) => {
   isSearching.value = false;
 };
 
-function clearSearch() {
+function clearSearch(): void {
   searchTerm.value = "";
   searchResults.value = [];
 }
 
 const debounceSearch = _debounce(searchCards, 250);
 
-watch(searchTerm, (term) => {
+watch(searchTerm, (term: string) => {
   if (term.length >= 3) {
     debounceSearch(term);
   } else {
@@ -384,12 +455,13 @@ const debounceToast = _debounce(
   { leading: true },
 );
 
-const handleCardAdd = (card) => {
+const handleCardAdd = (card: DragEvent): void => {
   // Check if the current task is already selected.
   const taskIds = selectedVariants.value.map((variant) => variant.task.id);
 
   // If the task is already selected, remove the added card and show warning
-  if (taskIds.includes(card.item.dataset.taskId)) {
+  const taskId = card.item.dataset.taskId;
+  if (taskId && taskIds.includes(taskId)) {
     // Remove the last added card (which is the duplicate)
     selectedVariants.value.pop();
 
@@ -402,7 +474,7 @@ const handleCardAdd = (card) => {
   }
 };
 
-const handleCardMove = (card) => {
+const handleCardMove = (card: DragEvent): boolean => {
   // Check if this variant card is already in the list
   const cardVariantId = card.dragged.id;
   const index = _findIndex(
@@ -424,12 +496,13 @@ watch(
 );
 
 // Card event handlers
-const removeCard = (variant) => {
+const removeCard = (variant: VariantObject): void => {
   selectedVariants.value = selectedVariants.value.filter(
     (selectedVariant) => selectedVariant.id !== variant.id,
   );
 };
-const selectCard = (variant) => {
+
+const selectCard = (variant: VariantObject): void => {
   // Check if this variant is already in the list
   const cardVariantId = variant.id;
   const index = _findIndex(
@@ -459,29 +532,35 @@ const selectCard = (variant) => {
     debounceToast();
   }
 };
-const moveCardUp = (variant) => {
+
+const moveCardUp = (variant: VariantObject): void => {
   const index = _findIndex(
     selectedVariants.value,
     (currentVariant) => currentVariant.id === variant.id,
   );
-  if (index === 0) return;
+  if (index <= 0) return;
   const item = selectedVariants.value[index];
-  selectedVariants.value.splice(index, 1);
-  selectedVariants.value.splice(index - 1, 0, item);
+  if (item) {
+    selectedVariants.value.splice(index, 1);
+    selectedVariants.value.splice(index - 1, 0, item);
+  }
 };
-const moveCardDown = (variant) => {
+
+const moveCardDown = (variant: VariantObject): void => {
   const index = _findIndex(
     selectedVariants.value,
     (currentVariant) => currentVariant.id === variant.id,
   );
-  if (index === selectedVariants.value.length) return;
+  if (index === -1 || index >= selectedVariants.value.length - 1) return;
   const item = selectedVariants.value[index];
-  selectedVariants.value.splice(index, 1);
-  selectedVariants.value.splice(index + 1, 0, item);
+  if (item) {
+    selectedVariants.value.splice(index, 1);
+    selectedVariants.value.splice(index + 1, 0, item);
+  }
 };
 
 // Default all tasks to child only, unless it is the survey (for LEVANTE).
-function addChildDefaultCondition(variant) {
+function addChildDefaultCondition(variant: VariantObject): VariantObject {
   if (variant.task.id === "survey") return variant;
 
   const defaultedVariant = _cloneDeep(variant);

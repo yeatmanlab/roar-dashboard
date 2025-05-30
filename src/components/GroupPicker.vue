@@ -106,7 +106,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { reactive, ref, computed, onMounted, watch, toRaw } from "vue";
 import { useQuery } from "@tanstack/vue-query";
 import { storeToRefs } from "pinia";
@@ -128,35 +128,57 @@ import useDistrictsListQuery from "@/composables/queries/useDistrictsListQuery";
 import PvFloatLabel from "primevue/floatlabel";
 import { convertToGroupName } from "@/helpers";
 
-const initialized = ref(false);
+interface OrgItem {
+  id: string;
+  name: string;
+  districtId?: string;
+  schoolId?: string;
+  schools?: any[];
+  classes?: any[];
+}
+
+interface OrgCollection {
+  districts: OrgItem[];
+  schools: OrgItem[];
+  classes: OrgItem[];
+  groups: OrgItem[];
+  families: OrgItem[];
+  [key: string]: OrgItem[];
+}
+
+interface OrgHeader {
+  header: string;
+  id: string;
+}
+
+interface Props {
+  orgs?: Partial<OrgCollection>;
+  forParentOrg?: boolean;
+}
+
+interface Emits {
+  selection: [orgs: OrgCollection];
+}
+
+const initialized = ref<boolean>(false);
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
 
-const selectedDistrict = ref(undefined);
-const selectedSchool = ref(undefined);
+const selectedDistrict = ref<string | undefined>(undefined);
+const selectedSchool = ref<string | undefined>(undefined);
 
-const props = defineProps({
-  orgs: {
-    type: Object,
-    required: false,
-    default: () => {
-      return {
-        districts: [],
-        schools: [],
-        classes: [],
-        groups: [],
-        families: [],
-      };
-    },
-  },
-  forParentOrg: {
-    type: Boolean,
-    required: false,
-    default: false,
-  },
+const props = withDefaults(defineProps<Props>(), {
+  orgs: () => ({
+    districts: [],
+    schools: [],
+    classes: [],
+    groups: [],
+    families: [],
+  }),
+  forParentOrg: false,
 });
 
-const selectedOrgs = reactive({
+const selectedOrgs = reactive<OrgCollection>({
   districts: [],
   schools: [],
   classes: [],
@@ -165,7 +187,7 @@ const selectedOrgs = reactive({
 });
 
 // Declare computed property to watch for changes in props.orgs
-const computedOrgsProp = computed(() => {
+const computedOrgsProp = computed((): Partial<OrgCollection> => {
   return props.orgs ?? {};
 });
 
@@ -186,12 +208,12 @@ const { isLoading: isLoadingClaims, data: userClaims } = useUserClaimsQuery({
   enabled: initialized,
 });
 
-const isSuperAdmin = computed(() =>
+const isSuperAdmin = computed((): boolean =>
   Boolean(userClaims.value?.claims?.super_admin),
 );
 const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
 
-const orgHeaders = computed(() => {
+const orgHeaders = computed((): Record<string, OrgHeader> => {
   if (props.forParentOrg) {
     return {
       districts: { header: "Sites", id: "districts" },
@@ -206,13 +228,13 @@ const orgHeaders = computed(() => {
   };
 });
 
-const activeIndex = ref(0);
-const activeOrgType = computed(() => {
+const activeIndex = ref<number>(0);
+const activeOrgType = computed((): string => {
   return Object.keys(orgHeaders.value)[activeIndex.value];
 });
 
-const claimsLoaded = computed(
-  () => initialized.value && !isLoadingClaims.value,
+const claimsLoaded = computed((): boolean =>
+  initialized.value && !isLoadingClaims.value,
 );
 
 const { isLoading: isLoadingDistricts, data: allDistricts } =
@@ -220,15 +242,15 @@ const { isLoading: isLoadingDistricts, data: allDistricts } =
     enabled: claimsLoaded,
   });
 
-const schoolQueryEnabled = computed(() => {
+const schoolQueryEnabled = computed((): boolean => {
   return claimsLoaded.value && selectedDistrict.value !== undefined;
 });
 
 const { isLoading: isLoadingSchools, data: allSchools } = useQuery({
   queryKey: ["schools", selectedDistrict],
   queryFn: () =>
-    orgFetcher("schools", selectedDistrict, isSuperAdmin, adminOrgs),
-  keepPreviousData: true,
+    orgFetcher("schools", selectedDistrict.value, isSuperAdmin.value, adminOrgs.value),
+  placeholderData: (previousData) => previousData,
   enabled: schoolQueryEnabled,
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
@@ -237,15 +259,15 @@ const { data: orgData } = useQuery({
   queryKey: ["orgs", activeOrgType, selectedDistrict, selectedSchool],
   queryFn: () =>
     orgFetchAll(
-      activeOrgType,
-      selectedDistrict,
-      selectedSchool,
+      activeOrgType.value,
+      selectedDistrict.value,
+      selectedSchool.value,
       ref(orderByDefault),
-      isSuperAdmin,
-      adminOrgs,
+      isSuperAdmin.value,
+      adminOrgs.value,
       ["id", "name", "districtId", "schoolId", "schools", "classes"],
     ),
-  keepPreviousData: true,
+  placeholderData: (previousData) => previousData,
   enabled: claimsLoaded,
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
@@ -255,34 +277,36 @@ watch(activeOrgType, () => {
   if (props.forParentOrg) {
     // Reset all selections
     Object.keys(selectedOrgs).forEach((key) => {
-      selectedOrgs[key] = [];
+      if (key in selectedOrgs) {
+        selectedOrgs[key as keyof OrgCollection] = [];
+      }
     });
   }
 });
 
-const remove = (org, orgKey) => {
+const remove = (org: OrgItem, orgKey: keyof OrgCollection): void => {
   const rawSelectedOrgs = toRaw(selectedOrgs);
   if (Array.isArray(rawSelectedOrgs[orgKey])) {
     selectedOrgs[orgKey] = selectedOrgs[orgKey].filter(
       (_org) => _org.id !== org.id,
     );
   } else {
-    selectedOrgs[orgKey] = undefined;
+    selectedOrgs[orgKey] = [];
   }
 };
 
-let unsubscribe;
-const init = () => {
+let unsubscribe: (() => void) | undefined;
+const init = (): void => {
   if (unsubscribe) unsubscribe();
   initialized.value = true;
 };
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit.restConfig) init();
+  if ((state.roarfirekit as any)?.restConfig) init();
 });
 
-onMounted(() => {
-  if (roarfirekit.value.restConfig) init();
+onMounted((): void => {
+  if ((roarfirekit.value as any)?.restConfig) init();
 });
 
 watch(allDistricts, (newValue) => {
@@ -293,7 +317,7 @@ watch(allSchools, (newValue) => {
   selectedSchool.value = _get(_head(newValue), "id");
 });
 
-const emit = defineEmits(["selection"]);
+const emit = defineEmits<Emits>();
 
 watch(selectedOrgs, (newValue) => {
   emit("selection", newValue);

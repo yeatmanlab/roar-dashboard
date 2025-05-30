@@ -388,7 +388,7 @@
   </PvDialog>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed } from "vue";
 import _toPairs from "lodash/toPairs";
 import PvButton from "primevue/button";
@@ -400,33 +400,65 @@ import PvPopover from "primevue/popover";
 import PvTag from "primevue/tag";
 import EditVariantDialog from "@/components/EditVariantDialog.vue";
 
-const props = defineProps({
-  variant: {
-    required: true,
-    type: Object,
-  },
-  hasControls: {
-    required: false,
-    type: Boolean,
-    default: false,
-  },
-  updateVariant: {
-    type: Function,
-    required: true,
-  },
-  preExistingAssessmentInfo: {
-    type: Array,
-    default: () => [],
-  },
+interface Condition {
+  field: string;
+  op: string;
+  value: any;
+}
+
+interface VariantConditions {
+  assigned?: {
+    conditions: Condition[];
+  };
+  optional?: boolean | {
+    conditions: Condition[];
+  };
+}
+
+interface VariantData {
+  name: string;
+  params: Record<string, any>;
+  conditions?: VariantConditions;
+}
+
+interface TaskData {
+  name: string;
+  image?: string;
+}
+
+interface VariantObject {
+  id: string;
+  variant: VariantData;
+  task: TaskData;
+}
+
+interface Props {
+  variant: VariantObject;
+  hasControls?: boolean;
+  updateVariant: (variant: VariantObject) => void;
+  preExistingAssessmentInfo?: any[];
+}
+
+interface Emits {
+  remove: [variant: VariantObject];
+  select: [variant: VariantObject];
+  moveUp: [variant: VariantObject];
+  moveDown: [variant: VariantObject];
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  hasControls: false,
+  preExistingAssessmentInfo: () => [],
 });
 
-const backupImage = "/src/assets/roar-logo.png";
-const showContent = ref(false);
-const op = ref(null);
-const visible = ref(false);
-const emit = defineEmits(["remove", "select", "moveUp", "moveDown"]);
+const emit = defineEmits<Emits>();
 
-const formattedAssignedConditions = computed(() => {
+const backupImage = "/src/assets/roar-logo.png";
+const showContent = ref<boolean>(false);
+const op = ref<any>(null);
+const visible = ref<boolean>(false);
+
+const formattedAssignedConditions = computed((): string => {
   const conditions = props.variant.variant?.conditions?.assigned?.conditions;
   if (!conditions || !Array.isArray(conditions) || conditions.length === 0) {
     return "";
@@ -465,44 +497,47 @@ const formattedAssignedConditions = computed(() => {
   return processedStrings.join(", ");
 });
 
-const handleRemove = () => {
+const handleRemove = (): void => {
   emit("remove", props.variant);
 };
-const handleSelect = () => {
+
+const handleSelect = (): void => {
   emit("select", props.variant);
 };
-const handleMoveUp = () => {
+
+const handleMoveUp = (): void => {
   emit("moveUp", props.variant);
 };
-const handleMoveDown = () => {
+
+const handleMoveDown = (): void => {
   emit("moveDown", props.variant);
 };
 
-function toggleShowContent() {
+function toggleShowContent(): void {
   showContent.value = !showContent.value;
 }
 
-function iconClass() {
+function iconClass(): string {
   return showContent.value
     ? "pi pi-chevron-up text-primary hover:text-white-alpha-90 p-2"
     : "pi pi-chevron-down text-primary hover:text-white-alpha-90 p-2";
 }
 
-const parseConditions = (variant) => {
+const parseConditions = (variant: any): Condition[] | undefined => {
   return variant?.conditions;
 };
 
-const isActive = () => {
+const isActive = (): string => {
   return !showContent.value
     ? "flex-1 flex flex-row gap-2 border-1 border-round surface-border bg-white-alpha-90 mb-2 hover:surface-hover z-1 relative"
     : "flex-1 flex flex-row gap-2 border-1 border-round surface-border bg-white-alpha-90 mb-2 hover:surface-hover z-1 relative shadow-2";
 };
 
-const displayParamList = (inputObj) => {
+const displayParamList = (inputObj: Record<string, any>): Array<{ key: string; value: any }> => {
   return _toPairs(inputObj).map(([key, value]) => ({ key, value }));
 };
 
-const toggle = (event) => {
+const toggle = (event: Event): void => {
   op.value.toggle(event);
 };
 </script>

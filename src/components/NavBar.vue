@@ -59,7 +59,7 @@
   </header>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
 import { storeToRefs } from "pinia";
@@ -74,34 +74,50 @@ import Badge from "primevue/badge";
 import UserActions from "./UserActions.vue";
 import useUserType from "@/composables/useUserType";
 
+interface NavbarAction {
+  category: string;
+  title: string;
+  icon: string;
+  buttonLink: string;
+}
+
+interface MenuItem {
+  label: string;
+  icon?: string;
+  command?: () => void;
+  items?: MenuItem[];
+  badge?: string;
+  badgeClass?: string;
+}
+
 const router = useRouter();
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
 
-const initialized = ref(false);
+const initialized = ref<boolean>(false);
 const menu = ref();
-const screenWidth = ref(window.innerWidth);
-let unsubscribe;
+const screenWidth = ref<number>(window.innerWidth);
+let unsubscribe: (() => void) | undefined;
 
-const init = () => {
+const init = (): void => {
   if (unsubscribe) unsubscribe();
   initialized.value = true;
 };
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit.restConfig) init();
+  if ((state.roarfirekit as any)?.restConfig) init();
 });
 
-const handleResize = () => {
+const handleResize = (): void => {
   screenWidth.value = window.innerWidth;
 };
 
-onMounted(() => {
-  if (roarfirekit.value.restConfig) init();
+onMounted((): void => {
+  if ((roarfirekit.value as any)?.restConfig) init();
   window.addEventListener("resize", handleResize);
 });
 
-onUnmounted(() => {
+onUnmounted((): void => {
   window.removeEventListener("resize", handleResize);
 });
 
@@ -109,8 +125,8 @@ const { data: userClaims } = useUserClaimsQuery({
   enabled: initialized,
 });
 
-const computedItems = computed(() => {
-  const items = [];
+const computedItems = computed((): MenuItem[] => {
+  const items: MenuItem[] = [];
   // TO DO: REMOVE USERS AFTER NAMING 3 TICKET IS COMPLETED
 
   // Groups only has one associated page and therefore is not nested within items
@@ -131,7 +147,7 @@ const computedItems = computed(() => {
   for (const header of headers) {
     const headerItems = rawActions.value
       .filter((action) => action.category === header)
-      .map((action) => {
+      .map((action): MenuItem => {
         return {
           label: action.title,
           icon: action.icon,
@@ -153,18 +169,18 @@ const computedItems = computed(() => {
 
 const { isAdmin, isSuperAdmin } = useUserType(userClaims);
 
-const computedIsBasicView = computed(() => {
+const computedIsBasicView = computed((): boolean => {
   if (!userClaims.value) {
     return false;
   }
   return !isSuperAdmin.value && !isAdmin.value;
 });
 
-const isAtHome = computed(() => {
+const isAtHome = computed((): boolean => {
   return router.currentRoute.value.fullPath === "/";
 });
 
-const rawActions = computed(() => {
+const rawActions = computed((): NavbarAction[] => {
   return getNavbarActions({
     isSuperAdmin: isSuperAdmin.value,
     isAdmin: authStore.isUserAdmin,
@@ -172,7 +188,7 @@ const rawActions = computed(() => {
   });
 });
 
-const toggleMenu = (event) => {
+const toggleMenu = (event: Event): void => {
   menu.value.toggle(event);
 };
 </script>

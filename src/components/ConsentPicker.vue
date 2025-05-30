@@ -371,7 +371,7 @@
   </PvDialog>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted, watch, computed } from "vue";
 import { marked } from "marked";
 import _forEach from "lodash/forEach";
@@ -388,11 +388,52 @@ import PvFieldset from "primevue/fieldset";
 import { useAuthStore } from "@/store/auth";
 import useLegalDocsQuery from "@/composables/queries/useLegalDocsQuery";
 
-const props = defineProps({
-  legal: { type: Object, required: false, default: null },
+interface DefaultParam {
+  name: string;
+  icon: string;
+}
+
+interface SpecialParam {
+  name: string;
+}
+
+interface LegalDoc {
+  fileName: string;
+  type: string;
+  currentCommit?: string;
+  gitHubOrg?: string;
+  gitHubRepository?: string;
+  lastUpdated?: string;
+  params?: string[];
+}
+
+interface Legal {
+  consent?: LegalDoc[];
+  assent?: LegalDoc[];
+  amount?: string;
+  expectedTime?: string;
+}
+
+interface Props {
+  legal?: Legal | null;
+}
+
+interface Result {
+  consent: LegalDoc[];
+  assent: LegalDoc[];
+  amount: string;
+  expectedTime: string;
+}
+
+interface Emits {
+  'consent-selected': [result: Result | string];
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  legal: null,
 });
 
-const defaultParams = [
+const defaultParams: DefaultParam[] = [
   {
     name: "Mouse and click",
     icon: "pi pi-check",
@@ -411,7 +452,7 @@ const defaultParams = [
   },
 ];
 
-const specialParams = [
+const specialParams: SpecialParam[] = [
   {
     name: "eye-tracking",
   },
@@ -423,31 +464,31 @@ const specialParams = [
   },
 ];
 
-const initialized = ref(false);
-const showConsent = ref(false);
-const consentVersion = ref("");
-const confirmText = ref("");
-const paramCheckboxData = ref(false);
-const specialParam = ref(false);
-const amount = ref("");
-const expectedTime = ref("");
-const userDrivenFlow = ref(null);
-const noConsent = ref(false);
-let selectedConsent = ref(null);
-let selectedAssent = ref(null);
-const knowWhatIWant = ref(false);
-const decision = ref("");
-const disableIfNotDefault = ref(false);
-const tooltip = ref('Please check the "Default Data Collection Values" first');
+const initialized = ref<boolean>(false);
+const showConsent = ref<boolean>(false);
+const consentVersion = ref<string>("");
+const confirmText = ref<string>("");
+const paramCheckboxData = ref<string[] | boolean>(false);
+const specialParam = ref<string[] | boolean>(false);
+const amount = ref<string>("");
+const expectedTime = ref<string>("");
+const userDrivenFlow = ref<boolean | null>(null);
+const noConsent = ref<boolean>(false);
+let selectedConsent = ref<LegalDoc | null>(null);
+let selectedAssent = ref<LegalDoc | null>(null);
+const knowWhatIWant = ref<boolean>(false);
+const decision = ref<string>("");
+const disableIfNotDefault = ref<boolean>(false);
+const tooltip = ref<string>('Please check the "Default Data Collection Values" first');
 
-let result = {
+let result: Result = {
   consent: [],
   assent: [],
   amount: amount.value,
   expectedTime: expectedTime.value,
 };
 
-function whatDecision() {
+function whatDecision(): void {
   if (decision.value === "know") {
     knowWhatIWant.value = true;
     userDrivenFlow.value = false;
@@ -471,61 +512,57 @@ function whatDecision() {
 }
 
 const authStore = useAuthStore();
-const emit = defineEmits(["consent-selected"]);
+const emit = defineEmits<Emits>();
 
-onMounted(() => {
+onMounted((): void => {
   initialized.value = true;
   if (!props.legal || Object.keys(props.legal).length === 0) {
     decision.value = "know";
     knowWhatIWant.value = true;
   } else {
-    result.consent[0] = props.legal.consent[0];
-    result.assent[0] = props.legal.assent[0];
-    result.amount = props.legal.amount;
-    result.expectedTime = props.legal.expectedTime;
-    selectedConsent.value = props.legal.consent[0];
-    selectedAssent.value = props.legal.assent[0];
+    if (props.legal.consent?.[0]) result.consent[0] = props.legal.consent[0];
+    if (props.legal.assent?.[0]) result.assent[0] = props.legal.assent[0];
+    result.amount = props.legal.amount || "";
+    result.expectedTime = props.legal.expectedTime || "";
+    selectedConsent.value = props.legal.consent?.[0] || null;
+    selectedAssent.value = props.legal.assent?.[0] || null;
   }
 });
 
 watch(
   () => props.legal,
-  // eslint-disable-next-line no-unused-vars
-  (newValue, _) => {
+  (newValue) => {
     if (newValue) {
-      result.consent[0] = newValue.consent[0];
-      result.assent[0] = newValue.assent[0];
-      result.amount = newValue.amount;
-      result.expectedTime = newValue.expectedTime;
-      selectedConsent.value = newValue.consent[0];
-      selectedAssent.value = newValue.assent[0];
+      if (newValue.consent?.[0]) result.consent[0] = newValue.consent[0];
+      if (newValue.assent?.[0]) result.assent[0] = newValue.assent[0];
+      result.amount = newValue.amount || "";
+      result.expectedTime = newValue.expectedTime || "";
+      selectedConsent.value = newValue.consent?.[0] || null;
+      selectedAssent.value = newValue.assent?.[0] || null;
     }
   },
 );
 
-function checkBoxStatus() {
+function checkBoxStatus(): void {
   result = {
     consent: [],
     assent: [],
     amount: amount.value,
     expectedTime: expectedTime.value,
   };
-  if (
-    paramCheckboxData.value &&
-    paramCheckboxData.value?.find((item) => item === "hasDefault") &&
-    (!specialParam.value || specialParam.value.length === 0)
-  ) {
+  
+  const hasDefault = Array.isArray(paramCheckboxData.value) 
+    ? paramCheckboxData.value.includes("hasDefault")
+    : false;
+  
+  const hasSpecialParams = Array.isArray(specialParam.value) 
+    ? specialParam.value.some(item => ["hasVideo", "hasAudio", "hasEyeTracking"].includes(item))
+    : false;
+
+  if (hasDefault && (!specialParam.value || !hasSpecialParams)) {
     disableIfNotDefault.value = true;
     getDefaults();
-  } else if (
-    paramCheckboxData.value &&
-    paramCheckboxData.value?.find((item) => item === "hasDefault") &&
-    specialParam.value &&
-    specialParam.value?.find(
-      (item) =>
-        item === "hasVideo" || item === "hasAudio" || item === "hasEyeTracking",
-    )
-  ) {
+  } else if (hasDefault && hasSpecialParams) {
     getConsentAssent();
   } else {
     disableIfNotDefault.value = false;
@@ -538,10 +575,10 @@ const { data: consents } = useLegalDocsQuery({
 });
 
 const listOfDocs = computed(() => {
-  let consent = [];
-  let assent = [];
+  let consent: LegalDoc[] = [];
+  let assent: LegalDoc[] = [];
 
-  _forEach(consents.value, (doc) => {
+  _forEach(consents.value, (doc: LegalDoc) => {
     if (doc.type.toLowerCase().includes("consent")) {
       consent.push(doc);
     } else if (!doc.type.toLowerCase().includes("tos")) {
@@ -551,8 +588,8 @@ const listOfDocs = computed(() => {
   return { consent, assent };
 });
 
-async function seeConsent(consent) {
-  let consentDoc;
+async function seeConsent(consent: LegalDoc): Promise<void> {
+  let consentDoc: any;
   if (consent?.type === "Assent-es") {
     consentDoc = await authStore.getLegalDoc("assent-es");
   } else {
@@ -564,23 +601,27 @@ async function seeConsent(consent) {
   showConsent.value = true;
 }
 
-function updateConsent() {
-  result.consent[0] = selectedConsent.value;
+function updateConsent(): void {
+  if (selectedConsent.value) {
+    result.consent[0] = selectedConsent.value;
+  }
   if (selectedAssent.value && selectedConsent.value) {
     emit("consent-selected", result);
   }
 }
 
-function updateAssent() {
-  result.assent[0] = selectedAssent.value;
+function updateAssent(): void {
+  if (selectedAssent.value) {
+    result.assent[0] = selectedAssent.value;
+  }
   if (selectedAssent.value && selectedConsent.value) {
     emit("consent-selected", result);
   }
 }
 
-function getDefaults() {
+function getDefaults(): Result | undefined {
   if (consents.value !== undefined) {
-    _forEach(consents.value, (consent) => {
+    _forEach(consents.value, (consent: LegalDoc) => {
       if (
         consent.type.toLowerCase().includes("consent") &&
         !consent.type.toLowerCase().includes("es")
@@ -598,11 +639,11 @@ function getDefaults() {
   }
 }
 
-function processConsentAssentDefault(consent, targetArray) {
+function processConsentAssentDefault(consent: LegalDoc, targetArray: LegalDoc[]): void {
   if (consent.params) {
     const params = consent.params;
     let hasSpecialParams = false;
-    _forEach(params, (param) => {
+    _forEach(params, (param: string) => {
       const paramName = param;
       if (specialParams.some((param) => param.name === paramName)) {
         hasSpecialParams = true;
@@ -611,7 +652,7 @@ function processConsentAssentDefault(consent, targetArray) {
     });
 
     if (!hasSpecialParams) {
-      _forEach(params, (param) => {
+      _forEach(params, (param: string) => {
         const paramName = param;
         if (
           defaultParams.some((param) => param.name === paramName) ||
@@ -625,11 +666,11 @@ function processConsentAssentDefault(consent, targetArray) {
   }
 }
 
-function getConsentAssent() {
+function getConsentAssent(): Result | undefined {
   let foundConsent = false;
   let foundAssent = false;
   if (consents.value !== undefined) {
-    _forEach(consents.value, (consent) => {
+    _forEach(consents.value, (consent: LegalDoc) => {
       if (
         consent.type.toLowerCase().includes("consent") &&
         !foundConsent &&
@@ -649,36 +690,44 @@ function getConsentAssent() {
   }
 }
 
-function processConsentAssent(consent, targetArray) {
+function processConsentAssent(consent: LegalDoc, targetArray: LegalDoc[]): boolean {
   const params = consent.params;
+  if (!params) return false;
 
-  _forEach(params, (param) => {
+  let found = false;
+  _forEach(params, (param: string) => {
     const paramName = param;
+    const specialParamArray = Array.isArray(specialParam.value) ? specialParam.value : [];
+    
     if (
-      specialParam.value?.every((item) => item !== "hasAudio") &&
-      specialParam.value?.every((item) => item !== "hasVideo") &&
+      !specialParamArray.includes("hasAudio") &&
+      !specialParamArray.includes("hasVideo") &&
       paramName === "eye-tracking" &&
       params.length === 1
     ) {
       targetArray[0] = consent;
-      return true;
+      found = true;
+      return false;
     } else if (
-      specialParam.value?.every((item) => item !== "hasEyeTracking") &&
+      !specialParamArray.includes("hasEyeTracking") &&
       (paramName === "video recording" || paramName === "audio recording")
     ) {
       targetArray[0] = consent;
-      return true;
+      found = true;
+      return false;
     } else if (params.length === 3) {
       const requiredElements = ["hasVideo", "hasAudio", "hasEyeTracking"];
-      const matchingElements =
-        specialParam.value?.filter((item) => requiredElements.includes(item)) ||
-        [];
+      const matchingElements = specialParamArray.filter((item) => 
+        requiredElements.includes(item)
+      );
       if (matchingElements.length >= 2) {
         targetArray[0] = consent;
-        return true;
+        found = true;
+        return false;
       }
     }
   });
+  return found;
 }
 
 // Declare a computed property to watch the legal prop
@@ -688,7 +737,7 @@ const computedLegalProps = computed(() => {
 
 // Watch the computed property and set the noConsent value accordingly
 watch(computedLegalProps, (newValue) => {
-  if (newValue.consent === "No Consent") {
+  if ((newValue as any).consent === "No Consent") {
     noConsent.value = true;
   } else {
     noConsent.value = false;

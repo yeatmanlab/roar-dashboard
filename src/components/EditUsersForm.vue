@@ -272,7 +272,7 @@
     </div>
   </div>
 </template>
-<script setup>
+<script setup lang="ts">
 import { watch, ref, onMounted, computed } from "vue";
 import { useAuthStore } from "@/store/auth";
 import { storeToRefs } from "pinia";
@@ -285,27 +285,84 @@ import PvSelect from "primevue/select";
 import PvInputText from "primevue/inputtext";
 import useUserClaimsQuery from "@/composables/queries/useUserClaimsQuery";
 
-const props = defineProps({
-  userData: {
-    type: Object,
-    required: true,
-  },
-  userType: {
-    type: String,
-    default: "student",
-  },
-  editMode: {
-    type: Boolean,
-    default: false,
-  },
+interface Name {
+  first?: string | null;
+  middle?: string | null;
+  last?: string | null;
+}
+
+interface StudentData {
+  dob?: Date | string | null;
+  grade?: string;
+  gender?: string;
+  race?: string[];
+  hispanic_ethnicity?: boolean;
+  ell_status?: boolean;
+  frl_status?: boolean;
+  iep_status?: boolean;
+}
+
+interface UserData {
+  name?: Name;
+  studentData?: StudentData;
+  testData?: boolean;
+  demoData?: boolean;
+  userType?: string;
+}
+
+interface LocalUserData {
+  name: {
+    first: string | null;
+    middle: string | null;
+    last: string | null;
+  };
+  studentData: {
+    dob: Date | null;
+    grade: string;
+    gender: string;
+    race: string[];
+    hispanic_ethnicity: boolean;
+    ell_status: boolean;
+    frl_status: boolean;
+    iep_status: boolean;
+  };
+  testData: boolean;
+  demoData: boolean;
+  userType?: string;
+  dataInitialized: boolean;
+}
+
+interface Props {
+  userData: UserData;
+  userType?: string;
+  editMode?: boolean;
+}
+
+interface BinaryOption {
+  label: string;
+  value: boolean;
+}
+
+interface AutoCompleteEvent {
+  query: string;
+}
+
+interface Emits {
+  'modalClosed': [];
+  'update:userData': [userData: LocalUserData];
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  userType: "student",
+  editMode: false,
 });
 
 // Handle modal opening / closing
-const emit = defineEmits(["modalClosed", "update:userData"]);
+const emit = defineEmits<Emits>();
 
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
-const initialized = ref(false);
+const initialized = ref<boolean>(false);
 
 watch(
   () => props.userData,
@@ -321,7 +378,7 @@ watch(
 );
 
 // Utility functions
-const localUserData = ref({
+const localUserData = ref<LocalUserData>({
   name: {
     first: null,
     middle: null,
@@ -341,19 +398,19 @@ const localUserData = ref({
   demoData: false,
   dataInitialized: false,
 });
-const errorMessage = ref("");
+const errorMessage = ref<string>("");
 
 // Create a local version of the userData to perform updates on
-const setupUserData = () => {
-  let user = {
+const setupUserData = (): void => {
+  let user: LocalUserData = {
     name: {
       first: props.userData?.name?.first || null,
       middle: props.userData?.name?.middle || null,
       last: props.userData?.name?.last || null,
     },
     studentData: {
-      dob: !isNaN(new Date(props.userData?.studentData?.dob))
-        ? new Date(props.userData?.studentData?.dob)
+      dob: !isNaN(new Date(props.userData?.studentData?.dob as string).getTime())
+        ? new Date(props.userData?.studentData?.dob as string)
         : null,
       grade: props.userData?.studentData?.grade || "",
       gender: props.userData?.studentData?.gender || "",
@@ -366,26 +423,26 @@ const setupUserData = () => {
     },
     testData: props.userData?.testData || false,
     demoData: props.userData?.demoData || false,
-    userType: localUserType.value,
+    userType: localUserType.value || undefined,
     dataInitialized: true,
   };
   localUserData.value = user;
 };
 
 // Keep track of the user's type
-const localUserType = computed(() => {
+const localUserType = computed((): string | null => {
   if (props.userData?.userType) return props.userData.userType;
   if (props.userType) return props.userType;
   return null;
 });
 
-const userDobString = computed(() => {
+const userDobString = computed((): string => {
   if (localUserData.value?.studentData?.dob instanceof Date) {
-    return localUserData.value?.studentData?.dob.toDateString("MM/DD/YYYY");
+    return localUserData.value?.studentData?.dob.toDateString();
   } else return "None";
 });
 
-const races = [
+const races: string[] = [
   "american Indian or alaska Native",
   "asian",
   "black or african American",
@@ -393,13 +450,13 @@ const races = [
   "white",
 ];
 
-const raceOptions = ref([...races]);
-const binaryDropdownOptions = [
+const raceOptions = ref<string[]>([...races]);
+const binaryDropdownOptions: BinaryOption[] = [
   { label: "Yes", value: true },
   { label: "No", value: false },
 ];
 
-const searchRaces = (event) => {
+const searchRaces = (event: AutoCompleteEvent): void => {
   const query = event.query.toLowerCase();
 
   let filteredOptions = races.filter((opt) =>
@@ -415,19 +472,19 @@ const searchRaces = (event) => {
   raceOptions.value = filteredOptions;
 };
 
-let unsubscribe;
-const init = () => {
+let unsubscribe: (() => void) | undefined;
+const init = (): void => {
   if (unsubscribe) unsubscribe();
   initialized.value = true;
 };
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit?.restConfig) init();
+  if ((state.roarfirekit as any)?.restConfig) init();
 });
 
-onMounted(() => {
+onMounted((): void => {
   console.log("onMounted hook called");
-  if (roarfirekit.value?.restConfig) init();
+  if ((roarfirekit.value as any)?.restConfig) init();
   if (props.userData) setupUserData();
 });
 
@@ -447,8 +504,8 @@ const { data: userClaims } = useUserClaimsQuery({
   enabled: initialized,
 });
 
-const isSuperAdmin = computed(() => {
-  if (userClaims.value?.claims?.super_admin) return true;
+const isSuperAdmin = computed((): boolean => {
+  if ((userClaims.value as any)?.claims?.super_admin) return true;
   return false;
 });
 </script>

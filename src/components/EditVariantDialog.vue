@@ -292,7 +292,7 @@
   </PvDialog>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted, computed, toRaw } from "vue";
 import _isEmpty from "lodash/isEmpty";
 import _cloneDeep from "lodash/cloneDeep";
@@ -305,22 +305,66 @@ import PvToggleSwitch from "primevue/toggleswitch";
 import PvTag from "primevue/tag";
 import PvColumn from "primevue/column";
 
-const props = defineProps({
-  assessment: {
-    type: Object,
-    required: true,
-  },
-  updateVariant: {
-    type: Function,
-    required: true,
-  },
-  preExistingAssessmentInfo: {
-    type: Array,
-    default: () => [],
-  },
+interface FieldOption {
+  label: string;
+  value: string;
+  project: string;
+}
+
+interface ConditionOption {
+  label: string;
+  value: string;
+}
+
+interface Condition {
+  field: FieldOption | string;
+  op: ConditionOption | string;
+  value: ConditionOption | string;
+}
+
+interface ConditionsStructure {
+  assigned?: {
+    op: string;
+    conditions: Condition[];
+  };
+  optional?: boolean | {
+    op: string;
+    conditions: Condition[];
+  };
+}
+
+interface Task {
+  id: string;
+  name: string;
+  image?: string;
+}
+
+interface Variant {
+  name?: string;
+}
+
+interface Assessment {
+  id: string;
+  task: Task;
+  variant?: Variant;
+}
+
+interface PreExistingAssessmentInfo {
+  taskId: string;
+  conditions?: ConditionsStructure;
+}
+
+interface Props {
+  assessment: Assessment;
+  updateVariant: (id: string, conditions: ConditionsStructure) => void;
+  preExistingAssessmentInfo?: PreExistingAssessmentInfo[];
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  preExistingAssessmentInfo: () => [],
 });
 
-onMounted(() => {
+onMounted((): void => {
   getAllConditions(props.assessment.task.id);
   // LEVANTE assigns surveys as assessments, so we add a defualt for child only so researchers
   // do not accidently assign tasks to parents and teachers
@@ -333,16 +377,16 @@ onMounted(() => {
   }
 });
 
-const isVisible = ref(false);
-const assignedConditions = ref([]);
-const optionalConditions = ref([]);
+const isVisible = ref<boolean>(false);
+const assignedConditions = ref<Condition[]>([]);
+const optionalConditions = ref<Condition[]>([]);
 // Store optional conditions in case the isOptionalForAll is toggled on and off again (prevents the form from resetting to the original state)
-const previousOptionalConditions = ref([]);
+const previousOptionalConditions = ref<Condition[]>([]);
 
-const computedValueOptions = (field) => {
+const computedValueOptions = (field: FieldOption | string): ConditionOption[] | undefined => {
   const processedField = toRaw(field);
   if (!processedField) return;
-  const selectedField = processedField.label;
+  const selectedField = typeof processedField === 'string' ? processedField : processedField.label;
 
   if (selectedField === "Age") {
     return [
@@ -366,10 +410,10 @@ const computedValueOptions = (field) => {
   }
 };
 
-const computedConditionOptions = (field) => {
+const computedConditionOptions = (field: FieldOption | string): ConditionOption[] | undefined => {
   const processedField = toRaw(field);
   if (!processedField) return;
-  const selectedField = processedField.label;
+  const selectedField = typeof processedField === 'string' ? processedField : processedField.label;
 
   if (selectedField === "Age") {
     return [
@@ -388,11 +432,11 @@ const computedConditionOptions = (field) => {
   }
 };
 
-const removeCondition = (condtions, index) => {
-  condtions.splice(index, 1);
+const removeCondition = (conditions: Condition[], index: number): void => {
+  conditions.splice(index, 1);
 };
 
-function getAllConditions(taskId) {
+function getAllConditions(taskId: string): void {
   const existingAssignedConditions = getAssignedConditions(taskId);
   const existingOptionalConditions = getOptionalConditions(taskId);
 
@@ -401,21 +445,21 @@ function getAllConditions(taskId) {
 }
 
 // Get the assigned and optional conditions from the pre-existing admin info
-function getAssignedConditions(taskId) {
+function getAssignedConditions(taskId: string): Condition[] | undefined {
   return props.preExistingAssessmentInfo.find(
     (assessment) => assessment.taskId === taskId,
   )?.conditions?.assigned?.conditions;
 }
 
-function getOptionalConditions(taskId) {
+function getOptionalConditions(taskId: string): Condition[] {
   const task = props.preExistingAssessmentInfo.find(
     (assessment) => assessment.taskId === taskId,
   );
-  const hasOptionalConditions = task?.conditions?.optional?.conditions;
+  const hasOptionalConditions = task?.conditions?.optional;
 
-  if (hasOptionalConditions) {
+  if (hasOptionalConditions && typeof hasOptionalConditions === 'object' && 'conditions' in hasOptionalConditions) {
     isOptionalForAll.value = false;
-    return hasOptionalConditions;
+    return hasOptionalConditions.conditions;
   } else {
     isOptionalForAll.value = !!task?.conditions?.optional;
     return [];
@@ -423,32 +467,32 @@ function getOptionalConditions(taskId) {
 }
 
 // Set the assigned and optional conditions from the pre-existing admin info
-function setAssignedConditions(existingAssignedConditions) {
+function setAssignedConditions(existingAssignedConditions: Condition[] | undefined): void {
   if (!existingAssignedConditions) return;
   for (const condition of existingAssignedConditions) {
     assignedConditions.value = [condition, ...assignedConditions.value];
   }
 }
 
-function setOptionalConditions(existingOptionalConditions) {
+function setOptionalConditions(existingOptionalConditions: Condition[]): void {
   if (!existingOptionalConditions) return;
   for (const condition of existingOptionalConditions) {
     optionalConditions.value = [condition, ...optionalConditions.value];
   }
 }
 
-const addOptionalCondition = () => {
+const addOptionalCondition = (): void => {
   optionalConditions.value.push({ field: "", op: "", value: "" });
 };
 
-const addAssignedCondition = () => {
+const addAssignedCondition = (): void => {
   assignedConditions.value.push({ field: "", op: "", value: "" });
 };
 
-const isOptionalForAll = ref(false);
-const errorSubmitText = ref("");
+const isOptionalForAll = ref<boolean>(false);
+const errorSubmitText = ref<string>("");
 
-const handleOptionalForAllSwitch = () => {
+const handleOptionalForAllSwitch = (): void => {
   if (isOptionalForAll.value === true) {
     // Store the optional conditions in case the isOptionalForAll is toggled on and off again
     previousOptionalConditions.value = optionalConditions.value;
@@ -458,14 +502,14 @@ const handleOptionalForAllSwitch = () => {
   }
 };
 
-const isOptionalForAllAndOptionalConditionsPresent = computed(() => {
+const isOptionalForAllAndOptionalConditionsPresent = computed((): boolean => {
   return (
     isOptionalForAll.value &&
     toRaw(previousOptionalConditions.value)?.length > 0
   );
 });
 
-const handleReset = () => {
+const handleReset = (): void => {
   errorSubmitText.value = "";
   assignedConditions.value = [];
   optionalConditions.value = [];
@@ -473,7 +517,7 @@ const handleReset = () => {
   getAllConditions(props.assessment.task.id);
 };
 
-const handleSave = () => {
+const handleSave = (): void => {
   let error = false;
 
   // Check if any emppty fields in Assigned Conditions
@@ -519,27 +563,31 @@ const handleSave = () => {
 
 // Conditions hold the object of the form { field: { lable: 'Grade', value: 'studentData.grade', project: ALL }, etc }
 // We need to convert the conditions to the form { field: 'studnetData.grade', etc }
-function conditionsToValues() {
+function conditionsToValues(): [Condition[], Condition[]] {
   const assignedConditionsCopy = _cloneDeep(assignedConditions.value);
   const optionalConditionsCopy = _cloneDeep(optionalConditions.value);
 
   assignedConditionsCopy.forEach((condition) => {
     for (const [key, value] of Object.entries(condition)) {
-      condition[key] = condition[key] = value.value;
+      if (typeof value === 'object' && value !== null && 'value' in value) {
+        (condition as any)[key] = value.value;
+      }
     }
   });
 
   optionalConditionsCopy.forEach((condition) => {
     for (const [key, value] of Object.entries(condition)) {
-      condition[key] = condition[key] = value.value;
+      if (typeof value === 'object' && value !== null && 'value' in value) {
+        (condition as any)[key] = value.value;
+      }
     }
   });
 
   return [assignedConditionsCopy, optionalConditionsCopy];
 }
 
-const computedConditions = (assignedConditions, optionalConditions) => {
-  const conditions = {};
+const computedConditions = (assignedConditions: Condition[], optionalConditions: Condition[]): ConditionsStructure => {
+  const conditions: ConditionsStructure = {};
 
   if (!_isEmpty(optionalConditions)) {
     conditions.optional = { op: "AND", conditions: optionalConditions };
@@ -552,8 +600,13 @@ const computedConditions = (assignedConditions, optionalConditions) => {
   return conditions;
 };
 
-const fieldOptions = [
+const fieldOptions: FieldOption[] = [
   { label: "User Type", value: "userType", project: "LEVANTE" },
   { label: "Age", value: "age", project: "LEVANTE" },
 ];
+
+const selectedGroup = computed((): string => {
+  // This would need to be implemented based on your actual group selection logic
+  return "selected group";
+});
 </script>
