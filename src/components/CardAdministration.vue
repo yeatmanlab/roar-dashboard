@@ -542,7 +542,7 @@ onMounted(() => {
   text-align: left;
   width: 100%;
   background: var(--surface-b);
-  border: 1px solid var(--primary-color);
+  border: 1px solid var(--gray-300);
   border-radius: var(--border-radius);
   display: flex;
   flex-direction: row;
