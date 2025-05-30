@@ -1,8 +1,8 @@
-import { useMutation, useQueryClient } from '@tanstack/vue-query';
-import type { UseMutationReturnType } from '@tanstack/vue-query';
-import { useAuthStore } from '@/store/auth';
-import { USER_DATA_QUERY_KEY } from '@/constants/queryKeys';
-import { USER_UPDATE_MUTATION_KEY } from '@/constants/mutationKeys';
+import { useMutation, useQueryClient } from "@tanstack/vue-query";
+import type { UseMutationReturnType } from "@tanstack/vue-query";
+import { useAuthStore } from "@/store/auth";
+import { USER_DATA_QUERY_KEY } from "@/constants/queryKeys";
+import { USER_UPDATE_MUTATION_KEY } from "@/constants/mutationKeys";
 
 interface UpdateUserParams {
   userId: string;
@@ -17,13 +17,21 @@ interface UpdateUserParams {
  *
  * @returns The mutation object returned by `useMutation`.
  */
-const useUpdateUserMutation = (): UseMutationReturnType<void, Error, UpdateUserParams, unknown> => {
+const useUpdateUserMutation = (): UseMutationReturnType<
+  void,
+  Error,
+  UpdateUserParams,
+  unknown
+> => {
   const authStore = useAuthStore();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationKey: USER_UPDATE_MUTATION_KEY,
-    mutationFn: async ({ userId, userData }: UpdateUserParams): Promise<void> => {
+    mutationFn: async ({
+      userId,
+      userData,
+    }: UpdateUserParams): Promise<void> => {
       await authStore.roarfirekit.updateUserData(userId, userData);
     },
     onSuccess: (): void => {
@@ -32,4 +40,4 @@ const useUpdateUserMutation = (): UseMutationReturnType<void, Error, UpdateUserP
   });
 };
 
-export default useUpdateUserMutation; 
+export default useUpdateUserMutation;

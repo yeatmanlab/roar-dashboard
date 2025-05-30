@@ -32,50 +32,42 @@
     <!-- </template> -->
   </PvDialog>
 </template>
-<script setup>
+<script setup lang="ts">
 import { watch, ref, onMounted } from "vue";
 import { storeToRefs } from "pinia";
 import PvDialog from "primevue/dialog";
 import { useAuthStore } from "@/store/auth";
 
-const props = defineProps({
-  isEnabled: {
-    type: Boolean,
-    required: true,
-    default: false,
-  },
-  title: {
-    type: String,
-    required: true,
-    default: "",
-  },
-  subtitle: {
-    type: String,
-    required: true,
-    default: "",
-  },
-  icon: {
-    type: String,
-    required: false,
-    default: "pi-pencil",
-  },
-  small: {
-    type: Boolean,
-    required: false,
-    default: false,
-  },
+interface Props {
+  isEnabled: boolean;
+  title: string;
+  subtitle: string;
+  icon?: string;
+  small?: boolean;
+}
+
+interface Emits {
+  (e: "modalClosed"): void;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  isEnabled: false,
+  title: "",
+  subtitle: "",
+  icon: "pi-pencil",
+  small: false,
 });
 
 // Handle modal opening / closing
-const emit = defineEmits(["modalClosed"]);
+const emit = defineEmits<Emits>();
 
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
-const initialized = ref(false);
+const initialized = ref<boolean>(false);
 
 watch(
   () => props.isEnabled,
-  (isEnabled) => {
+  (isEnabled: boolean) => {
     console.log("isEnabled from watcher", isEnabled);
     if (isEnabled) {
       isOpen.value = true;
@@ -85,15 +77,15 @@ watch(
   },
 );
 
-const isOpen = ref(false);
+const isOpen = ref<boolean>(false);
 
-let unsubscribe;
-const init = () => {
+let unsubscribe: (() => void) | undefined;
+const init = (): void => {
   if (unsubscribe) unsubscribe();
   initialized.value = true;
 };
 
-unsubscribe = authStore.$subscribe(async (mutation, state) => {
+unsubscribe = authStore.$subscribe(async (mutation: any, state: any) => {
   if (state.roarfirekit?.restConfig) init();
 });
 

@@ -30,11 +30,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-import PvButton from 'primevue/button';
-import PvCard from 'primevue/card';
-import PvInlineMessage from 'primevue/inlinemessage';
-import PvTag from 'primevue/tag';
+import { computed } from "vue";
+import PvButton from "primevue/button";
+import PvCard from "primevue/card";
+import PvInlineMessage from "primevue/inlinemessage";
+import PvTag from "primevue/tag";
 
 interface Props {
   gameId: string;
@@ -48,11 +48,13 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   metadata: () => ({}),
-  imgSrc: '',
-  statusText: '',
+  imgSrc: "",
+  statusText: "",
 });
 
-const playLabel = computed((): string => props.completed ? 'Play again' : 'Play');
+const playLabel = computed((): string =>
+  props.completed ? "Play again" : "Play",
+);
 </script>
 
 <style lang="scss">
@@ -94,7 +96,7 @@ const playLabel = computed((): string => props.completed ? 'Play again' : 'Play'
     color: inherit;
 
     &:before {
-      content: ' ';
+      content: " ";
       position: absolute;
       top: 0;
       left: 0;
@@ -118,7 +120,7 @@ const playLabel = computed((): string => props.completed ? 'Play again' : 'Play'
   }
 
   // Not completed
-  &[data-completed='false'] {
+  &[data-completed="false"] {
     &:hover {
       border-color: var(--primary);
       color: var(--primary);
@@ -132,7 +134,7 @@ const playLabel = computed((): string => props.completed ? 'Play again' : 'Play'
   }
 
   // Completed
-  &[data-completed='true'] {
+  &[data-completed="true"] {
     .p-card-game-status {
       background: var(--green-50);
       color: var(--success);

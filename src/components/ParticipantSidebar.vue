@@ -21,9 +21,9 @@
   </div>
 </template>
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-import _isEmpty from 'lodash/isEmpty';
-import PvChart from 'primevue/chart';
+import { ref, computed } from "vue";
+import _isEmpty from "lodash/isEmpty";
+import PvChart from "primevue/chart";
 
 interface Props {
   totalGames: number;

@@ -1,12 +1,12 @@
-import { useMutation, useQueryClient } from '@tanstack/vue-query';
-import type { UseMutationReturnType } from '@tanstack/vue-query';
-import { useAuthStore } from '@/store/auth';
-import { ADMINISTRATION_UPSERT_MUTATION_KEY } from '@/constants/mutationKeys';
+import { useMutation, useQueryClient } from "@tanstack/vue-query";
+import type { UseMutationReturnType } from "@tanstack/vue-query";
+import { useAuthStore } from "@/store/auth";
+import { ADMINISTRATION_UPSERT_MUTATION_KEY } from "@/constants/mutationKeys";
 import {
   ADMINISTRATIONS_QUERY_KEY,
   ADMINISTRATIONS_LIST_QUERY_KEY,
   ADMINISTRATION_ASSIGNMENTS_QUERY_KEY,
-} from '@/constants/queryKeys';
+} from "@/constants/queryKeys";
 
 interface AdministrationData {
   [key: string]: any;
@@ -14,12 +14,17 @@ interface AdministrationData {
 
 /**
  * Upsert Administration mutation.
- * 
+ *
  * TanStack mutation to update or insert an administration and automatically invalidate the corresponding queries.
- * 
+ *
  * @returns The mutation object returned by `useMutation`.
  */
-const useUpsertAdministrationMutation = (): UseMutationReturnType<void, Error, AdministrationData, unknown> => {
+const useUpsertAdministrationMutation = (): UseMutationReturnType<
+  void,
+  Error,
+  AdministrationData,
+  unknown
+> => {
   const authStore = useAuthStore();
   const queryClient = useQueryClient();
 
@@ -35,10 +40,14 @@ const useUpsertAdministrationMutation = (): UseMutationReturnType<void, Error, A
       // is updated in the application, we would have to manually map the updated data, which could cause issues when
       // the data model changes. Therefore, we invalidate the entire query to ensure the data is up-to-date.
       queryClient.invalidateQueries({ queryKey: [ADMINISTRATIONS_QUERY_KEY] });
-      queryClient.invalidateQueries({ queryKey: [ADMINISTRATIONS_LIST_QUERY_KEY] });
-      queryClient.invalidateQueries({ queryKey: [ADMINISTRATION_ASSIGNMENTS_QUERY_KEY] });
+      queryClient.invalidateQueries({
+        queryKey: [ADMINISTRATIONS_LIST_QUERY_KEY],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [ADMINISTRATION_ASSIGNMENTS_QUERY_KEY],
+      });
     },
   });
 };
 
-export default useUpsertAdministrationMutation; 
+export default useUpsertAdministrationMutation;

@@ -12,6 +12,11 @@ on:
           - patch
           - minor
           - major
+      release_description:
+        description: "Release description (supports markdown, can be multi-line)"
+        required: false
+        type: string
+        default: "Production release"
 
 jobs:
   version_build_deploy:
@@ -117,9 +122,54 @@ jobs:
           version: v${{ steps.version.outputs.prod_version }}
           finalize: true
 
+      - name: Generate Release Notes
+        id: release_notes
+        run: |
+          # Get commit messages since last tag
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ -n "$LAST_TAG" ]; then
+            COMMITS=$(git log $LAST_TAG..HEAD --pretty=format:"- %s (%h)" --no-merges)
+          else
+            COMMITS=$(git log --pretty=format:"- %s (%h)" --no-merges -n 10)
+          fi
+
+          # Create release notes
+          RELEASE_NOTES="## What's Changed\n\n$COMMITS\n\n"
+          RELEASE_NOTES+="## Deployment Info\n"
+          RELEASE_NOTES+="- Version: v${{ steps.version.outputs.prod_version }}\n"
+          RELEASE_NOTES+="- Environment: Production\n"
+          RELEASE_NOTES+="- Deployed by: ${{ github.actor }}\n\n"
+
+          # Add user description if provided
+          if [ -n "${{ github.event.inputs.release_description }}" ]; then
+            RELEASE_NOTES+="## Release Notes\n${{ github.event.inputs.release_description }}\n\n"
+          fi
+
+          # Set output
+          echo "notes<<EOF" >> $GITHUB_OUTPUT
+          echo "$RELEASE_NOTES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          token: ${{ steps.generate_token.outputs.token }}
+          tag_name: v${{ steps.version.outputs.prod_version }}
+          name: Release v${{ steps.version.outputs.prod_version }}
+          body: ${{ steps.release_notes.outputs.notes }}
+          target_commitish: ${{ steps.version.outputs.branch_name }}
+
+      - name: Push Tags
+        run: git push origin --tags
+
       - name: Update main branch version
         run: |
           git checkout main
+          # Remove -dev suffix before version bump
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          BASE_VERSION=${CURRENT_VERSION%-dev}
+          # Update package.json with base version
+          npm version $BASE_VERSION --no-git-tag-version
           # Increment version based on user selection
           npm version ${{ github.event.inputs.version_type }} --no-git-tag-version
           # Add -dev suffix

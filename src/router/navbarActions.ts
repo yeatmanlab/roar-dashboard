@@ -22,15 +22,6 @@ const navbarActionOptions: Readonly<NavbarAction>[] = [
     category: "Home",
   },
   {
-    title: "Debug",
-    icon: "pi pi-bug",
-    buttonLink: { name: "Debug" },
-    requiresSuperAdmin: false,
-    requiresAdmin: false,
-    project: "ALL",
-    category: "Home",
-  },
-  {
     title: "Groups",
     buttonLink: { name: "ListGroups" },
     requiresSuperAdmin: false,

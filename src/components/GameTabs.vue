@@ -101,7 +101,7 @@
                     </span>
                     <PvProgressBar
                       :value="getGeneralSurveyProgress"
-                      class="flex-grow-1"
+                      :class="getGeneralSurveyProgressClass"
                     />
                   </div>
 
@@ -127,7 +127,7 @@
                       </span>
                       <PvProgressBar
                         :value="getSpecificSurveyProgress(i)"
-                        class="flex-grow-1 w-full sm:w-auto incomplete-progress-bar"
+                        :class="getSpecificSurveyProgressClass"
                       />
                     </div>
                   </div>
@@ -144,7 +144,7 @@
                       </span>
                       <PvProgressBar
                         :value="getSpecificSurveyProgress(i)"
-                        class="flex-grow-1 w-full sm:w-auto"
+                        :class="getSpecificSurveyProgressClass"
                       />
                     </div>
                   </div>
@@ -331,6 +331,33 @@ const getGeneralSurveyProgress = computed((): number => {
       (surveyStore.numGeneralPages - 1)) *
       100,
   );
+});
+
+
+const getGeneralSurveyProgressClass = computed(() => {
+  if (
+    getGeneralSurveyProgress.value > 0 &&
+    getGeneralSurveyProgress.value < 100
+  ) {
+    return "p-progressbar--started";
+  }
+  if (getGeneralSurveyProgress.value === 100) {
+    return "p-progressbar--completed";
+  }
+  return "p-progressbar--empty";
+});
+
+const getSpecificSurveyProgressClass = computed(() => {
+  if (
+    getSpecificSurveyProgress.value > 0 &&
+    getSpecificSurveyProgress.value < 100
+  ) {
+    return "p-progressbar--started";
+  }
+  if (getSpecificSurveyProgress.value === 100) {
+    return "p-progressbar--completed";
+  }
+  return "p-progressbar--empty";
 });
 
 const getSpecificSurveyProgress = computed(() => (loopIndex: number): number => {
@@ -663,6 +690,19 @@ const isTaskComplete = (gameCompletedTime: string | Date | undefined, taskId: st
   text-align: center;
   background-color: #f0f0f0;
   border-radius: 4px;
+}
+
+.p-progressbar {
+  flex-grow: 1;
+  width: 100%;
+
+  &.p-progressbar--started :deep(.p-progressbar-value) {
+    background-color: var(--yellow-400);
+  }
+
+  &.p-progressbar--completed :deep(.p-progressbar-value) {
+    background-color: var(--green-500);
+  }
 }
 
 @media screen and (max-width: 800px) {
