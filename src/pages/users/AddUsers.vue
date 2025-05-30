@@ -501,7 +501,6 @@ async function submitUsers() {
     user,
     index
   })).filter(({ user }) => !user.uid || user.uid === '');
-  debugger;
   const usersWithErrors = [];
 
   // If no users to register, show message and return
