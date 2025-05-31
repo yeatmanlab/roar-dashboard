@@ -8,17 +8,12 @@ import {
   type AudioLinkMap,
   type RoarfirekitType,
   type LocalStorageSurveyData,
-} from "@/helpers/survey";
-import { LEVANTE_SURVEY_RESPONSES_KEY } from "@/constants/bucket";
-import type {
-  SurveyModel,
-  PageModel,
-  Question,
-  CompleteEvent,
-} from "survey-core";
-import type { Router } from "vue-router";
-import type { ToastServiceMethods } from "primevue/toastservice";
-import type { QueryClient } from "@tanstack/vue-query";
+} from '@/helpers/survey';
+import { LEVANTE_SURVEY_RESPONSES_KEY } from '@/constants/bucket';
+import type { SurveyModel, PageModel, Question, CompleteEvent } from 'survey-core';
+import type { Router } from 'vue-router';
+import type { ToastServiceMethods } from 'primevue/toastservice';
+import type { QueryClient } from '@tanstack/vue-query';
 
 interface UserData {
   id: string;
@@ -104,13 +99,8 @@ export async function initializeSurvey({
   const numSpecificPages = allSpecificPages.length;
   surveyStore.setNumberOfSurveyPages(numGeneralPages, numSpecificPages);
 
-  if (userType === "student") {
-    await setupStudentAudio(
-      surveyInstance,
-      locale,
-      audioLinkMap,
-      surveyStore as any,
-    );
+  if (userType === 'student') {
+    await setupStudentAudio(surveyInstance, locale, audioLinkMap, surveyStore as any);
   }
 }
 
@@ -132,25 +122,20 @@ export async function setupStudentAudio(
     ) => void,
   });
 
-  surveyInstance.onAfterRenderPage.add(
-    (sender: SurveyModel, options: { htmlElement: HTMLElement }) => {
-      const questionElements =
-        options.htmlElement.querySelectorAll("div[id^=sq_]");
-      if (surveyStore.currentSurveyAudioSource) {
-        surveyStore.currentSurveyAudioSource.stop();
-      }
-      questionElements.forEach((el) => {
-        const htmlEl = el as HTMLElement;
-        const playAudioButton = document.getElementById(
-          "audio-button-" + htmlEl.dataset.name,
-        );
-        showAndPlaceAudioButton({
-          playAudioButton: playAudioButton as HTMLElement | null,
-          el: htmlEl,
-        });
+  surveyInstance.onAfterRenderPage.add((sender: SurveyModel, options: { htmlElement: HTMLElement }) => {
+    const questionElements = options.htmlElement.querySelectorAll('div[id^=sq_]');
+    if (surveyStore.currentSurveyAudioSource) {
+      surveyStore.currentSurveyAudioSource.stop();
+    }
+    questionElements.forEach((el) => {
+      const htmlEl = el as HTMLElement;
+      const playAudioButton = document.getElementById('audio-button-' + htmlEl.dataset.name);
+      showAndPlaceAudioButton({
+        playAudioButton: playAudioButton as HTMLElement | null,
+        el: htmlEl,
       });
-    },
-  );
+    });
+  });
 }
 
 export function setupSurveyEventHandlers({
@@ -167,26 +152,22 @@ export function setupSurveyEventHandlers({
   gameStore,
 }: SetupSurveyEventHandlersParams): void {
   let specificIds: (string | number)[] = [];
-  if (userType === "parent") {
+  if (userType === 'parent') {
     specificIds = userData.childIds || [];
-  } else if (userType === "teacher") {
+  } else if (userType === 'teacher') {
     specificIds = userData.classes?.current || [];
   }
 
-  surveyInstance.onValueChanged.add(
-    (
-      sender: SurveyModel,
-      options: { name: string; question: Question; value: any },
-    ) =>
-      saveSurveyData({
-        survey: sender,
-        uid,
-        questionName: options.name,
-        responseValue: options.value,
-        userType,
-        surveyStore: surveyStore as any,
-        specificIds: specificIds,
-      }),
+  surveyInstance.onValueChanged.add((sender: SurveyModel, options: { name: string; question: Question; value: any }) =>
+    saveSurveyData({
+      survey: sender,
+      uid,
+      questionName: options.name,
+      responseValue: options.value,
+      userType,
+      surveyStore: surveyStore as any,
+      specificIds: specificIds,
+    }),
   );
 
   surveyInstance.onCurrentPageChanged.add(
@@ -203,21 +184,17 @@ export function setupSurveyEventHandlers({
 
       if (previousPage) {
         const previousPageQuestions = previousPage.questions as Question[];
-        const prevDataStr = window.localStorage.getItem(
-          `${LEVANTE_SURVEY_RESPONSES_KEY}-${uid}`,
-        );
+        const prevDataStr = window.localStorage.getItem(`${LEVANTE_SURVEY_RESPONSES_KEY}-${uid}`);
 
         if (prevDataStr) {
           const parsedData: LocalStorageSurveyData = JSON.parse(prevDataStr);
-          const previousPageResponses: Record<
-            string,
-            { responseValue: string; responseTime: string }
-          > = { ...parsedData.responses };
+          const previousPageResponses: Record<string, { responseValue: string; responseTime: string }> = {
+            ...parsedData.responses,
+          };
 
           previousPageQuestions.forEach((question) => {
             if (parsedData.responses[question.name] !== undefined) {
-              previousPageResponses[question.name] =
-                parsedData.responses[question.name];
+              previousPageResponses[question.name] = parsedData.responses[question.name];
             }
           });
 
@@ -226,9 +203,7 @@ export function setupSurveyEventHandlers({
             pageNo: previousPage.visibleIndex,
             isComplete: false,
             isGeneral: !surveyStore.isGeneralSurveyComplete,
-            specificId: surveyStore.isGeneralSurveyComplete
-              ? specificIds[surveyStore.specificSurveyRelationIndex]
-              : 0,
+            specificId: surveyStore.isGeneralSurveyComplete ? specificIds[surveyStore.specificSurveyRelationIndex] : 0,
             userType: userType,
           };
 
@@ -239,7 +214,7 @@ export function setupSurveyEventHandlers({
             });
           } catch (error: unknown) {
             console.error(
-              "Error saving previous page responses: ",
+              'Error saving previous page responses: ',
               error instanceof Error ? error.message : String(error),
             );
           }

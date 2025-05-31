@@ -1,11 +1,7 @@
 <template>
   <div class="flex flex-row" style="max-height: 100vh">
     <!-- Sidebar -->
-    <div
-      :class="
-        sidebarOpen ? 'sidebar-container-open' : 'sidebar-container-collapsed'
-      "
-    >
+    <div :class="sidebarOpen ? 'sidebar-container-open' : 'sidebar-container-collapsed'">
       <div class="flex flex-column">
         <router-link v-if="!isLevante" to="/profile">
           <div class="sidebar-button">
@@ -15,22 +11,18 @@
         <router-link v-if="isAdmin" to="/profile/password"
           ><div class="sidebar-button">
             <i class="pi pi-key" /><span v-if="sidebarOpen">{{
-              hasPassword ? "Change Password" : "Add Password"
+              hasPassword ? 'Change Password' : 'Add Password'
             }}</span>
           </div></router-link
         >
         <router-link v-if="isAdmin" to="/profile/accounts"
           ><div class="sidebar-button">
-            <i class="pi pi-users" /><span v-if="sidebarOpen"
-              >Link Accounts</span
-            >
+            <i class="pi pi-users" /><span v-if="sidebarOpen">Link Accounts</span>
           </div></router-link
         >
         <router-link to="/profile/settings"
           ><div class="sidebar-button">
-            <i class="pi pi-cog" /><span v-if="sidebarOpen">{{
-              t("profile.settings.settings")
-            }}</span>
+            <i class="pi pi-cog" /><span v-if="sidebarOpen">{{ t('profile.settings.settings') }}</span>
           </div></router-link
         >
       </div>
@@ -45,11 +37,7 @@
           class="pi text-2xl pi-angle-double-right text-grey-600"
           style="color: var(--surface-400)"
         ></i>
-        <i
-          v-else
-          class="pi text-2xl pi-angle-double-left mr-2 text-grey-600"
-          style="color: var(--surface-400)"
-        ></i>
+        <i v-else class="pi text-2xl pi-angle-double-left mr-2 text-grey-600" style="color: var(--surface-400)"></i>
       </button>
     </div>
     <!-- Main Page Content-->
@@ -59,14 +47,14 @@
   </div>
 </template>
 <script setup>
-import { ref, computed, onMounted } from "vue";
-import { storeToRefs } from "pinia";
-import _isEmpty from "lodash/isEmpty";
-import _union from "lodash/union";
-import { useAuthStore } from "@/store/auth";
-import useUserClaimsQuery from "@/composables/queries/useUserClaimsQuery";
-import { isLevante } from "@/helpers";
-import { useI18n } from "vue-i18n";
+import { ref, computed, onMounted } from 'vue';
+import { storeToRefs } from 'pinia';
+import _isEmpty from 'lodash/isEmpty';
+import _union from 'lodash/union';
+import { useAuthStore } from '@/store/auth';
+import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
+import { isLevante } from '@/helpers';
+import { useI18n } from 'vue-i18n';
 
 const { t } = useI18n();
 const authStore = useAuthStore();
@@ -81,7 +69,7 @@ const providerIds = computed(() => {
 });
 
 const hasPassword = computed(() => {
-  return providerIds.value.includes("password");
+  return providerIds.value.includes('password');
 });
 
 // +-------------------------+
@@ -109,14 +97,7 @@ const { data: userClaims } = useUserClaimsQuery({
 // Keep track of the user's type
 const isAdmin = computed(() => {
   if (userClaims.value?.claims?.super_admin) return true;
-  if (
-    _isEmpty(
-      _union(
-        ...Object.values(userClaims.value?.claims?.minimalAdminOrgs ?? {}),
-      ),
-    )
-  )
-    return false;
+  if (_isEmpty(_union(...Object.values(userClaims.value?.claims?.minimalAdminOrgs ?? {})))) return false;
   return true;
 });
 </script>

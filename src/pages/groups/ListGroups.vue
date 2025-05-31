@@ -6,32 +6,13 @@
         <div class="flex justify-content-between mb-2">
           <div class="flex align-items-center gap-3">
             <div class="admin-page-header mr-4">Groups</div>
-            <PvButton
-              class="bg-primary text-white border-none p-2 ml-auto"
-              @click="newGroup"
-            >
-              Add Group
-            </PvButton>
-            <PvButton
-              class="bg-primary text-white border-none p-2 ml-auto"
-              @click="addUsers"
-            >
-              Add Users
-            </PvButton>
+            <PvButton class="bg-primary text-white border-none p-2 ml-auto" @click="newGroup"> Add Group </PvButton>
+            <PvButton class="bg-primary text-white border-none p-2 ml-auto" @click="addUsers"> Add Users </PvButton>
           </div>
         </div>
       </div>
-      <PvTabView
-        v-if="claimsLoaded"
-        v-model:active-index="activeIndex"
-        lazy
-        class="mb-7"
-      >
-        <PvTabPanel
-          v-for="orgType in orgHeaders"
-          :key="orgType"
-          :header="orgType.header"
-        >
+      <PvTabView v-if="claimsLoaded" v-model:active-index="activeIndex" lazy class="mb-7">
+        <PvTabPanel v-for="orgType in orgHeaders" :key="orgType" :header="orgType.header">
           <div class="grid column-gap-3 mt-2">
             <div
               v-if="activeOrgType === 'schools' || activeOrgType === 'classes'"
@@ -51,10 +32,7 @@
                 <label for="district">Sites</label>
               </PvFloatLabel>
             </div>
-            <div
-              v-if="orgType.id === 'classes'"
-              class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3"
-            >
+            <div v-if="orgType.id === 'classes'" class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3">
               <PvFloatLabel>
                 <PvSelect
                   v-model="selectedSchool"
@@ -105,11 +83,7 @@
           />
           <PvButton
             class="bg-primary border-none p-2 text-white hover:bg-red-900 font-normal"
-            @click="
-              copyToClipboard(
-                `https://roar.education/register/?code=${activationCode}`,
-              )
-            "
+            @click="copyToClipboard(`https://roar.education/register/?code=${activationCode}`)"
           >
             <i class="pi pi-copy p-2"></i>
           </PvButton>
@@ -147,11 +121,7 @@
     :is-enabled="isEditModalEnabled"
     @modal-closed="closeEditModal"
   >
-    <EditOrgsForm
-      :org-id="currentEditOrgId"
-      :org-type="activeOrgType"
-      @update:org-data="localOrgData = $event"
-    />
+    <EditOrgsForm :org-id="currentEditOrgId" :org-type="activeOrgType" @update:org-data="localOrgData = $event" />
     <template #footer>
       <div>
         <div class="flex gap-2">
@@ -176,40 +146,37 @@
   </RoarModal>
 </template>
 <script setup>
-import { ref, computed, onMounted, watch, watchEffect } from "vue";
-import * as Sentry from "@sentry/vue";
-import { storeToRefs } from "pinia";
-import { useToast } from "primevue/usetoast";
-import { useRouter } from "vue-router";
-import PvButton from "primevue/button";
-import PvDialog from "primevue/dialog";
-import PvSelect from "primevue/select";
-import PvInputGroup from "primevue/inputgroup";
-import PvInputText from "primevue/inputtext";
-import PvTabPanel from "primevue/tabpanel";
-import PvTabView from "primevue/tabview";
-import PvToast from "primevue/toast";
-import _get from "lodash/get";
-import _head from "lodash/head";
-import _kebabCase from "lodash/kebabCase";
-import { useAuthStore } from "@/store/auth";
-import { orgFetchAll } from "@/helpers/query/orgs";
-import { fetchUsersByOrg, countUsersByOrg } from "@/helpers/query/users";
-import { orderByDefault, exportCsv, fetchDocById } from "@/helpers/query/utils";
-import useUserType from "@/composables/useUserType";
-import useUserClaimsQuery from "@/composables/queries/useUserClaimsQuery";
-import useDistrictsListQuery from "@/composables/queries/useDistrictsListQuery";
-import useDistrictSchoolsQuery from "@/composables/queries/useDistrictSchoolsQuery";
-import useOrgsTableQuery from "@/composables/queries/useOrgsTableQuery";
-import EditOrgsForm from "@/components/EditOrgsForm.vue";
-import RoarModal from "@/components/modals/RoarModal.vue";
-import { CSV_EXPORT_MAX_RECORD_COUNT } from "@/constants/csvExport";
-import {
-  TOAST_SEVERITIES,
-  TOAST_DEFAULT_LIFE_DURATION,
-} from "@/constants/toasts";
-import RoarDataTable from "@/components/RoarDataTable.vue";
-import PvFloatLabel from "primevue/floatlabel";
+import { ref, computed, onMounted, watch, watchEffect } from 'vue';
+import * as Sentry from '@sentry/vue';
+import { storeToRefs } from 'pinia';
+import { useToast } from 'primevue/usetoast';
+import { useRouter } from 'vue-router';
+import PvButton from 'primevue/button';
+import PvDialog from 'primevue/dialog';
+import PvSelect from 'primevue/select';
+import PvInputGroup from 'primevue/inputgroup';
+import PvInputText from 'primevue/inputtext';
+import PvTabPanel from 'primevue/tabpanel';
+import PvTabView from 'primevue/tabview';
+import PvToast from 'primevue/toast';
+import _get from 'lodash/get';
+import _head from 'lodash/head';
+import _kebabCase from 'lodash/kebabCase';
+import { useAuthStore } from '@/store/auth';
+import { orgFetchAll } from '@/helpers/query/orgs';
+import { fetchUsersByOrg, countUsersByOrg } from '@/helpers/query/users';
+import { orderByDefault, exportCsv, fetchDocById } from '@/helpers/query/utils';
+import useUserType from '@/composables/useUserType';
+import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
+import useDistrictsListQuery from '@/composables/queries/useDistrictsListQuery';
+import useDistrictSchoolsQuery from '@/composables/queries/useDistrictSchoolsQuery';
+import useOrgsTableQuery from '@/composables/queries/useOrgsTableQuery';
+import EditOrgsForm from '@/components/EditOrgsForm.vue';
+import RoarModal from '@/components/modals/RoarModal.vue';
+import { CSV_EXPORT_MAX_RECORD_COUNT } from '@/constants/csvExport';
+import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
+import RoarDataTable from '@/components/RoarDataTable.vue';
+import PvFloatLabel from 'primevue/floatlabel';
 
 const router = useRouter();
 const initialized = ref(false);
@@ -225,11 +192,11 @@ const localOrgData = ref(null);
 const isSubmitting = ref(false);
 
 const addUsers = () => {
-  router.push({ name: "Add Users" });
+  router.push({ name: 'Add Users' });
 };
 
 const newGroup = () => {
-  router.push({ name: "CreateGroup" });
+  router.push({ name: 'CreateGroup' });
 };
 
 const authStore = useAuthStore();
@@ -244,10 +211,10 @@ const adminOrgs = computed(() => userClaims?.value?.claims?.minimalAdminOrgs);
 
 const orgHeaders = computed(() => {
   return {
-    districts: { header: "Sites", id: "districts" },
-    schools: { header: "Schools", id: "schools" },
-    classes: { header: "Classes", id: "classes" },
-    groups: { header: "Cohorts", id: "groups" },
+    districts: { header: 'Sites', id: 'districts' },
+    schools: { header: 'Schools', id: 'schools' },
+    classes: { header: 'Classes', id: 'classes' },
+    groups: { header: 'Cohorts', id: 'groups' },
   };
 });
 
@@ -258,33 +225,25 @@ const activeOrgType = computed(() => {
 
 const claimsLoaded = computed(() => !!userClaims?.value?.claims);
 
-const { isLoading: isLoadingDistricts, data: allDistricts } =
-  useDistrictsListQuery({
-    enabled: claimsLoaded,
-  });
+const { isLoading: isLoadingDistricts, data: allDistricts } = useDistrictsListQuery({
+  enabled: claimsLoaded,
+});
 
 const schoolQueryEnabled = computed(() => {
   return claimsLoaded.value && !!selectedDistrict.value;
 });
 
-const { isLoading: isLoadingSchools, data: allSchools } =
-  useDistrictSchoolsQuery(selectedDistrict, {
-    enabled: schoolQueryEnabled,
-  });
+const { isLoading: isLoadingSchools, data: allSchools } = useDistrictSchoolsQuery(selectedDistrict, {
+  enabled: schoolQueryEnabled,
+});
 
 const {
   isLoading,
   isFetching,
   data: orgData,
-} = useOrgsTableQuery(
-  activeOrgType,
-  selectedDistrict,
-  selectedSchool,
-  orderBy,
-  {
-    enabled: claimsLoaded,
-  },
-);
+} = useOrgsTableQuery(activeOrgType, selectedDistrict, selectedSchool, orderBy, {
+  enabled: claimsLoaded,
+});
 
 function copyToClipboard(text) {
   navigator.clipboard
@@ -292,17 +251,16 @@ function copyToClipboard(text) {
     .then(function () {
       toast.add({
         severity: TOAST_SEVERITIES.SUCCESS,
-        summary: "Hoorah!",
-        detail: "Your code has been successfully copied to clipboard!",
+        summary: 'Hoorah!',
+        detail: 'Your code has been successfully copied to clipboard!',
         life: TOAST_DEFAULT_LIFE_DURATION,
       });
     })
     .catch(function () {
       toast.add({
         severity: TOAST_SEVERITIES.ERROR,
-        summary: "Error!",
-        detail:
-          "Your code has not been copied to clipboard! \n Please try again",
+        summary: 'Error!',
+        detail: 'Your code has not been copied to clipboard! \n Please try again',
         life: TOAST_DEFAULT_LIFE_DURATION,
       });
     });
@@ -339,17 +297,13 @@ const exportAll = async () => {
 const exportOrgUsers = async (orgType) => {
   try {
     // First, count the users
-    const userCount = await countUsersByOrg(
-      activeOrgType.value,
-      orgType.id,
-      orderBy,
-    );
+    const userCount = await countUsersByOrg(activeOrgType.value, orgType.id, orderBy);
 
     if (userCount === 0) {
       toast.add({
-        severity: "error",
-        summary: "Export Failed",
-        detail: "No users found for the organization.",
+        severity: 'error',
+        summary: 'Export Failed',
+        detail: 'No users found for the organization.',
         life: 3000,
       });
       return;
@@ -357,57 +311,47 @@ const exportOrgUsers = async (orgType) => {
 
     if (userCount > CSV_EXPORT_MAX_RECORD_COUNT) {
       toast.add({
-        severity: "error",
-        summary: "Export Failed",
-        detail:
-          "Too many users to export. Please filter the users by selecting a smaller org type.",
+        severity: 'error',
+        summary: 'Export Failed',
+        detail: 'Too many users to export. Please filter the users by selecting a smaller org type.',
         life: 3000,
       });
       return;
     }
 
     // Fetch the users if the count is within acceptable limits
-    const users = await fetchUsersByOrg(
-      activeOrgType.value,
-      orgType.id,
-      userCount,
-      ref(0),
-      orderBy,
-    );
+    const users = await fetchUsersByOrg(activeOrgType.value, orgType.id, userCount, ref(0), orderBy);
 
     const computedExportData = users.map((user) => ({
-      Username: _get(user, "username"),
-      Email: _get(user, "email"),
-      FirstName: _get(user, "name.first"),
-      LastName: _get(user, "name.last"),
-      Grade: _get(user, "studentData.grade"),
-      Gender: _get(user, "studentData.gender"),
-      DateOfBirth: _get(user, "studentData.dob"),
-      UserType: _get(user, "userType"),
-      ell_status: _get(user, "studentData.ell_status"),
-      iep_status: _get(user, "studentData.iep_status"),
-      frl_status: _get(user, "studentData.frl_status"),
-      race: _get(user, "studentData.race"),
-      hispanic_ethnicity: _get(user, "studentData.hispanic_ethnicity"),
-      home_language: _get(user, "studentData.home_language"),
+      Username: _get(user, 'username'),
+      Email: _get(user, 'email'),
+      FirstName: _get(user, 'name.first'),
+      LastName: _get(user, 'name.last'),
+      Grade: _get(user, 'studentData.grade'),
+      Gender: _get(user, 'studentData.gender'),
+      DateOfBirth: _get(user, 'studentData.dob'),
+      UserType: _get(user, 'userType'),
+      ell_status: _get(user, 'studentData.ell_status'),
+      iep_status: _get(user, 'studentData.iep_status'),
+      frl_status: _get(user, 'studentData.frl_status'),
+      race: _get(user, 'studentData.race'),
+      hispanic_ethnicity: _get(user, 'studentData.hispanic_ethnicity'),
+      home_language: _get(user, 'studentData.home_language'),
     }));
 
     // ex. cypress-test-district-users-export.csv
-    exportCsv(
-      computedExportData,
-      `${_kebabCase(orgType.name)}-users-export.csv`,
-    );
+    exportCsv(computedExportData, `${_kebabCase(orgType.name)}-users-export.csv`);
 
     toast.add({
-      severity: "success",
-      summary: "Export Successful",
-      detail: "Users have been exported successfully!",
+      severity: 'success',
+      summary: 'Export Successful',
+      detail: 'Users have been exported successfully!',
       life: 3000,
     });
   } catch (error) {
     toast.add({
-      severity: "error",
-      summary: "Export Failed",
+      severity: 'error',
+      summary: 'Export Failed',
       detail: error.message,
       life: 3000,
     });
@@ -418,33 +362,33 @@ const exportOrgUsers = async (orgType) => {
 const tableColumns = computed(() => {
   const columns = [
     {
-      field: "name",
-      header: "Name",
-      dataType: "string",
+      field: 'name',
+      header: 'Name',
+      dataType: 'string',
       pinned: true,
       sort: true,
     },
   ];
 
-  if (["districts", "schools"].includes(activeOrgType.value)) {
+  if (['districts', 'schools'].includes(activeOrgType.value)) {
     columns.push();
   }
 
   columns.push(
     {
-      header: "Users",
+      header: 'Users',
       link: true,
-      routeName: "ListUsers",
-      routeTooltip: "View users",
-      routeLabel: "Users",
-      routeIcon: "pi pi-user",
+      routeName: 'ListUsers',
+      routeTooltip: 'View users',
+      routeLabel: 'Users',
+      routeIcon: 'pi pi-user',
       sort: false,
     },
     {
-      header: "Edit",
+      header: 'Edit',
       button: true,
-      eventName: "edit-button",
-      buttonIcon: "pi pi-pencil",
+      eventName: 'edit-button',
+      buttonIcon: 'pi pi-pencil',
       sort: false,
     },
     // {
@@ -477,8 +421,8 @@ watchEffect(async () => {
         routeParams: {
           orgType: activeOrgType.value,
           orgId: org.id,
-          orgName: org?.name || "_",
-          tooltip: "View Users in " + org?.name || "",
+          orgName: org?.name || '_',
+          tooltip: 'View Users in ' + org?.name || '',
         },
       };
     }) || [],
@@ -497,7 +441,7 @@ const showCode = async (selectedOrg) => {
 
 const onEditButtonClick = (event) => {
   isEditModalEnabled.value = true;
-  currentEditOrgId.value = _get(event, "id", null);
+  currentEditOrgId.value = _get(event, 'id', null);
 };
 
 const closeEditModal = () => {
@@ -515,23 +459,23 @@ const updateOrgData = async () => {
     .createOrg(
       activeOrgType.value,
       localOrgData.value,
-      _get(localOrgData.value, "testData", false),
-      _get(localOrgData.value, "demoData", false),
+      _get(localOrgData.value, 'testData', false),
+      _get(localOrgData.value, 'demoData', false),
       currentEditOrgId.value,
     )
     .then(() => {
       closeEditModal();
       toast.add({
         severity: TOAST_SEVERITIES.SUCCESS,
-        summary: "Updated",
-        detail: "Organization data updated successfully!",
+        summary: 'Updated',
+        detail: 'Organization data updated successfully!',
         life: TOAST_DEFAULT_LIFE_DURATION,
       });
     })
     .catch((error) => {
       toast.add({
         severity: TOAST_SEVERITIES.ERROR,
-        summary: "Unexpected error",
+        summary: 'Unexpected error',
         detail: `Unexpected error occurred: ${error.message}`,
         life: TOAST_DEFAULT_LIFE_DURATION,
       });
@@ -557,11 +501,11 @@ onMounted(() => {
 });
 
 watchEffect(() => {
-  selectedDistrict.value = _get(_head(allDistricts.value), "id");
+  selectedDistrict.value = _get(_head(allDistricts.value), 'id');
 });
 
 watch(allSchools, (newValue) => {
-  selectedSchool.value = _get(_head(newValue), "id");
+  selectedSchool.value = _get(_head(newValue), 'id');
 });
 
 const tableKey = ref(0);

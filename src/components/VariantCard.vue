@@ -54,25 +54,13 @@
               <PvColumn
                 field="key"
                 header="Parameter"
-                style="
-                  width: 50%;
-                  text-align: left;
-                  padding-left: 1vh;
-                  padding-top: 0.15vh;
-                  padding-bottom: 0.1vh;
-                "
+                style="width: 50%; text-align: left; padding-left: 1vh; padding-top: 0.15vh; padding-bottom: 0.1vh"
               >
               </PvColumn>
               <PvColumn
                 field="value"
                 header="Value"
-                style="
-                  width: 50%;
-                  text-align: left;
-                  padding-left: 1vh;
-                  padding-top: 0.15vh;
-                  padding-bottom: 0.1vh;
-                "
+                style="width: 50%; text-align: left; padding-left: 1vh; padding-top: 0.15vh; padding-bottom: 0.1vh"
               >
               </PvColumn>
             </PvDataTable>
@@ -86,10 +74,7 @@
         class="surface-hover border-1 border-300 border-circle m-0 hover:bg-primary p-0 m-2"
         data-cy="selected-variant"
         @click="handleSelect"
-        ><i
-          class="pi pi-chevron-right text-primary hover:text-white-alpha-90 p-2"
-          style="font-size: 1rem"
-        ></i
+        ><i class="pi pi-chevron-right text-primary hover:text-white-alpha-90 p-2" style="font-size: 1rem"></i
       ></PvButton>
     </div>
   </div>
@@ -99,42 +84,27 @@
       <PvButton
         class="surface-hover border-y-1 border-200 border-noround m-0 hover:bg-primary p-0"
         @click="handleRemove"
-        ><i
-          class="pi pi-times text-primary hover:text-white-alpha-90 p-2"
-          style="font-size: 1rem"
-        ></i
+        ><i class="pi pi-times text-primary hover:text-white-alpha-90 p-2" style="font-size: 1rem"></i
       ></PvButton>
       <PvButton
         class="surface-hover border-y-1 border-200 border-noround m-0 hover:bg-primary p-0"
         @click="handleMoveUp"
-        ><i
-          class="pi pi-sort-up text-primary hover:text-white-alpha-90 p-2"
-          style="font-size: 1rem"
-        ></i
+        ><i class="pi pi-sort-up text-primary hover:text-white-alpha-90 p-2" style="font-size: 1rem"></i
       ></PvButton>
       <PvButton
         class="surface-hover border-y-1 border-200 border-noround m-0 hover:bg-primary p-0"
         @click="handleMoveDown"
-        ><i
-          class="pi pi-sort-down text-primary hover:text-white-alpha-90 p-2"
-          style="font-size: 1rem"
-        ></i
+        ><i class="pi pi-sort-down text-primary hover:text-white-alpha-90 p-2" style="font-size: 1rem"></i
       ></PvButton>
     </div>
     <div class="w-11 mt-3 flex flex-row p-0">
       <div>
-        <img
-          class="w-4rem shadow-2 border-round"
-          :src="variant.task.image || backupImage"
-          :alt="variant.task.name"
-        />
+        <img class="w-4rem shadow-2 border-round" :src="variant.task.image || backupImage" :alt="variant.task.name" />
       </div>
       <div>
         <!-- repeated code -->
         <div class="flex align-items-center flex-row">
-          <span class="font-bold" style="margin-left: 0.625rem">{{
-            variant.task.name
-          }}</span>
+          <span class="font-bold" style="margin-left: 0.625rem">{{ variant.task.name }}</span>
           <PvButton
             class="p-0 surface-hover border-none border-circle hover:text-100 hover:bg-primary"
             @click="toggle($event)"
@@ -158,12 +128,7 @@
           </p>
         </div>
       </div>
-      <PvPopover
-        ref="op"
-        append-to="body"
-        class="border-1 surface-border"
-        style="width: 40vh"
-      >
+      <PvPopover ref="op" append-to="body" class="border-1 surface-border" style="width: 40vh">
         <div class="flex justify-content-end mt-0 mb-2">
           <PvButton
             class="p-0 surface-hover border-none border-circle -rotate-45 hover:text-100 hover:bg-primary"
@@ -185,25 +150,13 @@
             <PvColumn
               field="key"
               header="Parameter"
-              style="
-                width: 50%;
-                text-align: left;
-                padding-left: 1vh;
-                padding-top: 0.15vh;
-                padding-bottom: 0.1vh;
-              "
+              style="width: 50%; text-align: left; padding-left: 1vh; padding-top: 0.15vh; padding-bottom: 0.1vh"
             >
             </PvColumn>
             <PvColumn
               field="value"
               header="Value"
-              style="
-                width: 50%;
-                text-align: left;
-                padding-left: 1vh;
-                padding-top: 0.15vh;
-                padding-bottom: 0.1vh;
-              "
+              style="width: 50%; text-align: left; padding-left: 1vh; padding-top: 0.15vh; padding-bottom: 0.1vh"
             >
             </PvColumn>
           </PvDataTable>
@@ -217,10 +170,7 @@
         :pre-existing-assessment-info="preExistingAssessmentInfo"
       />
       <PvButton
-        v-if="
-          variant.variant?.conditions?.assigned ||
-          variant.variant?.conditions?.optional
-        "
+        v-if="variant.variant?.conditions?.assigned || variant.variant?.conditions?.optional"
         class="surface-hover border-1 border-300 border-circle m-0 hover:bg-primary p-0 m-2"
         @click="toggleShowContent()"
         ><i :class="iconClass()" style="font-size: 1rem"></i
@@ -247,45 +197,16 @@
         <PvColumn
           field="field"
           header="Field"
-          style="
-            width: 33%;
-            text-align: left;
-            padding-left: 1vh;
-            padding: 0.8vh;
-            margin: 0.3vh;
-          "
+          style="width: 33%; text-align: left; padding-left: 1vh; padding: 0.8vh; margin: 0.3vh"
         ></PvColumn>
-        <PvColumn
-          field="op"
-          header="Operation"
-          style="
-            width: 33%;
-            text-align: left;
-            padding-left: 1vh;
-            padding: 0.8vh;
-          "
-        >
+        <PvColumn field="op" header="Operation" style="width: 33%; text-align: left; padding-left: 1vh; padding: 0.8vh">
         </PvColumn>
-        <PvColumn
-          field="value"
-          header="Value"
-          style="
-            width: 33%;
-            text-align: left;
-            padding-left: 1vh;
-            padding: 0.8vh;
-          "
-        >
+        <PvColumn field="value" header="Value" style="width: 33%; text-align: left; padding-left: 1vh; padding: 0.8vh">
         </PvColumn>
       </PvDataTable>
     </div>
-    <div
-      v-if="variant.variant?.conditions?.optional === true"
-      class="flex mt-3 flex-column w-full ml-3 pr-5"
-    >
-      <PvTag severity="success">
-        Assignment optional for all participants
-      </PvTag>
+    <div v-if="variant.variant?.conditions?.optional === true" class="flex mt-3 flex-column w-full ml-3 pr-5">
+      <PvTag severity="success"> Assignment optional for all participants </PvTag>
     </div>
     <div
       v-else-if="variant.variant?.conditions?.optional?.conditions?.length > 0"
@@ -302,55 +223,22 @@
         <PvColumn
           field="field"
           header="Field"
-          style="
-            width: 33%;
-            text-align: left;
-            padding-left: 1vh;
-            padding: 0.8vh;
-          "
+          style="width: 33%; text-align: left; padding-left: 1vh; padding: 0.8vh"
         ></PvColumn>
-        <PvColumn
-          field="op"
-          header="Operation"
-          style="
-            width: 33%;
-            text-align: left;
-            padding-left: 1vh;
-            padding: 0.8vh;
-          "
-        >
+        <PvColumn field="op" header="Operation" style="width: 33%; text-align: left; padding-left: 1vh; padding: 0.8vh">
         </PvColumn>
-        <PvColumn
-          field="value"
-          header="Value"
-          style="
-            width: 33%;
-            text-align: left;
-            padding-left: 1vh;
-            padding: 0.8vh;
-          "
-        >
+        <PvColumn field="value" header="Value" style="width: 33%; text-align: left; padding-left: 1vh; padding: 0.8vh">
         </PvColumn>
       </PvDataTable>
     </div>
     <div
-      v-if="
-        !variant.variant?.conditions?.assigned &&
-        !variant.variant?.conditions?.optional
-      "
+      v-if="!variant.variant?.conditions?.assigned && !variant.variant?.conditions?.optional"
       class="flex mt-2 flex-column w-full px-3 ml-3"
     >
-      <PvTag severity="danger">
-        Assignment required for all participants
-      </PvTag>
+      <PvTag severity="danger"> Assignment required for all participants </PvTag>
     </div>
   </div>
-  <PvDialog
-    v-model:visible="visible"
-    modal
-    header="Parameters"
-    :style="{ width: '50rem' }"
-  >
+  <PvDialog v-model:visible="visible" modal header="Parameters" :style="{ width: '50rem' }">
     <div class="flex gap-2 flex-column w-full pr-3">
       <PvDataTable
         class="p-datatable-small ml-3 border-1 surface-border text-xl"
@@ -362,25 +250,13 @@
         <PvColumn
           field="key"
           header="Parameter"
-          style="
-            width: 50%;
-            text-align: left;
-            padding-left: 1vh;
-            padding-top: 0.15vh;
-            padding-bottom: 0.1vh;
-          "
+          style="width: 50%; text-align: left; padding-left: 1vh; padding-top: 0.15vh; padding-bottom: 0.1vh"
         >
         </PvColumn>
         <PvColumn
           field="value"
           header="Value"
-          style="
-            width: 50%;
-            text-align: left;
-            padding-left: 1vh;
-            padding-top: 0.15vh;
-            padding-bottom: 0.1vh;
-          "
+          style="width: 50%; text-align: left; padding-left: 1vh; padding-top: 0.15vh; padding-bottom: 0.1vh"
         >
         </PvColumn>
       </PvDataTable>
@@ -389,16 +265,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from "vue";
-import _toPairs from "lodash/toPairs";
-import PvButton from "primevue/button";
-import PvColumn from "primevue/column";
-import PvChip from "primevue/chip";
-import PvDataTable from "primevue/datatable";
-import PvDialog from "primevue/dialog";
-import PvPopover from "primevue/popover";
-import PvTag from "primevue/tag";
-import EditVariantDialog from "@/components/EditVariantDialog.vue";
+import { ref, computed } from 'vue';
+import _toPairs from 'lodash/toPairs';
+import PvButton from 'primevue/button';
+import PvColumn from 'primevue/column';
+import PvChip from 'primevue/chip';
+import PvDataTable from 'primevue/datatable';
+import PvDialog from 'primevue/dialog';
+import PvPopover from 'primevue/popover';
+import PvTag from 'primevue/tag';
+import EditVariantDialog from '@/components/EditVariantDialog.vue';
 
 interface Condition {
   field: string;
@@ -410,9 +286,11 @@ interface VariantConditions {
   assigned?: {
     conditions: Condition[];
   };
-  optional?: boolean | {
-    conditions: Condition[];
-  };
+  optional?:
+    | boolean
+    | {
+        conditions: Condition[];
+      };
 }
 
 interface VariantData {
@@ -453,7 +331,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<Emits>();
 
-const backupImage = "/src/assets/roar-logo.png";
+const backupImage = '/src/assets/roar-logo.png';
 const showContent = ref<boolean>(false);
 const op = ref<any>(null);
 const visible = ref<boolean>(false);
@@ -461,56 +339,50 @@ const visible = ref<boolean>(false);
 const formattedAssignedConditions = computed((): string => {
   const conditions = props.variant.variant?.conditions?.assigned?.conditions;
   if (!conditions || !Array.isArray(conditions) || conditions.length === 0) {
-    return "";
+    return '';
   }
 
   const processedStrings = conditions
-    .filter((entry) => entry.field !== "age")
+    .filter((entry) => entry.field !== 'age')
     .map((entry) => {
-      const valueStr = String(entry.value ?? "");
-      if (!valueStr) return ""; // Handle cases where value might be null, undefined, or already an empty string
+      const valueStr = String(entry.value ?? '');
+      if (!valueStr) return ''; // Handle cases where value might be null, undefined, or already an empty string
 
       // Replace "student" with "child" for display purposes
       let displayValue = valueStr;
-      if (entry.field === "userType" && valueStr.toLowerCase() === "student") {
-        displayValue = "child";
+      if (entry.field === 'userType' && valueStr.toLowerCase() === 'student') {
+        displayValue = 'child';
       }
 
-      const capitalizedValue =
-        displayValue.charAt(0).toUpperCase() + displayValue.slice(1);
+      const capitalizedValue = displayValue.charAt(0).toUpperCase() + displayValue.slice(1);
       // Special case for 'child' to pluralize correctly as 'Children' instead of 'Childs'
-      if (
-        entry.field === "userType" &&
-        displayValue.toLowerCase() === "child"
-      ) {
-        return entry.op === "EQUAL" ? "Children" : "Not Children";
+      if (entry.field === 'userType' && displayValue.toLowerCase() === 'child') {
+        return entry.op === 'EQUAL' ? 'Children' : 'Not Children';
       }
-      return entry.op === "EQUAL"
-        ? `${capitalizedValue}s`
-        : `Not ${capitalizedValue}s`;
+      return entry.op === 'EQUAL' ? `${capitalizedValue}s` : `Not ${capitalizedValue}s`;
     })
-    .filter((str) => str !== ""); // Remove empty strings that might result from 'age' filter or empty values
+    .filter((str) => str !== ''); // Remove empty strings that might result from 'age' filter or empty values
 
   if (processedStrings.length === 0) {
-    return "";
+    return '';
   }
-  return processedStrings.join(", ");
+  return processedStrings.join(', ');
 });
 
 const handleRemove = (): void => {
-  emit("remove", props.variant);
+  emit('remove', props.variant);
 };
 
 const handleSelect = (): void => {
-  emit("select", props.variant);
+  emit('select', props.variant);
 };
 
 const handleMoveUp = (): void => {
-  emit("moveUp", props.variant);
+  emit('moveUp', props.variant);
 };
 
 const handleMoveDown = (): void => {
-  emit("moveDown", props.variant);
+  emit('moveDown', props.variant);
 };
 
 function toggleShowContent(): void {
@@ -519,8 +391,8 @@ function toggleShowContent(): void {
 
 function iconClass(): string {
   return showContent.value
-    ? "pi pi-chevron-up text-primary hover:text-white-alpha-90 p-2"
-    : "pi pi-chevron-down text-primary hover:text-white-alpha-90 p-2";
+    ? 'pi pi-chevron-up text-primary hover:text-white-alpha-90 p-2'
+    : 'pi pi-chevron-down text-primary hover:text-white-alpha-90 p-2';
 }
 
 const parseConditions = (variant: any): Condition[] | undefined => {
@@ -529,8 +401,8 @@ const parseConditions = (variant: any): Condition[] | undefined => {
 
 const isActive = (): string => {
   return !showContent.value
-    ? "flex-1 flex flex-row gap-2 border-1 border-round surface-border bg-white-alpha-90 mb-2 hover:surface-hover z-1 relative"
-    : "flex-1 flex flex-row gap-2 border-1 border-round surface-border bg-white-alpha-90 mb-2 hover:surface-hover z-1 relative shadow-2";
+    ? 'flex-1 flex flex-row gap-2 border-1 border-round surface-border bg-white-alpha-90 mb-2 hover:surface-hover z-1 relative'
+    : 'flex-1 flex flex-row gap-2 border-1 border-round surface-border bg-white-alpha-90 mb-2 hover:surface-hover z-1 relative shadow-2';
 };
 
 const displayParamList = (inputObj: Record<string, any>): Array<{ key: string; value: any }> => {

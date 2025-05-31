@@ -1,10 +1,10 @@
-import { toValue } from "vue";
-import type { MaybeRefOrGetter } from "vue";
-import { useMutation, useQueryClient } from "@tanstack/vue-query";
-import type { UseMutationReturnType } from "@tanstack/vue-query";
-import { useAuthStore } from "@/store/auth";
-import { CONSENT_UPDATE_MUTATION_KEY } from "@/constants/mutationKeys";
-import { USER_DATA_QUERY_KEY } from "@/constants/queryKeys";
+import { toValue } from 'vue';
+import type { MaybeRefOrGetter } from 'vue';
+import { useMutation, useQueryClient } from '@tanstack/vue-query';
+import type { UseMutationReturnType } from '@tanstack/vue-query';
+import { useAuthStore } from '@/store/auth';
+import { CONSENT_UPDATE_MUTATION_KEY } from '@/constants/mutationKeys';
+import { USER_DATA_QUERY_KEY } from '@/constants/queryKeys';
 
 interface ConsentUpdateData {
   consentType: MaybeRefOrGetter<string>;
@@ -19,12 +19,7 @@ interface ConsentUpdateData {
  *
  * @returns The mutation object returned by `useMutation`.
  */
-const useUpdateConsentMutation = (): UseMutationReturnType<
-  void,
-  Error,
-  ConsentUpdateData,
-  unknown
-> => {
+const useUpdateConsentMutation = (): UseMutationReturnType<void, Error, ConsentUpdateData, unknown> => {
   const authStore = useAuthStore();
   const queryClient = useQueryClient();
 
@@ -35,11 +30,7 @@ const useUpdateConsentMutation = (): UseMutationReturnType<
       const consentVersion = toValue(data.consentVersion);
       const consentParams = toValue(data.consentParams) || {};
 
-      await authStore.roarfirekit.updateConsentStatus(
-        consentType,
-        consentVersion,
-        consentParams,
-      );
+      await authStore.roarfirekit.updateConsentStatus(consentType, consentVersion, consentParams);
     },
     onSuccess: (): void => {
       queryClient.invalidateQueries({ queryKey: [USER_DATA_QUERY_KEY] });

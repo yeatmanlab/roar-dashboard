@@ -1,12 +1,12 @@
-import { useMutation, useQueryClient } from "@tanstack/vue-query";
-import type { UseMutationReturnType } from "@tanstack/vue-query";
-import { useAuthStore } from "@/store/auth";
-import { ADMINISTRATION_DELETE_MUTATION_KEY } from "@/constants/mutationKeys";
+import { useMutation, useQueryClient } from '@tanstack/vue-query';
+import type { UseMutationReturnType } from '@tanstack/vue-query';
+import { useAuthStore } from '@/store/auth';
+import { ADMINISTRATION_DELETE_MUTATION_KEY } from '@/constants/mutationKeys';
 import {
   ADMINISTRATIONS_QUERY_KEY,
   ADMINISTRATIONS_LIST_QUERY_KEY,
   ADMINISTRATION_ASSIGNMENTS_QUERY_KEY,
-} from "@/constants/queryKeys";
+} from '@/constants/queryKeys';
 
 /**
  * Delete Administration mutation.
@@ -15,12 +15,7 @@ import {
  *
  * @returns The mutation object returned by `useMutation`.
  */
-const useDeleteAdministrationMutation = (): UseMutationReturnType<
-  void,
-  Error,
-  string,
-  unknown
-> => {
+const useDeleteAdministrationMutation = (): UseMutationReturnType<void, Error, string, unknown> => {
   const authStore = useAuthStore();
   const queryClient = useQueryClient();
 

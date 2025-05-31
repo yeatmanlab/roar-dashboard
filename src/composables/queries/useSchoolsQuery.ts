@@ -1,14 +1,10 @@
-import { type MaybeRefOrGetter } from "vue";
-import {
-  useQuery,
-  type UseQueryReturnType,
-  type UseQueryOptions,
-} from "@tanstack/vue-query";
-import { computeQueryOverrides } from "@/helpers/computeQueryOverrides";
-import { hasArrayEntries } from "@/helpers/hasArrayEntries";
-import { fetchDocumentsById } from "@/helpers/query/utils";
-import { SCHOOLS_QUERY_KEY } from "@/constants/queryKeys";
-import { FIRESTORE_COLLECTIONS } from "@/constants/firebase";
+import { type MaybeRefOrGetter } from 'vue';
+import { useQuery, type UseQueryReturnType, type UseQueryOptions } from '@tanstack/vue-query';
+import { computeQueryOverrides } from '@/helpers/computeQueryOverrides';
+import { hasArrayEntries } from '@/helpers/hasArrayEntries';
+import { fetchDocumentsById } from '@/helpers/query/utils';
+import { SCHOOLS_QUERY_KEY } from '@/constants/queryKeys';
+import { FIRESTORE_COLLECTIONS } from '@/constants/firebase';
 
 /**
  * School Query
@@ -17,16 +13,10 @@ import { FIRESTORE_COLLECTIONS } from "@/constants/firebase";
  * @param {QueryOptions|undefined} queryOptions – Optional TanStack query options.
  * @returns {UseQueryResult} The TanStack query result.
  */
-const useSchoolsQuery = (
-  schoolIds,
-  queryOptions?: UseQueryOptions,
-): UseQueryReturnType => {
+const useSchoolsQuery = (schoolIds, queryOptions?: UseQueryOptions): UseQueryReturnType => {
   // Ensure all necessary data is loaded before enabling the query.
   const conditions = [() => hasArrayEntries(schoolIds)];
-  const { isQueryEnabled, options } = computeQueryOverrides(
-    conditions,
-    queryOptions,
-  );
+  const { isQueryEnabled, options } = computeQueryOverrides(conditions, queryOptions);
 
   return useQuery({
     queryKey: [SCHOOLS_QUERY_KEY, schoolIds],

@@ -1,5 +1,5 @@
-import { useMutation, useQueryClient } from "@tanstack/vue-query";
-import { useAuthStore } from "@/store/auth.js";
+import { useMutation, useQueryClient } from '@tanstack/vue-query';
+import { useAuthStore } from '@/store/auth.js';
 import {
   DISTRICTS_LIST_QUERY_KEY,
   DISTRICT_SCHOOLS_QUERY_KEY,
@@ -7,8 +7,8 @@ import {
   GROUPS_LIST_QUERY_KEY,
   ORG_MUTATION_KEY,
   ORGS_TABLE_QUERY_KEY,
-} from "@/constants/queryKeys";
-import { FIRESTORE_COLLECTIONS } from "@/constants/firebase";
+} from '@/constants/queryKeys';
+import { FIRESTORE_COLLECTIONS } from '@/constants/firebase';
 
 interface OrgDataBase {
   name: string;
@@ -83,10 +83,7 @@ const useUpsertOrgMutation = () => {
         // This case should ideally not be hit if OrgData is correctly typed
         // and all cases are handled. Adding an exhaustive check:
         const _exhaustiveCheck: never = newOrgData;
-        console.error(
-          "Unknown org type for optimistic update:",
-          _exhaustiveCheck,
-        );
+        console.error('Unknown org type for optimistic update:', _exhaustiveCheck);
         return {
           previousData: undefined,
           queryKey: [] as string[],
@@ -102,9 +99,7 @@ const useUpsertOrgMutation = () => {
 
       queryClient.setQueryData<OrgData[]>(queryKey, (oldData) => {
         if (Array.isArray(oldData)) {
-          const existingIndex = newOrgData.id
-            ? oldData.findIndex((org) => org.id === newOrgData.id)
-            : -1;
+          const existingIndex = newOrgData.id ? oldData.findIndex((org) => org.id === newOrgData.id) : -1;
           if (existingIndex > -1) {
             const updatedData = [...oldData];
             updatedData[existingIndex] = optimisticOrg;
@@ -122,7 +117,7 @@ const useUpsertOrgMutation = () => {
       if (context?.queryKey && context.previousData !== undefined) {
         queryClient.setQueryData(context.queryKey, context.previousData);
       }
-      console.error("Error upserting org:", err, newOrgData);
+      console.error('Error upserting org:', err, newOrgData);
     },
     onSettled: (data, error, variables, context) => {
       if (context?.queryKey) {
@@ -130,7 +125,7 @@ const useUpsertOrgMutation = () => {
 
         // We need to invalidate this query otherwise a site will not show up right away in the list groups table.
         if (variables.type === FIRESTORE_COLLECTIONS.DISTRICTS) {
-          console.log("invalidating orgs-table");
+          console.log('invalidating orgs-table');
           queryClient.invalidateQueries({
             queryKey: [ORGS_TABLE_QUERY_KEY],
             exact: false,
@@ -145,45 +140,27 @@ const useUpsertOrgMutation = () => {
           });
         }
         // Added type checks for variables before accessing parent IDs
-        if (
-          orgType === FIRESTORE_COLLECTIONS.SCHOOLS &&
-          (variables as SchoolOrg).districtId
-        ) {
+        if (orgType === FIRESTORE_COLLECTIONS.SCHOOLS && (variables as SchoolOrg).districtId) {
           queryClient.invalidateQueries({
-            queryKey: [
-              DISTRICT_SCHOOLS_QUERY_KEY,
-              (variables as SchoolOrg).districtId,
-            ],
+            queryKey: [DISTRICT_SCHOOLS_QUERY_KEY, (variables as SchoolOrg).districtId],
           });
         } else if (orgType === FIRESTORE_COLLECTIONS.SCHOOLS) {
           queryClient.invalidateQueries({
             queryKey: [DISTRICT_SCHOOLS_QUERY_KEY],
           });
         }
-        if (
-          orgType === FIRESTORE_COLLECTIONS.CLASSES &&
-          (variables as ClassOrg).schoolId
-        ) {
+        if (orgType === FIRESTORE_COLLECTIONS.CLASSES && (variables as ClassOrg).schoolId) {
           queryClient.invalidateQueries({
-            queryKey: [
-              SCHOOL_CLASSES_QUERY_KEY,
-              (variables as ClassOrg).schoolId,
-            ],
+            queryKey: [SCHOOL_CLASSES_QUERY_KEY, (variables as ClassOrg).schoolId],
           });
         } else if (orgType === FIRESTORE_COLLECTIONS.CLASSES) {
           queryClient.invalidateQueries({
             queryKey: [SCHOOL_CLASSES_QUERY_KEY],
           });
         }
-        if (
-          orgType === FIRESTORE_COLLECTIONS.GROUPS &&
-          (variables as GroupOrg).parentOrgId
-        ) {
+        if (orgType === FIRESTORE_COLLECTIONS.GROUPS && (variables as GroupOrg).parentOrgId) {
           queryClient.invalidateQueries({
-            queryKey: [
-              GROUPS_LIST_QUERY_KEY,
-              (variables as GroupOrg).parentOrgId,
-            ],
+            queryKey: [GROUPS_LIST_QUERY_KEY, (variables as GroupOrg).parentOrgId],
           });
         } else if (orgType === FIRESTORE_COLLECTIONS.GROUPS) {
           queryClient.invalidateQueries({ queryKey: [GROUPS_LIST_QUERY_KEY] });

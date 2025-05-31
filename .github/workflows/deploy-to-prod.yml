@@ -4,19 +4,19 @@ on:
   workflow_dispatch:
     inputs:
       version_type:
-        description: "Version type (patch, minor, major)"
+        description: 'Version type (patch, minor, major)'
         required: true
-        default: "patch"
+        default: 'patch'
         type: choice
         options:
           - patch
           - minor
           - major
       release_description:
-        description: "Release description (supports markdown, can be multi-line)"
+        description: 'Release description (supports markdown, can be multi-line)'
         required: false
         type: string
-        default: "Production release"
+        default: 'Production release'
 
 jobs:
   version_build_deploy:
@@ -38,8 +38,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20.x"
-          registry-url: "https://registry.npmjs.org"
+          node-version: '20.x'
+          registry-url: 'https://registry.npmjs.org'
 
       - name: Install dependencies
         run: npm ci
@@ -87,7 +87,7 @@ jobs:
 
       - name: Build for production
         env:
-          NODE_OPTIONS: "--max_old_space_size=8192"
+          NODE_OPTIONS: '--max_old_space_size=8192'
         run: npm run build:prod
 
       - name: Create Sentry release

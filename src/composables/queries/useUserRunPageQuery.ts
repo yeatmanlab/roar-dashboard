@@ -1,10 +1,10 @@
-import { computed, toValue } from "vue";
-import { useQuery } from "@tanstack/vue-query";
-import _isEmpty from "lodash/isEmpty";
-import useUserAdministrationAssignmentsQuery from "@/composables/queries/useUserAdministrationAssignmentsQuery";
-import { runPageFetcher } from "@/helpers/query/runs";
-import { computeQueryOverrides } from "@/helpers/computeQueryOverrides";
-import { USER_RUN_PAGE_QUERY_KEY } from "@/constants/queryKeys";
+import { computed, toValue } from 'vue';
+import { useQuery } from '@tanstack/vue-query';
+import _isEmpty from 'lodash/isEmpty';
+import useUserAdministrationAssignmentsQuery from '@/composables/queries/useUserAdministrationAssignmentsQuery';
+import { runPageFetcher } from '@/helpers/query/runs';
+import { computeQueryOverrides } from '@/helpers/computeQueryOverrides';
+import { USER_RUN_PAGE_QUERY_KEY } from '@/constants/queryKeys';
 
 // NOT USED ANYWHERE
 
@@ -26,18 +26,12 @@ const useUserRunPageQuery = (
   orgId,
   queryOptions?: UseQueryOptions,
 ): UseQueryReturnType => {
-  const { data: assignmentData } = useUserAdministrationAssignmentsQuery(
-    userId,
-    administrationId,
-    {
-      enabled: queryOptions?.enabled ?? true,
-    },
-  );
+  const { data: assignmentData } = useUserAdministrationAssignmentsQuery(userId, administrationId, {
+    enabled: queryOptions?.enabled ?? true,
+  });
 
   const optionalAssessments = computed(() => {
-    return assignmentData?.value?.assessments.filter(
-      (assessment) => assessment.optional,
-    );
+    return assignmentData?.value?.assessments.filter((assessment) => assessment.optional);
   });
 
   const queryConditions = [
@@ -47,40 +41,23 @@ const useUserRunPageQuery = (
     () => !!toValue(orgId),
     () => !_isEmpty(assignmentData.value),
   ];
-  const { isQueryEnabled, options } = computeQueryOverrides(
-    queryConditions,
-    queryOptions,
-  );
+  const { isQueryEnabled, options } = computeQueryOverrides(queryConditions, queryOptions);
 
   return useQuery({
-    queryKey: [
-      USER_RUN_PAGE_QUERY_KEY,
-      userId,
-      administrationId,
-      orgType,
-      orgId,
-    ],
+    queryKey: [USER_RUN_PAGE_QUERY_KEY, userId, administrationId, orgType, orgId],
     queryFn: async () => {
       const runPageData = await runPageFetcher({
         administrationId: administrationId,
         orgType: orgType,
         orgId: orgId,
         userId: userId,
-        select: [
-          "scores.computed",
-          "taskId",
-          "reliable",
-          "engagementFlags",
-          "optional",
-        ],
-        scoreKey: "scores.computed",
+        select: ['scores.computed', 'taskId', 'reliable', 'engagementFlags', 'optional'],
+        scoreKey: 'scores.computed',
         paginate: false,
       });
 
       const data = runPageData?.map((task) => {
-        const isOptional = optionalAssessments?.value?.some(
-          (assessment) => assessment.taskId === task.taskId,
-        );
+        const isOptional = optionalAssessments?.value?.some((assessment) => assessment.taskId === task.taskId);
         return isOptional ? { ...task, optional: true } : task;
       });
 

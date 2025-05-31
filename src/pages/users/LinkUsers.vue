@@ -3,10 +3,7 @@
     <section class="main-body">
       <LinkUsersInfo />
 
-      <div
-        v-if="!isFileUploaded"
-        class="text-gray-500 mb-2 surface-100 border-round p-2 mt-5"
-      >
+      <div v-if="!isFileUploaded" class="text-gray-500 mb-2 surface-100 border-round p-2 mt-5">
         <PvFileUpload
           name="linkUsersUploader[]"
           custom-upload
@@ -37,11 +34,7 @@
           :rows="10"
           class="datatable"
         >
-          <PvColumn
-            v-for="col of allFields"
-            :key="col.field"
-            :field="col.field"
-          >
+          <PvColumn v-for="col of allFields" :key="col.field" :field="col.field">
             <template #header>
               <div class="col-header">
                 <b>{{ col.header }}</b>
@@ -76,11 +69,7 @@
           :rows="10"
           class="datatable"
         >
-          <PvColumn
-            v-for="col of errorUserColumns"
-            :key="col.field"
-            :field="col.field"
-          >
+          <PvColumn v-for="col of errorUserColumns" :key="col.field" :field="col.field">
             <template #header>
               {{ col.header }}
             </template>
@@ -92,19 +81,19 @@
 </template>
 
 <script setup>
-import { ref, toRaw } from "vue";
-import { csvFileToJson } from "@/helpers";
-import { useToast } from "primevue/usetoast";
-import { useAuthStore } from "@/store/auth";
-import LinkUsersInfo from "@/components/userInfo/LinkUsersInfo.vue";
-import PvButton from "primevue/button";
-import PvColumn from "primevue/column";
-import PvDataTable from "primevue/datatable";
-import PvFileUpload from "primevue/fileupload";
-import _forEach from "lodash/forEach";
-import _startCase from "lodash/startCase";
-import _isEmpty from "lodash/isEmpty";
-import { TOAST_DEFAULT_LIFE_DURATION } from "@/constants/toasts";
+import { ref, toRaw } from 'vue';
+import { csvFileToJson } from '@/helpers';
+import { useToast } from 'primevue/usetoast';
+import { useAuthStore } from '@/store/auth';
+import LinkUsersInfo from '@/components/userInfo/LinkUsersInfo.vue';
+import PvButton from 'primevue/button';
+import PvColumn from 'primevue/column';
+import PvDataTable from 'primevue/datatable';
+import PvFileUpload from 'primevue/fileupload';
+import _forEach from 'lodash/forEach';
+import _startCase from 'lodash/startCase';
+import _isEmpty from 'lodash/isEmpty';
+import { TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
 
 const authStore = useAuthStore();
 const toast = useToast();
@@ -121,29 +110,29 @@ const showErrorTable = ref(false);
 
 const allFields = [
   {
-    field: "id",
-    header: "ID",
-    dataType: "string",
+    field: 'id',
+    header: 'ID',
+    dataType: 'string',
   },
   {
-    field: "userType",
-    header: "User Type",
-    dataType: "string",
+    field: 'userType',
+    header: 'User Type',
+    dataType: 'string',
   },
   {
-    field: "caregiverId",
-    header: "Caregiver ID",
-    dataType: "string",
+    field: 'caregiverId',
+    header: 'Caregiver ID',
+    dataType: 'string',
   },
   {
-    field: "teacherId",
-    header: "Teacher ID",
-    dataType: "string",
+    field: 'teacherId',
+    header: 'Teacher ID',
+    dataType: 'string',
   },
   {
-    field: "uid",
-    header: "UID",
-    dataType: "string",
+    field: 'uid',
+    header: 'UID',
+    dataType: 'string',
   },
 ];
 
@@ -158,9 +147,9 @@ const onFileUpload = async (event) => {
   // Check if there's any data
   if (!parsedData || parsedData.length === 0) {
     toast.add({
-      severity: "error",
-      summary: "Error: Empty File",
-      detail: "The uploaded file contains no data",
+      severity: 'error',
+      summary: 'Error: Empty File',
+      detail: 'The uploaded file contains no data',
       life: TOAST_DEFAULT_LIFE_DURATION,
     });
     return;
@@ -172,30 +161,30 @@ const onFileUpload = async (event) => {
   // Get all column names from the first row, case-insensitive check
   const firstRow = toRaw(rawUserFile.value[0]);
   const allColumns = Object.keys(firstRow).map((col) => col.toLowerCase());
-  console.log("allColumns: ", allColumns);
+  console.log('allColumns: ', allColumns);
 
   // First check if the required columns are present (case-insensitive)
-  const hasId = allColumns.includes("id");
-  const hasUserType = allColumns.includes("usertype");
-  const hasUid = allColumns.includes("uid");
+  const hasId = allColumns.includes('id');
+  const hasUserType = allColumns.includes('usertype');
+  const hasUid = allColumns.includes('uid');
 
   const missingColumns = [];
 
   if (!hasId) {
-    missingColumns.push("id");
+    missingColumns.push('id');
   }
   if (!hasUserType) {
-    missingColumns.push("userType");
+    missingColumns.push('userType');
   }
   if (!hasUid) {
-    missingColumns.push("uid");
+    missingColumns.push('uid');
   }
 
   if (missingColumns.length > 0) {
     toast.add({
-      severity: "error",
-      summary: "Error: Missing Column",
-      detail: `Missing required column(s): ${missingColumns.join(", ")}`,
+      severity: 'error',
+      summary: 'Error: Missing Column',
+      detail: `Missing required column(s): ${missingColumns.join(', ')}`,
       life: TOAST_DEFAULT_LIFE_DURATION,
     });
     return;
@@ -208,9 +197,9 @@ const onFileUpload = async (event) => {
   if (errorUsers.value.length === 0) {
     isFileUploaded.value = true;
     toast.add({
-      severity: "success",
-      summary: "Success",
-      detail: "File Successfully Uploaded",
+      severity: 'success',
+      summary: 'Success',
+      detail: 'File Successfully Uploaded',
       life: TOAST_DEFAULT_LIFE_DURATION,
     });
   }
@@ -218,92 +207,67 @@ const onFileUpload = async (event) => {
 
 const validateUsers = () => {
   errorUsers.value = [];
-  const userMap = new Map(
-    toRaw(rawUserFile.value).map((user) => [user.id.toString(), user]),
-  );
+  const userMap = new Map(toRaw(rawUserFile.value).map((user) => [user.id.toString(), user]));
 
-  const requiredFields = ["id", "usertype", "uid"];
+  const requiredFields = ['id', 'usertype', 'uid'];
 
   rawUserFile.value.forEach((user) => {
-    console.log("user: ", user);
+    console.log('user: ', user);
     const missingFields = [];
 
     // Check for required fields (case-insensitive)
     requiredFields.forEach((requiredField) => {
       // Find the actual field name in the user object (case-insensitive)
-      const actualField = Object.keys(user).find(
-        (key) => key.toLowerCase() === requiredField,
-      );
+      const actualField = Object.keys(user).find((key) => key.toLowerCase() === requiredField);
       if (!actualField || !user[actualField]) {
-        missingFields.push(
-          requiredField === "usertype" ? "userType" : requiredField,
-        );
+        missingFields.push(requiredField === 'usertype' ? 'userType' : requiredField);
       }
     });
 
     // Check parentId and teacherId if they exist (now optional)
     // Find userType field (case-insensitive)
-    const userTypeField = Object.keys(user).find(
-      (key) => key.toLowerCase() === "usertype",
-    );
+    const userTypeField = Object.keys(user).find((key) => key.toLowerCase() === 'usertype');
 
-    if (userTypeField && user[userTypeField].toLowerCase() === "child") {
+    if (userTypeField && user[userTypeField].toLowerCase() === 'child') {
       // Find parentId field (case-insensitive)
-      const caregiverIdField = Object.keys(user).find(
-        (key) => key.toLowerCase() === "caregiverid",
-      );
+      const caregiverIdField = Object.keys(user).find((key) => key.toLowerCase() === 'caregiverid');
 
       // Only validate parentId if it exists
-      if (
-        caregiverIdField &&
-        user[caregiverIdField] &&
-        user[caregiverIdField].trim() !== ""
-      ) {
+      if (caregiverIdField && user[caregiverIdField] && user[caregiverIdField].trim() !== '') {
         const caregiverIds =
-          typeof user[caregiverIdField] === "string"
-            ? user[caregiverIdField].split(",").map((id) => id.trim())
+          typeof user[caregiverIdField] === 'string'
+            ? user[caregiverIdField].split(',').map((id) => id.trim())
             : [user[caregiverIdField].toString()];
 
         caregiverIds.forEach((caregiverId) => {
-          console.log("caregiverId in loop:", caregiverId);
+          console.log('caregiverId in loop:', caregiverId);
 
           if (!userMap.has(caregiverId)) {
             missingFields.push(`Caregiver with ID ${caregiverId} not found`);
           } else {
             // Find userType field in caregiver (case-insensitive)
-            const caregiverUserTypeField = Object.keys(
-              userMap.get(caregiverId),
-            ).find((key) => key.toLowerCase() === "usertype");
+            const caregiverUserTypeField = Object.keys(userMap.get(caregiverId)).find(
+              (key) => key.toLowerCase() === 'usertype',
+            );
             const caregiverUserTypeValue = caregiverUserTypeField
               ? userMap.get(caregiverId)[caregiverUserTypeField].toLowerCase()
               : null;
 
-            if (
-              !caregiverUserTypeField ||
-              caregiverUserTypeValue !== "caregiver"
-            ) {
-              missingFields.push(
-                `User with ID ${caregiverId} is not a caregiver`,
-              );
+            if (!caregiverUserTypeField || caregiverUserTypeValue !== 'caregiver') {
+              missingFields.push(`User with ID ${caregiverId} is not a caregiver`);
             }
           }
         });
       }
 
       // Find teacherId field (case-insensitive)
-      const teacherIdField = Object.keys(user).find(
-        (key) => key.toLowerCase() === "teacherid",
-      );
+      const teacherIdField = Object.keys(user).find((key) => key.toLowerCase() === 'teacherid');
 
       // Only validate teacherId if it exists
-      if (
-        teacherIdField &&
-        user[teacherIdField] &&
-        user[teacherIdField].trim() !== ""
-      ) {
+      if (teacherIdField && user[teacherIdField] && user[teacherIdField].trim() !== '') {
         const teacherIds =
-          typeof user[teacherIdField] === "string"
-            ? user[teacherIdField].split(",").map((id) => id.trim())
+          typeof user[teacherIdField] === 'string'
+            ? user[teacherIdField].split(',').map((id) => id.trim())
             : [user[teacherIdField].toString()];
 
         teacherIds.forEach((teacherId) => {
@@ -311,15 +275,11 @@ const validateUsers = () => {
             missingFields.push(`Teacher with ID ${teacherId} not found`);
           } else {
             // Find userType field in teacher (case-insensitive)
-            const teacherUserTypeField = Object.keys(
-              userMap.get(teacherId),
-            ).find((key) => key.toLowerCase() === "usertype");
+            const teacherUserTypeField = Object.keys(userMap.get(teacherId)).find(
+              (key) => key.toLowerCase() === 'usertype',
+            );
 
-            if (
-              !teacherUserTypeField ||
-              userMap.get(teacherId)[teacherUserTypeField].toLowerCase() !==
-                "teacher"
-            ) {
+            if (!teacherUserTypeField || userMap.get(teacherId)[teacherUserTypeField].toLowerCase() !== 'teacher') {
               missingFields.push(`User with ID ${teacherId} is not a teacher`);
             }
           }
@@ -328,15 +288,15 @@ const validateUsers = () => {
     }
 
     if (missingFields.length > 0) {
-      addErrorUser(user, `Missing Field(s): ${missingFields.join(", ")}`);
+      addErrorUser(user, `Missing Field(s): ${missingFields.join(', ')}`);
     }
   });
 
   if (errorUsers.value.length > 0) {
-    console.log("errorUsers: ", errorUsers.value);
+    console.log('errorUsers: ', errorUsers.value);
     toast.add({
-      severity: "error",
-      summary: "Missing Fields. See below for details.",
+      severity: 'error',
+      summary: 'Missing Fields. See below for details.',
       life: TOAST_DEFAULT_LIFE_DURATION,
     });
   }
@@ -350,55 +310,31 @@ const submitUsers = async () => {
       const normalizedUser = {};
 
       // Process required fields
-      const idField = Object.keys(user).find(
-        (key) => key.toLowerCase() === "id",
-      );
-      const userTypeField = Object.keys(user).find(
-        (key) => key.toLowerCase() === "usertype",
-      );
-      const uidField = Object.keys(user).find(
-        (key) => key.toLowerCase() === "uid",
-      );
+      const idField = Object.keys(user).find((key) => key.toLowerCase() === 'id');
+      const userTypeField = Object.keys(user).find((key) => key.toLowerCase() === 'usertype');
+      const uidField = Object.keys(user).find((key) => key.toLowerCase() === 'uid');
 
       if (idField) normalizedUser.id = user[idField];
       if (userTypeField) {
         const userTypeValue = user[userTypeField];
         // Change 'caregiver' to 'parent' before sending to backend
-        normalizedUser.userType =
-          userTypeValue.toLowerCase() === "caregiver"
-            ? "parent"
-            : userTypeValue;
+        normalizedUser.userType = userTypeValue.toLowerCase() === 'caregiver' ? 'parent' : userTypeValue;
       }
       if (uidField) normalizedUser.uid = user[uidField];
 
       // Process optional fields
-      const caregiverIdField = Object.keys(user).find(
-        (key) => key.toLowerCase() === "caregiverid",
-      );
-      const teacherIdField = Object.keys(user).find(
-        (key) => key.toLowerCase() === "teacherid",
-      );
+      const caregiverIdField = Object.keys(user).find((key) => key.toLowerCase() === 'caregiverid');
+      const teacherIdField = Object.keys(user).find((key) => key.toLowerCase() === 'teacherid');
 
       // Rename caregiverId to parentId
-      if (caregiverIdField && user[caregiverIdField])
-        normalizedUser.parentId = user[caregiverIdField];
-      if (teacherIdField && user[teacherIdField])
-        normalizedUser.teacherId = user[teacherIdField];
+      if (caregiverIdField && user[caregiverIdField]) normalizedUser.parentId = user[caregiverIdField];
+      if (teacherIdField && user[teacherIdField]) normalizedUser.teacherId = user[teacherIdField];
 
       // Include any other fields that might be in the original data
       Object.keys(user).forEach((key) => {
         const lowerCaseKey = key.toLowerCase();
         // Ensure original fields (case-insensitive) and already processed fields are not copied again
-        if (
-          ![
-            "id",
-            "usertype",
-            "uid",
-            "caregiverid",
-            "teacherid",
-            "parentid",
-          ].includes(lowerCaseKey)
-        ) {
+        if (!['id', 'usertype', 'uid', 'caregiverid', 'teacherid', 'parentid'].includes(lowerCaseKey)) {
           normalizedUser[key] = user[key];
         }
       });
@@ -410,16 +346,16 @@ const submitUsers = async () => {
     isFileUploaded.value = false;
 
     toast.add({
-      severity: "success",
-      summary: "Success",
-      detail: "Users linked successfully",
+      severity: 'success',
+      summary: 'Success',
+      detail: 'Users linked successfully',
       life: TOAST_DEFAULT_LIFE_DURATION,
     });
   } catch (error) {
     console.error(error);
     toast.add({
-      severity: "error",
-      summary: "Error",
+      severity: 'error',
+      summary: 'Error',
       detail: `Failed to link users: ${error.message}. Please try again.`,
       life: TOAST_DEFAULT_LIFE_DURATION,
     });
@@ -433,8 +369,8 @@ function generateColumns(rawJson) {
   const columnValues = Object.keys(rawJson);
   _forEach(columnValues, (col) => {
     let dataType = typeof rawJson[col];
-    if (dataType === "object") {
-      if (rawJson[col] instanceof Date) dataType = "date";
+    if (dataType === 'object') {
+      if (rawJson[col] instanceof Date) dataType = 'date';
     }
     columns.push({
       field: col,
@@ -451,9 +387,9 @@ function addErrorUser(user, error) {
   if (_isEmpty(errorUserColumns.value)) {
     errorUserColumns.value = generateColumns(user);
     errorUserColumns.value.unshift({
-      dataType: "string",
-      field: "error",
-      header: "Cause of Error",
+      dataType: 'string',
+      field: 'error',
+      header: 'Cause of Error',
     });
     showErrorTable.value = true;
   }

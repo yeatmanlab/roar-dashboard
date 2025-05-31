@@ -1,9 +1,9 @@
-import { defineStore } from "pinia";
-import { parse, stringify } from "zipson";
+import { defineStore } from 'pinia';
+import { parse, stringify } from 'zipson';
 
 export const useSurveyStore = () => {
   return defineStore({
-    id: "surveyStore",
+    id: 'surveyStore',
     state: () => {
       return {
         requireRefresh: false,

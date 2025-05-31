@@ -3,13 +3,8 @@
   <h2 v-else>Add a Password</h2>
   <div class="flex flex-column">
     <label>New password</label>
-    <PvInputText
-      v-model="v$.password.$model"
-      :class="{ 'p-invalid': v$.password.$invalid && submitted }"
-    />
-    <small v-if="v$.password.$invalid && submitted" class="p-error"
-      >Password must be at least 6 characters long.</small
-    >
+    <PvInputText v-model="v$.password.$model" :class="{ 'p-invalid': v$.password.$invalid && submitted }" />
+    <small v-if="v$.password.$invalid && submitted" class="p-error">Password must be at least 6 characters long.</small>
   </div>
   <div class="flex flex-column mt-3">
     <label>Confirm password</label>
@@ -17,9 +12,7 @@
       v-model="v$.confirmPassword.$model"
       :class="{ 'p-invalid': v$.confirmPassword.$invalid && submitted }"
     />
-    <small v-if="v$.confirmPassword.$invalid && submitted" class="p-error"
-      >Passwords do not match.</small
-    >
+    <small v-if="v$.confirmPassword.$invalid && submitted" class="p-error">Passwords do not match.</small>
   </div>
   <div class="flex mt-3">
     <PvButton
@@ -31,14 +24,14 @@
   </div>
 </template>
 <script setup>
-import { ref, reactive, computed, onMounted } from "vue";
-import { useVuelidate } from "@vuelidate/core";
-import { useAuthStore } from "@/store/auth";
-import { useToast } from "primevue/usetoast";
-import PvButton from "primevue/button";
-import PvInputText from "primevue/inputtext";
-import { storeToRefs } from "pinia";
-import { required, sameAs, minLength } from "@vuelidate/validators";
+import { ref, reactive, computed, onMounted } from 'vue';
+import { useVuelidate } from '@vuelidate/core';
+import { useAuthStore } from '@/store/auth';
+import { useToast } from 'primevue/usetoast';
+import PvButton from 'primevue/button';
+import PvInputText from 'primevue/inputtext';
+import { storeToRefs } from 'pinia';
+import { required, sameAs, minLength } from '@vuelidate/validators';
 // +-------------------+
 // | Vuelidate / Setup |
 // +-------------------+
@@ -54,8 +47,8 @@ const rules = {
   },
 };
 const state = reactive({
-  password: "",
-  confirmPassword: "",
+  password: '',
+  confirmPassword: '',
 });
 const v$ = useVuelidate(rules, state);
 const submitted = ref(false);
@@ -76,7 +69,7 @@ const providerIds = computed(() => {
 });
 
 const hasPassword = computed(() => {
-  return providerIds.value.includes("password");
+  return providerIds.value.includes('password');
 });
 
 async function updatePassword() {
@@ -88,20 +81,20 @@ async function updatePassword() {
       .then(() => {
         submitted.value = false;
         isSubmitting.value = false;
-        state.password = "";
-        state.confirmPassword = "";
+        state.password = '';
+        state.confirmPassword = '';
         toast.add({
-          severity: "success",
-          summary: "Updated",
-          detail: "Password Updated!",
+          severity: 'success',
+          summary: 'Updated',
+          detail: 'Password Updated!',
           life: 3000,
         });
       })
       .catch(() => {
         toast.add({
-          severity: "error",
-          summary: "Error",
-          detail: "Unable to update password",
+          severity: 'error',
+          summary: 'Error',
+          detail: 'Unable to update password',
         });
       });
   }

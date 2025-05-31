@@ -1,12 +1,12 @@
-import { ref, onUnmounted } from "vue";
-import { storeToRefs } from "pinia";
-import { useRouter } from "vue-router";
-import { useQueryClient } from "@tanstack/vue-query";
-import { StatusCodes } from "http-status-codes";
-import { useAuthStore } from "@/store/auth.js";
-import useUserDataQuery from "@/composables/queries/useUserDataQuery";
-import { AUTH_USER_TYPE } from "@/constants/auth";
-import { APP_ROUTES } from "@/constants/routes";
+import { ref, onUnmounted } from 'vue';
+import { storeToRefs } from 'pinia';
+import { useRouter } from 'vue-router';
+import { useQueryClient } from '@tanstack/vue-query';
+import { StatusCodes } from 'http-status-codes';
+import { useAuthStore } from '@/store/auth.js';
+import useUserDataQuery from '@/composables/queries/useUserDataQuery';
+import { AUTH_USER_TYPE } from '@/constants/auth';
+import { APP_ROUTES } from '@/constants/routes';
 
 const POLLING_INTERVAL = 600;
 
@@ -32,11 +32,7 @@ const useSSOAccountReadinessVerification = () => {
   const authStore = useAuthStore();
   const { roarUid } = storeToRefs(authStore);
 
-  const {
-    data: userData,
-    refetch: refetchUserData,
-    isFetchedAfterMount,
-  } = useUserDataQuery();
+  const { data: userData, refetch: refetchUserData, isFetchedAfterMount } = useUserDataQuery();
 
   /**
    * Verify account readiness after SSO authentication.
@@ -57,9 +53,7 @@ const useSSOAccountReadinessVerification = () => {
       const userType = userData?.value?.userType;
 
       if (!userType) {
-        console.log(
-          `[SSO] User type missing for user ${roarUid.value}. Attempt #${retryCount.value}, retrying...`,
-        );
+        console.log(`[SSO] User type missing for user ${roarUid.value}. Attempt #${retryCount.value}, retrying...`);
         retryCount.value++;
         return;
       }
@@ -72,9 +66,7 @@ const useSSOAccountReadinessVerification = () => {
         return;
       }
 
-      console.log(
-        `[SSO] User ${roarUid.value} successfully identified as ${userType} user. Routing to home page...`,
-      );
+      console.log(`[SSO] User ${roarUid.value} successfully identified as ${userType} user. Routing to home page...`);
 
       // Stop the polling mechanism.
       clearInterval(userDataCheckInterval);
@@ -100,10 +92,7 @@ const useSSOAccountReadinessVerification = () => {
    * @returns {void}
    */
   const startPolling = () => {
-    userDataCheckInterval = setInterval(
-      verifyAccountReadiness,
-      POLLING_INTERVAL,
-    );
+    userDataCheckInterval = setInterval(verifyAccountReadiness, POLLING_INTERVAL);
   };
 
   /**

@@ -1,4 +1,4 @@
-import { createApp } from "vue";
+import { createApp } from 'vue';
 
 /**
  * Test utility function to setup and mount a Vue component for testing composables.
@@ -23,6 +23,6 @@ export function withSetup(composable, options = []) {
     },
   });
 
-  app.mount(document.createElement("div"));
+  app.mount(document.createElement('div'));
   return [result, app];
 }

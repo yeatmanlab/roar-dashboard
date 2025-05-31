@@ -1,13 +1,13 @@
-import { RoarFirekit } from "@levante-framework/firekit";
-import levanteFirebaseConfig from "./config/firebaseLevante";
-import { isLevante } from "./helpers";
+import { RoarFirekit } from '@levante-framework/firekit';
+import levanteFirebaseConfig from './config/firebaseLevante';
+import { isLevante } from './helpers';
 
 const roarConfig = levanteFirebaseConfig;
 
 export async function initNewFirekit(): Promise<RoarFirekit> {
   const firekit = new RoarFirekit({
     roarConfig,
-    authPersistence: "session",
+    authPersistence: 'session',
     markRawConfig: {
       auth: false,
       db: false,

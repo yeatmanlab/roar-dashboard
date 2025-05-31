@@ -8,9 +8,7 @@
           :disabled="
             sequential &&
             ((index > 0 && !games[index - 1].completedOn) ||
-              (allGamesComplete &&
-                currentGameId !== game.taskId &&
-                !game.completedOn))
+              (allGamesComplete && currentGameId !== game.taskId && !game.completedOn))
           "
           :value="String(index)"
           :class="[
@@ -32,47 +30,27 @@
             data-game-status="current"
           />
           <!--Locked Game-->
-          <i
-            v-if="sequential"
-            class="pi pi-lock mr-2"
-            data-game-status="incomplete"
-          />
+          <i v-if="sequential" class="pi pi-lock mr-2" data-game-status="incomplete" />
           <span
             class="tabview-nav-link-label"
-            :data-game-status="`${
-              isTaskComplete(game.completedOn, game.taskId)
-                ? 'complete'
-                : 'incomplete'
-            }`"
+            :data-game-status="`${isTaskComplete(game.completedOn, game.taskId) ? 'complete' : 'incomplete'}`"
             >{{ getTaskName(game.taskId, game.taskData.name) }}</span
           >
         </PvTab>
       </PvTabList>
-      <PvTabPanels
-        style="
-          width: 80vw;
-          min-width: 800px;
-          max-width: 1200px;
-          margin-top: 0.5rem;
-          padding: 0;
-        "
-      >
+      <PvTabPanels style="width: 80vw; min-width: 800px; max-width: 1200px; margin-top: 0.5rem; padding: 0">
         <PvTabPanel
           v-for="(game, index) in games"
           :key="game.taskId"
           :disabled="
             sequential &&
             ((index > 0 && !games[index - 1].completedOn) ||
-              (allGamesComplete &&
-                currentGameId !== game.taskId &&
-                !game.completedOn))
+              (allGamesComplete && currentGameId !== game.taskId && !game.completedOn))
           "
           :value="String(index)"
           class="p-0"
         >
-          <div
-            class="roar-tabview-game pointer flex flex-row p-5 surface-100 w-full"
-          >
+          <div class="roar-tabview-game pointer flex flex-row p-5 surface-100 w-full">
             <div class="roar-game-content flex flex-column" style="width: 65%">
               <div class="flex flex-column h-full">
                 <div class="roar-game-title font-bold">
@@ -80,29 +58,23 @@
                 </div>
                 <div class="roar-game-description mr-2 flex-grow-1">
                   <p>
-                    {{
-                      getTaskDescription(game.taskId, game.taskData.description)
-                    }}
+                    {{ getTaskDescription(game.taskId, game.taskData.description) }}
                   </p>
                 </div>
 
                 <div v-if="game.taskId === 'survey'" class="mt-4 mb-4">
                   <div class="flex align-items-center mb-2">
                     <span class="mr-2 w-4"
-                      ><b>{{ $t("gameTabs.surveyProgressGeneral") }} </b> -
+                      ><b>{{ $t('gameTabs.surveyProgressGeneral') }} </b> -
                       {{
-                        props.userData.userType === "teacher" ||
-                        props.userData.userType === "parent"
-                          ? props.userData.userType === "teacher"
-                            ? $t("gameTabs.surveyProgressGeneralTeacher")
-                            : $t("gameTabs.surveyProgressGeneralParent")
-                          : ""
+                        props.userData.userType === 'teacher' || props.userData.userType === 'parent'
+                          ? props.userData.userType === 'teacher'
+                            ? $t('gameTabs.surveyProgressGeneralTeacher')
+                            : $t('gameTabs.surveyProgressGeneralParent')
+                          : ''
                       }}
                     </span>
-                    <PvProgressBar
-                      :value="getGeneralSurveyProgress"
-                      :class="getGeneralSurveyProgressClass"
-                    />
+                    <PvProgressBar :value="getGeneralSurveyProgress" :class="getGeneralSurveyProgressClass" />
                   </div>
 
                   <div v-if="props.userData.userType === 'parent'">
@@ -112,23 +84,14 @@
                       class="flex flex-wrap align-items-center mb-2"
                     >
                       <span class="mr-2 w-full sm:w-4 mb-1 sm:mb-0">
-                        <b
-                          >{{ $t("gameTabs.surveyProgressSpecificParent") }} -
-                        </b>
-                        {{ $t("gameTabs.surveyProgressSpecificParentMonth") }}:
-                        {{
-                          surveyStore.specificSurveyRelationData[i]?.birthMonth
-                        }}
+                        <b>{{ $t('gameTabs.surveyProgressSpecificParent') }} - </b>
+                        {{ $t('gameTabs.surveyProgressSpecificParentMonth') }}:
+                        {{ surveyStore.specificSurveyRelationData[i]?.birthMonth }}
                         <br class="sm:hidden" />
-                        {{ $t("gameTabs.surveyProgressSpecificParentYear") }}:
-                        {{
-                          surveyStore.specificSurveyRelationData[i]?.birthYear
-                        }}
+                        {{ $t('gameTabs.surveyProgressSpecificParentYear') }}:
+                        {{ surveyStore.specificSurveyRelationData[i]?.birthYear }}
                       </span>
-                      <PvProgressBar
-                        :value="getSpecificSurveyProgress(i)"
-                        :class="getSpecificSurveyProgressClass"
-                      />
+                      <PvProgressBar :value="getSpecificSurveyProgress(i)" :class="getSpecificSurveyProgressClass" />
                     </div>
                   </div>
 
@@ -142,10 +105,7 @@
                         <b>Classroom - </b>
                         {{ surveyStore.specificSurveyRelationData[i]?.name }}
                       </span>
-                      <PvProgressBar
-                        :value="getSpecificSurveyProgress(i)"
-                        :class="getSpecificSurveyProgressClass"
-                      />
+                      <PvProgressBar :value="getSpecificSurveyProgress(i)" :class="getSpecificSurveyProgressClass" />
                     </div>
                   </div>
                 </div>
@@ -162,17 +122,11 @@
                     v-if="!isTaskComplete(game.completedOn, game.taskId)"
                     class="roar-game-footer p-3 hover:surface-200 no-underline text-900"
                     :to="{
-                      path: getRoutePath(
-                        game.taskId,
-                        game.taskData?.variantURL,
-                        game.taskData?.taskURL,
-                      ),
+                      path: getRoutePath(game.taskId, game.taskData?.variantURL, game.taskData?.taskURL),
                     }"
                     @click="routeExternalTask(game)"
                   >
-                    <div
-                      class="flex align-items-center justify-content-center text-xl font-bold mt-2"
-                    >
+                    <div class="flex align-items-center justify-content-center text-xl font-bold mt-2">
                       <i class="pi">
                         <svg
                           width="24"
@@ -189,17 +143,14 @@
                           />
                         </svg>
                       </i>
-                      <span>{{ $t("gameTabs.clickToStart") }}</span>
+                      <span>{{ $t('gameTabs.clickToStart') }}</span>
                     </div>
                   </router-link>
                   <div v-else>
                     <div
                       class="flex align-items-center justify-content-center text-green-500 roar-game-footer p-3 no-underline text-900 text-xl font-bold"
                     >
-                      <i
-                        v-if="game.completedOn"
-                        class="pi pi-check-circle mr-3"
-                      />
+                      <i v-if="game.completedOn" class="pi pi-check-circle mr-3" />
                       <span>{{ taskCompletedMessage }} </span>
                     </div>
                   </div>
@@ -207,10 +158,7 @@
               </div>
             </div>
             <div class="roar-game-image" style="width: 35%">
-              <div
-                v-if="game.taskData?.tutorialVideo"
-                class="video-player-wrapper"
-              >
+              <div v-if="game.taskData?.tutorialVideo" class="video-player-wrapper">
                 <VideoPlayer
                   :options="returnVideoOptions(game.taskData?.tutorialVideo)"
                   :on-video-end="updateVideoCompleted"
@@ -239,28 +187,28 @@
   </div>
 </template>
 <script setup lang="ts">
-import { computed } from "vue";
-import { useI18n } from "vue-i18n";
-import { storeToRefs } from "pinia";
-import _get from "lodash/get";
-import _find from "lodash/find";
-import _findIndex from "lodash/findIndex";
-import { camelize, getAgeData } from "@bdelab/roar-utils";
-import PvTabPanel from "primevue/tabpanel";
-import PvTabs from "primevue/tabs";
-import PvTabList from "primevue/tablist";
-import PvTab from "primevue/tab";
-import PvTabPanels from "primevue/tabpanels";
-import PvTag from "primevue/tag";
-import { useAuthStore } from "@/store/auth";
-import { useGameStore } from "@/store/game";
-import { useSurveyStore } from "@/store/survey";
-import VideoPlayer from "@/components/VideoPlayer.vue";
-import { isLevante } from "@/helpers";
-import _capitalize from "lodash/capitalize";
-import { useQueryClient } from "@tanstack/vue-query";
-import { LEVANTE_SURVEY_RESPONSES_KEY } from "@/constants/bucket";
-import PvProgressBar from "primevue/progressbar";
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { storeToRefs } from 'pinia';
+import _get from 'lodash/get';
+import _find from 'lodash/find';
+import _findIndex from 'lodash/findIndex';
+import { camelize, getAgeData } from '@bdelab/roar-utils';
+import PvTabPanel from 'primevue/tabpanel';
+import PvTabs from 'primevue/tabs';
+import PvTabList from 'primevue/tablist';
+import PvTab from 'primevue/tab';
+import PvTabPanels from 'primevue/tabpanels';
+import PvTag from 'primevue/tag';
+import { useAuthStore } from '@/store/auth';
+import { useGameStore } from '@/store/game';
+import { useSurveyStore } from '@/store/survey';
+import VideoPlayer from '@/components/VideoPlayer.vue';
+import { isLevante } from '@/helpers';
+import _capitalize from 'lodash/capitalize';
+import { useQueryClient } from '@tanstack/vue-query';
+import { LEVANTE_SURVEY_RESPONSES_KEY } from '@/constants/bucket';
+import PvProgressBar from 'primevue/progressbar';
 
 interface TaskData {
   name: string;
@@ -318,59 +266,42 @@ const authStore = useAuthStore();
 const gameStore = useGameStore();
 const surveyStore = useSurveyStore();
 const queryClient = useQueryClient();
-const surveyData = queryClient.getQueryData([
-  "surveyResponses",
-  props.userData.id,
-]);
+const surveyData = queryClient.getQueryData(['surveyResponses', props.userData.id]);
 
 const getGeneralSurveyProgress = computed((): number => {
   if (surveyStore.isGeneralSurveyComplete) return 100;
   if (!surveyStore.survey) return 0;
-  return Math.round(
-    ((surveyStore.survey.currentPageNo - 1) /
-      (surveyStore.numGeneralPages - 1)) *
-      100,
-  );
+  return Math.round(((surveyStore.survey.currentPageNo - 1) / (surveyStore.numGeneralPages - 1)) * 100);
 });
 
-
 const getGeneralSurveyProgressClass = computed(() => {
-  if (
-    getGeneralSurveyProgress.value > 0 &&
-    getGeneralSurveyProgress.value < 100
-  ) {
-    return "p-progressbar--started";
+  if (getGeneralSurveyProgress.value > 0 && getGeneralSurveyProgress.value < 100) {
+    return 'p-progressbar--started';
   }
   if (getGeneralSurveyProgress.value === 100) {
-    return "p-progressbar--completed";
+    return 'p-progressbar--completed';
   }
-  return "p-progressbar--empty";
+  return 'p-progressbar--empty';
 });
 
 const getSpecificSurveyProgressClass = computed(() => {
-  if (
-    getSpecificSurveyProgress.value > 0 &&
-    getSpecificSurveyProgress.value < 100
-  ) {
-    return "p-progressbar--started";
+  if (getSpecificSurveyProgress.value > 0 && getSpecificSurveyProgress.value < 100) {
+    return 'p-progressbar--started';
   }
   if (getSpecificSurveyProgress.value === 100) {
-    return "p-progressbar--completed";
+    return 'p-progressbar--completed';
   }
-  return "p-progressbar--empty";
+  return 'p-progressbar--empty';
 });
 
 const getSpecificSurveyProgress = computed(() => (loopIndex: number): number => {
   if (surveyStore.isSpecificSurveyComplete) return 100;
 
   const localStorageKey = `${LEVANTE_SURVEY_RESPONSES_KEY}-${props.userData.id}`;
-  const localStorageData = JSON.parse(
-    localStorage.getItem(localStorageKey) || "{}",
-  );
+  const localStorageData = JSON.parse(localStorage.getItem(localStorageKey) || '{}');
 
   if (localStorageData && surveyStore.specificSurveyRelationData[loopIndex]) {
-    const specificIdFromServer =
-      surveyStore.specificSurveyRelationData[loopIndex].id;
+    const specificIdFromServer = surveyStore.specificSurveyRelationData[loopIndex].id;
 
     if (specificIdFromServer === localStorageData.specificId) {
       if (localStorageData.isComplete) return 100;
@@ -385,15 +316,8 @@ const getSpecificSurveyProgress = computed(() => (loopIndex: number): number => 
   // If data is not found in localStorage, use surveyData from server
   if (!surveyData || !Array.isArray(surveyData)) return 0;
 
-  const currentSurvey = (surveyData as any[]).find(
-    (doc) => doc.administrationId === selectedAdmin.value.id,
-  );
-  if (
-    !currentSurvey ||
-    !currentSurvey.specific ||
-    !currentSurvey.specific[loopIndex]
-  )
-    return 0;
+  const currentSurvey = (surveyData as any[]).find((doc) => doc.administrationId === selectedAdmin.value.id);
+  if (!currentSurvey || !currentSurvey.specific || !currentSurvey.specific[loopIndex]) return 0;
 
   // Specific survey is complete
   const specificSurvey = currentSurvey.specific[loopIndex];
@@ -409,22 +333,22 @@ const getSpecificSurveyProgress = computed(() => (loopIndex: number): number => 
 const { t, locale } = useI18n();
 
 const levanteTasks: string[] = [
-  "intro",
-  "heartsAndFlowers",
-  "egmaMath",
-  "matrixReasoning",
-  "memoryGame",
-  "mentalRotation",
-  "sameDifferentSelection",
-  "theoryOfMind",
-  "trog",
-  "survey",
-  "mefs",
-  "roarInference",
+  'intro',
+  'heartsAndFlowers',
+  'egmaMath',
+  'matrixReasoning',
+  'memoryGame',
+  'mentalRotation',
+  'sameDifferentSelection',
+  'theoryOfMind',
+  'trog',
+  'survey',
+  'mefs',
+  'roarInference',
 ];
 
 const levantifiedRoarTasks: string[] = [
-  "vocab",
+  'vocab',
   // Not yet implemented
   // 'swr',
   // 'swr-es',
@@ -438,17 +362,12 @@ const getTaskName = (taskId: string, taskName: string): string => {
   // Translate Levante task names. The task name is not the same as the taskId.
   const taskIdLowercased = taskId.toLowerCase();
 
-  if (taskIdLowercased === "survey") {
-    if (
-      props.userData.userType === "teacher" ||
-      props.userData.userType === "parent"
-    ) {
-      return t(
-        `gameTabs.surveyName${_capitalize(props.userData.userType)}Part1`,
-      );
+  if (taskIdLowercased === 'survey') {
+    if (props.userData.userType === 'teacher' || props.userData.userType === 'parent') {
+      return t(`gameTabs.surveyName${_capitalize(props.userData.userType)}Part1`);
     } else {
       // child
-      return t(`gameTabs.surveyNameChild`);
+      return t('gameTabs.surveyNameChild');
     }
   }
 
@@ -462,19 +381,12 @@ const getTaskDescription = (taskId: string, taskDescription: string): string => 
   // Translate Levante task descriptions if not in English
   const taskIdLowercased = taskId.toLowerCase();
 
-  if (taskIdLowercased === "survey") {
-    if (
-      props.userData.userType === "teacher" ||
-      props.userData.userType === "parent"
-    ) {
-      return t(
-        `gameTabs.surveyDescription${_capitalize(
-          props.userData.userType,
-        )}Part1`,
-      );
+  if (taskIdLowercased === 'survey') {
+    if (props.userData.userType === 'teacher' || props.userData.userType === 'parent') {
+      return t(`gameTabs.surveyDescription${_capitalize(props.userData.userType)}Part1`);
     } else {
       // child
-      return t(`gameTabs.surveyDescriptionChild`);
+      return t('gameTabs.surveyDescriptionChild');
     }
   }
 
@@ -486,47 +398,39 @@ const getTaskDescription = (taskId: string, taskDescription: string): string => 
 
 const getRoutePath = (taskId: string, variantURL?: string, taskURL?: string): string => {
   // do not navigate if the task is external
-  if (variantURL || taskURL) return "/";
+  if (variantURL || taskURL) return '/';
 
   const lowerCasedAndCamelizedTaskId = camelize(taskId.toLowerCase());
 
-  if (lowerCasedAndCamelizedTaskId === "survey") {
-    return "/survey";
+  if (lowerCasedAndCamelizedTaskId === 'survey') {
+    return '/survey';
   } else if (
     levanteTasks.includes(lowerCasedAndCamelizedTaskId) ||
     (isLevante && levantifiedRoarTasks.includes(lowerCasedAndCamelizedTaskId))
   ) {
-    return "/game/core-tasks/" + taskId;
+    return '/game/core-tasks/' + taskId;
   } else {
-    return "/game/" + taskId;
+    return '/game/' + taskId;
   }
 };
 
 const taskCompletedMessage = computed((): string => {
-  return t("gameTabs.taskCompleted");
+  return t('gameTabs.taskCompleted');
 });
 
 const updateVideoStarted = async (taskId: string): Promise<void> => {
   try {
-    await (authStore.roarfirekit as any).updateVideoMetadata(
-      selectedAdmin.value.id,
-      taskId,
-      "started",
-    );
+    await (authStore.roarfirekit as any).updateVideoMetadata(selectedAdmin.value.id, taskId, 'started');
   } catch (e) {
-    console.error("Error while updating video completion", e);
+    console.error('Error while updating video completion', e);
   }
 };
 
 const updateVideoCompleted = async (taskId: string): Promise<void> => {
   try {
-    await (authStore.roarfirekit as any).updateVideoMetadata(
-      selectedAdmin.value.id,
-      taskId,
-      "completed",
-    );
+    await (authStore.roarfirekit as any).updateVideoMetadata(selectedAdmin.value.id, taskId, 'completed');
   } catch (e) {
-    console.error("Error while updating video completion", e);
+    console.error('Error while updating video completion', e);
   }
 };
 
@@ -535,7 +439,7 @@ const currentGameId = computed((): string | undefined => {
     _find(props.games, (game) => {
       return game.completedOn === undefined;
     }),
-    "taskId",
+    'taskId',
   );
 });
 
@@ -545,9 +449,7 @@ const gameIndex = computed((): number =>
   }),
 );
 
-const displayGameIndex = computed((): number =>
-  gameIndex.value === -1 ? 0 : gameIndex.value,
-);
+const displayGameIndex = computed((): number => (gameIndex.value === -1 ? 0 : gameIndex.value));
 
 const allGamesComplete = computed((): boolean => gameIndex.value === -1);
 
@@ -565,24 +467,15 @@ async function routeExternalTask(game: Game): Promise<void> {
     return;
   }
 
-  if (game.taskData.name.toLowerCase() === "mefs") {
-    const ageInMonths = getAgeData(
-      props.userData.birthMonth,
-      props.userData.birthYear,
-    ).ageMonths;
+  if (game.taskData.name.toLowerCase() === 'mefs') {
+    const ageInMonths = getAgeData(props.userData.birthMonth, props.userData.birthYear).ageMonths;
     url += `participantID=${props.userData.id}&participantAgeInMonths=${ageInMonths}&lng=${locale.value}`;
-    window.open(url, "_blank")?.focus();
+    window.open(url, '_blank')?.focus();
     await (authStore as any).completeAssessment(selectedAdmin.value.id, game.taskId);
   } else {
     url += `&participant=${props.userData.assessmentPid}${
-      props.userData.schools?.current?.length
-        ? "&schoolId=" + props.userData.schools.current.join('"%2C"')
-        : ""
-    }${
-      props.userData.classes?.current?.length
-        ? "&classId=" + props.userData.classes.current.join('"%2C"')
-        : ""
-    }`;
+      props.userData.schools?.current?.length ? '&schoolId=' + props.userData.schools.current.join('"%2C"') : ''
+    }${props.userData.classes?.current?.length ? '&classId=' + props.userData.classes.current.join('"%2C"') : ''}`;
 
     await (authStore as any).completeAssessment(selectedAdmin.value.id, game.taskId);
     window.location.href = url;
@@ -598,24 +491,18 @@ const returnVideoOptions = (videoURL: string): VideoOptions => {
     sources: [
       {
         src: videoURL,
-        type: "video/mp4",
+        type: 'video/mp4',
       },
     ],
   };
 };
 
 const isTaskComplete = (gameCompletedTime: string | Date | undefined, taskId: string): boolean => {
-  if (taskId === "survey") {
-    if (
-      props.userData.userType === "teacher" ||
-      props.userData.userType === "parent"
-    ) {
+  if (taskId === 'survey') {
+    if (props.userData.userType === 'teacher' || props.userData.userType === 'parent') {
       if (!surveyStore.isGeneralSurveyComplete) {
         return false;
-      } else if (
-        surveyStore.specificSurveyRelationData.length > 0 &&
-        !surveyStore.isSpecificSurveyComplete
-      ) {
+      } else if (surveyStore.specificSurveyRelationData.length > 0 && !surveyStore.isSpecificSurveyComplete) {
         return false;
       } else {
         return true;

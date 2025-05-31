@@ -14,9 +14,7 @@
             @click="checkForCapsLock"
           />
         </div>
-        <small v-if="invalid" class="p-error">{{
-          $t("authSignIn.incorrectEmailOrPassword")
-        }}</small>
+        <small v-if="invalid" class="p-error">{{ $t('authSignIn.incorrectEmailOrPassword') }}</small>
       </div>
       <div class="field mt-4 mb-5">
         <div>
@@ -46,12 +44,9 @@
                 allowPassword = false;
                 state.usePassword = false;
               "
-              >{{ $t("authSignIn.signInWithEmailLinkInstead") }}</small
+              >{{ $t('authSignIn.signInWithEmailLinkInstead') }}</small
             >
-            <small
-              class="text-link sign-in-method-link"
-              data-cy="sign-in-with-password"
-              @click="handleForgotPassword"
+            <small class="text-link sign-in-method-link" data-cy="sign-in-with-password" @click="handleForgotPassword"
               >Forgot password?</small
             >
           </div>
@@ -71,17 +66,17 @@
             @click="checkForCapsLock"
           >
             <template #header>
-              <h6>{{ $t("authSignIn.pickPassword") }}</h6>
+              <h6>{{ $t('authSignIn.pickPassword') }}</h6>
             </template>
             <template #footer="sp">
               {{ sp.level }}
               <PvDivider />
-              <p class="mt-2">{{ $t("authSignIn.suggestions") }}</p>
+              <p class="mt-2">{{ $t('authSignIn.suggestions') }}</p>
               <ul class="pl-2 ml-2 mt-0" style="line-height: 1.5">
-                <li>{{ $t("authSignIn.atLeastOneLowercase") }}</li>
-                <li>{{ $t("authSignIn.atLeastOneUppercase") }}</li>
-                <li>{{ $t("authSignIn.atLeastOneNumeric") }}</li>
-                <li>{{ $t("authSignIn.minimumCharacters") }}</li>
+                <li>{{ $t('authSignIn.atLeastOneLowercase') }}</li>
+                <li>{{ $t('authSignIn.atLeastOneUppercase') }}</li>
+                <li>{{ $t('authSignIn.atLeastOneNumeric') }}</li>
+                <li>{{ $t('authSignIn.minimumCharacters') }}</li>
               </ul>
             </template>
           </PvPassword>
@@ -100,7 +95,7 @@
                 allowPassword = true;
                 state.usePassword = true;
               "
-              >{{ $t("authSignIn.signInWithPasswordInstead") }}</small
+              >{{ $t('authSignIn.signInWithPasswordInstead') }}</small
             >
           </div>
           <!-- Email is entered, however it is an invalid email (prevent login) -->
@@ -111,9 +106,7 @@
               :placeholder="$t('authSignIn.invalidEmailPlaceholder')"
             />
           </div>
-          <div v-if="capsLockEnabled" class="mt-2 p-error">
-            ⇪ Caps Lock is on!
-          </div>
+          <div v-if="capsLockEnabled" class="mt-2 p-error">⇪ Caps Lock is on!</div>
         </div>
       </div>
       <PvButton
@@ -157,18 +150,18 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, watch } from "vue";
-import { storeToRefs } from "pinia";
-import { required, requiredUnless } from "@vuelidate/validators";
-import { useVuelidate } from "@vuelidate/core";
-import _debounce from "lodash/debounce";
-import PvButton from "primevue/button";
-import PvDivider from "primevue/divider";
-import PvInputText from "primevue/inputtext";
-import PvPassword from "primevue/password";
-import PvSkeleton from "primevue/skeleton";
-import { useAuthStore } from "@/store/auth";
-import RoarModal from "../modals/RoarModal.vue";
+import { reactive, ref, watch } from 'vue';
+import { storeToRefs } from 'pinia';
+import { required, requiredUnless } from '@vuelidate/validators';
+import { useVuelidate } from '@vuelidate/core';
+import _debounce from 'lodash/debounce';
+import PvButton from 'primevue/button';
+import PvDivider from 'primevue/divider';
+import PvInputText from 'primevue/inputtext';
+import PvPassword from 'primevue/password';
+import PvSkeleton from 'primevue/skeleton';
+import { useAuthStore } from '@/store/auth';
+import RoarModal from '../modals/RoarModal.vue';
 
 interface SignInState {
   email: string;
@@ -182,8 +175,8 @@ interface Props {
 }
 
 interface Emits {
-  (e: "submit", state: SignInState): void;
-  (e: "update:email", email: string): void;
+  (e: 'submit', state: SignInState): void;
+  (e: 'update:email', email: string): void;
 }
 
 const authStore = useAuthStore();
@@ -195,8 +188,8 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const state = reactive<SignInState>({
-  email: "",
-  password: "",
+  email: '',
+  password: '',
   useLink: false,
   usePassword: true,
 });
@@ -217,7 +210,7 @@ const handleFormSubmit = (isFormValid: boolean): void => {
   if (!isFormValid) {
     return;
   }
-  emit("submit", state);
+  emit('submit', state);
 };
 
 const isValidEmail = (email: string): boolean => {
@@ -233,7 +226,7 @@ const allowLink = ref<boolean>(true);
 const validateRoarEmail = _debounce(
   async (email: string): Promise<void> => {
     // Don't evaluate empty emails or obviously invalid ones
-    if (!email || !email.includes("@")) {
+    if (!email || !email.includes('@')) {
       evaluatingEmail.value = false;
       return;
     }
@@ -242,7 +235,7 @@ const validateRoarEmail = _debounce(
 
     try {
       // First handle levante emails
-      if (email.includes("levante") || isRoarAuth) {
+      if (email.includes('levante') || isRoarAuth) {
         allowPassword.value = true;
         allowLink.value = false;
         state.useLink = false;
@@ -256,7 +249,7 @@ const validateRoarEmail = _debounce(
       state.useLink = allowLink.value;
       evaluatingEmail.value = false;
     } catch (error) {
-      console.error("Error evaluating email:", error);
+      console.error('Error evaluating email:', error);
       evaluatingEmail.value = false;
     }
   },
@@ -269,22 +262,22 @@ function checkForCapsLock(e: Event): void {
   // Using password autofill will trigger a regular
   //   event which does not have a getModifierState method.
   if (e instanceof KeyboardEvent) {
-    capsLockEnabled.value = e.getModifierState("CapsLock");
+    capsLockEnabled.value = e.getModifierState('CapsLock');
   }
 }
 
-const forgotEmail = ref<string>("");
+const forgotEmail = ref<string>('');
 function handleForgotPassword(): void {
-  console.log("Opening modal for forgot password");
+  console.log('Opening modal for forgot password');
   forgotPasswordModalOpen.value = true;
   // e.preventDefault();
 }
 function closeForgotPasswordModal(): void {
   forgotPasswordModalOpen.value = false;
-  forgotEmail.value = "";
+  forgotEmail.value = '';
 }
 function sendResetEmail(): void {
-  console.log("Submitting forgot password with email", forgotEmail.value);
+  console.log('Submitting forgot password with email', forgotEmail.value);
   roarfirekit.value.sendPasswordResetEmail(forgotEmail.value);
   closeForgotPasswordModal();
 }
@@ -292,7 +285,7 @@ function sendResetEmail(): void {
 watch(
   () => state.email,
   async (email: string) => {
-    emit("update:email", email);
+    emit('update:email', email);
     if (isValidEmail(email)) {
       evaluatingEmail.value = true;
       validateRoarEmail(email);

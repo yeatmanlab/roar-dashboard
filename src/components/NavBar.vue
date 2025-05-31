@@ -1,22 +1,13 @@
 <template>
   <header id="site-header" class="navbar-container">
-    <nav
-      class="flex flex-row align-items-center justify-content-between w-full"
-    >
-      <div
-        id="navBarRightEnd"
-        class="flex flex-row align-items-center justify-content-start w-full gap-1"
-      >
+    <nav class="flex flex-row align-items-center justify-content-between w-full">
+      <div id="navBarRightEnd" class="flex flex-row align-items-center justify-content-start w-full gap-1">
         <div class="flex align-items-center justify-content-center w-full">
           <PvMenubar :model="computedItems" class="w-full">
             <template #start>
               <router-link :to="{ path: APP_ROUTES.HOME }">
                 <div class="navbar-logo mx-3">
-                  <PvImage
-                    src="/LEVANTE/Levante_Logo.png"
-                    alt="LEVANTE Logo"
-                    width="200"
-                  />
+                  <PvImage src="/LEVANTE/Levante_Logo.png" alt="LEVANTE Logo" width="200" />
                 </div>
               </router-link>
             </template>
@@ -39,13 +30,7 @@
                   :class="[item.badgeClass, { 'ml-auto': !root, 'ml-2': root }]"
                   :value="item.badge"
                 />
-                <i
-                  v-if="hasSubmenu"
-                  :class="[
-                    'pi ml-auto',
-                    { 'pi-angle-down': root, 'pi-angle-right': !root },
-                  ]"
-                ></i>
+                <i v-if="hasSubmenu" :class="['pi ml-auto', { 'pi-angle-down': root, 'pi-angle-right': !root }]"></i>
               </a>
             </template>
 
@@ -60,19 +45,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from "vue";
-import { useRouter } from "vue-router";
-import { storeToRefs } from "pinia";
-import PvButton from "primevue/button";
-import PvImage from "primevue/image";
-import PvMenubar from "primevue/menubar";
-import { useAuthStore } from "@/store/auth";
-import { getNavbarActions } from "@/router/navbarActions";
-import useUserClaimsQuery from "@/composables/queries/useUserClaimsQuery";
-import { APP_ROUTES } from "@/constants/routes";
-import Badge from "primevue/badge";
-import UserActions from "./UserActions.vue";
-import useUserType from "@/composables/useUserType";
+import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { useRouter } from 'vue-router';
+import { storeToRefs } from 'pinia';
+import PvButton from 'primevue/button';
+import PvImage from 'primevue/image';
+import PvMenubar from 'primevue/menubar';
+import { useAuthStore } from '@/store/auth';
+import { getNavbarActions } from '@/router/navbarActions';
+import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
+import { APP_ROUTES } from '@/constants/routes';
+import Badge from 'primevue/badge';
+import UserActions from './UserActions.vue';
+import useUserType from '@/composables/useUserType';
 
 interface NavbarAction {
   category: string;
@@ -114,11 +99,11 @@ const handleResize = (): void => {
 
 onMounted((): void => {
   if ((roarfirekit.value as any)?.restConfig) init();
-  window.addEventListener("resize", handleResize);
+  window.addEventListener('resize', handleResize);
 });
 
 onUnmounted((): void => {
-  window.removeEventListener("resize", handleResize);
+  window.removeEventListener('resize', handleResize);
 });
 
 const { data: userClaims } = useUserClaimsQuery({
@@ -130,9 +115,7 @@ const computedItems = computed((): MenuItem[] => {
   // TO DO: REMOVE USERS AFTER NAMING 3 TICKET IS COMPLETED
 
   // Groups only has one associated page and therefore is not nested within items
-  const groupsAction = rawActions.value.find(
-    (action) => action.category === "Groups",
-  );
+  const groupsAction = rawActions.value.find((action) => action.category === 'Groups');
   if (groupsAction) {
     items.push({
       label: groupsAction.title,
@@ -143,7 +126,7 @@ const computedItems = computed((): MenuItem[] => {
     });
   }
 
-  const headers = ["Users", "Assignments"];
+  const headers = ['Users', 'Assignments'];
   for (const header of headers) {
     const headerItems = rawActions.value
       .filter((action) => action.category === header)
@@ -177,7 +160,7 @@ const computedIsBasicView = computed((): boolean => {
 });
 
 const isAtHome = computed((): boolean => {
-  return router.currentRoute.value.fullPath === "/";
+  return router.currentRoute.value.fullPath === '/';
 });
 
 const rawActions = computed((): NavbarAction[] => {
