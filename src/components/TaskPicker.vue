@@ -181,6 +181,8 @@ const props = defineProps({
   },
 });
 
+const selectedVariants = ref([]);
+
 const emit = defineEmits(['variants-changed']);
 
 const taskOptions = computed(() => {
@@ -197,6 +199,9 @@ const taskOptions = computed(() => {
 watch(
   () => props.inputVariants,
   (newVariants) => {
+    if (_isEmpty(newVariants)) {
+      return;
+    }
     // @TODO: Fix this as it's not working as expected. When updating the data set in the parent component, the data is
     // added twice to the selectedVariants array, despite the _union call.
     selectedVariants.value = _union(selectedVariants.value, newVariants);
@@ -211,6 +216,7 @@ watch(
       return variant;
     });
   },
+  { deep: true, immediate: true },
 );
 
 const updateVariant = (variantId, conditions) => {
@@ -225,7 +231,6 @@ const updateVariant = (variantId, conditions) => {
   return;
 };
 
-const selectedVariants = ref([]);
 const namedOnly = ref(true);
 
 const currentTask = ref(Object.keys(props.allVariants)[0]);

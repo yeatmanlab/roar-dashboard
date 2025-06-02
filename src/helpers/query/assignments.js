@@ -355,7 +355,7 @@ export const assignmentPageFetcher = async (
  * @param {ref<String>} roarUid - A Vue ref containing the user's ROAR ID.
  * @returns {Promise<Array>} - A promise that resolves to an array of open assignments for the user.
  */
-export const getUserAssignments = async (roarUid, orgType = null, orgIds = null) => {
+export const getUserAssignments = async (roarUid, orgType = null, orgIds = null, isTestUser = false) => {
   const adminAxiosInstance = getAxiosInstance();
   const assignmentRequest = getAssignmentsRequestBody({
     orgType: orgType,
@@ -364,7 +364,7 @@ export const getUserAssignments = async (roarUid, orgType = null, orgIds = null)
     paginate: false,
     isCollectionGroupQuery: false,
     restrictToOpenAssignments: true,
-    excludeTestData: true,
+    excludeTestData: !isTestUser,
   });
   const userId = toValue(roarUid);
   return await adminAxiosInstance
