@@ -1,17 +1,17 @@
-import { ref, nextTick } from "vue";
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import * as VueQuery from "@tanstack/vue-query";
-import { type QueryClient } from "@tanstack/vue-query";
-import { nanoid } from "nanoid";
-import { withSetup } from "@/test-support/withSetup.js";
-import { fetchDocById } from "@/helpers/query/utils";
-import useUserAdministrationAssignmentsQuery from "./useUserAdministrationAssignmentsQuery";
+import { ref, nextTick } from 'vue';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import * as VueQuery from '@tanstack/vue-query';
+import { type QueryClient } from '@tanstack/vue-query';
+import { nanoid } from 'nanoid';
+import { withSetup } from '@/test-support/withSetup.js';
+import { fetchDocById } from '@/helpers/query/utils';
+import useUserAdministrationAssignmentsQuery from './useUserAdministrationAssignmentsQuery';
 
-vi.mock("@/helpers/query/utils", () => ({
+vi.mock('@/helpers/query/utils', () => ({
   fetchDocById: vi.fn().mockImplementation(() => []),
 }));
 
-vi.mock("@tanstack/vue-query", async (getModule) => {
+vi.mock('@tanstack/vue-query', async (getModule) => {
   const original = await getModule();
   return {
     ...original,
@@ -19,7 +19,7 @@ vi.mock("@tanstack/vue-query", async (getModule) => {
   };
 });
 
-describe("useUserAdministrationAssignmentsQuery", () => {
+describe('useUserAdministrationAssignmentsQuery', () => {
   let queryClient: QueryClient;
 
   beforeEach(() => {
@@ -30,68 +30,45 @@ describe("useUserAdministrationAssignmentsQuery", () => {
     queryClient?.clear();
   });
 
-  it("should call query with correct parameters", () => {
+  it('should call query with correct parameters', () => {
     const mockUserId = nanoid();
     const mockAdministrationId = nanoid();
 
-    vi.spyOn(VueQuery, "useQuery");
+    vi.spyOn(VueQuery, 'useQuery');
 
-    withSetup(
-      () =>
-        useUserAdministrationAssignmentsQuery(mockUserId, mockAdministrationId),
-      {
-        plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
-      },
-    );
+    withSetup(() => useUserAdministrationAssignmentsQuery(mockUserId, mockAdministrationId), {
+      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
+    });
 
     expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: [
-        "user-administration-assignments",
-        mockUserId,
-        mockAdministrationId,
-      ],
+      queryKey: ['user-administration-assignments', mockUserId, mockAdministrationId],
       queryFn: expect.any(Function),
       enabled: expect.objectContaining({
         _value: true,
       }),
     });
 
-    expect(fetchDocById).toHaveBeenCalledWith(
-      "users",
-      `${mockUserId}/assignments/${mockAdministrationId}`,
-    );
+    expect(fetchDocById).toHaveBeenCalledWith('users', `${mockUserId}/assignments/${mockAdministrationId}`);
   });
 
-  it("should correctly control the enabled state of the query", async () => {
+  it('should correctly control the enabled state of the query', async () => {
     const mockUserId = nanoid();
     const mockAdministrationId = nanoid();
 
     const enableQuery = ref(false);
 
-    vi.spyOn(VueQuery, "useQuery");
+    vi.spyOn(VueQuery, 'useQuery');
 
     const queryOptions = {
       enabled: enableQuery,
     };
 
-    withSetup(
-      () =>
-        useUserAdministrationAssignmentsQuery(
-          mockUserId,
-          mockAdministrationId,
-          queryOptions,
-        ),
-      {
-        plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
-      },
-    );
+    withSetup(() => useUserAdministrationAssignmentsQuery(mockUserId, mockAdministrationId, queryOptions), {
+      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
+    });
 
     expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: [
-        "user-administration-assignments",
-        mockUserId,
-        mockAdministrationId,
-      ],
+      queryKey: ['user-administration-assignments', mockUserId, mockAdministrationId],
       queryFn: expect.any(Function),
       enabled: expect.objectContaining({
         _value: false,
@@ -104,36 +81,21 @@ describe("useUserAdministrationAssignmentsQuery", () => {
     enableQuery.value = true;
     await nextTick();
 
-    expect(fetchDocById).toHaveBeenCalledWith(
-      "users",
-      `${mockUserId}/assignments/${mockAdministrationId}`,
-    );
+    expect(fetchDocById).toHaveBeenCalledWith('users', `${mockUserId}/assignments/${mockAdministrationId}`);
   });
 
-  it("should only fetch data if the params are set", async () => {
+  it('should only fetch data if the params are set', async () => {
     const mockUserId = ref(null);
     const mockAdministrationId = ref(null);
 
     const queryOptions = { enabled: true };
 
-    withSetup(
-      () =>
-        useUserAdministrationAssignmentsQuery(
-          mockUserId,
-          mockAdministrationId,
-          queryOptions,
-        ),
-      {
-        plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
-      },
-    );
+    withSetup(() => useUserAdministrationAssignmentsQuery(mockUserId, mockAdministrationId, queryOptions), {
+      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
+    });
 
     expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: [
-        "user-administration-assignments",
-        mockUserId,
-        mockAdministrationId,
-      ],
+      queryKey: ['user-administration-assignments', mockUserId, mockAdministrationId],
       queryFn: expect.any(Function),
       enabled: expect.objectContaining({
         _value: false,
@@ -153,36 +115,21 @@ describe("useUserAdministrationAssignmentsQuery", () => {
 
     await nextTick();
 
-    expect(fetchDocById).toHaveBeenCalledWith(
-      "users",
-      `${mockUserId.value}/assignments/${mockAdministrationId.value}`,
-    );
+    expect(fetchDocById).toHaveBeenCalledWith('users', `${mockUserId.value}/assignments/${mockAdministrationId.value}`);
   });
 
-  it("should not let queryOptions override the internally computed value", async () => {
+  it('should not let queryOptions override the internally computed value', async () => {
     const mockUserId = ref(null);
     const mockAdministrationId = ref(nanoid());
 
     const queryOptions = { enabled: true };
 
-    withSetup(
-      () =>
-        useUserAdministrationAssignmentsQuery(
-          mockUserId,
-          mockAdministrationId,
-          queryOptions,
-        ),
-      {
-        plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
-      },
-    );
+    withSetup(() => useUserAdministrationAssignmentsQuery(mockUserId, mockAdministrationId, queryOptions), {
+      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
+    });
 
     expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: [
-        "user-administration-assignments",
-        mockUserId,
-        mockAdministrationId,
-      ],
+      queryKey: ['user-administration-assignments', mockUserId, mockAdministrationId],
       queryFn: expect.any(Function),
       enabled: expect.objectContaining({
         _value: false,

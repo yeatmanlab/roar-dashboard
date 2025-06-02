@@ -1,24 +1,22 @@
 <template>
   <PvPanel header="Edit Users" class="users-edit-panel">
     <p>
-      The following fields define the columns for your CSV file when editing
-      existing users. Please refer to the legend below for specific requirements
-      on each field.
+      The following fields define the columns for your CSV file when editing existing users. Please refer to the legend
+      below for specific requirements on each field.
     </p>
 
     <ul>
       <li>
-        <b>uid</b><span class="field-marker">*</span> - The unique LEVANTE
-        identifier of the user to edit. This field is used to find the user and
-        cannot be changed.
+        <b>uid</b><span class="field-marker">*</span> - The unique LEVANTE identifier of the user to edit. This field is
+        used to find the user and cannot be changed.
       </li>
       <li>
-        <b>month</b><span class="field-marker">†</span> - The new month if
-        editing a child user's birth month (numeric; For Example, 5 for May).
+        <b>month</b><span class="field-marker">†</span> - The new month if editing a child user's birth month (numeric;
+        For Example, 5 for May).
       </li>
       <li>
-        <b>year</b><span class="field-marker">†</span> - The new year if editing
-        a child user's birth year (four-digit; For Example, 2017).
+        <b>year</b><span class="field-marker">†</span> - The new year if editing a child user's birth year (four-digit;
+        For Example, 2017).
       </li>
       <li><b>site</b> - The new name of the site.</li>
       <li><b>school</b> - The new name of the school.</li>
@@ -28,8 +26,8 @@
 
     <p class="mb-6 legend">
       <span class="field-marker">*</span> Required for this Step<br />
-      <span class="field-marker">†</span> Editable only for child users. Leave
-      blank if not editing or for caregiver/teacher users.
+      <span class="field-marker">†</span> Editable only for child users. Leave blank if not editing or for
+      caregiver/teacher users.
     </p>
 
     <div class="warning-message">
@@ -38,9 +36,8 @@
     </div>
 
     <p>
-      Below is an example of what your CSV should look like. Note that you may
-      upload a CSV with any columns you need, but only the fields listed above
-      will be processed during the edit.
+      Below is an example of what your CSV should look like. Note that you may upload a CSV with any columns you need,
+      but only the fields listed above will be processed during the edit.
     </p>
 
     <div class="info-message">
@@ -66,8 +63,8 @@
 </template>
 
 <script setup>
-import PvPanel from "primevue/panel";
-import { LEVANTE_BUCKET_URL } from "@/constants/bucket";
+import PvPanel from 'primevue/panel';
+import { LEVANTE_BUCKET_URL } from '@/constants/bucket';
 </script>
 
 <style scoped>

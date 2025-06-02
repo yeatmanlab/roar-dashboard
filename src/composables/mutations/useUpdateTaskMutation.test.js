@@ -1,14 +1,14 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { withSetup } from "@/test-support/withSetup.js";
-import * as VueQuery from "@tanstack/vue-query";
-import { useAuthStore } from "@/store/auth";
-import useUpdateTaskMutation from "./useUpdateTaskMutation";
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { withSetup } from '@/test-support/withSetup.js';
+import * as VueQuery from '@tanstack/vue-query';
+import { useAuthStore } from '@/store/auth';
+import useUpdateTaskMutation from './useUpdateTaskMutation';
 
-vi.mock("@/store/auth", () => ({
+vi.mock('@/store/auth', () => ({
   useAuthStore: vi.fn(),
 }));
 
-vi.mock("@tanstack/vue-query", async (getModule) => {
+vi.mock('@tanstack/vue-query', async (getModule) => {
   const original = await getModule();
   return {
     ...original,
@@ -16,7 +16,7 @@ vi.mock("@tanstack/vue-query", async (getModule) => {
   };
 });
 
-describe("useUpdateTaskMutation", () => {
+describe('useUpdateTaskMutation', () => {
   let queryClient;
 
   beforeEach(() => {
@@ -29,9 +29,9 @@ describe("useUpdateTaskMutation", () => {
     queryClient?.clear();
   });
 
-  const mockTask = { id: "mock-test-task", name: "Mock Test Task" };
+  const mockTask = { id: 'mock-test-task', name: 'Mock Test Task' };
 
-  it("should call updateTaskOrVariant when the mutation is triggered", async () => {
+  it('should call updateTaskOrVariant when the mutation is triggered', async () => {
     const mockAuthStore = { roarfirekit: { updateTaskOrVariant: vi.fn() } };
     useAuthStore.mockReturnValue(mockAuthStore);
 
@@ -42,18 +42,16 @@ describe("useUpdateTaskMutation", () => {
     const { mutateAsync } = result;
     await mutateAsync(mockTask);
 
-    expect(mockAuthStore.roarfirekit.updateTaskOrVariant).toHaveBeenCalledWith(
-      mockTask,
-    );
+    expect(mockAuthStore.roarfirekit.updateTaskOrVariant).toHaveBeenCalledWith(mockTask);
   });
 
-  it("should invalidate task queries upon mutation success", async () => {
+  it('should invalidate task queries upon mutation success', async () => {
     const mockInvalidateQueries = vi.fn();
     const mockAuthStore = { roarfirekit: { updateTaskOrVariant: vi.fn() } };
 
     useAuthStore.mockReturnValue(mockAuthStore);
 
-    vi.spyOn(VueQuery, "useQueryClient").mockImplementation(() => ({
+    vi.spyOn(VueQuery, 'useQueryClient').mockImplementation(() => ({
       invalidateQueries: mockInvalidateQueries,
     }));
 
@@ -65,12 +63,12 @@ describe("useUpdateTaskMutation", () => {
     await mutateAsync(mockTask);
 
     expect(isSuccess.value).toBe(true);
-    expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ["tasks"] });
+    expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['tasks'] });
   });
 
-  it("should not invalidate task queries upon mutation failure", async () => {
+  it('should not invalidate task queries upon mutation failure', async () => {
     const mockInvalidateQueries = vi.fn();
-    const mockError = new Error("Mock error");
+    const mockError = new Error('Mock error');
     const mockAuthStore = {
       roarfirekit: {
         updateTaskOrVariant: vi.fn(() => Promise.reject(mockError)),
@@ -79,7 +77,7 @@ describe("useUpdateTaskMutation", () => {
 
     useAuthStore.mockReturnValue(mockAuthStore);
 
-    vi.spyOn(VueQuery, "useQueryClient").mockImplementation(() => ({
+    vi.spyOn(VueQuery, 'useQueryClient').mockImplementation(() => ({
       invalidateQueries: mockInvalidateQueries,
     }));
 

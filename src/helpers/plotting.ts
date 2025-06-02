@@ -25,11 +25,7 @@ interface OrgStats {
 type ChartJsData = any;
 type ChartJsOptions = any;
 
-const getBorderRadii = (
-  left: number,
-  middle: number,
-  right: number,
-): BorderRadii => {
+const getBorderRadii = (left: number, middle: number, right: number): BorderRadii => {
   const defaultRadius: BorderRadiusValue = {
     topLeft: 0,
     topRight: 0,
@@ -66,9 +62,7 @@ const getBorderRadii = (
   return borderRadii;
 };
 
-export const setBarChartData = (
-  orgStats: OrgStats | null | undefined,
-): ChartJsData => {
+export const setBarChartData = (orgStats: OrgStats | null | undefined): ChartJsData => {
   let { assigned = 0, started = 0, completed = 0 } = orgStats || {};
   const documentStyle = getComputedStyle(document.documentElement);
 
@@ -84,30 +78,30 @@ export const setBarChartData = (
   const borderWidth = 0;
 
   const chartData = {
-    labels: [""],
+    labels: [''],
     datasets: [
       {
-        type: "bar",
-        label: "Completed",
-        backgroundColor: documentStyle.getPropertyValue("--bright-green"),
+        type: 'bar',
+        label: 'Completed',
+        backgroundColor: documentStyle.getPropertyValue('--bright-green'),
         data: [completed],
         borderWidth: borderWidth,
         borderSkipped: false,
         borderRadius: borderRadii.left,
       },
       {
-        type: "bar",
-        label: "Started",
-        backgroundColor: documentStyle.getPropertyValue("--yellow-100"),
+        type: 'bar',
+        label: 'Started',
+        backgroundColor: documentStyle.getPropertyValue('--yellow-100'),
         data: [started],
         borderWidth: borderWidth,
         borderSkipped: false,
         borderRadius: borderRadii.middle,
       },
       {
-        type: "bar",
-        label: "Not Started",
-        backgroundColor: documentStyle.getPropertyValue("--surface-d"),
+        type: 'bar',
+        label: 'Not Started',
+        backgroundColor: documentStyle.getPropertyValue('--surface-d'),
         data: [assigned],
         borderWidth: borderWidth,
         borderSkipped: false,
@@ -119,9 +113,7 @@ export const setBarChartData = (
   return chartData;
 };
 
-export const setBarChartOptions = (
-  orgStats: OrgStats | null | undefined,
-): ChartJsOptions => {
+export const setBarChartOptions = (orgStats: OrgStats | null | undefined): ChartJsOptions => {
   let { assigned = 0 } = orgStats || {};
 
   assigned = Number(assigned) || 0;
@@ -130,12 +122,12 @@ export const setBarChartOptions = (
   const max = assigned;
 
   return {
-    indexAxis: "y",
+    indexAxis: 'y',
     maintainAspectRatio: false,
     aspectRatio: 9,
     plugins: {
       tooltips: {
-        mode: "index",
+        mode: 'index',
         intersect: false,
       },
       legend: false,

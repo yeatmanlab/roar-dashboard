@@ -1,12 +1,12 @@
-import { toValue } from "vue";
-import _chunk from "lodash/chunk";
-import _last from "lodash/last";
-import _mapValues from "lodash/mapValues";
-import _without from "lodash/without";
-import { storeToRefs } from "pinia";
-import { useAuthStore } from "@/store/auth";
-import { convertValues, getAxiosInstance, orderByDefault } from "./utils";
-import { filterAdminOrgs } from "@/helpers";
+import { toValue } from 'vue';
+import _chunk from 'lodash/chunk';
+import _last from 'lodash/last';
+import _mapValues from 'lodash/mapValues';
+import _without from 'lodash/without';
+import { storeToRefs } from 'pinia';
+import { useAuthStore } from '@/store/auth';
+import { convertValues, getAxiosInstance, orderByDefault } from './utils';
+import { filterAdminOrgs } from '@/helpers';
 
 export function getTitle(item, isSuperAdmin) {
   if (isSuperAdmin) {
@@ -21,7 +21,7 @@ const processBatchStats = async (axiosInstance, statsPaths, batchSize = 5) => {
   const batchStatsDocs = [];
   const statsPathChunks = _chunk(statsPaths, batchSize);
   for (const batch of statsPathChunks) {
-    const { data } = await axiosInstance.post(":batchGet", {
+    const { data } = await axiosInstance.post(':batchGet', {
       documents: batch,
     });
 
@@ -86,9 +86,7 @@ const mapAdministrations = async ({ isSuperAdmin, data, adminOrgs }) => {
   const batchStatsDocs = await processBatchStats(axiosInstance, statsPaths);
 
   const administrations = administrationData?.map((administration) => {
-    const thisAdminStats = batchStatsDocs.find((statsDoc) =>
-      statsDoc.name.includes(administration.id),
-    );
+    const thisAdminStats = batchStatsDocs.find((statsDoc) => statsDoc.name.includes(administration.id));
     return {
       ...administration,
       stats: { total: thisAdminStats?.data },
@@ -98,12 +96,7 @@ const mapAdministrations = async ({ isSuperAdmin, data, adminOrgs }) => {
   return administrations;
 };
 
-export const administrationPageFetcher = async (
-  isSuperAdmin,
-  exhaustiveAdminOrgs,
-  fetchTestData = false,
-  orderBy,
-) => {
+export const administrationPageFetcher = async (isSuperAdmin, exhaustiveAdminOrgs, fetchTestData = false, orderBy) => {
   const authStore = useAuthStore();
   const { roarfirekit } = storeToRefs(authStore);
   const administrationIds = await roarfirekit.value.getAdministrations({
@@ -111,15 +104,10 @@ export const administrationPageFetcher = async (
   });
 
   const axiosInstance = getAxiosInstance();
-  const documentPrefix = axiosInstance.defaults.baseURL.replace(
-    "https://firestore.googleapis.com/v1/",
-    "",
-  );
-  const documents = administrationIds.map(
-    (id) => `${documentPrefix}/administrations/${id}`,
-  );
+  const documentPrefix = axiosInstance.defaults.baseURL.replace('https://firestore.googleapis.com/v1/', '');
+  const documents = administrationIds.map((id) => `${documentPrefix}/administrations/${id}`);
 
-  const { data } = await axiosInstance.post(":batchGet", { documents });
+  const { data } = await axiosInstance.post(':batchGet', { documents });
 
   const administrationData = _without(
     data.map(({ found }) => {
@@ -127,7 +115,7 @@ export const administrationPageFetcher = async (
         return {
           name: found.name,
           data: {
-            id: _last(found.name.split("/")),
+            id: _last(found.name.split('/')),
             ..._mapValues(found.fields, (value) => convertValues(value)),
           },
         };
@@ -148,10 +136,8 @@ export const administrationPageFetcher = async (
   const sortedAdministrations = administrations
     .filter((a) => a[orderField] !== undefined)
     .sort((a, b) => {
-      if (orderDirection === "ASCENDING")
-        return 2 * +(a[orderField] > b[orderField]) - 1;
-      if (orderDirection === "DESCENDING")
-        return 2 * +(b[orderField] > a[orderField]) - 1;
+      if (orderDirection === 'ASCENDING') return 2 * +(a[orderField] > b[orderField]) - 1;
+      if (orderDirection === 'DESCENDING') return 2 * +(b[orderField] > a[orderField]) - 1;
       return 0;
     });
 

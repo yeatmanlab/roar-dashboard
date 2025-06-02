@@ -31,14 +31,14 @@
   </section>
 </template>
 <script setup>
-import { ref, onMounted, computed } from "vue";
-import { storeToRefs } from "pinia";
-import { useToast } from "primevue/usetoast";
-import PvButton from "primevue/button";
-import _get from "lodash/get";
-import { useAuthStore } from "@/store/auth";
-import useUserDataQuery from "@/composables/queries/useUserDataQuery";
-import EditUsersForm from "../EditUsersForm.vue";
+import { ref, onMounted, computed } from 'vue';
+import { storeToRefs } from 'pinia';
+import { useToast } from 'primevue/usetoast';
+import PvButton from 'primevue/button';
+import _get from 'lodash/get';
+import { useAuthStore } from '@/store/auth';
+import useUserDataQuery from '@/composables/queries/useUserDataQuery';
+import EditUsersForm from '../EditUsersForm.vue';
 
 // +----------------+
 // | Initialization |
@@ -50,7 +50,7 @@ const localUserData = ref({});
 const isEditMode = ref(false);
 const isSubmitting = ref(false);
 const userType = computed(() => {
-  return _get(userData.value, "userType", "student");
+  return _get(userData.value, 'userType', 'student');
 });
 
 // +-------------------------+
@@ -82,7 +82,7 @@ const { data: userData } = useUserDataQuery(null, {
 // | Submission |
 // +------------+
 async function submitUserData() {
-  console.log("Submitting user data", localUserData.value);
+  console.log('Submitting user data', localUserData.value);
   isSubmitting.value = true;
 
   await roarfirekit.value
@@ -91,18 +91,18 @@ async function submitUserData() {
       isEditMode.value = false;
       isSubmitting.value = false;
       toast.add({
-        severity: "success",
-        summary: "Updated",
-        detail: "Your Info has been updated",
+        severity: 'success',
+        summary: 'Updated',
+        detail: 'Your Info has been updated',
         life: 3000,
       });
     })
     .catch((error) => {
-      console.log("Error updating user data", error);
+      console.log('Error updating user data', error);
       toast.add({
-        severity: "error",
-        summary: "Unexpected Error",
-        detail: "An unexpected error has occurred.",
+        severity: 'error',
+        summary: 'Unexpected Error',
+        detail: 'An unexpected error has occurred.',
         life: 3000,
       });
     });

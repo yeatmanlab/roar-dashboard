@@ -1,14 +1,14 @@
-import { defineStore } from "pinia";
-import { csvFileToJson, standardDeviation } from "@/helpers";
+import { defineStore } from 'pinia';
+import { csvFileToJson, standardDeviation } from '@/helpers';
 
 const standardizeTaskId = (taskId) => {
-  return taskId.replace(/^roar-/, "");
+  return taskId.replace(/^roar-/, '');
 };
 const standardizeNames = (run) => {
   return {
-    first: run["name.first"],
-    middle: run["name.middle"],
-    last: run["name.last"],
+    first: run['name.first'],
+    middle: run['name.middle'],
+    last: run['name.last'],
   };
 };
 
@@ -18,38 +18,30 @@ const getRunInfoCommon = (mergedRun) => {
 
   // note: new fields should be added to all cases
   switch (mergedRun.taskId) {
-    case "swr":
+    case 'swr':
       normedPercentile = woodcockJohnsonLookup(mergedRun.thetaEstimate);
       return {
         parsedGrade: parsedGrade,
         roarScore: thetaToRoarScore(mergedRun.thetaEstimate),
         normedPercentile: normedPercentile,
         //supportLevel: thetaToSupportSWR(run.runInfoOrig.thetaEstimate, run.runInfoOrig.grade),
-        supportLevel: percentileToSupportClassification(
-          "swr",
-          normedPercentile,
-          mergedRun.grade,
-        ),
+        supportLevel: percentileToSupportClassification('swr', normedPercentile, mergedRun.grade),
       };
 
-    case "pa":
+    case 'pa':
       normedPercentile = 0;
       return {
         parsedGrade: parsedGrade,
         roarScore: 0,
         normedPercentile: normedPercentile,
         //supportLevel: thetaToSupportSWR(run.runInfoOrig.thetaEstimate, run.runInfoOrig.grade),
-        supportLevel: percentileToSupportClassification(
-          "pa",
-          normedPercentile,
-          mergedRun.grade,
-        ),
+        supportLevel: percentileToSupportClassification('pa', normedPercentile, mergedRun.grade),
       };
 
-    case "sre":
-    case "vocab":
+    case 'sre':
+    case 'vocab':
     default:
-      console.log("TODO: add", mergedRun.taskId, " to getRunInfoCommon()");
+      console.log('TODO: add', mergedRun.taskId, ' to getRunInfoCommon()');
       break;
   }
 };
@@ -114,29 +106,29 @@ export function computeAges(dob, timeStarted) {
 export function parseGrade(grade) {
   if (!grade) {
     // null, undefined, or empty string
-    return "NA";
+    return 'NA';
   } else if (isNaN(grade)) {
     // parse as a string
-    if (grade.toLowerCase() === "k") {
-      return "k";
-    } else if (grade.substring(0, 2).toLowerCase() === "tk") {
-      return "tk";
-    } else if (grade.toLowerCase().includes("trans")) {
-      return "tk";
-    } else if (grade.toLowerCase().includes("p")) {
-      return "pk";
-    } else if (grade.toLowerCase().includes("j")) {
-      return "jk";
-    } else if (grade.substring(0, 3).toLowerCase() === "kin") {
-      return "k";
-    } else if (grade.toLowerCase() == "adult") {
-      return "adult";
+    if (grade.toLowerCase() === 'k') {
+      return 'k';
+    } else if (grade.substring(0, 2).toLowerCase() === 'tk') {
+      return 'tk';
+    } else if (grade.toLowerCase().includes('trans')) {
+      return 'tk';
+    } else if (grade.toLowerCase().includes('p')) {
+      return 'pk';
+    } else if (grade.toLowerCase().includes('j')) {
+      return 'jk';
+    } else if (grade.substring(0, 3).toLowerCase() === 'kin') {
+      return 'k';
+    } else if (grade.toLowerCase() == 'adult') {
+      return 'adult';
     } else if (!isNaN(parseInt(grade))) {
       // this catches strings like 1st, 2nd, 3rd
       let gradeNum = parseInt(grade);
       return gradeNum.toString();
     } else {
-      console.warn(grade, "not recognized as a grade");
+      console.warn(grade, 'not recognized as a grade');
       return grade.toString();
     }
   } else {
@@ -144,13 +136,13 @@ export function parseGrade(grade) {
     let gradeNum = parseInt(grade);
 
     if (gradeNum < 0) {
-      return "pk";
+      return 'pk';
     } else if (gradeNum === 0) {
-      return "k";
+      return 'k';
     } else if (gradeNum >= 1 && gradeNum <= 12) {
       return gradeNum.toString();
     } else {
-      return "adult";
+      return 'adult';
     }
   }
 }
@@ -159,74 +151,64 @@ export function thetaToSupportSWR(percentile, grade) {
   let support;
 
   // we report automaticity instead of support for grades K/1
-  if (grade == "K" || grade == "1") {
-    support = percentile < 50 ? "Limited" : "Average or Above Average";
+  if (grade == 'K' || grade == '1') {
+    support = percentile < 50 ? 'Limited' : 'Average or Above Average';
   } else {
     support =
-      percentile < 25
-        ? "Extra Support Needed"
-        : percentile < 50
-        ? "Some Support Needed"
-        : "Average or Above Average";
+      percentile < 25 ? 'Extra Support Needed' : percentile < 50 ? 'Some Support Needed' : 'Average or Above Average';
   }
   return support;
 }
 
 export function woodcockJohnsonLookup(thetaEstimate) {
   // TODO_Adam replace this totally fake calculation with a real lookup table based on thetaEstimate and ageMonths
-  console.log("WARNING: fake woodcockJohnsonLookup still in use");
+  console.log('WARNING: fake woodcockJohnsonLookup still in use');
   return Math.round((100 * (thetaEstimate + 4)) / 8);
 }
 
-export function percentileToSupportClassification(
-  taskId,
-  percentile,
-  grade = 1,
-) {
-  let support = "";
+export function percentileToSupportClassification(taskId, percentile, grade = 1) {
+  let support = '';
 
   switch (taskId) {
-    case "pa":
-      if (grade == "K" || grade <= "4") {
+    case 'pa':
+      if (grade == 'K' || grade <= '4') {
         support =
           percentile < 25
-            ? "Extra Support Needed"
+            ? 'Extra Support Needed'
             : percentile < 50
-            ? "Some Support Needed"
-            : "Average or Above Average";
+            ? 'Some Support Needed'
+            : 'Average or Above Average';
       } else {
         support =
           percentile < 15
-            ? "Extra Support Needed"
+            ? 'Extra Support Needed'
             : percentile < 30
-            ? "Some Support Needed"
-            : "Average or Above Average";
+            ? 'Some Support Needed'
+            : 'Average or Above Average';
       }
       break;
 
-    case "swr":
+    case 'swr':
       // we report automaticity instead of support for grades K/1
-      if (grade == "K" || grade == "1") {
-        support = percentile < 50 ? "Limited" : "Average or Above Average";
+      if (grade == 'K' || grade == '1') {
+        support = percentile < 50 ? 'Limited' : 'Average or Above Average';
       } else {
         support =
           percentile < 25
-            ? "Extra Support Needed"
+            ? 'Extra Support Needed'
             : percentile < 50
-            ? "Some Support Needed"
-            : "Average or Above Average";
+            ? 'Some Support Needed'
+            : 'Average or Above Average';
       }
       break;
 
-    case "sre":
-    case "vocab":
-      console.log(
-        "TODO add sre and vocab cases to percentileToSupportClassification() ",
-      );
+    case 'sre':
+    case 'vocab':
+      console.log('TODO add sre and vocab cases to percentileToSupportClassification() ');
       break;
 
     default:
-      console.log(taskId, "missing from switch statement");
+      console.log(taskId, 'missing from switch statement');
   }
 
   return support;
@@ -240,25 +222,7 @@ export function countItems() {
 }
 
 const gradeComparator = (a, b) => {
-  const order = [
-    "pk",
-    "jk",
-    "tk",
-    "k",
-    "1",
-    "2",
-    "3",
-    "4",
-    "5",
-    "6",
-    "7",
-    "8",
-    "9",
-    "10",
-    "11",
-    "12",
-    "adult",
-  ];
+  const order = ['pk', 'jk', 'tk', 'k', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', 'adult'];
 
   if (a === b) {
     // equal inputs
@@ -290,20 +254,14 @@ const gradeComparator = (a, b) => {
 };
 
 const getRunScores = (subScoresForThisRun) => {
-  const taskId = [
-    ...new Set(
-      subScoresForThisRun.map((subScore) => subScore.runInfoOrig.taskId),
-    ),
-  ][0];
+  const taskId = [...new Set(subScoresForThisRun.map((subScore) => subScore.runInfoOrig.taskId))][0];
   switch (taskId) {
-    case "pa": {
+    case 'pa': {
       const paSubScores = subScoresForThisRun
         .map((subScore) => subScore.runInfoOrig)
-        .filter((subScore) =>
-          ["FSM", "LSM", "DEL"].includes(subScore.blockId.toUpperCase()),
-        );
+        .filter((subScore) => ['FSM', 'LSM', 'DEL'].includes(subScore.blockId.toUpperCase()));
       const paScore = { ...paSubScores[0] };
-      ["attempted", "correct", "incorrect"].forEach((scoreType) => {
+      ['attempted', 'correct', 'incorrect'].forEach((scoreType) => {
         const total = paSubScores.reduce((a, b) => {
           return a + b[scoreType];
         }, 0);
@@ -311,42 +269,39 @@ const getRunScores = (subScoresForThisRun) => {
       });
       return {
         ...paScore,
-        blockId: "total",
+        blockId: 'total',
       };
     }
 
-    case "swr":
+    case 'swr':
       // Assume there is only one subscore for SWR
       return subScoresForThisRun[0];
 
-    case "sre": {
+    case 'sre': {
       // TODO: Confirm SRE blockId names
       const sreSubScores = subScoresForThisRun.filter((subScore) =>
-        ["LAB", "TOSREC"].contains(subScore.blockId.toUpperCase()),
+        ['LAB', 'TOSREC'].contains(subScore.blockId.toUpperCase()),
       );
       const sreScore = sreSubScores[0];
-      sreScore.blockId = "total";
-      ["attempted", "correct", "incorrect"].forEach((scoreType) => {
-        sreScore[scoreType] = sreSubScores.reduce(
-          (a, b) => a[scoreType] + b[scoreType],
-          0,
-        );
+      sreScore.blockId = 'total';
+      ['attempted', 'correct', 'incorrect'].forEach((scoreType) => {
+        sreScore[scoreType] = sreSubScores.reduce((a, b) => a[scoreType] + b[scoreType], 0);
       });
       return sreScore;
     }
 
-    case "vocab":
-      console.log("TODO add sre and vocab cases");
+    case 'vocab':
+      console.log('TODO add sre and vocab cases');
       break;
 
     default:
-      console.log(taskId, "missing from switch statement");
+      console.log(taskId, 'missing from switch statement');
   }
 };
 
 export const useScoreStore = () => {
   return defineStore({
-    id: "scoreStore",
+    id: 'scoreStore',
     state: () => {
       return {
         appScores: [],
@@ -388,9 +343,7 @@ export const useScoreStore = () => {
         } else {
           // Try to match appScores with the identifiers, matching on pid
           return state.appScores.map((run) => {
-            const matchingIdentifier = state.identifiers.filter(
-              (participant) => participant.pid === run.pid,
-            );
+            const matchingIdentifier = state.identifiers.filter((participant) => participant.pid === run.pid);
             const taskId = standardizeTaskId(run.taskId);
             if (matchingIdentifier.length === 0) {
               //return state.run;
@@ -424,15 +377,9 @@ export const useScoreStore = () => {
         }
       },
       scores: (state) => {
-        const uniqueRunIds = [
-          ...new Set(
-            state.subScores.map((subScore) => subScore.runInfoOrig.runId),
-          ),
-        ];
+        const uniqueRunIds = [...new Set(state.subScores.map((subScore) => subScore.runInfoOrig.runId))];
         return uniqueRunIds.map((runId) => {
-          const subScoresForThisRun = state.subScores.filter(
-            (subScore) => subScore.runInfoOrig.runId === runId,
-          );
+          const subScoresForThisRun = state.subScores.filter((subScore) => subScore.runInfoOrig.runId === runId);
           return {
             ...getRunScores(subScoresForThisRun),
           };
@@ -440,9 +387,7 @@ export const useScoreStore = () => {
       },
 
       ageStats: (state) => {
-        const ages = state.scores.map((score) =>
-          computeAges(score.runInfoOrig.dob, score.runInfoOrig.timeStarted),
-        );
+        const ages = state.scores.map((score) => computeAges(score.runInfoOrig.dob, score.runInfoOrig.timeStarted));
         if (ages.length === 0) {
           return null;
         }
@@ -456,15 +401,13 @@ export const useScoreStore = () => {
       },
 
       gradeStats: (state) => {
-        const parsedGrades = state.scores.map((score) =>
-          parseGrade(score.runInfoOrig.grade),
-        );
+        const parsedGrades = state.scores.map((score) => parseGrade(score.runInfoOrig.grade));
         const hasFirstOrK =
-          parsedGrades.includes("k") ||
-          parsedGrades.includes("pk") ||
-          parsedGrades.includes("tk") ||
-          parsedGrades.includes("jk") ||
-          parsedGrades.includes("1");
+          parsedGrades.includes('k') ||
+          parsedGrades.includes('pk') ||
+          parsedGrades.includes('tk') ||
+          parsedGrades.includes('jk') ||
+          parsedGrades.includes('1');
 
         if (parsedGrades.length === 0) {
           return null;
@@ -494,31 +437,23 @@ export const useScoreStore = () => {
       supportStats: (state) => {
         let stats = {
           // set defaults
-          High: "",
-          Medium: "",
-          Low: "",
+          High: '',
+          Medium: '',
+          Low: '',
         };
         if (state.identifiers.length === 0) {
           // TODO_Adam how to test whether match was found, not just file loaded?
           return stats;
         }
-        const supportArray = state.scores.map(
-          (run) => run.runInfoCommon.supportLevel,
-        );
+        const supportArray = state.scores.map((run) => run.runInfoCommon.supportLevel);
         if (supportArray.length === 0) {
           return stats;
         }
 
         // update values
-        stats.High = supportArray.filter(
-          (x) => x === "Average or Above Average",
-        ).length;
-        stats.Medium = supportArray.filter(
-          (x) => x === "Some Support Needed",
-        ).length;
-        stats.Low = supportArray.filter(
-          (x) => x === "Extra Support Needed",
-        ).length;
+        stats.High = supportArray.filter((x) => x === 'Average or Above Average').length;
+        stats.Medium = supportArray.filter((x) => x === 'Some Support Needed').length;
+        stats.Low = supportArray.filter((x) => x === 'Extra Support Needed').length;
 
         return stats;
       },
@@ -526,40 +461,32 @@ export const useScoreStore = () => {
       swrAutomaticityStats: (state) => {
         let stats = {
           // set defaults
-          High: "",
-          Low: "",
+          High: '',
+          Low: '',
         };
         if (state.identifiers.length === 0) {
           // TODO_Adam how to test whether match was found, not just file loaded?
           return stats;
         }
-        const supportArray = state.scores.map(
-          (run) => run.runInfoCommon.supportLevel,
-        );
+        const supportArray = state.scores.map((run) => run.runInfoCommon.supportLevel);
         if (supportArray.length === 0) {
           return stats;
         }
 
         // update values
-        stats.High = supportArray.filter(
-          (x) => x === "Average or Above Average",
-        ).length;
-        stats.Low = supportArray.filter((x) => x === "Limited").length;
+        stats.High = supportArray.filter((x) => x === 'Average or Above Average').length;
+        stats.Low = supportArray.filter((x) => x === 'Limited').length;
 
         return stats;
       },
 
       roarScoreStats: (state) => {
-        const roarScoresArray = state.scores.map((score) =>
-          thetaToRoarScore(score.runInfoOrig.thetaEstimate),
-        );
+        const roarScoresArray = state.scores.map((score) => thetaToRoarScore(score.runInfoOrig.thetaEstimate));
         return {
           // Note: all calculations must gracefully handle an array length of 0
           roarScoreMin: Math.min(...roarScoresArray),
           roarScoreMax: Math.max(...roarScoresArray),
-          roarScoreMean: Math.round(
-            roarScoresArray.reduce((a, b) => a + b, 0) / roarScoresArray.length,
-          ),
+          roarScoreMean: Math.round(roarScoresArray.reduce((a, b) => a + b, 0) / roarScoresArray.length),
           roarScoreStandardDev: standardDeviation(roarScoresArray).toFixed(0),
         };
       },

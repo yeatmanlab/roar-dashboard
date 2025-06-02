@@ -1,9 +1,9 @@
-import { type MaybeRefOrGetter } from "vue";
-import { toValue } from "vue";
-import { useQuery } from "@tanstack/vue-query";
-import { DSGF_ORGS_QUERY_KEY } from "@/constants/queryKeys";
-import { computeQueryOverrides } from "@/helpers/computeQueryOverrides";
-import { fetchTreeOrgs } from "@/helpers/query/orgs";
+import { type MaybeRefOrGetter } from 'vue';
+import { toValue } from 'vue';
+import { useQuery } from '@tanstack/vue-query';
+import { DSGF_ORGS_QUERY_KEY } from '@/constants/queryKeys';
+import { computeQueryOverrides } from '@/helpers/computeQueryOverrides';
+import { fetchTreeOrgs } from '@/helpers/query/orgs';
 
 /**
  * District School Groups Families (DSGF) Orgs query.
@@ -16,17 +16,10 @@ import { fetchTreeOrgs } from "@/helpers/query/orgs";
  * @param {QueryOptions|undefined} queryOptions – Optional TanStack query options.
  * @returns {UseQueryResult} The TanStack query result.
  */
-const useDsgfOrgQuery = (
-  administrationId,
-  assignedOrgs,
-  queryOptions?: UseQueryOptions,
-): UseQueryReturnType => {
+const useDsgfOrgQuery = (administrationId, assignedOrgs, queryOptions?: UseQueryOptions): UseQueryReturnType => {
   // Ensure all necessary data is available before enabling the query.
   const conditions = [() => !!toValue(administrationId)];
-  const { isQueryEnabled, options } = computeQueryOverrides(
-    conditions,
-    queryOptions,
-  );
+  const { isQueryEnabled, options } = computeQueryOverrides(conditions, queryOptions);
 
   return useQuery({
     queryKey: [DSGF_ORGS_QUERY_KEY, administrationId],

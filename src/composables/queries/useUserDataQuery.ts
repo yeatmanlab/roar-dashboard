@@ -1,15 +1,11 @@
-import {
-  useQuery,
-  type UseQueryReturnType,
-  type UseQueryOptions,
-} from "@tanstack/vue-query";
-import { storeToRefs } from "pinia";
-import { useAuthStore } from "@/store/auth";
-import { computeQueryOverrides } from "@/helpers/computeQueryOverrides";
-import { fetchDocById } from "@/helpers/query/utils";
-import { USER_DATA_QUERY_KEY } from "@/constants/queryKeys";
-import { FIRESTORE_COLLECTIONS } from "@/constants/firebase";
-import { computed, type MaybeRefOrGetter } from "vue";
+import { useQuery, type UseQueryReturnType, type UseQueryOptions } from '@tanstack/vue-query';
+import { storeToRefs } from 'pinia';
+import { useAuthStore } from '@/store/auth';
+import { computeQueryOverrides } from '@/helpers/computeQueryOverrides';
+import { fetchDocById } from '@/helpers/query/utils';
+import { USER_DATA_QUERY_KEY } from '@/constants/queryKeys';
+import { FIRESTORE_COLLECTIONS } from '@/constants/firebase';
+import { computed, type MaybeRefOrGetter } from 'vue';
 
 /**
  * User profile data query.
@@ -27,10 +23,7 @@ const useUserDataQuery = (
 
   const uid = computed(() => userId || roarUid.value);
   const queryConditions = [() => !!uid.value];
-  const { isQueryEnabled, options } = computeQueryOverrides(
-    queryConditions,
-    queryOptions,
-  );
+  const { isQueryEnabled, options } = computeQueryOverrides(queryConditions, queryOptions);
 
   return useQuery({
     queryKey: [USER_DATA_QUERY_KEY, uid],

@@ -10,22 +10,22 @@
 // - User data query hook for fetching user information
 // - The main composable being tested for SSO account verification
 
-import { ref, nextTick } from "vue";
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { createTestingPinia } from "@pinia/testing";
-import * as VueQuery from "@tanstack/vue-query";
-import { useRouter } from "vue-router";
-import { nanoid } from "nanoid";
-import { withSetup } from "@/test-support/withSetup.js";
-import { useAuthStore } from "@/store/auth";
-import useUserDataQuery from "@/composables/queries/useUserDataQuery";
-import useSSOAccountReadinessVerification from "./useSSOAccountReadinessVerification";
+import { ref, nextTick } from 'vue';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { createTestingPinia } from '@pinia/testing';
+import * as VueQuery from '@tanstack/vue-query';
+import { useRouter } from 'vue-router';
+import { nanoid } from 'nanoid';
+import { withSetup } from '@/test-support/withSetup.js';
+import { useAuthStore } from '@/store/auth';
+import useUserDataQuery from '@/composables/queries/useUserDataQuery';
+import useSSOAccountReadinessVerification from './useSSOAccountReadinessVerification';
 
-vi.mock("vue-router", () => ({
+vi.mock('vue-router', () => ({
   useRouter: vi.fn(),
 }));
 
-vi.mock("@tanstack/vue-query", async (getModule) => {
+vi.mock('@tanstack/vue-query', async (getModule) => {
   const original = await getModule();
   return {
     ...original,
@@ -35,7 +35,7 @@ vi.mock("@tanstack/vue-query", async (getModule) => {
   };
 });
 
-vi.mock("@/composables/queries/useUserDataQuery", () => {
+vi.mock('@/composables/queries/useUserDataQuery', () => {
   const mock = vi.fn(() => ({
     data: {},
     refetch: vi.fn(),
@@ -47,7 +47,7 @@ vi.mock("@/composables/queries/useUserDataQuery", () => {
   };
 });
 
-describe("useSSOAccountReadinessVerification", () => {
+describe('useSSOAccountReadinessVerification', () => {
   let piniaInstance;
   let queryClient;
   let router;
@@ -70,11 +70,11 @@ describe("useSSOAccountReadinessVerification", () => {
     vi.restoreAllMocks();
   });
 
-  it("should start polling when startPolling is called", () => {
+  it('should start polling when startPolling is called', () => {
     withSetup(
       () => {
         const { startPolling } = useSSOAccountReadinessVerification();
-        const setIntervalSpy = vi.spyOn(global, "setInterval");
+        const setIntervalSpy = vi.spyOn(global, 'setInterval');
 
         startPolling();
 
@@ -86,15 +86,12 @@ describe("useSSOAccountReadinessVerification", () => {
     );
   });
 
-  it("should stop polling when component is unmounted", async () => {
-    const clearIntervalSpy = vi.spyOn(global, "clearInterval");
+  it('should stop polling when component is unmounted', async () => {
+    const clearIntervalSpy = vi.spyOn(global, 'clearInterval');
 
-    const [result, app] = withSetup(
-      () => useSSOAccountReadinessVerification(),
-      {
-        plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
-      },
-    );
+    const [result, app] = withSetup(() => useSSOAccountReadinessVerification(), {
+      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
+    });
 
     const { startPolling } = result;
 
@@ -107,7 +104,7 @@ describe("useSSOAccountReadinessVerification", () => {
     expect(clearIntervalSpy).toHaveBeenCalledTimes(1);
   });
 
-  it("should refetch user data only after the initial mount", async () => {
+  it('should refetch user data only after the initial mount', async () => {
     const mockUserRoarUid = ref(nanoid());
     const authStore = useAuthStore(piniaInstance);
     authStore.roarUid = mockUserRoarUid;
@@ -122,12 +119,9 @@ describe("useSSOAccountReadinessVerification", () => {
       refetch: mockRefetch,
     });
 
-    const [result, app] = withSetup(
-      () => useSSOAccountReadinessVerification(),
-      {
-        plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
-      },
-    );
+    const [result, app] = withSetup(() => useSSOAccountReadinessVerification(), {
+      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
+    });
 
     const { startPolling } = result;
 
@@ -148,7 +142,7 @@ describe("useSSOAccountReadinessVerification", () => {
     app.unmount();
   });
 
-  it("should redirect to the homepage once the correct user type is identified", async () => {
+  it('should redirect to the homepage once the correct user type is identified', async () => {
     const mockUserRoarUid = ref(nanoid());
     const authStore = useAuthStore(piniaInstance);
     authStore.roarUid = mockUserRoarUid;
@@ -163,12 +157,9 @@ describe("useSSOAccountReadinessVerification", () => {
       refetch: mockRefetch,
     });
 
-    const [result, app] = withSetup(
-      () => useSSOAccountReadinessVerification(),
-      {
-        plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
-      },
-    );
+    const [result, app] = withSetup(() => useSSOAccountReadinessVerification(), {
+      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
+    });
 
     const { startPolling } = result;
 
@@ -179,7 +170,7 @@ describe("useSSOAccountReadinessVerification", () => {
     mockIsFetchedAfterMount.value = true;
 
     mockUserData.value = {
-      userType: "guest",
+      userType: 'guest',
     };
 
     vi.advanceTimersByTime(610);
@@ -187,7 +178,7 @@ describe("useSSOAccountReadinessVerification", () => {
     expect(mockRefetch).toHaveBeenCalledTimes(1);
 
     mockUserData.value = {
-      userType: "participant",
+      userType: 'participant',
     };
 
     vi.advanceTimersByTime(610);
@@ -195,7 +186,7 @@ describe("useSSOAccountReadinessVerification", () => {
     await nextTick();
 
     expect(mockRefetch).toHaveBeenCalledTimes(2);
-    expect(router.push).toHaveBeenCalledWith({ path: "/" });
+    expect(router.push).toHaveBeenCalledWith({ path: '/' });
 
     app.unmount();
   });

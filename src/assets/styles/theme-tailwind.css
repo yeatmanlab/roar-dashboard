@@ -14,11 +14,6 @@ button.p-button.p-component.p-button-icon-only.p-button-secondary.p-button-round
 input.p-inputtext.p-component.p-password-input {
   width: 100%;
 }
-.p-datatable.p-datatable-gridlines:has(.p-datatable-thead):has(
-    .p-datatable-tbody
-  )
-  .p-datatable-tbody
-  > tr
-  > td {
+.p-datatable.p-datatable-gridlines:has(.p-datatable-thead):has(.p-datatable-tbody) .p-datatable-tbody > tr > td {
   text-align: center;
 }

@@ -1,16 +1,16 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { withSetup } from "@/test-support/withSetup.js";
-import * as VueQuery from "@tanstack/vue-query";
-import { type QueryClient } from "@tanstack/vue-query";
-import { nanoid } from "nanoid";
-import { fetchUsersByOrg } from "@/helpers/query/users";
-import useOrgUsersQuery from "./useOrgUsersQuery";
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { withSetup } from '@/test-support/withSetup.js';
+import * as VueQuery from '@tanstack/vue-query';
+import { type QueryClient } from '@tanstack/vue-query';
+import { nanoid } from 'nanoid';
+import { fetchUsersByOrg } from '@/helpers/query/users';
+import useOrgUsersQuery from './useOrgUsersQuery';
 
-vi.mock("@/helpers/query/users", () => ({
-  fetchUsersByOrg: vi.fn().mockImplementation(() => [{ name: "mock-user" }]),
+vi.mock('@/helpers/query/users', () => ({
+  fetchUsersByOrg: vi.fn().mockImplementation(() => [{ name: 'mock-user' }]),
 }));
 
-vi.mock("@tanstack/vue-query", async (getModule) => {
+vi.mock('@tanstack/vue-query', async (getModule) => {
   const original = await getModule();
   return {
     ...original,
@@ -18,7 +18,7 @@ vi.mock("@tanstack/vue-query", async (getModule) => {
   };
 });
 
-describe("useOrgUsersQuery", () => {
+describe('useOrgUsersQuery', () => {
   let queryClient: QueryClient;
 
   beforeEach(() => {
@@ -29,37 +29,21 @@ describe("useOrgUsersQuery", () => {
     queryClient?.clear();
   });
 
-  it("should call query with correct parameters", () => {
-    const mockOrgType = "org";
+  it('should call query with correct parameters', () => {
+    const mockOrgType = 'org';
     const mockOrgId = nanoid();
     const mockPageNumber = 1;
-    const mockOrderBy = "name";
+    const mockOrderBy = 'name';
     const queryOptions = { enabled: true };
 
-    vi.spyOn(VueQuery, "useQuery");
+    vi.spyOn(VueQuery, 'useQuery');
 
-    withSetup(
-      () =>
-        useOrgUsersQuery(
-          mockOrgType,
-          mockOrgId,
-          mockPageNumber,
-          mockOrderBy,
-          queryOptions,
-        ),
-      {
-        plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
-      },
-    );
+    withSetup(() => useOrgUsersQuery(mockOrgType, mockOrgId, mockPageNumber, mockOrderBy, queryOptions), {
+      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
+    });
 
     expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: [
-        "org-users",
-        mockOrgType,
-        mockOrgId,
-        mockPageNumber,
-        mockOrderBy,
-      ],
+      queryKey: ['org-users', mockOrgType, mockOrgId, mockPageNumber, mockOrderBy],
       queryFn: expect.any(Function),
       enabled: true,
     });
@@ -73,37 +57,21 @@ describe("useOrgUsersQuery", () => {
     );
   });
 
-  it("should allow the query to be disabled via the passed query options", () => {
-    const mockOrgType = "org";
+  it('should allow the query to be disabled via the passed query options', () => {
+    const mockOrgType = 'org';
     const mockOrgId = nanoid();
     const mockPageNumber = 1;
-    const mockOrderBy = "name";
+    const mockOrderBy = 'name';
     const queryOptions = { enabled: false };
 
-    vi.spyOn(VueQuery, "useQuery");
+    vi.spyOn(VueQuery, 'useQuery');
 
-    withSetup(
-      () =>
-        useOrgUsersQuery(
-          mockOrgType,
-          mockOrgId,
-          mockPageNumber,
-          mockOrderBy,
-          queryOptions,
-        ),
-      {
-        plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
-      },
-    );
+    withSetup(() => useOrgUsersQuery(mockOrgType, mockOrgId, mockPageNumber, mockOrderBy, queryOptions), {
+      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
+    });
 
     expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: [
-        "org-users",
-        mockOrgType,
-        mockOrgId,
-        mockPageNumber,
-        mockOrderBy,
-      ],
+      queryKey: ['org-users', mockOrgType, mockOrgId, mockPageNumber, mockOrderBy],
       queryFn: expect.any(Function),
       enabled: false,
     });

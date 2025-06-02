@@ -2,75 +2,45 @@
   <PvPanel header="Add users" class="add-users-panel">
     <div class="info-message-container">
       <i class="pi pi-exclamation-circle"></i>
-      <p>
-        Groups must be created before adding users. You cannot add users
-        otherwise.
-      </p>
+      <p>Groups must be created before adding users. You cannot add users otherwise.</p>
     </div>
 
     <div class="how-to-section">
       <h3>How to Add Users</h3>
       <ol class="numbered-steps">
         <li>
-          <span class="step-number">1</span>Download the template below or
-          create your own CSV with the required columns
+          <span class="step-number">1</span>Download the template below or create your own CSV with the required columns
         </li>
+        <li><span class="step-number">2</span>Fill in the CSV with the user data</li>
+        <li><span class="step-number">3</span>Upload the CSV file and click "Start Adding Users"</li>
         <li>
-          <span class="step-number">2</span>Fill in the CSV with the user data
+          <span class="step-number">4</span>When finished, a file called "registered_users.csv" will be downloaded. If
+          it is not in your downloads folder, click the "Download Users" button.
         </li>
-        <li>
-          <span class="step-number">3</span>Upload the CSV file and click "Start
-          Adding Users"
-        </li>
-        <li>
-          <span class="step-number">4</span>When finished, a file called
-          "registered_users.csv" will be downloaded. If it is not in your
-          downloads folder, click the "Download Users" button.
-        </li>
-        <li>
-          <span class="step-number">5</span>Click "Continue to Link Users" and
-          get their login information.
-        </li>
+        <li><span class="step-number">5</span>Click "Continue to Link Users" and get their login information.</li>
       </ol>
     </div>
 
     <p>
-      The following fields define the columns for your CSV file when adding
-      users. Please refer to the legend below for specific requirements on each
-      field.
+      The following fields define the columns for your CSV file when adding users. Please refer to the legend below for
+      specific requirements on each field.
     </p>
-    <p>
-      Caregivers and Teachers need to have the same Groups as the children they
-      relate to.
-    </p>
+    <p>Caregivers and Teachers need to have the same Groups as the children they relate to.</p>
     <ul>
+      <li><b>id</b><span class="field-marker">*</span> - A unique identifier for the user in CSV file.</li>
+      <li><b>userType</b><span class="field-marker">*</span> - The type of user: child, caregiver, teacher.</li>
       <li>
-        <b>id</b><span class="field-marker">*</span> - A unique identifier for
-        the user in CSV file.
+        <b>month</b><span class="field-marker">*</span><span class="field-marker">†</span> - The month a child user was
+        born (numeric; For Example, 5 for May).
       </li>
       <li>
-        <b>userType</b><span class="field-marker">*</span> - The type of user:
-        child, caregiver, teacher.
+        <b>year</b><span class="field-marker">*</span><span class="field-marker">†</span> - The year a child user was
+        born (four-digit; For Example, 2017).
       </li>
+      <li><b>caregiverId</b> - A unique identifier (id) for the child's caregiver.</li>
+      <li><b>teacherId</b> - A unique identifier (id) for the child's teacher.</li>
       <li>
-        <b>month</b><span class="field-marker">*</span
-        ><span class="field-marker">†</span> - The month a child user was born
-        (numeric; For Example, 5 for May).
-      </li>
-      <li>
-        <b>year</b><span class="field-marker">*</span
-        ><span class="field-marker">†</span> - The year a child user was born
-        (four-digit; For Example, 2017).
-      </li>
-      <li>
-        <b>caregiverId</b> - A unique identifier (id) for the child's caregiver.
-      </li>
-      <li>
-        <b>teacherId</b> - A unique identifier (id) for the child's teacher.
-      </li>
-      <li>
-        <b>site</b><span class="field-marker">*</span> - The name of the site
-        you created from the Add Groups page.
+        <b>site</b><span class="field-marker">*</span> - The name of the site you created from the Add Groups page.
       </li>
       <li>
         One of the following<span class="field-marker">*</span>:
@@ -79,10 +49,7 @@
           <li>
             <b>school</b> - The name of the school.
             <ul class="nested-list">
-              <li>
-                <b>class</b> - The name of the class. Must have a school as
-                well. (Optional)
-              </li>
+              <li><b>class</b> - The name of the class. Must have a school as well. (Optional)</li>
             </ul>
           </li>
         </ul>
@@ -91,24 +58,18 @@
 
     <p class="mb-6 legend">
       <span class="field-marker">*</span> Required for this Step<br />
-      <span class="field-marker">†</span> Required only for child users. Leave
-      blank for caregiver or teacher users.
+      <span class="field-marker">†</span> Required only for child users. Leave blank for caregiver or teacher users.
     </p>
 
     <div class="download-button-container">
-      <button
-        class="download-csv-btn"
-        data-testid="download-template"
-        @click="downloadTemplate"
-      >
+      <button class="download-csv-btn" data-testid="download-template" @click="downloadTemplate">
         <i class="pi pi-download"></i>
         Download CSV Template
       </button>
     </div>
 
     <p>
-      Below is an example of what your CSV/spreadsheet should look like. Only
-      the required columns will be processed.
+      Below is an example of what your CSV/spreadsheet should look like. Only the required columns will be processed.
     </p>
 
     <img
@@ -121,33 +82,22 @@
 </template>
 
 <script setup>
-import { LEVANTE_BUCKET_URL } from "@/constants/bucket";
-import PvPanel from "primevue/panel";
+import { LEVANTE_BUCKET_URL } from '@/constants/bucket';
+import PvPanel from 'primevue/panel';
 
 const generateTemplateFile = () => {
-  const headers = [
-    "id",
-    "userType",
-    "month",
-    "year",
-    "caregiverId",
-    "teacherId",
-    "site",
-    "school",
-    "class",
-    "cohort",
-  ];
-  const csvContent = headers.join(",") + "\n";
-  return new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const headers = ['id', 'userType', 'month', 'year', 'caregiverId', 'teacherId', 'site', 'school', 'class', 'cohort'];
+  const csvContent = headers.join(',') + '\n';
+  return new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
 };
 
 const downloadTemplate = () => {
   const blob = generateTemplateFile();
-  const link = document.createElement("a");
+  const link = document.createElement('a');
   const url = URL.createObjectURL(blob);
-  link.setAttribute("href", url);
-  link.setAttribute("download", "add_users_template.csv");
-  link.style.visibility = "hidden";
+  link.setAttribute('href', url);
+  link.setAttribute('download', 'add_users_template.csv');
+  link.style.visibility = 'hidden';
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);

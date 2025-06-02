@@ -31,14 +31,8 @@
                 <small class="p-error">{{ error.$message }}</small>
               </span>
             </span>
-            <small
-              v-if="
-                (v$.taskName.$invalid && submitted) ||
-                v$.taskName.$pending.$response
-              "
-              class="p-error"
-            >
-              {{ v$.taskName.required.$message.replace("Value", "Task Name") }}
+            <small v-if="(v$.taskName.$invalid && submitted) || v$.taskName.$pending.$response" class="p-error">
+              {{ v$.taskName.required.$message.replace('Value', 'Task Name') }}
             </small>
           </section>
           <!-- Task ID -->
@@ -60,14 +54,8 @@
                 <small class="p-error">{{ error.$message }}</small>
               </span>
             </span>
-            <small
-              v-else-if="
-                (v$.taskId.$invalid && submitted) ||
-                v$.taskId.$pending.$response
-              "
-              class="p-error"
-            >
-              {{ v$.taskId.required.$message.replace("Value", "Task ID") }}
+            <small v-else-if="(v$.taskId.$invalid && submitted) || v$.taskId.$pending.$response" class="p-error">
+              {{ v$.taskId.required.$message.replace('Value', 'Task ID') }}
             </small>
           </section>
           <!-- Cover Image -->
@@ -85,10 +73,7 @@
               <label for="description">
                 <small class="text-gray-400 font-bold">Description</small>
               </label>
-              <PvInputText
-                v-model="taskFields.description"
-                name="description"
-              />
+              <PvInputText v-model="taskFields.description" name="description" />
             </div>
           </section>
           <!--Task URL-->
@@ -109,14 +94,8 @@
                   <small class="p-error">{{ error.$message }}</small>
                 </span>
               </span>
-              <small
-                v-else-if="
-                  (v$.taskURL.$invalid && submitted) ||
-                  v$.taskURL.$pending.$response
-                "
-                class="p-error"
-              >
-                {{ v$.taskURL.required.$message.replace("Value", "Task URL") }}
+              <small v-else-if="(v$.taskURL.$invalid && submitted) || v$.taskURL.$pending.$response" class="p-error">
+                {{ v$.taskURL.required.$message.replace('Value', 'Task URL') }}
               </small>
             </div>
           </section>
@@ -126,33 +105,18 @@
           <h3 class="text-center">
             <strong>Configure Game Parameters</strong>
           </h3>
-          <h4 class="text-center">
-            Create the configurable game parameters for variants of this task.
-          </h4>
+          <h4 class="text-center">Create the configurable game parameters for variants of this task.</h4>
           <div v-for="(param, index) in gameConfig" :key="index">
-            <div
-              class="flex gap-2 align-content-start flex-grow-0 params-container"
-            >
+            <div class="flex gap-2 align-content-start flex-grow-0 params-container">
               <PvInputText v-model="param.name" placeholder="Name" />
 
               <PvDropdown v-model="param.type" :options="typeOptions" />
 
-              <PvInputText
-                v-if="param.type === 'string'"
-                v-model="param.value"
-                placeholder="Value"
-              />
+              <PvInputText v-if="param.type === 'string'" v-model="param.value" placeholder="Value" />
 
-              <PvDropdown
-                v-else-if="param.type === 'boolean'"
-                v-model="param.value"
-                :options="[true, false]"
-              />
+              <PvDropdown v-else-if="param.type === 'boolean'" v-model="param.value" :options="[true, false]" />
 
-              <PvInputNumber
-                v-else-if="param.type === 'number'"
-                v-model="param.value"
-              />
+              <PvInputNumber v-else-if="param.type === 'number'" v-model="param.value" />
 
               <PvButton
                 icon="pi pi-trash"
@@ -167,33 +131,19 @@
         <div v-else>
           <h3 class="text-center">Configure URL Parameters</h3>
           <h4 class="text-center">
-            These parameters will be appended to the task URL to generate the
-            variant URL for this task.
+            These parameters will be appended to the task URL to generate the variant URL for this task.
           </h4>
           <div v-for="(param, index) in taskParams" :key="index">
-            <div
-              class="flex gap-2 align-content-start flex-grow-0 params-container"
-            >
+            <div class="flex gap-2 align-content-start flex-grow-0 params-container">
               <PvInputText v-model="param.name" placeholder="Name" />
 
               <PvDropdown v-model="param.type" :options="typeOptions" />
 
-              <PvInputText
-                v-if="param.type === 'string'"
-                v-model="param.value"
-                placeholder="Value"
-              />
+              <PvInputText v-if="param.type === 'string'" v-model="param.value" placeholder="Value" />
 
-              <PvDropdown
-                v-else-if="param.type === 'boolean'"
-                v-model="param.value"
-                :options="[true, false]"
-              />
+              <PvDropdown v-else-if="param.type === 'boolean'" v-model="param.value" :options="[true, false]" />
 
-              <PvInputNumber
-                v-else-if="param.type === 'number'"
-                v-model="param.value"
-              />
+              <PvInputNumber v-else-if="param.type === 'number'" v-model="param.value" />
 
               <PvButton
                 icon="pi pi-trash"
@@ -225,48 +175,22 @@
             />
           </div>
         </div>
-        <div
-          class="flex flex-row align-items-center justify-content-center gap-2 flex-order-0 my-3"
-        >
+        <div class="flex flex-row align-items-center justify-content-center gap-2 flex-order-0 my-3">
           <div class="flex flex-row align-items-center">
-            <PvCheckbox
-              v-model="taskCheckboxData"
-              input-id="chbx-demoTask"
-              value="isDemoTask"
-            />
-            <label class="ml-1 mr-3" for="chbx-demoTask"
-              >Mark as <b>Demo Task</b></label
-            >
+            <PvCheckbox v-model="taskCheckboxData" input-id="chbx-demoTask" value="isDemoTask" />
+            <label class="ml-1 mr-3" for="chbx-demoTask">Mark as <b>Demo Task</b></label>
           </div>
           <div class="flex flex-row align-items-center">
-            <PvCheckbox
-              v-model="taskCheckboxData"
-              input-id="chbx-testTask"
-              value="isTestTask"
-            />
-            <label class="ml-1 mr-3" for="chbx-testTask"
-              >Mark as <b>Test Task</b></label
-            >
+            <PvCheckbox v-model="taskCheckboxData" input-id="chbx-testTask" value="isTestTask" />
+            <label class="ml-1 mr-3" for="chbx-testTask">Mark as <b>Test Task</b></label>
           </div>
           <div class="flex flex-row align-items-center">
-            <PvCheckbox
-              v-model="taskCheckboxData"
-              input-id="chbx-externalTask"
-              value="isExternalTask"
-            />
-            <label class="ml-1 mr-3" for="chbx-externalTask"
-              >Mark as <b>External Task</b>
-            </label>
+            <PvCheckbox v-model="taskCheckboxData" input-id="chbx-externalTask" value="isExternalTask" />
+            <label class="ml-1 mr-3" for="chbx-externalTask">Mark as <b>External Task</b> </label>
           </div>
           <div class="flex flex-row align-items-center">
-            <PvCheckbox
-              v-model="taskCheckboxData"
-              input-id="chbx-registeredTask"
-              value="isRegisteredTask"
-            />
-            <label class="ml-1 mr-3" for="chbx-externalTask"
-              >Mark as <b>Registered Task</b>
-            </label>
+            <PvCheckbox v-model="taskCheckboxData" input-id="chbx-registeredTask" value="isRegisteredTask" />
+            <label class="ml-1 mr-3" for="chbx-externalTask">Mark as <b>Registered Task</b> </label>
           </div>
         </div>
         <div class="form-submit">
@@ -283,12 +207,9 @@
     <div v-else>
       <h2>Your task has been created!</h2>
       <p>
-        Redirect to this URL upon task completion. ParticipantId can be any
-        string, completed should be set to true.
+        Redirect to this URL upon task completion. ParticipantId can be any string, completed should be set to true.
       </p>
-      <p>
-        roar.education/?participantId=[$PARTICIPANT_ID]&completed=[$BOOLEAN]
-      </p>
+      <p>roar.education/?participantId=[$PARTICIPANT_ID]&completed=[$BOOLEAN]</p>
       <PvButton
         label="Create Another Task"
         class="submit-button bg-primary text-white border-none border-round p-2 hover:bg-red-900"
@@ -302,9 +223,7 @@
     <form @submit.prevent="handleUpdateTask()">
       <section class="flex flex-column gap-2 mb-4 p-4">
         <label for="variant-fields" class="my-2">
-          <small class="text-gray-400 font-bold"
-            >Select an Existing Task
-          </small>
+          <small class="text-gray-400 font-bold">Select an Existing Task </small>
           <span class="required">*</span></label
         >
         <PvDropdown
@@ -316,10 +235,7 @@
         />
       </section>
 
-      <section
-        v-if="taskData"
-        class="flex flex-column align-items-start mt-4 p-4"
-      >
+      <section v-if="taskData" class="flex flex-column align-items-start mt-4 p-4">
         <div class="flex flex-column w-full">
           <label for="fieldsOutput">
             <strong>Fields</strong>
@@ -333,11 +249,7 @@
                 <label :for="key" class="w-1">
                   <em>{{ key }}</em>
                 </label>
-                <PvInputText
-                  :placeholder="typeof value"
-                  class="w-2 text-center"
-                  disabled
-                />
+                <PvInputText :placeholder="typeof value" class="w-2 text-center" disabled />
 
                 <PvInputText
                   v-if="typeof value === 'string'"
@@ -371,17 +283,9 @@
         </div>
 
         <div v-if="newFields.length > 0" class="w-full">
-          <div
-            v-for="(field, index) in newFields"
-            :key="index"
-            class="flex align-items-center column-gap-2 mb-1"
-          >
+          <div v-for="(field, index) in newFields" :key="index" class="flex align-items-center column-gap-2 mb-1">
             <PvInputText v-model="field.name" placeholder="Field Name" />
-            <PvDropdown
-              v-model="field.type"
-              :options="['string', 'number', 'boolean']"
-              placeholder="Field Type"
-            />
+            <PvDropdown v-model="field.type" :options="['string', 'number', 'boolean']" placeholder="Field Type" />
 
             <PvInputText
               v-if="field.type === 'string'"
@@ -425,12 +329,7 @@
           <label for="gameConfigOutput">
             <strong>Game Parameters</strong>
           </label>
-          <div
-            v-for="(param, paramName) in updatedTaskData.gameConfig"
-            id="paramsOutput"
-            :key="paramName"
-            class="mb-1"
-          >
+          <div v-for="(param, paramName) in updatedTaskData.gameConfig" id="paramsOutput" :key="paramName" class="mb-1">
             <div
               v-if="updatedTaskData.gameConfig[paramName] !== undefined"
               class="flex align-items-center justify-content-end column-gap-2"
@@ -438,12 +337,7 @@
               <label :for="paramName" class="w-2">
                 <em>{{ paramName }} </em>
               </label>
-              <PvInputText
-                id="inputEditParamType"
-                :placeholder="typeof param"
-                class="w-2 text-center"
-                disabled
-              />
+              <PvInputText id="inputEditParamType" :placeholder="typeof param" class="w-2 text-center" disabled />
               <PvInputText
                 v-if="typeof param === 'string'"
                 v-model="updatedTaskData.gameConfig[paramName]"
@@ -479,11 +373,7 @@
               class="flex align-items-center column-gap-2 mb-1"
             >
               <PvInputText v-model="field.name" placeholder="Field Name" />
-              <PvDropdown
-                v-model="field.type"
-                :options="['string', 'number', 'boolean']"
-                placeholder="Field Type"
-              />
+              <PvDropdown v-model="field.type" :options="['string', 'number', 'boolean']" placeholder="Field Type" />
               <PvInputText
                 v-if="field.type === 'string'"
                 v-model="field.value"
@@ -524,9 +414,7 @@
         />
       </section>
 
-      <PvButton
-        type="submit"
-        class="my-4 bg-primary text-white border-none border-round p-2 hover:bg-red-900"
+      <PvButton type="submit" class="my-4 bg-primary text-white border-none border-round p-2 hover:bg-red-900"
         >Update Task</PvButton
       >
     </form>
@@ -534,23 +422,23 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref, watch } from "vue";
-import { required, requiredIf, url } from "@vuelidate/validators";
-import { useVuelidate } from "@vuelidate/core";
-import { storeToRefs } from "pinia";
-import { useToast } from "primevue/usetoast";
-import PvButton from "primevue/button";
-import PvCheckbox from "primevue/checkbox";
-import PvDropdown from "primevue/dropdown";
-import PvInputNumber from "primevue/inputnumber";
-import PvInputText from "primevue/inputtext";
-import PvSelectButton from "primevue/selectbutton";
-import PvToast from "primevue/toast";
-import { cloneDeep, camelCase } from "lodash";
-import { useAuthStore } from "@/store/auth";
-import useTasksQuery from "@/composables/queries/useTasksQuery";
-import useAddTaskMutation from "@/composables/mutations/useAddTaskMutation";
-import useUpdateTaskMutation from "@/composables/mutations/useUpdateTaskMutation";
+import { computed, onMounted, reactive, ref, watch } from 'vue';
+import { required, requiredIf, url } from '@vuelidate/validators';
+import { useVuelidate } from '@vuelidate/core';
+import { storeToRefs } from 'pinia';
+import { useToast } from 'primevue/usetoast';
+import PvButton from 'primevue/button';
+import PvCheckbox from 'primevue/checkbox';
+import PvDropdown from 'primevue/dropdown';
+import PvInputNumber from 'primevue/inputnumber';
+import PvInputText from 'primevue/inputtext';
+import PvSelectButton from 'primevue/selectbutton';
+import PvToast from 'primevue/toast';
+import { cloneDeep, camelCase } from 'lodash';
+import { useAuthStore } from '@/store/auth';
+import useTasksQuery from '@/composables/queries/useTasksQuery';
+import useAddTaskMutation from '@/composables/mutations/useAddTaskMutation';
+import useUpdateTaskMutation from '@/composables/mutations/useUpdateTaskMutation';
 
 const toast = useToast();
 const initialized = ref(false);
@@ -562,9 +450,7 @@ const { roarfirekit } = storeToRefs(authStore);
 const { mutate: addTask } = useAddTaskMutation();
 const { mutate: updateTask } = useUpdateTaskMutation();
 
-const isExternalTask = computed(
-  () => !!taskCheckboxData.value?.find((item) => item === "isExternalTask"),
-);
+const isExternalTask = computed(() => !!taskCheckboxData.value?.find((item) => item === 'isExternalTask'));
 const selectedTask = ref(null);
 
 let taskData = computed(() => {
@@ -582,16 +468,14 @@ let newFields = reactive([]);
 let addedGameConfig = reactive([]);
 
 const MODEL_VIEWS = Object.freeze({
-  CREATE_TASK: "Create Task",
-  UPDATE_TASK: "Update Task",
+  CREATE_TASK: 'Create Task',
+  UPDATE_TASK: 'Update Task',
 });
 
 const viewModel = ref(MODEL_VIEWS.CREATE_TASK);
 
 const handleViewChange = (value) => {
-  const selectedView = Object.values(MODEL_VIEWS).find(
-    (view) => view === value,
-  );
+  const selectedView = Object.values(MODEL_VIEWS).find((view) => view === value);
   if (selectedView) {
     viewModel.value = selectedView;
   }
@@ -602,13 +486,13 @@ watch(taskData, (newVal) => {
 });
 
 // Ignore these fields when displaying the task data
-const ignoreFields = ["id", "lastUpdated", "gameConfig", "parentDoc"];
+const ignoreFields = ['id', 'lastUpdated', 'gameConfig', 'parentDoc'];
 
-const typeOptions = ["string", "number", "boolean"];
+const typeOptions = ['string', 'number', 'boolean'];
 
 const booleanDropDownOptions = [
-  { label: "true", value: true },
-  { label: "false", value: false },
+  { label: 'true', value: true },
+  { label: 'false', value: false },
 ];
 
 const submitted = ref(false);
@@ -644,11 +528,11 @@ const formattedTasks = computed(() => {
 
 // For modeling a task to submit to the DB
 const taskFields = reactive({
-  taskName: "",
-  taskURL: "",
-  taskId: "",
-  coverImage: "",
-  description: "",
+  taskName: '',
+  taskURL: '',
+  taskId: '',
+  coverImage: '',
+  description: '',
   gameConfig: {},
   // Based on type of account?
   external: isExternalTask,
@@ -667,27 +551,27 @@ const v$ = useVuelidate(taskRules, taskFields);
 // This array of objects is later converted back into an object and spread into the task object
 const gameConfig = ref([
   {
-    name: "",
-    value: "",
-    type: "String",
+    name: '',
+    value: '',
+    type: 'String',
   },
 ]);
 
 // Array of objects which models the task parameters and is used to build the task URL
 const taskParams = ref([
   {
-    name: "",
-    value: "",
-    type: "String",
+    name: '',
+    value: '',
+    type: 'String',
   },
 ]);
 
 // For adding a new field to the new task document
 function addField(type) {
   type.push({
-    name: "",
-    value: "",
-    type: "String",
+    name: '',
+    value: '',
+    type: 'String',
   });
 }
 
@@ -698,7 +582,7 @@ function removeField(type, index) {
 
 // Adds a new object to the newFields array, which models a new field for the task object being updated
 const newField = () => {
-  newFields.push({ name: "", value: "", type: "string" });
+  newFields.push({ name: '', value: '', type: 'string' });
 };
 
 // Removes a field from the newFields or addedGameConfig array
@@ -709,22 +593,21 @@ const removeNewField = (field, array) => {
 
 // Deletes a parameter from the updatedTaskData object
 const deleteParam = (param) => {
-  if (updatedTaskData["gameConfig"][param] !== undefined) {
-    delete updatedTaskData["gameConfig"][param];
+  if (updatedTaskData['gameConfig'][param] !== undefined) {
+    delete updatedTaskData['gameConfig'][param];
   }
   delete updatedTaskData[param];
 };
 
 // Adds a new object to the addedGameConfig array, which models a new field for the gameConfig object being updated
 const addGameConfig = () => {
-  addedGameConfig.push({ name: "", value: "", type: "string" });
+  addedGameConfig.push({ name: '', value: '', type: 'string' });
 };
 
 // Takes the array of objects that will be added to the current data object in Firestore
 // and checks if any of the new fields are duplicates of existing fields to prevent overwriting data
 const checkForDuplicates = (newItemsArray, currentDataObject) => {
-  if (currentDataObject === undefined)
-    return { isDuplicate: false, duplicateField: "" };
+  if (currentDataObject === undefined) return { isDuplicate: false, duplicateField: '' };
 
   const keys = Object.keys(currentDataObject);
   for (const newItem of newItemsArray) {
@@ -732,7 +615,7 @@ const checkForDuplicates = (newItemsArray, currentDataObject) => {
       return { isDuplicate: true, duplicateField: newItem.name };
     }
   }
-  return { isDuplicate: false, duplicateField: "" };
+  return { isDuplicate: false, duplicateField: '' };
 };
 
 // Helper function to check for errors before updating a task
@@ -740,23 +623,20 @@ const checkForDuplicates = (newItemsArray, currentDataObject) => {
 const checkForErrors = () => {
   if (!selectedTask.value) {
     toast.add({
-      severity: "error",
-      summary: "Oops!",
-      detail: "Please select a task to update.",
+      severity: 'error',
+      summary: 'Oops!',
+      detail: 'Please select a task to update.',
       life: 3000,
     });
     return true;
   }
 
   if (newFields.length > 0) {
-    const { isDuplicate, duplicateField } = checkForDuplicates(
-      newFields,
-      updatedTaskData,
-    );
+    const { isDuplicate, duplicateField } = checkForDuplicates(newFields, updatedTaskData);
     if (isDuplicate) {
       toast.add({
-        severity: "error",
-        summary: "Oops!",
+        severity: 'error',
+        summary: 'Oops!',
         detail: `Duplicate field name detected: ${duplicateField}.`,
         life: 3000,
       });
@@ -765,14 +645,11 @@ const checkForErrors = () => {
   }
 
   if (addedGameConfig.length > 0) {
-    const { isDuplicate, duplicateField } = checkForDuplicates(
-      addedGameConfig,
-      updatedTaskData.gameConfig,
-    );
+    const { isDuplicate, duplicateField } = checkForDuplicates(addedGameConfig, updatedTaskData.gameConfig);
     if (isDuplicate) {
       toast.add({
-        severity: "error",
-        summary: "Oops!",
+        severity: 'error',
+        summary: 'Oops!',
         detail: `Duplicate field name detected: ${duplicateField}.`,
         life: 3000,
       });
@@ -804,48 +681,38 @@ const handleUpdateTask = async () => {
   await updateTask(taskData, {
     onSuccess: () => {
       toast.add({
-        severity: "success",
-        summary: "Hoorah!",
-        detail: "Task successfully updated.",
+        severity: 'success',
+        summary: 'Hoorah!',
+        detail: 'Task successfully updated.',
         life: 3000,
       });
       resetUpdateTaskForm();
     },
     onError: (error) => {
       toast.add({
-        severity: "error",
-        summary: "Error",
-        detail: "Unable to update task, please try again.",
+        severity: 'error',
+        summary: 'Error',
+        detail: 'Unable to update task, please try again.',
         life: 3000,
       });
-      console.error("Failed to update task.", error);
+      console.error('Failed to update task.', error);
     },
   });
 };
 
 const handleNewTaskSubmit = async (isFormValid) => {
   submitted.value = true;
-  const isDemoData = !!taskCheckboxData.value?.find(
-    (item) => item === "isDemoTask",
-  );
-  const isTestData = !!taskCheckboxData.value?.find(
-    (item) => item === "isTestTask",
-  );
-  const isExternalTask = !!taskCheckboxData.value?.find(
-    (item) => item === "isExternalTask",
-  );
-  const isRegisteredTask = !!taskCheckboxData.value?.find(
-    (item) => item === "isRegisteredTask",
-  );
+  const isDemoData = !!taskCheckboxData.value?.find((item) => item === 'isDemoTask');
+  const isTestData = !!taskCheckboxData.value?.find((item) => item === 'isTestTask');
+  const isExternalTask = !!taskCheckboxData.value?.find((item) => item === 'isExternalTask');
+  const isRegisteredTask = !!taskCheckboxData.value?.find((item) => item === 'isRegisteredTask');
 
   if (!isFormValid) {
     return;
   }
 
   const convertedGameConfig = convertParamsToObj(gameConfig) ?? {};
-  const convertedTaskParams = isExternalTask
-    ? convertParamsToObj(taskParams)
-    : null;
+  const convertedTaskParams = isExternalTask ? convertParamsToObj(taskParams) : null;
 
   let newTaskObject = reactive({
     taskId: taskFields.taskId,
@@ -871,12 +738,12 @@ const handleNewTaskSubmit = async (isFormValid) => {
     },
     onError: (error) => {
       toast.add({
-        severity: "error",
-        summary: "Error",
-        detail: "Unable to create task, please try again.",
+        severity: 'error',
+        summary: 'Error',
+        detail: 'Unable to create task, please try again.',
         life: 3000,
       });
-      console.error("Failed to add task.", error);
+      console.error('Failed to add task.', error);
     },
   });
 };
@@ -897,7 +764,7 @@ function convertParamsToObj(paramType) {
 function buildTaskURL(url, params) {
   const baseURL = url;
 
-  let queryParams = url.includes("/?") ? "" : "/?";
+  let queryParams = url.includes('/?') ? '' : '/?';
 
   params.value.forEach((param, i) => {
     if (param.name) {

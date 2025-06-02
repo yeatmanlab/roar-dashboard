@@ -1,9 +1,9 @@
-import { defineStore } from "pinia";
-import { parse, stringify } from "zipson";
+import { defineStore } from 'pinia';
+import { parse, stringify } from 'zipson';
 
 export const useGameStore = () => {
   return defineStore({
-    id: "gameStore",
+    id: 'gameStore',
     state: () => {
       return {
         selectedAdmin: undefined,

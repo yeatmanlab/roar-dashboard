@@ -4,10 +4,7 @@
     data-cy="button-edit-variant"
     @click="isVisible = true"
   >
-    <i
-      class="pi pi-pencil text-primary hover:text-white-alpha-90 p-2"
-      style="font-size: 1rem"
-    ></i>
+    <i class="pi pi-pencil text-primary hover:text-white-alpha-90 p-2" style="font-size: 1rem"></i>
   </PvButton>
 
   <PvDialog
@@ -22,17 +19,13 @@
     <div class="flex w-full align-items-center justify-content-around">
       <div class="flex flex-column w-full my-3 gap-2">
         <div>
-          <div class="text-sm font-light uppercase text-gray-400">
-            Task Name
-          </div>
+          <div class="text-sm font-light uppercase text-gray-400">Task Name</div>
           <div class="text-3xl font-bold uppercase">
             {{ assessment.task.name }}
           </div>
         </div>
         <div v-if="assessment.variant?.name" class="gap-2">
-          <div class="text-sm font-light uppercase text-gray-500">
-            Variant Name
-          </div>
+          <div class="text-sm font-light uppercase text-gray-500">Variant Name</div>
           <div class="text-xl">
             {{ assessment.variant?.name }}
           </div>
@@ -44,9 +37,7 @@
     </div>
     <div class="flex flex-column w-full my-2 gap-2">
       <div class="card p-fluid bg-gray-100 p-3">
-        <div class="text-lg font-normal text-gray-500 uppercase mb-2">
-          Assigned Conditions
-        </div>
+        <div class="text-lg font-normal text-gray-500 uppercase mb-2">Assigned Conditions</div>
         <div
           v-if="assignedConditions.length > 0"
           class="flex flex-row flex-wrap justify-content-around align-content-center w-full font-semibold uppercase pr-6"
@@ -62,19 +53,15 @@
           <div class="text-xl uppercase font-bold">No Conditions Added</div>
           <div class="text-sm uppercase text-gray-700">
             Assignment will be
-            <PvTag severity="warning" class="mx-1">ASSIGNED</PvTag> to all
-            {{ isLevante ? "users" : "participants" }} in the
+            <PvTag severity="warning" class="mx-1">ASSIGNED</PvTag> to all {{ isLevante ? 'users' : 'participants' }} in
+            the
             {{ selectedGroup }}
           </div>
         </div>
         <!-- ASSIGNED CONDITIONS  -->
         <div v-for="(condtion, index) in assignedConditions" :key="index">
-          <div
-            class="flex gap-2 align-content-start flex-grow-0 params-container mb-2"
-          >
-            <div
-              class="flex flex-row flex-wrap justify-content-between align-content-center gap-2 w-full"
-            >
+          <div class="flex gap-2 align-content-start flex-grow-0 params-container mb-2">
+            <div class="flex flex-row flex-wrap justify-content-between align-content-center gap-2 w-full">
               <PvSelect
                 v-model="condtion.field"
                 :options="fieldOptions"
@@ -85,9 +72,7 @@
               />
             </div>
 
-            <div
-              class="flex flex-row flex-wrap justify-content-between align-content-center gap-2 w-full"
-            >
+            <div class="flex flex-row flex-wrap justify-content-between align-content-center gap-2 w-full">
               <PvSelect
                 v-model="condtion.op"
                 :options="computedConditionOptions(condtion.field)"
@@ -98,9 +83,7 @@
               />
             </div>
 
-            <div
-              class="flex flex-row flex-wrap justify-content-between align-content-center gap-2 w-full"
-            >
+            <div class="flex flex-row flex-wrap justify-content-between align-content-center gap-2 w-full">
               <PvSelect
                 v-model="condtion.value"
                 :options="computedValueOptions(condtion.field)"
@@ -119,9 +102,7 @@
           </div>
         </div>
 
-        <div
-          class="flex flex-row-reverse justify-content-between align-items-center"
-        >
+        <div class="flex flex-row-reverse justify-content-between align-items-center">
           <div class="mt-2 flex">
             <PvButton
               label="Add Condition"
@@ -137,9 +118,7 @@
       <div>
         <div class="mt-2 flex flex-column gap-2">
           <div class="card p-fluid bg-gray-100 p-3">
-            <div class="text-lg font-normal text-gray-500 uppercase mb-2">
-              Optional Conditions
-            </div>
+            <div class="text-lg font-normal text-gray-500 uppercase mb-2">Optional Conditions</div>
             <div
               v-if="optionalConditions.length > 0"
               class="flex flex-row flex-wrap justify-content-around align-content-center w-full font-semibold uppercase pr-6"
@@ -153,30 +132,23 @@
               class="flex flex-column align-items-center justify-content-center py-2 gap-2"
             >
               <div class="text-xl uppercase font-bold">No Conditions Added</div>
-              <div
-                v-if="isOptionalForAll"
-                class="text-sm uppercase text-gray-700"
-              >
+              <div v-if="isOptionalForAll" class="text-sm uppercase text-gray-700">
                 Assignment will be
                 <PvTag severity="success" class="mx-1">OPTIONAL</PvTag> for all
-                {{ isLevante ? "users" : "participants" }} in the
+                {{ isLevante ? 'users' : 'participants' }} in the
                 {{ selectedGroup }}
               </div>
               <div v-else class="text-sm uppercase text-gray-700">
                 Assignment will
                 <PvTag severity="danger" class="mx-1">NOT BE OPTIONAL</PvTag>
-                for any {{ isLevante ? "users" : "participants" }} in the
+                for any {{ isLevante ? 'users' : 'participants' }} in the
                 {{ selectedGroup }}
               </div>
             </div>
 
             <div v-for="(condtion, index) in optionalConditions" :key="index">
-              <div
-                class="flex gap-2 align-content-start flex-grow-0 params-container mb-2"
-              >
-                <div
-                  class="flex flex-row flex-wrap justify-content-between align-content-center gap-2 w-full"
-                >
+              <div class="flex gap-2 align-content-start flex-grow-0 params-container mb-2">
+                <div class="flex flex-row flex-wrap justify-content-between align-content-center gap-2 w-full">
                   <PvSelect
                     v-model="condtion.field"
                     :options="fieldOptions"
@@ -187,9 +159,7 @@
                   />
                 </div>
 
-                <div
-                  class="flex flex-row flex-wrap justify-content-between align-content-center gap-2 w-full"
-                >
+                <div class="flex flex-row flex-wrap justify-content-between align-content-center gap-2 w-full">
                   <PvSelect
                     v-model="condtion.op"
                     :options="computedConditionOptions(condtion.field)"
@@ -200,9 +170,7 @@
                   />
                 </div>
 
-                <div
-                  class="flex flex-row flex-wrap justify-content-between align-content-center gap-2 w-full"
-                >
+                <div class="flex flex-row flex-wrap justify-content-between align-content-center gap-2 w-full">
                   <PvSelect
                     v-model="condtion.value"
                     :options="computedValueOptions(condtion.field)"
@@ -221,15 +189,11 @@
               </div>
             </div>
 
-            <div
-              class="flex flex-row justify-content-between align-items-center"
-            >
-              <div
-                class="flex flex-row justify-content-end align-items-center gap-2 mr-2"
-              >
+            <div class="flex flex-row justify-content-between align-items-center">
+              <div class="flex flex-row justify-content-end align-items-center gap-2 mr-2">
                 <div class="uppercase text-md font-bold text-gray-600">
                   Make Assessment Optional For All
-                  {{ isLevante ? "Users" : "Participants" }}
+                  {{ isLevante ? 'Users' : 'Participants' }}
                 </div>
                 <PvToggleSwitch
                   v-model="isOptionalForAll"
@@ -253,22 +217,15 @@
       </div>
       <PvDivider />
       <div class="flex flex-column align-items-center gap-1 mx-2">
-        <div
-          v-if="isOptionalForAllAndOptionalConditionsPresent"
-          class="text-sm"
-        >
+        <div v-if="isOptionalForAllAndOptionalConditionsPresent" class="text-sm">
           <PvTag icon="pi pi-info-circle" severity="info">
-            Making the assessment optional for all will override any optional
-            conditions you have added.
+            Making the assessment optional for all will override any optional conditions you have added.
           </PvTag>
         </div>
         <div v-if="errorSubmitText.length > 0" class="text-sm">
-          <PvTag
-            icon="pi pi-exclamation-triangle"
-            severity="error"
-            class="bg-transparent text-red-600"
-            >{{ errorSubmitText }}</PvTag
-          >
+          <PvTag icon="pi pi-exclamation-triangle" severity="error" class="bg-transparent text-red-600">{{
+            errorSubmitText
+          }}</PvTag>
         </div>
       </div>
       <div class="flex justify-content-center gap-2">
@@ -293,17 +250,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, toRaw } from "vue";
-import _isEmpty from "lodash/isEmpty";
-import _cloneDeep from "lodash/cloneDeep";
-import { isLevante } from "@/helpers";
-import PvButton from "primevue/button";
-import PvDialog from "primevue/dialog";
-import PvDivider from "primevue/divider";
-import PvSelect from "primevue/select";
-import PvToggleSwitch from "primevue/toggleswitch";
-import PvTag from "primevue/tag";
-import PvColumn from "primevue/column";
+import { ref, onMounted, computed, toRaw } from 'vue';
+import _isEmpty from 'lodash/isEmpty';
+import _cloneDeep from 'lodash/cloneDeep';
+import { isLevante } from '@/helpers';
+import PvButton from 'primevue/button';
+import PvDialog from 'primevue/dialog';
+import PvDivider from 'primevue/divider';
+import PvSelect from 'primevue/select';
+import PvToggleSwitch from 'primevue/toggleswitch';
+import PvTag from 'primevue/tag';
+import PvColumn from 'primevue/column';
 
 interface FieldOption {
   label: string;
@@ -327,10 +284,12 @@ interface ConditionsStructure {
     op: string;
     conditions: Condition[];
   };
-  optional?: boolean | {
-    op: string;
-    conditions: Condition[];
-  };
+  optional?:
+    | boolean
+    | {
+        op: string;
+        conditions: Condition[];
+      };
 }
 
 interface Task {
@@ -368,11 +327,11 @@ onMounted((): void => {
   getAllConditions(props.assessment.task.id);
   // LEVANTE assigns surveys as assessments, so we add a defualt for child only so researchers
   // do not accidently assign tasks to parents and teachers
-  if (isLevante && props.assessment.task.id !== "survey") {
+  if (isLevante && props.assessment.task.id !== 'survey') {
     assignedConditions.value.push({
-      field: { label: "User Type", value: "userType", project: "LEVANTE" },
-      op: { label: "Equal", value: "EQUAL" },
-      value: { label: "Child", value: "student" },
+      field: { label: 'User Type', value: 'userType', project: 'LEVANTE' },
+      op: { label: 'Equal', value: 'EQUAL' },
+      value: { label: 'Child', value: 'student' },
     });
   }
 });
@@ -388,24 +347,24 @@ const computedValueOptions = (field: FieldOption | string): ConditionOption[] | 
   if (!processedField) return;
   const selectedField = typeof processedField === 'string' ? processedField : processedField.label;
 
-  if (selectedField === "Age") {
+  if (selectedField === 'Age') {
     return [
-      { label: "3", value: "3" },
-      { label: "4", value: "4" },
-      { label: "5", value: "5" },
-      { label: "6", value: "6" },
-      { label: "7", value: "7" },
-      { label: "8", value: "8" },
-      { label: "9", value: "9" },
-      { label: "10", value: "10" },
-      { label: "11", value: "11" },
-      { label: "12", value: "12" },
+      { label: '3', value: '3' },
+      { label: '4', value: '4' },
+      { label: '5', value: '5' },
+      { label: '6', value: '6' },
+      { label: '7', value: '7' },
+      { label: '8', value: '8' },
+      { label: '9', value: '9' },
+      { label: '10', value: '10' },
+      { label: '11', value: '11' },
+      { label: '12', value: '12' },
     ];
-  } else if (selectedField === "User Type") {
+  } else if (selectedField === 'User Type') {
     return [
-      { label: "Child", value: "student" },
-      { label: "Caregiver", value: "parent" },
-      { label: "Teacher", value: "teacher" },
+      { label: 'Child', value: 'student' },
+      { label: 'Caregiver', value: 'parent' },
+      { label: 'Teacher', value: 'teacher' },
     ];
   }
 };
@@ -415,19 +374,19 @@ const computedConditionOptions = (field: FieldOption | string): ConditionOption[
   if (!processedField) return;
   const selectedField = typeof processedField === 'string' ? processedField : processedField.label;
 
-  if (selectedField === "Age") {
+  if (selectedField === 'Age') {
     return [
-      { label: "Less Than", value: "LESS_THAN" },
-      { label: "Greater Than", value: "GREATER_THAN" },
-      { label: "Less Than or Equal", value: "LESS_THAN_OR_EQUAL" },
-      { label: "Greater Than or Equal", value: "GREATER_THAN_OR_EQUAL" },
-      { label: "Equal", value: "EQUAL" },
-      { label: "Not Equal", value: "NOT_EQUAL" },
+      { label: 'Less Than', value: 'LESS_THAN' },
+      { label: 'Greater Than', value: 'GREATER_THAN' },
+      { label: 'Less Than or Equal', value: 'LESS_THAN_OR_EQUAL' },
+      { label: 'Greater Than or Equal', value: 'GREATER_THAN_OR_EQUAL' },
+      { label: 'Equal', value: 'EQUAL' },
+      { label: 'Not Equal', value: 'NOT_EQUAL' },
     ];
-  } else if (selectedField === "User Type") {
+  } else if (selectedField === 'User Type') {
     return [
-      { label: "Equal", value: "EQUAL" },
-      { label: "Not Equal", value: "NOT_EQUAL" },
+      { label: 'Equal', value: 'EQUAL' },
+      { label: 'Not Equal', value: 'NOT_EQUAL' },
     ];
   }
 };
@@ -446,15 +405,12 @@ function getAllConditions(taskId: string): void {
 
 // Get the assigned and optional conditions from the pre-existing admin info
 function getAssignedConditions(taskId: string): Condition[] | undefined {
-  return props.preExistingAssessmentInfo.find(
-    (assessment) => assessment.taskId === taskId,
-  )?.conditions?.assigned?.conditions;
+  return props.preExistingAssessmentInfo.find((assessment) => assessment.taskId === taskId)?.conditions?.assigned
+    ?.conditions;
 }
 
 function getOptionalConditions(taskId: string): Condition[] {
-  const task = props.preExistingAssessmentInfo.find(
-    (assessment) => assessment.taskId === taskId,
-  );
+  const task = props.preExistingAssessmentInfo.find((assessment) => assessment.taskId === taskId);
   const hasOptionalConditions = task?.conditions?.optional;
 
   if (hasOptionalConditions && typeof hasOptionalConditions === 'object' && 'conditions' in hasOptionalConditions) {
@@ -482,15 +438,15 @@ function setOptionalConditions(existingOptionalConditions: Condition[]): void {
 }
 
 const addOptionalCondition = (): void => {
-  optionalConditions.value.push({ field: "", op: "", value: "" });
+  optionalConditions.value.push({ field: '', op: '', value: '' });
 };
 
 const addAssignedCondition = (): void => {
-  assignedConditions.value.push({ field: "", op: "", value: "" });
+  assignedConditions.value.push({ field: '', op: '', value: '' });
 };
 
 const isOptionalForAll = ref<boolean>(false);
-const errorSubmitText = ref<string>("");
+const errorSubmitText = ref<string>('');
 
 const handleOptionalForAllSwitch = (): void => {
   if (isOptionalForAll.value === true) {
@@ -503,14 +459,11 @@ const handleOptionalForAllSwitch = (): void => {
 };
 
 const isOptionalForAllAndOptionalConditionsPresent = computed((): boolean => {
-  return (
-    isOptionalForAll.value &&
-    toRaw(previousOptionalConditions.value)?.length > 0
-  );
+  return isOptionalForAll.value && toRaw(previousOptionalConditions.value)?.length > 0;
 });
 
 const handleReset = (): void => {
-  errorSubmitText.value = "";
+  errorSubmitText.value = '';
   assignedConditions.value = [];
   optionalConditions.value = [];
 
@@ -523,8 +476,8 @@ const handleSave = (): void => {
   // Check if any emppty fields in Assigned Conditions
   for (const condition of assignedConditions.value) {
     for (const [key, value] of Object.entries(condition)) {
-      if (value == "") {
-        errorSubmitText.value = "Missing fields in Assigned Conditions";
+      if (value == '') {
+        errorSubmitText.value = 'Missing fields in Assigned Conditions';
         error = true;
       }
     }
@@ -533,25 +486,21 @@ const handleSave = (): void => {
   // Check if any emppty fields in Optional Conditions
   for (const condition of optionalConditions.value) {
     for (const [key, value] of Object.entries(condition)) {
-      if (value == "") {
-        errorSubmitText.value = "Missing fields in Optional Conditions";
+      if (value == '') {
+        errorSubmitText.value = 'Missing fields in Optional Conditions';
         error = true;
       }
     }
   }
 
   if (!error) {
-    errorSubmitText.value = "";
+    errorSubmitText.value = '';
     // If isOptionalForAll is true, then overwrite optional conditions by setting optional to true
-    const [assignedConditionsToValues, optionalConditionsToValues] =
-      conditionsToValues();
-    const conditionsCopy = computedConditions(
-      assignedConditionsToValues,
-      optionalConditionsToValues,
-    );
+    const [assignedConditionsToValues, optionalConditionsToValues] = conditionsToValues();
+    const conditionsCopy = computedConditions(assignedConditionsToValues, optionalConditionsToValues);
 
     if (isOptionalForAll.value === true) {
-      conditionsCopy["optional"] = true;
+      conditionsCopy['optional'] = true;
     }
 
     props.updateVariant(props.assessment.id, conditionsCopy);
@@ -590,23 +539,23 @@ const computedConditions = (assignedConditions: Condition[], optionalConditions:
   const conditions: ConditionsStructure = {};
 
   if (!_isEmpty(optionalConditions)) {
-    conditions.optional = { op: "AND", conditions: optionalConditions };
+    conditions.optional = { op: 'AND', conditions: optionalConditions };
   }
 
   if (!_isEmpty(assignedConditions)) {
-    conditions.assigned = { op: "AND", conditions: assignedConditions };
+    conditions.assigned = { op: 'AND', conditions: assignedConditions };
   }
 
   return conditions;
 };
 
 const fieldOptions: FieldOption[] = [
-  { label: "User Type", value: "userType", project: "LEVANTE" },
-  { label: "Age", value: "age", project: "LEVANTE" },
+  { label: 'User Type', value: 'userType', project: 'LEVANTE' },
+  { label: 'Age', value: 'age', project: 'LEVANTE' },
 ];
 
 const selectedGroup = computed((): string => {
   // This would need to be implemented based on your actual group selection logic
-  return "selected group";
+  return 'selected group';
 });
 </script>

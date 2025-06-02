@@ -1,11 +1,11 @@
-import { type MaybeRefOrGetter } from "vue";
-import { toValue } from "vue";
-import { useQuery } from "@tanstack/vue-query";
-import { computeQueryOverrides } from "@/helpers/computeQueryOverrides";
-import { hasArrayEntries } from "@/helpers/hasArrayEntries";
-import { fetchDocsById } from "@/helpers/query/utils";
-import { ADMINISTRATIONS_STATS_QUERY_KEY } from "@/constants/queryKeys";
-import { FIRESTORE_COLLECTIONS } from "@/constants/firebase";
+import { type MaybeRefOrGetter } from 'vue';
+import { toValue } from 'vue';
+import { useQuery } from '@tanstack/vue-query';
+import { computeQueryOverrides } from '@/helpers/computeQueryOverrides';
+import { hasArrayEntries } from '@/helpers/hasArrayEntries';
+import { fetchDocsById } from '@/helpers/query/utils';
+import { ADMINISTRATIONS_STATS_QUERY_KEY } from '@/constants/queryKeys';
+import { FIRESTORE_COLLECTIONS } from '@/constants/firebase';
 
 /**
  * Administrations stats query.
@@ -14,16 +14,10 @@ import { FIRESTORE_COLLECTIONS } from "@/constants/firebase";
  * @param {QueryOptions|undefined} queryOptions – Optional TanStack query options.
  * @returns {UseQueryResult} The TanStack query result.
  */
-const useAdministrationsStatsQuery = (
-  administrationIds,
-  queryOptions?: UseQueryOptions,
-): UseQueryReturnType => {
+const useAdministrationsStatsQuery = (administrationIds, queryOptions?: UseQueryOptions): UseQueryReturnType => {
   // Ensure all necessary data is available before enabling the query.
   const conditions = [() => hasArrayEntries(administrationIds)];
-  const { isQueryEnabled, options } = computeQueryOverrides(
-    conditions,
-    queryOptions,
-  );
+  const { isQueryEnabled, options } = computeQueryOverrides(conditions, queryOptions);
 
   return useQuery({
     queryKey: [ADMINISTRATIONS_STATS_QUERY_KEY, administrationIds],

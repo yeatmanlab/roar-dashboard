@@ -1,16 +1,16 @@
 <script setup>
-import "survey-core/survey-core.css";
-import { SurveyComponent } from "survey-vue3-ui";
-import { useAuthStore } from "@/store/auth";
-import AppSpinner from "@/components/AppSpinner.vue";
-import { useSurveyStore } from "@/store/survey";
-import { useI18n } from "vue-i18n";
-import { AudioContext } from "@/helpers/audio";
-import { getParsedLocale } from "@/helpers/survey";
-import { onBeforeRouteLeave } from "vue-router";
-import { isLevante } from "@/helpers";
-import PvButton from "primevue/button";
-import LevanteSpinner from "@/components/LevanteSpinner.vue";
+import 'survey-core/survey-core.css';
+import { SurveyComponent } from 'survey-vue3-ui';
+import { useAuthStore } from '@/store/auth';
+import AppSpinner from '@/components/AppSpinner.vue';
+import { useSurveyStore } from '@/store/survey';
+import { useI18n } from 'vue-i18n';
+import { AudioContext } from '@/helpers/audio';
+import { getParsedLocale } from '@/helpers/survey';
+import { onBeforeRouteLeave } from 'vue-router';
+import { isLevante } from '@/helpers';
+import PvButton from 'primevue/button';
+import LevanteSpinner from '@/components/LevanteSpinner.vue';
 
 const authStore = useAuthStore();
 const surveyStore = useSurveyStore();
@@ -43,32 +43,22 @@ async function playAudio(name) {
     v-if="
       surveyStore.survey &&
       !surveyStore.isSavingSurveyResponses &&
-      (!surveyStore.surveyAudioLoading ||
-        authStore.userData.userType === 'student')
+      (!surveyStore.surveyAudioLoading || authStore.userData.userType === 'student')
     "
   >
     <h1
-      v-if="
-        authStore.userData.userType !== 'student' &&
-        surveyStore.isGeneralSurveyComplete
-      "
+      v-if="authStore.userData.userType !== 'student' && surveyStore.isGeneralSurveyComplete"
       class="text-2xl font-bold text-black text-center"
     >
       {{
-        authStore.userData.userType === "parent"
-          ? `${$t("userSurvey.specificRelationDescriptionChildA")} ${
-              surveyStore.specificSurveyRelationData[
-                surveyStore.specificSurveyRelationIndex
-              ].birthMonth
-            } ${$t("userSurvey.specificRelationDescriptionChildB")} ${
-              surveyStore.specificSurveyRelationData[
-                surveyStore.specificSurveyRelationIndex
-              ].birthYear
+        authStore.userData.userType === 'parent'
+          ? `${$t('userSurvey.specificRelationDescriptionChildA')} ${
+              surveyStore.specificSurveyRelationData[surveyStore.specificSurveyRelationIndex].birthMonth
+            } ${$t('userSurvey.specificRelationDescriptionChildB')} ${
+              surveyStore.specificSurveyRelationData[surveyStore.specificSurveyRelationIndex].birthYear
             }`
-          : `${$t("userSurvey.specificRelationDescriptionClass")} ${
-              surveyStore.specificSurveyRelationData[
-                surveyStore.specificSurveyRelationIndex
-              ].name
+          : `${$t('userSurvey.specificRelationDescriptionClass')} ${
+              surveyStore.specificSurveyRelationData[surveyStore.specificSurveyRelationIndex].name
             }`
       }}
     </h1>
@@ -77,10 +67,7 @@ async function playAudio(name) {
 
     <div v-if="authStore.userData.userType === 'student'">
       <div v-for="page in surveyStore.survey.pages" :key="page.name">
-        <div
-          v-for="item in page.elements[0].elements || page.elements"
-          :key="item.name"
-        >
+        <div v-for="item in page.elements[0].elements || page.elements" :key="item.name">
           <PvButton
             :id="'audio-button-' + item.name"
             icon="pi pi-volume-up text-white"
@@ -93,11 +80,7 @@ async function playAudio(name) {
   </div>
 
   <LevanteSpinner
-    v-if="
-      !surveyStore.survey ||
-      surveyStore.isSavingSurveyResponses ||
-      surveyStore.surveyAudioLoading
-    "
+    v-if="!surveyStore.survey || surveyStore.isSavingSurveyResponses || surveyStore.surveyAudioLoading"
     fullscreen
   />
 </template>
