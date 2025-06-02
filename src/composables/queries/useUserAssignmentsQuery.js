@@ -18,10 +18,11 @@ import { computed } from 'vue';
  */
 const useUserAssignmentsQuery = (queryOptions = undefined, userId = null, orgType = null, orgIds = null) => {
   const authStore = useAuthStore();
-  const { roarUid } = storeToRefs(authStore);
+  const { roarUid, userData } = storeToRefs(authStore);
   const uid = computed(() => userId ?? roarUid.value);
   const isSuperAdmin = authStore?.userClaims?.claims?.super_admin;
   const isExternalCallWithoutSuperAdmin = !isSuperAdmin && userId !== null;
+  const isTestUser = userData.value?.testData ?? false;
 
   // We need to have the orgId and orgType for a non-superadmin call of an external fetch
   const queryConditions = [() => !!uid.value && (isExternalCallWithoutSuperAdmin ? orgType && orgIds : true)];
@@ -29,7 +30,7 @@ const useUserAssignmentsQuery = (queryOptions = undefined, userId = null, orgTyp
 
   return useQuery({
     queryKey: [USER_ASSIGNMENTS_QUERY_KEY, uid, orgType, orgIds],
-    queryFn: () => getUserAssignments(uid.value, orgType?.value, orgIds?.value),
+    queryFn: () => getUserAssignments(uid.value, orgType?.value, orgIds?.value, isTestUser),
     // Refetch on window focus for MEFS assessments as those are opened in a separate tab.
     refetchOnWindowFocus: 'always',
     enabled: isQueryEnabled,

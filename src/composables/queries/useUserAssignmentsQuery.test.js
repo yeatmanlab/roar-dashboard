@@ -56,7 +56,7 @@ describe('useUserAssignmentsQuery', () => {
     expect(call.enabled.value).toBe(true);
     expect(call.refetchOnWindowFocus).toBe('always');
 
-    expect(getUserAssignments).toHaveBeenCalledWith(mockUserId.value, undefined, undefined);
+    expect(getUserAssignments).toHaveBeenCalledWith(mockUserId.value, undefined, undefined, false);
   });
 
   it('should correctly control the enabled state of the query', async () => {
@@ -91,7 +91,7 @@ describe('useUserAssignmentsQuery', () => {
     enableQuery.value = true;
     await nextTick();
 
-    expect(getUserAssignments).toHaveBeenCalledWith(mockUserId.value, undefined, undefined);
+    expect(getUserAssignments).toHaveBeenCalledWith(mockUserId.value, undefined, undefined, false);
   });
 
   it('should only fetch data once the uid is available', async () => {
@@ -120,7 +120,7 @@ describe('useUserAssignmentsQuery', () => {
     mockUserId.value = newId;
     await nextTick();
 
-    expect(getUserAssignments).toHaveBeenCalledWith(newId, undefined, undefined);
+    expect(getUserAssignments).toHaveBeenCalledWith(newId, undefined, undefined, false);
   });
 
   it('should not let queryOptions override the internally computed value', () => {
