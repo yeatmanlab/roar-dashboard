@@ -399,7 +399,9 @@ export const orgFetchAll = async (
 
   if (isSuperAdmin.value) {
     try {
-      return await axiosInstance.post(':runQuery', requestBody).then(({ data }) => mapFields(data));
+      return await axiosInstance.post(':runQuery', requestBody).then(({ data }) => {
+        return mapFields(data);
+      });
     } catch (error) {
       console.error('orgFetchAll: Error fetching all orgs for super admin:', error);
       return [];

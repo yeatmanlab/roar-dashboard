@@ -229,7 +229,7 @@ const schoolQueryEnabled = computed((): boolean => {
 
 const { isLoading: isLoadingSchools, data: allSchools } = useQuery({
   queryKey: ['schools', selectedDistrict],
-  queryFn: () => orgFetcher('schools', selectedDistrict.value, isSuperAdmin.value, adminOrgs.value),
+  queryFn: () => orgFetcher('schools', selectedDistrict, isSuperAdmin, adminOrgs),
   placeholderData: (previousData) => previousData,
   enabled: schoolQueryEnabled,
   staleTime: 5 * 60 * 1000, // 5 minutes
@@ -239,12 +239,12 @@ const { data: orgData } = useQuery({
   queryKey: ['orgs', activeOrgType, selectedDistrict, selectedSchool],
   queryFn: () =>
     orgFetchAll(
-      activeOrgType.value,
-      selectedDistrict.value,
-      selectedSchool.value,
+      activeOrgType,
+      selectedDistrict,
+      selectedSchool,
       ref(orderByDefault),
-      isSuperAdmin.value,
-      adminOrgs.value,
+      isSuperAdmin,
+      adminOrgs,
       ['id', 'name', 'districtId', 'schoolId', 'schools', 'classes'],
     ),
   placeholderData: (previousData) => previousData,
