@@ -8,15 +8,15 @@
           :disabled="
             sequential &&
             ((index > 0 && !games[index - 1].completedOn) ||
-              (allGamesComplete && currentGameId !== game.taskId && !game.completedOn && !game?.unsuitableForScoring))
+              (allGamesComplete && currentGameId !== game.taskId && !game.completedOn && !game?.allowRetake))
           "
           :value="String(index)"
           :class="[
             'p3 mr-1 text-base hover:bg-black-alpha-10',
             {
-              'text-yellow-600': game?.unsuitableForScoring === true,
-              'text-green-500': game.completedOn && game?.unsuitableForScoring !== true,
-              'bg-white': game.completedOn && game?.unsuitableForScoring !== true,
+              'text-yellow-600': game?.allowRetake === true,
+              'text-green-500': game.completedOn && game?.allowRetake !== true,
+              'bg-white': game.completedOn && game?.allowRetake !== true,
             },
           ]"
           style="border: solid 2px #00000014; border-radius: 10px"
@@ -33,18 +33,14 @@
           :disabled="
             sequential &&
             ((index > 0 && !games[index - 1].completedOn) ||
-              (allGamesComplete && currentGameId !== game.taskId && !game.completedOn && !game?.unsuitableForScoring))
+              (allGamesComplete && currentGameId !== game.taskId && !game.completedOn && !game?.allowRetake))
           "
           :value="String(index)"
           class="p-0"
         >
           <template #header>
             <!--Unsuitable for Scoring-->
-            <i
-              v-if="game?.unsuitableForScoring === true"
-              class="pi pi-exclamation-circle mr-2"
-              data-game-status="unsuitable"
-            />
+            <i v-if="game?.allowRetake === true" class="pi pi-exclamation-circle mr-2" data-game-status="unsuitable" />
             <!--Complete Game-->
             <i v-else-if="game.completedOn" class="pi pi-check-circle mr-2" data-game-status="complete" />
             <!--Current Game-->
@@ -121,22 +117,19 @@
                     <div v-else>
                       <div
                         :class="{
-                          // 'text-yellow-600': game.unsuitableForScoring === true,
+                          // 'text-yellow-600': game.allowRetake === true,
                           // 'text-green-500': game.completedOn
                         }"
                         class="flex align-items-center justify-content-center"
                       >
-                        <i
-                          v-if="game.completedOn && game.unsuitableForScoring !== true"
-                          class="pi pi-check-circle mr-3"
-                        />
+                        <i v-if="game.completedOn && game.allowRetake !== true" class="pi pi-check-circle mr-3" />
                         <div class="flex flex-column align-items-center gap-2">
-                          <span v-if="game.unsuitableForScoring !== true" style="cursor: default">{{
+                          <span v-if="game.allowRetake !== true" style="cursor: default">{{
                             taskCompletedMessage
                           }}</span>
-                          <PvMessage v-if="game?.unsuitableForScoring === true" severity="warn" class="w-full">
+                          <PvMessage v-if="game?.allowRetake === true" severity="warn" class="w-full">
                             <div class="flex flex-column align-items-center gap-2">
-                              <span>{{ $t('gameTabs.unsuitableForScoring') }}</span>
+                              <span>{{ $t('gameTabs.allowRetake') }}</span>
                               <router-link
                                 :to="game.taskData.external ? '' : { path: getRoutePath(game.taskId) }"
                                 class="no-underline text-yellow-900 hover:text-yellow-800 w-full flex align-items-center justify-content-center p-3 hover:bg-yellow-100"
