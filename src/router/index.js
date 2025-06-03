@@ -199,7 +199,7 @@ const routes = [
   },
   {
     path: GAME_ROUTES.ROAR_READALOUD,
-    name: 'ReadAloud',
+    name: 'Read Aloud',
     component: () => import('../components/tasks/TaskReadAloud.vue'),
     props: { taskId: 'roar-readaloud', language: 'en' },
     meta: { pageTitle: 'ReadAloud' },
@@ -466,6 +466,30 @@ const routes = [
       launchId: route.params.launchId,
     }),
     meta: { pageTitle: 'MEP', permission: Permissions.Tasks.LAUNCH },
+  },
+  {
+    path: '/launch/:launchId' + GAME_ROUTES.PHONICS,
+    name: 'Launch Phonics',
+    component: () => import('../components/tasks/TaskLetter.vue'),
+    props: (route) => ({
+      taskId: 'phonics',
+      language: 'en',
+      launchId: route.params.launchId,
+    }),
+    meta: { pageTitle: 'Phonics', permission: Permissions.Tasks.LAUNCH },
+  },
+  {
+    path: '/launch/:launchId' + GAME_ROUTES.ROAR_READALOUD,
+    name: 'Launch Read Aloud',
+    component: () => import('../components/tasks/TaskReadAloud.vue'),
+    props(route) {
+      return {
+        taskId: 'roar-readaloud',
+        language: 'en',
+        launchId: route.params.launchId,
+      };
+    },
+    meta: { pageTitle: 'ReadAloud', permission: Permissions.Tasks.LAUNCH },
   },
   {
     path: '/manage-tasks-variants',

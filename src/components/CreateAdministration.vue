@@ -241,7 +241,7 @@ const findVariantWithParams = (variants, params) => {
   });
 };
 
-const { data: allVariants } = useTaskVariantsQuery(true, {
+const { data: allVariants } = useTaskVariantsQuery(false, {
   enabled: initialized,
 });
 
@@ -494,6 +494,7 @@ const submit = async () => {
     },
   };
 
+  // Only overwrite the given adminId if we are in edit mode.
   if (props.formType === ADMINISTRATION_FORM_TYPES.EDIT && props.adminId) args.administrationId = props.adminId;
 
   await upsertAdministration(args, {
@@ -537,41 +538,57 @@ onMounted(async () => {
   if (roarfirekit.value.restConfig?.()) init();
 });
 
-watch([existingAdministrationData, allVariants], ([adminInfo, allVariantInfo]) => {
-  if (adminInfo && !_isEmpty(allVariantInfo)) {
-    // Exclude name and publicName from duplicate formType
-    if (props.formType !== ADMINISTRATION_FORM_TYPES.DUPLICATE) {
-      state.administrationName = adminInfo.name;
-      state.administrationPublicName = adminInfo.publicName;
-    }
-    state.dateStarted = new Date(adminInfo.dateOpened);
-    state.dateClosed = new Date(adminInfo.dateClosed);
-    state.sequential = adminInfo.sequential;
-    _forEach(adminInfo.assessments, (assessment) => {
-      const assessmentParams = assessment.params;
-      const taskId = assessment.taskId;
-      const allVariantsForThisTask = _filter(allVariantInfo, (variant) => variant.task.id === taskId);
-      const found = findVariantWithParams(allVariantsForThisTask, assessmentParams);
-      if (found) {
-        preSelectedVariants.value = _union(preSelectedVariants.value, [found]);
+watch(
+  [existingAdministrationData, allVariants],
+  ([adminInfo, allVariantInfo]) => {
+    if (adminInfo && !_isEmpty(allVariantInfo)) {
+      // Exclude name and publicName from duplicate formType
+      if (props.formType === ADMINISTRATION_FORM_TYPES.DUPLICATE) {
+        state.administrationName = `${adminInfo.name} - Copy`;
+        state.administrationPublicName = `${adminInfo.publicName} - Copy`;
+      } else {
+        state.administrationName = adminInfo.name;
+        state.administrationPublicName = adminInfo.publicName;
       }
-    });
-    state.legal = adminInfo.legal;
-    state.consent = adminInfo?.legal?.consent ?? null;
-    state.assent = adminInfo?.legal?.assent ?? null;
-    isTestData.value = adminInfo.testData;
+      state.dateStarted = new Date(adminInfo.dateOpened);
+      state.dateClosed = new Date(adminInfo.dateClosed);
+      state.sequential = adminInfo.sequential;
+      _forEach(adminInfo.assessments, (assessment) => {
+        const assessmentParams = assessment.params;
+        const taskId = assessment.taskId;
+        const allVariantsForThisTask = _filter(allVariantInfo, (variant) => variant.task.id === taskId);
+        const found = findVariantWithParams(allVariantsForThisTask, assessmentParams);
+        if (found) {
+          preSelectedVariants.value = _union(preSelectedVariants.value, [found]);
+        }
+      });
+      state.legal = adminInfo.legal;
+      state.consent = adminInfo?.legal?.consent ?? null;
+      state.assent = adminInfo?.legal?.assent ?? null;
+      isTestData.value = adminInfo.testData;
 
-    if (state.consent === 'No Consent') {
-      noConsent.value = state.consent;
+      if (state.consent === 'No Consent') {
+        noConsent.value = state.consent;
+      }
     }
-  }
-});
+  },
+  { immediate: true },
+);
 
-watch(state, (newState) => {
-  if (newState.administrationName && newState.administrationPublicName && newState.dateStarted && newState.dateClosed) {
-    statePopulated.value = true;
-  }
-});
+watch(
+  state,
+  (newState) => {
+    if (
+      newState?.administrationName &&
+      newState?.administrationPublicName &&
+      newState?.dateStarted &&
+      newState?.dateClosed
+    ) {
+      statePopulated.value = true;
+    }
+  },
+  { immediate: true },
+);
 </script>
 
 <style lang="scss">
