@@ -254,6 +254,7 @@ const onEditButtonClick = (event) => {
 
 const isSubmitting = ref(false);
 
+// Hidden until we refactor to update users how we want
 const updateUserData = async () => {
   if (!localUserData.value) return;
   isSubmitting.value = true;

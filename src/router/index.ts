@@ -177,17 +177,6 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import('../pages/AdminProfile.vue'),
     children: [
       {
-        path: '',
-        name: 'ProfileInfo',
-        component: () => import('../components/adminSettings/UserInfoView.vue'),
-      },
-      {
-        path: 'password',
-        name: 'ProfilePassword',
-        component: () => import('../components/adminSettings/PasswordView.vue'),
-        meta: { requireAdmin: true },
-      },
-      {
         path: 'accounts',
         name: 'ProfileAccounts',
         component: () => import('../components/adminSettings/LinkAccountsView.vue'),

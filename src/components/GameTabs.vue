@@ -158,16 +158,7 @@
               </div>
             </div>
             <div class="roar-game-image" style="width: 35%">
-              <div v-if="game.taskData?.tutorialVideo" class="video-player-wrapper">
-                <VideoPlayer
-                  :options="returnVideoOptions(game.taskData?.tutorialVideo)"
-                  :on-video-end="updateVideoCompleted"
-                  :on-video-start="updateVideoStarted"
-                  :task-id="game.taskId"
-                  style="width: 100%"
-                />
-              </div>
-              <div v-else>
+              <div>
                 <img
                   v-if="game.taskData.image"
                   :src="game.taskData.image"
@@ -203,7 +194,6 @@ import PvTag from 'primevue/tag';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
 import { useSurveyStore } from '@/store/survey';
-import VideoPlayer from '@/components/VideoPlayer.vue';
 import { isLevante } from '@/helpers';
 import _capitalize from 'lodash/capitalize';
 import { useQueryClient } from '@tanstack/vue-query';
@@ -417,22 +407,6 @@ const getRoutePath = (taskId: string, variantURL?: string, taskURL?: string): st
 const taskCompletedMessage = computed((): string => {
   return t('gameTabs.taskCompleted');
 });
-
-const updateVideoStarted = async (taskId: string): Promise<void> => {
-  try {
-    await (authStore.roarfirekit as any).updateVideoMetadata(selectedAdmin.value.id, taskId, 'started');
-  } catch (e) {
-    console.error('Error while updating video completion', e);
-  }
-};
-
-const updateVideoCompleted = async (taskId: string): Promise<void> => {
-  try {
-    await (authStore.roarfirekit as any).updateVideoMetadata(selectedAdmin.value.id, taskId, 'completed');
-  } catch (e) {
-    console.error('Error while updating video completion', e);
-  }
-};
 
 const currentGameId = computed((): string | undefined => {
   return _get(
