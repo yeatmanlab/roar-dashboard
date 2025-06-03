@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
-import DatePicker from './DatePicker.vue';
+import DatePicker from './DateInput.vue';
 
 // Mock PrimeVue components
 vi.mock('primevue/datepicker', () => ({

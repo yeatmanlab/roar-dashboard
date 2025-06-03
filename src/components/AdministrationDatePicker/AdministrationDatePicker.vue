@@ -8,6 +8,7 @@
             { label: 'Help me choose', value: 'presets' },
             { label: 'I know what to select', value: 'custom' },
           ]"
+          :allow-empty="false"
           option-label="label"
           option-value="value"
           @change="decisionChange"
@@ -45,7 +46,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import DatePicker from '../RoarDatePicker/DatePicker.vue';
+import DatePicker from '../Form/DateInput/DateInput.vue';
 import PvSelectButton from 'primevue/selectbutton';
 import { datePresets } from './presets';
 import PvPanel from 'primevue/panel';
