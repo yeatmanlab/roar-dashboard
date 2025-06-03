@@ -24,8 +24,8 @@
         >
           <div class="flex flex-row">
             <span class="card-icon">
-              <i class="pi pi-check-circle" style="color: var(--primary-color)" v-if="selectedPreset === key" />
-              <i class="pi pi-circle" v-else />
+              <i v-if="selectedPreset === key" class="pi pi-check-circle" style="color: var(--primary-color)" />
+              <i v-else class="pi pi-circle" />
             </span>
             <div class="flex flex-column">
               <label :for="key" class="text-xl font-bold cursor-pointer">{{ _capitalize(key) }}</label>
@@ -37,8 +37,8 @@
         </div>
       </div>
       <div v-if="decision === 'custom'" class="flex flex-row w-full justify-content-between mt-4">
-        <DatePicker :min-date="minStartDate" label="Start Date" data-cy="input-start-date" v-model="startDate" />
-        <DatePicker :min-date="minEndDate" label="End Date" data-cy="input-end-date" v-model="endDate" />
+        <DatePicker v-model="startDate" :min-date="minStartDate" label="Start Date" data-cy="input-start-date" />
+        <DatePicker v-model="endDate" :min-date="minEndDate" label="End Date" data-cy="input-end-date" />
       </div>
     </PvPanel>
   </div>
@@ -52,9 +52,10 @@ import { datePresets } from './presets';
 import PvPanel from 'primevue/panel';
 import _capitalize from 'lodash/capitalize';
 
-const startDate = defineModel('startDate');
-const endDate = defineModel('endDate');
+const startDate = defineModel('startDate', { type: Date });
+const endDate = defineModel('endDate', { type: Date });
 
+// eslint-disable-next-line no-unused-vars
 const props = defineProps({
   minStartDate: {
     type: Date,

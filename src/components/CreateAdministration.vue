@@ -54,10 +54,10 @@
         </div>
 
         <AdministrationDatePicker
-          :min-start-date="minStartDate"
-          :min-end-date="minEndDate"
           v-model:start-date="state.dateStarted"
           v-model:end-date="state.dateClosed"
+          :min-start-date="minStartDate"
+          :min-end-date="minEndDate"
         />
 
         <OrgPicker :orgs="orgsList" @selection="selection($event)" />
