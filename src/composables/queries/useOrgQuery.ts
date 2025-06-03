@@ -1,10 +1,10 @@
-import { computed } from "vue";
-import useDistrictsQuery from "@/composables/queries/useDistrictsQuery";
-import useSchoolsQuery from "@/composables/queries/useSchoolsQuery";
-import useClassesQuery from "@/composables/queries/useClassesQuery";
-import useGroupsQuery from "@/composables/queries/useGroupsQuery";
-import useFamiliesQuery from "@/composables/queries/useFamiliesQuery";
-import { SINGULAR_ORG_TYPES } from "@/constants/orgTypes";
+import { computed } from 'vue';
+import useDistrictsQuery from '@/composables/queries/useDistrictsQuery';
+import useSchoolsQuery from '@/composables/queries/useSchoolsQuery';
+import useClassesQuery from '@/composables/queries/useClassesQuery';
+import useGroupsQuery from '@/composables/queries/useGroupsQuery';
+import useFamiliesQuery from '@/composables/queries/useFamiliesQuery';
+import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
 
 /**
  * Org Query

@@ -1,11 +1,11 @@
-import { toValue } from "vue";
-import _pick from "lodash/pick";
-import _get from "lodash/get";
-import _mapValues from "lodash/mapValues";
-import _uniq from "lodash/uniq";
-import _without from "lodash/without";
-import { convertValues, getAxiosInstance, mapFields } from "./utils";
-import { pluralizeFirestoreCollection } from "@/helpers";
+import { toValue } from 'vue';
+import _pick from 'lodash/pick';
+import _get from 'lodash/get';
+import _mapValues from 'lodash/mapValues';
+import _uniq from 'lodash/uniq';
+import _without from 'lodash/without';
+import { convertValues, getAxiosInstance, mapFields } from './utils';
+import { pluralizeFirestoreCollection } from '@/helpers';
 
 /**
  * Constructs the request body for fetching runs based on the provided parameters.
@@ -33,7 +33,7 @@ export const getRunsRequestBody = ({
   pageLimit,
   page,
   paginate = true,
-  select = ["scores.computed.composite"],
+  select = ['scores.computed.composite'],
   allDescendants = true,
   requireCompleted = false,
 }) => {
@@ -56,7 +56,7 @@ export const getRunsRequestBody = ({
 
   requestBody.structuredQuery.from = [
     {
-      collectionId: "runs",
+      collectionId: 'runs',
       allDescendants: allDescendants,
     },
   ];
@@ -64,19 +64,19 @@ export const getRunsRequestBody = ({
   if (administrationId && (orgId || !allDescendants)) {
     requestBody.structuredQuery.where = {
       compositeFilter: {
-        op: "AND",
+        op: 'AND',
         filters: [
           {
             fieldFilter: {
-              field: { fieldPath: "assignmentId" },
-              op: "EQUAL",
+              field: { fieldPath: 'assignmentId' },
+              op: 'EQUAL',
               value: { stringValue: administrationId },
             },
           },
           {
             fieldFilter: {
-              field: { fieldPath: "bestRun" },
-              op: "EQUAL",
+              field: { fieldPath: 'bestRun' },
+              op: 'EQUAL',
               value: { booleanValue: true },
             },
           },
@@ -90,7 +90,7 @@ export const getRunsRequestBody = ({
           field: {
             fieldPath: `readOrgs.${pluralizeFirestoreCollection(orgType)}`,
           },
-          op: "ARRAY_CONTAINS",
+          op: 'ARRAY_CONTAINS',
           value: { stringValue: orgId },
         },
       });
@@ -98,12 +98,12 @@ export const getRunsRequestBody = ({
   } else {
     requestBody.structuredQuery.where = {
       compositeFilter: {
-        op: "AND",
+        op: 'AND',
         filters: [
           {
             fieldFilter: {
-              field: { fieldPath: "bestRun" },
-              op: "EQUAL",
+              field: { fieldPath: 'bestRun' },
+              op: 'EQUAL',
               value: { booleanValue: true },
             },
           },
@@ -115,8 +115,8 @@ export const getRunsRequestBody = ({
   if (taskId) {
     requestBody.structuredQuery.where.compositeFilter.filters.push({
       fieldFilter: {
-        field: { fieldPath: "taskId" },
-        op: "EQUAL",
+        field: { fieldPath: 'taskId' },
+        op: 'EQUAL',
         value: { stringValue: taskId },
       },
     });
@@ -125,8 +125,8 @@ export const getRunsRequestBody = ({
   if (requireCompleted) {
     requestBody.structuredQuery.where.compositeFilter.filters.push({
       fieldFilter: {
-        field: { fieldPath: "completed" },
-        op: "EQUAL",
+        field: { fieldPath: 'completed' },
+        op: 'EQUAL',
         value: { booleanValue: true },
       },
     });
@@ -138,7 +138,7 @@ export const getRunsRequestBody = ({
         ...requestBody,
         aggregations: [
           {
-            alias: "count",
+            alias: 'count',
             count: {},
           },
         ],
@@ -158,18 +158,16 @@ export const getRunsRequestBody = ({
  * @returns {Promise<number>} The count of runs.
  */
 export const runCounter = async (administrationId, orgType, orgId) => {
-  const axiosInstance = getAxiosInstance("app");
+  const axiosInstance = getAxiosInstance('app');
   const requestBody = getRunsRequestBody({
     administrationId: toValue(administrationId),
     orgType: toValue(orgType),
     orgId: toValue(orgId),
     aggregationQuery: true,
   });
-  return axiosInstance
-    .post(":runAggregationQuery", requestBody)
-    .then(({ data }) => {
-      return Number(convertValues(data[0].result?.aggregateFields?.count));
-    });
+  return axiosInstance.post(':runAggregationQuery', requestBody).then(({ data }) => {
+    return Number(convertValues(data[0].result?.aggregateFields?.count));
+  });
 };
 
 /**
@@ -196,11 +194,11 @@ export const runPageFetcher = async ({
   taskId,
   pageLimit,
   page,
-  select = ["scores.computed.composite"],
-  scoreKey = "scores.computed.composite",
+  select = ['scores.computed.composite'],
+  scoreKey = 'scores.computed.composite',
   paginate = true,
 }) => {
-  const appAxiosInstance = getAxiosInstance("app");
+  const appAxiosInstance = getAxiosInstance('app');
   const requestBody = getRunsRequestBody({
     administrationId: toValue(administrationId),
     orgType: toValue(orgType),
@@ -213,10 +211,7 @@ export const runPageFetcher = async ({
     paginate: toValue(paginate),
     select: toValue(select),
   });
-  const runQuery =
-    toValue(userId) === undefined
-      ? ":runQuery"
-      : `/users/${toValue(userId)}:runQuery`;
+  const runQuery = toValue(userId) === undefined ? ':runQuery' : `/users/${toValue(userId)}:runQuery`;
   return appAxiosInstance.post(runQuery, requestBody).then(async ({ data }) => {
     const runData = mapFields(data, true);
 
@@ -224,7 +219,7 @@ export const runPageFetcher = async ({
       _without(
         data.map((runDoc) => {
           if (runDoc.document?.name) {
-            return runDoc.document.name.split("/runs/")[0];
+            return runDoc.document.name.split('/runs/')[0];
           } else {
             return undefined;
           }
@@ -235,10 +230,10 @@ export const runPageFetcher = async ({
 
     // Use batchGet to get all user docs with one post request
     const batchUserDocs = await appAxiosInstance
-      .post(":batchGet", {
+      .post(':batchGet', {
         documents: userDocPaths,
         mask: {
-          fieldPaths: ["grade", "birthMonth", "birthYear", "schools.current"],
+          fieldPaths: ['grade', 'birthMonth', 'birthYear', 'schools.current'],
         },
       })
       .then(({ data }) => {
@@ -247,7 +242,7 @@ export const runPageFetcher = async ({
             if (found) {
               return {
                 name: found.name,
-                id: found.name.split("/users/")[1],
+                id: found.name.split('/users/')[1],
                 data: _mapValues(found.fields, (value) => convertValues(value)),
               };
             }

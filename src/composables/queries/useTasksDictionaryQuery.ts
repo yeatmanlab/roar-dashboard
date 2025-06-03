@@ -1,5 +1,5 @@
-import { computed } from "vue";
-import useTasksQuery from "@/composables/queries/useTasksQuery";
+import { computed } from 'vue';
+import useTasksQuery from '@/composables/queries/useTasksQuery';
 
 /**
  * Tasks dictionary query.

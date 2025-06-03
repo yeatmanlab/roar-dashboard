@@ -1,19 +1,19 @@
-import { ref, nextTick } from "vue";
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { createTestingPinia } from "@pinia/testing";
-import * as VueQuery from "@tanstack/vue-query";
-import { type QueryClient } from "@tanstack/vue-query";
-import { nanoid } from "nanoid";
-import { withSetup } from "@/test-support/withSetup.js";
-import { useAuthStore } from "@/store/auth";
-import { fetchSubcollection } from "@/helpers/query/utils";
-import useSurveyResponsesQuery from "./useSurveyResponsesQuery";
+import { ref, nextTick } from 'vue';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { createTestingPinia } from '@pinia/testing';
+import * as VueQuery from '@tanstack/vue-query';
+import { type QueryClient } from '@tanstack/vue-query';
+import { nanoid } from 'nanoid';
+import { withSetup } from '@/test-support/withSetup.js';
+import { useAuthStore } from '@/store/auth';
+import { fetchSubcollection } from '@/helpers/query/utils';
+import useSurveyResponsesQuery from './useSurveyResponsesQuery';
 
-vi.mock("@/helpers/query/utils", () => ({
+vi.mock('@/helpers/query/utils', () => ({
   fetchSubcollection: vi.fn().mockImplementation(() => []),
 }));
 
-vi.mock("@tanstack/vue-query", async (getModule) => {
+vi.mock('@tanstack/vue-query', async (getModule) => {
   const original = await getModule();
   return {
     ...original,
@@ -21,7 +21,7 @@ vi.mock("@tanstack/vue-query", async (getModule) => {
   };
 });
 
-describe("useSurveyResponsesQuery", () => {
+describe('useSurveyResponsesQuery', () => {
   let piniaInstance: ReturnType<typeof createTestingPinia>;
   let queryClient: QueryClient;
 
@@ -34,34 +34,31 @@ describe("useSurveyResponsesQuery", () => {
     queryClient?.clear();
   });
 
-  it("should call query with correct parameters", () => {
+  it('should call query with correct parameters', () => {
     const mockUserId = nanoid();
 
     const authStore = useAuthStore(piniaInstance);
     authStore.roarUid = mockUserId;
     authStore.userQueryKeyIndex = 1;
 
-    vi.spyOn(VueQuery, "useQuery");
+    vi.spyOn(VueQuery, 'useQuery');
 
     withSetup(() => useSurveyResponsesQuery(), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
     expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: ["survey-responses"],
+      queryKey: ['survey-responses'],
       queryFn: expect.any(Function),
       enabled: expect.objectContaining({
         _value: true,
       }),
     });
 
-    expect(fetchSubcollection).toHaveBeenCalledWith(
-      `users/${mockUserId}`,
-      "surveyResponses",
-    );
+    expect(fetchSubcollection).toHaveBeenCalledWith(`users/${mockUserId}`, 'surveyResponses');
   });
 
-  it("should correctly control the enabled state of the query", async () => {
+  it('should correctly control the enabled state of the query', async () => {
     const mockUserId = nanoid();
 
     const authStore = useAuthStore(piniaInstance);
@@ -79,7 +76,7 @@ describe("useSurveyResponsesQuery", () => {
     });
 
     expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: ["survey-responses"],
+      queryKey: ['survey-responses'],
       queryFn: expect.any(Function),
       enabled: expect.objectContaining({
         _value: false,
@@ -92,13 +89,10 @@ describe("useSurveyResponsesQuery", () => {
     enableQuery.value = true;
     await nextTick();
 
-    expect(fetchSubcollection).toHaveBeenCalledWith(
-      `users/${mockUserId}`,
-      "surveyResponses",
-    );
+    expect(fetchSubcollection).toHaveBeenCalledWith(`users/${mockUserId}`, 'surveyResponses');
   });
 
-  it("should only fetch data if the roarUid is available", async () => {
+  it('should only fetch data if the roarUid is available', async () => {
     const mockUserId = nanoid();
 
     const authStore = useAuthStore(piniaInstance);
@@ -112,7 +106,7 @@ describe("useSurveyResponsesQuery", () => {
     });
 
     expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: ["survey-responses"],
+      queryKey: ['survey-responses'],
       queryFn: expect.any(Function),
       enabled: expect.objectContaining({
         _value: false,
@@ -125,13 +119,10 @@ describe("useSurveyResponsesQuery", () => {
     authStore.roarUid = mockUserId;
     await nextTick();
 
-    expect(fetchSubcollection).toHaveBeenCalledWith(
-      `users/${mockUserId}`,
-      "surveyResponses",
-    );
+    expect(fetchSubcollection).toHaveBeenCalledWith(`users/${mockUserId}`, 'surveyResponses');
   });
 
-  it("should not let queryOptions override the internally computed value", async () => {
+  it('should not let queryOptions override the internally computed value', async () => {
     const authStore = useAuthStore(piniaInstance);
     authStore.roarUid = null;
     authStore.userQueryKeyIndex = 1;
@@ -143,7 +134,7 @@ describe("useSurveyResponsesQuery", () => {
     });
 
     expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: ["survey-responses"],
+      queryKey: ['survey-responses'],
       queryFn: expect.any(Function),
       enabled: expect.objectContaining({
         _value: false,

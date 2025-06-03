@@ -5,20 +5,15 @@
         <i class="pi pi-pencil text-gray-400 modal-icon"></i>
         <div class="flex flex-column">
           <h1 class="modal-title admin-page-header">
-            {{ showPassword ? "Change Password" : "Edit User Information" }} -
+            {{ showPassword ? 'Change Password' : 'Edit User Information' }} -
             {{ localUserData.name.first }}
             {{ localUserData.name.last }}
           </h1>
-          <span class="text-md text-gray-500"
-            >Modify, add, or remove user information</span
-          >
+          <span class="text-md text-gray-500">Modify, add, or remove user information</span>
         </div>
       </div>
     </template>
-    <div
-      class="flex flex-column align-items-center surface-overlay border-round"
-      style="width: 66vw; gap: 2rem"
-    >
+    <div class="flex flex-column align-items-center surface-overlay border-round" style="width: 66vw; gap: 2rem">
       <!-- Body of Modal -->
       <div v-if="localUserType === 'student'" class="form-container">
         <!-- User Information View -->
@@ -40,20 +35,13 @@
             <div class="form-field">
               <label
                 >Date of Birth
-                <span
-                  v-if="localUserType === 'student'"
-                  v-tooltip.top="'Required'"
-                  class="required"
-                  >*</span
-                ></label
+                <span v-if="localUserType === 'student'" v-tooltip.top="'Required'" class="required">*</span></label
               >
               <PvDatePicker
                 v-model="localUserData.studentData.dob"
                 :class="{ 'p-invalid': errorMessage.includes('Date of birth') }"
               />
-              <small
-                v-if="errorMessage.includes('Date of birth')"
-                class="p-error"
+              <small v-if="errorMessage.includes('Date of birth')" class="p-error"
                 >Date of Birth can not be in the future.</small
               >
             </div>
@@ -61,12 +49,7 @@
             <div class="form-field">
               <label
                 >Grade
-                <span
-                  v-if="localUserType === 'student'"
-                  v-tooltip.top="'Required'"
-                  class="required"
-                  >*</span
-                ></label
+                <span v-if="localUserType === 'student'" v-tooltip.top="'Required'" class="required">*</span></label
               >
               <PvInputText
                 v-model="localUserData.studentData.grade"
@@ -80,19 +63,13 @@
               <div>
                 <PvCheckbox v-model="localUserData.testData" binary />
                 <label class="ml-2"
-                  >Test Data?
-                  <span v-tooltip.top="'Super Admin Only'" class="admin-only"
-                    >*</span
-                  ></label
+                  >Test Data? <span v-tooltip.top="'Super Admin Only'" class="admin-only">*</span></label
                 >
               </div>
               <div>
                 <PvCheckbox v-model="localUserData.demoData" binary />
                 <label class="ml-2"
-                  >Demo Data?
-                  <span v-tooltip.top="'Super Admin Only'" class="admin-only"
-                    >*</span
-                  ></label
+                  >Demo Data? <span v-tooltip.top="'Super Admin Only'" class="admin-only">*</span></label
                 >
               </div>
             </div>
@@ -164,34 +141,20 @@
           <div class="flex" style="gap: 1rem">
             <div class="form-field" style="width: 100%">
               <label>New Password</label>
-              <PvInputText
-                v-model="newPassword"
-                :class="{ 'p-invalid': errorMessage.includes('6 characters') }"
-              />
-              <small
-                v-if="errorMessage.includes('6 characters')"
-                class="p-error"
+              <PvInputText v-model="newPassword" :class="{ 'p-invalid': errorMessage.includes('6 characters') }" />
+              <small v-if="errorMessage.includes('6 characters')" class="p-error"
                 >Password must be at least 6 characters.</small
               >
             </div>
             <div class="form-field" style="width: 100%">
               <label>Confirm New Password</label>
-              <PvInputText
-                v-model="confirmPassword"
-                :class="{ 'p-invalid': errorMessage.includes('do not match') }"
-              />
-              <small
-                v-if="errorMessage.includes('do not match')"
-                class="p-error"
-                >Passwords do not match.</small
-              >
+              <PvInputText v-model="confirmPassword" :class="{ 'p-invalid': errorMessage.includes('do not match') }" />
+              <small v-if="errorMessage.includes('do not match')" class="p-error">Passwords do not match.</small>
             </div>
           </div>
         </div>
       </div>
-      <div v-else-if="localUserType === 'admin'">
-        Admin Edit User Modal Under Construction
-      </div>
+      <div v-else-if="localUserType === 'admin'">Admin Edit User Modal Under Construction</div>
 
       <!-- End fields for userData form-->
     </div>
@@ -237,18 +200,18 @@
   </PvDialog>
 </template>
 <script setup lang="ts">
-import { watch, ref, onMounted, computed } from "vue";
-import { useToast } from "primevue/usetoast";
-import { storeToRefs } from "pinia";
-import { useAuthStore } from "@/store/auth";
-import PvAutoComplete from "primevue/autocomplete";
-import PvButton from "primevue/button";
-import PvDatePicker from "primevue/datepicker";
-import PvCheckbox from "primevue/checkbox";
-import PvDialog from "primevue/dialog";
-import PvSelect from "primevue/select";
-import PvInputText from "primevue/inputtext";
-import useUserClaimsQuery from "@/composables/queries/useUserClaimsQuery";
+import { watch, ref, onMounted, computed } from 'vue';
+import { useToast } from 'primevue/usetoast';
+import { storeToRefs } from 'pinia';
+import { useAuthStore } from '@/store/auth';
+import PvAutoComplete from 'primevue/autocomplete';
+import PvButton from 'primevue/button';
+import PvDatePicker from 'primevue/datepicker';
+import PvCheckbox from 'primevue/checkbox';
+import PvDialog from 'primevue/dialog';
+import PvSelect from 'primevue/select';
+import PvInputText from 'primevue/inputtext';
+import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 
 interface StudentData {
   dob: Date | null;
@@ -283,7 +246,7 @@ interface Props {
 }
 
 interface Emits {
-  (e: "modalClosed"): void;
+  (e: 'modalClosed'): void;
 }
 
 interface DropdownOption {
@@ -297,7 +260,7 @@ interface AutoCompleteEvent {
 
 const props = withDefaults(defineProps<Props>(), {
   isEnabled: false,
-  userType: "student",
+  userType: 'student',
 });
 
 // Handle modal opening / closing
@@ -310,10 +273,10 @@ const initialized = ref<boolean>(false);
 watch(
   () => props.isEnabled,
   (isEnabled: boolean) => {
-    console.log("isEnabled from watcher", isEnabled);
+    console.log('isEnabled from watcher', isEnabled);
     if (isEnabled) {
       localUserData.value = setupUserData();
-      console.log("userData", localUserData.value);
+      console.log('userData', localUserData.value);
       isOpen.value = true;
     }
   },
@@ -323,16 +286,16 @@ const toast = useToast();
 
 // Handle Modal Actions
 const closeModal = (): void => {
-  errorMessage.value = "";
-  newPassword.value = "";
-  confirmPassword.value = "";
+  errorMessage.value = '';
+  newPassword.value = '';
+  confirmPassword.value = '';
   showPassword.value = false;
   isOpen.value = false;
-  emit("modalClosed");
+  emit('modalClosed');
 };
 
 const onAccept = async (): Promise<void> => {
-  errorMessage.value = "";
+  errorMessage.value = '';
   isSubmitting.value = true;
   await roarfirekit.value
     .updateUserData(props.userData.id, { ...localUserData.value })
@@ -340,14 +303,14 @@ const onAccept = async (): Promise<void> => {
       isSubmitting.value = false;
       closeModal();
       toast.add({
-        severity: "success",
-        summary: "Updated",
-        detail: "User has been updated",
+        severity: 'success',
+        summary: 'Updated',
+        detail: 'User has been updated',
         life: 3000,
       });
     })
     .catch((error: any) => {
-      console.log("Error occurred during submission:", error);
+      console.log('Error occurred during submission:', error);
       errorMessage.value = error.message;
       isSubmitting.value = false;
     });
@@ -355,11 +318,11 @@ const onAccept = async (): Promise<void> => {
 
 const updatePassword = async (): Promise<void> => {
   if (newPassword.value.length < 6) {
-    errorMessage.value = "Password must be at least 6 characters";
+    errorMessage.value = 'Password must be at least 6 characters';
     return;
   }
   if (newPassword.value !== confirmPassword.value) {
-    errorMessage.value = "Passwords do not match";
+    errorMessage.value = 'Passwords do not match';
     return;
   }
   isSubmitting.value = true;
@@ -370,14 +333,14 @@ const updatePassword = async (): Promise<void> => {
       isSubmitting.value = false;
       showPassword.value = false;
       toast.add({
-        severity: "success",
-        summary: "Updated",
-        detail: "Password has been updated",
+        severity: 'success',
+        summary: 'Updated',
+        detail: 'Password has been updated',
         life: 3000,
       });
     })
     .catch((error: any) => {
-      console.log("Error occurred during submission:", error);
+      console.log('Error occurred during submission:', error);
       errorMessage.value = error.message;
       isSubmitting.value = false;
     });
@@ -390,10 +353,10 @@ const onReject = (): void => {
 // Utility functions
 const isOpen = ref<boolean>(false);
 const localUserData = ref<UserData>({} as UserData);
-const newPassword = ref<string>("");
-const confirmPassword = ref<string>("");
+const newPassword = ref<string>('');
+const confirmPassword = ref<string>('');
 const isSubmitting = ref<boolean>(false);
-const errorMessage = ref<string>("");
+const errorMessage = ref<string>('');
 const showPassword = ref<boolean>(false);
 
 const setupUserData = (): UserData => {
@@ -407,11 +370,10 @@ const setupUserData = (): UserData => {
       dob: !isNaN(new Date(props.userData?.studentData?.dob).getTime())
         ? new Date(props.userData?.studentData?.dob)
         : null,
-      grade: props.userData?.studentData?.grade || "",
-      gender: props.userData?.studentData?.gender || "",
+      grade: props.userData?.studentData?.grade || '',
+      gender: props.userData?.studentData?.gender || '',
       race: props.userData?.studentData?.race || [],
-      hispanic_ethnicity:
-        props.userData?.studentData?.hispanic_ethnicity || false,
+      hispanic_ethnicity: props.userData?.studentData?.hispanic_ethnicity || false,
       ell_status: props.userData?.studentData?.ell_status || false,
       frl_status: props.userData?.studentData?.frl_status || false,
       iep_status: props.userData?.studentData?.iep_status || false,
@@ -430,25 +392,23 @@ const localUserType = computed<string | null>(() => {
 });
 
 const races: string[] = [
-  "american Indian or alaska Native",
-  "asian",
-  "black or african American",
-  "native hawaiian or other pacific islander",
-  "white",
+  'american Indian or alaska Native',
+  'asian',
+  'black or african American',
+  'native hawaiian or other pacific islander',
+  'white',
 ];
 
 const raceOptions = ref<string[]>([...races]);
 const binaryDropdownOptions: DropdownOption[] = [
-  { label: "Yes", value: true },
-  { label: "No", value: false },
+  { label: 'Yes', value: true },
+  { label: 'No', value: false },
 ];
 
 const searchRaces = (event: AutoCompleteEvent): void => {
   const query = event.query.toLowerCase();
 
-  let filteredOptions = races.filter((opt) =>
-    opt.toLowerCase().includes(query),
-  );
+  let filteredOptions = races.filter((opt) => opt.toLowerCase().includes(query));
 
   if (filteredOptions.length === 0 && query) {
     filteredOptions.push(query);

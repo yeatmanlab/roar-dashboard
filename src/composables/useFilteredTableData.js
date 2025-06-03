@@ -1,6 +1,6 @@
-import { ref, watch } from "vue";
-import _once from "lodash/once";
-import _cloneDeep from "lodash/cloneDeep";
+import { ref, watch } from 'vue';
+import _once from 'lodash/once';
+import _cloneDeep from 'lodash/cloneDeep';
 
 let initialTableData = null;
 const setInitialTableData = _once((data) => {
@@ -33,20 +33,13 @@ export function useFilteredTableData(tableData) {
     const filteredData = ref(_cloneDeep(initialTableData) ?? []);
 
     if (filterSchools.length) {
-      filteredData.value = filteredData.value.filter((item) =>
-        filterSchools.includes(item?.user.schoolName),
-      );
+      filteredData.value = filteredData.value.filter((item) => filterSchools.includes(item?.user.schoolName));
     }
     if (filterGrades.length) {
-      filteredData.value = filteredData.value.filter((item) =>
-        filterGrades.includes(String(item?.user.grade)),
-      );
+      filteredData.value = filteredData.value.filter((item) => filterGrades.includes(String(item?.user.grade)));
     }
 
-    filteredTableData.value =
-      !filterSchools.length && !filterGrades.length
-        ? initialTableData
-        : filteredData.value;
+    filteredTableData.value = !filterSchools.length && !filterGrades.length ? initialTableData : filteredData.value;
   };
 
   watch(tableData, (newValue) => {

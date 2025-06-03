@@ -3,10 +3,7 @@
     <section class="main-body">
       <div class="flex flex-column mb-5">
         <div class="flex align-items-center flex-wrap gap-3 mb-2">
-          <i
-            class="pi pi-pencil text-gray-400 rounded"
-            style="font-size: 1.6rem"
-          />
+          <i class="pi pi-pencil text-gray-400 rounded" style="font-size: 1.6rem" />
           <div class="admin-page-header">Manage Tasks</div>
         </div>
         <div class="text-md text-gray-500 ml-6">Manage tasks and variants.</div>
@@ -27,10 +24,10 @@
 </template>
 
 <script setup>
-import PvTabPanel from "primevue/tabpanel";
-import PvTabView from "primevue/tabview";
-import ManageTasks from "@/components/tasks/ManageTasks.vue";
-import ManageVariants from "@/components/tasks/ManageVariants.vue";
+import PvTabPanel from 'primevue/tabpanel';
+import PvTabView from 'primevue/tabview';
+import ManageTasks from '@/components/tasks/ManageTasks.vue';
+import ManageVariants from '@/components/tasks/ManageVariants.vue';
 </script>
 
 <style scoped>

@@ -1,45 +1,32 @@
-import { toValue, toRaw } from "vue";
-import _find from "lodash/find";
-import _flatten from "lodash/flatten";
-import _get from "lodash/get";
-import _groupBy from "lodash/groupBy";
-import _mapValues from "lodash/mapValues";
-import _replace from "lodash/replace";
-import _uniq from "lodash/uniq";
-import _without from "lodash/without";
-import _isEmpty from "lodash/isEmpty";
-import {
-  convertValues,
-  getAxiosInstance,
-  getProjectId,
-  mapFields,
-} from "./utils";
-import { pluralizeFirestoreCollection, isLevante } from "@/helpers";
+import { toValue, toRaw } from 'vue';
+import _find from 'lodash/find';
+import _flatten from 'lodash/flatten';
+import _get from 'lodash/get';
+import _groupBy from 'lodash/groupBy';
+import _mapValues from 'lodash/mapValues';
+import _replace from 'lodash/replace';
+import _uniq from 'lodash/uniq';
+import _without from 'lodash/without';
+import _isEmpty from 'lodash/isEmpty';
+import { convertValues, getAxiosInstance, getProjectId, mapFields } from './utils';
+import { pluralizeFirestoreCollection, isLevante } from '@/helpers';
 
-const userSelectFields = [
-  "name",
-  "assessmentPid",
-  "username",
-  "studentData",
-  "schools",
-  "classes",
-  "userType",
-];
+const userSelectFields = ['name', 'assessmentPid', 'username', 'studentData', 'schools', 'classes', 'userType'];
 
 const assignmentSelectFields = [
-  "assessments",
-  "assigningOrgs",
-  "completed",
-  "dateAssigned",
-  "dateClosed",
-  "dateOpened",
-  "id",
-  "legal",
-  "name",
-  "publicName",
-  "readOrgs",
-  "sequential",
-  "started",
+  'assessments',
+  'assigningOrgs',
+  'completed',
+  'dateAssigned',
+  'dateClosed',
+  'dateOpened',
+  'id',
+  'legal',
+  'name',
+  'publicName',
+  'readOrgs',
+  'sequential',
+  'started',
 ];
 
 export const getAssignmentsRequestBody = ({
@@ -76,7 +63,7 @@ export const getAssignmentsRequestBody = ({
 
   requestBody.structuredQuery.from = [
     {
-      collectionId: "assignments",
+      collectionId: 'assignments',
       allDescendants: isCollectionGroupQuery,
     },
   ];
@@ -84,12 +71,12 @@ export const getAssignmentsRequestBody = ({
   if (adminId && (orgId || orgArray)) {
     requestBody.structuredQuery.where = {
       compositeFilter: {
-        op: "AND",
+        op: 'AND',
         filters: [
           {
             fieldFilter: {
-              field: { fieldPath: "id" },
-              op: "EQUAL",
+              field: { fieldPath: 'id' },
+              op: 'EQUAL',
               value: { stringValue: adminId },
             },
           },
@@ -103,7 +90,7 @@ export const getAssignmentsRequestBody = ({
           field: {
             fieldPath: `readOrgs.${pluralizeFirestoreCollection(orgType)}`,
           },
-          op: "ARRAY_CONTAINS_ANY",
+          op: 'ARRAY_CONTAINS_ANY',
           value: {
             arrayValue: {
               values: [
@@ -121,7 +108,7 @@ export const getAssignmentsRequestBody = ({
           field: {
             fieldPath: `readOrgs.${pluralizeFirestoreCollection(orgType)}`,
           },
-          op: "ARRAY_CONTAINS",
+          op: 'ARRAY_CONTAINS',
           value: { stringValue: orgId },
         },
       });
@@ -130,8 +117,8 @@ export const getAssignmentsRequestBody = ({
     if (!_isEmpty(grades)) {
       requestBody.structuredQuery.where.compositeFilter.filters.push({
         fieldFilter: {
-          field: { fieldPath: `userData.grade` },
-          op: "IN",
+          field: { fieldPath: 'userData.grade' },
+          op: 'IN',
           value: {
             arrayValue: {
               values: [
@@ -145,11 +132,11 @@ export const getAssignmentsRequestBody = ({
       });
     }
 
-    if (["Completed", "Started", "Assigned"].includes(filter?.value)) {
+    if (['Completed', 'Started', 'Assigned'].includes(filter?.value)) {
       requestBody.structuredQuery.where.compositeFilter.filters.push({
         fieldFilter: {
-          field: { fieldPath: `progress.${filter.taskId.replace(/-/g, "_")}` },
-          op: "EQUAL",
+          field: { fieldPath: `progress.${filter.taskId.replace(/-/g, '_')}` },
+          op: 'EQUAL',
           value: { stringValue: filter.value.toLowerCase() },
         },
       });
@@ -157,7 +144,7 @@ export const getAssignmentsRequestBody = ({
       requestBody.structuredQuery.where.compositeFilter.filters.push({
         fieldFilter: {
           field: { fieldPath: `userData.${filter.field}` },
-          op: "EQUAL",
+          op: 'EQUAL',
           value: { stringValue: filter.value },
         },
       });
@@ -166,8 +153,8 @@ export const getAssignmentsRequestBody = ({
     const currentDate = new Date().toISOString();
     requestBody.structuredQuery.where = {
       fieldFilter: {
-        field: { fieldPath: "dateClosed" },
-        op: "GREATER_THAN_OR_EQUAL",
+        field: { fieldPath: 'dateClosed' },
+        op: 'GREATER_THAN_OR_EQUAL',
         value: { timestampValue: currentDate },
       },
     };
@@ -183,7 +170,7 @@ export const getAssignmentsRequestBody = ({
         ...requestBody,
         aggregations: [
           {
-            alias: "count",
+            alias: 'count',
             count: {},
           },
         ],
@@ -200,7 +187,7 @@ export const getFilteredScoresRequestBody = ({
   orgType,
   orgArray,
   filter,
-  select = ["scores", "reliable", "engagementFlags"],
+  select = ['scores', 'reliable', 'engagementFlags'],
   aggregationQuery,
   grades,
   paginate = true,
@@ -221,32 +208,32 @@ export const getFilteredScoresRequestBody = ({
   }
   requestBody.structuredQuery.from = [
     {
-      collectionId: "runs",
+      collectionId: 'runs',
       allDescendants: true,
     },
   ];
   requestBody.structuredQuery.where = {
     compositeFilter: {
-      op: "AND",
+      op: 'AND',
       filters: [
         {
           fieldFilter: {
-            field: { fieldPath: "assignmentId" },
-            op: "EQUAL",
+            field: { fieldPath: 'assignmentId' },
+            op: 'EQUAL',
             value: { stringValue: adminId },
           },
         },
         {
           fieldFilter: {
-            field: { fieldPath: "taskId" },
-            op: "EQUAL",
+            field: { fieldPath: 'taskId' },
+            op: 'EQUAL',
             value: { stringValue: filter.taskId },
           },
         },
         {
           fieldFilter: {
-            field: { fieldPath: "bestRun" },
-            op: "EQUAL",
+            field: { fieldPath: 'bestRun' },
+            op: 'EQUAL',
             value: { booleanValue: true },
           },
         },
@@ -259,7 +246,7 @@ export const getFilteredScoresRequestBody = ({
         field: {
           fieldPath: `readOrgs.${pluralizeFirestoreCollection(orgType)}`,
         },
-        op: "ARRAY_CONTAINS_ANY",
+        op: 'ARRAY_CONTAINS_ANY',
         value: {
           arrayValue: {
             values: [
@@ -277,7 +264,7 @@ export const getFilteredScoresRequestBody = ({
         field: {
           fieldPath: `readOrgs.${pluralizeFirestoreCollection(orgType)}`,
         },
-        op: "ARRAY_CONTAINS",
+        op: 'ARRAY_CONTAINS',
         value: { stringValue: orgId },
       },
     });
@@ -285,28 +272,28 @@ export const getFilteredScoresRequestBody = ({
   if (filter) {
     requestBody.structuredQuery.where.compositeFilter.filters.push({
       compositeFilter: {
-        op: "OR",
+        op: 'OR',
         filters: [
           {
             compositeFilter: {
-              op: "AND",
+              op: 'AND',
               filters: [
                 {
                   compositeFilter: {
-                    op: "OR",
+                    op: 'OR',
                     filters: [
                       {
                         fieldFilter: {
-                          field: { fieldPath: "userData.schoolLevel" },
-                          op: "EQUAL",
-                          value: { stringValue: "elementary" },
+                          field: { fieldPath: 'userData.schoolLevel' },
+                          op: 'EQUAL',
+                          value: { stringValue: 'elementary' },
                         },
                       },
                       {
                         fieldFilter: {
-                          field: { fieldPath: "userData.schoolLevel" },
-                          op: "EQUAL",
-                          value: { stringValue: "early-childhood" },
+                          field: { fieldPath: 'userData.schoolLevel' },
+                          op: 'EQUAL',
+                          value: { stringValue: 'early-childhood' },
                         },
                       },
                     ],
@@ -319,31 +306,31 @@ export const getFilteredScoresRequestBody = ({
           },
           {
             compositeFilter: {
-              op: "AND",
+              op: 'AND',
               filters: [
                 {
                   compositeFilter: {
-                    op: "OR",
+                    op: 'OR',
                     filters: [
                       {
                         fieldFilter: {
-                          field: { fieldPath: "userData.schoolLevel" },
-                          op: "EQUAL",
-                          value: { stringValue: "middle" },
+                          field: { fieldPath: 'userData.schoolLevel' },
+                          op: 'EQUAL',
+                          value: { stringValue: 'middle' },
                         },
                       },
                       {
                         fieldFilter: {
-                          field: { fieldPath: "userData.schoolLevel" },
-                          op: "EQUAL",
-                          value: { stringValue: "high" },
+                          field: { fieldPath: 'userData.schoolLevel' },
+                          op: 'EQUAL',
+                          value: { stringValue: 'high' },
                         },
                       },
                       {
                         fieldFilter: {
-                          field: { fieldPath: "userData.schoolLevel" },
-                          op: "Equal",
-                          value: { stringValue: "postsecondary" },
+                          field: { fieldPath: 'userData.schoolLevel' },
+                          op: 'Equal',
+                          value: { stringValue: 'postsecondary' },
                         },
                       },
                     ],
@@ -357,14 +344,14 @@ export const getFilteredScoresRequestBody = ({
         ],
       },
     });
-    if (filter.value === "Green") {
+    if (filter.value === 'Green') {
       // If the filter requests average students, define filters in which
       // elementary school students have the inequality percentileScore >= 50
       requestBody.structuredQuery.where.compositeFilter.filters[4].compositeFilter.filters[0].compositeFilter.filters.push(
         {
           fieldFilter: {
             field: { fieldPath: filter.field },
-            op: "GREATER_THAN_OR_EQUAL",
+            op: 'GREATER_THAN_OR_EQUAL',
             value: { doubleValue: 50 },
           },
         },
@@ -374,26 +361,26 @@ export const getFilteredScoresRequestBody = ({
         {
           fieldFilter: {
             field: { fieldPath: filter.field },
-            op: "GREATER_THAN_OR_EQUAL",
+            op: 'GREATER_THAN_OR_EQUAL',
             value: { doubleValue: filter.cutoffs.above }, // For middle/high students, the same field applies but the inequality changes.
           },
         },
       );
-    } else if (filter.value === "Yellow") {
+    } else if (filter.value === 'Yellow') {
       // If the filter requests some support students, define filters in which
       // elementary school students have the inequality percentileScore < 50 and > 25
       requestBody.structuredQuery.where.compositeFilter.filters[4].compositeFilter.filters[0].compositeFilter.filters.push(
         {
           fieldFilter: {
             field: { fieldPath: filter.field },
-            op: "LESS_THAN",
+            op: 'LESS_THAN',
             value: { doubleValue: 50 },
           },
         },
         {
           fieldFilter: {
             field: { fieldPath: filter.field },
-            op: "GREATER_THAN",
+            op: 'GREATER_THAN',
             value: { doubleValue: 25 },
           },
         },
@@ -403,26 +390,26 @@ export const getFilteredScoresRequestBody = ({
         {
           fieldFilter: {
             field: { fieldPath: filter.field },
-            op: "LESS_THAN",
+            op: 'LESS_THAN',
             value: { doubleValue: filter.cutoffs.above }, // For middle/high students, the same field applies but the inequality changes.
           },
         },
         {
           fieldFilter: {
             field: { fieldPath: filter.field },
-            op: "GREATER_THAN",
+            op: 'GREATER_THAN',
             value: { doubleValue: filter.cutoffs.some }, // For middle/high students, the same field applies but the inequality changes.
           },
         },
       );
-    } else if (filter.value === "Pink") {
+    } else if (filter.value === 'Pink') {
       // If the filter requests extra support students, define filters in which
       // elementary school students have the inequality percentileScore <= 25
       requestBody.structuredQuery.where.compositeFilter.filters[4].compositeFilter.filters[0].compositeFilter.filters.push(
         {
           fieldFilter: {
             field: { fieldPath: filter.field },
-            op: "LESS_THAN_OR_EQUAL",
+            op: 'LESS_THAN_OR_EQUAL',
             value: { doubleValue: 25 },
           },
         },
@@ -432,7 +419,7 @@ export const getFilteredScoresRequestBody = ({
         {
           fieldFilter: {
             field: { fieldPath: filter.field },
-            op: "LESS_THAN_OR_EQUAL",
+            op: 'LESS_THAN_OR_EQUAL',
             value: { doubleValue: filter.cutoffs.some }, // For middle/high students, the same field applies but the inequality changes.
           },
         },
@@ -441,8 +428,8 @@ export const getFilteredScoresRequestBody = ({
     if (!_isEmpty(grades)) {
       requestBody.structuredQuery.where.compositeFilter.filters.push({
         fieldFilter: {
-          field: { fieldPath: `userData.grade` },
-          op: "IN",
+          field: { fieldPath: 'userData.grade' },
+          op: 'IN',
           value: {
             arrayValue: {
               values: [
@@ -462,7 +449,7 @@ export const getFilteredScoresRequestBody = ({
         ...requestBody,
         aggregations: [
           {
-            alias: "count",
+            alias: 'count',
             count: {},
           },
         ],
@@ -480,7 +467,7 @@ export const getScoresRequestBody = ({
   pageLimit,
   page,
   paginate = true,
-  select = ["scores"],
+  select = ['scores'],
 }) => {
   const requestBody = {
     structuredQuery: {},
@@ -499,19 +486,19 @@ export const getScoresRequestBody = ({
 
   requestBody.structuredQuery.from = [
     {
-      collectionId: "runs",
+      collectionId: 'runs',
       allDescendants: true,
     },
   ];
 
   requestBody.structuredQuery.where = {
     compositeFilter: {
-      op: "AND",
+      op: 'AND',
       filters: [
         {
           fieldFilter: {
-            field: { fieldPath: "id" },
-            op: "IN",
+            field: { fieldPath: 'id' },
+            op: 'IN',
             value: {
               arrayValue: {
                 values: [
@@ -528,7 +515,7 @@ export const getScoresRequestBody = ({
             field: {
               fieldPath: `readOrgs.${pluralizeFirestoreCollection(orgType)}`,
             },
-            op: "ARRAY_CONTAINS",
+            op: 'ARRAY_CONTAINS',
             value: { stringValue: orgId },
           },
         },
@@ -542,7 +529,7 @@ export const getScoresRequestBody = ({
         ...requestBody,
         aggregations: [
           {
-            alias: "count",
+            alias: 'count',
             count: {},
           },
         ],
@@ -553,85 +540,65 @@ export const getScoresRequestBody = ({
   return requestBody;
 };
 
-export const assignmentCounter = (
-  adminId,
-  orgType,
-  orgId,
-  filters = [],
-  orderBy = [],
-) => {
+export const assignmentCounter = (adminId, orgType, orgId, filters = [], orderBy = []) => {
   const adminAxiosInstance = getAxiosInstance();
-  const appAxiosInstance = getAxiosInstance("app");
+  const appAxiosInstance = getAxiosInstance('app');
 
   // Only allow one non-org filter
   let nonOrgFilter = null;
   let orgFilters = null;
   let gradeFilters = null;
   filters.forEach((filter) => {
-    if (filter.collection === "schools") {
+    if (filter.collection === 'schools') {
       orgFilters = filter;
-    } else if (filter.collection === "grade") {
+    } else if (filter.collection === 'grade') {
       gradeFilters = filter;
-    } else if (filter.collection !== "schools") {
+    } else if (filter.collection !== 'schools') {
       if (nonOrgFilter) {
-        throw new Error("You may specify at most one filter");
+        throw new Error('You may specify at most one filter');
       } else {
         nonOrgFilter = filter;
       }
     }
   });
   let requestBody;
-  if (nonOrgFilter && nonOrgFilter.collection === "scores") {
+  if (nonOrgFilter && nonOrgFilter.collection === 'scores') {
     let orgFilter = null;
     let gradeFilter = null;
-    if (
-      orgFilters &&
-      orgFilters.collection === "schools" &&
-      !_isEmpty(orgFilters.value)
-    ) {
+    if (orgFilters && orgFilters.collection === 'schools' && !_isEmpty(orgFilters.value)) {
       orgFilter = orgFilters.value;
     }
-    if (gradeFilters && gradeFilters.collection === "grade") {
+    if (gradeFilters && gradeFilters.collection === 'grade') {
       gradeFilter = gradeFilters.value;
     }
     requestBody = getFilteredScoresRequestBody({
       adminId: adminId,
-      orgType: orgFilter ? "school" : orgType,
+      orgType: orgFilter ? 'school' : orgType,
       orgId: orgFilter ? null : orgId,
       orgArray: orgFilter,
       grades: gradeFilter,
       filter: nonOrgFilter,
       aggregationQuery: true,
     });
-    return appAxiosInstance
-      .post(":runAggregationQuery", requestBody)
-      .then(({ data }) => {
-        return Number(convertValues(data[0].result?.aggregateFields?.count));
-      });
+    return appAxiosInstance.post(':runAggregationQuery', requestBody).then(({ data }) => {
+      return Number(convertValues(data[0].result?.aggregateFields?.count));
+    });
   } else {
     let userFilter = null;
     let orgFilter = null;
     let gradeFilter = null;
-    if (
-      nonOrgFilter &&
-      nonOrgFilter.collection === "users" &&
-      nonOrgFilter.collection === "assignments"
-    ) {
+    if (nonOrgFilter && nonOrgFilter.collection === 'users' && nonOrgFilter.collection === 'assignments') {
       userFilter = nonOrgFilter;
     }
-    if (
-      orgFilters &&
-      orgFilters.collection === "schools" &&
-      !_isEmpty(orgFilters.value)
-    ) {
+    if (orgFilters && orgFilters.collection === 'schools' && !_isEmpty(orgFilters.value)) {
       orgFilter = orgFilters.value;
     }
-    if (gradeFilters && gradeFilters.collection === "grade") {
+    if (gradeFilters && gradeFilters.collection === 'grade') {
       gradeFilter = gradeFilters.value;
     }
     const requestBody = getAssignmentsRequestBody({
       adminId: adminId,
-      orgType: orgFilter ? "school" : orgType,
+      orgType: orgFilter ? 'school' : orgType,
       orgId: orgFilter ? null : orgId,
       orgArray: orgFilter,
       aggregationQuery: true,
@@ -639,11 +606,9 @@ export const assignmentCounter = (
       grades: gradeFilter,
       orderBy: toRaw(orderBy),
     });
-    return adminAxiosInstance
-      .post(":runAggregationQuery", requestBody)
-      .then(({ data }) => {
-        return Number(convertValues(data[0].result?.aggregateFields?.count));
-      });
+    return adminAxiosInstance.post(':runAggregationQuery', requestBody).then(({ data }) => {
+      return Number(convertValues(data[0].result?.aggregateFields?.count));
+    });
   }
 };
 
@@ -660,22 +625,22 @@ export const assignmentPageFetcher = async (
   orderBy = [],
 ) => {
   const adminAxiosInstance = getAxiosInstance();
-  const appAxiosInstance = getAxiosInstance("app");
-  const adminProjectId = getProjectId("admin");
-  const appProjectId = getProjectId("app");
+  const appAxiosInstance = getAxiosInstance('app');
+  const adminProjectId = getProjectId('admin');
+  const appProjectId = getProjectId('app');
 
   // Only allow one non-org filter
   let nonOrgFilter = null;
   let orgFilters = null;
   let gradeFilters = null;
   filters?.forEach((filter) => {
-    if (filter.collection === "schools") {
+    if (filter.collection === 'schools') {
       orgFilters = filter;
-    } else if (filter.collection === "grade") {
+    } else if (filter.collection === 'grade') {
       gradeFilters = filter;
-    } else if (filter.collection !== "schools") {
+    } else if (filter.collection !== 'schools') {
       if (nonOrgFilter) {
-        throw new Error("You may specify at most one filter");
+        throw new Error('You may specify at most one filter');
       } else {
         nonOrgFilter = filter;
       }
@@ -683,22 +648,18 @@ export const assignmentPageFetcher = async (
   });
 
   // Handle filtering based on scores
-  if (nonOrgFilter && nonOrgFilter.collection === "scores") {
+  if (nonOrgFilter && nonOrgFilter.collection === 'scores') {
     let orgFilter = null;
     let gradeFilter = null;
-    if (
-      orgFilters &&
-      orgFilters.collection === "schools" &&
-      !_isEmpty(orgFilters.value)
-    ) {
+    if (orgFilters && orgFilters.collection === 'schools' && !_isEmpty(orgFilters.value)) {
       orgFilter = orgFilters.value;
     }
-    if (gradeFilters && gradeFilters.collection === "grade") {
+    if (gradeFilters && gradeFilters.collection === 'grade') {
       gradeFilter = gradeFilters.value;
     }
     const requestBody = getFilteredScoresRequestBody({
       adminId: adminId,
-      orgType: orgFilter ? "school" : orgType,
+      orgType: orgFilter ? 'school' : orgType,
       orgId: orgFilter ? null : orgId,
       orgArray: orgFilter,
       filter: nonOrgFilter,
@@ -711,234 +672,194 @@ export const assignmentPageFetcher = async (
     console.log(
       `Fetching page ${page.value} for ${adminId} with filter ${filters[0].value} on field ${filters[0].field}`,
     );
-    return appAxiosInstance
-      .post(":runQuery", requestBody)
-      .then(async ({ data }) => {
-        const scoresData = mapFields(data, true);
+    return appAxiosInstance.post(':runQuery', requestBody).then(async ({ data }) => {
+      const scoresData = mapFields(data, true);
 
-        // Generate a list of user docs paths
-        const userDocPaths = _uniq(
-          _without(
-            data.map((scoreDoc) => {
-              if (scoreDoc.document?.name) {
-                return _replace(
-                  scoreDoc.document.name.split("/runs/")[0],
-                  appProjectId,
-                  adminProjectId,
-                );
-              } else {
-                return undefined;
-              }
-            }),
-            undefined,
-          ),
-        );
-
-        // Use a batch get to grab the user docs
-        const batchUserDocs = await adminAxiosInstance
-          .post(":batchGet", {
-            documents: userDocPaths,
-            mask: { fieldPaths: userSelectFields },
-          })
-          .then(({ data }) => {
-            return _without(
-              data.map(({ found }) => {
-                if (found) {
-                  return {
-                    name: found.name,
-                    userId: found.name.split("/users/")[1],
-                    data: _mapValues(found.fields, (value) =>
-                      convertValues(value),
-                    ),
-                  };
-                }
-                return undefined;
-              }),
-              undefined,
-            );
-          });
-
-        // Generate a list of assignment doc paths
-        const assignmentDocPaths = userDocPaths.map((userDocPath) => {
-          return `${userDocPath}/assignments/${adminId}`;
-        });
-
-        // Batch get assignment docs
-        const batchAssignmentDocs = await adminAxiosInstance
-          .post(":batchGet", {
-            documents: assignmentDocPaths,
-            mask: { fieldPaths: assignmentSelectFields },
-          })
-          .then(({ data }) => {
-            return _without(
-              data.map(({ found }) => {
-                if (found) {
-                  return {
-                    name: found.name,
-                    userId: found.name.split("/users/")[1].split("/")[0],
-                    data: _mapValues(found.fields, (value) =>
-                      convertValues(value),
-                    ),
-                  };
-                }
-                return undefined;
-              }),
-              undefined,
-            );
-          });
-
-        // Merge the scores into the assignment object
-        const unretrievedScores = [];
-        const initialScoredAssignments = batchAssignmentDocs.map(
-          (assignment) => {
-            const scoredAssessments = _without(
-              assignment.data.assessments.map((assessment) => {
-                const runId = assessment.runId;
-                const scoresObject = _get(
-                  _find(scoresData, { id: runId }),
-                  "scores",
-                );
-                const reliable = _get(
-                  _find(scoresData, { id: runId }),
-                  "reliable",
-                );
-                const engagementFlags = _get(
-                  _find(scoresData, { id: runId }),
-                  "engagementFlags",
-                );
-                if (!scoresObject && runId) {
-                  const runPath = `projects/${appProjectId}/databases/(default)/documents/users/${assignment.userId}/runs/${runId}`;
-                  unretrievedScores.push(runPath);
-                }
-                return {
-                  ...assessment,
-                  scores: scoresObject,
-                  reliable,
-                  engagementFlags,
-                };
-              }),
-              undefined,
-            );
-            return {
-              userId: assignment.userId,
-              data: {
-                ...assignment.data,
-                assessments: scoredAssessments,
-              },
-            };
-          },
-        );
-
-        // Use the list of unretrieved scores and batchGet
-        const otherScores = await appAxiosInstance
-          .post(":batchGet", {
-            documents: unretrievedScores,
-            mask: { fieldPaths: ["scores", "reliable", "engagementFlags"] },
-          })
-          .then(({ data }) => {
-            return _without(
-              data.map(({ found }) => {
-                if (found) {
-                  return {
-                    id: found.name.split("/runs/")[1],
-                    ..._mapValues(found.fields, (value) =>
-                      convertValues(value),
-                    ),
-                  };
-                }
-                return undefined;
-              }),
-              undefined,
-            );
-          });
-
-        // Merge the newly retrieved scores with the scoredAssignments object
-        const scoredAssignments = initialScoredAssignments.map((assignment) => {
-          const scoredAssessments = assignment.data.assessments.map(
-            (assessment) => {
-              const runId = assessment.runId;
-              const runScores = _get(
-                _find(otherScores, { id: runId }),
-                "scores",
-              );
-              const reliable = _get(
-                _find(otherScores, { id: runId }),
-                "reliable",
-              );
-              const engagementFlags = _get(
-                _find(otherScores, { id: runId }),
-                "engagementFlags",
-              );
-              if (runScores) {
-                return {
-                  ...assessment,
-                  scores: runScores,
-                  reliable,
-                  engagementFlags,
-                };
-              } else {
-                return assessment;
-              }
-            },
-          );
-          return {
-            userId: assignment.userId,
-            data: {
-              ...assignment.data,
-              assessments: scoredAssessments,
-            },
-          };
-        });
-
-        // Integrate the assignment and scores objects
-        return _without(
-          data.map((score) => {
-            if (_get(score, "document")) {
-              const userId = score.document.name
-                .split("/users/")[1]
-                .split("/runs/")[0];
-              const assignmentDoc = _find(scoredAssignments, {
-                userId: userId,
-              });
-              const userDoc = _find(batchUserDocs, { userId: userId });
-              return {
-                user: {
-                  ...userDoc.data,
-                  userId: userDoc.userId,
-                },
-                assignment: assignmentDoc.data,
-              };
+      // Generate a list of user docs paths
+      const userDocPaths = _uniq(
+        _without(
+          data.map((scoreDoc) => {
+            if (scoreDoc.document?.name) {
+              return _replace(scoreDoc.document.name.split('/runs/')[0], appProjectId, adminProjectId);
             } else {
               return undefined;
             }
           }),
           undefined,
-        );
+        ),
+      );
+
+      // Use a batch get to grab the user docs
+      const batchUserDocs = await adminAxiosInstance
+        .post(':batchGet', {
+          documents: userDocPaths,
+          mask: { fieldPaths: userSelectFields },
+        })
+        .then(({ data }) => {
+          return _without(
+            data.map(({ found }) => {
+              if (found) {
+                return {
+                  name: found.name,
+                  userId: found.name.split('/users/')[1],
+                  data: _mapValues(found.fields, (value) => convertValues(value)),
+                };
+              }
+              return undefined;
+            }),
+            undefined,
+          );
+        });
+
+      // Generate a list of assignment doc paths
+      const assignmentDocPaths = userDocPaths.map((userDocPath) => {
+        return `${userDocPath}/assignments/${adminId}`;
       });
+
+      // Batch get assignment docs
+      const batchAssignmentDocs = await adminAxiosInstance
+        .post(':batchGet', {
+          documents: assignmentDocPaths,
+          mask: { fieldPaths: assignmentSelectFields },
+        })
+        .then(({ data }) => {
+          return _without(
+            data.map(({ found }) => {
+              if (found) {
+                return {
+                  name: found.name,
+                  userId: found.name.split('/users/')[1].split('/')[0],
+                  data: _mapValues(found.fields, (value) => convertValues(value)),
+                };
+              }
+              return undefined;
+            }),
+            undefined,
+          );
+        });
+
+      // Merge the scores into the assignment object
+      const unretrievedScores = [];
+      const initialScoredAssignments = batchAssignmentDocs.map((assignment) => {
+        const scoredAssessments = _without(
+          assignment.data.assessments.map((assessment) => {
+            const runId = assessment.runId;
+            const scoresObject = _get(_find(scoresData, { id: runId }), 'scores');
+            const reliable = _get(_find(scoresData, { id: runId }), 'reliable');
+            const engagementFlags = _get(_find(scoresData, { id: runId }), 'engagementFlags');
+            if (!scoresObject && runId) {
+              const runPath = `projects/${appProjectId}/databases/(default)/documents/users/${assignment.userId}/runs/${runId}`;
+              unretrievedScores.push(runPath);
+            }
+            return {
+              ...assessment,
+              scores: scoresObject,
+              reliable,
+              engagementFlags,
+            };
+          }),
+          undefined,
+        );
+        return {
+          userId: assignment.userId,
+          data: {
+            ...assignment.data,
+            assessments: scoredAssessments,
+          },
+        };
+      });
+
+      // Use the list of unretrieved scores and batchGet
+      const otherScores = await appAxiosInstance
+        .post(':batchGet', {
+          documents: unretrievedScores,
+          mask: { fieldPaths: ['scores', 'reliable', 'engagementFlags'] },
+        })
+        .then(({ data }) => {
+          return _without(
+            data.map(({ found }) => {
+              if (found) {
+                return {
+                  id: found.name.split('/runs/')[1],
+                  ..._mapValues(found.fields, (value) => convertValues(value)),
+                };
+              }
+              return undefined;
+            }),
+            undefined,
+          );
+        });
+
+      // Merge the newly retrieved scores with the scoredAssignments object
+      const scoredAssignments = initialScoredAssignments.map((assignment) => {
+        const scoredAssessments = assignment.data.assessments.map((assessment) => {
+          const runId = assessment.runId;
+          const runScores = _get(_find(otherScores, { id: runId }), 'scores');
+          const reliable = _get(_find(otherScores, { id: runId }), 'reliable');
+          const engagementFlags = _get(_find(otherScores, { id: runId }), 'engagementFlags');
+          if (runScores) {
+            return {
+              ...assessment,
+              scores: runScores,
+              reliable,
+              engagementFlags,
+            };
+          } else {
+            return assessment;
+          }
+        });
+        return {
+          userId: assignment.userId,
+          data: {
+            ...assignment.data,
+            assessments: scoredAssessments,
+          },
+        };
+      });
+
+      // Integrate the assignment and scores objects
+      return _without(
+        data.map((score) => {
+          if (_get(score, 'document')) {
+            const userId = score.document.name.split('/users/')[1].split('/runs/')[0];
+            const assignmentDoc = _find(scoredAssignments, {
+              userId: userId,
+            });
+            const userDoc = _find(batchUserDocs, { userId: userId });
+            return {
+              user: {
+                ...userDoc.data,
+                userId: userDoc.userId,
+              },
+              assignment: assignmentDoc.data,
+            };
+          } else {
+            return undefined;
+          }
+        }),
+        undefined,
+      );
+    });
   } else {
     let userFilter = null;
     let orgFilter = null;
     let gradeFilter = null;
-    if (nonOrgFilter && nonOrgFilter.collection === "users") {
-      if (nonOrgFilter.field === "grade") {
+    if (nonOrgFilter && nonOrgFilter.collection === 'users') {
+      if (nonOrgFilter.field === 'grade') {
         gradeFilter = nonOrgFilter.value;
       } else {
         userFilter = nonOrgFilter;
       }
     }
-    if (
-      orgFilters &&
-      orgFilters.collection === "schools" &&
-      !_isEmpty(orgFilters.value)
-    ) {
+    if (orgFilters && orgFilters.collection === 'schools' && !_isEmpty(orgFilters.value)) {
       orgFilter = orgFilters.value;
     }
-    if (gradeFilters && gradeFilters.collection === "grade") {
+    if (gradeFilters && gradeFilters.collection === 'grade') {
       gradeFilter = gradeFilters.value;
     }
     const requestBody = getAssignmentsRequestBody({
       adminId: adminId,
-      orgType: orgFilter ? "school" : orgType,
+      orgType: orgFilter ? 'school' : orgType,
       orgId: orgFilter ? null : orgId,
       orgArray: orgFilter,
       aggregationQuery: false,
@@ -952,44 +873,157 @@ export const assignmentPageFetcher = async (
     });
 
     console.log(`Fetching page ${page.value} for ${adminId}`);
-    return adminAxiosInstance
-      .post(":runQuery", requestBody)
-      .then(async ({ data }) => {
-        const assignmentData = mapFields(data, true);
+    return adminAxiosInstance.post(':runQuery', requestBody).then(async ({ data }) => {
+      const assignmentData = mapFields(data, true);
 
-        // Get User docs
-        const userDocPaths = _uniq(
-          _without(
-            data.map((adminDoc) => {
-              if (adminDoc.document?.name) {
-                return adminDoc.document.name.split("/assignments/")[0];
-              } else {
-                return undefined;
+      // Get User docs
+      const userDocPaths = _uniq(
+        _without(
+          data.map((adminDoc) => {
+            if (adminDoc.document?.name) {
+              return adminDoc.document.name.split('/assignments/')[0];
+            } else {
+              return undefined;
+            }
+          }),
+          undefined,
+        ),
+      );
+
+      // Use batchGet to get all user docs with one post request
+      const batchUserDocs = await adminAxiosInstance
+        .post(':batchGet', {
+          documents: userDocPaths,
+          mask: { fieldPaths: userSelectFields },
+        })
+        .then(({ data }) => {
+          return _without(
+            data.map(({ found }) => {
+              if (found) {
+                const userId = found.name.split('/users/')[1];
+                return {
+                  name: found.name,
+                  data: {
+                    ..._mapValues(found.fields, (value) => convertValues(value)),
+                    userId,
+                  },
+                };
               }
+              return undefined;
             }),
             undefined,
-          ),
+          );
+        });
+
+      let batchSurveyDocs = [];
+      if (isLevante) {
+        console.log('adminId: ', adminId);
+        // Batch get survey response docs
+        batchSurveyDocs = await Promise.all(
+          userDocPaths.map(async (userDocPath) => {
+            const userId = userDocPath.split('/users/')[1];
+            const surveyQuery = {
+              structuredQuery: {
+                from: [
+                  {
+                    collectionId: 'surveyResponses',
+                  },
+                ],
+                where: {
+                  fieldFilter: {
+                    field: { fieldPath: 'administrationId' },
+                    op: 'EQUAL',
+                    value: { stringValue: adminId },
+                  },
+                },
+              },
+            };
+
+            try {
+              const { data } = await adminAxiosInstance.post(`users/${userId}:runQuery`, surveyQuery);
+
+              const validResponses = data
+                .filter((doc) => doc.document)
+                .map((doc) => ({
+                  name: doc.document.name,
+                  ..._mapValues(doc.document.fields, (value) => convertValues(value)),
+                }));
+
+              return validResponses.length > 0 ? validResponses[0] : null;
+            } catch (error) {
+              console.error('Error fetching survey response: ', error);
+              return null;
+            }
+          }),
+        );
+      }
+
+      // Merge assignments, users, and survey data
+      const scoresObj = assignmentData.map((assignment, index) => {
+        const user = batchUserDocs.find((userDoc) => userDoc.name.includes(assignment.parentDoc));
+        const surveyResponse = isLevante ? batchSurveyDocs[index] : null;
+
+        let progress = 'assigned';
+        if (surveyResponse) {
+          // Check completion based on user type
+          if (user.data.userType === 'student') {
+            progress = surveyResponse.general?.isComplete ? 'completed' : 'started';
+          } else if (['parent', 'teacher'].includes(user.data.userType)) {
+            // For parent/teacher, check both general and specific parts
+            const generalComplete = surveyResponse.general?.isComplete || false;
+            const specificItems = surveyResponse?.specific || [];
+
+            if (specificItems.length > 0) {
+              const allSpecificComplete = specificItems.every((item) => item.isComplete === true);
+              // Both general and all specific items must be complete
+              progress = generalComplete && allSpecificComplete ? 'completed' : 'started';
+            } else {
+              progress = 'started';
+            }
+          }
+        }
+
+        return {
+          assignment,
+          user: user.data,
+          roarUid: user.name.split('/users/')[1],
+          ...(isLevante && {
+            survey: {
+              progress,
+              ...surveyResponse,
+            },
+          }),
+        };
+      });
+
+      if (includeScores) {
+        // Use batchGet to get all of the run docs (including their scores)
+        const runDocPaths = _flatten(
+          assignmentData.map((assignment) => {
+            const firestoreBasePath = 'https://firestore.googleapis.com/v1/';
+            const adminBasePath = adminAxiosInstance.defaults.baseURL.replace(firestoreBasePath, '');
+            const appBasePath = appAxiosInstance.defaults.baseURL.replace(firestoreBasePath, '');
+            const runIds = _without(
+              assignment.assessments.map((assessment) => assessment.runId),
+              undefined,
+            );
+            const userPath = userDocPaths.find((userDocPath) => userDocPath.includes(assignment.parentDoc));
+            return runIds.map((runId) => `${userPath.replace(adminBasePath, appBasePath)}/runs/${runId}`);
+          }),
         );
 
-        // Use batchGet to get all user docs with one post request
-        const batchUserDocs = await adminAxiosInstance
-          .post(":batchGet", {
-            documents: userDocPaths,
-            mask: { fieldPaths: userSelectFields },
+        const batchRunDocs = await appAxiosInstance
+          .post(':batchGet', {
+            documents: runDocPaths,
+            mask: { fieldPaths: ['scores', 'reliable', 'engagementFlags'] },
           })
           .then(({ data }) => {
             return _without(
               data.map(({ found }) => {
                 if (found) {
-                  const userId = found.name.split("/users/")[1];
                   return {
                     name: found.name,
-                    data: {
-                      ..._mapValues(found.fields, (value) =>
-                        convertValues(value),
-                      ),
-                      userId,
-                    },
+                    data: _mapValues(found.fields, (value) => convertValues(value)),
                   };
                 }
                 return undefined;
@@ -998,183 +1032,32 @@ export const assignmentPageFetcher = async (
             );
           });
 
-        let batchSurveyDocs = [];
-        if (isLevante) {
-          console.log("adminId: ", adminId);
-          // Batch get survey response docs
-          batchSurveyDocs = await Promise.all(
-            userDocPaths.map(async (userDocPath) => {
-              const userId = userDocPath.split("/users/")[1];
-              const surveyQuery = {
-                structuredQuery: {
-                  from: [
-                    {
-                      collectionId: "surveyResponses",
-                    },
-                  ],
-                  where: {
-                    fieldFilter: {
-                      field: { fieldPath: "administrationId" },
-                      op: "EQUAL",
-                      value: { stringValue: adminId },
-                    },
-                  },
-                },
-              };
+        // Again the order of batchGet is not guaranteed. This time, we'd like to
+        // group the runDocs by user's roarUid, in the same order as the userDocPaths
+        const runs = _groupBy(batchRunDocs, (runDoc) => runDoc.name.split('/users/')[1].split('/runs/')[0]);
 
-              try {
-                const { data } = await adminAxiosInstance.post(
-                  `users/${userId}:runQuery`,
-                  surveyQuery,
-                );
-
-                const validResponses = data
-                  .filter((doc) => doc.document)
-                  .map((doc) => ({
-                    name: doc.document.name,
-                    ..._mapValues(doc.document.fields, (value) =>
-                      convertValues(value),
-                    ),
-                  }));
-
-                return validResponses.length > 0 ? validResponses[0] : null;
-              } catch (error) {
-                console.error("Error fetching survey response: ", error);
-                return null;
-              }
-            }),
-          );
-        }
-
-        // Merge assignments, users, and survey data
-        const scoresObj = assignmentData.map((assignment, index) => {
-          const user = batchUserDocs.find((userDoc) =>
-            userDoc.name.includes(assignment.parentDoc),
-          );
-          const surveyResponse = isLevante ? batchSurveyDocs[index] : null;
-
-          let progress = "assigned";
-          if (surveyResponse) {
-            // Check completion based on user type
-            if (user.data.userType === "student") {
-              progress = surveyResponse.general?.isComplete
-                ? "completed"
-                : "started";
-            } else if (["parent", "teacher"].includes(user.data.userType)) {
-              // For parent/teacher, check both general and specific parts
-              const generalComplete =
-                surveyResponse.general?.isComplete || false;
-              const specificItems = surveyResponse?.specific || [];
-
-              if (specificItems.length > 0) {
-                const allSpecificComplete = specificItems.every(
-                  (item) => item.isComplete === true,
-                );
-                // Both general and all specific items must be complete
-                progress =
-                  generalComplete && allSpecificComplete
-                    ? "completed"
-                    : "started";
-              } else {
-                progress = "started";
-              }
-            }
-          }
-
-          return {
-            assignment,
-            user: user.data,
-            roarUid: user.name.split("/users/")[1],
-            ...(isLevante && {
-              survey: {
-                progress,
-                ...surveyResponse,
-              },
-            }),
-          };
-        });
-
-        if (includeScores) {
-          // Use batchGet to get all of the run docs (including their scores)
-          const runDocPaths = _flatten(
-            assignmentData.map((assignment) => {
-              const firestoreBasePath = "https://firestore.googleapis.com/v1/";
-              const adminBasePath = adminAxiosInstance.defaults.baseURL.replace(
-                firestoreBasePath,
-                "",
-              );
-              const appBasePath = appAxiosInstance.defaults.baseURL.replace(
-                firestoreBasePath,
-                "",
-              );
-              const runIds = _without(
-                assignment.assessments.map((assessment) => assessment.runId),
-                undefined,
-              );
-              const userPath = userDocPaths.find((userDocPath) =>
-                userDocPath.includes(assignment.parentDoc),
-              );
-              return runIds.map(
-                (runId) =>
-                  `${userPath.replace(
-                    adminBasePath,
-                    appBasePath,
-                  )}/runs/${runId}`,
-              );
-            }),
-          );
-
-          const batchRunDocs = await appAxiosInstance
-            .post(":batchGet", {
-              documents: runDocPaths,
-              mask: { fieldPaths: ["scores", "reliable", "engagementFlags"] },
-            })
-            .then(({ data }) => {
-              return _without(
-                data.map(({ found }) => {
-                  if (found) {
-                    return {
-                      name: found.name,
-                      data: _mapValues(found.fields, (value) =>
-                        convertValues(value),
-                      ),
-                    };
-                  }
-                  return undefined;
-                }),
-                undefined,
-              );
-            });
-
-          // Again the order of batchGet is not guaranteed. This time, we'd like to
-          // group the runDocs by user's roarUid, in the same order as the userDocPaths
-          const runs = _groupBy(
-            batchRunDocs,
-            (runDoc) => runDoc.name.split("/users/")[1].split("/runs/")[0],
-          );
-
-          for (const score of scoresObj) {
-            const userRuns = runs[score.roarUid];
-            for (const task of score.assignment.assessments) {
-              const runId = task.runId;
-              task["scores"] = _get(
-                _find(userRuns, (runDoc) => runDoc.name.includes(runId)),
-                "data.scores",
-              );
-              task["reliable"] = _get(
-                _find(userRuns, (runDoc) => runDoc.name.includes(runId)),
-                "data.reliable",
-              );
-              task["engagementFlags"] = _get(
-                _find(userRuns, (runDoc) => runDoc.name.includes(runId)),
-                "data.engagementFlags",
-              );
-            }
+        for (const score of scoresObj) {
+          const userRuns = runs[score.roarUid];
+          for (const task of score.assignment.assessments) {
+            const runId = task.runId;
+            task['scores'] = _get(
+              _find(userRuns, (runDoc) => runDoc.name.includes(runId)),
+              'data.scores',
+            );
+            task['reliable'] = _get(
+              _find(userRuns, (runDoc) => runDoc.name.includes(runId)),
+              'data.reliable',
+            );
+            task['engagementFlags'] = _get(
+              _find(userRuns, (runDoc) => runDoc.name.includes(runId)),
+              'data.engagementFlags',
+            );
           }
         }
+      }
 
-        return scoresObj;
-      });
+      return scoresObj;
+    });
   }
 };
 
@@ -1197,19 +1080,12 @@ export const getUserAssignments = async (roarUid) => {
     .post(`/users/${toValue(userId)}:runQuery`, assignmentRequest)
     .then(async ({ data }) => {
       const assignmentData = mapFields(data);
-      const openAssignments = assignmentData.filter(
-        (assignment) => new Date(assignment.dateOpened) <= new Date(),
-      );
+      const openAssignments = assignmentData.filter((assignment) => new Date(assignment.dateOpened) <= new Date());
       return openAssignments;
     });
 };
 
-export const assignmentFetchAll = async (
-  adminId,
-  orgType,
-  orgId,
-  includeScores = false,
-) => {
+export const assignmentFetchAll = async (adminId, orgType, orgId, includeScores = false) => {
   return await assignmentPageFetcher(
     adminId,
     orgType,

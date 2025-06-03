@@ -3,30 +3,13 @@
   <span>Make logging in easy by linking your accounts.</span>
   <div class="table-container">
     <!-- Google -->
-    <div
-      class="flex flex-row justify-content-between w-full"
-      style="background-color: var(--surface-d)"
-    >
+    <div class="flex flex-row justify-content-between w-full" style="background-color: var(--surface-d)">
       <div class="flex flex-row w-full h-3rem p-2 gap-2">
-        <img
-          src="../../assets/provider-google-logo.svg"
-          alt="The Google Logo"
-          class="mr-2"
-        />
+        <img src="../../assets/provider-google-logo.svg" alt="The Google Logo" class="mr-2" />
         <span style="line-height: 30px" class="text-lg">Google</span>
         <div class="chip-container">
-          <PvChip
-            v-if="providerIds.includes('google.com')"
-            icon="pi pi-check"
-            label="Linked"
-            class="linked-chip"
-          />
-          <PvChip
-            v-else
-            label="Linked"
-            icon="pi pi-times"
-            class="unlinked-chip"
-          />
+          <PvChip v-if="providerIds.includes('google.com')" icon="pi pi-check" label="Linked" class="linked-chip" />
+          <PvChip v-else label="Linked" icon="pi pi-times" class="unlinked-chip" />
         </div>
       </div>
       <button
@@ -48,10 +31,8 @@
   <div>
     <h2 style="margin-top: 3.5rem">Delete Password</h2>
     <span
-      >You have the option to remove your password if you want to exclusively
-      use an SSO option listed above. You must have
-      <span class="font-bold"> at least one</span> other login method linked to
-      delete your password.</span
+      >You have the option to remove your password if you want to exclusively use an SSO option listed above. You must
+      have <span class="font-bold"> at least one</span> other login method linked to delete your password.</span
     >
     <div class="flex justify-content-end">
       <button
@@ -66,13 +47,13 @@
   <PvConfirmDialog />
 </template>
 <script setup>
-import { ref, onMounted, computed } from "vue";
-import { useToast } from "primevue/usetoast";
-import { useConfirm } from "primevue/useconfirm";
-import { storeToRefs } from "pinia";
-import PvChip from "primevue/chip";
-import PvConfirmDialog from "primevue/confirmdialog";
-import { useAuthStore } from "@/store/auth";
+import { ref, onMounted, computed } from 'vue';
+import { useToast } from 'primevue/usetoast';
+import { useConfirm } from 'primevue/useconfirm';
+import { storeToRefs } from 'pinia';
+import PvChip from 'primevue/chip';
+import PvConfirmDialog from 'primevue/confirmdialog';
+import { useAuthStore } from '@/store/auth';
 
 // +----------------+
 // | Initialization |
@@ -117,32 +98,31 @@ const linkAccount = async (providerId) => {
     })
     .catch((error) => {
       const errorCode = error.code;
-      if (errorCode === "auth/provider-already-linked") {
+      if (errorCode === 'auth/provider-already-linked') {
         // This user already has credentials for this provider
         toast.add({
-          severity: "error",
-          summary: "Account already linked",
-          detail: "This account is already associated with that provider.",
+          severity: 'error',
+          summary: 'Account already linked',
+          detail: 'This account is already associated with that provider.',
           life: 3000,
         });
-      } else if (errorCode === "auth/auth/credential-already-in-use") {
+      } else if (errorCode === 'auth/auth/credential-already-in-use') {
         // This credential is already linked with another account
         toast.add({
-          severity: "error",
-          summary: "Email already in use",
-          detail:
-            "The login you provided is already associated with an existing account.",
+          severity: 'error',
+          summary: 'Email already in use',
+          detail: 'The login you provided is already associated with an existing account.',
           life: 3000,
         });
       } else if (errorCode === 18) {
         // Error code for known cross-origin popup issue. Ignore.
-        console.log("Cross-origin popup error ignored.");
+        console.log('Cross-origin popup error ignored.');
       } else {
         // Oops! Error occured.
         toast.add({
-          severity: "error",
-          summary: "Error occurred",
-          detail: "An unexpected error occurred while linking this account.",
+          severity: 'error',
+          summary: 'Error occurred',
+          detail: 'An unexpected error occurred while linking this account.',
           life: 3000,
         });
       }
@@ -159,34 +139,31 @@ const unlinkAccount = async (providerId) => {
 // +-----------------+
 const confirm = useConfirm();
 const canDeletePassword = computed(() => {
-  return providerIds.value.includes("password") && providerIds.value.length > 1;
+  return providerIds.value.includes('password') && providerIds.value.length > 1;
 });
 const deletePassword = async () => {
   confirm.require({
-    message:
-      "Once deleted, you will need to use an SSO option to access your account!",
-    header: "Delete Password",
-    icon: "pi pi-exclamation-triangle",
-    rejectClass: "p-button-secondary p-button-outlined",
-    rejectLabel: "Cancel",
-    acceptLabel: "Delete",
+    message: 'Once deleted, you will need to use an SSO option to access your account!',
+    header: 'Delete Password',
+    icon: 'pi pi-exclamation-triangle',
+    rejectClass: 'p-button-secondary p-button-outlined',
+    rejectLabel: 'Cancel',
+    acceptLabel: 'Delete',
     accept: async () => {
-      await unlinkAccount("password")
+      await unlinkAccount('password')
         .then(() => {
           toast.add({
-            severity: "success",
-            summary: "Password Deleted",
-            detail:
-              "Password authentication has been removed from your account.",
+            severity: 'success',
+            summary: 'Password Deleted',
+            detail: 'Password authentication has been removed from your account.',
             life: 3000,
           });
         })
         .catch(() => {
           toast.add({
-            severity: "error",
-            summary: "Error occurred",
-            detail:
-              "An unexpected error occurred while deleting your password.",
+            severity: 'error',
+            summary: 'Error occurred',
+            detail: 'An unexpected error occurred while deleting your password.',
             life: 3000,
           });
         });

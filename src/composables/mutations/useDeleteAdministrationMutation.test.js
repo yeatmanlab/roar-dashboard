@@ -1,15 +1,15 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { nanoid } from "nanoid";
-import { withSetup } from "@/test-support/withSetup.js";
-import * as VueQuery from "@tanstack/vue-query";
-import { useAuthStore } from "@/store/auth";
-import useDeleteAdministrationMutation from "./useDeleteAdministrationMutation";
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { nanoid } from 'nanoid';
+import { withSetup } from '@/test-support/withSetup.js';
+import * as VueQuery from '@tanstack/vue-query';
+import { useAuthStore } from '@/store/auth';
+import useDeleteAdministrationMutation from './useDeleteAdministrationMutation';
 
-vi.mock("@/store/auth", () => ({
+vi.mock('@/store/auth', () => ({
   useAuthStore: vi.fn(),
 }));
 
-vi.mock("@tanstack/vue-query", async (getModule) => {
+vi.mock('@tanstack/vue-query', async (getModule) => {
   const original = await getModule();
   return {
     ...original,
@@ -17,7 +17,7 @@ vi.mock("@tanstack/vue-query", async (getModule) => {
   };
 });
 
-describe("useDeleteAdministrationMutation", () => {
+describe('useDeleteAdministrationMutation', () => {
   let queryClient;
 
   beforeEach(() => {
@@ -32,7 +32,7 @@ describe("useDeleteAdministrationMutation", () => {
 
   const mockAdministrationId = nanoid();
 
-  it("should call deleteAdministration when the mutation is triggered", async () => {
+  it('should call deleteAdministration when the mutation is triggered', async () => {
     const mockAuthStore = { roarfirekit: { deleteAdministration: vi.fn() } };
     useAuthStore.mockReturnValue(mockAuthStore);
 
@@ -43,18 +43,16 @@ describe("useDeleteAdministrationMutation", () => {
     const { mutateAsync } = result;
     await mutateAsync(mockAdministrationId);
 
-    expect(mockAuthStore.roarfirekit.deleteAdministration).toHaveBeenCalledWith(
-      mockAdministrationId,
-    );
+    expect(mockAuthStore.roarfirekit.deleteAdministration).toHaveBeenCalledWith(mockAdministrationId);
   });
 
-  it("should invalidate task queries upon mutation success", async () => {
+  it('should invalidate task queries upon mutation success', async () => {
     const mockInvalidateQueries = vi.fn();
     const mockAuthStore = { roarfirekit: { deleteAdministration: vi.fn() } };
 
     useAuthStore.mockReturnValue(mockAuthStore);
 
-    vi.spyOn(VueQuery, "useQueryClient").mockImplementation(() => ({
+    vi.spyOn(VueQuery, 'useQueryClient').mockImplementation(() => ({
       invalidateQueries: mockInvalidateQueries,
     }));
 
@@ -67,19 +65,19 @@ describe("useDeleteAdministrationMutation", () => {
 
     expect(isSuccess.value).toBe(true);
     expect(mockInvalidateQueries).toHaveBeenCalledWith({
-      queryKey: ["administrations"],
+      queryKey: ['administrations'],
     });
     expect(mockInvalidateQueries).toHaveBeenCalledWith({
-      queryKey: ["administrations-list"],
+      queryKey: ['administrations-list'],
     });
     expect(mockInvalidateQueries).toHaveBeenCalledWith({
-      queryKey: ["administration-assignments"],
+      queryKey: ['administration-assignments'],
     });
   });
 
-  it("should not invalidate task queries upon mutation failure", async () => {
+  it('should not invalidate task queries upon mutation failure', async () => {
     const mockInvalidateQueries = vi.fn();
-    const mockError = new Error("Mock error");
+    const mockError = new Error('Mock error');
     const mockAuthStore = {
       roarfirekit: {
         deleteAdministration: vi.fn(() => Promise.reject(mockError)),
@@ -88,7 +86,7 @@ describe("useDeleteAdministrationMutation", () => {
 
     useAuthStore.mockReturnValue(mockAuthStore);
 
-    vi.spyOn(VueQuery, "useQueryClient").mockImplementation(() => ({
+    vi.spyOn(VueQuery, 'useQueryClient').mockImplementation(() => ({
       invalidateQueries: mockInvalidateQueries,
     }));
 

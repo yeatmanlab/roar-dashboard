@@ -1,9 +1,6 @@
 <template>
   <div>
-    <div
-      v-if="props.isBasicView"
-      class="nav-user-wrapper flex align-items-center gap-2 bg-gray-100"
-    >
+    <div v-if="props.isBasicView" class="nav-user-wrapper flex align-items-center gap-2 bg-gray-100">
       <div class="flex gap-2 align-items-center justify-content-center">
         <PvButton
           text
@@ -11,25 +8,24 @@
           class="no-underline h-2 p-1 m-0 text-primary border-none border-round h-2rem text-sm hover:bg-red-900 hover:text-white"
           @click="signOut"
         >
-          {{ $t("navBar.signOut") }}
+          {{ $t('navBar.signOut') }}
         </PvButton>
       </div>
     </div>
-    <div v-else class="flex gap-2">
+    <div v-else class="flex gap-2 options-wrapper">
       <!-- Help dropdown -->
       <PvSelect
         :options="helpOptions"
         :optionValue="(o) => o.value"
         :optionLabel="(o) => o.label"
         @change="handleHelpChange"
+        class="options-help"
       >
         <template #value>
           <i class="pi pi-question-circle"></i>
         </template>
       </PvSelect>
-      <button ref="feedbackButton" style="display: none">
-        Give me feedback
-      </button>
+      <button ref="feedbackButton" style="display: none">Give me feedback</button>
 
       <!-- Profile dropdown -->
       <PvSelect
@@ -37,6 +33,7 @@
         :optionValue="(o) => o.value"
         :optionLabel="(o) => o.label"
         @change="handleProfileChange"
+        class="options-settings"
       >
         <template #value>
           <i class="pi pi-user"></i>
@@ -47,13 +44,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watchEffect } from "vue";
-import useSignOutMutation from "@/composables/mutations/useSignOutMutation";
-import PvButton from "primevue/button";
-import PvSelect from "primevue/select";
-import { useRouter } from "vue-router";
-import { useI18n } from "vue-i18n";
-import { APP_ROUTES } from "@/constants/routes";
+import { ref, watchEffect } from 'vue';
+import useSignOutMutation from '@/composables/mutations/useSignOutMutation';
+import PvButton from 'primevue/button';
+import PvSelect from 'primevue/select';
+import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
+import { APP_ROUTES } from '@/constants/routes';
 
 interface Props {
   isBasicView: boolean;
@@ -77,45 +74,55 @@ const feedbackButton = ref<HTMLButtonElement | null>(null);
 const props = defineProps<Props>();
 
 watchEffect((): void => {
-  const feedbackElement = document.getElementById("sentry-feedback");
+  const feedbackElement = document.getElementById('sentry-feedback');
   if (feedbackElement) {
     if (!props.isBasicView) {
-      feedbackElement.style.setProperty("display", "none");
+      feedbackElement.style.setProperty('display', 'none');
     }
   }
 });
 
 const helpOptions: DropdownOption[] = [
-  { label: "Researcher Documentation", value: "researcherDocumentation" },
-  { label: "Report an Issue", value: "reportAnIssue" },
+  { label: 'Researcher Documentation', value: 'researcherDocumentation' },
+  { label: 'Report an Issue', value: 'reportAnIssue' },
 ];
 
 const profileOptions: DropdownOption[] = [
-  { label: "Settings", value: "settings" },
-  { label: i18n.t("navBar.signOut"), value: "signout" },
+  { label: 'Settings', value: 'settings' },
+  { label: i18n.t('navBar.signOut'), value: 'signout' },
 ];
 
 const handleHelpChange = (e: DropdownChangeEvent): void => {
-  if (e.value === "researcherDocumentation") {
-    window.open("https://researcher.levante-network.org/", "_blank");
-  } else if (e.value === "reportAnIssue") {
-    window.open(
-      "https://watery-wrench-dee.notion.site/13c244e26d9b8005adbde4522455edfd",
-      "_blank",
-    );
+  if (e.value === 'researcherDocumentation') {
+    window.open('https://researcher.levante-network.org/', '_blank');
+  } else if (e.value === 'reportAnIssue') {
+    window.open('https://watery-wrench-dee.notion.site/13c244e26d9b8005adbde4522455edfd', '_blank');
   }
 };
 
 const handleProfileChange = (e: DropdownChangeEvent): void => {
-  if (e.value === "settings") {
+  if (e.value === 'settings') {
     router.push({ path: APP_ROUTES.ACCOUNT_PROFILE });
-  } else if (e.value === "signout") {
+  } else if (e.value === 'signout') {
     signOut();
   }
 };
 </script>
 
 <style>
+.options-wrapper {
+  position: relative;
+  top: -18px;
+
+  .options-settings {
+    position: absolute;
+    right: 0;
+  }
+  .options-help {
+    position: absolute;
+    right: 5.4rem;
+  }
+}
 .nav-user-wrapper {
   display: flex;
   align-items: center;

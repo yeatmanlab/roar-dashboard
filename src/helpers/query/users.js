@@ -1,5 +1,5 @@
-import { toValue } from "vue";
-import { convertValues, getAxiosInstance, mapFields } from "./utils";
+import { toValue } from 'vue';
+import { convertValues, getAxiosInstance, mapFields } from './utils';
 
 /**
  * Constructs the request body for fetching users.
@@ -25,7 +25,7 @@ export const getUsersRequestBody = ({
   pageLimit,
   page,
   paginate = true,
-  select = ["name"],
+  select = ['name'],
   orderBy,
   restrictToActiveUsers = false,
 }) => {
@@ -49,14 +49,14 @@ export const getUsersRequestBody = ({
   }
   requestBody.structuredQuery.from = [
     {
-      collectionId: "users",
+      collectionId: 'users',
       allDescendants: false,
     },
   ];
 
   requestBody.structuredQuery.where = {
     compositeFilter: {
-      op: "AND",
+      op: 'AND',
       filters: [],
     },
   };
@@ -64,8 +64,8 @@ export const getUsersRequestBody = ({
   if (restrictToActiveUsers) {
     requestBody.structuredQuery.where.compositeFilter.filters.push({
       fieldFilter: {
-        field: { fieldPath: "archived" },
-        op: "EQUAL",
+        field: { fieldPath: 'archived' },
+        op: 'EQUAL',
         value: { booleanValue: false },
       },
     });
@@ -74,8 +74,8 @@ export const getUsersRequestBody = ({
   if (userIds.length > 0) {
     requestBody.structuredQuery.where.compositeFilter.filters.push({
       fieldFilter: {
-        field: { fieldPath: "id" }, // change this to accept document Id, if we need
-        op: "IN",
+        field: { fieldPath: 'id' }, // change this to accept document Id, if we need
+        op: 'IN',
         value: {
           arrayValue: {
             values: [
@@ -91,12 +91,12 @@ export const getUsersRequestBody = ({
     requestBody.structuredQuery.where.compositeFilter.filters.push({
       fieldFilter: {
         field: { fieldPath: `${orgType}.current` }, // change this to accept document Id, if we need
-        op: "ARRAY_CONTAINS",
+        op: 'ARRAY_CONTAINS',
         value: { stringValue: orgId },
       },
     });
   } else {
-    throw new Error("Must provide either userIds or orgType and orgId");
+    throw new Error('Must provide either userIds or orgType and orgId');
   }
 
   if (aggregationQuery) {
@@ -105,7 +105,7 @@ export const getUsersRequestBody = ({
         ...requestBody,
         aggregations: [
           {
-            alias: "count",
+            alias: 'count',
             count: {},
           },
         ],
@@ -127,14 +127,7 @@ export const getUsersRequestBody = ({
  * @param {boolean} restrictToActiveUsers - Whether to restrict the count to active users.
  * @returns {Promise<Object>} The fetched users data.
  */
-export const fetchUsersByOrg = async (
-  orgType,
-  orgId,
-  pageLimit,
-  page,
-  orderBy,
-  restrictToActiveUsers = false,
-) => {
+export const fetchUsersByOrg = async (orgType, orgId, pageLimit, page, orderBy, restrictToActiveUsers = false) => {
   const axiosInstance = getAxiosInstance();
   const requestBody = getUsersRequestBody({
     orgType: toValue(orgType),
@@ -143,19 +136,13 @@ export const fetchUsersByOrg = async (
     pageLimit: toValue(pageLimit),
     page: toValue(page),
     paginate: true,
-    select: ["username", "name", "studentData", "userType", "archived"],
+    select: ['username', 'name', 'studentData', 'userType', 'archived'],
     orderBy: toValue(orderBy),
     restrictToActiveUsers: restrictToActiveUsers,
   });
 
-  console.log(
-    `Fetching users page ${toValue(page)} for ${toValue(orgType)} ${toValue(
-      orgId,
-    )}`,
-  );
-  return axiosInstance
-    .post(":runQuery", requestBody)
-    .then(({ data }) => mapFields(data));
+  console.log(`Fetching users page ${toValue(page)} for ${toValue(orgType)} ${toValue(orgId)}`);
+  return axiosInstance.post(':runQuery', requestBody).then(({ data }) => mapFields(data));
 };
 
 /**
@@ -167,12 +154,7 @@ export const fetchUsersByOrg = async (
  * @param {boolean} restrictToActiveUsers - Whether to restrict the count to active users.
  * @returns {Promise<number>} The count of users.
  */
-export const countUsersByOrg = async (
-  orgType,
-  orgId,
-  orderBy,
-  restrictToActiveUsers = false,
-) => {
+export const countUsersByOrg = async (orgType, orgId, orderBy, restrictToActiveUsers = false) => {
   const axiosInstance = getAxiosInstance();
   const requestBody = getUsersRequestBody({
     orgType: toValue(orgType),
@@ -183,9 +165,7 @@ export const countUsersByOrg = async (
     restrictToActiveUsers: restrictToActiveUsers,
   });
 
-  return axiosInstance
-    .post(":runAggregationQuery", requestBody)
-    .then(({ data }) => {
-      return Number(convertValues(data[0].result?.aggregateFields?.count));
-    });
+  return axiosInstance.post(':runAggregationQuery', requestBody).then(({ data }) => {
+    return Number(convertValues(data[0].result?.aggregateFields?.count));
+  });
 };

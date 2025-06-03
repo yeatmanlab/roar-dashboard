@@ -1,22 +1,13 @@
 <template>
   <header id="site-header" class="navbar-container">
-    <nav
-      class="flex flex-row align-items-center justify-content-between w-full"
-    >
-      <div
-        id="navBarRightEnd"
-        class="flex flex-row align-items-center justify-content-start w-full gap-1"
-      >
+    <nav class="flex flex-row align-items-center justify-content-between w-full">
+      <div id="navBarRightEnd" class="flex flex-row align-items-center justify-content-start w-full gap-1">
         <div class="flex align-items-center justify-content-center w-full">
           <PvMenubar :model="computedItems" class="w-full">
             <template #start>
               <router-link :to="{ path: APP_ROUTES.HOME }">
                 <div class="navbar-logo mx-3">
-                  <PvImage
-                    src="/LEVANTE/Levante_Logo.png"
-                    alt="LEVANTE Logo"
-                    width="200"
-                  />
+                  <PvImage src="/LEVANTE/Levante_Logo.png" alt="LEVANTE Logo" width="200" />
                 </div>
               </router-link>
             </template>
@@ -39,13 +30,7 @@
                   :class="[item.badgeClass, { 'ml-auto': !root, 'ml-2': root }]"
                   :value="item.badge"
                 />
-                <i
-                  v-if="hasSubmenu"
-                  :class="[
-                    'pi ml-auto',
-                    { 'pi-angle-down': root, 'pi-angle-right': !root },
-                  ]"
-                ></i>
+                <i v-if="hasSubmenu" :class="['pi ml-auto', { 'pi-angle-down': root, 'pi-angle-right': !root }]"></i>
               </a>
             </template>
 
@@ -59,64 +44,78 @@
   </header>
 </template>
 
-<script setup>
-import { ref, computed, onMounted, onUnmounted } from "vue";
-import { useRouter } from "vue-router";
-import { storeToRefs } from "pinia";
-import PvButton from "primevue/button";
-import PvImage from "primevue/image";
-import PvMenubar from "primevue/menubar";
-import { useAuthStore } from "@/store/auth";
-import { getNavbarActions } from "@/router/navbarActions";
-import useUserClaimsQuery from "@/composables/queries/useUserClaimsQuery";
-import { APP_ROUTES } from "@/constants/routes";
-import Badge from "primevue/badge";
-import UserActions from "./UserActions.vue";
-import useUserType from "@/composables/useUserType";
+<script setup lang="ts">
+import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { useRouter } from 'vue-router';
+import { storeToRefs } from 'pinia';
+import PvButton from 'primevue/button';
+import PvImage from 'primevue/image';
+import PvMenubar from 'primevue/menubar';
+import { useAuthStore } from '@/store/auth';
+import { getNavbarActions } from '@/router/navbarActions';
+import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
+import { APP_ROUTES } from '@/constants/routes';
+import Badge from 'primevue/badge';
+import UserActions from './UserActions.vue';
+import useUserType from '@/composables/useUserType';
+
+interface NavbarAction {
+  category: string;
+  title: string;
+  icon: string;
+  buttonLink: string;
+}
+
+interface MenuItem {
+  label: string;
+  icon?: string;
+  command?: () => void;
+  items?: MenuItem[];
+  badge?: string;
+  badgeClass?: string;
+}
 
 const router = useRouter();
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
 
-const initialized = ref(false);
+const initialized = ref<boolean>(false);
 const menu = ref();
-const screenWidth = ref(window.innerWidth);
-let unsubscribe;
+const screenWidth = ref<number>(window.innerWidth);
+let unsubscribe: (() => void) | undefined;
 
-const init = () => {
+const init = (): void => {
   if (unsubscribe) unsubscribe();
   initialized.value = true;
 };
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit.restConfig) init();
+  if ((state.roarfirekit as any)?.restConfig) init();
 });
 
-const handleResize = () => {
+const handleResize = (): void => {
   screenWidth.value = window.innerWidth;
 };
 
-onMounted(() => {
-  if (roarfirekit.value.restConfig) init();
-  window.addEventListener("resize", handleResize);
+onMounted((): void => {
+  if ((roarfirekit.value as any)?.restConfig) init();
+  window.addEventListener('resize', handleResize);
 });
 
-onUnmounted(() => {
-  window.removeEventListener("resize", handleResize);
+onUnmounted((): void => {
+  window.removeEventListener('resize', handleResize);
 });
 
 const { data: userClaims } = useUserClaimsQuery({
   enabled: initialized,
 });
 
-const computedItems = computed(() => {
-  const items = [];
+const computedItems = computed((): MenuItem[] => {
+  const items: MenuItem[] = [];
   // TO DO: REMOVE USERS AFTER NAMING 3 TICKET IS COMPLETED
 
   // Groups only has one associated page and therefore is not nested within items
-  const groupsAction = rawActions.value.find(
-    (action) => action.category === "Groups",
-  );
+  const groupsAction = rawActions.value.find((action) => action.category === 'Groups');
   if (groupsAction) {
     items.push({
       label: groupsAction.title,
@@ -127,11 +126,11 @@ const computedItems = computed(() => {
     });
   }
 
-  const headers = ["Users", "Assignments"];
+  const headers = ['Users', 'Assignments'];
   for (const header of headers) {
     const headerItems = rawActions.value
       .filter((action) => action.category === header)
-      .map((action) => {
+      .map((action): MenuItem => {
         return {
           label: action.title,
           icon: action.icon,
@@ -153,18 +152,18 @@ const computedItems = computed(() => {
 
 const { isAdmin, isSuperAdmin } = useUserType(userClaims);
 
-const computedIsBasicView = computed(() => {
+const computedIsBasicView = computed((): boolean => {
   if (!userClaims.value) {
     return false;
   }
   return !isSuperAdmin.value && !isAdmin.value;
 });
 
-const isAtHome = computed(() => {
-  return router.currentRoute.value.fullPath === "/";
+const isAtHome = computed((): boolean => {
+  return router.currentRoute.value.fullPath === '/';
 });
 
-const rawActions = computed(() => {
+const rawActions = computed((): NavbarAction[] => {
   return getNavbarActions({
     isSuperAdmin: isSuperAdmin.value,
     isAdmin: authStore.isUserAdmin,
@@ -172,7 +171,7 @@ const rawActions = computed(() => {
   });
 });
 
-const toggleMenu = (event) => {
+const toggleMenu = (event: Event): void => {
   menu.value.toggle(event);
 };
 </script>

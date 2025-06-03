@@ -1,6 +1,6 @@
-import { computed } from "vue";
-import { AUTH_USER_TYPE } from "@/constants/auth";
-import _isEmpty from "lodash/isEmpty";
+import { computed } from 'vue';
+import { AUTH_USER_TYPE } from '@/constants/auth';
+import _isEmpty from 'lodash/isEmpty';
 
 /**
  * Get user type
@@ -26,9 +26,7 @@ export default function useUserType(userClaims) {
 
     // Check if the user has any minimal admin organizations.
     const minimalAdminOrgs = claims?.minimalAdminOrgs || {};
-    const hasMinimalAdminOrgs = Object.values(minimalAdminOrgs).some(
-      (org) => !_isEmpty(org),
-    );
+    const hasMinimalAdminOrgs = Object.values(minimalAdminOrgs).some((org) => !_isEmpty(org));
 
     if (hasMinimalAdminOrgs) {
       return AUTH_USER_TYPE.ADMIN;
@@ -39,12 +37,8 @@ export default function useUserType(userClaims) {
   });
 
   const isAdmin = computed(() => userType.value === AUTH_USER_TYPE.ADMIN);
-  const isParticipant = computed(
-    () => userType.value === AUTH_USER_TYPE.PARTICIPANT,
-  );
-  const isSuperAdmin = computed(
-    () => userType.value === AUTH_USER_TYPE.SUPER_ADMIN,
-  );
+  const isParticipant = computed(() => userType.value === AUTH_USER_TYPE.PARTICIPANT);
+  const isSuperAdmin = computed(() => userType.value === AUTH_USER_TYPE.SUPER_ADMIN);
 
   return {
     userType,

@@ -1,19 +1,12 @@
 <template>
   <div class="p-card card-administration mb-4 w-full">
     <div v-if="props.stats && isSuperAdmin" class="card-admin-chart">
-      <PvChart
-        type="doughnut"
-        :data="doughnutChartData"
-        :options="doughnutChartOptions"
-      />
+      <PvChart type="doughnut" :data="doughnutChartData" :options="doughnutChartOptions" />
     </div>
     <div class="card-admin-body w-full">
       <div class="flex flex-row w-full md:h-2rem sm:h-3rem">
         <div class="flex-grow-1 pr-3 mr-2 p-0 m-0">
-          <h2
-            data-cy="h2-card-admin-title"
-            class="sm:text-lg lg:text-lx m-0 h2-card-admin-title"
-          >
+          <h2 data-cy="h2-card-admin-title" class="sm:text-lg lg:text-lx m-0 h2-card-admin-title">
             {{ title }}
           </h2>
         </div>
@@ -44,14 +37,8 @@
       <div class="card-admin-assessments">
         <span class="mr-1"><strong>Tasks</strong>:</span>
         <template v-if="!isLoadingTasksDictionary">
-          <span
-            v-for="assessmentId in assessmentIds"
-            :key="assessmentId"
-            class="card-inline-list-item"
-          >
-            <span>{{
-              tasksDictionary[assessmentId]?.name ?? assessmentId
-            }}</span>
+          <span v-for="assessmentId in assessmentIds" :key="assessmentId" class="card-inline-list-item">
+            <span>{{ tasksDictionary[assessmentId]?.name ?? assessmentId }}</span>
             <span
               v-if="showParams"
               v-tooltip.top="'View parameters'"
@@ -63,11 +50,7 @@
         </template>
 
         <div v-if="showParams">
-          <PvPopover
-            v-for="assessmentId in assessmentIds"
-            :key="assessmentId"
-            :ref="paramPanelRefs[assessmentId]"
-          >
+          <PvPopover v-for="assessmentId in assessmentIds" :key="assessmentId" :ref="paramPanelRefs[assessmentId]">
             <div v-if="getAssessment(assessmentId).variantId">
               Variant ID: {{ getAssessment(assessmentId).variantId }}
             </div>
@@ -80,16 +63,8 @@
               table-style="min-width: 30rem"
               :value="toEntryObjects(params[assessmentId])"
             >
-              <PvColumn
-                field="key"
-                header="Parameter"
-                style="width: 50%"
-              ></PvColumn>
-              <PvColumn
-                field="value"
-                header="Value"
-                style="width: 50%"
-              ></PvColumn>
+              <PvColumn field="key" header="Parameter" style="width: 50%"></PvColumn>
+              <PvColumn field="value" header="Value" style="width: 50%"></PvColumn>
             </PvDataTable>
           </PvPopover>
         </div>
@@ -173,51 +148,119 @@
   </div>
 </template>
 
-<script setup>
-import { computed, onMounted, ref, watch } from "vue";
-import { useConfirm } from "primevue/useconfirm";
-import { useToast } from "primevue/usetoast";
-import { useRouter } from "vue-router";
-import _fromPairs from "lodash/fromPairs";
-import _isEmpty from "lodash/isEmpty";
-import _mapValues from "lodash/mapValues";
-import _toPairs from "lodash/toPairs";
-import _without from "lodash/without";
-import _zip from "lodash/zip";
-import PvButton from "primevue/button";
-import PvColumn from "primevue/column";
-import PvChart from "primevue/chart";
-import PvConfirmPopup from "primevue/confirmpopup";
-import PvDataTable from "primevue/datatable";
-import PvPopover from "primevue/popover";
-import PvSpeedDial from "primevue/speeddial";
-import PvTreeTable from "primevue/treetable";
-import { batchGetDocs } from "@/helpers/query/utils";
-import { taskDisplayNames } from "@/helpers/reports";
-import { setBarChartData, setBarChartOptions } from "@/helpers/plotting";
-import useDsgfOrgQuery from "@/composables/queries/useDsgfOrgQuery";
-import useTasksDictionaryQuery from "@/composables/queries/useTasksDictionaryQuery";
-import useDeleteAdministrationMutation from "@/composables/mutations/useDeleteAdministrationMutation";
-import { SINGULAR_ORG_TYPES } from "@/constants/orgTypes";
-import { FIRESTORE_COLLECTIONS } from "@/constants/firebase";
-import {
-  TOAST_SEVERITIES,
-  TOAST_DEFAULT_LIFE_DURATION,
-} from "@/constants/toasts";
-import { isLevante } from "@/helpers";
+<script setup lang="ts">
+import { computed, onMounted, ref, watch } from 'vue';
+import { useConfirm } from 'primevue/useconfirm';
+import { useToast } from 'primevue/usetoast';
+import { useRouter } from 'vue-router';
+import _fromPairs from 'lodash/fromPairs';
+import _isEmpty from 'lodash/isEmpty';
+import _mapValues from 'lodash/mapValues';
+import _toPairs from 'lodash/toPairs';
+import _without from 'lodash/without';
+import _zip from 'lodash/zip';
+import PvButton from 'primevue/button';
+import PvColumn from 'primevue/column';
+import PvChart from 'primevue/chart';
+import PvConfirmPopup from 'primevue/confirmpopup';
+import PvDataTable from 'primevue/datatable';
+import PvPopover from 'primevue/popover';
+import PvSpeedDial from 'primevue/speeddial';
+import PvTreeTable from 'primevue/treetable';
+import { batchGetDocs } from '@/helpers/query/utils';
+import { taskDisplayNames } from '@/helpers/reports';
+import { setBarChartData, setBarChartOptions } from '@/helpers/plotting';
+import useDsgfOrgQuery from '@/composables/queries/useDsgfOrgQuery';
+import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery';
+import useDeleteAdministrationMutation from '@/composables/mutations/useDeleteAdministrationMutation';
+import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
+import { FIRESTORE_COLLECTIONS } from '@/constants/firebase';
+import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
+import { isLevante } from '@/helpers';
+
+interface Assessment {
+  taskId: string;
+  variantId?: string;
+  variantName?: string;
+  params: Record<string, any>;
+}
+
+interface Stats {
+  assignment?: {
+    assigned?: number;
+    started?: number;
+    completed?: number;
+  };
+}
+
+interface Dates {
+  start: string | Date;
+  end: string | Date;
+}
+
+interface Assignees {
+  [key: string]: any;
+}
+
+interface Props {
+  id: string;
+  title: string;
+  publicName: string;
+  stats?: {
+    total?: Stats;
+  };
+  dates: Dates;
+  assignees: Assignees;
+  assessments: Assessment[];
+  showParams: boolean;
+  isSuperAdmin: boolean;
+}
+
+interface SpeedDialItem {
+  label: string;
+  icon: string;
+  command: (event?: any) => void;
+}
+
+interface TreeNode {
+  key: string;
+  data: {
+    id?: string;
+    name?: string;
+    orgType?: string;
+    districtId?: string;
+    schoolId?: string;
+    stats?: Stats;
+    expanded?: boolean;
+  };
+  children?: TreeNode[];
+}
+
+interface ChartData {
+  labels: string[];
+  datasets: Array<{
+    data: number[];
+    backgroundColor: string[];
+  }>;
+}
+
+interface ChartOptions {
+  cutout: string;
+  showToolTips: boolean;
+  plugins: {
+    legend: {
+      display: boolean;
+    };
+    tooltip: {
+      enabled: boolean;
+    };
+  };
+}
 
 const router = useRouter();
 
-const props = defineProps({
-  id: { type: String, required: true },
-  title: { type: String, required: true },
-  publicName: { type: String, required: true },
-  stats: { type: Object, required: false, default: () => ({}) },
-  dates: { type: Object, required: true },
-  assignees: { type: Object, required: true },
-  assessments: { type: Array, required: true },
-  showParams: { type: Boolean, required: true },
-  isSuperAdmin: { type: Boolean, required: true },
+const props = withDefaults(defineProps<Props>(), {
+  stats: () => ({}),
 });
 
 const confirm = useConfirm();
@@ -225,35 +268,34 @@ const toast = useToast();
 
 const { mutateAsync: deleteAdministration } = useDeleteAdministrationMutation();
 
-const administrationStatus = computed(() => {
+const administrationStatus = computed((): string => {
   const now = new Date();
   const dateClosed = new Date(props.dates.end);
-  let status = "OPEN";
-  if (now > dateClosed) status = "CLOSED";
+  let status = 'OPEN';
+  if (now > dateClosed) status = 'CLOSED';
   return status;
 });
-const administrationStatusBadge = computed(() =>
-  administrationStatus.value.toLowerCase(),
-);
 
-const speedDialItems = computed(() => {
-  const items = [];
+const administrationStatusBadge = computed((): string => administrationStatus.value.toLowerCase());
+
+const speedDialItems = computed((): SpeedDialItem[] => {
+  const items: SpeedDialItem[] = [];
 
   if (props.isSuperAdmin) {
     items.push({
-      label: "Delete",
-      icon: "pi pi-trash",
+      label: 'Delete',
+      icon: 'pi pi-trash',
       command: (event) => {
         confirm.require({
           target: event.originalEvent.currentTarget,
-          message: "Are you sure you want to delete this administration?",
-          icon: "pi pi-exclamation-triangle",
+          message: 'Are you sure you want to delete this administration?',
+          icon: 'pi pi-exclamation-triangle',
           accept: async () => {
             await deleteAdministration(props.id);
 
             toast.add({
               severity: TOAST_SEVERITIES.INFO,
-              summary: "Confirmed",
+              summary: 'Confirmed',
               detail: `Deleted administration ${props.title}`,
               life: TOAST_DEFAULT_LIFE_DURATION,
             });
@@ -261,7 +303,7 @@ const speedDialItems = computed(() => {
           reject: () => {
             toast.add({
               severity: TOAST_SEVERITIES.ERROR,
-              summary: "Rejected",
+              summary: 'Rejected',
               detail: `Failed to delete administration ${props.title}`,
               life: TOAST_DEFAULT_LIFE_DURATION,
             });
@@ -272,11 +314,11 @@ const speedDialItems = computed(() => {
   }
 
   items.push({
-    label: "Edit",
-    icon: "pi pi-pencil",
+    label: 'Edit',
+    icon: 'pi pi-pencil',
     command: () => {
       router.push({
-        name: "EditAdministration",
+        name: 'EditAdministration',
         params: { adminId: props.id },
       });
     },
@@ -291,101 +333,83 @@ const processedDates = computed(() => {
   });
 });
 
-const assessmentIds = props.assessments
+const assessmentIds: string[] = props.assessments
   .map((assessment) => assessment.taskId.toLowerCase())
   .sort((p1, p2) => {
-    return (
-      (taskDisplayNames[p1]?.order ?? 0) - (taskDisplayNames[p2]?.order ?? 0)
-    );
+    return ((taskDisplayNames as any)[p1]?.order ?? 0) - ((taskDisplayNames as any)[p2]?.order ?? 0);
   });
 
-const paramPanelRefs = _fromPairs(
-  props.assessments.map((assessment) => [
-    assessment.taskId.toLowerCase(),
-    ref(),
-  ]),
-);
-const params = _fromPairs(
-  props.assessments.map((assessment) => [
-    assessment.taskId.toLowerCase(),
-    assessment.params,
-  ]),
+const paramPanelRefs: Record<string, any> = _fromPairs(
+  props.assessments.map((assessment) => [assessment.taskId.toLowerCase(), ref()]),
 );
 
-const toEntryObjects = (inputObj) => {
+const params: Record<string, Record<string, any>> = _fromPairs(
+  props.assessments.map((assessment) => [assessment.taskId.toLowerCase(), assessment.params]),
+);
+
+const toEntryObjects = (inputObj: Record<string, any>): Array<{ key: string; value: any }> => {
   return _toPairs(inputObj).map(([key, value]) => ({ key, value }));
 };
 
-const toggleParams = (event, id) => {
+const toggleParams = (event: Event, id: string): void => {
   paramPanelRefs[id].value[0].toggle(event);
 };
 
-function getAssessment(assessmentId) {
-  return props.assessments.find(
-    (assessment) => assessment.taskId.toLowerCase() === assessmentId,
-  );
+function getAssessment(assessmentId: string): Assessment | undefined {
+  return props.assessments.find((assessment) => assessment.taskId.toLowerCase() === assessmentId);
 }
 
-const showTable = ref(false);
-const enableQueries = ref(false);
+const showTable = ref<boolean>(false);
+const enableQueries = ref<boolean>(false);
 
-onMounted(() => {
+onMounted((): void => {
   enableQueries.value = true;
   showTable.value = !showTable.value;
 });
 
-const isWideScreen = computed(() => {
+const isWideScreen = computed((): boolean => {
   return window.innerWidth > 768;
 });
 
-const { data: tasksDictionary, isLoading: isLoadingTasksDictionary } =
-  useTasksDictionaryQuery();
+const { data: tasksDictionary, isLoading: isLoadingTasksDictionary } = useTasksDictionaryQuery();
 
-const { data: orgs, isLoading: isLoadingDsgfOrgs } = useDsgfOrgQuery(
-  props.id,
-  props.assignees,
-  {
-    enabled: enableQueries,
-  },
-);
+const { data: orgs, isLoading: isLoadingDsgfOrgs } = useDsgfOrgQuery(props.id, props.assignees, {
+  enabled: enableQueries,
+});
 
-const loadingTreeTable = computed(() => {
+const loadingTreeTable = computed((): boolean => {
   return isLoadingDsgfOrgs.value || expanding.value;
 });
 
-const treeTableOrgs = ref([]);
+const treeTableOrgs = ref<TreeNode[]>([]);
 watch(orgs, (newValue) => {
-  treeTableOrgs.value = newValue;
+  treeTableOrgs.value = newValue || [];
 });
 
 watch(showTable, (newValue) => {
-  if (newValue) treeTableOrgs.value = orgs.value;
+  if (newValue) treeTableOrgs.value = orgs.value || [];
 });
 
-const expanding = ref(false);
-const onExpand = async (node) => {
+const expanding = ref<boolean>(false);
+const onExpand = async (node: TreeNode): Promise<void> => {
   if (
     node.data.orgType === SINGULAR_ORG_TYPES.SCHOOLS &&
-    node.children?.length > 0 &&
+    node.children &&
+    node.children.length > 0 &&
     !node.data.expanded
   ) {
     expanding.value = true;
 
     const classPaths = node.children.map(({ data }) => `classes/${data.id}`);
-    const statPaths = node.children.map(
-      ({ data }) => `administrations/${props.id}/stats/${data.id}`,
-    );
+    const statPaths = node.children.map(({ data }) => `administrations/${props.id}/stats/${data.id}`);
 
-    const classPromises = [
-      batchGetDocs(classPaths, ["name", "schoolId"]),
-      batchGetDocs(statPaths),
-    ];
+    const classPromises = [batchGetDocs(classPaths, ['name', 'schoolId']), batchGetDocs(statPaths)];
 
     const [classDocs, classStats] = await Promise.all(classPromises);
 
     // Lazy node is a copy of the expanding node. We will insert more detailed
     // children nodes later.
-    const lazyNode = {
+    const lazyNode: TreeNode = {
       key: node.key,
       data: {
         ...node.data,
@@ -395,22 +419,23 @@ const onExpand = async (node) => {
 
     const childNodes = _without(
       _zip(classDocs, classStats).map(([orgDoc, stats], index) => {
-        const { collection = FIRESTORE_COLLECTIONS.CLASSES, ...nodeData } =
-          orgDoc ?? {};
+        if (!orgDoc) return undefined;
+
+        const { collection = FIRESTORE_COLLECTIONS.CLASSES, ...nodeData } = orgDoc;
 
         if (_isEmpty(nodeData)) return undefined;
 
         return {
           key: `${node.key}-${index}`,
           data: {
-            orgType: SINGULAR_ORG_TYPES[collection.toUpperCase()],
+            orgType: (SINGULAR_ORG_TYPES as any)[collection.toUpperCase()],
             ...(stats && { stats }),
             ...nodeData,
           },
         };
       }),
       undefined,
-    );
+    ).filter((node): node is TreeNode => node !== undefined);
 
     lazyNode.children = childNodes;
 
@@ -423,7 +448,7 @@ const onExpand = async (node) => {
           ...n,
           // Replace the existing school child nodes with a map that inserts the
           // classes at the appropriate position
-          children: n.children.map((child) => {
+          children: n.children?.map((child) => {
             if (child.data.id === node.data.id) {
               return lazyNode;
             }
@@ -451,7 +476,7 @@ const onExpand = async (node) => {
           schoolNode.children = schoolNode.children.toSorted((a, b) => {
             if (!a.data.stats) return 1;
             if (!b.data.stats) return -1;
-            return a.data.name.localeCompare(b.data.name);
+            return (a.data.name || '').localeCompare(b.data.name || '');
           });
         }
       }
@@ -462,11 +487,11 @@ const onExpand = async (node) => {
   }
 };
 
-const doughnutChartData = ref();
-const doughnutChartOptions = ref();
+const doughnutChartData = ref<ChartData>();
+const doughnutChartOptions = ref<ChartOptions>();
 
-const setDoughnutChartOptions = () => ({
-  cutout: "60%",
+const setDoughnutChartOptions = (): ChartOptions => ({
+  cutout: '60%',
   showToolTips: true,
   plugins: {
     legend: {
@@ -478,26 +503,22 @@ const setDoughnutChartOptions = () => ({
   },
 });
 
-const setDoughnutChartData = () => {
+const setDoughnutChartData = (): ChartData => {
   const docStyle = getComputedStyle(document.documentElement);
-  let {
-    assigned = 0,
-    started = 0,
-    completed = 0,
-  } = props.stats.total?.assignment || {};
+  let { assigned = 0, started = 0, completed = 0 } = props.stats.total?.assignment || {};
 
   started -= completed;
   assigned -= started + completed;
 
   return {
-    labels: ["Completed", "Started", "Assigned"],
+    labels: ['Completed', 'Started', 'Assigned'],
     datasets: [
       {
         data: [completed, started, assigned],
         backgroundColor: [
-          docStyle.getPropertyValue("--bright-green"),
-          docStyle.getPropertyValue("--yellow-100"),
-          docStyle.getPropertyValue("--surface-d"),
+          docStyle.getPropertyValue('--bright-green'),
+          docStyle.getPropertyValue('--yellow-100'),
+          docStyle.getPropertyValue('--surface-d'),
         ],
         // hoverBackgroundColor: ['green', docStyle.getPropertyValue('--surface-d')]
       },
@@ -505,7 +526,7 @@ const setDoughnutChartData = () => {
   };
 };
 
-onMounted(() => {
+onMounted((): void => {
   if (props.stats) {
     doughnutChartData.value = setDoughnutChartData();
     doughnutChartOptions.value = setDoughnutChartOptions();
@@ -542,7 +563,7 @@ onMounted(() => {
   text-align: left;
   width: 100%;
   background: var(--surface-b);
-  border: 1px solid var(--primary-color);
+  border: 1px solid var(--gray-300);
   border-radius: var(--border-radius);
   display: flex;
   flex-direction: row;
@@ -592,7 +613,7 @@ onMounted(() => {
   position: relative;
 
   &:not(:last-child):after {
-    content: ", ";
+    content: ', ';
   }
 }
 
