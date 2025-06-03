@@ -655,6 +655,11 @@ const computeAssignmentAndRunData = computed(() => {
             if (!earliest) return assessment.startedOn;
             return assessment.startedOn < earliest ? assessment.startedOn : earliest;
           }, null) ?? null,
+        completionDate:
+          assignment.assessments.reduce((latest, assessment) => {
+            if (!latest) return assessment.completedOn;
+            return assessment.completedOn > latest ? assessment.completedOn : latest;
+          }, null) ?? null,
         // compute and add scores data in next step as so
         // swr: { support_level: 'Needs Extra Support', percentile: 10, raw: 10, reliable: true, engagementFlags: {}},
       };
@@ -919,19 +924,21 @@ const viewOptions = ref([
  */
 
 const createExportData = ({ rows, includeProgress = false }) => {
-  const computedExportData = _map(rows, ({ user, scores }) => {
+  const computedExportData = _map(rows, ({ user, scores, startDate, completionDate }) => {
     let tableRow = {
       Username: user?.username,
       Email: user?.email, // This will only be used when exporting all rows
       First: user?.firstName,
       Last: user?.lastName,
       Grade: user?.grade,
-      state: user?.stateId,
     };
 
     if (authStore.isUserSuperAdmin) {
       tableRow['PID'] = user?.assessmentPid;
     }
+
+    tableRow['Start Date'] = startDate;
+    tableRow['Completion Date'] = completionDate;
 
     if (props.orgType === 'district') {
       tableRow['School'] = user?.schoolName;
@@ -1043,6 +1050,8 @@ const exportData = async ({ selectedRows = null, includeProgress = false }) => {
   const rows = selectedRows || computeAssignmentAndRunData.value.assignmentTableData;
   let exportData = createExportData({ rows, includeProgress });
 
+  console.log('exportData', exportData);
+
   // Analyze all rows to determine which columns are present in the data
   const allColumns = new Set();
   exportData.forEach((row) => {
@@ -1055,7 +1064,17 @@ const exportData = async ({ selectedRows = null, includeProgress = false }) => {
   const allColumnsArray = Array.from(allColumns);
 
   // Define the static columns
-  const staticColumns = ['Username', 'Email', 'First', 'Last', 'Grade', 'PID', 'School'];
+  const staticColumns = [
+    'Username',
+    'Email',
+    'First',
+    'Last',
+    'Grade',
+    'PID',
+    'School',
+    'Start Date',
+    'Completion Date',
+  ];
 
   if (orgData.value?.clever === true) {
     staticColumns.push('State ID');
@@ -1285,6 +1304,16 @@ const scoreReportColumns = computed(() => {
   tableColumns.push({
     field: 'startDate',
     header: 'Start Date',
+    dataType: 'date',
+    sort: true,
+    filter: false,
+    hidden: true, // Column is hidden by default, available via the Show/Hide Columns menu
+    headerStyle: `background:var(--primary-color); color:white; padding-top:0; margin-top:0; padding-bottom:0; margin-bottom:0; border:0; margin-left:0; border-right-width:2px; border-right-style:solid; border-right-color:#ffffff;`,
+  });
+
+  tableColumns.push({
+    field: 'completionDate',
+    header: 'Completion Date',
     dataType: 'date',
     sort: true,
     filter: false,
