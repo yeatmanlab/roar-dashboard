@@ -23,7 +23,7 @@
         >
           <div class="flex flex-row">
             <span class="card-icon">
-              <i class="pi pi-check-circle text-green-500" v-if="selectedPreset === key" />
+              <i class="pi pi-check-circle" style="color: var(--primary-color)" v-if="selectedPreset === key" />
               <i class="pi pi-circle" v-else />
             </span>
             <div class="flex flex-column">
