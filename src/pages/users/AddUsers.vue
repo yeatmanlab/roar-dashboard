@@ -6,9 +6,8 @@
 
       <PvDivider />
 
-      <div v-if="!isFileUploaded || errorUsers.length" class="text-gray-500 mb-2 surface-100 border-round p-2">
+      <div class="text-gray-500 mb-2 surface-100 border-round p-2">
         <PvFileUpload
-          v-if="!isFileUploaded || errorUsers.length"
           name="massUploader[]"
           custom-upload
           accept=".csv"
@@ -456,12 +455,27 @@ async function submitUsers() {
   showErrorTable.value = false;
   errorMessage.value = '';
 
-  // Group needs to be an array of strings
-  const usersToBeRegistered = _cloneDeep(toRaw(rawUserFile.value));
+  // Get users to be registered (those with empty uid)
+  const usersToBeRegistered = _cloneDeep(toRaw(rawUserFile.value)).map((user, index) => ({
+    user,
+    index
+  })).filter(({ user }) => !user.uid || user.uid === '');
   const usersWithErrors = [];
 
+  // If no users to register, show message and return
+  if (usersToBeRegistered.length === 0) {
+    toast.add({
+      severity: 'info',
+      summary: 'No New Users to Register',
+      detail: 'All users in the file have already been registered',
+      life: TOAST_DEFAULT_LIFE_DURATION,
+    });
+    activeSubmit.value = false;
+    return;
+  }
+
   // Check orgs exist
-  for (const user of usersToBeRegistered) {
+  for (const { user, index } of usersToBeRegistered) {
     try {
       // Find fields case-insensitively
       const siteField = Object.keys(user).find((key) => key.toLowerCase() === 'site');
@@ -603,6 +617,7 @@ async function submitUsers() {
             // Add the user to the error list with the specific organization error
             usersWithErrors.push({
               user,
+              index,
               error: `Invalid ${_capitalize(orgType)}: ${error.message}`,
             });
             break; // Break out of the orgType loop for this user
@@ -621,12 +636,14 @@ async function submitUsers() {
         // Only add this error if the user doesn't already have an error
         usersWithErrors.push({
           user,
-          error: 'No valid organization information found',
+          index,
+          error: "No valid organization information found",
         });
       }
     } catch (error) {
       usersWithErrors.push({
         user,
+        index,
         error: error.message,
       });
     }
@@ -663,7 +680,7 @@ async function submitUsers() {
   for (const users of chunkedUsersToBeRegistered) {
     try {
       // Ensure each user has the proper userType field name for the backend
-      const processedUsers = users.map((user) => {
+      const processedUsers = users.map(({ user }) => {
         const processedUser = { ...user };
 
         // Find the userType field (case-insensitive)
@@ -695,11 +712,15 @@ async function submitUsers() {
 
       // Update only the newly registered users
       currentRegisteredUsers.forEach((registeredUser, index) => {
-        const rawUserIndex = processedUserCount + index;
-        if (rawUserIndex < rawUserFile.value.length) {
-          rawUserFile.value[rawUserIndex].email = registeredUser.email;
-          rawUserFile.value[rawUserIndex].password = registeredUser.password;
-          rawUserFile.value[rawUserIndex].uid = registeredUser.uid;
+        const originalIndex = users[index].index;
+        if (originalIndex < rawUserFile.value.length) {
+          // Preserve all existing user data and update with new registration data
+          rawUserFile.value[originalIndex] = {
+            ...rawUserFile.value[originalIndex],
+            email: registeredUser.email,
+            password: registeredUser.password,
+            uid: registeredUser.uid
+          };
         }
       });
 
@@ -733,11 +754,16 @@ const csvBlob = ref(null);
 const csvURL = ref(null);
 
 function convertUsersToCSV() {
+  // Get the first user to determine headers
   const headerObj = toRaw(rawUserFile.value[0]);
 
   // Convert Objects to CSV String
-  const csvHeader = Object.keys(headerObj).join(',') + '\n';
-  const csvRows = rawUserFile.value
+  const csvHeader = Object.keys(headerObj).join(",") + "\n";
+  
+  // Get all users from rawUserFile (which now contains updated data for newly registered users)
+  const allUsers = toRaw(rawUserFile.value);
+
+  const csvRows = allUsers
     .map((obj) =>
       Object.values(obj)
         .map((value) => {
