@@ -9,6 +9,8 @@ interface UpdateUserParams {
   userData: Record<string, any>;
 }
 
+// NOT used. Todo: Refactor to update users how we want
+
 /**
  * Update User mutation.
  *
@@ -24,6 +26,7 @@ const useUpdateUserMutation = (): UseMutationReturnType<void, Error, UpdateUserP
   return useMutation({
     mutationKey: USER_UPDATE_MUTATION_KEY,
     mutationFn: async ({ userId, userData }: UpdateUserParams): Promise<void> => {
+      // Method no longer exists. Todo: Refactor to update users how we want
       await authStore.roarfirekit.updateUserData(userId, userData);
     },
     onSuccess: (): void => {

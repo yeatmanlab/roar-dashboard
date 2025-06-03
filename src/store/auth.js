@@ -96,9 +96,6 @@ export const useAuthStore = () => {
       async getLegalDoc(docName) {
         return await this.roarfirekit.getLegalDoc(docName);
       },
-      async registerWithEmailAndPassword({ email, password, userData }) {
-        return this.roarfirekit.createStudentWithEmailPassword(email, password, userData);
-      },
       async logInWithEmailAndPassword({ email, password }) {
         if (this.isFirekitInit) {
           return this.roarfirekit
