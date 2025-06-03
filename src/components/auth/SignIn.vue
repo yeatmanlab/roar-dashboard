@@ -225,17 +225,15 @@ const allowLink = ref<boolean>(true);
 
 const validateRoarEmail = _debounce(
   async (email: string): Promise<void> => {
-    // Don't evaluate empty emails or obviously invalid ones
+    // Don't evaluate empty or invalid emails
     if (!email || !email.includes('@')) {
       evaluatingEmail.value = false;
       return;
     }
 
-    const isRoarAuth = roarfirekit.value.isRoarAuthEmail(email);
-
     try {
       // First handle levante emails
-      if (email.includes('levante') || isRoarAuth) {
+      if (email.includes('levante')) {
         allowPassword.value = true;
         allowLink.value = false;
         state.useLink = false;
