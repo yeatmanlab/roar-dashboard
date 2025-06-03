@@ -113,6 +113,7 @@
             :allow-export="!isLevante"
             :allow-column-selection="!isLevante"
             :lazy-pre-sorting="orderBy"
+            :show-options-control="false"
             @export-selected="exportSelected"
             @export-all="exportAll"
           >

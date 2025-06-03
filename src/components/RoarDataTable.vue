@@ -4,7 +4,12 @@
   </div>
   <div v-else class="options-container">
     <div class="flex justify-content-end mr-3 mt-2 button-container">
-      <button type="button" class="text-red-700 cursor-pointer options-toggle" @click.prevent="toggleControls">
+      <button 
+        type="button"
+        class="text-red-700 cursor-pointer options-toggle"
+        @click.prevent="toggleControls"
+        v-if="props.showOptionsControl"
+      >
         {{ showControls ? 'Hide Options' : 'Show Options' }}
       </button>
     </div>
@@ -431,6 +436,7 @@ const props = defineProps({
   groupheaders: { type: Boolean, default: false },
   allowFiltering: { type: Boolean, default: true },
   allowColumnSelection: { type: Boolean, default: true },
+  showOptionsControl: { type: Boolean, default: true },
 });
 
 const inputColumns = ref(props.columns);
