@@ -12,13 +12,14 @@
         </PvButton>
       </div>
     </div>
-    <div v-else class="flex gap-2">
+    <div v-else class="flex gap-2 options-wrapper">
       <!-- Help dropdown -->
       <PvSelect
         :options="helpOptions"
         :optionValue="(o) => o.value"
         :optionLabel="(o) => o.label"
         @change="handleHelpChange"
+        class="options-help"
       >
         <template #value>
           <i class="pi pi-question-circle"></i>
@@ -32,6 +33,7 @@
         :optionValue="(o) => o.value"
         :optionLabel="(o) => o.label"
         @change="handleProfileChange"
+        class="options-settings"
       >
         <template #value>
           <i class="pi pi-user"></i>
@@ -108,6 +110,19 @@ const handleProfileChange = (e: DropdownChangeEvent): void => {
 </script>
 
 <style>
+.options-wrapper {
+  position: relative;
+  top: -18px;
+
+  .options-settings {
+    position: absolute;
+    right: 0;
+  }
+  .options-help {
+    position: absolute;
+    right: 5.4rem;
+  }
+}
 .nav-user-wrapper {
   display: flex;
   align-items: center;
