@@ -39,8 +39,8 @@
           class="p-0"
         >
           <template #header>
-            <!--Unsuitable for Scoring-->
-            <i v-if="game?.allowRetake === true" class="pi pi-exclamation-circle mr-2" data-game-status="unsuitable" />
+            <!--Retake required-->
+            <i v-if="game?.allowRetake === true" class="pi pi-exclamation-circle mr-2" data-game-status="retake-required" />
             <!--Complete Game-->
             <i v-else-if="game.completedOn" class="pi pi-check-circle mr-2" data-game-status="complete" />
             <!--Current Game-->
