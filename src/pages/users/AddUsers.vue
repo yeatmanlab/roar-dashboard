@@ -456,10 +456,12 @@ async function submitUsers() {
   errorMessage.value = '';
 
   // Get users to be registered (those with empty uid)
-  const usersToBeRegistered = _cloneDeep(toRaw(rawUserFile.value)).map((user, index) => ({
-    user,
-    index
-  })).filter(({ user }) => !user.uid || user.uid === '');
+  const usersToBeRegistered = _cloneDeep(toRaw(rawUserFile.value))
+    .map((user, index) => ({
+      user,
+      index,
+    }))
+    .filter(({ user }) => !user.uid || user.uid === '');
   const usersWithErrors = [];
 
   // If no users to register, show message and return
@@ -637,7 +639,7 @@ async function submitUsers() {
         usersWithErrors.push({
           user,
           index,
-          error: "No valid organization information found",
+          error: 'No valid organization information found',
         });
       }
     } catch (error) {
@@ -719,7 +721,7 @@ async function submitUsers() {
             ...rawUserFile.value[originalIndex],
             email: registeredUser.email,
             password: registeredUser.password,
-            uid: registeredUser.uid
+            uid: registeredUser.uid,
           };
         }
       });
@@ -758,8 +760,8 @@ function convertUsersToCSV() {
   const headerObj = toRaw(rawUserFile.value[0]);
 
   // Convert Objects to CSV String
-  const csvHeader = Object.keys(headerObj).join(",") + "\n";
-  
+  const csvHeader = Object.keys(headerObj).join(',') + '\n';
+
   // Get all users from rawUserFile (which now contains updated data for newly registered users)
   const allUsers = toRaw(rawUserFile.value);
 

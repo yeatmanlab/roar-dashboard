@@ -238,15 +238,14 @@ const { isLoading: isLoadingSchools, data: allSchools } = useQuery({
 const { data: orgData } = useQuery({
   queryKey: ['orgs', activeOrgType, selectedDistrict, selectedSchool],
   queryFn: () =>
-    orgFetchAll(
-      activeOrgType,
-      selectedDistrict,
-      selectedSchool,
-      ref(orderByDefault),
-      isSuperAdmin,
-      adminOrgs,
-      ['id', 'name', 'districtId', 'schoolId', 'schools', 'classes'],
-    ),
+    orgFetchAll(activeOrgType, selectedDistrict, selectedSchool, ref(orderByDefault), isSuperAdmin, adminOrgs, [
+      'id',
+      'name',
+      'districtId',
+      'schoolId',
+      'schools',
+      'classes',
+    ]),
   placeholderData: (previousData) => previousData,
   enabled: claimsLoaded,
   staleTime: 5 * 60 * 1000, // 5 minutes

@@ -4,11 +4,11 @@
   </div>
   <div v-else class="options-container">
     <div class="flex justify-content-end mr-3 mt-2 button-container">
-      <button 
+      <button
+        v-if="props.showOptionsControl"
         type="button"
         class="text-red-700 cursor-pointer options-toggle"
         @click.prevent="toggleControls"
-        v-if="props.showOptionsControl"
       >
         {{ showControls ? 'Hide Options' : 'Show Options' }}
       </button>

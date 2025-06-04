@@ -1,14 +1,14 @@
-import * as VueQuery from "@tanstack/vue-query";
-import { mount } from "@vue/test-utils";
-import { createPinia, setActivePinia } from "pinia";
-import PrimeVue from "primevue/config";
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { ref } from "vue";
-import CreateAssignment from "../CreateAssignment.vue";
+import * as VueQuery from '@tanstack/vue-query';
+import { mount } from '@vue/test-utils';
+import { createPinia, setActivePinia } from 'pinia';
+import PrimeVue from 'primevue/config';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ref } from 'vue';
+import CreateAssignment from '../CreateAssignment.vue';
 
 const mockUpsertAdministration = vi.fn();
 
-vi.mock("@/composables/mutations/useUpsertAdministrationMutation", () => {
+vi.mock('@/composables/mutations/useUpsertAdministrationMutation', () => {
   return {
     default: () => ({
       mutate: mockUpsertAdministration,
@@ -18,7 +18,7 @@ vi.mock("@/composables/mutations/useUpsertAdministrationMutation", () => {
   };
 });
 
-vi.mock("@/composables/queries/useUserClaimsQuery", () => ({
+vi.mock('@/composables/queries/useUserClaimsQuery', () => ({
   default: vi.fn(() => ({
     data: ref({
       //
@@ -26,13 +26,13 @@ vi.mock("@/composables/queries/useUserClaimsQuery", () => ({
   })),
 }));
 
-vi.mock("primevue/usetoast", () => ({
+vi.mock('primevue/usetoast', () => ({
   useToast: () => ({
     add: vi.fn(),
   }),
 }));
 
-vi.mock("@/store/auth", () => ({
+vi.mock('@/store/auth', () => ({
   useAuthStore: vi.fn(() => ({
     $subscribe: vi.fn(),
     roarfirekit: ref({
@@ -45,8 +45,8 @@ beforeEach(() => {
   setActivePinia(createPinia());
 });
 
-describe("Create Assignment Page", () => {
-  it("should render the page", () => {
+describe('Create Assignment Page', () => {
+  it('should render the page', () => {
     const wrapper = mount(CreateAssignment, {
       global: {
         plugins: [VueQuery.VueQueryPlugin, PrimeVue],
@@ -57,7 +57,7 @@ describe("Create Assignment Page", () => {
     expect(wrapper.exists()).toBe(true);
   });
 
-  it("should show an error if a required field is not filled in", async () => {
+  it('should show an error if a required field is not filled in', async () => {
     const wrapper = mount(CreateAssignment, {
       global: {
         plugins: [VueQuery.VueQueryPlugin, PrimeVue],
@@ -69,23 +69,23 @@ describe("Create Assignment Page", () => {
 
     // The submit button should be disabled by default
     expect(submitBtn.exists()).toBe(true);
-    expect(submitBtn.attributes("disabled")).toBe("");
+    expect(submitBtn.attributes('disabled')).toBe('');
 
-    wrapper.vm.state.administrationName = "Assignment Name";
+    wrapper.vm.state.administrationName = 'Assignment Name';
 
     await wrapper.vm.$nextTick();
 
     // After setting a name, the button should NOT have the disabled attr anymore
-    expect(submitBtn.attributes("disabled")).toBe(undefined);
+    expect(submitBtn.attributes('disabled')).toBe(undefined);
 
     await wrapper.vm.submit();
 
-    const errorMessages = wrapper.findAll(".p-error");
+    const errorMessages = wrapper.findAll('.p-error');
 
     expect(errorMessages.length).toBeGreaterThan(0);
   });
 
-  it("should submit the form if everything is ok", async () => {
+  it('should submit the form if everything is ok', async () => {
     const wrapper = mount(CreateAssignment, {
       global: {
         plugins: [VueQuery.VueQueryPlugin, PrimeVue],
@@ -93,14 +93,14 @@ describe("Create Assignment Page", () => {
       },
     });
 
-    const assignmentName = "Assignment Name";
-    const dateStarted = "2025-05-30";
-    const dateClosed = "2025-05-31";
+    const assignmentName = 'Assignment Name';
+    const dateStarted = '2025-05-30';
+    const dateClosed = '2025-05-31';
     const districts = [
       {
-        schools: ["3Xtxp98rBmtJfp0I8Gsl"],
-        name: "A Test Site",
-        id: "ym6s50BHi6B5nYCKGGWH",
+        schools: ['3Xtxp98rBmtJfp0I8Gsl'],
+        name: 'A Test Site',
+        id: 'ym6s50BHi6B5nYCKGGWH',
       },
     ];
     const schools = [];
@@ -121,13 +121,13 @@ describe("Create Assignment Page", () => {
     wrapper.vm.state.legal = {
       consent: null,
       assent: null,
-      amount: "",
-      expectedTime: "",
+      amount: '',
+      expectedTime: '',
     };
 
     wrapper.vm.variants = [
       {
-        id: "YXXjBbBuaacSaEV4NGiW",
+        id: 'YXXjBbBuaacSaEV4NGiW',
         variant: {
           params: {
             storeItemId: false,
@@ -139,39 +139,38 @@ describe("Create Assignment Page", () => {
             corpus: null,
             numOfPracticeTrials: 2,
             maxIncorrect: 3,
-            language: "en",
+            language: 'en',
             sequentialPractice: true,
             skipInstructions: true,
-            taskName: "intro",
-            buttonLayout: "default",
+            taskName: 'intro',
+            buttonLayout: 'default',
             age: null,
           },
-          name: "en",
+          name: 'en',
           registered: true,
-          lastUpdated: "2025-05-15T20:12:54.288Z",
-          id: "YXXjBbBuaacSaEV4NGiW",
-          parentDoc: "intro",
+          lastUpdated: '2025-05-15T20:12:54.288Z',
+          id: 'YXXjBbBuaacSaEV4NGiW',
+          parentDoc: 'intro',
           conditions: {
             assigned: {
-              op: "AND",
+              op: 'AND',
               conditions: [
                 {
-                  field: "userType",
-                  op: "EQUAL",
-                  value: "student",
+                  field: 'userType',
+                  op: 'EQUAL',
+                  value: 'student',
                 },
               ],
             },
           },
         },
         task: {
-          id: "intro",
-          name: "Instructions",
+          id: 'intro',
+          name: 'Instructions',
           registered: true,
-          description: "Learn how to play our games!",
-          image:
-            "https://storage.googleapis.com/road-dashboard/shared/intro-logo.png",
-          lastUpdated: "2025-05-30T15:17:44.859Z",
+          description: 'Learn how to play our games!',
+          image: 'https://storage.googleapis.com/road-dashboard/shared/intro-logo.png',
+          lastUpdated: '2025-05-30T15:17:44.859Z',
         },
       },
     ];
@@ -179,7 +178,7 @@ describe("Create Assignment Page", () => {
     await wrapper.vm.submit();
     await wrapper.vm.$nextTick();
 
-    const errorMessages = wrapper.findAll(".p-error");
+    const errorMessages = wrapper.findAll('.p-error');
 
     expect(errorMessages.length).toBe(0);
     expect(mockUpsertAdministration).toHaveBeenCalledTimes(1);

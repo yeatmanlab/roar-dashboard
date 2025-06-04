@@ -18,8 +18,8 @@
         :options="helpOptions"
         :optionValue="(o) => o.value"
         :optionLabel="(o) => o.label"
-        @change="handleHelpChange"
         class="options-help"
+        @change="handleHelpChange"
       >
         <template #value>
           <i class="pi pi-question-circle"></i>
@@ -32,8 +32,8 @@
         :options="profileOptions"
         :optionValue="(o) => o.value"
         :optionLabel="(o) => o.label"
-        @change="handleProfileChange"
         class="options-settings"
+        @change="handleProfileChange"
       >
         <template #value>
           <i class="pi pi-user"></i>
