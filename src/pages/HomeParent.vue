@@ -22,7 +22,7 @@
 
     <HomeParentStudentView
       v-if="currentParentView.name === VIEWS.BY_STUDENT"
-      :is-loading="isLoadingAssignments || isLoadingAdministrations"
+      :is-loading="isLoadingAssignments || isLoadingAdministrations || isLoadingChildrenAssignments"
       :parent-registration-complete="parentRegistrationComplete"
       :assignment-data="assignmentData || []"
       :org-type="orgType"
@@ -40,12 +40,14 @@
 <script setup>
 import useAdministrationsListQuery from '@/composables/queries/useAdministrationsListQuery';
 import useAdministrationAssignmentsQuery from '@/composables/queries/useAdministrationAssignmentsQuery';
+import useMultipleUserAssignmentsQuery from '@/composables/queries/useMultipleUserAssignmentsQuery';
 import { useTimeoutPoll } from '@vueuse/core';
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { pluralizeFirestoreCollection } from '@/helpers';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes.js';
 import { useAuthStore } from '@/store/auth';
+import { storeToRefs } from 'pinia';
 import PvSelectButton from 'primevue/selectbutton';
 import HomeAdministrator from '@/pages/HomeAdministrator.vue';
 import HomeParentStudentView from '@/components/HomeParentStudentView.vue';
@@ -61,11 +63,25 @@ const VIEWS = Object.freeze({
 const currentParentView = ref({ name: VIEWS.BY_STUDENT });
 
 const parentViews = [{ name: VIEWS.BY_STUDENT }, { name: VIEWS.BY_ADMINISTRATION }];
+const { data: userClaims } = useUserClaimsQuery();
 
+// Parent registration status
 const parentRegistrationComplete = ref(false);
 const initialized = ref(false);
+const orgId = computed(
+  () => userClaims.value?.claims?.adminOrgs[pluralizeFirestoreCollection(orgType.value)]?.[0] ?? null,
+);
+
 // TODO: Set this dynamically in cases where this component is used for non-family adminstrators
 const orgType = ref(SINGULAR_ORG_TYPES.FAMILIES);
+
+// Get assignments for all children
+const childrenUids = computed(() => authStore.userData?.childrenUids || []);
+const { data: childrenAssignments, isLoading: isLoadingChildrenAssignments } = useMultipleUserAssignmentsQuery(
+  childrenUids,
+  orgType,
+  orgId,
+);
 
 const administrationQueryEnabled = computed(() => initialized.value && parentRegistrationComplete);
 
@@ -135,11 +151,6 @@ onBeforeUnmount(() => {
 });
 
 const administrationId = computed(() => administrations.value?.[0]?.id ?? null);
-const { data: userClaims } = useUserClaimsQuery();
-
-const orgId = computed(
-  () => userClaims.value?.claims?.adminOrgs[pluralizeFirestoreCollection(orgType.value)]?.[0] ?? null,
-);
 
 const { isLoading: isLoadingAssignments, data: assignmentData } = useAdministrationAssignmentsQuery(
   administrationId,
