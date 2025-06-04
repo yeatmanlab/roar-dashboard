@@ -47,7 +47,7 @@
   "gameTabs": {
     "clickToStart": "Haz clic para empezar",
     "externalTaskMessage": "Haga clic aquí para abrir de nuevo",
-    "taskCompleted": "Actividad completada!",
+    "taskCompleted": "¡Actividad completada!",
     "allowRetake": "La evaluación debe repetirse",
     "retakeAssessment": "Repetir evaluación"
   },
