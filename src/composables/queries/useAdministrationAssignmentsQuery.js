@@ -26,7 +26,6 @@ const useAdministrationAssignmentsQuery = (administrationId, orgType, orgId, que
     () => !!toValue(roarUid),
   ];
   const { isQueryEnabled, options } = computeQueryOverrides(queryConditions, queryOptions);
-  console.log('adminiid', administrationId.value, orgType.value, orgId.value, roarUid.value);
 
   return useQuery({
     queryKey: [

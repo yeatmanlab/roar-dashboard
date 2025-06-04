@@ -5,11 +5,7 @@
         <PvTab
           v-for="(game, index) in games"
           :key="game.taskId"
-          :disabled="
-            sequential &&
-            ((index > 0 && !games[index - 1].completedOn) ||
-              (allGamesComplete && currentGameId !== game.taskId && !game.completedOn && !game?.allowRetake))
-          "
+          :disabled="isGameTabDisabled(index)"
           :value="String(index)"
           :class="[
             'p3 mr-1 text-base hover:bg-black-alpha-10',
@@ -30,22 +26,22 @@
         <PvTabPanel
           v-for="(game, index) in games"
           :key="game.taskId"
-          :disabled="
-            sequential &&
-            ((index > 0 && !games[index - 1].completedOn) ||
-              (allGamesComplete && currentGameId !== game.taskId && !game.completedOn && !game?.allowRetake))
-          "
+          :disabled="isGameTabDisabled(index)"
           :value="String(index)"
           class="p-0"
         >
           <template #header>
             <!--Retake required-->
-            <i v-if="game?.allowRetake === true" class="pi pi-exclamation-circle mr-2" data-game-status="retake-required" />
+            <i
+              v-if="game?.allowRetake === true"
+              class="pi pi-exclamation-circle mr-2"
+              data-game-status="retake-required"
+            />
             <!--Complete Game-->
             <i v-else-if="game.completedOn" class="pi pi-check-circle mr-2" data-game-status="complete" />
             <!--Current Game-->
             <i
-              v-else-if="game.taskId == currentGameId || !sequential"
+              v-else-if="game.taskId == firstIncompleteGameId || !sequential"
               class="pi pi-circle mr-2"
               data-game-status="current"
             />
@@ -276,6 +272,11 @@ const getRoutePath = (taskId) => {
   }
 };
 
+const isGameTabDisabled = (index) => {
+  const previousGameIncomplete = index > 0 && !props.games[index - 1].completedOn;
+  return props.sequential && previousGameIncomplete;
+};
+
 const taskCompletedMessage = computed(() => {
   return t('gameTabs.taskCompleted');
 });
@@ -296,7 +297,7 @@ const updateVideoCompleted = async (taskId) => {
   }
 };
 
-const currentGameId = computed(() => {
+const firstIncompleteGameId = computed(() => {
   return _get(
     _find(props.games, (game) => {
       return game.completedOn === undefined;
@@ -307,7 +308,7 @@ const currentGameId = computed(() => {
 
 const gameIndex = computed(() =>
   _findIndex(props.games, (game) => {
-    return game.taskId === currentGameId.value;
+    return game.taskId === firstIncompleteGameId.value;
   }),
 );
 
