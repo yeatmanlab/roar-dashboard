@@ -308,6 +308,7 @@ import {
   includedValidityFlags,
 } from '@/helpers/reports';
 import RoarDataTable from '@/components/RoarDataTable';
+import { CSV_EXPORT_STATIC_COLUMNS } from '@/constants/csvExport';
 import { APP_ROUTES } from '@/constants/routes';
 import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
 import { usePermissions } from '@/composables/usePermissions';
@@ -1050,8 +1051,6 @@ const exportData = async ({ selectedRows = null, includeProgress = false }) => {
   const rows = selectedRows || computeAssignmentAndRunData.value.assignmentTableData;
   let exportData = createExportData({ rows, includeProgress });
 
-  console.log('exportData', exportData);
-
   // Analyze all rows to determine which columns are present in the data
   const allColumns = new Set();
   exportData.forEach((row) => {
@@ -1064,17 +1063,7 @@ const exportData = async ({ selectedRows = null, includeProgress = false }) => {
   const allColumnsArray = Array.from(allColumns);
 
   // Define the static columns
-  const staticColumns = [
-    'Username',
-    'Email',
-    'First',
-    'Last',
-    'Grade',
-    'PID',
-    'School',
-    'Start Date',
-    'Completion Date',
-  ];
+  const staticColumns = [...CSV_EXPORT_STATIC_COLUMNS];
 
   if (orgData.value?.clever === true) {
     staticColumns.push('State ID');
