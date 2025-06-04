@@ -190,8 +190,8 @@ const {
 
 const columns = ref([
   {
-    field: 'username',
-    header: 'Username',
+    field: 'id',
+    header: 'UID',
     dataType: 'string',
     sort: false,
   },
