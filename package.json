@@ -75,7 +75,7 @@
     "zipson": "^0.2.12"
   },
   "devDependencies": {
-    "@pinia/testing": "^0.1.5",
+    "@pinia/testing": "^0.1.7",
     "@testing-library/vue": "^8.1.0",
     "@types/lodash": "^4.14.196",
     "@typescript-eslint/eslint-plugin": "^8.32.1",

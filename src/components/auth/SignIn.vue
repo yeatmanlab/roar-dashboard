@@ -90,7 +90,6 @@
             />
             <small
               class="text-link sign-in-method-link"
-              data-cy="sign-in-with-password"
               @click="
                 allowPassword = true;
                 state.usePassword = true;
@@ -113,6 +112,7 @@
         type="submit"
         class="mt-5 flex w-5 p-3 border-none border-round hover:bg-black-alpha-20"
         :label="$t('authSignIn.buttonLabel') + ' &rarr;'"
+        data-cy="submit-sign-in-with-password"
       />
       <hr class="opacity-20 mt-5" />
     </form>
