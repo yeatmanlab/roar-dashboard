@@ -47,7 +47,9 @@
   "gameTabs": {
     "clickToStart": "Haz clic para empezar",
     "externalTaskMessage": "Haga clic aquí para abrir de nuevo",
-    "taskCompleted": "¡Tarea completada!",
+    "taskCompleted": "¡Actividad completada!",
+    "allowRetake": "La evaluación debe repetirse",
+    "retakeAssessment": "Repetir evaluación",
     "LEVANTE TRANSLATIONS--------------------------": "",
     "heartsAndFlowersDescription": "Haz coincidir el lado correcto con los corazones y las flores.",
     "heartsAndFlowersName": "Juego de Corazones y Flores",
