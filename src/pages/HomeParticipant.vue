@@ -103,7 +103,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref, watch, watchEffect, computed } from 'vue';
+import { onMounted, onBeforeMount, ref, watch, watchEffect, computed } from 'vue';
 import _filter from 'lodash/filter';
 import _get from 'lodash/get';
 import _find from 'lodash/find';
@@ -181,17 +181,19 @@ const {
 });
 
 const adminOrgIntersection = computed(() => {
-  const orgIntersection = highestAdminOrgIntersection(userData.value, authStore?.userClaims?.claims?.adminOrgs);
-  return orgIntersection;
+  return highestAdminOrgIntersection(userData.value, authStore?.userClaims?.claims?.adminOrgs);
 });
-
-watch(adminOrgIntersection, (newOrgIntersection) => {
-  orgType.value = newOrgIntersection?.orgType;
-  orgIds.value = newOrgIntersection?.orgIds;
-});
-
 const orgType = ref(null);
 const orgIds = ref(null);
+
+watch(
+  adminOrgIntersection,
+  (newOrgIntersection) => {
+    orgType.value = newOrgIntersection?.orgType;
+    orgIds.value = newOrgIntersection?.orgIds;
+  },
+  { immediate: true },
+);
 
 const isOrgIntersectionReady = ref(false);
 
@@ -210,8 +212,7 @@ watchEffect(() => {
   if (isSuperAdmin.value || !props.launchId) {
     isOrgIntersectionReady.value = true;
   } else {
-    isOrgIntersectionReady.value =
-      !!adminOrgIntersection.value?.orgType && adminOrgIntersection.value?.orgIds?.length > 0;
+    isOrgIntersectionReady.value = !!orgType.value && !!orgIds.value;
   }
 });
 
