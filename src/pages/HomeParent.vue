@@ -80,7 +80,7 @@ const childrenUids = computed(() => authStore.userData?.childrenUids || []);
 const { data: childrenAssignments, isLoading: isLoadingChildrenAssignments } = useMultipleUserAssignmentsQuery(
   childrenUids,
   orgType,
-  orgId,
+  [orgId],
 );
 
 const administrationQueryEnabled = computed(() => initialized.value && parentRegistrationComplete);
