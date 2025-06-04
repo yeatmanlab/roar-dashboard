@@ -4,7 +4,7 @@ import { storeToRefs } from 'pinia';
 import { useAuthStore } from '@/store/auth';
 import { computeQueryOverrides } from '@/helpers/computeQueryOverrides';
 import { getUserAssignments } from '@/helpers/query/assignments';
-import { USER_ASSIGNMENTS_QUERY_KEY } from '@/constants/queryKeys';
+import { MULTIPLE_USER_ASSIGNMENTS_QUERY_KEY } from '@/constants/queryKeys';
 
 /**
  * Multiple user assignments query that returns a map of userId to assignments.
@@ -30,9 +30,8 @@ const useMultipleUserAssignmentsQuery = (userIds = [], orgType = null, orgIds = 
   const { isQueryEnabled, options } = computeQueryOverrides(queryConditions, queryOptions);
 
   const queries = toValue(userIds).map((userId) => ({
-    queryKey: [USER_ASSIGNMENTS_QUERY_KEY, userId, orgType, orgIds],
+    queryKey: [MULTIPLE_USER_ASSIGNMENTS_QUERY_KEY, toValue(userId)],
     queryFn: () => getUserAssignments(userId, toValue(orgType), toValue(orgIds), isTestUser),
-    // Refetch on window focus for MEFS assessments as those are opened in a separate tab
     refetchOnWindowFocus: 'always',
     enabled: isQueryEnabled,
     ...options,
