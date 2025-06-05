@@ -103,7 +103,7 @@
 </template>
 
 <script setup>
-import { onMounted, onBeforeMount, ref, watch, watchEffect, computed } from 'vue';
+import { onMounted, ref, watch, watchEffect, computed } from 'vue';
 import _filter from 'lodash/filter';
 import _get from 'lodash/get';
 import _find from 'lodash/find';
