@@ -109,7 +109,7 @@ const handleProfileChange = (e: DropdownChangeEvent): void => {
 };
 </script>
 
-<style>
+<style lang="scss">
 .options-wrapper {
   position: relative;
   top: -18px;
