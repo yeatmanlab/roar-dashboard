@@ -99,6 +99,8 @@ async function startTask(selectedAdmin) {
 
     const appKit = await authStore.roarfirekit.startAssessment(selectedAdmin.value.id, taskId, version);
 
+    console.log('created appKit', appKit);
+
     const birthMonth = _get(userData.value, 'birthMonth');
     const birthYear = _get(userData.value, 'birthYear');
 
@@ -110,6 +112,8 @@ async function startTask(selectedAdmin) {
     const gameParams = { ...appKit._taskInfo.variantParams };
 
     const levanteTask = new levanteTaskLauncher(appKit, gameParams, userParams, logger);
+
+    console.log('created levanteTask', levanteTask);
 
     await levanteTask.run().then(async () => {
       // Handle any post-game actions.
