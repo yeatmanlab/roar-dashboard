@@ -1,3 +1,1 @@
-npx dotenvx ext precommit
-npm run lint:fix
-npm run format
+npx lint-staged
