@@ -14,7 +14,7 @@ import { computed } from 'vue';
  * @param {String|undefined} orgType– The orgtype that is shared between the admin user and the target studnet user
  * @param {String|undefined} orgId – The orgId that is shared between the admin user and the target studnet user
  * OrgType and OrgId are passed in in order to construct a query that will validate the administrator's permissions to view target user data
- * @returns {UseQueryResult} The TanStack query result.
+ * @returns {UseQuery} The TanStack query result.
  */
 const useUserAssignmentsQuery = (queryOptions = undefined, userId = null, orgType = null, orgIds = null) => {
   const authStore = useAuthStore();
