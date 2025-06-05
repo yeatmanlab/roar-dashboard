@@ -4,13 +4,13 @@
       <div
         v-for="(student, outerIndex) in state.students"
         :key="outerIndex"
-        class="bg-gray-100 rounded py-3 px-5 flex flex-column gap-2 my-3"
+        class="flex gap-2 px-5 py-3 my-3 bg-gray-100 rounded flex-column"
       >
         <div class="flex flex-column justify-content-between align-items-center">
-          <div class="font-bold text-2xl text-gray-600">Student #{{ outerIndex + 1 }}</div>
+          <div class="text-2xl font-bold text-gray-600">Student #{{ outerIndex + 1 }}</div>
           <section v-if="!student.orgName" class="form-section">
             <div class="p-input-icon-right">
-              <div class="flex justify-content-between gap-2">
+              <div class="flex gap-2 justify-content-between">
                 <label for="activationCode">Activation code <span class="required">*</span></label>
               </div>
               <PvInputGroup v-if="!student.noActivationCode">
@@ -24,7 +24,7 @@
                   :disabled="student.noActivationCode"
                 />
                 <PvButton
-                  class="w-4 bg-primary text-white hover:bg-red-900 text-sm"
+                  class="w-4 text-sm text-white bg-primary hover:bg-red-900"
                   label="Validate"
                   @click="validateCode(student.activationCode, outerIndex)"
                 />
@@ -46,17 +46,17 @@
             </span>
           </section>
           <section v-else>
-            <div class="flex justify-content-between align-items-center my-2">
-              <div class="flex-column gap-2">
-                <div class="text-xs text-gray-500 font-light uppercase">Registering under</div>
-                <div class="flex gap-2 rounded bg-gray-200 p-2">
-                  <div class="text-sm text-gray-600 font-bold" data-cy="child-registration__org-name">
+            <div class="flex my-2 justify-content-between align-items-center">
+              <div class="gap-2 flex-column">
+                <div class="text-xs font-light text-gray-500 uppercase">Registering under</div>
+                <div class="flex gap-2 p-2 bg-gray-200 rounded">
+                  <div class="text-sm font-bold text-gray-600" data-cy="child-registration__org-name">
                     {{ student.orgName }}
                   </div>
                 </div>
                 <div>
                   <PvButton
-                    class="bg-primary border-none border-round py-2 text-white hover:surface-300 hover:text-black-alpha-90 text-md"
+                    class="py-2 text-white border-none bg-primary border-round hover:surface-300 hover:text-black-alpha-90 text-md"
                     icon="pi pi-replay ml-2"
                     icon-pos="right"
                     severity="secondary"
@@ -69,7 +69,7 @@
           </section>
         </div>
         <section class="form-section">
-          <div class="p-input-icon-right flex flex-column">
+          <div class="flex p-input-icon-right flex-column">
             <label for="studentUsername">Student Username <span class="required">*</span></label>
             <PvInputText
               v-model="student.studentUsername"
@@ -88,7 +88,7 @@
           </span>
         </section>
         <!-- Password -->
-        <section class="form-section flex lg:flex-row">
+        <section class="flex form-section lg:flex-row">
           <div>
             <div>
               <label for="password">Password (Minimum 6 characters)<span class="required">*</span></label>
@@ -99,10 +99,11 @@
                   'p-invalid': v$.students.$each.$response.$data[outerIndex].password.$invalid && submitted,
                   'w-full': true,
                 }"
-                toggle-mask
+                :inputProps="{ autocomplete: 'new-password' }"
+                :feedback="false"
                 show-icon="pi pi-eye-slash"
                 hide-icon="pi pi-eye"
-                :feedback="false"
+                toggle-mask
               ></PvPassword>
             </div>
             <span v-if="v$.students.$each.$response.$errors[outerIndex].password.length > 0 && submitted">
@@ -123,10 +124,11 @@
                 v-model="student.confirmPassword"
                 name="confirmPassword"
                 :class="{ 'p-invalid': isPasswordMismatch(outerIndex) && submitted, 'w-full': true }"
-                toggle-mask
+                :inputProps="{ autocomplete: 'new-password' }"
+                :feedback="false"
                 show-icon="pi pi-eye-slash"
                 hide-icon="pi pi-eye"
-                :feedback="false"
+                toggle-mask
               ></PvPassword>
             </div>
             <span v-if="isPasswordMismatch(outerIndex)" class="p-error"> Passwords must match </span>
@@ -135,7 +137,7 @@
         <section class="form-section">
           <div>
             <!-- Age / DOB -->
-            <div class="flex justify-content-start gap-2">
+            <div class="flex gap-2 justify-content-start">
               <label>Date of Birth <span class="required">*</span></label>
               <div class="flex align-items-center">
                 <PvCheckbox v-model="student.yearOnlyCheckRef" :binary="true" name="yearOnly" />
@@ -228,7 +230,7 @@
                 />
               </div>
               <!--Sex-->
-              <div class="flex flex-column mt-2 mb-3">
+              <div class="flex mt-2 mb-3 flex-column">
                 <label for="sex">Gender </label>
                 <PvSelect
                   v-model="student.gender"
@@ -239,7 +241,7 @@
                 />
               </div>
             </section>
-            <section class="form-section mt-2 mb-3">
+            <section class="mt-2 mb-3 form-section">
               <!-- Free-Reduced Lunch -->
               <div class="flex flex-column">
                 <label for="stateId">Free-Reduced Lunch </label>
@@ -263,7 +265,7 @@
                 />
               </div>
             </section>
-            <section class="flex flex-row form-section mt-2 mb-3">
+            <section class="flex flex-row mt-2 mb-3 form-section">
               <!-- Race -->
               <div class="flex flex-column">
                 <label for="race">Race </label>
@@ -302,11 +304,11 @@
         <section class="form-section-button">
           <PvButton
             v-if="outerIndex !== 0"
-            class="bg-primary border-none border-round p-3 w-5 text-white hover:surface-300 hover:text-black-alpha-90"
+            class="p-3 w-5 text-white border-none bg-primary border-round hover:surface-300 hover:text-black-alpha-90"
             icon="pi pi-trash"
             @click="deleteStudentForm(outerIndex)"
           >
-            <i class="pi pi-trash mr-2"></i>
+            <i class="mr-2 pi pi-trash"></i>
             Delete Student
           </PvButton>
         </section>
@@ -338,7 +340,7 @@
     </form>
     <div class="form-section-button2">
       <PvButton
-        class="bg-primary border-none border-round text-white p-3 hover:surface-300 hover:text-black-alpha-90"
+        class="p-3 text-white border-none bg-primary border-round hover:surface-300 hover:text-black-alpha-90"
         icon="pi pi-plus"
         label="Add Student"
         @click="addStudent()"
@@ -349,7 +351,7 @@
       <PvButton
         type="submit"
         label="Submit"
-        class="bg-primary text-white border-none border-round w-4 p-2 h-3rem mr-3 hover:surface-300 hover:text-black-alpha-90"
+        class="p-2 mr-3 w-4 text-white border-none bg-primary border-round h-3rem hover:surface-300 hover:text-black-alpha-90"
         @click.prevent="handleFormSubmit(!v$.$invalid && !anyPasswordsMismatched())"
       />
       <PvDialog
@@ -361,7 +363,7 @@
       >
         <p>{{ dialogMessage }}</p>
         <PvButton
-          class="bg-primary text-white border-none border-round p-2 h-3rem mr-3 hover:surface-300 hover:text-black-alpha-90"
+          class="p-2 mr-3 text-white border-none bg-primary border-round h-3rem hover:surface-300 hover:text-black-alpha-90"
           @click="closeErrorDialog"
           >Close</PvButton
         >

@@ -2,15 +2,15 @@
   <main class="container main">
     <section class="main-body">
       <div v-if="!isLoading">
-        <div class="flex flex-column mb-5">
+        <div class="flex mb-5 flex-column">
           <div class="flex justify-content-between">
-            <div class="flex align-items-center gap-3">
-              <i class="pi pi-users text-gray-400 rounded" style="font-size: 1.6rem"></i>
+            <div class="flex gap-3 align-items-center">
+              <i class="text-gray-400 rounded pi pi-users" style="font-size: 1.6rem"></i>
               <div class="admin-page-header">List Users</div>
             </div>
-            <div class="bg-gray-100 px-5 py-2 rounded flex flex-column gap-3">
-              <div class="flex flex-wrap align-items-center gap-2 justify-content-between">
-                <div class="uppercase font-light font-sm text-gray-400 mb-1">
+            <div class="flex gap-3 px-5 py-2 bg-gray-100 rounded flex-column">
+              <div class="flex flex-wrap gap-2 align-items-center justify-content-between">
+                <div class="mb-1 font-light text-gray-400 uppercase font-sm">
                   {{ singularizeFirestoreCollection(orgType) }}
                 </div>
                 <div class="text-xl text-gray-600">
@@ -18,14 +18,14 @@
                 </div>
               </div>
               <div class="flex flex-wrap gap-2 justify-content-between">
-                <div class="uppercase font-light font-sm text-gray-400 mb-1">Student Count</div>
+                <div class="mb-1 font-light text-gray-400 uppercase font-sm">Student Count</div>
                 <div class="text-xl text-gray-600">
                   <b> {{ users?.length }} </b>
                 </div>
               </div>
             </div>
           </div>
-          <div class="text-md text-gray-500 ml-6">View users for the selected organization.</div>
+          <div class="ml-6 text-gray-500 text-md">View users for the selected organization.</div>
         </div>
 
         <RoarDataTable
@@ -54,27 +54,39 @@
         />
         <div v-if="showPassword">
           <div class="flex" style="gap: 1rem">
-            <div class="form-field" style="width: 100%">
+            <div class="flex gap-1 flex-column form-field" style="width: 100%">
               <label>New Password</label>
-              <PvInputText v-model="v$.password.$model" :class="{ 'p-invalid': v$.password.$invalid && submitted }" />
-              <small v-if="v$.password.$invalid && submitted" class="p-error"
-                >Password must be at least 6 characters long.</small
-              >
+              <PvPassword
+                v-model="v$.password.$model"
+                :class="{ 'p-invalid': v$.password.$invalid && submitted }"
+                :inputProps="{ autocomplete: 'new-password' }"
+                show-icon="pi pi-eye-slash"
+                hide-icon="pi pi-eye"
+                toggle-mask
+              />
+              <small v-if="v$.password.$invalid && submitted" class="p-error">
+                Password must be at least 6 characters long.
+              </small>
             </div>
-            <div class="form-field" style="width: 100%">
+            <div class="flex gap-1 flex-column form-field" style="width: 100%">
               <label>Confirm New Password</label>
-              <PvInputText
+              <PvPassword
                 v-model="v$.confirmPassword.$model"
                 :class="{ 'p-invalid': v$.confirmPassword.$invalid && submitted }"
+                :inputProps="{ autocomplete: 'new-password' }"
+                :feedback="false"
+                show-icon="pi pi-eye-slash"
+                hide-icon="pi pi-eye"
+                toggle-mask
               />
               <small v-if="v$.confirmPassword.$invalid && submitted" class="p-error">Passwords do not match.</small>
             </div>
           </div>
         </div>
-        <div v-if="userCan(Permissions.Users.Credentials.UPDATE)" class="flex justify-content-center mt-3 w-full">
+        <div v-if="userCan(Permissions.Users.Credentials.UPDATE)" class="flex mt-3 w-full justify-content-center">
           <PvButton
             v-if="!showPassword"
-            class="border-none border-round bg-primary text-white p-2 hover:surface-400 mr-auto ml-auto"
+            class="p-2 mr-auto ml-auto text-white border-none border-round bg-primary hover:surface-400"
             @click="showPassword = true"
             >Change Password</PvButton
           >
@@ -85,7 +97,7 @@
             <div v-if="!showPassword" class="flex gap-2">
               <PvButton
                 tabindex="0"
-                class="border-none border-round bg-white text-primary p-2 hover:surface-200"
+                class="p-2 bg-white border-none border-round text-primary hover:surface-200"
                 text
                 label="Cancel"
                 outlined
@@ -94,7 +106,7 @@
               <PvButton
                 v-if="canUserEdit"
                 tabindex="0"
-                class="border-none border-round bg-primary text-white p-2 hover:surface-400"
+                class="p-2 text-white border-none border-round bg-primary hover:surface-400"
                 label="Save"
                 @click="updateUserData"
                 ><i v-if="isSubmitting" class="pi pi-spinner pi-spin"></i
@@ -103,7 +115,7 @@
             <div v-else-if="showPassword" class="flex gap-2">
               <PvButton
                 tabindex="0"
-                class="border-none border-round bg-white text-primary p-2 hover:surface-200"
+                class="p-2 bg-white border-none border-round text-primary hover:surface-200"
                 text
                 label="Back to User Information"
                 outlined
@@ -111,7 +123,7 @@
               ></PvButton>
               <PvButton
                 tabindex="0"
-                class="border-none border-round bg-primary text-white p-2 hover:surface-400"
+                class="p-2 text-white border-none border-round bg-primary hover:surface-400"
                 label="Save Password"
                 @click="updatePassword"
                 ><i v-if="isSubmitting" class="pi pi-spinner pi-spin"></i
@@ -130,7 +142,7 @@ import { useVuelidate } from '@vuelidate/core';
 import { required, sameAs, minLength } from '@vuelidate/validators';
 import { useToast } from 'primevue/usetoast';
 import PvButton from 'primevue/button';
-import PvInputText from 'primevue/inputtext';
+import PvPassword from 'primevue/password';
 import _isEmpty from 'lodash/isEmpty';
 import { useAuthStore } from '@/store/auth';
 import useOrgUsersQuery from '@/composables/queries/useOrgUsersQuery';
