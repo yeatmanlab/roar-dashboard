@@ -14,21 +14,21 @@
       <section class="signin-options">
         <section class="signin-option-container signin-option-userpass">
           <h4 class="signin-option-title">{{ $t('pageSignIn.login') }}</h4>
-          <div id="languageSelect" class="m-4 flex justify-content-center">
+          <div id="languageSelect" class="flex m-4 justify-content-center">
             <LanguageSelector class="w-7" />
           </div>
           <SignIn :invalid="incorrect" @submit="authWithEmail" @update:email="email = $event" />
         </section>
-        <section class="flex flex-column w-full">
+        <section class="flex w-full flex-column">
           <h4
-            class="flex mb-3 mt-1 align-content-center justify-content-center flex-wrap-reverse font-bold text-md text-500"
+            class="flex flex-wrap-reverse mt-1 mb-3 font-bold align-content-center justify-content-center text-md text-500"
           >
             {{ $t('pageSignIn.loginWith') }}
           </h4>
-          <div class="flex flex-row align-content-center justify-content-center w-full">
+          <div class="flex flex-row w-full align-content-center justify-content-center">
             <PvButton
               label="Sign in with Google"
-              class="flex surface-0 p-1 border-black-alpha-10 w-3 ml-2 mr-2 text-center text-black justify-content-center hover:border-primary hover:surface-ground"
+              class="flex p-1 mr-2 ml-2 w-3 text-center text-black surface-0 border-black-alpha-10 justify-content-center hover:border-primary hover:surface-ground"
               style="border-radius: 3rem; height: 3rem; color: black"
               data-cy="sign-in__google-sso"
               @click="authWithGoogle"
@@ -38,7 +38,7 @@
             </PvButton>
             <PvButton
               v-if="!isLevante"
-              class="flex surface-0 p-1 border-black-alpha-10 w-3 ml-2 mr-2 justify-content-center hover:border-primary hover:surface-ground"
+              class="flex p-1 mr-2 ml-2 w-3 surface-0 border-black-alpha-10 justify-content-center hover:border-primary hover:surface-ground"
               style="border-radius: 3rem; height: 3rem; color: black"
               data-cy="sign-in__clever-sso"
               @click="authWithClever"
@@ -48,7 +48,7 @@
             </PvButton>
             <PvButton
               v-if="!isLevante"
-              class="flex surface-0 p-1 border-black-alpha-10 w-3 ml-2 mr-2 text-black justify-content-center hover:border-primary hover:surface-ground"
+              class="flex p-1 mr-2 ml-2 w-3 text-black surface-0 border-black-alpha-10 justify-content-center hover:border-primary hover:surface-ground"
               style="border-radius: 3rem; height: 3rem; color: black"
               data-cy="sign-in__classlink-sso"
               @click="authWithClassLink"
@@ -59,9 +59,9 @@
           </div>
         </section>
         <!-- <section class="signin-option-container signin-option-providers">
-          <div class="flex flex-row justify-content-center w-full">
-            <p class="signin-option-title text-sm">Don't have an account yet?</p>
-            <PvButton label="Register" class="signin-button w-3" @click="router.push({ name: 'Register' })" />
+          <div class="flex flex-row w-full justify-content-center">
+            <p class="text-sm signin-option-title">Don't have an account yet?</p>
+            <PvButton label="Register" class="w-3 signin-button" @click="router.push({ name: 'Register' })" />
           </div>
         </section> -->
       </section>
@@ -83,11 +83,11 @@
       The email <span class="font-bold">{{ email }}</span> is already in use using
       {{ displaySignInMethods.slice(0, -1).join(', ') + ' or ' + displaySignInMethods.slice(-1) }}. If this is you,
       click to sign in below.
-      <div class="flex align-items-center flex-column gap-2 my-2">
+      <div class="flex gap-2 my-2 align-items-center flex-column">
         <div v-if="signInMethods.includes('google')" class="flex">
           <PvButton
             label="Sign in with Google"
-            class="flex surface-0 p-1 mr-1 border-black-alpha-10 text-center justify-content-center hover:border-primary hover:surface-ground"
+            class="flex p-1 mr-1 text-center surface-0 border-black-alpha-10 justify-content-center hover:border-primary hover:surface-ground"
             style="border-radius: 3rem; height: 3rem"
             @click="authWithGoogle"
           >
@@ -98,7 +98,7 @@
         <div v-if="signInMethods.includes(AUTH_SSO_PROVIDERS.CLEVER)">
           <PvButton
             v-if="!isLevante"
-            class="flex surface-0 p-1 mr-1 border-black-alpha-10 justify-content-center hover:border-primary hover:surface-ground"
+            class="flex p-1 mr-1 surface-0 border-black-alpha-10 justify-content-center hover:border-primary hover:surface-ground"
             style="border-radius: 3rem; height: 3rem"
             @click="authWithClever"
           >
@@ -109,7 +109,7 @@
         <div v-if="signInMethods.includes(AUTH_SSO_PROVIDERS.CLASSLINK)">
           <PvButton
             v-if="!isLevante"
-            class="flex surface-0 p-1 mr-1 border-black-alpha-10 justify-content-center hover:border-primary hover:surface-ground"
+            class="flex p-1 mr-1 surface-0 border-black-alpha-10 justify-content-center hover:border-primary hover:surface-ground"
             style="border-radius: 3rem; height: 3rem"
             @click="authWithClassLink"
           >
@@ -118,7 +118,12 @@
           </PvButton>
         </div>
         <div v-if="signInMethods.includes('password')" class="flex flex-row gap-2">
-          <PvPassword v-model="modalPassword" placeholder="Password" :feedback="false"></PvPassword>
+          <PvPassword
+            v-model="modalPassword"
+            placeholder="Password"
+            :input-props="{ autocomplete: 'current-password' }"
+            :feedback="false"
+          />
           <PvButton
             class="flex p-3 border-none border-round hover:bg-black-alpha-20"
             :label="$t('authSignIn.buttonLabel') + ' &rarr;'"
@@ -131,7 +136,7 @@
     <template #footer>
       <PvButton
         tabindex="0"
-        class="border-none border-round bg-white text-primary p-2 hover:surface-200"
+        class="p-2 bg-white border-none border-round text-primary hover:surface-200"
         text
         label="Back to Sign In"
         outlined

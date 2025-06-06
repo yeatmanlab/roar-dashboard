@@ -1,11 +1,11 @@
 <template>
   <div class="card">
     <div class="p-3 text-xl font-bold text-gray-600">Parent/Guardian Registration</div>
-    <div class="bg-gray-100 p-3 roundedk">
+    <div class="p-3 bg-gray-100 rounded">
       <form class="p-fluid" @submit.prevent="handleFormSubmit(!v$.$invalid)">
-        <section class="form-section flex lg:flex-row">
+        <section class="flex form-section lg:flex-row">
           <div>
-            <label for="firstName">First Name <span class="required p-1">*</span></label>
+            <label for="firstName">First Name <span class="p-1 required">*</span></label>
             <PvInputText
               v-model="v$.firstName.$model"
               name="firstName"
@@ -23,7 +23,7 @@
             </small>
           </div>
           <div>
-            <label for="lastName">Last Name <span class="required p-1">*</span></label>
+            <label for="lastName">Last Name <span class="p-1 required">*</span></label>
             <PvInputText
               v-model="v$.lastName.$model"
               name="lastName"
@@ -42,9 +42,9 @@
           </div>
         </section>
         <!--Username / Email-->
-        <section class="form-section flex lg:flex-row">
+        <section class="flex form-section lg:flex-row">
           <div class="p-input-icon-right">
-            <label for="ParentEmail">Email <span class="required p-1">*</span></label>
+            <label for="ParentEmail">Email <span class="p-1 required">*</span></label>
             <PvInputText
               v-model="v$.ParentEmail.$model"
               name="ParentEmail"
@@ -65,18 +65,19 @@
           </small>
         </section>
         <!--Password-->
-        <section class="form-section flex lg:flex-row">
+        <section class="flex form-section lg:flex-row">
           <div>
             <div>
-              <label for="password">Password (minimum 6 characters)<span class="required p-1">*</span></label>
+              <label for="password">Password (minimum 6 characters)<span class="p-1 required">*</span></label>
               <PvPassword
                 v-model="v$.password.$model"
                 name="password"
                 :class="{ 'p-invalid': v$.password.$invalid && submitted }"
-                toggle-mask
+                :input-props="{ autocomplete: 'new-password' }"
+                :feedback="false"
                 show-icon="pi pi-eye-slash"
                 hide-icon="pi pi-eye"
-                :feedback="false"
+                toggle-mask
                 data-cy="signup__parent-password"
               ></PvPassword>
             </div>
@@ -92,17 +93,18 @@
           <!--Confirm Password-->
           <div>
             <div>
-              <label for="confirmPassword">Confirm Password <span class="required p-1">*</span></label>
+              <label for="confirmPassword">Confirm Password <span class="p-1 required">*</span></label>
               <PvPassword
                 :id="`confirmPassword-${isRegistering ? 'register' : 'login'}`"
                 v-model="v$.confirmPassword.$model"
                 name="confirmPassword"
                 :class="{ 'p-invalid': v$.confirmPassword.$invalid && submitted }"
-                toggle-mask
+                :input-props="{ autocomplete: 'new-password' }"
+                :feedback="false"
                 show-icon="pi pi-eye-slash"
                 hide-icon="pi pi-eye"
+                toggle-mask
                 data-cy="signup__parent-password-confirm"
-                :feedback="false"
               >
               </PvPassword>
             </div>
@@ -115,7 +117,7 @@
           </div>
         </section>
         <!--Accept Checkbox-->
-        <section class="form-section flex lg:flex-row">
+        <section class="flex form-section lg:flex-row">
           <!-- Recaptcha + consent -->
           <ChallengeV3 v-model="response" action="submit">
             <div class="field-checkbox terms-checkbox">
@@ -148,7 +150,7 @@
             type="submit"
             label="Next"
             :disabled="isNextButtonDisabled"
-            class="bg-primary text-white p-3 border-none border-round w-5 z-5 hover:bg-red-900"
+            class="p-3 w-5 text-white border-none bg-primary border-round z-5 hover:bg-red-900"
           />
           <PvDialog
             v-model:visible="isDialogVisible"
@@ -159,7 +161,7 @@
           >
             <p>{{ dialogMessage }}</p>
             <PvButton
-              class="bg-primary text-white p-3 border-none border-round z-5 hover:bg-red-900"
+              class="p-3 text-white border-none bg-primary border-round z-5 hover:bg-red-900"
               @click="closeErrorDialog"
               >Close</PvButton
             >

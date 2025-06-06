@@ -1,26 +1,41 @@
 <template>
-  <h2 v-if="hasPassword">Change Your Password</h2>
-  <h2 v-else>Add a Password</h2>
-  <div class="flex flex-column">
+  <h2>{{ hasPassword ? 'Change Your Password' : 'Add a Password' }}</h2>
+
+  <div class="flex gap-1 flex-column">
     <label>New password</label>
-    <PvInputText v-model="v$.password.$model" :class="{ 'p-invalid': v$.password.$invalid && submitted }" />
+    <PvPassword
+      v-model="v$.password.$model"
+      :class="{ 'p-invalid': v$.password.$invalid && submitted }"
+      :input-props="{ autocomplete: 'new-password' }"
+      show-icon="pi pi-eye-slash"
+      hide-icon="pi pi-eye"
+      toggle-mask
+    />
     <small v-if="v$.password.$invalid && submitted" class="p-error">Password must be at least 6 characters long.</small>
   </div>
-  <div class="flex flex-column mt-3">
+
+  <div class="flex gap-1 mt-3 flex-column">
     <label>Confirm password</label>
-    <PvInputText
+    <PvPassword
       v-model="v$.confirmPassword.$model"
       :class="{ 'p-invalid': v$.confirmPassword.$invalid && submitted }"
+      :input-props="{ autocomplete: 'new-password' }"
+      :feedback="false"
+      show-icon="pi pi-eye-slash"
+      hide-icon="pi pi-eye"
+      toggle-mask
     />
     <small v-if="v$.confirmPassword.$invalid && submitted" class="p-error">Passwords do not match.</small>
   </div>
+
   <div class="flex mt-3">
     <PvButton
       :label="hasPassword ? 'Update Password' : 'Submit Password'"
-      class="border-none border-round bg-primary text-white p-2 hover:surface-400 ml-auto"
+      class="p-2 ml-auto text-white border-none border-round bg-primary hover:surface-400"
       @click="updatePassword"
-      ><i v-if="isSubmitting" class="pi pi-spinner pi-spin"
-    /></PvButton>
+    >
+      <i v-if="isSubmitting" class="pi pi-spinner pi-spin" />
+    </PvButton>
   </div>
 </template>
 <script setup>
@@ -29,7 +44,7 @@ import { useVuelidate } from '@vuelidate/core';
 import { useAuthStore } from '@/store/auth';
 import { useToast } from 'primevue/usetoast';
 import PvButton from 'primevue/button';
-import PvInputText from 'primevue/inputtext';
+import PvPassword from 'primevue/password';
 import { storeToRefs } from 'pinia';
 import { required, sameAs, minLength } from '@vuelidate/validators';
 // +-------------------+

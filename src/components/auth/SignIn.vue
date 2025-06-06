@@ -1,7 +1,7 @@
 <template>
   <div class="card">
     <form class="p-fluid" @submit.prevent="handleFormSubmit(!v$.$invalid)">
-      <div class="field mt-2">
+      <div class="mt-2 field">
         <div class="p-input-icon-right">
           <PvInputText
             :id="$t('authSignIn.emailId')"
@@ -16,7 +16,7 @@
         </div>
         <small v-if="invalid" class="p-error">{{ $t('authSignIn.incorrectEmailOrPassword') }}</small>
       </div>
-      <div class="field mt-4 mb-5">
+      <div class="mt-4 mb-5 field">
         <div>
           <!-- Email is currently being evaluated (loading state) -->
           <span v-if="evaluatingEmail">
@@ -28,11 +28,12 @@
               :id="$t('authSignIn.passwordId')"
               v-model="v$.password.$model"
               :class="['w-full', { 'p-invalid': invalid }]"
+              :feedback="false"
+              :placeholder="$t('authSignIn.passwordPlaceholder')"
+              :input-props="{ autocomplete: 'current-password' }"
               toggle-mask
               show-icon="pi pi-eye-slash"
               hide-icon="pi pi-eye"
-              :feedback="false"
-              :placeholder="$t('authSignIn.passwordPlaceholder')"
               data-cy="sign-in__password"
               @keyup="checkForCapsLock"
               @click="checkForCapsLock"
@@ -69,7 +70,7 @@
               {{ sp.level }}
               <PvDivider />
               <p class="mt-2">{{ $t('authSignIn.suggestions') }}</p>
-              <ul class="pl-2 ml-2 mt-0" style="line-height: 1.5">
+              <ul class="pl-2 mt-0 ml-2" style="line-height: 1.5">
                 <li>{{ $t('authSignIn.atLeastOneLowercase') }}</li>
                 <li>{{ $t('authSignIn.atLeastOneUppercase') }}</li>
                 <li>{{ $t('authSignIn.atLeastOneNumeric') }}</li>
@@ -93,7 +94,7 @@
           <div v-else>
             <PvPassword
               disabled
-              class="p-invalid text-red-600 w-full"
+              class="w-full text-red-600 p-invalid"
               :placeholder="$t('authSignIn.invalidEmailPlaceholder')"
             />
           </div>
@@ -102,10 +103,10 @@
       </div>
       <PvButton
         type="submit"
-        class="mt-5 flex w-5 p-3 border-none border-round hover:bg-black-alpha-20"
+        class="flex p-3 mt-5 w-5 border-none border-round hover:bg-black-alpha-20"
         :label="$t('authSignIn.buttonLabel') + ' &rarr;'"
       />
-      <hr class="opacity-20 mt-5" />
+      <hr class="mt-5 opacity-20" />
     </form>
   </div>
   <RoarModal
@@ -124,7 +125,7 @@
     <template #footer>
       <PvButton
         tabindex="0"
-        class="border-none border-round bg-white text-primary p-2 hover:surface-200"
+        class="p-2 bg-white border-none border-round text-primary hover:surface-200"
         text
         label="Cancel"
         outlined
@@ -132,7 +133,7 @@
       ></PvButton>
       <PvButton
         tabindex="0"
-        class="border-none border-round bg-primary text-white p-2 hover:surface-400"
+        class="p-2 text-white border-none border-round bg-primary hover:surface-400"
         label="Send Reset Email"
         @click="sendResetEmail"
       ></PvButton>
