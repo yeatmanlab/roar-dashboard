@@ -1,7 +1,7 @@
 <template>
   <div class="card">
     <div class="p-3 text-xl font-bold text-gray-600">Parent/Guardian Registration</div>
-    <div class="p-3 bg-gray-100 roundedk">
+    <div class="p-3 bg-gray-100 rounded">
       <form class="p-fluid" @submit.prevent="handleFormSubmit(!v$.$invalid)">
         <section class="flex form-section lg:flex-row">
           <div>
