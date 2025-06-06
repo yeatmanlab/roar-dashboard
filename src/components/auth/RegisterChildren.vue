@@ -99,7 +99,7 @@
                   'p-invalid': v$.students.$each.$response.$data[outerIndex].password.$invalid && submitted,
                   'w-full': true,
                 }"
-                :inputProps="{ autocomplete: 'new-password' }"
+                :input-props="{ autocomplete: 'new-password' }"
                 :feedback="false"
                 show-icon="pi pi-eye-slash"
                 hide-icon="pi pi-eye"
@@ -124,7 +124,7 @@
                 v-model="student.confirmPassword"
                 name="confirmPassword"
                 :class="{ 'p-invalid': isPasswordMismatch(outerIndex) && submitted, 'w-full': true }"
-                :inputProps="{ autocomplete: 'new-password' }"
+                :input-props="{ autocomplete: 'new-password' }"
                 :feedback="false"
                 show-icon="pi pi-eye-slash"
                 hide-icon="pi pi-eye"

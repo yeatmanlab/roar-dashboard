@@ -121,7 +121,7 @@
           <PvPassword
             v-model="modalPassword"
             placeholder="Password"
-            :inputProps="{ autocomplete: 'current-password' }"
+            :input-props="{ autocomplete: 'current-password' }"
             :feedback="false"
           />
           <PvButton

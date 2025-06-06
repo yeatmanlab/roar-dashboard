@@ -25,12 +25,12 @@
           <!-- Email is entered, Password is desired -->
           <div v-else-if="allowPassword && allowLink">
             <PvPassword
-              v-model="v$.password.$model"
               :id="$t('authSignIn.passwordId')"
+              v-model="v$.password.$model"
               :class="['w-full', { 'p-invalid': invalid }]"
               :feedback="false"
               :placeholder="$t('authSignIn.passwordPlaceholder')"
-              :inputProps="{ autocomplete: 'current-password' }"
+              :input-props="{ autocomplete: 'current-password' }"
               toggle-mask
               show-icon="pi pi-eye-slash"
               hide-icon="pi pi-eye"

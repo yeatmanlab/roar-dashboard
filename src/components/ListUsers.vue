@@ -59,7 +59,7 @@
               <PvPassword
                 v-model="v$.password.$model"
                 :class="{ 'p-invalid': v$.password.$invalid && submitted }"
-                :inputProps="{ autocomplete: 'new-password' }"
+                :input-props="{ autocomplete: 'new-password' }"
                 show-icon="pi pi-eye-slash"
                 hide-icon="pi pi-eye"
                 toggle-mask
@@ -73,7 +73,7 @@
               <PvPassword
                 v-model="v$.confirmPassword.$model"
                 :class="{ 'p-invalid': v$.confirmPassword.$invalid && submitted }"
-                :inputProps="{ autocomplete: 'new-password' }"
+                :input-props="{ autocomplete: 'new-password' }"
                 :feedback="false"
                 show-icon="pi pi-eye-slash"
                 hide-icon="pi pi-eye"
