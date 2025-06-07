@@ -37,7 +37,7 @@ describe('useTasksQuery', () => {
     });
 
     expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: ['tasks'],
+      queryKey: ['tasks', 'all'],
       queryFn: expect.any(Function),
     });
 
