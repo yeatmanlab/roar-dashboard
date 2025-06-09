@@ -6,13 +6,13 @@
         <div class="text-sm font-light">Student</div>
       </h2>
       <div class="flex gap-4 mt-2 font-normal text-gray-500">
-        <!-- <div class="text-sm">
+        <div class="text-sm">
           {{ getGradeToDisplay(userData?.studentData?.grade) }}
         </div>
         <div class="text-sm">
           {{ _capitalize(userData?.studentData?.schoolLevel) }}
           <span class="">School</span>
-        </div> -->
+        </div>
       </div>
     </div>
 
