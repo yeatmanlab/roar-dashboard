@@ -16,15 +16,14 @@
       </div>
     </div>
 
-    <div v-for="assignment in assignments" :key="assignment.id">
-      <div class="flex gap-1 border-t border-gray-200 flex-column">
-        <div class="flex gap-3 p-3 flex-column">
-          <div class="flex gap-4 justify-between">
+    <PvAccordion :active-index="0">
+      <PvAccordionTab v-for="(assignment, index) in assignments" :key="assignment.id">
+        <template #header>
+          <div class="flex justify-between w-full">
             <div>
               <div class="text-md">{{ assignment.name }}</div>
               <div class="mt-1 text-xs font-light">Assignment</div>
             </div>
-
             <div>
               <div class="mt-1 text-sm">
                 {{ parseDate(assignment.dateOpened) }} - {{ parseDate(assignment.dateClosed) }}
@@ -32,8 +31,10 @@
               <div class="mt-1 text-xs font-light text-end">Dates Active</div>
             </div>
           </div>
+        </template>
 
-          <div class="flex mt-1 justify-content-between">
+        <div class="flex gap-3 flex-column">
+          <div class="flex gap-4 justify-content-between">
             <a :href="'/launch/' + userId">
               <PvButton :label="'Play Games'" data-cy="play-assessments-btn" />
             </a>
@@ -53,44 +54,54 @@
               <PvButton label="View Scores" icon="" outlined severity="contrast" data-cy="view-score-report-btn" />
             </router-link>
           </div>
-        </div>
 
-        <div class="flex gap-3 p-3 border-t border-gray-200 flex-column">
-          <h4 class="m-0 font-semibold text-md">Progress by Tasks</h4>
-          <div class="flex gap-1 flex-column">
-            <div
-              v-for="(status, task) in assignment.progress"
-              :key="task"
-              class="flex justify-between text-sm align-items-center"
-            >
-              <div>{{ taskDisplayNames[task]?.publicName }}</div>
-              <div>
-                <PvTag
-                  :severity="progressTags[_capitalize(status)]?.severity"
-                  :value="progressTags[_capitalize(status)]?.value"
-                  :icon="progressTags[_capitalize(status)]?.icon"
-                  class="p-0.5 m-0 font-semibold capitalize"
-                  :style="`min-width: 2rem;`"
-                  rounded
-                />
+          <div class="flex gap-3 mt-3 flex-column">
+            <h4 class="m-0 font-semibold text-md">Progress by Tasks</h4>
+            <div class="flex gap-1 flex-column">
+              <div
+                v-for="assessment in assignment.assessments"
+                :key="assessment.taskId"
+                class="flex justify-between text-sm align-items-center"
+              >
+                <div>{{ taskDisplayNames[assessment.taskId]?.publicName }}</div>
+                <div>
+                  <PvTag
+                    :severity="getAssessmentStatus(assessment).severity"
+                    :value="getAssessmentStatus(assessment).value"
+                    :icon="getAssessmentStatus(assessment).icon"
+                    class="p-0.5 m-0 font-semibold capitalize"
+                    :style="`min-width: 2rem;`"
+                    rounded
+                  />
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
-    </div>
+      </PvAccordionTab>
+    </PvAccordion>
   </article>
 </template>
 
 <script setup>
 import { computed } from 'vue';
-import { taskDisplayNames, progressTags } from '@/helpers/reports.js';
+import { taskDisplayNames, getGradeToDisplay, progressTags } from '@/helpers/reports.js';
 import _capitalize from 'lodash/capitalize';
 import PvTag from 'primevue/tag';
 import PvButton from 'primevue/button';
+import PvAccordion from 'primevue/accordion';
+import PvAccordionTab from 'primevue/accordiontab';
 import useUserDataQuery from '@/composables/queries/useUserDataQuery';
 
-import { getGradeToDisplay } from '@/helpers/reports.js';
+const getAssessmentStatus = (assessment) => {
+  if (assessment.completedOn) {
+    return progressTags.Completed;
+  }
+  if (assessment.startedOn) {
+    return progressTags.Started;
+  }
+  return progressTags.Assigned;
+};
 
 const props = defineProps({
   assignments: { type: Object, required: true },
@@ -102,21 +113,19 @@ const props = defineProps({
 
 const { isLoading: isLoadingUserData, isFetching: isFetchingUserData, data: userData } = useUserDataQuery(props.userId);
 
-console.log('Assignment for user:', props.userId, props.assignments);
+const userName = computed(() => {
+  if (!userData.value) return '';
+  console.log('userdat', userData);
+  const { first, last } = userData.value?.name || {};
+  if (first && last) {
+    return `${first} ${last}`;
+  }
+
+  return first || userData.value?.username;
+});
 
 const parseDate = (date) => {
   const d = new Date(date);
   return d.toLocaleDateString('en-US');
 };
-
-const userName = computed(() => {
-  const { first, last } = userData?.name || {};
-  const { username } = userData || {};
-
-  if (first && last) {
-    return `${first} ${last}`;
-  }
-
-  return first || username;
-});
 </script>
