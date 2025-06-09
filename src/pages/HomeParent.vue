@@ -39,20 +39,17 @@
 
 <script setup>
 import useAdministrationsListQuery from '@/composables/queries/useAdministrationsListQuery';
-import useAdministrationAssignmentsQuery from '@/composables/queries/useAdministrationAssignmentsQuery';
+import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useMultipleUserAssignmentsQuery from '@/composables/queries/useMultipleUserAssignmentsQuery';
 import { useTimeoutPoll } from '@vueuse/core';
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { pluralizeFirestoreCollection } from '@/helpers';
-import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes.js';
 import { useAuthStore } from '@/store/auth';
-import { storeToRefs } from 'pinia';
 import PvSelectButton from 'primevue/selectbutton';
 import HomeAdministrator from '@/pages/HomeAdministrator.vue';
 import HomeParentStudentView from '@/components/HomeParentStudentView.vue';
 import { orderByDefault } from '@/helpers/query/utils';
-import useUserAssignmentsQuery from '@/composables/queries/useUserAssignmentsQuery';
 
 const authStore = useAuthStore();
 
@@ -159,15 +156,6 @@ onBeforeUnmount(() => {
 });
 
 const administrationId = computed(() => administrations.value?.[0]?.id ?? null);
-
-const { isLoading: isLoadingAssignments, data: assignmentData } = useAdministrationAssignmentsQuery(
-  administrationId,
-  orgType,
-  orgId,
-  {
-    enabled: administrationQueryEnabled,
-  },
-);
 </script>
 
 <style scoped>

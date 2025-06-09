@@ -4,7 +4,7 @@ import { useAuthStore } from '@/store/auth';
 import { computeQueryOverrides } from '@/helpers/computeQueryOverrides';
 import { getUserAssignments } from '@/helpers/query/assignments';
 import { USER_ASSIGNMENTS_QUERY_KEY } from '@/constants/queryKeys';
-import { computed, toValue } from 'vue';
+import { computed } from 'vue';
 
 /**
  * User assignments query.
@@ -14,7 +14,7 @@ import { computed, toValue } from 'vue';
  * @param {String|undefined} orgType– The orgtype that is shared between the admin user and the target studnet user
  * @param {String|undefined} orgId – The orgId that is shared between the admin user and the target studnet user
  * OrgType and OrgId are passed in in order to construct a query that will validate the administrator's permissions to view target user data
- * @returns {UseQuery} The TanStack query result.
+ * @returns {UseQueryResult} The TanStack query result.
  */
 const useUserAssignmentsQuery = (queryOptions = undefined, userId = null, orgType = null, orgIds = null) => {
   const authStore = useAuthStore();
@@ -31,7 +31,7 @@ const useUserAssignmentsQuery = (queryOptions = undefined, userId = null, orgTyp
 
   return useQuery({
     queryKey: [USER_ASSIGNMENTS_QUERY_KEY, uid, orgType, orgIds],
-    queryFn: () => getUserAssignments(toValue(uid), toValue(orgType), toValue(orgIds), isTestUser),
+    queryFn: () => getUserAssignments(uid.value, orgType?.value, orgIds?.value, isTestUser),
     // Refetch on window focus for MEFS assessments as those are opened in a separate tab.
     refetchOnWindowFocus: 'always',
     enabled: isQueryEnabled,

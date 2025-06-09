@@ -17,7 +17,7 @@
     </div>
 
     <PvAccordion :active-index="0">
-      <PvAccordionTab v-for="(assignment, index) in assignments" :key="assignment.id">
+      <PvAccordionTab v-for="assignment in assignments" :key="assignment.id">
         <template #header>
           <div class="flex justify-between w-full">
             <div>
@@ -35,13 +35,9 @@
 
         <div class="flex gap-3 flex-column">
           <div class="flex gap-4 justify-content-between">
-            <a :href="'/launch/' + userId">
-              <PvButton :label="'Play Games'" data-cy="play-assessments-btn" />
-            </a>
-        <div class="flex mt-1 justify-content-between">
-          <router-link :to="{ name: 'LaunchParticipant', params: { launchId: roarUid } }">
-            <PvButton label="Play Games" data-cy="play-assessments-btn" />
-          </router-link>
+            <router-link :to="{ name: 'LaunchParticipant', params: { launchId: roarUid } }">
+              <PvButton label="Play Games" data-cy="play-assessments-btn" />
+            </router-link>
             <router-link
               :to="{
                 name: 'StudentReport',
@@ -88,6 +84,8 @@
 
 <script setup>
 import { computed } from 'vue';
+import { storeToRefs } from 'pinia';
+import { useAuthStore } from '@/store/auth';
 import { taskDisplayNames, getGradeToDisplay, progressTags } from '@/helpers/reports.js';
 import _capitalize from 'lodash/capitalize';
 import PvTag from 'primevue/tag';
@@ -114,7 +112,10 @@ const props = defineProps({
   userId: { type: String, required: true },
 });
 
-const { isLoading: isLoadingUserData, isFetching: isFetchingUserData, data: userData } = useUserDataQuery(props.userId);
+const { data: userData } = useUserDataQuery(props.userId);
+
+const authStore = useAuthStore();
+const { roarUid } = storeToRefs(authStore);
 
 const userName = computed(() => {
   if (!userData.value) return '';
