@@ -5,39 +5,43 @@
         <PvTab
           v-for="(game, index) in games"
           :key="game.taskId"
-          :disabled="
-            sequential &&
-            ((index > 0 && !games[index - 1].completedOn) ||
-              (allGamesComplete && currentGameId !== game.taskId && !game.completedOn))
-          "
+          :disabled="isGameTabDisabled(index)"
           :value="String(index)"
           :class="[
             'p3 mr-1 text-base hover:bg-black-alpha-10',
-            { 'text-green-500': game.completedOn, 'bg-white': game.completedOn },
+            {
+              'text-yellow-600': game?.allowRetake === true,
+              'text-green-500': game.completedOn && game?.allowRetake !== true,
+              'bg-white': game.completedOn && game?.allowRetake !== true,
+            },
           ]"
           style="border: solid 2px #00000014; border-radius: 10px"
         >
-          {{ getTaskName(game.taskId, game.taskData.name) }}
+          <span class="flex align-items-center gap-2">
+            {{ getTaskName(game.taskId, game.taskData.name) }}
+          </span>
         </PvTab>
       </PvTabList>
       <PvTabPanels style="width: 120vh">
         <PvTabPanel
           v-for="(game, index) in games"
           :key="game.taskId"
-          :disabled="
-            sequential &&
-            ((index > 0 && !games[index - 1].completedOn) ||
-              (allGamesComplete && currentGameId !== game.taskId && !game.completedOn))
-          "
+          :disabled="isGameTabDisabled(index)"
           :value="String(index)"
           class="p-0"
         >
           <template #header>
+            <!--Retake required-->
+            <i
+              v-if="game?.allowRetake === true"
+              class="pi pi-exclamation-circle mr-2"
+              data-game-status="retake-required"
+            />
             <!--Complete Game-->
-            <i v-if="game.completedOn" class="pi pi-check-circle mr-2" data-game-status="complete" />
+            <i v-else-if="game.completedOn" class="pi pi-check-circle mr-2" data-game-status="complete" />
             <!--Current Game-->
             <i
-              v-else-if="game.taskId == currentGameId || !sequential"
+              v-else-if="game.taskId == firstIncompleteGameId || !sequential"
               class="pi pi-circle mr-2"
               data-game-status="current"
             />
@@ -107,9 +111,31 @@
                       <span v-else style="cursor: default">{{ taskCompletedMessage }}</span>
                     </router-link>
                     <div v-else>
-                      <div class="flex align-items-center justify-content-center text-green-500">
-                        <i v-if="game.completedOn" class="pi pi-check-circle mr-3" />
-                        <span style="cursor: default">{{ taskCompletedMessage }} </span>
+                      <div
+                        :class="{
+                          // 'text-yellow-600': game.allowRetake === true,
+                          // 'text-green-500': game.completedOn
+                        }"
+                        class="flex align-items-center justify-content-center"
+                      >
+                        <i v-if="game.completedOn && game.allowRetake !== true" class="pi pi-check-circle mr-3" />
+                        <div class="flex flex-column align-items-center gap-2">
+                          <span v-if="game.allowRetake !== true" style="cursor: default">{{
+                            taskCompletedMessage
+                          }}</span>
+                          <PvMessage v-if="game?.allowRetake === true" severity="warn" class="w-full">
+                            <div class="flex flex-column align-items-center gap-2">
+                              <span>{{ $t('gameTabs.allowRetake') }}</span>
+                              <router-link
+                                :to="game.taskData.external ? '' : { path: getRoutePath(game.taskId) }"
+                                class="no-underline text-yellow-900 hover:text-yellow-800 w-full flex align-items-center justify-content-center p-3 hover:bg-yellow-100"
+                                @click="game.taskData.external && routeExternalTask(game)"
+                              >
+                                <i class="pi pi-refresh mr-2"></i>{{ $t('gameTabs.retakeAssessment') }}
+                              </router-link>
+                            </div>
+                          </PvMessage>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -162,6 +188,7 @@ import PvTag from 'primevue/tag';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
 import VideoPlayer from '@/components/VideoPlayer.vue';
+import PvMessage from 'primevue/message';
 
 const props = defineProps({
   games: { type: Array, required: true },
@@ -245,6 +272,11 @@ const getRoutePath = (taskId) => {
   }
 };
 
+const isGameTabDisabled = (index) => {
+  const previousGameIncomplete = index > 0 && !props.games[index - 1].completedOn;
+  return props.sequential && previousGameIncomplete;
+};
+
 const taskCompletedMessage = computed(() => {
   return t('gameTabs.taskCompleted');
 });
@@ -265,7 +297,7 @@ const updateVideoCompleted = async (taskId) => {
   }
 };
 
-const currentGameId = computed(() => {
+const firstIncompleteGameId = computed(() => {
   return _get(
     _find(props.games, (game) => {
       return game.completedOn === undefined;
@@ -276,7 +308,7 @@ const currentGameId = computed(() => {
 
 const gameIndex = computed(() =>
   _findIndex(props.games, (game) => {
-    return game.taskId === currentGameId.value;
+    return game.taskId === firstIncompleteGameId.value;
   }),
 );
 
