@@ -1,7 +1,7 @@
 const dashboardUrl = "https://localhost:5173/signin";
 
 // starts each task and checks that it has loaded (the 'OK' button is present)
-function startTask(tasksRemaining) {
+function startTask(tasksRemaining: number) {
   cy.get("[data-pc-section=tablist]", {timeout: 30000}).children().then((taskTabs) => {
       
     cy.wrap(taskTabs.eq(tasksRemaining)).click(); 
@@ -41,7 +41,7 @@ describe('test core tasks from dashboard', () => {
 
     // check that each task loads
     cy.get("[data-pc-section=tablist]", {timeout: 120000}).children().then((children) => {
-        const tasksToComplete = Array.from(children).length - 1; 
+        const tasksToComplete: number = Array.from(children).length - 1; 
         startTask(tasksToComplete);
     }); 
 
