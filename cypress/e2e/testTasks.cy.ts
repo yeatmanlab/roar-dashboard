@@ -10,7 +10,7 @@ function startTask(tasksRemaining: number) {
    
     // start task
     cy.wrap(taskTabs.eq(tasksRemaining)).click();
-    cy.scrollTo('bottomLeft');
+    cy.scrollTo('bottomLeft', {ensureScrollable: false});
     cy.get("[data-pc-name=tabpanel][data-p-active=true]").children().contains("Click to start").click();
 
     // enter fullscreen and check that first instruction trial has loaded
@@ -32,7 +32,6 @@ function startTask(tasksRemaining: number) {
 
 describe('test core tasks from dashboard', () => {
   it('logs in to the dashboard and begins each task', () => {
-    cy.intercept({ resourceType: /xhr|fetch/ }, { log: false });
     cy.visit(dashboardUrl);
 
     // input username
