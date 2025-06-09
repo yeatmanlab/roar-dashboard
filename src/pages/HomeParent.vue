@@ -52,6 +52,7 @@ import PvSelectButton from 'primevue/selectbutton';
 import HomeAdministrator from '@/pages/HomeAdministrator.vue';
 import HomeParentStudentView from '@/components/HomeParentStudentView.vue';
 import { orderByDefault } from '@/helpers/query/utils';
+import useUserAssignmentsQuery from '@/composables/queries/useUserAssignmentsQuery';
 
 const authStore = useAuthStore();
 
@@ -72,15 +73,22 @@ const orgId = computed(
   () => userClaims.value?.claims?.adminOrgs[pluralizeFirestoreCollection(orgType.value)]?.[0] ?? null,
 );
 
+const orgIds = computed(() => (orgId.value ? [orgId.value] : []));
+
 // TODO: Set this dynamically in cases where this component is used for non-family adminstrators
 const orgType = ref(SINGULAR_ORG_TYPES.FAMILIES);
 
 // Get assignments for all children
-const childrenUids = computed(() => authStore.userData?.childrenUids || []);
+const childrenUids = computed(() => {
+  const uids = authStore.userData?.childrenUids || [];
+  console.log('childrenUids computed:', { uids, userData: authStore.userData });
+  return uids;
+});
+
 const { data: childrenAssignments, isLoading: isLoadingChildrenAssignments } = useMultipleUserAssignmentsQuery(
   childrenUids,
   orgType,
-  [orgId],
+  orgIds,
 );
 
 const administrationQueryEnabled = computed(() => initialized.value && parentRegistrationComplete);

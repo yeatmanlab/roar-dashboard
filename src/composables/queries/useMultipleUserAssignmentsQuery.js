@@ -16,12 +16,12 @@ import { MULTIPLE_USER_ASSIGNMENTS_QUERY_KEY } from '@/constants/queryKeys';
  * @returns {UseQueriesResult & { data: ComputedRef<Record<string, any[]>> }} The TanStack queries result with a computed map of userId to assignments
  */
 const useMultipleUserAssignmentsQuery = (userIds = [], orgType = null, orgIds = null, queryOptions = undefined) => {
-  console.log('orgIds', toValue(orgIds));
   const authStore = useAuthStore();
   const { userData } = storeToRefs(authStore);
   const isSuperAdmin = authStore?.userClaims?.claims?.super_admin;
   const isTestUser = userData.value?.testData ?? false;
   const isExternalCallWithoutSuperAdmin = !isSuperAdmin;
+  const resolvedUserIds = toValue(userIds);
 
   // We need to have the orgId and orgType for a non-superadmin call
   const queryConditions = [
@@ -29,31 +29,34 @@ const useMultipleUserAssignmentsQuery = (userIds = [], orgType = null, orgIds = 
   ];
   const { isQueryEnabled, options } = computeQueryOverrides(queryConditions, queryOptions);
 
-  const queries = toValue(userIds).map((userId) => ({
-    queryKey: [MULTIPLE_USER_ASSIGNMENTS_QUERY_KEY, toValue(userId)],
-    queryFn: () => getUserAssignments(userId, toValue(orgType), toValue(orgIds), isTestUser),
-    refetchOnWindowFocus: 'always',
-    enabled: isQueryEnabled,
-    ...options,
-  }));
-  console.log('queries', queries);
+  // Create queries array as a computed to handle reactive userIds
+  const queries = computed(() => {
+    console.log('Creating queries for userIds:', resolvedUserIds);
 
-  const results = useQueries({ queries });
-  console.log('results', results);
+    return resolvedUserIds.map((userId) => ({
+      queryKey: [MULTIPLE_USER_ASSIGNMENTS_QUERY_KEY, userId, toValue(orgType), toValue(orgIds)],
+      queryFn: () => getUserAssignments(userId, toValue(orgType), toValue(orgIds), isTestUser),
+      refetchOnWindowFocus: 'always',
+      enabled: isQueryEnabled,
+      ...options,
+    }));
+  });
+
+  const results = useQueries({ queries: queries.value });
 
   // Compute a map of userId to assignments
   const assignmentsMap = computed(() => {
     const map = {};
-    // results.value is an array of individual query results
+
     if (results.value) {
       results.value.forEach((result, index) => {
-        const userId = toValue(userIds[index]);
-        map[userId] = result.data ?? [];
+        const userId = resolvedUserIds[index];
+        map[userId] = result.status === 'success' && result.data ? result.data : [];
       });
     }
+
     return map;
   });
-  console.log('assignments', assignmentsMap.value);
 
   return {
     ...results,

@@ -4,7 +4,7 @@ import { useAuthStore } from '@/store/auth';
 import { computeQueryOverrides } from '@/helpers/computeQueryOverrides';
 import { getUserAssignments } from '@/helpers/query/assignments';
 import { USER_ASSIGNMENTS_QUERY_KEY } from '@/constants/queryKeys';
-import { computed } from 'vue';
+import { computed, toValue } from 'vue';
 
 /**
  * User assignments query.
@@ -23,6 +23,7 @@ const useUserAssignmentsQuery = (queryOptions = undefined, userId = null, orgTyp
   const isSuperAdmin = authStore?.userClaims?.claims?.super_admin;
   const isExternalCallWithoutSuperAdmin = !isSuperAdmin && userId !== null;
   const isTestUser = userData.value?.testData ?? false;
+  console.log('userid', uid.value, orgType?.value, orgIds?.value);
 
   // We need to have the orgId and orgType for a non-superadmin call of an external fetch
   const queryConditions = [() => !!uid.value && (isExternalCallWithoutSuperAdmin ? orgType && orgIds : true)];
@@ -30,7 +31,7 @@ const useUserAssignmentsQuery = (queryOptions = undefined, userId = null, orgTyp
 
   return useQuery({
     queryKey: [USER_ASSIGNMENTS_QUERY_KEY, uid, orgType, orgIds],
-    queryFn: () => getUserAssignments(uid.value, orgType?.value, orgIds?.value, isTestUser),
+    queryFn: () => getUserAssignments(toValue(uid), toValue(orgType), toValue(orgIds), isTestUser),
     // Refetch on window focus for MEFS assessments as those are opened in a separate tab.
     refetchOnWindowFocus: 'always',
     enabled: isQueryEnabled,
