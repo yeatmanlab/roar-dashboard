@@ -24,7 +24,7 @@
       v-if="currentParentView.name === VIEWS.BY_STUDENT"
       :is-loading="isLoadingAssignments || isLoadingAdministrations || isLoadingChildrenAssignments"
       :parent-registration-complete="parentRegistrationComplete"
-      :assignment-data="assignmentData || []"
+      :children-assignments="childrenAssignments || []"
       :org-type="orgType"
       :org-id="orgId"
       :administration-id="administrationId"

@@ -25,7 +25,7 @@
       </PvMessage>
     </div>
 
-    <div v-else-if="assignmentData?.length == 0" class="p-3">
+    <div v-else-if="Object.keys(childrenAssignments).length === 0" class="p-3">
       <PvMessage severity="info">
         <div class="text-lg font-bold text-gray-600">No assignments available</div>
         <div class="text-sm font-light text-gray-800">Please check back later.</div>
@@ -36,14 +36,15 @@
       v-else
       class="grid flex-wrap grid-cols-1 gap-4 w-full"
       :class="{
-        'lg:grid-cols-2': assignmentData.length === 2,
-        'lg:grid-cols-2 2xl:grid-cols-3': assignmentData.length === 3,
-        'lg:grid-cols-4': assignmentData.length === 4,
+        'lg:grid-cols-2': Object.keys(childrenAssignments).length === 2,
+        'lg:grid-cols-2 2xl:grid-cols-3': Object.keys(childrenAssignments).length === 3,
+        'lg:grid-cols-4': Object.keys(childrenAssignments).length === 4,
       }"
     >
-      <template v-for="assignment in assignmentData" :key="assignment.id">
+      <template v-for="(assignments, userId) in childrenAssignments" :key="userId">
         <StudentCard
-          :assignment="assignment"
+          :assignments="assignments"
+          :user-id="userId"
           :org-type="orgType"
           :org-id="orgId"
           :administration-id="administrationId"
@@ -71,8 +72,8 @@ defineProps({
     type: Boolean,
     required: true,
   },
-  assignmentData: {
-    type: Array,
+  childrenAssignments: {
+    type: Object,
     required: true,
   },
   orgType: {
