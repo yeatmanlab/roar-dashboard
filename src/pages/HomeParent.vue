@@ -78,7 +78,6 @@ const orgType = ref(SINGULAR_ORG_TYPES.FAMILIES);
 // Get assignments for all children
 const childrenUids = computed(() => {
   const uids = authStore.userData?.childrenUids || [];
-  console.log('childrenUids computed:', { uids, userData: authStore.userData });
   return uids;
 });
 

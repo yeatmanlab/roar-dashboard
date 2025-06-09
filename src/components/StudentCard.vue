@@ -114,7 +114,6 @@ const { data: userData } = useUserDataQuery(props.userId);
 
 const userName = computed(() => {
   if (!userData.value) return '';
-  console.log('userdat', userData);
   const { first, last } = userData.value?.name || {};
   if (first && last) {
     return `${first} ${last}`;

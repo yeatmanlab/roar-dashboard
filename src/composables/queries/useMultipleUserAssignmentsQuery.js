@@ -31,8 +31,6 @@ const useMultipleUserAssignmentsQuery = (userIds = [], orgType = null, orgIds = 
 
   // Create queries array as a computed to handle reactive userIds
   const queries = computed(() => {
-    console.log('Creating queries for userIds:', resolvedUserIds);
-
     return resolvedUserIds.map((userId) => ({
       queryKey: [MULTIPLE_USER_ASSIGNMENTS_QUERY_KEY, userId, toValue(orgType), toValue(orgIds)],
       queryFn: () => getUserAssignments(userId, toValue(orgType), toValue(orgIds), isTestUser),
