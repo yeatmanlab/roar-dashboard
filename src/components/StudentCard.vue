@@ -35,7 +35,7 @@
 
         <div class="flex gap-3 flex-column">
           <div class="flex gap-4 justify-content-between">
-            <router-link :to="{ name: 'LaunchParticipant', params: { launchId: roarUid } }">
+            <router-link :to="{ name: 'LaunchParticipant', params: { launchId: userId } }">
               <PvButton label="Play Games" data-cy="play-assessments-btn" />
             </router-link>
             <router-link
@@ -84,8 +84,6 @@
 
 <script setup>
 import { computed } from 'vue';
-import { storeToRefs } from 'pinia';
-import { useAuthStore } from '@/store/auth';
 import { taskDisplayNames, getGradeToDisplay, progressTags } from '@/helpers/reports.js';
 import _capitalize from 'lodash/capitalize';
 import PvTag from 'primevue/tag';
@@ -113,9 +111,6 @@ const props = defineProps({
 });
 
 const { data: userData } = useUserDataQuery(props.userId);
-
-const authStore = useAuthStore();
-const { roarUid } = storeToRefs(authStore);
 
 const userName = computed(() => {
   if (!userData.value) return '';
