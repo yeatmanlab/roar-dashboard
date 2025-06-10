@@ -457,8 +457,6 @@ import useTasksQuery from '@/composables/queries/useTasksQuery';
 import useTaskVariantsQuery from '@/composables/queries/useTaskVariantsQuery';
 import useAddTaskVariantMutation from '@/composables/mutations/useAddTaskVariantMutation';
 import useUpdateTaskVariantMutation from '@/composables/mutations/useUpdateTaskVariantMutation';
-import useToggleRegisteredTasksMutation from '@/composables/mutations/useToggleRegisteredTasksMutation';
-import useToggleRegisteredVariantsMutation from '@/composables/mutations/useToggleRegisteredVariantsMutation';
 import { usePermissions } from '@/composables/usePermissions';
 const { userCan, Permissions } = usePermissions();
 
@@ -483,8 +481,8 @@ const { roarfirekit } = storeToRefs(authStore);
 
 const { mutate: addVariant } = useAddTaskVariantMutation();
 const { mutate: updateVariant } = useUpdateTaskVariantMutation();
-const { mutate: toggleRegisteredVariants } = useToggleRegisteredVariantsMutation();
-const { mutate: toggleRegisteredTasks } = useToggleRegisteredTasksMutation();
+const { refetch: toggleRegisteredVariants } = useTaskVariantsQuery();
+const { refetch: toggleRegisteredTasks } = useTasksQuery();
 
 const selectedTask = ref(null);
 const selectedVariant = ref(null);
