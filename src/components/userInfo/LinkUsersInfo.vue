@@ -161,14 +161,15 @@ import { LEVANTE_BUCKET_URL } from '@/constants/bucket';
   display: flex;
   justify-content: center;
   overflow-x: auto;
-  margin: 1rem 0;
+  position: relative;
+  height: 108px;
   
   .csv-example-image {
     width: auto;
     height: 108px;
-    object-fit: contain;
     display: block;
-    margin: 1rem 0;
+    position: absolute;
+    left: 0;
   }
 }
 </style>
