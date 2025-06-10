@@ -644,7 +644,7 @@ onMounted((): void => {
 .h2-card-admin-title {
   float: left;
   @media (max-width: 768px) {
-    font-size: 1.2rem;
+    font-size: 1rem;
   }
 }
 </style>

@@ -15,3 +15,8 @@ main.main {
     width: 1px;
   }
 }
+.p-treetable-body-cell-content {
+  @media (max-width: 768px) {
+    font-size: 0.85rem;
+  }
+}

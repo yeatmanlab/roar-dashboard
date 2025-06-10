@@ -11,10 +11,11 @@
               <div class="text-md text-gray-500">
                 This page lists all the assignments that are administered to your users.
               </div>
-              <div class="text-md text-gray-500">
+              <div class="text-md text-gray-500 mb-1">
                 You can view and monitor completion and create new bundles of tasks, surveys, and questionnaires to be
                 administered as assignments.
               </div>
+
             </div>
             <div class="flex align-items-center gap-2 mt-2">
               <div class="flex gap-3 align-items-stretch justify-content-start">
