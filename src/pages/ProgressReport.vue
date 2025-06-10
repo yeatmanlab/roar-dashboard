@@ -41,7 +41,7 @@
         <div v-if="assignmentData?.length">
           <div
             v-if="!isEmpty(adminStatsWithSurvey)"
-            class="flex flex-column align-items-around flex-wrap gap-3 rounded bg-gray-100 p-5 details-card"
+            class="flex flex-column align-items-around flex-wrap gap-3 rounded bg-gray-100 p-2 details-card"
           >
             <div class="flex flex-column gap-1 mx-5 mb-5">
               <div class="text-sm uppercase text-gray-500">Progress by Task</div>
@@ -701,11 +701,9 @@ onMounted(async () => {
   font-size: 2.5rem;
   font-weight: bold;
   margin-top: 0;
-  white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-
-
+  @media (max-width: 768px) {
+    font-size: 1.8rem;
+  }
 }
 
 .no-scores-container {
@@ -768,5 +766,4 @@ onMounted(async () => {
 }
 .details-card {
   max-width: 100%;
-}
-</style>
+}</style>

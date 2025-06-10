@@ -569,10 +569,14 @@ onMounted((): void => {
   flex-direction: row;
   gap: 2rem;
   padding: 1rem;
-  overflow-y: scroll;
+  overflow-y: hidden;
+  overflow-x: scroll;
 
   .card-admin-chart {
     width: 12ch;
+    @media (max-width: 768px) {
+      display: none;
+    }
   }
 
   .card-admin-body {
@@ -639,5 +643,8 @@ onMounted((): void => {
 
 .h2-card-admin-title {
   float: left;
+  @media (max-width: 768px) {
+    font-size: 1.2rem;
+  }
 }
 </style>
