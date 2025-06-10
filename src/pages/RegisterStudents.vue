@@ -690,9 +690,7 @@ const getOrgId = async (orgType, orgName, selectedDistrict = null, selectedSchoo
     });
 
     // Find org with name orgName
-    const org = userAdminOrgs.find(
-      (o) => o.name.trim().toLowerCase() === orgName.trim().toLowerCase()
-    );
+    const org = userAdminOrgs.find((o) => o.name.trim().toLowerCase() === orgName.trim().toLowerCase());
     return org?.id;
   } catch (error) {
     console.error(`Error fetching ${orgType} ID for ${orgName}:`, error);
