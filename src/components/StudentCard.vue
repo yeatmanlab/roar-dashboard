@@ -33,9 +33,9 @@
         </div>
 
         <div class="flex mt-1 justify-content-between">
-          <a :href="'/launch/' + roarUid">
-            <PvButton :label="'Play Games'" data-cy="play-assessments-btn" />
-          </a>
+          <router-link :to="{ name: 'LaunchParticipant', params: { launchId: roarUid } }">
+            <PvButton label="Play Games" data-cy="play-assessments-btn" />
+          </router-link>
 
           <router-link
             :to="{

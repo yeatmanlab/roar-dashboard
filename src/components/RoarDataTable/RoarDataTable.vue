@@ -3,7 +3,7 @@
     <SkeletonTable />
   </div>
   <div v-else>
-    <div class="w-full gap-1 pt-1 flex justify-content-center align-items-center flex-wrap mt-3">
+    <div class="flex flex-wrap gap-1 pt-1 mt-3 w-full justify-content-center align-items-center">
       <slot name="filterbar"></slot>
       <PvButton type="button" icon="pi pi-filter-slash" label="Clear Filters" @click="resetFilters" />
       <PvFloatLabel>
@@ -34,12 +34,12 @@
         />
         <label for="ms-columns" class="view-label2">Freeze Columns</label>
       </PvFloatLabel>
-      <span class="flex flex-row flex-wrap justify-content-end gap-2 max-h-3 export-wrapper">
+      <span class="flex flex-row flex-wrap gap-2 max-h-3 justify-content-end export-wrapper">
         <PvButton
           v-tooltip.bottom="'Expand or Compress table rows'"
           text
           :label="rowViewMode"
-          class="my-1 m-1 h-3rem text-primary surface-ground border-none border-round h-2rem text-sm hover:bg-gray-300"
+          class="m-1 my-1 text-sm border-none h-3rem text-primary surface-ground border-round h-2rem hover:bg-gray-300"
           @click="toggleView"
         />
         <PvButton
@@ -52,7 +52,7 @@
           label="Export Selected"
           :badge="selectedRows?.length?.toString()"
           :disabled="selectedRows.length === 0"
-          class="m-1 h-3rem bg-primary text-white border-none border-round h-2rem text-sm hover:bg-red-900"
+          class="m-1 text-sm text-white border-none h-3rem bg-primary border-round h-2rem hover:bg-red-900"
           data-cy="data-table__export-selected-btn"
           @click="exportCSV(true, $event)"
         />
@@ -60,7 +60,7 @@
           v-if="allowExport"
           v-tooltip.bottom="'Export all scores for all students to a CSV file for spreadsheet import.'"
           label="Export Whole Table"
-          class="m-1 h-3rem bg-primary text-white border-none border-round h-2rem text-sm hover:bg-red-900"
+          class="m-1 text-sm text-white border-none h-3rem bg-primary border-round h-2rem hover:bg-red-900"
           data-cy="data-table__export-table-btn"
           @click="exportCSV(false, $event)"
         />
@@ -68,7 +68,7 @@
     </div>
     <div class="flex flex-column">
       <span style="height: 10px">
-        <div class="relative flex justify-content-end mt-0 mr-2 z-1" style="top: 25px; width: 20%; left: 80%">
+        <div class="flex relative mt-0 mr-2 justify-content-end z-1" style="top: 25px; width: 20%; left: 80%">
           <slot />
         </div>
       </span>
@@ -168,7 +168,7 @@
                     v-tooltip.right="colData.tooltip"
                     severity="secondary"
                     text
-                    class="border border-round surface-200 p-2 hover:surface-500"
+                    class="p-2 border border-round surface-200 hover:surface-500"
                     :label="colData.routeParams.buttonLabel"
                     :aria-label="col.routeTooltip"
                     :icon="col.routeIcon"
@@ -184,7 +184,7 @@
                     v-tooltip.right="colData?.launchTooltip"
                     severity="secondary"
                     text
-                    class="border border-round surface-200 p-2 hover:surface-500"
+                    class="p-2 border border-round surface-200 hover:surface-500"
                     :label="colData?.routeParams?.buttonLabel"
                     :aria-label="col?.routeTooltip"
                     :icon="col?.routeIcon"
@@ -198,7 +198,7 @@
                 <PvButton
                   severity="secondary"
                   text
-                  class="border border-round surface-200 text-primary p-2 hover:surface-500 hover:text-white"
+                  class="p-2 border border-round surface-200 text-primary hover:surface-500 hover:text-white"
                   :label="col.buttonLabel"
                   :aria-label="col.buttonTooltip"
                   :icon="col.buttonIcon"
@@ -217,16 +217,16 @@
               </div>
             </template>
             <template v-if="col.dataType" #sorticon="{ sorted, sortOrder }">
-              <i v-if="!sorted && currentSort.length === 0" v-tooltip.top="'Sort'" class="pi pi-sort-alt ml-2" />
+              <i v-if="!sorted && currentSort.length === 0" v-tooltip.top="'Sort'" class="ml-2 pi pi-sort-alt" />
               <i
                 v-if="sorted && sortOrder === 1"
                 v-tooltip.top="'Sort Desecending'"
-                class="pi pi-sort-amount-down-alt ml-2"
+                class="ml-2 pi pi-sort-amount-down-alt"
               />
               <i
                 v-else-if="sorted && sortOrder === -1"
                 v-tooltip.top="'Sort Ascending'"
-                class="pi pi-sort-amount-up-alt ml-2"
+                class="ml-2 pi pi-sort-amount-up-alt"
               />
             </template>
             <template #filtericon>
@@ -276,7 +276,7 @@
                   style="margin-bottom: 0.5rem; width: 17vh; height: 4vh"
                 >
                   <template #option="{ option }">
-                    <div class="flex align-items-center p-0">
+                    <div class="flex p-0 align-items-center">
                       <div v-if="supportLevelColors[option]" class="flex gap-2 p-0">
                         <div class="small-circle tooltip" :style="`background-color: ${supportLevelColors[option]};`" />
                         <span class="tooltiptext">{{ option }}</span>
@@ -350,7 +350,7 @@
                   type="button"
                   text
                   icon="pi pi-times"
-                  class="pl-5 pr-5 bg-primary text-white border-round border-none hover:bg-red-900"
+                  class="pr-5 pl-5 text-white border-none bg-primary border-round hover:bg-red-900"
                   severity="primary"
                   @click="filterCallback()"
                   >Clear</PvButton
@@ -361,7 +361,7 @@
               <PvButton
                 type="button"
                 icon="pi pi-times"
-                class="pl-5 pr-5 bg-primary text-white border-round border-none hover:bg-red-900"
+                class="pr-5 pl-5 text-white border-none bg-primary border-round hover:bg-red-900"
                 severity="primary"
                 @click="filterCallback()"
                 >Apply
@@ -369,12 +369,12 @@
             </template>
           </PvColumn>
           <template #empty>
-            <div class="flex flex-column align-items-center align-text-left my-8">
-              <div class="text-lg font-bold my-2">No results found</div>
+            <div class="flex my-8 flex-column align-items-center align-text-left">
+              <div class="my-2 text-lg font-bold">No results found</div>
               <div class="font-light">The filters applied have no matching results .</div>
               <PvButton
                 text
-                class="my-2 bg-primary p-2 border-none border-round text-white hover:bg-red-900"
+                class="p-2 my-2 text-white border-none bg-primary border-round hover:bg-red-900"
                 @click="resetFilters"
                 >Reset Filters</PvButton
               >
@@ -471,6 +471,11 @@ const computedColumns = computed(() => {
     return _find(props.columns, (pcol) => pcol.header === col.header);
   });
 });
+
+const toast = useToast();
+
+const dataTable = ref();
+const selectAll = ref(false);
 const currentSort = ref([]);
 const selectedRows = ref([]);
 
@@ -492,32 +497,38 @@ const taskFilterOptions = ref([
   },
 ]);
 
-const toast = useToast();
-const selectAll = ref(false);
-const onSelectAll = () => {
-  selectAll.value = !selectAll.value;
-  if (selectAll.value) {
-    selectedRows.value = props.data;
+const onSelectAll = (event) => {
+  selectAll.value = event.checked;
+
+  if (!selectAll.value) {
+    selectedRows.value = [];
+    emit('selection', selectedRows.value);
+    return;
+  }
+
+  // Get the currently visible dataset using the internal PrimeVue dataToRender method.
+  // This is a workaround as PrimeVue does not provide a public API for this functionality (see
+  // https://github.com/primefaces/primevue/issues/3477). The dataToRender method is not
+  // exposed in the public API, but it is available on the ref of the DataTable component.
+  selectedRows.value = dataTable.value.dataToRender();
+
+  // Show a toast if the user has selected less rows than the total number of rows in the table as the "select all"
+  // checkbox only selects the currently visible rows.
+  if (selectedRows.value.length < props.totalRecords) {
     toast.add({
       severity: 'info',
-      summary: 'Rows selected',
-      detail: `You selected ${selectedRows.value.length} rows but there are
-        ${props.totalRecords} total rows in all of this table's pages. If you
-        would like to export all rows, please click the "Export Whole Table"
-        button.`,
+      summary: `${selectedRows.value.length} rows selected`,
+      detail: `You've selected ${selectedRows.value.length} out of ${props.totalRecords} rows in this table. To include all rows in your export, click Export Whole Table.`,
       life: 5000,
     });
-  } else {
-    selectedRows.value = [];
   }
+
   emit('selection', selectedRows.value);
 };
 
 const onSelectionChange = () => {
   emit('selection', selectedRows.value);
 };
-
-const dataTable = ref();
 
 const exportCSV = (exportSelected) => {
   if (exportSelected) {
