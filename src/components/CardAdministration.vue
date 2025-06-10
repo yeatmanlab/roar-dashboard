@@ -569,6 +569,7 @@ onMounted((): void => {
   flex-direction: row;
   gap: 2rem;
   padding: 1rem;
+  overflow-y: scroll;
 
   .card-admin-chart {
     width: 12ch;
