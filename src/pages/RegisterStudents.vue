@@ -393,6 +393,7 @@ import { usePermissions } from '../composables/usePermissions';
 import { exportCsv } from '@/helpers/query/utils';
 import { orderByDefault } from '@/helpers/query/utils';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
+import useUserType from '@/composables/useUserType';
 import _without from 'lodash/without';
 
 const rawStudentFile = ref([]);
@@ -491,7 +492,7 @@ const { data: userClaims } = useUserClaimsQuery({
   enabled: initialized,
 });
 
-const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
+const { isSuperAdmin } = useUserType(userClaims);
 const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
 
 const orgSelection = (selected) => {
@@ -690,14 +691,11 @@ const getOrgId = async (orgType, orgName, selectedDistrict = null, selectedSchoo
 
     // Find org with name orgName
     const org = userAdminOrgs.find((o) => o.name === orgName);
-
-    if (org?.id) {
-      return org.id;
-    }
+    return org?.id;
   } catch (error) {
     console.error(`Error fetching ${orgType} ID for ${orgName}:`, error);
+    return null;
   }
-  return null;
 };
 
 const eduOrgsSelected = computed(() => {
@@ -889,7 +887,6 @@ const submit = async () => {
     transformedStudents.push(transformedStudent);
   }
   submitting.value = SubmitStatus.SUBMITTING;
-  console.log(transformedStudents);
 
   // Chunk users into chunks of 50 for submission
   const chunkedUsers = _chunk(transformedStudents, 50);
