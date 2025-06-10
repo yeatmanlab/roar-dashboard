@@ -173,7 +173,7 @@ import OrgPicker from '@/components/OrgPicker.vue';
 import { APP_ROUTES, ADMINISTRATION_FORM_TYPES } from '@/constants/routes';
 import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
 import { usePermissions } from '@/composables/usePermissions';
-import AdministrationDatePicker from '@/components/AdministrationDatePicker/AdministrationDatePicker.vue';
+import AdministrationDatePicker from '@/components/AdministrationDatePicker';
 const { userCan, Permissions } = usePermissions();
 
 const isLevante = import.meta.env.MODE === 'LEVANTE';
