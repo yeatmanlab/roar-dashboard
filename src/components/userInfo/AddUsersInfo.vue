@@ -235,11 +235,11 @@ const downloadTemplate = () => {
   justify-content: center;
   overflow-x: auto;
   position: relative;
-  height: 108px;
+  height: 123px;
   
   .csv-example-image {
     width: auto;
-    height: 108px;
+    max-height: 108px;
     display: block;
     position: absolute;
     left: 0;
