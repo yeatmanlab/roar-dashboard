@@ -1,6 +1,6 @@
 <template>
   <div>
-    <PvPanel header="Select Administration Dates" class="mb-2">
+    <PvPanel header="Select Administration Dates" class="mb-2" style="height: 12.5rem">
       <div class="flex justify-content-center mb-2">
         <PvSelectButton
           v-model="decision"
