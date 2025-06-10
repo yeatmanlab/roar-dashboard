@@ -6,8 +6,8 @@
         <div class="flex justify-content-between mb-2">
           <div class="flex align-items-center gap-3">
             <div class="admin-page-header mr-4">Groups</div>
-            <PvButton class="bg-primary text-white border-none p-2 ml-auto" @click="newGroup"> Add Group </PvButton>
-            <PvButton class="bg-primary text-white border-none p-2 ml-auto" @click="addUsers"> Add Users </PvButton>
+            <PvButton class="bg-primary text-white border-none p-2 ml-auto" data-testid="add-group-btn" @click="newGroup"> Add Group </PvButton>
+            <PvButton class="bg-primary text-white border-none p-2 ml-auto" data-testid="add-users-btn" @click="addUsers"> Add Users </PvButton>
           </div>
         </div>
       </div>
