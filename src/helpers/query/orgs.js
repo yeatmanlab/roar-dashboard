@@ -1,4 +1,4 @@
-import { toValue } from 'vue';
+import { toValue, unref } from 'vue';
 import _intersection from 'lodash/intersection';
 import _uniq from 'lodash/uniq';
 import _flattenDeep from 'lodash/flattenDeep';
@@ -352,36 +352,38 @@ export const orgPageFetcher = async (
   isSuperAdmin,
   adminOrgs,
 ) => {
+  const activeOrgTypeValue = unref(activeOrgType);
+  const selectedDistrictId = unref(selectedDistrict);
+  const selectedSchoolId = unref(selectedSchool);
+
   const axiosInstance = getAxiosInstance();
   const requestBody = getOrgsRequestBody({
-    orgType: activeOrgType.value,
-    parentDistrict: selectedDistrict.value,
-    parentSchool: selectedSchool.value,
+    orgType: activeOrgTypeValue,
+    parentDistrict: selectedDistrictId,
+    parentSchool: selectedSchoolId,
     aggregationQuery: false,
-    orderBy: orderBy.value,
-    pageLimit: pageLimit.value,
+    orderBy: unref(orderBy),
+    pageLimit: unref(pageLimit),
     paginate: true,
-    page: page.value,
+    page: unref(page),
   });
-
-  console.log(`Fetching page ${page.value} for ${activeOrgType.value}`);
 
   if (isSuperAdmin.value) {
     return axiosInstance.post(':runQuery', requestBody).then(({ data }) => mapFields(data));
   } else {
-    if (activeOrgType.value === 'schools' && (adminOrgs.value['districts'] ?? []).includes(selectedDistrict.value)) {
+    if (activeOrgTypeValue === 'schools' && (adminOrgs.value['districts'] ?? []).includes(selectedDistrictId)) {
       return axiosInstance.post(':runQuery', requestBody).then(({ data }) => mapFields(data));
     } else if (
-      activeOrgType.value === 'classes' &&
-      ((adminOrgs.value['schools'] ?? []).includes(selectedSchool.value) ||
-        (adminOrgs.value['districts'] ?? []).includes(selectedDistrict.value))
+      activeOrgTypeValue === 'classes' &&
+      ((adminOrgs.value['schools'] ?? []).includes(selectedSchoolId) ||
+        (adminOrgs.value['districts'] ?? []).includes(selectedDistrictId))
     ) {
       return axiosInstance.post(':runQuery', requestBody).then(({ data }) => mapFields(data));
     }
 
-    const orgIds = adminOrgs.value[activeOrgType.value] ?? [];
+    const orgIds = adminOrgs.value[activeOrgTypeValue] ?? [];
     // @TODO: Refactor to a single query for all orgs instead of multiple parallel queries.
-    const promises = orgIds.map((orgId) => fetchDocById(activeOrgType.value, orgId));
+    const promises = orgIds.map((orgId) => fetchDocById(activeOrgTypeValue, orgId));
     const orderField = (orderBy?.value ?? orderByDefault)[0].field.fieldPath;
     const orderDirection = (orderBy?.value ?? orderByDefault)[0].direction;
     const orgs = (await Promise.all(promises)).sort((a, b) => {
@@ -404,11 +406,11 @@ export const orgFetchAll = async (
 ) => {
   const axiosInstance = getAxiosInstance();
   const requestBody = getOrgsRequestBody({
-    orgType: activeOrgType.value,
-    parentDistrict: selectedDistrict.value,
-    parentSchool: selectedSchool.value,
+    orgType: unref(activeOrgType),
+    parentDistrict: unref(selectedDistrict),
+    parentSchool: unref(selectedSchool),
     aggregationQuery: false,
-    orderBy: orderBy.value,
+    orderBy: unref(orderBy),
     paginate: false,
     select,
   });

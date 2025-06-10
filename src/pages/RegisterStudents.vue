@@ -669,10 +669,10 @@ const getOrgId = async (orgType, orgName, selectedDistrict = null, selectedSchoo
   try {
     // Fetch user's available orgs of type orgType
     const userAdminOrgs = await orgFetchAll(
-      ref(orgType),
-      ref(selectedDistrict),
-      ref(selectedSchool),
-      ref(orderByDefault),
+      orgType,
+      selectedDistrict,
+      selectedSchool,
+      orderByDefault,
       isSuperAdmin,
       adminOrgs,
       ['id', 'name', 'districtId', 'schoolId', 'schools', 'classes'],
