@@ -101,4 +101,11 @@ defineProps({
   display: grid !important;
   margin: 0 !important;
 }
+
+@media (min-width: 1024px) {
+  .grid > * {
+    max-width: 575px;
+    width: 100%;
+  }
+}
 </style>

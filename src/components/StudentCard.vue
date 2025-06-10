@@ -33,9 +33,14 @@
           </div>
         </template>
 
-        <div class="flex gap-3 flex-column">
+        <div class="flex gap-3 flex-column p-2">
           <div class="flex gap-4 justify-content-between">
-            <router-link :to="{ name: 'LaunchParticipant', params: { launchId: userId } }">
+            <router-link
+              :to="{
+                name: 'LaunchParticipantWithAdmin',
+                params: { launchId: userId, administrationId: props.administrationId },
+              }"
+            >
               <PvButton label="Play Games" data-cy="play-assessments-btn" />
             </router-link>
             <router-link
@@ -55,7 +60,7 @@
           </div>
 
           <div class="flex gap-3 mt-3 flex-column">
-            <h4 class="m-0 font-semibold text-md">Progress by Tasks</h4>
+            <h4 class="m-0 font-semibold text-md">Progress</h4>
             <div class="flex gap-1 flex-column">
               <div
                 v-for="assessment in assignment.assessments"

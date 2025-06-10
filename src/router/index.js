@@ -217,6 +217,19 @@ const routes = [
     },
   },
   {
+    path: '/launch/:launchId/administration/:administrationId',
+    component: () => import('../pages/HomeParticipant.vue'),
+    props: (route) => ({
+      launchId: route.params.launchId,
+      administrationId: route.params.administrationId,
+    }),
+    name: 'LaunchParticipantWithAdmin',
+    meta: {
+      pageTitle: 'TaskLauncher Home',
+      permission: Permissions.Tasks.LAUNCH,
+    },
+  },
+  {
     path: '/launch/:launchId' + GAME_ROUTES.SWR,
     name: 'Launch SWR',
     component: () => import('../components/tasks/TaskSWR.vue'),
