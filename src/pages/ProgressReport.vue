@@ -683,7 +683,7 @@ onMounted(async () => {
 });
 </script>
 
-<style>
+<style lang="scss">
 .loading-container {
   text-align: center;
 }
@@ -766,4 +766,5 @@ onMounted(async () => {
 }
 .details-card {
   max-width: 100%;
-}</style>
+}
+</style>
