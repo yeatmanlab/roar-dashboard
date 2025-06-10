@@ -51,12 +51,14 @@
       Below is an example of what your CSV/spreadsheet should look like. Only the required columns will be processed.
     </p>
 
-    <img
-      id="link-users-example-image"
-      :src="LEVANTE_BUCKET_URL + '/link_users_example.png'"
-      alt="Link Users CSV example"
-      style="width: 100%; max-width: 1400px; height: auto"
-    />
+    <div class="csv-example-image-container">
+      <img
+        id="link-users-example-image"
+        :src="LEVANTE_BUCKET_URL + '/link_users_example.png'"
+        alt="Link Users CSV example"
+        class="csv-example-image"
+      />
+    </div>
   </PvPanel>
 </template>
 
@@ -152,6 +154,21 @@ import { LEVANTE_BUCKET_URL } from '@/constants/bucket';
       font-weight: bold;
       flex-shrink: 0;
     }
+  }
+}
+
+.csv-example-image-container {
+  display: flex;
+  justify-content: center;
+  overflow-x: auto;
+  margin: 1rem 0;
+  
+  .csv-example-image {
+    width: auto;
+    height: 108px;
+    object-fit: contain;
+    display: block;
+    margin: 1rem 0;
   }
 }
 </style>
