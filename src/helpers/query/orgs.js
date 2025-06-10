@@ -352,6 +352,8 @@ export const orgPageFetcher = async (
   isSuperAdmin,
   adminOrgs,
 ) => {
+  // N.B. We use unref here rather than toValue until we bump Vue to 3.3+.
+  // The only difference in functionality is that unref does not handle getters.
   const activeOrgTypeValue = unref(activeOrgType);
   const selectedDistrictId = unref(selectedDistrict);
   const selectedSchoolId = unref(selectedSchool);
@@ -404,6 +406,8 @@ export const orgFetchAll = async (
   adminOrgs,
   select,
 ) => {
+  // N.B. We use unref here rather than toValue until we bump Vue to 3.3+.
+  // The only difference in functionality is that unref does not handle getters.
   const axiosInstance = getAxiosInstance();
   const requestBody = getOrgsRequestBody({
     orgType: unref(activeOrgType),
