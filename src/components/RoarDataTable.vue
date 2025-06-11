@@ -721,7 +721,7 @@ g {
   padding: 0.6rem 1rem !important;
   @media (max-width: 768px) {
     font-size: 0.8rem;
-    padding: 0rem 0.3rem!important;
+    padding: 0.3rem 0.5rem!important;
   }
 }
 
