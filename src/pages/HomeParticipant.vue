@@ -139,10 +139,12 @@ const props = defineProps({
   launchId: {
     type: String,
     required: false,
+    default: null,
   },
   administrationId: {
     type: String,
     required: false,
+    default: null,
   },
 });
 

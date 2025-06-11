@@ -42,13 +42,7 @@
       }"
     >
       <template v-for="(assignments, userId) in childrenAssignments" :key="userId">
-        <StudentCard
-          :assignments="assignments"
-          :user-id="userId"
-          :org-type="orgType"
-          :org-id="orgId"
-          :administration-id="administrationId"
-        />
+        <StudentCard :assignments="assignments" :user-id="userId" :org-type="orgType" :org-id="orgId" />
       </template>
     </div>
   </div>
@@ -81,10 +75,6 @@ defineProps({
     required: true,
   },
   orgId: {
-    type: String,
-    required: true,
-  },
-  administrationId: {
     type: String,
     required: true,
   },

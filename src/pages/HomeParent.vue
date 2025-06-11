@@ -22,12 +22,11 @@
 
     <HomeParentStudentView
       v-if="currentParentView.name === VIEWS.BY_STUDENT"
-      :is-loading="isLoadingAssignments || isLoadingAdministrations || isLoadingChildrenAssignments"
+      :is-loading="isLoadingAdministrations || isLoadingChildrenAssignments"
       :parent-registration-complete="parentRegistrationComplete"
       :children-assignments="childrenAssignments || []"
       :org-type="orgType"
       :org-id="orgId"
-      :administration-id="administrationId"
       :registration-error="registrationError"
     />
 
@@ -38,7 +37,6 @@
 </template>
 
 <script setup>
-import useAdministrationsListQuery from '@/composables/queries/useAdministrationsListQuery';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useMultipleUserAssignmentsQuery from '@/composables/queries/useMultipleUserAssignmentsQuery';
 import { useTimeoutPoll } from '@vueuse/core';
@@ -49,7 +47,6 @@ import { useAuthStore } from '@/store/auth';
 import PvSelectButton from 'primevue/selectbutton';
 import HomeAdministrator from '@/pages/HomeAdministrator.vue';
 import HomeParentStudentView from '@/components/HomeParentStudentView.vue';
-import { orderByDefault } from '@/helpers/query/utils';
 
 const authStore = useAuthStore();
 
@@ -85,16 +82,6 @@ const { data: childrenAssignments, isLoading: isLoadingChildrenAssignments } = u
   childrenUids,
   orgType,
   orgIds,
-);
-
-const administrationQueryEnabled = computed(() => initialized.value && parentRegistrationComplete);
-
-const { isLoading: isLoadingAdministrations, data: administrations } = useAdministrationsListQuery(
-  orderByDefault,
-  false,
-  {
-    enabled: administrationQueryEnabled,
-  },
 );
 
 const registrationError = ref(null);
@@ -153,8 +140,6 @@ onBeforeUnmount(() => {
   if (isActive.value) pause();
   if (unsubscribe) unsubscribe();
 });
-
-const administrationId = computed(() => administrations.value?.[0]?.id ?? null);
 </script>
 
 <style scoped>
