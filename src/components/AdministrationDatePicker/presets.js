@@ -17,7 +17,7 @@ function createUTCDate(year, month, day) {
  *
  * @returns {Object} An object containing the date presets.
  */
-function generateDatePresets() {
+export function generateDatePresets() {
   const now = new Date();
   const currentYear = now.getFullYear();
 
