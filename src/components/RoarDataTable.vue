@@ -5,6 +5,7 @@
   <div v-else class="options-container">
     <div class="flex justify-content-end mr-3 mt-2 button-container">
       <button
+        data-testid="options-control"
         v-if="props.showOptionsControl"
         type="button"
         class="text-red-700 cursor-pointer options-toggle"
@@ -616,7 +617,9 @@ function getFormattedDate(date) {
 }
 
 const onColumnToggle = (selected) => {
-  selectedColumns.value = inputColumns.value.filter((col) => selected.includes(col));
+  selectedColumns.value = inputColumns.value.filter((col) => {
+    return selected.some((s) => s.header === col.header)
+  });
 };
 
 const frozenColumns = ref(inputColumns.value.filter((col) => col.pinned));
@@ -630,8 +633,10 @@ const onFreezeToggle = (selected) => {
 
 // Pass through data table events
 const emit = defineEmits(['export-all', 'selection', 'reset-filters', 'export-selected', 'export-org-users']);
+defineExpose({ onColumnToggle, selectedColumns });
 </script>
-<style>
+
+<style lang="scss">
 .column-button {
   color: black !important;
 }
