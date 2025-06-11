@@ -65,8 +65,7 @@ import PvPanel from 'primevue/panel';
 const startDate = defineModel('startDate', { type: Date });
 const endDate = defineModel('endDate', { type: Date });
 
-// eslint-disable-next-line no-unused-vars
-const props = defineProps({
+defineProps({
   minStartDate: {
     type: Date,
     required: true,

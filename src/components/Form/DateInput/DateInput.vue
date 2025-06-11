@@ -25,8 +25,7 @@ import PvFloatLabel from 'primevue/floatlabel';
 
 const model = defineModel({ type: Date });
 
-// eslint-disable-next-line no-unused-vars
-const props = defineProps({
+defineProps({
   label: {
     type: String,
     required: true,
