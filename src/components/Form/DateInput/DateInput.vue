@@ -11,7 +11,7 @@
         icon="pi pi-calendar text-primary p-1"
         input-id="datePicker"
         show-button-bar
-        :data-cy="dataCy"
+        :data-testid="testId"
       />
       <label for="datePicker">{{ label }}</label>
       <small v-if="hasError" class="p-error">{{ errorMessage }}</small>
@@ -31,9 +31,10 @@ const props = defineProps({
     type: String,
     required: true,
   },
-  dataCy: {
+  testId: {
     type: String,
     required: true,
+    default: 'date-input',
   },
   hasError: {
     type: Boolean,

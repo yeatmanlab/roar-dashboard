@@ -3,7 +3,7 @@
     <PvPanel header="Select Administration Dates" class="mb-2" style="height: 12.5rem">
       <div class="flex justify-content-center mb-2">
         <PvSelectButton
-          v-model="decision"
+          v-model="currentMode"
           :options="[
             { label: 'Help me choose', value: 'presets' },
             { label: 'I know what to select', value: 'custom' },
@@ -11,10 +11,10 @@
           :allow-empty="false"
           option-label="label"
           option-value="value"
-          @change="decisionChange"
+          @change="currentModeChange"
         />
       </div>
-      <div v-if="decision === 'presets'" class="flex flex-row w-full my-2">
+      <div v-if="currentMode === DATEPICKER_MODE.PRESETS" class="flex flex-row w-full my-2">
         <div
           v-for="(preset, key) in datePresets"
           :key="key"
@@ -28,7 +28,7 @@
               <i v-else class="pi pi-circle" />
             </span>
             <div class="flex flex-column">
-              <label :for="key" class="text-xl font-bold cursor-pointer">{{ _capitalize(key) }}</label>
+              <label :for="key" class="text-xl font-bold cursor-pointer">{{ preset.label }}</label>
               <span class="cursor-pointer text-grey-500">{{
                 `${getDateString(preset.start)} - ${getDateString(preset.end)}`
               }}</span>
@@ -36,9 +36,19 @@
           </div>
         </div>
       </div>
-      <div v-if="decision === 'custom'" class="flex flex-row w-full justify-content-between mt-4">
-        <DatePicker v-model="startDate" :min-date="minStartDate" label="Start Date" data-cy="input-start-date" />
-        <DatePicker v-model="endDate" :min-date="minEndDate" label="End Date" data-cy="input-end-date" />
+      <div v-if="currentMode === DATEPICKER_MODE.CUSTOM" class="flex flex-row w-full justify-content-between mt-4">
+        <DateInput
+          v-model="startDate"
+          :min-date="minStartDate"
+          label="Start Date"
+          test-id="administration-date-picker__start-date-input"
+        />
+        <DateInput
+          v-model="endDate"
+          :min-date="minEndDate"
+          label="End Date"
+          test-id="administration-date-picker__end-date-input"
+        />
       </div>
     </PvPanel>
   </div>
@@ -46,11 +56,10 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import DatePicker from '../Form/DateInput/DateInput.vue';
+import DateInput from '../Form/DateInput/DateInput.vue';
 import PvSelectButton from 'primevue/selectbutton';
 import { datePresets } from './presets';
 import PvPanel from 'primevue/panel';
-import _capitalize from 'lodash/capitalize';
 
 const startDate = defineModel('startDate', { type: Date });
 const endDate = defineModel('endDate', { type: Date });
@@ -67,14 +76,19 @@ const props = defineProps({
   },
 });
 
-const decision = ref('presets');
+const DATEPICKER_MODE = {
+  PRESETS: 'presets',
+  CUSTOM: 'custom',
+};
+
+const currentMode = ref(DATEPICKER_MODE.PRESETS);
 const selectedPreset = ref(null);
 
 // Handle user changing the input method
 // Always clear the selected preset. If the user switches away from custom, clear the current date inputs.
-const decisionChange = () => {
+const currentModeChange = () => {
   selectedPreset.value = null;
-  if (decision.value === 'presets') {
+  if (currentMode.value === DATEPICKER_MODE.PRESETS) {
     startDate.value = null;
     endDate.value = null;
   }
@@ -93,13 +107,13 @@ const getDateString = (date) => {
 };
 
 onMounted(() => {
-  // If the start and end dates are already populated, set the decision to custom
+  // If the start and end dates are already populated, set the currentMode to custom
   if (startDate.value && endDate.value) {
-    // If the start and end dates are not equal to a preset, set the decision to custom
+    // If the start and end dates are not equal to a preset, set the currentMode to custom
     if (
       !Object.values(datePresets).some((preset) => preset.start === startDate.value && preset.end === endDate.value)
     ) {
-      decision.value = 'custom';
+      currentMode.value = DATEPICKER_MODE.CUSTOM;
     }
   }
 });
