@@ -3,6 +3,7 @@ main.main {
   padding-block: 2rem;
   display: flex;
   margin-inline: auto;
+  overflow-x: hidden;
 
   .main-sidebar {
     flex: 30ch 30ch auto;
