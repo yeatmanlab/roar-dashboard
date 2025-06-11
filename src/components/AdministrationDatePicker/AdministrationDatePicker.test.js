@@ -47,7 +47,7 @@ describe('AdministrationDatePicker.vue', () => {
   });
 
   it('initializes with correct default values', () => {
-    expect(wrapper.vm.decision).toBe('presets');
+    expect(wrapper.vm.currentMode).toBe('presets');
     expect(wrapper.vm.selectedPreset).toBeNull();
   });
 
@@ -83,7 +83,7 @@ describe('AdministrationDatePicker.vue', () => {
     });
 
     await customWrapper.vm.$nextTick();
-    expect(customWrapper.vm.decision).toBe('custom');
+    expect(customWrapper.vm.currentMode).toBe('custom');
   });
 
   it('stays in preset mode when preset dates are provided', async () => {
@@ -102,7 +102,7 @@ describe('AdministrationDatePicker.vue', () => {
     });
 
     await presetWrapper.vm.$nextTick();
-    expect(presetWrapper.vm.decision).toBe('presets');
+    expect(presetWrapper.vm.currentMode).toBe('presets');
   });
 
   it('highlights selected preset card', async () => {
