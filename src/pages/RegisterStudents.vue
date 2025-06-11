@@ -373,7 +373,7 @@ import Button from 'primevue/button';
 import PvFileUpload from 'primevue/fileupload';
 import PvToggleSwitch from 'primevue/toggleswitch';
 import { csvFileToJson } from '@/helpers';
-import { fetchOrgByName } from '@/helpers/query/orgs';
+import { orgFetchAll } from '@/helpers/query/orgs';
 import { useToast } from 'primevue/usetoast';
 import { useAuthStore } from '@/store/auth';
 import { storeToRefs } from 'pinia';
@@ -391,6 +391,9 @@ import SelectButton from 'primevue/selectbutton';
 import MultiSelect from 'primevue/multiselect';
 import { usePermissions } from '../composables/usePermissions';
 import { exportCsv } from '@/helpers/query/utils';
+import { orderByDefault } from '@/helpers/query/utils';
+import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
+import useUserType from '@/composables/useUserType';
 import _without from 'lodash/without';
 
 const rawStudentFile = ref([]);
@@ -401,6 +404,9 @@ const usingOrgPicker = ref(true);
 const isFileUploaded = ref(false);
 const showSubmitTable = ref(false);
 const allStudentsValid = ref(false);
+
+const refreshing = ref(false);
+const initialized = ref(false);
 
 const toast = useToast();
 const authStore = useAuthStore();
@@ -481,6 +487,14 @@ const selectedOrgs = ref({
   groups: [],
   families: [],
 });
+
+const { data: userClaims } = useUserClaimsQuery({
+  enabled: initialized,
+});
+
+const { isSuperAdmin } = useUserType(userClaims);
+const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
+
 const orgSelection = (selected) => {
   selectedOrgs.value = selected;
 };
@@ -653,15 +667,35 @@ const getOrgId = async (orgType, orgName, selectedDistrict = null, selectedSchoo
 
   // If not in cache, fetch and cache the result
   try {
-    const org = await fetchOrgByName(orgType, orgName, { value: selectedDistrict }, { value: selectedSchool });
-    if (org[0]?.id) {
-      orgCache.value[orgType].set(cacheKey, org[0].id);
-      return org[0].id;
-    }
+    // Fetch user's available orgs of type orgType
+    const userAdminOrgs = await orgFetchAll(
+      orgType,
+      selectedDistrict,
+      selectedSchool,
+      orderByDefault,
+      isSuperAdmin,
+      adminOrgs,
+      ['id', 'name', 'districtId', 'schoolId', 'schools', 'classes'],
+    );
+
+    // Cache orgs in case we need them for a subsequent call
+    userAdminOrgs.forEach((org) => {
+      const cacheKey =
+        orgType === 'schools'
+          ? `${org.name}-${selectedDistrict}`
+          : orgType === 'classes'
+          ? `${org.name}-${selectedSchool}`
+          : org.name;
+      orgCache.value[orgType].set(cacheKey, org.id);
+    });
+
+    // Find org with name orgName
+    const org = userAdminOrgs.find((o) => o.name.trim().toLowerCase() === orgName.trim().toLowerCase());
+    return org?.id;
   } catch (error) {
     console.error(`Error fetching ${orgType} ID for ${orgName}:`, error);
+    return null;
   }
-  return null;
 };
 
 const eduOrgsSelected = computed(() => {
@@ -853,7 +887,6 @@ const submit = async () => {
     transformedStudents.push(transformedStudent);
   }
   submitting.value = SubmitStatus.SUBMITTING;
-  console.log(transformedStudents);
 
   // Chunk users into chunks of 50 for submission
   const chunkedUsers = _chunk(transformedStudents, 50);
@@ -881,8 +914,6 @@ const submit = async () => {
 /**
  * Handles firekit initialization
  */
-const refreshing = ref(false);
-const initialized = ref(false);
 let unsubscribe;
 const refresh = () => {
   refreshing.value = true;
