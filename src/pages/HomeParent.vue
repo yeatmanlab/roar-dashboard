@@ -52,12 +52,12 @@ const authStore = useAuthStore();
 
 const VIEWS = Object.freeze({
   BY_STUDENT: 'Student',
-  BY_ADMINISTRATION: 'Administration',
+  BY_ASSIGNMENT: 'Assignment',
 });
 
 const currentParentView = ref({ name: VIEWS.BY_STUDENT });
 
-const parentViews = [{ name: VIEWS.BY_STUDENT }, { name: VIEWS.BY_ADMINISTRATION }];
+const parentViews = [{ name: VIEWS.BY_STUDENT }, { name: VIEWS.BY_ASSIGNMENT }];
 const { data: userClaims } = useUserClaimsQuery();
 
 // Parent registration status
