@@ -1,5 +1,5 @@
 <template>
-  <div class="field col-12 md:col-6">
+  <div class="col-12 md:col-6">
     <PvFloatLabel>
       <PvDatePicker
         v-model="model"

@@ -1,6 +1,6 @@
 <template>
   <div>
-    <PvPanel header="Select Administration Dates" class="mb-2" style="height: 12.5rem">
+    <PvPanel header="Select Administration Dates" class="mb-2 xl:height">
       <div class="flex justify-content-center mb-2">
         <PvSelectButton
           v-model="currentMode"
@@ -15,7 +15,7 @@
           @change="currentModeChange"
         />
       </div>
-      <div v-if="currentMode === DATEPICKER_MODE.PRESETS" class="flex flex-row w-full my-2">
+      <div v-if="currentMode === DATEPICKER_MODE.PRESETS" class="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-4">
         <div
           v-for="(preset, key) in datePresets"
           :key="key"
@@ -37,18 +37,20 @@
           </div>
         </div>
       </div>
-      <div v-if="currentMode === DATEPICKER_MODE.CUSTOM" class="flex flex-row w-full justify-content-between mt-4">
+      <div v-if="currentMode === DATEPICKER_MODE.CUSTOM" class="grid grid-cols-1 gap-2 md:grid-cols-2 w-full mt-4">
         <DateInput
           v-model="startDate"
           :min-date="minStartDate"
           label="Start Date"
           test-id="administration-date-picker__start-date-input"
+          class="w-full px-0 pt-4"
         />
         <DateInput
           v-model="endDate"
           :min-date="minEndDate"
           label="End Date"
           test-id="administration-date-picker__end-date-input"
+          class="w-full px-0 pt-4"
         />
       </div>
     </PvPanel>
@@ -139,5 +141,18 @@ onMounted(() => {
   margin-top: 0.25rem;
   margin-right: 0.625rem;
   margin-left: 0.5rem;
+}
+.grid {
+  display: grid !important;
+  margin: 0 !important;
+}
+.height {
+  height: 12.5rem;
+}
+
+@media (min-width: 1280px) {
+  .xl\:height {
+    height: 12.5rem;
+  }
 }
 </style>
