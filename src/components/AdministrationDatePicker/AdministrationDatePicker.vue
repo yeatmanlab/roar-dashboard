@@ -16,7 +16,7 @@
         />
       </div>
       <div v-if="currentMode === DATEPICKER_MODE.PRESETS" class="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-4">
-        <div
+        <button
           v-for="(preset, key) in datePresets"
           :key="key"
           class="card"
@@ -35,7 +35,7 @@
               }}</span>
             </div>
           </div>
-        </div>
+        </button>
       </div>
       <div v-if="currentMode === DATEPICKER_MODE.CUSTOM" class="grid grid-cols-1 gap-2 md:grid-cols-2 w-full mt-4">
         <DateInput
@@ -130,6 +130,8 @@ onMounted(() => {
   padding: 0.5rem;
   margin: 0.25rem;
   cursor: pointer;
+  background-color: var(--surface-card);
+  text-align: start;
 }
 .card:hover {
   background-color: var(--surface-hover);
