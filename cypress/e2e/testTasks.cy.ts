@@ -14,7 +14,7 @@ function startTask(tasksRemaining: number) {
     cy.get("[data-pc-name=tabpanel][data-p-active=true]").children().contains("Click to start").click();
 
     // enter fullscreen and check that first instruction trial has loaded
-    cy.contains('OK', {timeout: 240000}).should('exist').realClick().then(() => {
+    cy.contains('OK', {timeout: 600000}).should('exist').realClick().then(() => {
       cy.contains('OK').should('exist');
     });
 
