@@ -27,7 +27,7 @@
             :options="inputColumns"
             option-label="header"
             :max-selected-labels="3"
-            class="w-2 md:w-10rem"
+            class="w-2 w-10rem"
             selected-items-label="{0} columns selected"
             @update:model-value="onColumnToggle"
           />
@@ -40,7 +40,7 @@
             :options="inputColumns"
             option-label="header"
             :max-selected-labels="3"
-            class="w-2 md:w-10rem"
+            class="w-2 w-10rem"
             selected-items-label="{0} columns frozen"
             :show-toggle-all="false"
             @update:model-value="onFreezeToggle"
