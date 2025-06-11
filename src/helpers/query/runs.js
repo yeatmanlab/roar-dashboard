@@ -158,7 +158,7 @@ export const getRunsRequestBody = ({
  * @returns {Promise<number>} The count of runs.
  */
 export const runCounter = async (administrationId, orgType, orgId) => {
-  const axiosInstance = getAxiosInstance('app');
+  const axiosInstance = getAxiosInstance();
   const requestBody = getRunsRequestBody({
     administrationId: toValue(administrationId),
     orgType: toValue(orgType),
@@ -198,7 +198,7 @@ export const runPageFetcher = async ({
   scoreKey = 'scores.computed.composite',
   paginate = true,
 }) => {
-  const appAxiosInstance = getAxiosInstance('app');
+  const adminAxiosInstance = getAxiosInstance();
   const requestBody = getRunsRequestBody({
     administrationId: toValue(administrationId),
     orgType: toValue(orgType),
@@ -212,7 +212,7 @@ export const runPageFetcher = async ({
     select: toValue(select),
   });
   const runQuery = toValue(userId) === undefined ? ':runQuery' : `/users/${toValue(userId)}:runQuery`;
-  return appAxiosInstance.post(runQuery, requestBody).then(async ({ data }) => {
+  return adminAxiosInstance.post(runQuery, requestBody).then(async ({ data }) => {
     const runData = mapFields(data, true);
 
     const userDocPaths = _uniq(
@@ -229,7 +229,7 @@ export const runPageFetcher = async ({
     );
 
     // Use batchGet to get all user docs with one post request
-    const batchUserDocs = await appAxiosInstance
+    const batchUserDocs = await adminAxiosInstance
       .post(':batchGet', {
         documents: userDocPaths,
         mask: {

@@ -542,7 +542,6 @@ export const getScoresRequestBody = ({
 
 export const assignmentCounter = (adminId, orgType, orgId, filters = [], orderBy = []) => {
   const adminAxiosInstance = getAxiosInstance();
-  const appAxiosInstance = getAxiosInstance('app');
 
   // Only allow one non-org filter
   let nonOrgFilter = null;
@@ -580,7 +579,7 @@ export const assignmentCounter = (adminId, orgType, orgId, filters = [], orderBy
       filter: nonOrgFilter,
       aggregationQuery: true,
     });
-    return appAxiosInstance.post(':runAggregationQuery', requestBody).then(({ data }) => {
+    return adminAxiosInstance.post(':runAggregationQuery', requestBody).then(({ data }) => {
       return Number(convertValues(data[0].result?.aggregateFields?.count));
     });
   } else {
@@ -625,9 +624,7 @@ export const assignmentPageFetcher = async (
   orderBy = [],
 ) => {
   const adminAxiosInstance = getAxiosInstance();
-  const appAxiosInstance = getAxiosInstance('app');
-  const adminProjectId = getProjectId('admin');
-  const appProjectId = getProjectId('app');
+  const adminProjectId = getProjectId();
 
   // Only allow one non-org filter
   let nonOrgFilter = null;
@@ -672,7 +669,7 @@ export const assignmentPageFetcher = async (
     console.log(
       `Fetching page ${page.value} for ${adminId} with filter ${filters[0].value} on field ${filters[0].field}`,
     );
-    return appAxiosInstance.post(':runQuery', requestBody).then(async ({ data }) => {
+    return adminAxiosInstance.post(':runQuery', requestBody).then(async ({ data }) => {
       const scoresData = mapFields(data, true);
 
       // Generate a list of user docs paths
@@ -680,7 +677,7 @@ export const assignmentPageFetcher = async (
         _without(
           data.map((scoreDoc) => {
             if (scoreDoc.document?.name) {
-              return _replace(scoreDoc.document.name.split('/runs/')[0], appProjectId, adminProjectId);
+              return _replace(scoreDoc.document.name.split('/runs/')[0], adminProjectId, adminProjectId);
             } else {
               return undefined;
             }
@@ -748,7 +745,7 @@ export const assignmentPageFetcher = async (
             const reliable = _get(_find(scoresData, { id: runId }), 'reliable');
             const engagementFlags = _get(_find(scoresData, { id: runId }), 'engagementFlags');
             if (!scoresObject && runId) {
-              const runPath = `projects/${appProjectId}/databases/(default)/documents/users/${assignment.userId}/runs/${runId}`;
+              const runPath = `projects/${adminProjectId}/databases/(default)/documents/users/${assignment.userId}/runs/${runId}`;
               unretrievedScores.push(runPath);
             }
             return {
@@ -770,7 +767,7 @@ export const assignmentPageFetcher = async (
       });
 
       // Use the list of unretrieved scores and batchGet
-      const otherScores = await appAxiosInstance
+      const otherScores = await adminAxiosInstance
         .post(':batchGet', {
           documents: unretrievedScores,
           mask: { fieldPaths: ['scores', 'reliable', 'engagementFlags'] },
@@ -1002,17 +999,16 @@ export const assignmentPageFetcher = async (
           assignmentData.map((assignment) => {
             const firestoreBasePath = 'https://firestore.googleapis.com/v1/';
             const adminBasePath = adminAxiosInstance.defaults.baseURL.replace(firestoreBasePath, '');
-            const appBasePath = appAxiosInstance.defaults.baseURL.replace(firestoreBasePath, '');
             const runIds = _without(
               assignment.assessments.map((assessment) => assessment.runId),
               undefined,
             );
             const userPath = userDocPaths.find((userDocPath) => userDocPath.includes(assignment.parentDoc));
-            return runIds.map((runId) => `${userPath.replace(adminBasePath, appBasePath)}/runs/${runId}`);
+            return runIds.map((runId) => `${userPath.replace(adminBasePath, '')}/runs/${runId}`);
           }),
         );
 
-        const batchRunDocs = await appAxiosInstance
+        const batchRunDocs = await adminAxiosInstance
           .post(':batchGet', {
             documents: runDocPaths,
             mask: { fieldPaths: ['scores', 'reliable', 'engagementFlags'] },

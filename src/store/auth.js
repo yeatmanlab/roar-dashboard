@@ -16,7 +16,6 @@ export const useAuthStore = () => {
         spinner: false,
         firebaseUser: {
           adminFirebaseUser: null,
-          appFirebaseUser: null,
         },
         adminOrgs: null,
         roarfirekit: null,
@@ -26,7 +25,6 @@ export const useAuthStore = () => {
         ssoProvider: null,
         showOptionalAssessments: false,
         adminAuthStateListener: null,
-        appAuthStateListener: null,
       };
     },
     getters: {
@@ -42,11 +40,8 @@ export const useAuthStore = () => {
       isUserAuthedAdmin: (state) => {
         return Boolean(state.firebaseUser.adminFirebaseUser);
       },
-      isUserAuthedApp: (state) => {
-        return Boolean(state.firebaseUser.appFirebaseUser);
-      },
       isAuthenticated: (state) => {
-        return Boolean(state.firebaseUser.adminFirebaseUser) && Boolean(state.firebaseUser.appFirebaseUser);
+        return Boolean(state.firebaseUser.adminFirebaseUser);
       },
       isFirekitInit: (state) => {
         return state.roarfirekit?.initialized;
@@ -76,16 +71,6 @@ export const useAuthStore = () => {
             logger.setUser(user);
           } else {
             this.firebaseUser.adminFirebaseUser = null;
-            logger.setUser(null);
-          }
-        });
-
-        this.appAuthStateListener = onAuthStateChanged(this.roarfirekit?.app.auth, async (user) => {
-          if (user) {
-            this.firebaseUser.appFirebaseUser = user;
-            logger.setUser(user);
-          } else {
-            this.firebaseUser.appFirebaseUser = null;
             logger.setUser(null);
           }
         });

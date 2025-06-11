@@ -69,7 +69,7 @@ export const getTasksRequestBody = ({
 };
 
 export const taskFetcher = async (registered = true, allData = false, select = ['name', 'testData', 'demoData']) => {
-  const axiosInstance = getAxiosInstance('app');
+  const axiosInstance = getAxiosInstance();
   const requestBody = getTasksRequestBody({
     registered,
     allData,
@@ -93,7 +93,7 @@ export const fetchByTaskId = async (taskIds) => {
     docId: taskId,
   }));
 
-  return fetchDocsById(taskDocs, FIRESTORE_DATABASES.APP);
+  return fetchDocsById(taskDocs, FIRESTORE_DATABASES.ADMIN);
 };
 
 export const getVariantsRequestBody = ({ registered = false, aggregationQuery, pageLimit, page, paginate = false }) => {
@@ -141,14 +141,15 @@ export const getVariantsRequestBody = ({ registered = false, aggregationQuery, p
 };
 
 export const variantsFetcher = async (registered = false) => {
-  const axiosInstance = getAxiosInstance('app');
+  const axiosInstance = getAxiosInstance();
   const requestBody = getVariantsRequestBody({
     registered,
     aggregationQuery: false,
     paginate: false,
   });
 
-  return axiosInstance.post(':runQuery', requestBody).then(async ({ data }) => {
+  return axiosInstance.post(':runQuery', requestBody)
+  .then(async ({ data }) => {
     // Convert to regular object. Second arg is true to return parent doc ID as well.
     const variants = mapFields(data, true);
 
@@ -207,5 +208,9 @@ export const variantsFetcher = async (registered = false) => {
         task: task.data,
       };
     });
+  })
+  .catch((error) => {
+    console.error(error);
+    return [];
   });
 };
