@@ -1,5 +1,5 @@
 import { toValue } from 'vue';
-import { useQuery } from '@tanstack/vue-query';
+import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import { variantsFetcher } from '@/helpers/query/tasks';
 import { TASK_VARIANTS_QUERY_KEY } from '@/constants/queryKeys';
 
@@ -10,15 +10,22 @@ import { TASK_VARIANTS_QUERY_KEY } from '@/constants/queryKeys';
  * @returns {UseQueryResult} The TanStack query result.
  */
 const useTaskVariantsQuery = (registeredVariantsOnly = false, queryOptions = undefined) => {
+  const queryClient = useQueryClient();
   const queryKey = toValue(registeredVariantsOnly)
     ? [TASK_VARIANTS_QUERY_KEY, 'registered']
-    : [TASK_VARIANTS_QUERY_KEY];
-
-  return useQuery({
-    queryKey,
-    queryFn: () => variantsFetcher(registeredVariantsOnly),
-    ...queryOptions,
-  });
+    : [TASK_VARIANTS_QUERY_KEY, 'all'];
+  const queryFn = () => variantsFetcher(registeredVariantsOnly);
+  return {
+    ...useQuery({
+      queryKey: queryKey,
+      queryFn: queryFn,
+      ...queryOptions,
+    }),
+    refetch: () => {
+      queryClient.invalidateQueries({ queryKey: [TASK_VARIANTS_QUERY_KEY, 'registered'] });
+      queryClient.invalidateQueries({ queryKey: [TASK_VARIANTS_QUERY_KEY, 'all'] });
+    },
+  };
 };
 
 export default useTaskVariantsQuery;
