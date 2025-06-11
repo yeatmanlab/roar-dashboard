@@ -719,6 +719,10 @@ g {
   margin-top: 5px;
   margin-bottom: 5px;
   padding: 0.6rem 1rem !important;
+  @media (max-width: 768px) {
+    font-size: 0.8rem;
+    padding: 0rem 0.3rem!important;
+  }
 }
 
 .p-datatable-popover-filter {
@@ -754,7 +758,7 @@ button.p-column-filter-menu-button.p-link:hover {
   text-align: left;
   border: 1px solid var(--surface-c);
   border-width: 0 0 3px 0;
-  padding: 0.6rem 1rem !important;
+  padding: 0.6rem 1rem!important;
 }
 
 .filter-content {
