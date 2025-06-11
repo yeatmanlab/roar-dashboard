@@ -1,6 +1,6 @@
 <template>
   <div>
-    <PvPanel header="Select Administration Dates" class="mb-2 xl:height">
+    <PvPanel header="Select Administration Dates" class="mb-2">
       <div class="flex justify-content-center mb-2">
         <PvSelectButton
           v-model="currentMode"
@@ -128,8 +128,8 @@ onMounted(() => {
   flex-direction: column;
   width: 100%;
   padding: 0.5rem;
-  margin: 0.25rem;
   cursor: pointer;
+  color: var(--surface-text);
   background-color: var(--surface-card);
   text-align: start;
 }
@@ -147,14 +147,5 @@ onMounted(() => {
 .grid {
   display: grid !important;
   margin: 0 !important;
-}
-.height {
-  height: 12.5rem;
-}
-
-@media (min-width: 1280px) {
-  .xl\:height {
-    height: 12.5rem;
-  }
 }
 </style>
