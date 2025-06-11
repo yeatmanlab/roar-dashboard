@@ -15,8 +15,11 @@
         </div>
       </div>
     </div>
+    <div class="p-2 mt-3">
+      <h3 class="m-0 text-md font-semibold text-gray-600">Assignments</h3>
+    </div>
 
-    <div class="flex flex-column gap-2 mb-3">
+    <div class="flex flex-column gap-2 mb-3 p-2">
       <div class="flex justify-content-between align-items-center">
         <div class="text-sm text-gray-600">Sort by</div>
         <PvSelect v-model="sortKey" :options="sortOptions" option-label="label" class="w-auto" @change="onSortChange" />
@@ -26,83 +29,89 @@
     <PvDataView
       :value="sortedAssignments"
       paginator
-      :rows="3"
-      :rows-per-page-options="[3, 5, 10]"
+      :rows="5"
+      :rows-per-page-options="[5, 10]"
       :sort-order="sortOrder"
       :sort-field="sortField"
     >
       <template #list="slotProps">
-        <div class="w-full">
-          <PvAccordion>
-            <PvAccordionTab v-for="assignment in slotProps.items" :key="assignment.id">
-              <template #header>
-                <div class="flex justify-between w-full">
-                  <div>
-                    <div class="text-md">{{ assignment.name }}</div>
-                    <div class="mt-1 text-xs font-light">Assignment</div>
-                  </div>
-                  <div>
-                    <div class="mt-1 text-sm">
-                      {{ parseDate(assignment.dateOpened) }} - {{ parseDate(assignment.dateClosed) }}
+        <div class="w-full flex flex-column gap-3 px-2">
+          <div
+            v-for="assignment in slotProps.items"
+            :key="assignment.id"
+            class="border-1 border-gray-200 rounded-lg overflow-hidden"
+          >
+            <PvAccordion>
+              <PvAccordionTab>
+                <template #header>
+                  <div class="flex justify-between w-full">
+                    <div>
+                      <div class="text-md">{{ assignment.name }}</div>
+                      <div class="mt-1 text-xs font-light">Assignment</div>
                     </div>
-                    <div class="mt-1 text-xs font-light text-end">Dates Active</div>
+                    <div>
+                      <div class="mt-1 text-sm">
+                        {{ parseDate(assignment.dateOpened) }} - {{ parseDate(assignment.dateClosed) }}
+                      </div>
+                      <div class="mt-1 text-xs font-light text-end">Dates Active</div>
+                    </div>
                   </div>
-                </div>
-              </template>
-              <div class="flex gap-3 flex-column p-2">
-                <div class="flex gap-4 justify-content-between">
-                  <PvButton
-                    label="Play Games"
-                    data-cy="play-assessments-btn"
-                    :on-click="() => setSelectedAdminAndLaunchStudent(assignment)"
-                  />
-                  <router-link
-                    :to="{
-                      name: 'StudentReport',
-                      params: {
-                        administrationId: assignment.id,
-                        orgType: props.orgType,
-                        orgId: props.orgId,
-                        userId: userId,
-                      },
-                    }"
-                    class="text-black no-underline"
-                  >
+                </template>
+                <div class="flex gap-3 flex-column p-3">
+                  <div class="flex gap-4 justify-content-between">
                     <PvButton
-                      label="View Scores"
-                      icon=""
-                      outlined
-                      severity="contrast"
-                      data-cy="view-score-report-btn"
+                      label="Play Games"
+                      data-cy="play-assessments-btn"
+                      :on-click="() => setSelectedAdminAndLaunchStudent(assignment)"
                     />
-                  </router-link>
-                </div>
-
-                <div class="flex gap-3 mt-3 flex-column">
-                  <h4 class="m-0 font-semibold text-md">Progress</h4>
-                  <div class="flex gap-1 flex-column">
-                    <div
-                      v-for="assessment in assignment.assessments"
-                      :key="assessment.taskId"
-                      class="flex justify-between text-sm align-items-center"
+                    <router-link
+                      :to="{
+                        name: 'StudentReport',
+                        params: {
+                          administrationId: assignment.id,
+                          orgType: props.orgType,
+                          orgId: props.orgId,
+                          userId: userId,
+                        },
+                      }"
+                      class="text-black no-underline"
                     >
-                      <div>{{ taskDisplayNames[assessment.taskId]?.publicName }}</div>
-                      <div>
-                        <PvTag
-                          :severity="getAssessmentStatus(assessment).severity"
-                          :value="getAssessmentStatus(assessment).value"
-                          :icon="getAssessmentStatus(assessment).icon"
-                          class="p-0.5 m-0 font-semibold capitalize"
-                          :style="`min-width: 2rem;`"
-                          rounded
-                        />
+                      <PvButton
+                        label="View Scores"
+                        icon=""
+                        outlined
+                        severity="contrast"
+                        data-cy="view-score-report-btn"
+                      />
+                    </router-link>
+                  </div>
+
+                  <div class="flex gap-3 mt-3 flex-column">
+                    <h4 class="m-0 font-semibold text-md">Progress</h4>
+                    <div class="flex gap-1 flex-column">
+                      <div
+                        v-for="assessment in assignment.assessments"
+                        :key="assessment.taskId"
+                        class="flex justify-between text-sm align-items-center"
+                      >
+                        <div>{{ taskDisplayNames[assessment.taskId]?.publicName }}</div>
+                        <div>
+                          <PvTag
+                            :severity="getAssessmentStatus(assessment).severity"
+                            :value="getAssessmentStatus(assessment).value"
+                            :icon="getAssessmentStatus(assessment).icon"
+                            class="p-0.5 m-0 font-semibold capitalize"
+                            :style="`min-width: 2rem;`"
+                            rounded
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            </PvAccordionTab>
-          </PvAccordion>
+              </PvAccordionTab>
+            </PvAccordion>
+          </div>
         </div>
       </template>
     </PvDataView>
@@ -143,7 +152,16 @@ const onSortChange = (event) => {
 };
 
 const sortedAssignments = computed(() => {
-  return _orderBy(Object.values(props.assignments), [sortField.value], [sortOrder.value === 1 ? 'asc' : 'desc']);
+  // For dateOpened, we want ascending order (earliest to latest) when sortOrder is 1
+  const order =
+    sortField.value === 'dateOpened'
+      ? sortOrder.value === 1
+        ? 'asc'
+        : 'desc'
+      : sortOrder.value === 1
+      ? 'desc'
+      : 'asc';
+  return _orderBy(Object.values(props.assignments), [sortField.value], [order]);
 });
 
 // method to set selectedAdmin to assignment passed in on button click
