@@ -11,6 +11,7 @@
           :allow-empty="false"
           option-label="label"
           option-value="value"
+          :pt="{ root: { class: 'w-full' }, pcToggleButton: { root: { class: 'w-full' } } }"
           @change="currentModeChange"
         />
       </div>
