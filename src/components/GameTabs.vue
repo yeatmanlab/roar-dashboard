@@ -72,7 +72,8 @@
                   :class="{ 'hover:surface-200 pointer': !game.completedOn || game.taskData.external }"
                 >
                   <div class="flex align-items-center justify-content-center font-bold mt-2 h-full responsive-text">
-                    <router-link
+                    <!-- Tasks that are not yet complete -->
+                    <div
                       v-if="
                         (!allGamesComplete &&
                           !game.completedOn &&
@@ -80,36 +81,62 @@
                           !game.taskData?.variantURL) ||
                         game.taskData.external
                       "
-                      :to="game.taskData.external ? '' : { path: getRoutePath(game.taskId) }"
-                      class="no-underline text-900 text-center"
+                      class="flex align-items-center justify-content-center h-full w-full"
                     >
-                      <div class="flex align-items-center justify-content-center h-full w-full">
-                        <i v-if="!allGamesComplete" class="pi"
-                          ><svg
-                            viewBox="0 0 42 42"
-                            fill="none"
-                            class="responsive-icon"
-                            xmlns="http://www.w3.org/2000/svg"
-                          >
-                            <rect width="42" height="42" rx="21" fill="#A80532" />
-                            <path
-                              d="M26.1858 19.6739L17.4823 14.1736C16.7751 13.7269 15.6921 14.1604 15.6921 15.2652V26.2632C15.6921 27.2544 16.6985 27.8518 17.4823 27.3549L26.1858 21.8572C26.9622 21.3682 26.9647 20.1629 26.1858 19.6739Z"
-                              fill="white"
-                            />
-                          </svg>
-                        </i>
-                      </div>
-                      <span v-if="game.taskData.external && game.completedOn">{{
-                        $t('gameTabs.externalTaskMessage')
-                      }}</span>
-                      <span
-                        v-else-if="
-                          (!allGamesComplete && !game.completedOn) || (game.taskData.external && !game.completedOn)
-                        "
-                        >{{ $t('gameTabs.clickToStart') }}</span
+                      <!-- ROAR Tasks should use router-link-->
+                      <router-link
+                        v-if="!game.taskData.external"
+                        :to="{ path: getRoutePath(game.taskId) }"
+                        class="no-underline text-900 text-center w-full h-full"
                       >
-                      <span v-else style="cursor: default">{{ taskCompletedMessage }}</span>
-                    </router-link>
+                        <div class="flex align-items-center justify-content-center">
+                          <i v-if="!allGamesComplete" class="pi"
+                            ><svg
+                              viewBox="0 0 42 42"
+                              fill="none"
+                              class="responsive-icon"
+                              xmlns="http://www.w3.org/2000/svg"
+                            >
+                              <rect width="42" height="42" rx="21" fill="#A80532" />
+                              <path
+                                d="M26.1858 19.6739L17.4823 14.1736C16.7751 13.7269 15.6921 14.1604 15.6921 15.2652V26.2632C15.6921 27.2544 16.6985 27.8518 17.4823 27.3549L26.1858 21.8572C26.9622 21.3682 26.9647 20.1629 26.1858 19.6739Z"
+                                fill="white"
+                              />
+                            </svg>
+                          </i>
+                        </div>
+                        <span v-if="!allGamesComplete && !game.completedOn">{{ $t('gameTabs.clickToStart') }}</span>
+                        <span v-else style="cursor: default">{{ taskCompletedMessage }}</span>
+                      </router-link>
+                      <!-- External Tasks should use anchor tag -->
+                      <a
+                        v-else
+                        :href="externalLinksByTask[game.taskId]"
+                        target="_blank"
+                        class="no-underline text-900 text-center w-full h-full"
+                        @click="onExternalTaskClick(game)"
+                      >
+                        <div class="flex align-items-center justify-content-center">
+                          <i v-if="!allGamesComplete" class="pi"
+                            ><svg
+                              viewBox="0 0 42 42"
+                              fill="none"
+                              class="responsive-icon"
+                              xmlns="http://www.w3.org/2000/svg"
+                            >
+                              <rect width="42" height="42" rx="21" fill="#A80532" />
+                              <path
+                                d="M26.1858 19.6739L17.4823 14.1736C16.7751 13.7269 15.6921 14.1604 15.6921 15.2652V26.2632C15.6921 27.2544 16.6985 27.8518 17.4823 27.3549L26.1858 21.8572C26.9622 21.3682 26.9647 20.1629 26.1858 19.6739Z"
+                                fill="white"
+                              />
+                            </svg>
+                          </i>
+                        </div>
+                        <span v-if="game.completedOn">{{ $t('gameTabs.externalTaskMessage') }}</span>
+                        <span v-else style="cursor: default">{{ taskCompletedMessage }}</span>
+                      </a>
+                    </div>
+                    <!-- Tasks that are complete -->
                     <div v-else>
                       <div
                         :class="{
@@ -127,12 +154,21 @@
                             <div class="flex flex-column align-items-center gap-2">
                               <span>{{ $t('gameTabs.allowRetake') }}</span>
                               <router-link
-                                :to="game.taskData.external ? '' : { path: getRoutePath(game.taskId) }"
+                                v-if="!game.taskData.external"
+                                :to="{ path: getRoutePath(game.taskId) }"
                                 class="no-underline text-yellow-900 hover:text-yellow-800 w-full flex align-items-center justify-content-center p-3 hover:bg-yellow-100"
-                                @click="game.taskData.external && routeExternalTask(game)"
                               >
                                 <i class="pi pi-refresh mr-2"></i>{{ $t('gameTabs.retakeAssessment') }}
                               </router-link>
+                              <a
+                                v-else
+                                :href="externalLinksByTask[game.taskId]"
+                                target="_blank"
+                                class="no-underline text-yellow-900 hover:text-yellow-800 w-full flex align-items-center justify-content-center p-3 hover:bg-yellow-100"
+                                @click="onExternalTaskClick(game)"
+                              >
+                                <i class="pi pi-refresh mr-2"></i>{{ $t('gameTabs.retakeAssessment') }}
+                              </a>
                             </div>
                           </PvMessage>
                         </div>
@@ -407,7 +443,6 @@ const externalLinksByTask = computed(() => {
 });
 
 async function onExternalTaskClick(game) {
-  // console.log('onExternalTaskClick', game);
   // Mark the assessment as complete immediately if external roar task and clicked the button
   await authStore.completeAssessment(selectedAdmin.value.id, game.taskId);
 }
