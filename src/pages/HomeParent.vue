@@ -63,9 +63,13 @@ const { data: userClaims } = useUserClaimsQuery();
 // Parent registration status
 const parentRegistrationComplete = ref(false);
 const initialized = ref(false);
-const orgId = computed(
-  () => userClaims.value?.claims?.adminOrgs[pluralizeFirestoreCollection(orgType.value)]?.[0] ?? null,
-);
+const orgId = computed(() => {
+  const adminOrgs = userClaims.value?.claims?.adminOrgs ?? {};
+  const orgTypePluralized = pluralizeFirestoreCollection(orgType.value);
+  const orgTypeOrganizations = adminOrgs[orgTypePluralized] ?? [];
+
+  return orgTypeOrganizations[0] ?? null;
+});
 
 const orgIds = computed(() => (orgId.value ? [orgId.value] : []));
 
