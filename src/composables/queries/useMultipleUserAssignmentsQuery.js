@@ -20,8 +20,12 @@ const useMultipleUserAssignmentsQuery = (userIds = [], orgType = null, orgIds = 
   const { userData } = storeToRefs(authStore);
   const isSuperAdmin = authStore?.userClaims?.claims?.super_admin ?? false;
   const isTestUser = userData.value?.testData ?? false;
-  const isExternalCallWithoutSuperAdmin = !isSuperAdmin;
   const resolvedUserIds = toValue(userIds);
+
+  // Break down conditions for better readability
+  const hasUserIds = toValue(userIds).length > 0;
+  const requiresOrgValidation = !isSuperAdmin;
+  const hasOrgDetails = orgType && orgIds;
 
   // We need to have the orgId and orgType for a non-superadmin call
 const hasUserIds = toValue(userIds).length > 0;

@@ -16,12 +16,12 @@
       </div>
     </div>
     <div class="p-2 mt-3">
-      <h3 class="m-0 text-md font-semibold text-gray-600">Assignments</h3>
+      <h3 class="m-0 text-md font-semibold text-gray-500">Assignments</h3>
     </div>
 
     <div class="flex flex-column gap-2 mb-3 p-2">
       <div class="flex justify-content-between align-items-center">
-        <div class="text-sm text-gray-600">Sort by</div>
+        <div class="text-sm text-gray-400">Sort by</div>
         <PvSelect v-model="sortKey" :options="sortOptions" option-label="label" class="w-auto" @change="onSortChange" />
       </div>
     </div>
@@ -62,7 +62,7 @@
                     <PvButton
                       label="Play Games"
                       data-cy="play-assessments-btn"
-                      @click="setSelectedAdminAndLaunchStudent(assignment)"
+                      :on-click="() => setSelectedAdminAndLaunchStudent(assignment)"
                     />
                     <router-link
                       :to="{
@@ -166,7 +166,6 @@ const sortedAssignments = computed(() => {
 
 // method to set selectedAdmin to assignment passed in on button click
 const setSelectedAdminAndLaunchStudent = (assignment) => {
-  console.log('assignment', assignment);
   selectedAdmin.value = assignment;
 
   router.push({
