@@ -357,49 +357,6 @@ const gameStore = useGameStore();
 
 const { selectedAdmin } = storeToRefs(gameStore);
 
-async function routeExternalTask(game) {
-  let url;
-
-  if (game.taskData?.variantURL) {
-    url = game.taskData.variantURL;
-  } else if (game.taskData?.taskURL) {
-    url = game.taskData.taskURL;
-  } else {
-    return;
-  }
-
-  // Mark the assessment as complete immediately if external roar task and clicked the button
-  if (game.taskData.external) {
-    await authStore.completeAssessment(selectedAdmin.value.id, game.taskId);
-
-    let taskUrl = game.taskData.taskURL;
-    if (game.taskId.includes('qualtrics')) {
-      // this was a request for a qualtrics-based task
-      taskUrl += `/?participantID=${props?.userData?.assessmentPid}`;
-    }
-
-    window.open(taskUrl, '_blank')?.focus();
-  } else if (game.taskData.name.toLowerCase() === 'mefs') {
-    // this is a levante external task
-    const ageInMonths = getAgeData(props.userData.birthMonth, props.userData.birthYear).ageMonths;
-    url += `participantID=${props.userData.id}&participantAgeInMonths=${ageInMonths}&lng=${locale.value}`;
-    window.open(url, '_blank').focus();
-    await authStore.completeAssessment(selectedAdmin.value.id, game.taskId);
-  } else {
-    // This is for no external tasks
-    url += `&participant=${props.userData.assessmentPid}${
-      (props?.userData?.schools?.current ?? []).length
-        ? '&schoolId=' + props.userData.schools.current.join('“%2C”')
-        : ''
-    }${
-      (props.userData?.classes?.current ?? []).length ? '&classId=' + props.userData.classes.current.join('“%2C”') : ''
-    }`;
-
-    await authStore.completeAssessment(selectedAdmin.value.id, game.taskId);
-    window.location.href = url;
-  }
-}
-
 const externalLinksByTask = computed(() => {
   const externalLinks = {};
   props.games.forEach((game) => {
