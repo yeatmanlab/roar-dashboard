@@ -15,7 +15,7 @@
         </div>
       </div>
     </div>
-    <div class="p-2 mt-3 flex justify-content-between align-items-center">
+    <div class="p-3 mt-3 flex justify-content-between align-items-center">
       <h3 class="m-0 text-md font-semibold text-gray-500">Assignments</h3>
       <PvButton
         outlined
@@ -28,7 +28,7 @@
       />
     </div>
 
-    <div class="flex flex-column gap-2 mb-3 p-2">
+    <div class="flex flex-column gap-2 mb-3 p-3">
       <div class="flex justify-content-between align-items-center">
         <div class="text-sm text-gray-400">Sort by</div>
         <PvSelect v-model="sortKey" :options="sortOptions" option-label="label" class="w-auto" @change="onSortChange" />
