@@ -18,7 +18,7 @@ import { MULTIPLE_USER_ASSIGNMENTS_QUERY_KEY } from '@/constants/queryKeys';
 const useMultipleUserAssignmentsQuery = (userIds = [], orgType = null, orgIds = null, queryOptions = undefined) => {
   const authStore = useAuthStore();
   const { userData } = storeToRefs(authStore);
-  const isSuperAdmin = authStore?.userClaims?.claims?.super_admin;
+  const isSuperAdmin = authStore?.userClaims?.claims?.super_admin ?? false;
   const isTestUser = userData.value?.testData ?? false;
   const isExternalCallWithoutSuperAdmin = !isSuperAdmin;
   const resolvedUserIds = toValue(userIds);
