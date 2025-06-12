@@ -24,9 +24,13 @@ const useMultipleUserAssignmentsQuery = (userIds = [], orgType = null, orgIds = 
   const resolvedUserIds = toValue(userIds);
 
   // We need to have the orgId and orgType for a non-superadmin call
-  const queryConditions = [
-    () => toValue(userIds).length > 0 && (isExternalCallWithoutSuperAdmin ? orgType && orgIds : true),
-  ];
+const hasUserIds = toValue(userIds).length > 0;
+const needsOrgCheck = isExternalCallWithoutSuperAdmin;
+const hasOrgDetails = orgType && orgIds;
+
+const queryConditions = [
+  () => hasUserIds && (needsOrgCheck ? hasOrgDetails : true),
+];
   const { isQueryEnabled, options } = computeQueryOverrides(queryConditions, queryOptions);
 
   // Create queries array as a computed to handle reactive userIds
