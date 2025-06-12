@@ -38,7 +38,7 @@
       :class="{
         'lg:grid-cols-2': Object.keys(childrenAssignments).length === 2,
         'lg:grid-cols-2 2xl:grid-cols-3': Object.keys(childrenAssignments).length === 3,
-        'lg:grid-cols-4': Object.keys(childrenAssignments).length === 4,
+        'lg:grid-cols-4': Object.keys(childrenAssignments).length >= 4,
       }"
     >
       <template v-for="(assignments, userId) in childrenAssignments" :key="userId">
