@@ -141,11 +141,6 @@ const props = defineProps({
     required: false,
     default: null,
   },
-  administrationId: {
-    type: String,
-    required: false,
-    default: null,
-  },
 });
 
 const isLevante = import.meta.env.MODE === 'LEVANTE';
@@ -170,12 +165,6 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
 onMounted(async () => {
   if (roarfirekit.value.restConfig?.()) {
     init();
-    if (props.administrationId && userAssignments.value?.length) {
-      const administration = userAssignments.value.find((admin) => admin.id === props.administrationId);
-      if (administration) {
-        selectedAdmin.value = administration;
-      }
-    }
   }
 });
 
@@ -482,16 +471,16 @@ watch(
       await checkConsent();
     }
 
-    if (!selectedAdmin.value) return;
+    const selectedAdminId = selectedAdmin.value?.id;
 
     const allAdminIds = userAssignments.value?.map((administration) => administration.id) ?? [];
 
-    // Verify that the selected administration is in the list of all assigned administrations
-    if (allAdminIds.includes(selectedAdmin.value.id)) {
+    // Verify that we have a selected administration and it is in the list of all assigned administrations.
+    if (selectedAdminId && allAdminIds.includes(selectedAdminId)) {
       // Ensure that the selected administration is a fresh instance of the administration. Whilst this seems redundant,
       // this is apparently relevant in the case that the game store does not flush properly.
       selectedAdmin.value = sortedUserAdministrations.value.find(
-        (administration) => administration.id === selectedAdmin.value.id,
+        (administration) => administration.id === selectedAdminId,
       );
 
       return;
