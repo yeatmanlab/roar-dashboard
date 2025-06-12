@@ -15,8 +15,17 @@
         </div>
       </div>
     </div>
-    <div class="p-2 mt-3">
+    <div class="p-2 mt-3 flex justify-content-between align-items-center">
       <h3 class="m-0 text-md font-semibold text-gray-500">Assignments</h3>
+      <PvButton
+        outlined
+        class="text-black border-1 border-round h-2rem p-2"
+        :label="!expanded ? 'Expand All' : 'Collapse All'"
+        :icon="!expanded ? 'pi pi-plus ml-2' : 'pi pi-minus ml-2'"
+        icon-pos="right"
+        size="small"
+        @click="setExpand"
+      />
     </div>
 
     <div class="flex flex-column gap-2 mb-3 p-2">
@@ -41,7 +50,12 @@
             :key="assignment.id"
             class="border-1 border-gray-200 rounded-lg overflow-hidden"
           >
-            <PvAccordion>
+            <PvAccordion
+              :multiple="true"
+              :active-index="activeIndices"
+              collapse-icon="pi pi-minus"
+              expand-icon="pi pi-plus"
+            >
               <PvAccordionTab>
                 <template #header>
                   <div class="flex justify-between w-full">
@@ -146,9 +160,20 @@ const sortOptions = [
 const sortKey = ref(sortOptions[0]);
 const sortOrder = ref(1);
 const sortField = ref('name');
+const expanded = ref(false);
+
+const activeIndices = computed(() => {
+  if (!expanded.value) return [];
+  return sortedAssignments.value?.map((_, index) => index) || [];
+});
 
 const onSortChange = (event) => {
   sortField.value = event.value.value;
+  sortOrder.value = 1;
+};
+
+const setExpand = () => {
+  expanded.value = !expanded.value;
 };
 
 const sortedAssignments = computed(() => {

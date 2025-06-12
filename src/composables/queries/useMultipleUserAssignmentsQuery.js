@@ -21,20 +21,14 @@ const useMultipleUserAssignmentsQuery = (userIds = [], orgType = null, orgIds = 
   const isSuperAdmin = authStore?.userClaims?.claims?.super_admin ?? false;
   const isTestUser = userData.value?.testData ?? false;
   const resolvedUserIds = toValue(userIds);
-
-  // Break down conditions for better readability
-  const hasUserIds = toValue(userIds).length > 0;
-  const requiresOrgValidation = !isSuperAdmin;
-  const hasOrgDetails = orgType && orgIds;
+  const isExternalCallWithoutSuperAdmin = !isSuperAdmin;
 
   // We need to have the orgId and orgType for a non-superadmin call
-const hasUserIds = toValue(userIds).length > 0;
-const needsOrgCheck = isExternalCallWithoutSuperAdmin;
-const hasOrgDetails = orgType && orgIds;
+  const hasUserIds = toValue(userIds).length > 0;
+  const needsOrgCheck = isExternalCallWithoutSuperAdmin;
+  const hasOrgDetails = orgType && orgIds;
 
-const queryConditions = [
-  () => hasUserIds && (needsOrgCheck ? hasOrgDetails : true),
-];
+  const queryConditions = [() => hasUserIds && (needsOrgCheck ? hasOrgDetails : true)];
   const { isQueryEnabled, options } = computeQueryOverrides(queryConditions, queryOptions);
 
   // Create queries array as a computed to handle reactive userIds
