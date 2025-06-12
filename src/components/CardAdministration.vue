@@ -10,7 +10,7 @@
             {{ title }}
           </h2>
         </div>
-        <div class="flex justify-content-end w-3 pl-5 pb-5 ml-2 mb-6">
+        <div class="flex justify-content-end w-3 pl-5 pb-5 ml-2 mt-2">
           <PvSpeedDial
             :model="speedDialItems"
             direction="left"
@@ -538,6 +538,7 @@ onMounted((): void => {
 .p-treetable-header-cell {
   display: none;
 }
+
 .p-confirm-popup .p-confirm-popup-footer button {
   background-color: var(--primary-color);
   border: none;
@@ -547,6 +548,7 @@ onMounted((): void => {
   padding-right: 0.5rem;
   color: white;
 }
+
 .p-confirm-popup .p-confirm-popup-footer button:hover {
   background-color: var(--red-900);
 }
@@ -569,9 +571,14 @@ onMounted((): void => {
   flex-direction: row;
   gap: 2rem;
   padding: 1rem;
+  overflow-y: hidden;
+  overflow-x: scroll;
 
   .card-admin-chart {
     width: 12ch;
+    @media (max-width: 768px) {
+      display: none;
+    }
   }
 
   .card-admin-body {
@@ -638,5 +645,10 @@ onMounted((): void => {
 
 .h2-card-admin-title {
   float: left;
+
+  @media (max-width: 768px) {
+    font-size: 1.1rem;
+    font-weight: bold;
+  }
 }
 </style>

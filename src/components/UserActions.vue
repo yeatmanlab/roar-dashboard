@@ -121,7 +121,16 @@ const handleProfileChange = (e: DropdownChangeEvent): void => {
   .options-help {
     position: absolute;
     right: 5.4rem;
+    @media (max-width: 768px) {
+      right: 3rem;
+    }
   }
+
+    @media (max-width: 768px) {
+      .p-select-dropdown {
+        display: none
+      }
+    }
 }
 .nav-user-wrapper {
   display: flex;

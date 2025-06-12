@@ -71,13 +71,14 @@
     <p>
       Below is an example of what your CSV/spreadsheet should look like. Only the required columns will be processed.
     </p>
-
-    <img
-      id="add-users-example-image"
-      :src="LEVANTE_BUCKET_URL + '/add_users_example.png'"
-      alt="Add Users CSV Example "
-      style="width: 100%; max-width: 1400px; height: auto"
-    />
+    <div class="csv-example-image-container">
+      <img
+        id="add-users-example-image"
+        :src="LEVANTE_BUCKET_URL + '/add_users_example.png'"
+        alt="Add Users CSV Example "
+        class="csv-example-image"
+      />
+  </div>
   </PvPanel>
 </template>
 
@@ -226,6 +227,22 @@ const downloadTemplate = () => {
       font-weight: bold;
       flex-shrink: 0;
     }
+  }
+}
+
+.csv-example-image-container {
+  display: flex;
+  justify-content: center;
+  overflow-x: auto;
+  position: relative;
+  height: 123px;
+  
+  .csv-example-image {
+    width: auto;
+    max-height: 108px;
+    display: block;
+    position: absolute;
+    left: 0;
   }
 }
 </style>
