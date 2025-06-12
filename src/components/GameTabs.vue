@@ -54,7 +54,7 @@
             >
           </template>
           <div class="roar-tabview-game flex flex-row p-5 surface-100 w-full">
-            <div class="roar-game-content flex flex-column" style="width: 70%" @click="routeExternalTask(game)">
+            <div class="roar-game-content flex flex-column" style="width: 70%">
               <div class="roar-game-title font-bold">{{ getTaskName(game.taskId, game.taskData.name) }}</div>
               <div class="roar-game-description mr-2">
                 <p>{{ getTaskDescription(game.taskId, game.taskData.description) }}</p>
@@ -324,9 +324,9 @@ const { selectedAdmin } = storeToRefs(gameStore);
 async function routeExternalTask(game) {
   let url;
 
-  if (!allGamesComplete.value && game.taskData?.variantURL) {
+  if (game.taskData?.variantURL) {
     url = game.taskData.variantURL;
-  } else if (!allGamesComplete.value && game.taskData?.taskURL) {
+  } else if (game.taskData?.taskURL) {
     url = game.taskData.taskURL;
   } else {
     return;
@@ -362,6 +362,54 @@ async function routeExternalTask(game) {
     await authStore.completeAssessment(selectedAdmin.value.id, game.taskId);
     window.location.href = url;
   }
+}
+
+const externalLinksByTask = computed(() => {
+  const externalLinks = {};
+  props.games.forEach((game) => {
+    let url;
+
+    // Set the URL based on variantURL or taskURL
+    if (game.taskData?.variantURL) {
+      url = game.taskData.variantURL;
+    } else if (game.taskData?.taskURL) {
+      url = game.taskData.taskURL;
+    } else {
+      // No URL found, this is not a valid external task.
+      externalLinks[game.taskId] = null;
+      return;
+    }
+
+    // Additional logic for specific tasks
+    if (game.taskId.includes('qualtrics')) {
+      url += `/?participantID=${props?.userData?.assessmentPid}`;
+    } else if (game.taskId.includes('mefs')) {
+      const ageInMonths = getAgeData(props.userData.birthMonth, props.userData.birthYear).ageMonths;
+      url += `participantID=${props.userData.id}&participantAgeInMonths=${ageInMonths}&lng=${locale.value}`;
+    } else {
+      // N.B. The following comment was created in commit
+      // This is for no external tasks
+      url += `&participant=${props.userData.assessmentPid}${
+        (props?.userData?.schools?.current ?? []).length
+          ? '&schoolId=' + props.userData.schools.current.join('“%2C”')
+          : ''
+      }${
+        (props.userData?.classes?.current ?? []).length
+          ? '&classId=' + props.userData.classes.current.join('“%2C”')
+          : ''
+      }`;
+    }
+
+    externalLinks[game.taskId] = url;
+  });
+
+  return externalLinks;
+});
+
+async function onExternalTaskClick(game) {
+  // console.log('onExternalTaskClick', game);
+  // Mark the assessment as complete immediately if external roar task and clicked the button
+  await authStore.completeAssessment(selectedAdmin.value.id, game.taskId);
 }
 
 const returnVideoOptions = (videoURL) => {
