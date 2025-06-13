@@ -44,7 +44,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watchEffect } from 'vue';
+import { ref } from 'vue';
 import useSignOutMutation from '@/composables/mutations/useSignOutMutation';
 import PvButton from 'primevue/button';
 import PvSelect from 'primevue/select';
@@ -72,15 +72,6 @@ const { mutate: signOut } = useSignOutMutation() as any;
 const feedbackButton = ref<HTMLButtonElement | null>(null);
 
 const props = defineProps<Props>();
-
-watchEffect((): void => {
-  const feedbackElement = document.getElementById('sentry-feedback');
-  if (feedbackElement) {
-    if (!props.isBasicView) {
-      feedbackElement.style.setProperty('display', 'none');
-    }
-  }
-});
 
 const helpOptions: DropdownOption[] = [
   { label: 'Researcher Documentation', value: 'researcherDocumentation' },
