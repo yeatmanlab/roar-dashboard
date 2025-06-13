@@ -179,7 +179,7 @@
           <PvAccordionTab :header="$t('scoreReports.nextStepsTabHeader')">
             <i18n-t keypath="scoreReports.nextSteps" tag="div" class="text-lg">
               <template #link>
-                <a :href="NextSteps" class="hover:text-red-700" data-html2canvas-ignore="true" target="_blank"
+                <a href="/roar-next-steps.pdf" class="hover:text-red-700" data-html2canvas-ignore="true" target="_blank"
                   >click here.</a
                 >
               </template>
@@ -207,7 +207,6 @@ import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQue
 import { taskDisplayNames, addElementToPdf } from '@/helpers/reports';
 import IndividualScoreReportTask from '@/components/reports/IndividualScoreReportTask.vue'; // @TODO: Not used?
 import AppSpinner from '@/components/AppSpinner.vue';
-import NextSteps from '@/assets/NextSteps.pdf';
 import { getGradeWithSuffix } from '@/helpers/reports.js';
 
 const authStore = useAuthStore();
@@ -300,7 +299,7 @@ const exportToPdf = async () => {
   yCounter += 25;
   doc.setTextColor(0, 0, 255);
   doc.textWithLink('Next Steps', 15, yCounter, {
-    url: 'https://roar.education/assets/NextSteps-a446d6a7.pdf',
+    url: 'https://roar.education/roar-next-steps.pdf',
     color: 'blue',
   });
 
