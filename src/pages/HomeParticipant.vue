@@ -136,7 +136,11 @@ const consentType = ref('');
 const consentParams = ref({});
 
 const props = defineProps({
-  launchId: { type: String, required: false, default: null },
+  launchId: {
+    type: String,
+    required: false,
+    default: null,
+  },
 });
 
 const isLevante = import.meta.env.MODE === 'LEVANTE';
@@ -159,7 +163,9 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
 });
 
 onMounted(async () => {
-  if (roarfirekit.value.restConfig?.()) init();
+  if (roarfirekit.value.restConfig?.()) {
+    init();
+  }
 });
 
 const getOptionLabel = computed(() => {
@@ -466,6 +472,7 @@ watch(
     }
 
     const selectedAdminId = selectedAdmin.value?.id;
+
     const allAdminIds = userAssignments.value?.map((administration) => administration.id) ?? [];
 
     // Verify that we have a selected administration and it is in the list of all assigned administrations.
