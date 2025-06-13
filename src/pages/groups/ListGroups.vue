@@ -9,6 +9,13 @@
             <PvButton class="bg-primary text-white border-none p-2 ml-auto" data-testid="add-group-btn" @click="newGroup"> Add Group </PvButton>
             <PvButton class="bg-primary text-white border-none p-2 ml-auto" data-testid="add-users-btn" @click="addUsers"> Add Users </PvButton>
           </div>
+          <div class="flex align-items-center">
+            <span class="p-input-icon-left p-input-icon-right">
+              <i class="pi pi-search" />
+              <PvInputText v-model="searchQuery" placeholder="Search groups" class="p-inputtext-sm" />
+              <i v-if="searchQuery" class="pi pi-times cursor-pointer" @click="clearSearch" />
+            </span>
+          </div>
         </div>
       </div>
       <PvTabView v-if="claimsLoaded" v-model:active-index="activeIndex" lazy class="mb-7">
@@ -51,7 +58,7 @@
           <RoarDataTable
             :key="tableKey"
             :columns="tableColumns"
-            :data="tableData ?? []"
+            :data="filteredTableData ?? []"
             sortable
             :loading="isLoading || isFetching"
             :allow-filtering="false"
@@ -162,6 +169,7 @@ import PvToast from 'primevue/toast';
 import _get from 'lodash/get';
 import _head from 'lodash/head';
 import _kebabCase from 'lodash/kebabCase';
+import _debounce from 'lodash/debounce';
 import { useAuthStore } from '@/store/auth';
 import { orgFetchAll } from '@/helpers/query/orgs';
 import { fetchUsersByOrg, countUsersByOrg } from '@/helpers/query/users';
@@ -190,6 +198,21 @@ const isEditModalEnabled = ref(false);
 const currentEditOrgId = ref(null);
 const localOrgData = ref(null);
 const isSubmitting = ref(false);
+const searchQuery = ref('');
+const debouncedSearchQuery = ref('');
+
+const updateDebouncedSearch = _debounce((value) => {
+  debouncedSearchQuery.value = value;
+}, 300);
+
+watch(searchQuery, (newValue) => {
+  updateDebouncedSearch(newValue);
+});
+
+const clearSearch = () => {
+  searchQuery.value = '';
+  debouncedSearchQuery.value = '';
+};
 
 const addUsers = () => {
   router.push({ name: 'Add Users' });
@@ -511,5 +534,26 @@ watch(allSchools, (newValue) => {
 const tableKey = ref(0);
 watch([selectedDistrict, selectedSchool], () => {
   tableKey.value += 1;
+});
+
+const filteredTableData = computed(() => {
+  if (!tableData.value || !debouncedSearchQuery.value) {
+    return tableData.value;
+  }
+  
+  const query = debouncedSearchQuery.value.toLowerCase().trim();
+  return tableData.value.filter(item => {
+    // Filter by name
+    if (item.name && item.name.toLowerCase().includes(query)) {
+      return true;
+    }
+    
+    // Filter by tags if they exist
+    if (item.tags && Array.isArray(item.tags)) {
+      return item.tags.some(tag => tag.toLowerCase().includes(query));
+    }
+    
+    return false;
+  });
 });
 </script>
