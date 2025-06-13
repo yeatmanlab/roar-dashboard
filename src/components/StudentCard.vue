@@ -76,7 +76,7 @@
                     <PvButton
                       label="Play Games"
                       data-cy="play-assessments-btn"
-                      :on-click="() => setSelectedAdminAndLaunchStudent(assignment)"
+                      @click="() => setSelectedAdminAndLaunchStudent(assignment)"
                     />
                     <router-link
                       :to="{
