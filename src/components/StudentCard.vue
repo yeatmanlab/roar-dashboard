@@ -178,14 +178,10 @@ const setExpand = () => {
 
 const sortedAssignments = computed(() => {
   // For dateOpened, we want ascending order (earliest to latest) when sortOrder is 1
-  const order =
-    sortField.value === 'dateOpened'
-      ? sortOrder.value === 1
-        ? 'asc'
-        : 'desc'
-      : sortOrder.value === 1
-      ? 'desc'
-      : 'asc';
+  const isAscending = sortOrder.value === 1;
+  const isDateOpened = sortField.value === 'dateOpened';
+  const order = (isDateOpened === isAscending) ? 'asc' : 'desc';
+
   return _orderBy(Object.values(props.assignments), [sortField.value], [order]);
 });
 
