@@ -380,7 +380,7 @@ const externalLinksByTask = computed(() => {
       const ageInMonths = getAgeData(props.userData.birthMonth, props.userData.birthYear).ageMonths;
       url += `participantID=${props.userData.id}&participantAgeInMonths=${ageInMonths}&lng=${locale.value}`;
     } else {
-      // N.B. The following comment was created in commit
+      // N.B. The following comment was created in commit 4288fba
       // This is for no external tasks
       url += `&participant=${props.userData.assessmentPid}${
         (props?.userData?.schools?.current ?? []).length
