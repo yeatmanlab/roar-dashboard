@@ -1,15 +1,15 @@
 <template>
   <PvToast />
-  <main class="container main">
+  <main class="container main w-full">
     <section class="main-body">
       <div class="flex flex-column mb-5">
-        <div class="flex flex-column align-items-start mb-2 md:flex-row ">
-          <div class="flex align-items-center gap-3 mb-2 md:mb-0">
+        <div class="flex flex-column align-items-start mb-2 md:flex-row w-full justify-content-between">
+          <div class="flex align-items-center gap-3 mb-4 md:mb-0">
             <div class="admin-page-header mr-4">Groups</div>
             <PvButton class="bg-primary text-white border-none p-2 ml-auto" data-testid="add-group-btn" @click="newGroup"> Add Group </PvButton>
             <PvButton class="bg-primary text-white border-none p-2 ml-auto" data-testid="add-users-btn" @click="addUsers"> Add Users </PvButton>
           </div>
-          <div class="flex align-items-center">
+          <div class="flex align-items-center justify-content-end w-full md:w-auto">
             <span class="p-input-icon-left p-input-icon-right">
               <i v-if="!searchQuery" class="pi pi-search" />
               <i v-if="searchQuery" class="pi pi-times cursor-pointer" @click="clearSearch" />
