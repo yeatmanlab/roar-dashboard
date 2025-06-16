@@ -91,7 +91,7 @@
                         {{ $t('gameTabs.surveyProgressSpecificParentYear') }}:
                         {{ surveyStore.specificSurveyRelationData[i]?.birthYear }}
                       </span>
-                      <PvProgressBar :value="getSpecificSurveyProgress(i)" :class="getSpecificSurveyProgressClass" />
+                      <PvProgressBar :value="getSpecificSurveyProgress(i)" :class="getSpecificSurveyProgressClass(i)" />
                     </div>
                   </div>
 
@@ -105,7 +105,7 @@
                         <b>Classroom - </b>
                         {{ surveyStore.specificSurveyRelationData[i]?.name }}
                       </span>
-                      <PvProgressBar :value="getSpecificSurveyProgress(i)" :class="getSpecificSurveyProgressClass" />
+                      <PvProgressBar :value="getSpecificSurveyProgress(i)" :class="getSpecificSurveyProgressClass(i)" />
                     </div>
                   </div>
                 </div>
@@ -264,21 +264,11 @@ const getGeneralSurveyProgress = computed((): number => {
   return Math.round(((surveyStore.survey.currentPageNo - 1) / (surveyStore.numGeneralPages - 1)) * 100);
 });
 
-const getGeneralSurveyProgressClass = computed(() => {
+const getGeneralSurveyProgressClass = computed((): string => {
   if (getGeneralSurveyProgress.value > 0 && getGeneralSurveyProgress.value < 100) {
     return 'p-progressbar--started';
   }
   if (getGeneralSurveyProgress.value === 100) {
-    return 'p-progressbar--completed';
-  }
-  return 'p-progressbar--empty';
-});
-
-const getSpecificSurveyProgressClass = computed(() => {
-  if (getSpecificSurveyProgress.value > 0 && getSpecificSurveyProgress.value < 100) {
-    return 'p-progressbar--started';
-  }
-  if (getSpecificSurveyProgress.value === 100) {
     return 'p-progressbar--completed';
   }
   return 'p-progressbar--empty';
@@ -318,6 +308,17 @@ const getSpecificSurveyProgress = computed(() => (loopIndex: number): number => 
   const totalPages = surveyStore.numSpecificPages || 1;
 
   return Math.round((currentPage / totalPages) * 100);
+});
+
+const getSpecificSurveyProgressClass = computed(() => (loopIndex: number): string => {
+  const value = getSpecificSurveyProgress.value(loopIndex)
+  if (value > 0 && value < 100) {
+    return 'p-progressbar--started';
+  }
+  if (value === 100) {
+    return 'p-progressbar--completed';
+  }
+  return 'p-progressbar--empty';
 });
 
 const { t, locale } = useI18n();
