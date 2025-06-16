@@ -3,17 +3,17 @@
   <main class="container main">
     <section class="main-body">
       <div class="flex flex-column mb-5">
-        <div class="flex justify-content-between mb-2">
-          <div class="flex align-items-center gap-3">
+        <div class="flex flex-column align-items-start mb-2 md:flex-row ">
+          <div class="flex align-items-center gap-3 mb-2 md:mb-0">
             <div class="admin-page-header mr-4">Groups</div>
             <PvButton class="bg-primary text-white border-none p-2 ml-auto" data-testid="add-group-btn" @click="newGroup"> Add Group </PvButton>
             <PvButton class="bg-primary text-white border-none p-2 ml-auto" data-testid="add-users-btn" @click="addUsers"> Add Users </PvButton>
           </div>
           <div class="flex align-items-center">
             <span class="p-input-icon-left p-input-icon-right">
-              <i class="pi pi-search" />
-              <PvInputText v-model="searchQuery" placeholder="Search groups" class="p-inputtext-sm" />
+              <i v-if="!searchQuery" class="pi pi-search" />
               <i v-if="searchQuery" class="pi pi-times cursor-pointer" @click="clearSearch" />
+              <PvInputText v-model="searchQuery" placeholder="Search groups" class="ml-2 p-inputtext-sm" />
             </span>
           </div>
         </div>
