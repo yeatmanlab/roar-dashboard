@@ -1,13 +1,20 @@
 <template>
   <PvToast />
-  <main class="container main">
+  <main class="container main w-full">
     <section class="main-body">
       <div class="flex flex-column mb-5">
-        <div class="flex justify-content-between mb-2">
-          <div class="flex align-items-center gap-3">
+        <div class="flex flex-column align-items-start mb-2 md:flex-row w-full justify-content-between">
+          <div class="flex align-items-center gap-3 mb-4 md:mb-0">
             <div class="admin-page-header mr-4">Groups</div>
             <PvButton class="bg-primary text-white border-none p-2 ml-auto" data-testid="add-group-btn" @click="newGroup"> Add Group </PvButton>
             <PvButton class="bg-primary text-white border-none p-2 ml-auto" data-testid="add-users-btn" @click="addUsers"> Add Users </PvButton>
+          </div>
+          <div class="flex align-items-center justify-content-end w-full md:w-auto">
+            <span class="p-input-icon-left p-input-icon-right">
+              <i v-if="!searchQuery" class="pi pi-search" />
+              <i v-if="searchQuery" class="pi pi-times cursor-pointer" @click="clearSearch" />
+              <PvInputText v-model="searchQuery" placeholder="Search groups" class="ml-2 p-inputtext-sm" />
+            </span>
           </div>
         </div>
       </div>
@@ -51,7 +58,7 @@
           <RoarDataTable
             :key="tableKey"
             :columns="tableColumns"
-            :data="tableData ?? []"
+            :data="filteredTableData ?? []"
             sortable
             :loading="isLoading || isFetching"
             :allow-filtering="false"
@@ -162,6 +169,7 @@ import PvToast from 'primevue/toast';
 import _get from 'lodash/get';
 import _head from 'lodash/head';
 import _kebabCase from 'lodash/kebabCase';
+import _debounce from 'lodash/debounce';
 import { useAuthStore } from '@/store/auth';
 import { orgFetchAll } from '@/helpers/query/orgs';
 import { fetchUsersByOrg, countUsersByOrg } from '@/helpers/query/users';
@@ -190,6 +198,21 @@ const isEditModalEnabled = ref(false);
 const currentEditOrgId = ref(null);
 const localOrgData = ref(null);
 const isSubmitting = ref(false);
+const searchQuery = ref('');
+const sanitizedSearchString = ref('');
+
+const updateSanitizedSearch = _debounce((value) => {
+  sanitizedSearchString.value = value;
+}, 300);
+
+watch(searchQuery, (newValue) => {
+  updateSanitizedSearch(newValue);
+});
+
+const clearSearch = () => {
+  searchQuery.value = '';
+  sanitizedSearchString.value = '';
+};
 
 const addUsers = () => {
   router.push({ name: 'Add Users' });
@@ -511,5 +534,26 @@ watch(allSchools, (newValue) => {
 const tableKey = ref(0);
 watch([selectedDistrict, selectedSchool], () => {
   tableKey.value += 1;
+});
+
+const filteredTableData = computed(() => {
+  if (!tableData.value || !sanitizedSearchString.value) {
+    return tableData.value;
+  }
+  
+  const query = sanitizedSearchString.value.toLowerCase().trim();
+  return tableData.value.filter(item => {
+    // Filter by name
+    if (item.name && item.name.toLowerCase().includes(query)) {
+      return true;
+    }
+    
+    // Filter by tags if they exist
+    if (item.tags && Array.isArray(item.tags)) {
+      return item.tags.some(tag => tag.toLowerCase().includes(query));
+    }
+    
+    return false;
+  });
 });
 </script>
