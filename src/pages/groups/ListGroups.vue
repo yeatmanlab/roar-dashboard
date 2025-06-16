@@ -201,12 +201,12 @@ const isSubmitting = ref(false);
 const searchQuery = ref('');
 const sanitizedSearchString = ref('');
 
-const updateDebouncedSearch = _debounce((value) => {
+const updateSanitizedSearch = _debounce((value) => {
   sanitizedSearchString.value = value;
 }, 300);
 
 watch(searchQuery, (newValue) => {
-  updateDebouncedSearch(newValue);
+  updateSanitizedSearch(newValue);
 });
 
 const clearSearch = () => {
