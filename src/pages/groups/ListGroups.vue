@@ -199,10 +199,10 @@ const currentEditOrgId = ref(null);
 const localOrgData = ref(null);
 const isSubmitting = ref(false);
 const searchQuery = ref('');
-const debouncedSearchQuery = ref('');
+const sanitizedSearchString = ref('');
 
 const updateDebouncedSearch = _debounce((value) => {
-  debouncedSearchQuery.value = value;
+  sanitizedSearchString.value = value;
 }, 300);
 
 watch(searchQuery, (newValue) => {
@@ -211,7 +211,7 @@ watch(searchQuery, (newValue) => {
 
 const clearSearch = () => {
   searchQuery.value = '';
-  debouncedSearchQuery.value = '';
+  sanitizedSearchString.value = '';
 };
 
 const addUsers = () => {
@@ -537,11 +537,11 @@ watch([selectedDistrict, selectedSchool], () => {
 });
 
 const filteredTableData = computed(() => {
-  if (!tableData.value || !debouncedSearchQuery.value) {
+  if (!tableData.value || !sanitizedSearchString.value) {
     return tableData.value;
   }
   
-  const query = debouncedSearchQuery.value.toLowerCase().trim();
+  const query = sanitizedSearchString.value.toLowerCase().trim();
   return tableData.value.filter(item => {
     // Filter by name
     if (item.name && item.name.toLowerCase().includes(query)) {
