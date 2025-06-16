@@ -36,14 +36,43 @@
       v-else
       class="grid flex-wrap grid-cols-1 gap-4 w-full"
       :class="{
-        'lg:grid-cols-2': Object.keys(childrenAssignments).length === 2,
-        'lg:grid-cols-2 2xl:grid-cols-3': Object.keys(childrenAssignments).length === 3,
+        'lg:grid-cols-2': Object.keys(childrenAssignments).length <= 2,
+        'lg:grid-cols-3': Object.keys(childrenAssignments).length === 3,
         'lg:grid-cols-4': Object.keys(childrenAssignments).length >= 4,
       }"
     >
       <template v-for="(assignments, userId) in childrenAssignments" :key="userId">
         <StudentCard :assignments="assignments" :user-id="userId" :org-type="orgType" :org-id="orgId" />
       </template>
+      <article class="flex overflow-hidden rounded border-gray-200 flex-column border-1 mx-auto w-full max-w-3xl">
+        <div class="flex gap-2 p-3 bg-gray-100 flex-column">
+          <h2 class="m-0 text-xl font-bold text-center">
+            Enroll New Student
+            <div class="text-sm font-light">Add a student to your family account</div>
+          </h2>
+        </div>
+        <div class="flex justify-content-center p-4">
+          <PvButton
+            label="Add Student"
+            icon="pi pi-plus"
+            severity="primary"
+            size="small"
+            data-cy="add-student-btn"
+            @click="showEnrollmentModal"
+          />
+        </div>
+      </article>
+
+      <PvDialog
+        v-model:visible="isEnrollmentModalVisible"
+        modal
+        :style="{ width: '80vw', maxWidth: '1200px' }"
+        header="Enroll New Student"
+        :closable="true"
+        :draggable="false"
+      >
+        <RegisterChildren @submit="handleStudentEnrollment" />
+      </PvDialog>
     </div>
   </div>
 </template>
@@ -52,10 +81,26 @@
 import AppSpinner from '@/components/AppSpinner.vue';
 import StudentCard from '@/components/StudentCard.vue';
 import PvMessage from 'primevue/message';
+import PvButton from 'primevue/button';
+import PvDialog from 'primevue/dialog';
+import RegisterChildren from '@/components/auth/RegisterChildren.vue';
+import { ref } from 'vue';
 
 defineOptions({
   name: 'HomeParentStudentView',
 });
+
+const isEnrollmentModalVisible = ref(false);
+
+function showEnrollmentModal() {
+  isEnrollmentModalVisible.value = true;
+}
+
+function handleStudentEnrollment(studentData) {
+  // TODO: Handle the student enrollment data
+  console.log('Student enrollment data:', studentData);
+  isEnrollmentModalVisible.value = false;
+}
 
 defineProps({
   isLoading: {
