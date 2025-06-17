@@ -50,11 +50,14 @@
                 <div
                   v-for="element in searchResults"
                   :id="element.id"
+                  :data-task-id="element?.task?.id ?? element.id"
                   :key="element.id"
-                  :data-task-id="element.task.id"
                   style="cursor: grab"
                 >
-                  <VariantCard :variant="element" @select="selectCard" />
+                  <VariantCard v-if="element.type === 'variant'" :variant="element" @select="selectCard" />
+                  <div v-else-if="element.type === 'group'">
+                    {{ element }}
+                  </div>
                 </div>
               </transition-group>
             </VueDraggableNext>
@@ -84,11 +87,14 @@
               :move="handleCardMove"
             >
               <transition-group>
+                <div v-for="group in currentGroups" :key="group.id">
+                  <VariantGroup :group="group" />
+                </div>
                 <div
                   v-for="element in currentVariants"
                   :id="element.id"
                   :key="element.id"
-                  :data-task-id="element.task.id"
+                  :data-task-id="element?.task?.id ?? element.id"
                   style="cursor: grab"
                 >
                   <VariantCard :variant="element" :update-variant="updateVariant" @select="selectCard" />
@@ -124,10 +130,11 @@
                 v-for="element in selectedVariants"
                 :id="element.id"
                 :key="element.id"
-                :data-task-id="element.task.id"
+                :data-task-id="element?.task?.id ?? element.id"
                 style="cursor: grab"
               >
                 <VariantCard
+                  v-if="element.type === CARD_TYPES.VARIANT"
                   :variant="element"
                   has-controls
                   :update-variant="updateVariant"
@@ -136,6 +143,7 @@
                   @move-up="moveCardUp"
                   @move-down="moveCardDown"
                 />
+                <div v-if="element.type === CARD_TYPES.GROUP">{{ element }}</div>
               </div>
             </transition-group>
           </VueDraggableNext>
@@ -160,7 +168,7 @@ import PvInputSwitch from 'primevue/inputswitch';
 import PvInputText from 'primevue/inputtext';
 import PvPanel from 'primevue/panel';
 import PvScrollPanel from 'primevue/scrollpanel';
-import VariantCard from './VariantCard.vue';
+import VariantCard from '../VariantCard';
 import PvIconField from 'primevue/iconfield';
 import PvInputIcon from 'primevue/inputicon';
 
@@ -175,11 +183,24 @@ const props = defineProps({
     type: Array,
     default: () => [],
   },
+  allTaskGroups: {
+    type: Object,
+    required: true,
+  },
+  inputTaskGroups: {
+    type: Array,
+    default: () => [],
+  },
   preExistingAssessmentInfo: {
     type: Array,
     default: () => [],
   },
 });
+
+const CARD_TYPES = {
+  VARIANT: 'variant',
+  GROUP: 'group',
+};
 
 const selectedVariants = ref([]);
 
@@ -242,6 +263,10 @@ const currentVariants = computed(() => {
   return props.allVariants[currentTask.value];
 });
 
+const currentGroups = computed(() => {
+  return props.allTaskGroups[currentTask.value];
+});
+
 // Pane handlers
 const tasksPaneOpen = ref(true);
 
@@ -253,6 +278,19 @@ const isSearching = ref(false);
 const searchCards = (term) => {
   isSearching.value = true;
   searchResults.value = [];
+  const matchingGroups = _filter(props.allTaskGroups, (group) => {
+    if (_toLower(group.name).includes(_toLower(term))) return true;
+    else return false;
+  });
+  searchResults.value.push(
+    ...matchingGroups.map((group) => {
+      return {
+        type: 'group',
+        id: group.id,
+        ...group,
+      };
+    }),
+  );
   Object.values(props.allVariants).forEach((variants) => {
     const matchingVariants = _filter(variants, (variant) => {
       if (
@@ -264,7 +302,15 @@ const searchCards = (term) => {
         return true;
       else return false;
     });
-    searchResults.value.push(...matchingVariants);
+    searchResults.value.push(
+      ...matchingVariants.map((variant) => {
+        return {
+          type: 'variant',
+          id: variant.id,
+          ...variant,
+        };
+      }),
+    );
   });
   isSearching.value = false;
 };
@@ -294,32 +340,43 @@ const debounceToast = _debounce(
 );
 
 const handleCardAdd = (card) => {
-  // Check if the current task is already selected.
-  const taskIds = [];
-  // Add fires after the move is complete, so check if there is a duplicate task in the list.
-  for (const variant of selectedVariants.value) {
-    // If the duplicate task is also the current task, send a warn toast.
-    if (taskIds.includes(variant.task.id) && variant.task.id === card.item.dataset.taskId) {
-      toast.add({
-        severity: 'warn',
-        summary: 'Task Selected',
-        detail: 'There is a task with that Task ID already selected.',
-        life: 3000,
-      });
-    } else {
-      taskIds.push(variant.task.id);
+  if (card.type === CARD_TYPES.VARIANT) {
+    // Check if the current task is already selected.
+    const taskIds = [];
+    // Add fires after the move is complete, so check if there is a duplicate task in the list.
+    for (const variant of selectedVariants.value) {
+      // If the duplicate task is also the current task, send a warn toast.
+      if (taskIds.includes(variant.task.id) && variant.task.id === card.item.dataset.taskId) {
+        toast.add({
+          severity: 'warn',
+          summary: 'Task Selected',
+          detail: 'There is a task with that Task ID already selected.',
+          life: 3000,
+        });
+      } else {
+        taskIds.push(variant.task.id);
+      }
     }
+  }
+  if (card.type === CARD_TYPES.GROUP) {
+    // Check if this group is already selected
+    console.log('handleCardAdd Group Handler');
   }
 };
 
 const handleCardMove = (card) => {
-  // Check if this variant card is already in the list
-  const cardVariantId = card.dragged.id;
-  const index = _findIndex(selectedVariants.value, (element) => element.id === cardVariantId);
-  if (index !== -1 && card.from !== card.to) {
-    debounceToast();
-    return false;
-  } else return true;
+  if (card.type === CARD_TYPES.VARIANT) {
+    // Check if this variant card is already in the list
+    const cardVariantId = card.dragged.id;
+    const index = _findIndex(selectedVariants.value, (element) => element.id === cardVariantId);
+    if (index !== -1 && card.from !== card.to) {
+      debounceToast();
+      return false;
+    } else return true;
+  }
+  if (card.type === CARD_TYPES.GROUP) {
+    console.log('handleCardMove Group Handler');
+  }
 };
 
 watch(
@@ -332,7 +389,10 @@ watch(
 
 // Card event handlers
 const removeCard = (variant) => {
-  selectedVariants.value = selectedVariants.value.filter((selectedVariant) => selectedVariant.id !== variant.id);
+  // Filter out cards where the id and type match the variant to remove.
+  selectedVariants.value = selectedVariants.value.filter(
+    (selectedVariant) => selectedVariant.id !== variant.id && selectedVariant.type === variant.type,
+  );
 };
 const selectCard = (variant) => {
   // Check if this variant is already in the list
