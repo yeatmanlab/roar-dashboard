@@ -362,7 +362,11 @@ onMounted(() => {
   if (!props.legal || Object.keys(props.legal).length === 0) {
     decision.value = 'know';
     knowWhatIWant.value = true;
+  } else if (props.legal?.consent === 'No Consent') {
+    noConsent.value = true;
   } else {
+    decision.value = 'know';
+    knowWhatIWant.value = true;
     result.consent[0] = props.legal.consent[0];
     result.assent[0] = props.legal.assent[0];
     result.amount = props.legal.amount;
@@ -377,12 +381,18 @@ watch(
   // eslint-disable-next-line no-unused-vars
   (newValue, _) => {
     if (newValue) {
-      result.consent[0] = newValue.consent[0];
-      result.assent[0] = newValue.assent[0];
-      result.amount = newValue.amount;
-      result.expectedTime = newValue.expectedTime;
-      selectedConsent.value = newValue.consent[0];
-      selectedAssent.value = newValue.assent[0];
+      if (newValue?.consent === 'No Consent') {
+        noConsent.value = true;
+      } else {
+        decision.value = 'know';
+        knowWhatIWant.value = true;
+        result.consent[0] = newValue.consent[0];
+        result.assent[0] = newValue.assent[0];
+        result.amount = newValue.amount;
+        result.expectedTime = newValue.expectedTime;
+        selectedConsent.value = newValue.consent[0];
+        selectedAssent.value = newValue.assent[0];
+      }
     }
   },
 );

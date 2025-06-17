@@ -60,9 +60,28 @@
           :min-end-date="minEndDate"
         />
 
+        <PvConfirmDialog
+          group="org-errors"
+          class="confirm"
+          :draggable="false"
+          :pt="{ pcRejectButton: { root: { class: 'hidden' } } }"
+        >
+          <template #message>
+            <span
+              >Organization selections are not valid. Please select at least one district and school, or a group or
+              family.</span
+            >
+          </template>
+        </PvConfirmDialog>
+
         <OrgPicker :orgs="orgsList" @selection="selection($event)" />
 
-        <PvConfirmDialog group="errors" class="confirm" :draggable="false">
+        <PvConfirmDialog
+          group="task-errors"
+          class="confirm"
+          :draggable="false"
+          :pt="{ pcRejectButton: { root: { class: 'hidden' } } }"
+        >
           <template #message>
             <span class="flex flex-column">
               <span v-if="nonUniqueTasks.length > 0" class="flex flex-column">
@@ -172,6 +191,7 @@ import ConsentPicker from './ConsentPicker.vue';
 import OrgPicker from '@/components/OrgPicker.vue';
 import { APP_ROUTES, ADMINISTRATION_FORM_TYPES } from '@/constants/routes';
 import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
+import { ORG_TYPES } from '@/constants/orgTypes';
 import { usePermissions } from '@/composables/usePermissions';
 import AdministrationDatePicker from '@/components/AdministrationDatePicker';
 const { userCan, Permissions } = usePermissions();
@@ -451,7 +471,7 @@ const submit = async () => {
   if (!tasksUnique || _isEmpty(submittedAssessments)) {
     getNonUniqueTasks(submittedAssessments);
     confirm.require({
-      group: 'errors',
+      group: 'task-errors',
       header: 'Task Selections',
       icon: 'pi pi-question-circle',
       acceptLabel: 'Close',
@@ -470,7 +490,13 @@ const submit = async () => {
 
   const orgsValid = checkForRequiredOrgs(orgs);
   if (!orgsValid) {
-    // @TODO: Add error handling, i.e. confirmation dialog like the one for non-unique tasks?
+    confirm.require({
+      group: 'org-errors',
+      header: 'Organization Selections',
+      icon: 'pi pi-question-circle',
+      acceptLabel: 'Close',
+      acceptIcon: 'pi pi-times',
+    });
     return;
   }
 
@@ -550,9 +576,16 @@ watch(
         state.administrationName = adminInfo.name;
         state.administrationPublicName = adminInfo.publicName;
       }
+      // For each orgtype, find the orgs in adminInfo and add them to state
+      _forEach(ORG_TYPES, (orgType) => {
+        if (!_isEmpty(adminInfo[orgType])) {
+          state[orgType] = adminInfo[orgType].map((orgId) => ({ id: orgId }));
+        } else {
+          state[orgType] = [];
+        }
+      });
       state.dateStarted = new Date(adminInfo.dateOpened);
       state.dateClosed = new Date(adminInfo.dateClosed);
-      state.sequential = adminInfo.sequential;
       _forEach(adminInfo.assessments, (assessment) => {
         const assessmentParams = assessment.params;
         const taskId = assessment.taskId;
@@ -560,12 +593,14 @@ watch(
         const found = findVariantWithParams(allVariantsForThisTask, assessmentParams);
         if (found) {
           preSelectedVariants.value = _union(preSelectedVariants.value, [found]);
+          variants.value = _union(variants.value, [found]);
         }
       });
       state.legal = adminInfo.legal;
       state.consent = adminInfo?.legal?.consent ?? null;
       state.assent = adminInfo?.legal?.assent ?? null;
       isTestData.value = adminInfo.testData;
+      state.sequential = adminInfo.sequential;
 
       if (state.consent === 'No Consent') {
         noConsent.value = state.consent;
