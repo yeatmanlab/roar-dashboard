@@ -262,7 +262,7 @@ import PvDataTable from 'primevue/datatable';
 import PvDialog from 'primevue/dialog';
 import PvPopover from 'primevue/popover';
 import PvTag from 'primevue/tag';
-import EditVariantDialog from '@/components/EditVariantDialog.vue';
+import EditVariantDialog from './EditVariantDialog.vue';
 
 const props = defineProps({
   variant: {
