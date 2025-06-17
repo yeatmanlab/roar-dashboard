@@ -3,4 +3,4 @@
 	url = ../roar-firebase-functions.git
 [submodule "env-configs"]
 	path = env-configs
-	url = https://github.com/yeatmanlab/roar-dashboard-envs.git
+	url = ../roar-dashboard-envs.git
