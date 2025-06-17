@@ -91,16 +91,15 @@ describe('ListGroups.vue', () => {
     }
   });
 
-  it('should redirect users to the page for creating groups', () => {
+  it('should turn AddGroupModal visible after clicking Add Group button', () => {
     const wrapper = mount(ListGroups, mountOptions);
     const addGroupBtn = wrapper.find('[data-testid="add-group-btn"]');
 
     expect(addGroupBtn.exists()).toBe(true);
+    expect(wrapper.vm.isAddGroupModalVisible).toBe(false);
 
     addGroupBtn.trigger('click');
-
-    expect(routerPush).toHaveBeenCalledTimes(1);
-    expect(routerPush).toHaveBeenCalledWith({ name: 'CreateGroup' });
+    expect(wrapper.vm.isAddGroupModalVisible).toBe(true);
   });
 
   it('should redirect users to the page for creating users', () => {
