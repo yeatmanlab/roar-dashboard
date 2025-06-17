@@ -133,7 +133,9 @@
 
         <TaskPicker
           :all-variants="variantsByTaskId"
+          :all-task-groups="taskGroupsByGroupName"
           :input-variants="preSelectedVariants"
+          :input-task-groups="preSelectedTaskGroups"
           :pre-existing-assessment-info="existingAssessments"
           @variants-changed="handleVariantsChanged"
         />
@@ -222,7 +224,7 @@ import useGroupsQuery from '@/composables/queries/useGroupsQuery';
 import useFamiliesQuery from '@/composables/queries/useFamiliesQuery';
 import useTaskVariantsQuery from '@/composables/queries/useTaskVariantsQuery';
 import useUpsertAdministrationMutation from '@/composables/mutations/useUpsertAdministrationMutation';
-import TaskPicker from './TaskPicker.vue';
+import TaskPicker from './TaskPicker';
 import ConsentPicker from './ConsentPicker.vue';
 import OrgPicker from '@/components/OrgPicker.vue';
 import { APP_ROUTES, ADMINISTRATION_FORM_TYPES } from '@/constants/routes';
@@ -426,11 +428,45 @@ const selection = (selected) => {
 // +------------------------------------------------------------------------------------------------------------------+
 const variants = ref([]);
 const preSelectedVariants = ref([]);
+const preSelectedTaskGroups = ref([]);
 const nonUniqueTasks = ref('');
 
 const variantsByTaskId = computed(() => {
   return _groupBy(allVariants.value, 'task.id');
 });
+
+const taskGroupsByGroupName = [
+  {
+    name: 'testGroupOne',
+    id: 'testGroupOneId',
+    description: 'This is a test group',
+    variants: [
+      {
+        taskId: 'testTaskId1',
+        variantId: 'testVariantId1',
+      },
+      {
+        taskId: 'testTaskId2',
+        variantId: 'testVariantId2',
+      },
+    ],
+  },
+  {
+    name: 'testGroupTwo',
+    id: 'testGroupTwoId',
+    description: 'This is another test group',
+    variants: [
+      {
+        taskId: 'testTaskId3',
+        variantId: 'testVariantId3',
+      },
+      {
+        taskId: 'testTaskId4',
+        variantId: 'testVariantId4',
+      },
+    ],
+  },
+];
 
 const handleVariantsChanged = (newVariants) => {
   variants.value = newVariants;
