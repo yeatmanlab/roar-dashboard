@@ -85,19 +85,64 @@ import PvButton from 'primevue/button';
 import PvDialog from 'primevue/dialog';
 import RegisterChildren from '@/components/auth/RegisterChildren.vue';
 import { ref } from 'vue';
+import { useAuthStore } from '@/store/auth';
+import { useToast } from 'primevue/usetoast';
 
 defineOptions({
   name: 'HomeParentStudentView',
 });
 
 const isEnrollmentModalVisible = ref(false);
+const toast = useToast();
 
 function showEnrollmentModal() {
   isEnrollmentModalVisible.value = true;
 }
 
-function handleStudentEnrollment(studentData) {
-  // TODO: Handle the student enrollment data
+async function handleStudentEnrollment(studentData) {
+  const authStore = useAuthStore();
+
+  try {
+    // Get current user's data for family association
+    const { email } = authStore.userData;
+    const careTakerData = {
+      name: {
+        first: authStore.userData.firstName,
+        middle: authStore.userData.middleName,
+        last: authStore.userData.lastName,
+      },
+      grade: authStore.userData.grade,
+      language: authStore.userData.language,
+      username: authStore.userData.username,
+    };
+
+    await authStore.createNewFamily(
+      email, // careTakerEmail
+      null, // careTakerPassword not needed for existing user
+      careTakerData,
+      studentData, // students array
+      null, // consentData
+      false, // isTestData
+    );
+
+    isEnrollmentModalVisible.value = false;
+
+    // Show success message
+    toast.add({
+      severity: 'success',
+      summary: 'Success',
+      detail: 'Student(s) successfully enrolled in your family',
+      life: 3000,
+    });
+  } catch (error) {
+    console.error('Error enrolling students:', error);
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'Failed to enroll student(s). Please try again.',
+      life: 3000,
+    });
+  }
   console.log('Student enrollment data:', studentData);
   isEnrollmentModalVisible.value = false;
 }
