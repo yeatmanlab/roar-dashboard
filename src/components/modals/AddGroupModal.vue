@@ -25,7 +25,7 @@
             option-label="label"
             show-clear
           />
-          <label for="orgType">Group Type<span id="required-asterisk">*</span></label>
+          <label for="orgType">Group Type<span class="required-asterisk">*</span></label>
         </PvFloatLabel>
         <small v-if="v$.orgType.$error" class="p-error">Please select a type.</small>
       </div>
@@ -44,7 +44,7 @@
                 option-label="name"
                 show-clear
               />
-              <label for="parentDistrict">Site<span id="required-asterisk">*</span></label>
+              <label for="parentDistrict">Site<span class="required-asterisk">*</span></label>
             </PvFloatLabel>
             <small v-if="v$.parentDistrict.$error" class="p-error">Please select a site.</small>
           </div>
@@ -62,7 +62,7 @@
                   option-label="name"
                   show-clear
                 />
-                <label for="parentSchool">School<span id="required-asterisk">*</span></label>
+                <label for="parentSchool">School<span class="required-asterisk">*</span></label>
               </PvFloatLabel>
               <small v-if="v$.parentSchool.$error" class="p-error">Please select a school.</small>
             </div>
@@ -73,7 +73,7 @@
       <div class="flex flex-column gap-1 w-full">
         <PvFloatLabel>
           <PvInputText id="orgName" v-model="orgName" class="w-full" data-cy="input-org-name" />
-          <label for="orgName">{{ orgTypeLabel }} Name<span id="required-asterisk">*</span></label>
+          <label for="orgName">{{ orgTypeLabel }} Name<span class="required-asterisk">*</span></label>
         </PvFloatLabel>
         <small v-if="v$.orgName.$error" class="p-error">Please supply a name.</small>
       </div>
