@@ -200,6 +200,24 @@ export const useAuthStore = () => {
         consentData,
         isTestData = false,
       ) {
+        console.log('Auth Store createNewFamily called with:', {
+          careTakerEmail,
+          careTakerData,
+          studentsLength: students?.length,
+          students,
+          consentData,
+          isTestData,
+          hasRoarFirekit: !!this.roarfirekit,
+        });
+
+        if (!this.roarfirekit) {
+          throw new Error('roarfirekit is not initialized');
+        }
+
+        if (!Array.isArray(students)) {
+          throw new Error('students parameter must be an array');
+        }
+
         return await this.roarfirekit.createNewFamily(
           careTakerEmail,
           careTakerPassword,
