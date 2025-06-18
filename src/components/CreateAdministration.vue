@@ -433,6 +433,7 @@ const variantsByTaskId = computed(() => {
   return _groupBy(allVariants.value, 'task.id');
 });
 
+// TODO: Replace with actual task groups from API
 const taskGroupsByGroupName = [
   {
     name: 'testGroupOne',
