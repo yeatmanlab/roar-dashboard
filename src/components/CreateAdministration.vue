@@ -135,7 +135,6 @@
           :all-variants="variantsByTaskId"
           :all-task-groups="taskGroupsByGroupName"
           :input-variants="preSelectedVariants"
-          :input-task-groups="preSelectedTaskGroups"
           :pre-existing-assessment-info="existingAssessments"
           @variants-changed="handleVariantsChanged"
         />
@@ -428,7 +427,6 @@ const selection = (selected) => {
 // +------------------------------------------------------------------------------------------------------------------+
 const variants = ref([]);
 const preSelectedVariants = ref([]);
-const preSelectedTaskGroups = ref([]);
 const nonUniqueTasks = ref('');
 
 const variantsByTaskId = computed(() => {
@@ -463,8 +461,12 @@ const taskGroupsByGroupName = [
         variantId: 'testVariantId3',
       },
       {
-        taskId: 'testTaskId4',
+        taskId: 'pa',
         variantId: 'testVariantId4',
+      },
+      {
+        taskId: 'swr',
+        variantId: '0A5qXQ5oTXg7szwLOul7',
       },
     ],
   },

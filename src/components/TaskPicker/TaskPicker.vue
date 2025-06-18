@@ -238,10 +238,6 @@ const props = defineProps({
     required: true,
     default: () => {},
   },
-  inputTaskGroups: {
-    type: Array,
-    default: () => [],
-  },
   preExistingAssessmentInfo: {
     type: Array,
     default: () => [],
@@ -419,8 +415,27 @@ const handleGroupAdd = (groupId) => {
   for (const variant of group.variants) {
     const taskId = variant.taskId;
     const variantId = variant.variantId;
-    const foundVariant = props.allVariants[taskId].find((variant) => variant.id === variantId);
-    selectedVariants.value.push(foundVariant);
+    const allVariantsForTask = props.allVariants[taskId];
+    if (allVariantsForTask) {
+      const foundVariant = allVariantsForTask.find((variant) => variant.id === variantId);
+      if (foundVariant) {
+        selectedVariants.value.push(foundVariant);
+      } else {
+        toast.add({
+          severity: 'warn',
+          summary: 'Error adding task from task group.',
+          detail: `Could not find variant of task ${variant.taskId} with id: ${variant.variantId}`,
+          life: 3000,
+        });
+      }
+    } else {
+      toast.add({
+        severity: 'warn',
+        summary: 'Error adding task from task group.',
+        detail: `Could not find task with id: ${variant.taskId}`,
+        life: 3000,
+      });
+    }
   }
 };
 
