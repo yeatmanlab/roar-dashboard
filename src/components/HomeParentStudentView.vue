@@ -103,25 +103,90 @@ async function handleStudentEnrollment(studentData) {
   const authStore = useAuthStore();
 
   try {
+    // Ensure roarfirekit is initialized
+    if (!authStore.initialized) {
+      await authStore.initFirekit();
+    }
     // Get current user's data for family association
-    const { email } = authStore.userData;
+    console.log('authstore', authStore);
+    const { email } = authStore.firebaseUser.adminFirebaseUser;
+
+    // Format caretaker data according to CreateParentInput interface
     const careTakerData = {
       name: {
         first: authStore.userData.firstName,
-        middle: authStore.userData.middleName,
         last: authStore.userData.lastName,
       },
-      grade: authStore.userData.grade,
-      language: authStore.userData.language,
-      username: authStore.userData.username,
+      legal: {
+        consentType: 'family_enrollment',
+        consentVersion: '1.0',
+        amount: '0',
+        expectedTime: '5 minutes',
+        isSignedWithAdobe: false,
+        dateSigned: new Date().toISOString(),
+      },
     };
+
+    // Format student data to match RegisterFamilyUsers structure
+    if (!Array.isArray(studentData)) {
+      console.error('studentData is not an array:', studentData);
+      throw new Error('studentData must be an array');
+    }
+
+    const formattedStudentData = studentData.map((student) => {
+      // Extract email from studentUsername if it's already in email format
+      const email = student.studentUsername.includes('@')
+        ? student.studentUsername
+        : `${student.studentUsername}@roar-auth.com`;
+
+      return {
+        email,
+        password: student.password,
+        userData: {
+          name: {
+            first: student.firstName || '',
+            middle: student.middleName || '',
+            last: student.lastName || '',
+          },
+          activationCode: student.activationCode,
+          grade: student.grade,
+          dob: student.dob,
+          gender: student.gender,
+          ell_status: student.ell,
+          iep_status: student.IEPStatus,
+          frl_status: student.freeReducedLunch,
+          race: student.race || [],
+          hispanic_ethnicity: student.hispanicEthnicity,
+          home_language: student.homeLanguage || [],
+          accept: student.accept,
+        },
+      };
+    });
+
+    // Use the same consent name as RegisterFamilyUsers
+    const consentData = {
+      name: 'consent-behavioral-eye-tracking',
+      text: 'I agree to the terms and conditions for enrolling additional students in my family.',
+      version: '1.0',
+    };
+
+    console.log('Calling createNewFamily with:', {
+      email,
+      careTakerData,
+      formattedStudentData,
+      consentData,
+    });
+
+    if (!Array.isArray(formattedStudentData)) {
+      throw new Error('formattedStudentData must be an array');
+    }
 
     await authStore.createNewFamily(
       email, // careTakerEmail
-      null, // careTakerPassword not needed for existing user
+      'dummyPassword123!', // Filler password since we're using an existing account
       careTakerData,
-      studentData, // students array
-      null, // consentData
+      formattedStudentData, // properly formatted students array
+      consentData, // proper consent data
       false, // isTestData
     );
 
@@ -143,7 +208,6 @@ async function handleStudentEnrollment(studentData) {
       life: 3000,
     });
   }
-  console.log('Student enrollment data:', studentData);
   isEnrollmentModalVisible.value = false;
 }
 
