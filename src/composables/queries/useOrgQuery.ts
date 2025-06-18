@@ -3,7 +3,6 @@ import useDistrictsQuery from '@/composables/queries/useDistrictsQuery';
 import useSchoolsQuery from '@/composables/queries/useSchoolsQuery';
 import useClassesQuery from '@/composables/queries/useClassesQuery';
 import useGroupsQuery from '@/composables/queries/useGroupsQuery';
-import useFamiliesQuery from '@/composables/queries/useFamiliesQuery';
 import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
 
 /**
@@ -29,8 +28,6 @@ export default function useOrgQuery(orgType, orgIds, queryOptions = undefined) {
         return useClassesQuery(orgIds, queryOptions);
       case SINGULAR_ORG_TYPES.GROUPS:
         return useGroupsQuery(orgIds, queryOptions);
-      case SINGULAR_ORG_TYPES.FAMILIES:
-        return useFamiliesQuery(orgIds, queryOptions);
       default:
         throw new Error(`Unsupported org type: ${orgType}`);
     }
