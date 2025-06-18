@@ -784,7 +784,7 @@ router.beforeEach(async (to, from, next) => {
     !store.isAuthenticated &&
     !allowedUnauthenticatedRoutes.includes(to.name)
   ) {
-    if (to.fullPath === '/' || to.name === 'NotFound') {
+    if (to.fullPath === '/') {
       next({ name: 'SignIn' });
       return;
     } else {
