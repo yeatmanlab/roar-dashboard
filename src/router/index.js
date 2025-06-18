@@ -787,7 +787,7 @@ router.beforeEach(async (to, from, next) => {
     if (to.fullPath === '/') {
       next({ name: 'SignIn' });
       return;
-    } else if (to.fullPath.startsWith('/') && !to.fullPath.startsWith('//') && !to.fullPath.match(/^[a-z]+:/i)) {
+    } else if (to.fullPath.startsWith('/') && !to.fullPath.startsWith('//') && !to.fullPath.match(/[a-z]+:/i)) {
       next({ name: 'SignIn', query: { redirect_to: to.fullPath } });
       return;
     } else {
