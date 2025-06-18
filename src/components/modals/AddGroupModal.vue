@@ -8,8 +8,8 @@
   >
     <template #header>
       <div class="flex flex-column gap-1">
-        <h2 class="m-0 font-bold">Add New {{ orgTypeLabel }}</h2>
-        <p class="m-0 text-gray-500">Use the form below to create a new group.</p>
+        <h2 class="m-0 font-bold" data-testid="modalTitle">Add New {{ orgTypeLabel }}</h2>
+        <p class="m-0 text-gray-500" data-testid="modalDescription">Use the form below to create a new group.</p>
       </div>
     </template>
 
@@ -103,7 +103,7 @@
           label="Cancel"
           @click="handleOnClose"
         ></PvButton>
-        <PvButton :label="`Add ${orgTypeLabel}`" @click="submit">
+        <PvButton :label="`Add ${orgTypeLabel}`" data-testid="submitBtn" @click="submit">
           <i v-if="isSubmittingOrg" class="pi pi-spinner pi-spin"></i>
         </PvButton>
       </div>
@@ -152,7 +152,6 @@ const emit = defineEmits<Emits>();
 
 const toast = useToast();
 
-const initialized = ref(true);
 const orgName = ref('');
 const orgType = ref<OrgType | null>(null);
 const orgTypes: OrgType[] = [
@@ -196,14 +195,12 @@ const allTags = computed(() => {
   const groupTags = (groups.value ?? []).map((org) => org.tags);
   return _without(_union(...districtTags, ...schoolTags, ...classTags, ...groupTags), undefined) || [];
 });
-const classQueryEnabled = computed(() => initialized.value && parentSchool?.value !== undefined);
+const classQueryEnabled = computed(() => parentSchool?.value !== undefined);
 const orgTypeLabel = computed(() => (orgType.value ? _capitalize(orgType.value.label) : 'Group'));
 const parentOrgRequired = computed(() => ['school', 'class', 'group'].includes(orgType.value?.singular || ''));
 const selectedDistrict = computed(() => parentDistrict?.value?.id);
 const selectedSchool = computed(() => parentSchool?.value?.id);
-const schoolQueryEnabled = computed(() => {
-  return initialized.value && parentDistrict?.value !== undefined;
-});
+const schoolQueryEnabled = computed(() => parentDistrict?.value !== undefined);
 const schoolDropdownEnabled = computed(() => {
   return parentDistrict.value && !isFetchingSchools.value;
 });
@@ -214,13 +211,9 @@ const { data: classes } = useSchoolClassesQuery(selectedSchool, {
   enabled: classQueryEnabled,
 });
 
-const { data: districts, loading: isLoadingDistricts } = useDistrictsListQuery({
-  enabled: initialized,
-});
+const { data: districts, loading: isLoadingDistricts } = useDistrictsListQuery();
 
-const { data: groups } = useGroupsListQuery({
-  enabled: initialized,
-});
+const { data: groups } = useGroupsListQuery();
 
 const { isFetching: isFetchingSchools, data: schools } = useDistrictSchoolsQuery(selectedDistrict, {
   enabled: schoolQueryEnabled,
