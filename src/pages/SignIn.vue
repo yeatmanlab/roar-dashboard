@@ -192,7 +192,11 @@ authStore.$subscribe(() => {
       if (isUserFullyAuthed && router.options.history.state.back.includes('redirect_to')) {
         const queryString = router.options.history.state.back.split('?')[1];
         const redirect_to = new URLSearchParams(queryString).get('redirect_to');
-        router.push(redirect_to);
+        if (redirect_to.startsWith('/') && !redirect_to.match(/^(?:[a-z+]+:)?\/\//i)) {
+          router.push(redirect_to);
+        } else {
+          router.push({ path: '/unauthorized' });
+        }
       } else {
         router.push({ path: APP_ROUTES.HOME });
       }
