@@ -440,6 +440,7 @@ const taskGroupsByGroupName = [
     name: 'testGroupOne',
     id: 'testGroupOneId',
     description: 'This is a test group',
+    image: '',
     variants: [
       {
         taskId: 'swr',
@@ -455,6 +456,7 @@ const taskGroupsByGroupName = [
     name: 'testGroupTwo',
     id: 'testGroupTwoId',
     description: 'This is another test group',
+    image: '',
     variants: [
       {
         taskId: 'testTaskId3',

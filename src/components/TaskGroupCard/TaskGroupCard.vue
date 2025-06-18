@@ -1,34 +1,30 @@
 <template>
   <div
-    v-if="!hasControls"
     class="flex-1 flex h-6rem flex-row gap-2 border-1 border-round surface-border bg-white-alpha-90 mb-2 hover:surface-hover"
   >
     <div class="w-11 mt-3 flex flex-row p-0 mb-2">
       <div>
-        <img
-          class="w-4rem shadow-2 border-round ml-2"
-          :src="variant.task.image || backupImage"
-          :alt="variant.task.name"
-        />
+        <img class="w-4rem shadow-2 border-round ml-2" :src="group.image || backupImage" :alt="group.name" />
       </div>
       <div>
         <div class="flex flex-row">
-          <span class="font-bold" style="margin-left: 0.625rem">{{ variant.task.name }}</span>
+          <span class="font-bold" style="margin-left: 0.625rem">{{ group.name }}</span>
           <PvButton
             class="p-0 surface-hover border-none border-circle hover:text-100 hover:bg-primary"
             @click="toggle($event)"
             ><i
-              v-tooltip.top="'Click to view params'"
+              v-tooltip.top="'Click to view variants'"
               class="pi pi-info-circle text-primary p-1 border-circle hover:text-100"
             ></i
           ></PvButton>
         </div>
         <div class="flex align-items-center gap-2">
           <p class="m-0 mt-1 ml-2">
-            <span class="font-bold">Variant name:</span> {{ variant.variant.name }} <br />
-            <span class="font-bold">Variant id: </span>{{ variant.id }}
+            <span class="font-bold">Variant name:</span> {{ group.name }} <br />
+            <span class="font-bold">Variant id: </span>{{ group.id }}
           </p>
         </div>
+        <!-- (i) info button -->
         <PvPopover ref="op" append-to="body" style="width: 40vh">
           <div class="flex justify-content-end mt-0 mb-2">
             <PvButton
@@ -41,25 +37,16 @@
             ></PvButton>
           </div>
           <div class="flex gap-2 flex-column w-full pr-3">
+            <!-- Create datatable to show tasks and their respective variants from group.variants -->
             <PvDataTable
               class="p-datatable-small ml-3 border-1 surface-border text-sm"
               header-style="font-size: 20px;"
-              :value="displayParamList(variant.variant.params)"
+              :value="group.variants"
               scrollable
               scroll-height="300px"
             >
-              <PvColumn
-                field="key"
-                header="Parameter"
-                style="width: 50%; text-align: left; padding-left: 1vh; padding-top: 0.15vh; padding-bottom: 0.1vh"
-              >
-              </PvColumn>
-              <PvColumn
-                field="value"
-                header="Value"
-                style="width: 50%; text-align: left; padding-left: 1vh; padding-top: 0.15vh; padding-bottom: 0.1vh"
-              >
-              </PvColumn>
+              <PvColumn field="taskId" header="Task ID"></PvColumn>
+              <PvColumn field="variantId" header="Variant ID"></PvColumn>
             </PvDataTable>
           </div>
         </PvPopover>
@@ -67,7 +54,6 @@
     </div>
     <div class="mr-0 pl-0 flex flex-column">
       <PvButton
-        v-if="!hasControls"
         class="surface-hover border-1 border-300 border-circle m-0 hover:bg-primary p-0 m-2"
         data-cy="selected-variant"
         @click="handleSelect"
@@ -75,180 +61,23 @@
       ></PvButton>
     </div>
   </div>
-  <!---------- end card without buttons ----- >-->
-  <div v-else :id="variant.id" class="h-6rem" :class="isActive()">
-    <div class="ml-0 pl-0 flex flex-column">
-      <PvButton
-        class="surface-hover border-y-1 border-200 border-noround m-0 hover:bg-primary p-0"
-        @click="handleRemove"
-        ><i class="pi pi-times text-primary hover:text-white-alpha-90 p-2" style="font-size: 1rem"></i
-      ></PvButton>
-      <PvButton
-        class="surface-hover border-y-1 border-200 border-noround m-0 hover:bg-primary p-0"
-        @click="handleMoveUp"
-        ><i class="pi pi-sort-up text-primary hover:text-white-alpha-90 p-2" style="font-size: 1rem"></i
-      ></PvButton>
-      <PvButton
-        class="surface-hover border-y-1 border-200 border-noround m-0 hover:bg-primary p-0"
-        @click="handleMoveDown"
-        ><i class="pi pi-sort-down text-primary hover:text-white-alpha-90 p-2" style="font-size: 1rem"></i
-      ></PvButton>
-    </div>
-    <div class="w-11 mt-3 flex flex-row p-0">
-      <div>
-        <img class="w-4rem shadow-2 border-round" :src="variant.task.image || backupImage" :alt="variant.task.name" />
-      </div>
-      <div>
-        <div class="flex flex-row">
-          <span class="font-bold" style="margin-left: 0.625rem">{{ variant.task.name }}</span>
-          <PvButton
-            class="p-0 surface-hover border-none border-circle hover:text-100 hover:bg-primary"
-            @click="toggle($event)"
-            ><i
-              v-tooltip.top="'Click to view params'"
-              class="pi pi-info-circle text-primary p-1 border-circle hover:text-100"
-            ></i
-          ></PvButton>
-        </div>
-        <div class="flex align-items-center gap-2">
-          <p class="m-0 mt-1 ml-2">
-            <span class="font-bold">Variant name:</span> {{ variant.variant.name }} <br />
-            <span class="font-bold">Variant id: </span>{{ variant.id }}
-          </p>
-        </div>
-      </div>
-      <PvPopover ref="op" append-to="body" class="border-1 surface-border" style="width: 40vh">
-        <div class="flex justify-content-end mt-0 mb-2">
-          <PvButton
-            class="p-0 surface-hover border-none border-circle -rotate-45 hover:text-100 hover:bg-primary"
-            @click="visible = true"
-            ><i
-              v-tooltip.top="'Click to expand'"
-              class="pi pi-arrows-h border-circle p-2 text-primary hover:text-100"
-            ></i
-          ></PvButton>
-        </div>
-        <div class="flex gap-2 flex-column w-full pr-3">
-          <PvDataTable
-            class="p-datatable-small ml-3 border-1 surface-border text-sm p-0"
-            header-style="font-size: 20px;"
-            :value="displayParamList(variant.variant.params)"
-            scrollable
-            scroll-height="300px"
-          >
-            <PvColumn
-              field="key"
-              header="Parameter"
-              style="width: 50%; text-align: left; padding-left: 1vh; padding-top: 0.15vh; padding-bottom: 0.1vh"
-            >
-            </PvColumn>
-            <PvColumn
-              field="value"
-              header="Value"
-              style="width: 50%; text-align: left; padding-left: 1vh; padding-top: 0.15vh; padding-bottom: 0.1vh"
-            >
-            </PvColumn>
-          </PvDataTable>
-        </div>
-      </PvPopover>
-    </div>
-    <div class="mr-0 pl-0 flex flex-column">
-      <EditVariantDialog
-        :assessment="variant"
-        :update-variant="updateVariant"
-        :pre-existing-assessment-info="preExistingAssessmentInfo"
-      />
-      <ViewVariantsDialog :variants="variant" />
-      <PvButton
-        v-if="variant.variant?.conditions?.assigned || variant.variant?.conditions?.optional"
-        class="surface-hover border-1 border-300 border-circle m-0 hover:bg-primary p-0 m-2"
-        @click="toggleShowContent()"
-        ><i :class="iconClass()" style="font-size: 1rem"></i
-      ></PvButton>
-    </div>
-  </div>
-  <div
-    v-if="showContent"
-    class="flex-1 flex flex-column border-1 border-round surface-border surface-hover mb-2 hover:surface-ground mr-2 ml-2 pb-2"
-    style="margin-top: -25px"
+  <!-- Variants Full Size Modal -->
+  <PvDialog
+    v-model:visible="visible"
+    modal
+    :header="`Variants for Task Group: ${group.name}`"
+    :style="{ width: '50rem' }"
   >
-    <div
-      v-if="variant.variant?.conditions?.assigned?.conditions?.length > 0"
-      class="flex gap-2 mt-2 flex-column w-full pr-3"
-    >
-      <p class="font-bold mt-3 mb-1 ml-3">Assigned Conditions:</p>
-      <PvDataTable
-        class="p-datatable-small ml-3 border-1 surface-border"
-        table-style="min-width:50vh"
-        :value="parseConditions(variant.variant?.conditions?.assigned)"
-        scrollable
-        scroll-height="300px"
-      >
-        <PvColumn
-          field="field"
-          header="Field"
-          style="width: 33%; text-align: left; padding-left: 1vh; padding: 0.8vh; margin: 0.3vh"
-        ></PvColumn>
-        <PvColumn field="op" header="Operation" style="width: 33%; text-align: left; padding-left: 1vh; padding: 0.8vh">
-        </PvColumn>
-        <PvColumn field="value" header="Value" style="width: 33%; text-align: left; padding-left: 1vh; padding: 0.8vh">
-        </PvColumn>
-      </PvDataTable>
-    </div>
-    <div v-if="variant.variant?.conditions?.optional === true" class="flex mt-3 flex-column w-full ml-3 pr-5">
-      <PvTag severity="success"> Assignment optional for all students </PvTag>
-    </div>
-    <div
-      v-else-if="variant.variant?.conditions?.optional?.conditions?.length > 0"
-      class="flex mt-2 flex-column w-full pr-3"
-    >
-      <p class="font-bold mt-3 mb-1 ml-3">Optional Conditions:</p>
-      <PvDataTable
-        class="p-datatable-small ml-3 border-1 surface-border"
-        table-style="min-width:50vh"
-        :value="parseConditions(variant.variant?.conditions?.optional)"
-        scrollable
-        scroll-height="300px"
-      >
-        <PvColumn
-          field="field"
-          header="Field"
-          style="width: 33%; text-align: left; padding-left: 1vh; padding: 0.8vh"
-        ></PvColumn>
-        <PvColumn field="op" header="Operation" style="width: 33%; text-align: left; padding-left: 1vh; padding: 0.8vh">
-        </PvColumn>
-        <PvColumn field="value" header="Value" style="width: 33%; text-align: left; padding-left: 1vh; padding: 0.8vh">
-        </PvColumn>
-      </PvDataTable>
-    </div>
-    <div
-      v-if="!variant.variant?.conditions?.assigned && !variant.variant?.conditions?.optional"
-      class="flex mt-2 flex-column w-full px-3 ml-3"
-    >
-      <PvTag severity="danger"> Assignment required for all students </PvTag>
-    </div>
-  </div>
-  <PvDialog v-model:visible="visible" modal header="Parameters" :style="{ width: '50rem' }">
     <div class="flex gap-2 flex-column w-full pr-3">
       <PvDataTable
-        class="p-datatable-small ml-3 border-1 surface-border text-xl"
+        class="p-datatable-small ml-3 border-1 surface-border text-sm"
         header-style="font-size: 20px;"
-        :value="displayParamList(variant.variant.params)"
+        :value="group.variants"
         scrollable
         scroll-height="300px"
       >
-        <PvColumn
-          field="key"
-          header="Parameter"
-          style="width: 50%; text-align: left; padding-left: 1vh; padding-top: 0.15vh; padding-bottom: 0.1vh"
-        >
-        </PvColumn>
-        <PvColumn
-          field="value"
-          header="Value"
-          style="width: 50%; text-align: left; padding-left: 1vh; padding-top: 0.15vh; padding-bottom: 0.1vh"
-        >
-        </PvColumn>
+        <PvColumn field="taskId" header="Task ID"></PvColumn>
+        <PvColumn field="variantId" header="Variant ID"></PvColumn>
       </PvDataTable>
     </div>
   </PvDialog>
@@ -262,26 +91,11 @@ import PvColumn from 'primevue/column';
 import PvDataTable from 'primevue/datatable';
 import PvDialog from 'primevue/dialog';
 import PvPopover from 'primevue/popover';
-import PvTag from 'primevue/tag';
-import EditVariantDialog from './EditVariantDialog.vue';
 
 const props = defineProps({
-  variant: {
+  group: {
     required: true,
     type: Object,
-  },
-  hasControls: {
-    required: false,
-    type: Boolean,
-    default: false,
-  },
-  updateVariant: {
-    type: Function,
-    required: true,
-  },
-  preExistingAssessmentInfo: {
-    type: Array,
-    default: () => [],
   },
 });
 
@@ -289,43 +103,10 @@ const backupImage = '/src/assets/roar-logo.png';
 const showContent = ref(false);
 const op = ref(null);
 const visible = ref(false);
-const emit = defineEmits(['remove', 'select', 'moveUp', 'moveDown']);
+const emit = defineEmits(['select']);
 
-const handleRemove = () => {
-  emit('remove', props.variant);
-};
 const handleSelect = () => {
-  emit('select', props.variant);
-};
-const handleMoveUp = () => {
-  emit('moveUp', props.variant);
-};
-const handleMoveDown = () => {
-  emit('moveDown', props.variant);
-};
-
-function toggleShowContent() {
-  showContent.value = !showContent.value;
-}
-
-function iconClass() {
-  return showContent.value
-    ? 'pi pi-chevron-up text-primary hover:text-white-alpha-90 p-2'
-    : 'pi pi-chevron-down text-primary hover:text-white-alpha-90 p-2';
-}
-
-const parseConditions = (variant) => {
-  return variant?.conditions;
-};
-
-const isActive = () => {
-  return !showContent.value
-    ? 'flex-1 flex flex-row gap-2 border-1 border-round surface-border bg-white-alpha-90 mb-2 hover:surface-hover z-1 relative'
-    : 'flex-1 flex flex-row gap-2 border-1 border-round surface-border bg-white-alpha-90 mb-2 hover:surface-hover z-1 relative shadow-2';
-};
-
-const displayParamList = (inputObj) => {
-  return _toPairs(inputObj).map(([key, value]) => ({ key, value }));
+  emit('select', props.group);
 };
 
 const toggle = (event) => {

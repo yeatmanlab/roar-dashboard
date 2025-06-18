@@ -70,9 +70,16 @@
                   :key="element.id"
                   style="cursor: grab"
                 >
-                  <VariantCard v-if="element.type === CARD_TYPES.VARIANT" :variant="element" @select="selectCard" />
-                  <!-- <TaskGroupCard v-else-if="element.type === CARD_TYPES.GROUP" :group="element" /> -->
-                  <div v-else-if="element.type === CARD_TYPES.GROUP">{{ element }}</div>
+                  <VariantCard
+                    v-if="element.type === CARD_TYPES.VARIANT"
+                    :variant="element"
+                    @select="selectVariantCard"
+                  />
+                  <TaskGroupCard
+                    v-else-if="element.type === CARD_TYPES.GROUP"
+                    :group="element"
+                    @select="selectTaskGroupCard"
+                  />
                 </div>
               </transition-group>
             </VueDraggableNext>
@@ -111,7 +118,7 @@
                   :data-card-type="CARD_TYPES.VARIANT"
                   style="cursor: grab"
                 >
-                  <VariantCard :variant="element" :update-variant="updateVariant" @select="selectCard" />
+                  <VariantCard :variant="element" :update-variant="updateVariant" @select="selectVariantCard" />
                 </div>
               </transition-group>
             </VueDraggableNext>
@@ -138,8 +145,7 @@
                   :data-card-type="CARD_TYPES.GROUP"
                   style="cursor: grab"
                 >
-                  <!-- {{ element }} -->
-                  <TaskGroupCard :group="element" />
+                  <TaskGroupCard :group="element" @select="selectTaskGroupCard" />
                 </div>
               </transition-group>
             </VueDraggableNext>
@@ -407,10 +413,8 @@ const handleCardAdd = (card) => {
   }
 };
 
-const handleGroupAdd = (card) => {
-  // Check if this group is already selected
-  const cardGroupId = card.dragged.dataset.groupId;
-  const group = props.allTaskGroups.find((group) => group.id === cardGroupId);
+const handleGroupAdd = (groupId) => {
+  const group = props.allTaskGroups.find((group) => group.id === groupId);
   // For each variant in the group, find it in allVariants and add it to the selectedVariants.
   for (const variant of group.variants) {
     const taskId = variant.taskId;
@@ -424,7 +428,8 @@ const throttleHandleGroupAdd = _debounce(handleGroupAdd, 3000, { leading: true, 
 
 const handleCardMove = (card) => {
   if (card.dragged.dataset.cardType === CARD_TYPES.GROUP) {
-    throttleHandleGroupAdd(card);
+    const cardGroupId = card.dragged.dataset.groupId;
+    throttleHandleGroupAdd(cardGroupId);
     return false;
   }
   // Check if this variant card is already in the list
@@ -451,7 +456,7 @@ const removeCard = (variant) => {
     (selectedVariant) => selectedVariant.id !== variant.id && selectedVariant.type === variant.type,
   );
 };
-const selectCard = (variant) => {
+const selectVariantCard = (variant) => {
   // Check if this variant is already in the list
   const cardVariantId = variant.id;
   const index = _findIndex(selectedVariants.value, (element) => element.id === cardVariantId);
@@ -472,6 +477,11 @@ const selectCard = (variant) => {
     debounceToast();
   }
 };
+
+const selectTaskGroupCard = (group) => {
+  handleGroupAdd(group.id);
+};
+
 const moveCardUp = (variant) => {
   const index = _findIndex(selectedVariants.value, (currentVariant) => currentVariant.id === variant.id);
   if (index === 0) return;
