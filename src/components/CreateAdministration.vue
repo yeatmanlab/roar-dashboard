@@ -442,12 +442,12 @@ const taskGroupsByGroupName = [
     description: 'This is a test group',
     variants: [
       {
-        taskId: 'testTaskId1',
-        variantId: 'testVariantId1',
+        taskId: 'swr',
+        variantId: '0A5qXQ5oTXg7szwLOul7',
       },
       {
-        taskId: 'testTaskId2',
-        variantId: 'testVariantId2',
+        taskId: 'pa',
+        variantId: '60zM6IYe2D5eSuGBAt8w',
       },
     ],
   },

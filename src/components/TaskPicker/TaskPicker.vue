@@ -9,6 +9,19 @@
     </template>
     <div class="w-full flex flex-column lg:flex-row gap-2">
       <div v-if="tasksPaneOpen" class="w-full lg:w-6">
+        <!-- Select Button for -->
+        <SelectButton
+          v-model="currentCardType"
+          :options="[
+            { label: 'Task Groups', value: CARD_TYPES.GROUP },
+            { label: 'Variants', value: CARD_TYPES.VARIANT },
+          ]"
+          :pt="{ root: { class: 'w-full' }, pcToggleButton: { root: { class: 'w-full' } } }"
+          option-label="label"
+          option-value="value"
+          class="w-full mb-2"
+        />
+        <!-- Search Bar -->
         <div class="flex flex-row mb-2">
           <div class="flex flex-column flex-grow-1 p-input-icon-left">
             <PvIconField class="w-full">
@@ -16,7 +29,9 @@
               <PvInputText
                 v-model="searchTerm"
                 class="w-full"
-                placeholder="Variant name, ID, or Task ID"
+                :placeholder="
+                  currentCardType === CARD_TYPES.VARIANT ? 'Variant name, ID, or Task ID' : 'Task Group name or ID'
+                "
                 data-cy="input-variant-name"
               />
             </PvIconField>
@@ -30,6 +45,7 @@
             <i class="pi pi-times" />
           </PvButton>
         </div>
+        <!-- Search Results -->
         <div v-if="searchTerm.length >= 3">
           <div v-if="isSearching">
             <span>Searching...</span>
@@ -54,16 +70,16 @@
                   :key="element.id"
                   style="cursor: grab"
                 >
-                  <VariantCard v-if="element.type === 'variant'" :variant="element" @select="selectCard" />
-                  <div v-else-if="element.type === 'group'">
-                    {{ element }}
-                  </div>
+                  <VariantCard v-if="element.type === CARD_TYPES.VARIANT" :variant="element" @select="selectCard" />
+                  <!-- <TaskGroupCard v-else-if="element.type === CARD_TYPES.GROUP" :group="element" /> -->
+                  <div v-else-if="element.type === CARD_TYPES.GROUP">{{ element }}</div>
                 </div>
               </transition-group>
             </VueDraggableNext>
           </PvScrollPanel>
         </div>
-        <div v-if="searchTerm.length < 3">
+        <!-- Browse for variants -->
+        <div v-if="searchTerm.length < 3 && currentCardType === CARD_TYPES.VARIANT">
           <PvSelect
             v-model="currentTask"
             :options="taskOptions"
@@ -87,17 +103,43 @@
               :move="handleCardMove"
             >
               <transition-group>
-                <div v-for="group in currentGroups" :key="group.id">
-                  <VariantGroup :group="group" />
-                </div>
                 <div
                   v-for="element in currentVariants"
                   :id="element.id"
                   :key="element.id"
-                  :data-task-id="element?.task?.id ?? element.id"
+                  :data-task-id="element?.task?.id"
+                  :data-card-type="CARD_TYPES.VARIANT"
                   style="cursor: grab"
                 >
                   <VariantCard :variant="element" :update-variant="updateVariant" @select="selectCard" />
+                </div>
+              </transition-group>
+            </VueDraggableNext>
+          </PvScrollPanel>
+        </div>
+        <!-- Browse for task groups -->
+        <div v-if="searchTerm.length < 3 && currentCardType === CARD_TYPES.GROUP">
+          <PvScrollPanel style="height: 27.75rem; width: 100%; overflow-y: auto">
+            <div v-if="!currentGroups.length">No task groups to show.</div>
+            <!-- Draggable Zone 1 -->
+            <VueDraggableNext
+              v-model="currentGroups"
+              :reorderable-columns="true"
+              :group="{ name: 'variants', pull: 'clone', put: false }"
+              :sort="false"
+              :move="handleCardMove"
+            >
+              <transition-group>
+                <div
+                  v-for="element in currentGroups"
+                  :id="element.id"
+                  :key="element.id"
+                  :data-group-id="element.id"
+                  :data-card-type="CARD_TYPES.GROUP"
+                  style="cursor: grab"
+                >
+                  <!-- {{ element }} -->
+                  <TaskGroupCard :group="element" />
                 </div>
               </transition-group>
             </VueDraggableNext>
@@ -109,6 +151,7 @@
       </div>
       <div class="divider"></div>
       <div class="w-full lg:w-6" data-cy="panel-droppable-zone">
+        <!-- Selected Variants-->
         <div class="panel-title mb-2 text-base">Selected Variants</div>
         <PvScrollPanel style="height: 32rem; width: 100%; overflow-y: auto">
           <!-- Draggable Zone 2 -->
@@ -134,7 +177,6 @@
                 style="cursor: grab"
               >
                 <VariantCard
-                  v-if="element.type === CARD_TYPES.VARIANT"
                   :variant="element"
                   has-controls
                   :update-variant="updateVariant"
@@ -143,7 +185,6 @@
                   @move-up="moveCardUp"
                   @move-down="moveCardDown"
                 />
-                <div v-if="element.type === CARD_TYPES.GROUP">{{ element }}</div>
               </div>
             </transition-group>
           </VueDraggableNext>
@@ -169,8 +210,10 @@ import PvInputText from 'primevue/inputtext';
 import PvPanel from 'primevue/panel';
 import PvScrollPanel from 'primevue/scrollpanel';
 import VariantCard from '../VariantCard';
+import TaskGroupCard from '../TaskGroupCard';
 import PvIconField from 'primevue/iconfield';
 import PvInputIcon from 'primevue/inputicon';
+import SelectButton from 'primevue/selectbutton';
 
 const toast = useToast();
 
@@ -178,6 +221,7 @@ const props = defineProps({
   allVariants: {
     type: Object,
     required: true,
+    default: () => {},
   },
   inputVariants: {
     type: Array,
@@ -186,6 +230,7 @@ const props = defineProps({
   allTaskGroups: {
     type: Object,
     required: true,
+    default: () => {},
   },
   inputTaskGroups: {
     type: Array,
@@ -203,6 +248,7 @@ const CARD_TYPES = {
 };
 
 const selectedVariants = ref([]);
+const currentCardType = ref(CARD_TYPES.GROUP);
 
 const emit = defineEmits(['variants-changed']);
 
@@ -264,7 +310,7 @@ const currentVariants = computed(() => {
 });
 
 const currentGroups = computed(() => {
-  return props.allTaskGroups[currentTask.value];
+  return props.allTaskGroups;
 });
 
 // Pane handlers
@@ -278,40 +324,43 @@ const isSearching = ref(false);
 const searchCards = (term) => {
   isSearching.value = true;
   searchResults.value = [];
-  const matchingGroups = _filter(props.allTaskGroups, (group) => {
-    if (_toLower(group.name).includes(_toLower(term))) return true;
-    else return false;
-  });
-  searchResults.value.push(
-    ...matchingGroups.map((group) => {
-      return {
-        type: 'group',
-        id: group.id,
-        ...group,
-      };
-    }),
-  );
-  Object.values(props.allVariants).forEach((variants) => {
-    const matchingVariants = _filter(variants, (variant) => {
-      if (
-        _toLower(variant.variant.name).includes(_toLower(term)) ||
-        _toLower(variant.id).includes(_toLower(term)) ||
-        _toLower(variant.task.id).includes(_toLower(term)) ||
-        _toLower(variant.task.studentFacingName).includes(_toLower(term))
-      )
-        return true;
+  if (currentCardType.value === CARD_TYPES.GROUP) {
+    const matchingGroups = _filter(props.allTaskGroups, (group) => {
+      if (_toLower(group.name).includes(_toLower(term))) return true;
       else return false;
     });
     searchResults.value.push(
-      ...matchingVariants.map((variant) => {
+      ...matchingGroups.map((group) => {
         return {
-          type: 'variant',
-          id: variant.id,
-          ...variant,
+          type: 'group',
+          id: group.id,
+          ...group,
         };
       }),
     );
-  });
+  } else if (currentCardType.value === CARD_TYPES.VARIANT) {
+    Object.values(props.allVariants).forEach((variants) => {
+      const matchingVariants = _filter(variants, (variant) => {
+        if (
+          _toLower(variant.variant.name).includes(_toLower(term)) ||
+          _toLower(variant.id).includes(_toLower(term)) ||
+          _toLower(variant.task.id).includes(_toLower(term)) ||
+          _toLower(variant.task.studentFacingName).includes(_toLower(term))
+        )
+          return true;
+        else return false;
+      });
+      searchResults.value.push(
+        ...matchingVariants.map((variant) => {
+          return {
+            type: 'variant',
+            id: variant.id,
+            ...variant,
+          };
+        }),
+      );
+    });
+  }
   isSearching.value = false;
 };
 
@@ -322,7 +371,7 @@ function clearSearch() {
 
 const debounceSearch = _debounce(searchCards, 250);
 
-watch(searchTerm, (term) => {
+watch([searchTerm, currentCardType], ([term, cardType]) => {
   if (term.length >= 3) {
     debounceSearch(term);
   } else {
@@ -340,43 +389,51 @@ const debounceToast = _debounce(
 );
 
 const handleCardAdd = (card) => {
-  if (card.type === CARD_TYPES.VARIANT) {
-    // Check if the current task is already selected.
-    const taskIds = [];
-    // Add fires after the move is complete, so check if there is a duplicate task in the list.
-    for (const variant of selectedVariants.value) {
-      // If the duplicate task is also the current task, send a warn toast.
-      if (taskIds.includes(variant.task.id) && variant.task.id === card.item.dataset.taskId) {
-        toast.add({
-          severity: 'warn',
-          summary: 'Task Selected',
-          detail: 'There is a task with that Task ID already selected.',
-          life: 3000,
-        });
-      } else {
-        taskIds.push(variant.task.id);
-      }
+  // Check if the current task is already selected.
+  const taskIds = [];
+  // Add fires after the move is complete, so check if there is a duplicate task in the list.
+  for (const variant of selectedVariants.value) {
+    // If the duplicate task is also the current task, send a warn toast.
+    if (taskIds.includes(variant.task.id) && variant.task.id === card.item.dataset.taskId) {
+      toast.add({
+        severity: 'warn',
+        summary: 'Task Selected',
+        detail: 'There is a task with that Task ID already selected.',
+        life: 3000,
+      });
+    } else {
+      taskIds.push(variant.task.id);
     }
-  }
-  if (card.type === CARD_TYPES.GROUP) {
-    // Check if this group is already selected
-    console.log('handleCardAdd Group Handler');
   }
 };
 
+const handleGroupAdd = (card) => {
+  // Check if this group is already selected
+  const cardGroupId = card.dragged.dataset.groupId;
+  const group = props.allTaskGroups.find((group) => group.id === cardGroupId);
+  // For each variant in the group, find it in allVariants and add it to the selectedVariants.
+  for (const variant of group.variants) {
+    const taskId = variant.taskId;
+    const variantId = variant.variantId;
+    const foundVariant = props.allVariants[taskId].find((variant) => variant.id === variantId);
+    selectedVariants.value.push(foundVariant);
+  }
+};
+
+const throttleHandleGroupAdd = _debounce(handleGroupAdd, 3000, { leading: true, trailing: false });
+
 const handleCardMove = (card) => {
-  if (card.type === CARD_TYPES.VARIANT) {
-    // Check if this variant card is already in the list
-    const cardVariantId = card.dragged.id;
-    const index = _findIndex(selectedVariants.value, (element) => element.id === cardVariantId);
-    if (index !== -1 && card.from !== card.to) {
-      debounceToast();
-      return false;
-    } else return true;
+  if (card.dragged.dataset.cardType === CARD_TYPES.GROUP) {
+    throttleHandleGroupAdd(card);
+    return false;
   }
-  if (card.type === CARD_TYPES.GROUP) {
-    console.log('handleCardMove Group Handler');
-  }
+  // Check if this variant card is already in the list
+  const cardVariantId = card.dragged.id;
+  const index = _findIndex(selectedVariants.value, (element) => element.id === cardVariantId);
+  if (index !== -1 && card.from !== card.to) {
+    debounceToast();
+    return false;
+  } else return true;
 };
 
 watch(
