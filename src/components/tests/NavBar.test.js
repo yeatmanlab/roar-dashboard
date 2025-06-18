@@ -13,9 +13,7 @@ let mockIsUserSuperAdmin = true;
 
 vi.mock('@/composables/queries/useUserClaimsQuery', () => ({
   default: vi.fn(() => ({
-    data: ref({
-      //
-    }),
+    data: ref({}),
   })),
 }));
 
