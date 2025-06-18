@@ -1,4 +1,4 @@
-// @TODO Add tests for after successfully logging in for email & Google sign-ins. 
+// @TODO Add tests for after successfully logging in for email & Google sign-ins.
 describe('Participant: URL Handling', () => {
   it('Redirects to login when unauthenticated user visits home', () => {
     cy.visit('/');
