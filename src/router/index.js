@@ -784,8 +784,13 @@ router.beforeEach(async (to, from, next) => {
     !store.isAuthenticated &&
     !allowedUnauthenticatedRoutes.includes(to.name)
   ) {
-    next({ name: 'SignIn' });
-    return;
+    if (to.fullPath === '/' || to.name === 'NotFound') {
+      next({ name: 'SignIn' });
+      return;
+    } else {
+      next({ name: 'SignIn', query: { redirect_to: to.fullPath } });
+      return;
+    }
   }
 
   // Prevent routing to routes that the user does not have permission to access.
