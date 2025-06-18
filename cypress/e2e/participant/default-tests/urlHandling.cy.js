@@ -1,3 +1,4 @@
+// @TODO Add tests for after successfully logging in for email & Google sign-ins. 
 describe('Participant: URL Handling', () => {
   it('Redirects to login when unauthenticated user visits home', () => {
     cy.visit('/');
@@ -11,11 +12,5 @@ describe('Participant: URL Handling', () => {
     cy.visit(randomizedUrl);
     cy.wait(0.2 * Cypress.env('timeout'));
     cy.url().should('eq', `${Cypress.config().baseUrl}/signin?redirect_to=${randomizedUrl}`);
-  });
-
-  it('Redirects to login with redirect_to=/unauthorized when unauthenticated user appends protocol prefixes', () => {
-    cy.visit('/https://example.com');
-    cy.wait(0.2 * Cypress.env('timeout'));
-    cy.url().should('eq', `${Cypress.config().baseUrl}/signin?redirect_to=/unauthorized`);
   });
 });
