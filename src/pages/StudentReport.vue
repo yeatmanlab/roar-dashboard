@@ -179,7 +179,11 @@
           <PvAccordionTab :header="$t('scoreReports.nextStepsTabHeader')">
             <i18n-t keypath="scoreReports.nextSteps" tag="div" class="text-lg">
               <template #link>
-                <a href="/roar-next-steps.pdf" class="hover:text-red-700" data-html2canvas-ignore="true" target="_blank"
+                <a
+                  href="/docs/roar-next-steps.pdf"
+                  class="hover:text-red-700"
+                  data-html2canvas-ignore="true"
+                  target="_blank"
                   >click here.</a
                 >
               </template>
@@ -299,7 +303,7 @@ const exportToPdf = async () => {
   yCounter += 25;
   doc.setTextColor(0, 0, 255);
   doc.textWithLink('Next Steps', 15, yCounter, {
-    url: 'https://roar.education/roar-next-steps.pdf',
+    url: 'https://roar.education/docs/roar-next-steps.pdf',
     color: 'blue',
   });
 

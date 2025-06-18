@@ -248,7 +248,7 @@
             administration. By providing classifications for students based on national norms for scoring, you are able
             to see how your student(s) can benefit from varying levels of support. To read more about what to do to
             support your student,
-            <a href="/roar-next-steps.pdf" class="hover:text-red-700" target="_blank">read more</a>.
+            <a href="/docs/roar-next-steps.pdf" class="hover:text-red-700" target="_blank">read more</a>.
           </p>
         </div>
       </div>
