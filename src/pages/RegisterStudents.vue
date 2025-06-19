@@ -830,39 +830,38 @@ const transformStudentData = async (rawStudent) => {
       if (groupId) {
         _set(transformedStudent, 'userData.groups', { id: groupId });
       }
-    } else {
-      // Process district -> school -> class hierarchy
-      if (orgFields.districts && rawStudent['districts']) {
-        const districtName = rawStudent['districts'];
-        studentDistrictId = await getOrgId('districts', districtName);
-        if (studentDistrictId) {
-          _set(transformedStudent, 'userData.districts', { id: studentDistrictId });
-        } else {
-          // TODO: display this gracefully on the UI.
-          console.log(`District ${districtName} not found.`);
-        }
+    }
+    // Process district -> school -> class hierarchy
+    if (orgFields.districts && rawStudent['districts']) {
+      const districtName = rawStudent['districts'];
+      studentDistrictId = await getOrgId('districts', districtName);
+      if (studentDistrictId) {
+        _set(transformedStudent, 'userData.districts', { id: studentDistrictId });
+      } else {
+        // TODO: display this gracefully on the UI.
+        console.log(`District ${districtName} not found.`);
       }
+    }
 
-      if (studentDistrictId && orgFields.schools && rawStudent['schools']) {
-        const schoolName = rawStudent['schools'];
-        studentSchoolId = await getOrgId('schools', schoolName, studentDistrictId);
-        if (studentSchoolId) {
-          _set(transformedStudent, 'userData.schools', { id: studentSchoolId });
-        } else {
-          // TODO: display this gracefully on the UI.
-          console.log(`School ${schoolName} not found.`);
-        }
+    if (studentDistrictId && orgFields.schools && rawStudent['schools']) {
+      const schoolName = rawStudent['schools'];
+      studentSchoolId = await getOrgId('schools', schoolName, studentDistrictId);
+      if (studentSchoolId) {
+        _set(transformedStudent, 'userData.schools', { id: studentSchoolId });
+      } else {
+        // TODO: display this gracefully on the UI.
+        console.log(`School ${schoolName} not found.`);
       }
+    }
 
-      if (studentSchoolId && orgFields.classes && rawStudent['classes']) {
-        const className = rawStudent['classes'];
-        const classId = await getOrgId('classes', className, studentDistrictId, studentSchoolId);
-        if (classId) {
-          _set(transformedStudent, 'userData.classes', { id: classId });
-        } else {
-          // TODO: display this gracefully on the UI.
-          console.log(`Class ${className} not found.`);
-        }
+    if (studentSchoolId && orgFields.classes && rawStudent['classes']) {
+      const className = rawStudent['classes'];
+      const classId = await getOrgId('classes', className, studentDistrictId, studentSchoolId);
+      if (classId) {
+        _set(transformedStudent, 'userData.classes', { id: classId });
+      } else {
+        // TODO: display this gracefully on the UI.
+        console.log(`Class ${className} not found.`);
       }
     }
   } else {
