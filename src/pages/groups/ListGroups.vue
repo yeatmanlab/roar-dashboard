@@ -1,13 +1,12 @@
 <template>
-  <PvToast />
   <main class="container main w-full">
     <section class="main-body">
       <div class="flex flex-column mb-5">
         <div class="flex flex-column align-items-start mb-2 md:flex-row w-full justify-content-between">
           <div class="flex align-items-center gap-3 mb-4 md:mb-0">
             <div class="admin-page-header mr-4">Groups</div>
-            <PvButton class="bg-primary text-white border-none p-2 ml-auto" data-testid="add-group-btn" @click="newGroup"> Add Group </PvButton>
-            <PvButton class="bg-primary text-white border-none p-2 ml-auto" data-testid="add-users-btn" @click="addUsers"> Add Users </PvButton>
+            <PvButton class="bg-primary text-white border-none p-2 ml-auto" data-testid="add-group-btn" @click="isAddGroupModalVisible = true">Add Group</PvButton>
+            <PvButton class="bg-primary text-white border-none p-2 ml-auto" data-testid="add-users-btn" @click="addUsers">Add Users</PvButton>
           </div>
           <div class="flex align-items-center justify-content-end w-full md:w-auto">
             <span class="p-input-icon-left p-input-icon-right">
@@ -151,6 +150,8 @@
       </div>
     </template>
   </RoarModal>
+
+  <AddGroupModal :isVisible="isAddGroupModalVisible" @close="isAddGroupModalVisible = false" />
 </template>
 <script setup>
 import { ref, computed, onMounted, watch, watchEffect } from 'vue';
@@ -165,7 +166,6 @@ import PvInputGroup from 'primevue/inputgroup';
 import PvInputText from 'primevue/inputtext';
 import PvTabPanel from 'primevue/tabpanel';
 import PvTabView from 'primevue/tabview';
-import PvToast from 'primevue/toast';
 import _get from 'lodash/get';
 import _head from 'lodash/head';
 import _kebabCase from 'lodash/kebabCase';
@@ -185,6 +185,7 @@ import { CSV_EXPORT_MAX_RECORD_COUNT } from '@/constants/csvExport';
 import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
 import RoarDataTable from '@/components/RoarDataTable.vue';
 import PvFloatLabel from 'primevue/floatlabel';
+import AddGroupModal from '@/components/modals/AddGroupModal.vue'
 
 const router = useRouter();
 const initialized = ref(false);
@@ -213,13 +214,10 @@ const clearSearch = () => {
   searchQuery.value = '';
   sanitizedSearchString.value = '';
 };
+const isAddGroupModalVisible = ref(false)
 
 const addUsers = () => {
   router.push({ name: 'Add Users' });
-};
-
-const newGroup = () => {
-  router.push({ name: 'CreateGroup' });
 };
 
 const authStore = useAuthStore();
@@ -540,19 +538,19 @@ const filteredTableData = computed(() => {
   if (!tableData.value || !sanitizedSearchString.value) {
     return tableData.value;
   }
-  
+
   const query = sanitizedSearchString.value.toLowerCase().trim();
   return tableData.value.filter(item => {
     // Filter by name
     if (item.name && item.name.toLowerCase().includes(query)) {
       return true;
     }
-    
+
     // Filter by tags if they exist
     if (item.tags && Array.isArray(item.tags)) {
       return item.tags.some(tag => tag.toLowerCase().includes(query));
     }
-    
+
     return false;
   });
 });
