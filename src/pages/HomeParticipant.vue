@@ -105,6 +105,7 @@ import useTasksQuery from '@/composables/queries/useTasksQuery';
 import useSurveyResponsesQuery from '@/composables/useSurveyResponses/useSurveyResponses';
 import useUpdateConsentMutation from '@/composables/mutations/useUpdateConsentMutation';
 import useSignOutMutation from '@/composables/mutations/useSignOutMutation';
+import useDistrictsQuery from '@/composables/queries/useDistrictsQuery';
 import ConsentModal from '@/components/ConsentModal.vue';
 import GameTabs from '@/components/GameTabs.vue';
 import ParticipantSidebar from '@/components/ParticipantSidebar.vue';
@@ -121,6 +122,7 @@ import { initializeSurvey, setupSurveyEventHandlers } from '@/helpers/surveyInit
 import { useSurveyStore } from '@/store/survey';
 import { fetchDocsById } from '@/helpers/query/utils';
 import LevanteSpinner from '@/components/LevanteSpinner.vue';
+import { logger } from '@/logger';
 
 const showConsent = ref(false);
 const consentVersion = ref('');
@@ -144,7 +146,7 @@ const init = () => {
 };
 
 const authStore = useAuthStore();
-const { roarfirekit, showOptionalAssessments } = storeToRefs(authStore);
+const { roarfirekit, showOptionalAssessments, userData: currentUserData } = storeToRefs(authStore);
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.roarfirekit.restConfig) init();
@@ -156,6 +158,14 @@ onMounted(async () => {
 
 const gameStore = useGameStore();
 const { selectedAdmin } = storeToRefs(gameStore);
+
+const { 
+  data: districtsData,
+  isLoading: isLoadingDistricts,
+  isFetching: isFetchingDistricts,
+} = useDistrictsQuery(currentUserData.value?.districts?.current, {
+  enabled: initialized,
+});
 
 const {
   isLoading: isLoadingUserData,
@@ -199,11 +209,11 @@ const { data: surveyResponsesData } = useSurveyResponsesQuery({
 });
 
 const isLoading = computed(() => {
-  return isLoadingUserData.value || isLoadingAssignments.value || isLoadingTasks.value;
+  return isLoadingUserData.value || isLoadingAssignments.value || isLoadingTasks.value || isLoadingDistricts.value;
 });
 
 const isFetching = computed(() => {
-  return isFetchingUserData.value || isFetchingAssignments.value || isFetchingTasks.value;
+  return isFetchingUserData.value || isFetchingAssignments.value || isFetchingTasks.value || isFetchingDistricts.value;
 });
 
 const hasAssignments = computed(() => {
@@ -259,6 +269,18 @@ const toggleShowOptionalAssessments = async () => {
 const userType = computed(() => {
   return toRaw(userData.value)?.userType?.toLowerCase();
 });
+
+// Watch for when districts data changes
+watch(districtsData, (newDistrictsData) => {
+  if (newDistrictsData) {
+    const rawDistrictsData = toRaw(newDistrictsData)?.[0];
+    if (rawDistrictsData?.name) {
+      logger.setAdditionalProperties({
+        siteName: rawDistrictsData?.name,
+      });
+    }
+  }
+}, { immediate: true });
 
 // Assessments to populate the game tabs.
 // Generated based on the current selected administration Id
