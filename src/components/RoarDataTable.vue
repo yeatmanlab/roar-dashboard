@@ -210,6 +210,7 @@
               </div>
               <div v-else-if="col.field === 'userType' && _get(colData, col.field) === 'parent'">caregiver</div>
               <div v-else-if="col.field === 'userType' && _get(colData, col.field) === 'student'">child</div>
+              <div v-else-if="col.field === 'id' && _get(colData, 'userType') === 'admin'">--</div>
               <div v-else>
                 {{ _get(colData, col.field) }}
               </div>
