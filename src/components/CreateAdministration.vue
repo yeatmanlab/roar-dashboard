@@ -18,7 +18,7 @@
       </div>
       <div v-else class="bg-gray-100 rounded p-5">
         <div class="formgrid grid mt-5">
-          <div class="field col-12 xl:col-6 mb-5">
+          <div class="field col-12 xl:col-6">
             <PvFloatLabel>
               <PvInputText
                 id="administration-name"
@@ -35,7 +35,7 @@
             </PvFloatLabel>
           </div>
 
-          <div class="field col-12 xl:col-6 mb-5">
+          <div class="field col-12 xl:col-6">
             <PvFloatLabel>
               <PvInputText
                 id="administration-public-name"
@@ -52,48 +52,13 @@
             </PvFloatLabel>
           </div>
         </div>
-        <div class="formgrid grid">
-          <div class="field col-12 md:col-6 mb-5">
-            <PvFloatLabel>
-              <PvDatePicker
-                v-model="state.dateStarted"
-                class="w-full"
-                show-icon
-                :min-date="minStartDate"
-                :number-of-months="1"
-                :manual-input="false"
-                icon="pi pi-calendar text-primary p-1"
-                input-id="start-date"
-                show-button-bar
-                data-cy="input-start-date"
-              />
-              <label for="start-date">Start Date</label>
-              <small v-if="v$.dateStarted.required.$invalid && submitted" class="p-error"
-                >Please select a start date.</small
-              >
-            </PvFloatLabel>
-          </div>
-          <div class="field col-12 md:col-6">
-            <PvFloatLabel>
-              <PvDatePicker
-                v-model="state.dateClosed"
-                class="w-full"
-                show-icon
-                :min-date="minEndDate"
-                input-id="end-date"
-                :number-of-months="1"
-                :manual-input="false"
-                icon="pi pi-calendar text-primary p-1"
-                show-button-bar
-                data-cy="input-end-date"
-              />
-              <label for="end-date">End Date</label>
-              <small v-if="v$.dateClosed.required.$invalid && submitted" class="p-error"
-                >Please select an end date.</small
-              >
-            </PvFloatLabel>
-          </div>
-        </div>
+
+        <AdministrationDatePicker
+          v-model:start-date="state.dateStarted"
+          v-model:end-date="state.dateClosed"
+          :min-start-date="minStartDate"
+          :min-end-date="minEndDate"
+        />
 
         <PvConfirmDialog
           group="org-errors"
@@ -196,7 +161,6 @@ import { useToast } from 'primevue/usetoast';
 import { useConfirm } from 'primevue/useconfirm';
 import PvFloatLabel from 'primevue/floatlabel';
 import PvButton from 'primevue/button';
-import PvDatePicker from 'primevue/datepicker';
 import PvCheckbox from 'primevue/checkbox';
 import PvConfirmDialog from 'primevue/confirmdialog';
 import PvDivider from 'primevue/divider';
@@ -230,6 +194,7 @@ import { APP_ROUTES, ADMINISTRATION_FORM_TYPES } from '@/constants/routes';
 import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
 import { ORG_TYPES } from '@/constants/orgTypes';
 import { usePermissions } from '@/composables/usePermissions';
+import AdministrationDatePicker from '@/components/AdministrationDatePicker';
 const { userCan, Permissions } = usePermissions();
 
 const isLevante = import.meta.env.MODE === 'LEVANTE';
