@@ -82,8 +82,7 @@
               districts: state.districts,
               schools: state.schools,
               classes: state.classes,
-              groups: state.groups,
-              families: state.families,
+              groups: state.groups
             })
           "
           class="p-error mb-8"
@@ -185,7 +184,6 @@ import useDistrictsQuery from '@/composables/queries/useDistrictsQuery';
 import useSchoolsQuery from '@/composables/queries/useSchoolsQuery';
 import useClassesQuery from '@/composables/queries/useClassesQuery';
 import useGroupsQuery from '@/composables/queries/useGroupsQuery';
-import useFamiliesQuery from '@/composables/queries/useFamiliesQuery';
 import useTaskVariantsQuery from '@/composables/queries/useTaskVariantsQuery';
 import useUpsertAdministrationMutation from '@/composables/mutations/useUpsertAdministrationMutation';
 import TaskPicker from '@/components/TaskPicker.vue';
@@ -288,12 +286,6 @@ const { data: existingGroupData } = useGroupsQuery(groupIds, {
   enabled: initialized,
 });
 
-// Fetch the families assigned to the administration.
-const familyIds = computed(() => existingAdministrationData.value?.minimalOrgs?.families ?? []);
-
-const { data: existingFamiliesData } = useFamiliesQuery(familyIds, {
-  enabled: initialized,
-});
 
 // +------------------------------------------------------------------------------------------------------------------+
 // | Form state and validation rules
@@ -316,7 +308,6 @@ const state = reactive({
   schools: [],
   classes: [],
   groups: [],
-  families: [],
   amount: '',
   expectedTime: '',
 });
@@ -355,7 +346,6 @@ const orgsList = computed(() => {
     schools: existingSchoolsData.value,
     classes: existingClassesData.value,
     groups: existingGroupData.value,
-    families: existingFamiliesData.value,
   };
 });
 
@@ -488,7 +478,6 @@ const submit = async () => {
     schools: toRaw(state.schools).map((org) => org.id),
     classes: toRaw(state.classes).map((org) => org.id),
     groups: toRaw(state.groups).map((org) => org.id),
-    families: toRaw(state.families).map((org) => org.id),
   };
 
   console.log('Checking required orgs...', orgs);

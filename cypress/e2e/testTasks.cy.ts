@@ -1,8 +1,8 @@
 import 'cypress-real-events';
 
 const dashboardUrl = "https://localhost:5173/signin";
-const username = "57xpeiz2b4@levante.com"; 
-const password = "u31p03umu5"; 
+const username = "quqa2y1jss@levante.com"; 
+const password = "xbqamkqc7z"; 
 
 // starts each task and checks that it has loaded (the 'OK' button is present)
 function startTask(tasksRemaining: number) {

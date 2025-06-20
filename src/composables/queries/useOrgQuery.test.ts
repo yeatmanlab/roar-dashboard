@@ -18,9 +18,6 @@ vi.mock('@/composables/queries/useClassesQuery', () => ({
 vi.mock('@/composables/queries/useGroupsQuery', () => ({
   default: vi.fn(() => 'useGroupsQuery'),
 }));
-vi.mock('@/composables/queries/useFamiliesQuery', () => ({
-  default: vi.fn(() => 'useFamiliesQuery'),
-}));
 
 describe('useOrgQuery', () => {
   let queryClient: QueryClient;
@@ -59,13 +56,6 @@ describe('useOrgQuery', () => {
     const mockOrgIds = ref([nanoid(), nanoid()]);
     const result = useOrgQuery(mockOrgType, mockOrgIds);
     expect(result).toBe('useGroupsQuery');
-  });
-
-  it('should return useFamiliesQuery for families as org type', () => {
-    const mockOrgType = SINGULAR_ORG_TYPES.FAMILIES;
-    const mockOrgIds = ref([nanoid(), nanoid()]);
-    const result = useOrgQuery(mockOrgType, mockOrgIds);
-    expect(result).toBe('useFamiliesQuery');
   });
 
   it('should throw an error for unsupported org type', () => {

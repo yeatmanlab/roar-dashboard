@@ -3,7 +3,6 @@ export const ORG_TYPES = {
   SCHOOLS: 'schools',
   CLASSES: 'classes',
   GROUPS: 'groups',
-  FAMILIES: 'families',
 } as const;
 
 export const SINGULAR_ORG_TYPES = {
@@ -11,5 +10,4 @@ export const SINGULAR_ORG_TYPES = {
   SCHOOLS: 'school',
   CLASSES: 'class',
   GROUPS: 'group',
-  FAMILIES: 'family',
 } as const;
