@@ -188,7 +188,22 @@ authStore.$subscribe(() => {
     } else if (routeToProfile.value) {
       router.push({ path: APP_ROUTES.ACCOUNT_PROFILE });
     } else {
-      router.push({ path: APP_ROUTES.HOME });
+      const isUserFullyAuthed = authStore.isAuthenticated && authStore.isUserAuthedAdmin && authStore.isUserAuthedApp;
+      if (
+        isUserFullyAuthed &&
+        router.options.history.state.back &&
+        router.options.history.state.back.includes('redirect_to')
+      ) {
+        const queryString = router.options.history.state.back.split('?')[1];
+        const redirect_to = new URLSearchParams(queryString).get('redirect_to');
+        if (redirect_to.startsWith('/') && !redirect_to.match(/^(?:[a-z+]+:)?\/\//i)) {
+          router.push(redirect_to);
+        } else {
+          router.push({ path: '/unauthorized' });
+        }
+      } else {
+        router.push({ path: APP_ROUTES.HOME });
+      }
     }
   }
 });
