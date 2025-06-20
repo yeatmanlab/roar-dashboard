@@ -66,8 +66,8 @@
                 <div
                   v-for="element in searchResults"
                   :id="element.id"
-                  :data-task-id="element?.task?.id ?? element.id"
                   :key="element.id"
+                  :data-task-id="element?.task?.id ?? element.id"
                   style="cursor: grab"
                 >
                   <VariantCard
@@ -373,7 +373,7 @@ function clearSearch() {
 
 const debounceSearch = _debounce(searchCards, 250);
 
-watch([searchTerm, currentCardType], ([term, cardType]) => {
+watch([searchTerm, currentCardType], ([term]) => {
   if (term.length >= 3) {
     debounceSearch(term);
   } else {
