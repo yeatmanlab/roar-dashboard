@@ -21,9 +21,6 @@ body {
 
 // Sentry feedback widget
 #sentry-feedback {
-  --bottom: 1rem; /* Adjust this value to change the distance from the bottom */
-  --right: 88%;
-  --left: 1rem;
   display: flex;
   justify-content: flex-start;
   --border: 1px solid var(--primary-color);
