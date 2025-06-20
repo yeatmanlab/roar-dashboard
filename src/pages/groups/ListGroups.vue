@@ -555,3 +555,9 @@ const filteredTableData = computed(() => {
   });
 });
 </script>
+
+<style lang="scss">
+.p-datatable-scrollable .p-datatable-frozen-column {
+  position: inherit!important;
+}
+</style>
