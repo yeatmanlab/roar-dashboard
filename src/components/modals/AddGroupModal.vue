@@ -279,7 +279,7 @@ const submit = async () => {
 
   if (orgNameExists) {
     const errorTitle = `${orgTypeLabel.value} Creation Error`;
-    const errorMessage = `${orgTypeLabel.value} with name ${orgName.value} already exists. ${orgTypeLabel.value} names must be uniques.`;
+    const errorMessage = `${orgTypeLabel.value} with name ${orgName.value} already exists. ${orgTypeLabel.value} names must be unique.`;
 
     return toast.add({
       severity: 'error',
