@@ -142,16 +142,6 @@ const routes: Array<RouteRecordRaw> = [
     meta: { pageTitle: 'Create an administrator account', requireAdmin: true },
   },
   {
-    path: '/create-group',
-    name: 'CreateGroup',
-    component: () => import('../pages/groups/CreateGroup.vue'),
-    meta: {
-      pageTitle: 'Create a group',
-      requireAdmin: true,
-      requireSuperAdmin: true,
-    },
-  },
-  {
     path: '/list-groups',
     name: 'ListGroups',
     component: () => import('../pages/groups/ListGroups.vue'),
