@@ -276,6 +276,7 @@ watch(districtsData, (newDistrictsData) => {
     const rawDistrictsData = toRaw(newDistrictsData)?.[0];
     if (rawDistrictsData?.name) {
       logger.setAdditionalProperties({
+        siteId: rawDistrictsData?.id,
         siteName: rawDistrictsData?.name,
       });
     }
