@@ -812,6 +812,13 @@ const computeAssignmentAndRunData = computed(() => {
           currRowScores[taskId].numIncorrect = numIncorrect;
           currRowScores[taskId].thetaEstimate = thetaEstimate;
         }
+        if (['fluency-calf', 'fluency-arf', 'fluency-calf-es', 'fluency-arf-es'].includes(taskId)) {
+          const fc = _get(assessment, 'scores.computed.FC.roamScore');
+          const fr = _get(assessment, 'scores.computed.FR.roamScore');
+
+          currRowScores[taskId].fc = fc;
+          currRowScores[taskId].fr = fr;
+        }
 
         // Logic to update runsByTaskIdAcc
         const run = {
@@ -875,6 +882,18 @@ const computeAssignmentAndRunData = computed(() => {
     const filteredRunsByTaskId = _pickBy(runsByTaskIdAcc, (scores, taskId) => {
       return Object.keys(taskInfoById).includes(taskId);
     });
+
+    // We only want to display the ROAM Tasks if the recruitment param is responseModality
+    // Otherwise, remove them from the runsByTaskId object to prevent including them in TaskReports.
+    const assessments = administrationData.value.assessments;
+    for (const assessment of assessments) {
+      if (['fluency-calf', 'fluency-arf', 'fluency-calf-es', 'fluency-arf-es'].includes(assessment.taskId)) {
+        const recruitment = assessment?.params?.recruitment;
+        if (recruitment !== 'responseModality') {
+          delete filteredRunsByTaskId[assessment.taskId];
+        }
+      }
+    }
 
     return { runsByTaskId: filteredRunsByTaskId, assignmentTableData: assignmentTableDataAcc };
   }
