@@ -12,7 +12,7 @@ import _get from 'lodash/get';
 import _union from 'lodash/union';
 import AppSpinner from '@/components/AppSpinner.vue';
 import { fetchDocById } from '@/helpers/query/utils';
-import { logBreadcrumb, createAuthBreadcrumb } from '@/helpers/logBreadcrumb';
+import { createAuthBreadcrumb, logNavBreadcrumb } from '@/helpers/logBreadcrumb';
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -70,10 +70,9 @@ async function checkForUserType() {
     }
   }
 }
-logBreadcrumb({
-  category: 'navigation',
-  data: { roarUid: roarUid.value, authFrom: 'Clever', authValue: authFromClever.value },
+logNavBreadcrumb({
   message: 'Arrived at CleverLanding.vue',
+  data: { roarUid: roarUid.value, authFrom: 'Clever', authValue: authFromClever.value },
 });
 // console.log(`Arrived at CleverLanding.vue with uid: ${roarUid.value} and authFromClever: ${authFromClever.value} `);
 authFromClever.value = false;

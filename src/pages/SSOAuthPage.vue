@@ -14,7 +14,7 @@ import useSSOAccountReadinessVerification from '@/composables/useSSOAccountReadi
 import AppSpinner from '@/components/AppSpinner.vue';
 import { APP_ROUTES } from '@/constants/routes';
 import { AUTH_SSO_PROVIDERS } from '../constants/auth';
-import { logBreadcrumb } from '@/helpers/logBreadcrumb';
+import { logNavBreadcrumb } from '@/helpers/logBreadcrumb';
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -27,11 +27,10 @@ const isCleverProvider = computed(() => ssoProvider.value === AUTH_SSO_PROVIDERS
 
 onBeforeMount(() => {
   if (!ssoProvider.value) {
-    logBreadcrumb({
-      category: 'navigation',
+    logNavBreadcrumb({
+      message: 'No SSO provider detected. Redirecting to homepage...',
       data: { roarUid: roarUid.value, ssoProvider: ssoProvider.value },
       level: 'warning',
-      message: 'No SSO provider detected. Redirecting to homepage...',
     });
     //console.error('[SSO] No SSO provider detected. Redirecting to homepage...');
     router.push({ path: APP_ROUTES.HOME });
@@ -40,10 +39,9 @@ onBeforeMount(() => {
 });
 
 onMounted(() => {
-  logBreadcrumb({
-    category: 'navigation',
-    data: { roarUid: roarUid.value, ssoProvider: ssoProvider.value },
+  logNavBreadcrumb({
     message: 'Redirected to SSO landing page, polling for account readiness...',
+    data: { roarUid: roarUid.value, ssoProvider: ssoProvider.value },
   });
   //console.log(`[SSO] User ${roarUid.value} was redirected to SSO landing page from ${ssoProvider.value}`);
   //console.log('[SSO] Polling for account readiness...');
