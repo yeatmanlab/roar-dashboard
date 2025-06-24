@@ -86,7 +86,7 @@ async function checkForUserType() {
 
 logBreadcrumb({
   category: 'navigation',
-  data: { roarUid: roarUid.value, details: { authFromClassLink: authFromClassLink.value } },
+  data: { roarUid: roarUid.value, authFrom: 'ClassLink', authValue: authFromClassLink.value },
   message: 'Arrived at ClassLinkLanding.vue',
 });
 //console.log(`Arrived at ClassLinkLanding.vue with uid: ${roarUid.value} and authFromClassLink: ${authFromClassLink.value} `);

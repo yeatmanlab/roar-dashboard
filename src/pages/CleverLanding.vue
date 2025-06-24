@@ -72,7 +72,7 @@ async function checkForUserType() {
 }
 logBreadcrumb({
   category: 'navigation',
-  data: { roarUid: roarUid.value, details: { authFromClever: authFromClever.value } },
+  data: { roarUid: roarUid.value, authFrom: 'Clever', authValue: authFromClever.value },
   message: 'Arrived at CleverLanding.vue',
 });
 // console.log(`Arrived at CleverLanding.vue with uid: ${roarUid.value} and authFromClever: ${authFromClever.value} `);
