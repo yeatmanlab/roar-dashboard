@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { logBreadcrumb } from './logBreadcrumb';
+import { logBreadcrumb, createAuthBreadcrumb } from './logBreadcrumb';
 import { addBreadcrumb } from '@sentry/vue';
 
 vi.mock('@sentry/vue', () => ({
@@ -21,5 +21,18 @@ describe('logBreadcrumb', () => {
       message: 'User is found',
       timestamp: expect.any(Date),
     });
+  });
+
+  it('should log an auth breadcrumb', () => {
+    const logAuthBreadcrumb = createAuthBreadcrumb({ roarUid: 'testUid', userType: 'student', provider: 'Clever' });
+    logAuthBreadcrumb({ message: 'User is found' });
+    expect(addBreadcrumb).toHaveBeenCalledWith({
+      category: 'auth',
+      data: { roarUid: 'testUid', userType: 'student', provider: 'Clever' },
+      level: 'info',
+      message: 'User is found',
+      timestamp: expect.any(Date),
+    });
+    expect(addBreadcrumb.mock.calls[0][0].data).not.toHaveProperty('details');
   });
 });
