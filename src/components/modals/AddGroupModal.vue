@@ -104,7 +104,7 @@
           @click="handleOnClose"
         ></PvButton>
         <PvButton :label="`Add ${orgTypeLabel}`" data-testid="submitBtn" @click="submit">
-          <i v-if="isSubmittingOrg" class="pi pi-spinner pi-spin"></i>
+          <i v-if="isSubmittingOrg || isCheckingOrgName" class="pi pi-spinner pi-spin"></i>
         </PvButton>
       </div>
     </template>
@@ -128,6 +128,7 @@ import PvSelect from 'primevue/select';
 import useDistrictSchoolsQuery from '@/composables/queries/useDistrictSchoolsQuery';
 import useDistrictsListQuery from '@/composables/queries/useDistrictsListQuery';
 import useGroupsListQuery from '@/composables/queries/useGroupsListQuery';
+import useOrgNameExistsQuery from '@/composables/queries/useOrgNameExistsQuery';
 import useSchoolClassesQuery from '@/composables/queries/useSchoolClassesQuery';
 import useUpsertOrgMutation from '@/composables/mutations/useUpsertOrgMutation';
 import useVuelidate from '@vuelidate/core';
@@ -153,7 +154,7 @@ const emit = defineEmits<Emits>();
 const toast = useToast();
 
 const orgName = ref('');
-const orgType = ref<OrgType | null>(null);
+const orgType = ref<OrgType | undefined>(undefined);
 const orgTypes: OrgType[] = [
   { firestoreCollection: 'districts', singular: 'district', label: 'Site' },
   { firestoreCollection: 'schools', singular: 'school', label: 'School' },
@@ -219,6 +220,13 @@ const { isFetching: isFetchingSchools, data: schools } = useDistrictSchoolsQuery
   enabled: schoolQueryEnabled,
 });
 
+const { isRefetching: isCheckingOrgName, refetch: doesOrgNameExist } = useOrgNameExistsQuery(
+  orgName,
+  orgType,
+  parentDistrict,
+  parentSchool,
+);
+
 const handleOnClose = () => {
   resetForm();
   emit('close');
@@ -226,7 +234,7 @@ const handleOnClose = () => {
 
 const resetForm = () => {
   orgName.value = '';
-  orgType.value = null;
+  orgType.value = undefined;
   tags.value = [];
   parentDistrict.value = undefined;
   parentSchool.value = undefined;
@@ -266,6 +274,20 @@ const submit = async () => {
     districtId: toRaw(parentDistrict.value)?.id,
     parentOrgId: toRaw(parentDistrict.value)?.id,
   };
+
+  const { data: orgNameExists } = await doesOrgNameExist();
+
+  if (orgNameExists) {
+    const errorTitle = `${orgTypeLabel.value} Creation Error`;
+    const errorMessage = `${orgTypeLabel.value} with name ${orgName.value} already exists. ${orgTypeLabel.value} names must be unique.`;
+
+    return toast.add({
+      severity: 'error',
+      summary: errorTitle,
+      detail: errorMessage,
+      life: TOAST_DEFAULT_LIFE_DURATION,
+    });
+  }
 
   upsertOrg(data, {
     onSuccess: () => {
