@@ -22,11 +22,13 @@ export const logBreadcrumb = ({ category, data, message, level = 'info' }) => {
   });
 };
 
-export const createAuthBreadcrumb = (baseOptions) => (options, details) => {
-  const data = details ? { ...baseOptions, details } : baseOptions;
-  logBreadcrumb({
-    ...options,
-    data,
-    category: 'auth',
-  });
-};
+export const createAuthBreadcrumb =
+  (baseOptions) =>
+  ({ details, ...options }) => {
+    const data = details ? { ...baseOptions, details } : baseOptions;
+    logBreadcrumb({
+      ...options,
+      data,
+      category: 'auth',
+    });
+  };

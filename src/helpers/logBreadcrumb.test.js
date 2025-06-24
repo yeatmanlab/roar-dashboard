@@ -23,16 +23,28 @@ describe('logBreadcrumb', () => {
     });
   });
 
-  it('should log an auth breadcrumb', () => {
+  it('should log an auth breadcrumb without extra details', () => {
     const logAuthBreadcrumb = createAuthBreadcrumb({ roarUid: 'testUid', userType: 'student', provider: 'Clever' });
-    logAuthBreadcrumb({ message: 'User is found' });
+    logAuthBreadcrumb({ message: 'User is found with invalid userType, retrying...', level: 'warning' });
     expect(addBreadcrumb).toHaveBeenCalledWith({
       category: 'auth',
       data: { roarUid: 'testUid', userType: 'student', provider: 'Clever' },
-      level: 'info',
-      message: 'User is found',
+      level: 'warning',
+      message: 'User is found with invalid userType, retrying...',
       timestamp: expect.any(Date),
     });
     expect(addBreadcrumb.mock.calls[0][0].data).not.toHaveProperty('details');
+  });
+
+  it('should log an auth breadcrumb with extra details', () => {
+    const logAuthBreadcrumb = createAuthBreadcrumb({ roarUid: 'testUid', userType: 'student', provider: 'Clever' });
+    logAuthBreadcrumb({ message: 'Arrived at CleverLanding.vue', details: { authFromClever: true } });
+    expect(addBreadcrumb).toHaveBeenCalledWith({
+      category: 'auth',
+      data: { roarUid: 'testUid', userType: 'student', provider: 'Clever', details: { authFromClever: true } },
+      level: 'info',
+      message: 'Arrived at CleverLanding.vue',
+      timestamp: expect.any(Date),
+    });
   });
 });
