@@ -221,3 +221,10 @@ export const convertToGroupName = (groupName: string): string => {
   const lowerCaseGroupName = groupName.toLowerCase();
   return groupNameMap[lowerCaseGroupName] || groupName;
 };
+
+export const normalizeToLowercase = (str = ''): string =>
+  str
+    .trim()
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '');
