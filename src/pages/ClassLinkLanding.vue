@@ -13,7 +13,7 @@ import _union from 'lodash/union';
 import _isEmpty from 'lodash/isEmpty';
 import AppSpinner from '@/components/AppSpinner.vue';
 import { fetchDocById } from '@/helpers/query/utils';
-import { createAuthBreadcrumb, logNavBreadcrumb } from '@/helpers/logBreadcrumb';
+import { createAuthBreadcrumb, logNavBreadcrumb } from '@/helpers/logBreadcrumbs';
 
 const router = useRouter();
 const authStore = useAuthStore();
