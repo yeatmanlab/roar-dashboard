@@ -1,34 +1,57 @@
 import { addBreadcrumb } from '@sentry/vue';
 
 /**
- * Logs a Sentry breadcrumb.
+ * Logs a generic Sentry breadcrumb.
  *
  * @param {Object} options
  * @param {string} options.category - Event context.
- * @param {Object} options.data - Expected fields by category:
- *   - auth: { roarUid: string, userType: string, provider: string, details?: object }
- *   - admin: { adminUid: string, role: string }
- *   - assignment: { assignmentId: string, userId: string }
- * @param {string} options.message - Short event summary.
+ * @param {Object} options.data - Event data.
+ * @param {string} options.message - Event description.
  * @param {string} [options.level='info'] - Severity, defaults to 'info'.
  */
 export const logBreadcrumb = ({ category, data, message, level = 'info' }) => {
   addBreadcrumb({
     category,
+    message,
     data,
     level,
-    message,
     timestamp: new Date(),
   });
 };
 
+/**
+ * Creates a reusable Sentry auth breadcrumb logger.
+ *
+ * @param {Object} baseData - Data included in every event: { roarUid: string, userType: string, provider: string }
+ * @returns {Function} logger - Returns a function that logs an authentication event.
+ *   @param {Object} eventData - Event to log.
+ *   @param {string} eventData.message - Event description.
+ *   @param {string} [eventData.level='info'] - Optional severity level.
+ *   @param {Object} [eventData.details] - Optional extra data.
+ */
 export const createAuthBreadcrumb =
-  (baseOptions) =>
+  (baseData) =>
   ({ details, ...options }) => {
-    const data = details ? { ...baseOptions, details } : baseOptions;
+    const data = details ? { ...baseData, details } : baseData;
     logBreadcrumb({
-      ...options,
-      data,
       category: 'auth',
+      data,
+      ...options,
     });
   };
+
+/**
+ * Logs a Sentry navigation breadcrumb.
+ *
+ * @param {Object} eventData - Event to log.
+ * @param {string} eventData.message - Event description.
+ * @param {string} [eventData.level='info'] - Optional severity level.
+ */
+export const logNavBreadcrumb = ({ data, message, level }) => {
+  logBreadcrumb({
+    category: 'navigation',
+    data,
+    message,
+    level,
+  });
+};
