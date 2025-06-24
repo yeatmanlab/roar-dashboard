@@ -12,6 +12,7 @@ import { FIRESTORE_COLLECTIONS } from '@/constants/firebase';
 
 interface OrgDataBase {
   name: string;
+  normalizedName: string;
   id?: string; // Optional for new orgs, assigned by backend
   tags?: string[];
 }
