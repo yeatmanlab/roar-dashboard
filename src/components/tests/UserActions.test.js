@@ -57,7 +57,7 @@ describe('UserActions', () => {
     helpSelect.vm.$emit('change', { value: 'reportAnIssue' });
 
     expect(windowOpenSpy).toHaveBeenCalledWith(
-      'https://watery-wrench-dee.notion.site/13c244e26d9b8005adbde4522455edfd',
+      'https://levante-support.freshdesk.com',
       '_blank',
     );
   });

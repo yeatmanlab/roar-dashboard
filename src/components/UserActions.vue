@@ -87,7 +87,7 @@ const handleHelpChange = (e: DropdownChangeEvent): void => {
   if (e.value === 'researcherDocumentation') {
     window.open('https://researcher.levante-network.org/', '_blank');
   } else if (e.value === 'reportAnIssue') {
-    window.open('https://watery-wrench-dee.notion.site/13c244e26d9b8005adbde4522455edfd', '_blank');
+    window.open('https://levante-support.freshdesk.com', '_blank');
   }
 };
 
