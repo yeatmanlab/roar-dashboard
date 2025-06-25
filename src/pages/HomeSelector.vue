@@ -34,6 +34,7 @@ import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useUpdateConsentMutation from '@/composables/mutations/useUpdateConsentMutation';
 import { CONSENT_TYPES } from '@/constants/consentTypes';
 import { APP_ROUTES } from '@/constants/routes';
+import { logBreadcrumb } from '@/helpers/logBreadcrumbs';
 
 const HomeParticipant = defineAsyncComponent(() => import('@/pages/HomeParticipant.vue'));
 const HomeAdministrator = defineAsyncComponent(() => import('@/pages/HomeAdministrator.vue'));
@@ -145,6 +146,17 @@ watch(
   },
   { immediate: true },
 );
+
+watch(userClaims, (updatedUserClaims) => {
+  if (updatedUserClaims && updatedUserClaims.value) {
+    const { adminUid, assessmentUid, roarUid } = updatedUserClaims.value.claims;
+    const { userType } = useUserType(updatedUserClaims);
+    logBreadcrumb({
+      message: 'User claims updated',
+      data: { adminUid, assessmentUid, roarUid, userType },
+    });
+  }
+});
 
 onMounted(async () => {
   if (requireRefresh.value) {
