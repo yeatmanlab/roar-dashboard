@@ -177,7 +177,7 @@ const submit = async () => {
   }
 
   await roarfirekit.value
-    .createAdministrator(email.value, name, orgs, adminOrgs, isTestData)
+    .createAdministrator(email.value, name, orgs, adminOrgs, isTestData.value)
     .then(() => {
       toast.add({ severity: 'success', summary: 'Success', detail: 'Administrator account created', life: 5000 });
       router.push({ name: 'Home' });
