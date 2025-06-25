@@ -18,7 +18,7 @@ import { FIRESTORE_COLLECTIONS } from '@/constants/firebase';
 
 export const getOrgsRequestBody = ({
   orgType,
-  orgName,
+  orgNormalizedName,
   parentDistrict,
   parentSchool,
   orderBy,
@@ -54,22 +54,22 @@ export const getOrgsRequestBody = ({
 
   const filters = [];
 
-  if (orgName && !(parentDistrict || parentSchool)) {
+  if (orgNormalizedName && !(parentDistrict || parentSchool)) {
     filters.push({
       fieldFilter: {
-        field: { fieldPath: 'name' },
+        field: { fieldPath: 'normalizedName' },
         op: 'EQUAL',
-        value: { stringValue: orgName },
+        value: { stringValue: orgNormalizedName },
       },
     });
   } else if ((orgType === 'schools' && parentDistrict) || (orgType === 'classes' && parentDistrict && !parentSchool)) {
-    if (orgName) {
+    if (orgNormalizedName) {
       filters.push(
         {
           fieldFilter: {
-            field: { fieldPath: 'name' },
+            field: { fieldPath: 'normalizedName' },
             op: 'EQUAL',
-            value: { stringValue: orgName },
+            value: { stringValue: orgNormalizedName },
           },
         },
         {
@@ -90,13 +90,13 @@ export const getOrgsRequestBody = ({
       });
     }
   } else if (orgType === 'classes' && parentSchool) {
-    if (orgName) {
+    if (orgNormalizedName) {
       filters.push(
         {
           fieldFilter: {
-            field: { fieldPath: 'name' },
+            field: { fieldPath: 'normalizedName' },
             op: 'EQUAL',
-            value: { stringValue: orgName },
+            value: { stringValue: orgNormalizedName },
           },
         },
         {
@@ -220,16 +220,17 @@ export const orgCounter = async (activeOrgType, selectedDistrict, selectedSchool
   }
 };
 
-export const fetchOrgByName = async (orgType, orgName, selectedDistrict, selectedSchool) => {
+export const fetchOrgByName = async (orgType, orgNormalizedName, selectedDistrict, selectedSchool, orderBy = null) => {
   const axiosInstance = getAxiosInstance();
   const requestBody = getOrgsRequestBody({
-    orgType: orgType,
+    orgType,
     parentDistrict: orgType === 'schools' ? selectedDistrict.value : null,
     parentSchool: orgType === 'classes' ? selectedSchool.value : null,
     aggregationQuery: false,
-    orgName,
+    orgNormalizedName,
     paginate: false,
     select: ['id'],
+    orderBy
   });
 
   return axiosInstance.post(':runQuery', requestBody).then(({ data }) => mapFields(data));

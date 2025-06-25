@@ -116,6 +116,7 @@ import _capitalize from 'lodash/capitalize';
 import _union from 'lodash/union';
 import _without from 'lodash/without';
 import { computed, ref, toRaw } from 'vue';
+import { normalizeToLowercase } from '@/helpers';
 import { required, requiredIf } from '@vuelidate/validators';
 import { TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
 import { useToast } from 'primevue/usetoast';
@@ -268,6 +269,7 @@ const submit = async () => {
 
   const data = {
     name: orgName.value,
+    normalizedName: normalizeToLowercase(orgName.value),
     type: orgType.value?.firestoreCollection,
     tags: tags.value?.length > 0 ? tags.value : [],
     schoolId: toRaw(parentSchool.value)?.id,

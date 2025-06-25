@@ -1,3 +1,4 @@
+import { normalizeToLowercase } from '@/helpers';
 import { fetchOrgByName } from '@/helpers/query/orgs';
 import { useQuery } from '@tanstack/vue-query';
 import { Ref } from 'vue';
@@ -24,15 +25,22 @@ export default function useOrgNameExistsQuery(
     enabled: false,
     queryKey: ['useOrgNameExists', orgType.value?.singular, orgName.value],
     queryFn: async () => {
-      const trimmedOrgName = orgName.value.trim();
+      const normalized = normalizeToLowercase(orgName.value);
+      const orderBy = [
+        {
+          field: { fieldPath: 'normalizedName' },
+          direction: 'ASCENDING',
+        },
+      ];
 
-      if (trimmedOrgName === '') return true;
+      if (normalized === '') return true;
 
       const orgs = await fetchOrgByName(
         orgType.value?.firestoreCollection,
-        trimmedOrgName,
+        normalized,
         selectedDistrict.value?.name,
         selectedSchool.value?.name,
+        orderBy,
       );
 
       return orgs.length > 0;
