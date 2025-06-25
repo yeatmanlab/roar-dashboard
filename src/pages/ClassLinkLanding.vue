@@ -37,8 +37,6 @@ async function checkForUserType() {
           message: 'User is found with assignments, routing to home',
           details: { userData, assignments },
         });
-        //console.log(`User ${roarUid.value} found with assignments.`, { userData, assignments });
-        //console.log('Routing to Home');
         clearInterval(userDataCheckInterval);
         authStore.refreshQueryKeys();
         router.push({ name: 'Home' });
@@ -47,19 +45,15 @@ async function checkForUserType() {
           message: 'User is found but no assignments. Retrying...',
           level: 'warning',
         });
-        //console.log(`User ${roarUid.value} found with userType ${userType} but no assignments. Retrying...`);
       }
     } else if (userType && userType !== 'guest') {
-      //console.log(`User ${roarUid.value} found with userType ${userType}.`);
       const userClaims = await fetchDocById('userClaims', uid.value);
       const adminOrgs = _get(userClaims, 'claims.adminOrgs', {});
       logAuthBreadcrumb({
         message: 'User is found with adminOrgs',
         details: { adminOrgs },
       });
-      //console.log(`User ${roarUid.value} found with userType ${userType} and adminOrgs:`, adminOrgs);
       if (!_isEmpty(adminOrgs)) {
-        console.log('Routing to Home');
         clearInterval(userDataCheckInterval);
         authStore.refreshQueryKeys();
         router.push({ name: 'Home' });
@@ -68,14 +62,12 @@ async function checkForUserType() {
           message: 'User is found but with no adminOrgs, retrying...',
           level: 'warning',
         });
-        //console.log(`User ${roarUid.value} found with userType ${userType} but no adminOrgs. Retrying...`);
       }
     } else {
       logAuthBreadcrumb({
         message: 'User is found with invalid userType, retrying...',
         level: 'warning',
       });
-      //console.log(`User ${roarUid.value} found with userType ${userType}. Retrying...`);
     }
   } catch (error) {
     if (error.code !== 'ERR_BAD_REQUEST') {
@@ -88,7 +80,6 @@ logNavBreadcrumb({
   message: 'Arrived at ClassLinkLanding.vue',
   data: { roarUid: roarUid.value, authFrom: 'ClassLink', authValue: authFromClassLink.value },
 });
-//console.log(`Arrived at ClassLinkLanding.vue with uid: ${roarUid.value} and authFromClassLink: ${authFromClassLink.value} `);
 authFromClassLink.value = false;
 userDataCheckInterval = setInterval(checkForUserType, 500);
 </script>

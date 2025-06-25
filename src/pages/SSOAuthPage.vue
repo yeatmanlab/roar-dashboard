@@ -32,7 +32,6 @@ onBeforeMount(() => {
       data: { roarUid: roarUid.value, ssoProvider: ssoProvider.value },
       level: 'warning',
     });
-    //console.error('[SSO] No SSO provider detected. Redirecting to homepage...');
     router.push({ path: APP_ROUTES.HOME });
     return;
   }
@@ -43,9 +42,6 @@ onMounted(() => {
     message: 'Redirected to SSO landing page, polling for account readiness...',
     data: { roarUid: roarUid.value, ssoProvider: ssoProvider.value },
   });
-  //console.log(`[SSO] User ${roarUid.value} was redirected to SSO landing page from ${ssoProvider.value}`);
-  //console.log('[SSO] Polling for account readiness...');
-
   ssoProvider.value = null;
   startPolling();
 });

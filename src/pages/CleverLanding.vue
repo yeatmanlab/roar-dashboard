@@ -36,24 +36,19 @@ async function checkForUserType() {
           message: 'User is found with assignments, routing to home',
           details: { userData, assignments },
         });
-        // console.log(`User ${roarUid.value} found with assignments.`, { userData, assignments });
-        // console.log('Routing to Home');
         clearInterval(userDataCheckInterval);
         authStore.refreshQueryKeys();
         await router.push({ name: 'Home' });
       } else {
         logAuthBreadcrumb({
-          message: 'User is found but no assignments. Retrying...',
+          message: 'User is found but with no assignments. Retrying...',
           level: 'warning',
         });
-        // console.log(`User ${roarUid.value} found with userType ${userType} but no assignments. Retrying...`);
       }
     } else if (userType && userType !== 'guest') {
       logAuthBreadcrumb({
         message: 'User is found, routing to home',
       });
-      //console.log(`User ${roarUid.value} found with userType ${userType}.`);
-      //console.log('Routing to Home');
       clearInterval(userDataCheckInterval);
       authStore.refreshQueryKeys();
       await router.push({ name: 'Home' });
@@ -62,7 +57,6 @@ async function checkForUserType() {
         message: 'User is found with invalid userType, retrying...',
         level: 'warning',
       });
-      //console.log(`User ${roarUid.value} found with userType ${userType}. Retrying...`);
     }
   } catch (error) {
     if (error.code !== 'ERR_BAD_REQUEST') {
@@ -74,7 +68,6 @@ logNavBreadcrumb({
   message: 'Arrived at CleverLanding.vue',
   data: { roarUid: roarUid.value, authFrom: 'Clever', authValue: authFromClever.value },
 });
-// console.log(`Arrived at CleverLanding.vue with uid: ${roarUid.value} and authFromClever: ${authFromClever.value} `);
 authFromClever.value = false;
 userDataCheckInterval = setInterval(checkForUserType, 1000);
 </script>
