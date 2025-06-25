@@ -18,6 +18,14 @@ const appVersion = packageJson.version;
 const coreTasksVersion = packageJson.dependencies['@levante-framework/core-tasks'].replace('^', '');
 const commitHash = import.meta.env.VITE_APP_VERSION;
 let currentUser: UserData | null = null;
+let currentProperties: Record<string, any> = {};
+
+function setAdditionalProperties(properties: Record<string, any>): void {
+  currentProperties = {
+    ...currentProperties,
+    ...properties,
+  };
+}
 
 /**
  * Logs an event for analytics.
@@ -33,6 +41,7 @@ function capture(name: string, properties?: Record<string, any>, force: boolean 
     coreTasksVersion,
     commitHash,
     ...properties,
+    ...currentProperties,
   };
   if (isProduction || force) {
     // Assuming posthogInstance might be the mock object in dev, check for capture existence
@@ -58,6 +67,7 @@ function error(error: Error | unknown, context?: Record<string, any>, force: boo
     coreTasksVersion,
     commitHash,
     ...context,
+    ...currentProperties,
   };
   if (isProduction || force) {
     Sentry.captureException(error, { extra });
@@ -94,12 +104,14 @@ function setUser(userData: UserData | null, force: boolean = false): void {
       }
       Sentry.setUser(null);
       currentUser = null;
+      currentProperties = {};
     }
   } else {
     if (userData) {
       console.info('[Logger SetUser]', userData);
     } else {
       console.info('[Logger ResetUser]');
+      currentProperties = {};
     }
   }
 }
@@ -108,4 +120,5 @@ export const logger = {
   capture,
   error,
   setUser,
+  setAdditionalProperties,
 };
