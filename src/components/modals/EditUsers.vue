@@ -211,7 +211,7 @@ import PvDialog from 'primevue/dialog';
 import PvSelect from 'primevue/select';
 import PvInputText from 'primevue/inputtext';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
-import { logBreadcrumb } from '@/helpers/logBreadcrumb';
+import { logBreadcrumb } from '@/helpers/logBreadcrumbs';
 
 const props = defineProps({
   userData: {

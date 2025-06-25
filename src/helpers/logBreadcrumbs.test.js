@@ -6,7 +6,7 @@ vi.mock('@sentry/vue', () => ({
   addBreadcrumb: vi.fn(),
 }));
 
-describe('logBreadcrumb', () => {
+describe('logBreadcrumbs', () => {
   it('should log a breadcrumb', () => {
     logBreadcrumb({
       category: 'auth',

@@ -39,7 +39,7 @@ import _get from 'lodash/get';
 import { useAuthStore } from '@/store/auth';
 import useUserDataQuery from '@/composables/queries/useUserDataQuery';
 import EditUsersForm from '../EditUsersForm.vue';
-import { logBreadcrumb } from '@/helpers/logBreadcrumb';
+import { logBreadcrumb } from '@/helpers/logBreadcrumbs';
 
 // +----------------+
 // | Initialization |
