@@ -200,16 +200,6 @@ export const useAuthStore = () => {
         consentData,
         isTestData = false,
       ) {
-        console.log('Auth Store createNewFamily called with:', {
-          careTakerEmail,
-          careTakerData,
-          studentsLength: students?.length,
-          students,
-          consentData,
-          isTestData,
-          hasRoarFirekit: !!this.roarfirekit,
-        });
-
         if (!this.roarfirekit) {
           throw new Error('roarfirekit is not initialized');
         }
