@@ -9,15 +9,18 @@
           <h2 data-cy="h2-card-admin-title" class="sm:text-lg lg:text-lx m-0 h2-card-admin-title">
             {{ title }}
           </h2>
+          <small v-if="Object.keys(props.creator).length" class="m-0 ml-1">
+            — Created by <span class="font-bold">{{ props.creator?.displayName }}</span></small
+          >
         </div>
-        <div class="flex justify-content-end w-3 pl-5 pb-5 ml-2 mt-2">
+        <div class="flex justify-content-end w-3">
           <PvSpeedDial
             :model="speedDialItems"
             direction="left"
             :transition-delay="80"
             show-icon="pi pi-cog text-primary"
             hide-icon="pi pi-times"
-            button-class="p-button-outlined p-button-sm w-3rem h-3rem border-primary border-1 border-circle bg-transparent hover:surface-300"
+            button-class="w-2rem h-2rem border-none border-circle bg-transparent"
             :tooltip-options="{ position: 'top' }"
             :pt="{ button: { size: 'small' } }"
           />
@@ -26,7 +29,7 @@
       </div>
       <div class="card-admin-details">
         <span class="mr-1"><strong>Availability</strong>:</span>
-        <span class="mr-1">
+        <span>
           {{ processedDates.start.toLocaleDateString() }} —
           {{ processedDates.end.toLocaleDateString() }}
         </span>
@@ -43,7 +46,7 @@
               v-if="showParams"
               v-tooltip.top="'View parameters'"
               class="pi pi-info-circle cursor-pointer ml-1"
-              style="font-size: 1rem"
+              style="font-size: 0.8rem"
               @click="toggleParams($event, assessmentId)"
             />
           </span>
@@ -84,7 +87,7 @@
               type="bar"
               :data="setBarChartData(node.data.stats?.assignment)"
               :options="setBarChartOptions(node.data.stats?.assignment)"
-              class="h-3rem w-full"
+              class="h-2rem w-full m-0 mt-2 p-0"
             />
           </template>
         </PvColumn>
@@ -104,8 +107,8 @@
               >
                 <PvButton
                   v-tooltip.top="'See completion details'"
-                  class="m-0 mr-1 surface-0 text-bluegray-500 shadow-1 border-none p-2 border-round hover:surface-100"
-                  style="height: 2.5rem; color: var(--primary-color) !important"
+                  class="m-0 bg-transparent text-bluegray-500 shadow-none border-none p-0 border-round"
+                  style="color: var(--primary-color) !important"
                   severity="secondary"
                   text
                   raised
@@ -214,6 +217,7 @@ interface Props {
   assessments: Assessment[];
   showParams: boolean;
   isSuperAdmin: boolean;
+  creator?: any;
 }
 
 interface SpeedDialItem {
@@ -260,6 +264,7 @@ interface ChartOptions {
 const router = useRouter();
 
 const props = withDefaults(defineProps<Props>(), {
+  creator: {},
   stats: () => ({}),
 });
 
@@ -565,14 +570,14 @@ onMounted((): void => {
   text-align: left;
   width: 100%;
   background: var(--surface-b);
-  border: 1px solid var(--gray-300);
-  border-radius: var(--border-radius);
+  border: 1px solid var(--gray-200);
+  border-radius: calc(var(--border-radius) * 4);
   display: flex;
   flex-direction: row;
   gap: 2rem;
-  padding: 1rem;
+  padding: 2rem;
   overflow-y: hidden;
-  overflow-x: scroll;
+  overflow-x: auto;
 
   .card-admin-chart {
     width: 12ch;
@@ -619,18 +624,24 @@ onMounted((): void => {
 .card-inline-list-item {
   position: relative;
 
-  &:not(:last-child):after {
+  &:not(:last-of-type):after {
     content: ', ';
   }
+}
+
+.card-admin-details {
+  display: flex;
+  justify-content: start;
+  align-items: center;
 }
 
 .status-badge {
   font-weight: bold;
   font-family: var(--font-family);
-  padding: 0.2rem 0.5rem;
+  padding: 0.25rem 0.5rem;
   border-radius: var(--p-border-radius-xl);
-  font-size: 0.8rem;
-  margin-left: 0.8rem;
+  font-size: 0.7rem;
+  margin: 0 0 0 0.8rem;
 
   &.open {
     background-color: var(--green-100);
@@ -645,10 +656,10 @@ onMounted((): void => {
 
 .h2-card-admin-title {
   float: left;
+  font-weight: bold;
 
   @media (max-width: 768px) {
     font-size: 1.1rem;
-    font-weight: bold;
   }
 }
 </style>
