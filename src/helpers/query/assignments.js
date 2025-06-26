@@ -8,7 +8,7 @@ import _replace from 'lodash/replace';
 import _uniq from 'lodash/uniq';
 import _without from 'lodash/without';
 import _isEmpty from 'lodash/isEmpty';
-import { convertValues, getAxiosInstance, getProjectId, mapFields } from './utils';
+import { convertValues, getAxiosInstance, getBaseDocumentPath, getProjectId, mapFields } from './utils';
 import { pluralizeFirestoreCollection, isLevante } from '@/helpers';
 
 const userSelectFields = ['name', 'assessmentPid', 'username', 'studentData', 'schools', 'classes', 'userType'];
@@ -669,7 +669,7 @@ export const assignmentPageFetcher = async (
     console.log(
       `Fetching page ${page.value} for ${adminId} with filter ${filters[0].value} on field ${filters[0].field}`,
     );
-    return adminAxiosInstance.post(':runQuery', requestBody).then(async ({ data }) => {
+    return adminAxiosInstance.post(`${getBaseDocumentPath()}:runQuery`, requestBody).then(async ({ data }) => {
       const scoresData = mapFields(data, true);
 
       // Generate a list of user docs paths
@@ -688,7 +688,7 @@ export const assignmentPageFetcher = async (
 
       // Use a batch get to grab the user docs
       const batchUserDocs = await adminAxiosInstance
-        .post(':batchGet', {
+        .post(`${getBaseDocumentPath()}:batchGet`, {
           documents: userDocPaths,
           mask: { fieldPaths: userSelectFields },
         })
@@ -715,7 +715,7 @@ export const assignmentPageFetcher = async (
 
       // Batch get assignment docs
       const batchAssignmentDocs = await adminAxiosInstance
-        .post(':batchGet', {
+        .post(`${getBaseDocumentPath()}:batchGet`, {
           documents: assignmentDocPaths,
           mask: { fieldPaths: assignmentSelectFields },
         })
@@ -768,7 +768,7 @@ export const assignmentPageFetcher = async (
 
       // Use the list of unretrieved scores and batchGet
       const otherScores = await adminAxiosInstance
-        .post(':batchGet', {
+        .post(`${getBaseDocumentPath()}:batchGet`, {
           documents: unretrievedScores,
           mask: { fieldPaths: ['scores', 'reliable', 'engagementFlags'] },
         })
@@ -870,7 +870,7 @@ export const assignmentPageFetcher = async (
     });
 
     console.log(`Fetching page ${page.value} for ${adminId}`);
-    return adminAxiosInstance.post(':runQuery', requestBody).then(async ({ data }) => {
+    return adminAxiosInstance.post(`${getBaseDocumentPath()}:runQuery`, requestBody).then(async ({ data }) => {
       const assignmentData = mapFields(data, true);
 
       // Get User docs
@@ -889,7 +889,7 @@ export const assignmentPageFetcher = async (
 
       // Use batchGet to get all user docs with one post request
       const batchUserDocs = await adminAxiosInstance
-        .post(':batchGet', {
+        .post(`${getBaseDocumentPath()}:batchGet`, {
           documents: userDocPaths,
           mask: { fieldPaths: userSelectFields },
         })
@@ -997,19 +997,16 @@ export const assignmentPageFetcher = async (
         // Use batchGet to get all of the run docs (including their scores)
         const runDocPaths = _flatten(
           assignmentData.map((assignment) => {
-            const firestoreBasePath = 'https://firestore.googleapis.com/v1/';
-            const adminBasePath = adminAxiosInstance.defaults.baseURL.replace(firestoreBasePath, '');
             const runIds = _without(
               assignment.assessments.map((assessment) => assessment.runId),
               undefined,
             );
-            const userPath = userDocPaths.find((userDocPath) => userDocPath.includes(assignment.parentDoc));
-            return runIds.map((runId) => `${userPath.replace(adminBasePath, '')}/runs/${runId}`);
+            return runIds.map((runId) => `${getBaseDocumentPath()}/runs/${runId}`);
           }),
         );
 
         const batchRunDocs = await adminAxiosInstance
-          .post(':batchGet', {
+          .post(`${getBaseDocumentPath()}:batchGet`, {
             documents: runDocPaths,
             mask: { fieldPaths: ['scores', 'reliable', 'engagementFlags'] },
           })
@@ -1073,7 +1070,7 @@ export const getUserAssignments = async (roarUid) => {
   });
   const userId = toValue(roarUid);
   return await adminAxiosInstance
-    .post(`/users/${toValue(userId)}:runQuery`, assignmentRequest)
+    .post(`${getBaseDocumentPath()}/users/${toValue(userId)}:runQuery`, assignmentRequest)
     .then(async ({ data }) => {
       const assignmentData = mapFields(data);
       const openAssignments = assignmentData.filter((assignment) => new Date(assignment.dateOpened) <= new Date());

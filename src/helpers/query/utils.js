@@ -12,7 +12,7 @@ import _without from 'lodash/without';
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '@/store/auth';
 import { flattenObj } from '@/helpers';
-import { FIRESTORE_DATABASES } from '@/constants/firebase';
+import { FIRESTORE_BASE_URL, FIRESTORE_DATABASES } from '@/constants/firebase';
 
 export const convertValues = (value) => {
   const passThroughKeys = [
@@ -72,10 +72,15 @@ export const getProjectId = (project = 'admin') => {
   return roarfirekit.value.roarConfig?.[project]?.projectId;
 };
 
+export const getBaseDocumentPath = () => {
+  return `projects/${getProjectId()}/databases/(default)/documents`;
+};
+
 export const getAxiosInstance = (db = FIRESTORE_DATABASES.ADMIN, unauthenticated = false) => {
   const authStore = useAuthStore();
   const { roarfirekit } = storeToRefs(authStore);
   const axiosOptions = _get(roarfirekit.value.restConfig, db) ?? {};
+  axiosOptions.baseURL = FIRESTORE_BASE_URL;
 
   // // Add appCheckToken to the headers if it exists in the firekit config
   // const appCheckToken = roarfirekit.value[db]?.appCheckToken;
@@ -152,7 +157,7 @@ export const fetchDocById = async (
   const queryParams = (select ?? []).map((field) => `mask.fieldPaths=${field}`);
   const queryString = queryParams.length > 0 ? `?${queryParams.join('&')}` : '';
 
-  const { data } = await axiosInstance.get(docPath + queryString);
+  const { data } = await axiosInstance.get(getBaseDocumentPath() + docPath + queryString);
 
   return {
     id: docIdValue,
@@ -174,8 +179,7 @@ export const fetchDocById = async (
  */
 export const fetchDocumentsById = async (collection, docIds, select = [], db = FIRESTORE_DATABASES.ADMIN) => {
   const axiosInstance = getAxiosInstance(db);
-  const baseURL = axiosInstance.defaults.baseURL.split('googleapis.com/v1/')[1];
-  const documents = toValue(docIds).map((docId) => `${baseURL}/${collection}/${docId}`);
+  const documents = toValue(docIds).map((docId) => `${getBaseDocumentPath()}/${collection}/${docId}`);
 
   const requestBody = {
     documents,
@@ -186,7 +190,7 @@ export const fetchDocumentsById = async (collection, docIds, select = [], db = F
   }
 
   try {
-    const response = await axiosInstance.post(':batchGet', requestBody);
+    const response = await axiosInstance.post(`${getBaseDocumentPath()}:batchGet`, requestBody);
 
     return response.data
       .filter(({ found }) => found)
@@ -224,7 +228,7 @@ export const fetchDocsById = async (documents, db = FIRESTORE_DATABASES.ADMIN) =
     const queryParams = (select ?? []).map((field) => `mask.fieldPaths=${field}`);
     const queryString = queryParams.length > 0 ? `?${queryParams.join('&')}` : '';
     promises.push(
-      axiosInstance.get(docPath + queryString)
+      axiosInstance.get(getBaseDocumentPath() + docPath + queryString)
       .then(({ data }) => {
         return {
           id: docId,
@@ -247,10 +251,9 @@ export const batchGetDocs = async (docPaths, select = [], db = FIRESTORE_DATABAS
   }
 
   const axiosInstance = getAxiosInstance(db);
-  const baseURL = axiosInstance.defaults.baseURL.split('googleapis.com/v1/')[1];
-  const documents = docPaths.map((docPath) => `${baseURL}/${docPath}`);
+  const documents = docPaths.map((docPath) => `${getBaseDocumentPath()}/${docPath}`);
   const batchDocs = await axiosInstance
-    .post(':batchGet', {
+    .post(`${getBaseDocumentPath()}:batchGet`, {
       documents,
       ...(select.length > 0 && {
         mask: { fieldPaths: select },
@@ -297,7 +300,7 @@ export const fetchSubcollection = async (
   const queryString = queryParams ? `?${queryParams}` : '';
 
   try {
-    const response = await axiosInstance.get(subcollectionPath + queryString);
+    const response = await axiosInstance.get(getBaseDocumentPath() + subcollectionPath + queryString);
 
     // Check if the API returns an array of document data in the subcollection
     const documents = response.data.documents ?? [];
