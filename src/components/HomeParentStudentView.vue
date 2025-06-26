@@ -95,6 +95,7 @@ defineOptions({
 const isEnrollmentModalVisible = ref(false);
 const isSubmitting = ref(false);
 const toast = useToast();
+const consentName = ref('consent-behavioral-eye-tracking');
 const emit = defineEmits(['refresh-registration']);
 
 function showEnrollmentModal() {
@@ -166,11 +167,11 @@ async function handleStudentEnrollment(studentData) {
       };
     });
 
-    // Use the same consent name as RegisterFamilyUsers
+    // Fetch the consent document to get its version
+    const consentDoc = await authStore.getLegalDoc(consentName.value);
     const consentData = {
-      name: 'consent-behavioral-eye-tracking',
-      text: 'I agree to the terms and conditions for enrolling additional students in my family.',
-      version: '1.0',
+      version: consentDoc.currentCommit,
+      name: consentName.value,
     };
 
     console.log('Calling createNewFamily with:', {
