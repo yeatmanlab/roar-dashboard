@@ -71,7 +71,7 @@
         :closable="true"
         :draggable="false"
       >
-        <RegisterChildren @submit="handleStudentEnrollment" />
+        <RegisterChildren :submitting="isSubmitting" @submit="handleStudentEnrollment" />
       </PvDialog>
     </div>
   </div>
@@ -93,7 +93,9 @@ defineOptions({
 });
 
 const isEnrollmentModalVisible = ref(false);
+const isSubmitting = ref(false);
 const toast = useToast();
+const emit = defineEmits(['refresh-registration']);
 
 function showEnrollmentModal() {
   isEnrollmentModalVisible.value = true;
@@ -101,6 +103,7 @@ function showEnrollmentModal() {
 
 async function handleStudentEnrollment(studentData) {
   const authStore = useAuthStore();
+  isSubmitting.value = true;
 
   try {
     // Ensure roarfirekit is initialized
@@ -196,19 +199,23 @@ async function handleStudentEnrollment(studentData) {
     toast.add({
       severity: 'success',
       summary: 'Success',
-      detail: 'Student(s) successfully enrolled in your family',
+      detail: 'Student enrolled successfully',
       life: 3000,
     });
+    // Trigger refresh of parent registration status
+    emit('refresh-registration');
   } catch (error) {
-    console.error('Error enrolling students:', error);
+    console.error('Error enrolling student:', error);
     toast.add({
       severity: 'error',
       summary: 'Error',
       detail: 'Failed to enroll student(s). Please try again.',
       life: 3000,
     });
+  } finally {
+    isSubmitting.value = false;
+    isEnrollmentModalVisible.value = false;
   }
-  isEnrollmentModalVisible.value = false;
 }
 
 defineProps({

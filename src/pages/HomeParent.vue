@@ -28,6 +28,7 @@
       :org-type="orgType"
       :org-id="orgId"
       :registration-error="registrationError"
+      @refresh-registration="handleRefreshRegistration"
     />
 
     <div v-else class="home-administrator-wrapper">
@@ -91,6 +92,12 @@ const { data: childrenAssignments, isLoading: isLoadingChildrenAssignments } = u
 const registrationError = ref(null);
 const registrationRetryCount = ref(0);
 const MAX_RETRIES = 3;
+// Handler for refreshing registration status after student enrollment
+const handleRefreshRegistration = () => {
+  registrationRetryCount.value = 0;
+  resume();
+};
+
 const { isActive, pause, resume } = useTimeoutPoll(
   async () => {
     try {
