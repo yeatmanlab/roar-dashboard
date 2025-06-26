@@ -939,8 +939,8 @@ const createExportData = ({ rows, includeProgress = false }) => {
       tableRow['PID'] = user?.assessmentPid;
     }
 
-    tableRow['Start Date'] = startDate;
-    tableRow['Completion Date'] = completionDate;
+    tableRow['Start Date'] = startDate?.split?.('T')?.[0];
+    tableRow['Completion Date'] = completionDate?.split?.('T')?.[0];
 
     if (props.orgType === 'district') {
       tableRow['School'] = user?.schoolName;
