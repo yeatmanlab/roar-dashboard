@@ -1,5 +1,10 @@
 import { addBreadcrumb } from '@sentry/vue';
 
+const SENTRY_BREADCRUMB_CATEGORIES = Object.freeze({
+  AUTH: 'auth',
+  NAV: 'navigation',
+});
+
 /**
  * Logs a generic Sentry breadcrumb.
  *
@@ -34,7 +39,7 @@ export const createAuthBreadcrumb =
   ({ details, ...options }) => {
     const data = details ? { ...baseData, details } : baseData;
     logBreadcrumb({
-      category: 'auth',
+      category: SENTRY_BREADCRUMB_CATEGORIES.AUTH,
       data,
       ...options,
     });
@@ -49,7 +54,7 @@ export const createAuthBreadcrumb =
  */
 export const logNavBreadcrumb = ({ data, message, level }) => {
   logBreadcrumb({
-    category: 'navigation',
+    category: SENTRY_BREADCRUMB_CATEGORIES.NAV,
     data,
     message,
     level,
