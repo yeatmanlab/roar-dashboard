@@ -33,41 +33,26 @@ async function checkForUserType() {
       const assignments = _get(userData, 'assignments', {});
       const allAssignmentIds = _union(...Object.values(assignments));
       if (allAssignmentIds.length > 0) {
-        logAuthBreadcrumb({
-          message: 'User is found with assignments, routing to home',
-          details: { userData, assignments },
-        });
+        logAuthBreadcrumb('User is found with assignments, routing to home', { details: { userData, assignments } });
         clearInterval(userDataCheckInterval);
         authStore.refreshQueryKeys();
         router.push({ name: 'Home' });
       } else {
-        logAuthBreadcrumb({
-          message: 'User is found but no assignments. Retrying...',
-          level: 'warning',
-        });
+        logAuthBreadcrumb('User is found but no assignments. Retrying...', { level: 'warning' });
       }
     } else if (userType && userType !== 'guest') {
       const userClaims = await fetchDocById('userClaims', uid.value);
       const adminOrgs = _get(userClaims, 'claims.adminOrgs', {});
-      logAuthBreadcrumb({
-        message: 'User is found with adminOrgs',
-        details: { adminOrgs },
-      });
+      logAuthBreadcrumb('User is found with adminOrgs', { details: { adminOrgs } });
       if (!_isEmpty(adminOrgs)) {
         clearInterval(userDataCheckInterval);
         authStore.refreshQueryKeys();
         router.push({ name: 'Home' });
       } else {
-        logAuthBreadcrumb({
-          message: 'User is found but with no adminOrgs, retrying...',
-          level: 'warning',
-        });
+        logAuthBreadcrumb('User is found but with no adminOrgs, retrying...', { level: 'warning' });
       }
     } else {
-      logAuthBreadcrumb({
-        message: 'User is found with invalid userType, retrying...',
-        level: 'warning',
-      });
+      logAuthBreadcrumb('User is found with invalid userType, retrying...', { level: 'warning' });
     }
   } catch (error) {
     if (error.code !== 'ERR_BAD_REQUEST') {

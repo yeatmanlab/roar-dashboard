@@ -38,17 +38,18 @@ export const logBreadcrumb = ({ category, data, message, level = 'info' }) => {
  *
  * @param {Object} baseData - Data included in every event: { roarUid: string, userType: string, provider: string }
  * @returns {Function} logger - Returns a function that logs an authentication event.
+ *   @param {string} message - Event description.
  *   @param {Object} eventData - Event to log.
- *   @param {string} eventData.message - Event description.
  *   @param {string} [eventData.level='info'] - Optional severity level.
  *   @param {Object} [eventData.details] - Optional extra data.
  */
 export const createAuthBreadcrumb =
   (baseData) =>
-  ({ details, ...options }) => {
+  (message, { details, ...options }) => {
     const data = details ? { ...baseData, details } : baseData;
     logBreadcrumb({
       category: SENTRY_BREADCRUMB_CATEGORIES.AUTH,
+      message,
       data,
       ...options,
     });

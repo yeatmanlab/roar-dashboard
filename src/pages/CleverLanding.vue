@@ -32,31 +32,20 @@ async function checkForUserType() {
       const assignments = _get(userData, 'assignments', {});
       const allAssignmentIds = _union(...Object.values(assignments));
       if (allAssignmentIds.length > 0) {
-        logAuthBreadcrumb({
-          message: 'User is found with assignments, routing to home',
-          details: { userData, assignments },
-        });
+        logAuthBreadcrumb('User is found with assignments, routing to home', { details: { userData, assignments } });
         clearInterval(userDataCheckInterval);
         authStore.refreshQueryKeys();
         await router.push({ name: 'Home' });
       } else {
-        logAuthBreadcrumb({
-          message: 'User is found but with no assignments. Retrying...',
-          level: 'warning',
-        });
+        logAuthBreadcrumb('User is found but with no assignments. Retrying...', { level: 'warning' });
       }
     } else if (userType && userType !== 'guest') {
-      logAuthBreadcrumb({
-        message: 'User is found, routing to home',
-      });
+      logAuthBreadcrumb('User is found, routing to home');
       clearInterval(userDataCheckInterval);
       authStore.refreshQueryKeys();
       await router.push({ name: 'Home' });
     } else {
-      logAuthBreadcrumb({
-        message: 'User is found with invalid userType, retrying...',
-        level: 'warning',
-      });
+      logAuthBreadcrumb('User is found with invalid userType, retrying...', { level: 'warning' });
     }
   } catch (error) {
     if (error.code !== 'ERR_BAD_REQUEST') {

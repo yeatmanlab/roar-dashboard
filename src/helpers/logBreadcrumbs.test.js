@@ -14,6 +14,7 @@ describe('logBreadcrumbs', () => {
       message: 'User is found',
       level: 'info',
     });
+
     expect(addBreadcrumb).toHaveBeenCalledWith({
       category: 'auth',
       data: { roarUid: 'testUid', userType: 'student', provider: 'Clever' },
@@ -24,7 +25,8 @@ describe('logBreadcrumbs', () => {
 
   it('should create and log an auth breadcrumb without extra details', () => {
     const logAuthBreadcrumb = createAuthBreadcrumb({ roarUid: 'testUid', userType: 'student', provider: 'Clever' });
-    logAuthBreadcrumb({ message: 'User is found with invalid userType, retrying...', level: 'warning' });
+    logAuthBreadcrumb('User is found with invalid userType, retrying...', { level: 'warning' });
+
     expect(addBreadcrumb).toHaveBeenCalledWith({
       category: 'auth',
       data: { roarUid: 'testUid', userType: 'student', provider: 'Clever' },
@@ -36,7 +38,8 @@ describe('logBreadcrumbs', () => {
 
   it('should create and log an auth breadcrumb with extra details', () => {
     const logAuthBreadcrumb = createAuthBreadcrumb({ roarUid: 'testUid', userType: 'student', provider: 'Clever' });
-    logAuthBreadcrumb({ message: 'Arrived at CleverLanding.vue', details: { authFromClever: true } });
+    logAuthBreadcrumb('Arrived at CleverLanding.vue', { details: { authFromClever: true } });
+
     expect(addBreadcrumb).toHaveBeenCalledWith({
       category: 'auth',
       data: { roarUid: 'testUid', userType: 'student', provider: 'Clever', details: { authFromClever: true } },
@@ -49,6 +52,7 @@ describe('logBreadcrumbs', () => {
     logNavBreadcrumb('Arrived at CleverLanding.vue', {
       data: { roarUid: 'testUid', authFrom: 'Clever', authValue: true },
     });
+
     expect(addBreadcrumb).toHaveBeenCalledWith({
       category: 'navigation',
       data: { roarUid: 'testUid', authFrom: 'Clever', authValue: true },
