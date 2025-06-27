@@ -98,6 +98,7 @@
 
         <TaskPicker
           :all-variants="variantsByTaskId"
+          :all-task-groups="taskGroupsByGroupName"
           :input-variants="preSelectedVariants"
           :pre-existing-assessment-info="existingAssessments"
           @variants-changed="handleVariantsChanged"
@@ -186,7 +187,7 @@ import useGroupsQuery from '@/composables/queries/useGroupsQuery';
 import useFamiliesQuery from '@/composables/queries/useFamiliesQuery';
 import useTaskVariantsQuery from '@/composables/queries/useTaskVariantsQuery';
 import useUpsertAdministrationMutation from '@/composables/mutations/useUpsertAdministrationMutation';
-import TaskPicker from './TaskPicker/TaskPicker.vue';
+import TaskPicker from './TaskPicker';
 import ConsentPicker from './ConsentPicker.vue';
 import OrgPicker from '@/components/OrgPicker.vue';
 import { APP_ROUTES, ADMINISTRATION_FORM_TYPES } from '@/constants/routes';
@@ -396,6 +397,46 @@ const nonUniqueTasks = ref('');
 const variantsByTaskId = computed(() => {
   return _groupBy(allVariants.value, 'task.id');
 });
+
+// TODO: Replace with actual task groups from API
+const taskGroupsByGroupName = [
+  {
+    name: 'testGroupOne',
+    id: 'testGroupOneId',
+    description: 'This is a test group',
+    image: '',
+    variants: [
+      {
+        taskId: 'swr',
+        variantId: '0A5qXQ5oTXg7szwLOul7',
+      },
+      {
+        taskId: 'pa',
+        variantId: '60zM6IYe2D5eSuGBAt8w',
+      },
+    ],
+  },
+  {
+    name: 'testGroupTwo',
+    id: 'testGroupTwoId',
+    description: 'This is another test group',
+    image: '',
+    variants: [
+      {
+        taskId: 'testTaskId3',
+        variantId: 'testVariantId3',
+      },
+      {
+        taskId: 'pa',
+        variantId: 'testVariantId4',
+      },
+      {
+        taskId: 'swr',
+        variantId: '0A5qXQ5oTXg7szwLOul7',
+      },
+    ],
+  },
+];
 
 const handleVariantsChanged = (newVariants) => {
   variants.value = newVariants;
