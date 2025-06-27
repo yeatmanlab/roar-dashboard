@@ -13,11 +13,12 @@ import _union from 'lodash/union';
 import _isEmpty from 'lodash/isEmpty';
 import AppSpinner from '@/components/AppSpinner.vue';
 import { fetchDocById } from '@/helpers/query/utils';
-import { createAuthBreadcrumb } from '@/helpers/logBreadcrumbs';
+import { useSentryLogging } from '@/helpers/logBreadcrumbs';
 
 const router = useRouter();
 const authStore = useAuthStore();
 const { uid, roarUid, authFromClassLink } = storeToRefs(authStore);
+const { createAuthBreadcrumb } = useSentryLogging();
 
 let userDataCheckInterval;
 

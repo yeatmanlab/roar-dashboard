@@ -15,7 +15,18 @@ export const useSentryLogging = () => {
     });
   };
 
-  return { logBreadcrumb };
+  const createAuthBreadcrumb =
+    (baseData) =>
+    (message, { details, ...options }) => {
+      const data = details ? { ...baseData, details } : baseData;
+      logBreadcrumb(message, {
+        category: SENTRY_BREADCRUMB_CATEGORIES.AUTH,
+        data,
+        ...options,
+      });
+    };
+
+  return { logBreadcrumb, createAuthBreadcrumb };
 };
 /**
  * Logs a generic Sentry breadcrumb.
