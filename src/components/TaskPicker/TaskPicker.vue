@@ -160,7 +160,7 @@ import PvInputSwitch from 'primevue/inputswitch';
 import PvInputText from 'primevue/inputtext';
 import PvPanel from 'primevue/panel';
 import PvScrollPanel from 'primevue/scrollpanel';
-import VariantCard from './VariantCard.vue';
+import VariantCard from '../VariantCard';
 import PvIconField from 'primevue/iconfield';
 import PvInputIcon from 'primevue/inputicon';
 
