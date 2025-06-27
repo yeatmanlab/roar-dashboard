@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { addBreadcrumb } from '@sentry/vue';
-import { logBreadcrumb, createAuthBreadcrumb, logNavBreadcrumb } from './logBreadcrumbs';
-
+import { createAuthBreadcrumb, logNavBreadcrumb, useSentryLogging } from './logBreadcrumbs';
+const { logBreadcrumb } = useSentryLogging();
 vi.mock('@sentry/vue', () => ({
   addBreadcrumb: vi.fn(),
 }));

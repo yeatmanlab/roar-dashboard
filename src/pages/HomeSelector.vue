@@ -34,7 +34,8 @@ import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useUpdateConsentMutation from '@/composables/mutations/useUpdateConsentMutation';
 import { CONSENT_TYPES } from '@/constants/consentTypes';
 import { APP_ROUTES } from '@/constants/routes';
-import { logBreadcrumb } from '@/helpers/logBreadcrumbs';
+import { useSentryLogging } from '@/helpers/logBreadcrumbs';
+const { logBreadcrumb } = useSentryLogging();
 
 const HomeParticipant = defineAsyncComponent(() => import('@/pages/HomeParticipant.vue'));
 const HomeAdministrator = defineAsyncComponent(() => import('@/pages/HomeAdministrator.vue'));
