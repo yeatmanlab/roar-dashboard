@@ -6,6 +6,15 @@ const SENTRY_BREADCRUMB_CATEGORIES = Object.freeze({
 });
 
 export const useSentryLogging = () => {
+  /**
+   * Logs a generic Sentry breadcrumb.
+   *
+   * @param {string} message - Event description.
+   * @param {Object} options
+   * @param {string} options.category - Event context.
+   * @param {Object} options.data - Event data.
+   * @param {string} [options.level='info'] - Severity, defaults to 'info'.
+   */
   const logBreadcrumb = (message, { category, data, level = 'info' }) => {
     addBreadcrumb({
       category,
@@ -15,6 +24,16 @@ export const useSentryLogging = () => {
     });
   };
 
+  /**
+   * Creates a Sentry auth breadcrumb logger.
+   *
+   * @param {Object} baseData - Data included in every event: { roarUid: string, userType: string, provider: string }
+   * @returns {Function} logger - Returns a function that logs an authentication event.
+   *   @param {string} message - Event description.
+   *   @param {Object} eventData - Event to log.
+   *   @param {string} [eventData.level='info'] - Optional severity level.
+   *   @param {Object} [eventData.details] - Optional extra data.
+   */
   const createAuthBreadcrumb =
     (baseData) =>
     (message, { details, ...options }) => {
@@ -26,6 +45,14 @@ export const useSentryLogging = () => {
       });
     };
 
+  /**
+   * Logs a Sentry navigation breadcrumb.
+   *
+   * @param {string} message - Event description.
+   * @param {Object} eventData - Event to log.
+   * @param {string} eventData.data - Event data.
+   * @param {string} [eventData.level='info'] - Optional severity level.
+   */
   const logNavBreadcrumb = (message, { data, level }) => {
     logBreadcrumb(message, {
       category: SENTRY_BREADCRUMB_CATEGORIES.NAV,
@@ -36,6 +63,7 @@ export const useSentryLogging = () => {
 
   return { logBreadcrumb, createAuthBreadcrumb, logNavBreadcrumb };
 };
+
 /**
  * Logs a generic Sentry breadcrumb.
  *
@@ -44,7 +72,7 @@ export const useSentryLogging = () => {
  * @param {Object} options.data - Event data.
  * @param {string} options.message - Event description.
  * @param {string} [options.level='info'] - Severity, defaults to 'info'.
- */
+ 
 export const logBreadcrumb = (message, { category, data, level = 'info' }) => {
   addBreadcrumb({
     category,
@@ -52,7 +80,7 @@ export const logBreadcrumb = (message, { category, data, level = 'info' }) => {
     data,
     level,
   });
-};
+};*/
 
 /**
  * Creates a reusable Sentry auth breadcrumb logger.
@@ -63,7 +91,7 @@ export const logBreadcrumb = (message, { category, data, level = 'info' }) => {
  *   @param {Object} eventData - Event to log.
  *   @param {string} [eventData.level='info'] - Optional severity level.
  *   @param {Object} [eventData.details] - Optional extra data.
- */
+ 
 export const createAuthBreadcrumb =
   (baseData) =>
   (message, { details, ...options }) => {
@@ -73,7 +101,7 @@ export const createAuthBreadcrumb =
       data,
       ...options,
     });
-  };
+  };*/
 
 /**
  * Logs a Sentry navigation breadcrumb.
@@ -81,11 +109,11 @@ export const createAuthBreadcrumb =
  * @param {Object} eventData - Event to log.
  * @param {string} eventData.data - Event data.
  * @param {string} [eventData.level='info'] - Optional severity level.
- */
+ 
 export const logNavBreadcrumb = (message, { data, level }) => {
   logBreadcrumb(message, {
     category: SENTRY_BREADCRUMB_CATEGORIES.NAV,
     data,
     level,
   });
-};
+};*/
