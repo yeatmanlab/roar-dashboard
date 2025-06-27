@@ -14,7 +14,7 @@ import useSSOAccountReadinessVerification from '@/composables/useSSOAccountReadi
 import AppSpinner from '@/components/AppSpinner.vue';
 import { APP_ROUTES } from '@/constants/routes';
 import { AUTH_SSO_PROVIDERS } from '../constants/auth';
-import useSentryLogging from '@/helpers/useSentryLogging';
+import useSentryLogging from '@/composables/useSentryLogging';
 
 const router = useRouter();
 const authStore = useAuthStore();
