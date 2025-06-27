@@ -53,6 +53,21 @@
                 <label for="school">School</label>
               </PvFloatLabel>
             </div>
+            <div v-if="activeOrgType === 'groups'" class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3">
+              <PvFloatLabel>
+                <PvSelect
+                  v-model="selectedCohortSite"
+                  input-id="cohortSite"
+                  :options="cohortSites"
+                  option-label="name"
+                  option-value="id"
+                  :loading="isLoadingCohortSites"
+                  class="w-full"
+                  data-cy="dropdown-cohort-site"
+                />
+                <label for="cohortSite">Sites</label>
+              </PvFloatLabel>
+            </div>
           </div>
           <RoarDataTable
             :key="tableKey"
@@ -186,11 +201,13 @@ import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toast
 import RoarDataTable from '@/components/RoarDataTable.vue';
 import PvFloatLabel from 'primevue/floatlabel';
 import AddGroupModal from '@/components/modals/AddGroupModal.vue'
+import _uniq from 'lodash/uniq';
 
 const router = useRouter();
 const initialized = ref(false);
 const selectedDistrict = ref(undefined);
 const selectedSchool = ref(undefined);
+const selectedCohortSite = ref(undefined);
 const orderBy = ref(orderByDefault);
 let activationCode = ref(null);
 const isDialogVisible = ref(false);
@@ -264,6 +281,48 @@ const {
   data: orgData,
 } = useOrgsTableQuery(activeOrgType, selectedDistrict, selectedSchool, orderBy, {
   enabled: claimsLoaded,
+});
+
+// Use existing districts data for cohort sites filter
+const cohortSites = computed(() => {
+  if (activeOrgType.value !== 'groups') {
+    return [];
+  }
+  
+  // If orgData is not loaded yet, return all districts as fallback
+  if (!orgData.value) {
+    return allDistricts.value || [];
+  }
+  
+  // Get unique parentOrgIds from the current org data (cohorts)
+  const parentOrgIds = orgData.value
+    .map((org) => org.parentOrgId)
+    .filter(Boolean);
+  
+  const uniqueParentOrgIds = _uniq(parentOrgIds);
+  
+  // If no parentOrgIds found, return all districts as fallback
+  if (uniqueParentOrgIds.length === 0) {
+    return allDistricts.value || [];
+  }
+  
+  // Filter allDistricts to only include districts that have cohorts
+  const filteredDistricts = allDistricts.value?.filter((district) => 
+    uniqueParentOrgIds.includes(district.id)
+  ) || [];
+  
+  return filteredDistricts;
+});
+
+const isLoadingCohortSites = ref(false);
+
+// Filtered org data based on selected cohort site
+const filteredOrgData = computed(() => {
+  if (activeOrgType.value !== 'groups' || !selectedCohortSite.value || !orgData.value) {
+    return orgData.value;
+  }
+
+  return orgData.value.filter((org) => org.parentOrgId === selectedCohortSite.value);
 });
 
 function copyToClipboard(text) {
@@ -434,7 +493,7 @@ watchEffect(async () => {
   }
 
   const mappedData = await Promise.all(
-    orgData?.value?.map(async (org) => {
+    filteredOrgData?.value?.map(async (org) => {
       const userCount = await countUsersByOrg(activeOrgType.value, org.id);
       return {
         ...org,
@@ -529,8 +588,22 @@ watch(allSchools, (newValue) => {
   selectedSchool.value = _get(_head(newValue), 'id');
 });
 
+// Reset cohort site selection when switching tabs
+watch(activeOrgType, () => {
+  if (activeOrgType.value !== 'groups') {
+    selectedCohortSite.value = undefined;
+  }
+});
+
+// Auto-select first site when cohort sites are loaded
+watch(cohortSites, (newValue) => {
+  if (activeOrgType.value === 'groups' && newValue && newValue.length > 0 && !selectedCohortSite.value) {
+    selectedCohortSite.value = _get(_head(newValue), 'id');
+  }
+});
+
 const tableKey = ref(0);
-watch([selectedDistrict, selectedSchool], () => {
+watch([selectedDistrict, selectedSchool, selectedCohortSite], () => {
   tableKey.value += 1;
 });
 

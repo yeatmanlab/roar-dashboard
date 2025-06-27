@@ -1,5 +1,5 @@
-import { computed, ref } from 'vue';
-import { useQuery } from '@tanstack/vue-query';
+import { computed, ref, type MaybeRefOrGetter } from 'vue';
+import { useQuery, type UseQueryReturnType, type UseQueryOptions } from '@tanstack/vue-query';
 import _isEmpty from 'lodash/isEmpty';
 import useUserType from '@/composables/useUserType';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
@@ -41,6 +41,15 @@ const useOrgsTableQuery = (
   const queryConditions = [() => claimsLoaded.value];
   const { isQueryEnabled, options } = computeQueryOverrides(queryConditions, queryOptions);
 
+  // Determine select fields based on org type
+  const selectFields = computed(() => {
+    const orgType = typeof activeOrgType === 'function' ? activeOrgType() : activeOrgType.value || activeOrgType;
+    if (orgType === 'groups') {
+      return ['id', 'name', 'tags', 'parentOrgId'];
+    }
+    return ['id', 'name', 'tags'];
+  });
+
   return useQuery({
     queryKey: [ORGS_TABLE_QUERY_KEY, activeOrgType, selectedDistrict, selectedSchool, orderBy],
     queryFn: () =>
@@ -53,6 +62,7 @@ const useOrgsTableQuery = (
         ref(0),
         isSuperAdmin,
         adminOrgs,
+        selectFields.value,
       ),
     enabled: isQueryEnabled,
     ...options,

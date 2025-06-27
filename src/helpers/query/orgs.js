@@ -335,6 +335,7 @@ export const orgPageFetcher = async (
   page,
   isSuperAdmin,
   adminOrgs,
+  select = ['id', 'name', 'tags'],
 ) => {
   const axiosInstance = getAxiosInstance();
   const requestBody = getOrgsRequestBody({
@@ -346,6 +347,7 @@ export const orgPageFetcher = async (
     pageLimit: pageLimit.value,
     paginate: true,
     page: page.value,
+    select,
   });
 
   if (isSuperAdmin.value) {
@@ -366,7 +368,7 @@ export const orgPageFetcher = async (
 
     const orgIds = adminOrgs.value[activeOrgType.value] ?? [];
     // @TODO: Refactor to a single query for all orgs instead of multiple parallel queries.
-    const promises = orgIds.map((orgId) => fetchDocById(activeOrgType.value, orgId));
+    const promises = orgIds.map((orgId) => fetchDocById(activeOrgType.value, orgId, select));
     const orderField = (orderBy?.value ?? orderByDefault)[0].field.fieldPath;
     const orderDirection = (orderBy?.value ?? orderByDefault)[0].direction;
     const orgs = (await Promise.all(promises)).sort((a, b) => {
@@ -419,6 +421,7 @@ export const orgFetchAll = async (
         { value: 0 },
         isSuperAdmin,
         adminOrgs,
+        select,
       );
     } catch (error) {
       console.error('orgFetchAll: Error fetching all orgs for non-super admin:', error);
