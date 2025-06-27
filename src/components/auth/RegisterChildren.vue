@@ -352,6 +352,8 @@
         type="submit"
         label="Submit"
         class="p-2 mr-3 w-4 text-white border-none bg-primary border-round h-3rem hover:surface-300 hover:text-black-alpha-90"
+        :loading="props.submitting"
+        :disabled="props.submitting"
         @click.prevent="handleFormSubmit(!v$.$invalid && !anyPasswordsMismatched())"
       />
       <PvDialog
@@ -409,6 +411,7 @@ const props = defineProps({
   isRegistering: { type: Boolean, default: true },
   code: { type: String, default: null },
   consent: { type: Object, default: null },
+  submitting: { type: Boolean, default: false },
 });
 
 const isDialogVisible = ref(false);

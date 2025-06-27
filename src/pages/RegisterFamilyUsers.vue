@@ -132,6 +132,11 @@ const closeDialog = () => {
 async function handleParentSubmit(data) {
   try {
     parentInfo.value = data;
+    // Fetch consent document when moving to student registration
+    const consentDoc = await authStore.getLegalDoc(consentName.value);
+    consent.value = {
+      version: consentDoc.currentCommit,
+    };
     activeIndex.value = 1;
   } catch (error) {
     dialogHeader.value = 'Error!';

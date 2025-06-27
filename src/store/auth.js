@@ -200,6 +200,14 @@ export const useAuthStore = () => {
         consentData,
         isTestData = false,
       ) {
+        if (!this.roarfirekit) {
+          throw new Error('roarfirekit is not initialized');
+        }
+
+        if (!Array.isArray(students)) {
+          throw new Error('students parameter must be an array');
+        }
+
         return await this.roarfirekit.createNewFamily(
           careTakerEmail,
           careTakerPassword,

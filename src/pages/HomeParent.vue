@@ -28,6 +28,7 @@
       :org-type="orgType"
       :org-id="orgId"
       :registration-error="registrationError"
+      @refresh-registration="handleRefreshRegistration"
     />
 
     <div v-else class="home-administrator-wrapper">
@@ -47,6 +48,9 @@ import { useAuthStore } from '@/store/auth';
 import PvSelectButton from 'primevue/selectbutton';
 import HomeAdministrator from '@/pages/HomeAdministrator.vue';
 import HomeParentStudentView from '@/components/HomeParentStudentView.vue';
+import { useQueryClient } from '@tanstack/vue-query';
+import { USER_DATA_QUERY_KEY } from '@/constants/queryKeys';
+import useUserDataQuery from '@/composables/queries/useUserDataQuery';
 
 const authStore = useAuthStore();
 
@@ -76,9 +80,13 @@ const orgIds = computed(() => (orgId.value ? [orgId.value] : []));
 // TODO: Set this dynamically in cases where this component is used for non-family adminstrators
 const orgType = ref(SINGULAR_ORG_TYPES.FAMILIES);
 
+const { data: userData } = useUserDataQuery(null, {
+  enabled: initialized,
+});
+
 // Get assignments for all children
 const childrenUids = computed(() => {
-  const uids = authStore.userData?.childrenUids || [];
+  const uids = userData.value?.childrenUids || [];
   return uids;
 });
 
@@ -91,6 +99,7 @@ const { data: childrenAssignments, isLoading: isLoadingChildrenAssignments } = u
 const registrationError = ref(null);
 const registrationRetryCount = ref(0);
 const MAX_RETRIES = 3;
+
 const { isActive, pause, resume } = useTimeoutPoll(
   async () => {
     try {
@@ -115,6 +124,17 @@ const { isActive, pause, resume } = useTimeoutPoll(
   5000,
   { immediate: false },
 );
+
+const queryClient = useQueryClient();
+// Handler for refreshing registration status after student enrollment
+const handleRefreshRegistration = () => {
+  console.log('handle refresh called');
+  registrationRetryCount.value = 0;
+  queryClient.invalidateQueries({ queryKey: [USER_DATA_QUERY_KEY] });
+  setTimeout(() => {
+    resume();
+  }, 5000);
+};
 
 let unsubscribe;
 const init = () => {
