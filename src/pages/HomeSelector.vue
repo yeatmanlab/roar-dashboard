@@ -34,8 +34,7 @@ import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useUpdateConsentMutation from '@/composables/mutations/useUpdateConsentMutation';
 import { CONSENT_TYPES } from '@/constants/consentTypes';
 import { APP_ROUTES } from '@/constants/routes';
-import { useSentryLogging } from '@/helpers/logBreadcrumbs';
-const { logBreadcrumb } = useSentryLogging();
+import useSentryLogging from '@/helpers/logBreadcrumbs';
 
 const HomeParticipant = defineAsyncComponent(() => import('@/pages/HomeParticipant.vue'));
 const HomeAdministrator = defineAsyncComponent(() => import('@/pages/HomeAdministrator.vue'));
@@ -50,6 +49,7 @@ const router = useRouter();
 const i18n = useI18n();
 
 const { mutateAsync: updateConsentStatus } = useUpdateConsentMutation();
+const { logBreadcrumb } = useSentryLogging();
 
 if (ssoProvider.value) {
   console.log('Detected SSO authentication, redirecting...');

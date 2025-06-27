@@ -12,7 +12,7 @@ import _get from 'lodash/get';
 import _union from 'lodash/union';
 import AppSpinner from '@/components/AppSpinner.vue';
 import { fetchDocById } from '@/helpers/query/utils';
-import { useSentryLogging } from '@/helpers/logBreadcrumbs';
+import useSentryLogging from '@/helpers/logBreadcrumbs';
 
 const router = useRouter();
 const authStore = useAuthStore();
