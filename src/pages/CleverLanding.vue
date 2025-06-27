@@ -12,7 +12,7 @@ import _get from 'lodash/get';
 import _union from 'lodash/union';
 import AppSpinner from '@/components/AppSpinner.vue';
 import { fetchDocById } from '@/helpers/query/utils';
-import { createAuthBreadcrumb, logNavBreadcrumb } from '@/helpers/logBreadcrumbs';
+import { createAuthBreadcrumb } from '@/helpers/logBreadcrumbs';
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -64,10 +64,6 @@ async function checkForUserType() {
     }
   }
 }
-logNavBreadcrumb({
-  message: 'Arrived at CleverLanding.vue',
-  data: { roarUid: roarUid.value, authFrom: 'Clever', authValue: authFromClever.value },
-});
 authFromClever.value = false;
 userDataCheckInterval = setInterval(checkForUserType, 1000);
 </script>

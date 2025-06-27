@@ -13,7 +13,7 @@ import _union from 'lodash/union';
 import _isEmpty from 'lodash/isEmpty';
 import AppSpinner from '@/components/AppSpinner.vue';
 import { fetchDocById } from '@/helpers/query/utils';
-import { createAuthBreadcrumb, logNavBreadcrumb } from '@/helpers/logBreadcrumbs';
+import { createAuthBreadcrumb } from '@/helpers/logBreadcrumbs';
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -76,10 +76,6 @@ async function checkForUserType() {
   }
 }
 
-logNavBreadcrumb({
-  message: 'Arrived at ClassLinkLanding.vue',
-  data: { roarUid: roarUid.value, authFrom: 'ClassLink', authValue: authFromClassLink.value },
-});
 authFromClassLink.value = false;
 userDataCheckInterval = setInterval(checkForUserType, 500);
 </script>
