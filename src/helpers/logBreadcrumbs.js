@@ -5,6 +5,17 @@ const SENTRY_BREADCRUMB_CATEGORIES = Object.freeze({
   NAV: 'navigation',
 });
 
+/*export const useSentryLogging = () => {
+  const logBreadcrumb = ({ category, data, message, level = 'info' }) => {
+    addBreadcrumb({
+      category,
+      message,
+      data,
+      level,
+      timestamp: new Date(),
+    });
+  };
+}*/
 /**
  * Logs a generic Sentry breadcrumb.
  *
@@ -20,7 +31,6 @@ export const logBreadcrumb = ({ category, data, message, level = 'info' }) => {
     message,
     data,
     level,
-    timestamp: new Date(),
   });
 };
 

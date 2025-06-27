@@ -19,7 +19,6 @@ describe('logBreadcrumbs', () => {
       data: { roarUid: 'testUid', userType: 'student', provider: 'Clever' },
       level: 'info',
       message: 'User is found',
-      timestamp: expect.any(Date),
     });
   });
 
@@ -31,7 +30,6 @@ describe('logBreadcrumbs', () => {
       data: { roarUid: 'testUid', userType: 'student', provider: 'Clever' },
       level: 'warning',
       message: 'User is found with invalid userType, retrying...',
-      timestamp: expect.any(Date),
     });
     expect(addBreadcrumb.mock.calls[0][0].data).not.toHaveProperty('details');
   });
@@ -44,7 +42,6 @@ describe('logBreadcrumbs', () => {
       data: { roarUid: 'testUid', userType: 'student', provider: 'Clever', details: { authFromClever: true } },
       level: 'info',
       message: 'Arrived at CleverLanding.vue',
-      timestamp: expect.any(Date),
     });
   });
 
@@ -58,7 +55,6 @@ describe('logBreadcrumbs', () => {
       data: { roarUid: 'testUid', authFrom: 'Clever', authValue: true },
       level: 'info',
       message: 'Arrived at CleverLanding.vue',
-      timestamp: expect.any(Date),
     });
   });
 });
