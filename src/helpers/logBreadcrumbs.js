@@ -15,7 +15,7 @@ export default function useSentryLogging() {
    * @param {Object} options.data - Event data.
    * @param {string} [options.level='info'] - Severity, defaults to 'info'.
    */
-  const logBreadcrumb = (message, { category, data, level = 'info' }) => {
+  const logEvent = (message, { category, data, level = 'info' }) => {
     addBreadcrumb({
       category,
       message,
@@ -28,17 +28,17 @@ export default function useSentryLogging() {
    * Creates a Sentry auth breadcrumb logger.
    *
    * @param {Object} baseData - Data included in every event: { roarUid: string, userType: string, provider: string }
-   * @returns {Function} logger - Returns a function that logs an authentication event.
+   * @returns {Function} logAuthEvent - Returns a function that logs an authentication event.
    *   @param {string} message - Event description.
    *   @param {Object} eventData - Event to log.
    *   @param {string} [eventData.level='info'] - Optional severity level.
    *   @param {Object} [eventData.details] - Optional extra data.
    */
-  const createAuthBreadcrumb =
+  const createAuthLogger =
     (baseData) =>
     (message, { details, ...options }) => {
       const data = details ? { ...baseData, details } : baseData;
-      logBreadcrumb(message, {
+      logEvent(message, {
         category: SENTRY_BREADCRUMB_CATEGORIES.AUTH,
         data,
         ...options,
@@ -53,13 +53,13 @@ export default function useSentryLogging() {
    * @param {string} eventData.data - Event data.
    * @param {string} [eventData.level='info'] - Optional severity level.
    */
-  const logNavBreadcrumb = (message, { data, level }) => {
-    logBreadcrumb(message, {
+  const logNavEvent = (message, { data, level }) => {
+    logEvent(message, {
       category: SENTRY_BREADCRUMB_CATEGORIES.NAV,
       data,
       level,
     });
   };
 
-  return { logBreadcrumb, createAuthBreadcrumb, logNavBreadcrumb };
+  return { logEvent, createAuthLogger, logNavEvent };
 }

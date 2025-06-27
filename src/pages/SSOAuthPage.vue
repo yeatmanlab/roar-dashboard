@@ -21,14 +21,14 @@ const authStore = useAuthStore();
 const { roarUid, ssoProvider } = storeToRefs(authStore);
 
 const { startPolling } = useSSOAccountReadinessVerification(roarUid.value);
-const { logNavBreadcrumb } = useSentryLogging();
+const { logNavEvent } = useSentryLogging();
 
 const isClassLinkProvider = computed(() => ssoProvider.value === AUTH_SSO_PROVIDERS.CLASSLINK);
 const isCleverProvider = computed(() => ssoProvider.value === AUTH_SSO_PROVIDERS.CLEVER);
 
 onBeforeMount(() => {
   if (!ssoProvider.value) {
-    logNavBreadcrumb('No SSO provider detected. Redirecting to homepage...', {
+    logNavEvent('No SSO provider detected. Redirecting to homepage...', {
       data: { roarUid: roarUid.value, ssoProvider: ssoProvider.value },
       level: 'warning',
     });
@@ -38,7 +38,7 @@ onBeforeMount(() => {
 });
 
 onMounted(() => {
-  logNavBreadcrumb('Redirected to SSO landing page, polling for account readiness...', {
+  logNavEvent('Redirected to SSO landing page, polling for account readiness...', {
     data: { roarUid: roarUid.value, ssoProvider: ssoProvider.value },
   });
   ssoProvider.value = null;

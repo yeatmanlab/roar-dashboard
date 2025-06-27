@@ -1,14 +1,14 @@
 import { describe, it, expect, vi } from 'vitest';
 import { addBreadcrumb } from '@sentry/vue';
 import useSentryLogging from './logBreadcrumbs';
-const { logBreadcrumb, createAuthBreadcrumb, logNavBreadcrumb } = useSentryLogging();
+const { logEvent, createAuthLogger, logNavEvent } = useSentryLogging();
 vi.mock('@sentry/vue', () => ({
   addBreadcrumb: vi.fn(),
 }));
 
-describe('logBreadcrumbs', () => {
+describe('logEvents', () => {
   it('should log a breadcrumb', () => {
-    logBreadcrumb('User is found', {
+    logEvent('User is found', {
       category: 'auth',
       data: { roarUid: 'testUid', userType: 'student', provider: 'Clever' },
       level: 'info',
@@ -23,8 +23,8 @@ describe('logBreadcrumbs', () => {
   });
 
   it('should create and log an auth breadcrumb without extra details', () => {
-    const logAuthBreadcrumb = createAuthBreadcrumb({ roarUid: 'testUid', userType: 'student', provider: 'Clever' });
-    logAuthBreadcrumb('User is found with invalid userType, retrying...', { level: 'warning' });
+    const logAuthEvent = createAuthLogger({ roarUid: 'testUid', userType: 'student', provider: 'Clever' });
+    logAuthEvent('User is found with invalid userType, retrying...', { level: 'warning' });
 
     expect(addBreadcrumb).toHaveBeenCalledWith({
       category: 'auth',
@@ -36,8 +36,8 @@ describe('logBreadcrumbs', () => {
   });
 
   it('should create and log an auth breadcrumb with extra details', () => {
-    const logAuthBreadcrumb = createAuthBreadcrumb({ roarUid: 'testUid', userType: 'student', provider: 'Clever' });
-    logAuthBreadcrumb('Arrived at CleverLanding.vue', { details: { authFromClever: true } });
+    const logAuthEvent = createAuthLogger({ roarUid: 'testUid', userType: 'student', provider: 'Clever' });
+    logAuthEvent('Arrived at CleverLanding.vue', { details: { authFromClever: true } });
 
     expect(addBreadcrumb).toHaveBeenCalledWith({
       category: 'auth',
@@ -48,7 +48,7 @@ describe('logBreadcrumbs', () => {
   });
 
   it('should log a navigation breadcrumb', () => {
-    logNavBreadcrumb('Arrived at CleverLanding.vue', {
+    logNavEvent('Arrived at CleverLanding.vue', {
       data: { roarUid: 'testUid', authFrom: 'Clever', authValue: true },
     });
 

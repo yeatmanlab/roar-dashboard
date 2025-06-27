@@ -49,7 +49,7 @@ const router = useRouter();
 const i18n = useI18n();
 
 const { mutateAsync: updateConsentStatus } = useUpdateConsentMutation();
-const { logBreadcrumb } = useSentryLogging();
+const { logEvent } = useSentryLogging();
 
 if (ssoProvider.value) {
   console.log('Detected SSO authentication, redirecting...');
@@ -152,7 +152,7 @@ watch(userClaims, (updatedUserClaims) => {
   if (updatedUserClaims && updatedUserClaims.value) {
     const { adminUid, assessmentUid, roarUid } = updatedUserClaims.value.claims;
     const { userType } = useUserType(updatedUserClaims);
-    logBreadcrumb('User claims updated', {
+    logEvent('User claims updated', {
       data: { adminUid, assessmentUid, roarUid, userType },
     });
   }

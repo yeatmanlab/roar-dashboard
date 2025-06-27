@@ -17,7 +17,7 @@ import useSentryLogging from '@/helpers/logBreadcrumbs';
 const router = useRouter();
 const authStore = useAuthStore();
 const { roarUid, authFromClever } = storeToRefs(authStore);
-const { createAuthBreadcrumb } = useSentryLogging();
+const { createAuthLogger } = useSentryLogging();
 
 let userDataCheckInterval;
 
@@ -25,7 +25,7 @@ async function checkForUserType() {
   try {
     const userData = await fetchDocById('users', roarUid.value);
     const userType = _get(userData, 'userType');
-    const logAuthBreadcrumb = createAuthBreadcrumb({ roarUid: roarUid.value, userType, provider: 'Clever' });
+    const logAuthEvent = createAuthLogger({ roarUid: roarUid.value, userType, provider: 'Clever' });
     if (userType && userType === 'student') {
       // The user document exists and is not a guest. This means that the
       // on-demand account provisioning cloud function has completed.  However,
@@ -33,20 +33,20 @@ async function checkForUserType() {
       const assignments = _get(userData, 'assignments', {});
       const allAssignmentIds = _union(...Object.values(assignments));
       if (allAssignmentIds.length > 0) {
-        logAuthBreadcrumb('User is found with assignments, routing to home', { details: { userData, assignments } });
+        logAuthEvent('User is found with assignments, routing to home', { details: { userData, assignments } });
         clearInterval(userDataCheckInterval);
         authStore.refreshQueryKeys();
         await router.push({ name: 'Home' });
       } else {
-        logAuthBreadcrumb('User is found but with no assignments. Retrying...', { level: 'warning' });
+        logAuthEvent('User is found but with no assignments. Retrying...', { level: 'warning' });
       }
     } else if (userType && userType !== 'guest') {
-      logAuthBreadcrumb('User is found, routing to home');
+      logAuthEvent('User is found, routing to home');
       clearInterval(userDataCheckInterval);
       authStore.refreshQueryKeys();
       await router.push({ name: 'Home' });
     } else {
-      logAuthBreadcrumb('User is found with invalid userType, retrying...', { level: 'warning' });
+      logAuthEvent('User is found with invalid userType, retrying...', { level: 'warning' });
     }
   } catch (error) {
     if (error.code !== 'ERR_BAD_REQUEST') {
