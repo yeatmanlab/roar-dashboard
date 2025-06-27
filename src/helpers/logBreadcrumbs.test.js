@@ -46,8 +46,7 @@ describe('logBreadcrumbs', () => {
   });
 
   it('should log a navigation breadcrumb', () => {
-    logNavBreadcrumb({
-      message: 'Arrived at CleverLanding.vue',
+    logNavBreadcrumb('Arrived at CleverLanding.vue', {
       data: { roarUid: 'testUid', authFrom: 'Clever', authValue: true },
     });
     expect(addBreadcrumb).toHaveBeenCalledWith({

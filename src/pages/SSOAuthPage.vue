@@ -27,8 +27,7 @@ const isCleverProvider = computed(() => ssoProvider.value === AUTH_SSO_PROVIDERS
 
 onBeforeMount(() => {
   if (!ssoProvider.value) {
-    logNavBreadcrumb({
-      message: 'No SSO provider detected. Redirecting to homepage...',
+    logNavBreadcrumb('No SSO provider detected. Redirecting to homepage...', {
       data: { roarUid: roarUid.value, ssoProvider: ssoProvider.value },
       level: 'warning',
     });
@@ -38,8 +37,7 @@ onBeforeMount(() => {
 });
 
 onMounted(() => {
-  logNavBreadcrumb({
-    message: 'Redirected to SSO landing page, polling for account readiness...',
+  logNavBreadcrumb('Redirected to SSO landing page, polling for account readiness...', {
     data: { roarUid: roarUid.value, ssoProvider: ssoProvider.value },
   });
   ssoProvider.value = null;

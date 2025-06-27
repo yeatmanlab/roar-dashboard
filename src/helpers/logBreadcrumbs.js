@@ -12,7 +12,6 @@ const SENTRY_BREADCRUMB_CATEGORIES = Object.freeze({
       message,
       data,
       level,
-      timestamp: new Date(),
     });
   };
 }*/
@@ -57,12 +56,12 @@ export const createAuthBreadcrumb =
 
 /**
  * Logs a Sentry navigation breadcrumb.
- *
+ * @param {string} message - Event description.
  * @param {Object} eventData - Event to log.
- * @param {string} eventData.message - Event description.
+ * @param {string} eventData.data - Event data.
  * @param {string} [eventData.level='info'] - Optional severity level.
  */
-export const logNavBreadcrumb = ({ data, message, level }) => {
+export const logNavBreadcrumb = (message, { data, level }) => {
   logBreadcrumb({
     category: SENTRY_BREADCRUMB_CATEGORIES.NAV,
     data,
