@@ -151,8 +151,7 @@ watch(userClaims, (updatedUserClaims) => {
   if (updatedUserClaims && updatedUserClaims.value) {
     const { adminUid, assessmentUid, roarUid } = updatedUserClaims.value.claims;
     const { userType } = useUserType(updatedUserClaims);
-    logBreadcrumb({
-      message: 'User claims updated',
+    logBreadcrumb('User claims updated', {
       data: { adminUid, assessmentUid, roarUid, userType },
     });
   }

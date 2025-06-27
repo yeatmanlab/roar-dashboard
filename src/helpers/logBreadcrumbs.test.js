@@ -8,10 +8,9 @@ vi.mock('@sentry/vue', () => ({
 
 describe('logBreadcrumbs', () => {
   it('should log a breadcrumb', () => {
-    logBreadcrumb({
+    logBreadcrumb('User is found', {
       category: 'auth',
       data: { roarUid: 'testUid', userType: 'student', provider: 'Clever' },
-      message: 'User is found',
       level: 'info',
     });
 
