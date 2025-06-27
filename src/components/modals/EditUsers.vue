@@ -211,7 +211,6 @@ import PvDialog from 'primevue/dialog';
 import PvSelect from 'primevue/select';
 import PvInputText from 'primevue/inputtext';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
-import { logBreadcrumb } from '@/helpers/logBreadcrumbs';
 
 const props = defineProps({
   userData: {
@@ -239,13 +238,8 @@ const initialized = ref(false);
 watch(
   () => props.isEnabled,
   (isEnabled) => {
-    console.log('isEnabled from watcher', isEnabled);
     if (isEnabled) {
       localUserData.value = setupUserData();
-      logBreadcrumb({
-        message: 'User data loaded',
-        data: { localUserData: localUserData.value },
-      });
       isOpen.value = true;
     }
   },
