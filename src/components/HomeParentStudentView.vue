@@ -195,16 +195,17 @@ async function handleStudentEnrollment(studentData) {
     );
 
     isEnrollmentModalVisible.value = false;
+    isSubmitting.value = false;
+    emit('refresh-registration');
 
-    // Show success message
     toast.add({
       severity: 'success',
       summary: 'Success',
-      detail: 'Student enrolled successfully',
+      detail: 'Student successfully enrolled',
       life: 3000,
     });
-    // Trigger refresh of parent registration status
-    emit('refresh-registration');
+    // Reload the page to reflect the new student
+    window.location.reload();
   } catch (error) {
     console.error('Error enrolling student:', error);
     toast.add({
