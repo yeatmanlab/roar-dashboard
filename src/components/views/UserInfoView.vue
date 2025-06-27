@@ -39,7 +39,6 @@ import _get from 'lodash/get';
 import { useAuthStore } from '@/store/auth';
 import useUserDataQuery from '@/composables/queries/useUserDataQuery';
 import EditUsersForm from '../EditUsersForm.vue';
-import { logBreadcrumb } from '@/helpers/logBreadcrumbs';
 
 // +----------------+
 // | Initialization |
@@ -83,10 +82,6 @@ const { data: userData } = useUserDataQuery(null, {
 // | Submission |
 // +------------+
 async function submitUserData() {
-  logBreadcrumb({
-    message: 'Submitting user data',
-    data: { roarUid: roarUid.value, localUserData: localUserData.value },
-  });
   isSubmitting.value = true;
 
   await roarfirekit.value
