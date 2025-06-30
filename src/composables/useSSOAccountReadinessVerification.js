@@ -7,6 +7,9 @@ import { useAuthStore } from '@/store/auth.js';
 import useUserDataQuery from '@/composables/queries/useUserDataQuery';
 import { AUTH_USER_TYPE } from '@/constants/auth';
 import { APP_ROUTES } from '@/constants/routes';
+import useSentryLogging from '@/composables/useSentryLogging';
+
+const { createAuthLogger } = useSentryLogging();
 
 const POLLING_INTERVAL = 600;
 
@@ -51,22 +54,24 @@ const useSSOAccountReadinessVerification = () => {
       }
 
       const userType = userData?.value?.userType;
+      const logAuthEvent = createAuthLogger({ roarUid: roarUid.value, userType, provider: 'SSO' });
 
       if (!userType) {
-        console.log(`[SSO] User type missing for user ${roarUid.value}. Attempt #${retryCount.value}, retrying...`);
+        logAuthEvent('User type missing, retrying...', { level: 'warning', details: { retryCount: retryCount.value } });
         retryCount.value++;
         return;
       }
 
       if (userType === AUTH_USER_TYPE.GUEST) {
-        console.log(
-          `[SSO] User ${roarUid.value} identified as ${userType} user. Attempt #${retryCount.value}, retrying...`,
-        );
+        logAuthEvent('User identified as guest user, retrying...', {
+          level: 'warning',
+          details: { retryCount: retryCount.value },
+        });
         retryCount.value++;
         return;
       }
 
-      console.log(`[SSO] User ${roarUid.value} successfully identified as ${userType} user. Routing to home page...`);
+      logAuthEvent('User successfully identified, routing to home page');
 
       // Stop the polling mechanism.
       clearInterval(userDataCheckInterval);

@@ -61,7 +61,6 @@ export async function deleteTestRuns(user, adminFirestore, assessmentFirestore) 
     await getUserId(user, adminFirestore).then(async (id) => {
       const runsCollectionRef = collection(assessmentFirestore, 'users', id, 'runs');
       await getDocs(runsCollectionRef).then(async (runsSnapshot) => {
-
         const seenAssignmentIds = new Set();
 
         //   Loop through each run, get the assignmentId, and reset the assignment
