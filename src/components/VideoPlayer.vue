@@ -8,7 +8,7 @@
 import 'video.js/dist/video-js.css';
 import useSentryLogging from '@/composables/useSentryLogging';
 
-const { logEvent } = useSentryLogging();
+const { logMediaEvent } = useSentryLogging();
 
 export default {
   name: 'VideoPlayer',
@@ -22,13 +22,13 @@ export default {
     onVideoStart: {
       type: Function,
       default(taskId) {
-        logEvent('Video started', { data: { taskId } });
+        logMediaEvent('Video started', { data: { taskId } });
       },
     },
     onVideoEnd: {
       type: Function,
       default(taskId) {
-        logEvent('Video ended', { data: { taskId } });
+        logMediaEvent('Video ended', { data: { taskId } });
       },
     },
     taskId: {

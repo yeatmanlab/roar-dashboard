@@ -3,6 +3,9 @@ import { addBreadcrumb } from '@sentry/vue';
 const SENTRY_BREADCRUMB_CATEGORIES = Object.freeze({
   AUTH: 'auth',
   NAV: 'navigation',
+  PROFILE: 'profile',
+  MEDIA: 'media',
+  ACCESS_CONTROL: 'access-control',
 });
 
 export default function useSentryLogging() {
@@ -61,5 +64,53 @@ export default function useSentryLogging() {
     });
   };
 
-  return { logEvent, createAuthLogger, logNavEvent };
+  /**
+   * Logs a Sentry media breadcrumb.
+   *
+   * @param {string} message - Event description.
+   * @param {Object} eventData - Event to log.
+   * @param {string} eventData.data - Event data.
+   * @param {string} [eventData.level='info'] - Optional severity level.
+   */
+  const logMediaEvent = (message, { data, level }) => {
+    logEvent(message, {
+      category: SENTRY_BREADCRUMB_CATEGORIES.MEDIA,
+      data,
+      level,
+    });
+  };
+
+  /**
+   * Logs a Sentry profile breadcrumb.
+   *
+   * @param {string} message - Event description.
+   * @param {Object} eventData - Event to log.
+   * @param {string} eventData.data - Event data.
+   * @param {string} [eventData.level='info'] - Optional severity level.
+   */
+  const logProfileEvent = (message, { data, level }) => {
+    logEvent(message, {
+      category: SENTRY_BREADCRUMB_CATEGORIES.PROFILE,
+      data,
+      level,
+    });
+  };
+
+  /**
+   * Logs a Sentry access-control breadcrumb.
+   *
+   * @param {string} message - Event description.
+   * @param {Object} eventData - Event to log.
+   * @param {string} eventData.data - Event data.
+   * @param {string} [eventData.level='info'] - Optional severity level.
+   */
+  const logAccessEvent = (message, { data, level }) => {
+    logEvent(message, {
+      category: SENTRY_BREADCRUMB_CATEGORIES.ACCESS_CONTROL,
+      data,
+      level,
+    });
+  };
+
+  return { logEvent, createAuthLogger, logNavEvent, logMediaEvent, logProfileEvent, logAccessEvent };
 }

@@ -49,7 +49,7 @@ const router = useRouter();
 const i18n = useI18n();
 
 const { mutateAsync: updateConsentStatus } = useUpdateConsentMutation();
-const { logEvent } = useSentryLogging();
+const { logProfileEvent } = useSentryLogging();
 
 if (ssoProvider.value) {
   router.replace({ path: APP_ROUTES.SSO });
@@ -151,7 +151,7 @@ watch(userClaims, (updatedUserClaims) => {
   if (updatedUserClaims && updatedUserClaims.value) {
     const { adminUid, assessmentUid, roarUid } = updatedUserClaims.value.claims;
     const { userType } = useUserType(updatedUserClaims);
-    logEvent('User claims updated', {
+    logProfileEvent('User claims updated', {
       data: { adminUid, assessmentUid, roarUid, userType },
     });
   }
