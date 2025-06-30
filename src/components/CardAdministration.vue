@@ -20,6 +20,11 @@
               severity: 'danger',
               variant: 'outlined',
             }"
+            :button-props="{
+              rounded: true,
+              severity: 'danger',
+              variant: 'outlined',
+            }"
             :model="speedDialItems"
             :tooltip-options="{
               event: 'hover',
@@ -675,6 +680,11 @@ onMounted((): void => {
   justify-content: end;
   align-items: center;
 
+  // .p-speeddial-button {
+  //   background: var(--primary-color-hover);
+  //   border: 1px solid var(--primary-color-hover);
+  // }
+
   .p-speeddial-item {
     width: 2rem;
     height: 2rem;
@@ -692,8 +702,15 @@ onMounted((): void => {
 
   &.p-speeddial-open {
     .p-speeddial-button {
-      background: var(--primary-color-hover);
-      border: 1px solid var(--primary-color-hover);
+      background: var(--primary-color);
+      border: 1px solid var(--primary-color);
+      color: white;
+
+      &:hover {
+        background: var(--primary-color-hover);
+        border: 1px solid var(--primary-color-hover);
+        color: white;
+      }
     }
   }
 }
