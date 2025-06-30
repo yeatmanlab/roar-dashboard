@@ -61,7 +61,7 @@
                   :options="cohortSites"
                   option-label="name"
                   option-value="id"
-                  :loading="isLoadingCohortSites"
+                  :loading="isLoadingDistricts"
                   class="w-full"
                   data-cy="dropdown-cohort-site"
                 />
@@ -201,7 +201,6 @@ import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toast
 import RoarDataTable from '@/components/RoarDataTable.vue';
 import PvFloatLabel from 'primevue/floatlabel';
 import AddGroupModal from '@/components/modals/AddGroupModal.vue'
-import _uniq from 'lodash/uniq';
 
 const router = useRouter();
 const initialized = ref(false);
@@ -289,27 +288,8 @@ const cohortSites = computed(() => {
     return [];
   }
   
-  // If orgData is not loaded yet, return all districts as fallback
-  if (!orgData.value) {
-    return allDistricts.value || [];
-  }
-  
-  // Get unique parentOrgIds from the current org data (cohorts)
-  const parentOrgIds = orgData.value
-    .map((org) => org.parentOrgId)
-    .filter(Boolean);
-  
-  const uniqueParentOrgIds = _uniq(parentOrgIds);
-  
-  // If no parentOrgIds found, return all districts as fallback
-  if (uniqueParentOrgIds.length === 0) {
-    return allDistricts.value || [];
-  }
-  
-  return filteredDistricts;
+  return allDistricts.value || [];
 });
-
-const isLoadingCohortSites = ref(false);
 
 // Filtered org data based on selected cohort site
 const filteredOrgData = computed(() => {
@@ -581,13 +561,6 @@ watchEffect(() => {
 
 watch(allSchools, (newValue) => {
   selectedSchool.value = _get(_head(newValue), 'id');
-});
-
-// Reset cohort site selection when switching tabs
-watch(activeOrgType, () => {
-  if (activeOrgType.value !== 'groups') {
-    selectedCohortSite.value = undefined;
-  }
 });
 
 // Auto-select first site when cohort sites are loaded
