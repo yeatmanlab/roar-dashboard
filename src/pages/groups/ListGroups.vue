@@ -21,7 +21,7 @@
         <PvTabPanel v-for="orgType in orgHeaders" :key="orgType" :header="orgType.header">
           <div class="grid column-gap-3 mt-2">
             <div
-              v-if="activeOrgType === 'schools' || activeOrgType === 'classes'"
+              v-if="activeOrgType === 'schools' || activeOrgType === 'classes' || activeOrgType === 'groups'"
               class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3"
             >
               <PvFloatLabel>
@@ -51,21 +51,6 @@
                   data-cy="dropdown-parent-school"
                 />
                 <label for="school">School</label>
-              </PvFloatLabel>
-            </div>
-            <div v-if="activeOrgType === 'groups'" class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3">
-              <PvFloatLabel>
-                <PvSelect
-                  v-model="selectedCohortSite"
-                  input-id="cohortSite"
-                  :options="cohortSites"
-                  option-label="name"
-                  option-value="id"
-                  :loading="isLoadingDistricts"
-                  class="w-full"
-                  data-cy="dropdown-cohort-site"
-                />
-                <label for="cohortSite">Sites</label>
               </PvFloatLabel>
             </div>
           </div>
@@ -206,7 +191,6 @@ const router = useRouter();
 const initialized = ref(false);
 const selectedDistrict = ref(undefined);
 const selectedSchool = ref(undefined);
-const selectedCohortSite = ref(undefined);
 const orderBy = ref(orderByDefault);
 let activationCode = ref(null);
 const isDialogVisible = ref(false);
@@ -282,22 +266,13 @@ const {
   enabled: claimsLoaded,
 });
 
-// Use existing districts data for cohort sites filter
-const cohortSites = computed(() => {
-  if (activeOrgType.value !== 'groups') {
-    return [];
-  }
-  
-  return allDistricts.value || [];
-});
-
 // Filtered org data based on selected cohort site
 const filteredOrgData = computed(() => {
-  if (activeOrgType.value !== 'groups' || !selectedCohortSite.value || !orgData.value) {
+  if (activeOrgType.value !== 'groups' || !selectedDistrict.value || !orgData.value) {
     return orgData.value;
   }
 
-  return orgData.value.filter((org) => org.parentOrgId === selectedCohortSite.value);
+  return orgData.value.filter((org) => org.parentOrgId === selectedDistrict.value);
 });
 
 function copyToClipboard(text) {
@@ -564,14 +539,14 @@ watch(allSchools, (newValue) => {
 });
 
 // Auto-select first site when cohort sites are loaded
-watch(cohortSites, (newValue) => {
-  if (activeOrgType.value === 'groups' && newValue && newValue.length > 0 && !selectedCohortSite.value) {
-    selectedCohortSite.value = _get(_head(newValue), 'id');
+watch(allDistricts, (newValue) => {
+  if (activeOrgType.value === 'groups' && newValue && newValue.length > 0 && !selectedDistrict.value) {
+    selectedDistrict.value = _get(_head(newValue), 'id');
   }
 });
 
 const tableKey = ref(0);
-watch([selectedDistrict, selectedSchool, selectedCohortSite], () => {
+watch([selectedDistrict, selectedSchool], () => {
   tableKey.value += 1;
 });
 
