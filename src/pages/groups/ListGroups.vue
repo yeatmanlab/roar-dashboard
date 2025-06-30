@@ -538,13 +538,6 @@ watch(allSchools, (newValue) => {
   selectedSchool.value = _get(_head(newValue), 'id');
 });
 
-// Auto-select first site when cohort sites are loaded
-watch(allDistricts, (newValue) => {
-  if (activeOrgType.value === 'groups' && newValue && newValue.length > 0 && !selectedDistrict.value) {
-    selectedDistrict.value = _get(_head(newValue), 'id');
-  }
-});
-
 const tableKey = ref(0);
 watch([selectedDistrict, selectedSchool], () => {
   tableKey.value += 1;
