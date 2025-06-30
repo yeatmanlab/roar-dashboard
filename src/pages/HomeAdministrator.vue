@@ -15,7 +15,6 @@
                 You can view and monitor completion and create new bundles of tasks, surveys, and questionnaires to be
                 administered as assignments.
               </div>
-
             </div>
             <div class="flex align-items-center gap-2 mt-2">
               <div class="flex gap-3 align-items-stretch justify-content-start">
@@ -118,6 +117,7 @@
                     :public-name="item.publicName ?? item.name"
                     :show-params="isSuperAdmin"
                     :is-super-admin="isSuperAdmin"
+                    :creator="item.creator"
                     data-cy="h2-card-admin"
                   />
                 </div>

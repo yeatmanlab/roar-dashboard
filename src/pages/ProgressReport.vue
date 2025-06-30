@@ -21,6 +21,12 @@
                 {{ displayName }}
               </div>
             </div>
+            <div>
+              <div class="uppercase font-light text-gray-500 text-md">Created by</div>
+              <div class="administration-creator">
+                {{ creator?.displayName }}
+              </div>
+            </div>
           </div>
           <div v-if="!isLevante" class="flex flex-row align-items-center gap-4">
             <div class="uppercase text-sm text-gray-600">VIEW</div>
@@ -179,6 +185,7 @@ import useOrgQuery from '@/composables/queries/useOrgQuery';
 import useDistrictSchoolsQuery from '@/composables/queries/useDistrictSchoolsQuery';
 import useAdministrationAssignmentsQuery from '@/composables/queries/useAdministrationAssignmentsQuery';
 import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery';
+import useUserDataQuery from '@/composables/queries/useUserDataQuery';
 import { getDynamicRouterPath } from '@/helpers/getDynamicRouterPath';
 import { exportCsv } from '@/helpers/query/utils';
 import { taskDisplayNames, gradeOptions } from '@/helpers/reports';
@@ -287,6 +294,12 @@ const { isSuperAdmin } = useUserType(userClaims);
 const { data: administrationData } = useAdministrationsQuery([props.administrationId], {
   enabled: initialized,
   select: (data) => data[0],
+});
+
+const createdBy = computed(() => administrationData?.value?.createdBy);
+
+const { data: creator } = useUserDataQuery(createdBy.value, {
+  enabled: computed(() => !!createdBy.value),
 });
 
 const { data: adminStats } = useAdministrationsStatsQuery([props.administrationId], {
@@ -723,6 +736,11 @@ onMounted(async () => {
 
 .administration-name {
   font-size: 1.8rem;
+  font-weight: light;
+}
+
+.administration-creator {
+  font-size: 1.2rem;
   font-weight: light;
 }
 

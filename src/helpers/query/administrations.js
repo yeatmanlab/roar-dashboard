@@ -44,7 +44,7 @@ const processBatchStats = async (axiosInstance, statsPaths, batchSize = 5) => {
   return batchStatsDocs;
 };
 
-const mapAdministrations = async ({ isSuperAdmin, data, adminOrgs }) => {
+const mapAdministrations = async ({ isSuperAdmin, data, creators, adminOrgs }) => {
   // First format the administration documents
   const administrationData = data
     .map((a) => a.data)
@@ -56,9 +56,11 @@ const mapAdministrations = async ({ isSuperAdmin, data, adminOrgs }) => {
         groups: a.groups,
         families: a.families,
       };
+
       if (!isSuperAdmin.value) {
         assignedOrgs = filterAdminOrgs(adminOrgs.value, assignedOrgs);
       }
+
       return {
         id: a.id,
         name: a.name,
@@ -68,6 +70,7 @@ const mapAdministrations = async ({ isSuperAdmin, data, adminOrgs }) => {
           end: a.dateClosed,
           created: a.dateCreated,
         },
+        creator: { ...creators[a.createdBy] } || null,
         assessments: a.assessments,
         assignedOrgs,
         // If testData is not defined, default to false when mapping
@@ -125,9 +128,25 @@ export const administrationPageFetcher = async (isSuperAdmin, exhaustiveAdminOrg
     undefined,
   );
 
+  const creatorIds = administrationData.map((adm) => adm.data.createdBy).filter(Boolean);
+  const uniqueCreatorIds = [...new Set(creatorIds)];
+  const creatorDocs = uniqueCreatorIds.map((id) => `${documentPrefix}/users/${id}`);
+  const { data: creators } = await axiosInstance.post(':batchGet', { documents: creatorDocs });
+  const creatorsData = creators.reduce((acc, { found }) => {
+    if (found) {
+      const creatorId = _last(found.name.split('/'));
+      acc[creatorId] = {
+        id: creatorId,
+        ..._mapValues(found.fields, (value) => convertValues(value)),
+      };
+    }
+    return acc;
+  }, {});
+
   const administrations = await mapAdministrations({
     isSuperAdmin,
     data: administrationData,
+    creators: creatorsData,
     adminOrgs: exhaustiveAdminOrgs,
   });
 
