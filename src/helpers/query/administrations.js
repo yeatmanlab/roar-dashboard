@@ -138,8 +138,8 @@ export const administrationPageFetcher = async (isSuperAdmin, exhaustiveAdminOrg
 
   const creatorIds = administrationData.map((adm) => adm.data.createdBy).filter(Boolean);
   const uniqueCreatorIds = [...new Set(creatorIds)];
-  const creatorDocs = uniqueCreatorIds.map((id) => `${documentPrefix}/users/${id}`);
-  const { data: creators } = await axiosInstance.post(':batchGet', { documents: creatorDocs });
+  const creatorDocs = uniqueCreatorIds.map((id) => `${getBaseDocumentPath()}/users/${id}`);
+  const { data: creators } = await axiosInstance.post(`${getBaseDocumentPath()}:batchGet`, { documents: creatorDocs });
   const creatorsData = creators.reduce((acc, { found }) => {
     if (found) {
       const creatorId = _last(found.name.split('/'));
