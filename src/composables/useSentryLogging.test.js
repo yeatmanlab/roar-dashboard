@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { addBreadcrumb } from '@sentry/vue';
 import useSentryLogging from './useSentryLogging';
-const { logEvent, createAuthLogger, logNavEvent } = useSentryLogging();
+const { logEvent, createAuthLogger, logNavEvent, logMediaEvent, logProfileEvent, logAccessEvent } = useSentryLogging();
 vi.mock('@sentry/vue', () => ({
   addBreadcrumb: vi.fn(),
 }));
@@ -57,6 +57,54 @@ describe('logEvents', () => {
       data: { roarUid: 'testUid', authFrom: 'Clever', authValue: true },
       level: 'info',
       message: 'Arrived at CleverLanding.vue',
+    });
+  });
+
+  it('should log a media breadcrumb', () => {
+    logMediaEvent('Video started', { data: { taskId: 'testTaskId' } });
+
+    expect(addBreadcrumb).toHaveBeenCalledWith({
+      category: 'media',
+      data: { taskId: 'testTaskId' },
+      level: 'info',
+      message: 'Video started',
+    });
+  });
+
+  it('should log a profile breadcrumb', () => {
+    logProfileEvent('User claims updated', {
+      data: {
+        adminUid: 'testAdminUid',
+        assessmentUid: 'testAssessmentUid',
+        roarUid: 'testRoarUid',
+        userType: 'student',
+      },
+    });
+
+    expect(addBreadcrumb).toHaveBeenCalledWith({
+      category: 'profile',
+      data: {
+        adminUid: 'testAdminUid',
+        assessmentUid: 'testAssessmentUid',
+        roarUid: 'testRoarUid',
+        userType: 'student',
+      },
+      level: 'info',
+      message: 'User claims updated',
+    });
+  });
+
+  it('should log an access-control breadcrumb', () => {
+    logAccessEvent('User does not have permission to access route', {
+      level: 'warning',
+      data: { permission: 'testPermission' },
+    });
+
+    expect(addBreadcrumb).toHaveBeenCalledWith({
+      category: 'access-control',
+      data: { permission: 'testPermission' },
+      level: 'warning',
+      message: 'User does not have permission to access route',
     });
   });
 });

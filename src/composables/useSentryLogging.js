@@ -3,8 +3,8 @@ import { addBreadcrumb } from '@sentry/vue';
 const SENTRY_BREADCRUMB_CATEGORIES = Object.freeze({
   AUTH: 'auth',
   NAV: 'navigation',
-  PROFILE: 'profile',
   MEDIA: 'media',
+  PROFILE: 'profile',
   ACCESS_CONTROL: 'access-control',
 });
 
