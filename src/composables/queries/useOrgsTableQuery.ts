@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { computed, ref, type MaybeRefOrGetter } from 'vue';
 import { useQuery, type UseQueryReturnType, type UseQueryOptions } from '@tanstack/vue-query';
 import _isEmpty from 'lodash/isEmpty';

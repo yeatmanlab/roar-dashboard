@@ -306,11 +306,6 @@ const cohortSites = computed(() => {
     return allDistricts.value || [];
   }
   
-  // Filter allDistricts to only include districts that have cohorts
-  const filteredDistricts = allDistricts.value?.filter((district) => 
-    uniqueParentOrgIds.includes(district.id)
-  ) || [];
-  
   return filteredDistricts;
 });
 
