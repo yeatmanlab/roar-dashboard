@@ -2,7 +2,7 @@ import { toValue } from 'vue';
 import _mapValues from 'lodash/mapValues';
 import _uniq from 'lodash/uniq';
 import _without from 'lodash/without';
-import { convertValues, getAxiosInstance, mapFields, fetchDocsById } from './utils';
+import { convertValues, getAxiosInstance, mapFields, fetchDocsById, getBaseDocumentPath } from './utils';
 import { FIRESTORE_DATABASES, FIRESTORE_COLLECTIONS } from '../../constants/firebase';
 
 export const getTasksRequestBody = ({
@@ -78,7 +78,7 @@ export const taskFetcher = async (registered = true, allData = false, select = [
     select: allData ? '' : select,
   });
 
-  return axiosInstance.post(':runQuery', requestBody).then(({ data }) => mapFields(data));
+  return axiosInstance.post(`${getBaseDocumentPath()}:runQuery`, requestBody).then(({ data }) => mapFields(data));
 };
 
 /**
@@ -148,7 +148,7 @@ export const variantsFetcher = async (registered = false) => {
     paginate: false,
   });
 
-  return axiosInstance.post(':runQuery', requestBody)
+  return axiosInstance.post(`${getBaseDocumentPath()}:runQuery`, requestBody)
   .then(async ({ data }) => {
     // Convert to regular object. Second arg is true to return parent doc ID as well.
     const variants = mapFields(data, true);
@@ -172,7 +172,7 @@ export const variantsFetcher = async (registered = false) => {
 
     // Use batchGet to get all task docs with one post request
     const batchTaskDocs = await axiosInstance
-      .post(':batchGet', {
+      .post(`${getBaseDocumentPath()}:batchGet`, {
         documents: taskDocPaths,
       })
       .then(({ data }) => {

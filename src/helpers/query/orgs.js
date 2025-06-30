@@ -12,6 +12,7 @@ import {
   getAxiosInstance,
   mapFields,
   orderByDefault,
+  getBaseDocumentPath,
 } from '@/helpers/query/utils';
 import { ORG_TYPES, SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
 import { FIRESTORE_COLLECTIONS } from '@/constants/firebase';
@@ -233,7 +234,7 @@ export const fetchOrgByName = async (orgType, orgNormalizedName, selectedDistric
     orderBy
   });
 
-  return axiosInstance.post(':runQuery', requestBody).then(({ data }) => mapFields(data));
+  return axiosInstance.post(`${getBaseDocumentPath()}:runQuery`, requestBody).then(({ data }) => mapFields(data));
 };
 
 export const orgFetcher = async (
@@ -261,7 +262,7 @@ export const orgFetcher = async (
       console.log(`Fetching ${orgType} for ${districtId}`);
     }
 
-    return axiosInstance.post(':runQuery', requestBody).then(({ data }) => mapFields(data));
+    return axiosInstance.post(`${getBaseDocumentPath()}:runQuery`, requestBody).then(({ data }) => mapFields(data));
   } else {
     if (['groups', 'families'].includes(orgType)) {
       const promises = (adminOrgs.value[orgType] ?? []).map((orgId) => {
@@ -349,10 +350,10 @@ export const orgPageFetcher = async (
   });
 
   if (isSuperAdmin.value) {
-    return axiosInstance.post(':runQuery', requestBody).then(({ data }) => mapFields(data));
+    return axiosInstance.post(`${getBaseDocumentPath()}:runQuery`, requestBody).then(({ data }) => mapFields(data));
   } else {
     if (activeOrgType.value === 'schools' && (adminOrgs.value['districts'] ?? []).includes(selectedDistrict.value)) {
-      const query = axiosInstance.post(':runQuery', requestBody).then(({ data }) => {
+      const query = axiosInstance.post(`${getBaseDocumentPath()}:runQuery`, requestBody).then(({ data }) => {
         return mapFields(data);
       });
       return query;
@@ -361,7 +362,7 @@ export const orgPageFetcher = async (
       ((adminOrgs.value['schools'] ?? []).includes(selectedSchool.value) ||
         (adminOrgs.value['districts'] ?? []).includes(selectedDistrict.value))
     ) {
-      return axiosInstance.post(':runQuery', requestBody).then(({ data }) => mapFields(data));
+      return axiosInstance.post(`${getBaseDocumentPath()}:runQuery`, requestBody).then(({ data }) => mapFields(data));
     }
 
     const orgIds = adminOrgs.value[activeOrgType.value] ?? [];
@@ -400,7 +401,7 @@ export const orgFetchAll = async (
 
   if (isSuperAdmin.value) {
     try {
-      return await axiosInstance.post(':runQuery', requestBody).then(({ data }) => {
+      return await axiosInstance.post(`${getBaseDocumentPath()}:runQuery`, requestBody).then(({ data }) => {
         return mapFields(data);
       });
     } catch (error) {

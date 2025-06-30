@@ -6,7 +6,8 @@
   "scripts": {
     "build:dev": "export VITE_LEVANTE=TRUE && export VITE_FIREBASE_PROJECT=DEV && vite build",
     "build:prod": "export VITE_LEVANTE=TRUE && vite build",
-    "dev": "export VITE_LEVANTE=TRUE && export VITE_FIREBASE_PROJECT=DEV && vite --force --host",
+    "dev": "export VITE_LEVANTE=TRUE && export VITE_FIREBASE_PROJECT=DEV && export VITE_EMULATOR=TRUE && vite --force --host",
+    "dev:db": "export VITE_LEVANTE=TRUE && export VITE_FIREBASE_PROJECT=DEV && vite --force --host",
     "local:prod": "export VITE_LEVANTE=TRUE && export VITE_FIREBASE_PROJECT=PROD && vite --force --host",
     "dev:pc": "powershell -Command \"$env:VITE_LEVANTE='TRUE'; $env:VITE_FIREBASE_PROJECT='DEV'; vite --force --host\"",
     "deploy:dev": "npm run build:dev && npx firebase use levante-admin-dev && npx firebase deploy --only hosting --config levante-firebase.json",
@@ -28,7 +29,7 @@
     "@bdelab/roar-swr": "1.12.11",
     "@bdelab/roar-utils": "^1.2.1",
     "@levante-framework/core-tasks": "^1.0.12-beta.3",
-    "@levante-framework/firekit": "^9.3.0",
+    "@levante-framework/firekit": "^9.3.1",
     "@primevue/core": "^4.2.4",
     "@primevue/themes": "^4.2.4",
     "@sentry/browser": "^8.0.0",

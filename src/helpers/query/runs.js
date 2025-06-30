@@ -4,7 +4,7 @@ import _get from 'lodash/get';
 import _mapValues from 'lodash/mapValues';
 import _uniq from 'lodash/uniq';
 import _without from 'lodash/without';
-import { convertValues, getAxiosInstance, mapFields } from './utils';
+import { convertValues, getAxiosInstance, mapFields, getBaseDocumentPath } from './utils';
 import { pluralizeFirestoreCollection } from '@/helpers';
 
 /**
@@ -165,7 +165,7 @@ export const runCounter = async (administrationId, orgType, orgId) => {
     orgId: toValue(orgId),
     aggregationQuery: true,
   });
-  return axiosInstance.post(':runAggregationQuery', requestBody).then(({ data }) => {
+  return axiosInstance.post(`${getBaseDocumentPath()}:runAggregationQuery`, requestBody).then(({ data }) => {
     return Number(convertValues(data[0].result?.aggregateFields?.count));
   });
 };
@@ -212,7 +212,7 @@ export const runPageFetcher = async ({
     select: toValue(select),
   });
   const runQuery = toValue(userId) === undefined ? ':runQuery' : `/users/${toValue(userId)}:runQuery`;
-  return adminAxiosInstance.post(runQuery, requestBody).then(async ({ data }) => {
+  return adminAxiosInstance.post(getBaseDocumentPath() + runQuery, requestBody).then(async ({ data }) => {
     const runData = mapFields(data, true);
 
     const userDocPaths = _uniq(
@@ -230,7 +230,7 @@ export const runPageFetcher = async ({
 
     // Use batchGet to get all user docs with one post request
     const batchUserDocs = await adminAxiosInstance
-      .post(':batchGet', {
+      .post(`${getBaseDocumentPath()}:batchGet`, {
         documents: userDocPaths,
         mask: {
           fieldPaths: ['grade', 'birthMonth', 'birthYear', 'schools.current'],

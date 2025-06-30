@@ -5,6 +5,7 @@ import _toPairs from 'lodash/toPairs';
 import * as Papa from 'papaparse';
 
 export const isLevante: boolean = import.meta.env.VITE_LEVANTE === 'TRUE';
+export const isEmulator: boolean = import.meta.env.VITE_EMULATOR === 'TRUE';
 
 export const isMobileBrowser = (): boolean => {
   const userAgent: string = navigator.userAgent || navigator.vendor || (window as any).opera;

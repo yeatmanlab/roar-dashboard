@@ -1,7 +1,7 @@
 {
   "firestore": {
-    "rules": "firebase/admin/firestore.rules",
-    "indexes": "firebase/admin/firestore.indexes.json"
+    "rules": "firebase/LEVANTE/admin/firestore.rules",
+    "indexes": "firebase/LEVANTE/admin/firestore.indexes.json"
   },
   "hosting": [
     {
@@ -27,62 +27,41 @@
             {
               "key": "Cross-Origin-Opener-Policy",
               "value": "same-origin-allow-popups"
-            },
-            {
-              "key": "Content-Security-Policy",
-              "value": "script-src 'self'"
-            },
-            {
-              "key": "Content-Security-Policy",
-              "value": "frame-ancestors 'self'"
-            },
-            {
-              "key": "X-Content-Type-Options",
-              "value": "nosniff"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "public": "dist",
-      "target": "staging",
-      "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
-      "rewrites": [
-        {
-          "source": "**",
-          "destination": "/index.html",
-          "headers": [
-            {
-              "key": "Cross-Origin-Opener-Policy",
-              "value": "same-origin-allow-popups"
-            }
-          ]
-        }
-      ],
-      "headers": [
-        {
-          "source": "**",
-          "headers": [
-            {
-              "key": "Cross-Origin-Opener-Policy",
-              "value": "same-origin-allow-popups"
-            },
-            {
-              "key": "Content-Security-Policy",
-              "value": "script-src 'self'"
-            },
-            {
-              "key": "Content-Security-Policy",
-              "value": "frame-ancestors 'self'"
-            },
-            {
-              "key": "X-Content-Type-Options",
-              "value": "nosniff"
             }
           ]
         }
       ]
     }
-  ]
+  ],
+  "emulators": {
+    "auth": {
+      "host": "127.0.0.1",
+      "port": 9199
+    },
+    "firestore": {
+      "host": "127.0.0.1",
+      "port": 8180
+    },
+    "functions": {
+      "host": "127.0.0.1",
+      "port": 5002
+    },
+    "ui": {
+      "host": "127.0.0.1",
+      "port": 4001
+    },
+    "tasks": {
+      "host": "127.0.0.1",
+      "port": 5001
+    },
+    "hub": {
+      "host": "127.0.0.1",
+      "port": 4401
+    },
+    "logging": {
+      "host": "127.0.0.1",
+      "port": 4501
+    },
+    "singleProjectMode": true
+  }
 }

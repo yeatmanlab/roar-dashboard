@@ -5,8 +5,10 @@ import _mapValues from 'lodash/mapValues';
 import _without from 'lodash/without';
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '@/store/auth';
-import { convertValues, getAxiosInstance, orderByDefault } from './utils';
+import { convertValues, getAxiosInstance, getBaseDocumentPath, orderByDefault } from './utils';
 import { filterAdminOrgs } from '@/helpers';
+import { isEmulator } from '@/helpers';
+import { FIRESTORE_BASE_URL } from '@/constants/firebase';
 
 export function getTitle(item, isSuperAdmin) {
   if (isSuperAdmin) {
@@ -21,7 +23,7 @@ const processBatchStats = async (axiosInstance, statsPaths, batchSize = 5) => {
   const batchStatsDocs = [];
   const statsPathChunks = _chunk(statsPaths, batchSize);
   for (const batch of statsPathChunks) {
-    const { data } = await axiosInstance.post(':batchGet', {
+    const { data } = await axiosInstance.post(`${getBaseDocumentPath()}:batchGet`, {
       documents: batch,
     });
 
@@ -107,13 +109,19 @@ export const administrationPageFetcher = async (isSuperAdmin, exhaustiveAdminOrg
   });
 
   const axiosInstance = getAxiosInstance();
-  const documentPrefix = axiosInstance.defaults.baseURL.replace('https://firestore.googleapis.com/v1/', '');
-  const documents = administrationIds.map((id) => `${documentPrefix}/administrations/${id}`);
+  const documents = administrationIds.map((id) => `${getBaseDocumentPath()}/administrations/${id}`);
 
-  const { data } = await axiosInstance.post(':batchGet', { documents });
+  let data = [];
+
+  try {
+    data = await axiosInstance.post(`${getBaseDocumentPath()}:batchGet`, { documents });
+  } catch (error) {
+    console.error('Error fetching administration data:', error);
+    return [];
+  }
 
   const administrationData = _without(
-    data.map(({ found }) => {
+    data.data.map(({ found }) => {
       if (found) {
         return {
           name: found.name,
@@ -130,8 +138,8 @@ export const administrationPageFetcher = async (isSuperAdmin, exhaustiveAdminOrg
 
   const creatorIds = administrationData.map((adm) => adm.data.createdBy).filter(Boolean);
   const uniqueCreatorIds = [...new Set(creatorIds)];
-  const creatorDocs = uniqueCreatorIds.map((id) => `${documentPrefix}/users/${id}`);
-  const { data: creators } = await axiosInstance.post(':batchGet', { documents: creatorDocs });
+  const creatorDocs = uniqueCreatorIds.map((id) => `${getBaseDocumentPath()}/users/${id}`);
+  const { data: creators } = await axiosInstance.post(`${getBaseDocumentPath()}:batchGet`, { documents: creatorDocs });
   const creatorsData = creators.reduce((acc, { found }) => {
     if (found) {
       const creatorId = _last(found.name.split('/'));

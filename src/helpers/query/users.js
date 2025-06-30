@@ -1,5 +1,5 @@
 import { toValue } from 'vue';
-import { convertValues, getAxiosInstance, mapFields } from './utils';
+import { convertValues, getAxiosInstance, mapFields, getBaseDocumentPath } from './utils';
 
 /**
  * Constructs the request body for fetching users.
@@ -142,7 +142,7 @@ export const fetchUsersByOrg = async (orgType, orgId, pageLimit, page, orderBy, 
   });
 
   console.log(`Fetching users page ${toValue(page)} for ${toValue(orgType)} ${toValue(orgId)}`);
-  return axiosInstance.post(':runQuery', requestBody).then(({ data }) => mapFields(data));
+  return axiosInstance.post(`${getBaseDocumentPath()}:runQuery`, requestBody).then(({ data }) => mapFields(data));
 };
 
 /**
@@ -165,7 +165,7 @@ export const countUsersByOrg = async (orgType, orgId, orderBy, restrictToActiveU
     restrictToActiveUsers: restrictToActiveUsers,
   });
 
-  return axiosInstance.post(':runAggregationQuery', requestBody).then(({ data }) => {
+  return axiosInstance.post(`${getBaseDocumentPath()}:runAggregationQuery`, requestBody).then(({ data }) => {
     return Number(convertValues(data[0].result?.aggregateFields?.count));
   });
 };
