@@ -52,7 +52,6 @@ const { mutateAsync: updateConsentStatus } = useUpdateConsentMutation();
 const { logEvent } = useSentryLogging();
 
 if (ssoProvider.value) {
-  console.log('Detected SSO authentication, redirecting...');
   router.replace({ path: APP_ROUTES.SSO });
 }
 
