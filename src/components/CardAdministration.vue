@@ -680,11 +680,6 @@ onMounted((): void => {
   justify-content: end;
   align-items: center;
 
-  // .p-speeddial-button {
-  //   background: var(--primary-color-hover);
-  //   border: 1px solid var(--primary-color-hover);
-  // }
-
   .p-speeddial-item {
     width: 2rem;
     height: 2rem;
