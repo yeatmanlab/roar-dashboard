@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { computed, ref, type MaybeRefOrGetter } from 'vue';
+import { computed, ref } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
 import _isEmpty from 'lodash/isEmpty';
 import useUserType from '@/composables/useUserType';
