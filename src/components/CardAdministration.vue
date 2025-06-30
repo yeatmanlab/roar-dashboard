@@ -15,14 +15,21 @@
         </div>
         <div class="flex justify-content-end w-3">
           <PvSpeedDial
+            :action-button-props="{
+              rounded: true,
+              severity: 'danger',
+              variant: 'outlined',
+            }"
             :model="speedDialItems"
-            direction="left"
+            :tooltip-options="{
+              event: 'hover',
+              position: 'top',
+            }"
             :transition-delay="80"
-            show-icon="pi pi-cog text-primary"
+            class="administration-action"
+            direction="left"
             hide-icon="pi pi-times"
-            button-class="w-2rem h-2rem border-none border-circle bg-transparent"
-            :tooltip-options="{ position: 'top' }"
-            :pt="{ button: { size: 'small' } }"
+            show-icon="pi pi-cog"
           />
           <PvConfirmPopup />
         </div>
@@ -660,6 +667,34 @@ onMounted((): void => {
 
   @media (max-width: 768px) {
     font-size: 1.1rem;
+  }
+}
+
+.administration-action {
+  display: flex;
+  justify-content: end;
+  align-items: center;
+
+  .p-speeddial-item {
+    width: 2rem;
+    height: 2rem;
+    margin: 0;
+    padding: 0;
+
+    .p-button {
+      display: flex;
+      width: 2rem;
+      height: 2rem;
+      margin: 0;
+      padding: 0;
+    }
+  }
+
+  &.p-speeddial-open {
+    .p-speeddial-button {
+      background: var(--primary-color-hover);
+      border: 1px solid var(--primary-color-hover);
+    }
   }
 }
 </style>
