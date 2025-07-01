@@ -22,7 +22,19 @@ describe('logEvents', () => {
     });
   });
 
-  it('should create and log an auth breadcrumb without extra details', () => {
+  it('should create and log an auth breadcrumb with base data', () => {
+    const logAuthEvent = createAuthLogger({ roarUid: 'testUid', userType: 'student', provider: 'Clever' });
+    logAuthEvent('Arrived at CleverLanding.vue');
+
+    expect(addBreadcrumb).toHaveBeenCalledWith({
+      category: 'auth',
+      data: { roarUid: 'testUid', userType: 'student', provider: 'Clever' },
+      level: 'info',
+      message: 'Arrived at CleverLanding.vue',
+    });
+  });
+
+  it('should create and log an auth breadcrumb with only non-detail attributes', () => {
     const logAuthEvent = createAuthLogger({ roarUid: 'testUid', userType: 'student', provider: 'Clever' });
     logAuthEvent('User is found with invalid userType, retrying...', { level: 'warning' });
 

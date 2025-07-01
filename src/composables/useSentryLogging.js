@@ -39,7 +39,8 @@ export default function useSentryLogging() {
    */
   const createAuthLogger =
     (baseData) =>
-    (message, { details, ...options }) => {
+    (message, eventData = {}) => {
+      const { details, ...options } = eventData;
       const data = details ? { ...baseData, details } : baseData;
       logEvent(message, {
         category: SENTRY_BREADCRUMB_CATEGORIES.AUTH,
