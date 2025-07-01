@@ -21,7 +21,7 @@
         <section v-if="isLevante" class="w-full">
           <i18n-t keypath="pageSignIn.adminPrompt" tag="p" class="text-center m-auto">
             <template #action>
-              <span class="underline text-red-700 cursor-pointer" @click="toggleAdminSignIn">{{
+              <span class="text-red-700 cursor-pointer hover:underline" @click="toggleAdminSignIn">{{
                 $t('pageSignIn.adminAction')
               }}</span>
             </template>
@@ -36,10 +36,10 @@
               @click="authWithGoogle"
             >
               <img src="../assets/provider-google-logo.svg" alt="The Google Logo" class="flex mr-2 w-1" />
-              <span>{{ $t('authSignIn.continueWithGoogle') }}</span>
+              <span>{{ $t('authSignIn.continueWithGoogle') }}*</span>
             </PvButton>
           </div>
-          <p class="text-xs text-center">{{ $t('pageSignIn.adminInfoPrompt') }}</p>
+          <small class="mt-3 text-center text-color-secondary">*{{ $t('pageSignIn.adminInfoPrompt') }}</small>
         </section>
         <!-- <section class="signin-option-container signin-option-providers">
           <div class="flex flex-row justify-content-center w-full">

@@ -39,7 +39,7 @@
             />
             <div class="flex">
               <small
-                class="text-link sign-in-method-link"
+                class="sign-in-method-link"
                 data-cy="sign-in-with-email-link"
                 @click="
                   allowPassword = false;
@@ -48,7 +48,7 @@
                 >{{ $t('authSignIn.signInWithEmailLinkInstead') }}</small
               >
               <small
-                class="ml-auto text-link sign-in-method-link"
+                class="ml-auto sign-in-method-link"
                 data-cy="sign-in-with-password"
                 @click="handleForgotPassword"
                 >{{ $t('authSignIn.forgotPassword') }}</small
@@ -93,14 +93,17 @@
               data-cy="password-disabled-for-email"
               class="w-full"
             />
-            <small
-              class="text-link sign-in-method-link"
-              @click="
-                allowPassword = true;
-                state.usePassword = true;
-              "
-              >{{ $t('authSignIn.signInWithPasswordInstead') }}</small
-            >
+            <div class="flex">
+              <small
+                class="sign-in-method-link"
+                @click="
+                  allowPassword = true;
+                  state.usePassword = true;
+                "
+              >
+                {{ $t('authSignIn.signInWithPasswordInstead') }}
+              </small>
+            </div>
           </div>
           <!-- Email is entered, however it is an invalid email (prevent login) -->
           <div v-else>
@@ -295,7 +298,7 @@ watch(
   },
 );
 </script>
-<style scoped>
+<style lang="scss" scoped>
 .submit-button {
   margin-top: 0.5rem;
   display: flex;
@@ -309,18 +312,16 @@ watch(
   background-color: #b7b5b5;
   color: black;
 }
-.text-link {
+
+.sign-in-method-link {
   cursor: pointer;
   color: var(--text-color-secondary);
-  font-weight: bold;
-  text-decoration: underline;
-}
-
-.text-link:hover {
-  color: var(--primary-color-text);
-}
-.sign-in-method-link {
+  font-weight: 600;
   text-align: left;
   margin-top: 0.5rem;
+
+  &:hover {
+    text-decoration: underline;
+  }
 }
 </style>

@@ -1,6 +1,6 @@
 <template>
   <div class="language-selector-wrapper">
-    <div class="font-semibold">{{ $t('authSignIn.selectLanguageLabel') }}:</div>
+    <div class="font-semibold text-color-secondary">{{ $t('authSignIn.selectLanguageLabel') }}:</div>
 
     <PvSelect
       v-model="$i18n.locale"
