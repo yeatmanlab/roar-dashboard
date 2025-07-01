@@ -10,65 +10,65 @@ describe('logEvents', () => {
   it('should log a breadcrumb', () => {
     logEvent('User is found', {
       category: 'auth',
-      data: { roarUid: 'testUid', userType: 'student', provider: 'Clever' },
+      data: { roarUid: 'testRoarUid', userType: 'student', provider: 'Clever' },
       level: 'info',
     });
 
     expect(addBreadcrumb).toHaveBeenCalledWith({
       category: 'auth',
-      data: { roarUid: 'testUid', userType: 'student', provider: 'Clever' },
-      level: 'info',
       message: 'User is found',
+      data: { roarUid: 'testRoarUid', userType: 'student', provider: 'Clever' },
+      level: 'info',
     });
   });
 
   it('should create and log an auth breadcrumb with base data', () => {
-    const logAuthEvent = createAuthLogger({ roarUid: 'testUid', userType: 'student', provider: 'Clever' });
+    const logAuthEvent = createAuthLogger({ roarUid: 'testRoarUid', userType: 'student', provider: 'Clever' });
     logAuthEvent('Arrived at CleverLanding.vue');
 
     expect(addBreadcrumb).toHaveBeenCalledWith({
       category: 'auth',
-      data: { roarUid: 'testUid', userType: 'student', provider: 'Clever' },
-      level: 'info',
       message: 'Arrived at CleverLanding.vue',
+      data: { roarUid: 'testRoarUid', userType: 'student', provider: 'Clever' },
+      level: 'info',
     });
   });
 
   it('should create and log an auth breadcrumb with only non-detail attributes', () => {
-    const logAuthEvent = createAuthLogger({ roarUid: 'testUid', userType: 'student', provider: 'Clever' });
+    const logAuthEvent = createAuthLogger({ roarUid: 'testRoarUid', userType: 'student', provider: 'Clever' });
     logAuthEvent('User is found with invalid userType, retrying...', { level: 'warning' });
 
     expect(addBreadcrumb).toHaveBeenCalledWith({
       category: 'auth',
-      data: { roarUid: 'testUid', userType: 'student', provider: 'Clever' },
-      level: 'warning',
       message: 'User is found with invalid userType, retrying...',
+      data: { roarUid: 'testRoarUid', userType: 'student', provider: 'Clever' },
+      level: 'warning',
     });
     expect(addBreadcrumb.mock.calls[0][0].data).not.toHaveProperty('details');
   });
 
   it('should create and log an auth breadcrumb with extra details', () => {
-    const logAuthEvent = createAuthLogger({ roarUid: 'testUid', userType: 'student', provider: 'Clever' });
+    const logAuthEvent = createAuthLogger({ roarUid: 'testRoarUid', userType: 'student', provider: 'Clever' });
     logAuthEvent('Arrived at CleverLanding.vue', { details: { authFromClever: true } });
 
     expect(addBreadcrumb).toHaveBeenCalledWith({
       category: 'auth',
-      data: { roarUid: 'testUid', userType: 'student', provider: 'Clever', details: { authFromClever: true } },
-      level: 'info',
       message: 'Arrived at CleverLanding.vue',
+      data: { roarUid: 'testRoarUid', userType: 'student', provider: 'Clever', details: { authFromClever: true } },
+      level: 'info',
     });
   });
 
   it('should log a navigation breadcrumb', () => {
     logNavEvent('Arrived at CleverLanding.vue', {
-      data: { roarUid: 'testUid', authFrom: 'Clever', authValue: true },
+      data: { roarUid: 'testRoarUid', authFrom: 'Clever', authValue: true },
     });
 
     expect(addBreadcrumb).toHaveBeenCalledWith({
       category: 'navigation',
-      data: { roarUid: 'testUid', authFrom: 'Clever', authValue: true },
-      level: 'info',
       message: 'Arrived at CleverLanding.vue',
+      data: { roarUid: 'testRoarUid', authFrom: 'Clever', authValue: true },
+      level: 'info',
     });
   });
 
@@ -77,9 +77,9 @@ describe('logEvents', () => {
 
     expect(addBreadcrumb).toHaveBeenCalledWith({
       category: 'media',
+      message: 'Video started',
       data: { taskId: 'testTaskId' },
       level: 'info',
-      message: 'Video started',
     });
   });
 
@@ -95,6 +95,7 @@ describe('logEvents', () => {
 
     expect(addBreadcrumb).toHaveBeenCalledWith({
       category: 'profile',
+      message: 'User claims updated',
       data: {
         adminUid: 'testAdminUid',
         assessmentUid: 'testAssessmentUid',
@@ -102,7 +103,6 @@ describe('logEvents', () => {
         userType: 'student',
       },
       level: 'info',
-      message: 'User claims updated',
     });
   });
 
@@ -114,9 +114,9 @@ describe('logEvents', () => {
 
     expect(addBreadcrumb).toHaveBeenCalledWith({
       category: 'access-control',
+      message: 'User does not have permission to access route',
       data: { permission: 'testPermission' },
       level: 'warning',
-      message: 'User does not have permission to access route',
     });
   });
 });
