@@ -12,17 +12,13 @@
       <h1 v-if="!isLevante">{{ $t('pageSignIn.welcome') }}</h1>
       <section class="signin-options">
         <section class="signin-option-container signin-option-userpass">
-          <h4 class="signin-option-title">{{ $t('pageSignIn.login') }}</h4>
-          <div id="languageSelect" class="m-4 flex justify-content-center">
-            <LanguageSelector class="w-7" />
+          <h3 class="signin-option-title font-semibold">{{ $t('pageSignIn.login') }}</h3>
+          <div id="languageSelect" class="mb-3">
+            <LanguageSelector />
           </div>
           <SignIn :invalid="incorrect" @submit="authWithEmail" @update:email="email = $event" />
         </section>
-        <section v-if="isLevante" class="w-full mb-2">
-          <!-- <p class="text-center m-auto">
-            Are you an Admin? Click
-            <span class="underline text-red-700 cursor-pointer" @click="toggleAdminSignIn">Here</span> to Sign In
-          </p> -->
+        <section v-if="isLevante" class="w-full">
           <i18n-t keypath="pageSignIn.adminPrompt" tag="p" class="text-center m-auto">
             <template #action>
               <span class="underline text-red-700 cursor-pointer" @click="toggleAdminSignIn">{{
@@ -32,23 +28,18 @@
           </i18n-t>
         </section>
         <section v-if="adminSignIn || !isLevante" class="flex flex-column w-full">
-          <h4
-            class="flex mb-3 mt-1 align-content-center justify-content-center flex-wrap-reverse font-bold text-md text-500"
-          >
-            {{ $t('pageSignIn.loginWith') }}
-          </h4>
-          <div class="flex flex-row align-content-center justify-content-center w-full">
+          <div class="flex flex-row align-content-center justify-content-center w-full mt-3">
             <PvButton
               label="Sign in with Google"
-              class="flex surface-0 p-1 border-black-alpha-10 w-3 ml-2 mr-2 text-center text-black justify-content-center hover:border-primary hover:surface-ground"
+              class="inline-flex surface-0 p-2 border-black-alpha-10 text-center text-black justify-content-center hover:border-primary hover:surface-ground"
               style="border-radius: 3rem; height: 3rem; color: black !important"
               @click="authWithGoogle"
             >
-              <img src="../assets/provider-google-logo.svg" alt="The Google Logo" class="flex mr-2 w-2" />
-              <span>Google</span>
+              <img src="../assets/provider-google-logo.svg" alt="The Google Logo" class="flex mr-2 w-1" />
+              <span>{{ $t('authSignIn.continueWithGoogle') }}</span>
             </PvButton>
           </div>
-          <p class="text-xs">*{{ $t('pageSignIn.adminInfoPrompt') }}</p>
+          <p class="text-xs text-center">{{ $t('pageSignIn.adminInfoPrompt') }}</p>
         </section>
         <!-- <section class="signin-option-container signin-option-providers">
           <div class="flex flex-row justify-content-center w-full">

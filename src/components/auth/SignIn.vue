@@ -14,9 +14,9 @@
             @click="checkForCapsLock"
           />
         </div>
-        <small v-if="invalid" class="p-error">{{ $t('authSignIn.incorrectEmailOrPassword') }}</small>
+        <small v-if="invalid" class="p-error block mt-3">{{ $t('authSignIn.incorrectEmailOrPassword') }}</small>
       </div>
-      <div class="field mt-4 mb-5">
+      <div class="field mt-2 mb-4">
         <div>
           <!-- Email is currently being evaluated (loading state) -->
           <span v-if="evaluatingEmail">
@@ -37,18 +37,23 @@
               @keyup="checkForCapsLock"
               @click="checkForCapsLock"
             />
-            <small
-              class="text-link sign-in-method-link"
-              data-cy="sign-in-with-email-link"
-              @click="
-                allowPassword = false;
-                state.usePassword = false;
-              "
-              >{{ $t('authSignIn.signInWithEmailLinkInstead') }}</small
-            >
-            <small class="text-link sign-in-method-link" data-cy="sign-in-with-password" @click="handleForgotPassword"
-              >Forgot password?</small
-            >
+            <div class="flex">
+              <small
+                class="text-link sign-in-method-link"
+                data-cy="sign-in-with-email-link"
+                @click="
+                  allowPassword = false;
+                  state.usePassword = false;
+                "
+                >{{ $t('authSignIn.signInWithEmailLinkInstead') }}</small
+              >
+              <small
+                class="ml-auto text-link sign-in-method-link"
+                data-cy="sign-in-with-password"
+                @click="handleForgotPassword"
+                >{{ $t('authSignIn.forgotPassword') }}</small
+              >
+            </div>
           </div>
           <!-- Username is entered, Password is desired -->
           <PvPassword
@@ -110,11 +115,10 @@
       </div>
       <PvButton
         type="submit"
-        class="mt-5 flex w-5 p-3 border-none border-round hover:bg-black-alpha-20"
+        class="flex w-full p-3 border-none border-round"
         :label="$t('authSignIn.buttonLabel') + ' &rarr;'"
         data-cy="submit-sign-in-with-password"
       />
-      <hr class="opacity-20 mt-5" />
     </form>
   </div>
   <RoarModal
@@ -316,9 +320,7 @@ watch(
   color: var(--primary-color-text);
 }
 .sign-in-method-link {
+  text-align: left;
   margin-top: 0.5rem;
-  display: flex;
-  justify-content: flex-end;
-  width: 100%;
 }
 </style>
