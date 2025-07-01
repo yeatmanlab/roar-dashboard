@@ -21,7 +21,7 @@
         <PvTabPanel v-for="orgType in orgHeaders" :key="orgType" :header="orgType.header">
           <div class="grid column-gap-3 mt-2">
             <div
-              v-if="activeOrgType === 'schools' || activeOrgType === 'classes'"
+              v-if="activeOrgType === 'schools' || activeOrgType === 'classes' || activeOrgType === 'groups'"
               class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3"
             >
               <PvFloatLabel>
@@ -266,6 +266,15 @@ const {
   enabled: claimsLoaded,
 });
 
+// Filtered org data based on selected cohort site
+const filteredOrgData = computed(() => {
+  if (activeOrgType.value !== 'groups' || !selectedDistrict.value || !orgData.value) {
+    return orgData.value;
+  }
+
+  return orgData.value.filter((org) => org.parentOrgId === selectedDistrict.value);
+});
+
 function copyToClipboard(text) {
   navigator.clipboard
     .writeText(text)
@@ -434,7 +443,7 @@ watchEffect(async () => {
   }
 
   const mappedData = await Promise.all(
-    orgData?.value?.map(async (org) => {
+    filteredOrgData?.value?.map(async (org) => {
       const userCount = await countUsersByOrg(activeOrgType.value, org.id);
       return {
         ...org,
