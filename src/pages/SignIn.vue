@@ -149,7 +149,7 @@
 <script setup>
 import { onMounted, ref, toRaw, onBeforeUnmount, computed } from 'vue';
 import { storeToRefs } from 'pinia';
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import PvButton from 'primevue/button';
 import PvImage from 'primevue/image';
 import PvPassword from 'primevue/password';
@@ -167,6 +167,7 @@ const incorrect = ref(false);
 const isLevante = import.meta.env.MODE === 'LEVANTE';
 const authStore = useAuthStore();
 const router = useRouter();
+const route = useRoute();
 
 const { spinner, ssoProvider, routeToProfile, roarfirekit } = storeToRefs(authStore);
 const warningModalOpen = ref(false);
@@ -182,20 +183,13 @@ authStore.$subscribe(() => {
         return;
       }
     }
-
     if (ssoProvider.value) {
       router.push({ path: APP_ROUTES.SSO });
     } else if (routeToProfile.value) {
       router.push({ path: APP_ROUTES.ACCOUNT_PROFILE });
     } else {
-      const isUserFullyAuthed = authStore.isAuthenticated && authStore.isUserAuthedAdmin && authStore.isUserAuthedApp;
-      if (
-        isUserFullyAuthed &&
-        router.options.history.state.back &&
-        router.options.history.state.back.includes('redirect_to')
-      ) {
-        const queryString = router.options.history.state.back.split('?')[1];
-        const redirect_to = new URLSearchParams(queryString).get('redirect_to');
+      const redirect_to = route.query.redirect_to;
+      if (typeof redirect_to !== 'undefined') {
         if (redirect_to.startsWith('/') && !redirect_to.match(/^(?:[a-z+]+:)?\/\//i)) {
           router.push(redirect_to);
         } else {

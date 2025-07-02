@@ -787,9 +787,10 @@ router.beforeEach(async (to, from, next) => {
     if (to.fullPath === '/') {
       next({ name: 'SignIn' });
       return;
-    } else {
+    } else if (from.path !== '/signin' && to.path !== '/sso') {
       next({ name: 'SignIn', query: { redirect_to: to.fullPath } });
-      return;
+    } else if (from.path === '/signin' && to.path === '/sso' && to.query.redirect_to !== from.query.redirect_to) {
+      next({ name: 'SSO', query: { redirect_to: from.query.redirect_to } });
     }
   }
 
