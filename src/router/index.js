@@ -784,12 +784,16 @@ router.beforeEach(async (to, from, next) => {
     !store.isAuthenticated &&
     !allowedUnauthenticatedRoutes.includes(to.name)
   ) {
-    if (to.fullPath === '/') {
+    if (to.fullPath === APP_ROUTES.HOME) {
       next({ name: 'SignIn' });
       return;
-    } else if (from.path !== '/signin' && to.path !== '/sso') {
+    } else if (from.path !== APP_ROUTES.SIGN_IN && to.path !== APP_ROUTES.SSO) {
       next({ name: 'SignIn', query: { redirect_to: to.fullPath } });
-    } else if (from.path === '/signin' && to.path === '/sso' && to.query.redirect_to !== from.query.redirect_to) {
+    } else if (
+      from.path === APP_ROUTES.SIGN_IN &&
+      to.path === APP_ROUTES.SSO &&
+      to.query.redirect_to !== from.query.redirect_to
+    ) {
       next({ name: 'SSO', query: { redirect_to: from.query.redirect_to } });
     }
   }
