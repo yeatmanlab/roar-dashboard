@@ -163,10 +163,10 @@ import { LEVANTE_BUCKET_URL } from '@/constants/bucket';
   overflow-x: auto;
   position: relative;
   height: 123px;
-  
+
   .csv-example-image {
     width: auto;
-    MAX-height: 108px;
+    max-height: 108px;
     display: block;
     position: absolute;
     left: 0;

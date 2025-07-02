@@ -5,8 +5,8 @@
   <div v-else class="options-container">
     <div class="flex justify-content-end mr-3 mt-2 button-container">
       <button
-        data-testid="options-control"
         v-if="props.showOptionsControl"
+        data-testid="options-control"
         type="button"
         class="text-red-700 cursor-pointer options-toggle"
         @click.prevent="toggleControls"
@@ -619,7 +619,7 @@ function getFormattedDate(date) {
 
 const onColumnToggle = (selected) => {
   selectedColumns.value = inputColumns.value.filter((col) => {
-    return selected.some((s) => s.header === col.header)
+    return selected.some((s) => s.header === col.header);
   });
 };
 
@@ -728,7 +728,7 @@ g {
 
   @media (max-width: 768px) {
     font-size: 0.8rem;
-    padding: 0.3rem 0.5rem!important;
+    padding: 0.3rem 0.5rem !important;
   }
 }
 
@@ -765,7 +765,7 @@ button.p-column-filter-menu-button.p-link:hover {
   text-align: left;
   border: 1px solid var(--surface-c);
   border-width: 0 0 3px 0;
-  padding: 0.6rem 1rem!important;
+  padding: 0.6rem 1rem !important;
 }
 
 .filter-content {

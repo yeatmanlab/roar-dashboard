@@ -5,8 +5,18 @@
         <div class="flex flex-column align-items-start mb-2 md:flex-row w-full justify-content-between">
           <div class="flex align-items-center gap-3 mb-4 md:mb-0">
             <div class="admin-page-header mr-4">Groups</div>
-            <PvButton class="bg-primary text-white border-none p-2 ml-auto" data-testid="add-group-btn" @click="isAddGroupModalVisible = true">Add Group</PvButton>
-            <PvButton class="bg-primary text-white border-none p-2 ml-auto" data-testid="add-users-btn" @click="addUsers">Add Users</PvButton>
+            <PvButton
+              class="bg-primary text-white border-none p-2 ml-auto"
+              data-testid="add-group-btn"
+              @click="isAddGroupModalVisible = true"
+              >Add Group</PvButton
+            >
+            <PvButton
+              class="bg-primary text-white border-none p-2 ml-auto"
+              data-testid="add-users-btn"
+              @click="addUsers"
+              >Add Users</PvButton
+            >
           </div>
           <div class="flex align-items-center justify-content-end w-full md:w-auto">
             <span class="p-input-icon-left p-input-icon-right">
@@ -185,7 +195,7 @@ import { CSV_EXPORT_MAX_RECORD_COUNT } from '@/constants/csvExport';
 import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
 import RoarDataTable from '@/components/RoarDataTable.vue';
 import PvFloatLabel from 'primevue/floatlabel';
-import AddGroupModal from '@/components/modals/AddGroupModal.vue'
+import AddGroupModal from '@/components/modals/AddGroupModal.vue';
 
 const router = useRouter();
 const initialized = ref(false);
@@ -214,7 +224,7 @@ const clearSearch = () => {
   searchQuery.value = '';
   sanitizedSearchString.value = '';
 };
-const isAddGroupModalVisible = ref(false)
+const isAddGroupModalVisible = ref(false);
 
 const addUsers = () => {
   router.push({ name: 'Add Users' });
@@ -549,7 +559,7 @@ const filteredTableData = computed(() => {
   }
 
   const query = sanitizedSearchString.value.toLowerCase().trim();
-  return tableData.value.filter(item => {
+  return tableData.value.filter((item) => {
     // Filter by name
     if (item.name && item.name.toLowerCase().includes(query)) {
       return true;
@@ -557,7 +567,7 @@ const filteredTableData = computed(() => {
 
     // Filter by tags if they exist
     if (item.tags && Array.isArray(item.tags)) {
-      return item.tags.some(tag => tag.toLowerCase().includes(query));
+      return item.tags.some((tag) => tag.toLowerCase().includes(query));
     }
 
     return false;
@@ -567,6 +577,6 @@ const filteredTableData = computed(() => {
 
 <style lang="scss">
 .p-datatable-scrollable .p-datatable-frozen-column {
-  position: inherit!important;
+  position: inherit !important;
 }
 </style>

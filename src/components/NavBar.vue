@@ -13,16 +13,22 @@
             </template>
 
             <template #buttonicon>
-              <PvButton icon="pi pi-bars"
-                class="bg-primary text-white p-2 mr-2 border-none border-round hover:bg-red-900" @click="toggleMenu" />
+              <PvButton
+                icon="pi pi-bars"
+                class="bg-primary text-white p-2 mr-2 border-none border-round hover:bg-red-900"
+                @click="toggleMenu"
+              />
             </template>
 
             <template #item="{ item, props, hasSubmenu, root }">
               <a class="flex items-center" v-bind="props.action">
                 <i v-if="item.icon" :class="['mr-2', item.icon]"></i>
                 <span>{{ item.label }}</span>
-                <Badge v-if="item.badge" :class="[item.badgeClass, { 'ml-auto': !root, 'ml-2': root }]"
-                  :value="item.badge" />
+                <Badge
+                  v-if="item.badge"
+                  :class="[item.badgeClass, { 'ml-auto': !root, 'ml-2': root }]"
+                  :value="item.badge"
+                />
                 <i v-if="hasSubmenu" :class="['pi ml-auto', { 'pi-angle-down': root, 'pi-angle-right': !root }]"></i>
               </a>
             </template>
@@ -173,7 +179,7 @@ const toggleMenu = (event: Event): void => {
 <style scoped>
 .p-button {
   min-width: 2.5rem;
-  min-height: 2.5rem; 
+  min-height: 2.5rem;
   top: -2px;
 }
 nav {

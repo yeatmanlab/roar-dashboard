@@ -1,10 +1,9 @@
 ---
 name: 📌 Task
 about: Track work that isn’t a bug or feature request
-title: "[Task] "
+title: '[Task] '
 labels: task
 assignees: ''
-
 ---
 
 ## 📋 Description

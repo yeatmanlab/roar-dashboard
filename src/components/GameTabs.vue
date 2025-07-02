@@ -311,7 +311,7 @@ const getSpecificSurveyProgress = computed(() => (loopIndex: number): number => 
 });
 
 const getSpecificSurveyProgressClass = computed(() => (loopIndex: number): string => {
-  const value = getSpecificSurveyProgress.value(loopIndex)
+  const value = getSpecificSurveyProgress.value(loopIndex);
   if (value > 0 && value < 100) {
     return 'p-progressbar--started';
   }

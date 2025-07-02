@@ -159,7 +159,7 @@ onMounted(async () => {
 const gameStore = useGameStore();
 const { selectedAdmin } = storeToRefs(gameStore);
 
-const { 
+const {
   data: districtsData,
   isLoading: isLoadingDistricts,
   isFetching: isFetchingDistricts,
@@ -271,17 +271,21 @@ const userType = computed(() => {
 });
 
 // Watch for when districts data changes
-watch(districtsData, (newDistrictsData) => {
-  if (newDistrictsData) {
-    const rawDistrictsData = toRaw(newDistrictsData)?.[0];
-    if (rawDistrictsData?.name) {
-      logger.setAdditionalProperties({
-        siteId: rawDistrictsData?.id,
-        siteName: rawDistrictsData?.name,
-      });
+watch(
+  districtsData,
+  (newDistrictsData) => {
+    if (newDistrictsData) {
+      const rawDistrictsData = toRaw(newDistrictsData)?.[0];
+      if (rawDistrictsData?.name) {
+        logger.setAdditionalProperties({
+          siteId: rawDistrictsData?.id,
+          siteName: rawDistrictsData?.name,
+        });
+      }
     }
-  }
-}, { immediate: true });
+  },
+  { immediate: true },
+);
 
 // Assessments to populate the game tabs.
 // Generated based on the current selected administration Id

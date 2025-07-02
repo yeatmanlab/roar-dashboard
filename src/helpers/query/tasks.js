@@ -148,69 +148,70 @@ export const variantsFetcher = async (registered = false) => {
     paginate: false,
   });
 
-  return axiosInstance.post(`${getBaseDocumentPath()}:runQuery`, requestBody)
-  .then(async ({ data }) => {
-    // Convert to regular object. Second arg is true to return parent doc ID as well.
-    const variants = mapFields(data, true);
+  return axiosInstance
+    .post(`${getBaseDocumentPath()}:runQuery`, requestBody)
+    .then(async ({ data }) => {
+      // Convert to regular object. Second arg is true to return parent doc ID as well.
+      const variants = mapFields(data, true);
 
-    // Retrieve all paths to the parent task documents. Note that there will be
-    // duplicates so we use _uniq. We also use _without to remove undefined
-    // values. The undefined values come from continuation tokens when the query
-    // is paginated.
-    const taskDocPaths = _uniq(
-      _without(
-        data.map((taskDoc) => {
-          if (taskDoc.document?.name) {
-            return taskDoc.document.name.split('/variants/')[0];
-          } else {
-            return undefined;
-          }
-        }),
-        undefined,
-      ),
-    );
-
-    // Use batchGet to get all task docs with one post request
-    const batchTaskDocs = await axiosInstance
-      .post(`${getBaseDocumentPath()}:batchGet`, {
-        documents: taskDocPaths,
-      })
-      .then(({ data }) => {
-        return _without(
-          data.map(({ found }) => {
-            if (found) {
-              return {
-                name: found.name,
-                data: {
-                  id: found.name.split('/tasks/')[1],
-                  ..._mapValues(found.fields, (value) => convertValues(value)),
-                },
-              };
+      // Retrieve all paths to the parent task documents. Note that there will be
+      // duplicates so we use _uniq. We also use _without to remove undefined
+      // values. The undefined values come from continuation tokens when the query
+      // is paginated.
+      const taskDocPaths = _uniq(
+        _without(
+          data.map((taskDoc) => {
+            if (taskDoc.document?.name) {
+              return taskDoc.document.name.split('/variants/')[0];
+            } else {
+              return undefined;
             }
-            return undefined;
           }),
           undefined,
-        );
+        ),
+      );
+
+      // Use batchGet to get all task docs with one post request
+      const batchTaskDocs = await axiosInstance
+        .post(`${getBaseDocumentPath()}:batchGet`, {
+          documents: taskDocPaths,
+        })
+        .then(({ data }) => {
+          return _without(
+            data.map(({ found }) => {
+              if (found) {
+                return {
+                  name: found.name,
+                  data: {
+                    id: found.name.split('/tasks/')[1],
+                    ..._mapValues(found.fields, (value) => convertValues(value)),
+                  },
+                };
+              }
+              return undefined;
+            }),
+            undefined,
+          );
+        });
+
+      const taskDocDict = batchTaskDocs.reduce((acc, task) => {
+        acc[task.data.id] = { ...task };
+        return acc;
+      }, {});
+
+      // But the order of batchGet is not guaranteed, so we need to match the task
+      // docs back with their variants.
+      return variants.map((variant) => {
+        const task = taskDocDict[variant.parentDoc];
+        return {
+          id: variant.id,
+          variant,
+          task: task.data,
+        };
       });
-
-    const taskDocDict = batchTaskDocs.reduce((acc, task) => {
-      acc[task.data.id] = { ...task };
-      return acc;
-    }, {});
-
-    // But the order of batchGet is not guaranteed, so we need to match the task
-    // docs back with their variants.
-    return variants.map((variant) => {
-      const task = taskDocDict[variant.parentDoc];
-      return {
-        id: variant.id,
-        variant,
-        task: task.data,
-      };
+    })
+    .catch((error) => {
+      console.error(error);
+      return [];
     });
-  })
-  .catch((error) => {
-    console.error(error);
-    return [];
-  });
 };

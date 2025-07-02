@@ -78,7 +78,7 @@
         alt="Add Users CSV Example "
         class="csv-example-image"
       />
-  </div>
+    </div>
   </PvPanel>
 </template>
 
@@ -236,7 +236,7 @@ const downloadTemplate = () => {
   overflow-x: auto;
   position: relative;
   height: 123px;
-  
+
   .csv-example-image {
     width: auto;
     max-height: 108px;

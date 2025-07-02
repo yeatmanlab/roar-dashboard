@@ -56,9 +56,6 @@ describe('UserActions', () => {
 
     helpSelect.vm.$emit('change', { value: 'reportAnIssue' });
 
-    expect(windowOpenSpy).toHaveBeenCalledWith(
-      'https://levante-support.freshdesk.com',
-      '_blank',
-    );
+    expect(windowOpenSpy).toHaveBeenCalledWith('https://levante-support.freshdesk.com', '_blank');
   });
 });

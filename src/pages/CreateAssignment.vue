@@ -82,7 +82,7 @@
               districts: state.districts,
               schools: state.schools,
               classes: state.classes,
-              groups: state.groups
+              groups: state.groups,
             })
           "
           class="p-error mb-8"
@@ -285,7 +285,6 @@ const groupIds = computed(() => existingAdministrationData.value?.minimalOrgs?.g
 const { data: existingGroupData } = useGroupsQuery(groupIds, {
   enabled: initialized,
 });
-
 
 // +------------------------------------------------------------------------------------------------------------------+
 // | Form state and validation rules

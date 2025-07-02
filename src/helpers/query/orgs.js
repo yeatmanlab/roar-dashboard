@@ -231,7 +231,7 @@ export const fetchOrgByName = async (orgType, orgNormalizedName, selectedDistric
     orgNormalizedName,
     paginate: false,
     select: ['id'],
-    orderBy
+    orderBy,
   });
 
   return axiosInstance.post(`${getBaseDocumentPath()}:runQuery`, requestBody).then(({ data }) => mapFields(data));

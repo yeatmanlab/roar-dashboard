@@ -117,11 +117,11 @@ const handleProfileChange = (e: DropdownChangeEvent): void => {
     }
   }
 
-    @media (max-width: 768px) {
-      .p-select-dropdown {
-        display: none
-      }
+  @media (max-width: 768px) {
+    .p-select-dropdown {
+      display: none;
     }
+  }
 }
 .nav-user-wrapper {
   display: flex;

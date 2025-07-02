@@ -228,18 +228,19 @@ export const fetchDocsById = async (documents, db = FIRESTORE_DATABASES.ADMIN) =
     const queryParams = (select ?? []).map((field) => `mask.fieldPaths=${field}`);
     const queryString = queryParams.length > 0 ? `?${queryParams.join('&')}` : '';
     promises.push(
-      axiosInstance.get(getBaseDocumentPath() + docPath + queryString)
-      .then(({ data }) => {
-        return {
-          id: docId,
-          collection,
-          ..._mapValues(data.fields, (value) => convertValues(value)),
-        };
-      })
-      .catch((error) => {
-        console.error('fetchDocsById: Error fetching document:', error);
-        return [];
-      }),
+      axiosInstance
+        .get(getBaseDocumentPath() + docPath + queryString)
+        .then(({ data }) => {
+          return {
+            id: docId,
+            collection,
+            ..._mapValues(data.fields, (value) => convertValues(value)),
+          };
+        })
+        .catch((error) => {
+          console.error('fetchDocsById: Error fetching document:', error);
+          return [];
+        }),
     );
   }
   return Promise.all(promises);
