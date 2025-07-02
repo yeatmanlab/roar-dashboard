@@ -7,9 +7,10 @@ vi.mock('@sentry/vue', () => ({
 }));
 
 describe('logEvents', () => {
+  const logAuthEvent = createAuthLogger({ roarUid: 'testRoarUid', userType: 'student', provider: 'Clever' });
+
   it('should log a breadcrumb', () => {
-    logEvent('User is found', {
-      category: 'auth',
+    logEvent('auth', 'User is found', {
       data: { roarUid: 'testRoarUid', userType: 'student', provider: 'Clever' },
       level: 'info',
     });
@@ -22,8 +23,7 @@ describe('logEvents', () => {
     });
   });
 
-  it('should create and log an auth breadcrumb with base data', () => {
-    const logAuthEvent = createAuthLogger({ roarUid: 'testRoarUid', userType: 'student', provider: 'Clever' });
+  it('should log an auth breadcrumb with base data', () => {
     logAuthEvent('Arrived at CleverLanding.vue');
 
     expect(addBreadcrumb).toHaveBeenCalledWith({
@@ -34,8 +34,7 @@ describe('logEvents', () => {
     });
   });
 
-  it('should create and log an auth breadcrumb with only non-detail attributes', () => {
-    const logAuthEvent = createAuthLogger({ roarUid: 'testRoarUid', userType: 'student', provider: 'Clever' });
+  it('should log an auth breadcrumb with only non-detail attributes', () => {
     logAuthEvent('User is found with invalid userType, retrying...', { level: 'warning' });
 
     expect(addBreadcrumb).toHaveBeenCalledWith({
@@ -47,8 +46,7 @@ describe('logEvents', () => {
     expect(addBreadcrumb.mock.calls[0][0].data).not.toHaveProperty('details');
   });
 
-  it('should create and log an auth breadcrumb with extra details', () => {
-    const logAuthEvent = createAuthLogger({ roarUid: 'testRoarUid', userType: 'student', provider: 'Clever' });
+  it('should log an auth breadcrumb with extra details', () => {
     logAuthEvent('Arrived at CleverLanding.vue', { details: { authFromClever: true } });
 
     expect(addBreadcrumb).toHaveBeenCalledWith({

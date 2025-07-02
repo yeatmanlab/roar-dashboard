@@ -12,18 +12,20 @@ export default function useSentryLogging() {
   /**
    * Logs a generic Sentry breadcrumb.
    *
+   * @param {string} category - Event context.
    * @param {string} message - Event description.
-   * @param {Object} options
-   * @param {string} options.category - Event context.
-   * @param {Object} options.data - Event data.
+   * @param {Object} [options={}] - Optional overrides and data.
+   * @param {Object} [options.data] - Event data.
    * @param {string} [options.level='info'] - Severity, defaults to 'info'.
+   * @param {...any} [extras] - Less common attributes: type, timestamp, and origin.
    */
-  const logEvent = (message, { category, data, level = 'info' }) => {
+  const logEvent = (category, message, { data, level = 'info', ...extras } = {}) => {
     addBreadcrumb({
       category,
       message,
       data,
       level,
+      ...extras,
     });
   };
 
@@ -31,87 +33,42 @@ export default function useSentryLogging() {
    * Creates a Sentry auth breadcrumb logger.
    *
    * @param {Object} baseData - Data included in every event: { roarUid: string, userType: string, provider: string }
-   * @returns {Function} logAuthEvent - Returns a function that logs an authentication event.
-   *   @param {string} message - Event description.
-   *   @param {Object} eventData - Event to log.
-   *   @param {string} [eventData.level='info'] - Optional severity level.
-   *   @param {Object} [eventData.details] - Optional extra data.
+   * @returns {Function} logAuthEvent - Returns a function that logs an auth event.
+   *   @param {Object} [options.details] - Optional extra data.
+   *   See {@link logEvent} for rest of parameter details.
    */
   const createAuthLogger =
     (baseData) =>
-    (message, eventData = {}) => {
-      const { details, ...options } = eventData;
+    (message, { details, level, ...extras } = {}) => {
       const data = details ? { ...baseData, details } : baseData;
-      logEvent(message, {
-        category: SENTRY_BREADCRUMB_CATEGORIES.AUTH,
+      logEvent(SENTRY_BREADCRUMB_CATEGORIES.AUTH, message, {
         data,
-        ...options,
+        level,
+        ...extras,
       });
     };
 
   /**
-   * Logs a Sentry navigation breadcrumb.
+   * Creates a generic Sentry breadcrumb logger.
    *
-   * @param {string} message - Event description.
-   * @param {Object} eventData - Event to log.
-   * @param {string} eventData.data - Event data.
-   * @param {string} [eventData.level='info'] - Optional severity level.
+   * @param {string} category - Event context.
+   * @returns {Function} logCategoryEvent - Returns a function that logs an event.
+   *   See {@link logEvent} for parameter details.
    */
-  const logNavEvent = (message, { data, level }) => {
-    logEvent(message, {
-      category: SENTRY_BREADCRUMB_CATEGORIES.NAV,
-      data,
-      level,
-    });
-  };
+  const createLogger =
+    (category) =>
+    (message, { data, level, ...extras } = {}) => {
+      logEvent(category, message, {
+        data,
+        level,
+        ...extras,
+      });
+    };
 
-  /**
-   * Logs a Sentry media breadcrumb.
-   *
-   * @param {string} message - Event description.
-   * @param {Object} eventData - Event to log.
-   * @param {string} eventData.data - Event data.
-   * @param {string} [eventData.level='info'] - Optional severity level.
-   */
-  const logMediaEvent = (message, { data, level }) => {
-    logEvent(message, {
-      category: SENTRY_BREADCRUMB_CATEGORIES.MEDIA,
-      data,
-      level,
-    });
-  };
-
-  /**
-   * Logs a Sentry profile breadcrumb.
-   *
-   * @param {string} message - Event description.
-   * @param {Object} eventData - Event to log.
-   * @param {string} eventData.data - Event data.
-   * @param {string} [eventData.level='info'] - Optional severity level.
-   */
-  const logProfileEvent = (message, { data, level }) => {
-    logEvent(message, {
-      category: SENTRY_BREADCRUMB_CATEGORIES.PROFILE,
-      data,
-      level,
-    });
-  };
-
-  /**
-   * Logs a Sentry access-control breadcrumb.
-   *
-   * @param {string} message - Event description.
-   * @param {Object} eventData - Event to log.
-   * @param {string} eventData.data - Event data.
-   * @param {string} [eventData.level='info'] - Optional severity level.
-   */
-  const logAccessEvent = (message, { data, level }) => {
-    logEvent(message, {
-      category: SENTRY_BREADCRUMB_CATEGORIES.ACCESS_CONTROL,
-      data,
-      level,
-    });
-  };
+  const logNavEvent = createLogger(SENTRY_BREADCRUMB_CATEGORIES.NAV);
+  const logMediaEvent = createLogger(SENTRY_BREADCRUMB_CATEGORIES.MEDIA);
+  const logProfileEvent = createLogger(SENTRY_BREADCRUMB_CATEGORIES.PROFILE);
+  const logAccessEvent = createLogger(SENTRY_BREADCRUMB_CATEGORIES.ACCESS_CONTROL);
 
   return { logEvent, createAuthLogger, logNavEvent, logMediaEvent, logProfileEvent, logAccessEvent };
 }
