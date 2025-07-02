@@ -124,12 +124,12 @@
 import { ref, computed, onMounted } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useI18n } from 'vue-i18n';
-import { useAuthStore } from '@/stores/auth';
-import { useUserRunPageQuery } from '@/composables/queries/useUserRunPageQuery';
+import { useAuthStore } from '@/store/auth';
+import useUserRunPageQuery from '@/composables/queries/useUserRunPageQuery';
 import { startCase as _startCase } from 'lodash';
 import IndividualScoreReportTask from '@/components/reports/IndividualScoreReportTask.vue';
 import AppSpinner from '@/components/AppSpinner.vue';
-import { getGradeWithSuffix } from '@/utils/gradeUtils';
+import { getGradeWithSuffix } from '@/helpers/reports.js';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import PvButton from 'primevue/button';

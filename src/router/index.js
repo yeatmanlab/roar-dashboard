@@ -672,6 +672,16 @@ const routes = [
     },
   },
   {
+    path: APP_ROUTES.LONGITUDINAL_REPORT,
+    name: 'LongitudinalReport',
+    props: true,
+    component: () => import('../pages/LongitudinalReport.vue'),
+    meta: {
+      pageTitle: 'Longitudinal Report',
+      permission: Permissions.Reports.Student.READ,
+    },
+  },
+  {
     path: APP_ROUTES.ACCOUNT_PROFILE,
     name: 'Profile',
     component: () => import('../pages/AdminProfile.vue'),
