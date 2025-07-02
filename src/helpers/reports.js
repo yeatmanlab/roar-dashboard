@@ -378,6 +378,7 @@ export const rawOnlyTasks = [
   'cva',
   'morphology',
   'vocab',
+  'phonics',
   'fluency',
   'letter-es',
   'letter-en-ca',
@@ -703,7 +704,7 @@ export function getScoreKeys(taskId, grade) {
     rawScoreKey = 'sreScore';
   }
   if (taskId === 'letter' || taskId === 'letter-es' || taskId === 'letter-en-ca') {
-    rawScoreKey = 'totalPercentCorrect';
+    rawScoreKey = 'totalCorrect';
   }
   if (taskId === 'phonics') {
     percentileScoreKey = 'totalPercentCorrect';
