@@ -123,10 +123,9 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { storeToRefs } from 'pinia';
-import { useI18n } from 'vue-i18n';
 import { useAuthStore } from '@/store/auth';
-import useUserRunPageQuery from '@/composables/queries/useUserRunPageQuery';
-import { startCase as _startCase } from 'lodash';
+import useUserAssignmentsQuery from '@/composables/queries/useUserAssignmentsQuery';
+import { startCase as _startCase, flatten as _flatten, uniq as _uniq } from 'lodash';
 import IndividualScoreReportTask from '@/components/reports/IndividualScoreReportTask.vue';
 import AppSpinner from '@/components/AppSpinner.vue';
 import { getGradeWithSuffix } from '@/helpers/reports.js';
@@ -152,7 +151,6 @@ const props = defineProps({
   },
 });
 
-const { t } = useI18n();
 const authStore = useAuthStore();
 const { user } = storeToRefs(authStore);
 
@@ -167,11 +165,15 @@ const studentData = computed(() => user.value);
 const studentFirstName = computed(() => studentData.value?.studentData?.firstName || '');
 const studentLastName = computed(() => studentData.value?.studentData?.lastName || '');
 
-// Mock data for available administrations - replace with actual API call
-const availableAdministrations = ref([
-  { id: '1', name: t('administrations.fall2024') },
-  { id: '2', name: t('administrations.spring2025') },
-]);
+const availableAdministrations = computed(() => {
+  if (!assignmentsData.value) return [];
+  return _uniq(
+    assignmentsData.value.map((assignment) => ({
+      id: assignment.id,
+      name: assignment.name,
+    })),
+  );
+});
 
 const hasAnyData = computed(() => {
   return Object.values(administrationData.value).some((data) => data && data.length > 0);
@@ -181,11 +183,29 @@ const setExpand = () => {
   expanded.value = !expanded.value;
 };
 
-const handleAdministrationChange = async () => {
+const { data: assignmentsData } = useUserAssignmentsQuery({ enabled: initialized }, props.userId, props.orgType, [
+  props.orgId,
+]);
+
+const handleAdministrationChange = () => {
+  if (!assignmentsData.value) return;
+
   for (const admin of selectedAdministrations.value) {
     if (!administrationData.value[admin.id]) {
-      const { data } = await useUserRunPageQuery(props.userId, admin.id, props.orgType, props.orgId, { enabled: true });
-      administrationData.value[admin.id] = data.value;
+      // Filter assignments for this administration and extract task data
+      const adminAssignments = assignmentsData.value.filter((assignment) => assignment.id === admin.id);
+
+      administrationData.value[admin.id] = _flatten(
+        adminAssignments.map((assignment) =>
+          assignment.assessments.map((assessment) => ({
+            ...assessment,
+            administrationId: assignment.id,
+            administrationName: assignment.name,
+            dateAssigned: assignment.dateAssigned,
+            dateCompleted: assessment.completed ? assessment.dateCompleted : null,
+          })),
+        ),
+      );
     }
   }
 };
