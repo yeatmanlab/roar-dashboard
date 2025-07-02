@@ -26,6 +26,9 @@ async function checkForUserType() {
   try {
     const userData = await fetchDocById('users', roarUid.value);
     const userType = _get(userData, 'userType');
+
+    const userClaims = await fetchDocById('userClaims', uid.value);
+
     const logAuthEvent = createAuthLogger({ roarUid: roarUid.value, userType, provider: 'ClassLink' });
     if (userType && userType === 'student') {
       // The user document exists and is not a guest. This means that the
@@ -34,7 +37,11 @@ async function checkForUserType() {
       const assignments = _get(userData, 'assignments', {});
       const allAssignmentIds = _union(...Object.values(assignments));
       if (allAssignmentIds.length > 0) {
-        logAuthEvent('User is found with assignments, routing to home', { details: { userData, assignments } });
+        const assessmentPid = _get(userData, 'assessmentPid');
+        const assessmentUid = _get(userClaims, 'claims.assessmentUid');
+        logAuthEvent('User is found with assignments, routing to home', {
+          details: { adminUid: uid.value, assessmentPid, assessmentUid, assignments },
+        });
         clearInterval(userDataCheckInterval);
         authStore.refreshQueryKeys();
         router.push({ name: 'Home' });
@@ -42,7 +49,6 @@ async function checkForUserType() {
         logAuthEvent('User is found but no assignments. Retrying...', { level: 'warning' });
       }
     } else if (userType && userType !== 'guest') {
-      const userClaims = await fetchDocById('userClaims', uid.value);
       const adminOrgs = _get(userClaims, 'claims.adminOrgs', {});
       logAuthEvent('User is found with adminOrgs', { details: { adminOrgs } });
       if (!_isEmpty(adminOrgs)) {
