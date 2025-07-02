@@ -155,7 +155,7 @@ import PvImage from 'primevue/image';
 import PvPassword from 'primevue/password';
 import ROARLogoShort from '@/assets/RoarLogo-Short.vue';
 import { useAuthStore } from '@/store/auth';
-import { isMobileBrowser } from '@/helpers';
+import { isMobileBrowser, redirectSignInPath } from '@/helpers';
 import { fetchDocById } from '@/helpers/query/utils';
 import { AUTH_SSO_PROVIDERS } from '@/constants/auth';
 import { APP_ROUTES } from '@/constants/routes';
@@ -188,16 +188,7 @@ authStore.$subscribe(() => {
     } else if (routeToProfile.value) {
       router.push({ path: APP_ROUTES.ACCOUNT_PROFILE });
     } else {
-      const redirect_to = route.query.redirect_to;
-      if (typeof redirect_to !== 'undefined') {
-        if (redirect_to.startsWith('/') && !redirect_to.match(/^(?:[a-z+]+:)?\/\//i)) {
-          router.push(redirect_to);
-        } else {
-          router.push({ path: '/unauthorized' });
-        }
-      } else {
-        router.push({ path: APP_ROUTES.HOME });
-      }
+      router.push({ path: redirectSignInPath(route) });
     }
   }
 });
