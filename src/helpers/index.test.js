@@ -11,6 +11,7 @@ import {
   standardDeviation,
   pluralizeFirestoreCollection,
   singularizeFirestoreCollection,
+  redirectSignInPath,
 } from './index';
 import Papa from 'papaparse';
 
@@ -349,6 +350,23 @@ describe('index helpers', () => {
 
     it('should throw error for unknown collection', () => {
       expect(() => singularizeFirestoreCollection('unknown')).toThrow();
+    });
+  });
+
+  describe('redirectSignInPath', () => {
+    it('should return redirect_to if it is a valid path', () => {
+      const route = { query: { redirect_to: '/game/swr' } };
+      expect(redirectSignInPath(route)).toBe('/game/swr');
+    });
+
+    it('should return home if redirect_to is not a valid path', () => {
+      const route = { query: { redirect_to: 'https://example.com' } };
+      expect(redirectSignInPath(route)).toBe('/unauthorized');
+    });
+
+    it('should return home if redirect_to is undefined', () => {
+      const route = { query: {} };
+      expect(redirectSignInPath(route)).toBe('/');
     });
   });
 });
