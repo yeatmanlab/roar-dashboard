@@ -7,18 +7,19 @@ vi.mock('@sentry/vue', () => ({
 }));
 
 describe('logEvents', () => {
-  const logAuthEvent = createAuthLogger({ roarUid: 'testRoarUid', userType: 'student', provider: 'Clever' });
+  const baseData = Object.freeze({ roarUid: 'testRoarUid', userType: 'student', provider: 'Clever' });
+  const logAuthEvent = createAuthLogger(baseData);
 
   it('should log a breadcrumb', () => {
     logEvent('auth', 'User is found', {
-      data: { roarUid: 'testRoarUid', userType: 'student', provider: 'Clever' },
+      data: baseData,
       level: 'info',
     });
 
     expect(addBreadcrumb).toHaveBeenCalledWith({
       category: 'auth',
       message: 'User is found',
-      data: { roarUid: 'testRoarUid', userType: 'student', provider: 'Clever' },
+      data: baseData,
       level: 'info',
     });
   });
@@ -29,7 +30,7 @@ describe('logEvents', () => {
     expect(addBreadcrumb).toHaveBeenCalledWith({
       category: 'auth',
       message: 'Arrived at CleverLanding.vue',
-      data: { roarUid: 'testRoarUid', userType: 'student', provider: 'Clever' },
+      data: baseData,
       level: 'info',
     });
   });
@@ -40,7 +41,7 @@ describe('logEvents', () => {
     expect(addBreadcrumb).toHaveBeenCalledWith({
       category: 'auth',
       message: 'User is found with invalid userType, retrying...',
-      data: { roarUid: 'testRoarUid', userType: 'student', provider: 'Clever' },
+      data: baseData,
       level: 'warning',
     });
     expect(addBreadcrumb.mock.calls[0][0].data).not.toHaveProperty('details');
@@ -52,7 +53,7 @@ describe('logEvents', () => {
     expect(addBreadcrumb).toHaveBeenCalledWith({
       category: 'auth',
       message: 'Arrived at CleverLanding.vue',
-      data: { roarUid: 'testRoarUid', userType: 'student', provider: 'Clever', details: { authFromClever: true } },
+      data: { ...baseData, details: { authFromClever: true } },
       level: 'info',
     });
   });
@@ -106,8 +107,8 @@ describe('logEvents', () => {
 
   it('should log an access-control breadcrumb', () => {
     logAccessEvent('User does not have permission to access route', {
-      level: 'warning',
       data: { permission: 'testPermission' },
+      level: 'warning',
     });
 
     expect(addBreadcrumb).toHaveBeenCalledWith({
