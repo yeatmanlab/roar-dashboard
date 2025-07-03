@@ -2,7 +2,7 @@ import { ref, nextTick } from 'vue';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createTestingPinia } from '@pinia/testing';
 import * as VueQuery from '@tanstack/vue-query';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { nanoid } from 'nanoid';
 import { withSetup } from '@/test-support/withSetup.js';
 import { useAuthStore } from '@/store/auth';
@@ -11,6 +11,7 @@ import useSSOAccountReadinessVerification from './useSSOAccountReadinessVerifica
 
 vi.mock('vue-router', () => ({
   useRouter: vi.fn(),
+  useRoute: vi.fn(),
 }));
 
 vi.mock('@tanstack/vue-query', async (getModule) => {
@@ -39,6 +40,7 @@ describe('useSSOAccountReadinessVerification', () => {
   let piniaInstance;
   let queryClient;
   let router;
+  let route;
 
   beforeEach(() => {
     vi.useFakeTimers();
@@ -48,8 +50,12 @@ describe('useSSOAccountReadinessVerification', () => {
     router = {
       push: vi.fn(),
     };
+    route = {
+      query: {},
+    };
 
     useRouter.mockReturnValue(router);
+    useRoute.mockReturnValue(route);
   });
 
   afterEach(() => {

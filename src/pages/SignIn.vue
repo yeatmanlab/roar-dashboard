@@ -149,13 +149,14 @@
 <script setup>
 import { onMounted, ref, toRaw, onBeforeUnmount, computed } from 'vue';
 import { storeToRefs } from 'pinia';
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import PvButton from 'primevue/button';
 import PvImage from 'primevue/image';
 import PvPassword from 'primevue/password';
 import ROARLogoShort from '@/assets/RoarLogo-Short.vue';
 import { useAuthStore } from '@/store/auth';
 import { isMobileBrowser } from '@/helpers';
+import { redirectSignInPath } from '@/helpers/redirectSignInPath';
 import { fetchDocById } from '@/helpers/query/utils';
 import { AUTH_SSO_PROVIDERS } from '@/constants/auth';
 import { APP_ROUTES } from '@/constants/routes';
@@ -167,6 +168,7 @@ const incorrect = ref(false);
 const isLevante = import.meta.env.MODE === 'LEVANTE';
 const authStore = useAuthStore();
 const router = useRouter();
+const route = useRoute();
 
 const { spinner, ssoProvider, routeToProfile, roarfirekit } = storeToRefs(authStore);
 const warningModalOpen = ref(false);
@@ -182,13 +184,12 @@ authStore.$subscribe(() => {
         return;
       }
     }
-
     if (ssoProvider.value) {
       router.push({ path: APP_ROUTES.SSO });
     } else if (routeToProfile.value) {
       router.push({ path: APP_ROUTES.ACCOUNT_PROFILE });
     } else {
-      router.push({ path: APP_ROUTES.HOME });
+      router.push({ path: redirectSignInPath(route) });
     }
   }
 });
