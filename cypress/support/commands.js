@@ -1,7 +1,7 @@
 import 'cypress-wait-until';
 import '@testing-library/cypress/add-commands';
 import { APP_ROUTES } from '../../src/constants/routes.js';
-import { redirectSignInPath } from '../../src/helpers/redirectSigninPath.js';
+import { redirectSignInPath } from '../../src/helpers/redirectSignInPath.js'
 
 const baseUrl = Cypress.config().baseUrl;
 

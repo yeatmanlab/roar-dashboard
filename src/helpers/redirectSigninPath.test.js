@@ -1,4 +1,4 @@
-import { redirectSignInPath } from './redirectSigninPath';
+import { redirectSignInPath } from './redirectSignInPath';
 import { APP_ROUTES } from '../constants/routes';
 
 describe('redirectSignInPath', () => {

@@ -6,7 +6,7 @@ import { StatusCodes } from 'http-status-codes';
 import { useAuthStore } from '@/store/auth.js';
 import useUserDataQuery from '@/composables/queries/useUserDataQuery';
 import { AUTH_USER_TYPE } from '@/constants/auth';
-import { redirectSignInPath } from '@/helpers/redirectSigninPath';
+import { redirectSignInPath } from '@/helpers/redirectSignInPath';
 
 const POLLING_INTERVAL = 600;
 
