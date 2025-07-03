@@ -32,6 +32,14 @@ export const taskDisplayNames = {
     extendedName: 'Letter Names and Sounds',
     order: 27,
   },
+  phonics: {
+    name: 'Phonics',
+    publicName: 'ROAR - Phonics',
+    studentFacingName: 'Phonics',
+    extendedTitle: 'ROAR - Phonics',
+    extendedName: 'Phonics Assessment',
+    order: 28,
+  },
   pa: {
     name: 'Phoneme',
     publicName: 'ROAR - Phoneme',
@@ -207,14 +215,6 @@ export const taskDisplayNames = {
     extendedTitle: 'ROAR - Inference',
     extendedName: 'Inference',
     order: 27,
-  },
-  phonics: {
-    name: 'Phonics',
-    publicName: 'ROAR - Phonics',
-    studentFacingName: 'Phonics',
-    extendedTitle: 'ROAR - Phonics',
-    extendedName: 'Phonics',
-    order: 18,
   },
   comp: {
     name: 'Comprehension',
@@ -703,6 +703,13 @@ export function getScoreKeys(taskId, grade) {
     rawScoreKey = 'sreScore';
   }
   if (taskId === 'letter' || taskId === 'letter-es' || taskId === 'letter-en-ca') {
+    rawScoreKey = 'totalPercentCorrect';
+  }
+  if (taskId === 'phonics') {
+    percentileScoreKey = 'totalPercentCorrect';
+    percentileScoreDisplayKey = 'totalPercentCorrect';
+    standardScoreKey = 'totalPercentCorrect';
+    standardScoreDisplayKey = 'totalPercentCorrect';
     rawScoreKey = 'totalPercentCorrect';
   }
   return {
