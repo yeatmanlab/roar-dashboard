@@ -29,32 +29,7 @@ describe('Participant: URL Handling', () => {
   });
 
   it('Redirects to redirect_to path after successfully authenticating with Clever SSO', () => {
-    const CLEVER_SSO_URL = Cypress.env('cleverOAuthLink');
-
-    cy.visit('/game/core-tasks/trog');
-    cy.get('[data-cy="sign-in__clever-sso"]').contains('Clever').click();
-
-    cy.origin(
-      CLEVER_SSO_URL,
-      {
-        args: {
-          schoolName: CLEVER_SCHOOL_NAME,
-          username: CLEVER_USERNAME,
-          password: CLEVER_PASSWORD,
-        },
-      },
-      ({ schoolName, username, password }) => {
-        cy.get('input[title="School name"]').type(schoolName);
-        cy.get('ul > li').contains(schoolName).click();
-
-        cy.get('input#username').type(username);
-        cy.get('input#password').type(password, { log: false });
-        cy.wait(1000); // Add a delay to simulate user input, as Clever SSO is sensitive to rapid input.
-        cy.get('button#UsernamePasswordForm--loginButton').click();
-      },
-    );
-
-    cy.url().should('eq', `${Cypress.config().baseUrl}/game/core-tasks/trog`);
+    cy.loginWithClever(CLEVER_SCHOOL_NAME, CLEVER_USERNAME, CLEVER_PASSWORD, '/game/core-tasks/trog');
     cy.visit('/');
     return;
   });

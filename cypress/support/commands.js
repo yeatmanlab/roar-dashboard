@@ -1,7 +1,7 @@
 import 'cypress-wait-until';
 import '@testing-library/cypress/add-commands';
 import { APP_ROUTES } from '../../src/constants/routes.js';
-import { redirectSignInPath } from '../../src/helpers/redirectSigninPath.js'
+import { redirectSignInPath } from '../../src/helpers/redirectSigninPath.js';
 
 const baseUrl = Cypress.config().baseUrl;
 
@@ -55,7 +55,7 @@ Cypress.Commands.add('login', (username, password) => {
  * @param {string} schoolName - The name of the school to log in with.
  * @param {string} username - The username to log in with.
  * @param {string} password - The password to log in with.
- * @param {string} [firstPath=APP_ROUTES.HOME] - The first path to visit. 
+ * @param {string} [firstPath=APP_ROUTES.HOME] - The first path to visit.
  */
 Cypress.Commands.add('loginWithClever', (schoolName, username, password, firstPath = APP_ROUTES.HOME) => {
   const CLEVER_SSO_URL = Cypress.env('cleverOAuthLink');
@@ -87,7 +87,9 @@ Cypress.Commands.add('loginWithClever', (schoolName, username, password, firstPa
     },
   );
 
-  const landingPath = `${baseUrl}${firstPath === APP_ROUTES.HOME ? APP_ROUTES.HOME : redirectSignInPath({ query: { redirect_to: firstPath } })}`
+  const landingPath = `${baseUrl}${
+    firstPath === APP_ROUTES.HOME ? APP_ROUTES.HOME : redirectSignInPath({ query: { redirect_to: firstPath } })
+  }`;
   cy.url().should('include', landingPath);
 
   if (landingPath === `${baseUrl}${APP_ROUTES.HOME}`) {
