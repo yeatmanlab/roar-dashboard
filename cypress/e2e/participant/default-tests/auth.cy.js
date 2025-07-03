@@ -36,15 +36,15 @@ describe('Participant: Auth', () => {
   });
 
   it('Redirects to login when unauthenticated user visits home', () => {
-      cy.visit(APP_ROUTES.HOME);
-      cy.url().should('eq', `${Cypress.config().baseUrl}/signin`);
-    });
-  
+    cy.visit(APP_ROUTES.HOME);
+    cy.url().should('eq', `${Cypress.config().baseUrl}/signin`);
+  });
+
   it('Redirects to login with redirect_to set to previous path when unauthenticated user visits a protected route', () => {
     cy.visit(APP_ROUTES.ACCOUNT_PROFILE);
     cy.url().should('eq', `${Cypress.config().baseUrl}/signin?redirect_to=/profile`);
   });
-  
+
   it('Redirects to redirect_to path after successfully authenticating with email', () => {
     cy.visit('/game/core-tasks/trog');
 
@@ -55,7 +55,7 @@ describe('Participant: Auth', () => {
 
     cy.url().should('eq', `${Cypress.config().baseUrl}/game/core-tasks/trog`);
   });
-  
+
   it('Redirects to redirect_to path after successfully authenticating with Clever SSO', () => {
     cy.loginWithClever(CLEVER_SCHOOL_NAME, CLEVER_USERNAME, CLEVER_PASSWORD, '/game/core-tasks/trog');
     cy.visit('/');
