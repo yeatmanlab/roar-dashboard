@@ -3,7 +3,6 @@ import _fromPairs from 'lodash/fromPairs';
 import _invert from 'lodash/invert';
 import _toPairs from 'lodash/toPairs';
 import * as Papa from 'papaparse';
-import { APP_ROUTES } from '../constants/routes';
 
 export const isMobileBrowser = () => {
   const userAgent = navigator.userAgent || navigator.vendor || window.opera;
@@ -173,17 +172,4 @@ export const singularizeFirestoreCollection = (plural) => {
   if (singular) return singular;
 
   throw new Error(`There is no Firestore collection ${plural}`);
-};
-
-export const redirectSignInPath = (route) => {
-  const redirect_to = route.query.redirect_to;
-  if (typeof redirect_to !== 'undefined') {
-    if (redirect_to.startsWith('/') && !redirect_to.match(/^(?:[a-z+]+:)?\/\//i)) {
-      return redirect_to;
-    } else {
-      return APP_ROUTES.UNAUTHORIZED;
-    }
-  } else {
-    return APP_ROUTES.HOME;
-  }
 };
