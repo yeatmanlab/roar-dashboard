@@ -802,7 +802,7 @@ router.beforeEach(async (to, from, next) => {
       to.path === APP_ROUTES.SSO &&
       to.query.redirect_to !== from.query.redirect_to
     ) {
-      next({ path: APP_ROUTES.SSO, query: { redirect_to: to.query.redirect_to } });
+      next({ path: APP_ROUTES.SSO, query: { redirect_to: from.query.redirect_to } });
       return;
     }
   }
