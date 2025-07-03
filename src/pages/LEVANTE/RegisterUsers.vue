@@ -316,8 +316,6 @@ async function submitUsers() {
 
     convertUsersToCSV();
   } catch (error) {
-    console.error(error);
-
     toast.add({
       severity: 'error',
       summary: 'Error registering users: ' + error.message,
@@ -417,8 +415,6 @@ const getOrgId = async (orgType, orgName, parentDistrict, parentSchool) => {
   }
 
   orgIds.value[orgType][orgName] = orgs;
-
-  console.log('orgs: ', orgs);
 
   return orgs;
 };

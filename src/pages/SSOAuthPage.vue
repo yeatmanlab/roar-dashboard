@@ -14,28 +14,33 @@ import useSSOAccountReadinessVerification from '@/composables/useSSOAccountReadi
 import AppSpinner from '@/components/AppSpinner.vue';
 import { APP_ROUTES } from '@/constants/routes';
 import { AUTH_SSO_PROVIDERS } from '../constants/auth';
+import useSentryLogging from '@/composables/useSentryLogging';
 
 const router = useRouter();
 const authStore = useAuthStore();
 const { roarUid, ssoProvider } = storeToRefs(authStore);
 
 const { startPolling } = useSSOAccountReadinessVerification(roarUid.value);
+const { logNavEvent } = useSentryLogging();
 
 const isClassLinkProvider = computed(() => ssoProvider.value === AUTH_SSO_PROVIDERS.CLASSLINK);
 const isCleverProvider = computed(() => ssoProvider.value === AUTH_SSO_PROVIDERS.CLEVER);
 
 onBeforeMount(() => {
   if (!ssoProvider.value) {
-    console.error('[SSO] No SSO provider detected. Redirecting to homepage...');
+    logNavEvent('No SSO provider detected. Redirecting to homepage...', {
+      data: { roarUid: roarUid.value, ssoProvider: ssoProvider.value },
+      level: 'warning',
+    });
     router.push({ path: APP_ROUTES.HOME });
     return;
   }
 });
 
 onMounted(() => {
-  console.log(`[SSO] User ${roarUid.value} was redirected to SSO landing page from ${ssoProvider.value}`);
-  console.log('[SSO] Polling for account readiness...');
-
+  logNavEvent('Redirected to SSO landing page, polling for account readiness...', {
+    data: { roarUid: roarUid.value, ssoProvider: ssoProvider.value },
+  });
   ssoProvider.value = null;
   startPolling();
 });

@@ -4,7 +4,7 @@ import { Model } from 'survey-core';
 import { onMounted, ref, toRaw, watch } from 'vue';
 import axios from 'axios';
 import { useAuthStore } from '@/store/auth';
-import { storeToRefs } from 'pinia';
+// import { storeToRefs } from 'pinia';
 import AppSpinner from '@/components/AppSpinner.vue';
 import { useRouter } from 'vue-router';
 import { useGameStore } from '@/store/game';
@@ -33,7 +33,7 @@ const fetchAudioLinks = async (surveyType) => {
 };
 
 const authStore = useAuthStore();
-const { roarfirekit } = storeToRefs(authStore);
+// const { roarfirekit } = storeToRefs(authStore);
 const fetchedSurvey = ref(null);
 const survey = ref(null);
 const isSavingResponses = ref(false);
@@ -154,11 +154,8 @@ async function playAudio(name) {
 }
 
 async function saveResults(sender) {
-  console.log('sender.data: ', sender.data);
-
   // If user did not fill out the survey, do not save the results
   if (Object.keys(sender.data).length === 0) {
-    console.log('No data to save');
     // update game store to let game tabs know
     gameStore.requireHomeRefresh();
     gameStore.setSurveyCompleted();
@@ -172,8 +169,7 @@ async function saveResults(sender) {
   // call cloud function to save the survey results
   // TODO: Use tanstack-query mutation for automaitic retries.
   try {
-    const res = await roarfirekit.value.saveSurveyResponses(sender.data);
-    console.log('response: ', res);
+    // const res = await roarfirekit.value.saveSurveyResponses(sender.data);
 
     // update game store to let game tabs know
     gameStore.setSurveyCompleted();

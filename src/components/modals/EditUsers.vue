@@ -238,10 +238,8 @@ const initialized = ref(false);
 watch(
   () => props.isEnabled,
   (isEnabled) => {
-    console.log('isEnabled from watcher', isEnabled);
     if (isEnabled) {
       localUserData.value = setupUserData();
-      console.log('userData', localUserData.value);
       isOpen.value = true;
     }
   },
