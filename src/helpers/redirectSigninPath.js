@@ -13,7 +13,7 @@ export const redirectSignInPath = (route) => {
     return APP_ROUTES.HOME;
   }
 
-  if (redirect_to.startsWith('/') && !redirect_to.match(/^(?:[a-z+]+:)?\/\//i)) {
+  if (redirect_to.startsWith('/') && !redirect_to.match(/^(?:[a-z+]+:)?\/\//i) && !redirect_to.match(/^\/[\\/]+/)) {
     return redirect_to;
   }
 
