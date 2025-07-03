@@ -784,17 +784,26 @@ router.beforeEach(async (to, from, next) => {
     !store.isAuthenticated &&
     !allowedUnauthenticatedRoutes.includes(to.name)
   ) {
+    // If the user attempt to visit the home page, skip the redirect_to query parameter.
     if (to.fullPath === APP_ROUTES.HOME) {
-      next({ name: 'SignIn' });
+      next({ path: APP_ROUTES.SIGN_IN });
       return;
-    } else if (from.path !== APP_ROUTES.SIGN_IN && to.path !== APP_ROUTES.SSO) {
-      next({ name: 'SignIn', query: { redirect_to: to.fullPath } });
-    } else if (
+    }
+
+    // If the user didn't initiate an SSO flow, ensure redirect intent is preserved.
+    if (from.path !== APP_ROUTES.SIGN_IN && to.path !== APP_ROUTES.SSO) {
+      next({ path: APP_ROUTES.SIGN_IN, query: { redirect_to: to.fullPath } });
+      return;
+    }
+
+    // If the user initiated the SSO flow from the sign-in page, preserve the redirect intent.
+    if (
       from.path === APP_ROUTES.SIGN_IN &&
       to.path === APP_ROUTES.SSO &&
       to.query.redirect_to !== from.query.redirect_to
     ) {
-      next({ name: 'SSO', query: { redirect_to: from.query.redirect_to } });
+      next({ path: APP_ROUTES.SSO, query: { redirect_to: to.query.redirect_to } });
+      return;
     }
   }
 
