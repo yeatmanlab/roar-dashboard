@@ -1,4 +1,5 @@
 import { APP_ROUTES } from '../constants/routes';
+import { PATH_REGEX } from '../constants/regex';
 
 /**
  * Redirects to the path specified in the redirect_to query parameter if it is a valid path.
@@ -13,7 +14,11 @@ export const redirectSignInPath = (route) => {
     return APP_ROUTES.HOME;
   }
 
-  if (redirect_to.startsWith('/') && !redirect_to.match(/^(?:[a-z+]+:)?\/\//i) && !redirect_to.match(/^\/[\\/]+/)) {
+  if (
+    redirect_to.startsWith('/') &&
+    !redirect_to.match(PATH_REGEX.HAS_URL_SCHEME) &&
+    !redirect_to.match(PATH_REGEX.HAS_INVALID_SLASHES)
+  ) {
     return redirect_to;
   }
 
