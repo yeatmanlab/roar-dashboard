@@ -26,7 +26,7 @@ describe('useGroupsListQuery', () => {
 
   const mockUserClaims = ref({
     claims: {
-      minimalAdminOrgs: ['mock-org-id-1', 'mock-org-id-2'],
+      adminOrgs: ['mock-org-id-1', 'mock-org-id-2'],
       super_admin: true,
     },
   });
