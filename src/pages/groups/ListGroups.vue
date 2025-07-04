@@ -238,7 +238,7 @@ const { data: userClaims } = useUserClaimsQuery({
 });
 
 const { isSuperAdmin } = useUserType(userClaims);
-const adminOrgs = computed(() => userClaims?.value?.claims?.minimalAdminOrgs);
+const adminOrgs = computed(() => userClaims?.value?.claims?.adminOrgs);
 
 const orgHeaders = computed(() => {
   return {

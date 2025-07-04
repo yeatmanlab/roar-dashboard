@@ -20,10 +20,10 @@ describe('useUserType', () => {
     expect(isSuperAdmin.value).toBe(true);
   });
 
-  it('should return admin user type when user has minimal admin orgs', () => {
+  it('should return admin user type when user has admin orgs', () => {
     const userClaims = computed(() => ({
       claims: {
-        minimalAdminOrgs: {
+        adminOrgs: {
           org1: [{ id: 1 }],
           org2: [{ id: 2 }],
         },
@@ -41,7 +41,7 @@ describe('useUserType', () => {
     const userClaims = computed(() => ({
       claims: {
         super_admin: false,
-        minimalAdminOrgs: {},
+        adminOrgs: {},
       },
     }));
     const { userType, isAdmin, isParticipant, isSuperAdmin } = useUserType(userClaims);

@@ -26,14 +26,14 @@ describe('useDistrictsListQuery', () => {
 
   const mockUserClaims = ref({
     claims: {
-      minimalAdminOrgs: ['mock-org-id-1', 'mock-org-id-2'],
+      adminOrgs: ['mock-org-id-1', 'mock-org-id-2'],
       super_admin: false,
     },
   });
 
   const mockSuperAdminUserClaims = ref({
     claims: {
-      minimalAdminOrgs: ['mock-org-id-3'],
+      adminOrgs: ['mock-org-id-3'],
       super_admin: true,
     },
   });

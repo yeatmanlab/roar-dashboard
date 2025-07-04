@@ -7,7 +7,7 @@ import _isEmpty from 'lodash/isEmpty';
  *
  * Composable function to determine the user type based on the user claims. The user type can be either an admin or a
  * participant. The user type is determined based on the user claims, where a user is considered an admin if they have
- * the corresponding super_admin or miniamlAdminOrgs claims.
+ * the corresponding super_admin or adminOrgs claims.
  *
  * @param {Object} userClaims - The user claims object.
  * @returns {Object} The user type and related computed properties.
@@ -24,11 +24,11 @@ export default function useUserType(userClaims) {
       return AUTH_USER_TYPE.SUPER_ADMIN;
     }
 
-    // Check if the user has any minimal admin organizations.
-    const minimalAdminOrgs = claims?.minimalAdminOrgs || {};
-    const hasMinimalAdminOrgs = Object.values(minimalAdminOrgs).some((org) => !_isEmpty(org));
+    // Check if the user has any admin organizations.
+    const adminOrgs = claims?.adminOrgs || {};
+    const hasAdminOrgs = Object.values(adminOrgs).some((org) => !_isEmpty(org));
 
-    if (hasMinimalAdminOrgs) {
+    if (hasAdminOrgs) {
       return AUTH_USER_TYPE.ADMIN;
     }
 

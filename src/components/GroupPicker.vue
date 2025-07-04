@@ -195,7 +195,7 @@ const { isLoading: isLoadingClaims, data: userClaims } = useUserClaimsQuery({
 });
 
 const isSuperAdmin = computed((): boolean => Boolean(userClaims.value?.claims?.super_admin));
-const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
+const adminOrgs = computed(() => userClaims.value?.claims?.adminOrgs);
 
 const orgHeaders = computed((): Record<string, OrgHeader> => {
   if (props.forParentOrg) {

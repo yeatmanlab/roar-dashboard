@@ -97,7 +97,7 @@ const { data: userClaims } = useUserClaimsQuery({
 // Keep track of the user's type
 const isAdmin = computed(() => {
   if (userClaims.value?.claims?.super_admin) return true;
-  if (_isEmpty(_union(...Object.values(userClaims.value?.claims?.minimalAdminOrgs ?? {})))) return false;
+  if (_isEmpty(_union(...Object.values(userClaims.value?.claims?.adminOrgs ?? {})))) return false;
   return true;
 });
 </script>

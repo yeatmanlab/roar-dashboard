@@ -377,6 +377,7 @@ export const orgPageFetcher = async (
       if (orderDirection === 'DESCENDING') return 2 * +(b[orderField] > a[orderField]) - 1;
       return 0;
     });
+
     return orgs.slice(page.value * pageLimit.value, (page.value + 1) * pageLimit.value);
   }
 };
