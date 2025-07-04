@@ -56,6 +56,15 @@
           data-cy="report__pdf-export-btn"
           @click="exportToPdf"
         />
+        <PvButton
+          outlined
+          class="text-white bg-primary border-white border-1 border-round h-3rem p-3 hover:bg-red-900"
+          :label="$t('scoreReports.viewLongitudinal')"
+          icon="pi pi-chart-line ml-2"
+          icon-pos="right"
+          data-cy="report__longitudinal-btn"
+          @click="navigateToLongitudinal"
+        />
       </div>
     </div>
 
@@ -198,6 +207,8 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
 import { storeToRefs } from 'pinia';
+import { useRouter } from 'vue-router';
+import { APP_ROUTES } from '@/constants/routes';
 import jsPDF from 'jspdf';
 import _startCase from 'lodash/startCase';
 import PvAccordion from 'primevue/accordion';
@@ -259,6 +270,15 @@ const { data: tasksDictionary, isLoading: isLoadingTasksDictionary } = useTasksD
 
 const expanded = ref(false);
 const exportLoading = ref(false);
+const router = useRouter();
+
+const navigateToLongitudinal = () => {
+  router.push({
+    path: APP_ROUTES.LONGITUDINAL_REPORT.replace(':orgType', props.orgType)
+      .replace(':orgId', props.orgId)
+      .replace(':userId', props.userId),
+  });
+};
 
 const setExpand = () => {
   expanded.value = !expanded.value;

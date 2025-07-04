@@ -49,6 +49,7 @@ export const APP_ROUTES = {
   CREATE_ADMINISTRATION: '/administration/create',
   EDIT_ADMINISTRATION: '/administration/:formType/:adminId',
   DUPLICATE_ADMINISTRATION: '/administration/:formType/:adminId',
+  LONGITUDINAL_REPORT: '/longitudinal/:orgType/:orgId/user/:userId',
 };
 
 export const ADMINISTRATION_FORM_TYPES = {
