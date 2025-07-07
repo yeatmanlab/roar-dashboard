@@ -13,10 +13,12 @@
               <div class="flex gap-2 justify-content-between">
                 <label for="activationCode">Activation code <span class="required">*</span></label>
               </div>
-              <PvInputGroup v-if="!student.noActivationCode">
+              <PvInputGroup v-if="!student.noActivationCode" data-cy="activation-code-group">
                 <PvInputText
                   v-model="student.activationCode"
-                  name="noActivationCode"
+                  name="activationCode"
+                  data-cy="activation-code-input"
+                  placeholder="Enter activation code"
                   :class="{
                     'p-invalid': v$.students.$each.$response.$data[outerIndex].activationCode.$invalid && submitted,
                   }"
@@ -74,6 +76,7 @@
             <PvInputText
               v-model="student.studentUsername"
               name="studentUsername"
+              data-cy="student-username-input"
               :class="{
                 'p-invalid': v$.students.$each.$response.$data[outerIndex].studentUsername.$invalid && submitted,
               }"
@@ -95,6 +98,7 @@
               <PvPassword
                 v-model="student.password"
                 name="password"
+                data-cy="student-password-input"
                 :class="{
                   'p-invalid': v$.students.$each.$response.$data[outerIndex].password.$invalid && submitted,
                   'w-full': true,
@@ -123,6 +127,7 @@
                 :id="`confirmPassword-${isRegistering ? 'register' : 'login'}`"
                 v-model="student.confirmPassword"
                 name="confirmPassword"
+                data-cy="student-confirm-password-input"
                 :class="{ 'p-invalid': isPasswordMismatch(outerIndex) && submitted, 'w-full': true }"
                 :input-props="{ autocomplete: 'new-password' }"
                 :feedback="false"
@@ -140,7 +145,12 @@
             <div class="flex gap-2 justify-content-start">
               <label>Date of Birth <span class="required">*</span></label>
               <div class="flex align-items-center">
-                <PvCheckbox v-model="student.yearOnlyCheckRef" :binary="true" name="yearOnly" />
+                <PvCheckbox
+                  v-model="student.yearOnlyCheckRef"
+                  :binary="true"
+                  name="yearOnly"
+                  data-cy="year-only-checkbox"
+                />
                 <label for="yearOnly" class="ml-2">Use Year Only</label>
               </div>
             </div>
@@ -162,6 +172,7 @@
                 view="year"
                 date-format="yy"
                 icon="pi pi-calendar text-white p-1"
+                data-cy="dob-year-picker"
               />
             </div>
             <small v-if="v$.students.$each.$response.$data[outerIndex].dob.$invalid && submitted" class="p-error">{{
@@ -177,6 +188,7 @@
               option-value="value"
               class="w-full"
               name="grade"
+              data-cy="grade-select"
             />
           </div>
         </section>

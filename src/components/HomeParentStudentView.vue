@@ -70,6 +70,7 @@
         header="Enroll New Student"
         :closable="true"
         :draggable="false"
+        data-cy="enrollment-modal"
       >
         <RegisterChildren :submitting="isSubmitting" @submit="handleStudentEnrollment" />
       </PvDialog>
