@@ -891,8 +891,6 @@ const getOrgId = async (orgType, orgName, parentDistrict = ref(null), parentScho
 
   if (orgIds[orgType][normalizedOrgName]) return orgIds[orgType][normalizedOrgName];
 
-  const normalizedOrgName = normalizeToLowercase(orgName);
-
   // Array of objects. Ex: [{id: 'lut54353jkler'}]
   const orgs = await fetchOrgByName(orgType, normalizedOrgName, parentDistrict, parentSchool);
 
