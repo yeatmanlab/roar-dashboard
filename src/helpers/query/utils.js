@@ -61,7 +61,7 @@ export const mapFields = (data, getParentDocId) => {
 
 export const orderByDefault = [
   {
-    field: { fieldPath: 'name' },
+    field: { fieldPath: 'normalizedName' },
     direction: 'ASCENDING',
   },
 ];
