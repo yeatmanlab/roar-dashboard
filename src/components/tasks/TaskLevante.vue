@@ -24,7 +24,7 @@ const props = defineProps({
 let levanteTaskLauncher;
 
 const taskId = props.taskId;
-const { version } = packageLockJson.packages['node_modules/@levante-framework/core-tasks'];
+const { version } = packageLockJson.packages['node_modules/@bdelab/roar-levante-tasks'];
 const router = useRouter();
 const taskStarted = ref(false);
 const gameStarted = ref(false);
@@ -62,7 +62,7 @@ window.addEventListener(
 
 onMounted(async () => {
   try {
-    let module = await import('@levante-framework/core-tasks');
+    let module = await import('@bdelab/roar-levante-tasks');
     levanteTaskLauncher = module.TaskLauncher;
   } catch (error) {
     console.error('An error occurred while importing the game module.', error);
@@ -137,7 +137,7 @@ async function startTask(selectedAdmin) {
 </script>
 
 <style>
-@import '@levante-framework/core-tasks/lib/resources/core-tasks.css';
+@import '@bdelab/roar-levante-tasks/lib/resources/core-tasks.css';
 
 .game-target {
   position: absolute;
