@@ -112,7 +112,6 @@ async function handleStudentEnrollment(studentData) {
       await authStore.initFirekit();
     }
     // Get current user's data for family association
-    console.log('authstore', authStore);
     const { email } = authStore.firebaseUser.adminFirebaseUser;
 
     // Format caretaker data according to CreateParentInput interface
@@ -173,13 +172,6 @@ async function handleStudentEnrollment(studentData) {
       version: consentDoc.currentCommit,
       name: consentName.value,
     };
-
-    console.log('Calling createNewFamily with:', {
-      email,
-      careTakerData,
-      formattedStudentData,
-      consentData,
-    });
 
     if (!Array.isArray(formattedStudentData)) {
       throw new Error('formattedStudentData must be an array');
