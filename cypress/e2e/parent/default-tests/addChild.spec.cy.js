@@ -66,7 +66,5 @@ describe('Parent: Add Child', () => {
 
     // Verify successful registration
     cy.get('article.flex.overflow-hidden h2', { timeout: Cypress.env('timeout') }).should('contain', username);
-
-    // Verify success message
   });
 });
