@@ -287,7 +287,7 @@ const submit = async () => {
     if (orgType.value?.singular === SINGULAR_ORG_TYPES.DISTRICTS) {
       errorMessage = `${orgTypeLabel.value} with name ${orgName.value} already exists. ${orgTypeLabel.value} names must be unique.`;
     } else {
-      errorMessage = `${orgTypeLabel.value} with name ${orgName.value} already exists within this site. ${orgTypeLabel.value} names must be unique.`;
+      errorMessage = `${orgTypeLabel.value} with name ${orgName.value} already exists. ${orgTypeLabel.value} names must be unique within a site.`;
     }
 
     return toast.add({
