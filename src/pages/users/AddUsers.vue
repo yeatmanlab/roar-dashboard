@@ -104,7 +104,7 @@
 
 <script setup>
 import { ref, toRaw, watch, nextTick } from 'vue';
-import { csvFileToJson } from '@/helpers';
+import { csvFileToJson, normalizeToLowercase } from '@/helpers';
 import _cloneDeep from 'lodash/cloneDeep';
 import _forEach from 'lodash/forEach';
 import _capitalize from 'lodash/capitalize';
@@ -859,8 +859,10 @@ const orgIds = {
 const getOrgId = async (orgType, orgName, parentDistrict, parentSchool) => {
   if (orgIds[orgType][orgName]) return orgIds[orgType][orgName];
 
+  const normalizedOrgName = normalizeToLowercase(orgName);
+
   // Array of objects. Ex: [{id: 'lut54353jkler'}]
-  const orgs = await fetchOrgByName(orgType, orgName, parentDistrict, parentSchool);
+  const orgs = await fetchOrgByName(orgType, normalizedOrgName, parentDistrict, parentSchool);
 
   if (orgs.length === 0) {
     if (orgType === 'districts') {
