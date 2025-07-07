@@ -1,14 +1,9 @@
 <template>
   <div>
-    <div v-if="props.isBasicView" class="nav-user-wrapper flex align-items-center gap-2 bg-gray-100">
+    <div v-if="props.isBasicView">
       <div class="flex gap-2 align-items-center justify-content-center">
-        <PvButton
-          text
-          data-cy="button-sign-out"
-          class="no-underline h-2 p-1 m-0 text-primary border-none border-round h-2rem text-sm hover:bg-red-900 hover:text-white"
-          @click="signOut"
-        >
-          {{ $t('navBar.signOut') }}
+        <PvButton data-cy="button-sign-out" @click="signOut">
+          <i class="pi pi-sign-out"></i> {{ $t('navBar.signOut') }}
         </PvButton>
       </div>
     </div>
