@@ -240,7 +240,7 @@ const validateRoarEmail = _debounce(
 
     try {
       // First handle levante emails
-      if (email.includes('levante')) {
+      if (email.includes('@levante')) {
         allowPassword.value = true;
         allowLink.value = false;
         state.useLink = false;
@@ -291,10 +291,15 @@ watch(
   () => state.email,
   async (email: string) => {
     emit('update:email', email);
-    if (isValidEmail(email)) {
-      evaluatingEmail.value = true;
-      validateRoarEmail(email);
+    if (!isValidEmail(email)) {
+      allowPassword.value = true;
+      allowLink.value = true;
+      state.useLink = allowLink.value;
+      return;
     }
+
+    evaluatingEmail.value = true;
+    validateRoarEmail(email);
   },
 );
 </script>
