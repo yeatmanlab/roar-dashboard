@@ -377,8 +377,12 @@ const onFileUpload = async (event) => {
         .map((s) => s.trim())
         .filter((s) => s).length > 0;
 
-    if (!hasCohort && !(hasSite && hasSchool)) {
-      missingFields.push('Cohort OR Site and School');
+    if (!hasSite) {
+      missingFields.push('Site');
+    }
+
+    if (!hasCohort && !hasSchool) {
+      missingFields.push('Cohort OR School');
     }
 
     // --- Aggregate Errors and Add User to Error List if Needed ---
@@ -510,6 +514,32 @@ async function submitUsers() {
             .map((s) => s.trim())
             .filter((s) => s)
         : [];
+
+      // At least, one site is required for every user
+      if (sites.length <= 0) {
+        toast.add({
+          severity: 'error',
+          summary: 'Required field missing',
+          detail: 'At least, one site is required for every user.',
+          life: TOAST_DEFAULT_LIFE_DURATION,
+        });
+
+        activeSubmit.value = false;
+        return;
+      }
+
+      // At least, one school or cohort is required for every user
+      if (schools.length <= 0 && cohorts.length <= 0) {
+        toast.add({
+          severity: 'error',
+          summary: 'Required field missing',
+          detail: 'At least, one school or cohort is required for every user.',
+          life: TOAST_DEFAULT_LIFE_DURATION,
+        });
+
+        activeSubmit.value = false;
+        return;
+      }
 
       const orgNameMap = {
         site: sites,
