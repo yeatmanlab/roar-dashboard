@@ -1,6 +1,7 @@
 <template>
   <div class="card">
     <div class="p-3 text-xl font-bold text-gray-600">Parent/Guardian Registration</div>
+
     <div class="p-3 bg-gray-100 rounded">
       <form class="p-fluid" @submit.prevent="handleFormSubmit(!v$.$invalid)">
         <section class="flex form-section lg:flex-row">
@@ -169,11 +170,18 @@
         </div>
       </form>
     </div>
+    <div class="flex align-items-center justify-content-center py-3 mt-3 border-top-1 border-gray-200">
+      <RouterLink :to="APP_ROUTES.SIGN_IN" class="text-sm text-blue-600 hover:text-blue-800">
+        Already have an account? Click here to sign in
+      </RouterLink>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { computed, reactive, ref } from 'vue';
+import { RouterLink } from 'vue-router';
+import { APP_ROUTES } from '@/constants/routes';
 import { ChallengeV3 } from 'vue-recaptcha';
 import { storeToRefs } from 'pinia';
 import { required, sameAs, minLength } from '@vuelidate/validators';

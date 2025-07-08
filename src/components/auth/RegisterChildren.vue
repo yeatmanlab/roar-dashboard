@@ -347,7 +347,7 @@
       >
       </PvButton>
     </div>
-    <section class="flex mt-8 justify-content-end">
+    <div class="form-section-button2">
       <PvButton
         type="submit"
         label="Submit"
@@ -368,7 +368,7 @@
           >Close</PvButton
         >
       </PvDialog>
-    </section>
+    </div>
   </div>
 </template>
 
