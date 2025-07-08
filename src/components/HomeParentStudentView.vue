@@ -49,7 +49,7 @@
       >
         <div class="flex flex-column align-items-center gap-4">
           <div class="w-16 h-16 rounded-full bg-pink-50 flex align-items-center justify-content-center">
-            <i class="pi pi-users text-2xl text-red-700"></i>
+            <i class="pi pi-users text-4xl text-red-700"></i>
           </div>
           <div class="text-center">
             <h2 class="m-0 text-2xl font-bold mb-2">Add a Child</h2>
