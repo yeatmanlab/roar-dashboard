@@ -91,8 +91,8 @@
           </span>
         </section>
         <!-- Password -->
-        <section class="flex form-section lg:flex-row">
-          <div>
+        <section class="flex form-section lg:flex-row gap-4">
+          <div class="flex-1">
             <div>
               <label for="password">Password (Minimum 6 characters)<span class="required">*</span></label>
               <PvPassword
@@ -120,7 +120,7 @@
             </span>
           </div>
           <!-- Confirm Password -->
-          <div>
+          <div class="flex-1">
             <div>
               <label for="confirmPassword">Confirm Password <span class="required">*</span></label>
               <PvPassword
@@ -140,57 +140,59 @@
           </div>
         </section>
         <section class="form-section">
-          <div>
-            <!-- Age / DOB -->
-            <div class="flex gap-2 justify-content-start">
-              <label>Date of Birth <span class="required">*</span></label>
-              <div class="flex align-items-center">
-                <PvCheckbox
-                  v-model="student.yearOnlyCheckRef"
-                  :binary="true"
-                  name="yearOnly"
-                  data-cy="year-only-checkbox"
-                />
-                <label for="yearOnly" class="ml-2">Use Year Only</label>
+          <div class="flex gap-4">
+            <div class="flex-1">
+              <!-- Age / DOB -->
+              <div class="flex gap-2 justify-content-start">
+                <label>Date of Birth <span class="required">*</span></label>
+                <div class="flex align-items-center">
+                  <PvCheckbox
+                    v-model="student.yearOnlyCheckRef"
+                    :binary="true"
+                    name="yearOnly"
+                    data-cy="year-only-checkbox"
+                  />
+                  <label for="yearOnly" class="ml-2">Use Year Only</label>
+                </div>
               </div>
+              <div v-if="!student.yearOnlyCheckRef">
+                <PvDatePicker
+                  v-model="student.dob"
+                  :max-date="maxDoB"
+                  class="w-full"
+                  view="date"
+                  date-format="mm/dd/yy"
+                  icon="pi pi-calendar text-white p-1"
+                  data-cy="date-picker"
+                />
+              </div>
+              <div v-else>
+                <PvDatePicker
+                  v-model="student.dob"
+                  :max-date="maxDoB"
+                  class="w-full"
+                  view="year"
+                  date-format="yy"
+                  icon="pi pi-calendar text-white p-1"
+                  data-cy="dob-year-picker"
+                />
+              </div>
+              <small v-if="v$.students.$each.$response.$data[outerIndex].dob.$invalid && submitted" class="p-error">{{
+                v$.students.$each.$response.$errors[outerIndex].dob.$message.replace('Value', 'Date of Birth')
+              }}</small>
             </div>
-            <div v-if="!student.yearOnlyCheckRef">
-              <PvDatePicker
-                v-model="student.dob"
-                :max-date="maxDoB"
+            <div class="flex-1">
+              <label for="grade">Grade <span class="required">*</span></label>
+              <PvSelect
+                v-model="student.grade"
+                :options="gradeOptions"
+                option-label="label"
+                option-value="value"
                 class="w-full"
-                view="date"
-                date-format="mm/dd/yy"
-                icon="pi pi-calendar text-white p-1"
-                data-cy="date-picker"
+                name="grade"
+                data-cy="grade-select"
               />
             </div>
-            <div v-else>
-              <PvDatePicker
-                v-model="student.dob"
-                :max-date="maxDoB"
-                class="w-full"
-                view="year"
-                date-format="yy"
-                icon="pi pi-calendar text-white p-1"
-                data-cy="dob-year-picker"
-              />
-            </div>
-            <small v-if="v$.students.$each.$response.$data[outerIndex].dob.$invalid && submitted" class="p-error">{{
-              v$.students.$each.$response.$errors[outerIndex].dob.$message.replace('Value', 'Date of Birth')
-            }}</small>
-          </div>
-          <div class="flex flex-column">
-            <label for="grade">Grade <span class="required">*</span></label>
-            <PvSelect
-              v-model="student.grade"
-              :options="gradeOptions"
-              option-label="label"
-              option-value="value"
-              class="w-full"
-              name="grade"
-              data-cy="grade-select"
-            />
           </div>
         </section>
         <section class="form-section">
