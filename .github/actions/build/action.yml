@@ -46,13 +46,20 @@ runs:
         echo "Changes:"
         git diff --name-only ${{ inputs.diff-base-sha }} ${{ inputs.commit-sha }} || echo "No changes"
 
-    # Install Node.js and cache global npm modules
+    # Install Node.js
     - name: Install Node.js
       uses: actions/setup-node@v4
       with:
         node-version-file: 'roar-dashboard/.nvmrc'
-        cache-dependency-path: 'roar-dashboard/package-lock.json'
-        cache: 'npm'
+
+    # Cache node_modules
+    - name: Cache node_modules
+      uses: actions/cache@v4
+      with:
+        path: roar-dashboard/node_modules
+        key: ${{ runner.os }}-node-${{ hashFiles('roar-dashboard/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-node-
 
     # Install npm dependencies
     - name: Install dependencies
@@ -72,6 +79,6 @@ runs:
     - name: Build application
       working-directory: roar-dashboard
       env:
-        NODE_OPTIONS: '--max_old_space_size=12288'
+        NODE_OPTIONS: '--max_old_space_size=8192'
       shell: bash
       run: npm run build -- --mode ${{ inputs.environment }}
