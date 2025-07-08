@@ -72,6 +72,6 @@ runs:
     - name: Build application
       working-directory: roar-dashboard
       env:
-        NODE_OPTIONS: '--max_old_space_size=8192'
+        NODE_OPTIONS: '--max_old_space_size=12288'
       shell: bash
       run: npm run build -- --mode ${{ inputs.environment }}
