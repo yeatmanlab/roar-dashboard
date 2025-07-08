@@ -47,7 +47,7 @@
       <article class="flex overflow-hidden rounded border-gray-200 flex-column border-1 mx-auto w-full max-w-3xl">
         <div class="flex gap-2 p-3 bg-gray-100 flex-column">
           <h2 class="m-0 text-xl font-bold text-center">
-            Enroll New Student
+            <i class="pi pi-users mr-2"></i>Enroll New Student
             <div class="text-sm font-light">Add a student to your family account</div>
           </h2>
         </div>
