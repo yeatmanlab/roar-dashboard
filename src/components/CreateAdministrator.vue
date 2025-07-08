@@ -86,7 +86,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, toValue } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useToast } from 'primevue/usetoast';
@@ -177,7 +177,7 @@ const submit = async () => {
   }
 
   await roarfirekit.value
-    .createAdministrator(email.value, name, orgs, adminOrgs, isTestData)
+    .createAdministrator(toValue(email), toValue(name), toValue(orgs), toValue(adminOrgs), toValue(isTestData))
     .then(() => {
       toast.add({ severity: 'success', summary: 'Success', detail: 'Administrator account created', life: 5000 });
       router.push({ name: 'Home' });
