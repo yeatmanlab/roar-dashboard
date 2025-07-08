@@ -423,7 +423,7 @@ const computedProgressData = computed(() => {
 
     const currRow = {
       user: {
-        email: user.email || assignment.userData.email,
+        username: user?.username || assignment?.userData?.username || '',
         userType: user.userType,
         userId: user.userId,
         firstName: user?.name?.first || '',
@@ -588,9 +588,10 @@ const progressReportColumns = computed(() => {
     sort: true,
     filter: true,
   });
+
   tableColumns.push({
-    field: 'user.email',
-    header: 'Email',
+    field: 'user.username',
+    header: 'Username',
     dataType: 'text',
     sort: true,
     filter: true,
