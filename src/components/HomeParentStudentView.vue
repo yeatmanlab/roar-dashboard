@@ -44,19 +44,22 @@
       <template v-for="(assignments, userId) in childrenAssignments" :key="userId">
         <StudentCard :assignments="assignments" :user-id="userId" :org-type="orgType" :org-id="orgId" />
       </template>
-      <article class="flex overflow-hidden rounded border-gray-200 flex-column border-1 mx-auto w-full max-w-3xl">
-        <div class="flex gap-2 p-3 bg-gray-100 flex-column">
-          <h2 class="m-0 text-xl font-bold text-center">
-            <i class="pi pi-users mr-2"></i>Enroll New Student
-            <div class="text-sm font-light">Add a student to your family account</div>
-          </h2>
-        </div>
-        <div class="flex justify-content-center p-4">
+      <article
+        class="flex overflow-hidden rounded border-gray-200 bg-gray-100 flex-column border-1 mx-auto w-full max-w-3xl p-8"
+      >
+        <div class="flex flex-column align-items-center gap-4">
+          <div class="w-16 h-16 rounded-full bg-pink-50 flex align-items-center justify-content-center">
+            <i class="pi pi-users text-2xl text-red-700"></i>
+          </div>
+          <div class="text-center">
+            <h2 class="m-0 text-2xl font-bold mb-2">Add a Child</h2>
+            <div class="text-gray-600 mb-4 font-light text-sm">Add a new student to your family account</div>
+          </div>
           <PvButton
-            label="Add Student"
-            icon="pi pi-plus"
-            severity="primary"
-            size="small"
+            label="Add Child"
+            class="px-6"
+            severity="danger"
+            outlined
             data-cy="add-student-btn"
             @click="showEnrollmentModal"
           />
