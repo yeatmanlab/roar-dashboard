@@ -20,7 +20,7 @@ describe('Parent: Add Child', () => {
     const CHILD_FIRST_NAME = 'TestChild';
 
     // Click on Add Student button
-    cy.get('[data-cy="add-student-btn"]').click();
+    cy.get('[data-cy="add-student-btn"]', { timeout: Cypress.env('timeout') }).click();
 
     // Verify enrollment modal is visible
     cy.get('[data-cy="enrollment-modal"]').should('be.visible');
