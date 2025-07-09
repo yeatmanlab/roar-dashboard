@@ -91,6 +91,7 @@ import RegisterChildren from '@/components/auth/RegisterChildren.vue';
 import { ref } from 'vue';
 import { useAuthStore } from '@/store/auth';
 import { useToast } from 'primevue/usetoast';
+import { useRouter } from 'vue-router';
 
 defineOptions({
   name: 'HomeParentStudentView',
@@ -124,6 +125,7 @@ defineProps({
   },
 });
 
+const router = useRouter();
 const isEnrollmentModalVisible = ref(false);
 const isSubmitting = ref(false);
 const toast = useToast();
@@ -228,8 +230,8 @@ async function handleStudentEnrollment(studentData) {
       detail: 'Student successfully enrolled',
       life: 3000,
     });
-    // // Reload the page to reflect the new student
-    // window.location.reload();
+    // Use Vue Router to refresh the current route
+    router.go(0);
   } catch (error) {
     console.error('Error enrolling student:', error);
     toast.add({
