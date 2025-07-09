@@ -112,9 +112,7 @@
               <template #empty>
                 <div>
                   {{
-                    isLevante
-                      ? 'There are no administrations to display. You can create an administration by navigating to the Create administration page from the dropdown menu.'
-                      : 'There are no administrations to display. Please contact a lab administrator to add you as an admin to an administration.'
+                    'There are no administrations to display. Please contact a lab administrator to add you as an admin to an administration.'
                   }}
                 </div>
               </template>
@@ -155,8 +153,6 @@ const search = ref('');
 
 const filteredAdministrations = ref([]);
 const fetchTestAdministrations = ref(false);
-
-const isLevante = import.meta.env.MODE === 'LEVANTE';
 
 const authStore = useAuthStore();
 
