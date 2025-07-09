@@ -50,15 +50,7 @@
       </div>
     </div>
 
-    <template #footer>
-      <div class="flex justify-content-end">
-        <PvButton
-          label="Close"
-          class="bg-primary border-none text-white"
-          @click="closeModal"
-        />
-      </div>
-    </template>
+
   </PvDialog>
 </template>
 
@@ -133,9 +125,7 @@ const getStatusBadgeClass = (assignment) => {
   return status.toLowerCase();
 };
 
-const closeModal = () => {
-  emit('close');
-};
+
 
 // Watch for changes in isVisible to reset state when modal closes
 watch(() => props.isVisible, (newValue) => {
@@ -153,14 +143,8 @@ watch(() => props.isVisible, (newValue) => {
   }
 
   .assignment-card {
-    transition: all 0.2s ease;
     border: 1px solid var(--gray-200);
     border-radius: calc(var(--border-radius) * 4);
-    
-    &:hover {
-      background-color: var(--surface-200) !important;
-      border-color: var(--gray-300);
-    }
   }
 
   .assignment-header {
