@@ -170,9 +170,9 @@
         </div>
       </form>
     </div>
-    <div class="text-center mt-3 border-top-1 border-gray-200">
-      <RouterLink :to="APP_ROUTES.SIGN_IN" class="text-sm transition text-gray-600 hover:text-gray-800 p-3">
-        Already have an account? Click here to sign in
+    <div class="text-center border-top-1 border-gray-200">
+      <RouterLink :to="APP_ROUTES.SIGN_IN" class="text-sm transition text-gray-600 hover:text-gray-800">
+        <div class="p-3">Already have an account? Click here to sign in</div>
       </RouterLink>
     </div>
   </div>
