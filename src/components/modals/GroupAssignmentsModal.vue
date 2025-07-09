@@ -100,15 +100,45 @@ watch(() => props.isVisible, (newValue) => {
 
 <style lang="scss" scoped>
 .group-assignments-modal {
-  .assignments-list {
-    max-height: 60vh;
-    overflow-y: auto;
-  }
+      .assignments-list {
+      max-height: 59vh;
+      overflow-y: auto;
+      padding: 0 1rem 0 0;
+      
+      // Estilização da scrollbar para ficar mais bonita
+      &::-webkit-scrollbar {
+        width: 8px;
+      }
+      
+      &::-webkit-scrollbar-track {
+        background: var(--surface-100);
+        border-radius: 4px;
+      }
+      
+      &::-webkit-scrollbar-thumb {
+        background: var(--surface-300);
+        border-radius: 4px;
+        
+        &:hover {
+          background: var(--surface-400);
+        }
+      }
+    }
 
-  .assignment-item {
-    border: 1px solid var(--gray-200);
-    border-radius: calc(var(--border-radius) * 4);
-  }
+      .assignment-item {
+      border: 1px solid var(--gray-200);
+      border-radius: calc(var(--border-radius) * 4);
+      transition: all 0.2s ease;
+      
+      &:hover {
+        border-color: var(--gray-300);
+        background-color: var(--surface-50);
+      }
+      
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
 
   .assignment-title {
     font-weight: bold;
