@@ -3,8 +3,7 @@
     <section id="signin">
       <header>
         <div class="signin-logo">
-          <PvImage v-if="isLevante" src="/LEVANTE/Levante_Logo.png" alt="LEVANTE Logo" width="200" />
-          <ROARLogoShort v-else />
+          <ROARLogoShort />
         </div>
       </header>
       <section class="px-3 flex flex-column gap-3 text-center align-items-center">
@@ -17,7 +16,6 @@
 </template>
 <script setup>
 import { onMounted, onBeforeUnmount } from 'vue';
-import PvImage from 'primevue/image';
 import ROARLogoShort from '@/assets/RoarLogo-Short.vue';
 
 onMounted(() => {

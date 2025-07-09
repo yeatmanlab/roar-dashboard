@@ -217,11 +217,6 @@ export const useAuthStore = () => {
           isTestData,
         );
       },
-
-      // ------------------ LEVANTE ------------------
-      async createLevanteUsers(userData) {
-        return this.roarfirekit.createLevanteUsersWithEmailPassword(userData);
-      },
     },
     persist: {
       storage: sessionStorage,
