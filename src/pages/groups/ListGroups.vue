@@ -75,6 +75,7 @@
             @selected-org-id="showCode"
             @export-org-users="(orgId) => exportOrgUsers(orgId)"
             @edit-button="onEditButtonClick($event)"
+            @assignments-button="onAssignmentsButtonClick($event)"
           />
         </PvTabPanel>
       </PvTabView>
@@ -162,6 +163,16 @@
   </RoarModal>
 
   <AddGroupModal :isVisible="isAddGroupModalVisible" @close="isAddGroupModalVisible = false" />
+  
+  <GroupAssignmentsModal
+    :is-visible="isAssignmentsModalVisible"
+    :org-id="selectedOrgId"
+    :org-name="selectedOrgName"
+    :org-type="activeOrgType"
+    :all-administrations="allAdministrations"
+    :is-loading="isLoadingAdministrations"
+    @close="closeAssignmentsModal"
+  />
 </template>
 <script setup>
 import { ref, computed, onMounted, watch, watchEffect } from 'vue';
@@ -189,6 +200,7 @@ import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useDistrictsListQuery from '@/composables/queries/useDistrictsListQuery';
 import useDistrictSchoolsQuery from '@/composables/queries/useDistrictSchoolsQuery';
 import useOrgsTableQuery from '@/composables/queries/useOrgsTableQuery';
+import useAdministrationsListQuery from '@/composables/queries/useAdministrationsListQuery';
 import EditOrgsForm from '@/components/EditOrgsForm.vue';
 import RoarModal from '@/components/modals/RoarModal.vue';
 import { CSV_EXPORT_MAX_RECORD_COUNT } from '@/constants/csvExport';
@@ -196,6 +208,7 @@ import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toast
 import RoarDataTable from '@/components/RoarDataTable.vue';
 import PvFloatLabel from 'primevue/floatlabel';
 import AddGroupModal from '@/components/modals/AddGroupModal.vue';
+import GroupAssignmentsModal from '@/components/modals/GroupAssignmentsModal.vue';
 
 const router = useRouter();
 const initialized = ref(false);
@@ -225,6 +238,9 @@ const clearSearch = () => {
   sanitizedSearchString.value = '';
 };
 const isAddGroupModalVisible = ref(false);
+const isAssignmentsModalVisible = ref(false);
+const selectedOrgId = ref('');
+const selectedOrgName = ref('');
 
 const addUsers = () => {
   router.push({ name: 'Add Users' });
@@ -273,6 +289,11 @@ const {
   isFetching,
   data: orgData,
 } = useOrgsTableQuery(activeOrgType, selectedDistrict, selectedSchool, orderBy, {
+  enabled: claimsLoaded,
+});
+
+// Fetch all administrations for the assignments modal
+const { data: allAdministrations, isLoading: isLoadingAdministrations } = useAdministrationsListQuery(orderBy, false, {
   enabled: claimsLoaded,
 });
 
@@ -424,6 +445,18 @@ const tableColumns = computed(() => {
       routeIcon: 'pi pi-user',
       sort: false,
     },
+  );
+
+  // Add Assignments column for all org types
+  columns.push({
+    header: 'Assignments',
+    button: true,
+    eventName: 'assignments-button',
+    buttonIcon: 'pi pi-list',
+    sort: false,
+  });
+
+  columns.push(
     {
       header: 'Edit',
       button: true,
@@ -482,6 +515,18 @@ const showCode = async (selectedOrg) => {
 const onEditButtonClick = (event) => {
   isEditModalEnabled.value = true;
   currentEditOrgId.value = _get(event, 'id', null);
+};
+
+const onAssignmentsButtonClick = (event) => {
+  selectedOrgId.value = _get(event, 'id', '');
+  selectedOrgName.value = _get(event, 'name', '');
+  isAssignmentsModalVisible.value = true;
+};
+
+const closeAssignmentsModal = () => {
+  isAssignmentsModalVisible.value = false;
+  selectedOrgId.value = '';
+  selectedOrgName.value = '';
 };
 
 const closeEditModal = () => {
