@@ -189,15 +189,3 @@ export const getAdministrationsByOrg = (orgId, orgType, administrations) => {
     return assignedOrgs.includes(orgId);
   });
 };
-
-/**
- * Fetches administrations that are assigned to a specific group.
- * @deprecated Use getAdministrationsByOrg instead for better flexibility.
- *
- * @param {String} groupId – The group ID to filter administrations by.
- * @param {Array} administrations – The list of all administrations to filter.
- * @returns {Array} – An array of administrations assigned to the specified group.
- */
-export const getAdministrationsByGroup = (groupId, administrations) => {
-  return getAdministrationsByOrg(groupId, 'groups', administrations);
-};
