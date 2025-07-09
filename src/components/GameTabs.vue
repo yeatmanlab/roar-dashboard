@@ -192,11 +192,12 @@
                 />
               </div>
               <div v-else>
-                <img v-if="game.taskData.image" :src="game.taskData.image" style="width: 28vw" />
+                <img v-if="game.taskData.image" :src="game.taskData.image" alt="Game Image" style="width: 28vw" />
                 <!-- TODO: Get real backup image -->
                 <img
                   v-else
                   src="https://reading.stanford.edu/wp-content/uploads/2021/10/PA-1024x512.png"
+                  alt="Game Image"
                   style="width: 28vw"
                 />
               </div>
@@ -232,7 +233,6 @@ const props = defineProps({
   userData: { type: Object, required: true },
   launchId: { type: String, required: false, default: null },
 });
-const isLevante = import.meta.env.MODE === 'LEVANTE';
 
 const { t, locale } = useI18n();
 
@@ -245,20 +245,8 @@ const levanteTasks = [
   'sameDifferentSelection',
   'theoryOfMind',
   'trog',
-  'survey',
   'mefs',
   'roarInference',
-];
-
-const levantifiedRoarTasks = [
-  'vocab',
-  // Not yet implemented
-  // 'swr',
-  // 'swr-es',
-  // 'sre',
-  // 'sre-es',
-  // 'pa',
-  // 'pa-es',
 ];
 
 const getTaskName = (taskId, taskName) => {
@@ -284,23 +272,13 @@ const getRoutePath = (taskId) => {
   const lowerCasedAndCamelizedTaskId = camelize(taskId.toLowerCase());
   // For externally launched participants, prepend the launch route to the task path
   if (props.launchId) {
-    if (lowerCasedAndCamelizedTaskId === 'survey') {
-      return `/launch/${props.launchId}/survey`;
-    } else if (
-      levanteTasks.includes(lowerCasedAndCamelizedTaskId) ||
-      (isLevante && levantifiedRoarTasks.includes(lowerCasedAndCamelizedTaskId))
-    ) {
+    if (levanteTasks.includes(lowerCasedAndCamelizedTaskId)) {
       return `/launch/${props.launchId}/game/core-tasks/` + taskId;
     } else {
       return `/launch/${props.launchId}/game/` + taskId;
     }
   } else {
-    if (lowerCasedAndCamelizedTaskId === 'survey') {
-      return '/survey';
-    } else if (
-      levanteTasks.includes(lowerCasedAndCamelizedTaskId) ||
-      (isLevante && levantifiedRoarTasks.includes(lowerCasedAndCamelizedTaskId))
-    ) {
+    if (levanteTasks.includes(lowerCasedAndCamelizedTaskId)) {
       return '/game/core-tasks/' + taskId;
     } else {
       return '/game/' + taskId;

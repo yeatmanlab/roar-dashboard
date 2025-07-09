@@ -40,7 +40,6 @@ const HomeAdministrator = defineAsyncComponent(() => import('@/pages/HomeAdminis
 const HomeParent = defineAsyncComponent(() => import('@/pages/HomeParent.vue'));
 const ConsentModal = defineAsyncComponent(() => import('@/components/ConsentModal.vue'));
 
-const isLevante = import.meta.env.MODE === 'LEVANTE';
 const authStore = useAuthStore();
 const { roarfirekit, ssoProvider } = storeToRefs(authStore);
 
@@ -103,7 +102,7 @@ async function updateConsent() {
 }
 
 async function checkConsent() {
-  if (isLevante || !isAdminUser.value) return;
+  if (!isAdminUser.value) return;
 
   const consentStatus = userData.value?.legal?.[consentType.value];
   const consentDoc = await authStore.getLegalDoc(consentType.value);

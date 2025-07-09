@@ -5,15 +5,10 @@ import { i18n, languageOptions } from './translations/i18n';
 // Workaround for using i18n-vue in plain JavaScript; this is a temporary solution until a more robust bug report component is implemented
 const language = i18n.global.locale.value;
 const regex = /https:\/\/roar-staging(--pr\d+-\w+)?\.web\.app/;
-const isLevante = import.meta.env.MODE === 'LEVANTE';
 
 export function initSentry(app) {
-  // skip if levante instance
-  if (isLevante) {
-    return;
-  }
   // Only initialize Sentry in production
-  if (process.env.NODE_ENV === 'production' && process.env.MODE !== 'LEVANTE') {
+  if (process.env.NODE_ENV === 'production') {
     Sentry.init({
       app,
       dsn: 'https://f15e3ff866394e93e00514b42113d03d@o4505913837420544.ingest.us.sentry.io/4506820782129152',
