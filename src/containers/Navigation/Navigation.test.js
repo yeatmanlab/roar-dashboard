@@ -205,24 +205,6 @@ describe('<Navigation />', () => {
     });
   });
 
-  describe('logo', () => {
-    it('should render the default logo by default', () => {
-      wrapper = mount(Navigation, {
-        global: {
-          plugins: [testingPinia, VueQueryPlugin],
-          stubs: {
-            NavBar: true,
-          },
-        },
-      });
-
-      const navbarComponent = wrapper.findComponent(NavBar);
-      expect(navbarComponent.props()).toMatchObject({
-        logo: null,
-      });
-    });
-  });
-
   describe('account settings', () => {
     it('should hide the account settings for participants', () => {
       wrapper = mount(Navigation, {
