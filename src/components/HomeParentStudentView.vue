@@ -96,6 +96,34 @@ defineOptions({
   name: 'HomeParentStudentView',
 });
 
+defineProps({
+  isLoading: {
+    type: Boolean,
+    required: true,
+  },
+  parentRegistrationComplete: {
+    type: Boolean,
+    required: true,
+  },
+  childrenAssignments: {
+    type: Object,
+    required: true,
+  },
+  orgType: {
+    type: String,
+    required: true,
+  },
+  orgId: {
+    type: String,
+    required: true,
+  },
+  registrationError: {
+    type: String,
+    required: false,
+    default: '',
+  },
+});
+
 const isEnrollmentModalVisible = ref(false);
 const isSubmitting = ref(false);
 const toast = useToast();
@@ -200,8 +228,8 @@ async function handleStudentEnrollment(studentData) {
       detail: 'Student successfully enrolled',
       life: 3000,
     });
-    // Reload the page to reflect the new student
-    window.location.reload();
+    // // Reload the page to reflect the new student
+    // window.location.reload();
   } catch (error) {
     console.error('Error enrolling student:', error);
     toast.add({
@@ -215,34 +243,6 @@ async function handleStudentEnrollment(studentData) {
     isEnrollmentModalVisible.value = false;
   }
 }
-
-defineProps({
-  isLoading: {
-    type: Boolean,
-    required: true,
-  },
-  parentRegistrationComplete: {
-    type: Boolean,
-    required: true,
-  },
-  childrenAssignments: {
-    type: Object,
-    required: true,
-  },
-  orgType: {
-    type: String,
-    required: true,
-  },
-  orgId: {
-    type: String,
-    required: true,
-  },
-  registrationError: {
-    type: String,
-    required: false,
-    default: '',
-  },
-});
 </script>
 
 <style>
