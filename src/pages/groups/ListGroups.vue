@@ -530,9 +530,6 @@ const closeAssignmentsModal = () => {
   isAssignmentsModalVisible.value = false;
   selectedOrgId.value = '';
   selectedOrgName.value = '';
-  
-  // Force a re-render of the table to ensure fresh data
-  tableKey.value += 1;
 };
 
 const closeEditModal = () => {
