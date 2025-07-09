@@ -7,8 +7,7 @@
             <template #start>
               <router-link :to="{ path: APP_ROUTES.HOME }" data-cy="navbar__logo">
                 <div class="navbar-logo mx-3">
-                  <ROARLogo v-if="!logo" />
-                  <PvImage v-else :src="logo" alt="Logo" width="200" height="auto" />
+                  <ROARLogo />
                 </div>
               </router-link>
             </template>
@@ -71,7 +70,6 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import PvButton from 'primevue/button';
-import PvImage from 'primevue/image';
 import PvMenubar from 'primevue/menubar';
 import LanguageSelector from '@/components/LanguageSelector.vue';
 import { APP_ROUTES } from '@/constants/routes';
@@ -82,10 +80,6 @@ const props = defineProps({
   displayName: {
     type: String,
     required: true,
-  },
-  logo: {
-    type: [String, Object],
-    default: null,
   },
   menuItems: {
     type: Array,
