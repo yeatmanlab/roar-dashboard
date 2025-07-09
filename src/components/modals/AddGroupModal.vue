@@ -118,6 +118,7 @@ import _without from 'lodash/without';
 import { computed, ref, toRaw } from 'vue';
 import { normalizeToLowercase } from '@/helpers';
 import { required, requiredIf } from '@vuelidate/validators';
+import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
 import { TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
 import { useToast } from 'primevue/usetoast';
 import PvAutoComplete from 'primevue/autocomplete';
@@ -281,7 +282,13 @@ const submit = async () => {
 
   if (orgNameExists) {
     const errorTitle = `${orgTypeLabel.value} Creation Error`;
-    const errorMessage = `${orgTypeLabel.value} with name ${orgName.value} already exists. ${orgTypeLabel.value} names must be unique.`;
+    let errorMessage: string;
+
+    if (orgType.value?.singular === SINGULAR_ORG_TYPES.DISTRICTS) {
+      errorMessage = `${orgTypeLabel.value} with name ${orgName.value} already exists. ${orgTypeLabel.value} names must be unique.`;
+    } else {
+      errorMessage = `${orgTypeLabel.value} with name ${orgName.value} already exists. ${orgTypeLabel.value} names must be unique within a site.`;
+    }
 
     return toast.add({
       severity: 'error',

@@ -63,6 +63,16 @@ export const getOrgsRequestBody = ({
         value: { stringValue: orgNormalizedName },
       },
     });
+
+    if (parentDistrict) {
+      filters.push({
+        fieldFilter: {
+          field: { fieldPath: 'districtId' },
+          op: 'EQUAL',
+          value: { stringValue: parentDistrict },
+        },
+      });
+    }
   } else if ((orgType === 'schools' && parentDistrict) || (orgType === 'classes' && parentDistrict && !parentSchool)) {
     if (orgNormalizedName) {
       filters.push(
@@ -225,12 +235,12 @@ export const fetchOrgByName = async (orgType, orgNormalizedName, selectedDistric
   const axiosInstance = getAxiosInstance();
   const requestBody = getOrgsRequestBody({
     orgType,
-    parentDistrict: orgType === 'schools' ? selectedDistrict.value : null,
-    parentSchool: orgType === 'classes' ? selectedSchool.value : null,
+    parentDistrict: orgType === 'schools' ? selectedDistrict?.value?.id : null,
+    parentSchool: orgType === 'classes' ? selectedSchool?.value?.id : null,
     aggregationQuery: false,
     orgNormalizedName,
     paginate: false,
-    select: ['id'],
+    select: ['id', 'name', 'normalizedName'],
     orderBy,
   });
 

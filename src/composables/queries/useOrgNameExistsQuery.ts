@@ -36,10 +36,10 @@ export default function useOrgNameExistsQuery(
       if (normalized === '') return true;
 
       const orgs = await fetchOrgByName(
-        orgType.value?.firestoreCollection,
+        orgType.value!.firestoreCollection,
         normalized,
-        selectedDistrict.value?.name,
-        selectedSchool.value?.name,
+        selectedDistrict,
+        selectedSchool,
         orderBy,
       );
 
