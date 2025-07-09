@@ -194,6 +194,7 @@ import _debounce from 'lodash/debounce';
 import { useAuthStore } from '@/store/auth';
 import { orgFetchAll } from '@/helpers/query/orgs';
 import { fetchUsersByOrg, countUsersByOrg } from '@/helpers/query/users';
+import { getAdministrationsByOrg } from '@/helpers/query/administrations';
 import { orderByDefault, exportCsv, fetchDocById } from '@/helpers/query/utils';
 import useUserType from '@/composables/useUserType';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
@@ -488,9 +489,11 @@ watchEffect(async () => {
   const mappedData = await Promise.all(
     filteredOrgData?.value?.map(async (org) => {
       const userCount = await countUsersByOrg(activeOrgType.value, org.id);
+      const assignmentCount = getAdministrationsByOrg(org.id, activeOrgType.value, allAdministrations.value || []).length;
       return {
         ...org,
         userCount,
+        assignmentCount,
         routeParams: {
           orgType: activeOrgType.value,
           orgId: org.id,

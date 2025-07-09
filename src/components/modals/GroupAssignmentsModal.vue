@@ -23,29 +23,13 @@
       <div
         v-for="assignment in assignments"
         :key="assignment.id"
-        class="assignment-card p-4 mb-3 surface-100 border-round"
+        class="assignment-item p-3 mb-2 surface-100 border-round"
       >
-        <div class="assignment-header">
-          <h3 class="assignment-title m-0 mb-2">{{ assignment.name || assignment.publicName }}</h3>
-          <small v-if="assignment.creator?.displayName" class="m-0 ml-1 text-gray-600">
-            — Created by <span class="font-bold">{{ assignment.creator.displayName }}</span>
+        <div class="flex justify-content-between align-items-start">
+          <h3 class="assignment-title m-0">{{ assignment.name || assignment.publicName }}</h3>
+          <small v-if="assignment.creator?.displayName" class="m-0 text-gray-600">
+            Created by <span class="font-bold">{{ assignment.creator.displayName }}</span>
           </small>
-        </div>
-        
-        <div class="assignment-details">
-          <span class="mr-1"><strong>Availability</strong>:</span>
-          <span v-if="assignment.dates">
-            {{ formatDate(assignment.dates.start) }} — {{ formatDate(assignment.dates.end) }}
-          </span>
-          <span v-else class="text-gray-500">No dates set</span>
-          <span :class="['status-badge', getStatusBadgeClass(assignment)]">
-            {{ getAssignmentStatus(assignment) }}
-          </span>
-        </div>
-        
-        <div class="assignment-tasks">
-          <span class="mr-1"><strong>Tasks</strong>:</span>
-          <span class="text-gray-600">{{ assignment.assessments?.length || 0 }} tasks</span>
         </div>
       </div>
     </div>
@@ -57,7 +41,6 @@
 <script setup>
 import { computed, watch } from 'vue';
 import PvDialog from 'primevue/dialog';
-import PvButton from 'primevue/button';
 import AppSpinner from '@/components/AppSpinner.vue';
 import { getAdministrationsByOrg } from '@/helpers/query/administrations';
 
@@ -106,24 +89,7 @@ const assignments = computed(() => {
   return getAdministrationsByOrg(props.orgId, props.orgType, props.allAdministrations);
 });
 
-const formatDate = (date) => {
-  if (!date) return 'No date';
-  return new Date(date).toLocaleDateString();
-};
 
-const getAssignmentStatus = (assignment) => {
-  if (!assignment.dates?.end) return 'NO DATES';
-  
-  const now = new Date();
-  const endDate = new Date(assignment.dates.end);
-  
-  return now > endDate ? 'CLOSED' : 'OPEN';
-};
-
-const getStatusBadgeClass = (assignment) => {
-  const status = getAssignmentStatus(assignment);
-  return status.toLowerCase();
-};
 
 
 
@@ -142,54 +108,15 @@ watch(() => props.isVisible, (newValue) => {
     overflow-y: auto;
   }
 
-  .assignment-card {
+  .assignment-item {
     border: 1px solid var(--gray-200);
     border-radius: calc(var(--border-radius) * 4);
   }
 
-  .assignment-header {
-    margin-bottom: 1rem;
-  }
-
   .assignment-title {
     font-weight: bold;
-    font-size: 1.1rem;
+    font-size: 1rem;
     color: var(--text-color);
-  }
-
-  .assignment-details {
-    display: flex;
-    justify-content: start;
-    align-items: center;
-    margin-bottom: 0.5rem;
-  }
-
-  .assignment-tasks {
-    margin-top: 0.5rem;
-  }
-
-  .status-badge {
-    font-weight: bold;
-    font-family: var(--font-family);
-    padding: 0.25rem 0.5rem;
-    border-radius: var(--p-border-radius-xl);
-    font-size: 0.7rem;
-    margin: 0 0 0 0.8rem;
-
-    &.open {
-      background-color: var(--green-100);
-      color: var(--green-800);
-    }
-
-    &.closed {
-      background-color: var(--gray-300);
-      color: var(--red-900);
-    }
-
-    &.no-dates {
-      background-color: var(--yellow-100);
-      color: var(--yellow-800);
-    }
   }
 }
 </style> 
