@@ -221,24 +221,6 @@ describe('<Navigation />', () => {
         logo: null,
       });
     });
-
-    it('should render custom logo in Levante mode', () => {
-      vi.stubEnv('MODE', 'LEVANTE');
-
-      wrapper = mount(Navigation, {
-        global: {
-          plugins: [testingPinia, VueQueryPlugin],
-          stubs: {
-            NavBar: true,
-          },
-        },
-      });
-
-      const navbarComponent = wrapper.findComponent(NavBar);
-      expect(navbarComponent.props()).toMatchObject({
-        logo: '/LEVANTE/Levante_Logo.png',
-      });
-    });
   });
 
   describe('account settings', () => {

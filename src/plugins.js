@@ -6,7 +6,6 @@ import TextClamp from 'vue3-text-clamp';
 import VueGoogleMaps from 'vue-google-maps-community-fork';
 import { createHead } from '@unhead/vue';
 import { VueQueryPlugin } from '@tanstack/vue-query';
-import { surveyPlugin } from 'survey-vue3-ui';
 import { i18n } from '@/translations/i18n.js';
 import { createPinia } from 'pinia';
 import piniaPluginPersistedState from 'pinia-plugin-persistedstate';
@@ -82,7 +81,6 @@ const plugins = [
   router,
   TextClamp,
   head,
-  surveyPlugin,
   i18n,
   pinia,
 ];
