@@ -6,11 +6,10 @@
     <section id="signin">
       <header>
         <div class="signin-logo">
-          <PvImage v-if="isLevante" src="/LEVANTE/Levante_Logo.png" alt="LEVANTE Logo" width="200" />
-          <ROARLogoShort v-else />
+          <ROARLogoShort />
         </div>
       </header>
-      <h1 v-if="!isLevante">{{ $t('pageSignIn.welcome') }}</h1>
+      <h1>{{ $t('pageSignIn.welcome') }}</h1>
       <section class="signin-options">
         <section class="signin-option-container signin-option-userpass">
           <h4 class="signin-option-title">{{ $t('pageSignIn.login') }}</h4>
@@ -37,7 +36,6 @@
               <span>Google</span>
             </PvButton>
             <PvButton
-              v-if="!isLevante"
               class="flex p-1 mr-2 ml-2 w-3 surface-0 border-black-alpha-10 justify-content-center hover:border-primary hover:surface-ground"
               style="border-radius: 3rem; height: 3rem; color: black"
               data-cy="sign-in__clever-sso"
@@ -47,7 +45,6 @@
               <span>Clever</span>
             </PvButton>
             <PvButton
-              v-if="!isLevante"
               class="flex p-1 mr-2 ml-2 w-3 text-black surface-0 border-black-alpha-10 justify-content-center hover:border-primary hover:surface-ground"
               style="border-radius: 3rem; height: 3rem; color: black"
               data-cy="sign-in__classlink-sso"
@@ -97,7 +94,6 @@
         </div>
         <div v-if="signInMethods.includes(AUTH_SSO_PROVIDERS.CLEVER)">
           <PvButton
-            v-if="!isLevante"
             class="flex p-1 mr-1 surface-0 border-black-alpha-10 justify-content-center hover:border-primary hover:surface-ground"
             style="border-radius: 3rem; height: 3rem"
             @click="authWithClever"
@@ -108,7 +104,6 @@
         </div>
         <div v-if="signInMethods.includes(AUTH_SSO_PROVIDERS.CLASSLINK)">
           <PvButton
-            v-if="!isLevante"
             class="flex p-1 mr-1 surface-0 border-black-alpha-10 justify-content-center hover:border-primary hover:surface-ground"
             style="border-radius: 3rem; height: 3rem"
             @click="authWithClassLink"
@@ -151,7 +146,6 @@ import { onMounted, ref, toRaw, onBeforeUnmount, computed } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router';
 import PvButton from 'primevue/button';
-import PvImage from 'primevue/image';
 import PvPassword from 'primevue/password';
 import ROARLogoShort from '@/assets/RoarLogo-Short.vue';
 import { useAuthStore } from '@/store/auth';
@@ -164,7 +158,6 @@ import SignIn from '@/components/auth/SignIn.vue';
 import LanguageSelector from '@/components/LanguageSelector.vue';
 
 const incorrect = ref(false);
-const isLevante = import.meta.env.MODE === 'LEVANTE';
 const authStore = useAuthStore();
 const router = useRouter();
 
@@ -173,16 +166,6 @@ const warningModalOpen = ref(false);
 
 authStore.$subscribe(() => {
   if (authStore.uid) {
-    if (authStore.userData && isLevante) {
-      if (
-        toRaw(authStore.userData?.userType?.toLowerCase()) === 'parent' ||
-        toRaw(authStore.userData?.userType?.toLowerCase()) === 'teacher'
-      ) {
-        router.push({ name: 'Survey' });
-        return;
-      }
-    }
-
     if (ssoProvider.value) {
       router.push({ path: APP_ROUTES.SSO });
     } else if (routeToProfile.value) {

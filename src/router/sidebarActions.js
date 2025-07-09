@@ -9,7 +9,6 @@ const sidebarActionOptions = [
     buttonLink: { name: 'Home' },
     requiresSuperAdmin: false,
     requiresAdmin: false,
-    project: 'ALL',
     category: 'Home',
   },
   {
@@ -19,7 +18,6 @@ const sidebarActionOptions = [
     requiresSuperAdmin: false,
     requiresAdmin: true,
     permission: Permissions.Organizations.LIST,
-    project: 'ALL',
     category: 'Organizations',
   },
   {
@@ -29,7 +27,6 @@ const sidebarActionOptions = [
     requiresSuperAdmin: true,
     requiresAdmin: true,
     permission: Permissions.Organizations.CREATE,
-    project: 'ALL',
     category: 'Organizations',
   },
   {
@@ -39,7 +36,6 @@ const sidebarActionOptions = [
     requiresSuperAdmin: true,
     requiresAdmin: true,
     permission: Permissions.Users.CREATE,
-    project: 'ROAR',
     category: 'Users',
   },
   {
@@ -48,7 +44,6 @@ const sidebarActionOptions = [
     buttonLink: { name: 'CreateAdministrator' },
     requiresSuperAdmin: true,
     permission: Permissions.Administrators.CREATE,
-    project: 'ALL',
     category: 'Users',
   },
   {
@@ -58,7 +53,6 @@ const sidebarActionOptions = [
     requiresSuperAdmin: false,
     requiresAdmin: true,
     permission: Permissions.Administrations.LIST,
-    project: 'ALL',
     category: 'Administrations',
   },
   {
@@ -68,7 +62,6 @@ const sidebarActionOptions = [
     requiresSuperAdmin: true,
     requiresAdmin: true,
     permission: Permissions.Administrations.CREATE,
-    project: 'ALL',
     category: 'Administrations',
   },
   {
@@ -78,64 +71,31 @@ const sidebarActionOptions = [
     requiresSuperAdmin: true,
     requiresAdmin: true,
     permission: Permissions.Tasks.UPDATE,
-    project: 'ALL',
     category: 'Administrations',
-  },
-  {
-    title: 'Register Users',
-    icon: 'pi pi-user-plus',
-    buttonLink: { name: 'Register Users' },
-    requiresSuperAdmin: true,
-    requiresAdmin: true,
-    project: 'LEVANTE',
-    category: 'Users',
   },
   {
     title: 'Register New Family',
     icon: 'pi pi-home',
     buttonLink: { name: 'Register' },
     requiresSuperAdmin: true,
-    project: 'ROAR',
     category: 'Users',
   },
 ];
 
-export const getSidebarActions = ({ isSuperAdmin = false, isAdmin = false, isLaunchAdmin = false }) => {
+export const getSidebarActions = ({ isLaunchAdmin = false }) => {
   const { userCan } = usePermissions();
-  if (import.meta.env.MODE === 'LEVANTE') {
-    return sidebarActionOptions.filter((action) => {
-      if (action.project === 'LEVANTE' || action.project === 'ALL') {
-        // If the action requires admin and the user is an admin, or if the action
-        // requires super admin and the user is a super admin,
-        // or if the action does not require admin or super admin,
-        // the action will be in the dropdown
-        if (
-          (action.requiresAdmin && isAdmin) ||
-          (action.requiresSuperAdmin && isSuperAdmin) ||
-          (!action.requiresAdmin && !action.requiresSuperAdmin)
-        ) {
-          return true;
-        } else {
-          return false;
-        }
-      }
-    });
-  } else {
-    if (isLaunchAdmin) {
-      // Disable showing menu items for launch admins
-      return [];
-    }
-    const actions = sidebarActionOptions.filter((action) => {
-      if (action.project === 'ROAR' || action.project === 'ALL') {
-        // If the action requires a permission, check user's permissions.
-        const permission = action.permission;
-        if (Object.keys(action).includes('permission')) {
-          return userCan(permission);
-        }
-        return true;
-      }
-    });
-
-    return actions;
+  if (isLaunchAdmin) {
+    // Disable showing menu items for launch admins
+    return [];
   }
+  const actions = sidebarActionOptions.filter((action) => {
+    // If the action requires a permission, check user's permissions.
+    const permission = action.permission;
+    if (Object.keys(action).includes('permission')) {
+      return userCan(permission);
+    }
+    return true;
+  });
+
+  return actions;
 };
