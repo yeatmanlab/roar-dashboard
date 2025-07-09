@@ -6,6 +6,7 @@
           <div class="flex align-items-center gap-3">
             <i class="pi pi-sliders-h text-gray-400 rounded" style="font-size: 1.6rem" />
             <div class="admin-page-header">{{ header }}</div>
+            {{ allTaskBundles }}
           </div>
         </div>
         <div class="text-md text-gray-500 ml-6">{{ description }}</div>
@@ -186,6 +187,7 @@ import useClassesQuery from '@/composables/queries/useClassesQuery';
 import useGroupsQuery from '@/composables/queries/useGroupsQuery';
 import useFamiliesQuery from '@/composables/queries/useFamiliesQuery';
 import useTaskVariantsQuery from '@/composables/queries/useTaskVariantsQuery';
+import useTaskBundlesQuery from '@/composables/queries/useTaskBundlesQuery';
 import useUpsertAdministrationMutation from '@/composables/mutations/useUpsertAdministrationMutation';
 import TaskPicker from './TaskPicker';
 import ConsentPicker from './ConsentPicker.vue';
@@ -263,6 +265,10 @@ const findVariantWithParams = (variants, params) => {
 };
 
 const { data: allVariants } = useTaskVariantsQuery(false, {
+  enabled: initialized,
+});
+
+const { data: allTaskBundles } = useTaskBundlesQuery({
   enabled: initialized,
 });
 
