@@ -30,7 +30,7 @@
                 v-model="searchTerm"
                 class="w-full"
                 :placeholder="
-                  currentCardType === CARD_TYPES.VARIANT ? 'Variant name, ID, or Task ID' : 'Task Group name or ID'
+                  currentCardType === CARD_TYPES.VARIANT ? 'Variant name, ID, or Task ID' : 'Task Bundle name or ID'
                 "
                 data-cy="input-variant-name"
               />
@@ -124,10 +124,10 @@
             </VueDraggableNext>
           </PvScrollPanel>
         </div>
-        <!-- Browse for task groups -->
+        <!-- Browse for task bundles -->
         <div v-if="searchTerm.length < 3 && currentCardType === CARD_TYPES.GROUP">
           <PvScrollPanel style="height: 27.75rem; width: 100%; overflow-y: auto">
-            <div v-if="!currentGroups.length">No task groups to show.</div>
+            <div v-if="!currentGroups.length">No task bundles to show.</div>
             <!-- Draggable Zone 1 -->
             <VueDraggableNext
               v-model="currentGroups"
@@ -423,7 +423,7 @@ const handleGroupAdd = (groupId) => {
       } else {
         toast.add({
           severity: 'warn',
-          summary: 'Error adding task from task group.',
+          summary: 'Error adding task from task bundle.',
           detail: `Could not find variant of task ${variant.taskId} with id: ${variant.variantId}`,
           life: 3000,
         });
@@ -431,7 +431,7 @@ const handleGroupAdd = (groupId) => {
     } else {
       toast.add({
         severity: 'warn',
-        summary: 'Error adding task from task group.',
+        summary: 'Error adding task from task bundle.',
         detail: `Could not find task with id: ${variant.taskId}`,
         life: 3000,
       });

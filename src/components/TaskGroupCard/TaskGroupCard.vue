@@ -66,7 +66,7 @@
   <PvDialog
     v-model:visible="visible"
     modal
-    :header="`Variants for Task Group: ${group.name}`"
+    :header="`Variants for Task Bundle: ${group.name}`"
     :style="{ width: '50rem' }"
   >
     <div class="flex gap-2 flex-column w-full pr-3">
