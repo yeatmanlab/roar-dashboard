@@ -170,7 +170,7 @@
         </div>
       </form>
     </div>
-    <div class="flex align-items-center justify-content-center py-3 mt-3 border-top-1 border-gray-200">
+    <div class="text-center mt-3 border-top-1 border-gray-200">
       <RouterLink :to="APP_ROUTES.SIGN_IN" class="text-sm transition text-gray-600 hover:text-gray-800 p-3">
         Already have an account? Click here to sign in
       </RouterLink>
