@@ -89,14 +89,11 @@ const assignments = computed(() => {
   return getAdministrationsByOrg(props.orgId, props.orgType, props.allAdministrations);
 });
 
-
-
-
-
 // Watch for changes in isVisible to reset state when modal closes
 watch(() => props.isVisible, (newValue) => {
   if (!newValue) {
-    // Modal is closing, could add cleanup logic here if needed
+    // Modal is closing, emit close event to parent for cleanup
+    emit('close');
   }
 });
 </script>

@@ -175,7 +175,7 @@
   />
 </template>
 <script setup>
-import { ref, computed, onMounted, watch, watchEffect } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch, watchEffect } from 'vue';
 import * as Sentry from '@sentry/vue';
 import { storeToRefs } from 'pinia';
 import { useToast } from 'primevue/usetoast';
@@ -530,6 +530,9 @@ const closeAssignmentsModal = () => {
   isAssignmentsModalVisible.value = false;
   selectedOrgId.value = '';
   selectedOrgName.value = '';
+  
+  // Force a re-render of the table to ensure fresh data
+  tableKey.value += 1;
 };
 
 const closeEditModal = () => {
@@ -586,6 +589,23 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
 
 onMounted(() => {
   if (roarfirekit.value.restConfig) initTable();
+});
+
+onUnmounted(() => {
+  // Cleanup subscriptions and reset state
+  if (unsubscribe) {
+    unsubscribe();
+  }
+  
+  // Reset modal states
+  isAssignmentsModalVisible.value = false;
+  selectedOrgId.value = '';
+  selectedOrgName.value = '';
+  
+  // Reset other states
+  isEditModalEnabled.value = false;
+  currentEditOrgId.value = null;
+  isDialogVisible.value = false;
 });
 
 watchEffect(() => {
