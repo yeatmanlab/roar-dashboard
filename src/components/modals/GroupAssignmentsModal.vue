@@ -89,10 +89,8 @@ const assignments = computed(() => {
   return getAdministrationsByOrg(props.orgId, props.orgType, props.allAdministrations);
 });
 
-// Watch for changes in isVisible to reset state when modal closes
 watch(() => props.isVisible, (newValue) => {
   if (!newValue) {
-    // Modal is closing, emit close event to parent for cleanup
     emit('close');
   }
 });
@@ -105,7 +103,6 @@ watch(() => props.isVisible, (newValue) => {
       overflow-y: auto;
       padding: 0 1rem 0 0;
       
-      // Estilização da scrollbar para ficar mais bonita
       &::-webkit-scrollbar {
         width: 8px;
       }
