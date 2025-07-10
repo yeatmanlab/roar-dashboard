@@ -34,6 +34,7 @@ import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useUpdateConsentMutation from '@/composables/mutations/useUpdateConsentMutation';
 import { CONSENT_TYPES } from '@/constants/consentTypes';
 import { APP_ROUTES } from '@/constants/routes';
+import useSentryLogging from '@/composables/useSentryLogging';
 
 const HomeParticipant = defineAsyncComponent(() => import('@/pages/HomeParticipant.vue'));
 const HomeAdministrator = defineAsyncComponent(() => import('@/pages/HomeAdministrator.vue'));
@@ -47,9 +48,9 @@ const router = useRouter();
 const i18n = useI18n();
 
 const { mutateAsync: updateConsentStatus } = useUpdateConsentMutation();
+const { logProfileEvent } = useSentryLogging();
 
 if (ssoProvider.value) {
-  console.log('Detected SSO authentication, redirecting...');
   router.replace({ path: APP_ROUTES.SSO });
 }
 
@@ -144,6 +145,16 @@ watch(
   },
   { immediate: true },
 );
+
+watch(userClaims, (updatedUserClaims) => {
+  if (updatedUserClaims && updatedUserClaims.value) {
+    const { adminUid, assessmentUid, roarUid } = updatedUserClaims.value.claims;
+    const { userType } = useUserType(updatedUserClaims);
+    logProfileEvent('User claims updated', {
+      data: { adminUid, assessmentUid, roarUid, userType },
+    });
+  }
+});
 
 onMounted(async () => {
   if (requireRefresh.value) {

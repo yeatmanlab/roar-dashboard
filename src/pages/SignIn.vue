@@ -199,7 +199,6 @@ const authWithGoogle = () => {
           openWarningModal();
           spinner.value = false;
         } else {
-          console.log('caught error', e);
           spinner.value = false;
         }
       });
@@ -211,7 +210,6 @@ const authWithGoogle = () => {
 const modalPassword = ref('');
 
 const authWithClever = () => {
-  console.log('---> authWithClever');
   if (process.env.NODE_ENV === 'development' && !window.Cypress) {
     authStore.signInWithCleverPopup();
   } else {
@@ -221,7 +219,6 @@ const authWithClever = () => {
 };
 
 const authWithClassLink = () => {
-  console.log('---> authWithClassLink');
   if (isMobileBrowser()) {
     authStore.signInWithClassLinkRedirect();
     spinner.value = true;
