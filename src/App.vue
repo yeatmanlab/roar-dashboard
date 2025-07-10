@@ -1,6 +1,6 @@
 <template>
   <Head>
-    <title>{{ isLevante ? '' : 'ROAR:' }} {{ pageTitle }}</title>
+    <title>ROAR: {{ pageTitle }}</title>
     <meta name="description" content="The Rapid Online Assessment of Reading" />
 
     <!-- Social -->
@@ -42,7 +42,6 @@ import { useAuthStore } from '@/store/auth';
 import { fetchDocById } from '@/helpers/query/utils';
 import { i18n } from '@/translations/i18n';
 
-const isLevante = import.meta.env.MODE === 'LEVANTE';
 const isAuthStoreReady = ref(false);
 const showDevtools = ref(false);
 

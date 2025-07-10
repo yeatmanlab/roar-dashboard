@@ -104,7 +104,7 @@
           @variants-changed="handleVariantsChanged"
         />
 
-        <div v-if="!isLevante" class="mt-2 flex w-full">
+        <div class="mt-2 flex w-full">
           <ConsentPicker :legal="state.legal" @consent-selected="handleConsentSelected" />
           <small v-if="submitted && v$.consent.$invalid && v$.consent.$invalid" class="p-error mt-2"
             >Please select a consent/assent form.</small
@@ -197,8 +197,6 @@ import { ORG_TYPES } from '@/constants/orgTypes';
 import { usePermissions } from '@/composables/usePermissions';
 import AdministrationDatePicker from '@/components/AdministrationDatePicker';
 const { userCan, Permissions } = usePermissions();
-
-const isLevante = import.meta.env.MODE === 'LEVANTE';
 
 const initialized = ref(false);
 const router = useRouter();
@@ -353,8 +351,8 @@ const rules = {
   dateStarted: { required },
   dateClosed: { required },
   sequential: { required },
-  consent: { requiredIf: requiredIf(!isLevante && noConsent.value === '') },
-  assent: { requiredIf: requiredIf(!isLevante && noConsent.value === '') },
+  consent: { requiredIf: requiredIf(noConsent.value === '') },
+  assent: { requiredIf: requiredIf(noConsent.value === '') },
 };
 
 const v$ = useVuelidate(rules, state);

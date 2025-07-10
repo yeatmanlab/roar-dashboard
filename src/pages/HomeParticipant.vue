@@ -95,7 +95,7 @@
   </div>
 
   <ConsentModal
-    v-if="showConsent && !isLevante"
+    v-if="showConsent"
     :consent-text="confirmText"
     :consent-type="consentType"
     :on-confirm="updateConsent"
@@ -119,7 +119,6 @@ import { useGameStore } from '@/store/game';
 import useUserDataQuery from '@/composables/queries/useUserDataQuery';
 import useUserAssignmentsQuery from '@/composables/queries/useUserAssignmentsQuery';
 import useTasksQuery from '@/composables/queries/useTasksQuery';
-import useSurveyReponsesQuery from '@/composables/queries/useSurveyResponsesQuery';
 import useUpdateConsentMutation from '@/composables/mutations/useUpdateConsentMutation';
 import useSignOutMutation from '@/composables/mutations/useSignOutMutation';
 import ConsentModal from '@/components/ConsentModal.vue';
@@ -142,8 +141,6 @@ const props = defineProps({
     default: null,
   },
 });
-
-const isLevante = import.meta.env.MODE === 'LEVANTE';
 
 const { mutateAsync: updateConsentStatus } = useUpdateConsentMutation();
 const { mutate: signOut } = useSignOutMutation();
@@ -248,10 +245,6 @@ const {
   data: userTasks,
 } = useTasksQuery(false, taskIds, {
   enabled: tasksQueryEnabled,
-});
-
-const { data: surveyResponsesData } = useSurveyReponsesQuery({
-  enabled: initialized.value && isLevante,
 });
 
 const isLoading = computed(() => {
@@ -405,17 +398,6 @@ const assessments = computed(() => {
       undefined,
     );
 
-    if (authStore.userData?.userType === 'student' && isLevante) {
-      // This is just to mark the card as complete
-      if (gameStore.isSurveyCompleted || surveyResponsesData.value?.length) {
-        fetchedAssessments.forEach((assessment) => {
-          if (assessment.taskId === 'Survey') {
-            assessment.completedOn = new Date();
-          }
-        });
-      }
-    }
-
     return fetchedAssessments;
   }
   return [];
@@ -453,8 +435,6 @@ let completeGames = computed(() => {
 
 // Set up studentInfo for sidebar
 const studentInfo = computed(() => {
-  if (isLevante) return null;
-
   return {
     grade: userData.value?.studentData?.grade,
   };

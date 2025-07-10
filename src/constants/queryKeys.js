@@ -16,7 +16,6 @@ export const ORG_USERS_QUERY_KEY = 'org-users';
 export const ORGS_TABLE_QUERY_KEY = 'orgs-table';
 export const SCHOOLS_QUERY_KEY = 'schools';
 export const SCHOOL_CLASSES_QUERY_KEY = 'school-classes';
-export const SURVEY_RESPONSES_QUERY_KEY = 'survey-responses';
 export const TASKS_QUERY_KEY = 'tasks';
 export const TASK_BUNDLES_QUERY_KEY = 'task-bundles';
 export const TASK_VARIANTS_QUERY_KEY = 'task-variants';
