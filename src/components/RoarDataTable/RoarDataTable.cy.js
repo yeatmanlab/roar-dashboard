@@ -15,8 +15,6 @@ const props = {
   groupheaders: true,
 };
 
-const tableHeaderOffset = 4;
-
 // Use this data to compare against the data being filtered by the component
 let mockFilteredData;
 
@@ -69,7 +67,7 @@ function checkTableColumn(headers, values = []) {
         cy.get('tbody tr ').each(($row) => {
           cy.wrap($row)
             .find('td')
-            .eq(headerIndex - tableHeaderOffset)
+            .eq(headerIndex)
             .then(($cell) => {
               const cellText = $cell.text();
               cy.wrap(cellText).should('be.oneOf', values);
