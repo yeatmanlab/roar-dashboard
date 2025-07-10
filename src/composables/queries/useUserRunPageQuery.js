@@ -29,12 +29,10 @@ const useUserRunPageQuery = (userId, administrationId, orgType, orgId, queryOpti
     'engagementFlags',
     'optional',
   ];
-  console.log('Select fields:', selectFields);
 
   return useQuery({
     queryKey: [USER_RUN_PAGE_QUERY_KEY, userId, administrationId, orgType, orgId],
     queryFn: async () => {
-      console.log('Fetching run page data with:', { userId, administrationId, orgType, orgId });
       const runPageData = await runPageFetcher({
         administrationId: administrationId,
         orgType: orgType,
@@ -44,7 +42,6 @@ const useUserRunPageQuery = (userId, administrationId, orgType, orgId, queryOpti
         scoreKey: 'scores.computed',
         paginate: false,
       });
-      console.log('Run page data received:', runPageData);
 
       const data = runPageData?.map((task) => {
         const isOptional = optionalAssessments?.value?.some((assessment) => assessment.taskId === task.taskId);
