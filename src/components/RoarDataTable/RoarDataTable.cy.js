@@ -44,7 +44,7 @@ function mockFilterBySupportLevelCategory(task, supportLevel) {
   mockFilteredData = mockFilteredData.filter((object) => object.scores[task].supportLevel === supportLevel);
 }
 
-function setFilterByCategory(header, category) {
+function setFilterByCategory(header, category, forceClick = false) {
   cy.contains(
     'th.p-datatable-header-cell.p-datatable-sortable-column.p-datatable-resizable-column.p-datatable-reorderable-column',
     header,
@@ -52,7 +52,7 @@ function setFilterByCategory(header, category) {
     .find('button')
     .click();
   cy.get('[data-cy="data-table__score-filter-dropdown"]').click();
-  cy.get('.p-select-list-container > .p-select-list').contains(category).click();
+  cy.get('.p-select-list-container > .p-select-list').contains(category).click({ force: forceClick });
   cy.get('button').contains('Apply').click();
 }
 
@@ -230,7 +230,16 @@ describe('<RoarDataTable />', () => {
     cy.mount(RoarDataTable, { props: props });
 
     // Filter the prop data by the category using the UI
-    setFilterByCategory(assessment, category);
+
+    // @TODO: For some reason, Cypress believes that it cannot click the started
+    // label span element. It claims that it is being covered by another
+    // element. I cannot reproduce by hand. Following
+    // https://docs.cypress.io/app/references/error-messages#cy-failed-because-the-element-cannot-be-interacted-with,
+    // I tried `{waitForAnimations: false}` and `{animationDistanceThreshold:
+    // 20}` but neither worked. So I added the `force` option. This should be
+    // removed once we figure out how to convince Cypress that you actually can
+    // click on this element.
+    setFilterByCategory(assessment, category, true);
 
     // Check that the filtered prop data matches the mock data
     checkTableColumn(column, users);
