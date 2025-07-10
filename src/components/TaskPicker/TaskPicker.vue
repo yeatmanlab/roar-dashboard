@@ -327,8 +327,13 @@ const searchCards = (term) => {
   isSearching.value = true;
   searchResults.value = [];
   if (currentCardType.value === CARD_TYPES.GROUP) {
-    const matchingGroups = _filter(props.allTaskGroups, (group) => {
-      if (_toLower(group.name).includes(_toLower(term))) return true;
+    const matchingGroups = _filter(props.allTaskBundles, (group) => {
+      if (
+        _toLower(group.data.name).includes(_toLower(term)) ||
+        _toLower(group.data.publicName).includes(_toLower(term)) ||
+        _toLower(group.id).includes(_toLower(term))
+      )
+        return true;
       else return false;
     });
     searchResults.value.push(

@@ -4,11 +4,11 @@
   >
     <div class="w-11 mt-3 flex flex-row p-0 mb-2">
       <div>
-        <img class="w-4rem shadow-2 border-round ml-2" :src="group.image || backupImage" :alt="group.name" />
+        <img class="w-4rem shadow-2 border-round ml-2" :src="group.data.image || backupImage" :alt="group.data.name" />
       </div>
       <div>
         <div class="flex flex-row">
-          <span class="font-bold" style="margin-left: 0.625rem">{{ group.name }}</span>
+          <span class="font-bold" style="margin-left: 0.625rem">{{ group.data.name }}</span>
           <PvButton
             class="p-0 surface-hover border-none border-circle hover:text-100 hover:bg-primary ml-2"
             style="margin-top: -0.25rem"
@@ -21,8 +21,8 @@
         </div>
         <div class="flex align-items-center gap-2">
           <p class="m-0 mt-1 ml-2">
-            <span class="font-bold">Variant name:</span> {{ group.name }} <br />
-            <span class="font-bold">Variant id: </span>{{ group.id }}
+            <span class="font-bold">Bundle name:</span> {{ group.data.name }} <br />
+            <span class="font-bold">Bundle id: </span>{{ group.id }}
           </p>
         </div>
         <!-- (i) info button -->
@@ -42,7 +42,7 @@
             <PvDataTable
               class="p-datatable-small ml-3 border-1 surface-border text-sm"
               header-style="font-size: 20px;"
-              :value="group.variants"
+              :value="group.data.variants"
               scrollable
               scroll-height="300px"
             >
@@ -66,14 +66,14 @@
   <PvDialog
     v-model:visible="visible"
     modal
-    :header="`Variants for Task Bundle: ${group.name}`"
+    :header="`Variants for Task Bundle: ${group.data.name}`"
     :style="{ width: '50rem' }"
   >
     <div class="flex gap-2 flex-column w-full pr-3">
       <PvDataTable
         class="p-datatable-small ml-3 border-1 surface-border text-sm"
         header-style="font-size: 20px;"
-        :value="group.variants"
+        :value="group.data.variants"
         scrollable
         scroll-height="300px"
       >
