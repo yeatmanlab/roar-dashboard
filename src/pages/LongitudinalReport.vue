@@ -354,7 +354,7 @@ const exportToPdf = async () => {
     await new Promise((resolve) => setTimeout(resolve, 100)); // Wait for DOM update
 
     const canvas = await html2canvas(element, {
-      scale: 2,
+      scale: 1.5,
       useCORS: true,
       allowTaint: true,
       ignoreElements: (element) => {
@@ -367,9 +367,42 @@ const exportToPdf = async () => {
 
     const imgData = canvas.toDataURL('image/png');
     const pdf = new jsPDF('p', 'mm', 'a4');
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = pdf.internal.pageSize.getHeight();
-    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+
+    const margin = 10; // 10mm margins
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const contentWidth = pageWidth - 2 * margin;
+    const contentHeight = pageHeight - 2 * margin;
+
+    // Calculate scale to fit width while maintaining aspect ratio
+    const scale = contentWidth / canvas.width;
+    const totalHeight = canvas.height * scale;
+    const pagesNeeded = Math.ceil(totalHeight / contentHeight);
+
+    // For each page
+    for (let page = 0; page < pagesNeeded; page++) {
+      if (page > 0) pdf.addPage();
+
+      // Calculate which part of the image to use
+      const sourceY = (page * contentHeight) / scale;
+      const sourceHeight = Math.min(contentHeight / scale, canvas.height - sourceY);
+
+      pdf.addImage(
+        imgData,
+        'PNG',
+        margin, // x
+        margin, // y
+        contentWidth,
+        sourceHeight * scale, // maintain aspect ratio
+        `page-${page}`,
+        'FAST',
+        0,
+        sourceY / canvas.height,
+        1,
+        sourceHeight / canvas.height,
+      );
+    }
+
     pdf.save(`${studentFirstName.value}_${studentLastName.value}_longitudinal_report.pdf`);
   } catch (error) {
     console.error('Error generating PDF:', error);
