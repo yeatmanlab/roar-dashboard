@@ -714,20 +714,6 @@ const routes = [
     component: () => import('../pages/Unauthorized.vue'),
     meta: { pageTitle: 'Unauthorized' },
   },
-  // LEVANTE
-  // TODO: LEVANTE Needs to add permissions for their registerUser route.
-  {
-    path: '/register-users',
-    name: 'Register Users',
-    component: () => import('../pages/LEVANTE/RegisterUsers.vue'),
-    meta: { pageTitle: 'Register Users', requireAdmin: true, project: 'LEVANTE' },
-  },
-  {
-    path: '/survey',
-    name: 'Survey',
-    component: () => import('../pages/LEVANTE/UserSurvey.vue'),
-    meta: { pageTitle: 'Survey', project: 'LEVANTE' },
-  },
   {
     path: '/maintenance',
     name: 'Maintenance',
@@ -748,14 +734,6 @@ export const router = createRouter({
 });
 
 router.beforeEach(async (to, from, next) => {
-  const isLevante = import.meta.env.MODE === 'LEVANTE';
-  // Don't allow routing to LEVANTE pages if not in LEVANTE instance
-  if (!isLevante && to.meta?.project === 'LEVANTE') {
-    next({ name: 'Home' });
-    // next function can only be called once per route
-    return;
-  }
-
   const store = useAuthStore();
   const { userCan } = usePermissions();
 
