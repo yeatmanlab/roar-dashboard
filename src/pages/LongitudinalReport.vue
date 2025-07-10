@@ -5,9 +5,15 @@
   </div>
 
   <div v-else class="container flex flex-column align-items-around">
-    <div id="longitudinal-report-header" class="flex flex-column md:flex-row align-items-center my-2">
+    <div
+      id="longitudinal-report-header"
+      class="flex flex-column md:flex-row align-items-center my-2"
+      data-cy="report__header"
+    >
       <div class="student-name text-center md:text-left my-3">
-        <h1 class="text-lg uppercase text-gray-400">{{ $t('scoreReports.longitudinalTitle') }}</h1>
+        <h1 class="text-lg uppercase text-gray-400">
+          {{ $t('scoreReports.longitudinalTitle') }}
+        </h1>
         <h2 class="text-5xl">
           <strong>{{ studentFirstName }} {{ studentLastName }}</strong>
         </h2>
@@ -33,6 +39,7 @@
           :icon="!expanded ? 'pi pi-plus ml-2' : 'pi pi-minus ml-2'"
           icon-pos="right"
           data-html2canvas-ignore="true"
+          data-cy="report__expand-btn"
           @click="setExpand"
         />
         <PvButton
@@ -49,11 +56,9 @@
     </div>
 
     <div v-if="!hasAnyData" class="flex flex-column align-items-center py-6 bg-gray-100">
-      <i18n-t keypath="scoreReports.noDataAvailable" tag="div" class="my-2 text-2xl font-bold text-gray-600">
-        <template #firstName>
-          {{ studentFirstName }}
-        </template>
-      </i18n-t>
+      <div class="my-4 px-4 text-xl font-normal text-gray-500">
+        {{ $t('scoreReports.needOneComplete', { firstName: studentFirstName }) }}
+      </div>
     </div>
 
     <div v-else>
@@ -122,10 +127,10 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-import { storeToRefs } from 'pinia';
-import { useAuthStore } from '@/store/auth';
-import useUserAssignmentsQuery from '@/composables/queries/useUserAssignmentsQuery';
-import { startCase as _startCase, flatten as _flatten, uniq as _uniq } from 'lodash';
+import { useI18n } from 'vue-i18n';
+import useUserDataQuery from '@/composables/queries/useUserDataQuery';
+import useUserRunPageQuery from '@/composables/queries/useUserRunPageQuery';
+import { startCase as _startCase, uniq as _uniq } from 'lodash';
 import IndividualScoreReportTask from '@/components/reports/IndividualScoreReportTask.vue';
 import AppSpinner from '@/components/AppSpinner.vue';
 import { getGradeWithSuffix } from '@/helpers/reports.js';
@@ -135,6 +140,8 @@ import PvButton from 'primevue/button';
 import PvMultiSelect from 'primevue/multiselect';
 import PvAccordion from 'primevue/accordion';
 import PvAccordionTab from 'primevue/accordiontab';
+
+useI18n();
 
 const props = defineProps({
   userId: {
@@ -151,26 +158,33 @@ const props = defineProps({
   },
 });
 
-const authStore = useAuthStore();
-const { user } = storeToRefs(authStore);
-
-const isLoading = ref(true);
-const exportLoading = ref(false);
-const expanded = ref(false);
 const initialized = ref(false);
+const exportLoading = ref(false);
+const isLoading = computed(() => isLoadingStudentData.value);
+const expanded = ref(false);
 const selectedAdministrations = ref([]);
 const administrationData = ref({});
 
-const studentData = computed(() => user.value);
-const studentFirstName = computed(() => studentData.value?.studentData?.firstName || '');
-const studentLastName = computed(() => studentData.value?.studentData?.lastName || '');
+const { data: studentData, isLoading: isLoadingStudentData } = useUserDataQuery(props.userId, {
+  enabled: initialized,
+});
+
+const studentFirstName = computed(() => {
+  if (!studentData?.value) return '';
+  return studentData.value.name?.first || studentData.value.username;
+});
+
+const studentLastName = computed(() => {
+  if (!studentData?.value?.name) return '';
+  return studentData.value.name.last;
+});
 
 const availableAdministrations = computed(() => {
-  if (!assignmentsData.value) return [];
+  if (!taskData.value) return [];
   return _uniq(
-    assignmentsData.value.map((assignment) => ({
-      id: assignment.id,
-      name: assignment.name,
+    taskData.value.map((task) => ({
+      id: task.administrationId,
+      name: task.administrationName,
     })),
   );
 });
@@ -183,29 +197,23 @@ const setExpand = () => {
   expanded.value = !expanded.value;
 };
 
-const { data: assignmentsData } = useUserAssignmentsQuery({ enabled: initialized }, props.userId, props.orgType, [
-  props.orgId,
-]);
+const { data: taskData } = useUserRunPageQuery(props.userId, null, props.orgType, props.orgId, {
+  enabled: initialized,
+});
 
 const handleAdministrationChange = () => {
-  if (!assignmentsData.value) return;
+  if (!taskData.value) return;
 
   for (const admin of selectedAdministrations.value) {
     if (!administrationData.value[admin.id]) {
-      // Filter assignments for this administration and extract task data
-      const adminAssignments = assignmentsData.value.filter((assignment) => assignment.id === admin.id);
+      // Filter tasks for this administration
+      const adminTasks = taskData.value.filter((task) => task.administrationId === admin.id);
 
-      administrationData.value[admin.id] = _flatten(
-        adminAssignments.map((assignment) =>
-          assignment.assessments.map((assessment) => ({
-            ...assessment,
-            administrationId: assignment.id,
-            administrationName: assignment.name,
-            dateAssigned: assignment.dateAssigned,
-            dateCompleted: assessment.completed ? assessment.dateCompleted : null,
-          })),
-        ),
-      );
+      administrationData.value[admin.id] = adminTasks.map((task) => ({
+        ...task,
+        administrationId: task.administrationId,
+        administrationName: task.administrationName,
+      }));
     }
   }
 };

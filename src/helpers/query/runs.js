@@ -61,56 +61,49 @@ export const getRunsRequestBody = ({
     },
   ];
 
-  if (administrationId && (orgId || !allDescendants)) {
-    requestBody.structuredQuery.where = {
-      compositeFilter: {
-        op: 'AND',
-        filters: [
-          {
-            fieldFilter: {
-              field: { fieldPath: 'assignmentId' },
-              op: 'EQUAL',
-              value: { stringValue: administrationId },
-            },
-          },
-          {
-            fieldFilter: {
-              field: { fieldPath: 'bestRun' },
-              op: 'EQUAL',
-              value: { booleanValue: true },
-            },
-          },
-        ],
-      },
-    };
+  const filters = [];
 
-    if (orgId) {
-      requestBody.structuredQuery.where.compositeFilter.filters.push({
-        fieldFilter: {
-          field: { fieldPath: `readOrgs.${pluralizeFirestoreCollection(orgType)}` },
-          op: 'ARRAY_CONTAINS',
-          value: { stringValue: orgId },
-        },
-      });
-    }
-  } else {
+  // Always add bestRun filter
+  filters.push({
+    fieldFilter: {
+      field: { fieldPath: 'bestRun' },
+      op: 'EQUAL',
+      value: { booleanValue: true },
+    },
+  });
+
+  // Add administrationId filter if provided
+  if (administrationId) {
+    filters.push({
+      fieldFilter: {
+        field: { fieldPath: 'assignmentId' },
+        op: 'EQUAL',
+        value: { stringValue: administrationId },
+      },
+    });
+  }
+
+  // Add orgId filter if provided
+  if (orgId) {
+    filters.push({
+      fieldFilter: {
+        field: { fieldPath: `readOrgs.${pluralizeFirestoreCollection(orgType)}` },
+        op: 'ARRAY_CONTAINS',
+        value: { stringValue: orgId },
+      },
+    });
+  }
+
+  if (filters.length > 0) {
     requestBody.structuredQuery.where = {
       compositeFilter: {
         op: 'AND',
-        filters: [
-          {
-            fieldFilter: {
-              field: { fieldPath: 'bestRun' },
-              op: 'EQUAL',
-              value: { booleanValue: true },
-            },
-          },
-        ],
+        filters,
       },
     };
   }
 
-  if (taskId) {
+  if (taskId && filters.length > 0) {
     requestBody.structuredQuery.where.compositeFilter.filters.push({
       fieldFilter: {
         field: { fieldPath: 'taskId' },
@@ -120,7 +113,7 @@ export const getRunsRequestBody = ({
     });
   }
 
-  if (requireCompleted) {
+  if (requireCompleted && filters.length > 0) {
     requestBody.structuredQuery.where.compositeFilter.filters.push({
       fieldFilter: {
         field: { fieldPath: 'completed' },

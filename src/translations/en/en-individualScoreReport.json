@@ -1,5 +1,7 @@
 {
   "scoreReports": {
+    "longitudinalTitle": "Progress Over Time",
+    "longitudinalWelcome": "Welcome to your ROAR Progress Report. Here you can see how your scores have changed over time.",
     "pageTitle": "Individual Score Report",
     "welcome": "Welcome to your ROAR Score Report",
     "loading": "Loading Your Individual Roar Score Report...",
