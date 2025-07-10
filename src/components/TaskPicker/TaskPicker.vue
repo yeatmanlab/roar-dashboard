@@ -13,7 +13,7 @@
         <SelectButton
           v-model="currentCardType"
           :options="[
-            { label: 'Task Groups', value: CARD_TYPES.GROUP },
+            { label: 'Task Groups', value: CARD_TYPES.BUNDLE },
             { label: 'Variants', value: CARD_TYPES.VARIANT },
           ]"
           :pt="{ root: { class: 'w-full' }, pcToggleButton: { root: { class: 'w-full' } } }"
@@ -68,7 +68,9 @@
                   :id="element.id"
                   :key="element.id"
                   :data-task-id="element?.task?.id ?? element.id"
+                  :data-group-id="element.id"
                   style="cursor: grab"
+                  :data-card-type="element.type"
                 >
                   <VariantCard
                     v-if="element.type === CARD_TYPES.VARIANT"
@@ -76,7 +78,7 @@
                     @select="selectVariantCard"
                   />
                   <TaskGroupCard
-                    v-else-if="element.type === CARD_TYPES.GROUP"
+                    v-else-if="element.type === CARD_TYPES.BUNDLE"
                     :group="element"
                     @select="selectTaskGroupCard"
                   />
@@ -125,7 +127,7 @@
           </PvScrollPanel>
         </div>
         <!-- Browse for task bundles -->
-        <div v-if="searchTerm.length < 3 && currentCardType === CARD_TYPES.GROUP">
+        <div v-if="searchTerm.length < 3 && currentCardType === CARD_TYPES.BUNDLE">
           <PvScrollPanel style="height: 27.75rem; width: 100%; overflow-y: auto">
             <div v-if="!currentBundles?.length">No task bundles to show.</div>
             <!-- Draggable Zone 1 -->
@@ -142,7 +144,7 @@
                   :id="element.id"
                   :key="element.id"
                   :data-group-id="element.id"
-                  :data-card-type="CARD_TYPES.GROUP"
+                  :data-card-type="CARD_TYPES.BUNDLE"
                   style="cursor: grab"
                 >
                   <TaskGroupCard :group="element" @select="selectTaskGroupCard" />
@@ -246,11 +248,11 @@ const props = defineProps({
 
 const CARD_TYPES = {
   VARIANT: 'variant',
-  GROUP: 'group',
+  BUNDLE: 'bundle',
 };
 
 const selectedVariants = ref([]);
-const currentCardType = ref(CARD_TYPES.GROUP);
+const currentCardType = ref(CARD_TYPES.BUNDLE);
 
 const emit = defineEmits(['variants-changed']);
 
@@ -326,22 +328,22 @@ const isSearching = ref(false);
 const searchCards = (term) => {
   isSearching.value = true;
   searchResults.value = [];
-  if (currentCardType.value === CARD_TYPES.GROUP) {
-    const matchingGroups = _filter(props.allTaskBundles, (group) => {
+  if (currentCardType.value === CARD_TYPES.BUNDLE) {
+    const matchingGroups = _filter(props.allTaskBundles, (bundle) => {
       if (
-        _toLower(group.data.name).includes(_toLower(term)) ||
-        _toLower(group.data.publicName).includes(_toLower(term)) ||
-        _toLower(group.id).includes(_toLower(term))
+        _toLower(bundle.data.name).includes(_toLower(term)) ||
+        _toLower(bundle.data.publicName).includes(_toLower(term)) ||
+        _toLower(bundle.id).includes(_toLower(term))
       )
         return true;
       else return false;
     });
     searchResults.value.push(
-      ...matchingGroups.map((group) => {
+      ...matchingGroups.map((bundle) => {
         return {
-          type: 'group',
-          id: group.id,
-          ...group,
+          type: 'bundle',
+          id: bundle.id,
+          ...bundle,
         };
       }),
     );
@@ -414,10 +416,10 @@ const handleCardAdd = (card) => {
   }
 };
 
-const handleGroupAdd = (groupId) => {
-  const group = props.allTaskBundles.find((group) => group.id === groupId);
+const handleGroupAdd = (bundleId) => {
+  const bundle = props.allTaskBundles.find((bundle) => bundle.id === bundleId);
   // For each variant in the group, find it in allVariants and add it to the selectedVariants.
-  for (const variant of group.variants) {
+  for (const variant of bundle.data.variants) {
     const taskId = variant.taskId;
     const variantId = variant.variantId;
     const allVariantsForTask = props.allVariants[taskId];
@@ -447,7 +449,7 @@ const handleGroupAdd = (groupId) => {
 const throttleHandleGroupAdd = _debounce(handleGroupAdd, 3000, { leading: true, trailing: false });
 
 const handleCardMove = (card) => {
-  if (card.dragged.dataset.cardType === CARD_TYPES.GROUP) {
+  if (card.dragged.dataset.cardType === CARD_TYPES.BUNDLE) {
     const cardGroupId = card.dragged.dataset.groupId;
     throttleHandleGroupAdd(cardGroupId);
     return false;
