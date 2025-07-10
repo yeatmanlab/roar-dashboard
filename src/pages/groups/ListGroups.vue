@@ -163,7 +163,7 @@
   </RoarModal>
 
   <AddGroupModal :isVisible="isAddGroupModalVisible" @close="isAddGroupModalVisible = false" />
-  
+
   <GroupAssignmentsModal
     :is-visible="isAssignmentsModalVisible"
     :org-id="selectedOrgId"
@@ -436,17 +436,15 @@ const tableColumns = computed(() => {
     columns.push();
   }
 
-  columns.push(
-    {
-      header: 'Users',
-      link: true,
-      routeName: 'ListUsers',
-      routeTooltip: 'View users',
-      routeLabel: 'Users',
-      routeIcon: 'pi pi-user',
-      sort: false,
-    },
-  );
+  columns.push({
+    header: 'Users',
+    link: true,
+    routeName: 'ListUsers',
+    routeTooltip: 'View users',
+    routeLabel: 'Users',
+    routeIcon: 'pi pi-user',
+    sort: false,
+  });
 
   // Add Assignments column for all org types
   columns.push({
@@ -489,12 +487,16 @@ watchEffect(async () => {
   }
 
   isProcessingTableData.value = true;
-  
+
   try {
     const mappedData = await Promise.all(
       filteredOrgData?.value?.map(async (org) => {
         const userCount = await countUsersByOrg(activeOrgType.value, org.id);
-        const assignmentCount = getAdministrationsByOrg(org.id, activeOrgType.value, allAdministrations.value || []).length;
+        const assignmentCount = getAdministrationsByOrg(
+          org.id,
+          activeOrgType.value,
+          allAdministrations.value || [],
+        ).length;
         return {
           ...org,
           userCount,
@@ -601,12 +603,12 @@ onUnmounted(() => {
   if (unsubscribe) {
     unsubscribe();
   }
-  
+
   // Reset modal states
   isAssignmentsModalVisible.value = false;
   selectedOrgId.value = '';
   selectedOrgName.value = '';
-  
+
   // Reset other states
   isEditModalEnabled.value = false;
   currentEditOrgId.value = null;

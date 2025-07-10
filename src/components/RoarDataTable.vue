@@ -360,7 +360,7 @@
             </template>
           </PvColumn>
           <template #empty>
-            <div class="flex flex-column align-items-center align-text-left my-8">
+            <div v-if="!loading" class="flex flex-column align-items-center align-text-left my-8">
               <div class="text-lg font-bold my-2">No results found</div>
               <div class="font-light">The filters applied have no matching results .</div>
               <PvButton
@@ -369,6 +369,9 @@
                 @click="resetFilters"
                 >Reset Filters</PvButton
               >
+            </div>
+            <div v-else class="flex flex-column align-items-center justify-content-center" style="min-height: 200px;">
+              <!-- Loading state - table will show its own loading spinner -->
             </div>
           </template>
         </PvDataTable>
