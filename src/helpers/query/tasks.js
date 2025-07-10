@@ -2,6 +2,8 @@ import { toValue } from 'vue';
 import _mapValues from 'lodash/mapValues';
 import _uniq from 'lodash/uniq';
 import _without from 'lodash/without';
+import { storeToRefs } from 'pinia';
+import { useAuthStore } from '@/store/auth';
 import { convertValues, getAxiosInstance, mapFields, fetchDocsById } from './utils';
 import { FIRESTORE_DATABASES, FIRESTORE_COLLECTIONS } from '../../constants/firebase';
 
@@ -208,4 +210,12 @@ export const variantsFetcher = async (registered = false) => {
       };
     });
   });
+};
+
+export const fetchTaskGroups = async () => {
+  const authStore = useAuthStore();
+  const { roarfirekit } = storeToRefs(authStore);
+
+  const taskGroups = await roarfirekit.value.getTaskBundles();
+  return taskGroups;
 };
