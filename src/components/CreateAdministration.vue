@@ -6,7 +6,6 @@
           <div class="flex align-items-center gap-3">
             <i class="pi pi-sliders-h text-gray-400 rounded" style="font-size: 1.6rem" />
             <div class="admin-page-header">{{ header }}</div>
-            {{ allTaskBundles }}
           </div>
         </div>
         <div class="text-md text-gray-500 ml-6">{{ description }}</div>
@@ -99,7 +98,7 @@
 
         <TaskPicker
           :all-variants="variantsByTaskId"
-          :all-task-groups="taskGroupsByGroupName"
+          :all-task-bundles="allTaskBundles"
           :input-variants="preSelectedVariants"
           :pre-existing-assessment-info="existingAssessments"
           @variants-changed="handleVariantsChanged"
@@ -403,46 +402,6 @@ const nonUniqueTasks = ref('');
 const variantsByTaskId = computed(() => {
   return _groupBy(allVariants.value, 'task.id');
 });
-
-// TODO: Replace with actual task groups from API
-const taskGroupsByGroupName = [
-  {
-    name: 'testGroupOne',
-    id: 'testGroupOneId',
-    description: 'This is a test group',
-    image: '',
-    variants: [
-      {
-        taskId: 'swr',
-        variantId: '0A5qXQ5oTXg7szwLOul7',
-      },
-      {
-        taskId: 'pa',
-        variantId: '60zM6IYe2D5eSuGBAt8w',
-      },
-    ],
-  },
-  {
-    name: 'testGroupTwo',
-    id: 'testGroupTwoId',
-    description: 'This is another test group',
-    image: '',
-    variants: [
-      {
-        taskId: 'testTaskId3',
-        variantId: 'testVariantId3',
-      },
-      {
-        taskId: 'pa',
-        variantId: 'testVariantId4',
-      },
-      {
-        taskId: 'swr',
-        variantId: '0A5qXQ5oTXg7szwLOul7',
-      },
-    ],
-  },
-];
 
 const handleVariantsChanged = (newVariants) => {
   variants.value = newVariants;

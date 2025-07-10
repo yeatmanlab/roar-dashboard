@@ -127,10 +127,10 @@
         <!-- Browse for task bundles -->
         <div v-if="searchTerm.length < 3 && currentCardType === CARD_TYPES.GROUP">
           <PvScrollPanel style="height: 27.75rem; width: 100%; overflow-y: auto">
-            <div v-if="!currentGroups.length">No task bundles to show.</div>
+            <div v-if="!currentBundles?.length">No task bundles to show.</div>
             <!-- Draggable Zone 1 -->
             <VueDraggableNext
-              v-model="currentGroups"
+              v-model="currentBundles"
               :reorderable-columns="true"
               :group="{ name: 'variants', pull: 'clone', put: false }"
               :sort="false"
@@ -138,7 +138,7 @@
             >
               <transition-group>
                 <div
-                  v-for="element in currentGroups"
+                  v-for="element in currentBundles"
                   :id="element.id"
                   :key="element.id"
                   :data-group-id="element.id"
@@ -233,7 +233,7 @@ const props = defineProps({
     type: Array,
     default: () => [],
   },
-  allTaskGroups: {
+  allTaskBundles: {
     type: Object,
     required: true,
     default: () => {},
@@ -311,8 +311,8 @@ const currentVariants = computed(() => {
   return props.allVariants[currentTask.value];
 });
 
-const currentGroups = computed(() => {
-  return props.allTaskGroups;
+const currentBundles = computed(() => {
+  return props.allTaskBundles;
 });
 
 // Pane handlers
@@ -410,7 +410,7 @@ const handleCardAdd = (card) => {
 };
 
 const handleGroupAdd = (groupId) => {
-  const group = props.allTaskGroups.find((group) => group.id === groupId);
+  const group = props.allTaskBundles.find((group) => group.id === groupId);
   // For each variant in the group, find it in allVariants and add it to the selectedVariants.
   for (const variant of group.variants) {
     const taskId = variant.taskId;
