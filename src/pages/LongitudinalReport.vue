@@ -62,27 +62,26 @@
     </div>
 
     <div v-else>
-      <div class="administration-selector my-4">
-        <h3>{{ $t('scoreReports.selectAdministrations') }}</h3>
-        <PvMultiSelect
-          v-model="selectedAdministrations"
-          :options="availableAdministrations"
-          option-label="name"
-          :placeholder="$t('scoreReports.selectPlaceholder')"
-          class="w-full md:w-20rem"
-          @change="handleAdministrationChange"
-        />
-      </div>
+      <div v-for="admin in availableAdministrations" :key="admin.id" class="administration-section mb-4">
+        <h2 class="text-2xl font-bold mb-3">{{ admin.name }}</h2>
 
-      <div v-for="administration in selectedAdministrations" :key="administration.id" class="mb-4">
-        <h3 class="administration-title">{{ administration.name }}</h3>
-        <div class="individual-report-cards">
-          <individual-score-report-task
-            v-if="administrationData[administration.id]?.length"
-            :student-data="studentData"
-            :task-data="administrationData[administration.id]"
-            :expanded="expanded"
-          />
+        <div class="welcome-card mt-2 mb-4">
+          <div class="p-3 text-lg">
+            <i18n-t keypath="scoreReports.completedTasks" tag="div" class="mt-2">
+              <template #firstName>
+                {{ studentFirstName }}
+              </template>
+            </i18n-t>
+
+            <div class="task-section">
+              <IndividualScoreReportTask
+                :task-data="tasksByAdministration[admin.id]"
+                :student-first-name="studentFirstName"
+                :student-grade="studentData?.studentData?.grade"
+                :expanded="expanded"
+              />
+            </div>
+          </div>
         </div>
       </div>
 
@@ -126,20 +125,19 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import useUserDataQuery from '@/composables/queries/useUserDataQuery';
 import useUserRunPageQuery from '@/composables/queries/useUserRunPageQuery';
-import { startCase as _startCase, uniq as _uniq } from 'lodash';
-import IndividualScoreReportTask from '@/components/reports/IndividualScoreReportTask.vue';
-import AppSpinner from '@/components/AppSpinner.vue';
-import { getGradeWithSuffix } from '@/helpers/reports.js';
-import html2canvas from 'html2canvas';
-import { jsPDF } from 'jspdf';
+import useUserDataQuery from '@/composables/queries/useUserDataQuery';
+import { uniq as _uniq, startCase as _startCase } from 'lodash';
 import PvButton from 'primevue/button';
-import PvMultiSelect from 'primevue/multiselect';
 import PvAccordion from 'primevue/accordion';
 import PvAccordionTab from 'primevue/accordiontab';
+import AppSpinner from '@/components/AppSpinner.vue';
+import IndividualScoreReportTask from '@/components/reports/IndividualScoreReportTask.vue';
+import { getGradeWithSuffix } from '@/helpers/reports';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 
 useI18n();
 
@@ -162,8 +160,6 @@ const initialized = ref(false);
 const exportLoading = ref(false);
 const isLoading = computed(() => isLoadingStudentData.value);
 const expanded = ref(false);
-const selectedAdministrations = ref([]);
-const administrationData = ref({});
 
 const { data: studentData, isLoading: isLoadingStudentData } = useUserDataQuery(props.userId, {
   enabled: initialized,
@@ -179,6 +175,10 @@ const studentLastName = computed(() => {
   return studentData.value.name.last;
 });
 
+const { data: taskData } = useUserRunPageQuery(props.userId, null, props.orgType, props.orgId, {
+  enabled: initialized,
+});
+
 const availableAdministrations = computed(() => {
   if (!taskData.value) return [];
   return _uniq(
@@ -186,36 +186,27 @@ const availableAdministrations = computed(() => {
       id: task.administrationId,
       name: task.administrationName,
     })),
-  );
+  ).sort((a, b) => a.name.localeCompare(b.name));
+});
+
+const tasksByAdministration = computed(() => {
+  if (!taskData.value) return {};
+  return taskData.value.reduce((acc, task) => {
+    const adminId = task.administrationId;
+    if (!acc[adminId]) {
+      acc[adminId] = [];
+    }
+    acc[adminId].push(task);
+    return acc;
+  }, {});
 });
 
 const hasAnyData = computed(() => {
-  return Object.values(administrationData.value).some((data) => data && data.length > 0);
+  return taskData.value && taskData.value.length > 0;
 });
 
 const setExpand = () => {
   expanded.value = !expanded.value;
-};
-
-const { data: taskData } = useUserRunPageQuery(props.userId, null, props.orgType, props.orgId, {
-  enabled: initialized,
-});
-
-const handleAdministrationChange = () => {
-  if (!taskData.value) return;
-
-  for (const admin of selectedAdministrations.value) {
-    if (!administrationData.value[admin.id]) {
-      // Filter tasks for this administration
-      const adminTasks = taskData.value.filter((task) => task.administrationId === admin.id);
-
-      administrationData.value[admin.id] = adminTasks.map((task) => ({
-        ...task,
-        administrationId: task.administrationId,
-        administrationName: task.administrationName,
-      }));
-    }
-  }
 };
 
 const exportToPdf = async () => {
@@ -256,14 +247,84 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+.welcome-banner {
+  background-color: var(--primary-color);
+  padding: 0.8rem 1rem;
+  border-radius: 0.5rem;
+  color: white;
+  justify-content: space-between;
+  align-items: center;
+  border-radius: 0.2rem 0.2rem 0rem 0rem;
+}
+
+.banner-text {
+  color: white;
+  font-weight: bold;
+  font-size: 1.3rem;
+}
+
+.student-name {
+  flex: 2;
+  border-radius: 12px;
+}
+
+.student-info {
+  flex: 1;
+  font-size: 1.2rem;
+  border-radius: 12px;
+  padding: 0.35rem 0.75rem;
+}
+
+.support-wrapper {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: space-around;
+}
+
 .container {
-  max-width: 1200px;
   margin: 0 auto;
-  padding: 2rem;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+@media (min-width: 768px) {
+  .container {
+    max-width: 768px;
+  }
+}
+
+@media (min-width: 992px) {
+  .container {
+    max-width: 992px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .container {
+    max-width: 1200px;
+  }
 }
 
 .loading-container {
-  min-height: 400px;
+  height: 100vh;
+}
+
+.administration-section {
+  background-color: var(--surface-ground);
+  border-radius: 8px;
+  padding: 1.5rem;
+}
+
+.task-section {
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background-color: var(--surface-card);
+  border-radius: 4px;
+  box-shadow: var(--card-shadow);
 }
 
 .student-info {
