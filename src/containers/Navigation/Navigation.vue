@@ -1,11 +1,10 @@
 <template>
   <NavBar
     v-if="displayNavbar"
-    :display-name
-    :menu-items
-    :logo="logoOverride"
+    :display-name="displayName"
+    :menu-items="menuItems"
     :on-sign-out="signOut"
-    :show-account-settings-link
+    :show-account-settings-link="showAccountSettingsLink"
   />
 </template>
 
@@ -28,8 +27,6 @@ const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
 
 const initialized = ref(false);
-
-const isLevante = import.meta.env.MODE === 'LEVANTE';
 
 let unsubscribe;
 
@@ -111,10 +108,6 @@ const showAccountSettingsLink = computed(() => {
 const displayNavbar = computed(() => {
   if (!route.name) return false;
   return !navbarBlacklist.includes(route.name);
-});
-
-const logoOverride = computed(() => {
-  return isLevante ? '/LEVANTE/Levante_Logo.png' : null;
 });
 
 const displayName = computed(() => {
