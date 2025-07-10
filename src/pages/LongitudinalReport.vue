@@ -168,15 +168,9 @@ const { data: taskData, isLoading: isLoadingTaskData } = useUserRunPageQuery(
   props.orgType,
   props.orgId,
   {
-    select: [
-      'scores.computed',
-      'taskId',
-      'reliable',
-      'engagementFlags',
-      'optional',
-      'assignment.id',
-      'assignment.name',
-    ],
+    queryFnOptions: {
+      select: ['scores.computed', 'taskId', 'reliable', 'engagementFlags', 'optional', 'assignmentId'],
+    },
     onSuccess: (data) => {
       console.log('Task data received:', data);
     },
@@ -201,10 +195,10 @@ const studentLastName = computed(() => {
 const availableAdministrations = computed(() => {
   if (!taskData.value) return [];
   const mapped = taskData.value
-    .filter((task) => task.assignment?.id && task.assignment?.name)
+    .filter((task) => task.assignmentId)
     .map((task) => ({
-      id: task.assignment.id,
-      name: task.assignment.name,
+      id: task.assignmentId,
+      name: task.assignmentId, // For now, use ID as name until we get the name
     }));
   return _uniq(mapped).sort((a, b) => a.name.localeCompare(b.name));
 });
@@ -212,7 +206,7 @@ const availableAdministrations = computed(() => {
 const tasksByAdministration = computed(() => {
   if (!taskData.value) return {};
   return taskData.value.reduce((acc, task) => {
-    const adminId = task.assignment?.id;
+    const adminId = task.assignmentId;
     if (!adminId) return acc;
 
     if (!acc[adminId]) {
