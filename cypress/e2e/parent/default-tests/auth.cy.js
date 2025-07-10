@@ -1,6 +1,7 @@
 import { APP_ROUTES } from '../../../../src/constants/routes';
 
-const PARENT_USERNAME = Cypress.env('PARENT_EMAIL');
+const randomNum = Math.floor(Math.random() * (9999 - 1000 + 1)) + 1000;
+const PARENT_USERNAME = Cypress.env('PARENT_EMAIL').replace('@', `${randomNum}@`);
 const PARENT_PASSWORD = Cypress.env('PARENT_PASSWORD');
 const PARENT_FIRST_NAME = Cypress.env('PARENT_FIRST_NAME');
 const PARENT_LAST_NAME = Cypress.env('PARENT_LAST_NAME');
@@ -37,7 +38,7 @@ describe('Parent: Auth', () => {
 
   it('Validates invitation codes during sign-up', () => {
     const ORG_CODE = Cypress.env('ACTIVATION_CODE');
-    const ORG_NAME = Cypress.env('testPartnerDistrictName');
+    const ORG_NAME = Cypress.env('testInviteGroupName');
 
     cy.visit(`${APP_ROUTES.REGISTER}/?code=${ORG_CODE}`);
 
