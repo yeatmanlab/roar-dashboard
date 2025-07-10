@@ -9,7 +9,7 @@
     </template>
     <div class="w-full flex flex-column lg:flex-row gap-2">
       <div v-if="tasksPaneOpen" class="w-full lg:w-6">
-        <!-- Select Button for -->
+        <!-- Select Button for Bundles / Variants-->
         <SelectButton
           v-model="currentCardType"
           :options="[
@@ -218,7 +218,7 @@ import PvInputText from 'primevue/inputtext';
 import PvPanel from 'primevue/panel';
 import PvScrollPanel from 'primevue/scrollpanel';
 import VariantCard from '../VariantCard';
-import TaskGroupCard from '../TaskGroupCard';
+import TaskGroupCard from '../TaskBundleCard';
 import PvIconField from 'primevue/iconfield';
 import PvInputIcon from 'primevue/inputicon';
 import SelectButton from 'primevue/selectbutton';
