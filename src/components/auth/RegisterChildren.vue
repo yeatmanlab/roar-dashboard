@@ -13,10 +13,12 @@
               <div class="flex gap-2 justify-content-between">
                 <label for="activationCode">Activation code <span class="required">*</span></label>
               </div>
-              <PvInputGroup v-if="!student.noActivationCode">
+              <PvInputGroup v-if="!student.noActivationCode" data-cy="activation-code-group">
                 <PvInputText
                   v-model="student.activationCode"
-                  name="noActivationCode"
+                  name="activationCode"
+                  data-cy="activation-code-input"
+                  placeholder="Enter activation code"
                   :class="{
                     'p-invalid': v$.students.$each.$response.$data[outerIndex].activationCode.$invalid && submitted,
                   }"
@@ -78,6 +80,7 @@
                 'p-invalid': v$.students.$each.$response.$data[outerIndex].studentUsername.$invalid && submitted,
               }"
               aria-describedby="username-error"
+              data-cy="student-username-input"
             />
           </div>
           <span
@@ -88,13 +91,14 @@
           </span>
         </section>
         <!-- Password -->
-        <section class="flex form-section lg:flex-row">
-          <div>
+        <section class="flex form-section lg:flex-row gap-4">
+          <div class="flex-1">
             <div>
               <label for="password">Password (Minimum 6 characters)<span class="required">*</span></label>
               <PvPassword
                 v-model="student.password"
                 name="password"
+                data-cy="student-password-input"
                 :class="{
                   'p-invalid': v$.students.$each.$response.$data[outerIndex].password.$invalid && submitted,
                   'w-full': true,
@@ -116,13 +120,14 @@
             </span>
           </div>
           <!-- Confirm Password -->
-          <div>
+          <div class="flex-1">
             <div>
               <label for="confirmPassword">Confirm Password <span class="required">*</span></label>
               <PvPassword
                 :id="`confirmPassword-${isRegistering ? 'register' : 'login'}`"
                 v-model="student.confirmPassword"
                 name="confirmPassword"
+                data-cy="student-confirm-password-input"
                 :class="{ 'p-invalid': isPasswordMismatch(outerIndex) && submitted, 'w-full': true }"
                 :input-props="{ autocomplete: 'new-password' }"
                 :feedback="false"
@@ -135,49 +140,59 @@
           </div>
         </section>
         <section class="form-section">
-          <div>
-            <!-- Age / DOB -->
-            <div class="flex gap-2 justify-content-start">
-              <label>Date of Birth <span class="required">*</span></label>
-              <div class="flex align-items-center">
-                <PvCheckbox v-model="student.yearOnlyCheckRef" :binary="true" name="yearOnly" />
-                <label for="yearOnly" class="ml-2">Use Year Only</label>
+          <div class="flex gap-4">
+            <div class="flex-1">
+              <!-- Age / DOB -->
+              <div class="flex gap-2 justify-content-start">
+                <label>Date of Birth <span class="required">*</span></label>
+                <div class="flex align-items-center">
+                  <PvCheckbox
+                    v-model="student.yearOnlyCheckRef"
+                    :binary="true"
+                    name="yearOnly"
+                    data-cy="year-only-checkbox"
+                  />
+                  <label for="yearOnly" class="ml-2">Use Year Only</label>
+                </div>
               </div>
+              <div v-if="!student.yearOnlyCheckRef">
+                <PvDatePicker
+                  v-model="student.dob"
+                  :max-date="maxDoB"
+                  class="w-full"
+                  view="date"
+                  date-format="mm/dd/yy"
+                  icon="pi pi-calendar text-white p-1"
+                  data-cy="date-picker"
+                />
+              </div>
+              <div v-else>
+                <PvDatePicker
+                  v-model="student.dob"
+                  :max-date="maxDoB"
+                  class="w-full"
+                  view="year"
+                  date-format="yy"
+                  icon="pi pi-calendar text-white p-1"
+                  data-cy="dob-year-picker"
+                />
+              </div>
+              <small v-if="v$.students.$each.$response.$data[outerIndex].dob.$invalid && submitted" class="p-error">{{
+                v$.students.$each.$response.$errors[outerIndex].dob.$message.replace('Value', 'Date of Birth')
+              }}</small>
             </div>
-            <div v-if="!student.yearOnlyCheckRef">
-              <PvDatePicker
-                v-model="student.dob"
-                :max-date="maxDoB"
+            <div class="flex-1">
+              <label for="grade">Grade <span class="required">*</span></label>
+              <PvSelect
+                v-model="student.grade"
+                :options="gradeOptions"
+                option-label="label"
+                option-value="value"
                 class="w-full"
-                view="date"
-                date-format="mm/dd/yy"
-                icon="pi pi-calendar text-white p-1"
+                name="grade"
+                data-cy="grade-select"
               />
             </div>
-            <div v-else>
-              <PvDatePicker
-                v-model="student.dob"
-                :max-date="maxDoB"
-                class="w-full"
-                view="year"
-                date-format="yy"
-                icon="pi pi-calendar text-white p-1"
-              />
-            </div>
-            <small v-if="v$.students.$each.$response.$data[outerIndex].dob.$invalid && submitted" class="p-error">{{
-              v$.students.$each.$response.$errors[outerIndex].dob.$message.replace('Value', 'Date of Birth')
-            }}</small>
-          </div>
-          <div class="flex flex-column">
-            <label for="grade">Grade <span class="required">*</span></label>
-            <PvSelect
-              v-model="student.grade"
-              :options="gradeOptions"
-              option-label="label"
-              option-value="value"
-              class="w-full"
-              name="grade"
-            />
           </div>
         </section>
         <section class="form-section">
@@ -315,7 +330,7 @@
         <ChallengeV3 v-model="response" action="submit">
           <div class="field-checkbox terms-checkbox">
             <PvCheckbox
-              :id="`accept-${isRegistering ? 'register' : 'login'}`"
+              id="accept-register"
               v-model="student.accept"
               binary
               :disabled="showConsent[outerIndex]"
@@ -352,6 +367,8 @@
         type="submit"
         label="Submit"
         class="p-2 mr-3 w-4 text-white border-none bg-primary border-round h-3rem hover:surface-300 hover:text-black-alpha-90"
+        :loading="props.submitting"
+        :disabled="props.submitting"
         @click.prevent="handleFormSubmit(!v$.$invalid && !anyPasswordsMismatched())"
       />
       <PvDialog
@@ -409,6 +426,7 @@ const props = defineProps({
   isRegistering: { type: Boolean, default: true },
   code: { type: String, default: null },
   consent: { type: Object, default: null },
+  submitting: { type: Boolean, default: false },
 });
 
 const isDialogVisible = ref(false);
