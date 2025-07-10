@@ -100,10 +100,10 @@ describe('query/runs', () => {
       expect(result.structuredQuery.offset).toBe(0);
       expect(result.structuredQuery.from[0].collectionId).toBe('runs');
       expect(result.structuredQuery.where.compositeFilter.filters).toHaveLength(3);
-      expect(result.structuredQuery.where.compositeFilter.filters[0].fieldFilter.field.fieldPath).toBe('assignmentId');
-      expect(result.structuredQuery.where.compositeFilter.filters[0].fieldFilter.value.stringValue).toBe('admin1');
-      expect(result.structuredQuery.where.compositeFilter.filters[1].fieldFilter.field.fieldPath).toBe('bestRun');
-      expect(result.structuredQuery.where.compositeFilter.filters[1].fieldFilter.value.booleanValue).toBe(true);
+      expect(result.structuredQuery.where.compositeFilter.filters[0].fieldFilter.field.fieldPath).toBe('bestRun');
+      expect(result.structuredQuery.where.compositeFilter.filters[0].fieldFilter.value.booleanValue).toBe(true);
+      expect(result.structuredQuery.where.compositeFilter.filters[1].fieldFilter.field.fieldPath).toBe('assignmentId');
+      expect(result.structuredQuery.where.compositeFilter.filters[1].fieldFilter.value.stringValue).toBe('admin1');
       expect(result.structuredQuery.where.compositeFilter.filters[2].fieldFilter.field.fieldPath).toBe(
         'readOrgs.schools',
       );
@@ -164,8 +164,8 @@ describe('query/runs', () => {
       const result = getRunsRequestBody(params);
 
       expect(result.structuredQuery.where.compositeFilter.filters).toHaveLength(2);
-      expect(result.structuredQuery.where.compositeFilter.filters[0].fieldFilter.field.fieldPath).toBe('assignmentId');
-      expect(result.structuredQuery.where.compositeFilter.filters[1].fieldFilter.field.fieldPath).toBe('bestRun');
+      expect(result.structuredQuery.where.compositeFilter.filters[0].fieldFilter.field.fieldPath).toBe('bestRun');
+      expect(result.structuredQuery.where.compositeFilter.filters[1].fieldFilter.field.fieldPath).toBe('assignmentId');
     });
 
     it('should create a request body with only bestRun filter when no administrationId or orgId', () => {
