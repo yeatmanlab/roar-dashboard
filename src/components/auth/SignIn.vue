@@ -105,6 +105,7 @@
         type="submit"
         class="flex p-3 mt-5 w-5 border-none border-round hover:bg-black-alpha-20"
         :label="$t('authSignIn.buttonLabel') + ' &rarr;'"
+        data-cy="sign-in__submit"
       />
       <hr class="mt-5 opacity-20" />
     </form>
