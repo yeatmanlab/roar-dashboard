@@ -75,6 +75,7 @@ export async function deleteTestRuns(user, adminFirestore, assessmentFirestore) 
             const assignmentRef = doc(adminFirestore, 'users', id, 'assignments', assignmentId);
             await getDoc(assignmentRef).then(async (assignmentDoc) => {
               if (!assignmentDoc.exists()) {
+                console.log('Assignment document does not exist');
                 return;
               }
               const assignmentData = assignmentDoc.data();

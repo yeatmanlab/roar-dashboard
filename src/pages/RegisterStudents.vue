@@ -838,6 +838,7 @@ const transformStudentData = async (rawStudent) => {
         _set(transformedStudent, 'userData.districts', { id: studentDistrictId });
       } else {
         // TODO: display this gracefully on the UI.
+        console.error(`District ${districtName} not found.`);
       }
     }
 
@@ -848,6 +849,7 @@ const transformStudentData = async (rawStudent) => {
         _set(transformedStudent, 'userData.schools', { id: studentSchoolId });
       } else {
         // TODO: display this gracefully on the UI.
+        console.error(`School ${schoolName} not found.`);
       }
     }
 
@@ -858,6 +860,7 @@ const transformStudentData = async (rawStudent) => {
         _set(transformedStudent, 'userData.classes', { id: classId });
       } else {
         // TODO: display this gracefully on the UI.
+        console.error(`Class ${className} not found.`);
       }
     }
   } else {
