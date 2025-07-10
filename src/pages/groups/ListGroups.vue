@@ -69,7 +69,7 @@
             :columns="tableColumns"
             :data="filteredTableData ?? []"
             sortable
-            :loading="isLoading || isFetching"
+            :loading="isLoading || isFetching || isProcessingTableData"
             :allow-filtering="false"
             @export-all="exportAll"
             @selected-org-id="showCode"
@@ -479,32 +479,40 @@ const tableColumns = computed(() => {
 });
 
 const tableData = ref([]);
+const isProcessingTableData = ref(false);
 
 watchEffect(async () => {
   if (isLoading.value) {
     tableData.value = [];
+    isProcessingTableData.value = false;
     return;
   }
 
-  const mappedData = await Promise.all(
-    filteredOrgData?.value?.map(async (org) => {
-      const userCount = await countUsersByOrg(activeOrgType.value, org.id);
-      const assignmentCount = getAdministrationsByOrg(org.id, activeOrgType.value, allAdministrations.value || []).length;
-      return {
-        ...org,
-        userCount,
-        assignmentCount,
-        routeParams: {
-          orgType: activeOrgType.value,
-          orgId: org.id,
-          orgName: org?.name || '_',
-          tooltip: 'View Users in ' + org?.name || '',
-        },
-      };
-    }) || [],
-  );
+  isProcessingTableData.value = true;
+  
+  try {
+    const mappedData = await Promise.all(
+      filteredOrgData?.value?.map(async (org) => {
+        const userCount = await countUsersByOrg(activeOrgType.value, org.id);
+        const assignmentCount = getAdministrationsByOrg(org.id, activeOrgType.value, allAdministrations.value || []).length;
+        return {
+          ...org,
+          userCount,
+          assignmentCount,
+          routeParams: {
+            orgType: activeOrgType.value,
+            orgId: org.id,
+            orgName: org?.name || '_',
+            tooltip: 'View Users in ' + org?.name || '',
+          },
+        };
+      }) || [],
+    );
 
-  tableData.value = mappedData;
+    tableData.value = mappedData;
+  } finally {
+    isProcessingTableData.value = false;
+  }
 });
 
 const showCode = async (selectedOrg) => {
