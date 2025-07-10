@@ -71,22 +71,8 @@ const createCSVWithInvalidYear = () => {
   );
 };
 
-const createCSVWithSiteNoSchool = () => {
-  return (
-    'id,userType,month,year,caregiverId,teacherId,site,school,class,cohort\n' +
-    '1,child,5,2018,,,"Test Site",,"Class A",""'
-  );
-};
-
-const createCSVWithSchoolNoSite = () => {
-  return (
-    'id,userType,month,year,caregiverId,teacherId,site,school,class,cohort\n' +
-    '1,child,5,2018,,,,"Test School","Class A",""'
-  );
-};
-
-const createCSVWithClassNoSchoolSite = () => {
-  return 'id,userType,month,year,caregiverId,teacherId,site,school,class,cohort\n' + '1,child,5,2018,,,,,"Class A",""';
+const createCSVWithSiteNoSchoolNoCohort = () => {
+  return 'id,userType,month,year,caregiverId,teacherId,site,school,class,cohort\n' + '1,child,5,2018,,,"Test Site",,,';
 };
 
 const createMockFile = (content, filename = 'test.csv', type = 'text/csv') => {
@@ -224,56 +210,28 @@ describe('Add Users Page', () => {
       expect(wrapper.vm.isFileUploaded).toBe(false);
     });
 
-    it('handles validation errors when missing Groups info (cohort or site+school)', async () => {
+    // Site is always required
+    it('handles validation errors when a site is missing', async () => {
       const wrapper = mount(AddUsers, {
         global: { plugins: [PrimeVue, ToastService] },
       });
       const mockEventData = mockFileUpload(createCSVWithMissingOrg());
       await wrapper.vm.onFileUpload(mockEventData);
       expect(wrapper.vm.errorUsers.length).toBeGreaterThan(0);
-      expect(wrapper.vm.errorUsers[0].error).toContain('Cohort OR Site and School');
+      expect(wrapper.vm.errorUsers[0].error).toContain('Site');
       expect(wrapper.vm.showErrorTable).toBe(true);
       expect(wrapper.vm.isFileUploaded).toBe(false);
     });
 
-    // Test for Site (District) without School
-    it('handles validation errors when site is provided but school is missing', async () => {
+    // At least, either a school OR a cohort is required
+    it('handles validation errors when either a school OR cohort is missing', async () => {
       const wrapper = mount(AddUsers, {
         global: { plugins: [PrimeVue, ToastService] },
       });
-      const mockEventData = mockFileUpload(createCSVWithSiteNoSchool());
+      const mockEventData = mockFileUpload(createCSVWithSiteNoSchoolNoCohort());
       await wrapper.vm.onFileUpload(mockEventData);
       expect(wrapper.vm.errorUsers.length).toBeGreaterThan(0);
-      // It flags 'cohort OR site and school' because site is present but school is missing
-      expect(wrapper.vm.errorUsers[0].error).toContain('Cohort OR Site and School');
-      expect(wrapper.vm.showErrorTable).toBe(true);
-      expect(wrapper.vm.isFileUploaded).toBe(false);
-    });
-
-    // Test for School without Site (District)
-    it('handles validation errors when school is provided but site is missing', async () => {
-      const wrapper = mount(AddUsers, {
-        global: { plugins: [PrimeVue, ToastService] },
-      });
-      const mockEventData = mockFileUpload(createCSVWithSchoolNoSite());
-      await wrapper.vm.onFileUpload(mockEventData);
-      expect(wrapper.vm.errorUsers.length).toBeGreaterThan(0);
-      // It flags 'cohort OR site and school' because school is present but site is missing
-      expect(wrapper.vm.errorUsers[0].error).toContain('Cohort OR Site and School');
-      expect(wrapper.vm.showErrorTable).toBe(true);
-      expect(wrapper.vm.isFileUploaded).toBe(false);
-    });
-
-    // Test for Class without School and Site (District)
-    it('handles validation errors when class is provided but school and site are missing', async () => {
-      const wrapper = mount(AddUsers, {
-        global: { plugins: [PrimeVue, ToastService] },
-      });
-      const mockEventData = mockFileUpload(createCSVWithClassNoSchoolSite());
-      await wrapper.vm.onFileUpload(mockEventData);
-      expect(wrapper.vm.errorUsers.length).toBeGreaterThan(0);
-      // It flags 'cohort OR district and school' because class requires district+school if no cohort
-      expect(wrapper.vm.errorUsers[0].error).toContain('Cohort OR Site and School');
+      expect(wrapper.vm.errorUsers[0].error).toContain('Cohort OR School');
       expect(wrapper.vm.showErrorTable).toBe(true);
       expect(wrapper.vm.isFileUploaded).toBe(false);
     });
