@@ -4,6 +4,8 @@
     modal
     :style="{ width: '50rem', padding: '0.8rem' }"
     :draggable="false"
+    :close-on-escape="true"
+    :closable="true"
     class="group-assignments-modal"
   >
     <template #header>
@@ -145,5 +147,9 @@ watch(
     font-size: 1rem;
     color: var(--text-color);
   }
+}
+
+:global(body) {
+  overflow-y: auto !important;
 }
 </style>
