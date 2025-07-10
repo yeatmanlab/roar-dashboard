@@ -1,6 +1,6 @@
 {
   "scoreReports": {
-    "longitudinalTitle": "Progress Over Time",
+    "longitudinalTitle": "Longitudinal Report",
     "longitudinalWelcome": "Welcome to your ROAR Progress Report. Here you can see how your scores have changed over time.",
     "pageTitle": "Individual Score Report",
     "welcome": "Welcome to your ROAR Score Report",
@@ -11,7 +11,7 @@
     "expandSections": "Expand All Sections",
     "collapseSections": "Collapse All Sections",
     "exportPDF": "Export to PDF",
-    "viewLongitudinal": "View Progress Over Time",
+    "viewLongitudinal": "View Longitudinal Report",
     "stillWorking": "It looks like {firstName} is still working on completing their assigned games!",
     "needOneComplete": "{firstName}'s individual score report will be built when the student has completed at least one assessment.",
     "completedTasks": "{firstName} completed the following games:",
