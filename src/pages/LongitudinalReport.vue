@@ -156,14 +156,37 @@ const props = defineProps({
   },
 });
 
-const initialized = ref(false);
+const initialized = ref(true); // Start initialized as true
 const exportLoading = ref(false);
-const isLoading = computed(() => isLoadingStudentData.value);
 const expanded = ref(false);
 
-const { data: studentData, isLoading: isLoadingStudentData } = useUserDataQuery(props.userId, {
-  enabled: initialized,
-});
+const { data: studentData, isLoading: isLoadingStudentData } = useUserDataQuery(props.userId);
+
+const { data: taskData, isLoading: isLoadingTaskData } = useUserRunPageQuery(
+  props.userId,
+  null,
+  props.orgType,
+  props.orgId,
+  {
+    select: [
+      'scores.computed',
+      'taskId',
+      'reliable',
+      'engagementFlags',
+      'optional',
+      'assignment.id',
+      'assignment.name',
+    ],
+    onSuccess: (data) => {
+      console.log('Task data received:', data);
+    },
+    onError: (error) => {
+      console.error('Error fetching task data:', error);
+    },
+  },
+);
+
+const isLoading = computed(() => isLoadingStudentData.value || isLoadingTaskData.value);
 
 const studentFirstName = computed(() => {
   if (!studentData?.value) return '';
@@ -175,24 +198,23 @@ const studentLastName = computed(() => {
   return studentData.value.name.last;
 });
 
-const { data: taskData } = useUserRunPageQuery(props.userId, null, props.orgType, props.orgId, {
-  enabled: initialized,
-});
-
 const availableAdministrations = computed(() => {
   if (!taskData.value) return [];
-  return _uniq(
-    taskData.value.map((task) => ({
-      id: task.administrationId,
-      name: task.administrationName,
-    })),
-  ).sort((a, b) => a.name.localeCompare(b.name));
+  const mapped = taskData.value
+    .filter((task) => task.assignment?.id && task.assignment?.name)
+    .map((task) => ({
+      id: task.assignment.id,
+      name: task.assignment.name,
+    }));
+  return _uniq(mapped).sort((a, b) => a.name.localeCompare(b.name));
 });
 
 const tasksByAdministration = computed(() => {
   if (!taskData.value) return {};
   return taskData.value.reduce((acc, task) => {
-    const adminId = task.administrationId;
+    const adminId = task.assignment?.id;
+    if (!adminId) return acc;
+
     if (!acc[adminId]) {
       acc[adminId] = [];
     }
