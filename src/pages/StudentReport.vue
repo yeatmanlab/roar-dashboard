@@ -19,12 +19,12 @@
         </h2>
       </div>
 
-      <div class="student-info bg-gray-200">
-        <p v-if="studentData?.studentData?.grade">
+      <div class="student-info bg-gray-200 p-4 border-round">
+        <p v-if="studentData?.studentData?.grade" class="mb-2">
           <strong>{{ $t('scoreReports.grade') }}:</strong> {{ getGradeWithSuffix(studentData.studentData.grade) }}
         </p>
         <!-- TODO: Get Student Class -->
-        <p v-if="studentData?.studentData?.class">
+        <p v-if="studentData?.studentData?.class" class="mb-2">
           <strong>{{ $t('scoreReports.class') }}:</strong> { Placeholder }
         </p>
         <p v-if="administrationData?.name">
