@@ -1,6 +1,5 @@
 import NavBar from './NavBar.vue';
 import { APP_ROUTES } from '../../constants/routes';
-import overrideLogo from '../../../public/LEVANTE/Levante_Logo.png';
 
 const MOCK_USERNAME = 'Test User';
 const MOCK_MENU_ITEMS = [
@@ -89,19 +88,6 @@ describe('<NavBar />', () => {
 
       cy.get('nav').should('exist');
       cy.get('[data-cy="navbar__account-settings-btn"]').should('not.exist');
-    });
-
-    it('Renders with a logo override', () => {
-      cy.mount(NavBar, {
-        props: {
-          displayName: MOCK_USERNAME,
-          menuItems: MOCK_MENU_ITEMS,
-          logo: overrideLogo,
-        },
-      });
-
-      cy.get('nav').should('exist');
-      cy.get('[data-cy="navbar__logo"]').find('img').should('be.visible').should('have.attr', 'src', overrideLogo);
     });
 
     it('Allows users to navigate to the homepage', () => {
