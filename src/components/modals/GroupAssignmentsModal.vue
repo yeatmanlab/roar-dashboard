@@ -120,10 +120,6 @@ watch(
     &::-webkit-scrollbar-thumb {
       background: var(--surface-300);
       border-radius: 4px;
-
-      &:hover {
-        background: var(--surface-400);
-      }
     }
   }
 
@@ -131,11 +127,6 @@ watch(
     border: 1px solid var(--gray-200);
     border-radius: calc(var(--border-radius) * 4);
     transition: all 0.2s ease;
-
-    &:hover {
-      border-color: var(--gray-300);
-      background-color: var(--surface-50);
-    }
 
     &:last-child {
       margin-bottom: 0;
