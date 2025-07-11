@@ -491,9 +491,6 @@ watchEffect(async () => {
   try {
     const mappedData = await Promise.all(
       filteredOrgData?.value?.map(async (org) => {
-        // Simulate poor network request with 5 second delay for assignment count
-        await new Promise(resolve => setTimeout(resolve, 5000));
-        
         const userCount = await countUsersByOrg(activeOrgType.value, org.id);
         const assignmentCount = getAdministrationsByOrg(
           org.id,
