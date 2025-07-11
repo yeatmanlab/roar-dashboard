@@ -1,4 +1,4 @@
-import { ref, nextTick } from 'vue';
+import { ref, isRef, nextTick } from 'vue';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createTestingPinia } from '@pinia/testing';
 import * as VueQuery from '@tanstack/vue-query';
@@ -7,6 +7,7 @@ import { withSetup } from '@/test-support/withSetup.js';
 import { useAuthStore } from '@/store/auth';
 import { fetchDocById } from '@/helpers/query/utils';
 import useUserClaimsQuery from './useUserClaimsQuery';
+import { USER_CLAIMS_QUERY_KEY } from '@/constants/queryKeys';
 
 vi.mock('@/helpers/query/utils', () => ({
   fetchDocById: vi.fn().mockImplementation(() => []),
@@ -45,15 +46,14 @@ describe('useUserClaimsQuery', () => {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
-    expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: ['user-claims', mockUserId],
-      queryFn: expect.any(Function),
-      enabled: expect.objectContaining({
-        _value: true,
-      }),
-    });
+    expect(VueQuery.useQuery).toHaveBeenCalledTimes(1);
+    const [firstArg] = VueQuery.useQuery.mock.calls[0];
+    expect(firstArg.queryKey).toEqual([USER_CLAIMS_QUERY_KEY, expect.objectContaining({ _value: mockUserId.value })]);
+    expect(firstArg.queryFn).toBeInstanceOf(Function);
+    expect(firstArg.enabled.value).toBe(true);
+    expect(isRef(firstArg.enabled)).toBe(true);
 
-    expect(fetchDocById).toHaveBeenCalledWith('userClaims', mockUserId);
+    expect(fetchDocById).toHaveBeenCalledWith('userClaims', expect.objectContaining({ _value: mockUserId.value }));
   });
 
   it('should correctly control the enabled state of the query', async () => {
@@ -72,21 +72,19 @@ describe('useUserClaimsQuery', () => {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
-    expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: ['user-claims', mockUserId],
-      queryFn: expect.any(Function),
-      enabled: expect.objectContaining({
-        _value: false,
-        __v_isRef: true,
-      }),
-    });
+    expect(VueQuery.useQuery).toHaveBeenCalledTimes(1);
+    const [firstArg] = VueQuery.useQuery.mock.calls[0];
+    expect(firstArg.queryKey).toEqual([USER_CLAIMS_QUERY_KEY, expect.objectContaining({ _value: mockUserId.value })]);
+    expect(firstArg.queryFn).toBeInstanceOf(Function);
+    expect(firstArg.enabled.value).toBe(false);
+    expect(isRef(firstArg.enabled)).toBe(true);
 
     expect(fetchDocById).not.toHaveBeenCalled();
 
     enableQuery.value = true;
     await nextTick();
 
-    expect(fetchDocById).toHaveBeenCalledWith('userClaims', mockUserId);
+    expect(fetchDocById).toHaveBeenCalledWith('userClaims', expect.objectContaining({ _value: mockUserId.value }));
   });
 
   it('should only fetch data if once uid is available', async () => {
@@ -101,21 +99,19 @@ describe('useUserClaimsQuery', () => {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
-    expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: ['user-claims', mockUserId],
-      queryFn: expect.any(Function),
-      enabled: expect.objectContaining({
-        _value: false,
-        __v_isRef: true,
-      }),
-    });
+    expect(VueQuery.useQuery).toHaveBeenCalledTimes(1);
+    const [firstArg] = VueQuery.useQuery.mock.calls[0];
+    expect(firstArg.queryKey).toEqual([USER_CLAIMS_QUERY_KEY, expect.objectContaining({ _value: mockUserId.value })]);
+    expect(firstArg.queryFn).toBeInstanceOf(Function);
+    expect(firstArg.enabled.value).toBe(false);
+    expect(isRef(firstArg.enabled)).toBe(true);
 
     expect(fetchDocById).not.toHaveBeenCalled();
 
     mockUserId.value = nanoid();
     await nextTick();
 
-    expect(fetchDocById).toHaveBeenCalledWith('userClaims', mockUserId);
+    expect(fetchDocById).toHaveBeenCalledWith('userClaims', expect.objectContaining({ _value: mockUserId.value }));
   });
 
   it('should not let queryOptions override the internally computed value', async () => {
@@ -130,14 +126,12 @@ describe('useUserClaimsQuery', () => {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
-    expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: ['user-claims', mockUserId],
-      queryFn: expect.any(Function),
-      enabled: expect.objectContaining({
-        _value: false,
-        __v_isRef: true,
-      }),
-    });
+    expect(VueQuery.useQuery).toHaveBeenCalledTimes(1);
+    const [firstArg] = VueQuery.useQuery.mock.calls[0];
+    expect(firstArg.queryKey).toEqual([USER_CLAIMS_QUERY_KEY, expect.objectContaining({ _value: mockUserId.value })]);
+    expect(firstArg.queryFn).toBeInstanceOf(Function);
+    expect(firstArg.enabled.value).toBe(false);
+    expect(isRef(firstArg.enabled)).toBe(true);
 
     expect(fetchDocById).not.toHaveBeenCalled();
   });
