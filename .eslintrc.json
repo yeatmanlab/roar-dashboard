@@ -29,5 +29,5 @@
       }
     ]
   },
-  "ignorePatterns": ["**/node_modules/**", "**/dist/**", "**/lib/**", "roar-firebase-functions"]
+  "ignorePatterns": ["**/node_modules/**", "**/dist/**", "**/lib/**"]
 }
