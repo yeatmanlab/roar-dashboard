@@ -16,7 +16,7 @@
         </div>
         <small v-if="invalid" class="p-error block mt-3">{{ $t('authSignIn.incorrectEmailOrPassword') }}</small>
       </div>
-      <div class="field mt-2 mb-4">
+      <div class="field mt-2 mb-5">
         <div>
           <!-- Email is currently being evaluated (loading state) -->
           <span v-if="evaluatingEmail">

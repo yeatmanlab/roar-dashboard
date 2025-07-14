@@ -13,7 +13,7 @@
       <section class="signin-options">
         <section class="signin-option-container signin-option-userpass">
           <h3 class="signin-option-title font-semibold">{{ $t('pageSignIn.login') }}</h3>
-          <div id="languageSelect" class="mb-3">
+          <div id="languageSelect" class="mb-5">
             <LanguageSelector />
           </div>
           <SignIn :invalid="incorrect" @submit="authWithEmail" @update:email="email = $event" />
