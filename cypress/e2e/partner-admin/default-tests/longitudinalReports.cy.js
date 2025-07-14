@@ -26,7 +26,7 @@ describe('Partner Admin: Longitudinal Reports', () => {
 
     // Open the individual report for the first student
     cy.get('[data-cy="data-table__entry-details-btn"]').first().click();
-    
+
     // Click View Longitudinal Report button
     cy.get('[data-cy="report__longitudinal-btn"]').click();
 
@@ -38,7 +38,7 @@ describe('Partner Admin: Longitudinal Reports', () => {
     cy.get('.loading-container').should('not.exist', { timeout: 10000 });
 
     // Check if there is data
-    cy.get('body').then($body => {
+    cy.get('body').then(($body) => {
       if ($body.find('.flex.flex-column.align-items-center.py-6.bg-gray-100').length > 0) {
         // No data case
         cy.get('.flex.flex-column.align-items-center.py-6.bg-gray-100')
@@ -47,7 +47,7 @@ describe('Partner Admin: Longitudinal Reports', () => {
       } else {
         // Data exists case
         cy.get('[data-cy="report__expand-btn"]').contains('Expand All Sections').click();
-        
+
         // Wait for accordion to be ready
         cy.get('.p-accordion').should('be.visible');
         cy.get('.border-2.border-gray-300.border-round-lg').should('have.length.at.least', 1);
@@ -55,7 +55,7 @@ describe('Partner Admin: Longitudinal Reports', () => {
         // Verify administration content
         cy.get('.text-xl').should('be.visible'); // Administration name
         cy.get('.text-sm').should('be.visible'); // Date info
-        
+
         // Verify task list is present
         cy.get('ul').should('be.visible');
         cy.get('li strong').should('be.visible');
@@ -63,10 +63,7 @@ describe('Partner Admin: Longitudinal Reports', () => {
     });
 
     // Test PDF export functionality
-    cy.get('[data-cy="report__pdf-export-btn"]')
-      .should('be.visible')
-      .and('not.be.disabled')
-      .click();
+    cy.get('[data-cy="report__pdf-export-btn"]').should('be.visible').and('not.be.disabled').click();
 
     // Check loading state via button icon
     cy.get('[data-cy="report__pdf-export-btn"] .pi-spin.pi-spinner')
@@ -76,5 +73,4 @@ describe('Partner Admin: Longitudinal Reports', () => {
         cy.get('[data-cy="report__pdf-export-btn"] .pi-download', { timeout: 10000 }).should('be.visible');
       });
   });
-
 });
