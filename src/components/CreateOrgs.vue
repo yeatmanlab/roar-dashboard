@@ -19,7 +19,7 @@
               <PvSelect
                 v-model="orgType"
                 input-id="org-type"
-                :options="isLevante ? levanteOrgTypes : orgTypes"
+                :options="orgTypes"
                 show-clear
                 option-label="singular"
                 class="w-full"
@@ -230,7 +230,6 @@ const isDemoData = ref(false);
 const toast = useToast();
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
-const isLevante = import.meta.env.MODE === 'LEVANTE';
 
 const state = reactive({
   orgName: '',
@@ -306,8 +305,6 @@ const orgTypes = [
   { firestoreCollection: 'classes', singular: 'class' },
   { firestoreCollection: 'groups', singular: 'group' },
 ];
-
-const levanteOrgTypes = [{ firestoreCollection: 'groups', singular: 'group' }];
 
 const orgType = ref();
 const orgTypeLabel = computed(() => {
@@ -400,33 +397,18 @@ const submit = async () => {
       orgData.districtId = toRaw(state.parentDistrict).id;
     }
 
-    if (isLevante) {
-      await roarfirekit.value
-        .createLevanteGroup(orgData)
-        .then(() => {
-          toast.add({ severity: 'success', summary: 'Success', detail: 'Org created', life: 3000 });
-          submitted.value = false;
-          resetForm();
-        })
-        .catch((error) => {
-          toast.add({ severity: 'error', summary: 'Error', detail: error.message, life: 3000 });
-          console.error('Error creating org:', error);
-          submitted.value = false;
-        });
-    } else {
-      await roarfirekit.value
-        .createOrg(orgType.value.firestoreCollection, orgData, isTestData.value, isDemoData.value)
-        .then(() => {
-          toast.add({ severity: 'success', summary: 'Success', detail: 'Org created', life: 3000 });
-          submitted.value = false;
-          resetForm();
-        })
-        .catch((error) => {
-          toast.add({ severity: 'error', summary: 'Error', detail: error.message, life: 3000 });
-          console.error('Error creating org:', error);
-          submitted.value = false;
-        });
-    }
+    await roarfirekit.value
+      .createOrg(orgType.value.firestoreCollection, orgData, isTestData.value, isDemoData.value)
+      .then(() => {
+        toast.add({ severity: 'success', summary: 'Success', detail: 'Org created', life: 3000 });
+        submitted.value = false;
+        resetForm();
+      })
+      .catch((error) => {
+        toast.add({ severity: 'error', summary: 'Error', detail: error.message, life: 3000 });
+        console.error('Error creating org:', error);
+        submitted.value = false;
+      });
   } else {
     console.error('Form is invalid');
   }
