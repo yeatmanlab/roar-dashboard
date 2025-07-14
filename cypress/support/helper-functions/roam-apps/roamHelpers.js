@@ -84,6 +84,7 @@ function playARFIntroES() {
   //   Click enter
   cy.get('#practice_number').type('{enter}');
   waitTimeout();
+  typeEnter();
 
   //   Click backspace
   cy.get('#practice_number').type('{backspace}');
