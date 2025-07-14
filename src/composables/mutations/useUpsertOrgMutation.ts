@@ -9,36 +9,45 @@ import {
   ORGS_TABLE_QUERY_KEY,
 } from '@/constants/queryKeys';
 import { FIRESTORE_COLLECTIONS } from '@/constants/firebase';
+import { OrgData } from '@/types';
 
-interface OrgDataBase {
-  name: string;
-  normalizedName: string;
-  id?: string; // Optional for new orgs, assigned by backend
-  tags?: string[];
-}
+const formatOrgData = (data: OrgData): OrgData => {
+  const { districtId, name, normalizedName, parentOrgId, schoolId, tags, type } = data;
 
-interface DistrictOrg extends OrgDataBase {
-  type: typeof FIRESTORE_COLLECTIONS.DISTRICTS;
-}
+  const commonFields = {
+    name,
+    normalizedName,
+    tags,
+    type,
+  };
 
-interface SchoolOrg extends OrgDataBase {
-  type: typeof FIRESTORE_COLLECTIONS.SCHOOLS;
-  districtId: string;
-}
+  switch (type) {
+    case FIRESTORE_COLLECTIONS.CLASSES:
+      return {
+        ...commonFields,
+        districtId,
+        schoolId,
+      };
 
-interface ClassOrg extends OrgDataBase {
-  type: typeof FIRESTORE_COLLECTIONS.CLASSES;
-  schoolId: string;
-  districtId: string;
-}
+    case FIRESTORE_COLLECTIONS.DISTRICTS:
+      return commonFields;
 
-interface GroupOrg extends OrgDataBase {
-  type: typeof FIRESTORE_COLLECTIONS.GROUPS;
-  parentOrgId: string;
-  parentOrgType?: string;
-}
+    case FIRESTORE_COLLECTIONS.GROUPS:
+      return {
+        ...commonFields,
+        parentOrgId,
+      };
 
-type OrgData = DistrictOrg | SchoolOrg | ClassOrg | GroupOrg;
+    case FIRESTORE_COLLECTIONS.SCHOOLS:
+      return {
+        ...commonFields,
+        districtId,
+      };
+
+    default:
+      throw new Error(`Unknown org type: ${type}`);
+  }
+};
 
 type UpsertOrgMutationContext = {
   previousData: OrgData[] | undefined;
@@ -60,38 +69,42 @@ const useUpsertOrgMutation = () => {
   return useMutation<OrgData, Error, OrgData, UpsertOrgMutationContext>({
     mutationKey: [ORG_MUTATION_KEY],
     mutationFn: async (data: OrgData): Promise<OrgData> => {
-      await authStore.roarfirekit.upsertOrg(data);
-      return data;
+      const formattedOrgData = formatOrgData(data);
+      await authStore.roarfirekit.upsertOrg(formattedOrgData);
+      return formattedOrgData;
     },
     onMutate: async (newOrgData: OrgData) => {
       let queryKey: string[];
       let parentId: string | undefined;
 
-      if (newOrgData.type === FIRESTORE_COLLECTIONS.DISTRICTS) {
-        queryKey = [DISTRICTS_LIST_QUERY_KEY];
-        // parentId remains undefined for districts
-      } else if (newOrgData.type === FIRESTORE_COLLECTIONS.SCHOOLS) {
-        queryKey = [DISTRICT_SCHOOLS_QUERY_KEY, newOrgData.districtId];
-        parentId = newOrgData.districtId;
-      } else if (newOrgData.type === FIRESTORE_COLLECTIONS.CLASSES) {
-        queryKey = [SCHOOL_CLASSES_QUERY_KEY, newOrgData.schoolId];
-        parentId = newOrgData.schoolId;
-        // Note: newOrgData.districtId is also available here if needed for context
-      } else if (newOrgData.type === FIRESTORE_COLLECTIONS.GROUPS) {
-        queryKey = [GROUPS_LIST_QUERY_KEY, newOrgData.parentOrgId];
-        parentId = newOrgData.parentOrgId;
-      } else {
-        // This case should ideally not be hit if OrgData is correctly typed
-        // and all cases are handled. Adding an exhaustive check:
-        const _exhaustiveCheck: never = newOrgData;
-        console.error('Unknown org type for optimistic update:', _exhaustiveCheck);
-        return {
-          previousData: undefined,
-          queryKey: [] as string[],
-          parentId: undefined,
-        } as unknown as UpsertOrgMutationContext;
-        // Returning a compatible type to satisfy onMutate's expected return, though this path is an error.
-        // The [] as string[] for queryKey is a placeholder for the error case.
+      switch (newOrgData.type) {
+        case FIRESTORE_COLLECTIONS.CLASSES:
+          queryKey = [SCHOOL_CLASSES_QUERY_KEY, newOrgData.schoolId!];
+          parentId = newOrgData.schoolId;
+          break;
+
+        case FIRESTORE_COLLECTIONS.DISTRICTS:
+          queryKey = [DISTRICTS_LIST_QUERY_KEY];
+          break;
+
+        case FIRESTORE_COLLECTIONS.GROUPS:
+          queryKey = [GROUPS_LIST_QUERY_KEY, newOrgData.parentOrgId!];
+          parentId = newOrgData.parentOrgId;
+          break;
+
+        case FIRESTORE_COLLECTIONS.SCHOOLS:
+          queryKey = [DISTRICT_SCHOOLS_QUERY_KEY, newOrgData.districtId!];
+          parentId = newOrgData.districtId;
+          break;
+
+        default:
+          console.error('Unknown org type for optimistic update:', newOrgData.type);
+
+          return {
+            previousData: undefined,
+            queryKey: [] as string[],
+            parentId: undefined,
+          } as unknown as UpsertOrgMutationContext;
       }
 
       await queryClient.cancelQueries({ queryKey });
@@ -141,27 +154,27 @@ const useUpsertOrgMutation = () => {
           });
         }
         // Added type checks for variables before accessing parent IDs
-        if (orgType === FIRESTORE_COLLECTIONS.SCHOOLS && (variables as SchoolOrg).districtId) {
+        if (orgType === FIRESTORE_COLLECTIONS.SCHOOLS && variables.districtId) {
           queryClient.invalidateQueries({
-            queryKey: [DISTRICT_SCHOOLS_QUERY_KEY, (variables as SchoolOrg).districtId],
+            queryKey: [DISTRICT_SCHOOLS_QUERY_KEY, variables.districtId],
           });
         } else if (orgType === FIRESTORE_COLLECTIONS.SCHOOLS) {
           queryClient.invalidateQueries({
             queryKey: [DISTRICT_SCHOOLS_QUERY_KEY],
           });
         }
-        if (orgType === FIRESTORE_COLLECTIONS.CLASSES && (variables as ClassOrg).schoolId) {
+        if (orgType === FIRESTORE_COLLECTIONS.CLASSES && variables.schoolId) {
           queryClient.invalidateQueries({
-            queryKey: [SCHOOL_CLASSES_QUERY_KEY, (variables as ClassOrg).schoolId],
+            queryKey: [SCHOOL_CLASSES_QUERY_KEY, variables.schoolId],
           });
         } else if (orgType === FIRESTORE_COLLECTIONS.CLASSES) {
           queryClient.invalidateQueries({
             queryKey: [SCHOOL_CLASSES_QUERY_KEY],
           });
         }
-        if (orgType === FIRESTORE_COLLECTIONS.GROUPS && (variables as GroupOrg).parentOrgId) {
+        if (orgType === FIRESTORE_COLLECTIONS.GROUPS && variables.parentOrgId) {
           queryClient.invalidateQueries({
-            queryKey: [GROUPS_LIST_QUERY_KEY, (variables as GroupOrg).parentOrgId],
+            queryKey: [GROUPS_LIST_QUERY_KEY, variables.parentOrgId],
           });
         } else if (orgType === FIRESTORE_COLLECTIONS.GROUPS) {
           queryClient.invalidateQueries({ queryKey: [GROUPS_LIST_QUERY_KEY] });
