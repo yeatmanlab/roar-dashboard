@@ -80,6 +80,7 @@
                   <TaskGroupCard
                     v-else-if="element.type === CARD_TYPES.BUNDLE"
                     :group="element"
+                    :all-variants="allVariants"
                     @select="selectTaskGroupCard"
                   />
                 </div>
@@ -147,7 +148,7 @@
                   :data-card-type="CARD_TYPES.BUNDLE"
                   style="cursor: grab"
                 >
-                  <TaskGroupCard :group="element" @select="selectTaskGroupCard" />
+                  <TaskGroupCard :group="element" :all-variants="allVariants" @select="selectTaskGroupCard" />
                 </div>
               </transition-group>
             </VueDraggableNext>

@@ -22,7 +22,7 @@
         <div class="flex align-items-center gap-2">
           <p class="m-0 mt-1 ml-2">
             <span class="font-bold">Bundle name:</span> {{ group.data.name }} <br />
-            <span class="font-bold">Bundle id: </span>{{ group.id }}
+            <span class="font-bold">Included tasks: </span>{{ taskList.join(', ') }}
           </p>
         </div>
         <!-- (i) info button -->
@@ -42,12 +42,13 @@
             <PvDataTable
               class="p-datatable-small ml-3 border-1 surface-border text-sm"
               header-style="font-size: 20px;"
-              :value="group.data.variants"
+              :value="variantData"
               scrollable
               scroll-height="300px"
             >
-              <PvColumn field="taskId" header="Task ID"></PvColumn>
-              <PvColumn field="variantId" header="Variant ID"></PvColumn>
+              <PvColumn field="task.publicName" header="Task Name"></PvColumn>
+              <PvColumn field="variant.id" header="Variant ID"></PvColumn>
+              <PvColumn field="variant.name" header="Variant Name"></PvColumn>
             </PvDataTable>
           </div>
         </PvPopover>
@@ -66,34 +67,40 @@
   <PvDialog
     v-model:visible="visible"
     modal
-    :header="`Variants for Task Bundle: ${group.data.name}`"
+    :header="`Included Variants for Task Bundle: ${group.data.name}`"
     :style="{ width: '50rem' }"
   >
     <div class="flex gap-2 flex-column w-full pr-3">
       <PvDataTable
         class="p-datatable-small ml-3 border-1 surface-border text-sm"
         header-style="font-size: 20px;"
-        :value="group.data.variants"
+        :value="variantData"
         scrollable
         scroll-height="300px"
       >
-        <PvColumn field="taskId" header="Task ID"></PvColumn>
-        <PvColumn field="variantId" header="Variant ID"></PvColumn>
+        <PvColumn field="task.publicName" header="Task Name"></PvColumn>
+        <PvColumn field="variant.id" header="Variant ID"></PvColumn>
+        <PvColumn field="variant.name" header="Variant Name"></PvColumn>
       </PvDataTable>
     </div>
   </PvDialog>
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import PvButton from 'primevue/button';
 import PvColumn from 'primevue/column';
 import PvDataTable from 'primevue/datatable';
 import PvDialog from 'primevue/dialog';
 import PvPopover from 'primevue/popover';
+import { taskDisplayNames } from '@/helpers/reports';
 
 const props = defineProps({
   group: {
+    required: true,
+    type: Object,
+  },
+  allVariants: {
     required: true,
     type: Object,
   },
@@ -111,4 +118,16 @@ const handleSelect = () => {
 const toggle = (event) => {
   op.value.toggle(event);
 };
+
+const taskList = computed(() => {
+  return props.group.data.variants.map((variant) => taskDisplayNames[variant.taskId]?.publicName ?? variant.taskId);
+});
+
+const variantData = computed(() => {
+  return props.group.data.variants.map((variant) => {
+    const taskInfo = props.allVariants[variant.taskId];
+    const variantInfo = taskInfo.find((taskVariant) => taskVariant.id === variant.variantId);
+    return variantInfo;
+  });
+});
 </script>
