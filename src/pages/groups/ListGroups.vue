@@ -69,7 +69,7 @@
             :columns="tableColumns"
             :data="filteredTableData ?? []"
             sortable
-            :loading="isLoading || isFetching || isProcessingTableData"
+            :loading="isTableLoading"
             :allow-filtering="false"
             @export-all="exportAll"
             @selected-org-id="showCode"
@@ -294,7 +294,11 @@ const {
 });
 
 // Fetch all administrations for the assignments modal
-const { data: allAdministrations, isLoading: isLoadingAdministrations } = useAdministrationsListQuery(orderBy, false, {
+const { 
+  data: allAdministrations, 
+  isLoading: isLoadingAdministrations,
+  isFetching: isFetchingAdministrations 
+} = useAdministrationsListQuery(orderBy, false, {
   enabled: claimsLoaded,
 });
 
@@ -477,25 +481,34 @@ const tableColumns = computed(() => {
 });
 
 const tableData = ref([]);
-const isProcessingTableData = ref(false);
+const isProcessingData = ref(false);
+
+const isTableLoading = computed(() => {
+  return isLoading.value || isFetching.value || isLoadingAdministrations.value || isFetchingAdministrations.value || isProcessingData.value;
+});
 
 watchEffect(async () => {
-  if (isLoading.value) {
+  // Wait for both queries to be ready
+  if (isLoading.value || isLoadingAdministrations.value) {
     tableData.value = [];
-    isProcessingTableData.value = false;
     return;
   }
 
-  isProcessingTableData.value = true;
+  // Only process if we have both org data and administrations data
+  if (!filteredOrgData.value || !allAdministrations.value) {
+    return;
+  }
 
+  isProcessingData.value = true;
+  
   try {
     const mappedData = await Promise.all(
-      filteredOrgData?.value?.map(async (org) => {
+      filteredOrgData.value.map(async (org) => {
         const userCount = await countUsersByOrg(activeOrgType.value, org.id);
         const assignmentCount = getAdministrationsByOrg(
           org.id,
           activeOrgType.value,
-          allAdministrations.value || [],
+          allAdministrations.value,
         ).length;
         return {
           ...org,
@@ -508,12 +521,12 @@ watchEffect(async () => {
             tooltip: 'View Users in ' + org?.name || '',
           },
         };
-      }) || [],
+      }),
     );
 
     tableData.value = mappedData;
   } finally {
-    isProcessingTableData.value = false;
+    isProcessingData.value = false;
   }
 });
 

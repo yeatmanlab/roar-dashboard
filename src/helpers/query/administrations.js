@@ -185,6 +185,7 @@ export const getAdministrationsByOrg = (orgId, orgType, administrations) => {
   }
 
   return administrations.filter((administration) => {
+
     const assignedOrgs = administration.assignedOrgs?.[orgType] || [];
     return assignedOrgs.includes(orgId);
   });
