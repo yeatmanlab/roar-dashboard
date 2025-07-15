@@ -886,10 +886,10 @@ const orgIds = {
  * The fetched data is then cached for future use.
  * If no Group is found, it throws an error.
  */
-const getOrgId = async (orgType, orgName, parentDistrict, parentSchool) => {
-  if (orgIds[orgType][orgName]) return orgIds[orgType][orgName];
-
+const getOrgId = async (orgType, orgName, parentDistrict = ref(null), parentSchool = ref(null)) => {
   const normalizedOrgName = normalizeToLowercase(orgName);
+
+  if (orgIds[orgType][normalizedOrgName]) return orgIds[orgType][normalizedOrgName];
 
   // Array of objects. Ex: [{id: 'lut54353jkler'}]
   const orgs = await fetchOrgByName(orgType, normalizedOrgName, parentDistrict, parentSchool);
@@ -904,7 +904,7 @@ const getOrgId = async (orgType, orgName, parentDistrict, parentSchool) => {
     }
   }
 
-  orgIds[orgType][orgName] = orgs[0].id;
+  orgIds[orgType][normalizedOrgName] = orgs[0].id;
 
   return orgs[0].id;
 };

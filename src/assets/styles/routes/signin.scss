@@ -18,9 +18,9 @@ body.page-signin {
 
 #signin {
   background: var(--surface-a);
-  width: clamp(500px, 75vw, 620px);
+  width: clamp(420px, 75vw, 500px);
   height: auto;
-  padding: 1rem 0rem 2rem;
+  padding: 0 0 3rem;
   margin-block: auto;
   border-radius: 5px;
   display: flex;
@@ -39,18 +39,12 @@ body.page-signin {
   header {
     text-align: center;
     display: flex;
-    // justify-content: space-around;
     text-align: center;
     flex-direction: column;
-
     width: 100%;
-    border-bottom: 1px solid var(--surface-d);
-    // border-bottom: 10px solid var(--surface-d);
-    padding-block: 2rem;
+    padding: 3rem 1rem 0;
 
     .signin-logo {
-      // width: 100%;
-
       svg {
         height: 111px;
         width: auto;
@@ -93,11 +87,10 @@ body.page-signin {
   .signin-option-userpass {
     width: 100%;
     text-align: center;
-    margin-bottom: 2rem;
+    margin-bottom: 1rem;
 
     .signin-option-title {
-      margin-bottom: 1.5rem;
-      margin-top: 0rem;
+      margin: 0 0 2rem;
     }
 
     form {
@@ -131,7 +124,6 @@ body.page-signin {
     }
 
     .signin-option-title {
-      // width: 100%;
       text-align: center;
       margin-bottom: auto;
       margin-top: auto;
