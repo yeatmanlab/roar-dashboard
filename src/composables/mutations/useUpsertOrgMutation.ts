@@ -10,6 +10,7 @@ import {
 } from '@/constants/queryKeys';
 import { FIRESTORE_COLLECTIONS } from '@/constants/firebase';
 import { OrgData } from '@/types';
+import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
 
 const formatOrgData = (data: OrgData): OrgData => {
   const { districtId, name, normalizedName, parentOrgId, schoolId, tags, type } = data;
@@ -39,7 +40,7 @@ const formatOrgData = (data: OrgData): OrgData => {
       return {
         ...commonFields,
         parentOrgId,
-        parentOrgType: 'district',
+        parentOrgType: SINGULAR_ORG_TYPES.DISTRICTS,
       };
 
     case FIRESTORE_COLLECTIONS.SCHOOLS:
