@@ -4,7 +4,9 @@ export interface OrgData {
   name: string;
   normalizedName: string;
   parentOrgId?: string;
+  parentOrgType?: string;
   schoolId?: string;
+  subGroups?: string[];
   tags?: string[];
   type: string;
 }
