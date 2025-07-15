@@ -82,12 +82,12 @@ function playARFIntroES() {
   waitTimeout();
 
   //   Click enter
-  cy.get('#practice_number').type('{enter}');
+  cy.get('body').type('{enter}');
   waitTimeout();
   typeEnter();
 
   //   Click backspace
-  cy.get('#practice_number').type('{backspace}');
+  cy.get('body').type('{backspace}');
   waitTimeout();
 
   // Input example number, enter x1
@@ -189,11 +189,11 @@ function playCALFIntroES() {
   waitTimeout();
 
   //   Click enter
-  cy.get('#practice_number').type('{enter}');
+  cy.get('body').type('{enter}');
   waitTimeout();
 
   //   Click backspace
-  cy.get('#practice_number').type('{backspace}');
+  cy.get('body').type('{backspace}');
   waitTimeout();
 
   // Input example number, enter x1
