@@ -49,7 +49,7 @@
             <small v-if="v$.parentDistrict.$error" class="p-error">Please select a site.</small>
           </div>
 
-          <div v-if="orgType.singular === 'class'" class="w-full">
+          <div v-if="orgType?.singular === 'class'" class="w-full">
             <div class="flex flex-column gap-1 w-full">
               <PvFloatLabel class="w-full">
                 <PvSelect
@@ -103,8 +103,13 @@
           label="Cancel"
           @click="handleOnClose"
         ></PvButton>
-        <PvButton :label="`Add ${orgTypeLabel}`" data-testid="submitBtn" @click="submit">
-          <i v-if="isSubmittingOrg || isCheckingOrgName" class="pi pi-spinner pi-spin"></i>
+        <PvButton
+          :disabled="isSubmitBtnDisabled"
+          :label="`Add ${orgTypeLabel}`"
+          data-testid="submitBtn"
+          @click="submit"
+        >
+          <div v-if="isSubmitBtnDisabled"><i class="pi pi-spinner pi-spin mr-1"></i> Adding {{ orgTypeLabel }}</div>
         </PvButton>
       </div>
     </template>
@@ -115,7 +120,7 @@
 import _capitalize from 'lodash/capitalize';
 import _union from 'lodash/union';
 import _without from 'lodash/without';
-import { computed, ref, toRaw } from 'vue';
+import { computed, ref, toRaw, watch } from 'vue';
 import { normalizeToLowercase } from '@/helpers';
 import { required, requiredIf } from '@vuelidate/validators';
 import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
@@ -155,6 +160,7 @@ const emit = defineEmits<Emits>();
 
 const toast = useToast();
 
+const isSubmitBtnDisabled = ref(false);
 const orgName = ref('');
 const orgType = ref<OrgType | undefined>(undefined);
 const orgTypes: OrgType[] = [
@@ -229,6 +235,10 @@ const { isRefetching: isCheckingOrgName, refetch: doesOrgNameExist } = useOrgNam
   parentSchool,
 );
 
+watch([isCheckingOrgName, isSubmittingOrg], ([isChecking, isSubmitting]) => {
+  isSubmitBtnDisabled.value = isChecking || isSubmitting;
+});
+
 const handleOnClose = () => {
   resetForm();
   emit('close');
@@ -257,9 +267,13 @@ const searchTags = (e) => {
 };
 
 const submit = async () => {
+  isSubmitBtnDisabled.value = true;
+
   const isFormValid = await v$.value.$validate();
 
   if (!isFormValid) {
+    isSubmitBtnDisabled.value = false;
+
     return toast.add({
       severity: 'warn',
       summary: 'Validation Error',
@@ -290,6 +304,8 @@ const submit = async () => {
       errorMessage = `${orgTypeLabel.value} with name ${orgName.value} already exists. ${orgTypeLabel.value} names must be unique within a site.`;
     }
 
+    isSubmitBtnDisabled.value = false;
+
     return toast.add({
       severity: 'error',
       summary: errorTitle,
@@ -303,7 +319,7 @@ const submit = async () => {
       toast.add({
         severity: 'success',
         summary: 'Success',
-        detail: `${orgTypeLabel.value} created successfully`,
+        detail: `${orgTypeLabel.value} created successfully.`,
         life: TOAST_DEFAULT_LIFE_DURATION,
       });
 
@@ -318,6 +334,9 @@ const submit = async () => {
       });
 
       console.error(`Error creating ${orgTypeLabel.value}:`, error);
+    },
+    onSettled: () => {
+      isSubmitBtnDisabled.value = false;
     },
   });
 };
