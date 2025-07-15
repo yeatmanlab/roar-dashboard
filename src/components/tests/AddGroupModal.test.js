@@ -204,4 +204,56 @@ describe('AddGroupModal.vue', () => {
 
     wrapper.unmount();
   });
+
+  it('should set submit btn as disabled after clicking it', async () => {
+    const wrapper = mount(AddGroupModal, mountOptions);
+    await nextTick();
+
+    // First, we select the orgType dropdown
+    const orgTypeDropdown = document.querySelector('[data-cy="dropdown-org-type"]');
+    expect(orgTypeDropdown).not.toBeNull();
+    // Then we click it
+    await orgTypeDropdown.click();
+    await nextTick();
+
+    // Now, select the options to make sure the click action worked
+    const orgTypeDropdownOptions = document.querySelectorAll('.p-select-option');
+    // We must have 4 options: Site, School, Class and Cohort
+    expect(orgTypeDropdownOptions.length).toBe(4);
+
+    // Select the Site option and click on it
+    const siteOption = orgTypeDropdownOptions.find((option) => option.textContent === 'Site');
+    expect(siteOption).not.toBeNull();
+    await siteOption.click();
+    await nextTick();
+
+    // Now we provide a site name
+    const orgName = document.querySelector('[data-cy="input-org-name"]');
+    expect(orgName).not.toBeNull();
+    orgName.value = 'Test Site';
+    orgName.dispatchEvent(new Event('input'));
+    await nextTick();
+
+    // Mocking the vuelidate
+    wrapper.vm.v$.$validate = () => Promise.resolve(true);
+
+    // After that, we select the submit button and check if it says "Add Site"
+    const submitBtn = document.querySelector('[data-testid="submitBtn"]');
+    expect(submitBtn).not.toBeNull();
+    expect(submitBtn.textContent).toContain('Add Site');
+
+    await submitBtn.click();
+    // The submit btn must be set as disabled to avoid multiple submissions at once
+    expect(submitBtn.disabled).toBe(true);
+
+    await flushPromises();
+
+    const errorMessages = document.querySelectorAll('.p-error');
+    // We should NOT have any errors
+    expect(errorMessages.length).toBe(0);
+
+    expect(mockUseUpsertOrgMutation).toHaveBeenCalledTimes(1);
+
+    wrapper.unmount();
+  });
 });
