@@ -44,6 +44,15 @@ describe('Partner Admin: Longitudinal Reports', () => {
         cy.get('.flex.flex-column.align-items-center.py-6.bg-gray-100')
           .should('be.visible')
           .and('contain', 'need to complete at least one assessment');
+        
+        // Verify Add Student button is present and clickable
+        cy.get('[data-cy="report__add-student-btn"]')
+          .should('be.visible')
+          .and('contain', 'Add Student')
+          .click();
+
+        // Verify navigation to add student page
+        cy.url().should('include', '/add-student');
       } else {
         // Data exists case
         cy.get('[data-cy="report__expand-btn"]').contains('Expand All Sections').click();

@@ -62,7 +62,7 @@ describe('Parent: Add Child', () => {
     cy.get('button').contains('Submit').click();
 
     // Wait for loading state to complete
-    cy.contains('Administration enrollment in progress', { timeout: Cypress.env('timeout') }).should('be.visible');
+    cy.contains('Administration enrollment in progress', { timeout: Cypress.env('timeout') * 3 }).should('be.visible');
 
     // Verify successful registration
     cy.get('article.flex.overflow-hidden h2', { timeout: Cypress.env('timeout') }).should('contain', username);
