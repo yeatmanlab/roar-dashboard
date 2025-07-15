@@ -13,8 +13,8 @@
         <SelectButton
           v-model="currentCardType"
           :options="[
-            { label: 'Task Groups', value: CARD_TYPES.BUNDLE },
-            { label: 'Variants', value: CARD_TYPES.VARIANT },
+            { label: 'Task Bundles', value: CARD_TYPES.BUNDLE },
+            { label: 'Individual Tasks', value: CARD_TYPES.VARIANT },
           ]"
           :pt="{ root: { class: 'w-full' }, pcToggleButton: { root: { class: 'w-full' } } }"
           option-label="label"
@@ -160,7 +160,7 @@
       <div class="divider"></div>
       <div class="w-full lg:w-6" data-cy="panel-droppable-zone">
         <!-- Selected Variants-->
-        <div class="panel-title mb-2 text-base">Selected Variants</div>
+        <div class="panel-title mb-2 text-base">Selected Tasks</div>
         <PvScrollPanel style="height: 32rem; width: 100%; overflow-y: auto">
           <!-- Draggable Zone 2 -->
           <VueDraggableNext
@@ -200,6 +200,11 @@
       </div>
     </div>
   </PvPanel>
+  <PvConfirmDialog group="task-duplicate" :pt="{ pcRejectButton: { root: { class: 'hidden' } } }">
+    <template #message="{ message }">
+      <p v-html="message.message"></p>
+    </template>
+  </PvConfirmDialog>
 </template>
 <script setup>
 import { computed, ref, watch } from 'vue';
@@ -211,6 +216,8 @@ import _isEmpty from 'lodash/isEmpty';
 import _union from 'lodash/union';
 import { VueDraggableNext } from 'vue-draggable-next';
 import { useToast } from 'primevue/usetoast';
+import { useConfirm } from 'primevue/useconfirm';
+import { taskDisplayNames } from '@/helpers/reports';
 import PvButton from 'primevue/button';
 import PvSelect from 'primevue/select';
 import PvInputSwitch from 'primevue/inputswitch';
@@ -222,8 +229,10 @@ import TaskGroupCard from '../TaskBundleCard';
 import PvIconField from 'primevue/iconfield';
 import PvInputIcon from 'primevue/inputicon';
 import SelectButton from 'primevue/selectbutton';
+import PvConfirmDialog from 'primevue/confirmdialog';
 
 const toast = useToast();
+const confirm = useConfirm();
 
 const props = defineProps({
   allVariants: {
@@ -418,6 +427,36 @@ const handleCardAdd = (card) => {
 
 const handleGroupAdd = (bundleId) => {
   const bundle = props.allTaskBundles.find((bundle) => bundle.id === bundleId);
+  // Check that none of the variants in the bundle are already selected
+  const bundleTasks = bundle.data.variants;
+  const bundleTaskIds = bundleTasks.map((task) => task.taskId);
+  const bundleVariantIds = bundleTasks.map((task) => task.variantId);
+  const bundleTaskIdsInList = bundleTaskIds.filter((taskId) =>
+    selectedVariants.value.some((variant) => variant.task.id === taskId),
+  );
+  const bundleVariantIdsInList = bundleVariantIds.filter((variantId) =>
+    selectedVariants.value.some((variant) => variant.id === variantId),
+  );
+  if (bundleTaskIdsInList.length > 0 || bundleVariantIdsInList.length > 0) {
+    let errorMessage = 'The bundle contains tasks or variants that are already selected:<br />';
+    if (bundleTaskIdsInList.length > 0) {
+      errorMessage += `<br /><b>Tasks:</b> ${bundleTaskIdsInList
+        .map((taskId) => taskDisplayNames[taskId]?.publicName ?? taskId)
+        .join(', ')}`;
+    }
+    if (bundleVariantIdsInList.length > 0) {
+      errorMessage += `<br /><b>Variants:</b> ${bundleVariantIdsInList.join(', ')}`;
+    }
+    confirm.require({
+      group: 'task-duplicate',
+      icon: 'pi pi-question-circle',
+      header: 'Error Selecting Task Bundle',
+      acceptLabel: 'Close',
+      acceptIcon: 'pi pi-times',
+      message: errorMessage,
+    });
+    return;
+  }
   // For each variant in the group, find it in allVariants and add it to the selectedVariants.
   for (const variant of bundle.data.variants) {
     const taskId = variant.taskId;
