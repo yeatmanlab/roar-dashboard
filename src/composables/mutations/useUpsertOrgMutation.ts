@@ -30,12 +30,16 @@ const formatOrgData = (data: OrgData): OrgData => {
       };
 
     case FIRESTORE_COLLECTIONS.DISTRICTS:
-      return commonFields;
+      return {
+        ...commonFields,
+        subGroups: [],
+      };
 
     case FIRESTORE_COLLECTIONS.GROUPS:
       return {
         ...commonFields,
         parentOrgId,
+        parentOrgType: 'district',
       };
 
     case FIRESTORE_COLLECTIONS.SCHOOLS:
