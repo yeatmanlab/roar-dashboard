@@ -198,6 +198,11 @@
             </transition-group>
           </VueDraggableNext>
         </PvScrollPanel>
+        <div class="w-full flex justify-content-end">
+          <PvButton :disabled="!selectedVariants.length" class="mt-2" @click="clearSelectedVariants"
+            >Clear Selected</PvButton
+          >
+        </div>
       </div>
     </div>
   </PvPanel>
@@ -322,6 +327,10 @@ const currentVariants = computed(() => {
   }
   return props.allVariants[currentTask.value];
 });
+
+const clearSelectedVariants = () => {
+  selectedVariants.value = [];
+};
 
 const currentBundles = computed(() => {
   return props.allTaskBundles;
