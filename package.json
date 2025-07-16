@@ -35,7 +35,7 @@
     "@bdelab/roav-mep": "1.2.0",
     "@bdelab/roav-ran": "1.0.33",
     "@dotenvx/dotenvx": "^1.24.4",
-    "@levante-framework/core-tasks": "1.0.0-beta.39",
+    "@bdelab/roar-levante-tasks": "0.0.1",
     "@primevue/core": "^4.2.4",
     "@primevue/themes": "^4.2.4",
     "@sentry/browser": "^8.0.0",
