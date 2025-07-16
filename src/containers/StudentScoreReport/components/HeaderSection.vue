@@ -66,22 +66,3 @@ defineProps({
 
 defineEmits(['toggleExpand', 'exportPdf']);
 </script>
-
-<style scoped>
-.welcome-banner {
-  display: flex;
-  background-color: var(--primary-color);
-  padding: 0.8rem 1rem;
-  border-radius: 0.5rem;
-  color: white;
-  justify-content: space-between;
-  align-items: center;
-  border-radius: 0.2rem 0.2rem 0rem 0rem;
-}
-
-.banner-text {
-  color: white;
-  font-weight: bold;
-  font-size: 1.3rem;
-}
-</style>
