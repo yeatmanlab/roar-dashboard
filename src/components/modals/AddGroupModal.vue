@@ -49,7 +49,7 @@
             <small v-if="v$.parentDistrict.$error" class="p-error">Please select a site.</small>
           </div>
 
-          <div v-if="orgType.singular === 'class'" class="w-full">
+          <div v-if="orgType?.singular === 'class'" class="w-full">
             <div class="flex flex-column gap-1 w-full">
               <PvFloatLabel class="w-full">
                 <PvSelect
@@ -117,6 +117,7 @@ import _union from 'lodash/union';
 import _without from 'lodash/without';
 import { computed, ref, toRaw } from 'vue';
 import { normalizeToLowercase } from '@/helpers';
+import { OrgData } from '@/types';
 import { required, requiredIf } from '@vuelidate/validators';
 import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
 import { TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
@@ -192,10 +193,10 @@ const v$ = useVuelidate(
 );
 
 const allTags = computed(() => {
-  const districtTags = (districts.value ?? []).map((org) => org.tags);
-  const schoolTags = (districts.value ?? []).map((org) => org.tags);
-  const classTags = (classes.value ?? []).map((org) => org.tags);
-  const groupTags = (groups.value ?? []).map((org) => org.tags);
+  const districtTags = (districts.value ?? []).map((org: OrgData) => org.tags);
+  const schoolTags = (districts.value ?? []).map((org: OrgData) => org.tags);
+  const classTags = (classes.value ?? []).map((org: OrgData) => org.tags);
+  const groupTags = (groups.value ?? []).map((org: OrgData) => org.tags);
   return _without(_union(...districtTags, ...schoolTags, ...classTags, ...groupTags), undefined) || [];
 });
 const classQueryEnabled = computed(() => parentSchool?.value !== undefined);
@@ -268,10 +269,10 @@ const submit = async () => {
     });
   }
 
-  const data = {
+  const data: OrgData = {
     name: orgName.value,
     normalizedName: normalizeToLowercase(orgName.value),
-    type: orgType.value?.firestoreCollection,
+    type: orgType.value!.firestoreCollection,
     tags: tags.value?.length > 0 ? tags.value : [],
     schoolId: toRaw(parentSchool.value)?.id,
     districtId: toRaw(parentDistrict.value)?.id,
