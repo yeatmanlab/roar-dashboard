@@ -89,6 +89,28 @@
       :org-name="orgInfo.name ?? undefined"
       :computed-table-data="computedTableData"
     />
+    <SubscoreTable
+      v-if="taskId === 'fluency-calf' && !isLoadingTasksDictionary"
+      task-id="fluency-calf"
+      :task-name="tasksDictionary['fluency-calf'].publicName"
+      :administration-id="administrationId"
+      :org-type="orgType"
+      :org-id="orgId"
+      :administration-name="administrationInfo.name ?? undefined"
+      :org-name="orgInfo.name ?? undefined"
+      :computed-table-data="computedTableData"
+    />
+    <SubscoreTable
+      v-if="taskId === 'fluency-arf' && !isLoadingTasksDictionary"
+      task-id="fluency-arf"
+      :task-name="tasksDictionary['fluency-arf'].publicName"
+      :administration-id="administrationId"
+      :org-type="orgType"
+      :org-id="orgId"
+      :administration-name="administrationInfo.name ?? undefined"
+      :org-name="orgInfo.name ?? undefined"
+      :computed-table-data="computedTableData"
+    />
   </div>
 </template>
 <script setup>
