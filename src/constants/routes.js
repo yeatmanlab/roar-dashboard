@@ -50,6 +50,7 @@ export const APP_ROUTES = {
   EDIT_ADMINISTRATION: '/administration/:formType/:adminId',
   DUPLICATE_ADMINISTRATION: '/administration/:formType/:adminId',
   LONGITUDINAL_REPORT: '/longitudinal/:orgType/:orgId/user/:userId',
+  UNAUTHORIZED: '/unauthorized',
 };
 
 export const ADMINISTRATION_FORM_TYPES = {
