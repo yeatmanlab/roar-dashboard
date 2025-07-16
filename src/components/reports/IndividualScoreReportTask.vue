@@ -208,6 +208,7 @@ const computedTaskData = computed(() => {
     let rawScore = null;
     if (!taskId.includes('vocab') && !taskId.includes('es')) {
       if (taskId.includes('letter')) {
+        // letter's raw score is a percentage expressed as a float, so we need to multiply by 100.
         rawScore = _get(compositeScores, 'totalCorrect');
       } else {
         rawScore = _get(compositeScores, rawScoreKey);
