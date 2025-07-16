@@ -435,8 +435,12 @@ const handleCardAdd = (card) => {
   }
 };
 
-const handleGroupAdd = (bundleId) => {
-  const bundle = props.allTaskBundles.find((bundle) => bundle.id === bundleId);
+/**
+ * Checks if any of the variants in the bundle are already selected.
+ * @param bundle The bundle to check.
+ * @returns {boolean} True if the bundle has no duplicate tasks or variants, false otherwise.
+ */
+const checkForBundleDuplicateTasks = (bundle) => {
   // Check that none of the variants in the bundle are already selected
   const bundleTasks = bundle.data.variants;
   const bundleTaskIds = bundleTasks.map((task) => task.taskId);
@@ -465,8 +469,19 @@ const handleGroupAdd = (bundleId) => {
       acceptIcon: 'pi pi-times',
       message: errorMessage,
     });
-    return;
+    return false;
   }
+  return true;
+};
+
+/**
+ * Handles adding a task bundle to the selected variants.
+ * @param bundleId The id of the bundle to add.
+ */
+const handleGroupAdd = (bundleId) => {
+  const bundle = props.allTaskBundles.find((bundle) => bundle.id === bundleId);
+  const isValid = checkForBundleDuplicateTasks(bundle);
+  if (!isValid) return;
   // For each variant in the group, find it in allVariants and add it to the selectedVariants.
   for (const variant of bundle.data.variants) {
     const taskId = variant.taskId;
@@ -495,8 +510,17 @@ const handleGroupAdd = (bundleId) => {
   }
 };
 
+/**
+ * Handles adding a task bundle to the selected variants.
+ * @param bundleId The id of the bundle to add.
+ */
 const throttleHandleGroupAdd = _debounce(handleGroupAdd, 3000, { leading: true, trailing: false });
 
+/**
+ * Handles moving a card to the selected variants column.
+ * Accepts both Variant and Bundle cards.
+ * @param card The card to move.
+ */
 const handleCardMove = (card) => {
   if (card.dragged.dataset.cardType === CARD_TYPES.BUNDLE) {
     const cardGroupId = card.dragged.dataset.groupId;
