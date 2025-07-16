@@ -90,7 +90,7 @@ const navbarBlacklist = [
   'Launch Multichoice',
   'Launch Morphology',
   'Launch Cva',
-  'Launch Fluency -ARF',
+  'Launch Fluency-ARF',
   'Launch Fluency-ARF-ES',
   'Launch Fluency-CALF',
   'Launch Fluency-CALF-ES',
