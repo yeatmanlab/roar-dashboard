@@ -15,20 +15,20 @@ import useSentryLogging from '@/composables/useSentryLogging';
 import AppSpinner from '@/components/AppSpinner.vue';
 import { APP_ROUTES } from '@/constants/routes';
 import { AUTH_SSO_PROVIDERS } from '../constants/auth';
-
+import { AUTH_LOG_MESSAGES } from '../constants/logMessages';
 const router = useRouter();
 const authStore = useAuthStore();
 const { roarUid, ssoProvider } = storeToRefs(authStore);
 
 const { startPolling } = useSSOAccountReadinessVerification(roarUid.value);
-const { logNavEvent } = useSentryLogging();
+const { logAuthEvent } = useSentryLogging();
 
 const isClassLinkProvider = computed(() => ssoProvider.value === AUTH_SSO_PROVIDERS.CLASSLINK);
 const isCleverProvider = computed(() => ssoProvider.value === AUTH_SSO_PROVIDERS.CLEVER);
 
 onBeforeMount(() => {
   if (!ssoProvider.value) {
-    logNavEvent('No SSO provider detected. Redirecting to homepage...', {
+    logAuthEvent(AUTH_LOG_MESSAGES.MISSING_SSO_PROVIDER, {
       data: { ssoProvider: ssoProvider.value },
       level: 'warning',
     });
@@ -38,7 +38,7 @@ onBeforeMount(() => {
 });
 
 onMounted(() => {
-  logNavEvent('Redirected to SSO landing page, polling for account readiness...', {
+  logAuthEvent(AUTH_LOG_MESSAGES.POLLING_ACCOUNT_READINESS, {
     data: { ssoProvider: ssoProvider.value },
   });
   ssoProvider.value = null;

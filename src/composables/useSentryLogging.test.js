@@ -22,26 +22,30 @@ describe('useSentryLogging', () => {
   });
 
   it('should log an auth breadcrumb', () => {
-    logAuthEvent('Arrived at CleverLanding.vue', { data: { provider: 'Clever' } });
+    logAuthEvent('No SSO provider detected. Redirecting to SSO landing page...', {
+      level: 'warning',
+      data: { ssoProvider: 'Clever' },
+    });
 
     expect(addBreadcrumb).toHaveBeenCalledWith({
       category: 'auth',
-      message: 'Arrived at CleverLanding.vue',
-      data: { provider: 'Clever' },
-      level: 'info',
+      message: 'No SSO provider detected. Redirecting to SSO landing page...',
+      data: { ssoProvider: 'Clever' },
+      level: 'warning',
     });
   });
 
   it('should log a navigation breadcrumb', () => {
-    logNavEvent('Arrived at CleverLanding.vue', {
-      data: { roarUid: 'testRoarUid', authFrom: 'Clever', authValue: true },
+    logNavEvent('User does not have permission to access route', {
+      level: 'warning',
+      data: { permission: 'testPermission', route: 'testRoute' },
     });
 
     expect(addBreadcrumb).toHaveBeenCalledWith({
       category: 'navigation',
-      message: 'Arrived at CleverLanding.vue',
-      data: { roarUid: 'testRoarUid', authFrom: 'Clever', authValue: true },
-      level: 'info',
+      message: 'User does not have permission to access route',
+      data: { permission: 'testPermission', route: 'testRoute' },
+      level: 'warning',
     });
   });
 

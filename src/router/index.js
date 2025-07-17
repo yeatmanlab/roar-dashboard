@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 import { useAuthStore } from '@/store/auth';
 import { pageTitlesEN, pageTitlesUS, pageTitlesES, pageTitlesCO } from '@/translations/exports';
 import { APP_ROUTES, GAME_ROUTES } from '@/constants/routes';
+import { NAV_LOG_MESSAGES } from '@/constants/logMessages';
 import { usePermissions } from '@/composables/usePermissions';
 import useSentryLogging from '@/composables/useSentryLogging';
 const { Permissions } = usePermissions();
@@ -789,7 +790,7 @@ router.beforeEach(async (to, from, next) => {
 
   // Prevent routing to routes that the user does not have permission to access.
   if (Object.keys(to?.meta).includes('permission') && !userCan(to.meta.permission)) {
-    logNavEvent('User does not have permission to access route', {
+    logNavEvent(NAV_LOG_MESSAGES.FORBIDDEN_ROUTE, {
       level: 'warning',
       data: { permission: to.meta.permission, route: to.path },
     });
