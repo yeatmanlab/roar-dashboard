@@ -35,6 +35,7 @@ import useUpdateConsentMutation from '@/composables/mutations/useUpdateConsentMu
 import useSentryLogging from '@/composables/useSentryLogging';
 import { CONSENT_TYPES } from '@/constants/consentTypes';
 import { APP_ROUTES } from '@/constants/routes';
+import { AUTH_LOG_MESSAGES } from '@/constants/logMessages';
 
 const HomeParticipant = defineAsyncComponent(() => import('@/pages/HomeParticipant.vue'));
 const HomeAdministrator = defineAsyncComponent(() => import('@/pages/HomeAdministrator.vue'));
@@ -149,7 +150,7 @@ watch(
 watch(userClaims, (updatedUserClaims) => {
   if (updatedUserClaims?.value) {
     const { adminUid, assessmentUid } = updatedUserClaims.value.claims;
-    logAuthEvent('User claims updated', { data: { assessmentUid, adminUid } });
+    logAuthEvent(AUTH_LOG_MESSAGES.USER_CLAIMS_UPDATED, { data: { assessmentUid, adminUid } });
   }
 });
 
