@@ -5,7 +5,7 @@ import { APP_ROUTES, GAME_ROUTES } from '@/constants/routes';
 import { usePermissions } from '@/composables/usePermissions';
 import useSentryLogging from '@/composables/useSentryLogging';
 const { Permissions } = usePermissions();
-const { logAccessEvent } = useSentryLogging();
+const { logNavEvent } = useSentryLogging();
 
 function removeQueryParams(to) {
   if (Object.keys(to.query).length) return { path: to.path, query: {}, hash: to.hash };
@@ -789,9 +789,10 @@ router.beforeEach(async (to, from, next) => {
 
   // Prevent routing to routes that the user does not have permission to access.
   if (Object.keys(to?.meta).includes('permission') && !userCan(to.meta.permission)) {
-    logAccessEvent('User does not have permission to access route', {
+    logNavEvent('User does not have permission to access route', {
       level: 'warning',
       data: { permission: to.meta.permission },
+      route: to.path,
     });
     next({ name: 'Unauthorized' });
     return;

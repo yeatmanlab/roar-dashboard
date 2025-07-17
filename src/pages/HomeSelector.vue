@@ -147,7 +147,7 @@ watch(
 );
 
 watch(userClaims, (updatedUserClaims) => {
-  if (updatedUserClaims && updatedUserClaims.value) {
+  if (updatedUserClaims?.value) {
     const { adminUid, assessmentUid, roarUid } = updatedUserClaims.value.claims;
     const { userType } = useUserType(updatedUserClaims);
     logProfileEvent('User claims updated', {

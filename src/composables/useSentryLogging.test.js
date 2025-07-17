@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { addBreadcrumb } from '@sentry/vue';
 import useSentryLogging from './useSentryLogging';
-const { logEvent, createAuthLogger, logNavEvent, logMediaEvent, logProfileEvent, logAccessEvent } = useSentryLogging();
+const { logEvent, createAuthLogger, logNavEvent, logMediaEvent, logProfileEvent } = useSentryLogging();
 vi.mock('@sentry/vue', () => ({
   addBreadcrumb: vi.fn(),
 }));
@@ -102,20 +102,6 @@ describe('logEvents', () => {
         userType: 'student',
       },
       level: 'info',
-    });
-  });
-
-  it('should log an access-control breadcrumb', () => {
-    logAccessEvent('User does not have permission to access route', {
-      data: { permission: 'testPermission' },
-      level: 'warning',
-    });
-
-    expect(addBreadcrumb).toHaveBeenCalledWith({
-      category: 'access-control',
-      message: 'User does not have permission to access route',
-      data: { permission: 'testPermission' },
-      level: 'warning',
     });
   });
 });

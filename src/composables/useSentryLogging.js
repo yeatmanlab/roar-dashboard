@@ -5,7 +5,6 @@ const SENTRY_BREADCRUMB_CATEGORIES = Object.freeze({
   NAV: 'navigation',
   MEDIA: 'media',
   PROFILE: 'profile',
-  ACCESS_CONTROL: 'access-control',
 });
 
 export default function useSentryLogging() {
@@ -68,7 +67,6 @@ export default function useSentryLogging() {
   const logNavEvent = createLogger(SENTRY_BREADCRUMB_CATEGORIES.NAV);
   const logMediaEvent = createLogger(SENTRY_BREADCRUMB_CATEGORIES.MEDIA);
   const logProfileEvent = createLogger(SENTRY_BREADCRUMB_CATEGORIES.PROFILE);
-  const logAccessEvent = createLogger(SENTRY_BREADCRUMB_CATEGORIES.ACCESS_CONTROL);
 
-  return { logEvent, createAuthLogger, logNavEvent, logMediaEvent, logProfileEvent, logAccessEvent };
+  return { logEvent, createAuthLogger, logNavEvent, logMediaEvent, logProfileEvent };
 }
