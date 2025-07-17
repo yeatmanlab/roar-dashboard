@@ -1,59 +1,33 @@
 import { describe, it, expect, vi } from 'vitest';
 import { addBreadcrumb } from '@sentry/vue';
 import useSentryLogging from './useSentryLogging';
-const { logEvent, createAuthLogger, logNavEvent, logMediaEvent, logProfileEvent } = useSentryLogging();
+const { logEvent, logNavEvent, logMediaEvent, logAuthEvent } = useSentryLogging();
 vi.mock('@sentry/vue', () => ({
   addBreadcrumb: vi.fn(),
 }));
 
 describe('useSentryLogging', () => {
-  const baseData = Object.freeze({ roarUid: 'testRoarUid', userType: 'student', provider: 'Clever' });
-  const logAuthEvent = createAuthLogger(baseData);
-
   it('should log a breadcrumb', () => {
     logEvent('auth', 'User is found', {
-      data: baseData,
+      data: { grade: '1' },
       level: 'info',
     });
 
     expect(addBreadcrumb).toHaveBeenCalledWith({
       category: 'auth',
       message: 'User is found',
-      data: baseData,
+      data: { grade: '1' },
       level: 'info',
     });
   });
 
-  it('should log an auth breadcrumb with base data', () => {
-    logAuthEvent('Arrived at CleverLanding.vue');
+  it('should log an auth breadcrumb', () => {
+    logAuthEvent('Arrived at CleverLanding.vue', { data: { provider: 'Clever' } });
 
     expect(addBreadcrumb).toHaveBeenCalledWith({
       category: 'auth',
       message: 'Arrived at CleverLanding.vue',
-      data: baseData,
-      level: 'info',
-    });
-  });
-
-  it('should log an auth breadcrumb with only non-detail attributes', () => {
-    logAuthEvent('User is found with invalid userType, retrying...', { level: 'warning' });
-
-    expect(addBreadcrumb).toHaveBeenCalledWith({
-      category: 'auth',
-      message: 'User is found with invalid userType, retrying...',
-      data: baseData,
-      level: 'warning',
-    });
-    expect(addBreadcrumb.mock.calls[0][0].data).not.toHaveProperty('details');
-  });
-
-  it('should log an auth breadcrumb with extra details', () => {
-    logAuthEvent('Arrived at CleverLanding.vue', { details: { authFromClever: true } });
-
-    expect(addBreadcrumb).toHaveBeenCalledWith({
-      category: 'auth',
-      message: 'Arrived at CleverLanding.vue',
-      data: { ...baseData, details: { authFromClever: true } },
+      data: { provider: 'Clever' },
       level: 'info',
     });
   });
@@ -78,29 +52,6 @@ describe('useSentryLogging', () => {
       category: 'media',
       message: 'Video started',
       data: { taskId: 'testTaskId' },
-      level: 'info',
-    });
-  });
-
-  it('should log a profile breadcrumb', () => {
-    logProfileEvent('User claims updated', {
-      data: {
-        adminUid: 'testAdminUid',
-        assessmentUid: 'testAssessmentUid',
-        roarUid: 'testRoarUid',
-        userType: 'student',
-      },
-    });
-
-    expect(addBreadcrumb).toHaveBeenCalledWith({
-      category: 'profile',
-      message: 'User claims updated',
-      data: {
-        adminUid: 'testAdminUid',
-        assessmentUid: 'testAssessmentUid',
-        roarUid: 'testRoarUid',
-        userType: 'student',
-      },
       level: 'info',
     });
   });

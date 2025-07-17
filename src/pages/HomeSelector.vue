@@ -25,6 +25,7 @@ import { computed, defineAsyncComponent, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
+import { setUser } from '@sentry/vue';
 import _isEmpty from 'lodash/isEmpty';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
@@ -32,9 +33,9 @@ import useUserType from '@/composables/useUserType';
 import useUserDataQuery from '@/composables/queries/useUserDataQuery';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useUpdateConsentMutation from '@/composables/mutations/useUpdateConsentMutation';
+import useSentryLogging from '@/composables/useSentryLogging';
 import { CONSENT_TYPES } from '@/constants/consentTypes';
 import { APP_ROUTES } from '@/constants/routes';
-import useSentryLogging from '@/composables/useSentryLogging';
 
 const HomeParticipant = defineAsyncComponent(() => import('@/pages/HomeParticipant.vue'));
 const HomeAdministrator = defineAsyncComponent(() => import('@/pages/HomeAdministrator.vue'));
@@ -48,7 +49,7 @@ const router = useRouter();
 const i18n = useI18n();
 
 const { mutateAsync: updateConsentStatus } = useUpdateConsentMutation();
-const { logProfileEvent } = useSentryLogging();
+const { logAuthEvent } = useSentryLogging();
 
 if (ssoProvider.value) {
   router.replace({ path: APP_ROUTES.SSO });
@@ -150,9 +151,13 @@ watch(userClaims, (updatedUserClaims) => {
   if (updatedUserClaims?.value) {
     const { adminUid, assessmentUid, roarUid } = updatedUserClaims.value.claims;
     const { userType } = useUserType(updatedUserClaims);
-    logProfileEvent('User claims updated', {
-      data: { adminUid, assessmentUid, roarUid, userType },
+    setUser({
+      id: roarUid,
+      adminUid,
+      assessmentUid,
+      userType,
     });
+    logAuthEvent('User claims updated');
   }
 });
 

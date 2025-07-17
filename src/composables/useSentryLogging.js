@@ -4,7 +4,6 @@ const SENTRY_BREADCRUMB_CATEGORIES = Object.freeze({
   AUTH: 'auth',
   NAV: 'navigation',
   MEDIA: 'media',
-  PROFILE: 'profile',
 });
 
 export default function useSentryLogging() {
@@ -29,25 +28,6 @@ export default function useSentryLogging() {
   };
 
   /**
-   * Creates a Sentry auth breadcrumb logger.
-   *
-   * @param {Object} baseData - Data included in every event: { roarUid: string, userType: string, provider: string }
-   * @returns {Function} logAuthEvent - Returns a function that logs an auth event.
-   *   @param {Object} [options.details] - Optional extra data.
-   *   See {@link logEvent} for rest of parameter details.
-   */
-  const createAuthLogger =
-    (baseData) =>
-    (message, { details, level, ...extras } = {}) => {
-      const data = details ? { ...baseData, details } : baseData;
-      logEvent(SENTRY_BREADCRUMB_CATEGORIES.AUTH, message, {
-        data,
-        level,
-        ...extras,
-      });
-    };
-
-  /**
    * Creates a generic Sentry breadcrumb logger.
    *
    * @param {string} category - Event context.
@@ -66,7 +46,7 @@ export default function useSentryLogging() {
 
   const logNavEvent = createLogger(SENTRY_BREADCRUMB_CATEGORIES.NAV);
   const logMediaEvent = createLogger(SENTRY_BREADCRUMB_CATEGORIES.MEDIA);
-  const logProfileEvent = createLogger(SENTRY_BREADCRUMB_CATEGORIES.PROFILE);
+  const logAuthEvent = createLogger(SENTRY_BREADCRUMB_CATEGORIES.AUTH);
 
-  return { logEvent, createAuthLogger, logNavEvent, logMediaEvent, logProfileEvent };
+  return { logEvent, logNavEvent, logMediaEvent, logAuthEvent };
 }
