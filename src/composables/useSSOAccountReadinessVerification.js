@@ -1,13 +1,16 @@
 import { ref, onUnmounted } from 'vue';
 import { storeToRefs } from 'pinia';
+import { setUser } from '@sentry/vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useQueryClient } from '@tanstack/vue-query';
 import { StatusCodes } from 'http-status-codes';
 import { useAuthStore } from '@/store/auth.js';
 import useUserDataQuery from '@/composables/queries/useUserDataQuery';
+import useSentryLogging from '@/composables/useSentryLogging';
 import { AUTH_USER_TYPE } from '@/constants/auth';
+import { AUTH_LOG_MESSAGES } from '@/constants/logMessages';
 import { redirectSignInPath } from '@/helpers/redirectSignInPath';
-
+const { logAuthEvent } = useSentryLogging();
 const POLLING_INTERVAL = 600;
 
 /**
@@ -29,7 +32,6 @@ const useSSOAccountReadinessVerification = () => {
   const router = useRouter();
   const route = useRoute();
   const queryClient = useQueryClient();
-
   const authStore = useAuthStore();
   const { roarUid } = storeToRefs(authStore);
 
@@ -53,21 +55,27 @@ const useSSOAccountReadinessVerification = () => {
 
       const userType = userData?.value?.userType;
 
+      setUser({ id: roarUid.value, userType });
+
       if (!userType) {
-        console.log(`[SSO] User type missing for user ${roarUid.value}. Attempt #${retryCount.value}, retrying...`);
+        logAuthEvent(AUTH_LOG_MESSAGES.USER_TYPE_MISSING, {
+          level: 'warning',
+          data: { retryCount: retryCount.value, provider: 'SSO' },
+        });
         retryCount.value++;
         return;
       }
 
       if (userType === AUTH_USER_TYPE.GUEST) {
-        console.log(
-          `[SSO] User ${roarUid.value} identified as ${userType} user. Attempt #${retryCount.value}, retrying...`,
-        );
+        logAuthEvent(AUTH_LOG_MESSAGES.USER_TYPE_GUEST, {
+          level: 'warning',
+          data: { retryCount: retryCount.value, provider: 'SSO' },
+        });
         retryCount.value++;
         return;
       }
 
-      console.log(`[SSO] User ${roarUid.value} successfully identified as ${userType} user. Routing to home page...`);
+      logAuthEvent(AUTH_LOG_MESSAGES.SUCCESS, { data: { provider: 'SSO' } });
 
       // Stop the polling mechanism.
       clearInterval(userDataCheckInterval);
