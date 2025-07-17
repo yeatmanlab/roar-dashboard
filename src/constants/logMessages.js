@@ -10,3 +10,8 @@ export const AUTH_LOG_MESSAGES = Object.freeze({
 export const NAV_LOG_MESSAGES = Object.freeze({
   FORBIDDEN_ROUTE: 'User does not have permission to access route',
 });
+
+export const MEDIA_LOG_MESSAGES = Object.freeze({
+  VIDEO_STARTED: 'Video started',
+  VIDEO_ENDED: 'Video ended',
+});
