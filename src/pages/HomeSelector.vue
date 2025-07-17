@@ -25,7 +25,6 @@ import { computed, defineAsyncComponent, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
-import { setUser } from '@sentry/vue';
 import _isEmpty from 'lodash/isEmpty';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
@@ -149,15 +148,8 @@ watch(
 
 watch(userClaims, (updatedUserClaims) => {
   if (updatedUserClaims?.value) {
-    const { adminUid, assessmentUid, roarUid } = updatedUserClaims.value.claims;
-    const { userType } = useUserType(updatedUserClaims);
-    setUser({
-      id: roarUid,
-      adminUid,
-      assessmentUid,
-      userType,
-    });
-    logAuthEvent('User claims updated');
+    const { adminUid, assessmentUid } = updatedUserClaims.value.claims;
+    logAuthEvent('User claims updated', { data: { assessmentUid, adminUid } });
   }
 });
 
