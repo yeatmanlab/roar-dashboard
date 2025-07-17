@@ -6,7 +6,7 @@ vi.mock('@sentry/vue', () => ({
   addBreadcrumb: vi.fn(),
 }));
 
-describe('logEvents', () => {
+describe('useSentryLogging', () => {
   const baseData = Object.freeze({ roarUid: 'testRoarUid', userType: 'student', provider: 'Clever' });
   const logAuthEvent = createAuthLogger(baseData);
 
