@@ -791,8 +791,7 @@ router.beforeEach(async (to, from, next) => {
   if (Object.keys(to?.meta).includes('permission') && !userCan(to.meta.permission)) {
     logNavEvent('User does not have permission to access route', {
       level: 'warning',
-      data: { permission: to.meta.permission },
-      route: to.path,
+      data: { permission: to.meta.permission, route: to.path },
     });
     next({ name: 'Unauthorized' });
     return;

@@ -11,10 +11,10 @@ import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/store/auth';
 import useSSOAccountReadinessVerification from '@/composables/useSSOAccountReadinessVerification';
+import useSentryLogging from '@/composables/useSentryLogging';
 import AppSpinner from '@/components/AppSpinner.vue';
 import { APP_ROUTES } from '@/constants/routes';
 import { AUTH_SSO_PROVIDERS } from '../constants/auth';
-import useSentryLogging from '@/composables/useSentryLogging';
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -29,7 +29,7 @@ const isCleverProvider = computed(() => ssoProvider.value === AUTH_SSO_PROVIDERS
 onBeforeMount(() => {
   if (!ssoProvider.value) {
     logNavEvent('No SSO provider detected. Redirecting to homepage...', {
-      data: { roarUid: roarUid.value, ssoProvider: ssoProvider.value },
+      data: { ssoProvider: ssoProvider.value },
       level: 'warning',
     });
     router.push({ path: APP_ROUTES.HOME });
@@ -39,7 +39,7 @@ onBeforeMount(() => {
 
 onMounted(() => {
   logNavEvent('Redirected to SSO landing page, polling for account readiness...', {
-    data: { roarUid: roarUid.value, ssoProvider: ssoProvider.value },
+    data: { ssoProvider: ssoProvider.value },
   });
   ssoProvider.value = null;
   startPolling();
