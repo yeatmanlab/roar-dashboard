@@ -121,8 +121,8 @@ import _capitalize from 'lodash/capitalize';
 import _union from 'lodash/union';
 import _without from 'lodash/without';
 import { computed, ref, toRaw, watch } from 'vue';
+import { CreateOrgType } from 'levante-zod';
 import { normalizeToLowercase } from '@/helpers';
-import { OrgData } from '@/types';
 import { required, requiredIf } from '@vuelidate/validators';
 import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
 import { TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
@@ -199,10 +199,10 @@ const v$ = useVuelidate(
 );
 
 const allTags = computed(() => {
-  const districtTags = (districts.value ?? []).map((org: OrgData) => org.tags);
-  const schoolTags = (districts.value ?? []).map((org: OrgData) => org.tags);
-  const classTags = (classes.value ?? []).map((org: OrgData) => org.tags);
-  const groupTags = (groups.value ?? []).map((org: OrgData) => org.tags);
+  const districtTags = (districts.value ?? []).map((org: CreateOrgType) => org.tags);
+  const schoolTags = (districts.value ?? []).map((org: CreateOrgType) => org.tags);
+  const classTags = (classes.value ?? []).map((org: CreateOrgType) => org.tags);
+  const groupTags = (groups.value ?? []).map((org: CreateOrgType) => org.tags);
   return _without(_union(...districtTags, ...schoolTags, ...classTags, ...groupTags), undefined) || [];
 });
 const classQueryEnabled = computed(() => parentSchool?.value !== undefined);
@@ -283,7 +283,7 @@ const submit = async () => {
     });
   }
 
-  const data: OrgData = {
+  const data: CreateOrgType = {
     name: orgName.value,
     normalizedName: normalizeToLowercase(orgName.value),
     type: orgType.value!.firestoreCollection,
