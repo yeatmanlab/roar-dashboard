@@ -41,6 +41,7 @@ import {
   getRawScoreRange,
   getScoreKeys,
 } from '@/helpers/reports';
+import { TAG_SEVERITIES } from '@/constants/tags';
 import ScoreCard from './ScoreCard.vue';
 
 const props = defineProps({
@@ -197,16 +198,16 @@ const computedTaskData = computed(() => {
       const tags = [];
 
       tags.push({
-        icon: '',
+        icon: 'pi pi-info-circle',
         value: t(optional ? 'scoreReports.optional' : 'scoreReports.required'),
-        severity: 'secondary',
+        severity: TAG_SEVERITIES.INFO,
         tooltip: t(optional ? 'scoreReports.optionalTagText' : 'scoreReports.requiredTagText'),
       });
 
       tags.push({
         value: t(reliable === false ? 'scoreReports.unreliable' : 'scoreReports.reliable'),
         icon: reliable === false ? 'pi pi-times' : 'pi pi-check',
-        severity: reliable === false ? 'warning' : 'success',
+        severity: reliable === false ? TAG_SEVERITIES.DANGER : TAG_SEVERITIES.SUCCESS,
         tooltip:
           reliable === false
             ? engagementFlags
