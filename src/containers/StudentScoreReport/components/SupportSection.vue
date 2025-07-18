@@ -43,7 +43,19 @@
             </i18n-t>
             <i18n-t keypath="scoreReports.extraSupportDescription" tag="p">
               <template #supportCategory>
-                <span class="font-bold text-pink-600">{{ $t('scoreReports.extraSupport') }}</span>
+                <span class="font-semibold text-pink-600">{{ $t('scoreReports.extraSupport') }}</span>
+              </template>
+            </i18n-t>
+
+            <i18n-t keypath="scoreReports.developingDescription" tag="p">
+              <template #supportCategory>
+                <span class="font-semibold text-yellow-600">{{ $t('scoreReports.developing') }}</span>
+              </template>
+            </i18n-t>
+
+            <i18n-t keypath="scoreReports.achievedDescription" tag="p">
+              <template #supportCategory>
+                <span class="font-semibold text-green-600">{{ $t('scoreReports.achieved') }}</span>
               </template>
             </i18n-t>
           </div>
