@@ -1,6 +1,7 @@
 import 'cypress-wait-until';
 import '@testing-library/cypress/add-commands';
 import { APP_ROUTES } from '../../src/constants/routes.js';
+import { redirectSignInPath } from '../../src/helpers/redirectSignInPath.js';
 
 const baseUrl = Cypress.config().baseUrl;
 
@@ -54,12 +55,15 @@ Cypress.Commands.add('login', (username, password) => {
  * @param {string} schoolName - The name of the school to log in with.
  * @param {string} username - The username to log in with.
  * @param {string} password - The password to log in with.
+ * @param {string} [firstPath=APP_ROUTES.HOME] - The first path to visit.
  */
-Cypress.Commands.add('loginWithClever', (schoolName, username, password) => {
+Cypress.Commands.add('loginWithClever', (schoolName, username, password, firstPath = APP_ROUTES.HOME) => {
   const CLEVER_SSO_URL = Cypress.env('cleverOAuthLink');
 
-  cy.visit(APP_ROUTES.HOME);
-  cy.url().should('eq', `${baseUrl}${APP_ROUTES.SIGN_IN}`);
+  cy.visit(firstPath);
+
+  const signInPath = `${APP_ROUTES.SIGN_IN}${firstPath === APP_ROUTES.HOME ? '' : `?redirect_to=${firstPath}`}`;
+  cy.url().should('eq', `${baseUrl}${signInPath}`);
 
   cy.get('[data-cy="sign-in__clever-sso"]').contains('Clever').click();
 
@@ -83,16 +87,18 @@ Cypress.Commands.add('loginWithClever', (schoolName, username, password) => {
     },
   );
 
-  cy.url().should('include', `${baseUrl}/`);
+  const landingPath = `${baseUrl}${
+    firstPath === APP_ROUTES.HOME ? APP_ROUTES.HOME : redirectSignInPath({ query: { redirect_to: firstPath } })
+  }`;
+  cy.url().should('include', landingPath);
 
-  cy.get('[data-cy="app-spinner"]').should('be.visible');
-
-  cy.waitForParticipantHomepage();
-
-  cy.url().should('eq', `${baseUrl}/`);
-
-  cy.log('SSO login successful.');
-  cy.agreeToConsent();
+  if (landingPath === `${baseUrl}${APP_ROUTES.HOME}`) {
+    cy.get('[data-cy="app-spinner"]').should('be.visible');
+    cy.waitForParticipantHomepage();
+    cy.url().should('eq', `${baseUrl}/`);
+    cy.log('SSO login successful.');
+    cy.agreeToConsent();
+  }
 });
 
 /**

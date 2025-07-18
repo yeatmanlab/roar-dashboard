@@ -50,6 +50,7 @@ export const APP_ROUTES = {
   CREATE_ADMINISTRATION: '/administration/create',
   EDIT_ADMINISTRATION: '/administration/:formType/:adminId',
   DUPLICATE_ADMINISTRATION: '/administration/:formType/:adminId',
+  UNAUTHORIZED: '/unauthorized',
 };
 
 export const ADMINISTRATION_FORM_TYPES = {
