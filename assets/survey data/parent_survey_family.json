@@ -1,0 +1,2554 @@
+{
+    "logoPosition": "right",
+    "pages": [
+      {
+        "name": "Introduction",
+        "elements": [
+          {
+            "type": "html",
+            "name": "CaregiverSurveyIntroB",
+            "html": {
+              "default": "<block><b><font face=\"Verdana\" size=\"4\">\nThank you again for participating in this research project!</b><br> <br> <p><font face=\"Verdana\" size=\"4\">The following survey will take approximately 20-30 minutes to complete and will ask questions about your home and yourself.<br><br>We appreciate you answering as completely and accurately as possible with the information you have available to you. If you have questions about this survey, please reach out to the research coordinator. <br><br>When you are ready to begin, select the “start survey” button. <br><br><b><font face=\"Verdana\" size=\"4\">Thank you!",
+              "de": "<block><b><font face=\"Verdana\" size=\"4\">Nochmals vielen Dank für die Teilnahme an diesem Forschungsprojekt! </b><br> <br> <p><font face=\"Verdana\" size=\"4\">Dieser Teil der Umfrage dauert etwa 20-30 Minuten und enthält Fragen zu Ihnen selbst und zu Ihrem häuslichen Umfeld.<br><br>Wir bitten Sie, die Fragen so vollständig und genau wie möglich zu beantworten. Wenn Sie Fragen zu dieser Umfrage haben, wenden Sie sich bitte an die Forschungskoordinatorin (luise_hornoff@eva.mpg.de).<br><br>Wenn Sie bereit sind zu beginnen, klicken Sie auf \"Umfrage starten\".<br><br><b><font face=\"Verdana\" size=\"4\">Vielen Dank!",
+              "es": "<block><b><font face=\"Verdana\" size=\"4\"> ¡Gracias de nuevo por participar en este proyecto de investigación! </b><br> <br> <p><font face=\"Verdana\" size=\"4\">Estimamos que diligenciar la siguiente parte de la encuesta le tomará aproximadamente 20-30 minutos. En esta encuesta se le harán preguntas sobre su hogar y sobre usted mismo(a).<br><br>Le agradecemos que responda la encuesta de la forma más precisa posible con la información que tiene disponible. Si tiene alguna duda, comuníquesela a quien coordina esta aplicación. <br><br>Cuando esté listo(a) para empezar, seleccione el botón \"Comenzar Encuesta\".<br><br><b><font face=\"Verdana\" size=\"4\">¡Muchas gracias!"
+            }
+          }
+        ]
+      },
+      {
+        "name": "page1",
+        "elements": [
+          {
+            "type": "panel",
+            "name": "HomeNeighborhood",
+            "title": {
+              "default": "Please answer the following questions about the community in which you live.",
+              "es": "Responda a las siguientes preguntas sobre la comunidad en la que vive.",
+              "de": "Bitte beantworten Sie die folgenden Fragen zu der Gemeinschaft, in der Sie leben."
+            },
+            "elements": [
+              {
+                "type": "boolean",
+                "name": "HomeNSCHi7a",
+                "title": {
+                  "default": "In your neighborhood, are there sidewalks or walking paths?",
+                  "es": "¿En su vecindario hay aceras o caminos peatonales?",
+                  "de": "Gibt es in Ihrer Nachbarschaft Bürgersteige oder Spazierwege?"
+                },
+                "showNumber": false,
+                "labelTrue": {
+                  "default": "Yes",
+                  "es": "Sí",
+                  "de": "Ja"
+                },
+                "labelFalse": {
+                  "default": "No",
+                  "de": "Nein"
+                },
+                "valueTrue": "Yes",
+                "valueFalse": "No"
+              },
+              {
+                "type": "boolean",
+                "name": "HomeNSCHi7b",
+                "title": {
+                  "default": "In your neighborhood, is there a park or playground?",
+                  "es": "¿En su vecindario hay un parque o área de juegos?",
+                  "de": "Gibt es in Ihrer Nachbarschaft einen Park oder Spielplatz?"
+                },
+                "showNumber": false,
+                "labelTrue": {
+                  "default": "Yes",
+                  "es": "Sí",
+                  "de": "Ja"
+                },
+                "labelFalse": {
+                  "default": "No",
+                  "de": "Nein"
+                },
+                "valueTrue": "Yes",
+                "valueFalse": "No"
+              },
+              {
+                "type": "boolean",
+                "name": "HomeNSCHi7c",
+                "title": {
+                  "default": "In your neighborhood, is there a community center or recreation center where families get together?",
+                  "es": "¿En su vecindario hay un centro de recreación o centro comunitario donde se reúnen las familias?",
+                  "de": "Gibt es in Ihrer Nachbarschaft ein Gemeindezentrum oder ein Freizeitzentrum, in dem sich Familien treffen?"
+                },
+                "showNumber": false,
+                "labelTrue": {
+                  "default": "Yes",
+                  "es": "Sí",
+                  "de": "Ja"
+                },
+                "labelFalse": {
+                  "default": "No",
+                  "de": "Nein"
+                },
+                "valueTrue": "Yes",
+                "valueFalse": "No"
+              },
+              {
+                "type": "boolean",
+                "name": "HomeNSCHi7d",
+                "title": {
+                  "default": "In your neighborhood, is there a library or other place to get free books?",
+                  "es": "¿En su vecindario hay una biblioteca o un lugar donde conseguir libros gratis?",
+                  "de": "Gibt es in Ihrer Nachbarschaft eine Bibliothek oder einen anderen Ort, an dem man kostenlose Bücher erhalten kann?"
+                },
+                "showNumber": false,
+                "labelTrue": {
+                  "default": "Yes",
+                  "es": "Sí",
+                  "de": "Ja"
+                },
+                "labelFalse": {
+                  "default": "No",
+                  "de": "Nein"
+                },
+                "valueTrue": "Yes",
+                "valueFalse": "No"
+              },
+              {
+                "type": "boolean",
+                "name": "HomeNSCHi7e",
+                "title": {
+                  "default": "In your neighborhood, is there litter or garbage on the street or sidewalk?",
+                  "es": "¿En su vecindario hay basura o desperdicios en las calles o aceras?",
+                  "de": "Gibt es in Ihrer Nachbarschaft Abfall oder Müll auf der Straße oder dem Gehweg?"
+                },
+                "showNumber": false,
+                "labelTrue": {
+                  "default": "Yes",
+                  "es": "Sí",
+                  "de": "Ja"
+                },
+                "labelFalse": {
+                  "default": "No",
+                  "de": "Nein"
+                },
+                "valueTrue": "Yes",
+                "valueFalse": "No"
+              },
+              {
+                "type": "boolean",
+                "name": "HomeNSCHi7f",
+                "title": {
+                  "default": "In your neighborhood is there poorly kept or rundown housing?",
+                  "es": "¿En su vecindario hay viviendas deterioradas o en mal estado?",
+                  "de": "Gibt es in Ihrer Nachbarschaft schlecht erhaltene oder heruntergekommene Wohnungen?"
+                },
+                "showNumber": false,
+                "labelTrue": {
+                  "default": "Yes",
+                  "es": "Sí",
+                  "de": "Ja"
+                },
+                "labelFalse": {
+                  "default": "No",
+                  "de": "Nein"
+                },
+                "valueTrue": "Yes",
+                "valueFalse": "No"
+              },
+              {
+                "type": "boolean",
+                "name": "HomeNSCHi7g",
+                "title": {
+                  "default": "In your neighborhood, is there vandalism such as broken windows or graffiti?",
+                  "es": "¿En su vecindario hay vandalismo, como romper ventanas o pintar grafitis?",
+                  "de": "Gibt es in Ihrer Nachbarschaft Vandalismus wie z.B. eingeschlagene Fensterscheiben oder Graffiti?"
+                },
+                "showNumber": false,
+                "labelTrue": {
+                  "default": "Yes",
+                  "es": "Sí",
+                  "de": "Ja"
+                },
+                "labelFalse": {
+                  "default": "No",
+                  "de": "Nein"
+                },
+                "valueTrue": "Yes",
+                "valueFalse": "No"
+              }
+            ]
+          },
+          {
+            "type": "matrix",
+            "name": "HomeNSCHi8items",
+            "title": {
+              "default": "To what extent do you agree with these statements about your neighborhood or community?",
+              "es": "¿En qué medida está de acuerdo con estas afirmaciones sobre su vecindario o comunidad?",
+              "de": "Inwieweit stimmen Sie diesen Aussagen über Ihre Nachbarschaft oder Gemeinde zu?"
+            },
+            "showNumber": false,
+            "alternateRows": true,
+            "columns": [
+              {
+                "value": "3",
+                "text": {
+                  "default": "Definitely Agree",
+                  "es": "Definitivamente de acuerdo",
+                  "de": "Voll und ganz zustimmen"
+                }
+              },
+              {
+                "value": "2",
+                "text": {
+                  "default": "Somewhat Agree",
+                  "es": "Algo de acuerdo",
+                  "de": "Eher zustimmen"
+                }
+              },
+              {
+                "value": "1",
+                "text": {
+                  "default": "Somewhat Disagree",
+                  "es": "Algo en descuerdo",
+                  "de": "Eher nicht zustimmen"
+                }
+              },
+              {
+                "value": "0",
+                "text": {
+                  "default": "Definitely Disagree",
+                  "es": "Definitivamente en desacuerdo",
+                  "de": "Überhaupt nicht zustimmen"
+                }
+              }
+            ],
+            "rows": [
+              {
+                "value": "HomeNSCHi8a",
+                "text": {
+                  "default": "People in your neighborhood help each other out.",
+                  "es": "La gente de su vecindario se ayuda mutuamente.",
+                  "de": "Die Menschen in deiner Nachbarschaft helfen sich gegenseitig."
+                }
+              },
+              {
+                "value": "HomeNSCHi8b",
+                "text": {
+                  "default": "People in your neighborhood watch out for each other's children.",
+                  "es": "La gente de su vecindario cuida mutuamente de nuestros niños(as).",
+                  "de": "Die Menschen in Ihrer Nachbarschaft passen auf die Kinder der anderen auf."
+                }
+              },
+              {
+                "value": "HomeNSCHi8c",
+                "text": {
+                  "default": "Your child is safe in your neighborhood.",
+                  "es": "Su niño(a) está seguro(a) en su vecindario.",
+                  "de": "Ihr Kind ist in Ihrer Nachbarschaft sicher."
+                }
+              },
+              {
+                "value": "HomeNSCHi8d",
+                "text": {
+                  "default": "When you encounter difficulties, you know where to go for help in your community.",
+                  "es": "Ustedes saben a quién acudir en su comunidad para buscar ayuda, cuando enfrentan dificultades.",
+                  "de": "Wenn Sie auf Schwierigkeiten stoßen, wissen Sie, an wen Sie sich in Ihrer Gemeinde wenden können, um Hilfe zu erhalten."
+                }
+              },
+              {
+                "value": "HomeNSCHi8e",
+                "text": {
+                  "default": "Your child is safe at school.",
+                  "es": "Su niño(a) está seguro(a) en la escuela.",
+                  "de": "Ihr Kind ist in der Schule sicher."
+                }
+              }
+            ]
+          },
+          {
+            "type": "panel",
+            "name": "HomeFood",
+            "title": {
+              "default": "These are statements people have made about their food situation. For these statements, please mark whether the statement was often true, sometimes true, or never true for your household in the <b>last 12 months</b>.",
+              "es": "Estas son declaraciones que las personas han hecho sobre situaciones alimentarias. Para cada uno, favor de indicar si ha ocurrido frecuentemente, a veces, o nunca (a Ud. / en su hogar) en <b>los últimos 12 meses</b>.",
+              "de": "Dies sind Aussagen, die Menschen über ihre Ernährungssituation gemacht haben. Bitte kreuzen Sie für diese Aussagen an, ob die Aussage in den <b>letzten 12 Monaten</b> für Ihren Haushalt oft, manchmal oder nie stimmte."
+            },
+            "showQuestionNumbers": "off",
+            "elements": [
+              {
+                "type": "radiogroup",
+                "name": "HomeFoodLast",
+                "title": {
+                  "default": "The food that we bought just didn't last, and we didn't have enough money to get more.",
+                  "es": "La comida que comprábamos no alcanzaba, y no teníamos dinero para comprar más.",
+                  "de": "Die Lebensmittel, die wir gekauft hatten, reichten einfach nicht aus, und wir hatten nicht genug Geld, um mehr zu kaufen."
+                },
+                "choices": [
+                  {
+                    "value": "0",
+                    "text": {
+                      "default": "Never true",
+                      "es": "Nunca",
+                      "de": "Trifft nie zu"
+                    }
+                  },
+                  {
+                    "value": "1",
+                    "text": {
+                      "default": "Sometimes true",
+                      "es": "A veces",
+                      "de": "Trifft manchmal zu"
+                    }
+                  },
+                  {
+                    "value": "2",
+                    "text": {
+                      "default": "Often true",
+                      "es": "Frecuentemente",
+                      "de": "Trifft oft zu"
+                    }
+                  }
+                ],
+                "colCount": 0,
+                "allowClear": true
+              },
+              {
+                "type": "radiogroup",
+                "name": "HomeFoodBalanced",
+                "title": {
+                  "default": "We couldn't afford to eat balanced meals.",
+                  "es": "No teníamos recursos suficientes para comer comida variada y nutritiva.",
+                  "de": "Wir konnten es uns nicht leisten, ausgewogene Mahlzeiten zu essen."
+                },
+                "choices": [
+                  {
+                    "value": "0",
+                    "text": {
+                      "default": "Never true",
+                      "es": "Nunca",
+                      "de": "Trifft nie zu"
+                    }
+                  },
+                  {
+                    "value": "1",
+                    "text": {
+                      "default": "Sometimes true",
+                      "es": "A veces",
+                      "de": "Trifft manchmal zu"
+                    }
+                  },
+                  {
+                    "value": "2",
+                    "text": {
+                      "default": "Often true",
+                      "es": "Frecuentemente",
+                      "de": "Trifft oft zu"
+                    }
+                  }
+                ],
+                "allowClear": true
+              },
+              {
+                "type": "boolean",
+                "name": "HomeFoodSkipMeal",
+                "title": {
+                  "default": "In the <b>last 12 months</b>, did you or other adults in your household ever cut the size of your meals or skip meals because there wasn't enough money for food?",
+                  "es": "En <b>los últimos 12 meses</b>, ¿usted u otros adultos del hogar redujeron la cantidad de sus comidas o se saltaron comidas porque les faltaba dinero para alimentos?",
+                  "de": "Haben Sie oder andere Erwachsene in Ihrem Haushalt in den <b>letzten 12 Monaten</b> jemals die Menge Ihrer Mahlzeiten reduziert oder Mahlzeiten ausgelassen, weil nicht genug Geld für Lebensmittel vorhanden war?"
+                },
+                "labelTrue": {
+                  "default": "Yes",
+                  "es": "Sí",
+                  "de": "Ja"
+                },
+                "labelFalse": {
+                  "default": "No",
+                  "de": "Nein"
+                },
+                "valueTrue": "Yes",
+                "valueFalse": "No"
+              },
+              {
+                "type": "radiogroup",
+                "name": "HomeFoodSkipMealAmount",
+                "visibleIf": "{HomeFoodSkipMeal} = yes",
+                "title": {
+                  "default": "If yes, how often did this happen - almost every month, some months but not every month, or in only 1 or 2 months?",
+                  "es": "En caso afirmativo, ¿con qué frecuencia: casi todos los meses, algunos meses, solo 1 o 2 meses?",
+                  "de": "Wenn ja, wie oft ist kam dies vor - fast jeden Monat, in einigen Monaten aber nicht in jedem Monat, nur in 1 oder 2 Monaten?"
+                },
+                "choices": [
+                  {
+                    "value": "3",
+                    "text": {
+                      "default": "Almost every month",
+                      "es": "Casi todos los meses",
+                      "de": "Fast jeden Monat"
+                    }
+                  },
+                  {
+                    "value": "2",
+                    "text": {
+                      "default": "Some months but not every month",
+                      "es": "Algunos meses",
+                      "de": "In einigen Monaten aber nicht jeden Monat"
+                    }
+                  },
+                  {
+                    "value": "1",
+                    "text": {
+                      "default": "Only 1 or 2 months",
+                      "es": "Solo 1 ó 2 meses",
+                      "de": "Nur in 1 oder 2 Monaten"
+                    }
+                  }
+                ],
+                "allowClear": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "page2",
+        "elements": [
+          {
+            "type": "panel",
+            "name": "HomeCHAOS",
+            "title": {
+              "default": "Below are statements about the environment in your home. Please indicate how much you agree that the statement is true of your home.",
+              "es": "A continuación encontrará una serie de afirmaciones sobre el entorno de su hogar. Indique qué tan cierta es cada afirmación para su hogar.",
+              "de": "Im Folgenden finden Sie Aussagen über die häusliche Umgebung. Bitte geben Sie an, inwieweit Sie der Aussage zustimmen, dass sie auf Ihr Zuhause zutrifft."
+            },
+            "showQuestionNumbers": "off",
+            "elements": [
+              {
+                "type": "radiogroup",
+                "name": "HomeCHAOS4",
+                "title": {
+                  "default": "We are usually able to stay on top of things.",
+                  "es": "Normalmente somos capaces de estar al día con las actividades.",
+                  "de": "Wir sind in der Regel in der Lage, den Überblick zu behalten."
+                },
+                "choices": [
+                  {
+                    "value": "0",
+                    "text": {
+                      "default": "Definitely Untrue",
+                      "es": "Totalmente falso",
+                      "de": "Definitiv unwahr"
+                    }
+                  },
+                  {
+                    "value": "1",
+                    "text": {
+                      "default": "Somewhat Untrue",
+                      "es": "Algo falso",
+                      "de": "Eher unwahr"
+                    }
+                  },
+                  {
+                    "value": "2",
+                    "text": {
+                      "default": "Somewhat True",
+                      "es": "Algo verdadero",
+                      "de": "Eher wahr"
+                    }
+                  },
+                  {
+                    "value": "3",
+                    "text": {
+                      "default": "Definitely True",
+                      "es": "Totalmente verdadero",
+                      "de": "Definitiv wahr"
+                    }
+                  }
+                ],
+                "allowClear": true
+              },
+              {
+                "type": "radiogroup",
+                "name": "HomeCHAOS10",
+                "title": {
+                  "default": "You can't hear yourself think in our home.",
+                  "es": "En nuestra casa hay tanto ruido que no escuchas ni tus pensamientos.",
+                  "de": "Bei uns zu Hause versteht man sein eigenes Wort nicht."
+                },
+                "choices": [
+                  {
+                    "value": "0",
+                    "text": {
+                      "default": "Definitely Untrue",
+                      "es": "Totalmente falso",
+                      "de": "Definitiv unwahr"
+                    }
+                  },
+                  {
+                    "value": "1",
+                    "text": {
+                      "default": "Somewhat Untrue",
+                      "es": "Algo falso",
+                      "de": "Eher unwahr"
+                    }
+                  },
+                  {
+                    "value": "2",
+                    "text": {
+                      "default": "Somewhat True",
+                      "es": "Algo verdadero",
+                      "de": "Eher wahr"
+                    }
+                  },
+                  {
+                    "value": "3",
+                    "text": {
+                      "default": "Definitely True",
+                      "es": "Totalmente verdadero",
+                      "de": "Definitiv wahr"
+                    }
+                  }
+                ],
+                "allowClear": true
+              },
+              {
+                "type": "radiogroup",
+                "name": "HomeCHAOS14",
+                "title": {
+                  "default": "The atmosphere in our home is calm.",
+                  "es": "El ambiente de nuestra casa es muy calmado.",
+                  "de": "Die Atmosphäre in unserem Haus ist ruhig."
+                },
+                "choices": [
+                  {
+                    "value": "0",
+                    "text": {
+                      "default": "Definitely Untrue",
+                      "es": "Totalmente falso",
+                      "de": "Definitiv unwahr"
+                    }
+                  },
+                  {
+                    "value": "1",
+                    "text": {
+                      "default": "Somewhat Untrue",
+                      "es": "Algo falso",
+                      "de": "Eher unwahr"
+                    }
+                  },
+                  {
+                    "value": "2",
+                    "text": {
+                      "default": "Somewhat True",
+                      "es": "Algo verdadero",
+                      "de": "Eher wahr"
+                    }
+                  },
+                  {
+                    "value": "3",
+                    "text": {
+                      "default": "Definitely True",
+                      "es": "Totalmente verdadero",
+                      "de": "Definitiv wahr"
+                    }
+                  }
+                ],
+                "allowClear": true
+              },
+              {
+                "type": "radiogroup",
+                "name": "HomeCHAOS15",
+                "title": {
+                  "default": "We have a regular morning routine at home.",
+                  "es": "En nuestra casa, tenemos una rutina matutina regular.",
+                  "de": "Wir haben zu Hause eine regelmäßige Morgenroutine."
+                },
+                "choices": [
+                  {
+                    "value": "0",
+                    "text": {
+                      "default": "Definitely Untrue",
+                      "es": "Totalmente falso",
+                      "de": "Definitiv unwahr"
+                    }
+                  },
+                  {
+                    "value": "1",
+                    "text": {
+                      "default": "Somewhat Untrue",
+                      "es": "Algo falso",
+                      "de": "Eher unwahr"
+                    }
+                  },
+                  {
+                    "value": "2",
+                    "text": {
+                      "default": "Somewhat True",
+                      "es": "Algo verdadero",
+                      "de": "Eher wahr"
+                    }
+                  },
+                  {
+                    "value": "3",
+                    "text": {
+                      "default": "Definitely True",
+                      "es": "Totalmente verdadero",
+                      "de": "Definitiv wahr"
+                    }
+                  }
+                ],
+                "allowClear": true
+              }
+            ]
+          },
+          {
+            "type": "panel",
+            "name": "SelfParentStress",
+            "showQuestionNumbers": "off",
+            "elements": [
+              {
+                "type": "radiogroup",
+                "name": "SelfParentStressNSCHh8",
+                "title": {
+                  "default": "How well do you think you are handling the day-to-day demands of raising children?",
+                  "es": "¿Qué tan bien cree usted que está manejando las exigencias diarias de la crianza de los niños?",
+                  "de": "Was glauben Sie, wie gut Sie mit den täglichen Anforderungen der Kindererziehung zurechtkommen?"
+                },
+                "showNumber": false,
+                "choices": [
+                  {
+                    "value": "1",
+                    "text": {
+                      "default": "Very well",
+                      "es": "Muy bien",
+                      "de": "Sehr gut"
+                    }
+                  },
+                  {
+                    "value": "2",
+                    "text": {
+                      "default": "Somewhat well",
+                      "es": "Bien",
+                      "de": "Eher gut"
+                    }
+                  },
+                  {
+                    "value": "3",
+                    "text": {
+                      "default": "Not very well",
+                      "es": "No muy bien",
+                      "de": "Nicht sehr gut"
+                    }
+                  },
+                  {
+                    "value": "4",
+                    "text": {
+                      "default": "Not well at all",
+                      "es": "Muy mal",
+                      "de": "Überhaupt nicht gut"
+                    }
+                  }
+                ],
+                "allowClear": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "page3",
+        "elements": [
+          {
+            "type": "matrix",
+            "name": "SelfAnxDep",
+            "title": {
+              "default": "Over the <b>last two weeks</b>, how often have you been bothered by the following problems?",
+              "es": "En las <b>últimas dos semanas</b>, ¿con qué frecuencia se sintió usted afectado por los siguientes problemas?",
+              "de": "Wie oft wurden Sie in den <b>letzten zwei Wochen</b> von den folgenden Problemen geplagt?"
+            },
+            "showNumber": false,
+            "alternateRows": true,
+            "columns": [
+              {
+                "value": "0",
+                "text": {
+                  "default": "Not at all",
+                  "es": "Nunca",
+                  "de": "Überhaupt nicht"
+                }
+              },
+              {
+                "value": "1",
+                "text": {
+                  "default": "Several days",
+                  "es": "Varios días",
+                  "de": "Mehrere Tage"
+                }
+              },
+              {
+                "value": "2",
+                "text": {
+                  "default": "More than half of the days",
+                  "es": "Más de la mitad de los días",
+                  "de": "Mehr als die Hälfte der Tage"
+                }
+              },
+              {
+                "value": "3",
+                "text": {
+                  "default": "Nearly every day",
+                  "es": "Casi todos los días",
+                  "de": "Fast jeden Tag"
+                }
+              }
+            ],
+            "rows": [
+              {
+                "value": "SelfAnxDep1",
+                "text": {
+                  "default": "Feeling nervous, anxious, or on edge",
+                  "es": "Nerviosismo, ansiedad o irritabilidad",
+                  "de": "Sich nervös, ängstlich oder gereizt fühlen"
+                }
+              },
+              {
+                "value": "SelfAnxDep2",
+                "text": {
+                  "default": "Not being able to stop or control worrying",
+                  "es": "No poder parar o controlar las preocupaciones",
+                  "de": "Nicht in der Lage zu sein, das Grübeln zu beenden oder zu kontrollieren"
+                }
+              },
+              {
+                "value": "SelfAnxDep3",
+                "text": {
+                  "default": "Feeling down, depressed, or hopeless",
+                  "es": "Sentirse decaído, deprimido o desesperanzado.",
+                  "de": "Sich niedergeschlagen, deprimiert oder hoffnungslos fühlen"
+                }
+              },
+              {
+                "value": "SelfAnxDep4",
+                "text": {
+                  "default": "Little interest or pleasure in doing things",
+                  "es": "Poco interés o placer por hacer cosas",
+                  "de": "Wenig Interesse oder Freude am Tun"
+                }
+              }
+            ]
+          },
+          {
+            "type": "matrix",
+            "name": "SelfSupport",
+            "title": {
+              "default": "We are interested in how you feel about the following statements. Read each statement carefully. Indicate how you feel about each statement.",
+              "es": "Nos interesa conocer su opinión sobre las siguientes afirmaciones. Léalas atentamente e indique cómo se siente respecto a cada una.",
+              "de": "Uns interessiert, wie Sie zu den folgenden Aussagen stehen. Lesen Sie jede Aussage sorgfältig durch. Geben Sie an, wie Sie über jede Aussage denken."
+            },
+            "showNumber": false,
+            "alternateRows": true,
+            "columns": [
+              {
+                "value": "1",
+                "text": {
+                  "default": "Very Strongly Disagree ",
+                  "es": "Totalmente en desacuerdo",
+                  "de": "Sehr stark ablehnen"
+                }
+              },
+              {
+                "value": "2",
+                "text": {
+                  "default": "Strongly Disagree",
+                  "es": "Muy en desacuerdo",
+                  "de": "Stark ablehnen"
+                }
+              },
+              {
+                "value": "3",
+                "text": {
+                  "default": "Mildly Disagree",
+                  "es": "Algo en desacuerdo",
+                  "de": "Leicht ablehnen"
+                }
+              },
+              {
+                "value": "4",
+                "text": "Neutral"
+              },
+              {
+                "value": "5",
+                "text": {
+                  "default": "Mildly Agree",
+                  "es": "Ligeramente de acuerdo",
+                  "de": "Leicht zustimmen"
+                }
+              },
+              {
+                "value": "6",
+                "text": {
+                  "default": "Strongly Agree",
+                  "es": "Muy de acuerdo",
+                  "de": "Stark zustimmen"
+                }
+              },
+              {
+                "value": "7",
+                "text": {
+                  "default": "Very Strongly Agree",
+                  "es": "Totalmente de acuerdo",
+                  "de": "Sehr stark zustimmen"
+                }
+              }
+            ],
+            "rows": [
+              {
+                "value": "SelfSupport1",
+                "text": {
+                  "default": "There is a special person (ex: spouse, partner, etc.) who is around when I am in need.",
+                  "es": "Hay una persona especial (cónyuge, pareja, etc.) que está a mi lado cuando la necesito.",
+                  "de": "Es gibt eine besondere Person (z. B. Ehepartner, Partner usw.), die für mich da ist, wenn ich in Not bin."
+                }
+              },
+              {
+                "value": "SelfSupport2",
+                "text": {
+                  "default": "There is a special person (ex: spouse, partner, etc.) with whom I can share joys and sorrows.",
+                  "es": "Hay una persona especial (cónyuge, pareja, etc.) con la que puedo compartir alegrías y penas.",
+                  "de": "Es gibt eine besondere Person (z. B. Ehepartner, Partner usw.), mit der ich Freud und Leid teilen kann."
+                }
+              },
+              {
+                "value": "SelfSupport3",
+                "text": {
+                  "default": "My family really tries to help me.",
+                  "es": "Mi familia realmente trata de ayudarme.",
+                  "de": "Meine Familie versucht wirklich, mir zu helfen."
+                }
+              },
+              {
+                "value": "SelfSupport4",
+                "text": {
+                  "default": "I get the emotional help & support I need from my family.",
+                  "es": "Recibo la ayuda y el apoyo emocional que necesito de mi familia.",
+                  "de": "Ich bekomme die emotionale Hilfe und Unterstützung, die ich brauche, von meiner Familie."
+                }
+              },
+              {
+                "value": "SelfSupport5",
+                "text": {
+                  "default": "I have a special person (ex: spouse, partner, etc.) who is a real source of comfort to me.",
+                  "es": "Tengo una persona especial (cónyuge, pareja, etc.) que es una verdadera fuente de consuelo para mí.",
+                  "de": "Ich habe eine besondere Person (z. B. Ehepartner, Partner usw.), die mir wirklich Trost spendet."
+                }
+              },
+              {
+                "value": "SelfSupport6",
+                "text": {
+                  "default": "My friends really try to help me.",
+                  "es": "Mis amigos realmente tratan de ayudarme. ",
+                  "de": "Meine Freunde versuchen wirklich, mir zu helfen."
+                }
+              },
+              {
+                "value": "SelfSupport7",
+                "text": {
+                  "default": "I can count on my friends when things go wrong.",
+                  "es": "Puedo contar con mis amigos cuando las cosas van mal.",
+                  "de": "Ich kann auf meine Freunde zählen, wenn etwas schief läuft."
+                }
+              },
+              {
+                "value": "SelfSupport8",
+                "text": {
+                  "default": "I can talk about my problems with my family.",
+                  "es": "Puedo hablar de mis problemas con mi familia.",
+                  "de": "Ich kann über meine Probleme mit meiner Familie sprechen."
+                }
+              },
+              {
+                "value": "SelfSupport9",
+                "text": {
+                  "default": "I have friends with whom I can share my joys and sorrows.",
+                  "es": "Tengo amigos con los que puedo compartir mis alegrías y mis penas.",
+                  "de": "Ich habe Freunde, mit denen ich meine Freuden und Sorgen teilen kann."
+                }
+              },
+              {
+                "value": "SelfSupport10",
+                "text": {
+                  "default": "There is a special person (ex: spouse, partner, etc.) in my life who cares about my feelings.",
+                  "es": "Hay una persona especial (cónyuge, pareja, etc.) en mi vida que se preocupa por mis sentimientos.",
+                  "de": "Es gibt eine besondere Person (z. B. Ehepartner, Partner usw.) in meinem Leben, die sich um meine Gefühle kümmert."
+                }
+              },
+              {
+                "value": "SelfSupport11",
+                "text": {
+                  "default": "My family is willing to help me make decisions.",
+                  "es": "Mi familia está dispuesta a ayudarme a tomar decisiones.",
+                  "de": "Meine Familie ist bereit, mir bei Entscheidungsfindungen zu helfen."
+                }
+              },
+              {
+                "value": "SelfSupport12",
+                "text": {
+                  "default": "I can talk about my problems with my friends.",
+                  "es": "Puedo hablar de mis problemas con mis amigos.",
+                  "de": "Ich kann mit meinen Freunden über meine Probleme sprechen."
+                }
+              }
+            ]
+          },
+          {
+            "type": "matrix",
+            "name": "SelfDiscrim",
+            "title": {
+              "default": "In your day-to-day life how often have any of the following things happened to you?",
+              "es": "En su vida cotidiana, ¿con qué frecuencia ha vivido usted alguna de las siguientes situaciones?",
+              "de": "Wie oft ist Ihnen in Ihrem Alltag eines der folgenden Dinge passiert?"
+            },
+            "showNumber": false,
+            "alternateRows": true,
+            "columns": [
+              {
+                "value": "0",
+                "text": {
+                  "default": "Never",
+                  "es": "Nunca",
+                  "de": "Nie"
+                }
+              },
+              {
+                "value": "1",
+                "text": {
+                  "default": "Less than once a year",
+                  "es": "Menos de una vez al año",
+                  "de": "Weniger als einmal im Jahr"
+                }
+              },
+              {
+                "value": "2",
+                "text": {
+                  "default": "A few times a year",
+                  "es": "Algunas veces al año",
+                  "de": "Ein paar Mal im Jahr"
+                }
+              },
+              {
+                "value": "3",
+                "text": {
+                  "default": "A few times a month",
+                  "es": "Algunas veces al mes",
+                  "de": "Ein paar Mal im Monat"
+                }
+              },
+              {
+                "value": "4",
+                "text": {
+                  "default": "At least once a week",
+                  "es": "Al menos una vez a la semana",
+                  "de": "Mindestens einmal in der Woche"
+                }
+              },
+              {
+                "value": "5",
+                "text": {
+                  "default": "Almost everyday",
+                  "es": "Casi todos los días",
+                  "de": "Fast jeden Tag"
+                }
+              }
+            ],
+            "rows": [
+              {
+                "value": "SelfDiscrim1",
+                "text": {
+                  "default": "You are treated with less courtesy or respect than other people.",
+                  "es": "Le tratan con menos cortesía o respeto que a otras personas.",
+                  "de": "Sie werden mit weniger Höflichkeit oder Respekt behandelt als andere Menschen."
+                }
+              },
+              {
+                "value": "SelfDiscrim2",
+                "text": {
+                  "default": "You receive poorer service than other people at restaurants or stores.",
+                  "es": "Le atienden peor que a otras personas en restaurantes o tiendas.",
+                  "de": "Sie werden in Restaurants oder Geschäften schlechter bedient als andere Menschen."
+                }
+              },
+              {
+                "value": "SelfDiscrim3",
+                "text": {
+                  "default": "People act as if they think you are not smart.",
+                  "es": "La gente actúa como si pensara que usted no es muy inteligente.",
+                  "de": "Die Leute tun so, als ob sie der Meinung wären, dass sie nicht intelligent sind."
+                }
+              },
+              {
+                "value": "SelfDiscrim4",
+                "text": {
+                  "default": "People act as if they are afraid of you.",
+                  "es": "La gente actúa como si le tuviera miedo.",
+                  "de": "Die Leute tun so, als hätten sie Angst vor Ihnen."
+                }
+              },
+              {
+                "value": "SelfDiscrim5",
+                "text": {
+                  "default": "You are threatened or harassed.",
+                  "es": "Le amenazan o acosan.",
+                  "de": "Sie werden bedroht oder belästigt."
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "page4",
+        "elements": [
+          {
+            "type": "panel",
+            "name": "SelfLifeChanges",
+            "title": {
+              "default": "Please select Yes or No to indicate whether each event has happened to you <b>in the past year</b>.",
+              "es": "Indique con Sí o No si le ha sucedido alguna de las siguientes cosas <b>en el último año</b>.",
+              "de": "Bitte wählen Sie \"Ja\" oder\"Nein\", um anzugeben, ob Ihnen das jeweilige Ereignis im vergangenen Jahr widerfahren ist."
+            },
+            "showQuestionNumbers": "off",
+            "elements": [
+              {
+                "type": "panel",
+                "name": "SelfLifeChangesHealth",
+                "title": {
+                  "default": "Health:",
+                  "es": "Salud:",
+                  "de": "Gesundheit:"
+                },
+                "elements": [
+                  {
+                    "type": "boolean",
+                    "name": "SelfLifeChanges1",
+                    "title": {
+                      "default": "An injury or illness which kept you in bed a week or more, or sent you to the hospital.",
+                      "es": "Una lesión o enfermedad que le haya mantenido en cama una semana o más, o que le haya mandado al hospital.",
+                      "de": "Eine Verletzung oder Krankheit, wegen der Sie mindestens eine Woche oder länger im Bett liegen mussten oder Sie ins Krankenhaus brachte."
+                    },
+                    "labelTrue": {
+                      "default": "Yes",
+                      "es": "Sí",
+                      "de": "Ja"
+                    },
+                    "labelFalse": {
+                      "default": "No",
+                      "de": "Nein"
+                    },
+                    "valueTrue": "74",
+                    "valueFalse": "0"
+                  },
+                  {
+                    "type": "boolean",
+                    "name": "SelfLifeChanges2",
+                    "title": {
+                      "default": "An injury or illness which was less serious than above but still sent you to the doctor or kept you in bed for a day or two.",
+                      "es": "Una lesión o enfermedad menos grave que las anteriores, pero que le haya obligado a ir al médico o a guardar cama uno o dos días.",
+                      "de": "Eine Verletzung oder Erkrankung, die weniger schwerwiegend ist als die oben genannten, die aber dennoch einen Arztbesuch oder Bettruhe für ein oder zwei Tage erforderlich machte."
+                    },
+                    "labelTrue": {
+                      "default": "Yes",
+                      "es": "Sí",
+                      "de": "Ja"
+                    },
+                    "labelFalse": {
+                      "default": "No",
+                      "de": "Nein"
+                    },
+                    "valueTrue": "44",
+                    "valueFalse": "0"
+                  },
+                  {
+                    "type": "boolean",
+                    "name": "SelfLifeChanges3",
+                    "title": {
+                      "default": "Major dental work.",
+                      "es": "Tratamiento dental importante.",
+                      "de": "Größere zahnärztliche Behandlungen."
+                    },
+                    "labelTrue": {
+                      "default": "Yes",
+                      "es": "Sí",
+                      "de": "Ja"
+                    },
+                    "labelFalse": {
+                      "default": "No",
+                      "de": "Nein"
+                    },
+                    "valueTrue": "26",
+                    "valueFalse": "0"
+                  },
+                  {
+                    "type": "boolean",
+                    "name": "SelfLifeChanges4",
+                    "title": {
+                      "default": "Major change in eating habits.",
+                      "es": "Cambio importante en los hábitos alimentarios.",
+                      "de": "Wesentliche Änderung der Essgewohnheiten."
+                    },
+                    "labelTrue": {
+                      "default": "Yes",
+                      "es": "Sí",
+                      "de": "Ja"
+                    },
+                    "labelFalse": {
+                      "default": "No",
+                      "de": "Nein"
+                    },
+                    "valueTrue": "27",
+                    "valueFalse": "0"
+                  },
+                  {
+                    "type": "boolean",
+                    "name": "SelfLifeChanges5",
+                    "title": {
+                      "default": "Major change in sleeping habits.",
+                      "es": "Cambio importante en los hábitos de sueño.",
+                      "de": "Wesentliche Änderung der Schlafgewohnheiten."
+                    },
+                    "labelTrue": {
+                      "default": "Yes",
+                      "es": "Sí",
+                      "de": "Ja"
+                    },
+                    "labelFalse": {
+                      "default": "No",
+                      "de": "Nein"
+                    },
+                    "valueTrue": "26",
+                    "valueFalse": "0"
+                  },
+                  {
+                    "type": "boolean",
+                    "name": "SelfLifeChanges6",
+                    "title": {
+                      "default": "Major change in your usual type and/or amount of recreation.",
+                      "es": "Cambio importante en el tipo o la cantidad de tiempo de ocio habitual.",
+                      "de": "Wesentliche Änderung der Art und/oder des Umfangs Ihrer üblichen Freizeitgestaltung."
+                    },
+                    "labelTrue": {
+                      "default": "Yes",
+                      "es": "Sí",
+                      "de": "Ja"
+                    },
+                    "labelFalse": {
+                      "default": "No",
+                      "de": "Nein"
+                    },
+                    "valueTrue": "28",
+                    "valueFalse": "0"
+                  }
+                ]
+              },
+              {
+                "type": "panel",
+                "name": "SelfLifeChangesWork",
+                "title": {
+                  "default": "Work:",
+                  "es": "Trabajo:",
+                  "de": "Arbeit:"
+                },
+                "elements": [
+                  {
+                    "type": "boolean",
+                    "name": "SelfLifeChanges7",
+                    "title": {
+                      "default": "Change to a new type of work.",
+                      "es": "Cambio de tipo de trabajo.",
+                      "de": "Wechsel zu einer neuen Art von Arbeit."
+                    },
+                    "labelTrue": {
+                      "default": "Yes",
+                      "es": "Sí",
+                      "de": "Ja"
+                    },
+                    "labelFalse": {
+                      "default": "No",
+                      "de": "Nein"
+                    },
+                    "valueTrue": "51",
+                    "valueFalse": "0"
+                  },
+                  {
+                    "type": "boolean",
+                    "name": "SelfLifeChanges8",
+                    "title": {
+                      "default": "Change in your work hours or conditions.",
+                      "es": "Cambio de horario o de condiciones de trabajo.",
+                      "de": "Änderung der Arbeitszeiten oder -bedingungen."
+                    },
+                    "labelTrue": {
+                      "default": "Yes",
+                      "es": "Sí",
+                      "de": "Ja"
+                    },
+                    "labelFalse": {
+                      "default": "No",
+                      "de": "Nein"
+                    },
+                    "valueTrue": "35",
+                    "valueFalse": "0"
+                  },
+                  {
+                    "type": "boolean",
+                    "name": "SelfLifeChanges9",
+                    "title": {
+                      "default": "Change in your responsibilities at work (more responsibilities).",
+                      "de": "Änderung Ihrer Verantwortlichkeiten am Arbeitsplatz (mehr Verantwortung).",
+                      "es": "Cambio de responsabilidades en el trabajo (más responsabilidades)."
+                    },
+                    "labelTrue": {
+                      "default": "Yes",
+                      "es": "Sí",
+                      "de": "Ja"
+                    },
+                    "labelFalse": {
+                      "default": "No",
+                      "de": "Nein"
+                    },
+                    "valueTrue": "29",
+                    "valueFalse": "0"
+                  },
+                  {
+                    "type": "boolean",
+                    "name": "SelfLifeChanges10",
+                    "title": {
+                      "default": "Change in your responsibilities at work (fewer responsibilities).",
+                      "de": "Änderung Ihrer Verantwortlichkeiten am Arbeitsplatz (weniger Verantwortlichkeiten).",
+                      "es": "Cambio de responsabilidades en el trabajo (menos responsabilidades)."
+                    },
+                    "labelTrue": {
+                      "default": "Yes",
+                      "es": "Sí",
+                      "de": "Ja"
+                    },
+                    "labelFalse": {
+                      "default": "No",
+                      "de": "Nein"
+                    },
+                    "valueTrue": "21",
+                    "valueFalse": "0"
+                  },
+                  {
+                    "type": "boolean",
+                    "name": "SelfLifeChanges11",
+                    "title": {
+                      "default": "Change in your responsibilities at work (promotion).",
+                      "de": "Änderung Ihrer Verantwortlichkeiten am Arbeitsplatz (Beförderung).",
+                      "es": "Cambio de responsabilidades en el trabajo (ascenso)."
+                    },
+                    "labelTrue": {
+                      "default": "Yes",
+                      "es": "Sí",
+                      "de": "Ja"
+                    },
+                    "labelFalse": {
+                      "default": "No",
+                      "de": "Nein"
+                    },
+                    "valueTrue": "31",
+                    "valueFalse": "0"
+                  },
+                  {
+                    "type": "boolean",
+                    "name": "SelfLifeChanges12",
+                    "title": {
+                      "default": "Change in your responsibilities at work (demotion).",
+                      "de": "Änderung Ihrer Verantwortlichkeiten am Arbeitsplatz (Herunterstufung).",
+                      "es": "Cambio de responsabilidades en el trabajo (descenso)."
+                    },
+                    "labelTrue": {
+                      "default": "Yes",
+                      "es": "Sí",
+                      "de": "Ja"
+                    },
+                    "labelFalse": {
+                      "default": "No",
+                      "de": "Nein"
+                    },
+                    "valueTrue": "42",
+                    "valueFalse": "0"
+                  },
+                  {
+                    "type": "boolean",
+                    "name": "SelfLifeChanges13",
+                    "title": {
+                      "default": "Change in your responsibilities at work (transfer).",
+                      "de": "Änderung Ihrer Verantwortlichkeiten am Arbeitsplatz (Versetzung).",
+                      "es": "Cambio de responsabilidades en el trabajo (traslado)."
+                    },
+                    "labelTrue": {
+                      "default": "Yes",
+                      "es": "Sí",
+                      "de": "Ja"
+                    },
+                    "labelFalse": {
+                      "default": "No",
+                      "de": "Nein"
+                    },
+                    "valueTrue": "32",
+                    "valueFalse": "0"
+                  },
+                  {
+                    "type": "boolean",
+                    "name": "SelfLifeChanges14",
+                    "title": {
+                      "default": "Troubles at work (with your boss).",
+                      "de": "Probleme bei der Arbeit (mit Ihrem Chef).",
+                      "es": "Problemas en el trabajo (con el jefe)."
+                    },
+                    "labelTrue": {
+                      "default": "Yes",
+                      "es": "Sí",
+                      "de": "Ja"
+                    },
+                    "labelFalse": {
+                      "default": "No",
+                      "de": "Nein"
+                    },
+                    "valueTrue": "29",
+                    "valueFalse": "0"
+                  },
+                  {
+                    "type": "boolean",
+                    "name": "SelfLifeChanges15",
+                    "title": {
+                      "default": "Troubles at work (with your coworkers).",
+                      "de": "Probleme bei der Arbeit (mit Ihren Kollegen).",
+                      "es": "Problemas en el trabajo (con los compañeros)."
+                    },
+                    "labelTrue": {
+                      "default": "Yes",
+                      "es": "Sí",
+                      "de": "Ja"
+                    },
+                    "labelFalse": {
+                      "default": "No",
+                      "de": "Nein"
+                    },
+                    "valueTrue": "35",
+                    "valueFalse": "0"
+                  },
+                  {
+                    "type": "boolean",
+                    "name": "SelfLifeChanges16",
+                    "title": {
+                      "default": "Troubles at work (with persons under your supervision).",
+                      "de": "Probleme bei der Arbeit (mit den Ihnen unterstellten Personen).",
+                      "es": "Problemas en el trabajo (con subalternos)."
+                    },
+                    "labelTrue": {
+                      "default": "Yes",
+                      "es": "Sí",
+                      "de": "Ja"
+                    },
+                    "labelFalse": {
+                      "default": "No",
+                      "de": "Nein"
+                    },
+                    "valueTrue": "35",
+                    "valueFalse": "0"
+                  },
+                  {
+                    "type": "boolean",
+                    "name": "SelfLifeChanges17",
+                    "title": {
+                      "default": "Other work problems.",
+                      "es": "Otros problemas laborales.",
+                      "de": "Andere Arbeitsprobleme."
+                    },
+                    "labelTrue": {
+                      "default": "Yes",
+                      "es": "Sí",
+                      "de": "Ja"
+                    },
+                    "labelFalse": {
+                      "default": "No",
+                      "de": "Nein"
+                    },
+                    "valueTrue": "28",
+                    "valueFalse": "0"
+                  },
+                  {
+                    "type": "boolean",
+                    "name": "SelfLifeChanges18",
+                    "title": {
+                      "default": "Major business adjustment.",
+                      "es": "Cambios importantes de la empresa.",
+                      "de": "Größere geschäftliche Anpassungen."
+                    },
+                    "labelTrue": {
+                      "default": "Yes",
+                      "es": "Sí",
+                      "de": "Ja"
+                    },
+                    "labelFalse": {
+                      "default": "No",
+                      "de": "Nein"
+                    },
+                    "valueTrue": "60",
+                    "valueFalse": "0"
+                  },
+                  {
+                    "type": "boolean",
+                    "name": "SelfLifeChanges19",
+                    "title": {
+                      "default": "Retirement.",
+                      "es": "Jubilación.",
+                      "de": "Ruhestand."
+                    },
+                    "labelTrue": {
+                      "default": "Yes",
+                      "es": "Sí",
+                      "de": "Ja"
+                    },
+                    "labelFalse": {
+                      "default": "No",
+                      "de": "Nein"
+                    },
+                    "valueTrue": "52",
+                    "valueFalse": "0"
+                  },
+                  {
+                    "type": "boolean",
+                    "name": "SelfLifeChanges20",
+                    "title": {
+                      "default": "Loss of a job (laid off from work).",
+                      "es": "Despido con indemnización",
+                      "de": "Verlust des Arbeitsplatzes (Entlassung)."
+                    },
+                    "labelTrue": {
+                      "default": "Yes",
+                      "es": "Sí",
+                      "de": "Ja"
+                    },
+                    "labelFalse": {
+                      "default": "No",
+                      "de": "Nein"
+                    },
+                    "valueTrue": "68",
+                    "valueFalse": "0"
+                  },
+                  {
+                    "type": "boolean",
+                    "name": "SelfLifeChanges21",
+                    "title": {
+                      "default": "Loss of a job (fired from work).",
+                      "es": "Despido sin indemnización",
+                      "de": "Verlust des Arbeitsplatzes (gekündigt werden)."
+                    },
+                    "labelTrue": {
+                      "default": "Yes",
+                      "es": "Sí",
+                      "de": "Ja"
+                    },
+                    "labelFalse": {
+                      "default": "No",
+                      "de": "Nein"
+                    },
+                    "valueTrue": "79",
+                    "valueFalse": "0"
+                  },
+                  {
+                    "type": "boolean",
+                    "name": "SelfLifeChanges22",
+                    "title": {
+                      "default": "Taking a course to help you with your work.",
+                      "es": "Realización de un curso para ayudarle en su trabajo.",
+                      "de": "Teilnahme an einem Kurs, der Ihnen bei Ihrer Arbeit hilft."
+                    },
+                    "labelTrue": {
+                      "default": "Yes",
+                      "es": "Sí",
+                      "de": "Ja"
+                    },
+                    "labelFalse": {
+                      "default": "No",
+                      "de": "Nein"
+                    },
+                    "valueTrue": "18",
+                    "valueFalse": "0"
+                  }
+                ]
+              },
+              {
+                "type": "panel",
+                "name": "SelfLifeChangesHome",
+                "title": {
+                  "default": "Home and Family:",
+                  "es": "Hogar y Familia:",
+                  "de": "Haus und Familie:"
+                },
+                "elements": [
+                  {
+                    "type": "boolean",
+                    "name": "SelfLifeChanges23",
+                    "title": {
+                      "default": "Major change in living conditions.",
+                      "es": "Cambio importante en las condiciones de vida.",
+                      "de": "Wesentliche Änderung der Lebensumstände."
+                    },
+                    "labelTrue": {
+                      "default": "Yes",
+                      "es": "Sí",
+                      "de": "Ja"
+                    },
+                    "labelFalse": {
+                      "default": "No",
+                      "de": "Nein"
+                    },
+                    "valueTrue": "42",
+                    "valueFalse": "0"
+                  },
+                  {
+                    "type": "boolean",
+                    "name": "SelfLifeChanges24",
+                    "title": {
+                      "default": "Change in residence (move within the same town or city).",
+                      "de": "Wechsel des Wohnsitzes (Umzug innerhalb derselben Stadt).",
+                      "es": "Cambio de residencia (traslado dentro de la misma vereda, pueblo o ciudad)."
+                    },
+                    "labelTrue": {
+                      "default": "Yes",
+                      "es": "Sí",
+                      "de": "Ja"
+                    },
+                    "labelFalse": {
+                      "default": "No",
+                      "de": "Nein"
+                    },
+                    "valueTrue": "25",
+                    "valueFalse": "0"
+                  },
+                  {
+                    "type": "boolean",
+                    "name": "SelfLifeChanges25",
+                    "title": {
+                      "default": "Change in residence (move to a different town, city, or state).",
+                      "de": "Änderung des Wohnsitzes (Umzug in eine andere Stadt oder ein anderes Bundesland).",
+                      "es": "Cambio de residencia (traslado a otro pueblo, ciudad o estado)."
+                    },
+                    "labelTrue": {
+                      "default": "Yes",
+                      "es": "Sí",
+                      "de": "Ja"
+                    },
+                    "labelFalse": {
+                      "default": "No",
+                      "de": "Nein"
+                    },
+                    "valueTrue": "47",
+                    "valueFalse": "0"
+                  },
+                  {
+                    "type": "boolean",
+                    "name": "SelfLifeChanges26",
+                    "title": {
+                      "default": "Change in family get-togethers.",
+                      "es": "Cambios en los encuentros y reuniones de familia.",
+                      "de": "Änderung der Familienzusammenkünfte."
+                    },
+                    "labelTrue": {
+                      "default": "Yes",
+                      "es": "Sí",
+                      "de": "Ja"
+                    },
+                    "labelFalse": {
+                      "default": "No",
+                      "de": "Nein"
+                    },
+                    "valueTrue": "25",
+                    "valueFalse": "0"
+                  },
+                  {
+                    "type": "boolean",
+                    "name": "SelfLifeChanges27",
+                    "title": {
+                      "default": "Major change in health or behavior of family member.",
+                      "es": "Cambio importante en la salud o el comportamiento de un miembro de la familia.",
+                      "de": "Wesentliche Änderung des Gesundheitszustands oder Verhaltens eines Familienmitglieds."
+                    },
+                    "labelTrue": {
+                      "default": "Yes",
+                      "es": "Sí",
+                      "de": "Ja"
+                    },
+                    "labelFalse": {
+                      "default": "No",
+                      "de": "Nein"
+                    },
+                    "valueTrue": "55",
+                    "valueFalse": "0"
+                  },
+                  {
+                    "type": "boolean",
+                    "name": "SelfLifeChanges28",
+                    "title": {
+                      "default": "Marriage.",
+                      "es": "Matrimonio.",
+                      "de": "Heirat."
+                    },
+                    "labelTrue": {
+                      "default": "Yes",
+                      "es": "Sí",
+                      "de": "Ja"
+                    },
+                    "labelFalse": {
+                      "default": "No",
+                      "de": "Nein"
+                    },
+                    "valueTrue": "50",
+                    "valueFalse": "0"
+                  },
+                  {
+                    "type": "boolean",
+                    "name": "SelfLifeChanges29",
+                    "title": {
+                      "default": "Pregnancy.",
+                      "es": "Embarazo.",
+                      "de": "Schwangerschaft."
+                    },
+                    "labelTrue": {
+                      "default": "Yes",
+                      "es": "Sí",
+                      "de": "Ja"
+                    },
+                    "labelFalse": {
+                      "default": "No",
+                      "de": "Nein"
+                    },
+                    "valueTrue": "67",
+                    "valueFalse": "0"
+                  },
+                  {
+                    "type": "boolean",
+                    "name": "SelfLifeChanges31",
+                    "title": {
+                      "default": "Gain of a new family member (birth of a child).",
+                      "de": "Zuwachs eines neuen Familienmitglieds (Geburt eines Kindes).",
+                      "es": "Llegada de un nuevo miembro a la familia (nacimiento de un niño(a))."
+                    },
+                    "labelTrue": {
+                      "default": "Yes",
+                      "es": "Sí",
+                      "de": "Ja"
+                    },
+                    "labelFalse": {
+                      "default": "No",
+                      "de": "Nein"
+                    },
+                    "valueTrue": "66",
+                    "valueFalse": "0"
+                  },
+                  {
+                    "type": "boolean",
+                    "name": "SelfLifeChanges32",
+                    "title": {
+                      "default": "Gain of a new family member (adoption of a child).",
+                      "de": "Zuwachs eines neuen Familienmitglieds (Adoption eines Kindes).",
+                      "es": "Llegada de un nuevo miembro de la familia (adopción de un niño(a))."
+                    },
+                    "labelTrue": {
+                      "default": "Yes",
+                      "es": "Sí",
+                      "de": "Ja"
+                    },
+                    "labelFalse": {
+                      "default": "No",
+                      "de": "Nein"
+                    },
+                    "valueTrue": "65",
+                    "valueFalse": "0"
+                  },
+                  {
+                    "type": "boolean",
+                    "name": "SelfLifeChanges33",
+                    "title": {
+                      "default": "Gain of a new family member (a relative moving in with you).",
+                      "de": "Zuwachs eines neuen Familienmitglieds (ein Verwandter zieht bei Ihnen ein).",
+                      "es": "Llegada de un nuevo familiar (un pariente que se mudó a vivir con usted)."
+                    },
+                    "labelTrue": {
+                      "default": "Yes",
+                      "es": "Sí",
+                      "de": "Ja"
+                    },
+                    "labelFalse": {
+                      "default": "No",
+                      "de": "Nein"
+                    },
+                    "valueTrue": "59",
+                    "valueFalse": "0"
+                  },
+                  {
+                    "type": "boolean",
+                    "name": "SelfLifeChanges34",
+                    "title": {
+                      "default": "Spouse beginning or ending work.",
+                      "es": "Inicio o terminación de empleo por parte de su cónyuge.",
+                      "de": "Ehepartner beginnt oder beendet seine Arbeit."
+                    },
+                    "labelTrue": {
+                      "default": "Yes",
+                      "es": "Sí",
+                      "de": "Ja"
+                    },
+                    "labelFalse": {
+                      "default": "No",
+                      "de": "Nein"
+                    },
+                    "valueTrue": "46",
+                    "valueFalse": "0"
+                  },
+                  {
+                    "type": "boolean",
+                    "name": "SelfLifeChanges35",
+                    "title": {
+                      "default": "Child leaving home (to attend college).",
+                      "de": "Kind verlässt das Haus (um ein Studium zu beginnen).",
+                      "es": "Un menor de edad se va de casa (para seguir sus estudios)."
+                    },
+                    "labelTrue": {
+                      "default": "Yes",
+                      "es": "Sí",
+                      "de": "Ja"
+                    },
+                    "labelFalse": {
+                      "default": "No",
+                      "de": "Nein"
+                    },
+                    "valueTrue": "41",
+                    "valueFalse": "0"
+                  },
+                  {
+                    "type": "boolean",
+                    "name": "SelfLifeChanges36",
+                    "title": {
+                      "default": "Child leaving home (due to marriage).",
+                      "de": "Kind verlässt das Elternhaus (weil es heiratet).",
+                      "es": "Un menor de edad se va de casa (por matrimonio)."
+                    },
+                    "labelTrue": {
+                      "default": "Yes",
+                      "es": "Sí",
+                      "de": "Ja"
+                    },
+                    "labelFalse": {
+                      "default": "No",
+                      "de": "Nein"
+                    },
+                    "valueTrue": "41",
+                    "valueFalse": "0"
+                  },
+                  {
+                    "type": "boolean",
+                    "name": "SelfLifeChanges37",
+                    "title": {
+                      "default": "Child leaving home (for other reasons).",
+                      "de": "Kind verlässt das Haus (aus anderen Gründen).",
+                      "es": "Un menor de edad se va de casa (por otros motivos)."
+                    },
+                    "labelTrue": {
+                      "default": "Yes",
+                      "es": "Sí",
+                      "de": "Ja"
+                    },
+                    "labelFalse": {
+                      "default": "No",
+                      "de": "Nein"
+                    },
+                    "valueTrue": "45",
+                    "valueFalse": "0"
+                  },
+                  {
+                    "type": "boolean",
+                    "name": "SelfLifeChanges38",
+                    "title": {
+                      "default": "Change in arguments with spouse.",
+                      "es": "Cambios en el tipo y forma de las discusiones con el cónyuge.",
+                      "de": "Änderung der Streitigkeiten mit dem Ehepartner."
+                    },
+                    "labelTrue": {
+                      "default": "Yes",
+                      "es": "Sí",
+                      "de": "Ja"
+                    },
+                    "labelFalse": {
+                      "default": "No",
+                      "de": "Nein"
+                    },
+                    "valueTrue": "50",
+                    "valueFalse": "0"
+                  },
+                  {
+                    "type": "boolean",
+                    "name": "SelfLifeChanges39",
+                    "title": {
+                      "default": "In-law problems.",
+                      "es": "Problemas con los suegros.",
+                      "de": "Schwiegerelternprobleme."
+                    },
+                    "labelTrue": {
+                      "default": "Yes",
+                      "es": "Sí",
+                      "de": "Ja"
+                    },
+                    "labelFalse": {
+                      "default": "No",
+                      "de": "Nein"
+                    },
+                    "valueTrue": "38",
+                    "valueFalse": "0"
+                  },
+                  {
+                    "type": "boolean",
+                    "name": "SelfLifeChanges40",
+                    "title": {
+                      "default": "Change to the marital status of your parents (divorce).",
+                      "es": "Cambio en el estado civil de sus padres (divorcio).",
+                      "de": "Änderung des Ehestandes Ihrer Eltern (Scheidung)."
+                    },
+                    "labelTrue": {
+                      "default": "Yes",
+                      "es": "Sí",
+                      "de": "Ja"
+                    },
+                    "labelFalse": {
+                      "default": "No",
+                      "de": "Nein"
+                    },
+                    "valueTrue": "59",
+                    "valueFalse": "0"
+                  },
+                  {
+                    "type": "boolean",
+                    "name": "SelfLifeChanges41",
+                    "title": {
+                      "default": "Change to the marital status of your parents (remarriage).",
+                      "es": "Cambio de estado civil de sus padres (segundas nupcias).",
+                      "de": "Änderung des Ehestandes Ihrer Eltern (erneute Heirat)."
+                    },
+                    "labelTrue": {
+                      "default": "Yes",
+                      "es": "Sí",
+                      "de": "Ja"
+                    },
+                    "labelFalse": {
+                      "default": "No",
+                      "de": "Nein"
+                    },
+                    "valueTrue": "50",
+                    "valueFalse": "0"
+                  },
+                  {
+                    "type": "boolean",
+                    "name": "SelfLifeChanges42",
+                    "title": {
+                      "default": "Separation from spouse (due to work).",
+                      "es": "Separación del cónyuge (por motivos de trabajo).",
+                      "de": "Trennung vom Ehepartner (aus beruflichen Gründen)."
+                    },
+                    "labelTrue": {
+                      "default": "Yes",
+                      "es": "Sí",
+                      "de": "Ja"
+                    },
+                    "labelFalse": {
+                      "default": "No",
+                      "de": "Nein"
+                    },
+                    "valueTrue": "53",
+                    "valueFalse": "0"
+                  },
+                  {
+                    "type": "boolean",
+                    "name": "SelfLifeChanges43",
+                    "title": {
+                      "default": "Separation from spouse (due to marital problems).",
+                      "es": "Separación del cónyuge (por problemas conyugales).",
+                      "de": "Trennung vom Ehepartner (aufgrund von Eheproblemen)."
+                    },
+                    "labelTrue": {
+                      "default": "Yes",
+                      "es": "Sí",
+                      "de": "Ja"
+                    },
+                    "labelFalse": {
+                      "default": "No",
+                      "de": "Nein"
+                    },
+                    "valueTrue": "76",
+                    "valueFalse": "0"
+                  },
+                  {
+                    "type": "boolean",
+                    "name": "SelfLifeChanges44",
+                    "title": {
+                      "default": "Divorce.",
+                      "es": "Divorcio.",
+                      "de": "Scheidung."
+                    },
+                    "labelTrue": {
+                      "default": "Yes",
+                      "es": "Sí",
+                      "de": "Ja"
+                    },
+                    "labelFalse": {
+                      "default": "No",
+                      "de": "Nein"
+                    },
+                    "valueTrue": "96",
+                    "valueFalse": "0"
+                  },
+                  {
+                    "type": "boolean",
+                    "name": "SelfLifeChanges45",
+                    "title": {
+                      "default": "Birth of a grandchild.",
+                      "es": "Nacimiento de un nieto.",
+                      "de": "Geburt eines Enkelkindes."
+                    },
+                    "labelTrue": {
+                      "default": "Yes",
+                      "es": "Sí",
+                      "de": "Ja"
+                    },
+                    "labelFalse": {
+                      "default": "No",
+                      "de": "Nein"
+                    },
+                    "valueTrue": "43",
+                    "valueFalse": "0"
+                  },
+                  {
+                    "type": "boolean",
+                    "name": "SelfLifeChanges46",
+                    "title": {
+                      "default": "Death of a spouse.",
+                      "es": "Fallecimiento del cónyuge.",
+                      "de": "Tod eines Ehepartners."
+                    },
+                    "labelTrue": {
+                      "default": "Yes",
+                      "es": "Sí",
+                      "de": "Ja"
+                    },
+                    "labelFalse": {
+                      "default": "No",
+                      "de": "Nein"
+                    },
+                    "valueTrue": "119",
+                    "valueFalse": "0"
+                  },
+                  {
+                    "type": "boolean",
+                    "name": "SelfLifeChanges47",
+                    "title": {
+                      "default": "Death of other family member (child).",
+                      "es": "Fallecimiento de otro familiar (hijo o hija).",
+                      "de": "Tod eines anderen Familienmitglieds (Kind)."
+                    },
+                    "labelTrue": {
+                      "default": "Yes",
+                      "es": "Sí",
+                      "de": "Ja"
+                    },
+                    "labelFalse": {
+                      "default": "No",
+                      "de": "Nein"
+                    },
+                    "valueTrue": "123",
+                    "valueFalse": "0"
+                  },
+                  {
+                    "type": "boolean",
+                    "name": "SelfLifeChanges48",
+                    "title": {
+                      "default": "Death of other family member (brother or sister).",
+                      "es": "Fallecimiento de otro familiar (hermano o hermana).",
+                      "de": "Tod eines anderen Familienmitglieds (Bruder oder Schwester)."
+                    },
+                    "labelTrue": {
+                      "default": "Yes",
+                      "es": "Sí",
+                      "de": "Ja"
+                    },
+                    "labelFalse": {
+                      "default": "No",
+                      "de": "Nein"
+                    },
+                    "valueTrue": "102",
+                    "valueFalse": "0"
+                  },
+                  {
+                    "type": "boolean",
+                    "name": "SelfLifeChanges49",
+                    "title": {
+                      "default": "Death of other family member (parent).",
+                      "es": "Fallecimiento de otro familiar (padre o madre).",
+                      "de": "Tod eines anderen Familienmitglieds (Elternteil)."
+                    },
+                    "labelTrue": {
+                      "default": "Yes",
+                      "es": "Sí",
+                      "de": "Ja"
+                    },
+                    "labelFalse": {
+                      "default": "No",
+                      "de": "Nein"
+                    },
+                    "valueTrue": "100",
+                    "valueFalse": "0"
+                  }
+                ]
+              },
+              {
+                "type": "panel",
+                "name": "SelfLifeChangesPersonal",
+                "title": {
+                  "default": "Personal and Social:",
+                  "es": "Personal y Social:",
+                  "de": "Persönlich und sozial:"
+                },
+                "elements": [
+                  {
+                    "type": "boolean",
+                    "name": "SelfLifeChanges50",
+                    "title": {
+                      "default": "Change in personal habits.",
+                      "es": "Cambio de hábitos personales.",
+                      "de": "Änderung der persönlichen Gewohnheiten."
+                    },
+                    "labelTrue": {
+                      "default": "Yes",
+                      "es": "Sí",
+                      "de": "Ja"
+                    },
+                    "labelFalse": {
+                      "default": "No",
+                      "de": "Nein"
+                    },
+                    "valueTrue": "26",
+                    "valueFalse": "0"
+                  },
+                  {
+                    "type": "boolean",
+                    "name": "SelfLifeChanges51",
+                    "title": {
+                      "default": "Beginning or ending school or college.",
+                      "es": "Inicio o culminación de escuela o universidad.",
+                      "de": "Beginn oder Ende der Schule oder des Studiums."
+                    },
+                    "labelTrue": {
+                      "default": "Yes",
+                      "es": "Sí",
+                      "de": "Ja"
+                    },
+                    "labelFalse": {
+                      "default": "No",
+                      "de": "Nein"
+                    },
+                    "valueTrue": "38",
+                    "valueFalse": "0"
+                  },
+                  {
+                    "type": "boolean",
+                    "name": "SelfLifeChanges52",
+                    "title": {
+                      "default": "Change of school or college.",
+                      "es": "Cambio de colegio o universidad.",
+                      "de": "Schul- oder Hochschulwechsel"
+                    },
+                    "labelTrue": {
+                      "default": "Yes",
+                      "es": "Sí",
+                      "de": "Ja"
+                    },
+                    "labelFalse": {
+                      "default": "No",
+                      "de": "Nein"
+                    },
+                    "valueTrue": "35",
+                    "valueFalse": "0"
+                  },
+                  {
+                    "type": "boolean",
+                    "name": "SelfLifeChanges53",
+                    "title": {
+                      "default": "Change in political beliefs.",
+                      "es": "Cambio de convicciones políticas.",
+                      "de": "Politische Überzeugung geändert."
+                    },
+                    "labelTrue": {
+                      "default": "Yes",
+                      "es": "Sí",
+                      "de": "Ja"
+                    },
+                    "labelFalse": {
+                      "default": "No",
+                      "de": "Nein"
+                    },
+                    "valueTrue": "24",
+                    "valueFalse": "0"
+                  },
+                  {
+                    "type": "boolean",
+                    "name": "SelfLifeChanges54",
+                    "title": {
+                      "default": "Change in religious beliefs.",
+                      "es": "Cambio de creencias religiosas.",
+                      "de": "Religiöse Überzeugung geändert."
+                    },
+                    "labelTrue": {
+                      "default": "Yes",
+                      "es": "Sí",
+                      "de": "Ja"
+                    },
+                    "labelFalse": {
+                      "default": "No",
+                      "de": "Nein"
+                    },
+                    "valueTrue": "29",
+                    "valueFalse": "0"
+                  },
+                  {
+                    "type": "boolean",
+                    "name": "SelfLifeChanges55",
+                    "title": {
+                      "default": "Change in social activities.",
+                      "es": "Cambio de actividades sociales.",
+                      "de": "Änderung der sozialen Aktivitäten."
+                    },
+                    "labelTrue": {
+                      "default": "Yes",
+                      "es": "Sí",
+                      "de": "Ja"
+                    },
+                    "labelFalse": {
+                      "default": "No",
+                      "de": "Nein"
+                    },
+                    "valueTrue": "27",
+                    "valueFalse": "0"
+                  },
+                  {
+                    "type": "boolean",
+                    "name": "SelfLifeChanges56",
+                    "title": {
+                      "default": "Vacation.",
+                      "es": "Vacaciones.",
+                      "de": "Urlaub."
+                    },
+                    "labelTrue": {
+                      "default": "Yes",
+                      "es": "Sí",
+                      "de": "Ja"
+                    },
+                    "labelFalse": {
+                      "default": "No",
+                      "de": "Nein"
+                    },
+                    "valueTrue": "24",
+                    "valueFalse": "0"
+                  },
+                  {
+                    "type": "boolean",
+                    "name": "SelfLifeChanges57",
+                    "title": {
+                      "default": "New, close, personal relationship.",
+                      "es": "Nueva relación personal cercana.",
+                      "de": "Neue, enge, persönliche Beziehung."
+                    },
+                    "labelTrue": {
+                      "default": "Yes",
+                      "es": "Sí",
+                      "de": "Ja"
+                    },
+                    "labelFalse": {
+                      "default": "No",
+                      "de": "Nein"
+                    },
+                    "valueTrue": "37",
+                    "valueFalse": "0"
+                  },
+                  {
+                    "type": "boolean",
+                    "name": "SelfLifeChanges58",
+                    "title": {
+                      "default": "Engagement to marry.",
+                      "es": "Compromiso de matrimonio.",
+                      "de": "Verlobung und Heirat."
+                    },
+                    "labelTrue": {
+                      "default": "Yes",
+                      "es": "Sí",
+                      "de": "Ja"
+                    },
+                    "labelFalse": {
+                      "default": "No",
+                      "de": "Nein"
+                    },
+                    "valueTrue": "45",
+                    "valueFalse": "0"
+                  },
+                  {
+                    "type": "boolean",
+                    "name": "SelfLifeChanges59",
+                    "title": {
+                      "default": "Girlfriend or boyfriend problems.",
+                      "es": "Problemas con la novia o el novio.",
+                      "de": "Probleme mit der Freundin oder dem Freund."
+                    },
+                    "labelTrue": {
+                      "default": "Yes",
+                      "es": "Sí",
+                      "de": "Ja"
+                    },
+                    "labelFalse": {
+                      "default": "No",
+                      "de": "Nein"
+                    },
+                    "valueTrue": "39",
+                    "valueFalse": "0"
+                  },
+                  {
+                    "type": "boolean",
+                    "name": "SelfLifeChanges61",
+                    "title": {
+                      "default": "\"Falling out\" of a close personal relationship.",
+                      "es": "Se rompió una relación personal cercana.",
+                      "de": "\"Aussteigen\" aus einer engen persönlichen Beziehung."
+                    },
+                    "labelTrue": {
+                      "default": "Yes",
+                      "es": "Sí",
+                      "de": "Ja"
+                    },
+                    "labelFalse": {
+                      "default": "No",
+                      "de": "Nein"
+                    },
+                    "valueTrue": "47",
+                    "valueFalse": "0"
+                  },
+                  {
+                    "type": "boolean",
+                    "name": "SelfLifeChanges62",
+                    "title": {
+                      "default": "An accident.",
+                      "es": "Un accidente.",
+                      "de": "Ein Unfall."
+                    },
+                    "labelTrue": {
+                      "default": "Yes",
+                      "es": "Sí",
+                      "de": "Ja"
+                    },
+                    "labelFalse": {
+                      "default": "No",
+                      "de": "Nein"
+                    },
+                    "valueTrue": "48",
+                    "valueFalse": "0"
+                  },
+                  {
+                    "type": "boolean",
+                    "name": "SelfLifeChanges63",
+                    "title": {
+                      "default": "Minor violation of the law.",
+                      "es": "Infracción leve de la ley.",
+                      "de": "Geringfügiger Verstoß gegen das Gesetz."
+                    },
+                    "labelTrue": {
+                      "default": "Yes",
+                      "es": "Sí",
+                      "de": "Ja"
+                    },
+                    "labelFalse": {
+                      "default": "No",
+                      "de": "Nein"
+                    },
+                    "valueTrue": "20",
+                    "valueFalse": "0"
+                  },
+                  {
+                    "type": "boolean",
+                    "name": "SelfLifeChanges65",
+                    "title": {
+                      "default": "Death of a close friend.",
+                      "es": "Muerte de un amigo cercano.",
+                      "de": "Tod eines engen Freundes."
+                    },
+                    "labelTrue": {
+                      "default": "Yes",
+                      "es": "Sí",
+                      "de": "Ja"
+                    },
+                    "labelFalse": {
+                      "default": "No",
+                      "de": "Nein"
+                    },
+                    "valueTrue": "70",
+                    "valueFalse": "0"
+                  },
+                  {
+                    "type": "boolean",
+                    "name": "SelfLifeChanges66",
+                    "title": {
+                      "default": "Major decision regarding your immediate future.",
+                      "es": "Decisión importante sobre su futuro inmediato.",
+                      "de": "Wichtige Entscheidung über Ihre unmittelbare Zukunft."
+                    },
+                    "labelTrue": {
+                      "default": "Yes",
+                      "es": "Sí",
+                      "de": "Ja"
+                    },
+                    "labelFalse": {
+                      "default": "No",
+                      "de": "Nein"
+                    },
+                    "valueTrue": "51",
+                    "valueFalse": "0"
+                  },
+                  {
+                    "type": "boolean",
+                    "name": "SelfLifeChanges67",
+                    "title": {
+                      "default": "Major personal achievement.",
+                      "de": "Großer persönlicher Erfolg.",
+                      "es": "Mayor logro personal."
+                    },
+                    "labelTrue": {
+                      "default": "Yes",
+                      "es": "Sí",
+                      "de": "Ja"
+                    },
+                    "labelFalse": {
+                      "default": "No",
+                      "de": "Nein"
+                    },
+                    "valueTrue": "36",
+                    "valueFalse": "0"
+                  }
+                ]
+              },
+              {
+                "type": "panel",
+                "name": "SelfLifeChangesFinancial",
+                "title": {
+                  "default": "Financial:",
+                  "es": "Financiera:",
+                  "de": "Finanzen:"
+                },
+                "elements": [
+                  {
+                    "type": "boolean",
+                    "name": "SelfLifeChanges68",
+                    "title": {
+                      "default": "Major change in finances (increased income).",
+                      "es": "Cambio importante en las finanzas (aumento de los ingresos).",
+                      "de": "Größere Veränderung der Finanzen (höheres Einkommen)."
+                    },
+                    "labelTrue": {
+                      "default": "Yes",
+                      "es": "Sí",
+                      "de": "Ja"
+                    },
+                    "labelFalse": {
+                      "default": "No",
+                      "de": "Nein"
+                    },
+                    "valueTrue": "38",
+                    "valueFalse": "0"
+                  },
+                  {
+                    "type": "boolean",
+                    "name": "SelfLifeChanges69",
+                    "title": {
+                      "default": "Major change in finances (decreased income).",
+                      "es": "Cambio importante en las finanzas (disminución de ingresos).",
+                      "de": "Starke Veränderung der Finanzen (Einkommensrückgang)."
+                    },
+                    "labelTrue": {
+                      "default": "Yes",
+                      "es": "Sí",
+                      "de": "Ja"
+                    },
+                    "labelFalse": {
+                      "default": "No",
+                      "de": "Nein"
+                    },
+                    "valueTrue": "60",
+                    "valueFalse": "0"
+                  },
+                  {
+                    "type": "boolean",
+                    "name": "SelfLifeChanges70",
+                    "title": {
+                      "default": "Major change in finances (investment and/or credit difficulties).",
+                      "es": "Cambio importante en las finanzas (dificultades de inversión y/o de crédito).",
+                      "de": "Größere Veränderung der Finanzen (Investitions- und/oder Kreditschwierigkeiten)."
+                    },
+                    "labelTrue": {
+                      "default": "Yes",
+                      "es": "Sí",
+                      "de": "Ja"
+                    },
+                    "labelFalse": {
+                      "default": "No",
+                      "de": "Nein"
+                    },
+                    "valueTrue": "56",
+                    "valueFalse": "0"
+                  },
+                  {
+                    "type": "boolean",
+                    "name": "SelfLifeChanges71",
+                    "title": {
+                      "default": "Loss or damage of personal property.",
+                      "es": "Pérdida o deterioro de bienes personales.",
+                      "de": "Verlust oder Beschädigung von persönlichem Eigentum."
+                    },
+                    "labelTrue": {
+                      "default": "Yes",
+                      "es": "Sí",
+                      "de": "Ja"
+                    },
+                    "labelFalse": {
+                      "default": "No",
+                      "de": "Nein"
+                    },
+                    "valueTrue": "43",
+                    "valueFalse": "0"
+                  },
+                  {
+                    "type": "boolean",
+                    "name": "SelfLifeChanges72",
+                    "title": {
+                      "default": "Moderate purchase.",
+                      "de": "Mittelgroße Anschaffung.",
+                      "es": "Compra moderada."
+                    },
+                    "labelTrue": {
+                      "default": "Yes",
+                      "es": "Sí",
+                      "de": "Ja"
+                    },
+                    "labelFalse": {
+                      "default": "No",
+                      "de": "Nein"
+                    },
+                    "valueTrue": "20",
+                    "valueFalse": "0"
+                  },
+                  {
+                    "type": "boolean",
+                    "name": "SelfLifeChanges73",
+                    "title": {
+                      "default": "Major purchase.",
+                      "de": "Größere Anschaffung.",
+                      "es": "Compra importante."
+                    },
+                    "labelTrue": {
+                      "default": "Yes",
+                      "es": "Sí",
+                      "de": "Ja"
+                    },
+                    "labelFalse": {
+                      "default": "No",
+                      "de": "Nein"
+                    },
+                    "valueTrue": "37",
+                    "valueFalse": "0"
+                  },
+                  {
+                    "type": "boolean",
+                    "name": "SelfLifeChanges74",
+                    "title": {
+                      "default": "Foreclosure on a mortgage or loan.",
+                      "es": "Ejecución de una hipoteca o préstamo.",
+                      "de": "Zwangsvollstreckung einer Hypothek oder eines Kredits."
+                    },
+                    "labelTrue": {
+                      "default": "Yes",
+                      "es": "Sí",
+                      "de": "Ja"
+                    },
+                    "labelFalse": {
+                      "default": "No",
+                      "de": "Nein"
+                    },
+                    "valueTrue": "58",
+                    "valueFalse": "0"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "page5",
+        "elements": [
+          {
+            "type": "text",
+            "name": "SelfMcArthurCountry",
+            "title": {
+              "default": "<b>Instructions:</b> Think of this line as representing where people stand in the <i>country where you live</i>. To the <b>right</b> are the people who are the best off - those who have the most money, the most education, and the most respected jobs. To the <b>left</b> are the people who are the worst off - those who have the least money, the least education, the least respected jobs, or no job. The further to the right you are on the line, the closer you are to the people at the very top; the further to the left you are, the closer you are to the people at the very bottom.<br><b>Where would you place yourself on this line?</b><br>Move the slider to where you think you stand at this time in your life relative to other people in your country.",
+              "es": "<b>Instrucciones:</b> Piense que esta línea representa la situación de la gente en <i>el país en el que vive</i>. <b>A la derecha</b> están las personas más acomodadas: las que tienen más dinero, más educación y los trabajos más respetados. <b>A la izquierda</b> están las personas que están en peor situación: las que tienen menos dinero, menos educación, los trabajos menos respetados o ningún trabajo. Cuanto más a la derecha se encuentre en la línea, más cerca estará de la gente que más tiene; cuanto más a la izquierda, más cerca estará de la gente que menos tiene.<br><b>¿Dónde se situaría usted en esta línea?</b><br>Mueva y ubique el círculo sobre la recta donde usted crea que encontrarse en este momento de su vida en relación con otras personas de su país.",
+              "de": "<b>Anweisungen:</b> Stellen Sie sich vor, dass diese Linie zeigt, wo sich die Menschen<i>in dem Land, in dem Sie leben, befinden</i>. Auf der <b>rechten</b> Seite befinden sich die Menschen, denen es am besten geht - diejenigen, die das meiste Geld, die beste Ausbildung und die angesehensten Arbeitsplätze haben. Auf der <b>linken</b> Seite befinden sich die Menschen, denen es am schlechtesten geht - diejenigen, die das wenigste Geld, die geringste Bildung, die am wenigsten angesehenen Arbeitsplätze oder gar keinen Arbeitsplatz haben.Je weiter rechts Sie sich auf der Linie befinden, desto näher sind Sie den Menschen ganz oben; je weiter links Sie sind, desto näher sind Sie den Menschen ganz unten.<br><b>Wo würden Sie sich selbst auf dieser Linie einordnen?</b><br>Bewegen Sie den Schieberegler dorthin, wo Sie Ihrer Meinung nach im Vergleich zu anderen Menschen in Ihrem Land derzeit stehen."
+            },
+            "showNumber": false,
+            "inputType": "range",
+            "min": 0,
+            "max": 10
+          },
+          {
+            "type": "text",
+            "name": "SelfMcArthurCommunity",
+            "title": {
+              "default": "<b>Instructions:</b> Think of this line as representing where people stand in their <i>communities</i>. People define community in different ways; please define it in whatever way is most meaningful to you. To the <b>right</b> are people who have the highest standing in their community. To the <b>left</b> are the people who have the lowest standing in their community.<br><b>Where would you place yourself on this line?</b><br>Move the slider to where you think you stand at this time in your life relative to other people in your community.",
+              "es": "<b>Instrucciones:</b> Piense que esta línea representa la posición de las personas en sus <i>comunidades</i>. La gente define la comunidad de distintas maneras; por favor, piense en la definición que a usted le resulte más significativa. <b>A la derecha</b> están las personas que gozan de mayor prestigio en su comunidad. <b>A la izquierda</> están las personas que tienen menor prestigio en su comunidad.<br><b>¿Dónde se situaría en esta línea?</b><br>Mueve y ubique el círculo sobre la recta donde usted creas que encontrarse en este momento de su vida en relación con otras personas de su comunidad.",
+              "de": "<b>Anweisungen:</b> Stellen Sie sich vor, dass diese Linie zeigt, wo die Menschen in ihren <i>Gemeinschaften</i> stehen. Menschen definieren Gemeinschaft auf unterschiedliche Weise; bitte definieren Sie sie so, wie es für Sie am sinnvollsten ist. Auf der <b>rechten</b> Seite stehen die Menschen, die den höchsten Stellenwert in ihrer Gemeinschaft haben. Auf der <b>linken</b> Seite befinden sich die Menschen, die den niedrigsten Stellenwert in ihrer Gemeinschaft haben.<br><b>Wo würden Sie sich auf dieser Linie einordnen?</b><br>Bewegen Sie den Schieberegler dorthin, wo Sie Ihrer Meinung nach im Vergleich zu den anderen Menschen in Ihrer Gemeinschaft stehen."
+            },
+            "showNumber": false,
+            "inputType": "range",
+            "min": 0,
+            "max": 10
+          }
+        ]
+      }
+    ],
+    "showPageNumbers": true,
+    "showProgressBar": true,
+    "progressBarLocation": "both",
+    "startSurveyText": {
+      "default": "Start Survey",
+      "de": "Umfrage starten",
+      "es": "Comenzar Encuesta"
+    },
+    "pagePrevText": {
+      "default": "Previous",
+      "es": "Anterior",
+      "de": "Zurück"
+    },
+    "pageNextText": {
+      "default": "Next",
+      "es": "Siguiente",
+      "de": "Weiter"
+    },
+    "completeText": {
+      "default": "Finish",
+      "es": "Terminar",
+      "de": "Beenden"
+    },
+    "firstPageIsStartPage": true
+  }
+  Text to speech button

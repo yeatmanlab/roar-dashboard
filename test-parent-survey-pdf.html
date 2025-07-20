@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Parent Survey PDF Generator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .survey-info {
+            background: white;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Parent Survey PDF Generator Test</h1>
+    
+    <div class="container">
+        <h2>Test the Survey PDF Generator</h2>
+        <p>This will fetch the <code>parent_survey_family.json</code> from the Levante bucket and generate a PDF.</p>
+        
+        <button onclick="analyzeSurvey()">📊 Analyze Survey</button>
+        <button onclick="generatePDF()" id="generateBtn">📄 Generate PDF</button>
+        <button onclick="generatePDFWithOptions()" id="generateOptionsBtn">⚙️ Generate PDF (Custom Options)</button>
+    </div>
+
+    <div id="status"></div>
+    <div id="surveyInfo"></div>
+
+    <script>
+        const SURVEY_URL = 'https://storage.googleapis.com/levante-dashboard-dev/parent_survey_family.json';
+        let surveyData = null;
+
+        // Helper function to add logo to PDF
+        async function addLogoToPdf(pdf, x, y, width = 25, height = 15) {
+            try {
+                const logoUrl = '/public/LEVANTE/Levante_Logo.png';
+                const response = await fetch(logoUrl);
+                const blob = await response.blob();
+                
+                return new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onload = function() {
+                        const base64 = reader.result;
+                        pdf.addImage(base64, 'PNG', x, y, width, height);
+                        resolve();
+                    };
+                    reader.readAsDataURL(blob);
+                });
+            } catch (error) {
+                console.warn('Could not load logo:', error);
+                // If logo fails to load, continue without it
+            }
+        }
+
+        // Simple PDF generator (simplified version of your utility)
+        async function generatePdfFromSurvey(surveyJson, options = {}) {
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            
+            const defaultOptions = {
+                title: surveyJson.title || 'Survey',
+                includeQuestionNumbers: true,
+                includePages: true,
+                fontSize: 10,
+                margin: 20,
+                showChoices: true,
+                showDescriptions: true,
+                headerText: '',
+                footerText: ''
+            };
+            
+            const mergedOptions = { ...defaultOptions, ...options };
+            let currentY = mergedOptions.margin;
+            let questionCounter = 1;
+
+            // Add logo to first page
+            await addLogoToPdf(pdf, mergedOptions.margin, 5);
+            
+            // Add title (moved down to accommodate logo)
+            currentY = mergedOptions.margin + 5; // Extra space for logo
+            if (mergedOptions.title) {
+                pdf.setFontSize(16);
+                pdf.setFont('helvetica', 'bold');
+                pdf.text(mergedOptions.title, 105, currentY, { align: 'center' });
+                currentY += 15;
+            }
+
+            // Add fill-in-the-blank fields for caregiver information
+            pdf.setFontSize(10);
+            pdf.setFont('helvetica', 'normal');
+            
+            // Child's Name
+            pdf.text("Child's Name: ________________________________", mergedOptions.margin, currentY);
+            currentY += 8;
+            
+            // Caregiver's Name
+            pdf.text("Caregiver's Name: ________________________________", mergedOptions.margin, currentY);
+            currentY += 8;
+            
+            // Site and/or School
+            pdf.text("Site and/or School: ________________________________", mergedOptions.margin, currentY);
+            currentY += 8;
+            
+            // Date Completed
+            pdf.text("Date Completed: ________________________________", mergedOptions.margin, currentY);
+            currentY += 12;
+
+            // Process survey structure
+            const pages = surveyJson.pages || [{ elements: surveyJson.elements || [] }];
+            
+            for (let pageIndex = 0; pageIndex < pages.length; pageIndex++) {
+                const page = pages[pageIndex];
+                // Add page title
+                if (mergedOptions.includePages && pages.length > 1 && page.title) {
+                    if (pageIndex > 0) {
+                        pdf.addPage();
+                        await addLogoToPdf(pdf, mergedOptions.margin, 5);
+                        currentY = mergedOptions.margin + 5; // Extra space for logo
+                    }
+                    pdf.setFontSize(14);
+                    pdf.setFont('helvetica', 'bold');
+                    const pageTitle = extractText(page.title) || page.title;
+                    pdf.text(pageTitle, mergedOptions.margin, currentY);
+                    currentY += 10;
+                }
+
+                // Process elements with improved expansion
+                const expandElements = (elements) => {
+                    const expandedQuestions = [];
+                    
+                    elements.forEach(element => {
+                        if (element.type === 'html') {
+                            // Skip HTML elements
+                            return;
+                        } else if (element.type === 'panel' && element.elements) {
+                            // Expand panel elements
+                            expandedQuestions.push(...expandElements(element.elements));
+                        } else if (element.type === 'matrix') {
+                            // Expand matrix questions - each row becomes a separate question
+                            if (element.rows && element.rows.length > 0) {
+                                element.rows.forEach(row => {
+                                    const rowQuestion = {
+                                        ...element,
+                                        name: row.value,
+                                        title: extractText(row.text) || row.value,
+                                        type: 'matrix-row',
+                                        choices: element.columns ? element.columns.map(col => ({
+                                            value: col.value,
+                                            text: extractText(col.text) || col.value
+                                        })) : []
+                                    };
+                                    expandedQuestions.push(rowQuestion);
+                                });
+                            } else {
+                                // Fallback if no rows
+                                expandedQuestions.push(element);
+                            }
+                        } else {
+                            // Regular question
+                            expandedQuestions.push(element);
+                        }
+                    });
+                    
+                    return expandedQuestions;
+                };
+
+                const expandedElements = expandElements(page.elements || []);
+                for (const element of expandedElements) {
+                    // Check if we need a new page
+                    if (currentY > 250) {
+                        pdf.addPage();
+                        await addLogoToPdf(pdf, mergedOptions.margin, 5);
+                        currentY = mergedOptions.margin + 5; // Extra space for logo
+                    }
+
+                    currentY = addQuestionToPdf(pdf, element, questionCounter, currentY, mergedOptions);
+                    questionCounter++;
+                }
+            }
+
+            // Add footer with page numbers
+            const pageCount = pdf.getNumberOfPages();
+            for (let i = 1; i <= pageCount; i++) {
+                pdf.setPage(i);
+                pdf.setFontSize(8);
+                pdf.setFont('helvetica', 'normal');
+                const footerText = `Page ${i} out of ${pageCount}`;
+                const pageWidth = pdf.internal.pageSize.getWidth();
+                const textWidth = pdf.getTextWidth(footerText);
+                const x = (pageWidth - textWidth) / 2; // Center the text
+                pdf.text(footerText, x, 285);
+            }
+
+            return pdf;
+        }
+
+        // Helper function to draw a checkbox
+        function drawCheckbox(pdf, x, y, size = 3) {
+            pdf.setDrawColor(0); // Black border
+            pdf.setFillColor(255, 255, 255); // White fill
+            pdf.rect(x, y - size, size, size, 'FD'); // Draw filled rectangle with border
+        }
+
+        // Helper function to draw a radio button (circle)
+        function drawRadioButton(pdf, x, y, radius = 1.5) {
+            pdf.setDrawColor(0); // Black border
+            pdf.setFillColor(255, 255, 255); // White fill
+            pdf.circle(x + radius, y - radius/2, radius, 'FD'); // Draw filled circle with border
+        }
+
+        function addQuestionToPdf(pdf, element, questionNumber, startY, options) {
+            let currentY = startY;
+            
+            // Question title
+            const questionTitle = options.includeQuestionNumbers 
+                ? `${questionNumber}. ${getElementTitle(element)}`
+                : getElementTitle(element);
+            
+            pdf.setFontSize(options.fontSize + 1);
+            pdf.setFont('helvetica', 'bold');
+            const lines = pdf.splitTextToSize(questionTitle, 170);
+            lines.forEach((line, index) => {
+                pdf.text(line, options.margin, currentY);
+                currentY += 5;
+            });
+
+            // Question content based on type
+            pdf.setFontSize(options.fontSize);
+            pdf.setFont('helvetica', 'normal');
+            
+            switch (element.type) {
+                case 'boolean':
+                    const trueLabel = extractText(element.labelTrue) || 'Yes';
+                    const falseLabel = extractText(element.labelFalse) || 'No';
+                    
+                    // Draw first checkbox and label
+                    drawCheckbox(pdf, options.margin + 5, currentY);
+                    pdf.text(`${trueLabel}`, options.margin + 12, currentY);
+                    
+                    // Draw second checkbox and label (offset horizontally)
+                    const trueLabelWidth = pdf.getTextWidth(trueLabel);
+                    const checkboxSpacing = Math.max(30, trueLabelWidth + 20);
+                    drawCheckbox(pdf, options.margin + 5 + checkboxSpacing, currentY);
+                    pdf.text(`${falseLabel}`, options.margin + 12 + checkboxSpacing, currentY);
+                    
+                    currentY += 8;
+                    break;
+                    
+                case 'radiogroup':
+                case 'dropdown':
+                    if (options.showChoices && element.choices) {
+                        element.choices.forEach(choice => {
+                            const choiceText = typeof choice === 'string' ? choice : extractText(choice.text) || extractText(choice) || choice.value || choice;
+                            
+                            if (element.type === 'radiogroup') {
+                                drawRadioButton(pdf, options.margin + 5, currentY);
+                                pdf.text(`${choiceText}`, options.margin + 12, currentY);
+                            } else {
+                                // For dropdown, just show numbered list
+                                pdf.text(`  ${element.choices.indexOf(choice) + 1}. ${choiceText}`, options.margin + 5, currentY);
+                            }
+                            currentY += 6;
+                        });
+                    }
+                    break;
+                    
+                case 'checkbox':
+                    if (options.showChoices && element.choices) {
+                        element.choices.forEach(choice => {
+                            const choiceText = typeof choice === 'string' ? choice : extractText(choice.text) || extractText(choice) || choice.value || choice;
+                            
+                            drawCheckbox(pdf, options.margin + 5, currentY);
+                            pdf.text(`${choiceText}`, options.margin + 12, currentY);
+                            currentY += 6;
+                        });
+                    }
+                    break;
+                    
+                case 'matrix-row':
+                    // Individual matrix row question
+                    if (options.showChoices && element.choices) {
+                        // Show as radio buttons with the matrix column choices
+                        element.choices.forEach(choice => {
+                            const choiceText = typeof choice === 'string' ? choice : extractText(choice.text) || extractText(choice) || choice.value || choice;
+                            
+                            drawRadioButton(pdf, options.margin + 5, currentY);
+                            pdf.text(`${choiceText}`, options.margin + 12, currentY);
+                            currentY += 6;
+                        });
+                    } else {
+                        pdf.text('  ________________', options.margin + 5, currentY);
+                        currentY += 6;
+                    }
+                    break;
+                    
+                case 'matrix':
+                    // Full matrix question (if not expanded into rows)
+                    pdf.text('  Matrix Question - Please refer to original survey for full layout', options.margin + 5, currentY);
+                    currentY += 6;
+                    break;
+                    
+                case 'text':
+                    if (element.inputType === 'range') {
+                        // This is a numberline/slider question
+                        const min = element.min || 0;
+                        const max = element.max || 10;
+                        
+                        // Add instruction text
+                        pdf.setFontSize(options.fontSize - 1);
+                        pdf.setFont('helvetica', 'italic');
+                        pdf.text('Please mark your position on the line below:', options.margin + 5, currentY);
+                        currentY += 8;
+                        
+                        // Draw the numberline
+                        pdf.setFont('helvetica', 'normal');
+                        currentY = drawNumberline(pdf, options.margin + 5, currentY, 120, min, max);
+                        currentY += 5;
+                    } else {
+                        const inputTypeText = element.inputType ? ` (${element.inputType})` : '';
+                        pdf.text(`  ________________${inputTypeText}`, options.margin + 5, currentY);
+                        currentY += 6;
+                    }
+                    break;
+                    
+                case 'comment':
+                    const rows = element.rows || 3;
+                    for (let i = 0; i < rows; i++) {
+                        pdf.text('  ________________________________________________', options.margin + 5, currentY);
+                        currentY += 5;
+                    }
+                    break;
+                    
+                default:
+                    pdf.text('  ________________', options.margin + 5, currentY);
+                    currentY += 6;
+                    break;
+            }
+            
+            return currentY + 3; // Add spacing
+        }
+
+        // Helper function to extract text from multilingual objects
+        function extractText(textObj) {
+            if (typeof textObj === 'string') return textObj;
+            if (typeof textObj === 'object' && textObj) {
+                return textObj.default || textObj.en || textObj.es || textObj.de || Object.values(textObj)[0] || '';
+            }
+            return '';
+        }
+
+        // Helper function to parse HTML and convert to plain text
+        function parseHtmlToText(html) {
+            if (!html) return '';
+            
+            // Create a temporary div to parse HTML
+            const div = document.createElement('div');
+            div.innerHTML = html;
+            
+            // Extract text content and clean it up
+            let text = div.textContent || div.innerText || '';
+            
+            // Replace multiple whitespace with single space and clean up
+            text = text.replace(/\s+/g, ' ').trim();
+            
+            return text;
+        }
+
+        // Helper function to draw a numberline/slider
+        function drawNumberline(pdf, x, y, width = 120, min = 0, max = 10) {
+            const lineY = y;
+            const lineStartX = x;
+            const lineEndX = x + width;
+            
+            // Draw the main line
+            pdf.setDrawColor(0);
+            pdf.setLineWidth(0.5);
+            pdf.line(lineStartX, lineY, lineEndX, lineY);
+            
+            // Draw start and end markers
+            pdf.line(lineStartX, lineY - 2, lineStartX, lineY + 2);
+            pdf.line(lineEndX, lineY - 2, lineEndX, lineY + 2);
+            
+            // Add labels
+            pdf.setFontSize(8);
+            pdf.text(min.toString(), lineStartX - 2, lineY + 6);
+            pdf.text(max.toString(), lineEndX - 2, lineY + 6);
+            
+            // Draw tick marks for intermediate values
+            if (max - min <= 10) {
+                for (let i = min + 1; i < max; i++) {
+                    const tickX = lineStartX + ((i - min) / (max - min)) * width;
+                    pdf.line(tickX, lineY - 1, tickX, lineY + 1);
+                    if (i % 2 === 0) { // Label every other tick
+                        pdf.text(i.toString(), tickX - 1, lineY + 6);
+                    }
+                }
+            }
+            
+            return lineY + 12; // Return next Y position
+        }
+
+        function getElementTitle(element) {
+            if (!element.title) return element.name || 'Untitled Question';
+            
+            const titleText = extractText(element.title) || element.name || 'Untitled Question';
+            
+            // If the title contains HTML, parse it to clean text
+            if (titleText.includes('<') && titleText.includes('>')) {
+                return parseHtmlToText(titleText);
+            }
+            
+            return titleText;
+        }
+
+        function showStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+
+        function showSurveyInfo(survey) {
+            const infoDiv = document.getElementById('surveyInfo');
+            
+            let totalQuestions = 0;
+            const questionTypes = new Set();
+            
+            const countElements = (elements) => {
+                elements.forEach(element => {
+                    if (element.type === 'html') {
+                        // Skip HTML elements
+                        return;
+                    } else if (element.type === 'panel' && element.elements) {
+                        // Expand panel elements
+                        countElements(element.elements);
+                    } else if (element.type === 'matrix' && element.rows) {
+                        // Matrix questions - each row is a separate question
+                        totalQuestions += element.rows.length;
+                        questionTypes.add('matrix-row');
+                    } else {
+                        // Regular question
+                        totalQuestions++;
+                        questionTypes.add(element.type);
+                    }
+                });
+            };
+
+            if (survey.pages) {
+                survey.pages.forEach(page => {
+                    if (page.elements) countElements(page.elements);
+                });
+            } else if (survey.elements) {
+                countElements(survey.elements);
+            }
+
+            infoDiv.innerHTML = `
+                <div class="survey-info">
+                    <h3>📋 Survey Analysis</h3>
+                    <p><strong>Title:</strong> ${survey.title || 'No title'}</p>
+                    <p><strong>Pages:</strong> ${survey.pages?.length || 1}</p>
+                    <p><strong>Total Questions:</strong> ${totalQuestions}</p>
+                    <p><strong>Question Types:</strong> ${Array.from(questionTypes).join(', ')}</p>
+                    <details>
+                        <summary>Raw Survey JSON (first 1000 chars)</summary>
+                        <pre>${JSON.stringify(survey, null, 2).substring(0, 1000)}...</pre>
+                    </details>
+                </div>
+            `;
+        }
+
+        async function analyzeSurvey() {
+            showStatus('🔄 Fetching survey data...', 'info');
+            
+            try {
+                const response = await fetch(SURVEY_URL);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch: ${response.statusText}`);
+                }
+                
+                surveyData = await response.json();
+                showStatus('✅ Survey data loaded successfully!', 'success');
+                showSurveyInfo(surveyData);
+                
+                // Enable buttons
+                document.getElementById('generateBtn').disabled = false;
+                document.getElementById('generateOptionsBtn').disabled = false;
+                
+            } catch (error) {
+                showStatus(`❌ Error loading survey: ${error.message}`, 'error');
+            }
+        }
+
+        async function generatePDF() {
+            if (!surveyData) {
+                await analyzeSurvey();
+                if (!surveyData) return;
+            }
+
+            showStatus('🔄 Generating PDF...', 'info');
+
+            try {
+                const pdf = await generatePdfFromSurvey(surveyData, {
+                    title: 'Caregiver Survey'
+                });
+
+                // Download the PDF
+                pdf.save('caregiver_survey.pdf');
+                showStatus('✅ PDF generated and downloaded successfully!', 'success');
+
+            } catch (error) {
+                showStatus(`❌ Error generating PDF: ${error.message}`, 'error');
+            }
+        }
+
+        async function generatePDFWithOptions() {
+            if (!surveyData) {
+                await analyzeSurvey();
+                if (!surveyData) return;
+            }
+
+            showStatus('🔄 Generating PDF with custom options...', 'info');
+
+            try {
+                const pdf = await generatePdfFromSurvey(surveyData, {
+                    title: 'Caregiver Survey',
+                    includeQuestionNumbers: true,
+                    includePages: true,
+                    fontSize: 11,
+                    margin: 25,
+                    showChoices: true,
+                    showDescriptions: true
+                });
+
+                // Download the PDF
+                pdf.save('caregiver_survey_detailed.pdf');
+                showStatus('✅ Detailed PDF generated and downloaded successfully!', 'success');
+
+            } catch (error) {
+                showStatus(`❌ Error generating PDF: ${error.message}`, 'error');
+            }
+        }
+
+        // Initialize
+        showStatus('👋 Ready to test! Click "Analyze Survey" to start.', 'info');
+        document.getElementById('generateBtn').disabled = true;
+        document.getElementById('generateOptionsBtn').disabled = true;
+    </script>
+</body>
+</html> 
