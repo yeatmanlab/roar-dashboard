@@ -937,7 +937,7 @@ export const assignmentPageFetcher = async (
             };
 
             try {
-              const { data } = await adminAxiosInstance.post(`users/${userId}:runQuery`, surveyQuery);
+              const { data } = await adminAxiosInstance.post(`${getBaseDocumentPath()}/users/${userId}:runQuery`, surveyQuery);
 
               const validResponses = data
                 .filter((doc) => doc.document)
