@@ -57,11 +57,11 @@ describe('Parent: Add Child', () => {
     cy.get('#accept-register').should('be.visible').click();
     cy.wait(500); // Wait for consent modal if it appears
     // Wait for the Continue button to be ready and click it
-cy.contains('button', 'Continue')
+    cy.contains('button', 'Continue')
       .should('be.visible')
       .and('not.have.attr', 'data-p-disabled', 'true')
       .and('not.have.class', 'p-button-loading')
-      .click({animationDistanceThreshold: 20});
+      .click({ animationDistanceThreshold: 20 });
 
     // Submit child form
     cy.get('button').contains('Submit').click();
