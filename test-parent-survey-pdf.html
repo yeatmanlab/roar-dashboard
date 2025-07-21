@@ -256,7 +256,7 @@
         <div class="button-group">
             <h3>💻 Digital Form Alternatives</h3>
             <button onclick="openHtmlForm()" id="htmlFormBtn">💻 Open Digital HTML Form (All Pages)</button>
-            <button onclick="generateTrueFillablePDF()" id="trueFillableBtn">📋 Generate Interactive Fillable PDF</button>
+            <button onclick="generateTrueFillablePDF()" id="trueFillableBtn">📋 Generate Interactive Fillable PDF (Click fields to fill)</button>
         </div>
     </div>
 
@@ -401,9 +401,18 @@
                     
                     elements.forEach(element => {
                         if (element.type === 'html') {
-                            // Skip HTML elements
-                            return;
+                            // HTML elements often contain instructions - keep them for instruction extraction
+                            expandedQuestions.push(element);
                         } else if (element.type === 'panel' && element.elements) {
+                            // Add panel as section header if it has a title or description
+                            if (element.title || element.description) {
+                                expandedQuestions.push({
+                                    type: 'panel-header',
+                                    title: element.title,
+                                    description: element.description,
+                                    name: element.name || 'panel'
+                                });
+                            }
                             // Expand panel elements
                             expandedQuestions.push(...expandElements(element.elements));
                         } else if (element.type === 'matrix') {
@@ -482,6 +491,58 @@
         function addQuestionToPdf(pdf, element, questionNumber, startY, options) {
             let currentY = startY;
             
+            // Handle HTML instruction elements
+            if (element.type === 'html') {
+                if (element.html) {
+                    const instructionText = parseHtmlToText(element.html);
+                    if (instructionText) {
+                        pdf.setFontSize(options.fontSize);
+                        pdf.setFont('helvetica', 'italic');
+                        const lines = pdf.splitTextToSize(instructionText, 170);
+                        lines.forEach((line, index) => {
+                            pdf.text(line, options.margin, currentY);
+                            currentY += 5;
+                        });
+                        currentY += 3; // Extra spacing after instructions
+                    }
+                }
+                return currentY;
+            }
+            
+            // Handle panel headers (section dividers)
+            if (element.type === 'panel-header') {
+                currentY += 5; // Extra space before section
+                
+                if (element.title) {
+                    const sectionTitle = extractText(element.title);
+                    pdf.setFontSize(options.fontSize + 3);
+                    pdf.setFont('helvetica', 'bold');
+                    const lines = pdf.splitTextToSize(sectionTitle, 170);
+                    lines.forEach((line, index) => {
+                        pdf.text(line, options.margin, currentY);
+                        currentY += 6;
+                    });
+                    currentY += 2;
+                }
+                
+                if (element.description) {
+                    const sectionDescription = parseHtmlToText(element.description);
+                    if (sectionDescription) {
+                        pdf.setFontSize(options.fontSize);
+                        pdf.setFont('helvetica', 'italic');
+                        const lines = pdf.splitTextToSize(sectionDescription, 170);
+                        lines.forEach((line, index) => {
+                            pdf.text(line, options.margin + 5, currentY);
+                            currentY += 5;
+                        });
+                        currentY += 3;
+                    }
+                }
+                
+                currentY += 5; // Extra space after section
+                return currentY;
+            }
+            
             // Question title
             const questionTitle = options.includeQuestionNumbers 
                 ? `${questionNumber}. ${getElementTitle(element)}`
@@ -494,6 +555,27 @@
                 pdf.text(line, options.margin, currentY);
                 currentY += 5;
             });
+
+            // Extract and display instructions/descriptions
+            let instructions = '';
+            if (element.description) {
+                instructions = parseHtmlToText(element.description);
+            } else if (element.descriptionHtml) {
+                instructions = parseHtmlToText(element.descriptionHtml);
+            } else if (element.html) {
+                instructions = parseHtmlToText(element.html);
+            }
+            
+            if (instructions) {
+                pdf.setFontSize(options.fontSize - 1);
+                pdf.setFont('helvetica', 'italic');
+                const instructionLines = pdf.splitTextToSize(instructions, 170);
+                instructionLines.forEach((line, index) => {
+                    pdf.text(line, options.margin + 5, currentY);
+                    currentY += 4;
+                });
+                currentY += 3; // Extra spacing after instructions
+            }
 
             // Question content based on type
             pdf.setFontSize(options.fontSize);
@@ -750,6 +832,11 @@
         function parseHtmlToText(html) {
             if (!html) return '';
             
+            // If it's already plain text, return it
+            if (typeof html === 'string' && !html.includes('<')) {
+                return html.trim();
+            }
+            
             // Create a temporary div to parse HTML
             const div = document.createElement('div');
             div.innerHTML = html;
@@ -757,8 +844,13 @@
             // Extract text content and clean it up
             let text = div.textContent || div.innerText || '';
             
-            // Replace multiple whitespace with single space and clean up
+            // Clean up common HTML artifacts
             text = text.replace(/\s+/g, ' ').trim();
+            text = text.replace(/&nbsp;/g, ' ');
+            text = text.replace(/&amp;/g, '&');
+            text = text.replace(/&lt;/g, '<');
+            text = text.replace(/&gt;/g, '>');
+            text = text.replace(/&quot;/g, '"');
             
             return text;
         }
@@ -1072,6 +1164,19 @@
                  if (element.type === 'html') {
                      // For HTML elements, just display the HTML
                      container.innerHTML += `<div class="form-group">${element.html}</div>`;
+                 } else if (element.type === 'panel-header') {
+                     // For panel headers, create section dividers
+                     let sectionHtml = '<div class="form-section" style="margin: 30px 0 20px 0; padding: 15px; background: #f8f9fa; border-left: 4px solid #007bff; border-radius: 4px;">';
+                     if (element.title) {
+                         const sectionTitle = extractText(element.title);
+                         sectionHtml += `<h3 style="margin: 0 0 10px 0; color: #333; font-size: 18px;">${sectionTitle}</h3>`;
+                     }
+                     if (element.description) {
+                         const sectionDescription = parseHtmlToText(element.description);
+                         sectionHtml += `<p style="margin: 0; color: #666; font-style: italic;">${sectionDescription}</p>`;
+                     }
+                     sectionHtml += '</div>';
+                     container.innerHTML += sectionHtml;
                  } else if (element.type === 'panel' && element.elements) {
                      // For panels, recursively create form groups
                      container.innerHTML += `<div class="form-group"><h4>${element.title || 'Panel'}</h4></div>`;
@@ -1128,9 +1233,20 @@
             const questionTitle = getElementTitle(element);
             const questionNumber = element.name ? element.name.replace(/[^a-zA-Z0-9]/g, '_') : 'question';
 
+            // Extract instructions for all question types
+            let instructions = '';
+            if (element.description) {
+                instructions = parseHtmlToText(element.description);
+            } else if (element.descriptionHtml) {
+                instructions = parseHtmlToText(element.descriptionHtml);
+            } else if (element.html) {
+                instructions = parseHtmlToText(element.html);
+            }
+
             if (element.type === 'boolean') {
                 html += `<div class="form-group">
                     <label for="${questionNumber}">${questionTitle}:</label>
+                    ${instructions ? `<p style="font-size: 14px; color: #666; margin: 10px 0;">${instructions}</p>` : ''}
                     <div class="checkbox-group">
                         <input type="radio" id="${questionNumber}_true" name="${questionNumber}" value="true">
                         <label for="${questionNumber}_true">${extractText(element.labelTrue) || 'Yes'}</label>
@@ -1141,6 +1257,7 @@
             } else if (element.type === 'radiogroup' || element.type === 'dropdown') {
                 html += `<div class="form-group">
                     <label for="${questionNumber}">${questionTitle}:</label>
+                    ${instructions ? `<p style="font-size: 14px; color: #666; margin: 10px 0;">${instructions}</p>` : ''}
                                          <select id="${questionNumber}" name="${questionNumber}">
                          <option value="">${extractText(element.placeholder) || 'Select an option'}</option>
                          ${element.choices ? element.choices.map(choice => {
@@ -1165,6 +1282,7 @@
             } else if (element.type === 'checkbox') {
                 html += `<div class="form-group">
                     <label for="${questionNumber}">${questionTitle}:</label>
+                    ${instructions ? `<p style="font-size: 14px; color: #666; margin: 10px 0;">${instructions}</p>` : ''}
                     <div class="checkbox-group">
                                                  ${element.choices ? element.choices.map(choice => {
                              let choiceText = '';
@@ -1223,11 +1341,13 @@
             } else if (element.type === 'comment') {
                 html += `<div class="form-group">
                     <label for="${questionNumber}">${questionTitle}:</label>
+                    ${instructions ? `<p style="font-size: 14px; color: #666; margin: 10px 0;">${instructions}</p>` : ''}
                     <textarea id="${questionNumber}" name="${questionNumber}" rows="${element.rows || 3}" cols="50"></textarea>
                 </div>`;
             } else {
                 html += `<div class="form-group">
                     <label for="${questionNumber}">${questionTitle}:</label>
+                    ${instructions ? `<p style="font-size: 14px; color: #666; margin: 10px 0;">${instructions}</p>` : ''}
                     <input type="text" id="${questionNumber}" name="${questionNumber}" value="${element.value || ''}">
                 </div>`;
             }
@@ -1260,6 +1380,22 @@
              
              if (currentLine) lines.push(currentLine);
              return lines;
+         }
+
+         // Helper function to draw wrapped text and return the new Y position
+         function drawWrappedText(page, text, x, y, font, size, color = PDFLib.rgb(0, 0, 0), maxWidth = 500) {
+             // More accurate character width calculation based on font size
+             const avgCharWidth = size * 0.5; // Helvetica average character width
+             const maxCharsPerLine = Math.floor(maxWidth / avgCharWidth);
+             const lines = wrapText(text, maxCharsPerLine);
+             let currentY = y;
+             
+             lines.forEach(line => {
+                 page.drawText(line, { x, y: currentY, size, font, color });
+                 currentY -= size + 3; // Line spacing (font size + 3px)
+             });
+             
+             return currentY - 5; // Add extra spacing after the wrapped text
          }
 
          // Form action functions
@@ -1296,7 +1432,97 @@
              console.log('Saved form data:', data);
          }
 
-                  // True Fillable PDF (PDF-lib)
+                  // Function to add footers to all pages
+         async function addFootersToAllPages(pdfDoc) {
+             const pages = pdfDoc.getPages();
+             const totalPages = pages.length;
+             const footerFont = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+             
+             pages.forEach((page, index) => {
+                 const pageNumber = index + 1;
+                 const footerText = `Levante Caregiver Survey 2025 -- Page ${pageNumber} of ${totalPages}`;
+                 
+                 // Position footer at bottom center of page
+                 const textWidth = footerFont.widthOfTextAtSize(footerText, 10);
+                 const pageWidth = page.getSize().width;
+                 const centerX = (pageWidth - textWidth) / 2;
+                 
+                 page.drawText(footerText, {
+                     x: centerX,
+                     y: 30, // 30 units from bottom
+                     size: 10,
+                     font: footerFont,
+                     color: PDFLib.rgb(0.4, 0.4, 0.4) // Gray color
+                 });
+             });
+         }
+
+         // Function to calculate space needed for a question
+         function calculateQuestionSpace(element) {
+             let spaceNeeded = 35; // Base space for question title and margin
+             
+             // Add space for instructions if they exist
+             let instructions = '';
+             if (element.description) {
+                 instructions = parseHtmlToText(element.description);
+             } else if (element.descriptionHtml) {
+                 instructions = parseHtmlToText(element.descriptionHtml);
+             } else if (element.html) {
+                 instructions = parseHtmlToText(element.html);
+             }
+             
+             if (instructions) {
+                 const instructionLines = Math.ceil(instructions.length / 70); // Rough estimate
+                 spaceNeeded += instructionLines * 12 + 15; // 12px per line + padding
+             }
+             
+             if (element.type === 'html') {
+                 // HTML instruction elements only
+                 return spaceNeeded;
+             } else if (element.type === 'panel-header') {
+                 // Panel headers need space for title and description
+                 spaceNeeded += 30; // Base space for section header
+                 if (element.title) {
+                     const titleText = extractText(element.title);
+                     const titleLines = Math.ceil(titleText.length / 60);
+                     spaceNeeded += titleLines * 16; // 14px font + spacing
+                 }
+                 if (element.description) {
+                     const descText = parseHtmlToText(element.description);
+                     const descLines = Math.ceil(descText.length / 70);
+                     spaceNeeded += descLines * 12; // 10px font + spacing
+                 }
+                 return spaceNeeded;
+             } else if (element.type === 'boolean') {
+                 // Title + yes/no options
+                 spaceNeeded += 35; // 25 for options + 10 margin
+             } else if (element.type === 'radiogroup') {
+                 // Title + all radio options stacked vertically
+                 const numChoices = element.choices ? element.choices.length : 0;
+                 spaceNeeded += (numChoices * 25) + 10; // 25 per choice + margin
+             } else if (element.type === 'checkbox') {
+                 // Title + all checkbox options stacked vertically  
+                 const numChoices = element.choices ? element.choices.length : 0;
+                 spaceNeeded += (numChoices * 25) + 10; // 25 per choice + margin
+             } else if (element.type === 'matrix-row') {
+                 // Title + all matrix options stacked vertically
+                 const numChoices = element.choices ? element.choices.length : 0;
+                 spaceNeeded += (numChoices * 25) + 10; // 25 per choice + margin
+             } else if (element.type === 'text' && element.inputType === 'range') {
+                 // Timeline questions need lots of space for enhanced instructions, scale, and input
+                 spaceNeeded += 180; // Enhanced instructions + visual scale + input field
+             } else if (element.type === 'comment') {
+                 // Multiline text area needs more space
+                 spaceNeeded += 70; // Large text field
+             } else if (element.type === 'text') {
+                 // Regular text input
+                 spaceNeeded += 35; // Text field
+             }
+             
+             return spaceNeeded;
+         }
+
+         // True Fillable PDF (PDF-lib)
          async function generateTrueFillablePDF() {
              if (!surveyData) {
                  await analyzeSurvey();
@@ -1330,27 +1556,55 @@
                  // Add title
                  page.drawText('Caregiver Survey', { x: 100, y: 800, size: 18, font: titleFont });
 
-                 let currentY = 750;
+                 let currentY = 720; // Leave more space at top for better layout with footer
                  
                  // Add header form fields
                  page.drawText('Child\'s Name:', { x: 50, y: currentY, size: 12, font: titleFont });
                  const childNameField = form.createTextField('childName');
-                 childNameField.addToPage(page, { x: 150, y: currentY - 5, width: 200, height: 20 });
+                 childNameField.addToPage(page, { 
+                     x: 150, y: currentY - 5, width: 200, height: 20,
+                     borderWidth: 1,
+                     borderColor: PDFLib.rgb(0, 0, 0),
+                     backgroundColor: PDFLib.rgb(1, 1, 1),
+                     color: PDFLib.rgb(0, 0, 0)
+                 });
+                 childNameField.setText('');
                  currentY -= 30;
                  
                  page.drawText('Caregiver\'s Name:', { x: 50, y: currentY, size: 12, font: titleFont });
                  const caregiverNameField = form.createTextField('caregiverName');
-                 caregiverNameField.addToPage(page, { x: 150, y: currentY - 5, width: 200, height: 20 });
+                 caregiverNameField.addToPage(page, { 
+                     x: 150, y: currentY - 5, width: 200, height: 20,
+                     borderWidth: 1,
+                     borderColor: PDFLib.rgb(0, 0, 0),
+                     backgroundColor: PDFLib.rgb(1, 1, 1),
+                     color: PDFLib.rgb(0, 0, 0)
+                 });
+                 caregiverNameField.setText('');
                  currentY -= 30;
                  
                  page.drawText('Site and/or School:', { x: 50, y: currentY, size: 12, font: titleFont });
                  const siteSchoolField = form.createTextField('siteSchool');
-                 siteSchoolField.addToPage(page, { x: 150, y: currentY - 5, width: 200, height: 20 });
+                 siteSchoolField.addToPage(page, { 
+                     x: 150, y: currentY - 5, width: 200, height: 20,
+                     borderWidth: 1,
+                     borderColor: PDFLib.rgb(0, 0, 0),
+                     backgroundColor: PDFLib.rgb(1, 1, 1),
+                     color: PDFLib.rgb(0, 0, 0)
+                 });
+                 siteSchoolField.setText('');
                  currentY -= 30;
                  
                  page.drawText('Date Completed:', { x: 50, y: currentY, size: 12, font: titleFont });
                  const dateField = form.createTextField('dateCompleted');
-                 dateField.addToPage(page, { x: 150, y: currentY - 5, width: 200, height: 20 });
+                 dateField.addToPage(page, { 
+                     x: 150, y: currentY - 5, width: 200, height: 20,
+                     borderWidth: 1,
+                     borderColor: PDFLib.rgb(0, 0, 0),
+                     backgroundColor: PDFLib.rgb(1, 1, 1),
+                     color: PDFLib.rgb(0, 0, 0)
+                 });
+                 dateField.setText('');
                  currentY -= 50;
 
                  // Process all survey pages
@@ -1369,10 +1623,22 @@
                      const expandedQuestions = [];
                      elements.forEach(element => {
                          if (element.type === 'html') {
-                             // Skip HTML elements for now
+                             // HTML elements often contain instructions - keep them for instruction extraction
+                             expandedQuestions.push(element);
                          } else if (element.type === 'panel' && element.elements) {
+                             // Add panel as section header if it has a title or description
+                             if (element.title || element.description) {
+                                 expandedQuestions.push({
+                                     type: 'panel-header',
+                                     title: element.title,
+                                     description: element.description,
+                                     name: element.name || 'panel'
+                                 });
+                             }
+                             // Expand panel elements
                              expandedQuestions.push(...expandElements(element.elements));
                          } else if (element.type === 'matrix') {
+                             // Expand matrix questions - each row becomes a separate question
                              if (element.rows && element.rows.length > 0) {
                                  element.rows.forEach(row => {
                                      const rowQuestion = {
@@ -1387,8 +1653,12 @@
                                      };
                                      expandedQuestions.push(rowQuestion);
                                  });
+                             } else {
+                                 // Fallback if no rows
+                                 expandedQuestions.push(element);
                              }
                          } else {
+                             // Regular question
                              expandedQuestions.push(element);
                          }
                      });
@@ -1401,10 +1671,13 @@
                  for (const element of expandedElements) {
                      questionCount++;
                      
-                     // Add new page if needed
-                     if (currentY < 100) {
+                     // Calculate space needed for this question
+                     const spaceNeeded = calculateQuestionSpace(element);
+                     
+                     // Add new page if question won't fit
+                     if (currentY - spaceNeeded < 80) {  // 80 units minimum bottom margin for footer
                          const newPage = pdfDoc.addPage([595, 842]);
-                         currentY = 750;
+                         currentY = 720; // Consistent with first page
                          // Add logo to new page
                          try {
                              const logoUrl = '/public/LEVANTE/Levante_Logo.png';
@@ -1421,6 +1694,9 @@
                      
                      currentY = await addInteractiveQuestionToPdf(pdfDoc, form, element, currentY, questionCount);
                  }
+
+                 // Add footers to all pages
+                 await addFootersToAllPages(pdfDoc);
 
                  const pdfBytes = await pdfDoc.save();
                  const blob = new Blob([pdfBytes], { type: 'application/pdf' });
@@ -1444,36 +1720,115 @@
              const page = pdfDoc.getPages()[pdfDoc.getPageCount() - 1];
              let currentY = startY;
 
+             // Handle HTML instruction elements
+             if (element.type === 'html') {
+                 if (element.html) {
+                     const instructionText = parseHtmlToText(element.html);
+                     if (instructionText) {
+                         const titleFont = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+                         const instructionLines = wrapText(instructionText, 70);
+                         instructionLines.forEach(line => {
+                             page.drawText(line, { x: 50, y: currentY, size: 10, font: titleFont, color: PDFLib.rgb(0.3, 0.3, 0.3) });
+                             currentY -= 12;
+                         });
+                         currentY -= 10; // Extra spacing after instructions
+                     }
+                 }
+                 return currentY;
+             }
+             
+             // Handle panel headers (section dividers)
+             if (element.type === 'panel-header') {
+                 currentY -= 10; // Extra space before section
+                 
+                 if (element.title) {
+                     const sectionTitle = extractText(element.title);
+                     const sectionFont = await pdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
+                     currentY = drawWrappedText(page, sectionTitle, 50, currentY, sectionFont, 14, PDFLib.rgb(0, 0, 0), 500);
+                 }
+                 
+                 if (element.description) {
+                     const sectionDescription = parseHtmlToText(element.description);
+                     if (sectionDescription) {
+                         const descFont = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+                         currentY = drawWrappedText(page, sectionDescription, 70, currentY, descFont, 10, PDFLib.rgb(0.4, 0.4, 0.4), 480);
+                     }
+                 }
+                 
+                 currentY -= 10; // Extra space after section
+                 return currentY;
+             }
+
              const questionTitle = getElementTitle(element);
              const fieldName = element.name ? element.name.replace(/[^a-zA-Z0-9_]/g, '_') : `question_${questionNumber}`;
 
              const titleFont = await pdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
              const regularFont = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
 
-             if (element.type === 'boolean') {
-                 // Draw question title
-                 page.drawText(`${questionNumber}. ${questionTitle}`, { x: 50, y: currentY, size: 11, font: titleFont });
-                 currentY -= 25;
+             // Extract and display instructions/descriptions for all question types
+             let instructions = '';
+             if (element.description) {
+                 instructions = parseHtmlToText(element.description);
+             } else if (element.descriptionHtml) {
+                 instructions = parseHtmlToText(element.descriptionHtml);
+             } else if (element.html) {
+                 instructions = parseHtmlToText(element.html);
+             }
 
-                 // Create radio group for yes/no
+             if (element.type === 'boolean') {
+                 // Draw question title with wrapping
+                 currentY = drawWrappedText(page, `${questionNumber}. ${questionTitle}`, 50, currentY, titleFont, 11, PDFLib.rgb(0, 0, 0), 500);
+                 
+                 // Display instructions if available
+                 if (instructions) {
+                     const instructionLines = wrapText(instructions, 70);
+                     instructionLines.forEach(line => {
+                         page.drawText(line, { x: 70, y: currentY, size: 9, font: regularFont, color: PDFLib.rgb(0.4, 0.4, 0.4) });
+                         currentY -= 12;
+                     });
+                     currentY -= 5;
+                 } else {
+                     currentY -= 5;
+                 }
+
+                 // Create radio group for yes/no with better configuration
                  const radioGroup = form.createRadioGroup(fieldName);
                  const trueLabel = extractText(element.labelTrue) || 'Yes';
                  const falseLabel = extractText(element.labelFalse) || 'No';
                  
-                 // Yes option - better spacing and formatting
+                 // Yes option - clear positioning without overlap
                  page.drawText(`${trueLabel}`, { x: 90, y: currentY, size: 10, font: regularFont });
-                 radioGroup.addOptionToPage('true', page, { x: 70, y: currentY - 2, width: 12, height: 12 });
+                 radioGroup.addOptionToPage('true', page, { 
+                     x: 70, y: currentY - 2, width: 15, height: 15,
+                     borderWidth: 1,
+                     borderColor: PDFLib.rgb(0, 0, 0)
+                 });
                  
-                 // No option - better spacing and formatting
-                 page.drawText(`${falseLabel}`, { x: 140, y: currentY, size: 10, font: regularFont });
-                 radioGroup.addOptionToPage('false', page, { x: 120, y: currentY - 2, width: 12, height: 12 });
+                 // No option - clear positioning without overlap  
+                 page.drawText(`${falseLabel}`, { x: 170, y: currentY, size: 10, font: regularFont });
+                 radioGroup.addOptionToPage('false', page, { 
+                     x: 150, y: currentY - 2, width: 15, height: 15,
+                     borderWidth: 1,
+                     borderColor: PDFLib.rgb(0, 0, 0)
+                 });
                  
-                 currentY -= 30;
+                 currentY -= 35;
 
              } else if (element.type === 'radiogroup') {
-                 // Draw question title
-                 page.drawText(`${questionNumber}. ${questionTitle}`, { x: 50, y: currentY, size: 11, font: titleFont });
-                 currentY -= 20;
+                 // Draw question title with wrapping
+                 currentY = drawWrappedText(page, `${questionNumber}. ${questionTitle}`, 50, currentY, titleFont, 11, PDFLib.rgb(0, 0, 0), 500);
+                 
+                 // Display instructions if available
+                 if (instructions) {
+                     const instructionLines = wrapText(instructions, 70);
+                     instructionLines.forEach(line => {
+                         page.drawText(line, { x: 70, y: currentY, size: 9, font: regularFont, color: PDFLib.rgb(0.4, 0.4, 0.4) });
+                         currentY -= 12;
+                     });
+                     currentY -= 5;
+                 } else {
+                     currentY -= 5;
+                 }
 
                  // Create radio group
                  const radioGroup = form.createRadioGroup(fieldName);
@@ -1495,16 +1850,32 @@
                          }
                          
                          page.drawText(`${choiceText}`, { x: 90, y: currentY, size: 10, font: regularFont });
-                         radioGroup.addOptionToPage(choiceValue, page, { x: 70, y: currentY - 2, width: 12, height: 12 });
-                         currentY -= 20;
+                         radioGroup.addOptionToPage(choiceValue, page, { 
+                             x: 70, y: currentY - 2, width: 15, height: 15,
+                             borderWidth: 1,
+                             borderColor: PDFLib.rgb(0, 0, 0),
+                             backgroundColor: PDFLib.rgb(1, 1, 1)
+                         });
+                         currentY -= 25;
                      });
                  }
                  currentY -= 10;
 
              } else if (element.type === 'checkbox') {
-                 // Draw question title
-                 page.drawText(`${questionNumber}. ${questionTitle}`, { x: 50, y: currentY, size: 11, font: titleFont });
-                 currentY -= 20;
+                 // Draw question title with wrapping
+                 currentY = drawWrappedText(page, `${questionNumber}. ${questionTitle}`, 50, currentY, titleFont, 11, PDFLib.rgb(0, 0, 0), 500);
+                 
+                 // Display instructions if available
+                 if (instructions) {
+                     const instructionLines = wrapText(instructions, 70);
+                     instructionLines.forEach(line => {
+                         page.drawText(line, { x: 70, y: currentY, size: 9, font: regularFont, color: PDFLib.rgb(0.4, 0.4, 0.4) });
+                         currentY -= 12;
+                     });
+                     currentY -= 5;
+                 } else {
+                     currentY -= 5;
+                 }
 
                  if (element.choices && element.choices.length > 0) {
                      element.choices.forEach((choice, index) => {
@@ -1522,21 +1893,37 @@
                              choiceValue = String(choice);
                          }
                          
-                         // Create individual checkbox for each choice
+                         // Create individual checkbox for each choice with proper styling
                          const checkbox = form.createCheckBox(`${fieldName}_${index}`);
                          page.drawText(`${choiceText}`, { x: 90, y: currentY, size: 10, font: regularFont });
-                         checkbox.addToPage(page, { x: 70, y: currentY - 2, width: 12, height: 12 });
-                         currentY -= 20;
+                         checkbox.addToPage(page, { 
+                             x: 70, y: currentY - 2, width: 15, height: 15,
+                             borderWidth: 1,
+                             borderColor: PDFLib.rgb(0, 0, 0),
+                             backgroundColor: PDFLib.rgb(1, 1, 1)
+                         });
+                         currentY -= 25;
                      });
                  }
                  currentY -= 10;
 
              } else if (element.type === 'matrix-row') {
-                 // Draw question title
-                 page.drawText(`${questionNumber}. ${questionTitle}`, { x: 50, y: currentY, size: 11, font: titleFont });
-                 currentY -= 20;
+                 // Draw question title with wrapping
+                 currentY = drawWrappedText(page, `${questionNumber}. ${questionTitle}`, 50, currentY, titleFont, 11, PDFLib.rgb(0, 0, 0), 500);
+                 
+                 // Display instructions if available
+                 if (instructions) {
+                     const instructionLines = wrapText(instructions, 70);
+                     instructionLines.forEach(line => {
+                         page.drawText(line, { x: 70, y: currentY, size: 9, font: regularFont, color: PDFLib.rgb(0.4, 0.4, 0.4) });
+                         currentY -= 12;
+                     });
+                     currentY -= 5;
+                 } else {
+                     currentY -= 5;
+                 }
 
-                 // Create radio group for matrix row
+                 // Create radio group for matrix row - stack vertically for better fit
                  const radioGroup = form.createRadioGroup(fieldName);
                  
                  if (element.choices && element.choices.length > 0) {
@@ -1555,16 +1942,22 @@
                              choiceValue = String(choice);
                          }
                          
-                         page.drawText(`${choiceText}`, { x: 90 + (index * 80), y: currentY, size: 9, font: regularFont });
-                         radioGroup.addOptionToPage(choiceValue, page, { x: 70 + (index * 80), y: currentY - 2, width: 12, height: 12 });
+                         // Stack vertically instead of horizontally to fit on screen
+                         page.drawText(`${choiceText}`, { x: 90, y: currentY, size: 10, font: regularFont });
+                         radioGroup.addOptionToPage(choiceValue, page, { 
+                             x: 70, y: currentY - 2, width: 15, height: 15,
+                             borderWidth: 1,
+                             borderColor: PDFLib.rgb(0, 0, 0),
+                             backgroundColor: PDFLib.rgb(1, 1, 1)
+                         });
+                         currentY -= 25; // Move down for next option
                      });
                  }
-                 currentY -= 30;
+                 currentY -= 10;
 
              } else if (element.type === 'text' && element.inputType === 'range') {
-                 // Draw question title
-                 page.drawText(`${questionNumber}. ${questionTitle}`, { x: 50, y: currentY, size: 11, font: titleFont });
-                 currentY -= 20;
+                 // Draw question title with wrapping
+                 currentY = drawWrappedText(page, `${questionNumber}. ${questionTitle}`, 50, currentY, titleFont, 11, PDFLib.rgb(0, 0, 0), 500);
                  
                  // Parse HTML instructions for timeline questions
                  let instructions = '';
@@ -1633,29 +2026,72 @@
                  // Create text field for numerical answer
                  page.drawText(`Your answer:`, { x: 70, y: currentY - 35, size: 10, font: regularFont });
                  const textField = form.createTextField(fieldName);
-                 textField.addToPage(page, { x: 150, y: currentY - 40, width: 60, height: 20 });
+                 textField.addToPage(page, { 
+                     x: 150, y: currentY - 40, width: 60, height: 20,
+                     borderWidth: 1,
+                     borderColor: PDFLib.rgb(0, 0, 0),
+                     backgroundColor: PDFLib.rgb(1, 1, 1),
+                     color: PDFLib.rgb(0, 0, 0)
+                 });
+                 textField.setText('');
                  
                  currentY -= 60;
 
              } else if (element.type === 'comment') {
-                 // Draw question title
-                 page.drawText(`${questionNumber}. ${questionTitle}`, { x: 50, y: currentY, size: 11, font: titleFont });
-                 currentY -= 25;
+                 // Draw question title with wrapping
+                 currentY = drawWrappedText(page, `${questionNumber}. ${questionTitle}`, 50, currentY, titleFont, 11, PDFLib.rgb(0, 0, 0), 500);
+                 
+                 // Display instructions if available
+                 if (instructions) {
+                     const instructionLines = wrapText(instructions, 70);
+                     instructionLines.forEach(line => {
+                         page.drawText(line, { x: 70, y: currentY, size: 9, font: regularFont, color: PDFLib.rgb(0.4, 0.4, 0.4) });
+                         currentY -= 12;
+                     });
+                     currentY -= 5;
+                 } else {
+                     currentY -= 5;
+                 }
                  
                  // Create multiline text field
                  const textField = form.createTextField(fieldName);
                  textField.setMultiline(true);
-                 textField.addToPage(page, { x: 70, y: currentY - 40, width: 400, height: 60 });
+                 textField.addToPage(page, { 
+                     x: 70, y: currentY - 40, width: 400, height: 60,
+                     borderWidth: 1,
+                     borderColor: PDFLib.rgb(0, 0, 0),
+                     backgroundColor: PDFLib.rgb(1, 1, 1),
+                     color: PDFLib.rgb(0, 0, 0)
+                 });
+                 textField.setText('');
                  currentY -= 70;
 
              } else if (element.type === 'text') {
-                 // Draw question title
-                 page.drawText(`${questionNumber}. ${questionTitle}`, { x: 50, y: currentY, size: 11, font: titleFont });
-                 currentY -= 25;
+                 // Draw question title with wrapping
+                 currentY = drawWrappedText(page, `${questionNumber}. ${questionTitle}`, 50, currentY, titleFont, 11, PDFLib.rgb(0, 0, 0), 500);
+                 
+                 // Display instructions if available
+                 if (instructions) {
+                     const instructionLines = wrapText(instructions, 70);
+                     instructionLines.forEach(line => {
+                         page.drawText(line, { x: 70, y: currentY, size: 9, font: regularFont, color: PDFLib.rgb(0.4, 0.4, 0.4) });
+                         currentY -= 12;
+                     });
+                     currentY -= 5;
+                 } else {
+                     currentY -= 5;
+                 }
                  
                  // Create text field
                  const textField = form.createTextField(fieldName);
-                 textField.addToPage(page, { x: 70, y: currentY - 5, width: 300, height: 20 });
+                 textField.addToPage(page, { 
+                     x: 70, y: currentY - 5, width: 300, height: 20,
+                     borderWidth: 1,
+                     borderColor: PDFLib.rgb(0, 0, 0),
+                     backgroundColor: PDFLib.rgb(1, 1, 1),
+                     color: PDFLib.rgb(0, 0, 0)
+                 });
+                 textField.setText('');
                  currentY -= 35;
              }
              
