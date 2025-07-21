@@ -233,6 +233,12 @@
     </style>
 </head>
 <body>
+    <div style="margin-bottom: 20px;">
+        <a href="index.html" style="display: inline-block; background: #6c757d; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; font-size: 14px;">
+            ← Back to Survey Index
+        </a>
+    </div>
+    
     <h1>🔧 Parent Survey Child PDF Generator Test</h1>
     
     <div class="container">
@@ -2052,9 +2058,20 @@
                      currentY -= 5;
                  }
                  
-                 // Create multiline text field
+                 // Create multiline text field (using createTextField with multiline support)
                  const textField = form.createTextField(fieldName);
-                 textField.setMultiline(true);
+                 try {
+                     // Try the newer method first
+                     if (typeof textField.enableMultiline === 'function') {
+                         textField.enableMultiline();
+                     } else if (typeof textField.setMultiline === 'function') {
+                         textField.setMultiline(true);
+                     }
+                     // If neither method exists, it will just be a regular text field
+                 } catch (error) {
+                     console.warn('Multiline not supported, using regular text field:', error);
+                 }
+                 
                  textField.addToPage(page, { 
                      x: 70, y: currentY - 40, width: 400, height: 60,
                      borderWidth: 1,

@@ -1,39 +1,310 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin-allow-popups" />
-    <title>LEVANTE Platform</title>
-    <link rel="icon" href="/levante-icon.svg" sizes="any" type="image/svg+xml" />
-    <!--  Target ios browsers. -->
-    <link rel="apple-touch-icon" sizes="180x180" href="/levante-apple-touch-icon-180x180.png" />
-    <!--  Target safari on MacOS. -->
-    <link rel="icon" type="image/png" sizes="64x64" href="/levante-pwa-64x64.png" />
-    <!--  The classic favicon displayed in tabs. -->
-    <link rel="icon" type="image/png" sizes="16x16" href="/levante-pwa-64x64.png" />
-    <!--  Used for Safari pinned tabs. -->
-    <link rel="mask-icon" type="image/png" href="/levante-maskable-icon-512x512.png" color="#193860" />
-    <!--  Target older browsers like IE 10 and lower. -->
-    <link rel="icon" href="/favicon-levante.ico" />
-    <!-- Used by Chrome, Firefox OS, and opera to change the browser address bar. -->
-    <meta name="theme-color" content="#ccccc7" />
-    <!--  Used by windows 8, 8.1, and 10 for the start menu tiles. -->
-    <meta name="msapplication-TileColor" content="#00aba9" />
-  </head>
-  <!-- Google tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YYE3YN0S99"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag() {
-      dataLayer.push(arguments);
-    }
-    gtag('js', new Date());
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LEVANTE Survey PDF Generator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .logo {
+            max-width: 150px;
+            height: auto;
+            margin-bottom: 20px;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            margin: 0 0 10px 0;
+            font-size: 2.5em;
+            font-weight: 300;
+        }
+        
+        .subtitle {
+            color: #7f8c8d;
+            font-size: 1.2em;
+            margin: 0;
+        }
+        
+        .survey-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        
+        .survey-card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border-left: 5px solid #3498db;
+        }
+        
+        .survey-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        
+        .survey-card.child {
+            border-left-color: #e74c3c;
+        }
+        
+        .survey-card h2 {
+            color: #2c3e50;
+            margin: 0 0 15px 0;
+            font-size: 1.8em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .survey-card p {
+            color: #7f8c8d;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        
+        .survey-card .features {
+            list-style: none;
+            padding: 0;
+            margin: 20px 0;
+        }
+        
+        .survey-card .features li {
+            color: #34495e;
+            margin: 8px 0;
+            padding-left: 25px;
+            position: relative;
+        }
+        
+        .survey-card .features li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #27ae60;
+            font-weight: bold;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+            text-align: center;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #2980b9, #1f618d);
+            transform: translateY(-2px);
+        }
+        
+        .btn-primary.child {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+        }
+        
+        .btn-primary.child:hover {
+            background: linear-gradient(135deg, #c0392b, #a93226);
+        }
+        
+        .info-section {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .info-section h3 {
+            color: #2c3e50;
+            margin: 0 0 15px 0;
+            font-size: 1.4em;
+        }
+        
+        .info-section p {
+            color: #7f8c8d;
+            line-height: 1.6;
+            margin: 0;
+        }
+        
+        .tech-stack {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .tech-badge {
+            background: #ecf0f1;
+            color: #2c3e50;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 500;
+        }
+        
+        .footer {
+            text-align: center;
+            color: #7f8c8d;
+            margin-top: 40px;
+            padding: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .survey-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+            
+            .header {
+                padding: 20px;
+            }
+            
+            .survey-card {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <img src="/public/LEVANTE/Levante_Logo.png" alt="LEVANTE Logo" class="logo" onerror="this.style.display='none'">
+        <h1>🔧 LEVANTE Survey PDF Generator</h1>
+        <p class="subtitle">Professional PDF generation for caregiver research surveys</p>
+    </div>
 
-    gtag('config', 'G-YYE3YN0S99');
-  </script>
-  <body>
-    <div id="app"></div>
-    <script type="module" src="/src/main.ts"></script>
-  </body>
+    <div class="survey-grid">
+        <div class="survey-card">
+            <h2>👨‍👩‍👧‍👦 Family Survey</h2>
+            <p>Generate PDFs for the <strong>parent_survey_family.json</strong> - focused on family dynamics, household structure, and general family-based questions.</p>
+            
+            <ul class="features">
+                <li>📄 Printable PDFs (for handwriting)</li>
+                <li>📝 Form-Style PDFs (visual enhancement)</li>
+                <li>💻 Digital HTML Forms (browser-based)</li>
+                <li>📋 Interactive Fillable PDFs (clickable fields)</li>
+                <li>🎯 Smart page breaks & text wrapping</li>
+                <li>📊 Complete instruction handling</li>
+            </ul>
+            
+            <a href="test-parent-survey-pdf.html" class="btn-primary">
+                🚀 Open Family Survey Generator
+            </a>
+        </div>
+
+        <div class="survey-card child">
+            <h2>👶 Child Survey</h2>
+            <p>Generate PDFs for the <strong>parent_survey_child.json</strong> - focused on individual child development, behavior, and child-specific questions.</p>
+            
+            <ul class="features">
+                <li>📄 Printable PDFs (for handwriting)</li>
+                <li>📝 Form-Style PDFs (visual enhancement)</li>
+                <li>💻 Digital HTML Forms (browser-based)</li>
+                <li>📋 Interactive Fillable PDFs (clickable fields)</li>
+                <li>🎯 Smart page breaks & text wrapping</li>
+                <li>📊 Complete instruction handling</li>
+            </ul>
+            
+            <a href="test-parent-survey-child-pdf.html" class="btn-primary child">
+                🚀 Open Child Survey Generator
+            </a>
+        </div>
+    </div>
+
+    <div class="info-section">
+        <h3>🛠️ Features & Capabilities</h3>
+        <p>
+            Both survey generators provide comprehensive PDF creation with advanced features including:
+            automatic question numbering, multilingual text extraction, matrix question expansion, 
+            section headers, instruction parsing, timeline/numberline rendering, and professional 
+            formatting with LEVANTE branding.
+        </p>
+        
+        <div class="tech-stack">
+            <span class="tech-badge">jsPDF</span>
+            <span class="tech-badge">PDF-lib</span>
+            <span class="tech-badge">SurveyJS Format</span>
+            <span class="tech-badge">Interactive Forms</span>
+            <span class="tech-badge">HTML5</span>
+            <span class="tech-badge">JavaScript ES6+</span>
+        </div>
+    </div>
+
+    <div class="info-section">
+        <h3>🌐 Access Methods</h3>
+        <p>
+            <strong>HTTP Server:</strong> <code>http://localhost:8080/index.html</code><br>
+            <strong>Vite Dev Server:</strong> <code>https://localhost:5173/index.html</code>
+        </p>
+    </div>
+
+    <div class="footer">
+        <p>LEVANTE Research Platform • Survey PDF Generator • 2025</p>
+        <p>Advanced PDF generation for educational research surveys</p>
+    </div>
+
+    <script>
+        // Add some interactive enhancements
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add smooth scrolling for any internal links
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    document.querySelector(this.getAttribute('href')).scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                });
+            });
+
+            // Add loading states for survey links
+            document.querySelectorAll('.btn-primary').forEach(button => {
+                button.addEventListener('click', function(e) {
+                    const originalText = this.textContent;
+                    this.textContent = '🔄 Loading...';
+                    this.style.opacity = '0.7';
+                    
+                    // Reset after navigation (fallback)
+                    setTimeout(() => {
+                        this.textContent = originalText;
+                        this.style.opacity = '1';
+                    }, 2000);
+                });
+            });
+
+            // Add some visual feedback
+            console.log('🎉 LEVANTE Survey PDF Generator loaded successfully!');
+            console.log('📋 Available surveys: Family, Child');
+            console.log('🚀 Ready to generate professional PDFs!');
+        });
+    </script>
+</body>
 </html>
