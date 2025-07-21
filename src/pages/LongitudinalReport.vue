@@ -50,6 +50,7 @@
           :disabled="exportLoading"
           icon-pos="right"
           data-html2canvas-ignore="true"
+          data-cy="report__pdf-export-btn"
           @click="exportToPdf"
         />
       </div>
