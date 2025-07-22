@@ -27,7 +27,7 @@
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import ScoreCard from './ScoreCard.vue';
-import { ScoreReportService } from '@/services/ScoreReport.service';
+import ScoreReportService from '@/services/ScoreReport.service';
 import { SCORE_TYPES } from '@/constants/scores';
 
 const props = defineProps({
