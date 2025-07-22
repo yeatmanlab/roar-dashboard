@@ -102,6 +102,12 @@ const columns = computed(() => {
       { field: 'scores.pa.skills', header: 'Skills To Work On', dataType: 'text', sort: false },
     );
   }
+  if (['fluency-calf', 'fluency-arf', 'fluency-calf-es', 'fluency-arf-es'].includes(props.taskId)) {
+    tableColumns.push(
+      { field: `scores.${props.taskId}.fr`, header: 'Free Response', dataType: 'text', sort: false },
+      { field: `scores.${props.taskId}.fc`, header: 'Multiple Choice', dataType: 'text', sort: false },
+    );
+  }
   return tableColumns;
 });
 
@@ -127,6 +133,10 @@ const exportSelected = (selectedRows) => {
       _set(tableRow, 'Deletion', _get(scores, 'pa.deletion'));
       _set(tableRow, 'Total', _get(scores, 'pa.total'));
       _set(tableRow, 'Skills To Work On', _get(scores, 'pa.skills'));
+    }
+    if (['fluency-calf', 'fluency-arf', 'fluency-calf-es', 'fluency-arf-es'].includes(props.taskId)) {
+      _set(tableRow, 'Free Response', _get(scores, `${props.taskId}.fr`));
+      _set(tableRow, 'Multiple Choice', _get(scores, `${props.taskId}.fc`));
     }
     return tableRow;
   });
@@ -155,6 +165,9 @@ const exportAll = async () => {
       _set(tableRow, 'Deletion', _get(scores, 'pa.deletion'));
       _set(tableRow, 'Total', _get(scores, 'pa.total'));
       _set(tableRow, 'Skills To Work On', _get(scores, 'pa.skills'));
+    } else if (['fluency-calf', 'fluency-arf', 'fluency-calf-es', 'fluency-arf-es'].includes(props.taskId)) {
+      _set(tableRow, 'Free Response', _get(scores, `${props.taskId}.fr`));
+      _set(tableRow, 'Multiple Choice', _get(scores, `${props.taskId}.fc`));
     }
     return tableRow;
   });
