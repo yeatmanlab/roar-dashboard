@@ -7,11 +7,11 @@
   <div v-else class="container flex flex-column align-items-around">
     <div
       id="individual-report-header"
-      class="flex flex-column md:flex-row align-items-center my-2"
+      class="flex my-2 flex-column md:flex-row align-items-center"
       data-cy="report__header"
     >
-      <div class="student-name text-center md:text-left my-3">
-        <h1 class="text-lg uppercase text-gray-400">
+      <div class="my-3 text-center student-name md:text-left">
+        <h1 class="text-lg text-gray-400 uppercase">
           {{ $t('scoreReports.pageTitle') }}
         </h1>
         <h2 class="text-5xl">
@@ -19,7 +19,7 @@
         </h2>
       </div>
 
-      <div class="student-info bg-gray-200">
+      <div class="bg-gray-200 student-info">
         <p v-if="studentData?.studentData?.grade">
           <strong>{{ $t('scoreReports.grade') }}:</strong> {{ getGradeWithSuffix(studentData.studentData.grade) }}
         </p>
@@ -37,7 +37,7 @@
       <div class="flex gap-2">
         <PvButton
           outlined
-          class="text-white bg-primary border-white border-1 border-round h-3rem p-3 hover:bg-red-900"
+          class="p-3 text-white border-white bg-primary border-1 border-round h-3rem hover:bg-red-900"
           :label="!expanded ? $t('scoreReports.expandSections') : $t('scoreReports.collapseSections')"
           :icon="!expanded ? 'pi pi-plus ml-2' : 'pi pi-minus ml-2'"
           icon-pos="right"
@@ -47,7 +47,7 @@
         />
         <PvButton
           outlined
-          class="text-white bg-primary border-white border-1 border-round h-3rem p-3 hover:bg-red-900"
+          class="p-3 text-white border-white bg-primary border-1 border-round h-3rem hover:bg-red-900"
           :label="$t('scoreReports.exportPDF')"
           :icon="exportLoading ? 'pi pi-spin pi-spinner ml-2' : 'pi pi-download ml-2'"
           :disabled="exportLoading"
@@ -59,22 +59,22 @@
       </div>
     </div>
 
-    <div v-if="taskData?.length === 0" class="flex flex-column align-items-center py-6 bg-gray-100">
+    <div v-if="taskData?.length === 0" class="flex py-6 bg-gray-100 flex-column align-items-center">
       <i18n-t keypath="scoreReports.stillWorking" tag="div" class="my-2 text-2xl font-bold text-gray-600">
         <template #firstName>
           {{ studentFirstName }}
         </template>
       </i18n-t>
-      <i18n-t keypath="scoreReports.needOneComplete" tag="div" class="text-md font-light">
+      <i18n-t keypath="scoreReports.needOneComplete" tag="div" class="font-light text-md">
         <template #firstName>
           {{ studentFirstName }}
         </template>
       </i18n-t>
     </div>
 
-    <div v-else id="individual-report-banner" class="welcome-card mt-2 mb-4">
+    <div v-else id="individual-report-banner" class="mt-2 mb-4 welcome-card">
       <div class="p-3 text-lg">
-        {{ $t('scoreReports.roarSummery') }}
+        {{ $t('scoreReports.roarSummary') }}
         <i18n-t keypath="scoreReports.completedTasks" tag="div" class="mt-2">
           <template #firstName>
             {{ studentFirstName }}
@@ -85,14 +85,14 @@
             <strong>{{ formattedTasks }}</strong>
           </li>
         </ul>
-        <i18n-t keypath="scoreReports.summery" tag="div">
+        <i18n-t keypath="scoreReports.summary" tag="div">
           <template #firstName>
             {{ studentFirstName }}
           </template>
         </i18n-t>
       </div>
     </div>
-    <div id="individual-report-cards" class="individual-report-wrapper gap-4">
+    <div id="individual-report-cards" class="gap-4 individual-report-wrapper">
       <individual-score-report-task
         v-if="taskData?.length"
         :student-data="studentData"
@@ -108,9 +108,9 @@
         collapse-icon="pi pi-minus ml-2"
       >
         <PvAccordionTab :header="$t('scoreReports.taskTabHeader')">
-          <div class="flex flex-column align-items-center text-lg">
+          <div class="flex text-lg flex-column align-items-center">
             <img v-if="!(studentData?.studentData?.grade >= 6)" src="../assets/support-distribution.png" width="650" />
-            <div class="text-xl font-bold mt-2">{{ $t('scoreReports.taskIntro') }}</div>
+            <div class="mt-2 text-xl font-bold">{{ $t('scoreReports.taskIntro') }}</div>
             <ul>
               <i18n-t keypath="scoreReports.standardScoreDescription" tag="li">
                 <template #taskTitle>
@@ -145,21 +145,21 @@
               <br />
               <i18n-t keypath="scoreReports.extraSupportDescription" tag="span">
                 <template #supportCategory>
-                  <span class="text-pink-600 font-bold">{{ $t('scoreReports.extraSupport') }}</span>
+                  <span class="font-bold text-pink-600">{{ $t('scoreReports.extraSupport') }}</span>
                 </template>
               </i18n-t>
               <br />
               <br />
               <i18n-t keypath="scoreReports.developingDescription" tag="span">
                 <template #supportCategory>
-                  <span class="text-yellow-600 font-bold">{{ $t('scoreReports.developing') }}</span>
+                  <span class="font-bold text-yellow-600">{{ $t('scoreReports.developing') }}</span>
                 </template>
               </i18n-t>
               <br />
               <br />
               <i18n-t keypath="scoreReports.achievedDescription" tag="span">
                 <template #supportCategory>
-                  <span class="text-green-600 font-bold">{{ $t('scoreReports.achieved') }}</span>
+                  <span class="font-bold text-green-600">{{ $t('scoreReports.achieved') }}</span>
                 </template>
               </i18n-t>
               <br />
@@ -169,7 +169,7 @@
           </div>
         </PvAccordionTab>
       </PvAccordion>
-      <div data-html2canvas-ignore="true" class="w-full mb-7">
+      <div data-html2canvas-ignore="true" class="mb-7 w-full">
         <PvAccordion
           class="my-2 w-full"
           :active-index="expanded ? 0 : null"

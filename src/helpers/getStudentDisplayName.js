@@ -1,3 +1,5 @@
+import { toValue } from 'vue';
+
 /**
  * Gets the display name for a student
  *
@@ -5,12 +7,12 @@
  * @returns {Object<{firstName: string, lastName: string}>} Object containing firstName and lastName.
  */
 export const getStudentDisplayName = (studentData) => {
-  if (!studentData) {
+  if (!toValue(studentData)) {
     return { firstName: '', lastName: '' };
   }
 
-  const firstName = studentData?.name?.first || studentData?.username || '';
-  const lastName = studentData?.name?.last || '';
+  const firstName = toValue(studentData)?.name?.first || toValue(studentData)?.username || '';
+  const lastName = toValue(studentData)?.name?.last || '';
 
   return { firstName, lastName };
 };

@@ -31,66 +31,33 @@
     </div>
 
     <div id="individual-report-banner" class="py-4 mt-2 lg:pr-8">
-      <template v-if="tasks?.length">
-        {{ $t('scoreReports.roarSummery') }}
+      {{ $t('scoreReports.roarSummary') }}
 
-        <i18n-t keypath="scoreReports.completedTasks" tag="div" class="mt-2">
-          <template #firstName>
-            {{ firstName }}
-          </template>
-        </i18n-t>
-        <ul class="inline-flex p-0" style="list-style-type: none">
-          <li>
-            <!-- TODO: Improve task rendering -->
-            <strong>{{ formattedTasks }}</strong>
-          </li>
-        </ul>
-        <i18n-t keypath="scoreReports.summery" tag="div">
-          <template #firstName>
-            {{ firstName }}
-          </template>
-        </i18n-t>
-      </template>
-
-      <template v-else>
-        <EmptyState>
-          <template #title>
-            <i18n-t keypath="scoreReports.stillWorking">
-              <template #firstName>
-                {{ firstName }}
-              </template>
-            </i18n-t>
-          </template>
-          <template #description>
-            <i18n-t keypath="scoreReports.needOneComplete">
-              <template #firstName>
-                {{ firstName }}
-              </template>
-            </i18n-t>
-          </template>
-          <template #action>
-            <!-- TODO: Fix routing to always go back to overview -->
-            <PvButton
-              label="Back to overview "
-              icon="pi pi-arrow-left"
-              icon-pos="left"
-              severity="secondary"
-              data-html2canvas-ignore="true"
-              @click="$router.go(-1)"
-            />
-          </template>
-        </EmptyState>
-      </template>
+      <i18n-t keypath="scoreReports.completedTasks" tag="div" class="mt-2">
+        <template #firstName>
+          {{ studentFirstName }}
+        </template>
+      </i18n-t>
+      <ul class="inline-flex p-0" style="list-style-type: none">
+        <li>
+          <!-- TODO: Improve task rendering -->
+          <strong>{{ formattedTasks }}</strong>
+        </li>
+      </ul>
+      <i18n-t keypath="scoreReports.summary" tag="div">
+        <template #firstName>
+          {{ studentFirstName }}
+        </template>
+      </i18n-t>
     </div>
   </section>
 </template>
 
 <script setup>
 import PvButton from 'primevue/button';
-import EmptyState from '@/components/EmptyState.vue';
 
 defineProps({
-  firstName: {
+  studentFirstName: {
     type: String,
     required: true,
   },
@@ -101,10 +68,6 @@ defineProps({
   exportLoading: {
     type: Boolean,
     default: false,
-  },
-  tasks: {
-    type: Array,
-    default: () => [],
   },
   formattedTasks: {
     type: String,

@@ -10,38 +10,42 @@
       <HeaderSection
         :student-first-name="studentFirstName"
         :student-last-name="studentLastName"
-        :student-grade="studentData?.studentData?.grade"
+        :student-grade="studentGrade"
         :administration-name="administrationData?.name"
         :administration-date="administrationData?.date"
-        data-pdf-export-section="header"
+        :data-pdf-export-section="SCORE_REPORT_EXPORT_SECTIONS.HEADER"
       />
 
-      <SummarySection
-        :first-name="studentFirstName"
-        :tasks="taskData"
-        :formatted-tasks="formattedTasks"
-        :expanded="expanded"
-        :export-loading="exportLoading"
-        data-pdf-export-section="summary"
-        @toggle-expand="toggleExpand"
-        @export-pdf="handleExportToPdf"
-      />
+      <template v-if="!taskData?.length">
+        <EmptyState :student-first-name="studentFirstName" />
+      </template>
 
-      <ScoreCardsListSection
-        v-if="taskData?.length"
-        :student-data="studentData"
-        :task-data="taskData"
-        :tasks-dictionary="tasksDictionary"
-        :expanded="expanded"
-        data-pdf-export-section="details"
-      />
+      <template v-else>
+        <SummarySection
+          :student-first-name="studentFirstName"
+          :formatted-tasks="formattedTasksList"
+          :expanded="expanded"
+          :export-loading="exportLoading"
+          :data-pdf-export-section="SCORE_REPORT_EXPORT_SECTIONS.SUMMARY"
+          @toggle-expand="toggleExpand"
+          @export-pdf="handleExportToPdf"
+        />
 
-      <SupportSection
-        v-if="taskData?.length"
-        :expanded="expanded"
-        :student-grade="studentData?.studentData?.grade"
-        data-pdf-export-section="support"
-      />
+        <ScoreCardsListSection
+          :student-first-name="studentFirstName"
+          :student-grade="studentGrade"
+          :task-data="taskData"
+          :tasks-dictionary="tasksDictionary"
+          :expanded="expanded"
+          :data-pdf-export-section="SCORE_REPORT_EXPORT_SECTIONS.DETAILS"
+        />
+
+        <SupportSection
+          :expanded="expanded"
+          :student-grade="studentData?.studentData?.grade"
+          :data-pdf-export-section="SCORE_REPORT_EXPORT_SECTIONS.SUPPORT"
+        />
+      </template>
     </template>
   </div>
 </template>
@@ -61,7 +65,17 @@ import HeaderSection from './components/HeaderSection.vue';
 import SummarySection from './components/SummarySection.vue';
 import ScoreCardsListSection from './components/ScoreCardsListSection.vue';
 import SupportSection from './components/SupportSection.vue';
-import { getStudentDisplayName } from '../../helpers/getStudentDisplayName';
+import EmptyState from './components/EmptyState.vue';
+import { getStudentDisplayName } from '@/helpers/getStudentDisplayName';
+import { getStudentGrade } from '@/helpers/getStudentGrade';
+import { formatList } from '@/helpers/formatList';
+
+const SCORE_REPORT_EXPORT_SECTIONS = Object.freeze({
+  HEADER: 'header',
+  SUMMARY: 'summary',
+  DETAILS: 'details',
+  SUPPORT: 'support',
+});
 
 const props = defineProps({
   administrationId: {
@@ -84,17 +98,6 @@ const props = defineProps({
 
 const authStore = useAuthStore();
 
-// UI control state
-const expanded = ref(false);
-const exportLoading = ref(false);
-
-/**
- * Toggles the expanded state of the report to show all cards
- */
-const toggleExpand = () => {
-  expanded.value = !expanded.value;
-};
-
 // Data loading state
 const initialized = ref(false);
 const isLoading = computed(
@@ -104,6 +107,10 @@ const isLoading = computed(
     isLoadingTaskData.value ||
     isLoadingAdministrationData.value,
 );
+
+// UI control state
+const expanded = ref(false);
+const exportLoading = ref(false);
 
 // Data queries
 const { data: studentData, isLoading: isLoadingStudentData } = useUserDataQuery(props.userId, {
@@ -134,16 +141,43 @@ const { data: tasksDictionary, isLoading: isLoadingTasksDictionary } = useTasksD
 
 // Computed properties
 const tasks = computed(() => taskData?.value?.map((assignment) => assignment.taskId) || []);
+const formattedTasksList = computed(() =>
+  formatList(tasks.value, tasksDictionary.value, (task, entry) => entry?.technicalName ?? task, {
+    orderLookup: Object.entries(taskDisplayNames).reduce((acc, [key, value]) => {
+      acc[key] = value.order;
+      return acc;
+    }, {}),
+    suffix: '.',
+  }),
+);
 
-const formattedTasks = computed(() => formatTaskList(tasks.value, tasksDictionary.value));
+const studentFirstName = computed(
+  () => {
+    return getStudentDisplayName(studentData).firstName;
+  },
+  { immediate: true },
+);
 
-const studentFirstName = computed(() => {
-  return getStudentDisplayName(studentData.value).firstName;
-});
+const studentLastName = computed(
+  () => {
+    return getStudentDisplayName(studentData).lastName;
+  },
+  { immediate: true },
+);
 
-const studentLastName = computed(() => {
-  return getStudentDisplayName(studentData.value).lastName;
-});
+const studentGrade = computed(
+  () => {
+    return getStudentGrade(studentData);
+  },
+  { immediate: true },
+);
+
+/**
+ * Toggles the expanded state of the report to show all cards
+ */
+const toggleExpand = () => {
+  expanded.value = !expanded.value;
+};
 
 /**
  * Handles the export to PDF
@@ -154,12 +188,12 @@ const handleExportToPdf = async () => {
   const studentName = `${studentFirstName.value}${studentLastName.value ? studentLastName.value : ''}`;
   const fileName = `ROAR-IndividualScoreReport-${studentName}.pdf`;
 
-  const elements = [
-    document.querySelector('[data-pdf-export-section="header"]'),
-    document.querySelector('[data-pdf-export-section="summary"]'),
-    document.querySelector('[data-pdf-export-section="details"]'),
-    document.querySelector('[data-pdf-export-section="support"]'),
-  ];
+  const elements = [];
+
+  for (const section of Object.values(SCORE_REPORT_EXPORT_SECTIONS)) {
+    const element = document.querySelector(`[data-pdf-export-section="${section}"]`);
+    if (element) elements.push(element);
+  }
 
   exportLoading.value = true;
 
@@ -177,29 +211,6 @@ const handleExportToPdf = async () => {
   } finally {
     exportLoading.value = false;
   }
-};
-
-/**
- * Formats a list of tasks into a readable string
- * @param {Array} tasks - Array of task IDs
- * @param {Object} tasksDictionary - Dictionary of task information
- * @returns {String} Formatted task list
- */
-const formatTaskList = (tasks = [], tasksDictionary = {}) => {
-  if (!tasks || tasks.length === 0) return '';
-
-  return (
-    tasks
-      .sort((a, b) => {
-        if (Object.keys(taskDisplayNames).includes(a) && Object.keys(taskDisplayNames).includes(b)) {
-          return taskDisplayNames[a].order - taskDisplayNames[b].order;
-        } else {
-          return -1;
-        }
-      })
-      .map((task) => tasksDictionary[task]?.technicalName ?? task)
-      .join(', ') + '.'
-  );
 };
 
 // Initialization

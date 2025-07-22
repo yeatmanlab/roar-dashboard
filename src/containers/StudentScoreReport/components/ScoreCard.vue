@@ -28,7 +28,7 @@
     <div class="flex gap-2 px-4 flex-column align-items-center justify-content-center">
       <PvKnob
         readonly
-        :value-template="scoreToDisplay === 'percentileScore' ? valueTemplate : undefined"
+        :value-template="valueTemplate"
         :model-value="score.value"
         :size="180"
         :value-color="score.supportColor"
@@ -106,7 +106,8 @@ const props = defineProps({
   },
   valueTemplate: {
     type: String,
-    required: true,
+    required: false,
+    default: undefined,
   },
   scoreToDisplay: {
     type: String,
