@@ -67,7 +67,8 @@
         <PvAccordionContent>
           <i18n-t keypath="scoreReports.nextSteps" tag="p" class="mt-0">
             <template #link>
-              <a href="/docs/roar-next-steps.pdf" class="text-gray-700 hover:text-red-700" target="_blank">click here</a
+              <a :href="SCORE_REPORT_NEXT_STEPS_DOCUMENT_PATH" class="text-gray-700 hover:text-red-700" target="_blank"
+                >click here</a
               >.
             </template>
           </i18n-t>
@@ -84,6 +85,7 @@ import PvAccordion from 'primevue/accordion';
 import PvAccordionPanel from 'primevue/accordionpanel';
 import PvAccordionHeader from 'primevue/accordionheader';
 import PvAccordionContent from 'primevue/accordioncontent';
+import { SCORE_REPORT_NEXT_STEPS_DOCUMENT_PATH } from '@/constants/scores';
 
 const SUPPORT_PANELS = Object.freeze({
   TASK: '1',

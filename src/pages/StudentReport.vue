@@ -180,7 +180,7 @@
             <i18n-t keypath="scoreReports.nextSteps" tag="div" class="text-lg">
               <template #link>
                 <a
-                  href="/docs/roar-next-steps.pdf"
+                  :href="SCORE_REPORT_NEXT_STEPS_DOCUMENT_PATH"
                   class="hover:text-red-700"
                   data-html2canvas-ignore="true"
                   target="_blank"
@@ -212,6 +212,7 @@ import { taskDisplayNames, addElementToPdf } from '@/helpers/reports';
 import IndividualScoreReportTask from '@/components/reports/IndividualScoreReportTask.vue'; // @TODO: Not used?
 import AppSpinner from '@/components/AppSpinner.vue';
 import { getGradeWithSuffix } from '@/helpers/reports.js';
+import { SCORE_REPORT_NEXT_STEPS_DOCUMENT_PATH } from '@/constants/scores';
 
 const authStore = useAuthStore();
 
@@ -303,7 +304,7 @@ const exportToPdf = async () => {
   yCounter += 25;
   doc.setTextColor(0, 0, 255);
   doc.textWithLink('Next Steps', 15, yCounter, {
-    url: 'https://roar.education/docs/roar-next-steps.pdf',
+    url: `${window.location.origin}${SCORE_REPORT_NEXT_STEPS_DOCUMENT_PATH}`,
     color: 'blue',
   });
 
