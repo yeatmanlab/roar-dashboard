@@ -17,7 +17,7 @@ import {
   CreateSchoolSchema,
   CreateOrgType,
   OrgType,
-} from 'levante-zod';
+} from '@levante-framework/levante-zod';
 
 const parseCreateOrgData = (data: CreateOrgType) => {
   let formatted;

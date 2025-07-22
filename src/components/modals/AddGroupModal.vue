@@ -121,7 +121,7 @@ import _capitalize from 'lodash/capitalize';
 import _union from 'lodash/union';
 import _without from 'lodash/without';
 import { computed, ref, toRaw, watch } from 'vue';
-import { CreateOrgType } from 'levante-zod';
+import { CreateOrgType } from '@levante-framework/levante-zod';
 import { normalizeToLowercase } from '@/helpers';
 import { required, requiredIf } from '@vuelidate/validators';
 import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
