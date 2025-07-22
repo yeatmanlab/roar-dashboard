@@ -41,9 +41,6 @@ const PdfExportService = (() => {
       const remainingSpace = availableHeight - currentPosition;
       const requiredSpace = scaledCanvasHeight + offset;
 
-      console.log('remainingSpace', remainingSpace);
-      console.log('requiredSpace', requiredSpace);
-
       if (requiredSpace > remainingSpace) {
         document.addPage([PAGE_WIDTH, PAGE_HEIGHT], 'mm');
         yCounter = MARGIN;
