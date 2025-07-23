@@ -335,7 +335,7 @@ const speedDialItems = computed((): SpeedDialItem[] => {
     icon: 'pi pi-pencil',
     command: () => {
       router.push({
-        name: 'EditAdministration',
+        name: 'EditAssignment',
         params: { adminId: props.id },
       });
     },
