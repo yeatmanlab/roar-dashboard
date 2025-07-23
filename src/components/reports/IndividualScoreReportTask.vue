@@ -25,13 +25,7 @@
             </div>
             <PvKnob
               readonly
-              :value-template="
-                task.taskId === 'phonics'
-                  ? task[task.scoreToDisplay].value + '%'
-                  : task.scoreToDisplay == 'percentileScore'
-                  ? getPercentileSuffix(task.percentileScore.value)
-                  : undefined
-              "
+              :value-template="getValueTemplate(task)"
               :model-value="task[task.scoreToDisplay].value"
               :size="180"
               :range-color="gray"
@@ -385,9 +379,6 @@ const computedTaskData = computed(() => {
 });
 
 function getSupportLevelLanguage(grade, percentile, rawScore, taskId) {
-  if (taskId === 'phonics') {
-    return null; // Now handled by the template using i18n
-  }
   const { support_level } = getSupportLevel(grade, percentile, rawScore, taskId);
   if (support_level) {
     if (support_level === 'Achieved Skill') {
@@ -410,6 +401,18 @@ function getPercentileSuffix(percentile) {
   } else {
     return '{value}th';
   }
+}
+
+function getValueTemplate(task) {
+  if (task.taskId === 'phonics') {
+    return task[task.scoreToDisplay].value + '%';
+  }
+
+  if (task.scoreToDisplay === 'percentileScore') {
+    return getPercentileSuffix(task.percentileScore.value);
+  }
+
+  return undefined;
 }
 </script>
 

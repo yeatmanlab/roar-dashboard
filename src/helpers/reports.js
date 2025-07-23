@@ -610,12 +610,6 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = 
   let support_level = null;
   let tag_color = null;
 
-  if (taskId === 'phonics') {
-    return {
-      support_level: 'Phonics',
-      tag_color: 'var(--blue-500)',
-    };
-  }
   if (rawScore === undefined) {
     return {
       support_level,
