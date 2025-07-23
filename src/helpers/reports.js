@@ -302,7 +302,7 @@ export const extendedDescriptions = {
     'This test measures how well your student knows the names of letters and which letters are used to spell each sound.',
   comp: 'Temporary description for comp',
   phonics:
-    'This test measures phonics knowledge by testing how well your student can match the sounds of a word to the spelling',
+    "This is a new test of phonics knowledge. It is currently being studied to determine how well it measures a student's ability to use phonics patterns to decode nonsense words.",
   syntax: 'This test measures how well students understand sentences that vary from simple to complicated',
   trog: 'This test measures how well students understand sentences that vary from simple to complicated',
   fluency: 'Temporary description for fluency',
@@ -601,9 +601,21 @@ export function getGradeWithSuffix(grade) {
  *  Get Support Level
  *  Function to take scores, taskId, and grade and return the proper support category for the run.
  */
+export const getDialColor = (grade, percentile, rawScore, taskId) => {
+  const { tag_color } = getSupportLevel(grade, percentile, rawScore, taskId);
+  return tag_color;
+};
+
 export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = null) => {
   let support_level = null;
   let tag_color = null;
+
+  if (taskId === 'phonics') {
+    return {
+      support_level: 'Phonics',
+      tag_color: 'var(--blue-500)',
+    };
+  }
   if (rawScore === undefined) {
     return {
       support_level,
