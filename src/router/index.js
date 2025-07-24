@@ -28,6 +28,13 @@ const routes = [
     },
   },
   {
+    path: GAME_ROUTES.SURVEY,
+    name: 'ROAR Survey',
+    component: () => import('../components/tasks/TaskSurvey.vue'),
+    props: { taskId: 'roar-survey' },
+    meta: { pageTitle: 'ROAR Survey' },
+  },
+  {
     path: GAME_ROUTES.SWR,
     name: 'SWR',
     component: () => import('../components/tasks/TaskSWR.vue'),
@@ -213,6 +220,20 @@ const routes = [
     name: 'LaunchParticipant',
     meta: {
       pageTitle: 'TaskLauncher Home',
+      permission: Permissions.Tasks.LAUNCH,
+    },
+  },
+  {
+    path: '/launch/:launchId' + GAME_ROUTES.SURVEY,
+    name: 'Launch Survey',
+    component: () => import('../components/tasks/TaskSurvey.vue'),
+    props: (route) => ({
+      taskId: 'roar-survey',
+      language: 'en',
+      launchId: route.params.launchId,
+    }),
+    meta: {
+      pageTitle: 'ROAR Survey',
       permission: Permissions.Tasks.LAUNCH,
     },
   },
