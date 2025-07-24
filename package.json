@@ -34,6 +34,7 @@
     "@bdelab/roav-crowding": "1.1.35",
     "@bdelab/roav-mep": "1.2.0",
     "@bdelab/roav-ran": "1.0.33",
+    "@bdelab/roar-survey": "0.0.1",
     "@dotenvx/dotenvx": "^1.24.4",
     "@levante-framework/core-tasks": "1.0.0-beta.39",
     "@primevue/core": "^4.2.4",
@@ -113,5 +114,8 @@
     "workbox-core": "^7.1.0",
     "workbox-routing": "^7.1.0",
     "workbox-strategies": "^7.1.0"
+  },
+  "peerDependencies": {
+    "survey-core": "^2.0.8"
   }
 }
