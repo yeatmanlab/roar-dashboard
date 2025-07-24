@@ -36,6 +36,7 @@
     "nextStepsTabHeader": "Next Steps",
     "nextSteps": "This score report provides a broad overview of your student’s reading development. Understand that a student’s progress may not be linear, and their scores are not fixed- everyone has room to grow and learn. To learn more about any given test or subskill, and to find more resources for supporting your student {link}",
     "rawTaskDescription": "{firstName} achieved a composite score of {rawScore} in {taskName}. {taskDescription}",
+    "percentageCorrectTaskDescription": "{firstName} correctly answered {percentage}% of the items in {taskName}. {taskDescription}",
     "standardTaskDescription": "{firstName} scored a standard score of {standardScore}, which indicates they {supportCategory} {taskName}. {taskDescription}",
     "percentileTaskDescription": "{firstName} scored in the {percentile}, which indicates they {supportCategory} {taskName}. {taskDescription}",
     "scoreBreakdown": "Score Breakdown",
