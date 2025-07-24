@@ -582,14 +582,6 @@ const progressReportColumns = computed(() => {
   });
 
   tableColumns.push({
-    field: 'user.userId',
-    header: 'UID',
-    dataType: 'text',
-    sort: true,
-    filter: true,
-  });
-
-  tableColumns.push({
     field: 'user.username',
     header: 'Username',
     dataType: 'text',
