@@ -5,28 +5,28 @@
         <section>
           <div v-if="isLoadingOrgData" class="loading-wrapper">
             <AppSpinner style="margin: 0.3rem 0rem" />
-            <div class="uppercase text-sm text-gray-600 font-light">Loading Org Info</div>
+            <div class="text-sm font-light text-gray-600 uppercase">Loading Org Info</div>
           </div>
 
           <div v-if="orgData && administrationData" id="at-a-glance-charts">
             <div class="flex justify-content-between align-items-center">
-              <div class="flex flex-column align-items-start gap-2">
+              <div class="flex gap-2 flex-column align-items-start">
                 <div>
-                  <div class="uppercase font-light text-gray-500 text-xs">{{ props.orgType }} Score Report</div>
+                  <div class="text-xs font-light text-gray-500 uppercase">{{ props.orgType }} Score Report</div>
                   <div class="report-title">
                     {{ _toUpper(orgData?.name) }}
                   </div>
                 </div>
                 <div>
-                  <div class="uppercase font-light text-gray-500 text-xs">Administration</div>
-                  <div class="administration-name mb-4">
+                  <div class="text-xs font-light text-gray-500 uppercase">Administration</div>
+                  <div class="mb-4 administration-name">
                     {{ _toUpper(displayName) }}
                   </div>
                 </div>
               </div>
-              <div class="flex flex-column align-items-end gap-1">
-                <div class="flex flex-row align-items-center gap-4" data-html2canvas-ignore="true">
-                  <div class="uppercase text-sm text-gray-600 flex flex-row">VIEW</div>
+              <div class="flex gap-1 flex-column align-items-end">
+                <div class="flex flex-row gap-4 align-items-center" data-html2canvas-ignore="true">
+                  <div class="flex flex-row text-sm text-gray-600 uppercase">VIEW</div>
                   <PvSelectButton
                     v-model="reportView"
                     v-tooltip.top="'View different report'"
@@ -40,15 +40,15 @@
                   </PvSelectButton>
                 </div>
 
-                <div v-if="!isLoadingAssignments" class="flex flex-column gap-2 mr-5">
+                <div v-if="!isLoadingAssignments" class="flex gap-2 mr-5 flex-column">
                   <PvButton
-                    class="flex flex-row p-2 text-sm bg-primary text-white border-none border-round h-2rem text-sm hover:bg-red-900"
+                    class="flex flex-row p-2 text-sm text-white border-none bg-primary border-round h-2rem hover:bg-red-900"
                     :icon="!exportLoading ? 'pi pi-download mr-2' : 'pi pi-spin pi-spinner mr-2'"
                     label="Export Combined Reports"
                     @click="exportData({ includeProgress: true })"
                   />
                   <PvButton
-                    class="flex flex-row p-2 text-sm bg-primary text-white border-none border-round mb-2 h-2rem text-sm hover:bg-red-900"
+                    class="flex flex-row p-2 mb-2 text-sm text-white border-none bg-primary border-round h-2rem hover:bg-red-900"
                     :icon="!exportLoading ? 'pi pi-download mr-2' : 'pi pi-spin pi-spinner mr-2'"
                     :disabled="exportLoading"
                     label="Export To Pdf"
@@ -60,9 +60,9 @@
             </div>
             <div v-if="isLoadingAssignments" class="loading-wrapper">
               <AppSpinner style="margin: 1rem 0rem" />
-              <div class="uppercase text-sm text-gray-600 font-light">Loading Overview Charts</div>
+              <div class="text-sm font-light text-gray-600 uppercase">Loading Overview Charts</div>
             </div>
-            <div v-if="sortedAndFilteredTaskIds?.length > 0" class="text-left bg-gray-100 py-3 mb-2">
+            <div v-if="sortedAndFilteredTaskIds?.length > 0" class="py-3 mb-2 text-left bg-gray-100">
               <div class="overview-wrapper">
                 <div class="chart-wrapper">
                   <div v-for="taskId of sortedAndFilteredTaskIds" :key="taskId" style="width: 33%">
@@ -91,7 +91,7 @@
               </div>
               <div
                 v-if="!isLoadingAssignments && sortedAndFilteredTaskIds?.length > 0"
-                class="legend-container flex flex-column align-items-center rounded"
+                class="flex rounded legend-container flex-column align-items-center"
               >
                 <div class="flex align-items-center">
                   <div class="legend-entry">
@@ -113,16 +113,16 @@
                     </div>
                   </div>
                 </div>
-                <div class="font-light uppercase text-xs text-gray-500 my-1">Legend</div>
+                <div class="my-1 text-xs font-light text-gray-500 uppercase">Legend</div>
               </div>
             </div>
           </div>
         </section>
 
         <!-- Loading data spinner -->
-        <div v-if="isLoadingAssignments || isFetchingAssignments" class="loading-container my-4">
+        <div v-if="isLoadingAssignments || isFetchingAssignments" class="my-4 loading-container">
           <AppSpinner style="margin-bottom: 1rem" />
-          <span class="text-sm text-gray-600 uppercase font-light">Loading Administration Datatable</span>
+          <span class="text-sm font-light text-gray-600 uppercase">Loading Administration Datatable</span>
         </div>
         <!-- Main table -->
 
@@ -187,7 +187,7 @@
         <!-- Subscores tables -->
         <div v-if="isLoadingAssignments || isLoadingTasksDictionary" class="loading-wrapper">
           <AppSpinner style="margin: 1rem 0rem" />
-          <div class="uppercase text-sm font-light text-gray-600">Loading Task Reports</div>
+          <div class="text-sm font-light text-gray-600 uppercase">Loading Task Reports</div>
         </div>
 
         <PvTabView :active-index="activeTabIndex">
@@ -212,7 +212,7 @@
             </div>
           </PvTabPanel>
         </PvTabView>
-        <div id="score-report-closing" class="bg-gray-200 px-4 py-2 mt-4">
+        <div id="score-report-closing" class="px-4 py-2 mt-4 bg-gray-200">
           <h2 class="extra-info-title">HOW ROAR SCORES INFORM PLANNING TO PROVIDE SUPPORT</h2>
           <p>
             Each foundational reading skill is a building block of the subsequent skill. Phonological awareness supports
@@ -239,7 +239,7 @@
           <!-- Reintroduce when we have somewhere for this link to go. -->
           <!-- <a href="google.com">Click here</a> for more guidance on steps you can take in planning to support your students. -->
         </div>
-        <div class="bg-gray-200 px-4 py-2 mb-7">
+        <div class="px-4 py-2 mb-7 bg-gray-200">
           <h2 class="extra-info-title">NEXT STEPS</h2>
           <!-- Reintroduce when we have somewhere for this link to go. -->
           <!-- <p>This score report has provided a snapshot of your school's reading performance at the time of administration. By providing classifications for students based on national norms for scoring, you are able to see which students can benefit from varying levels of support. To read more about what to do to support your students, <a href="google.com">read here.</a></p> -->
@@ -248,7 +248,7 @@
             administration. By providing classifications for students based on national norms for scoring, you are able
             to see how your student(s) can benefit from varying levels of support. To read more about what to do to
             support your student,
-            <a href="/docs/roar-next-steps.pdf" class="hover:text-red-700" target="_blank">read more</a>.
+            <a :href="SCORE_REPORT_NEXT_STEPS_DOCUMENT_PATH" class="hover:text-red-700" target="_blank">read more</a>.
           </p>
         </div>
       </div>
@@ -288,6 +288,7 @@ import useOrgQuery from '@/composables/queries/useOrgQuery';
 import useDistrictSchoolsQuery from '@/composables/queries/useDistrictSchoolsQuery';
 import useAdministrationAssignmentsQuery from '@/composables/queries/useAdministrationAssignmentsQuery';
 import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery';
+import { usePermissions } from '@/composables/usePermissions';
 import { exportCsv } from '@/helpers/query/utils';
 import { getTitle } from '@/helpers/query/administrations';
 import {
@@ -312,7 +313,8 @@ import RoarDataTable from '@/components/RoarDataTable';
 import { CSV_EXPORT_STATIC_COLUMNS } from '@/constants/csvExport';
 import { APP_ROUTES } from '@/constants/routes';
 import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
-import { usePermissions } from '@/composables/usePermissions';
+import { SCORE_REPORT_NEXT_STEPS_DOCUMENT_PATH } from '@/constants/scores';
+
 const { userCan, Permissions } = usePermissions();
 
 let TaskReport, DistributionChartOverview;
