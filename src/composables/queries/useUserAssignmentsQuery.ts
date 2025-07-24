@@ -15,6 +15,7 @@ import { USER_ASSIGNMENTS_QUERY_KEY } from '@/constants/queryKeys';
 const useUserAssignmentsQuery = (queryOptions?: UseQueryOptions): UseQueryReturnType => {
   const authStore = useAuthStore();
   const { roarUid } = storeToRefs(authStore);
+  console.log('roarUid: ', roarUid.value);
 
   const queryConditions = [() => !!roarUid.value];
   const { isQueryEnabled, options } = computeQueryOverrides(queryConditions, queryOptions);

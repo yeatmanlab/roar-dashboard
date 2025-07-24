@@ -183,6 +183,10 @@ const {
   enabled: initialized,
 });
 
+watch(userAssignments, (newUserAssignments) => {
+  console.log('newUserAssignments: ', newUserAssignments);
+});
+
 const sortedUserAdministrations = computed(() => {
   return [...(userAssignments.value ?? [])].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 });
