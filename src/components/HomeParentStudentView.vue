@@ -26,10 +26,34 @@
     </div>
 
     <div v-else-if="Object.keys(childrenAssignments).length === 0" class="p-3">
-      <PvMessage severity="info">
-        <div class="text-lg font-bold text-gray-600">No assignments available</div>
-        <div class="text-sm font-light text-gray-800">Please check back later.</div>
-      </PvMessage>
+      <div class="grid grid-cols-1 gap-4 w-full">
+        <PvMessage severity="info" class="mb-4">
+          <div class="text-lg font-bold text-gray-600">No assignments available</div>
+          <div class="text-sm font-light text-gray-800">Please check back later.</div>
+        </PvMessage>
+
+        <article
+          class="flex overflow-hidden rounded border-gray-200 bg-gray-100 flex-column border-1 mx-auto w-full max-w-3xl p-8"
+        >
+          <div class="flex flex-column align-items-center gap-4">
+            <div class="w-16 h-16 rounded-full bg-pink-50 flex align-items-center justify-content-center">
+              <i class="pi pi-users text-4xl text-red-700"></i>
+            </div>
+            <div class="text-center">
+              <h2 class="m-0 text-2xl font-bold mb-2">Add a Child</h2>
+              <div class="text-gray-600 mb-4 font-light text-sm">Add a new student to your family account</div>
+            </div>
+            <PvButton
+              label="Add Child"
+              class="px-6"
+              severity="danger"
+              outlined
+              data-cy="add-student-btn"
+              @click="showEnrollmentModal"
+            />
+          </div>
+        </article>
+      </div>
     </div>
 
     <div
@@ -65,19 +89,19 @@
           />
         </div>
       </article>
-
-      <PvDialog
-        v-model:visible="isEnrollmentModalVisible"
-        modal
-        :style="{ width: '80vw', maxWidth: '1200px' }"
-        header="Enroll New Student"
-        :closable="true"
-        :draggable="false"
-        data-cy="enrollment-modal"
-      >
-        <RegisterChildren :submitting="isSubmitting" @submit="handleStudentEnrollment" />
-      </PvDialog>
     </div>
+
+    <PvDialog
+      v-model:visible="isEnrollmentModalVisible"
+      modal
+      :style="{ width: '80vw', maxWidth: '1200px' }"
+      header="Enroll New Student"
+      :closable="true"
+      :draggable="false"
+      data-cy="enrollment-modal"
+    >
+      <RegisterChildren :submitting="isSubmitting" @submit="handleStudentEnrollment" />
+    </PvDialog>
   </div>
 </template>
 
