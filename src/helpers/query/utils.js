@@ -11,7 +11,7 @@ import _union from 'lodash/union';
 import _without from 'lodash/without';
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '@/store/auth';
-import { flattenObj } from '@/helpers';
+import { flattenObj, isEmulator } from '@/helpers';
 import { FIRESTORE_BASE_URL, FIRESTORE_DATABASES } from '@/constants/firebase';
 
 export const convertValues = (value) => {
@@ -76,7 +76,7 @@ export const orderByNameASC = [
 export const getProjectId = (project = 'admin') => {
   const authStore = useAuthStore();
   const { roarfirekit } = storeToRefs(authStore);
-  return roarfirekit.value.roarConfig?.[project]?.projectId;
+  return isEmulator ? 'demo-emulator' : roarfirekit.value.roarConfig?.[project]?.projectId;
 };
 
 export const getBaseDocumentPath = () => {
