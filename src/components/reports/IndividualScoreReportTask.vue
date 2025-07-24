@@ -154,8 +154,6 @@
 </template>
 
 <script setup>
-const emit = defineEmits(['update:expanded']);
-
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import _lowerCase from 'lodash/lowerCase';
@@ -179,25 +177,22 @@ import {
   tasksToDisplayPercentCorrect,
 } from '@/helpers/reports';
 
-const props = defineProps(
-  {
-    studentData: {
-      type: Object,
-      required: true,
-    },
-    taskData: {
-      type: Object,
-      required: true,
-    },
-    expanded: {
-      type: Boolean,
-      required: false,
-    },
+const props = defineProps({
+  studentData: {
+    type: Object,
+    required: true,
   },
-  {
-    emits: ['update:expanded'],
+  taskData: {
+    type: Object,
+    required: true,
   },
-);
+  expanded: {
+    type: Boolean,
+    required: false,
+  },
+});
+
+const emit = defineEmits(['update:expanded']);
 
 const { t } = useI18n();
 
