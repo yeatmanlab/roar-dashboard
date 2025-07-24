@@ -103,8 +103,8 @@
             :active-index="expanded ? 0 : null"
             expand-icon="pi pi-plus ml-2"
             collapse-icon="pi pi-minus ml-2"
-            @tab-close="$emit('update:expanded', false)"
-            @tab-open="$emit('update:expanded', true)"
+            @tab-close="emit('update:expanded', false)"
+            @tab-open="emit('update:expanded', true)"
           >
             <PvAccordionTab>
               <template #header>
@@ -154,6 +154,8 @@
 </template>
 
 <script setup>
+const emit = defineEmits(['update:expanded']);
+
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import _lowerCase from 'lodash/lowerCase';
@@ -298,11 +300,7 @@ const computedTaskData = computed(() => {
       }
 
       // determine which score to display in the card based on grade
-      let scoreToDisplay =
-        taskId === 'phonics' ? 'percentileScore' : grade.value >= 6 ? 'standardScore' : 'percentileScore';
-      if (rawOnlyTasks.includes(taskId)) {
-        scoreToDisplay = 'rawScore';
-      }
+      const scoreToDisplay = rawOnlyTasks.includes(taskId) ? 'rawScore' : getScoreToDisplay(taskId, grade.value);
 
       computedTaskAcc[taskId] = {
         taskId: taskId,
@@ -413,6 +411,11 @@ function getValueTemplate(task) {
   }
 
   return undefined;
+}
+
+function getScoreToDisplay(taskId, gradeValue) {
+  if (taskId === 'phonics') return 'percentileScore';
+  return gradeValue >= 6 ? 'standardScore' : 'percentileScore';
 }
 </script>
 
