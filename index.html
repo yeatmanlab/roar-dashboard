@@ -29,6 +29,59 @@
             margin-bottom: 20px;
         }
         
+        .survey-selector {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 2px solid #e9ecef;
+        }
+        
+        .survey-selector h3 {
+            margin: 0 0 15px 0;
+            color: #495057;
+            font-size: 1.2em;
+            text-align: center;
+        }
+        
+        .selector-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .selector-btn {
+            background: #f8f9fa;
+            border: 2px solid #dee2e6;
+            color: #495057;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            min-width: 180px;
+        }
+        
+        .selector-btn:hover {
+            background: #e9ecef;
+            border-color: #adb5bd;
+            transform: translateY(-2px);
+        }
+        
+        .selector-btn.active {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            border-color: #28a745;
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+        }
+        
+        .selector-btn.active:hover {
+            background: linear-gradient(135deg, #20c997, #17a2b8);
+            border-color: #20c997;
+        }
+        
         h1 {
             color: #2c3e50;
             margin: 0 0 10px 0;
@@ -198,45 +251,48 @@
 <body>
     <div class="header">
         <img src="/public/LEVANTE/Levante_Logo.png" alt="LEVANTE Logo" class="logo" onerror="this.style.display='none'">
-        <h1>🔧 LEVANTE Survey PDF Generator</h1>
-        <p class="subtitle">Professional PDF generation for caregiver research surveys</p>
-    </div>
-
-    <div class="survey-grid">
-        <div class="survey-card">
-            <h2>👨‍👩‍👧‍👦 Family Survey</h2>
-            <p>Generate PDFs for the <strong>parent_survey_family.json</strong> - focused on family dynamics, household structure, and general family-based questions.</p>
+        <h1>🧠 LEVANTE Caregiver Survey Generators</h1>
+        <p class="subtitle">Generate multilingual PDF surveys in English, Spanish, or German</p>
+        
+        <div class="survey-grid">
+            <div class="survey-card">
+                <h2>📋 Family Survey</h2>
+                <p>General family questionnaire covering broad topics about family dynamics, routines, and child development.</p>
+                <div class="features">
+                    <span class="feature-tag">✅ Multilingual Support</span>
+                    <span class="feature-tag">📄 Multiple PDF Formats</span>
+                    <span class="feature-tag">📝 Interactive Forms</span>
+                </div>
+                <a href="test-parent-survey-pdf.html" class="btn btn-primary">Open Family Survey Generator</a>
+            </div>
             
-            <ul class="features">
-                <li>📄 Printable PDFs (for handwriting)</li>
-                <li>📝 Form-Style PDFs (visual enhancement)</li>
-                <li>💻 Digital HTML Forms (browser-based)</li>
-                <li>📋 Interactive Fillable PDFs (clickable fields)</li>
-                <li>🎯 Smart page breaks & text wrapping</li>
-                <li>📊 Complete instruction handling</li>
-            </ul>
-            
-            <a href="test-parent-survey-pdf.html" class="btn-primary">
-                🚀 Open Family Survey Generator
-            </a>
+            <div class="survey-card">
+                <h2>👶 Child Survey</h2>
+                <p>Child-specific questionnaire focusing on individual child development, behaviors, and milestones.</p>
+                <div class="features">
+                    <span class="feature-tag">✅ Multilingual Support</span>
+                    <span class="feature-tag">📄 Multiple PDF Formats</span>
+                    <span class="feature-tag">📝 Interactive Forms</span>
+                </div>
+                <a href="test-parent-survey-child-pdf.html" class="btn btn-secondary">Open Child Survey Generator</a>
+            </div>
         </div>
-
-        <div class="survey-card child">
-            <h2>👶 Child Survey</h2>
-            <p>Generate PDFs for the <strong>parent_survey_child.json</strong> - focused on individual child development, behavior, and child-specific questions.</p>
-            
-            <ul class="features">
-                <li>📄 Printable PDFs (for handwriting)</li>
-                <li>📝 Form-Style PDFs (visual enhancement)</li>
-                <li>💻 Digital HTML Forms (browser-based)</li>
-                <li>📋 Interactive Fillable PDFs (clickable fields)</li>
-                <li>🎯 Smart page breaks & text wrapping</li>
-                <li>📊 Complete instruction handling</li>
+        
+        <div class="info-section">
+            <h3>🌍 Supported Languages</h3>
+            <ul>
+                <li><strong>English</strong> - Full support</li>
+                <li><strong>Español (Spanish)</strong> - Full support</li>
+                <li><strong>Deutsch (German)</strong> - Full support</li>
             </ul>
             
-            <a href="test-parent-survey-child-pdf.html" class="btn-primary child">
-                🚀 Open Child Survey Generator
-            </a>
+            <h3>📊 Available PDF Formats</h3>
+            <ul>
+                <li><strong>Printable PDF</strong> - Clean, print-ready format</li>
+                <li><strong>Form-Style PDF</strong> - Visual form fields for manual completion</li>
+                <li><strong>Interactive PDF</strong> - Digitally fillable and saveable</li>
+                <li><strong>HTML Form</strong> - Web-based form for online completion</li>
+            </ul>
         </div>
     </div>
 
@@ -249,6 +305,17 @@
             formatting with LEVANTE branding.
         </p>
         
+        <div class="recent-updates" style="background: #e8f5e8; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #28a745;">
+            <h4 style="margin: 0 0 10px 0; color: #155724;">🆕 Latest Improvements:</h4>
+            <ul style="margin: 0; padding-left: 20px; color: #155724;">
+                <li><strong>🌍 Language selection support</strong> - Choose English, Spanish, or German for PDF generation</li>
+                <li><strong>🏷️ Enhanced HTML instruction parsing</strong> - Better handling of lists, emphasis, and formatting</li>
+                <li><strong>🎛️ Dual survey layout</strong> - Both Family and Child surveys accessible from main page</li>
+                <li><strong>🛡️ Robust error handling</strong> - Continues processing even if individual questions fail</li>
+                <li><strong>🚀 Performance optimizations</strong> - Better memory management for large surveys</li>
+            </ul>
+        </div>
+        
         <div class="tech-stack">
             <span class="tech-badge">jsPDF</span>
             <span class="tech-badge">PDF-lib</span>
@@ -256,6 +323,7 @@
             <span class="tech-badge">Interactive Forms</span>
             <span class="tech-badge">HTML5</span>
             <span class="tech-badge">JavaScript ES6+</span>
+            <span class="tech-badge">Multilingual</span>
         </div>
     </div>
 
@@ -286,7 +354,7 @@
             });
 
             // Add loading states for survey links
-            document.querySelectorAll('.btn-primary').forEach(button => {
+            document.querySelectorAll('.btn-primary, .btn-secondary').forEach(button => {
                 button.addEventListener('click', function(e) {
                     const originalText = this.textContent;
                     this.textContent = '🔄 Loading...';
@@ -301,9 +369,9 @@
             });
 
             // Add some visual feedback
-            console.log('🎉 LEVANTE Survey PDF Generator loaded successfully!');
+            console.log('🎉 LEVANTE Caregiver Survey Generator loaded successfully!');
             console.log('📋 Available surveys: Family, Child');
-            console.log('🚀 Ready to generate professional PDFs!');
+            console.log('🚀 Ready to generate professional PDFs in multiple languages!');
         });
     </script>
 </body>

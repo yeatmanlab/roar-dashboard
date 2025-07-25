@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Test Parent Survey Child PDF Generator</title>
+    <title>Caregiver Survey - Child PDF Generator</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <!-- Add PDF-lib for truly fillable PDFs -->
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
@@ -239,30 +239,31 @@
         </a>
     </div>
     
-    <h1>🔧 Parent Survey Child PDF Generator Test</h1>
+
     
     <div class="container">
-        <h2>Test the Survey PDF Generator - Child Survey</h2>
-        <p>This will fetch the <code>parent_survey_child.json</code> from the Levante bucket and generate PDFs.</p>
+        <h1>Caregiver Survey - Child PDF Generator</h1>
         
-        <button onclick="analyzeSurvey()">📊 Analyze Survey</button>
-        
-        <div class="button-group">
-            <h3>📄 Printable PDFs (for printing and handwriting)</h3>
-            <button onclick="generatePDF()" id="generateBtn">📄 Generate Printable PDF</button>
-            <button onclick="generatePDFWithOptions()" id="generateOptionsBtn">⚙️ Generate Detailed Printable PDF</button>
+        <!-- Language Selector -->
+        <div class="language-selector" style="margin-bottom: 20px; padding: 15px; background-color: #f5f5f5; border-radius: 5px;">
+            <label for="languageSelect" style="font-weight: bold; margin-right: 10px;">Select Language:</label>
+            <select id="languageSelect" style="padding: 5px; font-size: 14px;">
+                <option value="en">English</option>
+                <option value="es">Español (Spanish)</option>
+                <option value="de">Deutsch (German)</option>
+            </select>
         </div>
         
-        <div class="button-group">
-            <h3>📝 Form-Style PDFs (enhanced visual forms)</h3>
-            <button onclick="generateFillablePDF()" id="generateFillableBtn">📝 Generate Form-Style PDF</button>
-            <button onclick="generateFillablePDFWithOptions()" id="generateFillableOptionsBtn">⚙️ Generate Detailed Form-Style PDF</button>
+        <div class="description" style="margin-bottom: 20px; padding: 15px; background-color: #e8f4f8; border-radius: 5px;">
+            <p><strong>Generate PDFs for the Child Survey</strong> - This tool fetches the <code>parent_survey_child.json</code> from the Levante bucket and generates PDFs in your selected language.</p>
         </div>
         
-        <div class="button-group">
-            <h3>💻 Digital Form Alternatives</h3>
-            <button onclick="openHtmlForm()" id="htmlFormBtn">💻 Open Digital HTML Form (All Pages)</button>
-            <button onclick="generateTrueFillablePDF()" id="trueFillableBtn">📋 Generate Interactive Fillable PDF (Click fields to fill)</button>
+        <div class="button-group" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 20px;">
+            <button onclick="analyzeSurvey()" style="background-color: #007bff; color: white; padding: 10px; border: none; border-radius: 5px; cursor: pointer;">📊 Analyze Survey</button>
+            <button onclick="generatePDF()" style="background-color: #28a745; color: white; padding: 10px; border: none; border-radius: 5px; cursor: pointer;">📄 Generate Printable PDF</button>
+            <button onclick="generateFillablePDF()" style="background-color: #fd7e14; color: white; padding: 10px; border: none; border-radius: 5px; cursor: pointer;">📝 Generate Form-Style PDF</button>
+            <button onclick="openHtmlForm()" style="background-color: #6f42c1; color: white; padding: 10px; border: none; border-radius: 5px; cursor: pointer;">💻 Open HTML Form</button>
+            <button onclick="generateTrueFillablePDF()" style="background-color: #dc3545; color: white; padding: 10px; border: none; border-radius: 5px; cursor: pointer;">📋 Generate Interactive Fillable PDF</button>
         </div>
     </div>
 
@@ -278,9 +279,71 @@
         </div>
     </div>
 
-    <script>
-        const SURVEY_URL = 'https://storage.googleapis.com/levante-dashboard-dev/parent_survey_child.json';
-        let surveyData = null;
+            <script>
+            const SURVEY_URL = 'https://storage.googleapis.com/levante-dashboard-dev/parent_survey_child.json';
+            
+            // Specialized function for extracting boolean labels with English priority
+            function extractTextWithEnglishPriority(textObj) {
+                if (!textObj) return '';
+                
+                // If it's already a string, return it
+                if (typeof textObj === 'string') {
+                    return textObj;
+                }
+                
+                // If it's an object, prioritize English strongly
+                if (typeof textObj === 'object') {
+                    // FIRST: Look for English under 'en' key
+                    if (textObj.en) {
+                        const englishText = extractTextWithEnglishPriority(textObj.en);
+                        if (englishText && englishText.trim()) return englishText;
+                    }
+                    
+                    // SECOND: Look for 'default' but check if it's English
+                    if (textObj.default) {
+                        const defaultText = extractTextWithEnglishPriority(textObj.default);
+                        if (defaultText && defaultText.trim()) {
+                            // Skip if it's clearly Spanish
+                            if (!defaultText.toLowerCase().includes('sí') && !defaultText.toLowerCase().includes('no')) {
+                                return defaultText;
+                            }
+                        }
+                    }
+                    
+                    // THIRD: Look for any English-looking values
+                    for (const key of Object.keys(textObj)) {
+                        if (key !== 'en' && key !== 'default' && key !== 'es' && key !== 'de') {
+                            if (typeof textObj[key] === 'string' && textObj[key].trim()) {
+                                const value = textObj[key].trim();
+                                // Prefer English-looking values
+                                if (value.toLowerCase() === 'yes' || value.toLowerCase() === 'no' || 
+                                    value.toLowerCase() === 'true' || value.toLowerCase() === 'false') {
+                                    return value;
+                                }
+                            }
+                        }
+                    }
+                    
+                    // FOURTH: If we must, use other languages but avoid Spanish boolean terms
+                    for (const key of Object.keys(textObj)) {
+                        if (key !== 'en' && key !== 'es') {  // Skip Spanish
+                            if (typeof textObj[key] === 'string' && textObj[key].trim()) {
+                                return textObj[key];
+                            }
+                            if (typeof textObj[key] === 'object') {
+                                const nested = extractTextWithEnglishPriority(textObj[key]);
+                                if (nested && nested.trim()) return nested;
+                            }
+                        }
+                    }
+                }
+                
+                return '';
+            }
+            
+            // Language-aware text extraction is now handled by the main extractText function
+            
+            let surveyData = null;
 
         // Helper function to add logo to PDF
         async function addLogoToPdf(pdf, x, y, width = 25, height = 15) {
@@ -588,6 +651,7 @@
             
             switch (element.type) {
                 case 'boolean':
+                    // Extract labels with English priority
                     const trueLabel = extractText(element.labelTrue) || 'Yes';
                     const falseLabel = extractText(element.labelFalse) || 'No';
                     
@@ -744,20 +808,21 @@
                         
                     } else {
                         if (options.fillable) {
-                            // Create visual text field
+                            // Create longer visual text field for fill-in-the-blank
                             pdf.setDrawColor(0);
                             pdf.setFillColor(245, 245, 245);
-                            pdf.rect(options.margin + 5, currentY - 4, 120, 6, 'FD');
+                            pdf.rect(options.margin + 5, currentY - 4, 160, 8, 'FD'); // Longer and taller
                             
                             if (element.inputType === 'email') {
-                                pdf.text('(Email)', options.margin + 130, currentY - 1);
+                                pdf.text('(Email)', options.margin + 170, currentY - 1);
                             }
                             
-                            currentY += 8;
+                            currentY += 12; // More vertical space
                         } else {
                             const inputTypeText = element.inputType ? ` (${element.inputType})` : '';
-                            pdf.text(`  ________________${inputTypeText}`, options.margin + 5, currentY);
-                            currentY += 6;
+                            // Make static fill-in lines much longer
+                            pdf.text(`  ________________________________________________${inputTypeText}`, options.margin + 5, currentY);
+                            currentY += 10; // More vertical space
                         }
                     }
                     break;
@@ -799,20 +864,31 @@
             return currentY + 3; // Add spacing
         }
 
-        // Helper function to extract text from multilingual objects
+        // Get selected language
+        function getSelectedLanguage() {
+            const languageSelect = document.getElementById('languageSelect');
+            return languageSelect ? languageSelect.value : 'en';
+        }
+
+        // Helper function to extract text from multilingual objects with language priority
         function extractText(textObj) {
             if (!textObj) return '';
             if (typeof textObj === 'string') return textObj;
             if (typeof textObj === 'number') return String(textObj);
             if (typeof textObj === 'object' && textObj) {
-                // Handle different object structures for text
+                const selectedLang = getSelectedLanguage();
+                
+                // Priority order: Selected language first, then English, then default, then other languages
+                if (textObj[selectedLang]) return extractText(textObj[selectedLang]);
+                if (selectedLang !== 'en' && textObj.en) return extractText(textObj.en);
                 if (textObj.default) return extractText(textObj.default);
-                if (textObj.en) return extractText(textObj.en);
-                if (textObj.es) return extractText(textObj.es);
-                if (textObj.de) return extractText(textObj.de);
                 if (textObj.text) return extractText(textObj.text);
                 if (textObj.value) return extractText(textObj.value);
                 if (textObj.title) return extractText(textObj.title);
+                
+                // Fall back to other languages
+                if (textObj.es) return extractText(textObj.es);
+                if (textObj.de) return extractText(textObj.de);
                 
                 // If it's an array, join the elements
                 if (Array.isArray(textObj)) {
@@ -833,7 +909,7 @@
             return String(textObj);
         }
 
-        // Helper function to parse HTML and convert to plain text
+        // Enhanced HTML parsing with better tag handling
         function parseHtmlToText(html) {
             if (!html) return '';
             
@@ -842,20 +918,53 @@
                 return html.trim();
             }
             
+            // Pre-process common HTML patterns for better formatting
+            let processedHtml = html;
+            
+            // Convert line breaks to spaces
+            processedHtml = processedHtml.replace(/<br\s*\/?>/gi, ' ');
+            processedHtml = processedHtml.replace(/<\/p>/gi, ' ');
+            processedHtml = processedHtml.replace(/<p[^>]*>/gi, '');
+            
+            // Handle lists - add spacing around list items
+            processedHtml = processedHtml.replace(/<li[^>]*>/gi, '• ');
+            processedHtml = processedHtml.replace(/<\/li>/gi, ' ');
+            processedHtml = processedHtml.replace(/<\/?[uo]l[^>]*>/gi, '');
+            
+            // Handle emphasis tags - keep the text but remove tags
+            processedHtml = processedHtml.replace(/<\/?(?:strong|b|em|i|u)[^>]*>/gi, '');
+            
+            // Handle div tags - treat as paragraph breaks
+            processedHtml = processedHtml.replace(/<\/div>/gi, ' ');
+            processedHtml = processedHtml.replace(/<div[^>]*>/gi, '');
+            
+            // Handle additional common HTML tags
+            processedHtml = processedHtml.replace(/<\/?(?:span|font|a)[^>]*>/gi, '');
+            processedHtml = processedHtml.replace(/<\/?(?:h[1-6]|header|footer|nav|section|article)[^>]*>/gi, ' ');
+            processedHtml = processedHtml.replace(/<\/?(?:table|tr|td|th|thead|tbody)[^>]*>/gi, ' ');
+            processedHtml = processedHtml.replace(/<\/?(?:img|video|audio|canvas)[^>]*>/gi, '');
+            
             // Create a temporary div to parse HTML
             const div = document.createElement('div');
-            div.innerHTML = html;
+            div.innerHTML = processedHtml;
             
             // Extract text content and clean it up
             let text = div.textContent || div.innerText || '';
             
-            // Clean up common HTML artifacts
-            text = text.replace(/\s+/g, ' ').trim();
+            // Clean up common HTML entities and artifacts
             text = text.replace(/&nbsp;/g, ' ');
             text = text.replace(/&amp;/g, '&');
             text = text.replace(/&lt;/g, '<');
             text = text.replace(/&gt;/g, '>');
             text = text.replace(/&quot;/g, '"');
+            text = text.replace(/&apos;/g, "'");
+            text = text.replace(/&#39;/g, "'");
+            text = text.replace(/&#8217;/g, "'");
+            text = text.replace(/&#8220;/g, '"');
+            text = text.replace(/&#8221;/g, '"');
+            
+            // Clean up excessive whitespace
+            text = text.replace(/\s+/g, ' ').trim();
             
             return text;
         }
@@ -973,14 +1082,6 @@
                 surveyData = await response.json();
                 showStatus('✅ Survey data loaded successfully!', 'success');
                 showSurveyInfo(surveyData);
-                
-                // Enable buttons
-                            document.getElementById('generateBtn').disabled = false;
-            document.getElementById('generateOptionsBtn').disabled = false;
-            document.getElementById('generateFillableBtn').disabled = false;
-            document.getElementById('generateFillableOptionsBtn').disabled = false;
-            document.getElementById('htmlFormBtn').disabled = false;
-            document.getElementById('trueFillableBtn').disabled = false;
                 
             } catch (error) {
                 showStatus(`❌ Error loading survey: ${error.message}`, 'error');
@@ -1353,7 +1454,7 @@
                 html += `<div class="form-group">
                     <label for="${questionNumber}">${questionTitle}:</label>
                     ${instructions ? `<p style="font-size: 14px; color: #666; margin: 10px 0;">${instructions}</p>` : ''}
-                    <input type="text" id="${questionNumber}" name="${questionNumber}" value="${element.value || ''}">
+                    <input type="text" id="${questionNumber}" name="${questionNumber}" value="${element.value || ''}" style="height: 40px; font-size: 16px; padding: 12px;">
                 </div>`;
             }
                          return html;
@@ -1520,8 +1621,8 @@
                  // Multiline text area needs more space
                  spaceNeeded += 70; // Large text field
              } else if (element.type === 'text') {
-                 // Regular text input
-                 spaceNeeded += 35; // Text field
+                 // Regular text input - now needs more space for longer fill-in-the-blank fields
+                 spaceNeeded += 50; // Increased from 35 to 50 for larger text fields
              }
              
              return spaceNeeded;
@@ -1541,9 +1642,12 @@
                  const form = pdfDoc.getForm();
                  const page = pdfDoc.addPage([595, 842]); // A4 size
                  
-                 // Add fonts
+                 // Add fonts (embed once for better performance with many questions)
                  const titleFont = await pdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
                  const regularFont = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+                 
+                 // Store fonts globally for reuse in question processing
+                 window.pdfFonts = { titleFont, regularFont };
                  
                  // Try to add logo
                  try {
@@ -1676,28 +1780,46 @@
                  for (const element of expandedElements) {
                      questionCount++;
                      
-                     // Calculate space needed for this question
-                     const spaceNeeded = calculateQuestionSpace(element);
-                     
-                     // Add new page if question won't fit
-                     if (currentY - spaceNeeded < 80) {  // 80 units minimum bottom margin for footer
-                         const newPage = pdfDoc.addPage([595, 842]);
-                         currentY = 720; // Consistent with first page
-                         // Add logo to new page
-                         try {
-                             const logoUrl = '/public/LEVANTE/Levante_Logo.png';
-                             const response = await fetch(logoUrl);
-                             if (response.ok) {
-                                 const logoBytes = await response.arrayBuffer();
-                                 const logoImage = await pdfDoc.embedPng(logoBytes);
-                                 newPage.drawImage(logoImage, { x: 20, y: 790, width: 60, height: 40 });
-                             }
-                         } catch (error) {
-                             console.warn('Could not add logo to new page:', error);
+                     try {
+                         // Add debugging for questions around 175
+                         if (questionCount >= 170 && questionCount <= 180) {
+                             console.log(`Processing question ${questionCount}:`, element.name || element.type, element.title ? extractText(element.title)?.substring(0, 50) : 'No title');
                          }
+                         
+                         // Calculate space needed for this question
+                         const spaceNeeded = calculateQuestionSpace(element);
+                         
+                         // Add new page if question won't fit
+                         if (currentY - spaceNeeded < 80) {  // 80 units minimum bottom margin for footer
+                             if (questionCount >= 170 && questionCount <= 180) {
+                                 console.log(`Adding new page for question ${questionCount}, currentY: ${currentY}, spaceNeeded: ${spaceNeeded}`);
+                             }
+                             const newPage = pdfDoc.addPage([595, 842]);
+                             currentY = 720; // Consistent with first page
+                             // Add logo to new page
+                             try {
+                                 const logoUrl = '/public/LEVANTE/Levante_Logo.png';
+                                 const response = await fetch(logoUrl);
+                                 if (response.ok) {
+                                     const logoBytes = await response.arrayBuffer();
+                                     const logoImage = await pdfDoc.embedPng(logoBytes);
+                                     newPage.drawImage(logoImage, { x: 20, y: 790, width: 60, height: 40 });
+                                 }
+                             } catch (error) {
+                                 console.warn('Could not add logo to new page:', error);
+                             }
+                         }
+                         
+                         currentY = await addInteractiveQuestionToPdf(pdfDoc, form, element, currentY, questionCount);
+                         
+                     } catch (error) {
+                         console.error(`Error processing question ${questionCount}:`, error);
+                         console.error('Element causing error:', element);
+                         
+                         // Try to continue with next question instead of failing completely
+                         showStatus(`⚠️ Warning: Skipped question ${questionCount} due to error: ${error.message}`, 'error');
+                         continue;
                      }
-                     
-                     currentY = await addInteractiveQuestionToPdf(pdfDoc, form, element, currentY, questionCount);
                  }
 
                  // Add footers to all pages
@@ -1730,10 +1852,10 @@
                  if (element.html) {
                      const instructionText = parseHtmlToText(element.html);
                      if (instructionText) {
-                         const titleFont = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+                         const instructionFont = window.pdfFonts?.regularFont || await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
                          const instructionLines = wrapText(instructionText, 70);
                          instructionLines.forEach(line => {
-                             page.drawText(line, { x: 50, y: currentY, size: 10, font: titleFont, color: PDFLib.rgb(0.3, 0.3, 0.3) });
+                             page.drawText(line, { x: 50, y: currentY, size: 10, font: instructionFont, color: PDFLib.rgb(0.3, 0.3, 0.3) });
                              currentY -= 12;
                          });
                          currentY -= 10; // Extra spacing after instructions
@@ -1748,14 +1870,14 @@
                  
                  if (element.title) {
                      const sectionTitle = extractText(element.title);
-                     const sectionFont = await pdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
+                     const sectionFont = window.pdfFonts?.titleFont || await pdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
                      currentY = drawWrappedText(page, sectionTitle, 50, currentY, sectionFont, 14, PDFLib.rgb(0, 0, 0), 500);
                  }
                  
                  if (element.description) {
                      const sectionDescription = parseHtmlToText(element.description);
                      if (sectionDescription) {
-                         const descFont = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+                         const descFont = window.pdfFonts?.regularFont || await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
                          currentY = drawWrappedText(page, sectionDescription, 70, currentY, descFont, 10, PDFLib.rgb(0.4, 0.4, 0.4), 480);
                      }
                  }
@@ -1765,10 +1887,13 @@
              }
 
              const questionTitle = getElementTitle(element);
-             const fieldName = element.name ? element.name.replace(/[^a-zA-Z0-9_]/g, '_') : `question_${questionNumber}`;
+             // Generate unique field name to prevent conflicts, especially with large numbers of questions
+             const baseName = element.name ? element.name.replace(/[^a-zA-Z0-9_]/g, '_') : `question_${questionNumber}`;
+             const fieldName = `${baseName}_q${questionNumber}`; // Add question number to ensure uniqueness
 
-             const titleFont = await pdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
-             const regularFont = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+             // Use pre-embedded fonts for better performance
+             const titleFont = window.pdfFonts?.titleFont || await pdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
+             const regularFont = window.pdfFonts?.regularFont || await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
 
              // Extract and display instructions/descriptions for all question types
              let instructions = '';
@@ -1796,10 +1921,17 @@
                      currentY -= 5;
                  }
 
-                 // Create radio group for yes/no with better configuration
-                 const radioGroup = form.createRadioGroup(fieldName);
-                 const trueLabel = extractText(element.labelTrue) || 'Yes';
-                 const falseLabel = extractText(element.labelFalse) || 'No';
+                                 // Create radio group for yes/no with better configuration
+                const radioGroup = form.createRadioGroup(fieldName);
+                // Extract labels with English priority, fallback to defaults
+                // Debug logging to see label structure
+                if (element.labelTrue) console.log('labelTrue structure:', element.labelTrue);
+                if (element.labelFalse) console.log('labelFalse structure:', element.labelFalse);
+                
+                const trueLabel = extractText(element.labelTrue) || 'Yes';
+                const falseLabel = extractText(element.labelFalse) || 'No';
+                
+                console.log('Using labels:', trueLabel, falseLabel);
                  
                  // Yes option - clear positioning without overlap
                  page.drawText(`${trueLabel}`, { x: 90, y: currentY, size: 10, font: regularFont });
@@ -2098,17 +2230,17 @@
                      currentY -= 5;
                  }
                  
-                 // Create text field
+                 // Create larger text field for fill-in-the-blank questions
                  const textField = form.createTextField(fieldName);
                  textField.addToPage(page, { 
-                     x: 70, y: currentY - 5, width: 300, height: 20,
+                     x: 70, y: currentY - 10, width: 400, height: 30, // Wider and taller
                      borderWidth: 1,
                      borderColor: PDFLib.rgb(0, 0, 0),
                      backgroundColor: PDFLib.rgb(1, 1, 1),
                      color: PDFLib.rgb(0, 0, 0)
                  });
                  textField.setText('');
-                 currentY -= 35;
+                 currentY -= 50; // More vertical space
              }
              
              return currentY;
@@ -2116,12 +2248,6 @@
 
         // Initialize
         showStatus('👋 Ready to test! Click "Analyze Survey" to start.', 'info');
-        document.getElementById('generateBtn').disabled = true;
-        document.getElementById('generateOptionsBtn').disabled = true;
-        document.getElementById('generateFillableBtn').disabled = true;
-        document.getElementById('generateFillableOptionsBtn').disabled = true;
-        document.getElementById('htmlFormBtn').disabled = true;
-        document.getElementById('trueFillableBtn').disabled = true;
     </script>
 </body>
 </html>
