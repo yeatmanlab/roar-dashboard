@@ -82,7 +82,6 @@ const { data: userData } = useUserDataQuery(null, {
 // | Submission |
 // +------------+
 async function submitUserData() {
-  console.log('Submitting user data', localUserData.value);
   isSubmitting.value = true;
 
   await roarfirekit.value

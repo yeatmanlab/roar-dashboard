@@ -11,31 +11,36 @@ import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/store/auth';
 import useSSOAccountReadinessVerification from '@/composables/useSSOAccountReadinessVerification';
+import useSentryLogging from '@/composables/useSentryLogging';
 import AppSpinner from '@/components/AppSpinner.vue';
 import { APP_ROUTES } from '@/constants/routes';
 import { AUTH_SSO_PROVIDERS } from '../constants/auth';
-
+import { AUTH_LOG_MESSAGES } from '../constants/logMessages';
 const router = useRouter();
 const authStore = useAuthStore();
 const { roarUid, ssoProvider } = storeToRefs(authStore);
 
 const { startPolling } = useSSOAccountReadinessVerification(roarUid.value);
+const { logAuthEvent } = useSentryLogging();
 
 const isClassLinkProvider = computed(() => ssoProvider.value === AUTH_SSO_PROVIDERS.CLASSLINK);
 const isCleverProvider = computed(() => ssoProvider.value === AUTH_SSO_PROVIDERS.CLEVER);
 
 onBeforeMount(() => {
   if (!ssoProvider.value) {
-    console.error('[SSO] No SSO provider detected. Redirecting to homepage...');
+    logAuthEvent(AUTH_LOG_MESSAGES.MISSING_SSO_PROVIDER, {
+      data: { ssoProvider: ssoProvider.value },
+      level: 'warning',
+    });
     router.push({ path: APP_ROUTES.HOME });
     return;
   }
 });
 
 onMounted(() => {
-  console.log(`[SSO] User ${roarUid.value} was redirected to SSO landing page from ${ssoProvider.value}`);
-  console.log('[SSO] Polling for account readiness...');
-
+  logAuthEvent(AUTH_LOG_MESSAGES.POLLING_ACCOUNT_READINESS, {
+    data: { ssoProvider: ssoProvider.value },
+  });
   ssoProvider.value = null;
   startPolling();
 });

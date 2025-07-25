@@ -145,6 +145,7 @@
 import { onMounted, ref, toRaw, onBeforeUnmount, computed } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useRoute, useRouter } from 'vue-router';
+import { setUser } from '@sentry/vue';
 import PvButton from 'primevue/button';
 import PvPassword from 'primevue/password';
 import ROARLogoShort from '@/assets/RoarLogo-Short.vue';
@@ -192,6 +193,7 @@ const authWithGoogle = () => {
         if (authStore.roarUid) {
           const userData = await fetchDocById('users', authStore.roarUid);
           authStore.userData = userData;
+          setUser({ id: authStore.roarUid, userType: userData.userType });
         }
       })
       .catch((e) => {
@@ -201,7 +203,6 @@ const authWithGoogle = () => {
           openWarningModal();
           spinner.value = false;
         } else {
-          console.log('caught error', e);
           spinner.value = false;
         }
       });
@@ -213,7 +214,6 @@ const authWithGoogle = () => {
 const modalPassword = ref('');
 
 const authWithClever = () => {
-  console.log('---> authWithClever');
   if (process.env.NODE_ENV === 'development' && !window.Cypress) {
     authStore.signInWithCleverPopup();
   } else {
@@ -223,7 +223,6 @@ const authWithClever = () => {
 };
 
 const authWithClassLink = () => {
-  console.log('---> authWithClassLink');
   if (isMobileBrowser()) {
     authStore.signInWithClassLinkRedirect();
     spinner.value = true;
@@ -257,6 +256,7 @@ const authWithEmail = (state) => {
         if (authStore.roarUid) {
           const userData = await fetchDocById('users', authStore.roarUid);
           authStore.userData = userData;
+          setUser({ id: authStore.roarUid, userType: userData.userType });
         }
 
         spinner.value = true;
