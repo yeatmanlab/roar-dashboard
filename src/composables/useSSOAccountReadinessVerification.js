@@ -1,9 +1,9 @@
 import { ref, onUnmounted } from 'vue';
 import { storeToRefs } from 'pinia';
-import { setUser } from '@sentry/vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useQueryClient } from '@tanstack/vue-query';
 import { StatusCodes } from 'http-status-codes';
+import { setUser } from '@sentry/vue';
 import { useAuthStore } from '@/store/auth.js';
 import useUserDataQuery from '@/composables/queries/useUserDataQuery';
 import useSentryLogging from '@/composables/useSentryLogging';
@@ -37,6 +37,7 @@ const useSSOAccountReadinessVerification = () => {
 
   const { data: userData, refetch: refetchUserData, isFetchedAfterMount } = useUserDataQuery();
 
+  setUser({ id: roarUid.value, userType: userData?.value?.userType });
   /**
    * Verify account readiness after SSO authentication.
    *
@@ -54,8 +55,6 @@ const useSSOAccountReadinessVerification = () => {
       }
 
       const userType = userData?.value?.userType;
-
-      setUser({ id: roarUid.value, userType });
 
       if (!userType) {
         logAuthEvent(AUTH_LOG_MESSAGES.USER_TYPE_MISSING, {
