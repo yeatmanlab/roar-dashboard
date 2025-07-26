@@ -23,7 +23,7 @@ export const useSurveyStore = () => {
         specificSurveyRelationIndex: 0,
         isGeneralSurveyComplete: false,
         isSpecificSurveyComplete: false,
-        isSurveyCompleted: false,
+        isEntireSurveyCompleted: false,
         audioLinkMap: {},
       };
     },
@@ -31,8 +31,8 @@ export const useSurveyStore = () => {
       requireHomeRefresh() {
         this.requireRefresh = true;
       },
-      setSurveyCompleted() {
-        this.isSurveyCompleted = true;
+      setEntireSurveyCompleted() {
+        this.isEntireSurveyCompleted = true;
       },
       setSurvey(survey) {
         this.survey = survey;

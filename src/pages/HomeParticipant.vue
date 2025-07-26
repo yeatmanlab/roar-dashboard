@@ -59,8 +59,9 @@
         </div>
       </div>
       <div class="tabs-container">
-        <ParticipantSidebar :total-games="totalGames" :completed-games="completeGames" :student-info="childInfo" />
+        <ParticipantSidebar :total-games="totalGames" :completed-games="completeGames" />
         <Transition name="fade" mode="out-in">
+          <!-- TODO: Pass in data conditionally to one instance of GameTabs. -->
           <GameTabs
             v-if="showOptionalAssessments && userData"
             :games="optionalAssessments"
@@ -183,15 +184,14 @@ const {
   enabled: initialized,
 });
 
-watch(userAssignments, (newUserAssignments) => {
-  console.log('newUserAssignments: ', newUserAssignments);
-});
-
 const sortedUserAdministrations = computed(() => {
   return [...(userAssignments.value ?? [])].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 });
 
-const taskIds = computed(() => (selectedAdmin.value?.assessments ?? []).map((assessment) => assessment.taskId));
+const taskIds = computed(() => {
+  return (selectedAdmin.value?.assessments ?? []).map((assessment) => assessment.taskId);
+});
+
 const tasksQueryEnabled = computed(() => !isLoadingAssignments.value && !_isEmpty(taskIds.value));
 
 const {
@@ -382,10 +382,6 @@ let completeGames = computed(() => {
   return _filter(requiredAssessments.value, (task) => task.completedOn).length ?? 0;
 });
 
-// Set up studentInfo for sidebar
-const studentInfo = computed(() => {
-  return {};
-});
 
 watch(
   [userData, selectedAdmin, userAssignments],
@@ -501,7 +497,7 @@ watch(
         if (surveyResponseDoc.specific && surveyResponseDoc.specific.length > 0) {
           if (
             surveyResponseDoc.specific.length === numOfSpecificSurveys &&
-            surveyResponseDoc.specific.every((relation) => relation.isComplete)
+            surveyResponseDoc.specific.every((relation) => relation.isComplete) 
           ) {
             surveyStore.setIsSpecificSurveyComplete(true);
           } else {

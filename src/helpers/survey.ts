@@ -100,9 +100,10 @@ interface StructuredSurveyResponse {
   pageNo: number;
   isGeneral: boolean;
   isComplete: boolean;
-  specificId: string | number;
+  specificId?: string | number;
   responses: Record<string, SurveyResponse | null>;
   userType: string;
+  isEntireSurveyCompleted: boolean;
 }
 
 interface SaveFinalSurveyDataParams {
@@ -335,6 +336,7 @@ export async function saveFinalSurveyData({
     specificId: 0,
     responses: responsesWithAllQuestions,
     userType: userType,
+    isEntireSurveyCompleted: false,
   };
 
   // Update specificId if it's a specific survey
@@ -343,6 +345,22 @@ export async function saveFinalSurveyData({
     const specificIndex = surveyStore.specificSurveyRelationIndex;
     structuredResponses.specificId = specificIds[specificIndex];
   }
+
+  let isEntireSurveyCompleted;
+  if (userType === 'student') {
+    isEntireSurveyCompleted = true;
+  } else {
+    const hasSpecificSurveys = surveyStore.specificSurveyRelationData.length > 0;
+    // If the teacher/caregiver has no classes or children, the entire survey is complete
+    if (!hasSpecificSurveys) {
+      isEntireSurveyCompleted = true;
+    } else {
+      isEntireSurveyCompleted =
+        surveyStore.isGeneralSurveyComplete && surveyStore.specificSurveyRelationIndex === surveyStore.specificSurveyRelationData.length - 1;
+    }
+  }
+
+  structuredResponses.isEntireSurveyCompleted = isEntireSurveyCompleted;
 
   // turn on loading state
   surveyStore.setIsSavingSurveyResponses(true);

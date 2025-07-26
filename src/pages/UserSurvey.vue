@@ -2,7 +2,6 @@
 import 'survey-core/survey-core.css';
 import { SurveyComponent } from 'survey-vue3-ui';
 import { useAuthStore } from '@/store/auth';
-import AppSpinner from '@/components/AppSpinner.vue';
 import { useSurveyStore } from '@/store/survey';
 import { useI18n } from 'vue-i18n';
 import { AudioContext } from '@/helpers/audio';
