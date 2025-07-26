@@ -49,13 +49,11 @@ export const getAssignmentsRequestBody = ({
   };
 
   if (!aggregationQuery) {
-    console.log('not aggregationQuery: ');
     if (paginate) {
       requestBody.structuredQuery.limit = pageLimit;
       requestBody.structuredQuery.offset = page * pageLimit;
     }
 
-    console.log('select fields: ', select);
     if (select.length > 0) {
       requestBody.structuredQuery.select = {
         fields: select.map((field) => ({ fieldPath: field })),
@@ -69,11 +67,8 @@ export const getAssignmentsRequestBody = ({
       allDescendants: isCollectionGroupQuery,
     },
   ];
-  console.log('adminId: ', adminId);
 
   if (adminId && (orgId || orgArray)) {
-    console.log('orgId: ', orgId);
-    console.log('orgArray: ', orgArray);
     requestBody.structuredQuery.where = {
       compositeFilter: {
         op: 'AND',
@@ -1077,7 +1072,6 @@ export const getUserAssignments = async (roarUid) => {
   return await adminAxiosInstance
     .post(`${getBaseDocumentPath()}/users/${userId}:runQuery`, assignmentRequest)
     .then(async ({ data }) => {
-      console.log('data: ', data);
       const assignmentData = mapFields(data);
       const openAssignments = assignmentData.filter((assignment) => new Date(assignment.dateOpened) <= new Date());
       return openAssignments;

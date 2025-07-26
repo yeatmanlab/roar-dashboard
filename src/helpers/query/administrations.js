@@ -111,8 +111,6 @@ export const administrationPageFetcher = async (isSuperAdmin, exhaustiveAdminOrg
   const axiosInstance = getAxiosInstance();
   const documents = administrationIds.map((id) => `${getBaseDocumentPath()}/administrations/${id}`);
 
-  console.log('documents: ', documents);
-
   let data = [];
 
   try {
