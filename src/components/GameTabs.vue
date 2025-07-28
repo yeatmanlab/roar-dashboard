@@ -132,7 +132,7 @@
                             </svg>
                           </i>
                         </div>
-                        <span v-if="!game.completedOn">{{ $t('gameTabs.clickToStart') }}</span>
+                        <span v-if="!allGamesComplete && !game.completedOn">{{ $t('gameTabs.clickToStart') }}</span>
                         <span v-else style="cursor: default">{{ $t('gameTabs.externalTaskMessage') }}</span>
                       </a>
                     </div>
