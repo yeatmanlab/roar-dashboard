@@ -1,5 +1,5 @@
 <template>
-  <div v-if="!appKit" class="col-full text-center">
+  <div v-if="!appKit || !userParams || !gameParams" class="col-full text-center">
     <h1>{{ $t('tasks.preparing') }}</h1>
     <AppSpinner />
   </div>
@@ -28,8 +28,8 @@ const props = defineProps({
   launchId: { type: String, required: false, default: null },
 });
 
-let userParams = {};
-let gameParams = {};
+const userParams = ref(null);
+const gameParams = ref(null);
 
 const taskId = props.taskId;
 const version = packageLockJson.packages['node_modules/@bdelab/roar-survey'].version;
@@ -99,14 +99,14 @@ async function startTask(selectedAdmin) {
     const userDob = _get(userData.value, 'studentData.dob');
     const userDateObj = new Date(userDob);
 
-    userParams = {
+    userParams.value = {
       grade: _get(userData.value, 'studentData.grade'),
       birthMonth: userDateObj.getMonth() + 1,
       birthYear: userDateObj.getFullYear(),
       language: props.language,
     };
 
-    gameParams = { ...appKit.value._taskInfo.variantParams };
+    gameParams.value = { ...appKit.value._taskInfo.variantParams };
   } catch (error) {
     console.error('An error occurred while starting the task:', error);
     alert(
