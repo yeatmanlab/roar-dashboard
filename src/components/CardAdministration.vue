@@ -1,8 +1,5 @@
 <template>
   <div class="p-card card-administration mb-4 w-full">
-    <div v-if="props.stats && isSuperAdmin" class="card-admin-chart">
-      <PvChart type="doughnut" :data="doughnutChartData" :options="doughnutChartOptions" />
-    </div>
     <div class="card-admin-body w-full">
       <div class="flex flex-row w-full md:h-2rem sm:h-3rem">
         <div class="flex-grow-1 pr-3 mr-2 p-0 m-0">
@@ -504,51 +501,6 @@ const onExpand = async (node: TreeNode): Promise<void> => {
   }
 };
 
-const doughnutChartData = ref<ChartData>();
-const doughnutChartOptions = ref<ChartOptions>();
-
-const setDoughnutChartOptions = (): ChartOptions => ({
-  cutout: '60%',
-  showToolTips: true,
-  plugins: {
-    legend: {
-      display: false,
-    },
-    tooltip: {
-      enabled: true,
-    },
-  },
-});
-
-const setDoughnutChartData = (): ChartData => {
-  const docStyle = getComputedStyle(document.documentElement);
-  let { assigned = 0, started = 0, completed = 0 } = props.stats.total?.assignment || {};
-
-  started -= completed;
-  assigned -= started + completed;
-
-  return {
-    labels: ['Completed', 'Started', 'Assigned'],
-    datasets: [
-      {
-        data: [completed, started, assigned],
-        backgroundColor: [
-          docStyle.getPropertyValue('--bright-green'),
-          docStyle.getPropertyValue('--yellow-100'),
-          docStyle.getPropertyValue('--surface-d'),
-        ],
-        // hoverBackgroundColor: ['green', docStyle.getPropertyValue('--surface-d')]
-      },
-    ],
-  };
-};
-
-onMounted((): void => {
-  if (props.stats) {
-    doughnutChartData.value = setDoughnutChartData();
-    doughnutChartOptions.value = setDoughnutChartOptions();
-  }
-});
 </script>
 
 <style lang="scss">
