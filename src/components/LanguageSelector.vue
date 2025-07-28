@@ -1,21 +1,17 @@
 <template>
-  <div class="card flex justify-center w-full">
+  <div class="language-selector-wrapper">
+    <div class="font-semibold text-color-secondary">{{ $t('authSignIn.selectLanguageLabel') }}:</div>
+
     <PvSelect
       v-model="$i18n.locale"
-      class="w-full md:w-56 bg-white"
+      class="w-full"
       :options="languageDropdownOptions"
       option-label="name"
       option-value="value"
       :placeholder="$t('authSignIn.selectLanguage')"
       :highlight-on-select="true"
       @change="onLanguageChange"
-    >
-      <template #header>
-        <small class="m-2 font-bold uppercase text-gray-400">
-          {{ $t('authSignIn.selectLanguage') }}
-        </small>
-      </template>
-    </PvSelect>
+    />
   </div>
 </template>
 
@@ -71,4 +67,14 @@ async function onLanguageChange(event: LanguageChangeEvent): Promise<void> {
 }
 </script>
 
-<style scoped></style>
+<style lang="scss">
+.language-selector-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.p-select-label {
+  text-align: left;
+}
+</style>

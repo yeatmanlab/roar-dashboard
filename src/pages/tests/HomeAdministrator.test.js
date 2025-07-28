@@ -123,7 +123,7 @@ describe('HomeAdministrator', () => {
     }));
 
     vi.mock('@/helpers/query/utils', () => ({
-      orderByDefault: [
+      orderByNameASC: [
         {
           field: { fieldPath: 'name' },
           direction: 'ASCENDING',

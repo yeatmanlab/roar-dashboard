@@ -377,8 +377,12 @@ const onFileUpload = async (event) => {
         .map((s) => s.trim())
         .filter((s) => s).length > 0;
 
-    if (!hasCohort && !(hasSite && hasSchool)) {
-      missingFields.push('Cohort OR Site and School');
+    if (!hasSite) {
+      missingFields.push('Site');
+    }
+
+    if (!hasCohort && !hasSchool) {
+      missingFields.push('Cohort OR School');
     }
 
     // --- Aggregate Errors and Add User to Error List if Needed ---
@@ -510,6 +514,32 @@ async function submitUsers() {
             .map((s) => s.trim())
             .filter((s) => s)
         : [];
+
+      // At least, one site is required for every user
+      if (sites.length <= 0) {
+        toast.add({
+          severity: 'error',
+          summary: 'Required field missing',
+          detail: 'At least, one site is required for every user.',
+          life: TOAST_DEFAULT_LIFE_DURATION,
+        });
+
+        activeSubmit.value = false;
+        return;
+      }
+
+      // At least, one school or cohort is required for every user
+      if (schools.length <= 0 && cohorts.length <= 0) {
+        toast.add({
+          severity: 'error',
+          summary: 'Required field missing',
+          detail: 'At least, one school or cohort is required for every user.',
+          life: TOAST_DEFAULT_LIFE_DURATION,
+        });
+
+        activeSubmit.value = false;
+        return;
+      }
 
       const orgNameMap = {
         site: sites,
@@ -856,10 +886,10 @@ const orgIds = {
  * The fetched data is then cached for future use.
  * If no Group is found, it throws an error.
  */
-const getOrgId = async (orgType, orgName, parentDistrict, parentSchool) => {
-  if (orgIds[orgType][orgName]) return orgIds[orgType][orgName];
-
+const getOrgId = async (orgType, orgName, parentDistrict = ref(null), parentSchool = ref(null)) => {
   const normalizedOrgName = normalizeToLowercase(orgName);
+
+  if (orgIds[orgType][normalizedOrgName]) return orgIds[orgType][normalizedOrgName];
 
   // Array of objects. Ex: [{id: 'lut54353jkler'}]
   const orgs = await fetchOrgByName(orgType, normalizedOrgName, parentDistrict, parentSchool);
@@ -874,7 +904,7 @@ const getOrgId = async (orgType, orgName, parentDistrict, parentSchool) => {
     }
   }
 
-  orgIds[orgType][orgName] = orgs[0].id;
+  orgIds[orgType][normalizedOrgName] = orgs[0].id;
 
   return orgs[0].id;
 };

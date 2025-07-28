@@ -14,9 +14,9 @@
             @click="checkForCapsLock"
           />
         </div>
-        <small v-if="invalid" class="p-error">{{ $t('authSignIn.incorrectEmailOrPassword') }}</small>
+        <small v-if="invalid" class="p-error block mt-3">{{ $t('authSignIn.incorrectEmailOrPassword') }}</small>
       </div>
-      <div class="field mt-4 mb-5">
+      <div class="field mt-2 mb-5">
         <div>
           <!-- Email is currently being evaluated (loading state) -->
           <span v-if="evaluatingEmail">
@@ -37,18 +37,23 @@
               @keyup="checkForCapsLock"
               @click="checkForCapsLock"
             />
-            <small
-              class="text-link sign-in-method-link"
-              data-cy="sign-in-with-email-link"
-              @click="
-                allowPassword = false;
-                state.usePassword = false;
-              "
-              >{{ $t('authSignIn.signInWithEmailLinkInstead') }}</small
-            >
-            <small class="text-link sign-in-method-link" data-cy="sign-in-with-password" @click="handleForgotPassword"
-              >Forgot password?</small
-            >
+            <div class="flex">
+              <small
+                class="sign-in-method-link"
+                data-cy="sign-in-with-email-link"
+                @click="
+                  allowPassword = false;
+                  state.usePassword = false;
+                "
+                >{{ $t('authSignIn.signInWithEmailLinkInstead') }}</small
+              >
+              <small
+                class="ml-auto sign-in-method-link"
+                data-cy="sign-in-with-password"
+                @click="handleForgotPassword"
+                >{{ $t('authSignIn.forgotPassword') }}</small
+              >
+            </div>
           </div>
           <!-- Username is entered, Password is desired -->
           <PvPassword
@@ -88,14 +93,17 @@
               data-cy="password-disabled-for-email"
               class="w-full"
             />
-            <small
-              class="text-link sign-in-method-link"
-              @click="
-                allowPassword = true;
-                state.usePassword = true;
-              "
-              >{{ $t('authSignIn.signInWithPasswordInstead') }}</small
-            >
+            <div class="flex">
+              <small
+                class="sign-in-method-link"
+                @click="
+                  allowPassword = true;
+                  state.usePassword = true;
+                "
+              >
+                {{ $t('authSignIn.signInWithPasswordInstead') }}
+              </small>
+            </div>
           </div>
           <!-- Email is entered, however it is an invalid email (prevent login) -->
           <div v-else>
@@ -110,11 +118,10 @@
       </div>
       <PvButton
         type="submit"
-        class="mt-5 flex w-5 p-3 border-none border-round hover:bg-black-alpha-20"
+        class="flex w-full p-3 border-none border-round"
         :label="$t('authSignIn.buttonLabel') + ' &rarr;'"
         data-cy="submit-sign-in-with-password"
       />
-      <hr class="opacity-20 mt-5" />
     </form>
   </div>
   <RoarModal
@@ -233,7 +240,7 @@ const validateRoarEmail = _debounce(
 
     try {
       // First handle levante emails
-      if (email.includes('levante')) {
+      if (email.includes('@levante')) {
         allowPassword.value = true;
         allowLink.value = false;
         state.useLink = false;
@@ -284,14 +291,19 @@ watch(
   () => state.email,
   async (email: string) => {
     emit('update:email', email);
-    if (isValidEmail(email)) {
-      evaluatingEmail.value = true;
-      validateRoarEmail(email);
+    if (!isValidEmail(email)) {
+      allowPassword.value = true;
+      allowLink.value = true;
+      state.useLink = allowLink.value;
+      return;
     }
+
+    evaluatingEmail.value = true;
+    validateRoarEmail(email);
   },
 );
 </script>
-<style scoped>
+<style lang="scss" scoped>
 .submit-button {
   margin-top: 0.5rem;
   display: flex;
@@ -305,20 +317,16 @@ watch(
   background-color: #b7b5b5;
   color: black;
 }
-.text-link {
+
+.sign-in-method-link {
   cursor: pointer;
   color: var(--text-color-secondary);
-  font-weight: bold;
-  text-decoration: underline;
-}
-
-.text-link:hover {
-  color: var(--primary-color-text);
-}
-.sign-in-method-link {
+  font-weight: 600;
+  text-align: left;
   margin-top: 0.5rem;
-  display: flex;
-  justify-content: flex-end;
-  width: 100%;
+
+  &:hover {
+    text-decoration: underline;
+  }
 }
 </style>

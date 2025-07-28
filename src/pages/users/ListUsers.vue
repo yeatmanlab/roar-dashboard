@@ -196,8 +196,8 @@ const columns = ref([
     sort: false,
   },
   {
-    field: 'email',
-    header: 'Email',
+    field: 'username',
+    header: 'Username',
     dataType: 'string',
     sort: false,
   },

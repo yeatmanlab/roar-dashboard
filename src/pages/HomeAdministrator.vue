@@ -151,7 +151,7 @@ import PvDataView from 'primevue/dataview';
 import PvSelect from 'primevue/select';
 import PvInputGroup from 'primevue/inputgroup';
 import { useAuthStore } from '@/store/auth';
-import { orderByDefault } from '@/helpers/query/utils';
+import { orderByNameASC } from '@/helpers/query/utils';
 import { getTitle } from '@/helpers/query/administrations';
 import useUserType from '@/composables/useUserType';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
@@ -163,7 +163,7 @@ const initialized = ref(false);
 const pageLimit = ref(10);
 const page = ref(0);
 
-const orderBy = ref(orderByDefault);
+const orderBy = ref(orderByNameASC);
 const searchSuggestions = ref([]);
 const searchTokens = ref([]);
 const searchInput = ref('');
