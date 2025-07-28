@@ -368,7 +368,7 @@ const searchCards = (term) => {
     );
   } else if (currentCardType.value === CARD_TYPES.VARIANT) {
     Object.values(props.allVariants).forEach((variants) => {
-      const matchingVariants = _filter(variants, (variant) => {
+      let matchingVariants = _filter(variants, (variant) => {
         if (
           _toLower(variant.variant.name).includes(_toLower(term)) ||
           _toLower(variant.id).includes(_toLower(term)) ||
@@ -378,6 +378,9 @@ const searchCards = (term) => {
           return true;
         else return false;
       });
+      if (namedOnly.value) {
+        matchingVariants = _filter(matchingVariants, (variant) => variant.variant.name);
+      }
       searchResults.value.push(
         ...matchingVariants.map((variant) => {
           return {
@@ -399,7 +402,7 @@ function clearSearch() {
 
 const debounceSearch = _debounce(searchCards, 250);
 
-watch([searchTerm, currentCardType], ([term]) => {
+watch([searchTerm, currentCardType, namedOnly], ([term]) => {
   if (term.length >= 3) {
     debounceSearch(term);
   } else {
