@@ -6,22 +6,37 @@ labels: enhancement
 assignees: ''
 ---
 
-## ✨ Feature Description
+**Description:**
+[Brief description of what needs to be done and why]
 
-Briefly describe the feature you want to add and what problem it solves.
+**Functional Requirements:**
+- [What the feature must do]
+- [User-facing functionality]
 
-## 🎯 Goals
+**Acceptance Criteria:**
+- [ ] [Specific measurable outcome]
+- [ ] [Another measurable outcome]
 
-- [ ] What will the user be able to do?
-- [ ] Why is this important?
+**Technical Implementation:**
+- [Key technical decisions]
+- [Architecture notes]
+- [Important constraints]
 
-## 🧩 Requirements
+**User Experience:** (if applicable)
+- [UX considerations]
+- [UI requirements]
 
-List any specific technical or design requirements.
+**Performance Constraints:** (if applicable)
+- [Response time requirements]
+- [Resource limitations]
 
-- Ex: Should work on mobile and desktop
-- Ex: Must integrate with existing auth system
+**Dependencies:**
+- [Other tickets that must be completed first]
 
-## 📎 Additional Context
+**Testing Requirements:**
+- [Types of tests needed]
+- [Coverage expectations]
 
-Add any links, screenshots, or context that help explain the request.
+**Rollback Plan:**
+- [How to undo changes if needed]
+- [What to monitor]
