@@ -9,7 +9,7 @@
  * @param {Function} [options.orderExtractor]  - (item, entry) => number
  * @param {string} [options.separator=', ']
  * @param {string} [options.suffix='']
- * @returns {string}
+ * @returns {string} The formatted list.
  */
 export const formatList = (
   items,
@@ -32,7 +32,7 @@ export const formatList = (
       : null);
 
   // Sort if we have a weight function
-  const sorted = getWeight ? [...items].sort((a, b) => getWeight(a, lookup[a]) - getWeight(b, lookup[b])) : items;
+  const sorted = getWeight ? [...items].sort((a, b) => getWeight(a, lookup?.[a]) - getWeight(b, lookup?.[b])) : items;
 
-  return sorted.map((item) => displayMapper(item, lookup[item])).join(separator) + suffix;
+  return sorted.map((item) => displayMapper(item, lookup?.[item])).join(separator) + suffix;
 };

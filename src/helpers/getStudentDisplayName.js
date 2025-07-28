@@ -3,6 +3,8 @@ import { toValue } from 'vue';
 /**
  * Gets the display name for a student
  *
+ * @TODO: Validate the expected business logic regarding username fallback combined with lastname.
+ *
  * @param {Object} studentData - Student data object.
  * @returns {Object<{firstName: string, lastName: string}>} Object containing firstName and lastName.
  */
