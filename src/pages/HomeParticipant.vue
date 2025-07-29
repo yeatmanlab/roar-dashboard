@@ -506,8 +506,8 @@ function setupMarkdownConverter(surveyInstance) {
 }
 
 watch(
-  surveyDependenciesLoaded,
-  async (isLoaded) => {
+  [surveyDependenciesLoaded, selectedAdmin],
+  async ([isLoaded]) => {
     const isAssessment = selectedAdmin.value?.assessments.some((task) => task.taskId === 'survey');
     if (!isLoaded || !isAssessment || surveyStore.survey) return;
 
@@ -547,15 +547,15 @@ watch(
             }
           }
         }
+        
+        // Check if both general and specific surveys are complete
+        if (surveyResponseDoc.general.isComplete &&
+          surveyResponseDoc.specific?.length === numOfSpecificSurveys &&
+          surveyResponseDoc.specific?.every((relation) => relation.isComplete)
+        ) {
+          shouldInitializeSurvey = false;
+        }
       }
-    }
-
-    // Check if both general and specific surveys are complete
-    if (surveyResponseDoc.general.isComplete &&
-      surveyResponseDoc.specific?.length === numOfSpecificSurveys &&
-      surveyResponseDoc.specific?.every((relation) => relation.isComplete)
-    ) {
-      shouldInitializeSurvey = false;
     }
 
     if (!shouldInitializeSurvey) return;
