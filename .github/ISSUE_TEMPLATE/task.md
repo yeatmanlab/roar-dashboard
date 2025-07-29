@@ -6,15 +6,37 @@ labels: task
 assignees: ''
 ---
 
-## 📋 Description
+**Description:**
+[Brief description of what needs to be done and why]
 
-Brief summary of the task or work to be done.
+**Functional Requirements:**
+- [What the feature must do]
+- [User-facing functionality]
 
-## ✅ Acceptance Criteria
+**Acceptance Criteria:**
+- [ ] [Specific measurable outcome]
+- [ ] [Another measurable outcome]
 
-- [ ] What needs to be true for this task to be considered done?
-- [ ] Include any edge cases or definitions of done.
+**Technical Implementation:**
+- [Key technical decisions]
+- [Architecture notes]
+- [Important constraints]
 
-## 🔗 Related Work
+**User Experience:** (if applicable)
+- [UX considerations]
+- [UI requirements]
 
-- PRs, issues, Slack messages, etc.
+**Performance Constraints:** (if applicable)
+- [Response time requirements]
+- [Resource limitations]
+
+**Dependencies:**
+- [Other tickets that must be completed first]
+
+**Testing Requirements:**
+- [Types of tests needed]
+- [Coverage expectations]
+
+**Rollback Plan:**
+- [How to undo changes if needed]
+- [What to monitor]
