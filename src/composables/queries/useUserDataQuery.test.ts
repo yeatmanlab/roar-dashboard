@@ -48,7 +48,7 @@ describe('useUserDataQuery', () => {
 
     expect(VueQuery.useQuery).toHaveBeenCalledWith(
       expect.objectContaining({
-        queryKey: ['user', expect.objectContaining({ _value: authStore.roarUid })],
+        queryKey: ['user', mockUserRoarUid.value],
         queryFn: expect.any(Function),
         enabled: expect.objectContaining({
           _value: true,
@@ -56,7 +56,7 @@ describe('useUserDataQuery', () => {
       }),
     );
 
-    expect(fetchDocById).toHaveBeenCalledWith('users', expect.objectContaining({ _value: authStore.roarUid }));
+    expect(fetchDocById).toHaveBeenCalledWith('users', mockUserRoarUid.value);
   });
 
   it('should allow the use of a manual user ID', async () => {
@@ -73,14 +73,14 @@ describe('useUserDataQuery', () => {
     });
 
     expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: ['user', expect.objectContaining({ _value: mockStudentUserId })],
+      queryKey: ['user', mockStudentUserId.value],
       queryFn: expect.any(Function),
       enabled: expect.objectContaining({
         _value: true,
       }),
     });
 
-    expect(fetchDocById).toHaveBeenCalledWith('users', expect.objectContaining({ _value: mockStudentUserId }));
+    expect(fetchDocById).toHaveBeenCalledWith('users', mockStudentUserId.value);
   });
 
   it('should correctly control the enabled state of the query', async () => {
@@ -100,7 +100,7 @@ describe('useUserDataQuery', () => {
     });
 
     expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: ['user', expect.objectContaining({ _value: authStore.roarUid })],
+      queryKey: ['user', mockUserRoarUid.value],
       queryFn: expect.any(Function),
       enabled: expect.objectContaining({
         _value: false,
@@ -113,7 +113,7 @@ describe('useUserDataQuery', () => {
     enableQuery.value = true;
     await nextTick();
 
-    expect(fetchDocById).toHaveBeenCalledWith('users', expect.objectContaining({ _value: authStore.roarUid }));
+    expect(fetchDocById).toHaveBeenCalledWith('users', mockUserRoarUid.value);
   });
 
   it('should only fetch data once the roarUid is available', async () => {
@@ -129,7 +129,7 @@ describe('useUserDataQuery', () => {
     });
 
     expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: ['user', expect.objectContaining({ _value: authStore.roarUid })],
+      queryKey: ['user', mockUserRoarUid.value],
       queryFn: expect.any(Function),
       enabled: expect.objectContaining({
         _value: false,
@@ -142,7 +142,7 @@ describe('useUserDataQuery', () => {
     mockUserRoarUid.value = nanoid();
     await nextTick();
 
-    expect(fetchDocById).toHaveBeenCalledWith('users', expect.objectContaining({ _value: authStore.roarUid }));
+    expect(fetchDocById).toHaveBeenCalledWith('users', mockUserRoarUid.value);
   });
 
   it('should not let queryOptions override the internally computed value', async () => {
@@ -158,7 +158,7 @@ describe('useUserDataQuery', () => {
     });
 
     expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: ['user', expect.objectContaining({ _value: authStore.roarUid })],
+      queryKey: ['user', mockUserRoarUid.value],
       queryFn: expect.any(Function),
       enabled: expect.objectContaining({
         _value: false,

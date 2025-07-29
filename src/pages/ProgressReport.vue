@@ -298,7 +298,7 @@ const { data: administrationData } = useAdministrationsQuery([props.administrati
 
 const createdBy = computed(() => administrationData?.value?.createdBy);
 
-const { data: creator } = useUserDataQuery(createdBy.value, {
+const { data: creator } = useUserDataQuery(createdBy, {
   enabled: computed(() => !!createdBy.value),
 });
 
@@ -579,14 +579,6 @@ const progressReportColumns = computed(() => {
         ...(pinned && { pinned: true }),
       });
     }
-  });
-
-  tableColumns.push({
-    field: 'user.userId',
-    header: 'UID',
-    dataType: 'text',
-    sort: true,
-    filter: true,
   });
 
   tableColumns.push({
