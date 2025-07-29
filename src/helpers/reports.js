@@ -735,43 +735,95 @@ export const getRawScoreThreshold = (taskId) => {
 };
 
 export const getRawScoreRange = (taskId) => {
-  if (taskId.includes('swr')) {
-    return {
-      min: 100,
-      max: 900,
-    };
-  } else if (taskId.includes('letter')) {
-    return {
-      min: 0,
-      max: 90,
-    };
-  } else if (taskId.includes('phonics')) {
-    return {
-      min: 0,
-      max: 150,
-    };
-  } else if (taskId.includes('pa')) {
-    return {
-      min: 0,
-      max: 57,
-    };
-  } else if (taskId.includes('sre')) {
-    return {
-      min: 0,
-      max: 130,
-    };
-  } else if (taskId.includes('morphology')) {
-    return {
-      min: 0,
-      max: 130,
-    };
-  } else if (taskId.includes('cva')) {
-    return {
-      min: 0,
-      max: 130,
-    };
+  switch (taskId) {
+    case 'letter':
+    case 'letter-en-ca':
+    case 'letter-es':
+      return { min: 0, max: 104 };
+    case 'pa':
+    case 'pa-es':
+      return { min: 0, max: 40 };
+    case 'swr':
+    case 'swr-es':
+      return { min: 0, max: 50 };
+    case 'sre':
+    case 'sre-es':
+      return { min: 0, max: 60 };
+    case 'morphology':
+      return { min: 0, max: 29 };
+    case 'cva':
+      return { min: 0, max: 45 };
+    case 'multichoice':
+      return { min: 0, max: 45 };
+    case 'vocab':
+      return { min: 0, max: 45 };
+    case 'vocab-es':
+      return { min: 0, max: 45 };
+    case 'vocab-en-ca':
+      return { min: 0, max: 45 };
+    case 'trog':
+      return { min: 0, max: 40 };
+    case 'trog-es':
+      return { min: 0, max: 40 };
+    case 'trog-en-ca':
+      return { min: 0, max: 40 };
+    case 'passage':
+      return { min: 0, max: 60 };
+    case 'passage-es':
+      return { min: 0, max: 60 };
+    default:
+      return { min: 0, max: 100 };
   }
-  return null;
+};
+
+/**
+ * Combines and formats scores for longitudinal display
+ * @param {Array} taskData - Array of task data objects containing scores
+ * @param {number} grade - Student's grade level
+ * @returns {Object} Object with taskIds as keys and arrays of formatted scores as values
+ */
+export const combineScoresForLongitudinal = (taskData, grade) => {
+  const scoresByTask = {};
+
+  // Sort task data by date
+  const sortedTaskData = [...taskData].sort((a, b) => new Date(a.dateCompleted) - new Date(b.dateCompleted));
+
+  for (const task of sortedTaskData) {
+    const { taskId, scores, dateCompleted } = task;
+    if (!taskId || !scores?.composite) continue;
+
+    const { percentileScoreKey, standardScoreKey, rawScoreKey } = getScoreKeys(taskId, grade);
+
+    // Initialize array for this taskId if it doesn't exist
+    if (!scoresByTask[taskId]) {
+      scoresByTask[taskId] = [];
+    }
+
+    // Get scores
+    const rawScore = scores.composite[rawScoreKey];
+    const percentileScore = scores.composite[percentileScoreKey];
+    const standardScore = scores.composite[standardScoreKey];
+
+    // Get support level and range
+    const supportLevel = getSupportLevel(grade, percentileScore, rawScore, taskId);
+    const range = getRawScoreRange(taskId);
+
+    // Format score entry
+    const scoreEntry = {
+      date: new Date(dateCompleted),
+      rawScore,
+      percentileScore,
+      standardScore,
+      supportLevel: supportLevel.support_level,
+      supportColor: supportLevel.tag_color,
+      range,
+      displayName: taskDisplayNames[taskId]?.publicName || taskId,
+    };
+
+    scoresByTask[taskId].push(scoreEntry);
+  }
+
+  return scoresByTask;
 };
 
 export const taskInfoById = {
