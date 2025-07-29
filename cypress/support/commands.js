@@ -212,7 +212,7 @@ Cypress.Commands.add('waitForParentHomepage', () => {
       return Cypress.$('[data-cy="parent-homepage__students-grid"]').length > 0;
     },
     {
-      errorMsg: 'Failed to load the parent home page before timeout'
+      errorMsg: 'Failed to load the parent home page before timeout',
     },
   );
 });
