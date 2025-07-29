@@ -783,44 +783,62 @@ export const getRawScoreRange = (taskId) => {
  * @returns {Object} Object with taskIds as keys and arrays of formatted scores as values
  */
 export const combineScoresForLongitudinal = (taskData, grade) => {
+  // Return empty object if no task data
+  if (!taskData || !Array.isArray(taskData)) return {};
+
   const scoresByTask = {};
 
   // Sort task data by date
-  const sortedTaskData = [...taskData].sort((a, b) => new Date(a.dateCompleted) - new Date(b.dateCompleted));
+  const sortedTaskData = [...taskData].sort((a, b) => {
+    const dateA = a?.dateCompleted ? new Date(a.dateCompleted) : new Date(0);
+    const dateB = b?.dateCompleted ? new Date(b.dateCompleted) : new Date(0);
+    return dateA - dateB;
+  });
 
   for (const task of sortedTaskData) {
+    // Skip invalid tasks
+    if (!task || typeof task !== 'object') continue;
+
     const { taskId, scores, dateCompleted } = task;
-    if (!taskId || !scores?.composite) continue;
+    if (!taskId || !scores?.composite || !dateCompleted) continue;
 
-    const { percentileScoreKey, standardScoreKey, rawScoreKey } = getScoreKeys(taskId, grade);
+    try {
+      const { percentileScoreKey, standardScoreKey, rawScoreKey } = getScoreKeys(taskId, grade);
 
-    // Initialize array for this taskId if it doesn't exist
-    if (!scoresByTask[taskId]) {
-      scoresByTask[taskId] = [];
+      // Initialize array for this taskId if it doesn't exist
+      if (!scoresByTask[taskId]) {
+        scoresByTask[taskId] = [];
+      }
+
+      // Get scores
+      const rawScore = scores.composite[rawScoreKey];
+      const percentileScore = scores.composite[percentileScoreKey];
+      const standardScore = scores.composite[standardScoreKey];
+
+      // Skip if required scores are missing
+      if (rawScore === undefined || percentileScore === undefined) continue;
+
+      // Get support level and range
+      const supportLevel = getSupportLevel(grade, percentileScore, rawScore, taskId);
+      const range = getRawScoreRange(taskId);
+
+      // Format score entry
+      const scoreEntry = {
+        date: new Date(dateCompleted),
+        rawScore,
+        percentileScore,
+        standardScore,
+        supportLevel: supportLevel?.support_level || 'unknown',
+        supportColor: supportLevel?.tag_color || '#808080',
+        range,
+        displayName: taskDisplayNames[taskId]?.publicName || taskId,
+      };
+
+      scoresByTask[taskId].push(scoreEntry);
+    } catch (error) {
+      console.warn(`Error processing task ${taskId}:`, error);
+      continue;
     }
-
-    // Get scores
-    const rawScore = scores.composite[rawScoreKey];
-    const percentileScore = scores.composite[percentileScoreKey];
-    const standardScore = scores.composite[standardScoreKey];
-
-    // Get support level and range
-    const supportLevel = getSupportLevel(grade, percentileScore, rawScore, taskId);
-    const range = getRawScoreRange(taskId);
-
-    // Format score entry
-    const scoreEntry = {
-      date: new Date(dateCompleted),
-      rawScore,
-      percentileScore,
-      standardScore,
-      supportLevel: supportLevel.support_level,
-      supportColor: supportLevel.tag_color,
-      range,
-      displayName: taskDisplayNames[taskId]?.publicName || taskId,
-    };
-
-    scoresByTask[taskId].push(scoreEntry);
   }
 
   return scoresByTask;

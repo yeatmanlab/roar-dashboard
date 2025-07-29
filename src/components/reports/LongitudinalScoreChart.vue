@@ -1,24 +1,17 @@
 <template>
   <div ref="chartContainer" class="longitudinal-wrapper">
-    <div :id="chartId" class="chart-area"></div>
-    <div v-if="minGradeByRuns < 6" class="view-by-wrapper my-2">
-      <div class="flex uppercase text-xs font-light">view scores by</div>
-      <PvSelectButton
-        v-model="scoreMode"
-        :allow-empty="false"
-        class="flex flex-row my-2 select-button"
-        :options="scoreModes"
-        option-label="name"
-        @change="handleModeChange"
-      />
+    <div v-if="hasValidData && longitudinalData.length > 0">
+      <div :id="chartId" class="chart-area"></div>
+    </div>
+    <div v-else class="no-data-message">
+      <p>No assessment data available to display.</p>
     </div>
   </div>
 </template>
 
 <script setup>
-import { onMounted, onBeforeUnmount, ref, watch, computed, nextTick } from 'vue';
+import { onMounted, onBeforeUnmount, watch, computed, nextTick } from 'vue';
 import embed from 'vega-embed';
-import PvSelectButton from 'primevue/selectbutton';
 import { combineScoresForLongitudinal } from '@/helpers/reports';
 
 const props = defineProps({
@@ -40,30 +33,28 @@ const props = defineProps({
   },
 });
 
-const scoreMode = ref({ name: 'Raw Score', key: 'rawScore' });
-const scoreModes = [
-  { name: 'Raw Score', key: 'rawScore' },
-  { name: 'Percentile', key: 'percentileScore' },
-  { name: 'Standard Score', key: 'standardScore' },
-];
+// Remove score mode selection since we're only showing raw scores
+
+const hasValidData = computed(() => {
+  return props.taskData && Array.isArray(props.taskData) && props.taskData.length > 0;
+});
 
 const longitudinalData = computed(() => {
+  if (!hasValidData.value) return [];
   const data = combineScoresForLongitudinal(props.taskData, props.grade);
   return data[props.taskId] || [];
 });
 
 const getScoreRange = computed(() => {
-  if (longitudinalData.value.length === 0) return { min: 0, max: 100 };
+  if (!hasValidData.value || longitudinalData.value.length === 0) {
+    return { min: 0, max: 100 };
+  }
 
-  switch (scoreMode.value.key) {
-    case 'rawScore':
-      return longitudinalData.value[0].range;
-    case 'percentileScore':
-      return { min: 0, max: 100 };
-    case 'standardScore':
-      return { min: 0, max: 180 };
-    default:
-      return { min: 0, max: 100 };
+  try {
+    return longitudinalData.value[0]?.range || { min: 0, max: 100 };
+  } catch (error) {
+    console.warn('Error getting score range:', error);
+    return { min: 0, max: 100 };
   }
 });
 
@@ -74,39 +65,68 @@ const getSpec = () => ({
   data: {
     values: longitudinalData.value,
   },
-  mark: {
-    type: 'line',
-    point: true,
-    tooltip: true,
-  },
-  encoding: {
-    x: {
-      field: 'date',
-      type: 'temporal',
-      title: 'Assessment Date',
-      axis: {
-        format: '%b %d, %Y',
+  layer: [
+    // Line layer
+    {
+      mark: {
+        type: 'line',
+        color: '#E0E0E0',
+        strokeWidth: 1,
+      },
+      encoding: {
+        x: {
+          field: 'date',
+          type: 'temporal',
+          title: 'Assessment Date',
+          axis: {
+            format: '%b %d, %Y',
+            labelAngle: -45,
+            grid: true,
+          },
+        },
+        y: {
+          field: 'rawScore',
+          type: 'quantitative',
+          title: 'Raw Score',
+          scale: {
+            domain: [getScoreRange.value.min, getScoreRange.value.max],
+          },
+          axis: {
+            grid: true,
+          },
+        },
       },
     },
-    y: {
-      field: scoreMode.value.key,
-      type: 'quantitative',
-      title: scoreMode.value.name,
-      scale: {
-        domain: [getScoreRange.value.min, getScoreRange.value.max],
+    // Points layer
+    {
+      mark: {
+        type: 'circle',
+        size: 100,
+        filled: true,
+        tooltip: true,
+      },
+      encoding: {
+        x: {
+          field: 'date',
+          type: 'temporal',
+        },
+        y: {
+          field: 'rawScore',
+          type: 'quantitative',
+        },
+        color: {
+          field: 'supportColor',
+          type: 'nominal',
+          scale: null,
+        },
+        tooltip: [
+          { field: 'date', type: 'temporal', title: 'Date', format: '%b %d, %Y' },
+          { field: 'rawScore', type: 'quantitative', title: 'Raw Score' },
+          { field: 'supportLevel', type: 'nominal', title: 'Support Level' },
+        ],
       },
     },
-    color: {
-      field: 'supportColor',
-      type: 'nominal',
-      scale: null,
-    },
-    tooltip: [
-      { field: 'date', type: 'temporal', title: 'Date', format: '%b %d, %Y' },
-      { field: scoreMode.value.key, type: 'quantitative', title: scoreMode.value.name },
-      { field: 'supportLevel', type: 'nominal', title: 'Support Level' },
-    ],
-  },
+  ],
 });
 
 const chartId = computed(() => `roar-longitudinal-chart-${props.taskId}-${Date.now()}`);
@@ -126,6 +146,12 @@ const draw = async () => {
       }
     }
 
+    // Don't try to render if we have no data
+    if (!hasValidData.value || longitudinalData.value.length === 0) {
+      console.warn('No valid data to display in chart');
+      return;
+    }
+
     // Create new chart
     chartView = await embed(`#${chartId.value}`, getSpec(), {
       actions: false,
@@ -134,10 +160,6 @@ const draw = async () => {
   } catch (error) {
     console.error('Error drawing longitudinal chart:', error);
   }
-};
-
-const handleModeChange = () => {
-  draw();
 };
 
 watch(
@@ -172,6 +194,17 @@ onBeforeUnmount(() => {
 .chart-area {
   width: 100%;
   min-height: 300px;
+}
+
+.no-data-message {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  color: #6c757d;
+  font-size: 0.9rem;
 }
 
 .view-by-wrapper {
