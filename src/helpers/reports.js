@@ -942,4 +942,40 @@ export const taskInfoById = {
     subheader: 'ReadAloud',
     desc: 'ROAR-ReadAloud',
   },
+  'fluency-arf': {
+    header: 'ROAM Math Facts',
+    color: '#52627E',
+    subheader: 'Math Facts - Response Modality Experiment',
+    desc:
+      'Math fluency is a foundational math skill that is measured by testing ' +
+      'how quickly and accurately students solve simple arithmetic problems. ROAM Math ' +
+      'Facts measures memory-based fact retrieval (e.g., 3x4), one of the two key processes ' +
+      'required for proficient math fluency. In online assessment, the response speed can ' +
+      'be affected by a student’s familiarity with the digital mode. This can have implications ' +
+      'on the precision and validity of the assessment. In order to evaluate this in ROAM, we ' +
+      'are running an experiment on two response modality designs, employing free response ' +
+      'and multiple choice, respectively. The goal of this experiment is to identify the ' +
+      'response modality that best captures math fluency, while minimizing the impact of ' +
+      'digital familiarity on the assessment. Students experience these response modes as ' +
+      'two 3-minute blocks, each scored separately. Each block begins with addition and ' +
+      'subtraction, then progresses to multiplication and division.',
+  },
+  'fluency-calf': {
+    header: 'ROAM Calculation Fluency',
+    color: '#52627E',
+    subheader: 'Calculation Fluency - Response Modality Experiment',
+    desc:
+      'Math fluency is a foundational math skill that is measured by testing ' +
+      'how quickly and accurately students solve simple arithmetic problems. ROAM ' +
+      'Calculation Fluency measures mental calculation performance (e.g., 37x4), one ' +
+      'of the two key processes required for proficient math fluency. In online assessment, ' +
+      'the response speed can be affected by a student’s familiarity with the digital mode. ' +
+      'This can have implications on the precision and validity of the assessment. In order to ' +
+      'evaluate this in ROAM, we are running an experiment on two response modality designs, ' +
+      'employing free response and multiple choice, respectively. The goal of this experiment ' +
+      'is to identify the response modality that best captures math fluency, while minimizing ' +
+      'the impact of digital familiarity on the assessment. Students experience these response ' +
+      'modes as two 4.5-minute blocks, each scored separately. Each block begins with addition ' +
+      'and subtraction, then progresses to multiplication and division.',
+  },
 };
