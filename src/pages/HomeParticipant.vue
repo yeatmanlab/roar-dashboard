@@ -332,53 +332,6 @@ const assessments = computed(() => {
       undefined,
     );
 
-    // // Mark the survey as complete as if it was a task
-    // if (userType.value === 'student') {
-    //   if (surveyStore.isGeneralSurveyComplete) {
-    //     fetchedAssessments.forEach((assessment) => {
-    //       if (assessment.taskId === 'survey') {
-    //         assessment.completedOn = new Date();
-    //       }
-    //     });
-    //   }
-    // } else if (userType.value === 'teacher' || userType.value === 'parent') {
-    //   if (surveyStore.isGeneralSurveyComplete && surveyStore.isSpecificSurveyComplete) {
-    //     fetchedAssessments.forEach((assessment) => {
-    //       if (assessment.taskId === 'survey') {
-    //         assessment.completedOn = new Date();
-    //       }
-    //     });
-    //   }
-    // }
-
-    // Mark the survey as complete based on actual survey response data
-    const surveyResponse = surveyResponsesData.value?.find(
-      (doc) => doc?.administrationId === selectedAdmin.value.id
-    );
-    
-    if (surveyResponse) {
-      fetchedAssessments.forEach((assessment) => {
-        if (assessment.taskId === 'survey') {
-          if (userType.value === 'student' && surveyResponse.general?.isComplete) {
-            assessment.completedOn = new Date();
-          } else if ((userType.value === 'teacher' || userType.value === 'parent')) {
-            // Calculate expected number of specific surveys
-            const numOfSpecificSurveys = userType.value === 'parent' 
-              ? userData.value?.childIds?.length 
-              : userData.value?.classes?.current?.length;
-            
-            // Check if general survey is complete and all specific surveys are complete
-            const allSpecificComplete = surveyResponse.specific?.length === numOfSpecificSurveys && 
-              surveyResponse.specific?.every((s) => s.isComplete);
-            
-            if (surveyResponse.general?.isComplete && allSpecificComplete) {
-              assessment.completedOn = new Date();
-            }
-          }
-        }
-      });
-    }
-
     return fetchedAssessments;
   }
   return [];
@@ -587,14 +540,6 @@ watch(
         console.error('Error fetching relation data:', error);
       }
     }
-
-    // if (userType.value === 'student' && surveyStore.isGeneralSurveyComplete) {
-    //   return;
-    // } else if (userType.value === 'teacher' || userType.value === 'parent') {
-    //   if (surveyStore.isGeneralSurveyComplete && surveyStore.isSpecificSurveyComplete) {
-    //     return;
-    //   }
-    // }
 
     const surveyDataToStartAt =
       userType.value === 'student' || !surveyStore.isGeneralSurveyComplete
