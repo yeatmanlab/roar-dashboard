@@ -167,7 +167,7 @@ module.exports = defineConfig({
     testPartnerClassInitials: 'CTD-CTS-CTC',
     testPartnerGroupName: 'Cypress Test Group',
     testPartnerGroupInitials: 'CTG',
-    testInviteGroupName: 'Districts - Cypress Test District',
+    testInviteGroupName: 'Groups - testgrouplucas3',
     testGrade: 'Grade 5',
     stanfordUniversityAddress: '450 Jane Stanford Way, Stanford, CA 94305, USA',
     testTag: 'stanford university',
