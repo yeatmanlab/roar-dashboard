@@ -6,15 +6,24 @@ import { useSurveyStore } from '@/store/survey';
 import { useI18n } from 'vue-i18n';
 import { AudioContext } from '@/helpers/audio';
 import { getParsedLocale } from '@/helpers/survey';
-import { onBeforeRouteLeave } from 'vue-router';
+import { onBeforeRouteLeave, useRouter } from 'vue-router';
 import { isLevante } from '@/helpers';
 import PvButton from 'primevue/button';
 import LevanteSpinner from '@/components/LevanteSpinner.vue';
+import { onMounted } from 'vue';
 
 const authStore = useAuthStore();
+const router = useRouter();
 const surveyStore = useSurveyStore();
 const { locale } = useI18n();
 const context = new AudioContext();
+
+onMounted(() => {
+  if (!surveyStore.survey) {
+    router.push({ name: 'Home' });
+  }
+});
+
 
 onBeforeRouteLeave(() => {
   const surveyStore = useSurveyStore();
