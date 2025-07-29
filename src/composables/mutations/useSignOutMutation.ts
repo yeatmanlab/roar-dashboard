@@ -33,9 +33,8 @@ const useSignOutMutation = (): UseMutationReturnType<void, Error, void, unknown>
       // remove it manually from sessionStorage to prevent any issues.
       authStore.$reset();
       gameStore.$reset();
-      surveyStore.$reset();
+      surveyStore.reset();
       sessionStorage.removeItem('authStore');
-      sessionStorage.removeItem('surveyStore');
       sessionStorage.removeItem('gameStore');
 
       // Clear the query client to remove all cached data.
