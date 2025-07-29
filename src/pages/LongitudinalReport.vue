@@ -106,13 +106,34 @@
 
             <div class="task-section px-4 pb-4">
               <div v-if="tasksByAdministration[assignmentId]?.length" class="bg-gray-50 border-round p-4">
-                <div class="individual-report-wrapper flex flex-wrap align-items-center justify-content-center gap-4">
-                  <IndividualScoreReportTask
-                    :task-data="tasksByAdministration[assignmentId]"
-                    :student-data="studentData"
-                    :expanded="expanded"
-                    class="w-full max-w-full"
-                  />
+                <div
+                  v-for="task in uniqueTasksByAdministration[assignmentId]"
+                  :key="task.taskId"
+                  class="task-container mb-8"
+                >
+                  <h3 class="text-xl font-semibold mb-4">
+                    {{ taskDisplayNames[task.taskId]?.publicName || task.taskId }}
+                  </h3>
+
+                  <div class="chart-section bg-white p-4 border-round mb-4 shadow-1">
+                    <h4 class="text-lg mb-2">Progress Over Time</h4>
+                    <LongitudinalScoreChart
+                      :task-id="task.taskId"
+                      :task-data="getTaskData(task.taskId)"
+                      :grade="studentData?.studentData?.grade"
+                      :min-grade-by-runs="minGradeByRuns"
+                    />
+                  </div>
+
+                  <div class="latest-score-section">
+                    <h4 class="text-lg mb-2">Latest Assessment</h4>
+                    <IndividualScoreReportTask
+                      :task-data="tasksByAdministration[assignmentId].filter((t) => t.taskId === task.taskId)"
+                      :grade="studentData?.studentData?.grade"
+                      :student-first-name="studentFirstName"
+                      :expanded="expanded"
+                    />
+                  </div>
                 </div>
               </div>
               <div
@@ -184,6 +205,7 @@ import IndividualScoreReportTask from '@/components/reports/IndividualScoreRepor
 import { getGradeWithSuffix } from '@/helpers/reports';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
+import LongitudinalScoreChart from '@/components/reports/LongitudinalScoreChart.vue';
 
 useI18n();
 
@@ -338,6 +360,33 @@ const formattedTasks = computed(() => {
 const hasAnyData = computed(() => {
   return taskData.value && taskData.value.length > 0;
 });
+
+const uniqueTasksByAdministration = computed(() => {
+  if (!tasksByAdministration.value) return {};
+
+  return Object.entries(tasksByAdministration.value).reduce((acc, [adminId, tasks]) => {
+    acc[adminId] = _uniq(
+      tasks.map((task) => ({
+        taskId: task.taskId,
+        assignmentId: task.assignmentId,
+      })),
+      'taskId',
+    );
+    return acc;
+  }, {});
+});
+
+const minGradeByRuns = computed(() => {
+  if (!taskData.value) return 0;
+  return Math.min(...taskData.value.map((task) => task.grade || 0));
+});
+
+const getTaskData = (taskId) => {
+  if (!taskData.value) return [];
+  return taskData.value
+    .filter((task) => task.taskId === taskId && task.scores?.composite)
+    .sort((a, b) => new Date(a.dateCompleted) - new Date(b.dateCompleted));
+};
 
 const setExpand = () => {
   expanded.value = !expanded.value;
@@ -556,5 +605,21 @@ onMounted(async () => {
     flex-direction: column;
     gap: 1rem;
   }
+}
+.task-container {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 2rem;
+}
+
+.chart-section {
+  min-height: 400px;
+}
+
+.latest-score-section {
+  background: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: var(--card-shadow);
 }
 </style>
