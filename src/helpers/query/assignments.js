@@ -1070,7 +1070,7 @@ export const getUserAssignments = async (roarUid) => {
   });
   const userId = toValue(roarUid);
   return await adminAxiosInstance
-    .post(`${getBaseDocumentPath()}/users/${toValue(userId)}:runQuery`, assignmentRequest)
+    .post(`${getBaseDocumentPath()}/users/${userId}:runQuery`, assignmentRequest)
     .then(async ({ data }) => {
       const assignmentData = mapFields(data);
       const openAssignments = assignmentData.filter((assignment) => new Date(assignment.dateOpened) <= new Date());
