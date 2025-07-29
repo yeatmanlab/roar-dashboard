@@ -204,8 +204,12 @@ const {
 
 // Computed didn't react to selected admin changes, so using a ref instead.
 let hasSurvey = ref(false);
-watch(selectedAdmin, (newAdmin) => {
+watch(selectedAdmin, (newAdmin, oldAdmin) => {
   hasSurvey.value = newAdmin?.assessments.some((task) => task.taskId === 'survey');
+  // Reset survey store when switching between different administrations
+  if (newAdmin?.id !== oldAdmin?.id && oldAdmin?.id) {
+    surveyStore.reset();
+  }
 });
 
 const { data: surveyResponsesData } = useSurveyResponsesQuery({
@@ -328,23 +332,51 @@ const assessments = computed(() => {
       undefined,
     );
 
-    // Mark the survey as complete as if it was a task
-    if (userType.value === 'student') {
-      if (surveyStore.isGeneralSurveyComplete) {
-        fetchedAssessments.forEach((assessment) => {
-          if (assessment.taskId === 'survey') {
+    // // Mark the survey as complete as if it was a task
+    // if (userType.value === 'student') {
+    //   if (surveyStore.isGeneralSurveyComplete) {
+    //     fetchedAssessments.forEach((assessment) => {
+    //       if (assessment.taskId === 'survey') {
+    //         assessment.completedOn = new Date();
+    //       }
+    //     });
+    //   }
+    // } else if (userType.value === 'teacher' || userType.value === 'parent') {
+    //   if (surveyStore.isGeneralSurveyComplete && surveyStore.isSpecificSurveyComplete) {
+    //     fetchedAssessments.forEach((assessment) => {
+    //       if (assessment.taskId === 'survey') {
+    //         assessment.completedOn = new Date();
+    //       }
+    //     });
+    //   }
+    // }
+
+    // Mark the survey as complete based on actual survey response data
+    const surveyResponse = surveyResponsesData.value?.find(
+      (doc) => doc?.administrationId === selectedAdmin.value.id
+    );
+    
+    if (surveyResponse) {
+      fetchedAssessments.forEach((assessment) => {
+        if (assessment.taskId === 'survey') {
+          if (userType.value === 'student' && surveyResponse.general?.isComplete) {
             assessment.completedOn = new Date();
+          } else if ((userType.value === 'teacher' || userType.value === 'parent')) {
+            // Calculate expected number of specific surveys
+            const numOfSpecificSurveys = userType.value === 'parent' 
+              ? userData.value?.childIds?.length 
+              : userData.value?.classes?.current?.length;
+            
+            // Check if general survey is complete and all specific surveys are complete
+            const allSpecificComplete = surveyResponse.specific?.length === numOfSpecificSurveys && 
+              surveyResponse.specific?.every((s) => s.isComplete);
+            
+            if (surveyResponse.general?.isComplete && allSpecificComplete) {
+              assessment.completedOn = new Date();
+            }
           }
-        });
-      }
-    } else if (userType.value === 'teacher' || userType.value === 'parent') {
-      if (surveyStore.isGeneralSurveyComplete && surveyStore.isSpecificSurveyComplete) {
-        fetchedAssessments.forEach((assessment) => {
-          if (assessment.taskId === 'survey') {
-            assessment.completedOn = new Date();
-          }
-        });
-      }
+        }
+      });
     }
 
     return fetchedAssessments;
@@ -482,17 +514,22 @@ watch(
     const surveyResponseDoc = (surveyResponsesData.value || []).find(
       (doc) => doc?.administrationId === selectedAdmin.value.id,
     );
+    let shouldInitializeSurvey = true;
+    
+    // Calculate number of specific surveys for teachers/parents
+    const numOfSpecificSurveys = userType.value === 'parent' 
+      ? userData.value?.childIds?.length 
+      : userData.value?.classes?.current?.length;
 
     if (surveyResponseDoc) {
       if (userType.value === 'student') {
         const isComplete = surveyResponseDoc.general.isComplete;
         surveyStore.setIsGeneralSurveyComplete(isComplete);
-        if (isComplete) return;
+        if (isComplete) {
+          shouldInitializeSurvey = false;
+        }
       } else {
         surveyStore.setIsGeneralSurveyComplete(surveyResponseDoc.general.isComplete);
-
-        const numOfSpecificSurveys =
-          userType.value === 'parent' ? userData.value?.childIds?.length : userData.value?.classes?.current?.length;
 
         if (surveyResponseDoc.specific && surveyResponseDoc.specific.length > 0) {
           if (
@@ -500,6 +537,7 @@ watch(
             surveyResponseDoc.specific.every((relation) => relation.isComplete) 
           ) {
             surveyStore.setIsSpecificSurveyComplete(true);
+            shouldInitializeSurvey = false;
           } else {
             const incompleteIndex = surveyResponseDoc.specific.findIndex((relation) => !relation.isComplete);
             if (incompleteIndex > -1) {
@@ -511,6 +549,16 @@ watch(
         }
       }
     }
+
+    // Check if both general and specific surveys are complete
+    if (surveyResponseDoc.general.isComplete &&
+      surveyResponseDoc.specific?.length === numOfSpecificSurveys &&
+      surveyResponseDoc.specific?.every((relation) => relation.isComplete)
+    ) {
+      shouldInitializeSurvey = false;
+    }
+
+    if (!shouldInitializeSurvey) return;
 
     // Fetch child docs for parent or class docs for teacher
     if (userType.value === 'parent' || userType.value === 'teacher') {
@@ -540,13 +588,13 @@ watch(
       }
     }
 
-    if (userType.value === 'student' && surveyStore.isGeneralSurveyComplete) {
-      return;
-    } else if (userType.value === 'teacher' || userType.value === 'parent') {
-      if (surveyStore.isGeneralSurveyComplete && surveyStore.isSpecificSurveyComplete) {
-        return;
-      }
-    }
+    // if (userType.value === 'student' && surveyStore.isGeneralSurveyComplete) {
+    //   return;
+    // } else if (userType.value === 'teacher' || userType.value === 'parent') {
+    //   if (surveyStore.isGeneralSurveyComplete && surveyStore.isSpecificSurveyComplete) {
+    //     return;
+    //   }
+    // }
 
     const surveyDataToStartAt =
       userType.value === 'student' || !surveyStore.isGeneralSurveyComplete
