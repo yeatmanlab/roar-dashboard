@@ -1,5 +1,4 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { h, nextTick } from 'vue';
 import { shallowMount } from '@vue/test-utils';
 import SignIn from '@/pages/SignIn.vue';
 
@@ -87,6 +86,12 @@ const SignInStub = {
 
 // Mock storeToRefs since this is causing issues
 vi.mock('pinia', () => ({
+  defineStore: vi.fn((name, setup) => {
+    // Return a function that returns the store
+    return () => ({
+      // Add any default store properties/methods that might be needed
+    });
+  }),
   storeToRefs: vi.fn(() => ({
     spinner: { value: false },
     ssoProvider: { value: null },
