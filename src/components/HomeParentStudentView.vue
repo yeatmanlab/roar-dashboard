@@ -64,20 +64,21 @@
         'lg:grid-cols-3': Object.keys(childrenAssignments).length === 3,
         'lg:grid-cols-4': Object.keys(childrenAssignments).length >= 4,
       }"
+      data-cy="parent-homepage__students-grid"
     >
       <template v-for="(assignments, userId) in childrenAssignments" :key="userId">
         <StudentCard :assignments="assignments" :user-id="userId" :org-type="orgType" :org-id="orgId" />
       </template>
       <article
-        class="flex overflow-hidden rounded border-gray-200 bg-gray-100 flex-column border-1 mx-auto w-full max-w-3xl p-8"
+        class="flex overflow-hidden p-8 mx-auto w-full max-w-3xl bg-gray-100 rounded border-gray-200 flex-column border-1"
       >
-        <div class="flex flex-column align-items-center gap-4">
-          <div class="w-16 h-16 rounded-full bg-pink-50 flex align-items-center justify-content-center">
-            <i class="pi pi-users text-4xl text-red-700"></i>
+        <div class="flex gap-4 flex-column align-items-center">
+          <div class="flex w-16 h-16 bg-pink-50 rounded-full align-items-center justify-content-center">
+            <i class="text-4xl text-red-700 pi pi-users"></i>
           </div>
           <div class="text-center">
-            <h2 class="m-0 text-2xl font-bold mb-2">Add a Child</h2>
-            <div class="text-gray-600 mb-4 font-light text-sm">Add a new student to your family account</div>
+            <h2 class="m-0 mb-2 text-2xl font-bold">Add a Child</h2>
+            <div class="mb-4 text-sm font-light text-gray-600">Add a new student to your family account</div>
           </div>
           <PvButton
             label="Add Child"
