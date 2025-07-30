@@ -672,6 +672,16 @@ const routes = [
     },
   },
   {
+    path: APP_ROUTES.SCORE_REPORT_STUDENT,
+    name: 'StudentScoreReport',
+    props: true,
+    component: () => import('../pages/scores/StudentScoreReport.vue'),
+    meta: {
+      pageTitle: 'Student Score Report',
+      permission: Permissions.Reports.Student.READ,
+    },
+  },
+  {
     path: APP_ROUTES.ACCOUNT_PROFILE,
     name: 'Profile',
     component: () => import('../pages/AdminProfile.vue'),
