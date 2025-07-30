@@ -1,103 +1,15 @@
-import { useMutation, useQueryClient } from '@tanstack/vue-query';
-import { useAuthStore } from '@/store/auth.js';
+import { FIRESTORE_COLLECTIONS } from '@/constants/firebase';
 import {
-  DISTRICTS_LIST_QUERY_KEY,
   DISTRICT_SCHOOLS_QUERY_KEY,
-  SCHOOL_CLASSES_QUERY_KEY,
+  DISTRICTS_LIST_QUERY_KEY,
   GROUPS_LIST_QUERY_KEY,
   ORG_MUTATION_KEY,
   ORGS_TABLE_QUERY_KEY,
+  SCHOOL_CLASSES_QUERY_KEY,
 } from '@/constants/queryKeys';
-import { FIRESTORE_COLLECTIONS } from '@/constants/firebase';
-import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
-import {
-  CreateClassSchema,
-  CreateDistrictSchema,
-  CreateGroupSchema,
-  CreateSchoolSchema,
-  CreateOrgType,
-  OrgType,
-} from '@levante-framework/levante-zod';
-
-const parseCreateOrgData = (data: CreateOrgType) => {
-  let formatted;
-  let parsed;
-
-  const { districtId, name, normalizedName, parentOrgId, schoolId, tags, type } = data;
-  const commonFields = {
-    name,
-    normalizedName,
-    tags,
-    type,
-  };
-
-  switch (type) {
-    case FIRESTORE_COLLECTIONS.CLASSES:
-      formatted = {
-        ...commonFields,
-        districtId,
-        schoolId,
-      };
-
-      parsed = CreateClassSchema.safeParse(formatted);
-
-      if (parsed.error) {
-        console.error(parsed.error.message);
-        throw new Error(`Invalid data format for ${name}`);
-      }
-
-      return parsed.data;
-
-    case FIRESTORE_COLLECTIONS.DISTRICTS:
-      formatted = {
-        ...commonFields,
-        subGroups: [],
-      };
-
-      parsed = CreateDistrictSchema.safeParse(formatted);
-
-      if (parsed.error) {
-        console.error(parsed.error.message);
-        throw new Error(`Invalid data format for ${name}`);
-      }
-
-      return parsed.data;
-
-    case FIRESTORE_COLLECTIONS.GROUPS:
-      formatted = {
-        ...commonFields,
-        parentOrgId,
-        parentOrgType: SINGULAR_ORG_TYPES.DISTRICTS,
-      };
-
-      parsed = CreateGroupSchema.safeParse(formatted);
-
-      if (parsed.error) {
-        console.error(parsed.error.message);
-        throw new Error(`Invalid data format for ${name}`);
-      }
-
-      return parsed.data;
-
-    case FIRESTORE_COLLECTIONS.SCHOOLS:
-      formatted = {
-        ...commonFields,
-        districtId,
-      };
-
-      parsed = CreateSchoolSchema.safeParse(formatted);
-
-      if (parsed.error) {
-        console.error(parsed.error.message);
-        throw new Error(`Invalid data format for ${name}`);
-      }
-
-      return parsed.data;
-
-    default:
-      throw new Error(`Unknown org type: ${type}`);
-  }
-};
+import { useAuthStore } from '@/store/auth.js';
+import { CreateOrgType, OrgType } from '@levante-framework/levante-zod';
+import { useMutation, useQueryClient } from '@tanstack/vue-query';
 
 type UpsertOrgMutationContext = {
   previousData: OrgType[] | undefined;
@@ -119,8 +31,7 @@ const useUpsertOrgMutation = () => {
   return useMutation<OrgType, Error, CreateOrgType, UpsertOrgMutationContext>({
     mutationKey: [ORG_MUTATION_KEY],
     mutationFn: async (data: CreateOrgType): Promise<OrgType> => {
-      const parsed = parseCreateOrgData(data);
-      const response = await authStore.roarfirekit.upsertOrg(parsed);
+      const response = await authStore.roarfirekit.upsertOrg(data);
       return response.data;
     },
     onMutate: async (newOrgData: CreateOrgType) => {
