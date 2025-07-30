@@ -1,0 +1,16 @@
+# Dotenvx files
+.env.keys
+.env.*.local
+
+# Other
+.idea
+/idea
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
