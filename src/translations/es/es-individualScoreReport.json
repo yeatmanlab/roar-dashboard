@@ -9,6 +9,7 @@
     "expandSections": "Expandir todas las secciones",
     "collapseSections": "Contraer todas las secciones",
     "exportPDF": "Exportar a PDF",
+    "viewLongitudinal": "Ver progreso a lo largo del tiempo",
     "stillWorking": "¡Parece que {firstName} todavía está trabajando para completar los juegos asignados!",
     "needOneComplete": "El informe individual de notas de {firstName} se creará cuando el/la estudiante haya completado al menos una actividad.",
     "completedTasks": "{firstName} completó los siguientes juegos:",

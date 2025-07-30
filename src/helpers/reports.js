@@ -705,6 +705,11 @@ export function getScoreKeys(taskId, grade) {
   if (taskId === 'letter' || taskId === 'letter-es' || taskId === 'letter-en-ca') {
     rawScoreKey = 'totalPercentCorrect';
   }
+  if (taskId === 'phoneme') {
+    rawScoreKey = 'roarScore';
+    percentileScoreKey = 'percentile';
+    standardScoreKey = 'standardScore';
+  }
   return {
     percentileScoreKey,
     percentileScoreDisplayKey,
@@ -735,43 +740,131 @@ export const getRawScoreThreshold = (taskId) => {
 };
 
 export const getRawScoreRange = (taskId) => {
-  if (taskId.includes('swr')) {
-    return {
-      min: 100,
-      max: 900,
-    };
-  } else if (taskId.includes('letter')) {
-    return {
-      min: 0,
-      max: 90,
-    };
-  } else if (taskId.includes('phonics')) {
-    return {
-      min: 0,
-      max: 150,
-    };
-  } else if (taskId.includes('pa')) {
-    return {
-      min: 0,
-      max: 57,
-    };
-  } else if (taskId.includes('sre')) {
-    return {
-      min: 0,
-      max: 130,
-    };
-  } else if (taskId.includes('morphology')) {
-    return {
-      min: 0,
-      max: 130,
-    };
-  } else if (taskId.includes('cva')) {
-    return {
-      min: 0,
-      max: 130,
-    };
+  switch (taskId) {
+    case 'letter':
+    case 'letter-en-ca':
+    case 'letter-es':
+      return { min: 0, max: 104 };
+    case 'pa':
+    case 'pa-es':
+      return { min: 0, max: 40 };
+    case 'swr':
+    case 'swr-es':
+      return { min: 0, max: 50 };
+    case 'sre':
+    case 'sre-es':
+      return { min: 0, max: 60 };
+    case 'morphology':
+      return { min: 0, max: 29 };
+    case 'cva':
+      return { min: 0, max: 45 };
+    case 'multichoice':
+      return { min: 0, max: 45 };
+    case 'vocab':
+      return { min: 0, max: 45 };
+    case 'vocab-es':
+      return { min: 0, max: 45 };
+    case 'vocab-en-ca':
+      return { min: 0, max: 45 };
+    case 'trog':
+      return { min: 0, max: 40 };
+    case 'trog-es':
+      return { min: 0, max: 40 };
+    case 'trog-en-ca':
+      return { min: 0, max: 40 };
+    case 'passage':
+      return { min: 0, max: 60 };
+    case 'passage-es':
+      return { min: 0, max: 60 };
+    default:
+      return { min: 0, max: 100 };
   }
-  return null;
+};
+
+/**
+ * Combines and formats scores for longitudinal display
+ * @param {Array} taskData - Array of task data objects containing scores
+ * @param {number} grade - Student's grade level
+ * @returns {Object} Object with taskIds as keys and arrays of formatted scores as values
+ */
+export const combineScoresForLongitudinal = (taskData, grade) => {
+  console.log('combineScoresForLongitudinal input:', { taskData, grade });
+  // Return empty object if no task data
+  if (!taskData || !Array.isArray(taskData)) {
+    console.log('No task data or not an array');
+    return {};
+  }
+
+  const scoresByTask = {};
+
+  // Sort task data by date
+  const sortedTaskData = [...taskData].sort((a, b) => {
+    const dateA = a?.timeStarted ? new Date(a.timeStarted) : new Date(0);
+    const dateB = b?.timeStarted ? new Date(b.timeStarted) : new Date(0);
+    return dateA - dateB;
+  });
+
+  for (const task of sortedTaskData) {
+    // Skip invalid tasks
+    if (!task || typeof task !== 'object') continue;
+
+    const { taskId, scores, timeStarted } = task;
+    console.log('Processing task:', { taskId, scores, timeStarted });
+
+    // Check if scores exist in either scores.composite or scores.computed.composite
+    const compositeScores = scores?.composite || scores?.computed?.composite;
+    if (!taskId || !compositeScores || !timeStarted) {
+      console.log('Skipping task due to missing data:', {
+        taskId,
+        hasScores: !!compositeScores,
+        hasDate: !!timeStarted,
+      });
+      continue;
+    }
+
+    try {
+      const { percentileScoreKey, standardScoreKey, rawScoreKey } = getScoreKeys(taskId, grade);
+
+      // Initialize array for this taskId if it doesn't exist
+      if (!scoresByTask[taskId]) {
+        scoresByTask[taskId] = [];
+      }
+
+      // Get scores
+      console.log('Score keys for', taskId, ':', { rawScoreKey, percentileScoreKey, standardScoreKey });
+      console.log('Available score keys:', Object.keys(compositeScores));
+      const rawScore = compositeScores[rawScoreKey];
+      const percentileScore = compositeScores[percentileScoreKey];
+      const standardScore = compositeScores[standardScoreKey];
+      console.log('Extracted scores:', { rawScore, percentileScore, standardScore });
+
+      // Skip if required scores are missing
+      if (rawScore === undefined || percentileScore === undefined) continue;
+
+      // Get support level and range
+      const supportLevel = getSupportLevel(grade, percentileScore, rawScore, taskId);
+      const range = getRawScoreRange(taskId);
+
+      // Format score entry
+      const scoreEntry = {
+        date: new Date(timeStarted),
+        rawScore,
+        percentileScore,
+        standardScore,
+        supportLevel: supportLevel?.support_level || 'unknown',
+        supportColor: supportLevel?.tag_color || '#808080',
+        range,
+        displayName: taskDisplayNames[taskId]?.publicName || taskId,
+      };
+
+      scoresByTask[taskId].push(scoreEntry);
+    } catch (error) {
+      console.warn(`Error processing task ${taskId}:`, error);
+      continue;
+    }
+  }
+
+  return scoresByTask;
 };
 
 export const taskInfoById = {

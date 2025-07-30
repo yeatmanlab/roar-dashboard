@@ -1,7 +1,5 @@
 import { computed, toValue } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
-import _isEmpty from 'lodash/isEmpty';
-import useUserAdministrationAssignmentsQuery from '@/composables/queries/useUserAdministrationAssignmentsQuery';
 import { runPageFetcher } from '@/helpers/query/runs';
 import { computeQueryOverrides } from '@/helpers/computeQueryOverrides';
 import { USER_RUN_PAGE_QUERY_KEY } from '@/constants/queryKeys';
@@ -18,22 +16,19 @@ import { USER_RUN_PAGE_QUERY_KEY } from '@/constants/queryKeys';
  * @returns {UseQueryResult} The TanStack query result.
  */
 const useUserRunPageQuery = (userId, administrationId, orgType, orgId, queryOptions = undefined) => {
-  const { data: assignmentData } = useUserAdministrationAssignmentsQuery(userId, administrationId, {
-    enabled: queryOptions?.enabled ?? true,
-  });
+  const optionalAssessments = computed(() => []);
 
-  const optionalAssessments = computed(() => {
-    return assignmentData?.value?.assessments.filter((assessment) => assessment.optional);
-  });
-
-  const queryConditions = [
-    () => !!toValue(userId),
-    () => !!toValue(administrationId),
-    () => !!toValue(orgType),
-    () => !!toValue(orgId),
-    () => !_isEmpty(assignmentData.value),
-  ];
+  const queryConditions = [() => !!toValue(userId), () => !!toValue(orgType), () => !!toValue(orgId)];
   const { isQueryEnabled, options } = computeQueryOverrides(queryConditions, queryOptions);
+
+  // Get select fields from queryFnOptions or use default
+  const selectFields = options?.queryFnOptions?.select || [
+    'scores.composite',
+    'taskId',
+    'reliable',
+    'engagementFlags',
+    'optional',
+  ];
 
   return useQuery({
     queryKey: [USER_RUN_PAGE_QUERY_KEY, userId, administrationId, orgType, orgId],
@@ -43,8 +38,8 @@ const useUserRunPageQuery = (userId, administrationId, orgType, orgId, queryOpti
         orgType: orgType,
         orgId: orgId,
         userId: userId,
-        select: ['scores.computed', 'taskId', 'reliable', 'engagementFlags', 'optional'],
-        scoreKey: 'scores.computed',
+        select: selectFields,
+        scoreKey: 'scores.composite',
         paginate: false,
       });
 
