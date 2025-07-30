@@ -37,7 +37,7 @@ export const config = [
     },
   },
 
-  // Test files (Vitest)
+  // Test file rules (Vitest)
   {
     files: [
       '**/*.test.{js,ts}',
@@ -59,7 +59,7 @@ export const config = [
     }
   },
 
-  // Prettier override
+  // Prettier rules
   prettierPlugin,
 
   // Ignored files
