@@ -69,85 +69,39 @@
           <PvDropdown v-model="sortOption" :options="sortOptions" option-label="label" class="w-15rem" />
         </div>
       </div>
-      <PvAccordion class="w-full">
+      <div class="task-grid">
         <div
-          v-for="assignmentId in availableAdministrations"
-          :key="assignmentId"
-          class="border-2 border-gray-300 border-round-lg mb-4 overflow-hidden"
+          v-for="taskId in uniqueTaskIds"
+          :key="taskId"
+          class="task-container border-2 border-gray-300 border-round-lg mb-4 overflow-hidden bg-white"
         >
-          <PvAccordionTab class="assignment-card bg-white">
-            <div class="flex flex-column align-items-start justify-content-start px-4 py-3">
-              <div class="text-xl font-bold">
-                {{ administrationData?.find((a) => a.id == assignmentId)?.name || _startCase(assignmentId) }}
-              </div>
-              <div v-if="currentAdministration(assignmentId)" class="text-sm text-gray-500 mt-1">
-                <span>Opened {{ formatDate(currentAdministration(assignmentId).dateOpened) }}</span>
-                <span v-if="currentAdministration(assignmentId).dateClosed">
-                  · Closes {{ formatDate(currentAdministration(assignmentId).dateClosed) }}
-                </span>
-              </div>
-            </div>
-            <div v-if="tasksByAdministration[assignmentId]?.length" class="mt-4 mx-4 mb-4 bg-gray-200 border-round">
-              <div class="p-4">
-                <div class="text-lg">
-                  <i18n-t keypath="scoreReports.completedTasks" tag="div">
-                    <template #firstName>
-                      {{ studentFirstName }}
-                    </template>
-                  </i18n-t>
-                  <ul class="inline-flex p-0 mt-2" style="list-style-type: none">
-                    <li>
-                      <strong>{{ formattedTasks[assignmentId] }}</strong>
-                    </li>
-                  </ul>
-                </div>
-              </div>
+          <div class="px-4 py-3">
+            <h3 class="text-xl font-semibold mb-4">
+              {{ taskDisplayNames[taskId]?.publicName || taskId }}
+            </h3>
+
+            <div class="chart-section bg-white p-4 border-round mb-4 shadow-1">
+              <h4 class="text-lg mb-2">Progress Over Time</h4>
+              <LongitudinalScoreChart
+                :task-id="taskId"
+                :task-data="getTaskData(taskId)"
+                :grade="studentData?.studentData?.grade"
+                :min-grade-by-runs="minGradeByRuns"
+              />
             </div>
 
-            <div class="task-section px-4 pb-4">
-              <div v-if="tasksByAdministration[assignmentId]?.length" class="bg-gray-50 border-round p-4">
-                <div
-                  v-for="task in uniqueTasksByAdministration[assignmentId]"
-                  :key="task.taskId"
-                  class="task-container mb-8"
-                >
-                  <h3 class="text-xl font-semibold mb-4">
-                    {{ taskDisplayNames[task.taskId]?.publicName || task.taskId }}
-                  </h3>
-
-                  <div class="chart-section bg-white p-4 border-round mb-4 shadow-1">
-                    <h4 class="text-lg mb-2">Progress Over Time</h4>
-                    <LongitudinalScoreChart
-                      :task-id="task.taskId"
-                      :task-data="getTaskData(task.taskId)"
-                      :grade="studentData?.studentData?.grade"
-                      :min-grade-by-runs="minGradeByRuns"
-                    />
-                  </div>
-
-                  <div class="latest-score-section">
-                    <h4 class="text-lg mb-2">Latest Assessment</h4>
-                    <IndividualScoreReportTask
-                      :task-data="tasksByAdministration[assignmentId].filter((t) => t.taskId === task.taskId)"
-                      :grade="studentData?.studentData?.grade"
-                      :student-first-name="studentFirstName"
-                      :expanded="expanded"
-                    />
-                  </div>
-                </div>
-              </div>
-              <div
-                v-else
-                class="flex flex-column align-items-center justify-content-center py-6 bg-gray-100 border-round"
-              >
-                <div class="my-4 px-4 text-xl font-normal text-gray-500">
-                  {{ $t('scoreReports.needOneComplete', { firstName: studentFirstName }) }}
-                </div>
-              </div>
+            <div class="latest-score-section">
+              <h4 class="text-lg mb-2">Latest Assessment</h4>
+              <IndividualScoreReportTask
+                :task-data="getLatestTaskData(taskId)"
+                :grade="studentData?.studentData?.grade"
+                :student-first-name="studentFirstName"
+                :expanded="expanded"
+              />
             </div>
-          </PvAccordionTab>
+          </div>
         </div>
-      </PvAccordion>
+      </div>
 
       <div id="support-graphic" class="support-wrapper">
         <PvAccordion
@@ -196,8 +150,7 @@ import PvAccordion from 'primevue/accordion';
 import { useI18n } from 'vue-i18n';
 import useUserRunPageQuery from '@/composables/queries/useUserRunPageQuery';
 import useUserDataQuery from '@/composables/queries/useUserDataQuery';
-import useAdministrationsQuery from '@/composables/queries/useAdministrationsQuery';
-import { uniq as _uniq, startCase as _startCase } from 'lodash';
+import { startCase as _startCase } from 'lodash';
 import { taskDisplayNames } from '@/helpers/reports';
 import PvAccordionTab from 'primevue/accordiontab';
 import AppSpinner from '@/components/AppSpinner.vue';
@@ -243,20 +196,7 @@ const { data: taskData, isLoading: isLoadingTaskData } = useUserRunPageQuery(
   },
 );
 
-const administrationIds = computed(() => {
-  if (!taskData?.value) return [];
-  return _uniq(
-    taskData.value
-      .filter((task) => task.assignmentId && task.assignmentId !== 'undefined')
-      .map((task) => task.assignmentId),
-  );
-});
-
-const { data: administrationData } = useAdministrationsQuery(administrationIds, {
-  enabled: computed(() => initialized.value && administrationIds.value.length > 0),
-});
-
-const isLoading = computed(() => isLoadingStudentData.value || isLoadingTaskData.value || !administrationData.value);
+const isLoading = computed(() => isLoadingStudentData.value || isLoadingTaskData.value);
 
 const studentFirstName = computed(() => {
   if (!studentData?.value) return '';
@@ -268,112 +208,8 @@ const studentLastName = computed(() => {
   return studentData.value.name.last || '';
 });
 
-const sortOption = ref({
-  value: 'scores',
-  label: 'Has Scores First',
-});
-
-const sortOptions = [
-  { value: 'scores', label: 'Has Scores First' },
-  { value: 'openedDesc', label: 'Most Recently Opened' },
-  { value: 'openedAsc', label: 'Oldest Opened First' },
-  { value: 'closedDesc', label: 'Most Recently Closed' },
-  { value: 'closedAsc', label: 'Oldest Closed First' },
-];
-
-const sortAdministrations = (administrations) => {
-  return [...administrations].sort((a, b) => {
-    const aAdmin = currentAdministration(a);
-    const bAdmin = currentAdministration(b);
-    const aHasScores = tasksByAdministration.value[a]?.length > 0;
-    const bHasScores = tasksByAdministration.value[b]?.length > 0;
-
-    switch (sortOption.value.value) {
-      case 'scores':
-        if (aHasScores !== bHasScores) return aHasScores ? -1 : 1;
-        return bAdmin?.dateOpened?.localeCompare(aAdmin?.dateOpened) || 0;
-
-      case 'openedDesc':
-        return bAdmin?.dateOpened?.localeCompare(aAdmin?.dateOpened) || 0;
-
-      case 'openedAsc':
-        return aAdmin?.dateOpened?.localeCompare(bAdmin?.dateOpened) || 0;
-
-      case 'closedDesc':
-        if (!bAdmin?.dateClosed) return -1;
-        if (!aAdmin?.dateClosed) return 1;
-        return bAdmin.dateClosed.localeCompare(aAdmin.dateClosed);
-
-      case 'closedAsc':
-        if (!aAdmin?.dateClosed) return 1;
-        if (!bAdmin?.dateClosed) return -1;
-        return aAdmin.dateClosed.localeCompare(bAdmin.dateClosed);
-
-      default:
-        return 0;
-    }
-  });
-};
-
-const availableAdministrations = computed(() => {
-  return sortAdministrations(administrationIds.value);
-});
-
-const tasksByAdministration = computed(() => {
-  if (!taskData.value) return {};
-
-  return taskData.value
-    .filter((task) => task.assignmentId && task.assignmentId !== 'undefined' && task.scores != undefined)
-    .reduce((acc, task) => {
-      const adminId = task.assignmentId;
-      if (!acc[adminId]) {
-        acc[adminId] = [];
-      }
-      acc[adminId].push(task);
-      return acc;
-    }, {});
-});
-
-const currentAdministration = (assignmentId) => {
-  return administrationData.value?.find((a) => a.id === assignmentId);
-};
-
-const formatDate = (dateString) => {
-  if (!dateString) return '';
-  return new Date(dateString).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  });
-};
-
-const formattedTasks = computed(() => {
-  if (!taskData.value) return {};
-  return Object.entries(tasksByAdministration.value).reduce((acc, [assignmentId, tasks]) => {
-    acc[assignmentId] = _uniq(
-      tasks.filter((task) => task.taskId).map((task) => taskDisplayNames[task.taskId].publicName || task.taskId),
-    ).join(', ');
-    return acc;
-  }, {});
-});
-
 const hasAnyData = computed(() => {
   return taskData.value && taskData.value.length > 0;
-});
-
-const uniqueTasksByAdministration = computed(() => {
-  if (!tasksByAdministration.value) return {};
-
-  return Object.entries(tasksByAdministration.value).reduce((acc, [adminId, tasks]) => {
-    acc[adminId] = _uniq(
-      tasks.map((task) => ({
-        taskId: task.taskId,
-        assignmentId: task.assignmentId,
-      })),
-      'taskId',
-    );
-    return acc;
-  }, {});
 });
 
 const minGradeByRuns = computed(() => {
@@ -381,11 +217,36 @@ const minGradeByRuns = computed(() => {
   return Math.min(...taskData.value.map((task) => task.grade || 0));
 });
 
-const getTaskData = (taskId) => {
+const uniqueTaskIds = computed(() => {
   if (!taskData.value) return [];
-  return taskData.value
-    .filter((task) => task.taskId === taskId && task.scores?.composite)
+  return [...new Set(taskData.value.map((task) => task.taskId))].sort((a, b) => {
+    const orderA = taskDisplayNames[a]?.order || Infinity;
+    const orderB = taskDisplayNames[b]?.order || Infinity;
+    return orderA - orderB;
+  });
+});
+
+const getTaskData = (taskId) => {
+  if (!taskData.value) {
+    console.log('No taskData.value');
+    return [];
+  }
+  console.log('Raw taskData for', taskId, ':', taskData.value);
+  const filteredData = taskData.value
+    .filter((task) => {
+      const hasTask = task.taskId === taskId;
+      const hasScores = task.scores?.composite;
+      console.log('Task:', task.taskId, 'Has scores:', hasScores);
+      return hasTask && hasScores;
+    })
     .sort((a, b) => new Date(a.dateCompleted) - new Date(b.dateCompleted));
+  console.log('Filtered taskData for', taskId, ':', filteredData);
+  return filteredData;
+};
+
+const getLatestTaskData = (taskId) => {
+  const tasks = getTaskData(taskId);
+  return tasks.length ? [tasks[tasks.length - 1]] : [];
 };
 
 const setExpand = () => {
@@ -473,6 +334,25 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+.task-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 600px), 1fr));
+  gap: 1.5rem;
+  width: 100%;
+  margin-bottom: 2rem;
+}
+
+.task-container {
+  background: white;
+  transition: all 0.2s ease;
+}
+
+.task-container:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
 .welcome-banner {
   background-color: var(--primary-color);
   padding: 0.8rem 1rem;

@@ -783,8 +783,12 @@ export const getRawScoreRange = (taskId) => {
  * @returns {Object} Object with taskIds as keys and arrays of formatted scores as values
  */
 export const combineScoresForLongitudinal = (taskData, grade) => {
+  console.log('combineScoresForLongitudinal input:', { taskData, grade });
   // Return empty object if no task data
-  if (!taskData || !Array.isArray(taskData)) return {};
+  if (!taskData || !Array.isArray(taskData)) {
+    console.log('No task data or not an array');
+    return {};
+  }
 
   const scoresByTask = {};
 
@@ -800,7 +804,15 @@ export const combineScoresForLongitudinal = (taskData, grade) => {
     if (!task || typeof task !== 'object') continue;
 
     const { taskId, scores, dateCompleted } = task;
-    if (!taskId || !scores?.composite || !dateCompleted) continue;
+    console.log('Processing task:', { taskId, scores, dateCompleted });
+    if (!taskId || !scores?.composite || !dateCompleted) {
+      console.log('Skipping task due to missing data:', {
+        taskId,
+        hasScores: !!scores?.composite,
+        hasDate: !!dateCompleted,
+      });
+      continue;
+    }
 
     try {
       const { percentileScoreKey, standardScoreKey, rawScoreKey } = getScoreKeys(taskId, grade);
@@ -811,9 +823,11 @@ export const combineScoresForLongitudinal = (taskData, grade) => {
       }
 
       // Get scores
+      console.log('Score keys:', { rawScoreKey, percentileScoreKey, standardScoreKey });
       const rawScore = scores.composite[rawScoreKey];
       const percentileScore = scores.composite[percentileScoreKey];
       const standardScore = scores.composite[standardScoreKey];
+      console.log('Extracted scores:', { rawScore, percentileScore, standardScore });
 
       // Skip if required scores are missing
       if (rawScore === undefined || percentileScore === undefined) continue;

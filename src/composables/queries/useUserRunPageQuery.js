@@ -23,7 +23,7 @@ const useUserRunPageQuery = (userId, administrationId, orgType, orgId, queryOpti
 
   // Get select fields from queryFnOptions or use default
   const selectFields = options?.queryFnOptions?.select || [
-    'scores.computed',
+    'scores.composite',
     'taskId',
     'reliable',
     'engagementFlags',
@@ -39,7 +39,7 @@ const useUserRunPageQuery = (userId, administrationId, orgType, orgId, queryOpti
         orgId: orgId,
         userId: userId,
         select: selectFields,
-        scoreKey: 'scores.computed',
+        scoreKey: 'scores.composite',
         paginate: false,
       });
 

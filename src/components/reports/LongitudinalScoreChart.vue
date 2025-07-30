@@ -1,6 +1,9 @@
 <template>
   <div ref="chartContainer" class="longitudinal-wrapper">
-    <div v-if="hasValidData && longitudinalData.length > 0">
+    <div v-if="isLoading" class="loading-message">
+      <p>Loading chart data...</p>
+    </div>
+    <div v-else-if="hasValidData && longitudinalData.length > 0">
       <div :id="chartId" class="chart-area"></div>
     </div>
     <div v-else class="no-data-message">
@@ -10,9 +13,11 @@
 </template>
 
 <script setup>
-import { onMounted, onBeforeUnmount, watch, computed, nextTick } from 'vue';
+import { onMounted, onBeforeUnmount, watch, computed, nextTick, ref } from 'vue';
 import embed from 'vega-embed';
 import { combineScoresForLongitudinal } from '@/helpers/reports';
+
+const isLoading = ref(false);
 
 const props = defineProps({
   taskId: {
@@ -36,12 +41,19 @@ const props = defineProps({
 // Remove score mode selection since we're only showing raw scores
 
 const hasValidData = computed(() => {
-  return props.taskData && Array.isArray(props.taskData) && props.taskData.length > 0;
+  return props.taskData && Array.isArray(props.taskData) && props.taskData.length > 0 && props.grade !== undefined;
 });
 
 const longitudinalData = computed(() => {
-  if (!hasValidData.value) return [];
+  if (!hasValidData.value) {
+    console.log('No valid data for chart');
+    return [];
+  }
+  console.log('Task data for longitudinal:', props.taskData);
+  console.log('Grade:', props.grade);
   const data = combineScoresForLongitudinal(props.taskData, props.grade);
+  console.log('Combined scores:', data);
+  console.log('Data for taskId', props.taskId, ':', data[props.taskId]);
   return data[props.taskId] || [];
 });
 
@@ -133,32 +145,32 @@ const chartId = computed(() => `roar-longitudinal-chart-${props.taskId}-${Date.n
 let chartView = null;
 
 const draw = async () => {
+  console.log('Drawing chart with data:', longitudinalData.value);
   try {
+    isLoading.value = true;
+
     // Wait for the next tick to ensure DOM is ready
     await nextTick();
 
-    // Clean up previous chart if it exists
+    // Clear existing chart if it exists
     if (chartView) {
       try {
         await chartView.finalize();
-      } catch (e) {
-        console.warn('Error cleaning up previous chart:', e);
+      } catch (error) {
+        console.warn('Error finalizing chart:', error);
       }
     }
 
-    // Don't try to render if we have no data
-    if (!hasValidData.value || longitudinalData.value.length === 0) {
-      console.warn('No valid data to display in chart');
-      return;
-    }
-
     // Create new chart
-    chartView = await embed(`#${chartId.value}`, getSpec(), {
+    const view = await embed(`#${chartId.value}`, getSpec(), {
       actions: false,
       renderer: 'svg',
     });
+    chartView = view;
   } catch (error) {
-    console.error('Error drawing longitudinal chart:', error);
+    console.error('Error drawing chart:', error);
+  } finally {
+    isLoading.value = false;
   }
 };
 
