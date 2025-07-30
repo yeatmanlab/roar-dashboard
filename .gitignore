@@ -21,10 +21,6 @@ dist
 *.sln
 *.sw?
 
-# Firebase
-.firebaserc
-.firebase/
-
 # Env
 .env*
 !.env.example
