@@ -350,7 +350,7 @@ const parseCreateOrgData = (data: CreateOrgType) => {
       return parsed.data;
 
     default:
-      throw new Error(`Unknown org type: ${type}`);
+      throw new Error(`Unknown org type "${type}"`);
   }
 };
 
@@ -409,7 +409,7 @@ const submit = async () => {
   } catch (error) {
     return toast.add({
       severity: 'error',
-      summary: 'Parse Error',
+      summary: 'Validation Error',
       detail: error,
       life: TOAST_DEFAULT_LIFE_DURATION,
     });
