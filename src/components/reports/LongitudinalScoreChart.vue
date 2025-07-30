@@ -3,11 +3,16 @@
     <div v-if="isLoading" class="loading-message">
       <p>Loading chart data...</p>
     </div>
-    <div v-else-if="hasValidData && longitudinalData.length > 0">
-      <div :id="chartId" class="chart-area"></div>
+    <div v-else-if="hasValidData">
+      <div v-if="longitudinalData.length > 0">
+        <div :id="chartId" class="chart-area"></div>
+      </div>
+      <div v-else class="no-data-message">
+        <p>No assessment data available to display.</p>
+      </div>
     </div>
     <div v-else class="no-data-message">
-      <p>No assessment data available to display.</p>
+      <p>Invalid data configuration.</p>
     </div>
   </div>
 </template>
@@ -16,8 +21,6 @@
 import { onMounted, onBeforeUnmount, watch, computed, nextTick, ref } from 'vue';
 import embed from 'vega-embed';
 import { combineScoresForLongitudinal } from '@/helpers/reports';
-
-const isLoading = ref(false);
 
 const props = defineProps({
   taskId: {
@@ -41,20 +44,38 @@ const props = defineProps({
 // Remove score mode selection since we're only showing raw scores
 
 const hasValidData = computed(() => {
-  return props.taskData && Array.isArray(props.taskData) && props.taskData.length > 0 && props.grade !== undefined;
+  const isValid = props.taskData && Array.isArray(props.taskData) && props.grade !== undefined;
+  console.log('Data validation:', {
+    hasTaskData: !!props.taskData,
+    isArray: Array.isArray(props.taskData),
+    hasGrade: props.grade !== undefined,
+  });
+  return isValid;
 });
 
 const longitudinalData = computed(() => {
+  console.log('Computing longitudinal data...');
+  console.log('Props:', {
+    taskData: props.taskData,
+    grade: props.grade,
+    taskId: props.taskId,
+  });
+
   if (!hasValidData.value) {
     console.log('No valid data for chart');
     return [];
   }
-  console.log('Task data for longitudinal:', props.taskData);
+
+  console.log('Task data for longitudinal:', JSON.stringify(props.taskData, null, 2));
   console.log('Grade:', props.grade);
-  const data = combineScoresForLongitudinal(props.taskData, props.grade);
-  console.log('Combined scores:', data);
-  console.log('Data for taskId', props.taskId, ':', data[props.taskId]);
-  return data[props.taskId] || [];
+
+  const data = combineScoresForLongitudinal(props.taskData || [], props.grade);
+  console.log('Combined scores:', JSON.stringify(data, null, 2));
+
+  const taskData = data[props.taskId] || [];
+  console.log('Final data for chart:', JSON.stringify(taskData, null, 2));
+
+  return taskData;
 });
 
 const getScoreRange = computed(() => {
@@ -70,87 +91,148 @@ const getScoreRange = computed(() => {
   }
 });
 
-const getSpec = () => ({
-  $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
-  width: 'container',
-  height: 300,
-  data: {
-    values: longitudinalData.value,
-  },
-  layer: [
-    // Line layer
-    {
-      mark: {
-        type: 'line',
-        color: '#E0E0E0',
-        strokeWidth: 1,
-      },
-      encoding: {
-        x: {
-          field: 'date',
-          type: 'temporal',
-          title: 'Assessment Date',
-          axis: {
-            format: '%b %d, %Y',
-            labelAngle: -45,
-            grid: true,
-          },
-        },
-        y: {
-          field: 'rawScore',
-          type: 'quantitative',
-          title: 'Raw Score',
-          scale: {
-            domain: [getScoreRange.value.min, getScoreRange.value.max],
-          },
-          axis: {
-            grid: true,
-          },
-        },
-      },
-    },
-    // Points layer
-    {
-      mark: {
-        type: 'circle',
-        size: 100,
-        filled: true,
-        tooltip: true,
-      },
-      encoding: {
-        x: {
-          field: 'date',
-          type: 'temporal',
-        },
-        y: {
-          field: 'rawScore',
-          type: 'quantitative',
-        },
-        color: {
-          field: 'supportColor',
-          type: 'nominal',
-          scale: null,
-        },
-        tooltip: [
-          { field: 'date', type: 'temporal', title: 'Date', format: '%b %d, %Y' },
-          { field: 'rawScore', type: 'quantitative', title: 'Raw Score' },
-          { field: 'supportLevel', type: 'nominal', title: 'Support Level' },
-        ],
-      },
-    },
-  ],
-});
+const getSpec = () => {
+  console.log('Generating chart spec with:', {
+    data: longitudinalData.value,
+    range: getScoreRange.value,
+  });
 
-const chartId = computed(() => `roar-longitudinal-chart-${props.taskId}-${Date.now()}`);
+  return {
+    $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+    width: 'container',
+    height: 300,
+    autosize: {
+      type: 'fit',
+      contains: 'padding',
+    },
+    data: {
+      values: longitudinalData.value,
+    },
+    config: {
+      axis: {
+        labelFont: 'Inter',
+        titleFont: 'Inter',
+      },
+    },
+    layer: [
+      // Line layer
+      {
+        mark: {
+          type: 'line',
+          color: '#E0E0E0',
+          strokeWidth: 1,
+        },
+        encoding: {
+          x: {
+            field: 'date',
+            type: 'temporal',
+            title: 'Assessment Date',
+            axis: {
+              format: '%b %d, %Y',
+              labelAngle: -45,
+              grid: true,
+            },
+          },
+          y: {
+            field: 'rawScore',
+            type: 'quantitative',
+            title: 'Raw Score',
+            scale: {
+              domain: [
+                0,
+                Math.max(getScoreRange.value.max, Math.max(...longitudinalData.value.map((d) => d.rawScore))),
+              ],
+              nice: true,
+            },
+            axis: {
+              grid: true,
+            },
+          },
+        },
+      },
+      // Points layer
+      {
+        mark: {
+          type: 'circle',
+          size: 100,
+          filled: true,
+          tooltip: true,
+        },
+        encoding: {
+          x: {
+            field: 'date',
+            type: 'temporal',
+          },
+          y: {
+            field: 'rawScore',
+            type: 'quantitative',
+          },
+          color: {
+            field: 'supportColor',
+            type: 'nominal',
+            scale: null,
+          },
+          tooltip: [
+            { field: 'date', type: 'temporal', title: 'Date', format: '%b %d, %Y' },
+            { field: 'rawScore', type: 'quantitative', title: 'Raw Score' },
+            { field: 'supportLevel', type: 'nominal', title: 'Support Level' },
+          ],
+        },
+      },
+    ],
+  };
+};
+
+// Component state
+const isLoading = ref(false);
+const chartContainer = ref(null);
 let chartView = null;
+
+// Computed properties
+const chartId = computed(() => `roar-longitudinal-chart-${props.taskId.replace(/[^a-zA-Z0-9-]/g, '-')}`);
+
+// Methods
+const ensureChartContainer = () => {
+  if (!chartContainer.value) {
+    console.error('Chart container ref not initialized');
+    return null;
+  }
+
+  let container = document.getElementById(chartId.value);
+  if (!container) {
+    console.log('Creating chart container with ID:', chartId.value);
+    container = document.createElement('div');
+    container.id = chartId.value;
+    container.className = 'chart-area';
+    chartContainer.value.appendChild(container);
+  }
+  return container;
+};
 
 const draw = async () => {
   console.log('Drawing chart with data:', longitudinalData.value);
   try {
-    isLoading.value = true;
+    if (!longitudinalData.value || longitudinalData.value.length === 0) {
+      console.log('No data to draw');
+      return;
+    }
 
-    // Wait for the next tick to ensure DOM is ready
+    isLoading.value = true;
     await nextTick();
+
+    // Ensure container exists
+    const container = ensureChartContainer();
+    if (!container) {
+      console.error(`Failed to create chart container #${chartId.value}`);
+      return;
+    }
+
+    // Clear container
+    container.innerHTML = '';
+
+    // Generate spec
+    const spec = getSpec();
+    console.log('Chart spec:', JSON.stringify(spec, null, 2));
 
     // Clear existing chart if it exists
     if (chartView) {
@@ -161,10 +243,14 @@ const draw = async () => {
       }
     }
 
+    // Clear container
+    container.innerHTML = '';
+
     // Create new chart
-    const view = await embed(`#${chartId.value}`, getSpec(), {
+    const view = await embed(`#${chartId.value}`, spec, {
       actions: false,
       renderer: 'svg',
+      downloadFileName: `roar-longitudinal-${props.taskId}`,
     });
     chartView = view;
   } catch (error) {

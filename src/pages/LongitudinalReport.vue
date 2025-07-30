@@ -191,7 +191,7 @@ const { data: taskData, isLoading: isLoadingTaskData } = useUserRunPageQuery(
   {
     enabled: initialized,
     queryFnOptions: {
-      select: ['scores.computed', 'taskId', 'assignmentId', 'taskName'],
+      select: ['scores.computed.composite', 'taskId', 'assignmentId', 'taskName', 'timeStarted', 'grade'],
     },
   },
 );
@@ -217,6 +217,39 @@ const minGradeByRuns = computed(() => {
   return Math.min(...taskData.value.map((task) => task.grade || 0));
 });
 
+const getTaskData = (taskId) => {
+  if (!taskData.value) {
+    console.log('No taskData.value');
+    return [];
+  }
+  console.log('Raw taskData for', taskId, ':', JSON.stringify(taskData.value, null, 2));
+  const filteredData = taskData.value
+    .filter((task) => {
+      const hasTask = task.taskId === taskId;
+      const scores = task.scores?.computed?.composite || task.scores?.composite;
+      console.log('Task:', task.taskId, {
+        hasTask,
+        scores: scores ? Object.keys(scores) : null,
+        timeStarted: task.timeStarted,
+      });
+      return hasTask && scores;
+    })
+    .sort((a, b) => new Date(a.timeStarted) - new Date(b.timeStarted));
+  console.log('Filtered taskData for', taskId, ':', JSON.stringify(filteredData, null, 2));
+  return filteredData;
+};
+
+const getLatestTaskData = (taskId) => {
+  const tasks = getTaskData(taskId);
+  if (!tasks.length) return [];
+  const latest = tasks.reduce((latest, task) => {
+    if (!latest.timeStarted) return task;
+    if (!task.timeStarted) return latest;
+    return new Date(task.timeStarted) > new Date(latest.timeStarted) ? task : latest;
+  });
+  return [latest];
+};
+
 const uniqueTaskIds = computed(() => {
   if (!taskData.value) return [];
   return [...new Set(taskData.value.map((task) => task.taskId))].sort((a, b) => {
@@ -225,29 +258,6 @@ const uniqueTaskIds = computed(() => {
     return orderA - orderB;
   });
 });
-
-const getTaskData = (taskId) => {
-  if (!taskData.value) {
-    console.log('No taskData.value');
-    return [];
-  }
-  console.log('Raw taskData for', taskId, ':', taskData.value);
-  const filteredData = taskData.value
-    .filter((task) => {
-      const hasTask = task.taskId === taskId;
-      const hasScores = task.scores?.composite;
-      console.log('Task:', task.taskId, 'Has scores:', hasScores);
-      return hasTask && hasScores;
-    })
-    .sort((a, b) => new Date(a.dateCompleted) - new Date(b.dateCompleted));
-  console.log('Filtered taskData for', taskId, ':', filteredData);
-  return filteredData;
-};
-
-const getLatestTaskData = (taskId) => {
-  const tasks = getTaskData(taskId);
-  return tasks.length ? [tasks[tasks.length - 1]] : [];
-};
 
 const setExpand = () => {
   expanded.value = !expanded.value;

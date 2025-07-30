@@ -705,6 +705,11 @@ export function getScoreKeys(taskId, grade) {
   if (taskId === 'letter' || taskId === 'letter-es' || taskId === 'letter-en-ca') {
     rawScoreKey = 'totalPercentCorrect';
   }
+  if (taskId === 'phoneme') {
+    rawScoreKey = 'roarScore';
+    percentileScoreKey = 'percentile';
+    standardScoreKey = 'standardScore';
+  }
   return {
     percentileScoreKey,
     percentileScoreDisplayKey,
@@ -794,8 +799,8 @@ export const combineScoresForLongitudinal = (taskData, grade) => {
 
   // Sort task data by date
   const sortedTaskData = [...taskData].sort((a, b) => {
-    const dateA = a?.dateCompleted ? new Date(a.dateCompleted) : new Date(0);
-    const dateB = b?.dateCompleted ? new Date(b.dateCompleted) : new Date(0);
+    const dateA = a?.timeStarted ? new Date(a.timeStarted) : new Date(0);
+    const dateB = b?.timeStarted ? new Date(b.timeStarted) : new Date(0);
     return dateA - dateB;
   });
 
@@ -803,13 +808,16 @@ export const combineScoresForLongitudinal = (taskData, grade) => {
     // Skip invalid tasks
     if (!task || typeof task !== 'object') continue;
 
-    const { taskId, scores, dateCompleted } = task;
-    console.log('Processing task:', { taskId, scores, dateCompleted });
-    if (!taskId || !scores?.composite || !dateCompleted) {
+    const { taskId, scores, timeStarted } = task;
+    console.log('Processing task:', { taskId, scores, timeStarted });
+
+    // Check if scores exist in either scores.composite or scores.computed.composite
+    const compositeScores = scores?.composite || scores?.computed?.composite;
+    if (!taskId || !compositeScores || !timeStarted) {
       console.log('Skipping task due to missing data:', {
         taskId,
-        hasScores: !!scores?.composite,
-        hasDate: !!dateCompleted,
+        hasScores: !!compositeScores,
+        hasDate: !!timeStarted,
       });
       continue;
     }
@@ -823,10 +831,11 @@ export const combineScoresForLongitudinal = (taskData, grade) => {
       }
 
       // Get scores
-      console.log('Score keys:', { rawScoreKey, percentileScoreKey, standardScoreKey });
-      const rawScore = scores.composite[rawScoreKey];
-      const percentileScore = scores.composite[percentileScoreKey];
-      const standardScore = scores.composite[standardScoreKey];
+      console.log('Score keys for', taskId, ':', { rawScoreKey, percentileScoreKey, standardScoreKey });
+      console.log('Available score keys:', Object.keys(compositeScores));
+      const rawScore = compositeScores[rawScoreKey];
+      const percentileScore = compositeScores[percentileScoreKey];
+      const standardScore = compositeScores[standardScoreKey];
       console.log('Extracted scores:', { rawScore, percentileScore, standardScore });
 
       // Skip if required scores are missing
@@ -838,7 +847,7 @@ export const combineScoresForLongitudinal = (taskData, grade) => {
 
       // Format score entry
       const scoreEntry = {
-        date: new Date(dateCompleted),
+        date: new Date(timeStarted),
         rawScore,
         percentileScore,
         standardScore,
