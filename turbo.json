@@ -1,7 +1,13 @@
 {
   "$schema": "https://turborepo.com/schema.json",
   "ui": "tui",
+  "globalEnv": ["NODE_ENV", "MODE"],
   "tasks": {
+    "dev": {
+      "dependsOn": ["^build"],
+      "cache": false,
+      "persistent": true
+    },
     "build": {
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
       "dependsOn": ["^build"],
@@ -10,16 +16,14 @@
       ]
     },
     "test": {
-      "outputs": ["coverage/**"],
-      "dependsOn": []
+      "outputs": ["coverage/**"]
     },
-    "lint": {
-      "dependsOn": ["^build", "^lint"]
+    "test:watch": {
+      "outputs": ["coverage/**"]
     },
-    "dev": {
-      "dependsOn": ["^build"],
-      "cache": false,
-      "persistent": true
-    }
+    "format": {},
+    "format:check": {},
+    "lint": {},
+    "lint:watch": {}
   }
 }

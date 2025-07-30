@@ -7,7 +7,7 @@ export const config = [
   ...baseConfig,
   ...vue.configs['flat/recommended'],
 
-  // General JS
+  // General frontend JS
   {
     files: ['**/*.js'],
     languageOptions: {
