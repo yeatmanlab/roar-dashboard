@@ -24,6 +24,6 @@
     "format": {},
     "format:check": {},
     "lint": {},
-    "lint:watch": {}
+    "lint:fix": {}
   }
 }

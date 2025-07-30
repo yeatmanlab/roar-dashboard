@@ -1,0 +1,10 @@
+{
+  "**/.env*": ["npx dotenvx ext precommit"],
+  "**/src/**/*.{ts,js,vue}": [
+    "npx turbo lint:fix --filter=...[HEAD] --cache-dir=.turbo", 
+    "npx turbo format --filter=...[HEAD] --cache-dir=.turbo"
+  ],
+  "**/src/**/*.json": [
+    "npx turbo format --filter=...[HEAD] --cache-dir=.turbo"
+  ]
+}

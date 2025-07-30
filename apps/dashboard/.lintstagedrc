@@ -1,5 +1,0 @@
-{
-  "env-configs/.env*": ["npx dotenvx ext precommit"],
-  "src/**/*.{js,vue}": ["npm run lint:fix", "npm run format"],
-  "src/**/*.json": ["npm run format"]
-}

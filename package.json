@@ -8,9 +8,10 @@
     "format": "turbo run format",
     "format:check": "turbo run format:check",
     "lint": "turbo run lint",
-    "lint:watch": "turbo run lint:watch",
+    "lint:fix": "turbo run lint:fix",
     "test": "turbo run test",
-    "test:watch": "turbo run test:watch"
+    "test:watch": "turbo run test:watch",
+    "prepare": "husky"
   },
   "devDependencies": {
     "prettier": "^3.6.0",
@@ -23,5 +24,9 @@
   "workspaces": [
     "apps/*",
     "packages/*"
-  ]
+  ],
+  "dependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^16.1.2"
+  }
 }
