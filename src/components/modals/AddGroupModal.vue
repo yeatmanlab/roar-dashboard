@@ -407,6 +407,7 @@ const submit = async () => {
   try {
     parsedData = parseCreateOrgData(data);
   } catch (error) {
+    isSubmitBtnDisabled.value = false;
     return toast.add({
       severity: 'error',
       summary: 'Validation Error',
