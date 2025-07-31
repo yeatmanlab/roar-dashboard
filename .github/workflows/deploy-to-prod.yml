@@ -66,23 +66,31 @@ jobs:
       - name: Create and switch to release branch
         run: |
           git checkout -b ${{ steps.version.outputs.branch_name }}
-          # Update package.json with production version
-          npm version ${{ steps.version.outputs.prod_version }} --no-git-tag-version
+          # Update package.json with production version manually to avoid automatic tag creation
+          node -e "
+            const fs = require('fs');
+            const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+            packageJson.version = '${{ steps.version.outputs.prod_version }}';
+            fs.writeFileSync('package.json', JSON.stringify(packageJson, null, 2) + '\n');
+          "
           git add package.json
           git commit -m "chore(release): prepare version ${{ steps.version.outputs.prod_version }}"
           git push --set-upstream origin ${{ steps.version.outputs.branch_name }}
 
       - name: Create and push tag
+        id: create_tag
         run: |
           # Check if tag already exists
           if git rev-parse "v${{ steps.version.outputs.prod_version }}" >/dev/null 2>&1; then
             echo "Tag v${{ steps.version.outputs.prod_version }} already exists, skipping tag creation"
+            echo "tag_name=v${{ steps.version.outputs.prod_version }}" >> $GITHUB_OUTPUT
           else
             # Create annotated tag with timestamp to ensure uniqueness
             TIMESTAMP=$(date +%Y%m%d%H%M%S)
             TAG_NAME="v${{ steps.version.outputs.prod_version }}-$TIMESTAMP"
             git tag -a "$TAG_NAME" -m "Release v${{ steps.version.outputs.prod_version }}"
             git push origin "$TAG_NAME"
+            echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
           fi
 
       - name: Build for production
@@ -154,7 +162,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           token: ${{ steps.generate_token.outputs.token }}
-          tag_name: v${{ steps.version.outputs.prod_version }}
+          tag_name: ${{ steps.create_tag.outputs.tag_name }}
           name: Release v${{ steps.version.outputs.prod_version }}
           body: ${{ steps.release_notes.outputs.notes }}
           target_commitish: ${{ steps.version.outputs.branch_name }}
