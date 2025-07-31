@@ -1,7 +1,7 @@
 import * as Sentry from '@sentry/vue';
 import { captureConsoleIntegration, contextLinesIntegration, extraErrorDataIntegration } from '@sentry/integrations';
 import { i18n, languageOptions } from './translations/i18n';
-
+import router from './router';
 // Workaround for using i18n-vue in plain JavaScript; this is a temporary solution until a more robust bug report component is implemented
 const language = i18n.global.locale.value;
 const regex = /https:\/\/roar-staging(--pr\d+-\w+)?\.web\.app/;
@@ -17,7 +17,7 @@ export function initSentry(app) {
           maskAllText: true,
           maskAllInputs: true,
         }),
-        Sentry.browserTracingIntegration(),
+        Sentry.browserTracingIntegration({ router }),
         captureConsoleIntegration({
           levels: ['error'],
         }),

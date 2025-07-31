@@ -6,6 +6,10 @@
 
 <script>
 import 'video.js/dist/video-js.css';
+import useSentryLogging from '@/composables/useSentryLogging';
+import { MEDIA_LOG_MESSAGES } from '@/constants/logMessages';
+
+const { logMediaEvent } = useSentryLogging();
 
 export default {
   name: 'VideoPlayer',
@@ -19,13 +23,13 @@ export default {
     onVideoStart: {
       type: Function,
       default(taskId) {
-        console.log('videoStarted', taskId);
+        logMediaEvent(MEDIA_LOG_MESSAGES.VIDEO_STARTED, { data: { taskId } });
       },
     },
     onVideoEnd: {
       type: Function,
       default(taskId) {
-        console.log('videoEnded', taskId);
+        logMediaEvent(MEDIA_LOG_MESSAGES.VIDEO_ENDED, { data: { taskId } });
       },
     },
     taskId: {

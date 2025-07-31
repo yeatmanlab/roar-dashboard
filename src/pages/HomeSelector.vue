@@ -32,8 +32,10 @@ import useUserType from '@/composables/useUserType';
 import useUserDataQuery from '@/composables/queries/useUserDataQuery';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useUpdateConsentMutation from '@/composables/mutations/useUpdateConsentMutation';
+import useSentryLogging from '@/composables/useSentryLogging';
 import { CONSENT_TYPES } from '@/constants/consentTypes';
 import { APP_ROUTES } from '@/constants/routes';
+import { AUTH_LOG_MESSAGES } from '@/constants/logMessages';
 
 const HomeParticipant = defineAsyncComponent(() => import('@/pages/HomeParticipant.vue'));
 const HomeAdministrator = defineAsyncComponent(() => import('@/pages/HomeAdministrator.vue'));
@@ -47,9 +49,9 @@ const router = useRouter();
 const i18n = useI18n();
 
 const { mutateAsync: updateConsentStatus } = useUpdateConsentMutation();
+const { logAuthEvent } = useSentryLogging();
 
 if (ssoProvider.value) {
-  console.log('Detected SSO authentication, redirecting...');
   router.replace({ path: APP_ROUTES.SSO });
 }
 
@@ -144,6 +146,13 @@ watch(
   },
   { immediate: true },
 );
+
+watch(userClaims, (updatedUserClaims) => {
+  if (updatedUserClaims?.value) {
+    const { adminUid, assessmentUid } = updatedUserClaims.value.claims;
+    logAuthEvent(AUTH_LOG_MESSAGES.USER_CLAIMS_UPDATED, { data: { assessmentUid, adminUid } });
+  }
+});
 
 onMounted(async () => {
   if (requireRefresh.value) {
