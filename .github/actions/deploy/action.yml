@@ -62,13 +62,13 @@ runs:
         cp -r roar-dashboard/dist app/dist
         case "${{ inputs.firebase-target }}" in
           "production")
-            cp roar-dashboard/firebase/admin/firebase.production.json app/firebase.json
+            cp roar-dashboard/apps/dashboard/firebase/admin/firebase.production.json app/firebase.json
             ;;
           "staging")
-            cp roar-dashboard/firebase/admin/firebase.staging.json app/firebase.json
+            cp roar-dashboard/apps/dashboard/firebase/admin/firebase.staging.json app/firebase.json
             ;;
           "dev")
-            cp roar-dashboard/firebase/admin/firebase.dev.json app/firebase.json
+            cp roar-dashboard/apps/dashboard/firebase/admin/firebase.dev.json app/firebase.json
             ;;
         esac
         rm -rf roar-dashboard

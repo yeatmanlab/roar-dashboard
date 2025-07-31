@@ -65,8 +65,8 @@ runs:
       if: ${{ inputs.override-env-configs != 'false' }}
       shell: bash
       run: |
-        rm -rf roar-dashboard/env-configs
-        cp -r ${{ github.event.repository.name }}/env-configs roar-dashboard/env-configs
+        rm -rf roar-dashboard/apps/dashboard/env-configs
+        cp -r ${{ github.event.repository.name }}/apps/dashboard/env-configs roar-dashboard/apps/dashboard/env-configs
 
     # Build the application
     - name: Build application

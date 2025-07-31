@@ -124,6 +124,7 @@ jobs:
           parallel: true
           browser: ${{ matrix.browser }}
           ci-build-id: ${{ github.run_id }}-e2e-${{ matrix.browser }}
+          working-directory: apps/dashboard
           spec: |
             cypress/e2e/parent/default-tests/**/*.cy.js
             cypress/e2e/participant/default-tests/**/*.cy.js
@@ -172,6 +173,7 @@ jobs:
           parallel: true
           browser: ${{ matrix.browser }}
           ci-build-id: ${{ github.run_id }}-component-${{ matrix.browser }}
+          working-directory: apps/dashboard
           spec: |
             src/**/*.cy.js
 
