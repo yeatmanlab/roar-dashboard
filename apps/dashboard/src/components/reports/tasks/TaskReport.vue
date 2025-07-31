@@ -1,5 +1,5 @@
 <template>
-  <div :id="'tab-view-description-' + taskId" class="flex flex-col items-center justify-center mx-2">
+  <div :id="'tab-view-description-' + taskId" class="flex flex-col justify-center items-center mx-2">
     <PvAccordion
       v-if="taskInfoById[taskId]"
       class="mb-5 w-full"
@@ -12,15 +12,15 @@
           <div style="text-transform: uppercase" class="text-2xl font-bold">{{ taskInfoById[taskId]?.subheader }}</div>
           <!-- The following HTML is from a hard-coded source (below) -->
           <!-- eslint-disable-next-line vue/no-v-html -->
-          <p class="mt-1 text-md font-light" v-html="taskInfoById[taskId]?.desc"></p>
+          <p class="mt-1 font-light text-md" v-html="taskInfoById[taskId]?.desc"></p>
         </div>
       </PvAccordionTab>
     </PvAccordion>
   </div>
-  <!-- <div class="grid grid-cols-2 w-full space-around items-center p-3"> -->
+  <!-- <div class="grid grid-cols-2 items-center p-3 w-full space-around"> -->
   <div v-if="tasksToDisplayGraphs.includes(taskId)" :id="'tab-view-chart-' + taskId" class="chart-toggle-wrapper">
     <div v-if="orgType === 'district'" class="mb-3" data-html2canvas-ignore="true">
-      <div class="flex uppercase text-xs font-light">view rows by</div>
+      <div class="flex text-xs font-light uppercase">view rows by</div>
       <PvSelectButton
         v-model="facetMode"
         class="flex flex-row my-2 select-button"
@@ -30,7 +30,7 @@
       />
     </div>
     <div class="chart-wrapper align-items-start">
-      <div class="h-full flex flex-column align-items-center">
+      <div class="flex h-full flex-column align-items-center">
         <DistributionChartSupport
           :initialized="initialized"
           :administration-id="administrationId"
@@ -41,7 +41,7 @@
           :facet-mode="facetMode"
         />
       </div>
-      <div class="h-full flex">
+      <div class="flex h-full">
         <DistributionChartFacet
           :initialized="initialized"
           :administration-id="administrationId"
@@ -55,7 +55,7 @@
       </div>
     </div>
   </div>
-  <div class="my-2 mx-4">
+  <div class="mx-4 my-2">
     <SubscoreTable
       v-if="taskId === 'letter' && !isLoadingTasksDictionary"
       task-id="letter"
@@ -124,7 +124,6 @@ import SubscoreTable from '@/components/reports/SubscoreTable.vue';
 import DistributionChartFacet from '@/components/reports/DistributionChartFacet.vue';
 import DistributionChartSupport from '@/components/reports/DistributionChartSupport.vue';
 
-// eslint-disable-next-line no-unused-vars
 const props = defineProps({
   initialized: {
     type: Boolean,
