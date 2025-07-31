@@ -4,6 +4,6 @@
     "eslint --config apps/dashboard/eslint.config.mjs --fix"
   ],
   "apps/dashboard/*": [
-    "prettier --write --log-level=warn"
+    "prettier --config apps/dashboard/prettier.config.mjs --write --log-level=warn"
   ]
 }
