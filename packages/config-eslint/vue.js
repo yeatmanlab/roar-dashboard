@@ -9,7 +9,7 @@ export const config = [
 
   // General frontend JS
   {
-    files: ['**/*.js'],
+    files: ['**/src/**/*.js', '**/cypress/**/*.js'],
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',
@@ -22,7 +22,7 @@ export const config = [
 
   // Vue-specific config
   {
-    files: ['**/*.vue'],
+    files: ['**/src/**/*.vue'],
     plugins: { vue },
     languageOptions: {
       ecmaVersion: 'latest',
@@ -61,11 +61,44 @@ export const config = [
   // Cypress-specific config
   cypress.configs.recommended,
   {
-    files: ['**/*.cy.js', '**/cypress/**/*.js'],
+    files: ['**/cypress/**/*.cy.js', '**/cypress/**/*.js'],
     plugins: { cypress },
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',
+    },
+    rules: {
+      'cypress/no-unnecessary-waiting': 'warn',
+      'cypress/unsafe-to-chain-command': 'warn',
+    },
+  },
+
+
+  // Cypress config
+  {
+    files: ['cypress.config.cjs'],
+    languageOptions: {
+      ecmaVersion: 'latest',
+      sourceType: 'module',
+      globals: {
+        ...globals.node,
+        process: 'readonly',
+        __dirname: 'readonly',
+      }
+    }
+  },
+
+  // Vite and Vitest configs
+  {
+    files: ['vite.config.js', 'vitest.config.js', 'vitest.setup.js'],
+    languageOptions: {
+      ecmaVersion: 'latest',
+      sourceType: 'module',
+      globals: {
+        ...globals.node,
+        process: 'readonly',
+        __dirname: 'readonly',
+      }
     }
   }
 ];

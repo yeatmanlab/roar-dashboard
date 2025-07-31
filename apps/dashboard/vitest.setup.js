@@ -1,12 +1,7 @@
 import { vi } from 'vitest';
 import { config, DOMWrapper } from '@vue/test-utils';
 import PrimeVue from 'primevue/config';
-
-const locale = 'en';
-
-config.global.mocks = {
-  $t: (msg) => translations[locale][msg],
-};
+import translations from 'src/translations/en/en-componentTranslations.json' with { type: 'json' };
 
 vi.mock('vue-recaptcha', () => ({
   default: {},
@@ -45,7 +40,6 @@ config.global.plugins.push(PrimeVue);
 // Mock the $t function based on the logic in i18n.js
 config.global.mocks = {
   $t: (key) => {
-    const locale = 'en-US';
-    return languageOptions[locale]?.translations[key];
+    return translations[key];
   },
 };
