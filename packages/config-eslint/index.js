@@ -5,6 +5,16 @@ import vitest from '@vitest/eslint-plugin';
 import globals from 'globals';
 
 export const config = [
+  // Global ignores
+  {
+    ignores: [
+      '**/node_modules/**',
+      '**/dist/**',
+      '**/coverage/**',
+      '**/.turbo/**',
+    ],
+  },
+
   // Base recommended JS rules
   js.configs.recommended,
 
@@ -61,9 +71,4 @@ export const config = [
 
   // Prettier rules
   prettierPlugin,
-
-  // Ignored files
-  {
-    ignores: ['**/node_modules/**', '**/dist/**'],
-  },
 ];
