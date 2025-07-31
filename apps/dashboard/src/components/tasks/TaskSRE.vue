@@ -1,6 +1,6 @@
 <template>
   <div id="jspsych-target" class="game-target" translate="no" />
-  <div v-if="!gameStarted" class="col-full text-center">
+  <div v-if="!gameStarted" class="text-center col-full">
     <h1>{{ $t('tasks.preparing') }}</h1>
     <AppSpinner />
   </div>
@@ -13,7 +13,7 @@ import _get from 'lodash/get';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
 import useUserStudentDataQuery from '@/composables/queries/useUserStudentDataQuery';
-import packageLockJson from '../../../package-lock.json';
+import packageLockJson from '../../../../../package-lock.json';
 
 const props = defineProps({
   taskId: { type: String, required: true, default: 'sre' },
