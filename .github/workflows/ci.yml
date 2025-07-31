@@ -107,6 +107,9 @@ jobs:
           submodules: 'true'
           token: ${{ secrets.CI_GITHUB_PAT }}
 
+      - name: Setup environment
+        uses: ./.github/actions/setup-node-environment
+
       - name: Execute Cypress tests
         uses: cypress-io/github-action@v6
         env:
@@ -115,6 +118,7 @@ jobs:
           COMMIT_INFO_MESSAGE: '${{ github.event.pull_request.title }} (#${{ github.event.pull_request.number }})'
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
+          install: false
           build: npm run build
           start: npm run preview -- --host
           tag: ${{ github.event_name }},e2e,${{ matrix.browser }}
@@ -155,6 +159,9 @@ jobs:
           submodules: 'true'
           token: ${{ secrets.CI_GITHUB_PAT }}
 
+      - name: Setup environment
+        uses: ./.github/actions/setup-node-environment
+
       - name: Execute Cypress tests
         uses: cypress-io/github-action@v6
         env:
@@ -164,6 +171,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           component: true
+          install: false
           build: npm run build
           start: npm run preview -- --host
           tag: ${{ github.event_name }},component,${{ matrix.browser }}
