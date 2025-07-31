@@ -11,8 +11,6 @@ const orgs = [
 
 describe('Partner Admin: Orgs', () => {
   orgs.forEach((org) => {
-    const orgType = org.tabName.slice(0, -1).toLowerCase();
-
     describe(`${org.tabName} – ${org.orgName}`, () => {
       it(`Lists the org in the data table`, () => {
         // Login as the partner admin.
@@ -21,7 +19,7 @@ describe('Partner Admin: Orgs', () => {
         // Wait to ensure that the login is successful.
         // @NOTE: This is currently required as the app is not immediately ready to navigate to the orgs list page.
         // @TODO: Remove this arbitrary wait once the app initialisation has been refactored and is stable.
-        cy.wait(2000);
+        cy.wait(2000); // eslint-disable-line cypress/no-unnecessary-waiting
 
         cy.navigateTo(APP_ROUTES.ORGS_LIST);
 

@@ -1,5 +1,3 @@
-const timeout = Cypress.env('timeout');
-
 const LAUNCH_ADMIN_USERNAME = Cypress.env('LAUNCH_ADMIN_USERNAME');
 const LAUNCH_ADMIN_PASSWORD = Cypress.env('LAUNCH_ADMIN_PASSWORD');
 
