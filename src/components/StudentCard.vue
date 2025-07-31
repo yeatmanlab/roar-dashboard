@@ -1,7 +1,10 @@
 <template>
-  <article class="flex overflow-hidden rounded border-gray-200 flex-column border-1 mx-auto w-full max-w-3xl">
+  <article
+    class="flex overflow-hidden mx-auto w-full max-w-3xl rounded border-gray-200 flex-column border-1"
+    data-cy="student-card"
+  >
     <div class="flex gap-2 p-3 bg-gray-100 flex-column">
-      <h2 class="m-0 text-xl font-bold">
+      <h2 class="m-0 text-xl font-bold" data-cy="student-card__name">
         {{ userName }}
         <div class="text-sm font-light">Student</div>
       </h2>
@@ -15,11 +18,11 @@
         </div>
       </div>
     </div>
-    <div class="p-2 mt-3 flex justify-content-between align-items-center">
-      <h3 class="m-0 text-md font-semibold text-gray-500">Assignments</h3>
+    <div class="flex p-2 mt-3 justify-content-between align-items-center">
+      <h3 class="m-0 font-semibold text-gray-500 text-md">Assignments</h3>
       <PvButton
         outlined
-        class="text-black border-1 border-round h-2rem p-2"
+        class="p-2 text-black border-1 border-round h-2rem"
         :label="!expanded ? 'Expand All' : 'Collapse All'"
         :icon="!expanded ? 'pi pi-plus ml-2' : 'pi pi-minus ml-2'"
         icon-pos="right"
@@ -28,7 +31,7 @@
       />
     </div>
 
-    <div class="flex flex-column gap-2 mb-3 p-2">
+    <div class="flex gap-2 p-2 mb-3 flex-column">
       <div class="flex justify-content-between align-items-center">
         <div class="text-sm text-gray-400">Sort by</div>
         <PvSelect v-model="sortKey" :options="sortOptions" option-label="label" class="w-auto" @change="onSortChange" />
@@ -44,11 +47,11 @@
       :sort-field="sortField"
     >
       <template #list="slotProps">
-        <div class="w-full flex flex-column gap-3 px-2">
+        <div class="flex gap-3 px-2 w-full flex-column">
           <div
             v-for="assignment in slotProps.items"
             :key="assignment.id"
-            class="border-1 border-gray-200 rounded-lg overflow-hidden"
+            class="overflow-hidden rounded-lg border-gray-200 border-1"
           >
             <PvAccordion
               :multiple="true"
@@ -71,7 +74,7 @@
                     </div>
                   </div>
                 </template>
-                <div class="flex gap-3 flex-column p-3">
+                <div class="flex gap-3 p-3 flex-column">
                   <div class="flex gap-4 justify-content-between">
                     <PvButton
                       label="Play Games"

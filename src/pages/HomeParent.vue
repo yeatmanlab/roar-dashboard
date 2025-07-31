@@ -1,5 +1,5 @@
 <template>
-  <main class="container p-4">
+  <main class="container p-4" data-cy="parent-homepage">
     <div class="flex mb-4 align-items-center justify-content-between">
       <div>
         <h1 class="text-2xl font-bold text-gray-600">Parent Dashboard</h1>
