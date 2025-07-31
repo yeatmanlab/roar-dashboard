@@ -356,7 +356,8 @@ export async function saveFinalSurveyData({
       isEntireSurveyCompleted = true;
     } else {
       isEntireSurveyCompleted =
-        surveyStore.isGeneralSurveyComplete && surveyStore.specificSurveyRelationIndex === surveyStore.specificSurveyRelationData.length - 1;
+        surveyStore.isGeneralSurveyComplete &&
+        surveyStore.specificSurveyRelationIndex === surveyStore.specificSurveyRelationData.length - 1;
     }
   }
 

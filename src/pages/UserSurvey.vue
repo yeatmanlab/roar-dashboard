@@ -24,7 +24,6 @@ onMounted(() => {
   }
 });
 
-
 onBeforeRouteLeave(() => {
   const surveyStore = useSurveyStore();
 
