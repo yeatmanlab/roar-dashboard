@@ -9,7 +9,7 @@ export const config = [
 
   // General frontend JS
   {
-    files: ['src/**/*.js', 'cypress/**/*.js'],
+    files: ['**/src/**/*.js', '**/cypress/**/*.js'],
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',
@@ -22,7 +22,7 @@ export const config = [
 
   // Vue-specific config
   {
-    files: ['src/**/*.vue'],
+    files: ['**/src/**/*.vue'],
     plugins: { vue },
     languageOptions: {
       ecmaVersion: 'latest',
@@ -61,7 +61,7 @@ export const config = [
   // Cypress-specific config
   cypress.configs.recommended,
   {
-    files: ['cypress/**/*.cy.js', 'cypress/**/*.js'],
+    files: ['**/cypress/**/*.cy.js', '**/cypress/**/*.js'],
     plugins: { cypress },
     languageOptions: {
       ecmaVersion: 'latest',
