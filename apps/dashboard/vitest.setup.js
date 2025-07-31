@@ -1,7 +1,7 @@
 import { vi } from 'vitest';
 import { config, DOMWrapper } from '@vue/test-utils';
 import PrimeVue from 'primevue/config';
-import translations from 'src/translations/en/en-componentTranslations.json' with { type: 'json' };
+import translations from '@/translations/en/en-componentTranslations.json';
 
 vi.mock('vue-recaptcha', () => ({
   default: {},
