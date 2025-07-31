@@ -1,38 +1,25 @@
 # Logs
-logs
 *.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
+
+# Cache
+.turbo
+.vite
+.cache
 
 # Dependencies
 node_modules
 
 # Build Outputs
 dist
-dist-ssr
-dev-dist
-*.local
 
 # Editor directories and files
-.editorconfig
 .idea
-/idea
-.vscode/*
-!.vscode/extensions.json
-.idea
-.DS_Store
+.vscode
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
-
-# Firebase
-.firebaserc
-.firebase/
 
 # Env
 .env*
@@ -42,9 +29,5 @@ dev-dist
 # Test coverage
 coverage
 
-# Sentry Config File
-.env.sentry-build-plugin
-
 # Other
-.vite/*
-cypress/downloads
+.DS_Store

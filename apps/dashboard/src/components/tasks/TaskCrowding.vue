@@ -1,11 +1,10 @@
 <template>
-  <div id="jspsych-target" class="game-target" translate="no" />
+  <div translate="no" />
   <div v-if="!gameStarted" class="col-full text-center">
     <h1>{{ $t('tasks.preparing') }}</h1>
     <AppSpinner />
   </div>
 </template>
-
 <script setup>
 import { onMounted, watch, ref, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
@@ -14,17 +13,18 @@ import _get from 'lodash/get';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
 import useUserStudentDataQuery from '@/composables/queries/useUserStudentDataQuery';
-import packageLockJson from '../../../package-lock.json';
+import packageLockJson from '../../../../../package-lock.json';
 
 const props = defineProps({
-  taskId: { type: String, default: 'egma-math' },
+  taskId: { type: String, default: 'crowding' },
+  language: { type: String, default: 'en' },
   launchId: { type: String, default: null },
 });
 
-let levanteTaskLauncher;
+let TaskLauncher;
 
 const taskId = props.taskId;
-const { version } = packageLockJson.packages['node_modules/@levante-framework/core-tasks'];
+const { version } = packageLockJson.packages['node_modules/@bdelab/roav-crowding'];
 const router = useRouter();
 const taskStarted = ref(false);
 const gameStarted = ref(false);
@@ -62,8 +62,7 @@ window.addEventListener(
 
 onMounted(async () => {
   try {
-    let module = await import('@levante-framework/core-tasks');
-    levanteTaskLauncher = module.TaskLauncher;
+    TaskLauncher = (await import('@bdelab/roav-crowding')).default;
   } catch (error) {
     console.error('An error occurred while importing the game module.', error);
   }
@@ -97,7 +96,7 @@ async function startTask(selectedAdmin) {
     if (checkGameStarted) clearInterval(checkGameStarted);
     checkGameStarted = setInterval(function () {
       // Poll for the preload trials progress bar to exist and then begin the game
-      let gameLoading = document.querySelector('.jspsych-content-wrapper');
+      let gameLoading = document.querySelector('.card-title');
       if (gameLoading) {
         gameStarted.value = true;
         clearInterval(checkGameStarted);
@@ -113,13 +112,14 @@ async function startTask(selectedAdmin) {
       grade: _get(userData.value, 'studentData.grade'),
       birthMonth: userDateObj.getMonth() + 1,
       birthYear: userDateObj.getFullYear(),
+      language: props.language,
     };
 
     const gameParams = { ...appKit._taskInfo.variantParams };
 
-    const levanteTask = new levanteTaskLauncher(appKit, gameParams, userParams, 'jspsych-target');
+    const roarApp = new TaskLauncher(appKit, gameParams, userParams, 'card-title');
 
-    await levanteTask.run().then(async () => {
+    await roarApp.run().then(async () => {
       // Handle any post-game actions.
       await authStore.completeAssessment(selectedAdmin.value.id, taskId, props.launchId);
 
@@ -135,9 +135,8 @@ async function startTask(selectedAdmin) {
   }
 }
 </script>
-
 <style>
-@import '@levante-framework/core-tasks/lib/resources/core-tasks.css';
+@import '@bdelab/roav-crowding/lib/resources/roav-crowding.css';
 
 .game-target {
   position: absolute;
@@ -146,6 +145,7 @@ async function startTask(selectedAdmin) {
   width: 100%;
   height: 100%;
 }
+
 .game-target:focus {
   outline: none;
 }

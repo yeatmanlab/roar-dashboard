@@ -6,25 +6,25 @@
   </div>
 </template>
 <script setup>
-import { onMounted, onBeforeUnmount, watch, ref } from 'vue';
+import { onMounted, watch, ref, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import _get from 'lodash/get';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
 import useUserStudentDataQuery from '@/composables/queries/useUserStudentDataQuery';
-import packageLockJson from '../../../package-lock.json';
+import packageLockJson from '../../../../../package-lock.json';
 
 const props = defineProps({
-  taskId: { type: String, required: true, default: 'swr' },
-  language: { type: String, required: true, default: 'en' },
-  launchId: { type: String, required: false, default: null },
+  taskId: { type: String, default: 'letter' },
+  language: { type: String, default: 'en' },
+  launchId: { type: String, default: null },
 });
 
 let TaskLauncher;
 
 const taskId = props.taskId;
-const { version } = packageLockJson.packages['node_modules/@bdelab/roar-swr'];
+const { version } = packageLockJson.packages['node_modules/@bdelab/roar-letter'];
 const router = useRouter();
 const taskStarted = ref(false);
 const gameStarted = ref(false);
@@ -62,7 +62,7 @@ window.addEventListener(
 
 onMounted(async () => {
   try {
-    TaskLauncher = (await import('@bdelab/roar-swr')).default;
+    TaskLauncher = (await import('@bdelab/roar-letter')).default;
   } catch (error) {
     console.error('An error occurred while importing the game module.', error);
   }
@@ -116,19 +116,18 @@ async function startTask(selectedAdmin) {
     };
 
     const gameParams = { ...appKit._taskInfo.variantParams };
+
     const roarApp = new TaskLauncher(appKit, gameParams, userParams, 'jspsych-target');
 
     await roarApp.run().then(async () => {
       // Handle any post-game actions.
       await authStore.completeAssessment(selectedAdmin.value.id, taskId, props.launchId);
 
+      // Navigate to home, but first set the refresh flag to true.
       gameStore.requireHomeRefresh();
-      // if session is externally launched, return instead fo participant home
       if (props.launchId) {
         router.push({ name: 'LaunchParticipant', params: { launchId: props.launchId } });
-      }
-      // Navigate to home, but first set the refresh flag to true.
-      else {
+      } else {
         router.push({ name: 'Home' });
       }
     });
@@ -141,7 +140,7 @@ async function startTask(selectedAdmin) {
 }
 </script>
 <style>
-@import '@bdelab/roar-swr/lib/resources/roar-swr.css';
+@import '@bdelab/roar-letter/lib/resources/roar-letter.css';
 
 .game-target {
   position: absolute;

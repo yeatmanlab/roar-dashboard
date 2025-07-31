@@ -1,5 +1,5 @@
 <template>
-  <div id="jspsych-target" class="game-target" translate="no" />
+  <div translate="no" />
   <div v-if="!gameStarted" class="col-full text-center">
     <h1>{{ $t('tasks.preparing') }}</h1>
     <AppSpinner />
@@ -13,10 +13,10 @@ import _get from 'lodash/get';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
 import useUserStudentDataQuery from '@/composables/queries/useUserStudentDataQuery';
-import packageLockJson from '../../../package-lock.json';
+import packageLockJson from '../../../../../package-lock.json';
 
 const props = defineProps({
-  taskId: { type: String, default: 'pa' },
+  taskId: { type: String, default: 'ran' },
   language: { type: String, default: 'en' },
   launchId: { type: String, default: null },
 });
@@ -24,7 +24,7 @@ const props = defineProps({
 let TaskLauncher;
 
 const taskId = props.taskId;
-const { version } = packageLockJson.packages['node_modules/@bdelab/roar-pa'];
+const { version } = packageLockJson.packages['node_modules/@bdelab/roav-ran'];
 const router = useRouter();
 const taskStarted = ref(false);
 const gameStarted = ref(false);
@@ -62,7 +62,7 @@ window.addEventListener(
 
 onMounted(async () => {
   try {
-    TaskLauncher = (await import('@bdelab/roar-pa')).default;
+    TaskLauncher = (await import('@bdelab/roav-ran')).default;
   } catch (error) {
     console.error('An error occurred while importing the game module.', error);
   }
@@ -96,7 +96,7 @@ async function startTask(selectedAdmin) {
     if (checkGameStarted) clearInterval(checkGameStarted);
     checkGameStarted = setInterval(function () {
       // Poll for the preload trials progress bar to exist and then begin the game
-      let gameLoading = document.querySelector('.jspsych-content-wrapper');
+      let gameLoading = document.querySelector('.card-title');
       if (gameLoading) {
         gameStarted.value = true;
         clearInterval(checkGameStarted);
@@ -117,7 +117,7 @@ async function startTask(selectedAdmin) {
 
     const gameParams = { ...appKit._taskInfo.variantParams };
 
-    const roarApp = new TaskLauncher(appKit, gameParams, userParams, 'jspsych-target');
+    const roarApp = new TaskLauncher(appKit, gameParams, userParams, 'card-title');
 
     await roarApp.run().then(async () => {
       // Handle any post-game actions.
@@ -140,7 +140,7 @@ async function startTask(selectedAdmin) {
 }
 </script>
 <style>
-@import '@bdelab/roar-pa/lib/resources/roar-pa.css';
+@import '@bdelab/roav-ran/lib/resources/roav-ran.css';
 
 .game-target {
   position: absolute;

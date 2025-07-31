@@ -13,18 +13,18 @@ import _get from 'lodash/get';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
 import useUserStudentDataQuery from '@/composables/queries/useUserStudentDataQuery';
-import packageLockJson from '../../../package-lock.json';
+import packageLockJson from '../../../../../package-lock.json';
 
 const props = defineProps({
-  taskId: { type: String, default: 'letter' },
-  language: { type: String, default: 'en' },
-  launchId: { type: String, default: null },
+  taskId: { type: String, required: true, default: 'vocab' },
+  language: { type: String, required: true, default: 'en' },
+  launchId: { type: String, required: false, default: null },
 });
 
 let TaskLauncher;
 
 const taskId = props.taskId;
-const { version } = packageLockJson.packages['node_modules/@bdelab/roar-letter'];
+const { version } = packageLockJson.packages['node_modules/@bdelab/roar-vocab'];
 const router = useRouter();
 const taskStarted = ref(false);
 const gameStarted = ref(false);
@@ -62,7 +62,7 @@ window.addEventListener(
 
 onMounted(async () => {
   try {
-    TaskLauncher = (await import('@bdelab/roar-letter')).default;
+    TaskLauncher = (await import('@bdelab/roar-vocab')).default;
   } catch (error) {
     console.error('An error occurred while importing the game module.', error);
   }
@@ -140,7 +140,7 @@ async function startTask(selectedAdmin) {
 }
 </script>
 <style>
-@import '@bdelab/roar-letter/lib/resources/roar-letter.css';
+@import '@bdelab/roar-vocab/lib/resources/roar-vocab.css';
 
 .game-target {
   position: absolute;

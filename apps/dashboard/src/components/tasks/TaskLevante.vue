@@ -5,6 +5,7 @@
     <AppSpinner />
   </div>
 </template>
+
 <script setup>
 import { onMounted, watch, ref, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
@@ -13,18 +14,17 @@ import _get from 'lodash/get';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
 import useUserStudentDataQuery from '@/composables/queries/useUserStudentDataQuery';
-import packageLockJson from '../../../package-lock.json';
+import packageLockJson from '../../../../../package-lock.json';
 
 const props = defineProps({
-  taskId: { type: String, required: true, default: 'vocab' },
-  language: { type: String, required: true, default: 'en' },
-  launchId: { type: String, required: false, default: null },
+  taskId: { type: String, default: 'egma-math' },
+  launchId: { type: String, default: null },
 });
 
-let TaskLauncher;
+let levanteTaskLauncher;
 
 const taskId = props.taskId;
-const { version } = packageLockJson.packages['node_modules/@bdelab/roar-vocab'];
+const { version } = packageLockJson.packages['node_modules/@levante-framework/core-tasks'];
 const router = useRouter();
 const taskStarted = ref(false);
 const gameStarted = ref(false);
@@ -62,7 +62,8 @@ window.addEventListener(
 
 onMounted(async () => {
   try {
-    TaskLauncher = (await import('@bdelab/roar-vocab')).default;
+    let module = await import('@levante-framework/core-tasks');
+    levanteTaskLauncher = module.TaskLauncher;
   } catch (error) {
     console.error('An error occurred while importing the game module.', error);
   }
@@ -112,24 +113,19 @@ async function startTask(selectedAdmin) {
       grade: _get(userData.value, 'studentData.grade'),
       birthMonth: userDateObj.getMonth() + 1,
       birthYear: userDateObj.getFullYear(),
-      language: props.language,
     };
 
     const gameParams = { ...appKit._taskInfo.variantParams };
 
-    const roarApp = new TaskLauncher(appKit, gameParams, userParams, 'jspsych-target');
+    const levanteTask = new levanteTaskLauncher(appKit, gameParams, userParams, 'jspsych-target');
 
-    await roarApp.run().then(async () => {
+    await levanteTask.run().then(async () => {
       // Handle any post-game actions.
       await authStore.completeAssessment(selectedAdmin.value.id, taskId, props.launchId);
 
       // Navigate to home, but first set the refresh flag to true.
       gameStore.requireHomeRefresh();
-      if (props.launchId) {
-        router.push({ name: 'LaunchParticipant', params: { launchId: props.launchId } });
-      } else {
-        router.push({ name: 'Home' });
-      }
+      router.push({ name: 'Home' });
     });
   } catch (error) {
     console.error('An error occurred while starting the task:', error);
@@ -139,8 +135,9 @@ async function startTask(selectedAdmin) {
   }
 }
 </script>
+
 <style>
-@import '@bdelab/roar-vocab/lib/resources/roar-vocab.css';
+@import '@levante-framework/core-tasks/lib/resources/core-tasks.css';
 
 .game-target {
   position: absolute;
@@ -149,7 +146,6 @@ async function startTask(selectedAdmin) {
   width: 100%;
   height: 100%;
 }
-
 .game-target:focus {
   outline: none;
 }

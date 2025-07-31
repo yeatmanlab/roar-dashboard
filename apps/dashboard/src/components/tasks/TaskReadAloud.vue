@@ -1,5 +1,5 @@
 <template>
-  <div id="jspsych-target" class="game-target" translate="no" />
+  <div translate="no" />
   <div v-if="!gameStarted" class="col-full text-center">
     <h1>{{ $t('tasks.preparing') }}</h1>
     <AppSpinner />
@@ -13,18 +13,18 @@ import _get from 'lodash/get';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
 import useUserStudentDataQuery from '@/composables/queries/useUserStudentDataQuery';
-import packageLockJson from '../../../package-lock.json';
+import packageLockJson from '../../../../../package-lock.json';
 
 const props = defineProps({
-  taskId: { type: String, default: 'fluency-arf' },
-  language: { type: String, default: 'en' },
-  launchId: { type: String, default: null },
+  taskId: { type: String, required: true, default: 'roar-readaloud' },
+  language: { type: String, required: true, default: 'en' },
+  launchId: { type: String, required: false, default: null },
 });
 
 let TaskLauncher;
 
 const taskId = props.taskId;
-const { version } = packageLockJson.packages['node_modules/@bdelab/roam-apps'];
+const { version } = packageLockJson.packages['node_modules/@bdelab/roar-readaloud'];
 const router = useRouter();
 const taskStarted = ref(false);
 const gameStarted = ref(false);
@@ -62,7 +62,7 @@ window.addEventListener(
 
 onMounted(async () => {
   try {
-    TaskLauncher = (await import('@bdelab/roam-apps')).default;
+    TaskLauncher = (await import('@bdelab/roar-readaloud')).default;
   } catch (error) {
     console.error('An error occurred while importing the game module.', error);
   }
@@ -96,7 +96,7 @@ async function startTask(selectedAdmin) {
     if (checkGameStarted) clearInterval(checkGameStarted);
     checkGameStarted = setInterval(function () {
       // Poll for the preload trials progress bar to exist and then begin the game
-      let gameLoading = document.querySelector('.jspsych-content-wrapper');
+      let gameLoading = document.querySelector('.card-title');
       if (gameLoading) {
         gameStarted.value = true;
         clearInterval(checkGameStarted);
@@ -117,7 +117,7 @@ async function startTask(selectedAdmin) {
 
     const gameParams = { ...appKit._taskInfo.variantParams };
 
-    const roarApp = new TaskLauncher(appKit, gameParams, userParams, 'jspsych-target');
+    const roarApp = new TaskLauncher(appKit, gameParams, userParams, 'card-title');
 
     await roarApp.run().then(async () => {
       // Handle any post-game actions.
@@ -125,7 +125,11 @@ async function startTask(selectedAdmin) {
 
       // Navigate to home, but first set the refresh flag to true.
       gameStore.requireHomeRefresh();
-      router.push({ name: 'Home' });
+      if (props.launchId) {
+        router.push({ name: 'LaunchParticipant', params: { launchId: props.launchId } });
+      } else {
+        router.push({ name: 'Home' });
+      }
     });
   } catch (error) {
     console.error('An error occurred while starting the task:', error);
@@ -136,7 +140,7 @@ async function startTask(selectedAdmin) {
 }
 </script>
 <style>
-@import '@bdelab/roam-apps/lib/resources/roam-apps.css';
+@import '@bdelab/roar-readaloud/lib/resources/roar-readaloud.css';
 
 .game-target {
   position: absolute;

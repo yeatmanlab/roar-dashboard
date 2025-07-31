@@ -1,30 +1,30 @@
 <template>
-  <div translate="no" />
+  <div id="jspsych-target" class="game-target" translate="no" />
   <div v-if="!gameStarted" class="col-full text-center">
     <h1>{{ $t('tasks.preparing') }}</h1>
     <AppSpinner />
   </div>
 </template>
 <script setup>
-import { onMounted, watch, ref, onBeforeUnmount } from 'vue';
+import { onMounted, onBeforeUnmount, watch, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import _get from 'lodash/get';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
 import useUserStudentDataQuery from '@/composables/queries/useUserStudentDataQuery';
-import packageLockJson from '../../../package-lock.json';
+import packageLockJson from '../../../../../package-lock.json';
 
 const props = defineProps({
-  taskId: { type: String, default: 'crowding' },
-  language: { type: String, default: 'en' },
-  launchId: { type: String, default: null },
+  taskId: { type: String, required: true, default: 'swr' },
+  language: { type: String, required: true, default: 'en' },
+  launchId: { type: String, required: false, default: null },
 });
 
 let TaskLauncher;
 
 const taskId = props.taskId;
-const { version } = packageLockJson.packages['node_modules/@bdelab/roav-crowding'];
+const { version } = packageLockJson.packages['node_modules/@bdelab/roar-swr'];
 const router = useRouter();
 const taskStarted = ref(false);
 const gameStarted = ref(false);
@@ -62,7 +62,7 @@ window.addEventListener(
 
 onMounted(async () => {
   try {
-    TaskLauncher = (await import('@bdelab/roav-crowding')).default;
+    TaskLauncher = (await import('@bdelab/roar-swr')).default;
   } catch (error) {
     console.error('An error occurred while importing the game module.', error);
   }
@@ -96,7 +96,7 @@ async function startTask(selectedAdmin) {
     if (checkGameStarted) clearInterval(checkGameStarted);
     checkGameStarted = setInterval(function () {
       // Poll for the preload trials progress bar to exist and then begin the game
-      let gameLoading = document.querySelector('.card-title');
+      let gameLoading = document.querySelector('.jspsych-content-wrapper');
       if (gameLoading) {
         gameStarted.value = true;
         clearInterval(checkGameStarted);
@@ -116,16 +116,21 @@ async function startTask(selectedAdmin) {
     };
 
     const gameParams = { ...appKit._taskInfo.variantParams };
-
-    const roarApp = new TaskLauncher(appKit, gameParams, userParams, 'card-title');
+    const roarApp = new TaskLauncher(appKit, gameParams, userParams, 'jspsych-target');
 
     await roarApp.run().then(async () => {
       // Handle any post-game actions.
       await authStore.completeAssessment(selectedAdmin.value.id, taskId, props.launchId);
 
-      // Navigate to home, but first set the refresh flag to true.
       gameStore.requireHomeRefresh();
-      router.push({ name: 'Home' });
+      // if session is externally launched, return instead fo participant home
+      if (props.launchId) {
+        router.push({ name: 'LaunchParticipant', params: { launchId: props.launchId } });
+      }
+      // Navigate to home, but first set the refresh flag to true.
+      else {
+        router.push({ name: 'Home' });
+      }
     });
   } catch (error) {
     console.error('An error occurred while starting the task:', error);
@@ -136,7 +141,7 @@ async function startTask(selectedAdmin) {
 }
 </script>
 <style>
-@import '@bdelab/roav-crowding/lib/resources/roav-crowding.css';
+@import '@bdelab/roar-swr/lib/resources/roar-swr.css';
 
 .game-target {
   position: absolute;
