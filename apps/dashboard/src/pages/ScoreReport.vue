@@ -585,10 +585,10 @@ const computedProgressData = computed(() => {
       const status = assessment.optional
         ? 'optional'
         : assessment.completedOn
-        ? 'completed'
-        : assessment.startedOn
-        ? 'started'
-        : 'assigned';
+          ? 'completed'
+          : assessment.startedOn
+            ? 'started'
+            : 'assigned';
 
       acc[assessment.taskId] = { value: status };
       return acc;
@@ -763,8 +763,8 @@ const computeAssignmentAndRunData = computed(() => {
             numAttempted === undefined || numAttempted === 0
               ? ''
               : numAttempted !== 0 && assessment.scores?.raw?.composite?.test?.numCorrect !== undefined
-              ? assessment.scores?.raw?.composite?.test?.numCorrect
-              : 0;
+                ? assessment.scores?.raw?.composite?.test?.numCorrect
+                : 0;
           currRowScores[taskId].numAttempted = numAttempted;
           currRowScores[taskId].numCorrect = numCorrect;
           currRowScores[taskId].tagColor =

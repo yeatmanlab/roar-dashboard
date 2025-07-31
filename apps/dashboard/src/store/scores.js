@@ -176,15 +176,15 @@ export function percentileToSupportClassification(taskId, percentile, grade = 1)
           percentile < 25
             ? 'Extra Support Needed'
             : percentile < 50
-            ? 'Some Support Needed'
-            : 'Average or Above Average';
+              ? 'Some Support Needed'
+              : 'Average or Above Average';
       } else {
         support =
           percentile < 15
             ? 'Extra Support Needed'
             : percentile < 30
-            ? 'Some Support Needed'
-            : 'Average or Above Average';
+              ? 'Some Support Needed'
+              : 'Average or Above Average';
       }
       break;
 
@@ -197,8 +197,8 @@ export function percentileToSupportClassification(taskId, percentile, grade = 1)
           percentile < 25
             ? 'Extra Support Needed'
             : percentile < 50
-            ? 'Some Support Needed'
-            : 'Average or Above Average';
+              ? 'Some Support Needed'
+              : 'Average or Above Average';
       }
       break;
 
