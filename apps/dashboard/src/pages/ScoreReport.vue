@@ -124,6 +124,26 @@
           <AppSpinner style="margin-bottom: 1rem" />
           <span class="text-sm font-light text-gray-600 uppercase">Loading Administration Datatable</span>
         </div>
+        <!-- Export Progress -->
+        <div v-if="exportProgress.show" class="p-4 mb-4 bg-white border-round shadow-1">
+          <div class="flex mb-2 justify-content-between align-items-center">
+            <h3 class="text-lg font-semibold">Bulk PDF Export Progress</h3>
+            <span class="text-sm text-gray-600"> {{ exportProgress.completed }} / {{ exportProgress.total }} </span>
+          </div>
+          <PvProgressBar :value="exportProgress.percentage" class="mb-2" />
+          <p class="text-sm text-gray-600">
+            {{ exportProgress.currentStudent ? `Processing: ${exportProgress.currentStudent}` : 'Preparing export...' }}
+          </p>
+          <div v-if="exportProgress.errors.length > 0" class="mt-3">
+            <h4 class="mb-1 text-sm font-semibold text-red-600">Export Errors</h4>
+            <ul class="text-sm text-red-600">
+              <li v-for="error in exportProgress.errors" :key="error.studentId">
+                {{ error.studentName }}: {{ error.message }}
+              </li>
+            </ul>
+          </div>
+        </div>
+
         <!-- Main table -->
 
         <div v-if="assignmentData?.length ?? 0 > 0">
@@ -137,6 +157,7 @@
             data-cy="roar-data-table"
             @export-all="exportData({ selectedRows: $event })"
             @export-selected="exportData({ selectedRows: $event })"
+            @export-pdf-reports="exportBulkPdfReports($event)"
           >
             <span>
               <label for="view-columns" class="view-label">View</label>
@@ -280,6 +301,7 @@ import PvSelect from 'primevue/select';
 import PvSelectButton from 'primevue/selectbutton';
 import PvTabPanel from 'primevue/tabpanel';
 import PvTabView from 'primevue/tabview';
+import PvProgressBar from 'primevue/progressbar';
 import { useAuthStore } from '@/store/auth';
 import { getDynamicRouterPath } from '@/helpers/getDynamicRouterPath';
 import useUserType from '@/composables/useUserType';
@@ -291,6 +313,7 @@ import useAdministrationAssignmentsQuery from '@/composables/queries/useAdminist
 import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery';
 import { usePermissions } from '@/composables/usePermissions';
 import { exportCsv } from '@/helpers/query/utils';
+import PdfExportService from '@/services/PdfExport.service';
 import { getTitle } from '@/helpers/query/administrations';
 import {
   taskDisplayNames,
@@ -369,6 +392,17 @@ const handleViewChange = () => {
 };
 
 const exportLoading = ref(false);
+const bulkPdfExportLoading = ref(false);
+
+// Export progress tracking
+const exportProgress = ref({
+  show: false,
+  completed: 0,
+  total: 0,
+  percentage: 0,
+  currentStudent: null,
+  errors: [],
+});
 
 const activeTabIndex = ref(0);
 
@@ -424,6 +458,97 @@ const handleExportToPdf = async () => {
   window.scrollTo(0, 0);
 
   return;
+};
+
+/**
+ * Exports selected student reports as PDFs in bulk
+ */
+const exportBulkPdfReports = async (selectedRows) => {
+  if (!selectedRows || selectedRows.length === 0) {
+    console.warn('No students selected for bulk PDF export');
+    return;
+  }
+
+  try {
+    bulkPdfExportLoading.value = true;
+    exportProgress.value = {
+      show: true,
+      completed: 0,
+      total: selectedRows.length,
+      percentage: 0,
+      currentStudent: null,
+      errors: [],
+    };
+
+    // Transform selected rows to student objects
+    const students = selectedRows.map((row) => ({
+      id: row.user.userId,
+      firstName: row.user.firstName,
+      lastName: row.user.lastName,
+      username: row.user.username,
+      email: row.user.email,
+      grade: row.user.grade,
+    }));
+
+    // URL generator function
+    const urlGenerator = (student) => {
+      return `${window.location.origin}/scores/${props.administrationId}/${props.orgType}/${props.orgId}/user/${student.id}/new`;
+    };
+
+    // Filename generator function
+    const filenameGenerator = (student) => {
+      const studentName =
+        `${student.firstName || ''} ${student.lastName || ''}`.trim() || student.username || student.id;
+      const safeStudentName = studentName.replace(/[^a-zA-Z0-9\s-_]/g, '');
+      const sanitizedAdminName =
+        administrationData.value?.name?.replace(/[^a-zA-Z0-9\s-]/g, '').replace(/\s+/g, '-') || 'Report';
+      // Include student ID to ensure uniqueness when students have the same name
+      const safeStudentId = student.id.replace(/[^a-zA-Z0-9-_]/g, '');
+      return `${safeStudentName}_${safeStudentId}_${sanitizedAdminName}.pdf`;
+    };
+
+    // ZIP filename
+    const sanitizedOrgName =
+      orgData.value?.name?.replace(/[^a-zA-Z0-9\s-]/g, '').replace(/\s+/g, '-') || 'organization';
+    const sanitizedAdminName =
+      administrationData.value?.name?.replace(/[^a-zA-Z0-9\s-]/g, '').replace(/\s+/g, '-') || 'reports';
+    const zipFilename = `${sanitizedOrgName}-${sanitizedAdminName}-score-reports.zip`;
+
+    await PdfExportService.generateBulkDocuments(students, urlGenerator, filenameGenerator, {
+      zipFilename,
+      debug: false,
+      onProgress: (progress) => {
+        exportProgress.value = {
+          ...exportProgress.value,
+          completed: progress.completed,
+          total: progress.total,
+          percentage: progress.percentage,
+          currentStudent: progress.current,
+          errors: progress.errors,
+        };
+      },
+    });
+
+    // Hide progress after completion, but keep visible longer if there are errors
+    setTimeout(() => {
+      const hasErrors = exportProgress.value.errors && exportProgress.value.errors.length > 0;
+      if (!hasErrors) {
+        exportProgress.value.show = false;
+      }
+
+      // else {
+      //   // Keep error UI visible longer for user to see
+      //   setTimeout(() => {
+      //     exportProgress.value.show = false;
+      //   }, 10000); // 10 seconds for errors
+      // }
+    }, 3000);
+  } catch (error) {
+    console.error('Error during bulk PDF export:', error);
+    // TODO: Show error toast
+  } finally {
+    bulkPdfExportLoading.value = false;
+  }
 };
 
 const orderBy = ref([

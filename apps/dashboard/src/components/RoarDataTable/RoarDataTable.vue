@@ -64,6 +64,19 @@
           data-cy="data-table__export-table-btn"
           @click="exportCSV(false, $event)"
         />
+        <PvButton
+          v-if="allowExport"
+          v-tooltip.bottom="
+            `Export PDF reports for ${selectedRows.length} selected student${selectedRows.length > 1 ? 's' : ''}`
+          "
+          label="Export PDF Reports"
+          icon="pi pi-file-pdf"
+          :badge="selectedRows?.length?.toString()"
+          :disabled="selectedRows.length === 0"
+          class="m-1 text-sm text-white bg-orange-500 border-none h-3rem border-round h-2rem hover:bg-orange-600"
+          data-cy="data-table__export-pdf-btn"
+          @click="exportPdfReports($event)"
+        />
       </span>
     </div>
     <div class="flex flex-column">
@@ -552,6 +565,10 @@ const exportCSV = (exportSelected) => {
   emit('export-all');
 };
 
+const exportPdfReports = () => {
+  emit('export-pdf-reports', selectedRows.value);
+};
+
 const compressedRows = ref(false);
 const padding = '0rem 0.5rem 0rem 0.5rem';
 
@@ -691,7 +708,14 @@ function pcColumnFilterButton({ context }) {
 }
 
 // Pass through data table events
-const emit = defineEmits(['export-all', 'selection', 'reset-filters', 'export-selected', 'export-org-users']);
+const emit = defineEmits([
+  'export-all',
+  'selection',
+  'reset-filters',
+  'export-selected',
+  'export-org-users',
+  'export-pdf-reports',
+]);
 </script>
 <style>
 .small-circle {

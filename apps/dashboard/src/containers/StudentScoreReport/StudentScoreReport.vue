@@ -7,52 +7,54 @@
     </div>
 
     <template v-else>
-      <HeaderSection
-        :student-first-name="studentFirstName"
-        :student-last-name="studentLastName"
-        :student-grade="studentGrade"
-        :administration-name="administrationData?.name"
-        :administration-date="administrationData?.date"
-        :data-pdf-export-section="SCORE_REPORT_EXPORT_SECTIONS.HEADER"
-      />
-
-      <template v-if="!taskData?.length">
-        <EmptyState :student-first-name="studentFirstName" />
-      </template>
-
-      <template v-else>
-        <SummarySection
+      <div data-pdf-export-container>
+        <HeaderSection
           :student-first-name="studentFirstName"
-          :formatted-tasks="formattedTasksList"
-          :expanded="expanded"
-          :export-loading="exportLoading"
-          :data-pdf-export-section="SCORE_REPORT_EXPORT_SECTIONS.SUMMARY"
-          @toggle-expand="toggleExpand"
-          @export-pdf="handleExportToPdf"
-        />
-
-        <ScoreCardsListSection
-          :student-first-name="studentFirstName"
+          :student-last-name="studentLastName"
           :student-grade="studentGrade"
-          :task-data="taskData"
-          :tasks-dictionary="tasksDictionary"
-          :longitudinal-data="longitudinalData"
-          :expanded="expanded"
-          :data-pdf-export-section="SCORE_REPORT_EXPORT_SECTIONS.DETAILS"
+          :administration-name="administrationData?.name"
+          :administration-date="administrationData?.date"
+          :data-pdf-export-section="SCORE_REPORT_EXPORT_SECTIONS.HEADER"
         />
 
-        <SupportSection
-          :expanded="expanded"
-          :student-grade="studentData?.studentData?.grade"
-          :data-pdf-export-section="SCORE_REPORT_EXPORT_SECTIONS.SUPPORT"
-        />
-      </template>
+        <template v-if="!taskData?.length">
+          <EmptyState :student-first-name="studentFirstName" data-pdf-export-section />
+        </template>
+
+        <template v-else>
+          <SummarySection
+            :student-first-name="studentFirstName"
+            :formatted-tasks="formattedTasksList"
+            :expanded="expanded"
+            :export-loading="exportLoading"
+            :data-pdf-export-section="SCORE_REPORT_EXPORT_SECTIONS.SUMMARY"
+            @toggle-expand="toggleExpand"
+            @export-pdf="handleExportToPdf"
+          />
+
+          <ScoreCardsListSection
+            :student-first-name="studentFirstName"
+            :student-grade="studentGrade"
+            :task-data="taskData"
+            :tasks-dictionary="tasksDictionary"
+            :longitudinal-data="longitudinalData"
+            :expanded="expanded"
+            :data-pdf-export-section="SCORE_REPORT_EXPORT_SECTIONS.DETAILS"
+          />
+
+          <SupportSection
+            :expanded="expanded"
+            :student-grade="studentData?.studentData?.grade"
+            :data-pdf-export-section="SCORE_REPORT_EXPORT_SECTIONS.SUPPORT"
+          />
+        </template>
+      </div>
     </template>
   </div>
 </template>
 
 <script setup>
-import { computed, ref, onMounted, onUnmounted } from 'vue';
+import { computed, ref, onMounted, onUnmounted, watch, nextTick } from 'vue';
 import { useAuthStore } from '@/store/auth';
 import useUserDataQuery from '@/composables/queries/useUserDataQuery';
 import useAdministrationsQuery from '@/composables/queries/useAdministrationsQuery';
@@ -252,4 +254,48 @@ onMounted(() => {
 onUnmounted(() => {
   if (unsubscribe) unsubscribe();
 });
+
+// PostMessage communication for iframe loading state
+let hasMessageBeenSent = false;
+let isMounted = false;
+
+const sendPageLoadedMessage = async () => {
+  if (hasMessageBeenSent || window.parent === window || !isMounted) return;
+
+  // Wait for next tick to ensure DOM is fully updated
+  await nextTick();
+
+  // Double-check loading state after nextTick
+  if (!isLoading.value) {
+    hasMessageBeenSent = true;
+
+    window.parent.postMessage(
+      {
+        type: 'page:loaded',
+        timestamp: Date.now(),
+      },
+      window.location.origin,
+    );
+  }
+};
+
+onMounted(() => {
+  isMounted = true;
+
+  // Check if we're already loaded when mounted
+  if (!isLoading.value) {
+    sendPageLoadedMessage();
+  }
+});
+
+watch(
+  isLoading,
+  (loading) => {
+    // Only send message when loading completes and component is mounted
+    if (!loading) {
+      sendPageLoadedMessage();
+    }
+  },
+  { immediate: false },
+);
 </script>
