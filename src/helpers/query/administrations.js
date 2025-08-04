@@ -168,8 +168,6 @@ export const administrationPageFetcher = async (isSuperAdmin, exhaustiveAdminOrg
       return 0;
     });
 
-  console.log(sortedAdministrations, administrations);
-
   return administrations;
 };
 
