@@ -335,8 +335,6 @@ const schoolNameDictionary = computed(() => {
   }
 });
 
-
-
 const computedProgressData = computed(() => {
   if (!assignmentData.value) return [];
   // assignmentTableData is an array of objects, each representing a row in the table
@@ -371,35 +369,35 @@ const computedProgressData = computed(() => {
       let progressFilterTags = '';
       const taskId = assessment.taskId;
 
-        if (assessment?.optional) {
-          currRowProgress[taskId] = {
-            value: 'optional',
-            icon: 'pi pi-question',
-            severity: 'info',
-          };
-          progressFilterTags += ' Optional ';
-        } else if (assessment?.completedOn !== undefined) {
-          currRowProgress[taskId] = {
-            value: 'completed',
-            icon: 'pi pi-check-circle',
-            severity: 'success',
-          };
-          progressFilterTags += ' Completed ';
-        } else if (assessment?.startedOn !== undefined) {
-          currRowProgress[taskId] = {
-            value: 'started',
-            icon: 'pi pi-clock',
-            severity: 'warn',
-          };
-          progressFilterTags += ' Started ';
-        } else {
-          currRowProgress[taskId] = {
-            value: 'not started',
-            icon: 'pi pi-minus-circle',
-            severity: 'warning',
-          };
-          progressFilterTags += ' Not Started ';
-        }
+      if (assessment?.optional) {
+        currRowProgress[taskId] = {
+          value: 'optional',
+          icon: 'pi pi-question',
+          severity: 'info',
+        };
+        progressFilterTags += ' Optional ';
+      } else if (assessment?.completedOn !== undefined) {
+        currRowProgress[taskId] = {
+          value: 'completed',
+          icon: 'pi pi-check-circle',
+          severity: 'success',
+        };
+        progressFilterTags += ' Completed ';
+      } else if (assessment?.startedOn !== undefined) {
+        currRowProgress[taskId] = {
+          value: 'started',
+          icon: 'pi pi-clock',
+          severity: 'warn',
+        };
+        progressFilterTags += ' Started ';
+      } else {
+        currRowProgress[taskId] = {
+          value: 'not started',
+          icon: 'pi pi-minus-circle',
+          severity: 'warning',
+        };
+        progressFilterTags += ' Not Started ';
+      }
       currRowProgress[taskId].tags = progressFilterTags;
     }
 

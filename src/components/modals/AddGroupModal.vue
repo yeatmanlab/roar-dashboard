@@ -121,12 +121,19 @@ import _capitalize from 'lodash/capitalize';
 import _union from 'lodash/union';
 import _without from 'lodash/without';
 import { computed, ref, toRaw, watch } from 'vue';
+import { FIRESTORE_COLLECTIONS } from '@/constants/firebase';
 import { normalizeToLowercase } from '@/helpers';
-import { OrgData } from '@/types';
 import { required, requiredIf } from '@vuelidate/validators';
 import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
 import { TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
 import { useToast } from 'primevue/usetoast';
+import {
+  CreateClassSchema,
+  CreateDistrictSchema,
+  CreateGroupSchema,
+  CreateOrgType,
+  CreateSchoolSchema,
+} from '@levante-framework/levante-zod';
 import PvAutoComplete from 'primevue/autocomplete';
 import PvButton from 'primevue/button';
 import PvDialog from 'primevue/dialog';
@@ -199,10 +206,10 @@ const v$ = useVuelidate(
 );
 
 const allTags = computed(() => {
-  const districtTags = (districts.value ?? []).map((org: OrgData) => org.tags);
-  const schoolTags = (districts.value ?? []).map((org: OrgData) => org.tags);
-  const classTags = (classes.value ?? []).map((org: OrgData) => org.tags);
-  const groupTags = (groups.value ?? []).map((org: OrgData) => org.tags);
+  const districtTags = (districts.value ?? []).map((org: CreateOrgType) => org.tags);
+  const schoolTags = (districts.value ?? []).map((org: CreateOrgType) => org.tags);
+  const classTags = (classes.value ?? []).map((org: CreateOrgType) => org.tags);
+  const groupTags = (groups.value ?? []).map((org: CreateOrgType) => org.tags);
   return _without(_union(...districtTags, ...schoolTags, ...classTags, ...groupTags), undefined) || [];
 });
 const classQueryEnabled = computed(() => parentSchool?.value !== undefined);
@@ -267,6 +274,86 @@ const searchTags = (e) => {
   tagSuggestions.value = filteredOptions;
 };
 
+const parseCreateOrgData = (data: CreateOrgType) => {
+  let formatted;
+  let parsed;
+
+  const { districtId, name, normalizedName, parentOrgId, schoolId, tags, type } = data;
+  const commonFields = {
+    name,
+    normalizedName,
+    tags,
+    type,
+  };
+
+  switch (type) {
+    case FIRESTORE_COLLECTIONS.CLASSES:
+      formatted = {
+        ...commonFields,
+        districtId,
+        schoolId,
+      };
+
+      parsed = CreateClassSchema.safeParse(formatted);
+
+      if (!parsed.success) {
+        console.error(parsed.error.message);
+        throw new Error(`Invalid data format for ${name}`);
+      }
+
+      return parsed.data;
+
+    case FIRESTORE_COLLECTIONS.DISTRICTS:
+      formatted = {
+        ...commonFields,
+        subGroups: [],
+      };
+
+      parsed = CreateDistrictSchema.safeParse(formatted);
+
+      if (!parsed.success) {
+        console.error(parsed.error.message);
+        throw new Error(`Invalid data format for ${name}`);
+      }
+
+      return parsed.data;
+
+    case FIRESTORE_COLLECTIONS.GROUPS:
+      formatted = {
+        ...commonFields,
+        parentOrgId,
+        parentOrgType: SINGULAR_ORG_TYPES.DISTRICTS,
+      };
+
+      parsed = CreateGroupSchema.safeParse(formatted);
+
+      if (!parsed.success) {
+        console.error(parsed.error.message);
+        throw new Error(`Invalid data format for ${name}`);
+      }
+
+      return parsed.data;
+
+    case FIRESTORE_COLLECTIONS.SCHOOLS:
+      formatted = {
+        ...commonFields,
+        districtId,
+      };
+
+      parsed = CreateSchoolSchema.safeParse(formatted);
+
+      if (!parsed.success) {
+        console.error(parsed.error.message);
+        throw new Error(`Invalid data format for ${name}`);
+      }
+
+      return parsed.data;
+
+    default:
+      throw new Error(`Unknown org type "${type}"`);
+  }
+};
+
 const submit = async () => {
   isSubmitBtnDisabled.value = true;
 
@@ -283,7 +370,7 @@ const submit = async () => {
     });
   }
 
-  const data: OrgData = {
+  const data: CreateOrgType = {
     name: orgName.value,
     normalizedName: normalizeToLowercase(orgName.value),
     type: orgType.value!.firestoreCollection,
@@ -315,7 +402,21 @@ const submit = async () => {
     });
   }
 
-  upsertOrg(data, {
+  let parsedData: unknown;
+
+  try {
+    parsedData = parseCreateOrgData(data);
+  } catch (error) {
+    isSubmitBtnDisabled.value = false;
+    return toast.add({
+      severity: 'error',
+      summary: 'Validation Error',
+      detail: error,
+      life: TOAST_DEFAULT_LIFE_DURATION,
+    });
+  }
+
+  upsertOrg(parsedData as CreateOrgType, {
     onSuccess: () => {
       toast.add({
         severity: 'success',

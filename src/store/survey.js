@@ -127,7 +127,7 @@ export const useSurveyStore = defineStore('surveyStore', () => {
     isSpecificSurveyComplete,
     isSurveyCompleted,
     audioLinkMap,
-    
+
     // Actions
     requireHomeRefresh,
     setSurveyCompleted,

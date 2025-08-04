@@ -1,61 +1,18 @@
-import { useMutation, useQueryClient } from '@tanstack/vue-query';
-import { useAuthStore } from '@/store/auth.js';
+import { FIRESTORE_COLLECTIONS } from '@/constants/firebase';
 import {
-  DISTRICTS_LIST_QUERY_KEY,
   DISTRICT_SCHOOLS_QUERY_KEY,
-  SCHOOL_CLASSES_QUERY_KEY,
+  DISTRICTS_LIST_QUERY_KEY,
   GROUPS_LIST_QUERY_KEY,
   ORG_MUTATION_KEY,
   ORGS_TABLE_QUERY_KEY,
+  SCHOOL_CLASSES_QUERY_KEY,
 } from '@/constants/queryKeys';
-import { FIRESTORE_COLLECTIONS } from '@/constants/firebase';
-import { OrgData } from '@/types';
-import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
-
-const formatOrgData = (data: OrgData): OrgData => {
-  const { districtId, name, normalizedName, parentOrgId, schoolId, tags, type } = data;
-
-  const commonFields = {
-    name,
-    normalizedName,
-    tags,
-    type,
-  };
-
-  switch (type) {
-    case FIRESTORE_COLLECTIONS.CLASSES:
-      return {
-        ...commonFields,
-        districtId,
-        schoolId,
-      };
-
-    case FIRESTORE_COLLECTIONS.DISTRICTS:
-      return {
-        ...commonFields,
-        subGroups: [],
-      };
-
-    case FIRESTORE_COLLECTIONS.GROUPS:
-      return {
-        ...commonFields,
-        parentOrgId,
-        parentOrgType: SINGULAR_ORG_TYPES.DISTRICTS,
-      };
-
-    case FIRESTORE_COLLECTIONS.SCHOOLS:
-      return {
-        ...commonFields,
-        districtId,
-      };
-
-    default:
-      throw new Error(`Unknown org type: ${type}`);
-  }
-};
+import { useAuthStore } from '@/store/auth.js';
+import { CreateOrgType, OrgType } from '@levante-framework/levante-zod';
+import { useMutation, useQueryClient } from '@tanstack/vue-query';
 
 type UpsertOrgMutationContext = {
-  previousData: OrgData[] | undefined;
+  previousData: OrgType[] | undefined;
   queryKey: string[];
   parentId: string | undefined; // parentId can still be undefined if it's a district
 };
@@ -71,20 +28,19 @@ const useUpsertOrgMutation = () => {
   const authStore = useAuthStore();
   const queryClient = useQueryClient();
 
-  return useMutation<OrgData, Error, OrgData, UpsertOrgMutationContext>({
+  return useMutation<OrgType, Error, CreateOrgType, UpsertOrgMutationContext>({
     mutationKey: [ORG_MUTATION_KEY],
-    mutationFn: async (data: OrgData): Promise<OrgData> => {
-      const formattedOrgData = formatOrgData(data);
-      await authStore.roarfirekit.upsertOrg(formattedOrgData);
-      return formattedOrgData;
+    mutationFn: async (data: CreateOrgType): Promise<OrgType> => {
+      const response = await authStore.roarfirekit.upsertOrg(data);
+      return response.data;
     },
-    onMutate: async (newOrgData: OrgData) => {
+    onMutate: async (newOrgData: CreateOrgType) => {
       let queryKey: string[];
       let parentId: string | undefined;
 
       switch (newOrgData.type) {
         case FIRESTORE_COLLECTIONS.CLASSES:
-          queryKey = [SCHOOL_CLASSES_QUERY_KEY, newOrgData.schoolId!];
+          queryKey = [SCHOOL_CLASSES_QUERY_KEY, newOrgData.schoolId];
           parentId = newOrgData.schoolId;
           break;
 
@@ -93,12 +49,12 @@ const useUpsertOrgMutation = () => {
           break;
 
         case FIRESTORE_COLLECTIONS.GROUPS:
-          queryKey = [GROUPS_LIST_QUERY_KEY, newOrgData.parentOrgId!];
+          queryKey = [GROUPS_LIST_QUERY_KEY, newOrgData.parentOrgId];
           parentId = newOrgData.parentOrgId;
           break;
 
         case FIRESTORE_COLLECTIONS.SCHOOLS:
-          queryKey = [DISTRICT_SCHOOLS_QUERY_KEY, newOrgData.districtId!];
+          queryKey = [DISTRICT_SCHOOLS_QUERY_KEY, newOrgData.districtId];
           parentId = newOrgData.districtId;
           break;
 
@@ -113,10 +69,10 @@ const useUpsertOrgMutation = () => {
       }
 
       await queryClient.cancelQueries({ queryKey });
-      const previousData = queryClient.getQueryData<OrgData[]>(queryKey);
-      const optimisticOrg = { ...newOrgData, id: newOrgData.id };
+      const previousData = queryClient.getQueryData<OrgType[]>(queryKey);
+      const optimisticOrg = { ...newOrgData, id: `temp-${Date.now()}` };
 
-      queryClient.setQueryData<OrgData[]>(queryKey, (oldData) => {
+      queryClient.setQueryData<CreateOrgType[]>(queryKey, (oldData) => {
         if (Array.isArray(oldData)) {
           const existingIndex = newOrgData.id ? oldData.findIndex((org) => org.id === newOrgData.id) : -1;
           if (existingIndex > -1) {

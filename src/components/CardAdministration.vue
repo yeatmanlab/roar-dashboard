@@ -500,7 +500,6 @@ const onExpand = async (node: TreeNode): Promise<void> => {
     expanding.value = false;
   }
 };
-
 </script>
 
 <style lang="scss">

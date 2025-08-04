@@ -71,7 +71,7 @@ export const orderByNameASC = [
     field: { fieldPath: 'name' },
     direction: 'ASCENDING',
   },
-]
+];
 
 export const getProjectId = (project = 'admin') => {
   const authStore = useAuthStore();

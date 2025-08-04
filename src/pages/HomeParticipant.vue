@@ -367,7 +367,6 @@ let completeGames = computed(() => {
   return _filter(requiredAssessments.value, (task) => task.completedOn).length ?? 0;
 });
 
-
 watch(
   [userData, selectedAdmin, userAssignments],
   async ([newUserData, isSelectedAdminChanged]) => {
@@ -468,11 +467,10 @@ watch(
       (doc) => doc?.administrationId === selectedAdmin.value.id,
     );
     let shouldInitializeSurvey = true;
-    
+
     // Calculate number of specific surveys for teachers/parents
-    const numOfSpecificSurveys = userType.value === 'parent' 
-      ? userData.value?.childIds?.length 
-      : userData.value?.classes?.current?.length;
+    const numOfSpecificSurveys =
+      userType.value === 'parent' ? userData.value?.childIds?.length : userData.value?.classes?.current?.length;
 
     if (surveyResponseDoc) {
       if (userType.value === 'student') {
@@ -487,7 +485,7 @@ watch(
         if (surveyResponseDoc.specific && surveyResponseDoc.specific.length > 0) {
           if (
             surveyResponseDoc.specific.length === numOfSpecificSurveys &&
-            surveyResponseDoc.specific.every((relation) => relation.isComplete) 
+            surveyResponseDoc.specific.every((relation) => relation.isComplete)
           ) {
             surveyStore.setIsSpecificSurveyComplete(true);
             shouldInitializeSurvey = false;
@@ -500,9 +498,10 @@ watch(
             }
           }
         }
-        
+
         // Check if both general and specific surveys are complete
-        if (surveyResponseDoc.general.isComplete &&
+        if (
+          surveyResponseDoc.general.isComplete &&
           surveyResponseDoc.specific?.length === numOfSpecificSurveys &&
           surveyResponseDoc.specific?.every((relation) => relation.isComplete)
         ) {
