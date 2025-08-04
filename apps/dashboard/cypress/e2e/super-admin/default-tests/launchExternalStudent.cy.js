@@ -2,7 +2,6 @@ const baseUrl = Cypress.config().baseUrl;
 const testDistrictId = Cypress.env('testDistrictId');
 const testPartnerAdministrationName = Cypress.env('testPartnerAdministrationName');
 const testPartnerAdministrationId = Cypress.env('testPartnerAdministrationId');
-const testUserList = Cypress.env('testUserList');
 
 describe('Super Admin: Launching Students', () => {
   it('Selects an administration and launches a student in their assessment portal', () => {

@@ -657,8 +657,8 @@ const getOrgId = async (orgType, orgName, selectedDistrict = null, selectedSchoo
     orgType === 'schools'
       ? `${orgName}-${selectedDistrict}`
       : orgType === 'classes'
-      ? `${orgName}-${selectedSchool}`
-      : orgName;
+        ? `${orgName}-${selectedSchool}`
+        : orgName;
 
   // Check cache first
   if (orgCache.value[orgType].has(cacheKey)) {
@@ -684,8 +684,8 @@ const getOrgId = async (orgType, orgName, selectedDistrict = null, selectedSchoo
         orgType === 'schools'
           ? `${org.name}-${selectedDistrict}`
           : orgType === 'classes'
-          ? `${org.name}-${selectedSchool}`
-          : org.name;
+            ? `${org.name}-${selectedSchool}`
+            : org.name;
       orgCache.value[orgType].set(cacheKey, org.id);
     });
 

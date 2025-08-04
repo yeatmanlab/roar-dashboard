@@ -43,7 +43,7 @@ const playTrial = (targetText) => {
             cy.log(correctAnswer);
 
             cy.log('Game in progress; selecting correct answer.');
-            // eslint-disable-next-line cypress/unsafe-to-chain-command
+
             cy.get(`img[src*="${correctAnswer}.webp"]`).then((exists) => {
               if (exists) {
                 cy.get(`img[src*="${correctAnswer}.webp"]`).first().click();

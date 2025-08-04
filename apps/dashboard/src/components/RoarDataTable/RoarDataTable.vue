@@ -648,7 +648,7 @@ function getFormattedDate(date) {
         month: 'short',
         day: 'numeric',
       });
-    } catch (error) {
+    } catch {
       return '';
     }
   }

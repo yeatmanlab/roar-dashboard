@@ -31,13 +31,9 @@ function checkAssignmentColumns() {
 describe('The partner admin can view score reports for a given administration.', () => {
   it('Selects an administration and views its score report.', () => {
     checkUrl();
-    cy.wait(Cypress.env('timeout'));
     cy.getAdministrationCard(testPartnerAdministrationName);
-    cy.wait(Cypress.env('timeout'));
     clickScoreButton();
-    cy.wait(Cypress.env('timeout'));
     cy.checkUserList(testUserList);
-    cy.wait(timeout);
     checkAssignmentColumns(testAssignments);
   });
 });
