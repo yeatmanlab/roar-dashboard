@@ -101,7 +101,7 @@ const mapAdministrations = async ({ isSuperAdmin, data, creators, adminOrgs }) =
   return administrations;
 };
 
-export const administrationPageFetcher = async (isSuperAdmin, exhaustiveAdminOrgs, fetchTestData = false, orderBy) => {
+export const fetchAdministrations = async (isSuperAdmin, exhaustiveAdminOrgs, fetchTestData = false) => {
   const authStore = useAuthStore();
   const { roarfirekit } = storeToRefs(authStore);
   const administrationIds = await roarfirekit.value.getAdministrations({
@@ -158,6 +158,12 @@ export const administrationPageFetcher = async (isSuperAdmin, exhaustiveAdminOrg
     adminOrgs: exhaustiveAdminOrgs,
   });
 
+  return administrations;
+};
+
+export const administrationPageFetcher = async (isSuperAdmin, exhaustiveAdminOrgs, fetchTestData = false, orderBy) => {
+  const administrations = await fetchAdministrations(isSuperAdmin, exhaustiveAdminOrgs, fetchTestData);
+
   const orderField = (orderBy?.value ?? orderByDefault)[0].field.fieldPath;
   const orderDirection = (orderBy?.value ?? orderByDefault)[0].direction;
   const sortedAdministrations = administrations
@@ -168,7 +174,7 @@ export const administrationPageFetcher = async (isSuperAdmin, exhaustiveAdminOrg
       return 0;
     });
 
-  return administrations;
+  return sortedAdministrations;
 };
 
 /**
@@ -185,7 +191,6 @@ export const getAdministrationsByOrg = (orgId, orgType, administrations) => {
   }
 
   return administrations.filter((administration) => {
-
     const assignedOrgs = administration.assignedOrgs?.[orgType] || [];
     return assignedOrgs.includes(orgId);
   });
