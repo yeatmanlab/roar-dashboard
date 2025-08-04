@@ -158,17 +158,7 @@ export const administrationPageFetcher = async (isSuperAdmin, exhaustiveAdminOrg
     adminOrgs: exhaustiveAdminOrgs,
   });
 
-  const orderField = (orderBy?.value ?? orderByDefault)[0].field.fieldPath;
-  const orderDirection = (orderBy?.value ?? orderByDefault)[0].direction;
-  const sortedAdministrations = administrations
-    .filter((a) => a[orderField] !== undefined)
-    .sort((a, b) => {
-      if (orderDirection === 'ASCENDING') return 2 * +(a[orderField] > b[orderField]) - 1;
-      if (orderDirection === 'DESCENDING') return 2 * +(b[orderField] > a[orderField]) - 1;
-      return 0;
-    });
-
-  return sortedAdministrations;
+  return administrations;
 };
 
 /**
