@@ -204,6 +204,20 @@ Cypress.Commands.add('waitForParticipantHomepage', () => {
 });
 
 /**
+ * Wait for the parent homepage to load.
+ */
+Cypress.Commands.add('waitForParentHomepage', () => {
+  cy.waitUntil(
+    () => {
+      return Cypress.$('[data-cy="parent-homepage__students-grid"]').length > 0;
+    },
+    {
+      errorMsg: 'Failed to load the parent home page before timeout',
+    },
+  );
+});
+
+/**
  * Wait for the assessment to load.
  */
 Cypress.Commands.add('waitForAssessmentReadyState', () => {
