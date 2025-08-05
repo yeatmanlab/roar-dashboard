@@ -201,14 +201,17 @@ export const variantsFetcher = async (registered = false) => {
 
     // But the order of batchGet is not guaranteed, so we need to match the task
     // docs back with their variants.
-    return variants.map((variant) => {
+    const mappedVariants = variants.map((variant) => {
       const task = taskDocDict[variant.parentDoc];
-      return {
-        id: variant.id,
-        variant,
-        task: task.data,
-      };
+      if (task) {
+        return {
+          id: variant.id,
+          variant,
+          task: task.data,
+        };
+      } else return undefined;
     });
+    return _without(mappedVariants, undefined);
   });
 };
 
