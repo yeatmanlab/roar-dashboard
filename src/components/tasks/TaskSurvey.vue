@@ -139,4 +139,7 @@ async function handleCompleteSurvey() {
 
 <style>
 @import '@bdelab/roar-survey/lib/roar-survey.css';
+.sd-root-modern__wrapper {
+  margin: auto;
+}
 </style>
