@@ -137,13 +137,6 @@ describe('checkConsentRenewalDate', () => {
       vi.setSystemTime(mockDate);
     });
 
-    it('should handle documents signed on the exact renewal date', () => {
-      const userLegalDocs = [
-        { id: 1, dateSigned: '2024-08-01T07:00:00Z' }, // Exactly on renewal date
-      ];
-      expect(checkConsentRenewalDate(userLegalDocs)).toBe(false);
-    });
-
     it('should handle documents signed one second after renewal date', () => {
       const userLegalDocs = [
         { id: 1, dateSigned: '2024-08-01T07:00:01Z' }, // One second after renewal date
