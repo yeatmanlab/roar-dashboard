@@ -201,7 +201,7 @@ import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useDistrictsListQuery from '@/composables/queries/useDistrictsListQuery';
 import useDistrictSchoolsQuery from '@/composables/queries/useDistrictSchoolsQuery';
 import useOrgsTableQuery from '@/composables/queries/useOrgsTableQuery';
-import useAdministrationsListQuery from '@/composables/queries/useAdministrationsListQuery';
+import useAdministrationsListQuery, { useFullAdministrationsListQuery } from '@/composables/queries/useAdministrationsListQuery';
 import EditOrgsForm from '@/components/EditOrgsForm.vue';
 import RoarModal from '@/components/modals/RoarModal.vue';
 import { CSV_EXPORT_MAX_RECORD_COUNT } from '@/constants/csvExport';
@@ -295,12 +295,15 @@ const {
 
 // Fetch all administrations for the assignments modal
 const { 
-  data: allAdministrations, 
+  data: administrationsData, 
   isLoading: isLoadingAdministrations,
   isFetching: isFetchingAdministrations 
-} = useAdministrationsListQuery(orderBy, false, {
+} = useFullAdministrationsListQuery(orderBy, false, {
   enabled: claimsLoaded,
 });
+
+// Extract the full administrations array for getAdministrationsByOrg
+const allAdministrations = computed(() => administrationsData.value?.administrations || []);
 
 // Filtered org data based on selected cohort site
 const filteredOrgData = computed(() => {

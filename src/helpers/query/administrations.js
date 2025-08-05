@@ -101,7 +101,7 @@ const mapAdministrations = async ({ isSuperAdmin, data, creators, adminOrgs }) =
   return administrations;
 };
 
-export const fetchAdministrations = async (isSuperAdmin, exhaustiveAdminOrgs, fetchTestData = false) => {
+export const administrationPageFetcher = async (isSuperAdmin, exhaustiveAdminOrgs, fetchTestData = false, orderBy) => {
   const authStore = useAuthStore();
   const { roarfirekit } = storeToRefs(authStore);
   const administrationIds = await roarfirekit.value.getAdministrations({
@@ -117,7 +117,7 @@ export const fetchAdministrations = async (isSuperAdmin, exhaustiveAdminOrgs, fe
     data = await axiosInstance.post(`${getBaseDocumentPath()}:batchGet`, { documents });
   } catch (error) {
     console.error('Error fetching administration data:', error);
-    return [];
+    return { sortedAdministrations: [], administrations: [] };
   }
 
   const administrationData = _without(
@@ -158,12 +158,6 @@ export const fetchAdministrations = async (isSuperAdmin, exhaustiveAdminOrgs, fe
     adminOrgs: exhaustiveAdminOrgs,
   });
 
-  return administrations;
-};
-
-export const administrationPageFetcher = async (isSuperAdmin, exhaustiveAdminOrgs, fetchTestData = false, orderBy) => {
-  const administrations = await fetchAdministrations(isSuperAdmin, exhaustiveAdminOrgs, fetchTestData);
-
   const orderField = (orderBy?.value ?? orderByDefault)[0].field.fieldPath;
   const orderDirection = (orderBy?.value ?? orderByDefault)[0].direction;
   const sortedAdministrations = administrations
@@ -174,7 +168,7 @@ export const administrationPageFetcher = async (isSuperAdmin, exhaustiveAdminOrg
       return 0;
     });
 
-  return sortedAdministrations;
+  return { sortedAdministrations, administrations };
 };
 
 /**
