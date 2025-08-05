@@ -5,7 +5,7 @@ import { CONSENT_DATES } from '@/constants/consentDates';
  * @param {Array} userLegalDocs - Array of user legal documents
  * @returns {boolean} - True if user has consented since latest August 1st, false otherwise
  */
-const hasConsentedSinceLatestAugust = (userLegalDocs) => {
+const checkConsentRenewalDate = (userLegalDocs) => {
   // Check if userLegalDocs exists and is an array
   if (!userLegalDocs || !Array.isArray(userLegalDocs)) {
     return false;
@@ -31,4 +31,4 @@ const hasConsentedSinceLatestAugust = (userLegalDocs) => {
   });
 };
 
-export { hasConsentedSinceLatestAugust };
+export { checkConsentRenewalDate };

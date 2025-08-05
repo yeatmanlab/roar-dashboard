@@ -126,7 +126,7 @@ import GameTabs from '@/components/GameTabs.vue';
 import ParticipantSidebar from '@/components/ParticipantSidebar.vue';
 import useUserType from '@/composables/useUserType';
 import { highestAdminOrgIntersection } from '@/helpers/query/assignments';
-import { hasConsentedSinceLatestAugust } from '@/helpers/consent';
+import { checkConsentRenewalDate } from '@/helpers/consent';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 
 const showConsent = ref(false);
@@ -296,7 +296,7 @@ async function checkConsent() {
   consentVersion.value = consentDoc.version;
 
   if (consentStatus?.[consentDoc.version]) {
-    const hasUpdatedConsent = hasConsentedSinceLatestAugust(consentStatus?.[consentDoc.version]);
+    const hasUpdatedConsent = checkConsentRenewalDate(consentStatus?.[consentDoc.version]);
     // Show the consent form if the latest document was signed before August 1st.
     if (!hasUpdatedConsent) {
       if (docAmount !== '' || docExpectedTime !== '') {
