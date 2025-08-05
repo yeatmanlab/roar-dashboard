@@ -190,17 +190,25 @@
                 </span>
               </div>
               <div v-else-if="col.button">
-                <PvButton
-                  severity="secondary"
-                  text
-                  class="column-button border border-round surface-200 text-primary p-2 hover:surface-500 hover:text-white"
-                  :label="col.buttonLabel"
-                  :aria-label="col.buttonTooltip"
-                  :icon="col.buttonIcon"
-                  data-cy="event-button"
-                  size="small"
-                  @click="$emit(col.eventName, colData)"
-                />
+                <div class="flex align-items-center justify-content-center">
+                  <PvButton
+                    severity="secondary"
+                    text
+                    class="column-button border border-round surface-200 text-primary p-2 hover:surface-500 hover:text-white"
+                    :label="col.buttonLabel"
+                    :aria-label="col.buttonTooltip"
+                    :icon="col.buttonIcon"
+                    data-cy="event-button"
+                    size="small"
+                    @click="$emit(col.eventName, colData)"
+                  />
+                  <span
+                    v-if="col.eventName === 'assignments-button' && colData.assignmentCount !== undefined && colData.assignmentCount !== null"
+                    class="font-semibold text-sm ml-2"
+                  >
+                    {{ colData.assignmentCount }}
+                  </span>
+                </div>
               </div>
               <div v-else-if="col.dataType === 'date'">
                 {{ getFormattedDate(_get(colData, col.field)) }}

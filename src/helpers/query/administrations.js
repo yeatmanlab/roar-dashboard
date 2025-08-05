@@ -117,7 +117,7 @@ export const administrationPageFetcher = async (isSuperAdmin, exhaustiveAdminOrg
     data = await axiosInstance.post(`${getBaseDocumentPath()}:batchGet`, { documents });
   } catch (error) {
     console.error('Error fetching administration data:', error);
-    return [];
+    return { sortedAdministrations: [], administrations: [] };
   }
 
   const administrationData = _without(
@@ -168,5 +168,24 @@ export const administrationPageFetcher = async (isSuperAdmin, exhaustiveAdminOrg
       return 0;
     });
 
-  return sortedAdministrations;
+  return { sortedAdministrations, administrations };
+};
+
+/**
+ * Fetches administrations that are assigned to a specific organization.
+ *
+ * @param {String} orgId – The organization ID to filter administrations by.
+ * @param {String} orgType – The organization type (districts, schools, classes, groups).
+ * @param {Array} administrations – The list of all administrations to filter.
+ * @returns {Array} – An array of administrations assigned to the specified organization.
+ */
+export const getAdministrationsByOrg = (orgId, orgType, administrations) => {
+  if (!administrations || !orgId || !orgType) {
+    return [];
+  }
+
+  return administrations.filter((administration) => {
+    const assignedOrgs = administration.assignedOrgs?.[orgType] || [];
+    return assignedOrgs.includes(orgId);
+  });
 };
