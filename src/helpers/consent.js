@@ -16,10 +16,9 @@ const checkConsentRenewalDate = (userLegalDocs) => {
   // @NOTE: We consider the school year to start on August 1st
   const currentDate = new Date();
   const latestAugust =
-    currentDate.getMonth() < CONSENT_DATES.RENEWAL_MONTH
-      ? new Date(currentDate.getFullYear() - 1, CONSENT_DATES.RENEWAL_MONTH, CONSENT_DATES.RENEWAL_DAY) // Previous year's August 1st
-      : new Date(currentDate.getFullYear(), CONSENT_DATES.RENEWAL_MONTH, CONSENT_DATES.RENEWAL_DAY); // Current year's August 1st
-
+    currentDate.getMonth() < CONSENT_DATES.RENEWAL_MONTH - 1
+      ? new Date(currentDate.getFullYear() - 1, CONSENT_DATES.RENEWAL_MONTH - 1, CONSENT_DATES.RENEWAL_DAY) // Previous year's August 1st
+      : new Date(currentDate.getFullYear(), CONSENT_DATES.RENEWAL_MONTH - 1, CONSENT_DATES.RENEWAL_DAY); // Current year's August 1st
   // Check if any entry has a dateSigned more recent than the latest August 1st
   return userLegalDocs.some((doc) => {
     if (!doc.dateSigned) {
