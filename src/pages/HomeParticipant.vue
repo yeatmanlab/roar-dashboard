@@ -126,6 +126,7 @@ import GameTabs from '@/components/GameTabs.vue';
 import ParticipantSidebar from '@/components/ParticipantSidebar.vue';
 import useUserType from '@/composables/useUserType';
 import { highestAdminOrgIntersection } from '@/helpers/query/assignments';
+import { hasConsentedSinceLatestAugust } from '@/helpers/consent';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 
 const showConsent = ref(false);
@@ -294,49 +295,11 @@ async function checkConsent() {
   const consentDoc = await authStore.getLegalDoc(docType);
   consentVersion.value = consentDoc.version;
 
-  // Determine the start of the school year (August 1st).
-  // If the current date is before August 1st, use the previous year's date.
-  // @NOTE: We consider the school year to start on August 1st
-  const latestAugust =
-    currentDate.getMonth() < 7
-      ? new Date(currentDate.getFullYear() - 1, 7, 1)
-      : new Date(currentDate.getFullYear(), 7, 1);
-
   if (consentStatus?.[consentDoc.version]) {
-    const legalDocs = consentStatus?.[consentDoc.version];
-
-    let found = false;
-    let signedBeforeAugFirst = false;
-
-    for (const document of legalDocs) {
-      const signedDate = new Date(document.dateSigned);
-
-      if (document.amount === docAmount && document.expectedTime === docExpectedTime) {
-        found = true;
-
-        /**
-         * Checks if a given date is before the start of the current school year.
-         *
-         * @param {string} signedDate - The date to check, in the format 'YYYY-MM-DD'.
-         * @set {boolean} signedBeforeAugFirst to True if the given date is before the start of the current school year.
-         */
-        if (signedDate < latestAugust) {
-          signedBeforeAugFirst = true;
-          break;
-        }
-      }
-
-      // If the signedDate is invalid (e.g., an invalid date string), mark the document as needing resigning.
-      // This is because it's not possible to determine whether it was signed before the school year start date.
-      if (isNaN(new Date(document.dateSigned)) && currentDate >= latestAugust) {
-        signedBeforeAugFirst = true;
-        break;
-      }
-    }
-
-    // Show the consent form if no document is found or if a document was signed before August 1st.
-    if (!found || signedBeforeAugFirst) {
-      if (docAmount !== '' || docExpectedTime !== '' || signedBeforeAugFirst) {
+    const hasUpdatedConsent = hasConsentedSinceLatestAugust(consentStatus?.[consentDoc.version]);
+    // Show the consent form if the latest document was signed before August 1st.
+    if (!hasUpdatedConsent) {
+      if (docAmount !== '' || docExpectedTime !== '') {
         confirmText.value = consentDoc.text;
         showConsent.value = true;
         return;
