@@ -122,7 +122,6 @@ function writeRandomizedDataToFile(data) {
       console.error('Error writing file:', err);
       return;
     }
-    console.log('File has been created');
   });
 }
 
