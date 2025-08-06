@@ -32,6 +32,14 @@ export const taskDisplayNames = {
     extendedName: 'Letter Names and Sounds',
     order: 27,
   },
+  phonics: {
+    name: 'Phonics',
+    publicName: 'ROAR - Phonics',
+    studentFacingName: 'Phonics',
+    extendedTitle: 'ROAR - Phonics',
+    extendedName: 'Phonics Assessment',
+    order: 28,
+  },
   pa: {
     name: 'Phoneme',
     publicName: 'ROAR - Phoneme',
@@ -208,14 +216,6 @@ export const taskDisplayNames = {
     extendedName: 'Inference',
     order: 27,
   },
-  phonics: {
-    name: 'Phonics',
-    publicName: 'ROAR - Phonics',
-    studentFacingName: 'Phonics',
-    extendedTitle: 'ROAR - Phonics',
-    extendedName: 'Phonics',
-    order: 18,
-  },
   comp: {
     name: 'Comprehension',
     publicName: 'ROAR - Comprehension',
@@ -302,7 +302,7 @@ export const extendedDescriptions = {
     'This test measures how well your student knows the names of letters and which letters are used to spell each sound.',
   comp: 'Temporary description for comp',
   phonics:
-    'This test measures phonics knowledge by testing how well your student can match the sounds of a word to the spelling',
+    "This is a new test of phonics knowledge. It is currently being studied to determine how well it measures a student's ability to use phonics patterns to decode nonsense words.",
   syntax: 'This test measures how well students understand sentences that vary from simple to complicated',
   trog: 'This test measures how well students understand sentences that vary from simple to complicated',
   fluency: 'Temporary description for fluency',
@@ -378,6 +378,7 @@ export const rawOnlyTasks = [
   'cva',
   'morphology',
   'vocab',
+  'phonics',
   'fluency',
   'letter-es',
   'letter-en-ca',
@@ -600,9 +601,15 @@ export function getGradeWithSuffix(grade) {
  *  Get Support Level
  *  Function to take scores, taskId, and grade and return the proper support category for the run.
  */
+export const getDialColor = (grade, percentile, rawScore, taskId) => {
+  const { tag_color } = getSupportLevel(grade, percentile, rawScore, taskId);
+  return tag_color;
+};
+
 export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = null) => {
   let support_level = null;
   let tag_color = null;
+
   if (rawScore === undefined) {
     return {
       support_level,
@@ -703,6 +710,13 @@ export function getScoreKeys(taskId, grade) {
     rawScoreKey = 'sreScore';
   }
   if (taskId === 'letter' || taskId === 'letter-es' || taskId === 'letter-en-ca') {
+    rawScoreKey = 'totalCorrect';
+  }
+  if (taskId === 'phonics') {
+    percentileScoreKey = 'totalPercentCorrect';
+    percentileScoreDisplayKey = 'totalPercentCorrect';
+    standardScoreKey = 'totalPercentCorrect';
+    standardScoreDisplayKey = 'totalPercentCorrect';
     rawScoreKey = 'totalPercentCorrect';
   }
   return {
