@@ -15,7 +15,8 @@
         <div class="flex flex-row">
           <span class="font-bold" style="margin-left: 0.625rem">{{ variant.task.name }}</span>
           <PvButton
-            class="p-0 surface-hover border-none border-circle hover:text-100 hover:bg-primary"
+            class="p-0 surface-hover border-none border-circle hover:text-100 hover:bg-primary ml-2"
+            style="margin-top: -0.25rem"
             @click="toggle($event)"
             ><i
               v-tooltip.top="'Click to view params'"
@@ -102,7 +103,8 @@
         <div class="flex flex-row">
           <span class="font-bold" style="margin-left: 0.625rem">{{ variant.task.name }}</span>
           <PvButton
-            class="p-0 surface-hover border-none border-circle hover:text-100 hover:bg-primary"
+            class="p-0 surface-hover border-none border-circle hover:text-100 hover:bg-primary ml-2"
+            style="margin-top: -0.25rem"
             @click="toggle($event)"
             ><i
               v-tooltip.top="'Click to view params'"
@@ -262,7 +264,7 @@ import PvDataTable from 'primevue/datatable';
 import PvDialog from 'primevue/dialog';
 import PvPopover from 'primevue/popover';
 import PvTag from 'primevue/tag';
-import EditVariantDialog from './EditVariantDialog.vue';
+import EditVariantDialog from '../modals/EditVariantDialog.vue';
 
 const props = defineProps({
   variant: {
