@@ -75,9 +75,13 @@ onBeforeUnmount(() => {
 });
 
 watch(
-  [isFirekitInit, isLoadingUserData],
-  async ([newFirekitInitValue, newLoadingUserData]) => {
-    if (newFirekitInitValue && !newLoadingUserData && !taskStarted.value) {
+  [isFirekitInit, isLoadingUserData, userData],
+  async ([newFirekitInitValue, isLoadingUserData]) => {
+    const birthMonth = _get(userData.value, 'birthMonth');
+    const birthYear = _get(userData.value, 'birthYear');
+    const ageDataDefined = birthMonth !== undefined && birthYear !== undefined
+    
+    if (newFirekitInitValue && !isLoadingUserData && ageDataDefined && !taskStarted.value) {
       taskStarted.value = true;
       const { selectedAdmin } = storeToRefs(gameStore);
       await startTask(selectedAdmin);
