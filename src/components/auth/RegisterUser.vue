@@ -208,7 +208,6 @@ const handleFormSubmit = (isFormValid) => {
   if (!isFormValid) {
     return;
   }
-  console.log('to submit:', state);
 };
 
 const yearOnlyCheck = ref(false);

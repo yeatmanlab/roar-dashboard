@@ -131,7 +131,7 @@ describe('reports', () => {
         percentileScoreDisplayKey: undefined,
         standardScoreKey: undefined,
         standardScoreDisplayKey: undefined,
-        rawScoreKey: 'totalPercentCorrect',
+        rawScoreKey: 'totalCorrect',
       });
     });
   });
