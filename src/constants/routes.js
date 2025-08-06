@@ -32,6 +32,7 @@ export const GAME_ROUTES = {
   CROWDING: '/game/crowding',
   ROAV_MEP: '/game/roav-mep',
   ROAR_READALOUD: '/game/roar-readaloud',
+  SURVEY: '/game/roar-survey',
 };
 
 export const APP_ROUTES = {
