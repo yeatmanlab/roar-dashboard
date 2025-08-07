@@ -1,0 +1,112 @@
+identifier,label,en,es-CO,de
+auth.consent.header,auth/consent,Consent,Consentimiento,Zustimmung
+auth.consent.consentTitle,auth/consent,Consent,Consentimiento,
+auth.consent.assentTitle,auth/consent,Assent,Asentimiento,
+auth.consent.acceptButton,auth/consent,Accept,Aceptar,Akzeptieren
+auth.consent.rejectButton,auth/consent,"No, sign me out","No, cerrar sesión","Nein, mich abmelden"
+auth.consent.toastHeader,auth/consent,Confirmed,Confirmado,Bestätigt
+auth.consent.consentUpdatedStatus,auth/consent,Consent status updated,Estado de consentimiento actualizado,Zustimmungsstatus aktualisiert
+auth.signin.atLeastOneLowercase,auth/signin,At least one lowercase,Al menos una minúscula,Mindestens ein Kleinbuchstabe
+auth.signin.atLeastOneNumber,auth/signin,At least one number,Al menos un número,Mindestens eine Zahl
+auth.signin.atLeastOneNumeric,auth/signin,At least one numeric,Al menos un numérico,Mindestens eine Nummer
+auth.signin.atLeastOneUpperCase,auth/signin,At least one uppercase,Al menos una mayúscula,Mindestens ein Großbuchstabe
+auth.signin.buttonLabel,auth/signin,Go!,¡Vamos!,Los!
+auth.signin.continueWithGoogle,auth/signin,Continue with Google,Sigue adelante con Google,Machen Sie weiter mit Google
+auth.signin.emailId,auth/signin,email,correo electrónico,E-Mail
+auth.signin.emailPlaceholder,auth/signin,Username or email,Nombre de usuario o correo electrónico,Benutzername oder E-Mail
+auth.signin.forgotPassword,auth/signin,Forgot Password?,¿Olvidaste tu contraseña?,Passwort vergessen?
+auth.signin.incorrectEmailOrPassword,auth/signin,Incorrect username/email or password,Nombre de usuario/correo electrónico o contraseña incorrectos,Falscher Benutzername/E-Mail oder Passwort
+auth.signin.invalidEmailPlaceholder,auth/signin,Error: invalid email,Error: correo electrónico no válido,Fehler: Ungültige E-Mail
+auth.signin.minimumCharacters,auth/signin,Minimum 8 characters,Mínimo 8 caracteres,Mindestens 8 Zeichen
+auth.signin.passwordId,auth/signin,password,contraseña,Passwort
+auth.signin.passwordPlaceholder,auth/signin,Password,Contraseña,Passwort
+auth.signin.pickPassword,auth/signin,Pick a password,Elige una contraseña,Wählen Sie ein Passwort
+auth.signin.selectLanguage,auth/signin,Select Language,Seleccionar idioma,Sprache auswählen
+auth.signin.selectLanguageLabel,auth/signin,Language,Idioma,Sprache
+auth.signin.signInWithEmailLinkInstead,auth/signin,Sign-in using email link,Iniciar sesión con enlace de correo electrónico,Mit E-Mail-Link anmelden
+auth.signin.signInWithEmailLinkPlaceHolder,auth/signin,Press Go to sign-in with an email link.,Presiona Go para iniciar sesión con un enlace de correo electrónico.,"Drücken Sie „Los“, um sich mit einem E-Mail-Link anzumelden."
+auth.signin.signInWithPasswordInstead,auth/signin,Sign-in using password,Iniciar sesión con contraseña,Mit Passwort anmelden
+auth.signin.suggestions,auth/signin,Suggestions,Sugerencias,Vorschläge
+components.game-tabs.clickToStart,components/game-tabs,Click to start,Haz clic para empezar,Klicken zum Starten
+components.game-tabs.taskCompleted,components/game-tabs,Task Completed!,¡Tarea completada!,Aufgabe abgeschlossen!
+components.game-tabs.introName,components/game-tabs,Introduction,Introducción,Anleitungen
+components.game-tabs.introDescription,components/game-tabs,Learn how to play our games. ,Aprende a jugar a nuestros juegos.,"Schau dir an, wie man unsere Spiele spielt."
+components.game-tabs.heartsAndFlowersDescription,components/game-tabs,Match the correct side to the hearts and flowers.,Haz coincidir el lado correcto con los corazones y las flores.,Wähle die richige Seite für die Herzen und Blumen.
+components.game-tabs.heartsAndFlowersName,components/game-tabs,Hearts and Flowers,Corazones y Flores,Herzen & Blumen
+components.game-tabs.egmaMathDescription,components/game-tabs,Solve the math problems.,Resuelve los problemas matemáticos.,Löse die Matheaufgaben.
+components.game-tabs.egmaMathName,components/game-tabs,Math,Matemáticas,Mathe
+components.game-tabs.matrixReasoningDescription,components/game-tabs,Find the missing piece to complete the puzzle.,Encuentra la pieza que falta para completar el rompecabeza.,"Finde das fehlende Teil, um das Puzzle zu vervollständigen."
+components.game-tabs.matrixReasoningName,components/game-tabs,Pattern matching,Razonamiento Matricial,Musterspiel
+components.game-tabs.memoryGameDescription,components/game-tabs,Watch the squares light up. Remember the order and make the same pattern.,Observa cómo se iluminan los cuadrados. Recuerda el orden y haz el mismo patrón.,"Schau dir genau an, wie die Quadrate aufleuchten. Merke dir die Reihenfolge und mach das Muster genauso nach."
+components.game-tabs.memoryGameName,components/game-tabs,Memory,Memoria,Merkspiel
+components.game-tabs.mentalRotationDescription,components/game-tabs,Match the pictures.,Empareja las imágenes.,Ordne die Bilder zu.
+components.game-tabs.mentalRotationName,components/game-tabs,Shape Rotation,Rotación Mental,Formenspiel
+components.game-tabs.sameDifferentSelectionDescription,components/game-tabs,Find things that are the same about the shapes.,Encuentra cosas iguales en las formas.,"Finde Dinge, die die Formen gemeinsam haben."
+components.game-tabs.sameDifferentSelectionName,components/game-tabs,Same & Different,Iguales y Diferentes,Gleich & Verschieden
+components.game-tabs.theoryOfMindDescription,components/game-tabs,Listen to the stories and answer the questions.,Escucha las historias y responde a las preguntas.,Höre dir die Geschichten an und beantworte dann Fragen dazu.
+components.game-tabs.theoryOfMindName,components/game-tabs,Stories,Historias,Bildergeschichten
+components.game-tabs.trogDescription,components/game-tabs,Listen to the words and choose the matching picture.,Escucha las palabras y elige la imagen correspondiente.,Hör dir die Wörter an und wähle das passende Bild dazu aus.
+components.game-tabs.trogName,components/game-tabs,Sentence Undersanding,Comprensión de Frases,Satzverstehen
+components.game-tabs.surveyNameChild,components/game-tabs,Thoughts and Feelings,Pensamientos y Sentimientos,Gedanken & Gefühle
+components.game-tabs.surveyDescriptionChild,components/game-tabs,Answer questions about your time at school.,Responde a las preguntas sobre tu estancia en el colegio.,Hier geht es um Fragen zu deiner Schulzeit.
+components.game-tabs.surveyNameParentPart1,components/game-tabs,Survey - Caregiver,Encuesta para cuidadores,Umfrage - Erwachsene
+components.game-tabs.surveyDescriptionParentPart1,components/game-tabs,This survey will take approximately 20-30 minutes to complete and will ask questions about your child.,Estimamos que diligenciar la siguiente encuesta le tomará aproximadamente 20-30 minutos y se le harán preguntas sobre su niño(a).,"Das Ausfüllen dieser Fragebögen dauert etwa 30-45 Minuten. Teil A enthält Fragen zu Ihrem häuslichen Umfeld und zu Ihrer Person. In Teil B werden Fragen zu Ihrem Kind/ Ihren Kindern gestellt. Anhand des Geburtsdatums, welches im jeweiligen Fragebogen aufgeführt ist, können Sie erkennen, an welches Kind Sie bei der Beantwortung der Fragen denken sollen (falls Sie mehr als ein Kind in dieser Studie haben)."
+components.game-tabs.surveyNameParentPart2,components/game-tabs,Survey - Family,Encuesta para cuidadores,Umfrage - Familie
+components.game-tabs.surveyDescriptionParentPart2,components/game-tabs,This survey will take approximately 20-30 minutes to complete and will ask questions about your home and yourself.,Estimamos que diligenciar la siguiente encuesta le tomará aproximadamente 20-30 minutos y se le harán preguntas sobre su hogar y usted mismo(a).,Umfrage für Eltern: Die folgende Umfrage dauert etwa 20-30 Minuten und enthält Fragen Ihrem zu Hause und zu Ihrer Person. 
+components.game-tabs.surveyNameTeacherPart1,components/game-tabs,Survey - General,Encuesta de profesores - General,Umfrage - Allgemein
+components.game-tabs.surveyDescriptionTeacherPart1,components/game-tabs,This survey will take approximately 5-10 minutes to complete and asks about your background and beliefs about teaching.,Estimamos que diligenciar la siguiente encuesta le tomará aproximadamente 5-10 minutos. Las preguntas indagan por sus antecedentes y creencias sobre la enseñanza.,This survey will take approximately 5-10 minutes to complete and asks about your background and beliefs about teaching.
+components.game-tabs.surveyNameTeacherPart2,components/game-tabs,Survey - Classroom,Encuesta de profesores - Salón,Umfrage - Klassenzimmer
+components.game-tabs.surveyDescriptionTeacherPart2,components/game-tabs,This survey will take approximately 5-10 minutes to complete and asks questions about the classroom(s) you teach.,Estimamos que diligenciar la siguiente encuesta le tomará aproximadamente 5-10 minutos y se le hará preguntas sobre el salón o los salones en los que imparte.,This survey will take approximately 5-10 minutes to complete and asks questions about the classroom(s) you teach.
+components.game-tabs.surveyProgressGeneral,components/game-tabs,General,General,Allgemein
+components.game-tabs.surveyProgressGeneralParent,components/game-tabs,Home/Caregiver,Familia,zu Hause/ Erwachsener
+components.game-tabs.surveyProgressSpecificParent,components/game-tabs,Child,Niño,Kind
+components.game-tabs.surveyProgressSpecificParentMonth,components/game-tabs,Month,Mes,Monat
+components.game-tabs.surveyProgressSpecificParentYear,components/game-tabs,Year,Año,Jahr
+components.game-tabs.surveyProgressGeneralTeacher,components/game-tabs,Teacher,Profesor,Lehrer
+components.game-tabs.surveyProgressSpecificTeacher,components/game-tabs,Classroom,Aula,Klassenzimmer
+components.game-tabs.mefsName,components/game-tabs,Lion and Monkey,El León y El Mono,Löwe & Affe
+components.game-tabs.mefsDescription,components/game-tabs,Match the shapes and colors.,Empareja las formas y los colores.,Formen und Farben zuordnen.
+components.game-tabs.vocabName,components/game-tabs,Vocabulary,Vocabulario,Vokabeln
+components.game-tabs.vocabDescription,components/game-tabs,Listen to the word and choose the matching picture.,Escucha la palabra y elige la imagen correspondiente.,Hör dir die Wörter an und wähle das passende Bild dazu aus.
+components.game-tabs.roarInferenceName,components/game-tabs,Roar - Inference,Roar - Inferencia,
+components.game-tabs.roarInferenceDescription,components/game-tabs,Read the stories and answer the questions.,Lee las historias y responde a las preguntas.,
+components.navbar.greeting,components/navbar,Hi,¡Hola,
+components.navbar.signOut,components/navbar,Sign Out,Salir,Abmelden
+components.participant-sidebar.grade,components/participant-sidebar,Grade,Calificación,Klasse
+components.participant-sidebar.studentInfo,components/participant-sidebar,Participant Info,Información del nina,Schülerinformationen
+components.participant-sidebar.tasksCompleted,components/participant-sidebar,tasks completed!,¡tareas completadas!,Aufgaben abgeschlossen!
+components.sentry-form.formTitle,components/sentry-form,Report an Issue to LEVANTE,Reportar un problema a LEVANTE,Ein Problem bei LEVANTE melden
+components.sentry-form.buttonLabel,components/sentry-form,Report an Issue,Reportar un problema,Ein Problem melden
+components.sentry-form.submitButtonLabel,components/sentry-form,Submit Issue Report,Enviar informe de problema,Problembericht einreichen
+components.sentry-form.cancelButtonLabel,components/sentry-form,Cancel,Cancelar,Abbrechen
+components.sentry-form.namePlaceholder,components/sentry-form,Your Name (optional),Tu nombre (opcional),Ihr Name (optional)
+components.sentry-form.emailPlaceholder,components/sentry-form,your.email@example.org (optional),tu.email@example.org (opcional),ihre.email@beispiel.org (optional)
+components.sentry-form.messageLabel,components/sentry-form,Description,Descripción,Beschreibung
+components.sentry-form.messagePlaceholder,components/sentry-form,What is the issue? What did you want to experience instead? Thank you for sharing.,¿Cuál es el problema? ¿Qué querías experimentar en su lugar? Gracias por compartir.,Was ist das Problem? Was wollten Sie stattdessen erleben? Vielen Dank für Ihr Feedback.
+components.tasks.preparing,components/tasks,Preparing your game!,¡Preparando tu juego!,Gleich geht das Spiel los!
+components.tasks.loading,components/tasks,loading,cargando,Laden
+pages.home-participant.showOptionalAssignments,pages/home-participant,Show optional assignments,Mostrar actividades opcionales,Optionale Zuordnungen anzeigen
+pages.home-participant.loadingAssignments,pages/home-participant,Loading Assignments,Cargando actividades,Lade Zuordnungen
+pages.home-participant.selectAssignment,pages/home-participant,Select an assignment,Selecciona una actividad,Wählen Sie eine Zuordnung aus
+pages.home-participant.noAssignments,pages/home-participant,You have no assignments!,¡No tienes actividades!,Sie haben keine Zuordnungen!
+pages.home-participant.contactAdministrator,pages/home-participant,Please contact your administrator to get added to an assignment.,"Por favor, contacta a tu administrador para que te agregue a una actividad.","Bitte kontaktieren Sie Ihren Administrator, um zu einer Zuordnung hinzugefügt zu werden."
+pages.home-selector.loading,pages/home-selector,Loading...,Cargando...,Laden...
+pages.home-selector.inactivityLogout,pages/home-selector,"You will soon be logged out for security purposes. Please click ""Continue"" if you wish to continue your session.
+ Otherwise, you will be automatically logged out in { timeLeft } seconds.","Pronto será desconectado por motivos de seguridad. Haz clic en ""Continuar"" si desea continuar con su sesión. De lo contrario, se cerrará la sesión automáticamente en {timeLeft} segundos.","Sie werden aus Sicherheitsgründen bald abgemeldet. Bitte klicken Sie auf 'Fortsetzen', wenn Sie Ihre Sitzung fortsetzen möchten. Andernfalls werden Sie automatisch in { timeLeft } Sekunden abgemeldet."
+pages.home-selector.inactivityLogoutAcceptLabel,pages/home-selector,Continue,Continuar,Fortsetzen
+pages.not-found.label,pages/not-found,Return to Home,Ir a la página de inicio.,"Klicken Sie hier, um zur Startseite zu gelangen."
+pages.not-found.pageNotFound,pages/not-found,Page not found,Página no encontrada,Seite nicht gefunden
+pages.not-found.sorry,pages/not-found,"Sorry, we could not find that page!","¡Lo siento, no pudimos encontrar esa página!","Entschuldigung, wir konnten diese Seite nicht finden!"
+pages.page-titles.home,pages/page-titles,Dashboard,Tablero,Dashboard
+pages.page-titles.signIn,pages/page-titles,Sign In,Iniciar Sesión,Anmelden
+pages.page-titles.signOut,pages/page-titles,Sign Out,Cerrar Sesión,Abmelden
+pages.signin.havingTrouble,pages/signin,Having trouble?,¿Tienes problemas?,Haben Sie Schwierigkeiten?
+pages.signin.login,pages/signin,Log in to access your dashboard,Inicia sesión para acceder a tu panel de control,"Melden Sie sich an, um auf Ihr Dashboard zuzugreifen"
+pages.signin.loginWith,pages/signin,Log in with,Inicia sesión con,Anmelden mit
+pages.signin.welcome,pages/signin,Welcome to ROAR!,¡Bienvenido a ROAR!,Willkommen bei ROAR!
+pages.signin.adminPrompt,pages/signin,Are you an Admin? Click {action} to Sign in.,¿Eres administrador? Haz clic {action} para iniciar sesión.,"Sind Sie ein Administrator? Klicken Sie {action}, um sich anzumelden."
+pages.signin.adminAction,pages/signin,here,aquí,hier
+pages.signin.adminInfoPrompt,pages/signin,If you registered with a Google email or your email provider uses Google SSO.,Si te registraste con un correo de Google o tu proveedor de correo utiliza Google SSO.,"Wenn Sie sich mit einer Google-E-Mail oder Ihr E-Mail-Anbieter Google SSO verwendet, registriert haben."
+surveys.user-survey.specificRelationDescriptionChildA,surveys/user-survey,For child with Birth Month,Para niño(a) con mes de nacimiento,Für Kind mit Geburtsmonat
+surveys.user-survey.specificRelationDescriptionChildB,surveys/user-survey,and Birth Year,y año de nacimiento,und Geburtsjahr
+surveys.user-survey.specificRelationDescriptionClass,surveys/user-survey,For class,Para la clase,Für Klasse

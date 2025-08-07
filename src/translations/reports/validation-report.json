@@ -1,0 +1,751 @@
+{
+  "generatedAt": "2025-08-07T00:06:55.771Z",
+  "summary": {
+    "totalFiles": 48,
+    "totalKeys": 1408,
+    "missingTranslations": 305,
+    "inconsistentVariables": 1,
+    "lengthViolations": 0,
+    "htmlMismatches": 0,
+    "issueCount": 35,
+    "localesChecked": 4,
+    "completeness": 78
+  },
+  "issues": [
+    {
+      "type": "missing_translations",
+      "message": "Missing 5 translations in individualScoreReport",
+      "component": "individualScoreReport",
+      "locale": "es",
+      "details": {
+        "missingKeys": [
+          "scoreReports.rawScoreLabel",
+          "scoreReports.reliability",
+          "scoreReports.percentileGrading",
+          "scoreReports.reliabilityMessage",
+          "scoreReports.reliability_flags"
+        ]
+      },
+      "timestamp": "2025-08-07T00:06:55.759Z",
+      "severity": "medium"
+    },
+    {
+      "type": "missing_translations",
+      "message": "Missing 1 translations in gameTabs",
+      "component": "gameTabs",
+      "locale": "es",
+      "details": {
+        "missingKeys": [
+          "LEVANTE TRANSLATIONS--------------------------"
+        ]
+      },
+      "timestamp": "2025-08-07T00:06:55.760Z",
+      "severity": "medium"
+    },
+    {
+      "type": "variable_mismatch",
+      "message": "Variable mismatch in homeSelector.inactivityLogout",
+      "component": "homeSelector",
+      "locale": "es",
+      "details": {
+        "baseVars": [
+          "{ timeLeft }"
+        ],
+        "localeVars": [
+          "{timeLeft}"
+        ],
+        "baseStr": "You will soon be logged out for security purposes. Please click \"Continue\" if you wish to continue your session.\n Otherwise, you will be automatically logged out in { timeLeft } seconds.",
+        "localeStr": "Pronto será desconectado por motivos de seguridad. Haz clic en \"Continuar\" si desea continuar con su sesión. De lo contrario, se cerrará la sesión automáticamente en {timeLeft} segundos."
+      },
+      "timestamp": "2025-08-07T00:06:55.760Z",
+      "severity": "high"
+    },
+    {
+      "type": "missing_translations",
+      "message": "Missing 1 translations in navBar",
+      "component": "navBar",
+      "locale": "de",
+      "details": {
+        "missingKeys": [
+          "greeting"
+        ]
+      },
+      "timestamp": "2025-08-07T00:06:55.765Z",
+      "severity": "medium"
+    },
+    {
+      "type": "missing_translations",
+      "message": "Missing 62 translations in individualScoreReport",
+      "component": "individualScoreReport",
+      "locale": "de",
+      "details": {
+        "missingKeys": [
+          "scoreReports.pageTitle",
+          "scoreReports.welcome",
+          "scoreReports.loading",
+          "scoreReports.grade",
+          "scoreReports.class",
+          "scoreReports.administration",
+          "scoreReports.expandSections",
+          "scoreReports.collapseSections",
+          "scoreReports.exportPDF",
+          "scoreReports.stillWorking",
+          "scoreReports.needOneComplete",
+          "scoreReports.completedTasks",
+          "scoreReports.roarSummery",
+          "scoreReports.summery",
+          "scoreReports.taskTabHeader",
+          "scoreReports.taskIntro",
+          "scoreReports.standardScore",
+          "scoreReports.percentileScore",
+          "scoreReports.rawScore",
+          "scoreReports.standardScoreDescription",
+          "scoreReports.percentileScoreDescription",
+          "scoreReports.rawScoreDescription",
+          "scoreReports.roarDescription",
+          "scoreReports.extraSupportDescription",
+          "scoreReports.developingDescription",
+          "scoreReports.achievedDescription",
+          "scoreReports.extraSupport",
+          "scoreReports.developing",
+          "scoreReports.achieved",
+          "scoreReports.extraSupportText",
+          "scoreReports.developingText",
+          "scoreReports.achievedText",
+          "scoreReports.skillsDescription",
+          "scoreReports.nextStepsTabHeader",
+          "scoreReports.nextSteps",
+          "scoreReports.rawTaskDescription",
+          "scoreReports.standardTaskDescription",
+          "scoreReports.percentileTaskDescription",
+          "scoreReports.scoreBreakdown",
+          "scoreReports.firstSoundMatching",
+          "scoreReports.lastSoundMatching",
+          "scoreReports.deletion",
+          "scoreReports.skillsToWorkOn",
+          "scoreReports.upperCase",
+          "scoreReports.lowerCase",
+          "scoreReports.letterSounds",
+          "scoreReports.lettersToWorkOn",
+          "scoreReports.letterSoundsToWorkOn",
+          "scoreReports.optional",
+          "scoreReports.required",
+          "scoreReports.optionalTagText",
+          "scoreReports.requiredTagText",
+          "scoreReports.reliable",
+          "scoreReports.unreliable",
+          "scoreReports.reliableTagText",
+          "scoreReports.unreliableTagText",
+          "scoreReports.unreliableTagTextFlags",
+          "scoreReports.rawScoreLabel",
+          "scoreReports.reliability",
+          "scoreReports.percentileGrading",
+          "scoreReports.reliabilityMessage",
+          "scoreReports.reliability_flags"
+        ]
+      },
+      "timestamp": "2025-08-07T00:06:55.765Z",
+      "severity": "medium"
+    },
+    {
+      "type": "missing_translations",
+      "message": "Missing 2 translations in gameTabs",
+      "component": "gameTabs",
+      "locale": "de",
+      "details": {
+        "missingKeys": [
+          "roarInferenceName",
+          "roarInferenceDescription"
+        ]
+      },
+      "timestamp": "2025-08-07T00:06:55.765Z",
+      "severity": "medium"
+    },
+    {
+      "type": "missing_translations",
+      "message": "Missing 2 translations in consentModal",
+      "component": "consentModal",
+      "locale": "de",
+      "details": {
+        "missingKeys": [
+          "consentTitle",
+          "assentTitle"
+        ]
+      },
+      "timestamp": "2025-08-07T00:06:55.765Z",
+      "severity": "medium"
+    },
+    {
+      "type": "missing_translations",
+      "message": "Missing 3 translations in userSurvey",
+      "component": "userSurvey",
+      "locale": "es-CO",
+      "details": {
+        "missingKeys": [
+          "specificRelationDescriptionChildA",
+          "specificRelationDescriptionChildB",
+          "specificRelationDescriptionClass"
+        ]
+      },
+      "timestamp": "2025-08-07T00:06:55.769Z",
+      "severity": "medium"
+    },
+    {
+      "type": "missing_translations",
+      "message": "Missing 2 translations in tasks",
+      "component": "tasks",
+      "locale": "es-CO",
+      "details": {
+        "missingKeys": [
+          "preparing",
+          "loading"
+        ]
+      },
+      "timestamp": "2025-08-07T00:06:55.769Z",
+      "severity": "medium"
+    },
+    {
+      "type": "missing_translations",
+      "message": "Missing 8 translations in sentryForm",
+      "component": "sentryForm",
+      "locale": "es-CO",
+      "details": {
+        "missingKeys": [
+          "formTitle",
+          "buttonLabel",
+          "submitButtonLabel",
+          "cancelButtonLabel",
+          "namePlaceholder",
+          "emailPlaceholder",
+          "messageLabel",
+          "messagePlaceholder"
+        ]
+      },
+      "timestamp": "2025-08-07T00:06:55.769Z",
+      "severity": "medium"
+    },
+    {
+      "type": "missing_translations",
+      "message": "Missing 3 translations in participantSidebar",
+      "component": "participantSidebar",
+      "locale": "es-CO",
+      "details": {
+        "missingKeys": [
+          "grade",
+          "studentInfo",
+          "tasksCompleted"
+        ]
+      },
+      "timestamp": "2025-08-07T00:06:55.769Z",
+      "severity": "medium"
+    },
+    {
+      "type": "missing_translations",
+      "message": "Missing 2 translations in navBar",
+      "component": "navBar",
+      "locale": "es-CO",
+      "details": {
+        "missingKeys": [
+          "greeting",
+          "signOut"
+        ]
+      },
+      "timestamp": "2025-08-07T00:06:55.769Z",
+      "severity": "medium"
+    },
+    {
+      "type": "missing_translations",
+      "message": "Missing 5 translations in individualScoreReport",
+      "component": "individualScoreReport",
+      "locale": "es-CO",
+      "details": {
+        "missingKeys": [
+          "scoreReports.rawScoreLabel",
+          "scoreReports.reliability",
+          "scoreReports.percentileGrading",
+          "scoreReports.reliabilityMessage",
+          "scoreReports.reliability_flags"
+        ]
+      },
+      "timestamp": "2025-08-07T00:06:55.769Z",
+      "severity": "medium"
+    },
+    {
+      "type": "missing_translations",
+      "message": "Missing 44 translations in gameTabs",
+      "component": "gameTabs",
+      "locale": "es-CO",
+      "details": {
+        "missingKeys": [
+          "clickToStart",
+          "taskCompleted",
+          "LEVANTE TRANSLATIONS--------------------------",
+          "introName",
+          "introDescription",
+          "heartsAndFlowersDescription",
+          "heartsAndFlowersName",
+          "egmaMathDescription",
+          "egmaMathName",
+          "matrixReasoningDescription",
+          "matrixReasoningName",
+          "memoryGameDescription",
+          "memoryGameName",
+          "mentalRotationDescription",
+          "mentalRotationName",
+          "sameDifferentSelectionDescription",
+          "sameDifferentSelectionName",
+          "theoryOfMindDescription",
+          "theoryOfMindName",
+          "trogDescription",
+          "trogName",
+          "surveyNameChild",
+          "surveyDescriptionChild",
+          "surveyNameParentPart1",
+          "surveyDescriptionParentPart1",
+          "surveyNameParentPart2",
+          "surveyDescriptionParentPart2",
+          "surveyNameTeacherPart1",
+          "surveyDescriptionTeacherPart1",
+          "surveyNameTeacherPart2",
+          "surveyDescriptionTeacherPart2",
+          "surveyProgressGeneral",
+          "surveyProgressGeneralParent",
+          "surveyProgressSpecificParent",
+          "surveyProgressSpecificParentMonth",
+          "surveyProgressSpecificParentYear",
+          "surveyProgressGeneralTeacher",
+          "surveyProgressSpecificTeacher",
+          "mefsName",
+          "mefsDescription",
+          "vocabName",
+          "vocabDescription",
+          "roarInferenceName",
+          "roarInferenceDescription"
+        ]
+      },
+      "timestamp": "2025-08-07T00:06:55.769Z",
+      "severity": "medium"
+    },
+    {
+      "type": "missing_translations",
+      "message": "Missing 7 translations in pageSignIn",
+      "component": "pageSignIn",
+      "locale": "es-CO",
+      "details": {
+        "missingKeys": [
+          "havingTrouble",
+          "login",
+          "loginWith",
+          "welcome",
+          "adminPrompt",
+          "adminAction",
+          "adminInfoPrompt"
+        ]
+      },
+      "timestamp": "2025-08-07T00:06:55.769Z",
+      "severity": "medium"
+    },
+    {
+      "type": "missing_translations",
+      "message": "Missing 3 translations in profile",
+      "component": "profile",
+      "locale": "es-CO",
+      "details": {
+        "missingKeys": [
+          "settings.settings",
+          "settings.language",
+          "settings.languageDescription"
+        ]
+      },
+      "timestamp": "2025-08-07T00:06:55.769Z",
+      "severity": "medium"
+    },
+    {
+      "type": "missing_translations",
+      "message": "Missing 3 translations in notFound",
+      "component": "notFound",
+      "locale": "es-CO",
+      "details": {
+        "missingKeys": [
+          "label",
+          "pageNotFound",
+          "sorry"
+        ]
+      },
+      "timestamp": "2025-08-07T00:06:55.769Z",
+      "severity": "medium"
+    },
+    {
+      "type": "missing_translations",
+      "message": "Missing 3 translations in homeSelector",
+      "component": "homeSelector",
+      "locale": "es-CO",
+      "details": {
+        "missingKeys": [
+          "loading",
+          "inactivityLogout",
+          "inactivityLogoutAcceptLabel"
+        ]
+      },
+      "timestamp": "2025-08-07T00:06:55.769Z",
+      "severity": "medium"
+    },
+    {
+      "type": "missing_translations",
+      "message": "Missing 5 translations in homeParticipant",
+      "component": "homeParticipant",
+      "locale": "es-CO",
+      "details": {
+        "missingKeys": [
+          "showOptionalAssignments",
+          "loadingAssignments",
+          "selectAssignment",
+          "noAssignments",
+          "contactAdministrator"
+        ]
+      },
+      "timestamp": "2025-08-07T00:06:55.769Z",
+      "severity": "medium"
+    },
+    {
+      "type": "missing_translations",
+      "message": "Missing 21 translations in authSignIn",
+      "component": "authSignIn",
+      "locale": "es-CO",
+      "details": {
+        "missingKeys": [
+          "atLeastOneLowercase",
+          "atLeastOneNumber",
+          "atLeastOneNumeric",
+          "atLeastOneUpperCase",
+          "buttonLabel",
+          "continueWithGoogle",
+          "emailId",
+          "emailPlaceholder",
+          "forgotPassword",
+          "incorrectEmailOrPassword",
+          "invalidEmailPlaceholder",
+          "minimumCharacters",
+          "passwordId",
+          "passwordPlaceholder",
+          "pickPassword",
+          "selectLanguage",
+          "selectLanguageLabel",
+          "signInWithEmailLinkInstead",
+          "signInWithEmailLinkPlaceHolder",
+          "signInWithPasswordInstead",
+          "suggestions"
+        ]
+      },
+      "timestamp": "2025-08-07T00:06:55.769Z",
+      "severity": "medium"
+    },
+    {
+      "type": "missing_translations",
+      "message": "Missing 7 translations in consentModal",
+      "component": "consentModal",
+      "locale": "es-CO",
+      "details": {
+        "missingKeys": [
+          "header",
+          "consentTitle",
+          "assentTitle",
+          "acceptButton",
+          "rejectButton",
+          "toastHeader",
+          "consentUpdatedStatus"
+        ]
+      },
+      "timestamp": "2025-08-07T00:06:55.769Z",
+      "severity": "medium"
+    },
+    {
+      "type": "missing_translations",
+      "message": "Missing 3 translations in userSurvey",
+      "component": "userSurvey",
+      "locale": "en-US",
+      "details": {
+        "missingKeys": [
+          "specificRelationDescriptionChildA",
+          "specificRelationDescriptionChildB",
+          "specificRelationDescriptionClass"
+        ]
+      },
+      "timestamp": "2025-08-07T00:06:55.771Z",
+      "severity": "medium"
+    },
+    {
+      "type": "missing_translations",
+      "message": "Missing 2 translations in tasks",
+      "component": "tasks",
+      "locale": "en-US",
+      "details": {
+        "missingKeys": [
+          "preparing",
+          "loading"
+        ]
+      },
+      "timestamp": "2025-08-07T00:06:55.771Z",
+      "severity": "medium"
+    },
+    {
+      "type": "missing_translations",
+      "message": "Missing 8 translations in sentryForm",
+      "component": "sentryForm",
+      "locale": "en-US",
+      "details": {
+        "missingKeys": [
+          "formTitle",
+          "buttonLabel",
+          "submitButtonLabel",
+          "cancelButtonLabel",
+          "namePlaceholder",
+          "emailPlaceholder",
+          "messageLabel",
+          "messagePlaceholder"
+        ]
+      },
+      "timestamp": "2025-08-07T00:06:55.771Z",
+      "severity": "medium"
+    },
+    {
+      "type": "missing_translations",
+      "message": "Missing 3 translations in participantSidebar",
+      "component": "participantSidebar",
+      "locale": "en-US",
+      "details": {
+        "missingKeys": [
+          "grade",
+          "studentInfo",
+          "tasksCompleted"
+        ]
+      },
+      "timestamp": "2025-08-07T00:06:55.771Z",
+      "severity": "medium"
+    },
+    {
+      "type": "missing_translations",
+      "message": "Missing 2 translations in navBar",
+      "component": "navBar",
+      "locale": "en-US",
+      "details": {
+        "missingKeys": [
+          "greeting",
+          "signOut"
+        ]
+      },
+      "timestamp": "2025-08-07T00:06:55.771Z",
+      "severity": "medium"
+    },
+    {
+      "type": "missing_translations",
+      "message": "Missing 5 translations in individualScoreReport",
+      "component": "individualScoreReport",
+      "locale": "en-US",
+      "details": {
+        "missingKeys": [
+          "scoreReports.rawScoreLabel",
+          "scoreReports.reliability",
+          "scoreReports.percentileGrading",
+          "scoreReports.reliabilityMessage",
+          "scoreReports.reliability_flags"
+        ]
+      },
+      "timestamp": "2025-08-07T00:06:55.771Z",
+      "severity": "medium"
+    },
+    {
+      "type": "missing_translations",
+      "message": "Missing 44 translations in gameTabs",
+      "component": "gameTabs",
+      "locale": "en-US",
+      "details": {
+        "missingKeys": [
+          "clickToStart",
+          "taskCompleted",
+          "LEVANTE TRANSLATIONS--------------------------",
+          "introName",
+          "introDescription",
+          "heartsAndFlowersDescription",
+          "heartsAndFlowersName",
+          "egmaMathDescription",
+          "egmaMathName",
+          "matrixReasoningDescription",
+          "matrixReasoningName",
+          "memoryGameDescription",
+          "memoryGameName",
+          "mentalRotationDescription",
+          "mentalRotationName",
+          "sameDifferentSelectionDescription",
+          "sameDifferentSelectionName",
+          "theoryOfMindDescription",
+          "theoryOfMindName",
+          "trogDescription",
+          "trogName",
+          "surveyNameChild",
+          "surveyDescriptionChild",
+          "surveyNameParentPart1",
+          "surveyDescriptionParentPart1",
+          "surveyNameParentPart2",
+          "surveyDescriptionParentPart2",
+          "surveyNameTeacherPart1",
+          "surveyDescriptionTeacherPart1",
+          "surveyNameTeacherPart2",
+          "surveyDescriptionTeacherPart2",
+          "surveyProgressGeneral",
+          "surveyProgressGeneralParent",
+          "surveyProgressSpecificParent",
+          "surveyProgressSpecificParentMonth",
+          "surveyProgressSpecificParentYear",
+          "surveyProgressGeneralTeacher",
+          "surveyProgressSpecificTeacher",
+          "mefsName",
+          "mefsDescription",
+          "vocabName",
+          "vocabDescription",
+          "roarInferenceName",
+          "roarInferenceDescription"
+        ]
+      },
+      "timestamp": "2025-08-07T00:06:55.771Z",
+      "severity": "medium"
+    },
+    {
+      "type": "missing_translations",
+      "message": "Missing 7 translations in pageSignIn",
+      "component": "pageSignIn",
+      "locale": "en-US",
+      "details": {
+        "missingKeys": [
+          "havingTrouble",
+          "login",
+          "loginWith",
+          "welcome",
+          "adminPrompt",
+          "adminAction",
+          "adminInfoPrompt"
+        ]
+      },
+      "timestamp": "2025-08-07T00:06:55.771Z",
+      "severity": "medium"
+    },
+    {
+      "type": "missing_translations",
+      "message": "Missing 3 translations in profile",
+      "component": "profile",
+      "locale": "en-US",
+      "details": {
+        "missingKeys": [
+          "settings.settings",
+          "settings.language",
+          "settings.languageDescription"
+        ]
+      },
+      "timestamp": "2025-08-07T00:06:55.771Z",
+      "severity": "medium"
+    },
+    {
+      "type": "missing_translations",
+      "message": "Missing 3 translations in notFound",
+      "component": "notFound",
+      "locale": "en-US",
+      "details": {
+        "missingKeys": [
+          "label",
+          "pageNotFound",
+          "sorry"
+        ]
+      },
+      "timestamp": "2025-08-07T00:06:55.771Z",
+      "severity": "medium"
+    },
+    {
+      "type": "missing_translations",
+      "message": "Missing 3 translations in homeSelector",
+      "component": "homeSelector",
+      "locale": "en-US",
+      "details": {
+        "missingKeys": [
+          "loading",
+          "inactivityLogout",
+          "inactivityLogoutAcceptLabel"
+        ]
+      },
+      "timestamp": "2025-08-07T00:06:55.771Z",
+      "severity": "medium"
+    },
+    {
+      "type": "missing_translations",
+      "message": "Missing 5 translations in homeParticipant",
+      "component": "homeParticipant",
+      "locale": "en-US",
+      "details": {
+        "missingKeys": [
+          "showOptionalAssignments",
+          "loadingAssignments",
+          "selectAssignment",
+          "noAssignments",
+          "contactAdministrator"
+        ]
+      },
+      "timestamp": "2025-08-07T00:06:55.771Z",
+      "severity": "medium"
+    },
+    {
+      "type": "missing_translations",
+      "message": "Missing 21 translations in authSignIn",
+      "component": "authSignIn",
+      "locale": "en-US",
+      "details": {
+        "missingKeys": [
+          "atLeastOneLowercase",
+          "atLeastOneNumber",
+          "atLeastOneNumeric",
+          "atLeastOneUpperCase",
+          "buttonLabel",
+          "continueWithGoogle",
+          "emailId",
+          "emailPlaceholder",
+          "forgotPassword",
+          "incorrectEmailOrPassword",
+          "invalidEmailPlaceholder",
+          "minimumCharacters",
+          "passwordId",
+          "passwordPlaceholder",
+          "pickPassword",
+          "selectLanguage",
+          "selectLanguageLabel",
+          "signInWithEmailLinkInstead",
+          "signInWithEmailLinkPlaceHolder",
+          "signInWithPasswordInstead",
+          "suggestions"
+        ]
+      },
+      "timestamp": "2025-08-07T00:06:55.771Z",
+      "severity": "medium"
+    },
+    {
+      "type": "missing_translations",
+      "message": "Missing 7 translations in consentModal",
+      "component": "consentModal",
+      "locale": "en-US",
+      "details": {
+        "missingKeys": [
+          "header",
+          "consentTitle",
+          "assentTitle",
+          "acceptButton",
+          "rejectButton",
+          "toastHeader",
+          "consentUpdatedStatus"
+        ]
+      },
+      "timestamp": "2025-08-07T00:06:55.771Z",
+      "severity": "medium"
+    }
+  ],
+  "recommendations": [
+    "Upload missing translations to Crowdin for completion",
+    "Review variable usage in translations - ensure all placeholders are preserved"
+  ]
+}

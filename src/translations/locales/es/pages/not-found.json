@@ -1,0 +1,25 @@
+{
+  "$schema": "../../base/metadata-schema.json",
+  "$metadata": {
+    "component": "notFound",
+    "lastUpdated": "2025-08-06T23:57:13.766Z",
+    "completeness": 100,
+    "context": "404 error page",
+    "migrated": true,
+    "originalFormat": "legacy"
+  },
+  "translations": {
+    "label": {
+      "value": "Ir a la página de inicio.",
+      "context": "Form or UI label"
+    },
+    "pageNotFound": {
+      "value": "Página no encontrada",
+      "context": "General text"
+    },
+    "sorry": {
+      "value": "¡Lo siento, no pudimos encontrar esa página!",
+      "context": "General text"
+    }
+  }
+}

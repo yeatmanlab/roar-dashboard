@@ -1,0 +1,33 @@
+{
+  "$schema": "../../base/metadata-schema.json",
+  "$metadata": {
+    "component": "homeParticipant",
+    "lastUpdated": "2025-08-06T23:57:13.762Z",
+    "completeness": 100,
+    "context": "Participant dashboard home page",
+    "migrated": true,
+    "originalFormat": "legacy"
+  },
+  "translations": {
+    "showOptionalAssignments": {
+      "value": "Mostrar actividades opcionales",
+      "context": "General text"
+    },
+    "loadingAssignments": {
+      "value": "Cargando actividades",
+      "context": "General text"
+    },
+    "selectAssignment": {
+      "value": "Selecciona una actividad",
+      "context": "General text"
+    },
+    "noAssignments": {
+      "value": "¡No tienes actividades!",
+      "context": "General text"
+    },
+    "contactAdministrator": {
+      "value": "Por favor, contacta a tu administrador para que te agregue a una actividad.",
+      "context": "General text"
+    }
+  }
+}

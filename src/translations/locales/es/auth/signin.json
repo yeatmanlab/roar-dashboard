@@ -1,0 +1,101 @@
+{
+  "$schema": "../../base/metadata-schema.json",
+  "$metadata": {
+    "component": "authSignIn",
+    "lastUpdated": "2025-08-06T23:57:13.759Z",
+    "completeness": 100,
+    "context": "User authentication and sign-in forms",
+    "migrated": true,
+    "originalFormat": "legacy"
+  },
+  "translations": {
+    "atLeastOneLowercase": {
+      "value": "Al menos una minúscula",
+      "context": "General text"
+    },
+    "atLeastOneNumber": {
+      "value": "Al menos un número",
+      "context": "Short label or title"
+    },
+    "atLeastOneNumeric": {
+      "value": "Al menos un numérico",
+      "context": "General text"
+    },
+    "atLeastOneUpperCase": {
+      "value": "Al menos una mayúscula",
+      "context": "General text"
+    },
+    "buttonLabel": {
+      "value": "¡Vamos!",
+      "context": "Button text"
+    },
+    "continueWithGoogle": {
+      "value": "Sigue adelante con Google",
+      "context": "General text"
+    },
+    "emailId": {
+      "value": "correo electrónico",
+      "context": "Short label or title"
+    },
+    "emailPlaceholder": {
+      "value": "Nombre de usuario o correo electrónico",
+      "context": "Input field placeholder"
+    },
+    "forgotPassword": {
+      "value": "¿Olvidaste tu contraseña?",
+      "context": "General text"
+    },
+    "incorrectEmailOrPassword": {
+      "value": "Nombre de usuario/correo electrónico o contraseña incorrectos",
+      "context": "General text"
+    },
+    "invalidEmailPlaceholder": {
+      "value": "Error: correo electrónico no válido",
+      "context": "Input field placeholder"
+    },
+    "minimumCharacters": {
+      "value": "Mínimo 8 caracteres",
+      "context": "Short label or title"
+    },
+    "pageTitle": {
+      "value": "Iniciar sesión",
+      "context": "Page or section title"
+    },
+    "passwordId": {
+      "value": "contraseña",
+      "context": "Short label or title"
+    },
+    "passwordPlaceholder": {
+      "value": "Contraseña",
+      "context": "Input field placeholder"
+    },
+    "pickPassword": {
+      "value": "Elige una contraseña",
+      "context": "General text"
+    },
+    "selectLanguage": {
+      "value": "Seleccionar idioma",
+      "context": "Short label or title"
+    },
+    "selectLanguageLabel": {
+      "value": "Idioma",
+      "context": "Form or UI label"
+    },
+    "signInWithEmailLinkInstead": {
+      "value": "Iniciar sesión con enlace de correo electrónico",
+      "context": "General text"
+    },
+    "signInWithEmailLinkPlaceHolder": {
+      "value": "Presiona Go para iniciar sesión con un enlace de correo electrónico.",
+      "context": "Input field placeholder"
+    },
+    "signInWithPasswordInstead": {
+      "value": "Iniciar sesión con contraseña",
+      "context": "General text"
+    },
+    "suggestions": {
+      "value": "Sugerencias",
+      "context": "Short label or title"
+    }
+  }
+}

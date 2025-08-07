@@ -1,0 +1,25 @@
+{
+  "$schema": "../../base/metadata-schema.json",
+  "$metadata": {
+    "component": "homeSelector",
+    "lastUpdated": "2025-08-06T23:57:13.763Z",
+    "completeness": 100,
+    "context": "Role selection and general home components",
+    "migrated": true,
+    "originalFormat": "legacy"
+  },
+  "translations": {
+    "loading": {
+      "value": "Cargando...",
+      "context": "Short label or title"
+    },
+    "inactivityLogout": {
+      "value": "Pronto será desconectado por motivos de seguridad. Haz clic en \"Continuar\" si desea continuar con su sesión. De lo contrario, se cerrará la sesión automáticamente en {timeLeft} segundos.",
+      "context": "Long descriptive text"
+    },
+    "inactivityLogoutAcceptLabel": {
+      "value": "Continuar",
+      "context": "Form or UI label"
+    }
+  }
+}

@@ -1,0 +1,243 @@
+{
+  "$schema": "../../base/metadata-schema.json",
+  "$metadata": {
+    "component": "individualScoreReport",
+    "lastUpdated": "2025-08-06T23:57:13.788Z",
+    "completeness": 100,
+    "context": "Individual assessment score report generation",
+    "migrated": true,
+    "originalFormat": "legacy"
+  },
+  "translations": {
+    "scoreReports": {
+      "pageTitle": {
+        "value": "Individual Score Report",
+        "context": "Page or section title"
+      },
+      "welcome": {
+        "value": "Welcome to your ROAR Score Report",
+        "context": "General text"
+      },
+      "loading": {
+        "value": "Loading Your Individual Roar Score Report...",
+        "context": "General text"
+      },
+      "grade": {
+        "value": "Grade",
+        "context": "Short label or title"
+      },
+      "class": {
+        "value": "Class",
+        "context": "Short label or title"
+      },
+      "administration": {
+        "value": "Administration",
+        "context": "Short label or title"
+      },
+      "expandSections": {
+        "value": "Expand All Sections",
+        "context": "Short label or title"
+      },
+      "collapseSections": {
+        "value": "Collapse All Sections",
+        "context": "General text"
+      },
+      "exportPDF": {
+        "value": "Export to PDF",
+        "context": "Short label or title"
+      },
+      "stillWorking": {
+        "value": "It looks like {firstName} is still working on completing their assigned games!",
+        "context": "General text"
+      },
+      "needOneComplete": {
+        "value": "{firstName}'s individual score report will be built when the child has completed at least one assessment.",
+        "context": "Long descriptive text"
+      },
+      "completedTasks": {
+        "value": "{firstName} completed the following games:",
+        "context": "General text"
+      },
+      "roarSummery": {
+        "value": "The Rapid Online Assessment of Reading (ROAR) assesses children across a range of foundational reading skills.",
+        "context": "Long descriptive text"
+      },
+      "summery": {
+        "value": "In this report, you will find {firstName}’s scoring at the time of testing, as well as ways you can support {firstName} in their path to reading fluency and comprehension!",
+        "context": "Long descriptive text"
+      },
+      "taskTabHeader": {
+        "value": "Understanding the Scores",
+        "context": "Page or section title"
+      },
+      "taskIntro": {
+        "value": "The ROAR assessments return these kinds of scores:",
+        "context": "General text"
+      },
+      "standardScore": {
+        "value": "standard score",
+        "context": "Short label or title"
+      },
+      "percentileScore": {
+        "value": "percentile",
+        "context": "Short label or title"
+      },
+      "rawScore": {
+        "value": "raw score",
+        "context": "Short label or title"
+      },
+      "standardScoreDescription": {
+        "value": "{taskTitle} is a way of showing how your child's test performance compares to other kids of the same age or grade. Standard Scores have a range of 0-180. The standard score is comparable within a grade level, but not across grade levels or over time.",
+        "context": "Descriptive text"
+      },
+      "percentileScoreDescription": {
+        "value": "{taskTitle} refers to a child's rank within their grade level on the given skill. The percentile is the number of children out of 100 who have lower scores for that skill. For example, children in the 50th percentile would score higher than 50 out of 100 children in the same grade.",
+        "context": "Descriptive text"
+      },
+      "rawScoreDescription": {
+        "value": "{taskTitle} is the basic measure of a child's performance on the test. Depending on the test, the raw score is based on a number of factors. These may include the number of items a child answered correctly or incorrectly, and the difficulty of the items. The raw score is comparable across grade levels and over time.",
+        "context": "Descriptive text"
+      },
+      "roarDescription": {
+        "value": "{roar} assesses foundational reading skills that are ideally in place before 5th grade.",
+        "context": "Descriptive text"
+      },
+      "extraSupportDescription": {
+        "value": "In Grades 6–12, skills that {supportCategory} are at or below a 3rd-grade level. Children with this support level likely need additional systematic, intensive instruction on this skill in order to access grade-level reading.",
+        "context": "Descriptive text"
+      },
+      "developingDescription": {
+        "value": "Skills that are {supportCategory} are between a 3rd- and 5th-grade level. Children with this support level may need additional instruction on this skill in order to access grade-level reading.",
+        "context": "Descriptive text"
+      },
+      "achievedDescription": {
+        "value": "Skills that have been {supportCategory} are above a 5th-grade level. Children who have achieved this skill likely do not require intervention on this skill to access grade-level reading.",
+        "context": "Descriptive text"
+      },
+      "extraSupport": {
+        "value": "need extra support (pink)",
+        "context": "General text"
+      },
+      "developing": {
+        "value": "developing (yellow)",
+        "context": "Short label or title"
+      },
+      "achieved": {
+        "value": "achieved (green)",
+        "context": "Short label or title"
+      },
+      "extraSupportText": {
+        "value": "need extra support in",
+        "context": "Message or general text"
+      },
+      "developingText": {
+        "value": "are developing the skill of",
+        "context": "Message or general text"
+      },
+      "achievedText": {
+        "value": "have achieved the skill of",
+        "context": "Message or general text"
+      },
+      "skillsDescription": {
+        "value": "If a reader has achieved all of these skills, it is likely that foundational reading skills are sufficient. If they are still struggling with reading comprehension, other skills such as vocabulary, syntax, or comprehension strategies may be holding them back.",
+        "context": "Descriptive text"
+      },
+      "nextStepsTabHeader": {
+        "value": "Next Steps",
+        "context": "Page or section title"
+      },
+      "nextSteps": {
+        "value": "This score report provides a broad overview of your child's reading development. Understand that a child's progress may not be linear, and their scores are not fixed- everyone has room to grow and learn. To learn more about any given test or subskill, and to find more resources for supporting your child {link}",
+        "context": "Long descriptive text"
+      },
+      "rawTaskDescription": {
+        "value": "{firstName} achieved a composite score of {rawScore} in {taskName}. {taskDescription}",
+        "context": "Descriptive text"
+      },
+      "standardTaskDescription": {
+        "value": "{firstName} scored a standard score of {standardScore}, which indicates they {supportCategory} {taskName}. {taskDescription}",
+        "context": "Descriptive text"
+      },
+      "percentileTaskDescription": {
+        "value": "{firstName} scored in the {percentile}, which indicates they {supportCategory} {taskName}. {taskDescription}",
+        "context": "Descriptive text"
+      },
+      "scoreBreakdown": {
+        "value": "Score Breakdown",
+        "context": "Short label or title"
+      },
+      "firstSoundMatching": {
+        "value": "First Sound Matching (FSM)",
+        "context": "General text"
+      },
+      "lastSoundMatching": {
+        "value": "Last Sound Matching (LSM)",
+        "context": "General text"
+      },
+      "deletion": {
+        "value": "Deletion (DEL)",
+        "context": "Short label or title"
+      },
+      "skillsToWorkOn": {
+        "value": "Skills to work on",
+        "context": "Short label or title"
+      },
+      "upperCase": {
+        "value": "Upper Case",
+        "context": "Short label or title"
+      },
+      "lowerCase": {
+        "value": "Lower Case",
+        "context": "Short label or title"
+      },
+      "letterSounds": {
+        "value": "Letter Sounds",
+        "context": "Short label or title"
+      },
+      "lettersToWorkOn": {
+        "value": "Letters to work on",
+        "context": "Short label or title"
+      },
+      "letterSoundsToWorkOn": {
+        "value": "Letter Sounds to work on",
+        "context": "General text"
+      },
+      "optional": {
+        "value": "Optional",
+        "context": "Short label or title"
+      },
+      "required": {
+        "value": "Required",
+        "context": "Short label or title"
+      },
+      "optionalTagText": {
+        "value": "This task was a optional assignment.",
+        "context": "Message or general text"
+      },
+      "requiredTagText": {
+        "value": "This task was a required assignment.",
+        "context": "Message or general text"
+      },
+      "reliable": {
+        "value": "Reliable",
+        "context": "Short label or title"
+      },
+      "unreliable": {
+        "value": "Unreliable",
+        "context": "Short label or title"
+      },
+      "reliableTagText": {
+        "value": "The child's behavior did not trigger any flags and the run can be considered reliable",
+        "context": "Message or general text"
+      },
+      "unreliableTagText": {
+        "value": "The run was marked as unreliable.",
+        "context": "Message or general text"
+      },
+      "unreliableTagTextFlags": {
+        "value": "The run was marked unreliable because of the following flags",
+        "context": "Message or general text"
+      }
+    }
+  }
+}

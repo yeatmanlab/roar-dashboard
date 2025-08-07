@@ -1,0 +1,25 @@
+{
+  "$schema": "../../base/metadata-schema.json",
+  "$metadata": {
+    "component": "userSurvey",
+    "lastUpdated": "2025-08-06T23:57:13.771Z",
+    "completeness": 100,
+    "context": "User survey components",
+    "migrated": true,
+    "originalFormat": "legacy"
+  },
+  "translations": {
+    "specificRelationDescriptionChildA": {
+      "value": "Para niño(a) con mes de nacimiento",
+      "context": "Descriptive text"
+    },
+    "specificRelationDescriptionChildB": {
+      "value": "y año de nacimiento",
+      "context": "Descriptive text"
+    },
+    "specificRelationDescriptionClass": {
+      "value": "Para la clase",
+      "context": "Descriptive text"
+    }
+  }
+}

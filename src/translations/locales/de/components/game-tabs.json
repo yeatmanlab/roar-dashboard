@@ -1,0 +1,181 @@
+{
+  "$schema": "../../base/metadata-schema.json",
+  "$metadata": {
+    "component": "gameTabs",
+    "lastUpdated": "2025-08-06T23:57:13.777Z",
+    "completeness": 100,
+    "context": "Task and game tab interface",
+    "migrated": true,
+    "originalFormat": "legacy"
+  },
+  "translations": {
+    "clickToStart": {
+      "value": "Klicken zum Starten",
+      "context": "Short label or title"
+    },
+    "taskCompleted": {
+      "value": "Aufgabe abgeschlossen!",
+      "context": "General text"
+    },
+    "LEVANTE TRANSLATIONS--------------------------": {
+      "value": "",
+      "context": "Short label or title"
+    },
+    "introName": {
+      "value": "Anleitungen",
+      "context": "Name or identifier"
+    },
+    "introDescription": {
+      "value": "Schau dir an, wie man unsere Spiele spielt.",
+      "context": "Descriptive text"
+    },
+    "heartsAndFlowersDescription": {
+      "value": "Wähle die richige Seite für die Herzen und Blumen.",
+      "context": "Descriptive text"
+    },
+    "heartsAndFlowersName": {
+      "value": "Herzen & Blumen",
+      "context": "Name or identifier"
+    },
+    "egmaMathDescription": {
+      "value": "Löse die Matheaufgaben.",
+      "context": "Descriptive text"
+    },
+    "egmaMathName": {
+      "value": "Mathe",
+      "context": "Name or identifier"
+    },
+    "matrixReasoningDescription": {
+      "value": "Finde das fehlende Teil, um das Puzzle zu vervollständigen.",
+      "context": "Descriptive text"
+    },
+    "matrixReasoningName": {
+      "value": "Musterspiel",
+      "context": "Name or identifier"
+    },
+    "memoryGameDescription": {
+      "value": "Schau dir genau an, wie die Quadrate aufleuchten. Merke dir die Reihenfolge und mach das Muster genauso nach.",
+      "context": "Descriptive text"
+    },
+    "memoryGameName": {
+      "value": "Merkspiel",
+      "context": "Name or identifier"
+    },
+    "mentalRotationDescription": {
+      "value": "Ordne die Bilder zu.",
+      "context": "Descriptive text"
+    },
+    "mentalRotationName": {
+      "value": "Formenspiel",
+      "context": "Name or identifier"
+    },
+    "sameDifferentSelectionDescription": {
+      "value": "Finde Dinge, die die Formen gemeinsam haben.",
+      "context": "Descriptive text"
+    },
+    "sameDifferentSelectionName": {
+      "value": "Gleich & Verschieden",
+      "context": "Name or identifier"
+    },
+    "theoryOfMindDescription": {
+      "value": "Höre dir die Geschichten an und beantworte dann Fragen dazu.",
+      "context": "Descriptive text"
+    },
+    "theoryOfMindName": {
+      "value": "Bildergeschichten",
+      "context": "Name or identifier"
+    },
+    "trogDescription": {
+      "value": "Hör dir die Wörter an und wähle das passende Bild dazu aus.",
+      "context": "Descriptive text"
+    },
+    "trogName": {
+      "value": "Satzverstehen",
+      "context": "Name or identifier"
+    },
+    "surveyNameChild": {
+      "value": "Gedanken & Gefühle",
+      "context": "Name or identifier"
+    },
+    "surveyDescriptionChild": {
+      "value": "Hier geht es um Fragen zu deiner Schulzeit.",
+      "context": "Descriptive text"
+    },
+    "surveyNameParentPart1": {
+      "value": "Umfrage - Erwachsene",
+      "context": "Name or identifier"
+    },
+    "surveyDescriptionParentPart1": {
+      "value": "Das Ausfüllen dieser Fragebögen dauert etwa 30-45 Minuten. Teil A enthält Fragen zu Ihrem häuslichen Umfeld und zu Ihrer Person. In Teil B werden Fragen zu Ihrem Kind/ Ihren Kindern gestellt. Anhand des Geburtsdatums, welches im jeweiligen Fragebogen aufgeführt ist, können Sie erkennen, an welches Kind Sie bei der Beantwortung der Fragen denken sollen (falls Sie mehr als ein Kind in dieser Studie haben).",
+      "context": "Descriptive text"
+    },
+    "surveyNameParentPart2": {
+      "value": "Umfrage - Familie",
+      "context": "Name or identifier"
+    },
+    "surveyDescriptionParentPart2": {
+      "value": "Umfrage für Eltern: Die folgende Umfrage dauert etwa 20-30 Minuten und enthält Fragen Ihrem zu Hause und zu Ihrer Person. ",
+      "context": "Descriptive text"
+    },
+    "surveyNameTeacherPart1": {
+      "value": "Umfrage - Allgemein",
+      "context": "Name or identifier"
+    },
+    "surveyDescriptionTeacherPart1": {
+      "value": "This survey will take approximately 5-10 minutes to complete and asks about your background and beliefs about teaching.",
+      "context": "Descriptive text"
+    },
+    "surveyNameTeacherPart2": {
+      "value": "Umfrage - Klassenzimmer",
+      "context": "Name or identifier"
+    },
+    "surveyDescriptionTeacherPart2": {
+      "value": "This survey will take approximately 5-10 minutes to complete and asks questions about the classroom(s) you teach.",
+      "context": "Descriptive text"
+    },
+    "surveyProgressGeneral": {
+      "value": "Allgemein",
+      "context": "Short label or title"
+    },
+    "surveyProgressGeneralParent": {
+      "value": "zu Hause/ Erwachsener",
+      "context": "General text"
+    },
+    "surveyProgressSpecificParent": {
+      "value": "Kind",
+      "context": "Short label or title"
+    },
+    "surveyProgressSpecificParentMonth": {
+      "value": "Monat",
+      "context": "Short label or title"
+    },
+    "surveyProgressSpecificParentYear": {
+      "value": "Jahr",
+      "context": "Short label or title"
+    },
+    "surveyProgressGeneralTeacher": {
+      "value": "Lehrer",
+      "context": "Short label or title"
+    },
+    "surveyProgressSpecificTeacher": {
+      "value": "Klassenzimmer",
+      "context": "Short label or title"
+    },
+    "mefsName": {
+      "value": "Löwe & Affe",
+      "context": "Name or identifier"
+    },
+    "mefsDescription": {
+      "value": "Formen und Farben zuordnen.",
+      "context": "Descriptive text"
+    },
+    "vocabName": {
+      "value": "Vokabeln",
+      "context": "Name or identifier"
+    },
+    "vocabDescription": {
+      "value": "Hör dir die Wörter an und wähle das passende Bild dazu aus.",
+      "context": "Descriptive text"
+    }
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "$schema": "../../base/metadata-schema.json",
+  "$metadata": {
+    "component": "profile",
+    "lastUpdated": "2025-08-06T23:57:13.783Z",
+    "completeness": 100,
+    "context": "User profile and settings",
+    "migrated": true,
+    "originalFormat": "legacy"
+  },
+  "translations": {
+    "settings": {
+      "settings": {
+        "value": "Einstellungen",
+        "context": "Short label or title"
+      },
+      "language": {
+        "value": "Sprache",
+        "context": "Short label or title"
+      },
+      "languageDescription": {
+        "value": "Wählen Sie die Sprache, die Sie im Dashboard verwenden möchten. Dies wird NUR die Sprache des Dashboards und der Umfragen ändern, nicht die Aufgaben.",
+        "context": "Descriptive text"
+      }
+    }
+  }
+}

@@ -1,0 +1,185 @@
+{
+  "$schema": "../../base/metadata-schema.json",
+  "$metadata": {
+    "component": "gameTabs",
+    "lastUpdated": "2025-08-06T23:57:13.764Z",
+    "completeness": 100,
+    "context": "Task and game tab interface",
+    "migrated": true,
+    "originalFormat": "legacy"
+  },
+  "translations": {
+    "clickToStart": {
+      "value": "Haz clic para empezar",
+      "context": "General text"
+    },
+    "taskCompleted": {
+      "value": "¡Tarea completada!",
+      "context": "Short label or title"
+    },
+    "introName": {
+      "value": "Introducción",
+      "context": "Name or identifier"
+    },
+    "introDescription": {
+      "value": "Aprende a jugar a nuestros juegos.",
+      "context": "Descriptive text"
+    },
+    "heartsAndFlowersDescription": {
+      "value": "Haz coincidir el lado correcto con los corazones y las flores.",
+      "context": "Descriptive text"
+    },
+    "heartsAndFlowersName": {
+      "value": "Corazones y Flores",
+      "context": "Name or identifier"
+    },
+    "egmaMathDescription": {
+      "value": "Resuelve los problemas matemáticos.",
+      "context": "Descriptive text"
+    },
+    "egmaMathName": {
+      "value": "Matemáticas",
+      "context": "Name or identifier"
+    },
+    "matrixReasoningDescription": {
+      "value": "Encuentra la pieza que falta para completar el rompecabeza.",
+      "context": "Descriptive text"
+    },
+    "matrixReasoningName": {
+      "value": "Razonamiento Matricial",
+      "context": "Name or identifier"
+    },
+    "memoryGameDescription": {
+      "value": "Observa cómo se iluminan los cuadrados. Recuerda el orden y haz el mismo patrón.",
+      "context": "Descriptive text"
+    },
+    "memoryGameName": {
+      "value": "Memoria",
+      "context": "Name or identifier"
+    },
+    "mentalRotationDescription": {
+      "value": "Empareja las imágenes.",
+      "context": "Descriptive text"
+    },
+    "mentalRotationName": {
+      "value": "Rotación Mental",
+      "context": "Name or identifier"
+    },
+    "sameDifferentSelectionDescription": {
+      "value": "Encuentra cosas iguales en las formas.",
+      "context": "Descriptive text"
+    },
+    "sameDifferentSelectionName": {
+      "value": "Iguales y Diferentes",
+      "context": "Name or identifier"
+    },
+    "theoryOfMindDescription": {
+      "value": "Escucha las historias y responde a las preguntas.",
+      "context": "Descriptive text"
+    },
+    "theoryOfMindName": {
+      "value": "Historias",
+      "context": "Name or identifier"
+    },
+    "trogDescription": {
+      "value": "Escucha las palabras y elige la imagen correspondiente.",
+      "context": "Descriptive text"
+    },
+    "trogName": {
+      "value": "Comprensión de Frases",
+      "context": "Name or identifier"
+    },
+    "surveyNameChild": {
+      "value": "Pensamientos y Sentimientos",
+      "context": "Name or identifier"
+    },
+    "surveyDescriptionChild": {
+      "value": "Responde a las preguntas sobre tu estancia en el colegio.",
+      "context": "Descriptive text"
+    },
+    "surveyNameParentPart1": {
+      "value": "Encuesta para cuidadores",
+      "context": "Name or identifier"
+    },
+    "surveyDescriptionParentPart1": {
+      "value": "Estimamos que diligenciar la siguiente encuesta le tomará aproximadamente 20-30 minutos y se le harán preguntas sobre su niño(a).",
+      "context": "Descriptive text"
+    },
+    "surveyNameParentPart2": {
+      "value": "Encuesta para cuidadores",
+      "context": "Name or identifier"
+    },
+    "surveyDescriptionParentPart2": {
+      "value": "Estimamos que diligenciar la siguiente encuesta le tomará aproximadamente 20-30 minutos y se le harán preguntas sobre su hogar y usted mismo(a).",
+      "context": "Descriptive text"
+    },
+    "surveyNameTeacherPart1": {
+      "value": "Encuesta de profesores - General",
+      "context": "Name or identifier"
+    },
+    "surveyDescriptionTeacherPart1": {
+      "value": "Estimamos que diligenciar la siguiente encuesta le tomará aproximadamente 5-10 minutos. Las preguntas indagan por sus antecedentes y creencias sobre la enseñanza.",
+      "context": "Descriptive text"
+    },
+    "surveyNameTeacherPart2": {
+      "value": "Encuesta de profesores - Salón",
+      "context": "Name or identifier"
+    },
+    "surveyDescriptionTeacherPart2": {
+      "value": "Estimamos que diligenciar la siguiente encuesta le tomará aproximadamente 5-10 minutos y se le hará preguntas sobre el salón o los salones en los que imparte.",
+      "context": "Descriptive text"
+    },
+    "surveyProgressGeneral": {
+      "value": "General",
+      "context": "Short label or title"
+    },
+    "surveyProgressGeneralParent": {
+      "value": "Familia",
+      "context": "Short label or title"
+    },
+    "surveyProgressSpecificParent": {
+      "value": "Niño",
+      "context": "Short label or title"
+    },
+    "surveyProgressSpecificParentMonth": {
+      "value": "Mes",
+      "context": "Short label or title"
+    },
+    "surveyProgressSpecificParentYear": {
+      "value": "Año",
+      "context": "Short label or title"
+    },
+    "surveyProgressGeneralTeacher": {
+      "value": "Profesor",
+      "context": "Short label or title"
+    },
+    "surveyProgressSpecificTeacher": {
+      "value": "Aula",
+      "context": "Short label or title"
+    },
+    "mefsName": {
+      "value": "El León y El Mono",
+      "context": "Name or identifier"
+    },
+    "mefsDescription": {
+      "value": "Empareja las formas y los colores.",
+      "context": "Descriptive text"
+    },
+    "vocabName": {
+      "value": "Vocabulario",
+      "context": "Name or identifier"
+    },
+    "vocabDescription": {
+      "value": "Escucha la palabra y elige la imagen correspondiente.",
+      "context": "Descriptive text"
+    },
+    "roarInferenceName": {
+      "value": "Roar - Inferencia",
+      "context": "Name or identifier"
+    },
+    "roarInferenceDescription": {
+      "value": "Lee las historias y responde a las preguntas.",
+      "context": "Descriptive text"
+    }
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "$schema": "../../base/metadata-schema.json",
+  "$metadata": {
+    "component": "pageTitles",
+    "lastUpdated": "2025-08-06T23:57:13.801Z",
+    "completeness": 100,
+    "context": "Page titles for browser tabs and navigation",
+    "migrated": true,
+    "originalFormat": "legacy"
+  },
+  "translations": {
+    "home": {
+      "value": "Dashboard",
+      "context": "Short label or title"
+    },
+    "signIn": {
+      "value": "Anmelden",
+      "context": "Short label or title"
+    },
+    "signOut": {
+      "value": "Abmelden",
+      "context": "Short label or title"
+    }
+  }
+}

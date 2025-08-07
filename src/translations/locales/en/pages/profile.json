@@ -1,0 +1,27 @@
+{
+  "$schema": "../../base/metadata-schema.json",
+  "$metadata": {
+    "component": "profile",
+    "lastUpdated": "2025-08-06T23:57:13.755Z",
+    "completeness": 100,
+    "context": "User profile and settings",
+    "migrated": true,
+    "originalFormat": "legacy"
+  },
+  "translations": {
+    "settings": {
+      "settings": {
+        "value": "Settings",
+        "context": "Short label or title"
+      },
+      "language": {
+        "value": "Language",
+        "context": "Short label or title"
+      },
+      "languageDescription": {
+        "value": "Select the language you want to use in the dashboard. This will ONLY change the language of the dashboard and surveys, not the tasks.",
+        "context": "Descriptive text"
+      }
+    }
+  }
+}

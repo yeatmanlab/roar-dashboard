@@ -1,0 +1,41 @@
+{
+  "$schema": "../../base/metadata-schema.json",
+  "$metadata": {
+    "component": "pageSignIn",
+    "lastUpdated": "2025-08-06T23:57:13.751Z",
+    "completeness": 100,
+    "context": "Sign-in page content",
+    "migrated": true,
+    "originalFormat": "legacy"
+  },
+  "translations": {
+    "havingTrouble": {
+      "value": "Having trouble?",
+      "context": "Short label or title"
+    },
+    "login": {
+      "value": "Log in to access your dashboard",
+      "context": "General text"
+    },
+    "loginWith": {
+      "value": "Log in with",
+      "context": "Short label or title"
+    },
+    "welcome": {
+      "value": "Welcome to ROAR!",
+      "context": "Short label or title"
+    },
+    "adminPrompt": {
+      "value": "Are you an Admin? Click {action} to Sign in.",
+      "context": "General text"
+    },
+    "adminAction": {
+      "value": "here",
+      "context": "Short label or title"
+    },
+    "adminInfoPrompt": {
+      "value": "If you registered with a Google email or your email provider uses Google SSO.",
+      "context": "General text"
+    }
+  }
+}

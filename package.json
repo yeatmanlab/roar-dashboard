@@ -1,5 +1,5 @@
 {
-  "name": "levante-surveys",
+  "name": "levante-dashboard",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -12,7 +12,21 @@
     "preview": "vite preview",
     "build-only": "vite build",
     "type-check": "vue-tsc --build",
-    "lint": "eslint . --fix"
+    "lint": "eslint . --fix",
+    "i18n:extract": "node src/translations/tools/extract-keys.js",
+    "i18n:validate": "node src/translations/tools/validate-translations.js",
+    "i18n:crowdin:upload": "crowdin upload sources --config src/translations/crowdin/crowdin.yml",
+    "i18n:crowdin:upload-translations": "crowdin upload translations --config src/translations/crowdin/crowdin.yml",
+    "i18n:crowdin:download": "crowdin download --config src/translations/crowdin/crowdin.yml",
+    "i18n:crowdin:status": "crowdin status --config src/translations/crowdin/crowdin.yml",
+    "i18n:crowdin:sync": "node src/translations/tools/crowdin-sync.js",
+    "i18n:crowdin:init": "node src/translations/tools/crowdin-sync.js init",
+    "i18n:crowdin:seed": "node src/translations/tools/crowdin-seed-upload.js",
+    "i18n:build": "node src/translations/tools/build-translations.js",
+    "i18n:migrate": "node src/translations/tools/migrate-existing.js",
+    "i18n:health": "node src/translations/tools/system-health-check.js",
+    "i18n:report": "npm run i18n:extract && npm run i18n:validate && node src/translations/tools/crowdin-sync.js report",
+    "i18n:consolidate": "node src/translations/tools/create-consolidated-translations.js"
   },
   "dependencies": {
     "@primevue/core": "^4.3.6",
@@ -32,6 +46,7 @@
     "vue-router": "^4.5.1"
   },
   "devDependencies": {
+    "@crowdin/cli": "^4.2.0",
     "@tsconfig/node22": "^22.0.2",
     "@types/lodash": "^4.14.196",
     "@types/node": "^22.16.5",
@@ -40,6 +55,7 @@
     "@vue/tsconfig": "^0.7.0",
     "eslint": "^9.31.0",
     "eslint-plugin-vue": "~10.3.0",
+    "glob": "^11.0.0",
     "jiti": "^2.4.2",
     "npm-run-all2": "^8.0.4",
     "typescript": "~5.8.0",

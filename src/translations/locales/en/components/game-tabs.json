@@ -1,0 +1,189 @@
+{
+  "$schema": "../../base/metadata-schema.json",
+  "$metadata": {
+    "component": "gameTabs",
+    "lastUpdated": "2025-08-06T23:57:13.747Z",
+    "completeness": 100,
+    "context": "Task and game tab interface",
+    "migrated": true,
+    "originalFormat": "legacy"
+  },
+  "translations": {
+    "clickToStart": {
+      "value": "Click to start",
+      "context": "Short label or title"
+    },
+    "taskCompleted": {
+      "value": "Task Completed!",
+      "context": "Short label or title"
+    },
+    "LEVANTE TRANSLATIONS--------------------------": {
+      "value": "",
+      "context": "Short label or title"
+    },
+    "introName": {
+      "value": "Introduction",
+      "context": "Name or identifier"
+    },
+    "introDescription": {
+      "value": "Learn how to play our games. ",
+      "context": "Descriptive text"
+    },
+    "heartsAndFlowersDescription": {
+      "value": "Match the correct side to the hearts and flowers.",
+      "context": "Descriptive text"
+    },
+    "heartsAndFlowersName": {
+      "value": "Hearts and Flowers",
+      "context": "Name or identifier"
+    },
+    "egmaMathDescription": {
+      "value": "Solve the math problems.",
+      "context": "Descriptive text"
+    },
+    "egmaMathName": {
+      "value": "Math",
+      "context": "Name or identifier"
+    },
+    "matrixReasoningDescription": {
+      "value": "Find the missing piece to complete the puzzle.",
+      "context": "Descriptive text"
+    },
+    "matrixReasoningName": {
+      "value": "Pattern matching",
+      "context": "Name or identifier"
+    },
+    "memoryGameDescription": {
+      "value": "Watch the squares light up. Remember the order and make the same pattern.",
+      "context": "Descriptive text"
+    },
+    "memoryGameName": {
+      "value": "Memory",
+      "context": "Name or identifier"
+    },
+    "mentalRotationDescription": {
+      "value": "Match the pictures.",
+      "context": "Descriptive text"
+    },
+    "mentalRotationName": {
+      "value": "Shape Rotation",
+      "context": "Name or identifier"
+    },
+    "sameDifferentSelectionDescription": {
+      "value": "Find things that are the same about the shapes.",
+      "context": "Descriptive text"
+    },
+    "sameDifferentSelectionName": {
+      "value": "Same & Different",
+      "context": "Name or identifier"
+    },
+    "theoryOfMindDescription": {
+      "value": "Listen to the stories and answer the questions.",
+      "context": "Descriptive text"
+    },
+    "theoryOfMindName": {
+      "value": "Stories",
+      "context": "Name or identifier"
+    },
+    "trogDescription": {
+      "value": "Listen to the words and choose the matching picture.",
+      "context": "Descriptive text"
+    },
+    "trogName": {
+      "value": "Sentence Undersanding",
+      "context": "Name or identifier"
+    },
+    "surveyNameChild": {
+      "value": "Thoughts and Feelings",
+      "context": "Name or identifier"
+    },
+    "surveyDescriptionChild": {
+      "value": "Answer questions about your time at school.",
+      "context": "Descriptive text"
+    },
+    "surveyNameParentPart1": {
+      "value": "Survey - Caregiver",
+      "context": "Name or identifier"
+    },
+    "surveyDescriptionParentPart1": {
+      "value": "This survey will take approximately 20-30 minutes to complete and will ask questions about your child.",
+      "context": "Descriptive text"
+    },
+    "surveyNameParentPart2": {
+      "value": "Survey - Family",
+      "context": "Name or identifier"
+    },
+    "surveyDescriptionParentPart2": {
+      "value": "This survey will take approximately 20-30 minutes to complete and will ask questions about your home and yourself.",
+      "context": "Descriptive text"
+    },
+    "surveyNameTeacherPart1": {
+      "value": "Survey - General",
+      "context": "Name or identifier"
+    },
+    "surveyDescriptionTeacherPart1": {
+      "value": "This survey will take approximately 5-10 minutes to complete and asks about your background and beliefs about teaching.",
+      "context": "Descriptive text"
+    },
+    "surveyNameTeacherPart2": {
+      "value": "Survey - Classroom",
+      "context": "Name or identifier"
+    },
+    "surveyDescriptionTeacherPart2": {
+      "value": "This survey will take approximately 5-10 minutes to complete and asks questions about the classroom(s) you teach.",
+      "context": "Descriptive text"
+    },
+    "surveyProgressGeneral": {
+      "value": "General",
+      "context": "Short label or title"
+    },
+    "surveyProgressGeneralParent": {
+      "value": "Home/Caregiver",
+      "context": "Short label or title"
+    },
+    "surveyProgressSpecificParent": {
+      "value": "Child",
+      "context": "Short label or title"
+    },
+    "surveyProgressSpecificParentMonth": {
+      "value": "Month",
+      "context": "Short label or title"
+    },
+    "surveyProgressSpecificParentYear": {
+      "value": "Year",
+      "context": "Short label or title"
+    },
+    "surveyProgressGeneralTeacher": {
+      "value": "Teacher",
+      "context": "Short label or title"
+    },
+    "surveyProgressSpecificTeacher": {
+      "value": "Classroom",
+      "context": "Short label or title"
+    },
+    "mefsName": {
+      "value": "Lion and Monkey",
+      "context": "Name or identifier"
+    },
+    "mefsDescription": {
+      "value": "Match the shapes and colors.",
+      "context": "Descriptive text"
+    },
+    "vocabName": {
+      "value": "Vocabulary",
+      "context": "Name or identifier"
+    },
+    "vocabDescription": {
+      "value": "Listen to the word and choose the matching picture.",
+      "context": "Descriptive text"
+    },
+    "roarInferenceName": {
+      "value": "Roar - Inference",
+      "context": "Name or identifier"
+    },
+    "roarInferenceDescription": {
+      "value": "Read the stories and answer the questions.",
+      "context": "Descriptive text"
+    }
+  }
+}

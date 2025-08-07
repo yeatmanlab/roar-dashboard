@@ -1,0 +1,45 @@
+{
+  "$schema": "../../base/metadata-schema.json",
+  "$metadata": {
+    "component": "sentryForm",
+    "lastUpdated": "2025-08-06T23:57:13.753Z",
+    "completeness": 100,
+    "context": "Error reporting form",
+    "migrated": true,
+    "originalFormat": "legacy"
+  },
+  "translations": {
+    "formTitle": {
+      "value": "Report an Issue to LEVANTE",
+      "context": "Page or section title"
+    },
+    "buttonLabel": {
+      "value": "Report an Issue",
+      "context": "Button text"
+    },
+    "submitButtonLabel": {
+      "value": "Submit Issue Report",
+      "context": "Button text"
+    },
+    "cancelButtonLabel": {
+      "value": "Cancel",
+      "context": "Button text"
+    },
+    "namePlaceholder": {
+      "value": "Your Name (optional)",
+      "context": "Input field placeholder"
+    },
+    "emailPlaceholder": {
+      "value": "your.email@example.org (optional)",
+      "context": "Input field placeholder"
+    },
+    "messageLabel": {
+      "value": "Description",
+      "context": "Form or UI label"
+    },
+    "messagePlaceholder": {
+      "value": "What is the issue? What did you want to experience instead? Thank you for sharing.",
+      "context": "Input field placeholder"
+    }
+  }
+}

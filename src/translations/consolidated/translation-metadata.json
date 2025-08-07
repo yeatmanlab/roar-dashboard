@@ -1,0 +1,18 @@
+{
+  "project": "Levante Dashboard Translations",
+  "created": "2025-08-07T15:42:04.047Z",
+  "description": "Consolidated translation files with all languages in single CSV format",
+  "format": "CSV with columns: identifier, label, en, es-CO, de",
+  "languages": [
+    "en",
+    "es-CO",
+    "de"
+  ],
+  "componentTypes": [
+    "auth",
+    "components",
+    "pages",
+    "surveys"
+  ],
+  "note": "Generated automatically from modular JSON translation files"
+}

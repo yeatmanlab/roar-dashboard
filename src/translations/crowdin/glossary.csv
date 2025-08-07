@@ -1,0 +1,39 @@
+identifier,source_phrase,es,de,description
+levante,LEVANTE,LEVANTE,LEVANTE,Project name - do not translate
+roar,ROAR,ROAR,ROAR,Project name - do not translate
+task,task,tarea,Aufgabe,Interactive assessment activity
+assessment,assessment,evaluación,Bewertung,Educational evaluation or test
+assignment,assignment,asignación,Aufgabe,Collection of tasks given to participant
+participant,participant,participante,Teilnehmer,Person taking part in research study
+administrator,administrator,administrador,Administrator,Researcher or teacher managing platform
+dashboard,dashboard,panel de control,Dashboard,Main interface/control panel
+sign_in,sign in,iniciar sesión,anmelden,Login to the platform
+sign_out,sign out,cerrar sesión,abmelden,Logout from the platform
+game,game,juego,Spiel,Child-friendly term for assessment tasks
+activity,activity,actividad,Aktivität,General term for tasks or exercises
+survey,survey,encuesta,Umfrage,Questionnaire for participants/parents/teachers
+consent,consent,consentimiento,Einverständnis,Parental permission for participation
+assent,assent,asentimiento,Zustimmung,Child's agreement to participate
+profile,profile,perfil,Profil,User account settings and information
+progress,progress,progreso,Fortschritt,Completion status or advancement
+score,score,puntuación,Punktzahl,Assessment results or points earned
+report,report,informe,Bericht,Summary of performance or results
+completed,completed,completado,abgeschlossen,Finished or done status
+loading,loading,cargando,laden,System is processing
+error,error,error,Fehler,Something went wrong
+success,success,éxito,Erfolg,Action completed successfully
+continue,continue,continuar,weiter,Proceed to next step
+cancel,cancel,cancelar,abbrechen,Stop current action
+save,save,guardar,speichern,Store information or progress
+family,family,familia,Familie,Family unit or household
+child,child,niño/niña,Kind,Young participant
+parent,parent,padre/madre,Elternteil,Parent or guardian
+teacher,teacher,profesor/profesora,Lehrer,Educational instructor
+classroom,classroom,aula,Klassenzimmer,School classroom setting
+grade,grade,grado,Klasse,School grade level
+student,student,estudiante,Student,Learner in educational context
+language,language,idioma,Sprache,Communication language setting
+username,username,nombre de usuario,Benutzername,Login identifier
+password,password,contraseña,Passwort,Login credential
+email,email,correo electrónico,E-Mail,Email address
+settings,settings,configuraciones,Einstellungen,User preferences and options

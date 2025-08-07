@@ -1,0 +1,25 @@
+{
+  "$schema": "../../base/metadata-schema.json",
+  "$metadata": {
+    "component": "pageTitles",
+    "lastUpdated": "2025-08-06T23:57:13.799Z",
+    "completeness": 100,
+    "context": "Page titles for browser tabs and navigation",
+    "migrated": true,
+    "originalFormat": "legacy"
+  },
+  "translations": {
+    "home": {
+      "value": "Tablero",
+      "context": "Short label or title"
+    },
+    "signIn": {
+      "value": "Iniciar Sesión",
+      "context": "Short label or title"
+    },
+    "signOut": {
+      "value": "Cerrar Sesión",
+      "context": "Short label or title"
+    }
+  }
+}

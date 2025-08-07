@@ -1,0 +1,37 @@
+{
+  "migrationDate": "2025-08-06T23:57:13.804Z",
+  "summary": {
+    "locales": [
+      "en",
+      "es",
+      "de",
+      "es-CO",
+      "en-US"
+    ],
+    "components": [
+      "authSignIn",
+      "consentModal",
+      "homeParticipant",
+      "homeSelector",
+      "gameTabs",
+      "navBar",
+      "notFound",
+      "participantSidebar",
+      "pageSignIn",
+      "tasks",
+      "sentryForm",
+      "userSurvey",
+      "profile"
+    ],
+    "totalFiles": 48,
+    "successfulMigrations": 48,
+    "warnings": 0
+  },
+  "files": {
+    "en": 15,
+    "es": 15,
+    "de": 14,
+    "es-CO": 2,
+    "en-US": 2
+  }
+}

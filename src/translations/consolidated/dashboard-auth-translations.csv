@@ -1,0 +1,29 @@
+identifier,label,en,es-CO,de
+auth.consent.header,auth/consent,Consent,Consentimiento,Zustimmung
+auth.consent.consentTitle,auth/consent,Consent,Consentimiento,
+auth.consent.assentTitle,auth/consent,Assent,Asentimiento,
+auth.consent.acceptButton,auth/consent,Accept,Aceptar,Akzeptieren
+auth.consent.rejectButton,auth/consent,"No, sign me out","No, cerrar sesión","Nein, mich abmelden"
+auth.consent.toastHeader,auth/consent,Confirmed,Confirmado,Bestätigt
+auth.consent.consentUpdatedStatus,auth/consent,Consent status updated,Estado de consentimiento actualizado,Zustimmungsstatus aktualisiert
+auth.signin.atLeastOneLowercase,auth/signin,At least one lowercase,Al menos una minúscula,Mindestens ein Kleinbuchstabe
+auth.signin.atLeastOneNumber,auth/signin,At least one number,Al menos un número,Mindestens eine Zahl
+auth.signin.atLeastOneNumeric,auth/signin,At least one numeric,Al menos un numérico,Mindestens eine Nummer
+auth.signin.atLeastOneUpperCase,auth/signin,At least one uppercase,Al menos una mayúscula,Mindestens ein Großbuchstabe
+auth.signin.buttonLabel,auth/signin,Go!,¡Vamos!,Los!
+auth.signin.continueWithGoogle,auth/signin,Continue with Google,Sigue adelante con Google,Machen Sie weiter mit Google
+auth.signin.emailId,auth/signin,email,correo electrónico,E-Mail
+auth.signin.emailPlaceholder,auth/signin,Username or email,Nombre de usuario o correo electrónico,Benutzername oder E-Mail
+auth.signin.forgotPassword,auth/signin,Forgot Password?,¿Olvidaste tu contraseña?,Passwort vergessen?
+auth.signin.incorrectEmailOrPassword,auth/signin,Incorrect username/email or password,Nombre de usuario/correo electrónico o contraseña incorrectos,Falscher Benutzername/E-Mail oder Passwort
+auth.signin.invalidEmailPlaceholder,auth/signin,Error: invalid email,Error: correo electrónico no válido,Fehler: Ungültige E-Mail
+auth.signin.minimumCharacters,auth/signin,Minimum 8 characters,Mínimo 8 caracteres,Mindestens 8 Zeichen
+auth.signin.passwordId,auth/signin,password,contraseña,Passwort
+auth.signin.passwordPlaceholder,auth/signin,Password,Contraseña,Passwort
+auth.signin.pickPassword,auth/signin,Pick a password,Elige una contraseña,Wählen Sie ein Passwort
+auth.signin.selectLanguage,auth/signin,Select Language,Seleccionar idioma,Sprache auswählen
+auth.signin.selectLanguageLabel,auth/signin,Language,Idioma,Sprache
+auth.signin.signInWithEmailLinkInstead,auth/signin,Sign-in using email link,Iniciar sesión con enlace de correo electrónico,Mit E-Mail-Link anmelden
+auth.signin.signInWithEmailLinkPlaceHolder,auth/signin,Press Go to sign-in with an email link.,Presiona Go para iniciar sesión con un enlace de correo electrónico.,"Drücken Sie „Los“, um sich mit einem E-Mail-Link anzumelden."
+auth.signin.signInWithPasswordInstead,auth/signin,Sign-in using password,Iniciar sesión con contraseña,Mit Passwort anmelden
+auth.signin.suggestions,auth/signin,Suggestions,Sugerencias,Vorschläge

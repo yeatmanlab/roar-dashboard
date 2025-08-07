@@ -1,0 +1,17 @@
+{
+  "$schema": "../../base/metadata-schema.json",
+  "$metadata": {
+    "component": "navBar",
+    "lastUpdated": "2025-08-06T23:57:13.778Z",
+    "completeness": 100,
+    "context": "Navigation bar component",
+    "migrated": true,
+    "originalFormat": "legacy"
+  },
+  "translations": {
+    "signOut": {
+      "value": "Abmelden",
+      "context": "Short label or title"
+    }
+  }
+}

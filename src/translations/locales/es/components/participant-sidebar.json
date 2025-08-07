@@ -1,0 +1,25 @@
+{
+  "$schema": "../../base/metadata-schema.json",
+  "$metadata": {
+    "component": "participantSidebar",
+    "lastUpdated": "2025-08-06T23:57:13.767Z",
+    "completeness": 100,
+    "context": "Participant information sidebar",
+    "migrated": true,
+    "originalFormat": "legacy"
+  },
+  "translations": {
+    "grade": {
+      "value": "Calificación",
+      "context": "Short label or title"
+    },
+    "studentInfo": {
+      "value": "Información del nina",
+      "context": "General text"
+    },
+    "tasksCompleted": {
+      "value": "¡tareas completadas!",
+      "context": "General text"
+    }
+  }
+}

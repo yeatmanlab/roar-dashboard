@@ -1,0 +1,25 @@
+{
+  "$schema": "../../base/metadata-schema.json",
+  "$metadata": {
+    "component": "homeSelector",
+    "lastUpdated": "2025-08-06T23:57:13.746Z",
+    "completeness": 100,
+    "context": "Role selection and general home components",
+    "migrated": true,
+    "originalFormat": "legacy"
+  },
+  "translations": {
+    "loading": {
+      "value": "Loading...",
+      "context": "Short label or title"
+    },
+    "inactivityLogout": {
+      "value": "You will soon be logged out for security purposes. Please click \"Continue\" if you wish to continue your session.\n Otherwise, you will be automatically logged out in { timeLeft } seconds.",
+      "context": "Long descriptive text"
+    },
+    "inactivityLogoutAcceptLabel": {
+      "value": "Continue",
+      "context": "Form or UI label"
+    }
+  }
+}

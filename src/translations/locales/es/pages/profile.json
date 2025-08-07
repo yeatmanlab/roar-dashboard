@@ -1,0 +1,27 @@
+{
+  "$schema": "../../base/metadata-schema.json",
+  "$metadata": {
+    "component": "profile",
+    "lastUpdated": "2025-08-06T23:57:13.772Z",
+    "completeness": 100,
+    "context": "User profile and settings",
+    "migrated": true,
+    "originalFormat": "legacy"
+  },
+  "translations": {
+    "settings": {
+      "settings": {
+        "value": "Configuraciones",
+        "context": "Short label or title"
+      },
+      "language": {
+        "value": "Idioma",
+        "context": "Short label or title"
+      },
+      "languageDescription": {
+        "value": "Selecciona el idioma que deseas usar en el panel. Esto SOLO cambiará el idioma del panel y las encuestas, no las tareas.",
+        "context": "Descriptive text"
+      }
+    }
+  }
+}

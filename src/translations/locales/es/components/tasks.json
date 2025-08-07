@@ -1,0 +1,21 @@
+{
+  "$schema": "../../base/metadata-schema.json",
+  "$metadata": {
+    "component": "tasks",
+    "lastUpdated": "2025-08-06T23:57:13.769Z",
+    "completeness": 100,
+    "context": "Task loading and preparation",
+    "migrated": true,
+    "originalFormat": "legacy"
+  },
+  "translations": {
+    "preparing": {
+      "value": "¡Preparando tu juego!",
+      "context": "General text"
+    },
+    "loading": {
+      "value": "cargando",
+      "context": "Short label or title"
+    }
+  }
+}

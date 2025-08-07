@@ -1,0 +1,45 @@
+{
+  "$schema": "../../base/metadata-schema.json",
+  "$metadata": {
+    "component": "sentryForm",
+    "lastUpdated": "2025-08-06T23:57:13.770Z",
+    "completeness": 100,
+    "context": "Error reporting form",
+    "migrated": true,
+    "originalFormat": "legacy"
+  },
+  "translations": {
+    "formTitle": {
+      "value": "Reportar un problema a LEVANTE",
+      "context": "Page or section title"
+    },
+    "buttonLabel": {
+      "value": "Reportar un problema",
+      "context": "Button text"
+    },
+    "submitButtonLabel": {
+      "value": "Enviar informe de problema",
+      "context": "Button text"
+    },
+    "cancelButtonLabel": {
+      "value": "Cancelar",
+      "context": "Button text"
+    },
+    "namePlaceholder": {
+      "value": "Tu nombre (opcional)",
+      "context": "Input field placeholder"
+    },
+    "emailPlaceholder": {
+      "value": "tu.email@example.org (opcional)",
+      "context": "Input field placeholder"
+    },
+    "messageLabel": {
+      "value": "Descripción",
+      "context": "Form or UI label"
+    },
+    "messagePlaceholder": {
+      "value": "¿Cuál es el problema? ¿Qué querías experimentar en su lugar? Gracias por compartir.",
+      "context": "Input field placeholder"
+    }
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "$schema": "../../base/metadata-schema.json",
+  "$metadata": {
+    "component": "homeParticipant",
+    "lastUpdated": "2025-08-06T23:57:13.776Z",
+    "completeness": 100,
+    "context": "Participant dashboard home page",
+    "migrated": true,
+    "originalFormat": "legacy"
+  },
+  "translations": {
+    "showOptionalAssignments": {
+      "value": "Optionale Zuordnungen anzeigen",
+      "context": "General text"
+    },
+    "loadingAssignments": {
+      "value": "Lade Zuordnungen",
+      "context": "Short label or title"
+    },
+    "selectAssignment": {
+      "value": "Wählen Sie eine Zuordnung aus",
+      "context": "General text"
+    },
+    "noAssignments": {
+      "value": "Sie haben keine Zuordnungen!",
+      "context": "General text"
+    },
+    "contactAdministrator": {
+      "value": "Bitte kontaktieren Sie Ihren Administrator, um zu einer Zuordnung hinzugefügt zu werden.",
+      "context": "General text"
+    }
+  }
+}

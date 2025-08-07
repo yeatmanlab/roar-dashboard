@@ -1,0 +1,87 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Translation File Schema",
+  "description": "Schema for translation files with metadata",
+  "type": "object",
+  "properties": {
+    "$metadata": {
+      "type": "object",
+      "properties": {
+        "component": {
+          "type": "string",
+          "description": "Component or section name"
+        },
+        "lastUpdated": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp of last update"
+        },
+        "completeness": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Translation completeness percentage"
+        },
+        "reviewer": {
+          "type": "string",
+          "format": "email",
+          "description": "Email of reviewer"
+        },
+        "context": {
+          "type": "string",
+          "description": "Context or description of the component"
+        },
+        "crowdinFileId": {
+          "type": "string",
+          "description": "Crowdin file identifier"
+        }
+      },
+      "required": ["component", "lastUpdated", "completeness"],
+      "additionalProperties": false
+    },
+    "translations": {
+      "type": "object",
+      "patternProperties": {
+        "^[a-zA-Z][a-zA-Z0-9_]*$": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "string",
+                  "description": "The translated text"
+                },
+                "context": {
+                  "type": "string",
+                  "description": "Context for translators"
+                },
+                "maxLength": {
+                  "type": "number",
+                  "description": "Maximum character limit"
+                },
+                "notes": {
+                  "type": "string",
+                  "description": "Additional notes for translators"
+                },
+                "variables": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "Variables used in the translation"
+                }
+              },
+              "required": ["value"],
+              "additionalProperties": false
+            }
+          ]
+        }
+      }
+    }
+  },
+  "required": ["$metadata", "translations"],
+  "additionalProperties": false
+}

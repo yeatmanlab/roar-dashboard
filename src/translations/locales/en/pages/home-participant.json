@@ -1,0 +1,33 @@
+{
+  "$schema": "../../base/metadata-schema.json",
+  "$metadata": {
+    "component": "homeParticipant",
+    "lastUpdated": "2025-08-06T23:57:13.745Z",
+    "completeness": 100,
+    "context": "Participant dashboard home page",
+    "migrated": true,
+    "originalFormat": "legacy"
+  },
+  "translations": {
+    "showOptionalAssignments": {
+      "value": "Show optional assignments",
+      "context": "General text"
+    },
+    "loadingAssignments": {
+      "value": "Loading Assignments",
+      "context": "Short label or title"
+    },
+    "selectAssignment": {
+      "value": "Select an assignment",
+      "context": "General text"
+    },
+    "noAssignments": {
+      "value": "You have no assignments!",
+      "context": "General text"
+    },
+    "contactAdministrator": {
+      "value": "Please contact your administrator to get added to an assignment.",
+      "context": "General text"
+    }
+  }
+}

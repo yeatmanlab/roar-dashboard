@@ -1,0 +1,97 @@
+{
+  "$schema": "../../base/metadata-schema.json",
+  "$metadata": {
+    "component": "authSignIn",
+    "lastUpdated": "2025-08-06T23:57:13.774Z",
+    "completeness": 100,
+    "context": "User authentication and sign-in forms",
+    "migrated": true,
+    "originalFormat": "legacy"
+  },
+  "translations": {
+    "atLeastOneLowercase": {
+      "value": "Mindestens ein Kleinbuchstabe",
+      "context": "General text"
+    },
+    "atLeastOneNumber": {
+      "value": "Mindestens eine Zahl",
+      "context": "General text"
+    },
+    "atLeastOneNumeric": {
+      "value": "Mindestens eine Nummer",
+      "context": "General text"
+    },
+    "atLeastOneUpperCase": {
+      "value": "Mindestens ein Großbuchstabe",
+      "context": "General text"
+    },
+    "buttonLabel": {
+      "value": "Los!",
+      "context": "Button text"
+    },
+    "continueWithGoogle": {
+      "value": "Machen Sie weiter mit Google",
+      "context": "General text"
+    },
+    "emailId": {
+      "value": "E-Mail",
+      "context": "Short label or title"
+    },
+    "emailPlaceholder": {
+      "value": "Benutzername oder E-Mail",
+      "context": "Input field placeholder"
+    },
+    "forgotPassword": {
+      "value": "Passwort vergessen?",
+      "context": "Short label or title"
+    },
+    "incorrectEmailOrPassword": {
+      "value": "Falscher Benutzername/E-Mail oder Passwort",
+      "context": "General text"
+    },
+    "invalidEmailPlaceholder": {
+      "value": "Fehler: Ungültige E-Mail",
+      "context": "Input field placeholder"
+    },
+    "minimumCharacters": {
+      "value": "Mindestens 8 Zeichen",
+      "context": "General text"
+    },
+    "passwordId": {
+      "value": "Passwort",
+      "context": "Short label or title"
+    },
+    "passwordPlaceholder": {
+      "value": "Passwort",
+      "context": "Input field placeholder"
+    },
+    "pickPassword": {
+      "value": "Wählen Sie ein Passwort",
+      "context": "General text"
+    },
+    "selectLanguage": {
+      "value": "Sprache auswählen",
+      "context": "Short label or title"
+    },
+    "selectLanguageLabel": {
+      "value": "Sprache",
+      "context": "Form or UI label"
+    },
+    "signInWithEmailLinkInstead": {
+      "value": "Mit E-Mail-Link anmelden",
+      "context": "General text"
+    },
+    "signInWithEmailLinkPlaceHolder": {
+      "value": "Drücken Sie „Los“, um sich mit einem E-Mail-Link anzumelden.",
+      "context": "Input field placeholder"
+    },
+    "signInWithPasswordInstead": {
+      "value": "Mit Passwort anmelden",
+      "context": "General text"
+    },
+    "suggestions": {
+      "value": "Vorschläge",
+      "context": "Short label or title"
+    }
+  }
+}

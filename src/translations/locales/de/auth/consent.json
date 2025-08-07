@@ -1,0 +1,37 @@
+{
+  "$schema": "../../base/metadata-schema.json",
+  "$metadata": {
+    "component": "consentModal",
+    "lastUpdated": "2025-08-06T23:57:13.775Z",
+    "completeness": 100,
+    "context": "User consent and assent modals",
+    "migrated": true,
+    "originalFormat": "legacy"
+  },
+  "translations": {
+    "header": {
+      "value": "Zustimmung",
+      "context": "Page or section title"
+    },
+    "title": {
+      "value": "Zustimmung",
+      "context": "Page or section title"
+    },
+    "acceptButton": {
+      "value": "Akzeptieren",
+      "context": "Button text"
+    },
+    "rejectButton": {
+      "value": "Nein, mich abmelden",
+      "context": "Button text"
+    },
+    "toastHeader": {
+      "value": "Bestätigt",
+      "context": "Page or section title"
+    },
+    "consentUpdatedStatus": {
+      "value": "Zustimmungsstatus aktualisiert",
+      "context": "General text"
+    }
+  }
+}

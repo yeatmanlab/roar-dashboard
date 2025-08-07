@@ -1,0 +1,59 @@
+identifier,label,en,es-CO,de
+components.game-tabs.clickToStart,components/game-tabs,Click to start,Haz clic para empezar,Klicken zum Starten
+components.game-tabs.taskCompleted,components/game-tabs,Task Completed!,¡Tarea completada!,Aufgabe abgeschlossen!
+components.game-tabs.introName,components/game-tabs,Introduction,Introducción,Anleitungen
+components.game-tabs.introDescription,components/game-tabs,Learn how to play our games. ,Aprende a jugar a nuestros juegos.,"Schau dir an, wie man unsere Spiele spielt."
+components.game-tabs.heartsAndFlowersDescription,components/game-tabs,Match the correct side to the hearts and flowers.,Haz coincidir el lado correcto con los corazones y las flores.,Wähle die richige Seite für die Herzen und Blumen.
+components.game-tabs.heartsAndFlowersName,components/game-tabs,Hearts and Flowers,Corazones y Flores,Herzen & Blumen
+components.game-tabs.egmaMathDescription,components/game-tabs,Solve the math problems.,Resuelve los problemas matemáticos.,Löse die Matheaufgaben.
+components.game-tabs.egmaMathName,components/game-tabs,Math,Matemáticas,Mathe
+components.game-tabs.matrixReasoningDescription,components/game-tabs,Find the missing piece to complete the puzzle.,Encuentra la pieza que falta para completar el rompecabeza.,"Finde das fehlende Teil, um das Puzzle zu vervollständigen."
+components.game-tabs.matrixReasoningName,components/game-tabs,Pattern matching,Razonamiento Matricial,Musterspiel
+components.game-tabs.memoryGameDescription,components/game-tabs,Watch the squares light up. Remember the order and make the same pattern.,Observa cómo se iluminan los cuadrados. Recuerda el orden y haz el mismo patrón.,"Schau dir genau an, wie die Quadrate aufleuchten. Merke dir die Reihenfolge und mach das Muster genauso nach."
+components.game-tabs.memoryGameName,components/game-tabs,Memory,Memoria,Merkspiel
+components.game-tabs.mentalRotationDescription,components/game-tabs,Match the pictures.,Empareja las imágenes.,Ordne die Bilder zu.
+components.game-tabs.mentalRotationName,components/game-tabs,Shape Rotation,Rotación Mental,Formenspiel
+components.game-tabs.sameDifferentSelectionDescription,components/game-tabs,Find things that are the same about the shapes.,Encuentra cosas iguales en las formas.,"Finde Dinge, die die Formen gemeinsam haben."
+components.game-tabs.sameDifferentSelectionName,components/game-tabs,Same & Different,Iguales y Diferentes,Gleich & Verschieden
+components.game-tabs.theoryOfMindDescription,components/game-tabs,Listen to the stories and answer the questions.,Escucha las historias y responde a las preguntas.,Höre dir die Geschichten an und beantworte dann Fragen dazu.
+components.game-tabs.theoryOfMindName,components/game-tabs,Stories,Historias,Bildergeschichten
+components.game-tabs.trogDescription,components/game-tabs,Listen to the words and choose the matching picture.,Escucha las palabras y elige la imagen correspondiente.,Hör dir die Wörter an und wähle das passende Bild dazu aus.
+components.game-tabs.trogName,components/game-tabs,Sentence Undersanding,Comprensión de Frases,Satzverstehen
+components.game-tabs.surveyNameChild,components/game-tabs,Thoughts and Feelings,Pensamientos y Sentimientos,Gedanken & Gefühle
+components.game-tabs.surveyDescriptionChild,components/game-tabs,Answer questions about your time at school.,Responde a las preguntas sobre tu estancia en el colegio.,Hier geht es um Fragen zu deiner Schulzeit.
+components.game-tabs.surveyNameParentPart1,components/game-tabs,Survey - Caregiver,Encuesta para cuidadores,Umfrage - Erwachsene
+components.game-tabs.surveyDescriptionParentPart1,components/game-tabs,This survey will take approximately 20-30 minutes to complete and will ask questions about your child.,Estimamos que diligenciar la siguiente encuesta le tomará aproximadamente 20-30 minutos y se le harán preguntas sobre su niño(a).,"Das Ausfüllen dieser Fragebögen dauert etwa 30-45 Minuten. Teil A enthält Fragen zu Ihrem häuslichen Umfeld und zu Ihrer Person. In Teil B werden Fragen zu Ihrem Kind/ Ihren Kindern gestellt. Anhand des Geburtsdatums, welches im jeweiligen Fragebogen aufgeführt ist, können Sie erkennen, an welches Kind Sie bei der Beantwortung der Fragen denken sollen (falls Sie mehr als ein Kind in dieser Studie haben)."
+components.game-tabs.surveyNameParentPart2,components/game-tabs,Survey - Family,Encuesta para cuidadores,Umfrage - Familie
+components.game-tabs.surveyDescriptionParentPart2,components/game-tabs,This survey will take approximately 20-30 minutes to complete and will ask questions about your home and yourself.,Estimamos que diligenciar la siguiente encuesta le tomará aproximadamente 20-30 minutos y se le harán preguntas sobre su hogar y usted mismo(a).,Umfrage für Eltern: Die folgende Umfrage dauert etwa 20-30 Minuten und enthält Fragen Ihrem zu Hause und zu Ihrer Person. 
+components.game-tabs.surveyNameTeacherPart1,components/game-tabs,Survey - General,Encuesta de profesores - General,Umfrage - Allgemein
+components.game-tabs.surveyDescriptionTeacherPart1,components/game-tabs,This survey will take approximately 5-10 minutes to complete and asks about your background and beliefs about teaching.,Estimamos que diligenciar la siguiente encuesta le tomará aproximadamente 5-10 minutos. Las preguntas indagan por sus antecedentes y creencias sobre la enseñanza.,This survey will take approximately 5-10 minutes to complete and asks about your background and beliefs about teaching.
+components.game-tabs.surveyNameTeacherPart2,components/game-tabs,Survey - Classroom,Encuesta de profesores - Salón,Umfrage - Klassenzimmer
+components.game-tabs.surveyDescriptionTeacherPart2,components/game-tabs,This survey will take approximately 5-10 minutes to complete and asks questions about the classroom(s) you teach.,Estimamos que diligenciar la siguiente encuesta le tomará aproximadamente 5-10 minutos y se le hará preguntas sobre el salón o los salones en los que imparte.,This survey will take approximately 5-10 minutes to complete and asks questions about the classroom(s) you teach.
+components.game-tabs.surveyProgressGeneral,components/game-tabs,General,General,Allgemein
+components.game-tabs.surveyProgressGeneralParent,components/game-tabs,Home/Caregiver,Familia,zu Hause/ Erwachsener
+components.game-tabs.surveyProgressSpecificParent,components/game-tabs,Child,Niño,Kind
+components.game-tabs.surveyProgressSpecificParentMonth,components/game-tabs,Month,Mes,Monat
+components.game-tabs.surveyProgressSpecificParentYear,components/game-tabs,Year,Año,Jahr
+components.game-tabs.surveyProgressGeneralTeacher,components/game-tabs,Teacher,Profesor,Lehrer
+components.game-tabs.surveyProgressSpecificTeacher,components/game-tabs,Classroom,Aula,Klassenzimmer
+components.game-tabs.mefsName,components/game-tabs,Lion and Monkey,El León y El Mono,Löwe & Affe
+components.game-tabs.mefsDescription,components/game-tabs,Match the shapes and colors.,Empareja las formas y los colores.,Formen und Farben zuordnen.
+components.game-tabs.vocabName,components/game-tabs,Vocabulary,Vocabulario,Vokabeln
+components.game-tabs.vocabDescription,components/game-tabs,Listen to the word and choose the matching picture.,Escucha la palabra y elige la imagen correspondiente.,Hör dir die Wörter an und wähle das passende Bild dazu aus.
+components.game-tabs.roarInferenceName,components/game-tabs,Roar - Inference,Roar - Inferencia,
+components.game-tabs.roarInferenceDescription,components/game-tabs,Read the stories and answer the questions.,Lee las historias y responde a las preguntas.,
+components.navbar.greeting,components/navbar,Hi,¡Hola,
+components.navbar.signOut,components/navbar,Sign Out,Salir,Abmelden
+components.participant-sidebar.grade,components/participant-sidebar,Grade,Calificación,Klasse
+components.participant-sidebar.studentInfo,components/participant-sidebar,Participant Info,Información del nina,Schülerinformationen
+components.participant-sidebar.tasksCompleted,components/participant-sidebar,tasks completed!,¡tareas completadas!,Aufgaben abgeschlossen!
+components.sentry-form.formTitle,components/sentry-form,Report an Issue to LEVANTE,Reportar un problema a LEVANTE,Ein Problem bei LEVANTE melden
+components.sentry-form.buttonLabel,components/sentry-form,Report an Issue,Reportar un problema,Ein Problem melden
+components.sentry-form.submitButtonLabel,components/sentry-form,Submit Issue Report,Enviar informe de problema,Problembericht einreichen
+components.sentry-form.cancelButtonLabel,components/sentry-form,Cancel,Cancelar,Abbrechen
+components.sentry-form.namePlaceholder,components/sentry-form,Your Name (optional),Tu nombre (opcional),Ihr Name (optional)
+components.sentry-form.emailPlaceholder,components/sentry-form,your.email@example.org (optional),tu.email@example.org (opcional),ihre.email@beispiel.org (optional)
+components.sentry-form.messageLabel,components/sentry-form,Description,Descripción,Beschreibung
+components.sentry-form.messagePlaceholder,components/sentry-form,What is the issue? What did you want to experience instead? Thank you for sharing.,¿Cuál es el problema? ¿Qué querías experimentar en su lugar? Gracias por compartir.,Was ist das Problem? Was wollten Sie stattdessen erleben? Vielen Dank für Ihr Feedback.
+components.tasks.preparing,components/tasks,Preparing your game!,¡Preparando tu juego!,Gleich geht das Spiel los!
+components.tasks.loading,components/tasks,loading,cargando,Laden

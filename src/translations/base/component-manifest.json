@@ -1,0 +1,61 @@
+{
+  "manifest": {
+    "version": "1.0.0",
+    "lastUpdated": "2024-01-15T00:00:00Z",
+    "description": "Maps components to their translation files"
+  },
+  "components": {
+    "authSignIn": {
+      "file": "auth/signin.json",
+      "description": "User authentication and sign-in forms"
+    },
+    "consentModal": {
+      "file": "auth/consent.json", 
+      "description": "User consent and assent modals"
+    },
+    "homeParticipant": {
+      "file": "pages/home-participant.json",
+      "description": "Participant dashboard home page"
+    },
+    "homeSelector": {
+      "file": "pages/home-selector.json",
+      "description": "Role selection and general home components"
+    },
+    "gameTabs": {
+      "file": "components/game-tabs.json",
+      "description": "Task and game tab interface"
+    },
+    "navBar": {
+      "file": "components/navbar.json",
+      "description": "Navigation bar component"
+    },
+    "notFound": {
+      "file": "pages/not-found.json",
+      "description": "404 error page"
+    },
+    "participantSidebar": {
+      "file": "components/participant-sidebar.json",
+      "description": "Participant information sidebar"
+    },
+    "pageSignIn": {
+      "file": "pages/signin.json",
+      "description": "Sign-in page content"
+    },
+    "tasks": {
+      "file": "components/tasks.json",
+      "description": "Task loading and preparation"
+    },
+    "sentryForm": {
+      "file": "components/sentry-form.json",
+      "description": "Error reporting form"
+    },
+    "userSurvey": {
+      "file": "surveys/user-survey.json",
+      "description": "User survey components"
+    },
+    "profile": {
+      "file": "pages/profile.json",
+      "description": "User profile and settings"
+    }
+  }
+}

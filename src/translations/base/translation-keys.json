@@ -1,0 +1,146 @@
+{
+  "registry": {
+    "version": "1.0.0",
+    "lastScanned": "2024-01-15T00:00:00Z",
+    "description": "Master registry of all translation keys used in the application"
+  },
+  "keys": {
+    "authSignIn": [
+      "atLeastOneLowercase",
+      "atLeastOneNumber", 
+      "atLeastOneNumeric",
+      "atLeastOneUpperCase",
+      "buttonLabel",
+      "continueWithGoogle",
+      "emailId",
+      "emailPlaceholder",
+      "forgotPassword",
+      "incorrectEmailOrPassword",
+      "invalidEmailPlaceholder",
+      "minimumCharacters",
+      "pageTitle",
+      "passwordId",
+      "passwordPlaceholder",
+      "pickPassword",
+      "selectLanguage",
+      "selectLanguageLabel",
+      "signInWithEmailLinkInstead",
+      "signInWithEmailLinkPlaceHolder",
+      "signInWithPasswordInstead",
+      "suggestions"
+    ],
+    "consentModal": [
+      "header",
+      "consentTitle",
+      "assentTitle",
+      "acceptButton",
+      "rejectButton",
+      "toastHeader",
+      "consentUpdatedStatus"
+    ],
+    "homeParticipant": [
+      "showOptionalAssignments",
+      "loadingAssignments",
+      "selectAssignment",
+      "noAssignments",
+      "contactAdministrator"
+    ],
+    "homeSelector": [
+      "loading",
+      "inactivityLogout",
+      "inactivityLogoutAcceptLabel"
+    ],
+    "gameTabs": [
+      "clickToStart",
+      "taskCompleted",
+      "introName",
+      "introDescription",
+      "heartsAndFlowersDescription",
+      "heartsAndFlowersName",
+      "egmaMathDescription",
+      "egmaMathName",
+      "matrixReasoningDescription",
+      "matrixReasoningName",
+      "memoryGameDescription",
+      "memoryGameName",
+      "mentalRotationDescription",
+      "mentalRotationName",
+      "sameDifferentSelectionDescription",
+      "sameDifferentSelectionName",
+      "theoryOfMindDescription",
+      "theoryOfMindName",
+      "trogDescription",
+      "trogName",
+      "surveyNameChild",
+      "surveyDescriptionChild",
+      "surveyNameParentPart1",
+      "surveyDescriptionParentPart1",
+      "surveyNameParentPart2",
+      "surveyDescriptionParentPart2",
+      "surveyNameTeacherPart1",
+      "surveyDescriptionTeacherPart1",
+      "surveyNameTeacherPart2",
+      "surveyDescriptionTeacherPart2",
+      "surveyProgressGeneral",
+      "surveyProgressGeneralParent",
+      "surveyProgressSpecificParent",
+      "surveyProgressSpecificParentMonth",
+      "surveyProgressSpecificParentYear",
+      "surveyProgressGeneralTeacher",
+      "surveyProgressSpecificTeacher",
+      "mefsName",
+      "mefsDescription",
+      "vocabName",
+      "vocabDescription",
+      "roarInferenceName",
+      "roarInferenceDescription"
+    ],
+    "navBar": [
+      "greeting",
+      "signOut"
+    ],
+    "notFound": [
+      "label",
+      "pageNotFound",
+      "sorry"
+    ],
+    "participantSidebar": [
+      "grade",
+      "studentInfo",
+      "tasksCompleted"
+    ],
+    "pageSignIn": [
+      "havingTrouble",
+      "login",
+      "loginWith",
+      "welcome",
+      "adminPrompt",
+      "adminAction",
+      "adminInfoPrompt"
+    ],
+    "tasks": [
+      "preparing",
+      "loading"
+    ],
+    "sentryForm": [
+      "formTitle",
+      "buttonLabel",
+      "submitButtonLabel",
+      "cancelButtonLabel",
+      "namePlaceholder",
+      "emailPlaceholder",
+      "messageLabel",
+      "messagePlaceholder"
+    ],
+    "userSurvey": [
+      "specificRelationDescriptionChildA",
+      "specificRelationDescriptionChildB",
+      "specificRelationDescriptionClass"
+    ],
+    "profile": [
+      "settings.settings",
+      "settings.language",
+      "settings.languageDescription"
+    ]
+  }
+}
