@@ -32,6 +32,7 @@ export const GAME_ROUTES = {
   CROWDING: '/game/crowding',
   ROAV_MEP: '/game/roav-mep',
   ROAR_READALOUD: '/game/roar-readaloud',
+  SURVEY: '/game/roar-survey',
 };
 
 export const APP_ROUTES = {
@@ -41,6 +42,7 @@ export const APP_ROUTES = {
   PROGRESS_REPORT: '/administration/:administrationId/:orgType/:orgId',
   SCORE_REPORT: '/scores/:administrationId/:orgType/:orgId',
   STUDENT_REPORT: '/scores/:administrationId/:orgType/:orgId/user/:userId',
+  SCORE_REPORT_STUDENT: '/scores/:administrationId/:orgType/:orgId/user/:userId/new',
   ACCOUNT_PROFILE: '/profile',
   ORGS_LIST: '/list-orgs',
   ORGS_CREATE: '/create-orgs',

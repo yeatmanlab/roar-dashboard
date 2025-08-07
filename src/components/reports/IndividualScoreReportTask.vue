@@ -25,9 +25,7 @@
             </div>
             <PvKnob
               readonly
-              :value-template="
-                task.scoreToDisplay == 'percentileScore' ? getPercentileSuffix(task.percentileScore.value) : undefined
-              "
+              :value-template="getValueTemplate(task)"
               :model-value="task[task.scoreToDisplay].value"
               :size="180"
               :range-color="gray"
@@ -38,7 +36,23 @@
           </div>
         </div>
 
-        <div v-if="rawOnlyTasks.includes(task.taskId)" class="score-description px-4 py-2">
+        <div v-if="tasksToDisplayPercentCorrect.includes(task.taskId)" class="score-description px-4 py-2">
+          <i18n-t keypath="scoreReports.percentageCorrectTaskDescription" tag="span">
+            <template #firstName>
+              {{ studentFirstName }}
+            </template>
+            <template #percentage>
+              <strong>{{ Math.round(task.percentileScore.value) }}</strong>
+            </template>
+            <template #taskName>
+              {{ taskDisplayNames[task.taskId]?.extendedName }}
+            </template>
+            <template #taskDescription>
+              {{ extendedDescriptions[task.taskId] }}
+            </template>
+          </i18n-t>
+        </div>
+        <div v-else-if="rawOnlyTasks.includes(task.taskId)" class="score-description px-4 py-2">
           <i18n-t keypath="scoreReports.rawTaskDescription" tag="span">
             <template #firstName>
               {{ studentFirstName }}
@@ -75,46 +89,37 @@
             </template>
           </i18n-t>
         </div>
-
         <div v-else class="px-4 py-2 score-description">
-          <i18n-t keypath="scoreReports.percentileTaskDescription" tag="span">
-            <template #firstName>
-              {{ studentFirstName }}
-            </template>
-            <template #percentile>
-              <strong>{{ getPercentileWithSuffix(Math.round(task?.percentileScore.value)) }} percentile</strong>
-            </template>
-            <template #supportCategory>
-              <strong>{{
-                getSupportLevelLanguage(grade, task.percentileScore.value, task.rawScore.value, task.taskId)
-              }}</strong>
-            </template>
-            <template #taskName>
-              {{ taskDisplayNames[task.taskId]?.extendedName }}
-            </template>
-            <template #taskDescription>
-              {{ extendedDescriptions[task.taskId] }}
-            </template>
-          </i18n-t>
+          <span>
+            {{ studentFirstName }}
+            <strong>{{
+              getSupportLevelLanguage(grade, task?.percentileScore.value, task?.rawScore.value, task.taskId)
+            }}</strong>
+          </span>
         </div>
-        <div v-if="!rawOnlyTasks.includes(task.taskId)">
+        <div v-if="!rawOnlyTasks.includes(task.taskId) && task.taskId !== 'phonics'">
           <PvAccordion
             class="my-2 w-full"
             :active-index="expanded ? 0 : null"
             expand-icon="pi pi-plus ml-2"
             collapse-icon="pi pi-minus ml-2"
+            @tab-close="emit('update:expanded', false)"
+            @tab-open="emit('update:expanded', true)"
           >
-            <PvAccordionTab :header="$t('scoreReports.scoreBreakdown')">
-              <div v-for="[key, rawScore, rangeMin, rangeMax] in task.scoresArray" :key="key">
-                <div class="flex justify-content-between score-table">
-                  <div class="mr-2">
-                    <b>{{ key }}</b
-                    ><span v-if="rangeMax" class="text-500"> ({{ rangeMin }}-{{ rangeMax }}):</span>
-                    <span v-else>:</span>
-                  </div>
-                  <div class="ml-2">
-                    <b>{{ isNaN(rawScore) ? rawScore : Math.round(rawScore) }}</b>
-                  </div>
+            <PvAccordionTab>
+              <template #header>
+                <div class="flex align-items-center">
+                  <span class="font-light">{{ t('scoreReports.scoreBreakdown') }}</span>
+                </div>
+              </template>
+              <div class="flex flex-column">
+                <div
+                  v-for="[key, value] in task.formattedScores"
+                  :key="key"
+                  class="flex flex-row justify-content-between align-items-center mb-2"
+                >
+                  <span class="font-light text-sm">{{ key }}</span>
+                  <span class="font-bold text-sm">{{ value }}</span>
                 </div>
               </div>
             </PvAccordionTab>
@@ -168,6 +173,8 @@ import {
   getSupportLevel,
   getRawScoreRange,
   getScoreKeys,
+  getDialColor,
+  tasksToDisplayPercentCorrect,
 } from '@/helpers/reports';
 
 const props = defineProps({
@@ -184,6 +191,8 @@ const props = defineProps({
     required: false,
   },
 });
+
+const emit = defineEmits(['update:expanded']);
 
 const { t } = useI18n();
 
@@ -207,8 +216,8 @@ const computedTaskData = computed(() => {
     const compositeScores = scores?.composite;
     let rawScore = null;
     if (!taskId.includes('vocab') && !taskId.includes('es')) {
-      // letter's raw score is a percentage expressed as a float, so we need to multiply by 100.
       if (taskId.includes('letter')) {
+        // letter's raw score is a percentage expressed as a float, so we need to multiply by 100.
         rawScore = _get(compositeScores, 'totalCorrect');
       } else {
         rawScore = _get(compositeScores, rawScoreKey);
@@ -220,7 +229,7 @@ const computedTaskData = computed(() => {
       const percentileScore = _get(compositeScores, percentileScoreKey);
       const standardScore = _get(compositeScores, standardScoreKey);
       const rawScoreRange = getRawScoreRange(taskId);
-      const supportColor = getSupportLevel(grade.value, percentileScore, rawScore, taskId).tag_color;
+      const supportColor = getDialColor(grade.value, percentileScore, rawScore, taskId);
 
       const scoresForTask = {
         standardScore: {
@@ -235,10 +244,12 @@ const computedTaskData = computed(() => {
           value: Math.round(rawScore),
           min: rawScoreRange?.min,
           max: rawScoreRange?.max,
-          supportColor: 'gray',
+          supportColor: 'var(--blue-500)',
         },
         percentileScore: {
-          name: _startCase(t('scoreReports.percentileScore')),
+          name: tasksToDisplayPercentCorrect.includes(taskId)
+            ? 'PERCENT CORRECT'
+            : _startCase(t('scoreReports.percentileScore')),
           value: Math.round(percentileScore),
           min: 0,
           max: 99,
@@ -284,10 +295,7 @@ const computedTaskData = computed(() => {
       }
 
       // determine which score to display in the card based on grade
-      let scoreToDisplay = grade.value >= 6 ? 'standardScore' : 'percentileScore';
-      if (rawOnlyTasks.includes(taskId)) {
-        scoreToDisplay = 'rawScore';
-      }
+      const scoreToDisplay = rawOnlyTasks.includes(taskId) ? 'rawScore' : getScoreToDisplay(taskId, grade.value);
 
       computedTaskAcc[taskId] = {
         taskId: taskId,
@@ -376,18 +384,6 @@ function getSupportLevelLanguage(grade, percentile, rawScore, taskId) {
   }
 }
 
-function getPercentileWithSuffix(percentile) {
-  if (percentile % 10 === 1 && percentile !== 11) {
-    return percentile + 'st';
-  } else if (percentile % 10 === 2 && percentile !== 12) {
-    return percentile + 'nd';
-  } else if (percentile % 10 === 3 && percentile !== 13) {
-    return percentile + 'rd';
-  } else {
-    return percentile + 'th';
-  }
-}
-
 function getPercentileSuffix(percentile) {
   if (percentile % 10 === 1 && percentile !== 11) {
     return '{value}st';
@@ -398,6 +394,23 @@ function getPercentileSuffix(percentile) {
   } else {
     return '{value}th';
   }
+}
+
+function getValueTemplate(task) {
+  if (task.taskId === 'phonics') {
+    return task[task.scoreToDisplay].value + '%';
+  }
+
+  if (task.scoreToDisplay === 'percentileScore') {
+    return getPercentileSuffix(task.percentileScore.value);
+  }
+
+  return undefined;
+}
+
+function getScoreToDisplay(taskId, gradeValue) {
+  if (taskId === 'phonics') return 'percentileScore';
+  return gradeValue >= 6 ? 'standardScore' : 'percentileScore';
 }
 </script>
 

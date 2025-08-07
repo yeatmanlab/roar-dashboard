@@ -34,6 +34,7 @@
     "@bdelab/roav-crowding": "1.1.35",
     "@bdelab/roav-mep": "1.2.0",
     "@bdelab/roav-ran": "1.0.33",
+    "@bdelab/roar-survey": "0.0.1",
     "@dotenvx/dotenvx": "^1.24.4",
     "@bdelab/roar-levante-tasks": "0.0.1",
     "@primevue/core": "^4.2.4",
