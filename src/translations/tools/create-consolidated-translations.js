@@ -107,7 +107,9 @@ function buildRows(langs) {
 function groupBySection(identifiers) {
   const groups = new Map() // section -> identifiers[]
   identifiers.forEach((id) => {
-    const [section] = id.split('.')
+    // identifier looks like: "components/navbar.something" or "auth/consent.something"
+    const firstToken = id.split('.')[0] // e.g., "components/navbar" or "auth/consent"
+    const section = firstToken.split('/')[0] // e.g., "components" or "auth"
     const list = groups.get(section) ?? []
     list.push(id)
     groups.set(section, list)
@@ -141,7 +143,9 @@ function writeConsolidatedCSVs({ allIdentifiers, perLangFlat }, langs) {
       })
       out.push(toCsvLine(row))
     })
-    const file = path.join(consolidatedRoot, `dashboard-${section}-translations.csv`)
+    // sanitize filename to avoid nested directories due to slashes in identifiers
+    const safeSection = section.replace(/[\\/]/g, '-')
+    const file = path.join(consolidatedRoot, `dashboard-${safeSection}-translations.csv`)
     fs.writeFileSync(file, out.join('\n'))
   }
   return detectedLangs

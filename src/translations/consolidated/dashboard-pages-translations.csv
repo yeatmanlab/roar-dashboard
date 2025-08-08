@@ -1,0 +1,22 @@
+identifier,label,de,en,en-us,es-co,es
+pages/home-participant.consentUpdatedStatus,consentUpdatedStatus,,,,Estado de consentimiento actualizado,
+pages/home-participant.contactAdministrator,contactAdministrator,"Bitte kontaktieren Sie Ihren Administrator, um zu einer Zuordnung hinzugefügt zu werden.",Please contact your administrator to get added to an assignment.,Please contact your administrator to get added to an assignment.,"Por favor, contacta a tu administrador para que agregue a una actividad.","Por favor, contacta a tu administrador para que te agregue a una actividad."
+pages/home-participant.loadingAssignments,loadingAssignments,Lade Zuordnungen,Loading Assignments,Loading Assignments,Cargando actividades,Cargando actividades
+pages/home-participant.noAssignments,noAssignments,Sie haben keine Zuordnungen!,You have no assignments!,You have no assignments!,¡No tienes actividades!,¡No tienes actividades!
+pages/home-participant.selectAssignment,selectAssignment,Wählen Sie eine Zuordnung aus,Select an assignment,Select an assignment,Selecciona una actividad,Selecciona una actividad
+pages/home-participant.showOptionalAssignments,showOptionalAssignments,Optionale Zuordnungen anzeigen,Show optional assignments,Show optional assignments,Mostrar actividades opcionales,Mostrar actividades opcionales
+pages/home-selector.inactivityLogout,inactivityLogout,"Sie werden aus Sicherheitsgründen bald abgemeldet. Bitte klicken Sie auf 'Fortsetzen', wenn Sie Ihre Sitzung fortsetzen möchten. Andernfalls werden Sie automatisch in { timeLeft } Sekunden abgemeldet.","You will soon be logged out for security purposes. Please click ""Continue"" if you wish to continue your session.
+ Otherwise, you will be automatically logged out in { timeLeft } seconds.","You will soon be logged out for security purposes. Please click ""Continue"" if you wish to continue your session.
+ Otherwise, you will be automatically logged out in { timeLeft } seconds.","Pronto serás desconectado por motivos de seguridad. Haz clic en ""Continuar"" si deseas continuar. De lo contrario, la sesión se cerrará en {timeLeft} segundos automáticamente .","Pronto será desconectado por motivos de seguridad. Haz clic en ""Continuar"" si desea continuar con su sesión. De lo contrario, se cerrará la sesión automáticamente en {timeLeft} segundos."
+pages/home-selector.inactivityLogoutAcceptLabel,inactivityLogoutAcceptLabel,Fortsetzen,Continue,Continue,Continuar,Continuar
+pages/home-selector.loading,loading,Laden...,Loading...,Loading...,Cargando...,Cargando...
+pages/not-found.label,label,"Klicken Sie hier, um zur Startseite zu gelangen.",Return to Home,Return to Home.,Ir a la página de inicio.,Ir a la página de inicio.
+pages/not-found.pageNotFound,pageNotFound,Seite nicht gefunden,Page not found,Page not found,Página no encontrada,Página no encontrada
+pages/not-found.sorry,sorry,"Entschuldigung, wir konnten diese Seite nicht finden!","Sorry, we could not find that page!","Sorry, we could not find that page!","¡Lo siento, no pudimos encontrar esa página!","¡Lo siento, no pudimos encontrar esa página!"
+pages/signin.adminAction,adminAction,hier,here,here,aquí,aquí
+pages/signin.adminInfoPrompt,adminInfoPrompt,"Wenn Sie sich mit einer Google-E-Mail oder Ihr E-Mail-Anbieter Google SSO verwendet, registriert haben.",If you registered with a Google email or your email provider uses Google SSO.,If you registered with a Google email or your email provider uses Google SSO.,Si te registraste con un correo de Google o tu proveedor de correo utiliza Google SSO.,Si te registraste con un correo de Google o tu proveedor de correo utiliza Google SSO.
+pages/signin.adminPrompt,adminPrompt,"Sind Sie ein Administrator? Klicken Sie {action}, um sich anzumelden.",Are you an Admin? Click {action} to Sign in.,Are you an Admin? Click {action} to Sign in.,¿Eres administrador? Haz clic {action} para iniciar sesión.,¿Eres administrador? Haz clic {action} para iniciar sesión.
+pages/signin.havingTrouble,havingTrouble,Haben Sie Schwierigkeiten?,Having trouble?,Having trouble?,¿Tienes problemas?,¿Tienes problemas?
+pages/signin.login,login,"Melden Sie sich an, um auf Ihr Dashboard zuzugreifen",Log in to access your dashboard,Log in to access your dashboard,Inicia sesión para acceder a tus actividades,Inicia sesión para acceder a tu panel de control
+pages/signin.loginWith,loginWith,Anmelden mit,Log in with,Log in with,Inicia sesión con,Inicia sesión con
+pages/signin.welcome,welcome,Willkommen bei ROAR!,Welcome to ROAR!,Welcome to ROAR!,¡Bienvenido a ROAR!,¡Bienvenido a ROAR!
