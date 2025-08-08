@@ -22,7 +22,11 @@
     "test": "vitest --config vitest.config.js",
     "test:watch": "vitest --watch",
     "version": "npm run format && git add -A",
-    "i18n:download-rebuild": "node src/translations/tools/download-and-rebuild.js"
+    "i18n:download-rebuild": "node src/translations/tools/download-and-rebuild.js",
+    "i18n:consolidate": "node src/translations/tools/create-consolidated-translations.js",
+    "i18n:crowdin:upload": "crowdin upload sources --config src/translations/crowdin/crowdin.yml",
+    "i18n:crowdin:download": "crowdin download --config src/translations/crowdin/crowdin.yml",
+    "i18n:sync": "npm run i18n:consolidate && npm run i18n:crowdin:upload && npm run i18n:crowdin:download && npm run i18n:download-rebuild"
   },
   "dependencies": {
     "@bdelab/roar-pa": "2.2.4",
