@@ -2,7 +2,7 @@
   "$schema": "../../base/metadata-schema.json",
   "$metadata": {
     "component": "navbar",
-    "lastUpdated": "2025-08-08T04:31:35.563Z",
+    "lastUpdated": "2025-08-08T04:49:33.012Z",
     "completeness": 100,
     "context": "components component",
     "source": "crowdin"

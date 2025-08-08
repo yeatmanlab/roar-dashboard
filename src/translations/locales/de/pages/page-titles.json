@@ -2,7 +2,7 @@
   "$schema": "../../base/metadata-schema.json",
   "$metadata": {
     "component": "page-titles",
-    "lastUpdated": "2025-08-08T04:31:35.564Z",
+    "lastUpdated": "2025-08-08T04:49:33.013Z",
     "completeness": 100,
     "context": "pages component",
     "source": "crowdin"
