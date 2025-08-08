@@ -1,45 +1,44 @@
 {
   "$schema": "../../base/metadata-schema.json",
   "$metadata": {
-    "component": "sentryForm",
-    "lastUpdated": "2025-08-06T23:57:13.753Z",
+    "component": "sentry-form",
+    "lastUpdated": "2025-08-08T04:31:35.563Z",
     "completeness": 100,
-    "context": "Error reporting form",
-    "migrated": true,
-    "originalFormat": "legacy"
+    "context": "components component",
+    "source": "crowdin"
   },
   "translations": {
     "formTitle": {
       "value": "Report an Issue to LEVANTE",
-      "context": "Page or section title"
+      "context": "components/sentry-form"
     },
     "buttonLabel": {
       "value": "Report an Issue",
-      "context": "Button text"
+      "context": "components/sentry-form"
     },
     "submitButtonLabel": {
       "value": "Submit Issue Report",
-      "context": "Button text"
+      "context": "components/sentry-form"
     },
     "cancelButtonLabel": {
       "value": "Cancel",
-      "context": "Button text"
+      "context": "components/sentry-form"
     },
     "namePlaceholder": {
       "value": "Your Name (optional)",
-      "context": "Input field placeholder"
+      "context": "components/sentry-form"
     },
     "emailPlaceholder": {
       "value": "your.email@example.org (optional)",
-      "context": "Input field placeholder"
+      "context": "components/sentry-form"
     },
     "messageLabel": {
       "value": "Description",
-      "context": "Form or UI label"
+      "context": "components/sentry-form"
     },
     "messagePlaceholder": {
       "value": "What is the issue? What did you want to experience instead? Thank you for sharing.",
-      "context": "Input field placeholder"
+      "context": "components/sentry-form"
     }
   }
 }

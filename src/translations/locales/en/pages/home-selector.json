@@ -1,25 +1,24 @@
 {
   "$schema": "../../base/metadata-schema.json",
   "$metadata": {
-    "component": "homeSelector",
-    "lastUpdated": "2025-08-06T23:57:13.746Z",
+    "component": "home-selector",
+    "lastUpdated": "2025-08-08T04:31:35.564Z",
     "completeness": 100,
-    "context": "Role selection and general home components",
-    "migrated": true,
-    "originalFormat": "legacy"
+    "context": "pages component",
+    "source": "crowdin"
   },
   "translations": {
     "loading": {
       "value": "Loading...",
-      "context": "Short label or title"
+      "context": "pages/home-selector"
     },
     "inactivityLogout": {
-      "value": "You will soon be logged out for security purposes. Please click \"Continue\" if you wish to continue your session.\n Otherwise, you will be automatically logged out in { timeLeft } seconds.",
-      "context": "Long descriptive text"
+      "value": "You will soon be logged out for security purposes. Please click Continue if you wish to continue your session.",
+      "context": "pages/home-selector"
     },
     "inactivityLogoutAcceptLabel": {
       "value": "Continue",
-      "context": "Form or UI label"
+      "context": "pages/home-selector"
     }
   }
 }

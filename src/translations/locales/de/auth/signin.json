@@ -1,97 +1,96 @@
 {
   "$schema": "../../base/metadata-schema.json",
   "$metadata": {
-    "component": "authSignIn",
-    "lastUpdated": "2025-08-06T23:57:13.774Z",
+    "component": "signin",
+    "lastUpdated": "2025-08-08T04:31:35.561Z",
     "completeness": 100,
-    "context": "User authentication and sign-in forms",
-    "migrated": true,
-    "originalFormat": "legacy"
+    "context": "auth component",
+    "source": "crowdin"
   },
   "translations": {
     "atLeastOneLowercase": {
       "value": "Mindestens ein Kleinbuchstabe",
-      "context": "General text"
+      "context": "auth/signin"
     },
     "atLeastOneNumber": {
       "value": "Mindestens eine Zahl",
-      "context": "General text"
+      "context": "auth/signin"
     },
     "atLeastOneNumeric": {
       "value": "Mindestens eine Nummer",
-      "context": "General text"
+      "context": "auth/signin"
     },
     "atLeastOneUpperCase": {
       "value": "Mindestens ein Großbuchstabe",
-      "context": "General text"
+      "context": "auth/signin"
     },
     "buttonLabel": {
       "value": "Los!",
-      "context": "Button text"
+      "context": "auth/signin"
     },
     "continueWithGoogle": {
       "value": "Machen Sie weiter mit Google",
-      "context": "General text"
+      "context": "auth/signin"
     },
     "emailId": {
       "value": "E-Mail",
-      "context": "Short label or title"
+      "context": "auth/signin"
     },
     "emailPlaceholder": {
       "value": "Benutzername oder E-Mail",
-      "context": "Input field placeholder"
+      "context": "auth/signin"
     },
     "forgotPassword": {
       "value": "Passwort vergessen?",
-      "context": "Short label or title"
+      "context": "auth/signin"
     },
     "incorrectEmailOrPassword": {
       "value": "Falscher Benutzername/E-Mail oder Passwort",
-      "context": "General text"
+      "context": "auth/signin"
     },
     "invalidEmailPlaceholder": {
       "value": "Fehler: Ungültige E-Mail",
-      "context": "Input field placeholder"
+      "context": "auth/signin"
     },
     "minimumCharacters": {
       "value": "Mindestens 8 Zeichen",
-      "context": "General text"
+      "context": "auth/signin"
     },
     "passwordId": {
       "value": "Passwort",
-      "context": "Short label or title"
+      "context": "auth/signin"
     },
     "passwordPlaceholder": {
       "value": "Passwort",
-      "context": "Input field placeholder"
+      "context": "auth/signin"
     },
     "pickPassword": {
       "value": "Wählen Sie ein Passwort",
-      "context": "General text"
+      "context": "auth/signin"
     },
     "selectLanguage": {
       "value": "Sprache auswählen",
-      "context": "Short label or title"
+      "context": "auth/signin"
     },
     "selectLanguageLabel": {
       "value": "Sprache",
-      "context": "Form or UI label"
+      "context": "auth/signin"
     },
     "signInWithEmailLinkInstead": {
       "value": "Mit E-Mail-Link anmelden",
-      "context": "General text"
+      "context": "auth/signin"
     },
     "signInWithEmailLinkPlaceHolder": {
       "value": "Drücken Sie „Los“, um sich mit einem E-Mail-Link anzumelden.",
-      "context": "Input field placeholder"
+      "context": "auth/signin"
     },
     "signInWithPasswordInstead": {
       "value": "Mit Passwort anmelden",
-      "context": "General text"
+      "context": "auth/signin"
     },
     "suggestions": {
       "value": "Vorschläge",
-      "context": "Short label or title"
+      "context": "auth/signin"
     }
   }
 }

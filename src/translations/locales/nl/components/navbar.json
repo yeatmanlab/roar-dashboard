@@ -1,0 +1,20 @@
+{
+  "$schema": "../../base/metadata-schema.json",
+  "$metadata": {
+    "component": "navbar",
+    "lastUpdated": "2025-08-08T04:31:35.563Z",
+    "completeness": 100,
+    "context": "components component",
+    "source": "crowdin"
+  },
+  "translations": {
+    "greeting": {
+      "value": "",
+      "context": "components/navbar"
+    },
+    "signOut": {
+      "value": "",
+      "context": "components/navbar"
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "$schema": "../../base/metadata-schema.json",
+  "$metadata": {
+    "component": "not-found",
+    "lastUpdated": "2025-08-08T04:31:35.564Z",
+    "completeness": 100,
+    "context": "pages component",
+    "source": "crowdin"
+  },
+  "translations": {
+    "label": {
+      "value": "Ir a la página de inicio.",
+      "context": "pages/not-found"
+    },
+    "pageNotFound": {
+      "value": "Página no encontrada",
+      "context": "pages/not-found"
+    },
+    "sorry": {
+      "value": "¡Lo siento, no pudimos encontrar esa página!",
+      "context": "pages/not-found"
+    }
+  }
+}

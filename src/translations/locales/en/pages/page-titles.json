@@ -1,25 +1,24 @@
 {
   "$schema": "../../base/metadata-schema.json",
   "$metadata": {
-    "component": "pageTitles",
-    "lastUpdated": "2025-08-06T23:57:13.793Z",
+    "component": "page-titles",
+    "lastUpdated": "2025-08-08T04:31:35.564Z",
     "completeness": 100,
-    "context": "Page titles for browser tabs and navigation",
-    "migrated": true,
-    "originalFormat": "legacy"
+    "context": "pages component",
+    "source": "crowdin"
   },
   "translations": {
     "home": {
       "value": "Dashboard",
-      "context": "Short label or title"
+      "context": "pages/page-titles"
     },
     "signIn": {
       "value": "Sign In",
-      "context": "Short label or title"
+      "context": "pages/page-titles"
     },
     "signOut": {
       "value": "Sign Out",
-      "context": "Short label or title"
+      "context": "pages/page-titles"
     }
   }
 }

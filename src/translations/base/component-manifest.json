@@ -10,7 +10,7 @@
       "description": "User authentication and sign-in forms"
     },
     "consentModal": {
-      "file": "auth/consent.json", 
+      "file": "auth/consent.json",
       "description": "User consent and assent modals"
     },
     "homeParticipant": {
@@ -57,5 +57,15 @@
       "file": "pages/profile.json",
       "description": "User profile and settings"
     }
-  }
+  },
+  "supportedLanguages": [
+    "de",
+    "de-ch",
+    "en",
+    "en-so",
+    "es-co",
+    "fr-ca",
+    "nl"
+  ],
+  "lastUpdated": "2025-08-08T04:31:35.586Z"
 }

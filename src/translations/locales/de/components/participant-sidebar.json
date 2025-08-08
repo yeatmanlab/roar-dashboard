@@ -1,25 +1,24 @@
 {
   "$schema": "../../base/metadata-schema.json",
   "$metadata": {
-    "component": "participantSidebar",
-    "lastUpdated": "2025-08-06T23:57:13.780Z",
+    "component": "participant-sidebar",
+    "lastUpdated": "2025-08-08T04:31:35.563Z",
     "completeness": 100,
-    "context": "Participant information sidebar",
-    "migrated": true,
-    "originalFormat": "legacy"
+    "context": "components component",
+    "source": "crowdin"
   },
   "translations": {
     "grade": {
       "value": "Klasse",
-      "context": "Short label or title"
+      "context": "components/participant-sidebar"
     },
     "studentInfo": {
       "value": "Schülerinformationen",
-      "context": "General text"
+      "context": "components/participant-sidebar"
     },
     "tasksCompleted": {
       "value": "Aufgaben abgeschlossen!",
-      "context": "General text"
+      "context": "components/participant-sidebar"
     }
   }
 }

@@ -245,6 +245,104 @@ Make sure to set the correct environment variables for production:
 VITE_FIREBASE_PROJECT=PROD
 ```
 
+## 🌐 Translation Management
+
+This project includes a comprehensive translation system integrated with Crowdin for collaborative translation management.
+
+### 🚀 Quick Start
+
+1. **Set your Crowdin API token:**
+   ```bash
+   export CROWDIN_API_TOKEN="your-api-token-here"
+   ```
+
+2. **Download latest translations:**
+   ```bash
+   npm run i18n:download-rebuild
+   ```
+
+3. **Check system health:**
+   ```bash
+   npm run i18n:health
+   ```
+
+### 📋 Translation Workflows
+
+#### For Developers
+```bash
+# Upload local changes to Crowdin
+npm run i18n:workflow upload
+
+# Download completed translations 
+npm run i18n:workflow download
+
+# Complete round-trip workflow
+npm run i18n:workflow full
+```
+
+#### For Translators
+1. Visit [Crowdin Project](https://crowdin.com/project/levantetranslations)
+2. Navigate to the `dashboard/` folder
+3. Open CSV files to translate (all languages in one file)
+4. Use the Crowdin editor to add/update translations
+
+### 🔄 Build-Time Integration
+
+Translations are automatically integrated during build:
+
+```bash
+# Development - auto-downloads latest translations
+npm run dev
+
+# Production build - includes latest translations
+npm run build
+```
+
+### 📁 File Structure
+
+```
+src/translations/
+├── locales/                    # Modular JSON files (auto-generated)
+│   ├── en/                    # English (source)
+│   ├── es/                    # Spanish
+│   └── de/                    # German  
+├── consolidated/              # CSV files for Crowdin
+├── crowdin/                   # Crowdin configuration
+└── tools/                     # Translation management scripts
+```
+
+### 🌍 Adding New Languages
+
+1. **In Crowdin:** Add the language to your project
+2. **Locally:** Run `npm run i18n:download-rebuild`
+3. **Automatic:** New language files are created automatically
+
+### 🛠️ Available Commands
+
+| Command | Description |
+|---------|-------------|
+| `i18n:health` | System health check |
+| `i18n:consolidate` | Create CSV files from JSON |
+| `i18n:download-rebuild` | Download from Crowdin & rebuild |
+| `i18n:crowdin:status` | Check translation progress |
+| `i18n:crowdin:upload` | Upload source files |
+| `i18n:validate` | Validate translation files |
+| `i18n:workflow [upload\|download\|full]` | Complete workflows |
+
+### 📊 Translation Format
+
+CSV files use this structure:
+```csv
+identifier,label,en,es-CO,de
+auth.signin.title,auth/signin,Sign In,Iniciar Sesión,Anmelden
+```
+
+- **identifier**: Unique key (category.component.key)
+- **label**: Component context (category/component)  
+- **en**: English source text
+- **es-CO**: Spanish Colombia translation
+- **de**: German translation
+
 ## 🤝 Contributing
 
 1. Fork the repository
@@ -261,6 +359,7 @@ VITE_FIREBASE_PROJECT=PROD
 - Use PrimeVue components when possible
 - Maintain responsive design principles
 - Add proper error handling and loading states
+- For translations: Update source files, then run `npm run i18n:workflow upload`
 
 ## 📝 License
 

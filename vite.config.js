@@ -6,8 +6,18 @@ import mkcert from 'vite-plugin-mkcert';
 import { nodePolyfills } from 'vite-plugin-node-polyfills';
 import UnheadVite from '@unhead/addons/vite';
 import * as child from 'child_process';
+import { createRequire } from 'module';
+
+const require = createRequire(import.meta.url);
 
 const commitHash = child.execSync('git rev-parse --short HEAD').toString();
+
+// Build optional optimizeDeps includes safely
+const optionalOptimizeDeps = [];
+try {
+  require.resolve('@levante-framework/firekit');
+  optionalOptimizeDeps.push('@levante-framework/firekit');
+} catch {}
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -67,7 +77,7 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    include: ['@levante-framework/firekit'],
+    include: optionalOptimizeDeps,
     esbuildOptions: {
       mainFields: ['module', 'main'],
       resolveExtensions: ['.js', '.mjs', '.cjs'],

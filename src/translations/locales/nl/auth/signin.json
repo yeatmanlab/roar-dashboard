@@ -1,0 +1,96 @@
+{
+  "$schema": "../../base/metadata-schema.json",
+  "$metadata": {
+    "component": "signin",
+    "lastUpdated": "2025-08-08T04:31:35.561Z",
+    "completeness": 100,
+    "context": "auth component",
+    "source": "crowdin"
+  },
+  "translations": {
+    "atLeastOneLowercase": {
+      "value": "",
+      "context": "auth/signin"
+    },
+    "atLeastOneNumber": {
+      "value": "",
+      "context": "auth/signin"
+    },
+    "atLeastOneNumeric": {
+      "value": "",
+      "context": "auth/signin"
+    },
+    "atLeastOneUpperCase": {
+      "value": "",
+      "context": "auth/signin"
+    },
+    "buttonLabel": {
+      "value": "",
+      "context": "auth/signin"
+    },
+    "continueWithGoogle": {
+      "value": "",
+      "context": "auth/signin"
+    },
+    "emailId": {
+      "value": "",
+      "context": "auth/signin"
+    },
+    "emailPlaceholder": {
+      "value": "",
+      "context": "auth/signin"
+    },
+    "forgotPassword": {
+      "value": "",
+      "context": "auth/signin"
+    },
+    "incorrectEmailOrPassword": {
+      "value": "",
+      "context": "auth/signin"
+    },
+    "invalidEmailPlaceholder": {
+      "value": "",
+      "context": "auth/signin"
+    },
+    "minimumCharacters": {
+      "value": "",
+      "context": "auth/signin"
+    },
+    "passwordId": {
+      "value": "",
+      "context": "auth/signin"
+    },
+    "passwordPlaceholder": {
+      "value": "",
+      "context": "auth/signin"
+    },
+    "pickPassword": {
+      "value": "",
+      "context": "auth/signin"
+    },
+    "selectLanguage": {
+      "value": "",
+      "context": "auth/signin"
+    },
+    "selectLanguageLabel": {
+      "value": "",
+      "context": "auth/signin"
+    },
+    "signInWithEmailLinkInstead": {
+      "value": "",
+      "context": "auth/signin"
+    },
+    "signInWithEmailLinkPlaceHolder": {
+      "value": "",
+      "context": "auth/signin"
+    },
+    "signInWithPasswordInstead": {
+      "value": "",
+      "context": "auth/signin"
+    },
+    "suggestions": {
+      "value": "",
+      "context": "auth/signin"
+    }
+  }
+}

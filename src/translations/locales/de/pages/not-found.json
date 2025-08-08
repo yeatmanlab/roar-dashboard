@@ -1,25 +1,24 @@
 {
   "$schema": "../../base/metadata-schema.json",
   "$metadata": {
-    "component": "notFound",
-    "lastUpdated": "2025-08-06T23:57:13.779Z",
+    "component": "not-found",
+    "lastUpdated": "2025-08-08T04:31:35.564Z",
     "completeness": 100,
-    "context": "404 error page",
-    "migrated": true,
-    "originalFormat": "legacy"
+    "context": "pages component",
+    "source": "crowdin"
   },
   "translations": {
     "label": {
       "value": "Klicken Sie hier, um zur Startseite zu gelangen.",
-      "context": "Form or UI label"
+      "context": "pages/not-found"
     },
     "pageNotFound": {
       "value": "Seite nicht gefunden",
-      "context": "General text"
+      "context": "pages/not-found"
     },
     "sorry": {
       "value": "Entschuldigung, wir konnten diese Seite nicht finden!",
-      "context": "General text"
+      "context": "pages/not-found"
     }
   }
 }

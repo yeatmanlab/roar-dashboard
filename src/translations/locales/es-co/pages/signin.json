@@ -1,0 +1,40 @@
+{
+  "$schema": "../../base/metadata-schema.json",
+  "$metadata": {
+    "component": "signin",
+    "lastUpdated": "2025-08-08T04:31:35.564Z",
+    "completeness": 100,
+    "context": "pages component",
+    "source": "crowdin"
+  },
+  "translations": {
+    "havingTrouble": {
+      "value": "¿Tienes problemas?",
+      "context": "pages/signin"
+    },
+    "login": {
+      "value": "Inicia sesión para acceder a tu panel de control",
+      "context": "pages/signin"
+    },
+    "loginWith": {
+      "value": "Inicia sesión con",
+      "context": "pages/signin"
+    },
+    "welcome": {
+      "value": "¡Bienvenido a ROAR!",
+      "context": "pages/signin"
+    },
+    "adminPrompt": {
+      "value": "¿Eres administrador? Haz clic {action} para iniciar sesión.",
+      "context": "pages/signin"
+    },
+    "adminAction": {
+      "value": "aquí",
+      "context": "pages/signin"
+    },
+    "adminInfoPrompt": {
+      "value": "Si te registraste con un correo de Google o tu proveedor de correo utiliza Google SSO.",
+      "context": "pages/signin"
+    }
+  }
+}

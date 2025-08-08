@@ -26,7 +26,12 @@
     "i18n:migrate": "node src/translations/tools/migrate-existing.js",
     "i18n:health": "node src/translations/tools/system-health-check.js",
     "i18n:report": "npm run i18n:extract && npm run i18n:validate && node src/translations/tools/crowdin-sync.js report",
-    "i18n:consolidate": "node src/translations/tools/create-consolidated-translations.js"
+    "i18n:consolidate": "node src/translations/tools/create-consolidated-translations.js",
+    "i18n:download-rebuild": "node src/translations/tools/download-and-rebuild.js",
+    "i18n:build-integration": "node src/translations/tools/build-integration.js",
+    "i18n:workflow": "node src/translations/tools/complete-workflow.js",
+    "prebuild": "npm run i18n:build-integration",
+    "predev": "npm run i18n:build-integration"
   },
   "dependencies": {
     "@primevue/core": "^4.3.6",
@@ -39,17 +44,20 @@
     "primeicons": "^7.0.0",
     "primevue": "^4.3.6",
     "survey-core": "^2.0.2",
-    "survey-vue3-ui": "^2.0.2",
     "survey-creator-core": "^2.0.2",
     "survey-creator-vue": "^2.0.2",
+    "survey-vue3-ui": "^2.0.2",
     "vue": "^3.5.18",
+    "vue-i18n": "^9.14.5",
     "vue-router": "^4.5.1"
   },
   "devDependencies": {
     "@crowdin/cli": "^4.2.0",
+    "@sentry/vite-plugin": "^4.0.2",
     "@tsconfig/node22": "^22.0.2",
     "@types/lodash": "^4.14.196",
     "@types/node": "^22.16.5",
+    "@unhead/addons": "^2.0.14",
     "@vitejs/plugin-vue": "^6.0.1",
     "@vue/eslint-config-typescript": "^14.6.0",
     "@vue/tsconfig": "^0.7.0",
@@ -59,7 +67,10 @@
     "jiti": "^2.4.2",
     "npm-run-all2": "^8.0.4",
     "typescript": "~5.8.0",
+    "unhead": "^2.0.14",
     "vite": "^7.0.6",
+    "vite-plugin-mkcert": "^1.17.8",
+    "vite-plugin-node-polyfills": "^0.24.0",
     "vite-plugin-vue-devtools": "^8.0.0",
     "vue-tsc": "^3.0.4"
   }

@@ -1,0 +1,44 @@
+{
+  "$schema": "../../base/metadata-schema.json",
+  "$metadata": {
+    "component": "sentry-form",
+    "lastUpdated": "2025-08-08T04:31:35.563Z",
+    "completeness": 100,
+    "context": "components component",
+    "source": "crowdin"
+  },
+  "translations": {
+    "formTitle": {
+      "value": "",
+      "context": "components/sentry-form"
+    },
+    "buttonLabel": {
+      "value": "",
+      "context": "components/sentry-form"
+    },
+    "submitButtonLabel": {
+      "value": "",
+      "context": "components/sentry-form"
+    },
+    "cancelButtonLabel": {
+      "value": "",
+      "context": "components/sentry-form"
+    },
+    "namePlaceholder": {
+      "value": "",
+      "context": "components/sentry-form"
+    },
+    "emailPlaceholder": {
+      "value": "",
+      "context": "components/sentry-form"
+    },
+    "messageLabel": {
+      "value": "",
+      "context": "components/sentry-form"
+    },
+    "messagePlaceholder": {
+      "value": "",
+      "context": "components/sentry-form"
+    }
+  }
+}

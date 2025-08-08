@@ -2,20 +2,19 @@
   "$schema": "../../base/metadata-schema.json",
   "$metadata": {
     "component": "tasks",
-    "lastUpdated": "2025-08-06T23:57:13.752Z",
+    "lastUpdated": "2025-08-08T04:31:35.563Z",
     "completeness": 100,
-    "context": "Task loading and preparation",
-    "migrated": true,
-    "originalFormat": "legacy"
+    "context": "components component",
+    "source": "crowdin"
   },
   "translations": {
     "preparing": {
       "value": "Preparing your game!",
-      "context": "General text"
+      "context": "components/tasks"
     },
     "loading": {
       "value": "loading",
-      "context": "Short label or title"
+      "context": "components/tasks"
     }
   }
 }

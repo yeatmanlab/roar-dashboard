@@ -1,0 +1,24 @@
+{
+  "$schema": "../../base/metadata-schema.json",
+  "$metadata": {
+    "component": "home-selector",
+    "lastUpdated": "2025-08-08T04:31:35.564Z",
+    "completeness": 100,
+    "context": "pages component",
+    "source": "crowdin"
+  },
+  "translations": {
+    "loading": {
+      "value": "Cargando...",
+      "context": "pages/home-selector"
+    },
+    "inactivityLogout": {
+      "value": "Pronto será desconectado por motivos de seguridad. Haz clic en Continuar si desea continuar con su sesión. De lo contrario, se cerrará la sesión automáticamente en {timeLeft} segundos.",
+      "context": "pages/home-selector"
+    },
+    "inactivityLogoutAcceptLabel": {
+      "value": "Continuar",
+      "context": "pages/home-selector"
+    }
+  }
+}

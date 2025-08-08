@@ -1,0 +1,32 @@
+{
+  "$schema": "../../base/metadata-schema.json",
+  "$metadata": {
+    "component": "home-participant",
+    "lastUpdated": "2025-08-08T04:31:35.564Z",
+    "completeness": 100,
+    "context": "pages component",
+    "source": "crowdin"
+  },
+  "translations": {
+    "showOptionalAssignments": {
+      "value": "",
+      "context": "pages/home-participant"
+    },
+    "loadingAssignments": {
+      "value": "",
+      "context": "pages/home-participant"
+    },
+    "selectAssignment": {
+      "value": "",
+      "context": "pages/home-participant"
+    },
+    "noAssignments": {
+      "value": "",
+      "context": "pages/home-participant"
+    },
+    "contactAdministrator": {
+      "value": "",
+      "context": "pages/home-participant"
+    }
+  }
+}

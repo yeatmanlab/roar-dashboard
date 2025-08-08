@@ -2,7 +2,7 @@
 
 /**
  * Creates consolidated translation files with all languages in a single CSV
- * Format: identifier, label, en, es-CO, de
+ * Format: identifier, label, en, es-CO, de, de-CH, en-so, fr-CA, nl
  */
 
 import fs from 'fs';
@@ -15,11 +15,15 @@ const __dirname = path.dirname(__filename);
 const TRANSLATIONS_DIR = path.join(__dirname, '..', 'locales');
 const OUTPUT_DIR = path.join(__dirname, '..', 'consolidated');
 
-// Language mappings
+// Language mappings (include all languages available in Crowdin)
 const LANGUAGES = {
     'en': 'en',
     'es': 'es-CO', 
-    'de': 'de'
+    'de': 'de',
+    'de-ch': 'de-CH',
+    'en-so': 'en-so',
+    'fr-ca': 'fr-CA',
+    'nl': 'nl'
 };
 
 // Component types to process
@@ -74,8 +78,9 @@ function createConsolidatedCSV(type) {
     
     const rows = [];
     
-    // CSV header
-    rows.push(['identifier', 'label', 'en', 'es-CO', 'de']);
+    // CSV header - dynamically generate based on available languages
+    const languageCodes = Object.values(LANGUAGES);
+    rows.push(['identifier', 'label', ...languageCodes]);
     
     // Process each file
     for (const filename of files) {
@@ -103,21 +108,21 @@ function createConsolidatedCSV(type) {
             const identifier = `${type}.${componentName}.${key}`;
             const label = `${type}/${componentName}`;
             
-            const enValue = enTranslations[key]?.value || '';
-            const esValue = translations['es-CO']?.[key]?.value || '';
-            const deValue = translations['de']?.[key]?.value || '';
+            // Get values for all languages dynamically
+            const values = languageCodes.map(langCode => 
+                translations[langCode]?.[key]?.value || ''
+            );
             
-            // Skip separator lines and empty values
-            if (key.includes('LEVANTE TRANSLATIONS') || !enValue.trim()) {
+            // Skip separator lines and empty values (check first language - usually English)
+            const firstValue = values[0] || '';
+            if (key.includes('LEVANTE TRANSLATIONS') || !firstValue.trim()) {
                 continue;
             }
             
             rows.push([
                 identifier,
                 label,
-                enValue,
-                esValue,
-                deValue
+                ...values
             ]);
         }
     }
@@ -192,7 +197,8 @@ function main() {
     
     // Create one master file with all translations
     console.log(`\n📋 Creating master consolidated file...`);
-    const allRows = [['identifier', 'label', 'en', 'es-CO', 'de']];
+    const languageCodes = Object.values(LANGUAGES);
+    const allRows = [['identifier', 'label', ...languageCodes]];
     
     for (const type of COMPONENT_TYPES) {
         const typeRows = createConsolidatedCSV(type);

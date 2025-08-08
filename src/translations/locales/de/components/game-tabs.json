@@ -1,181 +1,184 @@
 {
   "$schema": "../../base/metadata-schema.json",
   "$metadata": {
-    "component": "gameTabs",
-    "lastUpdated": "2025-08-06T23:57:13.777Z",
+    "component": "game-tabs",
+    "lastUpdated": "2025-08-08T04:31:35.562Z",
     "completeness": 100,
-    "context": "Task and game tab interface",
-    "migrated": true,
-    "originalFormat": "legacy"
+    "context": "components component",
+    "source": "crowdin"
   },
   "translations": {
     "clickToStart": {
       "value": "Klicken zum Starten",
-      "context": "Short label or title"
+      "context": "components/game-tabs"
     },
     "taskCompleted": {
       "value": "Aufgabe abgeschlossen!",
-      "context": "General text"
-    },
-    "LEVANTE TRANSLATIONS--------------------------": {
-      "value": "",
-      "context": "Short label or title"
+      "context": "components/game-tabs"
     },
     "introName": {
       "value": "Anleitungen",
-      "context": "Name or identifier"
+      "context": "components/game-tabs"
     },
     "introDescription": {
       "value": "Schau dir an, wie man unsere Spiele spielt.",
-      "context": "Descriptive text"
+      "context": "components/game-tabs"
     },
     "heartsAndFlowersDescription": {
       "value": "Wähle die richige Seite für die Herzen und Blumen.",
-      "context": "Descriptive text"
+      "context": "components/game-tabs"
     },
     "heartsAndFlowersName": {
       "value": "Herzen & Blumen",
-      "context": "Name or identifier"
+      "context": "components/game-tabs"
     },
     "egmaMathDescription": {
       "value": "Löse die Matheaufgaben.",
-      "context": "Descriptive text"
+      "context": "components/game-tabs"
     },
     "egmaMathName": {
       "value": "Mathe",
-      "context": "Name or identifier"
+      "context": "components/game-tabs"
     },
     "matrixReasoningDescription": {
       "value": "Finde das fehlende Teil, um das Puzzle zu vervollständigen.",
-      "context": "Descriptive text"
+      "context": "components/game-tabs"
     },
     "matrixReasoningName": {
       "value": "Musterspiel",
-      "context": "Name or identifier"
+      "context": "components/game-tabs"
     },
     "memoryGameDescription": {
       "value": "Schau dir genau an, wie die Quadrate aufleuchten. Merke dir die Reihenfolge und mach das Muster genauso nach.",
-      "context": "Descriptive text"
+      "context": "components/game-tabs"
     },
     "memoryGameName": {
       "value": "Merkspiel",
-      "context": "Name or identifier"
+      "context": "components/game-tabs"
     },
     "mentalRotationDescription": {
       "value": "Ordne die Bilder zu.",
-      "context": "Descriptive text"
+      "context": "components/game-tabs"
     },
     "mentalRotationName": {
       "value": "Formenspiel",
-      "context": "Name or identifier"
+      "context": "components/game-tabs"
     },
     "sameDifferentSelectionDescription": {
       "value": "Finde Dinge, die die Formen gemeinsam haben.",
-      "context": "Descriptive text"
+      "context": "components/game-tabs"
     },
     "sameDifferentSelectionName": {
       "value": "Gleich & Verschieden",
-      "context": "Name or identifier"
+      "context": "components/game-tabs"
     },
     "theoryOfMindDescription": {
       "value": "Höre dir die Geschichten an und beantworte dann Fragen dazu.",
-      "context": "Descriptive text"
+      "context": "components/game-tabs"
     },
     "theoryOfMindName": {
       "value": "Bildergeschichten",
-      "context": "Name or identifier"
+      "context": "components/game-tabs"
     },
     "trogDescription": {
       "value": "Hör dir die Wörter an und wähle das passende Bild dazu aus.",
-      "context": "Descriptive text"
+      "context": "components/game-tabs"
     },
     "trogName": {
       "value": "Satzverstehen",
-      "context": "Name or identifier"
+      "context": "components/game-tabs"
     },
     "surveyNameChild": {
       "value": "Gedanken & Gefühle",
-      "context": "Name or identifier"
+      "context": "components/game-tabs"
     },
     "surveyDescriptionChild": {
       "value": "Hier geht es um Fragen zu deiner Schulzeit.",
-      "context": "Descriptive text"
+      "context": "components/game-tabs"
     },
     "surveyNameParentPart1": {
       "value": "Umfrage - Erwachsene",
-      "context": "Name or identifier"
+      "context": "components/game-tabs"
     },
     "surveyDescriptionParentPart1": {
       "value": "Das Ausfüllen dieser Fragebögen dauert etwa 30-45 Minuten. Teil A enthält Fragen zu Ihrem häuslichen Umfeld und zu Ihrer Person. In Teil B werden Fragen zu Ihrem Kind/ Ihren Kindern gestellt. Anhand des Geburtsdatums, welches im jeweiligen Fragebogen aufgeführt ist, können Sie erkennen, an welches Kind Sie bei der Beantwortung der Fragen denken sollen (falls Sie mehr als ein Kind in dieser Studie haben).",
-      "context": "Descriptive text"
+      "context": "components/game-tabs"
     },
     "surveyNameParentPart2": {
       "value": "Umfrage - Familie",
-      "context": "Name or identifier"
+      "context": "components/game-tabs"
     },
     "surveyDescriptionParentPart2": {
-      "value": "Umfrage für Eltern: Die folgende Umfrage dauert etwa 20-30 Minuten und enthält Fragen Ihrem zu Hause und zu Ihrer Person. ",
-      "context": "Descriptive text"
+      "value": "Umfrage für Eltern: Die folgende Umfrage dauert etwa 20-30 Minuten und enthält Fragen Ihrem zu Hause und zu Ihrer Person.",
+      "context": "components/game-tabs"
     },
     "surveyNameTeacherPart1": {
       "value": "Umfrage - Allgemein",
-      "context": "Name or identifier"
+      "context": "components/game-tabs"
     },
     "surveyDescriptionTeacherPart1": {
       "value": "This survey will take approximately 5-10 minutes to complete and asks about your background and beliefs about teaching.",
-      "context": "Descriptive text"
+      "context": "components/game-tabs"
     },
     "surveyNameTeacherPart2": {
       "value": "Umfrage - Klassenzimmer",
-      "context": "Name or identifier"
+      "context": "components/game-tabs"
     },
     "surveyDescriptionTeacherPart2": {
       "value": "This survey will take approximately 5-10 minutes to complete and asks questions about the classroom(s) you teach.",
-      "context": "Descriptive text"
+      "context": "components/game-tabs"
     },
     "surveyProgressGeneral": {
       "value": "Allgemein",
-      "context": "Short label or title"
+      "context": "components/game-tabs"
     },
     "surveyProgressGeneralParent": {
       "value": "zu Hause/ Erwachsener",
-      "context": "General text"
+      "context": "components/game-tabs"
     },
     "surveyProgressSpecificParent": {
       "value": "Kind",
-      "context": "Short label or title"
+      "context": "components/game-tabs"
     },
     "surveyProgressSpecificParentMonth": {
       "value": "Monat",
-      "context": "Short label or title"
+      "context": "components/game-tabs"
     },
     "surveyProgressSpecificParentYear": {
       "value": "Jahr",
-      "context": "Short label or title"
+      "context": "components/game-tabs"
     },
     "surveyProgressGeneralTeacher": {
       "value": "Lehrer",
-      "context": "Short label or title"
+      "context": "components/game-tabs"
     },
     "surveyProgressSpecificTeacher": {
       "value": "Klassenzimmer",
-      "context": "Short label or title"
+      "context": "components/game-tabs"
     },
     "mefsName": {
       "value": "Löwe & Affe",
-      "context": "Name or identifier"
+      "context": "components/game-tabs"
     },
     "mefsDescription": {
       "value": "Formen und Farben zuordnen.",
-      "context": "Descriptive text"
+      "context": "components/game-tabs"
     },
     "vocabName": {
       "value": "Vokabeln",
-      "context": "Name or identifier"
+      "context": "components/game-tabs"
     },
     "vocabDescription": {
       "value": "Hör dir die Wörter an und wähle das passende Bild dazu aus.",
-      "context": "Descriptive text"
+      "context": "components/game-tabs"
+    },
+    "roarInferenceName": {
+      "value": "",
+      "context": "components/game-tabs"
+    },
+    "roarInferenceDescription": {
+      "value": "",
+      "context": "components/game-tabs"
     }
   }
 }

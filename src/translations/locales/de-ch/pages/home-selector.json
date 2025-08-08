@@ -1,0 +1,24 @@
+{
+  "$schema": "../../base/metadata-schema.json",
+  "$metadata": {
+    "component": "home-selector",
+    "lastUpdated": "2025-08-08T04:31:35.564Z",
+    "completeness": 100,
+    "context": "pages component",
+    "source": "crowdin"
+  },
+  "translations": {
+    "loading": {
+      "value": "",
+      "context": "pages/home-selector"
+    },
+    "inactivityLogout": {
+      "value": "",
+      "context": "pages/home-selector"
+    },
+    "inactivityLogoutAcceptLabel": {
+      "value": "",
+      "context": "pages/home-selector"
+    }
+  }
+}

@@ -1,41 +1,40 @@
 {
   "$schema": "../../base/metadata-schema.json",
   "$metadata": {
-    "component": "pageSignIn",
-    "lastUpdated": "2025-08-06T23:57:13.781Z",
+    "component": "signin",
+    "lastUpdated": "2025-08-08T04:31:35.564Z",
     "completeness": 100,
-    "context": "Sign-in page content",
-    "migrated": true,
-    "originalFormat": "legacy"
+    "context": "pages component",
+    "source": "crowdin"
   },
   "translations": {
     "havingTrouble": {
       "value": "Haben Sie Schwierigkeiten?",
-      "context": "General text"
+      "context": "pages/signin"
     },
     "login": {
       "value": "Melden Sie sich an, um auf Ihr Dashboard zuzugreifen",
-      "context": "General text"
+      "context": "pages/signin"
     },
     "loginWith": {
       "value": "Anmelden mit",
-      "context": "Short label or title"
+      "context": "pages/signin"
     },
     "welcome": {
       "value": "Willkommen bei ROAR!",
-      "context": "General text"
+      "context": "pages/signin"
     },
     "adminPrompt": {
       "value": "Sind Sie ein Administrator? Klicken Sie {action}, um sich anzumelden.",
-      "context": "General text"
+      "context": "pages/signin"
     },
     "adminAction": {
       "value": "hier",
-      "context": "Short label or title"
+      "context": "pages/signin"
     },
     "adminInfoPrompt": {
       "value": "Wenn Sie sich mit einer Google-E-Mail oder Ihr E-Mail-Anbieter Google SSO verwendet, registriert haben.",
-      "context": "Long descriptive text"
+      "context": "pages/signin"
     }
   }
 }

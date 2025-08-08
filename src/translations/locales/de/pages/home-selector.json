@@ -1,25 +1,24 @@
 {
   "$schema": "../../base/metadata-schema.json",
   "$metadata": {
-    "component": "homeSelector",
-    "lastUpdated": "2025-08-06T23:57:13.777Z",
+    "component": "home-selector",
+    "lastUpdated": "2025-08-08T04:31:35.564Z",
     "completeness": 100,
-    "context": "Role selection and general home components",
-    "migrated": true,
-    "originalFormat": "legacy"
+    "context": "pages component",
+    "source": "crowdin"
   },
   "translations": {
     "loading": {
       "value": "Laden...",
-      "context": "Short label or title"
+      "context": "pages/home-selector"
     },
     "inactivityLogout": {
-      "value": "Sie werden aus Sicherheitsgründen bald abgemeldet. Bitte klicken Sie auf 'Fortsetzen', wenn Sie Ihre Sitzung fortsetzen möchten. Andernfalls werden Sie automatisch in { timeLeft } Sekunden abgemeldet.",
-      "context": "Long descriptive text"
+      "value": "",
+      "context": "pages/home-selector"
     },
     "inactivityLogoutAcceptLabel": {
       "value": "Fortsetzen",
-      "context": "Form or UI label"
+      "context": "pages/home-selector"
     }
   }
 }

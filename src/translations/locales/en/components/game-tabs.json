@@ -1,189 +1,184 @@
 {
   "$schema": "../../base/metadata-schema.json",
   "$metadata": {
-    "component": "gameTabs",
-    "lastUpdated": "2025-08-06T23:57:13.747Z",
+    "component": "game-tabs",
+    "lastUpdated": "2025-08-08T04:31:35.562Z",
     "completeness": 100,
-    "context": "Task and game tab interface",
-    "migrated": true,
-    "originalFormat": "legacy"
+    "context": "components component",
+    "source": "crowdin"
   },
   "translations": {
     "clickToStart": {
       "value": "Click to start",
-      "context": "Short label or title"
+      "context": "components/game-tabs"
     },
     "taskCompleted": {
       "value": "Task Completed!",
-      "context": "Short label or title"
-    },
-    "LEVANTE TRANSLATIONS--------------------------": {
-      "value": "",
-      "context": "Short label or title"
+      "context": "components/game-tabs"
     },
     "introName": {
       "value": "Introduction",
-      "context": "Name or identifier"
+      "context": "components/game-tabs"
     },
     "introDescription": {
-      "value": "Learn how to play our games. ",
-      "context": "Descriptive text"
+      "value": "Learn how to play our games.",
+      "context": "components/game-tabs"
     },
     "heartsAndFlowersDescription": {
       "value": "Match the correct side to the hearts and flowers.",
-      "context": "Descriptive text"
+      "context": "components/game-tabs"
     },
     "heartsAndFlowersName": {
       "value": "Hearts and Flowers",
-      "context": "Name or identifier"
+      "context": "components/game-tabs"
     },
     "egmaMathDescription": {
       "value": "Solve the math problems.",
-      "context": "Descriptive text"
+      "context": "components/game-tabs"
     },
     "egmaMathName": {
       "value": "Math",
-      "context": "Name or identifier"
+      "context": "components/game-tabs"
     },
     "matrixReasoningDescription": {
       "value": "Find the missing piece to complete the puzzle.",
-      "context": "Descriptive text"
+      "context": "components/game-tabs"
     },
     "matrixReasoningName": {
       "value": "Pattern matching",
-      "context": "Name or identifier"
+      "context": "components/game-tabs"
     },
     "memoryGameDescription": {
       "value": "Watch the squares light up. Remember the order and make the same pattern.",
-      "context": "Descriptive text"
+      "context": "components/game-tabs"
     },
     "memoryGameName": {
       "value": "Memory",
-      "context": "Name or identifier"
+      "context": "components/game-tabs"
     },
     "mentalRotationDescription": {
       "value": "Match the pictures.",
-      "context": "Descriptive text"
+      "context": "components/game-tabs"
     },
     "mentalRotationName": {
       "value": "Shape Rotation",
-      "context": "Name or identifier"
+      "context": "components/game-tabs"
     },
     "sameDifferentSelectionDescription": {
       "value": "Find things that are the same about the shapes.",
-      "context": "Descriptive text"
+      "context": "components/game-tabs"
     },
     "sameDifferentSelectionName": {
       "value": "Same & Different",
-      "context": "Name or identifier"
+      "context": "components/game-tabs"
     },
     "theoryOfMindDescription": {
       "value": "Listen to the stories and answer the questions.",
-      "context": "Descriptive text"
+      "context": "components/game-tabs"
     },
     "theoryOfMindName": {
       "value": "Stories",
-      "context": "Name or identifier"
+      "context": "components/game-tabs"
     },
     "trogDescription": {
       "value": "Listen to the words and choose the matching picture.",
-      "context": "Descriptive text"
+      "context": "components/game-tabs"
     },
     "trogName": {
       "value": "Sentence Undersanding",
-      "context": "Name or identifier"
+      "context": "components/game-tabs"
     },
     "surveyNameChild": {
       "value": "Thoughts and Feelings",
-      "context": "Name or identifier"
+      "context": "components/game-tabs"
     },
     "surveyDescriptionChild": {
       "value": "Answer questions about your time at school.",
-      "context": "Descriptive text"
+      "context": "components/game-tabs"
     },
     "surveyNameParentPart1": {
       "value": "Survey - Caregiver",
-      "context": "Name or identifier"
+      "context": "components/game-tabs"
     },
     "surveyDescriptionParentPart1": {
       "value": "This survey will take approximately 20-30 minutes to complete and will ask questions about your child.",
-      "context": "Descriptive text"
+      "context": "components/game-tabs"
     },
     "surveyNameParentPart2": {
       "value": "Survey - Family",
-      "context": "Name or identifier"
+      "context": "components/game-tabs"
     },
     "surveyDescriptionParentPart2": {
       "value": "This survey will take approximately 20-30 minutes to complete and will ask questions about your home and yourself.",
-      "context": "Descriptive text"
+      "context": "components/game-tabs"
     },
     "surveyNameTeacherPart1": {
       "value": "Survey - General",
-      "context": "Name or identifier"
+      "context": "components/game-tabs"
     },
     "surveyDescriptionTeacherPart1": {
       "value": "This survey will take approximately 5-10 minutes to complete and asks about your background and beliefs about teaching.",
-      "context": "Descriptive text"
+      "context": "components/game-tabs"
     },
     "surveyNameTeacherPart2": {
       "value": "Survey - Classroom",
-      "context": "Name or identifier"
+      "context": "components/game-tabs"
     },
     "surveyDescriptionTeacherPart2": {
       "value": "This survey will take approximately 5-10 minutes to complete and asks questions about the classroom(s) you teach.",
-      "context": "Descriptive text"
+      "context": "components/game-tabs"
     },
     "surveyProgressGeneral": {
       "value": "General",
-      "context": "Short label or title"
+      "context": "components/game-tabs"
     },
     "surveyProgressGeneralParent": {
       "value": "Home/Caregiver",
-      "context": "Short label or title"
+      "context": "components/game-tabs"
     },
     "surveyProgressSpecificParent": {
       "value": "Child",
-      "context": "Short label or title"
+      "context": "components/game-tabs"
     },
     "surveyProgressSpecificParentMonth": {
       "value": "Month",
-      "context": "Short label or title"
+      "context": "components/game-tabs"
     },
     "surveyProgressSpecificParentYear": {
       "value": "Year",
-      "context": "Short label or title"
+      "context": "components/game-tabs"
     },
     "surveyProgressGeneralTeacher": {
       "value": "Teacher",
-      "context": "Short label or title"
+      "context": "components/game-tabs"
     },
     "surveyProgressSpecificTeacher": {
       "value": "Classroom",
-      "context": "Short label or title"
+      "context": "components/game-tabs"
     },
     "mefsName": {
       "value": "Lion and Monkey",
-      "context": "Name or identifier"
+      "context": "components/game-tabs"
     },
     "mefsDescription": {
       "value": "Match the shapes and colors.",
-      "context": "Descriptive text"
+      "context": "components/game-tabs"
     },
     "vocabName": {
       "value": "Vocabulary",
-      "context": "Name or identifier"
+      "context": "components/game-tabs"
     },
     "vocabDescription": {
       "value": "Listen to the word and choose the matching picture.",
-      "context": "Descriptive text"
+      "context": "components/game-tabs"
     },
     "roarInferenceName": {
       "value": "Roar - Inference",
-      "context": "Name or identifier"
+      "context": "components/game-tabs"
     },
     "roarInferenceDescription": {
       "value": "Read the stories and answer the questions.",
-      "context": "Descriptive text"
+      "context": "components/game-tabs"
     }
   }
 }

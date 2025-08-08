@@ -1,37 +1,40 @@
 {
   "$schema": "../../base/metadata-schema.json",
   "$metadata": {
-    "component": "consentModal",
-    "lastUpdated": "2025-08-06T23:57:13.775Z",
+    "component": "consent",
+    "lastUpdated": "2025-08-08T04:31:35.561Z",
     "completeness": 100,
-    "context": "User consent and assent modals",
-    "migrated": true,
-    "originalFormat": "legacy"
+    "context": "auth component",
+    "source": "crowdin"
   },
   "translations": {
     "header": {
       "value": "Zustimmung",
-      "context": "Page or section title"
+      "context": "auth/consent"
     },
-    "title": {
-      "value": "Zustimmung",
-      "context": "Page or section title"
+    "consentTitle": {
+      "value": "",
+      "context": "auth/consent"
+    },
+    "assentTitle": {
+      "value": "",
+      "context": "auth/consent"
     },
     "acceptButton": {
       "value": "Akzeptieren",
-      "context": "Button text"
+      "context": "auth/consent"
     },
     "rejectButton": {
       "value": "Nein, mich abmelden",
-      "context": "Button text"
+      "context": "auth/consent"
     },
     "toastHeader": {
       "value": "Bestätigt",
-      "context": "Page or section title"
+      "context": "auth/consent"
     },
     "consentUpdatedStatus": {
       "value": "Zustimmungsstatus aktualisiert",
-      "context": "General text"
+      "context": "auth/consent"
     }
   }
 }

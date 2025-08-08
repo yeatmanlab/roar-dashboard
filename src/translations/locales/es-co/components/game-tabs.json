@@ -1,0 +1,184 @@
+{
+  "$schema": "../../base/metadata-schema.json",
+  "$metadata": {
+    "component": "game-tabs",
+    "lastUpdated": "2025-08-08T04:31:35.562Z",
+    "completeness": 100,
+    "context": "components component",
+    "source": "crowdin"
+  },
+  "translations": {
+    "clickToStart": {
+      "value": "Haz clic para empezar",
+      "context": "components/game-tabs"
+    },
+    "taskCompleted": {
+      "value": "¡Tarea completada!",
+      "context": "components/game-tabs"
+    },
+    "introName": {
+      "value": "Introducción",
+      "context": "components/game-tabs"
+    },
+    "introDescription": {
+      "value": "Aprende a jugar a nuestros juegos.",
+      "context": "components/game-tabs"
+    },
+    "heartsAndFlowersDescription": {
+      "value": "Haz coincidir el lado correcto con los corazones y las flores.",
+      "context": "components/game-tabs"
+    },
+    "heartsAndFlowersName": {
+      "value": "Corazones y Flores",
+      "context": "components/game-tabs"
+    },
+    "egmaMathDescription": {
+      "value": "Resuelve los problemas matemáticos.",
+      "context": "components/game-tabs"
+    },
+    "egmaMathName": {
+      "value": "Matemáticas",
+      "context": "components/game-tabs"
+    },
+    "matrixReasoningDescription": {
+      "value": "Encuentra la pieza que falta para completar el rompecabeza.",
+      "context": "components/game-tabs"
+    },
+    "matrixReasoningName": {
+      "value": "Razonamiento Matricial",
+      "context": "components/game-tabs"
+    },
+    "memoryGameDescription": {
+      "value": "Observa cómo se iluminan los cuadrados. Recuerda el orden y haz el mismo patrón.",
+      "context": "components/game-tabs"
+    },
+    "memoryGameName": {
+      "value": "Memoria",
+      "context": "components/game-tabs"
+    },
+    "mentalRotationDescription": {
+      "value": "Empareja las imágenes.",
+      "context": "components/game-tabs"
+    },
+    "mentalRotationName": {
+      "value": "Rotación Mental",
+      "context": "components/game-tabs"
+    },
+    "sameDifferentSelectionDescription": {
+      "value": "Encuentra cosas iguales en las formas.",
+      "context": "components/game-tabs"
+    },
+    "sameDifferentSelectionName": {
+      "value": "Iguales y Diferentes",
+      "context": "components/game-tabs"
+    },
+    "theoryOfMindDescription": {
+      "value": "Escucha las historias y responde a las preguntas.",
+      "context": "components/game-tabs"
+    },
+    "theoryOfMindName": {
+      "value": "Historias",
+      "context": "components/game-tabs"
+    },
+    "trogDescription": {
+      "value": "Escucha las palabras y elige la imagen correspondiente.",
+      "context": "components/game-tabs"
+    },
+    "trogName": {
+      "value": "Comprensión de Frases",
+      "context": "components/game-tabs"
+    },
+    "surveyNameChild": {
+      "value": "Pensamientos y Sentimientos",
+      "context": "components/game-tabs"
+    },
+    "surveyDescriptionChild": {
+      "value": "Responde a las preguntas sobre tu estancia en el colegio.",
+      "context": "components/game-tabs"
+    },
+    "surveyNameParentPart1": {
+      "value": "Encuesta para cuidadores",
+      "context": "components/game-tabs"
+    },
+    "surveyDescriptionParentPart1": {
+      "value": "Estimamos que diligenciar la siguiente encuesta le tomará aproximadamente 20-30 minutos y se le harán preguntas sobre su niño(a).",
+      "context": "components/game-tabs"
+    },
+    "surveyNameParentPart2": {
+      "value": "Encuesta para cuidadores",
+      "context": "components/game-tabs"
+    },
+    "surveyDescriptionParentPart2": {
+      "value": "Estimamos que diligenciar la siguiente encuesta le tomará aproximadamente 20-30 minutos y se le harán preguntas sobre su hogar y usted mismo(a).",
+      "context": "components/game-tabs"
+    },
+    "surveyNameTeacherPart1": {
+      "value": "Encuesta de profesores - General",
+      "context": "components/game-tabs"
+    },
+    "surveyDescriptionTeacherPart1": {
+      "value": "Estimamos que diligenciar la siguiente encuesta le tomará aproximadamente 5-10 minutos. Las preguntas indagan por sus antecedentes y creencias sobre la enseñanza.",
+      "context": "components/game-tabs"
+    },
+    "surveyNameTeacherPart2": {
+      "value": "Encuesta de profesores - Salón",
+      "context": "components/game-tabs"
+    },
+    "surveyDescriptionTeacherPart2": {
+      "value": "Estimamos que diligenciar la siguiente encuesta le tomará aproximadamente 5-10 minutos y se le hará preguntas sobre el salón o los salones en los que imparte.",
+      "context": "components/game-tabs"
+    },
+    "surveyProgressGeneral": {
+      "value": "General",
+      "context": "components/game-tabs"
+    },
+    "surveyProgressGeneralParent": {
+      "value": "Familia",
+      "context": "components/game-tabs"
+    },
+    "surveyProgressSpecificParent": {
+      "value": "Niño",
+      "context": "components/game-tabs"
+    },
+    "surveyProgressSpecificParentMonth": {
+      "value": "Mes",
+      "context": "components/game-tabs"
+    },
+    "surveyProgressSpecificParentYear": {
+      "value": "Año",
+      "context": "components/game-tabs"
+    },
+    "surveyProgressGeneralTeacher": {
+      "value": "Profesor",
+      "context": "components/game-tabs"
+    },
+    "surveyProgressSpecificTeacher": {
+      "value": "Aula",
+      "context": "components/game-tabs"
+    },
+    "mefsName": {
+      "value": "El León y El Mono",
+      "context": "components/game-tabs"
+    },
+    "mefsDescription": {
+      "value": "Empareja las formas y los colores.",
+      "context": "components/game-tabs"
+    },
+    "vocabName": {
+      "value": "Vocabulario",
+      "context": "components/game-tabs"
+    },
+    "vocabDescription": {
+      "value": "Escucha la palabra y elige la imagen correspondiente.",
+      "context": "components/game-tabs"
+    },
+    "roarInferenceName": {
+      "value": "Roar - Inferencia",
+      "context": "components/game-tabs"
+    },
+    "roarInferenceDescription": {
+      "value": "Lee las historias y responde a las preguntas.",
+      "context": "components/game-tabs"
+    }
+  }
+}

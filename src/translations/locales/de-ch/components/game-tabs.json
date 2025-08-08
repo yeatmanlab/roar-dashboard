@@ -1,0 +1,184 @@
+{
+  "$schema": "../../base/metadata-schema.json",
+  "$metadata": {
+    "component": "game-tabs",
+    "lastUpdated": "2025-08-08T04:31:35.562Z",
+    "completeness": 100,
+    "context": "components component",
+    "source": "crowdin"
+  },
+  "translations": {
+    "clickToStart": {
+      "value": "",
+      "context": "components/game-tabs"
+    },
+    "taskCompleted": {
+      "value": "",
+      "context": "components/game-tabs"
+    },
+    "introName": {
+      "value": "",
+      "context": "components/game-tabs"
+    },
+    "introDescription": {
+      "value": "",
+      "context": "components/game-tabs"
+    },
+    "heartsAndFlowersDescription": {
+      "value": "",
+      "context": "components/game-tabs"
+    },
+    "heartsAndFlowersName": {
+      "value": "",
+      "context": "components/game-tabs"
+    },
+    "egmaMathDescription": {
+      "value": "",
+      "context": "components/game-tabs"
+    },
+    "egmaMathName": {
+      "value": "",
+      "context": "components/game-tabs"
+    },
+    "matrixReasoningDescription": {
+      "value": "",
+      "context": "components/game-tabs"
+    },
+    "matrixReasoningName": {
+      "value": "",
+      "context": "components/game-tabs"
+    },
+    "memoryGameDescription": {
+      "value": "",
+      "context": "components/game-tabs"
+    },
+    "memoryGameName": {
+      "value": "",
+      "context": "components/game-tabs"
+    },
+    "mentalRotationDescription": {
+      "value": "",
+      "context": "components/game-tabs"
+    },
+    "mentalRotationName": {
+      "value": "",
+      "context": "components/game-tabs"
+    },
+    "sameDifferentSelectionDescription": {
+      "value": "",
+      "context": "components/game-tabs"
+    },
+    "sameDifferentSelectionName": {
+      "value": "",
+      "context": "components/game-tabs"
+    },
+    "theoryOfMindDescription": {
+      "value": "",
+      "context": "components/game-tabs"
+    },
+    "theoryOfMindName": {
+      "value": "",
+      "context": "components/game-tabs"
+    },
+    "trogDescription": {
+      "value": "",
+      "context": "components/game-tabs"
+    },
+    "trogName": {
+      "value": "",
+      "context": "components/game-tabs"
+    },
+    "surveyNameChild": {
+      "value": "",
+      "context": "components/game-tabs"
+    },
+    "surveyDescriptionChild": {
+      "value": "",
+      "context": "components/game-tabs"
+    },
+    "surveyNameParentPart1": {
+      "value": "",
+      "context": "components/game-tabs"
+    },
+    "surveyDescriptionParentPart1": {
+      "value": "",
+      "context": "components/game-tabs"
+    },
+    "surveyNameParentPart2": {
+      "value": "",
+      "context": "components/game-tabs"
+    },
+    "surveyDescriptionParentPart2": {
+      "value": "",
+      "context": "components/game-tabs"
+    },
+    "surveyNameTeacherPart1": {
+      "value": "",
+      "context": "components/game-tabs"
+    },
+    "surveyDescriptionTeacherPart1": {
+      "value": "",
+      "context": "components/game-tabs"
+    },
+    "surveyNameTeacherPart2": {
+      "value": "",
+      "context": "components/game-tabs"
+    },
+    "surveyDescriptionTeacherPart2": {
+      "value": "",
+      "context": "components/game-tabs"
+    },
+    "surveyProgressGeneral": {
+      "value": "",
+      "context": "components/game-tabs"
+    },
+    "surveyProgressGeneralParent": {
+      "value": "",
+      "context": "components/game-tabs"
+    },
+    "surveyProgressSpecificParent": {
+      "value": "",
+      "context": "components/game-tabs"
+    },
+    "surveyProgressSpecificParentMonth": {
+      "value": "",
+      "context": "components/game-tabs"
+    },
+    "surveyProgressSpecificParentYear": {
+      "value": "",
+      "context": "components/game-tabs"
+    },
+    "surveyProgressGeneralTeacher": {
+      "value": "",
+      "context": "components/game-tabs"
+    },
+    "surveyProgressSpecificTeacher": {
+      "value": "",
+      "context": "components/game-tabs"
+    },
+    "mefsName": {
+      "value": "",
+      "context": "components/game-tabs"
+    },
+    "mefsDescription": {
+      "value": "",
+      "context": "components/game-tabs"
+    },
+    "vocabName": {
+      "value": "",
+      "context": "components/game-tabs"
+    },
+    "vocabDescription": {
+      "value": "",
+      "context": "components/game-tabs"
+    },
+    "roarInferenceName": {
+      "value": "",
+      "context": "components/game-tabs"
+    },
+    "roarInferenceDescription": {
+      "value": "",
+      "context": "components/game-tabs"
+    }
+  }
+}

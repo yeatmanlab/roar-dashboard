@@ -1,25 +1,24 @@
 {
   "$schema": "../../base/metadata-schema.json",
   "$metadata": {
-    "component": "userSurvey",
-    "lastUpdated": "2025-08-06T23:57:13.754Z",
+    "component": "user-survey",
+    "lastUpdated": "2025-08-08T04:31:35.564Z",
     "completeness": 100,
-    "context": "User survey components",
-    "migrated": true,
-    "originalFormat": "legacy"
+    "context": "surveys component",
+    "source": "crowdin"
   },
   "translations": {
     "specificRelationDescriptionChildA": {
       "value": "For child with Birth Month",
-      "context": "Descriptive text"
+      "context": "surveys/user-survey"
     },
     "specificRelationDescriptionChildB": {
       "value": "and Birth Year",
-      "context": "Descriptive text"
+      "context": "surveys/user-survey"
     },
     "specificRelationDescriptionClass": {
       "value": "For class",
-      "context": "Descriptive text"
+      "context": "surveys/user-survey"
     }
   }
 }

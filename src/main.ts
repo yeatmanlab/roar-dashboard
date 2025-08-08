@@ -18,38 +18,48 @@ import 'survey-creator-core/survey-creator-core.css'
 // App imports
 import App from './App.vue'
 import router from './router'
+import { createModularI18n } from './translations/composables/useModularI18n'
 
 // Environment setup for dev
 if (import.meta.env.DEV) {
   (window as any).VITE_FIREBASE_PROJECT = 'DEV'
 }
 
-const app = createApp(App)
+async function initApp() {
+  const app = createApp(App)
+  
+  // Initialize i18n with modular translations
+  const i18n = await createModularI18n()
+  app.use(i18n)
 
-// Pinia store
-const pinia = createPinia()
-pinia.use(piniaPluginPersistedstate)
-app.use(pinia)
+  // Pinia store
+  const pinia = createPinia()
+  pinia.use(piniaPluginPersistedstate)
+  app.use(pinia)
 
-// Router
-app.use(router)
+  // Router
+  app.use(router)
 
-// PrimeVue configuration
-app.use(PrimeVue, {
-  theme: {
-    preset: Aura,
-    options: {
-      prefix: 'p',
-      darkModeSelector: '.dark-mode',
-      cssLayer: false
+  // PrimeVue configuration
+  app.use(PrimeVue, {
+    theme: {
+      preset: Aura,
+      options: {
+        prefix: 'p',
+        darkModeSelector: '.dark-mode',
+        cssLayer: false
+      }
     }
-  }
-})
+  })
 
-app.use(ToastService)
-app.use(ConfirmationService)
+  app.use(ToastService)
+  app.use(ConfirmationService)
 
-// SurveyJS
-app.use(surveyPlugin)
+  // SurveyJS
+  app.use(surveyPlugin)
 
-app.mount('#app')
+  app.mount('#app')
+}
+
+// Initialize the app
+initApp().catch(console.error)

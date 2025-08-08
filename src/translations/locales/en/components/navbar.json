@@ -1,21 +1,20 @@
 {
   "$schema": "../../base/metadata-schema.json",
   "$metadata": {
-    "component": "navBar",
-    "lastUpdated": "2025-08-06T23:57:13.748Z",
+    "component": "navbar",
+    "lastUpdated": "2025-08-08T04:31:35.563Z",
     "completeness": 100,
-    "context": "Navigation bar component",
-    "migrated": true,
-    "originalFormat": "legacy"
+    "context": "components component",
+    "source": "crowdin"
   },
   "translations": {
     "greeting": {
       "value": "Hi",
-      "context": "Short label or title"
+      "context": "components/navbar"
     },
     "signOut": {
       "value": "Sign Out",
-      "context": "Short label or title"
+      "context": "components/navbar"
     }
   }
 }

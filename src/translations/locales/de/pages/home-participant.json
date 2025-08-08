@@ -1,33 +1,32 @@
 {
   "$schema": "../../base/metadata-schema.json",
   "$metadata": {
-    "component": "homeParticipant",
-    "lastUpdated": "2025-08-06T23:57:13.776Z",
+    "component": "home-participant",
+    "lastUpdated": "2025-08-08T04:31:35.564Z",
     "completeness": 100,
-    "context": "Participant dashboard home page",
-    "migrated": true,
-    "originalFormat": "legacy"
+    "context": "pages component",
+    "source": "crowdin"
   },
   "translations": {
     "showOptionalAssignments": {
       "value": "Optionale Zuordnungen anzeigen",
-      "context": "General text"
+      "context": "pages/home-participant"
     },
     "loadingAssignments": {
       "value": "Lade Zuordnungen",
-      "context": "Short label or title"
+      "context": "pages/home-participant"
     },
     "selectAssignment": {
       "value": "Wählen Sie eine Zuordnung aus",
-      "context": "General text"
+      "context": "pages/home-participant"
     },
     "noAssignments": {
       "value": "Sie haben keine Zuordnungen!",
-      "context": "General text"
+      "context": "pages/home-participant"
     },
     "contactAdministrator": {
       "value": "Bitte kontaktieren Sie Ihren Administrator, um zu einer Zuordnung hinzugefügt zu werden.",
-      "context": "General text"
+      "context": "pages/home-participant"
     }
   }
 }

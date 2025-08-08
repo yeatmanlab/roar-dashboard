@@ -1,0 +1,40 @@
+{
+  "$schema": "../../base/metadata-schema.json",
+  "$metadata": {
+    "component": "consent",
+    "lastUpdated": "2025-08-08T04:31:35.561Z",
+    "completeness": 100,
+    "context": "auth component",
+    "source": "crowdin"
+  },
+  "translations": {
+    "header": {
+      "value": "",
+      "context": "auth/consent"
+    },
+    "consentTitle": {
+      "value": "",
+      "context": "auth/consent"
+    },
+    "assentTitle": {
+      "value": "",
+      "context": "auth/consent"
+    },
+    "acceptButton": {
+      "value": "",
+      "context": "auth/consent"
+    },
+    "rejectButton": {
+      "value": "",
+      "context": "auth/consent"
+    },
+    "toastHeader": {
+      "value": "",
+      "context": "auth/consent"
+    },
+    "consentUpdatedStatus": {
+      "value": "",
+      "context": "auth/consent"
+    }
+  }
+}

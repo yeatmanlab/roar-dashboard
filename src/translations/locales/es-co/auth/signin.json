@@ -1,0 +1,96 @@
+{
+  "$schema": "../../base/metadata-schema.json",
+  "$metadata": {
+    "component": "signin",
+    "lastUpdated": "2025-08-08T04:31:35.561Z",
+    "completeness": 100,
+    "context": "auth component",
+    "source": "crowdin"
+  },
+  "translations": {
+    "atLeastOneLowercase": {
+      "value": "Al menos una minúscula",
+      "context": "auth/signin"
+    },
+    "atLeastOneNumber": {
+      "value": "Al menos un número",
+      "context": "auth/signin"
+    },
+    "atLeastOneNumeric": {
+      "value": "Al menos un numérico",
+      "context": "auth/signin"
+    },
+    "atLeastOneUpperCase": {
+      "value": "Al menos una mayúscula",
+      "context": "auth/signin"
+    },
+    "buttonLabel": {
+      "value": "¡Vamos!",
+      "context": "auth/signin"
+    },
+    "continueWithGoogle": {
+      "value": "Sigue adelante con Google",
+      "context": "auth/signin"
+    },
+    "emailId": {
+      "value": "correo electrónico",
+      "context": "auth/signin"
+    },
+    "emailPlaceholder": {
+      "value": "Nombre de usuario o correo electrónico",
+      "context": "auth/signin"
+    },
+    "forgotPassword": {
+      "value": "¿Olvidaste tu contraseña?",
+      "context": "auth/signin"
+    },
+    "incorrectEmailOrPassword": {
+      "value": "Nombre de usuario/correo electrónico o contraseña incorrectos",
+      "context": "auth/signin"
+    },
+    "invalidEmailPlaceholder": {
+      "value": "Error: correo electrónico no válido",
+      "context": "auth/signin"
+    },
+    "minimumCharacters": {
+      "value": "Mínimo 8 caracteres",
+      "context": "auth/signin"
+    },
+    "passwordId": {
+      "value": "contraseña",
+      "context": "auth/signin"
+    },
+    "passwordPlaceholder": {
+      "value": "Contraseña",
+      "context": "auth/signin"
+    },
+    "pickPassword": {
+      "value": "Elige una contraseña",
+      "context": "auth/signin"
+    },
+    "selectLanguage": {
+      "value": "Seleccionar idioma",
+      "context": "auth/signin"
+    },
+    "selectLanguageLabel": {
+      "value": "Idioma",
+      "context": "auth/signin"
+    },
+    "signInWithEmailLinkInstead": {
+      "value": "Iniciar sesión con enlace de correo electrónico",
+      "context": "auth/signin"
+    },
+    "signInWithEmailLinkPlaceHolder": {
+      "value": "Presiona Go para iniciar sesión con un enlace de correo electrónico.",
+      "context": "auth/signin"
+    },
+    "signInWithPasswordInstead": {
+      "value": "Iniciar sesión con contraseña",
+      "context": "auth/signin"
+    },
+    "suggestions": {
+      "value": "Sugerencias",
+      "context": "auth/signin"
+    }
+  }
+}

@@ -13,13 +13,17 @@ files:
     type: "csv"
     first_line_contains_header: true
     multilingual_spreadsheet: true
-    scheme: "identifier,context,source_phrase,es-co,de"
+    scheme: "identifier,context,source_phrase,es-co,de,de-ch,en-so,fr-ca,nl"
     column_mapping:
       identifier: 0       # identifier column
       context: 1          # label column  
       source_phrase: 2    # en column (source language)
       es-co: 3           # es-CO column
       de: 4              # de column
+      de-ch: 5           # de-CH column
+      en-so: 6           # en-so column
+      fr-ca: 7           # fr-CA column
+      nl: 8              # nl column
     update_option: "update_as_unapproved"
     export_only_approved: false
     skip_untranslated_strings: false
@@ -31,13 +35,17 @@ files:
     type: "csv"
     first_line_contains_header: true
     multilingual_spreadsheet: true
-    scheme: "identifier,context,source_phrase,es-co,de"
+    scheme: "identifier,context,source_phrase,es-co,de,de-ch,en-so,fr-ca,nl"
     column_mapping:
       identifier: 0
       context: 1
       source_phrase: 2
       es-co: 3
       de: 4
+      de-ch: 5
+      en-so: 6
+      fr-ca: 7
+      nl: 8
     update_option: "update_as_unapproved"
 
   - source: "consolidated/dashboard-components-translations.csv"
@@ -46,13 +54,17 @@ files:
     type: "csv"
     first_line_contains_header: true
     multilingual_spreadsheet: true
-    scheme: "identifier,context,source_phrase,es-co,de"
+    scheme: "identifier,context,source_phrase,es-co,de,de-ch,en-so,fr-ca,nl"
     column_mapping:
       identifier: 0
       context: 1
       source_phrase: 2
       es-co: 3
       de: 4
+      de-ch: 5
+      en-so: 6
+      fr-ca: 7
+      nl: 8
     update_option: "update_as_unapproved"
 
   - source: "consolidated/dashboard-pages-translations.csv"
@@ -61,13 +73,17 @@ files:
     type: "csv"
     first_line_contains_header: true
     multilingual_spreadsheet: true
-    scheme: "identifier,context,source_phrase,es-co,de"
+    scheme: "identifier,context,source_phrase,es-co,de,de-ch,en-so,fr-ca,nl"
     column_mapping:
       identifier: 0
       context: 1
       source_phrase: 2
       es-co: 3
       de: 4
+      de-ch: 5
+      en-so: 6
+      fr-ca: 7
+      nl: 8
     update_option: "update_as_unapproved"
 
   - source: "consolidated/dashboard-surveys-translations.csv"
@@ -76,13 +92,17 @@ files:
     type: "csv"
     first_line_contains_header: true
     multilingual_spreadsheet: true
-    scheme: "identifier,context,source_phrase,es-co,de"
+    scheme: "identifier,context,source_phrase,es-co,de,de-ch,en-so,fr-ca,nl"
     column_mapping:
       identifier: 0
       context: 1
       source_phrase: 2
       es-co: 3
       de: 4
+      de-ch: 5
+      en-so: 6
+      fr-ca: 7
+      nl: 8
     update_option: "update_as_unapproved"
 
   # Documentation - Standard CSV (not multilingual)
