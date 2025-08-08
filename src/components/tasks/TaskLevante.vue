@@ -76,12 +76,12 @@ onBeforeUnmount(() => {
 
 watch(
   [isFirekitInit, isLoadingUserData, userData],
-  async ([newFirekitInitValue, isLoadingUserData]) => {
+  async ([newFirekitInitValue, newLoadingUserData, newUserData]) => {
     const birthMonth = _get(userData.value, 'birthMonth');
     const birthYear = _get(userData.value, 'birthYear');
-    const ageDataDefined = birthMonth !== undefined && birthYear !== undefined
+    const hasAgeData = birthMonth !== undefined && birthYear !== undefined
     
-    if (newFirekitInitValue && !isLoadingUserData && ageDataDefined && !taskStarted.value) {
+    if (newFirekitInitValue && !newLoadingUserData && hasAgeData && !taskStarted.value) {
       taskStarted.value = true;
       const { selectedAdmin } = storeToRefs(gameStore);
       await startTask(selectedAdmin);
