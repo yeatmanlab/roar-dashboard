@@ -1,0 +1,12 @@
+{
+  "languages": ["en", "es-co", "de", "de-ch", "en-so", "fr-ca", "nl"],
+  "sections": ["components", "pages", "auth", "surveys"],
+  "components": {
+    "components": ["navbar", "game-tabs", "participant-sidebar", "sentry-form", "tasks"],
+    "pages": ["home-participant", "home-selector", "not-found", "page-titles", "signin"],
+    "auth": ["signin", "consent"],
+    "surveys": ["user-survey"]
+  }
+}
+
+

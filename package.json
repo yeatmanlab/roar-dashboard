@@ -21,7 +21,8 @@
     "preview": "vite preview",
     "test": "vitest --config vitest.config.js",
     "test:watch": "vitest --watch",
-    "version": "npm run format && git add -A"
+    "version": "npm run format && git add -A",
+    "i18n:download-rebuild": "node src/translations/tools/download-and-rebuild.js"
   },
   "dependencies": {
     "@bdelab/roar-pa": "2.2.4",

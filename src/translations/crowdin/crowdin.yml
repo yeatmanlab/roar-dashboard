@@ -1,0 +1,20 @@
+"project_id": 756721
+"api_token_env": "CROWDIN_API_TOKEN"
+"base_path": ".."
+"preserve_hierarchy": true
+
+files:
+  - source: "+/consolidated/dashboard-*.csv"
+    translation: "/dashboard/%original_file_name%"
+    multilingual_spreadsheet: true
+    scheme: "identifier,context,source_phrase,es-co,de,de-ch,en-so,fr-ca,nl"
+    languages_mapping:
+      two_letters_code:
+        de: de
+        de-ch: de-ch
+        en: en
+        en-so: en-so
+        es-co: es-co
+        fr-ca: fr-ca
+        nl: nl
+
