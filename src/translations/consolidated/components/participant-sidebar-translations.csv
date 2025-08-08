@@ -1,0 +1,4 @@
+identifier,label,en,es-CO,de,fr-CA,nl,en-GH,de-CH,es-AR
+components/participant-sidebar.grade,grade,Grade,Grado,Klasse,,,Grade,Klasse,Grado
+components/participant-sidebar.studentInfo,studentInfo,Participant Info,Información del estudiante,Schülerinformationen,,,Participant Info,Schülerinformationen,Información del estudiante
+components/participant-sidebar.tasksCompleted,tasksCompleted,tasks completed!,¡tareas completadas!,Aufgaben abgeschlossen!,,,tasks completed!,Aufgaben abgeschlossen!,¡tareas completadas!

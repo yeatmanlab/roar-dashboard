@@ -121,7 +121,9 @@ function toCsvLine(values) {
   return values
     .map((v) => {
       const s = v == null ? '' : String(v)
-      return s.includes(',') || s.includes('"') || s.includes('\n') ? '"' + s.replace(/"/g, '""') + '"' : s
+      // Escape newlines, carriage returns, and quotes for CSV
+      const escaped = s.replace(/\r?\n/g, '\\n').replace(/\r/g, '\\r')
+      return escaped.includes(',') || escaped.includes('"') || s.includes('\n') || s.includes('\r') ? '"' + escaped.replace(/"/g, '""') + '"' : escaped
     })
     .join(',')
 }
@@ -130,24 +132,89 @@ function writeConsolidatedCSVs({ allIdentifiers, perLangFlat }, langs) {
   ensureDir(consolidatedRoot)
   const detectedLangs = Array.from(langs.keys())
 
-  const groups = groupBySection(allIdentifiers)
-  for (const [section, ids] of groups.entries()) {
+  // Desired CSV column order (after identifier,label)
+  // Include requested regional variants; seed en-GH from en, de-CH from de, es-AR from es-CO
+  const OUTPUT_LANGS = ['en', 'es-CO', 'de', 'fr-CA', 'nl', 'en-GH', 'de-CH', 'es-AR']
+
+  // Helper to fetch value for a given identifier and output language with fallbacks
+  const getValue = (identifier, outLang) => {
+    const key = identifier
+    const pick = (code) => perLangFlat[code]?.[key]
+    switch (outLang) {
+      case 'en':
+        return pick('en') ?? pick('en-us') ?? ''
+      case 'es-CO':
+        return pick('es-co') ?? pick('es') ?? ''
+      case 'de':
+        return pick('de') ?? ''
+      case 'fr-CA':
+        return pick('fr-ca') ?? ''
+      case 'nl':
+        return pick('nl') ?? ''
+      case 'en-GH':
+        // Seed from existing English content
+        return pick('en-gh') ?? pick('en') ?? pick('en-us') ?? ''
+      case 'de-CH':
+        // Seed from existing German content
+        return pick('de-ch') ?? pick('de') ?? ''
+      case 'es-AR':
+        // Seed from existing Spanish Colombian content
+        return pick('es-ar') ?? pick('es-co') ?? pick('es') ?? ''
+      default:
+        return ''
+    }
+  }
+
+  // Split identifiers: components vs. main (auth/pages/surveys/etc.)
+  const mainIds = []
+  const componentMap = new Map() // componentName -> ids[]
+
+  allIdentifiers.forEach((id) => {
+    const firstToken = id.split('.')[0] // e.g., 'components/navbar'
+    const [section, maybeComponent] = firstToken.split('/')
+    if (section === 'components') {
+      const componentName = maybeComponent || 'unnamed'
+      const list = componentMap.get(componentName) ?? []
+      list.push(id)
+      componentMap.set(componentName, list)
+    } else {
+      mainIds.push(id)
+    }
+  })
+
+  // Write main dashboard file: dashboard-translations.csv
+  if (mainIds.length) {
     const out = []
-    const header = ['identifier', 'label', ...detectedLangs]
+    const header = ['identifier', 'label', ...OUTPUT_LANGS]
+    out.push(toCsvLine(header))
+    mainIds.forEach((id) => {
+      const label = id.split('.').slice(-1)[0]
+      const row = [id, label]
+      OUTPUT_LANGS.forEach((lang) => row.push(getValue(id, lang)))
+      out.push(toCsvLine(row))
+    })
+    const file = path.join(consolidatedRoot, `dashboard-translations.csv`)
+    fs.writeFileSync(file, out.join('\n'))
+  }
+
+  // Write component files under consolidated/components/<component>-translations.csv
+  const componentsDir = path.join(consolidatedRoot, 'components')
+  ensureDir(componentsDir)
+  for (const [componentName, ids] of componentMap.entries()) {
+    const out = []
+    const header = ['identifier', 'label', ...OUTPUT_LANGS]
     out.push(toCsvLine(header))
     ids.forEach((id) => {
       const label = id.split('.').slice(-1)[0]
       const row = [id, label]
-      detectedLangs.forEach((lang) => {
-        row.push(perLangFlat[lang]?.[id] ?? '')
-      })
+      OUTPUT_LANGS.forEach((lang) => row.push(getValue(id, lang)))
       out.push(toCsvLine(row))
     })
-    // sanitize filename to avoid nested directories due to slashes in identifiers
-    const safeSection = section.replace(/[\\/]/g, '-')
-    const file = path.join(consolidatedRoot, `dashboard-${safeSection}-translations.csv`)
+    const safeName = componentName.replace(/[\\/]/g, '-')
+    const file = path.join(componentsDir, `${safeName}-translations.csv`)
     fs.writeFileSync(file, out.join('\n'))
   }
+
   return detectedLangs
 }
 
