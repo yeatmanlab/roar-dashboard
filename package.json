@@ -6,7 +6,7 @@
   "scripts": {
     "build:dev": "export VITE_LEVANTE=TRUE && export VITE_FIREBASE_PROJECT=DEV && vite build",
     "build:prod": "export VITE_LEVANTE=TRUE && vite build",
-    "dev": "export VITE_LEVANTE=TRUE && export VITE_FIREBASE_PROJECT=DEV && export VITE_EMULATOR=FALSE && vite --force --host",
+    "dev": "export VITE_LEVANTE=TRUE && export VITE_FIREBASE_PROJECT=DEV && export VITE_EMULATOR=TRUE && vite --force --host",
     "dev:db": "export VITE_LEVANTE=TRUE && export VITE_FIREBASE_PROJECT=DEV && vite --force --host",
     "local:prod": "export VITE_LEVANTE=TRUE && export VITE_FIREBASE_PROJECT=PROD && vite --force --host",
     "dev:pc": "powershell -Command \"$env:VITE_LEVANTE='TRUE'; $env:VITE_FIREBASE_PROJECT='DEV'; vite --force --host\"",
