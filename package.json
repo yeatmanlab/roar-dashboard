@@ -3,9 +3,6 @@
   "private": true,
   "version": "3.2.3-dev",
   "type": "module",
-  "engines": {
-    "node": ">=20"
-  },
   "scripts": {
     "build:dev": "export VITE_LEVANTE=TRUE && export VITE_FIREBASE_PROJECT=DEV && vite build",
     "build:prod": "export VITE_LEVANTE=TRUE && vite build",
