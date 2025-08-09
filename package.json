@@ -26,7 +26,10 @@
     "i18n:consolidate": "node src/translations/tools/create-consolidated-translations.js",
     "i18n:crowdin:upload": "crowdin upload sources --config src/translations/crowdin/crowdin.yml",
     "i18n:crowdin:download": "crowdin download --config src/translations/crowdin/crowdin.yml",
-    "i18n:sync": "npm run i18n:consolidate && npm run i18n:crowdin:upload && npm run i18n:crowdin:download && npm run i18n:download-rebuild"
+    "i18n:csv-to-json": "node src/translations/tools/csv-to-json.js",
+    "predev": "npm run i18n:crowdin:download && npm run i18n:csv-to-json",
+    "prebuild": "npm run i18n:crowdin:download && npm run i18n:csv-to-json",
+    "i18n:sync": "npm run i18n:consolidate && npm run i18n:crowdin:upload && npm run i18n:crowdin:download && npm run i18n:csv-to-json"
   },
   "dependencies": {
     "@bdelab/roar-pa": "2.2.4",
