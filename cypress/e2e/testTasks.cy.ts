@@ -1,8 +1,24 @@
 import 'cypress-real-events';
 
-const dashboardUrl = 'https://localhost:5173/signin';
-const username = 'quqa2y1jss@levante.com';
-const password = 'xbqamkqc7z';
+// Flag: when true, read URL and credentials from Cypress env; otherwise use defaults
+const useEnvFlag: boolean = (() => {
+  const v = Cypress.env('E2E_USE_ENV');
+  return v === true || v === 'TRUE' || v === 'true' || v === 1 || v === '1';
+})();
+
+const defaultUrl = 'https://localhost:5173/signin';
+const defaultEmail = 'quqa2y1jss@levante.com';
+const defaultPassword = 'xbqamkqc7z';
+
+const dashboardUrl: string = useEnvFlag
+  ? ((Cypress.env('E2E_BASE_URL') as string) || defaultUrl)
+  : defaultUrl;
+const username: string = useEnvFlag
+  ? ((Cypress.env('E2E_TEST_EMAIL') as string) || defaultEmail)
+  : defaultEmail;
+const password: string = useEnvFlag
+  ? ((Cypress.env('E2E_TEST_PASSWORD') as string) || defaultPassword)
+  : defaultPassword;
 
 // starts each task and checks that it has loaded (the 'OK' button is present)
 function startTask(tasksRemaining: number) {
