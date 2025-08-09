@@ -3,6 +3,9 @@
   "private": true,
   "version": "3.2.3-dev",
   "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "build:dev": "export VITE_LEVANTE=TRUE && export VITE_FIREBASE_PROJECT=DEV && vite build",
     "build:prod": "export VITE_LEVANTE=TRUE && vite build",
@@ -33,7 +36,9 @@
     "i18n:csv-to-json": "node src/translations/tools/csv-to-json.js",
     "predev": "sh -c 'if [ -n \"$CROWDIN_API_TOKEN\" ]; then npm run i18n:crowdin:download; fi' && npm run i18n:csv-to-json",
     "prebuild": "sh -c 'if [ -n \"$CROWDIN_API_TOKEN\" ]; then npm run i18n:crowdin:download; fi' && npm run i18n:csv-to-json",
-    "i18n:sync": "npm run i18n:consolidate && npm run i18n:crowdin:upload && npm run i18n:crowdin:download && npm run i18n:csv-to-json"
+    "i18n:validate": "node src/translations/tools/validate-csvs.js",
+    "i18n:add-locale": "node src/translations/tools/add-locale-column.js",
+    "i18n:sync": "npm run i18n:consolidate && npm run i18n:crowdin:upload && npm run i18n:crowdin:download && npm run i18n:csv-to-json && npm run i18n:validate"
   },
   "dependencies": {
     "@bdelab/roar-pa": "2.2.4",

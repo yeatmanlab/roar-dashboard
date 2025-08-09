@@ -189,7 +189,7 @@ function writeConsolidatedCSVs({ allIdentifiers, perLangFlat }, langs) {
     const out = [];
     const header = ['identifier', 'label', ...OUTPUT_LANGS];
     out.push(toCsvLine(header));
-    mainIds.forEach((id) => {
+    mainIds.sort().forEach((id) => {
       const label = id.split('.').slice(-1)[0];
       const row = [id, label];
       OUTPUT_LANGS.forEach((lang) => row.push(getValue(id, lang)));
@@ -206,7 +206,7 @@ function writeConsolidatedCSVs({ allIdentifiers, perLangFlat }, langs) {
     const out = [];
     const header = ['identifier', 'label', ...OUTPUT_LANGS];
     out.push(toCsvLine(header));
-    ids.forEach((id) => {
+    ids.sort().forEach((id) => {
       const label = id.split('.').slice(-1)[0];
       const row = [id, label];
       OUTPUT_LANGS.forEach((lang) => row.push(getValue(id, lang)));

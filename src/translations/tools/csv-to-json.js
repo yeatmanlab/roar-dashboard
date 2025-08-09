@@ -85,6 +85,23 @@ function mergeDeep(target, source) {
   return target;
 }
 
+function validateCsvRows(rows, filePath) {
+  if (!rows.length) return;
+  const headers = Object.keys(rows[0]);
+  const required = ['identifier', 'label'];
+  const missing = required.filter((h) => !headers.includes(h));
+  if (missing.length) {
+    throw new Error(`CSV ${filePath} missing required columns: ${missing.join(', ')}`);
+  }
+  const seen = new Set();
+  for (const row of rows) {
+    const id = (row.identifier || '').trim();
+    if (!id) throw new Error(`CSV ${filePath} has empty identifier`);
+    if (seen.has(id)) throw new Error(`CSV ${filePath} has duplicate identifier: ${id}`);
+    seen.add(id);
+  }
+}
+
 function main() {
   console.log('🔄 Building legacy per-locale JSON from consolidated CSVs...');
   const csvFiles = listCsvFiles();
@@ -98,6 +115,7 @@ function main() {
 
   for (const csvPath of csvFiles) {
     const rows = readCsv(csvPath);
+    validateCsvRows(rows, csvPath);
     if (!rows.length) continue;
     const headers = Object.keys(rows[0]);
     const localeHeaders = headers.filter(isLocaleHeader);
@@ -127,18 +145,16 @@ function main() {
     ensureDir(dir);
     const outPath = path.join(dir, filename);
 
-    // Merge with existing file if it exists to preserve any external keys (optional)
-    let previous = {};
+    const nextContent = JSON.stringify(perLocaleMessages[locale], null, 2);
     if (fs.existsSync(outPath)) {
-      try {
-        previous = JSON.parse(fs.readFileSync(outPath, 'utf8'));
-      } catch {
-        previous = {};
+      const prev = fs.readFileSync(outPath, 'utf8');
+      if (prev === nextContent) {
+        console.log(`⏭  Skipped (unchanged) ${outPath}`);
+        continue;
       }
     }
 
-    const merged = mergeDeep(previous, perLocaleMessages[locale]);
-    fs.writeFileSync(outPath, JSON.stringify(merged, null, 2));
+    fs.writeFileSync(outPath, nextContent);
     console.log(`✅ Wrote ${outPath}`);
   }
 }
