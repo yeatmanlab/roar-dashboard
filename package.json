@@ -97,6 +97,7 @@
     "@pinia/testing": "^0.1.7",
     "@testing-library/vue": "^8.1.0",
     "@types/lodash": "^4.14.196",
+    "@types/node": "^24.2.1",
     "@typescript-eslint/eslint-plugin": "^8.32.1",
     "@typescript-eslint/parser": "^8.32.1",
     "@unhead/addons": "^1.9.16",
