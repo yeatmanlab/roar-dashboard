@@ -31,8 +31,8 @@
     "i18n:crowdin:upload": "crowdin upload sources --config src/translations/crowdin/crowdin.yml",
     "i18n:crowdin:download": "crowdin download --config src/translations/crowdin/crowdin.yml",
     "i18n:csv-to-json": "node src/translations/tools/csv-to-json.js",
-    "predev": "npm run i18n:crowdin:download && npm run i18n:csv-to-json",
-    "prebuild": "npm run i18n:crowdin:download && npm run i18n:csv-to-json",
+    "predev": "sh -c 'if [ -n \"$CROWDIN_API_TOKEN\" ]; then npm run i18n:crowdin:download; fi' && npm run i18n:csv-to-json",
+    "prebuild": "sh -c 'if [ -n \"$CROWDIN_API_TOKEN\" ]; then npm run i18n:crowdin:download; fi' && npm run i18n:csv-to-json",
     "i18n:sync": "npm run i18n:consolidate && npm run i18n:crowdin:upload && npm run i18n:crowdin:download && npm run i18n:csv-to-json"
   },
   "dependencies": {
