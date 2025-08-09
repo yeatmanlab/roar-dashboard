@@ -12,11 +12,11 @@ Example usage (in a dev-only page or script):
 import { generateSurveyPdfFromJson } from '@/helpers/surveyPdfGenerator'
 
 async function run() {
-  const survey = { title: 'Demo', pages: [{ title: 'Page 1', elements: [{ name: 'q1', title: 'Question 1' }] }] }
-  await generateSurveyPdfFromJson(survey, { filename: 'survey.pdf' })
+const survey = { title: 'Demo', pages: [{ title: 'Page 1', elements: [{ name: 'q1', title: 'Question 1' }] }] }
+await generateSurveyPdfFromJson(survey, { filename: 'survey.pdf' })
 }
 
 Notes
+
 - This is a text-only export for quick sharing/testing; extend as needed.
 - No UI changes are required; you can invoke from a console or a dev-only route.
-
