@@ -37,10 +37,6 @@ jobs:
       - name: Validate CSVs
         run: npm run i18n:validate
 
-      - name: Typecheck
-        continue-on-error: true
-        run: npx tsc -p tsconfig.json --noEmit
-
       - name: Build
         run: npm run build:dev
 
