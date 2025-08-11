@@ -541,6 +541,14 @@ export const gradeOptions = [
   },
 ];
 
+export const roamAlpacaSubskills = {
+  arithmeticExpressions: 'Arithmetic Expressions',
+  algebraicThinking: 'Algebraic Thinking',
+  numberKnowledge: 'Number Knowledge',
+  geometry: 'Geometry',
+  rationalNumbersProbability: 'Rational Numbers & Probability',
+};
+
 function getOrdinalSuffix(n) {
   if (n >= 11 && n <= 13) return 'th';
 
@@ -939,5 +947,11 @@ export const taskInfoById = {
       'the impact of digital familiarity on the assessment. Students experience these response ' +
       'modes as two 4.5-minute blocks, each scored separately. Each block begins with addition ' +
       'and subtraction, then progresses to multiplication and division.',
+  },
+  'roam-alpaca': {
+    header: 'ROAM Core Math',
+    color: '#52627E',
+    subheader: 'Core Math',
+    desc: '',
   },
 };

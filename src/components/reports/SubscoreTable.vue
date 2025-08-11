@@ -19,6 +19,7 @@ import { exportCsv } from '@/helpers/query/utils';
 import { useAuthStore } from '@/store/auth';
 import { storeToRefs } from 'pinia';
 import RoarDataTable from '@/components/RoarDataTable';
+import { roamAlpacaSubskills } from '@/helpers/reports';
 
 const props = defineProps({
   administrationId: { type: String, required: true, default: '' },
@@ -107,6 +108,17 @@ const columns = computed(() => {
       { field: `scores.${props.taskId}.fr`, header: 'Free Response', dataType: 'text', sort: false },
       { field: `scores.${props.taskId}.fc`, header: 'Multiple Choice', dataType: 'text', sort: false },
     );
+  }
+  if (props.taskId === 'roam-alpaca') {
+    Object.keys(roamAlpacaSubskills).forEach((subskill) => {
+      tableColumns.push({
+        field: `scores.${props.taskId}.${subskill}.score`,
+        header: roamAlpacaSubskills[subskill],
+        dataType: 'text',
+        sort: false,
+        tagColor: `scores.${props.taskId}.${subskill}.tagColor`,
+      });
+    });
   }
   return tableColumns;
 });
