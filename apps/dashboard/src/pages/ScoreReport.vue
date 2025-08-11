@@ -308,6 +308,7 @@ import {
   getScoreKeys,
   tasksToDisplayCorrectIncorrectDifference,
   includedValidityFlags,
+  roamAlpacaSubskills,
 } from '@/helpers/reports';
 import RoarDataTable from '@/components/RoarDataTable';
 import { CSV_EXPORT_STATIC_COLUMNS } from '@/constants/csvExport';
@@ -606,6 +607,7 @@ const computedProgressData = computed(() => {
 // 1. assignmentTableData: The data that should be passed into the ROARDataTable component
 // 2. runsByTaskId: run data for the TaskReport distribution chartsb
 const computeAssignmentAndRunData = computed(() => {
+  console.log(assignmentData.value);
   if (!assignmentData.value || assignmentData.value.length === 0) {
     return { assignmentTableData: [], runsByTaskId: {} };
   } else {
@@ -613,7 +615,7 @@ const computeAssignmentAndRunData = computed(() => {
     const assignmentTableDataAcc = [];
     // runsByTaskId is an object with keys as taskIds and values as arrays of scores
     const runsByTaskIdAcc = {};
-
+    console.log(assignmentData.value);
     for (const { assignment, user } of assignmentData.value) {
       // for each row, compute: username, firstName, lastName, assessmentPID, grade, school, all the scores, and routeParams for report link
       const grade = String(assignment.userData?.grade);
@@ -822,6 +824,35 @@ const computeAssignmentAndRunData = computed(() => {
 
           currRowScores[taskId].fc = fc;
           currRowScores[taskId].fr = fr;
+        }
+
+        if (taskId === 'roam-alpaca') {
+          const scores = _get(assessment, 'scores.computed');
+          Object.keys(roamAlpacaSubskills).forEach((subskill) => {
+            const subskillInfo = _get(scores, subskill);
+            if (subskillInfo && subskillInfo.gradeEstimate) {
+              const score = Math.trunc((subskillInfo.rawScore / subskillInfo.totalNumAttempted) * 100);
+              let tagColor = '';
+              if (subskillInfo.supportCategory === 'Needs Extra Support') {
+                tagColor = supportLevelColors.below;
+              } else if (subskillInfo.supportCategory === 'Developing Skill') {
+                tagColor = supportLevelColors.some;
+              } else if (subskillInfo.supportCategory === 'Achieved Skill') {
+                tagColor = supportLevelColors.above;
+              }
+              currRowScores[taskId][subskill] = {
+                score,
+                tagColor: returnColorByReliability(
+                  assessment,
+                  subskillInfo.rawScore,
+                  subskillInfo.supportCategory,
+                  tagColor,
+                ),
+              };
+            } else {
+              currRowScores[taskId][subskill] = '';
+            }
+          });
         }
 
         // Logic to update runsByTaskIdAcc
