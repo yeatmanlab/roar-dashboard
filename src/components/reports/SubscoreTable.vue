@@ -110,6 +110,8 @@ const columns = computed(() => {
     );
   }
   if (props.taskId === 'roam-alpaca') {
+    const subPercentCorrect = `scores.${props.taskId}.subPercentCorrect`;
+    const gradeEstimate = `scores.${props.taskId}.gradeEstimate`;
     Object.keys(roamAlpacaSubskills).forEach((subskill) => {
       tableColumns.push({
         field: `scores.${props.taskId}.${subskill}.score`,
@@ -117,7 +119,15 @@ const columns = computed(() => {
         dataType: 'text',
         sort: false,
         tagColor: `scores.${props.taskId}.${subskill}.tagColor`,
+        ...(subPercentCorrect && { subPercentCorrect }),
+        ...(gradeEstimate && { gradeEstimate }),
       });
+    });
+    tableColumns.push({
+      field: `scores.${props.taskId}.incorrectSkills`,
+      header: 'Skills To Work On',
+      dataType: 'text',
+      sort: false,
     });
   }
   return tableColumns;

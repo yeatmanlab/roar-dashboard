@@ -37,6 +37,8 @@ import {
   tasksToDisplayThetaScore,
   rawOnlyTasks,
   scoredTasks,
+  subskillTasks,
+  addTooltipIfExists,
 } from '@/helpers/reports.js';
 import { taskDisplayNames } from '@/helpers/reports';
 import { includedValidityFlags } from '@/helpers/reports';
@@ -55,13 +57,17 @@ defineProps({
 });
 
 let returnScoreTooltip = (colData, fieldPath) => {
-  const taskId = fieldPath.split('.')[0] === 'scores' ? fieldPath.split('.')[1] : null;
+  const pathSegments = fieldPath.split('.');
+  const taskId = pathSegments[0] === 'scores' ? pathSegments[1] : null;
+  const subskillId = pathSegments.length > 2 ? pathSegments[2] : null;
   let toolTip = '';
-
   if (colData.scores[taskId]?.supportLevel) {
     // Handle scored tasks
+
     return handleToolTip(taskId, toolTip, colData);
     // Handle raw only tasks
+  } else if (subskillTasks.includes(taskId) && subskillId) {
+    return handleSubskillToolTip(taskId, subskillId, toolTip, colData);
   } else if (taskId && !scoredTasks.includes(taskId)) {
     return handleToolTip(taskId, toolTip, colData);
   }
@@ -123,6 +129,21 @@ function handleToolTip(_taskId, _toolTip, _colData) {
   }
   // If the task is in the rawOnlyTasks list, display only the raw score and that the scores are under development
   // If the task is a scored task and has a raw score, then display all scores
+  return _toolTip;
+}
+
+function handleSubskillToolTip(_taskId, _subskillId, _toolTip, _colData) {
+  const subskillInfo = _colData.scores?.[_taskId]?.[_subskillId];
+
+  if (_taskId === 'roam-alpaca') {
+    if (subskillInfo?.supportCategory) {
+      _toolTip += subskillInfo?.supportCategory + '\n' + '\n';
+      _toolTip += getFlags(_colData, _taskId);
+    }
+    _toolTip = addTooltipIfExists(_toolTip, subskillInfo, 'gradeEstimate', 'Grade Estimate');
+    _toolTip = addTooltipIfExists(_toolTip, subskillInfo, 'subPercentCorrect', 'Sub Percent Correct');
+  }
+
   return _toolTip;
 }
 

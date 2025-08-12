@@ -828,31 +828,39 @@ const computeAssignmentAndRunData = computed(() => {
 
         if (taskId === 'roam-alpaca') {
           const scores = _get(assessment, 'scores.computed');
-          Object.keys(roamAlpacaSubskills).forEach((subskill) => {
-            const subskillInfo = _get(scores, subskill);
-            if (subskillInfo && subskillInfo.gradeEstimate) {
-              const score = Math.trunc((subskillInfo.rawScore / subskillInfo.totalNumAttempted) * 100);
-              let tagColor = '';
-              if (subskillInfo.supportCategory === 'Needs Extra Support') {
-                tagColor = supportLevelColors.below;
-              } else if (subskillInfo.supportCategory === 'Developing Skill') {
-                tagColor = supportLevelColors.some;
-              } else if (subskillInfo.supportCategory === 'Achieved Skill') {
-                tagColor = supportLevelColors.above;
+          if (scores) {
+            Object.keys(roamAlpacaSubskills).forEach((subskill) => {
+              const subskillInfo = _get(scores, subskill);
+              if (subskillInfo) {
+                const score = Math.trunc((subskillInfo.rawScore / subskillInfo.totalNumAttempted) * 100);
+                let tagColor = '';
+
+                // roam-alpaca calculates and returns support level automatically
+                if (subskillInfo.supportCategory === 'Needs Extra Support') {
+                  tagColor = supportLevelColors.below;
+                } else if (subskillInfo.supportCategory === 'Developing Skill') {
+                  tagColor = supportLevelColors.some;
+                } else if (subskillInfo.supportCategory === 'Achieved Skill') {
+                  tagColor = supportLevelColors.above;
+                }
+                currRowScores[taskId][subskill] = {
+                  score,
+                  tagColor: returnColorByReliability(
+                    assessment,
+                    subskillInfo.rawScore,
+                    subskillInfo.supportCategory,
+                    tagColor,
+                  ),
+                  ...(subskillInfo.gradeEstimate && { gradeEstimate: subskillInfo.gradeEstimate }),
+                  ...(subskillInfo.subPercentCorrect && { subPercentCorrect: subskillInfo.subPercentCorrect }),
+                  ...(subskillInfo.supportCategory && { supportCategory: subskillInfo.supportCategory }),
+                };
+              } else {
+                currRowScores[taskId][subskill] = '';
               }
-              currRowScores[taskId][subskill] = {
-                score,
-                tagColor: returnColorByReliability(
-                  assessment,
-                  subskillInfo.rawScore,
-                  subskillInfo.supportCategory,
-                  tagColor,
-                ),
-              };
-            } else {
-              currRowScores[taskId][subskill] = '';
-            }
-          });
+            });
+            currRowScores[taskId].incorrectSkills = scores.composite.incorrectSkills;
+          }
         }
 
         // Logic to update runsByTaskIdAcc
