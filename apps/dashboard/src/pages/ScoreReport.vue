@@ -1038,9 +1038,11 @@ const createExportData = ({ rows, includeProgress = false }) => {
       } else if (rawOnlyTasks.includes(taskId)) {
         tableRow[`${taskName} - Raw`] = score.rawScore;
       } else if (tasksToDisplayThetaScore.includes(taskId)) {
-        tableRow[`${taskName} - Num Correct`] = score.numCorrect;
-        tableRow[`${taskName} - Num Incorrect`] = score.numIncorrect;
-        tableRow[`${taskName} - Grade Estimate`] = score.thetaEstimate;
+        tableRow[`${taskName} - Num Correct`] = score.rawScore;
+        tableRow[`${taskName} - Num Attempted`] = score.totalNumAttempted;
+        tableRow[`${taskName} - Grade Estimate`] = score.gradeEstimate;
+        tableRow[`${taskName} - Theta Estimate`] = score.thetaEstimate;
+        tableRow[`${taskName} - Support Level`] = score.supportLevel;
       } else {
         tableRow[`${taskName} - Percentile`] = score.percentileString;
         tableRow[`${taskName} - Standard`] = score.standardScore;
