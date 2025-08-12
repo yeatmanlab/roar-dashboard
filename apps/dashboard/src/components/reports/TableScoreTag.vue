@@ -39,6 +39,7 @@ import {
   scoredTasks,
   subskillTasks,
   addTooltipIfExists,
+  roamAlpacaSubskills,
 } from '@/helpers/reports.js';
 import { taskDisplayNames } from '@/helpers/reports';
 import { includedValidityFlags } from '@/helpers/reports';
@@ -61,14 +62,14 @@ let returnScoreTooltip = (colData, fieldPath) => {
   const taskId = pathSegments[0] === 'scores' ? pathSegments[1] : null;
   const subskillId = pathSegments.length > 2 ? pathSegments[2] : null;
   let toolTip = '';
+
   if (colData.scores[taskId]?.supportLevel) {
     // Handle scored tasks
-
     return handleToolTip(taskId, toolTip, colData);
-    // Handle raw only tasks
-  } else if (subskillTasks.includes(taskId) && subskillId) {
+  } else if (subskillTasks.includes(taskId) && Object.keys(roamAlpacaSubskills).includes(subskillId)) {
     return handleSubskillToolTip(taskId, subskillId, toolTip, colData);
   } else if (taskId && !scoredTasks.includes(taskId)) {
+    // Handle raw only tasks
     return handleToolTip(taskId, toolTip, colData);
   }
   return toolTip;
@@ -140,8 +141,10 @@ function handleSubskillToolTip(_taskId, _subskillId, _toolTip, _colData) {
       _toolTip += subskillInfo?.supportCategory + '\n' + '\n';
       _toolTip += getFlags(_colData, _taskId);
     }
+    _toolTip += 'Raw Score: ' + subskillInfo?.rawScore + '\n';
+    _toolTip += 'Total Attempted: ' + subskillInfo?.totalNumAttempted + '\n';
     _toolTip = addTooltipIfExists(_toolTip, subskillInfo, 'gradeEstimate', 'Grade Estimate');
-    _toolTip = addTooltipIfExists(_toolTip, subskillInfo, 'subPercentCorrect', 'Sub Percent Correct');
+    _toolTip = addTooltipIfExists(_toolTip, subskillInfo, 'subPercentCorrect', 'Sub-Percent Correct');
   }
 
   return _toolTip;
