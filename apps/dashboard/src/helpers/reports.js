@@ -451,6 +451,11 @@ export const tasksToDisplayCorrectIncorrectDifference = ['sre-es'];
 export const scoredTasks = ['swr', 'pa', 'sre'];
 
 /*
+ *  Tasks with subskills that require tooltips for subscore table.
+ */
+export const subskillTasks = ['roam-alpaca'];
+
+/*
  *  Support Level Colors
  *  Colors corresponding to each support level.
  */
@@ -795,6 +800,13 @@ export const getRawScoreRange = (taskId) => {
   }
   return null;
 };
+
+export function addTooltipIfExists(tooltip, object, key, label) {
+  if (object && object[key] != null) {
+    return tooltip + `${label}: ${object[key]}\n`;
+  }
+  return tooltip;
+}
 
 export const taskInfoById = {
   swr: {
