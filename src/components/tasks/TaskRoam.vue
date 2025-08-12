@@ -13,7 +13,7 @@ import _get from 'lodash/get';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
 import useUserStudentDataQuery from '@/composables/queries/useUserStudentDataQuery';
-//import packageLockJson from '../../../package-lock.json';
+import packageLockJson from '../../../package-lock.json';
 
 const props = defineProps({
   taskId: { type: String, default: 'fluency-arf' },
@@ -24,8 +24,7 @@ const props = defineProps({
 let TaskLauncher;
 
 const taskId = props.taskId;
-const version = '1.2.19';
-//const { version } = packageLockJson.packages['node_modules/@bdelab/roam-apps'];
+const { version } = packageLockJson.packages['node_modules/@bdelab/roam-apps'];
 const router = useRouter();
 const taskStarted = ref(false);
 const gameStarted = ref(false);
@@ -63,7 +62,7 @@ window.addEventListener(
 
 onMounted(async () => {
   try {
-    TaskLauncher = (await import('@bdelab/roam-apps-temp')).default;
+    TaskLauncher = (await import('@bdelab/roam-apps')).default;
   } catch (error) {
     console.error('An error occurred while importing the game module.', error);
   }
@@ -137,7 +136,7 @@ async function startTask(selectedAdmin) {
 }
 </script>
 <style>
-@import '@bdelab/roam-apps-temp/lib/resources/roam-apps.css';
+@import '@bdelab/roam-apps/lib/resources/roam-apps.css';
 
 .game-target {
   position: absolute;
