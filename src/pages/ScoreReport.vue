@@ -565,6 +565,7 @@ const getScoresAndSupportFromAssessment = ({
       const supportLevel = _get(assessment, 'scores.computed.composite.supportCategory');
       support_level = supportLevel;
       tag_color = getTagColor(supportLevel);
+      rawScore = _get(assessment, 'scores.computed.composite.roarScore');
     } else {
       support_level = '';
       tag_color = '#A4DDED';
@@ -815,12 +816,12 @@ const computeAssignmentAndRunData = computed(() => {
         }
         if (tasksToDisplayThetaScore.includes(taskId)) {
           const thetaEstimate = _get(assessment, 'scores.computed.composite.thetaEstimate') ?? '';
-          const rawScore = _get(assessment, 'scores.computed.composite.rawScore');
+          const rawRoamScore = _get(assessment, 'scores.computed.composite.rawScore');
           const totalNumAttempted = _get(assessment, 'scores.computed.composite.totalNumAttempted');
           const gradeEstimate = _get(assessment, 'scores.computed.composite.gradeEstimate');
 
           currRowScores[taskId].thetaEstimate = thetaEstimate;
-          currRowScores[taskId].rawScore = rawScore;
+          currRowScores[taskId].rawRoamScore = rawRoamScore;
           currRowScores[taskId].totalNumAttempted = totalNumAttempted;
           currRowScores[taskId].gradeEstimate = gradeEstimate;
         }
