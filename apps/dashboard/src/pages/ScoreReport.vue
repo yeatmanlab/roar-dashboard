@@ -816,14 +816,16 @@ const computeAssignmentAndRunData = computed(() => {
         }
         if (tasksToDisplayThetaScore.includes(taskId)) {
           const thetaEstimate = _get(assessment, 'scores.computed.composite.thetaEstimate') ?? '';
-          const rawRoamScore = _get(assessment, 'scores.computed.composite.rawScore');
+          const rawScore = _get(assessment, 'scores.computed.composite.rawScore');
           const totalNumAttempted = _get(assessment, 'scores.computed.composite.totalNumAttempted');
           const gradeEstimate = _get(assessment, 'scores.computed.composite.gradeEstimate');
+          const roarScore = _get(assessment, 'scores.computed.composite.roarScore');
 
           currRowScores[taskId].thetaEstimate = thetaEstimate;
-          currRowScores[taskId].rawRoamScore = rawRoamScore;
+          currRowScores[taskId].rawScore = rawScore;
           currRowScores[taskId].totalNumAttempted = totalNumAttempted;
           currRowScores[taskId].gradeEstimate = gradeEstimate;
+          currRowScores[taskId].roarScore = roarScore;
         }
         if (['fluency-calf', 'fluency-arf', 'fluency-calf-es', 'fluency-arf-es'].includes(taskId)) {
           const fc = _get(assessment, 'scores.computed.FC.roamScore');
@@ -1486,7 +1488,7 @@ const scoreReportColumns = computed(() => {
       } else if (tasksToDisplayPercentCorrect.includes(taskId) && viewMode.value === 'raw') {
         colField = `scores.${taskId}.percentCorrect`;
       } else if (tasksToDisplayThetaScore.includes(taskId) && viewMode.value === 'raw') {
-        colField = `scores.${taskId}.numCorrect`;
+        colField = `scores.${taskId}.roarScore`;
       } else if (rawOnlyTasks.includes(taskId) && viewMode.value === 'raw') {
         colField = `scores.${taskId}.rawScore`;
       } else {
