@@ -814,13 +814,15 @@ const computeAssignmentAndRunData = computed(() => {
           currRowScores[taskId].skills = skills.length > 0 ? skills.join(', ') : 'None';
         }
         if (tasksToDisplayThetaScore.includes(taskId)) {
-          const numCorrect = assessment.scores?.raw?.composite?.test?.numCorrect;
-          const numIncorrect = assessment.scores?.raw?.composite?.test?.numIncorrect;
           const thetaEstimate = _get(assessment, 'scores.computed.composite.thetaEstimate') ?? '';
+          const rawScore = _get(assessment, 'scores.computed.composite.rawScore');
+          const totalNumAttempted = _get(assessment, 'scores.computed.composite.totalNumAttempted');
+          const gradeEstimate = _get(assessment, 'scores.computed.composite.gradeEstimate');
 
-          currRowScores[taskId].numCorrect = numCorrect;
-          currRowScores[taskId].numIncorrect = numIncorrect;
           currRowScores[taskId].thetaEstimate = thetaEstimate;
+          currRowScores[taskId].rawScore = rawScore;
+          currRowScores[taskId].totalNumAttempted = totalNumAttempted;
+          currRowScores[taskId].gradeEstimate = gradeEstimate;
         }
         if (['fluency-calf', 'fluency-arf', 'fluency-calf-es', 'fluency-arf-es'].includes(taskId)) {
           const fc = _get(assessment, 'scores.computed.FC.roamScore');

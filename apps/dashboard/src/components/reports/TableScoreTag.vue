@@ -110,16 +110,10 @@ function handleToolTip(_taskId, _toolTip, _colData) {
       _toolTip += 'Num Attempted: ' + _colData.scores?.[_taskId]?.numAttempted + '\n';
       _toolTip += 'Percent Correct: ' + _colData.scores?.[_taskId]?.percentCorrect + '\n';
     } else if (tasksToDisplayThetaScore.includes(_taskId)) {
-      if (_colData.scores?.[_taskId]?.numCorrect === undefined) {
-        _toolTip += 'Num Correct: ' + 0 + '\n';
-        _toolTip += 'Num Incorrect: ' + _colData.scores?.[_taskId]?.numIncorrect + '\n';
-      } else {
-        _toolTip += 'Num Correct: ' + _colData.scores?.[_taskId]?.numCorrect + '\n';
-        _toolTip += 'Num Incorrect: ' + _colData.scores?.[_taskId]?.numIncorrect + '\n';
-      }
-      if (_colData.scores?.[_taskId]?.thetaEstimate && _colData.scores?.[_taskId]?.thetaEstimate !== '') {
-        _toolTip += 'Grade Estimate: ' + _colData.scores?.[_taskId]?.thetaEstimate + '\n';
-      }
+      _toolTip += 'Num Correct: ' + _colData.scores?.[_taskId]?.rawScore + '\n';
+      _toolTip += 'Num Attempted: ' + _colData.scores?.[_taskId]?.totalNumAttempted + '\n';
+      _toolTip = addTooltipIfExists(_toolTip, _colData.scores?.[_taskId], 'gradeEstimate', 'Grade Estimate');
+      _toolTip = addTooltipIfExists(_toolTip, _colData.scores?.[_taskId], 'thetaEstimate', 'Theta Estimate');
     } else if (rawOnlyTasks.includes(_taskId) && _colData.scores?.[_taskId]?.rawScore !== undefined) {
       _toolTip += 'Raw Score: ' + _colData.scores?.[_taskId]?.rawScore + '\n';
     } else {
