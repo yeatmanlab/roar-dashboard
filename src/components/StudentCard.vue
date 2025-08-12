@@ -4,10 +4,22 @@
     data-cy="student-card"
   >
     <div class="flex gap-2 p-3 bg-gray-100 flex-column">
-      <h2 class="m-0 text-xl font-bold" data-cy="student-card__name">
-        {{ userName }}
-        <div class="text-sm font-light">Student</div>
-      </h2>
+      <div class="flex justify-content-between align-items-start w-full">
+        <h2 class="m-0 text-xl font-bold" data-cy="student-card__name">
+          {{ userName }}
+          <div class="text-sm font-light">Student</div>
+        </h2>
+        <PvButton
+          icon="pi pi-cog"
+          text
+          rounded
+          aria-label="Settings"
+          class="p-1"
+          :disabled="!userData"
+          :loading="!userData"
+          @click="openSettings"
+        />
+      </div>
       <div class="flex gap-4 mt-2 font-normal text-gray-500">
         <div class="text-sm">
           {{ getGradeToDisplay(userData?.studentData?.grade) }}
@@ -133,6 +145,19 @@
       </template>
     </PvDataView>
   </article>
+
+  <PvDialog
+    v-model:visible="showSettingsModal"
+    modal
+    :header="`Settings for ${userName}`"
+    :style="{ width: '80vw', height: '90vh' }"
+    maximizable
+    @hide="closeSettings"
+  >
+    <Suspense>
+      <AdminProfile :is-modal="true" :target-user-id="userData?.id" />
+    </Suspense>
+  </PvDialog>
 </template>
 
 <script setup>
@@ -146,6 +171,8 @@ import PvAccordion from 'primevue/accordion';
 import PvAccordionTab from 'primevue/accordiontab';
 import PvDataView from 'primevue/dataview';
 import PvSelect from 'primevue/select';
+import PvDialog from 'primevue/dialog';
+import AdminProfile from '@/pages/AdminProfile.vue';
 import useUserDataQuery from '@/composables/queries/useUserDataQuery';
 import { useGameStore } from '@/store/game';
 import { storeToRefs } from 'pinia';
@@ -206,6 +233,16 @@ const getAssessmentStatus = (assessment) => {
     return progressTags.Started;
   }
   return progressTags.Assigned;
+};
+
+const showSettingsModal = ref(false);
+
+const openSettings = () => {
+  showSettingsModal.value = true;
+};
+
+const closeSettings = () => {
+  showSettingsModal.value = false;
 };
 
 const props = defineProps({

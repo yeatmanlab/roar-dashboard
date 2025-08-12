@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-row" style="max-height: 100vh">
+  <div class="flex flex-row" :style="isModal ? {} : { maxHeight: '100vh' }">
     <!-- Sidebar -->
     <div :class="sidebarOpen ? 'sidebar-container-open' : 'sidebar-container-collapsed'">
       <div class="flex flex-column">
@@ -56,7 +56,15 @@ import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
-const sidebarOpen = ref(true);
+const props = defineProps({
+  isModal: { type: Boolean, default: false },
+  targetUserId: { type: String, default: null },
+});
+
+const sidebarOpen = ref(!props.isModal);
+
+// Use targetUserId if provided, otherwise use current user
+const userId = computed(() => props.targetUserId || roarfirekit.value?.admin?.user?.uid);
 
 const providerIds = computed(() => {
   const providerData = roarfirekit.value?.admin?.user?.providerData;
@@ -88,6 +96,7 @@ onMounted(() => {
 });
 
 const { data: userClaims } = useUserClaimsQuery({
+  userId: userId,
   enabled: initialized,
 });
 
