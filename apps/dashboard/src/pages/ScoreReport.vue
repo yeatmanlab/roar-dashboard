@@ -816,13 +816,13 @@ const computeAssignmentAndRunData = computed(() => {
         }
         if (tasksToDisplayThetaScore.includes(taskId)) {
           const thetaEstimate = _get(assessment, 'scores.computed.composite.thetaEstimate') ?? '';
-          const rawScore = _get(assessment, 'scores.computed.composite.rawScore');
+          const correctRawScore = _get(assessment, 'scores.computed.composite.rawScore');
           const totalNumAttempted = _get(assessment, 'scores.computed.composite.totalNumAttempted');
           const gradeEstimate = _get(assessment, 'scores.computed.composite.gradeEstimate');
           const roarScore = _get(assessment, 'scores.computed.composite.roarScore');
 
           currRowScores[taskId].thetaEstimate = thetaEstimate;
-          currRowScores[taskId].rawScore = rawScore;
+          currRowScores[taskId].correctRawScore = correctRawScore;
           currRowScores[taskId].totalNumAttempted = totalNumAttempted;
           currRowScores[taskId].gradeEstimate = gradeEstimate;
           currRowScores[taskId].roarScore = roarScore;
