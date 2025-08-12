@@ -309,7 +309,6 @@ import {
   tasksToDisplayCorrectIncorrectDifference,
   includedValidityFlags,
   roamAlpacaSubskills,
-  addPropertyIfExists,
 } from '@/helpers/reports';
 import RoarDataTable from '@/components/RoarDataTable';
 import { CSV_EXPORT_STATIC_COLUMNS } from '@/constants/csvExport';
@@ -845,11 +844,6 @@ const computeAssignmentAndRunData = computed(() => {
                   tagColor = supportLevelColors.above;
                 }
 
-                const filteredSubskillInfo = addPropertyIfExists(subskillInfo, [
-                  'gradeEstimate',
-                  'subPercentCorrect',
-                  'supportCategory',
-                ]);
                 currRowScores[taskId][subskill] = {
                   score,
                   tagColor: returnColorByReliability(
@@ -858,7 +852,7 @@ const computeAssignmentAndRunData = computed(() => {
                     subskillInfo.supportCategory,
                     tagColor,
                   ),
-                  ...filteredSubskillInfo,
+                  ...subskillInfo,
                 };
               } else {
                 currRowScores[taskId][subskill] = '';
