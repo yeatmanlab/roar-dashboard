@@ -47,13 +47,15 @@
                 </PvButton>
 
                 <div v-if="showAccountSettingsLink" class="nav-user-wrapper bg-gray-100 p-0">
-                  <router-link :to="{ path: APP_ROUTES.ACCOUNT_PROFILE }" data-cy="navbar__account-settings-btn">
-                    <PvButton
-                      class="no-underline m-0 p-0 text-primary bg-gray-100 border-none border-round cursor-pointer h-3rem w-3rem text-sm hover:bg-red-900 hover:text-white"
-                    >
-                      <i class="pi pi-cog"></i></PvButton
-                  ></router-link>
+                  <PvButton
+                    data-cy="navbar__account-settings-btn"
+                    class="no-underline m-0 p-0 text-primary bg-gray-100 border-none border-round cursor-pointer h-3rem w-3rem text-sm hover:bg-red-900 hover:text-white"
+                    @click="showSettings = true"
+                  >
+                    <i class="pi pi-cog"></i>
+                  </PvButton>
                 </div>
+                <UserSettingsWrapper v-model="showSettings" :is-modal="true" @close="showSettings = false" />
 
                 <div class="my-2">
                   <LanguageSelector />
@@ -74,6 +76,7 @@ import PvMenubar from 'primevue/menubar';
 import LanguageSelector from '@/components/LanguageSelector.vue';
 import { APP_ROUTES } from '@/constants/routes';
 import ROARLogo from '@/assets/RoarLogo.vue';
+import UserSettingsWrapper from '@/components/UserSettingsWrapper.vue';
 
 // Define props
 const props = defineProps({
@@ -97,6 +100,7 @@ const props = defineProps({
 
 const menu = ref();
 const screenWidth = ref(window.innerWidth);
+const showSettings = ref(false);
 
 // @TODO: Replace screen-size handlers with Tailwind/CSS media queries. Currently not possible due to an outdated
 // PrimeVue and Tailwind version. If we cannot update PrimeVue/Tailwind, we should throttle the resize events.
