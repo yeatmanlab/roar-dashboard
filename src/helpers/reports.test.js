@@ -252,6 +252,13 @@ describe('reports', () => {
       expect(tooltip).toBe('Grade Estimate: 1\nSub-Percent Correct: 2\n');
     });
 
+    it('should round number attributes for tooltip', () => {
+      const subskillInfo = { subPercentCorrect: 2.1234123 };
+
+      let tooltip = addTooltipIfExists('', subskillInfo, 'subPercentCorrect', 'Sub-Percent Correct');
+      expect(tooltip).toBe('Sub-Percent Correct: 2.12\n');
+    });
+
     it('should not add attribute to tooltip for non-existent ones', () => {
       const subskillInfo = { subPercentCorrect: 2 };
 
