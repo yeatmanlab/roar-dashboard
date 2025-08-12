@@ -6,6 +6,7 @@ import {
   getScoreKeys,
   getRawScoreThreshold,
   getRawScoreRange,
+  addTooltipIfExists,
 } from './reports';
 
 vi.mock('./index', () => ({
@@ -235,6 +236,25 @@ describe('reports', () => {
       await addElementToPdf(element, mockDocument, yCounter);
 
       expect(mockDocument.addPage).toHaveBeenCalled();
+    });
+  });
+
+  describe('addTooltipIfExists', () => {
+    it('should return tooltip for existent attributes', () => {
+      const subskillInfo = { gradeEstimate: 1, subPercentCorrect: 2 };
+
+      let tooltip = addTooltipIfExists('', subskillInfo, 'gradeEstimate', 'Grade Estimate');
+      expect(tooltip).toBe('Grade Estimate: 1\n');
+
+      tooltip = addTooltipIfExists(tooltip, subskillInfo, 'subPercentCorrect', 'Sub-Percent Correct');
+      expect(tooltip).toBe('Grade Estimate: 1\nSub-Percent Correct: 2\n');
+    });
+
+    it('should not add attribute to tooltip for non-existent ones', () => {
+      const subskillInfo = { subPercentCorrect: 2 };
+
+      let tooltip = addTooltipIfExists('', subskillInfo, 'gradeEstimate', 'Grade Estimate');
+      expect(tooltip).toBe('');
     });
   });
 });
