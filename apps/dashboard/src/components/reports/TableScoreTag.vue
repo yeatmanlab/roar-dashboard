@@ -141,10 +141,10 @@ function handleSubskillToolTip(_taskId, _subskillId, _toolTip, _colData) {
       _toolTip += subskillInfo?.supportCategory + '\n' + '\n';
       _toolTip += getFlags(_colData, _taskId);
     }
-    _toolTip += 'Raw Score: ' + subskillInfo?.rawScore + '\n';
-    _toolTip += 'Total Attempted: ' + subskillInfo?.totalNumAttempted + '\n';
-    _toolTip = addTooltipIfExists(_toolTip, subskillInfo, 'gradeEstimate', 'Grade Estimate');
+    _toolTip += 'Num Correct: ' + subskillInfo?.rawScore + '\n';
+    _toolTip += 'Num Attempted: ' + subskillInfo?.totalNumAttempted + '\n';
     _toolTip = addTooltipIfExists(_toolTip, subskillInfo, 'subPercentCorrect', 'Sub-Percent Correct');
+    _toolTip = addTooltipIfExists(_toolTip, subskillInfo, 'gradeEstimate', 'Grade Estimate');
   }
 
   return _toolTip;
