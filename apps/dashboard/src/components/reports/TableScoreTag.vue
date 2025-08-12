@@ -63,11 +63,11 @@ let returnScoreTooltip = (colData, fieldPath) => {
   const subskillId = pathSegments.length > 2 ? pathSegments[2] : null;
   let toolTip = '';
 
-  if (colData.scores[taskId]?.supportLevel) {
+  if (subskillTasks.includes(taskId) && Object.keys(roamAlpacaSubskills).includes(subskillId)) {
+    return handleSubskillToolTip(taskId, subskillId, toolTip, colData);
+  } else if (colData.scores[taskId]?.supportLevel) {
     // Handle scored tasks
     return handleToolTip(taskId, toolTip, colData);
-  } else if (subskillTasks.includes(taskId) && Object.keys(roamAlpacaSubskills).includes(subskillId)) {
-    return handleSubskillToolTip(taskId, subskillId, toolTip, colData);
   } else if (taskId && !scoredTasks.includes(taskId)) {
     // Handle raw only tasks
     return handleToolTip(taskId, toolTip, colData);
