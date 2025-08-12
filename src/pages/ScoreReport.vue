@@ -309,6 +309,7 @@ import {
   tasksToDisplayCorrectIncorrectDifference,
   includedValidityFlags,
   roamAlpacaSubskills,
+  addPropertyIfExists,
 } from '@/helpers/reports';
 import RoarDataTable from '@/components/RoarDataTable';
 import { CSV_EXPORT_STATIC_COLUMNS } from '@/constants/csvExport';
@@ -843,6 +844,12 @@ const computeAssignmentAndRunData = computed(() => {
                 } else if (subskillInfo.supportCategory === 'Achieved Skill') {
                   tagColor = supportLevelColors.above;
                 }
+
+                const filteredSubskillInfo = addPropertyIfExists(subskillInfo, [
+                  'gradeEstimate',
+                  'subPercentCorrect',
+                  'supportCategory',
+                ]);
                 currRowScores[taskId][subskill] = {
                   score,
                   tagColor: returnColorByReliability(
@@ -851,9 +858,7 @@ const computeAssignmentAndRunData = computed(() => {
                     subskillInfo.supportCategory,
                     tagColor,
                   ),
-                  ...(subskillInfo.gradeEstimate && { gradeEstimate: subskillInfo.gradeEstimate }),
-                  ...(subskillInfo.subPercentCorrect && { subPercentCorrect: subskillInfo.subPercentCorrect }),
-                  ...(subskillInfo.supportCategory && { supportCategory: subskillInfo.supportCategory }),
+                  ...filteredSubskillInfo,
                 };
               } else {
                 currRowScores[taskId][subskill] = '';

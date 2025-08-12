@@ -801,6 +801,16 @@ export const getRawScoreRange = (taskId) => {
   return null;
 };
 
+export function addPropertyIfExists(info, properties) {
+  const filteredInfo = {};
+  properties.forEach((property) => {
+    if (info[property] != null) {
+      filteredInfo[property] = info[property];
+    }
+  });
+  return filteredInfo;
+}
+
 export function addTooltipIfExists(tooltip, object, key, label) {
   if (object && object[key] != null) {
     return tooltip + `${label}: ${object[key]}\n`;
