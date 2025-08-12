@@ -62,7 +62,7 @@ window.addEventListener(
 
 onMounted(async () => {
   try {
-    TaskLauncher = (await import('@bdelab/roam-apps-temp')).default;
+    TaskLauncher = (await import('@bdelab/roam-apps')).default;
   } catch (error) {
     console.error('An error occurred while importing the game module.', error);
   }
@@ -136,7 +136,7 @@ async function startTask(selectedAdmin) {
 }
 </script>
 <style>
-@import '@bdelab/roam-apps-temp/lib/resources/roam-apps.css';
+@import '@bdelab/roam-apps/lib/resources/roam-apps.css';
 
 .game-target {
   position: absolute;
