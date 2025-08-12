@@ -3,28 +3,29 @@
     <!-- Sidebar -->
     <div :class="sidebarOpen ? 'sidebar-container-open' : 'sidebar-container-collapsed'">
       <div class="flex flex-column">
-        <router-link to="/profile">
-          <div class="sidebar-button">
-            <i class="pi pi-user" /><span v-if="sidebarOpen">Your Info</span>
-          </div></router-link
+        <div
+          class="sidebar-button cursor-pointer"
+          :class="{ active: activeTab === 'info' }"
+          @click="handleTabClick('info')"
         >
-        <router-link v-if="isAdmin" to="/profile/password"
-          ><div class="sidebar-button">
-            <i class="pi pi-key" /><span v-if="sidebarOpen">{{
-              hasPassword ? 'Change Password' : 'Add Password'
-            }}</span>
-          </div></router-link
+          <i class="pi pi-user" /><span v-if="sidebarOpen">Your Info</span>
+        </div>
+        <div
+          v-if="isAdmin"
+          class="sidebar-button cursor-pointer"
+          :class="{ active: activeTab === 'password' }"
+          @click="handleTabClick('password')"
         >
-        <router-link v-if="isAdmin" to="/profile/accounts"
-          ><div class="sidebar-button">
-            <i class="pi pi-users" /><span v-if="sidebarOpen">Link Accounts</span>
-          </div></router-link
+          <i class="pi pi-key" /><span v-if="sidebarOpen">{{ hasPassword ? 'Change Password' : 'Add Password' }}</span>
+        </div>
+        <div
+          v-if="isAdmin"
+          class="sidebar-button cursor-pointer"
+          :class="{ active: activeTab === 'accounts' }"
+          @click="handleTabClick('accounts')"
         >
-        <router-link v-if="isAdmin" to="/profile/offline"
-          ><div class="sidebar-button">
-            <i class="pi pi-wifi" /><span v-if="sidebarOpen">Offline Settings</span>
-          </div></router-link
-        >
+          <i class="pi pi-users" /><span v-if="sidebarOpen">Link Accounts</span>
+        </div>
       </div>
       <button
         class="w-full border-none cursor-pointer h-3rem flex align-items-center"
@@ -42,26 +43,58 @@
     </div>
     <!-- Main Page Content-->
     <div class="page-container">
-      <router-view />
+      <component :is="currentComponent" :target-user-id="targetUserId" />
     </div>
   </div>
 </template>
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, markRaw } from 'vue';
 import { storeToRefs } from 'pinia';
 import _isEmpty from 'lodash/isEmpty';
 import _union from 'lodash/union';
 import { useAuthStore } from '@/store/auth';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
+import { useRouter } from 'vue-router';
+
+// Import all the possible components
+import UserInfoView from '@/components/views/UserInfoView.vue';
+import PasswordView from '@/components/views/PasswordView.vue';
+import LinkAccountsView from '@/components/views/LinkAccountsView.vue';
 
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
+const router = useRouter();
+
 const props = defineProps({
   isModal: { type: Boolean, default: false },
   targetUserId: { type: String, default: null },
 });
 
 const sidebarOpen = ref(!props.isModal);
+const activeTab = ref('info');
+
+// Use markRaw to avoid performance issues with Vue's reactivity system
+const components = {
+  info: markRaw(UserInfoView),
+  password: markRaw(PasswordView),
+  accounts: markRaw(LinkAccountsView),
+};
+
+const currentComponent = computed(() => components[activeTab.value]);
+
+const handleTabClick = (tab) => {
+  if (props.isModal) {
+    activeTab.value = tab;
+  } else {
+    // If not in modal mode, use router navigation
+    const routes = {
+      info: '/profile',
+      password: '/profile/password',
+      accounts: '/profile/accounts',
+    };
+    router.push(routes[tab]);
+  }
+};
 
 // Use targetUserId if provided, otherwise use current user
 const userId = computed(() => props.targetUserId || roarfirekit.value?.admin?.user?.uid);
@@ -133,6 +166,11 @@ const isAdmin = computed(() => {
 }
 .sidebar-button:hover {
   background-color: var(--surface-400);
+}
+
+.sidebar-button.active {
+  background-color: var(--surface-400);
+  font-weight: bold;
 }
 .page-container {
   flex-basis: 75%;
