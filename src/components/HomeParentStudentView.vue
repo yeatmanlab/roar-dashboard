@@ -37,8 +37,10 @@
     >
       <div v-if="Object.keys(childrenAssignments).length === 0" class="p-3">
         <PvMessage severity="info" class="h-full">
-          <div class="text-lg font-bold text-gray-600">No assignments available</div>
-          <div class="text-sm font-light text-gray-800">Please check back later.</div>
+          <div class="text-lg font-bold text-gray-600">No assignments found</div>
+          <div class="text-sm font-light text-gray-800">
+            If you think something's not quite right, please report the issue to the ROAR team
+          </div>
         </PvMessage>
       </div>
       <div v-else>
