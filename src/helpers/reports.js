@@ -677,6 +677,17 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = 
   };
 };
 
+export function getTagColor(supportLevel) {
+  if (supportLevel === 'Needs Extra Support') {
+    return supportLevelColors.below;
+  } else if (supportLevel === 'Developing Skill') {
+    return supportLevelColors.some;
+  } else if (supportLevel === 'Achieved Skill') {
+    return supportLevelColors.above;
+  }
+  return supportLevelColors.Assessed;
+}
+
 export function getScoreKeys(taskId, grade) {
   let percentileScoreKey = undefined;
   let percentileScoreDisplayKey = undefined;

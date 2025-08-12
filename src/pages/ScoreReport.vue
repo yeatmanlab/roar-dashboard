@@ -309,6 +309,7 @@ import {
   tasksToDisplayCorrectIncorrectDifference,
   includedValidityFlags,
   roamAlpacaSubskills,
+  getTagColor,
 } from '@/helpers/reports';
 import RoarDataTable from '@/components/RoarDataTable';
 import { CSV_EXPORT_STATIC_COLUMNS } from '@/constants/csvExport';
@@ -831,17 +832,8 @@ const computeAssignmentAndRunData = computed(() => {
               const subskillInfo = _get(scores, subskill);
               if (subskillInfo) {
                 const score = Math.trunc((subskillInfo.rawScore / subskillInfo.totalNumAttempted) * 100);
-                let tagColor = '';
-
                 // roam-alpaca calculates and returns support level automatically
-                if (subskillInfo.supportCategory === 'Needs Extra Support') {
-                  tagColor = supportLevelColors.below;
-                } else if (subskillInfo.supportCategory === 'Developing Skill') {
-                  tagColor = supportLevelColors.some;
-                } else if (subskillInfo.supportCategory === 'Achieved Skill') {
-                  tagColor = supportLevelColors.above;
-                }
-
+                let tagColor = getTagColor(subskillInfo.supportCategory);
                 currRowScores[taskId][subskill] = {
                   score,
                   tagColor: returnColorByReliability(
