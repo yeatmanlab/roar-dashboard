@@ -561,6 +561,10 @@ const getScoresAndSupportFromAssessment = ({
     if (assessment.scores === undefined) {
       support_level = null;
       tag_color = null;
+    } else if (assessment.taskId === 'roam-alpaca') {
+      const supportLevel = _get(assessment, 'scores.computed.composite.supportCategory');
+      support_level = supportLevel;
+      tag_color = getTagColor(supportLevel);
     } else {
       support_level = '';
       tag_color = '#A4DDED';
