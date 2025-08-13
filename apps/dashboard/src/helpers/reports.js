@@ -435,7 +435,7 @@ export const tasksToDisplayTotalCorrect = [
 ];
 
 /*
- *  Tasks to Display total numCorrect and grade estimate
+ *  Tasks to Display total numCorrect grade estimate and support level
  */
 export const tasksToDisplayGradeEstimate = ['roam-alpaca'];
 
