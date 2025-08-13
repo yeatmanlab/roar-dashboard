@@ -12,8 +12,21 @@ const defaultEmail = 'student@levante.test';
 const defaultPassword = 'student123';
 
 
+function normalizeBaseUrl(url: string): string {
+  try {
+    const u = new URL(url);
+    if (u.hostname === 'localhost' && u.protocol === 'http:') {
+      u.protocol = 'https:';
+      return u.toString();
+    }
+    return url;
+  } catch {
+    return url;
+  }
+}
+
 const baseUrl: string = useEnvFlag
-  ? ((Cypress.env('E2E_BASE_URL') as string) || defaultUrl)
+  ? normalizeBaseUrl(((Cypress.env('E2E_BASE_URL') as string) || defaultUrl))
   : defaultUrl;
 const username: string = useEnvFlag
   ? ((Cypress.env('E2E_TEST_EMAIL') as string) || defaultEmail)
