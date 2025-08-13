@@ -143,7 +143,7 @@ function handleSubskillToolTip(_taskId, _subskillId, _toolTip, _colData) {
     _toolTip += 'Num Correct: ' + subskillInfo?.rawScore + '\n';
     _toolTip += 'Num Attempted: ' + subskillInfo?.totalNumAttempted + '\n';
     if (subskillInfo?.gradeEstimate) {
-      _toolTip += 'Grade Estimate: ' + subskillInfo?.gradeEstimate;
+      _toolTip += 'Grade Estimate: ' + subskillInfo?.gradeEstimate + '\n';
     }
   }
 
