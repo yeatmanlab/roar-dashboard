@@ -112,10 +112,10 @@ const columns = computed(() => {
   if (props.taskId === 'roam-alpaca') {
     const gradeEstimate = `scores.${props.taskId}.gradeEstimate`;
     tableColumns.push({
-      field: `scores.${props.taskId}.rawRoamScore.roarScore`,
+      field: `scores.${props.taskId}.composite.roarScore`,
       header: 'Raw Score',
       dataType: 'text',
-      tagColor: `scores.${props.taskId}.rawRoamScore.tagColor`,
+      tagColor: `scores.${props.taskId}.composite.tagColor`,
       sort: false,
     });
     Object.keys(roamAlpacaSubskills).forEach((subskill) => {
