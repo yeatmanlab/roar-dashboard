@@ -204,7 +204,7 @@ const exportAll = async () => {
       _set(tableRow, 'Multiple Choice', _get(scores, `${props.taskId}.fc`));
     } else if (props.taskId === 'roam-alpaca') {
       Object.keys(roamAlpacaSubskills).forEach((subskill) => {
-        _set(tableRow, 'Roar Score', _get(scores, `${props.taskId}.roarScore.score`));
+        _set(tableRow, 'Raw Score', _get(scores, `${props.taskId}.roarScore.score`));
         _set(tableRow, roamAlpacaSubskills[subskill], _get(scores, `${props.taskId}.${subskill}.score`));
       });
       _set(tableRow, 'Skills To Work On', _get(scores, `${props.taskId}.incorrectSkills`));
