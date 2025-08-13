@@ -845,11 +845,13 @@ const computeAssignmentAndRunData = computed(() => {
                   ...subskillInfo,
                 };
               } else {
-                currRowScores[taskId][subskill] = '-';
+                currRowScores[taskId][subskill] = '';
               }
             });
+
             currRowScores[taskId].composite = {
               ...scores.composite,
+              gradeEstimate: scores.composite.gradeEstimate ? _round(scores.composite.gradeEstimate, 2) : '',
               tagColor: getTagColor(scores.composite.supportCategory),
             };
           }

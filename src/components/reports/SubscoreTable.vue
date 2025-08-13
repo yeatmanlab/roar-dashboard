@@ -166,9 +166,34 @@ const exportSelected = (selectedRows) => {
       _set(tableRow, 'Multiple Choice', _get(scores, `${props.taskId}.fc`));
     }
     if (props.taskId === 'roam-alpaca') {
-      _set(tableRow, 'Roar Score', _get(scores, `${props.taskId}.composite.roarScore`));
+      _set(tableRow, 'Raw Score', _get(scores, `${props.taskId}.composite.roarScore`));
+      _set(tableRow, 'Grade Estimate', _get(scores, `${props.taskId}.composite.gradeEstimate`));
       Object.keys(roamAlpacaSubskills).forEach((subskill) => {
-        _set(tableRow, roamAlpacaSubskills[subskill], _get(scores, `${props.taskId}.${subskill}.score`));
+        _set(
+          tableRow,
+          `${roamAlpacaSubskills[subskill]} - Num Correct`,
+          _get(scores, `${props.taskId}.${subskill}.rawScore`),
+        );
+        _set(
+          tableRow,
+          `${roamAlpacaSubskills[subskill]} - Num Attempted`,
+          _get(scores, `${props.taskId}.${subskill}.totalNumAttempted`),
+        );
+        _set(
+          tableRow,
+          `${roamAlpacaSubskills[subskill]} - Percent Correct`,
+          _get(scores, `${props.taskId}.${subskill}.score`),
+        );
+        _set(
+          tableRow,
+          `${roamAlpacaSubskills[subskill]} - Grade Estimate`,
+          _get(scores, `${props.taskId}.${subskill}.gradeEstimate`),
+        );
+        _set(
+          tableRow,
+          `${roamAlpacaSubskills[subskill]} - Support Category`,
+          _get(scores, `${props.taskId}.${subskill}.supportCategory`),
+        );
       });
       _set(tableRow, 'Skills To Work On', _get(scores, `${props.taskId}.composite.incorrectSkills`));
     }
@@ -203,9 +228,34 @@ const exportAll = async () => {
       _set(tableRow, 'Free Response', _get(scores, `${props.taskId}.fr`));
       _set(tableRow, 'Multiple Choice', _get(scores, `${props.taskId}.fc`));
     } else if (props.taskId === 'roam-alpaca') {
+      _set(tableRow, 'Raw Score', _get(scores, `${props.taskId}.composite.roarScore`));
+      _set(tableRow, 'Grade Estimate', _get(scores, `${props.taskId}.composite.gradeEstimate`));
       Object.keys(roamAlpacaSubskills).forEach((subskill) => {
-        _set(tableRow, 'Raw Score', _get(scores, `${props.taskId}.composite.roarScore`));
-        _set(tableRow, roamAlpacaSubskills[subskill], _get(scores, `${props.taskId}.${subskill}.score`));
+        _set(
+          tableRow,
+          `${roamAlpacaSubskills[subskill]} - Num Correct`,
+          _get(scores, `${props.taskId}.${subskill}.rawScore`),
+        );
+        _set(
+          tableRow,
+          `${roamAlpacaSubskills[subskill]} - Num Attempted`,
+          _get(scores, `${props.taskId}.${subskill}.totalNumAttempted`),
+        );
+        _set(
+          tableRow,
+          `${roamAlpacaSubskills[subskill]} - Percent Correct`,
+          _get(scores, `${props.taskId}.${subskill}.score`),
+        );
+        _set(
+          tableRow,
+          `${roamAlpacaSubskills[subskill]} - Grade Estimate`,
+          _get(scores, `${props.taskId}.${subskill}.gradeEstimate`),
+        );
+        _set(
+          tableRow,
+          `${roamAlpacaSubskills[subskill]} - Support Category`,
+          _get(scores, `${props.taskId}.${subskill}.supportCategory`),
+        );
       });
       _set(tableRow, 'Skills To Work On', _get(scores, `${props.taskId}.composite.incorrectSkills`));
     }

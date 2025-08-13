@@ -547,11 +547,11 @@ export const gradeOptions = [
 ];
 
 export const roamAlpacaSubskills = {
-  arithmeticExpressions: 'Arithmetic Expressions',
-  algebraicThinking: 'Algebraic Thinking',
   numberKnowledge: 'Number Knowledge',
   geometry: 'Geometry',
+  arithmeticExpressions: 'Arithmetic Expressions',
   rationalNumbersProbability: 'Rational Numbers & Probability',
+  algebraicThinking: 'Algebraic Thinking',
 };
 
 function getOrdinalSuffix(n) {
