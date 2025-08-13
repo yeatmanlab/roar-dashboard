@@ -18,63 +18,40 @@
       </div>
     </div>
 
-    <div v-else>
-      <PvFloatLabel>
-        <h2 v-if="userAssignments?.length == 1" class="dropdown-container">
-          {{ userAssignments.at(0).publicName || userAssignments.at(0).name }}
-        </h2>
-      </PvFloatLabel>
-      <div class="ml-5 mt-5">
-        <PvFloatLabel>
-          <div v-if="userAssignments?.length > 0" class="flex flex-row align-items-start w-full mt-4">
-            <div class="assignment-select-container">
-              <div class="flex w-full">
-                <PvSelect
-                  v-model="selectedAdmin"
-                  :options="sortedUserAdministrations ?? []"
-                  :option-label="
-                    userAssignments.every((administration) => administration.publicName) ? 'publicName' : 'name'
-                  "
-                  input-id="dd-assignment"
-                  data-cy="dropdown-select-administration"
-                  @change="toggleShowOptionalAssessments"
-                />
-                <label for="dd-assignment" class="p-0 m-0">{{ $t('homeParticipant.selectAssignment') }}</label>
-              </div>
+    <div v-else class="assignments">
+      <div v-for="assignment of userAssignments" :key="assignment?.id" class="assignment">
+        <div class="assignment__header">
+          <h2 class="assignment__name">{{ assignment?.publicName || assignment?.name }}</h2>
+          <div class="assignment__dates">
+            <div class="assignment__date">
+              <i class="pi pi-calendar"></i>
+              <small><span class="font-bold">Start: </span>{{ format(assignment?.dateOpened, 'MMM dd, yyyy') }}</small>
+            </div>
+            <div class="assignment__date">
+              <i class="pi pi-calendar"></i>
+              <small><span class="font-bold">End: </span>{{ format(assignment?.dateClosed, 'MMM dd, yyyy') }}</small>
             </div>
           </div>
-        </PvFloatLabel>
-        <div
-          v-if="optionalAssessments.length !== 0"
-          class="switch-container flex flex-row align-items-center justify-content-end mr-6 gap-2"
-        >
-          <PvToggleSwitch
-            v-model="showOptionalAssessments"
-            input-id="switch-optional"
-            data-cy="switch-show-optional-assessments"
-          />
-          <label for="switch-optional" class="mr-2 text-gray-500">{{
-            $t('homeParticipant.showOptionalAssignments')
-          }}</label>
         </div>
-      </div>
-      <div class="tabs-container">
-        <ParticipantSidebar :total-games="totalGames" :completed-games="completeGames" />
-        <Transition name="fade" mode="out-in">
-          <!-- TODO: Pass in data conditionally to one instance of GameTabs. -->
-          <GameTabs
-            v-if="showOptionalAssessments && userData"
-            :games="optionalAssessments"
-            :sequential="isSequential"
-            :user-data="userData"
-          />
-          <GameTabs
-            v-else-if="requiredAssessments && userData"
-            :games="requiredAssessments"
-            :sequential="isSequential"
-            :user-data="userData"
-          />
-        </Transition>
+
+        <div class="tabs-container">
+          <ParticipantSidebar :total-games="totalGames" :completed-games="completeGames" />
+          <Transition name="fade" mode="out-in">
+            <!-- TODO: Pass in data conditionally to one instance of GameTabs. -->
+            <GameTabs
+              v-if="showOptionalAssessments && userData"
+              :games="optionalAssessments"
+              :sequential="isSequential"
+              :user-data="userData"
+            />
+            <GameTabs
+              v-else-if="requiredAssessments && userData"
+              :games="requiredAssessments"
+              :sequential="isSequential"
+              :user-data="userData"
+            />
+          </Transition>
+        </div>
       </div>
     </div>
   </div>
@@ -95,9 +72,6 @@ import _without from 'lodash/without';
 import _isEmpty from 'lodash/isEmpty';
 import { storeToRefs } from 'pinia';
 import PvButton from 'primevue/button';
-import PvSelect from 'primevue/select';
-import PvToggleSwitch from 'primevue/toggleswitch';
-import PvFloatLabel from 'primevue/floatlabel';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
 import useUserDataQuery from '@/composables/queries/useUserDataQuery';
@@ -124,6 +98,7 @@ import { useSurveyStore } from '@/store/survey';
 import { fetchDocsById } from '@/helpers/query/utils';
 import LevanteSpinner from '@/components/LevanteSpinner.vue';
 import { logger } from '@/logger';
+import { format } from 'date-fns';
 
 const showConsent = ref(false);
 const consentVersion = ref('');
@@ -578,15 +553,7 @@ watch(
   { immediate: true },
 );
 </script>
-<style scoped>
-.tabs-container {
-  display: flex;
-  flex-direction: row;
-  max-width: 100vw;
-  padding: 2rem;
-  gap: 2rem;
-}
-
+<style lang="scss" scoped>
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.5s ease;
@@ -597,9 +564,66 @@ watch(
   opacity: 0;
 }
 
-.dropdown-container {
-  margin-top: 2rem;
-  margin-left: 2rem;
+.assignments {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  width: 100%;
+  height: auto;
+  margin: 0;
+  padding: 2rem;
+}
+
+.assignment {
+  display: block;
+  margin: 0;
+  padding: 0 0 2rem;
+  border-bottom: 1px solid var(--surface-d);
+
+  &:last-of-type {
+    padding: 0;
+    border-bottom: none;
+  }
+}
+
+.assignment__name {
+  display: block;
+  margin: 0;
+  font-weight: 700;
+  font-size: 1.5rem;
+  color: var(--gray-600);
+
+  @media (max-width: 1024px) {
+    font-size: 1.35rem;
+  }
+}
+
+.assignment__dates,
+.assignment__date {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 1rem;
+  margin: 0.5rem 0 0;
+}
+
+.assignment__date {
+  gap: 0.25rem;
+  margin: 0;
+  font-weight: 500;
+  color: var(--gray-500);
+
+  .pi {
+    margin: -2px 0 0;
+  }
+}
+
+.tabs-container {
+  display: flex;
+  flex-direction: row;
+  max-width: 100vw;
+  gap: 2rem;
+  margin: 2rem 0 0;
 }
 
 .assignment-select-container {
