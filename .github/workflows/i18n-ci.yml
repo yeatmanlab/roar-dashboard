@@ -1,0 +1,52 @@
+name: i18n-and-build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  validate-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Cache npm
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+
+      - name: Install deps
+        run: npm ci --legacy-peer-deps
+
+      - name: Download translations from Crowdin (optional)
+        if: env.CROWDIN_API_TOKEN != ''
+        env:
+          CROWDIN_API_TOKEN: ${{ secrets.CROWDIN_API_TOKEN }}
+        run: npm run i18n:crowdin:download
+
+      - name: CSV → JSON
+        run: npm run i18n:csv-to-json
+
+      - name: Validate CSVs
+        run: npm run i18n:validate
+
+      - name: Build
+        run: npm run build:dev
+
+      # Optional Cypress smoke (headless)
+      - name: Cypress locales smoke
+        if: env.E2E_BASE_URL != ''
+        env:
+          E2E_USE_ENV: 'TRUE'
+          E2E_BASE_URL: ${{ env.E2E_BASE_URL }}
+          E2E_TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
+          E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
+        run: |
+          npx cypress run --e2e --spec "cypress/e2e/locales.cy.ts"

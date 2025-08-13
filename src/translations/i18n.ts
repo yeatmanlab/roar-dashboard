@@ -12,7 +12,28 @@ import {
 } from './exports';
 import { isLevante } from '@/helpers';
 
-export const languageOptions = {
+// Merge utility to deeply combine message trees
+function deepMerge(target: Record<string, any>, source: Record<string, any>): Record<string, any> {
+  for (const key of Object.keys(source)) {
+    const value = source[key];
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+      if (!target[key] || typeof target[key] !== 'object') target[key] = {};
+      deepMerge(target[key] as Record<string, any>, value as Record<string, any>);
+    } else {
+      target[key] = value;
+    }
+  }
+  return target;
+}
+
+function formatLocale(locale: string) {
+  const parts = locale.split('-');
+  const lang = (parts[0] || '').toLowerCase();
+  const region = parts[1];
+  return region ? `${lang}-${region.toUpperCase()}` : lang;
+}
+
+export const languageOptions: Record<string, { translations: any; language: string; code: string }> = {
   'en-US': {
     translations: enUSTranslations,
     language: 'English (United States)',
@@ -34,13 +55,14 @@ export const languageOptions = {
 
 const browserLocale = window.navigator.language;
 
-const getLocale = (localeFromBrowser) => {
-  const localeFromStorage = sessionStorage.getItem(`${isLevante ? 'levante' : 'roar'}PlatformLocale`);
+const getLocale = (localeFromBrowser: string) => {
+  const storageKey = `${isLevante ? 'levante' : 'roar'}PlatformLocale`;
+  const localeFromStorage = sessionStorage.getItem(storageKey);
 
   if (localeFromStorage) {
     return localeFromStorage;
   } else {
-    sessionStorage.setItem(`${isLevante ? 'levante' : 'roar'}PlatformLocale`, localeFromBrowser);
+    sessionStorage.setItem(storageKey, localeFromBrowser);
     return localeFromBrowser;
   }
 };
@@ -48,7 +70,8 @@ const getLocale = (localeFromBrowser) => {
 export const formattedLocale = getLocale(browserLocale);
 
 const getFallbackLocale = () => {
-  const localeFromStorage = sessionStorage.getItem(`${isLevante ? 'levante' : 'roar'}PlatformLocale`);
+  const storageKey = `${isLevante ? 'levante' : 'roar'}PlatformLocale`;
+  const localeFromStorage = sessionStorage.getItem(storageKey) || '';
 
   if (localeFromStorage.includes('es')) {
     console.log('Setting fallback local to es');
@@ -62,16 +85,53 @@ const getFallbackLocale = () => {
   }
 };
 
+// Build base messages from existing imports
+const baseMessages: Record<string, any> = {
+  en: { ...enUSTranslations, ...enIndividualScoreReport },
+  'en-US': { ...enUSTranslations, ...enUSIndividualScoreReport },
+  es: { ...esTranslations, ...esIndividualScoreReport },
+  'es-CO': { ...esCOTranslations, ...esCOIndividualScoreReport },
+  de: deTranslations,
+};
+
+// Dynamically load any generated componentTranslations for new locales and merge
+const modules = import.meta.glob('/src/translations/**/**-componentTranslations.json', { eager: true }) as Record<
+  string,
+  any
+>;
+for (const [filePath, mod] of Object.entries(modules)) {
+  const match = filePath.match(/\/([a-z]{2}(?:-[a-z]{2})?)-componentTranslations\.json$/i);
+  if (!match || !match[1]) continue;
+  const rawLocale = match[1] as string; // e.g., en, es-co, fr-ca
+  const locale = formatLocale(rawLocale);
+  const content: Record<string, any> = ((mod as any)?.default ?? {}) as Record<string, any>;
+
+  if (!baseMessages[locale]) baseMessages[locale] = {};
+  deepMerge(baseMessages[locale] as Record<string, any>, content as Record<string, any>);
+
+  // Auto-register new locales in languageOptions if missing
+  if (!languageOptions[locale]) {
+    let displayName = locale;
+    try {
+      // Best-effort language display name
+      const dn = new (window as any).Intl.DisplayNames([locale], { type: 'language' });
+      const parts = locale.split('-');
+      const langCode = parts[0] || locale;
+      const region = parts[1];
+      const langName = dn.of(langCode) as string | undefined;
+      displayName = region ? `${langName || langCode} (${region})` : langName || langCode;
+    } catch {
+      // Fallback to locale string
+    }
+    const code = locale.includes('-') ? (locale.split('-')[1] || '').toLowerCase() : locale.toLowerCase();
+    languageOptions[locale] = { translations: baseMessages[locale], language: displayName, code };
+  }
+}
+
 export const i18n = createI18n({
   locale: getLocale(browserLocale),
   fallbackLocale: getFallbackLocale(),
-  messages: {
-    en: { ...enUSTranslations, ...enIndividualScoreReport },
-    'en-US': { ...enUSTranslations, ...enUSIndividualScoreReport },
-    es: { ...esTranslations, ...esIndividualScoreReport },
-    'es-CO': { ...esCOTranslations, ...esCOIndividualScoreReport },
-    de: deTranslations,
-  },
+  messages: baseMessages,
   legacy: false,
   globalInjection: true,
 });
