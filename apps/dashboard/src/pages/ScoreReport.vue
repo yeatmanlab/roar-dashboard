@@ -1026,10 +1026,11 @@ const createExportData = ({ rows, includeProgress = false }) => {
       } else if (rawOnlyTasks.includes(taskId)) {
         tableRow[`${taskName} - Raw`] = score.rawScore;
       } else if (tasksToDisplayGradeEstimate.includes(taskId)) {
-        tableRow[`${taskName} - Raw`] = score.rawScore;
         tableRow[`${taskName} - Num Correct`] = score.numCorrect;
         tableRow[`${taskName} - Num Attempted`] = score.numAttempted;
+        tableRow[`${taskName} - Raw`] = score.rawScore;
         tableRow[`${taskName} - Grade Estimate`] = score.gradeEstimate;
+        tableRow[`${taskName} - Support Level`] = score.supportCategory;
       } else {
         tableRow[`${taskName} - Percentile`] = score.percentileString;
         tableRow[`${taskName} - Standard`] = score.standardScore;
