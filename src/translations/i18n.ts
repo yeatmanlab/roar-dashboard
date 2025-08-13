@@ -113,16 +113,24 @@ for (const [filePath, mod] of Object.entries(modules)) {
   if (!languageOptions[locale]) {
     let displayName = locale;
     try {
-      // Best-effort language display name
-      const dn = new (window as any).Intl.DisplayNames([locale], { type: 'language' });
       const parts = locale.split('-');
-      const langCode = parts[0] || locale;
-      const region = parts[1];
-      const langName = dn.of(langCode) as string | undefined;
-      displayName = region ? `${langName || langCode} (${region})` : langName || langCode;
+      const langCode = (parts[0] || locale).toLowerCase();
+      const regionCode = (parts[1] || '').toUpperCase();
+
+      // Use English for consistent display naming across app locales
+      const displayLocale = 'en';
+      const langNames = new (window as any).Intl.DisplayNames([displayLocale], { type: 'language' });
+      const regionNames = new (window as any).Intl.DisplayNames([displayLocale], { type: 'region' });
+
+      const rawLangName = (langNames.of(langCode) as string | undefined) || langCode;
+      const langName = rawLangName.charAt(0).toUpperCase() + rawLangName.slice(1);
+      const regionName = regionCode ? (regionNames.of(regionCode) as string | undefined) : undefined;
+
+      displayName = regionName ? `${langName} (${regionName})` : langName;
     } catch {
-      // Fallback to locale string
+      // Fallback to locale string if Intl.DisplayNames is unavailable
     }
+
     const code = locale.includes('-') ? (locale.split('-')[1] || '').toLowerCase() : locale.toLowerCase();
     languageOptions[locale] = { translations: baseMessages[locale], language: displayName, code };
   }
