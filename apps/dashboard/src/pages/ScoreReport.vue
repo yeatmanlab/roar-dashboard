@@ -301,7 +301,7 @@ import {
   rawOnlyTasks,
   tasksToDisplayPercentCorrect,
   tasksToDisplayTotalCorrect,
-  tasksToDisplayThetaScore,
+  tasksToDisplayGradeEstimate,
   excludeFromScoringTasks,
   includeReliabilityFlagsOnExport,
   addElementToPdf,
@@ -549,7 +549,7 @@ const getScoresAndSupportFromAssessment = ({
     tasksToDisplayCorrectIncorrectDifference.includes(assessment.taskId) ||
     tasksToDisplayPercentCorrect.includes(assessment.taskId) ||
     tasksToDisplayTotalCorrect.includes(taskId) ||
-    tasksToDisplayThetaScore.includes(assessment.taskId)
+    tasksToDisplayGradeEstimate.includes(assessment.taskId)
   ) {
     if (assessment.scores === undefined) {
       support_level = null;
@@ -806,7 +806,7 @@ const computeAssignmentAndRunData = computed(() => {
           currRowScores[taskId].total = _get(assessment, 'scores.computed.composite.roarScore');
           currRowScores[taskId].skills = skills.length > 0 ? skills.join(', ') : 'None';
         }
-        if (tasksToDisplayThetaScore.includes(taskId)) {
+        if (tasksToDisplayGradeEstimate.includes(taskId)) {
           const numCorrect = _get(assessment, 'scores.computed.composite.rawScore');
           const numAttempted = _get(assessment, 'scores.computed.composite.totalNumAttempted');
           const gradeEstimate = _get(assessment, 'scores.computed.composite.gradeEstimate');
@@ -1025,11 +1025,11 @@ const createExportData = ({ rows, includeProgress = false }) => {
         tableRow[`${taskName} - Num Attempted`] = score.numAttempted;
       } else if (rawOnlyTasks.includes(taskId)) {
         tableRow[`${taskName} - Raw`] = score.rawScore;
-      } else if (tasksToDisplayThetaScore.includes(taskId)) {
+      } else if (tasksToDisplayGradeEstimate.includes(taskId)) {
+        tableRow[`${taskName} - Raw`] = score.rawScore;
         tableRow[`${taskName} - Num Correct`] = score.numCorrect;
         tableRow[`${taskName} - Num Attempted`] = score.numAttempted;
         tableRow[`${taskName} - Grade Estimate`] = score.gradeEstimate;
-        tableRow[`${taskName} - Support Level`] = score.supportLevel;
       } else {
         tableRow[`${taskName} - Percentile`] = score.percentileString;
         tableRow[`${taskName} - Standard`] = score.standardScore;
@@ -1458,7 +1458,7 @@ const scoreReportColumns = computed(() => {
       !tasksToDisplayCorrectIncorrectDifference.includes(taskId) &&
       !tasksToDisplayPercentCorrect.includes(taskId) &&
       !tasksToDisplayTotalCorrect.includes(taskId) &&
-      !tasksToDisplayThetaScore.includes(taskId)
+      !tasksToDisplayGradeEstimate.includes(taskId)
     ) {
       colField = `scores.${taskId}.standardScore`;
     } else if (
@@ -1466,7 +1466,7 @@ const scoreReportColumns = computed(() => {
       !tasksToDisplayCorrectIncorrectDifference.includes(taskId) &&
       !tasksToDisplayPercentCorrect.includes(taskId) &&
       !tasksToDisplayTotalCorrect.includes(taskId) &&
-      !tasksToDisplayThetaScore.includes(taskId)
+      !tasksToDisplayGradeEstimate.includes(taskId)
     ) {
       colField = `scores.${taskId}.rawScore`;
     } else {
@@ -1476,7 +1476,7 @@ const scoreReportColumns = computed(() => {
         colField = `scores.${taskId}.numCorrect`;
       } else if (tasksToDisplayPercentCorrect.includes(taskId) && viewMode.value === 'raw') {
         colField = `scores.${taskId}.percentCorrect`;
-      } else if (tasksToDisplayThetaScore.includes(taskId) && viewMode.value === 'raw') {
+      } else if (tasksToDisplayGradeEstimate.includes(taskId) && viewMode.value === 'raw') {
         colField = `scores.${taskId}.rawScore`;
       } else if (rawOnlyTasks.includes(taskId) && viewMode.value === 'raw') {
         colField = `scores.${taskId}.rawScore`;

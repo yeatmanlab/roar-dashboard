@@ -34,7 +34,7 @@ import {
   tasksToDisplayPercentCorrect,
   tasksToDisplayCorrectIncorrectDifference,
   tasksToDisplayTotalCorrect,
-  tasksToDisplayThetaScore,
+  tasksToDisplayGradeEstimate,
   rawOnlyTasks,
   scoredTasks,
   subskillTasks,
@@ -109,7 +109,7 @@ function handleToolTip(_taskId, _toolTip, _colData) {
       _toolTip += 'Num Correct: ' + _colData.scores?.[_taskId]?.numCorrect + '\n';
       _toolTip += 'Num Attempted: ' + _colData.scores?.[_taskId]?.numAttempted + '\n';
       _toolTip += 'Percent Correct: ' + _colData.scores?.[_taskId]?.percentCorrect + '\n';
-    } else if (tasksToDisplayThetaScore.includes(_taskId)) {
+    } else if (tasksToDisplayGradeEstimate.includes(_taskId)) {
       _toolTip += 'Num Correct: ' + _colData.scores?.[_taskId]?.numCorrect + '\n';
       _toolTip += 'Num Attempted: ' + _colData.scores?.[_taskId]?.numAttempted + '\n';
       if (_colData.scores?.[_taskId]?.gradeEstimate) {
