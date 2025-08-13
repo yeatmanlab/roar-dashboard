@@ -6,9 +6,6 @@ const useEnvFlag: boolean = (() => {
   return v === true || v === 'TRUE' || v === 'true' || v === 1 || v === '1';
 })();
 
-const defaultUrl = 'https://localhost:5173/signin';
-const defaultEmail = 'quqa2y1jss@levante.com';
-const defaultPassword = 'xbqamkqc7z';
 
 const baseUrl: string = useEnvFlag
   ? ((Cypress.env('E2E_BASE_URL') as string) || defaultUrl)
