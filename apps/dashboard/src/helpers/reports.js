@@ -751,6 +751,9 @@ export function getScoreKeys(taskId, grade) {
     standardScoreDisplayKey = 'totalPercentCorrect';
     rawScoreKey = 'totalPercentCorrect';
   }
+  if (taskId === 'roam-alpaca') {
+    rawScoreKey = 'roarScore';
+  }
   return {
     percentileScoreKey,
     percentileScoreDisplayKey,

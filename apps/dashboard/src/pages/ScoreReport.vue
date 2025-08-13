@@ -565,7 +565,6 @@ const getScoresAndSupportFromAssessment = ({
       const supportLevel = _get(assessment, 'scores.computed.composite.supportCategory');
       support_level = supportLevel;
       tag_color = getTagColor(supportLevel);
-      rawScore = _get(assessment, 'scores.computed.composite.roarScore');
     } else {
       support_level = '';
       tag_color = '#A4DDED';
@@ -815,17 +814,13 @@ const computeAssignmentAndRunData = computed(() => {
           currRowScores[taskId].skills = skills.length > 0 ? skills.join(', ') : 'None';
         }
         if (tasksToDisplayThetaScore.includes(taskId)) {
-          const thetaEstimate = _get(assessment, 'scores.computed.composite.thetaEstimate') ?? '';
-          const correctRawScore = _get(assessment, 'scores.computed.composite.rawScore');
-          const totalNumAttempted = _get(assessment, 'scores.computed.composite.totalNumAttempted');
+          const numCorrect = _get(assessment, 'scores.computed.composite.rawScore');
+          const numAttempted = _get(assessment, 'scores.computed.composite.totalNumAttempted');
           const gradeEstimate = _get(assessment, 'scores.computed.composite.gradeEstimate');
-          const roarScore = _get(assessment, 'scores.computed.composite.roarScore');
 
-          currRowScores[taskId].thetaEstimate = thetaEstimate;
-          currRowScores[taskId].correctRawScore = correctRawScore;
-          currRowScores[taskId].totalNumAttempted = totalNumAttempted;
+          currRowScores[taskId].numCorrect = numCorrect;
+          currRowScores[taskId].numAttempted = numAttempted;
           currRowScores[taskId].gradeEstimate = gradeEstimate;
-          currRowScores[taskId].roarScore = roarScore;
         }
         if (['fluency-calf', 'fluency-arf', 'fluency-calf-es', 'fluency-arf-es'].includes(taskId)) {
           const fc = _get(assessment, 'scores.computed.FC.roamScore');
@@ -1038,10 +1033,9 @@ const createExportData = ({ rows, includeProgress = false }) => {
       } else if (rawOnlyTasks.includes(taskId)) {
         tableRow[`${taskName} - Raw`] = score.rawScore;
       } else if (tasksToDisplayThetaScore.includes(taskId)) {
-        tableRow[`${taskName} - Num Correct`] = score.rawScore;
-        tableRow[`${taskName} - Num Attempted`] = score.totalNumAttempted;
+        tableRow[`${taskName} - Num Correct`] = score.numCorrect;
+        tableRow[`${taskName} - Num Attempted`] = score.numAttempted;
         tableRow[`${taskName} - Grade Estimate`] = score.gradeEstimate;
-        tableRow[`${taskName} - Theta Estimate`] = score.thetaEstimate;
         tableRow[`${taskName} - Support Level`] = score.supportLevel;
       } else {
         tableRow[`${taskName} - Percentile`] = score.percentileString;
@@ -1490,7 +1484,7 @@ const scoreReportColumns = computed(() => {
       } else if (tasksToDisplayPercentCorrect.includes(taskId) && viewMode.value === 'raw') {
         colField = `scores.${taskId}.percentCorrect`;
       } else if (tasksToDisplayThetaScore.includes(taskId) && viewMode.value === 'raw') {
-        colField = `scores.${taskId}.roarScore`;
+        colField = `scores.${taskId}.rawScore`;
       } else if (rawOnlyTasks.includes(taskId) && viewMode.value === 'raw') {
         colField = `scores.${taskId}.rawScore`;
       } else {
