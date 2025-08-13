@@ -6,6 +6,11 @@ const useEnvFlag: boolean = (() => {
   return v === true || v === 'TRUE' || v === 'true' || v === 1 || v === '1';
 })();
 
+// Defaults for local dev/emulator runs
+const defaultUrl = 'https://localhost:5173/signin';
+const defaultEmail = 'student@levante.test';
+const defaultPassword = 'student123';
+
 
 const baseUrl: string = useEnvFlag
   ? ((Cypress.env('E2E_BASE_URL') as string) || defaultUrl)
