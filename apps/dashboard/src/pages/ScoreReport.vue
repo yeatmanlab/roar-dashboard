@@ -852,7 +852,6 @@ const computeAssignmentAndRunData = computed(() => {
               ...scores.composite,
               tagColor: getTagColor(scores.composite.supportCategory),
             };
-            currRowScores[taskId].incorrectSkills = scores.composite.incorrectSkills;
           }
         }
 
