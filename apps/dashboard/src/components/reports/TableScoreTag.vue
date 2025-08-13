@@ -38,11 +38,11 @@ import {
   rawOnlyTasks,
   scoredTasks,
   subskillTasks,
-  addTooltipIfExists,
   roamAlpacaSubskills,
 } from '@/helpers/reports.js';
 import { taskDisplayNames } from '@/helpers/reports';
 import { includedValidityFlags } from '@/helpers/reports';
+import _round from 'lodash/round';
 
 defineProps({
   colData: {
@@ -143,8 +143,9 @@ function handleSubskillToolTip(_taskId, _subskillId, _toolTip, _colData) {
     }
     _toolTip += 'Num Correct: ' + subskillInfo?.rawScore + '\n';
     _toolTip += 'Num Attempted: ' + subskillInfo?.totalNumAttempted + '\n';
-    _toolTip = addTooltipIfExists(_toolTip, subskillInfo, 'subPercentCorrect', 'Sub-Percent Correct');
-    _toolTip = addTooltipIfExists(_toolTip, subskillInfo, 'gradeEstimate', 'Grade Estimate');
+    if (subskillInfo?.gradeEstimate) {
+      _toolTip += 'Grade Estimate: ' + _round(subskillInfo?.gradeEstimate, 2) + '\n';
+    }
   }
 
   return _toolTip;
