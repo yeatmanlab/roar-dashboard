@@ -848,8 +848,8 @@ const computeAssignmentAndRunData = computed(() => {
                 currRowScores[taskId][subskill] = '-';
               }
             });
-            currRowScores[taskId].roarScore = {
-              score: scores.composite.roarScore,
+            currRowScores[taskId].rawRoamScore = {
+              ...scores.composite,
               tagColor: getTagColor(scores.composite.supportCategory),
             };
             currRowScores[taskId].incorrectSkills = scores.composite.incorrectSkills;
