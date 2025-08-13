@@ -1,139 +1,4 @@
 {
-  "authSignIn": {
-    "atLeastOneLowercase": "Mindestens ein Kleinbuchstabe",
-    "atLeastOneNumber": "Mindestens eine Zahl",
-    "atLeastOneNumeric": "Mindestens eine Nummer",
-    "atLeastOneUpperCase": "Mindestens ein Großbuchstabe",
-    "buttonLabel": "Los!",
-    "continueWithGoogle": "Machen Sie weiter mit Google",
-    "emailId": "E-Mail",
-    "emailPlaceholder": "Benutzername oder E-Mail",
-    "forgotPassword": "Passwort vergessen?",
-    "incorrectEmailOrPassword": "Falscher Benutzername/E-Mail oder Passwort",
-    "invalidEmailPlaceholder": "Fehler: Ungültige E-Mail",
-    "minimumCharacters": "Mindestens 8 Zeichen",
-    "passwordId": "Passwort",
-    "passwordPlaceholder": "Passwort",
-    "pickPassword": "Wählen Sie ein Passwort",
-    "selectLanguage": "Sprache auswählen",
-    "selectLanguageLabel": "Sprache",
-    "signInWithEmailLinkInstead": "Mit E-Mail-Link anmelden",
-    "signInWithEmailLinkPlaceHolder": "Drücken Sie „Los“, um sich mit einem E-Mail-Link anzumelden.",
-    "signInWithPasswordInstead": "Mit Passwort anmelden",
-    "suggestions": "Vorschläge"
-  },
-  "consentModal": {
-    "header": "Zustimmung",
-    "title": "Zustimmung",
-    "acceptButton": "Akzeptieren",
-    "rejectButton": "Nein, mich abmelden",
-    "toastHeader": "Bestätigt",
-    "consentUpdatedStatus": "Zustimmungsstatus aktualisiert"
-  },
-  "homeParticipant": {
-    "showOptionalAssignments": "Optionale Zuordnungen anzeigen",
-    "loadingAssignments": "Lade Zuordnungen",
-    "selectAssignment": "Wählen Sie eine Zuordnung aus",
-    "noAssignments": "Sie haben keine Zuordnungen!",
-    "contactAdministrator": "Bitte kontaktieren Sie Ihren Administrator, um zu einer Zuordnung hinzugefügt zu werden."
-  },
-  "homeSelector": {
-    "loading": "Laden...",
-    "inactivityLogout": "Sie werden aus Sicherheitsgründen bald abgemeldet. Bitte klicken Sie auf 'Fortsetzen', wenn Sie Ihre Sitzung fortsetzen möchten. Andernfalls werden Sie automatisch in { timeLeft } Sekunden abgemeldet.",
-    "inactivityLogoutAcceptLabel": "Fortsetzen"
-  },
-  "gameTabs": {
-    "clickToStart": "Klicken zum Starten",
-    "taskCompleted": "Aufgabe abgeschlossen!",
-    "LEVANTE TRANSLATIONS--------------------------": "",
-    "introName": "Anleitungen",
-    "introDescription": "Schau dir an, wie man unsere Spiele spielt.",
-    "heartsAndFlowersDescription": "Wähle die richige Seite für die Herzen und Blumen.",
-    "heartsAndFlowersName": "Herzen & Blumen",
-    "egmaMathDescription": "Löse die Matheaufgaben.",
-    "egmaMathName": "Mathe",
-    "matrixReasoningDescription": "Finde das fehlende Teil, um das Puzzle zu vervollständigen.",
-    "matrixReasoningName": "Musterspiel",
-    "memoryGameDescription": "Schau dir genau an, wie die Quadrate aufleuchten. Merke dir die Reihenfolge und mach das Muster genauso nach.",
-    "memoryGameName": "Merkspiel",
-    "mentalRotationDescription": "Ordne die Bilder zu.",
-    "mentalRotationName": "Formenspiel",
-    "sameDifferentSelectionDescription": "Finde Dinge, die die Formen gemeinsam haben.",
-    "sameDifferentSelectionName": "Gleich & Verschieden",
-    "theoryOfMindDescription": "Höre dir die Geschichten an und beantworte dann Fragen dazu.",
-    "theoryOfMindName": "Bildergeschichten",
-    "trogDescription": "Hör dir die Wörter an und wähle das passende Bild dazu aus.",
-    "trogName": "Satzverstehen",
-    "surveyNameChild": "Gedanken & Gefühle",
-    "surveyDescriptionChild": "Hier geht es um Fragen zu deiner Schulzeit.",
-    "surveyNameParentPart1": "Umfrage - Erwachsene",
-    "surveyDescriptionParentPart1": "Das Ausfüllen dieser Fragebögen dauert etwa 30-45 Minuten. Teil A enthält Fragen zu Ihrem häuslichen Umfeld und zu Ihrer Person. In Teil B werden Fragen zu Ihrem Kind/ Ihren Kindern gestellt. Anhand des Geburtsdatums, welches im jeweiligen Fragebogen aufgeführt ist, können Sie erkennen, an welches Kind Sie bei der Beantwortung der Fragen denken sollen (falls Sie mehr als ein Kind in dieser Studie haben).",
-    "surveyNameParentPart2": "Umfrage - Familie",
-    "surveyDescriptionParentPart2": "Umfrage für Eltern: Die folgende Umfrage dauert etwa 20-30 Minuten und enthält Fragen Ihrem zu Hause und zu Ihrer Person. ",
-    "surveyNameTeacherPart1": "Umfrage - Allgemein",
-    "surveyDescriptionTeacherPart1": "This survey will take approximately 5-10 minutes to complete and asks about your background and beliefs about teaching.",
-    "surveyNameTeacherPart2": "Umfrage - Klassenzimmer",
-    "surveyDescriptionTeacherPart2": "This survey will take approximately 5-10 minutes to complete and asks questions about the classroom(s) you teach.",
-    "surveyProgressGeneral": "Allgemein",
-    "surveyProgressGeneralParent": "zu Hause/ Erwachsener",
-    "surveyProgressSpecificParent": "Kind",
-    "surveyProgressSpecificParentMonth": "Monat",
-    "surveyProgressSpecificParentYear": "Jahr",
-    "surveyProgressGeneralTeacher": "Lehrer",
-    "surveyProgressSpecificTeacher": "Klassenzimmer",
-    "mefsName": "Löwe & Affe",
-    "mefsDescription": "Formen und Farben zuordnen.",
-    "vocabName": "Vokabeln",
-    "vocabDescription": "Hör dir die Wörter an und wähle das passende Bild dazu aus."
-  },
-  "navBar": {
-    "signOut": "Abmelden"
-  },
-  "notFound": {
-    "label": "Klicken Sie hier, um zur Startseite zu gelangen.",
-    "pageNotFound": "Seite nicht gefunden",
-    "sorry": "Entschuldigung, wir konnten diese Seite nicht finden!"
-  },
-  "participantSidebar": {
-    "grade": "Klasse",
-    "studentInfo": "Schülerinformationen",
-    "tasksCompleted": "Aufgaben abgeschlossen!"
-  },
-  "pageSignIn": {
-    "havingTrouble": "Haben Sie Schwierigkeiten?",
-    "login": "Melden Sie sich an, um auf Ihr Dashboard zuzugreifen",
-    "loginWith": "Anmelden mit",
-    "welcome": "Willkommen bei ROAR!",
-    "adminPrompt": "Sind Sie ein Administrator? Klicken Sie {action}, um sich anzumelden.",
-    "adminAction": "hier",
-    "adminInfoPrompt": "Wenn Sie sich mit einer Google-E-Mail oder Ihr E-Mail-Anbieter Google SSO verwendet, registriert haben."
-  },
-  "tasks": {
-    "preparing": "Gleich geht das Spiel los!",
-    "loading": "Laden"
-  },
-  "sentryForm": {
-    "formTitle": "Ein Problem bei LEVANTE melden",
-    "buttonLabel": "Ein Problem melden",
-    "submitButtonLabel": "Problembericht einreichen",
-    "cancelButtonLabel": "Abbrechen",
-    "namePlaceholder": "Ihr Name (optional)",
-    "emailPlaceholder": "ihre.email@beispiel.org (optional)",
-    "messageLabel": "Beschreibung",
-    "messagePlaceholder": "Was ist das Problem? Was wollten Sie stattdessen erleben? Vielen Dank für Ihr Feedback."
-  },
-  "userSurvey": {
-    "specificRelationDescriptionChildA": "Für Kind mit Geburtsmonat",
-    "specificRelationDescriptionChildB": "und Geburtsjahr",
-    "specificRelationDescriptionClass": "Für Klasse"
-  },
-  "profile": {
-    "settings": {
-      "settings": "Einstellungen",
-      "language": "Sprache",
-      "languageDescription": "Wählen Sie die Sprache, die Sie im Dashboard verwenden möchten. Dies wird NUR die Sprache des Dashboards und der Umfragen ändern, nicht die Aufgaben."
-    }
-  },
   "auth": {
     "consent": {
       "acceptButton": "Akzeptieren",
@@ -168,6 +33,42 @@
       "signInWithEmailLinkPlaceHolder": "Drücken Sie „Los“, um sich mit einem E-Mail-Link anzumelden.",
       "signInWithPasswordInstead": "Mit Passwort anmelden",
       "suggestions": "Vorschläge"
+    }
+  },
+  "pages": {
+    "home-participant": {
+      "consentUpdatedStatus": "",
+      "contactAdministrator": "Bitte kontaktieren Sie Ihren Administrator, um zu einer Zuordnung hinzugefügt zu werden.",
+      "loadingAssignments": "Lade Zuordnungen",
+      "noAssignments": "Sie haben keine Zuordnungen!",
+      "selectAssignment": "Wählen Sie eine Zuordnung aus",
+      "showOptionalAssignments": "Optionale Zuordnungen anzeigen"
+    },
+    "home-selector": {
+      "inactivityLogout": "Sie werden aus Sicherheitsgründen bald abgemeldet. Bitte klicken Sie auf 'Fortsetzen', wenn Sie Ihre Sitzung fortsetzen möchten. Andernfalls werden Sie automatisch in { timeLeft } Sekunden abgemeldet.",
+      "inactivityLogoutAcceptLabel": "Fortsetzen",
+      "loading": "Laden..."
+    },
+    "not-found": {
+      "label": "Klicken Sie hier, um zur Startseite zu gelangen.",
+      "pageNotFound": "Seite nicht gefunden",
+      "sorry": "Entschuldigung, wir konnten diese Seite nicht finden!"
+    },
+    "signin": {
+      "adminAction": "hier",
+      "adminInfoPrompt": "Wenn Sie sich mit einer Google-E-Mail oder Ihr E-Mail-Anbieter Google SSO verwendet, registriert haben.",
+      "adminPrompt": "Sind Sie ein Administrator? Klicken Sie {action}, um sich anzumelden.",
+      "havingTrouble": "Haben Sie Schwierigkeiten?",
+      "login": "Melden Sie sich an, um auf Ihr Dashboard zuzugreifen",
+      "loginWith": "Anmelden mit",
+      "welcome": "Willkommen bei ROAR!"
+    }
+  },
+  "surveys": {
+    "user-survey": {
+      "specificRelationDescriptionChildA": "Für Kind mit Geburtsmonat",
+      "specificRelationDescriptionChildB": "und Geburtsjahr",
+      "specificRelationDescriptionClass": "Für Klasse"
     }
   },
   "components": {
@@ -239,42 +140,6 @@
     "tasks": {
       "loading": "Laden",
       "preparing": "Gleich geht das Spiel los!"
-    }
-  },
-  "pages": {
-    "home-participant": {
-      "consentUpdatedStatus": "",
-      "contactAdministrator": "Bitte kontaktieren Sie Ihren Administrator, um zu einer Zuordnung hinzugefügt zu werden.",
-      "loadingAssignments": "Lade Zuordnungen",
-      "noAssignments": "Sie haben keine Zuordnungen!",
-      "selectAssignment": "Wählen Sie eine Zuordnung aus",
-      "showOptionalAssignments": "Optionale Zuordnungen anzeigen"
-    },
-    "home-selector": {
-      "inactivityLogout": "Sie werden aus Sicherheitsgründen bald abgemeldet. Bitte klicken Sie auf 'Fortsetzen', wenn Sie Ihre Sitzung fortsetzen möchten. Andernfalls werden Sie automatisch in { timeLeft } Sekunden abgemeldet.",
-      "inactivityLogoutAcceptLabel": "Fortsetzen",
-      "loading": "Laden..."
-    },
-    "not-found": {
-      "label": "Klicken Sie hier, um zur Startseite zu gelangen.",
-      "pageNotFound": "Seite nicht gefunden",
-      "sorry": "Entschuldigung, wir konnten diese Seite nicht finden!"
-    },
-    "signin": {
-      "adminAction": "hier",
-      "adminInfoPrompt": "Wenn Sie sich mit einer Google-E-Mail oder Ihr E-Mail-Anbieter Google SSO verwendet, registriert haben.",
-      "adminPrompt": "Sind Sie ein Administrator? Klicken Sie {action}, um sich anzumelden.",
-      "havingTrouble": "Haben Sie Schwierigkeiten?",
-      "login": "Melden Sie sich an, um auf Ihr Dashboard zuzugreifen",
-      "loginWith": "Anmelden mit",
-      "welcome": "Willkommen bei ROAR!"
-    }
-  },
-  "surveys": {
-    "user-survey": {
-      "specificRelationDescriptionChildA": "Für Kind mit Geburtsmonat",
-      "specificRelationDescriptionChildB": "und Geburtsjahr",
-      "specificRelationDescriptionClass": "Für Klasse"
     }
   }
 }
