@@ -38,7 +38,6 @@ import {
   rawOnlyTasks,
   scoredTasks,
   subskillTasks,
-  roamAlpacaSubskills,
 } from '@/helpers/reports.js';
 import { taskDisplayNames } from '@/helpers/reports';
 import { includedValidityFlags } from '@/helpers/reports';
@@ -60,10 +59,10 @@ defineProps({
 let returnScoreTooltip = (colData, fieldPath) => {
   const pathSegments = fieldPath.split('.');
   const taskId = pathSegments[0] === 'scores' ? pathSegments[1] : null;
-  const subskillId = pathSegments.length > 2 ? pathSegments[2] : null;
+  const subskillId = pathSegments.length > 3 ? pathSegments[2] : null;
   let toolTip = '';
 
-  if (subskillTasks.includes(taskId) && Object.keys(roamAlpacaSubskills).includes(subskillId)) {
+  if (subskillTasks.includes(taskId) && subskillId) {
     return handleSubskillToolTip(taskId, subskillId, toolTip, colData);
   } else if (colData.scores[taskId]?.supportLevel) {
     // Handle scored tasks
