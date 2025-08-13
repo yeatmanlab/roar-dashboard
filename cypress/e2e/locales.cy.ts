@@ -11,6 +11,12 @@ const defaultUrl = 'http://localhost:5173/signin';
 const defaultEmail = 'student@levante.test';
 const defaultPassword = 'student123';
 
+// Optionally skip login step (useful when emulator/backend is not available)
+const skipLoginFlag: boolean = (() => {
+  const v = Cypress.env('E2E_SKIP_LOGIN');
+  return v === true || v === 'TRUE' || v === 'true' || v === 1 || v === '1';
+})();
+
 const baseUrl: string = useEnvFlag
   ? ((Cypress.env('E2E_BASE_URL') as string) || defaultUrl)
   : defaultUrl;
@@ -60,6 +66,10 @@ locales.forEach((locale) => {
       cy.visit(baseUrl, setLocaleBeforeLoad(locale));
       // ensure signin page shows inputs
       cy.get('input').should('have.length.at.least', 2);
+      if (skipLoginFlag) {
+        // Only verify sign-in page renders for this locale
+        return;
+      }
       login();
       // assert route changes away from /signin within 30s
       cy.location('pathname', { timeout: 30000 }).should((p) => expect(p).to.not.match(/\/signin$/));
