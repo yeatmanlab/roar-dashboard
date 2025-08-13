@@ -845,9 +845,13 @@ const computeAssignmentAndRunData = computed(() => {
                   ...subskillInfo,
                 };
               } else {
-                currRowScores[taskId][subskill] = '';
+                currRowScores[taskId][subskill] = '-';
               }
             });
+            currRowScores[taskId].roarScore = {
+              score: scores.composite.roarScore,
+              tagColor: getTagColor(scores.composite.supportCategory),
+            };
             currRowScores[taskId].incorrectSkills = scores.composite.incorrectSkills;
           }
         }
