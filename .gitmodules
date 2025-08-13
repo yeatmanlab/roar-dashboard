@@ -1,0 +1,3 @@
+[submodule "apps/dashboard/env-configs"]
+	path = apps/dashboard/env-configs
+	url = https://github.com/yeatmanlab/roar-dashboard-envs.git

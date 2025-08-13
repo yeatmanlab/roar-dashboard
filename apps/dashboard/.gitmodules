@@ -1,3 +1,0 @@
-[submodule "env-configs"]
-	path = env-configs
-	url = ../roar-dashboard-envs.git
