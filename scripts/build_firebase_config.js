@@ -11,7 +11,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // Falls back to the FIREBASE_ENV environment variable, then to "production".
 const cliEnv = process.argv[2]; // dev | staging | production
 const env = cliEnv || process.env.FIREBASE_ENV || 'production'; // default production
-loadDotenvFiles(env);
+const dotenvEnv = env === 'dev' ? 'development' : env;
+loadDotenvFiles(dotenvEnv);
 
 const requiredEnvVars = ['VITE_FIREBASE_ADMIN_PROJECT_ID', 'VITE_FIREBASE_APP_PROJECT_ID'];
 
