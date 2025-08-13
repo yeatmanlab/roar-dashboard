@@ -61,6 +61,8 @@ runs:
         mkdir app
         cp -r roar-dashboard/dist app/dist
         cp -r roar-dashboard/scripts app/scripts
+        ls app
+        cat app/firebase.json
         case "${{ inputs.firebase-target }}" in
           "production")
             cp roar-dashboard/firebase/admin/firebase.production.json app/firebase.json
