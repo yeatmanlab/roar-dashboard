@@ -1,5 +1,12 @@
 import 'cypress-real-events';
 
+// Ignore Firebase auth network errors when skipping login
+// Keeps locale render checks green without emulator/backend
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// @ts-ignore
+// Cypress is available globally in spec files
+// We conditionally attach after skipLoginFlag is computed below
+
 // Flag to use env-overrides
 const useEnvFlag: boolean = (() => {
   const v = Cypress.env('E2E_USE_ENV');
@@ -16,6 +23,13 @@ const skipLoginFlag: boolean = (() => {
   const v = Cypress.env('E2E_SKIP_LOGIN');
   return v === true || v === 'TRUE' || v === 'true' || v === 1 || v === '1';
 })();
+
+if (skipLoginFlag) {
+  Cypress.on('uncaught:exception', (err) => {
+    if (/auth\/network-request-failed/i.test(err.message)) return false;
+    return true;
+  });
+}
 
 const baseUrl: string = useEnvFlag
   ? ((Cypress.env('E2E_BASE_URL') as string) || defaultUrl)
