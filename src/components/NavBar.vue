@@ -187,6 +187,7 @@ nav {
 
 .p-menubar {
   gap: 2rem;
+  padding: 1rem 2rem;
   border: none;
 }
 
