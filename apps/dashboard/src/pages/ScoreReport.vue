@@ -521,13 +521,6 @@ function returnColorByReliability(assessment, rawScore, support_level, tag_color
       } else {
         return '#A4DDED';
       }
-    } else if (tasksToDisplayThetaScore.includes(assessment.taskId)) {
-      const test = assessment.scores?.raw?.composite?.test;
-      if (test?.thetaEstimate === undefined || test?.thetaEstimate === '') {
-        return '#EEEEF0';
-      } else {
-        return '#A4DDED';
-      }
     } else if (rawOnlyTasks.includes(assessment.taskId) && rawScore) {
       return 'white';
     }
