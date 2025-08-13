@@ -59,6 +59,8 @@ defineProps({
 let returnScoreTooltip = (colData, fieldPath) => {
   const pathSegments = fieldPath.split('.');
   const taskId = pathSegments[0] === 'scores' ? pathSegments[1] : null;
+
+  // Subskill fieldPaths are formatted as scores.taskId.subskillId.scores
   const subskillId = pathSegments.length > 3 ? pathSegments[2] : null;
   let toolTip = '';
 
