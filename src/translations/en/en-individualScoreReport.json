@@ -57,6 +57,17 @@
     "unreliable": "Unreliable",
     "reliableTagText": "The student's behavior did not trigger any flags and the run can be considered reliable",
     "unreliableTagText": "The run was marked as unreliable.",
-    "unreliableTagTextFlags": "The run was marked unreliable because of the following flags"
+    "unreliableTagTextFlags": "The run was marked unreliable because of the following flags",
+    "phonics": {
+      "cvc": "CVC",
+      "digraph": "Digraph & Short Vowel",
+      "i_blend": "Initial blends & Short V",
+      "tri_blend": "Three C blends",
+      "f_blend": "Short V & Final blends",
+      "r_ctrl": "C & r-controlled & C",
+      "r_tri": "C & r-cluster",
+      "silent_e": "Silent e",
+      "vt": "Vowel teams"
+    }
   }
 }

@@ -19,6 +19,7 @@ import { exportCsv } from '@/helpers/query/utils';
 import { useAuthStore } from '@/store/auth';
 import { storeToRefs } from 'pinia';
 import RoarDataTable from '@/components/RoarDataTable';
+import { i18n } from '@/translations/i18n';
 
 const props = defineProps({
   administrationId: { type: String, required: true, default: '' },
@@ -102,6 +103,22 @@ const columns = computed(() => {
       { field: 'scores.pa.skills', header: 'Skills To Work On', dataType: 'text', sort: false },
     );
   }
+  if (props.taskId === 'phonics') {
+    const subcategories = ['cvc', 'digraph', 'i_blend', 'tri_blend', 'f_blend', 'r_ctrl', 'r_tri', 'silent_e', 'vt'];
+    const subcategoryColumns = subcategories.map((category) => ({
+      field: `scores.phonics.subscores.${category}.percentCorrect`,
+      header: i18n.t(`scoreReports.phonics.${category}`),
+      dataType: 'text',
+      sort: false,
+    }));
+    tableColumns.push(...subcategoryColumns);
+    tableColumns.push({
+      field: 'scores.phonics.skillsToWorkOn',
+      header: 'Skills To Work On',
+      dataType: 'text',
+      sort: false,
+    });
+  }
   if (['fluency-calf', 'fluency-arf', 'fluency-calf-es', 'fluency-arf-es'].includes(props.taskId)) {
     tableColumns.push(
       { field: `scores.${props.taskId}.fr`, header: 'Free Response', dataType: 'text', sort: false },
@@ -133,6 +150,13 @@ const exportSelected = (selectedRows) => {
       _set(tableRow, 'Deletion', _get(scores, 'pa.deletion'));
       _set(tableRow, 'Total', _get(scores, 'pa.total'));
       _set(tableRow, 'Skills To Work On', _get(scores, 'pa.skills'));
+    } else if (props.taskId === 'phonics') {
+      const subcategories = ['cvc', 'digraph', 'i_blend', 'tri_blend', 'f_blend', 'r_ctrl', 'r_tri', 'silent_e', 'vt'];
+      subcategories.forEach((category) => {
+        const displayName = i18n.t(`scoreReports.phonics.${category}`);
+        _set(tableRow, displayName, _get(scores, `phonics.subscores.${category}.percentCorrect`));
+      });
+      _set(tableRow, 'Skills To Work On', _get(scores, 'phonics.skillsToWorkOn'));
     }
     if (['fluency-calf', 'fluency-arf', 'fluency-calf-es', 'fluency-arf-es'].includes(props.taskId)) {
       _set(tableRow, 'Free Response', _get(scores, `${props.taskId}.fr`));
@@ -165,6 +189,13 @@ const exportAll = async () => {
       _set(tableRow, 'Deletion', _get(scores, 'pa.deletion'));
       _set(tableRow, 'Total', _get(scores, 'pa.total'));
       _set(tableRow, 'Skills To Work On', _get(scores, 'pa.skills'));
+    } else if (props.taskId === 'phonics') {
+      const subcategories = ['cvc', 'digraph', 'i_blend', 'tri_blend', 'f_blend', 'r_ctrl', 'r_tri', 'silent_e', 'vt'];
+      subcategories.forEach((category) => {
+        const displayName = i18n.t(`scoreReports.phonics.${category}`);
+        _set(tableRow, displayName, _get(scores, `phonics.subscores.${category}.percentCorrect`));
+      });
+      _set(tableRow, 'Skills To Work On', _get(scores, 'phonics.skillsToWorkOn'));
     } else if (['fluency-calf', 'fluency-arf', 'fluency-calf-es', 'fluency-arf-es'].includes(props.taskId)) {
       _set(tableRow, 'Free Response', _get(scores, `${props.taskId}.fr`));
       _set(tableRow, 'Multiple Choice', _get(scores, `${props.taskId}.fc`));
