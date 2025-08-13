@@ -110,7 +110,6 @@ const columns = computed(() => {
     );
   }
   if (props.taskId === 'roam-alpaca') {
-    const subPercentCorrect = `scores.${props.taskId}.subPercentCorrect`;
     const gradeEstimate = `scores.${props.taskId}.gradeEstimate`;
     tableColumns.push({
       field: `scores.${props.taskId}.roarScore.score`,
@@ -126,7 +125,6 @@ const columns = computed(() => {
         dataType: 'text',
         sort: false,
         tagColor: `scores.${props.taskId}.${subskill}.tagColor`,
-        ...(subPercentCorrect && { subPercentCorrect }),
         ...(gradeEstimate && { gradeEstimate }),
       });
     });

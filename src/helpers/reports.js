@@ -1,5 +1,4 @@
 import html2canvas from 'html2canvas';
-import _round from 'lodash/round';
 import { getGrade } from '@bdelab/roar-utils';
 /*
  *  Task Display Names
@@ -812,17 +811,6 @@ export const getRawScoreRange = (taskId) => {
   }
   return null;
 };
-
-export function addTooltipIfExists(tooltip, object, key, label) {
-  if (object && object[key] != null) {
-    let value = object[key];
-    if (!isNaN(Number(value))) {
-      value = _round(Number(value), 2);
-    }
-    return tooltip + `${label}: ${value}\n`;
-  }
-  return tooltip;
-}
 
 export const taskInfoById = {
   swr: {

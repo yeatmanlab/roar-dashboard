@@ -6,7 +6,6 @@ import {
   getScoreKeys,
   getRawScoreThreshold,
   getRawScoreRange,
-  addTooltipIfExists,
   getTagColor,
   supportLevelColors,
 } from './reports';
@@ -238,32 +237,6 @@ describe('reports', () => {
       await addElementToPdf(element, mockDocument, yCounter);
 
       expect(mockDocument.addPage).toHaveBeenCalled();
-    });
-  });
-
-  describe('addTooltipIfExists', () => {
-    it('should return tooltip for existent attributes', () => {
-      const subskillInfo = { gradeEstimate: 1, subPercentCorrect: 2 };
-
-      let tooltip = addTooltipIfExists('', subskillInfo, 'gradeEstimate', 'Grade Estimate');
-      expect(tooltip).toBe('Grade Estimate: 1\n');
-
-      tooltip = addTooltipIfExists(tooltip, subskillInfo, 'subPercentCorrect', 'Sub-Percent Correct');
-      expect(tooltip).toBe('Grade Estimate: 1\nSub-Percent Correct: 2\n');
-    });
-
-    it('should round number attributes for tooltip', () => {
-      const subskillInfo = { subPercentCorrect: 2.1234123 };
-
-      let tooltip = addTooltipIfExists('', subskillInfo, 'subPercentCorrect', 'Sub-Percent Correct');
-      expect(tooltip).toBe('Sub-Percent Correct: 2.12\n');
-    });
-
-    it('should not add attribute to tooltip for non-existent ones', () => {
-      const subskillInfo = { subPercentCorrect: 2 };
-
-      let tooltip = addTooltipIfExists('', subskillInfo, 'gradeEstimate', 'Grade Estimate');
-      expect(tooltip).toBe('');
     });
   });
 
