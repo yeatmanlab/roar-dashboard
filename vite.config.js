@@ -25,7 +25,7 @@ export default defineConfig({
       },
     }),
     UnheadVite(),
-    ...(process.env.NODE_ENV === 'development' ? [mkcert()] : []),
+    ...(process.env.VITE_HTTPS === 'TRUE' ? [mkcert()] : []),
     ...(process.env.NODE_ENV !== 'development'
       ? [
           sentryVitePlugin({
@@ -46,6 +46,7 @@ export default defineConfig({
     fs: {
       allow: ['..'],
     },
+    https: process.env.VITE_HTTPS === 'TRUE',
   },
 
   build: {
