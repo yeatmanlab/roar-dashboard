@@ -129,7 +129,7 @@ const columns = computed(() => {
       });
     });
     tableColumns.push({
-      field: `scores.${props.taskId}.incorrectSkills`,
+      field: `scores.${props.taskId}.composite.incorrectSkills`,
       header: 'Skills To Work On',
       dataType: 'text',
       sort: false,
@@ -166,11 +166,11 @@ const exportSelected = (selectedRows) => {
       _set(tableRow, 'Multiple Choice', _get(scores, `${props.taskId}.fc`));
     }
     if (props.taskId === 'roam-alpaca') {
-      _set(tableRow, 'Roar Score', _get(scores, `${props.taskId}.roarScore.score`));
+      _set(tableRow, 'Roar Score', _get(scores, `${props.taskId}.composite.roarScore`));
       Object.keys(roamAlpacaSubskills).forEach((subskill) => {
         _set(tableRow, roamAlpacaSubskills[subskill], _get(scores, `${props.taskId}.${subskill}.score`));
       });
-      _set(tableRow, 'Skills To Work On', _get(scores, `${props.taskId}.incorrectSkills`));
+      _set(tableRow, 'Skills To Work On', _get(scores, `${props.taskId}.composite.incorrectSkills`));
     }
     return tableRow;
   });
@@ -204,10 +204,10 @@ const exportAll = async () => {
       _set(tableRow, 'Multiple Choice', _get(scores, `${props.taskId}.fc`));
     } else if (props.taskId === 'roam-alpaca') {
       Object.keys(roamAlpacaSubskills).forEach((subskill) => {
-        _set(tableRow, 'Raw Score', _get(scores, `${props.taskId}.roarScore.score`));
+        _set(tableRow, 'Raw Score', _get(scores, `${props.taskId}.composite.roarScore`));
         _set(tableRow, roamAlpacaSubskills[subskill], _get(scores, `${props.taskId}.${subskill}.score`));
       });
-      _set(tableRow, 'Skills To Work On', _get(scores, `${props.taskId}.incorrectSkills`));
+      _set(tableRow, 'Skills To Work On', _get(scores, `${props.taskId}.composite.incorrectSkills`));
     }
     return tableRow;
   });

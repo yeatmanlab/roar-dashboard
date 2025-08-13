@@ -59,18 +59,17 @@ defineProps({
 let returnScoreTooltip = (colData, fieldPath) => {
   const pathSegments = fieldPath.split('.');
   const taskId = pathSegments[0] === 'scores' ? pathSegments[1] : null;
-
-  // Subskill fieldPaths are formatted as scores.taskId.subskillId.scores
+  // Subskill fieldPaths are formatted as scores.taskId.subskillId[property]
   const subskillId = pathSegments.length > 3 ? pathSegments[2] : null;
   let toolTip = '';
 
   if (subskillTasks.includes(taskId) && subskillId) {
+    if (taskId === 'roam-alpaca' && subskillId === 'composite' && pathSegments[3] === 'incorrectSkills') {
+      return toolTip;
+    }
     return handleSubskillToolTip(taskId, subskillId, toolTip, colData);
-  } else if (colData.scores[taskId]?.supportLevel) {
-    // Handle scored tasks
-    return handleToolTip(taskId, toolTip, colData);
-  } else if (taskId && !scoredTasks.includes(taskId)) {
-    // Handle raw only tasks
+  } else if (colData.scores[taskId]?.supportLevel || (taskId && !scoredTasks.includes(taskId))) {
+    // Handle raw only tasks or scored tasks
     return handleToolTip(taskId, toolTip, colData);
   }
   return toolTip;
