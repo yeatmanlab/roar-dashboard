@@ -1030,7 +1030,7 @@ const createExportData = ({ rows, includeProgress = false }) => {
         tableRow[`${taskName} - Num Attempted`] = score.numAttempted;
         tableRow[`${taskName} - Raw`] = score.rawScore;
         tableRow[`${taskName} - Grade Estimate`] = score.gradeEstimate;
-        tableRow[`${taskName} - Support Level`] = score.supportCategory;
+        tableRow[`${taskName} - Support Level`] = score.supportLevel;
       } else {
         tableRow[`${taskName} - Percentile`] = score.percentileString;
         tableRow[`${taskName} - Standard`] = score.standardScore;
