@@ -117,13 +117,15 @@ for (const [filePath, mod] of Object.entries(modules)) {
       const langCode = (parts[0] || locale).toLowerCase();
       const regionCode = (parts[1] || '').toUpperCase();
 
-      // Use English for consistent display naming across app locales
-      const displayLocale = 'en';
-      const langNames = new (window as any).Intl.DisplayNames([displayLocale], { type: 'language' });
-      const regionNames = new (window as any).Intl.DisplayNames([displayLocale], { type: 'region' });
+      // Language autonym (language name in its own language) with English fallback
+      const langNames = new (window as any).Intl.DisplayNames([langCode, 'en'], { type: 'language' });
+      // Region name in English for consistency
+      const regionNames = new (window as any).Intl.DisplayNames(['en'], { type: 'region' });
 
-      const rawLangName = (langNames.of(langCode) as string | undefined) || langCode;
-      const langName = rawLangName.charAt(0).toUpperCase() + rawLangName.slice(1);
+      const langNameRaw = (langNames.of(langCode) as string | undefined) || langCode;
+      const langName = /^[a-z]/.test(langNameRaw)
+        ? langNameRaw.charAt(0).toLocaleUpperCase(langCode) + langNameRaw.slice(1)
+        : langNameRaw;
       const regionName = regionCode ? (regionNames.of(regionCode) as string | undefined) : undefined;
 
       displayName = regionName ? `${langName} (${regionName})` : langName;
