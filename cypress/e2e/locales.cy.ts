@@ -67,7 +67,8 @@ locales.forEach((locale) => {
       // ensure signin page shows inputs
       cy.get('input').should('have.length.at.least', 2);
       if (skipLoginFlag) {
-        // Only verify sign-in page renders for this locale
+        // Only verify sign-in page renders for this locale (no auth calls)
+        cy.contains(/sign in|sign-in|login/i).should('exist');
         return;
       }
       login();
