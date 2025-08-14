@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+set -x
 
 PORT=5173
 EMU_UI_PORT=4001
@@ -63,21 +64,25 @@ for i in $(seq 1 60); do
   curl -sSf http://localhost:${PORT}/signin >/dev/null && break || sleep 1
 done
 
-# Seed emulator user (idempotent)
-curl -sS -X POST \
-  -H 'Content-Type: application/json' \
-  -d '{"email":"student@levante.test","password":"student123","returnSecureToken":true}' \
-  "http://127.0.0.1:${AUTH_PORT}/identitytoolkit.googleapis.com/v1/accounts:signUp?key=dummy" \
-  >/dev/null 2>&1 || true
+SEED="${E2E_SEED:-FALSE}"
+if [ "$SEED" = "TRUE" ] || [ "$SEED" = "true" ]; then
+  # Seed emulator user (idempotent)
+  curl -sS -X POST \
+    -H 'Content-Type: application/json' \
+    -d '{"email":"student@levante.test","password":"student123","returnSecureToken":true}' \
+    "http://127.0.0.1:${AUTH_PORT}/identitytoolkit.googleapis.com/v1/accounts:signUp?key=dummy" \
+    >/dev/null 2>&1 || true
+fi
 
 # Run Cypress locales emulator spec
 E2E_USE_ENV=TRUE \
 E2E_BASE_URL="http://localhost:${PORT}/signin" \
 E2E_TEST_EMAIL=student@levante.test \
 E2E_TEST_PASSWORD=student123 \
-./node_modules/.bin/cypress run --e2e --spec "cypress/e2e/locales-emulator.cy.ts" || code=$?
-
-code=${code:-0}
+set +e
+./node_modules/.bin/cypress run --e2e --spec "cypress/e2e/locales-emulator.cy.ts"
+code=$?
+set -e
 
 if [ "$code" -ne 0 ]; then
   echo '--- Vite last lines ---'
