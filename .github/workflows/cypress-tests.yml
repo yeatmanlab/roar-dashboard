@@ -38,9 +38,12 @@ jobs:
           browser: chrome
           start: npm run dev:db
           spec: cypress/e2e/**/!(locales*).cy.ts
+        env:
+          E2E_USE_ENV: 'TRUE'
+          E2E_BASE_URL: 'https://localhost:5173/signin'
 
   cypress-locales-emulator:
-    if: github.event_name == 'pull_request'
+    if: ${{ env.RUN_LOCALES_EMU == 'TRUE' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code

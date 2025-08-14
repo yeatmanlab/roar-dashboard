@@ -7,11 +7,20 @@ const useEnvFlag: boolean = (() => {
 })();
 
 const defaultUrl = 'https://localhost:5173/signin';
+
+function normalizeUrl(url: string): string {
+  try {
+    const u = new URL(url);
+    return u.toString();
+  } catch {
+    return `https://localhost:5173/signin`;
+  }
+}
 const defaultEmail = 'quqa2y1jss@levante.com';
 const defaultPassword = 'xbqamkqc7z';
 
 const dashboardUrl: string = useEnvFlag
-  ? ((Cypress.env('E2E_BASE_URL') as string) || defaultUrl)
+  ? normalizeUrl(((Cypress.env('E2E_BASE_URL') as string) || defaultUrl))
   : defaultUrl;
 const username: string = useEnvFlag
   ? ((Cypress.env('E2E_TEST_EMAIL') as string) || defaultEmail)
