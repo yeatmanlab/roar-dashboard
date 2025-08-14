@@ -32,10 +32,18 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-node-
 
-      - name: Run core tasks against emulator
-        run: |
-          export E2E_SPEC=cypress/e2e/testTasks.cy.ts
-          bash scripts/e2e-locales-emulator.sh
+      - name: Run cypress tests (exclude locales)
+        uses: cypress-io/github-action@v6
+        with:
+          browser: chrome
+          start: npm run dev:db
+          wait-on: 'https://localhost:5173'
+          wait-on-timeout: 120
+        env:
+          E2E_USE_ENV: 'TRUE'
+          E2E_BASE_URL: 'https://localhost:5173/signin'
+          E2E_TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
+          E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
 
   cypress-locales-emulator:
     if: ${{ false }}
