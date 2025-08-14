@@ -13,7 +13,7 @@ function normalizeUrl(url: string): string {
     const u = new URL(url);
     return u.toString();
   } catch {
-    return `https://localhost:5173/signin`;
+    return 'https://localhost:5173/signin';
   }
 }
 const defaultEmail = 'quqa2y1jss@levante.com';
@@ -63,6 +63,11 @@ function startTask(tasksRemaining: number) {
 
 describe('test core tasks from dashboard', () => {
   it('logs in to the dashboard and begins each task', () => {
+    // Debug: log the credentials being used
+    cy.log('Using URL: ' + dashboardUrl);
+    cy.log('Using email: ' + username);
+    cy.log('UseEnvFlag: ' + useEnvFlag);
+    
     cy.visit(dashboardUrl);
 
     // input username
@@ -82,6 +87,9 @@ describe('test core tasks from dashboard', () => {
     // click go button
     cy.get('button').filter('[data-pc-name=button]').click();
 
+    // wait a moment for login to process
+    cy.wait(2000);
+    
     // ensure we navigated away from /signin (fail fast if login didn't work)
     cy.location('pathname', { timeout: 30000 }).should((p) => expect(p).to.not.match(/\/signin$/));
 
