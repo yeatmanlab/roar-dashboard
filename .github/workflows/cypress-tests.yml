@@ -43,8 +43,8 @@ jobs:
           E2E_USE_ENV: 'TRUE'
           E2E_BASE_URL: 'http://localhost:5173/signin'
           VITE_HTTPS: 'FALSE'
-          E2E_TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
-          E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
+          E2E_TEST_EMAIL: ${{ secrets.PARTICIPANT_EMAIL }}
+          E2E_TEST_PASSWORD: ${{ secrets.PARTICIPANT_PASSWORD }}
 
   cypress-locales-emulator:
     if: ${{ false }}
