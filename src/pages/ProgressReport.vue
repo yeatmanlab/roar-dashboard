@@ -275,7 +275,7 @@ const computedProgressData = computed(() => {
 
   for (const { assignment, user } of assignmentData.value) {
     // for each row, compute: username, firstName, lastName, assessmentPID, grade, school, all the scores, and routeParams for report link
-    const grade = user.studentData?.grade;
+    const grade = String(assignment.userData?.grade);
     // compute schoolName
     let schoolName = '';
     const schoolId = user?.schools?.current[0];
