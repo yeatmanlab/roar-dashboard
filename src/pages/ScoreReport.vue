@@ -615,6 +615,7 @@ const computeAssignmentAndRunData = computed(() => {
     const assignmentTableDataAcc = [];
     // runsByTaskId is an object with keys as taskIds and values as arrays of scores
     const runsByTaskIdAcc = {};
+
     for (const { assignment, user } of assignmentData.value) {
       // for each row, compute: username, firstName, lastName, assessmentPID, grade, school, all the scores, and routeParams for report link
       const grade = String(user.studentData?.grade);
