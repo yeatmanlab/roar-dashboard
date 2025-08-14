@@ -40,48 +40,76 @@ for p in "$PORT" "$EMU_UI_PORT" "$AUTH_PORT" "$FS_PORT"; do
 done
 
 # Start Firebase emulators (auth + firestore)
-if ! ./node_modules/.bin/firebase emulators:start \
+echo "Starting Firebase emulators..."
+./node_modules/.bin/firebase emulators:start \
   --only auth,firestore \
   --project levante-admin-dev \
   --config firebase.json \
   > /tmp/firebase-emu.log 2>&1 &
-then
-  echo "Failed to start Firebase emulators"
-  exit 1
-fi
-echo $! > /tmp/firebase.pid
+firebase_pid=$!
+echo $firebase_pid > /tmp/firebase.pid
+echo "Firebase emulators started with PID $firebase_pid"
 
 # Start Vite dev server over HTTP with emulator enabled, locked to 5173
-if ! VITE_HTTPS=FALSE \
+echo "Starting Vite dev server..."
+VITE_HTTPS=FALSE \
 VITE_LEVANTE=TRUE \
 VITE_FIREBASE_PROJECT=DEV \
 VITE_EMULATOR=TRUE \
 ./node_modules/.bin/vite --force --host --port "$PORT" \
   > /tmp/vite.log 2>&1 &
-then
-  echo "Failed to start Vite dev server"
-  exit 1
-fi
-echo $! > /tmp/vite.pid
+vite_pid=$!
+echo $vite_pid > /tmp/vite.pid
+echo "Vite dev server started with PID $vite_pid"
 
 # Wait for Firebase Emulator UI and Vite to be ready
 echo "Waiting for Firebase Emulator UI on port ${EMU_UI_PORT}..."
+firebase_ready=false
 for i in $(seq 1 60); do
+  if ! kill -0 $firebase_pid 2>/dev/null; then
+    echo "Firebase emulator process died"
+    echo "--- Firebase emulator log ---"
+    tail -n 50 /tmp/firebase-emu.log || true
+    exit 1
+  fi
   if curl -sSf http://127.0.0.1:${EMU_UI_PORT} >/dev/null 2>&1; then
     echo "Firebase Emulator UI ready"
+    firebase_ready=true
     break
   fi
   sleep 1
 done
 
+if [ "$firebase_ready" = "false" ]; then
+  echo "Firebase emulator failed to become ready within 60 seconds"
+  echo "--- Firebase emulator log ---"
+  tail -n 50 /tmp/firebase-emu.log || true
+  exit 1
+fi
+
 echo "Waiting for Vite dev server on port ${PORT}..."
+vite_ready=false
 for i in $(seq 1 60); do
+  if ! kill -0 $vite_pid 2>/dev/null; then
+    echo "Vite dev server process died"
+    echo "--- Vite log ---"
+    tail -n 50 /tmp/vite.log || true
+    exit 1
+  fi
   if curl -sSf http://localhost:${PORT} >/dev/null 2>&1; then
     echo "Vite dev server ready"
+    vite_ready=true
     break
   fi
   sleep 1
 done
+
+if [ "$vite_ready" = "false" ]; then
+  echo "Vite dev server failed to become ready within 60 seconds"
+  echo "--- Vite log ---"
+  tail -n 50 /tmp/vite.log || true
+  exit 1
+fi
 
 SEED="${E2E_SEED:-FALSE}"
 if [ "$SEED" = "TRUE" ] || [ "$SEED" = "true" ]; then
