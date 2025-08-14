@@ -600,6 +600,9 @@ export function getGradeWithSuffix(grade) {
  *  Function to take scores, taskId, and grade and return the proper support category for the run.
  */
 export const getDialColor = (grade, percentile, rawScore, taskId) => {
+  if (taskId === 'phonics') {
+    return 'var(--gray-500)';
+  }
   const { tag_color } = getSupportLevel(grade, percentile, rawScore, taskId);
   return tag_color;
 };
