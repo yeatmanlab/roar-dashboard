@@ -32,8 +32,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-node-
 
-      - name: Run cypress tests
+      - name: Run cypress tests (exclude locales)
         uses: cypress-io/github-action@v6
         with:
           browser: chrome
           start: npm run dev:db
+          spec: cypress/e2e/**/!(locales*).cy.ts

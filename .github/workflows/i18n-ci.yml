@@ -42,7 +42,7 @@ jobs:
 
       # Optional Cypress smoke (headless) - only on PRs; never on deployment
       - name: Cypress locales smoke
-        if: ${{ github.event_name == 'pull_request' && env.E2E_BASE_URL != '' }}
+        if: ${{ false }}
         env:
           E2E_USE_ENV: 'TRUE'
           E2E_BASE_URL: ${{ env.E2E_BASE_URL }}

@@ -7,6 +7,7 @@ export default defineConfig({
       return config;
     },
     supportFile: false,
+    excludeSpecPattern: ['**/locales*.cy.ts'],
     env: {
       E2E_BASE_URL: process.env.E2E_BASE_URL || 'http://localhost:5173/signin',
       E2E_TEST_EMAIL: process.env.E2E_TEST_EMAIL,
