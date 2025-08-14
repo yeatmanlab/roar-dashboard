@@ -6,14 +6,14 @@ const useEnvFlag: boolean = (() => {
   return v === true || v === 'TRUE' || v === 'true' || v === 1 || v === '1';
 })();
 
-const defaultUrl = 'http://localhost:5173/signin';
+const defaultUrl = 'https://localhost:5173/signin';
 
 function normalizeUrl(url: string): string {
   try {
     const u = new URL(url);
     return u.toString();
   } catch {
-    return 'http://localhost:5173/signin';
+    return 'https://localhost:5173/signin';
   }
 }
 const defaultEmail = 'quqa2y1jss@levante.com';
