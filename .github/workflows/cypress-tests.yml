@@ -10,7 +10,6 @@ on:
 
 jobs:
   cypress-tests:
-    if: false  # Temporarily disabled until credentials are resolved
     runs-on: ubuntu-latest
 
     steps:
