@@ -10,6 +10,7 @@ on:
 
 jobs:
   cypress-tests:
+    if: false  # Temporarily disabled until credentials are resolved
     runs-on: ubuntu-latest
 
     steps:
@@ -39,6 +40,7 @@ jobs:
           start: npm run dev:db
           wait-on: 'http://localhost:5173'
           wait-on-timeout: 120
+
         env:
           E2E_USE_ENV: 'TRUE'
           E2E_BASE_URL: 'http://localhost:5173/signin'
