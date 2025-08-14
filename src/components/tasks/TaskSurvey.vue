@@ -1,13 +1,18 @@
 <template>
-  <div id="jspsych-target" class="game-target" translate="no" />
-  <div v-if="!gameStarted" class="col-full text-center">
+  <div v-if="!appKit || !userParams || !gameParams" class="col-full text-center">
     <h1>{{ $t('tasks.preparing') }}</h1>
     <AppSpinner />
   </div>
+  <SurveyRunner
+    v-else
+    :appkit="appKit"
+    :user-params="userParams"
+    :game-params="gameParams"
+    @complete-survey="handleCompleteSurvey"
+  />
 </template>
-
 <script setup>
-import { onMounted, watch, ref, onBeforeUnmount } from 'vue';
+import { onMounted, onBeforeUnmount, watch, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import _get from 'lodash/get';
@@ -15,25 +20,28 @@ import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
 import useUserStudentDataQuery from '@/composables/queries/useUserStudentDataQuery';
 import packageLockJson from '../../../package-lock.json';
+import SurveyRunner from '@bdelab/roar-survey';
 
 const props = defineProps({
-  taskId: { type: String, default: 'egma-math' },
-  launchId: { type: String, default: null },
+  taskId: { type: String, required: true, default: 'swr' },
+  language: { type: String, required: true, default: 'en' },
+  launchId: { type: String, required: false, default: null },
 });
 
-let levanteTaskLauncher;
+const userParams = ref(null);
+const gameParams = ref(null);
 
 const taskId = props.taskId;
-const { version } = packageLockJson.packages['node_modules/@bdelab/roar-levante-tasks'];
+const version = packageLockJson.packages['node_modules/@bdelab/roar-survey'].version;
 const router = useRouter();
 const taskStarted = ref(false);
-const gameStarted = ref(false);
 const authStore = useAuthStore();
 const gameStore = useGameStore();
 const { isFirekitInit, roarfirekit } = storeToRefs(authStore);
 
 const initialized = ref(false);
 let unsubscribe;
+const appKit = ref(null);
 const init = () => {
   if (unsubscribe) unsubscribe();
   initialized.value = true;
@@ -61,13 +69,6 @@ window.addEventListener(
 );
 
 onMounted(async () => {
-  try {
-    let module = await import('@bdelab/roar-levante-tasks');
-    levanteTaskLauncher = module.TaskLauncher;
-  } catch (error) {
-    console.error('An error occurred while importing the game module.', error);
-  }
-
   if (roarfirekit.value.restConfig?.()) init();
 });
 
@@ -93,40 +94,19 @@ watch(
 
 async function startTask(selectedAdmin) {
   try {
-    // Move interval to component scope for cleanup
-    if (checkGameStarted) clearInterval(checkGameStarted);
-    checkGameStarted = setInterval(function () {
-      // Poll for the preload trials progress bar to exist and then begin the game
-      let gameLoading = document.querySelector('.jspsych-content-wrapper');
-      if (gameLoading) {
-        gameStarted.value = true;
-        clearInterval(checkGameStarted);
-      }
-    }, 100);
-
-    const appKit = await authStore.roarfirekit.startAssessment(selectedAdmin.value.id, taskId, version, props.launchId);
+    appKit.value = await authStore.roarfirekit.startAssessment(selectedAdmin.value.id, taskId, version, props.launchId);
 
     const userDob = _get(userData.value, 'studentData.dob');
     const userDateObj = new Date(userDob);
 
-    const userParams = {
+    userParams.value = {
       grade: _get(userData.value, 'studentData.grade'),
       birthMonth: userDateObj.getMonth() + 1,
       birthYear: userDateObj.getFullYear(),
+      language: props.language,
     };
 
-    const gameParams = { ...appKit._taskInfo.variantParams };
-
-    const levanteTask = new levanteTaskLauncher(appKit, gameParams, userParams, 'jspsych-target');
-
-    await levanteTask.run().then(async () => {
-      // Handle any post-game actions.
-      await authStore.completeAssessment(selectedAdmin.value.id, taskId, props.launchId);
-
-      // Navigate to home, but first set the refresh flag to true.
-      gameStore.requireHomeRefresh();
-      router.push({ name: 'Home' });
-    });
+    gameParams.value = { ...appKit.value._taskInfo.variantParams };
   } catch (error) {
     console.error('An error occurred while starting the task:', error);
     alert(
@@ -134,19 +114,32 @@ async function startTask(selectedAdmin) {
     );
   }
 }
+
+async function handleCompleteSurvey() {
+  try {
+    const { selectedAdmin } = storeToRefs(gameStore);
+    await authStore.completeAssessment(selectedAdmin.value.id, taskId, props.launchId);
+    gameStore.requireHomeRefresh();
+    // if session is externally launched, return instead fo participant home
+    if (props.launchId) {
+      router.push({ name: 'LaunchParticipant', params: { launchId: props.launchId } });
+    }
+    // Navigate to home, but first set the refresh flag to true.
+    else {
+      router.push({ name: 'Home' });
+    }
+  } catch (error) {
+    console.error('An error occurred while completing the survey:', error);
+    alert(
+      'An error occurred while completing the survey. Please refresh the page and try again. If the error persists, please submit an issue report.',
+    );
+  }
+}
 </script>
 
 <style>
-@import '@bdelab/roar-levante-tasks/lib/resources/core-tasks.css';
-
-.game-target {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-}
-.game-target:focus {
-  outline: none;
+@import '@bdelab/roar-survey/lib/roar-survey.css';
+.sd-root-modern__wrapper {
+  margin: auto;
 }
 </style>

@@ -771,7 +771,6 @@ const preTransformStudents = () => {
     }
     transformedStudents.push(transformedStudent);
   }
-  console.log('all transformed students', transformedStudents);
   mappedStudents.value = transformedStudents;
   showSubmitTable.value = true;
 };
@@ -839,7 +838,7 @@ const transformStudentData = async (rawStudent) => {
         _set(transformedStudent, 'userData.districts', { id: studentDistrictId });
       } else {
         // TODO: display this gracefully on the UI.
-        console.log(`District ${districtName} not found.`);
+        console.error(`District ${districtName} not found.`);
       }
     }
 
@@ -850,7 +849,7 @@ const transformStudentData = async (rawStudent) => {
         _set(transformedStudent, 'userData.schools', { id: studentSchoolId });
       } else {
         // TODO: display this gracefully on the UI.
-        console.log(`School ${schoolName} not found.`);
+        console.error(`School ${schoolName} not found.`);
       }
     }
 
@@ -861,7 +860,7 @@ const transformStudentData = async (rawStudent) => {
         _set(transformedStudent, 'userData.classes', { id: classId });
       } else {
         // TODO: display this gracefully on the UI.
-        console.log(`Class ${className} not found.`);
+        console.error(`Class ${className} not found.`);
       }
     }
   } else {

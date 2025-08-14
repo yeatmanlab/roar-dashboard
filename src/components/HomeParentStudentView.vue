@@ -25,13 +25,6 @@
       </PvMessage>
     </div>
 
-    <div v-else-if="Object.keys(childrenAssignments).length === 0" class="p-3">
-      <PvMessage severity="info">
-        <div class="text-lg font-bold text-gray-600">No assignments available</div>
-        <div class="text-sm font-light text-gray-800">Please check back later.</div>
-      </PvMessage>
-    </div>
-
     <div
       v-else
       class="grid flex-wrap grid-cols-1 gap-4 w-full"
@@ -42,9 +35,19 @@
       }"
       data-cy="parent-homepage__students-grid"
     >
-      <template v-for="(assignments, userId) in childrenAssignments" :key="userId">
-        <StudentCard :assignments="assignments" :user-id="userId" :org-type="orgType" :org-id="orgId" />
-      </template>
+      <div v-if="Object.keys(childrenAssignments).length === 0" class="p-3">
+        <PvMessage severity="info" class="h-full">
+          <div class="text-lg font-bold text-gray-600">No assignments found</div>
+          <div class="text-sm font-light text-gray-800">
+            If you think something's not quite right, please report the issue to the ROAR team
+          </div>
+        </PvMessage>
+      </div>
+      <div v-else>
+        <template v-for="(assignments, userId) in childrenAssignments" :key="userId">
+          <StudentCard :assignments="assignments" :user-id="userId" :org-type="orgType" :org-id="orgId" />
+        </template>
+      </div>
       <article
         class="flex overflow-hidden p-8 mx-auto w-full max-w-3xl bg-gray-100 rounded border-gray-200 flex-column border-1"
       >

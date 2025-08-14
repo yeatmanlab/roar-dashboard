@@ -616,7 +616,7 @@ const computeAssignmentAndRunData = computed(() => {
 
     for (const { assignment, user } of assignmentData.value) {
       // for each row, compute: username, firstName, lastName, assessmentPID, grade, school, all the scores, and routeParams for report link
-      const grade = String(user.studentData?.grade);
+      const grade = String(assignment.userData?.grade);
       // compute schoolName. Use the schoolId from the assignment's assigningOrgs, as this should be correct even when the
       //   user is unenrolled. The assigningOrgs should be up to date and persistant. Fallback to the student's current schools.
       let schoolName = '';
@@ -659,11 +659,12 @@ const computeAssignmentAndRunData = computed(() => {
             if (!earliest) return assessment.startedOn;
             return assessment.startedOn < earliest ? assessment.startedOn : earliest;
           }, null) ?? null,
-        completionDate:
-          assignment.assessments.reduce((latest, assessment) => {
-            if (!latest) return assessment.completedOn;
-            return assessment.completedOn > latest ? assessment.completedOn : latest;
-          }, null) ?? null,
+        completionDate: assignment.completed
+          ? assignment.assessments.reduce((latest, assessment) => {
+              if (!latest) return assessment.completedOn;
+              return assessment.completedOn > latest ? assessment.completedOn : latest;
+            }, null) ?? null
+          : null,
         // compute and add scores data in next step as so
         // swr: { support_level: 'Needs Extra Support', percentile: 10, raw: 10, reliable: true, engagementFlags: {}},
       };
@@ -700,11 +701,11 @@ const computeAssignmentAndRunData = computed(() => {
         }
 
         const { percentileScoreKey, rawScoreKey, percentileScoreDisplayKey, standardScoreDisplayKey } =
-          getScoreKeysByRow(assessment, getGrade(_get(user, 'studentData.grade')));
+          getScoreKeysByRow(assessment, getGrade(grade));
         // compute and add scores data in next step as so
         const { support_level, tag_color, percentile, percentileString, standardScore, rawScore } =
           getScoresAndSupportFromAssessment({
-            grade: grade,
+            grade,
             assessment,
             percentileScoreKey,
             percentileScoreDisplayKey,
@@ -834,7 +835,7 @@ const computeAssignmentAndRunData = computed(() => {
           },
           taskId,
           user: {
-            grade: grade,
+            grade,
             schoolName: schoolsDictWithGrade.value[schoolId] ?? '0 Unknown School',
           },
           tag_color: tag_color,
