@@ -82,6 +82,9 @@ describe('test core tasks from dashboard', () => {
     // click go button
     cy.get('button').filter('[data-pc-name=button]').click();
 
+    // ensure we navigated away from /signin (fail fast if login didn't work)
+    cy.location('pathname', { timeout: 30000 }).should((p) => expect(p).to.not.match(/\/signin$/));
+
     // check that each task loads
     cy.get('[data-pc-section=tablist]', { timeout: 240000 })
       .children()
