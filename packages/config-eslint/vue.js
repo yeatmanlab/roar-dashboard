@@ -68,6 +68,7 @@ export const config = [
       sourceType: 'module',
     },
     rules: {
+      // @TODO: Re-enable and fix violations of the following rules
       'cypress/no-unnecessary-waiting': 'warn',
       'cypress/unsafe-to-chain-command': 'warn',
     },

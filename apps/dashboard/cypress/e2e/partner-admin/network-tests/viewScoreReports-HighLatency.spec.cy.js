@@ -37,7 +37,7 @@ describe('The partner admin can view score reports for a given administration.',
     clickScoreButton();
     cy.wait(Cypress.env('timeout'));
     cy.checkUserList(testUserList);
-    cy.wait(timeout);
+    cy.wait(Cypress.env('timeout'));
     checkAssignmentColumns(testAssignments);
   });
 });
