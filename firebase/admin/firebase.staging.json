@@ -5,7 +5,6 @@
   },
   "hosting": {
     "public": "dist",
-    "predeploy": ["node", "scripts/build_firebase_config.js", "staging"],
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
     "rewrites": [
       {

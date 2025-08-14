@@ -60,13 +60,6 @@ runs:
       run: |
         mkdir app
         cp -r roar-dashboard/dist app/dist
-        cp -r roar-dashboard/scripts app/scripts
-        cp roar-dashboard/firebase/admin/csp.template.json app/csp.template.json
-        # copy env-configs so build script can load dotenv files (optional; ignore if absent)
-        if [[ -d roar-dashboard/env-configs ]]; then
-          cp -r roar-dashboard/env-configs app/env-configs
-        fi
-        ls app
         case "${{ inputs.firebase-target }}" in
           "production")
             cp roar-dashboard/firebase/admin/firebase.production.json app/firebase.json
@@ -78,10 +71,7 @@ runs:
             cp roar-dashboard/firebase/admin/firebase.dev.json app/firebase.json
             ;;
         esac
-        cp roar-dashboard/package.json app/package.json
-        cp roar-dashboard/package-lock.json app/package-lock.json
         rm -rf roar-dashboard
-        npm ci --omit=dev --prefix app
         cd app && pwd && ls -la
 
     # Deploy application

@@ -75,3 +75,8 @@ runs:
         NODE_OPTIONS: '--max_old_space_size=8192'
       shell: bash
       run: npm run build -- --mode ${{ inputs.environment }}
+
+    - name: Build Firebase config
+      working-directory: roar-dashboard
+      shell: bash
+      run: node scripts/build_firebase_config.cjs ${{ inputs.environment }}
