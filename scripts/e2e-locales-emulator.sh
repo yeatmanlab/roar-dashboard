@@ -57,11 +57,22 @@ VITE_EMULATOR=TRUE \
 echo $! > /tmp/vite.pid
 
 # Wait for Firebase Emulator UI and Vite to be ready
+echo "Waiting for Firebase Emulator UI on port ${EMU_UI_PORT}..."
 for i in $(seq 1 60); do
-  curl -sSf http://127.0.0.1:${EMU_UI_PORT} >/dev/null && break || sleep 1
+  if curl -sSf http://127.0.0.1:${EMU_UI_PORT} >/dev/null 2>&1; then
+    echo "Firebase Emulator UI ready"
+    break
+  fi
+  sleep 1
 done
+
+echo "Waiting for Vite dev server on port ${PORT}..."
 for i in $(seq 1 60); do
-  curl -sSf http://localhost:${PORT}/signin >/dev/null && break || sleep 1
+  if curl -sSf http://localhost:${PORT} >/dev/null 2>&1; then
+    echo "Vite dev server ready"
+    break
+  fi
+  sleep 1
 done
 
 SEED="${E2E_SEED:-FALSE}"
