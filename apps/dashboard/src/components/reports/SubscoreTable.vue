@@ -120,7 +120,7 @@ const columns = computed(() => {
     });
     Object.keys(roamAlpacaSubskills).forEach((subskill) => {
       tableColumns.push({
-        field: `scores.${props.taskId}.${subskill}.score`,
+        field: `scores.${props.taskId}.${subskill}.percentCorrect`,
         header: roamAlpacaSubskills[subskill],
         dataType: 'text',
         sort: false,
