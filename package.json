@@ -14,6 +14,8 @@
     "deploy:dev": "npm run build:dev && npx firebase use levante-admin-dev && npx firebase deploy --only hosting --config levante-firebase.json",
     "deploy:prod": "npm run build:prod && npx firebase use levante-admin-prod && npx firebase deploy --only hosting --config firebase.json",
     "cypress:open": "cypress open",
+    "cypress:locales:emulator": "E2E_USE_ENV=TRUE E2E_BASE_URL=http://localhost:5173/signin E2E_TEST_EMAIL=student@levante.test E2E_TEST_PASSWORD=student123 npx cypress run --e2e --spec cypress/e2e/locales-emulator.cy.ts",
+    "e2e:locales:emulator": "bash scripts/e2e-locales-emulator.sh",
     "format": "prettier . --write --log-level=warn",
     "generate-pwa-assets": "pwa-assets-generator",
     "check-format": "prettier . --check",
