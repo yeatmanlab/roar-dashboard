@@ -557,7 +557,7 @@ export const roamAlpacaSubskills = {
 export const roamAlpacaSubskillHeaders = {
   rawScore: 'Num Correct',
   totalNumAttempted: 'Num Attempted',
-  score: 'Percent Correct',
+  percentCorrect: 'Percent Correct',
   gradeEstimate: 'Grade Estimate',
   supportCategory: 'Support Category',
 };
