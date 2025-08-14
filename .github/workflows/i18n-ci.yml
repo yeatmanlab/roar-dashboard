@@ -40,7 +40,7 @@ jobs:
       - name: Build
         run: npm run build:dev
 
-      # Optional Cypress smoke (headless)
+      # Optional Cypress smoke (headless) - only on PRs; never on deployment
       - name: Cypress locales smoke
         if: ${{ github.event_name == 'pull_request' && env.E2E_BASE_URL != '' }}
         env:
