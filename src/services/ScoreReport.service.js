@@ -170,24 +170,13 @@ const ScoreReportService = (() => {
         'silent_e',
         'vt',
       ];
-      const skillsToWorkOn = [];
 
       // Add each subscore in the defined order
       subcategoryOrder.forEach((category) => {
         const stats = subscores[category] || {};
         const percentCorrect = stats.percentCorrect || 0;
         formattedScoresArray.push([i18n.t(`scoreReports.phonics.${category}`), percentCorrect, 0, 100]);
-
-        // If score is below 80%, add to skills to work on
-        if (percentCorrect < 80) {
-          skillsToWorkOn.push(i18n.t(`scoreReports.phonics.${category}`));
-        }
       });
-
-      // Add skills to work on
-      if (skillsToWorkOn.length > 0) {
-        formattedScoresArray.push([i18n.t('scoreReports.skillsToWorkOn'), skillsToWorkOn.join(', ')]);
-      }
     }
 
     // Special handling for letter tasks
