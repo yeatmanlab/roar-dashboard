@@ -60,9 +60,14 @@ runs:
       run: |
         mkdir app
         cp -r roar-dashboard/dist app/dist
+        # include firebase configs (templates & admin dir) so predeploy hooks find CSP template
+        cp -r roar-dashboard/firebase app/firebase
         cp -r roar-dashboard/scripts app/scripts
+        # copy env-configs so build script can load dotenv files (optional; ignore if absent)
+        if [[ -d roar-dashboard/env-configs ]]; then
+          cp -r roar-dashboard/env-configs app/env-configs
+        fi
         ls app
-        cat app/firebase.json
         case "${{ inputs.firebase-target }}" in
           "production")
             cp roar-dashboard/firebase/admin/firebase.production.json app/firebase.json
@@ -76,6 +81,8 @@ runs:
         esac
         rm -rf roar-dashboard
         cd app && pwd && ls -la
+        cat firebase.json
+        cat scripts/build_firebase_config.js
 
     # Deploy application
     # Note: Due to a bug in the FirebaseExtended/action-hosting-deploy action, it is not possible to use a conditional
@@ -85,6 +92,7 @@ runs:
       uses: FirebaseExtended/action-hosting-deploy@v0.9.0
       id: firebase-deploy
       with:
+        debug: true
         firebaseServiceAccount: '${{ env.GCP_HOSTING_SERVICE_ACCOUNT_KEY }}'
         repoToken: '${{ inputs.github-token }}'
         projectId: '${{ inputs.firebase-project-id }}'
@@ -94,6 +102,7 @@ runs:
       if: ${{ inputs.firebase-channel == 'default' }}
       uses: FirebaseExtended/action-hosting-deploy@v0.9.0
       with:
+        debug: true
         firebaseServiceAccount: '${{ env.GCP_HOSTING_SERVICE_ACCOUNT_KEY }}'
         projectId: '${{ inputs.firebase-project-id }}'
         channelId: 'live'
