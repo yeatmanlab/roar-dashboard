@@ -112,6 +112,10 @@ if [ "$vite_ready" = "false" ]; then
   exit 1
 fi
 
+# Additional wait for Vite to fully compile and serve the app
+echo "Waiting additional 10 seconds for Vite to fully compile..."
+sleep 10
+
 SEED="${E2E_SEED:-FALSE}"
 if [ "$SEED" = "TRUE" ] || [ "$SEED" = "true" ]; then
   # Seed emulator user (idempotent)
@@ -129,7 +133,7 @@ E2E_USE_ENV=TRUE \
 E2E_BASE_URL="http://localhost:${PORT}/signin" \
 E2E_TEST_EMAIL=student@levante.test \
 E2E_TEST_PASSWORD=student123 \
-./node_modules/.bin/cypress run --e2e --spec "$SPEC_PATH"
+./node_modules/.bin/cypress run --e2e --spec "$SPEC_PATH" --config baseUrl="http://localhost:${PORT}"
 code=$?
 
 if [ "$code" -ne 0 ]; then
