@@ -79,6 +79,7 @@ runs:
             ;;
         esac
         cp roar-dashboard/package.json app/package.json
+        cp roar-dashboard/package-lock.json app/package-lock.json
         rm -rf roar-dashboard
         npm ci --omit=dev --prefix app
         cd app && pwd && ls -la
