@@ -8,6 +8,8 @@
     "https://*.googletagmanager.com",
     "https://apis.google.com",
     "https://browser.sentry-cdn.com",
+    "https://cdn.jsdelivr.net/gh/EasyEyes/remote-calibrator@latest/",
+    "https://cdn.jsdelivr.net/npm/remote-calibrator@latest",
     "https://googletagmanager.com",
     "https://js.sentry-cdn.com",
     "https://tagmanager.google.com",
@@ -18,6 +20,7 @@
   "style-src": [
     "'self'",
     "'unsafe-inline'",
+    "https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/",
     "https://cdn.jsdelivr.net/npm/katex@0.16.8/",
     "https://fonts.googleapis.com",
     "https://googletagmanager.com",
@@ -28,6 +31,7 @@
     "data:",
     "https://*.google-analytics.com",
     "https://*.googletagmanager.com",
+    "https://eyetrackingdata.blob.core.windows.net/",
     "https://googletagmanager.com",
     "https://raw.githubusercontent.com/yeatmanlab/",
     "https://ssl.gstatic.com",
@@ -57,6 +61,7 @@
     "https://www.gstatic.com"
   ],
   "media-src": [
+    "https://eyetrackingdata.blob.core.windows.net/",
     "https://storage.googleapis.com/road-dashboard/",
     "https://storage.googleapis.com/roam-apps/",
     "https://storage.googleapis.com/roar-ak/",
@@ -81,7 +86,7 @@
     "https://storage.googleapis.com/roav-readaloud/",
     "https://storage.googleapis.com/trog/"
   ],
-  "font-src": ["'self'", "https://fonts.gstatic.com", "data:"],
+  "font-src": ["'self'", "https://storage.googleapis.com/roar-ak/font/", "https://fonts.gstatic.com", "data:"],
   "connect-src": [
     "'self'",
     "https://*.analytics.google.com",
@@ -92,7 +97,15 @@
     "https://firestore.googleapis.com",
     "https://identitytoolkit.googleapis.com",
     "https://raw.githubusercontent.com/yeatmanlab/",
-    "https://us-central1-__ADMIN_PROJECT_ID__.cloudfunctions.net/"
+    "https://tfhub.dev/mediapipe/tfjs-model/face_detection/full/1/group1-shard1of1.bin",
+    "https://tfhub.dev/mediapipe/tfjs-model/face_detection/full/1/model.json",
+    "https://tfhub.dev/mediapipe/tfjs-model/face_landmarks_detection/face_mesh/1/group1-shard1of1.bin",
+    "https://tfhub.dev/mediapipe/tfjs-model/face_landmarks_detection/face_mesh/1/model.json",
+    "https://us-central1-__ADMIN_PROJECT_ID__.cloudfunctions.net/",
+    "https://www.kaggle.com/models/mediapipe/face-detection/tfJs/full/1/group1-shard1of1.bin",
+    "https://www.kaggle.com/models/mediapipe/face-detection/tfJs/full/1/model.json",
+    "https://www.kaggle.com/models/mediapipe/face-landmarks-detection/tfJs/face-mesh/1/group1-shard1of1.bin",
+    "https://www.kaggle.com/models/mediapipe/face-landmarks-detection/tfJs/face-mesh/1/model.json"
   ],
   "frame-src": [
     "'self'",
