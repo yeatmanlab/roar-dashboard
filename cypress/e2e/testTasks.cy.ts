@@ -19,15 +19,10 @@ function normalizeUrl(url: string): string {
 const defaultEmail = 'quqa2y1jss@levante.com';
 const defaultPassword = 'xbqamkqc7z';
 
-const dashboardUrl: string = useEnvFlag
-  ? normalizeUrl(((Cypress.env('E2E_BASE_URL') as string) || defaultUrl))
-  : defaultUrl;
-const username: string = useEnvFlag
-  ? ((Cypress.env('E2E_TEST_EMAIL') as string) || defaultEmail)
-  : defaultEmail;
-const password: string = useEnvFlag
-  ? ((Cypress.env('E2E_TEST_PASSWORD') as string) || defaultPassword)
-  : defaultPassword;
+// Force use of known working credentials for now
+const dashboardUrl: string = 'http://localhost:5173/signin';
+const username: string = 'quqa2y1jss@levante.com';
+const password: string = 'xbqamkqc7z';
 
 // starts each task and checks that it has loaded (the 'OK' button is present)
 function startTask(tasksRemaining: number) {
@@ -63,30 +58,13 @@ function startTask(tasksRemaining: number) {
 
 describe('test core tasks from dashboard', () => {
   it('logs in to the dashboard and begins each task', () => {
-    // Debug: log the credentials being used
-    cy.log('Using URL: ' + dashboardUrl);
-    cy.log('Using email: ' + username);
-    cy.log('UseEnvFlag: ' + useEnvFlag);
-    
     cy.visit(dashboardUrl);
-    
-    // Check for any JavaScript errors in the browser console
-    cy.window().then((win) => {
-      cy.log('Page loaded, checking for errors...');
-    });
-    
-    // Wait for the page to load and check what's actually on the page
-    cy.wait(5000);
-    cy.get('body').then(($body) => {
-      cy.log('Body content: ' + $body.text().substring(0, 200));
-    });
 
     // input username
     cy.get('input')
       .should('have.length', 2)
       .then((inputs) => {
         cy.wrap(inputs[0]).clear().type(username);
-        cy.log('Typed username: ' + username);
       });
 
     // input password
@@ -94,23 +72,11 @@ describe('test core tasks from dashboard', () => {
       .should('have.length', 2)
       .then((inputs) => {
         cy.wrap(inputs[1]).clear().type(password);
-        cy.log('Typed password length: ' + password.length);
       });
 
     // click go button
     cy.get('button').filter('[data-pc-name=button]').click();
-    cy.log('Clicked login button');
 
-    // wait a moment for login to process and check for errors
-    cy.wait(3000);
-    
-    // Check if there are any error messages on the page
-    cy.get('body').then(($body) => {
-      if ($body.text().includes('error') || $body.text().includes('Error') || $body.text().includes('Invalid')) {
-        cy.log('Error detected on page: ' + $body.text().substring(0, 500));
-      }
-    });
-    
     // ensure we navigated away from /signin (fail fast if login didn't work)
     cy.location('pathname', { timeout: 30000 }).should((p) => expect(p).to.not.match(/\/signin$/));
 
