@@ -69,6 +69,17 @@ describe('test core tasks from dashboard', () => {
     cy.log('UseEnvFlag: ' + useEnvFlag);
     
     cy.visit(dashboardUrl);
+    
+    // Check for any JavaScript errors in the browser console
+    cy.window().then((win) => {
+      cy.log('Page loaded, checking for errors...');
+    });
+    
+    // Wait for the page to load and check what's actually on the page
+    cy.wait(5000);
+    cy.get('body').then(($body) => {
+      cy.log('Body content: ' + $body.text().substring(0, 200));
+    });
 
     // input username
     cy.get('input')
