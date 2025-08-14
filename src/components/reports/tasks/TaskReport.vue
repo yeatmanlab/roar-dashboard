@@ -17,21 +17,7 @@
       </PvAccordionTab>
     </PvAccordion>
   </div>
-  <!-- <div class="grid grid-cols-2 w-full space-around items-center p-3"> -->
-  <div v-if="taskId === 'phonics'" class="w-full">
-    <SubscoreTable
-      v-if="!isLoadingTasksDictionary"
-      task-id="phonics"
-      :task-name="tasksDictionary['phonics'].publicName"
-      :administration-id="administrationId"
-      :org-type="orgType"
-      :org-id="orgId"
-      :administration-name="administrationInfo.name ?? undefined"
-      :org-name="orgInfo.name ?? undefined"
-      :computed-table-data="computedTableData"
-    />
-  </div>
-  <div v-else-if="tasksToDisplayGraphs.includes(taskId)" :id="'tab-view-chart-' + taskId" class="chart-toggle-wrapper">
+  <div v-if="tasksToDisplayGraphs.includes(taskId)" :id="'tab-view-chart-' + taskId" class="chart-toggle-wrapper">
     <div v-if="orgType === 'district'" class="mb-3" data-html2canvas-ignore="true">
       <div class="flex uppercase text-xs font-light">view rows by</div>
       <PvSelectButton

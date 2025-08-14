@@ -12,7 +12,7 @@
 <script setup>
 import { computed, ref, onMounted } from 'vue';
 import { storeToRefs } from 'pinia';
-import { exportCsv } from '@/utils/exportCsv';
+import { exportCsv } from '@/helpers/query/utils';
 import _set from 'lodash/set';
 import _get from 'lodash/get';
 import _kebabCase from 'lodash/kebabCase';
@@ -101,46 +101,32 @@ const columns = computed(() => {
     const subcategories = [
       { field: 'cvc', header: 'CVC' },
       { field: 'digraph', header: 'Digraph' },
-      { field: 'i_blend', header: 'Initial Blend' },
+      { field: 'initial_blend', header: 'Initial Blend' },
       { field: 'tri_blend', header: 'Triple Blend' },
-      { field: 'f_blend', header: 'Final Blend' },
-      { field: 'r_ctrl', header: 'R-Controlled' },
-      { field: 'r_tri', header: 'R-Triple' },
+      { field: 'final_blend', header: 'Final Blend' },
+      { field: 'r_controlled', header: 'R-Controlled' },
+      { field: 'r_cluster', header: 'R-Cluster' },
       { field: 'silent_e', header: 'Silent E' },
-      { field: 'vt', header: 'Vowel Team' },
+      { field: 'vowel_team', header: 'Vowel Team' },
     ];
 
     // Add columns for each subcategory
     subcategories.forEach(({ field, header }) => {
       tableColumns.push({
         field: `scores.${props.taskId}.composite.subscores.${field}.percentCorrect`,
-        header: `${header} % Correct`,
+        header: `${header} (Correct/Attempted)`,
         dataType: 'number',
         sort: true,
       });
     });
 
-    // Add total scores
-    tableColumns.push(
-      {
-        field: `scores.${props.taskId}.composite.totalCorrect`,
-        header: 'Total Correct',
-        dataType: 'number',
-        sort: true,
-      },
-      {
-        field: `scores.${props.taskId}.composite.totalNumAttempted`,
-        header: 'Total Attempted',
-        dataType: 'number',
-        sort: true,
-      },
-      {
-        field: `scores.${props.taskId}.composite.totalPercentCorrect`,
-        header: 'Total % Correct',
-        dataType: 'number',
-        sort: true,
-      },
-    );
+    // Add total percentage
+    tableColumns.push({
+      field: `scores.${props.taskId}.composite.totalPercentCorrect`,
+      header: 'Total % Correct',
+      dataType: 'number',
+      sort: true,
+    });
   }
 
   if (props.taskId === 'pa') {
@@ -151,33 +137,6 @@ const columns = computed(() => {
       { field: 'scores.pa.total', header: 'Total', dataType: 'text', sort: false },
       { field: 'scores.pa.skills', header: 'Skills To Work On', dataType: 'text', sort: false },
     );
-  }
-  if (props.taskId === 'phonics') {
-    const subcategories = ['cvc', 'digraph', 'i_blend', 'tri_blend', 'f_blend', 'r_ctrl', 'r_tri', 'silent_e', 'vt'];
-    const headerMap = {
-      cvc: 'CVC',
-      digraph: 'Digraph',
-      i_blend: 'Initial Blend',
-      tri_blend: 'Triple Blend',
-      f_blend: 'Final Blend',
-      r_ctrl: 'R-Controlled',
-      r_tri: 'R-Triple',
-      silent_e: 'Silent E',
-      vt: 'Vowel Team',
-    };
-    const subcategoryColumns = subcategories.map((category) => ({
-      field: `scores.phonics.subscores.${category}.percentCorrect`,
-      header: headerMap[category],
-      dataType: 'number',
-      sort: true,
-    }));
-    tableColumns.push(...subcategoryColumns);
-    tableColumns.push({
-      field: 'scores.phonics.skillsToWorkOn',
-      header: 'Skills To Work On',
-      dataType: 'text',
-      sort: false,
-    });
   }
   if (['fluency-calf', 'fluency-arf', 'fluency-calf-es', 'fluency-arf-es'].includes(props.taskId)) {
     tableColumns.push(
@@ -211,12 +170,23 @@ const exportSelected = (selectedRows) => {
       _set(tableRow, 'Total', _get(scores, 'pa.total'));
       _set(tableRow, 'Skills To Work On', _get(scores, 'pa.skills'));
     } else if (props.taskId === 'phonics') {
-      const subcategories = ['cvc', 'digraph', 'i_blend', 'tri_blend', 'f_blend', 'r_ctrl', 'r_tri', 'silent_e', 'vt'];
+      const subcategories = [
+        'cvc',
+        'digraph',
+        'initial_blend',
+        'tri_blend',
+        'final_blend',
+        'r_controlled',
+        'r_cluster',
+        'silent_e',
+        'vowel_team',
+      ];
       subcategories.forEach((category) => {
         const displayName = t(`scoreReports.phonics.${category}`);
-        _set(tableRow, displayName, _get(scores, `phonics.subscores.${category}.percentCorrect`));
+        const subscore = _get(scores, `${props.taskId}.composite.subscores.${category}`);
+        _set(tableRow, displayName, subscore ? `${subscore.correct}/${subscore.attempted}` : '0/0');
       });
-      _set(tableRow, 'Skills To Work On', _get(scores, 'phonics.skillsToWorkOn'));
+      _set(tableRow, 'Skills To Work On', _get(scores, `${props.taskId}.skillsToWorkOn`));
     }
     if (['fluency-calf', 'fluency-arf', 'fluency-calf-es', 'fluency-arf-es'].includes(props.taskId)) {
       _set(tableRow, 'Free Response', _get(scores, `${props.taskId}.fr`));
@@ -250,12 +220,23 @@ const exportAll = async () => {
       _set(tableRow, 'Total', _get(scores, 'pa.total'));
       _set(tableRow, 'Skills To Work On', _get(scores, 'pa.skills'));
     } else if (props.taskId === 'phonics') {
-      const subcategories = ['cvc', 'digraph', 'i_blend', 'tri_blend', 'f_blend', 'r_ctrl', 'r_tri', 'silent_e', 'vt'];
+      const subcategories = [
+        'cvc',
+        'digraph',
+        'initial_blend',
+        'tri_blend',
+        'final_blend',
+        'r_controlled',
+        'r_cluster',
+        'silent_e',
+        'vowel_team',
+      ];
       subcategories.forEach((category) => {
         const displayName = t(`scoreReports.phonics.${category}`);
-        _set(tableRow, displayName, _get(scores, `phonics.subscores.${category}.percentCorrect`));
+        const subscore = _get(scores, `${props.taskId}.composite.subscores.${category}`);
+        _set(tableRow, displayName, subscore ? `${subscore.correct}/${subscore.attempted}` : '0/0');
       });
-      _set(tableRow, 'Skills To Work On', _get(scores, 'phonics.skillsToWorkOn'));
+      _set(tableRow, 'Skills To Work On', _get(scores, `${props.taskId}.skillsToWorkOn`));
     } else if (['fluency-calf', 'fluency-arf', 'fluency-calf-es', 'fluency-arf-es'].includes(props.taskId)) {
       _set(tableRow, 'Free Response', _get(scores, `${props.taskId}.fr`));
       _set(tableRow, 'Multiple Choice', _get(scores, `${props.taskId}.fc`));
