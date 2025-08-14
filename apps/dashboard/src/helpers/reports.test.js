@@ -136,6 +136,17 @@ describe('reports', () => {
         rawScoreKey: 'totalCorrect',
       });
     });
+
+    it('should return correct keys for roam-alpaca task', () => {
+      const result = getScoreKeys('roam-alpaca', 3);
+      expect(result).toEqual({
+        percentileScoreKey: undefined,
+        percentileScoreDisplayKey: undefined,
+        standardScoreKey: undefined,
+        standardScoreDisplayKey: undefined,
+        rawScoreKey: 'roarScore',
+      });
+    });
   });
 
   describe('getRawScoreThreshold', () => {
