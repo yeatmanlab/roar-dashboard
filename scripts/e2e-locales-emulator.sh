@@ -8,11 +8,12 @@ AUTH_PORT=9199
 FS_PORT=8180
 
 cleanup() {
+  set +e  # Disable exit on error for cleanup
   (test -f /tmp/vite.pid && kill "$(cat /tmp/vite.pid)" 2>/dev/null) || true
   (test -f /tmp/firebase.pid && kill "$(cat /tmp/firebase.pid)" 2>/dev/null) || true
   pkill -f "vite --force --host" 2>/dev/null || true
+  return 0  # Always return success
 }
-trap cleanup EXIT
 
 kill_on_port() {
   local port="$1"
@@ -138,6 +139,8 @@ if [ "$code" -ne 0 ]; then
   tail -n 120 /tmp/firebase-emu.log || true
 fi
 
+# Explicit cleanup before exit
+cleanup
 exit "$code"
 
 
