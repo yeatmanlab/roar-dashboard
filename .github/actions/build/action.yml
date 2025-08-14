@@ -79,4 +79,4 @@ runs:
     - name: Build Firebase config
       working-directory: roar-dashboard
       shell: bash
-      run: node scripts/build_firebase_config.cjs ${{ inputs.environment }}
+      run: node scripts/build_firebase_config.js ${{ inputs.environment }}

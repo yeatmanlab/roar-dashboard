@@ -9,7 +9,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // Environment can be supplied as the first CLI arg, e.g.
 //   node scripts/build_firebase_config.js staging
 // Falls back to the FIREBASE_ENV environment variable, then to "production".
-const cliEnv = process.argv[2]; // dev | staging | production
+let cliEnv = process.argv[2]; // dev | staging | production
+if (cliEnv === 'development') cliEnv = 'dev';
 const env = cliEnv || process.env.FIREBASE_ENV || 'production'; // default production
 const dotenvEnv = env === 'dev' ? 'development' : env;
 loadDotenvFiles(dotenvEnv);
