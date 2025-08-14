@@ -80,7 +80,8 @@ E2E_BASE_URL="http://localhost:${PORT}/signin" \
 E2E_TEST_EMAIL=student@levante.test \
 E2E_TEST_PASSWORD=student123 \
 set +e
-./node_modules/.bin/cypress run --e2e --spec "cypress/e2e/locales-emulator.cy.ts"
+SPEC_PATH="${E2E_SPEC:-cypress/e2e/locales-emulator.cy.ts}"
+./node_modules/.bin/cypress run --e2e --spec "$SPEC_PATH"
 code=$?
 set -e
 
