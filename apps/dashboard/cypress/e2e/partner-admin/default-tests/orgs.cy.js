@@ -11,8 +11,6 @@ const orgs = [
 
 describe('Partner Admin: Orgs', () => {
   orgs.forEach((org) => {
-    const orgType = org.tabName.slice(0, -1).toLowerCase();
-
     describe(`${org.tabName} – ${org.orgName}`, () => {
       it(`Lists the org in the data table`, () => {
         // Login as the partner admin.

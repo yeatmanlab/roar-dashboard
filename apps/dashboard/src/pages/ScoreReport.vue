@@ -587,10 +587,10 @@ const computedProgressData = computed(() => {
       const status = assessment.optional
         ? 'optional'
         : assessment.completedOn
-        ? 'completed'
-        : assessment.startedOn
-        ? 'started'
-        : 'assigned';
+          ? 'completed'
+          : assessment.startedOn
+            ? 'started'
+            : 'assigned';
 
       acc[assessment.taskId] = { value: status };
       return acc;
@@ -660,10 +660,10 @@ const computeAssignmentAndRunData = computed(() => {
             return assessment.startedOn < earliest ? assessment.startedOn : earliest;
           }, null) ?? null,
         completionDate: assignment.completed
-          ? assignment.assessments.reduce((latest, assessment) => {
+          ? (assignment.assessments.reduce((latest, assessment) => {
               if (!latest) return assessment.completedOn;
               return assessment.completedOn > latest ? assessment.completedOn : latest;
-            }, null) ?? null
+            }, null) ?? null)
           : null,
         // compute and add scores data in next step as so
         // swr: { support_level: 'Needs Extra Support', percentile: 10, raw: 10, reliable: true, engagementFlags: {}},
@@ -766,8 +766,8 @@ const computeAssignmentAndRunData = computed(() => {
             numAttempted === undefined || numAttempted === 0
               ? ''
               : numAttempted !== 0 && assessment.scores?.raw?.composite?.test?.numCorrect !== undefined
-              ? assessment.scores?.raw?.composite?.test?.numCorrect
-              : 0;
+                ? assessment.scores?.raw?.composite?.test?.numCorrect
+                : 0;
           currRowScores[taskId].numAttempted = numAttempted;
           currRowScores[taskId].numCorrect = numCorrect;
           currRowScores[taskId].tagColor =

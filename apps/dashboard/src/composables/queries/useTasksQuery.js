@@ -17,8 +17,8 @@ const useTasksQuery = (registeredTasksOnly = false, taskIds = undefined, queryOp
   const queryKey = toValue(registeredTasksOnly)
     ? [TASKS_QUERY_KEY, 'registered']
     : !_isEmpty(taskIds)
-    ? [TASKS_QUERY_KEY, taskIds]
-    : [TASKS_QUERY_KEY, 'all'];
+      ? [TASKS_QUERY_KEY, taskIds]
+      : [TASKS_QUERY_KEY, 'all'];
   const queryFn = () => (!_isEmpty(taskIds) ? fetchByTaskId(taskIds) : taskFetcher(registeredTasksOnly, true));
 
   return {

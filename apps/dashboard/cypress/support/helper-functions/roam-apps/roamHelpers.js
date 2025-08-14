@@ -266,7 +266,6 @@ export function playARF({
   administration = Cypress.env('testRoarAppsAdministration'),
   language = 'en',
   task = 'fluency-arf',
-  optional = false,
   endText = 'You are all done.',
   continueText = null,
   auth = 'username',

@@ -1,5 +1,5 @@
 <template>
-  <div v-if="!appKit || !userParams || !gameParams" class="col-full text-center">
+  <div v-if="!appKit || !userParams || !gameParams" class="text-center col-full">
     <h1>{{ $t('tasks.preparing') }}</h1>
     <AppSpinner />
   </div>
@@ -19,7 +19,7 @@ import _get from 'lodash/get';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
 import useUserStudentDataQuery from '@/composables/queries/useUserStudentDataQuery';
-import packageLockJson from '../../../package-lock.json';
+import packageLockJson from '../../../../../package-lock.json';
 import SurveyRunner from '@bdelab/roar-survey';
 
 const props = defineProps({

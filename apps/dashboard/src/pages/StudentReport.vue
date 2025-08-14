@@ -308,15 +308,14 @@ const exportToPdf = async () => {
     color: 'blue',
   });
 
-  doc.save(`IndividualScoreReport_${studentFirstName.value}${studentLastName.value}.pdf`),
-    (exportLoading.value = false);
+  (doc.save(`IndividualScoreReport_${studentFirstName.value}${studentLastName.value}.pdf`),
+    (exportLoading.value = false));
 };
 
 const tasks = computed(() => taskData?.value?.map((assignment) => assignment.taskId));
 
 const formattedTasks = computed(() => {
   return (
-    // eslint-disable-next-line vue/no-side-effects-in-computed-properties
     (tasks?.value ?? [])
       .sort((a, b) => {
         if (Object.keys(taskDisplayNames).includes(a) && Object.keys(taskDisplayNames).includes(b)) {

@@ -649,6 +649,8 @@ function getFormattedDate(date) {
         day: 'numeric',
       });
     } catch (error) {
+      // @TODO: Improve error handling
+      console.error('Error parsing date:', error);
       return '';
     }
   }
