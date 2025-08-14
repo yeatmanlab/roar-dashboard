@@ -75,10 +75,10 @@ const ScoreReportService = (() => {
     return support_level === SCORE_SUPPORT_SKILL_LEVELS.ACHIEVED_SKILL
       ? i18n.t('scoreReports.achievedText')
       : support_level === SCORE_SUPPORT_SKILL_LEVELS.DEVELOPING_SKILL
-      ? i18n.t('scoreReports.developingText')
-      : support_level === SCORE_SUPPORT_SKILL_LEVELS.NEEDS_EXTRA_SUPPORT
-      ? i18n.t('scoreReports.extraSupportText')
-      : '';
+        ? i18n.t('scoreReports.developingText')
+        : support_level === SCORE_SUPPORT_SKILL_LEVELS.NEEDS_EXTRA_SUPPORT
+          ? i18n.t('scoreReports.extraSupportText')
+          : '';
   };
 
   /**

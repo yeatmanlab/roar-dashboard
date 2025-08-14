@@ -124,7 +124,6 @@ import SubscoreTable from '@/components/reports/SubscoreTable.vue';
 import DistributionChartFacet from '@/components/reports/DistributionChartFacet.vue';
 import DistributionChartSupport from '@/components/reports/DistributionChartSupport.vue';
 
-// eslint-disable-next-line no-unused-vars
 const props = defineProps({
   initialized: {
     type: Boolean,

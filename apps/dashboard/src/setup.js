@@ -40,7 +40,7 @@ export const createAppInstance = () => {
   app.directive('tooltip', PvTooltip);
 
   // Register global variables.
-  // eslint-disable-next-line no-undef
+
   globalThis.Buffer = Buffer;
 
   if (process.env.NODE_ENV === 'production') {
