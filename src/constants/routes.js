@@ -44,6 +44,7 @@ export const APP_ROUTES = {
   STUDENT_REPORT: '/scores/:administrationId/:orgType/:orgId/user/:userId',
   SCORE_REPORT_STUDENT: '/scores/:administrationId/:orgType/:orgId/user/:userId/new',
   ACCOUNT_PROFILE: '/profile',
+  USER_SETTINGS: '/profile/:userId',
   ORGS_LIST: '/list-orgs',
   ORGS_CREATE: '/create-orgs',
   REGISTER: '/register',
