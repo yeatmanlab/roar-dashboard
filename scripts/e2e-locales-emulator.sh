@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -uo pipefail
 set -x
 
 PORT=5173
@@ -40,20 +40,28 @@ for p in "$PORT" "$EMU_UI_PORT" "$AUTH_PORT" "$FS_PORT"; do
 done
 
 # Start Firebase emulators (auth + firestore)
-./node_modules/.bin/firebase emulators:start \
+if ! ./node_modules/.bin/firebase emulators:start \
   --only auth,firestore \
   --project levante-admin-dev \
   --config firebase.json \
   > /tmp/firebase-emu.log 2>&1 &
+then
+  echo "Failed to start Firebase emulators"
+  exit 1
+fi
 echo $! > /tmp/firebase.pid
 
 # Start Vite dev server over HTTP with emulator enabled, locked to 5173
-VITE_HTTPS=FALSE \
+if ! VITE_HTTPS=FALSE \
 VITE_LEVANTE=TRUE \
 VITE_FIREBASE_PROJECT=DEV \
 VITE_EMULATOR=TRUE \
 ./node_modules/.bin/vite --force --host --port "$PORT" \
   > /tmp/vite.log 2>&1 &
+then
+  echo "Failed to start Vite dev server"
+  exit 1
+fi
 echo $! > /tmp/vite.pid
 
 # Wait for Firebase Emulator UI and Vite to be ready
@@ -86,15 +94,14 @@ if [ "$SEED" = "TRUE" ] || [ "$SEED" = "true" ]; then
 fi
 
 # Run Cypress locales emulator spec
+echo "Running Cypress spec: ${E2E_SPEC:-cypress/e2e/locales-emulator.cy.ts}"
+SPEC_PATH="${E2E_SPEC:-cypress/e2e/locales-emulator.cy.ts}"
 E2E_USE_ENV=TRUE \
 E2E_BASE_URL="http://localhost:${PORT}/signin" \
 E2E_TEST_EMAIL=student@levante.test \
 E2E_TEST_PASSWORD=student123 \
-set +e
-SPEC_PATH="${E2E_SPEC:-cypress/e2e/locales-emulator.cy.ts}"
 ./node_modules/.bin/cypress run --e2e --spec "$SPEC_PATH"
 code=$?
-set -e
 
 if [ "$code" -ne 0 ]; then
   echo '--- Vite last lines ---'
