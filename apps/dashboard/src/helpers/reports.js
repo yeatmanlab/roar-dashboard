@@ -554,6 +554,14 @@ export const roamAlpacaSubskills = {
   algebraicThinking: 'Algebraic Thinking',
 };
 
+export const roamAlpacaSubskillHeaders = {
+  rawScore: 'Num Correct',
+  totalNumAttempted: 'Num Attempted',
+  score: 'Percent Correct',
+  gradeEstimate: 'Grade Estimate',
+  supportCategory: 'Support Category',
+};
+
 function getOrdinalSuffix(n) {
   if (n >= 11 && n <= 13) return 'th';
 
