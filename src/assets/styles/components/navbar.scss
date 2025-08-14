@@ -3,6 +3,10 @@
   background: var(--surface-a);
   border-top: 7px solid var(--primary-color);
   border-bottom: 1px solid var(--surface-d);
+  position: sticky;
+  top: 0;
+  left: 0;
+  z-index: 10;
 
   nav {
     display: flex;
