@@ -37,11 +37,12 @@ jobs:
         with:
           browser: chrome
           start: npm run dev:db
-          wait-on: 'https://localhost:5173'
+          wait-on: 'http://localhost:5173'
           wait-on-timeout: 120
         env:
           E2E_USE_ENV: 'TRUE'
-          E2E_BASE_URL: 'https://localhost:5173/signin'
+          E2E_BASE_URL: 'http://localhost:5173/signin'
+          VITE_HTTPS: 'FALSE'
           E2E_TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
           E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
 
