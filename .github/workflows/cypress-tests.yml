@@ -38,3 +38,21 @@ jobs:
           browser: chrome
           start: npm run dev:db
           spec: cypress/e2e/**/!(locales*).cy.ts
+
+  cypress-locales-emulator:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+
+      - name: Install dependencies
+        run: npm install --legacy-peer-deps
+
+      - name: Run locales login against emulator (HTTP)
+        run: bash scripts/e2e-locales-emulator.sh
