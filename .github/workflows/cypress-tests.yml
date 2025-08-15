@@ -60,7 +60,7 @@ jobs:
           node-version: '20.x'
 
       - name: Install dependencies
-        run: npm install --legacy-peer-deps
+        run: npm ci
 
       - name: Run locales login against emulator (HTTP)
         run: bash scripts/e2e-locales-emulator.sh

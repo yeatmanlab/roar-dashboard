@@ -48,7 +48,7 @@ jobs:
           cache-dependency-path: 'package-lock.json'
 
       - name: Install dependencies
-        run: npm install --legacy-peer-deps
+        run: npm ci
 
       - name: Log environment variables
         run: echo "VITE_LEVANTE=$VITE_LEVANTE"
@@ -92,11 +92,11 @@ jobs:
 
       - name: Build (ROAR)
         if: ${{ contains(github.repository, 'roar') }}
-        run: npm install --legacy-peer-deps && npm run build
+        run: npm ci && npm run build
 
       - name: Build (LEVANTE)
         if: ${{ contains(github.repository, 'levante') }}
-        run: npm install --legacy-peer-deps && npm run build:dev
+        run: npm ci && npm run build:dev
 
       - name: Deploy to Firebase Hosting Channel
         id: firebase-deploy
