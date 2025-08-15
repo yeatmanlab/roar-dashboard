@@ -156,6 +156,29 @@ const ScoreReportService = (() => {
       formattedScoresArray.push([i18n.t('scoreReports.skillsToWorkOn'), skills.join(', ') || 'None']);
     }
 
+    // Special handling for Phonics task
+    if (taskId === 'phonics') {
+      const subscores = scores?.composite?.subscores || {};
+      const subcategoryOrder = [
+        'cvc',
+        'digraph',
+        'i_blend',
+        'tri_blend',
+        'f_blend',
+        'r_ctrl',
+        'r_tri',
+        'silent_e',
+        'vt',
+      ];
+
+      // Add each subscore in the defined order
+      subcategoryOrder.forEach((category) => {
+        const stats = subscores[category] || {};
+        const percentCorrect = stats.percentCorrect || 0;
+        formattedScoresArray.push([i18n.t(`scoreReports.phonics.${category}`), percentCorrect, 0, 100]);
+      });
+    }
+
     // Special handling for letter tasks
     if (taskId === 'letter' || taskId === 'letter-en-ca') {
       const incorrectLetters = [
