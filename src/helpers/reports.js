@@ -435,9 +435,9 @@ export const tasksToDisplayTotalCorrect = [
 ];
 
 /*
- *  Tasks to Display total numCorrect and theta scores
+ *  Tasks to Display total numCorrect grade estimate and support level
  */
-export const tasksToDisplayThetaScore = ['roam-alpaca'];
+export const tasksToDisplayGradeEstimate = ['roam-alpaca'];
 
 /*
  *  Tasks to Display numCorrect - numIncorrect
@@ -647,7 +647,7 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = 
     (tasksToDisplayPercentCorrect.includes(taskId) ||
       tasksToDisplayCorrectIncorrectDifference.includes(taskId) ||
       tasksToDisplayTotalCorrect.includes(taskId)) &&
-    tasksToDisplayThetaScore.includes(taskId) &&
+    tasksToDisplayGradeEstimate.includes(taskId) &&
     rawScore !== undefined
   ) {
     return {
@@ -751,6 +751,7 @@ export function getScoreKeys(taskId, grade) {
     standardScoreDisplayKey = 'totalPercentCorrect';
     rawScoreKey = 'totalPercentCorrect';
   }
+
   return {
     percentileScoreKey,
     percentileScoreDisplayKey,
