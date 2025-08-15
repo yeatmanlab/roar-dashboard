@@ -1,7 +1,7 @@
 {
   "name": "roar-dashboard",
   "private": true,
-  "version": "3.11.1",
+  "version": "3.12.0",
   "type": "module",
   "scripts": {
     "dev": "vite --host",
@@ -24,6 +24,7 @@
     "@bdelab/roam-apps": "^1.2.20",
     "@bdelab/roar-firekit": "^9.8.0",
     "@bdelab/roar-letter": "2.1.0",
+    "@bdelab/roar-levante-tasks": "^0.1.0",
     "@bdelab/roar-multichoice": "1.11.8",
     "@bdelab/roar-pa": "2.2.5",
     "@bdelab/roar-readaloud": "1.2.1",
@@ -36,7 +37,6 @@
     "@bdelab/roav-mep": "1.2.0",
     "@bdelab/roav-ran": "1.0.33",
     "@dotenvx/dotenvx": "^1.24.4",
-    "@levante-framework/core-tasks": "1.0.0-beta.39",
     "@primevue/core": "^4.2.4",
     "@primevue/themes": "^4.2.4",
     "@sentry/browser": "^8.0.0",
