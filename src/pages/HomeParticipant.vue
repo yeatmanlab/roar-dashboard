@@ -10,13 +10,13 @@
     </div>
 
     <div v-else-if="!hasAssignments" data-cy="home-participant__administration-emptystate">
-      <div class="col-full text-center py-8">
+      <div class="py-8 text-center col-full">
         <h1>{{ $t('homeParticipant.noAssignments') }}</h1>
         <p class="text-center">{{ $t('homeParticipant.contactAdministrator') }}</p>
 
         <PvButton
           :label="$t('navBar.signOut')"
-          class="no-underline bg-primary border-none border-round p-2 text-white hover:bg-red-900"
+          class="p-2 text-white no-underline border-none bg-primary border-round hover:bg-red-900"
           icon="pi pi-sign-out"
           @click="signOut"
         />
@@ -24,9 +24,9 @@
     </div>
 
     <div v-else data-cy="home-participant__administration">
-      <div v-if="props.launchId" class="w-100 flex items-center justify-content-center bg-gray-100 p-2">
-        <div class="font-bold text-lg text-gray-600" data-cy="participant-launch-mode">
-          Currently in <span class="text-red-700 mr-4"> external launch mode </span>
+      <div v-if="props.launchId" class="flex items-center p-2 bg-gray-100 w-100 justify-content-center">
+        <div class="text-lg font-bold text-gray-600" data-cy="participant-launch-mode">
+          Currently in <span class="mr-4 text-red-700"> external launch mode </span>
           <router-link to="/">
             <PvButton>
               <i class="pi pi-arrow-left"></i>
@@ -40,11 +40,11 @@
           {{ userAssignments.at(0).publicName || userAssignments.at(0).name }}
         </h2>
       </PvFloatLabel>
-      <div class="flex flex-row ml-5 align-items-end gap-2 justify-content-between">
+      <div class="flex flex-row gap-2 ml-5 align-items-end justify-content-between">
         <PvFloatLabel class="mt-3 mr-3">
-          <div v-if="userAssignments?.length > 0" class="flex flex-row align-items-start w-full mt-4">
+          <div v-if="userAssignments?.length > 0" class="flex flex-row mt-4 w-full align-items-start">
             <div class="assignment-select-container">
-              <div class="flex align-content-start w-full">
+              <div class="flex w-full align-content-start">
                 <PvSelect
                   v-model="selectedAdmin"
                   :options="sortedUserAdministrations ?? []"
@@ -60,7 +60,7 @@
         </PvFloatLabel>
         <div
           v-if="optionalAssessments.length !== 0"
-          class="switch-container flex flex-row align-items-center justify-content-end mr-6 gap-2"
+          class="flex flex-row gap-2 mr-6 switch-container align-items-center justify-content-end"
         >
           <PvToggleSwitch
             v-model="showOptionalAssessments"
@@ -126,7 +126,7 @@ import GameTabs from '@/components/GameTabs.vue';
 import ParticipantSidebar from '@/components/ParticipantSidebar.vue';
 import useUserType from '@/composables/useUserType';
 import { highestAdminOrgIntersection } from '@/helpers/query/assignments';
-import { checkConsentRenewalDate } from '@/helpers/consent';
+import { checkConsentRenewalDate } from '@/helpers/checkConsentRenewalDate';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 
 const showConsent = ref(false);
