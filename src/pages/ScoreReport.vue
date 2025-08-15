@@ -308,6 +308,8 @@ import {
   getScoreKeys,
   tasksToDisplayCorrectIncorrectDifference,
   includedValidityFlags,
+  roamAlpacaSubskills,
+  getTagColor,
 } from '@/helpers/reports';
 import RoarDataTable from '@/components/RoarDataTable';
 import { CSV_EXPORT_STATIC_COLUMNS } from '@/constants/csvExport';
@@ -822,6 +824,38 @@ const computeAssignmentAndRunData = computed(() => {
 
           currRowScores[taskId].fc = fc;
           currRowScores[taskId].fr = fr;
+        }
+
+        if (taskId === 'roam-alpaca') {
+          const scores = _get(assessment, 'scores.computed');
+          if (scores) {
+            Object.keys(roamAlpacaSubskills).forEach((subskill) => {
+              const subskillInfo = _get(scores, subskill);
+              if (subskillInfo) {
+                const percentCorrect = `${_round((subskillInfo.rawScore / subskillInfo.totalNumAttempted) * 100)}%`;
+                // roam-alpaca calculates and returns support level automatically
+                let tagColor = getTagColor(subskillInfo.supportCategory);
+                currRowScores[taskId][subskill] = {
+                  percentCorrect,
+                  tagColor: returnColorByReliability(
+                    assessment,
+                    subskillInfo.rawScore,
+                    subskillInfo.supportCategory,
+                    tagColor,
+                  ),
+                  ...subskillInfo,
+                };
+              } else {
+                currRowScores[taskId][subskill] = '';
+              }
+            });
+
+            currRowScores[taskId].composite = {
+              ...scores.composite,
+              gradeEstimate: scores.composite.gradeEstimate ? _round(scores.composite.gradeEstimate, 2) : '',
+              tagColor: getTagColor(scores.composite.supportCategory),
+            };
+          }
         }
 
         // Logic to update runsByTaskIdAcc

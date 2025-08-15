@@ -19,6 +19,7 @@ import { exportCsv } from '@/helpers/query/utils';
 import { useAuthStore } from '@/store/auth';
 import { storeToRefs } from 'pinia';
 import RoarDataTable from '@/components/RoarDataTable';
+import { roamAlpacaSubskills, roamAlpacaSubskillHeaders } from '@/helpers/reports';
 
 const props = defineProps({
   administrationId: { type: String, required: true, default: '' },
@@ -108,6 +109,32 @@ const columns = computed(() => {
       { field: `scores.${props.taskId}.fc`, header: 'Multiple Choice', dataType: 'text', sort: false },
     );
   }
+  if (props.taskId === 'roam-alpaca') {
+    const gradeEstimate = `scores.${props.taskId}.gradeEstimate`;
+    tableColumns.push({
+      field: `scores.${props.taskId}.composite.roarScore`,
+      header: 'Raw Score',
+      dataType: 'text',
+      tagColor: `scores.${props.taskId}.composite.tagColor`,
+      sort: false,
+    });
+    Object.keys(roamAlpacaSubskills).forEach((subskill) => {
+      tableColumns.push({
+        field: `scores.${props.taskId}.${subskill}.percentCorrect`,
+        header: roamAlpacaSubskills[subskill],
+        dataType: 'text',
+        sort: false,
+        tagColor: `scores.${props.taskId}.${subskill}.tagColor`,
+        ...(gradeEstimate && { gradeEstimate }),
+      });
+    });
+    tableColumns.push({
+      field: `scores.${props.taskId}.composite.incorrectSkills`,
+      header: 'Skills To Work On',
+      dataType: 'text',
+      sort: false,
+    });
+  }
   return tableColumns;
 });
 
@@ -137,6 +164,20 @@ const exportSelected = (selectedRows) => {
     if (['fluency-calf', 'fluency-arf', 'fluency-calf-es', 'fluency-arf-es'].includes(props.taskId)) {
       _set(tableRow, 'Free Response', _get(scores, `${props.taskId}.fr`));
       _set(tableRow, 'Multiple Choice', _get(scores, `${props.taskId}.fc`));
+    }
+    if (props.taskId === 'roam-alpaca') {
+      _set(tableRow, 'Raw Score', _get(scores, `${props.taskId}.composite.roarScore`));
+      _set(tableRow, 'Grade Estimate', _get(scores, `${props.taskId}.composite.gradeEstimate`));
+      Object.keys(roamAlpacaSubskills).forEach((subskill) => {
+        Object.keys(roamAlpacaSubskillHeaders).forEach((property) => {
+          _set(
+            tableRow,
+            `${roamAlpacaSubskills[subskill]} - ${roamAlpacaSubskillHeaders[property]}`,
+            _get(scores, `${props.taskId}.${subskill}.${property}`),
+          );
+        });
+      });
+      _set(tableRow, 'Skills To Work On', _get(scores, `${props.taskId}.composite.incorrectSkills`));
     }
     return tableRow;
   });
@@ -168,6 +209,19 @@ const exportAll = async () => {
     } else if (['fluency-calf', 'fluency-arf', 'fluency-calf-es', 'fluency-arf-es'].includes(props.taskId)) {
       _set(tableRow, 'Free Response', _get(scores, `${props.taskId}.fr`));
       _set(tableRow, 'Multiple Choice', _get(scores, `${props.taskId}.fc`));
+    } else if (props.taskId === 'roam-alpaca') {
+      _set(tableRow, 'Raw Score', _get(scores, `${props.taskId}.composite.roarScore`));
+      _set(tableRow, 'Grade Estimate', _get(scores, `${props.taskId}.composite.gradeEstimate`));
+      Object.keys(roamAlpacaSubskills).forEach((subskill) => {
+        Object.keys(roamAlpacaSubskillHeaders).forEach((property) => {
+          _set(
+            tableRow,
+            `${roamAlpacaSubskills[subskill]} - ${roamAlpacaSubskillHeaders[property]}`,
+            _get(scores, `${props.taskId}.${subskill}.${property}`),
+          );
+        });
+      });
+      _set(tableRow, 'Skills To Work On', _get(scores, `${props.taskId}.composite.incorrectSkills`));
     }
     return tableRow;
   });
