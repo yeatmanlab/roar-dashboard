@@ -32,7 +32,7 @@ runs:
         ref: ${{ inputs.commit-sha }}
         repository: yeatmanlab/roar-dashboard
         token: ${{ inputs.github-pat }}
-        submodules: ${{ inputs.override-env-configs == 'false' }}
+        submodules: ${{ inputs.override-env-configs == 'false' && 'recursive' || 'false' }}
         path: roar-dashboard
 
     - name: Inspect changes
@@ -65,8 +65,8 @@ runs:
       if: ${{ inputs.override-env-configs != 'false' }}
       shell: bash
       run: |
-        rm -rf roar-dashboard/env-configs
-        cp -r ${{ github.event.repository.name }}/env-configs roar-dashboard/env-configs
+        rm -rf roar-dashboard/apps/dashboard/env-configs
+        cp -r ${{ github.event.repository.name }}/apps/dashboard/env-configs roar-dashboard/apps/dashboard/env-configs
 
     # Build the application
     - name: Build application
@@ -74,4 +74,4 @@ runs:
       env:
         NODE_OPTIONS: '--max_old_space_size=8192'
       shell: bash
-      run: npm run build -- --mode ${{ inputs.environment }}
+      run: npm run build -- -- --mode ${{ inputs.environment }}
