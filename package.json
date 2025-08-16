@@ -4,7 +4,9 @@
   "version": "3.12.0",
   "type": "module",
   "scripts": {
+    "predev": "node scripts/build_firebase_config.js",
     "dev": "vite --host",
+    "prebuild": "node scripts/build_firebase_config.js",
     "build": "vite build --mode development",
     "cypress:open": "cypress open",
     "generate-pwa-assets": "npx pwa-assets-generator",
@@ -15,6 +17,7 @@
     "postversion": "GIT_REMOTE=$(git remote -v | grep \"yeatmanlab/roar-dashboard.git \\(push\\)\" | cut -f 1) && git push $GIT_REMOTE && git push $GIT_REMOTE --tags",
     "prepare": "husky",
     "preversion": "npm run lint",
+    "prepreview": "node scripts/build_firebase_config.js",
     "preview": "vite preview",
     "test": "vitest",
     "test:watch": "vitest --watch",
