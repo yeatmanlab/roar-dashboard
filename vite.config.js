@@ -5,7 +5,7 @@ import mkcert from 'vite-plugin-mkcert';
 import Vue from '@vitejs/plugin-vue';
 import UnheadVite from '@unhead/addons/vite';
 import { fileURLToPath, URL } from 'url';
-import { default as FirebaseConfig } from './firebase/admin/firebase.dev.json';
+import { default as FirebaseConfig } from './firebase/admin/firebase.json';
 import { loadDotenvFiles } from './scripts/load_dot_env_files';
 
 /**

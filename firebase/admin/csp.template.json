@@ -104,7 +104,7 @@
   ],
   "frame-ancestors": ["'none'"],
   "report-uri": [
-    "https://o4505913837420544.ingest.us.sentry.io/api/4506820782129152/security/?sentry_key=f15e3ff866394e93e00514b42113d03d&sentry_environment=__ENV__"
+    "https://o4505913837420544.ingest.us.sentry.io/api/4506820782129152/security/?sentry_key=f15e3ff866394e93e00514b42113d03d&sentry_environment=__SENTRY_ENV__"
   ],
   "report-to": ["csp-endpoint"]
 }
