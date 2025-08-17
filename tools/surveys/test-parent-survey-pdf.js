@@ -22,7 +22,7 @@ global.document = {
 async function testParentSurveyPdf() {
   try {
     // The survey URL from the dev bucket
-    const surveyUrl = 'https://storage.googleapis.com/levante-dashboard-dev/parent_survey_family.json';
+    const surveyUrl = 'https://storage.googleapis.com/levante-assets-dev/surveys/parent_survey_family.json';
     
     console.log('🔄 Fetching survey from:', surveyUrl);
     

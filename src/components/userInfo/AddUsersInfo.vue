@@ -74,7 +74,7 @@
     <div class="csv-example-image-container">
       <img
         id="add-users-example-image"
-        :src="LEVANTE_BUCKET_URL + '/add_users_example.png'"
+        :src="LEVANTE_STATIC_ASSETS_URL + '/add_users_example.png'"
         alt="Add Users CSV Example "
         class="csv-example-image"
       />
@@ -83,7 +83,7 @@
 </template>
 
 <script setup>
-import { LEVANTE_BUCKET_URL } from '@/constants/bucket';
+import { LEVANTE_STATIC_ASSETS_URL } from '@/constants/bucket';
 import PvPanel from 'primevue/panel';
 
 const generateTemplateFile = () => {

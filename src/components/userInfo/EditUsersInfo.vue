@@ -55,7 +55,7 @@
 
     <img
       id="example-image"
-      :src="LEVANTE_BUCKET_URL + '/edit_users_example.png'"
+      :src="LEVANTE_STATIC_ASSETS_URL + '/edit_users_example.png'"
       alt="Edit Users CSV Example"
       style="width: 100%; max-width: 1400px; height: auto"
     />
@@ -64,7 +64,7 @@
 
 <script setup>
 import PvPanel from 'primevue/panel';
-import { LEVANTE_BUCKET_URL } from '@/constants/bucket';
+import { LEVANTE_STATIC_ASSETS_URL } from '@/constants/bucket';
 </script>
 
 <style scoped>
