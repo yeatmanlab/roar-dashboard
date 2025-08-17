@@ -3,13 +3,19 @@ import path from 'node:path';
 import { fileURLToPath } from 'url';
 
 export const buildFirebaseConfig = (mode = 'development') => {
-  const allowedModes = ['development', 'staging', 'production'];
+  const allowedModes = ['test', 'development', 'staging', 'production'];
   if (!allowedModes.includes(mode)) {
     throw new Error(`Invalid mode: ${mode}. Expected one of: ${allowedModes.join(', ')}`);
   }
 
-  // The sentry environment uses "staging" for dev.
-  const sentryEnv = mode === 'development' ? 'staging' : mode;
+  // The sentry environment uses "staging" for dev and test as well.
+  const sentryEnvModeMap = {
+    test: 'staging',
+    development: 'staging',
+    staging: 'staging',
+    production: 'production',
+  };
+  const sentryEnv = sentryEnvModeMap[mode];
 
   const __dirname = path.dirname(fileURLToPath(import.meta.url));
   const root = path.resolve(__dirname, '..');
