@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host",
-    "build": "vite build --mode=development",
+    "build": "vite build --mode development",
     "cypress:open": "cypress open",
     "generate-pwa-assets": "npx pwa-assets-generator",
     "format": "prettier . --write --log-level=warn",
