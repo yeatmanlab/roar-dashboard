@@ -5,8 +5,9 @@ import mkcert from 'vite-plugin-mkcert';
 import Vue from '@vitejs/plugin-vue';
 import UnheadVite from '@unhead/addons/vite';
 import { fileURLToPath, URL } from 'url';
-import { default as FirebaseConfig } from './firebase/admin/firebase.json';
+import { readFileSync } from 'node:fs';
 import { loadDotenvFiles } from './scripts/load_dot_env_files';
+import { buildFirebaseConfig } from './scripts/build_firebase_config';
 
 /**
  * Parse server response headers
@@ -20,6 +21,9 @@ import { loadDotenvFiles } from './scripts/load_dot_env_files';
  * @returns {Object} The parsed response headers
  */
 function getResponseHeaders() {
+  const fbPath = fileURLToPath(new URL('./firebase/admin/firebase.json', import.meta.url));
+  const FirebaseConfig = JSON.parse(readFileSync(fbPath, 'utf8'));
+
   // Find the staging hosting config
   const stagingHostingConfig = FirebaseConfig.hosting;
 
@@ -57,6 +61,9 @@ function getResponseHeaders() {
 export default defineConfig(({ mode }) => {
   // Trigger custom dotenv file loader for env-configs directory.
   loadDotenvFiles(mode);
+  buildFirebaseConfig(mode);
+
+  const responseHeaders = getResponseHeaders();
 
   // Return default Vite configuration.
   return {
@@ -93,7 +100,7 @@ export default defineConfig(({ mode }) => {
         allow: ['..'],
       },
       headers: {
-        ...getResponseHeaders(),
+        ...responseHeaders,
       },
     },
 
