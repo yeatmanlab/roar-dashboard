@@ -3,6 +3,7 @@
     <div v-if="!initialized || isLoading || isFetching">
       <LevanteSpinner fullscreen />
     </div>
+
     <div v-else-if="!hasAssignments">
       <div class="col-full text-center py-8">
         <h1>{{ $t('homeParticipant.noAssignments') }}</h1>
@@ -18,18 +19,34 @@
       </div>
     </div>
 
-    <div v-else class="assignments">
-      <div v-for="assignment of userAssignments" :key="assignment?.id" class="assignment">
+    <div v-else>
+      <NavBar />
+
+      <SideBar
+        v-if="authStore.showSideBar"
+        :assignments="sortedUserAdministrations"
+        @select-assignment="onAssignmentSelected"
+        @select-status="onStatusSelected"
+      />
+
+      <div v-if="selectedAssignment" class="assignment">
         <div class="assignment__header">
-          <h2 class="assignment__name">{{ assignment?.publicName || assignment?.name }}</h2>
+          <PvTag :value="selectedStatus" class="text-xs uppercase" :class="`assignment__status --${selectedStatus}`" />
+
+          <h2 class="assignment__name">{{ selectedAssignment?.publicName || selectedAssignment?.name }}</h2>
           <div class="assignment__dates">
             <div class="assignment__date">
               <i class="pi pi-calendar"></i>
-              <small><span class="font-bold">Start: </span>{{ format(assignment?.dateOpened, 'MMM dd, yyyy') }}</small>
+              <small
+                ><span class="font-bold">Start: </span
+                >{{ format(selectedAssignment?.dateOpened, 'MMM dd, yyyy') }}</small
+              >
             </div>
             <div class="assignment__date">
               <i class="pi pi-calendar"></i>
-              <small><span class="font-bold">End: </span>{{ format(assignment?.dateClosed, 'MMM dd, yyyy') }}</small>
+              <small
+                ><span class="font-bold">End: </span>{{ format(selectedAssignment?.dateClosed, 'MMM dd, yyyy') }}</small
+              >
             </div>
           </div>
         </div>
@@ -99,6 +116,10 @@ import { fetchDocsById } from '@/helpers/query/utils';
 import LevanteSpinner from '@/components/LevanteSpinner.vue';
 import { logger } from '@/logger';
 import { format } from 'date-fns';
+import SideBar from '@/components/SideBar.vue';
+import NavBar from '@/components/NavBar.vue';
+import { useAssignmentsStore } from '@/store/assignments';
+import PvTag from 'primevue/tag';
 
 const showConsent = ref(false);
 const consentVersion = ref('');
@@ -123,6 +144,10 @@ const init = () => {
 
 const authStore = useAuthStore();
 const { roarfirekit, showOptionalAssessments, userData: currentUserData } = storeToRefs(authStore);
+
+const assignmentStore = useAssignmentsStore();
+const selectedAssignment = ref(assignmentStore?.selectedAssignment || null);
+const selectedStatus = ref(assignmentStore?.selectedStatus || null);
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.roarfirekit.restConfig) init();
@@ -203,6 +228,14 @@ const hasAssignments = computed(() => {
   if (isLoading.value || isFetching.value) return false;
   return assessments.value.length > 0;
 });
+
+function onAssignmentSelected(assignment) {
+  selectedAssignment.value = assignment;
+}
+
+function onStatusSelected(status) {
+  selectedStatus.value = status;
+}
 
 async function checkConsent() {
   showConsent.value = false;
@@ -564,31 +597,34 @@ watch(
   opacity: 0;
 }
 
-.assignments {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
+.assignment {
+  display: block;
   width: 100%;
   height: auto;
   margin: 0;
   padding: 2rem;
 }
 
-.assignment {
-  display: block;
-  margin: 0;
-  padding: 0 0 2rem;
-  border-bottom: 1px solid var(--surface-d);
+.assignment__status {
+  &.--current {
+    background: rgba(var(--bright-green-rgb), 0.1);
+    color: var(--bright-green);
+  }
 
-  &:last-of-type {
-    padding: 0;
-    border-bottom: none;
+  &.--upcoming {
+    background: rgba(var(--bright-yellow-rgb), 0.1);
+    color: var(--bright-yellow);
+  }
+
+  &.--past {
+    background: rgba(var(--bright-red-rgb), 0.1);
+    color: var(--bright-red);
   }
 }
 
 .assignment__name {
   display: block;
-  margin: 0;
+  margin: 0.5rem 0 0;
   font-weight: 700;
   font-size: 1.5rem;
   color: var(--gray-600);
