@@ -1,148 +1,144 @@
 <template>
-  <div>
-    <NavBar />
-
-    <main class="container main">
-      <section class="main-body">
-        <div>
-          <div class="flex flex-column">
-            <div class="flex flex-row flex-wrap align-items-center justify-content-between mb-3 gap-3">
-              <div class="flex flex-column gap-2">
-                <div class="flex align-items-center flex-wrap gap-3 mb-2">
-                  <div class="admin-page-header">All Assignments</div>
-                </div>
-                <div class="text-md text-gray-500">
-                  This page lists all the assignments that are administered to your users.
-                </div>
-                <div class="text-md text-gray-500 mb-1">
-                  You can view and monitor completion and create new bundles of tasks, surveys, and questionnaires to be
-                  administered as assignments.
-                </div>
+  <main class="container main">
+    <section class="main-body">
+      <div>
+        <div class="flex flex-column">
+          <div class="flex flex-row flex-wrap align-items-center justify-content-between mb-3 gap-3">
+            <div class="flex flex-column gap-2">
+              <div class="flex align-items-center flex-wrap gap-3 mb-2">
+                <div class="admin-page-header">All Assignments</div>
               </div>
-              <div class="flex align-items-center gap-2 mt-2">
-                <div class="flex gap-3 align-items-stretch justify-content-start">
-                  <div class="flex flex-column gap-1">
-                    <small id="search-help" class="text-gray-400">Search by name</small>
-                    <div class="flex align-items-center">
-                      <PvInputGroup>
-                        <PvAutoComplete
-                          v-model="searchInput"
-                          placeholder="Search Assignments"
-                          :suggestions="searchSuggestions"
-                          data-cy="search-input"
-                          @complete="autocomplete"
-                          @keyup.enter="onSearch"
-                        />
-                        <PvButton
-                          icon="pi pi-search"
-                          class="text-xs bg-primary border-none text-white pl-3 pr-3"
-                          @click="onSearch"
-                        />
-                      </PvInputGroup>
-                    </div>
-                  </div>
-                </div>
-
+              <div class="text-md text-gray-500">
+                This page lists all the assignments that are administered to your users.
+              </div>
+              <div class="text-md text-gray-500 mb-1">
+                You can view and monitor completion and create new bundles of tasks, surveys, and questionnaires to be
+                administered as assignments.
+              </div>
+            </div>
+            <div class="flex align-items-center gap-2 mt-2">
+              <div class="flex gap-3 align-items-stretch justify-content-start">
                 <div class="flex flex-column gap-1">
-                  <small for="dd-sort" class="text-gray-400">Sort by</small>
-                  <PvSelect
-                    v-model="sortKey"
-                    input-id="dd-sort"
-                    :options="sortOptions"
-                    option-label="label"
-                    data-cy="dropdown-sort-administrations"
-                    @change="onSortChange($event)"
-                  />
+                  <small id="search-help" class="text-gray-400">Search by name</small>
+                  <div class="flex align-items-center">
+                    <PvInputGroup>
+                      <PvAutoComplete
+                        v-model="searchInput"
+                        placeholder="Search Assignments"
+                        :suggestions="searchSuggestions"
+                        data-cy="search-input"
+                        @complete="autocomplete"
+                        @keyup.enter="onSearch"
+                      />
+                      <PvButton
+                        icon="pi pi-search"
+                        class="text-xs bg-primary border-none text-white pl-3 pr-3"
+                        @click="onSearch"
+                      />
+                    </PvInputGroup>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div
-              v-if="search.length > 0"
-              class="flex align-items-center gap-3 text-gray-700 px-4 py-3 my-1 bg-gray-100 rounded"
-            >
-              <div>
-                You searched for <strong>{{ search }}</strong>
+              <div class="flex flex-column gap-1">
+                <small for="dd-sort" class="text-gray-400">Sort by</small>
+                <PvSelect
+                  v-model="sortKey"
+                  input-id="dd-sort"
+                  :options="sortOptions"
+                  option-label="label"
+                  data-cy="dropdown-sort-administrations"
+                  @change="onSortChange($event)"
+                />
               </div>
-              <PvButton
-                text
-                class="text-xs p-2 border-none border-round text-primary hover:surface-200"
-                @click="clearSearch"
-              >
-                Clear Search
-              </PvButton>
             </div>
           </div>
 
-          <div v-if="!initialized || isLoadingAdministrations" class="loading-container">
-            <div
-              style="
-                width: 100%;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                margin-top: 100px;
-                margin-bottom: 50px;
-              "
-            >
-              <LevanteSpinner :size="200" />
+          <div
+            v-if="search.length > 0"
+            class="flex align-items-center gap-3 text-gray-700 px-4 py-3 my-1 bg-gray-100 rounded"
+          >
+            <div>
+              You searched for <strong>{{ search }}</strong>
             </div>
-            <span class="uppercase font-light text-sm text-gray-600">
-              <template v-if="fetchTestAdministrations">Fetching Test Assignments</template>
-              <template v-else>Fetching Assignments</template>
-            </span>
-          </div>
-          <div v-else>
-            <PvBlockUI>
-              <PvDataView
-                :key="dataViewKey"
-                :value="filteredAdministrations"
-                paginator
-                paginator-position="both"
-                :total-records="filteredAdministrations?.length"
-                :rows="pageLimit"
-                :rows-per-page-options="[3, 5, 10, 25]"
-                data-key="id"
-                :sort-order="sortOrder"
-                :sort-field="sortField"
-              >
-                <template #list="slotProps">
-                  <div class="mb-2 w-full">
-                    <CardAdministration
-                      v-for="item in slotProps.items"
-                      :id="item.id"
-                      :key="item.id"
-                      :title="getTitle(item, isSuperAdmin)"
-                      :stats="item.stats"
-                      :dates="item.dates"
-                      :assignees="item.assignedOrgs"
-                      :assessments="item.assessments"
-                      :public-name="item.publicName ?? item.name"
-                      :show-params="isSuperAdmin"
-                      :is-super-admin="isSuperAdmin"
-                      :creator="item.creator"
-                      data-cy="h2-card-admin"
-                    />
-                  </div>
-                </template>
-                <template #empty>
-                  <div class="flex flex-column align-items-center justify-content-center py-8">
-                    <h1 class="text-xl font-bold mb-4">No Assignments Yet</h1>
-                    <p class="text-center text-gray-500 mb-4">Go create your first assignment to get started.</p>
-                    <PvButton
-                      label="Create Assignment"
-                      class="bg-primary border-none text-white"
-                      @click="$router.push({ name: 'CreateAssignment' })"
-                    />
-                  </div>
-                </template>
-              </PvDataView>
-            </PvBlockUI>
+            <PvButton
+              text
+              class="text-xs p-2 border-none border-round text-primary hover:surface-200"
+              @click="clearSearch"
+            >
+              Clear Search
+            </PvButton>
           </div>
         </div>
-      </section>
-    </main>
-  </div>
+
+        <div v-if="!initialized || isLoadingAdministrations" class="loading-container">
+          <div
+            style="
+              width: 100%;
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              margin-top: 100px;
+              margin-bottom: 50px;
+            "
+          >
+            <LevanteSpinner :size="200" />
+          </div>
+          <span class="uppercase font-light text-sm text-gray-600">
+            <template v-if="fetchTestAdministrations">Fetching Test Assignments</template>
+            <template v-else>Fetching Assignments</template>
+          </span>
+        </div>
+        <div v-else>
+          <PvBlockUI>
+            <PvDataView
+              :key="dataViewKey"
+              :value="filteredAdministrations"
+              paginator
+              paginator-position="both"
+              :total-records="filteredAdministrations?.length"
+              :rows="pageLimit"
+              :rows-per-page-options="[3, 5, 10, 25]"
+              data-key="id"
+              :sort-order="sortOrder"
+              :sort-field="sortField"
+            >
+              <template #list="slotProps">
+                <div class="mb-2 w-full">
+                  <CardAdministration
+                    v-for="item in slotProps.items"
+                    :id="item.id"
+                    :key="item.id"
+                    :title="getTitle(item, isSuperAdmin)"
+                    :stats="item.stats"
+                    :dates="item.dates"
+                    :assignees="item.assignedOrgs"
+                    :assessments="item.assessments"
+                    :public-name="item.publicName ?? item.name"
+                    :show-params="isSuperAdmin"
+                    :is-super-admin="isSuperAdmin"
+                    :creator="item.creator"
+                    data-cy="h2-card-admin"
+                  />
+                </div>
+              </template>
+              <template #empty>
+                <div class="flex flex-column align-items-center justify-content-center py-8">
+                  <h1 class="text-xl font-bold mb-4">No Assignments Yet</h1>
+                  <p class="text-center text-gray-500 mb-4">Go create your first assignment to get started.</p>
+                  <PvButton
+                    label="Create Assignment"
+                    class="bg-primary border-none text-white"
+                    @click="$router.push({ name: 'CreateAssignment' })"
+                  />
+                </div>
+              </template>
+            </PvDataView>
+          </PvBlockUI>
+        </div>
+      </div>
+    </section>
+  </main>
 </template>
 
 <script setup>

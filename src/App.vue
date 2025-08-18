@@ -17,6 +17,8 @@
   <div v-if="isAuthStoreReady" :class="`${authStore.showSideBar ? 'app app--sidebar' : 'app'}`">
     <PvToast position="bottom-center" />
 
+    <NavBar v-if="typeof $route.name === 'string' && !NAVBAR_BLACKLIST.includes($route.name)" />
+
     <router-view :key="$route.fullPath" />
 
     <SessionTimer v-if="loadSessionTimeoutHandler" />
@@ -37,6 +39,8 @@ import { useAuthStore } from '@/store/auth';
 import { fetchDocById } from '@/helpers/query/utils';
 import { i18n } from '@/translations/i18n';
 import LevanteSpinner from '@/components/LevanteSpinner.vue';
+import NavBar from '@/components/NavBar.vue';
+import { NAVBAR_BLACKLIST } from './constants';
 
 const SessionTimer = defineAsyncComponent(() => import('@/containers/SessionTimer/SessionTimer.vue'));
 const VueQueryDevtools = defineAsyncComponent(() =>

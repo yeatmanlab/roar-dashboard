@@ -20,8 +20,6 @@
     </div>
 
     <div v-else>
-      <NavBar />
-
       <SideBar
         v-if="authStore.showSideBar"
         :currentAssignments="currentAssignments"
@@ -124,7 +122,6 @@ import LevanteSpinner from '@/components/LevanteSpinner.vue';
 import { logger } from '@/logger';
 import { format } from 'date-fns';
 import SideBar from '@/components/SideBar.vue';
-import NavBar from '@/components/NavBar.vue';
 import { useAssignmentsStore } from '@/store/assignments';
 import PvTag from 'primevue/tag';
 import { ASSIGNMENT_STATUSES } from '@/constants';
