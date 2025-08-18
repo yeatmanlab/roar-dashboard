@@ -4,6 +4,6 @@
   "private": true,
   "exports": {
     "./frontend.json": "./frontend.json",
-    "./node.json": "./node.json"
+    "./backend.json": "./backend.json"
   }
 }

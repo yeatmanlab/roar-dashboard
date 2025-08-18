@@ -1,0 +1,29 @@
+{
+  "name": "roar-backend",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "NODE_ENV=development rollup -c -w",
+    "build": "NODE_ENV=production rollup -c",
+    "start": "node dist/server.js",
+    "lint": "eslint .",
+    "lint:fix": "eslint --fix .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "check-types": "tsc --noEmit --watch"
+  },
+  "devDependencies": {
+    "@repo/typescript-config": "^0.0.0",
+    "@rollup/plugin-alias": "^5.1.1",
+    "@rollup/plugin-commonjs": "^28.0.6",
+    "@rollup/plugin-json": "^6.1.0",
+    "@rollup/plugin-node-resolve": "^16.0.1",
+    "@rollup/plugin-run": "^3.1.0",
+    "@types/express": "^5.0.3",
+    "rollup": "^4.46.3",
+    "rollup-plugin-esbuild": "^6.2.1",
+    "rollup-plugin-node-externals": "^8.0.1"
+  }
+}

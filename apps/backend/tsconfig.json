@@ -1,0 +1,7 @@
+{
+  "extends": "@repo/typescript-config/backend.json",
+  "compilerOptions": {
+    "rootDir": "./src",
+  },
+  "include": ["src/**/*"]
+}
