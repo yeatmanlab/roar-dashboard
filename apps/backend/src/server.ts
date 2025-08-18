@@ -9,8 +9,8 @@ const {
   KEEP_ALIVE_TIMEOUT = "75000"
 } = process.env;
 
-const LOCAL_SSL_KEY_PATH = "./certs/localhost-key.pem"
-const LOCAL_SSL_CERT_PATH = "./certs/localhost.pem"
+const LOCAL_SSL_KEY_PATH = "../../certs/roar-local.key"
+const LOCAL_SSL_CERT_PATH = "../../certs/roar-local.crt"
 
 
 const port: number = parseInt(PORT, 10);

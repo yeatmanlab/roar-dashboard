@@ -1,6 +1,9 @@
 {
   "name": "roar-dashboard",
   "private": true,
+  "bin": {
+    "setup-certs": "./scripts/setup-certs.sh"
+  },
   "scripts": {
     "dev": "turbo run dev",
     "build": "turbo run build",
@@ -12,7 +15,8 @@
     "test": "turbo run test",
     "test:watch": "turbo run test:watch",
     "check-types": "turbo run check-types",
-    "prepare": "husky"
+    "prepare": "husky",
+    "setup:certs": "setup-certs"
   },
   "devDependencies": {
     "prettier": "^3.6.0",
