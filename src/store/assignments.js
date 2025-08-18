@@ -5,9 +5,6 @@ export const useAssignmentsStore = defineStore('assignmentsStore', {
     selectedAssignment: null,
     selectedStatus: '',
   }),
-  getters: {
-    //
-  },
   actions: {
     setSelectedAssignment(assignment) {
       this.selectedAssignment = assignment;

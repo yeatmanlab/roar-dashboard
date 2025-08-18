@@ -158,7 +158,6 @@ import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useAdministrationsListQuery from '@/composables/queries/useAdministrationsListQuery';
 import CardAdministration from '@/components/CardAdministration.vue';
 import LevanteSpinner from '@/components/LevanteSpinner.vue';
-import NavBar from '@/components/NavBar.vue';
 
 const initialized = ref(false);
 const pageLimit = ref(10);
