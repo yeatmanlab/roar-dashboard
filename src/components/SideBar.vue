@@ -18,9 +18,9 @@
             :class="`assignment-group assignment-group--current ${selectedStatusCurrent} ? '--active' : ''`"
           >
             <small class="assignment-group__title">Current</small>
-            <ul v-if="currentAssignments.length > 0" class="assignment-group__list">
+            <ul v-if="props.currentAssignments.length > 0" class="assignment-group__list">
               <li
-                v-for="assignment in currentAssignments"
+                v-for="assignment in props.currentAssignments"
                 :key="assignment?.id"
                 :class="`assignment-group__item ${
                   assignmentsStore.selectedAssignment?.id === assignment?.id ? '--active' : ''
@@ -52,9 +52,9 @@
             :class="`assignment-group assignment-group--upcoming ${selectedStatusUpcoming} ? '--active' : ''`"
           >
             <small class="assignment-group__title">Upcoming</small>
-            <ul v-if="upcomingAssignments.length > 0" class="assignment-group__list">
+            <ul v-if="props.upcomingAssignments.length > 0" class="assignment-group__list">
               <li
-                v-for="assignment in upcomingAssignments"
+                v-for="assignment in props.upcomingAssignments"
                 :key="assignment?.id"
                 :class="`assignment-group__item ${
                   assignmentsStore.selectedAssignment?.id === assignment?.id ? '--active' : ''
@@ -86,9 +86,9 @@
             :class="`assignment-group assignment-group--past ${selectedStatusPast} ? '--active' : ''`"
           >
             <small class="assignment-group__title">Past</small>
-            <ul v-if="pastAssignments.length > 0" class="assignment-group__list">
+            <ul v-if="props.pastAssignments.length > 0" class="assignment-group__list">
               <li
-                v-for="assignment in pastAssignments"
+                v-for="assignment in props.pastAssignments"
                 :key="assignment?.id"
                 :class="`assignment-group__item ${
                   assignmentsStore.selectedAssignment?.id === assignment?.id ? '--active' : ''
@@ -162,7 +162,9 @@ import { useAssignmentsStore } from '@/store/assignments';
 import { ASSIGNMENT_STATUSES } from '@/constants';
 
 interface Props {
-  assignments?: any;
+  currentAssignments?: any;
+  pastAssignments?: any;
+  upcomingAssignments?: any;
 }
 
 const assignmentsStore = useAssignmentsStore();
@@ -173,49 +175,19 @@ const showSideBarPanel = ref(false);
 const selectedStatus = ref(assignmentsStore.selectedStatus);
 
 const props = withDefaults(defineProps<Props>(), {
-  assignments: [],
+  currentAssignments: [],
+  pastAssignments: [],
+  upcomingAssignments: [],
 });
-
-const emit = defineEmits<{
-  (e: 'select-assignment', assignment: any): void;
-  (e: 'select-status', status: any): void;
-}>();
-
-function isCurrent(assignment, now: Date) {
-  const assigned = new Date(assignment?.dateOpened);
-  const closed = new Date(assignment?.dateClosed);
-  return assigned <= now && closed >= now;
-}
-
-function isPast(assignment, now: Date) {
-  return new Date(assignment?.dateClosed) < now;
-}
-
-function isUpcoming(assignment, now: Date) {
-  return new Date(assignment?.dateOpened) > now;
-}
-
-const now = computed(() => new Date());
 
 const selectedStatusCurrent = computed(() => selectedStatus.value === ASSIGNMENT_STATUSES.CURRENT);
 const selectedStatusPast = computed(() => selectedStatus.value === ASSIGNMENT_STATUSES.PAST);
 const selectedStatusUpcoming = computed(() => selectedStatus.value === ASSIGNMENT_STATUSES.UPCOMING);
 
-assignmentsStore.setAssignments(props.assignments);
-
-const currentAssignments = computed(() => props.assignments.filter((a) => isCurrent(a, now.value)));
-const pastAssignments = computed(() => props.assignments.filter((a) => isPast(a, now.value)));
-const upcomingAssignments = computed(() => props.assignments.filter((a) => isUpcoming(a, now.value)));
-
-assignmentsStore.setSelectedAssignment(assignmentsStore.selectedAssignment || currentAssignments.value[0]);
-
 const onClickAssignment = (assignment, status: string) => {
   assignmentsStore.setSelectedAssignment(assignment);
   assignmentsStore.setSelectedStatus(status);
   showSideBarPanel.value = false;
-
-  emit('select-assignment', assignment);
-  emit('select-status', status);
 };
 
 const onClickSideBarNavLink = (status: string) => {
@@ -354,7 +326,7 @@ const onClickSideBarToggleBtn = () => {
   position: absolute;
   top: 0;
   left: 100%;
-  box-shadow: 3px 0 8px rgba(0, 0, 0, 0.3);
+  box-shadow: 3px 0 8px rgba(0, 0, 0, 0.2);
   transition: transform 0.3s ease-in-out;
 }
 

@@ -24,28 +24,35 @@
 
       <SideBar
         v-if="authStore.showSideBar"
-        :assignments="sortedUserAdministrations"
-        @select-assignment="onAssignmentSelected"
-        @select-status="onStatusSelected"
+        :currentAssignments="currentAssignments"
+        :pastAssignments="pastAssignments"
+        :upcomingAssignments="upcomingAssignments"
       />
 
-      <div v-if="selectedAssignment" class="assignment">
+      <div v-if="assgsStore?.selectedAssignment" class="assignment">
         <div class="assignment__header">
-          <PvTag :value="selectedStatus" class="text-xs uppercase" :class="`assignment__status --${selectedStatus}`" />
+          <PvTag
+            :value="assgsStore?.selectedStatus"
+            class="text-xs uppercase"
+            :class="`assignment__status --${assgsStore?.selectedStatus}`"
+          />
 
-          <h2 class="assignment__name">{{ selectedAssignment?.publicName || selectedAssignment?.name }}</h2>
+          <h2 class="assignment__name">
+            {{ assgsStore?.selectedAssignment?.publicName || assgsStore?.selectedAssignment?.name }}
+          </h2>
           <div class="assignment__dates">
             <div class="assignment__date">
               <i class="pi pi-calendar"></i>
               <small
                 ><span class="font-bold">Start: </span
-                >{{ format(selectedAssignment?.dateOpened, 'MMM dd, yyyy') }}</small
+                >{{ format(assgsStore?.selectedAssignment?.dateOpened, 'MMM dd, yyyy') }}</small
               >
             </div>
             <div class="assignment__date">
               <i class="pi pi-calendar"></i>
               <small
-                ><span class="font-bold">End: </span>{{ format(selectedAssignment?.dateClosed, 'MMM dd, yyyy') }}</small
+                ><span class="font-bold">End: </span
+                >{{ format(assgsStore?.selectedAssignment?.dateClosed, 'MMM dd, yyyy') }}</small
               >
             </div>
           </div>
@@ -120,6 +127,7 @@ import SideBar from '@/components/SideBar.vue';
 import NavBar from '@/components/NavBar.vue';
 import { useAssignmentsStore } from '@/store/assignments';
 import PvTag from 'primevue/tag';
+import { ASSIGNMENT_STATUSES } from '@/constants';
 
 const showConsent = ref(false);
 const consentVersion = ref('');
@@ -145,9 +153,7 @@ const init = () => {
 const authStore = useAuthStore();
 const { roarfirekit, showOptionalAssessments, userData: currentUserData } = storeToRefs(authStore);
 
-const assignmentStore = useAssignmentsStore();
-const selectedAssignment = ref(assignmentStore?.selectedAssignment || null);
-const selectedStatus = ref(assignmentStore?.selectedStatus || null);
+const assgsStore = useAssignmentsStore();
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.roarfirekit.restConfig) init();
@@ -186,6 +192,34 @@ const {
 
 const sortedUserAdministrations = computed(() => {
   return [...(userAssignments.value ?? [])].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+});
+
+function isCurrent(assignment, now) {
+  const assigned = new Date(assignment?.dateOpened);
+  const closed = new Date(assignment?.dateClosed);
+  return assigned <= now && closed >= now;
+}
+
+function isPast(assignment, now) {
+  return new Date(assignment?.dateClosed) < now;
+}
+
+function isUpcoming(assignment, now) {
+  return new Date(assignment?.dateOpened) > now;
+}
+
+const now = computed(() => new Date());
+
+const currentAssignments = computed(() => sortedUserAdministrations.value.filter((a) => isCurrent(a, now.value)));
+const pastAssignments = computed(() => sortedUserAdministrations.value.filter((a) => isPast(a, now.value)));
+const upcomingAssignments = computed(() => sortedUserAdministrations.value.filter((a) => isUpcoming(a, now.value)));
+
+watch([assgsStore, sortedUserAdministrations], () => {
+  const assignment = assgsStore?.selectedAssignment || sortedUserAdministrations.value[0];
+  assgsStore.setSelectedAssignment(assignment);
+  if (isCurrent(assignment, now.value)) assgsStore.setSelectedStatus(ASSIGNMENT_STATUSES.CURRENT);
+  if (isPast(assignment, now.value)) assgsStore.setSelectedStatus(ASSIGNMENT_STATUSES.PAST);
+  if (isUpcoming(assignment, now.value)) assgsStore.setSelectedStatus(ASSIGNMENT_STATUSES.UPCOMING);
 });
 
 const taskIds = computed(() => {
@@ -228,14 +262,6 @@ const hasAssignments = computed(() => {
   if (isLoading.value || isFetching.value) return false;
   return assessments.value.length > 0;
 });
-
-function onAssignmentSelected(assignment) {
-  selectedAssignment.value = assignment;
-}
-
-function onStatusSelected(status) {
-  selectedStatus.value = status;
-}
 
 async function checkConsent() {
   showConsent.value = false;
