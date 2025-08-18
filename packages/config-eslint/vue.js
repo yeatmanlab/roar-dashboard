@@ -77,7 +77,7 @@ export const config = [
 
   // Cypress config
   {
-    files: ['cypress.config.cjs'],
+    files: ['**/cypress.config.cjs'],
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',
@@ -91,7 +91,7 @@ export const config = [
 
   // Vite and Vitest configs
   {
-    files: ['vite.config.js', 'vitest.config.js', 'vitest.setup.js'],
+    files: ['**/vite.config.js', '**/vitest.config.js', '**/vitest.setup.js'],
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',
