@@ -160,7 +160,11 @@ const authWithGoogle = () => {
         if (authStore.uid) {
           const userClaims = await fetchDocById('userClaims', authStore.uid);
           authStore.userClaims = userClaims;
+
+          const showSideBar = !userClaims?.claims?.super_admin && !userClaims?.claims?.admin;
+          authStore.setShowSideBar(showSideBar);
         }
+
         if (authStore.roarUid) {
           const userData = await fetchDocById('users', authStore.roarUid);
           authStore.userData = userData;
@@ -205,7 +209,11 @@ const authWithEmail = async (state) => {
         if (authStore.uid) {
           const userClaims = await fetchDocById('userClaims', authStore.uid);
           authStore.userClaims = userClaims;
+
+          const showSideBar = !userClaims?.claims?.super_admin && !userClaims?.claims?.admin;
+          authStore.setShowSideBar(showSideBar);
         }
+
         if (authStore.roarUid) {
           const userData = await fetchDocById('users', authStore.roarUid);
           authStore.userData = userData;
