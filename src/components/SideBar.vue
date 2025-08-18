@@ -15,7 +15,7 @@
         <div class="sidebar__panel__main">
           <div
             v-if="selectedStatusCurrent"
-            :class="`assignment-group assignment-group--current ${selectedStatusCurrent} ? '--active' : ''`"
+            :class="`assignment-group assignment-group--current ${selectedStatusCurrent ? '--active' : ''}`"
           >
             <small class="assignment-group__title">Current</small>
             <ul v-if="props.currentAssignments.length > 0" class="assignment-group__list">
@@ -49,7 +49,7 @@
 
           <div
             v-if="selectedStatusUpcoming"
-            :class="`assignment-group assignment-group--upcoming ${selectedStatusUpcoming} ? '--active' : ''`"
+            :class="`assignment-group assignment-group--upcoming ${selectedStatusUpcoming ? '--active' : ''}`"
           >
             <small class="assignment-group__title">Upcoming</small>
             <ul v-if="props.upcomingAssignments.length > 0" class="assignment-group__list">
@@ -83,7 +83,7 @@
 
           <div
             v-if="selectedStatusPast"
-            :class="`assignment-group assignment-group--past ${selectedStatusPast} ? '--active' : ''`"
+            :class="`assignment-group assignment-group--past ${selectedStatusPast ? '--active' : ''}`"
           >
             <small class="assignment-group__title">Past</small>
             <ul v-if="props.pastAssignments.length > 0" class="assignment-group__list">
