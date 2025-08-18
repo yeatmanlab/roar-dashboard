@@ -852,6 +852,7 @@ const computeAssignmentAndRunData = computed(() => {
 
             currRowScores[taskId].composite = {
               ...scores.composite,
+              incorrectSkills: scores.composite.incorrectSkills?.length > 0 ? scores.composite.incorrectSkills : '',
               gradeEstimate: scores.composite.gradeEstimate ? _round(scores.composite.gradeEstimate, 2) : '',
               tagColor: getTagColor(scores.composite.supportCategory),
             };
