@@ -567,6 +567,9 @@ const getScoresAndSupportFromAssessment = ({
     } else {
       support_level = '';
       tag_color = '#A4DDED';
+      if (tasksToDisplayTotalCorrect.includes(taskId)) {
+        rawScore = _get(assessment, 'scores.computed.composite.rawScore');
+      }
     }
   } else {
     ({ support_level, tag_color } = getSupportLevel(grade, percentile, rawScore, taskId, optional));
@@ -822,13 +825,12 @@ const computeAssignmentAndRunData = computed(() => {
           currRowScores[taskId].thetaEstimate = thetaEstimate;
         }
         if (['fluency-calf', 'fluency-arf', 'fluency-calf-es', 'fluency-arf-es'].includes(taskId)) {
-          const fc = _get(assessment, 'scores.computed.FC');
-          const fr = _get(assessment, 'scores.computed.FR');
-          const recruit = _get(assessment, 'params.recruitment');
-
-          currRowScores[taskId].recruitment = recruit;
-          currRowScores[taskId].fc = fc;
-          currRowScores[taskId].fr = fr;
+          currRowScores[taskId].numCorrect = _get(assessment, 'scores.computed.composite.totalCorrect');
+          currRowScores[taskId].numIncorrect = _get(assessment, 'scores.computed.composite.totalIncorrect');
+          currRowScores[taskId].numAttempted = _get(assessment, 'scores.computed.composite.totalNumAttempted');
+          currRowScores[taskId].recruitment = _get(assessment, 'params.recruitment');
+          currRowScores[taskId].fc = _get(assessment, 'scores.computed.FC');
+          currRowScores[taskId].fr = _get(assessment, 'scores.computed.FR');
         }
 
         if (taskId === 'roam-alpaca') {
@@ -1487,7 +1489,7 @@ const scoreReportColumns = computed(() => {
       if (tasksToDisplayCorrectIncorrectDifference.includes(taskId) && viewMode.value === 'raw') {
         colField = `scores.${taskId}.correctIncorrectDifference`;
       } else if (tasksToDisplayTotalCorrect.includes(taskId) && viewMode.value === 'raw') {
-        colField = `scores.${taskId}.numCorrect`;
+        colField = `scores.${taskId}.rawScore`;
       } else if (tasksToDisplayPercentCorrect.includes(taskId) && viewMode.value === 'raw') {
         colField = `scores.${taskId}.percentCorrect`;
       } else if (tasksToDisplayThetaScore.includes(taskId) && viewMode.value === 'raw') {
