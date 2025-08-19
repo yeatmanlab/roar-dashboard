@@ -13,6 +13,7 @@ import { isLevante } from '@/helpers';
 import { APP_ROUTES } from '@/constants/routes';
 import posthogInstance from '@/plugins/posthog';
 import { logger } from '@/logger';
+import { NAVBAR_BLACKLIST } from '@/constants';
 
 function removeQueryParams(to: RouteLocationNormalized) {
   if (Object.keys(to.query).length) return { path: to.path, query: {}, hash: to.hash };
@@ -257,6 +258,10 @@ router.beforeEach(async (to: RouteLocationNormalized, from: RouteLocationNormali
   const allowedUnauthenticatedRoutes = ['SignIn', 'Maintenance', 'AuthEmailLink', 'AuthEmailSent', 'Debug'];
 
   const inMaintenanceMode = false;
+
+  if (NAVBAR_BLACKLIST.includes(to.name)) {
+    store.setShowSideBar(false);
+  }
 
   if (inMaintenanceMode && to.name !== 'Maintenance') {
     next({ name: 'Maintenance' });

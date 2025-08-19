@@ -1,0 +1,468 @@
+<template>
+  <div class="sidebar">
+    <div
+      class="sidebar__panel__backdrop"
+      :class="{ 'is-active': showSideBarPanel }"
+      @click="onClickSideBarPanelBackdrop"
+    />
+
+    <transition name="sidebar__panel">
+      <div v-if="showSideBarPanel" class="sidebar__panel">
+        <div class="sidebar__panel__header">
+          <h3 class="sidebar__panel__title">Assignments</h3>
+        </div>
+
+        <div class="sidebar__panel__main">
+          <div
+            v-if="selectedStatusCurrent"
+            :class="`assignment-group assignment-group--current ${selectedStatusCurrent ? '--active' : ''}`"
+          >
+            <small class="assignment-group__title">Current</small>
+            <ul v-if="props.currentAssignments.length > 0" class="assignment-group__list">
+              <li
+                v-for="assignment in props.currentAssignments"
+                :key="assignment?.id"
+                :class="`assignment-group__item ${
+                  assignmentsStore.selectedAssignment?.id === assignment?.id ? '--active' : ''
+                }`"
+                @click="() => onClickAssignment(assignment, ASSIGNMENT_STATUSES.CURRENT)"
+              >
+                <div class="assignment__content">
+                  <h4 class="assignment__name">{{ assignment?.publicName || assignment?.name }}</h4>
+                  <div class="assignment__dates">
+                    <i class="pi pi-calendar"></i>
+                    <small>{{ format(assignment?.dateOpened, 'MMM dd, yyyy') }}</small> —
+                    <small>{{ format(assignment?.dateClosed, 'MMM dd, yyyy') }}</small>
+                  </div>
+                </div>
+
+                <div
+                  v-if="assignmentsStore.selectedAssignment?.id === assignment?.id"
+                  class="assignment__selected-icon"
+                >
+                  <i class="pi pi-angle-right"></i>
+                </div>
+              </li>
+            </ul>
+            <div v-else class="assignment-group__empty">No current assignments were found</div>
+          </div>
+
+          <div
+            v-if="selectedStatusUpcoming"
+            :class="`assignment-group assignment-group--upcoming ${selectedStatusUpcoming ? '--active' : ''}`"
+          >
+            <small class="assignment-group__title">Upcoming</small>
+            <ul v-if="props.upcomingAssignments.length > 0" class="assignment-group__list">
+              <li
+                v-for="assignment in props.upcomingAssignments"
+                :key="assignment?.id"
+                :class="`assignment-group__item ${
+                  assignmentsStore.selectedAssignment?.id === assignment?.id ? '--active' : ''
+                }`"
+                @click="() => onClickAssignment(assignment, ASSIGNMENT_STATUSES.UPCOMING)"
+              >
+                <div class="assignment__content">
+                  <h4 class="assignment__name">{{ assignment?.publicName || assignment?.name }}</h4>
+                  <div class="assignment__dates">
+                    <i class="pi pi-calendar"></i>
+                    <small>{{ format(assignment?.dateOpened, 'MMM dd, yyyy') }}</small> —
+                    <small>{{ format(assignment?.dateClosed, 'MMM dd, yyyy') }}</small>
+                  </div>
+                </div>
+
+                <div
+                  v-if="assignmentsStore.selectedAssignment?.id === assignment?.id"
+                  class="assignment__selected-icon"
+                >
+                  <i class="pi pi-angle-right"></i>
+                </div>
+              </li>
+            </ul>
+            <div v-else class="assignment-group__empty">No upcoming assignments were found</div>
+          </div>
+
+          <div
+            v-if="selectedStatusPast"
+            :class="`assignment-group assignment-group--past ${selectedStatusPast ? '--active' : ''}`"
+          >
+            <small class="assignment-group__title">Past</small>
+            <ul v-if="props.pastAssignments.length > 0" class="assignment-group__list">
+              <li
+                v-for="assignment in props.pastAssignments"
+                :key="assignment?.id"
+                :class="`assignment-group__item ${
+                  assignmentsStore.selectedAssignment?.id === assignment?.id ? '--active' : ''
+                }`"
+                @click="() => onClickAssignment(assignment, ASSIGNMENT_STATUSES.PAST)"
+              >
+                <div class="assignment__content">
+                  <h4 class="assignment__name">{{ assignment?.publicName || assignment?.name }}</h4>
+                  <div class="assignment__dates">
+                    <i class="pi pi-calendar"></i>
+                    <small>{{ format(assignment?.dateOpened, 'MMM dd, yyyy') }}</small> —
+                    <small>{{ format(assignment?.dateClosed, 'MMM dd, yyyy') }}</small>
+                  </div>
+                </div>
+
+                <div
+                  v-if="assignmentsStore.selectedAssignment?.id === assignment?.id"
+                  class="assignment__selected-icon"
+                >
+                  <i class="pi pi-angle-right"></i>
+                </div>
+              </li>
+            </ul>
+            <div v-else class="assignment-group__empty">No past assignments were found</div>
+          </div>
+        </div>
+      </div>
+    </transition>
+
+    <div class="sidebar__rail">
+      <div class="sidebar__toggle-btn" @click="onClickSideBarToggleBtn">
+        <i v-if="showSideBarPanel" class="pi pi-times"></i>
+        <i v-else class="pi pi-list"></i>
+      </div>
+
+      <div class="sidebar__divider" />
+
+      <div class="sidebar__nav">
+        <div
+          v-tooltip.right="'Current'"
+          :class="`sidebar__nav-link --${ASSIGNMENT_STATUSES.CURRENT} ${selectedStatusCurrent ? '--active' : ''}`"
+          @click="() => onClickSideBarNavLink(ASSIGNMENT_STATUSES.CURRENT)"
+        >
+          <i class="pi pi-play"></i>
+        </div>
+
+        <div
+          v-tooltip.right="'Upcoming'"
+          :class="`sidebar__nav-link --${ASSIGNMENT_STATUSES.UPCOMING} ${selectedStatusUpcoming ? '--active' : ''}`"
+          @click="() => onClickSideBarNavLink(ASSIGNMENT_STATUSES.UPCOMING)"
+        >
+          <i class="pi pi-clock"></i>
+        </div>
+
+        <div
+          v-tooltip.right="'Past'"
+          :class="`sidebar__nav-link --${ASSIGNMENT_STATUSES.PAST} ${selectedStatusPast ? '--active' : ''}`"
+          @click="() => onClickSideBarNavLink(ASSIGNMENT_STATUSES.PAST)"
+        >
+          <i class="pi pi-briefcase"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script lang="ts" setup>
+import { computed, ref } from 'vue';
+import { format } from 'date-fns';
+import { useAssignmentsStore } from '@/store/assignments';
+import { ASSIGNMENT_STATUSES } from '@/constants';
+
+interface Props {
+  currentAssignments?: any;
+  pastAssignments?: any;
+  upcomingAssignments?: any;
+}
+
+const assignmentsStore = useAssignmentsStore();
+
+assignmentsStore.setSelectedStatus(assignmentsStore.selectedStatus || ASSIGNMENT_STATUSES.CURRENT);
+
+const showSideBarPanel = ref(false);
+const selectedStatus = ref(assignmentsStore.selectedStatus);
+
+const props = withDefaults(defineProps<Props>(), {
+  currentAssignments: [],
+  pastAssignments: [],
+  upcomingAssignments: [],
+});
+
+const selectedStatusCurrent = computed(() => selectedStatus.value === ASSIGNMENT_STATUSES.CURRENT);
+const selectedStatusPast = computed(() => selectedStatus.value === ASSIGNMENT_STATUSES.PAST);
+const selectedStatusUpcoming = computed(() => selectedStatus.value === ASSIGNMENT_STATUSES.UPCOMING);
+
+const onClickAssignment = (assignment, status: string) => {
+  assignmentsStore.setSelectedAssignment(assignment);
+  assignmentsStore.setSelectedStatus(status);
+  showSideBarPanel.value = false;
+};
+
+const onClickSideBarNavLink = (status: string) => {
+  selectedStatus.value = status;
+  showSideBarPanel.value = true;
+};
+
+const onClickSideBarPanelBackdrop = () => {
+  showSideBarPanel.value = false;
+
+  if (showSideBarPanel.value === false) {
+    selectedStatus.value = assignmentsStore.selectedStatus;
+  }
+};
+
+const onClickSideBarToggleBtn = () => {
+  showSideBarPanel.value = !showSideBarPanel.value;
+
+  if (showSideBarPanel.value === false) {
+    selectedStatus.value = assignmentsStore.selectedStatus;
+  }
+};
+</script>
+
+<style lang="scss">
+.sidebar {
+  display: inline-flex;
+  width: auto;
+  height: 100dvh;
+  margin: 0;
+  padding: 0;
+  background: white;
+  border-top: 7px solid var(--primary-color);
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 20;
+}
+
+.sidebar__rail {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 0.5rem;
+  width: var(--sidebar-width);
+  height: 100%;
+  padding: 0.5rem 0;
+  background: white;
+  border-right: 1px solid var(--surface-d);
+  position: relative;
+}
+
+.sidebar__toggle-btn,
+.sidebar__nav-link {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 0.75rem;
+  color: var(--gray-600);
+  cursor: pointer;
+
+  .pi {
+    font-size: 18px;
+  }
+}
+
+.sidebar__toggle-btn {
+  &:hover {
+    color: black;
+  }
+}
+
+.sidebar__divider {
+  display: block;
+  width: 2rem;
+  height: auto;
+  margin: 0;
+  border-bottom: 1px solid var(--surface-d);
+}
+
+.sidebar__nav {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.sidebar__nav-link {
+  transition: all 0.2s ease-out;
+
+  &.--current {
+    &:hover {
+      color: var(--bright-green);
+    }
+
+    &.--active {
+      background: rgba(var(--bright-green-rgb), 0.1);
+      color: var(--bright-green);
+    }
+  }
+
+  &.--upcoming {
+    &:hover {
+      color: var(--bright-yellow);
+    }
+
+    &.--active {
+      background: rgba(var(--bright-yellow-rgb), 0.1);
+      color: var(--bright-yellow);
+    }
+  }
+
+  &.--past {
+    &:hover {
+      color: var(--bright-red);
+    }
+
+    &.--active {
+      background: rgba(var(--bright-red-rgb), 0.1);
+      color: var(--bright-red);
+    }
+  }
+}
+
+.sidebar__panel {
+  display: block;
+  width: var(--sidebar-panel-width);
+  height: 100%;
+  margin: 0;
+  padding: 0.5rem 0;
+  background: white;
+  position: absolute;
+  top: 0;
+  left: 100%;
+  box-shadow: 3px 0 8px rgba(0, 0, 0, 0.2);
+  transition: transform 0.3s ease-in-out;
+}
+
+.sidebar__panel__backdrop {
+  display: block;
+  width: 100vw;
+  height: 100svh;
+  position: absolute;
+  top: 0;
+  left: 0;
+  background: rgba(0, 0, 0, 0);
+  pointer-events: none;
+  transition: background 0.3s ease-in-out;
+
+  &.is-active {
+    background: rgba(0, 0, 0, 0.5);
+    pointer-events: initial;
+  }
+}
+
+.sidebar__panel-enter-from,
+.sidebar__panel-leave-to {
+  transform: translateX(-100%);
+}
+
+.sidebar__panel__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  height: 56px;
+  margin: 0;
+  padding: 0 1.5rem 0.5rem;
+  border-bottom: 1px solid var(--surface-d);
+}
+
+.sidebar__panel__title {
+  display: block;
+  margin: 0;
+  font-weight: 700;
+  color: var(--gray-600);
+}
+
+.sidebar__panel__close-btn {
+  display: block;
+  margin: 0;
+  color: var(--gray-600);
+  cursor: pointer;
+
+  &:hover {
+    color: black;
+  }
+}
+
+.sidebar__panel__main {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin: 0;
+  padding: 1.5rem;
+}
+
+.assignment-group__title {
+  display: block;
+  margin: 0;
+  font-weight: 700;
+  color: var(--gray-600);
+  text-transform: uppercase;
+}
+
+.assignment-group__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+  height: auto;
+  margin: 1rem 0 0;
+  padding: 0;
+  list-style-type: none;
+}
+
+.assignment-group__item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: auto;
+  margin: 0;
+  padding: 0.75rem;
+  border: 1px solid var(--surface-d);
+  border-radius: 0.75rem;
+  cursor: pointer;
+
+  &.--active {
+    background: rgba(var(--bright-yellow-rgb), 0.1);
+    border: 1px solid var(--bright-yellow);
+
+    .assignment__name {
+      color: var(--bright-yellow);
+    }
+  }
+}
+
+.assignment__content {
+  display: block;
+  flex: 1;
+  margin: 0;
+}
+
+.assignment__selected-icon {
+  color: var(--bright-yellow);
+}
+
+.assignment__name {
+  display: block;
+  margin: 0;
+  font-weight: 700;
+  color: var(--gray-600);
+}
+
+.assignment__dates {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 0.25rem;
+  margin: 0.5rem 0 0;
+  font-weight: 500;
+  color: var(--gray-500);
+
+  .pi {
+    margin: -2px 0 0;
+  }
+}
+
+.assignment-group__empty {
+  display: block;
+  margin: 1rem 0 0;
+  color: var(--gray-600);
+}
+</style>

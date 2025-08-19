@@ -3,6 +3,7 @@
     <div v-if="!initialized || isLoading || isFetching">
       <LevanteSpinner fullscreen />
     </div>
+
     <div v-else-if="!hasAssignments">
       <div class="col-full text-center py-8">
         <h1>{{ $t('homeParticipant.noAssignments') }}</h1>
@@ -18,18 +19,39 @@
       </div>
     </div>
 
-    <div v-else class="assignments">
-      <div v-for="assignment of userAssignments" :key="assignment?.id" class="assignment">
+    <div v-else>
+      <SideBar
+        v-if="authStore.showSideBar"
+        :currentAssignments="currentAssignments"
+        :pastAssignments="pastAssignments"
+        :upcomingAssignments="upcomingAssignments"
+      />
+
+      <div v-if="assgsStore?.selectedAssignment" class="assignment">
         <div class="assignment__header">
-          <h2 class="assignment__name">{{ assignment?.publicName || assignment?.name }}</h2>
+          <PvTag
+            :value="assgsStore?.selectedStatus"
+            class="text-xs uppercase"
+            :class="`assignment__status --${assgsStore?.selectedStatus}`"
+          />
+
+          <h2 class="assignment__name">
+            {{ assgsStore?.selectedAssignment?.publicName || assgsStore?.selectedAssignment?.name }}
+          </h2>
           <div class="assignment__dates">
             <div class="assignment__date">
               <i class="pi pi-calendar"></i>
-              <small><span class="font-bold">Start: </span>{{ format(assignment?.dateOpened, 'MMM dd, yyyy') }}</small>
+              <small
+                ><span class="font-bold">Start: </span
+                >{{ format(assgsStore?.selectedAssignment?.dateOpened, 'MMM dd, yyyy') }}</small
+              >
             </div>
             <div class="assignment__date">
               <i class="pi pi-calendar"></i>
-              <small><span class="font-bold">End: </span>{{ format(assignment?.dateClosed, 'MMM dd, yyyy') }}</small>
+              <small
+                ><span class="font-bold">End: </span
+                >{{ format(assgsStore?.selectedAssignment?.dateClosed, 'MMM dd, yyyy') }}</small
+              >
             </div>
           </div>
         </div>
@@ -99,6 +121,10 @@ import { fetchDocsById } from '@/helpers/query/utils';
 import LevanteSpinner from '@/components/LevanteSpinner.vue';
 import { logger } from '@/logger';
 import { format } from 'date-fns';
+import SideBar from '@/components/SideBar.vue';
+import { useAssignmentsStore } from '@/store/assignments';
+import PvTag from 'primevue/tag';
+import { ASSIGNMENT_STATUSES } from '@/constants';
 
 const showConsent = ref(false);
 const consentVersion = ref('');
@@ -123,6 +149,8 @@ const init = () => {
 
 const authStore = useAuthStore();
 const { roarfirekit, showOptionalAssessments, userData: currentUserData } = storeToRefs(authStore);
+
+const assgsStore = useAssignmentsStore();
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.roarfirekit.restConfig) init();
@@ -161,6 +189,34 @@ const {
 
 const sortedUserAdministrations = computed(() => {
   return [...(userAssignments.value ?? [])].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+});
+
+function isCurrent(assignment, now) {
+  const assigned = new Date(assignment?.dateOpened);
+  const closed = new Date(assignment?.dateClosed);
+  return assigned <= now && closed >= now;
+}
+
+function isPast(assignment, now) {
+  return new Date(assignment?.dateClosed) < now;
+}
+
+function isUpcoming(assignment, now) {
+  return new Date(assignment?.dateOpened) > now;
+}
+
+const now = computed(() => new Date());
+
+const currentAssignments = computed(() => sortedUserAdministrations.value.filter((a) => isCurrent(a, now.value)));
+const pastAssignments = computed(() => sortedUserAdministrations.value.filter((a) => isPast(a, now.value)));
+const upcomingAssignments = computed(() => sortedUserAdministrations.value.filter((a) => isUpcoming(a, now.value)));
+
+watch([assgsStore, sortedUserAdministrations], () => {
+  const assignment = assgsStore?.selectedAssignment || sortedUserAdministrations.value[0];
+  assgsStore.setSelectedAssignment(assignment);
+  if (isCurrent(assignment, now.value)) assgsStore.setSelectedStatus(ASSIGNMENT_STATUSES.CURRENT);
+  if (isPast(assignment, now.value)) assgsStore.setSelectedStatus(ASSIGNMENT_STATUSES.PAST);
+  if (isUpcoming(assignment, now.value)) assgsStore.setSelectedStatus(ASSIGNMENT_STATUSES.UPCOMING);
 });
 
 const taskIds = computed(() => {
@@ -564,31 +620,34 @@ watch(
   opacity: 0;
 }
 
-.assignments {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
+.assignment {
+  display: block;
   width: 100%;
   height: auto;
   margin: 0;
   padding: 2rem;
 }
 
-.assignment {
-  display: block;
-  margin: 0;
-  padding: 0 0 2rem;
-  border-bottom: 1px solid var(--surface-d);
+.assignment__status {
+  &.--current {
+    background: rgba(var(--bright-green-rgb), 0.1);
+    color: var(--bright-green);
+  }
 
-  &:last-of-type {
-    padding: 0;
-    border-bottom: none;
+  &.--upcoming {
+    background: rgba(var(--bright-yellow-rgb), 0.1);
+    color: var(--bright-yellow);
+  }
+
+  &.--past {
+    background: rgba(var(--bright-red-rgb), 0.1);
+    color: var(--bright-red);
   }
 }
 
 .assignment__name {
   display: block;
-  margin: 0;
+  margin: 0.5rem 0 0;
   font-weight: 700;
   font-size: 1.5rem;
   color: var(--gray-600);

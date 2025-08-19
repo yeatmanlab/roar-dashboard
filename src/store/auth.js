@@ -24,6 +24,7 @@ export const useAuthStore = () => {
         routeToProfile: false,
         ssoProvider: null,
         showOptionalAssessments: false,
+        showSideBar: false,
         adminAuthStateListener: null,
       };
     },
@@ -158,6 +159,9 @@ export const useAuthStore = () => {
       },
       setUserClaims(userClaims) {
         this.userClaims = userClaims;
+      },
+      setShowSideBar(showSideBar) {
+        this.showSideBar = showSideBar;
       },
     },
     persist: {

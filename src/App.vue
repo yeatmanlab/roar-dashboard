@@ -14,9 +14,11 @@
     <!-- Dynamic Favicon -->
     <link rel="icon" :href="`/favicon-levante.ico`" />
   </Head>
-  <div v-if="isAuthStoreReady">
+  <div v-if="isAuthStoreReady" :class="`${authStore.showSideBar ? 'app app--sidebar' : 'app'}`">
     <PvToast position="bottom-center" />
-    <NavBar v-if="typeof $route.name === 'string' && !navbarBlacklist.includes($route.name)" />
+
+    <NavBar v-if="typeof $route.name === 'string' && !NAVBAR_BLACKLIST.includes($route.name)" />
+
     <router-view :key="$route.fullPath" />
 
     <SessionTimer v-if="loadSessionTimeoutHandler" />
@@ -33,11 +35,12 @@ import { computed, onBeforeMount, onMounted, ref, defineAsyncComponent } from 'v
 import { useRoute } from 'vue-router';
 import { Head } from '@unhead/vue/components';
 import PvToast from 'primevue/toast';
-import NavBar from '@/components/NavBar.vue';
 import { useAuthStore } from '@/store/auth';
 import { fetchDocById } from '@/helpers/query/utils';
 import { i18n } from '@/translations/i18n';
 import LevanteSpinner from '@/components/LevanteSpinner.vue';
+import NavBar from '@/components/NavBar.vue';
+import { NAVBAR_BLACKLIST } from './constants';
 
 const SessionTimer = defineAsyncComponent(() => import('@/containers/SessionTimer/SessionTimer.vue'));
 const VueQueryDevtools = defineAsyncComponent(() =>
@@ -69,8 +72,6 @@ const pageTitle = computed(() => {
 
 const loadSessionTimeoutHandler = computed(() => isAuthStoreReady.value && authStore.isAuthenticated);
 
-const navbarBlacklist = ref(['SignIn', 'Register', 'Maintenance', 'PlayApp', 'SWR', 'SRE', 'PA']);
-
 onBeforeMount(async () => {
   await authStore.initFirekit();
 
@@ -81,7 +82,11 @@ onBeforeMount(async () => {
     if (authStore.uid) {
       const userClaims = await fetchDocById('userClaims', authStore.uid);
       authStore.setUserClaims(userClaims);
+
+      const showSideBar = !userClaims?.claims?.super_admin && !userClaims?.claims?.admin;
+      authStore.setShowSideBar(showSideBar);
     }
+
     if (authStore.roarUid) {
       const userData = await fetchDocById('users', authStore.roarUid);
       authStore.setUserData(userData);

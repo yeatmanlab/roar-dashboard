@@ -49,6 +49,18 @@ body {
   color: var(--text-color-secondary);
 }
 
+.app {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin: 0;
+  padding: 0;
+
+  &.app--sidebar {
+    padding: 0 0 0 var(--sidebar-width);
+  }
+}
+
 .admin-page-header {
   font-size: 1.5rem;
   color: #52525b;

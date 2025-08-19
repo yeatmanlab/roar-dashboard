@@ -1076,8 +1076,7 @@ export const getUserAssignments = async (roarUid) => {
     .post(`${getBaseDocumentPath()}/users/${userId}:runQuery`, assignmentRequest)
     .then(async ({ data }) => {
       const assignmentData = mapFields(data);
-      const openAssignments = assignmentData.filter((assignment) => new Date(assignment.dateOpened) <= new Date());
-      return openAssignments;
+      return assignmentData;
     });
 };
 
