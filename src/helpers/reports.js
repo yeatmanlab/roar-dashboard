@@ -568,6 +568,13 @@ export const roamAlpacaSubskillHeaders = {
   supportCategory: 'Support Category',
 };
 
+export const roamFluencySubskillHeaders = {
+  rawScore: 'Raw Score',
+  totalCorrect: 'Num Correct',
+  totalIncorrect: 'Num Incorrect',
+  totalNumAttempted: 'Num Attempted',
+};
+
 function getOrdinalSuffix(n) {
   if (n >= 11 && n <= 13) return 'th';
 
