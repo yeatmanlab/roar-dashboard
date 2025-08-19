@@ -61,7 +61,7 @@ let returnScoreTooltip = (colData, fieldPath) => {
   // Subskill fieldPaths are formatted as scores.taskId.subskillId[property]
   const subskillId = pathSegments.length > 3 ? pathSegments[2] : null;
   let toolTip = '';
-  console.log(pathSegments);
+
   if (subskillTasks.includes(taskId) && subskillId) {
     if (taskId === 'roam-alpaca' && subskillId === 'composite' && pathSegments[3] === 'incorrectSkills') {
       return toolTip;
