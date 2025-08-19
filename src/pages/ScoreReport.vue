@@ -1037,7 +1037,11 @@ const createExportData = ({ rows, includeProgress = false }) => {
         tableRow[`${taskName} - Num Incorrect`] = score.numIncorrect;
         tableRow[`${taskName} - Num Correct`] = score.numCorrect;
       } else if (tasksToDisplayTotalCorrect.includes(taskId)) {
+        if (score.recruitment !== 'responseModality') {
+          tableRow[`${taskName} - Raw Score`] = score.rawScore;
+        }
         tableRow[`${taskName} - Num Correct`] = score.numCorrect;
+        tableRow[`${taskName} - Num Incorrect`] = score.numIncorrect;
         tableRow[`${taskName} - Num Attempted`] = score.numAttempted;
       } else if (rawOnlyTasks.includes(taskId)) {
         tableRow[`${taskName} - Raw`] = score.rawScore;
