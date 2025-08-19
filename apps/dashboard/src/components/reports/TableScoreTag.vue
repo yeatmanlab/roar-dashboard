@@ -38,6 +38,7 @@ import {
   rawOnlyTasks,
   scoredTasks,
   subskillTasks,
+  roamFluencySubskillHeaders,
 } from '@/helpers/reports.js';
 import { taskDisplayNames } from '@/helpers/reports';
 import { includedValidityFlags } from '@/helpers/reports';
@@ -146,10 +147,9 @@ function handleSubskillToolTip(_taskId, _subskillId, _toolTip, _colData) {
       _toolTip += 'Grade Estimate: ' + subskillInfo?.gradeEstimate + '\n';
     }
   } else if (fluencyTasks.includes(_taskId)) {
-    _toolTip += 'Raw Score: ' + subskillInfo?.rawScore + '\n';
-    _toolTip += 'Num Correct: ' + subskillInfo?.totalCorrect + '\n';
-    _toolTip += 'Num Incorrect: ' + subskillInfo?.totalIncorrect + '\n';
-    _toolTip += 'Num Attempted: ' + subskillInfo?.totalNumAttempted + '\n';
+    Object.keys(roamFluencySubskillHeaders).forEach((property) => {
+      _toolTip += `${roamFluencySubskillHeaders[property]}: ${subskillInfo?.[property]}\n`;
+    });
   }
 
   return _toolTip;
