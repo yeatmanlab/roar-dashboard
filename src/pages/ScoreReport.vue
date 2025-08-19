@@ -310,6 +310,7 @@ import {
   includedValidityFlags,
   roamAlpacaSubskills,
   getTagColor,
+  fluencyTasks,
 } from '@/helpers/reports';
 import RoarDataTable from '@/components/RoarDataTable';
 import { CSV_EXPORT_STATIC_COLUMNS } from '@/constants/csvExport';
@@ -363,6 +364,8 @@ const handleViewChange = () => {
 const exportLoading = ref(false);
 
 const activeTabIndex = ref(0);
+
+const recruitment = ref({});
 
 const pageWidth = 190; // Set page width for calculations
 const returnScaleFactor = (width) => pageWidth / width; // Calculate the scale factor
@@ -930,8 +933,7 @@ const computeAssignmentAndRunData = computed(() => {
     const assessments = administrationData.value.assessments;
     for (const assessment of assessments) {
       if (['fluency-calf', 'fluency-arf', 'fluency-calf-es', 'fluency-arf-es'].includes(assessment.taskId)) {
-        const recruitment = assessment?.params?.recruitment;
-        if (recruitment !== 'responseModality') {
+        if (recruitment.value[assessment.taskId] !== 'responseModality') {
           delete filteredRunsByTaskId[assessment.taskId];
         }
       }
@@ -1453,6 +1455,7 @@ const scoreReportColumns = computed(() => {
     if (excludeFromScoringTasks.includes(taskId)) continue; // Skip adding this column
     let colField;
     const isOptional = `scores.${taskId}.optional`;
+    const isFluencyResponseModality = fluencyTasks.includes(taskId) && recruitment.value[taskId] === 'responseModality';
 
     // Color needs to include a field to allow sorting.
     if (viewMode.value === 'percentile' || viewMode.value === 'color') {
@@ -1502,6 +1505,7 @@ const scoreReportColumns = computed(() => {
     } else {
       backgroundColor = '#EEEEF0';
     }
+
     tableColumns.push({
       field: colField,
       header: tasksDictionary.value[taskId]?.publicName ?? taskId,
@@ -1511,7 +1515,7 @@ const scoreReportColumns = computed(() => {
       filter: true,
       sortField: colField ? colField : `scores.${taskId}.percentile`,
       tag: viewMode.value !== 'color',
-      emptyTag: viewMode.value === 'color' || isOptional,
+      emptyTag: viewMode.value === 'color' || isFluencyResponseModality || isOptional,
       tagColor: `scores.${taskId}.tagColor`,
       style: (() => {
         return `text-align: center; ${getTaskStyle(taskId, backgroundColor, orderedTasks)}`;
