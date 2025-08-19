@@ -822,10 +822,11 @@ const computeAssignmentAndRunData = computed(() => {
           currRowScores[taskId].thetaEstimate = thetaEstimate;
         }
         if (['fluency-calf', 'fluency-arf', 'fluency-calf-es', 'fluency-arf-es'].includes(taskId)) {
-          console.log('fluency', assessment);
           const fc = _get(assessment, 'scores.computed.FC');
           const fr = _get(assessment, 'scores.computed.FR');
+          const recruit = _get(assessment, 'params.recruitment');
 
+          currRowScores[taskId].recruitment = recruit;
           currRowScores[taskId].fc = fc;
           currRowScores[taskId].fr = fr;
         }
@@ -952,6 +953,12 @@ watch(
   computeAssignmentAndRunData,
   (newValue) => {
     filteredTableData.value = newValue.assignmentTableData;
+    if (filteredTableData.value.length > 0) {
+      // Assign recruitment values to handle roam response modality raw score reporting
+      for (const [key, value] of Object.entries(filteredTableData.value[0].scores)) {
+        recruitment.value[key] = value?.recruitment;
+      }
+    }
   },
   { immediate: true, deep: true },
 );
