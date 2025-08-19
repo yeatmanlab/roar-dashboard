@@ -105,8 +105,8 @@ const columns = computed(() => {
   }
   if (['fluency-calf', 'fluency-arf', 'fluency-calf-es', 'fluency-arf-es'].includes(props.taskId)) {
     tableColumns.push(
-      { field: `scores.${props.taskId}.fr`, header: 'Free Response', dataType: 'text', sort: false },
-      { field: `scores.${props.taskId}.fc`, header: 'Multiple Choice', dataType: 'text', sort: false },
+      { field: `scores.${props.taskId}.fr.rawScore`, header: 'Free Response', dataType: 'text', sort: false },
+      { field: `scores.${props.taskId}.fc.rawScore`, header: 'Multiple Choice', dataType: 'text', sort: false },
     );
   }
   if (props.taskId === 'roam-alpaca') {
@@ -162,8 +162,8 @@ const exportSelected = (selectedRows) => {
       _set(tableRow, 'Skills To Work On', _get(scores, 'pa.skills'));
     }
     if (['fluency-calf', 'fluency-arf', 'fluency-calf-es', 'fluency-arf-es'].includes(props.taskId)) {
-      _set(tableRow, 'Free Response', _get(scores, `${props.taskId}.fr`));
-      _set(tableRow, 'Multiple Choice', _get(scores, `${props.taskId}.fc`));
+      _set(tableRow, 'Free Response', _get(scores, `${props.taskId}.fr.rawScore`));
+      _set(tableRow, 'Multiple Choice', _get(scores, `${props.taskId}.fc.rawScore`));
     }
     if (props.taskId === 'roam-alpaca') {
       _set(tableRow, 'Raw Score', _get(scores, `${props.taskId}.composite.roarScore`));
@@ -207,8 +207,8 @@ const exportAll = async () => {
       _set(tableRow, 'Total', _get(scores, 'pa.total'));
       _set(tableRow, 'Skills To Work On', _get(scores, 'pa.skills'));
     } else if (['fluency-calf', 'fluency-arf', 'fluency-calf-es', 'fluency-arf-es'].includes(props.taskId)) {
-      _set(tableRow, 'Free Response', _get(scores, `${props.taskId}.fr`));
-      _set(tableRow, 'Multiple Choice', _get(scores, `${props.taskId}.fc`));
+      _set(tableRow, 'Free Response', _get(scores, `${props.taskId}.fr.rawScore`));
+      _set(tableRow, 'Multiple Choice', _get(scores, `${props.taskId}.fc.rawScore`));
     } else if (props.taskId === 'roam-alpaca') {
       _set(tableRow, 'Raw Score', _get(scores, `${props.taskId}.composite.roarScore`));
       _set(tableRow, 'Grade Estimate', _get(scores, `${props.taskId}.composite.gradeEstimate`));
