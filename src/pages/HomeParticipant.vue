@@ -435,23 +435,23 @@ const { data: surveyData } = useQuery({
     const userType = userData.value.userType;
 
     if (userType === 'student') {
-      const resSurvey = await axios.get(`${LEVANTE_BUCKET_URL}/child_survey.json`);
+      const resSurvey = await axios.get(`${LEVANTE_BUCKET_URL}/surveys/child_survey.json`);
       const resAudio = await fetchAudioLinks('child-survey');
       surveyStore.setAudioLinkMap(resAudio);
       return {
         general: resSurvey.data,
       };
     } else if (userType === 'teacher') {
-      const resGeneral = await axios.get(`${LEVANTE_BUCKET_URL}/teacher_survey_general.json`);
-      const resClassroom = await axios.get(`${LEVANTE_BUCKET_URL}/teacher_survey_classroom.json`);
+      const resGeneral = await axios.get(`${LEVANTE_BUCKET_URL}/surveys/teacher_survey_general.json`);
+      const resClassroom = await axios.get(`${LEVANTE_BUCKET_URL}/surveys/teacher_survey_classroom.json`);
       return {
         general: resGeneral.data,
         specific: resClassroom.data,
       };
     } else {
       // parent
-      const resFamily = await axios.get(`${LEVANTE_BUCKET_URL}/parent_survey_family.json`);
-      const resChild = await axios.get(`${LEVANTE_BUCKET_URL}/parent_survey_child.json`);
+      const resFamily = await axios.get(`${LEVANTE_BUCKET_URL}/surveys/parent_survey_family.json`);
+      const resChild = await axios.get(`${LEVANTE_BUCKET_URL}/surveys/parent_survey_child.json`);
       return {
         general: resFamily.data,
         specific: resChild.data,

@@ -128,15 +128,18 @@ export const fetchAudioLinks = async (surveyType: string): Promise<AudioLinkMap>
   const files = response.data || { items: [] };
   const audioLinkMap: AudioLinkMap = {};
   files.items.forEach((item: GCSFileItem) => {
-    if (item.contentType === 'audio/mpeg' && item.name.startsWith(surveyType)) {
+    if (item.contentType === 'audio/mpeg' && item.name.startsWith(`audio/${surveyType}`)) {
       const splitParts = item.name.split('/');
-      const fileLocale = splitParts[1];
-      const fileName = splitParts.at(-1)?.split('.')?.[0];
-      if (fileName) {
-        if (!audioLinkMap[fileLocale]) {
-          audioLinkMap[fileLocale] = {};
+      // Expected format: audio/surveyType/locale/filename.mp3
+      if (splitParts.length >= 4 && splitParts[0] === 'audio') {
+        const fileLocale = splitParts[2];
+        const fileName = splitParts.at(-1)?.split('.')?.[0];
+        if (fileName && fileLocale) {
+          if (!audioLinkMap[fileLocale]) {
+            audioLinkMap[fileLocale] = {};
+          }
+          audioLinkMap[fileLocale][fileName] = LEVANTE_BUCKET_URL + `/${item.name}`;
         }
-        audioLinkMap[fileLocale][fileName] = LEVANTE_BUCKET_URL + `/${item.name}`;
       }
     }
   });

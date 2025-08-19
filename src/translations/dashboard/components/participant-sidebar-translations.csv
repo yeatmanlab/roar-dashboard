@@ -1,4 +1,4 @@
 "identifier","label","en","es-CO","de","fr-CA","nl","en-GH","de-CH","es-AR"
-"components/participant-sidebar.grade","grade","Grade","Grado","Klasse","Grade","Grade","Grade","Klasse","Grado"
-"components/participant-sidebar.studentInfo","studentInfo","Participant Info","Información del estudiante","Schülerinformationen","Participant Info","Participant Info","Participant Info","Schülerinformationen","Información del estudiante"
-"components/participant-sidebar.tasksCompleted","tasksCompleted","tasks completed!","¡tareas completadas!","Aufgaben abgeschlossen!","tasks completed!","tasks completed!","tasks completed!","Aufgaben abgeschlossen!","¡tareas completadas!"
+"components/participant-sidebar.grade","grade","Grade","Grado","Klasse","Classe","Cijfer","Grade","Klasse","Grado"
+"components/participant-sidebar.studentInfo","studentInfo","Participant Info","Información del estudiante","Schülerinformationen","Informations sur le participant","Deelnemer Info","Participant Info","Schülerinformationen","Información del estudiante"
+"components/participant-sidebar.tasksCompleted","tasksCompleted","tasks completed!","¡tareas completadas!","Aufgaben abgeschlossen!","tâches complétées!","taken voltooid!","tasks completed!","Aufgaben abgeschlossen!","¡tareas completadas!"

@@ -54,7 +54,7 @@
     <div class="csv-example-image-container">
       <img
         id="link-users-example-image"
-        :src="LEVANTE_BUCKET_URL + '/link_users_example.png'"
+        :src="LEVANTE_STATIC_ASSETS_URL + '/link_users_example.png'"
         alt="Link Users CSV example"
         class="csv-example-image"
       />
@@ -64,7 +64,7 @@
 
 <script setup>
 import PvPanel from 'primevue/panel';
-import { LEVANTE_BUCKET_URL } from '@/constants/bucket';
+import { LEVANTE_STATIC_ASSETS_URL } from '@/constants/bucket';
 </script>
 
 <style scoped>

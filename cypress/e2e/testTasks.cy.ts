@@ -7,18 +7,22 @@ const useEnvFlag: boolean = (() => {
 })();
 
 const defaultUrl = 'https://localhost:5173/signin';
+
+function normalizeUrl(url: string): string {
+  try {
+    const u = new URL(url);
+    return u.toString();
+  } catch {
+    return 'https://localhost:5173/signin';
+  }
+}
 const defaultEmail = 'quqa2y1jss@levante.com';
 const defaultPassword = 'xbqamkqc7z';
 
-const dashboardUrl: string = useEnvFlag
-  ? ((Cypress.env('E2E_BASE_URL') as string) || defaultUrl)
-  : defaultUrl;
-const username: string = useEnvFlag
-  ? ((Cypress.env('E2E_TEST_EMAIL') as string) || defaultEmail)
-  : defaultEmail;
-const password: string = useEnvFlag
-  ? ((Cypress.env('E2E_TEST_PASSWORD') as string) || defaultPassword)
-  : defaultPassword;
+// Force use of known working credentials for now
+const dashboardUrl: string = 'http://localhost:5173/signin';
+const username: string = 'quqa2y1jss@levante.com';
+const password: string = 'xbqamkqc7z';
 
 // starts each task and checks that it has loaded (the 'OK' button is present)
 function startTask(tasksRemaining: number) {
@@ -60,18 +64,21 @@ describe('test core tasks from dashboard', () => {
     cy.get('input')
       .should('have.length', 2)
       .then((inputs) => {
-        cy.wrap(inputs[0]).type(username);
+        cy.wrap(inputs[0]).clear().type(username);
       });
 
     // input password
     cy.get('input')
       .should('have.length', 2)
       .then((inputs) => {
-        cy.wrap(inputs[1]).type(password);
+        cy.wrap(inputs[1]).clear().type(password);
       });
 
     // click go button
     cy.get('button').filter('[data-pc-name=button]').click();
+
+    // ensure we navigated away from /signin (fail fast if login didn't work)
+    cy.location('pathname', { timeout: 30000 }).should((p) => expect(p).to.not.match(/\/signin$/));
 
     // check that each task loads
     cy.get('[data-pc-section=tablist]', { timeout: 240000 })
