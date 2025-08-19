@@ -61,7 +61,7 @@ let returnScoreTooltip = (colData, fieldPath) => {
   // Subskill fieldPaths are formatted as scores.taskId.subskillId[property]
   const subskillId = pathSegments.length > 3 ? pathSegments[2] : null;
   let toolTip = '';
-
+  console.log(pathSegments);
   if (subskillTasks.includes(taskId) && subskillId) {
     if (taskId === 'roam-alpaca' && subskillId === 'composite' && pathSegments[3] === 'incorrectSkills') {
       return toolTip;
@@ -134,7 +134,7 @@ function handleToolTip(_taskId, _toolTip, _colData) {
 
 function handleSubskillToolTip(_taskId, _subskillId, _toolTip, _colData) {
   const subskillInfo = _colData.scores?.[_taskId]?.[_subskillId];
-
+  const fluencyTasks = ['fluency-arf', 'fluency-calf', 'fluency-arf-es', 'fluency-calf-es'];
   if (_taskId === 'roam-alpaca') {
     if (subskillInfo?.supportCategory) {
       _toolTip += subskillInfo?.supportCategory + '\n' + '\n';
@@ -145,6 +145,10 @@ function handleSubskillToolTip(_taskId, _subskillId, _toolTip, _colData) {
     if (subskillInfo?.gradeEstimate) {
       _toolTip += 'Grade Estimate: ' + subskillInfo?.gradeEstimate + '\n';
     }
+  } else if (fluencyTasks.includes(_taskId)) {
+    _toolTip += 'Num Correct: ' + subskillInfo?.totalCorrect + '\n';
+    _toolTip += 'Num Incorrect: ' + subskillInfo?.totalIncorrect + '\n';
+    _toolTip += 'Num Attempted: ' + subskillInfo?.totalNumAttempted + '\n';
   }
 
   return _toolTip;

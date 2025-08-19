@@ -819,8 +819,9 @@ const computeAssignmentAndRunData = computed(() => {
           currRowScores[taskId].thetaEstimate = thetaEstimate;
         }
         if (['fluency-calf', 'fluency-arf', 'fluency-calf-es', 'fluency-arf-es'].includes(taskId)) {
-          const fc = _get(assessment, 'scores.computed.FC.roamScore');
-          const fr = _get(assessment, 'scores.computed.FR.roamScore');
+          console.log('fluency', assessment);
+          const fc = _get(assessment, 'scores.computed.FC');
+          const fr = _get(assessment, 'scores.computed.FR');
 
           currRowScores[taskId].fc = fc;
           currRowScores[taskId].fr = fr;
