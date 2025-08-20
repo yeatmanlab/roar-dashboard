@@ -39,6 +39,7 @@ import {
   scoredTasks,
   subskillTasks,
   roamFluencySubskillHeaders,
+  fluencyTasks,
 } from '@/helpers/reports.js';
 import { taskDisplayNames } from '@/helpers/reports';
 import { includedValidityFlags } from '@/helpers/reports';
@@ -135,7 +136,6 @@ function handleToolTip(_taskId, _toolTip, _colData) {
 
 function handleSubskillToolTip(_taskId, _subskillId, _toolTip, _colData) {
   const subskillInfo = _colData.scores?.[_taskId]?.[_subskillId];
-  const fluencyTasks = ['fluency-arf', 'fluency-calf', 'fluency-arf-es', 'fluency-calf-es'];
   if (_taskId === 'roam-alpaca') {
     if (subskillInfo?.supportLevel) {
       _toolTip += subskillInfo?.supportLevel + '\n' + '\n';

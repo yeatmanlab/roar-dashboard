@@ -769,15 +769,13 @@ const computeAssignmentAndRunData = computed(() => {
           currRowScores[taskId].tagColor = percentCorrect === null ? 'transparent' : tagColor;
           scoreFilterTags += ' Assessed ';
         } else if (tasksToDisplayTotalCorrect.includes(taskId)) {
-          const numAttempted = assessment.scores?.raw?.composite?.test?.numAttempted;
-          const numCorrect =
-            numAttempted === undefined || numAttempted === 0
-              ? ''
-              : numAttempted !== 0 && assessment.scores?.raw?.composite?.test?.numCorrect !== undefined
-                ? assessment.scores?.raw?.composite?.test?.numCorrect
-                : 0;
+          const numAttempted = _get(assessment, 'scores.computed.composite.numAttempted');
+          currRowScores[taskId].numCorrect = _get(assessment, 'scores.computed.composite.numCorrect');
+          currRowScores[taskId].numIncorrect = _get(assessment, 'scores.computed.composite.numIncorrect');
           currRowScores[taskId].numAttempted = numAttempted;
-          currRowScores[taskId].numCorrect = numCorrect;
+          currRowScores[taskId].recruitment = _get(assessment, 'params.recruitment');
+          currRowScores[taskId].fc = _get(assessment, 'scores.computed.FC');
+          currRowScores[taskId].fr = _get(assessment, 'scores.computed.FR');
           currRowScores[taskId].tagColor =
             numAttempted === undefined || numAttempted === 0 ? '#EEEEF0' : numAttempted !== 0 ? tagColor : '#EEEEF0';
           scoreFilterTags += ' Assessed ';
@@ -824,15 +822,6 @@ const computeAssignmentAndRunData = computed(() => {
           currRowScores[taskId].numIncorrect = numIncorrect;
           currRowScores[taskId].thetaEstimate = thetaEstimate;
         }
-        if (['fluency-calf', 'fluency-arf', 'fluency-calf-es', 'fluency-arf-es'].includes(taskId)) {
-          currRowScores[taskId].numCorrect = _get(assessment, 'scores.computed.composite.numCorrect');
-          currRowScores[taskId].numIncorrect = _get(assessment, 'scores.computed.composite.numIncorrect');
-          currRowScores[taskId].numAttempted = _get(assessment, 'scores.computed.composite.numAttempted');
-          currRowScores[taskId].recruitment = _get(assessment, 'params.recruitment');
-          currRowScores[taskId].fc = _get(assessment, 'scores.computed.FC');
-          currRowScores[taskId].fr = _get(assessment, 'scores.computed.FR');
-        }
-
         if (taskId === 'roam-alpaca') {
           const scores = _get(assessment, 'scores.computed');
           if (scores) {
@@ -937,7 +926,7 @@ const computeAssignmentAndRunData = computed(() => {
     // Otherwise, remove them from the runsByTaskId object to prevent including them in TaskReports.
     const assessments = administrationData.value.assessments;
     for (const assessment of assessments) {
-      if (['fluency-calf', 'fluency-arf', 'fluency-calf-es', 'fluency-arf-es'].includes(assessment.taskId)) {
+      if (fluencyTasks.includes(assessment.taskId)) {
         if (recruitment.value[assessment.taskId] !== 'responseModality') {
           delete filteredRunsByTaskId[assessment.taskId];
         }
