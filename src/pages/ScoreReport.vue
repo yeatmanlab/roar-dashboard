@@ -825,9 +825,9 @@ const computeAssignmentAndRunData = computed(() => {
           currRowScores[taskId].thetaEstimate = thetaEstimate;
         }
         if (['fluency-calf', 'fluency-arf', 'fluency-calf-es', 'fluency-arf-es'].includes(taskId)) {
-          currRowScores[taskId].numCorrect = _get(assessment, 'scores.computed.composite.totalCorrect');
-          currRowScores[taskId].numIncorrect = _get(assessment, 'scores.computed.composite.totalIncorrect');
-          currRowScores[taskId].numAttempted = _get(assessment, 'scores.computed.composite.totalNumAttempted');
+          currRowScores[taskId].numCorrect = _get(assessment, 'scores.computed.composite.numCorrect');
+          currRowScores[taskId].numIncorrect = _get(assessment, 'scores.computed.composite.numIncorrect');
+          currRowScores[taskId].numAttempted = _get(assessment, 'scores.computed.composite.numAttempted');
           currRowScores[taskId].recruitment = _get(assessment, 'params.recruitment');
           currRowScores[taskId].fc = _get(assessment, 'scores.computed.FC');
           currRowScores[taskId].fr = _get(assessment, 'scores.computed.FR');

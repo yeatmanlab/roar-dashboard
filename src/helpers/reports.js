@@ -570,9 +570,9 @@ export const roamAlpacaSubskillHeaders = {
 
 export const roamFluencySubskillHeaders = {
   rawScore: 'Raw Score',
-  totalCorrect: 'Num Correct',
-  totalIncorrect: 'Num Incorrect',
-  totalNumAttempted: 'Num Attempted',
+  numCorrect: 'Num Correct',
+  numIncorrect: 'Num Incorrect',
+  numAttempted: 'Num Attempted',
 };
 
 function getOrdinalSuffix(n) {
