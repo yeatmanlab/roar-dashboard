@@ -23,7 +23,7 @@ import {
   roamAlpacaSubskills,
   roamAlpacaSubskillHeaders,
   roamFluencySubskillHeaders,
-  fluencyTasks,
+  roamFluencyTasks,
 } from '@/helpers/reports';
 
 const props = defineProps({
@@ -108,7 +108,7 @@ const columns = computed(() => {
       { field: 'scores.pa.skills', header: 'Skills To Work On', dataType: 'text', sort: false },
     );
   }
-  if (fluencyTasks.includes(props.taskId)) {
+  if (roamFluencyTasks.includes(props.taskId)) {
     tableColumns.push(
       { field: `scores.${props.taskId}.fr.rawScore`, header: 'Free Response', dataType: 'text', sort: false },
       { field: `scores.${props.taskId}.fc.rawScore`, header: 'Multiple Choice', dataType: 'text', sort: false },
@@ -166,7 +166,7 @@ const exportSelected = (selectedRows) => {
       _set(tableRow, 'Total', _get(scores, 'pa.total'));
       _set(tableRow, 'Skills To Work On', _get(scores, 'pa.skills'));
     }
-    if (['fluency-calf', 'fluency-arf', 'fluency-calf-es', 'fluency-arf-es'].includes(props.taskId)) {
+    if (roamFluencyTasks.includes(props.taskId)) {
       Object.keys(roamFluencySubskillHeaders).forEach((property) => {
         _set(
           tableRow,
@@ -220,7 +220,7 @@ const exportAll = async () => {
       _set(tableRow, 'Deletion', _get(scores, 'pa.deletion'));
       _set(tableRow, 'Total', _get(scores, 'pa.total'));
       _set(tableRow, 'Skills To Work On', _get(scores, 'pa.skills'));
-    } else if (fluencyTasks.includes(props.taskId)) {
+    } else if (roamFluencyTasks.includes(props.taskId)) {
       Object.keys(roamFluencySubskillHeaders).forEach((property) => {
         _set(
           tableRow,

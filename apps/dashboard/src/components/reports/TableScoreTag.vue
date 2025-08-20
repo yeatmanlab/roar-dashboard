@@ -39,7 +39,7 @@ import {
   scoredTasks,
   subskillTasks,
   roamFluencySubskillHeaders,
-  fluencyTasks,
+  roamFluencyTasks,
 } from '@/helpers/reports.js';
 import { taskDisplayNames } from '@/helpers/reports';
 import { includedValidityFlags } from '@/helpers/reports';
@@ -146,7 +146,7 @@ function handleSubskillToolTip(_taskId, _subskillId, _toolTip, _colData) {
     if (subskillInfo?.gradeEstimate) {
       _toolTip += 'Grade Estimate: ' + subskillInfo?.gradeEstimate + '\n';
     }
-  } else if (fluencyTasks.includes(_taskId)) {
+  } else if (roamFluencyTasks.includes(_taskId)) {
     Object.keys(roamFluencySubskillHeaders).forEach((property) => {
       _toolTip += `${roamFluencySubskillHeaders[property]}: ${subskillInfo?.[property]}\n`;
     });

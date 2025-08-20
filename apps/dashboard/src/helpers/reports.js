@@ -443,12 +443,12 @@ export const scoredTasks = ['swr', 'pa', 'sre'];
  *  Fluency Tasks
  *  Temporary variable to differentiate from tasksToDisplayTotalCorrect for backward compatibility
  */
-export const fluencyTasks = ['fluency-arf', 'fluency-calf', 'fluency-arf-es', 'fluency-calf-es'];
+export const roamFluencyTasks = ['fluency-arf', 'fluency-calf', 'fluency-arf-es', 'fluency-calf-es'];
 
 /*
  *  Tasks with subskills that require tooltips for subscore table.
  */
-export const subskillTasks = ['roam-alpaca', ...fluencyTasks];
+export const subskillTasks = ['roam-alpaca', ...roamFluencyTasks];
 
 /*
  *  Support Level Colors
