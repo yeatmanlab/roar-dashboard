@@ -779,7 +779,7 @@ const computeAssignmentAndRunData = computed(() => {
 
           /**
            * TODO: If the composite exists, the raw score should exist as well.
-           * Check and see if we need the 2nd ternary and condition in returnColorByReliability.
+           * Check and see if we can simplify the condition here and in returnColorByReliability.
            */
           currRowScores[taskId].tagColor =
             numAttempted === undefined || numAttempted === 0 ? '#EEEEF0' : numAttempted !== 0 ? tagColor : '#EEEEF0';
