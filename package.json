@@ -21,7 +21,7 @@
     "version": "npm run format:check && git add -A"
   },
   "dependencies": {
-    "@bdelab/roam-apps": "^1.2.20",
+    "@bdelab/roam-apps": "^1.2.23",
     "@bdelab/roar-firekit": "^9.8.0",
     "@bdelab/roar-letter": "2.1.0",
     "@bdelab/roar-levante-tasks": "^0.1.0",

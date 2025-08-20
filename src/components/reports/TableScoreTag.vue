@@ -136,12 +136,12 @@ function handleSubskillToolTip(_taskId, _subskillId, _toolTip, _colData) {
   const subskillInfo = _colData.scores?.[_taskId]?.[_subskillId];
   const fluencyTasks = ['fluency-arf', 'fluency-calf', 'fluency-arf-es', 'fluency-calf-es'];
   if (_taskId === 'roam-alpaca') {
-    if (subskillInfo?.supportCategory) {
-      _toolTip += subskillInfo?.supportCategory + '\n' + '\n';
+    if (subskillInfo?.supportLevel) {
+      _toolTip += subskillInfo?.supportLevel + '\n' + '\n';
       _toolTip += getFlags(_colData, _taskId);
     }
     _toolTip += 'Num Correct: ' + subskillInfo?.rawScore + '\n';
-    _toolTip += 'Num Attempted: ' + subskillInfo?.totalNumAttempted + '\n';
+    _toolTip += 'Num Attempted: ' + subskillInfo?.numAttempted + '\n';
     if (subskillInfo?.gradeEstimate) {
       _toolTip += 'Grade Estimate: ' + subskillInfo?.gradeEstimate + '\n';
     }
