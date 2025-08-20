@@ -310,7 +310,7 @@ import {
   includedValidityFlags,
   roamAlpacaSubskills,
   getTagColor,
-  fluencyTasks,
+  roamFluencyTasks,
 } from '@/helpers/reports';
 import RoarDataTable from '@/components/RoarDataTable';
 import { CSV_EXPORT_STATIC_COLUMNS } from '@/constants/csvExport';
@@ -924,7 +924,7 @@ const computeAssignmentAndRunData = computed(() => {
     // Otherwise, remove them from the runsByTaskId object to prevent including them in TaskReports.
     const assessments = administrationData.value.assessments;
     for (const assessment of assessments) {
-      if (fluencyTasks.includes(assessment.taskId)) {
+      if (roamFluencyTasks.includes(assessment.taskId)) {
         if (recruitment.value[assessment.taskId] !== 'responseModality') {
           delete filteredRunsByTaskId[assessment.taskId];
         }
@@ -1457,7 +1457,8 @@ const scoreReportColumns = computed(() => {
     if (excludeFromScoringTasks.includes(taskId)) continue; // Skip adding this column
     let colField;
     const isOptional = `scores.${taskId}.optional`;
-    const isFluencyResponseModality = fluencyTasks.includes(taskId) && recruitment.value[taskId] === 'responseModality';
+    const isFluencyResponseModality =
+      roamFluencyTasks.includes(taskId) && recruitment.value[taskId] === 'responseModality';
 
     // Color needs to include a field to allow sorting.
     if (viewMode.value === 'percentile' || viewMode.value === 'color') {
