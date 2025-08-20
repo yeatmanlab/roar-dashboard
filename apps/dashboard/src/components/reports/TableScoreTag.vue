@@ -100,12 +100,20 @@ function handleToolTip(_taskId, _toolTip, _colData) {
       _toolTip += 'Num Incorrect: ' + _colData.scores?.[_taskId]?.numIncorrect + '\n';
       _toolTip += 'Correct - Incorrect: ' + _colData.scores?.[_taskId]?.correctIncorrectDifference + '\n';
     } else if (tasksToDisplayTotalCorrect.includes(_taskId)) {
+      const numCorrect = _colData.scores?.[_taskId]?.numCorrect;
+      const numIncorrect = _colData.scores?.[_taskId]?.numIncorrect;
+      const numAttempted = _colData.scores?.[_taskId]?.numAttempted;
+
+      if (numCorrect === 0 && numIncorrect === 0 && numAttempted === 0) {
+        return '';
+      }
+
       if (_colData.scores?.[_taskId]?.recruitment !== 'responseModality') {
         _toolTip += 'Raw Score: ' + _colData.scores?.[_taskId]?.rawScore + '\n';
       }
-      _toolTip += 'Num Correct: ' + (_colData.scores?.[_taskId]?.numCorrect ?? 0) + '\n';
-      _toolTip += 'Num Incorrect: ' + _colData.scores?.[_taskId]?.numIncorrect + '\n';
-      _toolTip += 'Num Attempted: ' + _colData.scores?.[_taskId]?.numAttempted + '\n';
+      _toolTip += 'Num Correct: ' + numCorrect + '\n';
+      _toolTip += 'Num Incorrect: ' + numIncorrect + '\n';
+      _toolTip += 'Num Attempted: ' + numAttempted + '\n';
     } else if (tasksToDisplayPercentCorrect.includes(_taskId)) {
       _toolTip += 'Num Correct: ' + _colData.scores?.[_taskId]?.numCorrect + '\n';
       _toolTip += 'Num Attempted: ' + _colData.scores?.[_taskId]?.numAttempted + '\n';
