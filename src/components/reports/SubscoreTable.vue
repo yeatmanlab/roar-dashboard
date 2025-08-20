@@ -19,7 +19,12 @@ import { exportCsv } from '@/helpers/query/utils';
 import { useAuthStore } from '@/store/auth';
 import { storeToRefs } from 'pinia';
 import RoarDataTable from '@/components/RoarDataTable';
-import { roamAlpacaSubskills, roamAlpacaSubskillHeaders, roamFluencySubskillHeaders } from '@/helpers/reports';
+import {
+  roamAlpacaSubskills,
+  roamAlpacaSubskillHeaders,
+  roamFluencySubskillHeaders,
+  fluencyTasks,
+} from '@/helpers/reports';
 
 const props = defineProps({
   administrationId: { type: String, required: true, default: '' },
@@ -103,7 +108,7 @@ const columns = computed(() => {
       { field: 'scores.pa.skills', header: 'Skills To Work On', dataType: 'text', sort: false },
     );
   }
-  if (['fluency-calf', 'fluency-arf', 'fluency-calf-es', 'fluency-arf-es'].includes(props.taskId)) {
+  if (fluencyTasks.includes(props.taskId)) {
     tableColumns.push(
       { field: `scores.${props.taskId}.fr.rawScore`, header: 'Free Response', dataType: 'text', sort: false },
       { field: `scores.${props.taskId}.fc.rawScore`, header: 'Multiple Choice', dataType: 'text', sort: false },
@@ -219,7 +224,7 @@ const exportAll = async () => {
       _set(tableRow, 'Deletion', _get(scores, 'pa.deletion'));
       _set(tableRow, 'Total', _get(scores, 'pa.total'));
       _set(tableRow, 'Skills To Work On', _get(scores, 'pa.skills'));
-    } else if (['fluency-calf', 'fluency-arf', 'fluency-calf-es', 'fluency-arf-es'].includes(props.taskId)) {
+    } else if (fluencyTasks.includes(props.taskId)) {
       Object.keys(roamFluencySubskillHeaders).forEach((property) => {
         _set(
           tableRow,
