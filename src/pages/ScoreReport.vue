@@ -793,6 +793,27 @@ const computeAssignmentAndRunData = computed(() => {
             .join(', ');
           currRowScores[taskId].incorrectPhonemes = incorrectPhonemesArray.length > 0 ? incorrectPhonemesArray : 'None';
         }
+        if (taskId === 'phonics' && assessment.scores?.computed?.composite) {
+          const composite = assessment.scores.computed.composite;
+          currRowScores[taskId] = {
+            composite: {
+              totalCorrect: composite.totalCorrect,
+              totalNumAttempted: composite.totalNumAttempted,
+              totalPercentCorrect: composite.totalPercentCorrect,
+              subscores: {},
+            },
+          };
+
+          // Process each subscore
+          Object.entries(composite.subscores || {}).forEach(([category, data]) => {
+            currRowScores[taskId].composite.subscores[category] = {
+              percentCorrect: `${data.correct}/${data.attempted}`,
+              correct: data.correct,
+              attempted: data.attempted,
+            };
+          });
+        }
+
         if (taskId === 'pa' && assessment.scores) {
           const first = _get(assessment, 'scores.computed.FSM.roarScore');
           const last = _get(assessment, 'scores.computed.LSM.roarScore');
@@ -1491,7 +1512,7 @@ const allTasks = computed(() => {
 
 const sortedTaskIds = computed(() => {
   const runsByTaskId = computeAssignmentAndRunData.value.runsByTaskId;
-  const specialTaskIds = ['swr', 'sre', 'pa'].filter((id) => Object.keys(runsByTaskId).includes(id));
+  const specialTaskIds = ['swr', 'sre', 'pa', 'phonics'].filter((id) => Object.keys(runsByTaskId).includes(id));
   const remainingTaskIds = Object.keys(runsByTaskId).filter((id) => !specialTaskIds.includes(id));
 
   remainingTaskIds.sort((p1, p2) => {
