@@ -559,7 +559,7 @@ export const roamAlpacaSubskillHeaders = {
   numAttempted: 'Num Attempted',
   percentCorrect: 'Percent Correct',
   gradeEstimate: 'Grade Estimate',
-  supportLevel: 'Support Category',
+  supportLevel: 'Support Level',
 };
 
 function getOrdinalSuffix(n) {
