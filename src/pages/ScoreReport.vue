@@ -555,7 +555,7 @@ const getScoresAndSupportFromAssessment = ({
       support_level = null;
       tag_color = null;
     } else if (assessment.taskId === 'roam-alpaca') {
-      const supportLevel = _get(assessment, 'scores.computed.composite.supportCategory');
+      const supportLevel = _get(assessment, 'scores.computed.composite.supportLevel');
       support_level = supportLevel;
       tag_color = getTagColor(supportLevel);
       /*
@@ -814,7 +814,7 @@ const computeAssignmentAndRunData = computed(() => {
         }
         if (tasksToDisplayGradeEstimate.includes(taskId)) {
           const numCorrect = _get(assessment, 'scores.computed.composite.rawScore');
-          const numAttempted = _get(assessment, 'scores.computed.composite.totalNumAttempted');
+          const numAttempted = _get(assessment, 'scores.computed.composite.numAttempted');
           const gradeEstimate = _get(assessment, 'scores.computed.composite.gradeEstimate');
 
           currRowScores[taskId].numCorrect = numCorrect;
