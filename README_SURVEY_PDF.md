@@ -2,8 +2,8 @@ Survey to PDF (developer notes)
 
 This repo includes a simple helper to export SurveyJS JSON to a PDF without changing any UI.
 
-- Helper: src/helpers/surveyPdfGenerator.ts
-- Loader: src/helpers/surveyLoader.ts
+- Helper: [`src/helpers/surveyPdfGenerator.ts`](./src/helpers/surveyPdfGenerator.ts)
+- Loader: [`src/helpers/surveyLoader.ts`](./src/helpers/surveyLoader.ts)
 - API:
   - generateSurveyPdfFromJson(surveyJson, { filename?, margin?, title? })
   - appendElementAsImage(doc, element, margin?)

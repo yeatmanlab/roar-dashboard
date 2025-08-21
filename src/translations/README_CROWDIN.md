@@ -14,19 +14,19 @@ This dashboard uses Crowdin to manage translations. Locally, translations are ma
 ## Structure
 
 - Crowdin config
-  - `src/translations/crowdin/crowdin.yml`
+  - [`src/translations/crowdin/crowdin.yml`](./crowdin/crowdin.yml)
 - Consolidated CSVs (source-of-truth locally; mirrored to Crowdin)
-  - `src/translations/consolidated/dashboard-translations.csv`
-  - `src/translations/consolidated/components/*-translations.csv`
+  - [`src/translations/consolidated/dashboard-translations.csv`](./consolidated/dashboard-translations.csv)
+  - [`src/translations/consolidated/components/*-translations.csv`](./consolidated/components/)
   - Columns: `identifier,label,en,es-CO,de,fr-CA,nl,en-GH,de-CH,es-AR`
 - Build tools
-  - `src/translations/tools/create-consolidated-translations.js` (optional local consolidation)
-  - `src/translations/tools/csv-to-json.js` (CSV → per-locale JSON; includes validation and caching)
-  - `src/translations/tools/download-and-rebuild.js` (Crowdin → local JSON; optional)
-  - `src/translations/tools/validate-csvs.js` (new: CSV validation across all files)
-  - `src/translations/tools/add-locale-column.js` (new: add locale columns to CSVs, optionally seeded)
+  - [`src/translations/tools/create-consolidated-translations.js`](./tools/create-consolidated-translations.js) (optional local consolidation)
+  - [`src/translations/tools/csv-to-json.js`](./tools/csv-to-json.js) (CSV → per-locale JSON; includes validation and caching)
+  - [`src/translations/tools/download-and-rebuild.js`](./tools/download-and-rebuild.js) (Crowdin → local JSON; optional)
+  - [`src/translations/tools/validate-csvs.js`](./tools/validate-csvs.js) (new: CSV validation across all files)
+  - [`src/translations/tools/add-locale-column.js`](./tools/add-locale-column.js) (new: add locale columns to CSVs, optionally seeded)
 - Runtime loading
-  - `src/translations/i18n.ts`
+  - [`src/translations/i18n.ts`](./i18n.ts)
     - Loads existing baseline locales and auto-imports any `**-componentTranslations.json`
     - Automatically registers new locales in `languageOptions`
 - Generated per-locale files (output of CSV → JSON)
@@ -49,7 +49,7 @@ This dashboard uses Crowdin to manage translations. Locally, translations are ma
 
 ## Scripts and workflow
 
-Key scripts (see `package.json`):
+Key scripts (see [`package.json`](../../package.json)):
 
 - Build-time utilities
   - `npm run i18n:consolidate`
@@ -117,9 +117,9 @@ The CSV → JSON step will detect the new locale, create the appropriate directo
 ## Cypress validation
 
 Two specs:
-- `cypress/e2e/testTasks.cy.ts`
+- [`cypress/e2e/testTasks.cy.ts`](../../cypress/e2e/testTasks.cy.ts)
   - Participant dashboard flow (requires a participant account)
-- `cypress/e2e/locales.cy.ts`
+- [`cypress/e2e/locales.cy.ts`](../../cypress/e2e/locales.cy.ts)
   - Iterates through locales: `en, en-US, es, es-CO, de, fr-CA, nl, en-GH, de-CH, es-AR`
   - Sets the locale pre-load, logs in, and asserts navigation away from `/signin`
 
@@ -161,11 +161,11 @@ Implementation details to reduce flakiness:
 
 ## Seeding DEV users
 
-Scripts (in `scripts/`):
-- `seed-dev-user-admin.js`: uses `firebase-admin` to upsert `users/<uid>` (preferred)
+Scripts (in [`scripts/`](../../scripts/)):
+- [`seed-dev-user-admin.js`](../../scripts/seed-dev-user-admin.js): uses `firebase-admin` to upsert `users/<uid>` (preferred)
   - Requires `FIREBASE_ADMIN_CREDENTIALS` (inline JSON) or `GOOGLE_APPLICATION_CREDENTIALS` (file path)
-- `seed-dev-user.js`: client sign-in to obtain ID token and write the Firestore doc via REST
-- `seed-dev-participant.js`: sign-up-or-sign-in a participant, then upsert the user doc
+- [`seed-dev-user.js`](../../scripts/seed-dev-user.js): client sign-in to obtain ID token and write the Firestore doc via REST
+- [`seed-dev-participant.js`](../../scripts/seed-dev-participant.js): sign-up-or-sign-in a participant, then upsert the user doc
 
 Convenience:
 - `npm run cypress:run-seeded` tries admin seed, then client seed, then participant seed, then runs Cypress
@@ -179,7 +179,7 @@ Defaults (override via env):
 
 ## CI workflow (GitHub Actions)
 
-Workflow: `.github/workflows/i18n-ci.yml`
+Workflow: [`.github/workflows/i18n-ci.yml`](../../.github/workflows/i18n-ci.yml)
 - Node 20 LTS
 - Steps:
   - Install deps
@@ -202,7 +202,7 @@ Secrets/Env to configure in the repository:
   - HTTPS via `vite-plugin-mkcert`
   - Prefers port 5173 but will auto-switch if in use
 - Node version
-  - `.nvmrc` recommends Node 20 LTS
+  - [`.nvmrc`](../../.nvmrc) recommends Node 20 LTS
   - Use `nvm use` to match CI and avoid npm warnings
 
 ---
