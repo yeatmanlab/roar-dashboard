@@ -1,7 +1,15 @@
 {
   "$schema": "https://turborepo.com/schema.json",
   "ui": "tui",
-  "globalEnv": ["NODE_ENV", "MODE", "CI"],
+  "globalEnv": [
+    "NODE_ENV", 
+    "MODE", 
+    "CI",
+    "DOTENV_PRIVATE_KEY_TEST",
+    "DOTENV_PRIVATE_KEY_DEVELOPMENT",
+    "DOTENV_PRIVATE_KEY_STAGING",
+    "DOTENV_PRIVATE_KEY_PRODUCTION"
+  ],
   "tasks": {
     "dev": {
       "dependsOn": ["^build"],
