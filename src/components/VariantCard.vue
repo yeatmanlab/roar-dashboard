@@ -22,8 +22,21 @@
               class="pi pi-info-circle text-primary p-1 border-circle hover:text-100"
             ></i
           ></PvButton>
-          <div v-if="variant?.variant?.params?.cat" class="flex ml-2">
-            <PvChip class="bg-primary text-white h-2rem" label="CAT" />
+          <div class="flex ml-2 gap-2">
+            <div v-if="variant?.variant?.params?.cat">
+              <PvChip class="bg-primary text-white h-2rem" label="CAT" />
+            </div>
+            <div v-if="variant?.variant?.params?.language" class="flex align-items-center">
+              <PvChip :class="getLanguageInfo(variant.variant.params.language)?.isLegacy ? 'bg-orange-500 text-white h-2rem' : 'bg-green-500 text-white h-2rem'">
+                <template #default>
+                  <div class="flex align-items-center gap-1">
+                    <span v-if="getLanguageInfo(variant.variant.params.language)" :class="`fi fi-${getLanguageInfo(variant.variant.params.language)?.flagCode}`" style="font-size: 0.8rem;"></span>
+                    <span>{{ getLanguageInfo(variant.variant.params.language)?.displayName || variant.variant.params.language }}</span>
+                    <small v-if="getLanguageInfo(variant.variant.params.language)?.isLegacy" class="ml-1">(legacy)</small>
+                  </div>
+                </template>
+              </PvChip>
+            </div>
           </div>
         </div>
         <div class="pl-2 w-full">
@@ -275,6 +288,7 @@ import PvDialog from 'primevue/dialog';
 import PvPopover from 'primevue/popover';
 import PvTag from 'primevue/tag';
 import EditVariantDialog from '@/components/EditVariantDialog.vue';
+import { getLanguageInfo } from '@/helpers/languageDiscovery';
 
 interface Condition {
   field: string;

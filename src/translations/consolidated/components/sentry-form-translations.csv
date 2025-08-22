@@ -1,4 +1,4 @@
-identifier,label,en,es-CO,de,fr-CA,nl,en-GH,de-CH,es-AR
+identifier,label,en-US,es-CO,de,fr-CA,nl,en-GH,de-CH,es-AR
 components/sentry-form.buttonLabel,buttonLabel,Report an Issue,Reportar un problema,Ein Problem melden,,,Report an Issue,Ein Problem melden,Reportar un problema
 components/sentry-form.cancelButtonLabel,cancelButtonLabel,Cancel,Cancelar,Abbrechen,,,Cancel,Abbrechen,Cancelar
 components/sentry-form.emailPlaceholder,emailPlaceholder,your.email@example.org (optional),tu.email@example.org (opcional),ihre.email@beispiel.org (optional),,,your.email@example.org (optional),ihre.email@beispiel.org (optional),tu.email@example.org (opcional)

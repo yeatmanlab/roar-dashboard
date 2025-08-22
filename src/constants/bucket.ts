@@ -8,7 +8,7 @@ export const LEVANTE_BUCKET_URL =
 export const LEVANTE_STATIC_ASSETS_URL =
   import.meta.env.VITE_FIREBASE_PROJECT === 'DEV'
     ? 'https://storage.googleapis.com/levante-dashboard-dev'
-    : 'https://storage.googleapis.com/road-dashboard';
+    : 'https://storage.googleapis.com/levante-dashboard-prod';
 
 export const LEVANTE_SURVEY_RESPONSES_KEY = 'levante-survey-responses';
 export const LEVANTE_BUCKET_SURVEY_AUDIO =

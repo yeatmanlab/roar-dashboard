@@ -39,11 +39,6 @@ export const languageOptions: Record<string, { translations: any; language: stri
     language: 'English (United States)',
     code: 'usa',
   },
-  en: {
-    translations: enTranslations,
-    language: 'English (United Kingdom)',
-    code: 'gb',
-  },
   es: { translations: esTranslations, language: 'Español (Spain)', code: 'es' },
   'es-CO': {
     translations: esCOTranslations,
@@ -74,8 +69,8 @@ const getFallbackLocale = () => {
   const localeFromStorage = sessionStorage.getItem(storageKey) || '';
 
   if (localeFromStorage.includes('es')) {
-    console.log('Setting fallback local to es');
-    return 'es';
+    console.log('Setting fallback local to es-CO');
+    return 'es-CO';
   } else if (localeFromStorage.includes('de')) {
     console.log('Setting fallback local to de');
     return 'de';
@@ -87,11 +82,11 @@ const getFallbackLocale = () => {
 
 // Build base messages from existing imports
 const baseMessages: Record<string, any> = {
-  en: { ...enUSTranslations, ...enIndividualScoreReport },
   'en-US': { ...enUSTranslations, ...enUSIndividualScoreReport },
-  es: { ...esTranslations, ...esIndividualScoreReport },
   'es-CO': { ...esCOTranslations, ...esCOIndividualScoreReport },
   de: deTranslations,
+  // Legacy fallbacks for backward compatibility
+  es: { ...esTranslations, ...esIndividualScoreReport },
 };
 
 // Dynamically load any generated componentTranslations for new locales and merge

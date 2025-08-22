@@ -56,6 +56,11 @@
     "unreliable": "Unreliable",
     "reliableTagText": "The child's behavior did not trigger any flags and the run can be considered reliable",
     "unreliableTagText": "The run was marked as unreliable.",
-    "unreliableTagTextFlags": "The run was marked unreliable because of the following flags"
+    "unreliableTagTextFlags": "The run was marked unreliable because of the following flags",
+    "rawScoreLabel": "Raw Score",
+    "reliability": "Data Reliability",
+    "percentileGrading": "Percents are scored in relation to other children in this grade level.",
+    "reliabilityMessage": "For all scores, some caution should be exercised when interpreting scores.  {firstName}'s current behaviors during the last administration of the tests are noted below.",
+    "reliability_flags": "Data Reliability Flags"
   }
 }

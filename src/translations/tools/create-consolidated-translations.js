@@ -143,8 +143,8 @@ function writeConsolidatedCSVs({ allIdentifiers, perLangFlat }, langs) {
     const key = identifier;
     const pick = (code) => perLangFlat[code]?.[key];
     switch (outLang) {
-      case 'en':
-        return pick('en') ?? pick('en-us') ?? '';
+      case 'en-US':
+        return pick('en-us') ?? pick('en') ?? '';
       case 'es-CO':
         return pick('es-co') ?? pick('es') ?? '';
       case 'de':
@@ -155,7 +155,7 @@ function writeConsolidatedCSVs({ allIdentifiers, perLangFlat }, langs) {
         return pick('nl') ?? '';
       case 'en-GH':
         // Seed from existing English content
-        return pick('en-gh') ?? pick('en') ?? pick('en-us') ?? '';
+        return pick('en-gh') ?? pick('en-us') ?? pick('en') ?? '';
       case 'de-CH':
         // Seed from existing German content
         return pick('de-ch') ?? pick('de') ?? '';

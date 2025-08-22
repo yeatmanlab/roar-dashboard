@@ -31,7 +31,6 @@ const routes: Array<RouteRecordRaw> = [
     meta: {
       pageTitle: {
         'en-US': pageTitlesUS['home'],
-        en: pageTitlesEN['home'],
         es: pageTitlesES['home'],
         'es-CO': pageTitlesCO['home'],
       },
@@ -90,7 +89,6 @@ const routes: Array<RouteRecordRaw> = [
     meta: {
       pageTitle: {
         'en-US': pageTitlesUS['signIn'],
-        en: pageTitlesEN['signIn'],
         es: pageTitlesES['signIn'],
         'es-CO': pageTitlesCO['signIn'],
       },
