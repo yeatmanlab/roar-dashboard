@@ -16,8 +16,6 @@ function normalizeUrl(url: string): string {
     return 'https://localhost:5173/signin';
   }
 }
-const defaultEmail = 'quqa2y1jss@levante.com';
-const defaultPassword = 'xbqamkqc7z';
 
 // Force use of known working credentials for now
 const dashboardUrl: string = 'http://localhost:5173/signin';

@@ -80,13 +80,58 @@ const getFallbackLocale = () => {
   }
 };
 
+// Map flat keys to nested paths for backward compatibility
+const namespaceMap: Record<string, string> = {
+  navBar: 'components.navbar',
+  gameTabs: 'components.game-tabs',
+  participantSidebar: 'components.participant-sidebar',
+  sentryForm: 'components.sentry-form',
+  tasks: 'components.tasks',
+  notFound: 'pages.not-found',
+  pageSignIn: 'pages.signin',
+  homeParticipant: 'pages.home-participant',
+  homeSelector: 'pages.home-selector',
+  consentModal: 'auth.consent',
+  authSignIn: 'auth.signin',
+  userSurvey: 'surveys.user-survey',
+};
+
+// Helper function to add flat keys alongside nested ones
+function addFlatKeys(messages: Record<string, any>): Record<string, any> {
+  const result = { ...messages };
+  
+  // Add flat keys based on namespace mapping
+  Object.entries(namespaceMap).forEach(([flatKey, nestedPath]) => {
+    const pathParts = nestedPath.split('.');
+    let current: any = messages;
+    let found = true;
+    
+    // Navigate to the nested object
+    for (const part of pathParts) {
+      if (current && typeof current === 'object' && current[part]) {
+        current = current[part];
+      } else {
+        found = false;
+        break;
+      }
+    }
+    
+    // If we found the nested object, add it as a flat key
+    if (found && current && typeof current === 'object') {
+      result[flatKey] = current;
+    }
+  });
+  
+  return result;
+}
+
 // Build base messages from existing imports
 const baseMessages: Record<string, any> = {
-  'en-US': { ...enUSTranslations, ...enUSIndividualScoreReport },
-  'es-CO': { ...esCOTranslations, ...esCOIndividualScoreReport },
-  de: deTranslations,
+  'en-US': addFlatKeys({ ...enUSTranslations, ...enUSIndividualScoreReport }),
+  'es-CO': addFlatKeys({ ...esCOTranslations, ...esCOIndividualScoreReport }),
+  de: addFlatKeys(deTranslations),
   // Legacy fallbacks for backward compatibility
-  es: { ...esTranslations, ...esIndividualScoreReport },
+  es: addFlatKeys({ ...esTranslations, ...esIndividualScoreReport }),
 };
 
 // Dynamically load any generated componentTranslations for new locales and merge
@@ -103,6 +148,9 @@ for (const [filePath, mod] of Object.entries(modules)) {
 
   if (!baseMessages[locale]) baseMessages[locale] = {};
   deepMerge(baseMessages[locale] as Record<string, any>, content as Record<string, any>);
+  
+  // Apply flat key transformation to dynamically loaded content
+  baseMessages[locale] = addFlatKeys(baseMessages[locale]);
 
   // Auto-register new locales in languageOptions if missing
   if (!languageOptions[locale]) {

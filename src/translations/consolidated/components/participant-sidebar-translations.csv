@@ -1,4 +1,4 @@
-identifier,label,en-US,es-CO,de,fr-CA,nl,en-GH,de-CH,es-AR
-participantSidebar.grade,grade,Grade,Grado,Klasse,,,Grade,Klasse,Grado
-participantSidebar.studentInfo,studentInfo,Participant Info,Información del estudiante,Schülerinformationen,,,Participant Info,Schülerinformationen,Información del estudiante
-participantSidebar.tasksCompleted,tasksCompleted,tasks completed!,¡tareas completadas!,Aufgaben abgeschlossen!,,,tasks completed!,Aufgaben abgeschlossen!,¡tareas completadas!
+identifier,label,en,es-CO,de,fr-CA,nl,en-GH,de-CH,es-AR
+components/participant-sidebar.grade,grade,,Calificación,Klasse,,,,Klasse,Calificación
+components/participant-sidebar.studentInfo,studentInfo,,Información del nina,Schülerinformationen,,,,Schülerinformationen,Información del nina
+components/participant-sidebar.tasksCompleted,tasksCompleted,,¡tareas completadas!,Aufgaben abgeschlossen!,,,,Aufgaben abgeschlossen!,¡tareas completadas!
