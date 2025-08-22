@@ -111,7 +111,7 @@ import axios from 'axios';
 import { LEVANTE_BUCKET_URL } from '@/constants/bucket';
 import { Model, settings } from 'survey-core';
 import { Converter } from 'showdown';
-import { fetchAudioLinks } from '@/helpers/survey';
+import { fetchAudioLinks, getParsedLocale } from '@/helpers/survey';
 import { useRouter } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
 import { useQueryClient, useQuery } from '@tanstack/vue-query';
@@ -475,7 +475,7 @@ function createSurveyInstance(surveyDataToStartAt) {
   settings.lazyRender = true;
   const surveyInstance = new Model(surveyDataToStartAt);
   // surveyInstance.showNavigationButtons = 'none';
-  surveyInstance.locale = locale.value;
+  surveyInstance.locale = getParsedLocale(locale.value);
   return surveyInstance;
 }
 
