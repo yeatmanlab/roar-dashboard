@@ -1,0 +1,145 @@
+{
+  "auth": {
+    "consent": {
+      "acceptButton": "Aceptar",
+      "assentTitle": "Asentimiento",
+      "consentTitle": "Consentimiento",
+      "consentUpdatedStatus": "Estado de consentimiento actualizado",
+      "header": "Consentimiento",
+      "rejectButton": "No, cerrar sesión",
+      "title": "",
+      "toastHeader": "Confirmado"
+    },
+    "signin": {
+      "atLeastOneLowercase": "Al menos una letra minúscula",
+      "atLeastOneNumber": "Al menos un número",
+      "atLeastOneNumeric": "Al menos un numéro",
+      "atLeastOneUpperCase": "Al menos una letra mayúscula",
+      "buttonLabel": "¡Vamos!",
+      "continueWithGoogle": "Sigue adelante con Google",
+      "emailId": "correo electrónico",
+      "emailPlaceholder": "Nombre de usuario o correo electrónico",
+      "forgotPassword": "¿Olvidaste tu contraseña?",
+      "incorrectEmailOrPassword": "Nombre de usuario/correo electrónico o contraseña incorrectos",
+      "invalidEmailPlaceholder": "Error: el correo electrónico no es válido",
+      "minimumCharacters": "Mínimo 8 caracteres",
+      "pageTitle": "Iniciar sesión",
+      "passwordId": "contraseña",
+      "passwordPlaceholder": "Contraseña",
+      "pickPassword": "Elige una contraseña",
+      "selectLanguage": "Seleccionar idioma",
+      "selectLanguageLabel": "Idioma",
+      "signInWithEmailLinkInstead": "Iniciar sesión con enlace de correo electrónico",
+      "signInWithEmailLinkPlaceHolder": "Presiona Vamos para iniciar sesión con un enlace de correo electrónico.",
+      "signInWithPasswordInstead": "Iniciar sesión con contraseña",
+      "suggestions": "Sugerencias"
+    }
+  },
+  "pages": {
+    "home-participant": {
+      "consentUpdatedStatus": "Estado de consentimiento actualizado",
+      "contactAdministrator": "Por favor, contacta a tu administrador para que agregue a una actividad.",
+      "loadingAssignments": "Cargando actividades",
+      "noAssignments": "¡No tienes actividades!",
+      "selectAssignment": "Selecciona una actividad",
+      "showOptionalAssignments": "Mostrar actividades opcionales"
+    },
+    "home-selector": {
+      "inactivityLogout": "Pronto serás desconectado por motivos de seguridad. Haz clic en \"Continuar\" si deseas continuar. De lo contrario, la sesión se cerrará en {timeLeft} segundos automáticamente .",
+      "inactivityLogoutAcceptLabel": "Continuar",
+      "loading": "Cargando..."
+    },
+    "not-found": {
+      "label": "Ir a la página de inicio.",
+      "pageNotFound": "Página no encontrada",
+      "sorry": "¡Lo siento, no pudimos encontrar esa página!"
+    },
+    "signin": {
+      "adminAction": "aquí",
+      "adminInfoPrompt": "Si te registraste con un correo de Google o tu proveedor de correo utiliza Google SSO.",
+      "adminPrompt": "¿Eres administrador? Haz clic {action} para iniciar sesión.",
+      "havingTrouble": "¿Tienes problemas?",
+      "login": "Inicia sesión para acceder a tus actividades",
+      "loginWith": "Inicia sesión con",
+      "welcome": "¡Bienvenido a ROAR!"
+    }
+  },
+  "surveys": {
+    "user-survey": {
+      "specificRelationDescriptionChildA": "Para niño(a) con mes de nacimiento",
+      "specificRelationDescriptionChildB": "y año de nacimiento",
+      "specificRelationDescriptionClass": "Para la clase"
+    }
+  },
+  "components": {
+    "game-tabs": {
+      "LEVANTE TRANSLATIONS--------------------------": "",
+      "clickToStart": "Haz clic para empezar",
+      "egmaMathDescription": "Resuelve los problemas matemáticos.",
+      "egmaMathName": "Matemáticas",
+      "heartsAndFlowersDescription": "Haz coincidir el lado correcto con los corazones y las flores.",
+      "heartsAndFlowersName": "Corazones y Flores",
+      "introDescription": "Aprende a jugar a nuestros juegos.",
+      "introName": "Introducción",
+      "matrixReasoningDescription": "Encuentra la pieza que falta para completar el rompecabeza.",
+      "matrixReasoningName": "Razonamiento Matricial",
+      "mefsDescription": "Empareja las formas y los colores.",
+      "mefsName": "El León y El Mono",
+      "memoryGameDescription": "Observa cómo se iluminan los cuadrados. Recuerda el orden y haz el mismo patrón.",
+      "memoryGameName": "Memoria",
+      "mentalRotationDescription": "Empareja las imágenes.",
+      "mentalRotationName": "Rotación Mental",
+      "roarInferenceDescription": "Lee las historias y responde a las preguntas.",
+      "roarInferenceName": "Roar - Inferencia",
+      "sameDifferentSelectionDescription": "Encuentra cosas iguales en las formas.",
+      "sameDifferentSelectionName": "Iguales y Diferentes",
+      "surveyDescriptionChild": "Responde a las preguntas sobre tu estancia en el colegio.",
+      "surveyDescriptionParentPart1": "Estimamos que diligenciar la siguiente encuesta le tomará aproximadamente 20-30 minutos y se le harán preguntas sobre su niño(a).",
+      "surveyDescriptionParentPart2": "Estimamos que diligenciar la siguiente encuesta le tomará aproximadamente 20-30 minutos y se le harán preguntas sobre su hogar y usted mismo(a).",
+      "surveyDescriptionTeacherPart1": "Estimamos que diligenciar la siguiente encuesta le tomará aproximadamente 5-10 minutos. Las preguntas indagan por sus antecedentes y creencias sobre la enseñanza.",
+      "surveyDescriptionTeacherPart2": "Estimamos que diligenciar la siguiente encuesta le tomará aproximadamente 5-10 minutos y se le hará preguntas sobre el salón o los salones en los que imparte.",
+      "surveyNameChild": "Pensamientos y Sentimientos",
+      "surveyNameParentPart1": "Encuesta para cuidadores",
+      "surveyNameParentPart2": "Encuesta para cuidadores",
+      "surveyNameTeacherPart1": "Encuesta de profesores - General",
+      "surveyNameTeacherPart2": "Encuesta de profesores - Salón",
+      "surveyProgressGeneral": "General",
+      "surveyProgressGeneralParent": "Familia",
+      "surveyProgressGeneralTeacher": "Profesor",
+      "surveyProgressSpecificParent": "Niño",
+      "surveyProgressSpecificParentMonth": "Mes",
+      "surveyProgressSpecificParentYear": "Año",
+      "surveyProgressSpecificTeacher": "Aula",
+      "taskCompleted": "¡Tarea completa!",
+      "theoryOfMindDescription": "Escucha las historias y responde a las preguntas.",
+      "theoryOfMindName": "Historias",
+      "trogDescription": "Escucha las palabras y elige la imagen correspondiente.",
+      "trogName": "Comprensión de Frases",
+      "vocabDescription": "Escucha la palabra y elige la imagen correspondiente.",
+      "vocabName": "Vocabulario"
+    },
+    "navbar": {
+      "greeting": "¡Hola",
+      "signOut": "Salir"
+    },
+    "participant-sidebar": {
+      "grade": "Grado",
+      "studentInfo": "Información del estudiante",
+      "tasksCompleted": "¡tareas completadas!"
+    },
+    "sentry-form": {
+      "buttonLabel": "Reportar un problema",
+      "cancelButtonLabel": "Cancelar",
+      "emailPlaceholder": "tu.email@example.org (opcional)",
+      "formTitle": "Reportar un problema a LEVANTE",
+      "messageLabel": "Descripción",
+      "messagePlaceholder": "¿Cuál es el problema? ¿Qué querías experimentar en su lugar? Gracias por compartir.",
+      "namePlaceholder": "Tu nombre (opcional)",
+      "submitButtonLabel": "Enviar informe de problema"
+    },
+    "tasks": {
+      "loading": "cargando",
+      "preparing": "¡Preparando tu juego!"
+    }
+  }
+}

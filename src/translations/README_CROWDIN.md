@@ -18,7 +18,7 @@ This dashboard uses Crowdin to manage translations. Locally, translations are ma
 - Consolidated CSVs (source-of-truth locally; mirrored to Crowdin)
   - [`src/translations/consolidated/dashboard-translations.csv`](./consolidated/dashboard-translations.csv)
   - [`src/translations/consolidated/components/*-translations.csv`](./consolidated/components/)
-  - Columns: `identifier,label,en,es-CO,de,fr-CA,nl,en-GH,de-CH,es-AR`
+  - Columns: `identifier,label,en-US,es-CO,de,fr-CA,nl,en-GH,de-CH,es-AR`
 - Build tools
   - [`src/translations/tools/create-consolidated-translations.js`](./tools/create-consolidated-translations.js) (optional local consolidation)
   - [`src/translations/tools/csv-to-json.js`](./tools/csv-to-json.js) (CSV → per-locale JSON; includes validation and caching)

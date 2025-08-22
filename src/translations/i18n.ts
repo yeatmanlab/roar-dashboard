@@ -39,11 +39,6 @@ export const languageOptions: Record<string, { translations: any; language: stri
     language: 'English (United States)',
     code: 'usa',
   },
-  en: {
-    translations: enTranslations,
-    language: 'English (United Kingdom)',
-    code: 'gb',
-  },
   es: { translations: esTranslations, language: 'Español (Spain)', code: 'es' },
   'es-CO': {
     translations: esCOTranslations,
@@ -87,7 +82,6 @@ const getFallbackLocale = () => {
 
 // Build base messages from existing imports
 const baseMessages: Record<string, any> = {
-  en: { ...enUSTranslations, ...enIndividualScoreReport },
   'en-US': { ...enUSTranslations, ...enUSIndividualScoreReport },
   es: { ...esTranslations, ...esIndividualScoreReport },
   'es-CO': { ...esCOTranslations, ...esCOIndividualScoreReport },

@@ -1,5 +1,5 @@
 {
-  "languages": ["en", "es-co", "de", "de-ch", "en-so", "fr-ca", "nl"],
+  "languages": ["en-us", "es-co", "de", "de-ch", "en-gh", "fr-ca", "nl"],
   "sections": ["components", "pages", "auth", "surveys"],
   "components": {
     "components": ["navbar", "game-tabs", "participant-sidebar", "sentry-form", "tasks"],

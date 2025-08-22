@@ -47,12 +47,13 @@ function setNested(messages, identifier, value) {
 }
 
 function localeToPathParts(localeRaw) {
-  const locale = String(localeRaw).toLowerCase();
+  const originalLocale = String(localeRaw);
+  const locale = originalLocale.toLowerCase();
   if (locale.includes('-')) {
     const [lang, region] = locale.split('-');
-    return { dir: path.join('src', 'translations', lang, region), filename: `${locale}-componentTranslations.json` };
+    return { dir: path.join('src', 'translations', lang, region), filename: `${originalLocale}-componentTranslations.json` };
   }
-  return { dir: path.join('src', 'translations', locale), filename: `${locale}-componentTranslations.json` };
+  return { dir: path.join('src', 'translations', locale), filename: `${originalLocale}-componentTranslations.json` };
 }
 
 function listCsvFiles() {
@@ -112,6 +113,8 @@ function main() {
 
   /** @type {Record<string, any>} */
   const perLocaleMessages = {};
+  /** @type {Record<string, string>} */
+  const originalCaseMapping = {};
 
   for (const csvPath of csvFiles) {
     const rows = readCsv(csvPath);
@@ -126,8 +129,10 @@ function main() {
 
       for (const header of localeHeaders) {
         const localeKey = String(header).toLowerCase();
+        const originalHeader = String(header);
         const value = unescapeCsvValue(row[header] ?? '');
         if (!perLocaleMessages[localeKey]) perLocaleMessages[localeKey] = {};
+        originalCaseMapping[localeKey] = originalHeader;
         setNested(perLocaleMessages[localeKey], identifier, value);
       }
     }
@@ -141,7 +146,8 @@ function main() {
   }
 
   for (const locale of locales) {
-    const { dir, filename } = localeToPathParts(locale);
+    const originalLocale = originalCaseMapping[locale] || locale;
+    const { dir, filename } = localeToPathParts(originalLocale);
     ensureDir(dir);
     const outPath = path.join(dir, filename);
 
