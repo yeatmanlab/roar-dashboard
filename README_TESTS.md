@@ -31,63 +31,63 @@ Unit tests are located in various directories and test individual components, ut
 
 **Framework**: Vitest with Happy DOM
 **Test Pattern**: `**/*.test.{js,ts}`
-**Setup**: `vitest.setup.js`
+**Setup**: [`vitest.setup.js`](vitest.setup.js)
 
 #### Component Tests
-- **Location**: `src/components/tests/`
+- **Location**: [`src/components/tests/`](src/components/tests/)
 - **Examples**:
-  - `AddGroupModal.test.js` - Modal component functionality
-  - `NavBar.test.js` - Navigation component
-  - `RoarDataTable.test.js` - Data table component
-  - `UserActions.test.js` - User action components
+  - [`AddGroupModal.test.js`](src/components/tests/AddGroupModal.test.js) - Modal component functionality
+  - [`NavBar.test.js`](src/components/tests/NavBar.test.js) - Navigation component
+  - [`RoarDataTable.test.js`](src/components/tests/RoarDataTable.test.js) - Data table component
+  - [`UserActions.test.js`](src/components/tests/UserActions.test.js) - User action components
 
 #### Page Tests
-- **Location**: `src/pages/tests/`
+- **Location**: [`src/pages/tests/`](src/pages/tests/)
 - **Examples**:
-  - `SignIn.test.js` - Authentication page
-  - `HomeAdministrator.test.js` - Admin dashboard
-  - `CreateAssignment.test.js` - Assignment creation
-  - `ListGroups.test.js` - Groups management
-  - `addUsers.test.js` - User management
+  - [`SignIn.test.js`](src/pages/tests/SignIn.test.js) - Authentication page
+  - [`HomeAdministrator.test.js`](src/pages/tests/HomeAdministrator.test.js) - Admin dashboard
+  - [`CreateAssignment.test.js`](src/pages/tests/CreateAssignment.test.js) - Assignment creation
+  - [`ListGroups.test.js`](src/pages/tests/ListGroups.test.js) - Groups management
+  - [`addUsers.test.js`](src/pages/tests/addUsers.test.js) - User management
 
 #### Helper/Utility Tests
-- **Location**: `src/helpers/__tests__/`
+- **Location**: [`src/helpers/__tests__/`](src/helpers/__tests__/)
 - **Examples**:
-  - `languageDiscovery.test.ts` - Language system testing
-  - `getDynamicRouterPath.test.ts` - Router utilities
-  - `computeQueryOverrides.test.ts` - Query utilities
-  - `hasArrayEntries.test.ts` - Array utilities
+  - [`languageDiscovery.test.ts`](src/helpers/__tests__/languageDiscovery.test.ts) - Language system testing
+  - [`getDynamicRouterPath.test.ts`](src/helpers/__tests__/getDynamicRouterPath.test.ts) - Router utilities
+  - [`computeQueryOverrides.test.ts`](src/helpers/__tests__/computeQueryOverrides.test.ts) - Query utilities
+  - [`hasArrayEntries.test.ts`](src/helpers/__tests__/hasArrayEntries.test.ts) - Array utilities
 
 #### Composable Tests
-- **Location**: `src/composables/`
+- **Location**: [`src/composables/`](src/composables/)
 - **Query Tests**: Testing data fetching composables
-  - `useUserDataQuery.test.ts`
-  - `useGroupsListQuery.test.ts`
-  - `useDistrictsListQuery.test.ts`
-  - `useTasksQuery.test.ts`
-  - `useOrgUsersQuery.test.ts`
+  - [`useUserDataQuery.test.ts`](src/composables/useUserDataQuery.test.ts)
+  - [`useGroupsListQuery.test.ts`](src/composables/useGroupsListQuery.test.ts)
+  - [`useDistrictsListQuery.test.ts`](src/composables/useDistrictsListQuery.test.ts)
+  - [`useTasksQuery.test.ts`](src/composables/useTasksQuery.test.ts)
+  - [`useOrgUsersQuery.test.ts`](src/composables/useOrgUsersQuery.test.ts)
   - And many more...
 - **Mutation Tests**: Testing data modification composables
-  - `useDeleteAdministrationMutation.test.js`
-  - `useUpdateUserMutation.test.js`
-  - `useUpdateTaskMutation.test.js`
-  - `useAddTaskMutation.test.js`
+  - [`useDeleteAdministrationMutation.test.js`](src/composables/useDeleteAdministrationMutation.test.js)
+  - [`useUpdateUserMutation.test.js`](src/composables/useUpdateUserMutation.test.js)
+  - [`useUpdateTaskMutation.test.js`](src/composables/useUpdateTaskMutation.test.js)
+  - [`useAddTaskMutation.test.js`](src/composables/useAddTaskMutation.test.js)
 - **Utility Tests**: Testing utility composables
-  - `useUserType.test.js`
-  - `useInactivityTimeout.test.js`
-  - `useSSOAccountReadinessVerification.test.js`
+  - [`useUserType.test.js`](src/composables/useUserType.test.js)
+  - [`useInactivityTimeout.test.js`](src/composables/useInactivityTimeout.test.js)
+  - [`useSSOAccountReadinessVerification.test.js`](src/composables/useSSOAccountReadinessVerification.test.js)
 
 ### 2. End-to-End Tests (Cypress)
 
 E2E tests simulate real user interactions and test complete workflows.
 
 **Framework**: Cypress v14+
-**Location**: `cypress/e2e/`
-**Config**: `cypress.config.ts`
+**Location**: [`cypress/e2e/`](cypress/e2e/)
+**Config**: [`cypress.config.ts`](cypress.config.ts)
 
 #### Test Files
 
-##### `testTasks.cy.ts`
+##### [`testTasks.cy.ts`](cypress/e2e/testTasks.cy.ts)
 - **Purpose**: Tests core task functionality from dashboard
 - **Features**:
   - User authentication flow
@@ -100,7 +100,7 @@ E2E tests simulate real user interactions and test complete workflows.
   - `E2E_TEST_EMAIL`: Test user email
   - `E2E_TEST_PASSWORD`: Test user password
 
-##### `locales.cy.ts`
+##### [`locales.cy.ts`](cypress/e2e/locales.cy.ts)
 - **Purpose**: Tests localization functionality
 - **Features**:
   - Multi-language support testing
@@ -111,11 +111,11 @@ E2E tests simulate real user interactions and test complete workflows.
   - `E2E_LOCALES`: Comma-separated list of locales to test
   - `E2E_SKIP_LOGIN`: Skip authentication (useful for frontend-only testing)
 
-##### `locales-emulator.cy.ts`
+##### [`locales-emulator.cy.ts`](cypress/e2e/locales-emulator.cy.ts)
 - **Purpose**: Tests localization with Firebase emulator
-- **Features**: Similar to locales.cy.ts but with emulator backend
+- **Features**: Similar to [`locales.cy.ts`](cypress/e2e/locales.cy.ts) but with emulator backend
 
-##### `smoke.cy.ts`
+##### [`smoke.cy.ts`](cypress/e2e/smoke.cy.ts)
 - **Status**: Currently disabled due to CI failures
 - **Purpose**: Basic smoke tests for critical functionality
 
@@ -124,7 +124,7 @@ E2E tests simulate real user interactions and test complete workflows.
 The dashboard includes comprehensive translation testing:
 
 #### Language Discovery System Tests
-- **File**: `src/helpers/__tests__/languageDiscovery.test.ts`
+- **File**: [`src/helpers/__tests__/languageDiscovery.test.ts`](src/helpers/__tests__/languageDiscovery.test.ts)
 - **Coverage**:
   - Full locale discovery from dashboard translation system
   - Legacy language code compatibility
@@ -151,6 +151,8 @@ The dashboard includes comprehensive translation testing:
 }
 ```
 
+**File**: [`vitest.config.js`](vitest.config.js)
+
 ### Cypress Configuration
 
 ```typescript
@@ -168,6 +170,8 @@ The dashboard includes comprehensive translation testing:
   }
 }
 ```
+
+**File**: [`cypress.config.ts`](cypress.config.ts)
 
 ## Running Tests
 
@@ -296,7 +300,7 @@ xdg-open coverage/index.html  # Linux
 ## Test Support Utilities
 
 ### Test Support Directory
-- **Location**: `src/test-support/`
+- **Location**: [`src/test-support/`](src/test-support/)
 - **Purpose**: Shared testing utilities, mocks, and fixtures
 - **Excluded**: From coverage reports
 
