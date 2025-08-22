@@ -1,5 +1,9 @@
 {
-  "env-configs/.env*": ["npx dotenvx ext precommit"],
-  "src/**/*.{js,vue}": ["npm run lint:fix", "npm run format"],
-  "src/**/*.json": ["npm run format"]
+  "**/.env*": ["npx dotenvx ext precommit"],
+  "**/dashboard/**/*.{js,vue}": [
+    "eslint --config apps/dashboard/eslint.config.mjs --fix"
+  ],
+  "apps/dashboard/*": [
+    "prettier --config apps/dashboard/prettier.config.mjs --write --log-level=warn"
+  ]
 }
