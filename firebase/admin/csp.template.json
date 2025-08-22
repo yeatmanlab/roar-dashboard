@@ -92,7 +92,8 @@
     "https://firestore.googleapis.com",
     "https://identitytoolkit.googleapis.com",
     "https://raw.githubusercontent.com/yeatmanlab/",
-    "https://us-central1-__ADMIN_PROJECT_ID__.cloudfunctions.net/"
+    "https://us-central1-__ADMIN_PROJECT_ID__.cloudfunctions.net/",
+    "https://us-central1-__ASSESSMENT_PROJECT_ID__.cloudfunctions.net/"
   ],
   "frame-src": [
     "'self'",
