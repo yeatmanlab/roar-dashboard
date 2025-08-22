@@ -22,8 +22,16 @@
     "@rollup/plugin-node-resolve": "^16.0.1",
     "@rollup/plugin-run": "^3.1.0",
     "@types/express": "^5.0.3",
+    "@types/pg": "^8.15.5",
+    "drizzle-kit": "^0.31.4",
     "rollup": "^4.46.3",
     "rollup-plugin-esbuild": "^6.2.1",
-    "rollup-plugin-node-externals": "^8.0.1"
+    "rollup-plugin-node-externals": "^8.0.1",
+    "tsx": "^4.20.4"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.1",
+    "drizzle-orm": "^0.44.4",
+    "pg": "^8.16.3"
   }
 }
