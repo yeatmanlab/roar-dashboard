@@ -117,16 +117,16 @@
     "vocabDescription": "Hör dir die Wörter an und wähle das passende Bild dazu aus.",
     "vocabName": "Vokabeln"
   },
+  "navBar": {
+    "greeting": "",
+    "signOut": "Abmelden"
+  },
+  "participantSidebar": {
+    "grade": "Klasse",
+    "studentInfo": "Schülerinformationen",
+    "tasksCompleted": "Aufgaben abgeschlossen!"
+  },
   "components": {
-    "navbar": {
-      "greeting": "",
-      "signOut": "Abmelden"
-    },
-    "participant-sidebar": {
-      "grade": "Klasse",
-      "studentInfo": "Schülerinformationen",
-      "tasksCompleted": "Aufgaben abgeschlossen!"
-    },
     "sentry-form": {
       "buttonLabel": "Ein Problem melden",
       "cancelButtonLabel": "Abbrechen",

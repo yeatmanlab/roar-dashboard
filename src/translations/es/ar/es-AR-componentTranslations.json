@@ -117,16 +117,16 @@
     "vocabDescription": "Escucha la palabra y elige la imagen correspondiente.",
     "vocabName": "Vocabulario"
   },
+  "navBar": {
+    "greeting": "¡Hola",
+    "signOut": "Salir"
+  },
+  "participantSidebar": {
+    "grade": "Grado",
+    "studentInfo": "Información del estudiante",
+    "tasksCompleted": "¡tareas completadas!"
+  },
   "components": {
-    "navbar": {
-      "greeting": "¡Hola",
-      "signOut": "Salir"
-    },
-    "participant-sidebar": {
-      "grade": "Grado",
-      "studentInfo": "Información del estudiante",
-      "tasksCompleted": "¡tareas completadas!"
-    },
     "sentry-form": {
       "buttonLabel": "Reportar un problema",
       "cancelButtonLabel": "Cancelar",

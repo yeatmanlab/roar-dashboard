@@ -117,16 +117,16 @@
     "vocabDescription": "Listen to the word and choose the matching picture.",
     "vocabName": "Vocabulary"
   },
+  "navBar": {
+    "greeting": "Hi",
+    "signOut": "Sign Out"
+  },
+  "participantSidebar": {
+    "grade": "Grade",
+    "studentInfo": "Participant Info",
+    "tasksCompleted": "tasks completed!"
+  },
   "components": {
-    "navbar": {
-      "greeting": "Hi",
-      "signOut": "Sign Out"
-    },
-    "participant-sidebar": {
-      "grade": "Grade",
-      "studentInfo": "Participant Info",
-      "tasksCompleted": "tasks completed!"
-    },
     "sentry-form": {
       "buttonLabel": "Report an Issue",
       "cancelButtonLabel": "Cancel",

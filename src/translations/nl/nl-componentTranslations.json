@@ -117,16 +117,16 @@
     "vocabDescription": "",
     "vocabName": ""
   },
+  "navBar": {
+    "greeting": "",
+    "signOut": ""
+  },
+  "participantSidebar": {
+    "grade": "",
+    "studentInfo": "",
+    "tasksCompleted": ""
+  },
   "components": {
-    "navbar": {
-      "greeting": "",
-      "signOut": ""
-    },
-    "participant-sidebar": {
-      "grade": "",
-      "studentInfo": "",
-      "tasksCompleted": ""
-    },
     "sentry-form": {
       "buttonLabel": "",
       "cancelButtonLabel": "",
