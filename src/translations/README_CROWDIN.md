@@ -38,7 +38,7 @@ This dashboard uses Crowdin to manage translations. Locally, translations are ma
 ## Crowdin configuration
 
 - Project: `levantetranslations` (ID: 756721)
-- Destination in Crowdin: `dashboard/` folder (main + components subfolder)
+- Destination in Crowdin: `main/dashboard/` folder (main + components subfolder)
 - Each CSV is a multilingual spreadsheet with the columns listed above
 - Fallback seeding in CSV generation:
   - `en-GH` seeded from `en`
