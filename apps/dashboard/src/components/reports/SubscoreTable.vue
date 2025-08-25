@@ -167,20 +167,12 @@ const exportSelected = (selectedRows) => {
       _set(tableRow, 'Skills To Work On', _get(scores, 'pa.skills'));
     }
     if (roamFluencyTasks.includes(props.taskId)) {
-      Object.keys(roamFluencySubskillHeaders).forEach((property) => {
-        _set(
-          tableRow,
-          `Free Response - ${roamFluencySubskillHeaders[property]}`,
-          _get(scores, `${props.taskId}.fr.${property}`),
-        );
+      Object.entries(roamFluencySubskillHeaders).forEach(([property, propertyHeader]) => {
+        _set(tableRow, `Free Response - ${propertyHeader}`, _get(scores, `${props.taskId}.fr.${property}`));
       });
 
-      Object.keys(roamFluencySubskillHeaders).forEach((property) => {
-        _set(
-          tableRow,
-          `Multiple Choice - ${roamFluencySubskillHeaders[property]}`,
-          _get(scores, `${props.taskId}.fc.${property}`),
-        );
+      Object.entries(roamFluencySubskillHeaders).forEach(([property, propertyHeader]) => {
+        _set(tableRow, `Multiple Choice - ${propertyHeader}`, _get(scores, `${props.taskId}.fc.${property}`));
       });
     }
     if (props.taskId === 'roam-alpaca') {
@@ -221,20 +213,12 @@ const exportAll = async () => {
       _set(tableRow, 'Total', _get(scores, 'pa.total'));
       _set(tableRow, 'Skills To Work On', _get(scores, 'pa.skills'));
     } else if (roamFluencyTasks.includes(props.taskId)) {
-      Object.keys(roamFluencySubskillHeaders).forEach((property) => {
-        _set(
-          tableRow,
-          `Free Response - ${roamFluencySubskillHeaders[property]}`,
-          _get(scores, `${props.taskId}.fr.${property}`),
-        );
+      Object.entries(roamFluencySubskillHeaders).forEach(([property, propertyHeader]) => {
+        _set(tableRow, `Free Response - ${propertyHeader}`, _get(scores, `${props.taskId}.fr.${property}`));
       });
 
-      Object.keys(roamFluencySubskillHeaders).forEach((property) => {
-        _set(
-          tableRow,
-          `Multiple Choice - ${roamFluencySubskillHeaders[property]}`,
-          _get(scores, `${props.taskId}.fc.${property}`),
-        );
+      Object.entries(roamFluencySubskillHeaders).forEach(([property, propertyHeader]) => {
+        _set(tableRow, `Multiple Choice - ${propertyHeader}`, _get(scores, `${props.taskId}.fc.${property}`));
       });
     } else if (props.taskId === 'roam-alpaca') {
       _set(tableRow, 'Raw Score', _get(scores, `${props.taskId}.composite.roarScore`));
