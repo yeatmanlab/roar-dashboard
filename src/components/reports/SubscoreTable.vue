@@ -118,13 +118,13 @@ const columns = computed(() => {
       tagColor: `scores.${props.taskId}.composite.tagColor`,
       sort: false,
     });
-    Object.keys(roamAlpacaSubskills).forEach((subskill) => {
+    Object.entries(roamAlpacaSubskills).forEach(([subskillId, subskill]) => {
       tableColumns.push({
-        field: `scores.${props.taskId}.${subskill}.percentCorrect`,
-        header: roamAlpacaSubskills[subskill],
+        field: `scores.${props.taskId}.${subskillId}.percentCorrect`,
+        header: subskill,
         dataType: 'text',
         sort: false,
-        tagColor: `scores.${props.taskId}.${subskill}.tagColor`,
+        tagColor: `scores.${props.taskId}.${subskillId}.tagColor`,
         ...(gradeEstimate && { gradeEstimate }),
       });
     });
@@ -168,13 +168,9 @@ const exportSelected = (selectedRows) => {
     if (props.taskId === 'roam-alpaca') {
       _set(tableRow, 'Raw Score', _get(scores, `${props.taskId}.composite.roarScore`));
       _set(tableRow, 'Grade Estimate', _get(scores, `${props.taskId}.composite.gradeEstimate`));
-      Object.keys(roamAlpacaSubskills).forEach((subskill) => {
-        Object.keys(roamAlpacaSubskillHeaders).forEach((property) => {
-          _set(
-            tableRow,
-            `${roamAlpacaSubskills[subskill]} - ${roamAlpacaSubskillHeaders[property]}`,
-            _get(scores, `${props.taskId}.${subskill}.${property}`),
-          );
+      Object.entries(roamAlpacaSubskills).forEach(([subskillId, subskill]) => {
+        Object.entries(roamAlpacaSubskillHeaders).forEach(([property, propertyHeader]) => {
+          _set(tableRow, `${subskill} - ${propertyHeader}`, _get(scores, `${props.taskId}.${subskillId}.${property}`));
         });
       });
       _set(tableRow, 'Skills To Work On', _get(scores, `${props.taskId}.composite.incorrectSkills`));
@@ -212,13 +208,9 @@ const exportAll = async () => {
     } else if (props.taskId === 'roam-alpaca') {
       _set(tableRow, 'Raw Score', _get(scores, `${props.taskId}.composite.roarScore`));
       _set(tableRow, 'Grade Estimate', _get(scores, `${props.taskId}.composite.gradeEstimate`));
-      Object.keys(roamAlpacaSubskills).forEach((subskill) => {
-        Object.keys(roamAlpacaSubskillHeaders).forEach((property) => {
-          _set(
-            tableRow,
-            `${roamAlpacaSubskills[subskill]} - ${roamAlpacaSubskillHeaders[property]}`,
-            _get(scores, `${props.taskId}.${subskill}.${property}`),
-          );
+      Object.entries(roamAlpacaSubskills).forEach(([subskillId, subskill]) => {
+        Object.entries(roamAlpacaSubskillHeaders).forEach(([property, propertyHeader]) => {
+          _set(tableRow, `${subskill} - ${propertyHeader}`, _get(scores, `${props.taskId}.${subskillId}.${property}`));
         });
       });
       _set(tableRow, 'Skills To Work On', _get(scores, `${props.taskId}.composite.incorrectSkills`));
