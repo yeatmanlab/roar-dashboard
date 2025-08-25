@@ -1,9 +1,10 @@
 import express from 'express'
+import { registerAllRoutes } from './routes'
 
 const app = express()
 
-app.get('/', (req, res) => {
-  res.send('Hello World!')
-})
+app.use(express.json())
+
+registerAllRoutes(app)
 
 export default app
