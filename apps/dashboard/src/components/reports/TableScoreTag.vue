@@ -63,7 +63,8 @@ let returnScoreTooltip = (colData, fieldPath) => {
   let toolTip = '';
 
   if (subskillTasks.includes(taskId) && subskillId) {
-    if (taskId === 'roam-alpaca' && subskillId === 'composite' && pathSegments[3] === 'incorrectSkills') {
+    // Prevent any tooltips from rendering for the incorrectSkills column.
+    if (taskId === 'roam-alpaca' && pathSegments[3] === 'incorrectSkills') {
       return toolTip;
     }
     return handleSubskillToolTip(taskId, subskillId, toolTip, colData);
