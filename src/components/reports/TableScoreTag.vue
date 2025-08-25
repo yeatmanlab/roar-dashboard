@@ -155,8 +155,8 @@ function handleSubskillToolTip(_taskId, _subskillId, _toolTip, _colData) {
       _toolTip += 'Grade Estimate: ' + subskillInfo?.gradeEstimate + '\n';
     }
   } else if (roamFluencyTasks.includes(_taskId)) {
-    Object.keys(roamFluencySubskillHeaders).forEach((property) => {
-      _toolTip += `${roamFluencySubskillHeaders[property]}: ${subskillInfo?.[property]}\n`;
+    Object.entries(roamFluencySubskillHeaders).forEach(([property, propertyHeader]) => {
+      _toolTip += `${propertyHeader}: ${subskillInfo?.[property]}\n`;
     });
   }
 
