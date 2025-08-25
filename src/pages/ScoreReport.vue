@@ -820,24 +820,15 @@ const computeAssignmentAndRunData = computed(() => {
           if (isNewScoring) {
             currRowScores[taskId].numCorrect = _get(assessment, 'scores.computed.composite.rawScore');
           }
-          const propertyKeys = {
-            numAttempted: {
-              newPath: 'numAttempted',
-              oldPath: 'totalNumAttempted',
-            },
-            // Copied previous implementation for old scoring system where gradeEstimate was thetaEstimate
-            gradeEstimate: {
-              newPath: 'gradeEstimate',
-              oldPath: 'thetaEstimate',
-            },
-          };
-
-          Object.entries(propertyKeys).forEach(([key, paths]) => {
-            currRowScores[taskId][key] = _get(
-              assessment,
-              `scores.computed.composite.${paths[isNewScoring ? 'newPath' : 'oldPath']}`,
-            );
-          });
+          currRowScores[taskId].numAttempted = _get(
+            assessment,
+            `scores.computed.composite.${isNewScoring ? 'numAttempted' : 'totalNumAttempted'}`,
+          );
+          // Copied previous implementation for old scoring system where gradeEstimate was thetaEstimate
+          currRowScores[taskId].gradeEstimate = _get(
+            assessment,
+            `scores.computed.composite.${isNewScoring ? 'gradeEstimate' : 'thetaEstimate'}`,
+          );
         }
         if (['fluency-calf', 'fluency-arf', 'fluency-calf-es', 'fluency-arf-es'].includes(taskId)) {
           const fc = _get(assessment, 'scores.computed.FC.roamScore');
