@@ -365,8 +365,6 @@ const exportLoading = ref(false);
 
 const activeTabIndex = ref(0);
 
-const recruitment = ref({});
-
 const pageWidth = 190; // Set page width for calculations
 const returnScaleFactor = (width) => pageWidth / width; // Calculate the scale factor
 
@@ -930,7 +928,8 @@ const computeAssignmentAndRunData = computed(() => {
     const assessments = administrationData.value.assessments;
     for (const assessment of assessments) {
       if (roamFluencyTasks.includes(assessment.taskId)) {
-        if (recruitment.value[assessment.taskId] !== 'responseModality') {
+        const recruitment = assessment.params.recruitment;
+        if (recruitment !== 'responseModality') {
           delete filteredRunsByTaskId[assessment.taskId];
         }
       }
@@ -947,12 +946,6 @@ watch(
   computeAssignmentAndRunData,
   (newValue) => {
     filteredTableData.value = newValue.assignmentTableData;
-    if (filteredTableData.value.length > 0) {
-      // Assign recruitment values to handle roam response modality raw score reporting
-      for (const [key, value] of Object.entries(filteredTableData.value[0].scores)) {
-        recruitment.value[key] = value?.recruitment;
-      }
-    }
   },
   { immediate: true, deep: true },
 );
@@ -1462,8 +1455,11 @@ const scoreReportColumns = computed(() => {
     if (excludeFromScoringTasks.includes(taskId)) continue; // Skip adding this column
     let colField;
     const isOptional = `scores.${taskId}.optional`;
-    const isFluencyResponseModality =
-      roamFluencyTasks.includes(taskId) && recruitment.value[taskId] === 'responseModality';
+    let isFluencyResponseModality = false;
+    if (roamFluencyTasks.includes(taskId)) {
+      const fluencyTasks = administrationData.value?.assessments?.find((assessment) => assessment.taskId === taskId);
+      isFluencyResponseModality = fluencyTasks?.params?.recruitment === 'responseModality';
+    }
 
     // Color needs to include a field to allow sorting.
     if (viewMode.value === 'percentile' || viewMode.value === 'color') {
