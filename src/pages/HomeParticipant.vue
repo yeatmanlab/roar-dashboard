@@ -109,7 +109,7 @@ import axios from 'axios';
 import { LEVANTE_BUCKET_URL } from '@/constants/bucket';
 import { Model, settings } from 'survey-core';
 import { Converter } from 'showdown';
-import { fetchAudioLinks } from '@/helpers/survey';
+import { fetchAudioLinks, getParsedLocale } from '@/helpers/survey';
 import { useRouter } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
 import { useQueryClient, useQuery } from '@tanstack/vue-query';
@@ -475,7 +475,7 @@ function createSurveyInstance(surveyDataToStartAt) {
   settings.lazyRender = true;
   const surveyInstance = new Model(surveyDataToStartAt);
   // surveyInstance.showNavigationButtons = 'none';
-  surveyInstance.locale = locale.value;
+  surveyInstance.locale = getParsedLocale(locale.value);
   return surveyInstance;
 }
 
@@ -491,11 +491,17 @@ function setupMarkdownConverter(surveyInstance) {
 watch(
   [surveyDependenciesLoaded, selectedAdmin],
   async ([isLoaded]) => {
-    const isAssessment = selectedAdmin.value?.assessments.some((task) => task.taskId === 'survey');
+    // Add additional safety check to prevent race condition errors
+    if (!selectedAdmin.value?.assessments) {
+      console.warn('selectedAdmin or assessments not available during survey initialization');
+      return;
+    }
+    
+    const isAssessment = selectedAdmin.value.assessments.some((task) => task.taskId === 'survey');
     if (!isLoaded || !isAssessment || surveyStore.survey) return;
 
     const surveyResponseDoc = (surveyResponsesData.value || []).find(
-      (doc) => doc?.administrationId === selectedAdmin.value.id,
+      (doc) => doc?.administrationId === selectedAdmin.value?.id,
     );
     let shouldInitializeSurvey = true;
 
@@ -595,7 +601,7 @@ watch(
       userType: userType.value,
       roarfirekit: roarfirekit.value,
       uid: userData.value.id,
-      selectedAdminId: selectedAdmin.value.id,
+      selectedAdminId: selectedAdmin.value?.id,
       surveyStore,
       router,
       toast,

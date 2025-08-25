@@ -22,6 +22,7 @@ import { languageOptions } from '@/translations/i18n';
 import { isLevante } from '@/helpers';
 import { useSurveyStore } from '@/store/survey';
 import { setupStudentAudio } from '@/helpers/surveyInitialization';
+import { getParsedLocale } from '@/helpers/survey';
 
 interface LanguageOption {
   name: string;
@@ -61,7 +62,7 @@ async function onLanguageChange(event: LanguageChangeEvent): Promise<void> {
 
   if (isLevante && surveyStore.survey) {
     console.log('setting survey locale');
-    (surveyStore.survey as any).locale = event.value;
+    (surveyStore.survey as any).locale = getParsedLocale(event.value);
     await setupStudentAudio(surveyStore.survey as any, event.value, surveyStore.audioLinkMap, surveyStore);
   }
 }

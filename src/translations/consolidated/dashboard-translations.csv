@@ -1,53 +1,51 @@
-identifier,label,en-US,es-CO,de,fr-CA,nl,en-GH,de-CH,es-AR
-auth/consent.acceptButton,acceptButton,Accept,Aceptar,Akzeptieren,,,Accept,Akzeptieren,Aceptar
-auth/consent.assentTitle,assentTitle,Assent,Asentimiento,,,,Assent,,Asentimiento
-auth/consent.consentTitle,consentTitle,Consent,Consentimiento,,,,Consent,,Consentimiento
-auth/consent.consentUpdatedStatus,consentUpdatedStatus,Consent status updated,Estado de consentimiento actualizado,Zustimmungsstatus aktualisiert,,,Consent status updated,Zustimmungsstatus aktualisiert,Estado de consentimiento actualizado
-auth/consent.header,header,Consent,Consentimiento,Zustimmung,,,Consent,Zustimmung,Consentimiento
-auth/consent.rejectButton,rejectButton,"No, sign me out","No, cerrar sesión","Nein, mich abmelden",,,"No, sign me out","Nein, mich abmelden","No, cerrar sesión"
-auth/consent.title,title,,,Zustimmung,,,,Zustimmung,
-auth/consent.toastHeader,toastHeader,Confirmed,Confirmado,Bestätigt,,,Confirmed,Bestätigt,Confirmado
-auth/signin.atLeastOneLowercase,atLeastOneLowercase,At least one lowercase,Al menos una letra minúscula,Mindestens ein Kleinbuchstabe,,,At least one lowercase,Mindestens ein Kleinbuchstabe,Al menos una letra minúscula
-auth/signin.atLeastOneNumber,atLeastOneNumber,At least one number,Al menos un número,Mindestens eine Zahl,,,At least one number,Mindestens eine Zahl,Al menos un número
-auth/signin.atLeastOneNumeric,atLeastOneNumeric,At least one numeric,Al menos un numéro,Mindestens eine Nummer,,,At least one numeric,Mindestens eine Nummer,Al menos un numéro
-auth/signin.atLeastOneUpperCase,atLeastOneUpperCase,At least one uppercase,Al menos una letra mayúscula,Mindestens ein Großbuchstabe,,,At least one uppercase,Mindestens ein Großbuchstabe,Al menos una letra mayúscula
-auth/signin.buttonLabel,buttonLabel,Go!,¡Vamos!,Los!,,,Go!,Los!,¡Vamos!
-auth/signin.continueWithGoogle,continueWithGoogle,Continue with Google,Sigue adelante con Google,Machen Sie weiter mit Google,,,Continue with Google,Machen Sie weiter mit Google,Sigue adelante con Google
-auth/signin.emailId,emailId,email,correo electrónico,E-Mail,,,email,E-Mail,correo electrónico
-auth/signin.emailPlaceholder,emailPlaceholder,Username or email,Nombre de usuario o correo electrónico,Benutzername oder E-Mail,,,Username or email,Benutzername oder E-Mail,Nombre de usuario o correo electrónico
-auth/signin.forgotPassword,forgotPassword,Forgot Password?,¿Olvidaste tu contraseña?,Passwort vergessen?,,,Forgot Password?,Passwort vergessen?,¿Olvidaste tu contraseña?
-auth/signin.incorrectEmailOrPassword,incorrectEmailOrPassword,Incorrect username/email or password,Nombre de usuario/correo electrónico o contraseña incorrectos,Falscher Benutzername/E-Mail oder Passwort,,,Incorrect username/email or password,Falscher Benutzername/E-Mail oder Passwort,Nombre de usuario/correo electrónico o contraseña incorrectos
-auth/signin.invalidEmailPlaceholder,invalidEmailPlaceholder,Error: invalid email,Error: el correo electrónico no es válido,Fehler: Ungültige E-Mail,,,Error: invalid email,Fehler: Ungültige E-Mail,Error: el correo electrónico no es válido
-auth/signin.minimumCharacters,minimumCharacters,Minimum 8 characters,Mínimo 8 caracteres,Mindestens 8 Zeichen,,,Minimum 8 characters,Mindestens 8 Zeichen,Mínimo 8 caracteres
+identifier,label,en,es-CO,de,fr-CA,nl,en-GH,de-CH,es-AR
+auth/consent.acceptButton,acceptButton,,Aceptar,,,,,,Aceptar
+auth/consent.assentTitle,assentTitle,,Asentimiento,,,,,,Asentimiento
+auth/consent.consentTitle,consentTitle,,Consentimiento,,,,,,Consentimiento
+auth/consent.consentUpdatedStatus,consentUpdatedStatus,,Estado de consentimiento actualizado,,,,,,Estado de consentimiento actualizado
+auth/consent.header,header,,Consentimiento,,,,,,Consentimiento
+auth/consent.rejectButton,rejectButton,,"No, cerrar sesión",,,,,,"No, cerrar sesión"
+auth/consent.toastHeader,toastHeader,,Confirmado,,,,,,Confirmado
+auth/signin.atLeastOneLowercase,atLeastOneLowercase,,Al menos una minúscula,,,,,,Al menos una minúscula
+auth/signin.atLeastOneNumber,atLeastOneNumber,,Al menos un número,,,,,,Al menos un número
+auth/signin.atLeastOneNumeric,atLeastOneNumeric,,Al menos un numérico,,,,,,Al menos un numérico
+auth/signin.atLeastOneUpperCase,atLeastOneUpperCase,,Al menos una mayúscula,,,,,,Al menos una mayúscula
+auth/signin.buttonLabel,buttonLabel,,¡Vamos!,,,,,,¡Vamos!
+auth/signin.continueWithGoogle,continueWithGoogle,,Sigue adelante con Google,,,,,,Sigue adelante con Google
+auth/signin.emailId,emailId,,correo electrónico,,,,,,correo electrónico
+auth/signin.emailPlaceholder,emailPlaceholder,,Nombre de usuario o correo electrónico,,,,,,Nombre de usuario o correo electrónico
+auth/signin.forgotPassword,forgotPassword,,¿Olvidaste tu contraseña?,,,,,,¿Olvidaste tu contraseña?
+auth/signin.incorrectEmailOrPassword,incorrectEmailOrPassword,,Nombre de usuario/correo electrónico o contraseña incorrectos,,,,,,Nombre de usuario/correo electrónico o contraseña incorrectos
+auth/signin.invalidEmailPlaceholder,invalidEmailPlaceholder,,Error: correo electrónico no válido,,,,,,Error: correo electrónico no válido
+auth/signin.minimumCharacters,minimumCharacters,,Mínimo 8 caracteres,,,,,,Mínimo 8 caracteres
 auth/signin.pageTitle,pageTitle,,Iniciar sesión,,,,,,Iniciar sesión
-auth/signin.passwordId,passwordId,password,contraseña,Passwort,,,password,Passwort,contraseña
-auth/signin.passwordPlaceholder,passwordPlaceholder,Password,Contraseña,Passwort,,,Password,Passwort,Contraseña
-auth/signin.pickPassword,pickPassword,Pick a password,Elige una contraseña,Wählen Sie ein Passwort,,,Pick a password,Wählen Sie ein Passwort,Elige una contraseña
-auth/signin.selectLanguage,selectLanguage,Select Language,Seleccionar idioma,Sprache auswählen,,,Select Language,Sprache auswählen,Seleccionar idioma
-auth/signin.selectLanguageLabel,selectLanguageLabel,Language,Idioma,Sprache,,,Language,Sprache,Idioma
-auth/signin.signInWithEmailLinkInstead,signInWithEmailLinkInstead,Sign-in using email link,Iniciar sesión con enlace de correo electrónico,Mit E-Mail-Link anmelden,,,Sign-in using email link,Mit E-Mail-Link anmelden,Iniciar sesión con enlace de correo electrónico
-auth/signin.signInWithEmailLinkPlaceHolder,signInWithEmailLinkPlaceHolder,Press Go to sign-in with an email link.,Presiona Vamos para iniciar sesión con un enlace de correo electrónico.,"Drücken Sie „Los“, um sich mit einem E-Mail-Link anzumelden.",,,Press Go to sign-in with an email link.,"Drücken Sie „Los“, um sich mit einem E-Mail-Link anzumelden.",Presiona Vamos para iniciar sesión con un enlace de correo electrónico.
-auth/signin.signInWithPasswordInstead,signInWithPasswordInstead,Sign-in using password,Iniciar sesión con contraseña,Mit Passwort anmelden,,,Sign-in using password,Mit Passwort anmelden,Iniciar sesión con contraseña
-auth/signin.suggestions,suggestions,Suggestions,Sugerencias,Vorschläge,,,Suggestions,Vorschläge,Sugerencias
-pages/home-participant.consentUpdatedStatus,consentUpdatedStatus,,Estado de consentimiento actualizado,,,,,,Estado de consentimiento actualizado
-pages/home-participant.contactAdministrator,contactAdministrator,Please contact your administrator to get added to an assignment.,"Por favor, contacta a tu administrador para que agregue a una actividad.","Bitte kontaktieren Sie Ihren Administrator, um zu einer Zuordnung hinzugefügt zu werden.",,,Please contact your administrator to get added to an assignment.,"Bitte kontaktieren Sie Ihren Administrator, um zu einer Zuordnung hinzugefügt zu werden.","Por favor, contacta a tu administrador para que agregue a una actividad."
-pages/home-participant.loadingAssignments,loadingAssignments,Loading Assignments,Cargando actividades,Lade Zuordnungen,,,Loading Assignments,Lade Zuordnungen,Cargando actividades
-pages/home-participant.noAssignments,noAssignments,You have no assignments!,¡No tienes actividades!,Sie haben keine Zuordnungen!,,,You have no assignments!,Sie haben keine Zuordnungen!,¡No tienes actividades!
-pages/home-participant.selectAssignment,selectAssignment,Select an assignment,Selecciona una actividad,Wählen Sie eine Zuordnung aus,,,Select an assignment,Wählen Sie eine Zuordnung aus,Selecciona una actividad
-pages/home-participant.showOptionalAssignments,showOptionalAssignments,Show optional assignments,Mostrar actividades opcionales,Optionale Zuordnungen anzeigen,,,Show optional assignments,Optionale Zuordnungen anzeigen,Mostrar actividades opcionales
-pages/home-selector.inactivityLogout,inactivityLogout,"You will soon be logged out for security purposes. Please click ""Continue"" if you wish to continue your session.\n Otherwise, you will be automatically logged out in { timeLeft } seconds.","Pronto serás desconectado por motivos de seguridad. Haz clic en ""Continuar"" si deseas continuar. De lo contrario, la sesión se cerrará en {timeLeft} segundos automáticamente .","Sie werden aus Sicherheitsgründen bald abgemeldet. Bitte klicken Sie auf 'Fortsetzen', wenn Sie Ihre Sitzung fortsetzen möchten. Andernfalls werden Sie automatisch in { timeLeft } Sekunden abgemeldet.",,,"You will soon be logged out for security purposes. Please click ""Continue"" if you wish to continue your session.\n Otherwise, you will be automatically logged out in { timeLeft } seconds.","Sie werden aus Sicherheitsgründen bald abgemeldet. Bitte klicken Sie auf 'Fortsetzen', wenn Sie Ihre Sitzung fortsetzen möchten. Andernfalls werden Sie automatisch in { timeLeft } Sekunden abgemeldet.","Pronto serás desconectado por motivos de seguridad. Haz clic en ""Continuar"" si deseas continuar. De lo contrario, la sesión se cerrará en {timeLeft} segundos automáticamente ."
-pages/home-selector.inactivityLogoutAcceptLabel,inactivityLogoutAcceptLabel,Continue,Continuar,Fortsetzen,,,Continue,Fortsetzen,Continuar
-pages/home-selector.loading,loading,Loading...,Cargando...,Laden...,,,Loading...,Laden...,Cargando...
-pages/not-found.label,label,Return to Home,Ir a la página de inicio.,"Klicken Sie hier, um zur Startseite zu gelangen.",,,Return to Home,"Klicken Sie hier, um zur Startseite zu gelangen.",Ir a la página de inicio.
-pages/not-found.pageNotFound,pageNotFound,Page not found,Página no encontrada,Seite nicht gefunden,,,Page not found,Seite nicht gefunden,Página no encontrada
-pages/not-found.sorry,sorry,"Sorry, we could not find that page!","¡Lo siento, no pudimos encontrar esa página!","Entschuldigung, wir konnten diese Seite nicht finden!",,,"Sorry, we could not find that page!","Entschuldigung, wir konnten diese Seite nicht finden!","¡Lo siento, no pudimos encontrar esa página!"
-pages/signin.adminAction,adminAction,here,aquí,hier,,,here,hier,aquí
-pages/signin.adminInfoPrompt,adminInfoPrompt,If you registered with a Google email or your email provider uses Google SSO.,Si te registraste con un correo de Google o tu proveedor de correo utiliza Google SSO.,"Wenn Sie sich mit einer Google-E-Mail oder Ihr E-Mail-Anbieter Google SSO verwendet, registriert haben.",,,If you registered with a Google email or your email provider uses Google SSO.,"Wenn Sie sich mit einer Google-E-Mail oder Ihr E-Mail-Anbieter Google SSO verwendet, registriert haben.",Si te registraste con un correo de Google o tu proveedor de correo utiliza Google SSO.
-pages/signin.adminPrompt,adminPrompt,Are you an Admin? Click {action} to Sign in.,¿Eres administrador? Haz clic {action} para iniciar sesión.,"Sind Sie ein Administrator? Klicken Sie {action}, um sich anzumelden.",,,Are you an Admin? Click {action} to Sign in.,"Sind Sie ein Administrator? Klicken Sie {action}, um sich anzumelden.",¿Eres administrador? Haz clic {action} para iniciar sesión.
-pages/signin.havingTrouble,havingTrouble,Having trouble?,¿Tienes problemas?,Haben Sie Schwierigkeiten?,,,Having trouble?,Haben Sie Schwierigkeiten?,¿Tienes problemas?
-pages/signin.login,login,Log in to access your dashboard,Inicia sesión para acceder a tus actividades,"Melden Sie sich an, um auf Ihr Dashboard zuzugreifen",,,Log in to access your dashboard,"Melden Sie sich an, um auf Ihr Dashboard zuzugreifen",Inicia sesión para acceder a tus actividades
-pages/signin.loginWith,loginWith,Log in with,Inicia sesión con,Anmelden mit,,,Log in with,Anmelden mit,Inicia sesión con
-pages/signin.welcome,welcome,Welcome to ROAR!,¡Bienvenido a ROAR!,Willkommen bei ROAR!,,,Welcome to ROAR!,Willkommen bei ROAR!,¡Bienvenido a ROAR!
-surveys/user-survey.specificRelationDescriptionChildA,specificRelationDescriptionChildA,For child with Birth Month,Para niño(a) con mes de nacimiento,Für Kind mit Geburtsmonat,,,For child with Birth Month,Für Kind mit Geburtsmonat,Para niño(a) con mes de nacimiento
-surveys/user-survey.specificRelationDescriptionChildB,specificRelationDescriptionChildB,and Birth Year,y año de nacimiento,und Geburtsjahr,,,and Birth Year,und Geburtsjahr,y año de nacimiento
-surveys/user-survey.specificRelationDescriptionClass,specificRelationDescriptionClass,For class,Para la clase,Für Klasse,,,For class,Für Klasse,Para la clase
+auth/signin.passwordId,passwordId,,contraseña,,,,,,contraseña
+auth/signin.passwordPlaceholder,passwordPlaceholder,,Contraseña,,,,,,Contraseña
+auth/signin.pickPassword,pickPassword,,Elige una contraseña,,,,,,Elige una contraseña
+auth/signin.selectLanguage,selectLanguage,,Seleccionar idioma,,,,,,Seleccionar idioma
+auth/signin.selectLanguageLabel,selectLanguageLabel,,Idioma,,,,,,Idioma
+auth/signin.signInWithEmailLinkInstead,signInWithEmailLinkInstead,,Iniciar sesión con enlace de correo electrónico,,,,,,Iniciar sesión con enlace de correo electrónico
+auth/signin.signInWithEmailLinkPlaceHolder,signInWithEmailLinkPlaceHolder,,Presiona Go para iniciar sesión con un enlace de correo electrónico.,,,,,,Presiona Go para iniciar sesión con un enlace de correo electrónico.
+auth/signin.signInWithPasswordInstead,signInWithPasswordInstead,,Iniciar sesión con contraseña,,,,,,Iniciar sesión con contraseña
+auth/signin.suggestions,suggestions,,Sugerencias,,,,,,Sugerencias
+pages/home-participant.contactAdministrator,contactAdministrator,,"Por favor, contacta a tu administrador para que te agregue a una actividad.",,,,,,"Por favor, contacta a tu administrador para que te agregue a una actividad."
+pages/home-participant.loadingAssignments,loadingAssignments,,Cargando actividades,,,,,,Cargando actividades
+pages/home-participant.noAssignments,noAssignments,,¡No tienes actividades!,,,,,,¡No tienes actividades!
+pages/home-participant.selectAssignment,selectAssignment,,Selecciona una actividad,,,,,,Selecciona una actividad
+pages/home-participant.showOptionalAssignments,showOptionalAssignments,,Mostrar actividades opcionales,,,,,,Mostrar actividades opcionales
+pages/home-selector.inactivityLogout,inactivityLogout,,"Pronto será desconectado por motivos de seguridad. Haz clic en ""Continuar"" si desea continuar con su sesión. De lo contrario, se cerrará la sesión automáticamente en {timeLeft} segundos.",,,,,,"Pronto será desconectado por motivos de seguridad. Haz clic en ""Continuar"" si desea continuar con su sesión. De lo contrario, se cerrará la sesión automáticamente en {timeLeft} segundos."
+pages/home-selector.inactivityLogoutAcceptLabel,inactivityLogoutAcceptLabel,,Continuar,,,,,,Continuar
+pages/home-selector.loading,loading,,Cargando...,,,,,,Cargando...
+pages/not-found.label,label,,Ir a la página de inicio.,,,,,,Ir a la página de inicio.
+pages/not-found.pageNotFound,pageNotFound,,Página no encontrada,,,,,,Página no encontrada
+pages/not-found.sorry,sorry,,"¡Lo siento, no pudimos encontrar esa página!",,,,,,"¡Lo siento, no pudimos encontrar esa página!"
+pages/signin.adminAction,adminAction,,aquí,,,,,,aquí
+pages/signin.adminInfoPrompt,adminInfoPrompt,,Si te registraste con un correo de Google o tu proveedor de correo utiliza Google SSO.,,,,,,Si te registraste con un correo de Google o tu proveedor de correo utiliza Google SSO.
+pages/signin.adminPrompt,adminPrompt,,¿Eres administrador? Haz clic {action} para iniciar sesión.,,,,,,¿Eres administrador? Haz clic {action} para iniciar sesión.
+pages/signin.havingTrouble,havingTrouble,,¿Tienes problemas?,,,,,,¿Tienes problemas?
+pages/signin.login,login,,Inicia sesión para acceder a tu panel de control,,,,,,Inicia sesión para acceder a tu panel de control
+pages/signin.loginWith,loginWith,,Inicia sesión con,,,,,,Inicia sesión con
+pages/signin.welcome,welcome,,¡Bienvenido a ROAR!,,,,,,¡Bienvenido a ROAR!
+surveys/user-survey.specificRelationDescriptionChildA,specificRelationDescriptionChildA,,Para niño(a) con mes de nacimiento,,,,,,Para niño(a) con mes de nacimiento
+surveys/user-survey.specificRelationDescriptionChildB,specificRelationDescriptionChildB,,y año de nacimiento,,,,,,y año de nacimiento
+surveys/user-survey.specificRelationDescriptionClass,specificRelationDescriptionClass,,Para la clase,,,,,,Para la clase

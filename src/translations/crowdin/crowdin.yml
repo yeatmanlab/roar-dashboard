@@ -4,19 +4,19 @@
 'preserve_hierarchy': true
 
 files:
-  # Components CSVs → dashboard/components/
+  # Components CSVs → main/dashboard/components/
   - source: 'consolidated/components/*-translations.csv'
-    dest: '/dashboard/components/%original_file_name%'
-    translation: '/dashboard/components/%original_file_name%'
+    dest: '/main/dashboard/components/%original_file_name%'
+    translation: '/main/dashboard/components/%original_file_name%'
     multilingual_spreadsheet: true
     first_line_contains_header: true
     # Column order must match our CSV header: identifier,label,en,es-CO,de,fr-CA,nl,en-GH,de-CH,es-AR
     scheme: 'identifier,context,source_phrase,es-CO,de,fr-CA,nl,en-GH,de-CH,es-AR'
 
-  # Main dashboard CSV → dashboard/
+  # Main dashboard CSV → main/dashboard/
   - source: 'consolidated/dashboard-translations.csv'
-    dest: '/dashboard/dashboard-translations.csv'
-    translation: '/dashboard/%original_file_name%'
+    dest: '/main/dashboard/dashboard-translations.csv'
+    translation: '/main/dashboard/%original_file_name%'
     multilingual_spreadsheet: true
     first_line_contains_header: true
     scheme: 'identifier,context,source_phrase,es-CO,de,fr-CA,nl,en-GH,de-CH,es-AR'
