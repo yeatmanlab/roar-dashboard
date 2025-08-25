@@ -566,7 +566,9 @@ const getScoresAndSupportFromAssessment = ({
       support_level = '';
       tag_color = '#A4DDED';
       if (tasksToDisplayTotalCorrect.includes(taskId)) {
-        rawScore = _get(assessment, 'scores.computed.composite.rawScore');
+        const isNewScoring = !_get(assessment, 'scores.computed.composite.roamScore');
+        // Previous scoring system returned numCorrect for rawScore in scoreReportColumns
+        rawScore = _get(assessment, `scores.computed.composite.${isNewScoring ? 'rawScore' : 'roamScore'}`);
       }
     }
   } else {
@@ -767,20 +769,33 @@ const computeAssignmentAndRunData = computed(() => {
           currRowScores[taskId].tagColor = percentCorrect === null ? 'transparent' : tagColor;
           scoreFilterTags += ' Assessed ';
         } else if (tasksToDisplayTotalCorrect.includes(taskId)) {
-          const numAttempted = _get(assessment, 'scores.computed.composite.numAttempted');
-          currRowScores[taskId].numCorrect = _get(assessment, 'scores.computed.composite.numCorrect');
-          currRowScores[taskId].numIncorrect = _get(assessment, 'scores.computed.composite.numIncorrect');
-          currRowScores[taskId].numAttempted = numAttempted;
-          currRowScores[taskId].recruitment = _get(assessment, 'params.recruitment');
-          currRowScores[taskId].fc = _get(assessment, 'scores.computed.FC');
-          currRowScores[taskId].fr = _get(assessment, 'scores.computed.FR');
+          const isNewScoring = !_get(assessment, 'scores.computed.composite.roamScore');
+          const numAttempted = _get(
+            assessment,
+            `scores.computed.composite.${isNewScoring ? 'numAttempted' : 'totalNumAttempted'}`,
+          );
+
+          if (isNewScoring) {
+            currRowScores[taskId].numCorrect = _get(assessment, `scores.computed.composite.numCorrect`);
+            currRowScores[taskId].numIncorrect = _get(assessment, `scores.computed.composite.numIncorrect`);
+          }
 
           /**
            * TODO: If the composite exists, the raw score should exist as well.
            * Check and see if we can simplify the condition here and in returnColorByReliability.
            */
+          currRowScores[taskId].numAttempted = numAttempted;
           currRowScores[taskId].tagColor =
             numAttempted === undefined || numAttempted === 0 ? '#EEEEF0' : numAttempted !== 0 ? tagColor : '#EEEEF0';
+          currRowScores[taskId].recruitment = _get(assessment, 'params.recruitment');
+
+          // Add old paths to object format to match new computed format to access in SubscoreTable
+          const fcPath = `scores.computed.FC${isNewScoring ? '' : '.roamScore'}`;
+          const frPath = `scores.computed.FR${isNewScoring ? '' : '.roamScore'}`;
+
+          currRowScores[taskId].fc = isNewScoring ? _get(assessment, fcPath) : { rawScore: _get(assessment, fcPath) };
+
+          currRowScores[taskId].fr = isNewScoring ? _get(assessment, frPath) : { rawScore: _get(assessment, frPath) };
           scoreFilterTags += ' Assessed ';
         }
         if ((taskId === 'letter' || taskId === 'letter-en-ca') && assessment.scores) {
