@@ -829,13 +829,13 @@ const computeAssignmentAndRunData = computed(() => {
         if (taskId === 'roam-alpaca') {
           const scores = _get(assessment, 'scores.computed');
           if (scores) {
-            Object.keys(roamAlpacaSubskills).forEach((subskill) => {
-              const subskillInfo = _get(scores, subskill);
+            Object.keys(roamAlpacaSubskills).forEach((subskillId) => {
+              const subskillInfo = _get(scores, subskillId);
               if (subskillInfo) {
                 const percentCorrect = `${_round((subskillInfo.rawScore / subskillInfo.numAttempted) * 100)}%`;
                 // roam-alpaca calculates and returns support level automatically
                 let tagColor = getTagColor(subskillInfo.supportLevel);
-                currRowScores[taskId][subskill] = {
+                currRowScores[taskId][subskillId] = {
                   percentCorrect,
                   tagColor: returnColorByReliability(
                     assessment,
@@ -846,7 +846,7 @@ const computeAssignmentAndRunData = computed(() => {
                   ...subskillInfo,
                 };
               } else {
-                currRowScores[taskId][subskill] = '';
+                currRowScores[taskId][subskillId] = null;
               }
             });
 
