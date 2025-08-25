@@ -555,8 +555,7 @@ const getScoresAndSupportFromAssessment = ({
       support_level = null;
       tag_color = null;
     } else if (assessment.taskId === 'roam-alpaca') {
-      const availableScoreKeys = Object.keys(_get(assessment, 'scores.computed.composite'));
-      const isNewScoring = availableScoreKeys.includes('roarScore');
+      const isNewScoring = _get(assessment, 'scores.computed.composite.roarScore');
       const supportLevel = _get(assessment, 'scores.computed.composite.supportLevel');
 
       support_level = isNewScoring ? supportLevel : '';
