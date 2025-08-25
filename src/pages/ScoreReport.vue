@@ -566,8 +566,7 @@ const getScoresAndSupportFromAssessment = ({
        * because getScoreKeys is designed for tasks that display in IndividualScoreReport
        * and it has yet to be determined how roam-alpaca will be displayed
        */
-      const rawScoreKey = isNewScoring ? 'computed.composite.roarScore' : 'raw.composite.test.numCorrect';
-      rawScore = _get(assessment, `scores.${rawScoreKey}`);
+      rawScore = _get(assessment, `scores.computed.composite.${isNewScoring ? 'roarScore' : 'roamScore'}`);
     } else {
       support_level = '';
       tag_color = '#A4DDED';
@@ -818,24 +817,26 @@ const computeAssignmentAndRunData = computed(() => {
         }
         if (tasksToDisplayGradeEstimate.includes(taskId)) {
           const isNewScoring = _get(assessment, 'scores.computed.composite.roarScore');
+          if (isNewScoring) {
+            currRowScores[taskId].numCorrect = _get(assessment, 'scores.computed.composite.rawScore');
+          }
           const propertyKeys = {
-            numCorrect: {
-              newPath: 'scores.computed.composite.rawScore',
-              oldPath: 'scores.raw.composite.test.numCorrect',
-            },
             numAttempted: {
-              newPath: 'scores.computed.composite.numAttempted',
-              oldPath: 'scores.raw.composite.test.numAttempted',
+              newPath: 'numAttempted',
+              oldPath: 'totalNumAttempted',
             },
             // Copied previous implementation for old scoring system where gradeEstimate was thetaEstimate
             gradeEstimate: {
-              newPath: 'scores.computed.composite.gradeEstimate',
-              oldPath: 'scores.computed.composite.thetaEstimate',
+              newPath: 'gradeEstimate',
+              oldPath: 'thetaEstimate',
             },
           };
 
           Object.entries(propertyKeys).forEach(([key, paths]) => {
-            currRowScores[taskId][key] = _get(assessment, paths[isNewScoring ? 'newPath' : 'oldPath']);
+            currRowScores[taskId][key] = _get(
+              assessment,
+              `scores.computed.composite.${paths[isNewScoring ? 'newPath' : 'oldPath']}`,
+            );
           });
         }
         if (['fluency-calf', 'fluency-arf', 'fluency-calf-es', 'fluency-arf-es'].includes(taskId)) {
@@ -1049,13 +1050,12 @@ const createExportData = ({ rows, includeProgress = false }) => {
       } else if (rawOnlyTasks.includes(taskId)) {
         tableRow[`${taskName} - Raw`] = score.rawScore;
       } else if (tasksToDisplayGradeEstimate.includes(taskId)) {
-        const isNewScoring = score.composite && Object.keys(score.composite).includes('roarScore');
         tableRow[`${taskName} - Num Correct`] = score.numCorrect;
         tableRow[`${taskName} - Num Attempted`] = score.numAttempted;
-        tableRow[`${taskName} - Raw`] = isNewScoring ? score.rawScore : null;
+        tableRow[`${taskName} - Raw`] = score.rawScore;
         // Technically thetaEstimate for old scoring system (previous implementation)
         tableRow[`${taskName} - Grade Estimate`] = score.gradeEstimate;
-        tableRow[`${taskName} - Support Level`] = isNewScoring ? score.supportLevel : null;
+        tableRow[`${taskName} - Support Level`] = score.supportLevel;
       } else {
         tableRow[`${taskName} - Percentile`] = score.percentileString;
         tableRow[`${taskName} - Standard`] = score.standardScore;
