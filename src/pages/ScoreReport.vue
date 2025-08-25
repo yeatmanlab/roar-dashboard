@@ -555,15 +555,20 @@ const getScoresAndSupportFromAssessment = ({
       support_level = null;
       tag_color = null;
     } else if (assessment.taskId === 'roam-alpaca') {
+      const availableScoreKeys = Object.keys(_get(assessment, 'scores.computed.composite'));
+      const isNewScoring = availableScoreKeys.includes('roarScore');
       const supportLevel = _get(assessment, 'scores.computed.composite.supportLevel');
-      support_level = supportLevel;
-      tag_color = getTagColor(supportLevel);
+
+      support_level = isNewScoring ? supportLevel : '';
+      tag_color = isNewScoring ? getTagColor(supportLevel) : '#A4DDED';
+
       /*
        * Manually set instead of returning correct rawScoreKey using getScoreKeys
        * because getScoreKeys is designed for tasks that display in IndividualScoreReport
        * and it has yet to be determined how roam-alpaca will be displayed
        */
-      rawScore = _get(assessment, 'scores.computed.composite.roarScore');
+      const rawScoreKey = isNewScoring ? 'computed.composite.roarScore' : 'raw.composite.test.numCorrect';
+      rawScore = _get(assessment, `scores.${rawScoreKey}`);
     } else {
       support_level = '';
       tag_color = '#A4DDED';
@@ -813,13 +818,22 @@ const computeAssignmentAndRunData = computed(() => {
           currRowScores[taskId].skills = skills.length > 0 ? skills.join(', ') : 'None';
         }
         if (tasksToDisplayGradeEstimate.includes(taskId)) {
-          const numCorrect = _get(assessment, 'scores.computed.composite.rawScore');
-          const numAttempted = _get(assessment, 'scores.computed.composite.numAttempted');
-          const gradeEstimate = _get(assessment, 'scores.computed.composite.gradeEstimate');
-
+          let numCorrect = 0;
+          let numAttempted = 0;
+          let gradeEstimate = 0;
+          if (_get(assessment, 'scores.computed.composite.incorrectSkills')) {
+            numCorrect = _get(assessment, 'scores.computed.composite.rawScore');
+            numAttempted = _get(assessment, 'scores.computed.composite.numAttempted');
+            gradeEstimate = _get(assessment, 'scores.computed.composite.gradeEstimate');
+          } else {
+            numCorrect = _get(assessment, 'scores.raw.composite.test.numCorrect');
+            numAttempted = _get(assessment, 'scores.raw.composite.test.numAttempted');
+            // Copied previous implementation for old scoring system
+            gradeEstimate = _get(assessment, 'scores.computed.composite.thetaEstimate');
+          }
           currRowScores[taskId].numCorrect = numCorrect;
-          currRowScores[taskId].numAttempted = numAttempted;
           currRowScores[taskId].gradeEstimate = gradeEstimate;
+          currRowScores[taskId].numAttempted = numAttempted;
         }
         if (['fluency-calf', 'fluency-arf', 'fluency-calf-es', 'fluency-arf-es'].includes(taskId)) {
           const fc = _get(assessment, 'scores.computed.FC.roamScore');
@@ -1032,11 +1046,13 @@ const createExportData = ({ rows, includeProgress = false }) => {
       } else if (rawOnlyTasks.includes(taskId)) {
         tableRow[`${taskName} - Raw`] = score.rawScore;
       } else if (tasksToDisplayGradeEstimate.includes(taskId)) {
+        const isNewScoring = score.composite && Object.keys(score.composite).includes('roarScore');
         tableRow[`${taskName} - Num Correct`] = score.numCorrect;
         tableRow[`${taskName} - Num Attempted`] = score.numAttempted;
-        tableRow[`${taskName} - Raw`] = score.rawScore;
+        tableRow[`${taskName} - Raw`] = isNewScoring ? score.rawScore : null;
+        // Technically thetaEstimate for old scoring system (previous implementation)
         tableRow[`${taskName} - Grade Estimate`] = score.gradeEstimate;
-        tableRow[`${taskName} - Support Level`] = score.supportLevel;
+        tableRow[`${taskName} - Support Level`] = isNewScoring ? score.supportLevel : null;
       } else {
         tableRow[`${taskName} - Percentile`] = score.percentileString;
         tableRow[`${taskName} - Standard`] = score.standardScore;
