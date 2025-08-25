@@ -567,7 +567,7 @@ const getScoresAndSupportFromAssessment = ({
       tag_color = '#A4DDED';
       if (tasksToDisplayTotalCorrect.includes(taskId)) {
         const isNewScoring = !_get(assessment, 'scores.computed.composite.roamScore');
-        // Previous scoring system returned numCorrect for rawScore in scoreReportColumns
+        // Previous scoring returned numCorrect for rawScore in scoreReportColumns, confirmed roamScore with Kruttika
         rawScore = _get(assessment, `scores.computed.composite.${isNewScoring ? 'rawScore' : 'roamScore'}`);
       }
     }
