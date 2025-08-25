@@ -60,12 +60,13 @@ defineProps({
 let returnScoreTooltip = (colData, fieldPath) => {
   const pathSegments = fieldPath.split('.');
   const taskId = pathSegments[0] === 'scores' ? pathSegments[1] : null;
-  // Subskill fieldPaths are formatted as scores.taskId.subskillId[property]
+  // Subskill fieldPaths are formatted as scores.taskId.subskillId.property
   const subskillId = pathSegments.length > 3 ? pathSegments[2] : null;
   let toolTip = '';
 
   if (subskillTasks.includes(taskId) && subskillId) {
-    if (taskId === 'roam-alpaca' && subskillId === 'composite' && pathSegments[3] === 'incorrectSkills') {
+    // Prevent any tooltips from rendering for the incorrectSkills column.
+    if (taskId === 'roam-alpaca' && pathSegments[3] === 'incorrectSkills') {
       return toolTip;
     }
     return handleSubskillToolTip(taskId, subskillId, toolTip, colData);
