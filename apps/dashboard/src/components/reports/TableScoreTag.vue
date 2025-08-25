@@ -111,9 +111,14 @@ function handleToolTip(_taskId, _toolTip, _colData) {
       if (_colData.scores?.[_taskId]?.recruitment !== 'responseModality') {
         _toolTip += 'Raw Score: ' + _colData.scores?.[_taskId]?.rawScore + '\n';
       }
-      _toolTip += 'Num Correct: ' + numCorrect + '\n';
-      _toolTip += 'Num Incorrect: ' + numIncorrect + '\n';
-      _toolTip += 'Num Attempted: ' + numAttempted + '\n';
+
+      Object.entries(roamFluencySubskillHeaders)
+        .slice(1)
+        .forEach(([property, propertyHeader]) => {
+          if (_colData.scores?.[_taskId]?.[property] != undefined) {
+            _toolTip += `${propertyHeader}: ${_colData.scores?.[_taskId]?.[property]}\n`;
+          }
+        });
     } else if (tasksToDisplayPercentCorrect.includes(_taskId)) {
       _toolTip += 'Num Correct: ' + _colData.scores?.[_taskId]?.numCorrect + '\n';
       _toolTip += 'Num Attempted: ' + _colData.scores?.[_taskId]?.numAttempted + '\n';
@@ -156,7 +161,9 @@ function handleSubskillToolTip(_taskId, _subskillId, _toolTip, _colData) {
     }
   } else if (roamFluencyTasks.includes(_taskId)) {
     Object.entries(roamFluencySubskillHeaders).forEach(([property, propertyHeader]) => {
-      _toolTip += `${propertyHeader}: ${subskillInfo?.[property]}\n`;
+      if (subskillInfo?.[property] != undefined) {
+        _toolTip += `${propertyHeader}: ${subskillInfo?.[property]}\n`;
+      }
     });
   }
 
