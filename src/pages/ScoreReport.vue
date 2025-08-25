@@ -818,22 +818,26 @@ const computeAssignmentAndRunData = computed(() => {
           currRowScores[taskId].skills = skills.length > 0 ? skills.join(', ') : 'None';
         }
         if (tasksToDisplayGradeEstimate.includes(taskId)) {
-          let numCorrect = 0;
-          let numAttempted = 0;
-          let gradeEstimate = 0;
-          if (_get(assessment, 'scores.computed.composite.incorrectSkills')) {
-            numCorrect = _get(assessment, 'scores.computed.composite.rawScore');
-            numAttempted = _get(assessment, 'scores.computed.composite.numAttempted');
-            gradeEstimate = _get(assessment, 'scores.computed.composite.gradeEstimate');
-          } else {
-            numCorrect = _get(assessment, 'scores.raw.composite.test.numCorrect');
-            numAttempted = _get(assessment, 'scores.raw.composite.test.numAttempted');
-            // Copied previous implementation for old scoring system
-            gradeEstimate = _get(assessment, 'scores.computed.composite.thetaEstimate');
-          }
-          currRowScores[taskId].numCorrect = numCorrect;
-          currRowScores[taskId].gradeEstimate = gradeEstimate;
-          currRowScores[taskId].numAttempted = numAttempted;
+          const isNewScoring = _get(assessment, 'scores.computed.composite.roarScore');
+          const propertyKeys = {
+            numCorrect: {
+              newPath: 'scores.computed.composite.rawScore',
+              oldPath: 'scores.raw.composite.test.numCorrect',
+            },
+            numAttempted: {
+              newPath: 'scores.computed.composite.numAttempted',
+              oldPath: 'scores.raw.composite.test.numAttempted',
+            },
+            // Copied previous implementation for old scoring system where gradeEstimate was thetaEstimate
+            gradeEstimate: {
+              newPath: 'scores.computed.composite.gradeEstimate',
+              oldPath: 'scores.computed.composite.thetaEstimate',
+            },
+          };
+
+          Object.entries(propertyKeys).forEach(([key, paths]) => {
+            currRowScores[taskId][key] = _get(assessment, paths[isNewScoring ? 'newPath' : 'oldPath']);
+          });
         }
         if (['fluency-calf', 'fluency-arf', 'fluency-calf-es', 'fluency-arf-es'].includes(taskId)) {
           const fc = _get(assessment, 'scores.computed.FC.roamScore');
