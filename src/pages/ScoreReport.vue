@@ -310,6 +310,7 @@ import {
   includedValidityFlags,
   roamAlpacaSubskills,
   getTagColor,
+  roamFluencyTasks,
 } from '@/helpers/reports';
 import RoarDataTable from '@/components/RoarDataTable';
 import { CSV_EXPORT_STATIC_COLUMNS } from '@/constants/csvExport';
@@ -564,6 +565,11 @@ const getScoresAndSupportFromAssessment = ({
     } else {
       support_level = '';
       tag_color = '#A4DDED';
+      if (tasksToDisplayTotalCorrect.includes(taskId)) {
+        const isNewScoring = !_get(assessment, 'scores.computed.composite.roamScore');
+        // Previous scoring system returned numCorrect for rawScore in scoreReportColumns
+        rawScore = _get(assessment, `scores.computed.composite.${isNewScoring ? 'rawScore' : 'roamScore'}`);
+      }
     }
   } else {
     ({ support_level, tag_color } = getSupportLevel(grade, percentile, rawScore, taskId, optional));
@@ -763,17 +769,33 @@ const computeAssignmentAndRunData = computed(() => {
           currRowScores[taskId].tagColor = percentCorrect === null ? 'transparent' : tagColor;
           scoreFilterTags += ' Assessed ';
         } else if (tasksToDisplayTotalCorrect.includes(taskId)) {
-          const numAttempted = assessment.scores?.raw?.composite?.test?.numAttempted;
-          const numCorrect =
-            numAttempted === undefined || numAttempted === 0
-              ? ''
-              : numAttempted !== 0 && assessment.scores?.raw?.composite?.test?.numCorrect !== undefined
-              ? assessment.scores?.raw?.composite?.test?.numCorrect
-              : 0;
+          const isNewScoring = !_get(assessment, 'scores.computed.composite.roamScore');
+          const numAttempted = _get(
+            assessment,
+            `scores.computed.composite.${isNewScoring ? 'numAttempted' : 'totalNumAttempted'}`,
+          );
+
+          if (isNewScoring) {
+            currRowScores[taskId].numCorrect = _get(assessment, `scores.computed.composite.numCorrect`);
+            currRowScores[taskId].numIncorrect = _get(assessment, `scores.computed.composite.numIncorrect`);
+          }
+
+          /**
+           * TODO: If the composite exists, the raw score should exist as well.
+           * Check and see if we can simplify the condition here and in returnColorByReliability.
+           */
           currRowScores[taskId].numAttempted = numAttempted;
-          currRowScores[taskId].numCorrect = numCorrect;
           currRowScores[taskId].tagColor =
             numAttempted === undefined || numAttempted === 0 ? '#EEEEF0' : numAttempted !== 0 ? tagColor : '#EEEEF0';
+          currRowScores[taskId].recruitment = _get(assessment, 'params.recruitment');
+
+          // Add old paths to object format to match new computed format to access in SubscoreTable
+          const fcPath = `scores.computed.FC${isNewScoring ? '' : '.roamScore'}`;
+          const frPath = `scores.computed.FR${isNewScoring ? '' : '.roamScore'}`;
+
+          currRowScores[taskId].fc = isNewScoring ? _get(assessment, fcPath) : { rawScore: _get(assessment, fcPath) };
+
+          currRowScores[taskId].fr = isNewScoring ? _get(assessment, frPath) : { rawScore: _get(assessment, frPath) };
           scoreFilterTags += ' Assessed ';
         }
         if ((taskId === 'letter' || taskId === 'letter-en-ca') && assessment.scores) {
@@ -818,14 +840,6 @@ const computeAssignmentAndRunData = computed(() => {
           currRowScores[taskId].numIncorrect = numIncorrect;
           currRowScores[taskId].thetaEstimate = thetaEstimate;
         }
-        if (['fluency-calf', 'fluency-arf', 'fluency-calf-es', 'fluency-arf-es'].includes(taskId)) {
-          const fc = _get(assessment, 'scores.computed.FC.roamScore');
-          const fr = _get(assessment, 'scores.computed.FR.roamScore');
-
-          currRowScores[taskId].fc = fc;
-          currRowScores[taskId].fr = fr;
-        }
-
         if (taskId === 'roam-alpaca') {
           const scores = _get(assessment, 'scores.computed');
           if (scores) {
@@ -927,8 +941,8 @@ const computeAssignmentAndRunData = computed(() => {
     // Otherwise, remove them from the runsByTaskId object to prevent including them in TaskReports.
     const assessments = administrationData.value.assessments;
     for (const assessment of assessments) {
-      if (['fluency-calf', 'fluency-arf', 'fluency-calf-es', 'fluency-arf-es'].includes(assessment.taskId)) {
-        const recruitment = assessment?.params?.recruitment;
+      if (roamFluencyTasks.includes(assessment.taskId)) {
+        const recruitment = assessment.params.recruitment;
         if (recruitment !== 'responseModality') {
           delete filteredRunsByTaskId[assessment.taskId];
         }
@@ -1024,7 +1038,11 @@ const createExportData = ({ rows, includeProgress = false }) => {
         tableRow[`${taskName} - Num Incorrect`] = score.numIncorrect;
         tableRow[`${taskName} - Num Correct`] = score.numCorrect;
       } else if (tasksToDisplayTotalCorrect.includes(taskId)) {
+        if (score.recruitment !== 'responseModality') {
+          tableRow[`${taskName} - Raw Score`] = score.rawScore;
+        }
         tableRow[`${taskName} - Num Correct`] = score.numCorrect;
+        tableRow[`${taskName} - Num Incorrect`] = score.numIncorrect;
         tableRow[`${taskName} - Num Attempted`] = score.numAttempted;
       } else if (rawOnlyTasks.includes(taskId)) {
         tableRow[`${taskName} - Raw`] = score.rawScore;
@@ -1451,6 +1469,11 @@ const scoreReportColumns = computed(() => {
     if (excludeFromScoringTasks.includes(taskId)) continue; // Skip adding this column
     let colField;
     const isOptional = `scores.${taskId}.optional`;
+    let isFluencyResponseModality = false;
+    if (roamFluencyTasks.includes(taskId)) {
+      const fluencyTasks = administrationData.value?.assessments?.find((assessment) => assessment.taskId === taskId);
+      isFluencyResponseModality = fluencyTasks?.params?.recruitment === 'responseModality';
+    }
 
     // Color needs to include a field to allow sorting.
     if (viewMode.value === 'percentile' || viewMode.value === 'color') {
@@ -1475,7 +1498,7 @@ const scoreReportColumns = computed(() => {
       if (tasksToDisplayCorrectIncorrectDifference.includes(taskId) && viewMode.value === 'raw') {
         colField = `scores.${taskId}.correctIncorrectDifference`;
       } else if (tasksToDisplayTotalCorrect.includes(taskId) && viewMode.value === 'raw') {
-        colField = `scores.${taskId}.numCorrect`;
+        colField = `scores.${taskId}.rawScore`;
       } else if (tasksToDisplayPercentCorrect.includes(taskId) && viewMode.value === 'raw') {
         colField = `scores.${taskId}.percentCorrect`;
       } else if (tasksToDisplayThetaScore.includes(taskId) && viewMode.value === 'raw') {
@@ -1500,6 +1523,7 @@ const scoreReportColumns = computed(() => {
     } else {
       backgroundColor = '#EEEEF0';
     }
+
     tableColumns.push({
       field: colField,
       header: tasksDictionary.value[taskId]?.publicName ?? taskId,
@@ -1509,7 +1533,7 @@ const scoreReportColumns = computed(() => {
       filter: true,
       sortField: colField ? colField : `scores.${taskId}.percentile`,
       tag: viewMode.value !== 'color',
-      emptyTag: viewMode.value === 'color' || isOptional,
+      emptyTag: viewMode.value === 'color' || isFluencyResponseModality || isOptional,
       tagColor: `scores.${taskId}.tagColor`,
       style: (() => {
         return `text-align: center; ${getTaskStyle(taskId, backgroundColor, orderedTasks)}`;

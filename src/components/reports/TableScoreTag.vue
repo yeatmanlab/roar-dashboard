@@ -38,6 +38,8 @@ import {
   rawOnlyTasks,
   scoredTasks,
   subskillTasks,
+  roamFluencySubskillHeaders,
+  roamFluencyTasks,
 } from '@/helpers/reports.js';
 import { taskDisplayNames } from '@/helpers/reports';
 import { includedValidityFlags } from '@/helpers/reports';
@@ -98,13 +100,25 @@ function handleToolTip(_taskId, _toolTip, _colData) {
       _toolTip += 'Num Incorrect: ' + _colData.scores?.[_taskId]?.numIncorrect + '\n';
       _toolTip += 'Correct - Incorrect: ' + _colData.scores?.[_taskId]?.correctIncorrectDifference + '\n';
     } else if (tasksToDisplayTotalCorrect.includes(_taskId)) {
-      if (_colData.scores?.[_taskId]?.numCorrect === undefined) {
-        _toolTip += 'Num Correct: ' + 0 + '\n';
-        _toolTip += 'Num Attempted: ' + _colData.scores?.[_taskId]?.numAttempted + '\n';
-      } else {
-        _toolTip += 'Num Correct: ' + _colData.scores?.[_taskId]?.numCorrect + '\n';
-        _toolTip += 'Num Attempted: ' + _colData.scores?.[_taskId]?.numAttempted + '\n';
+      const numCorrect = _colData.scores?.[_taskId]?.numCorrect;
+      const numIncorrect = _colData.scores?.[_taskId]?.numIncorrect;
+      const numAttempted = _colData.scores?.[_taskId]?.numAttempted;
+
+      if (numCorrect === 0 && numIncorrect === 0 && numAttempted === 0) {
+        return '';
       }
+
+      if (_colData.scores?.[_taskId]?.recruitment !== 'responseModality') {
+        _toolTip += 'Raw Score: ' + _colData.scores?.[_taskId]?.rawScore + '\n';
+      }
+
+      Object.entries(roamFluencySubskillHeaders)
+        .slice(1)
+        .forEach(([property, propertyHeader]) => {
+          if (_colData.scores?.[_taskId]?.[property] != undefined) {
+            _toolTip += `${propertyHeader}: ${_colData.scores?.[_taskId]?.[property]}\n`;
+          }
+        });
     } else if (tasksToDisplayPercentCorrect.includes(_taskId)) {
       _toolTip += 'Num Correct: ' + _colData.scores?.[_taskId]?.numCorrect + '\n';
       _toolTip += 'Num Attempted: ' + _colData.scores?.[_taskId]?.numAttempted + '\n';
@@ -135,7 +149,6 @@ function handleToolTip(_taskId, _toolTip, _colData) {
 
 function handleSubskillToolTip(_taskId, _subskillId, _toolTip, _colData) {
   const subskillInfo = _colData.scores?.[_taskId]?.[_subskillId];
-
   if (_taskId === 'roam-alpaca') {
     if (subskillInfo?.supportLevel) {
       _toolTip += subskillInfo?.supportLevel + '\n' + '\n';
@@ -146,6 +159,12 @@ function handleSubskillToolTip(_taskId, _subskillId, _toolTip, _colData) {
     if (subskillInfo?.gradeEstimate) {
       _toolTip += 'Grade Estimate: ' + subskillInfo?.gradeEstimate + '\n';
     }
+  } else if (roamFluencyTasks.includes(_taskId)) {
+    Object.entries(roamFluencySubskillHeaders).forEach(([property, propertyHeader]) => {
+      if (subskillInfo?.[property] != undefined) {
+        _toolTip += `${propertyHeader}: ${subskillInfo?.[property]}\n`;
+      }
+    });
   }
 
   return _toolTip;

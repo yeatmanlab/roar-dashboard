@@ -19,7 +19,12 @@ import { exportCsv } from '@/helpers/query/utils';
 import { useAuthStore } from '@/store/auth';
 import { storeToRefs } from 'pinia';
 import RoarDataTable from '@/components/RoarDataTable';
-import { roamAlpacaSubskills, roamAlpacaSubskillHeaders } from '@/helpers/reports';
+import {
+  roamAlpacaSubskills,
+  roamAlpacaSubskillHeaders,
+  roamFluencySubskillHeaders,
+  roamFluencyTasks,
+} from '@/helpers/reports';
 
 const props = defineProps({
   administrationId: { type: String, required: true, default: '' },
@@ -103,10 +108,10 @@ const columns = computed(() => {
       { field: 'scores.pa.skills', header: 'Skills To Work On', dataType: 'text', sort: false },
     );
   }
-  if (['fluency-calf', 'fluency-arf', 'fluency-calf-es', 'fluency-arf-es'].includes(props.taskId)) {
+  if (roamFluencyTasks.includes(props.taskId)) {
     tableColumns.push(
-      { field: `scores.${props.taskId}.fr`, header: 'Free Response', dataType: 'text', sort: false },
-      { field: `scores.${props.taskId}.fc`, header: 'Multiple Choice', dataType: 'text', sort: false },
+      { field: `scores.${props.taskId}.fr.rawScore`, header: 'Free Response', dataType: 'text', sort: false },
+      { field: `scores.${props.taskId}.fc.rawScore`, header: 'Multiple Choice', dataType: 'text', sort: false },
     );
   }
   if (props.taskId === 'roam-alpaca') {
@@ -161,9 +166,14 @@ const exportSelected = (selectedRows) => {
       _set(tableRow, 'Total', _get(scores, 'pa.total'));
       _set(tableRow, 'Skills To Work On', _get(scores, 'pa.skills'));
     }
-    if (['fluency-calf', 'fluency-arf', 'fluency-calf-es', 'fluency-arf-es'].includes(props.taskId)) {
-      _set(tableRow, 'Free Response', _get(scores, `${props.taskId}.fr`));
-      _set(tableRow, 'Multiple Choice', _get(scores, `${props.taskId}.fc`));
+    if (roamFluencyTasks.includes(props.taskId)) {
+      Object.entries(roamFluencySubskillHeaders).forEach(([property, propertyHeader]) => {
+        _set(tableRow, `Free Response - ${propertyHeader}`, _get(scores, `${props.taskId}.fr.${property}`));
+      });
+
+      Object.entries(roamFluencySubskillHeaders).forEach(([property, propertyHeader]) => {
+        _set(tableRow, `Multiple Choice - ${propertyHeader}`, _get(scores, `${props.taskId}.fc.${property}`));
+      });
     }
     if (props.taskId === 'roam-alpaca') {
       _set(tableRow, 'Raw Score', _get(scores, `${props.taskId}.composite.roarScore`));
@@ -202,9 +212,14 @@ const exportAll = async () => {
       _set(tableRow, 'Deletion', _get(scores, 'pa.deletion'));
       _set(tableRow, 'Total', _get(scores, 'pa.total'));
       _set(tableRow, 'Skills To Work On', _get(scores, 'pa.skills'));
-    } else if (['fluency-calf', 'fluency-arf', 'fluency-calf-es', 'fluency-arf-es'].includes(props.taskId)) {
-      _set(tableRow, 'Free Response', _get(scores, `${props.taskId}.fr`));
-      _set(tableRow, 'Multiple Choice', _get(scores, `${props.taskId}.fc`));
+    } else if (roamFluencyTasks.includes(props.taskId)) {
+      Object.entries(roamFluencySubskillHeaders).forEach(([property, propertyHeader]) => {
+        _set(tableRow, `Free Response - ${propertyHeader}`, _get(scores, `${props.taskId}.fr.${property}`));
+      });
+
+      Object.entries(roamFluencySubskillHeaders).forEach(([property, propertyHeader]) => {
+        _set(tableRow, `Multiple Choice - ${propertyHeader}`, _get(scores, `${props.taskId}.fc.${property}`));
+      });
     } else if (props.taskId === 'roam-alpaca') {
       _set(tableRow, 'Raw Score', _get(scores, `${props.taskId}.composite.roarScore`));
       _set(tableRow, 'Grade Estimate', _get(scores, `${props.taskId}.composite.gradeEstimate`));
