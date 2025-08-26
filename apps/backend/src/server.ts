@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import fs from 'fs';
 import http from 'http';
 import https from 'https';
@@ -5,15 +6,15 @@ import app from './app';
 
 const { NODE_ENV = 'development', PORT = '4000', KEEP_ALIVE_TIMEOUT = '75000' } = process.env;
 
-const LOCAL_SSL_KEY_PATH = '../../certs/roar-local.key';
-const LOCAL_SSL_CERT_PATH = '../../certs/roar-local.crt';
-
 const port: number = parseInt(PORT, 10);
 app.set('port', port);
 
 let server: http.Server | https.Server;
 
 if (NODE_ENV === 'development') {
+  const LOCAL_SSL_KEY_PATH = '../../certs/roar-local.key';
+  const LOCAL_SSL_CERT_PATH = '../../certs/roar-local.crt';
+
   // Local development HTTPS server using mkcert certificates.
   // This mirrors production HTTPS to catch SSL-related issues early.
   const key = fs.readFileSync(LOCAL_SSL_KEY_PATH);

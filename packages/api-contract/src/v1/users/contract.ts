@@ -11,7 +11,7 @@ export const UsersContract = c.router(
       method: 'GET',
       path: '/:id',
       pathParams: z.object({
-        id: z.string(),
+        id: z.string().uuid(),
       }),
       responses: {
         200: SuccessEnvelopeSchema(User),
