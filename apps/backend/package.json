@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "NODE_ENV=development rollup -c -w",
+    "dev": "NODE_ENV=development rollup -cw",
     "build": "NODE_ENV=production rollup -c",
     "start": "node dist/server.js",
     "lint": "eslint .",
@@ -15,7 +15,7 @@
     "check-types": "tsc --noEmit --watch"
   },
   "devDependencies": {
-    "@repo/typescript-config": "^0.0.0",
+    "@repo/typescript-config": "*",
     "@rollup/plugin-alias": "^5.1.1",
     "@rollup/plugin-commonjs": "^28.0.6",
     "@rollup/plugin-json": "^6.1.0",
@@ -30,6 +30,7 @@
     "tsx": "^4.20.4"
   },
   "dependencies": {
+    "@repo/api-contract": "*",
     "@ts-rest/core": "^3.52.1",
     "@ts-rest/express": "^3.52.1",
     "dotenv": "^17.2.1",

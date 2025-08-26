@@ -3,7 +3,7 @@
   "**/dashboard/**/*.{js,vue}": [
     "eslint --config apps/dashboard/eslint.config.mjs --fix"
   ],
-  "apps/dashboard/*": [
+  "apps/dashboard/**/*.{js,ts,vue,json,css,md}": [
     "prettier --config apps/dashboard/prettier.config.mjs --write --log-level=warn"
   ]
 }

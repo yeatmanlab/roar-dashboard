@@ -4,6 +4,8 @@
   "private": true,
   "exports": {
     "./frontend.json": "./frontend.json",
-    "./backend.json": "./backend.json"
+    "./backend.json": "./backend.json",
+    "./library.json": "./library.json",
+    "./library.types.json": "./library.types.json"
   }
 }

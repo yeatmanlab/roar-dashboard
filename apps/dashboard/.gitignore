@@ -4,3 +4,6 @@
 
 # Cypress
 cypress/downloads
+
+# Vite
+vite.config.js.timestamp*

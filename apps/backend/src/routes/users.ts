@@ -1,7 +1,7 @@
 import type { Router } from 'express'
 import { initServer, createExpressEndpoints } from '@ts-rest/express'
 import { StatusCodes } from 'http-status-codes'
-import { UsersContract } from '../contracts/v1/users'
+import { UsersContract } from '@repo/api-contract'
 
 const s = initServer()
 
