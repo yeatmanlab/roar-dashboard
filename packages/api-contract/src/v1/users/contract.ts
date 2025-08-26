@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { initContract } from '@ts-rest/core';
 import { User } from './schema';
-import { NotFound } from '../common/http';
+import { ErrorEnvelopeSchema, SuccessEnvelopeSchema } from '../response';
 
 const c = initContract();
 
@@ -14,8 +14,8 @@ export const UsersContract = c.router(
         id: z.string(),
       }),
       responses: {
-        200: User,
-        404: NotFound,
+        200: SuccessEnvelopeSchema(User),
+        404: ErrorEnvelopeSchema,
       },
       strictStatusCodes: true,
     },

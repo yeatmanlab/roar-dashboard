@@ -1,14 +1,21 @@
 import { z } from 'zod';
 
-export const ErrorResponseSchema = z.object({
-  code: z.string(),
+// Error object used inside the error envelope
+export const ErrorObjectSchema = z.object({
   message: z.string(),
+  code: z.string().optional(),
 });
 
-export const ResponseSchema = <T extends z.ZodTypeAny>(dataSchema: T) =>
+// Error envelope: { error: { message, code? } }
+export const ErrorEnvelopeSchema = z.object({
+  error: ErrorObjectSchema,
+});
+
+// Success envelope: { data: ... }
+export const SuccessEnvelopeSchema = <T extends z.ZodTypeAny>(dataSchema: T) =>
   z.object({
-    data: dataSchema.nullable(),
-    error: ErrorResponseSchema.nullable(),
+    data: dataSchema,
   });
 
-export type ApiResponse<T extends z.ZodTypeAny> = z.infer<ReturnType<typeof ResponseSchema<T>>>;
+export type ApiError = z.infer<typeof ErrorEnvelopeSchema>;
+export type ApiSuccess<T extends z.ZodTypeAny> = z.infer<ReturnType<typeof SuccessEnvelopeSchema<T>>>;

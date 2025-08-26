@@ -1,5 +1,6 @@
 import { initContract } from '@ts-rest/core';
 import { UsersContract } from './users/index';
+export * from './response';
 
 const c = initContract();
 

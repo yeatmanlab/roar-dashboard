@@ -16,12 +16,14 @@ const UserController = {
     };
 
     if (id !== '1') {
-      return { status: StatusCodes.NOT_FOUND as const, body: { message: 'User not found' } };
+      return { status: StatusCodes.NOT_FOUND as const, body: { error: { message: 'User not found' } } };
     }
 
     return {
       status: StatusCodes.OK as const,
-      body: mockUser,
+      body: {
+        data: mockUser
+      }
     };
   },
 };
