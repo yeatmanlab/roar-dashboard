@@ -4,7 +4,7 @@
       class="sidebar__panel__backdrop"
       :class="{ 'is-active': showSideBarPanel }"
       @click="onClickSideBarPanelBackdrop"
-    />
+    ></div>
 
     <transition name="sidebar__panel">
       <div v-if="showSideBarPanel" class="sidebar__panel">
@@ -17,7 +17,9 @@
             v-if="selectedStatusCurrent"
             :class="`assignment-group assignment-group--current ${selectedStatusCurrent ? '--active' : ''}`"
           >
-            <small class="assignment-group__title">Current</small>
+            <small class="assignment-group__title"
+              >Current <span class="ml-auto font-medium">{{ numOfCurrentAssignments }}</span></small
+            >
             <ul v-if="props.currentAssignments.length > 0" class="assignment-group__list">
               <li
                 v-for="assignment in props.currentAssignments"
@@ -51,7 +53,9 @@
             v-if="selectedStatusUpcoming"
             :class="`assignment-group assignment-group--upcoming ${selectedStatusUpcoming ? '--active' : ''}`"
           >
-            <small class="assignment-group__title">Upcoming</small>
+            <small class="assignment-group__title"
+              >Upcoming <span class="ml-auto font-medium">{{ numOfUpcomingAssignments }}</span></small
+            >
             <ul v-if="props.upcomingAssignments.length > 0" class="assignment-group__list">
               <li
                 v-for="assignment in props.upcomingAssignments"
@@ -85,7 +89,9 @@
             v-if="selectedStatusPast"
             :class="`assignment-group assignment-group--past ${selectedStatusPast ? '--active' : ''}`"
           >
-            <small class="assignment-group__title">Past</small>
+            <small class="assignment-group__title"
+              >Past <span class="ml-auto font-medium">{{ numOfPastAssignments }}</span></small
+            >
             <ul v-if="props.pastAssignments.length > 0" class="assignment-group__list">
               <li
                 v-for="assignment in props.pastAssignments"
@@ -124,7 +130,7 @@
         <i v-else class="pi pi-list"></i>
       </div>
 
-      <div class="sidebar__divider" />
+      <div class="sidebar__divider"></div>
 
       <div class="sidebar__nav">
         <div
@@ -156,15 +162,16 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref } from 'vue';
-import { format } from 'date-fns';
-import { useAssignmentsStore } from '@/store/assignments';
 import { ASSIGNMENT_STATUSES } from '@/constants';
+import { useAssignmentsStore } from '@/store/assignments';
+import { AdministrationType } from '@levante-framework/levante-zod';
+import { format } from 'date-fns';
+import { computed, ref } from 'vue';
 
 interface Props {
-  currentAssignments?: any;
-  pastAssignments?: any;
-  upcomingAssignments?: any;
+  currentAssignments?: AdministrationType[];
+  pastAssignments?: AdministrationType[];
+  upcomingAssignments?: AdministrationType[];
 }
 
 const assignmentsStore = useAssignmentsStore();
@@ -175,16 +182,29 @@ const showSideBarPanel = ref(false);
 const selectedStatus = ref(assignmentsStore.selectedStatus);
 
 const props = withDefaults(defineProps<Props>(), {
-  currentAssignments: [],
-  pastAssignments: [],
-  upcomingAssignments: [],
+  currentAssignments: () => [],
+  pastAssignments: () => [],
+  upcomingAssignments: () => [],
+});
+
+const numOfCurrentAssignments = computed(() => {
+  const length = props?.currentAssignments?.length;
+  return length > 0 ? length.toString().padStart(2, '0') : '--';
+});
+const numOfPastAssignments = computed(() => {
+  const length = props?.pastAssignments?.length;
+  return length > 0 ? length.toString().padStart(2, '0') : '--';
+});
+const numOfUpcomingAssignments = computed(() => {
+  const length = props?.upcomingAssignments?.length;
+  return length > 0 ? length.toString().padStart(2, '0') : '--';
 });
 
 const selectedStatusCurrent = computed(() => selectedStatus.value === ASSIGNMENT_STATUSES.CURRENT);
 const selectedStatusPast = computed(() => selectedStatus.value === ASSIGNMENT_STATUSES.PAST);
 const selectedStatusUpcoming = computed(() => selectedStatus.value === ASSIGNMENT_STATUSES.UPCOMING);
 
-const onClickAssignment = (assignment, status: string) => {
+const onClickAssignment = (assignment: AdministrationType, status: string) => {
   assignmentsStore.setSelectedAssignment(assignment);
   assignmentsStore.setSelectedStatus(status);
   showSideBarPanel.value = false;
@@ -317,7 +337,8 @@ const onClickSideBarToggleBtn = () => {
 }
 
 .sidebar__panel {
-  display: block;
+  display: flex;
+  flex-direction: column;
   width: var(--sidebar-panel-width);
   height: 100%;
   margin: 0;
@@ -385,12 +406,16 @@ const onClickSideBarToggleBtn = () => {
   display: block;
   width: 100%;
   height: auto;
+  flex: 1;
   margin: 0;
   padding: 1.5rem;
+  overflow-y: auto;
 }
 
 .assignment-group__title {
-  display: block;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
   margin: 0;
   font-weight: 700;
   color: var(--gray-600);
@@ -400,7 +425,7 @@ const onClickSideBarToggleBtn = () => {
 .assignment-group__list {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.75rem;
   width: 100%;
   height: auto;
   margin: 1rem 0 0;

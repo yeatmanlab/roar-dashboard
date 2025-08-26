@@ -27,30 +27,28 @@
         :upcomingAssignments="upcomingAssignments"
       />
 
-      <div v-if="assgsStore?.selectedAssignment" class="assignment">
+      <UpcomingAssignments v-if="selectedStatus === ASSIGNMENT_STATUSES.UPCOMING" :assignment="selectedAssignment" />
+
+      <div v-else class="assignment">
         <div class="assignment__header">
-          <PvTag
-            :value="assgsStore?.selectedStatus"
-            class="text-xs uppercase"
-            :class="`assignment__status --${assgsStore?.selectedStatus}`"
-          />
+          <PvTag :value="selectedStatus" class="text-xs uppercase" :class="`assignment__status --${selectedStatus}`" />
 
           <h2 class="assignment__name">
-            {{ assgsStore?.selectedAssignment?.publicName || assgsStore?.selectedAssignment?.name }}
+            {{ selectedAssignment?.publicName || selectedAssignment?.name }}
           </h2>
+
           <div class="assignment__dates">
             <div class="assignment__date">
               <i class="pi pi-calendar"></i>
               <small
                 ><span class="font-bold">Start: </span
-                >{{ format(assgsStore?.selectedAssignment?.dateOpened, 'MMM dd, yyyy') }}</small
+                >{{ format(selectedAssignment?.dateOpened, 'MMM dd, yyyy') }}</small
               >
             </div>
             <div class="assignment__date">
               <i class="pi pi-calendar"></i>
               <small
-                ><span class="font-bold">End: </span
-                >{{ format(assgsStore?.selectedAssignment?.dateClosed, 'MMM dd, yyyy') }}</small
+                ><span class="font-bold">End: </span>{{ format(selectedAssignment?.dateClosed, 'MMM dd, yyyy') }}</small
               >
             </div>
           </div>
@@ -125,6 +123,7 @@ import SideBar from '@/components/SideBar.vue';
 import { useAssignmentsStore } from '@/store/assignments';
 import PvTag from 'primevue/tag';
 import { ASSIGNMENT_STATUSES } from '@/constants';
+import UpcomingAssignments from '@/components/assignments/UpcomingAssignments.vue';
 
 const showConsent = ref(false);
 const consentVersion = ref('');
@@ -150,7 +149,8 @@ const init = () => {
 const authStore = useAuthStore();
 const { roarfirekit, showOptionalAssessments, userData: currentUserData } = storeToRefs(authStore);
 
-const assgsStore = useAssignmentsStore();
+const assignmentsStore = useAssignmentsStore();
+const { selectedAssignment, selectedStatus } = storeToRefs(assignmentsStore);
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.roarfirekit.restConfig) init();
@@ -211,12 +211,12 @@ const currentAssignments = computed(() => sortedUserAdministrations.value.filter
 const pastAssignments = computed(() => sortedUserAdministrations.value.filter((a) => isPast(a, now.value)));
 const upcomingAssignments = computed(() => sortedUserAdministrations.value.filter((a) => isUpcoming(a, now.value)));
 
-watch([assgsStore, sortedUserAdministrations], () => {
-  const assignment = assgsStore?.selectedAssignment || sortedUserAdministrations.value[0];
-  assgsStore.setSelectedAssignment(assignment);
-  if (isCurrent(assignment, now.value)) assgsStore.setSelectedStatus(ASSIGNMENT_STATUSES.CURRENT);
-  if (isPast(assignment, now.value)) assgsStore.setSelectedStatus(ASSIGNMENT_STATUSES.PAST);
-  if (isUpcoming(assignment, now.value)) assgsStore.setSelectedStatus(ASSIGNMENT_STATUSES.UPCOMING);
+watch([assignmentsStore, sortedUserAdministrations], () => {
+  const assignment = assignmentsStore?.selectedAssignment || sortedUserAdministrations.value[0];
+  assignmentsStore.setSelectedAssignment(assignment);
+  if (isCurrent(assignment, now.value)) assignmentsStore.setSelectedStatus(ASSIGNMENT_STATUSES.CURRENT);
+  if (isPast(assignment, now.value)) assignmentsStore.setSelectedStatus(ASSIGNMENT_STATUSES.PAST);
+  if (isUpcoming(assignment, now.value)) assignmentsStore.setSelectedStatus(ASSIGNMENT_STATUSES.UPCOMING);
 });
 
 const taskIds = computed(() => {
