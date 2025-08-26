@@ -1,6 +1,7 @@
 import js from '@eslint/js';
 import turboPlugin from "eslint-plugin-turbo";
-import prettierPlugin from 'eslint-config-prettier';
+import turboConfig from "eslint-config-turbo/flat";
+import prettierConfig from 'eslint-config-prettier';
 import vitest from '@vitest/eslint-plugin';
 import globals from 'globals';
 
@@ -19,10 +20,8 @@ export const config = [
   js.configs.recommended,
 
   // Turbo rules
+  ...turboConfig,
   {
-    plugins: {
-      turbo: turboPlugin,
-    },
     rules: {
       "turbo/no-undeclared-env-vars": "warn",
     },
@@ -69,6 +68,25 @@ export const config = [
     }
   },
 
+  // Node tooling/config files (shared across frontend/backend)
+  {
+    files: [
+      '**/*.{config,setup}.{js,cjs,mjs,ts}',
+      '**/rollup.config.mjs',
+      '**/drizzle*.{ts,js}',
+      '**/vite.config.{js,ts}',
+    ],
+    languageOptions: {
+      ecmaVersion: 'latest',
+      sourceType: 'module',
+      globals: {
+        ...globals.node,
+        process: 'readonly',
+        __dirname: 'readonly',
+      },
+    },
+  },
+
   // Prettier rules
-  prettierPlugin,
+  prettierConfig,
 ];
