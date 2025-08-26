@@ -268,6 +268,7 @@ import html2canvas from 'html2canvas';
 import _toUpper from 'lodash/toUpper';
 import _round from 'lodash/round';
 import _get from 'lodash/get';
+import _has from 'lodash/has';
 import _map from 'lodash/map';
 import _kebabCase from 'lodash/kebabCase';
 import _pickBy from 'lodash/pickBy';
@@ -566,7 +567,7 @@ const getScoresAndSupportFromAssessment = ({
       support_level = '';
       tag_color = '#A4DDED';
       if (tasksToDisplayTotalCorrect.includes(taskId)) {
-        const isNewScoring = !_get(assessment, 'scores.computed.composite.roamScore');
+        const isNewScoring = !_has(assessment, 'scores.computed.composite.roamScore');
         // Previous scoring returned numCorrect for rawScore in scoreReportColumns, confirmed roamScore with Kruttika
         rawScore = _get(assessment, `scores.computed.composite.${isNewScoring ? 'rawScore' : 'roamScore'}`);
       }
@@ -769,12 +770,11 @@ const computeAssignmentAndRunData = computed(() => {
           currRowScores[taskId].tagColor = percentCorrect === null ? 'transparent' : tagColor;
           scoreFilterTags += ' Assessed ';
         } else if (tasksToDisplayTotalCorrect.includes(taskId)) {
-          const isNewScoring = !_get(assessment, 'scores.computed.composite.roamScore');
+          const isNewScoring = !_has(assessment, 'scores.computed.composite.roamScore');
           const numAttempted = _get(
             assessment,
             `scores.computed.composite.${isNewScoring ? 'numAttempted' : 'totalNumAttempted'}`,
           );
-
           if (isNewScoring) {
             currRowScores[taskId].numCorrect = _get(assessment, `scores.computed.composite.numCorrect`);
             currRowScores[taskId].numIncorrect = _get(assessment, `scores.computed.composite.numIncorrect`);
@@ -789,13 +789,24 @@ const computeAssignmentAndRunData = computed(() => {
             numAttempted === undefined || numAttempted === 0 ? '#EEEEF0' : numAttempted !== 0 ? tagColor : '#EEEEF0';
           currRowScores[taskId].recruitment = _get(assessment, 'params.recruitment');
 
-          // Add old paths to object format to match new computed format to access in SubscoreTable
-          const fcPath = `scores.computed.FC${isNewScoring ? '' : '.roamScore'}`;
-          const frPath = `scores.computed.FR${isNewScoring ? '' : '.roamScore'}`;
+          const fc = { ..._get(assessment, 'scores.computed.FC') };
+          const fr = { ..._get(assessment, 'scores.computed.FR') };
 
-          currRowScores[taskId].fc = isNewScoring ? _get(assessment, fcPath) : { rawScore: _get(assessment, fcPath) };
+          // Set to corresponding new keys to use in SubscoreTable
+          if (!isNewScoring) {
+            [fc, fr].forEach((subscore) => {
+              if (Object.keys(subscore).length > 0) {
+                Object.assign(subscore, {
+                  rawScore: _round(subscore.roamScore, 2),
+                  numAttempted: subscore.totalNumAttempted,
+                });
+              }
+            });
+          }
 
-          currRowScores[taskId].fr = isNewScoring ? _get(assessment, frPath) : { rawScore: _get(assessment, frPath) };
+          currRowScores[taskId].fc = fc;
+          currRowScores[taskId].fr = fr;
+
           scoreFilterTags += ' Assessed ';
         }
         if ((taskId === 'letter' || taskId === 'letter-en-ca') && assessment.scores) {
