@@ -30,9 +30,29 @@ export const config = [
     },
   },
 
+  // Import resolution
+  {
+    files: ['**/*.{js,ts,mjs}'],
+    settings: {
+      'import/resolver': {
+        typescript: {
+          alwaysTryTypes: true,
+          project: [
+            './tsconfig.json',
+            './apps/*/tsconfig.json',
+            './packages/*/tsconfig.json',
+          ],
+        },
+        node: {
+          extensions: ['.js', '.mjs', '.ts', '.d.ts', '.json'],
+        },
+      },
+    }
+  },
+
   // Shared general rules
   {
-    files: ['**/*.{js,ts,vue}'],
+    files: ['**/*.{js,ts,mjs,vue}'],
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',
@@ -40,6 +60,7 @@ export const config = [
     },
     rules: {
       'import/prefer-default-export': 'off',
+      'import/no-named-as-default': 'off',
       'import/no-cycle': 'off',
       'no-restricted-syntax': 'off',
       'camelcase': 'off',

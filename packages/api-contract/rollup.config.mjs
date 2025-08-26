@@ -1,4 +1,5 @@
 import { defineConfig } from 'rollup';
+import nodeResolve from '@rollup/plugin-node-resolve';
 import externals from 'rollup-plugin-node-externals';
 import esbuild from 'rollup-plugin-esbuild';
 
@@ -17,6 +18,13 @@ export default defineConfig({
   },
   plugins: [
     externals({ deps: true, devDeps: false, peerDeps: true }),
+
+    nodeResolve({
+      preferBuiltins: true,
+      exportConditions: ['node'],
+      extensions: ['.mjs', '.js', '.ts', '.json'],
+    }),
+
     esbuild({
       platform: 'node',
       tsconfig: 'tsconfig.json',
