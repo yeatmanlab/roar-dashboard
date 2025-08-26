@@ -6,6 +6,8 @@
   },
   "scripts": {
     "dev": "turbo run dev",
+    "dev:setup:certs": "setup-certs",
+    "watch": "turbo watch dev",
     "build": "turbo run build",
     "clean": "turbo run clean",
     "format": "turbo run format",
@@ -15,8 +17,7 @@
     "test": "turbo run test",
     "test:watch": "turbo run test:watch",
     "check-types": "turbo run check-types",
-    "prepare": "husky",
-    "setup:certs": "setup-certs"
+    "prepare": "husky"
   },
   "devDependencies": {
     "prettier": "^3.6.0",

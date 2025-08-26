@@ -28,11 +28,27 @@ export default defineConfig({
         exports: 'auto'
       },
   plugins: [
-    externals({ deps: true, devDeps: false, peerDeps: true }),
+    // Externalize Node deps to keep bundle fast and small. In dev we purposely do not externalize the local workspace
+    // package so that Rollup watches its source and triggers rebuilds automatically. 
+    externals({ exclude: isDev ? ['@repo/api-contract'] : [] }),
 
     alias({
       entries: [
-        { find: '@', replacement: new URL('./src', import.meta.url).pathname }
+        // Convenience alias used across the backend source code
+        { find: '@', replacement: new URL('./src', import.meta.url).pathname },
+        
+        // In dev, point the local monorepo package to its src/ instead of dist/. This makes Rollup compile it with
+        // esbuild, watch for changes, and restart the server when internal package source files change. In production
+        // we externalize the package so that it is not included in the bundle and is instead loaded from node_modules.
+        // This approach is, somewhat unfortunately, more efficient than using turbo's watch mode.
+        ...(isDev
+          ? [
+              {
+                find: '@repo/api-contract',
+                replacement: new URL('../../packages/api-contract/src/index.ts', import.meta.url).pathname
+              }
+            ]
+          : [])
       ]
     }),
 
@@ -52,7 +68,7 @@ export default defineConfig({
       sourceMap: true,
       minify: false
     }),
-
+    
     isDev && run({
       execArgv: ['--enable-source-maps']
     })
