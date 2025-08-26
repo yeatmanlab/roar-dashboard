@@ -1,9 +1,8 @@
-// rollup.config.mjs
-import { defineConfig } from 'rollup'
-import externals from 'rollup-plugin-node-externals'
-import esbuild from 'rollup-plugin-esbuild'
+import { defineConfig } from 'rollup';
+import externals from 'rollup-plugin-node-externals';
+import esbuild from 'rollup-plugin-esbuild';
 
-const isDev = process.env.NODE_ENV !== 'production'
+const isDev = process.env.NODE_ENV !== 'production';
 
 export default defineConfig({
   input: 'src/index.ts',
@@ -14,7 +13,7 @@ export default defineConfig({
     preserveModules: true,
     entryFileNames: '[name].mjs',
     chunkFileNames: '[name].mjs',
-    exports: 'auto'
+    exports: 'auto',
   },
   plugins: [
     externals({ deps: true, devDeps: false, peerDeps: true }),
@@ -22,9 +21,9 @@ export default defineConfig({
       platform: 'node',
       tsconfig: 'tsconfig.json',
       sourceMap: true,
-      minify: false
-    })
+      minify: false,
+    }),
   ],
   treeshake: isDev ? false : 'recommended',
-  watch: { clearScreen: false, buildDelay: 50 }
-})
+  watch: { clearScreen: false, buildDelay: 50 },
+});

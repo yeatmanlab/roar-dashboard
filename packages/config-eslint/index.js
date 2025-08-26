@@ -1,5 +1,5 @@
 import js from '@eslint/js';
-import turboPlugin from "eslint-plugin-turbo";
+import importConfig from 'eslint-plugin-import';
 import turboConfig from "eslint-config-turbo/flat";
 import prettierConfig from 'eslint-config-prettier';
 import vitest from '@vitest/eslint-plugin';
@@ -18,6 +18,9 @@ export const config = [
 
   // Base recommended JS rules
   js.configs.recommended,
+
+  // Import rules
+  importConfig.flatConfigs.recommended,
 
   // Turbo rules
   ...turboConfig,
