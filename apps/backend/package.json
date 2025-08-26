@@ -12,7 +12,15 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "check-types": "tsc --noEmit --watch"
+    "check-types": "tsc --noEmit --watch",
+    "db:gen:app": "drizzle-kit generate --config ./drizzle.app.config.ts",
+    "db:gen:assess": "drizzle-kit generate --config ./drizzle.assessment.config.ts",
+    "db:migrate:app": "drizzle-kit migrate --config ./drizzle.app.config.ts",
+    "db:migrate:assess": "drizzle-kit migrate --config ./drizzle.assessment.config.ts",
+    "db:push:app": "drizzle-kit push --config ./drizzle.app.config.ts",
+    "db:push:assess": "drizzle-kit push --config ./drizzle.assessment.config.ts",
+    "db:studio:app": "drizzle-kit studio --config ./drizzle.app.config.ts",
+    "db:studio:assess": "drizzle-kit studio --config ./drizzle.assessment.config.ts"
   },
   "dependencies": {
     "@repo/api-contract": "*",
