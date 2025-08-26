@@ -780,11 +780,13 @@ const computeAssignmentAndRunData = computed(() => {
             currRowScores[taskId].numIncorrect = _get(assessment, `scores.computed.composite.numIncorrect`);
           }
 
-          /**
-           * TODO: If the composite exists, the raw score should exist as well.
-           * Check and see if we can simplify the condition here and in returnColorByReliability.
-           */
           currRowScores[taskId].numAttempted = numAttempted;
+          /**
+           * TODO:
+           * - If the composite exists, the raw score should exist as well.
+           * Check and see if we can simplify the condition here and in returnColorByReliability.
+           * - What happens if numAttempted is 0?
+           */
           currRowScores[taskId].tagColor =
             numAttempted === undefined || numAttempted === 0 ? '#EEEEF0' : numAttempted !== 0 ? tagColor : '#EEEEF0';
           currRowScores[taskId].recruitment = _get(assessment, 'params.recruitment');
