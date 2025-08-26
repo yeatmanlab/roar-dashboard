@@ -1,0 +1,6 @@
+# Firebase
+.firebaserc
+.firebase/
+
+# Cypress
+cypress/downloads
