@@ -1,3 +1,3 @@
-identifier,label,en,es-CO,de,fr-CA,nl,en-GH,de-CH,es-AR
-components/tasks.loading,loading,,cargando,,,,,,cargando
-components/tasks.preparing,preparing,,¡Preparando tu juego!,,,,,,¡Preparando tu juego!
+identifier,label,en-US,es-CO,de,fr-CA,nl,en-GH,de-CH,es-AR
+components/tasks.loading,loading,loading,cargando,,,,,,cargando
+components/tasks.preparing,preparing,Preparing your game!,¡Preparando tu juego!,,,,,,¡Preparando tu juego!

@@ -188,3 +188,6 @@ export const i18n = createI18n({
   legacy: false,
   globalInjection: true,
 });
+
+// Export for debugging
+export { baseMessages };
