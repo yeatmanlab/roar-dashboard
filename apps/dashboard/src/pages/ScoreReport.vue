@@ -268,6 +268,7 @@ import html2canvas from 'html2canvas';
 import _toUpper from 'lodash/toUpper';
 import _round from 'lodash/round';
 import _get from 'lodash/get';
+import _has from 'lodash/has';
 import _map from 'lodash/map';
 import _kebabCase from 'lodash/kebabCase';
 import _pickBy from 'lodash/pickBy';
@@ -555,7 +556,7 @@ const getScoresAndSupportFromAssessment = ({
       support_level = null;
       tag_color = null;
     } else if (assessment.taskId === 'roam-alpaca') {
-      const isNewScoring = _get(assessment, 'scores.computed.composite.roarScore');
+      const isNewScoring = _has(assessment, 'scores.computed.composite.roarScore');
       const supportLevel = _get(assessment, 'scores.computed.composite.supportLevel');
 
       support_level = isNewScoring ? supportLevel : '';
@@ -816,7 +817,7 @@ const computeAssignmentAndRunData = computed(() => {
           currRowScores[taskId].skills = skills.length > 0 ? skills.join(', ') : 'None';
         }
         if (tasksToDisplayGradeEstimate.includes(taskId)) {
-          const isNewScoring = _get(assessment, 'scores.computed.composite.roarScore');
+          const isNewScoring = _has(assessment, 'scores.computed.composite.roarScore');
           if (isNewScoring) {
             currRowScores[taskId].numCorrect = _get(assessment, 'scores.computed.composite.rawScore');
           }
