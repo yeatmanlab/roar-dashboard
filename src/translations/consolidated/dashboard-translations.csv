@@ -1,51 +1,52 @@
-identifier,label,en,es-CO,de,fr-CA,nl,en-GH,de-CH,es-AR
-auth/consent.acceptButton,acceptButton,,Aceptar,,,,,,Aceptar
-auth/consent.assentTitle,assentTitle,,Asentimiento,,,,,,Asentimiento
-auth/consent.consentTitle,consentTitle,,Consentimiento,,,,,,Consentimiento
-auth/consent.consentUpdatedStatus,consentUpdatedStatus,,Estado de consentimiento actualizado,,,,,,Estado de consentimiento actualizado
-auth/consent.header,header,,Consentimiento,,,,,,Consentimiento
-auth/consent.rejectButton,rejectButton,,"No, cerrar sesión",,,,,,"No, cerrar sesión"
-auth/consent.toastHeader,toastHeader,,Confirmado,,,,,,Confirmado
-auth/signin.atLeastOneLowercase,atLeastOneLowercase,,Al menos una minúscula,,,,,,Al menos una minúscula
-auth/signin.atLeastOneNumber,atLeastOneNumber,,Al menos un número,,,,,,Al menos un número
-auth/signin.atLeastOneNumeric,atLeastOneNumeric,,Al menos un numérico,,,,,,Al menos un numérico
-auth/signin.atLeastOneUpperCase,atLeastOneUpperCase,,Al menos una mayúscula,,,,,,Al menos una mayúscula
-auth/signin.buttonLabel,buttonLabel,,¡Vamos!,,,,,,¡Vamos!
-auth/signin.continueWithGoogle,continueWithGoogle,,Sigue adelante con Google,,,,,,Sigue adelante con Google
-auth/signin.emailId,emailId,,correo electrónico,,,,,,correo electrónico
-auth/signin.emailPlaceholder,emailPlaceholder,,Nombre de usuario o correo electrónico,,,,,,Nombre de usuario o correo electrónico
-auth/signin.forgotPassword,forgotPassword,,¿Olvidaste tu contraseña?,,,,,,¿Olvidaste tu contraseña?
-auth/signin.incorrectEmailOrPassword,incorrectEmailOrPassword,,Nombre de usuario/correo electrónico o contraseña incorrectos,,,,,,Nombre de usuario/correo electrónico o contraseña incorrectos
-auth/signin.invalidEmailPlaceholder,invalidEmailPlaceholder,,Error: correo electrónico no válido,,,,,,Error: correo electrónico no válido
-auth/signin.minimumCharacters,minimumCharacters,,Mínimo 8 caracteres,,,,,,Mínimo 8 caracteres
+identifier,label,en-US,es-CO,de,fr-CA,nl,en-GH,de-CH,es-AR
+auth/consent.acceptButton,acceptButton,Accept,Aceptar,,,,,,Aceptar
+auth/consent.assentTitle,assentTitle,Assent,Asentimiento,,,,,,Asentimiento
+auth/consent.consentTitle,consentTitle,Consent,Consentimiento,,,,,,Consentimiento
+auth/consent.consentUpdatedStatus,consentUpdatedStatus,Consent status updated,Estado de consentimiento actualizado,,,,,,Estado de consentimiento actualizado
+auth/consent.header,header,Consent,Consentimiento,,,,,,Consentimiento
+auth/consent.rejectButton,rejectButton,"No, sign me out","No, cerrar sesión",,,,,,"No, cerrar sesión"
+auth/consent.toastHeader,toastHeader,Confirmed,Confirmado,,,,,,Confirmado
+auth/signin.atLeastOneLowercase,atLeastOneLowercase,At least one lowercase,Al menos una minúscula,,,,,,Al menos una minúscula
+auth/signin.atLeastOneNumber,atLeastOneNumber,At least one number,Al menos un número,,,,,,Al menos un número
+auth/signin.atLeastOneNumeric,atLeastOneNumeric,At least one numeric,Al menos un numérico,,,,,,Al menos un numérico
+auth/signin.atLeastOneUpperCase,atLeastOneUpperCase,At least one uppercase,Al menos una mayúscula,,,,,,Al menos una mayúscula
+auth/signin.buttonLabel,buttonLabel,Go!,¡Vamos!,,,,,,¡Vamos!
+auth/signin.continueWithGoogle,continueWithGoogle,Continue with Google,Sigue adelante con Google,,,,,,Sigue adelante con Google
+auth/signin.emailId,emailId,email,correo electrónico,,,,,,correo electrónico
+auth/signin.emailPlaceholder,emailPlaceholder,Username or email,Nombre de usuario o correo electrónico,,,,,,Nombre de usuario o correo electrónico
+auth/signin.forgotPassword,forgotPassword,Forgot Password?,¿Olvidaste tu contraseña?,,,,,,¿Olvidaste tu contraseña?
+auth/signin.incorrectEmailOrPassword,incorrectEmailOrPassword,Incorrect username/email or password,Nombre de usuario/correo electrónico o contraseña incorrectos,,,,,,Nombre de usuario/correo electrónico o contraseña incorrectos
+auth/signin.invalidEmailPlaceholder,invalidEmailPlaceholder,Error: invalid email,Error: correo electrónico no válido,,,,,,Error: correo electrónico no válido
+auth/signin.minimumCharacters,minimumCharacters,Minimum 8 characters,Mínimo 8 caracteres,,,,,,Mínimo 8 caracteres
 auth/signin.pageTitle,pageTitle,,Iniciar sesión,,,,,,Iniciar sesión
-auth/signin.passwordId,passwordId,,contraseña,,,,,,contraseña
-auth/signin.passwordPlaceholder,passwordPlaceholder,,Contraseña,,,,,,Contraseña
-auth/signin.pickPassword,pickPassword,,Elige una contraseña,,,,,,Elige una contraseña
-auth/signin.selectLanguage,selectLanguage,,Seleccionar idioma,,,,,,Seleccionar idioma
-auth/signin.selectLanguageLabel,selectLanguageLabel,,Idioma,,,,,,Idioma
-auth/signin.signInWithEmailLinkInstead,signInWithEmailLinkInstead,,Iniciar sesión con enlace de correo electrónico,,,,,,Iniciar sesión con enlace de correo electrónico
-auth/signin.signInWithEmailLinkPlaceHolder,signInWithEmailLinkPlaceHolder,,Presiona Go para iniciar sesión con un enlace de correo electrónico.,,,,,,Presiona Go para iniciar sesión con un enlace de correo electrónico.
-auth/signin.signInWithPasswordInstead,signInWithPasswordInstead,,Iniciar sesión con contraseña,,,,,,Iniciar sesión con contraseña
-auth/signin.suggestions,suggestions,,Sugerencias,,,,,,Sugerencias
-pages/home-participant.contactAdministrator,contactAdministrator,,"Por favor, contacta a tu administrador para que te agregue a una actividad.",,,,,,"Por favor, contacta a tu administrador para que te agregue a una actividad."
-pages/home-participant.loadingAssignments,loadingAssignments,,Cargando actividades,,,,,,Cargando actividades
-pages/home-participant.noAssignments,noAssignments,,¡No tienes actividades!,,,,,,¡No tienes actividades!
-pages/home-participant.selectAssignment,selectAssignment,,Selecciona una actividad,,,,,,Selecciona una actividad
-pages/home-participant.showOptionalAssignments,showOptionalAssignments,,Mostrar actividades opcionales,,,,,,Mostrar actividades opcionales
-pages/home-selector.inactivityLogout,inactivityLogout,,"Pronto será desconectado por motivos de seguridad. Haz clic en ""Continuar"" si desea continuar con su sesión. De lo contrario, se cerrará la sesión automáticamente en {timeLeft} segundos.",,,,,,"Pronto será desconectado por motivos de seguridad. Haz clic en ""Continuar"" si desea continuar con su sesión. De lo contrario, se cerrará la sesión automáticamente en {timeLeft} segundos."
-pages/home-selector.inactivityLogoutAcceptLabel,inactivityLogoutAcceptLabel,,Continuar,,,,,,Continuar
-pages/home-selector.loading,loading,,Cargando...,,,,,,Cargando...
-pages/not-found.label,label,,Ir a la página de inicio.,,,,,,Ir a la página de inicio.
-pages/not-found.pageNotFound,pageNotFound,,Página no encontrada,,,,,,Página no encontrada
-pages/not-found.sorry,sorry,,"¡Lo siento, no pudimos encontrar esa página!",,,,,,"¡Lo siento, no pudimos encontrar esa página!"
-pages/signin.adminAction,adminAction,,aquí,,,,,,aquí
-pages/signin.adminInfoPrompt,adminInfoPrompt,,Si te registraste con un correo de Google o tu proveedor de correo utiliza Google SSO.,,,,,,Si te registraste con un correo de Google o tu proveedor de correo utiliza Google SSO.
-pages/signin.adminPrompt,adminPrompt,,¿Eres administrador? Haz clic {action} para iniciar sesión.,,,,,,¿Eres administrador? Haz clic {action} para iniciar sesión.
-pages/signin.havingTrouble,havingTrouble,,¿Tienes problemas?,,,,,,¿Tienes problemas?
-pages/signin.login,login,,Inicia sesión para acceder a tu panel de control,,,,,,Inicia sesión para acceder a tu panel de control
-pages/signin.loginWith,loginWith,,Inicia sesión con,,,,,,Inicia sesión con
-pages/signin.welcome,welcome,,¡Bienvenido a ROAR!,,,,,,¡Bienvenido a ROAR!
-surveys/user-survey.specificRelationDescriptionChildA,specificRelationDescriptionChildA,,Para niño(a) con mes de nacimiento,,,,,,Para niño(a) con mes de nacimiento
-surveys/user-survey.specificRelationDescriptionChildB,specificRelationDescriptionChildB,,y año de nacimiento,,,,,,y año de nacimiento
-surveys/user-survey.specificRelationDescriptionClass,specificRelationDescriptionClass,,Para la clase,,,,,,Para la clase
+auth/signin.passwordId,passwordId,password,contraseña,,,,,,contraseña
+auth/signin.passwordPlaceholder,passwordPlaceholder,Password,Contraseña,,,,,,Contraseña
+auth/signin.pickPassword,pickPassword,Pick a password,Elige una contraseña,,,,,,Elige una contraseña
+auth/signin.selectLanguage,selectLanguage,Select Language,Seleccionar idioma,,,,,,Seleccionar idioma
+auth/signin.selectLanguageLabel,selectLanguageLabel,Language,Idioma,,,,,,Idioma
+auth/signin.signInWithEmailLinkInstead,signInWithEmailLinkInstead,Sign-in using email link,Iniciar sesión con enlace de correo electrónico,,,,,,Iniciar sesión con enlace de correo electrónico
+auth/signin.signInWithEmailLinkPlaceHolder,signInWithEmailLinkPlaceHolder,Press Go to sign-in with an email link.,Presiona Go para iniciar sesión con un enlace de correo electrónico.,,,,,,Presiona Go para iniciar sesión con un enlace de correo electrónico.
+auth/signin.signInWithPasswordInstead,signInWithPasswordInstead,Sign-in using password,Iniciar sesión con contraseña,,,,,,Iniciar sesión con contraseña
+auth/signin.suggestions,suggestions,Suggestions,Sugerencias,,,,,,Sugerencias
+pages/home-participant.contactAdministrator,contactAdministrator,Please contact your administrator to get added to an assignment.,"Por favor, contacta a tu administrador para que te agregue a una actividad.",,,,,,"Por favor, contacta a tu administrador para que te agregue a una actividad."
+pages/home-participant.loadingAssignments,loadingAssignments,Loading Assignments,Cargando actividades,,,,,,Cargando actividades
+pages/home-participant.noAssignments,noAssignments,You have no assignments!,¡No tienes actividades!,,,,,,¡No tienes actividades!
+pages/home-participant.selectAssignment,selectAssignment,Select an assignment,Selecciona una actividad,,,,,,Selecciona una actividad
+pages/home-participant.showOptionalAssignments,showOptionalAssignments,Show optional assignments,Mostrar actividades opcionales,,,,,,Mostrar actividades opcionales
+pages/home-selector.inactivityLogout,inactivityLogout,"You will soon be logged out for security purposes. Please click ""Continue"" if you wish to continue your session.
+ Otherwise, you will be automatically logged out in { timeLeft } seconds.","Pronto será desconectado por motivos de seguridad. Haz clic en ""Continuar"" si desea continuar con su sesión. De lo contrario, se cerrará la sesión automáticamente en {timeLeft} segundos.",,,,,,"Pronto será desconectado por motivos de seguridad. Haz clic en ""Continuar"" si desea continuar con su sesión. De lo contrario, se cerrará la sesión automáticamente en {timeLeft} segundos."
+pages/home-selector.inactivityLogoutAcceptLabel,inactivityLogoutAcceptLabel,Continue,Continuar,,,,,,Continuar
+pages/home-selector.loading,loading,Loading...,Cargando...,,,,,,Cargando...
+pages/not-found.label,label,Return to Home,Ir a la página de inicio.,,,,,,Ir a la página de inicio.
+pages/not-found.pageNotFound,pageNotFound,Page not found,Página no encontrada,,,,,,Página no encontrada
+pages/not-found.sorry,sorry,"Sorry, we could not find that page!","¡Lo siento, no pudimos encontrar esa página!",,,,,,"¡Lo siento, no pudimos encontrar esa página!"
+pages/signin.adminAction,adminAction,here,aquí,,,,,,aquí
+pages/signin.adminInfoPrompt,adminInfoPrompt,If you registered with a Google email or your email provider uses Google SSO.,Si te registraste con un correo de Google o tu proveedor de correo utiliza Google SSO.,,,,,,Si te registraste con un correo de Google o tu proveedor de correo utiliza Google SSO.
+pages/signin.adminPrompt,adminPrompt,Are you an Admin? Click {action} to Sign in.,¿Eres administrador? Haz clic {action} para iniciar sesión.,,,,,,¿Eres administrador? Haz clic {action} para iniciar sesión.
+pages/signin.havingTrouble,havingTrouble,Having trouble?,¿Tienes problemas?,,,,,,¿Tienes problemas?
+pages/signin.login,login,Log in to access your dashboard,Inicia sesión para acceder a tu panel de control,,,,,,Inicia sesión para acceder a tu panel de control
+pages/signin.loginWith,loginWith,Log in with,Inicia sesión con,,,,,,Inicia sesión con
+pages/signin.welcome,welcome,Welcome to ROAR!,¡Bienvenido a ROAR!,,,,,,¡Bienvenido a ROAR!
+surveys/user-survey.specificRelationDescriptionChildA,specificRelationDescriptionChildA,For child with Birth Month,Para niño(a) con mes de nacimiento,,,,,,Para niño(a) con mes de nacimiento
+surveys/user-survey.specificRelationDescriptionChildB,specificRelationDescriptionChildB,and Birth Year,y año de nacimiento,,,,,,y año de nacimiento
+surveys/user-survey.specificRelationDescriptionClass,specificRelationDescriptionClass,For class,Para la clase,,,,,,Para la clase
