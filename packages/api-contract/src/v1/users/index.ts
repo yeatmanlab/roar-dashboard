@@ -1,2 +1,2 @@
-export * from './contract.js'
-export * from './schema.js'
+export * from './contract';
+export * from './schema';

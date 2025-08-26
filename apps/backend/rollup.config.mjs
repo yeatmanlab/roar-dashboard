@@ -19,24 +19,24 @@ export default defineConfig({
         preserveModules: true,
         entryFileNames: '[name].js',
         chunkFileNames: '[name].js',
-        exports: 'auto'
+        exports: 'auto',
       }
     : {
         file: `dist/server.js`,
         format: 'esm',
         sourcemap: true,
-        exports: 'auto'
+        exports: 'auto',
       },
   plugins: [
     // Externalize Node deps to keep bundle fast and small. In dev we purposely do not externalize the local workspace
-    // package so that Rollup watches its source and triggers rebuilds automatically. 
+    // package so that Rollup watches its source and triggers rebuilds automatically.
     externals({ exclude: isDev ? ['@repo/api-contract'] : [] }),
 
     alias({
       entries: [
         // Convenience alias used across the backend source code
         { find: '@', replacement: new URL('./src', import.meta.url).pathname },
-        
+
         // In dev, point the local monorepo package to its src/ instead of dist/. This makes Rollup compile it with
         // esbuild, watch for changes, and restart the server when internal package source files change. In production
         // we externalize the package so that it is not included in the bundle and is instead loaded from node_modules.
@@ -45,17 +45,17 @@ export default defineConfig({
           ? [
               {
                 find: '@repo/api-contract',
-                replacement: new URL('../../packages/api-contract/src/index.ts', import.meta.url).pathname
-              }
+                replacement: new URL('../../packages/api-contract/src/index.ts', import.meta.url).pathname,
+              },
             ]
-          : [])
-      ]
+          : []),
+      ],
     }),
 
     nodeResolve({
       preferBuiltins: true,
       exportConditions: ['node'],
-      extensions: ['.mjs', '.js', '.ts', '.json']
+      extensions: ['.mjs', '.js', '.ts', '.json'],
     }),
 
     commonjs(),
@@ -66,18 +66,19 @@ export default defineConfig({
       platform: 'node',
       tsconfig: 'tsconfig.json',
       sourceMap: true,
-      minify: false
+      minify: false,
     }),
-    
-    isDev && run({
-      execArgv: ['--enable-source-maps']
-    })
+
+    isDev &&
+      run({
+        execArgv: ['--enable-source-maps'],
+      }),
   ].filter(Boolean),
 
   treeshake: isDev ? false : 'recommended',
 
   watch: {
     clearScreen: false,
-    buildDelay: 50
-  }
+    buildDelay: 50,
+  },
 });

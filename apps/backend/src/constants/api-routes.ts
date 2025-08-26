@@ -13,10 +13,10 @@
 export const API_ROUTES = {
   // Generic root path
   ROOT_PATH: '/',
-  
+
   // Users routes
   USERS: {
     PREFIX: '/users',
     BY_ID: '/:id',
-  }
-} as const
+  },
+} as const;

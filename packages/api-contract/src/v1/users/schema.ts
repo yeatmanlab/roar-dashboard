@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import { z } from 'zod';
 
 /**
  * Schema for a user.
@@ -6,5 +6,5 @@ import { z } from 'zod'
 export const User = z.object({
   id: z.string().uuid(),
   name: z.string(),
-  email: z.string().email()
-})
+  email: z.string().email(),
+});

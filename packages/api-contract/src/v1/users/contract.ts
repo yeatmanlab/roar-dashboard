@@ -1,9 +1,9 @@
-import { z } from 'zod'
-import { initContract } from '@ts-rest/core'
-import { User } from './schema.js'
-import { NotFound } from '../common/http.js'
+import { z } from 'zod';
+import { initContract } from '@ts-rest/core';
+import { User } from './schema';
+import { NotFound } from '../common/http';
 
-const c = initContract()
+const c = initContract();
 
 export const UsersContract = c.router(
   {
@@ -13,12 +13,12 @@ export const UsersContract = c.router(
       pathParams: z.object({
         id: z.string(),
       }),
-      responses: { 
-        200: User, 
+      responses: {
+        200: User,
         404: NotFound,
       },
       strictStatusCodes: true,
     },
   },
-  { pathPrefix: '/users' }
-)
+  { pathPrefix: '/users' },
+);
