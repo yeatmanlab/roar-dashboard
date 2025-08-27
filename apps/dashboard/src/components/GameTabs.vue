@@ -10,9 +10,10 @@
           :class="[
             'p3 mr-1 text-base hover:bg-black-alpha-10',
             {
-              'text-yellow-600': game?.allowRetake === true,
-              'text-green-500': game.completedOn && game?.allowRetake !== true,
-              'bg-white': game.completedOn && game?.allowRetake !== true,
+              'text-yellow-600': game?.allowRetake === true && implementsValidityChecking(game.taskId),
+              'text-green-500':
+                game.completedOn && (game?.allowRetake !== true || !implementsValidityChecking(game.taskId)),
+              'bg-white': game.completedOn && (game?.allowRetake !== true || !implementsValidityChecking(game.taskId)),
             },
           ]"
           style="border: solid 2px #00000014; border-radius: 10px"
@@ -33,7 +34,7 @@
           <template #header>
             <!--Retake required-->
             <i
-              v-if="game?.allowRetake === true"
+              v-if="game?.allowRetake === true && implementsValidityChecking(game.taskId)"
               class="pi pi-exclamation-circle mr-2"
               data-game-status="retake-required"
             />
@@ -145,11 +146,18 @@
                         }"
                         class="flex align-items-center justify-content-center"
                       >
-                        <i v-if="game.completedOn && game.allowRetake !== true" class="pi pi-check-circle mr-3" />
+                        <i
+                          v-if="
+                            game.completedOn && (game.allowRetake !== true || !implementsValidityChecking(game.taskId))
+                          "
+                          class="pi pi-check-circle mr-3"
+                        />
                         <div class="flex flex-column align-items-center gap-2">
-                          <span v-if="game.allowRetake !== true" style="cursor: default">{{
-                            taskCompletedMessage
-                          }}</span>
+                          <span
+                            v-if="game.allowRetake !== true || !implementsValidityChecking(game.taskId)"
+                            style="cursor: default"
+                            >{{ taskCompletedMessage }}</span
+                          >
                           <PvMessage v-if="game?.allowRetake === true" severity="warn" class="w-full">
                             <div class="flex flex-column align-items-center gap-2">
                               <span>{{ $t('gameTabs.allowRetake') }}</span>
@@ -248,6 +256,12 @@ const levanteTasks = [
   'mefs',
   'roarInference',
 ];
+
+/** Filter out tasks that do not handle validity and reliability, thus allowing for retakes. Temporory until LEVANTE core-tasks implement validity/reliability handling. */
+const implementsValidityChecking = (taskId) => {
+  const taskIdLowercased = taskId.toLowerCase();
+  return !levanteTasks.includes(camelize(taskIdLowercased));
+};
 
 const getTaskName = (taskId, taskName) => {
   // Translate Levante task names. The task name is not the same as the taskId.
