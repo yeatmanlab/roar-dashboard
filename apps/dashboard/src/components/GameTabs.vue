@@ -259,8 +259,7 @@ const levanteTasks = [
 
 /** Filter out tasks that do not handle validity and reliability, thus allowing for retakes. Temporory until LEVANTE core-tasks implement validity/reliability handling. */
 const implementsValidityChecking = (taskId) => {
-  const taskIdLowercased = taskId.toLowerCase();
-  return !levanteTasks.includes(camelize(taskIdLowercased));
+  return !levanteTasks.includes(taskId);
 };
 
 const getTaskName = (taskId, taskName) => {
