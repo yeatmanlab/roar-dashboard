@@ -5,5 +5,13 @@
   ],
   "apps/dashboard/**/*.{js,ts,vue,json,css,md}": [
     "prettier --config apps/dashboard/prettier.config.mjs --write --log-level=warn"
+  ],
+  "apps/backend/**/*.{js,ts,json,md}": [
+    "eslint --config apps/backend/eslint.config.mjs --fix",
+    "prettier --config apps/backend/prettier.config.mjs --write --log-level=warn"
+  ],
+  "packages/api-contract/**/*.{js,ts,json,md}": [
+    "eslint --config packages/api-contract/eslint.config.mjs --fix",
+    "prettier --config packages/api-contract/prettier.config.mjs --write --log-level=warn"
   ]
 }
