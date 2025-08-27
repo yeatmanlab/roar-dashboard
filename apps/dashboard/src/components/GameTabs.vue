@@ -261,9 +261,22 @@ const levanteTasks = [
   'roarInference',
 ];
 
+const levanteTaskIds = [
+  'hearts-and-flowers',
+  'egma-math',
+  'matrix-reasoning',
+  'memory-game',
+  'mental-rotation',
+  'same-different-selection',
+  'theory-of-mind',
+  'trog',
+  'mefs',
+  'roar-inference',
+];
+
 /** Filter out tasks that do not handle validity and reliability, thus allowing for retakes. Temporory until LEVANTE core-tasks implement validity/reliability handling. */
 const implementsValidityChecking = (taskId) => {
-  return !levanteTasks.includes(taskId);
+  return !levanteTaskIds.includes(taskId);
 };
 
 const getTaskName = (taskId, taskName) => {
