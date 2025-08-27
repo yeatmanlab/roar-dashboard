@@ -1,6 +1,5 @@
 import { createI18n } from 'vue-i18n';
 import {
-  enTranslations,
   enUSTranslations,
   enIndividualScoreReport,
   enUSIndividualScoreReport,
@@ -65,8 +64,7 @@ const getLocale = (localeFromBrowser: string) => {
 export const formattedLocale = getLocale(browserLocale);
 
 const getFallbackLocale = () => {
-  const storageKey = `${isLevante ? 'levante' : 'roar'}PlatformLocale`;
-  const localeFromStorage = sessionStorage.getItem(storageKey) || '';
+  const localeFromStorage = sessionStorage.getItem('levante') || '';
 
   if (localeFromStorage.includes('es')) {
     console.log('Setting fallback local to es-CO');

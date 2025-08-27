@@ -1,4 +1,4 @@
-export { default as enTranslations } from './en/en-componentTranslations.json';
+
 export { default as esTranslations } from './es/es-componentTranslations.json';
 export { default as esCOTranslations } from './es/co/es-CO-componentTranslations.json';
 export { default as enUSTranslations } from './en/us/en-US-componentTranslations.json';

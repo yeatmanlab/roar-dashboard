@@ -88,18 +88,36 @@ function buildRows(langs) {
   // keys: identifier, label, ...langs
   const allIdentifiers = new Set();
   const perLangFlat = {};
+  
+  // Create reverse mapping from modular paths to legacy namespace keys
+  const reverseMap = {};
+  Object.entries(namespaceMap).forEach(([legacyKey, modulePath]) => {
+    reverseMap[modulePath] = legacyKey;
+  });
+  
   for (const [lang, json] of langs.entries()) {
     perLangFlat[lang] = {};
-    for (const [ns, value] of Object.entries(json || {})) {
-      const mapped = namespaceMap[ns];
-      if (!mapped) continue;
-      const flat = flatten(value);
-      for (const [k, v] of Object.entries(flat)) {
-        const identifier = `${mapped}.${k}`;
-        allIdentifiers.add(identifier);
-        perLangFlat[lang][identifier] = typeof v === 'string' ? v : '';
+    
+    // Traverse the nested JSON structure to extract values for known paths
+    Object.entries(namespaceMap).forEach(([legacyKey, modulePath]) => {
+      const pathParts = modulePath.split('/');
+      let current = json;
+      
+      // Navigate to the nested object (e.g. auth/consent -> json.auth.consent)
+      for (const part of pathParts) {
+        current = current?.[part];
+        if (!current) break;
       }
-    }
+      
+      if (current && typeof current === 'object') {
+        const flat = flatten(current);
+        for (const [k, v] of Object.entries(flat)) {
+          const identifier = `${modulePath}.${k}`;
+          allIdentifiers.add(identifier);
+          perLangFlat[lang][identifier] = typeof v === 'string' ? v : '';
+        }
+      }
+    });
   }
   return { allIdentifiers: Array.from(allIdentifiers).sort(), perLangFlat };
 }
@@ -136,7 +154,7 @@ function writeConsolidatedCSVs({ allIdentifiers, perLangFlat }, langs) {
 
   // Desired CSV column order (after identifier,label)
   // Include requested regional variants; seed en-GH from en, de-CH from de, es-AR from es-CO
-  const OUTPUT_LANGS = ['en', 'es-CO', 'de', 'fr-CA', 'nl', 'en-GH', 'de-CH', 'es-AR'];
+  const OUTPUT_LANGS = ['en-US', 'es-CO', 'de', 'fr-CA', 'nl', 'en-GH', 'de-CH', 'es-AR'];
 
   // Helper to fetch value for a given identifier and output language with fallbacks
   const getValue = (identifier, outLang) => {
@@ -144,24 +162,24 @@ function writeConsolidatedCSVs({ allIdentifiers, perLangFlat }, langs) {
     const pick = (code) => perLangFlat[code]?.[key];
     switch (outLang) {
       case 'en-US':
-        return pick('en-us') ?? pick('en') ?? '';
+        return pick('en-US') ?? pick('en') ?? '';
       case 'es-CO':
-        return pick('es-co') ?? pick('es') ?? '';
+        return pick('es-CO') ?? pick('es') ?? '';
       case 'de':
         return pick('de') ?? '';
       case 'fr-CA':
-        return pick('fr-ca') ?? '';
+        return pick('fr-CA') ?? '';
       case 'nl':
         return pick('nl') ?? '';
       case 'en-GH':
         // Seed from existing English content
-        return pick('en-gh') ?? pick('en-us') ?? pick('en') ?? '';
+        return pick('en-GH') ?? pick('en-US') ?? pick('en') ?? '';
       case 'de-CH':
         // Seed from existing German content
-        return pick('de-ch') ?? pick('de') ?? '';
+        return pick('de-CH') ?? pick('de') ?? '';
       case 'es-AR':
         // Seed from existing Spanish Colombian content
-        return pick('es-ar') ?? pick('es-co') ?? pick('es') ?? '';
+        return pick('es-AR') ?? pick('es-CO') ?? pick('es') ?? '';
       default:
         return '';
     }

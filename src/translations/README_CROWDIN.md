@@ -221,9 +221,147 @@ Secrets/Env to configure in the repository:
 
 ---
 
+## Translation Update Workflow (Crowdin → Dashboard)
+
+This section documents the complete workflow for updating translations when they are modified in Crowdin. Based on recent fixes and learnings, here's the step-by-step process:
+
+### Prerequisites
+- Ensure you have `CROWDIN_API_TOKEN` environment variable set
+- Node.js 20 LTS (use `nvm use` to match [`.nvmrc`](../../.nvmrc))
+- Crowdin CLI installed (`npm install -g @crowdin/cli`)
+
+### Step 1: Download Latest Translations from Crowdin
+```bash
+npm run i18n:crowdin:download
+```
+This downloads the latest translated CSVs from Crowdin to `src/translations/consolidated/`
+
+### Step 2: Verify CSV Content
+Check that the downloaded CSVs have the expected translations:
+```bash
+# Quick check - look at a few rows of the main dashboard CSV
+head -5 src/translations/consolidated/dashboard-translations.csv
+
+# Validate all CSVs for structural integrity
+npm run i18n:validate
+```
+
+Expected CSV structure:
+- Header: `identifier,label,en-US,es-CO,de,fr-CA,nl,en-GH,de-CH,es-AR`
+- All language columns should have translated content (not empty strings)
+- No duplicate identifiers across all CSV files
+
+### Step 3: Generate JSON Files from CSVs
+```bash
+npm run i18n:csv-to-json
+```
+This converts the consolidated multilingual CSVs into per-locale JSON files under `src/translations/`
+
+### Step 4: Verify Generated JSON Files
+Check that the JSON files contain the expected translations:
+```bash
+# Verify a few key languages have content
+head -15 src/translations/en/us/en-US-componentTranslations.json
+head -15 src/translations/es/co/es-CO-componentTranslations.json
+head -15 src/translations/de/de-componentTranslations.json
+head -15 src/translations/nl/nl-componentTranslations.json
+```
+
+**⚠️ Important**: JSON files should NOT contain empty strings (`""`) for translated content. If they do, this indicates an issue with the CSV source data.
+
+### Step 5: Test the Application
+```bash
+# Start development server
+npm run dev:db
+
+# Test different locales in the browser
+# - Change language in the UI
+# - Verify text appears in the correct language
+# - Check for any translation keys showing instead of translated text
+```
+
+### Step 6: Run Automated Tests
+```bash
+# Run locale-specific Cypress tests
+npm run cypress:run -- --spec "cypress/e2e/locales.cy.ts"
+
+# Run full test suite
+npm test
+```
+
+### Troubleshooting Common Issues
+
+#### Issue 1: Empty Translations in JSON Files
+**Symptoms**: JSON files contain empty strings (`""`) for translation values
+**Root Cause**: CSV files downloaded from Crowdin are missing translations for certain languages
+**Solution**: 
+1. Check if the main CSV files in `src/translations/main/dashboard/` have the translations
+2. If yes, copy them to consolidated: `cp -r src/translations/main/dashboard/* src/translations/consolidated/`
+3. Re-run: `npm run i18n:csv-to-json`
+
+#### Issue 2: Translation Keys Showing Instead of Text
+**Symptoms**: UI shows `pageSignIn.login` instead of "Log in to access your dashboard"
+**Root Cause**: Flat key structure doesn't match nested JSON structure
+**Solution**: The system has automatic flat key mapping. Ensure `src/translations/i18n.ts` includes the `addFlatKeys` function.
+
+#### Issue 3: New Languages Not Appearing
+**Symptoms**: Added a new language in Crowdin but it doesn't show in the app
+**Solution**:
+1. Verify the language column exists in downloaded CSVs
+2. Re-run `npm run i18n:csv-to-json` 
+3. Check that `<locale>-componentTranslations.json` was generated
+4. Restart the dev server
+
+#### Issue 4: Consolidation Script Issues
+**Symptoms**: `npm run i18n:consolidate` generates empty columns for some languages
+**Root Cause**: The script tries to build from existing JSON files which may be empty
+**Solution**: Only use consolidation script when you have authoritative data in legacy JSON format. Otherwise, work directly with the main CSVs as source of truth.
+
+### Complete Sync Workflow
+For a full sync from local changes through Crowdin and back:
+```bash
+# 1. If you have local changes to push to Crowdin
+npm run i18n:consolidate  # Only if rebuilding from JSON sources
+npm run i18n:crowdin:upload
+
+# 2. Download latest from Crowdin and rebuild locally
+npm run i18n:sync
+# This runs: consolidate → upload → download → csv-to-json → validate
+```
+
+### File Structure Overview
+```
+src/translations/
+├── main/dashboard/              # Source of truth CSVs (if not using Crowdin)
+│   ├── dashboard-translations.csv
+│   └── components/
+│       ├── navbar-translations.csv
+│       ├── game-tabs-translations.csv
+│       └── ...
+├── consolidated/                # Working CSVs (synced with Crowdin)
+│   ├── dashboard-translations.csv
+│   └── components/
+│       ├── navbar-translations.csv
+│       └── ...
+├── en/us/                      # Generated JSON files
+│   └── en-US-componentTranslations.json
+├── es/co/
+│   └── es-CO-componentTranslations.json
+├── de/
+│   └── de-componentTranslations.json
+└── tools/                      # Build scripts
+    ├── csv-to-json.js
+    ├── download-and-rebuild.js
+    └── ...
+```
+
+---
+
 ## Summary
 - Authoritative strings are stored in multilingual CSVs and synced with Crowdin
 - Build pipeline generates per-locale JSON for the app (fast runtime)
 - New locales are detected and registered automatically
 - Validation scripts and CI ensure quality and determinism
 - Cypress tests provide a quick check that all locales can log in and navigate
+- **Always verify CSV content before generating JSON files**
+- **Main CSVs can serve as backup source of truth if Crowdin data is incomplete**
