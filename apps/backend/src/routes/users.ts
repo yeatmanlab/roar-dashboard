@@ -27,8 +27,8 @@ const UserController = {
           auth_id: user.authId,
           ...(user.email != null ? { email: user.email } : {}),
           ...(user.username != null ? { username: user.username } : {}),
-        }
-      }
+        },
+      },
     };
   },
 };
