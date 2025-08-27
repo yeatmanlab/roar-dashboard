@@ -7,6 +7,7 @@
       "consentUpdatedStatus": "Consent status updated",
       "header": "Consent",
       "rejectButton": "No, sign me out",
+      "title": "",
       "toastHeader": "Confirmed"
     },
     "signin": {
@@ -36,6 +37,7 @@
   },
   "pages": {
     "home-participant": {
+      "consentUpdatedStatus": "",
       "contactAdministrator": "Please contact your administrator to get added to an assignment.",
       "loadingAssignments": "Loading Assignments",
       "noAssignments": "You have no assignments!",

@@ -1,72 +1,74 @@
 {
   "auth": {
     "consent": {
-      "acceptButton": "",
-      "assentTitle": "",
-      "consentTitle": "",
-      "consentUpdatedStatus": "",
-      "header": "",
-      "rejectButton": "",
-      "toastHeader": ""
+      "acceptButton": "Akzeptieren",
+      "assentTitle": "Zustimmung",
+      "consentTitle": "Zustimmung",
+      "consentUpdatedStatus": "Zustimmungsstatus aktualisiert",
+      "header": "Consent",
+      "rejectButton": "Nein, mich abmelden",
+      "title": "",
+      "toastHeader": "Bestätigt"
     },
     "signin": {
-      "atLeastOneLowercase": "",
-      "atLeastOneNumber": "",
-      "atLeastOneNumeric": "",
-      "atLeastOneUpperCase": "",
-      "buttonLabel": "",
-      "continueWithGoogle": "",
-      "emailId": "",
-      "emailPlaceholder": "",
-      "forgotPassword": "",
-      "incorrectEmailOrPassword": "",
-      "invalidEmailPlaceholder": "",
-      "minimumCharacters": "",
+      "atLeastOneLowercase": "Mindestens ein Kleinbuchstabe",
+      "atLeastOneNumber": "Mindestens eine Zahl",
+      "atLeastOneNumeric": "Mindestens eine Nummer",
+      "atLeastOneUpperCase": "Mindestens ein Großbuchstabe",
+      "buttonLabel": "Los!",
+      "continueWithGoogle": "Machen Sie weiter mit Google",
+      "emailId": "email",
+      "emailPlaceholder": "Benutzername oder E-Mail",
+      "forgotPassword": "Passwort vergessen?",
+      "incorrectEmailOrPassword": "Falscher Benutzername/E-Mail oder Passwort",
+      "invalidEmailPlaceholder": "Fehler: Ungültige E-Mail",
+      "minimumCharacters": "Mindestens 8 Zeichen",
       "pageTitle": "",
-      "passwordId": "",
-      "passwordPlaceholder": "",
-      "pickPassword": "",
-      "selectLanguage": "",
-      "selectLanguageLabel": "",
-      "signInWithEmailLinkInstead": "",
-      "signInWithEmailLinkPlaceHolder": "",
-      "signInWithPasswordInstead": "",
-      "suggestions": ""
+      "passwordId": "password",
+      "passwordPlaceholder": "Passwort",
+      "pickPassword": "Wählen Sie ein Passwort",
+      "selectLanguage": "Sprache auswählen",
+      "selectLanguageLabel": "Sprache",
+      "signInWithEmailLinkInstead": "Mit E-Mail-Link anmelden",
+      "signInWithEmailLinkPlaceHolder": "Drücken Sie „Los“, um sich mit einem E-Mail-Link anzumelden.",
+      "signInWithPasswordInstead": "Mit Passwort anmelden",
+      "suggestions": "Vorschläge"
     }
   },
   "pages": {
     "home-participant": {
-      "contactAdministrator": "",
-      "loadingAssignments": "",
-      "noAssignments": "",
-      "selectAssignment": "",
-      "showOptionalAssignments": ""
+      "consentUpdatedStatus": "",
+      "contactAdministrator": "Bitte kontaktieren Sie Ihren Administrator, um zu einer Zuordnung hinzugefügt zu werden.",
+      "loadingAssignments": "Lade Zuordnungen",
+      "noAssignments": "Sie haben keine Zuordnungen!",
+      "selectAssignment": "Wählen Sie eine Zuordnung aus",
+      "showOptionalAssignments": "Optionale Zuordnungen anzeigen"
     },
     "home-selector": {
-      "inactivityLogout": "",
-      "inactivityLogoutAcceptLabel": "",
-      "loading": ""
+      "inactivityLogout": "Sie werden aus Sicherheitsgründen bald abgemeldet. Bitte klicken Sie auf \"Weiter\", wenn Sie Ihre Sitzung fortsetzen möchten. \n Andernfalls werden Sie in { timeLeft } Sekunden automatisch abgemeldet.",
+      "inactivityLogoutAcceptLabel": "Fortsetzen",
+      "loading": "Laden..."
     },
     "not-found": {
-      "label": "",
-      "pageNotFound": "",
-      "sorry": ""
+      "label": "Klicken Sie hier, um zur Startseite zu gelangen",
+      "pageNotFound": "Seite nicht gefunden",
+      "sorry": "Entschuldigung, wir konnten diese Seite nicht finden!"
     },
     "signin": {
-      "adminAction": "",
-      "adminInfoPrompt": "",
-      "adminPrompt": "",
-      "havingTrouble": "",
-      "login": "",
-      "loginWith": "",
-      "welcome": ""
+      "adminAction": "hier",
+      "adminInfoPrompt": "Wenn Sie sich mit einer Google-E-Mail oder Ihr E-Mail-Anbieter Google SSO verwendet, registriert haben.",
+      "adminPrompt": "Sind Sie ein Administrator? Klicken Sie {action}, um sich anzumelden.",
+      "havingTrouble": "Haben Sie Schwierigkeiten?",
+      "login": "Melden Sie sich an, um auf Ihr Dashboard zuzugreifen",
+      "loginWith": "Anmelden mit",
+      "welcome": "Willkommen bei ROAR!"
     }
   },
   "surveys": {
     "user-survey": {
-      "specificRelationDescriptionChildA": "",
-      "specificRelationDescriptionChildB": "",
-      "specificRelationDescriptionClass": ""
+      "specificRelationDescriptionChildA": "Für Kind mit Geburtsmonat",
+      "specificRelationDescriptionChildB": "und Geburtsjahr",
+      "specificRelationDescriptionClass": "Für Klasse"
     }
   },
   "components": {
@@ -77,7 +79,7 @@
       "egmaMathName": "Mathe",
       "heartsAndFlowersDescription": "Wähle die richige Seite für die Herzen und Blumen.",
       "heartsAndFlowersName": "Herzen & Blumen",
-      "introDescription": "Schau dir an, wie man unsere Spiele spielt.",
+      "introDescription": "Schau dir an, wie man unsere Spiele spielt. ",
       "introName": "Anleitungen",
       "matrixReasoningDescription": "Finde das fehlende Teil, um das Puzzle zu vervollständigen.",
       "matrixReasoningName": "Musterspiel",
@@ -87,15 +89,15 @@
       "memoryGameName": "Merkspiel",
       "mentalRotationDescription": "Ordne die Bilder zu.",
       "mentalRotationName": "Formenspiel",
-      "roarInferenceDescription": "",
-      "roarInferenceName": "",
+      "roarInferenceDescription": "Lies die Geschichten und beantworte die Fragen.",
+      "roarInferenceName": "Roar - Inferenz",
       "sameDifferentSelectionDescription": "Finde Dinge, die die Formen gemeinsam haben.",
       "sameDifferentSelectionName": "Gleich & Verschieden",
       "surveyDescriptionChild": "Hier geht es um Fragen zu deiner Schulzeit.",
       "surveyDescriptionParentPart1": "Das Ausfüllen dieser Fragebögen dauert etwa 30-45 Minuten. Teil A enthält Fragen zu Ihrem häuslichen Umfeld und zu Ihrer Person. In Teil B werden Fragen zu Ihrem Kind/ Ihren Kindern gestellt. Anhand des Geburtsdatums, welches im jeweiligen Fragebogen aufgeführt ist, können Sie erkennen, an welches Kind Sie bei der Beantwortung der Fragen denken sollen (falls Sie mehr als ein Kind in dieser Studie haben).",
-      "surveyDescriptionParentPart2": "Umfrage für Eltern: Die folgende Umfrage dauert etwa 20-30 Minuten und enthält Fragen Ihrem zu Hause und zu Ihrer Person. ",
-      "surveyDescriptionTeacherPart1": "This survey will take approximately 5-10 minutes to complete and asks about your background and beliefs about teaching.",
-      "surveyDescriptionTeacherPart2": "This survey will take approximately 5-10 minutes to complete and asks questions about the classroom(s) you teach.",
+      "surveyDescriptionParentPart2": "Umfrage für Eltern: Die folgende Umfrage dauert etwa 20-30 Minuten und enthält Fragen Ihrem zu Hause und zu Ihrer Person.",
+      "surveyDescriptionTeacherPart1": "Diese Umfrage dauert etwa 5-10 Minuten und fragt nach Ihrem Hintergrund und Ihren Ansichten zum Unterrichten.",
+      "surveyDescriptionTeacherPart2": "Diese Umfrage dauert etwa 5-10 Minuten und es werden Fragen zu den Klassenräumen gestellt, in denen Sie unterrichten.",
       "surveyNameChild": "Gedanken & Gefühle",
       "surveyNameParentPart1": "Umfrage - Erwachsene",
       "surveyNameParentPart2": "Umfrage - Familie",
@@ -117,7 +119,7 @@
       "vocabName": "Vokabeln"
     },
     "navbar": {
-      "greeting": "",
+      "greeting": "Hallo",
       "signOut": "Abmelden"
     },
     "participant-sidebar": {
@@ -126,18 +128,18 @@
       "tasksCompleted": "Aufgaben abgeschlossen!"
     },
     "sentry-form": {
-      "buttonLabel": "",
-      "cancelButtonLabel": "",
-      "emailPlaceholder": "",
-      "formTitle": "",
-      "messageLabel": "",
-      "messagePlaceholder": "",
-      "namePlaceholder": "",
-      "submitButtonLabel": ""
+      "buttonLabel": "Ein Problem melden",
+      "cancelButtonLabel": "Abbrechen",
+      "emailPlaceholder": "ihre.email@beispiel.org (optional)",
+      "formTitle": "Ein Problem bei LEVANTE melden",
+      "messageLabel": "Beschreibung",
+      "messagePlaceholder": "Was ist das Problem? Was wollten Sie stattdessen erleben? Vielen Dank für Ihr Feedback.",
+      "namePlaceholder": "Ihr Name (optional)",
+      "submitButtonLabel": "Problembericht einreichen"
     },
     "tasks": {
-      "loading": "",
-      "preparing": ""
+      "loading": "Laden",
+      "preparing": "Gleich geht das Spiel los!"
     }
   }
 }

@@ -1,6 +1,5 @@
 import { createI18n } from 'vue-i18n';
 import {
-  enTranslations,
   enUSTranslations,
   enIndividualScoreReport,
   enUSIndividualScoreReport,
