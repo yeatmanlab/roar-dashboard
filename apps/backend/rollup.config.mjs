@@ -30,7 +30,7 @@ export default defineConfig({
   plugins: [
     // Externalize Node deps to keep bundle fast and small. In dev we purposely do not externalize the local workspace
     // package so that Rollup watches its source and triggers rebuilds automatically.
-    externals({ exclude: isDev ? ['@repo/api-contract'] : [] }),
+    externals({ exclude: isDev ? ['@roar-dashboard/api-contract'] : [] }),
 
     alias({
       entries: [
@@ -44,7 +44,7 @@ export default defineConfig({
         ...(isDev
           ? [
               {
-                find: '@repo/api-contract',
+                find: '@roar-dashboard/api-contract',
                 replacement: new URL('../../packages/api-contract/src/index.ts', import.meta.url).pathname,
               },
             ]

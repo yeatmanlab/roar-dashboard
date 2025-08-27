@@ -2,13 +2,13 @@
   "extends": ["//"],
   "tasks": {
     "dev": {
-      "with": ["@repo/api-contract#dev"]
+      "with": ["@roar-dashboard/api-contract#dev"]
     },
     "build": {
       "env": ["DATABASE_URL", "APP_DATABASE_URL", "ASSESSMENT_DATABASE_URL", "PORT", "KEEP_ALIVE_TIMEOUT"]
     },
     "lint": {
-      "dependsOn": ["^@repo/api-contract#build"]
+      "dependsOn": ["^@roar-dashboard/api-contract#build"]
     }
   }
 }

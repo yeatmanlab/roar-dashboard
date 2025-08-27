@@ -1,7 +1,7 @@
 import type { Router } from 'express';
 import { initServer, createExpressEndpoints } from '@ts-rest/express';
 import { StatusCodes } from 'http-status-codes';
-import { UsersContract } from '@repo/api-contract';
+import { UsersContract } from '@roar-dashboard/api-contract';
 
 import { eq } from 'drizzle-orm';
 import { AppDbClient } from '../db/clients';

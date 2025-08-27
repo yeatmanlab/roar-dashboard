@@ -1,3 +1,3 @@
-import { config } from '@repo/prettier-config';
+import { config } from '@roar-dashboard/prettier-config';
 
 export default config;

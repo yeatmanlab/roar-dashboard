@@ -1,5 +1,5 @@
 {
-  "name": "@repo/api-contract",
+  "name": "@roar-dashboard/api-contract",
   "version": "0.0.0",
   "type": "module",
   "exports": {

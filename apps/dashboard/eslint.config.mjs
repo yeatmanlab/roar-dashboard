@@ -1,4 +1,4 @@
-import { config as base } from '@repo/eslint-config/vue';
+import { config as base } from '@roar-dashboard/eslint-config/vue';
 import { fileURLToPath, URL } from 'url';
 
 export default [

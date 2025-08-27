@@ -1,5 +1,5 @@
 {
-  "extends": "@repo/typescript-config/library.json",
+  "extends": "@roar-dashboard/typescript-config/library.json",
   "compilerOptions": {
     "rootDir": "./src",
     "outDir": "./dist"
