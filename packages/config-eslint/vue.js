@@ -7,6 +7,19 @@ export const config = [
   ...baseConfig,
   ...vue.configs['flat/recommended'],
 
+  // Resolve Vite alias '@' -> './src' for JS/Vue projects
+  {
+    files: ['**/*.{js,vue,mjs}'],
+    settings: {
+      'import/resolver': {
+        alias: {
+          map: [['@', './src']],
+          extensions: ['.js', '.mjs', '.vue', '.json']
+        },
+      },
+    },
+  },
+
   // General frontend JS
   {
     files: ['**/src/**/*.js', '**/cypress/**/*.js'],
