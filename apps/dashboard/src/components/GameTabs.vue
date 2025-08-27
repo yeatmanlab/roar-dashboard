@@ -238,6 +238,7 @@ import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
 import VideoPlayer from '@/components/VideoPlayer.vue';
 import PvMessage from 'primevue/message';
+import { LEVANTE_TASKS, LEVANTE_TASK_IDS } from '@/constants/levanteTasks';
 
 const props = defineProps({
   games: { type: Array, required: true },
@@ -248,42 +249,16 @@ const props = defineProps({
 
 const { t, locale } = useI18n();
 
-const levanteTasks = [
-  'heartsAndFlowers',
-  'egmaMath',
-  'matrixReasoning',
-  'memoryGame',
-  'mentalRotation',
-  'sameDifferentSelection',
-  'theoryOfMind',
-  'trog',
-  'mefs',
-  'roarInference',
-];
-
-const levanteTaskIds = [
-  'hearts-and-flowers',
-  'egma-math',
-  'matrix-reasoning',
-  'memory-game',
-  'mental-rotation',
-  'same-different-selection',
-  'theory-of-mind',
-  'trog',
-  'mefs',
-  'roar-inference',
-];
-
 /** Filter out tasks that do not handle validity and reliability, thus allowing for retakes. Temporory until LEVANTE core-tasks implement validity/reliability handling. */
 const implementsValidityChecking = (taskId) => {
-  return !levanteTaskIds.includes(taskId);
+  return !LEVANTE_TASK_IDS.includes(taskId);
 };
 
 const getTaskName = (taskId, taskName) => {
   // Translate Levante task names. The task name is not the same as the taskId.
   const taskIdLowercased = taskId.toLowerCase();
 
-  if (levanteTasks.includes(camelize(taskIdLowercased))) {
+  if (LEVANTE_TASKS.includes(camelize(taskIdLowercased))) {
     return t(`gameTabs.${camelize(taskIdLowercased)}Name`);
   }
   return taskName;
@@ -292,7 +267,7 @@ const getTaskDescription = (taskId, taskDescription) => {
   // Translate Levante task descriptions if not in English
   const taskIdLowercased = taskId.toLowerCase();
 
-  if (levanteTasks.includes(camelize(taskIdLowercased))) {
+  if (LEVANTE_TASKS.includes(camelize(taskIdLowercased))) {
     return t(`gameTabs.${camelize(taskIdLowercased)}Description`);
   }
   return taskDescription;
@@ -302,13 +277,13 @@ const getRoutePath = (taskId) => {
   const lowerCasedAndCamelizedTaskId = camelize(taskId.toLowerCase());
   // For externally launched participants, prepend the launch route to the task path
   if (props.launchId) {
-    if (levanteTasks.includes(lowerCasedAndCamelizedTaskId)) {
+    if (LEVANTE_TASKS.includes(lowerCasedAndCamelizedTaskId)) {
       return `/launch/${props.launchId}/game/core-tasks/` + taskId;
     } else {
       return `/launch/${props.launchId}/game/` + taskId;
     }
   } else {
-    if (levanteTasks.includes(lowerCasedAndCamelizedTaskId)) {
+    if (LEVANTE_TASKS.includes(lowerCasedAndCamelizedTaskId)) {
       return '/game/core-tasks/' + taskId;
     } else {
       return '/game/' + taskId;
