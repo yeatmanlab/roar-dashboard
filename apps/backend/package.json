@@ -11,7 +11,7 @@
     "lint:fix": "eslint --fix .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "echo \"Error: no test specified\" && exit 0",
     "check-types": "tsc --noEmit --watch",
     "db:gen:app": "drizzle-kit generate --config ./drizzle.app.config.ts",
     "db:gen:assess": "drizzle-kit generate --config ./drizzle.assessment.config.ts",

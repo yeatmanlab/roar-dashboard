@@ -6,6 +6,9 @@
     },
     "build": {
       "env": ["DATABASE_URL", "APP_DATABASE_URL", "ASSESSMENT_DATABASE_URL", "PORT", "KEEP_ALIVE_TIMEOUT"]
+    },
+    "lint": {
+      "dependsOn": ["^@repo/api-contract#build"]
     }
   }
 }
