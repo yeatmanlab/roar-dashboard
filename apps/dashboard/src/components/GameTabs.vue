@@ -158,7 +158,11 @@
                             style="cursor: default"
                             >{{ taskCompletedMessage }}</span
                           >
-                          <PvMessage v-if="game?.allowRetake === true" severity="warn" class="w-full">
+                          <PvMessage
+                            v-if="game?.allowRetake === true && implementsValidityChecking(game.taskId)"
+                            severity="warn"
+                            class="w-full"
+                          >
                             <div class="flex flex-column align-items-center gap-2">
                               <span>{{ $t('gameTabs.allowRetake') }}</span>
                               <router-link
