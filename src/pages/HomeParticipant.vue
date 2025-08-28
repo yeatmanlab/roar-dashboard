@@ -27,9 +27,7 @@
         :upcomingAssignments="upcomingAssignments"
       />
 
-      <UpcomingAssignments v-if="selectedStatus === ASSIGNMENT_STATUSES.UPCOMING" :assignment="selectedAssignment" />
-
-      <div v-else class="assignment">
+      <div class="assignment">
         <div class="assignment__header">
           <PvTag :value="selectedStatus" class="text-xs uppercase" :class="`assignment__status --${selectedStatus}`" />
 
@@ -37,7 +35,7 @@
             {{ selectedAssignment?.publicName || selectedAssignment?.name }}
           </h2>
 
-          <div class="assignment__dates">
+          <div v-if="selectedAssignment?.dateOpened && selectedAssignment?.dateClosed" class="assignment__dates">
             <div class="assignment__date">
               <i class="pi pi-calendar"></i>
               <small
@@ -123,7 +121,6 @@ import SideBar from '@/components/SideBar.vue';
 import { useAssignmentsStore } from '@/store/assignments';
 import PvTag from 'primevue/tag';
 import { ASSIGNMENT_STATUSES } from '@/constants';
-import UpcomingAssignments from '@/components/assignments/UpcomingAssignments.vue';
 
 const showConsent = ref(false);
 const consentVersion = ref('');
@@ -192,9 +189,9 @@ const sortedUserAdministrations = computed(() => {
 });
 
 function isCurrent(assignment, now) {
-  const assigned = new Date(assignment?.dateOpened);
+  const opened = new Date(assignment?.dateOpened);
   const closed = new Date(assignment?.dateClosed);
-  return assigned <= now && closed >= now;
+  return opened <= now && closed >= now;
 }
 
 function isPast(assignment, now) {
@@ -211,12 +208,10 @@ const currentAssignments = computed(() => sortedUserAdministrations.value.filter
 const pastAssignments = computed(() => sortedUserAdministrations.value.filter((a) => isPast(a, now.value)));
 const upcomingAssignments = computed(() => sortedUserAdministrations.value.filter((a) => isUpcoming(a, now.value)));
 
-watch([assignmentsStore, sortedUserAdministrations], () => {
-  const assignment = assignmentsStore?.selectedAssignment || sortedUserAdministrations.value[0];
+watch([assignmentsStore, currentAssignments], () => {
+  const assignment = assignmentsStore?.selectedAssignment || currentAssignments.value[0] || [];
   assignmentsStore.setSelectedAssignment(assignment);
-  if (isCurrent(assignment, now.value)) assignmentsStore.setSelectedStatus(ASSIGNMENT_STATUSES.CURRENT);
-  if (isPast(assignment, now.value)) assignmentsStore.setSelectedStatus(ASSIGNMENT_STATUSES.PAST);
-  if (isUpcoming(assignment, now.value)) assignmentsStore.setSelectedStatus(ASSIGNMENT_STATUSES.UPCOMING);
+  assignmentsStore.setSelectedStatus(ASSIGNMENT_STATUSES.CURRENT);
 });
 
 const taskIds = computed(() => {
@@ -496,7 +491,7 @@ watch(
       console.warn('selectedAdmin or assessments not available during survey initialization');
       return;
     }
-    
+
     const isAssessment = selectedAdmin.value.assessments.some((task) => task.taskId === 'survey');
     if (!isLoaded || !isAssessment || surveyStore.survey) return;
 

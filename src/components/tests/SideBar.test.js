@@ -216,9 +216,9 @@ describe('SideBar.vue', () => {
       expect(currentGroup.exists()).toBe(true);
       expect(currentGroup.find('.assignment-group__title').text()).toBe('Current 01');
 
-      const assignment = currentGroup.find('.assignment-group__item');
-      expect(assignment.exists()).toBe(true);
-      expect(assignment.find('.assignment__name').text()).toBe('Public Test 1');
+      const assignment = currentGroup.find('.assignment-card');
+      const assignmentName = assignment.find('.assignment-card__name');
+      expect(assignmentName.html()).toContain('Public Test 1');
     });
 
     it('should display upcoming assignments in the panel', async () => {
@@ -285,7 +285,7 @@ describe('SideBar.vue', () => {
       await wrapper.find('.sidebar__toggle-btn').trigger('click');
       expect(wrapper.find('.sidebar__panel').exists()).toBe(true);
 
-      await wrapper.find('.assignment-group__item').trigger('click');
+      await wrapper.find('.assignment-card').trigger('click');
 
       expect(wrapper.find('.sidebar__panel').exists()).toBe(false);
     });

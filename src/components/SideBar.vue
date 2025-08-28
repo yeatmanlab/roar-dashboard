@@ -21,30 +21,14 @@
               >Current <span class="ml-auto font-medium">{{ numOfCurrentAssignments }}</span></small
             >
             <ul v-if="props.currentAssignments.length > 0" class="assignment-group__list">
-              <li
+              <AssignmentCard
                 v-for="assignment in props.currentAssignments"
                 :key="assignment?.id"
-                :class="`assignment-group__item ${
-                  assignmentsStore.selectedAssignment?.id === assignment?.id ? '--active' : ''
-                }`"
-                @click="() => onClickAssignment(assignment, ASSIGNMENT_STATUSES.CURRENT)"
-              >
-                <div class="assignment__content">
-                  <h4 class="assignment__name">{{ assignment?.publicName || assignment?.name }}</h4>
-                  <div class="assignment__dates">
-                    <i class="pi pi-calendar"></i>
-                    <small>{{ format(assignment?.dateOpened, 'MMM dd, yyyy') }}</small> —
-                    <small>{{ format(assignment?.dateClosed, 'MMM dd, yyyy') }}</small>
-                  </div>
-                </div>
-
-                <div
-                  v-if="assignmentsStore.selectedAssignment?.id === assignment?.id"
-                  class="assignment__selected-icon"
-                >
-                  <i class="pi pi-angle-right"></i>
-                </div>
-              </li>
+                :data="assignment"
+                :is-active="assignmentsStore.selectedAssignment?.id === assignment?.id"
+                :status="selectedStatus"
+                @click="onClickAssignment"
+              />
             </ul>
             <div v-else class="assignment-group__empty">No current assignments were found</div>
           </div>
@@ -57,30 +41,13 @@
               >Upcoming <span class="ml-auto font-medium">{{ numOfUpcomingAssignments }}</span></small
             >
             <ul v-if="props.upcomingAssignments.length > 0" class="assignment-group__list">
-              <li
+              <AssignmentCard
                 v-for="assignment in props.upcomingAssignments"
                 :key="assignment?.id"
-                :class="`assignment-group__item ${
-                  assignmentsStore.selectedAssignment?.id === assignment?.id ? '--active' : ''
-                }`"
-                @click="() => onClickAssignment(assignment, ASSIGNMENT_STATUSES.UPCOMING)"
-              >
-                <div class="assignment__content">
-                  <h4 class="assignment__name">{{ assignment?.publicName || assignment?.name }}</h4>
-                  <div class="assignment__dates">
-                    <i class="pi pi-calendar"></i>
-                    <small>{{ format(assignment?.dateOpened, 'MMM dd, yyyy') }}</small> —
-                    <small>{{ format(assignment?.dateClosed, 'MMM dd, yyyy') }}</small>
-                  </div>
-                </div>
-
-                <div
-                  v-if="assignmentsStore.selectedAssignment?.id === assignment?.id"
-                  class="assignment__selected-icon"
-                >
-                  <i class="pi pi-angle-right"></i>
-                </div>
-              </li>
+                :data="assignment"
+                :is-active="assignmentsStore.selectedAssignment?.id === assignment?.id"
+                :status="selectedStatus"
+              />
             </ul>
             <div v-else class="assignment-group__empty">No upcoming assignments were found</div>
           </div>
@@ -93,30 +60,13 @@
               >Past <span class="ml-auto font-medium">{{ numOfPastAssignments }}</span></small
             >
             <ul v-if="props.pastAssignments.length > 0" class="assignment-group__list">
-              <li
+              <AssignmentCard
                 v-for="assignment in props.pastAssignments"
                 :key="assignment?.id"
-                :class="`assignment-group__item ${
-                  assignmentsStore.selectedAssignment?.id === assignment?.id ? '--active' : ''
-                }`"
-                @click="() => onClickAssignment(assignment, ASSIGNMENT_STATUSES.PAST)"
-              >
-                <div class="assignment__content">
-                  <h4 class="assignment__name">{{ assignment?.publicName || assignment?.name }}</h4>
-                  <div class="assignment__dates">
-                    <i class="pi pi-calendar"></i>
-                    <small>{{ format(assignment?.dateOpened, 'MMM dd, yyyy') }}</small> —
-                    <small>{{ format(assignment?.dateClosed, 'MMM dd, yyyy') }}</small>
-                  </div>
-                </div>
-
-                <div
-                  v-if="assignmentsStore.selectedAssignment?.id === assignment?.id"
-                  class="assignment__selected-icon"
-                >
-                  <i class="pi pi-angle-right"></i>
-                </div>
-              </li>
+                :data="assignment"
+                :is-active="assignmentsStore.selectedAssignment?.id === assignment?.id"
+                :status="selectedStatus"
+              />
             </ul>
             <div v-else class="assignment-group__empty">No past assignments were found</div>
           </div>
@@ -165,8 +115,8 @@
 import { ASSIGNMENT_STATUSES } from '@/constants';
 import { useAssignmentsStore } from '@/store/assignments';
 import { AdministrationType } from '@levante-framework/levante-zod';
-import { format } from 'date-fns';
 import { computed, ref } from 'vue';
+import AssignmentCard from './assignments/AssignmentCard.vue';
 
 interface Props {
   currentAssignments?: AdministrationType[];
@@ -412,6 +362,14 @@ const onClickSideBarToggleBtn = () => {
   overflow-y: auto;
 }
 
+.assignment-group {
+  &.assignment-group--current {
+    .assignment-group__item {
+      cursor: pointer;
+    }
+  }
+}
+
 .assignment-group__title {
   display: flex;
   justify-content: flex-start;
@@ -442,7 +400,6 @@ const onClickSideBarToggleBtn = () => {
   padding: 0.75rem;
   border: 1px solid var(--surface-d);
   border-radius: 0.75rem;
-  cursor: pointer;
 
   &.--active {
     background: rgba(var(--bright-yellow-rgb), 0.1);

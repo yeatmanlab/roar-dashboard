@@ -149,15 +149,6 @@ export const getAssignmentsRequestBody = ({
         },
       });
     }
-  } else {
-    const currentDate = new Date().toISOString();
-    requestBody.structuredQuery.where = {
-      fieldFilter: {
-        field: { fieldPath: 'dateClosed' },
-        op: 'GREATER_THAN_OR_EQUAL',
-        value: { timestampValue: currentDate },
-      },
-    };
   }
 
   if (!_isEmpty(orderBy)) {
