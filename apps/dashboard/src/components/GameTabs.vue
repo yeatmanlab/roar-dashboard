@@ -10,7 +10,8 @@
           :class="[
             'p3 mr-1 text-base hover:bg-black-alpha-10',
             {
-              'text-yellow-600': game?.allowRetake === true && implementsValidityChecking(game.taskId),
+              'text-yellow-600':
+                (game?.allowRetake === true && implementsValidityChecking(game.taskId)) || game.startedOn,
               'text-green-500':
                 game.completedOn && (game?.allowRetake !== true || !implementsValidityChecking(game.taskId)),
               'bg-white': game.completedOn && (game?.allowRetake !== true || !implementsValidityChecking(game.taskId)),
