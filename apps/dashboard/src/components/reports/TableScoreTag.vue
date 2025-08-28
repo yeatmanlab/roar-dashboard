@@ -110,9 +110,7 @@ function handleToolTip(_taskId, _toolTip, _colData) {
       _toolTip += 'Num Attempted: ' + _colData.scores?.[_taskId]?.numAttempted + '\n';
       _toolTip += 'Percent Correct: ' + _colData.scores?.[_taskId]?.percentCorrect + '\n';
     } else if (tasksToDisplayGradeEstimate.includes(_taskId)) {
-      if (_colData.scores?.[_taskId]?.numCorrect) {
-        _toolTip += 'Num Correct: ' + _colData.scores?.[_taskId]?.numCorrect + '\n';
-      }
+      _toolTip += 'Num Correct: ' + _colData.scores?.[_taskId]?.numCorrect + '\n';
       _toolTip += 'Num Attempted: ' + _colData.scores?.[_taskId]?.numAttempted + '\n';
       if (_colData.scores?.[_taskId]?.gradeEstimate) {
         _toolTip += 'Grade Estimate: ' + _colData.scores?.[_taskId]?.gradeEstimate + '\n';
