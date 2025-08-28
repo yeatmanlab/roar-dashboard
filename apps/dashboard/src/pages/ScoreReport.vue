@@ -557,17 +557,13 @@ const getScoresAndSupportFromAssessment = ({
       tag_color = null;
     } else if (assessment.taskId === 'roam-alpaca') {
       const isNewScoring = _has(assessment, 'scores.computed.composite.roarScore');
-      const supportLevel = _get(assessment, 'scores.computed.composite.supportLevel');
-
-      support_level = isNewScoring ? supportLevel : '';
-      tag_color = isNewScoring ? getTagColor(supportLevel) : '#A4DDED';
-
-      /*
-       * Manually set instead of returning correct rawScoreKey using getScoreKeys
-       * because getScoreKeys is designed for tasks that display in IndividualScoreReport
-       * and it has yet to be determined how roam-alpaca will be displayed
-       */
-      rawScore = _get(assessment, `scores.computed.composite.${isNewScoring ? 'roarScore' : 'roamScore'}`);
+      const numAttempted = _get(assessment, 'scores.computed.composite.totalNumAttempted');
+      support_level = _get(assessment, 'scores.computed.composite.supportLevel') ?? '';
+      // Handles old scoring for alpaca
+      tag_color = !isNewScoring && !numAttempted ? '#EEEEF0' : getTagColor(support_level);
+      // Manually set instead of returning rawScoreKey using getScoreKeys
+      // because f(x) is designed for tasks that display in IndividualScoreReport (n/a for alpaca)
+      rawScore = _get(assessment, 'scores.computed.composite.roarScore');
     } else {
       support_level = '';
       tag_color = '#A4DDED';
@@ -818,18 +814,21 @@ const computeAssignmentAndRunData = computed(() => {
         }
         if (tasksToDisplayGradeEstimate.includes(taskId)) {
           const isNewScoring = _has(assessment, 'scores.computed.composite.roarScore');
-          if (isNewScoring) {
-            currRowScores[taskId].numCorrect = _get(assessment, 'scores.computed.composite.rawScore');
-          }
-          currRowScores[taskId].numAttempted = _get(
-            assessment,
-            `scores.computed.composite.${isNewScoring ? 'numAttempted' : 'totalNumAttempted'}`,
-          );
-          // Copied previous implementation for old scoring system where gradeEstimate was thetaEstimate
-          currRowScores[taskId].gradeEstimate = _get(
-            assessment,
-            `scores.computed.composite.${isNewScoring ? 'gradeEstimate' : 'thetaEstimate'}`,
-          );
+
+          const propertyKeys = isNewScoring ? 
+            ['rawScore', 'numAttempted', 'gradeEstimate'] : 
+            ['totalCorrect', 'totalNumAttempted', 'thetaEstimate'];
+
+          const [rawNumCorrect, numAttempted, gradeEstimate] = propertyKeys.map(key => 
+            _get(assessment, `scores.computed.composite.${key}`));
+
+          // Special handling for older scoring, returns undefined for correct even if attempted != 0
+          // Otherwise, return original even if undefined because numAttempted is falsy
+          const isOldAttempted = !isNewScoring && numAttempted > 0 && !rawNumCorrect;
+          const numCorrect = isOldAttempted ? 0 : rawNumCorrect;
+  
+          Object.assign(currRowScores[taskId], {numCorrect, numAttempted, gradeEstimate});
+          
         }
         if (['fluency-calf', 'fluency-arf', 'fluency-calf-es', 'fluency-arf-es'].includes(taskId)) {
           const fc = _get(assessment, 'scores.computed.FC.roamScore');
