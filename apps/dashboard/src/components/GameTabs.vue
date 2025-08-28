@@ -7,16 +7,7 @@
           :key="game.taskId"
           :disabled="isGameTabDisabled(index)"
           :value="String(index)"
-          :class="[
-            'p3 mr-1 text-base hover:bg-black-alpha-10',
-            {
-              'text-yellow-600':
-                (game?.allowRetake === true && implementsValidityChecking(game.taskId)) || game.startedOn,
-              'text-green-500':
-                game.completedOn && (game?.allowRetake !== true || !implementsValidityChecking(game.taskId)),
-              'bg-white': game.completedOn && (game?.allowRetake !== true || !implementsValidityChecking(game.taskId)),
-            },
-          ]"
+          :class="['p3 mr-1 text-base hover:bg-black-alpha-10', setGameTabTextColor(game)]"
           style="border: solid 2px #00000014; border-radius: 10px"
         >
           <span class="flex align-items-center gap-2">
@@ -239,7 +230,8 @@ import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
 import VideoPlayer from '@/components/VideoPlayer.vue';
 import PvMessage from 'primevue/message';
-import { LEVANTE_TASKS, LEVANTE_TASK_IDS } from '@/constants/levanteTasks';
+import { LEVANTE_TASKS } from '@/constants/levanteTasks';
+import { TASKS_EXCLUDED_FROM_RETAKE } from '@/constants/tasksExcludedFromRetake';
 
 const props = defineProps({
   games: { type: Array, required: true },
@@ -250,9 +242,9 @@ const props = defineProps({
 
 const { t, locale } = useI18n();
 
-/** Filter out tasks that do not handle validity and reliability, thus allowing for retakes. Temporory until LEVANTE core-tasks implement validity/reliability handling. */
+/** Filter out tasks that do not handle validity and reliability, thus allowing for retakes. **/
 const implementsValidityChecking = (taskId) => {
-  return !LEVANTE_TASK_IDS.includes(taskId);
+  return !TASKS_EXCLUDED_FROM_RETAKE.includes(taskId);
 };
 
 const getTaskName = (taskId, taskName) => {
@@ -290,6 +282,27 @@ const getRoutePath = (taskId) => {
       return '/game/' + taskId;
     }
   }
+};
+
+// Helper functions for game tab styling conditions
+const isGameRequiresRetake = (game) => {
+  return game?.allowRetake === true && implementsValidityChecking(game.taskId);
+};
+
+const isGameInProgress = (game) => {
+  return game.startedOn && !game.completedOn;
+};
+
+const isGameCompleted = (game) => {
+  return game.completedOn && (game?.allowRetake !== true || !implementsValidityChecking(game.taskId));
+};
+
+const setGameTabTextColor = (game) => {
+  return {
+    'text-yellow-600': isGameRequiresRetake(game) || isGameInProgress(game),
+    'text-green-500': isGameCompleted(game),
+    'bg-white': isGameCompleted(game),
+  };
 };
 
 const isGameTabDisabled = (index) => {
