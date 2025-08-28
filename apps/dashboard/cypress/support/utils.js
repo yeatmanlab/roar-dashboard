@@ -22,7 +22,7 @@ export const isCurrentVersion = async (app) => {
 
   const owner = 'yeatmanlab';
   const repository = 'roar-dashboard';
-  const filePath = 'package.json';
+  const filePath = 'apps/dashboard/package.json';
   const branch = 'main';
 
   const url = `https://api.github.com/repos/${owner}/${repository}/contents/${filePath}?ref=${branch}`;
