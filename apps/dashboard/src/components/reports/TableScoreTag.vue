@@ -155,8 +155,7 @@ function handleSubskillToolTip(_taskId, _subskillId, _toolTip, _colData) {
     }
   } else if (roamFluencyTasks.includes(_taskId)) {
     Object.entries(roamFluencySubskillHeaders).forEach(([property, propertyHeader]) => {
-      const isResponseModality = _colData.scores?.[_taskId]?.recruitment === 'responseModality';
-      if (!isResponseModality && subskillInfo?.[property] != undefined) {
+      if (subskillInfo?.[property] != undefined) {
         _toolTip += `${propertyHeader}: ${subskillInfo?.[property]}\n`;
       }
     });
