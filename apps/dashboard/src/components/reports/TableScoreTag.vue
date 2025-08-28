@@ -37,9 +37,9 @@ import {
   tasksToDisplayThetaScore,
   rawOnlyTasks,
   scoredTasks,
+  taskDisplayNames,
+  includedValidityFlags,
 } from '@/helpers/reports.js';
-import { taskDisplayNames } from '@/helpers/reports';
-import { includedValidityFlags } from '@/helpers/reports';
 
 defineProps({
   colData: {

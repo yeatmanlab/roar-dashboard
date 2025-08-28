@@ -16,7 +16,7 @@
       <StepPanels>
         <!-- Upload CSV -->
         <StepPanel v-slot="{ activateCallback }" value="1">
-          <div v-if="!_isEmpty(rawStudentFile)" class="flex py-3 justify-between">
+          <div v-if="!_isEmpty(rawStudentFile)" class="flex justify-between py-3">
             <Button v-if="!_isEmpty(rawStudentFile)" label="Upload a different File" @click="resetUpload()" />
             <Button
               label="Next"
@@ -30,7 +30,7 @@
               <div v-if="_isEmpty(rawStudentFile)" class="text-gray-500 surface-100 border-round-top-md">
                 <PvFileUpload
                   name="massUploader[]"
-                  class="bg-primary text-white border-none border-round hover:bg-red-900"
+                  class="text-white border-none bg-primary border-round hover:bg-red-900"
                   custom-upload
                   accept=".csv"
                   auto
@@ -39,7 +39,7 @@
                   @uploader="onFileUpload($event)"
                 >
                   <template #empty>
-                    <div class="extra-height ml-6 text-gray-500">
+                    <div class="ml-6 text-gray-500 extra-height">
                       <p>Drag and drop files to here to upload.</p>
                     </div>
                   </template>
@@ -69,7 +69,7 @@
         </StepPanel>
         <!-- Required Fields -->
         <StepPanel v-slot="{ activateCallback }" value="2">
-          <div class="flex py-3 justify-between">
+          <div class="flex justify-between py-3">
             <Button label="Back" severity="secondary" icon="pi pi-arrow-left" @click="activateCallback('1')" />
             <h2 class="step-header">Required</h2>
             <Button
@@ -81,7 +81,7 @@
             />
           </div>
           <div class="step-container">
-            <div class="flex flex-column gap-3 p-4 w-full">
+            <div class="flex gap-3 p-4 w-full flex-column">
               <div class="flex align-items-center">
                 <label class="mr-2">Use Email</label>
                 <PvToggleSwitch v-model="usingEmail" />
@@ -89,7 +89,7 @@
               <div v-if="usingEmail" class="step-field-item">
                 <div>
                   <span class="font-bold">Email<span class="text-red-500">*</span></span>
-                  <p class="text-gray-500 my-2">The student's email address</p>
+                  <p class="my-2 text-gray-500">The student's email address</p>
                 </div>
                 <Dropdown
                   v-model="mappedColumns.required.email"
@@ -101,7 +101,7 @@
               <div v-else class="step-field-item">
                 <div>
                   <span class="font-bold">Username<span class="text-red-500">*</span></span>
-                  <p class="text-gray-500 my-2">The student's username</p>
+                  <p class="my-2 text-gray-500">The student's username</p>
                 </div>
                 <Dropdown
                   v-model="mappedColumns.required.username"
@@ -113,7 +113,7 @@
               <div class="step-field-item">
                 <div>
                   <span class="font-bold">Password<span class="text-red-500">*</span></span>
-                  <p class="text-gray-500 my-2">The student's password</p>
+                  <p class="my-2 text-gray-500">The student's password</p>
                 </div>
                 <Dropdown
                   v-model="mappedColumns.required.password"
@@ -125,7 +125,7 @@
               <div class="step-field-item">
                 <div>
                   <span class="font-bold">Date of Birth<span class="text-red-500">*</span></span>
-                  <p class="text-gray-500 my-2">The student's date of birth</p>
+                  <p class="my-2 text-gray-500">The student's date of birth</p>
                 </div>
                 <Dropdown
                   v-model="mappedColumns.required.dob"
@@ -137,7 +137,7 @@
               <div class="step-field-item">
                 <div>
                   <span class="font-bold">Grade<span class="text-red-500">*</span></span>
-                  <p class="text-gray-500 my-2">The student's grade</p>
+                  <p class="my-2 text-gray-500">The student's grade</p>
                 </div>
                 <Dropdown
                   v-model="mappedColumns.required.grade"
@@ -151,17 +151,17 @@
         </StepPanel>
         <!-- Names Fields -->
         <StepPanel v-slot="{ activateCallback }" value="3">
-          <div class="flex py-3 justify-between">
+          <div class="flex justify-between py-3">
             <Button label="Back" severity="secondary" icon="pi pi-arrow-left" @click="activateCallback('2')" />
             <h2 class="step-header">Names</h2>
             <Button label="Next" icon="pi pi-arrow-right" icon-pos="right" @click="activateCallback('4')" />
           </div>
           <div class="step-container">
-            <div class="flex flex-column gap-3 p-4 w-full">
+            <div class="flex gap-3 p-4 w-full flex-column">
               <div v-for="(value, key) in nameFields" :key="key" class="step-field-item">
                 <div>
                   <span class="font-bold"> {{ value.label }}</span>
-                  <p class="text-gray-500 my-2">{{ value.description }}</p>
+                  <p class="my-2 text-gray-500">{{ value.description }}</p>
                 </div>
                 <Dropdown
                   v-model="mappedColumns.names[value.field]"
@@ -189,11 +189,11 @@
                 },
               }"
             >
-              <div class="flex flex-column gap-3 pt-2 w-full">
+              <div class="flex gap-3 pt-2 w-full flex-column">
                 <div v-for="(value, key) in demographicFields" :key="key" class="step-field-item">
                   <div>
                     <span class="font-bold"> {{ value.label }}</span>
-                    <p class="text-gray-500 my-2">{{ value.description }}</p>
+                    <p class="my-2 text-gray-500">{{ value.description }}</p>
                   </div>
                   <MultiSelect
                     v-if="value.field === 'race'"
@@ -216,18 +216,18 @@
         </StepPanel>
         <!-- Other Fields -->
         <StepPanel v-slot="{ activateCallback }" value="5">
-          <div class="flex py-3 justify-between">
+          <div class="flex justify-between py-3">
             <Button label="Back" severity="secondary" icon="pi pi-arrow-left" @click="activateCallback('4')" />
             <h2 class="step-header">Other</h2>
             <Button label="Next" icon="pi pi-arrow-right" icon-pos="right" @click="activateCallback('6')" />
           </div>
           <div class="step-container">
-            <div class="flex flex-column gap-3 p-4 w-full">
+            <div class="flex gap-3 p-4 w-full flex-column">
               <div v-for="(value, key) in optionalFields" :key="key">
                 <div v-if="!value?.permission || userCan(value?.permission)" class="step-field-item">
                   <div>
                     <span class="font-bold"> {{ value.label }}</span>
-                    <p class="text-gray-500 my-2">{{ value.description }}</p>
+                    <p class="my-2 text-gray-500">{{ value.description }}</p>
                   </div>
                   <Dropdown
                     v-model="mappedColumns.optional[value.field]"
@@ -242,7 +242,7 @@
         </StepPanel>
         <!-- Organizations -->
         <StepPanel v-slot="{ activateCallback }" value="6">
-          <div class="py-3 flex justify-between">
+          <div class="flex justify-between py-3">
             <Button label="Back" severity="secondary" icon="pi pi-arrow-left" @click="activateCallback('5')" />
             <h2 class="step-header">Organizations</h2>
             <Button
@@ -257,9 +257,9 @@
             />
           </div>
           <div class="step-container">
-            <div class="flex flex-column gap-3 w-full">
+            <div class="flex gap-3 w-full flex-column">
               <div class="flex justify-between">
-                <div class="flex align-items-center gap-2 flex-column justify-content-">
+                <div class="flex gap-2 align-items-center flex-column justify-content-">
                   <SelectButton
                     v-model="usingOrgPicker"
                     :options="[
@@ -280,16 +280,16 @@
                 <div>
                   <div style="margin-left: -25px">One of the following required:</div>
                   <div :class="{ 'text-green-500': eduOrgsSelected }">
-                    <i v-if="eduOrgsSelected" class="pi pi-check mr-2" style="margin-left: -25px" /><i
+                    <i v-if="eduOrgsSelected" class="mr-2 pi pi-check" style="margin-left: -25px" /><i
                       v-else
-                      class="pi pi-circle mr-2"
+                      class="mr-2 pi pi-circle"
                       style="margin-left: -25px"
                     />At least one district and one school
                   </div>
                   <div :class="{ 'text-green-500': nonEduOrgsSelected }">
-                    <i v-if="nonEduOrgsSelected" class="pi pi-check mr-2" style="margin-left: -25px" /><i
+                    <i v-if="nonEduOrgsSelected" class="mr-2 pi pi-check" style="margin-left: -25px" /><i
                       v-else
-                      class="pi pi-circle mr-2"
+                      class="mr-2 pi pi-circle"
                       style="margin-left: -25px"
                     />At least one group
                   </div>
@@ -299,7 +299,7 @@
                 <OrgPicker @selection="orgSelection($event)" />
               </div>
               <div v-else>
-                <div class="flex flex-column gap-3 p-4">
+                <div class="flex gap-3 p-4 flex-column">
                   <div v-for="(value, key) in orgFields" :key="key" class="step-field-item">
                     <div>
                       <span class="font-bold"> {{ value.label }}</span>
@@ -318,7 +318,7 @@
         </StepPanel>
         <!-- Preview & Submit -->
         <StepPanel v-slot="{ activateCallback }" value="7">
-          <div class="flex py-3 justify-between">
+          <div class="flex justify-between py-3">
             <Button label="Back" severity="secondary" icon="pi pi-arrow-left" @click="activateCallback('6')" />
             <h2 class="step-header">Preview & Submit</h2>
             <Button
@@ -330,14 +330,14 @@
               @click="submit()"
             />
           </div>
-          <div class="step-container flex flex-column">
+          <div class="flex step-container flex-column">
             <div v-if="submitting !== SubmitStatus.IDLE">
-              <div class="flex flex-column gap-3">
+              <div class="flex gap-3 flex-column">
                 <h3 v-if="submitting === SubmitStatus.TRANSFORMING" class="step-header">
-                  <i class="pi pi-spinner pi-spin mr-2"></i>Formatting Students...
+                  <i class="mr-2 pi pi-spinner pi-spin"></i>Formatting Students...
                 </h3>
                 <h3 v-if="submitting === SubmitStatus.SUBMITTING" class="step-header">
-                  <i class="pi pi-spinner pi-spin mr-2"></i>Submitting...
+                  <i class="mr-2 pi pi-spinner pi-spin"></i>Submitting...
                 </h3>
                 <h3 v-if="submitting === SubmitStatus.COMPLETE" class="step-header">Upload Complete.</h3>
               </div>
@@ -390,8 +390,7 @@ import ScrollPanel from 'primevue/scrollpanel';
 import SelectButton from 'primevue/selectbutton';
 import MultiSelect from 'primevue/multiselect';
 import { usePermissions } from '../composables/usePermissions';
-import { exportCsv } from '@/helpers/query/utils';
-import { orderByDefault } from '@/helpers/query/utils';
+import { exportCsv, orderByDefault } from '@/helpers/query/utils';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useUserType from '@/composables/useUserType';
 import _without from 'lodash/without';

@@ -7,6 +7,19 @@ export const config = [
   ...baseConfig,
   ...vue.configs['flat/recommended'],
 
+  // Resolve Vite alias '@' -> './src' for JS/Vue projects
+  {
+    files: ['**/*.{js,vue,mjs}'],
+    settings: {
+      'import/resolver': {
+        alias: {
+          map: [['@', './src']],
+          extensions: ['.js', '.mjs', '.vue', '.json']
+        },
+      },
+    },
+  },
+
   // General frontend JS
   {
     files: ['**/src/**/*.js', '**/cypress/**/*.js'],
@@ -77,7 +90,7 @@ export const config = [
 
   // Cypress config
   {
-    files: ['cypress.config.cjs'],
+    files: ['**/cypress.config.cjs'],
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',
@@ -91,7 +104,7 @@ export const config = [
 
   // Vite and Vitest configs
   {
-    files: ['vite.config.js', 'vitest.config.js', 'vitest.setup.js'],
+    files: ['**/vite.config.js', '**/vitest.config.js', '**/vitest.setup.js'],
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',

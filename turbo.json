@@ -10,11 +10,13 @@
     "DOTENV_PRIVATE_KEY_STAGING",
     "DOTENV_PRIVATE_KEY_PRODUCTION"
   ],
+  "globalDependencies": [".env"], 
   "tasks": {
     "dev": {
       "dependsOn": ["^build"],
       "cache": false,
-      "persistent": true
+      "persistent": true,
+      "interruptible": true
     },
     "build": {
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
@@ -22,6 +24,9 @@
       "outputs": [
         "dist/**"
       ]
+    },
+    "check-types": {
+      "dependsOn": ["^check-types"]
     },
     "test": {
       "outputs": ["coverage/**"]
