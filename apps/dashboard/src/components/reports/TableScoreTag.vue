@@ -101,24 +101,18 @@ function handleToolTip(_taskId, _toolTip, _colData) {
       _toolTip += 'Correct - Incorrect: ' + _colData.scores?.[_taskId]?.correctIncorrectDifference + '\n';
     } else if (tasksToDisplayTotalCorrect.includes(_taskId)) {
       const numCorrect = _colData.scores?.[_taskId]?.numCorrect;
-      const numIncorrect = _colData.scores?.[_taskId]?.numIncorrect;
       const numAttempted = _colData.scores?.[_taskId]?.numAttempted;
 
-      if (numCorrect === 0 && numIncorrect === 0 && numAttempted === 0) {
+      if (!(numCorrect != undefined && numAttempted != undefined)) {
         return '';
       }
 
-      if (_colData.scores?.[_taskId]?.recruitment !== 'responseModality') {
-        _toolTip += 'Raw Score: ' + _colData.scores?.[_taskId]?.rawScore + '\n';
-      }
-
-      Object.entries(roamFluencySubskillHeaders)
-        .slice(1)
-        .forEach(([property, propertyHeader]) => {
-          if (_colData.scores?.[_taskId]?.[property] != undefined) {
-            _toolTip += `${propertyHeader}: ${_colData.scores?.[_taskId]?.[property]}\n`;
-          }
-        });
+      const isResponseModality = _colData.scores?.[_taskId]?.recruitment === 'responseModality';
+      Object.entries(roamFluencySubskillHeaders).forEach(([property, propertyHeader]) => {
+        if (_colData.scores?.[_taskId]?.[property] != undefined && !(isResponseModality && property === 'rawScore')) {
+          _toolTip += `${propertyHeader}: ${_colData.scores?.[_taskId]?.[property]}\n`;
+        }
+      });
     } else if (tasksToDisplayPercentCorrect.includes(_taskId)) {
       _toolTip += 'Num Correct: ' + _colData.scores?.[_taskId]?.numCorrect + '\n';
       _toolTip += 'Num Attempted: ' + _colData.scores?.[_taskId]?.numAttempted + '\n';
@@ -161,7 +155,8 @@ function handleSubskillToolTip(_taskId, _subskillId, _toolTip, _colData) {
     }
   } else if (roamFluencyTasks.includes(_taskId)) {
     Object.entries(roamFluencySubskillHeaders).forEach(([property, propertyHeader]) => {
-      if (subskillInfo?.[property] != undefined) {
+      const isResponseModality = _colData.scores?.[_taskId]?.recruitment === 'responseModality';
+      if (!isResponseModality && subskillInfo?.[property] != undefined) {
         _toolTip += `${propertyHeader}: ${subskillInfo?.[property]}\n`;
       }
     });

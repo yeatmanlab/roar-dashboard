@@ -516,13 +516,6 @@ function returnColorByReliability(assessment, rawScore, support_level, tag_color
         return '#EEEEF0';
       }
       return '#A4DDED';
-    } else if (tasksToDisplayTotalCorrect.includes(assessment.taskId)) {
-      const test = assessment.scores?.raw?.composite?.test;
-      if (test?.numAttempted === 0 || test?.numAttempted === undefined) {
-        return '#EEEEF0';
-      } else {
-        return '#A4DDED';
-      }
     } else if (tasksToDisplayThetaScore.includes(assessment.taskId)) {
       const test = assessment.scores?.raw?.composite?.test;
       if (test?.thetaEstimate === undefined || test?.thetaEstimate === '') {
@@ -567,9 +560,11 @@ const getScoresAndSupportFromAssessment = ({
       support_level = '';
       tag_color = '#A4DDED';
       if (tasksToDisplayTotalCorrect.includes(taskId)) {
-        const isNewScoring = !_has(assessment, 'scores.computed.composite.roamScore');
-        // Previous scoring returned numCorrect for rawScore in scoreReportColumns, confirmed roamScore with Kruttika
-        rawScore = _get(assessment, `scores.computed.composite.${isNewScoring ? 'rawScore' : 'roamScore'}`);
+        const isNewScoring = _has(assessment, 'scores.computed.composite.rawScore');
+        const numAttempted = _get(assessment, 'scores.computed.composite.totalNumAttempted');
+        // Handles tag color for old scoring
+        tag_color = !isNewScoring && !numAttempted ? '#EEEEF0' : '#A4DDED';
+        rawScore = _get(assessment, 'scores.computed.composite.rawScore');
       }
     }
   } else {
@@ -770,44 +765,25 @@ const computeAssignmentAndRunData = computed(() => {
           currRowScores[taskId].tagColor = percentCorrect === null ? 'transparent' : tagColor;
           scoreFilterTags += ' Assessed ';
         } else if (tasksToDisplayTotalCorrect.includes(taskId)) {
-          const isNewScoring = !_has(assessment, 'scores.computed.composite.roamScore');
-          const numAttempted = _get(
-            assessment,
-            `scores.computed.composite.${isNewScoring ? 'numAttempted' : 'totalNumAttempted'}`,
-          );
-          if (isNewScoring) {
-            currRowScores[taskId].numCorrect = _get(assessment, `scores.computed.composite.numCorrect`);
-            currRowScores[taskId].numIncorrect = _get(assessment, `scores.computed.composite.numIncorrect`);
-          }
+          // isNewScoring is 1.2.23+, otherwise handles 1.2.14
+          const isNewScoring = _has(assessment, 'scores.computed.composite.rawScore');
+          const propertyKeys = isNewScoring ? ['numCorrect', 'numIncorrect', 'numAttempted'] : ['totalCorrect', '', 'totalNumAttempted'];
 
-          currRowScores[taskId].numAttempted = numAttempted;
-          /**
-           * TODO:
-           * - If the composite exists, the raw score should exist as well.
-           * Check and see if we can simplify the condition here and in returnColorByReliability.
-           * - What happens if numAttempted is 0?
-           */
+          const [rawNumCorrect, numIncorrect, numAttempted] = propertyKeys.map(key => 
+            _get(assessment, `scores.computed.composite.${key}`));
+
+          // Special handling for older scoring, returns undefined for correct even if attempted != 0
+          // Otherwise, return original even if undefined because numAttempted is falsy
+          const isOldAttempted = !isNewScoring && numAttempted > 0 && !rawNumCorrect;
+          const numCorrect = isOldAttempted ? 0 : rawNumCorrect;
+
+          Object.assign(currRowScores[taskId], {numCorrect, numIncorrect, numAttempted});
+
           currRowScores[taskId].tagColor =
             numAttempted === undefined || numAttempted === 0 ? '#EEEEF0' : numAttempted !== 0 ? tagColor : '#EEEEF0';
           currRowScores[taskId].recruitment = _get(assessment, 'params.recruitment');
-
-          const fc = { ..._get(assessment, 'scores.computed.FC') };
-          const fr = { ..._get(assessment, 'scores.computed.FR') };
-
-          // Set to corresponding new keys to use in SubscoreTable
-          if (!isNewScoring) {
-            [fc, fr].forEach((subscore) => {
-              if (Object.keys(subscore).length > 0) {
-                Object.assign(subscore, {
-                  rawScore: _round(subscore.roamScore, 2),
-                  numAttempted: subscore.totalNumAttempted,
-                });
-              }
-            });
-          }
-
-          currRowScores[taskId].fc = fc;
-          currRowScores[taskId].fr = fr;
+          currRowScores[taskId].fc = _get(assessment, 'scores.computed.FC');
+          currRowScores[taskId].fr = _get(assessment, 'scores.computed.FR');
 
           scoreFilterTags += ' Assessed ';
         }
