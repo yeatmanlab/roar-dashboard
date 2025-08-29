@@ -7,14 +7,7 @@
           :key="game.taskId"
           :disabled="isGameTabDisabled(index)"
           :value="String(index)"
-          :class="[
-            'p3 mr-1 text-base hover:bg-black-alpha-10',
-            {
-              'text-yellow-600': game?.allowRetake === true,
-              'text-green-500': game.completedOn && game?.allowRetake !== true,
-              'bg-white': game.completedOn && game?.allowRetake !== true,
-            },
-          ]"
+          :class="['p3 mr-1 text-base hover:bg-black-alpha-10', setGameTabTextColor(game)]"
           style="border: solid 2px #00000014; border-radius: 10px"
         >
           <span class="flex align-items-center gap-2">
@@ -33,7 +26,7 @@
           <template #header>
             <!--Retake required-->
             <i
-              v-if="game?.allowRetake === true"
+              v-if="game?.allowRetake === true && implementsValidityChecking(game.taskId)"
               class="pi pi-exclamation-circle mr-2"
               data-game-status="retake-required"
             />
@@ -145,12 +138,23 @@
                         }"
                         class="flex align-items-center justify-content-center"
                       >
-                        <i v-if="game.completedOn && game.allowRetake !== true" class="pi pi-check-circle mr-3" />
+                        <i
+                          v-if="
+                            game.completedOn && (game.allowRetake !== true || !implementsValidityChecking(game.taskId))
+                          "
+                          class="pi pi-check-circle mr-3"
+                        />
                         <div class="flex flex-column align-items-center gap-2">
-                          <span v-if="game.allowRetake !== true" style="cursor: default">{{
-                            taskCompletedMessage
-                          }}</span>
-                          <PvMessage v-if="game?.allowRetake === true" severity="warn" class="w-full">
+                          <span
+                            v-if="game.allowRetake !== true || !implementsValidityChecking(game.taskId)"
+                            style="cursor: default"
+                            >{{ taskCompletedMessage }}</span
+                          >
+                          <PvMessage
+                            v-if="game?.allowRetake === true && implementsValidityChecking(game.taskId)"
+                            severity="warn"
+                            class="w-full"
+                          >
                             <div class="flex flex-column align-items-center gap-2">
                               <span>{{ $t('gameTabs.allowRetake') }}</span>
                               <router-link
@@ -226,6 +230,8 @@ import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
 import VideoPlayer from '@/components/VideoPlayer.vue';
 import PvMessage from 'primevue/message';
+import { LEVANTE_TASKS } from '@/constants/levanteTasks';
+import { TASKS_EXCLUDED_FROM_RETAKE } from '@/constants/tasksExcludedFromRetake';
 
 const props = defineProps({
   games: { type: Array, required: true },
@@ -236,24 +242,16 @@ const props = defineProps({
 
 const { t, locale } = useI18n();
 
-const levanteTasks = [
-  'heartsAndFlowers',
-  'egmaMath',
-  'matrixReasoning',
-  'memoryGame',
-  'mentalRotation',
-  'sameDifferentSelection',
-  'theoryOfMind',
-  'trog',
-  'mefs',
-  'roarInference',
-];
+/** Filter out tasks that do not handle validity and reliability, thus allowing for retakes. **/
+const implementsValidityChecking = (taskId) => {
+  return !TASKS_EXCLUDED_FROM_RETAKE.includes(taskId);
+};
 
 const getTaskName = (taskId, taskName) => {
   // Translate Levante task names. The task name is not the same as the taskId.
   const taskIdLowercased = taskId.toLowerCase();
 
-  if (levanteTasks.includes(camelize(taskIdLowercased))) {
+  if (LEVANTE_TASKS.includes(camelize(taskIdLowercased))) {
     return t(`gameTabs.${camelize(taskIdLowercased)}Name`);
   }
   return taskName;
@@ -262,7 +260,7 @@ const getTaskDescription = (taskId, taskDescription) => {
   // Translate Levante task descriptions if not in English
   const taskIdLowercased = taskId.toLowerCase();
 
-  if (levanteTasks.includes(camelize(taskIdLowercased))) {
+  if (LEVANTE_TASKS.includes(camelize(taskIdLowercased))) {
     return t(`gameTabs.${camelize(taskIdLowercased)}Description`);
   }
   return taskDescription;
@@ -272,18 +270,39 @@ const getRoutePath = (taskId) => {
   const lowerCasedAndCamelizedTaskId = camelize(taskId.toLowerCase());
   // For externally launched participants, prepend the launch route to the task path
   if (props.launchId) {
-    if (levanteTasks.includes(lowerCasedAndCamelizedTaskId)) {
+    if (LEVANTE_TASKS.includes(lowerCasedAndCamelizedTaskId)) {
       return `/launch/${props.launchId}/game/core-tasks/` + taskId;
     } else {
       return `/launch/${props.launchId}/game/` + taskId;
     }
   } else {
-    if (levanteTasks.includes(lowerCasedAndCamelizedTaskId)) {
+    if (LEVANTE_TASKS.includes(lowerCasedAndCamelizedTaskId)) {
       return '/game/core-tasks/' + taskId;
     } else {
       return '/game/' + taskId;
     }
   }
+};
+
+// Helper functions for game tab styling conditions
+const isGameRequiresRetake = (game) => {
+  return game?.allowRetake === true && implementsValidityChecking(game.taskId);
+};
+
+const isGameInProgress = (game) => {
+  return game.startedOn && !game.completedOn;
+};
+
+const isGameCompleted = (game) => {
+  return game.completedOn && (game?.allowRetake !== true || !implementsValidityChecking(game.taskId));
+};
+
+const setGameTabTextColor = (game) => {
+  return {
+    'text-yellow-600': isGameRequiresRetake(game) || isGameInProgress(game),
+    'text-green-500': isGameCompleted(game),
+    'bg-white': isGameCompleted(game),
+  };
 };
 
 const isGameTabDisabled = (index) => {
