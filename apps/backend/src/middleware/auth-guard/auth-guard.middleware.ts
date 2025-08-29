@@ -3,6 +3,7 @@ import createError from 'http-errors';
 import { StatusCodes } from 'http-status-codes';
 import { AuthService } from '../../services/auth/auth.service';
 import { extractJwt } from './jwt-extractor';
+import { API_ERROR_CODES } from '../../constants/api-error-codes';
 
 // Ready-to-use AuthService singleton is imported directly
 
@@ -21,11 +22,22 @@ import { extractJwt } from './jwt-extractor';
 export async function AuthGuardMiddleware(req: Request, res: Response, next: NextFunction) {
   try {
     const token = extractJwt(req);
-    if (!token) return next(createError(StatusCodes.UNAUTHORIZED, 'Missing bearer token'));
+    if (!token)
+      return next(
+        createError(StatusCodes.UNAUTHORIZED, {
+          message: 'Missing bearer token.',
+          code: API_ERROR_CODES.AUTH_REQUIRED,
+        }),
+      );
 
     req.user = await AuthService.verifyToken(token);
     return next();
   } catch {
-    return next(createError(StatusCodes.UNAUTHORIZED, 'Invalid or expired token'));
+    return next(
+      createError(StatusCodes.UNAUTHORIZED, {
+        message: 'Invalid or expired token.',
+        code: API_ERROR_CODES.AUTH_INVALID,
+      }),
+    );
   }
 }
