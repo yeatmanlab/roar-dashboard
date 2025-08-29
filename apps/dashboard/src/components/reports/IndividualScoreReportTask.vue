@@ -44,6 +44,11 @@
             <template #percentage>
               <strong>{{ Math.round(task.percentileScore.value) }}</strong>
             </template>
+            <template #supportCategory>
+              <strong>{{
+                getSupportLevelLanguage(grade, task?.percentileScore.value, task?.rawScore.value, task.taskId)
+              }}</strong>
+            </template>
             <template #taskName>
               {{ taskDisplayNames[task.taskId]?.extendedName }}
             </template>
@@ -59,6 +64,11 @@
             </template>
             <template #rawScore>
               <strong>{{ task.rawScore.value }}</strong>
+            </template>
+            <template #supportCategory>
+              <strong>{{
+                getSupportLevelLanguage(grade, task?.percentileScore.value, task?.rawScore.value, task.taskId)
+              }}</strong>
             </template>
             <template #taskName>
               {{ taskDisplayNames[task.taskId]?.extendedName }}
@@ -93,8 +103,9 @@
           <span>
             {{ studentFirstName }}
             <strong>{{
-              getSupportLevelLanguage(grade, task?.percentileScore.value, task?.rawScore.value, task.taskId)
+              getSupportLevelLanguage(grade, task?.percentileScore.value, task?.rawScore.value, task.taskId, true)
             }}</strong>
+            {{ taskDisplayNames[task.taskId]?.extendedName }}.
           </span>
         </div>
         <!-- Special handling for letter tasks -->
@@ -371,14 +382,25 @@ const computedTaskData = computed(() => {
     .map((taskId) => computedTaskAcc[taskId]);
 });
 
-function getSupportLevelLanguage(grade, percentile, rawScore, taskId) {
+function getSupportLevelLanguage(grade, percentile, rawScore, taskId, truncated = null) {
+  // truncated is applied when the description on the task card is shortened;
+  // the sentences called when truncated is true will better match the shortened descriptions
   const { support_level } = getSupportLevel(grade, percentile, rawScore, taskId);
   if (support_level) {
     if (support_level === 'Achieved Skill') {
+      if (truncated) {
+        return t('scoreReports.achievedTextSingular');
+      }
       return t('scoreReports.achievedText');
     } else if (support_level === 'Developing Skill') {
+      if (truncated) {
+        return t('scoreReports.developingTextSingular');
+      }
       return t('scoreReports.developingText');
     } else if (support_level === 'Needs Extra Support') {
+      if (truncated) {
+        return t('scoreReports.extraSupportTextPlural');
+      }
       return t('scoreReports.extraSupportText');
     }
   }
