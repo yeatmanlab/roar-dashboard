@@ -560,12 +560,11 @@ const getScoresAndSupportFromAssessment = ({
       support_level = '';
       tag_color = '#A4DDED';
       if (tasksToDisplayTotalCorrect.includes(taskId)) {
-        const isNewScoring = _has(assessment, 'scores.computed.composite.numAttempted');
-        const numAttempted = _get(assessment, 'scores.computed.composite.totalNumAttempted');
-        // Handles tag color for old scoring
-        tag_color = !isNewScoring && !numAttempted ? '#EEEEF0' : '#A4DDED';
-        // Do not display raw score for old scoring
+        const numAttempted = _get(assessment, 'scores.computed.composite.numAttempted');
+        const oldNumAttempted = _get(assessment, 'scores.computed.composite.totalNumAttempted');
         rawScore = _get(assessment, 'scores.computed.composite.rawScore');
+        // If numAttempted, set as assessed
+        tag_color = oldNumAttempted || numAttempted ? '#A4DDED' : '#EEEEF0';
       }
     }
   } else {
@@ -772,14 +771,9 @@ const computeAssignmentAndRunData = computed(() => {
             ? ['numCorrect', 'numIncorrect', 'numAttempted']
             : ['totalCorrect', 'totalIncorrect', 'totalNumAttempted'];
 
-          const [rawNumCorrect, numIncorrect, numAttempted] = propertyKeys.map((key) =>
+          const [numCorrect, numIncorrect, numAttempted] = propertyKeys.map((key) =>
             _get(assessment, `scores.computed.composite.${key}`),
           );
-
-          // Special handling for older scoring, returns undefined for correct even if attempted != 0
-          // Otherwise, return original even if undefined because numAttempted is falsy
-          const isOldAttempted = !isNewScoring && numAttempted > 0 && !rawNumCorrect;
-          const numCorrect = isOldAttempted ? 0 : rawNumCorrect;
 
           Object.assign(currRowScores[taskId], { numCorrect, numIncorrect, numAttempted, isNewScoring });
 
