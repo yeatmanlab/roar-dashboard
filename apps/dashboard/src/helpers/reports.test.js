@@ -129,8 +129,8 @@ describe('reports', () => {
     it('should return correct keys for letter task', () => {
       const result = getScoreKeys('letter', 3);
       expect(result).toEqual({
-        percentileScoreKey: undefined,
-        percentileScoreDisplayKey: undefined,
+        percentileScoreKey: 'totalPercentCorrect',
+        percentileScoreDisplayKey: 'totalPercentCorrect',
         standardScoreKey: undefined,
         standardScoreDisplayKey: undefined,
         rawScoreKey: 'totalCorrect',
