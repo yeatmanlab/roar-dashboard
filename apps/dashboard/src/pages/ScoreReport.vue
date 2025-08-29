@@ -562,7 +562,7 @@ const getScoresAndSupportFromAssessment = ({
       // Handles old scoring for alpaca
       tag_color = !isNewScoring && !numAttempted ? '#EEEEF0' : getTagColor(support_level);
       // Manually set instead of returning rawScoreKey using getScoreKeys
-      // because f(x) is designed for tasks that display in IndividualScoreReport (n/a for alpaca)
+      // because functions is designed for tasks that display in IndividualScoreReport (n/a for alpaca)
       rawScore = _get(assessment, 'scores.computed.composite.roarScore');
     } else {
       support_level = '';
@@ -815,20 +815,15 @@ const computeAssignmentAndRunData = computed(() => {
         if (tasksToDisplayGradeEstimate.includes(taskId)) {
           const isNewScoring = _has(assessment, 'scores.computed.composite.roarScore');
 
-          const propertyKeys = isNewScoring ? 
-            ['rawScore', 'numAttempted', 'gradeEstimate'] : 
-            ['totalCorrect', 'totalNumAttempted', 'thetaEstimate'];
+          const propertyKeys = isNewScoring
+            ? ['rawScore', 'numAttempted', 'gradeEstimate']
+            : ['totalCorrect', 'totalNumAttempted', 'thetaEstimate'];
 
-          const [rawNumCorrect, numAttempted, gradeEstimate] = propertyKeys.map(key => 
-            _get(assessment, `scores.computed.composite.${key}`));
+          const [numCorrect, numAttempted, gradeEstimate] = propertyKeys.map((key) =>
+            _get(assessment, `scores.computed.composite.${key}`),
+          );
 
-          // Special handling for older scoring, returns undefined for correct even if attempted != 0
-          // Otherwise, return original even if undefined because numAttempted is falsy
-          const isOldAttempted = !isNewScoring && numAttempted > 0 && !rawNumCorrect;
-          const numCorrect = isOldAttempted ? 0 : rawNumCorrect;
-  
-          Object.assign(currRowScores[taskId], {numCorrect, numAttempted, gradeEstimate});
-          
+          Object.assign(currRowScores[taskId], { numCorrect, numAttempted, gradeEstimate });
         }
         if (['fluency-calf', 'fluency-arf', 'fluency-calf-es', 'fluency-arf-es'].includes(taskId)) {
           const fc = _get(assessment, 'scores.computed.FC.roamScore');
