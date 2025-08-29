@@ -768,22 +768,25 @@ const computeAssignmentAndRunData = computed(() => {
         } else if (tasksToDisplayTotalCorrect.includes(taskId)) {
           // isNewScoring is 1.2.23+, otherwise handles 1.2.14
           const isNewScoring = _has(assessment, 'scores.computed.composite.numCorrect');
-          const propertyKeys = isNewScoring ? ['numCorrect', 'numIncorrect', 'numAttempted'] : ['totalCorrect', 'totalIncorrect', 'totalNumAttempted'];
-         
-          const [rawNumCorrect, numIncorrect, numAttempted] = propertyKeys.map(key => 
-            _get(assessment, `scores.computed.composite.${key}`));
+          const propertyKeys = isNewScoring
+            ? ['numCorrect', 'numIncorrect', 'numAttempted']
+            : ['totalCorrect', 'totalIncorrect', 'totalNumAttempted'];
+
+          const [rawNumCorrect, numIncorrect, numAttempted] = propertyKeys.map((key) =>
+            _get(assessment, `scores.computed.composite.${key}`),
+          );
 
           // Special handling for older scoring, returns undefined for correct even if attempted != 0
           // Otherwise, return original even if undefined because numAttempted is falsy
           const isOldAttempted = !isNewScoring && numAttempted > 0 && !rawNumCorrect;
           const numCorrect = isOldAttempted ? 0 : rawNumCorrect;
 
-          Object.assign(currRowScores[taskId], {numCorrect, numIncorrect, numAttempted, isNewScoring});
+          Object.assign(currRowScores[taskId], { numCorrect, numIncorrect, numAttempted, isNewScoring });
 
           currRowScores[taskId].recruitment = _get(assessment, 'params.recruitment');
           currRowScores[taskId].fc = _get(assessment, 'scores.computed.FC');
           currRowScores[taskId].fr = _get(assessment, 'scores.computed.FR');
-        
+
           scoreFilterTags += ' Assessed ';
         }
         if ((taskId === 'letter' || taskId === 'letter-en-ca') && assessment.scores) {
@@ -1029,7 +1032,7 @@ const createExportData = ({ rows, includeProgress = false }) => {
         tableRow[`${taskName} - Num Incorrect`] = score.numIncorrect;
         tableRow[`${taskName} - Num Correct`] = score.numCorrect;
       } else if (tasksToDisplayTotalCorrect.includes(taskId)) {
-        if ((score.isNewScoring && score.recruitment !== 'responseModality')) {
+        if (score.isNewScoring && score.recruitment !== 'responseModality') {
           tableRow[`${taskName} - Raw Score`] = score.rawScore;
         }
         tableRow[`${taskName} - Num Correct`] = score.numCorrect;

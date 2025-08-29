@@ -107,13 +107,15 @@ function handleToolTip(_taskId, _toolTip, _colData) {
         return '';
       }
 
-
-      const isResponseModality = _colData.scores?.[_taskId]?.isNewScoring && _colData.scores?.[_taskId]?.recruitment === 'responseModality';
+      const isResponseModality =
+        _colData.scores?.[_taskId]?.isNewScoring && _colData.scores?.[_taskId]?.recruitment === 'responseModality';
       const isOldScoring = !_colData.scores?.[_taskId]?.isNewScoring;
       Object.entries(roamFluencySubskillHeaders).forEach(([property, propertyHeader]) => {
-        if (_colData.scores?.[_taskId]?.[property] != undefined 
-            && !(isResponseModality && property === 'rawScore')
-            && !(isOldScoring && (property === 'rawScore' || property === 'numIncorrect'))) {
+        if (
+          _colData.scores?.[_taskId]?.[property] != undefined &&
+          !(isResponseModality && property === 'rawScore') &&
+          !(isOldScoring && (property === 'rawScore' || property === 'numIncorrect'))
+        ) {
           _toolTip += `${propertyHeader}: ${_colData.scores?.[_taskId]?.[property]}\n`;
         }
       });
