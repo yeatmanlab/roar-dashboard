@@ -16,7 +16,7 @@ app.use((_req: Request, res: Response) => {
   return res.status(StatusCodes.NOT_FOUND).json({
     error: {
       message: 'Not found.',
-      code: API_ERROR_CODES.REQUEST_INVALID,
+      code: API_ERROR_CODES.REQUEST.INVALID,
     },
   });
 });
