@@ -560,10 +560,11 @@ const getScoresAndSupportFromAssessment = ({
       support_level = '';
       tag_color = '#A4DDED';
       if (tasksToDisplayTotalCorrect.includes(taskId)) {
-        const isNewScoring = _has(assessment, 'scores.computed.composite.rawScore');
+        const isNewScoring = _has(assessment, 'scores.computed.composite.numAttempted');
         const numAttempted = _get(assessment, 'scores.computed.composite.totalNumAttempted');
         // Handles tag color for old scoring
         tag_color = !isNewScoring && !numAttempted ? '#EEEEF0' : '#A4DDED';
+        // Do not display raw score for old scoring
         rawScore = _get(assessment, 'scores.computed.composite.rawScore');
       }
     }
@@ -766,9 +767,9 @@ const computeAssignmentAndRunData = computed(() => {
           scoreFilterTags += ' Assessed ';
         } else if (tasksToDisplayTotalCorrect.includes(taskId)) {
           // isNewScoring is 1.2.23+, otherwise handles 1.2.14
-          const isNewScoring = _has(assessment, 'scores.computed.composite.rawScore');
-          const propertyKeys = isNewScoring ? ['numCorrect', 'numIncorrect', 'numAttempted'] : ['totalCorrect', '', 'totalNumAttempted'];
-
+          const isNewScoring = _has(assessment, 'scores.computed.composite.numCorrect');
+          const propertyKeys = isNewScoring ? ['numCorrect', 'numIncorrect', 'numAttempted'] : ['totalCorrect', 'totalIncorrect', 'totalNumAttempted'];
+         
           const [rawNumCorrect, numIncorrect, numAttempted] = propertyKeys.map(key => 
             _get(assessment, `scores.computed.composite.${key}`));
 
@@ -777,14 +778,12 @@ const computeAssignmentAndRunData = computed(() => {
           const isOldAttempted = !isNewScoring && numAttempted > 0 && !rawNumCorrect;
           const numCorrect = isOldAttempted ? 0 : rawNumCorrect;
 
-          Object.assign(currRowScores[taskId], {numCorrect, numIncorrect, numAttempted});
+          Object.assign(currRowScores[taskId], {numCorrect, numIncorrect, numAttempted, isNewScoring});
 
-          currRowScores[taskId].tagColor =
-            numAttempted === undefined || numAttempted === 0 ? '#EEEEF0' : numAttempted !== 0 ? tagColor : '#EEEEF0';
           currRowScores[taskId].recruitment = _get(assessment, 'params.recruitment');
           currRowScores[taskId].fc = _get(assessment, 'scores.computed.FC');
           currRowScores[taskId].fr = _get(assessment, 'scores.computed.FR');
-
+        
           scoreFilterTags += ' Assessed ';
         }
         if ((taskId === 'letter' || taskId === 'letter-en-ca') && assessment.scores) {
@@ -1030,7 +1029,7 @@ const createExportData = ({ rows, includeProgress = false }) => {
         tableRow[`${taskName} - Num Incorrect`] = score.numIncorrect;
         tableRow[`${taskName} - Num Correct`] = score.numCorrect;
       } else if (tasksToDisplayTotalCorrect.includes(taskId)) {
-        if (score.recruitment !== 'responseModality') {
+        if ((score.isNewScoring && score.recruitment !== 'responseModality')) {
           tableRow[`${taskName} - Raw Score`] = score.rawScore;
         }
         tableRow[`${taskName} - Num Correct`] = score.numCorrect;
