@@ -121,8 +121,6 @@
                 <div v-if="!isNaN(rawScore)" class="flex justify-content-between score-table">
                   <div class="mr-2">
                     <span class="font-bold text-sm">{{ key }}</span>
-                    <!-- <span v-if="rangeMax" class="text-500">({{ rangeMin }}-{{ rangeMax }}):</span>
-                    <span v-else>:</span> -->
                   </div>
                   <div class="ml-2">
                     <b>{{ isNaN(rawScore) ? rawScore : Math.round(rawScore) }}</b>
@@ -149,8 +147,6 @@
               </template>
               <div class="flex flex-column">
                 <div v-for="[key, value, rangeMin, rangeMax] in task.scoresArray" :key="key">
-                  <!-- <span class="font-bold text-sm">{{ key }}</span>
-                  <span class="font-bold text-sm">{{ value }}</span> -->
                   <div class="flex justify-content-between score-table">
                     <div class="mr-2">
                       <span class="font-bold text-sm">{{ key }}</span>
