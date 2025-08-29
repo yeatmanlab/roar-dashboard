@@ -97,34 +97,7 @@
             }}</strong>
           </span>
         </div>
-        <div v-if="!rawOnlyTasks.includes(task.taskId) && task.taskId !== 'phonics'">
-          <PvAccordion
-            class="my-2 w-full"
-            :active-index="expanded ? 0 : null"
-            expand-icon="pi pi-plus ml-2"
-            collapse-icon="pi pi-minus ml-2"
-            @tab-close="emit('update:expanded', false)"
-            @tab-open="emit('update:expanded', true)"
-          >
-            <PvAccordionTab>
-              <template #header>
-                <div class="flex align-items-center">
-                  <span class="font-strong">{{ t('scoreReports.scoreBreakdown') }}</span>
-                </div>
-              </template>
-              <div class="flex flex-column">
-                <div
-                  v-for="[key, value] in task.scoresArray"
-                  :key="key"
-                  class="flex flex-row justify-content-between align-items-center mb-2"
-                >
-                  <span class="font-bold text-sm">{{ key }}</span>
-                  <span class="font-bold text-sm">{{ value }}</span>
-                </div>
-              </div>
-            </PvAccordionTab>
-          </PvAccordion>
-        </div>
+        <!-- Special handling for letter tasks -->
         <div v-if="task.taskId === 'letter' || task.taskId === 'letter-en-ca'">
           <PvAccordion
             class="my-2 w-full"
@@ -142,6 +115,38 @@
                   </div>
                   <div class="ml-2">
                     <b>{{ isNaN(rawScore) ? rawScore : Math.round(rawScore) }}</b>
+                  </div>
+                </div>
+              </div>
+            </PvAccordionTab>
+          </PvAccordion>
+        </div>
+        <div v-else-if="!rawOnlyTasks.includes(task.taskId) && task.taskId !== 'phonics'">
+          <PvAccordion
+            class="my-2 w-full"
+            :active-index="expanded ? 0 : null"
+            expand-icon="pi pi-plus ml-2"
+            collapse-icon="pi pi-minus ml-2"
+            @tab-close="emit('update:expanded', false)"
+            @tab-open="emit('update:expanded', true)"
+          >
+            <PvAccordionTab>
+              <template #header>
+                <div class="flex align-items-center">
+                  <span class="font-strong">{{ t('scoreReports.scoreBreakdown') }}</span>
+                </div>
+              </template>
+              <div class="flex flex-column">
+                <div v-for="[key, value, rangeMin, rangeMax] in task.scoresArray" :key="key">
+                  <!-- <span class="font-bold text-sm">{{ key }}</span>
+                  <span class="font-bold text-sm">{{ value }}</span> -->
+                  <div class="flex justify-content-between score-table">
+                    <div class="mr-2">
+                      <span class="font-bold text-sm">{{ key }}</span>
+                      <span v-if="rangeMax" class="text-500">({{ rangeMin }}-{{ rangeMax }}):</span>
+                      <span v-else>:</span>
+                    </div>
+                    <span class="font-bold text-sm ml-2">{{ value }}</span>
                   </div>
                 </div>
               </div>
