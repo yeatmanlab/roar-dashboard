@@ -616,7 +616,7 @@ let toolTipByHeader = (header) => {
     'ROAR - Word':
       'Assesses decoding skills at the word level. \n\n  Percentile ranges from 0-99 \n Raw Score ranges from 100-900',
     'ROAR - Letter':
-      'Assesses decoding skills at the word level. \n\n Percentile ranges from 0-99 \n Raw Score ranges from 0-90',
+      'Assesses knowledge of letter names and sounds. \n\n Percentile ranges from 0-99 \n Raw Score ranges from 0-48 or 0-90, depending on assessment length',
     'ROAR - Phoneme':
       'Assesses phonological awareness: sound matching and elision. \n\n Percentile ranges from 0-99 \n Raw Score ranges from 0-57',
     'ROAR - Sentence':

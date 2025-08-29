@@ -97,7 +97,7 @@
             }}</strong>
           </span>
         </div>
-        <!-- <div v-if="!rawOnlyTasks.includes(task.taskId) && task.taskId !== 'phonics'">
+        <div v-if="!rawOnlyTasks.includes(task.taskId) && task.taskId !== 'phonics'">
           <PvAccordion
             class="my-2 w-full"
             :active-index="expanded ? 0 : null"
@@ -109,7 +109,7 @@
             <PvAccordionTab>
               <template #header>
                 <div class="flex align-items-center">
-                  <span class="font-light">{{ t('scoreReports.scoreBreakdown') }}</span>
+                  <span class="font-strong">{{ t('scoreReports.scoreBreakdown') }}</span>
                 </div>
               </template>
               <div class="flex flex-column">
@@ -124,14 +124,8 @@
               </div>
             </PvAccordionTab>
           </PvAccordion>
-        </div> -->
-        <div
-          v-if="
-            (!rawOnlyTasks.includes(task.taskId) && task.taskId !== 'phonics') ||
-            task.taskId === 'letter' ||
-            task.taskId === 'letter-en-ca'
-          "
-        >
+        </div>
+        <div v-if="task.taskId === 'letter' || task.taskId === 'letter-en-ca'">
           <PvAccordion
             class="my-2 w-full"
             :active-index="expanded ? 0 : null"
@@ -139,12 +133,12 @@
             collapse-icon="pi pi-minus ml-2"
           >
             <PvAccordionTab :header="$t('scoreReports.scoreBreakdown')">
-              <div v-for="[key, rawScore, rangeMin, rangeMax] in task.scoresArray" :key="key">
+              <div v-for="[key, rawScore] in task.scoresArray" :key="key">
                 <div v-if="!isNaN(rawScore)" class="flex justify-content-between score-table">
                   <div class="mr-2">
-                    <b>{{ key }}</b
-                    ><span v-if="rangeMax" class="text-500">({{ rangeMin }}-{{ rangeMax }}):</span>
-                    <span v-else>:</span>
+                    <span class="font-bold text-sm">{{ key }}</span>
+                    <!-- <span v-if="rangeMax" class="text-500">({{ rangeMin }}-{{ rangeMax }}):</span>
+                    <span v-else>:</span> -->
                   </div>
                   <div class="ml-2">
                     <b>{{ isNaN(rawScore) ? rawScore : Math.round(rawScore) }}</b>
@@ -198,7 +192,7 @@ const props = defineProps({
   },
 });
 
-// const emit = defineEmits(['update:expanded']);
+const emit = defineEmits(['update:expanded']);
 
 const { t } = useI18n();
 
@@ -222,12 +216,7 @@ const computedTaskData = computed(() => {
     const compositeScores = scores?.composite;
     let rawScore = null;
     if (!taskId.includes('vocab') && !taskId.includes('es')) {
-      if (taskId.includes('letter')) {
-        // letter's raw score is a percentage expressed as a float, so we need to multiply by 100.
-        rawScore = _get(compositeScores, 'totalCorrect');
-      } else {
-        rawScore = _get(compositeScores, rawScoreKey);
-      }
+      rawScore = _get(compositeScores, rawScoreKey);
     } else {
       rawScore = compositeScores;
     }
@@ -258,7 +247,7 @@ const computedTaskData = computed(() => {
             : _startCase(t('scoreReports.percentileScore')),
           value: Math.round(percentileScore),
           min: 0,
-          max: 99,
+          max: taskId.includes('letter') ? 100 : 99,
           supportColor: supportColor,
         },
       };
@@ -403,7 +392,8 @@ function getPercentileSuffix(percentile) {
 }
 
 function getValueTemplate(task) {
-  if (task.taskId === 'phonics') {
+  const appendPercentageTo = ['phonics', 'letter', 'letter-es', 'letter-en-ca'];
+  if (appendPercentageTo.includes(task.taskId)) {
     return task[task.scoreToDisplay].value + '%';
   }
 
@@ -415,8 +405,8 @@ function getValueTemplate(task) {
 }
 
 function getScoreToDisplay(taskId, gradeValue) {
-  if (taskId === 'letter' || taskId === 'letter-es' || taskId === 'letter-en-ca' || taskId === 'phonics')
-    return 'percentileScore';
+  const alwaysDisplaysPercentileScore = ['phonics', 'letter', 'letter-es', 'letter-en-ca'];
+  if (alwaysDisplaysPercentileScore.includes(taskId)) return 'percentileScore';
   return gradeValue >= 6 ? 'standardScore' : 'percentileScore';
 }
 </script>
