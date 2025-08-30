@@ -440,9 +440,15 @@ export const tasksToDisplayCorrectIncorrectDifference = ['sre-es'];
 export const scoredTasks = ['swr', 'pa', 'sre'];
 
 /*
+ *  Fluency Tasks
+ *  Temporary variable to differentiate from tasksToDisplayTotalCorrect for backward compatibility
+ */
+export const roamFluencyTasks = ['fluency-arf', 'fluency-calf', 'fluency-arf-es', 'fluency-calf-es'];
+
+/*
  *  Tasks with subskills that require tooltips for subscore table.
  */
-export const subskillTasks = ['roam-alpaca'];
+export const subskillTasks = ['roam-alpaca', ...roamFluencyTasks];
 
 /*
  *  Support Level Colors
@@ -549,6 +555,13 @@ export const roamAlpacaSubskillHeaders = {
   percentCorrect: 'Percent Correct',
   gradeEstimate: 'Grade Estimate',
   supportLevel: 'Support Level',
+};
+
+export const roamFluencySubskillHeaders = {
+  rawScore: 'Raw Score',
+  numCorrect: 'Num Correct',
+  numIncorrect: 'Num Incorrect',
+  numAttempted: 'Num Attempted',
 };
 
 function getOrdinalSuffix(n) {
