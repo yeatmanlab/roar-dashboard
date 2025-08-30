@@ -302,7 +302,7 @@ import {
   rawOnlyTasks,
   tasksToDisplayPercentCorrect,
   tasksToDisplayTotalCorrect,
-  tasksToDisplayThetaScore,
+  tasksToDisplayGradeEstimate,
   excludeFromScoringTasks,
   includeReliabilityFlagsOnExport,
   addElementToPdf,
@@ -516,13 +516,6 @@ function returnColorByReliability(assessment, rawScore, support_level, tag_color
         return '#EEEEF0';
       }
       return '#A4DDED';
-    } else if (tasksToDisplayThetaScore.includes(assessment.taskId)) {
-      const test = assessment.scores?.raw?.composite?.test;
-      if (test?.thetaEstimate === undefined || test?.thetaEstimate === '') {
-        return '#EEEEF0';
-      } else {
-        return '#A4DDED';
-      }
     } else if (rawOnlyTasks.includes(assessment.taskId) && rawScore) {
       return 'white';
     }
@@ -551,11 +544,20 @@ const getScoresAndSupportFromAssessment = ({
     tasksToDisplayCorrectIncorrectDifference.includes(assessment.taskId) ||
     tasksToDisplayPercentCorrect.includes(assessment.taskId) ||
     tasksToDisplayTotalCorrect.includes(taskId) ||
-    tasksToDisplayThetaScore.includes(assessment.taskId)
+    tasksToDisplayGradeEstimate.includes(assessment.taskId)
   ) {
     if (assessment.scores === undefined) {
       support_level = null;
       tag_color = null;
+    } else if (assessment.taskId === 'roam-alpaca') {
+      const isNewScoring = _has(assessment, 'scores.computed.composite.roarScore');
+      const numAttempted = _get(assessment, 'scores.computed.composite.totalNumAttempted');
+      support_level = _get(assessment, 'scores.computed.composite.supportLevel') ?? '';
+      // Handles old scoring for alpaca
+      tag_color = !isNewScoring && !numAttempted ? '#EEEEF0' : getTagColor(support_level);
+      // Manually set instead of returning rawScoreKey using getScoreKeys
+      // because functions is designed for tasks that display in IndividualScoreReport (n/a for alpaca)
+      rawScore = _get(assessment, 'scores.computed.composite.roarScore');
     } else {
       support_level = '';
       tag_color = '#A4DDED';
@@ -816,14 +818,18 @@ const computeAssignmentAndRunData = computed(() => {
           currRowScores[taskId].total = _get(assessment, 'scores.computed.composite.roarScore');
           currRowScores[taskId].skills = skills.length > 0 ? skills.join(', ') : 'None';
         }
-        if (tasksToDisplayThetaScore.includes(taskId)) {
-          const numCorrect = assessment.scores?.raw?.composite?.test?.numCorrect;
-          const numIncorrect = assessment.scores?.raw?.composite?.test?.numIncorrect;
-          const thetaEstimate = _get(assessment, 'scores.computed.composite.thetaEstimate') ?? '';
+        if (tasksToDisplayGradeEstimate.includes(taskId)) {
+          const isNewScoring = _has(assessment, 'scores.computed.composite.roarScore');
 
-          currRowScores[taskId].numCorrect = numCorrect;
-          currRowScores[taskId].numIncorrect = numIncorrect;
-          currRowScores[taskId].thetaEstimate = thetaEstimate;
+          const propertyKeys = isNewScoring
+            ? ['rawScore', 'numAttempted', 'gradeEstimate']
+            : ['totalCorrect', 'totalNumAttempted', 'thetaEstimate'];
+
+          const [numCorrect, numAttempted, gradeEstimate] = propertyKeys.map((key) =>
+            _get(assessment, `scores.computed.composite.${key}`),
+          );
+
+          Object.assign(currRowScores[taskId], { numCorrect, numAttempted, gradeEstimate });
         }
         if (taskId === 'roam-alpaca') {
           const scores = _get(assessment, 'scores.computed');
@@ -1034,10 +1040,13 @@ const createExportData = ({ rows, includeProgress = false }) => {
         tableRow[`${taskName} - Num Attempted`] = score.numAttempted;
       } else if (rawOnlyTasks.includes(taskId)) {
         tableRow[`${taskName} - Raw`] = score.rawScore;
-      } else if (tasksToDisplayThetaScore.includes(taskId)) {
+      } else if (tasksToDisplayGradeEstimate.includes(taskId)) {
         tableRow[`${taskName} - Num Correct`] = score.numCorrect;
-        tableRow[`${taskName} - Num Incorrect`] = score.numIncorrect;
-        tableRow[`${taskName} - Grade Estimate`] = score.thetaEstimate;
+        tableRow[`${taskName} - Num Attempted`] = score.numAttempted;
+        tableRow[`${taskName} - Raw`] = score.rawScore;
+        // Technically thetaEstimate for old scoring system (previous implementation)
+        tableRow[`${taskName} - Grade Estimate`] = score.gradeEstimate;
+        tableRow[`${taskName} - Support Level`] = score.supportLevel;
       } else {
         tableRow[`${taskName} - Percentile`] = score.percentileString;
         tableRow[`${taskName} - Standard`] = score.standardScore;
@@ -1471,7 +1480,7 @@ const scoreReportColumns = computed(() => {
       !tasksToDisplayCorrectIncorrectDifference.includes(taskId) &&
       !tasksToDisplayPercentCorrect.includes(taskId) &&
       !tasksToDisplayTotalCorrect.includes(taskId) &&
-      !tasksToDisplayThetaScore.includes(taskId)
+      !tasksToDisplayGradeEstimate.includes(taskId)
     ) {
       colField = `scores.${taskId}.standardScore`;
     } else if (
@@ -1479,7 +1488,7 @@ const scoreReportColumns = computed(() => {
       !tasksToDisplayCorrectIncorrectDifference.includes(taskId) &&
       !tasksToDisplayPercentCorrect.includes(taskId) &&
       !tasksToDisplayTotalCorrect.includes(taskId) &&
-      !tasksToDisplayThetaScore.includes(taskId)
+      !tasksToDisplayGradeEstimate.includes(taskId)
     ) {
       colField = `scores.${taskId}.rawScore`;
     } else {
@@ -1489,8 +1498,8 @@ const scoreReportColumns = computed(() => {
         colField = `scores.${taskId}.rawScore`;
       } else if (tasksToDisplayPercentCorrect.includes(taskId) && viewMode.value === 'raw') {
         colField = `scores.${taskId}.percentCorrect`;
-      } else if (tasksToDisplayThetaScore.includes(taskId) && viewMode.value === 'raw') {
-        colField = `scores.${taskId}.numCorrect`;
+      } else if (tasksToDisplayGradeEstimate.includes(taskId) && viewMode.value === 'raw') {
+        colField = `scores.${taskId}.rawScore`;
       } else if (rawOnlyTasks.includes(taskId) && viewMode.value === 'raw') {
         colField = `scores.${taskId}.rawScore`;
       } else {

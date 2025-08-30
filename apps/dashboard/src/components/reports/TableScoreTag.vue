@@ -34,7 +34,7 @@ import {
   tasksToDisplayPercentCorrect,
   tasksToDisplayCorrectIncorrectDifference,
   tasksToDisplayTotalCorrect,
-  tasksToDisplayThetaScore,
+  tasksToDisplayGradeEstimate,
   rawOnlyTasks,
   scoredTasks,
   subskillTasks,
@@ -118,16 +118,11 @@ function handleToolTip(_taskId, _toolTip, _colData) {
       _toolTip += 'Num Correct: ' + _colData.scores?.[_taskId]?.numCorrect + '\n';
       _toolTip += 'Num Attempted: ' + _colData.scores?.[_taskId]?.numAttempted + '\n';
       _toolTip += 'Percent Correct: ' + _colData.scores?.[_taskId]?.percentCorrect + '\n';
-    } else if (tasksToDisplayThetaScore.includes(_taskId)) {
-      if (_colData.scores?.[_taskId]?.numCorrect === undefined) {
-        _toolTip += 'Num Correct: ' + 0 + '\n';
-        _toolTip += 'Num Incorrect: ' + _colData.scores?.[_taskId]?.numIncorrect + '\n';
-      } else {
-        _toolTip += 'Num Correct: ' + _colData.scores?.[_taskId]?.numCorrect + '\n';
-        _toolTip += 'Num Incorrect: ' + _colData.scores?.[_taskId]?.numIncorrect + '\n';
-      }
-      if (_colData.scores?.[_taskId]?.thetaEstimate && _colData.scores?.[_taskId]?.thetaEstimate !== '') {
-        _toolTip += 'Grade Estimate: ' + _colData.scores?.[_taskId]?.thetaEstimate + '\n';
+    } else if (tasksToDisplayGradeEstimate.includes(_taskId)) {
+      _toolTip += 'Num Correct: ' + _colData.scores?.[_taskId]?.numCorrect + '\n';
+      _toolTip += 'Num Attempted: ' + _colData.scores?.[_taskId]?.numAttempted + '\n';
+      if (_colData.scores?.[_taskId]?.gradeEstimate) {
+        _toolTip += 'Grade Estimate: ' + _colData.scores?.[_taskId]?.gradeEstimate + '\n';
       }
     } else if (rawOnlyTasks.includes(_taskId) && _colData.scores?.[_taskId]?.rawScore !== undefined) {
       _toolTip += 'Raw Score: ' + _colData.scores?.[_taskId]?.rawScore + '\n';
