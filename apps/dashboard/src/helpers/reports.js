@@ -373,18 +373,7 @@ export const tasksToDisplayGraphs = ['swr', 'sre', 'pa'];
  *  Raw Only Tasks
  *  A list of tasks to only display raw scores when included in a RoarDataTable.
  */
-export const rawOnlyTasks = [
-  'letter',
-  'cva',
-  'morphology',
-  'vocab',
-  'phonics',
-  'fluency',
-  'letter-es',
-  'letter-en-ca',
-  'phonics',
-  'roar-readaloud',
-];
+export const rawOnlyTasks = ['cva', 'morphology', 'vocab', 'fluency', 'roar-readaloud'];
 
 /*
  *  Excluded from Score Report Apps
@@ -742,6 +731,8 @@ export function getScoreKeys(taskId, grade) {
     rawScoreKey = 'sreScore';
   }
   if (taskId === 'letter' || taskId === 'letter-es' || taskId === 'letter-en-ca') {
+    percentileScoreKey = 'totalPercentCorrect';
+    percentileScoreDisplayKey = 'totalPercentCorrect';
     rawScoreKey = 'totalCorrect';
   }
   if (taskId === 'phonics') {
@@ -749,7 +740,7 @@ export function getScoreKeys(taskId, grade) {
     percentileScoreDisplayKey = 'totalPercentCorrect';
     standardScoreKey = 'totalPercentCorrect';
     standardScoreDisplayKey = 'totalPercentCorrect';
-    rawScoreKey = 'totalPercentCorrect';
+    rawScoreKey = 'totalCorrect';
   }
 
   return {
