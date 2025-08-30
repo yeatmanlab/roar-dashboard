@@ -308,6 +308,8 @@ import {
   getScoreKeys,
   tasksToDisplayCorrectIncorrectDifference,
   includedValidityFlags,
+  roamAlpacaSubskills,
+  getTagColor,
 } from '@/helpers/reports';
 import RoarDataTable from '@/components/RoarDataTable';
 import { CSV_EXPORT_STATIC_COLUMNS } from '@/constants/csvExport';
@@ -822,6 +824,43 @@ const computeAssignmentAndRunData = computed(() => {
 
           currRowScores[taskId].fc = fc;
           currRowScores[taskId].fr = fr;
+        }
+
+        if (taskId === 'roam-alpaca') {
+          const scores = _get(assessment, 'scores.computed');
+          if (scores) {
+            Object.keys(roamAlpacaSubskills).forEach((subskillId) => {
+              const subskillInfo = _get(scores, subskillId);
+              if (subskillInfo) {
+                let percentCorrect = null;
+                if (typeof subskillInfo.rawScore === 'number' && subskillInfo.numAttempted) {
+                  percentCorrect = `${_round((subskillInfo.rawScore / subskillInfo.numAttempted) * 100)}%`;
+                }
+                // roam-alpaca calculates and returns support level automatically
+                let tagColor = getTagColor(subskillInfo.supportLevel);
+                currRowScores[taskId][subskillId] = {
+                  percentCorrect,
+                  tagColor: returnColorByReliability(
+                    assessment,
+                    subskillInfo.rawScore,
+                    subskillInfo.supportLevel,
+                    tagColor,
+                  ),
+                  ...subskillInfo,
+                };
+              } else {
+                currRowScores[taskId][subskillId] = null;
+              }
+            });
+
+            // Passing null for empty incorrectSkill arrays to prevent it from rendering under TableScoreTag.vue conditions.
+            currRowScores[taskId].composite = {
+              ...scores.composite,
+              incorrectSkills: scores.composite.incorrectSkills?.length > 0 ? scores.composite.incorrectSkills : null,
+              gradeEstimate: scores.composite.gradeEstimate ? _round(scores.composite.gradeEstimate, 2) : '',
+              tagColor: getTagColor(scores.composite.supportLevel),
+            };
+          }
         }
 
         // Logic to update runsByTaskIdAcc

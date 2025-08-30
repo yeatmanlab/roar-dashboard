@@ -440,6 +440,11 @@ export const tasksToDisplayCorrectIncorrectDifference = ['sre-es'];
 export const scoredTasks = ['swr', 'pa', 'sre'];
 
 /*
+ *  Tasks with subskills that require tooltips for subscore table.
+ */
+export const subskillTasks = ['roam-alpaca'];
+
+/*
  *  Support Level Colors
  *  Colors corresponding to each support level.
  */
@@ -529,6 +534,22 @@ export const gradeOptions = [
     label: '12th Grade',
   },
 ];
+
+export const roamAlpacaSubskills = {
+  numberKnowledge: 'Number Knowledge',
+  geometry: 'Geometry',
+  arithmeticExpressions: 'Arithmetic Expressions',
+  rationalNumbersProbability: 'Rational Numbers & Probability',
+  algebraicThinking: 'Algebraic Thinking',
+};
+
+export const roamAlpacaSubskillHeaders = {
+  rawScore: 'Num Correct',
+  numAttempted: 'Num Attempted',
+  percentCorrect: 'Percent Correct',
+  gradeEstimate: 'Grade Estimate',
+  supportLevel: 'Support Level',
+};
 
 function getOrdinalSuffix(n) {
   if (n >= 11 && n <= 13) return 'th';
@@ -652,6 +673,17 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = 
     tag_color,
   };
 };
+
+export function getTagColor(supportLevel) {
+  if (supportLevel === 'Needs Extra Support') {
+    return supportLevelColors.below;
+  } else if (supportLevel === 'Developing Skill') {
+    return supportLevelColors.some;
+  } else if (supportLevel === 'Achieved Skill') {
+    return supportLevelColors.above;
+  }
+  return supportLevelColors.Assessed;
+}
 
 export function getScoreKeys(taskId, grade) {
   let percentileScoreKey = undefined;
@@ -930,5 +962,20 @@ export const taskInfoById = {
       'the impact of digital familiarity on the assessment. Students experience these response ' +
       'modes as two 4.5-minute blocks, each scored separately. Each block begins with addition ' +
       'and subtraction, then progresses to multiplication and division.',
+  },
+  'roam-alpaca': {
+    header: 'ROAM Core Math',
+    color: '#52627E',
+    subheader: 'Core Math Procedures',
+    desc:
+      'ROAM-Core Math quickly measures students’ command of a wide range of key math skills, ' +
+      'including basic arithmetic, fractions and decimals, algebraic equations, and more. ' +
+      'Questions become more advanced as the student progresses through the assessment, ' +
+      'which ends once the student reaches a ceiling in their procedural knowledge. ' +
+      'This assessment provides educators with information about students’ knowledge of ' +
+      'specific math skills, proficiency in key math categories, and overall estimated ' +
+      'grade level based on their performance. These insights can be used to gauge both ' +
+      'student-level and classroom-wide competencies so that instruction can be customized ' +
+      'appropriately.',
   },
 };
