@@ -156,6 +156,7 @@
                   class="progress-tag"
                   rounded
                 />
+                <PvTag v-else class="progress-tag" icon="pi pi-ban" rounded severity="secondary" value="Not Assigned" />
               </div>
               <div
                 v-else-if="col.tagOutlined && _get(colData, col.tagColor)"
@@ -203,11 +204,7 @@
                     @click="$emit(col.eventName, colData)"
                   />
                   <span
-                    v-if="
-                      col.eventName === 'assignments-button' &&
-                      colData.assignmentCount !== undefined &&
-                      colData.assignmentCount !== null
-                    "
+                    v-if="col.eventName === 'assignments-button' && colData.assignmentCount != null"
                     class="font-semibold text-sm ml-2"
                   >
                     {{ colData.assignmentCount }}

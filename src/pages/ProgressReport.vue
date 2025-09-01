@@ -371,28 +371,28 @@ const computedProgressData = computed(() => {
 
       if (assessment?.optional) {
         currRowProgress[taskId] = {
-          value: 'optional',
+          value: 'Optional',
           icon: 'pi pi-question',
           severity: 'info',
         };
         progressFilterTags += ' Optional ';
       } else if (assessment?.completedOn !== undefined) {
         currRowProgress[taskId] = {
-          value: 'completed',
+          value: 'Completed',
           icon: 'pi pi-check-circle',
           severity: 'success',
         };
         progressFilterTags += ' Completed ';
       } else if (assessment?.startedOn !== undefined) {
         currRowProgress[taskId] = {
-          value: 'started',
+          value: 'Started',
           icon: 'pi pi-clock',
           severity: 'warn',
         };
         progressFilterTags += ' Started ';
       } else {
         currRowProgress[taskId] = {
-          value: 'not started',
+          value: 'Not Started',
           icon: 'pi pi-minus-circle',
           severity: 'warning',
         };
