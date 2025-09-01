@@ -1,6 +1,7 @@
 {
   "name": "roar-dashboard",
   "private": true,
+  "version": "3.13.0",
   "scripts": {
     "dev": "turbo run dev",
     "build": "turbo run build",
