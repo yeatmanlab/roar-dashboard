@@ -23,7 +23,7 @@
         <PvFloatLabel v-if="props.allowColumnSelection">
           <PvMultiSelect
             id="ms-columns"
-            v-tooltip.top="'Show and hide columns'"
+            v-tooltip.top="tooltip('Show and hide columns')"
             :model-value="selectedColumns"
             :options="inputColumns"
             option-label="header"
@@ -132,7 +132,7 @@
           >
             <template #header>
               <div
-                v-tooltip.top="`${toolTipByHeader(col.header)}`"
+                v-tooltip.top="tooltip(`${toolTipByHeader(col.header)}`)"
                 :style="[
                   toolTipByHeader(col.header).length > 0
                     ? 'text-decoration: underline dotted #0000CD; text-underline-offset: 3px'
@@ -170,7 +170,7 @@
               <div v-else-if="col.link">
                 <router-link :to="{ name: col.routeName, params: colData.routeParams }">
                   <PvButton
-                    v-tooltip.right="colData.tooltip"
+                    v-tooltip.right="tooltip(colData.tooltip)"
                     severity="secondary"
                     text
                     class="border border-round surface-200 p-2 hover:surface-500"
@@ -203,7 +203,11 @@
                     @click="$emit(col.eventName, colData)"
                   />
                   <span
-                    v-if="col.eventName === 'assignments-button' && colData.assignmentCount !== undefined && colData.assignmentCount !== null"
+                    v-if="
+                      col.eventName === 'assignments-button' &&
+                      colData.assignmentCount !== undefined &&
+                      colData.assignmentCount !== null
+                    "
                     class="font-semibold text-sm ml-2"
                   >
                     {{ colData.assignmentCount }}
@@ -402,6 +406,7 @@ import _startCase from 'lodash/startCase';
 import { supportLevelColors, progressTags } from '@/helpers/reports';
 import SkeletonTable from '@/components/SkeletonTable.vue';
 import TableScoreTag from '@/components/reports/TableScoreTag.vue';
+import { tooltip } from '@/helpers';
 
 /*
 Using the DataTable

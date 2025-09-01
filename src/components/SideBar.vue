@@ -84,7 +84,7 @@
 
       <div class="sidebar__nav">
         <div
-          v-tooltip.right="'Current'"
+          v-tooltip.right="tooltip('Current')"
           :class="`sidebar__nav-link --${ASSIGNMENT_STATUSES.CURRENT} ${selectedStatusCurrent ? '--active' : ''}`"
           @click="() => onClickSideBarNavLink(ASSIGNMENT_STATUSES.CURRENT)"
         >
@@ -92,7 +92,7 @@
         </div>
 
         <div
-          v-tooltip.right="'Upcoming'"
+          v-tooltip.right="tooltip('Upcoming')"
           :class="`sidebar__nav-link --${ASSIGNMENT_STATUSES.UPCOMING} ${selectedStatusUpcoming ? '--active' : ''}`"
           @click="() => onClickSideBarNavLink(ASSIGNMENT_STATUSES.UPCOMING)"
         >
@@ -100,7 +100,7 @@
         </div>
 
         <div
-          v-tooltip.right="'Past'"
+          v-tooltip.right="tooltip('Past')"
           :class="`sidebar__nav-link --${ASSIGNMENT_STATUSES.PAST} ${selectedStatusPast ? '--active' : ''}`"
           @click="() => onClickSideBarNavLink(ASSIGNMENT_STATUSES.PAST)"
         >
@@ -117,6 +117,7 @@ import { useAssignmentsStore } from '@/store/assignments';
 import { AdministrationType } from '@levante-framework/levante-zod';
 import { computed, ref } from 'vue';
 import AssignmentCard from './assignments/AssignmentCard.vue';
+import { tooltip } from '@/helpers';
 
 interface Props {
   currentAssignments?: AdministrationType[];

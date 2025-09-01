@@ -53,7 +53,7 @@
             <span>{{ tasksDictionary[assessmentId]?.name ?? assessmentId }}</span>
             <span
               v-if="showParams"
-              v-tooltip.top="'View parameters'"
+              v-tooltip.top="tooltip('View parameters')"
               class="pi pi-info-circle cursor-pointer ml-1"
               style="font-size: 0.8rem"
               @click="toggleParams($event, assessmentId)"
@@ -115,7 +115,7 @@
                 class="no-underline text-black"
               >
                 <PvButton
-                  v-tooltip.top="'See completion details'"
+                  v-tooltip.top="tooltip('See completion details')"
                   class="m-0 bg-transparent text-bluegray-500 shadow-none border-none p-0 border-round"
                   style="color: var(--primary-color) !important"
                   severity="secondary"
@@ -140,7 +140,7 @@
                 class="no-underline"
               >
                 <PvButton
-                  v-tooltip.top="'See Scores'"
+                  v-tooltip.top="tooltip('See Scores')"
                   class="m-0 mr-1 surface-0 text-bluegray-500 shadow-1 border-none p-2 border-round hover:surface-100"
                   style="height: 2.5rem; color: var(--primary-color) !important"
                   severity="secondary"
@@ -188,7 +188,7 @@ import useDeleteAdministrationMutation from '@/composables/mutations/useDeleteAd
 import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
 import { FIRESTORE_COLLECTIONS } from '@/constants/firebase';
 import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
-import { isLevante } from '@/helpers';
+import { isLevante, tooltip } from '@/helpers';
 
 interface Assessment {
   taskId: string;

@@ -50,7 +50,7 @@
         </div>
         <h3 class="mt-5">Additional Data Collection</h3>
         <div
-          v-tooltip.top="!disableIfNotDefault ? tooltip : ''"
+          v-tooltip.top="tooltip(!disableIfNotDefault ? tooltipMessage : '')"
           :class="[
             'border-solid border-round border-1 border-black-alpha-30 mt-2',
             { 'opacity-80 surface-200 mt-2': !disableIfNotDefault },
@@ -77,7 +77,7 @@
           </div>
         </div>
         <div
-          v-tooltip.top="!disableIfNotDefault ? tooltip : ''"
+          v-tooltip.top="tooltip(!disableIfNotDefault ? tooltipMessage : '')"
           :class="[
             'border-solid border-round border-1 border-black-alpha-30 mt-2',
             { 'opacity-80 surface-200 mt-2': !disableIfNotDefault },
@@ -104,7 +104,7 @@
           </div>
         </div>
         <div
-          v-tooltip.top="!disableIfNotDefault ? tooltip : ''"
+          v-tooltip.top="tooltip(!disableIfNotDefault ? tooltipMessage : '')"
           :class="[
             'border-solid border-round border-1 border-black-alpha-30 mt-2',
             { 'opacity-80 surface-200 mt-2': !disableIfNotDefault },
@@ -280,6 +280,7 @@ import PvRadioButton from 'primevue/radiobutton';
 import PvFieldset from 'primevue/fieldset';
 import { useAuthStore } from '@/store/auth';
 import useLegalDocsQuery from '@/composables/queries/useLegalDocsQuery';
+import { tooltip } from '@/helpers';
 
 interface DefaultParam {
   name: string;
@@ -372,7 +373,7 @@ let selectedAssent = ref<LegalDoc | null>(null);
 const knowWhatIWant = ref<boolean>(false);
 const decision = ref<string>('');
 const disableIfNotDefault = ref<boolean>(false);
-const tooltip = ref<string>('Please check the "Default Data Collection Values" first');
+const tooltipMessage = ref<string>('Please check the "Default Data Collection Values" first');
 
 let result: Result = {
   consent: [],

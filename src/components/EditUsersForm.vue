@@ -4,7 +4,7 @@
       <div class="form-field">
         <label :class="{ 'font-light uppercase text-sm': !editMode }"
           >Date of Birth
-          <span v-if="localUserType === 'student'" v-tooltip.top="'Required'" class="required">*</span></label
+          <span v-if="localUserType === 'student'" v-tooltip.top="tooltip('Required')" class="required">*</span></label
         >
         <div v-if="!editMode" :class="{ 'text-xl': !editMode }">
           {{ userDobString }}
@@ -21,7 +21,8 @@
 
       <div class="form-field">
         <label :class="{ 'font-light uppercase text-sm': !editMode }"
-          >Grade <span v-if="localUserType === 'student'" v-tooltip.top="'Required'" class="required">*</span></label
+          >Grade
+          <span v-if="localUserType === 'student'" v-tooltip.top="tooltip('Required')" class="required">*</span></label
         >
         <div v-if="!editMode" :class="{ 'text-xl': !editMode }">
           {{ userData?.studentData?.grade ?? 'None' }}
@@ -36,11 +37,15 @@
       <div v-if="isSuperAdmin">
         <div>
           <PvCheckbox v-model="localUserData.testData" binary />
-          <label class="ml-2">Test Data? <span v-tooltip.top="'Super Admin Only'" class="admin-only">*</span></label>
+          <label class="ml-2"
+            >Test Data? <span v-tooltip.top="tooltip('Super Admin Only')" class="admin-only">*</span></label
+          >
         </div>
         <div>
           <PvCheckbox v-model="localUserData.demoData" binary />
-          <label class="ml-2">Demo Data? <span v-tooltip.top="'Super Admin Only'" class="admin-only">*</span></label>
+          <label class="ml-2"
+            >Demo Data? <span v-tooltip.top="tooltip('Super Admin Only')" class="admin-only">*</span></label
+          >
         </div>
       </div>
     </div>
@@ -150,7 +155,7 @@
         <div>
           <PvCheckbox v-if="editMode" v-model="localUserData.testData" binary class="mr-2" />
           <label :class="{ 'font-light uppercase text-sm': !editMode }"
-            >Test Data? <span v-tooltip.top="'Super Admin Only'" class="admin-only">*</span></label
+            >Test Data? <span v-tooltip.top="tooltip('Super Admin Only')" class="admin-only">*</span></label
           >
           <div v-if="!editMode" :class="{ 'text-xl': !editMode }">
             {{ localUserData.testData ? 'Yes' : 'No' }}
@@ -159,7 +164,7 @@
         <div>
           <PvCheckbox v-if="editMode" v-model="localUserData.demoData" binary class="mr-2" />
           <label :class="{ 'font-light uppercase text-sm': !editMode }"
-            >Demo Data? <span v-tooltip.top="'Super Admin Only'" class="admin-only">*</span></label
+            >Demo Data? <span v-tooltip.top="tooltip('Super Admin Only')" class="admin-only">*</span></label
           >
           <div v-if="!editMode" :class="{ 'text-xl': !editMode }">
             {{ localUserData.demoData ? 'Yes' : 'No' }}
@@ -225,6 +230,7 @@ import PvCheckbox from 'primevue/checkbox';
 import PvSelect from 'primevue/select';
 import PvInputText from 'primevue/inputtext';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
+import { tooltip } from '@/helpers';
 
 interface Name {
   first?: string | null;

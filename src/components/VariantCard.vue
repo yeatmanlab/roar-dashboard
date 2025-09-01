@@ -18,7 +18,7 @@
             class="p-0 surface-hover border-none border-circle hover:text-100 hover:bg-primary ml-2"
             @click="toggle($event)"
             ><i
-              v-tooltip.top="'View parameters'"
+              v-tooltip.top="tooltip('View parameters')"
               class="pi pi-info-circle text-primary p-1 border-circle hover:text-100"
             ></i
           ></PvButton>
@@ -27,12 +27,26 @@
               <PvChip class="bg-primary text-white h-2rem" label="CAT" />
             </div>
             <div v-if="variant?.variant?.params?.language" class="flex align-items-center">
-              <PvChip :class="getLanguageInfo(variant.variant.params.language)?.isLegacy ? 'bg-orange-500 text-white h-2rem' : 'bg-green-500 text-white h-2rem'">
+              <PvChip
+                :class="
+                  getLanguageInfo(variant.variant.params.language)?.isLegacy
+                    ? 'bg-orange-500 text-white h-2rem'
+                    : 'bg-green-500 text-white h-2rem'
+                "
+              >
                 <template #default>
                   <div class="flex align-items-center gap-1">
-                    <span v-if="getLanguageInfo(variant.variant.params.language)" :class="`fi fi-${getLanguageInfo(variant.variant.params.language)?.flagCode}`" style="font-size: 0.8rem;"></span>
-                    <span>{{ getLanguageInfo(variant.variant.params.language)?.displayName || variant.variant.params.language }}</span>
-                    <small v-if="getLanguageInfo(variant.variant.params.language)?.isLegacy" class="ml-1">(legacy)</small>
+                    <span
+                      v-if="getLanguageInfo(variant.variant.params.language)"
+                      :class="`fi fi-${getLanguageInfo(variant.variant.params.language)?.flagCode}`"
+                      style="font-size: 0.8rem"
+                    ></span>
+                    <span>{{
+                      getLanguageInfo(variant.variant.params.language)?.displayName || variant.variant.params.language
+                    }}</span>
+                    <small v-if="getLanguageInfo(variant.variant.params.language)?.isLegacy" class="ml-1"
+                      >(legacy)</small
+                    >
                   </div>
                 </template>
               </PvChip>
@@ -51,7 +65,7 @@
               class="p-0 surface-hover border-none border-circle -rotate-45 hover:text-100 hover:bg-primary"
               @click="visible = true"
               ><i
-                v-tooltip.top="'Click to expand'"
+                v-tooltip.top="tooltip('Click to expand')"
                 class="pi pi-arrows-h border-circle p-2 text-primary hover:text-100"
               ></i
             ></PvButton>
@@ -122,7 +136,7 @@
             class="p-0 surface-hover border-none border-circle hover:text-100 hover:bg-primary"
             @click="toggle($event)"
             ><i
-              v-tooltip.top="'View parameters'"
+              v-tooltip.top="tooltip('View parameters')"
               class="pi pi-info-circle text-primary p-1 border-circle hover:text-100"
             ></i
           ></PvButton>
@@ -147,7 +161,7 @@
             class="p-0 surface-hover border-none border-circle -rotate-45 hover:text-100 hover:bg-primary"
             @click="visible = true"
             ><i
-              v-tooltip.top="'Click to expand'"
+              v-tooltip.top="tooltip('Click to expand')"
               class="pi pi-arrows-h border-circle p-2 text-primary hover:text-100"
             ></i
           ></PvButton>
@@ -289,6 +303,7 @@ import PvPopover from 'primevue/popover';
 import PvTag from 'primevue/tag';
 import EditVariantDialog from '@/components/EditVariantDialog.vue';
 import { getLanguageInfo } from '@/helpers/languageDiscovery';
+import { tooltip } from '@/helpers';
 
 interface Condition {
   field: string;

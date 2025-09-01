@@ -24,7 +24,7 @@
         <div
           v-for="task in props?.data?.assessments"
           :key="task?.taskId"
-          v-tooltip.top="task?.variantName"
+          v-tooltip.top="tooltip(task?.variantName)"
           class="assignment-card__task"
         ></div>
       </div>
@@ -38,6 +38,7 @@
 
 <script lang="ts" setup>
 import { ASSIGNMENT_STATUSES } from '@/constants';
+import { tooltip } from '@/helpers';
 import { AdministrationType } from '@levante-framework/levante-zod';
 import { format } from 'date-fns';
 
