@@ -6,26 +6,26 @@ name: Deploy
 description: Deploys the ROAR Dashboard to Firebase Hosting.
 outputs:
   deployment-url:
-    description: 'The URL of the deployed application.'
+    description: "The URL of the deployed application."
     value: ${{ steps.output-deployment-url.outputs.deployment-url }}
 inputs:
   firebase-target:
-    description: 'The Firebase hosting target, if applicable.'
+    description: "The Firebase hosting target, if applicable."
     required: false
   firebase-channel:
-    description: 'The Firebase hosting channel to deploy to, preview or default.'
+    description: "The Firebase hosting channel to deploy to, preview or default."
     required: true
   firebase-project-id:
-    description: 'The Firebase project ID to deploy to.'
+    description: "The Firebase project ID to deploy to."
     required: true
   gcp-workload-identity-provider:
-    description: 'The GCP workload identity provider to authenticate with.'
+    description: "The GCP workload identity provider to authenticate with."
     required: true
   gcp-service-account-id:
-    description: 'The GCP service account ID to impersonate.'
+    description: "The GCP service account ID to impersonate."
     required: true
   github-token:
-    description: 'The GitHub token to use for authentication.'
+    description: "The GitHub token to use for authentication."
     required: false
 
 runs:
@@ -40,8 +40,8 @@ runs:
         workload_identity_provider: ${{ inputs.gcp-workload-identity-provider }}
         service_account: ${{ inputs.gcp-service-account-id }}
         create_credentials_file: true
-        token_format: 'access_token'
-        access_token_scopes: 'email,openid,https://www.googleapis.com/auth/cloudplatformprojects.readonly,https://www.googleapis.com/auth/firebase,https://www.googleapis.com/auth/cloud-platform'
+        token_format: "access_token"
+        access_token_scopes: "email,openid,https://www.googleapis.com/auth/cloudplatformprojects.readonly,https://www.googleapis.com/auth/firebase,https://www.googleapis.com/auth/cloud-platform"
 
     # Retrieve GCP credentials
     # Note: This is currently necessary as firebaseextended/action-hosting-deploy does not support currently support
@@ -60,17 +60,7 @@ runs:
       run: |
         mkdir app
         cp -r roar-dashboard/apps/dashboard/dist app/dist
-        case "${{ inputs.firebase-target }}" in
-          "production")
-            cp roar-dashboard/apps/dashboard/firebase/admin/firebase.production.json app/firebase.json
-            ;;
-          "staging")
-            cp roar-dashboard/apps/dashboard/firebase/admin/firebase.staging.json app/firebase.json
-            ;;
-          "dev")
-            cp roar-dashboard/apps/dashboard/firebase/admin/firebase.dev.json app/firebase.json
-            ;;
-        esac
+        cp roar-dashboard/apps/dashboard/firebase/admin/firebase.json app/firebase.json
         rm -rf roar-dashboard
         cd app && pwd && ls -la
 
@@ -82,18 +72,18 @@ runs:
       uses: FirebaseExtended/action-hosting-deploy@v0.9.0
       id: firebase-deploy
       with:
-        firebaseServiceAccount: '${{ env.GCP_HOSTING_SERVICE_ACCOUNT_KEY }}'
-        repoToken: '${{ inputs.github-token }}'
-        projectId: '${{ inputs.firebase-project-id }}'
+        firebaseServiceAccount: "${{ env.GCP_HOSTING_SERVICE_ACCOUNT_KEY }}"
+        repoToken: "${{ inputs.github-token }}"
+        projectId: "${{ inputs.firebase-project-id }}"
         entryPoint: ./app
 
     - name: Deploy application
       if: ${{ inputs.firebase-channel == 'default' }}
       uses: FirebaseExtended/action-hosting-deploy@v0.9.0
       with:
-        firebaseServiceAccount: '${{ env.GCP_HOSTING_SERVICE_ACCOUNT_KEY }}'
-        projectId: '${{ inputs.firebase-project-id }}'
-        channelId: 'live'
+        firebaseServiceAccount: "${{ env.GCP_HOSTING_SERVICE_ACCOUNT_KEY }}"
+        projectId: "${{ inputs.firebase-project-id }}"
+        channelId: "live"
         entryPoint: ./app
 
     # Output deployment URL

@@ -1,0 +1,9 @@
+# Ignore gitignore files
+**/.gitignore
+
+# Ignore other files that don't need formatting
+*.md
+*.json
+node_modules/
+dist/
+build/
