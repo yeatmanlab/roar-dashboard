@@ -2,7 +2,7 @@
 
 <div align="center">
   <a href="https://github.com/yeatmanlab/roar-dashboard">
-    <img width="120" alt="Logo" src="https://github.com/yeatmanlab/roar-dashboard/blob/main/src/assets/roar-short-logo.png?raw=true">
+    <img width="120" alt="Logo" src="https://github.com/yeatmanlab/roar-dashboard/blob/main/apps/dashboard/src/assets/roar-short-logo.png?raw=true">
   </a>
 
   <h3 align="center">ROAR Dashboard</h3>

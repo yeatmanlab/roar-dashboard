@@ -111,6 +111,17 @@
       :org-name="orgInfo.name ?? undefined"
       :computed-table-data="computedTableData"
     />
+    <SubscoreTable
+      v-if="taskId === 'roam-alpaca' && !isLoadingTasksDictionary"
+      task-id="roam-alpaca"
+      :task-name="tasksDictionary['roam-alpaca'].publicName"
+      :administration-id="administrationId"
+      :org-type="orgType"
+      :org-id="orgId"
+      :administration-name="administrationInfo.name ?? undefined"
+      :org-name="orgInfo.name ?? undefined"
+      :computed-table-data="computedTableData"
+    />
   </div>
 </template>
 <script setup>
