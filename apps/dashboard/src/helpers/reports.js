@@ -707,10 +707,11 @@ const ALLOWED_SCORE_FIELD_TYPES = [
   'standardScoreDisplay',
 ];
 
-/*
+/**
  * Score Field Mapping Configuration
- * Defines new and legacy field names for each task and grade combination
- * This allows for backwards compatibility when field names are updated
+ * @desc Defines new and legacy field names for each task and grade combination
+ *       This allows for backwards compatibility when field names are updated
+ * @see ./SCORE_FIELD_MIGRATION_GUIDE.md
  */
 const SCORE_FIELD_MAPPINGS = {
   swr: {
@@ -897,6 +898,7 @@ const SCORE_FIELD_MAPPINGS = {
  * @param {number} grade - The grade level
  * @param {string} fieldType - The type of field (percentile, standardScore, etc.)
  * @param {boolean} isLegacy - Whether to use legacy field names
+ * @see ./SCORE_FIELD_MIGRATION_GUIDE.md
  * @returns {string|undefined} The resolved field name
  */
 function resolveFieldName(taskId, grade, fieldType, isLegacy = false) {
@@ -926,15 +928,16 @@ function resolveFieldName(taskId, grade, fieldType, isLegacy = false) {
  * @param {string} taskId - The task identifier
  * @param {number} grade - The grade level
  * @param {string} fieldType - The type of field to access
+ * @see ./SCORE_FIELD_MIGRATION_GUIDE.md
  * @returns {*} The score value or undefined if not found
  */
 export function getScoreValue(scoresObject, taskId, grade, fieldType) {
-  if (!ALLOWED_SCORE_FIELD_TYPES.includes(fieldType)) {
-    throw new Error(`Invalid fieldType. Expected one of ${ALLOWED_SCORE_FIELD_TYPES.join(', ')}, but got ${fieldType}`);
-  }
-
   if (!scoresObject || !taskId || fieldType === undefined) {
     return undefined;
+  }
+
+  if (!ALLOWED_SCORE_FIELD_TYPES.includes(fieldType)) {
+    throw new Error(`Invalid fieldType. Expected one of ${ALLOWED_SCORE_FIELD_TYPES.join(', ')}, but got ${fieldType}`);
   }
 
   const gradeValue = toValue(grade);
