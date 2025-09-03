@@ -1,19 +1,18 @@
+import { NAVBAR_BLACKLIST } from '@/constants';
+import { ROLES } from '@/constants/roles';
+import { APP_ROUTES } from '@/constants/routes';
+import { logger } from '@/logger';
+import { useAuthStore } from '@/store/auth';
+import { pageTitlesCO, pageTitlesES, pageTitlesUS } from '@/translations/exports';
+import { Role } from '@/types';
 import {
   createRouter,
   createWebHistory,
-  RouteRecordRaw,
   NavigationGuardNext,
   RouteLocationNormalized,
+  RouteRecordRaw,
   RouterScrollBehavior,
 } from 'vue-router';
-import { useAuthStore } from '@/store/auth';
-import _get from 'lodash/get';
-import { pageTitlesEN, pageTitlesUS, pageTitlesES, pageTitlesCO } from '@/translations/exports';
-import { isLevante } from '@/helpers';
-import { APP_ROUTES } from '@/constants/routes';
-import posthogInstance from '@/plugins/posthog';
-import { logger } from '@/logger';
-import { NAVBAR_BLACKLIST } from '@/constants';
 
 function removeQueryParams(to: RouteLocationNormalized) {
   if (Object.keys(to.query).length) return { path: to.path, query: {}, hash: to.hash };
@@ -34,34 +33,47 @@ const routes: Array<RouteRecordRaw> = [
         es: pageTitlesES['home'],
         'es-CO': pageTitlesCO['home'],
       },
+      allowedRoles: [],
     },
   },
   {
     path: '/debug',
     name: 'Debug',
     component: () => import('../pages/Debug.vue'),
-    meta: { pageTitle: 'Debug Information' },
+    meta: {
+      pageTitle: 'Debug Information',
+      allowedRoles: [],
+    },
   },
   {
     path: '/game/swr',
     name: 'SWR',
     component: () => import('../components/tasks/TaskSWR.vue'),
     props: { taskId: 'swr' },
-    meta: { pageTitle: 'SWR' },
+    meta: {
+      pageTitle: 'SWR',
+      allowedRoles: [],
+    },
   },
   {
     path: '/game/pa',
     name: 'PA',
     component: () => import('../components/tasks/TaskPA.vue'),
     props: { taskId: 'pa' },
-    meta: { pageTitle: 'PA' },
+    meta: {
+      pageTitle: 'PA',
+      allowedRoles: [],
+    },
   },
   {
     path: '/game/sre',
     name: 'SRE',
     component: () => import('../components/tasks/TaskSRE.vue'),
     props: { taskId: 'sre' },
-    meta: { pageTitle: 'SRE' },
+    meta: {
+      pageTitle: 'SRE',
+      allowedRoles: [],
+    },
   },
   {
     path: '/game/core-tasks/:taskId',
@@ -70,7 +82,10 @@ const routes: Array<RouteRecordRaw> = [
     props: true,
     // Add which specific task?
     // Code in App.vue overwrites updating it programmatically
-    meta: { pageTitle: 'Core Tasks' },
+    meta: {
+      pageTitle: 'Core Tasks',
+      allowedRoles: [],
+    },
   },
   {
     path: '/manage-tasks-variants',
@@ -78,8 +93,7 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import('../pages/ManageTasksVariants.vue'),
     meta: {
       pageTitle: 'Manage Tasks',
-      requireAdmin: true,
-      requireSuperAdmin: true,
+      allowedRoles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.SITE_ADMIN],
     },
   },
   {
@@ -92,6 +106,7 @@ const routes: Array<RouteRecordRaw> = [
         es: pageTitlesES['signIn'],
         'es-CO': pageTitlesCO['signIn'],
       },
+      allowedRoles: [],
     },
   },
   {
@@ -99,19 +114,28 @@ const routes: Array<RouteRecordRaw> = [
     name: 'AuthEmailLink',
     beforeRouteLeave: [removeQueryParams, removeHash],
     component: () => import('../components/auth/AuthEmailLink.vue'),
-    meta: { pageTitle: 'Email Link Authentication' },
+    meta: {
+      pageTitle: 'Email Link Authentication',
+      allowedRoles: [],
+    },
   },
   {
     path: '/auth-email-sent',
     name: 'AuthEmailSent',
     component: () => import('../components/auth/AuthEmailSent.vue'),
-    meta: { pageTitle: 'Authentication Email Sent' },
+    meta: {
+      pageTitle: 'Authentication Email Sent',
+      allowedRoles: [],
+    },
   },
   {
     path: '/administrator',
     name: 'Administrator',
     component: () => import('../pages/HomeAdministrator.vue'),
-    meta: { pageTitle: 'Administrator', requireAdmin: true },
+    meta: {
+      pageTitle: 'Administrator',
+      allowedRoles: [ROLES.ADMIN, ROLES.SITE_ADMIN],
+    },
   },
   {
     path: '/create-assignment',
@@ -119,8 +143,7 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import('../pages/CreateAssignment.vue'),
     meta: {
       pageTitle: 'Create Assignment',
-      requireAdmin: true,
-      requireSuperAdmin: true,
+      allowedRoles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.SITE_ADMIN],
     },
   },
   {
@@ -130,35 +153,46 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import('../pages/CreateAssignment.vue'),
     meta: {
       pageTitle: 'Edit an Assignment',
-      requireAdmin: true,
-      requireSuperAdmin: true,
+      allowedRoles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.SITE_ADMIN],
     },
   },
   {
     path: '/create-administrator',
     name: 'CreateAdministrator',
     component: () => import('../pages/CreateAdministrator.vue'),
-    meta: { pageTitle: 'Create an administrator account', requireAdmin: true },
+    meta: {
+      pageTitle: 'Create an administrator account',
+      allowedRoles: [ROLES.ADMIN, ROLES.SITE_ADMIN],
+    },
   },
   {
     path: '/list-groups',
     name: 'ListGroups',
     component: () => import('../pages/groups/ListGroups.vue'),
-    meta: { pageTitle: 'Groups', requireAdmin: true },
+    meta: {
+      pageTitle: 'Groups',
+      allowedRoles: [ROLES.ADMIN, ROLES.SITE_ADMIN],
+    },
   },
   {
     path: '/list-users/:orgType/:orgId/:orgName',
     name: 'ListUsers',
     props: true,
     component: () => import('../pages/users/ListUsers.vue'),
-    meta: { pageTitle: 'List users', requireAdmin: true },
+    meta: {
+      pageTitle: 'List users',
+      allowedRoles: [ROLES.ADMIN, ROLES.SITE_ADMIN],
+    },
   },
   {
     path: '/administration/:administrationId/:orgType/:orgId',
     name: 'ProgressReport',
     props: true,
     component: () => import('../pages/ProgressReport.vue'),
-    meta: { pageTitle: 'View Administration', requireAdmin: true },
+    meta: {
+      pageTitle: 'View Administration',
+      allowedRoles: [ROLES.ADMIN, ROLES.SITE_ADMIN],
+    },
   },
   {
     path: APP_ROUTES.ACCOUNT_PROFILE,
@@ -169,58 +203,84 @@ const routes: Array<RouteRecordRaw> = [
         path: 'accounts',
         name: 'ProfileAccounts',
         component: () => import('../components/adminSettings/LinkAccountsView.vue'),
-        meta: { requireAdmin: true },
+        meta: {
+          allowedRoles: [ROLES.ADMIN, ROLES.SITE_ADMIN],
+        },
       },
       {
         path: 'settings',
         name: 'ProfileSettings',
         component: () => import('../components/adminSettings/Settings.vue'),
+        meta: {
+          allowedRoles: [],
+        },
       },
     ],
-    meta: { pageTitle: 'Profile' },
+    meta: {
+      pageTitle: 'Profile',
+      allowedRoles: [],
+    },
   },
   {
     path: '/enable-cookies',
     name: 'EnableCookies',
     component: () => import('../pages/EnableCookies.vue'),
-    meta: { pageTitle: 'Enable Cookies' },
+    meta: {
+      pageTitle: 'Enable Cookies',
+      allowedRoles: [],
+    },
   },
   {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
     component: () => import('../pages/NotFound.vue'),
-    meta: { pageTitle: 'Whoops! 404 Page!' },
+    meta: {
+      pageTitle: 'Whoops! 404 Page!',
+      allowedRoles: [],
+    },
   },
   {
     path: '/add-users',
     name: 'Add Users',
     component: () => import('../pages/users/AddUsers.vue'),
-    meta: { pageTitle: 'Add Users', requireAdmin: true, project: 'LEVANTE' },
+    meta: {
+      pageTitle: 'Add Users',
+      allowedRoles: [ROLES.ADMIN, ROLES.SITE_ADMIN],
+    },
   },
 
   {
     path: '/link-users',
     name: 'Link Users',
     component: () => import('../pages/users/LinkUsers.vue'),
-    meta: { pageTitle: 'Link Users', requireAdmin: true, project: 'LEVANTE' },
+    meta: {
+      pageTitle: 'Link Users',
+      allowedRoles: [ROLES.ADMIN, ROLES.SITE_ADMIN],
+    },
   },
   // {
   //   path: '/edit-users',
   //   name: 'Edit Users',
   //   component: () => import('../pages/users/EditUsers.vue'),
-  //   meta: { pageTitle: 'Edit Users', requireAdmin: true, project: 'LEVANTE' },
+  //   meta: { allowedRoles: [],  pageTitle: 'Edit Users', requireAdmin: true, project: 'LEVANTE' },
   // },
   {
     path: '/survey',
     name: 'Survey',
     component: () => import('../pages/UserSurvey.vue'),
-    meta: { pageTitle: 'Survey', project: 'LEVANTE' },
+    meta: {
+      pageTitle: 'Survey',
+      allowedRoles: [],
+    },
   },
   {
     path: '/maintenance',
     name: 'Maintenance',
     component: () => import('../pages/MaintenancePage.vue'),
-    meta: { pageTitle: 'Down for Maintenance' },
+    meta: {
+      pageTitle: 'Down for Maintenance',
+      allowedRoles: [],
+    },
   },
 ];
 
@@ -244,80 +304,52 @@ const router = createRouter({
 });
 
 router.beforeEach(async (to: RouteLocationNormalized, from: RouteLocationNormalized, next: NavigationGuardNext) => {
-  // Don't allow routing to LEVANTE pages if not in LEVANTE instance
-  if (!isLevante && to.meta?.project === 'LEVANTE') {
-    next({ name: 'Home' });
-    // next function can only be called once per route
-    return;
-  }
-
-  const store = useAuthStore();
-
-  const allowedUnauthenticatedRoutes = ['SignIn', 'Maintenance', 'AuthEmailLink', 'AuthEmailSent', 'Debug'];
-
+  const authStore = useAuthStore();
+  const allowedUnauthenticatedRoutes = ['AuthEmailLink', 'AuthEmailSent', 'Debug', 'Maintenance', 'SignIn'];
   const inMaintenanceMode = false;
 
   if (NAVBAR_BLACKLIST.includes(to.name)) {
-    store.setShowSideBar(false);
+    authStore.setShowSideBar(false);
   }
 
   if (inMaintenanceMode && to.name !== 'Maintenance') {
-    next({ name: 'Maintenance' });
-    return;
+    return next({ name: 'Maintenance' });
   } else if (!inMaintenanceMode && to.name === 'Maintenance') {
-    next({ name: 'Home' });
-    return false;
+    return next({ name: 'Home' });
   }
+
   // Check if user is signed in. If not, go to signin
   if (
     !to.path.includes('__/auth/handler') &&
-    !store.isAuthenticated &&
+    !authStore.isAuthenticated &&
     !allowedUnauthenticatedRoutes.includes(to.name)
   ) {
-    next({ name: 'SignIn' });
-    return;
+    return next({ name: 'SignIn' });
   }
 
-  // Check if the route requires admin rights and the user is an admin.
-  const requiresAdmin = _get(to, 'meta.requireAdmin', false);
-  const requiresSuperAdmin = _get(to, 'meta.requireSuperAdmin', false);
+  // @TODO
+  // If we're gonna keep this solution,
+  // we need to think about setting up a max num of tries and an error handler.
+  if (!authStore.userData && !allowedUnauthenticatedRoutes.includes(to.name)) {
+    await new Promise<void>((resolve) => {
+      const checkUserData = () => {
+        if (authStore.userData) return resolve();
+        setTimeout(checkUserData, 50);
+      };
 
-  // Check user roles
-  const isUserAdmin = store.isUserAdmin;
-  const isUserSuperAdmin = store.isUserSuperAdmin;
-
-  // All current conditions:
-  // 1. Super Admin: true, Admin: true
-  // 2. Super Admin: false, Admin: true (Only exits because requiresSuperAdmin is not defined on every route)
-  // 3. Super Admin: false, Admin: false (Allowed routes for all users)
-  // (Also exists because requiresAdmin/requiresSuperAdmin is not defined on every route)
-
-  if (isUserSuperAdmin) {
-    next();
-    return;
-  } else if (isUserAdmin) {
-    // LEVANTE dashboard has opened some pages to administrators before the ROAR dashboard
-    // So if isLevante, then allow regular admins to access any route with requireAdmin = true.
-    // and if ROAR, then prohibit regular admins from accessing any route with requireSuperAdmin = true.
-    if (isLevante && requiresAdmin) {
-      next();
-      return;
-    } else if (requiresSuperAdmin) {
-      next({ name: 'Home' });
-      return;
-    }
-    next();
-    return;
+      checkUserData();
+    });
   }
 
-  // If we get here, the user is a regular user
-  if (requiresSuperAdmin || requiresAdmin) {
-    next({ name: 'Home' });
-    return;
+  const allowedRoles = to.meta.allowedRoles;
+  const userRoles = authStore.userData?.roles?.map((role: Role) => role.role) || [ROLES.PARTICIPANT];
+  const isUserAllowed = allowedRoles.some((allowedRole: string) => userRoles.includes(allowedRole));
+
+  if (allowedRoles.length && !isUserAllowed) {
+    return next({ name: 'Home' });
   }
 
-  next();
-  return;
+  return next();
 });
 
 // PostHog pageview tracking
