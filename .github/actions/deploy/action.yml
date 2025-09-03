@@ -9,9 +9,6 @@ outputs:
     description: "The URL of the deployed application."
     value: ${{ steps.output-deployment-url.outputs.deployment-url }}
 inputs:
-  firebase-target:
-    description: "The Firebase hosting target, if applicable."
-    required: false
   firebase-channel:
     description: "The Firebase hosting channel to deploy to, preview or default."
     required: true
