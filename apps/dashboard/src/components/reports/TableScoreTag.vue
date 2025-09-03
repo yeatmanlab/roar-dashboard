@@ -34,11 +34,14 @@ import {
   tasksToDisplayPercentCorrect,
   tasksToDisplayCorrectIncorrectDifference,
   tasksToDisplayTotalCorrect,
-  tasksToDisplayThetaScore,
+  tasksToDisplayGradeEstimate,
   rawOnlyTasks,
   scoredTasks,
   taskDisplayNames,
   includedValidityFlags,
+  subskillTasks,
+  roamFluencySubskillHeaders,
+  roamFluencyTasks,
 } from '@/helpers/reports.js';
 
 defineProps({
@@ -55,14 +58,20 @@ defineProps({
 });
 
 let returnScoreTooltip = (colData, fieldPath) => {
-  const taskId = fieldPath.split('.')[0] === 'scores' ? fieldPath.split('.')[1] : null;
+  const pathSegments = fieldPath.split('.');
+  const taskId = pathSegments[0] === 'scores' ? pathSegments[1] : null;
+  // Subskill fieldPaths are formatted as scores.taskId.subskillId.property
+  const subskillId = pathSegments.length > 3 ? pathSegments[2] : null;
   let toolTip = '';
 
-  if (colData.scores[taskId]?.supportLevel) {
-    // Handle scored tasks
-    return handleToolTip(taskId, toolTip, colData);
-    // Handle raw only tasks
-  } else if (taskId && !scoredTasks.includes(taskId)) {
+  if (subskillTasks.includes(taskId) && subskillId) {
+    // Prevent any tooltips from rendering for the incorrectSkills column.
+    if (taskId === 'roam-alpaca' && pathSegments[3] === 'incorrectSkills') {
+      return toolTip;
+    }
+    return handleSubskillToolTip(taskId, subskillId, toolTip, colData);
+  } else if (colData.scores[taskId]?.supportLevel || (taskId && !scoredTasks.includes(taskId))) {
+    // Handle raw only tasks or scored tasks
     return handleToolTip(taskId, toolTip, colData);
   }
   return toolTip;
@@ -91,27 +100,29 @@ function handleToolTip(_taskId, _toolTip, _colData) {
       _toolTip += 'Num Incorrect: ' + _colData.scores?.[_taskId]?.numIncorrect + '\n';
       _toolTip += 'Correct - Incorrect: ' + _colData.scores?.[_taskId]?.correctIncorrectDifference + '\n';
     } else if (tasksToDisplayTotalCorrect.includes(_taskId)) {
-      if (_colData.scores?.[_taskId]?.numCorrect === undefined) {
-        _toolTip += 'Num Correct: ' + 0 + '\n';
-        _toolTip += 'Num Attempted: ' + _colData.scores?.[_taskId]?.numAttempted + '\n';
-      } else {
-        _toolTip += 'Num Correct: ' + _colData.scores?.[_taskId]?.numCorrect + '\n';
-        _toolTip += 'Num Attempted: ' + _colData.scores?.[_taskId]?.numAttempted + '\n';
+      const numCorrect = _colData.scores?.[_taskId]?.numCorrect;
+      const numAttempted = _colData.scores?.[_taskId]?.numAttempted;
+
+      if (!(numCorrect != undefined && numAttempted != undefined)) {
+        return '';
       }
+
+      const isResponseModality =
+        _colData.scores?.[_taskId]?.isNewScoring && _colData.scores?.[_taskId]?.recruitment === 'responseModality';
+      Object.entries(roamFluencySubskillHeaders).forEach(([property, propertyHeader]) => {
+        if (_colData.scores?.[_taskId]?.[property] != undefined && !(isResponseModality && property === 'rawScore')) {
+          _toolTip += `${propertyHeader}: ${_colData.scores?.[_taskId]?.[property]}\n`;
+        }
+      });
     } else if (tasksToDisplayPercentCorrect.includes(_taskId)) {
       _toolTip += 'Num Correct: ' + _colData.scores?.[_taskId]?.numCorrect + '\n';
       _toolTip += 'Num Attempted: ' + _colData.scores?.[_taskId]?.numAttempted + '\n';
       _toolTip += 'Percent Correct: ' + _colData.scores?.[_taskId]?.percentCorrect + '\n';
-    } else if (tasksToDisplayThetaScore.includes(_taskId)) {
-      if (_colData.scores?.[_taskId]?.numCorrect === undefined) {
-        _toolTip += 'Num Correct: ' + 0 + '\n';
-        _toolTip += 'Num Incorrect: ' + _colData.scores?.[_taskId]?.numIncorrect + '\n';
-      } else {
-        _toolTip += 'Num Correct: ' + _colData.scores?.[_taskId]?.numCorrect + '\n';
-        _toolTip += 'Num Incorrect: ' + _colData.scores?.[_taskId]?.numIncorrect + '\n';
-      }
-      if (_colData.scores?.[_taskId]?.thetaEstimate && _colData.scores?.[_taskId]?.thetaEstimate !== '') {
-        _toolTip += 'Grade Estimate: ' + _colData.scores?.[_taskId]?.thetaEstimate + '\n';
+    } else if (tasksToDisplayGradeEstimate.includes(_taskId)) {
+      _toolTip += 'Num Correct: ' + _colData.scores?.[_taskId]?.numCorrect + '\n';
+      _toolTip += 'Num Attempted: ' + _colData.scores?.[_taskId]?.numAttempted + '\n';
+      if (_colData.scores?.[_taskId]?.gradeEstimate) {
+        _toolTip += 'Grade Estimate: ' + _colData.scores?.[_taskId]?.gradeEstimate + '\n';
       }
     } else if (rawOnlyTasks.includes(_taskId) && _colData.scores?.[_taskId]?.rawScore !== undefined) {
       _toolTip += 'Raw Score: ' + _colData.scores?.[_taskId]?.rawScore + '\n';
@@ -123,6 +134,29 @@ function handleToolTip(_taskId, _toolTip, _colData) {
   }
   // If the task is in the rawOnlyTasks list, display only the raw score and that the scores are under development
   // If the task is a scored task and has a raw score, then display all scores
+  return _toolTip;
+}
+
+function handleSubskillToolTip(_taskId, _subskillId, _toolTip, _colData) {
+  const subskillInfo = _colData.scores?.[_taskId]?.[_subskillId];
+  if (_taskId === 'roam-alpaca') {
+    if (subskillInfo?.supportLevel) {
+      _toolTip += subskillInfo?.supportLevel + '\n' + '\n';
+      _toolTip += getFlags(_colData, _taskId);
+    }
+    _toolTip += 'Num Correct: ' + (subskillInfo?.rawScore || 0) + '\n';
+    _toolTip += 'Num Attempted: ' + (subskillInfo?.numAttempted || 0) + '\n';
+    if (subskillInfo?.gradeEstimate) {
+      _toolTip += 'Grade Estimate: ' + subskillInfo?.gradeEstimate + '\n';
+    }
+  } else if (roamFluencyTasks.includes(_taskId)) {
+    Object.entries(roamFluencySubskillHeaders).forEach(([property, propertyHeader]) => {
+      if (subskillInfo?.[property] != undefined) {
+        _toolTip += `${propertyHeader}: ${subskillInfo?.[property]}\n`;
+      }
+    });
+  }
+
   return _toolTip;
 }
 

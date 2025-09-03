@@ -2,8 +2,9 @@
   "name": "roar-dashboard",
   "private": true,
   "bin": {
-    "setup-certs": "./scripts/setup-certs.sh"
+    "setup-certs": "./scrtips/setup-certs.sh"
   },
+  "version": "3.13.1",
   "scripts": {
     "dev": "turbo run dev",
     "dev:setup:certs": "setup-certs",

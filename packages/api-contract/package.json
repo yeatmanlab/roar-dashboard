@@ -12,7 +12,7 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "dev": "rollup -cw --environment NODE_ENV:development",
-    "build": "rollup -c --environment NODE_ENV:production && tsc -p tsconfig.build.types.json",
+    "build": "rm -rf dist && rollup -c --environment NODE_ENV:production && tsc -p tsconfig.build.types.json",
     "lint": "eslint .",
     "lint:fix": "eslint --fix .",
     "format": "prettier --write .",
@@ -27,7 +27,6 @@
   "devDependencies": {
     "@rollup/plugin-node-resolve": "^16.0.1",
     "@rollup/plugin-typescript": "^12.1.4",
-    "rimraf": "^6.0.1",
     "rollup": "^4.48.1",
     "rollup-plugin-node-externals": "^8.1.0",
     "typescript": "^5.9.2"

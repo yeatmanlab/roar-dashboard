@@ -44,6 +44,11 @@
             <template #percentage>
               <strong>{{ Math.round(task.percentileScore.value) }}</strong>
             </template>
+            <template #supportCategory>
+              <strong>{{
+                getSupportLevelLanguage(grade, task?.percentileScore.value, task?.rawScore.value, task.taskId)
+              }}</strong>
+            </template>
             <template #taskName>
               {{ taskDisplayNames[task.taskId]?.extendedName }}
             </template>
@@ -59,6 +64,11 @@
             </template>
             <template #rawScore>
               <strong>{{ task.rawScore.value }}</strong>
+            </template>
+            <template #supportCategory>
+              <strong>{{
+                getSupportLevelLanguage(grade, task?.percentileScore.value, task?.rawScore.value, task.taskId)
+              }}</strong>
             </template>
             <template #taskName>
               {{ taskDisplayNames[task.taskId]?.extendedName }}
@@ -93,11 +103,34 @@
           <span>
             {{ studentFirstName }}
             <strong>{{
-              getSupportLevelLanguage(grade, task?.percentileScore.value, task?.rawScore.value, task.taskId)
+              getSupportLevelLanguage(grade, task?.percentileScore.value, task?.rawScore.value, task.taskId, true)
             }}</strong>
+            {{ taskDisplayNames[task.taskId]?.extendedName }}.
           </span>
         </div>
-        <div v-if="!rawOnlyTasks.includes(task.taskId) && task.taskId !== 'phonics'">
+        <!-- Special handling for letter tasks -->
+        <div v-if="task.taskId === 'letter' || task.taskId === 'letter-en-ca'">
+          <PvAccordion
+            class="my-2 w-full"
+            :active-index="expanded ? 0 : null"
+            expand-icon="pi pi-plus ml-2"
+            collapse-icon="pi pi-minus ml-2"
+          >
+            <PvAccordionTab :header="$t('scoreReports.scoreBreakdown')">
+              <div v-for="[key, rawScore] in task.scoresArray" :key="key">
+                <div v-if="!isNaN(rawScore)" class="flex justify-content-between score-table">
+                  <div class="mr-2">
+                    <span class="font-bold text-sm">{{ key }}</span>
+                  </div>
+                  <div class="ml-2">
+                    <b>{{ isNaN(rawScore) ? rawScore : Math.round(rawScore) }}</b>
+                  </div>
+                </div>
+              </div>
+            </PvAccordionTab>
+          </PvAccordion>
+        </div>
+        <div v-else-if="!rawOnlyTasks.includes(task.taskId) && task.taskId !== 'phonics'">
           <PvAccordion
             class="my-2 w-full"
             :active-index="expanded ? 0 : null"
@@ -109,39 +142,18 @@
             <PvAccordionTab>
               <template #header>
                 <div class="flex align-items-center">
-                  <span class="font-light">{{ t('scoreReports.scoreBreakdown') }}</span>
+                  <span class="font-strong">{{ t('scoreReports.scoreBreakdown') }}</span>
                 </div>
               </template>
               <div class="flex flex-column">
-                <div
-                  v-for="[key, value] in task.formattedScores"
-                  :key="key"
-                  class="flex flex-row justify-content-between align-items-center mb-2"
-                >
-                  <span class="font-light text-sm">{{ key }}</span>
-                  <span class="font-bold text-sm">{{ value }}</span>
-                </div>
-              </div>
-            </PvAccordionTab>
-          </PvAccordion>
-        </div>
-        <div v-if="task.taskId === 'letter' || task.taskId === 'letter-en-ca'">
-          <PvAccordion
-            class="my-2 w-full"
-            :active-index="expanded ? 0 : null"
-            expand-icon="pi pi-plus ml-2"
-            collapse-icon="pi pi-minus ml-2"
-          >
-            <PvAccordionTab :header="$t('scoreReports.scoreBreakdown')">
-              <div v-for="[key, rawScore, rangeMin, rangeMax] in task.scoresArray" :key="key">
-                <div v-if="!isNaN(rawScore)" class="flex justify-content-between score-table">
-                  <div class="mr-2">
-                    <b>{{ key }}</b
-                    ><span v-if="rangeMax" class="text-500">({{ rangeMin }}-{{ rangeMax }}):</span>
-                    <span v-else>:</span>
-                  </div>
-                  <div class="ml-2">
-                    <b>{{ isNaN(rawScore) ? rawScore : Math.round(rawScore) }}</b>
+                <div v-for="[key, value, rangeMin, rangeMax] in task.scoresArray" :key="key">
+                  <div class="flex justify-content-between score-table">
+                    <div class="mr-2">
+                      <span class="font-bold text-sm">{{ key }}</span>
+                      <span v-if="rangeMax" class="text-500">({{ rangeMin }}-{{ rangeMax }}):</span>
+                      <span v-else>:</span>
+                    </div>
+                    <span class="font-bold text-sm ml-2">{{ value }}</span>
                   </div>
                 </div>
               </div>
@@ -216,12 +228,7 @@ const computedTaskData = computed(() => {
     const compositeScores = scores?.composite;
     let rawScore = null;
     if (!taskId.includes('vocab') && !taskId.includes('es')) {
-      if (taskId.includes('letter')) {
-        // letter's raw score is a percentage expressed as a float, so we need to multiply by 100.
-        rawScore = _get(compositeScores, 'totalCorrect');
-      } else {
-        rawScore = _get(compositeScores, rawScoreKey);
-      }
+      rawScore = _get(compositeScores, rawScoreKey);
     } else {
       rawScore = compositeScores;
     }
@@ -248,11 +255,11 @@ const computedTaskData = computed(() => {
         },
         percentileScore: {
           name: tasksToDisplayPercentCorrect.includes(taskId)
-            ? 'PERCENT CORRECT'
+            ? 'Percent Correct'
             : _startCase(t('scoreReports.percentileScore')),
           value: Math.round(percentileScore),
           min: 0,
-          max: 99,
+          max: taskId.includes('letter') ? 100 : 99,
           supportColor: supportColor,
         },
       };
@@ -371,14 +378,25 @@ const computedTaskData = computed(() => {
     .map((taskId) => computedTaskAcc[taskId]);
 });
 
-function getSupportLevelLanguage(grade, percentile, rawScore, taskId) {
+function getSupportLevelLanguage(grade, percentile, rawScore, taskId, truncated = null) {
+  // truncated is applied when the description on the task card is shortened;
+  // the sentences called when truncated is true will better match the shortened descriptions
   const { support_level } = getSupportLevel(grade, percentile, rawScore, taskId);
   if (support_level) {
     if (support_level === 'Achieved Skill') {
+      if (truncated) {
+        return t('scoreReports.achievedTextSingular');
+      }
       return t('scoreReports.achievedText');
     } else if (support_level === 'Developing Skill') {
+      if (truncated) {
+        return t('scoreReports.developingTextSingular');
+      }
       return t('scoreReports.developingText');
     } else if (support_level === 'Needs Extra Support') {
+      if (truncated) {
+        return t('scoreReports.extraSupportTextPlural');
+      }
       return t('scoreReports.extraSupportText');
     }
   }
@@ -397,7 +415,8 @@ function getPercentileSuffix(percentile) {
 }
 
 function getValueTemplate(task) {
-  if (task.taskId === 'phonics') {
+  const appendPercentageTo = ['phonics', 'letter', 'letter-es', 'letter-en-ca'];
+  if (appendPercentageTo.includes(task.taskId)) {
     return task[task.scoreToDisplay].value + '%';
   }
 
@@ -409,7 +428,8 @@ function getValueTemplate(task) {
 }
 
 function getScoreToDisplay(taskId, gradeValue) {
-  if (taskId === 'phonics') return 'percentileScore';
+  const alwaysDisplaysPercentileScore = ['phonics', 'letter', 'letter-es', 'letter-en-ca'];
+  if (alwaysDisplaysPercentileScore.includes(taskId)) return 'percentileScore';
   return gradeValue >= 6 ? 'standardScore' : 'percentileScore';
 }
 </script>

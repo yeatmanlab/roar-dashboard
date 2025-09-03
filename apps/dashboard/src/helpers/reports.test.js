@@ -6,6 +6,8 @@ import {
   getScoreKeys,
   getRawScoreThreshold,
   getRawScoreRange,
+  getTagColor,
+  supportLevelColors,
 } from './reports';
 
 vi.mock('./index', () => ({
@@ -127,8 +129,8 @@ describe('reports', () => {
     it('should return correct keys for letter task', () => {
       const result = getScoreKeys('letter', 3);
       expect(result).toEqual({
-        percentileScoreKey: undefined,
-        percentileScoreDisplayKey: undefined,
+        percentileScoreKey: 'totalPercentCorrect',
+        percentileScoreDisplayKey: 'totalPercentCorrect',
         standardScoreKey: undefined,
         standardScoreDisplayKey: undefined,
         rawScoreKey: 'totalCorrect',
@@ -235,6 +237,26 @@ describe('reports', () => {
       await addElementToPdf(element, mockDocument, yCounter);
 
       expect(mockDocument.addPage).toHaveBeenCalled();
+    });
+  });
+
+  describe('getTagColor', () => {
+    it('should return below color for "Needs Extra Support"', () => {
+      expect(getTagColor('Needs Extra Support')).toBe(supportLevelColors.below);
+    });
+
+    it('should return some color for "Developing Skill"', () => {
+      expect(getTagColor('Developing Skill')).toBe(supportLevelColors.some);
+    });
+
+    it('should return above color for "Achieved Skill"', () => {
+      expect(getTagColor('Achieved Skill')).toBe(supportLevelColors.above);
+    });
+
+    it('should handle unexpected values gracefully', () => {
+      expect(getTagColor('Unknown')).toBe(supportLevelColors.Assessed);
+      expect(getTagColor(null)).toBe(supportLevelColors.Assessed);
+      expect(getTagColor(undefined)).toBe(supportLevelColors.Assessed);
     });
   });
 });
