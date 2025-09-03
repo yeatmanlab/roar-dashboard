@@ -936,10 +936,6 @@ export function getScoreValue(scoresObject, taskId, grade, fieldType) {
     return undefined;
   }
 
-  if (!ALLOWED_SCORE_FIELD_TYPES.includes(fieldType)) {
-    throw new Error(`Invalid fieldType. Expected one of ${ALLOWED_SCORE_FIELD_TYPES.join(', ')}, but got ${fieldType}`);
-  }
-
   const gradeValue = toValue(grade);
 
   // Try new field name first
