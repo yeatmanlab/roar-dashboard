@@ -12,7 +12,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run",
-    "test:watch": "vitest",
+    "test:watch": "vitest --watch",
     "check-types": "tsc --noEmit --watch",
     "db:gen:app": "drizzle-kit generate --config ./drizzle.core.config.ts",
     "db:gen:assess": "drizzle-kit generate --config ./drizzle.assessment.config.ts",

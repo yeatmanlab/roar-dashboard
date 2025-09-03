@@ -7,14 +7,13 @@ export default defineConfig({
     environment: 'node',
     globals: true,
     watch: false,
+    setupFiles: ['./vitest.setup.ts'],
     coverage: {
       enabled: true,
       all: true,
       clean: true,
       provider: 'v8',
-      reporter: isCI
-        ? [['lcov', { projectRoot: '../..' }], 'json', 'json-summary', 'text-summary']
-        : ['html', 'text-summary'],
+      reporter: isCI ? [['lcov', { projectRoot: '../..' }], 'json', 'json-summary', 'text-summary'] : ['html', 'text'],
     },
   },
 });
