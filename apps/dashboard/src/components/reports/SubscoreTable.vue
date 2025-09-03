@@ -260,7 +260,6 @@ const exportAll = async () => {
     } else if (props.taskId === 'pa') {
       _set(tableRow, 'First Sound', _get(scores, 'pa.firstSound'));
       _set(tableRow, 'Last Sound', _get(scores, 'pa.lastSound'));
-      _set(tableRow, 'Blending', _get(scores, 'pa.blending'));
       _set(tableRow, 'Deletion', _get(scores, 'pa.deletion'));
       _set(tableRow, 'Total', _get(scores, 'pa.total'));
       _set(tableRow, 'Skills To Work On', _get(scores, 'pa.skills'));
