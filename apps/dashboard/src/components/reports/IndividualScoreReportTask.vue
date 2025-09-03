@@ -109,6 +109,51 @@
           </span>
         </div>
         <!-- Special handling for letter tasks -->
+        <div v-if="task.taskId === 'phonics'">
+          <PvAccordion
+            class="my-2 w-full"
+            :active-index="expanded ? 0 : null"
+            expand-icon="pi pi-plus ml-2"
+            collapse-icon="pi pi-minus ml-2"
+            @tab-close="emit('update:expanded', false)"
+            @tab-open="emit('update:expanded', true)"
+          >
+            <PvAccordionTab>
+              <template #header>
+                <div class="flex align-items-center">
+                  <span class="font-light">{{ t('scoreReports.scoreBreakdown') }}</span>
+                </div>
+              </template>
+              <div class="flex flex-column">
+                <!-- Total scores -->
+                <div class="flex flex-row justify-content-between align-items-center mb-2">
+                  <span class="font-light text-sm">Percent Correct</span>
+                  <span class="font-bold text-sm">{{ Math.round(_get(task.scores, 'composite.totalPercentCorrect')) }}%</span>
+                </div>
+                <div class="flex flex-row justify-content-between align-items-center mb-3">
+                  <span class="font-light text-sm">Raw Score (0-72)</span>
+                  <span class="font-bold text-sm">{{ _get(task.scores, 'composite.totalCorrect') }}</span>
+                </div>
+                <!-- Divider -->
+                <div class="border-bottom-1 border-300 mb-3"></div>
+                <!-- Subscores -->
+                <div
+                  v-for="category in phonicsCategories"
+                  :key="category"
+                  class="flex flex-row justify-content-between align-items-center mb-2"
+                >
+                  <span class="font-light text-sm">{{ t(`scoreReports.phonics.${category}`) }}</span>
+                  <span class="font-bold text-sm">{{ 
+                    (() => {
+                      const subscore = _get(task.scores, `composite.subscores.${category}`);
+                      return subscore ? `${subscore.correct}/${subscore.attempted}` : '0/0';
+                    })()
+                  }}</span>
+                </div>
+              </div>
+            </PvAccordionTab>
+          </PvAccordion>
+        </div>
         <div v-if="task.taskId === 'letter' || task.taskId === 'letter-en-ca'">
           <PvAccordion
             class="my-2 w-full"
@@ -130,41 +175,7 @@
             </PvAccordionTab>
           </PvAccordion>
         </div>
-        <div v-else-if="task.taskId === 'phonics'">
-          <PvAccordion
-            class="my-2 w-full"
-            :active-index="expanded ? 0 : null"
-            expand-icon="pi pi-plus ml-2"
-            collapse-icon="pi pi-minus ml-2"
-            @tab-close="emit('update:expanded', false)"
-            @tab-open="emit('update:expanded', true)"
-          >
-            <PvAccordionTab :header="$t('scoreReports.scoreBreakdown')">
-              <div class="flex flex-column">
-                <div v-for="category in phonicsCategories" :key="category" class="flex justify-content-between score-table">
-                  <div class="mr-2">
-                    <span class="font-bold text-sm">{{ t(`scoreReports.phonics.${category}`) }}</span>
-                  </div>
-                  <div class="ml-2">
-                    <span class="font-bold text-sm">
-                      {{ task.scores?.composite?.subscores?.[category]?.correct || 0 }}/
-                      {{ task.scores?.composite?.subscores?.[category]?.attempted || 0 }}
-                    </span>
-                  </div>
-                </div>
-                <div class="flex justify-content-between score-table mt-2">
-                  <div class="mr-2">
-                    <span class="font-bold text-sm">Total % Correct</span>
-                  </div>
-                  <div class="ml-2">
-                    <span class="font-bold text-sm">{{ task.scores?.composite?.totalPercentCorrect || 0 }}%</span>
-                  </div>
-                </div>
-              </div>
-            </PvAccordionTab>
-          </PvAccordion>
-        </div>
-        <div v-else-if="!rawOnlyTasks.includes(task.taskId)">
+        <div v-else-if="!rawOnlyTasks.includes(task.taskId) && task.taskId !== 'phonics'">
           <PvAccordion
             class="my-2 w-full"
             :active-index="expanded ? 0 : null"
@@ -202,6 +213,11 @@
 <script setup>
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
+import _lowerCase from 'lodash/lowerCase';
+import _startCase from 'lodash/startCase';
+import _toUpper from 'lodash/toUpper';
+import _get from 'lodash/get';
+import { getGrade } from '@bdelab/roar-utils';
 
 const phonicsCategories = [
   'cvc',
@@ -214,11 +230,6 @@ const phonicsCategories = [
   'silent_e',
   'vowel_team',
 ];
-import _lowerCase from 'lodash/lowerCase';
-import _startCase from 'lodash/startCase';
-import _toUpper from 'lodash/toUpper';
-import _get from 'lodash/get';
-import { getGrade } from '@bdelab/roar-utils';
 import PvAccordion from 'primevue/accordion';
 import PvAccordionTab from 'primevue/accordiontab';
 import PvKnob from 'primevue/knob';
@@ -355,6 +366,7 @@ const computedTaskData = computed(() => {
         scoreToDisplay: scoreToDisplay,
         ...scoresForTask,
         tags: tags,
+        scores: scores,
       };
 
       // initialize array with precomputed raw, std, percentile scores
