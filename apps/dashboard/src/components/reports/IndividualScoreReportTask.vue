@@ -366,6 +366,7 @@ const computedTaskData = computed(() => {
         scoreToDisplay: scoreToDisplay,
         ...scoresForTask,
         tags: tags,
+        scores: scores,
       };
 
       // initialize array with precomputed raw, std, percentile scores

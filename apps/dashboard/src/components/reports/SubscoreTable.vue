@@ -136,7 +136,6 @@ const columns = computed(() => {
     tableColumns.push(
       { field: 'scores.pa.firstSound', header: 'First Sound', dataType: 'text', sort: false },
       { field: 'scores.pa.lastSound', header: 'Last Sound', dataType: 'text', sort: false },
-      { field: 'scores.pa.blending', header: 'Blending', dataType: 'text', sort: false },
       { field: 'scores.pa.deletion', header: 'Deletion', dataType: 'text', sort: false },
       { field: 'scores.pa.total', header: 'Total', dataType: 'text', sort: false },
       { field: 'scores.pa.skills', header: 'Skills To Work On', dataType: 'text', sort: false },
