@@ -17,7 +17,6 @@
       </PvAccordionTab>
     </PvAccordion>
   </div>
-  <!-- <div class="grid grid-cols-2 w-full space-around items-center p-3"> -->
   <div v-if="tasksToDisplayGraphs.includes(taskId)" :id="'tab-view-chart-' + taskId" class="chart-toggle-wrapper">
     <div v-if="orgType === 'district'" class="mb-3" data-html2canvas-ignore="true">
       <div class="flex uppercase text-xs font-light">view rows by</div>

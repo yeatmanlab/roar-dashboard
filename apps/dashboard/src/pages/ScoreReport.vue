@@ -785,6 +785,27 @@ const computeAssignmentAndRunData = computed(() => {
 
           scoreFilterTags += ' Assessed ';
         }
+        if (taskId === 'phonics' && assessment.scores?.computed?.composite) {
+          const composite = assessment.scores.computed.composite;
+          currRowScores[taskId] = {
+            composite: {
+              totalCorrect: composite.totalCorrect,
+              totalNumAttempted: composite.totalNumAttempted,
+              totalPercentCorrect: composite.totalPercentCorrect,
+              subscores: {},
+            },
+          };
+
+          // Process each subscore
+          Object.entries(composite.subscores || {}).forEach(([category, data]) => {
+            currRowScores[taskId].composite.subscores[category] = {
+              percentCorrect: `${data.correct}/${data.attempted}`,
+              correct: data.correct,
+              attempted: data.attempted,
+            };
+          });
+        }
+
         if ((taskId === 'letter' || taskId === 'letter-en-ca') && assessment.scores) {
           currRowScores[taskId].lowerCaseScore = assessment.scores.computed.LowercaseNames?.subScore;
           currRowScores[taskId].upperCaseScore = assessment.scores.computed.UppercaseNames?.subScore;
