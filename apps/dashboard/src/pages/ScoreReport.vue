@@ -261,6 +261,11 @@
 
 <script setup>
 import { computed, ref, onMounted, watch } from 'vue';
+
+const formatPhonicsScore = (score) => {
+  if (!score?.correct || !score?.attempted) return '0/0';
+  return `${score.correct}/${score.attempted}`;
+};
 import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router';
 import { jsPDF } from 'jspdf';
@@ -785,28 +790,29 @@ const computeAssignmentAndRunData = computed(() => {
 
           scoreFilterTags += ' Assessed ';
         }
-        if (taskId === 'phonics' && assessment.scores?.computed?.composite) {
-          const composite = assessment.scores.computed.composite;
-          currRowScores[taskId] = {
-            composite: {
-              totalCorrect: composite.totalCorrect,
-              totalNumAttempted: composite.totalNumAttempted,
-              totalPercentCorrect: composite.totalPercentCorrect,
-              subscores: {},
-            },
-          };
-
-          // Process each subscore
-          Object.entries(composite.subscores || {}).forEach(([category, data]) => {
-            currRowScores[taskId].composite.subscores[category] = {
-              percentCorrect: `${data.correct}/${data.attempted}`,
-              correct: data.correct,
-              attempted: data.attempted,
+        if (taskId === 'phonics' && assessment.scores) {
+          // Process phonics scores
+          const composite = assessment.scores.computed?.composite;
+          if (composite) {
+            currRowScores[taskId] = {
+              composite: {
+                totalPercentCorrect: composite.totalPercentCorrect,
+                subscores: {
+                  cvc: formatPhonicsScore(composite.subscores?.cvc),
+                  digraph: formatPhonicsScore(composite.subscores?.digraph),
+                  initial_blend: formatPhonicsScore(composite.subscores?.initial_blend),
+                  tri_blend: formatPhonicsScore(composite.subscores?.tri_blend),
+                  final_blend: formatPhonicsScore(composite.subscores?.final_blend),
+                  r_controlled: formatPhonicsScore(composite.subscores?.r_controlled),
+                  r_cluster: formatPhonicsScore(composite.subscores?.r_cluster),
+                  silent_e: formatPhonicsScore(composite.subscores?.silent_e),
+                  vowel_team: formatPhonicsScore(composite.subscores?.vowel_team)
+                }
+              },
+              skillsToWorkOn: composite.skillsToWorkOn || 'None'
             };
-          });
-        }
-
-        if ((taskId === 'letter' || taskId === 'letter-en-ca') && assessment.scores) {
+          }
+        } else if ((taskId === 'letter' || taskId === 'letter-en-ca') && assessment.scores) {
           currRowScores[taskId].lowerCaseScore = assessment.scores.computed.LowercaseNames?.subScore;
           currRowScores[taskId].upperCaseScore = assessment.scores.computed.UppercaseNames?.subScore;
           currRowScores[taskId].phonemeScore = assessment.scores.computed.Phonemes?.subScore;
@@ -824,26 +830,6 @@ const computeAssignmentAndRunData = computed(() => {
             .split(',')
             .join(', ');
           currRowScores[taskId].incorrectPhonemes = incorrectPhonemesArray.length > 0 ? incorrectPhonemesArray : 'None';
-        }
-        if (taskId === 'phonics' && assessment.scores?.computed) {
-          const composite = assessment.scores.computed.composite;
-          currRowScores[taskId] = {
-            scores: {
-              composite: {
-                totalCorrect: composite.totalCorrect,
-                totalNumAttempted: composite.totalNumAttempted,
-                totalPercentCorrect: composite.totalPercentCorrect,
-                subscores: {},
-              },
-            },
-          };
-          // Process each subscore
-          Object.entries(composite.subscores || {}).forEach(([category, data]) => {
-            currRowScores[taskId].scores.composite.subscores[category] = {
-              correct: data.correct,
-              attempted: data.attempted,
-            };
-          });
         }
         if (taskId === 'pa' && assessment.scores) {
           const first = _get(assessment, 'scores.computed.FSM.roarScore');
@@ -898,18 +884,16 @@ const computeAssignmentAndRunData = computed(() => {
                 currRowScores[taskId][subskillId] = null;
               }
             });
+
+            // Passing null for empty incorrectSkill arrays to prevent it from rendering under TableScoreTag.vue conditions.
+            currRowScores[taskId].composite = {
+              ...scores.composite,
+              incorrectSkills: scores.composite.incorrectSkills?.length > 0 ? scores.composite.incorrectSkills : null,
+              gradeEstimate: scores.composite.gradeEstimate ? _round(scores.composite.gradeEstimate, 2) : '',
+              tagColor: getTagColor(scores.composite.supportLevel),
+            };
           }
         }
-
-      // Passing null for empty incorrectSkill arrays to prevent it from rendering under TableScoreTag.vue conditions.
-      if (taskId === 'roam-alpaca' && assessment.scores?.composite) {
-        currRowScores[taskId].composite = {
-          ...assessment.scores.composite,
-          incorrectSkills: assessment.scores.composite.incorrectSkills?.length > 0 ? assessment.scores.composite.incorrectSkills : null,
-          gradeEstimate: assessment.scores.composite.gradeEstimate ? _round(assessment.scores.composite.gradeEstimate, 2) : '',
-          tagColor: getTagColor(assessment.scores.composite.supportLevel)
-        };
-      }
 
         // Logic to update runsByTaskIdAcc
         const run = {
@@ -993,9 +977,13 @@ const computeAssignmentAndRunData = computed(() => {
 // This composable manages the data which is passed into the FilterBar component slot for filtering
 const filteredTableData = ref([]);
 
-watch(computeAssignmentAndRunData, (newValue) => {
-  filteredTableData.value = newValue.assignmentTableData;
-}, { immediate: true, deep: true });
+watch(
+  computeAssignmentAndRunData,
+  (newValue) => {
+    filteredTableData.value = newValue.assignmentTableData;
+  },
+  { immediate: true, deep: true },
+);
 
 const viewMode = ref('color');
 

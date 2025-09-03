@@ -426,7 +426,7 @@ export const tasksToDisplayTotalCorrect = [
 /*
  *  Tasks to Display total numCorrect grade estimate and support level
  */
-export const tasksToDisplayGradeEstimate = ['roam-alpaca'];
+export const tasksToDisplayGradeEstimate = ['roam-alpaca', 'phonics'];
 
 /*
  *  Tasks to Display numCorrect - numIncorrect
@@ -625,6 +625,9 @@ export function getGradeWithSuffix(grade) {
  *  Function to take scores, taskId, and grade and return the proper support category for the run.
  */
 export const getDialColor = (grade, percentile, rawScore, taskId) => {
+  if (taskId === 'phonics') {
+    return 'var(--gray-500)';
+  }
   const { tag_color } = getSupportLevel(grade, percentile, rawScore, taskId);
   return tag_color;
 };
@@ -826,6 +829,22 @@ export const getRawScoreRange = (taskId) => {
 };
 
 export const taskInfoById = {
+  phonics: {
+    color: '#4B7BE5',
+    header: 'ROAR-PHONICS',
+    subheader: 'Phonics Assessment',
+    desc: 'ROAR - Phonics evaluates a students understanding of letter-sound relationships and their ability to decode words using phonics skills. The assessment covers various phonics patterns including CVC words, digraphs, blends, r-controlled vowels, silent e, and vowel teams. Each category measures the students proficiency in recognizing and applying specific phonics patterns, which is essential for developing strong reading skills.',
+    definitions: [
+      {
+        header: 'WHAT ARE PHONICS PATTERNS?',
+        desc: 'Phonics patterns are consistent relationships between letters and sounds in written language. Understanding these patterns helps readers decode unfamiliar words by recognizing common letter combinations and their associated sounds.',
+      },
+      {
+        header: 'WHY IS PHONICS IMPORTANT?',
+        desc: 'Phonics is a fundamental skill for reading development. It helps students connect written letters to spoken sounds, enabling them to decode new words independently. Strong phonics skills contribute to better reading fluency and comprehension.',
+      },
+    ],
+  },
   swr: {
     color: '#E97A49',
     header: 'ROAR-WORD',

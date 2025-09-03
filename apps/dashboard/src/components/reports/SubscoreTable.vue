@@ -11,13 +11,13 @@
 </template>
 <script setup>
 import { computed, ref, onMounted } from 'vue';
-import { storeToRefs } from 'pinia';
-import { exportCsv } from '@/helpers/query/utils';
 import _get from 'lodash/get';
 import _kebabCase from 'lodash/kebabCase';
 import _set from 'lodash/set';
 import _toUpper from 'lodash/toUpper';
+import { exportCsv } from '@/helpers/query/utils';
 import { useAuthStore } from '@/store/auth';
+import { storeToRefs } from 'pinia';
 import RoarDataTable from '@/components/RoarDataTable';
 import {
   roamAlpacaSubskills,
@@ -25,16 +25,10 @@ import {
   roamFluencySubskillHeaders,
   roamFluencyTasks,
 } from '@/helpers/reports';
-import { useI18n } from 'vue-i18n';
-
-const { t } = useI18n();
 
 const props = defineProps({
   administrationId: { type: String, default: '' },
-  computedTableData: {
-    type: Array,
-    default: () => [],
-  },
+  computedTableData: { type: Array, default: () => [] },
   taskId: { type: String, required: true },
   taskName: { type: String, required: true },
   orgType: { type: String, default: '' },
@@ -101,6 +95,21 @@ const columns = computed(() => {
       { field: `scores.${props.taskId}.incorrectPhonemes`, header: 'Sounds To Work On', dataType: 'text', sort: false },
     );
   }
+  if (props.taskId === 'pa') {
+    tableColumns.push(
+      { field: 'scores.pa.firstSound', header: 'First Sound', dataType: 'text', sort: false },
+      { field: 'scores.pa.lastSound', header: 'Last Sound', dataType: 'text', sort: false },
+      { field: 'scores.pa.deletion', header: 'Deletion', dataType: 'text', sort: false },
+      { field: 'scores.pa.total', header: 'Total', dataType: 'text', sort: false },
+      { field: 'scores.pa.skills', header: 'Skills To Work On', dataType: 'text', sort: false },
+    );
+  }
+  if (roamFluencyTasks.includes(props.taskId)) {
+    tableColumns.push(
+      { field: `scores.${props.taskId}.fr.rawScore`, header: 'Free Response', dataType: 'text', sort: false },
+      { field: `scores.${props.taskId}.fc.rawScore`, header: 'Multiple Choice', dataType: 'text', sort: false },
+    );
+  }
   if (props.taskId === 'phonics') {
     const subcategories = [
       { field: 'cvc', header: 'CVC' },
@@ -117,10 +126,13 @@ const columns = computed(() => {
     // Add columns for each subcategory
     subcategories.forEach(({ field, header }) => {
       tableColumns.push({
-        field: `scores.${props.taskId}.composite.subscores.${field}.percentCorrect`,
-        header: `${header} (Correct/Attempted)`,
-        dataType: 'number',
+        field: `scores.${props.taskId}.composite.subscores.${field}`,
+        header: header,
+        dataType: 'text',
         sort: true,
+        body: (row) => {
+          return _get(row, `scores.${props.taskId}.composite.subscores.${field}`) || '0/0';
+        },
       });
     });
 
@@ -130,22 +142,19 @@ const columns = computed(() => {
       header: 'Total % Correct',
       dataType: 'number',
       sort: true,
+      body: (row) => {
+        const totalPercent = _get(row, `scores.${props.taskId}.composite.totalPercentCorrect`);
+        return typeof totalPercent === 'number' ? `${Math.round(totalPercent)}%` : '0%';
+      },
     });
-  }
-  if (props.taskId === 'pa') {
-    tableColumns.push(
-      { field: 'scores.pa.firstSound', header: 'First Sound', dataType: 'text', sort: false },
-      { field: 'scores.pa.lastSound', header: 'Last Sound', dataType: 'text', sort: false },
-      { field: 'scores.pa.deletion', header: 'Deletion', dataType: 'text', sort: false },
-      { field: 'scores.pa.total', header: 'Total', dataType: 'text', sort: false },
-      { field: 'scores.pa.skills', header: 'Skills To Work On', dataType: 'text', sort: false },
-    );
-  }
-  if (roamFluencyTasks.includes(props.taskId)) {
-    tableColumns.push(
-      { field: `scores.${props.taskId}.fr.rawScore`, header: 'Free Response', dataType: 'text', sort: false },
-      { field: `scores.${props.taskId}.fc.rawScore`, header: 'Multiple Choice', dataType: 'text', sort: false },
-    );
+
+    // Add skills to work on
+    tableColumns.push({
+      field: `scores.${props.taskId}.skillsToWorkOn`,
+      header: 'Skills To Work On',
+      dataType: 'text',
+      sort: false,
+    });
   }
   if (props.taskId === 'roam-alpaca') {
     const gradeEstimate = `scores.${props.taskId}.gradeEstimate`;
@@ -208,6 +217,26 @@ const exportSelected = (selectedRows) => {
         _set(tableRow, `Multiple Choice - ${propertyHeader}`, _get(scores, `${props.taskId}.fc.${property}`));
       });
     }
+    if (props.taskId === 'phonics') {
+      const subcategories = [
+        'cvc',
+        'digraph',
+        'initial_blend',
+        'tri_blend',
+        'final_blend',
+        'r_controlled',
+        'r_cluster',
+        'silent_e',
+        'vowel_team',
+      ];
+      subcategories.forEach((category) => {
+        const subscore = _get(scores, `${props.taskId}.composite.subscores.${category}`);
+        _set(tableRow, `${category} (Correct/Attempted)`, subscore ? `${subscore.correct}/${subscore.attempted}` : '0/0');
+      });
+      _set(tableRow, 'Total % Correct', _get(scores, `${props.taskId}.composite.totalPercentCorrect`));
+      _set(tableRow, 'Skills To Work On', _get(scores, `${props.taskId}.skillsToWorkOn`));
+    }
+
     if (props.taskId === 'roam-alpaca') {
       _set(tableRow, 'Raw Score', _get(scores, `${props.taskId}.composite.roarScore`));
       _set(tableRow, 'Grade Estimate', _get(scores, `${props.taskId}.composite.gradeEstimate`));
@@ -239,24 +268,6 @@ const exportAll = async () => {
       _set(tableRow, 'Total', _get(scores, `${props.taskId}.totalScore`));
       _set(tableRow, 'Letters To Work On', _get(scores, `${props.taskId}.incorrectLetters`));
       _set(tableRow, 'Sounds To Work On', _get(scores, `${props.taskId}.incorrectPhonemes`));
-    } else if (props.taskId === 'phonics') {
-      const subcategories = [
-        'cvc',
-        'digraph',
-        'initial_blend',
-        'tri_blend',
-        'final_blend',
-        'r_controlled',
-        'r_cluster',
-        'silent_e',
-        'vowel_team',
-      ];
-      subcategories.forEach((category) => {
-        const displayName = t(`scoreReports.phonics.${category}`);
-        const subscore = _get(scores, `${props.taskId}.composite.subscores.${category}`);
-        _set(tableRow, displayName, subscore ? `${subscore.correct}/${subscore.attempted}` : '0/0');
-      });
-      _set(tableRow, 'Skills To Work On', _get(scores, `${props.taskId}.skillsToWorkOn`));
     } else if (props.taskId === 'pa') {
       _set(tableRow, 'First Sound', _get(scores, 'pa.firstSound'));
       _set(tableRow, 'Last Sound', _get(scores, 'pa.lastSound'));
