@@ -39,14 +39,15 @@
             <div class="assignment__date">
               <i class="pi pi-calendar"></i>
               <small
-                ><span class="font-bold">Start: </span
-                >{{ format(selectedAssignment?.dateOpened, 'MMM dd, yyyy') }}</small
+                ><span class="font-bold">{{ assignmentStartDateLabel }}</span>
+                {{ format(selectedAssignment?.dateOpened, 'MMM dd, yyyy') }}</small
               >
             </div>
             <div class="assignment__date">
               <i class="pi pi-calendar"></i>
               <small
-                ><span class="font-bold">End: </span>{{ format(selectedAssignment?.dateClosed, 'MMM dd, yyyy') }}</small
+                ><span class="font-bold">{{ assignmentEndDateLabel }}</span>
+                {{ format(selectedAssignment?.dateClosed, 'MMM dd, yyyy') }}</small
               >
             </div>
           </div>
@@ -158,7 +159,6 @@ onMounted(async () => {
 });
 
 const gameStore = useGameStore();
-const { selectedAdmin } = storeToRefs(gameStore);
 
 const {
   data: districtsData,
@@ -208,14 +208,23 @@ const currentAssignments = computed(() => sortedUserAdministrations.value.filter
 const pastAssignments = computed(() => sortedUserAdministrations.value.filter((a) => isPast(a, now.value)));
 const upcomingAssignments = computed(() => sortedUserAdministrations.value.filter((a) => isUpcoming(a, now.value)));
 
+const assignmentStartDateLabel = computed(() => {
+  const dateOpened = selectedAssignment.value?.dateOpened || new Date();
+  return new Date(dateOpened) < now.value ? 'Started:' : 'Start:';
+});
+
+const assignmentEndDateLabel = computed(() => {
+  const dateClosed = selectedAssignment.value?.dateClosed || new Date();
+  return new Date(dateClosed) < now.value ? 'Ended:' : 'End:';
+});
+
 watch([assignmentsStore, currentAssignments], () => {
   const assignment = assignmentsStore?.selectedAssignment || currentAssignments.value[0] || [];
   assignmentsStore.setSelectedAssignment(assignment);
-  assignmentsStore.setSelectedStatus(ASSIGNMENT_STATUSES.CURRENT);
 });
 
 const taskIds = computed(() => {
-  return (selectedAdmin.value?.assessments ?? []).map((assessment) => assessment.taskId);
+  return (selectedAssignment.value?.assessments ?? []).map((assessment) => assessment.taskId);
 });
 
 const tasksQueryEnabled = computed(() => !isLoadingAssignments.value && !_isEmpty(taskIds.value));
@@ -230,7 +239,7 @@ const {
 
 // Computed didn't react to selected admin changes, so using a ref instead.
 let hasSurvey = ref(false);
-watch(selectedAdmin, (newAdmin, oldAdmin) => {
+watch(selectedAssignment, (newAdmin, oldAdmin) => {
   hasSurvey.value = newAdmin?.assessments.some((task) => task.taskId === 'survey');
   // Reset survey store when switching between different administrations
   if (newAdmin?.id !== oldAdmin?.id && oldAdmin?.id) {
@@ -258,7 +267,7 @@ const hasAssignments = computed(() => {
 async function checkConsent() {
   showConsent.value = false;
 
-  const legal = selectedAdmin.value?.legal;
+  const legal = selectedAssignment.value?.legal;
   if (!legal) return;
 
   // Check if the user has already consented to the Levante consent form
@@ -283,8 +292,8 @@ async function checkConsent() {
 
 async function updateConsent() {
   consentParams.value = {
-    amount: selectedAdmin.value?.legal.amount,
-    expectedTime: selectedAdmin.value?.legal.expectedTime,
+    amount: selectedAssignment.value?.legal.amount,
+    expectedTime: selectedAssignment.value?.legal.expectedTime,
     dateSigned: new Date(),
   };
 
@@ -324,12 +333,12 @@ watch(
 // Assessments to populate the game tabs.
 // Generated based on the current selected administration Id
 const assessments = computed(() => {
-  if (!isFetching.value && selectedAdmin.value && (userTasks.value ?? []).length > 0) {
+  if (!isFetching.value && selectedAssignment && (userTasks.value ?? []).length > 0) {
     const fetchedAssessments = _without(
-      selectedAdmin.value.assessments.map((assessment) => {
+      selectedAssignment.value.assessments.map((assessment) => {
         // Get the matching assessment from userAssignments
         const matchingAssignment = _find(userAssignments.value, {
-          id: selectedAdmin.value.id,
+          id: selectedAssignment.value.id,
         });
         const matchingAssessments = matchingAssignment?.assessments ?? [];
         const matchingAssessment = _find(matchingAssessments, {
@@ -376,7 +385,7 @@ const isSequential = computed(() => {
   return (
     _get(
       _find(userAssignments.value, (administration) => {
-        return administration.id === selectedAdmin.value.id;
+        return administration.id === selectedAssignment.value.id;
       }),
       'sequential',
     ) ?? true
@@ -394,7 +403,7 @@ let completeGames = computed(() => {
 });
 
 watch(
-  [userData, selectedAdmin, userAssignments],
+  [userData, selectedAssignment, userAssignments],
   async ([newUserData, isSelectedAdminChanged]) => {
     // If the assignments are still loading, abort.
     if (isLoadingAssignments.value || isFetchingAssignments.value || !userAssignments.value?.length) return;
@@ -404,22 +413,22 @@ watch(
       await checkConsent();
     }
 
-    const selectedAdminId = selectedAdmin.value?.id;
+    const selectedAssignmentId = selectedAssignment.value?.id;
     const allAdminIds = userAssignments.value?.map((administration) => administration.id) ?? [];
 
     // Verify that we have a selected administration and it is in the list of all assigned administrations.
-    if (selectedAdminId && allAdminIds.includes(selectedAdminId)) {
+    if (selectedAssignmentId && allAdminIds.includes(selectedAssignmentId)) {
       // Ensure that the selected administration is a fresh instance of the administration. Whilst this seems redundant,
       // this is apparently relevant in the case that the game store does not flush properly.
-      selectedAdmin.value = sortedUserAdministrations.value.find(
-        (administration) => administration.id === selectedAdminId,
+      selectedAssignment.value = sortedUserAdministrations.value.find(
+        (administration) => administration.id === selectedAssignmentId,
       );
 
       return;
     }
 
     // Otherwise, choose the first sorted administration if there is no selected administration.
-    selectedAdmin.value = sortedUserAdministrations.value[0];
+    selectedAssignment.value = sortedUserAdministrations.value[0];
   },
   { immediate: true },
 );
@@ -458,7 +467,7 @@ const { data: surveyData } = useQuery({
 });
 
 const surveyDependenciesLoaded = computed(() => {
-  return surveyData.value && userData.value && selectedAdmin.value && surveyResponsesData.value;
+  return surveyData.value && userData.value && selectedAssignment.value && surveyResponsesData.value;
 });
 
 const specificSurveyData = computed(() => {
@@ -484,19 +493,19 @@ function setupMarkdownConverter(surveyInstance) {
 }
 
 watch(
-  [surveyDependenciesLoaded, selectedAdmin],
+  [surveyDependenciesLoaded, selectedAssignment],
   async ([isLoaded]) => {
     // Add additional safety check to prevent race condition errors
-    if (!selectedAdmin.value?.assessments) {
-      console.warn('selectedAdmin or assessments not available during survey initialization');
+    if (!selectedAssignment.value?.assessments) {
+      console.warn('selectedAssignment or assessments not available during survey initialization');
       return;
     }
 
-    const isAssessment = selectedAdmin.value.assessments.some((task) => task.taskId === 'survey');
+    const isAssessment = selectedAssignment.value.assessments.some((task) => task.taskId === 'survey');
     if (!isLoaded || !isAssessment || surveyStore.survey) return;
 
     const surveyResponseDoc = (surveyResponsesData.value || []).find(
-      (doc) => doc?.administrationId === selectedAdmin.value?.id,
+      (doc) => doc?.administrationId === selectedAssignment.value?.id,
     );
     let shouldInitializeSurvey = true;
 
@@ -596,7 +605,7 @@ watch(
       userType: userType.value,
       roarfirekit: roarfirekit.value,
       uid: userData.value.id,
-      selectedAdminId: selectedAdmin.value?.id,
+      selectedAdminId: selectedAssignment.value?.id,
       surveyStore,
       router,
       toast,

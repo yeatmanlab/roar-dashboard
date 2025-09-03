@@ -1,8 +1,6 @@
 <template>
   <div
-    :class="`assignment-card ${props.isActive ? '--active' : ''} ${
-      props.status === ASSIGNMENT_STATUSES.CURRENT ? '--clickable' : ''
-    }`"
+    :class="`assignment-card ${props.isActive ? '--active' : ''}`"
     @click="props.onClick && props.onClick(props.data, props.status)"
   >
     <div class="assignment-card__content">
@@ -63,6 +61,7 @@ const props = defineProps<Props>();
   padding: 0.75rem;
   border: 1px solid var(--surface-d);
   border-radius: 0.75rem;
+  cursor: pointer;
 
   &.--active {
     background: rgba(var(--bright-yellow-rgb), 0.1);
@@ -75,10 +74,6 @@ const props = defineProps<Props>();
     .assignment-card__task {
       background: rgba(var(--bright-yellow-rgb), 0.5);
     }
-  }
-
-  &.--clickable {
-    cursor: pointer;
   }
 }
 

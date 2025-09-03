@@ -26,7 +26,7 @@
                 :key="assignment?.id"
                 :data="assignment"
                 :is-active="assignmentsStore.selectedAssignment?.id === assignment?.id"
-                :status="selectedStatus"
+                :status="ASSIGNMENT_STATUSES.CURRENT"
                 @click="onClickAssignment"
               />
             </ul>
@@ -46,7 +46,8 @@
                 :key="assignment?.id"
                 :data="assignment"
                 :is-active="assignmentsStore.selectedAssignment?.id === assignment?.id"
-                :status="selectedStatus"
+                :status="ASSIGNMENT_STATUSES.UPCOMING"
+                @click="onClickAssignment"
               />
             </ul>
             <div v-else class="assignment-group__empty">No upcoming assignments were found</div>
@@ -65,7 +66,8 @@
                 :key="assignment?.id"
                 :data="assignment"
                 :is-active="assignmentsStore.selectedAssignment?.id === assignment?.id"
-                :status="selectedStatus"
+                :status="ASSIGNMENT_STATUSES.PAST"
+                @click="onClickAssignment"
               />
             </ul>
             <div v-else class="assignment-group__empty">No past assignments were found</div>
@@ -142,10 +144,12 @@ const numOfCurrentAssignments = computed(() => {
   const length = props?.currentAssignments?.length;
   return length > 0 ? length.toString().padStart(2, '0') : '--';
 });
+
 const numOfPastAssignments = computed(() => {
   const length = props?.pastAssignments?.length;
   return length > 0 ? length.toString().padStart(2, '0') : '--';
 });
+
 const numOfUpcomingAssignments = computed(() => {
   const length = props?.upcomingAssignments?.length;
   return length > 0 ? length.toString().padStart(2, '0') : '--';
@@ -203,10 +207,10 @@ const onClickSideBarToggleBtn = () => {
   flex-direction: column;
   justify-content: flex-start;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.75rem;
   width: var(--sidebar-width);
   height: 100%;
-  padding: 0.5rem 0;
+  padding: 0.75rem 0;
   background: white;
   border-right: 1px solid var(--surface-d);
   position: relative;
@@ -217,8 +221,8 @@ const onClickSideBarToggleBtn = () => {
   display: flex;
   justify-content: center;
   align-items: center;
-  width: 48px;
-  height: 48px;
+  width: 40px;
+  height: 40px;
   border-radius: 0.75rem;
   color: var(--gray-600);
   cursor: pointer;
@@ -247,7 +251,7 @@ const onClickSideBarToggleBtn = () => {
   flex-direction: column;
   justify-content: flex-start;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.75rem;
 }
 
 .sidebar__nav-link {
@@ -293,7 +297,7 @@ const onClickSideBarToggleBtn = () => {
   width: var(--sidebar-panel-width);
   height: 100%;
   margin: 0;
-  padding: 0.5rem 0;
+  padding: 0.65rem 0;
   background: white;
   position: absolute;
   top: 0;

@@ -136,20 +136,6 @@ describe('AssignmentCard.vue', () => {
       expect(wrapper.find('.pi.pi-lock').exists()).toBe(false);
       expect(wrapper.find('.pi.pi-check-circle').exists()).toBe(false);
     });
-
-    it('should apply correct CSS classes based on status', () => {
-      const wrapper = mount(AssignmentCard, mountOptions({ status: 'current' }));
-      const card = wrapper.find('.assignment-card');
-
-      expect(card.classes()).toContain('--clickable');
-    });
-
-    it('should not apply clickable class for non-current assignments', () => {
-      const wrapper = mount(AssignmentCard, mountOptions({ status: 'upcoming' }));
-      const card = wrapper.find('.assignment-card');
-
-      expect(card.classes()).not.toContain('--clickable');
-    });
   });
 
   describe('Active State Styling', () => {
@@ -254,20 +240,6 @@ describe('AssignmentCard.vue', () => {
       const card = wrapper.find('.assignment-card');
 
       expect(card.classes()).toContain('--active');
-    });
-
-    it('should apply clickable class for current status', () => {
-      const wrapper = mount(AssignmentCard, mountOptions({ status: 'current' }));
-      const card = wrapper.find('.assignment-card');
-
-      expect(card.classes()).toContain('--clickable');
-    });
-
-    it('should not apply clickable class for non-current status', () => {
-      const wrapper = mount(AssignmentCard, mountOptions({ status: 'upcoming' }));
-      const card = wrapper.find('.assignment-card');
-
-      expect(card.classes()).not.toContain('--clickable');
     });
   });
 
