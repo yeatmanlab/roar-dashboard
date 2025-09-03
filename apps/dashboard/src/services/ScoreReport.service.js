@@ -156,6 +156,29 @@ const ScoreReportService = (() => {
       formattedScoresArray.push([i18n.t('scoreReports.skillsToWorkOn'), skills.join(', ') || 'None']);
     }
 
+    // Special handling for Phonics task
+    if (taskId === 'phonics') {
+      const subscores = scores?.composite?.subscores || {};
+      const subcategoryOrder = [
+        'cvc',
+        'digraph',
+        'i_blend',
+        'tri_blend',
+        'f_blend',
+        'r_ctrl',
+        'r_tri',
+        'silent_e',
+        'vt',
+      ];
+
+      // Add each subscore in the defined order
+      subcategoryOrder.forEach((category) => {
+        const stats = subscores[category] || {};
+        const percentCorrect = stats.percentCorrect || 0;
+        formattedScoresArray.push([i18n.t(`scoreReports.phonics.${category}`), percentCorrect, 0, 100]);
+      });
+    }
+
     // Special handling for letter tasks
     if (taskId === 'letter' || taskId === 'letter-en-ca') {
       const incorrectLetters = [
@@ -215,11 +238,7 @@ const ScoreReportService = (() => {
     if (rawOnlyTasks.includes(task.taskId)) {
       return {
         keypath: 'scoreReports.rawTaskDescription',
-        slots: {
-          rawScore: task.rawScore.value,
-          taskName,
-          taskDescription,
-        },
+        slots: { rawScore: task.rawScore.value, taskName, taskDescription },
       };
     } else if (grade >= 6) {
       return {
@@ -333,12 +352,7 @@ const ScoreReportService = (() => {
         let scoreToDisplay = grade >= 6 ? SCORE_TYPES.STANDARD_SCORE : SCORE_TYPES.PERCENTILE_SCORE;
         if (rawOnlyTasks.includes(taskId)) scoreToDisplay = SCORE_TYPES.RAW_SCORE;
 
-        computedTaskAcc[taskId] = {
-          taskId,
-          scoreToDisplay,
-          ...scoresForTask,
-          tags,
-        };
+        computedTaskAcc[taskId] = { taskId, scoreToDisplay, ...scoresForTask, tags };
 
         computedTaskAcc[taskId].scoresArray = createScoresArray(taskId, scoresForTask, scores, grade, i18n);
       }
@@ -349,12 +363,7 @@ const ScoreReportService = (() => {
       .map((taskId) => computedTaskAcc[taskId]);
   };
 
-  return {
-    getPercentileSuffixTemplate,
-    getScoreDescription,
-    getScoresArrayForTask,
-    processTaskScores,
-  };
+  return { getPercentileSuffixTemplate, getScoreDescription, getScoresArrayForTask, processTaskScores };
 })();
 
 export default ScoreReportService;
