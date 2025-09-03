@@ -1,7 +1,7 @@
 {
   "name": "roar-dashboard",
   "private": true,
-  "version": "3.13.0",
+  "version": "3.13.1",
   "type": "module",
   "scripts": {
     "dev": "vite --host",
@@ -33,7 +33,7 @@
     "@bdelab/roar-utils": "^1.2.1",
     "@bdelab/roar-vocab": "1.8.0",
     "@bdelab/roav-crowding": "1.1.35",
-    "@bdelab/roav-mep": "1.2.0",
+    "@bdelab/roav-mep": "1.2.2",
     "@bdelab/roav-ran": "1.0.33",
     "@dotenvx/dotenvx": "^1.24.4",
     "@primevue/core": "^4.2.4",
