@@ -13,7 +13,6 @@ import { UserRoles } from '@bdelab/roar-firekit';
  * Notes:
  * - super_admin → SUPER_ADMIN
  * - launch_admin → LAUNCH_ADMIN
- * - educator → ADMIN
  * - admin → ADMIN
  * - minimalAdminOrgs (non-empty) → ADMIN
  * - otherwise → PARTICIPANT
@@ -24,7 +23,7 @@ import { UserRoles } from '@bdelab/roar-firekit';
 export default function useUserType(userClaims) {
   const userType = computed(() => {
     // Abort the user type determination if the user claims are not available yet.
-    if (!userClaims.value) return;
+    if (!userClaims.value?.claims) return;
 
     const claims = userClaims.value.claims;
 
@@ -37,21 +36,11 @@ export default function useUserType(userClaims) {
       return AUTH_USER_TYPE.LAUNCH_ADMIN;
     }
 
-    // Educator → treat as admin
-    if (claims?.role === UserRoles.EDUCATOR) {
-      return AUTH_USER_TYPE.ADMIN;
-    }
-
-    // Admin role
-    if (claims?.role === UserRoles.ADMIN) {
-      return AUTH_USER_TYPE.ADMIN;
-    }
-
     // Check if the user has any minimal admin organizations.
     const minimalAdminOrgs = claims?.minimalAdminOrgs || {};
     const hasMinimalAdminOrgs = Object.values(minimalAdminOrgs).some((org) => !_isEmpty(org));
 
-    if (hasMinimalAdminOrgs) {
+    if (hasMinimalAdminOrgs || claims?.role === UserRoles.ADMIN) {
       return AUTH_USER_TYPE.ADMIN;
     }
 
@@ -63,12 +52,10 @@ export default function useUserType(userClaims) {
   const isParticipant = computed(() => userType.value === AUTH_USER_TYPE.PARTICIPANT);
   const isSuperAdmin = computed(() => userType.value === AUTH_USER_TYPE.SUPER_ADMIN);
   const isLaunchAdmin = computed(() => userType.value === AUTH_USER_TYPE.LAUNCH_ADMIN);
-  const isEducator = computed(() => userType.value === AUTH_USER_TYPE.EDUCATOR);
 
   return {
     userType,
     isAdmin,
-    isEducator,
     isParticipant,
     isSuperAdmin,
     isLaunchAdmin,
