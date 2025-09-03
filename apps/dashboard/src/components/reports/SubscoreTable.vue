@@ -11,13 +11,13 @@
 </template>
 <script setup>
 import { computed, ref, onMounted } from 'vue';
+import { storeToRefs } from 'pinia';
+import { exportCsv } from '@/helpers/query/utils';
 import _get from 'lodash/get';
 import _kebabCase from 'lodash/kebabCase';
 import _set from 'lodash/set';
 import _toUpper from 'lodash/toUpper';
-import { exportCsv } from '@/helpers/query/utils';
 import { useAuthStore } from '@/store/auth';
-import { storeToRefs } from 'pinia';
 import RoarDataTable from '@/components/RoarDataTable';
 import {
   roamAlpacaSubskills,
@@ -25,20 +25,22 @@ import {
   roamFluencySubskillHeaders,
   roamFluencyTasks,
 } from '@/helpers/reports';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 
 const props = defineProps({
-  administrationId: { type: String, required: true, default: '' },
+  administrationId: { type: String, default: '' },
   computedTableData: {
     type: Array,
-    required: true,
     default: () => [],
   },
   taskId: { type: String, required: true },
   taskName: { type: String, required: true },
-  orgType: { type: String, required: true, default: '' },
-  orgId: { type: String, required: true, default: '' },
-  administrationName: { type: String, required: true, default: '' },
-  orgName: { type: String, required: true, default: '' },
+  orgType: { type: String, default: '' },
+  orgId: { type: String, default: '' },
+  administrationName: { type: String, default: '' },
+  orgName: { type: String, default: '' },
 });
 
 const authStore = useAuthStore();
@@ -99,10 +101,42 @@ const columns = computed(() => {
       { field: `scores.${props.taskId}.incorrectPhonemes`, header: 'Sounds To Work On', dataType: 'text', sort: false },
     );
   }
+  if (props.taskId === 'phonics') {
+    const subcategories = [
+      { field: 'cvc', header: 'CVC' },
+      { field: 'digraph', header: 'Digraph' },
+      { field: 'initial_blend', header: 'Initial Blend' },
+      { field: 'tri_blend', header: 'Triple Blend' },
+      { field: 'final_blend', header: 'Final Blend' },
+      { field: 'r_controlled', header: 'R-Controlled' },
+      { field: 'r_cluster', header: 'R-Cluster' },
+      { field: 'silent_e', header: 'Silent E' },
+      { field: 'vowel_team', header: 'Vowel Team' },
+    ];
+
+    // Add columns for each subcategory
+    subcategories.forEach(({ field, header }) => {
+      tableColumns.push({
+        field: `scores.${props.taskId}.composite.subscores.${field}.percentCorrect`,
+        header: `${header} (Correct/Attempted)`,
+        dataType: 'number',
+        sort: true,
+      });
+    });
+
+    // Add total percentage
+    tableColumns.push({
+      field: `scores.${props.taskId}.composite.totalPercentCorrect`,
+      header: 'Total % Correct',
+      dataType: 'number',
+      sort: true,
+    });
+  }
   if (props.taskId === 'pa') {
     tableColumns.push(
       { field: 'scores.pa.firstSound', header: 'First Sound', dataType: 'text', sort: false },
       { field: 'scores.pa.lastSound', header: 'Last Sound', dataType: 'text', sort: false },
+      { field: 'scores.pa.blending', header: 'Blending', dataType: 'text', sort: false },
       { field: 'scores.pa.deletion', header: 'Deletion', dataType: 'text', sort: false },
       { field: 'scores.pa.total', header: 'Total', dataType: 'text', sort: false },
       { field: 'scores.pa.skills', header: 'Skills To Work On', dataType: 'text', sort: false },
@@ -206,9 +240,28 @@ const exportAll = async () => {
       _set(tableRow, 'Total', _get(scores, `${props.taskId}.totalScore`));
       _set(tableRow, 'Letters To Work On', _get(scores, `${props.taskId}.incorrectLetters`));
       _set(tableRow, 'Sounds To Work On', _get(scores, `${props.taskId}.incorrectPhonemes`));
+    } else if (props.taskId === 'phonics') {
+      const subcategories = [
+        'cvc',
+        'digraph',
+        'initial_blend',
+        'tri_blend',
+        'final_blend',
+        'r_controlled',
+        'r_cluster',
+        'silent_e',
+        'vowel_team',
+      ];
+      subcategories.forEach((category) => {
+        const displayName = t(`scoreReports.phonics.${category}`);
+        const subscore = _get(scores, `${props.taskId}.composite.subscores.${category}`);
+        _set(tableRow, displayName, subscore ? `${subscore.correct}/${subscore.attempted}` : '0/0');
+      });
+      _set(tableRow, 'Skills To Work On', _get(scores, `${props.taskId}.skillsToWorkOn`));
     } else if (props.taskId === 'pa') {
       _set(tableRow, 'First Sound', _get(scores, 'pa.firstSound'));
       _set(tableRow, 'Last Sound', _get(scores, 'pa.lastSound'));
+      _set(tableRow, 'Blending', _get(scores, 'pa.blending'));
       _set(tableRow, 'Deletion', _get(scores, 'pa.deletion'));
       _set(tableRow, 'Total', _get(scores, 'pa.total'));
       _set(tableRow, 'Skills To Work On', _get(scores, 'pa.skills'));

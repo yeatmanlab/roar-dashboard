@@ -804,6 +804,26 @@ const computeAssignmentAndRunData = computed(() => {
             .join(', ');
           currRowScores[taskId].incorrectPhonemes = incorrectPhonemesArray.length > 0 ? incorrectPhonemesArray : 'None';
         }
+        if (taskId === 'phonics' && assessment.scores?.computed) {
+          const composite = assessment.scores.computed.composite;
+          currRowScores[taskId] = {
+            scores: {
+              composite: {
+                totalCorrect: composite.totalCorrect,
+                totalNumAttempted: composite.totalNumAttempted,
+                totalPercentCorrect: composite.totalPercentCorrect,
+                subscores: {},
+              },
+            },
+          };
+          // Process each subscore
+          Object.entries(composite.subscores || {}).forEach(([category, data]) => {
+            currRowScores[taskId].scores.composite.subscores[category] = {
+              correct: data.correct,
+              attempted: data.attempted,
+            };
+          });
+        }
         if (taskId === 'pa' && assessment.scores) {
           const first = _get(assessment, 'scores.computed.FSM.roarScore');
           const last = _get(assessment, 'scores.computed.LSM.roarScore');
@@ -857,16 +877,18 @@ const computeAssignmentAndRunData = computed(() => {
                 currRowScores[taskId][subskillId] = null;
               }
             });
-
-            // Passing null for empty incorrectSkill arrays to prevent it from rendering under TableScoreTag.vue conditions.
-            currRowScores[taskId].composite = {
-              ...scores.composite,
-              incorrectSkills: scores.composite.incorrectSkills?.length > 0 ? scores.composite.incorrectSkills : null,
-              gradeEstimate: scores.composite.gradeEstimate ? _round(scores.composite.gradeEstimate, 2) : '',
-              tagColor: getTagColor(scores.composite.supportLevel),
-            };
           }
         }
+
+      // Passing null for empty incorrectSkill arrays to prevent it from rendering under TableScoreTag.vue conditions.
+      if (taskId === 'roam-alpaca' && assessment.scores?.composite) {
+        currRowScores[taskId].composite = {
+          ...assessment.scores.composite,
+          incorrectSkills: assessment.scores.composite.incorrectSkills?.length > 0 ? assessment.scores.composite.incorrectSkills : null,
+          gradeEstimate: assessment.scores.composite.gradeEstimate ? _round(assessment.scores.composite.gradeEstimate, 2) : '',
+          tagColor: getTagColor(assessment.scores.composite.supportLevel)
+        };
+      }
 
         // Logic to update runsByTaskIdAcc
         const run = {
@@ -950,13 +972,9 @@ const computeAssignmentAndRunData = computed(() => {
 // This composable manages the data which is passed into the FilterBar component slot for filtering
 const filteredTableData = ref([]);
 
-watch(
-  computeAssignmentAndRunData,
-  (newValue) => {
-    filteredTableData.value = newValue.assignmentTableData;
-  },
-  { immediate: true, deep: true },
-);
+watch(computeAssignmentAndRunData, (newValue) => {
+  filteredTableData.value = newValue.assignmentTableData;
+}, { immediate: true, deep: true });
 
 const viewMode = ref('color');
 
@@ -1548,7 +1566,7 @@ const allTasks = computed(() => {
 
 const sortedTaskIds = computed(() => {
   const runsByTaskId = computeAssignmentAndRunData.value.runsByTaskId;
-  const specialTaskIds = ['swr', 'sre', 'pa'].filter((id) => Object.keys(runsByTaskId).includes(id));
+  const specialTaskIds = ['swr', 'sre', 'pa', 'phonics'].filter((id) => Object.keys(runsByTaskId).includes(id));
   const remainingTaskIds = Object.keys(runsByTaskId).filter((id) => !specialTaskIds.includes(id));
 
   remainingTaskIds.sort((p1, p2) => {

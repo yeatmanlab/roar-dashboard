@@ -57,6 +57,17 @@
   </div>
   <div class="my-2 mx-4">
     <SubscoreTable
+      v-if="taskId === 'phonics' && !isLoadingTasksDictionary"
+      task-id="phonics"
+      :task-name="tasksDictionary['phonics'].publicName"
+      :administration-id="administrationId"
+      :org-type="orgType"
+      :org-id="orgId"
+      :administration-name="administrationInfo.name ?? undefined"
+      :org-name="orgInfo.name ?? undefined"
+      :computed-table-data="computedTableData"
+    />
+    <SubscoreTable
       v-if="taskId === 'letter' && !isLoadingTasksDictionary"
       task-id="letter"
       :task-name="tasksDictionary['letter'].publicName"
