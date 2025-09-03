@@ -18,6 +18,7 @@ export const AUTH_SESSION_TIMEOUT_COUNTDOWN_DURATION =
  */
 export const AUTH_USER_TYPE = Object.freeze({
   ADMIN: 'admin',
+  EDUCATOR: 'educator',
   GUEST: 'guest',
   PARTICIPANT: 'participant',
   STUDENT: 'student',
