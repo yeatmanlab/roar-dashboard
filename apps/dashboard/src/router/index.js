@@ -590,6 +590,14 @@ const routes = [
     meta: { pageTitle: 'ClassLink Authentication' },
   },
   {
+    path: '/auth-nycps',
+    name: 'AuthNycps',
+    beforeRouteLeave: [removeQueryParams, removeHash],
+    component: () => import('../components/auth/AuthNycps.vue'),
+    props: (route) => ({ code: route.query.code }),
+    meta: { pageTitle: 'NYCPS Authentication' },
+  },
+  {
     path: '/auth-email-link',
     name: 'AuthEmailLink',
     beforeRouteLeave: [removeQueryParams, removeHash],
@@ -776,6 +784,7 @@ router.beforeEach(async (to, from, next) => {
     'Maintenance',
     'AuthClever',
     'AuthClassLink',
+    'AuthNycps',
     'AuthEmailLink',
     'AuthEmailSent',
     'Register',
