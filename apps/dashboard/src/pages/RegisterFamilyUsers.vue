@@ -92,6 +92,7 @@ import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import Register from '../components/auth/RegisterParent.vue';
 import RegisterStudent from '../components/auth/RegisterChildren.vue';
 import ROARLogoShort from '@/assets/RoarLogo-Short.vue';
+import EmailService from '@/services/Email.service';
 
 const authStore = useAuthStore();
 const initialized = ref(false);
@@ -222,11 +223,22 @@ watch([parentInfo, studentInfo], ([newParentInfo, newStudentInfo]) => {
         consentData,
         isTestData.value,
       )
-      .then(() => {
-        spinner.value = false;
-        dialogHeader.value = 'Success!';
-        dialogMessage.value = 'Your family has been created!';
-        showDialog();
+      .then(async () => {
+        try {
+          // Send confirmation email with student information
+          // Call the static method directly from the EmailService class
+          await EmailService.sendConfirmationEmail(rawParentInfo.ParentEmail, rawParentInfo.password, rawParentInfo.firstName, rawStudentInfo);
+          spinner.value = false;
+          dialogHeader.value = 'Success!';
+          dialogMessage.value = 'Your family has been created! A confirmation email has been sent to your email address.';
+          showDialog();
+        } catch (emailError) {
+          console.error('Error sending confirmation email:', emailError);
+          spinner.value = false;
+          dialogHeader.value = 'Success with Warning';
+          dialogMessage.value = 'Your family has been created! However, we could not send the confirmation email. You can still proceed to sign in.';
+          showDialog();
+        }
       })
       .catch((error) => {
         spinner.value = false;
