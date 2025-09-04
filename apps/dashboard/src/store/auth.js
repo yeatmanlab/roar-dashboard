@@ -199,7 +199,7 @@ export const useAuthStore = () => {
         }
         return await this.roarfirekit.sendEmail({
           template: 'WELCOME_EMAIL',
-          ...emailData
+          ...emailData,
         });
       },
       async createNewFamily(

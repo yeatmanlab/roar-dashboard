@@ -223,20 +223,50 @@ watch([parentInfo, studentInfo], ([newParentInfo, newStudentInfo]) => {
         consentData,
         isTestData.value,
       )
-      .then(async () => {
+      .then(async (result) => {
+        console.log('createNewFamily result:', result);
         try {
-          // Send confirmation email with student information
-          // Call the static method directly from the EmailService class
-          await EmailService.sendConfirmationEmail(rawParentInfo.ParentEmail, rawParentInfo.password, rawParentInfo.firstName, rawStudentInfo);
+          // Sign in with the newly created account
+          await authStore.roarfirekit.logInWithEmailAndPassword({
+            email: rawParentInfo.ParentEmail,
+            password: rawParentInfo.password,
+          });
+
+          // Wait briefly for auth state to update
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+
+          // Get the app user from auth store
+          const appUser = authStore.firebaseUser.appFirebaseUser;
+          console.log('App user:', appUser);
+
+          if (!appUser) {
+            throw new Error('User not found after sign in');
+          }
+
+          // Send verification email
+          await EmailService.sendConfirmationEmail(appUser);
+
           spinner.value = false;
           dialogHeader.value = 'Success!';
-          dialogMessage.value = 'Your family has been created! A confirmation email has been sent to your email address.';
+          dialogMessage.value = 'Your family account has been created! Redirecting you to sign in...';
+
           showDialog();
+
+          // After a brief delay, redirect to sign in with credentials
+          setTimeout(() => {
+            const params = new URLSearchParams({
+              autoLogin: 'true',
+              email: rawParentInfo.ParentEmail,
+              password: rawParentInfo.password,
+            });
+            window.location.href = `/signin?${params.toString()}`;
+          }, 2000);
         } catch (emailError) {
           console.error('Error sending confirmation email:', emailError);
           spinner.value = false;
-          dialogHeader.value = 'Success with Warning';
-          dialogMessage.value = 'Your family has been created! However, we could not send the confirmation email. You can still proceed to sign in.';
+          dialogHeader.value = 'Success!';
+          dialogMessage.value =
+            'Your family account has been created! You will receive email verification instructions when you sign in.';
           showDialog();
         }
       })

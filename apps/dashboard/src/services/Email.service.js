@@ -1,38 +1,35 @@
-import { useAuthStore } from '@/store/auth';
-import { sendEmailVerification, signInWithEmailAndPassword } from 'firebase/auth';
+import { sendEmailVerification } from 'firebase/auth';
 
 class EmailService {
-  static async sendConfirmationEmail(email, password) {
+  static async sendConfirmationEmail(user) {
     try {
-      const authStore = useAuthStore();
-      if (!authStore.isFirekitInit) {
-        throw new Error('Firebase not initialized');
+      if (!user) {
+        throw new Error('User object is required to send verification email');
       }
 
-      // Send email verification
+      // Check if we're using emulators
+      const isEmulator = import.meta.env.VITE_FIREBASE_EMULATOR_ENABLED === 'true';
+
+      // In development/emulator mode, skip the actual verification
+      if (isEmulator) {
+        console.warn('Using emulator - skipping email verification');
+        return { success: true, message: 'Email verification skipped in emulator mode' };
+      }
+
+      // Configure action code settings
       const actionCodeSettings = {
         url: `${window.location.origin}/signin`,
         handleCodeInApp: true,
       };
 
-      // Wait for roarfirekit to be fully initialized
-      if (!authStore.roarfirekit?.app?.auth) {
-        throw new Error('Firebase App auth is not initialized');
-      }
-
-      // Get the app auth instance and sign in
-      const userCredential = await signInWithEmailAndPassword(authStore.roarfirekit.app.auth, email, password);
-
-      // Send verification email to the newly signed in user
-      await sendEmailVerification(userCredential.user, actionCodeSettings);
-
-      // Note: The actual email content will be handled by Firebase's email templates
-      // You can customize these templates in the Firebase Console under Authentication > Templates
+      // Send verification email directly to the newly created user
+      await sendEmailVerification(user, actionCodeSettings);
 
       return {
         success: true,
-        message: 'Confirmation email sent successfully',
+        message: 'Verification email sent successfully',
       };
+
     } catch (error) {
       console.error('Error sending confirmation email:', error);
       throw new Error('Failed to send confirmation email');
