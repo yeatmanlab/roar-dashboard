@@ -228,11 +228,7 @@ const authWithClassLink = () => {
 };
 
 const authWithNYCPS = () => {
-  if (process.env.NODE_ENV === 'development' && !window.Cypress) {
-    authStore.signInWithNYCPSRedirect();
-  } else {
-    authStore.signInWithNYCPSRedirect();
-  }
+  authStore.signInWithNYCPSRedirect();
   spinner.value = true;
 };
 
