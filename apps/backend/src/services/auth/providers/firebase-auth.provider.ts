@@ -1,6 +1,5 @@
-import type { IAuthProvider } from '../auth.service';
-import type { DecodedUser } from '../auth.types';
 import { FirebaseAuthClient } from '../../../clients/firebase-auth.clients';
+import type { DecodedUser, IAuthProvider } from '../auth.service';
 
 /**
  * Firebase Auth Provider

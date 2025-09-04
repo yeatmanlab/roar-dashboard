@@ -6,6 +6,7 @@ import { AuthGuardMiddleware } from './auth-guard.middleware';
 import { AuthService } from '../../services/auth/auth.service';
 import { API_ERROR_CODES } from '../../constants/api-error-codes';
 import { FIREBASE_ERROR_CODES } from '../../constants/firebase-error-codes';
+import { DecodedUserFactory } from '../../test-support/factories/auth.factory';
 
 // Mock AuthService
 vi.mock('../../services/auth/auth.service');
@@ -41,11 +42,7 @@ describe('AuthGuardMiddleware', () => {
   });
 
   it('should successfully authenticate valid token and attach user to request', async () => {
-    const mockUser = {
-      uid: 'user123',
-      email: 'test@example.com',
-      name: 'Test User',
-    };
+    const mockUser = DecodedUserFactory.build();
 
     authServiceMock.mockImplementation(() => new Promise((resolve) => setTimeout(() => resolve(mockUser), 10)));
 
