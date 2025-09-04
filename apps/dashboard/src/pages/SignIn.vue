@@ -53,14 +53,6 @@
               <img src="../assets/provider-classlink-logo.png" alt="The ClassLink Logo" class="flex mr-2 w-2" />
               <span>ClassLink</span>
             </PvButton>
-            <PvButton
-              class="flex p-1 mr-2 ml-2 w-3 text-black surface-0 border-black-alpha-10 justify-content-center hover:border-primary hover:surface-ground"
-              style="border-radius: 3rem; height: 3rem; color: black"
-              data-cy="sign-in__nycps-sso"
-              @click="authWithNYCPS"
-            >
-              <span>NYCPS</span>
-            </PvButton>
           </div>
         </section>
         <!-- <section class="signin-option-container signin-option-providers">
