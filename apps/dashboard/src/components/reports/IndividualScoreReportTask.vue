@@ -171,7 +171,6 @@ import { useI18n } from 'vue-i18n';
 import _lowerCase from 'lodash/lowerCase';
 import _startCase from 'lodash/startCase';
 import _toUpper from 'lodash/toUpper';
-import _get from 'lodash/get';
 import { getGrade } from '@bdelab/roar-utils';
 import PvAccordion from 'primevue/accordion';
 import PvAccordionTab from 'primevue/accordiontab';
@@ -184,7 +183,7 @@ import {
   extendedDescriptions,
   getSupportLevel,
   getRawScoreRange,
-  getScoreKeys,
+  getScoreValue,
   getDialColor,
   tasksToDisplayPercentCorrect,
 } from '@/helpers/reports';
@@ -224,17 +223,18 @@ const computedTaskData = computed(() => {
   const computedTaskAcc = {};
 
   for (const { taskId, scores, reliable, optional, engagementFlags } of props.taskData) {
-    const { percentileScoreKey, standardScoreKey, rawScoreKey } = getScoreKeys(taskId, grade.value);
     const compositeScores = scores?.composite;
     let rawScore = null;
     if (!taskId.includes('vocab') && !taskId.includes('es')) {
-      rawScore = _get(compositeScores, rawScoreKey);
+      rawScore = getScoreValue(compositeScores, taskId, grade.value, 'rawScore');
     } else {
       rawScore = compositeScores;
     }
+
     if (!isNaN(rawScore) && !tasksBlacklist.includes(taskId)) {
-      const percentileScore = _get(compositeScores, percentileScoreKey);
-      const standardScore = _get(compositeScores, standardScoreKey);
+      const percentileScore = getScoreValue(compositeScores, taskId, grade.value, 'percentile');
+      const standardScore = getScoreValue(compositeScores, taskId, grade.value, 'standardScore');
+
       const rawScoreRange = getRawScoreRange(taskId);
       const supportColor = getDialColor(grade.value, percentileScore, rawScore, taskId);
 
