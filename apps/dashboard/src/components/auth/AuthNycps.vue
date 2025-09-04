@@ -7,6 +7,7 @@ import { useAuthStore } from '@/store/auth';
 import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router';
 
+// eslint-disable-next-line no-unused-vars
 const props = defineProps({
   code: { type: String, required: true },
 });
@@ -16,11 +17,7 @@ const authStore = useAuthStore();
 const { isFirekitInit } = storeToRefs(authStore);
 
 watch(isFirekitInit, () => {
-  if (props.code) {
-    authStore.nycpsOAuthRequested = true;
-    router.replace({ name: 'SignIn' });
-  } else {
-    router.push({ name: 'Home' });
-  }
+  authStore.nycpsOAuthRequested = true;
+  router.replace({ name: 'SignIn' });
 });
 </script>
