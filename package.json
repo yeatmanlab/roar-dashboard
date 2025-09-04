@@ -27,7 +27,7 @@
     "packages/*"
   ],
   "dependencies": {
-    "@bdelab/roav-mep": "^1.2.3",
+    "@bdelab/roav-mep": "^1.2.4",
     "husky": "^9.1.7",
     "lint-staged": "^16.1.2"
   }
