@@ -29,7 +29,6 @@ class EmailService {
         success: true,
         message: 'Verification email sent successfully',
       };
-
     } catch (error) {
       console.error('Error sending confirmation email:', error);
       throw new Error('Failed to send confirmation email');
