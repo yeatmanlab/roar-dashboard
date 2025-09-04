@@ -58,7 +58,7 @@ jobs:
         if: success()
         uses: davelosert/vitest-coverage-report-action@v2
         with:
-          working-directory: 'apps/dashboard'
+          working-directory: "apps/dashboard"
           name: Dashboard
 
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
@@ -75,7 +75,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          submodules: 'recursive'
+          submodules: "recursive"
           token: ${{ secrets.CI_GITHUB_PAT }}
 
       - name: Setup environment
@@ -107,7 +107,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          submodules: 'recursive'
+          submodules: "recursive"
           token: ${{ secrets.CI_GITHUB_PAT }}
 
       - name: Setup environment
@@ -116,9 +116,9 @@ jobs:
       - name: Execute Cypress tests
         uses: cypress-io/github-action@v6
         env:
-          CYPRESS_BASE_URL: 'http://127.0.0.1:4173'
+          CYPRESS_BASE_URL: "http://127.0.0.1:4173"
           CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
-          COMMIT_INFO_MESSAGE: '${{ github.event.pull_request.title }} (#${{ github.event.pull_request.number }})'
+          COMMIT_INFO_MESSAGE: "${{ github.event.pull_request.title }} (#${{ github.event.pull_request.number }})"
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           install: false
@@ -159,7 +159,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          submodules: 'recursive'
+          submodules: "recursive"
           token: ${{ secrets.CI_GITHUB_PAT }}
 
       - name: Setup environment
@@ -168,9 +168,9 @@ jobs:
       - name: Execute Cypress tests
         uses: cypress-io/github-action@v6
         env:
-          CYPRESS_BASE_URL: 'http://127.0.0.1:4173'
+          CYPRESS_BASE_URL: "http://127.0.0.1:4173"
           CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
-          COMMIT_INFO_MESSAGE: '${{ github.event.pull_request.title }} (#${{ github.event.pull_request.number }})'
+          COMMIT_INFO_MESSAGE: "${{ github.event.pull_request.title }} (#${{ github.event.pull_request.number }})"
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           component: true
@@ -213,7 +213,6 @@ jobs:
         uses: ./.github/actions/deploy
         id: deployment
         with:
-          firebase-target: 'staging'
           firebase-channel: preview
           firebase-project-id: ${{ secrets.CI_FIREBASE_PROJECT_ID_ADMIN_STAGING }}
           gcp-workload-identity-provider: ${{ secrets.CI_FIREBASE_WORKLOAD_IDENTITY_PROVIDER_ADMIN_STAGING }}
