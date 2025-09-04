@@ -36,6 +36,7 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@faker-js/faker": "^10.0.0",
     "@roar-dashboard/eslint-config": "*",
     "@roar-dashboard/typescript-config": "*",
     "@rollup/plugin-alias": "^5.1.1",
@@ -48,6 +49,7 @@
     "@types/supertest": "^6.0.2",
     "@vitest/coverage-v8": "^3.2.4",
     "drizzle-kit": "^0.31.4",
+    "fishery": "^2.3.1",
     "rollup": "^4.46.3",
     "rollup-plugin-esbuild": "^6.2.1",
     "rollup-plugin-node-externals": "^8.0.1",

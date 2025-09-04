@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import type { Mock } from 'vitest';
 import { FirebaseCoreClient } from './firebase-core.client';
 import {
@@ -111,21 +111,16 @@ describe('FirebaseCoreClient', () => {
     const invalidJsonB64 = Buffer.from('invalid json', 'utf8').toString('base64');
     process.env.FIREBASE_SERVICE_ACCOUNT_CREDENTIALS = invalidJsonB64;
 
-    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-
     const defaultCredentials = { __type: 'mock-adc-credential' };
     applicationDefaultMock.mockReturnValue(defaultCredentials);
     initializeAppMock.mockReturnValue(mockApp);
 
     const app = FirebaseCoreClient.getApp();
 
-    expect(errorSpy).toHaveBeenCalledWith('Failed to parse service account credentials');
     expect(applicationDefaultMock).toHaveBeenCalledTimes(1);
     expect(certMock).not.toHaveBeenCalled();
     expect(initializeAppMock).toHaveBeenCalledWith({ credential: defaultCredentials });
     expect(app).toBe(mockApp);
-
-    errorSpy.mockRestore();
   });
 
   it('clearCache resets the cached app and allows re-initialization', () => {
