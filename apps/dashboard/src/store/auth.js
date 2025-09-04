@@ -192,16 +192,6 @@ export const useAuthStore = () => {
           return false;
         }
       },
-
-      async sendWelcomeEmail(emailData) {
-        if (!this.roarfirekit) {
-          throw new Error('roarfirekit is not initialized');
-        }
-        return await this.roarfirekit.sendEmail({
-          template: 'WELCOME_EMAIL',
-          ...emailData,
-        });
-      },
       async createNewFamily(
         careTakerEmail,
         careTakerPassword,
