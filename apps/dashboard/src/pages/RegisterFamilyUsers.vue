@@ -223,8 +223,7 @@ watch([parentInfo, studentInfo], ([newParentInfo, newStudentInfo]) => {
         consentData,
         isTestData.value,
       )
-      .then(async (result) => {
-        console.log('createNewFamily result:', result);
+      .then(async () => {
         try {
           // Sign in with the newly created account
           await authStore.roarfirekit.logInWithEmailAndPassword({
@@ -237,7 +236,6 @@ watch([parentInfo, studentInfo], ([newParentInfo, newStudentInfo]) => {
 
           // Get the app user from auth store
           const appUser = authStore.firebaseUser.appFirebaseUser;
-          console.log('App user:', appUser);
 
           if (!appUser) {
             throw new Error('User not found after sign in');
