@@ -29,7 +29,7 @@ export default function useUserType(userClaims) {
   // These userTypes are actually userRoles
   const userType = computed(() => {
     // Abort the user type determination if the user claims are not available yet.
-    if (!userClaims.value?.claims) return;
+    if (!userClaims.value) return;
 
     const claims = userClaims.value.claims;
 
