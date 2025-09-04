@@ -6,11 +6,16 @@ import { UserRoles } from '@bdelab/roar-firekit';
 /**
  * Get user type
  *
- * Composable function to determine the user type based on the user claims. The user type can be either an admin or a
- * participant. The user type is determined based on the user claims, where a user is considered an admin if they have
+ * Composable function to determine the user's role based on the user claims. The user role can be either an admin or a
+ * participant. The user's role is determined based on the user claims, where a user is considered an admin if they have
  * the corresponding super_admin or miniamlAdminOrgs claims.
  *
  * Notes:
+ * - Naming note: Despite the name `useUserType`, this composable infers an **admin-vs-participant role** from admin-side
+ *   userRoles/claims (dashboard/admin) rather than reading an explicit `userType` (e.g., educator, caregiver). This has led
+ *   to confusion when `UserType` and `UserRole` diverge.
+ * - Future plan: We intend to align `role` and `type` so they represent the same concept.
+ *
  * - super_admin → SUPER_ADMIN
  * - launch_admin → LAUNCH_ADMIN
  * - admin → ADMIN
@@ -18,9 +23,10 @@ import { UserRoles } from '@bdelab/roar-firekit';
  * - otherwise → PARTICIPANT
  *
  * @param {Object} userClaims - The user claims object.
- * @returns {Object} The user type and related computed properties.
+ * @returns {Object} The user role and related computed properties.
  */
 export default function useUserType(userClaims) {
+  // These userTypes are actually userRoles
   const userType = computed(() => {
     // Abort the user type determination if the user claims are not available yet.
     if (!userClaims.value?.claims) return;
@@ -32,16 +38,22 @@ export default function useUserType(userClaims) {
       return AUTH_USER_TYPE.SUPER_ADMIN;
     }
 
-    if (claims?.role === UserRoles.LAUNCH_ADMIN) {
-      return AUTH_USER_TYPE.LAUNCH_ADMIN;
-    }
+    if (claims?.role) {
+      if (claims?.role === UserRoles.LAUNCH_ADMIN) {
+        return AUTH_USER_TYPE.LAUNCH_ADMIN;
+      }
 
-    // Check if the user has any minimal admin organizations.
-    const minimalAdminOrgs = claims?.minimalAdminOrgs || {};
-    const hasMinimalAdminOrgs = Object.values(minimalAdminOrgs).some((org) => !_isEmpty(org));
+      if (claims?.role === UserRoles.ADMIN) {
+        return AUTH_USER_TYPE.ADMIN;
+      }
+    } else {
+      // Check if the user has any minimal admin organizations.
+      const minimalAdminOrgs = claims?.minimalAdminOrgs || {};
+      const hasMinimalAdminOrgs = Object.values(minimalAdminOrgs).some((org) => !_isEmpty(org));
 
-    if (hasMinimalAdminOrgs || claims?.role === UserRoles.ADMIN) {
-      return AUTH_USER_TYPE.ADMIN;
+      if (hasMinimalAdminOrgs) {
+        return AUTH_USER_TYPE.ADMIN;
+      }
     }
 
     // Otherwise, default to participant user type.
