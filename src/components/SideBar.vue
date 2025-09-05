@@ -142,17 +142,17 @@ const props = withDefaults(defineProps<Props>(), {
 
 const numOfCurrentAssignments = computed(() => {
   const length = props?.currentAssignments?.length;
-  return length > 0 ? length.toString().padStart(2, '0') : '--';
+  return length > 0 ? length.toString() : '--';
 });
 
 const numOfPastAssignments = computed(() => {
   const length = props?.pastAssignments?.length;
-  return length > 0 ? length.toString().padStart(2, '0') : '--';
+  return length > 0 ? length.toString() : '--';
 });
 
 const numOfUpcomingAssignments = computed(() => {
   const length = props?.upcomingAssignments?.length;
-  return length > 0 ? length.toString().padStart(2, '0') : '--';
+  return length > 0 ? length.toString() : '--';
 });
 
 const selectedStatusCurrent = computed(() => selectedStatus.value === ASSIGNMENT_STATUSES.CURRENT);

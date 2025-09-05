@@ -6,16 +6,23 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockOnClick = vi.fn();
 
+const mockCompletedAssessments = [
+  { taskId: 'task1', variantName: 'Variant A', completedOn: new Date('2024-01-10 00:00:00') },
+  { taskId: 'task2', variantName: 'Variant B', completedOn: new Date('2024-01-11 00:00:00') },
+];
+
+const mockIncompleteAssessments = [
+  { taskId: 'task1', variantName: 'Variant A', completedOn: new Date('2024-01-10 00:00:00') },
+  { taskId: 'task2', variantName: 'Variant B', completedOn: null },
+];
+
 const mockAssignmentData = {
   id: '1',
   name: 'Test Assignment',
   publicName: 'Public Test Assignment',
   dateOpened: new Date('2024-01-01 00:00:00'),
   dateClosed: new Date('2024-01-31 00:00:00'),
-  assessments: [
-    { taskId: 'task1', variantName: 'Variant A' },
-    { taskId: 'task2', variantName: 'Variant B' },
-  ],
+  assessments: mockIncompleteAssessments,
 };
 
 vi.mock('@/constants', () => ({
@@ -97,22 +104,6 @@ describe('AssignmentCard.vue', () => {
 
       expect(wrapper.find('.assignment-card__dates').exists()).toBe(false);
     });
-
-    it('should display task assessments when available', () => {
-      const wrapper = mount(AssignmentCard, mountOptions());
-      const tasksContainer = wrapper.find('.assignment-card__tasks');
-
-      expect(tasksContainer.exists()).toBe(true);
-      expect(wrapper.findAll('.assignment-card__task')).toHaveLength(2);
-    });
-
-    it('should handle empty assessments array', () => {
-      const dataWithoutAssessments = { ...mockAssignmentData, assessments: [] };
-      const wrapper = mount(AssignmentCard, mountOptions({ data: dataWithoutAssessments }));
-
-      expect(wrapper.find('.assignment-card__tasks').exists()).toBe(true);
-      expect(wrapper.findAll('.assignment-card__task')).toHaveLength(0);
-    });
   });
 
   describe('Status-based Rendering', () => {
@@ -123,8 +114,9 @@ describe('AssignmentCard.vue', () => {
       expect(lockIcon.exists()).toBe(true);
     });
 
-    it('should display check-circle icon for past assignments', () => {
-      const wrapper = mount(AssignmentCard, mountOptions({ status: 'past' }));
+    it('should display check-circle icon for past assignments if completed', () => {
+      const dataWithCompletedAssessments = { ...mockAssignmentData, assessments: mockCompletedAssessments };
+      const wrapper = mount(AssignmentCard, mountOptions({ data: dataWithCompletedAssessments, status: 'past' }));
       const checkIcon = wrapper.find('.pi.pi-check-circle.--past');
 
       expect(checkIcon.exists()).toBe(true);
@@ -195,35 +187,11 @@ describe('AssignmentCard.vue', () => {
   });
 
   describe('Edge Cases', () => {
-    it('should handle missing data gracefully', () => {
-      const wrapper = mount(AssignmentCard, mountOptions({ data: null }));
-
-      expect(wrapper.find('.assignment-card__name').text()).toBe('');
-      expect(wrapper.find('.assignment-card__dates').exists()).toBe(false);
-      expect(wrapper.find('.assignment-card__tasks').html()).toContain('');
-    });
-
     it('should handle undefined onClick gracefully', () => {
       const wrapper = mount(AssignmentCard, mountOptions({ onClick: undefined }));
 
       expect(wrapper.exists()).toBe(true);
       expect(() => wrapper.find('.assignment-card').trigger('click')).not.toThrow();
-    });
-
-    it('should handle missing assessment data gracefully', () => {
-      const dataWithUndefinedAssessments = { ...mockAssignmentData, assessments: undefined };
-      const wrapper = mount(AssignmentCard, mountOptions({ data: dataWithUndefinedAssessments }));
-
-      expect(wrapper.find('.assignment-card__tasks').exists()).toBe(true);
-      expect(wrapper.findAll('.assignment-card__task')).toHaveLength(0);
-    });
-
-    it('should handle null assessment data gracefully', () => {
-      const dataWithNullAssessments = { ...mockAssignmentData, assessments: null };
-      const wrapper = mount(AssignmentCard, mountOptions({ data: dataWithNullAssessments }));
-
-      expect(wrapper.find('.assignment-card__tasks').exists()).toBe(true);
-      expect(wrapper.findAll('.assignment-card__task')).toHaveLength(0);
     });
   });
 
@@ -249,20 +217,6 @@ describe('AssignmentCard.vue', () => {
       const wrapper = mount(AssignmentCard, mountOptions({ data: customData }));
 
       expect(wrapper.find('.assignment-card__name').text()).toContain('Custom Public Name');
-    });
-
-    it('should display the correct number of tasks', () => {
-      const customData = {
-        ...mockAssignmentData,
-        assessments: [
-          { taskId: 'task1', variantName: 'Variant 1' },
-          { taskId: 'task2', variantName: 'Variant 2' },
-          { taskId: 'task3', variantName: 'Variant 3' },
-        ],
-      };
-      const wrapper = mount(AssignmentCard, mountOptions({ data: customData }));
-
-      expect(wrapper.findAll('.assignment-card__task')).toHaveLength(3);
     });
 
     it('should format dates correctly using date-fns', () => {

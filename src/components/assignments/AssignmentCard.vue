@@ -7,7 +7,7 @@
       <div class="assignment-card__header">
         <h4 class="assignment-card__name">
           <i v-if="props.status === ASSIGNMENT_STATUSES.UPCOMING" :class="`pi pi-lock --${props.status}`"></i>
-          <i v-if="props.status === ASSIGNMENT_STATUSES.PAST" :class="`pi pi-check-circle --${props.status}`"></i>
+          <i v-else-if="isAssignmentCompleted" :class="`pi pi-check-circle --${props.status}`"></i>
           {{ props?.data?.publicName || props?.data?.name }}
         </h4>
 
@@ -16,15 +16,6 @@
           <small>{{ format(props?.data?.dateOpened, 'MMM dd, yyyy') }}</small> —
           <small>{{ format(props?.data?.dateClosed, 'MMM dd, yyyy') }}</small>
         </div>
-      </div>
-
-      <div class="assignment-card__tasks">
-        <div
-          v-for="task in props?.data?.assessments"
-          :key="task?.taskId"
-          v-tooltip.top="tooltip(task?.variantName)"
-          class="assignment-card__task"
-        ></div>
       </div>
     </div>
 
@@ -36,9 +27,9 @@
 
 <script lang="ts" setup>
 import { ASSIGNMENT_STATUSES } from '@/constants';
-import { tooltip } from '@/helpers';
 import { AdministrationType } from '@levante-framework/levante-zod';
 import { format } from 'date-fns';
+import { computed } from 'vue';
 
 interface Props {
   data: AdministrationType;
@@ -48,6 +39,8 @@ interface Props {
 }
 
 const props = defineProps<Props>();
+
+const isAssignmentCompleted = computed(() => props.data?.assessments?.every((assessment) => !!assessment?.completedOn));
 </script>
 
 <style lang="scss" scoped>
@@ -69,10 +62,6 @@ const props = defineProps<Props>();
 
     .assignment-card__name {
       color: var(--bright-yellow);
-    }
-
-    .assignment-card__task {
-      background: rgba(var(--bright-yellow-rgb), 0.5);
     }
   }
 }
@@ -108,6 +97,7 @@ const props = defineProps<Props>();
       color: var(--gray-500);
     }
 
+    &.--current,
     &.--past {
       color: var(--bright-green);
     }
@@ -126,25 +116,5 @@ const props = defineProps<Props>();
   .pi {
     margin: -2px 0 0;
   }
-}
-
-.assignment-card__tasks {
-  display: flex;
-  justify-content: flex-start;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  width: 100%;
-  height: auto;
-  margin: 0.5rem 0 0;
-}
-
-.assignment-card__task {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-width: 36px;
-  min-height: 36px;
-  border-radius: 0.5rem;
-  background: var(--surface-d);
 }
 </style>

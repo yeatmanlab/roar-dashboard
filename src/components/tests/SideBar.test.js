@@ -214,7 +214,7 @@ describe('SideBar.vue', () => {
 
       const currentGroup = wrapper.find('.assignment-group--current');
       expect(currentGroup.exists()).toBe(true);
-      expect(currentGroup.find('.assignment-group__title').text()).toBe('Current 01');
+      expect(currentGroup.find('.assignment-group__title').text()).toBe('Current 1');
 
       const assignment = currentGroup.find('.assignment-card');
       const assignmentName = assignment.find('.assignment-card__name');
