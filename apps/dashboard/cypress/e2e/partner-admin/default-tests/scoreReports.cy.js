@@ -85,9 +85,9 @@ describe('Partner Admin: Score Reports', () => {
     cy.get('[data-cy="data-table__export-selected-btn"]').should('be.disabled');
 
     // Select a user to export.
-    cy.get('.p-checkbox-input').eq(1).click();
-    cy.get('.p-checkbox-input').eq(3).click();
-    cy.get('.p-checkbox-input').eq(5).click();
+    cy.findByTestId('checkbox__input').eq(1).click();
+    cy.findByTestId('checkbox__input').eq(3).click();
+    cy.findByTestId('checkbox__input').eq(5).click();
 
     // Export the score report.
     cy.get('[data-cy="data-table__export-selected-btn"]').contains('Export Selected').click();

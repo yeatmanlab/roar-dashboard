@@ -335,6 +335,7 @@
               binary
               :disabled="showConsent[outerIndex]"
               :class="[{ 'p-invalid': student.accept.$invalid && submitted }]"
+              pt:input:data-testid="checkbox__input"
               @change="getConsent(outerIndex)"
             />
             <label for="accept" :class="{ 'p-error': student.accept.$invalid && submitted }"
@@ -377,6 +378,8 @@
         :style="{ width: '25rem' }"
         :modal="true"
         :draggable="false"
+        pt:header:data-testid="dialog__header"
+        pt:content:data-testid="dialog__content"
       >
         <p>{{ dialogMessage }}</p>
         <PvButton
