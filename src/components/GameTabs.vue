@@ -201,14 +201,12 @@ import PvTab from 'primevue/tab';
 import PvTabPanels from 'primevue/tabpanels';
 import PvTag from 'primevue/tag';
 import { useAuthStore } from '@/store/auth';
-import { useGameStore } from '@/store/game';
 import { useSurveyStore } from '@/store/survey';
 import _capitalize from 'lodash/capitalize';
 import { useQueryClient } from '@tanstack/vue-query';
 import { LEVANTE_SURVEY_RESPONSES_KEY } from '@/constants/bucket';
 import PvProgressBar from 'primevue/progressbar';
 import { useAssignmentsStore } from '@/store/assignments';
-import { ASSIGNMENT_STATUSES } from '@/constants';
 
 interface TaskData {
   name: string;
@@ -263,7 +261,7 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const authStore = useAuthStore();
-const gameStore = useGameStore();
+const assignmentsStore = useAssignmentsStore();
 const surveyStore = useSurveyStore();
 const assignmentsStore = useAssignmentsStore();
 const { selectedStatus } = storeToRefs(assignmentsStore);
@@ -308,7 +306,7 @@ const getSpecificSurveyProgress = computed(() => (loopIndex: number): number => 
   // If data is not found in localStorage, use surveyData from server
   if (!surveyData || !Array.isArray(surveyData)) return 0;
 
-  const currentSurvey = (surveyData as any[]).find((doc) => doc.administrationId === selectedAdmin.value.id);
+  const currentSurvey = (surveyData as any[]).find((doc) => doc.administrationId === selectedAssignment.value.id);
   if (!currentSurvey || !currentSurvey.specific || !currentSurvey.specific[loopIndex]) return 0;
 
   // Specific survey is complete
@@ -427,7 +425,7 @@ const displayGameIndex = computed((): number => (gameIndex.value === -1 ? 0 : ga
 
 const allGamesComplete = computed((): boolean => gameIndex.value === -1);
 
-const { selectedAdmin } = storeToRefs(gameStore);
+const { selectedAssignment } = storeToRefs(assignmentsStore);
 
 async function routeExternalTask(game: Game): Promise<void> {
   let url: string;
@@ -445,13 +443,13 @@ async function routeExternalTask(game: Game): Promise<void> {
     const ageInMonths = getAgeData(props.userData.birthMonth, props.userData.birthYear).ageMonths;
     url += `participantID=${props.userData.id}&participantAgeInMonths=${ageInMonths}&lng=${locale.value}`;
     window.open(url, '_blank')?.focus();
-    await (authStore as any).completeAssessment(selectedAdmin.value.id, game.taskId);
+    await (authStore as any).completeAssessment(selectedAssignment.value.id, game.taskId);
   } else {
     url += `&participant=${props.userData.assessmentPid}${
       props.userData.schools?.current?.length ? '&schoolId=' + props.userData.schools.current.join('"%2C"') : ''
     }${props.userData.classes?.current?.length ? '&classId=' + props.userData.classes.current.join('"%2C"') : ''}`;
 
-    await (authStore as any).completeAssessment(selectedAdmin.value.id, game.taskId);
+    await (authStore as any).completeAssessment(selectedAssignment.value.id, game.taskId);
     window.location.href = url;
   }
 }

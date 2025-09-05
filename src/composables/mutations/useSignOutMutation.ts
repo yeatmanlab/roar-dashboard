@@ -6,7 +6,6 @@ import { useAuthStore } from '@/store/auth';
 import { SIGN_OUT_MUTATION_KEY } from '@/constants/mutationKeys';
 import { APP_ROUTES } from '@/constants/routes';
 import { useSurveyStore } from '@/store/survey';
-import { useGameStore } from '@/store/game';
 import { useAssignmentsStore } from '@/store/assignments';
 
 /**
@@ -18,7 +17,6 @@ const useSignOutMutation = (): UseMutationReturnType<void, Error, void, unknown>
   const assignmentsStore = useAssignmentsStore();
   const authStore = useAuthStore();
   const surveyStore = useSurveyStore();
-  const gameStore = useGameStore();
   const router = useRouter();
   const queryClient = useQueryClient();
 
@@ -35,10 +33,10 @@ const useSignOutMutation = (): UseMutationReturnType<void, Error, void, unknown>
       // remove it manually from sessionStorage to prevent any issues.
       assignmentsStore.$reset();
       authStore.$reset();
-      gameStore.$reset();
+      assignmentsStore.$reset();
       surveyStore.reset();
       sessionStorage.removeItem('authStore');
-      sessionStorage.removeItem('gameStore');
+      sessionStorage.removeItem('assignmentsStore');
 
       // Clear the query client to remove all cached data.
       queryClient.clear();

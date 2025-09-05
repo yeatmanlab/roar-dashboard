@@ -25,7 +25,7 @@ import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import _isEmpty from 'lodash/isEmpty';
 import { useAuthStore } from '@/store/auth';
-import { useGameStore } from '@/store/game';
+import { useAssignmentsStore } from '@/store/assignments';
 import useUserType from '@/composables/useUserType';
 import useUserDataQuery from '@/composables/queries/useUserDataQuery';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
@@ -51,8 +51,8 @@ if (ssoProvider.value) {
   router.replace({ path: APP_ROUTES.SSO });
 }
 
-const gameStore = useGameStore();
-const { requireRefresh } = storeToRefs(gameStore);
+const assignmentsStore = useAssignmentsStore();
+const { requireRefresh } = storeToRefs(assignmentsStore);
 
 const initialized = ref(false);
 let unsubscribe;

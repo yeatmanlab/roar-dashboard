@@ -8,7 +8,7 @@ import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import _get from 'lodash/get';
 import { useAuthStore } from '@/store/auth';
-import { useGameStore } from '@/store/game';
+import { useAssignmentsStore } from '@/store/assignments';
 import useUserChildDataQuery from '@/composables/queries/useUserChildDataQuery';
 import useCompleteAssessmentMutation from '@/composables/mutations/useCompleteAssessmentMutation';
 import packageLockJson from '../../../package-lock.json';
@@ -26,7 +26,8 @@ const router = useRouter();
 const taskStarted = ref(false);
 const gameStarted = ref(false);
 const authStore = useAuthStore();
-const gameStore = useGameStore();
+const assignmentsStore = useAssignmentsStore();
+const { selectedAssignment } = storeToRefs(assignmentsStore);
 const { isFirekitInit, roarfirekit } = storeToRefs(authStore);
 
 const { mutateAsync: completeAssessmentMutate } = useCompleteAssessmentMutation();
@@ -78,8 +79,7 @@ watch(
   async ([newFirekitInitValue, newLoadingUserData]) => {
     if (newFirekitInitValue && !newLoadingUserData && !taskStarted.value) {
       taskStarted.value = true;
-      const { selectedAdmin } = storeToRefs(gameStore);
-      await startTask(selectedAdmin);
+      await startTask(selectedAssignment);
     }
   },
   { immediate: true },
@@ -116,7 +116,7 @@ async function startTask(selectedAdmin) {
       });
 
       // Navigate to home, but first set the refresh flag to true.
-      gameStore.requireHomeRefresh();
+      assignmentsStore.setHomeRefresh();
       router.push({ name: 'Home' });
     });
   } catch (error) {

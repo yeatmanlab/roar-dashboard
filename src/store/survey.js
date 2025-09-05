@@ -22,10 +22,6 @@ export const useSurveyStore = defineStore('surveyStore', () => {
   const audioLinkMap = ref({});
 
   // Actions
-  function requireHomeRefresh() {
-    requireRefresh.value = true;
-  }
-
   function setSurveyCompleted() {
     isSurveyCompleted.value = true;
   }
@@ -129,7 +125,6 @@ export const useSurveyStore = defineStore('surveyStore', () => {
     audioLinkMap,
 
     // Actions
-    requireHomeRefresh,
     setSurveyCompleted,
     setSurvey,
     setNumberOfSurveyPages,

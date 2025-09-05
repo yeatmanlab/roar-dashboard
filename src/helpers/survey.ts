@@ -9,8 +9,7 @@ import type { RoarFirekit as RoarfirekitType } from '@bdelab/roar-firekit';
 import type { ToastServiceMethods } from 'primevue/toastservice';
 // @ts-expect-error - Will be resolved when store file is converted to TS
 import type { UseSurveyStore } from '@/store/survey';
-// @ts-expect-error - Will be resolved when store file is converted to TS
-import type { UseGameStore } from '@/store/game';
+import type { useAssignmentsStore } from '@/store/assignments';
 import { LEVANTE_BUCKET_SURVEY_AUDIO, LEVANTE_BUCKET_URL } from '@/constants/bucket';
 
 export interface AudioLinkMap {
@@ -117,7 +116,7 @@ interface SaveFinalSurveyDataParams {
   queryClient: QueryClient;
   specificIds: (string | number)[];
   userType: string;
-  gameStore: UseGameStore;
+  assignmentsStore: typeof useAssignmentsStore;
 }
 
 const context = new AudioContext();
@@ -175,6 +174,7 @@ export const fetchBuffer = ({
     return;
   }
   setSurveyAudioLoading(true);
+
   const bufferLoader = new BufferLoader(context, audioLinks[parsedLocale], (bufferList: BufferList) =>
     finishedLoading({
       bufferList,
@@ -312,7 +312,7 @@ export async function saveFinalSurveyData({
   queryClient,
   specificIds,
   userType,
-  gameStore,
+  assignmentsStore,
 }: SaveFinalSurveyDataParams): Promise<void> {
   const fromStorage = window.localStorage.getItem(`${LEVANTE_SURVEY_RESPONSES_KEY}-${uid}`);
 
@@ -394,7 +394,7 @@ export async function saveFinalSurveyData({
 
     queryClient.invalidateQueries({ queryKey: ['surveyResponses', uid] });
 
-    gameStore.requireHomeRefresh();
+    assignmentsStore.setHomeRefresh();
     router.push({ name: 'Home' });
   } catch (error: unknown) {
     surveyStore.setIsSavingSurveyResponses(false);

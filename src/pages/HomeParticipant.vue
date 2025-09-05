@@ -92,7 +92,7 @@ import _isEmpty from 'lodash/isEmpty';
 import { storeToRefs } from 'pinia';
 import PvButton from 'primevue/button';
 import { useAuthStore } from '@/store/auth';
-import { useGameStore } from '@/store/game';
+import { useAssignmentsStore } from '@/store/assignments';
 import useUserDataQuery from '@/composables/queries/useUserDataQuery';
 import useUserAssignmentsQuery from '@/composables/queries/useUserAssignmentsQuery';
 import useTasksQuery from '@/composables/queries/useTasksQuery';
@@ -119,7 +119,6 @@ import LevanteSpinner from '@/components/LevanteSpinner.vue';
 import { logger } from '@/logger';
 import { format } from 'date-fns';
 import SideBar from '@/components/SideBar.vue';
-import { useAssignmentsStore } from '@/store/assignments';
 import PvTag from 'primevue/tag';
 
 const showConsent = ref(false);
@@ -157,7 +156,6 @@ onMounted(async () => {
   if (roarfirekit.value.restConfig) init();
 });
 
-const gameStore = useGameStore();
 
 const {
   data: districtsData,
@@ -610,7 +608,7 @@ watch(
       toast,
       queryClient,
       userData: userData.value,
-      gameStore,
+      assignmentsStore,
     });
 
     surveyStore.setSurvey(surveyInstance);

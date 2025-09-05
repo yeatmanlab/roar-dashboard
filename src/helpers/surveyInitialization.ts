@@ -14,6 +14,7 @@ import type { SurveyModel, PageModel, Question, CompleteEvent } from 'survey-cor
 import type { Router } from 'vue-router';
 import type { ToastServiceMethods } from 'primevue/toastservice';
 import type { QueryClient } from '@tanstack/vue-query';
+import type { useAssignmentsStore } from '@/store/assignments';
 
 interface UserData {
   id: string;
@@ -53,10 +54,6 @@ interface InitializeSurveyParams {
   generalSurveyData: SurveyData;
 }
 
-interface GameStore {
-  // Define necessary methods/properties used, e.g.:
-  // requireHomeRefresh: () => void;
-}
 
 interface SetupSurveyEventHandlersParams {
   surveyInstance: SurveyModel;
@@ -69,7 +66,7 @@ interface SetupSurveyEventHandlersParams {
   toast: ToastServiceMethods;
   queryClient: QueryClient;
   userData: UserData;
-  gameStore: GameStore;
+  assignmentsStore: typeof useAssignmentsStore;
 }
 
 export async function initializeSurvey({
@@ -149,7 +146,7 @@ export function setupSurveyEventHandlers({
   toast,
   queryClient,
   userData,
-  gameStore,
+  assignmentsStore,
 }: SetupSurveyEventHandlersParams): void {
   let specificIds: (string | number)[] = [];
   if (userType === 'parent') {
@@ -235,7 +232,7 @@ export function setupSurveyEventHandlers({
       specificIds: specificIds,
       selectedAdmin: selectedAdminId,
       userType,
-      gameStore: gameStore as any,
+      assignmentsStore: assignmentsStore as any,
     }),
   );
 }
