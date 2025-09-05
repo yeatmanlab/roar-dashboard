@@ -22,6 +22,7 @@ export const useAuthStore = () => {
         userClaims: null,
         cleverOAuthRequested: false,
         classLinkOAuthRequested: false,
+        nycpsOAuthRequested: false,
         routeToProfile: false,
         ssoProvider: null,
         showOptionalAssessments: false,
@@ -161,6 +162,18 @@ export const useAuthStore = () => {
       async signInWithClassLinkRedirect() {
         this.ssoProvider = AUTH_SSO_PROVIDERS.CLASSLINK;
         return this.roarfirekit.initiateRedirect(AUTH_SSO_PROVIDERS.CLASSLINK);
+      },
+      async signInWithNYCPSPopup() {
+        this.ssoProvider = AUTH_SSO_PROVIDERS.NYCPS;
+        if (this.isFirekitInit) {
+          console.log('In authStore. Calling roarfirekit.signInWithPopup');
+          return this.roarfirekit.signInWithPopup(AUTH_SSO_PROVIDERS.NYCPS);
+        }
+      },
+      async signInWithNYCPSRedirect() {
+        this.ssoProvider = AUTH_SSO_PROVIDERS.NYCPS;
+        console.log('In authStore. Calling roarfirekit.initiateRedirect');
+        return this.roarfirekit.initiateRedirect(AUTH_SSO_PROVIDERS.NYCPS);
       },
       async initStateFromRedirect() {
         this.spinner = true;

@@ -34,4 +34,5 @@ export const AUTH_SSO_PROVIDERS = Object.freeze({
   CLEVER: 'clever',
   CLASSLINK: 'classlink',
   GOOGLE: 'google',
+  NYCPS: 'nycps',
 });

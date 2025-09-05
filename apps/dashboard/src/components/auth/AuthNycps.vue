@@ -12,7 +12,7 @@ const authStore = useAuthStore();
 const { isFirekitInit } = storeToRefs(authStore);
 
 watch(isFirekitInit, () => {
-  authStore.classLinkOAuthRequested = true;
+  authStore.nycpsOAuthRequested = true;
   router.replace({ name: 'SignIn' });
 });
 </script>
