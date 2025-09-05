@@ -47,6 +47,11 @@ const props = defineProps({
     type: Object,
     required: true,
   },
+  longitudinalData: {
+    type: Array,
+    required: false,
+    default: () => [],
+  },
   expanded: {
     type: Boolean,
     required: false,
@@ -59,7 +64,25 @@ const { t } = useI18n();
  * Process task data into computed task data for display
  */
 const computedTaskData = computed(() => {
-  return ScoreReportService.processTaskScores(props.taskData, props.studentGrade, { t });
+  // Process current task data
+  const currentTasks = ScoreReportService.processTaskScores(props.taskData, props.studentGrade, { t });
+  
+  // Process longitudinal data
+  if (props.longitudinalData?.length) {
+    return currentTasks.map(task => ({
+      ...task,
+      historicalScores: props.longitudinalData
+        .filter(run => run.taskId === task.taskId)
+        .sort((a, b) => new Date(a.dateCreated) - new Date(b.dateCreated))
+        .map(run => ({
+          date: new Date(run.dateCreated),
+          score: run.scores?.composite?.[task.scoreToDisplay]?.value,
+          assignmentId: run.assignmentId
+        }))
+    }));
+  }
+  
+  return currentTasks;
 });
 
 /**

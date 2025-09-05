@@ -47,7 +47,7 @@
       </i18n-t>
     </div>
 
-    <template v-if="scoresArray?.length">
+    <template v-if="scoresArray?.length || historicalScores?.length">
       <PvAccordion v-model:value="visiblePanels" class="px-4 w-full border-t border-gray-100">
         <PvAccordionPanel
           class="bg-gray-50"
@@ -73,6 +73,27 @@
             </div>
           </PvAccordionContent>
         </PvAccordionPanel>
+
+        <PvAccordionPanel
+          v-if="historicalScores?.length"
+          class="bg-gray-50"
+          :pt="{ root: { class: 'border-0' } }"
+          :value="ACCORDION_PANELS.HISTORICAL_SCORES"
+        >
+          <PvAccordionHeader :pt="{ root: { class: 'px-0' } }">
+            {{ $t('scoreReports.historicalScores') }}
+          </PvAccordionHeader>
+          <PvAccordionContent :pt="{ content: { class: 'px-0' } }">
+            <div class="historical-scores">
+              <div v-for="historicalScore in historicalScores" :key="historicalScore.assignmentId" class="historical-score-item">
+                <div class="flex justify-content-between align-items-center">
+                  <span class="date">{{ formatDate(historicalScore.date) }}</span>
+                  <span class="score"><b>{{ Math.round(historicalScore.score) }}</b></span>
+                </div>
+              </div>
+            </div>
+          </PvAccordionContent>
+        </PvAccordionPanel>
       </PvAccordion>
     </template>
   </article>
@@ -80,6 +101,7 @@
 
 <script setup>
 import { ref, watch } from 'vue';
+import { format } from 'date-fns';
 import PvKnob from 'primevue/knob';
 import PvTag from 'primevue/tag';
 import PvAccordion from 'primevue/accordion';
@@ -127,20 +149,30 @@ const props = defineProps({
   },
   expanded: {
     type: Boolean,
-    required: true,
+    required: false,
+  },
+  historicalScores: {
+    type: Array,
+    required: false,
+    default: () => [],
   },
 });
 
 const ACCORDION_PANELS = Object.freeze({
-  SCORE_BREAKDOWN: '0',
+  SCORE_BREAKDOWN: 'scoreBreakdown',
+  HISTORICAL_SCORES: 'historicalScores',
 });
 
-const visiblePanels = ref(props.expanded ? ACCORDION_PANELS.SCORE_BREAKDOWN : null);
+const visiblePanels = ref([]);
+
+const formatDate = (date) => {
+  return format(date, 'MMM d, yyyy');
+};
 
 watch(
   () => props.expanded,
   (newValue) => {
-    visiblePanels.value = newValue ? ACCORDION_PANELS.SCORE_BREAKDOWN : null;
+    visiblePanels.value = newValue ? [ACCORDION_PANELS.SCORE_BREAKDOWN] : [];
   },
   { immediate: true },
 );
