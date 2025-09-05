@@ -92,9 +92,8 @@ const navbarActionOptions: Readonly<NavbarAction>[] = [
     project: 'ALL',
     category: 'Users',
   },
-] as const; // Use 'as const' for strong typing
+] as const; 
 
-// Define the type for the function parameters
 interface GetNavbarActionsParams {
   isSuperAdmin?: boolean;
   isAdmin?: boolean;
@@ -104,40 +103,20 @@ export const getNavbarActions = ({
   isSuperAdmin = false,
   isAdmin = false,
 }: GetNavbarActionsParams): Readonly<NavbarAction>[] => {
-  // TODO: Remove ROAR logic
-  if (isLevante) {
-    return navbarActionOptions.filter((action) => {
-      if (action.project === 'LEVANTE' || action.project === 'ALL') {
-        // If the action requires admin and the user is an admin, or if the action
-        // requires super admin and the user is a super admin,
-        // or if the action does not require admin or super admin,
-        // the action will be in the dropdown
-        if (
-          (action.requiresAdmin && isAdmin) ||
-          (action.requiresSuperAdmin && isSuperAdmin) ||
-          (!action.requiresAdmin && !action.requiresSuperAdmin)
-        ) {
-          return true;
-        } else {
-          return false;
-        }
-      }
-      return false; // Added default return
-    });
-  } else {
-    const actions = navbarActionOptions.filter((action) => {
-      if (action.project === 'ROAR' || action.project === 'ALL') {
-        if (action.requiresSuperAdmin && !isSuperAdmin) {
-          return false;
-        }
-        if (action.requiresAdmin && !isAdmin) {
-          return false;
-        }
-        return true;
-      }
-      return false; // Added default return
-    });
 
-    return actions;
-  }
+  return navbarActionOptions.filter((action) => {
+      // If the action requires admin and the user is an admin, or if the action
+      // requires super admin and the user is a super admin,
+      // or if the action does not require admin or super admin,
+      // the action will be in the dropdown
+      if (
+        (action.requiresAdmin && isAdmin) ||
+        (action.requiresSuperAdmin && isSuperAdmin) ||
+        (!action.requiresAdmin && !action.requiresSuperAdmin)
+      ) {
+        return true;
+      } else {
+        return false;
+      }
+    });
 };

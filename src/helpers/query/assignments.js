@@ -1050,10 +1050,10 @@ export const assignmentPageFetcher = async (
 
 /**
 /**
- * Fetches the assignments that are currently open for a user.
+ * Fetches all assignments for a user.
  *
- * @param {ref<String>} roarUid - A Vue ref containing the user's ROAR ID.
- * @returns {Promise<Array>} - A promise that resolves to an array of open assignments for the user.
+ * @param {ref<String>} roarUid - A Vue ref containing the user's ID.
+ * @returns {Promise<Array>} - A promise that resolves to an array of all assignments for the user.
  */
 export const getUserAssignments = async (roarUid) => {
   const adminAxiosInstance = getAxiosInstance();
@@ -1071,6 +1071,8 @@ export const getUserAssignments = async (roarUid) => {
     });
 };
 
+
+// TODO: Rename this function to be more descriptive.
 export const assignmentFetchAll = async (adminId, orgType, orgId, includeScores = false) => {
   return await assignmentPageFetcher(
     adminId,

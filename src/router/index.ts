@@ -134,7 +134,7 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import('../pages/HomeAdministrator.vue'),
     meta: {
       pageTitle: 'Administrator',
-      allowedRoles: [ROLES.ADMIN, ROLES.SITE_ADMIN],
+      allowedRoles: [ROLES.ADMIN, ROLES.SITE_ADMIN, ROLES.SUPER_ADMIN],
     },
   },
   {
@@ -162,7 +162,7 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import('../pages/CreateAdministrator.vue'),
     meta: {
       pageTitle: 'Create an administrator account',
-      allowedRoles: [ROLES.ADMIN, ROLES.SITE_ADMIN],
+      allowedRoles: [ROLES.ADMIN, ROLES.SITE_ADMIN, ROLES.SUPER_ADMIN],
     },
   },
   {
@@ -171,7 +171,7 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import('../pages/groups/ListGroups.vue'),
     meta: {
       pageTitle: 'Groups',
-      allowedRoles: [ROLES.ADMIN, ROLES.SITE_ADMIN],
+      allowedRoles: [ROLES.ADMIN, ROLES.SITE_ADMIN, ROLES.SUPER_ADMIN],
     },
   },
   {
@@ -191,7 +191,7 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import('../pages/ProgressReport.vue'),
     meta: {
       pageTitle: 'View Administration',
-      allowedRoles: [ROLES.ADMIN, ROLES.SITE_ADMIN],
+      allowedRoles: [ROLES.ADMIN, ROLES.SITE_ADMIN, ROLES.SUPER_ADMIN],
     },
   },
   {
@@ -204,7 +204,7 @@ const routes: Array<RouteRecordRaw> = [
         name: 'ProfileAccounts',
         component: () => import('../components/adminSettings/LinkAccountsView.vue'),
         meta: {
-          allowedRoles: [ROLES.ADMIN, ROLES.SITE_ADMIN],
+          allowedRoles: [ROLES.ADMIN, ROLES.SITE_ADMIN, ROLES.SUPER_ADMIN],
         },
       },
       {
@@ -245,7 +245,7 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import('../pages/users/AddUsers.vue'),
     meta: {
       pageTitle: 'Add Users',
-      allowedRoles: [ROLES.ADMIN, ROLES.SITE_ADMIN],
+      allowedRoles: [ROLES.ADMIN, ROLES.SITE_ADMIN, ROLES.SUPER_ADMIN],
     },
   },
 
@@ -255,7 +255,7 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import('../pages/users/LinkUsers.vue'),
     meta: {
       pageTitle: 'Link Users',
-      allowedRoles: [ROLES.ADMIN, ROLES.SITE_ADMIN],
+      allowedRoles: [ROLES.ADMIN, ROLES.SITE_ADMIN, ROLES.SUPER_ADMIN],
     },
   },
   // {
@@ -341,7 +341,7 @@ router.beforeEach(async (to: RouteLocationNormalized, from: RouteLocationNormali
     });
   }
 
-  const allowedRoles = to.meta.allowedRoles;
+  const allowedRoles = to.meta.allowedRoles as string[];
   const userRoles = authStore.userData?.roles?.map((role: Role) => role.role) || [ROLES.PARTICIPANT];
   const isUserAllowed = allowedRoles.some((allowedRole: string) => userRoles.includes(allowedRole));
 
