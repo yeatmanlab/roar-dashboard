@@ -260,12 +260,7 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted, watch } from 'vue';
-
-const formatPhonicsScore = (score) => {
-  if (!score?.correct || !score?.attempted) return '0/0';
-  return `${score.correct}/${score.attempted}`;
-};
+import { computed, ref, onMounted, toValue, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router';
 import { jsPDF } from 'jspdf';
@@ -311,7 +306,7 @@ import {
   excludeFromScoringTasks,
   includeReliabilityFlagsOnExport,
   addElementToPdf,
-  getScoreKeys,
+  getScoreValue,
   tasksToDisplayCorrectIncorrectDifference,
   includedValidityFlags,
   roamAlpacaSubskills,
@@ -355,6 +350,11 @@ const displayName = computed(() => {
   }
   return 'Fetching administration name...';
 });
+
+const formatPhonicsScore = (score) => {
+  if (!score?.correct || !score?.attempted) return '0/0';
+  return `${score.correct}/${score.attempted}`;
+};
 
 const reportView = ref({ name: 'Score Report', constant: true });
 const reportViews = [
@@ -528,22 +528,17 @@ function returnColorByReliability(assessment, rawScore, support_level, tag_color
   return tag_color;
 }
 
-const getScoresAndSupportFromAssessment = ({
-  grade,
-  assessment,
-  standardScoreDisplayKey,
-  percentileScoreKey,
-  percentileScoreDisplayKey,
-  rawScoreKey,
-  taskId,
-  optional,
-}) => {
+const getScoresAndSupportFromAssessment = ({ grade, assessment, taskId, optional }) => {
   let support_level;
   let tag_color;
-  let percentile = _get(assessment, `scores.computed.composite.${percentileScoreKey}`);
-  let percentileString = _get(assessment, `scores.computed.composite.${percentileScoreDisplayKey}`);
-  let standardScore = _get(assessment, `scores.computed.composite.${standardScoreDisplayKey}`);
-  let rawScore = _get(assessment, `scores.computed.composite.${rawScoreKey}`);
+
+  const compositeScores = _get(assessment, 'scores.computed.composite');
+  const gradeValue = getGrade(toValue(grade));
+
+  let percentile = getScoreValue(compositeScores, taskId, gradeValue, 'percentile');
+  let percentileString = getScoreValue(compositeScores, taskId, gradeValue, 'percentileDisplay');
+  let standardScore = getScoreValue(compositeScores, taskId, gradeValue, 'standardScore');
+  let rawScore = getScoreValue(compositeScores, taskId, gradeValue, 'rawScore');
 
   if (
     tasksToDisplayCorrectIncorrectDifference.includes(assessment.taskId) ||
@@ -560,7 +555,7 @@ const getScoresAndSupportFromAssessment = ({
       support_level = _get(assessment, 'scores.computed.composite.supportLevel') ?? '';
       // Handles old scoring for alpaca
       tag_color = !isNewScoring && !numAttempted ? '#EEEEF0' : getTagColor(support_level);
-      // Manually set instead of returning rawScoreKey using getScoreKeys
+      // Manually set instead of returning rawScoreKey using getScoreValue
       // because functions is designed for tasks that display in IndividualScoreReport (n/a for alpaca)
       rawScore = _get(assessment, 'scores.computed.composite.roarScore');
     } else {
@@ -711,17 +706,11 @@ const computeAssignmentAndRunData = computed(() => {
           scoreFilterTags += ' Assessed ';
         }
 
-        const { percentileScoreKey, rawScoreKey, percentileScoreDisplayKey, standardScoreDisplayKey } =
-          getScoreKeysByRow(assessment, getGrade(grade));
         // compute and add scores data in next step as so
         const { support_level, tag_color, percentile, percentileString, standardScore, rawScore } =
           getScoresAndSupportFromAssessment({
             grade,
             assessment,
-            percentileScoreKey,
-            percentileScoreDisplayKey,
-            standardScoreDisplayKey,
-            rawScoreKey,
             taskId,
             isOptional,
           });
@@ -1221,11 +1210,6 @@ const exportData = async ({ selectedRows = null, includeProgress = false }) => {
   // Export CSV
   exportCsv(exportData, fileName);
 };
-
-function getScoreKeysByRow(row, grade) {
-  const taskId = row?.taskId;
-  return getScoreKeys(taskId, grade);
-}
 
 const refreshing = ref(false);
 

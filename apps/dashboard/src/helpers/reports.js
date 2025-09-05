@@ -1,4 +1,5 @@
 import html2canvas from 'html2canvas';
+import { toValue } from 'vue';
 import { getGrade } from '@bdelab/roar-utils';
 /*
  *  Task Display Names
@@ -701,71 +702,258 @@ export function getTagColor(supportLevel) {
   return supportLevelColors.Assessed;
 }
 
-export function getScoreKeys(taskId, grade) {
-  let percentileScoreKey = undefined;
-  let percentileScoreDisplayKey = undefined;
-  let standardScoreKey = undefined;
-  let standardScoreDisplayKey = undefined;
-  let rawScoreKey = undefined;
-  if (taskId === 'swr' || taskId === 'swr-es') {
-    percentileScoreKey = 'wjPercentile';
-    percentileScoreDisplayKey = 'wjPercentile';
-    standardScoreKey = 'standardScore';
-    standardScoreDisplayKey = 'standardScore';
-    rawScoreKey = 'roarScore';
-  }
-  if (taskId === 'pa') {
-    if (grade < 6) {
-      percentileScoreKey = 'percentile';
-      percentileScoreDisplayKey = 'percentile';
-      standardScoreKey = 'standardScore';
-      standardScoreDisplayKey = 'standardScore';
-    } else {
-      // These are string values intended for display
-      //   they include '>' when the ceiling is hit
-      // Replace them with non '-String' versions for
-      //   comparison.
-      percentileScoreKey = 'sprPercentile';
-      percentileScoreDisplayKey = 'sprPercentileString';
-      standardScoreKey = 'sprStandardScore';
-      standardScoreDisplayKey = 'sprStandardScoreString';
-    }
-    rawScoreKey = 'roarScore';
-  }
-  if (taskId === 'sre') {
-    if (grade < 6) {
-      percentileScoreKey = 'tosrecPercentile';
-      percentileScoreDisplayKey = 'tosrecPercentile';
-      standardScoreKey = 'tosrecSS';
-      standardScoreDisplayKey = 'tosrecSS';
-    } else {
-      percentileScoreKey = 'sprPercentile';
-      percentileScoreDisplayKey = 'sprPercentile';
-      standardScoreKey = 'sprStandardScore';
-      standardScoreDisplayKey = 'sprStandardScore';
-    }
-    rawScoreKey = 'sreScore';
-  }
-  if (taskId === 'letter' || taskId === 'letter-es' || taskId === 'letter-en-ca') {
-    percentileScoreKey = 'totalPercentCorrect';
-    percentileScoreDisplayKey = 'totalPercentCorrect';
-    rawScoreKey = 'totalCorrect';
-  }
-  if (taskId === 'phonics') {
-    percentileScoreKey = 'totalPercentCorrect';
-    percentileScoreDisplayKey = 'totalPercentCorrect';
-    standardScoreKey = 'totalPercentCorrect';
-    standardScoreDisplayKey = 'totalPercentCorrect';
-    rawScoreKey = 'totalCorrect';
+const ALLOWED_SCORE_FIELD_TYPES = [
+  'percentile',
+  'standardScore',
+  'rawScore',
+  'percentileDisplay',
+  'standardScoreDisplay',
+];
+
+/**
+ * Score Field Mapping Configuration
+ * @desc Defines new and legacy field names for each task and grade combination
+ *       This allows for backwards compatibility when field names are updated
+ * @see ./SCORE_FIELD_MIGRATION_GUIDE.md
+ */
+const SCORE_FIELD_MAPPINGS = {
+  swr: {
+    percentile: {
+      new: 'wjPercentile',
+      legacy: 'wjPercentile', // Same for now, but can be updated
+    },
+    percentileDisplay: {
+      new: 'wjPercentile',
+      legacy: 'wjPercentile',
+    },
+    standardScore: {
+      new: 'standardScore',
+      legacy: 'standardScore',
+    },
+    standardScoreDisplay: {
+      new: 'standardScore',
+      legacy: 'standardScore',
+    },
+    rawScore: {
+      new: 'roarScore',
+      legacy: 'roarScore',
+    },
+  },
+  'swr-es': {
+    percentile: {
+      new: 'wjPercentile',
+      legacy: 'wjPercentile',
+    },
+    percentileDisplay: {
+      new: 'wjPercentile',
+      legacy: 'wjPercentile',
+    },
+    standardScore: {
+      new: 'standardScore',
+      legacy: 'standardScore',
+    },
+    standardScoreDisplay: {
+      new: 'standardScore',
+      legacy: 'standardScore',
+    },
+    rawScore: {
+      new: 'roarScore',
+      legacy: 'roarScore',
+    },
+  },
+  pa: {
+    percentile: {
+      new: (grade) => (grade < 6 ? 'percentile' : 'sprPercentile'),
+      legacy: (grade) => (grade < 6 ? 'percentile' : 'sprPercentile'),
+    },
+    percentileDisplay: {
+      new: (grade) => (grade < 6 ? 'percentile' : 'sprPercentileString'),
+      legacy: (grade) => (grade < 6 ? 'percentile' : 'sprPercentileString'),
+    },
+    standardScore: {
+      new: (grade) => (grade < 6 ? 'standardScore' : 'sprStandardScore'),
+      legacy: (grade) => (grade < 6 ? 'standardScore' : 'sprStandardScore'),
+    },
+    standardScoreDisplay: {
+      new: (grade) => (grade < 6 ? 'standardScore' : 'sprStandardScoreString'),
+      legacy: (grade) => (grade < 6 ? 'standardScore' : 'sprStandardScoreString'),
+    },
+    rawScore: {
+      new: 'roarScore',
+      legacy: 'roarScore',
+    },
+  },
+  sre: {
+    percentile: {
+      new: (grade) => (grade < 6 ? 'tosrecPercentile' : 'sprPercentile'),
+      legacy: (grade) => (grade < 6 ? 'tosrecPercentile' : 'sprPercentile'),
+    },
+    percentileDisplay: {
+      new: (grade) => (grade < 6 ? 'tosrecPercentile' : 'sprPercentile'),
+      legacy: (grade) => (grade < 6 ? 'tosrecPercentile' : 'sprPercentile'),
+    },
+    standardScore: {
+      new: (grade) => (grade < 6 ? 'tosrecSS' : 'sprStandardScore'),
+      legacy: (grade) => (grade < 6 ? 'tosrecSS' : 'sprStandardScore'),
+    },
+    standardScoreDisplay: {
+      new: (grade) => (grade < 6 ? 'tosrecSS' : 'sprStandardScore'),
+      legacy: (grade) => (grade < 6 ? 'tosrecSS' : 'sprStandardScore'),
+    },
+    rawScore: {
+      new: 'sreScore',
+      legacy: 'sreScore',
+    },
+  },
+  letter: {
+    percentile: {
+      new: 'totalPercentCorrect',
+      legacy: 'totalPercentCorrect',
+    },
+    percentileDisplay: {
+      new: 'totalPercentCorrect',
+      legacy: 'totalPercentCorrect',
+    },
+    standardScore: {
+      new: undefined,
+      legacy: undefined,
+    },
+    standardScoreDisplay: {
+      new: undefined,
+      legacy: undefined,
+    },
+    rawScore: {
+      new: 'totalCorrect',
+      legacy: 'totalCorrect',
+    },
+  },
+  'letter-es': {
+    percentile: {
+      new: 'totalPercentCorrect',
+      legacy: 'totalPercentCorrect',
+    },
+    percentileDisplay: {
+      new: 'totalPercentCorrect',
+      legacy: 'totalPercentCorrect',
+    },
+    standardScore: {
+      new: undefined,
+      legacy: undefined,
+    },
+    standardScoreDisplay: {
+      new: undefined,
+      legacy: undefined,
+    },
+    rawScore: {
+      new: 'totalCorrect',
+      legacy: 'totalCorrect',
+    },
+  },
+  'letter-en-ca': {
+    percentile: {
+      new: 'totalPercentCorrect',
+      legacy: 'totalPercentCorrect',
+    },
+    percentileDisplay: {
+      new: 'totalPercentCorrect',
+      legacy: 'totalPercentCorrect',
+    },
+    standardScore: {
+      new: undefined,
+      legacy: undefined,
+    },
+    standardScoreDisplay: {
+      new: undefined,
+      legacy: undefined,
+    },
+    rawScore: {
+      new: 'totalCorrect',
+      legacy: 'totalCorrect',
+    },
+  },
+  phonics: {
+    percentile: {
+      new: 'totalPercentCorrect',
+      legacy: 'totalPercentCorrect',
+    },
+    percentileDisplay: {
+      new: 'totalPercentCorrect',
+      legacy: 'totalPercentCorrect',
+    },
+    standardScore: {
+      new: 'totalPercentCorrect',
+      legacy: 'totalPercentCorrect',
+    },
+    standardScoreDisplay: {
+      new: 'totalPercentCorrect',
+      legacy: 'totalPercentCorrect',
+    },
+    rawScore: {
+      new: 'totalCorrect',
+      legacy: 'totalCorrect',
+    },
+  },
+};
+
+/**
+ * Resolves field name based on task, grade, and field type
+ * @param {string} taskId - The task identifier
+ * @param {number} grade - The grade level
+ * @param {string} fieldType - The type of field (percentile, standardScore, etc.)
+ * @param {boolean} isLegacy - Whether to use legacy field names
+ * @see ./SCORE_FIELD_MIGRATION_GUIDE.md
+ * @returns {string|undefined} The resolved field name
+ */
+function resolveFieldName(taskId, grade, fieldType, isLegacy = false) {
+  if (!ALLOWED_SCORE_FIELD_TYPES.includes(fieldType)) {
+    throw new Error(`Invalid fieldType. Expected one of ${ALLOWED_SCORE_FIELD_TYPES.join(', ')}, but got ${fieldType}`);
   }
 
-  return {
-    percentileScoreKey,
-    percentileScoreDisplayKey,
-    standardScoreKey,
-    standardScoreDisplayKey,
-    rawScoreKey,
-  };
+  const taskMapping = SCORE_FIELD_MAPPINGS[taskId];
+  if (!taskMapping || !taskMapping[fieldType]) {
+    return undefined;
+  }
+
+  const fieldMapping = taskMapping[fieldType];
+  const fieldName = isLegacy ? fieldMapping.legacy : fieldMapping.new;
+
+  // Handle function-based field names (grade-dependent)
+  if (typeof fieldName === 'function') {
+    return fieldName(grade);
+  }
+
+  return fieldName;
+}
+
+/**
+ * Safely accesses a score value from a scores object with fallback to legacy field names
+ * @param {Object} scoresObject - The scores object to access
+ * @param {string} taskId - The task identifier
+ * @param {number} grade - The grade level
+ * @param {string} fieldType - The type of field to access
+ * @see ./SCORE_FIELD_MIGRATION_GUIDE.md
+ * @returns {*} The score value or undefined if not found
+ */
+export function getScoreValue(scoresObject, taskId, grade, fieldType) {
+  if (!scoresObject || !taskId || fieldType === undefined) {
+    return undefined;
+  }
+
+  const gradeValue = toValue(grade);
+
+  // Try new field name first
+  const newFieldName = resolveFieldName(taskId, gradeValue, fieldType, false);
+  if (newFieldName && scoresObject[newFieldName] !== undefined) {
+    return scoresObject[newFieldName];
+  }
+
+  // Fall back to legacy field name
+  const legacyFieldName = resolveFieldName(taskId, gradeValue, fieldType, true);
+  if (legacyFieldName && scoresObject[legacyFieldName] !== undefined) {
+    return scoresObject[legacyFieldName];
+  }
+
+  return undefined;
 }
 
 export const getRawScoreThreshold = (taskId) => {
