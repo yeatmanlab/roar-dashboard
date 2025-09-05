@@ -106,6 +106,42 @@ The CSV → JSON step will detect the new locale, create the appropriate directo
 
 ---
 
+## Adding new terms (strings)
+
+When you need a new UI term translated:
+
+- Edit the appropriate consolidated CSV under `src/translations/consolidated/` (main dashboard or a file in `consolidated/components/`).
+- Add a new row with only the source fields filled:
+  - `identifier`: unique key (e.g., `navBar.invite`)
+  - `label`: short description for translators
+  - `en-US`: source English text
+- Leave all target language cells blank, but keep the commas so the row has the same number of columns as the header.
+
+Example (only source provided):
+```csv
+"identifier","label","en-US","es-CO","de","fr-CA","nl","en-GH","de-CH","es-AR"
+"navBar.invite","Invite button label","Invite","","","","","","",""
+```
+
+Notes:
+- Keep fields quoted if they may contain commas or special characters.
+- Crowdin will populate target languages (via translators/MT/TM). Our validator allows empty targets unless `I18N_FAIL_ON_LOW_COVERAGE=TRUE` is set.
+- Do not edit the generated per-locale JSON files directly; they are overwritten by `npm run i18n:csv-to-json` and Crowdin sync.
+
+Workflow after adding rows:
+```bash
+npm run i18n:crowdin:upload   # optional; pushes sources to Crowdin
+npm run i18n:crowdin:download # pull updated CSVs when translations are ready
+npm run i18n:csv-to-json      # regenerate per-locale JSON for the app
+```
+
+Then run the app and verify in different locales:
+```bash
+npm run dev:db
+```
+
+---
+
 ## Runtime i18n
 
 - `src/translations/i18n.ts` builds base messages and merges any detected `**-componentTranslations.json`

@@ -30,8 +30,8 @@
     "i18n:crowdin:upload": "crowdin upload sources --config src/translations/crowdin/crowdin.yml",
     "i18n:crowdin:download": "crowdin download --config src/translations/crowdin/crowdin.yml",
     "i18n:csv-to-json": "node src/translations/tools/csv-to-json.js",
-    "predev": "sh -c 'if [ -n \"$CROWDIN_API_TOKEN\" ]; then npm run i18n:crowdin:download; fi' && npm run i18n:csv-to-json",
-    "prebuild": "sh -c 'if [ -n \"$CROWDIN_API_TOKEN\" ]; then npm run i18n:crowdin:download; fi' && npm run i18n:csv-to-json",
+    "predev": "sh -c 'if [ -n \"$CROWDIN_API_TOKEN\" ]; then npm run i18n:crowdin:download; fi' && node src/translations/tools/conditional-csv-to-json.js",
+    "prebuild": "sh -c 'if [ -n \"$CROWDIN_API_TOKEN\" ]; then npm run i18n:crowdin:download; fi' && node src/translations/tools/conditional-csv-to-json.js",
     "i18n:validate": "node src/translations/tools/validate-csvs.js",
     "i18n:add-locale": "node src/translations/tools/add-locale-column.js",
     "i18n:sync": "npm run i18n:consolidate && npm run i18n:crowdin:upload && npm run i18n:crowdin:download && npm run i18n:csv-to-json && npm run i18n:validate"
