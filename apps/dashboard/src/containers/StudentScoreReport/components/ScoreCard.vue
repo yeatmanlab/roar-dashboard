@@ -101,7 +101,6 @@
 
 <script setup>
 import { ref, watch } from 'vue';
-import { format } from 'date-fns';
 import PvKnob from 'primevue/knob';
 import PvTag from 'primevue/tag';
 import PvAccordion from 'primevue/accordion';
@@ -166,7 +165,7 @@ const ACCORDION_PANELS = Object.freeze({
 const visiblePanels = ref([]);
 
 const formatDate = (date) => {
-  return format(date, 'MMM d, yyyy');
+  return date;
 };
 
 watch(
