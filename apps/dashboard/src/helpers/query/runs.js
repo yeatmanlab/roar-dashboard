@@ -61,57 +61,49 @@ export const getRunsRequestBody = ({
     },
   ];
 
-  if (administrationId && (orgId || !allDescendants)) {
-    requestBody.structuredQuery.where = {
-      compositeFilter: {
-        op: 'AND',
-        filters: [
-          {
-            fieldFilter: {
-              field: { fieldPath: 'assignmentId' },
-              op: 'EQUAL',
-              value: { stringValue: administrationId },
-            },
-          },
-          {
-            fieldFilter: {
-              field: { fieldPath: 'bestRun' },
-              op: 'EQUAL',
-              value: { booleanValue: true },
-            },
-          },
-        ],
-      },
-    };
+  const filters = [];
 
-    if (orgId) {
-      requestBody.structuredQuery.where.compositeFilter.filters.push({
-        fieldFilter: {
-          field: { fieldPath: `readOrgs.${pluralizeFirestoreCollection(orgType)}` },
-          op: 'ARRAY_CONTAINS',
-          value: { stringValue: orgId },
-        },
-      });
-    }
-  } else {
-    requestBody.structuredQuery.where = {
-      compositeFilter: {
-        op: 'AND',
-        filters: [
-          {
-            fieldFilter: {
-              field: { fieldPath: 'bestRun' },
-              op: 'EQUAL',
-              value: { booleanValue: true },
-            },
-          },
-        ],
+  // Always add bestRun filter
+  filters.push({
+    fieldFilter: {
+      field: { fieldPath: 'bestRun' },
+      op: 'EQUAL',
+      value: { booleanValue: true },
+    },
+  });
+
+  // Add administrationId filter if provided
+  if (administrationId) {
+    filters.push({
+      fieldFilter: {
+        field: { fieldPath: 'assignmentId' },
+        op: 'EQUAL',
+        value: { stringValue: administrationId },
       },
-    };
+    });
   }
 
-  if (taskId) {
-    requestBody.structuredQuery.where.compositeFilter.filters.push({
+  // Add orgId filter if provided
+  if (orgId) {
+    filters.push({
+      fieldFilter: {
+        field: { fieldPath: `readOrgs.${pluralizeFirestoreCollection(orgType)}` },
+        op: 'ARRAY_CONTAINS',
+        value: { stringValue: orgId },
+      },
+    });
+  }
+
+  // Set up the where clause with all collected filters
+  requestBody.structuredQuery.where = {
+    compositeFilter: {
+      op: 'AND',
+      filters,
+    },
+  }
+
+  if (taskId && filters.length > 0) {
+    filters.push({
       fieldFilter: {
         field: { fieldPath: 'taskId' },
         op: 'EQUAL',
@@ -120,8 +112,8 @@ export const getRunsRequestBody = ({
     });
   }
 
-  if (requireCompleted) {
-    requestBody.structuredQuery.where.compositeFilter.filters.push({
+  if (requireCompleted && filters.length > 0) {
+    filters.push({
       fieldFilter: {
         field: { fieldPath: 'completed' },
         op: 'EQUAL',

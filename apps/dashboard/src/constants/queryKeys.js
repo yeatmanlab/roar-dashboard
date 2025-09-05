@@ -26,3 +26,4 @@ export const MULTIPLE_USER_ASSIGNMENTS_QUERY_KEY = 'multiple-user-assignments';
 export const USER_CLAIMS_QUERY_KEY = 'user-claims';
 export const USER_STUDENT_DATA_QUERY_KEY = 'user-student';
 export const USER_RUN_PAGE_QUERY_KEY = 'user-run-page';
+export const USER_LONGITUDINAL_RUNS_QUERY_KEY = 'user-longitudinal-runs'

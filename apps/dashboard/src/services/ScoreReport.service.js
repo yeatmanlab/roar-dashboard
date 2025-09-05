@@ -157,16 +157,19 @@ const ScoreReportService = (() => {
 
     // Special handling for letter tasks
     if (taskId === 'letter' || taskId === 'letter-en-ca') {
+      const upperIncorrect = scores?.UppercaseNames?.upperIncorrect;
+      const lowerIncorrect = scores?.LowercaseNames?.lowerIncorrect;
       const incorrectLetters = [
-        scores?.UppercaseNames?.upperIncorrect ?? '',
-        scores?.LowercaseNames?.lowerIncorrect ?? '',
+        Array.isArray(upperIncorrect) ? upperIncorrect : [],
+        Array.isArray(lowerIncorrect) ? lowerIncorrect : []
       ]
         .flat()
         .sort((a, b) => _toUpper(a).localeCompare(_toUpper(b)))
         .filter(Boolean)
         .join(', ');
 
-      const incorrectPhonemes = (scores?.Phonemes?.phonemeIncorrect ?? []).join(', ');
+      const phonemeIncorrect = scores?.Phonemes?.phonemeIncorrect;
+      const incorrectPhonemes = Array.isArray(phonemeIncorrect) ? phonemeIncorrect.join(', ') : '';
 
       formattedScoresArray.push([i18n.t('Lower Case'), scores?.LowercaseNames?.subScore, 0, 26]);
       formattedScoresArray.push([i18n.t('Upper Case'), scores?.UppercaseNames?.subScore, 0, 26]);
