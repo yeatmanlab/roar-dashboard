@@ -71,12 +71,11 @@ const computedTaskData = computed(() => {
   if (props.longitudinalData?.length) {
     return currentTasks.map(task => ({
       ...task,
-      historicalScores: props.longitudinalData
-        .filter(run => run.taskId === task.taskId)
-        .sort((a, b) => new Date(a.dateCreated) - new Date(b.dateCreated))
+      historicalScores: (props.longitudinalData?.[task.taskId] || [])
+        .sort((a, b) => new Date(a.date) - new Date(b.date))
         .map(run => ({
-          date: new Date(run.dateCreated),
-          score: run.scores?.composite?.[task.scoreToDisplay]?.value,
+          date: new Date(run.date),
+          scores: run.scores,
           assignmentId: run.assignmentId
         }))
     }));

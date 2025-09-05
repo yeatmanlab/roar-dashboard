@@ -23,13 +23,32 @@ const useUserLongitudinalRunsQuery = (userId, orgType, orgId, queryOptions = und
 
   return useQuery({
     queryKey: [USER_LONGITUDINAL_RUNS_QUERY_KEY, userId, orgType, orgId],
-    queryFn: () => runPageFetcher({
-      userId,
-      orgType,
-      orgId,
-      paginate: false,
-      select: ['scores.computed.composite', 'taskId', 'dateCreated', 'assignmentId'],
-    }),
+    queryFn: async () => {
+      const data = await runPageFetcher({
+        userId,
+        orgType,
+        orgId,
+        paginate: false,
+        select: ['scores.computed.composite', 'taskId', 'dateCreated', 'assignmentId', 'timeStarted'],
+      });
+
+      // Transform the data into a dictionary keyed by taskId
+      return data.reduce((acc, run) => {
+        if (!run.taskId) return acc;
+        
+        if (!acc[run.taskId]) {
+          acc[run.taskId] = [];
+        }
+        
+        acc[run.taskId].push({
+          date: run.timeStarted,
+          scores: run.scores,
+          assignmentId: run.assignmentId
+        });
+        
+        return acc;
+      }, {});
+    },
     enabled: isQueryEnabled,
     ...options,
   });

@@ -86,9 +86,14 @@
           <PvAccordionContent :pt="{ content: { class: 'px-0' } }">
             <div class="historical-scores">
               <div v-for="historicalScore in historicalScores" :key="historicalScore.assignmentId" class="historical-score-item">
-                <div class="flex justify-content-between align-items-center">
-                  <span class="date">{{ formatDate(historicalScore.date) }}</span>
-                  <span class="score"><b>{{ Math.round(historicalScore.score) }}</b></span>
+                <div class="flex justify-content-between align-items-center mb-2">
+                  <span class="date font-semibold">{{ formatDate(historicalScore.date) }}</span>
+                </div>
+                <div class="score-types">
+                  <div v-for="(value, type) in historicalScore.scores?.composite" :key="type" class="score-type-item">
+                    <span class="score-label">{{ type }}:</span>
+                    <span class="score-value"><b>{{ Math.round(value.value) }}</b></span>
+                  </div>
                 </div>
               </div>
             </div>
