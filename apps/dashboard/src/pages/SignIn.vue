@@ -223,12 +223,20 @@ const authWithClever = () => {
 };
 
 const authWithClassLink = () => {
-  authStore.signInWithClassLinkRedirect();
+  if (process.env.NODE_ENV === 'development' && !window.Cypress) {
+    authStore.signInWithClassLinkPopup();
+  } else {
+    authStore.signInWithClassLinkRedirect();
+  }
   spinner.value = true;
 };
 
 const authWithNYCPS = () => {
-  authStore.signInWithNYCPSRedirect();
+  if (process.env.NODE_ENV === 'development' && !window.Cypress) {
+    authStore.signInWithNYCPSPopup();
+  } else {
+    authStore.signInWithNYCPSRedirect();
+  }
   spinner.value = true;
 };
 
