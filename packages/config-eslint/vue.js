@@ -6,7 +6,7 @@ import globals from "globals";
 export const config = [
   ...baseConfig,
   ...vue.configs["flat/recommended"],
-
+  
   // Resolve Vite alias '@' -> './src' for JS/Vue projects
   {
     files: ['**/*.{js,vue,mjs}'],
@@ -19,7 +19,7 @@ export const config = [
       },
     },
   },
-
+  
   // General frontend JS
   {
     files: ["**/src/**/*.js", "**/cypress/**/*.js"],
