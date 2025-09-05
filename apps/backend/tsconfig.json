@@ -1,0 +1,7 @@
+{
+  "extends": "@roar-dashboard/typescript-config/backend.json",
+  "compilerOptions": {
+    "rootDir": "./src"
+  },
+  "include": ["src/**/*"]
+}

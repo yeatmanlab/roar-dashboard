@@ -1,8 +1,7 @@
-import { nextTick } from 'vue';
+import { nextTick, ref } from 'vue';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { withSetup } from '@/test-support/withSetup';
 import useInactivityTimeout from './useInactivityTimeout';
-import { ref } from 'vue';
 
 const idle = ref(false);
 const lastActive = ref(Date.now());

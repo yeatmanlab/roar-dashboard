@@ -208,10 +208,9 @@ import useUserDataQuery from '@/composables/queries/useUserDataQuery';
 import useAdministrationsQuery from '@/composables/queries/useAdministrationsQuery';
 import useUserRunPageQuery from '@/composables/queries/useUserRunPageQuery';
 import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery';
-import { taskDisplayNames, addElementToPdf } from '@/helpers/reports';
+import { taskDisplayNames, addElementToPdf, getGradeWithSuffix } from '@/helpers/reports';
 import IndividualScoreReportTask from '@/components/reports/IndividualScoreReportTask.vue'; // @TODO: Not used?
 import AppSpinner from '@/components/AppSpinner.vue';
-import { getGradeWithSuffix } from '@/helpers/reports.js';
 import { SCORE_REPORT_NEXT_STEPS_DOCUMENT_PATH } from '@/constants/scores';
 
 const authStore = useAuthStore();

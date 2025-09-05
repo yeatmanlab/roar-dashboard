@@ -37,12 +37,12 @@ import {
   tasksToDisplayGradeEstimate,
   rawOnlyTasks,
   scoredTasks,
+  taskDisplayNames,
+  includedValidityFlags,
   subskillTasks,
   roamFluencySubskillHeaders,
   roamFluencyTasks,
 } from '@/helpers/reports.js';
-import { taskDisplayNames } from '@/helpers/reports';
-import { includedValidityFlags } from '@/helpers/reports';
 
 defineProps({
   colData: {

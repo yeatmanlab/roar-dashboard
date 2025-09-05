@@ -5,3 +5,6 @@ firebase/admin/firebase.json
 
 # Cypress
 cypress/downloads
+
+# Vite
+vite.config.js.timestamp*
