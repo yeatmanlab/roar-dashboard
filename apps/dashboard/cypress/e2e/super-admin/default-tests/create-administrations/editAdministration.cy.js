@@ -12,22 +12,22 @@ function clickMakeOptionalForAllSwitch() {
 
 function editAssignedConditions() {
   cy.get('[data-cy="button-assigned-condition"]').click();
-  cy.get('[data-cy="dropdown-assigned-field"]').find('.p-dropdown-trigger').click();
+  cy.get('[data-cy="dropdown-assigned-field"]').findByTestId('select__dropdown').click();
   cy.get('ul > li').contains('studentData.grade').click();
   cy.get('[data-cy="dropdown-assigned-operator"]').click();
   cy.get('ul > li').contains('Less Than').click();
   cy.get('[data-cy="assigned-value-content"]').type('2');
-  cy.get('.p-row-editor-save').click();
+  cy.findByTestId('row-editor-save').click();
 }
 
 function editOptionalConditions() {
   cy.get('[data-cy="button-optional-condition"]').click();
-  cy.get('[data-cy="dropdown-optional-field"]').find('.p-dropdown-trigger').click();
+  cy.get('[data-cy="dropdown-optional-field"]').findByTestId('select__dropdown').click();
   cy.get('ul > li').contains('studentData.grade').click();
   cy.get('[data-cy="dropdown-optional-operator"]').click();
   cy.get('ul > li').contains('Greater Than').click();
   cy.get('[data-cy="optional-value-content"]').type('4');
-  cy.get('.p-row-editor-save').click();
+  cy.findByTestId('row-editor-save').click();
 }
 
 function saveConditions() {
@@ -38,12 +38,12 @@ function checkNewConditions() {
   clickEditButton();
   for (const condition of newAssignedCondition) {
     cy.log(`Checking for assigned condition: ${condition}.`);
-    cy.get('.p-editable-column').contains(condition).should('exist');
+    cy.findAllByTestId('datatable__column-bodycell').contains(condition).should('exist');
     cy.log(`Assigned condition: ${condition} found.`);
   }
   for (const condition of newOptionalCondition) {
     cy.log(`Checking for optional condition: ${condition}.`);
-    cy.get('.p-editable-column').contains(condition).should('exist');
+    cy.findAllByTestId('datatable__column-bodycell').contains(condition).should('exist');
     cy.log(`Optional condition: ${condition} found.`);
   }
   cy.log('Found all new conditions.');

@@ -12,6 +12,9 @@
         input-id="datePicker"
         show-button-bar
         :data-testid="testId"
+        :pt="{ 
+          year: { 'data-testId': 'date-picker__year' },
+          pcTodayButton: { 'data-testId': 'date-picker__today-button' } }"
       />
       <label for="datePicker">{{ label }}</label>
       <small v-if="hasError" class="p-error">{{ errorMessage }}</small>

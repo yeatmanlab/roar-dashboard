@@ -96,6 +96,7 @@
                   show-clear
                   class="w-full dropdown"
                   :options="csv_columns"
+                  pt:label:data-testid="dropdown__label"
                 />
               </div>
               <div v-else class="step-field-item">
@@ -108,6 +109,7 @@
                   show-clear
                   class="w-full dropdown"
                   :options="csv_columns"
+                  pt:label:data-testid="dropdown__label"
                 />
               </div>
               <div class="step-field-item">
@@ -120,6 +122,7 @@
                   show-clear
                   class="w-full dropdown"
                   :options="csv_columns"
+                  pt:label:data-testid="dropdown__label"
                 />
               </div>
               <div class="step-field-item">
@@ -132,6 +135,7 @@
                   show-clear
                   class="w-full dropdown"
                   :options="csv_columns"
+                  pt:label:data-testid="dropdown__label"
                 />
               </div>
               <div class="step-field-item">
@@ -144,6 +148,7 @@
                   show-clear
                   class="w-full dropdown"
                   :options="csv_columns"
+                  pt:label:data-testid="dropdown__label"
                 />
               </div>
             </div>
@@ -168,6 +173,7 @@
                   show-clear
                   class="w-full dropdown"
                   :options="csv_columns"
+                  pt:label:data-testid="dropdown__label"
                 />
               </div>
             </div>
@@ -208,6 +214,7 @@
                     show-clear
                     class="w-full dropdown"
                     :options="csv_columns"
+                    pt:label:data-testid="dropdown__label"
                   />
                 </div>
               </div>
@@ -234,6 +241,7 @@
                     show-clear
                     class="w-full dropdown"
                     :options="csv_columns"
+                    pt:label:data-testid="dropdown__label"
                   />
                 </div>
               </div>
@@ -309,6 +317,7 @@
                       show-clear
                       class="w-full dropdown"
                       :options="csv_columns"
+                      pt:label:data-testid="dropdown__label"
                     />
                   </div>
                 </div>

@@ -1,7 +1,7 @@
 <template>
   <div id="games">
     <PvTabs v-model:value="displayGameIndex" scrollable>
-      <PvTabList>
+      <PvTabList data-testid="game-tablist">
         <PvTab
           v-for="(game, index) in games"
           :key="game.taskId"

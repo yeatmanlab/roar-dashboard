@@ -129,6 +129,7 @@
                 binary
                 :disabled="showConsent"
                 :class="[{ 'p-invalid': v$.accept.$invalid && submitted }]"
+                pt:input:data-testid="checkbox__input"
                 @change="getConsent"
               />
               <label for="accept" :class="{ 'p-error': v$.accept.$invalid && submitted }"

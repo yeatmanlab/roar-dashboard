@@ -36,7 +36,7 @@ describe('Parent: Auth', () => {
     cy.get('[data-cy="signup__parent-password-confirm"]').type(PARENT_PASSWORD);
 
     // Accept terms and conditions.
-    cy.get('.p-checkbox-input').click();
+    cy.findByTestId('checkbox__input').click();
 
     // Verify consent dialog.
     cy.get('[data-cy="consent-modal"]').should('be.visible').find('button').contains('Continue').click();
@@ -45,8 +45,8 @@ describe('Parent: Auth', () => {
     cy.get('button').contains('Next').click();
 
     // Validate failure message.
-    cy.get('.p-dialog-header').should('be.visible').contains('Error');
-    cy.get('.p-dialog-content')
+    cy.findByTestId('dialog__header').should('be.visible').contains('Error');
+    cy.findByTestId('dialog__content')
       .should('be.visible')
       .contains(`The code ${invalidActivationCode} does not belong to any organization`);
   });
@@ -65,7 +65,7 @@ describe('Parent: Auth', () => {
     cy.get('[data-cy="signup__parent-password-confirm"]').type(PARENT_PASSWORD);
 
     // Accept terms and conditions.
-    cy.get('.p-checkbox-input').click();
+    cy.findByTestId('checkbox__input').click();
 
     // Verify consent dialog.
     cy.get('[data-cy="consent-modal"]').should('be.visible').find('button').contains('Continue').click();

@@ -14,14 +14,14 @@ function typeAdministrationName() {
 
 function selectStartDate() {
   // eslint-disable-next-line cypress/unsafe-to-chain-command
-  cy.get('[data-cy="input-start-date"]').click().get('.p-datepicker-today > span').contains(today).click();
+  cy.get('[data-cy="input-start-date"]').click().get('[data-testId="date-picker__today-button"] > span').contains(today).click();
 }
 
 function selectEndDate() {
   // eslint-disable-next-line cypress/unsafe-to-chain-command
   cy.get('[data-cy="input-end-date"]')
     .click()
-    .get('.p-datepicker-today > span')
+    .get('[data-testId="date-picker__today-button"] > span')
     .contains(today)
     .type('{rightarrow}{enter}{esc}');
 }
@@ -37,7 +37,7 @@ function addCondition(_variant, _assignedvalue) {
   cy.get('[data-cy="dropdown-assigned-operator"]').click();
   cy.get('ul > li').contains('>').click();
   cy.get('[data-cy="assigned-value-content"]').type(_assignedvalue);
-  cy.get('.p-row-editor-save').click();
+  cy.findByTestId('row-editor-save').click();
   cy.wait(0.2 * Cypress.env('timeout'));
 }
 
