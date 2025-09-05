@@ -108,6 +108,12 @@
             header-style="background:color-mix(in srgb, var(--primary-color) 80%, white); border-left:4px solid var(--primary-color); border-right: 2px solid var(--primary-color); border-top:4px solid var(--primary-color); border-bottom: 4px solid var(--primary-color);"
             :reorderable-column="false"
             frozen
+            :pt="{
+              pcRowCheckbox: {
+                input: { 'data-testid': 'row-checkbox__input' }
+              },
+              columnHeaderContent: { 'data-testid': 'column-header-content' }
+            }"
           />
           <PvColumn
             v-for="(col, index) of computedColumns"
@@ -125,6 +131,7 @@
             header-style="background:color-mix(in srgb, var(--primary-color) 80%, white); color: white; padding-top:0; margin-top:0; padding-bottom:0; margin-bottom:0; border-left:2px solid var(--primary-color); border-right: 2px solid var(--primary-color); border-top:4px solid var(--primary-color); border-bottom: 4px solid var(--primary-color); margin-left:0"
             :pt="{
               pcColumnFilterButton: pcColumnFilterButton,
+              columnHeaderContent: { 'data-testid': 'column-header-content' }
             }"
           >
             <template #header>
@@ -150,6 +157,7 @@
                   :icon="_get(colData, col.iconField)"
                   :style="`min-width: 2rem; font-weight: bold;`"
                   rounded
+                  pt:root:data-testid="tag__root"
                 />
               </div>
               <div
@@ -287,6 +295,7 @@
                           :value="progressTags[option]?.value"
                           :icon="progressTags[option]?.icon"
                           class="p-0.5 m-0 font-bold"
+                          pt:root:data-testid="tag__root"
                         />
                       </div>
                       <div v-else>
@@ -305,6 +314,7 @@
                         :value="progressTags[value]?.value"
                         :icon="progressTags[value]?.icon"
                         class="p-0.5 m-0 font-bold"
+                        pt:root:data-testid="tag__root"
                       />
                     </div>
                     <div v-else>
@@ -328,6 +338,7 @@
                         :icon="progressTags[option]?.icon"
                         :style="`min-width: 2rem; font-weight: bold`"
                         rounded
+                        pt:root:data-testid="tag__root"
                       />
                     </div>
                   </template>
@@ -339,6 +350,7 @@
                       :icon="progressTags[value]?.icon"
                       :style="`min-width: 2rem; font-weight: bold`"
                       rounded
+                      pt:root:data-testid="tag__root"
                     />
                   </template>
                 </PvSelect>
