@@ -8,6 +8,6 @@ export default defineConfig({
   dialect: 'postgresql',
   casing: 'snake_case',
   dbCredentials: {
-    url: process.env.APP_DATABASE_URL!,
+    url: process.env.CORE_DATABASE_URL!,
   },
 }) satisfies Config;
