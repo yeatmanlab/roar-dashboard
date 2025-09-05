@@ -131,7 +131,8 @@
             header-style="background:color-mix(in srgb, var(--primary-color) 80%, white); color: white; padding-top:0; margin-top:0; padding-bottom:0; margin-bottom:0; border-left:2px solid var(--primary-color); border-right: 2px solid var(--primary-color); border-top:4px solid var(--primary-color); border-bottom: 4px solid var(--primary-color); margin-left:0"
             :pt="{
               pcColumnFilterButton: pcColumnFilterButton,
-              columnHeaderContent: { 'data-testid': 'column-header-content' }
+              columnHeaderContent: { 'data-testid': 'column-header-content' },
+              headerCell: { 'data-testid': 'column-header-cell' }
             }"
           >
             <template #header>
@@ -282,6 +283,7 @@
                   :options="taskFilterOptions"
                   data-cy="data-table__score-filter-dropdown"
                   style="margin-bottom: 0.5rem; width: 17vh; height: 4vh"
+                  pt:list:data-testid="score__list"
                 >
                   <template #option="{ option }">
                     <div class="flex p-0 align-items-center">

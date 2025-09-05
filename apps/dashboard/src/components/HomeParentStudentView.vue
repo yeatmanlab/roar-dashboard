@@ -78,6 +78,7 @@
         :closable="true"
         :draggable="false"
         data-cy="enrollment-modal"
+        pt:header:data-testid="dialog__header"
       >
         <RegisterChildren :submitting="isSubmitting" @submit="handleStudentEnrollment" />
       </PvDialog>

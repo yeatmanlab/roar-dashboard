@@ -191,6 +191,7 @@
                 class="w-full"
                 name="grade"
                 data-cy="grade-select"
+                pt:option:data-testid="grade-select__option"
               />
             </div>
           </div>
