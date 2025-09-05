@@ -75,6 +75,7 @@
                 editable
                 placeholder="Type or choose field"
                 data-cy="dropdown-assigned-field"
+                pt:trigger:data-testid="select__trigger"
               >
               </PvSelect>
             </template>
