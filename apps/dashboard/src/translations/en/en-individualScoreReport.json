@@ -52,6 +52,17 @@
     "letterSounds": "Letter Sounds",
     "lettersToWorkOn": "Letters to work on",
     "letterSoundsToWorkOn": "Letter Sounds to work on",
+    "phonics": {
+      "cvc": "CVC",
+      "digraph": "Digraph",
+      "initial_blend": "Initial blends",
+      "tri_blend": "Three-letter blends",
+      "final_blend": "Final blends",
+      "r_controlled": "R-controlled",
+      "r_cluster": "R-cluster",
+      "silent_e": "Silent-e",
+      "vowel_team": "Vowel team"
+    },
     "optional": "Optional",
     "required": "Required",
     "optionalTagText": "This task was a optional assignment.",
