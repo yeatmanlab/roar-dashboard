@@ -37,9 +37,9 @@
     >
       <div v-if="Object.keys(childrenAssignments).length === 0" class="p-3">
         <PvMessage severity="info" class="h-full">
-          <div class="text-lg font-bold text-gray-600">No assignments found</div>
+          <div class="text-lg font-bold text-gray-600">Add your first child</div>
           <div class="text-sm font-light text-gray-800">
-            If you think something's not quite right, please report the issue to the ROAR team
+            You’ll need to add a child to your account before they can take assessments.
           </div>
         </PvMessage>
       </div>

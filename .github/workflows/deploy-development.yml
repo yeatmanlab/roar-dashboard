@@ -14,10 +14,10 @@ permissions:
 
 jobs:
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
-  # Deploy app
+  # Deploy
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
-  deploy-app:
-    name: Deploy Firebase app
+  deploy:
+    name: Deploy
     runs-on: ubuntu-latest
     environment: development
     timeout-minutes: 15
@@ -41,19 +41,6 @@ jobs:
           firebase-project-id: ${{ secrets.FIREBASE_PROJECT_ID_ADMIN }}
           gcp-workload-identity-provider: ${{ secrets.FIREBASE_WORKLOAD_IDENTITY_PROVIDER_ADMIN }}
           gcp-service-account-id: ${{ secrets.FIREBASE_HOSTING_SERVICE_ACCOUNT_ID_ADMIN }}
-
-  # ––––––––––––––––––––––––––––––––––––––––––––––– #
-  # Deploy Firestore config
-  # ––––––––––––––––––––––––––––––––––––––––––––––– #
-  deploy-firestore-config:
-    name: Deploy Firestore config
-    needs: [deploy-app]
-    runs-on: ubuntu-latest
-    environment: development
-    timeout-minutes: 15
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
 
       - name: Deploy Firestore config to Admin instance
         uses: ./.github/actions/deploy-firestore-config
