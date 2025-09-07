@@ -593,6 +593,14 @@ const routes = [
     meta: { pageTitle: 'Clever Authentication' },
   },
   {
+    path: '/auth-clever-initiate',
+    name: 'AuthCleverInitiate',
+    beforeRouteLeave: [removeQueryParams, removeHash],
+    component: () => import('../components/auth/AuthClever.vue'),
+    props: (route) => ({ code: route.query.code, initiate: true }),
+    meta: { pageTitle: 'Initiate Clever Authentication' },
+  },
+  {
     path: '/auth-classlink',
     name: 'AuthClassLink',
     beforeRouteLeave: [removeQueryParams, removeHash],
@@ -601,12 +609,28 @@ const routes = [
     meta: { pageTitle: 'ClassLink Authentication' },
   },
   {
+    path: '/auth-classlink-intitiate',
+    name: 'AuthClassLinkInitiate',
+    beforeRouteLeave: [removeQueryParams, removeHash],
+    component: () => import('../components/auth/AuthClassLink.vue'),
+    props: (route) => ({ code: route.query.code, initiate: true }),
+    meta: { pageTitle: 'Initiate ClassLink Authentication' },
+  },
+  {
     path: '/auth-nycps',
     name: 'AuthNycps',
     beforeRouteLeave: [removeQueryParams, removeHash],
     component: () => import('../components/auth/AuthNycps.vue'),
     props: (route) => ({ code: route.query.code }),
     meta: { pageTitle: 'NYCPS Authentication' },
+  },
+  {
+    path: '/auth-nycps-initiate',
+    name: 'AuthNycpsInitiate',
+    beforeRouteLeave: [removeQueryParams, removeHash],
+    component: () => import('../components/auth/AuthNycps.vue'),
+    props: (route) => ({ code: route.query.code, initiate: true }),
+    meta: { pageTitle: 'Initiate NYCPS Authentication' },
   },
   {
     path: '/auth-email-link',
