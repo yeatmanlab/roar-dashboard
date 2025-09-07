@@ -46,11 +46,16 @@ describe('<NavBar />', () => {
       });
 
       cy.get('nav').should('exist');
-      cy.get('[data-testid="menubar__root-list"] > [data-testid="menubar__item"]').should('have.length', MOCK_MENU_ITEMS.length);
+      cy.get('[data-testid="menubar__root-list"] > [data-testid="menubar__item"]').should(
+        'have.length',
+        MOCK_MENU_ITEMS.length,
+      );
 
       MOCK_MENU_ITEMS.forEach((menuItem, index) => {
         // Check if the menu item is rendered correctly.
-        cy.get(`[data-testid="menubar__root-list"] > [data-testid="menubar__item"]:nth-child(${index + 1})`).as('menuItemEl');
+        cy.get(`[data-testid="menubar__root-list"] > [data-testid="menubar__item"]:nth-child(${index + 1})`).as(
+          'menuItemEl',
+        );
         cy.get('@menuItemEl').should('contain', menuItem.label).click();
         cy.get('@menuItemEl')
           .findByTestId('menubar__submenu')
@@ -65,7 +70,7 @@ describe('<NavBar />', () => {
                 ? [...subMenuItem.icon.split(' ').map((cls) => `.${cls}`)].join('')
                 : '';
 
-              const iconClassSelectors = iconClassSelector.split('.').filter(cls => cls.length > 0);
+              const iconClassSelectors = iconClassSelector.split('.').filter((cls) => cls.length > 0);
               cy.get(`[data-testid="menubar__item"]:nth-child(${subIndex + 1})`)
                 .should('contain', subMenuItem.label)
                 .find(`[data-testid="menubar__item-icon"]`)

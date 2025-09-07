@@ -106,8 +106,12 @@
             </template>
           </PvColumn>
           <PvColumn
-:row-editor="true" style="width: 8%; min-width: 8%" body-style="text-align:center" 
-            :pt="{ pcRowEditorSave: { root: { 'data-testid': 'row-editor-save' } } }"> </PvColumn>
+            :row-editor="true"
+            style="width: 8%; min-width: 8%"
+            body-style="text-align:center"
+            :pt="{ pcRowEditorSave: { root: { 'data-testid': 'row-editor-save' } } }"
+          >
+          </PvColumn>
           <PvColumn :row-editor="true" style="width: 5%; max-width: 1rem" body-style="text-align:center">
             <template #body="{ index }">
               <PvButton
@@ -205,14 +209,15 @@
                 <PvInputText v-model="data[field]" data-cy="optional-value-content" />
               </template>
             </PvColumn>
-            <PvColumn 
-              :row-editor="true" 
-              style="width: 8%; min-width: 8%" 
+            <PvColumn
+              :row-editor="true"
+              style="width: 8%; min-width: 8%"
               body-style="text-align:center"
-              :pt="{ 
+              :pt="{
                 pcRowEditorSave: { root: { 'data-testid': 'row-editor-save' } },
               }"
-            > </PvColumn>
+            >
+            </PvColumn>
             <PvColumn :row-editor="true" style="width: 5%; max-width: 1rem" body-style="text-align:center">
               <template #body="{ index }">
                 <PvButton

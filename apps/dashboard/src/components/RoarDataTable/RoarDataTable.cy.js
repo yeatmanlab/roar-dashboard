@@ -45,12 +45,7 @@ function mockFilterBySupportLevelCategory(task, supportLevel) {
 }
 
 function setFilterByCategory(header, category, forceClick = false) {
-  cy.contains(
-    '[data-testid="column-header-cell"]',
-    header,
-  )
-    .find('button')
-    .click();
+  cy.contains('[data-testid="column-header-cell"]', header).find('button').click();
   cy.get('[data-cy="data-table__score-filter-dropdown"]').click();
   cy.findByTestId('score__list').contains(category).click({ force: forceClick });
   cy.get('button').contains('Apply').click();

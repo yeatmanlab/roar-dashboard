@@ -110,9 +110,9 @@
             frozen
             :pt="{
               pcRowCheckbox: {
-                input: { 'data-testid': 'row-checkbox__input' }
+                input: { 'data-testid': 'row-checkbox__input' },
               },
-              columnHeaderContent: { 'data-testid': 'column-header-content' }
+              columnHeaderContent: { 'data-testid': 'column-header-content' },
             }"
           />
           <PvColumn
@@ -132,7 +132,7 @@
             :pt="{
               pcColumnFilterButton: pcColumnFilterButton,
               columnHeaderContent: { 'data-testid': 'column-header-content' },
-              headerCell: { 'data-testid': 'column-header-cell' }
+              headerCell: { 'data-testid': 'column-header-cell' },
             }"
           >
             <template #header>

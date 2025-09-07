@@ -14,7 +14,11 @@ function typeAdministrationName() {
 
 function selectStartDate() {
   // eslint-disable-next-line cypress/unsafe-to-chain-command
-  cy.get('[data-cy="input-start-date"]').click().get('[data-testId="date-picker__today-button"] > span').contains(today).click();
+  cy.get('[data-cy="input-start-date"]')
+    .click()
+    .get('[data-testId="date-picker__today-button"] > span')
+    .contains(today)
+    .click();
 }
 
 function selectEndDate() {
