@@ -34,7 +34,7 @@ describe('Partner Admin: Progress Reports', () => {
     cy.checkUserList(testUserList);
 
     // Validate that all test assignments are present in the progress report.
-    cy.findByTestId('column-header-content').then(($header) => {
+    cy.findAllByTestId('column-header-content').then(($header) => {
       const tableHeaders = $header.map((index, elem) => Cypress.$(elem).text()).get();
 
       testAssignments.forEach((header) => {

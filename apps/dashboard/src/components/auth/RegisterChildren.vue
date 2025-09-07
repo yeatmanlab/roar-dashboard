@@ -175,6 +175,7 @@
                   date-format="yy"
                   icon="pi pi-calendar text-white p-1"
                   data-cy="dob-year-picker"
+                  :pt="{ year: { 'data-testId': 'date-picker__year' } }"
                 />
               </div>
               <small v-if="v$.students.$each.$response.$data[outerIndex].dob.$invalid && submitted" class="p-error">{{

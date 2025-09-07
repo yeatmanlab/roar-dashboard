@@ -43,11 +43,11 @@ describe('Parent: Add Child', () => {
 
     // Set birth year in the date picker
     cy.get('[data-cy="dob-year-picker"] input').should('be.visible').click();
-    cy.findByTestId('date-picker__year').first().click();
+    cy.findAllByTestId('date-picker__year').first().click();
 
     // Select grade
     cy.get('[data-cy="grade-select"]').should('be.visible').click();
-    cy.findByTestId('grade-select__option').first().click();
+    cy.findAllByTestId('grade-select__option').first().click();
 
     // Accept terms and conditions
     cy.get('#accept-register').should('be.visible').click();
