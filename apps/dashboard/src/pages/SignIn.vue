@@ -235,7 +235,8 @@ const authWithNYCPS = () => {
   if (process.env.NODE_ENV === 'development' && !window.Cypress) {
     authStore.signInWithNYCPSPopup();
   } else {
-    authStore.signInWithNYCPSRedirect();
+    authStore.signInWithNYCPSPopup();
+    // authStore.signInWithNYCPSRedirect();
   }
   spinner.value = true;
 };

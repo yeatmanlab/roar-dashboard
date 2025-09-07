@@ -21,7 +21,9 @@ watch(isFirekitInit, () => {
     authStore.nycpsOAuthRequested = true;
     router.replace({ name: 'SignIn' });
   } else {
-    router.push({ name: 'Home' });
+    authStore.nycpsOAuthRequested = true;
+    router.replace({ name: 'SignIn' });
+    // router.push({ name: 'Home' });
   }
 });
 </script>

@@ -227,7 +227,7 @@ const routes = [
     meta: { pageTitle: 'ROAR Survey' },
   },
   {
-    path: '/launch/:launchId' + GAME_ROUTES.SWR,
+    path: APP_ROUTES.LAUNCH + GAME_ROUTES.SWR,
     name: 'Launch SWR',
     component: () => import('../components/tasks/TaskSWR.vue'),
     props: (route) => ({
@@ -241,7 +241,7 @@ const routes = [
     },
   },
   {
-    path: '/launch/:launchId' + GAME_ROUTES.SWR_ES,
+    path: APP_ROUTES.LAUNCH + GAME_ROUTES.SWR_ES,
     name: 'Launch SWR-ES',
     component: () => import('../components/tasks/TaskSWR.vue'),
     props: (route) => ({
@@ -252,7 +252,7 @@ const routes = [
     meta: { pageTitle: 'SWR (ES)', permission: Permissions.Tasks.LAUNCH },
   },
   {
-    path: '/launch/:launchId' + GAME_ROUTES.PA,
+    path: APP_ROUTES.LAUNCH + GAME_ROUTES.PA,
     name: 'Launch PA',
     component: () => import('../components/tasks/TaskPA.vue'),
     props: (route) => ({
@@ -266,7 +266,7 @@ const routes = [
     },
   },
   {
-    path: '/launch/:launchId' + GAME_ROUTES.PA_ES,
+    path: APP_ROUTES.LAUNCH + GAME_ROUTES.PA_ES,
     name: 'Launch PA-ES',
     component: () => import('../components/tasks/TaskPA.vue'),
     props: (route) => ({
@@ -277,7 +277,7 @@ const routes = [
     meta: { pageTitle: 'PA-ES', permission: Permissions.Tasks.LAUNCH },
   },
   {
-    path: '/launch/:launchId' + GAME_ROUTES.SRE,
+    path: APP_ROUTES.LAUNCH + GAME_ROUTES.SRE,
     name: 'Launch SRE',
     component: () => import('../components/tasks/TaskSRE.vue'),
     props: (route) => ({
@@ -310,7 +310,7 @@ const routes = [
     meta: { pageTitle: 'Letter', permission: Permissions.Tasks.LAUNCH },
   },
   {
-    path: '/launch/:launchId' + GAME_ROUTES.LETTER_ES,
+    path: APP_ROUTES.LAUNCH + GAME_ROUTES.LETTER_ES,
     name: 'Launch Letter-ES',
     component: () => import('../components/tasks/TaskLetter.vue'),
     props: (route) => ({
@@ -321,7 +321,7 @@ const routes = [
     meta: { pageTitle: 'Letter-ES', permission: Permissions.Tasks.LAUNCH },
   },
   {
-    path: '/launch/:launchId' + GAME_ROUTES.LETTER_EN_CA,
+    path: APP_ROUTES.LAUNCH + GAME_ROUTES.LETTER_EN_CA,
     name: 'Launch Letter-EN-CA',
     component: () => import('../components/tasks/TaskLetter.vue'),
     props: (route) => ({
@@ -332,7 +332,7 @@ const routes = [
     meta: { pageTitle: 'Letter-EN-CA', permission: Permissions.Tasks.LAUNCH },
   },
   {
-    path: '/launch/:launchId' + GAME_ROUTES.MULTICHOICE,
+    path: APP_ROUTES.LAUNCH + GAME_ROUTES.MULTICHOICE,
     name: 'Launch Multichoice',
     component: () => import('../components/tasks/TaskMultichoice.vue'),
     props: (route) => ({
@@ -343,7 +343,7 @@ const routes = [
     meta: { pageTitle: 'Multichoice', permission: Permissions.Tasks.LAUNCH },
   },
   {
-    path: '/launch/:launchId' + GAME_ROUTES.MORPHOLOGY,
+    path: APP_ROUTES.LAUNCH + GAME_ROUTES.MORPHOLOGY,
     name: 'Launch Morphology',
     component: () => import('../components/tasks/TaskMultichoice.vue'),
     props: (route) => ({
@@ -354,7 +354,7 @@ const routes = [
     meta: { pageTitle: 'Morphology', permission: Permissions.Tasks.LAUNCH },
   },
   {
-    path: '/launch/:launchId' + GAME_ROUTES.CVA,
+    path: APP_ROUTES.LAUNCH + GAME_ROUTES.CVA,
     name: 'Launch CVA',
     component: () => import('../components/tasks/TaskMultichoice.vue'),
     props: (route) => ({
@@ -365,7 +365,7 @@ const routes = [
     meta: { pageTitle: 'CVA', permission: Permissions.Tasks.LAUNCH },
   },
   {
-    path: '/launch/:launchId' + GAME_ROUTES.VOCAB,
+    path: APP_ROUTES.LAUNCH + GAME_ROUTES.VOCAB,
     name: 'Launch Vocab',
     component: () => import('../components/tasks/TaskVocab.vue'),
     props: (route) => ({
@@ -376,7 +376,7 @@ const routes = [
     meta: { pageTitle: 'Vocab', permission: Permissions.Tasks.LAUNCH },
   },
   {
-    path: '/launch/:launchId' + GAME_ROUTES.FLUENCY_ARF,
+    path: APP_ROUTES.LAUNCH + GAME_ROUTES.FLUENCY_ARF,
     name: 'Launch Fluency-ARF',
     component: () => import('../components/tasks/TaskRoam.vue'),
     props: (route) => ({
@@ -387,7 +387,7 @@ const routes = [
     meta: { pageTitle: 'ROAM-ARF', permission: Permissions.Tasks.LAUNCH },
   },
   {
-    path: '/launch/:launchId' + GAME_ROUTES.FLUENCY_ARF_ES,
+    path: APP_ROUTES.LAUNCH + GAME_ROUTES.FLUENCY_ARF_ES,
     name: 'Launch Fluency-ARF-ES',
     component: () => import('../components/tasks/TaskRoam.vue'),
     props: (route) => ({
@@ -398,7 +398,7 @@ const routes = [
     meta: { pageTitle: 'ROAM-ARF ES', permission: Permissions.Tasks.LAUNCH },
   },
   {
-    path: '/launch/:launchId' + GAME_ROUTES.FLUENCY_CALF,
+    path: APP_ROUTES.LAUNCH + GAME_ROUTES.FLUENCY_CALF,
     name: 'Launch Fluency-CALF',
     component: () => import('../components/tasks/TaskRoam.vue'),
     props: (route) => ({
@@ -409,7 +409,7 @@ const routes = [
     meta: { pageTitle: 'ROAM-CALF', permission: Permissions.Tasks.LAUNCH },
   },
   {
-    path: '/launch/:launchId' + GAME_ROUTES.FLUENCY_CALF_ES,
+    path: APP_ROUTES.LAUNCH + GAME_ROUTES.FLUENCY_CALF_ES,
     name: 'Launch Fluency-CALF-ES',
     component: () => import('../components/tasks/TaskRoam.vue'),
     props: (route) => ({
@@ -420,7 +420,7 @@ const routes = [
     meta: { pageTitle: 'ROAM-CALF ES', permission: Permissions.Tasks.LAUNCH },
   },
   {
-    path: '/launch/:launchId' + GAME_ROUTES.ROAM_ALPACA,
+    path: APP_ROUTES.LAUNCH + GAME_ROUTES.ROAM_ALPACA,
     name: 'Launch Fluency-Alpaca',
     component: () => import('../components/tasks/TaskRoam.vue'),
     props: (route) => ({
@@ -431,7 +431,7 @@ const routes = [
     meta: { pageTitle: 'ROAM-Alpaca', permission: Permissions.Tasks.LAUNCH },
   },
   {
-    path: '/launch/:launchId' + GAME_ROUTES.ROAM_ALPACA_ES,
+    path: APP_ROUTES.LAUNCH + GAME_ROUTES.ROAM_ALPACA_ES,
     name: 'Launch Fluency-Alpaca-ES',
     component: () => import('../components/tasks/TaskRoam.vue'),
     props: (route) => ({
@@ -442,7 +442,7 @@ const routes = [
     meta: { pageTitle: 'ROAM-Alpaca ES', permission: Permissions.Tasks.LAUNCH },
   },
   {
-    path: '/launch/:launchId' + GAME_ROUTES.CORE_TASKS,
+    path: APP_ROUTES.LAUNCH + GAME_ROUTES.CORE_TASKS,
     name: 'Launch Core Tasks',
     component: () => import('../components/tasks/TaskLevante.vue'),
     props: (route) => ({
@@ -453,7 +453,7 @@ const routes = [
     meta: { pageTitle: 'Core Tasks', permission: Permissions.Tasks.LAUNCH },
   },
   {
-    path: '/launch/:launchId' + GAME_ROUTES.RAN,
+    path: APP_ROUTES.LAUNCH + GAME_ROUTES.RAN,
     name: 'Launch RAN',
     component: () => import('../components/tasks/TaskRan.vue'),
     props: (route) => ({
@@ -467,7 +467,7 @@ const routes = [
     },
   },
   {
-    path: '/launch/:launchId' + GAME_ROUTES.CROWDING,
+    path: APP_ROUTES.LAUNCH + GAME_ROUTES.CROWDING,
     name: 'Launch Crowding',
     component: () => import('../components/tasks/TaskCrowding.vue'),
     props: (route) => ({
@@ -478,7 +478,7 @@ const routes = [
     meta: { pageTitle: 'Crowding', permission: Permissions.Tasks.LAUNCH },
   },
   {
-    path: '/launch/:launchId' + GAME_ROUTES.ROAV_MEP,
+    path: APP_ROUTES.LAUNCH + GAME_ROUTES.ROAV_MEP,
     name: 'Launch MEP',
     component: () => import('../components/tasks/TaskMEP.vue'),
     props: (route) => ({
@@ -489,7 +489,7 @@ const routes = [
     meta: { pageTitle: 'MEP', permission: Permissions.Tasks.LAUNCH },
   },
   {
-    path: '/launch/:launchId' + GAME_ROUTES.PHONICS,
+    path: APP_ROUTES.LAUNCH + GAME_ROUTES.PHONICS,
     name: 'Launch Phonics',
     component: () => import('../components/tasks/TaskLetter.vue'),
     props: (route) => ({
@@ -500,7 +500,7 @@ const routes = [
     meta: { pageTitle: 'Phonics', permission: Permissions.Tasks.LAUNCH },
   },
   {
-    path: '/launch/:launchId' + GAME_ROUTES.ROAR_READALOUD,
+    path: APP_ROUTES.LAUNCH + GAME_ROUTES.ROAR_READALOUD,
     name: 'Launch Read Aloud',
     component: () => import('../components/tasks/TaskReadAloud.vue'),
     props(route) {
@@ -513,7 +513,7 @@ const routes = [
     meta: { pageTitle: 'ReadAloud', permission: Permissions.Tasks.LAUNCH },
   },
   {
-    path: '/launch/:launchId' + GAME_ROUTES.SURVEY,
+    path: APP_ROUTES.LAUNCH + GAME_ROUTES.SURVEY,
     name: 'Launch Survey',
     component: () => import('../components/tasks/TaskSurvey.vue'),
     props: (route) => ({
@@ -585,7 +585,7 @@ const routes = [
     meta: { pageTitle: 'Signing you in…' },
   },
   {
-    path: '/auth-clever',
+    path: APP_ROUTES.AUTH_CLEVER,
     name: 'AuthClever',
     beforeRouteLeave: [removeQueryParams, removeHash],
     component: () => import('../components/auth/AuthClever.vue'),
@@ -601,7 +601,7 @@ const routes = [
     meta: { pageTitle: 'Initiate Clever Authentication' },
   },
   {
-    path: '/auth-classlink',
+    path: APP_ROUTES.AUTH_CLASSLINK,
     name: 'AuthClassLink',
     beforeRouteLeave: [removeQueryParams, removeHash],
     component: () => import('../components/auth/AuthClassLink.vue'),
@@ -617,7 +617,7 @@ const routes = [
     meta: { pageTitle: 'Initiate ClassLink Authentication' },
   },
   {
-    path: '/auth-nycps',
+    path: APP_ROUTES.AUTH_NYCPS,
     name: 'AuthNycps',
     beforeRouteLeave: [removeQueryParams, removeHash],
     component: () => import('../components/auth/AuthNycps.vue'),
@@ -633,7 +633,7 @@ const routes = [
     meta: { pageTitle: 'Initiate NYCPS Authentication' },
   },
   {
-    path: '/auth-email-link',
+    path: APP_ROUTES.AUTH_EMAIL_LINK,
     name: 'AuthEmailLink',
     beforeRouteLeave: [removeQueryParams, removeHash],
     component: () => import('../components/auth/AuthEmailLink.vue'),
