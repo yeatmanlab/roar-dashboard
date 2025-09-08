@@ -18,6 +18,7 @@
         :description="getTaskDescription(task)"
         :scores-array="getTaskScoresArray(task)"
         :expanded="expanded"
+        :longitudinal-data="task.historicalScores"
       />
     </div>
   </section>
@@ -26,6 +27,7 @@
 <script setup>
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { toValue } from 'vue';
 import ScoreCard from './ScoreCard.vue';
 import ScoreReportService from '@/services/ScoreReport.service';
 import { SCORE_TYPES } from '@/constants/scores';
@@ -68,17 +70,21 @@ const computedTaskData = computed(() => {
   const currentTasks = ScoreReportService.processTaskScores(props.taskData, props.studentGrade, { t });
   
   // Process longitudinal data
-  if (props.longitudinalData?.length) {
-    return currentTasks.map(task => ({
-      ...task,
-      historicalScores: (props.longitudinalData?.[task.taskId] || [])
-        .sort((a, b) => new Date(a.date) - new Date(b.date))
-        .map(run => ({
-          date: new Date(run.date),
-          scores: run.scores,
-          assignmentId: run.assignmentId
-        }))
-    }));
+  const longitudinalData = toValue(props.longitudinalData);
+  if (longitudinalData && Object.keys(longitudinalData).length > 0) {
+    return currentTasks.map(task => {
+      const taskHistory = longitudinalData[task.taskId] || [];
+      return {
+        ...task,
+        historicalScores: taskHistory
+          .sort((a, b) => new Date(a.date) - new Date(b.date))
+          .map(run => ({
+            date: new Date(run.date),
+            scores: run.scores,
+            assignmentId: run.assignmentId
+          }))
+      };
+    });
   }
   
   return currentTasks;
