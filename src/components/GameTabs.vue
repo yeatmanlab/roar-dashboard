@@ -207,6 +207,7 @@ import { useQueryClient } from '@tanstack/vue-query';
 import { LEVANTE_SURVEY_RESPONSES_KEY } from '@/constants/bucket';
 import PvProgressBar from 'primevue/progressbar';
 import { useAssignmentsStore } from '@/store/assignments';
+import { ASSIGNMENT_STATUSES } from '@/constants';
 
 interface TaskData {
   name: string;
