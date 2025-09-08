@@ -263,7 +263,6 @@ const props = withDefaults(defineProps<Props>(), {
 const authStore = useAuthStore();
 const assignmentsStore = useAssignmentsStore();
 const surveyStore = useSurveyStore();
-const assignmentsStore = useAssignmentsStore();
 const { selectedStatus } = storeToRefs(assignmentsStore);
 const queryClient = useQueryClient();
 const surveyData = queryClient.getQueryData(['surveyResponses', props.userData.id]);
