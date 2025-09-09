@@ -17,6 +17,14 @@ const props = defineProps({
   longitudinalData: {
     type: Array,
     required: true
+  },
+  taskId: {
+    type: String,
+    required: true
+  },
+  grade: {
+    type: Number,
+    required: true
   }
 });
 
@@ -45,37 +53,51 @@ const getColorForType = (type) => {
 
 // Prepare chart data
 const chartData = computed(() => {
-  if (!props.longitudinalData?.length) return { labels: [], datasets: [] };
+  console.log('LongitudinalChart - Input data:', props.longitudinalData);
+  
+  if (!props.longitudinalData?.length) {
+    console.log('No longitudinal data available');
+    return { labels: [], datasets: [] };
+  }
 
   const sortedData = [...props.longitudinalData].sort((a, b) => new Date(a.date) - new Date(b.date));
+  console.log('Sorted data:', sortedData);
+  
   const labels = sortedData.map(entry => formatDate(entry.date));
+  console.log('Labels:', labels);
   
   // Create datasets for each score type
   const datasets = [];
-  const scoreTypes = new Set();
   
-  // First, collect all score types
-  sortedData.forEach(entry => {
-    if (entry.scores?.composite) {
-      Object.entries(entry.scores.composite).forEach(([type, value]) => {
-        if (value?.value !== undefined) {
-          scoreTypes.add(type);
-        }
+  // Define the score types we want to show
+  const scoreTypes = ['rawScore', 'percentile', 'standardScore'];
+
+  // Create a dataset for each score type
+  scoreTypes.forEach(scoreType => {
+    console.log(`Processing scores for ${scoreType}:`);
+    const scores = sortedData.map(entry => {
+      const score = entry.scores?.[scoreType];
+      console.log(`- Entry scores:`, entry.scores, `Score for ${scoreType}:`, score);
+      return score || null;
+    });
+
+    console.log(`Final scores for ${scoreType}:`, scores);
+
+    // Only add the dataset if we have at least one valid score
+    if (scores.some(score => score !== null)) {
+      datasets.push({
+        label: formatScoreType(scoreType),
+        data: scores,
+        fill: false,
+        tension: 0.4,
+        borderColor: getColorForType(scoreType),
+        pointRadius: 4,
+        pointHoverRadius: 6
       });
     }
   });
 
-  // Then create a dataset for each type
-  scoreTypes.forEach(type => {
-    datasets.push({
-      label: formatScoreType(type),
-      data: sortedData.map(entry => entry.scores?.composite[type]?.value || null),
-      fill: false,
-      tension: 0.4,
-      borderColor: getColorForType(type)
-    });
-  });
-
+  console.log('Final datasets:', datasets);
   return { labels, datasets };
 });
 

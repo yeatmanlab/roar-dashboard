@@ -146,6 +146,10 @@ const { data: longitudinalData, isLoading: isLoadingLongitudinalData } = useUser
   props.orgId,
   {
     enabled: initialized,
+    select: (data) => {
+      console.log('Raw longitudinal data from query:', data);
+      return data;
+    }
   },
 );
 
