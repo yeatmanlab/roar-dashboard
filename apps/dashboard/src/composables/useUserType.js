@@ -45,9 +45,6 @@ const roleTypeMap = {
 if (claims?.role && roleTypeMap[claims.role]) {
   return roleTypeMap[claims.role];
 
-      if (claims?.role === UserRoles.ADMIN) {
-        return AUTH_USER_TYPE.ADMIN;
-      }
     } else {
       // Check if the user has any minimal admin organizations.
       const minimalAdminOrgs = claims?.minimalAdminOrgs || {};
