@@ -45,14 +45,9 @@ function mockFilterBySupportLevelCategory(task, supportLevel) {
 }
 
 function setFilterByCategory(header, category, forceClick = false) {
-  cy.contains(
-    'th.p-datatable-header-cell.p-datatable-sortable-column.p-datatable-resizable-column.p-datatable-reorderable-column',
-    header,
-  )
-    .find('button')
-    .click();
+  cy.contains('[data-testid="column-header-cell"]', header).find('button').click();
   cy.get('[data-cy="data-table__score-filter-dropdown"]').click();
-  cy.get('.p-select-list-container > .p-select-list').contains(category).click({ force: forceClick });
+  cy.findByTestId('score__list').contains(category).click({ force: forceClick });
   cy.get('button').contains('Apply').click();
 }
 

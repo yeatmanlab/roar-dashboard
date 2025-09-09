@@ -18,7 +18,7 @@ describe('Parent: Add Child', () => {
 
     // Verify enrollment modal is visible
     cy.get('[data-cy="enrollment-modal"]').should('be.visible');
-    cy.get('[data-cy="enrollment-modal"] .p-dialog-header').should('contain', 'Enroll New Student');
+    cy.get('[data-cy="enrollment-modal"] [data-testid="dialog__header"]').should('contain', 'Enroll New Student');
 
     // Enter activation code
     cy.get('[data-cy="activation-code-group"]').should('be.visible');
@@ -43,11 +43,11 @@ describe('Parent: Add Child', () => {
 
     // Set birth year in the date picker
     cy.get('[data-cy="dob-year-picker"] input').should('be.visible').click();
-    cy.get('.p-datepicker-year').first().click();
+    cy.findAllByTestId('date-picker__year').first().click();
 
     // Select grade
     cy.get('[data-cy="grade-select"]').should('be.visible').click();
-    cy.get('.p-select-option').first().click();
+    cy.findAllByTestId('grade-select__option').first().click();
 
     // Accept terms and conditions
     cy.get('#accept-register').should('be.visible').click();
