@@ -23,6 +23,9 @@
         option: {
           'data-testid': 'dropdown__item',
         },
+        emptyMessage: {
+          'data-testid': 'dropdown__empty-message',
+        },
       }"
     />
   </div>
