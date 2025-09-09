@@ -128,7 +128,9 @@
                 <!-- Total scores -->
                 <div class="flex flex-row justify-content-between align-items-center mb-2">
                   <span class="font-light text-sm">Percent Correct</span>
-                  <span class="font-bold text-sm">{{ Math.round(_get(task.scores, 'composite.totalPercentCorrect')) }}%</span>
+                  <span class="font-bold text-sm"
+                    >{{ Math.round(_get(task.scores, 'composite.totalPercentCorrect')) }}%</span
+                  >
                 </div>
                 <div class="flex flex-row justify-content-between align-items-center mb-3">
                   <span class="font-light text-sm">Raw Score (0-72)</span>
@@ -143,7 +145,7 @@
                   class="flex flex-row justify-content-between align-items-center mb-2"
                 >
                   <span class="font-light text-sm">{{ t(`scoreReports.phonics.${category}`) }}</span>
-                  <span class="font-bold text-sm">{{ 
+                  <span class="font-bold text-sm">{{
                     (() => {
                       const subscore = _get(task.scores, `composite.subscores.${category}`);
                       return subscore ? `${subscore.correct}/${subscore.attempted}` : '0/0';

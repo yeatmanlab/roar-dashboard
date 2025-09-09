@@ -795,10 +795,10 @@ const computeAssignmentAndRunData = computed(() => {
                   r_controlled: formatPhonicsScore(composite.subscores?.r_controlled),
                   r_cluster: formatPhonicsScore(composite.subscores?.r_cluster),
                   silent_e: formatPhonicsScore(composite.subscores?.silent_e),
-                  vowel_team: formatPhonicsScore(composite.subscores?.vowel_team)
-                }
+                  vowel_team: formatPhonicsScore(composite.subscores?.vowel_team),
+                },
               },
-              skillsToWorkOn: composite.skillsToWorkOn || 'None'
+              skillsToWorkOn: composite.skillsToWorkOn || 'None',
             };
           }
         } else if ((taskId === 'letter' || taskId === 'letter-en-ca') && assessment.scores) {

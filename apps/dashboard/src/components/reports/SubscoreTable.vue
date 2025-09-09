@@ -231,7 +231,11 @@ const exportSelected = (selectedRows) => {
       ];
       subcategories.forEach((category) => {
         const subscore = _get(scores, `${props.taskId}.composite.subscores.${category}`);
-        _set(tableRow, `${category} (Correct/Attempted)`, subscore ? `${subscore.correct}/${subscore.attempted}` : '0/0');
+        _set(
+          tableRow,
+          `${category} (Correct/Attempted)`,
+          subscore ? `${subscore.correct}/${subscore.attempted}` : '0/0',
+        );
       });
       _set(tableRow, 'Total % Correct', _get(scores, `${props.taskId}.composite.totalPercentCorrect`));
       _set(tableRow, 'Skills To Work On', _get(scores, `${props.taskId}.skillsToWorkOn`));
