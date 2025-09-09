@@ -53,18 +53,14 @@ const getColorForType = (type) => {
 
 // Prepare chart data
 const chartData = computed(() => {
-  console.log('LongitudinalChart - Input data:', props.longitudinalData);
   
   if (!props.longitudinalData?.length) {
-    console.log('No longitudinal data available');
     return { labels: [], datasets: [] };
   }
 
   const sortedData = [...props.longitudinalData].sort((a, b) => new Date(a.date) - new Date(b.date));
-  console.log('Sorted data:', sortedData);
   
   const labels = sortedData.map(entry => formatDate(entry.date));
-  console.log('Labels:', labels);
   
   // Create datasets for each score type
   const datasets = [];
@@ -74,14 +70,11 @@ const chartData = computed(() => {
 
   // Create a dataset for each score type
   scoreTypes.forEach(scoreType => {
-    console.log(`Processing scores for ${scoreType}:`);
     const scores = sortedData.map(entry => {
       const score = entry.scores?.[scoreType];
-      console.log(`- Entry scores:`, entry.scores, `Score for ${scoreType}:`, score);
       return score || null;
     });
 
-    console.log(`Final scores for ${scoreType}:`, scores);
 
     // Only add the dataset if we have at least one valid score
     if (scores.some(score => score !== null)) {
@@ -97,7 +90,6 @@ const chartData = computed(() => {
     }
   });
 
-  console.log('Final datasets:', datasets);
   return { labels, datasets };
 });
 

@@ -147,7 +147,6 @@ const { data: longitudinalData, isLoading: isLoadingLongitudinalData } = useUser
   {
     enabled: initialized,
     select: (data) => {
-      console.log('Raw longitudinal data from query:', data);
       return data;
     }
   },
