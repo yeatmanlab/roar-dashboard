@@ -2,7 +2,7 @@
   "name": "roar-dashboard",
   "private": true,
   "bin": {
-    "setup-certs": "./scrtips/setup-certs.sh"
+    "setup-certs": "./scripts/setup-certs.sh"
   },
   "version": "3.13.1",
   "scripts": {

@@ -1,6 +1,7 @@
 # Firebase
 .firebaserc
 .firebase/
+firebase/admin/firebase.json
 
 # Cypress
 cypress/downloads

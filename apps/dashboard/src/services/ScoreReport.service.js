@@ -1,4 +1,3 @@
-import _get from 'lodash/get';
 import _lowerCase from 'lodash/lowerCase';
 import _startCase from 'lodash/startCase';
 import _toUpper from 'lodash/toUpper';
@@ -8,7 +7,7 @@ import {
   extendedDescriptions,
   getSupportLevel,
   getRawScoreRange,
-  getScoreKeys,
+  getScoreValue,
 } from '@/helpers/reports';
 import { SCORE_SUPPORT_SKILL_LEVELS, SCORE_TYPES } from '@/constants/scores';
 import { TAG_SEVERITIES } from '@/constants/tags';
@@ -287,21 +286,19 @@ const ScoreReportService = (() => {
     const computedTaskAcc = {};
 
     for (const { taskId, scores, reliable, optional, engagementFlags } of taskData) {
-      const { percentileScoreKey, standardScoreKey, rawScoreKey } = getScoreKeys(taskId, grade);
       const compositeScores = scores?.composite;
+
       let rawScore = null;
 
       if (!taskId.includes('vocab') && !taskId.includes('es')) {
-        rawScore = taskId.includes('letter')
-          ? _get(compositeScores, 'totalCorrect')
-          : _get(compositeScores, rawScoreKey);
+        rawScore = getScoreValue(compositeScores, taskId, grade, 'rawScore');
       } else {
         rawScore = compositeScores;
       }
 
       if (!isNaN(rawScore) && !tasksBlacklist.includes(taskId)) {
-        const percentileScore = _get(compositeScores, percentileScoreKey);
-        const standardScore = _get(compositeScores, standardScoreKey);
+        const percentileScore = getScoreValue(compositeScores, taskId, grade, 'percentile');
+        const standardScore = getScoreValue(compositeScores, taskId, grade, 'standardScore');
         const rawScoreRange = getRawScoreRange(taskId);
         const supportColor = getSupportLevel(grade, percentileScore, rawScore, taskId).tag_color;
 
