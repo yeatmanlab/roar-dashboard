@@ -1,7 +1,7 @@
 {
   "name": "roar-dashboard",
   "private": true,
-  "version": "3.2.3-dev",
+  "version": "3.2.4-dev",
   "type": "module",
   "scripts": {
     "survey:pdf": "node -e \"(async()=>{const {loadSurveyFromFile}=await import('./dist/helpers/surveyLoader.js'); const {generateSurveyPdfFromJson}=await import('./dist/helpers/surveyPdfGenerator.js'); const fp=process.env.SURVEY_JSON||'surveys/demo.json'; const survey=await loadSurveyFromFile(fp); await generateSurveyPdfFromJson(survey,{filename:(process.env.OUTPUT||'survey.pdf')});})().catch(e=>{console.error(e);process.exit(1);})\"",
@@ -24,7 +24,7 @@
     "preview": "vite preview",
     "test": "vitest --config vitest.config.js",
     "test:watch": "vitest --watch",
-    "version": "npm run format && git add -A",
+    "format:add": "npm run format && git add -A",
     "i18n:download-rebuild": "node src/translations/tools/download-and-rebuild.js",
     "i18n:consolidate": "node src/translations/tools/create-consolidated-translations.js",
     "i18n:crowdin:upload": "crowdin upload sources --config src/translations/crowdin/crowdin.yml",
