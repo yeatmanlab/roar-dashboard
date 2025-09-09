@@ -50,9 +50,7 @@ if (claims?.role && roleTypeMap[claims.role]) {
       const minimalAdminOrgs = claims?.minimalAdminOrgs || {};
       const hasMinimalAdminOrgs = Object.values(minimalAdminOrgs).some((org) => !_isEmpty(org));
 
-      if (hasMinimalAdminOrgs) {
-        return AUTH_USER_TYPE.ADMIN;
-      }
+return hasMinimalAdminOrgs ? AUTH_USER_TYPE.ADMIN : undefined
     }
 
     // Otherwise, default to participant user type.
