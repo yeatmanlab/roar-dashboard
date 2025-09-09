@@ -175,6 +175,7 @@
                   date-format="yy"
                   icon="pi pi-calendar text-white p-1"
                   data-cy="dob-year-picker"
+                  :pt="{ year: { 'data-testId': 'date-picker__year' } }"
                 />
               </div>
               <small v-if="v$.students.$each.$response.$data[outerIndex].dob.$invalid && submitted" class="p-error">{{
@@ -191,6 +192,7 @@
                 class="w-full"
                 name="grade"
                 data-cy="grade-select"
+                pt:option:data-testid="grade-select__option"
               />
             </div>
           </div>
@@ -335,6 +337,7 @@
               binary
               :disabled="showConsent[outerIndex]"
               :class="[{ 'p-invalid': student.accept.$invalid && submitted }]"
+              pt:input:data-testid="checkbox__input"
               @change="getConsent(outerIndex)"
             />
             <label for="accept" :class="{ 'p-error': student.accept.$invalid && submitted }"
@@ -377,6 +380,8 @@
         :style="{ width: '25rem' }"
         :modal="true"
         :draggable="false"
+        pt:header:data-testid="dialog__header"
+        pt:content:data-testid="dialog__content"
       >
         <p>{{ dialogMessage }}</p>
         <PvButton

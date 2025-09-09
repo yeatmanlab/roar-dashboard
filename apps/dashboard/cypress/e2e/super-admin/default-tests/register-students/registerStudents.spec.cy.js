@@ -1,5 +1,5 @@
 function selectField(id, fieldName) {
-  cy.get(`#${id} > .p-dropdown-label`).should('exist').click().get('li').contains(fieldName).click();
+  cy.get(`#${id} > [data-testid="dropdown__label"]`).should('exist').click().get('li').contains(fieldName).click();
 }
 
 describe(

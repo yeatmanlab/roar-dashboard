@@ -3,7 +3,24 @@
     <nav class="flex flex-row align-items-center justify-content-between w-full">
       <div id="navBarRightEnd" class="flex flex-row align-items-center justify-content-start w-full gap-1">
         <div class="flex align-items-center justify-content-center w-full">
-          <PvMenubar :model="menuItems" class="w-full">
+          <PvMenubar
+            :model="menuItems"
+            class="w-full"
+            :pt="{
+              rootList: {
+                'data-testid': 'menubar__root-list',
+              },
+              submenu: {
+                'data-testid': 'menubar__submenu',
+              },
+              item: {
+                'data-testid': 'menubar__item',
+              },
+              itemIcon: {
+                'data-testid': 'menubar__item-icon',
+              },
+            }"
+          >
             <template #start>
               <router-link :to="{ path: APP_ROUTES.HOME }" data-cy="navbar__logo">
                 <div class="navbar-logo mx-3">
