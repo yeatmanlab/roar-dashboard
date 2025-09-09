@@ -38,23 +38,19 @@ export default function useUserType(userClaims) {
       return AUTH_USER_TYPE.SUPER_ADMIN;
     }
 
-const roleTypeMap = {
-  [UserRoles.LAUNCH_ADMIN]: AUTH_USER_TYPE.LAUNCH_ADMIN,
-  [UserRoles.ADMIN]: AUTH_USER_TYPE.ADMIN,
-}
-if (claims?.role && roleTypeMap[claims.role]) {
-  return roleTypeMap[claims.role];
-
+    const roleTypeMap = {
+      [UserRoles.LAUNCH_ADMIN]: AUTH_USER_TYPE.LAUNCH_ADMIN,
+      [UserRoles.ADMIN]: AUTH_USER_TYPE.ADMIN,
+    };
+    if (claims?.role && roleTypeMap[claims.role]) {
+      return roleTypeMap[claims.role];
     } else {
       // Check if the user has any minimal admin organizations.
       const minimalAdminOrgs = claims?.minimalAdminOrgs || {};
       const hasMinimalAdminOrgs = Object.values(minimalAdminOrgs).some((org) => !_isEmpty(org));
 
-return hasMinimalAdminOrgs ? AUTH_USER_TYPE.ADMIN : undefined
+      return hasMinimalAdminOrgs ? AUTH_USER_TYPE.ADMIN : AUTH_USER_TYPE.PARTICIPANT;
     }
-
-    // Otherwise, default to participant user type.
-    return AUTH_USER_TYPE.PARTICIPANT;
   });
 
   const isAdmin = computed(() => userType.value === AUTH_USER_TYPE.ADMIN);
