@@ -6,6 +6,7 @@ import { UsersContract } from '@roar-dashboard/api-contract';
 import { eq } from 'drizzle-orm';
 import { CoreDbClient } from '../db/clients';
 import { users } from '../db/schema';
+import { AuthGuardMiddleware } from '../middleware/auth-guard/auth-guard.middleware';
 
 const s = initServer();
 
@@ -43,7 +44,7 @@ const UserController = {
 export function registerUsersRoutes(routerInstance: Router) {
   const UsersRoutes = s.router(UsersContract, {
     getById: {
-      middleware: [],
+      middleware: [AuthGuardMiddleware],
       handler: UserController.getById,
     },
   });
