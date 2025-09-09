@@ -161,7 +161,7 @@ const ScoreReportService = (() => {
       const lowerIncorrect = scores?.LowercaseNames?.lowerIncorrect;
       const incorrectLetters = [
         Array.isArray(upperIncorrect) ? upperIncorrect : [],
-        Array.isArray(lowerIncorrect) ? lowerIncorrect : []
+        Array.isArray(lowerIncorrect) ? lowerIncorrect : [],
       ]
         .flat()
         .sort((a, b) => _toUpper(a).localeCompare(_toUpper(b)))

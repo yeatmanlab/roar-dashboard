@@ -100,7 +100,7 @@ export const getRunsRequestBody = ({
       op: 'AND',
       filters,
     },
-  }
+  };
 
   if (taskId && filters.length > 0) {
     filters.push({

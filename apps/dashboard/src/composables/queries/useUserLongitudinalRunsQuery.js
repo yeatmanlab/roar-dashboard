@@ -5,7 +5,7 @@ import { USER_LONGITUDINAL_RUNS_QUERY_KEY } from '@/constants/queryKeys';
 
 /**
  * Query hook for fetching a user's runs across multiple administrations
- * 
+ *
  * @param {string} userId - The user ID to fetch runs for
  * @param {string} orgType - The organization type
  * @param {string} orgId - The organization ID
@@ -14,11 +14,7 @@ import { USER_LONGITUDINAL_RUNS_QUERY_KEY } from '@/constants/queryKeys';
  */
 const useUserLongitudinalRunsQuery = (userId, orgType, orgId, queryOptions = undefined) => {
   // Ensure all necessary data is loaded before enabling the query
-  const queryConditions = [
-    () => !!userId,
-    () => !!orgType,
-    () => !!orgId,
-  ];
+  const queryConditions = [() => !!userId, () => !!orgType, () => !!orgId];
   const { isQueryEnabled, options } = computeQueryOverrides(queryConditions, queryOptions);
 
   return useQuery({
@@ -35,17 +31,17 @@ const useUserLongitudinalRunsQuery = (userId, orgType, orgId, queryOptions = und
       // Transform the data into a dictionary keyed by taskId
       return data.reduce((acc, run) => {
         if (!run.taskId) return acc;
-        
+
         if (!acc[run.taskId]) {
           acc[run.taskId] = [];
         }
-        
+
         acc[run.taskId].push({
           date: run.timeStarted,
           scores: run.scores,
-          assignmentId: run.assignmentId
+          assignmentId: run.assignmentId,
         });
-        
+
         return acc;
       }, {});
     },

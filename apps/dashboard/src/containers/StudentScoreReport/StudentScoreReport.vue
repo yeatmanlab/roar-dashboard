@@ -148,7 +148,7 @@ const { data: longitudinalData, isLoading: isLoadingLongitudinalData } = useUser
     enabled: initialized,
     select: (data) => {
       return data;
-    }
+    },
   },
 );
 

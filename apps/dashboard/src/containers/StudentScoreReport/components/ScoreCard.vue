@@ -84,18 +84,22 @@
             {{ $t('scoreReports.progressOverTime') }}
           </PvAccordionHeader>
           <PvAccordionContent :pt="{ content: { class: 'px-0' } }">
-            <LongitudinalChart 
-              :longitudinal-data="longitudinalData"
-              :task-id="taskId"
-              :grade="grade"
-            />
+            <LongitudinalChart :longitudinal-data="longitudinalData" :task-id="taskId" :grade="grade" />
             <div class="historical-scores mt-4">
-              <div v-for="historicalScore in longitudinalData" :key="historicalScore.assignmentId" class="historical-score-item p-3 surface-100 border-round mb-2">
+              <div
+                v-for="historicalScore in longitudinalData"
+                :key="historicalScore.assignmentId"
+                class="historical-score-item p-3 surface-100 border-round mb-2"
+              >
                 <div class="flex justify-content-between align-items-center mb-2">
                   <span class="date font-semibold">{{ formatDate(historicalScore.date) }}</span>
                 </div>
                 <div class="score-types grid">
-                  <div v-for="(value, type) in historicalScore.scores" :key="type" class="score-type-item col-6 flex justify-content-between align-items-center p-2">
+                  <div
+                    v-for="(value, type) in historicalScore.scores"
+                    :key="type"
+                    class="score-type-item col-6 flex justify-content-between align-items-center p-2"
+                  >
                     <span class="score-label text-500">{{ formatScoreType(type) }}:</span>
                     <span class="score-value font-semibold">{{ value }}</span>
                   </div>
@@ -169,11 +173,11 @@ const props = defineProps({
   },
   taskId: {
     type: String,
-    required: true
+    required: true,
   },
   grade: {
     type: Number,
-    required: true
+    required: true,
   },
 });
 
@@ -186,10 +190,10 @@ const ACCORDION_PANELS = Object.freeze({
 const visiblePanels = ref([]);
 
 const formatDate = (date) => {
-  return new Date(date).toLocaleDateString(undefined, { 
+  return new Date(date).toLocaleDateString(undefined, {
     year: 'numeric',
     month: 'short',
-    day: 'numeric'
+    day: 'numeric',
   });
 };
 
