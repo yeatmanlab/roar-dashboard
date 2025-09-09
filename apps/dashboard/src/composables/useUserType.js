@@ -38,10 +38,12 @@ export default function useUserType(userClaims) {
       return AUTH_USER_TYPE.SUPER_ADMIN;
     }
 
-    if (claims?.role) {
-      if (claims?.role === UserRoles.LAUNCH_ADMIN) {
-        return AUTH_USER_TYPE.LAUNCH_ADMIN;
-      }
+const roleTypeMap = {
+  [UserRoles.LAUNCH_ADMIN]: AUTH_USER_TYPE.LAUNCH_ADMIN,
+  [UserRoles.ADMIN]: AUTH_USER_TYPE.ADMIN,
+}
+if (claims?.role && roleTypeMap[claims.role]) {
+  return roleTypeMap[claims.role];
 
       if (claims?.role === UserRoles.ADMIN) {
         return AUTH_USER_TYPE.ADMIN;
