@@ -63,15 +63,6 @@ export const getRunsRequestBody = ({
 
   const filters = [];
 
-  // Always add bestRun filter
-  filters.push({
-    fieldFilter: {
-      field: { fieldPath: 'bestRun' },
-      op: 'EQUAL',
-      value: { booleanValue: true },
-    },
-  });
-
   // Add administrationId filter if provided
   if (administrationId) {
     filters.push({
@@ -82,6 +73,15 @@ export const getRunsRequestBody = ({
       },
     });
   }
+
+  // Then add bestRun filter
+  filters.push({
+    fieldFilter: {
+      field: { fieldPath: 'bestRun' },
+      op: 'EQUAL',
+      value: { booleanValue: true },
+    },
+  });
 
   // Add orgId filter if provided
   if (orgId) {

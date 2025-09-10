@@ -1,85 +1,85 @@
 <template>
   <div class="longitudinal-chart">
-    <PvChart type="line" :data="chartData" :options="chartOptions" />
+    <PvChart
+      type="line"
+      :data="chartData"
+      :options="chartOptions"
+    />
   </div>
 </template>
 
 <script setup>
 import { computed } from 'vue';
 import PvChart from 'primevue/chart';
-import _startCase from 'lodash/startCase';
-
 const props = defineProps({
   longitudinalData: {
     type: Array,
-    required: true,
+    required: true
   },
   taskId: {
     type: String,
-    required: true,
+    required: true
   },
   grade: {
     type: Number,
-    required: true,
-  },
+    required: true
+  }
 });
 
 const formatDate = (date) => {
-  return new Date(date).toLocaleDateString(undefined, {
+  return new Date(date).toLocaleDateString(undefined, { 
     year: 'numeric',
     month: 'short',
-    day: 'numeric',
+    day: 'numeric'
   });
-};
-
-const formatScoreType = (type) => {
-  return _startCase(type.replace(/([A-Z])/g, ' $1').toLowerCase());
 };
 
 // Helper function to get consistent colors for score types
 const getColorForType = (type) => {
   const colorMap = {
-    rawScore: '#2196F3', // Blue
-    percentile: '#4CAF50', // Green
-    standardScore: '#FF9800', // Orange
-    default: '#9C27B0', // Purple
+    rawScore: '#2196F3',       // Blue
+    percentile: '#4CAF50',     // Green
+    standardScore: '#FF9800',  // Orange
+    default: '#9C27B0'         // Purple
   };
   return colorMap[type] || colorMap.default;
 };
 
 // Prepare chart data
 const chartData = computed(() => {
+  
   if (!props.longitudinalData?.length) {
     return { labels: [], datasets: [] };
   }
 
   const sortedData = [...props.longitudinalData].sort((a, b) => new Date(a.date) - new Date(b.date));
-
-  const labels = sortedData.map((entry) => formatDate(entry.date));
-
+  
+  const labels = sortedData.map(entry => formatDate(entry.date));
+  
   // Create datasets for each score type
   const datasets = [];
-
-  // Define the score types we want to show
-  const scoreTypes = ['rawScore', 'percentile', 'standardScore'];
+  
+  // Only show raw scores
+  const scoreTypes = ['rawScore'];
 
   // Create a dataset for each score type
-  scoreTypes.forEach((scoreType) => {
-    const scores = sortedData.map((entry) => {
+  scoreTypes.forEach(scoreType => {
+    const scores = sortedData.map(entry => {
       const score = entry.scores?.[scoreType];
       return score || null;
     });
 
+
     // Only add the dataset if we have at least one valid score
-    if (scores.some((score) => score !== null)) {
+    if (scores.some(score => score !== null)) {
       datasets.push({
-        label: formatScoreType(scoreType),
+        label: 'Raw Score',
         data: scores,
         fill: false,
         tension: 0.4,
         borderColor: getColorForType(scoreType),
         pointRadius: 4,
-        pointHoverRadius: 6,
+        pointHoverRadius: 6
       });
     }
   });
@@ -92,42 +92,40 @@ const chartOptions = computed(() => ({
   maintainAspectRatio: false,
   plugins: {
     legend: {
-      position: 'bottom',
+      display: false,
       labels: {
         usePointStyle: true,
-        padding: 15,
-      },
+        padding: 15
+      }
     },
     tooltip: {
       mode: 'index',
       intersect: false,
       callbacks: {
         label: (context) => {
-          const label = context.dataset.label || '';
-          const value = context.parsed.y;
-          return `${label}: ${Math.round(value)}`;
-        },
-      },
-    },
+          return `Raw Score: ${context.parsed.y}`;
+        }
+      }
+    }
   },
   scales: {
     y: {
       beginAtZero: true,
       grid: {
-        color: 'rgba(0,0,0,0.1)',
-      },
+        color: 'rgba(0,0,0,0.1)'
+      }
     },
     x: {
       grid: {
-        display: false,
-      },
-    },
+        display: false
+      }
+    }
   },
   interaction: {
     mode: 'nearest',
     axis: 'x',
-    intersect: false,
-  },
+    intersect: false
+  }
 }));
 </script>
 
@@ -138,6 +136,6 @@ const chartOptions = computed(() => ({
   padding: 1rem;
   background-color: white;
   border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 </style>
