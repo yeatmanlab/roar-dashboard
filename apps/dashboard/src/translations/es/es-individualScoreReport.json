@@ -59,6 +59,17 @@
     "unreliable": "No confiable",
     "reliableTagText": "El comportamiento del estudiante no generó ninguna señal y la puntuación puede considerarse confiable.",
     "unreliableTagText": "La puntuación fue marcada como poco confiable.",
-    "unreliableTagTextFlags": "La puntuación se marcó como no confiable debido a los siguientes factores"
+    "unreliableTagTextFlags": "La puntuación se marcó como no confiable debido a los siguientes factores",
+    "phonics": {
+      "cvc": "CVC (Consonante-Vocal-Consonante)",
+      "digraph": "Dígrafo",
+      "initial_blend": "Grupo consonántico inicial",
+      "tri_blend": "Grupo consonántico de tres letras",
+      "final_blend": "Grupo consonántico final",
+      "r_controlled": "Vocal controlada por R",
+      "r_cluster": "Grupo consonántico con R",
+      "silent_e": "E muda",
+      "vowel_team": "Equipo vocálico"
+    }
   }
 }

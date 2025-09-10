@@ -351,6 +351,11 @@ const displayName = computed(() => {
   return 'Fetching administration name...';
 });
 
+const formatPhonicsScore = (score) => {
+  if (!score?.correct || !score?.attempted) return '0/0';
+  return `${score.correct}/${score.attempted}`;
+};
+
 const reportView = ref({ name: 'Score Report', constant: true });
 const reportViews = [
   { name: 'Progress Report', constant: false },
@@ -774,7 +779,29 @@ const computeAssignmentAndRunData = computed(() => {
 
           scoreFilterTags += ' Assessed ';
         }
-        if ((taskId === 'letter' || taskId === 'letter-en-ca') && assessment.scores) {
+        if (taskId === 'phonics' && assessment.scores) {
+          // Process phonics scores
+          const composite = assessment.scores.computed?.composite;
+          if (composite) {
+            currRowScores[taskId] = {
+              composite: {
+                totalPercentCorrect: composite.totalPercentCorrect,
+                subscores: {
+                  cvc: formatPhonicsScore(composite.subscores?.cvc),
+                  digraph: formatPhonicsScore(composite.subscores?.digraph),
+                  initial_blend: formatPhonicsScore(composite.subscores?.initial_blend),
+                  tri_blend: formatPhonicsScore(composite.subscores?.tri_blend),
+                  final_blend: formatPhonicsScore(composite.subscores?.final_blend),
+                  r_controlled: formatPhonicsScore(composite.subscores?.r_controlled),
+                  r_cluster: formatPhonicsScore(composite.subscores?.r_cluster),
+                  silent_e: formatPhonicsScore(composite.subscores?.silent_e),
+                  vowel_team: formatPhonicsScore(composite.subscores?.vowel_team),
+                },
+              },
+              skillsToWorkOn: composite.skillsToWorkOn || 'None',
+            };
+          }
+        } else if ((taskId === 'letter' || taskId === 'letter-en-ca') && assessment.scores) {
           currRowScores[taskId].lowerCaseScore = assessment.scores.computed.LowercaseNames?.subScore;
           currRowScores[taskId].upperCaseScore = assessment.scores.computed.UppercaseNames?.subScore;
           currRowScores[taskId].phonemeScore = assessment.scores.computed.Phonemes?.subScore;
@@ -1532,7 +1559,7 @@ const allTasks = computed(() => {
 
 const sortedTaskIds = computed(() => {
   const runsByTaskId = computeAssignmentAndRunData.value.runsByTaskId;
-  const specialTaskIds = ['swr', 'sre', 'pa'].filter((id) => Object.keys(runsByTaskId).includes(id));
+  const specialTaskIds = ['swr', 'sre', 'pa', 'phonics'].filter((id) => Object.keys(runsByTaskId).includes(id));
   const remainingTaskIds = Object.keys(runsByTaskId).filter((id) => !specialTaskIds.includes(id));
 
   remainingTaskIds.sort((p1, p2) => {
