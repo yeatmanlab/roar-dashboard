@@ -223,13 +223,22 @@ const authWithClever = () => {
 };
 
 const authWithClassLink = () => {
-  if (isMobileBrowser()) {
-    authStore.signInWithClassLinkRedirect();
-    spinner.value = true;
+  if (process.env.NODE_ENV === 'development' && !window.Cypress) {
+    authStore.signInWithClassLinkPopup();
   } else {
     authStore.signInWithClassLinkRedirect();
-    spinner.value = true;
   }
+  spinner.value = true;
+};
+
+const authWithNYCPS = () => {
+  if (process.env.NODE_ENV === 'development' && !window.Cypress) {
+    authStore.signInWithNYCPSPopup();
+  } else {
+    authStore.signInWithNYCPSPopup();
+    // authStore.signInWithNYCPSRedirect();
+  }
+  spinner.value = true;
 };
 
 const authWithEmail = (state) => {
@@ -304,6 +313,10 @@ onMounted(() => {
   if (authStore.classLinkOAuthRequested) {
     authStore.classLinkOAuthRequested = false;
     authWithClassLink();
+  }
+  if (authStore.nycpsOAuthRequested) {
+    authStore.nycpsOAuthRequested = false;
+    authWithNYCPS();
   }
 });
 
