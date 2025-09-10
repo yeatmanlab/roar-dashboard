@@ -181,7 +181,7 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import('../pages/users/ListUsers.vue'),
     meta: {
       pageTitle: 'List users',
-      allowedRoles: [ROLES.ADMIN, ROLES.SITE_ADMIN],
+      allowedRoles: [ROLES.ADMIN, ROLES.SITE_ADMIN, ROLES.SUPER_ADMIN],
     },
   },
   {
