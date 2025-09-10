@@ -8,6 +8,8 @@
     :close-on-escape="false"
     :closable="false"
     data-cy="consent-modal"
+    pt:title:data-testid="consent-modal__title"
+    pt:footer:data-testid="consent-modal__footer"
   >
     <template #message>
       <div class="scrolling-box">

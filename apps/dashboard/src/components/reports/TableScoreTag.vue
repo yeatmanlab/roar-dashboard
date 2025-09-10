@@ -14,6 +14,7 @@
       color: ${_get(colData, col.tagColor) === '#A4DDED' ? 'black' : 'white'};
       `"
       rounded
+      pt:root:data-testid="tag__root"
     />
   </div>
   <div v-else-if="col.emptyTag" v-tooltip.right="`${returnScoreTooltip(colData, col.field)}`">
