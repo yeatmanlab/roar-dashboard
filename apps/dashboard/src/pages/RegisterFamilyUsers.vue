@@ -131,9 +131,7 @@ const closeDialog = () => {
 
 async function handleParentSubmit(data) {
   try {
-    // Store the complete parent form data including keepUpdated state
-    parentInfo.value = { ...data };
-    
+    parentInfo.value = data;
     // Fetch consent document when moving to student registration
     const consentDoc = await authStore.getLegalDoc(consentName.value);
     consent.value = {
@@ -162,6 +160,8 @@ async function handleSubmit(event) {
     handleStudentSubmit(event);
   } else {
     handleParentSubmit(event);
+    activeIndex.value = 1;
+    activeComp();
   }
 }
 
