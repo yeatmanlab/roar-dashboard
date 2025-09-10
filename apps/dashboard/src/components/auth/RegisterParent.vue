@@ -145,9 +145,9 @@
         <section class="flex form-section lg:flex-row">
           <div class="field-checkbox">
             <PvCheckbox
-              id="keepUpdated"
-              v-model="state.keepUpdated"
-              name="keepUpdated"
+              id="canContactForFutureStudies"
+              v-model="state.canContactForFutureStudies"
+              name="canContactForFutureStudies"
               binary
             />
             <label for="keepUpdated" class="ml-2">Keep me up to date with new resources and innovations</label>
@@ -238,7 +238,7 @@ const state = reactive({
   password: '',
   confirmPassword: '',
   accept: false,
-  keepUpdated: false,
+  canContactForFutureStudies: false,
 });
 const passwordRef = computed(() => state.password);
 
@@ -280,22 +280,18 @@ const handleFormSubmit = (isFormValid) => {
     showErrorDialog();
     return;
   }
-  const formData = {
-    ...state,
-    canContactForFutureStudies: state.keepUpdated // Pass keepUpdated as canContactForFutureStudies
-  };
-  validateRoarEmail(formData);
+  validateRoarEmail();
 };
 
-const validateRoarEmail = async (formData) => {
-  const validEmail = await roarfirekit.value.isEmailAvailable(formData.ParentEmail);
+const validateRoarEmail = async () => {
+  const validEmail = await roarfirekit.value.isEmailAvailable(state.ParentEmail);
   if (!validEmail) {
     dialogMessage.value = 'This email address is already in use.';
     showErrorDialog();
     submitted.value = false;
     return;
   } else {
-    emit('submit', formData);
+    emit('submit', state);
   }
 };
 
