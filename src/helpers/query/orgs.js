@@ -344,7 +344,7 @@ export const orgPageFetcher = async (
   orderBy,
   pageLimit,
   page,
-  isSuperAdmin,
+  isAdmin,
   adminOrgs,
   select = ['id', 'name', 'tags'],
 ) => {
@@ -361,7 +361,7 @@ export const orgPageFetcher = async (
     select,
   });
 
-  if (isSuperAdmin.value) {
+  if (isAdmin.value) {
     return axiosInstance.post(`${getBaseDocumentPath()}:runQuery`, requestBody).then(({ data }) => mapFields(data));
   } else {
     if (activeOrgType.value === 'schools' && (adminOrgs.value['districts'] ?? []).includes(selectedDistrict.value)) {

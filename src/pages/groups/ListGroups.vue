@@ -201,7 +201,7 @@ import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useDistrictsListQuery from '@/composables/queries/useDistrictsListQuery';
 import useDistrictSchoolsQuery from '@/composables/queries/useDistrictSchoolsQuery';
 import useOrgsTableQuery from '@/composables/queries/useOrgsTableQuery';
-import useAdministrationsListQuery, { useFullAdministrationsListQuery } from '@/composables/queries/useAdministrationsListQuery';
+import { useFullAdministrationsListQuery } from '@/composables/queries/useAdministrationsListQuery';
 import EditOrgsForm from '@/components/EditOrgsForm.vue';
 import RoarModal from '@/components/modals/RoarModal.vue';
 import { CSV_EXPORT_MAX_RECORD_COUNT } from '@/constants/csvExport';
@@ -294,10 +294,10 @@ const {
 });
 
 // Fetch all administrations for the assignments modal
-const { 
-  data: administrationsData, 
+const {
+  data: administrationsData,
   isLoading: isLoadingAdministrations,
-  isFetching: isFetchingAdministrations 
+  isFetching: isFetchingAdministrations,
 } = useFullAdministrationsListQuery(orderBy, false, {
   enabled: claimsLoaded,
 });
@@ -487,7 +487,13 @@ const tableData = ref([]);
 const isProcessingData = ref(false);
 
 const isTableLoading = computed(() => {
-  return isLoading.value || isFetching.value || isLoadingAdministrations.value || isFetchingAdministrations.value || isProcessingData.value;
+  return (
+    isLoading.value ||
+    isFetching.value ||
+    isLoadingAdministrations.value ||
+    isFetchingAdministrations.value ||
+    isProcessingData.value
+  );
 });
 
 watchEffect(async () => {
@@ -503,16 +509,12 @@ watchEffect(async () => {
   }
 
   isProcessingData.value = true;
-  
+
   try {
     const mappedData = await Promise.all(
       filteredOrgData.value.map(async (org) => {
         const userCount = await countUsersByOrg(activeOrgType.value, org.id);
-        const assignmentCount = getAdministrationsByOrg(
-          org.id,
-          activeOrgType.value,
-          allAdministrations.value,
-        ).length;
+        const assignmentCount = getAdministrationsByOrg(org.id, activeOrgType.value, allAdministrations.value).length;
         return {
           ...org,
           userCount,
