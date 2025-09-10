@@ -131,7 +131,9 @@ const closeDialog = () => {
 
 async function handleParentSubmit(data) {
   try {
-    parentInfo.value = data;
+    // Store the complete parent form data including keepUpdated state
+    parentInfo.value = { ...data };
+    
     // Fetch consent document when moving to student registration
     const consentDoc = await authStore.getLegalDoc(consentName.value);
     consent.value = {
@@ -160,8 +162,6 @@ async function handleSubmit(event) {
     handleStudentSubmit(event);
   } else {
     handleParentSubmit(event);
-    activeIndex.value = 1;
-    activeComp();
   }
 }
 
@@ -187,6 +187,7 @@ watch([parentInfo, studentInfo], ([newParentInfo, newStudentInfo]) => {
         first: rawParentInfo.firstName,
         last: rawParentInfo.lastName,
       },
+      canContactForFutureStudies: rawParentInfo.canContactForFutureStudies || false,
     };
     const studentSendObject = rawStudentInfo.map((student) => {
       return {

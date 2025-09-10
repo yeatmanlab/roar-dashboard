@@ -141,6 +141,18 @@
             </small>
           </ChallengeV3>
         </section>
+        <!-- Keep me up to date checkbox -->
+        <section class="flex form-section lg:flex-row">
+          <div class="field-checkbox">
+            <PvCheckbox
+              id="keepUpdated"
+              v-model="state.keepUpdated"
+              name="keepUpdated"
+              binary
+            />
+            <label for="keepUpdated" class="ml-2">Keep me up to date with new resources and innovations</label>
+          </div>
+        </section>
         <ConsentModal
           v-if="showConsent"
           :consent-text="consentText"
@@ -226,6 +238,7 @@ const state = reactive({
   password: '',
   confirmPassword: '',
   accept: false,
+  keepUpdated: false,
 });
 const passwordRef = computed(() => state.password);
 
@@ -267,18 +280,22 @@ const handleFormSubmit = (isFormValid) => {
     showErrorDialog();
     return;
   }
-  validateRoarEmail();
+  const formData = {
+    ...state,
+    canContactForFutureStudies: state.keepUpdated // Pass keepUpdated as canContactForFutureStudies
+  };
+  validateRoarEmail(formData);
 };
 
-const validateRoarEmail = async () => {
-  const validEmail = await roarfirekit.value.isEmailAvailable(state.ParentEmail);
+const validateRoarEmail = async (formData) => {
+  const validEmail = await roarfirekit.value.isEmailAvailable(formData.ParentEmail);
   if (!validEmail) {
     dialogMessage.value = 'This email address is already in use.';
     showErrorDialog();
     submitted.value = false;
     return;
   } else {
-    emit('submit', state);
+    emit('submit', formData);
   }
 };
 
