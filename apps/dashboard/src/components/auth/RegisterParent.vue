@@ -129,6 +129,7 @@
                 binary
                 :disabled="showConsent"
                 :class="[{ 'p-invalid': v$.accept.$invalid && submitted }]"
+                pt:input:data-testid="checkbox__input"
                 @change="getConsent"
               />
               <label for="accept" :class="{ 'p-error': v$.accept.$invalid && submitted }"
@@ -139,6 +140,18 @@
               You must agree to the terms and conditions
             </small>
           </ChallengeV3>
+        </section>
+        <!-- Keep me up to date checkbox -->
+        <section class="flex form-section lg:flex-row">
+          <div class="field-checkbox">
+            <PvCheckbox
+              id="canContactForFutureStudies"
+              v-model="state.canContactForFutureStudies"
+              name="canContactForFutureStudies"
+              binary
+            />
+            <label for="keepUpdated" class="ml-2">Keep me up to date with new resources and innovations</label>
+          </div>
         </section>
         <ConsentModal
           v-if="showConsent"
@@ -225,6 +238,7 @@ const state = reactive({
   password: '',
   confirmPassword: '',
   accept: false,
+  canContactForFutureStudies: false,
 });
 const passwordRef = computed(() => state.password);
 

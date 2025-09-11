@@ -59,6 +59,7 @@
             column: {
               bodycell: ({ state }) => ({
                 style: state['d_editing'] && 'padding-top: 0.6rem; padding-bottom: 0.6rem',
+                'data-testid': 'datatable__column-bodycell',
               }),
             },
           }"
@@ -75,6 +76,7 @@
                 editable
                 placeholder="Type or choose field"
                 data-cy="dropdown-assigned-field"
+                pt:trigger:data-testid="select__trigger"
               >
               </PvSelect>
             </template>
@@ -103,7 +105,13 @@
               <PvInputText v-model="data[field]" data-cy="assigned-value-content" />
             </template>
           </PvColumn>
-          <PvColumn :row-editor="true" style="width: 8%; min-width: 8%" body-style="text-align:center"> </PvColumn>
+          <PvColumn
+            :row-editor="true"
+            style="width: 8%; min-width: 8%"
+            body-style="text-align:center"
+            :pt="{ pcRowEditorSave: { root: { 'data-testid': 'row-editor-save' } } }"
+          >
+          </PvColumn>
           <PvColumn :row-editor="true" style="width: 5%; max-width: 1rem" body-style="text-align:center">
             <template #body="{ index }">
               <PvButton
@@ -155,6 +163,7 @@
               column: {
                 bodycell: ({ state }) => ({
                   style: state['d_editing'] && 'padding-top: 0.6rem; padding-bottom: 0.6rem',
+                  'data-testid': 'datatable__column-bodycell',
                 }),
               },
             }"
@@ -170,6 +179,7 @@
                   editable
                   placeholder="Type or choose field"
                   data-cy="dropdown-optional-field"
+                  pt:dropdown:data-testId="select__dropdown"
                 >
                 </PvSelect>
               </template>
@@ -183,6 +193,7 @@
                   option-value="value"
                   placeholder="Select Operator"
                   data-cy="dropdown-optional-operator"
+                  pt:dropdown:data-testid="select__dropdown"
                 >
                   <template #option="slotProps">
                     <PvTag :value="slotProps.option.label" severity="warning" />
@@ -198,7 +209,15 @@
                 <PvInputText v-model="data[field]" data-cy="optional-value-content" />
               </template>
             </PvColumn>
-            <PvColumn :row-editor="true" style="width: 8%; min-width: 8%" body-style="text-align:center"> </PvColumn>
+            <PvColumn
+              :row-editor="true"
+              style="width: 8%; min-width: 8%"
+              body-style="text-align:center"
+              :pt="{
+                pcRowEditorSave: { root: { 'data-testid': 'row-editor-save' } },
+              }"
+            >
+            </PvColumn>
             <PvColumn :row-editor="true" style="width: 5%; max-width: 1rem" body-style="text-align:center">
               <template #body="{ index }">
                 <PvButton

@@ -27,18 +27,14 @@ import {
 } from '@/helpers/reports';
 
 const props = defineProps({
-  administrationId: { type: String, required: true, default: '' },
-  computedTableData: {
-    type: Array,
-    required: true,
-    default: () => [],
-  },
+  administrationId: { type: String, default: '' },
+  computedTableData: { type: Array, default: () => [] },
   taskId: { type: String, required: true },
   taskName: { type: String, required: true },
-  orgType: { type: String, required: true, default: '' },
-  orgId: { type: String, required: true, default: '' },
-  administrationName: { type: String, required: true, default: '' },
-  orgName: { type: String, required: true, default: '' },
+  orgType: { type: String, default: '' },
+  orgId: { type: String, default: '' },
+  administrationName: { type: String, default: '' },
+  orgName: { type: String, default: '' },
 });
 
 const authStore = useAuthStore();
@@ -114,6 +110,52 @@ const columns = computed(() => {
       { field: `scores.${props.taskId}.fc.rawScore`, header: 'Multiple Choice', dataType: 'text', sort: false },
     );
   }
+  if (props.taskId === 'phonics') {
+    const subcategories = [
+      { field: 'cvc', header: 'CVC' },
+      { field: 'digraph', header: 'Digraph' },
+      { field: 'initial_blend', header: 'Initial Blend' },
+      { field: 'tri_blend', header: 'Triple Blend' },
+      { field: 'final_blend', header: 'Final Blend' },
+      { field: 'r_controlled', header: 'R-Controlled' },
+      { field: 'r_cluster', header: 'R-Cluster' },
+      { field: 'silent_e', header: 'Silent E' },
+      { field: 'vowel_team', header: 'Vowel Team' },
+    ];
+
+    // Add columns for each subcategory
+    subcategories.forEach(({ field, header }) => {
+      tableColumns.push({
+        field: `scores.${props.taskId}.composite.subscores.${field}`,
+        header: header,
+        dataType: 'text',
+        sort: true,
+        body: (row) => {
+          return _get(row, `scores.${props.taskId}.composite.subscores.${field}`) || '0/0';
+        },
+      });
+    });
+
+    // Add total percentage
+    tableColumns.push({
+      field: `scores.${props.taskId}.composite.totalPercentCorrect`,
+      header: 'Total % Correct',
+      dataType: 'number',
+      sort: true,
+      body: (row) => {
+        const totalPercent = _get(row, `scores.${props.taskId}.composite.totalPercentCorrect`);
+        return typeof totalPercent === 'number' ? `${Math.round(totalPercent)}%` : '0%';
+      },
+    });
+
+    // Add skills to work on
+    tableColumns.push({
+      field: `scores.${props.taskId}.skillsToWorkOn`,
+      header: 'Skills To Work On',
+      dataType: 'text',
+      sort: false,
+    });
+  }
   if (props.taskId === 'roam-alpaca') {
     const gradeEstimate = `scores.${props.taskId}.gradeEstimate`;
     tableColumns.push({
@@ -175,6 +217,30 @@ const exportSelected = (selectedRows) => {
         _set(tableRow, `Multiple Choice - ${propertyHeader}`, _get(scores, `${props.taskId}.fc.${property}`));
       });
     }
+    if (props.taskId === 'phonics') {
+      const subcategories = [
+        'cvc',
+        'digraph',
+        'initial_blend',
+        'tri_blend',
+        'final_blend',
+        'r_controlled',
+        'r_cluster',
+        'silent_e',
+        'vowel_team',
+      ];
+      subcategories.forEach((category) => {
+        const subscore = _get(scores, `${props.taskId}.composite.subscores.${category}`);
+        _set(
+          tableRow,
+          `${category} (Correct/Attempted)`,
+          subscore ? `${subscore.correct}/${subscore.attempted}` : '0/0',
+        );
+      });
+      _set(tableRow, 'Total % Correct', _get(scores, `${props.taskId}.composite.totalPercentCorrect`));
+      _set(tableRow, 'Skills To Work On', _get(scores, `${props.taskId}.skillsToWorkOn`));
+    }
+
     if (props.taskId === 'roam-alpaca') {
       _set(tableRow, 'Raw Score', _get(scores, `${props.taskId}.composite.roarScore`));
       _set(tableRow, 'Grade Estimate', _get(scores, `${props.taskId}.composite.gradeEstimate`));
