@@ -120,17 +120,14 @@
                   </div>
 
                   <div v-if="selectedStatus === ASSIGNMENT_STATUSES.CURRENT">
-                    <router-link
+                    <button
                       v-if="isTaskComplete(game?.completedOn, game?.taskId)"
                       class="game-btn --completed"
-                      :to="{
-                        path: getRoutePath(game.taskId, game.taskData?.variantURL, game.taskData?.taskURL),
-                      }"
-                      @click="routeExternalTask(game)"
+                      disabled
                     >
                       <i class="pi pi-check-circle"></i>
                       <span>{{ $t('gameTabs.taskCompleted') }}</span>
-                    </router-link>
+                    </button>
 
                     <router-link
                       v-else
@@ -556,6 +553,13 @@ const isTaskComplete = (gameCompletedTime: string | Date | undefined, taskId: st
   color: inherit;
   text-decoration: none;
   user-select: none;
+  width: 100%;
+  box-sizing: border-box;
+
+  // Reset button defaults
+  &[disabled] {
+    cursor: not-allowed;
+  }
 
   .pi {
     display: flex;
