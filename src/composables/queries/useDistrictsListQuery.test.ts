@@ -60,7 +60,7 @@ describe('useDistrictsListQuery', () => {
     expect(orgFetcher).toHaveBeenCalledWith(
       'districts',
       undefined,
-      expect.objectContaining({ value: false }),
+      false,
       expect.objectContaining({ value: ['mock-org-id-1', 'mock-org-id-2'] }),
     );
   });

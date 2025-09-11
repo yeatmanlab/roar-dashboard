@@ -6,6 +6,7 @@ import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import { computeQueryOverrides } from '@/helpers/computeQueryOverrides';
 import { orgPageFetcher } from '@/helpers/query/orgs';
 import { ORGS_TABLE_QUERY_KEY } from '@/constants/queryKeys';
+import { useAuthStore } from '@/store/auth';
 /**
  * Orgs Table query.
  *
@@ -32,10 +33,11 @@ const useOrgsTableQuery = (
     enabled: queryOptions?.enabled ?? true,
   });
 
-  // Get the admin status and administation orgs.
-  const { isAdmin, isSuperAdmin } = useUserType(userClaims);
+  const authStore = useAuthStore();
+  const { isUserAdmin } = authStore;
+
+  // Get admin's administation orgs.
   const adminOrgs = computed(() => userClaims.value?.claims?.adminOrgs);
-  const isUserAdmin = computed(() => isAdmin || isSuperAdmin);
 
   // Ensure all necessary data is loaded before enabling the query.
   const claimsLoaded = computed(() => !_isEmpty(userClaims?.value?.claims));
@@ -61,7 +63,7 @@ const useOrgsTableQuery = (
         orderBy,
         ref(100000),
         ref(0),
-        isUserAdmin,
+        isUserAdmin(),
         adminOrgs,
         selectFields.value,
       ),
