@@ -26,7 +26,8 @@ const router = useRouter();
 const taskStarted = ref(false);
 const gameStarted = ref(false);
 const authStore = useAuthStore();
-const { isFirekitInit, roarfirekit } = storeToRefs(authStore);
+const { roarfirekit } = storeToRefs(authStore);
+const { isFirekitInit } = authStore;
 const assignmentsStore = useAssignmentsStore();
 const { selectedAssignment } = storeToRefs(assignmentsStore);
 

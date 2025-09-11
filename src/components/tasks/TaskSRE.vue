@@ -28,7 +28,8 @@ const gameStarted = ref(false);
 const authStore = useAuthStore();
 const assignmentsStore = useAssignmentsStore();
 const { selectedAssignment } = storeToRefs(assignmentsStore);
-const { isFirekitInit, roarfirekit } = storeToRefs(authStore);
+const { roarfirekit } = storeToRefs(authStore);
+const { isFirekitInit } = authStore;
 
 const { mutateAsync: completeAssessmentMutate } = useCompleteAssessmentMutation();
 

@@ -21,7 +21,8 @@ import { logger } from '@/logger';
 
 const router = useRouter();
 const authStore = useAuthStore();
-const { getUserId, roarfirekit } = storeToRefs(authStore);
+const { roarfirekit } = storeToRefs(authStore);
+const { getUserId } = authStore;
 const isError = ref(false);
 
 const loginFromEmailLink = async (email) => {
