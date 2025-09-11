@@ -18,6 +18,9 @@
         :description="getTaskDescription(task)"
         :scores-array="getTaskScoresArray(task)"
         :expanded="expanded"
+        :longitudinal-data="task.historicalScores"
+        :task-id="task.taskId"
+        :grade="studentGrade"
       />
     </div>
   </section>
@@ -26,9 +29,11 @@
 <script setup>
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { toValue } from 'vue';
 import ScoreCard from './ScoreCard.vue';
 import ScoreReportService from '@/services/ScoreReport.service';
 import { SCORE_TYPES } from '@/constants/scores';
+import { getScoreValue } from '@/helpers/reports';
 
 const props = defineProps({
   studentFirstName: {
@@ -47,6 +52,11 @@ const props = defineProps({
     type: Object,
     required: true,
   },
+  longitudinalData: {
+    type: Array,
+    required: false,
+    default: () => [],
+  },
   expanded: {
     type: Boolean,
     required: false,
@@ -59,7 +69,51 @@ const { t } = useI18n();
  * Process task data into computed task data for display
  */
 const computedTaskData = computed(() => {
-  return ScoreReportService.processTaskScores(props.taskData, props.studentGrade, { t });
+  // Process current task data
+  const currentTasks = ScoreReportService.processTaskScores(props.taskData, props.studentGrade, { t });
+
+  // Process longitudinal data
+  const longitudinalData = toValue(props.longitudinalData);
+
+  if (longitudinalData && Object.keys(longitudinalData).length > 0) {
+    return currentTasks.map((task) => {
+      const taskHistory = longitudinalData[task.taskId] || [];
+
+      const processedHistory = taskHistory
+        .sort((a, b) => new Date(a.date) - new Date(b.date))
+        .map((run) => {
+          // Make sure we're accessing the correct scores structure
+          const composite = run.scores?.composite || run.scores;
+
+          // Pre-process scores using getScoreValue
+          const processedScores = {
+            rawScore: getScoreValue(composite, task.taskId, props.studentGrade, 'rawScore'),
+            percentile: getScoreValue(composite, task.taskId, props.studentGrade, 'percentile'),
+            standardScore: getScoreValue(composite, task.taskId, props.studentGrade, 'standardScore'),
+          };
+
+          // Filter out undefined scores and round the values
+          const scores = Object.fromEntries(
+            Object.entries(processedScores)
+              .filter(([, value]) => value !== undefined)
+              .map(([key, value]) => [key, Math.round(Number(value))]),
+          );
+
+          return {
+            date: new Date(run.date),
+            scores,
+            assignmentId: run.assignmentId,
+          };
+        });
+
+      return {
+        ...task,
+        historicalScores: processedHistory,
+      };
+    });
+  }
+
+  return currentTasks;
 });
 
 /**

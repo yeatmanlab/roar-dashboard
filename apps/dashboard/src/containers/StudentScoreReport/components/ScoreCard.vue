@@ -47,7 +47,7 @@
       </i18n-t>
     </div>
 
-    <template v-if="scoresArray?.length">
+    <template v-if="scoresArray?.length || longitudinalData?.length > 0">
       <PvAccordion v-model:value="visiblePanels" class="px-4 w-full border-t border-gray-100">
         <PvAccordionPanel
           class="bg-gray-50"
@@ -73,6 +73,41 @@
             </div>
           </PvAccordionContent>
         </PvAccordionPanel>
+
+        <PvAccordionPanel
+          v-if="longitudinalData?.length > 0"
+          class="bg-gray-50"
+          :pt="{ root: { class: 'border-0' } }"
+          :value="ACCORDION_PANELS.LONGITUDINAL"
+        >
+          <PvAccordionHeader :pt="{ root: { class: 'px-0' } }">
+            {{ $t('scoreReports.progressOverTime') }}
+          </PvAccordionHeader>
+          <PvAccordionContent :pt="{ content: { class: 'px-0' } }">
+            <LongitudinalChart :longitudinal-data="longitudinalData" :task-id="taskId" :grade="grade" />
+            <div class="historical-scores mt-4">
+              <div
+                v-for="historicalScore in longitudinalData"
+                :key="historicalScore.assignmentId"
+                class="historical-score-item p-3 surface-100 border-round mb-2"
+              >
+                <div class="flex justify-content-between align-items-center mb-2">
+                  <span class="date font-semibold">{{ formatDate(historicalScore.date) }}</span>
+                </div>
+                <div class="score-types grid">
+                  <div
+                    v-for="(value, type) in historicalScore.scores"
+                    :key="type"
+                    class="score-type-item col-6 flex justify-content-between align-items-center p-2"
+                  >
+                    <span class="score-label text-500">{{ formatScoreType(type) }}:</span>
+                    <span class="score-value font-semibold">{{ value }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </PvAccordionContent>
+        </PvAccordionPanel>
       </PvAccordion>
     </template>
   </article>
@@ -80,12 +115,14 @@
 
 <script setup>
 import { ref, watch } from 'vue';
+import _startCase from 'lodash/startCase';
 import PvKnob from 'primevue/knob';
 import PvTag from 'primevue/tag';
 import PvAccordion from 'primevue/accordion';
 import PvAccordionPanel from 'primevue/accordionpanel';
 import PvAccordionHeader from 'primevue/accordionheader';
 import PvAccordionContent from 'primevue/accordioncontent';
+import LongitudinalChart from '@/components/reports/LongitudinalChart.vue';
 
 const props = defineProps({
   publicName: {
@@ -127,20 +164,47 @@ const props = defineProps({
   },
   expanded: {
     type: Boolean,
+    required: false,
+  },
+  longitudinalData: {
+    type: Array,
+    required: false,
+    default: () => [],
+  },
+  taskId: {
+    type: String,
     required: true,
+  },
+  grade: {
+    type: Number,
+    required: false,
   },
 });
 
 const ACCORDION_PANELS = Object.freeze({
-  SCORE_BREAKDOWN: '0',
+  SCORE_BREAKDOWN: 'scoreBreakdown',
+  HISTORICAL_SCORES: 'historicalScores',
+  LONGITUDINAL: 'longitudinal',
 });
 
-const visiblePanels = ref(props.expanded ? ACCORDION_PANELS.SCORE_BREAKDOWN : null);
+const visiblePanels = ref([]);
+
+const formatDate = (date) => {
+  return new Date(date).toLocaleDateString(undefined, {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  });
+};
+
+const formatScoreType = (type) => {
+  return _startCase(type);
+};
 
 watch(
   () => props.expanded,
   (newValue) => {
-    visiblePanels.value = newValue ? ACCORDION_PANELS.SCORE_BREAKDOWN : null;
+    visiblePanels.value = newValue ? [ACCORDION_PANELS.SCORE_BREAKDOWN] : [];
   },
   { immediate: true },
 );

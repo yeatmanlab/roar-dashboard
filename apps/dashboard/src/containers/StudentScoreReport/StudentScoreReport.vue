@@ -36,6 +36,7 @@
           :student-grade="studentGrade"
           :task-data="taskData"
           :tasks-dictionary="tasksDictionary"
+          :longitudinal-data="longitudinalData"
           :expanded="expanded"
           :data-pdf-export-section="SCORE_REPORT_EXPORT_SECTIONS.DETAILS"
         />
@@ -56,6 +57,7 @@ import { useAuthStore } from '@/store/auth';
 import useUserDataQuery from '@/composables/queries/useUserDataQuery';
 import useAdministrationsQuery from '@/composables/queries/useAdministrationsQuery';
 import useUserRunPageQuery from '@/composables/queries/useUserRunPageQuery';
+import useUserLongitudinalRunsQuery from '@/composables/queries/useUserLongitudinalRunsQuery';
 import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery';
 import PdfExportService from '@/services/PdfExport.service';
 import { taskDisplayNames } from '@/helpers/reports';
@@ -105,7 +107,8 @@ const isLoading = computed(
     isLoadingStudentData.value ||
     isLoadingTasksDictionary.value ||
     isLoadingTaskData.value ||
-    isLoadingAdministrationData.value,
+    isLoadingAdministrationData.value ||
+    isLoadingLongitudinalData.value,
 );
 
 // UI control state
@@ -125,6 +128,7 @@ const { data: administrationData, isLoading: isLoadingAdministrationData } = use
   },
 );
 
+// Get current administration data
 const { data: taskData, isLoading: isLoadingTaskData } = useUserRunPageQuery(
   props.userId,
   props.administrationId,
@@ -132,6 +136,19 @@ const { data: taskData, isLoading: isLoadingTaskData } = useUserRunPageQuery(
   props.orgId,
   {
     enabled: initialized,
+  },
+);
+
+// Get longitudinal data across all administrations
+const { data: longitudinalData, isLoading: isLoadingLongitudinalData } = useUserLongitudinalRunsQuery(
+  props.userId,
+  props.orgType,
+  props.orgId,
+  {
+    enabled: initialized,
+    select: (data) => {
+      return data;
+    },
   },
 );
 
