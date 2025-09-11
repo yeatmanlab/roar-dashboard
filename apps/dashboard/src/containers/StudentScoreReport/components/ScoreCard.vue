@@ -177,7 +177,7 @@ const props = defineProps({
   },
   grade: {
     type: Number,
-    required: true,
+    required: false,
   },
 });
 
