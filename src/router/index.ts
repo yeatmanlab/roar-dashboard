@@ -321,7 +321,7 @@ router.beforeEach(async (to: RouteLocationNormalized, from: RouteLocationNormali
   // Check if user is signed in. If not, go to signin
   if (
     !to.path.includes('__/auth/handler') &&
-    !authStore.isAuthenticated &&
+    !authStore.isAuthenticated() &&
     !allowedUnauthenticatedRoutes.includes(to.name)
   ) {
     return next({ name: 'SignIn' });

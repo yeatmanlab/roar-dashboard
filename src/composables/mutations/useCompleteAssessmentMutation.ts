@@ -24,7 +24,7 @@ const useCompleteAssessmentMutation = (): UseMutationReturnType<void, Error, Com
     mutationKey: COMPLETE_ASSESSMENT_MUTATION_KEY,
     mutationFn: async ({ adminId, taskId }: CompleteAssessmentParams): Promise<void> => {
       // Check if roarfirekit is initialized before attempting to use it.
-      if (!authStore.isFirekitInit || !authStore.roarfirekit) {
+      if (!authStore.isFirekitInit() || !authStore.roarfirekit) {
         throw new Error('Roarfirekit is not initialized. Cannot complete assessment.');
       }
       await authStore.roarfirekit.completeAssessment(adminId, taskId);

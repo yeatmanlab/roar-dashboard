@@ -23,6 +23,7 @@ export const useAuthStore = defineStore(
     const userData = ref(null);
 
     function $reset() {
+      adminAuthStateListener.value?.();
       adminAuthStateListener.value = null;
       adminOrgs.value = null;
       firebaseUser.value = { adminFirebaseUser: null };
