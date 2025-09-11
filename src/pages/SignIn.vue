@@ -135,7 +135,7 @@ const { spinner, ssoProvider, routeToProfile, roarfirekit } = storeToRefs(authSt
 const warningModalOpen = ref(false);
 
 authStore.$subscribe(() => {
-  if (authStore.uid) {
+  if (authStore.getUserId()) {
     if (ssoProvider.value) {
       router.push({ path: APP_ROUTES.SSO });
     } else if (routeToProfile.value) {
@@ -157,16 +157,16 @@ const authWithGoogle = () => {
     authStore
       .signInWithGooglePopup()
       .then(async () => {
-        if (authStore.uid) {
-          const userClaims = await fetchDocById('userClaims', authStore.uid);
+        if (authStore.getUserId()) {
+          const userClaims = await fetchDocById('userClaims', authStore.getUserId());
           authStore.userClaims = userClaims;
 
           const showSideBar = !userClaims?.claims?.super_admin && !userClaims?.claims?.admin;
           authStore.setShowSideBar(showSideBar);
         }
 
-        if (authStore.roarUid) {
-          const userData = await fetchDocById('users', authStore.roarUid);
+        if (authStore.getUserId()) {
+          const userData = await fetchDocById('users', authStore.getUserId());
           authStore.userData = userData;
         }
       })
@@ -206,16 +206,16 @@ const authWithEmail = async (state) => {
     await authStore
       .logInWithEmailAndPassword(creds)
       .then(async () => {
-        if (authStore.uid) {
-          const userClaims = await fetchDocById('userClaims', authStore.uid);
+        if (authStore.getUserId()) {
+          const userClaims = await fetchDocById('userClaims', authStore.getUserId());
           authStore.userClaims = userClaims;
 
           const showSideBar = !userClaims?.claims?.super_admin && !userClaims?.claims?.admin;
           authStore.setShowSideBar(showSideBar);
         }
 
-        if (authStore.roarUid) {
-          const userData = await fetchDocById('users', authStore.roarUid);
+        if (authStore.getUserId()) {
+          const userData = await fetchDocById('users', authStore.getUserId());
           authStore.userData = userData;
         }
 

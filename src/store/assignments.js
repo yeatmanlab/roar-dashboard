@@ -2,7 +2,9 @@ import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { parse, stringify } from 'zipson';
 
-export const useAssignmentsStore = defineStore('assignmentsStore', () => {
+export const useAssignmentsStore = defineStore(
+  'assignmentsStore',
+  () => {
     // state
     const selectedAssignment = ref(null);
     const selectedStatus = ref('');
@@ -45,6 +47,6 @@ export const useAssignmentsStore = defineStore('assignmentsStore', () => {
         deserialize: parse,
         serialize: stringify,
       },
-    }
-  }
+    },
+  },
 );

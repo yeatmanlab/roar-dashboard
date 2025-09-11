@@ -105,9 +105,9 @@ describe('useSSOAccountReadinessVerification', () => {
   });
 
   it('should refetch user data only after the initial mount', async () => {
-    const mockUserRoarUid = ref(nanoid());
+    const mockUserUid = ref(nanoid());
     const authStore = useAuthStore(piniaInstance);
-    authStore.roarUid = mockUserRoarUid;
+    authStore.getUserId = () => mockUserUid;
 
     const mockUserData = ref({});
     const mockIsFetchedAfterMount = ref(false);
@@ -143,9 +143,9 @@ describe('useSSOAccountReadinessVerification', () => {
   });
 
   it('should redirect to the homepage once the correct user type is identified', async () => {
-    const mockUserRoarUid = ref(nanoid());
+    const mockUserUid = ref(nanoid());
     const authStore = useAuthStore(piniaInstance);
-    authStore.roarUid = mockUserRoarUid;
+    authStore.getUserId = () => mockUserUid;
 
     const mockUserData = ref({});
     const mockIsFetchedAfterMount = ref(false);

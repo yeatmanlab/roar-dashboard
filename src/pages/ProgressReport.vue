@@ -423,7 +423,7 @@ const exportSelected = (selectedRows) => {
       Last: _get(user, 'lastName'),
       Grade: _get(user, 'grade'),
     };
-    if (authStore.isUserSuperAdmin) {
+    if (authStore.isUserSuperAdmin()) {
       tableRow['PID'] = _get(user, 'assessmentPid');
     }
     if (props.orgType === 'district') {
@@ -446,7 +446,7 @@ const exportAll = async () => {
       Last: _get(user, 'lastName'),
       Grade: _get(user, 'grade'),
     };
-    if (authStore.isUserSuperAdmin) {
+    if (authStore.isUserSuperAdmin()) {
       tableRow['PID'] = _get(user, 'assessmentPid');
     }
     if (props.orgType === 'district') {

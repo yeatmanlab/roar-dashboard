@@ -21,7 +21,7 @@ import { logger } from '@/logger';
 
 const router = useRouter();
 const authStore = useAuthStore();
-const { roarfirekit, uid } = storeToRefs(authStore);
+const { getUserId, roarfirekit } = storeToRefs(authStore);
 const isError = ref(false);
 
 const loginFromEmailLink = async (email) => {
@@ -30,11 +30,11 @@ const loginFromEmailLink = async (email) => {
   await authStore
     .signInWithEmailLink({ email, emailLink })
     .then(async () => {
-      if (uid) {
+      if (getUserId()) {
         // Not sure why we need this since user data and claims are fetched in the HomeSelector.vue but otherwise won't load homepage.
         // TODO: Remove once we figure out why the homepage doesn't load without this.
-        const userData = await fetchDocById('users', uid.value);
-        const userClaims = await fetchDocById('userClaims', uid.value);
+        const userData = await fetchDocById('users', getUserId());
+        const userClaims = await fetchDocById('userClaims', getUserId());
 
         authStore.setUserData(userData);
         authStore.setUserClaims(userClaims);

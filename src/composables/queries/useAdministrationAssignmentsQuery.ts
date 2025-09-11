@@ -23,13 +23,13 @@ const useAdministrationAssignmentsQuery = (
   queryOptions?: UseQueryOptions,
 ): UseQueryReturnType => {
   const authStore = useAuthStore();
-  const { roarUid } = storeToRefs(authStore);
+  const { getUserId } = authStore;
 
   const queryConditions = [
     () => !!toValue(administrationId),
     () => !!toValue(orgType),
     () => !!toValue(orgId),
-    () => !!toValue(roarUid),
+    () => !!toValue(getUserId()),
   ];
   const { isQueryEnabled, options } = computeQueryOverrides(queryConditions, queryOptions);
 

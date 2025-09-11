@@ -38,7 +38,7 @@ describe('useUserDataQuery', () => {
     const mockUserRoarUid = ref(nanoid());
 
     const authStore = useAuthStore(piniaInstance);
-    authStore.roarUid = mockUserRoarUid;
+    authStore.getUserId = () => mockUserRoarUid.value;
 
     vi.spyOn(VueQuery, 'useQuery');
 
@@ -64,7 +64,7 @@ describe('useUserDataQuery', () => {
     const mockStudentUserId = ref(nanoid());
 
     const authStore = useAuthStore(piniaInstance);
-    authStore.roarUid = mockUserRoarUid;
+    authStore.getUserId = () => mockUserRoarUid.value;
 
     vi.spyOn(VueQuery, 'useQuery');
 
@@ -87,7 +87,7 @@ describe('useUserDataQuery', () => {
     const mockUserRoarUid = ref(nanoid());
 
     const authStore = useAuthStore(piniaInstance);
-    authStore.roarUid = mockUserRoarUid;
+    authStore.getUserId = () => mockUserRoarUid.value;
 
     const enableQuery = ref(false);
 
@@ -116,11 +116,11 @@ describe('useUserDataQuery', () => {
     expect(fetchDocById).toHaveBeenCalledWith('users', mockUserRoarUid.value);
   });
 
-  it('should only fetch data once the roarUid is available', async () => {
+  it('should only fetch data once the userId is available', async () => {
     const mockUserRoarUid = ref(null);
 
     const authStore = useAuthStore(piniaInstance);
-    authStore.roarUid = mockUserRoarUid;
+    authStore.getUserId = () => mockUserRoarUid.value;
 
     const queryOptions = { enabled: true };
 
@@ -149,7 +149,7 @@ describe('useUserDataQuery', () => {
     const mockUserRoarUid = ref(null);
 
     const authStore = useAuthStore(piniaInstance);
-    authStore.roarUid = mockUserRoarUid;
+    authStore.getUserId = () => mockUserRoarUid.value;
 
     const queryOptions = { enabled: true };
 

@@ -14,14 +14,14 @@ import { USER_ASSIGNMENTS_QUERY_KEY } from '@/constants/queryKeys';
  */
 const useUserAssignmentsQuery = (queryOptions?: UseQueryOptions): UseQueryReturnType => {
   const authStore = useAuthStore();
-  const { roarUid } = storeToRefs(authStore);
+  const { getUserId } = authStore;
 
-  const queryConditions = [() => !!roarUid.value];
+  const queryConditions = [() => !!getUserId()];
   const { isQueryEnabled, options } = computeQueryOverrides(queryConditions, queryOptions);
 
   return useQuery({
-    queryKey: [USER_ASSIGNMENTS_QUERY_KEY, roarUid],
-    queryFn: () => getUserAssignments(roarUid),
+    queryKey: [USER_ASSIGNMENTS_QUERY_KEY, getUserId()],
+    queryFn: () => getUserAssignments(getUserId()),
     // Refetch on window focus for MEFS assessments as those are opened in a separate tab.
     refetchOnWindowFocus: 'always',
     enabled: isQueryEnabled,

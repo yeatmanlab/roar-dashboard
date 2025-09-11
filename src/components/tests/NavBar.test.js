@@ -27,7 +27,7 @@ vi.mock('@/composables/useUserType', () => ({
 vi.mock('@/store/auth', () => ({
   useAuthStore: vi.fn(() => ({
     $subscribe: vi.fn(),
-    isUserAdmin: mockIsUserAdmin,
+    isUserAdmin: () => mockIsUserAdmin,
     roarfirekit: ref({
       restConfig: true,
     }),

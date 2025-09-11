@@ -1,9 +1,11 @@
 import { defineStore } from 'pinia';
 import { csvFileToJson, standardDeviation } from '@/helpers';
+import { ref } from 'vue';
 
 const standardizeTaskId = (taskId) => {
   return taskId.replace(/^roar-/, '');
 };
+
 const standardizeNames = (run) => {
   return {
     first: run['name.first'],
@@ -87,10 +89,11 @@ export function thetaToRoarScore(thetaEstimate) {
 
 function differenceInMonths(date1, date2) {
   const monthDiff = date1.getMonth() - date2.getMonth();
-  const yearDiff = date1.getYear() - date2.getYear();
+  const yearDiff = date1.getFullYear() - date2.getFullYear();
 
   return monthDiff + yearDiff * 12;
 }
+
 export function computeAges(dob, timeStarted) {
   //const timeStartedDate = str.match(/(\d{1,4}([.\-/])\d{1,2}([.\-/])\d{1,4})/g);
   let timeStartedDate = timeStarted.substring(0, 10);
@@ -280,7 +283,7 @@ const getRunScores = (subScoresForThisRun) => {
     case 'sre': {
       // TODO: Confirm SRE blockId names
       const sreSubScores = subScoresForThisRun.filter((subScore) =>
-        ['LAB', 'TOSREC'].contains(subScore.blockId.toUpperCase()),
+        ['LAB', 'TOSREC'].includes(subScore.blockId.toUpperCase()),
       );
       const sreScore = sreSubScores[0];
       sreScore.blockId = 'total';
@@ -299,215 +302,228 @@ const getRunScores = (subScoresForThisRun) => {
   }
 };
 
-export const useScoreStore = () => {
-  return defineStore({
-    id: 'scoreStore',
-    state: () => {
-      return {
-        appScores: [],
-        identifiers: [],
-        sections: [],
-        selectedStudentId: null,
+export const useScoreStore = defineStore('scoreStore', () => {
+  const appScores = ref([]);
+  const identifiers = ref([]);
+  const sections = ref([]);
+
+  function $reset() {
+    appScores.value = [];
+    identifiers.value = [];
+    sections.value = [];
+  }
+
+  function taskId() {
+    return [...new Set(appScores.value.map((score) => score?.taskId))][0];
+  }
+
+  function reportType() {
+    // Lots of complicated logic in here to determine the report type.
+    // Options might include
+    // SWR
+    // PA
+    // A mix of the above
+    return null;
+  }
+
+  function subScores() {
+    if (identifiers.value.length === 0) {
+      return appScores.value.map((run) => {
+        const taskId = standardizeTaskId(run.taskId);
+
+        return {
+          runInfoOrig: {
+            ...run,
+            taskId,
+          },
+        };
+      });
+    }
+
+    return appScores.value.map((run) => {
+      const matchingIdentifier = identifiers.value.filter((participant) => participant.pid === run.pid);
+      const taskId = standardizeTaskId(run.taskId);
+
+      if (matchingIdentifier.length === 0) {
+        return {
+          runInfoOrig: {
+            ...run,
+            taskId,
+          },
+        };
+      }
+
+      const names = standardizeNames(matchingIdentifier[0]);
+      const mergedRun = {
+        ...run,
+        ...matchingIdentifier[0],
+        name: names,
+        taskId,
       };
-    },
-    getters: {
-      taskId: (state) => {
-        // TODO: Add error handling to check that there is only one taskId
-        return [...new Set(state.appScores.map((row) => row?.taskId))][0];
-      },
 
-      reportType: () => {
-        // Lots of complicated logic in here to determine the report type.
-        // Options might include
-        // SWR
-        // PA
-        // A mix of the above
-        return null;
-      },
+      return {
+        // original, unaltered, run-level info and identifiers from the databases
+        runInfoOrig: mergedRun,
+        // computed values common to all tasks
+        runInfoCommon: getRunInfoCommon(mergedRun),
+        // compute values unique to each task
+        //runInfoTask: getRunInfoTask(mergedRun),
+      };
+    });
+  }
 
-      scoresReady: (state) => state.scores.length > 0,
-      subScores: (state) => {
-        // If identifiers were not uploaded, simply return the appScores
-        if (state.identifiers.length === 0) {
-          //return { runInfoOrig: state.appScores};
-          return state.appScores.map((run) => {
-            const taskId = standardizeTaskId(run.taskId);
-            return {
-              // original, unaltered, run-level info from the databases (no identifiers)
-              runInfoOrig: {
-                ...run,
-                taskId,
-              },
-            };
-          });
-        } else {
-          // Try to match appScores with the identifiers, matching on pid
-          return state.appScores.map((run) => {
-            const matchingIdentifier = state.identifiers.filter((participant) => participant.pid === run.pid);
-            const taskId = standardizeTaskId(run.taskId);
-            if (matchingIdentifier.length === 0) {
-              //return state.run;
-              return {
-                // original, unaltered, run-level info from the databases (no identifiers)
-                runInfoOrig: {
-                  ...run,
-                  taskId,
-                },
-              };
-            } else {
-              const names = standardizeNames(matchingIdentifier[0]);
-              const mergedRun = {
-                ...run,
-                ...matchingIdentifier[0],
-                name: names,
-                taskId,
-              };
-              return {
-                // original, unaltered, run-level info and identifiers from the databases
-                runInfoOrig: mergedRun,
+  function scores() {
+    const uniqueRunIds = [...new Set(subScores().map((subScore) => subScore.runInfoOrig.runId))];
 
-                // computed values common to all tasks
-                runInfoCommon: getRunInfoCommon(mergedRun),
+    return uniqueRunIds.map((runId) => {
+      const subScoresForThisRun = subScores().filter((subScore) => subScore.runInfoOrig.runId === runId);
+      return {
+        ...getRunScores(subScoresForThisRun),
+      };
+    });
+  }
 
-                // compute values unique to each task
-                //runInfoTask: getRunInfoTask(mergedRun),
-              };
-            }
-          });
-        }
-      },
-      scores: (state) => {
-        const uniqueRunIds = [...new Set(state.subScores.map((subScore) => subScore.runInfoOrig.runId))];
-        return uniqueRunIds.map((runId) => {
-          const subScoresForThisRun = state.subScores.filter((subScore) => subScore.runInfoOrig.runId === runId);
-          return {
-            ...getRunScores(subScoresForThisRun),
-          };
-        });
-      },
+  function ageStats() {
+    const ages = scores().map((score) => computeAges(score.runInfoOrig.dob, score.runInfoOrig.timeStarted));
 
-      ageStats: (state) => {
-        const ages = state.scores.map((score) => computeAges(score.runInfoOrig.dob, score.runInfoOrig.timeStarted));
-        if (ages.length === 0) {
-          return null;
-        }
+    if (ages.length === 0) {
+      return null;
+    }
 
-        const ageYears = ages.map((age) => age.ageYears);
-        return {
-          ageMin: Math.min(...ageYears),
-          ageMax: Math.max(...ageYears),
-          ageMean: (ageYears.reduce((a, b) => a + b) / ages.length).toFixed(1),
-        };
-      },
+    const ageYears = ages.map((age) => age.ageYears);
 
-      gradeStats: (state) => {
-        const parsedGrades = state.scores.map((score) => parseGrade(score.runInfoOrig.grade));
-        const hasFirstOrK =
-          parsedGrades.includes('k') ||
-          parsedGrades.includes('pk') ||
-          parsedGrades.includes('tk') ||
-          parsedGrades.includes('jk') ||
-          parsedGrades.includes('1');
+    return {
+      ageMin: Math.min(...ageYears),
+      ageMax: Math.max(...ageYears),
+      ageMean: (ageYears.reduce((a, b) => a + b) / ages.length).toFixed(1),
+    };
+  }
 
-        if (parsedGrades.length === 0) {
-          return null;
-        }
-        return {
-          gradeMin: parsedGrades.reduce(function (prev, curr) {
-            return gradeComparator(curr, prev) === 1 ? prev : curr;
-          }),
-          gradeMax: parsedGrades.reduce(function (prev, curr) {
-            return gradeComparator(curr, prev) === 1 ? curr : prev;
-          }),
-          hasFirstOrK: hasFirstOrK,
-        };
-      },
+  function gradeStats() {
+    const parsedGrades = scores().map((score) => parseGrade(score.runInfoOrig.grade));
+    const hasFirstOrK =
+      parsedGrades.includes('k') ||
+      parsedGrades.includes('pk') ||
+      parsedGrades.includes('tk') ||
+      parsedGrades.includes('jk') ||
+      parsedGrades.includes('1');
 
-      swrStats: (state) => {
-        return {
-          numStudents: state.scores.length,
-          ...state.ageStats,
-          ...state.gradeStats,
-          ...state.roarScoreStats,
-          support: { ...state.supportStats },
-          automaticity: { ...state.swrAutomaticityStats },
-        };
-      },
+    if (parsedGrades.length === 0) {
+      return null;
+    }
 
-      supportStats: (state) => {
-        let stats = {
-          // set defaults
-          High: '',
-          Medium: '',
-          Low: '',
-        };
-        if (state.identifiers.length === 0) {
-          // TODO_Adam how to test whether match was found, not just file loaded?
-          return stats;
-        }
-        const supportArray = state.scores.map((run) => run.runInfoCommon.supportLevel);
-        if (supportArray.length === 0) {
-          return stats;
-        }
+    return {
+      gradeMin: parsedGrades.reduce(function (prev, curr) {
+        return gradeComparator(curr, prev) === 1 ? prev : curr;
+      }),
+      gradeMax: parsedGrades.reduce(function (prev, curr) {
+        return gradeComparator(curr, prev) === 1 ? curr : prev;
+      }),
+      hasFirstOrK: hasFirstOrK,
+    };
+  }
 
-        // update values
-        stats.High = supportArray.filter((x) => x === 'Average or Above Average').length;
-        stats.Medium = supportArray.filter((x) => x === 'Some Support Needed').length;
-        stats.Low = supportArray.filter((x) => x === 'Extra Support Needed').length;
+  function swrStats() {
+    return {
+      numStudents: scores().length,
+      ...ageStats(),
+      ...gradeStats(),
+      ...roarScoreStats(),
+      support: { ...supportStats() },
+      automaticity: { ...swrAutomaticityStats() },
+    };
+  }
 
-        return stats;
-      },
+  function supportStats() {
+    let stats = {
+      // set defaults
+      High: '',
+      Medium: '',
+      Low: '',
+    };
 
-      swrAutomaticityStats: (state) => {
-        let stats = {
-          // set defaults
-          High: '',
-          Low: '',
-        };
-        if (state.identifiers.length === 0) {
-          // TODO_Adam how to test whether match was found, not just file loaded?
-          return stats;
-        }
-        const supportArray = state.scores.map((run) => run.runInfoCommon.supportLevel);
-        if (supportArray.length === 0) {
-          return stats;
-        }
+    if (identifiers.value.length === 0) {
+      // TODO_Adam how to test whether match was found, not just file loaded?
+      return stats;
+    }
 
-        // update values
-        stats.High = supportArray.filter((x) => x === 'Average or Above Average').length;
-        stats.Low = supportArray.filter((x) => x === 'Limited').length;
+    const supportArray = scores().map((run) => run.runInfoCommon.supportLevel);
 
-        return stats;
-      },
+    if (supportArray.length === 0) {
+      return stats;
+    }
 
-      roarScoreStats: (state) => {
-        const roarScoresArray = state.scores.map((score) => thetaToRoarScore(score.runInfoOrig.thetaEstimate));
-        return {
-          // Note: all calculations must gracefully handle an array length of 0
-          roarScoreMin: Math.min(...roarScoresArray),
-          roarScoreMax: Math.max(...roarScoresArray),
-          roarScoreMean: Math.round(roarScoresArray.reduce((a, b) => a + b, 0) / roarScoresArray.length),
-          roarScoreStandardDev: standardDeviation(roarScoresArray).toFixed(0),
-        };
-      },
-    },
+    // update values
+    stats.High = supportArray.filter((x) => x === 'Average or Above Average').length;
+    stats.Medium = supportArray.filter((x) => x === 'Some Support Needed').length;
+    stats.Low = supportArray.filter((x) => x === 'Extra Support Needed').length;
 
-    actions: {
-      mergeSectionsWithIdentifiers: async (csvFile) => {
-        const sectionsData = await csvFileToJson(csvFile);
-        console.log(sectionsData);
-        this.sections = sectionsData;
-        // Do stuff to sectionsData
-        // merge with this.identifiers
-      },
-      // assignRiskCategories: (scoreField, cutoffs) => {
-      //   // Expect that cutoff is an array of objects with structure
-      //   // { category: string, lowerBound: number, upperBound: number}
-      //   this.scores = this.scores.map((run) => {
-      //     ...run,
-      //     cutoffs.filter((category) => category.lowerBound <= run[scoreField] && category.upperBound > run[scoreField])
-      //   })
-      // }
-    },
-  })();
-};
+    return stats;
+  }
+
+  function swrAutomaticityStats() {
+    let stats = {
+      // set defaults
+      High: '',
+      Low: '',
+    };
+
+    if (identifiers.value.length === 0) {
+      // TODO_Adam how to test whether match was found, not just file loaded?
+      return stats;
+    }
+
+    const supportArray = scores().map((run) => run.runInfoCommon.supportLevel);
+
+    if (supportArray.length === 0) {
+      return stats;
+    }
+
+    // update values
+    stats.High = supportArray.filter((x) => x === 'Average or Above Average').length;
+    stats.Low = supportArray.filter((x) => x === 'Limited').length;
+
+    return stats;
+  }
+
+  function roarScoreStats() {
+    const roarScoresArray = scores().map((score) => thetaToRoarScore(score.runInfoOrig.thetaEstimate));
+
+    return {
+      // Note: all calculations must gracefully handle an array length of 0
+      roarScoreMin: roarScoresArray.length ? Math.min(...roarScoresArray) : null,
+      roarScoreMax: roarScoresArray.length ? Math.max(...roarScoresArray) : null,
+      roarScoreMean: Math.round(roarScoresArray.reduce((a, b) => a + b, 0) / roarScoresArray.length),
+      roarScoreStandardDev: standardDeviation(roarScoresArray).toFixed(0),
+    };
+  }
+
+  async function mergeSectionsWithIdentifiers(csvFile) {
+    const sectionsData = await csvFileToJson(csvFile);
+    console.log(sectionsData);
+    sections.value = sectionsData;
+    // Do stuff to sectionsData
+    // merge with this.identifiers
+  }
+
+  return {
+    // State
+    appScores,
+    identifiers,
+    sections,
+
+    // Actions
+    $reset,
+    taskId,
+    ageStats,
+    gradeStats,
+    mergeSectionsWithIdentifiers,
+    reportType,
+    roarScoreStats,
+    scores,
+    subScores,
+    supportStats,
+    swrAutomaticityStats,
+    swrStats,
+  };
+});

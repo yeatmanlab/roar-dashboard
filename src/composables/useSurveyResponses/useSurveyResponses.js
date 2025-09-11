@@ -10,11 +10,11 @@ import { fetchSubcollection } from '@/helpers/query/utils';
  */
 const useSurveyResponsesQuery = (queryOptions = undefined, enabled) => {
   const authStore = useAuthStore();
-  const { uid } = storeToRefs(authStore);
+  const { getUserId } = authStore;
 
   return useQuery({
-    queryKey: ['surveyResponses', uid],
-    queryFn: () => fetchSubcollection(`users/${uid.value}`, 'surveyResponses'),
+    queryKey: ['surveyResponses', getUserId()],
+    queryFn: () => fetchSubcollection(`users/${getUserId()}`, 'surveyResponses'),
     enabled: enabled,
     staleTime: 5 * 60 * 1000, // 5 minutes
     cacheTime: 10 * 60 * 1000,

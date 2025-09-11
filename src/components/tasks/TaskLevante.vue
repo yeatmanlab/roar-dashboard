@@ -76,12 +76,12 @@ onBeforeUnmount(() => {
 });
 
 watch(
-  [isFirekitInit, isLoadingUserData, userData],
+  [isFirekitInit(), isLoadingUserData, userData],
   async ([newFirekitInitValue, newLoadingUserData, newUserData]) => {
     const birthMonth = _get(userData.value, 'birthMonth');
     const birthYear = _get(userData.value, 'birthYear');
-    const hasAgeData = birthMonth !== undefined && birthYear !== undefined
-    
+    const hasAgeData = birthMonth !== undefined && birthYear !== undefined;
+
     if (newFirekitInitValue && !newLoadingUserData && hasAgeData && !taskStarted.value) {
       taskStarted.value = true;
       await startTask(selectedAssignment);

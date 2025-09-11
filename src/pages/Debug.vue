@@ -35,15 +35,15 @@ const commitHash = import.meta.env.VITE_APP_VERSION;
 
 // User information - Use computed property
 const userInfo = computed<UserInfo | null>(() => {
-  if (authStore.isAuthenticated) {
+  if (authStore.isAuthenticated()) {
     const { userData } = authStore;
     return {
       displayName: userData?.username || userData?.displayName || null,
       email: authStore?.email || null,
       uid: authStore?.uid || null,
-      isAdmin: authStore.isUserAdmin,
+      isAdmin: authStore.isUserAdmin(),
       userType: userData?.userType || null,
-      isSuperAdmin: authStore.isUserSuperAdmin,
+      isSuperAdmin: authStore.isUserSuperAdmin(),
     };
   }
   return null;
@@ -363,7 +363,7 @@ function sendTestError() {
             <h2 class="text-sm font-bold">Authentication Status</h2>
           </div>
           <div class="card-body p-2">
-            <table v-if="authStore.isAuthenticated" class="w-full text-sm">
+            <table v-if="authStore.isAuthenticated()" class="w-full text-sm">
               <tbody>
                 <tr>
                   <td class="font-semibold pr-2">Status:</td>
