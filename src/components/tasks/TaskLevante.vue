@@ -77,7 +77,7 @@ onBeforeUnmount(() => {
 });
 
 watch(
-  [isFirekitInit(), isLoadingUserData, userData],
+  [isFirekitInit, isLoadingUserData, userData],
   async ([newFirekitInitValue, newLoadingUserData, newUserData]) => {
     const birthMonth = _get(userData.value, 'birthMonth');
     const birthYear = _get(userData.value, 'birthYear');

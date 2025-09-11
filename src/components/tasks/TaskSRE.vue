@@ -76,7 +76,7 @@ onBeforeUnmount(() => {
 });
 
 watch(
-  [isFirekitInit(), isLoadingUserData],
+  [isFirekitInit, isLoadingUserData],
   async ([newFirekitInitValue, newLoadingUserData]) => {
     if (newFirekitInitValue && !newLoadingUserData && !taskStarted.value) {
       taskStarted.value = true;
