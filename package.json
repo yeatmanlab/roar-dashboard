@@ -1,7 +1,7 @@
 {
   "name": "roar-dashboard",
   "private": true,
-  "version": "3.2.6-dev",
+  "version": "3.2.7-dev",
   "type": "module",
   "scripts": {
     "survey:pdf": "node -e \"(async()=>{const {loadSurveyFromFile}=await import('./dist/helpers/surveyLoader.js'); const {generateSurveyPdfFromJson}=await import('./dist/helpers/surveyPdfGenerator.js'); const fp=process.env.SURVEY_JSON||'surveys/demo.json'; const survey=await loadSurveyFromFile(fp); await generateSurveyPdfFromJson(survey,{filename:(process.env.OUTPUT||'survey.pdf')});})().catch(e=>{console.error(e);process.exit(1);})\"",
