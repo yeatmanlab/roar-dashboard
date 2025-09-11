@@ -318,6 +318,7 @@ import { CSV_EXPORT_STATIC_COLUMNS } from '@/constants/csvExport';
 import { APP_ROUTES } from '@/constants/routes';
 import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
 import { SCORE_REPORT_NEXT_STEPS_DOCUMENT_PATH } from '@/constants/scores';
+import _startCase from 'lodash/startCase';
 
 const { userCan, Permissions } = usePermissions();
 
@@ -632,9 +633,9 @@ const computeAssignmentAndRunData = computed(() => {
         schoolName = schoolNameDictionary.value[schoolId];
       }
 
-      const firstName = user.name?.first;
-      const lastName = user.name?.last;
-      const username = user.username;
+      const firstName = _startCase(user.name?.first?.toString() ?? '');
+      const lastName = _startCase(user.name?.last?.toString() ?? '');
+      const username = user.username?.toString() ?? '';
 
       const firstNameOrUsername = firstName ?? username;
 
