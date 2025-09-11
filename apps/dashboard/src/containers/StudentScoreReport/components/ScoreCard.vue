@@ -198,7 +198,7 @@ const formatDate = (date) => {
 };
 
 const formatScoreType = (type) => {
-  return _startCase(type.replace(/([A-Z])/g, ' $1').toLowerCase());
+  return _startCase(type);
 };
 
 watch(
