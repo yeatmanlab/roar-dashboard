@@ -250,13 +250,13 @@ export const fetchOrgByName = async (orgType, orgNormalizedName, selectedDistric
 export const orgFetcher = async (
   orgType,
   selectedDistrict,
-  isSuperAdmin,
+  isAdmin,
   adminOrgs,
   select = ['name', 'id', 'tags', 'currentActivationCode'],
 ) => {
   const districtId = toValue(selectedDistrict);
 
-  if (isSuperAdmin.value) {
+  if (isAdmin.value) {
     const axiosInstance = getAxiosInstance();
     const requestBody = getOrgsRequestBody({
       orgType: orgType,
