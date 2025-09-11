@@ -1,9 +1,218 @@
 {
-  "id": "7a024d81-5099-471c-914d-06c2e329444d",
-  "prevId": "f70aea3f-caa0-4384-abac-ecaa43a2af4d",
+  "id": "bbaa10f0-c60f-4032-8e9c-dab92db92f96",
+  "prevId": "7a024d81-5099-471c-914d-06c2e329444d",
   "version": "7",
   "dialect": "postgresql",
-  "tables": {},
+  "tables": {
+    "app.users": {
+      "name": "users",
+      "schema": "app",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "assessment_pid": {
+          "name": "assessment_pid",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "auth_provider": {
+          "name": "auth_provider",
+          "type": "auth_provider[]",
+          "typeSchema": "app",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'{}'::\"app\".\"auth_provider\"[]"
+        },
+        "auth_id": {
+          "name": "auth_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "username": {
+          "name": "username",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "user_type": {
+          "name": "user_type",
+          "type": "user_type",
+          "typeSchema": "app",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "dob": {
+          "name": "dob",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "grade": {
+          "name": "grade",
+          "type": "grade",
+          "typeSchema": "app",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "school_level": {
+          "name": "school_level",
+          "type": "school_level",
+          "typeSchema": "app",
+          "primaryKey": false,
+          "notNull": false,
+          "generated": {
+            "as": "app.get_school_level_from_grade(grade)",
+            "type": "stored"
+          }
+        },
+        "status_ell": {
+          "name": "status_ell",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status_frl": {
+          "name": "status_frl",
+          "type": "free_reduced_lunch_status",
+          "typeSchema": "app",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status_iep": {
+          "name": "status_iep",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "student_id": {
+          "name": "student_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sis_id": {
+          "name": "sis_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "state_id": {
+          "name": "state_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "local_id": {
+          "name": "local_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "gender": {
+          "name": "gender",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "race": {
+          "name": "race",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "hispanic_ethnicity": {
+          "name": "hispanic_ethnicity",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "home_language": {
+          "name": "home_language",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "exclude_from_research": {
+          "name": "exclude_from_research",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "users_email_lower_uniqIdx": {
+          "name": "users_email_lower_uniqIdx",
+          "columns": [
+            {
+              "expression": "lower(\"email\")",
+              "asc": true,
+              "isExpression": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"app\".\"users\".\"email\" IS NOT NULL",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "users_assessmentPid_unique": {
+          "name": "users_assessmentPid_unique",
+          "nullsNotDistinct": false,
+          "columns": ["assessment_pid"]
+        },
+        "users_authId_unique": {
+          "name": "users_authId_unique",
+          "nullsNotDistinct": false,
+          "columns": ["auth_id"]
+        },
+        "users_username_unique": {
+          "name": "users_username_unique",
+          "nullsNotDistinct": false,
+          "columns": ["username"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "users_dob_in_past": {
+          "name": "users_dob_in_past",
+          "value": "\"app\".\"users\".\"dob\" IS NULL OR \"app\".\"users\".\"dob\" <= now()::date"
+        }
+      },
+      "isRLSEnabled": false
+    }
+  },
   "enums": {
     "app.agreement_type": {
       "name": "agreement_type",
@@ -109,10 +318,10 @@
     }
   },
   "schemas": {},
-  "views": {},
   "sequences": {},
   "roles": {},
   "policies": {},
+  "views": {},
   "_meta": {
     "columns": {},
     "schemas": {},
