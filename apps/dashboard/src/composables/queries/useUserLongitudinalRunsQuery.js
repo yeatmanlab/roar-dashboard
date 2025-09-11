@@ -25,7 +25,7 @@ const useUserLongitudinalRunsQuery = (userId, orgType, orgId, queryOptions = und
         orgType,
         orgId,
         paginate: false,
-        select: ['scores.computed.composite', 'taskId', 'dateCreated', 'assignmentId', 'timeStarted'],
+        select: ['scores.computed.composite', 'taskId', 'assignmentId', 'timeStarted'],
       });
 
       // Transform the data into a dictionary keyed by taskId
