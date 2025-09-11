@@ -38,7 +38,6 @@ AS $$
     WHEN 'PostGraduate'::app.grade THEN 'postsecondary'::app.school_level
 
     -- explicit no-level cases
-    WHEN ''::app.grade         THEN NULL
     WHEN 'Ungraded'::app.grade THEN NULL
     WHEN 'Other'::app.grade    THEN NULL
 
