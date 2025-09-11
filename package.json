@@ -41,7 +41,7 @@
     "@bdelab/roar-sre": "1.15.18",
     "@bdelab/roar-swr": "1.12.11",
     "@bdelab/roar-utils": "^1.2.1",
-    "@levante-framework/core-tasks": "^1.0.13",
+    "@levante-framework/core-tasks": "^1.0.14",
     "@levante-framework/firekit": "^9.3.4",
     "@levante-framework/levante-zod": "^1.0.0",
     "@primevue/core": "^4.2.4",
