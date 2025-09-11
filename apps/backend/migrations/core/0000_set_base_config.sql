@@ -7,14 +7,60 @@ CREATE EXTENSION IF NOT EXISTS pg_trgm;    -- trigram search
 CREATE SCHEMA IF NOT EXISTS app;
 
 -- Group roles
-CREATE ROLE app_owner NOLOGIN;
-CREATE ROLE app_rw    NOLOGIN;
-CREATE ROLE app_ro    NOLOGIN;
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'app_owner') THEN
+    CREATE ROLE app_owner NOLOGIN;
+  END IF;
+END
+$$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'app_rw') THEN
+    CREATE ROLE app_rw NOLOGIN;
+  END IF;
+END
+$$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'app_ro') THEN
+    CREATE ROLE app_ro NOLOGIN;
+  END IF;
+END
+$$;
 
 -- Login roles
-CREATE ROLE migrator_srv  LOGIN NOINHERIT;
-CREATE ROLE api_srv       LOGIN INHERIT;
-CREATE ROLE api_ro        LOGIN INHERIT;
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'migrator_srv') THEN
+    CREATE ROLE migrator_srv LOGIN NOINHERIT;
+  ELSE
+    ALTER ROLE migrator_srv LOGIN NOINHERIT;
+  END IF;
+END
+$$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'api_srv') THEN
+    CREATE ROLE api_srv LOGIN INHERIT;
+  ELSE
+    ALTER ROLE api_srv LOGIN INHERIT;
+  END IF;
+END
+$$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'api_ro') THEN
+    CREATE ROLE api_ro LOGIN INHERIT;
+  ELSE
+    ALTER ROLE api_ro LOGIN INHERIT;
+  END IF;
+END
+$$;
 
 -- Memberships
 GRANT app_owner TO migrator_srv;
