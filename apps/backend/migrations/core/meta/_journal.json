@@ -43,6 +43,13 @@
       "when": 1757672769680,
       "tag": "0005_add_orgs_table",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1757673057328,
+      "tag": "0006_include_dashboard_as_rostering_provider",
+      "breakpoints": true
     }
   ]
 }

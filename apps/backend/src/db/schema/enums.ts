@@ -32,9 +32,6 @@ function enumToPgEnum<T extends Record<string, any>>(enumVal: T): [T[keyof T], .
  * Postgres Enumerations
  *
  * Exports all TS enums relevant to the database schema as Postgres enums using our enumToPgEnum helper function.
- *
- * @IMPORTANT When adding new values to existing enums, make sure to append the new values to the end of the enum. This
- * is currently required due to a bug in drizzle-kit (https://github.com/drizzle-team/drizzle-orm/issues/4884).
  */
 
 const db = p.pgSchema('app');
