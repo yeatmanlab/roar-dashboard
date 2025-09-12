@@ -100,7 +100,7 @@ const setChartData = (completed: number, incomplete: number): ChartData => {
 .sidebar-progress {
   // text-align: center;
   padding-bottom: 0.5rem;
-  width: 120px;
+  width: 100%;
 
   p {
     margin-block: 0;

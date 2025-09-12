@@ -53,23 +53,26 @@
           </div>
         </div>
 
-        <div class="tabs-container">
+        <div class="assignment__main">
           <ParticipantSidebar :total-games="totalGames" :completed-games="completeGames" />
-          <Transition name="fade" mode="out-in">
-            <!-- TODO: Pass in data conditionally to one instance of GameTabs. -->
-            <GameTabs
-              v-if="showOptionalAssessments && userData"
-              :games="optionalAssessments"
-              :sequential="isSequential"
-              :user-data="userData"
-            />
-            <GameTabs
-              v-else-if="requiredAssessments && userData"
-              :games="requiredAssessments"
-              :sequential="isSequential"
-              :user-data="userData"
-            />
-          </Transition>
+
+          <div class="tabs-container">
+            <Transition name="fade" mode="out-in">
+              <!-- TODO: Pass in data conditionally to one instance of GameTabs. -->
+              <GameTabs
+                v-if="showOptionalAssessments && userData"
+                :games="optionalAssessments"
+                :sequential="isSequential"
+                :user-data="userData"
+              />
+              <GameTabs
+                v-else-if="requiredAssessments && userData"
+                :games="requiredAssessments"
+                :sequential="isSequential"
+                :user-data="userData"
+              />
+            </Transition>
+          </div>
         </div>
       </div>
     </div>
@@ -155,7 +158,6 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
 onMounted(async () => {
   if (roarfirekit.value.restConfig) init();
 });
-
 
 const {
   data: districtsData,
@@ -690,12 +692,21 @@ watch(
   }
 }
 
-.tabs-container {
+.assignment__main {
   display: flex;
-  flex-direction: row;
-  max-width: 100vw;
   gap: 2rem;
+  width: 100%;
+  height: auto;
   margin: 2rem 0 0;
+}
+
+.tabs-container {
+  display: block;
+  // 100% - (side chart width) - (parent gap)
+  width: calc(100% - 200px - 2rem);
+  height: auto;
+  margin: 0;
+  padding: 0;
 }
 
 .assignment-select-container {

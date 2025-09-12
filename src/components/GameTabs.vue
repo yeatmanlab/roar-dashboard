@@ -38,7 +38,7 @@
           >
         </PvTab>
       </PvTabList>
-      <PvTabPanels style="width: 80vw; min-width: 800px; max-width: 1200px; margin-top: 0.5rem; padding: 0">
+      <PvTabPanels style="width: 100%; margin-top: 0.5rem; padding: 0">
         <PvTabPanel
           v-for="(game, index) in games"
           :key="game.taskId"
