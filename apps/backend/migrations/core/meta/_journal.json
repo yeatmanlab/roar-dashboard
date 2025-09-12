@@ -36,6 +36,13 @@
       "when": 1757595371154,
       "tag": "0004_add_users_table",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1757672769680,
+      "tag": "0005_add_orgs_table",
+      "breakpoints": true
     }
   ]
 }
