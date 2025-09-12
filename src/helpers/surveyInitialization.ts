@@ -107,7 +107,7 @@ export async function setupStudentAudio(
   audioLinkMap: AudioLinkMap,
   surveyStore: SurveyStore,
 ): Promise<void> {
-  const parsedLocale = getParsedLocale(locale);
+  const parsedLocale = getParsedLocale(locale)
   await fetchBuffer({
     parsedLocale,
     setSurveyAudioLoading: surveyStore.setSurveyAudioLoading,

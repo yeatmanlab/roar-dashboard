@@ -327,6 +327,13 @@ watch(
   { immediate: true },
 );
 
+// Watch for locale changes and reset survey to allow reinitialization with new locale
+watch(locale, (newLocale, oldLocale) => {
+  if (newLocale !== oldLocale && surveyStore.survey) {
+    surveyStore.reset();
+  }
+});
+
 // Assessments to populate the game tabs.
 // Generated based on the current selected administration Id
 const assessments = computed(() => {
@@ -431,7 +438,7 @@ watch(
 );
 
 const { data: surveyData } = useQuery({
-  queryKey: ['surveys'],
+  queryKey: ['surveys', locale.value],
   queryFn: async () => {
     const userType = userData.value.userType;
 
@@ -475,8 +482,7 @@ const specificSurveyData = computed(() => {
 function createSurveyInstance(surveyDataToStartAt) {
   settings.lazyRender = true;
   const surveyInstance = new Model(surveyDataToStartAt);
-  // surveyInstance.showNavigationButtons = 'none';
-  surveyInstance.locale = getParsedLocale(locale.value);
+  surveyInstance.locale = locale.value;
   return surveyInstance;
 }
 

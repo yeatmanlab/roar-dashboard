@@ -41,7 +41,7 @@ export const languageOptions: Record<string, { translations: any; language: stri
   es: { translations: esTranslations, language: 'Español (Spain)', code: 'es' },
   'es-CO': {
     translations: esCOTranslations,
-    language: 'Español (América Latina)',
+    language: 'Español (Colombia)',
     code: 'col',
   },
   de: { translations: deTranslations, language: 'Deutsch', code: 'de' },
@@ -133,51 +133,51 @@ const baseMessages: Record<string, any> = {
 };
 
 // Dynamically load any generated componentTranslations for new locales and merge
-const modules = import.meta.glob('/src/translations/**/**-componentTranslations.json', { eager: true }) as Record<
-  string,
-  any
->;
-for (const [filePath, mod] of Object.entries(modules)) {
-  const match = filePath.match(/\/([a-z]{2}(?:-[a-z]{2})?)-componentTranslations\.json$/i);
-  if (!match || !match[1]) continue;
-  const rawLocale = match[1] as string; // e.g., en, es-co, fr-ca
-  const locale = formatLocale(rawLocale);
-  const content: Record<string, any> = ((mod as any)?.default ?? {}) as Record<string, any>;
+// const modules = import.meta.glob('/src/translations/**/**-componentTranslations.json', { eager: true }) as Record<
+//   string,
+//   any
+// >;
+// for (const [filePath, mod] of Object.entries(modules)) {
+//   const match = filePath.match(/\/([a-z]{2}(?:-[a-z]{2})?)-componentTranslations\.json$/i);
+//   if (!match || !match[1]) continue;
+//   const rawLocale = match[1] as string; // e.g., en, es-co, fr-ca
+//   const locale = formatLocale(rawLocale);
+//   const content: Record<string, any> = ((mod as any)?.default ?? {}) as Record<string, any>;
 
-  if (!baseMessages[locale]) baseMessages[locale] = {};
-  deepMerge(baseMessages[locale] as Record<string, any>, content as Record<string, any>);
+//   if (!baseMessages[locale]) baseMessages[locale] = {};
+//   deepMerge(baseMessages[locale] as Record<string, any>, content as Record<string, any>);
   
-  // Apply flat key transformation to dynamically loaded content
-  baseMessages[locale] = addFlatKeys(baseMessages[locale]);
+//   // Apply flat key transformation to dynamically loaded content
+//   baseMessages[locale] = addFlatKeys(baseMessages[locale]);
 
-  // Auto-register new locales in languageOptions if missing
-  if (!languageOptions[locale]) {
-    let displayName = locale;
-    try {
-      const parts = locale.split('-');
-      const langCode = (parts[0] || locale).toLowerCase();
-      const regionCode = (parts[1] || '').toUpperCase();
+//   // Auto-register new locales in languageOptions if missing
+//   if (!languageOptions[locale]) {
+//     let displayName = locale;
+//     try {
+//       const parts = locale.split('-');
+//       const langCode = (parts[0] || locale).toLowerCase();
+//       const regionCode = (parts[1] || '').toUpperCase();
 
-      // Language autonym (language name in its own language) with English fallback
-      const langNames = new (window as any).Intl.DisplayNames([langCode, 'en'], { type: 'language' });
-      // Region name in English for consistency
-      const regionNames = new (window as any).Intl.DisplayNames(['en'], { type: 'region' });
+//       // Language autonym (language name in its own language) with English fallback
+//       const langNames = new (window as any).Intl.DisplayNames([langCode, 'en'], { type: 'language' });
+//       // Region name in English for consistency
+//       const regionNames = new (window as any).Intl.DisplayNames(['en'], { type: 'region' });
 
-      const langNameRaw = (langNames.of(langCode) as string | undefined) || langCode;
-      const langName = /^[a-z]/.test(langNameRaw)
-        ? langNameRaw.charAt(0).toLocaleUpperCase(langCode) + langNameRaw.slice(1)
-        : langNameRaw;
-      const regionName = regionCode ? (regionNames.of(regionCode) as string | undefined) : undefined;
+//       const langNameRaw = (langNames.of(langCode) as string | undefined) || langCode;
+//       const langName = /^[a-z]/.test(langNameRaw)
+//         ? langNameRaw.charAt(0).toLocaleUpperCase(langCode) + langNameRaw.slice(1)
+//         : langNameRaw;
+//       const regionName = regionCode ? (regionNames.of(regionCode) as string | undefined) : undefined;
 
-      displayName = regionName ? `${langName} (${regionName})` : langName;
-    } catch {
-      // Fallback to locale string if Intl.DisplayNames is unavailable
-    }
+//       displayName = regionName ? `${langName} (${regionName})` : langName;
+//     } catch {
+//       // Fallback to locale string if Intl.DisplayNames is unavailable
+//     }
 
-    const code = locale.includes('-') ? (locale.split('-')[1] || '').toLowerCase() : locale.toLowerCase();
-    languageOptions[locale] = { translations: baseMessages[locale], language: displayName, code };
-  }
-}
+//     const code = locale.includes('-') ? (locale.split('-')[1] || '').toLowerCase() : locale.toLowerCase();
+//     languageOptions[locale] = { translations: baseMessages[locale], language: displayName, code };
+//   }
+// }
 
 export const i18n = createI18n({
   locale: getLocale(browserLocale),
