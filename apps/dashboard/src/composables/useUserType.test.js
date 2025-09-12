@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest';
 import { computed } from 'vue';
 import { AUTH_USER_TYPE } from '@/constants/auth';
 import useUserType from './useUserType';
-
 describe('useUserType', () => {
   it('should return super admin user type when user is a super admin', () => {
     const userClaims = computed(() => ({ claims: { super_admin: true } }));
