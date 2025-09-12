@@ -50,6 +50,13 @@
       "when": 1757673057328,
       "tag": "0006_include_dashboard_as_rostering_provider",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1757677650491,
+      "tag": "0007_add_users_orgs_table",
+      "breakpoints": true
     }
   ]
 }

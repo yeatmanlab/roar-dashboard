@@ -16,7 +16,6 @@ const db = p.pgSchema('app');
  * - `authId`: The authId should ideally be not nullable, but currently has to be nullable due to the way the rostering
  *   process currently handles user syncing and auth record creation.
  */
-
 export const users = db.table(
   'users',
   {
