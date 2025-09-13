@@ -6,23 +6,25 @@ const useEnvFlag: boolean = (() => {
   return v === true || v === 'TRUE' || v === 'true' || v === 1 || v === '1';
 })();
 
-const defaultUrl = 'https://localhost:5173/signin';
+const defaultUrl = 'http://localhost:5173/signin';
 
 function normalizeUrl(url: string): string {
   try {
     const u = new URL(url);
     return u.toString();
   } catch {
-    return 'https://localhost:5173/signin';
+    return defaultUrl;
   }
 }
 
+// Base URL
+const dashboardUrl: string = useEnvFlag ? normalizeUrl(Cypress.env('E2E_BASE_URL')) : defaultUrl;
+
 // Force use of known working credentials for now
-const dashboardUrl: string = 'http://localhost:5173/signin';
 const username: string = 'quqa2y1jss@levante.com';
 const password: string = 'xbqamkqc7z';
 
-// starts each task and checks that it has loaded (the 'OK' button is present)
+// starts each task and checks that it has loaded
 function startTask(tasksRemaining: number) {
   cy.get('[data-pc-section=tablist]', { timeout: 30000 })
     .children()
@@ -30,15 +32,13 @@ function startTask(tasksRemaining: number) {
       // start task
       cy.wrap(taskTabs.eq(tasksRemaining)).click();
       cy.scrollTo('bottomLeft', { ensureScrollable: false });
-      cy.get('[data-pc-name=tabpanel][data-p-active=true]').children().contains('Click to start').click();
-
-      // enter fullscreen and check that first instruction trial has loaded
-      cy.contains('OK', { timeout: 600000 })
+      cy.get('[data-pc-name=tabpanel][data-p-active=true]')
+        .find('a.game-btn')
         .should('exist')
-        .realClick()
-        .then(() => {
-          cy.contains('OK').should('exist');
-        });
+        .click();
+
+      // Wait for the game content to render (locale-agnostic)
+      cy.get('.jspsych-content-wrapper', { timeout: 600000 }).should('exist');
 
       // return to dashboard
       cy.go('back');
