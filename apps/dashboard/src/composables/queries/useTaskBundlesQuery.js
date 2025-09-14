@@ -1,7 +1,6 @@
-import { useQuery } from '@tanstack/vue-query';
+import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import { fetchTaskGroups } from '@/helpers/query/tasks';
 import { TASK_BUNDLES_QUERY_KEY } from '@/constants/queryKeys';
-import { useQueryClient } from '@tanstack/vue-query';
 
 const useTaskBundlesQuery = (queryOptions = undefined) => {
   const queryClient = useQueryClient();

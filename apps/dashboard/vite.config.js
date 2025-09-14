@@ -1,7 +1,6 @@
 import { sentryVitePlugin } from '@sentry/vite-plugin';
 import { defineConfig } from 'vite';
 import { nodePolyfills } from 'vite-plugin-node-polyfills';
-import mkcert from 'vite-plugin-mkcert';
 import Vue from '@vitejs/plugin-vue';
 import UnheadVite from '@unhead/addons/vite';
 import { config } from '@dotenvx/dotenvx';
@@ -169,7 +168,6 @@ export default defineConfig(({ mode }) => {
         },
       }),
       UnheadVite(),
-      ...(process.env.NODE_ENV === 'development' ? [mkcert()] : []),
       ...(process.env.NODE_ENV !== 'development'
         ? [
             // @TODO: Modify to use environment variables for Sentry configuration.
@@ -194,6 +192,13 @@ export default defineConfig(({ mode }) => {
       headers: {
         ...responseHeaders,
       },
+      https:
+        process.env.NODE_ENV === 'development'
+          ? {
+              key: fs.readFileSync(path.resolve(__dirname, '../../certs/roar-local.key')),
+              cert: fs.readFileSync(path.resolve(__dirname, '../../certs/roar-local.crt')),
+            }
+          : false,
     },
 
     preview: {
