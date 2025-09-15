@@ -127,6 +127,13 @@
       "when": 1757946067519,
       "tag": "0017_add_validate_rostering_entity_fk_fn",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1757947125061,
+      "tag": "0018_add_rostering_run_tables",
+      "breakpoints": true
     }
   ]
 }
