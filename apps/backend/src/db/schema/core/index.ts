@@ -9,6 +9,7 @@ export * from './groups';
 export * from './users-groups';
 export * from './courses';
 export * from './classes';
+export * from './users-classes';
 
 // Relations
 export * from './relations';
