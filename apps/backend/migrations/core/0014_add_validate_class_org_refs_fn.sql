@@ -13,7 +13,7 @@ DECLARE
 BEGIN
   -- 1) validate school_id type
   IF NEW.school_id IS NOT NULL THEN
-    SELECT org_type, parent_id
+    SELECT org_type, parent_org_id
       INTO v_school_type, v_school_parent
     FROM app.orgs
     WHERE id = NEW.school_id;
