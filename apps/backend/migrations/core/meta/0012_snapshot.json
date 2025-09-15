@@ -1,6 +1,6 @@
 {
-  "id": "dc4260f9-22f3-4020-81e0-88056e98ad8a",
-  "prevId": "659d31a5-84a7-4216-a95e-e4e08fb481c6",
+  "id": "1619269d-54dd-4009-94f9-94d33026700c",
+  "prevId": "dc4260f9-22f3-4020-81e0-88056e98ad8a",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -74,8 +74,8 @@
           "primaryKey": false,
           "notNull": false,
           "generated": {
-            "type": "stored",
-            "as": "app.get_school_level_from_grade(grade)"
+            "as": "app.get_school_level_from_grade(grade)",
+            "type": "stored"
           }
         },
         "status_ell": {
@@ -172,16 +172,16 @@
           "columns": [
             {
               "expression": "lower(\"email\")",
-              "isExpression": true,
               "asc": true,
+              "isExpression": true,
               "nulls": "last"
             }
           ],
           "isUnique": true,
-          "with": {},
-          "method": "btree",
           "where": "\"app\".\"users\".\"email\" IS NOT NULL",
-          "concurrently": false
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {},
@@ -189,18 +189,18 @@
       "uniqueConstraints": {
         "users_assessmentPid_unique": {
           "name": "users_assessmentPid_unique",
-          "columns": ["assessment_pid"],
-          "nullsNotDistinct": false
+          "nullsNotDistinct": false,
+          "columns": ["assessment_pid"]
         },
         "users_authId_unique": {
           "name": "users_authId_unique",
-          "columns": ["auth_id"],
-          "nullsNotDistinct": false
+          "nullsNotDistinct": false,
+          "columns": ["auth_id"]
         },
         "users_username_unique": {
           "name": "users_username_unique",
-          "columns": ["username"],
-          "nullsNotDistinct": false
+          "nullsNotDistinct": false,
+          "columns": ["username"]
         }
       },
       "policies": {},
@@ -366,9 +366,9 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         },
         "orgs_parent_type_idx": {
           "name": "orgs_parent_type_idx",
@@ -387,59 +387,59 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         },
         "orgs_name_lower_idx": {
           "name": "orgs_name_lower_idx",
           "columns": [
             {
               "expression": "lower(\"name\")",
-              "isExpression": true,
               "asc": true,
+              "isExpression": true,
               "nulls": "last"
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         }
       },
       "foreignKeys": {
         "orgs_parent_org_id_orgs_id_fk": {
           "name": "orgs_parent_org_id_orgs_id_fk",
           "tableFrom": "orgs",
-          "columnsFrom": ["parent_org_id"],
           "tableTo": "orgs",
           "schemaTo": "app",
+          "columnsFrom": ["parent_org_id"],
           "columnsTo": ["id"],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "orgs_mdrNumber_unique": {
           "name": "orgs_mdrNumber_unique",
-          "columns": ["mdr_number"],
-          "nullsNotDistinct": false
+          "nullsNotDistinct": false,
+          "columns": ["mdr_number"]
         },
         "orgs_ncesId_unique": {
           "name": "orgs_ncesId_unique",
-          "columns": ["nces_id"],
-          "nullsNotDistinct": false
+          "nullsNotDistinct": false,
+          "columns": ["nces_id"]
         },
         "orgs_stateId_unique": {
           "name": "orgs_stateId_unique",
-          "columns": ["state_id"],
-          "nullsNotDistinct": false
+          "nullsNotDistinct": false,
+          "columns": ["state_id"]
         },
         "orgs_schoolNumber_unique": {
           "name": "orgs_schoolNumber_unique",
-          "columns": ["school_number"],
-          "nullsNotDistinct": false
+          "nullsNotDistinct": false,
+          "columns": ["school_number"]
         }
       },
       "policies": {},
@@ -512,9 +512,9 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         },
         "users_orgs_org_idx": {
           "name": "users_orgs_org_idx",
@@ -527,31 +527,31 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         }
       },
       "foreignKeys": {
         "users_orgs_user_id_users_id_fk": {
           "name": "users_orgs_user_id_users_id_fk",
           "tableFrom": "users_orgs",
-          "columnsFrom": ["user_id"],
           "tableTo": "users",
           "schemaTo": "app",
+          "columnsFrom": ["user_id"],
           "columnsTo": ["id"],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "users_orgs_org_id_orgs_id_fk": {
           "name": "users_orgs_org_id_orgs_id_fk",
           "tableFrom": "users_orgs",
-          "columnsFrom": ["org_id"],
           "tableTo": "orgs",
           "schemaTo": "app",
+          "columnsFrom": ["org_id"],
           "columnsTo": ["id"],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {
@@ -675,36 +675,36 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         },
         "groups_name_lower_idx": {
           "name": "groups_name_lower_idx",
           "columns": [
             {
               "expression": "lower(\"name\")",
-              "isExpression": true,
               "asc": true,
+              "isExpression": true,
               "nulls": "last"
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         }
       },
       "foreignKeys": {
         "groups_parent_group_id_groups_id_fk": {
           "name": "groups_parent_group_id_groups_id_fk",
           "tableFrom": "groups",
-          "columnsFrom": ["parent_group_id"],
           "tableTo": "groups",
           "schemaTo": "app",
+          "columnsFrom": ["parent_group_id"],
           "columnsTo": ["id"],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -774,9 +774,9 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         },
         "users_groups_group_idx": {
           "name": "users_groups_group_idx",
@@ -789,31 +789,31 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         }
       },
       "foreignKeys": {
         "users_groups_user_id_users_id_fk": {
           "name": "users_groups_user_id_users_id_fk",
           "tableFrom": "users_groups",
-          "columnsFrom": ["user_id"],
           "tableTo": "users",
           "schemaTo": "app",
+          "columnsFrom": ["user_id"],
           "columnsTo": ["id"],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "users_groups_group_id_groups_id_fk": {
           "name": "users_groups_group_id_groups_id_fk",
           "tableFrom": "users_groups",
-          "columnsFrom": ["group_id"],
           "tableTo": "groups",
           "schemaTo": "app",
+          "columnsFrom": ["group_id"],
           "columnsTo": ["id"],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {
@@ -882,42 +882,228 @@
             },
             {
               "expression": "lower(\"name\")",
-              "isExpression": true,
               "asc": true,
+              "isExpression": true,
               "nulls": "last"
             }
           ],
           "isUnique": true,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         },
         "courses_name_lower_idx": {
           "name": "courses_name_lower_idx",
           "columns": [
             {
               "expression": "lower(\"name\")",
-              "isExpression": true,
               "asc": true,
+              "isExpression": true,
               "nulls": "last"
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         }
       },
       "foreignKeys": {
         "courses_org_id_orgs_id_fk": {
           "name": "courses_org_id_orgs_id_fk",
           "tableFrom": "courses",
-          "columnsFrom": ["org_id"],
           "tableTo": "orgs",
           "schemaTo": "app",
+          "columnsFrom": ["org_id"],
           "columnsTo": ["id"],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "app.classes": {
+      "name": "classes",
+      "schema": "app",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "school_id": {
+          "name": "school_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "district_id": {
+          "name": "district_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "course_id": {
+          "name": "course_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "class_type": {
+          "name": "class_type",
+          "type": "class_type",
+          "typeSchema": "app",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "number": {
+          "name": "number",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "period": {
+          "name": "period",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "term_id": {
+          "name": "term_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "subjects": {
+          "name": "subjects",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "location": {
+          "name": "location",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "grades": {
+          "name": "grades",
+          "type": "grade[]",
+          "typeSchema": "app",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "school_levels": {
+          "name": "school_levels",
+          "type": "school_level[]",
+          "typeSchema": "app",
+          "primaryKey": false,
+          "notNull": false,
+          "generated": {
+            "as": "app.get_school_levels_from_grades_array(grades)",
+            "type": "stored"
+          }
+        },
+        "rostering_ended": {
+          "name": "rostering_ended",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "classes_school_name_lower_uniqIdx": {
+          "name": "classes_school_name_lower_uniqIdx",
+          "columns": [
+            {
+              "expression": "school_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "lower(\"name\")",
+              "asc": true,
+              "isExpression": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "classes_name_lower_idx": {
+          "name": "classes_name_lower_idx",
+          "columns": [
+            {
+              "expression": "lower(\"name\")",
+              "asc": true,
+              "isExpression": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "classes_school_id_orgs_id_fk": {
+          "name": "classes_school_id_orgs_id_fk",
+          "tableFrom": "classes",
+          "tableTo": "orgs",
+          "schemaTo": "app",
+          "columnsFrom": ["school_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "classes_district_id_orgs_id_fk": {
+          "name": "classes_district_id_orgs_id_fk",
+          "tableFrom": "classes",
+          "tableTo": "orgs",
+          "schemaTo": "app",
+          "columnsFrom": ["district_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "classes_course_id_courses_id_fk": {
+          "name": "classes_course_id_courses_id_fk",
+          "tableFrom": "classes",
+          "tableTo": "courses",
+          "schemaTo": "app",
+          "columnsFrom": ["course_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -1032,10 +1218,10 @@
     }
   },
   "schemas": {},
-  "views": {},
   "sequences": {},
   "roles": {},
   "policies": {},
+  "views": {},
   "_meta": {
     "columns": {},
     "schemas": {},

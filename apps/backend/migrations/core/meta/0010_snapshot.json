@@ -1,6 +1,6 @@
 {
-  "id": "8c5ca197-73c8-46cd-b995-01c4bf26819c",
-  "prevId": "fdf9237e-bd11-4229-a83b-dd75cdd4157b",
+  "id": "659d31a5-84a7-4216-a95e-e4e08fb481c6",
+  "prevId": "8c5ca197-73c8-46cd-b995-01c4bf26819c",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -395,7 +395,7 @@
           "name": "orgs_name_lower_idx",
           "columns": [
             {
-              "expression": "(\"name\")",
+              "expression": "lower(\"name\")",
               "asc": true,
               "isExpression": true,
               "nulls": "last"
@@ -683,7 +683,7 @@
           "name": "groups_name_lower_idx",
           "columns": [
             {
-              "expression": "(\"name\")",
+              "expression": "lower(\"name\")",
               "asc": true,
               "isExpression": true,
               "nulls": "last"
@@ -896,7 +896,7 @@
           "name": "courses_name_lower_idx",
           "columns": [
             {
-              "expression": "(\"name\")",
+              "expression": "lower(\"name\")",
               "asc": true,
               "isExpression": true,
               "nulls": "last"

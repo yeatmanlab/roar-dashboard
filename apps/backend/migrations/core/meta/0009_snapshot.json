@@ -1,6 +1,6 @@
 {
-  "id": "fdf9237e-bd11-4229-a83b-dd75cdd4157b",
-  "prevId": "a19ea986-13f7-4eea-b061-bb00efb0e003",
+  "id": "8c5ca197-73c8-46cd-b995-01c4bf26819c",
+  "prevId": "fdf9237e-bd11-4229-a83b-dd75cdd4157b",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -822,6 +822,105 @@
           "columns": ["user_id", "group_id"]
         }
       },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "app.courses": {
+      "name": "courses",
+      "schema": "app",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "org_id": {
+          "name": "org_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "number": {
+          "name": "number",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "courses_org_name_lower_uniqIdx": {
+          "name": "courses_org_name_lower_uniqIdx",
+          "columns": [
+            {
+              "expression": "org_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "lower(\"name\")",
+              "asc": true,
+              "isExpression": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "courses_name_lower_idx": {
+          "name": "courses_name_lower_idx",
+          "columns": [
+            {
+              "expression": "(\"name\")",
+              "asc": true,
+              "isExpression": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "courses_org_id_orgs_id_fk": {
+          "name": "courses_org_id_orgs_id_fk",
+          "tableFrom": "courses",
+          "tableTo": "orgs",
+          "schemaTo": "app",
+          "columnsFrom": ["org_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},

@@ -1,6 +1,6 @@
 {
-  "id": "03a38bf6-4c50-4db9-bf22-b7f8a5c907b9",
-  "prevId": "655a2e4a-8bb3-49ea-a8c9-8ea503f029db",
+  "id": "407c7bd2-8f01-4df4-8212-01da7d04a44d",
+  "prevId": "03a38bf6-4c50-4db9-bf22-b7f8a5c907b9",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -449,6 +449,120 @@
           "value": "\"app\".\"orgs\".\"abbreviation\" ~ '^[A-Za-z0-9]+$'"
         }
       },
+      "isRLSEnabled": false
+    },
+    "app.users_orgs": {
+      "name": "users_orgs",
+      "schema": "app",
+      "columns": {
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "org_id": {
+          "name": "org_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "role": {
+          "name": "role",
+          "type": "user_role",
+          "typeSchema": "app",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "enrollment_start": {
+          "name": "enrollment_start",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "enrollment_end": {
+          "name": "enrollment_end",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "users_orgs_user_idx": {
+          "name": "users_orgs_user_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "users_orgs_org_idx": {
+          "name": "users_orgs_org_idx",
+          "columns": [
+            {
+              "expression": "org_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "users_orgs_user_id_users_id_fk": {
+          "name": "users_orgs_user_id_users_id_fk",
+          "tableFrom": "users_orgs",
+          "tableTo": "users",
+          "schemaTo": "app",
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "users_orgs_org_id_orgs_id_fk": {
+          "name": "users_orgs_org_id_orgs_id_fk",
+          "tableFrom": "users_orgs",
+          "tableTo": "orgs",
+          "schemaTo": "app",
+          "columnsFrom": ["org_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "users_orgs_pk": {
+          "name": "users_orgs_pk",
+          "columns": ["user_id", "org_id"]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
       "isRLSEnabled": false
     }
   },
