@@ -1,7 +1,7 @@
 import * as p from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import { timestamps } from '../common';
-import { orgTypeEnum, rosteringProviderEnum } from '../enums';
+import { orgTypeEnum } from '../enums';
 import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 
 const db = p.pgSchema('app');
@@ -41,8 +41,6 @@ export const orgs = db.table(
     schoolNumber: p.text().unique(),
 
     isRosteringRootOrg: p.boolean().notNull().default(false),
-    rosteringProvider: rosteringProviderEnum().notNull(),
-    rosteringProviderId: p.text(),
     rosteringEnded: p.timestamp({ withTimezone: true }),
 
     ...timestamps,

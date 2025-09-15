@@ -148,6 +148,13 @@
       "when": 1757976975021,
       "tag": "0020_add_users_families_student_active_unique_index",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1757977067228,
+      "tag": "0021_drop_orgs_rostering_provider_details",
+      "breakpoints": true
     }
   ]
 }
