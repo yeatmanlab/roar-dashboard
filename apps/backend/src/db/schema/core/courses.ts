@@ -38,7 +38,7 @@ export const courses = db.table(
 
     // Indexes
     // - Name equality or prefix lookups
-    p.index('courses_name_lower_idx').on(sql`(${table.name})`),
+    p.index('courses_name_lower_idx').on(sql`lower(${table.name})`),
   ],
 );
 
