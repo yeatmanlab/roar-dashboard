@@ -11,5 +11,7 @@ export * from './courses';
 export * from './classes';
 export * from './users-classes';
 
+export * from './rostering-provider-ids';
+
 // Relations
 export * from './relations';
