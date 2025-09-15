@@ -50,7 +50,7 @@ export const groups = db.table(
     p.index('groups_parent_idx').on(table.parentGroupId),
 
     // - Name equality or prefix lookups
-    p.index('groups_name_lower_idx').on(sql`(${table.name})`),
+    p.index('groups_name_lower_idx').on(sql`lower(${table.name})`),
   ],
 );
 

@@ -58,7 +58,7 @@ export const orgs = db.table(
     p.index('orgs_parent_type_idx').on(table.parentOrgId, table.orgType),
 
     // - Name equality or prefix lookups
-    p.index('orgs_name_lower_idx').on(sql`(${table.name})`),
+    p.index('orgs_name_lower_idx').on(sql`lower(${table.name})`),
   ],
 );
 

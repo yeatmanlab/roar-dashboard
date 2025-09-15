@@ -78,6 +78,13 @@
       "when": 1757934092865,
       "tag": "0010_add_courses_table",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1757934646376,
+      "tag": "0011_fix_courses_groups_orgs_name_indexes",
+      "breakpoints": true
     }
   ]
 }
