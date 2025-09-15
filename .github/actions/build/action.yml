@@ -75,3 +75,9 @@ runs:
         NODE_OPTIONS: '--max_old_space_size=8192'
       shell: bash
       run: npm run build -- --mode ${{ inputs.environment }}
+
+    - name: Debug
+      shell: bash
+      run: |
+        pwd
+        ls -la

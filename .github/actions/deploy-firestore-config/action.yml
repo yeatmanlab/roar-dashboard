@@ -48,6 +48,13 @@ runs:
         workload_identity_provider: ${{ inputs.gcp-workload-identity-provider }}
         service_account: ${{ inputs.gcp-service-account-id }}
 
+    - name: Debug
+      shell: bash
+      run: |
+        pwd
+        ls -la
+        ls -la apps/dashboard/${{ inputs.config-directory }}
+
     # Deploy Firestore Rules
     - name: Deploy Firestore Rules
       shell: bash
