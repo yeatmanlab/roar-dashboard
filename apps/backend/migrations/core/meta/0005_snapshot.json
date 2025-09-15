@@ -1,6 +1,6 @@
 {
-  "id": "655a2e4a-8bb3-49ea-a8c9-8ea503f029db",
-  "prevId": "bbaa10f0-c60f-4032-8e9c-dab92db92f96",
+  "id": "03a38bf6-4c50-4db9-bf22-b7f8a5c907b9",
+  "prevId": "655a2e4a-8bb3-49ea-a8c9-8ea503f029db",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -523,7 +523,7 @@
     "app.rostering_provider": {
       "name": "rostering_provider",
       "schema": "app",
-      "values": ["classlink", "clever", "nycps", "csv"]
+      "values": ["classlink", "clever", "dashboard", "nycps", "csv"]
     },
     "app.school_level": {
       "name": "school_level",
