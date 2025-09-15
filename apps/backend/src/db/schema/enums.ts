@@ -11,6 +11,7 @@ import GroupType from '../../enums/group-type.enum';
 import OrgType from '../../enums/org-type.enum';
 import RosteringProvider from '../../enums/rostering-provider.enum';
 import RosteringEntityType from '../../enums/rostering-entity-type.enum';
+import RosteringEntityStatus from '../../enums/rostering-entity-status.enum';
 import TrialInteractionType from '../../enums/trial-interaction-type.enum';
 import UserFamilyRole from '../../enums/user-family-role.enum';
 import UserRole from '../../enums/user-role.enum';
@@ -55,6 +56,8 @@ export const orgTypeEnum = db.enum('org_type', enumToPgEnum(OrgType));
 export const rosteringProviderEnum = db.enum('rostering_provider', enumToPgEnum(RosteringProvider));
 
 export const rosteringEntityTypeEnum = db.enum('rostering_entity_type', enumToPgEnum(RosteringEntityType));
+
+export const rosteringEntityStatusEnum = db.enum('rostering_entity_status', enumToPgEnum(RosteringEntityStatus));
 
 export const schoolLevelEnum = db.enum('school_level', enumToPgEnum(SchoolLevel));
 
