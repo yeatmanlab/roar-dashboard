@@ -120,6 +120,13 @@
       "when": 1757945984302,
       "tag": "0016_add_rostering_provider_ids_table",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1757946067519,
+      "tag": "0017_add_validate_rostering_entity_fk_fn",
+      "breakpoints": true
     }
   ]
 }
