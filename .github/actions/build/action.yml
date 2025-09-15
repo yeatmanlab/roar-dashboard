@@ -33,11 +33,11 @@ runs:
         repository: yeatmanlab/roar-dashboard
         token: ${{ inputs.github-pat }}
         submodules: ${{ inputs.override-env-configs == 'false' && 'recursive' || 'false' }}
-        path: roar-dashboard
+        path: build
 
     - name: Inspect changes
       if: ${{ inputs.diff-base-sha != 'false' }}
-      working-directory: roar-dashboard
+      working-directory: build
       shell: bash
       run: |
         echo "Current: roar-dashboard/${{ inputs.environment }}@${{ inputs.diff-base-sha }}"
@@ -56,7 +56,7 @@ runs:
 
     # Install npm dependencies
     - name: Install dependencies
-      working-directory: roar-dashboard
+      working-directory: build
       shell: bash
       run: npm ci
 
@@ -65,19 +65,13 @@ runs:
       if: ${{ inputs.override-env-configs != 'false' }}
       shell: bash
       run: |
-        rm -rf roar-dashboard/apps/dashboard/env-configs
-        cp -r ${{ github.event.repository.name }}/apps/dashboard/env-configs roar-dashboard/apps/dashboard/env-configs
+        rm -rf build/apps/dashboard/env-configs
+        cp -r ${{ github.event.repository.name }}/apps/dashboard/env-configs build/apps/dashboard/env-configs
 
     # Build the application
     - name: Build application
-      working-directory: roar-dashboard/apps/dashboard
+      working-directory: build/apps/dashboard
       env:
         NODE_OPTIONS: '--max_old_space_size=8192'
       shell: bash
       run: npm run build -- --mode ${{ inputs.environment }}
-
-    - name: Debug
-      shell: bash
-      run: |
-        pwd
-        ls -la

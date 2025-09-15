@@ -25,14 +25,6 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-      if: ${{ inputs.commit-sha != 'false' }}
-      with:
-        ref: ${{ inputs.commit-sha }}
-        repository: yeatmanlab/roar-dashboard
-        path: roar-dashboard
-
     # Install Firebase CLI (Bash Installer)
     - name: Install Firebase CLI
       shell: bash
@@ -48,23 +40,16 @@ runs:
         workload_identity_provider: ${{ inputs.gcp-workload-identity-provider }}
         service_account: ${{ inputs.gcp-service-account-id }}
 
-    - name: Debug
-      shell: bash
-      run: |
-        pwd
-        ls -la
-        ls -la apps/dashboard/${{ inputs.config-directory }}
-
     # Deploy Firestore Rules
     - name: Deploy Firestore Rules
       shell: bash
-      working-directory: apps/dashboard/${{ inputs.config-directory }}
+      working-directory: ${{ inputs.config-directory }}
       run: |
         firebase deploy --only firestore:rules --project ${{ inputs.firebase-project-id }} --force
 
     # Deploy Firestore Indexes
     - name: Deploy Firestore Indexes
       shell: bash
-      working-directory: apps/dashboard/${{ inputs.config-directory }}
+      working-directory: ${{ inputs.config-directory }}
       run: |
         firebase deploy --only firestore:indexes --project ${{ inputs.firebase-project-id }} --force
