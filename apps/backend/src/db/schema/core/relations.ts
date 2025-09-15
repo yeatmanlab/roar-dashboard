@@ -1,7 +1,9 @@
 import { relations } from 'drizzle-orm';
+import { groups } from './groups';
 import { users } from './users';
 import { orgs } from './orgs';
 import { usersOrgs } from './users-orgs';
+import { usersGroups } from './users-groups';
 
 /**
  * User Relations
@@ -9,7 +11,27 @@ import { usersOrgs } from './users-orgs';
  * Drizzle relation definition for any membership of a user in a foreign table.
  */
 export const usersRelations = relations(users, ({ many }) => ({
-  orgMemberships: many(usersOrgs),
+  org: many(usersOrgs),
+  group: many(usersGroups),
+}));
+
+/**
+ * Group Relations
+ *
+ * Drizzle relation definition for any membership of a group in a foreign table.
+ */
+export const groupsRelations = relations(groups, ({ many }) => ({
+  user: many(usersGroups),
+}));
+
+/**
+ * Users Groups relationship
+ *
+ * Drizzle relation definition for users <> users_groups <> groups, where users_groups is the join table.
+ */
+export const usersGroupsRelations = relations(usersGroups, ({ one }) => ({
+  user: one(users, { fields: [usersGroups.userId], references: [users.id] }),
+  group: one(groups, { fields: [usersGroups.groupId], references: [groups.id] }),
 }));
 
 /**
@@ -18,7 +40,7 @@ export const usersRelations = relations(users, ({ many }) => ({
  * Drizzle relation definition for any membership of an org in a foreign table.
  */
 export const orgsRelations = relations(orgs, ({ many }) => ({
-  userMemberships: many(usersOrgs),
+  user: many(usersOrgs),
 }));
 
 /**
