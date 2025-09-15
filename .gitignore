@@ -12,6 +12,9 @@ node_modules
 # Build Outputs
 dist
 
+# Local SSL Certificates
+certs
+
 # Editor directories and files
 .idea
 .vscode

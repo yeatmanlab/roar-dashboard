@@ -1,6 +1,5 @@
 import { ref, watch, onMounted, onUnmounted } from 'vue';
-import { useIdle, useTimestamp } from '@vueuse/core';
-import { useThrottleFn } from '@vueuse/core';
+import { useIdle, useTimestamp, useThrottleFn } from '@vueuse/core';
 
 /**
  * Inactivity timeout composable.
