@@ -11,6 +11,9 @@ export * from './courses';
 export * from './classes';
 export * from './users-classes';
 
+export * from './families';
+export * from './users-families';
+
 export * from './rostering-provider-ids';
 export * from './rostering-runs';
 export * from './rostering-run-entities';

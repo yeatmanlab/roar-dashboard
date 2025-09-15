@@ -134,6 +134,20 @@
       "when": 1757947125061,
       "tag": "0018_add_rostering_run_tables",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1757976808167,
+      "tag": "0019_add_family_tables",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1757976975021,
+      "tag": "0020_add_users_families_student_active_unique_index",
+      "breakpoints": true
     }
   ]
 }
