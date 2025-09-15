@@ -106,6 +106,12 @@ const useUpsertOrgMutation = () => {
             exact: false,
           });
         }
+
+        // Invalidate the general orgs query used by GroupPicker in CreateAssignment
+        queryClient.invalidateQueries({
+          queryKey: ['orgs'],
+          exact: false,
+        });
       } else {
         // Fallback invalidation logic (should be less common if onMutate always provides context.queryKey)
         const orgType = variables.type;
@@ -140,6 +146,12 @@ const useUpsertOrgMutation = () => {
         } else if (orgType === FIRESTORE_COLLECTIONS.GROUPS) {
           queryClient.invalidateQueries({ queryKey: [GROUPS_LIST_QUERY_KEY] });
         }
+
+        // Invalidate the general orgs query used by GroupPicker in CreateAssignment
+        queryClient.invalidateQueries({
+          queryKey: ['orgs'],
+          exact: false,
+        });
       }
     },
   });
