@@ -85,6 +85,13 @@
       "when": 1757934646376,
       "tag": "0011_fix_courses_groups_orgs_name_indexes",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1757939255330,
+      "tag": "0012_add_get_school_levels_from_grades_array_fn",
+      "breakpoints": true
     }
   ]
 }
