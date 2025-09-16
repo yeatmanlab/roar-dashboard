@@ -50,8 +50,8 @@ runs:
     - name: Install Node.js
       uses: actions/setup-node@v4
       with:
-        node-version-file: 'roar-dashboard/.nvmrc'
-        cache-dependency-path: 'roar-dashboard/package-lock.json'
+        node-version-file: 'build/.nvmrc'
+        cache-dependency-path: 'build/package-lock.json'
         cache: 'npm'
 
     # Install npm dependencies
