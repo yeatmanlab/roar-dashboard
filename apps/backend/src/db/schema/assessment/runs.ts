@@ -20,7 +20,7 @@ export const runs = db.table('runs', {
   userId: p.uuid().notNull(),
   taskId: p.uuid().notNull(),
   taskVariantId: p.uuid().notNull(),
-  taskVersion: p.text(), //@TODO Should we enforce format? vx.x.x
+  taskVersion: p.text(),
 
   administrationId: p.uuid().notNull(),
   assignmentId: p.uuid().notNull(),

@@ -16,6 +16,8 @@ import TrialInteractionType from '../../enums/trial-interaction-type.enum';
 import UserFamilyRole from '../../enums/user-family-role.enum';
 import UserRole from '../../enums/user-role.enum';
 import TaskVariantStatus from '../../enums/task-variant-status.enum';
+import ScoreType from '../../enums/score-type.enum';
+import AssessmentStage from '../../enums/assessment-stage.enum';
 
 /**
  * Helper function to convert a TS enum to a pgEnum
@@ -39,6 +41,8 @@ const db = p.pgSchema('app');
 
 export const agreementTypeEnum = db.enum('agreement_type', enumToPgEnum(AgreementType));
 
+export const assessmentStageEnum = db.enum('assessment_stage', enumToPgEnum(AssessmentStage));
+
 export const assignmentProgressEnum = db.enum('assignment_progress', enumToPgEnum(AssignmentProgress));
 
 export const authProviderEnum = db.enum('auth_provider', enumToPgEnum(AuthProvider));
@@ -60,6 +64,8 @@ export const rosteringEntityTypeEnum = db.enum('rostering_entity_type', enumToPg
 export const rosteringEntityStatusEnum = db.enum('rostering_entity_status', enumToPgEnum(RosteringEntityStatus));
 
 export const schoolLevelEnum = db.enum('school_level', enumToPgEnum(SchoolLevel));
+
+export const scoreTypeEnum = db.enum('score_type', enumToPgEnum(ScoreType));
 
 export const trialInteractionTypeEnum = db.enum('trial_interaction_type', enumToPgEnum(TrialInteractionType));
 
