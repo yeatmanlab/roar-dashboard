@@ -2,16 +2,20 @@
 export * from '../enums';
 
 // Tables
-export * from './users';
 export * from './orgs';
-export * from './users-orgs';
 export * from './groups';
-export * from './users-groups';
 export * from './courses';
 export * from './classes';
-export * from './users-classes';
-
 export * from './families';
+
+export * from './agreements';
+export * from './agreement-versions';
+
+export * from './users';
+export * from './user-agreements';
+export * from './users-orgs';
+export * from './users-groups';
+export * from './users-classes';
 export * from './users-families';
 
 export * from './rostering-provider-ids';

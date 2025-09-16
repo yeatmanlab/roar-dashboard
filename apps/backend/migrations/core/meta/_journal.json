@@ -169,6 +169,27 @@
       "when": 1757979043857,
       "tag": "0023_add_validate_org_hierarchy_fn",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1757979471228,
+      "tag": "0024_add_agreements_table",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1758018841418,
+      "tag": "0025_add_agreement_versions_table",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1758025458638,
+      "tag": "0026_add_user_agreements_table",
+      "breakpoints": true
     }
   ]
 }
