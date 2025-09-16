@@ -267,6 +267,20 @@
       "when": 1758033723280,
       "tag": "0037_add_administration_agreements_table",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1758034419801,
+      "tag": "0038_add_user_assignments_table",
+      "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1758034778673,
+      "tag": "0039_add_user_assignment_progress_table",
+      "breakpoints": true
     }
   ]
 }

@@ -30,6 +30,8 @@ export * from './user-classes';
 export * from './user-families';
 export * from './user-groups';
 export * from './user-orgs';
+export * from './user-assignments';
+export * from './user-assignment-progress';
 
 export * from './rostering-provider-ids';
 export * from './rostering-runs';
