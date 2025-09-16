@@ -18,6 +18,6 @@ CREATE INDEX "user_assignments_administration_idx" ON "app"."user_assignments" U
 -- Add trigger to update user_assignments.updated_at
 DROP TRIGGER IF EXISTS user_assignments_set_updated_at ON app.user_assignments;
 CREATE TRIGGER user_assignments_set_updated_at
-BEFORE INSERT OR UPDATE ON app.user_assignments
+BEFORE UPDATE ON app.user_assignments
 FOR EACH ROW
 EXECUTE FUNCTION app.set_updated_at();

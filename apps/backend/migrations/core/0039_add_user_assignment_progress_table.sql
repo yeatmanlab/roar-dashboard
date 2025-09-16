@@ -17,6 +17,6 @@ CREATE INDEX "user_assignment_progress_user_assignment_progress_idx" ON "app"."u
 -- Add trigger to update user_assignment_progress.updated_at
 DROP TRIGGER IF EXISTS user_assignment_progress_set_updated_at ON app.user_assignment_progress;
 CREATE TRIGGER user_assignment_progress_set_updated_at
-BEFORE INSERT OR UPDATE ON app.user_assignment_progress
+BEFORE UPDATE ON app.user_assignment_progress
 FOR EACH ROW
 EXECUTE FUNCTION app.set_updated_at();

@@ -19,6 +19,6 @@ CREATE TABLE "app"."run_demographics" (
 -- Add trigger to update run_demographics.updated_at
 DROP TRIGGER IF EXISTS run_demographics_set_updated_at ON app.run_demographics;
 CREATE TRIGGER run_demographics_set_updated_at
-BEFORE INSERT OR UPDATE ON app.run_demographics
+BEFORE UPDATE ON app.run_demographics
 FOR EACH ROW
 EXECUTE FUNCTION app.set_updated_at();

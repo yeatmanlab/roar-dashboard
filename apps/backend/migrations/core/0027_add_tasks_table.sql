@@ -21,6 +21,6 @@ CREATE INDEX "tasks_name_technical_lower_idx" ON "app"."tasks" USING btree (lowe
 -- Add trigger to update tasks.updated_at
 DROP TRIGGER IF EXISTS tasks_set_updated_at ON app.tasks;
 CREATE TRIGGER tasks_set_updated_at
-BEFORE INSERT OR UPDATE ON app.tasks
+BEFORE UPDATE ON app.tasks
 FOR EACH ROW
 EXECUTE FUNCTION app.set_updated_at();

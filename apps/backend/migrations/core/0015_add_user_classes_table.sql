@@ -18,6 +18,6 @@ CREATE INDEX "user_classes_class_idx" ON "app"."user_classes" USING btree ("clas
 -- Add trigger to update updated_at
 DROP TRIGGER IF EXISTS user_classes_set_updated_at ON app.user_classes;
 CREATE TRIGGER user_classes_set_updated_at
-BEFORE INSERT OR UPDATE ON app.user_classes
+BEFORE UPDATE ON app.user_classes
 FOR EACH ROW
 EXECUTE FUNCTION app.set_updated_at();

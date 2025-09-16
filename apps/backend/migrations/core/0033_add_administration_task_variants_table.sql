@@ -18,6 +18,6 @@ CREATE INDEX "administration_task_variants_task_variant_id_idx" ON "app"."admini
 -- Add trigger to update administration_task_variants.updated_at
 DROP TRIGGER IF EXISTS administration_task_variants_set_updated_at ON app.administration_task_variants;
 CREATE TRIGGER administration_task_variants_set_updated_at
-BEFORE INSERT OR UPDATE ON app.administration_task_variants
+BEFORE UPDATE ON app.administration_task_variants
 FOR EACH ROW
 EXECUTE FUNCTION app.set_updated_at();

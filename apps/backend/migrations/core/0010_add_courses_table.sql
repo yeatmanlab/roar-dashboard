@@ -16,6 +16,6 @@ CREATE INDEX "courses_name_lower_idx" ON "app"."courses" USING btree (("name"));
 -- Add trigger to update updated_at
 DROP TRIGGER IF EXISTS courses_set_updated_at ON app.courses;
 CREATE TRIGGER courses_set_updated_at
-BEFORE INSERT OR UPDATE ON app.courses
+BEFORE UPDATE ON app.courses
 FOR EACH ROW
 EXECUTE FUNCTION app.set_updated_at();

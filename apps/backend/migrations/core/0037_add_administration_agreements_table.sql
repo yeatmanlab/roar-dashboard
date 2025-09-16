@@ -13,6 +13,6 @@ ALTER TABLE "app"."administration_agreements" ADD CONSTRAINT "administration_agr
 -- Add trigger to update administration_agreements.updated_at
 DROP TRIGGER IF EXISTS administration_agreements_set_updated_at ON app.administration_agreements;
 CREATE TRIGGER administration_agreements_set_updated_at
-BEFORE INSERT OR UPDATE ON app.administration_agreements
+BEFORE UPDATE ON app.administration_agreements
 FOR EACH ROW
 EXECUTE FUNCTION app.set_updated_at();

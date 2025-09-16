@@ -36,6 +36,6 @@ CREATE UNIQUE INDEX "users_email_lower_uniqIdx" ON "app"."users" USING btree (lo
 -- Add trigger to update updated_at
 DROP TRIGGER IF EXISTS users_set_updated_at ON app.users;
 CREATE TRIGGER users_set_updated_at
-BEFORE INSERT OR UPDATE ON app.users
+BEFORE UPDATE ON app.users
 FOR EACH ROW
 EXECUTE FUNCTION app.set_updated_at();

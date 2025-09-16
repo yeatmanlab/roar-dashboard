@@ -16,6 +16,6 @@ CREATE INDEX "rostering_provider_ids_provider_idx" ON "app"."rostering_provider_
 -- Add trigger to update updated_at
 DROP TRIGGER IF EXISTS rostering_provider_ids_set_updated_at ON app.rostering_provider_ids;
 CREATE TRIGGER rostering_provider_ids_set_updated_at
-BEFORE INSERT OR UPDATE ON app.rostering_provider_ids
+BEFORE UPDATE ON app.rostering_provider_ids
 FOR EACH ROW
 EXECUTE FUNCTION app.set_updated_at();

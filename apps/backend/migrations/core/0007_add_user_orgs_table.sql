@@ -19,6 +19,6 @@ CREATE INDEX "user_orgs_org_idx" ON "app"."user_orgs" USING btree ("org_id");
 -- Add trigger to update updated_at
 DROP TRIGGER IF EXISTS user_orgs_set_updated_at ON app.user_orgs;
 CREATE TRIGGER user_orgs_set_updated_at
-BEFORE INSERT OR UPDATE ON app.user_orgs
+BEFORE UPDATE ON app.user_orgs
 FOR EACH ROW
 EXECUTE FUNCTION app.set_updated_at();

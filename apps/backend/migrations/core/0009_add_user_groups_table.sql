@@ -18,6 +18,6 @@ CREATE INDEX "user_groups_group_idx" ON "app"."user_groups" USING btree ("group_
 -- Add trigger to update updated_at
 DROP TRIGGER IF EXISTS user_groups_set_updated_at ON app.user_groups;
 CREATE TRIGGER user_groups_set_updated_at
-BEFORE INSERT OR UPDATE ON app.user_groups
+BEFORE UPDATE ON app.user_groups
 FOR EACH ROW
 EXECUTE FUNCTION app.set_updated_at();
