@@ -1,4 +1,6 @@
 import { relations } from 'drizzle-orm';
+import { agreements } from './agreements';
+import { agreementVersions } from './agreement-versions';
 import { classes } from './classes';
 import { groups } from './groups';
 import { orgs } from './orgs';
@@ -73,4 +75,22 @@ export const orgsRelations = relations(orgs, ({ many }) => ({
 export const usersOrgsRelations = relations(usersOrgs, ({ one }) => ({
   user: one(users, { fields: [usersOrgs.userId], references: [users.id] }),
   org: one(orgs, { fields: [usersOrgs.orgId], references: [orgs.id] }),
+}));
+
+/**
+ * Agreements Relations
+ *
+ * Drizzle relation definition for any membership of an agreement in a foreign table.
+ */
+export const agreementsRelations = relations(agreements, ({ many }) => ({
+  versions: many(agreementVersions),
+}));
+
+/**
+ * Agreement Versions Relations
+ *
+ * Drizzle relation definition for any membership of an agreement version in a foreign table.
+ */
+export const agreementVersionsRelations = relations(agreementVersions, ({ one }) => ({
+  agreement: one(agreements, { fields: [agreementVersions.agreementId], references: [agreements.id] }),
 }));
