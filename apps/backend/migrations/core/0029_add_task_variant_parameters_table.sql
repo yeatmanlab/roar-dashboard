@@ -13,6 +13,6 @@ CREATE INDEX "task_variant_parameters_name_variant_id_idx" ON "app"."task_varian
 -- Add trigger to update task_variant_parameters.updated_at
 DROP TRIGGER IF EXISTS task_variant_parameters_set_updated_at ON app.task_variant_parameters;
 CREATE TRIGGER task_variant_parameters_set_updated_at
-BEFORE INSERT OR UPDATE ON app.task_variant_parameters
+BEFORE UPDATE ON app.task_variant_parameters
 FOR EACH ROW
 EXECUTE FUNCTION app.set_updated_at();

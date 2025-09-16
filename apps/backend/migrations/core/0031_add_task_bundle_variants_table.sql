@@ -17,6 +17,6 @@ CREATE INDEX "task_bundle_variants_task_bundle_id_sort_order_idx" ON "app"."task
 -- Add trigger to update task_bundle_variants.updated_at
 DROP TRIGGER IF EXISTS task_bundle_variants_set_updated_at ON app.task_bundle_variants;
 CREATE TRIGGER task_bundle_variants_set_updated_at
-BEFORE INSERT OR UPDATE ON app.task_bundle_variants
+BEFORE UPDATE ON app.task_bundle_variants
 FOR EACH ROW
 EXECUTE FUNCTION app.set_updated_at();

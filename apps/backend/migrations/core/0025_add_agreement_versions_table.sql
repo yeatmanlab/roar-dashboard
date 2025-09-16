@@ -20,6 +20,6 @@ CREATE INDEX "agreement_versions_current_locale_idx" ON "app"."agreement_version
 -- Add trigger to update agreement_versions.updated_at
 DROP TRIGGER IF EXISTS agreement_versions_set_updated_at ON app.agreement_versions;
 CREATE TRIGGER agreement_versions_set_updated_at
-BEFORE INSERT OR UPDATE ON app.agreement_versions
+BEFORE UPDATE ON app.agreement_versions
 FOR EACH ROW
 EXECUTE FUNCTION app.set_updated_at();

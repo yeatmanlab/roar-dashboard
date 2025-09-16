@@ -15,6 +15,6 @@ CREATE INDEX "task_bundles_name_lower_idx" ON "app"."task_bundles" USING btree (
 -- Add trigger to update task_bundles.updated_at
 DROP TRIGGER IF EXISTS task_bundles_set_updated_at ON app.task_bundles;
 CREATE TRIGGER task_bundles_set_updated_at
-BEFORE INSERT OR UPDATE ON app.task_bundles
+BEFORE UPDATE ON app.task_bundles
 FOR EACH ROW
 EXECUTE FUNCTION app.set_updated_at();

@@ -32,7 +32,7 @@ CREATE INDEX "user_families_family_idx" ON "app"."user_families" USING btree ("f
 -- Add trigger to update families.updated_at
 DROP TRIGGER IF EXISTS families_set_updated_at ON app.families;
 CREATE TRIGGER families_set_updated_at
-BEFORE INSERT OR UPDATE ON app.families
+BEFORE UPDATE ON app.families
 FOR EACH ROW
 EXECUTE FUNCTION app.set_updated_at();
 
@@ -40,6 +40,6 @@ EXECUTE FUNCTION app.set_updated_at();
 -- Add trigger to update user_families.updated_at
 DROP TRIGGER IF EXISTS user_families_set_updated_at ON app.user_families;
 CREATE TRIGGER user_families_set_updated_at
-BEFORE INSERT OR UPDATE ON app.user_families
+BEFORE UPDATE ON app.user_families
 FOR EACH ROW
 EXECUTE FUNCTION app.set_updated_at();

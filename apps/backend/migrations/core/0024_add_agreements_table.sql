@@ -15,6 +15,6 @@ CREATE INDEX "agreements_type_idx" ON "app"."agreements" USING btree ("agreement
 -- Add trigger to update agreements.updated_at
 DROP TRIGGER IF EXISTS agreements_set_updated_at ON app.agreements;
 CREATE TRIGGER agreements_set_updated_at
-BEFORE INSERT OR UPDATE ON app.agreements
+BEFORE UPDATE ON app.agreements
 FOR EACH ROW
 EXECUTE FUNCTION app.set_updated_at();

@@ -24,6 +24,6 @@ CREATE INDEX "administrations_date_start_end_idx" ON "app"."administrations" USI
 -- Add trigger to update administrations.updated_at
 DROP TRIGGER IF EXISTS administrations_set_updated_at ON app.administrations;
 CREATE TRIGGER administrations_set_updated_at
-BEFORE INSERT OR UPDATE ON app.administrations
+BEFORE UPDATE ON app.administrations
 FOR EACH ROW
 EXECUTE FUNCTION app.set_updated_at();

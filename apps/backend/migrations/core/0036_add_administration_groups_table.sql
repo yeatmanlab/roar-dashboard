@@ -13,6 +13,6 @@ ALTER TABLE "app"."administration_groups" ADD CONSTRAINT "administration_groups_
 -- Add trigger to update administration_groups.updated_at
 DROP TRIGGER IF EXISTS administration_groups_set_updated_at ON app.administration_groups;
 CREATE TRIGGER administration_groups_set_updated_at
-BEFORE INSERT OR UPDATE ON app.administration_groups
+BEFORE UPDATE ON app.administration_groups
 FOR EACH ROW
 EXECUTE FUNCTION app.set_updated_at();

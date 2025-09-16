@@ -25,6 +25,6 @@ CREATE INDEX "groups_name_lower_idx" ON "app"."groups" USING btree (("name"));
 -- Add trigger to update updated_at
 DROP TRIGGER IF EXISTS groups_set_updated_at ON app.groups;
 CREATE TRIGGER groups_set_updated_at
-BEFORE INSERT OR UPDATE ON app.groups
+BEFORE UPDATE ON app.groups
 FOR EACH ROW
 EXECUTE FUNCTION app.set_updated_at();

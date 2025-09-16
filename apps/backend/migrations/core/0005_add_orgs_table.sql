@@ -38,6 +38,6 @@ CREATE INDEX "orgs_name_lower_idx" ON "app"."orgs" USING btree (("name"));
 -- Add trigger to update updated_at
 DROP TRIGGER IF EXISTS orgs_set_updated_at ON app.orgs;
 CREATE TRIGGER orgs_set_updated_at
-BEFORE INSERT OR UPDATE ON app.orgs
+BEFORE UPDATE ON app.orgs
 FOR EACH ROW
 EXECUTE FUNCTION app.set_updated_at();
