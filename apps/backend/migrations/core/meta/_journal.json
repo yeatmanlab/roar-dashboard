@@ -190,6 +190,41 @@
       "when": 1758025458638,
       "tag": "0026_add_user_agreements_table",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1758030086866,
+      "tag": "0027_add_tasks_table",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1758030189021,
+      "tag": "0028_add_task_variants_table",
+      "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1758030231401,
+      "tag": "0029_add_task_variant_parameters_table",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1758030451045,
+      "tag": "0030_add_task_bundles_table",
+      "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1758030876857,
+      "tag": "0031_add_task_bundle_variants_table",
+      "breakpoints": true
     }
   ]
 }

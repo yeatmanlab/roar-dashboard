@@ -9,11 +9,14 @@ import { userAgreements } from './user-agreements';
 import { userClasses } from './user-classes';
 import { userGroups } from './user-groups';
 import { userOrgs } from './user-orgs';
+import { tasks } from './tasks';
+import { taskVariants } from './task-variants';
+import { taskVariantParameters } from './task-variant-parameters';
+import { taskBundles } from './task-bundles';
+import { taskBundleVariants } from './task-bundle-variants';
 
 /**
  * Class Relations
- *
- * Drizzle relation definition for any membership of a class in a foreign table.
  */
 export const classesRelations = relations(classes, ({ many }) => ({
   users: many(userClasses),
@@ -21,8 +24,6 @@ export const classesRelations = relations(classes, ({ many }) => ({
 
 /**
  * Group Relations
- *
- * Drizzle relation definition for any membership of a group in a foreign table.
  */
 export const groupsRelations = relations(groups, ({ many }) => ({
   users: many(userGroups),
@@ -30,8 +31,6 @@ export const groupsRelations = relations(groups, ({ many }) => ({
 
 /**
  * Org Relations
- *
- * Drizzle relation definition for any membership of an org in a foreign table.
  */
 export const orgsRelations = relations(orgs, ({ many }) => ({
   users: many(userOrgs),
@@ -39,26 +38,40 @@ export const orgsRelations = relations(orgs, ({ many }) => ({
 
 /**
  * Agreements Relations
- *
- * Drizzle relation definition for any membership of an agreement in a foreign table.
  */
 export const agreementsRelations = relations(agreements, ({ many }) => ({
   versions: many(agreementVersions),
 }));
 
-/**
- * Agreement Versions Relations
- *
- * Drizzle relation definition for any membership of an agreement version in a foreign table.
- */
 export const agreementVersionsRelations = relations(agreementVersions, ({ one }) => ({
   agreement: one(agreements, { fields: [agreementVersions.agreementId], references: [agreements.id] }),
 }));
 
 /**
- * User Relations
- *
- * Drizzle relation definition for any membership of a user in a foreign table.
+ * Tasks Relations
+ */
+export const tasksRelations = relations(tasks, ({ many }) => ({
+  variants: many(taskVariants),
+}));
+
+export const taskVariantsRelations = relations(taskVariants, ({ one }) => ({
+  task: one(tasks, { fields: [taskVariants.taskId], references: [tasks.id] }),
+}));
+
+export const taskVariantParametersRelations = relations(taskVariantParameters, ({ one }) => ({
+  taskVariant: one(taskVariants, { fields: [taskVariantParameters.taskVariantId], references: [taskVariants.id] }),
+}));
+
+export const taskBundlesRelations = relations(taskBundles, ({ many }) => ({
+  variants: many(taskBundleVariants),
+}));
+
+export const taskBundleVariantsRelations = relations(taskBundleVariants, ({ one }) => ({
+  taskBundle: one(taskBundles, { fields: [taskBundleVariants.taskBundleId], references: [taskBundles.id] }),
+}));
+
+/**
+ * User Relationships
  */
 export const usersRelations = relations(users, ({ many }) => ({
   orgs: many(userOrgs),
@@ -66,45 +79,24 @@ export const usersRelations = relations(users, ({ many }) => ({
   classes: many(userClasses),
 }));
 
-/**
- * User Classes relationship
- *
- * Drizzle relation definition for users <> user_classes <> classes, where user_classes is the join table.
- */
 export const userClassesRelations = relations(userClasses, ({ one }) => ({
   user: one(users, { fields: [userClasses.userId], references: [users.id] }),
   class: one(classes, { fields: [userClasses.classId], references: [classes.id] }),
 }));
 
-/**
- * User Groups relationship
- *
- * Drizzle relation definition for users <> user_groups <> groups, where user_groups is the join table.
- */
 export const userGroupsRelations = relations(userGroups, ({ one }) => ({
   user: one(users, { fields: [userGroups.userId], references: [users.id] }),
   group: one(groups, { fields: [userGroups.groupId], references: [groups.id] }),
 }));
 
-/**
- * User Orgs relationship
- *
- * Drizzle relation definition for users <> user_orgs <> orgs, where user_orgs is the join table.
- */
 export const userOrgsRelations = relations(userOrgs, ({ one }) => ({
   user: one(users, { fields: [userOrgs.userId], references: [users.id] }),
   org: one(orgs, { fields: [userOrgs.orgId], references: [orgs.id] }),
 }));
 
-/**
- * User Agreements relationship
- *
- * Drizzle relation definition for users <> user_agreements <> agreement_versions, where user_agreements is the join
- * table.
- */
 export const userAgreementsRelations = relations(userAgreements, ({ one }) => ({
   user: one(users, { fields: [userAgreements.userId], references: [users.id] }),
-  agreementVersion: one(agreementVersions, {
+  agreement: one(agreementVersions, {
     fields: [userAgreements.agreementVersionId],
     references: [agreementVersions.id],
   }),
