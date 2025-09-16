@@ -1,0 +1,235 @@
+{
+  "id": "0de33109-9568-4e1f-a89a-6a8c6f708d6c",
+  "prevId": "272b9ec4-1a2e-48dd-a2f4-b3acd6aaa403",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "app.runs": {
+      "name": "runs",
+      "schema": "app",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "task_id": {
+          "name": "task_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "task_variant_id": {
+          "name": "task_variant_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "task_version": {
+          "name": "task_version",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "administration_id": {
+          "name": "administration_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "assignment_id": {
+          "name": "assignment_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "best_run": {
+          "name": "best_run",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "reliable_run": {
+          "name": "reliable_run",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "engagement_flags": {
+          "name": "engagement_flags",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "metadata": {
+          "name": "metadata",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "exclude_from_research": {
+          "name": "exclude_from_research",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "completed_at": {
+          "name": "completed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {
+    "app.agreement_type": {
+      "name": "agreement_type",
+      "schema": "app",
+      "values": ["tos", "assent", "consent"]
+    },
+    "app.assignment_progress": {
+      "name": "assignment_progress",
+      "schema": "app",
+      "values": ["assigned", "started", "completed"]
+    },
+    "app.auth_provider": {
+      "name": "auth_provider",
+      "schema": "app",
+      "values": ["password", "oidc.clever", "oidc.classlink", "oidc.nycps", "google"]
+    },
+    "app.class_type": {
+      "name": "class_type",
+      "schema": "app",
+      "values": ["homeroom", "scheduled", "other"]
+    },
+    "app.free_reduced_lunch_status": {
+      "name": "free_reduced_lunch_status",
+      "schema": "app",
+      "values": ["Free", "Reduced", "Paid"]
+    },
+    "app.grade": {
+      "name": "grade",
+      "schema": "app",
+      "values": [
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "10",
+        "11",
+        "12",
+        "13",
+        "PreKindergarten",
+        "TransitionalKindergarten",
+        "Kindergarten",
+        "InfantToddler",
+        "Preschool",
+        "PostGraduate",
+        "Ungraded",
+        "Other"
+      ]
+    },
+    "app.group_type": {
+      "name": "group_type",
+      "schema": "app",
+      "values": ["cohort", "community", "business"]
+    },
+    "app.org_type": {
+      "name": "org_type",
+      "schema": "app",
+      "values": ["national", "state", "local", "district", "school", "department"]
+    },
+    "app.rostering_entity_status": {
+      "name": "rostering_entity_status",
+      "schema": "app",
+      "values": ["enrolled", "unenrolled", "failed", "skipped"]
+    },
+    "app.rostering_entity_type": {
+      "name": "rostering_entity_type",
+      "schema": "app",
+      "values": ["org", "class", "course", "user"]
+    },
+    "app.rostering_provider": {
+      "name": "rostering_provider",
+      "schema": "app",
+      "values": ["classlink", "clever", "dashboard", "nycps", "csv"]
+    },
+    "app.school_level": {
+      "name": "school_level",
+      "schema": "app",
+      "values": ["early_childhood", "elementary", "middle", "high", "postsecondary"]
+    },
+    "app.task_variant_status": {
+      "name": "task_variant_status",
+      "schema": "app",
+      "values": ["DRAFT", "PUBLISHED", "DEPRECATED"]
+    },
+    "app.trial_interaction_type": {
+      "name": "trial_interaction_type",
+      "schema": "app",
+      "values": ["focus", "blur", "fullscreen_enter", "fullscreen_exit"]
+    },
+    "app.user_family_role": {
+      "name": "user_family_role",
+      "schema": "app",
+      "values": ["parent", "child", "guest"]
+    },
+    "app.user_role": {
+      "name": "user_role",
+      "schema": "app",
+      "values": ["super_admin", "platform_admin", "launch_admin", "admin", "student"]
+    },
+    "app.user_type": {
+      "name": "user_type",
+      "schema": "app",
+      "values": ["student", "educator", "caregiver", "admin"]
+    }
+  },
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}
