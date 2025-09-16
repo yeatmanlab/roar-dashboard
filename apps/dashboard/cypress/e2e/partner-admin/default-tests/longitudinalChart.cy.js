@@ -3,13 +3,10 @@ const baseUrl = Cypress.config().baseUrl;
 const PARTNER_ADMIN_USERNAME = Cypress.env('PARTNER_ADMIN_USERNAME');
 const PARTNER_ADMIN_PASSWORD = Cypress.env('PARTNER_ADMIN_PASSWORD');
 
-// Score report path constants
-const ADMINISTRATION_ID = 'K8UaI8p79Dntj5Z2CJk8';
-const DISTRICT_ID = 'qoW9OEPcV50rIA2IcqbV';
-const USER_ID = 'yXuZ8S0En1UsOE4C0uh6wUlQ5Wt1';
-
 const navigateToStudentReport = () => {
-  cy.visit(`${baseUrl}/scores/${ADMINISTRATION_ID}/district/${DISTRICT_ID}/user/${USER_ID}/new`);
+  cy.visit(
+    `${baseUrl}/scores/${Cypress.env('testAdministrationId')}/district/${Cypress.env('testDistrictId')}/user/${Cypress.env('testUserId')}/new`,
+  );
 };
 
 describe('Longitudinal Chart Component', () => {

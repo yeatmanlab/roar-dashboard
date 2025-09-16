@@ -121,6 +121,9 @@ module.exports = defineConfig({
   env: {
     baseUrl: process.env.CYPRESS_BASE_URL ?? 'https://localhost:5173',
     firestoreUrl: 'https://firestore.googleapis.com/**/*',
+    testAdministrationId: 'K8UaI8p79Dntj5Z2CJk8',
+    testDistrictId: 'qoW9OEPcV50rIA2IcqbV',
+    testUserId: 'yXuZ8S0En1UsOE4C0uh6wUlQ5Wt1',
     firestoreAdminUrl: 'https://firestore.googleapis.com/v1/projects/gse-roar-admin-dev/databases/(default)/documents',
     firestoreAppUrl:
       'https://firestore.googleapis.com/v1/projects/gse-roar-assessment-dev/databases/(default)/documents',
