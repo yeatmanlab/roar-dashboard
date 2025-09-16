@@ -29,6 +29,13 @@
       "when": 1758056877413,
       "tag": "0003_add_runs_table",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1758058091162,
+      "tag": "0004_add_run_trials_table",
+      "breakpoints": true
     }
   ]
 }
