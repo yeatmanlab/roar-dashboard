@@ -281,6 +281,13 @@
       "when": 1758034778673,
       "tag": "0039_add_user_assignment_progress_table",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1758035479192,
+      "tag": "0040_add_run_demographics_table",
+      "breakpoints": true
     }
   ]
 }

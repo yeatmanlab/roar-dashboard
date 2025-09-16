@@ -33,6 +33,8 @@ export * from './user-orgs';
 export * from './user-assignments';
 export * from './user-assignment-progress';
 
+export * from './run-demographics';
+
 export * from './rostering-provider-ids';
 export * from './rostering-runs';
 export * from './rostering-run-entities';
