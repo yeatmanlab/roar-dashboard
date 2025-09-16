@@ -46,7 +46,6 @@ import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import PvButton from 'primevue/button';
-import PvImage from 'primevue/image';
 import PvMenubar from 'primevue/menubar';
 import { useAuthStore } from '@/store/auth';
 import { getNavbarActions } from '@/router/navbarActions';

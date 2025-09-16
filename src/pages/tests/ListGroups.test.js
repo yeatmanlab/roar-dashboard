@@ -69,7 +69,8 @@ describe('ListGroups.vue', () => {
 
     const addGroupBtn = wrapper.find('[data-testid="add-group-btn"]');
     const addUsersBtn = wrapper.find('[data-testid="add-users-btn"]');
-    const tabHeaders = wrapper.findAll('.p-tabview-tablist-item');
+    // Updated selector for new PrimeVue Tabs component
+    const tabHeaders = wrapper.findAll('.p-tab');
     const table = wrapper.find('[data-cy="roar-data-table"]');
 
     expect(addGroupBtn.exists()).toBe(true);
@@ -80,14 +81,15 @@ describe('ListGroups.vue', () => {
 
   it('should allow users to navigate through all the tabs', async () => {
     const wrapper = mount(ListGroups, mountOptions);
-    const tabHeaders = wrapper.findAll('.p-tabview-tablist-item');
+    // Updated selector for new PrimeVue Tabs component
+    const tabHeaders = wrapper.findAll('.p-tab');
 
     expect(tabHeaders.length).toBe(4);
 
     for (let i = 0; i < tabHeaders.length; i++) {
-      const tabHeaderLink = tabHeaders[i].find('a');
-      await tabHeaderLink.trigger('click');
-      expect(tabHeaders[i].classes()).toContain('p-tabview-tablist-item-active');
+      await tabHeaders[i].trigger('click');
+      // Updated active class for new PrimeVue Tabs component
+      expect(tabHeaders[i].classes()).toContain('p-tab-active');
     }
   });
 

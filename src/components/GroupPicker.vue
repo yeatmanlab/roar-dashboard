@@ -8,8 +8,12 @@
             <span class="required-asterisk text-red-500 ml-1">*</span>
           </div>
         </template>
-        <PvTabView v-if="claimsLoaded" v-model:active-index="activeIndex" class="m-0 p-0 org-tabs" lazy>
-          <PvTabPanel v-for="orgType in orgHeaders" :key="orgType" :header="orgType.header">
+        <PvTabs v-if="claimsLoaded" v-model:active-index="activeIndex" class="m-0 p-0 org-tabs" lazy :value="String(activeIndex)">
+          <PvTabList>
+            <PvTab v-for="(orgType, key) in orgHeaders" :key="key" :value="key">{{ orgType.header }}</PvTab>
+          </PvTabList>
+          <PvTabPanels>
+            <PvTabPanel v-for="(orgType, key) in orgHeaders" :key="key" :value="key">
             <div class="grid column-gap-3">
               <div
                 v-if="activeOrgType === 'schools' || activeOrgType === 'classes'"
@@ -61,7 +65,8 @@
               </PvListbox>
             </div>
           </PvTabPanel>
-        </PvTabView>
+          </PvTabPanels>
+        </PvTabs>
       </PvPanel>
     </div>
     <div v-if="!forParentOrg" class="col-12 md:col-4">
@@ -104,8 +109,11 @@ import PvSelect from 'primevue/select';
 import PvListbox from 'primevue/listbox';
 import PvPanel from 'primevue/panel';
 import PvScrollPanel from 'primevue/scrollpanel';
+import PvTab from 'primevue/tab';
+import PvTabList from 'primevue/tablist';
 import PvTabPanel from 'primevue/tabpanel';
-import PvTabView from 'primevue/tabview';
+import PvTabPanels from 'primevue/tabpanels';
+import PvTabs from 'primevue/tabs';
 import { useAuthStore } from '@/store/auth';
 import { orgFetcher, orgFetchAll } from '@/helpers/query/orgs';
 import { orderByDefault } from '@/helpers/query/utils';

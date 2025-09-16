@@ -9,23 +9,32 @@
         <div class="text-md text-gray-500 ml-6">Manage tasks and variants.</div>
       </div>
       <div class="register-container mx-auto md:flex-none">
-        <PvTabView>
-          <PvTabPanel header="Tasks">
-            <ManageTasks />
-          </PvTabPanel>
+        <PvTabs value="tasks">
+          <PvTabList>
+            <PvTab value="tasks">Tasks</PvTab>
+            <PvTab value="variants">Variants</PvTab>
+          </PvTabList>
+          <PvTabPanels>
+            <PvTabPanel value="tasks">
+              <ManageTasks />
+            </PvTabPanel>
 
-          <PvTabPanel header="Variants">
-            <ManageVariants />
-          </PvTabPanel>
-        </PvTabView>
+            <PvTabPanel value="variants">
+              <ManageVariants />
+            </PvTabPanel>
+          </PvTabPanels>
+        </PvTabs>
       </div>
     </section>
   </main>
 </template>
 
 <script setup>
+import PvTab from 'primevue/tab';
+import PvTabList from 'primevue/tablist';
 import PvTabPanel from 'primevue/tabpanel';
-import PvTabView from 'primevue/tabview';
+import PvTabPanels from 'primevue/tabpanels';
+import PvTabs from 'primevue/tabs';
 import ManageTasks from '@/components/tasks/ManageTasks.vue';
 import ManageVariants from '@/components/tasks/ManageVariants.vue';
 </script>

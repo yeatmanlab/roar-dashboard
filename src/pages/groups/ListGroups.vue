@@ -27,8 +27,12 @@
           </div>
         </div>
       </div>
-      <PvTabView v-if="claimsLoaded" v-model:active-index="activeIndex" lazy class="mb-7">
-        <PvTabPanel v-for="orgType in orgHeaders" :key="orgType" :header="orgType.header">
+      <PvTabs v-if="claimsLoaded" v-model:value="activeOrgTypeValue" lazy class="mb-7">
+        <PvTabList>
+          <PvTab v-for="orgType in orgHeaders" :key="orgType.id" :value="orgType.id">{{ orgType.header }}</PvTab>
+        </PvTabList>
+        <PvTabPanels>
+          <PvTabPanel v-for="orgType in orgHeaders" :key="orgType.id" :value="orgType.id">
           <div class="grid column-gap-3 mt-2">
             <div
               v-if="activeOrgType === 'schools' || activeOrgType === 'classes' || activeOrgType === 'groups'"
@@ -78,7 +82,8 @@
             @assignments-button="onAssignmentsButtonClick($event)"
           />
         </PvTabPanel>
-      </PvTabView>
+        </PvTabPanels>
+      </PvTabs>
     </section>
     <section class="flex mt-8 justify-content-end">
       <PvDialog
@@ -185,8 +190,11 @@ import PvDialog from 'primevue/dialog';
 import PvSelect from 'primevue/select';
 import PvInputGroup from 'primevue/inputgroup';
 import PvInputText from 'primevue/inputtext';
+import PvTab from 'primevue/tab';
+import PvTabList from 'primevue/tablist';
 import PvTabPanel from 'primevue/tabpanel';
-import PvTabView from 'primevue/tabview';
+import PvTabPanels from 'primevue/tabpanels';
+import PvTabs from 'primevue/tabs';
 import _get from 'lodash/get';
 import _head from 'lodash/head';
 import _kebabCase from 'lodash/kebabCase';
@@ -269,6 +277,16 @@ const orgHeaders = computed(() => {
 const activeIndex = ref(0);
 const activeOrgType = computed(() => {
   return Object.keys(orgHeaders.value)[activeIndex.value];
+});
+
+const activeOrgTypeValue = computed({
+  get() {
+    return Object.keys(orgHeaders.value)[activeIndex.value];
+  },
+  set(value) {
+    const keys = Object.keys(orgHeaders.value);
+    activeIndex.value = keys.indexOf(value);
+  }
 });
 
 const claimsLoaded = computed(() => !!userClaims?.value?.claims);
