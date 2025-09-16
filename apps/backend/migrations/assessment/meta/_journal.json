@@ -50,6 +50,13 @@
       "when": 1758059299028,
       "tag": "0006_add_score_type_and_assessment_stage_enums",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1758059397485,
+      "tag": "0007_add_run_scores_table",
+      "breakpoints": true
     }
   ]
 }
