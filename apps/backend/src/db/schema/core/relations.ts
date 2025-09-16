@@ -14,12 +14,19 @@ import { taskVariants } from './task-variants';
 import { taskVariantParameters } from './task-variant-parameters';
 import { taskBundles } from './task-bundles';
 import { taskBundleVariants } from './task-bundle-variants';
+import { administrations } from './administrations';
+import { administrationTaskVariants } from './administration-task-variants';
+import { administrationAgreements } from './administration-agreements';
+import { administrationClasses } from './administration-classes';
+import { administrationGroups } from './administration-groups';
+import { administrationOrgs } from './administration-orgs';
 
 /**
  * Class Relations
  */
 export const classesRelations = relations(classes, ({ many }) => ({
   users: many(userClasses),
+  administrations: many(administrationClasses),
 }));
 
 /**
@@ -27,6 +34,7 @@ export const classesRelations = relations(classes, ({ many }) => ({
  */
 export const groupsRelations = relations(groups, ({ many }) => ({
   users: many(userGroups),
+  administrations: many(administrationGroups),
 }));
 
 /**
@@ -34,17 +42,20 @@ export const groupsRelations = relations(groups, ({ many }) => ({
  */
 export const orgsRelations = relations(orgs, ({ many }) => ({
   users: many(userOrgs),
+  administrations: many(administrationOrgs),
 }));
 
 /**
  * Agreements Relations
  */
 export const agreementsRelations = relations(agreements, ({ many }) => ({
+  administrations: many(administrationAgreements),
   versions: many(agreementVersions),
 }));
 
-export const agreementVersionsRelations = relations(agreementVersions, ({ one }) => ({
+export const agreementVersionsRelations = relations(agreementVersions, ({ one, many }) => ({
   agreement: one(agreements, { fields: [agreementVersions.agreementId], references: [agreements.id] }),
+  users: many(userAgreements),
 }));
 
 /**
@@ -54,7 +65,8 @@ export const tasksRelations = relations(tasks, ({ many }) => ({
   variants: many(taskVariants),
 }));
 
-export const taskVariantsRelations = relations(taskVariants, ({ one }) => ({
+export const taskVariantsRelations = relations(taskVariants, ({ one, many }) => ({
+  administrations: many(administrationTaskVariants),
   task: one(tasks, { fields: [taskVariants.taskId], references: [tasks.id] }),
 }));
 
@@ -68,6 +80,73 @@ export const taskBundlesRelations = relations(taskBundles, ({ many }) => ({
 
 export const taskBundleVariantsRelations = relations(taskBundleVariants, ({ one }) => ({
   taskBundle: one(taskBundles, { fields: [taskBundleVariants.taskBundleId], references: [taskBundles.id] }),
+}));
+
+/**
+ * Administration Relations
+ */
+export const administrationsRelations = relations(administrations, ({ one, many }) => ({
+  createdByUser: one(users, { fields: [administrations.createdBy], references: [users.id] }),
+  agreements: many(administrationAgreements),
+  classes: many(administrationClasses),
+  groups: many(administrationGroups),
+  orgs: many(administrationOrgs),
+  taskVariants: many(administrationTaskVariants),
+}));
+
+export const administrationAgreementsRelations = relations(administrationAgreements, ({ one }) => ({
+  administration: one(administrations, {
+    fields: [administrationAgreements.administrationId],
+    references: [administrations.id],
+  }),
+  agreement: one(agreements, {
+    fields: [administrationAgreements.agreementId],
+    references: [agreements.id],
+  }),
+}));
+
+export const administrationClassesRelations = relations(administrationClasses, ({ one }) => ({
+  administration: one(administrations, {
+    fields: [administrationClasses.administrationId],
+    references: [administrations.id],
+  }),
+  class: one(classes, {
+    fields: [administrationClasses.classId],
+    references: [classes.id],
+  }),
+}));
+
+export const administrationGroupsRelations = relations(administrationGroups, ({ one }) => ({
+  administration: one(administrations, {
+    fields: [administrationGroups.administrationId],
+    references: [administrations.id],
+  }),
+  group: one(groups, {
+    fields: [administrationGroups.groupId],
+    references: [groups.id],
+  }),
+}));
+
+export const administrationOrgsRelations = relations(administrationOrgs, ({ one }) => ({
+  administration: one(administrations, {
+    fields: [administrationOrgs.administrationId],
+    references: [administrations.id],
+  }),
+  org: one(orgs, {
+    fields: [administrationOrgs.orgId],
+    references: [orgs.id],
+  }),
+}));
+
+export const administrationTaskVariantsRelations = relations(administrationTaskVariants, ({ one }) => ({
+  administration: one(administrations, {
+    fields: [administrationTaskVariants.administrationId],
+    references: [administrations.id],
+  }),
+  taskVariant: one(taskVariants, {
+    fields: [administrationTaskVariants.taskVariantId],
+    references: [taskVariants.id],
+  }),
 }));
 
 /**
@@ -96,7 +175,7 @@ export const userOrgsRelations = relations(userOrgs, ({ one }) => ({
 
 export const userAgreementsRelations = relations(userAgreements, ({ one }) => ({
   user: one(users, { fields: [userAgreements.userId], references: [users.id] }),
-  agreement: one(agreementVersions, {
+  agreementVersion: one(agreementVersions, {
     fields: [userAgreements.agreementVersionId],
     references: [agreementVersions.id],
   }),
