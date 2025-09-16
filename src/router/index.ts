@@ -354,7 +354,10 @@ router.beforeEach(async (to: RouteLocationNormalized, from: RouteLocationNormali
 
 // PostHog pageview tracking
 router.afterEach((to, from) => {
-  logger.capture('pageview', { to, from });
+  logger.capture('pageview', {
+    to: { name: to.name, path: to.path },
+    from: { name: from.name, path: from.path }
+  });
 });
 
 export default router;
