@@ -225,6 +225,48 @@
       "when": 1758030876857,
       "tag": "0031_add_task_bundle_variants_table",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1758032361508,
+      "tag": "0032_add_administrations_table",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1758032988805,
+      "tag": "0033_add_administration_task_variants_table",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1758033370158,
+      "tag": "0034_add_administration_orgs_table",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1758033483682,
+      "tag": "0035_add_administration_classes_table",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1758033562708,
+      "tag": "0036_add_administration_groups_table",
+      "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1758033723280,
+      "tag": "0037_add_administration_agreements_table",
+      "breakpoints": true
     }
   ]
 }
