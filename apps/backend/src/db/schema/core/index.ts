@@ -11,6 +11,12 @@ export * from './families';
 export * from './agreements';
 export * from './agreement-versions';
 
+export * from './tasks';
+export * from './task-variants';
+export * from './task-variant-parameters';
+export * from './task-bundles';
+export * from './task-bundle-variants';
+
 export * from './users';
 export * from './user-agreements';
 export * from './user-classes';

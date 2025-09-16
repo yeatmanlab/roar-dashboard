@@ -15,7 +15,7 @@ import RosteringEntityStatus from '../../enums/rostering-entity-status.enum';
 import TrialInteractionType from '../../enums/trial-interaction-type.enum';
 import UserFamilyRole from '../../enums/user-family-role.enum';
 import UserRole from '../../enums/user-role.enum';
-import VariantStatus from '../../enums/variant-status.enum';
+import TaskVariantStatus from '../../enums/task-variant-status.enum';
 
 /**
  * Helper function to convert a TS enum to a pgEnum
@@ -69,4 +69,4 @@ export const userRoleEnum = db.enum('user_role', enumToPgEnum(UserRole));
 
 export const userTypeEnum = db.enum('user_type', enumToPgEnum(UserType));
 
-export const variantStatusEnum = db.enum('variant_status', enumToPgEnum(VariantStatus));
+export const taskVariantStatusEnum = db.enum('task_variant_status', enumToPgEnum(TaskVariantStatus));

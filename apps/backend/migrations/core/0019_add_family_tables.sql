@@ -25,6 +25,7 @@ CREATE TABLE "app"."user_families" (
 --> statement-breakpoint
 ALTER TABLE "app"."user_families" ADD CONSTRAINT "user_families_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "app"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "app"."user_families" ADD CONSTRAINT "user_families_family_id_families_id_fk" FOREIGN KEY ("family_id") REFERENCES "app"."families"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+CREATE INDEX "user_families_user_idx" ON "app"."user_families" USING btree ("user_id");--> statement-breakpoint
 CREATE INDEX "user_families_family_idx" ON "app"."user_families" USING btree ("family_id");
 
 -- Manual edit: 
