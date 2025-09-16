@@ -805,6 +805,23 @@ const SCORE_FIELD_MAPPINGS = {
       legacy: 'sreScore',
     },
   },
+  'sre-es': {
+    percentile: {
+      new: 'percentile',
+    },
+    percentileDisplay: {
+      new: 'percentile',
+    },
+    standardScore: {
+      new: 'standardScore',
+    },
+    standardScoreDisplay: {
+      new: 'standardScore',
+    },
+    rawScore: {
+      new: 'sreScore',
+    },
+  },
   letter: {
     percentile: {
       new: 'totalPercentCorrect',
