@@ -5,7 +5,7 @@ const PARTNER_ADMIN_PASSWORD = Cypress.env('PARTNER_ADMIN_PASSWORD');
 
 const navigateToStudentReport = () => {
   cy.visit(
-    `${baseUrl}/scores/${Cypress.env('testAdministrationId')}/district/${Cypress.env('testDistrictId')}/user/${Cypress.env('testUserId')}/new`,
+    `${baseUrl}/scores/${Cypress.env('testAdministrationIdLongitudinal')}/district/${Cypress.env('testDistrictIdLongitudinal')}/user/${Cypress.env('testUserIdLongitudinal')}/new`,
   );
 };
 
