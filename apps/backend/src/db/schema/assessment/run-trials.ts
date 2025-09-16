@@ -3,6 +3,7 @@ import { sql } from 'drizzle-orm';
 import { timestamps } from '../common';
 import { runs } from './runs';
 import type { AnyPgColumn } from 'drizzle-orm/pg-core';
+import { assessmentStageEnum } from '../enums';
 
 const db = p.pgSchema('app');
 
@@ -24,7 +25,7 @@ export const runTrials = db.table('run_trials', {
     .references((): AnyPgColumn => runs.id)
     .notNull(),
 
-  assessmentStage: p.text(),
+  assessmentStage: assessmentStageEnum(),
   audioFeedback: p.text(),
   block: p.text(),
   blockId: p.text(),
