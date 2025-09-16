@@ -785,19 +785,19 @@ const SCORE_FIELD_MAPPINGS = {
   },
   sre: {
     percentile: {
-      new: (grade) => (grade < 6 ? 'tosrecPercentile' : 'sprPercentile'),
+      new: 'percentile',
       legacy: (grade) => (grade < 6 ? 'tosrecPercentile' : 'sprPercentile'),
     },
     percentileDisplay: {
-      new: (grade) => (grade < 6 ? 'tosrecPercentile' : 'sprPercentile'),
+      new: 'percentile',
       legacy: (grade) => (grade < 6 ? 'tosrecPercentile' : 'sprPercentile'),
     },
     standardScore: {
-      new: (grade) => (grade < 6 ? 'tosrecSS' : 'sprStandardScore'),
+      new: 'standardScore',
       legacy: (grade) => (grade < 6 ? 'tosrecSS' : 'sprStandardScore'),
     },
     standardScoreDisplay: {
-      new: (grade) => (grade < 6 ? 'tosrecSS' : 'sprStandardScore'),
+      new: 'standardScore',
       legacy: (grade) => (grade < 6 ? 'tosrecSS' : 'sprStandardScore'),
     },
     rawScore: {
