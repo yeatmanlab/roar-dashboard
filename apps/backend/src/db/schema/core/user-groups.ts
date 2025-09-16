@@ -8,13 +8,13 @@ import { userRoleEnum } from '../enums';
 const db = p.pgSchema('app');
 
 /**
- * Users Groups Table
+ * User Groups Table
  *
  * Stores information about the membership of a user in a group (e.g. cohort, community, etc.). By definition, a single
  * user can be a member of multiple groups, and a single group can have multiple users.
  */
-export const usersGroups = db.table(
-  'users_groups',
+export const userGroups = db.table(
+  'user_groups',
   {
     userId: p
       .uuid()
@@ -34,13 +34,13 @@ export const usersGroups = db.table(
   },
   (table) => [
     // Prevent duplicate memberships
-    p.primaryKey({ name: 'users_groups_pk', columns: [table.userId, table.groupId] }),
+    p.primaryKey({ name: 'user_groups_pk', columns: [table.userId, table.groupId] }),
 
     // Lookups from either side
-    p.index('users_groups_user_idx').on(table.userId),
-    p.index('users_groups_group_idx').on(table.groupId),
+    p.index('user_groups_user_idx').on(table.userId),
+    p.index('user_groups_group_idx').on(table.groupId),
   ],
 );
 
-export type UserGroup = typeof usersGroups.$inferSelect;
-export type NewUserGroup = typeof usersGroups.$inferInsert;
+export type UserGroup = typeof userGroups.$inferSelect;
+export type NewUserGroup = typeof userGroups.$inferInsert;

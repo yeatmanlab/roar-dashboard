@@ -451,8 +451,8 @@
       },
       "isRLSEnabled": false
     },
-    "app.users_orgs": {
-      "name": "users_orgs",
+    "app.user_orgs": {
+      "name": "user_orgs",
       "schema": "app",
       "columns": {
         "user_id": {
@@ -501,8 +501,8 @@
         }
       },
       "indexes": {
-        "users_orgs_user_idx": {
-          "name": "users_orgs_user_idx",
+        "user_orgs_user_idx": {
+          "name": "user_orgs_user_idx",
           "columns": [
             {
               "expression": "user_id",
@@ -516,8 +516,8 @@
           "method": "btree",
           "with": {}
         },
-        "users_orgs_org_idx": {
-          "name": "users_orgs_org_idx",
+        "user_orgs_org_idx": {
+          "name": "user_orgs_org_idx",
           "columns": [
             {
               "expression": "org_id",
@@ -533,9 +533,9 @@
         }
       },
       "foreignKeys": {
-        "users_orgs_user_id_users_id_fk": {
-          "name": "users_orgs_user_id_users_id_fk",
-          "tableFrom": "users_orgs",
+        "user_orgs_user_id_users_id_fk": {
+          "name": "user_orgs_user_id_users_id_fk",
+          "tableFrom": "user_orgs",
           "tableTo": "users",
           "schemaTo": "app",
           "columnsFrom": ["user_id"],
@@ -543,9 +543,9 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "users_orgs_org_id_orgs_id_fk": {
-          "name": "users_orgs_org_id_orgs_id_fk",
-          "tableFrom": "users_orgs",
+        "user_orgs_org_id_orgs_id_fk": {
+          "name": "user_orgs_org_id_orgs_id_fk",
+          "tableFrom": "user_orgs",
           "tableTo": "orgs",
           "schemaTo": "app",
           "columnsFrom": ["org_id"],
@@ -555,8 +555,8 @@
         }
       },
       "compositePrimaryKeys": {
-        "users_orgs_pk": {
-          "name": "users_orgs_pk",
+        "user_orgs_pk": {
+          "name": "user_orgs_pk",
           "columns": ["user_id", "org_id"]
         }
       },

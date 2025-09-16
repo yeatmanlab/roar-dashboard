@@ -55,7 +55,7 @@
       "idx": 7,
       "version": "7",
       "when": 1757677650491,
-      "tag": "0007_add_users_orgs_table",
+      "tag": "0007_add_user_orgs_table",
       "breakpoints": true
     },
     {
@@ -69,7 +69,7 @@
       "idx": 9,
       "version": "7",
       "when": 1757931616576,
-      "tag": "0009_add_users_groups_table",
+      "tag": "0009_add_user_groups_table",
       "breakpoints": true
     },
     {
@@ -111,7 +111,7 @@
       "idx": 15,
       "version": "7",
       "when": 1757943026502,
-      "tag": "0015_add_users_classes_table",
+      "tag": "0015_add_user_classes_table",
       "breakpoints": true
     },
     {
@@ -146,7 +146,7 @@
       "idx": 20,
       "version": "7",
       "when": 1757976975021,
-      "tag": "0020_add_users_families_student_active_unique_index",
+      "tag": "0020_add_user_families_student_active_unique_index",
       "breakpoints": true
     },
     {
