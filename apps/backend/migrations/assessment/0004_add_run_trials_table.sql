@@ -50,8 +50,6 @@ CREATE TABLE "app"."run_trials" (
 ALTER TABLE "app"."run_trials" ADD CONSTRAINT "run_trials_run_id_runs_id_fk" FOREIGN KEY ("run_id") REFERENCES "app"."runs"("id") ON DELETE no action ON UPDATE no action;
 
 
-
-
 -- Manual edit:
 -- Add trigger to update run_trials.updated_at
 DROP TRIGGER IF EXISTS run_trials_set_updated_at ON app.run_trials;
