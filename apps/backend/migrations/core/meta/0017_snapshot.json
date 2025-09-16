@@ -451,8 +451,8 @@
       },
       "isRLSEnabled": false
     },
-    "app.users_orgs": {
-      "name": "users_orgs",
+    "app.user_orgs": {
+      "name": "user_orgs",
       "schema": "app",
       "columns": {
         "user_id": {
@@ -501,8 +501,8 @@
         }
       },
       "indexes": {
-        "users_orgs_user_idx": {
-          "name": "users_orgs_user_idx",
+        "user_orgs_user_idx": {
+          "name": "user_orgs_user_idx",
           "columns": [
             {
               "expression": "user_id",
@@ -516,8 +516,8 @@
           "method": "btree",
           "with": {}
         },
-        "users_orgs_org_idx": {
-          "name": "users_orgs_org_idx",
+        "user_orgs_org_idx": {
+          "name": "user_orgs_org_idx",
           "columns": [
             {
               "expression": "org_id",
@@ -533,9 +533,9 @@
         }
       },
       "foreignKeys": {
-        "users_orgs_user_id_users_id_fk": {
-          "name": "users_orgs_user_id_users_id_fk",
-          "tableFrom": "users_orgs",
+        "user_orgs_user_id_users_id_fk": {
+          "name": "user_orgs_user_id_users_id_fk",
+          "tableFrom": "user_orgs",
           "tableTo": "users",
           "schemaTo": "app",
           "columnsFrom": ["user_id"],
@@ -543,9 +543,9 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "users_orgs_org_id_orgs_id_fk": {
-          "name": "users_orgs_org_id_orgs_id_fk",
-          "tableFrom": "users_orgs",
+        "user_orgs_org_id_orgs_id_fk": {
+          "name": "user_orgs_org_id_orgs_id_fk",
+          "tableFrom": "user_orgs",
           "tableTo": "orgs",
           "schemaTo": "app",
           "columnsFrom": ["org_id"],
@@ -555,8 +555,8 @@
         }
       },
       "compositePrimaryKeys": {
-        "users_orgs_pk": {
-          "name": "users_orgs_pk",
+        "user_orgs_pk": {
+          "name": "user_orgs_pk",
           "columns": ["user_id", "org_id"]
         }
       },
@@ -713,8 +713,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "app.users_groups": {
-      "name": "users_groups",
+    "app.user_groups": {
+      "name": "user_groups",
       "schema": "app",
       "columns": {
         "user_id": {
@@ -763,8 +763,8 @@
         }
       },
       "indexes": {
-        "users_groups_user_idx": {
-          "name": "users_groups_user_idx",
+        "user_groups_user_idx": {
+          "name": "user_groups_user_idx",
           "columns": [
             {
               "expression": "user_id",
@@ -778,8 +778,8 @@
           "method": "btree",
           "with": {}
         },
-        "users_groups_group_idx": {
-          "name": "users_groups_group_idx",
+        "user_groups_group_idx": {
+          "name": "user_groups_group_idx",
           "columns": [
             {
               "expression": "group_id",
@@ -795,9 +795,9 @@
         }
       },
       "foreignKeys": {
-        "users_groups_user_id_users_id_fk": {
-          "name": "users_groups_user_id_users_id_fk",
-          "tableFrom": "users_groups",
+        "user_groups_user_id_users_id_fk": {
+          "name": "user_groups_user_id_users_id_fk",
+          "tableFrom": "user_groups",
           "tableTo": "users",
           "schemaTo": "app",
           "columnsFrom": ["user_id"],
@@ -805,9 +805,9 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "users_groups_group_id_groups_id_fk": {
-          "name": "users_groups_group_id_groups_id_fk",
-          "tableFrom": "users_groups",
+        "user_groups_group_id_groups_id_fk": {
+          "name": "user_groups_group_id_groups_id_fk",
+          "tableFrom": "user_groups",
           "tableTo": "groups",
           "schemaTo": "app",
           "columnsFrom": ["group_id"],
@@ -817,8 +817,8 @@
         }
       },
       "compositePrimaryKeys": {
-        "users_groups_pk": {
-          "name": "users_groups_pk",
+        "user_groups_pk": {
+          "name": "user_groups_pk",
           "columns": ["user_id", "group_id"]
         }
       },
@@ -1112,8 +1112,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "app.users_classes": {
-      "name": "users_classes",
+    "app.user_classes": {
+      "name": "user_classes",
       "schema": "app",
       "columns": {
         "user_id": {
@@ -1162,8 +1162,8 @@
         }
       },
       "indexes": {
-        "users_classes_user_idx": {
-          "name": "users_classes_user_idx",
+        "user_classes_user_idx": {
+          "name": "user_classes_user_idx",
           "columns": [
             {
               "expression": "user_id",
@@ -1177,8 +1177,8 @@
           "method": "btree",
           "with": {}
         },
-        "users_classes_class_idx": {
-          "name": "users_classes_class_idx",
+        "user_classes_class_idx": {
+          "name": "user_classes_class_idx",
           "columns": [
             {
               "expression": "class_id",
@@ -1194,9 +1194,9 @@
         }
       },
       "foreignKeys": {
-        "users_classes_user_id_users_id_fk": {
-          "name": "users_classes_user_id_users_id_fk",
-          "tableFrom": "users_classes",
+        "user_classes_user_id_users_id_fk": {
+          "name": "user_classes_user_id_users_id_fk",
+          "tableFrom": "user_classes",
           "tableTo": "users",
           "schemaTo": "app",
           "columnsFrom": ["user_id"],
@@ -1204,9 +1204,9 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "users_classes_class_id_classes_id_fk": {
-          "name": "users_classes_class_id_classes_id_fk",
-          "tableFrom": "users_classes",
+        "user_classes_class_id_classes_id_fk": {
+          "name": "user_classes_class_id_classes_id_fk",
+          "tableFrom": "user_classes",
           "tableTo": "classes",
           "schemaTo": "app",
           "columnsFrom": ["class_id"],
@@ -1216,8 +1216,8 @@
         }
       },
       "compositePrimaryKeys": {
-        "users_classes_pk": {
-          "name": "users_classes_pk",
+        "user_classes_pk": {
+          "name": "user_classes_pk",
           "columns": ["user_id", "class_id"]
         }
       },

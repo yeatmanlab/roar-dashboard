@@ -13,10 +13,10 @@ export * from './agreement-versions';
 
 export * from './users';
 export * from './user-agreements';
-export * from './users-orgs';
-export * from './users-groups';
-export * from './users-classes';
-export * from './users-families';
+export * from './user-classes';
+export * from './user-families';
+export * from './user-groups';
+export * from './user-orgs';
 
 export * from './rostering-provider-ids';
 export * from './rostering-runs';
