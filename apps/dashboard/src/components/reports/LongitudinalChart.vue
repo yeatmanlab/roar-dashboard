@@ -7,6 +7,7 @@
 <script setup>
 import { computed } from 'vue';
 import PvChart from 'primevue/chart';
+import { getSupportLevel } from '@/helpers/reports';
 const props = defineProps({
   longitudinalData: {
     type: Array,
@@ -41,17 +42,21 @@ const getColorForType = (type) => {
   return colorMap[type] || colorMap.default;
 };
 
+// Prepare sorted data
+const sortedData = computed(() => {
+  if (!props.longitudinalData?.length) return [];
+  return [...props.longitudinalData].sort((a, b) => new Date(a.date) - new Date(b.date));
+});
+
 // Prepare chart data
 const chartData = computed(() => {
-  if (!props.longitudinalData?.length) {
+  if (!sortedData.value.length) {
     return { labels: [], datasets: [] };
   }
 
-  const sortedData = [...props.longitudinalData].sort((a, b) => new Date(a.date) - new Date(b.date));
+  const labels = sortedData.value.map((entry) => formatDate(entry.date));
 
-  const labels = sortedData.map((entry) => formatDate(entry.date));
-
-  // Create datasets for each score type
+  // Create datasets array
   const datasets = [];
 
   // Only show raw scores
@@ -59,9 +64,17 @@ const chartData = computed(() => {
 
   // Create a dataset for each score type
   scoreTypes.forEach((scoreType) => {
-    const scores = sortedData.map((entry) => {
+    const scores = sortedData.value.map((entry) => {
       const score = entry.scores?.[scoreType];
-      return score || null;
+      return score !== undefined && score !== null ? score : null;
+    });
+
+    // Get support levels for coloring points
+    const pointColors = sortedData.value.map((entry) => {
+      const rawScore = entry.scores?.rawScore;
+      const percentile = entry.scores?.percentile;
+      const supportLevel = getSupportLevel(props.grade, percentile, rawScore, props.taskId);
+      return supportLevel?.tag_color || getColorForType(scoreType);
     });
 
     // Only add the dataset if we have at least one valid score
@@ -74,6 +87,8 @@ const chartData = computed(() => {
         borderColor: getColorForType(scoreType),
         pointRadius: 4,
         pointHoverRadius: 6,
+        pointBackgroundColor: pointColors,
+        pointBorderColor: pointColors,
       });
     }
   });
@@ -97,7 +112,28 @@ const chartOptions = computed(() => ({
       intersect: false,
       callbacks: {
         label: (context) => {
-          return `Raw Score: ${context.parsed.y}`;
+          const dataIndex = context.dataIndex;
+          const entry = sortedData.value[dataIndex];
+          if (!entry?.scores) return null;
+
+          const lines = [];
+
+          // Raw Score
+          if (entry.scores.rawScore !== undefined && entry.scores.rawScore !== null) {
+            lines.push(`Raw Score: ${entry.scores.rawScore}`);
+          }
+
+          // Percentile
+          if (entry.scores.percentile !== undefined && entry.scores.percentile !== null) {
+            lines.push(`Percentile: ${entry.scores.percentile}`);
+          }
+
+          // Standard Score
+          if (entry.scores.standardScore !== undefined && entry.scores.standardScore !== null) {
+            lines.push(`Standard Score: ${entry.scores.standardScore}`);
+          }
+
+          return lines;
         },
       },
     },
