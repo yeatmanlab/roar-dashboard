@@ -763,19 +763,19 @@ const SCORE_FIELD_MAPPINGS = {
   },
   pa: {
     percentile: {
-      new: (grade) => (grade < 6 ? 'percentile' : 'sprPercentile'),
+      new: 'percentile',
       legacy: (grade) => (grade < 6 ? 'percentile' : 'sprPercentile'),
     },
     percentileDisplay: {
-      new: (grade) => (grade < 6 ? 'percentile' : 'sprPercentileString'),
+      new: 'percentile',
       legacy: (grade) => (grade < 6 ? 'percentile' : 'sprPercentileString'),
     },
     standardScore: {
-      new: (grade) => (grade < 6 ? 'standardScore' : 'sprStandardScore'),
+      new: 'standardScore',
       legacy: (grade) => (grade < 6 ? 'standardScore' : 'sprStandardScore'),
     },
     standardScoreDisplay: {
-      new: (grade) => (grade < 6 ? 'standardScore' : 'sprStandardScoreString'),
+      new: 'standardScore',
       legacy: (grade) => (grade < 6 ? 'standardScore' : 'sprStandardScoreString'),
     },
     rawScore: {
