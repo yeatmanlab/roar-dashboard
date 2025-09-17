@@ -54,8 +54,6 @@ const chartData = computed(() => {
     return { labels: [], datasets: [] };
   }
 
-  const labels = sortedData.value.map((entry) => formatDate(entry.date));
-
   // Create datasets array
   const datasets = [];
 
@@ -64,36 +62,56 @@ const chartData = computed(() => {
 
   // Create a dataset for each score type
   scoreTypes.forEach((scoreType) => {
-    const scores = sortedData.value.map((entry) => {
+    // Filter and map data points to only include valid scores
+    const validDataPoints = sortedData.value.filter((entry) => {
       const score = entry.scores?.[scoreType];
-      return score !== undefined && score !== null ? score : null;
+      return score !== undefined && score !== null;
     });
 
-    // Get support levels for coloring points
-    const pointColors = sortedData.value.map((entry) => {
-      const rawScore = entry.scores?.rawScore;
-      const percentile = entry.scores?.percentile;
-      const supportLevel = getSupportLevel(props.grade, percentile, rawScore, props.taskId);
-      return supportLevel?.tag_color || getColorForType(scoreType);
-    });
+    // Calculate relative positions based on dates
+    const mappedPoints = [];
 
-    // Only add the dataset if we have at least one valid score
-    if (scores.some((score) => score !== null)) {
+    if (validDataPoints.length > 0) {
+      const dates = validDataPoints.map((entry) => new Date(entry.date).getTime());
+      const minDate = Math.min(...dates);
+      const maxDate = Math.max(...dates);
+      const dateRange = maxDate - minDate || 1; // Avoid division by zero
+
+      validDataPoints.forEach((entry) => {
+        const score = entry.scores[scoreType];
+        const rawScore = entry.scores?.rawScore;
+        const percentile = entry.scores?.percentile;
+        const supportLevel = getSupportLevel(props.grade, percentile, rawScore, props.taskId);
+        const color = supportLevel?.tag_color || getColorForType(scoreType);
+        const timestamp = new Date(entry.date).getTime();
+        const relativePosition = (timestamp - minDate) / dateRange;
+
+        mappedPoints.push({
+          x: relativePosition,
+          y: score,
+          color,
+          date: entry.date,
+        });
+      });
+    }
+
+    // Only add the dataset if we have valid scores
+    if (mappedPoints.length > 0) {
       datasets.push({
         label: 'Raw Score',
-        data: scores,
+        data: mappedPoints,
         fill: false,
         tension: 0.4,
         borderColor: getColorForType(scoreType),
         pointRadius: 4,
         pointHoverRadius: 6,
-        pointBackgroundColor: pointColors,
-        pointBorderColor: pointColors,
+        pointBackgroundColor: mappedPoints.map((point) => point.color),
+        pointBorderColor: mappedPoints.map((point) => point.color),
       });
     }
   });
 
-  return { labels, datasets };
+  return { datasets };
 });
 
 const chartOptions = computed(() => ({
@@ -146,8 +164,24 @@ const chartOptions = computed(() => ({
       },
     },
     x: {
+      type: 'linear',
+      min: 0,
+      max: 1,
       grid: {
         display: false,
+      },
+      ticks: {
+        callback: function (value) {
+          // Find the closest point to this position
+          const dataset = this.chart.data.datasets[0];
+          if (dataset) {
+            const point = dataset.data.find((p) => Math.abs(p.x - value) < 0.01);
+            if (point) {
+              return formatDate(point.date);
+            }
+          }
+          return '';
+        },
       },
     },
   },
