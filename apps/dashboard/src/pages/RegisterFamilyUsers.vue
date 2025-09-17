@@ -187,6 +187,7 @@ watch([parentInfo, studentInfo], ([newParentInfo, newStudentInfo]) => {
         first: rawParentInfo.firstName,
         last: rawParentInfo.lastName,
       },
+      canContactForFutureStudies: rawParentInfo.canContactForFutureStudies || false,
     };
     const studentSendObject = rawStudentInfo.map((student) => {
       return {

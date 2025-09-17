@@ -70,8 +70,8 @@ runs:
 
     # Build the application
     - name: Build application
-      working-directory: roar-dashboard
+      working-directory: roar-dashboard/apps/dashboard
       env:
         NODE_OPTIONS: '--max_old_space_size=8192'
       shell: bash
-      run: npm run build -- -- --mode ${{ inputs.environment }}
+      run: npm run build -- --mode ${{ inputs.environment }}
