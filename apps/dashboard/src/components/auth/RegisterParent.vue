@@ -121,7 +121,11 @@
         <section class="flex form-section lg:flex-row">
           <!-- Recaptcha + consent -->
           <ChallengeV3 v-model="response" action="submit">
-            <div class="field-checkbox terms-checkbox">
+            <div
+              class="field-checkbox terms-checkbox clickable"
+              :class="{ disabled: showConsent }"
+              @click="!showConsent && getConsent()"
+            >
               <PvCheckbox
                 :id="`accept-${isRegistering ? 'register' : 'login'}`"
                 v-model="v$.accept.$model"
@@ -135,16 +139,20 @@
                   },
                 ]"
                 pt:input:data-testid="checkbox__input"
-                @change="getConsent"
               />
               <label
-                for="accept"
                 :class="{
                   'p-error': v$.accept.$invalid && submitted,
                   'research-opt-out': state.researchOptOut,
                 }"
               >
-                {{ state.researchOptOut ? 'Research opt-out selected' : 'I agree to the terms and conditions' }}
+                {{
+                  state.researchOptOut
+                    ? 'Research opt-out selected'
+                    : state.accept
+                      ? 'I agree to the terms and conditions'
+                      : 'View terms and conditions'
+                }}
                 <span class="required">*</span>
               </label>
             </div>
@@ -240,6 +248,7 @@ const state = reactive({
   password: '',
   confirmPassword: '',
   accept: false,
+  canContactForFutureStudies: false,
 });
 const passwordRef = computed(() => state.password);
 
@@ -304,6 +313,7 @@ const showConsent = ref(false);
 
 const handleConsentAccept = () => {
   state.accept = true;
+  state.researchOptOut = false;
   showConsent.value = false;
 };
 
@@ -332,6 +342,15 @@ const isNextButtonDisabled = computed(() => {
 </script>
 
 <style scoped>
+.clickable {
+  cursor: pointer;
+}
+
+.clickable.disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
 .research-opt-out {
   color: #666 !important;
   font-style: italic;
