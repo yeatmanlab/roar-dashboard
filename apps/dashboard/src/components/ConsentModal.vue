@@ -10,6 +10,8 @@
     data-cy="consent-modal"
     pt:title:data-testid="consent-modal__title"
     pt:footer:data-testid="consent-modal__footer"
+    :accept-label="i18n.t('consentModal.acceptButton')"
+    :reject-label="i18n.t('consentModal.optOutButton')"
   >
     <template #message>
       <div class="scrolling-box">
@@ -35,6 +37,8 @@ import _lowerCase from 'lodash/lowerCase';
 import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
 
 const i18n = useI18n();
+
+const emit = defineEmits(['optOut']);
 
 const props = defineProps({
   consentText: { type: String, required: true, default: 'Text Here' },
@@ -65,8 +69,8 @@ onMounted(() => {
     group: 'consent',
     header: header,
     icon: 'pi pi-question-circle',
-    acceptLabel: i18n.t('consentModal.acceptButton'),
     acceptClass: 'bg-primary text-white border-none border-round p-2 hover:bg-red-900',
+    rejectClass: 'bg-gray-500 text-white border-none border-round p-2 hover:bg-gray-700',
     acceptIcon,
     accept: async () => {
       try {
@@ -100,6 +104,30 @@ onMounted(() => {
         isSubmitting.value = false;
       }
     },
+    reject: async () => {
+      try {
+        isSubmitting.value = true;
+        emit('optOut');
+        toast.add({
+          severity: TOAST_SEVERITIES.INFO,
+          summary: i18n.t('consentModal.toastHeader'),
+          detail: 'You have opted out of research participation.',
+          life: TOAST_DEFAULT_LIFE_DURATION,
+        });
+        dialogVisible.value = false;
+      } catch (error) {
+        toast.add({
+          severity: TOAST_SEVERITIES.ERROR,
+          summary: 'Error',
+          detail: 'An error occurred while updating your opt-out status, please reload the page and try again.',
+          life: TOAST_DEFAULT_LIFE_DURATION,
+        });
+        Sentry.captureException(error);
+        return Promise.resolve(false);
+      } finally {
+        isSubmitting.value = false;
+      }
+    },
   });
 });
 </script>
@@ -117,7 +145,7 @@ onMounted(() => {
 }
 
 .confirm .p-confirmdialog-reject-button {
-  display: none !important;
+  margin-right: 0.5rem;
 }
 
 .confirm .p-dialog-header-close {

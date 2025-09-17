@@ -160,8 +160,6 @@ async function handleSubmit(event) {
     handleStudentSubmit(event);
   } else {
     handleParentSubmit(event);
-    activeIndex.value = 1;
-    activeComp();
   }
 }
 
@@ -187,7 +185,6 @@ watch([parentInfo, studentInfo], ([newParentInfo, newStudentInfo]) => {
         first: rawParentInfo.firstName,
         last: rawParentInfo.lastName,
       },
-      canContactForFutureStudies: rawParentInfo.canContactForFutureStudies || false,
     };
     const studentSendObject = rawStudentInfo.map((student) => {
       return {
@@ -213,7 +210,11 @@ watch([parentInfo, studentInfo], ([newParentInfo, newStudentInfo]) => {
         },
       };
     });
-    const consentData = { version: consent.value?.version, name: consentName.value };
+    const consentData = {
+      version: consent.value?.version,
+      name: consentName.value,
+      researchOptOut: rawParentInfo.researchOptOut || false,
+    };
     authStore
       .createNewFamily(
         rawParentInfo.ParentEmail,
