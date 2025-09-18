@@ -5,9 +5,33 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import PvChart from 'primevue/chart';
 import { getSupportLevel } from '@/helpers/reports';
+
+// Threshold for detecting points near a given x-value (used in axis ticks)
+const POINT_PROXIMITY_THRESHOLD = 0.01;
+
+// Cache for quick point lookup
+const pointsCache = ref(new Map());
+
+// Helper function to find the nearest point in the cache
+const findNearestPoint = (value) => {
+  // Get all x-values from cache
+  const xValues = Array.from(pointsCache.value.keys());
+
+  // Find the closest x-value
+  const nearestX = xValues.reduce((nearest, x) => {
+    return Math.abs(x - value) < Math.abs(nearest - value) ? x : nearest;
+  }, xValues[0]);
+
+  // Only return if within threshold
+  if (Math.abs(nearestX - value) < POINT_PROXIMITY_THRESHOLD) {
+    return pointsCache.value.get(nearestX);
+  }
+  return null;
+};
+
 const props = defineProps({
   longitudinalData: {
     type: Array,
@@ -86,14 +110,17 @@ const chartData = computed(() => {
         const timestamp = new Date(entry.date).getTime();
         const relativePosition = (timestamp - minDate) / dateRange;
 
-        mappedPoints.push({
+        const point = {
           x: relativePosition,
           y: score,
           color,
           date: entry.date,
           percentile: entry.scores.percentile,
           standardScore: entry.scores.standardScore,
-        });
+        };
+        mappedPoints.push(point);
+        // Add to cache
+        pointsCache.value.set(relativePosition, point);
       });
     }
 
@@ -188,7 +215,7 @@ const chartOptions = computed(() => ({
           // Find the closest point to this position
           const dataset = this.chart.data.datasets[0];
           if (dataset) {
-            const point = dataset.data.find((p) => Math.abs(p.x - value) < 0.01);
+            const point = findNearestPoint(value);
             if (point) {
               return formatDate(point.date);
             }
