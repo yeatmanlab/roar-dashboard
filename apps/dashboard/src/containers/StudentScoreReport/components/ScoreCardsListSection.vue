@@ -146,7 +146,8 @@ const getTaskScoresArray = computed(() => {
 
 @media (min-width: 1024px) {
   .grid > * {
-    width: 100%;
+    height: 100%;
+    align-self: flex-start;
   }
 }
 </style>
