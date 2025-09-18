@@ -10,6 +10,7 @@ import PvChart from 'primevue/chart';
 import { getSupportLevel } from '@/helpers/reports';
 
 // Threshold for detecting points near a given x-value (used in axis ticks)
+// The x-axis is normalized to the range [0, 1], so this threshold represents 1% of the total chart width.
 const POINT_PROXIMITY_THRESHOLD = 0.01;
 
 // Cache for quick point lookup, rebuilt when longitudinalData changes
