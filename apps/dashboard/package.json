@@ -29,7 +29,7 @@
     "@bdelab/roar-readaloud": "1.2.1",
     "@bdelab/roar-sre": "1.16.1",
     "@bdelab/roar-survey": "0.1.0",
-    "@bdelab/roar-swr": "1.13.1",
+    "@bdelab/roar-swr": "1.14.0",
     "@bdelab/roar-utils": "^1.2.1",
     "@bdelab/roar-vocab": "1.8.0",
     "@bdelab/roav-crowding": "1.1.35",
