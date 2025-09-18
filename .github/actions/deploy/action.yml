@@ -56,9 +56,9 @@ runs:
       shell: bash
       run: |
         mkdir app
-        cp -r roar-dashboard/apps/dashboard/dist app/dist
-        cp roar-dashboard/apps/dashboard/firebase/admin/firebase.json app/firebase.json
-        rm -rf roar-dashboard
+        cp -r build/apps/dashboard/dist app/dist
+        cp build/apps/dashboard/firebase/admin/firebase.json app/firebase.json
+        rm -rf build
         cd app && pwd && ls -la
 
     # Deploy application

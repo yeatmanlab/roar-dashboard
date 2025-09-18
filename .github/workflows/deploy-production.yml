@@ -74,7 +74,7 @@ jobs:
           firebase-project-id: ${{ secrets.FIREBASE_PROJECT_ID_ADMIN }}
           gcp-workload-identity-provider: ${{ secrets.FIREBASE_WORKLOAD_IDENTITY_PROVIDER_ADMIN }}
           gcp-service-account-id: ${{ secrets.FIREBASE_FIRESTORE_SERVICE_ACCOUNT_ID_ADMIN }}
-          config-directory: firebase/admin
+          config-directory: build/apps/dashboard/firebase/admin
 
       - name: Deploy Firestore config to Assessment instance
         uses: ./.github/actions/deploy-firestore-config
@@ -82,7 +82,7 @@ jobs:
           firebase-project-id: ${{ secrets.FIREBASE_PROJECT_ID_ASSESSMENT }}
           gcp-workload-identity-provider: ${{ secrets.FIREBASE_WORKLOAD_IDENTITY_PROVIDER_ASSESSMENT }}
           gcp-service-account-id: ${{ secrets.FIREBASE_FIRESTORE_SERVICE_ACCOUNT_ID_ASSESSMENT }}
-          config-directory: firebase/assessment
+          config-directory: build/apps/dashboard/firebase/assessment
 
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
   # Update project manifests
