@@ -91,6 +91,8 @@ const chartData = computed(() => {
           y: score,
           color,
           date: entry.date,
+          percentile: entry.scores.percentile,
+          standardScore: entry.scores.standardScore,
         });
       });
     }
@@ -129,26 +131,26 @@ const chartOptions = computed(() => ({
       mode: 'index',
       intersect: false,
       callbacks: {
+        title: (tooltipItems) => {
+          const item = tooltipItems[0];
+          const point = item.dataset.data[item.dataIndex];
+          return formatDate(point.date);
+        },
         label: (context) => {
-          const dataIndex = context.dataIndex;
-          const entry = sortedData.value[dataIndex];
-          if (!entry?.scores) return null;
-
+          const point = context.dataset.data[context.dataIndex];
           const lines = [];
 
           // Raw Score
-          if (entry.scores.rawScore !== undefined && entry.scores.rawScore !== null) {
-            lines.push(`Raw Score: ${entry.scores.rawScore}`);
-          }
+          lines.push(`Raw Score: ${point.y}`);
 
           // Percentile
-          if (entry.scores.percentile !== undefined && entry.scores.percentile !== null) {
-            lines.push(`Percentile: ${entry.scores.percentile}`);
+          if (point.percentile !== undefined && point.percentile !== null) {
+            lines.push(`Percentile: ${point.percentile}`);
           }
 
           // Standard Score
-          if (entry.scores.standardScore !== undefined && entry.scores.standardScore !== null) {
-            lines.push(`Standard Score: ${entry.scores.standardScore}`);
+          if (point.standardScore !== undefined && point.standardScore !== null) {
+            lines.push(`Standard Score: ${point.standardScore}`);
           }
 
           return lines;
