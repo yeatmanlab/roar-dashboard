@@ -122,6 +122,14 @@ const chartOptions = computed(() => ({
   plugins: {
     legend: {
       display: false,
+      layout: {
+        padding: {
+          left: 10,
+          right: 10,
+          top: 10,
+          bottom: 10,
+        },
+      },
       labels: {
         usePointStyle: true,
         padding: 15,
@@ -164,6 +172,9 @@ const chartOptions = computed(() => ({
       grid: {
         color: 'rgba(0,0,0,0.1)',
       },
+      ticks: {
+        padding: 10,
+      },
     },
     x: {
       type: 'linear',
@@ -197,7 +208,7 @@ const chartOptions = computed(() => ({
 
 <style scoped>
 .longitudinal-chart {
-  height: 300px;
+  height: 250px;
   margin: 1rem 0;
   padding: 1rem;
   background-color: white;
