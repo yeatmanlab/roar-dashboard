@@ -5,7 +5,17 @@
       "with": ["@roar-dashboard/api-contract#dev"]
     },
     "build": {
-      "env": ["DATABASE_URL", "CORE_DATABASE_URL", "ASSESSMENT_DATABASE_URL", "PORT", "KEEP_ALIVE_TIMEOUT"]
+      "env": [
+        "DATABASE_URL",
+        "CORE_DATABASE_URL",
+        "ASSESSMENT_DATABASE_URL",
+        "PORT",
+        "KEEP_ALIVE_TIMEOUT",
+        "FIREBASE_SERVICE_ACCOUNT_CREDENTIALS",
+        "GOOGLE_APPLICATION_CREDENTIALS",
+        "GCLOUD_PROJECT",
+        "GOOGLE_CLOUD_PROJECT"
+      ]
     },
     "lint": {
       "dependsOn": ["^@roar-dashboard/api-contract#build"]
