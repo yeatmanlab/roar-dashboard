@@ -235,7 +235,6 @@ const chartOptions = computed(() => ({
 
 <style scoped>
 .longitudinal-chart {
-  height: 250px;
   margin: 1rem 0;
   padding: 1rem;
   background-color: white;
