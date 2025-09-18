@@ -121,43 +121,52 @@
         <section class="flex form-section lg:flex-row">
           <!-- Recaptcha + consent -->
           <ChallengeV3 v-model="response" action="submit">
-            <div class="field-checkbox terms-checkbox">
+            <div
+              class="field-checkbox terms-checkbox clickable"
+              :class="{ disabled: showConsent }"
+              @click="!showConsent && getConsent()"
+            >
               <PvCheckbox
                 :id="`accept-${isRegistering ? 'register' : 'login'}`"
                 v-model="v$.accept.$model"
                 name="accept"
                 binary
                 :disabled="showConsent"
-                :class="[{ 'p-invalid': v$.accept.$invalid && submitted }]"
+                :class="[
+                  {
+                    'p-invalid': v$.accept.$invalid && submitted,
+                    'research-opt-out': state.researchOptOut,
+                  },
+                ]"
                 pt:input:data-testid="checkbox__input"
-                @change="getConsent"
               />
-              <label for="accept" :class="{ 'p-error': v$.accept.$invalid && submitted }"
-                >I agree to the terms and conditions<span class="required">*</span></label
+              <label
+                :class="{
+                  'p-error': v$.accept.$invalid && submitted,
+                  'research-opt-out': state.researchOptOut,
+                }"
               >
+                {{
+                  state.researchOptOut
+                    ? 'Research opt-out selected'
+                    : state.accept
+                      ? 'I agree to the terms and conditions'
+                      : 'View terms and conditions'
+                }}
+                <span class="required">*</span>
+              </label>
             </div>
             <small v-if="(v$.accept.$invalid && submitted) || v$.accept.$pending.$response" class="p-error">
               You must agree to the terms and conditions
             </small>
           </ChallengeV3>
         </section>
-        <!-- Keep me up to date checkbox -->
-        <section class="flex form-section lg:flex-row">
-          <div class="field-checkbox">
-            <PvCheckbox
-              id="canContactForFutureStudies"
-              v-model="state.canContactForFutureStudies"
-              name="canContactForFutureStudies"
-              binary
-            />
-            <label for="keepUpdated" class="ml-2">Keep me up to date with new resources and innovations</label>
-          </div>
-        </section>
         <ConsentModal
           v-if="showConsent"
           :consent-text="consentText"
           consent-type="consent"
           :on-confirm="handleConsentAccept"
+          @opt-out="handleOptOut"
         />
         <div class="form-submit2">
           <PvButton
@@ -231,6 +240,7 @@ defineProps({
 const emit = defineEmits(['submit']);
 
 const state = reactive({
+  researchOptOut: false,
   // activationCode: "",
   firstName: '',
   lastName: '',
@@ -301,9 +311,17 @@ function handleCaptcha() {
 
 const showConsent = ref(false);
 
-async function handleConsentAccept() {
+const handleConsentAccept = () => {
   state.accept = true;
-}
+  state.researchOptOut = false;
+  showConsent.value = false;
+};
+
+const handleOptOut = () => {
+  state.accept = true;
+  showConsent.value = false;
+  state.researchOptOut = true;
+};
 
 async function getConsent() {
   try {
@@ -324,6 +342,30 @@ const isNextButtonDisabled = computed(() => {
 </script>
 
 <style scoped>
+.clickable {
+  cursor: pointer;
+}
+
+.clickable.disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.research-opt-out {
+  color: #666 !important;
+  font-style: italic;
+}
+
+.p-checkbox.research-opt-out .p-checkbox-box {
+  background-color: #f0f0f0 !important;
+  border-color: #ccc !important;
+}
+
+.p-checkbox.research-opt-out .p-checkbox-box.p-highlight {
+  background-color: #999 !important;
+  border-color: #999 !important;
+}
+
 label {
   font-size: 0.775rem;
   font-weight: 300;

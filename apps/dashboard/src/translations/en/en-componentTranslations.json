@@ -29,6 +29,7 @@
     "consentTitle": "Consent",
     "assentTitle": "Assent",
     "acceptButton": "Continue",
+    "optOutButton": "Opt Out of Research",
     "toastHeader": "Confirmed"
   },
   "homeParticipant": {
