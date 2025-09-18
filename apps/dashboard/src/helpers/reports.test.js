@@ -170,7 +170,7 @@ describe('reports', () => {
     });
 
     describe('PA task field mapping with grade dependency', () => {
-      it('should retrieve correct field values for pa task with grade < 6', () => {
+      it('should retrieve correct legacy field values for pa task with grade < 6', () => {
         const scoresObject = {
           percentile: 60,
           standardScore: 95,
@@ -184,7 +184,7 @@ describe('reports', () => {
         expect(getScoreValue(scoresObject, 'pa', 3, 'rawScore')).toBe(45);
       });
 
-      it('should retrieve correct field values for pa task with grade >= 6', () => {
+      it('should retrieve correct legacy field values for pa task with grade >= 6', () => {
         const scoresObject = {
           sprPercentile: 70,
           sprPercentileString: '>99',
@@ -200,7 +200,7 @@ describe('reports', () => {
         expect(getScoreValue(scoresObject, 'pa', 6, 'rawScore')).toBe(55);
       });
 
-      it('should handle grade-dependent field names correctly', () => {
+      it('should handle legacy grade-dependent field names correctly', () => {
         const scoresObject = {
           percentile: 60,
           sprPercentile: 70,
@@ -213,6 +213,22 @@ describe('reports', () => {
         // Grade >= 6 should use 'sprPercentile'
         const resultGrade6 = getScoreValue(scoresObject, 'pa', 6, 'percentile');
         expect(resultGrade6).toBe(70);
+      });
+
+      it('should handle new field names correctly', () => {
+        const scoresObject = {
+          percentile: 60,
+          standardScore: 95,
+          roarScore: 45,
+        };
+
+        expect(getScoreValue(scoresObject, 'pa', 3, 'percentile')).toBe(60);
+        expect(getScoreValue(scoresObject, 'pa', 3, 'standardScore')).toBe(95);
+        expect(getScoreValue(scoresObject, 'pa', 3, 'rawScore')).toBe(45);
+
+        expect(getScoreValue(scoresObject, 'pa', 6, 'percentile')).toBe(60);
+        expect(getScoreValue(scoresObject, 'pa', 6, 'standardScore')).toBe(95);
+        expect(getScoreValue(scoresObject, 'pa', 6, 'rawScore')).toBe(45);
       });
     });
 
