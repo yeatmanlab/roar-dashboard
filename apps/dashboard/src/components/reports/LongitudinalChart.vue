@@ -12,8 +12,16 @@ import { getSupportLevel } from '@/helpers/reports';
 // Threshold for detecting points near a given x-value (used in axis ticks)
 const POINT_PROXIMITY_THRESHOLD = 0.01;
 
-// Cache for quick point lookup
-const pointsCache = ref(new Map());
+// Cache for quick point lookup, rebuilt when longitudinalData changes
+const pointsCache = computed(() => {
+  const cache = new Map();
+  // Assuming longitudinalData is an array of points with x-values
+  props.longitudinalData.forEach(point => {
+    // Replace 'x' with the actual property name for x-value in your data
+    cache.set(point.x, point);
+  });
+  return cache;
+});
 
 // Helper function to find the nearest point in the cache
 const findNearestPoint = (value) => {
