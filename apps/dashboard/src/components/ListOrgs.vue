@@ -72,7 +72,7 @@
             </span>
           </div>
           <RoarDataTable
-            v-if="tableData && !isExporting"
+            v-if="showTable"
             :key="tableKey"
             :columns="tableColumns"
             :data="tableData"
@@ -339,6 +339,11 @@ const exportAll = async () => {
   exportCsv(exportData, `roar-${activeOrgType.value}.csv`);
 };
 
+// Type guard to check if orgType is an object with a string 'name' property
+function hasNameProperty(obj) {
+  return obj && typeof obj === 'object' && typeof obj.name === 'string';
+}
+
 /**
  * Exports users of a given organization type to a CSV file.
  *
@@ -357,7 +362,7 @@ const exportAll = async () => {
  */
 const exportOrgUsers = async (orgType) => {
   if (!orgType) return;
-  const orgName = typeof orgType === 'string' ? '' : orgType.name || '';
+  const orgName = hasNameProperty(orgType) ? orgType.name : '';
 
   isExporting.value = true;
   exportingOrgName.value = orgName;
@@ -568,6 +573,8 @@ const updateOrgData = async () => {
       isSubmitting.value = false;
     });
 };
+
+const showTable = computed(() => !!tableData.value && !isExporting.value);
 
 let unsubscribe;
 const initTable = () => {
