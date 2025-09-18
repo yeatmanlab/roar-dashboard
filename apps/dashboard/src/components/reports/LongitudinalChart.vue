@@ -5,7 +5,7 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue';
+import { computed } from 'vue';
 import PvChart from 'primevue/chart';
 import { getSupportLevel } from '@/helpers/reports';
 
@@ -17,7 +17,7 @@ const POINT_PROXIMITY_THRESHOLD = 0.01;
 const pointsCache = computed(() => {
   const cache = new Map();
   // Assuming longitudinalData is an array of points with x-values
-  props.longitudinalData.forEach(point => {
+  props.longitudinalData.forEach((point) => {
     // Replace 'x' with the actual property name for x-value in your data
     cache.set(point.x, point);
   });
