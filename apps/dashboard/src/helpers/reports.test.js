@@ -247,18 +247,35 @@ describe('reports', () => {
 
       it('should retrieve correct new field values for sre task', () => {
         const scoresObject = {
-          percentile: 55,
-          standardScore: 102,
-          sreScore: 75,
+          percentile: 34,
+          standardScore: 82,
+          sreScore: 55,
         };
 
         const grades = [4, 7];
         grades.forEach((grade) => {
-          expect(getScoreValue(scoresObject, 'sre', grade, 'percentile')).toBe(55);
-          expect(getScoreValue(scoresObject, 'sre', grade, 'percentileDisplay')).toBe(55);
-          expect(getScoreValue(scoresObject, 'sre', grade, 'standardScore')).toBe(102);
-          expect(getScoreValue(scoresObject, 'sre', grade, 'standardScoreDisplay')).toBe(102);
-          expect(getScoreValue(scoresObject, 'sre', grade, 'rawScore')).toBe(75);
+          expect(getScoreValue(scoresObject, 'sre', grade, 'percentile')).toBe(34);
+          expect(getScoreValue(scoresObject, 'sre', grade, 'percentileDisplay')).toBe(34);
+          expect(getScoreValue(scoresObject, 'sre', grade, 'standardScore')).toBe(82);
+          expect(getScoreValue(scoresObject, 'sre', grade, 'standardScoreDisplay')).toBe(82);
+          expect(getScoreValue(scoresObject, 'sre', grade, 'rawScore')).toBe(55);
+        });
+      });
+
+      it('should retrieve correct field values for sre-es task', () => {
+        const scoresObject = {
+          percentile: 66,
+          standardScore: 120,
+          sreScore: 85,
+        };
+
+        const grades = [3, 6];
+        grades.forEach((grade) => {
+          expect(getScoreValue(scoresObject, 'sre-es', grade, 'percentile')).toBe(66);
+          expect(getScoreValue(scoresObject, 'sre-es', grade, 'percentileDisplay')).toBe(66);
+          expect(getScoreValue(scoresObject, 'sre-es', grade, 'standardScore')).toBe(120);
+          expect(getScoreValue(scoresObject, 'sre-es', grade, 'standardScoreDisplay')).toBe(120);
+          expect(getScoreValue(scoresObject, 'sre-es', grade, 'rawScore')).toBe(85);
         });
       });
     });
