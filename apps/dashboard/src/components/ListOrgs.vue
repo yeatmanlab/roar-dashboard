@@ -77,7 +77,7 @@
             :columns="tableColumns"
             :data="tableData"
             sortable
-            :loading="isLoading || isFetching || isExporting"
+            :loading="isLoading || isFetching"
             :allow-filtering="false"
             @export-all="exportAll"
             @show-activation-code="showCode"
