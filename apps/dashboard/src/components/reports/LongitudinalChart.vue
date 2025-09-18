@@ -221,12 +221,15 @@ const chartOptions = computed(() => ({
       ticks: {
         callback: function (value) {
           // Find the closest point to this position
-          const dataset = this.chart.data.datasets[0];
-          if (dataset) {
-            const point = findNearestPoint(value);
-            if (point) {
-              return formatDate(point.date);
-            }
+          const datasets = this.chart.data.datasets;
+          if (!datasets?.length) return '';
+
+          const dataset = datasets[0];
+          if (!dataset?.data?.length) return '';
+
+          const point = findNearestPoint(value);
+          if (point) {
+            return formatDate(point.date);
           }
           return '';
         },
