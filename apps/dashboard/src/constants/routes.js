@@ -42,6 +42,7 @@ export const APP_ROUTES = {
   AUTH_CLEVER: '/auth-clever',
   AUTH_EMAIL_LINK: '/auth-email-link',
   AUTH_NYCPS: '/auth-nycps',
+  AUTH_NYCPS_INITIATE: '/initiate-auth-nycps',
   CREATE_ADMINISTRATION: '/administration/create',
   DUPLICATE_ADMINISTRATION: '/administration/:formType/:adminId',
   EDIT_ADMINISTRATION: '/administration/:formType/:adminId',
