@@ -36,25 +36,21 @@ const SCORE_TYPES = {
   rawScore: {
     key: 'rawScore',
     label: 'Raw Score',
-    color: '#2196F3',
     priority: 1,
   },
   percentile: {
     key: 'percentile',
     label: 'Percentile',
-    color: '#4CAF50',
     priority: 2,
   },
   standardScore: {
     key: 'standardScore',
     label: 'Standard Score',
-    color: '#FF9800',
     priority: 3,
   },
 };
 
 // Utilities
-const getColorByScoreType = (type) => SCORE_TYPES[type]?.color ?? '#9C27B0';
 const getLabelByScoreType = (type) => SCORE_TYPES[type]?.label ?? 'Score';
 
 // List in priority order once
@@ -85,7 +81,7 @@ const chartData = computed(() => {
         assignmentId: e.assignmentId || e.administrationId,
         percentile: e.scores?.percentile ?? null,
         standardScore: e.scores?.standardScore ?? null,
-        color: s?.tag_color || getColorByScoreType(type),
+        color: s?.tag_color,
       };
     });
 
@@ -95,7 +91,7 @@ const chartData = computed(() => {
         label: getLabelByScoreType(type),
         data: points,
         tension: 0.4,
-        borderColor: getColorByScoreType(type),
+        borderColor: '#CCCCCC',
         pointRadius: points.map((p) => (p.assignmentId && p.assignmentId === props.currentAssignmentId ? 8 : 4)),
         pointHoverRadius: points.map((p) => (p.assignmentId && p.assignmentId === props.currentAssignmentId ? 10 : 6)),
         pointBackgroundColor: points.map((p) => p.color),
