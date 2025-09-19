@@ -7,6 +7,7 @@ import { ref } from 'vue';
 import CreateAssignment from '../CreateAssignment.vue';
 
 const mockUpsertAdministration = vi.fn();
+const mockDoesAssignmentExist = vi.fn().mockResolvedValue({ data: false });
 
 vi.mock('@/composables/mutations/useUpsertAdministrationMutation', () => {
   return {
@@ -23,6 +24,12 @@ vi.mock('@/composables/queries/useUserClaimsQuery', () => ({
     data: ref({
       //
     }),
+  })),
+}));
+
+vi.mock('@/composables/queries/useAssignmentByNameQuery', () => ({
+  default: vi.fn(() => ({
+    refetch: mockDoesAssignmentExist,
   })),
 }));
 
@@ -43,6 +50,9 @@ vi.mock('@/store/auth', () => ({
 
 beforeEach(() => {
   setActivePinia(createPinia());
+  mockUpsertAdministration.mockClear();
+  mockDoesAssignmentExist.mockClear();
+  mockDoesAssignmentExist.mockResolvedValue({ data: false });
 });
 
 describe('Create Assignment Page', () => {
@@ -83,6 +93,100 @@ describe('Create Assignment Page', () => {
     const errorMessages = wrapper.findAll('.p-error');
 
     expect(errorMessages.length).toBeGreaterThan(0);
+  });
+
+  it('should show an error if an assignment with the same name already exists', async () => {
+    mockDoesAssignmentExist.mockResolvedValue({ data: true });
+
+    const wrapper = mount(CreateAssignment, {
+      global: {
+        plugins: [VueQuery.VueQueryPlugin, PrimeVue],
+        stubs: { GroupPicker: true },
+      },
+    });
+
+    const assignmentName = 'Existing Assignment Name';
+    const dateStarted = '2025-05-30';
+    const dateClosed = '2025-05-31';
+    const districts = [
+      {
+        schools: ['3Xtxp98rBmtJfp0I8Gsl'],
+        name: 'A Test Site',
+        id: 'ym6s50BHi6B5nYCKGGWH',
+      },
+    ];
+
+    wrapper.vm.state.administrationName = assignmentName;
+    wrapper.vm.state.dateStarted = dateStarted;
+    wrapper.vm.state.dateClosed = dateClosed;
+    wrapper.vm.state.districts = districts;
+    wrapper.vm.state.schools = [];
+    wrapper.vm.state.classes = [];
+    wrapper.vm.state.groups = [];
+    wrapper.vm.state.families = [];
+    wrapper.vm.state.sequential = true;
+    wrapper.vm.state.legal = {
+      consent: null,
+      assent: null,
+      amount: '',
+      expectedTime: '',
+    };
+
+    wrapper.vm.variants = [
+      {
+        id: 'YXXjBbBuaacSaEV4NGiW',
+        variant: {
+          params: {
+            storeItemId: false,
+            maxTime: 100,
+            sequentialStimulus: true,
+            numberOfTrials: 300,
+            keyHelpers: false,
+            stimulusBlocks: 3,
+            corpus: null,
+            numOfPracticeTrials: 2,
+            maxIncorrect: 3,
+            language: 'en',
+            sequentialPractice: true,
+            skipInstructions: true,
+            taskName: 'intro',
+            buttonLayout: 'default',
+            age: null,
+          },
+          name: 'en',
+          registered: true,
+          lastUpdated: '2025-05-15T20:12:54.288Z',
+          id: 'YXXjBbBuaacSaEV4NGiW',
+          parentDoc: 'intro',
+          conditions: {
+            assigned: {
+              op: 'AND',
+              conditions: [
+                {
+                  field: 'userType',
+                  op: 'EQUAL',
+                  value: 'student',
+                },
+              ],
+            },
+          },
+        },
+        task: {
+          id: 'intro',
+          name: 'Instructions',
+          registered: true,
+          description: 'Learn how to play our games!',
+          image: 'https://storage.googleapis.com/road-dashboard/shared/intro-logo.png',
+          lastUpdated: '2025-05-30T15:17:44.859Z',
+        },
+      },
+    ];
+
+    await wrapper.vm.submit();
+    await wrapper.vm.$nextTick();
+
+    expect(mockDoesAssignmentExist).toHaveBeenCalledTimes(1);
+    expect(mockUpsertAdministration).not.toHaveBeenCalled();
   });
 
   it('should submit the form if everything is ok', async () => {

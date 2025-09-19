@@ -10,6 +10,7 @@ import _without from 'lodash/without';
 import _isEmpty from 'lodash/isEmpty';
 import { convertValues, getAxiosInstance, getBaseDocumentPath, getProjectId, mapFields } from './utils';
 import { pluralizeFirestoreCollection, isLevante } from '@/helpers';
+import { FIRESTORE_COLLECTIONS } from '@/constants/firebase';
 
 const userSelectFields = ['name', 'assessmentPid', 'username', 'studentData', 'schools', 'classes', 'userType'];
 
@@ -1071,7 +1072,6 @@ export const getUserAssignments = async (roarUid) => {
     });
 };
 
-
 // TODO: Rename this function to be more descriptive.
 export const assignmentFetchAll = async (adminId, orgType, orgId, includeScores = false) => {
   return await assignmentPageFetcher(
@@ -1084,4 +1084,62 @@ export const assignmentFetchAll = async (adminId, orgType, orgId, includeScores 
     true,
     true,
   );
+};
+
+export const fetchAssignmentsByNameAndDistricts = async (name, normalizedName, districts) => {
+  const axiosInstance = getAxiosInstance();
+
+  const queries = districts.map(async (district) => {
+    const requestBody = {
+      structuredQuery: {
+        from: [{ collectionId: FIRESTORE_COLLECTIONS.ADMINISTRATIONS }],
+        where: {
+          compositeFilter: {
+            op: 'AND',
+            filters: [
+              {
+                fieldFilter: {
+                  field: { fieldPath: 'districts' },
+                  op: 'ARRAY_CONTAINS',
+                  value: { stringValue: district.id },
+                },
+              },
+              {
+                compositeFilter: {
+                  op: 'OR',
+                  filters: [
+                    {
+                      fieldFilter: {
+                        field: { fieldPath: 'name' },
+                        op: 'EQUAL',
+                        value: { stringValue: name },
+                      },
+                    },
+                    {
+                      fieldFilter: {
+                        field: { fieldPath: 'normalizedName' },
+                        op: 'EQUAL',
+                        value: { stringValue: normalizedName },
+                      },
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        },
+      },
+    };
+
+    try {
+      const response = await axiosInstance.post(`${getBaseDocumentPath()}:runQuery`, requestBody);
+      return response.data.filter((data) => data.document);
+    } catch (error) {
+      console.error('Error fetching assignment by name: ', error);
+      return null;
+    }
+  });
+
+  const results = await Promise.all(queries);
+  return Array.isArray(results) ? results.flat() : null;
 };

@@ -155,7 +155,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref, toRaw, watch } from 'vue';
+import { computed, onMounted, reactive, ref, toRaw, toRef, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useToast } from 'primevue/usetoast';
@@ -191,8 +191,9 @@ import ConsentPicker from '@/components/ConsentPicker.vue';
 import GroupPicker from '@/components/GroupPicker.vue';
 import { APP_ROUTES } from '@/constants/routes';
 import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
-import { isLevante } from '@/helpers';
+import { isLevante, normalizeToLowercase } from '@/helpers';
 import { useQueryClient } from '@tanstack/vue-query';
+import useAssignmentByNameQuery from '@/composables/queries/useAssignmentByNameQuery';
 
 const initialized = ref(false);
 const router = useRouter();
@@ -310,6 +311,11 @@ const state = reactive({
   amount: '',
   expectedTime: '',
 });
+
+const { refetch: doesAssignmentExist } = useAssignmentByNameQuery(
+  toRef(state, 'administrationName'),
+  toRef(state, 'districts'),
+);
 
 const rules = {
   administrationName: { required },
@@ -566,6 +572,7 @@ const submit = async () => {
   const args = {
     name: toRaw(state).administrationName,
     publicName: toRaw(state).administrationName,
+    normalizedName: normalizeToLowercase(toRaw(state).administrationName),
     assessments: submittedAssessments,
     dateOpen: toRaw(state).dateStarted,
     dateClose,
@@ -582,7 +589,27 @@ const submit = async () => {
 
   if (props.adminId) args.administrationId = props.adminId;
 
-  await upsertAdministration(args, {
+  const { data: assignmentExist } = await doesAssignmentExist();
+
+  if (assignmentExist === null) {
+    return toast.add({
+      severity: TOAST_SEVERITIES.ERROR,
+      summary: 'Error',
+      detail: 'Failed to check for duplicate assignment names. Try again or use a different name.',
+      life: TOAST_DEFAULT_LIFE_DURATION,
+    });
+  }
+
+  if (assignmentExist) {
+    return toast.add({
+      severity: 'error',
+      summary: 'Assignment Creation Error',
+      detail: 'An assignment with that name already exists.',
+      life: TOAST_DEFAULT_LIFE_DURATION,
+    });
+  }
+
+  upsertAdministration(args, {
     onSuccess: () => {
       toast.add({
         severity: TOAST_SEVERITIES.SUCCESS,
