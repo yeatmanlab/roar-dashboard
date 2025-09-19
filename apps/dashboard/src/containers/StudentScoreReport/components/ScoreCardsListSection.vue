@@ -2,32 +2,30 @@
   <section class="py-4">
     <h2 class="text-2xl font-bold">Detailed Assessment Results</h2>
 
-    <div
-      v-for="task in computedTaskData"
-      :key="task.taskId"
-      class="grid lg:grid-cols-2 xl:grid-cols-3 align-items-end justify-content-start"
-    >
-      <ScoreCard
-        :public-name="tasksDictionary[task.taskId]?.publicName ?? task.taskId"
-        :score-label="task[task.scoreToDisplay].name"
-        :score="task[task.scoreToDisplay]"
-        :tags="task.tags"
-        :value-template="scoreValueTemplate(task)"
-        :score-to-display="task.scoreToDisplay"
-        :student-first-name="studentFirstName"
-        :description="getTaskDescription(task)"
-        :scores-array="getTaskScoresArray(task)"
-        :expanded="expanded"
-        :longitudinal-data="task.historicalScores"
-        :task-id="task.taskId"
-        :grade="studentGrade"
-      />
+    <div class="grid gap-2 lg:grid-cols-2 xl:grid-cols-3">
+      <template v-for="task in computedTaskData" :key="task.taskId">
+        <ScoreCard
+          :public-name="tasksDictionary[task.taskId]?.publicName ?? task.taskId"
+          :score-label="task[task.scoreToDisplay].name"
+          :score="task[task.scoreToDisplay]"
+          :tags="task.tags"
+          :value-template="scoreValueTemplate(task)"
+          :score-to-display="task.scoreToDisplay"
+          :student-first-name="studentFirstName"
+          :description="getTaskDescription(task)"
+          :scores-array="getTaskScoresArray(task)"
+          :expanded="expanded"
+          :longitudinal-data="task.historicalScores"
+          :task-id="task.taskId"
+          :grade="studentGrade"
+        />
+      </template>
     </div>
   </section>
 </template>
 
 <script setup>
-import { computed , toValue } from 'vue';
+import { computed, toValue } from 'vue';
 import { useI18n } from 'vue-i18n';
 import ScoreCard from './ScoreCard.vue';
 import ScoreReportService from '@/services/ScoreReport.service';
