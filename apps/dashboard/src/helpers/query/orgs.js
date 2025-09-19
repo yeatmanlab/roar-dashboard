@@ -225,7 +225,6 @@ export const orgCounter = async (activeOrgType, selectedDistrict, selectedSchool
     } else if (activeOrgType.value === 'classes') {
       if (selectedSchool.value) {
         return fetchDocById('schools', selectedSchool.value, ['classes']).then((school) => {
-          console.log('in orgs counter', districtIds);
           if (districtIds.includes(selectedDistrict.value) || schoolIds.includes(selectedSchool.value)) {
             return school.classes?.length ?? 0;
           }
@@ -473,10 +472,6 @@ export const fetchTreeOrgs = async (administrationId, assignedOrgs) => {
 
       // Only add the node if it is in the assignedOrgs
       if (!assignedOrgs[collection]?.includes(orgDoc.id)) {
-        console.log(`Skipping org ${orgDoc.id}. Not in assignedOrgs.${collection}`, {
-          assignedOrgs,
-          orgDoc,
-        });
         return undefined;
       }
 
