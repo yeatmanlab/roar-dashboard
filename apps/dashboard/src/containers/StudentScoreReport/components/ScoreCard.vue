@@ -99,7 +99,12 @@
             {{ $t('scoreReports.progressOverTime') }}
           </PvAccordionHeader>
           <PvAccordionContent :pt="{ content: { class: 'px-0' } }">
-            <LongitudinalChart :longitudinal-data="longitudinalData" :task-id="taskId" :grade="grade" />
+            <LongitudinalChart
+              :longitudinal-data="longitudinalData"
+              :task-id="taskId"
+              :grade="grade"
+              :current-assignment-id="assignmentId"
+            />
           </PvAccordionContent>
         </PvAccordionPanel>
       </PvAccordion>
@@ -178,6 +183,10 @@ const props = defineProps({
   grade: {
     type: Number,
     required: false,
+  },
+  assignmentId: {
+    type: String,
+    required: true,
   },
 });
 

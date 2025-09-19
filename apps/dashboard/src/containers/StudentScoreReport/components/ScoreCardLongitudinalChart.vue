@@ -26,6 +26,10 @@ const props = defineProps({
     type: Number,
     required: true,
   },
+  currentAssignmentId: {
+    type: String,
+    required: true,
+  },
 });
 
 const SCORE_TYPES = {
@@ -78,6 +82,7 @@ const chartData = computed(() => {
       return {
         x,
         y,
+        assignmentId: e.assignmentId || e.administrationId,
         percentile: e.scores?.percentile ?? null,
         standardScore: e.scores?.standardScore ?? null,
         color: s?.tag_color || getColorByScoreType(type),
@@ -91,10 +96,16 @@ const chartData = computed(() => {
         data: points,
         tension: 0.4,
         borderColor: getColorByScoreType(type),
-        pointRadius: 4,
-        pointHoverRadius: 6,
+        pointRadius: points.map((p) => (p.assignmentId && p.assignmentId === props.currentAssignmentId ? 8 : 4)),
+        pointHoverRadius: points.map((p) => (p.assignmentId && p.assignmentId === props.currentAssignmentId ? 10 : 6)),
         pointBackgroundColor: points.map((p) => p.color),
-        pointBorderColor: points.map((p) => p.color),
+        pointBorderColor: points.map((p) =>
+          p.assignmentId && p.assignmentId === props.currentAssignmentId ? '#000000' : p.color,
+        ),
+        pointBorderWidth: points.map((p) => (p.assignmentId && p.assignmentId === props.currentAssignmentId ? 2 : 1)),
+        pointStyle: points.map((p) =>
+          p.assignmentId && p.assignmentId === props.currentAssignmentId ? 'rectRot' : 'circle',
+        ),
         spanGaps: true,
       },
     ],
