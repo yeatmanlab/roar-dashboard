@@ -94,7 +94,6 @@
 
         <PvAccordionPanel
           v-if="longitudinalData?.length > 0"
-          class="bg-gray-50"
           :pt="{ root: { class: 'border-0' } }"
           :value="ACCORDION_PANELS.LONGITUDINAL"
         >

@@ -52,9 +52,9 @@ const props = defineProps({
     required: true,
   },
   longitudinalData: {
-    type: Array,
+    type: Object,
     required: false,
-    default: () => [],
+    default: () => ({}),
   },
   expanded: {
     type: Boolean,
@@ -99,7 +99,7 @@ const computedTaskData = computed(() => {
     return processedTasks.map((task) => {
       const taskHistory = longitudinalData[task.taskId] || [];
 
-      const processedHistory = taskHistory
+      const processedHistory = [...taskHistory]
         .sort((a, b) => new Date(a.date) - new Date(b.date))
         .map((run) => {
           // Make sure we're accessing the correct scores structure
