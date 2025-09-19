@@ -2,13 +2,19 @@ import { mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import PrimeVue from 'primevue/config';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ref } from 'vue';
 import SideBar from '../SideBar.vue';
 
+const selectedStatusRef = ref('current');
+const selectedAssignmentRef = ref(null);
+const userAssignmentsRef = ref([]);
+
 const mockAssignmentsStore = {
-  selectedStatus: 'current',
-  selectedAssignment: null,
+  selectedStatus: selectedStatusRef,
+  selectedAssignment: selectedAssignmentRef,
+  userAssignments: userAssignmentsRef,
   setSelectedStatus: vi.fn((status) => {
-    mockAssignmentsStore.selectedStatus = status;
+    selectedStatusRef.value = status;
   }),
   setSelectedAssignment: vi.fn(),
 };
@@ -25,10 +31,6 @@ vi.mock('@/store/assignments', () => ({
   useAssignmentsStore: vi.fn(() => mockAssignmentsStore),
 }));
 
-vi.mock('date-fns', () => ({
-  format: vi.fn(() => 'Jan 01, 2024'),
-}));
-
 const getDynamicDates = () => {
   const today = new Date();
   const oneWeekAgo = new Date(today);
@@ -38,6 +40,34 @@ const getDynamicDates = () => {
   oneWeekFromNow.setDate(today.getDate() + 7);
 
   return { oneWeekAgo, oneWeekFromNow };
+};
+
+const getTestAssignments = () => {
+  const { oneWeekAgo, oneWeekFromNow } = getDynamicDates();
+
+  return [
+    {
+      id: '1',
+      name: 'Test Assignment 1',
+      publicName: 'Public Test 1',
+      dateOpened: oneWeekAgo,
+      dateClosed: oneWeekFromNow,
+    },
+    {
+      id: '2',
+      name: 'Test Assignment 2',
+      publicName: 'Public Test 2',
+      dateOpened: oneWeekFromNow,
+      dateClosed: new Date(oneWeekFromNow.getTime() + 7 * 24 * 60 * 60 * 1000), // 2 weeks from now
+    },
+    {
+      id: '3',
+      name: 'Test Assignment 3',
+      publicName: 'Public Test 3',
+      dateOpened: new Date(oneWeekAgo.getTime() - 7 * 24 * 60 * 60 * 1000), // 2 weeks ago
+      dateClosed: oneWeekAgo,
+    },
+  ];
 };
 
 const mountOptions = {
@@ -50,43 +80,15 @@ const mountOptions = {
       },
     },
   },
-  props: {
-    currentAssignments: [
-      {
-        id: '1',
-        name: 'Test Assignment 1',
-        publicName: 'Public Test 1',
-        dateOpened: getDynamicDates().oneWeekAgo,
-        dateClosed: getDynamicDates().oneWeekFromNow,
-      },
-    ],
-    upcomingAssignments: [
-      {
-        id: '2',
-        name: 'Test Assignment 2',
-        publicName: 'Public Test 2',
-        dateOpened: getDynamicDates().oneWeekFromNow,
-        dateClosed: new Date(getDynamicDates().oneWeekFromNow.getTime() + 7 * 24 * 60 * 60 * 1000), // 2 weeks from now
-      },
-    ],
-    pastAssignments: [
-      {
-        id: '3',
-        name: 'Test Assignment 3',
-        publicName: 'Public Test 3',
-        dateOpened: new Date(getDynamicDates().oneWeekAgo.getTime() - 7 * 24 * 60 * 60 * 1000), // 2 weeks ago
-        dateClosed: getDynamicDates().oneWeekAgo,
-      },
-    ],
-  },
 };
 
 beforeEach(() => {
   setActivePinia(createPinia());
   vi.clearAllMocks();
   // Reset store state
-  mockAssignmentsStore.selectedStatus = 'current';
-  mockAssignmentsStore.selectedAssignment = null;
+  selectedStatusRef.value = 'current';
+  selectedAssignmentRef.value = null;
+  userAssignmentsRef.value = getTestAssignments();
 });
 
 describe('SideBar.vue', () => {
@@ -109,38 +111,6 @@ describe('SideBar.vue', () => {
   });
 
   describe('Icon Display', () => {
-    it('should display the toggle button icon (first icon)', () => {
-      const wrapper = mount(SideBar, mountOptions);
-      const toggleBtn = wrapper.find('.sidebar__toggle-btn');
-
-      expect(toggleBtn.exists()).toBe(true);
-      expect(toggleBtn.find('.pi.pi-list').exists()).toBe(true);
-    });
-
-    it('should display the current assignments icon (second icon)', () => {
-      const wrapper = mount(SideBar, mountOptions);
-      const currentIcon = wrapper.find('.sidebar__nav-link.--current');
-
-      expect(currentIcon.exists()).toBe(true);
-      expect(currentIcon.find('.pi.pi-play').exists()).toBe(true);
-    });
-
-    it('should display the upcoming assignments icon (third icon)', () => {
-      const wrapper = mount(SideBar, mountOptions);
-      const upcomingIcon = wrapper.find('.sidebar__nav-link.--upcoming');
-
-      expect(upcomingIcon.exists()).toBe(true);
-      expect(upcomingIcon.find('.pi.pi-clock').exists()).toBe(true);
-    });
-
-    it('should display the past assignments icon (fourth icon)', () => {
-      const wrapper = mount(SideBar, mountOptions);
-      const pastIcon = wrapper.find('.sidebar__nav-link.--past');
-
-      expect(pastIcon.exists()).toBe(true);
-      expect(pastIcon.find('.pi.pi-briefcase').exists()).toBe(true);
-    });
-
     it('should display all 4 icons correctly', () => {
       const wrapper = mount(SideBar, mountOptions);
 
@@ -167,9 +137,11 @@ describe('SideBar.vue', () => {
       const wrapper = mount(SideBar, mountOptions);
 
       await wrapper.find('.sidebar__toggle-btn').trigger('click');
+
       expect(wrapper.find('.sidebar__panel').exists()).toBe(true);
 
       await wrapper.find('.sidebar__toggle-btn').trigger('click');
+
       expect(wrapper.find('.sidebar__panel').exists()).toBe(false);
     });
 
@@ -270,6 +242,7 @@ describe('SideBar.vue', () => {
       const wrapper = mount(SideBar, mountOptions);
 
       await wrapper.find('.sidebar__toggle-btn').trigger('click');
+
       expect(wrapper.find('.sidebar__panel').exists()).toBe(true);
 
       await wrapper.find('.sidebar__panel__backdrop').trigger('click');
@@ -283,6 +256,7 @@ describe('SideBar.vue', () => {
       const wrapper = mount(SideBar, mountOptions);
 
       await wrapper.find('.sidebar__toggle-btn').trigger('click');
+
       expect(wrapper.find('.sidebar__panel').exists()).toBe(true);
 
       await wrapper.find('.assignment-card').trigger('click');
@@ -293,14 +267,10 @@ describe('SideBar.vue', () => {
 
   describe('Empty States', () => {
     it('should show empty message when no assignments exist', async () => {
-      const wrapper = mount(SideBar, {
-        ...mountOptions,
-        props: {
-          currentAssignments: [],
-          upcomingAssignments: [],
-          pastAssignments: [],
-        },
-      });
+      // Set empty assignments in store
+      userAssignmentsRef.value = [];
+
+      const wrapper = mount(SideBar, mountOptions);
 
       await wrapper.find('.sidebar__toggle-btn').trigger('click');
 

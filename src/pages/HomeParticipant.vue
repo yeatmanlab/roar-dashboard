@@ -20,13 +20,6 @@
     </div>
 
     <div v-else>
-      <SideBar
-        v-if="authStore.showSideBar"
-        :currentAssignments="currentAssignments"
-        :pastAssignments="pastAssignments"
-        :upcomingAssignments="upcomingAssignments"
-      />
-
       <div class="assignment">
         <div class="assignment__header">
           <PvTag :value="selectedStatus" class="text-xs uppercase" :class="`assignment__status --${selectedStatus}`" />
@@ -121,7 +114,6 @@ import { fetchDocsById } from '@/helpers/query/utils';
 import LevanteSpinner from '@/components/LevanteSpinner.vue';
 import { logger } from '@/logger';
 import { format } from 'date-fns';
-import SideBar from '@/components/SideBar.vue';
 import PvTag from 'primevue/tag';
 
 const showConsent = ref(false);
@@ -149,7 +141,7 @@ const authStore = useAuthStore();
 const { roarfirekit, showOptionalAssessments, userData: currentUserData } = storeToRefs(authStore);
 
 const assignmentsStore = useAssignmentsStore();
-const { selectedAssignment, selectedStatus } = storeToRefs(assignmentsStore);
+const { selectedAssignment, selectedStatus, userAssignments } = storeToRefs(assignmentsStore);
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.roarfirekit.restConfig) init();
@@ -178,7 +170,7 @@ const {
 const {
   isLoading: isLoadingAssignments,
   isFetching: isFetchingAssignments,
-  data: userAssignments,
+  data,
 } = useUserAssignmentsQuery({
   enabled: initialized,
 });
@@ -187,25 +179,7 @@ const sortedUserAdministrations = computed(() => {
   return [...(userAssignments.value ?? [])].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 });
 
-function isCurrent(assignment, now) {
-  const opened = new Date(assignment?.dateOpened);
-  const closed = new Date(assignment?.dateClosed);
-  return opened <= now && closed >= now;
-}
-
-function isPast(assignment, now) {
-  return new Date(assignment?.dateClosed) < now;
-}
-
-function isUpcoming(assignment, now) {
-  return new Date(assignment?.dateOpened) > now;
-}
-
 const now = computed(() => new Date());
-
-const currentAssignments = computed(() => sortedUserAdministrations.value.filter((a) => isCurrent(a, now.value)));
-const pastAssignments = computed(() => sortedUserAdministrations.value.filter((a) => isPast(a, now.value)));
-const upcomingAssignments = computed(() => sortedUserAdministrations.value.filter((a) => isUpcoming(a, now.value)));
 
 const assignmentStartDateLabel = computed(() => {
   const dateOpened = selectedAssignment.value?.dateOpened || new Date();
@@ -215,11 +189,6 @@ const assignmentStartDateLabel = computed(() => {
 const assignmentEndDateLabel = computed(() => {
   const dateClosed = selectedAssignment.value?.dateClosed || new Date();
   return new Date(dateClosed) < now.value ? 'Closed:' : 'Close:';
-});
-
-watch([assignmentsStore, currentAssignments], () => {
-  const assignment = assignmentsStore?.selectedAssignment || currentAssignments.value[0] || [];
-  assignmentsStore.setSelectedAssignment(assignment);
 });
 
 const taskIds = computed(() => {

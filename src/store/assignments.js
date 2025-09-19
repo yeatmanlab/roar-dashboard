@@ -6,47 +6,56 @@ export const useAssignmentsStore = defineStore(
   'assignmentsStore',
   () => {
     // state
+    const requireRefresh = ref(false);
     const selectedAssignment = ref(null);
     const selectedStatus = ref('');
-    const requireRefresh = ref(false);
+    const userAssignments = ref([]);
 
     // actions
-    function setSelectedAssignment(assignment) {
-      selectedAssignment.value = assignment;
-    }
-    function setSelectedStatus(status) {
-      selectedStatus.value = status;
+    function $reset() {
+      requireRefresh.value = false;
+      selectedAssignment.value = null;
+      selectedStatus.value = '';
+      userAssignments.value = [];
     }
 
     function setHomeRefresh() {
       requireRefresh.value = true;
     }
 
-    function $reset() {
-      selectedAssignment.value = null;
-      selectedStatus.value = '';
-      requireRefresh.value = false;
+    function setSelectedAssignment(assignment) {
+      selectedAssignment.value = assignment;
+    }
+
+    function setSelectedStatus(status) {
+      selectedStatus.value = status;
+    }
+
+    function setUserAssignments(assignments) {
+      userAssignments.value = assignments;
     }
 
     return {
       // state
+      requireRefresh,
       selectedAssignment,
       selectedStatus,
-      requireRefresh,
+      userAssignments,
       // actions
+      $reset,
+      setHomeRefresh,
       setSelectedAssignment,
       setSelectedStatus,
-      setHomeRefresh,
-      $reset,
+      setUserAssignments,
     };
   },
   {
     persist: {
-      storage: sessionStorage,
       serialize: {
         deserialize: parse,
         serialize: stringify,
       },
+      storage: sessionStorage,
     },
   },
 );

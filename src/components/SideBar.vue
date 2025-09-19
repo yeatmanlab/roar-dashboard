@@ -20,9 +20,9 @@
             <small class="assignment-group__title"
               >Current <span class="ml-auto font-medium">{{ numOfCurrentAssignments }}</span></small
             >
-            <ul v-if="props.currentAssignments.length > 0" class="assignment-group__list">
+            <ul v-if="currentAssignments.length > 0" class="assignment-group__list">
               <AssignmentCard
-                v-for="assignment in props.currentAssignments"
+                v-for="assignment in currentAssignments"
                 :key="assignment?.id"
                 :data="assignment"
                 :is-active="assignmentsStore.selectedAssignment?.id === assignment?.id"
@@ -40,9 +40,9 @@
             <small class="assignment-group__title"
               >Upcoming <span class="ml-auto font-medium">{{ numOfUpcomingAssignments }}</span></small
             >
-            <ul v-if="props.upcomingAssignments.length > 0" class="assignment-group__list">
+            <ul v-if="upcomingAssignments.length > 0" class="assignment-group__list">
               <AssignmentCard
-                v-for="assignment in props.upcomingAssignments"
+                v-for="assignment in upcomingAssignments"
                 :key="assignment?.id"
                 :data="assignment"
                 :is-active="assignmentsStore.selectedAssignment?.id === assignment?.id"
@@ -60,9 +60,9 @@
             <small class="assignment-group__title"
               >Past <span class="ml-auto font-medium">{{ numOfPastAssignments }}</span></small
             >
-            <ul v-if="props.pastAssignments.length > 0" class="assignment-group__list">
+            <ul v-if="pastAssignments.length > 0" class="assignment-group__list">
               <AssignmentCard
-                v-for="assignment in props.pastAssignments"
+                v-for="assignment in pastAssignments"
                 :key="assignment?.id"
                 :data="assignment"
                 :is-active="assignmentsStore.selectedAssignment?.id === assignment?.id"
@@ -115,43 +115,51 @@
 
 <script lang="ts" setup>
 import { ASSIGNMENT_STATUSES } from '@/constants';
+import { tooltip } from '@/helpers';
 import { useAssignmentsStore } from '@/store/assignments';
 import { AdministrationType } from '@levante-framework/levante-zod';
+import { storeToRefs } from 'pinia';
 import { computed, ref } from 'vue';
 import AssignmentCard from './assignments/AssignmentCard.vue';
-import { tooltip } from '@/helpers';
-
-interface Props {
-  currentAssignments?: AdministrationType[];
-  pastAssignments?: AdministrationType[];
-  upcomingAssignments?: AdministrationType[];
-}
 
 const assignmentsStore = useAssignmentsStore();
-
-assignmentsStore.setSelectedStatus(assignmentsStore.selectedStatus || ASSIGNMENT_STATUSES.CURRENT);
+const { userAssignments, selectedStatus } = storeToRefs(assignmentsStore);
+assignmentsStore.setSelectedStatus(assignmentsStore.selectedStatus.value || ASSIGNMENT_STATUSES.CURRENT);
 
 const showSideBarPanel = ref(false);
-const selectedStatus = ref(assignmentsStore.selectedStatus);
 
-const props = withDefaults(defineProps<Props>(), {
-  currentAssignments: () => [],
-  pastAssignments: () => [],
-  upcomingAssignments: () => [],
-});
+const now = computed(() => new Date());
+
+function isCurrent(assignment: AdministrationType, now: Date) {
+  const opened = new Date(assignment?.dateOpened);
+  const closed = new Date(assignment?.dateClosed);
+  return opened <= now && closed >= now;
+}
+
+function isPast(assignment: AdministrationType, now: Date) {
+  return new Date(assignment?.dateClosed) < now;
+}
+
+function isUpcoming(assignment: AdministrationType, now: Date) {
+  return new Date(assignment?.dateOpened) > now;
+}
+
+const currentAssignments = computed(() => userAssignments.value.filter((a) => isCurrent(a, now.value)));
+const pastAssignments = computed(() => userAssignments.value.filter((a) => isPast(a, now.value)));
+const upcomingAssignments = computed(() => userAssignments.value.filter((a) => isUpcoming(a, now.value)));
 
 const numOfCurrentAssignments = computed(() => {
-  const length = props?.currentAssignments?.length;
+  const length = currentAssignments.value?.length;
   return length > 0 ? length.toString() : '--';
 });
 
 const numOfPastAssignments = computed(() => {
-  const length = props?.pastAssignments?.length;
+  const length = pastAssignments.value?.length;
   return length > 0 ? length.toString() : '--';
 });
 
 const numOfUpcomingAssignments = computed(() => {
-  const length = props?.upcomingAssignments?.length;
+  const length = upcomingAssignments.value?.length;
   return length > 0 ? length.toString() : '--';
 });
 
@@ -166,24 +174,16 @@ const onClickAssignment = (assignment: AdministrationType, status: string) => {
 };
 
 const onClickSideBarNavLink = (status: string) => {
-  selectedStatus.value = status;
+  assignmentsStore.setSelectedStatus(status);
   showSideBarPanel.value = true;
 };
 
 const onClickSideBarPanelBackdrop = () => {
   showSideBarPanel.value = false;
-
-  if (showSideBarPanel.value === false) {
-    selectedStatus.value = assignmentsStore.selectedStatus;
-  }
 };
 
 const onClickSideBarToggleBtn = () => {
   showSideBarPanel.value = !showSideBarPanel.value;
-
-  if (showSideBarPanel.value === false) {
-    selectedStatus.value = assignmentsStore.selectedStatus;
-  }
 };
 </script>
 

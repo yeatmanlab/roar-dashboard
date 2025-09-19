@@ -125,9 +125,12 @@ import { APP_ROUTES } from '@/constants/routes';
 import RoarModal from '@/components/modals/RoarModal.vue';
 import SignIn from '@/components/auth/SignIn.vue';
 import LanguageSelector from '@/components/LanguageSelector.vue';
+import { getUserAssignments } from '@/helpers/query/assignments';
+import { useAssignmentsStore } from '@/store/assignments';
 
 const incorrect = ref(false);
 const authStore = useAuthStore();
+const assignmentsStore = useAssignmentsStore();
 const router = useRouter();
 const adminSignIn = ref(false);
 
@@ -161,13 +164,14 @@ const authWithGoogle = () => {
           const userClaims = await fetchDocById('userClaims', authStore.getUserId());
           authStore.userClaims = userClaims;
 
-          const showSideBar = !userClaims?.claims?.super_admin && !userClaims?.claims?.admin;
-          authStore.setShowSideBar(showSideBar);
-        }
-
-        if (authStore.getUserId()) {
           const userData = await fetchDocById('users', authStore.getUserId());
           authStore.userData = userData;
+
+          if (!authStore.isUserAdmin()) {
+            const userAssignments = await getUserAssignments(authStore.getUserId());
+            assignmentsStore.setUserAssignments(userAssignments || []);
+            authStore.setShowSideBar(true);
+          }
         }
       })
       .catch((e) => {
@@ -210,13 +214,14 @@ const authWithEmail = async (state) => {
           const userClaims = await fetchDocById('userClaims', authStore.getUserId());
           authStore.userClaims = userClaims;
 
-          const showSideBar = !userClaims?.claims?.super_admin && !userClaims?.claims?.admin;
-          authStore.setShowSideBar(showSideBar);
-        }
-
-        if (authStore.getUserId()) {
           const userData = await fetchDocById('users', authStore.getUserId());
           authStore.userData = userData;
+
+          if (!authStore.isUserAdmin()) {
+            const userAssignments = await getUserAssignments(authStore.getUserId());
+            assignmentsStore.setUserAssignments(userAssignments || []);
+            authStore.setShowSideBar(true);
+          }
         }
 
         spinner.value = true;
