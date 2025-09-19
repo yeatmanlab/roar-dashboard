@@ -27,9 +27,8 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, toValue } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { toValue } from 'vue';
 import ScoreCard from './ScoreCard.vue';
 import ScoreReportService from '@/services/ScoreReport.service';
 import { SCORE_TYPES } from '@/constants/scores';
