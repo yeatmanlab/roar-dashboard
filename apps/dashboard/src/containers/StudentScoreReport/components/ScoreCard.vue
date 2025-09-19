@@ -1,8 +1,6 @@
 <template>
-  <article
-    class="flex gap-4 pt-4 bg-white border-2 border border-gray-100 flex-column align-items-center justify-content-center"
-  >
-    <div class="flex gap-3 px-4 flex-column align-items-center justify-content-center">
+  <article class="flex gap-4 pt-4 bg-white border-2 border border-gray-100 flex-column">
+    <div class="flex gap-3 px-4 flex-column align-items-center">
       <div class="flex gap-1 text-center flex-column">
         <h2 class="m-0 text-lg font-semibold">{{ publicName }}</h2>
         <div class="text-sm font-thin text-gray-400">{{ scoreLabel }}</div>
@@ -25,7 +23,7 @@
       </div>
     </div>
 
-    <div class="flex gap-2 px-4 flex-column align-items-center justify-content-center">
+    <div class="flex gap-2 px-4 grow flex-column align-items-center">
       <PvKnob
         readonly
         :value-template="valueTemplate"
