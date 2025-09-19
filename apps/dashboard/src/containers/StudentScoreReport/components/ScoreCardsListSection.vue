@@ -27,9 +27,8 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed , toValue } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { toValue } from 'vue';
 import ScoreCard from './ScoreCard.vue';
 import ScoreReportService from '@/services/ScoreReport.service';
 import { SCORE_TYPES } from '@/constants/scores';
@@ -53,9 +52,9 @@ const props = defineProps({
     required: true,
   },
   longitudinalData: {
-    type: Array,
+    type: Object,
     required: false,
-    default: () => [],
+    default: () => ({}),
   },
   expanded: {
     type: Boolean,
@@ -79,7 +78,7 @@ const computedTaskData = computed(() => {
     return currentTasks.map((task) => {
       const taskHistory = longitudinalData[task.taskId] || [];
 
-      const processedHistory = taskHistory
+      const processedHistory = [...taskHistory]
         .sort((a, b) => new Date(a.date) - new Date(b.date))
         .map((run) => {
           // Make sure we're accessing the correct scores structure
