@@ -18,6 +18,7 @@
           :longitudinal-data="task.historicalScores"
           :task-id="task.taskId"
           :grade="studentGrade"
+          :assignment-id="props.administrationId"
         />
       </template>
     </div>
@@ -33,6 +34,10 @@ import { SCORE_TYPES } from '@/constants/scores';
 import { getScoreValue } from '@/helpers/reports';
 
 const props = defineProps({
+  administrationId: {
+    type: String,
+    required: true,
+  },
   studentFirstName: {
     type: String,
     required: true,
