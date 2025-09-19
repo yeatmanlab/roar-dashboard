@@ -22,7 +22,7 @@
   "dependencies": {
     "@bdelab/roam-apps": "^1.2.24",
     "@bdelab/roar-firekit": "^9.10.1",
-    "@bdelab/roar-letter": "2.1.0",
+    "@bdelab/roar-letter": "4.0.1",
     "@bdelab/roar-levante-tasks": "^0.2.0",
     "@bdelab/roar-multichoice": "1.11.8",
     "@bdelab/roar-pa": "2.2.5",
