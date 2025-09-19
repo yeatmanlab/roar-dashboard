@@ -470,6 +470,16 @@ export const fetchTreeOrgs = async (administrationId, assignedOrgs) => {
         return undefined;
       }
       const { classes, schools, archivedSchools, archivedClasses, collection, ...nodeData } = orgDoc;
+
+      // Only add the node if it is in the assignedOrgs
+      if (!assignedOrgs[collection]?.includes(orgDoc.id)) {
+        console.log(`Skipping org ${orgDoc.id}. Not in assignedOrgs.${collection}`, {
+          assignedOrgs,
+          orgDoc,
+        });
+        return undefined;
+      }
+
       const node = {
         key: String(index),
         data: {
@@ -482,8 +492,11 @@ export const fetchTreeOrgs = async (administrationId, assignedOrgs) => {
           ...nodeData,
         },
       };
-      if (classes || archivedClasses)
-        node.children = [...(classes ?? []), ...(archivedClasses ?? [])].map((classId) => {
+      if (classes || archivedClasses) {
+        const assignedClasses = [...(classes ?? []), ...(archivedClasses ?? [])].filter((classId) => {
+          return assignedOrgs.classes.includes(classId);
+        });
+        node.children = assignedClasses.map((classId) => {
           return {
             key: `${node.key}-${classId}`,
             data: {
@@ -492,6 +505,7 @@ export const fetchTreeOrgs = async (administrationId, assignedOrgs) => {
             },
           };
         });
+      }
       return node;
     }),
     undefined,
