@@ -46,7 +46,7 @@
     </div>
 
     <template v-if="scoresArray?.length || longitudinalData?.length > 0">
-      <PvAccordion v-model:value="visiblePanels" class="px-4 w-full border-t border-gray-100">
+      <PvAccordion v-model:value="visiblePanels" class="px-4 w-full border-t border-gray-100" multiple>
         <PvAccordionPanel
           class="bg-gray-50"
           :pt="{ root: { class: 'border-0' } }"
@@ -97,7 +97,7 @@ import PvAccordion from 'primevue/accordion';
 import PvAccordionPanel from 'primevue/accordionpanel';
 import PvAccordionHeader from 'primevue/accordionheader';
 import PvAccordionContent from 'primevue/accordioncontent';
-import LongitudinalChart from '@/components/reports/LongitudinalChart.vue';
+import LongitudinalChart from './ScoreCardLongitudinalChart.vue';
 
 const props = defineProps({
   publicName: {
