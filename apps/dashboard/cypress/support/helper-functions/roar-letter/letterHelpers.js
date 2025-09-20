@@ -7,12 +7,10 @@ const PARTICIPANT_USERNAME = Cypress.env('PARTICIPANT_USERNAME');
 const PARTICIPANT_PASSWORD = Cypress.env('PARTICIPANT_PASSWORD');
 
 function clickButton(selector) {
-  return cy.get(selector).then(($btn) => {
-    const foundButton = $btn.length > 0;
-    if (foundButton) {
+  return cy.getIfExists({ selector }).then(($btn) => {
+    if ($btn.length > 0) {
       $btn.click();
     }
-    return foundButton;
   });
 }
 
@@ -30,22 +28,9 @@ function makeChoiceOrContinue(gameCompleteText) {
     if (text.includes(gameCompleteText)) {
       cy.log('Game is complete.').then(() => true);
     } else {
-      // Use cy.get() instead of body.find() to grab the .go-button element.
-      // If it is found, then click it.
-      clickButton('go-button')
-        .then((foundGoButton) => {
-          if (!foundGoButton) {
-            // Fall back to the glowing button if the go button is not found.
-            return clickButton('glowingButton');
-          }
-          return foundGoButton;
-        })
-        .then((foundPreviousButton) => {
-          if (!foundPreviousButton) {
-            return clickButton('button:first');
-          }
-          return foundPreviousButton;
-        });
+      clickButton('go-button');
+      clickButton('glowingButton');
+      clickButton('button:first');
 
       cy.log('Making choice or continuing.');
       makeChoiceOrContinue(gameCompleteText);
