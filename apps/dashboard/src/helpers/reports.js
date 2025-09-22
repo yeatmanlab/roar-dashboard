@@ -280,6 +280,14 @@ export const taskDisplayNames = {
     extendedName: 'External Test',
     order: 26,
   },
+  'roar-survey': {
+    name: 'Survey',
+    publicName: 'ROAR - Survey',
+    studentFacingName: 'Survey',
+    extendedTitle: 'ROAR - Survey',
+    extendedName: 'Survey',
+    order: 27,
+  },
 };
 
 export const extendedDescriptions = {
@@ -311,6 +319,7 @@ export const extendedDescriptions = {
   crowding: 'Temporary description for crowding',
   'roav-mep': 'Temporary description for mep',
   'roar-readaloud': 'Temporary description for readaloud',
+  'roar-survey': 'Temporary description for survey',
 };
 
 /*
@@ -388,6 +397,7 @@ export const excludeFromScoringTasks = [
   'roav-crowding',
   'external-test-task',
   'qualtrics-experience',
+  'roar-survey',
 ];
 
 export const includeReliabilityFlagsOnExport = ['Word', 'Letter', 'Phoneme', 'Sentence'];

@@ -187,7 +187,7 @@ export default defineConfig(({ mode }) => {
 
     server: {
       fs: {
-        allow: ['..'],
+        allow: ['../../'],
       },
       headers: {
         ...responseHeaders,
