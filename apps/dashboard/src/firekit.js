@@ -43,7 +43,7 @@ const {
   VITE_FIREBASE_APP_MESSAGING_SENDER_ID,
   VITE_FIREKIT_APP_RECAPTCHA_SITE_KEY,
   VITE_FIREKIT_APPCHECK_DEBUG_TOKEN = undefined,
-  VITE_FIREKIT_VERBOSE_LOGGING_ENABLED = false,
+  // VITE_FIREKIT_VERBOSE_LOGGING_ENABLED = false,
 } = import.meta.env;
 
 // Define the App Check debug token
@@ -91,7 +91,8 @@ export async function initializeFirekit() {
   const firekit = new RoarFirekit({
     roarConfig: firekitConfig,
     authPersistence: 'session',
-    verboseLogging: VITE_FIREKIT_VERBOSE_LOGGING_ENABLED === true,
+    verboseLogging: true,
+    // verboseLogging: VITE_FIREKIT_VERBOSE_LOGGING_ENABLED === true,
   });
 
   return await firekit.init();
