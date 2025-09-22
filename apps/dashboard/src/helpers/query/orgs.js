@@ -225,7 +225,6 @@ export const orgCounter = async (activeOrgType, selectedDistrict, selectedSchool
     } else if (activeOrgType.value === 'classes') {
       if (selectedSchool.value) {
         return fetchDocById('schools', selectedSchool.value, ['classes']).then((school) => {
-          console.log('in orgs counter', districtIds);
           if (districtIds.includes(selectedDistrict.value) || schoolIds.includes(selectedSchool.value)) {
             return school.classes?.length ?? 0;
           }
@@ -470,6 +469,12 @@ export const fetchTreeOrgs = async (administrationId, assignedOrgs) => {
         return undefined;
       }
       const { classes, schools, archivedSchools, archivedClasses, collection, ...nodeData } = orgDoc;
+
+      // Only add the node if it is in the assignedOrgs
+      if (!assignedOrgs[collection]?.includes(orgDoc.id)) {
+        return undefined;
+      }
+
       const node = {
         key: String(index),
         data: {
@@ -482,8 +487,11 @@ export const fetchTreeOrgs = async (administrationId, assignedOrgs) => {
           ...nodeData,
         },
       };
-      if (classes || archivedClasses)
-        node.children = [...(classes ?? []), ...(archivedClasses ?? [])].map((classId) => {
+      if (classes || archivedClasses) {
+        const assignedClasses = [...(classes ?? []), ...(archivedClasses ?? [])].filter((classId) => {
+          return assignedOrgs.classes.includes(classId);
+        });
+        node.children = assignedClasses.map((classId) => {
           return {
             key: `${node.key}-${classId}`,
             data: {
@@ -492,6 +500,7 @@ export const fetchTreeOrgs = async (administrationId, assignedOrgs) => {
             },
           };
         });
+      }
       return node;
     }),
     undefined,
