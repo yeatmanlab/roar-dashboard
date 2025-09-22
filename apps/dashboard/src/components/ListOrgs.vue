@@ -65,8 +65,14 @@
               class="p-2 rounded"
             />
           </div>
+          <div v-if="isExporting" class="mt-3 flex flex-column align-items-center justify-content-center gap-3">
+            <AppSpinner />
+            <span class="text-gray-500 font-semibold text-lg text-center">
+              Preparing CSV{{ exportingOrgName ? ` for ${exportingOrgName}` : '' }}…
+            </span>
+          </div>
           <RoarDataTable
-            v-if="tableData"
+            v-if="showTable"
             :key="tableKey"
             :columns="tableColumns"
             :data="tableData"
@@ -78,7 +84,7 @@
             @export-org-users="(orgId) => exportOrgUsers(orgId)"
             @edit-button="onEditButtonClick($event)"
           />
-          <AppSpinner v-else />
+          <AppSpinner v-else-if="!tableData && !isExporting" />
         </PvTabPanel>
       </PvTabView>
       <AppSpinner v-else />
@@ -212,6 +218,8 @@ const currentEditOrgId = ref(null);
 const localOrgData = ref(null);
 const isSubmitting = ref(false);
 const hideSubgroups = ref(false);
+const isExporting = ref(false);
+const exportingOrgName = ref('');
 const { userCan, Permissions } = usePermissions();
 
 const districtPlaceholder = computed(() => {
@@ -331,6 +339,11 @@ const exportAll = async () => {
   exportCsv(exportData, `roar-${activeOrgType.value}.csv`);
 };
 
+// Type guard to check if orgType is an object with a string 'name' property
+function hasNameProperty(obj) {
+  return obj && typeof obj === 'object' && typeof obj.name === 'string';
+}
+
 /**
  * Exports users of a given organization type to a CSV file.
  *
@@ -348,6 +361,12 @@ const exportAll = async () => {
  * @returns {Promise<void>} - A promise that resolves when the export is complete.
  */
 const exportOrgUsers = async (orgType) => {
+  if (!orgType) return;
+  const orgName = hasNameProperty(orgType) ? orgType.name : '';
+
+  isExporting.value = true;
+  exportingOrgName.value = orgName;
+
   try {
     // First, count the users
     const userCount = await countUsersByOrg(activeOrgType.value, orgType.id, orderBy);
@@ -409,6 +428,9 @@ const exportOrgUsers = async (orgType) => {
       life: 3000,
     });
     Sentry.captureException(error);
+  } finally {
+    isExporting.value = false;
+    exportingOrgName.value = '';
   }
 };
 
@@ -551,6 +573,8 @@ const updateOrgData = async () => {
       isSubmitting.value = false;
     });
 };
+
+const showTable = computed(() => !!tableData.value && !isExporting.value);
 
 let unsubscribe;
 const initTable = () => {

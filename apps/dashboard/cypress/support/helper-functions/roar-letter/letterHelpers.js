@@ -7,7 +7,7 @@ const PARTICIPANT_USERNAME = Cypress.env('PARTICIPANT_USERNAME');
 const PARTICIPANT_PASSWORD = Cypress.env('PARTICIPANT_PASSWORD');
 
 function clickButton(selector) {
-  cy.get(selector).then(($btn) => {
+  return cy.getIfExists({ selector }).then(($btn) => {
     if ($btn.length > 0) {
       $btn.click();
     }
@@ -28,13 +28,10 @@ function makeChoiceOrContinue(gameCompleteText) {
     if (text.includes(gameCompleteText)) {
       cy.log('Game is complete.').then(() => true);
     } else {
-      if (body.find('.go-button').length > 0) {
-        clickButton('.go-button');
-      } else if (body.find('.glowingButton').length > 0) {
-        clickButton('.glowingButton');
-      } else {
-        clickButton('button:first');
-      }
+      clickButton('go-button');
+      clickButton('glowingButton');
+      clickButton('button:first');
+
       cy.log('Making choice or continuing.');
       makeChoiceOrContinue(gameCompleteText);
     }
