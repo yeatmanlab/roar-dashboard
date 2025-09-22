@@ -129,6 +129,7 @@ const chartOptions = computed(() => ({
           const lines = [`${ctx.dataset.label}: ${point.y}`];
           if (point.percentile != null) lines.push(`Percentile: ${point.percentile}`);
           if (point.standardScore != null) lines.push(`Standard Score: ${point.standardScore}`);
+          if (point.assignmentId === props.currentAssignmentId) lines.unshift('✦ Current Score Report ✦');
           return lines;
         },
       },
