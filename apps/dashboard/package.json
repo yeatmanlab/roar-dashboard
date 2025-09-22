@@ -97,6 +97,7 @@
     "happy-dom": "^14.12.3",
     "nanoid": "^5.0.9",
     "sass": "^1.50.1",
+    "turbo": "^2.5.6",
     "vite": "^5.4.2",
     "vite-plugin-favicons-inject": "^2.2.0",
     "vite-plugin-mkcert": "^1.17.5",
