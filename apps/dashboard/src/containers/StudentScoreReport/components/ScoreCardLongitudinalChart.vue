@@ -1,6 +1,22 @@
 <template>
-  <div class="longitudinal-chart px-2 pt-2 rounded border border-gray-100 border-solid" style="height: 10rem">
-    <canvas ref="canvasRef" class="w-full h-full"></canvas>
+  <div class="longitudinal-chart px-2 pt-2 rounded border border-gray-100 border-solid">
+    <div style="height: 10rem">
+      <canvas ref="canvasRef" class="w-full h-full"></canvas>
+    </div>
+    <div class="support-level-legend flex justify-end gap-3 mt-2 text-xs">
+      <div class="flex items-center gap-1">
+        <div class="w-3 h-3 rounded-full" style="background-color: green"></div>
+        <span>Achieved Skill</span>
+      </div>
+      <div class="flex items-center gap-1">
+        <div class="w-3 h-3 rounded-full" style="background-color: #edc037"></div>
+        <span>Developing Skill</span>
+      </div>
+      <div class="flex items-center gap-1">
+        <div class="w-3 h-3 rounded-full" style="background-color: #c93d82"></div>
+        <span>Needs Extra Support</span>
+      </div>
+    </div>
   </div>
 </template>
 
