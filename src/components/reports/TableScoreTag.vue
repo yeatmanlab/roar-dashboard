@@ -1,7 +1,7 @@
 <template>
   <div
     v-if="(_get(colData, col.field) != undefined || _get(colData, 'optional')) && col.emptyTag !== true"
-    v-tooltip.right="tooltip(`${returnScoreTooltip(colData, col.field)}`)"
+    v-tooltip.right="getTooltip(`${returnScoreTooltip(colData, col.field)}`)"
   >
     <PvTag
       :value="_get(colData, col.field)"
@@ -13,7 +13,7 @@
       rounded
     />
   </div>
-  <div v-else-if="col.emptyTag" v-tooltip.right="tooltip(`${returnScoreTooltip(colData, col.field)}`)">
+  <div v-else-if="col.emptyTag" v-tooltip.right="getTooltip(`${returnScoreTooltip(colData, col.field)}`)">
     <div
       class="circle"
       :style="`background-color: ${_get(colData, col.tagColor)}; color: ${
@@ -35,7 +35,7 @@ import {
   scoredTasks,
   includedValidityFlags,
 } from '@/helpers/reports';
-import { tooltip } from '@/helpers';
+import { getTooltip } from '@/helpers';
 
 defineProps({
   colData: {

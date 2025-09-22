@@ -1,0 +1,5 @@
+{
+  "inactivityLogout\"": " la sesión se cerrará automáticamente en {timeLeft} segundos.\"",
+  "inactivityLogoutAcceptLabel\"": "\"Continuer\"",
+  "loading\"": "\"Chargement...\""
+}

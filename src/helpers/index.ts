@@ -231,7 +231,7 @@ export const normalizeToLowercase = (str = ''): string =>
     .normalize('NFKD')
     .replace(/[\u0300-\u036f]/g, '');
 
-export const tooltip = (value: string, options?: TooltipOptions): TooltipOptions => {
+export const getTooltip = (value: string, options?: TooltipOptions): TooltipOptions => {
   const defaultOptions = {
     hideDelay: 0,
     showDelay: 1500,

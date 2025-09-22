@@ -35,7 +35,7 @@
             <div class="form-field">
               <label
                 >Date of Birth
-                <span v-if="localUserType === 'student'" v-tooltip.top="tooltip('Required')" class="required"
+                <span v-if="localUserType === 'student'" v-tooltip.top="getTooltip('Required')" class="required"
                   >*</span
                 ></label
               >
@@ -51,7 +51,7 @@
             <div class="form-field">
               <label
                 >Grade
-                <span v-if="localUserType === 'student'" v-tooltip.top="tooltip('Required')" class="required"
+                <span v-if="localUserType === 'student'" v-tooltip.top="getTooltip('Required')" class="required"
                   >*</span
                 ></label
               >
@@ -67,13 +67,13 @@
               <div>
                 <PvCheckbox v-model="localUserData.testData" binary />
                 <label class="ml-2"
-                  >Test Data? <span v-tooltip.top="tooltip('Super Admin Only')" class="admin-only">*</span></label
+                  >Test Data? <span v-tooltip.top="getTooltip('Super Admin Only')" class="admin-only">*</span></label
                 >
               </div>
               <div>
                 <PvCheckbox v-model="localUserData.demoData" binary />
                 <label class="ml-2"
-                  >Demo Data? <span v-tooltip.top="tooltip('Super Admin Only')" class="admin-only">*</span></label
+                  >Demo Data? <span v-tooltip.top="getTooltip('Super Admin Only')" class="admin-only">*</span></label
                 >
               </div>
             </div>
@@ -218,7 +218,7 @@ import PvDialog from 'primevue/dialog';
 import PvSelect from 'primevue/select';
 import PvInputText from 'primevue/inputtext';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
-import { tooltip } from '@/helpers';
+import { getTooltip } from '@/helpers';
 
 interface StudentData {
   dob: Date | null;

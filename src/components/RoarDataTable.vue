@@ -23,7 +23,7 @@
         <PvFloatLabel v-if="props.allowColumnSelection">
           <PvMultiSelect
             id="ms-columns"
-            v-tooltip.top="tooltip('Show and hide columns')"
+            v-tooltip.top="getTooltip('Show and hide columns')"
             :model-value="selectedColumns"
             :options="inputColumns"
             option-label="header"
@@ -132,7 +132,7 @@
           >
             <template #header>
               <div
-                v-tooltip.top="tooltip(`${toolTipByHeader(col.header)}`)"
+                v-tooltip.top="getTooltip(`${toolTipByHeader(col.header)}`)"
                 :style="[
                   toolTipByHeader(col.header).length > 0
                     ? 'text-decoration: underline dotted #0000CD; text-underline-offset: 3px'
@@ -171,7 +171,7 @@
               <div v-else-if="col.link">
                 <router-link :to="{ name: col.routeName, params: colData.routeParams }">
                   <PvButton
-                    v-tooltip.right="tooltip(colData.tooltip)"
+                    v-tooltip.right="getTooltip(colData.tooltip)"
                     severity="secondary"
                     text
                     class="border border-round surface-200 p-2 hover:surface-500"
@@ -403,7 +403,7 @@ import _startCase from 'lodash/startCase';
 import { supportLevelColors, progressTags } from '@/helpers/reports';
 import SkeletonTable from '@/components/SkeletonTable.vue';
 import TableScoreTag from '@/components/reports/TableScoreTag.vue';
-import { tooltip } from '@/helpers';
+import { getTooltip } from '@/helpers';
 
 /*
 Using the DataTable
