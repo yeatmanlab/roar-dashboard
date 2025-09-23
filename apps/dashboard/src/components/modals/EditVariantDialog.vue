@@ -77,6 +77,7 @@
                 placeholder="Type or choose field"
                 data-cy="dropdown-assigned-field"
                 pt:trigger:data-testid="select__trigger"
+                pt:dropdown:data-testId="select__dropdown"
               >
               </PvSelect>
             </template>
@@ -193,7 +194,6 @@
                   option-value="value"
                   placeholder="Select Operator"
                   data-cy="dropdown-optional-operator"
-                  pt:dropdown:data-testid="select__dropdown"
                 >
                   <template #option="slotProps">
                     <PvTag :value="slotProps.option.label" severity="warning" />
