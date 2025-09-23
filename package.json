@@ -25,7 +25,7 @@
     "test": "vitest --config vitest.config.js",
     "test:watch": "vitest --watch",
     "format:add": "npm run format && git add -A",
-    "i18n:download-rebuild": "node src/translations/tools/download-and-rebuild.js",
+    "i18n:pull-json": "node src/translations/tools/pull-json.js",
     "i18n:consolidate": "node src/translations/tools/create-consolidated-translations.js",
     "i18n:crowdin:upload": "crowdin upload sources --config src/translations/crowdin/crowdin.yml",
     "i18n:crowdin:download": "crowdin download --config src/translations/crowdin/crowdin.yml",

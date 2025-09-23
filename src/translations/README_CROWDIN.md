@@ -22,7 +22,7 @@ This dashboard uses Crowdin to manage translations. Locally, translations are ma
 - Build tools
   - [`src/translations/tools/create-consolidated-translations.js`](./tools/create-consolidated-translations.js) (optional local consolidation)
   - [`src/translations/tools/csv-to-json.js`](./tools/csv-to-json.js) (CSV → per-locale JSON; includes validation and caching)
-  - [`src/translations/tools/download-and-rebuild.js`](./tools/download-and-rebuild.js) (Crowdin → local JSON; optional)
+**Recommended single command**: `npm run i18n:pull-json` (Crowdin → consolidated CSVs → per-locale JSON)
   - [`src/translations/tools/validate-csvs.js`](./tools/validate-csvs.js) (new: CSV validation across all files)
   - [`src/translations/tools/add-locale-column.js`](./tools/add-locale-column.js) (new: add locale columns to CSVs, optionally seeded)
 - Runtime loading
@@ -57,10 +57,8 @@ Key scripts (see [`package.json`](../../package.json)):
     - Deterministic: rows sorted by identifier for stable diffs
   - `npm run i18n:crowdin:upload`
     - Upload CSVs to Crowdin
-  - `npm run i18n:crowdin:download`
-    - Download latest translations from Crowdin
-  - `npm run i18n:csv-to-json`
-    - Transform consolidated CSVs into per-locale JSON files
+  - `npm run i18n:pull-json`
+    - Downloads latest translations from Crowdin, syncs to `src/translations/consolidated/`, and transforms to per-locale JSON
     - Validates basic CSV requirements and duplicates per file
     - Skips writing unchanged JSON (faster incremental builds)
   - `npm run i18n:validate` (new)
@@ -100,7 +98,7 @@ Notes:
    - `npm run i18n:crowdin:upload`
 3. Translators update strings in Crowdin
 4. Pull updates and generate JSON:
-   - `npm run i18n:crowdin:download && npm run i18n:csv-to-json`
+   - `npm run i18n:pull-json`
 
 The CSV → JSON step will detect the new locale, create the appropriate directory structure under `src/translations/`, and emit `<locale>-componentTranslations.json`. `i18n.ts` will auto-import and register it at runtime.
 
@@ -387,7 +385,6 @@ src/translations/
 │   └── de-componentTranslations.json
 └── tools/                      # Build scripts
     ├── csv-to-json.js
-    ├── download-and-rebuild.js
     └── ...
 ```
 
