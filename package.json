@@ -30,6 +30,7 @@
     "i18n:crowdin:upload": "crowdin upload sources --config src/translations/crowdin/crowdin.yml",
     "i18n:crowdin:download": "crowdin download --config src/translations/crowdin/crowdin.yml",
     "i18n:csv-to-json": "node src/translations/tools/csv-to-json.js",
+    "i18n:pull-json": "node src/translations/tools/pull-json.js",
     "predev": "sh -c 'if [ -n \"$CROWDIN_API_TOKEN\" ]; then npm run i18n:crowdin:download; fi' && node src/translations/tools/conditional-csv-to-json.js",
     "prebuild": "sh -c 'if [ -n \"$CROWDIN_API_TOKEN\" ]; then npm run i18n:crowdin:download; fi' && node src/translations/tools/conditional-csv-to-json.js",
     "i18n:validate": "node src/translations/tools/validate-csvs.js",

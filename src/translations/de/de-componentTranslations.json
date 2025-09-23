@@ -5,7 +5,7 @@
       "assentTitle": "Zustimmung",
       "consentTitle": "Zustimmung",
       "consentUpdatedStatus": "Zustimmungsstatus aktualisiert",
-      "header": "Consent",
+      "header": "Zustimmung",
       "rejectButton": "Nein, mich abmelden",
       "title": "",
       "toastHeader": "Bestätigt"
@@ -17,14 +17,14 @@
       "atLeastOneUpperCase": "Mindestens ein Großbuchstabe",
       "buttonLabel": "Los!",
       "continueWithGoogle": "Machen Sie weiter mit Google",
-      "emailId": "email",
+      "emailId": "E-Mail",
       "emailPlaceholder": "Benutzername oder E-Mail",
       "forgotPassword": "Passwort vergessen?",
       "incorrectEmailOrPassword": "Falscher Benutzername/E-Mail oder Passwort",
       "invalidEmailPlaceholder": "Fehler: Ungültige E-Mail",
       "minimumCharacters": "Mindestens 8 Zeichen",
       "pageTitle": "",
-      "passwordId": "password",
+      "passwordId": "Passwort",
       "passwordPlaceholder": "Passwort",
       "pickPassword": "Wählen Sie ein Passwort",
       "selectLanguage": "Sprache auswählen",
@@ -42,7 +42,14 @@
       "loadingAssignments": "Lade Zuordnungen",
       "noAssignments": "Sie haben keine Zuordnungen!",
       "selectAssignment": "Wählen Sie eine Zuordnung aus",
-      "showOptionalAssignments": "Optionale Zuordnungen anzeigen"
+      "showOptionalAssignments": "Optionale Zuordnungen anzeigen",
+      "assignments": "Zuordnungen",
+      "current": "Aktuell",
+      "past": "Vergangen",
+      "upcoming": "Kommend",
+      "noCurrentAssignmentsFound": "Keine aktuellen Zuordnungen gefunden",
+      "noPastAssignmentsFound": "Keine vergangenen Zuordnungen gefunden",
+      "noUpcomingAssignmentsFound": "Keine kommenden Zuordnungen gefunden"
     },
     "home-selector": {
       "inactivityLogout": "Sie werden aus Sicherheitsgründen bald abgemeldet. Bitte klicken Sie auf \"Weiter\", wenn Sie Ihre Sitzung fortsetzen möchten. \n Andernfalls werden Sie in { timeLeft } Sekunden automatisch abgemeldet.",
@@ -73,7 +80,6 @@
   },
   "components": {
     "game-tabs": {
-      "LEVANTE TRANSLATIONS--------------------------": "",
       "clickToStart": "Klicken zum Starten",
       "egmaMathDescription": "Löse die Matheaufgaben.",
       "egmaMathName": "Mathe",
@@ -116,7 +122,12 @@
       "trogDescription": "Hör dir die Wörter an und wähle das passende Bild dazu aus.",
       "trogName": "Satzverstehen",
       "vocabDescription": "Hör dir die Wörter an und wähle das passende Bild dazu aus.",
-      "vocabName": "Vokabeln"
+      "vocabName": "Vokabeln",
+      "pa": "Language Sounds",
+      "sre": "Sentence Reading",
+      "swr": "Word Reading",
+      "taskNoLongerAvailable": "Task No longer Available",
+      "taskNotYetAvailable": "Task Not available yet"
     },
     "navbar": {
       "greeting": "Hallo",
@@ -125,7 +136,18 @@
     "participant-sidebar": {
       "grade": "Klasse",
       "studentInfo": "Schülerinformationen",
-      "tasksCompleted": "Aufgaben abgeschlossen!"
+      "tasksCompleted": "Aufgaben abgeschlossen!",
+      "statusCurrent": "Aktuell",
+      "statusOpened": "Opened",
+      "statusClose": "Schließen",
+      "statusClosed": "Closed",
+      "statusOpen": "Open",
+      "statusUpcoming": "Kommend",
+      "statusPast": "Vergangen",
+      "assignments": "Zuordnungen",
+      "noCurrentAssignments": "No Current Assignments",
+      "noUpcomingAssignments": "No Upcoming assignments",
+      "noPastAssignments": "No past assignments"
     },
     "sentry-form": {
       "buttonLabel": "Ein Problem melden",

@@ -42,7 +42,14 @@
       "loadingAssignments": "Loading Assignments",
       "noAssignments": "You have no assignments!",
       "selectAssignment": "Select an assignment",
-      "showOptionalAssignments": "Show optional assignments"
+      "showOptionalAssignments": "Show optional assignments",
+      "assignments": "Assignments",
+      "current": "Current",
+      "past": "Past",
+      "upcoming": "Upcoming",
+      "noCurrentAssignmentsFound": "No current assignments were found",
+      "noPastAssignmentsFound": "No past assignments were found",
+      "noUpcomingAssignmentsFound": "No upcoming assignments were found"
     },
     "home-selector": {
       "inactivityLogout": "You will soon be logged out for security purposes. Please click \"Continue\" if you wish to continue your session.\n Otherwise, you will be automatically logged out in { timeLeft } seconds.",
@@ -73,7 +80,6 @@
   },
   "components": {
     "game-tabs": {
-      "LEVANTE TRANSLATIONS--------------------------": "",
       "clickToStart": "Click to start",
       "egmaMathDescription": "Solve the math problems.",
       "egmaMathName": "Math",
@@ -116,7 +122,12 @@
       "trogDescription": "Listen to the words and choose the matching picture.",
       "trogName": "Sentence Undersanding",
       "vocabDescription": "Listen to the word and choose the matching picture.",
-      "vocabName": "Vocabulary"
+      "vocabName": "Vocabulary",
+      "pa": "Language Sounds",
+      "sre": "Sentence Reading",
+      "swr": "Word Reading",
+      "taskNoLongerAvailable": "Task No longer Available",
+      "taskNotYetAvailable": "Task Not available yet"
     },
     "navbar": {
       "greeting": "Hi",
@@ -125,7 +136,18 @@
     "participant-sidebar": {
       "grade": "Grade",
       "studentInfo": "Participant Info",
-      "tasksCompleted": "tasks completed!"
+      "tasksCompleted": "tasks completed!",
+      "statusCurrent": "Current",
+      "statusOpened": "Opened",
+      "statusClose": "Close",
+      "statusClosed": "Closed",
+      "statusOpen": "Open",
+      "statusUpcoming": "Upcoming",
+      "statusPast": "Past",
+      "assignments": "Assignments",
+      "noCurrentAssignments": "No Current Assignments",
+      "noUpcomingAssignments": "No Upcoming assignments",
+      "noPastAssignments": "No past assignments"
     },
     "sentry-form": {
       "buttonLabel": "Report an Issue",

@@ -5,7 +5,7 @@
       "assentTitle": "Asentimiento",
       "consentTitle": "Consentimiento",
       "consentUpdatedStatus": "Estado de consentimiento actualizado",
-      "header": "Consent",
+      "header": "Consentimiento",
       "rejectButton": "No, cerrar sesión",
       "title": "",
       "toastHeader": "Confirmado"
@@ -17,14 +17,14 @@
       "atLeastOneUpperCase": "Al menos una mayúscula",
       "buttonLabel": "¡Vamos!",
       "continueWithGoogle": "Continuar con Google",
-      "emailId": "email",
+      "emailId": "correo electrónico",
       "emailPlaceholder": "Nombre de usuario o correo electrónico",
       "forgotPassword": "¿Olvidaste tu contraseña?",
       "incorrectEmailOrPassword": "Nombre de usuario/correo electrónico o contraseña incorrectos",
       "invalidEmailPlaceholder": "Error: correo electrónico inválido",
       "minimumCharacters": "Mínimo 8 caracteres",
       "pageTitle": "",
-      "passwordId": "password",
+      "passwordId": "contraseña",
       "passwordPlaceholder": "Contraseña",
       "pickPassword": "Elige una contraseña",
       "selectLanguage": "Seleccionar idioma",
@@ -42,7 +42,14 @@
       "loadingAssignments": "Cargando Asignaciones",
       "noAssignments": "¡No tienes asignaciones!",
       "selectAssignment": "Seleccionar una asignación",
-      "showOptionalAssignments": "Mostrar asignaciones opcionales"
+      "showOptionalAssignments": "Mostrar asignaciones opcionales",
+      "assignments": "Asignaciones",
+      "current": "Actual",
+      "past": "Pasado",
+      "upcoming": "Próximo",
+      "noCurrentAssignmentsFound": "No se encontraron asignaciones actuales",
+      "noPastAssignmentsFound": "No se encontraron asignaciones pasadas",
+      "noUpcomingAssignmentsFound": "No se encontraron asignaciones futuras"
     },
     "home-selector": {
       "inactivityLogout": "Pronto se cerrará la sesión por razones de seguridad. Por favor haga clic en \"Continuar\" si desea continuar su sesión. Si no, la sesión se cerrará automáticamente en {timeLeft} segundos.",
@@ -73,7 +80,6 @@
   },
   "components": {
     "game-tabs": {
-      "LEVANTE TRANSLATIONS--------------------------": "",
       "clickToStart": "Haz clic para empezar",
       "egmaMathDescription": "Resuelve los problemas matemáticos.",
       "egmaMathName": "Matemáticas",
@@ -116,7 +122,12 @@
       "trogDescription": "Escucha las palabras y elige la imagen correspondiente.",
       "trogName": "Comprensión de Frases",
       "vocabDescription": "Escucha la palabra y elige la imagen correspondiente.",
-      "vocabName": "Vocabulario"
+      "vocabName": "Vocabulario",
+      "pa": "Language Sounds",
+      "sre": "Sentence Reading",
+      "swr": "Word Reading",
+      "taskNoLongerAvailable": "Task No longer Available",
+      "taskNotYetAvailable": "Task Not available yet"
     },
     "navbar": {
       "greeting": "¡Hola",
@@ -125,7 +136,18 @@
     "participant-sidebar": {
       "grade": "Grado",
       "studentInfo": "Información del estudiante",
-      "tasksCompleted": "¡tareas completadas!"
+      "tasksCompleted": "¡tareas completadas!",
+      "statusCurrent": "Actual",
+      "statusOpened": "Opened",
+      "statusClose": "Cerrar",
+      "statusClosed": "Closed",
+      "statusOpen": "Open",
+      "statusUpcoming": "Próximo",
+      "statusPast": "Pasado",
+      "assignments": "Asignaciones",
+      "noCurrentAssignments": "No Current Assignments",
+      "noUpcomingAssignments": "No Upcoming assignments",
+      "noPastAssignments": "No past assignments"
     },
     "sentry-form": {
       "buttonLabel": "Reportar un problema",
