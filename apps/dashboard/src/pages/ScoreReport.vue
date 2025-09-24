@@ -1099,7 +1099,6 @@ const createExportData = ({ rows, includeProgress = false }) => {
         if (progressRow) {
           scoreReportColumns.value.forEach((column) => {
             const { field, header: taskName } = column; // Use taskName from the column header
-            console.log(column);
             // Ensure field is defined and is a string before calling startsWith
             if (typeof field === 'string' && field.startsWith('scores')) {
               const scoreKey = field.split('.').slice(-2, -1)[0]; // Extract taskId (e.g., "swr", "sre", etc.)
