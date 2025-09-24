@@ -192,13 +192,7 @@ export default defineConfig(({ mode }) => {
       headers: {
         ...responseHeaders,
       },
-      https:
-        process.env.NODE_ENV === 'development'
-          ? {
-              key: fs.readFileSync(path.resolve(__dirname, '../../certs/roar-local.key')),
-              cert: fs.readFileSync(path.resolve(__dirname, '../../certs/roar-local.crt')),
-            }
-          : false,
+      https: false, // Disabled HTTPS for local development
     },
 
     preview: {

@@ -338,6 +338,7 @@ const ScoreReportService = (() => {
           scoreToDisplay,
           ...scoresForTask,
           tags,
+          scores, // Include the original scores object for phonics subscores
         };
 
         computedTaskAcc[taskId].scoresArray = createScoresArray(taskId, scoresForTask, scores, grade, i18n);
