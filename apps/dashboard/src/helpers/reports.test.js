@@ -262,7 +262,7 @@ describe('reports', () => {
         });
       });
 
-      it('should retrieve correct field values for sre-es task', () => {
+      it('should retrieve correct new field values for sre-es task', () => {
         const scoresObject = {
           percentile: 66,
           standardScore: 120,
