@@ -74,10 +74,10 @@
             </div>
 
             <!-- Phonics subscores -->
-            <template v-if="taskId === 'phonics' && score?.subscores">
+            <template v-if="taskId === 'phonics' && score?.subscores && Object.keys(score.subscores).length > 0">
               <div class="mt-4 mb-2 font-semibold">{{ $t('scoreReports.phonicsSubscores') }}:</div>
               <div
-                v-for="[key, value] in Object.entries(score.subscores)"
+                v-for="[key, value] in Object.entries(score.subscores || {})"
                 :key="key"
                 class="flex justify-content-between mb-1 px-2"
               >
