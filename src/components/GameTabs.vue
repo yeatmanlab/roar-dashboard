@@ -119,7 +119,7 @@
                     />
                   </div>
 
-                  <div v-if="selectedStatus === ASSIGNMENT_STATUSES.CURRENT">
+                  <div v-if="getAssignmentStatus(selectedAssignment) === ASSIGNMENT_STATUSES.CURRENT">
                     <button
                       v-if="isTaskComplete(game?.completedOn, game?.taskId)"
                       class="game-btn --completed"
@@ -142,14 +142,14 @@
                     </router-link>
                   </div>
 
-                  <div v-if="selectedStatus === ASSIGNMENT_STATUSES.UPCOMING">
+                  <div v-if="getAssignmentStatus(selectedAssignment) === ASSIGNMENT_STATUSES.UPCOMING">
                     <div class="game-btn --disabled">
                       <i class="pi pi-hourglass"></i>
                       <span>Not yet available</span>
                     </div>
                   </div>
 
-                  <div v-if="selectedStatus === ASSIGNMENT_STATUSES.PAST">
+                  <div v-if="getAssignmentStatus(selectedAssignment) === ASSIGNMENT_STATUSES.PAST">
                     <div v-if="isTaskComplete(game?.completedOn, game?.taskId)" class="game-btn --disabled --completed">
                       <i class="pi pi-check-circle"></i>
                       <span>{{ $t('gameTabs.taskCompleted') }}</span>
@@ -205,6 +205,7 @@ import { LEVANTE_SURVEY_RESPONSES_KEY } from '@/constants/bucket';
 import PvProgressBar from 'primevue/progressbar';
 import { useAssignmentsStore } from '@/store/assignments';
 import { ASSIGNMENT_STATUSES } from '@/constants';
+import { getAssignmentStatus } from '@/helpers/assignments';
 
 interface TaskData {
   name: string;
@@ -259,9 +260,9 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const authStore = useAuthStore();
-const assignmentsStore = useAssignmentsStore();
 const surveyStore = useSurveyStore();
-const { selectedStatus } = storeToRefs(assignmentsStore);
+const assignmentsStore = useAssignmentsStore();
+const { selectedAssignment } = storeToRefs(assignmentsStore);
 const queryClient = useQueryClient();
 const surveyData = queryClient.getQueryData(['surveyResponses', props.userData.id]);
 
@@ -421,8 +422,6 @@ const gameIndex = computed((): number =>
 const displayGameIndex = computed((): number => (gameIndex.value === -1 ? 0 : gameIndex.value));
 
 const allGamesComplete = computed((): boolean => gameIndex.value === -1);
-
-const { selectedAssignment } = storeToRefs(assignmentsStore);
 
 async function routeExternalTask(game: Game): Promise<void> {
   let url: string;

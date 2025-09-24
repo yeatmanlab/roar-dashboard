@@ -6,11 +6,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockOnClick = vi.fn();
 
-const mockCompletedAssessments = [
-  { taskId: 'task1', variantName: 'Variant A', completedOn: new Date('2024-01-10 00:00:00') },
-  { taskId: 'task2', variantName: 'Variant B', completedOn: new Date('2024-01-11 00:00:00') },
-];
-
 const mockIncompleteAssessments = [
   { taskId: 'task1', variantName: 'Variant A', completedOn: new Date('2024-01-10 00:00:00') },
   { taskId: 'task2', variantName: 'Variant B', completedOn: null },
@@ -115,7 +110,7 @@ describe('AssignmentCard.vue', () => {
     });
 
     it('should display check-circle icon for past assignments if completed', () => {
-      const dataWithCompletedAssessments = { ...mockAssignmentData, assessments: mockCompletedAssessments };
+      const dataWithCompletedAssessments = { ...mockAssignmentData, completed: true };
       const wrapper = mount(AssignmentCard, mountOptions({ data: dataWithCompletedAssessments, status: 'past' }));
       const checkIcon = wrapper.find('.pi.pi-check-circle.--past');
 

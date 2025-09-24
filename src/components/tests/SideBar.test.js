@@ -50,6 +50,7 @@ const getTestAssignments = () => {
       id: '1',
       name: 'Test Assignment 1',
       publicName: 'Public Test 1',
+      completed: false,
       dateOpened: oneWeekAgo,
       dateClosed: oneWeekFromNow,
     },
@@ -57,6 +58,7 @@ const getTestAssignments = () => {
       id: '2',
       name: 'Test Assignment 2',
       publicName: 'Public Test 2',
+      completed: false,
       dateOpened: oneWeekFromNow,
       dateClosed: new Date(oneWeekFromNow.getTime() + 7 * 24 * 60 * 60 * 1000), // 2 weeks from now
     },
@@ -64,6 +66,7 @@ const getTestAssignments = () => {
       id: '3',
       name: 'Test Assignment 3',
       publicName: 'Public Test 3',
+      completed: false,
       dateOpened: new Date(oneWeekAgo.getTime() - 7 * 24 * 60 * 60 * 1000), // 2 weeks ago
       dateClosed: oneWeekAgo,
     },

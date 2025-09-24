@@ -22,7 +22,11 @@
     <div v-else>
       <div class="assignment">
         <div class="assignment__header">
-          <PvTag :value="selectedStatus" class="text-xs uppercase" :class="`assignment__status --${selectedStatus}`" />
+          <PvTag
+            :value="getAssignmentStatus(selectedAssignment)"
+            class="text-xs uppercase"
+            :class="`assignment__status --${getAssignmentStatus(selectedAssignment)}`"
+          />
 
           <h2 class="assignment__name">
             {{ selectedAssignment?.publicName || selectedAssignment?.name }}
@@ -115,6 +119,7 @@ import LevanteSpinner from '@/components/LevanteSpinner.vue';
 import { logger } from '@/logger';
 import { format } from 'date-fns';
 import PvTag from 'primevue/tag';
+import { getAssignmentStatus, isCurrent, sortAssignmentsByDateOpened } from '@/helpers/assignments';
 
 const showConsent = ref(false);
 const consentVersion = ref('');
@@ -170,14 +175,18 @@ const {
 const {
   isLoading: isLoadingAssignments,
   isFetching: isFetchingAssignments,
-  data,
+  data: userAssignmentsData,
 } = useUserAssignmentsQuery({
   enabled: initialized,
 });
 
-const sortedUserAdministrations = computed(() => {
-  return [...(userAssignments.value ?? [])].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-});
+const sortedUserAdministrations = computed(() => sortAssignmentsByDateOpened(userAssignments.value));
+
+const sortedUserCurrentAdministrations = computed(() =>
+  sortAssignmentsByDateOpened(
+    userAssignments.value.filter((assignment) => isCurrent(assignment) && assignment?.completed === false),
+  ),
+);
 
 const now = computed(() => new Date());
 
@@ -377,6 +386,10 @@ let completeGames = computed(() => {
   return _filter(requiredAssessments.value, (task) => task.completedOn).length ?? 0;
 });
 
+watch(userAssignmentsData, (newUserAssignmentsData) => {
+  userAssignments.value = sortAssignmentsByDateOpened(newUserAssignmentsData);
+});
+
 watch(
   [userData, selectedAssignment, userAssignments],
   async ([newUserData, isSelectedAdminChanged]) => {
@@ -403,7 +416,11 @@ watch(
     }
 
     // Otherwise, choose the first sorted administration if there is no selected administration.
-    selectedAssignment.value = sortedUserAdministrations.value[0];
+    const chosenAssignment = sortedUserCurrentAdministrations.value[0] || sortedUserAdministrations.value[0];
+    const chosenAssignmentStatus = getAssignmentStatus(chosenAssignment);
+
+    selectedAssignment.value = chosenAssignment;
+    selectedStatus.value = chosenAssignmentStatus;
   },
   { immediate: true },
 );

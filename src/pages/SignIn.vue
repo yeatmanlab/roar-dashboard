@@ -127,6 +127,7 @@ import SignIn from '@/components/auth/SignIn.vue';
 import LanguageSelector from '@/components/LanguageSelector.vue';
 import { getUserAssignments } from '@/helpers/query/assignments';
 import { useAssignmentsStore } from '@/store/assignments';
+import { sortAssignmentsByDateOpened } from '@/helpers/assignments';
 
 const incorrect = ref(false);
 const authStore = useAuthStore();
@@ -169,7 +170,8 @@ const authWithGoogle = () => {
 
           if (!authStore.isUserAdmin()) {
             const userAssignments = await getUserAssignments(authStore.getUserId());
-            assignmentsStore.setUserAssignments(userAssignments || []);
+            const sortedAssignments = sortAssignmentsByDateOpened(userAssignments);
+            assignmentsStore.setUserAssignments(sortedAssignments);
             authStore.setShowSideBar(true);
           }
         }
@@ -219,7 +221,8 @@ const authWithEmail = async (state) => {
 
           if (!authStore.isUserAdmin()) {
             const userAssignments = await getUserAssignments(authStore.getUserId());
-            assignmentsStore.setUserAssignments(userAssignments || []);
+            const sortedAssignments = sortAssignmentsByDateOpened(userAssignments);
+            assignmentsStore.setUserAssignments(sortedAssignments);
             authStore.setShowSideBar(true);
           }
         }

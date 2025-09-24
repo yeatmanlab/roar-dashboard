@@ -40,7 +40,7 @@ interface Props {
 
 const props = defineProps<Props>();
 
-const isAssignmentCompleted = computed(() => props.data?.assessments?.every((assessment) => !!assessment?.completedOn));
+const isAssignmentCompleted = computed(() => props.data?.completed);
 </script>
 
 <style lang="scss" scoped>
