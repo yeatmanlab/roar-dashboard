@@ -32,7 +32,7 @@
             <div class="uppercase text-sm text-gray-600">VIEW</div>
             <PvSelectButton
               v-model="reportView"
-              v-tooltip.top="tooltip('View different report', { showDelay: 0 })"
+              v-tooltip.top="getTooltip('View different report', { showDelay: 0 })"
               :options="reportViews"
               option-disabled="constant"
               :allow-empty="false"
@@ -191,7 +191,7 @@ import { exportCsv } from '@/helpers/query/utils';
 import { taskDisplayNames, gradeOptions } from '@/helpers/reports';
 import { getTitle } from '@/helpers/query/administrations';
 import { setBarChartData, setBarChartOptions } from '@/helpers/plotting';
-import { isLevante, tooltip } from '@/helpers';
+import { isLevante, getTooltip } from '@/helpers';
 import { APP_ROUTES } from '@/constants/routes';
 import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
 import RoarDataTable from '@/components/RoarDataTable.vue';

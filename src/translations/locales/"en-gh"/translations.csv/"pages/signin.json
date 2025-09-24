@@ -1,0 +1,9 @@
+{
+  "adminAction\"": "\"here\"",
+  "adminInfoPrompt\"": "\"Als je je hebt geregistreerd met een Google-e-mail of je e-mailprovider gebruikt Google SSO.\"",
+  "adminPrompt\"": "\"Ben je een beheerder? Klik {action} om in te loggen.\"",
+  "havingTrouble\"": "\"Having trouble?\"",
+  "login\"": "\"Log in om toegang te krijgen tot je dashboard\"",
+  "loginWith\"": "\"Log in with\"",
+  "welcome\"": "\"Welcome to ROAR!\""
+}

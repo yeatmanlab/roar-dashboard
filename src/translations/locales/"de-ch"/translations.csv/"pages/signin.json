@@ -1,0 +1,9 @@
+{
+  "adminAction\"": "\"hier\"",
+  "adminInfoPrompt\"": "\"If you registered with a Google email or your email provider uses Google SSO.\"",
+  "adminPrompt\"": "\"Are you an Admin? Click {action} to Sign in.\"",
+  "havingTrouble\"": "\"Haben Sie Schwierigkeiten?\"",
+  "login\"": "\"Log in to access your dashboard\"",
+  "loginWith\"": "\"Anmelden mit\"",
+  "welcome\"": "\"Willkommen bei ROAR!\""
+}

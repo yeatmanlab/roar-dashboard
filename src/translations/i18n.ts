@@ -38,7 +38,7 @@ export const languageOptions: Record<string, { translations: any; language: stri
     language: 'English (United States)',
     code: 'usa',
   },
-  es: { translations: esTranslations, language: 'Español (Spain)', code: 'es' },
+  // es: { translations: esTranslations, language: 'Español (Spain)', code: 'es' },
   'es-CO': {
     translations: esCOTranslations,
     language: 'Español (Colombia)',
@@ -129,7 +129,7 @@ const baseMessages: Record<string, any> = {
   'es-CO': addFlatKeys({ ...esCOTranslations, ...esCOIndividualScoreReport }),
   de: addFlatKeys(deTranslations),
   // Legacy fallbacks for backward compatibility
-  es: addFlatKeys({ ...esTranslations, ...esIndividualScoreReport }),
+  // es: addFlatKeys({ ...esTranslations, ...esIndividualScoreReport }),
 };
 
 // Dynamically load any generated componentTranslations for new locales and merge

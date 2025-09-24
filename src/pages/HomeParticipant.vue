@@ -23,7 +23,7 @@
       <div class="assignment">
         <div class="assignment__header">
           <PvTag
-            :value="getAssignmentStatus(selectedAssignment)"
+            :value="t(`participant-sidebar.${getAssignmentStatus(selectedAssignment)}`)"
             class="text-xs uppercase"
             :class="`assignment__status --${getAssignmentStatus(selectedAssignment)}`"
           />
@@ -126,7 +126,7 @@ const consentVersion = ref('');
 const confirmText = ref('');
 const consentType = ref('');
 const consentParams = ref({});
-const { locale } = useI18n();
+const { locale, t } = useI18n();
 const router = useRouter();
 const toast = useToast();
 const queryClient = useQueryClient();
@@ -192,12 +192,12 @@ const now = computed(() => new Date());
 
 const assignmentStartDateLabel = computed(() => {
   const dateOpened = selectedAssignment.value?.dateOpened || new Date();
-  return new Date(dateOpened) < now.value ? 'Opened:' : 'Open:';
+  return new Date(dateOpened) < now.value ? t('participant-sidebar.opened') : t('participant-sidebar.open');
 });
 
 const assignmentEndDateLabel = computed(() => {
   const dateClosed = selectedAssignment.value?.dateClosed || new Date();
-  return new Date(dateClosed) < now.value ? 'Closed:' : 'Close:';
+  return new Date(dateClosed) < now.value ? t('participant-sidebar.closed') : t('participant-sidebar.close');
 });
 
 const taskIds = computed(() => {

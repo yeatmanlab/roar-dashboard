@@ -145,7 +145,7 @@
                   <div v-if="getAssignmentStatus(selectedAssignment) === ASSIGNMENT_STATUSES.UPCOMING">
                     <div class="game-btn --disabled">
                       <i class="pi pi-hourglass"></i>
-                      <span>Not yet available</span>
+                      <span>{{ $t('gameTabs.taskNotYetAvailable') }}</span>
                     </div>
                   </div>
 
@@ -157,7 +157,7 @@
 
                     <div v-else class="game-btn --disabled --incomplete">
                       <i class="pi pi-ban"></i>
-                      <span>No longer available</span>
+                      <span>{{ $t('gameTabs.taskNoLongerAvailable') }}</span>
                     </div>
                   </div>
                 </div>

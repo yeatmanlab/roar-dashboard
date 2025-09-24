@@ -50,7 +50,7 @@
         </div>
         <h3 class="mt-5">Additional Data Collection</h3>
         <div
-          v-tooltip.top="tooltip(!disableIfNotDefault ? tooltipMessage : '')"
+          v-tooltip.top="getTooltip(!disableIfNotDefault ? tooltipMessage : '')"
           :class="[
             'border-solid border-round border-1 border-black-alpha-30 mt-2',
             { 'opacity-80 surface-200 mt-2': !disableIfNotDefault },
@@ -77,7 +77,7 @@
           </div>
         </div>
         <div
-          v-tooltip.top="tooltip(!disableIfNotDefault ? tooltipMessage : '')"
+          v-tooltip.top="getTooltip(!disableIfNotDefault ? tooltipMessage : '')"
           :class="[
             'border-solid border-round border-1 border-black-alpha-30 mt-2',
             { 'opacity-80 surface-200 mt-2': !disableIfNotDefault },
@@ -104,7 +104,7 @@
           </div>
         </div>
         <div
-          v-tooltip.top="tooltip(!disableIfNotDefault ? tooltipMessage : '')"
+          v-tooltip.top="getTooltip(!disableIfNotDefault ? tooltipMessage : '')"
           :class="[
             'border-solid border-round border-1 border-black-alpha-30 mt-2',
             { 'opacity-80 surface-200 mt-2': !disableIfNotDefault },
@@ -280,7 +280,7 @@ import PvRadioButton from 'primevue/radiobutton';
 import PvFieldset from 'primevue/fieldset';
 import { useAuthStore } from '@/store/auth';
 import useLegalDocsQuery from '@/composables/queries/useLegalDocsQuery';
-import { tooltip } from '@/helpers';
+import { getTooltip } from '@/helpers';
 
 interface DefaultParam {
   name: string;
