@@ -1099,7 +1099,7 @@ const createExportData = ({ rows, includeProgress = false }) => {
         if (progressRow) {
           scoreReportColumns.value.forEach((column) => {
             const { field, header: taskName } = column; // Use taskName from the column header
-
+            console.log(column);
             // Ensure field is defined and is a string before calling startsWith
             if (typeof field === 'string' && field.startsWith('scores')) {
               const scoreKey = field.split('.').slice(-2, -1)[0]; // Extract taskId (e.g., "swr", "sre", etc.)
@@ -1112,6 +1112,11 @@ const createExportData = ({ rows, includeProgress = false }) => {
               }
             }
           });
+
+          // Use taskId instead of header to avoid conflicts with current logic in exportData, which filters tasks based on ' - ' (e.g., ROAR - Survey)
+          if (excludeFromScoringTasks.includes(taskId)) {
+            tableRow[`${taskId} - Progress`] = progressRow.progress[taskId].value ?? 'not assigned';
+          }
         } else {
           // If no progressRow is found, mark all scores as "not assigned"
           scoreReportColumns.value.forEach((column) => {
@@ -1189,6 +1194,7 @@ const exportData = async ({ selectedRows = null, includeProgress = false }) => {
         : [];
 
       const progressCol = allColumnsArray.filter((col) => col.includes(` - ${taskBase} -`) && col.endsWith('Progress'));
+
       return [...acc, ...taskCols, ...reliabilityCol, ...progressCol];
     }, []),
   ];
@@ -1199,6 +1205,18 @@ const exportData = async ({ selectedRows = null, includeProgress = false }) => {
     finalColumns.forEach((col) => {
       reorderedRow[col] = row[col] !== undefined ? row[col] : null;
     });
+
+    // Add progress columns for unscored tasks when exporting combined reports
+    if (includeProgress) {
+      const unscoredTaskIds = Object.values(administrationData.value.assessments)
+        .filter((assessment) => excludeFromScoringTasks.includes(assessment.taskId))
+        .map((assessment) => assessment.taskId);
+      unscoredTaskIds.forEach((taskId) => {
+        const taskName = tasksDictionary.value[taskId]?.publicName ?? taskId;
+        reorderedRow[`${taskName} - Progress`] =
+          row[`${taskId} - Progress`] !== undefined ? row[`${taskId} - Progress`] : null;
+      });
+    }
     return reorderedRow;
   });
 
