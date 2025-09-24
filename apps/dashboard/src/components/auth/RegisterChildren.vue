@@ -330,19 +330,39 @@
           </PvButton>
         </section>
         <ChallengeV3 v-model="response" action="submit">
-          <div class="field-checkbox terms-checkbox">
+          <div
+            class="field-checkbox terms-checkbox clickable"
+            :class="{ disabled: showConsent[outerIndex] }"
+            @click="!showConsent[outerIndex] && getConsent(outerIndex)"
+          >
             <PvCheckbox
               id="accept-register"
               v-model="student.accept"
               binary
               :disabled="showConsent[outerIndex]"
-              :class="[{ 'p-invalid': student.accept.$invalid && submitted }]"
+              :class="[
+                {
+                  'p-invalid': student.accept.$invalid && submitted,
+                  'research-opt-out': student.researchOptOut,
+                },
+              ]"
               pt:input:data-testid="checkbox__input"
-              @change="getConsent(outerIndex)"
             />
-            <label for="accept" :class="{ 'p-error': student.accept.$invalid && submitted }"
-              >I agree to the terms and conditions<span class="required">*</span></label
+            <label
+              :class="{
+                'p-error': student.accept.$invalid && submitted,
+                'research-opt-out': student.researchOptOut,
+              }"
             >
+              {{
+                student.researchOptOut
+                  ? 'Research opt-out selected'
+                  : student.accept
+                    ? 'I agree to the terms and conditions'
+                    : 'View terms and conditions'
+              }}
+              <span class="required">*</span>
+            </label>
           </div>
           <small v-if="(student.accept.$invalid && submitted) || student.accept.$pending" class="p-error">
             You must agree to the terms and conditions
@@ -353,6 +373,7 @@
           :consent-text="consentText"
           consent-type="consent"
           :on-confirm="() => handleConsentAccept(outerIndex)"
+          @opt-out="() => handleOptOut(outerIndex)"
         />
       </div>
     </form>
@@ -442,6 +463,14 @@ const isCaptchaverified = ref(null);
 
 async function handleConsentAccept(outerIndex) {
   state.students[outerIndex].accept = true;
+  state.students[outerIndex].researchOptOut = false;
+  showConsent.value[outerIndex] = false;
+}
+
+async function handleOptOut(outerIndex) {
+  state.students[outerIndex].accept = true;
+  state.students[outerIndex].researchOptOut = true;
+  showConsent.value[outerIndex] = false;
 }
 
 function handleCaptcha() {
@@ -498,13 +527,14 @@ const state = reactive({
       gender: '',
       freeReducedLunch: '',
       IEPStatus: '',
-      race: [],
+      race: '',
       hispanicEthnicity: '',
-      homeLanguage: [],
+      homeLanguage: '',
       noActivationCode: noActivationCodeRef.value,
       yearOnlyCheck: yearOnlyCheckRef.value,
       orgName: '',
       accept: false,
+      researchOptOut: false,
     },
   ],
 });
@@ -815,6 +845,30 @@ const validateRoarUsername = async () => {
 </script>
 
 <style scoped>
+.clickable {
+  cursor: pointer;
+}
+
+.clickable.disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.research-opt-out {
+  color: #666 !important;
+  font-style: italic;
+}
+
+.p-checkbox.research-opt-out .p-checkbox-box {
+  background-color: #f0f0f0 !important;
+  border-color: #ccc !important;
+}
+
+.p-checkbox.research-opt-out .p-checkbox-box.p-highlight {
+  background-color: #999 !important;
+  border-color: #999 !important;
+}
+
 label {
   font-size: 0.875rem;
   font-weight: 300;
