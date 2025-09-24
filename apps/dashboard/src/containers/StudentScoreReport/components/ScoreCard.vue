@@ -167,7 +167,7 @@ const visiblePanels = ref([]);
 watch(
   () => props.expanded,
   (newValue) => {
-    visiblePanels.value = newValue ? [ACCORDION_PANELS.SCORE_BREAKDOWN] : [];
+    visiblePanels.value = newValue ? [ACCORDION_PANELS.SCORE_BREAKDOWN, ACCORDION_PANELS.LONGITUDINAL] : [];
   },
   { immediate: true },
 );
