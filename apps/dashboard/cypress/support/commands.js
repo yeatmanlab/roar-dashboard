@@ -498,3 +498,36 @@ Cypress.Commands.add('getActivationCode', (orgType, orgName) => {
       return value;
     });
 });
+
+/**
+ * Conditionally run tests based on the result of a selector. Using this is a (`before`|`beforEach`) hook
+ * will skip the entire suite if it doesn't exist on the page by default. In an `it` block it will just skip the current test.
+ * To disable this behaviour pass in false for the `skip` parameter.
+ * @param {object} param The selector to see if the test subject is on the page.
+ * @param {string} param.selector The selector to see if the test subject is on the page.
+ * @param {boolean=} param.skip Whether or not to call the `this.skip` method in the current block if its not on the page.
+ * @returns {Cypress.Chainable<any>} The result of a cy.get() query using the provided selector.
+ */
+function getIfExists({ selector, skip = true }) {
+  // Access the document object.
+  cy.document().then(($document) => {
+    // Perform a search query with the selector.
+    const documentResult = $document.querySelectorAll(selector);
+
+    // If there is a result, we want to use Cypress.get() to store the cypress result instead of the vanilla js result.
+    if (documentResult.length) {
+      return cy.get(selector);
+      // If there are no results, end the test early.
+    } else if (!documentResult.length && skip) {
+      // Log the reason.
+      cy.log(`Selector ${selector} not in DOM, skipping this test.`).then(() => {
+        // End the test.
+        this.skip();
+      });
+    } else if (!documentResult.length && !skip) {
+      return cy.get(selector);
+    }
+  });
+}
+
+Cypress.Commands.add('getIfExists', getIfExists);

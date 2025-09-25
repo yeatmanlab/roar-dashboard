@@ -280,6 +280,14 @@ export const taskDisplayNames = {
     extendedName: 'External Test',
     order: 26,
   },
+  'roar-survey': {
+    name: 'Survey',
+    publicName: 'ROAR - Survey',
+    studentFacingName: 'Survey',
+    extendedTitle: 'ROAR - Survey',
+    extendedName: 'Survey',
+    order: 27,
+  },
 };
 
 export const extendedDescriptions = {
@@ -311,6 +319,7 @@ export const extendedDescriptions = {
   crowding: 'Temporary description for crowding',
   'roav-mep': 'Temporary description for mep',
   'roar-readaloud': 'Temporary description for readaloud',
+  'roar-survey': 'Temporary description for survey',
 };
 
 /*
@@ -388,6 +397,7 @@ export const excludeFromScoringTasks = [
   'roav-crowding',
   'external-test-task',
   'qualtrics-experience',
+  'roar-survey',
 ];
 
 export const includeReliabilityFlagsOnExport = ['Word', 'Letter', 'Phoneme', 'Sentence'];
@@ -785,24 +795,41 @@ const SCORE_FIELD_MAPPINGS = {
   },
   sre: {
     percentile: {
-      new: (grade) => (grade < 6 ? 'tosrecPercentile' : 'sprPercentile'),
+      new: 'percentile',
       legacy: (grade) => (grade < 6 ? 'tosrecPercentile' : 'sprPercentile'),
     },
     percentileDisplay: {
-      new: (grade) => (grade < 6 ? 'tosrecPercentile' : 'sprPercentile'),
+      new: 'percentile',
       legacy: (grade) => (grade < 6 ? 'tosrecPercentile' : 'sprPercentile'),
     },
     standardScore: {
-      new: (grade) => (grade < 6 ? 'tosrecSS' : 'sprStandardScore'),
+      new: 'standardScore',
       legacy: (grade) => (grade < 6 ? 'tosrecSS' : 'sprStandardScore'),
     },
     standardScoreDisplay: {
-      new: (grade) => (grade < 6 ? 'tosrecSS' : 'sprStandardScore'),
+      new: 'standardScore',
       legacy: (grade) => (grade < 6 ? 'tosrecSS' : 'sprStandardScore'),
     },
     rawScore: {
       new: 'sreScore',
       legacy: 'sreScore',
+    },
+  },
+  'sre-es': {
+    percentile: {
+      new: 'percentile',
+    },
+    percentileDisplay: {
+      new: 'percentile',
+    },
+    standardScore: {
+      new: 'standardScore',
+    },
+    standardScoreDisplay: {
+      new: 'standardScore',
+    },
+    rawScore: {
+      new: 'sreScore',
     },
   },
   letter: {
