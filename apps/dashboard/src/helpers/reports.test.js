@@ -6,6 +6,7 @@ import {
   getScoreValue,
   getRawScoreThreshold,
   getRawScoreRange,
+  getSubskillValues,
   getTagColor,
   supportLevelColors,
 } from './reports';
@@ -446,6 +447,61 @@ describe('reports', () => {
     it('should return null for unknown task', () => {
       const result = getRawScoreRange('unknown');
       expect(result).toBeNull();
+    });
+  });
+
+  describe('getSubskillValues', () => {
+    it('should return correct subskill values for pa task', () => {
+      const scoresObject = {
+        FSM: {
+          numCorrect: 5,
+        },
+        LSM: {
+          numCorrect: 3,
+        },
+        DEL: {
+          numCorrect: 2,
+        },
+        composite: {
+          numCorrect: 10,
+        },
+      };
+      const result = getSubskillValues(scoresObject, 'pa', 4);
+      expect(result).toEqual({
+        firstSound: 5,
+        lastSound: 3,
+        deletion: 2,
+        total: 10,
+      });
+    });
+
+    it('should return correct subskill values for pa task with scoringVersion 3', () => {
+      const scoresObject = {
+        FSM: {
+          roarScore: 5,
+        },
+        LSM: {
+          roarScore: 3,
+        },
+        DEL: {
+          roarScore: 2,
+        },
+        composite: {
+          roarScore: 10,
+        },
+      };
+      const result = getSubskillValues(scoresObject, 'pa', 3);
+      expect(result).toEqual({
+        firstSound: 5,
+        lastSound: 3,
+        deletion: 2,
+        total: 10,
+      });
+    });
+
+    it('should return empty object for unknown task', () => {
+      const result = getSubskillValues({}, 'unknown', 4);
+      expect(result).toEqual({});
     });
   });
 

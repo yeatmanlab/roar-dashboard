@@ -1043,6 +1043,27 @@ export const getRawScoreRange = (taskId) => {
   return null;
 };
 
+/**
+ * Safely accesses subskill values from a scores object
+ * @param {Object} scoresObject - The scores object to access
+ * @param {string} taskId - The task identifier
+ * @param {number} scoringVersion - The scoring version. TODO: Some updates (like ROAM) do not have scoringVersion.
+ * @returns {*} The subskill values or empty object if not found
+ */
+export const getSubskillValues = (scoresObject, taskId, scoringVersion = null) => {
+  if (taskId === 'pa') {
+    const paPath = scoringVersion === 4 ? 'numCorrect' : 'roarScore';
+    return {
+      firstSound: scoresObject?.FSM?.[paPath],
+      lastSound: scoresObject?.LSM?.[paPath],
+      deletion: scoresObject?.DEL?.[paPath],
+      total: scoresObject?.composite?.[paPath],
+    };
+  }
+
+  return {};
+};
+
 export const taskInfoById = {
   phonics: {
     color: '#4B7BE5',
