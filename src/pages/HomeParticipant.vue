@@ -208,13 +208,13 @@ const formattedEndDate = ref('');
 
 
 watch(
-  locale,
-  async (currentLocale) => {
-    if (selectedAssignment.value?.dateOpened && currentLocale) {
-      formattedStartDate.value = await formatDateWithLocale(selectedAssignment.value.dateOpened, 'MMM d, yyyy', currentLocale);
+  [selectedAssignment,locale],
+  async ([currentAssignment,currentLocale]) => {
+    if (currentAssignment?.dateOpened && currentLocale) {
+      formattedStartDate.value = await formatDateWithLocale(currentAssignment.dateOpened, 'MMM d, yyyy', currentLocale);
     }
-    if (selectedAssignment.value?.dateClosed && currentLocale) {
-      formattedEndDate.value = await formatDateWithLocale(selectedAssignment.value.dateClosed, 'MMM d, yyyy', currentLocale);
+    if (currentAssignment?.dateClosed && currentLocale) {
+      formattedEndDate.value = await formatDateWithLocale(currentAssignment.dateClosed, 'MMM d, yyyy', currentLocale);
     }
   },
   { immediate: true }

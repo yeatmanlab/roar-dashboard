@@ -345,6 +345,9 @@ const levanteTasks: string[] = [
   'mefs',
   'roarInference',
   'vocab',
+  'pa',
+  'swr',
+  'sre',
 ];
 
 const getTaskName = (taskId: string, taskName: string): string => {
@@ -361,6 +364,11 @@ const getTaskName = (taskId: string, taskName: string): string => {
   }
 
   if (levanteTasks.includes(camelize(taskIdLowercased))) {
+    // Can be removed once we update the translation keys in Crowdin.
+    if (taskIdLowercased === 'pa' || taskIdLowercased === 'swr' || taskIdLowercased === 'sre') {
+      return t(`gameTabs.${camelize(taskIdLowercased)}`);
+    }
+    
     return t(`gameTabs.${camelize(taskIdLowercased)}Name`);
   }
   return taskName;
