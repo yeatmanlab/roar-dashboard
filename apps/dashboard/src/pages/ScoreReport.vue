@@ -835,6 +835,7 @@ const computeAssignmentAndRunData = computed(() => {
           currRowScores[taskId].deletion = deletion;
           currRowScores[taskId].total = total;
           currRowScores[taskId].skills = skills.length > 0 ? skills.join(', ') : 'None';
+          currRowScores[taskId].scoringVersion = scoringVersion;
         }
         if (tasksToDisplayGradeEstimate.includes(taskId)) {
           const isNewScoring = _has(assessment, 'scores.computed.composite.roarScore');
