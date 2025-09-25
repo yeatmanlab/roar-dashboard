@@ -57,10 +57,11 @@ describe('The admin user can edit the conditions of an administration.', () => {
       cy.login(Cypress.env('SUPER_ADMIN_USERNAME'), Cypress.env('SUPER_ADMIN_PASSWORD'));
       cy.navigateTo('/');
       cy.wait(Cypress.env('timeout'));
-      cy.navigateTo(`/edit-administration/${administrationId}/`);
+      cy.navigateTo(`/administration/edit/${administrationId}/`);
       clickEditButton();
       clickMakeOptionalForAllSwitch();
       editAssignedConditions();
+      clickMakeOptionalForAllSwitch();
       editOptionalConditions();
       saveConditions();
       checkNewConditions();
