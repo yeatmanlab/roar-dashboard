@@ -1099,6 +1099,7 @@ const createExportData = ({ rows, includeProgress = false }) => {
         if (progressRow) {
           scoreReportColumns.value.forEach((column) => {
             const { field, header: taskName } = column; // Use taskName from the column header
+
             // Ensure field is defined and is a string before calling startsWith
             if (typeof field === 'string' && field.startsWith('scores')) {
               const scoreKey = field.split('.').slice(-2, -1)[0]; // Extract taskId (e.g., "swr", "sre", etc.)
@@ -1112,7 +1113,10 @@ const createExportData = ({ rows, includeProgress = false }) => {
             }
           });
 
-          // Use taskId instead of header to avoid conflicts with current logic in exportData, which filters tasks based on ' - ' (e.g., ROAR - Survey)
+          /**
+           * Use taskId to avoid conflicts for headers that match the current filter in exportData
+           * for scored tasks (e.g, ROAR - Survey)
+           */
           if (excludeFromScoringTasks.includes(taskId)) {
             tableRow[`${taskId} - Progress`] = progressRow.progress[taskId].value ?? 'not assigned';
           }
@@ -1193,7 +1197,6 @@ const exportData = async ({ selectedRows = null, includeProgress = false }) => {
         : [];
 
       const progressCol = allColumnsArray.filter((col) => col.includes(` - ${taskBase} -`) && col.endsWith('Progress'));
-
       return [...acc, ...taskCols, ...reliabilityCol, ...progressCol];
     }, []),
   ];
@@ -1216,6 +1219,7 @@ const exportData = async ({ selectedRows = null, includeProgress = false }) => {
           row[`${taskId} - Progress`] !== undefined ? row[`${taskId} - Progress`] : null;
       });
     }
+
     return reorderedRow;
   });
 
