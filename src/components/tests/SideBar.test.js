@@ -3,26 +3,31 @@ import { createPinia, setActivePinia } from 'pinia';
 import PrimeVue from 'primevue/config';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ref } from 'vue';
+import { createI18n } from 'vue-i18n';
 import SideBar from '../SideBar.vue';
 
 const i18nMock = vi.fn((key) => {
   const translations = {
-    'participant-sidebar.assignments': 'Assignments',
-    'participant-sidebar.statusCurrent': 'Current',
-    'participant-sidebar.statusUpcoming': 'Upcoming',
-    'participant-sidebar.statusPast': 'Past',
-    'participant-sidebar.noCurrentAssignments': 'No current assignments were found',
-    'participant-sidebar.noUpcomingAssignments': 'No upcoming assignments were found',
-    'participant-sidebar.noPastAssignments': 'No past assignments were found',
+    'participantSidebar.assignments': 'Assignments',
+    'participantSidebar.statusCurrent': 'Current',
+    'participantSidebar.statusUpcoming': 'Upcoming',
+    'participantSidebar.statusPast': 'Past',
+    'participantSidebar.noCurrentAssignments': 'You have no current assignments.',
+    'participantSidebar.noUpcomingAssignments': 'You have no upcoming assignments.',
+    'participantSidebar.noPastAssignments': 'You have no past assignments.',
   };
   return translations[key] || key;
 });
 
-vi.mock('vue-i18n', () => ({
-  useI18n: () => ({
-    t: i18nMock,
-  }),
-}));
+vi.mock('vue-i18n', async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    useI18n: () => ({
+      t: i18nMock,
+    }),
+  };
+});
 
 const selectedStatusRef = ref('current');
 const selectedAssignmentRef = ref(null);
@@ -92,9 +97,27 @@ const getTestAssignments = () => {
   ];
 };
 
+const i18n = createI18n({
+  legacy: false,
+  locale: 'en',
+  messages: {
+    en: {
+      participantSidebar: {
+        assignments: 'Assignments',
+        statusCurrent: 'Current',
+        statusUpcoming: 'Upcoming',
+        statusPast: 'Past',
+        noCurrentAssignments: 'You have no current assignments.',
+        noUpcomingAssignments: 'You have no upcoming assignments.',
+        noPastAssignments: 'You have no past assignments.',
+      },
+    },
+  },
+});
+
 const mountOptions = {
   global: {
-    plugins: [PrimeVue],
+    plugins: [i18n, PrimeVue],
     directives: {
       tooltip: {
         mounted: () => {},
@@ -102,7 +125,14 @@ const mountOptions = {
       },
     },
     mocks: {
-      $t: i18nMock,
+      $t: (key) => {
+        const messages = {
+          'participantSidebar.noCurrentAssignments': 'You have no current assignments.',
+          'participantSidebar.noUpcomingAssignments': 'You have no upcoming assignments.',
+          'participantSidebar.noPastAssignments': 'You have no past assignments.',
+        };
+        return messages[key] || key;
+      },
     },
   },
 };
@@ -300,7 +330,7 @@ describe('SideBar.vue', () => {
       await wrapper.find('.sidebar__toggle-btn').trigger('click');
 
       expect(wrapper.find('.assignment-group__empty').exists()).toBe(true);
-      expect(wrapper.text()).toContain('No current assignments were found');
+      expect(wrapper.text()).toContain('You have no current assignments.');
     });
   });
 });
