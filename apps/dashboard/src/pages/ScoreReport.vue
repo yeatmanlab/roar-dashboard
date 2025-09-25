@@ -743,11 +743,18 @@ const computeAssignmentAndRunData = computed(() => {
         if (tasksToDisplayCorrectIncorrectDifference.includes(taskId)) {
           const numCorrect = assessment.scores?.raw?.composite?.test?.numCorrect;
           const numIncorrect = assessment.scores?.raw?.composite?.test?.numAttempted - numCorrect;
-          currRowScores[taskId].correctIncorrectDifference =
-            numCorrect != null && numIncorrect != null ? Math.round(numCorrect - numIncorrect) : null;
+          const scoringVersion = _get(assessment, 'scores.computed.composite.scoringVersion');
+
+          // If scoring version is not present (no norms), use previous correct incorrect difference
+          if (!scoringVersion) {
+            currRowScores[taskId].rawScore =
+              numCorrect != null && numIncorrect != null ? Math.round(numCorrect - numIncorrect) : null;
+          }
+
           currRowScores[taskId].numCorrect = numCorrect;
           currRowScores[taskId].numIncorrect = numIncorrect;
           currRowScores[taskId].tagColor = tagColor;
+          currRowScores[taskId].scoringVersion = scoringVersion;
           scoreFilterTags += ' Assessed ';
         } else if (tasksToDisplayPercentCorrect.includes(taskId)) {
           const numAttempted = assessment.scores?.raw?.composite?.test?.numAttempted;
@@ -1045,7 +1052,8 @@ const createExportData = ({ rows, includeProgress = false }) => {
         tableRow[`${taskName} - Num Attempted`] = score.numAttempted;
         tableRow[`${taskName} - Num Correct`] = score.numCorrect;
       } else if (tasksToDisplayCorrectIncorrectDifference.includes(taskId)) {
-        tableRow[`${taskName} - Correct/Incorrect Difference`] = score.correctIncorrectDifference;
+        const mainColumn = score.scoringVersion ? 'Raw Score' : 'Correct/Incorrect Difference';
+        tableRow[`${taskName} - ${mainColumn}`] = score.rawScore;
         tableRow[`${taskName} - Num Incorrect`] = score.numIncorrect;
         tableRow[`${taskName} - Num Correct`] = score.numCorrect;
       } else if (tasksToDisplayTotalCorrect.includes(taskId)) {
@@ -1505,7 +1513,7 @@ const scoreReportColumns = computed(() => {
       colField = `scores.${taskId}.rawScore`;
     } else {
       if (tasksToDisplayCorrectIncorrectDifference.includes(taskId) && viewMode.value === 'raw') {
-        colField = `scores.${taskId}.correctIncorrectDifference`;
+        colField = `scores.${taskId}.rawScore`;
       } else if (tasksToDisplayTotalCorrect.includes(taskId) && viewMode.value === 'raw') {
         colField = `scores.${taskId}.rawScore`;
       } else if (tasksToDisplayPercentCorrect.includes(taskId) && viewMode.value === 'raw') {

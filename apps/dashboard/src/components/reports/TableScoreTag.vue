@@ -96,10 +96,10 @@ function handleToolTip(_taskId, _toolTip, _colData) {
     _colData.scores?.[_taskId]?.numCorrect ||
     _colData.scores?.[_taskId]?.numIncorrect
   ) {
-    if (tasksToDisplayCorrectIncorrectDifference.includes(_taskId)) {
+    if (tasksToDisplayCorrectIncorrectDifference.includes(_taskId) && !_colData.scores?.[_taskId]?.scoringVersion) {
       _toolTip += 'Num Correct: ' + _colData.scores?.[_taskId]?.numCorrect + '\n';
       _toolTip += 'Num Incorrect: ' + _colData.scores?.[_taskId]?.numIncorrect + '\n';
-      _toolTip += 'Correct - Incorrect: ' + _colData.scores?.[_taskId]?.correctIncorrectDifference + '\n';
+      _toolTip += 'Correct - Incorrect: ' + _colData.scores?.[_taskId]?.rawScore + '\n';
     } else if (tasksToDisplayTotalCorrect.includes(_taskId)) {
       const numCorrect = _colData.scores?.[_taskId]?.numCorrect;
       const numAttempted = _colData.scores?.[_taskId]?.numAttempted;
