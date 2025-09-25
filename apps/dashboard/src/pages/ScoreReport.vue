@@ -1114,8 +1114,8 @@ const createExportData = ({ rows, includeProgress = false }) => {
           });
 
           /**
-           * Use taskId to avoid conflicts for headers that match the current filter in exportData
-           * for scored tasks (e.g, ROAR - Survey)
+           * Use taskId to bypass the current filter ' - ' for scored tasks in exportData
+           * to avoid duplicate columns (e.g. ROAR - Survey) and allow unique headers (e.g. Hearts and Flowers)
            */
           if (excludeFromScoringTasks.includes(taskId)) {
             tableRow[`${taskId} - Progress`] = progressRow.progress[taskId].value ?? 'not assigned';
