@@ -26,8 +26,7 @@ function ensureCrowdinDownload() {
   // Try global crowdin first
   const res = run('crowdin', ['download', '--config', crowdinConfig]);
   if (res.error && res.error.code === 'ENOENT') {
-    // Fallback to npx if global is missing
-    const resNpx = run('npx', ['-y', '@crowdin/cli@latest', 'download', '--config', crowdinConfig]);
+    const resNpx = run('npx', ['-y', '-p', '@crowdin/cli', 'crowdin', 'download', '--config', crowdinConfig]);
     if (resNpx.status !== 0) process.exit(resNpx.status || 1);
     return;
   }

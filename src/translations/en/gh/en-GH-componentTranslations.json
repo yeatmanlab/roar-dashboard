@@ -127,7 +127,10 @@
       "sre": "",
       "swr": "",
       "taskNoLongerAvailable": "",
-      "taskNotYetAvailable": ""
+      "taskNotYetAvailable": "",
+      "paDescription": "",
+      "sreDescription": "",
+      "swrDescription": ""
     },
     "navbar": {
       "greeting": "Hi",

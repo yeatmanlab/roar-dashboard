@@ -138,6 +138,12 @@ function main() {
     }
   }
 
+  // Ensure legacy 'es' is generated from 'es-CO' when 'es' is not present
+  if (!perLocaleMessages['es'] && perLocaleMessages['es-co']) {
+    perLocaleMessages['es'] = JSON.parse(JSON.stringify(perLocaleMessages['es-co']));
+    originalCaseMapping['es'] = 'es';
+  }
+
   // Write one JSON file per locale
   const locales = Object.keys(perLocaleMessages);
   if (!locales.length) {

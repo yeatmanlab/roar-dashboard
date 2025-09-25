@@ -123,11 +123,14 @@
       "trogName": "Satzverstehen",
       "vocabDescription": "Hör dir die Wörter an und wähle das passende Bild dazu aus.",
       "vocabName": "Vokabeln",
-      "pa": "Language Sounds",
-      "sre": "Sentence Reading",
-      "swr": "Word Reading",
-      "taskNoLongerAvailable": "Task No longer Available",
-      "taskNotYetAvailable": "Task Not available yet"
+      "pa": "Klang",
+      "sre": "Satz",
+      "swr": "Wort",
+      "taskNoLongerAvailable": "Nicht mehr verfügbar",
+      "taskNotYetAvailable": "Noch nicht verfügbar",
+      "paDescription": "Den Klang in den Wörtern identifizieren.",
+      "sreDescription": "Lies die Sätze so schnell wie möglich und entscheide, ob sie wahr oder falsch sind.",
+      "swrDescription": "Die Wörter werden schnell auf dem Bildschirm erscheinen. Entscheide, ob sie echt oder erfunden sind."
     },
     "navbar": {
       "greeting": "Hallo",
@@ -145,9 +148,9 @@
       "statusUpcoming": "Kommend",
       "statusPast": "Vergangen",
       "assignments": "Zuordnungen",
-      "noCurrentAssignments": "No Current Assignments",
-      "noUpcomingAssignments": "No Upcoming assignments",
-      "noPastAssignments": "No past assignments"
+      "noCurrentAssignments": "You have no current assignments.",
+      "noUpcomingAssignments": "You have no upcoming assignments.",
+      "noPastAssignments": "You have no past assignments."
     },
     "sentry-form": {
       "buttonLabel": "Ein Problem melden",
