@@ -100,6 +100,84 @@ export const userHasSelectedOrgs = (userArray: any[], selections: SelectionItem[
 export const formatDate = (date: Date | number | string | undefined | null): string | undefined =>
   date?.toLocaleString('en-US');
 
+// Create a locale loader with static imports
+const loadDateFnsLocale = async (localeCode: string): Promise<any> => {
+  // Map of supported locales with their date-fns import paths
+  const localeMap: Record<string, () => Promise<any>> = {
+    en: () => import('date-fns/locale/en-US'),
+    'en-US': () => import('date-fns/locale/en-US'),
+    'en-us': () => import('date-fns/locale/en-US'),
+    'en-gh': () => import('date-fns/locale/en-GB'),
+    es: () => import('date-fns/locale/es'),
+    'es-co': () => import('date-fns/locale/es'),
+    'es-ar': () => import('date-fns/locale/es'),
+    de: () => import('date-fns/locale/de'),
+    'de-ch': () => import('date-fns/locale/de'),
+    fr: () => import('date-fns/locale/fr'),
+    'fr-ca': () => import('date-fns/locale/fr-CA'),
+    nl: () => import('date-fns/locale/nl'),
+    pt: () => import('date-fns/locale/pt'),
+  };
+
+  // Extract base language code if needed
+  const baseLocale = localeCode.split('-')[0].toLowerCase();
+
+  // Try exact match first, then base locale, then always fallback to en-US
+  const loader =
+    localeMap[localeCode] || localeMap[baseLocale] || localeMap['en-US'] || (() => import('date-fns/locale/en-US'));
+
+  try {
+    const localeModule = await loader();
+    // Handle different export formats from date-fns
+    // v4 uses named exports like enUS, es, de, etc.
+    if (localeModule.enUS) return localeModule.enUS;
+    if (localeModule.enGB) return localeModule.enGB;
+    if (localeModule.es) return localeModule.es;
+    if (localeModule.de) return localeModule.de;
+    if (localeModule.fr) return localeModule.fr;
+    if (localeModule.frCA) return localeModule.frCA;
+    if (localeModule.nl) return localeModule.nl;
+    if (localeModule.pt) return localeModule.pt;
+    // Fallback to first available export
+    const keys = Object.keys(localeModule);
+    if (keys.length > 0) return localeModule[keys[0]];
+    return localeModule;
+  } catch (error) {
+    console.warn(`Failed to load locale ${localeCode}, falling back to en-US`, error);
+    const fallback = await import('date-fns/locale/en-US');
+    return fallback.enUS || fallback;
+  }
+};
+
+/**
+ * Format date with dynamic locale loading from date-fns
+ * @param date - The date to format (Date object or string)
+ * @param formatString - The format string for date-fns
+ * @param localeCode - The i18n locale code (e.g., 'en-US', 'es-CO')
+ * @returns Promise<string> - The formatted date string
+ */
+export async function formatDateWithLocale(
+  date: Date | string,
+  formatString: string,
+  localeCode: string,
+): Promise<string> {
+  if (!date) return '';
+
+  const dateObj = date instanceof Date ? date : new Date(date);
+  if (isNaN(dateObj.getTime())) return '';
+
+  // Import format function
+  const { format } = await import('date-fns');
+
+  try {
+    const locale = await loadDateFnsLocale(localeCode);
+    return format(dateObj, formatString, { locale });
+  } catch (error) {
+    console.warn(`Error formatting date with locale ${localeCode}:`, error);
+    return format(dateObj, formatString);
+  }
+}
+
 const camelCase = (str: string): string => str.replace(/_([a-z])/g, (_match, group1) => group1.toUpperCase());
 
 export const flattenObj = (obj: any): Record<string, any> => {

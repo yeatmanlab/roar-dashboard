@@ -9,13 +9,13 @@
     <transition name="sidebar__panel">
       <div v-if="showSideBarPanel" class="sidebar__panel">
         <div class="sidebar__panel__header">
-          <h3 class="sidebar__panel__title">{{ t('participant-sidebar.assignments') }}</h3>
+          <h3 class="sidebar__panel__title">{{ t('participantSidebar.assignments') }}</h3>
         </div>
 
         <div class="sidebar__panel__main">
           <div v-if="selectedStatusCurrent" class="assignment-group assignment-group--current --active">
             <small class="assignment-group__title"
-              >{{ t('participant-sidebar.statusCurrent') }} <span class="ml-auto font-medium">{{ numOfCurrentAssignments }}</span></small
+              >{{ t('participantSidebar.statusCurrent') }} <span class="ml-auto font-medium">{{ numOfCurrentAssignments }}</span></small
             >
             <ul v-if="currentAssignments.length > 0" class="assignment-group__list">
               <AssignmentCard
@@ -27,12 +27,12 @@
                 @click="onClickAssignment"
               />
             </ul>
-            <div v-else class="assignment-group__empty">{{ $t('participant-sidebar.noCurrentAssignments') }}</div>
+            <div v-else class="assignment-group__empty">{{ $t('participantSidebar.noCurrentAssignments') }}</div>
           </div>
 
           <div v-if="selectedStatusUpcoming" class="assignment-group assignment-group--upcoming --active">
             <small class="assignment-group__title"
-              >{{ t('participant-sidebar.statusUpcoming') }} <span class="ml-auto font-medium">{{ numOfUpcomingAssignments }}</span></small
+              >{{ t('participantSidebar.statusUpcoming') }} <span class="ml-auto font-medium">{{ numOfUpcomingAssignments }}</span></small
             >
             <ul v-if="upcomingAssignments.length > 0" class="assignment-group__list">
               <AssignmentCard
@@ -44,12 +44,12 @@
                 @click="onClickAssignment"
               />
             </ul>
-            <div v-else class="assignment-group__empty">{{ $t('participant-sidebar.noUpcomingAssignments') }}</div>
+            <div v-else class="assignment-group__empty">{{ $t('participantSidebar.noUpcomingAssignments') }}</div>
           </div>
 
           <div v-if="selectedStatusPast" class="assignment-group assignment-group--past --active">
             <small class="assignment-group__title"
-              >{{ t('participant-sidebar.statusPast') }} <span class="ml-auto font-medium">{{ numOfPastAssignments }}</span></small
+              >{{ t('participantSidebar.statusPast') }} <span class="ml-auto font-medium">{{ numOfPastAssignments }}</span></small
             >
             <ul v-if="pastAssignments.length > 0" class="assignment-group__list">
               <AssignmentCard
@@ -61,7 +61,7 @@
                 @click="onClickAssignment"
               />
             </ul>
-            <div v-else class="assignment-group__empty">{{ $t('participant-sidebar.noPastAssignments') }}</div>
+            <div v-else class="assignment-group__empty">{{ $t('participantSidebar.noPastAssignments') }}</div>
           </div>
         </div>
       </div>
@@ -77,7 +77,7 @@
 
       <div class="sidebar__nav">
         <div
-          v-tooltip.right="getTooltip(t('participant-sidebar.statusCurrent'))"
+          v-tooltip.right="getTooltip(t('participantSidebar.statusCurrent'))"
           :class="`sidebar__nav-link --${ASSIGNMENT_STATUSES.CURRENT} ${selectedStatusCurrent ? '--active' : ''}`"
           @click="() => onClickSideBarNavLink(ASSIGNMENT_STATUSES.CURRENT)"
         >
@@ -85,7 +85,7 @@
         </div>
 
         <div
-          v-tooltip.right="getTooltip(t('participant-sidebar.statusUpcoming'))"
+          v-tooltip.right="getTooltip(t('participantSidebar.statusUpcoming'))"
           :class="`sidebar__nav-link --${ASSIGNMENT_STATUSES.UPCOMING} ${selectedStatusUpcoming ? '--active' : ''}`"
           @click="() => onClickSideBarNavLink(ASSIGNMENT_STATUSES.UPCOMING)"
         >
@@ -93,7 +93,7 @@
         </div>
 
         <div
-          v-tooltip.right="getTooltip(t('participant-sidebar.statusPast'))"
+          v-tooltip.right="getTooltip(t('participantSidebar.statusPast'))"
           :class="`sidebar__nav-link --${ASSIGNMENT_STATUSES.PAST} ${selectedStatusPast ? '--active' : ''}`"
           @click="() => onClickSideBarNavLink(ASSIGNMENT_STATUSES.PAST)"
         >

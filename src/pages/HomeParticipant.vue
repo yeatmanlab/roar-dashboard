@@ -23,10 +23,11 @@
       <div class="assignment">
         <div class="assignment__header">
           <PvTag
-            :value="t(`participant-sidebar.${getAssignmentStatus(selectedAssignment)}`)"
+            :value="t(`participantSidebar.status${capitalize(getAssignmentStatus(selectedAssignment))}`)"
             class="text-xs uppercase"
             :class="`assignment__status --${getAssignmentStatus(selectedAssignment)}`"
           />
+
 
           <h2 class="assignment__name">
             {{ selectedAssignment?.publicName || selectedAssignment?.name }}
@@ -37,14 +38,14 @@
               <i class="pi pi-calendar"></i>
               <small
                 ><span class="font-bold">{{ assignmentStartDateLabel }}</span>
-                {{ format(selectedAssignment?.dateOpened, 'MMM dd, yyyy') }}</small
+                {{ formattedStartDate }}</small
               >
             </div>
             <div class="assignment__date">
               <i class="pi pi-calendar"></i>
               <small
                 ><span class="font-bold">{{ assignmentEndDateLabel }}</span>
-                {{ format(selectedAssignment?.dateClosed, 'MMM dd, yyyy') }}</small
+                {{ formattedEndDate }}</small
               >
             </div>
           </div>
@@ -108,7 +109,7 @@ import axios from 'axios';
 import { LEVANTE_BUCKET_URL } from '@/constants/bucket';
 import { Model, settings } from 'survey-core';
 import { Converter } from 'showdown';
-import { fetchAudioLinks, getParsedLocale } from '@/helpers/survey';
+import { fetchAudioLinks } from '@/helpers/survey';
 import { useRouter } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
 import { useQueryClient, useQuery } from '@tanstack/vue-query';
@@ -117,9 +118,10 @@ import { useSurveyStore } from '@/store/survey';
 import { fetchDocsById } from '@/helpers/query/utils';
 import LevanteSpinner from '@/components/LevanteSpinner.vue';
 import { logger } from '@/logger';
-import { format } from 'date-fns';
+import { formatDateWithLocale } from '@/helpers';
 import PvTag from 'primevue/tag';
 import { getAssignmentStatus, isCurrent, sortAssignmentsByDateOpened } from '@/helpers/assignments';
+import { capitalize } from 'lodash';
 
 const showConsent = ref(false);
 const consentVersion = ref('');
@@ -192,13 +194,31 @@ const now = computed(() => new Date());
 
 const assignmentStartDateLabel = computed(() => {
   const dateOpened = selectedAssignment.value?.dateOpened || new Date();
-  return new Date(dateOpened) < now.value ? t('participant-sidebar.opened') : t('participant-sidebar.open');
+  return new Date(dateOpened) < now.value ? t('participantSidebar.statusOpened') : t('participantSidebar.statusOpen');
 });
 
 const assignmentEndDateLabel = computed(() => {
   const dateClosed = selectedAssignment.value?.dateClosed || new Date();
-  return new Date(dateClosed) < now.value ? t('participant-sidebar.closed') : t('participant-sidebar.close');
+  return new Date(dateClosed) < now.value ? t('participantSidebar.statusClosed') : t('participantSidebar.statusClose');
 });
+
+
+const formattedStartDate = ref('');
+const formattedEndDate = ref('');
+
+
+watch(
+  locale,
+  async (currentLocale) => {
+    if (selectedAssignment.value?.dateOpened && currentLocale) {
+      formattedStartDate.value = await formatDateWithLocale(selectedAssignment.value.dateOpened, 'MMM d, yyyy', currentLocale);
+    }
+    if (selectedAssignment.value?.dateClosed && currentLocale) {
+      formattedEndDate.value = await formatDateWithLocale(selectedAssignment.value.dateClosed, 'MMM d, yyyy', currentLocale);
+    }
+  },
+  { immediate: true }
+);
 
 const taskIds = computed(() => {
   return (selectedAssignment.value?.assessments ?? []).map((assessment) => assessment.taskId);
@@ -281,10 +301,6 @@ async function updateConsent() {
   });
 }
 
-const toggleShowOptionalAssessments = async () => {
-  await checkConsent();
-  showOptionalAssessments.value = null;
-};
 
 const userType = computed(() => {
   return toRaw(userData.value)?.userType?.toLowerCase();
@@ -703,3 +719,4 @@ watch(
   min-width: 24%;
 }
 </style>
+
