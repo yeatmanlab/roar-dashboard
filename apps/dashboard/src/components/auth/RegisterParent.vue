@@ -150,7 +150,9 @@
               name="canContactForFutureStudies"
               binary
             />
-            <label for="keepUpdated" class="ml-2">Keep me up to date with new resources and innovations</label>
+            <label for="keepUpdated" class="ml-2"
+              >Contact me about new research opportunities and ROAR innovations</label
+            >
           </div>
         </section>
         <ConsentModal
