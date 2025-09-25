@@ -26,7 +26,8 @@ describe('Participant: Auth', () => {
     cy.visit('/');
     cy.waitForParticipantHomepage();
     cy.get('[data-cy="home-participant__administration-emptystate"]').should('not.exist');
-    cy.get('[data-cy="home-participant__administration"]').should('contain', 'Cypress Test Roar Apps Administration');
+    cy.get('[data-cy="dropdown-select-administration"]').click();
+    cy.get('.p-select-list-container').find('li').should('contain', 'Cypress Test Roar Apps Administration');
   });
 
   it('Logs out', () => {
