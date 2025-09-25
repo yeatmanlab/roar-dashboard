@@ -318,7 +318,6 @@ import { CSV_EXPORT_STATIC_COLUMNS } from '@/constants/csvExport';
 import { APP_ROUTES } from '@/constants/routes';
 import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
 import { SCORE_REPORT_NEXT_STEPS_DOCUMENT_PATH } from '@/constants/scores';
-import { LEVANTE_TASK_IDS_NO_SCORES } from '@/constants/levanteTasks';
 import _startCase from 'lodash/startCase';
 
 const { userCan, Permissions } = usePermissions();
@@ -1065,7 +1064,7 @@ const createExportData = ({ rows, includeProgress = false }) => {
         // Technically thetaEstimate for old scoring system (previous implementation)
         tableRow[`${taskName} - Grade Estimate`] = score.gradeEstimate;
         tableRow[`${taskName} - Support Level`] = score.supportLevel;
-      } else if (!LEVANTE_TASK_IDS_NO_SCORES.includes(taskId) && taskId !== 'roar-survey') {
+      } else if (!excludeFromScoringTasks.includes(taskId)) {
         tableRow[`${taskName} - Percentile`] = score.percentileString;
         tableRow[`${taskName} - Standard`] = score.standardScore;
         tableRow[`${taskName} - Raw`] = score.rawScore;
