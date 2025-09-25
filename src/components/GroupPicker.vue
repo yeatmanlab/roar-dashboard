@@ -8,63 +8,59 @@
             <span class="required-asterisk text-red-500 ml-1">*</span>
           </div>
         </template>
-        <PvTabs v-if="claimsLoaded" v-model:active-index="activeIndex" class="m-0 p-0 org-tabs" lazy :value="String(activeIndex)">
+
+        <PvTabs v-if="claimsLoaded" v-model:value="activeOrgTypeValue" lazy class="m-0 p-0 org-tabs">
           <PvTabList>
-            <PvTab v-for="(orgType, key) in orgHeaders" :key="key" :value="key">{{ orgType.header }}</PvTab>
+            <PvTab v-for="orgType in orgHeaders" :key="orgType.id" :value="orgType.id">{{ orgType.header }}</PvTab>
           </PvTabList>
           <PvTabPanels>
-            <PvTabPanel v-for="(orgType, key) in orgHeaders" :key="key" :value="key">
-            <div class="grid column-gap-3">
-              <div
-                v-if="activeOrgType === 'schools' || activeOrgType === 'classes'"
-                class="col-6 md:col-5 lg:col-5 xl:col-5 mt-3"
-              >
-                <PvFloatLabel>
-                  <PvSelect
-                    id="district"
-                    v-model="selectedDistrict"
-                    input-id="district"
-                    :options="allDistricts"
-                    option-label="name"
-                    option-value="id"
-                    :loading="isLoadingDistricts"
-                    class="w-full"
-                    data-cy="dropdown-selected-district"
-                  />
-                  <label for="district">Select from Site</label>
-                </PvFloatLabel>
+            <PvTabPanel v-for="orgType in orgHeaders" :key="orgType.id" :value="orgType.id">
+              <div class="grid column-gap-3 mt-2">
+                <div v-if="orgType.id !== 'districts'" class="col-6 md:col-5 lg:col-5 xl:col-5 mt-3">
+                  <PvFloatLabel>
+                    <PvSelect
+                      v-model="selectedDistrict"
+                      input-id="district"
+                      :options="allDistricts"
+                      option-label="name"
+                      option-value="id"
+                      :loading="isLoadingDistricts"
+                      class="w-full"
+                      data-cy="dropdown-selected-district"
+                    />
+                    <label for="district">Select from site</label>
+                  </PvFloatLabel>
+                </div>
+                <div v-if="orgType.id === 'classes'" class="col-6 md:col-5 lg:col-5 xl:col-5 mt-3">
+                  <PvFloatLabel>
+                    <PvSelect
+                      v-model="selectedSchool"
+                      input-id="school"
+                      :options="allSchools"
+                      option-label="name"
+                      option-value="id"
+                      :loading="isLoadingSchools"
+                      class="w-full"
+                      data-cy="dropdown-selected-school"
+                    />
+                    <label for="school">Select from school</label>
+                  </PvFloatLabel>
+                </div>
               </div>
-              <div v-if="orgType.id === 'classes'" class="col-6 md:col-5 lg:col-5 xl:col-5 mt-3">
-                <PvFloatLabel>
-                  <PvSelect
-                    id="school"
-                    v-model="selectedSchool"
-                    input-id="school"
-                    :options="allSchools"
-                    option-label="name"
-                    option-value="id"
-                    :loading="isLoadingSchools"
-                    class="w-full"
-                    data-cy="dropdown-selected-school"
-                  />
-                  <label for="school">Select from school</label>
-                </PvFloatLabel>
+              <div class="card flex justify-content-center">
+                <PvListbox
+                  v-model="selectedOrgs[activeOrgType]"
+                  :options="orgData"
+                  :multiple="!forParentOrg"
+                  :meta-key-selection="false"
+                  option-label="name"
+                  class="w-full"
+                  list-style="max-height:20rem"
+                  checkmark
+                >
+                </PvListbox>
               </div>
-            </div>
-            <div class="card flex justify-content-center">
-              <PvListbox
-                v-model="selectedOrgs[activeOrgType]"
-                :options="orgData"
-                :multiple="!forParentOrg"
-                :meta-key-selection="false"
-                option-label="name"
-                class="w-full"
-                list-style="max-height:20rem"
-                checkmark
-              >
-              </PvListbox>
-            </div>
-          </PvTabPanel>
+            </PvTabPanel>
           </PvTabPanels>
         </PvTabs>
       </PvPanel>
@@ -116,7 +112,7 @@ import PvTabPanels from 'primevue/tabpanels';
 import PvTabs from 'primevue/tabs';
 import { useAuthStore } from '@/store/auth';
 import { orgFetcher, orgFetchAll } from '@/helpers/query/orgs';
-import { orderByDefault } from '@/helpers/query/utils';
+import { orderByNameASC } from '@/helpers/query/utils';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useDistrictsListQuery from '@/composables/queries/useDistrictsListQuery';
 import PvFloatLabel from 'primevue/floatlabel';
@@ -220,9 +216,16 @@ const orgHeaders = computed((): Record<string, OrgHeader> => {
   };
 });
 
-const activeIndex = ref<number>(0);
-const activeOrgType = computed((): string => {
-  return Object.keys(orgHeaders.value)[activeIndex.value];
+const activeIndex = ref(0);
+const activeOrgType = computed(() => Object.keys(orgHeaders.value)[activeIndex.value]!);
+const activeOrgTypeValue = computed<string | number>({
+  get() {
+    return Object.keys(orgHeaders.value)[activeIndex.value]!;
+  },
+  set(value) {
+    const keys = Object.keys(orgHeaders.value);
+    activeIndex.value = keys.indexOf(value.toString());
+  },
 });
 
 const claimsLoaded = computed((): boolean => initialized.value && !isLoadingClaims.value);
@@ -246,7 +249,7 @@ const { isLoading: isLoadingSchools, data: allSchools } = useQuery({
 const { data: orgData } = useQuery({
   queryKey: ['orgs', activeOrgType, selectedDistrict, selectedSchool],
   queryFn: () =>
-    orgFetchAll(activeOrgType, selectedDistrict, selectedSchool, ref(orderByDefault), isSuperAdmin, adminOrgs, [
+    orgFetchAll(activeOrgType, selectedDistrict, selectedSchool, ref(orderByNameASC), isSuperAdmin, adminOrgs, [
       'id',
       'name',
       'districtId',
