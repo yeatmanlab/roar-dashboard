@@ -745,10 +745,12 @@ const computeAssignmentAndRunData = computed(() => {
           const numIncorrect = assessment.scores?.raw?.composite?.test?.numAttempted - numCorrect;
           const scoringVersion = _get(assessment, 'scores.computed.composite.scoringVersion');
 
-          // If scoring version is not present (no norms), use previous correct incorrect difference
           if (!scoringVersion) {
             currRowScores[taskId].correctIncorrectDifference =
               numCorrect != null && numIncorrect != null ? Math.round(numCorrect - numIncorrect) : null;
+            // scoreReportColumns only can only access admin variants, so set rawScore = correctIncorrectDifference
+            // for admins with mixed normed & unnormed scores
+            currRowScores[taskId].rawScore = currRowScores[taskId].correctIncorrectDifference;
           }
 
           currRowScores[taskId].numCorrect = numCorrect;
@@ -1518,9 +1520,7 @@ const scoreReportColumns = computed(() => {
       colField = `scores.${taskId}.rawScore`;
     } else {
       if (tasksToDisplayCorrectIncorrectDifference.includes(taskId) && viewMode.value === 'raw') {
-        const scoringVersion = administrationData.value?.assessments?.find((assessment) => assessment.taskId === taskId)
-          ?.params.scoringVersion;
-        colField = `scores.${taskId}.${scoringVersion ? 'rawScore' : 'correctIncorrectDifference'}`;
+        colField = `scores.${taskId}.rawScore`; // Technically correctIncorrectDifference if unnormed
       } else if (tasksToDisplayTotalCorrect.includes(taskId) && viewMode.value === 'raw') {
         colField = `scores.${taskId}.rawScore`;
       } else if (tasksToDisplayPercentCorrect.includes(taskId) && viewMode.value === 'raw') {
