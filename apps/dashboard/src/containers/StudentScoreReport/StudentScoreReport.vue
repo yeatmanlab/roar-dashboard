@@ -38,6 +38,7 @@
           :tasks-dictionary="tasksDictionary"
           :longitudinal-data="longitudinalData"
           :expanded="expanded"
+          :administration-id="administrationId"
           :data-pdf-export-section="SCORE_REPORT_EXPORT_SECTIONS.DETAILS"
         />
 
