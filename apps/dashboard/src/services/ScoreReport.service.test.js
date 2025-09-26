@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import ScoreReportService from '@/services/ScoreReport.service';
-import { SCORE_SUPPORT_SKILL_LEVELS, SCORE_TYPES } from '@/constants/scores';
+import { SCORE_SUPPORT_SKILL_LEVELS, SCORE_TYPE_KEYS } from '@/constants/scores';
 
 import { getSupportLevel, getRawScoreRange } from '@/helpers/reports';
 
@@ -220,7 +220,7 @@ describe('ScoreReportService', () => {
 
       // Check first task
       expect(result[0].taskId).toBe('mock-task-1');
-      expect(result[0].scoreToDisplay).toBe(SCORE_TYPES.PERCENTILE_SCORE); // grade < 6
+      expect(result[0].scoreToDisplay).toBe(SCORE_TYPE_KEYS.PERCENTILE_SCORE); // grade < 6
       expect(result[0].rawScore.value).toBe(20);
       expect(result[0].percentileScore.value).toBe(65);
       expect(result[0].standardScore.value).toBe(95);
@@ -228,7 +228,7 @@ describe('ScoreReportService', () => {
 
       // Check second task
       expect(result[1].taskId).toBe('mock-raw-task');
-      expect(result[1].scoreToDisplay).toBe(SCORE_TYPES.RAW_SCORE); // raw-only task
+      expect(result[1].scoreToDisplay).toBe(SCORE_TYPE_KEYS.RAW_SCORE); // raw-only task
       expect(result[1].rawScore.value).toBe(15);
       expect(result[1].percentileScore.value).toBe(45);
       expect(result[1].standardScore.value).toBe(85);
@@ -254,7 +254,7 @@ describe('ScoreReportService', () => {
       const result = ScoreReportService.processTaskScores(taskData, 7, mockI18n); // grade >= 6
 
       expect(result).toHaveLength(1);
-      expect(result[0].scoreToDisplay).toBe(SCORE_TYPES.STANDARD_SCORE);
+      expect(result[0].scoreToDisplay).toBe(SCORE_TYPE_KEYS.STANDARD_SCORE);
     });
 
     it('should filter out blacklisted tasks', () => {
