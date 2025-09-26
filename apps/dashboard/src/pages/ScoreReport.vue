@@ -135,6 +135,7 @@
             :loading="isLoadingAssignments || isFetchingAssignments"
             :groupheaders="true"
             data-cy="roar-data-table"
+            :task-scoring-versions="getScoringVersions"
             @export-all="exportData({ selectedRows: $event })"
             @export-selected="exportData({ selectedRows: $event })"
           >
@@ -351,6 +352,16 @@ const displayName = computed(() => {
     return getTitle(administrationData.value, isSuperAdmin.value);
   }
   return 'Fetching administration name...';
+});
+
+const getScoringVersions = computed(() => {
+  const scoringVersions = Object.fromEntries(
+    administrationData.value?.assessments.map((assessment) => [
+      assessment.taskId,
+      assessment?.params?.scoringVersion ?? null,
+    ]),
+  );
+  return scoringVersions;
 });
 
 const formatPhonicsScore = (score) => {
