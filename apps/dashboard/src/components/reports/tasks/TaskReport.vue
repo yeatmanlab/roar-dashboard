@@ -62,7 +62,7 @@
       :administration-id="administrationId"
       :org-type="orgType"
       :org-id="orgId"
-      :administration-name="administrationInfo.name ?? undefined"
+      :administration-name="administrationName ?? undefined"
       :org-name="orgInfo.name ?? undefined"
       :computed-table-data="computedTableData"
     />
@@ -73,7 +73,7 @@
       :administration-id="administrationId"
       :org-type="orgType"
       :org-id="orgId"
-      :administration-name="administrationInfo.name ?? undefined"
+      :administration-name="administrationName ?? undefined"
       :org-name="orgInfo.name ?? undefined"
       :computed-table-data="computedTableData"
     />
@@ -84,7 +84,7 @@
       :administration-id="administrationId"
       :org-type="orgType"
       :org-id="orgId"
-      :administration-name="administrationInfo.name ?? undefined"
+      :administration-name="administrationName ?? undefined"
       :org-name="orgInfo.name ?? undefined"
       :computed-table-data="computedTableData"
     />
@@ -95,7 +95,7 @@
       :administration-id="administrationId"
       :org-type="orgType"
       :org-id="orgId"
-      :administration-name="administrationInfo.name ?? undefined"
+      :administration-name="administrationName ?? undefined"
       :org-name="orgInfo.name ?? undefined"
       :computed-table-data="computedTableData"
     />
@@ -106,7 +106,7 @@
       :administration-id="administrationId"
       :org-type="orgType"
       :org-id="orgId"
-      :administration-name="administrationInfo.name ?? undefined"
+      :administration-name="administrationName ?? undefined"
       :org-name="orgInfo.name ?? undefined"
       :computed-table-data="computedTableData"
     />
@@ -117,7 +117,7 @@
       :administration-id="administrationId"
       :org-type="orgType"
       :org-id="orgId"
-      :administration-name="administrationInfo.name ?? undefined"
+      :administration-name="administrationName ?? undefined"
       :org-name="orgInfo.name ?? undefined"
       :computed-table-data="computedTableData"
     />
@@ -128,7 +128,7 @@
       :administration-id="administrationId"
       :org-type="orgType"
       :org-id="orgId"
-      :administration-name="administrationInfo.name ?? undefined"
+      :administration-name="administrationName ?? undefined"
       :org-name="orgInfo.name ?? undefined"
       :computed-table-data="computedTableData"
     />
@@ -152,10 +152,6 @@ const props = defineProps({
   },
   administrationId: {
     type: String,
-    required: true,
-  },
-  administrationInfo: {
-    type: Object,
     required: true,
   },
   computedTableData: {
@@ -182,6 +178,14 @@ const props = defineProps({
     type: Array,
     required: true,
   },
+  administrationName: {
+    type: String,
+    required: true,
+  },
+  taskScoringVersions: {
+    type: Object,
+    required: true,
+  },
 });
 
 const { data: tasksDictionary, isLoading: isLoadingTasksDictionary } = useTasksDictionaryQuery();
@@ -199,8 +203,7 @@ const minGradeByRuns = computed(() => {
 });
 
 const taskDesc = computed(() => {
-  const assessment = props.administrationInfo.assessments.find((assessment) => assessment.taskId === props.taskId);
-  return replaceScoreRange(taskInfoById[props.taskId]?.desc, props.taskId, assessment?.params?.scoringVersion);
+  return replaceScoreRange(taskInfoById[props.taskId]?.desc, props.taskId, props.taskScoringVersions[props.taskId]);
 });
 </script>
 

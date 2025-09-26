@@ -208,7 +208,8 @@
                 :org-type="orgType"
                 :org-id="orgId"
                 :org-info="orgData"
-                :administration-info="administrationData"
+                :administration-name="administrationData?.name"
+                :task-scoring-versions="getScoringVersions"
               />
             </div>
           </PvTabPanel>
