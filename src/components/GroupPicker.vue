@@ -15,7 +15,7 @@
           </PvTabList>
           <PvTabPanels>
             <PvTabPanel v-for="orgType in orgHeaders" :key="orgType.id" :value="orgType.id">
-              <div class="grid column-gap-3 mt-2">
+              <!-- <div class="grid column-gap-3 mt-2">
                 <div v-if="orgType.id !== 'districts'" class="col-6 md:col-5 lg:col-5 xl:col-5 mt-3">
                   <PvFloatLabel>
                     <PvSelect
@@ -46,7 +46,7 @@
                     <label for="school">Select from school</label>
                   </PvFloatLabel>
                 </div>
-              </div>
+              </div> -->
               <div class="card flex justify-content-center">
                 <PvListbox
                   v-model="selectedOrgs[activeOrgType]"
