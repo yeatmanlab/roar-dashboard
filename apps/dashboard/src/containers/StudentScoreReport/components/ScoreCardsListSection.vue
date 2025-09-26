@@ -30,7 +30,7 @@ import { computed, toValue } from 'vue';
 import { useI18n } from 'vue-i18n';
 import ScoreCard from './ScoreCard.vue';
 import ScoreReportService from '@/services/ScoreReport.service';
-import { SCORE_TYPES } from '@/constants/scores';
+import { SCORE_TYPE_KEYS } from '@/constants/scores';
 import { getScoreValue } from '@/helpers/reports';
 
 const props = defineProps({
@@ -145,7 +145,7 @@ const computedTaskData = computed(() => {
 const scoreValueTemplate = computed(() => {
   return (task) => {
     const percentileSuffix = ScoreReportService.getPercentileSuffixTemplate(task.percentileScore.value);
-    return task.scoreToDisplay === SCORE_TYPES.PERCENTILE ? percentileSuffix : undefined;
+    return task.scoreToDisplay === SCORE_TYPE_KEYS.PERCENTILE_SCORE ? percentileSuffix : undefined;
   };
 });
 
