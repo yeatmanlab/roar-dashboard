@@ -294,7 +294,8 @@ const computedTaskData = computed(() => {
       const percentileScore = getScoreValue(compositeScores, taskId, grade.value, 'percentile');
       const standardScore = getScoreValue(compositeScores, taskId, grade.value, 'standardScore');
 
-      const rawScoreRange = getRawScoreRange(taskId);
+      const scoringVersion = scores.composite.scoringVersion ?? null;
+      const rawScoreRange = getRawScoreRange(taskId, scoringVersion);
       const supportColor = getDialColor(grade.value, percentileScore, rawScore, taskId);
 
       const scoresForTask = {
