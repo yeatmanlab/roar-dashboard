@@ -747,7 +747,7 @@ const computeAssignmentAndRunData = computed(() => {
 
           // If scoring version is not present (no norms), use previous correct incorrect difference
           if (!scoringVersion) {
-            currRowScores[taskId].rawScore =
+            currRowScores[taskId].correctIncorrectDifference =
               numCorrect != null && numIncorrect != null ? Math.round(numCorrect - numIncorrect) : null;
           }
 
@@ -1052,12 +1052,12 @@ const createExportData = ({ rows, includeProgress = false }) => {
         tableRow[`${taskName} - Num Attempted`] = score.numAttempted;
         tableRow[`${taskName} - Num Correct`] = score.numCorrect;
       } else if (tasksToDisplayCorrectIncorrectDifference.includes(taskId)) {
-        const mainColumn = score.scoringVersion ? 'Raw Score' : 'Correct/Incorrect Difference';
-        tableRow[`${taskName} - ${mainColumn}`] = score.rawScore;
         if (score.scoringVersion) {
+          tableRow[`${taskName} - Raw Score`] = score.rawScore;
           tableRow[`${taskName} - Percentile`] = score.percentileString;
           tableRow[`${taskName} - Standard`] = score.standardScore;
         } else {
+          tableRow[`${taskName} - Correct/Incorrect Difference`] = score.correctIncorrectDifference;
           tableRow[`${taskName} - Num Incorrect`] = score.numIncorrect;
           tableRow[`${taskName} - Num Correct`] = score.numCorrect;
         }
@@ -1518,7 +1518,9 @@ const scoreReportColumns = computed(() => {
       colField = `scores.${taskId}.rawScore`;
     } else {
       if (tasksToDisplayCorrectIncorrectDifference.includes(taskId) && viewMode.value === 'raw') {
-        colField = `scores.${taskId}.rawScore`;
+        const scoringVersion = administrationData.value?.assessments?.find((assessment) => assessment.taskId === taskId)
+          ?.params.scoringVersion;
+        colField = `scores.${taskId}.${scoringVersion ? 'rawScore' : 'correctIncorrectDifference'}`;
       } else if (tasksToDisplayTotalCorrect.includes(taskId) && viewMode.value === 'raw') {
         colField = `scores.${taskId}.rawScore`;
       } else if (tasksToDisplayPercentCorrect.includes(taskId) && viewMode.value === 'raw') {
