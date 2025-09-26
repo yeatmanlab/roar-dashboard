@@ -345,6 +345,10 @@ const levanteTasks: string[] = [
   'mefs',
   'roarInference',
   'vocab',
+
+];
+
+const roarTasks: string[] = [
   'pa',
   'swr',
   'sre',
@@ -364,13 +368,13 @@ const getTaskName = (taskId: string, taskName: string): string => {
   }
 
   if (levanteTasks.includes(camelize(taskIdLowercased))) {
-    // Can be removed once we update the translation keys in Crowdin.
-    if (taskIdLowercased === 'pa' || taskIdLowercased === 'swr' || taskIdLowercased === 'sre') {
-      return t(`gameTabs.${camelize(taskIdLowercased)}`);
-    }
-    
     return t(`gameTabs.${camelize(taskIdLowercased)}Name`);
   }
+
+  if (roarTasks.includes(camelize(taskIdLowercased))) {
+    return t(`gameTabs.${camelize(taskIdLowercased)}`);
+  }
+
   return taskName;
 };
 
@@ -387,9 +391,10 @@ const getTaskDescription = (taskId: string, taskDescription: string): string => 
     }
   }
 
-  if (levanteTasks.includes(camelize(taskIdLowercased))) {
+  if (levanteTasks.includes(camelize(taskIdLowercased)) || roarTasks.includes(camelize(taskIdLowercased))) {
     return t(`gameTabs.${camelize(taskIdLowercased)}Description`);
   }
+
   return taskDescription;
 };
 
@@ -408,9 +413,6 @@ const getRoutePath = (taskId: string, variantURL?: string, taskURL?: string): st
   }
 };
 
-const taskCompletedMessage = computed((): string => {
-  return t('gameTabs.taskCompleted');
-});
 
 const currentGameId = computed((): string | undefined => {
   return _get(
