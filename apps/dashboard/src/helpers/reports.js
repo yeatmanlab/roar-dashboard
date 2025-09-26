@@ -384,7 +384,16 @@ export const tasksToDisplayGraphs = ['swr', 'sre', 'pa'];
  *  Raw Only Tasks
  *  A list of tasks to only display raw scores when included in a RoarDataTable.
  */
-export const rawOnlyTasks = ['cva', 'morphology', 'vocab', 'fluency', 'roar-readaloud'];
+export const rawOnlyTasks = [
+  'cva',
+  'morphology',
+  'vocab',
+  'fluency',
+  'roar-readaloud',
+  'letter',
+  'letter-es',
+  'letter-en-ca',
+];
 
 /*
  *  Excluded from Score Report Apps

@@ -25,6 +25,7 @@ import { computed, ref, onMounted, onBeforeUnmount } from 'vue';
 import { getSupportLevel } from '@/helpers/reports';
 import Chart from 'chart.js/auto';
 import 'chartjs-adapter-date-fns';
+import { SCORE_TYPES } from '@/constants/scores';
 
 const canvasRef = ref(null);
 let chartInstance = null;
@@ -48,30 +49,12 @@ const props = defineProps({
   },
 });
 
-const SCORE_TYPES = {
-  rawScore: {
-    key: 'rawScore',
-    label: 'Raw Score',
-    priority: 1,
-  },
-  percentile: {
-    key: 'percentile',
-    label: 'Percentile',
-    priority: 2,
-  },
-  standardScore: {
-    key: 'standardScore',
-    label: 'Standard Score',
-    priority: 3,
-  },
-};
-
 // Utilities
 const getLabelByScoreType = (type) => SCORE_TYPES[type]?.label ?? 'Score';
 
 // List in priority order once
 const preferredTypes = Object.values(SCORE_TYPES)
-  .sort((a, b) => a.priority - b.priority)
+  .sort((a, b) => Number(a.priority ?? 0) - Number(b.priority ?? 0))
   .map((t) => t.key);
 
 // Prepare sorted data
@@ -85,26 +68,32 @@ const chartData = computed(() => {
   const type = preferredTypes.find((t) => sortedData.value.some((e) => e.scores?.[t] != null));
   if (!type) return { datasets: [] };
 
+  const scoreType = type;
+
   const points = sortedData.value
-    .filter((e) => e.scores?.[type] != null && !Number.isNaN(+e.scores[type]))
+    .filter((e) => {
+      const score = e.scores?.[scoreType];
+      return score != null && !Number.isNaN(Number(score));
+    })
     .map((e) => {
       const x = new Date(e.date);
-      const y = +e.scores[type];
+      const y = Number(e.scores[scoreType]);
       const s = getSupportLevel(props.grade, e.scores?.percentile, e.scores?.rawScore, props.taskId);
       return {
         x,
         y,
-        assignmentId: e.assignmentId || e.administrationId,
+        assignmentId: e.assignmentId || e.administrationId || '',
         percentile: e.scores?.percentile ?? null,
         standardScore: e.scores?.standardScore ?? null,
-        color: s?.tag_color,
+        color: s?.tag_color || '#CCCCCC',
       };
     });
 
   return {
     datasets: [
       {
-        label: getLabelByScoreType(type),
+        type: 'line',
+        label: getLabelByScoreType(scoreType),
         data: points,
         tension: 0.4,
         borderColor: '#CCCCCC',
@@ -129,19 +118,20 @@ const chartOptions = computed(() => ({
   normalized: true,
   maintainAspectRatio: false,
   plugins: {
-    legend: false,
+    legend: { display: false },
     tooltip: {
       mode: 'index',
       intersect: false,
       callbacks: {
         title: (items) => {
-          const timestamp = items[0].parsed.x;
-          return new Intl.DateTimeFormat(undefined, { year: 'numeric', month: 'short', day: 'numeric' }).format(
-            timestamp,
-          );
+          const timestamp = items[0]?.parsed?.x;
+          return timestamp
+            ? new Intl.DateTimeFormat(undefined, { year: 'numeric', month: 'short', day: 'numeric' }).format(timestamp)
+            : '';
         },
         label: (ctx) => {
           const point = ctx.dataset.data[ctx.dataIndex];
+          if (!point) return [];
           const lines = [`${ctx.dataset.label}: ${point.y}`];
           if (point.percentile != null) lines.push(`Percentile: ${point.percentile}`);
           if (point.standardScore != null) lines.push(`Standard Score: ${point.standardScore}`);
@@ -151,13 +141,14 @@ const chartOptions = computed(() => ({
       },
     },
   },
+
   scales: {
     y: {
       beginAtZero: true,
       grid: { color: 'rgba(0,0,0,0.1)' },
     },
     x: {
-      type: 'timeseries', // or revert to "time" if we need to display an actual time axis
+      type: 'time', // switch to 'timeseries' for evenly distributed points on the time axis
       time: {
         unit: 'month',
         displayFormats: { month: 'MMM yyyy' },
@@ -174,15 +165,17 @@ const chartOptions = computed(() => ({
 }));
 
 const createChart = () => {
-  const ctx = canvasRef.value?.getContext('2d');
+  if (!canvasRef.value) return;
+  const ctx = canvasRef.value.getContext('2d');
   if (!ctx) return;
   if (chartInstance) chartInstance.destroy();
 
-  chartInstance = new Chart(ctx, {
+  const config = {
     type: 'line',
     data: chartData.value,
     options: chartOptions.value,
-  });
+  };
+  chartInstance = new Chart(ctx, config);
 };
 
 onMounted(() => {
