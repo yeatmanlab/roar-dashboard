@@ -96,8 +96,8 @@ describe('reports', () => {
     describe('basic functionality', () => {
       it('should return value from new field name when available', () => {
         const scoresObject = {
-          wjPercentile: 75,
-          oldPercentile: 50, // legacy field
+          percentile: 75,
+          wjPercentile: 50, // legacy field
         };
         const result = getScoreValue(scoresObject, 'swr', 3, 'percentile');
         expect(result).toBe(75);
@@ -105,11 +105,11 @@ describe('reports', () => {
 
       it('should fallback to legacy field name when new field is missing', () => {
         const scoresObject = {
-          oldPercentile: 50, // only legacy field exists
+          wjPercentile: 50, // only legacy field exists
         };
         // Simulate a scenario where legacy field name is different
         const result = getScoreValue(scoresObject, 'swr', 3, 'percentile');
-        expect(result).toBe(undefined); // Since both new and legacy are 'wjPercentile' in current config
+        expect(result).toBe(50); // Since both new is 'percentile' and legacy are 'wjPercentile' in current config
       });
 
       it('should return undefined when neither field exists', () => {
@@ -140,7 +140,7 @@ describe('reports', () => {
     });
 
     describe('SWR task field mapping', () => {
-      it('should retrieve correct field values for swr task', () => {
+      it('should retrieve correct legacy field values for swr task', () => {
         const scoresObject = {
           wjPercentile: 75,
           standardScore: 110,
@@ -154,9 +154,37 @@ describe('reports', () => {
         expect(getScoreValue(scoresObject, 'swr', 3, 'rawScore')).toBe(550);
       });
 
-      it('should retrieve correct field values for swr-es task', () => {
+      it('should retrieve correct legacy field values for swr-es task', () => {
         const scoresObject = {
           wjPercentile: 65,
+          standardScore: 105,
+          roarScore: 480,
+        };
+
+        expect(getScoreValue(scoresObject, 'swr-es', 4, 'percentile')).toBe(65);
+        expect(getScoreValue(scoresObject, 'swr-es', 4, 'percentileDisplay')).toBe(65);
+        expect(getScoreValue(scoresObject, 'swr-es', 4, 'standardScore')).toBe(105);
+        expect(getScoreValue(scoresObject, 'swr-es', 4, 'standardScoreDisplay')).toBe(105);
+        expect(getScoreValue(scoresObject, 'swr-es', 4, 'rawScore')).toBe(480);
+      });
+
+      it('should retrieve correct new field values for swr task', () => {
+        const scoresObject = {
+          percentile: 75,
+          standardScore: 110,
+          roarScore: 550,
+        };
+
+        expect(getScoreValue(scoresObject, 'swr', 3, 'percentile')).toBe(75);
+        expect(getScoreValue(scoresObject, 'swr', 3, 'percentileDisplay')).toBe(75);
+        expect(getScoreValue(scoresObject, 'swr', 3, 'standardScore')).toBe(110);
+        expect(getScoreValue(scoresObject, 'swr', 3, 'standardScoreDisplay')).toBe(110);
+        expect(getScoreValue(scoresObject, 'swr', 3, 'rawScore')).toBe(550);
+      });
+
+      it('should retrieve correct new field values for swr-es task', () => {
+        const scoresObject = {
+          percentile: 65,
           standardScore: 105,
           roarScore: 480,
         };
@@ -217,7 +245,7 @@ describe('reports', () => {
     });
 
     describe('SRE task field mapping with grade dependency', () => {
-      it('should retrieve correct field values for sre task with grade < 6', () => {
+      it('should retrieve correct legacy field values for sre task with grade < 6', () => {
         const scoresObject = {
           tosrecPercentile: 45,
           tosrecSS: 88,
@@ -231,7 +259,7 @@ describe('reports', () => {
         expect(getScoreValue(scoresObject, 'sre', 4, 'rawScore')).toBe(65);
       });
 
-      it('should retrieve correct field values for sre task with grade >= 6', () => {
+      it('should retrieve correct legacy field values for sre task with grade >= 6', () => {
         const scoresObject = {
           sprPercentile: 55,
           sprStandardScore: 102,
@@ -243,6 +271,40 @@ describe('reports', () => {
         expect(getScoreValue(scoresObject, 'sre', 7, 'standardScore')).toBe(102);
         expect(getScoreValue(scoresObject, 'sre', 7, 'standardScoreDisplay')).toBe(102);
         expect(getScoreValue(scoresObject, 'sre', 7, 'rawScore')).toBe(75);
+      });
+
+      it('should retrieve correct new field values for sre task', () => {
+        const scoresObject = {
+          percentile: 34,
+          standardScore: 82,
+          sreScore: 55,
+        };
+
+        const grades = [4, 7];
+        grades.forEach((grade) => {
+          expect(getScoreValue(scoresObject, 'sre', grade, 'percentile')).toBe(34);
+          expect(getScoreValue(scoresObject, 'sre', grade, 'percentileDisplay')).toBe(34);
+          expect(getScoreValue(scoresObject, 'sre', grade, 'standardScore')).toBe(82);
+          expect(getScoreValue(scoresObject, 'sre', grade, 'standardScoreDisplay')).toBe(82);
+          expect(getScoreValue(scoresObject, 'sre', grade, 'rawScore')).toBe(55);
+        });
+      });
+
+      it('should retrieve correct new field values for sre-es task', () => {
+        const scoresObject = {
+          percentile: 66,
+          standardScore: 120,
+          sreScore: 85,
+        };
+
+        const grades = [3, 6];
+        grades.forEach((grade) => {
+          expect(getScoreValue(scoresObject, 'sre-es', grade, 'percentile')).toBe(66);
+          expect(getScoreValue(scoresObject, 'sre-es', grade, 'percentileDisplay')).toBe(66);
+          expect(getScoreValue(scoresObject, 'sre-es', grade, 'standardScore')).toBe(120);
+          expect(getScoreValue(scoresObject, 'sre-es', grade, 'standardScoreDisplay')).toBe(120);
+          expect(getScoreValue(scoresObject, 'sre-es', grade, 'rawScore')).toBe(85);
+        });
       });
     });
 

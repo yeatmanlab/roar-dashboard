@@ -731,11 +731,11 @@ const ALLOWED_SCORE_FIELD_TYPES = [
 const SCORE_FIELD_MAPPINGS = {
   swr: {
     percentile: {
-      new: 'wjPercentile',
+      new: 'percentile',
       legacy: 'wjPercentile', // Same for now, but can be updated
     },
     percentileDisplay: {
-      new: 'wjPercentile',
+      new: 'percentile',
       legacy: 'wjPercentile',
     },
     standardScore: {
@@ -753,11 +753,11 @@ const SCORE_FIELD_MAPPINGS = {
   },
   'swr-es': {
     percentile: {
-      new: 'wjPercentile',
+      new: 'percentile',
       legacy: 'wjPercentile',
     },
     percentileDisplay: {
-      new: 'wjPercentile',
+      new: 'percentile',
       legacy: 'wjPercentile',
     },
     standardScore: {
@@ -797,24 +797,41 @@ const SCORE_FIELD_MAPPINGS = {
   },
   sre: {
     percentile: {
-      new: (grade) => (grade < 6 ? 'tosrecPercentile' : 'sprPercentile'),
+      new: 'percentile',
       legacy: (grade) => (grade < 6 ? 'tosrecPercentile' : 'sprPercentile'),
     },
     percentileDisplay: {
-      new: (grade) => (grade < 6 ? 'tosrecPercentile' : 'sprPercentile'),
+      new: 'percentile',
       legacy: (grade) => (grade < 6 ? 'tosrecPercentile' : 'sprPercentile'),
     },
     standardScore: {
-      new: (grade) => (grade < 6 ? 'tosrecSS' : 'sprStandardScore'),
+      new: 'standardScore',
       legacy: (grade) => (grade < 6 ? 'tosrecSS' : 'sprStandardScore'),
     },
     standardScoreDisplay: {
-      new: (grade) => (grade < 6 ? 'tosrecSS' : 'sprStandardScore'),
+      new: 'standardScore',
       legacy: (grade) => (grade < 6 ? 'tosrecSS' : 'sprStandardScore'),
     },
     rawScore: {
       new: 'sreScore',
       legacy: 'sreScore',
+    },
+  },
+  'sre-es': {
+    percentile: {
+      new: 'percentile',
+    },
+    percentileDisplay: {
+      new: 'percentile',
+    },
+    standardScore: {
+      new: 'standardScore',
+    },
+    standardScoreDisplay: {
+      new: 'standardScore',
+    },
+    rawScore: {
+      new: 'sreScore',
     },
   },
   letter: {
