@@ -1003,7 +1003,7 @@ export const getRawScoreThreshold = (taskId) => {
   return { above: null, some: null };
 };
 
-export const getRawScoreRange = (taskId) => {
+export const getRawScoreRange = (taskId, scoringVersion = null) => {
   if (taskId.includes('swr')) {
     return {
       min: 100,
@@ -1020,6 +1020,12 @@ export const getRawScoreRange = (taskId) => {
       max: 150,
     };
   } else if (taskId.includes('pa')) {
+    if (scoringVersion === 4) {
+      return {
+        min: 100,
+        max: 900,
+      };
+    }
     return {
       min: 0,
       max: 57,
@@ -1111,9 +1117,7 @@ export const taskInfoById = {
       'phonological awareness, as a foundational pre-reading skill, is crucial for ' +
       'achieving reading fluency. Without support for their foundational reading ' +
       'abilities, students may struggle to catch up in overall reading proficiency. ' +
-      "The student's score will range between " +
-      `${getRawScoreRange('pa').min}-${getRawScoreRange('pa').max} and can be ` +
-      "viewed by selecting 'Raw Score' on the table above.",
+      "The student's score will range between {{RANGE}} and can be viewed by selecting 'Raw Score' on the table above.",
     definitions: [
       {
         header: 'What Does Elision Mean?',
@@ -1247,4 +1251,17 @@ export const taskInfoById = {
       'student-level and classroom-wide competencies so that instruction can be customized ' +
       'appropriately.',
   },
+};
+
+// Then create a function to populate the template
+export const replaceScoreRange = (desc, taskId, scoringVersion = null) => {
+  if (!desc) return '';
+
+  // Only process desc field if it contains placeholders
+  if (desc.includes('{{RANGE}}')) {
+    const range = getRawScoreRange(taskId, scoringVersion);
+    return desc.replace('{{RANGE}}', `${range?.min}-${range?.max}`);
+  }
+
+  return desc;
 };
