@@ -9,7 +9,7 @@ import {
   getRawScoreRange,
   getScoreValue,
 } from '@/helpers/reports';
-import { SCORE_SUPPORT_SKILL_LEVELS, SCORE_TYPES } from '@/constants/scores';
+import { SCORE_SUPPORT_SKILL_LEVELS, SCORE_TYPE_KEYS } from '@/constants/scores';
 import { TAG_SEVERITIES } from '@/constants/tags';
 
 /**
@@ -330,8 +330,8 @@ const ScoreReportService = (() => {
         };
 
         const tags = createTaskTags(optional, reliable, engagementFlags, i18n);
-        let scoreToDisplay = grade >= 6 ? SCORE_TYPES.STANDARD_SCORE : SCORE_TYPES.PERCENTILE_SCORE;
-        if (rawOnlyTasks.includes(taskId)) scoreToDisplay = SCORE_TYPES.RAW_SCORE;
+        let scoreToDisplay = grade >= 6 ? SCORE_TYPE_KEYS.STANDARD_SCORE : SCORE_TYPE_KEYS.PERCENTILE_SCORE;
+        if (rawOnlyTasks.includes(taskId)) scoreToDisplay = SCORE_TYPE_KEYS.RAW_SCORE;
 
         computedTaskAcc[taskId] = {
           taskId,
