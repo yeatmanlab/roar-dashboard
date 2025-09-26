@@ -6,6 +6,7 @@ import {
   getScoreValue,
   getRawScoreThreshold,
   getRawScoreRange,
+  getSubskillValues,
   getTagColor,
   supportLevelColors,
 } from './reports';
@@ -198,7 +199,7 @@ describe('reports', () => {
     });
 
     describe('PA task field mapping with grade dependency', () => {
-      it('should retrieve correct field values for pa task with grade < 6', () => {
+      it('should retrieve correct legacy field values for pa task with grade < 6', () => {
         const scoresObject = {
           percentile: 60,
           standardScore: 95,
@@ -212,7 +213,7 @@ describe('reports', () => {
         expect(getScoreValue(scoresObject, 'pa', 3, 'rawScore')).toBe(45);
       });
 
-      it('should retrieve correct field values for pa task with grade >= 6', () => {
+      it('should retrieve correct legacy field values for pa task with grade >= 6', () => {
         const scoresObject = {
           sprPercentile: 70,
           sprPercentileString: '>99',
@@ -228,7 +229,7 @@ describe('reports', () => {
         expect(getScoreValue(scoresObject, 'pa', 6, 'rawScore')).toBe(55);
       });
 
-      it('should handle grade-dependent field names correctly', () => {
+      it('should handle legacy grade-dependent field names correctly', () => {
         const scoresObject = {
           percentile: 60,
           sprPercentile: 70,
@@ -241,6 +242,22 @@ describe('reports', () => {
         // Grade >= 6 should use 'sprPercentile'
         const resultGrade6 = getScoreValue(scoresObject, 'pa', 6, 'percentile');
         expect(resultGrade6).toBe(70);
+      });
+
+      it('should handle new field names correctly', () => {
+        const scoresObject = {
+          percentile: 60,
+          standardScore: 95,
+          roarScore: 45,
+        };
+
+        expect(getScoreValue(scoresObject, 'pa', 3, 'percentile')).toBe(60);
+        expect(getScoreValue(scoresObject, 'pa', 3, 'standardScore')).toBe(95);
+        expect(getScoreValue(scoresObject, 'pa', 3, 'rawScore')).toBe(45);
+
+        expect(getScoreValue(scoresObject, 'pa', 6, 'percentile')).toBe(60);
+        expect(getScoreValue(scoresObject, 'pa', 6, 'standardScore')).toBe(95);
+        expect(getScoreValue(scoresObject, 'pa', 6, 'rawScore')).toBe(45);
       });
     });
 
@@ -458,6 +475,61 @@ describe('reports', () => {
     it('should return null for unknown task', () => {
       const result = getRawScoreRange('unknown');
       expect(result).toBeNull();
+    });
+  });
+
+  describe('getSubskillValues', () => {
+    it('should return correct subskill values for pa task', () => {
+      const scoresObject = {
+        FSM: {
+          numCorrect: 5,
+        },
+        LSM: {
+          numCorrect: 3,
+        },
+        DEL: {
+          numCorrect: 2,
+        },
+        composite: {
+          numCorrect: 10,
+        },
+      };
+      const result = getSubskillValues(scoresObject, 'pa', 4);
+      expect(result).toEqual({
+        firstSound: 5,
+        lastSound: 3,
+        deletion: 2,
+        total: 10,
+      });
+    });
+
+    it('should return correct subskill values for pa task with scoringVersion 3', () => {
+      const scoresObject = {
+        FSM: {
+          roarScore: 5,
+        },
+        LSM: {
+          roarScore: 3,
+        },
+        DEL: {
+          roarScore: 2,
+        },
+        composite: {
+          roarScore: 10,
+        },
+      };
+      const result = getSubskillValues(scoresObject, 'pa', 3);
+      expect(result).toEqual({
+        firstSound: 5,
+        lastSound: 3,
+        deletion: 2,
+        total: 10,
+      });
+    });
+
+    it('should return empty object for unknown task', () => {
+      const result = getSubskillValues({}, 'unknown', 4);
+      expect(result).toEqual({});
     });
   });
 

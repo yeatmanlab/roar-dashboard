@@ -12,7 +12,7 @@
           <div style="text-transform: uppercase" class="text-2xl font-bold">{{ taskInfoById[taskId]?.subheader }}</div>
           <!-- The following HTML is from a hard-coded source (below) -->
           <!-- eslint-disable-next-line vue/no-v-html -->
-          <p class="mt-1 text-md font-light" v-html="taskInfoById[taskId]?.desc"></p>
+          <p class="mt-1 text-md font-light" v-html="taskDesc"></p>
         </div>
       </PvAccordionTab>
     </PvAccordion>
@@ -62,7 +62,7 @@
       :administration-id="administrationId"
       :org-type="orgType"
       :org-id="orgId"
-      :administration-name="administrationInfo.name ?? undefined"
+      :administration-name="administrationName ?? undefined"
       :org-name="orgInfo.name ?? undefined"
       :computed-table-data="computedTableData"
     />
@@ -73,7 +73,7 @@
       :administration-id="administrationId"
       :org-type="orgType"
       :org-id="orgId"
-      :administration-name="administrationInfo.name ?? undefined"
+      :administration-name="administrationName ?? undefined"
       :org-name="orgInfo.name ?? undefined"
       :computed-table-data="computedTableData"
     />
@@ -84,7 +84,7 @@
       :administration-id="administrationId"
       :org-type="orgType"
       :org-id="orgId"
-      :administration-name="administrationInfo.name ?? undefined"
+      :administration-name="administrationName ?? undefined"
       :org-name="orgInfo.name ?? undefined"
       :computed-table-data="computedTableData"
     />
@@ -95,7 +95,7 @@
       :administration-id="administrationId"
       :org-type="orgType"
       :org-id="orgId"
-      :administration-name="administrationInfo.name ?? undefined"
+      :administration-name="administrationName ?? undefined"
       :org-name="orgInfo.name ?? undefined"
       :computed-table-data="computedTableData"
     />
@@ -106,7 +106,7 @@
       :administration-id="administrationId"
       :org-type="orgType"
       :org-id="orgId"
-      :administration-name="administrationInfo.name ?? undefined"
+      :administration-name="administrationName ?? undefined"
       :org-name="orgInfo.name ?? undefined"
       :computed-table-data="computedTableData"
     />
@@ -117,7 +117,7 @@
       :administration-id="administrationId"
       :org-type="orgType"
       :org-id="orgId"
-      :administration-name="administrationInfo.name ?? undefined"
+      :administration-name="administrationName ?? undefined"
       :org-name="orgInfo.name ?? undefined"
       :computed-table-data="computedTableData"
     />
@@ -128,7 +128,7 @@
       :administration-id="administrationId"
       :org-type="orgType"
       :org-id="orgId"
-      :administration-name="administrationInfo.name ?? undefined"
+      :administration-name="administrationName ?? undefined"
       :org-name="orgInfo.name ?? undefined"
       :computed-table-data="computedTableData"
     />
@@ -139,7 +139,7 @@ import { ref, computed } from 'vue';
 import PvAccordion from 'primevue/accordion';
 import PvAccordionTab from 'primevue/accordiontab';
 import PvSelectButton from 'primevue/selectbutton';
-import { tasksToDisplayGraphs, taskInfoById } from '@/helpers/reports.js';
+import { tasksToDisplayGraphs, taskInfoById, replaceScoreRange } from '@/helpers/reports.js';
 import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery.js';
 import SubscoreTable from '@/components/reports/SubscoreTable.vue';
 import DistributionChartFacet from '@/components/reports/DistributionChartFacet.vue';
@@ -152,10 +152,6 @@ const props = defineProps({
   },
   administrationId: {
     type: String,
-    required: true,
-  },
-  administrationInfo: {
-    type: Object,
     required: true,
   },
   computedTableData: {
@@ -182,6 +178,14 @@ const props = defineProps({
     type: Array,
     required: true,
   },
+  administrationName: {
+    type: String,
+    required: true,
+  },
+  taskScoringVersions: {
+    type: Object,
+    required: true,
+  },
 });
 
 const { data: tasksDictionary, isLoading: isLoadingTasksDictionary } = useTasksDictionaryQuery();
@@ -196,6 +200,10 @@ const minGradeByRuns = computed(() => {
   return Math.min(
     ...props.runs.filter((run) => run.scores.rawScore || run.scores.stdPercentile).map((run) => run.grade),
   );
+});
+
+const taskDesc = computed(() => {
+  return replaceScoreRange(taskInfoById[props.taskId]?.desc, props.taskId, props.taskScoringVersions[props.taskId]);
 });
 </script>
 
