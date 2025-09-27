@@ -747,10 +747,6 @@ const computeAssignmentAndRunData = computed(() => {
           tags: scoreFilterTags,
         };
 
-        if (taskId === 'swr') {
-          console.log(currRowScores[taskId]);
-        }
-
         if (tasksToDisplayCorrectIncorrectDifference.includes(taskId)) {
           const numCorrect = assessment.scores?.raw?.composite?.test?.numCorrect;
           const numIncorrect = assessment.scores?.raw?.composite?.test?.numAttempted - numCorrect;
