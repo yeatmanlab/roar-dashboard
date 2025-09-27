@@ -43,6 +43,7 @@
     "standardTaskDescription": "{firstName} scored a standard score of {standardScore}, which indicates they {supportCategory} {taskName}. {taskDescription}",
     "percentileTaskDescription": "{firstName} scored in the {percentile}, which indicates they {supportCategory} {taskName}. {taskDescription}",
     "scoreBreakdown": "Score Breakdown",
+    "phonicsSubscores": "Phonics Subscores",
     "historicalScores": "Historical Scores",
     "progressOverTime": "Progress Over Time",
     "firstSoundMatching": "First Sound Matching (FSM)",

@@ -42,6 +42,7 @@
     "standardTaskDescription": "{firstName} obtuvo una puntuación estándar de {standardScore}, lo que indica que {supportCategory} {taskName}. {taskDescription}",
     "percentileTaskDescription": "{firstName} obtuvo una puntuación en el {percentile}, lo que indica que {supportCategory} {taskName}. {taskDescription}",
     "scoreBreakdown": "Desglose de puntuación",
+    "phonicsSubscores": "Subpuntuaciones de fonética",
     "firstSoundMatching": "Primera coincidencia de sonido (FSM)",
     "lastSoundMatching": "Última coincidencia de sonido (LSM)",
     "deletion": "Eliminación (DEL)",
