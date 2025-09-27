@@ -540,6 +540,12 @@ const getScoresAndSupportFromAssessment = ({ grade, assessment, taskId, optional
   let percentileString = getScoreValue(compositeScores, taskId, gradeValue, 'percentileDisplay');
   let standardScore = getScoreValue(compositeScores, taskId, gradeValue, 'standardScore');
   let rawScore = getScoreValue(compositeScores, taskId, gradeValue, 'rawScore');
+  let tempPercentileSign = '';
+
+  if (typeof percentile === 'string' && percentile.match(/[<>]/).length > 0) {
+    tempPercentileSign = percentile.match(/[<>]/)[0];
+    percentile = parseFloat(percentile.replace(/[<>]/g, ''));
+  }
 
   if (
     tasksToDisplayCorrectIncorrectDifference.includes(assessment.taskId) ||
@@ -575,6 +581,7 @@ const getScoresAndSupportFromAssessment = ({ grade, assessment, taskId, optional
   }
 
   if (percentile) percentile = _round(percentile);
+  if (tempPercentileSign) percentile = `${tempPercentileSign}${percentile}`;
   if (percentileString && !isNaN(_round(percentileString))) percentileString = _round(percentileString);
 
   return {
@@ -739,6 +746,10 @@ const computeAssignmentAndRunData = computed(() => {
           standardScore: standardScore,
           tags: scoreFilterTags,
         };
+
+        if (taskId === 'swr') {
+          console.log(currRowScores[taskId]);
+        }
 
         if (tasksToDisplayCorrectIncorrectDifference.includes(taskId)) {
           const numCorrect = assessment.scores?.raw?.composite?.test?.numCorrect;
