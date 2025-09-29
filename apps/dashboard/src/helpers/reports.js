@@ -686,15 +686,19 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = 
     }
   } else if (rawScore !== undefined && grade >= 6) {
     const { above, some } = getRawScoreThreshold(taskId, scoringVersion);
-    if (rawScore >= above) {
-      support_level = 'Achieved Skill';
-      tag_color = supportLevelColors.above;
-    } else if (rawScore > some && rawScore < above) {
-      support_level = 'Developing Skill';
-      tag_color = supportLevelColors.some;
-    } else {
-      support_level = 'Needs Extra Support';
-      tag_color = supportLevelColors.below;
+
+    // Prevent checking thresholds for unnormed scores (swr-es, sre-es)
+    if (above != null && some != null) {
+      if (rawScore >= above) {
+        support_level = 'Achieved Skill';
+        tag_color = supportLevelColors.above;
+      } else if (rawScore > some && rawScore < above) {
+        support_level = 'Developing Skill';
+        tag_color = supportLevelColors.some;
+      } else {
+        support_level = 'Needs Extra Support';
+        tag_color = supportLevelColors.below;
+      }
     }
   }
   return {
