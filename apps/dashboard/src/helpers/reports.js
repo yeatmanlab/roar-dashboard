@@ -991,7 +991,7 @@ export function getScoreValue(scoresObject, taskId, grade, fieldType) {
 
 export const getRawScoreThreshold = (taskId, scoringVersion) => {
   if (taskId === 'swr') {
-    if (scoringVersion === 7) {
+    if (scoringVersion >= 7) {
       return {
         above: 513,
         some: 413,
@@ -1002,14 +1002,14 @@ export const getRawScoreThreshold = (taskId, scoringVersion) => {
       some: 400,
     };
   } else if (taskId === 'swr-es') {
-    if (scoringVersion === 1) {
+    if (scoringVersion >= 1) {
       return {
         above: 547,
         some: 447,
       };
     }
   } else if (taskId === 'sre') {
-    if (scoringVersion === 4) {
+    if (scoringVersion >= 4) {
       return {
         above: 41,
         some: 23,
@@ -1020,7 +1020,7 @@ export const getRawScoreThreshold = (taskId, scoringVersion) => {
       some: 47,
     };
   } else if (taskId === 'sre-es') {
-    if (scoringVersion === 1) {
+    if (scoringVersion >= 1) {
       return {
         above: 25,
         some: 12,
@@ -1271,7 +1271,7 @@ export const replaceScoreRange = (desc, taskId, scoringVersion = null) => {
   }
 
   if (desc.includes('{{SUPPORT_RANGE}}')) {
-    const useUpdatedNorms = (taskId === 'sre' && scoringVersion === 4) || (taskId === 'swr' && scoringVersion === 7);
+    const useUpdatedNorms = (taskId === 'sre' && scoringVersion >= 4) || (taskId === 'swr' && scoringVersion >= 7);
     return desc.replace('{{SUPPORT_RANGE}}', `${useUpdatedNorms ? '80' : '75'}%`);
   }
 
