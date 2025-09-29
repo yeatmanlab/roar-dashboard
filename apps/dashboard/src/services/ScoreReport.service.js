@@ -8,6 +8,7 @@ import {
   getSupportLevel,
   getRawScoreRange,
   getScoreValue,
+  tasksToDisplayPercentCorrect,
 } from '@/helpers/reports';
 import { SCORE_SUPPORT_SKILL_LEVELS, SCORE_TYPE_KEYS } from '@/constants/scores';
 import { TAG_SEVERITIES } from '@/constants/tags';
@@ -135,7 +136,14 @@ const ScoreReportService = (() => {
   const createScoresArray = (taskId, scoresForTask, scores, grade, i18n) => {
     let formattedScoresArray = Object.keys(scoresForTask).map((key) => {
       const score = scoresForTask[key];
-      return [score.name, score.value, score.min, score.max];
+      let name = score.name;
+
+      // For tasks that display percentage, rename percentileScore to Percent Correct
+      if (key === 'percentileScore' && tasksToDisplayPercentCorrect.includes(taskId)) {
+        name = _startCase(i18n.t('scoreReports.percentageScore'));
+      }
+
+      return [name, score.value, score.min, score.max];
     });
 
     // Special handling for PA task
@@ -214,7 +222,16 @@ const ScoreReportService = (() => {
     const taskName = taskDisplayNames[task.taskId]?.extendedName;
     const taskDescription = extendedDescriptions[task.taskId];
 
-    if (rawOnlyTasks.includes(task.taskId)) {
+    if (tasksToDisplayPercentCorrect.includes(task.taskId)) {
+      return {
+        keypath: 'scoreReports.percentageCorrectTaskDescription',
+        slots: {
+          percentage: task.percentage.value,
+          taskName,
+          taskDescription,
+        },
+      };
+    } else if (rawOnlyTasks.includes(task.taskId)) {
       return {
         keypath: 'scoreReports.rawTaskDescription',
         slots: {
@@ -305,6 +322,8 @@ const ScoreReportService = (() => {
         const rawScoreRange = getRawScoreRange(taskId);
         const supportColor = getSupportLevel(grade, percentileScore, rawScore, taskId).tag_color;
 
+        console.log('Processing task:', { taskId, rawScore, percentileScore, standardScore, rawScoreRange });
+
         const scoresForTask = {
           standardScore: {
             name: _startCase(i18n.t('scoreReports.standardScore')),
@@ -327,11 +346,25 @@ const ScoreReportService = (() => {
             max: 99,
             supportColor,
           },
+          percentage: {
+            name: 'Percent Correct',
+            value: Math.round((rawScore / rawScoreRange?.max) * 100),
+            min: 0,
+            max: 100,
+            supportColor,
+          },
         };
 
         const tags = createTaskTags(optional, reliable, engagementFlags, i18n);
-        let scoreToDisplay = grade >= 6 ? SCORE_TYPE_KEYS.STANDARD_SCORE : SCORE_TYPE_KEYS.PERCENTILE_SCORE;
-        if (rawOnlyTasks.includes(taskId)) scoreToDisplay = SCORE_TYPE_KEYS.RAW_SCORE;
+        let scoreToDisplay;
+        if (tasksToDisplayPercentCorrect.includes(taskId)) {
+          scoreToDisplay = 'percentage';
+        } else if (rawOnlyTasks.includes(taskId)) {
+          scoreToDisplay = SCORE_TYPE_KEYS.RAW_SCORE;
+        } else {
+          scoreToDisplay = grade >= 6 ? SCORE_TYPE_KEYS.STANDARD_SCORE : SCORE_TYPE_KEYS.PERCENTILE_SCORE;
+        }
+        console.log('Score type selected:', { taskId, scoreToDisplay });
 
         computedTaskAcc[taskId] = {
           taskId,

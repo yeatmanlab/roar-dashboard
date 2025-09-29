@@ -645,14 +645,25 @@ export function getGradeWithSuffix(grade) {
  *  Function to take scores, taskId, and grade and return the proper support category for the run.
  */
 export const getDialColor = (grade, percentile, rawScore, taskId) => {
-  if (taskId === 'phonics') {
-    return 'var(--gray-500)';
+  if (tasksToDisplayPercentCorrect.includes(taskId)) {
+    return 'var(--blue-500)';
   }
   const { tag_color } = getSupportLevel(grade, percentile, rawScore, taskId);
   return tag_color;
 };
 
 export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = null) => {
+  console.log('getSupportLevel:', {
+    grade,
+    percentile,
+    rawScore,
+    taskId,
+    optional,
+    isPercentCorrect: tasksToDisplayPercentCorrect.includes(taskId),
+    isGradeEstimate: tasksToDisplayGradeEstimate.includes(taskId),
+    isCorrectIncorrect: tasksToDisplayCorrectIncorrectDifference.includes(taskId),
+    isTotalCorrect: tasksToDisplayTotalCorrect.includes(taskId),
+  });
   let support_level = null;
   let tag_color = null;
 
@@ -668,10 +679,15 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = 
       tag_color: supportLevelColors.optional,
     };
   }
+  if (tasksToDisplayPercentCorrect.includes(taskId)) {
+    return {
+      support_level: 'Raw Score',
+      tag_color: supportLevelColors.Assessed,
+    };
+  }
+
   if (
-    (tasksToDisplayPercentCorrect.includes(taskId) ||
-      tasksToDisplayCorrectIncorrectDifference.includes(taskId) ||
-      tasksToDisplayTotalCorrect.includes(taskId)) &&
+    (tasksToDisplayCorrectIncorrectDifference.includes(taskId) || tasksToDisplayTotalCorrect.includes(taskId)) &&
     tasksToDisplayGradeEstimate.includes(taskId) &&
     rawScore !== undefined
   ) {
@@ -1010,6 +1026,18 @@ export const getRawScoreThreshold = (taskId) => {
     };
   }
   return { above: null, some: null };
+};
+
+/**
+ * Calculate the percent correct for a task
+ *
+ * @param {number} rawScore - The raw score value
+ * @param {number} maxScore - The maximum possible score
+ * @returns {number} The percentage correct (0-100)
+ */
+export const calculatePercentCorrect = (rawScore, maxScore) => {
+  if (!rawScore || !maxScore || maxScore === 0) return 0;
+  return Math.round((rawScore / maxScore) * 100);
 };
 
 export const getRawScoreRange = (taskId) => {
