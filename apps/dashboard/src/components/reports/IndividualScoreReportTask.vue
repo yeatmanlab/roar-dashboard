@@ -245,6 +245,7 @@ import {
   getScoreValue,
   getDialColor,
   tasksToDisplayPercentCorrect,
+  calculatePercentCorrect,
 } from '@/helpers/reports';
 
 const props = defineProps({
@@ -301,6 +302,12 @@ const computedTaskData = computed(() => {
       const rawScoreRange = getRawScoreRange(taskId);
       const supportColor = getDialColor(grade.value, percentileScore, rawScore, taskId);
 
+      // Calculate percent correct for tasks that use it
+      const showPercentCorrect = tasksToDisplayPercentCorrect.includes(taskId);
+      const percentValue = showPercentCorrect
+        ? calculatePercentCorrect(rawScore, rawScoreRange?.max)
+        : Math.round(percentileScore);
+
       const scoresForTask = {
         standardScore: {
           name: _startCase(t('scoreReports.standardScore')),
@@ -317,12 +324,10 @@ const computedTaskData = computed(() => {
           supportColor: 'var(--blue-500)',
         },
         percentileScore: {
-          name: tasksToDisplayPercentCorrect.includes(taskId)
-            ? 'Percent Correct'
-            : _startCase(t('scoreReports.percentileScore')),
-          value: Math.round(percentileScore),
+          name: showPercentCorrect ? 'Percent Correct' : _startCase(t('scoreReports.percentileScore')),
+          value: percentValue,
           min: 0,
-          max: taskId.includes('letter') ? 100 : 99,
+          max: showPercentCorrect ? 100 : 99,
           supportColor: supportColor,
         },
       };

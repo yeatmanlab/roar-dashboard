@@ -18,6 +18,7 @@
     "taskIntro": "The ROAR assessments return these kinds of scores:",
     "standardScore": "standard score",
     "percentileScore": "percentile",
+    "percentageScore": "Percent Correct",
     "rawScore": "raw score",
     "standardScoreDescription": "{taskTitle} is a way of showing how your child's test performance compares to other kids of the same age or grade. Standard Scores have a range of 0-180. The standard score is comparable within a grade level, but not across grade levels or over time.",
     "percentileScoreDescription": "{taskTitle} refers to a student's rank within their grade level on the given skill. The percentile is the number of students out of 100 who have lower scores for that skill. For example, students in the 50th percentile would score higher than 50 out of 100 students in the same grade.",

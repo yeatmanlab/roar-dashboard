@@ -144,8 +144,13 @@ const computedTaskData = computed(() => {
  */
 const scoreValueTemplate = computed(() => {
   return (task) => {
-    const percentileSuffix = ScoreReportService.getPercentileSuffixTemplate(task.percentileScore.value);
-    return task.scoreToDisplay === SCORE_TYPE_KEYS.PERCENTILE_SCORE ? percentileSuffix : undefined;
+    if (task.scoreToDisplay === 'percentage') {
+      return '{value}%';
+    }
+    if (task.scoreToDisplay === SCORE_TYPE_KEYS.PERCENTILE_SCORE) {
+      return ScoreReportService.getPercentileSuffixTemplate(task.percentileScore.value);
+    }
+    return undefined;
   };
 });
 

@@ -646,8 +646,8 @@ export function getGradeWithSuffix(grade) {
  *  Function to take scores, taskId, and grade and return the proper support category for the run.
  */
 export const getDialColor = (grade, percentile, rawScore, taskId) => {
-  if (taskId === 'phonics') {
-    return 'var(--gray-500)';
+  if (tasksToDisplayPercentCorrect.includes(taskId)) {
+    return 'var(--blue-500)';
   }
   const { tag_color } = getSupportLevel(grade, percentile, rawScore, taskId);
   return tag_color;
@@ -669,6 +669,13 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = 
       tag_color: supportLevelColors.optional,
     };
   }
+  if (tasksToDisplayPercentCorrect.includes(taskId)) {
+    return {
+      support_level: 'Raw Score',
+      tag_color: supportLevelColors.Assessed,
+    };
+  }
+
   if (
     ((tasksToDisplayPercentCorrect.includes(taskId) && !(taskId === 'swr-es' && scoringVersion >= 1)) ||
       tasksToDisplayTotalCorrect.includes(taskId)) &&
@@ -1054,6 +1061,18 @@ export const getRawScoreThreshold = (taskId, scoringVersion) => {
     };
   }
   return { above: null, some: null };
+};
+
+/**
+ * Calculate the percent correct for a task
+ *
+ * @param {number} rawScore - The raw score value
+ * @param {number} maxScore - The maximum possible score
+ * @returns {number} The percentage correct (0-100)
+ */
+export const calculatePercentCorrect = (rawScore, maxScore) => {
+  if (!rawScore || !maxScore || maxScore === 0) return 0;
+  return Math.round((rawScore / maxScore) * 100);
 };
 
 export const getRawScoreRange = (taskId) => {
