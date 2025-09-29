@@ -124,28 +124,107 @@
           <AppSpinner style="margin-bottom: 1rem" />
           <span class="text-sm font-light text-gray-600 uppercase">Loading Administration Datatable</span>
         </div>
-        <!-- Export Progress -->
-        <div v-if="exportProgress.show" class="p-4 mb-4 bg-white border-round shadow-1">
-          <div class="flex mb-2 justify-content-between align-items-center">
-            <h3 class="text-lg font-semibold">Bulk PDF Export Progress</h3>
-            <span class="text-sm text-gray-600"> {{ exportProgress.completed }} / {{ exportProgress.total }} </span>
+
+        <!-- Bulk Export Modal -->
+        <AppDialog :is-enabled="exportModalEnabled" @modal-closed="exportModalEnabled = false">
+          <template #header>
+            <template v-if="exportModalStep !== EXPORT_MODAL_STEP.COMPLETED">
+              <h1 class="p-0 m-0 font-semibold text-md">PDF Export</h1>
+            </template>
+          </template>
+
+          <div v-if="exportModalStep === EXPORT_MODAL_STEP.WARNING" class="">
+            <p class="mt-0">
+              Bulk exporting of score reports as PDFs is <b>currently in beta</b> and may take some time.
+            </p>
+            <p>Please do not navigate away or close this tab until the export has finished.</p>
           </div>
-          <PvProgressBar :value="exportProgress.percentage" class="mb-2" />
-          <p class="text-sm text-gray-600">
-            {{ exportProgress.currentStudent ? `Processing: ${exportProgress.currentStudent}` : 'Preparing export...' }}
-          </p>
-          <div v-if="exportProgress.errors.length > 0" class="mt-3">
-            <h4 class="mb-1 text-sm font-semibold text-red-600">Export Errors</h4>
-            <ul class="text-sm text-red-600">
-              <li v-for="error in exportProgress.errors" :key="error.studentId">
-                {{ error.studentName }}: {{ error.message }}
-              </li>
-            </ul>
+
+          <div v-else-if="exportModalStep === EXPORT_MODAL_STEP.PROGRESS">
+            <p class="mt-0">Your export is in progress and may take some time.</p>
+
+            <div class="pt-2">
+              <PvProgressBar :value="exportProgress.percentage" class="mb-2" />
+
+              <div class="flex mt-4 mb-2 justify-content-between align-items-center">
+                <span class="text-sm text-gray-600"> {{ exportProgress.completed }} / {{ exportProgress.total }}</span>
+
+                <span class="text-sm text-gray-600">
+                  {{
+                    exportProgress.currentStudent
+                      ? `Processing: ${exportProgress.currentStudent}`
+                      : 'Preparing export...'
+                  }}
+                </span>
+              </div>
+
+              <div v-if="exportProgress.errors.length > 0" class="p-3 mt-4 rounded border border-gray-200 border-solid">
+                <div class="flex gap-2">
+                  <i class="text-red-600 pi pi-exclamation-circle"></i>
+                  <h4 class="mt-0 mb-1 text-sm font-semibold text-red-600">Export Errors</h4>
+                </div>
+
+                <p class="text-sm text-red-600">
+                  Errors have occurred while exporting the score reports. Please check the errors below:
+                </p>
+
+                <ul class="text-sm text-red-600">
+                  <li v-for="error in exportProgress.errors" :key="error.studentId">
+                    {{ error.studentName }}: {{ error.message }}
+                  </li>
+                </ul>
+              </div>
+            </div>
           </div>
-        </div>
+
+          <div v-else-if="exportModalStep === EXPORT_MODAL_STEP.COMPLETED">
+            <div class="flex text-center flex-column align-items-center">
+              <i class="mb-2 text-green-600 pi pi-check-circle" style="font-size: 2rem"></i>
+              <h1 class="p-0 m-0 mb-3 font-semibold text-md">Export complete</h1>
+
+              <p class="m-0">
+                Your export has finished{{ exportProgress.errors.length ? ' with some errors' : '' }}. The ZIP download
+                should have started automatically.
+              </p>
+
+              <div
+                v-if="exportProgress.errors.length > 0"
+                class="p-3 mt-4 w-full rounded border border-gray-200 border-solid"
+              >
+                <div class="flex gap-2">
+                  <i class="text-red-600 pi pi-exclamation-circle"></i>
+                  <h4 class="mt-0 mb-1 text-sm font-semibold text-red-600">Export Errors</h4>
+                </div>
+                <p class="text-sm text-red-600">The following items failed to export:</p>
+                <ul class="text-sm text-left text-red-600">
+                  <li v-for="error in exportProgress.errors" :key="error.studentId">
+                    {{ error.studentName }}: {{ error.message }}
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <template #footer>
+            <div v-if="exportModalStep === EXPORT_MODAL_STEP.WARNING" class="flex gap-2">
+              <PvButton label="Cancel" class="p-button-text" @click="exportModalEnabled = false" />
+              <PvButton
+                label="Continue"
+                icon="pi pi-arrow-right"
+                class="text-white border-none bg-primary border-round hover:bg-red-900"
+                @click="proceedExportFromModal"
+              />
+            </div>
+            <div
+              v-else-if="exportModalStep === EXPORT_MODAL_STEP.COMPLETED"
+              class="flex gap-2 w-full justify-content-center"
+            >
+              <PvButton label="Close" class="w-full p-button-text" @click="exportModalEnabled = false" />
+            </div>
+          </template>
+        </AppDialog>
 
         <!-- Main table -->
-
         <div v-if="assignmentData?.length ?? 0 > 0">
           <RoarDataTable
             :data="filteredTableData"
@@ -157,7 +236,7 @@
             data-cy="roar-data-table"
             @export-all="exportData({ selectedRows: $event })"
             @export-selected="exportData({ selectedRows: $event })"
-            @export-pdf-reports="exportBulkPdfReports($event)"
+            @export-pdf-reports="openExportModal($event)"
           >
             <span>
               <label for="view-columns" class="view-label">View</label>
@@ -342,6 +421,7 @@ import { APP_ROUTES } from '@/constants/routes';
 import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
 import { SCORE_REPORT_NEXT_STEPS_DOCUMENT_PATH } from '@/constants/scores';
 import _startCase from 'lodash/startCase';
+import AppDialog from '@/components/Dialog/Dialog.vue';
 
 const { userCan, Permissions } = usePermissions();
 
@@ -367,6 +447,13 @@ const props = defineProps({
 });
 
 const initialized = ref(false);
+
+// Modal step constants for export dialog
+const EXPORT_MODAL_STEP = Object.freeze({
+  WARNING: 'warning',
+  PROGRESS: 'progress',
+  COMPLETED: 'completed',
+});
 
 const displayName = computed(() => {
   if (administrationData.value) {
@@ -403,6 +490,40 @@ const exportProgress = ref({
   currentStudent: null,
   errors: [],
 });
+
+// Modal-based bulk export (beta)
+const exportModalEnabled = ref(false);
+const exportModalStep = ref(EXPORT_MODAL_STEP.WARNING); // 'warning' | 'progress' | 'completed'
+const selectedRowsForExport = ref([]);
+
+const openExportModal = (selectedRows) => {
+  selectedRowsForExport.value = selectedRows || [];
+  exportModalStep.value = EXPORT_MODAL_STEP.WARNING;
+  exportModalEnabled.value = true;
+  // Reset progress state for fresh run
+  exportProgress.value = {
+    show: false,
+    completed: 0,
+    total: selectedRowsForExport.value.length || 0,
+    percentage: 0,
+    currentStudent: null,
+    errors: [],
+  };
+};
+
+const proceedExportFromModal = async () => {
+  // Switch view inside the modal
+  exportModalStep.value = EXPORT_MODAL_STEP.PROGRESS;
+  exportProgress.value.show = true;
+  exportProgress.value.total = selectedRowsForExport.value.length || 0;
+
+  try {
+    await exportBulkPdfReports(selectedRowsForExport.value);
+  } finally {
+    // Always move to completed state when the export routine finishes (success or with errors)
+    exportModalStep.value = EXPORT_MODAL_STEP.COMPLETED;
+  }
+};
 
 const activeTabIndex = ref(0);
 
@@ -538,13 +659,6 @@ const exportBulkPdfReports = async (selectedRows) => {
       if (!hasErrors) {
         exportProgress.value.show = false;
       }
-
-      // else {
-      //   // Keep error UI visible longer for user to see
-      //   setTimeout(() => {
-      //     exportProgress.value.show = false;
-      //   }, 10000); // 10 seconds for errors
-      // }
     }, 3000);
   } catch (error) {
     console.error('Error during bulk PDF export:', error);

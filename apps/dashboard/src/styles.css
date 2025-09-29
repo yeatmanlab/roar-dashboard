@@ -84,6 +84,10 @@ legend {
   width: 8rem;
 }
 
+.w-128 {
+  width: 32rem;
+}
+
 .w-1\/4 {
   width: 25%;
 }
