@@ -672,10 +672,12 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = 
     };
   }
   if (percentile !== undefined && getGrade(grade) < 6) {
-    if (percentile >= 50) {
+    const useUpdatedNorms = (taskId === 'sre' && scoringVersion === 4) || (taskId === 'swr' && scoringVersion === 7);
+    const [achievedCutOff, developingCutOff] = useUpdatedNorms ? [40, 20] : [50, 25];
+    if (percentile >= achievedCutOff) {
       support_level = 'Achieved Skill';
       tag_color = supportLevelColors.above;
-    } else if (percentile > 25 && percentile < 50) {
+    } else if (percentile > developingCutOff && percentile < achievedCutOff) {
       support_level = 'Developing Skill';
       tag_color = supportLevelColors.some;
     } else {
@@ -1265,8 +1267,8 @@ export const replaceScoreRange = (desc, taskId, scoringVersion = null) => {
   }
 
   if (desc.includes('{{SUPPORT_RANGE}}')) {
-    const ifNewScoring = (taskId === 'sre' && scoringVersion === 4) || (taskId === 'swr' && scoringVersion === 7);
-    return desc.replace('{{SUPPORT_RANGE}}', `${ifNewScoring ? '80' : '75'}%`);
+    const useUpdatedNorms = (taskId === 'sre' && scoringVersion === 4) || (taskId === 'swr' && scoringVersion === 7);
+    return desc.replace('{{SUPPORT_RANGE}}', `${useUpdatedNorms ? '80' : '75'}%`);
   }
 
   return desc;
