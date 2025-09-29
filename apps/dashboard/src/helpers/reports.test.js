@@ -46,7 +46,7 @@ describe('reports', () => {
 
   describe('getSupportLevel', () => {
     it('should return null support level when rawScore is undefined', () => {
-      const result = getSupportLevel(3, 50, undefined, 'swr');
+      const result = getSupportLevel(3, 50, undefined, 'swr', false);
       expect(result).toEqual({
         support_level: null,
         tag_color: null,
@@ -54,7 +54,7 @@ describe('reports', () => {
     });
 
     it('should return Optional support level when optional is true', () => {
-      const result = getSupportLevel(3, 50, 100, 'swr', true);
+      const result = getSupportLevel(3, 50, 100, 'swr', true, false);
       expect(result).toEqual({
         support_level: 'Optional',
         tag_color: undefined,
@@ -62,7 +62,7 @@ describe('reports', () => {
     });
 
     it('should return Achieved Skill for percentile >= 50 and grade < 6', () => {
-      const result = getSupportLevel(3, 75, 100, 'swr');
+      const result = getSupportLevel(3, 75, 100, 'swr', false);
       expect(result).toEqual({
         support_level: 'Achieved Skill',
         tag_color: 'green',
@@ -70,7 +70,7 @@ describe('reports', () => {
     });
 
     it('should return Developing Skill for percentile between 25 and 50', () => {
-      const result = getSupportLevel(3, 30, 100, 'swr');
+      const result = getSupportLevel(3, 30, 100, 'swr', false);
       expect(result).toEqual({
         support_level: 'Developing Skill',
         tag_color: '#edc037',
@@ -78,7 +78,7 @@ describe('reports', () => {
     });
 
     it('should return Needs Extra Support for percentile <= 25', () => {
-      const result = getSupportLevel(3, 20, 100, 'swr');
+      const result = getSupportLevel(3, 20, 100, 'swr', false);
       expect(result).toEqual({
         support_level: 'Needs Extra Support',
         tag_color: '#c93d82',
@@ -86,7 +86,7 @@ describe('reports', () => {
     });
 
     it('should use raw score thresholds for grade >= 6', () => {
-      const result = getSupportLevel(6, undefined, 600, 'swr');
+      const result = getSupportLevel(6, undefined, 600, 'swr', false);
       expect(result).toEqual({
         support_level: 'Achieved Skill',
         tag_color: 'green',
@@ -407,11 +407,43 @@ describe('reports', () => {
       });
     });
 
+    it('should return correct thresholds for swr with scoring version 7', () => {
+      const result = getRawScoreThreshold('swr', 7);
+      expect(result).toEqual({
+        above: 513,
+        some: 413,
+      });
+    });
+
+    it('should return correct thresholds for swr-es', () => {
+      const result = getRawScoreThreshold('swr-es', 1);
+      expect(result).toEqual({
+        above: 547,
+        some: 447,
+      });
+    });
+
     it('should return correct thresholds for sre', () => {
       const result = getRawScoreThreshold('sre');
       expect(result).toEqual({
         above: 70,
         some: 47,
+      });
+    });
+
+    it('should return correct thresholds for sre with scoring version 4', () => {
+      const result = getRawScoreThreshold('sre', 4);
+      expect(result).toEqual({
+        above: 41,
+        some: 23,
+      });
+    });
+
+    it('should return correct thresholds for sre-es', () => {
+      const result = getRawScoreThreshold('sre-es', 1);
+      expect(result).toEqual({
+        above: 25,
+        some: 12,
       });
     });
 

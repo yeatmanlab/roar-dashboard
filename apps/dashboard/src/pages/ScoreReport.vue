@@ -588,7 +588,14 @@ const getScoresAndSupportFromAssessment = ({ grade, assessment, taskId, optional
       }
     }
   } else {
-    ({ support_level, tag_color } = getSupportLevel(grade, percentile, rawScore, taskId, optional));
+    ({ support_level, tag_color } = getSupportLevel(
+      grade,
+      percentile,
+      rawScore,
+      taskId,
+      optional,
+      getScoringVersions.value[taskId],
+    ));
   }
 
   if (percentile) percentile = _round(percentile);

@@ -643,7 +643,7 @@ export const getDialColor = (grade, percentile, rawScore, taskId) => {
   return tag_color;
 };
 
-export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = null) => {
+export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = null, scoringVersion = null) => {
   let support_level = null;
   let tag_color = null;
 
@@ -683,7 +683,7 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = 
       tag_color = supportLevelColors.below;
     }
   } else if (rawScore !== undefined && grade >= 6) {
-    const { above, some } = getRawScoreThreshold(taskId);
+    const { above, some } = getRawScoreThreshold(taskId, scoringVersion);
     if (rawScore >= above) {
       support_level = 'Achieved Skill';
       tag_color = supportLevelColors.above;
@@ -983,17 +983,43 @@ export function getScoreValue(scoresObject, taskId, grade, fieldType) {
   return undefined;
 }
 
-export const getRawScoreThreshold = (taskId) => {
+export const getRawScoreThreshold = (taskId, scoringVersion) => {
   if (taskId === 'swr') {
+    if (scoringVersion === 7) {
+      return {
+        above: 513,
+        some: 413,
+      };
+    }
     return {
       above: 550,
       some: 400,
     };
+  } else if (taskId === 'swr-es') {
+    if (scoringVersion === 1) {
+      return {
+        above: 547,
+        some: 447,
+      };
+    }
   } else if (taskId === 'sre') {
+    if (scoringVersion === 4) {
+      return {
+        above: 41,
+        some: 23,
+      };
+    }
     return {
       above: 70,
       some: 47,
     };
+  } else if (taskId === 'sre-es') {
+    if (scoringVersion === 1) {
+      return {
+        above: 25,
+        some: 12,
+      };
+    }
   } else if (taskId === 'pa') {
     return {
       above: 55,
