@@ -791,21 +791,21 @@ const computeAssignmentAndRunData = computed(() => {
         }
         if (taskId === 'phonics' && assessment.scores) {
           // Process phonics scores
-          const composite = assessment.scores.computed?.composite;
+          const composite = _get(assessment, 'scores.computed.composite');
           if (composite) {
             currRowScores[taskId] = {
               composite: {
-                totalPercentCorrect: composite.totalPercentCorrect,
+                totalPercentCorrect: _get(composite, 'totalPercentCorrect'),
                 subscores: {
-                  cvc: formatPhonicsScore(composite.subscores?.cvc),
-                  digraph: formatPhonicsScore(composite.subscores?.digraph),
-                  initial_blend: formatPhonicsScore(composite.subscores?.initial_blend),
-                  tri_blend: formatPhonicsScore(composite.subscores?.tri_blend),
-                  final_blend: formatPhonicsScore(composite.subscores?.final_blend),
-                  r_controlled: formatPhonicsScore(composite.subscores?.r_controlled),
-                  r_cluster: formatPhonicsScore(composite.subscores?.r_cluster),
-                  silent_e: formatPhonicsScore(composite.subscores?.silent_e),
-                  vowel_team: formatPhonicsScore(composite.subscores?.vowel_team),
+                  cvc: formatPhonicsScore(_get(composite, 'subscores.cvc')),
+                  digraph: formatPhonicsScore(_get(composite, 'subscores.digraph')),
+                  initial_blend: formatPhonicsScore(_get(composite, 'subscores.initial_blend')),
+                  tri_blend: formatPhonicsScore(_get(composite, 'subscores.tri_blend')),
+                  final_blend: formatPhonicsScore(_get(composite, 'subscores.final_blend')),
+                  r_controlled: formatPhonicsScore(_get(composite, 'subscores.r_controlled')),
+                  r_cluster: formatPhonicsScore(_get(composite, 'subscores.r_cluster')),
+                  silent_e: formatPhonicsScore(_get(composite, 'subscores.silent_e')),
+                  vowel_team: formatPhonicsScore(_get(composite, 'subscores.vowel_team')),
                 },
               },
               skillsToWorkOn: composite.skillsToWorkOn || 'None',
