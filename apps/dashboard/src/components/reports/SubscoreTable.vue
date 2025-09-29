@@ -83,9 +83,7 @@ const columns = computed(() => {
       filter: true,
     });
   }
-  console.log('props.taskId', props.taskId);
   if (props.taskId === 'letter' || props.taskId === 'letter-en-ca') {
-    console.log('exporting letter data', props.taskId);
     tableColumns.push(
       { field: `scores.${props.taskId}.lowerCaseScore`, header: 'Lower Case', dataType: 'text', sort: false },
       { field: `scores.${props.taskId}.upperCaseScore`, header: 'Upper Case', dataType: 'text', sort: false },
