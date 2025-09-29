@@ -1227,3 +1227,16 @@ export const taskInfoById = {
       'appropriately.',
   },
 };
+
+// Then create a function to populate the template
+export const replaceScoreRange = (desc, taskId, scoringVersion = null) => {
+  if (!desc) return '';
+
+  // Only process desc field if it contains placeholders
+  if (desc.includes('{{RANGE}}')) {
+    const range = getRawScoreRange(taskId, scoringVersion);
+    return desc.replace('{{RANGE}}', `${range?.min}-${range?.max}`);
+  }
+
+  return desc;
+};
