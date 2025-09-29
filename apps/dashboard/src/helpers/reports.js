@@ -1068,7 +1068,7 @@ export const taskInfoById = {
       getRawScoreRange('swr').min
     }-${
       getRawScoreRange('swr').max
-    } and can be viewed by selecting 'Raw Score' on the table above. Students in the pink category need support in word-level decoding. For these students, decoding difficulties are likely the bottleneck for growth in reading fluency and comprehension. Students in grades K-5 in the pink category have word-level decoding skills below 75% of their peers, nationally. Students in grades 6-12 in the pink category have word-level decoding skills below a third-grade level. Students in the yellow category are still developing their decoding skills and will likely benefit from further practice and/or support in foundational reading skills. Students in the green category demonstrate that word-level decoding is not holding them back from developing fluency and comprehension of connected text.`,
+    } and can be viewed by selecting 'Raw Score' on the table above. Students in the pink category need support in word-level decoding. For these students, decoding difficulties are likely the bottleneck for growth in reading fluency and comprehension. Students in grades K-5 in the pink category have word-level decoding skills below {{SUPPORT_RANGE}} of their peers, nationally. Students in grades 6-12 in the pink category have word-level decoding skills below a third-grade level. Students in the yellow category are still developing their decoding skills and will likely benefit from further practice and/or support in foundational reading skills. Students in the green category demonstrate that word-level decoding is not holding them back from developing fluency and comprehension of connected text.`,
     definitions: [
       {
         header: 'WHAT IS DECODING',
@@ -1121,7 +1121,7 @@ export const taskInfoById = {
       "and can be viewed by selecting 'Raw Score' on the table above. " +
       'Students in the pink category need support in sentence-reading ' +
       'efficiency to support growth in reading comprehension. Students in grades ' +
-      'K-5 in the pink category have sentence-reading efficiency skills below 75% ' +
+      'K-5 in the pink category have sentence-reading efficiency skills below {{SUPPORT_RANGE}} ' +
       'of their peers. Students in grades 6-12 in the pink category have ' +
       'sentence-reading efficiency skills below a third-grade level. ' +
       'Students in the yellow category are still developing their sentence' +
@@ -1236,6 +1236,11 @@ export const replaceScoreRange = (desc, taskId, scoringVersion = null) => {
   if (desc.includes('{{RANGE}}')) {
     const range = getRawScoreRange(taskId, scoringVersion);
     return desc.replace('{{RANGE}}', `${range?.min}-${range?.max}`);
+  }
+
+  if (desc.includes('{{SUPPORT_RANGE}}')) {
+    const ifNewScoring = (taskId === 'sre' && scoringVersion === 4) || (taskId === 'swr' && scoringVersion === 7);
+    return desc.replace('{{SUPPORT_RANGE}}', `${ifNewScoring ? '80' : '75'}%`);
   }
 
   return desc;
