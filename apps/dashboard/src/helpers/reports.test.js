@@ -8,6 +8,8 @@ import {
   getRawScoreRange,
   getTagColor,
   supportLevelColors,
+  replaceScoreRange,
+  taskInfoById,
 } from './reports';
 
 vi.mock('./index', () => ({
@@ -515,6 +517,35 @@ describe('reports', () => {
       expect(getTagColor('Unknown')).toBe(supportLevelColors.Assessed);
       expect(getTagColor(null)).toBe(supportLevelColors.Assessed);
       expect(getTagColor(undefined)).toBe(supportLevelColors.Assessed);
+    });
+  });
+
+  describe('replaceScoreRange', () => {
+    it('should return an empty string if text does not exist', () => {
+      expect(replaceScoreRange(taskInfoById['hearts-and-flowers']?.desc, 'hearts-ands-flowers')).toBe('');
+    });
+
+    it('should return original text if templates do not exist', () => {
+      const alpacaDesc = taskInfoById['roam-alpaca']?.desc;
+      expect(replaceScoreRange(alpacaDesc, 'roam-alpaca', 5)).toBe(alpacaDesc);
+    });
+
+    it('should return original cutoff for swr if scoring version is not 7', () => {
+      const swrDesc = replaceScoreRange(taskInfoById['swr']?.desc, 'swr', 6);
+      expect(swrDesc).not.toMatch(/{{.*}}/);
+      expect(swrDesc).toMatch(/75%/);
+    });
+
+    it('should return new cutoff for swr if scoring version is 7', () => {
+      const swrDesc = replaceScoreRange(taskInfoById['swr']?.desc, 'swr', 7);
+      expect(swrDesc).not.toMatch(/{{.*}}/);
+      expect(swrDesc).toMatch(/80%/);
+    });
+
+    it('should return new cutoff for sre if scoring version is 4', () => {
+      const sreDesc = replaceScoreRange(taskInfoById['sre']?.desc, 'sre', 4);
+      expect(sreDesc).not.toMatch(/{{.*}}/);
+      expect(sreDesc).toMatch(/80%/);
     });
   });
 });
