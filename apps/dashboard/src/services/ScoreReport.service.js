@@ -322,8 +322,6 @@ const ScoreReportService = (() => {
         const rawScoreRange = getRawScoreRange(taskId);
         const supportColor = getSupportLevel(grade, percentileScore, rawScore, taskId).tag_color;
 
-        console.log('Processing task:', { taskId, rawScore, percentileScore, standardScore, rawScoreRange });
-
         const scoresForTask = {
           standardScore: {
             name: _startCase(i18n.t('scoreReports.standardScore')),
@@ -364,7 +362,6 @@ const ScoreReportService = (() => {
         } else {
           scoreToDisplay = grade >= 6 ? SCORE_TYPE_KEYS.STANDARD_SCORE : SCORE_TYPE_KEYS.PERCENTILE_SCORE;
         }
-        console.log('Score type selected:', { taskId, scoreToDisplay });
 
         computedTaskAcc[taskId] = {
           taskId,
