@@ -73,6 +73,7 @@ import EmptyState from './components/EmptyState.vue';
 import { getStudentDisplayName } from '@/helpers/getStudentDisplayName';
 import { getStudentGrade } from '@/helpers/getStudentGrade';
 import { formatList } from '@/helpers/formatList';
+import { SCORE_REPORT_SECTIONS_EXPANDED_URL_PARAM } from '@/constants/scores';
 
 const SCORE_REPORT_EXPORT_SECTIONS = Object.freeze({
   HEADER: 'header',
@@ -192,10 +193,16 @@ const studentGrade = computed(
 );
 
 /**
- * Toggles the expanded state of the report to show all cards
+ * Controls the expanded state of the report cards
  */
+const setExpanded = (isExpanded) => {
+  if (expanded.value !== isExpanded) {
+    expanded.value = isExpanded;
+  }
+};
+
 const toggleExpand = () => {
-  expanded.value = !expanded.value;
+  setExpanded(!expanded.value);
 };
 
 /**
@@ -217,11 +224,9 @@ const handleExportToPdf = async () => {
   exportLoading.value = true;
 
   try {
-    // Toggle expand to show all collapsed accordion panels and wait for the DOM to update.
-    if (!expanded.value) {
-      toggleExpand();
-      await new Promise((resolve) => setTimeout(resolve, 250));
-    }
+    // Ensure all sections are expanded for consistent PDF rendering.
+    setExpanded(true);
+    await nextTick();
 
     await PdfExportService.generateDocument(elements, fileName);
   } catch (error) {
@@ -249,6 +254,12 @@ onMounted(() => {
   });
 
   refresh();
+
+  // Auto-expand when page is opened for export via iframe using ?expanded=true flag
+  const params = new URLSearchParams(window.location.search);
+  if (params.get(SCORE_REPORT_SECTIONS_EXPANDED_URL_PARAM) === 'true') {
+    setExpanded(true);
+  }
 });
 
 onUnmounted(() => {

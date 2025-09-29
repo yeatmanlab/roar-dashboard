@@ -462,6 +462,9 @@ const handleExportToPdf = async () => {
 
 /**
  * Exports selected student reports as PDFs in bulk
+ *
+ * @param {Array} selectedRows - Array of selected rows to export
+ * @returns {Promise<void>}
  */
 const exportBulkPdfReports = async (selectedRows) => {
   if (!selectedRows || selectedRows.length === 0) {

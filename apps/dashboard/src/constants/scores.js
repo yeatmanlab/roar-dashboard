@@ -1,5 +1,7 @@
 export const SCORE_REPORT_NEXT_STEPS_DOCUMENT_PATH = '/docs/roar-next-steps.pdf';
 
+export const SCORE_REPORT_SECTIONS_EXPANDED_URL_PARAM = 'expanded';
+
 export const SCORE_TYPES = Object.freeze({
   STANDARD_SCORE: 'standardScore',
   RAW_SCORE: 'rawScore',
