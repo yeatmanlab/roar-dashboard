@@ -542,6 +542,7 @@ const getScoresAndSupportFromAssessment = ({ grade, assessment, taskId, optional
   let rawScore = getScoreValue(compositeScores, taskId, gradeValue, 'rawScore');
   let tempPercentileSign = '';
 
+  // Extract percentile for getSupportLevel and keep sign for display
   if (typeof percentile === 'string' && percentile.match(/[<>]/).length > 0) {
     tempPercentileSign = percentile.match(/[<>]/)[0];
     percentile = parseFloat(percentile.replace(/[<>]/g, ''));
