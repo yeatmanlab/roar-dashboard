@@ -653,17 +653,6 @@ export const getDialColor = (grade, percentile, rawScore, taskId) => {
 };
 
 export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = null) => {
-  console.log('getSupportLevel:', {
-    grade,
-    percentile,
-    rawScore,
-    taskId,
-    optional,
-    isPercentCorrect: tasksToDisplayPercentCorrect.includes(taskId),
-    isGradeEstimate: tasksToDisplayGradeEstimate.includes(taskId),
-    isCorrectIncorrect: tasksToDisplayCorrectIncorrectDifference.includes(taskId),
-    isTotalCorrect: tasksToDisplayTotalCorrect.includes(taskId),
-  });
   let support_level = null;
   let tag_color = null;
 
