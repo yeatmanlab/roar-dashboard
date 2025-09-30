@@ -17,6 +17,7 @@ vi.mock('@/helpers/reports', () => ({
     'mock-task-2': 'Description for task two',
     'mock-raw-task': 'Description for raw only task',
   },
+  tasksToDisplayPercentCorrect: ['mock-task-1', 'mock-task-2'],
   getSupportLevel: vi.fn(),
   getRawScoreRange: vi.fn(),
   getScoreValue: vi.fn().mockImplementation((scoresObject, taskId, grade, fieldType) => {
@@ -115,6 +116,7 @@ describe('ScoreReportService', () => {
         rawScore: { value: 20 },
         percentileScore: { value: 65 },
         standardScore: { value: 95 },
+        percentage: { value: 80 },
       };
 
       const result = ScoreReportService.getScoreDescription(task, 6, mockI18n);
@@ -132,6 +134,7 @@ describe('ScoreReportService', () => {
         rawScore: { value: 18 },
         percentileScore: { value: 55 },
         standardScore: { value: 88 },
+        percentage: { value: 75 },
       };
 
       const result = ScoreReportService.getScoreDescription(task, 4, mockI18n);
@@ -220,7 +223,7 @@ describe('ScoreReportService', () => {
 
       // Check first task
       expect(result[0].taskId).toBe('mock-task-1');
-      expect(result[0].scoreToDisplay).toBe(SCORE_TYPE_KEYS.PERCENTILE_SCORE); // grade < 6
+      expect(result[0].scoreToDisplay).toBe('percentileScore'); // grade < 6
       expect(result[0].rawScore.value).toBe(20);
       expect(result[0].percentileScore.value).toBe(65);
       expect(result[0].standardScore.value).toBe(95);
@@ -254,7 +257,7 @@ describe('ScoreReportService', () => {
       const result = ScoreReportService.processTaskScores(taskData, 7, mockI18n); // grade >= 6
 
       expect(result).toHaveLength(1);
-      expect(result[0].scoreToDisplay).toBe(SCORE_TYPE_KEYS.STANDARD_SCORE);
+      expect(result[0].scoreToDisplay).toBe('standardScore');
     });
 
     it('should filter out blacklisted tasks', () => {
