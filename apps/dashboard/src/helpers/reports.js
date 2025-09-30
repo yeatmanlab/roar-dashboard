@@ -691,7 +691,7 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = 
   } else if (rawScore !== undefined && grade >= 6) {
     const { above, some } = getRawScoreThreshold(taskId, scoringVersion);
 
-    // Prevent checking thresholds for unnormed scores (swr-es, sre-es)
+    // Only return support_level and tag_color if the thresholds are not null
     if (above != null && some != null) {
       if (rawScore >= above) {
         support_level = 'Achieved Skill';
