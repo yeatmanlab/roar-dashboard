@@ -11,9 +11,9 @@
       <h2 class="p-0 m-0 text-5xl">{{ studentFirstName }} {{ studentLastName }}</h2>
     </div>
 
-    <div class="px-4 py-2 bg-gray-100 rounded">
-      <dl v-if="studentGrade" class="flex gap-2 flex-column">
-        <div class="inline-flex">
+    <div v-if="studentGrade || className || administrationName" class="px-4 py-2 bg-gray-100 rounded">
+      <dl class="flex gap-2 flex-column">
+        <div v-if="studentGrade" class="inline-flex">
           <dt class="font-semibold">{{ $t('scoreReports.grade') }}:</dt>
           <dd class="ml-2">{{ getGradeWithSuffix(studentGrade) }}</dd>
         </div>
