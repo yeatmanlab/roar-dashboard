@@ -51,7 +51,10 @@ function localeToPathParts(localeRaw) {
   const locale = originalLocale.toLowerCase();
   if (locale.includes('-')) {
     const [lang, region] = locale.split('-');
-    return { dir: path.join('src', 'translations', lang, region), filename: `${originalLocale}-componentTranslations.json` };
+    return {
+      dir: path.join('src', 'translations', lang, region),
+      filename: `${originalLocale}-componentTranslations.json`,
+    };
   }
   return { dir: path.join('src', 'translations', locale), filename: `${originalLocale}-componentTranslations.json` };
 }

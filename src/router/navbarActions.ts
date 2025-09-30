@@ -92,7 +92,7 @@ const navbarActionOptions: Readonly<NavbarAction>[] = [
     project: 'ALL',
     category: 'Users',
   },
-] as const; 
+] as const;
 
 interface GetNavbarActionsParams {
   isSuperAdmin?: boolean;
@@ -103,20 +103,19 @@ export const getNavbarActions = ({
   isSuperAdmin = false,
   isAdmin = false,
 }: GetNavbarActionsParams): Readonly<NavbarAction>[] => {
-
   return navbarActionOptions.filter((action) => {
-      // If the action requires admin and the user is an admin, or if the action
-      // requires super admin and the user is a super admin,
-      // or if the action does not require admin or super admin,
-      // the action will be in the dropdown
-      if (
-        (action.requiresAdmin && isAdmin) ||
-        (action.requiresSuperAdmin && isSuperAdmin) ||
-        (!action.requiresAdmin && !action.requiresSuperAdmin)
-      ) {
-        return true;
-      } else {
-        return false;
-      }
-    });
+    // If the action requires admin and the user is an admin, or if the action
+    // requires super admin and the user is a super admin,
+    // or if the action does not require admin or super admin,
+    // the action will be in the dropdown
+    if (
+      (action.requiresAdmin && isAdmin) ||
+      (action.requiresSuperAdmin && isSuperAdmin) ||
+      (!action.requiresAdmin && !action.requiresSuperAdmin)
+    ) {
+      return true;
+    } else {
+      return false;
+    }
+  });
 };

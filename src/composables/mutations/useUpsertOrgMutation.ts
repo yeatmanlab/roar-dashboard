@@ -7,7 +7,7 @@ import {
   ORGS_TABLE_QUERY_KEY,
   SCHOOL_CLASSES_QUERY_KEY,
 } from '@/constants/queryKeys';
-import { useAuthStore } from '@/store/auth.js';
+import { useAuthStore } from '@/store/auth';
 import { CreateOrgType, OrgType } from '@levante-framework/levante-zod';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
 

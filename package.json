@@ -45,6 +45,7 @@
     "@levante-framework/core-tasks": "^1.0.17",
     "@levante-framework/firekit": "^9.3.5",
     "@levante-framework/levante-zod": "^1.0.0",
+    "@levante-framework/permissions-core": "^1.0.2",
     "@primevue/core": "^4.2.4",
     "@primevue/themes": "^4.2.4",
     "@sentry/browser": "^8.0.0",

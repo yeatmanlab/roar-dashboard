@@ -11,6 +11,11 @@ const routerPush = vi.fn();
 vi.mock('vue-router', () => ({
   useRouter: () => ({
     push: routerPush,
+    currentRoute: ref({
+      name: 'ListGroups',
+      path: '/list-groups',
+      fullPath: '/list-groups',
+    }),
   }),
 }));
 
@@ -45,6 +50,23 @@ vi.mock('@/composables/queries/useUserClaimsQuery', () => ({
       },
     },
   }),
+}));
+
+vi.mock('@/composables/usePermissions', () => ({
+  usePermissions: () => ({
+    can: vi.fn(() => true),
+    canGlobal: vi.fn(() => true),
+    hasRole: vi.fn(() => true),
+    permissions: ref({}),
+    permissionsLoaded: ref(true),
+  }),
+}));
+
+vi.mock('@/components/PermissionGuard.vue', () => ({
+  default: {
+    name: 'PermissionGuard',
+    template: '<div class="permission-guard"><slot /></div>',
+  },
 }));
 
 beforeEach(() => {

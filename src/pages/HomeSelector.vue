@@ -5,10 +5,16 @@
     </div>
   </div>
 
+  <div v-else-if="authStore.shouldUsePermissions">
+    <HomeAdministrator v-if="hasRole(ROLES.RESEARCH_ASSISTANT)" />
+    <HomeParticipant v-else/>
+  </div>
+
   <div v-else>
     <HomeParticipant v-if="isParticipant" />
     <HomeAdministrator v-else-if="isAdminUser" />
   </div>
+
 
   <ConsentModal
     v-if="!isLoading && showConsent && isAdminUser"
@@ -34,12 +40,15 @@ import { CONSENT_TYPES } from '@/constants/consentTypes';
 import { APP_ROUTES } from '@/constants/routes';
 import { isLevante } from '@/helpers';
 import LevanteSpinner from '@/components/LevanteSpinner.vue';
+import { usePermissions } from '@/composables/usePermissions';
+import { ROLES } from '@/constants/roles';
 const HomeParticipant = defineAsyncComponent(() => import('@/pages/HomeParticipant.vue'));
 const HomeAdministrator = defineAsyncComponent(() => import('@/pages/HomeAdministrator.vue'));
 const ConsentModal = defineAsyncComponent(() => import('@/components/ConsentModal.vue'));
 
 const authStore = useAuthStore();
 const { roarfirekit, ssoProvider } = storeToRefs(authStore);
+const { hasRole } = usePermissions();
 
 const router = useRouter();
 const i18n = useI18n();

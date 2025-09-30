@@ -34,6 +34,7 @@ Unit tests are located in various directories and test individual components, ut
 **Setup**: [`vitest.setup.js`](vitest.setup.js)
 
 #### Component Tests
+
 - **Location**: [`src/components/tests/`](src/components/tests/)
 - **Examples**:
   - [`AddGroupModal.test.js`](src/components/tests/AddGroupModal.test.js) - Modal component functionality
@@ -42,6 +43,7 @@ Unit tests are located in various directories and test individual components, ut
   - [`UserActions.test.js`](src/components/tests/UserActions.test.js) - User action components
 
 #### Page Tests
+
 - **Location**: [`src/pages/tests/`](src/pages/tests/)
 - **Examples**:
   - [`SignIn.test.js`](src/pages/tests/SignIn.test.js) - Authentication page
@@ -51,6 +53,7 @@ Unit tests are located in various directories and test individual components, ut
   - [`addUsers.test.js`](src/pages/tests/addUsers.test.js) - User management
 
 #### Helper/Utility Tests
+
 - **Location**: [`src/helpers/__tests__/`](src/helpers/__tests__/)
 - **Examples**:
   - [`languageDiscovery.test.ts`](src/helpers/__tests__/languageDiscovery.test.ts) - Language system testing
@@ -59,6 +62,7 @@ Unit tests are located in various directories and test individual components, ut
   - [`hasArrayEntries.test.ts`](src/helpers/__tests__/hasArrayEntries.test.ts) - Array utilities
 
 #### Composable Tests
+
 - **Location**: [`src/composables/`](src/composables/)
 - **Query Tests**: Testing data fetching composables
   - [`useUserDataQuery.test.ts`](src/composables/useUserDataQuery.test.ts)
@@ -88,6 +92,7 @@ E2E tests simulate real user interactions and test complete workflows.
 #### Test Files
 
 ##### [`testTasks.cy.ts`](cypress/e2e/testTasks.cy.ts)
+
 - **Purpose**: Tests core task functionality from dashboard
 - **Features**:
   - User authentication flow
@@ -101,6 +106,7 @@ E2E tests simulate real user interactions and test complete workflows.
   - `E2E_TEST_PASSWORD`: Test user password
 
 ##### [`locales.cy.ts`](cypress/e2e/locales.cy.ts)
+
 - **Purpose**: Tests localization functionality
 - **Features**:
   - Multi-language support testing
@@ -112,10 +118,12 @@ E2E tests simulate real user interactions and test complete workflows.
   - `E2E_SKIP_LOGIN`: Skip authentication (useful for frontend-only testing)
 
 ##### [`locales-emulator.cy.ts`](cypress/e2e/locales-emulator.cy.ts)
+
 - **Purpose**: Tests localization with Firebase emulator
 - **Features**: Similar to [`locales.cy.ts`](cypress/e2e/locales.cy.ts) but with emulator backend
 
 ##### [`smoke.cy.ts`](cypress/e2e/smoke.cy.ts)
+
 - **Status**: Currently disabled due to CI failures
 - **Purpose**: Basic smoke tests for critical functionality
 
@@ -124,6 +132,7 @@ E2E tests simulate real user interactions and test complete workflows.
 The dashboard includes comprehensive translation testing:
 
 #### Language Discovery System Tests
+
 - **File**: [`src/helpers/__tests__/languageDiscovery.test.ts`](src/helpers/__tests__/languageDiscovery.test.ts)
 - **Coverage**:
   - Full locale discovery from dashboard translation system
@@ -278,7 +287,7 @@ describe('Feature Test', () => {
 
 - **Provider**: Istanbul
 - **Threshold**: Configured per project needs
-- **Exclude Patterns**: 
+- **Exclude Patterns**:
   - `**/test-support/**`
   - Node modules
   - Configuration files
@@ -300,6 +309,7 @@ xdg-open coverage/index.html  # Linux
 ## Test Support Utilities
 
 ### Test Support Directory
+
 - **Location**: [`src/test-support/`](src/test-support/)
 - **Purpose**: Shared testing utilities, mocks, and fixtures
 - **Excluded**: From coverage reports
@@ -307,12 +317,14 @@ xdg-open coverage/index.html  # Linux
 ### Common Test Utilities
 
 #### Mocks
+
 - Firebase authentication mocks
 - Vue Query mocks
 - I18n mocks
 - Router mocks
 
 #### Test Data
+
 - User fixtures
 - Task fixtures
 - Translation fixtures
@@ -320,6 +332,7 @@ xdg-open coverage/index.html  # Linux
 ## Best Practices
 
 ### Unit Testing
+
 1. **Isolation**: Test components in isolation with proper mocking
 2. **Accessibility**: Test for accessibility compliance
 3. **User Behavior**: Test from user perspective, not implementation details
@@ -327,6 +340,7 @@ xdg-open coverage/index.html  # Linux
 5. **Async Testing**: Properly handle async operations
 
 ### E2E Testing
+
 1. **Realistic Data**: Use realistic test data
 2. **Stable Selectors**: Use `data-cy` attributes for element selection
 3. **Independent Tests**: Each test should be independent and repeatable
@@ -334,6 +348,7 @@ xdg-open coverage/index.html  # Linux
 5. **Environment Consistency**: Use consistent test environments
 
 ### Translation Testing
+
 1. **Key Coverage**: Test all translation keys are present
 2. **Locale Switching**: Test dynamic locale switching
 3. **Fallbacks**: Test fallback locale behavior
@@ -344,16 +359,19 @@ xdg-open coverage/index.html  # Linux
 ### Common Issues
 
 #### Unit Tests
+
 - **Module Resolution**: Ensure proper path aliases in test configuration
 - **Vue Component Mounting**: Check for proper Vue Test Utils setup
 - **Async Operations**: Use proper async/await or test utilities
 
 #### E2E Tests
+
 - **Element Not Found**: Check for dynamic content loading and use proper waits
 - **Authentication**: Ensure test credentials are valid
 - **Network Issues**: Check for proper mocking or test environment setup
 
 #### Translation Tests
+
 - **Missing Keys**: Ensure all translation files are generated
 - **Locale Format**: Use proper locale format (e.g., 'en-US' vs 'en')
 - **Dynamic Loading**: Wait for translations to load in tests
@@ -377,6 +395,7 @@ node --inspect-brk node_modules/.bin/vitest run
 ### Environment Setup
 
 #### Development Testing
+
 ```bash
 # Start development server
 npm run dev:db
@@ -386,6 +405,7 @@ npm test
 ```
 
 #### Emulator Testing
+
 ```bash
 # Start Firebase emulators
 npx firebase emulators:start --only auth,firestore
@@ -397,11 +417,13 @@ npm run e2e:locales:emulator
 ## Integration with CI/CD
 
 ### GitHub Actions
+
 - Tests run on pull requests and main branch
 - Coverage reports are generated and uploaded
 - E2E tests run against staging environments
 
 ### Pre-commit Hooks
+
 - Linting and formatting checks
 - Unit test execution
 - Type checking
@@ -409,12 +431,14 @@ npm run e2e:locales:emulator
 ## Contributing to Tests
 
 ### Adding New Tests
+
 1. Follow existing test structure and naming conventions
 2. Include both positive and negative test cases
 3. Add proper documentation and comments
 4. Update this README when adding new test categories
 
 ### Test Maintenance
+
 1. Keep tests up-to-date with feature changes
 2. Refactor tests when code structure changes
 3. Monitor and fix flaky tests

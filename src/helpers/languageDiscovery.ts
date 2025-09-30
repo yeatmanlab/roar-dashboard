@@ -1,19 +1,19 @@
 import { languageOptions } from '@/translations/i18n';
 
 export interface LanguageInfo {
-  code: string;           // e.g., 'en-US', 'es-CO' (primary) or 'en', 'es' (legacy)
+  code: string; // e.g., 'en-US', 'es-CO' (primary) or 'en', 'es' (legacy)
   dashboardLocale: string; // e.g., 'en-US', 'es-CO'
-  displayName: string;     // e.g., 'English (United States)'
-  flagCode: string;        // e.g., 'usa', 'col'
-  isLegacy: boolean;       // true for legacy 'en', 'es' codes
+  displayName: string; // e.g., 'English (United States)'
+  flagCode: string; // e.g., 'usa', 'col'
+  isLegacy: boolean; // true for legacy 'en', 'es' codes
 }
 
 export interface VariantLanguageMapping {
-  variantCode: string;     // Code used in variant params (full locale preferred)
+  variantCode: string; // Code used in variant params (full locale preferred)
   dashboardLocale: string; // Dashboard locale (same as variantCode for full locales)
-  displayName: string;     // Display name for UI
-  flagCode: string;        // Country flag code
-  isLegacy: boolean;       // true for legacy compatibility codes
+  displayName: string; // Display name for UI
+  flagCode: string; // Country flag code
+  isLegacy: boolean; // true for legacy compatibility codes
 }
 
 /**
@@ -21,8 +21,8 @@ export interface VariantLanguageMapping {
  * Maps old simplified codes to full locales
  */
 const LEGACY_LANGUAGE_MAPPINGS: Record<string, string> = {
-  'en': 'en-US',    // Legacy English → US English
-  'es': 'es-CO',    // Legacy Spanish → Colombian Spanish
+  en: 'en-US', // Legacy English → US English
+  es: 'es-CO', // Legacy Spanish → Colombian Spanish
 };
 
 /**
@@ -37,49 +37,49 @@ const FORCE_LEGACY_CODES = ['en', 'es'];
  */
 export function discoverAvailableLanguages(): VariantLanguageMapping[] {
   const languages: VariantLanguageMapping[] = [];
-  
+
   // Get all available dashboard locales
   const dashboardLocales = Object.keys(languageOptions);
-  
+
   // First pass: Add full locales as primary variant codes (exclude forced legacy codes)
-  dashboardLocales.forEach(locale => {
+  dashboardLocales.forEach((locale) => {
     const langInfo = languageOptions[locale];
     if (!langInfo) return;
-    
+
     // Skip if this should be treated as legacy
     if (FORCE_LEGACY_CODES.includes(locale)) return;
-    
+
     languages.push({
-      variantCode: locale,           // Use full locale as variant code
-      dashboardLocale: locale,       // Same as variant code
+      variantCode: locale, // Use full locale as variant code
+      dashboardLocale: locale, // Same as variant code
       displayName: langInfo.language,
       flagCode: langInfo.code,
-      isLegacy: false,              // Full locales are not legacy
+      isLegacy: false, // Full locales are not legacy
     });
   });
-  
+
   // Second pass: Add legacy compatibility mappings
   Object.entries(LEGACY_LANGUAGE_MAPPINGS).forEach(([legacyCode, fullLocale]) => {
     const langInfo = languageOptions[fullLocale];
     if (!langInfo) return;
-    
+
     // Only add legacy mapping if the full locale exists
     if (dashboardLocales.includes(fullLocale)) {
       languages.push({
-        variantCode: legacyCode,       // Legacy code (en, es)
-        dashboardLocale: fullLocale,   // Maps to full locale
+        variantCode: legacyCode, // Legacy code (en, es)
+        dashboardLocale: fullLocale, // Maps to full locale
         displayName: `${langInfo.language} (legacy)`,
         flagCode: langInfo.code,
-        isLegacy: true,               // Mark as legacy
+        isLegacy: true, // Mark as legacy
       });
     }
   });
-  
+
   // Third pass: Add any forced legacy codes that exist in languageOptions but map to themselves
-  FORCE_LEGACY_CODES.forEach(legacyCode => {
+  FORCE_LEGACY_CODES.forEach((legacyCode) => {
     const langInfo = languageOptions[legacyCode];
     if (!langInfo) return;
-    
+
     // Only add if not already covered by legacy mapping
     if (!LEGACY_LANGUAGE_MAPPINGS[legacyCode]) {
       languages.push({
@@ -91,7 +91,7 @@ export function discoverAvailableLanguages(): VariantLanguageMapping[] {
       });
     }
   });
-  
+
   // Sort: full locales first, then legacy, alphabetically within each group
   return languages.sort((a, b) => {
     if (a.isLegacy !== b.isLegacy) {
@@ -111,12 +111,12 @@ export function getLocaleForVariantLanguage(variantLanguageCode: string): string
   if (LEGACY_LANGUAGE_MAPPINGS[variantLanguageCode]) {
     return LEGACY_LANGUAGE_MAPPINGS[variantLanguageCode];
   }
-  
+
   // If it's already a full locale and exists in languageOptions, return as-is
   if (languageOptions[variantLanguageCode]) {
     return variantLanguageCode;
   }
-  
+
   // Fallback: return as-is (might be a custom locale)
   return variantLanguageCode;
 }
@@ -152,7 +152,7 @@ export function getLegacyVariantCode(dashboardLocale: string): string | null {
  */
 export function getLanguageInfo(variantLanguageCode: string): VariantLanguageMapping | null {
   const languages = discoverAvailableLanguages();
-  return languages.find(lang => lang.variantCode === variantLanguageCode) || null;
+  return languages.find((lang) => lang.variantCode === variantLanguageCode) || null;
 }
 
 /**
@@ -162,7 +162,7 @@ export function getLanguageInfo(variantLanguageCode: string): VariantLanguageMap
  */
 export function isLanguageSupported(variantLanguageCode: string): boolean {
   const languages = discoverAvailableLanguages();
-  return languages.some(lang => lang.variantCode === variantLanguageCode);
+  return languages.some((lang) => lang.variantCode === variantLanguageCode);
 }
 
 /**
@@ -171,9 +171,9 @@ export function isLanguageSupported(variantLanguageCode: string): boolean {
  */
 export function getPrimaryLanguageOptions(): VariantLanguageMapping[] {
   const allLanguages = discoverAvailableLanguages();
-  
+
   // Return only non-legacy languages (full locales)
-  return allLanguages.filter(lang => !lang.isLegacy);
+  return allLanguages.filter((lang) => !lang.isLegacy);
 }
 
 /**
@@ -188,5 +188,5 @@ export function getAllLanguageOptions(): VariantLanguageMapping[] {
  */
 export function getLegacyLanguageOptions(): VariantLanguageMapping[] {
   const allLanguages = discoverAvailableLanguages();
-  return allLanguages.filter(lang => lang.isLegacy);
+  return allLanguages.filter((lang) => lang.isLegacy);
 }

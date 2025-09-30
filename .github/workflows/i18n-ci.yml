@@ -2,7 +2,7 @@ name: i18n-and-build
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
 
 jobs:

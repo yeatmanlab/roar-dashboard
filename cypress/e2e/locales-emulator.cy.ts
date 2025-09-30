@@ -11,20 +11,17 @@ const defaultUrl = 'http://localhost:5173/signin';
 const defaultEmail = 'student@levante.test';
 const defaultPassword = 'student123';
 
-const baseUrl: string = useEnvFlag
-  ? ((Cypress.env('E2E_BASE_URL') as string) || defaultUrl)
-  : defaultUrl;
-const username: string = useEnvFlag
-  ? ((Cypress.env('E2E_TEST_EMAIL') as string) || defaultEmail)
-  : defaultEmail;
-const password: string = useEnvFlag
-  ? ((Cypress.env('E2E_TEST_PASSWORD') as string) || defaultPassword)
-  : defaultPassword;
+const baseUrl: string = useEnvFlag ? (Cypress.env('E2E_BASE_URL') as string) || defaultUrl : defaultUrl;
+const username: string = useEnvFlag ? (Cypress.env('E2E_TEST_EMAIL') as string) || defaultEmail : defaultEmail;
+const password: string = useEnvFlag ? (Cypress.env('E2E_TEST_PASSWORD') as string) || defaultPassword : defaultPassword;
 
 const defaultLocales = ['en', 'en-US', 'es', 'es-CO', 'de', 'fr-CA', 'nl', 'en-GH', 'de-CH', 'es-AR'];
 const localesEnv = (Cypress.env('E2E_LOCALES') as string) || '';
 const locales = localesEnv
-  ? localesEnv.split(',').map((s) => s.trim()).filter(Boolean)
+  ? localesEnv
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean)
   : defaultLocales;
 
 function setLocaleBeforeLoad(locale: string) {
@@ -60,5 +57,3 @@ locales.forEach((locale) => {
     });
   });
 });
-
-

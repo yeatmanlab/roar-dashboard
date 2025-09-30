@@ -2,12 +2,29 @@
   <div>
     <div v-if="props.isBasicView">
       <div class="flex gap-2 align-items-center justify-content-center">
-        <PvButton data-cy="button-sign-out" @click="signOut">
+        <PvButton data-cy="button-sign-out" @click="() => signOut()">
           <i class="pi pi-sign-out"></i> {{ $t('navBar.signOut') }}
         </PvButton>
       </div>
     </div>
     <div v-else class="flex gap-2 options-wrapper">
+
+      <div v-if="authStore.shouldUsePermissions">
+        <label for="site-select">Site:</label>
+        <PvSelect
+          :options="siteOptions"
+          :value="authStore.currentSite"
+          :optionValue="(o) => o.value"
+          :optionLabel="(o) => o.label"
+          class="options-site"
+          @change="handleSiteChange"
+        >
+          <template #value>
+            <i class="pi pi-building"></i>
+            </template>
+        </PvSelect>
+      </div>
+
       <!-- Help dropdown -->
       <PvSelect
         :options="helpOptions"
@@ -39,13 +56,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import useSignOutMutation from '@/composables/mutations/useSignOutMutation';
 import PvButton from 'primevue/button';
 import PvSelect from 'primevue/select';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { APP_ROUTES } from '@/constants/routes';
+import { useAuthStore } from '@/store/auth';
 
 interface Props {
   isBasicView: boolean;
@@ -60,11 +78,20 @@ interface DropdownChangeEvent {
   value: string;
 }
 
+const authStore = useAuthStore();
+const siteOptions = ref<DropdownOption[]>([]);
 const i18n = useI18n();
 const router = useRouter();
-const { mutate: signOut } = useSignOutMutation() as any;
-
+const { mutate: signOut } = useSignOutMutation();
 const feedbackButton = ref<HTMLButtonElement | null>(null);
+
+onMounted(() => {
+  siteOptions.value = (authStore.sites as {siteId: string, siteName: string}[]).map((site: {siteId: string, siteName: string}) => ({ label: site.siteName, value: site.siteId }));
+});
+
+const handleSiteChange = (e: DropdownChangeEvent): void => {
+  authStore.currentSite = e.value;
+};
 
 const props = defineProps<Props>();
 
@@ -97,21 +124,6 @@ const handleProfileChange = (e: DropdownChangeEvent): void => {
 
 <style lang="scss">
 .options-wrapper {
-  position: relative;
-  top: -18px;
-
-  .options-settings {
-    position: absolute;
-    right: 0;
-  }
-  .options-help {
-    position: absolute;
-    right: 5.4rem;
-    @media (max-width: 768px) {
-      right: 3rem;
-    }
-  }
-
   @media (max-width: 768px) {
     .p-select-dropdown {
       display: none;

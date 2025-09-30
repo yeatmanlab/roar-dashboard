@@ -44,7 +44,12 @@ const useAdministrationsListQuery = (
   return useQuery({
     queryKey,
     queryFn: async () => {
-      const result = await administrationPageFetcher(isSuperAdmin, exhaustiveAdministrationOrgs, testAdministrationsOnly, orderBy);
+      const result = await administrationPageFetcher(
+        isSuperAdmin,
+        exhaustiveAdministrationOrgs,
+        testAdministrationsOnly,
+        orderBy,
+      );
       return result.sortedAdministrations;
     },
     enabled: isQueryEnabled,

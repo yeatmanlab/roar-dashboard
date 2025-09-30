@@ -243,9 +243,13 @@ const { isRefetching: isCheckingOrgName, refetch: doesOrgNameExist } = useOrgNam
   parentSchool,
 );
 
-watch([isCheckingOrgName, isSubmittingOrg], ([isChecking, isSubmitting]) => {
-  isSubmitBtnDisabled.value = isChecking || isSubmitting;
-});
+// Watch for changes in loading states, with proper undefined handling
+watch(
+  () => [isCheckingOrgName?.value ?? false, isSubmittingOrg?.value ?? false],
+  ([isChecking, isSubmitting]) => {
+    isSubmitBtnDisabled.value = Boolean(isChecking) || Boolean(isSubmitting);
+  },
+);
 
 const handleOnClose = () => {
   resetForm();

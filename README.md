@@ -17,6 +17,7 @@ See the legacy [ROAR/ROAD Data Flow Diagram here](https://miro.com/app/board/uXj
 The dashboard’s translations are managed via multilingual CSVs synced with Crowdin (project `levantetranslations`). Locally, CSVs are transformed at build-time into per-locale JSON files that the app consumes.
 
 Key docs and tools:
+
 - [`src/translations/README_CROWDIN.md`](./src/translations/README_CROWDIN.md) — full guide to the workflow
 - [`src/translations/crowdin/crowdin.yml`](./src/translations/crowdin/crowdin.yml) — Crowdin configuration
 - [`src/translations/consolidated/`](./src/translations/consolidated/) — consolidated CSV sources (main + components)
@@ -26,6 +27,7 @@ Key docs and tools:
   - [`add-locale-column.js`](./src/translations/tools/add-locale-column.js) — adds a new locale column (optionally seeded)
 
 Common commands:
+
 - Generate per-locale JSON: `npm run i18n:csv-to-json`
 - Validate CSVs: `npm run i18n:validate`
 - Add a new locale column: `I18N_NEW_LOCALE=<locale> [I18N_SEED_FROM=<base>] npm run i18n:add-locale`
@@ -36,6 +38,7 @@ Crowdin download during `npm run dev` and `npm run build` only occurs when `CROW
 ## Survey PDF generation
 
 A helper is available to create PDFs from SurveyJS JSON:
+
 - [`src/helpers/surveyPdfGenerator.ts`](./src/helpers/surveyPdfGenerator.ts)
 
 See usage notes and examples in [`README_SURVEY_PDF.md`](./README_SURVEY_PDF.md) (if present), or integrate the helper by importing it and passing the Survey JSON you wish to export. The helper avoids UI changes and can be called from admin-only flows or scripts.

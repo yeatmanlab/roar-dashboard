@@ -3,7 +3,7 @@ import { mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import PrimeVue from 'primevue/config';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { createI18n } from 'vue-i18n';
 import { createRouter, createWebHistory } from 'vue-router';
 import NavBar from '../NavBar.vue';
@@ -13,14 +13,19 @@ let mockIsUserSuperAdmin = true;
 
 vi.mock('@/composables/queries/useUserClaimsQuery', () => ({
   default: vi.fn(() => ({
-    data: ref({}),
+    data: computed(() => ({
+      claims: {
+        super_admin: mockIsUserSuperAdmin,
+        adminOrgs: mockIsUserAdmin ? { testOrg: [{ id: 1 }] } : {},
+      },
+    })),
   })),
 }));
 
 vi.mock('@/composables/useUserType', () => ({
   default: vi.fn(() => ({
-    isAdmin: ref(mockIsUserAdmin),
-    isSuperAdmin: ref(mockIsUserSuperAdmin),
+    isAdmin: computed(() => mockIsUserAdmin),
+    isSuperAdmin: computed(() => mockIsUserSuperAdmin),
   })),
 }));
 
@@ -32,6 +37,55 @@ vi.mock('@/store/auth', () => ({
       restConfig: true,
     }),
   })),
+}));
+
+vi.mock('@/router/navbarActions', () => ({
+  getNavbarActions: vi.fn(({ isSuperAdmin, isAdmin }) => {
+    const actions = [];
+
+    if (isAdmin && isSuperAdmin) {
+      // Admin + SuperAdmin: 6 items
+      actions.push(
+        { category: 'Groups', title: 'Groups', icon: 'pi pi-users', buttonLink: '/list-groups' },
+        { category: 'Assignments', title: 'View Assignments', icon: 'pi pi-list', buttonLink: '/' },
+        {
+          category: 'Assignments',
+          title: 'Create Assignment',
+          icon: 'pi pi-sliders-h',
+          buttonLink: '/create-assignment',
+        },
+        { category: 'Assignments', title: 'Manage Tasks', icon: 'pi pi-pencil', buttonLink: '/manage-tasks-variants' },
+        { category: 'Users', title: 'Add Users', icon: 'pi pi-user-plus', buttonLink: '/add-users' },
+        { category: 'Users', title: 'Link Users', icon: 'pi pi-link', buttonLink: '/link-users' },
+        {
+          category: 'Users',
+          title: 'Register administrator',
+          icon: 'pi pi-user-plus',
+          buttonLink: '/create-administrator',
+        },
+      );
+    } else if (isAdmin && !isSuperAdmin) {
+      // Admin but not SuperAdmin: 2 items
+      actions.push(
+        { category: 'Groups', title: 'Groups', icon: 'pi pi-users', buttonLink: '/list-groups' },
+        { category: 'Assignments', title: 'View Assignments', icon: 'pi pi-list', buttonLink: '/' },
+      );
+    }
+
+    if (!isAdmin && !isSuperAdmin) {
+      return [];
+    }
+
+    return actions;
+  }),
+}));
+
+vi.mock('../UserActions.vue', () => ({
+  default: {
+    name: 'UserActions',
+    props: ['isBasicView'],
+    template: '<div class="user-actions">User Actions</div>',
+  },
 }));
 
 const i18n = createI18n({
@@ -110,41 +164,40 @@ describe('NavBar.vue', () => {
   });
 
   describe('User type: non-admin', () => {
-    it('should render the component', () => {
-      mockIsUserAdmin = false;
+    beforeEach(() => {
+      mockIsUserAdmin = true; // Still admin but not super admin
+      mockIsUserSuperAdmin = false;
+    });
 
+    it('should render the component', () => {
       const wrapper = mount(NavBar, mountOptions);
       expect(wrapper.exists()).toBe(true);
 
       const links = wrapper.findAll('.p-menubar-item-link');
-      expect(links.length).toBe(7);
+      expect(links.length).toBe(3);
 
       // If false, the help dropdown with Report an Issue option is displayed
       expect(wrapper.vm.computedIsBasicView).toBe(false);
     });
 
     it('should display the menu accordingly to user type', async () => {
-      mockIsUserAdmin = false;
-
       const wrapper = mount(NavBar, mountOptions);
       const links = wrapper.findAll('.p-menubar-item-link');
 
-      expect(links.length).toBe(7);
-      expect(links[0].html()).toContain('Users');
-      expect(links[1].html()).toContain('Add Users');
-      expect(links[2].html()).toContain('Link Users');
-      expect(links[3].html()).toContain('Register administrator');
-      expect(links[4].html()).toContain('Assignments');
-      expect(links[5].html()).toContain('Create Assignment');
-      expect(links[6].html()).toContain('Manage Tasks');
+      expect(links.length).toBe(3);
+      expect(links[0].html()).toContain('Groups');
+      expect(links[1].html()).toContain('Assignments');
+      expect(links[2].html()).toContain('View Assignments');
     });
   });
 
   describe('User type: non-admin & non-superAdmin', () => {
-    it('should render the component', () => {
+    beforeEach(() => {
       mockIsUserAdmin = false;
       mockIsUserSuperAdmin = false;
+    });
 
+    it('should render the component', () => {
       const wrapper = mount(NavBar, mountOptions);
       expect(wrapper.exists()).toBe(true);
 

@@ -110,68 +110,68 @@
                 <PvInputText id="inputParamType" v-model="param.type" :value="param.type" disabled />
               </div>
 
-                          <div class="flex align-items-center gap-2 flex-grow-1">
-              <label for="inputParamValue">Value:</label>
-              <PvDropdown
-                v-if="param.name === 'language'"
-                id="inputParamValue"
-                v-model="variantParams[param.name]"
-                :options="languageDropdownOptions"
-                option-label="displayName"
-                option-value="variantCode"
-                :option-disabled="(option) => option.disabled"
-                placeholder="Select language (full locale preferred)"
-                class="flex-grow-1"
-              >
-                <template #value="slotProps">
-                  <div v-if="slotProps.value" class="flex align-items-center gap-2">
-                    <span :class="`fi fi-${getLanguageInfo(slotProps.value)?.flagCode}`"></span>
-                    <span>{{ getLanguageInfo(slotProps.value)?.displayName }}</span>
-                    <small v-if="getLanguageInfo(slotProps.value)?.isLegacy" class="text-orange-500">(legacy)</small>
-                  </div>
-                  <span v-else>{{ slotProps.placeholder }}</span>
-                </template>
-                <template #option="slotProps">
-                  <div 
-                    v-if="slotProps.option.variantCode === '__separator__'"
-                    class="text-center text-color-secondary font-italic py-2"
-                    style="pointer-events: none;"
-                  >
-                    {{ slotProps.option.displayName }}
-                  </div>
-                  <div v-else class="flex align-items-center gap-2">
-                    <span :class="`fi fi-${slotProps.option.flagCode}`"></span>
-                    <span>{{ slotProps.option.displayName }}</span>
-                    <small class="text-color-secondary">({{ slotProps.option.variantCode }})</small>
-                    <small v-if="slotProps.option.isLegacy" class="text-orange-500 ml-1">legacy</small>
-                  </div>
-                </template>
-              </PvDropdown>
-              <PvInputText
-                v-else-if="param.type === 'string'"
-                id="inputParamValue"
-                v-model="variantParams[param.name]"
-                placeholder="Set game parameter to desired value"
-                class="flex-grow-1"
-              />
-              <PvDropdown
-                v-else-if="param.type === 'boolean'"
-                id="inputParamValue"
-                v-model="variantParams[param.name]"
-                :options="booleanDropDownOptions"
-                option-label="label"
-                option-value="value"
-                placeholder="Set game parameter to desired value"
-                class="flex-grow-1"
-              />
-              <PvInputNumber
-                v-else-if="param.type === 'number'"
-                id="inputParamValue"
-                v-model="variantParams[param.name]"
-                placeholder="Set game parameter to desired value"
-                class="flex-grow-1"
-              />
-            </div>
+              <div class="flex align-items-center gap-2 flex-grow-1">
+                <label for="inputParamValue">Value:</label>
+                <PvDropdown
+                  v-if="param.name === 'language'"
+                  id="inputParamValue"
+                  v-model="variantParams[param.name]"
+                  :options="languageDropdownOptions"
+                  option-label="displayName"
+                  option-value="variantCode"
+                  :option-disabled="(option) => option.disabled"
+                  placeholder="Select language (full locale preferred)"
+                  class="flex-grow-1"
+                >
+                  <template #value="slotProps">
+                    <div v-if="slotProps.value" class="flex align-items-center gap-2">
+                      <span :class="`fi fi-${getLanguageInfo(slotProps.value)?.flagCode}`"></span>
+                      <span>{{ getLanguageInfo(slotProps.value)?.displayName }}</span>
+                      <small v-if="getLanguageInfo(slotProps.value)?.isLegacy" class="text-orange-500">(legacy)</small>
+                    </div>
+                    <span v-else>{{ slotProps.placeholder }}</span>
+                  </template>
+                  <template #option="slotProps">
+                    <div
+                      v-if="slotProps.option.variantCode === '__separator__'"
+                      class="text-center text-color-secondary font-italic py-2"
+                      style="pointer-events: none"
+                    >
+                      {{ slotProps.option.displayName }}
+                    </div>
+                    <div v-else class="flex align-items-center gap-2">
+                      <span :class="`fi fi-${slotProps.option.flagCode}`"></span>
+                      <span>{{ slotProps.option.displayName }}</span>
+                      <small class="text-color-secondary">({{ slotProps.option.variantCode }})</small>
+                      <small v-if="slotProps.option.isLegacy" class="text-orange-500 ml-1">legacy</small>
+                    </div>
+                  </template>
+                </PvDropdown>
+                <PvInputText
+                  v-else-if="param.type === 'string'"
+                  id="inputParamValue"
+                  v-model="variantParams[param.name]"
+                  placeholder="Set game parameter to desired value"
+                  class="flex-grow-1"
+                />
+                <PvDropdown
+                  v-else-if="param.type === 'boolean'"
+                  id="inputParamValue"
+                  v-model="variantParams[param.name]"
+                  :options="booleanDropDownOptions"
+                  option-label="label"
+                  option-value="value"
+                  placeholder="Set game parameter to desired value"
+                  class="flex-grow-1"
+                />
+                <PvInputNumber
+                  v-else-if="param.type === 'number'"
+                  id="inputParamValue"
+                  v-model="variantParams[param.name]"
+                  placeholder="Set game parameter to desired value"
+                  class="flex-grow-1"
+                />
+              </div>
 
               <div>
                 <PvButton
@@ -538,21 +538,25 @@ const booleanDropDownOptions = [
 // Language discovery and mapping - primary languages first, then legacy for compatibility
 const languageDropdownOptions = computed(() => {
   const allLanguages = getAllLanguageOptions();
-  const primaryLanguages = allLanguages.filter(lang => !lang.isLegacy);
-  const legacyLanguages = allLanguages.filter(lang => lang.isLegacy);
-  
+  const primaryLanguages = allLanguages.filter((lang) => !lang.isLegacy);
+  const legacyLanguages = allLanguages.filter((lang) => lang.isLegacy);
+
   return [
     ...primaryLanguages,
     // Add separator if there are legacy options
-    ...(legacyLanguages.length > 0 ? [{ 
-      variantCode: '__separator__', 
-      displayName: '──── Legacy (for compatibility) ────',
-      dashboardLocale: '',
-      flagCode: '',
-      isLegacy: false,
-      disabled: true
-    }] : []),
-    ...legacyLanguages
+    ...(legacyLanguages.length > 0
+      ? [
+          {
+            variantCode: '__separator__',
+            displayName: '──── Legacy (for compatibility) ────',
+            dashboardLocale: '',
+            flagCode: '',
+            isLegacy: false,
+            disabled: true,
+          },
+        ]
+      : []),
+    ...legacyLanguages,
   ];
 });
 

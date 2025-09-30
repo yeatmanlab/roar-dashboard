@@ -54,7 +54,6 @@ interface InitializeSurveyParams {
   generalSurveyData: SurveyData;
 }
 
-
 interface SetupSurveyEventHandlersParams {
   surveyInstance: SurveyModel;
   userType: string;

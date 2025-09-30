@@ -88,27 +88,27 @@ function buildRows(langs) {
   // keys: identifier, label, ...langs
   const allIdentifiers = new Set();
   const perLangFlat = {};
-  
+
   // Create reverse mapping from modular paths to legacy namespace keys
   const reverseMap = {};
   Object.entries(namespaceMap).forEach(([legacyKey, modulePath]) => {
     reverseMap[modulePath] = legacyKey;
   });
-  
+
   for (const [lang, json] of langs.entries()) {
     perLangFlat[lang] = {};
-    
+
     // Traverse the nested JSON structure to extract values for known paths
     Object.entries(namespaceMap).forEach(([legacyKey, modulePath]) => {
       const pathParts = modulePath.split('/');
       let current = json;
-      
+
       // Navigate to the nested object (e.g. auth/consent -> json.auth.consent)
       for (const part of pathParts) {
         current = current?.[part];
         if (!current) break;
       }
-      
+
       if (current && typeof current === 'object') {
         const flat = flatten(current);
         for (const [k, v] of Object.entries(flat)) {
@@ -213,7 +213,7 @@ function writeConsolidatedCSVs({ allIdentifiers, perLangFlat }, langs) {
       OUTPUT_LANGS.forEach((lang) => row.push(getValue(id, lang)));
       out.push(toCsvLine(row));
     });
-    const file = path.join(consolidatedRoot, `dashboard-translations.csv`);
+    const file = path.join(consolidatedRoot, 'dashboard-translations.csv');
     fs.writeFileSync(file, out.join('\n'));
   }
 

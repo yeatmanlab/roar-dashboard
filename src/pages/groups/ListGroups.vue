@@ -5,12 +5,14 @@
         <div class="flex flex-column align-items-start mb-2 md:flex-row w-full justify-content-between">
           <div class="flex align-items-center gap-3 mb-4 md:mb-0">
             <div class="admin-page-header mr-4">Groups</div>
-            <PvButton
-              class="bg-primary text-white border-none p-2 ml-auto"
-              data-testid="add-group-btn"
-              @click="isAddGroupModalVisible = true"
-              >Add Group</PvButton
-            >
+            <PermissionGuard resource="groups" action="create">
+              <PvButton
+                class="bg-primary text-white border-none p-2 ml-auto"
+                data-testid="add-group-btn"
+                @click="isAddGroupModalVisible = true"
+                >Add Group</PvButton
+              >
+            </PermissionGuard>
             <PvButton
               class="bg-primary text-white border-none p-2 ml-auto"
               data-testid="add-users-btn"
@@ -218,6 +220,7 @@ import RoarDataTable from '@/components/RoarDataTable.vue';
 import PvFloatLabel from 'primevue/floatlabel';
 import AddGroupModal from '@/components/modals/AddGroupModal.vue';
 import GroupAssignmentsModal from '@/components/modals/GroupAssignmentsModal.vue';
+import PermissionGuard from '@/components/PermissionGuard.vue';
 
 const router = useRouter();
 const initialized = ref(false);
