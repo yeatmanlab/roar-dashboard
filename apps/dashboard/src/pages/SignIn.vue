@@ -16,42 +16,45 @@
           <div id="languageSelect" class="flex m-4 justify-content-center">
             <LanguageSelector class="w-7" />
           </div>
-          <SignIn :invalid="incorrect" @submit="authWithEmail" @update:email="email = $event" />
+          <SignIn
+            :invalid="incorrect"
+            @submit="authWithEmail({ email, password: modalPassword, useLink: false, usePassword: true })"
+            @checkproviders="checkAvailableProviders"
+            @update:email="email = $event"
+          />
         </section>
-        <section class="flex w-full flex-column">
-          <h4
-            class="flex flex-wrap-reverse mt-1 mb-3 font-bold align-content-center justify-content-center text-md text-500"
-          >
-            {{ $t('pageSignIn.loginWith') }}
-          </h4>
+        <section v-if="hasCheckedProviders" class="flex w-full flex-column">
           <div class="flex flex-row w-full align-content-center justify-content-center">
             <PvButton
+              v-if="availableProviders.includes(AUTH_SSO_PROVIDERS.GOOGLE)"
               label="Sign in with Google"
-              class="flex p-1 mr-2 ml-2 w-3 text-center text-black surface-0 border-black-alpha-10 justify-content-center hover:border-primary hover:surface-ground"
+              class="flex p-1 mr-2 ml-2 text-center text-black surface-0 border-black-alpha-10 justify-content-center hover:border-primary hover:surface-ground"
               style="border-radius: 3rem; height: 3rem; color: black"
               data-cy="sign-in__google-sso"
               @click="authWithGoogle"
             >
               <img src="../assets/provider-google-logo.svg" alt="The Google Logo" class="flex mr-2 w-2" />
-              <span>Google</span>
+              <span>Login with Google</span>
             </PvButton>
             <PvButton
-              class="flex p-1 mr-2 ml-2 w-3 surface-0 border-black-alpha-10 justify-content-center hover:border-primary hover:surface-ground"
+              v-if="availableProviders.includes(AUTH_SSO_PROVIDERS.CLEVER)"
+              class="flex p-1 mr-2 ml-2 surface-0 border-black-alpha-10 justify-content-center hover:border-primary hover:surface-ground"
               style="border-radius: 3rem; height: 3rem; color: black"
               data-cy="sign-in__clever-sso"
               @click="authWithClever"
             >
-              <img src="../assets/provider-clever-logo.svg" alt="The Clever Logo" class="flex mr-2 w-2" />
-              <span>Clever</span>
+              <img src="../assets/provider-clever-logo.svg" alt="The Clever Logo" class="flex mr-2" />
+              <span>Login with Clever</span>
             </PvButton>
             <PvButton
-              class="flex p-1 mr-2 ml-2 w-3 text-black surface-0 border-black-alpha-10 justify-content-center hover:border-primary hover:surface-ground"
+              v-if="availableProviders.includes(AUTH_SSO_PROVIDERS.CLASSLINK)"
+              class="flex p-1 mr-2 ml-2 text-black surface-0 border-black-alpha-10 justify-content-center hover:border-primary hover:surface-ground"
               style="border-radius: 3rem; height: 3rem; color: black"
               data-cy="sign-in__classlink-sso"
               @click="authWithClassLink"
             >
               <img src="../assets/provider-classlink-logo.png" alt="The ClassLink Logo" class="flex mr-2 w-2" />
-              <span>ClassLink</span>
+              <span>Login with ClassLink</span>
             </PvButton>
           </div>
         </section>
@@ -61,6 +64,13 @@
             <PvButton label="Register" class="w-3 signin-button" @click="router.push({ name: 'Register' })" />
           </div>
         </section> -->
+        <div class="flex flex-row w-full justify-content-end">
+          <small
+            class="hover:underline flex flex-row mt-3 justify-content-end font-bold text-primary cursor-pointer text-base"
+            @click="handleForgotPassword"
+            >Forgot password?</small
+          >
+        </div>
       </section>
       <footer style="display: none">
         <!-- TODO: figure out a link for this -->
@@ -89,7 +99,7 @@
             @click="authWithGoogle"
           >
             <img src="../assets/provider-google-logo.svg" alt="The Google Logo" class="flex mr-2 w-2" />
-            <span>Google</span>
+            <span>Continue with Google</span>
           </PvButton>
         </div>
         <div v-if="signInMethods.includes(AUTH_SSO_PROVIDERS.CLEVER)">
@@ -99,7 +109,7 @@
             @click="authWithClever"
           >
             <img src="../assets/provider-clever-logo.svg" alt="The Clever Logo" class="flex mr-2 w-2" />
-            <span>Clever</span>
+            <span>Continue with Clever</span>
           </PvButton>
         </div>
         <div v-if="signInMethods.includes(AUTH_SSO_PROVIDERS.CLASSLINK)">
@@ -109,9 +119,12 @@
             @click="authWithClassLink"
           >
             <img src="../assets/provider-classlink-logo.png" alt="The ClassLink Logo" class="flex mr-2 w-2" />
-            <span>ClassLink</span>
+            <span>Continue with ClassLink</span>
           </PvButton>
         </div>
+        <small v-if="hasCheckedProviders" class="text-link sign-in-method-link" @click="handleForgotPassword"
+          >Forgot password?</small
+        >
         <div v-if="signInMethods.includes('password')" class="flex flex-row gap-2">
           <PvPassword
             v-model="modalPassword"
@@ -119,11 +132,11 @@
             :input-props="{ autocomplete: 'current-password' }"
             :feedback="false"
           />
-          <PvButton
+          <!-- <PvButton
             class="flex p-3 border-none border-round hover:bg-black-alpha-20"
             :label="$t('authSignIn.buttonLabel') + ' &rarr;'"
-            @click="authWithEmail({ email, password: modalPassword, useLink: false, usePassword: true })"
-          />
+            @click="checkAvailableProviders"
+          /> -->
         </div>
       </div>
       You will then be directed to your profile page where you can link different authentication providers.
@@ -139,6 +152,36 @@
       ></PvButton>
     </template>
   </RoarModal>
+  <RoarModal
+    :is-enabled="forgotPasswordModalOpen"
+    title="Forgot Password"
+    subtitle="Enter your email to reset your password"
+    small
+    @modal-closed="forgotPasswordModalOpen = false"
+  >
+    <template #default>
+      <div class="flex flex-column">
+        <label>Email</label>
+        <PvInputText v-model="forgotEmail" />
+      </div>
+    </template>
+    <template #footer>
+      <PvButton
+        tabindex="0"
+        class="p-2 bg-white border-none border-round text-primary hover:surface-200"
+        text
+        label="Cancel"
+        outlined
+        @click="closeForgotPasswordModal"
+      ></PvButton>
+      <PvButton
+        tabindex="0"
+        class="p-2 text-white border-none border-round bg-primary hover:surface-400"
+        label="Send Reset Email"
+        @click="sendResetEmail"
+      ></PvButton>
+    </template>
+  </RoarModal>
 </template>
 
 <script setup>
@@ -149,6 +192,7 @@ import { setUser } from '@sentry/vue';
 import PvButton from 'primevue/button';
 import PvPassword from 'primevue/password';
 import ROARLogoShort from '@/assets/RoarLogo-Short.vue';
+import PvInputText from 'primevue/inputtext';
 import { useAuthStore } from '@/store/auth';
 import { isMobileBrowser } from '@/helpers';
 import { redirectSignInPath } from '@/helpers/redirectSignInPath';
@@ -163,9 +207,39 @@ const incorrect = ref(false);
 const authStore = useAuthStore();
 const router = useRouter();
 const route = useRoute();
+const availableProviders = ref([]);
+const hasCheckedProviders = ref(false);
+const forgotPasswordModalOpen = ref(false);
+const forgotEmail = ref('');
 
 const { spinner, ssoProvider, routeToProfile, roarfirekit } = storeToRefs(authStore);
 const warningModalOpen = ref(false);
+
+const checkAvailableProviders = async () => {
+  await getProviders(email.value);
+};
+function handleForgotPassword() {
+  forgotPasswordModalOpen.value = true;
+}
+function closeForgotPasswordModal() {
+  forgotPasswordModalOpen.value = false;
+  forgotEmail.value = '';
+}
+function sendResetEmail() {
+  roarfirekit.value.sendPasswordResetEmail(forgotEmail.value);
+  closeForgotPasswordModal();
+}
+
+const getProviders = async () => {
+  const authKit = roarfirekit.value;
+  if (!authKit) {
+    return [];
+  }
+  const emailProvider = (email.value || '').trim().toLowerCase();
+  const raw = await authKit.fetchEmailAuthMethods(emailProvider);
+  availableProviders.value = await normalizeProviders(raw || []);
+  hasCheckedProviders.value = true;
+};
 
 authStore.$subscribe(() => {
   if (authStore.uid) {
@@ -178,6 +252,26 @@ authStore.$subscribe(() => {
     }
   }
 });
+
+const normalizeProviders = async (ids = []) => {
+  const out = new Set();
+  for (const id of ids) {
+    const emailFromProvider = String(id).toLowerCase();
+    if (emailFromProvider === 'password' || emailFromProvider === 'emaillink') out.add('password');
+    if (
+      emailFromProvider === 'google.com' ||
+      emailFromProvider === 'google' ||
+      emailFromProvider === AUTH_SSO_PROVIDERS.GOOGLE
+    ) {
+      out.add(AUTH_SSO_PROVIDERS.GOOGLE);
+    }
+    if (emailFromProvider.startsWith('oidc.') && emailFromProvider.includes('clever'))
+      out.add(AUTH_SSO_PROVIDERS.CLEVER);
+    if (emailFromProvider.startsWith('oidc.') && emailFromProvider.includes('classlink'))
+      out.add(AUTH_SSO_PROVIDERS.CLASSLINK);
+  }
+  return [...out];
+};
 
 const authWithGoogle = () => {
   if (isMobileBrowser()) {
@@ -232,9 +326,10 @@ const authWithClassLink = () => {
   }
 };
 
-const authWithEmail = (state) => {
+const authWithEmail = async (state) => {
   // If username is supplied instead of email
   // turn it into our internal auth email
+  await getProviders(email.value);
   incorrect.value = false;
   let creds = toRaw(state);
   if (creds.useLink && !creds.usePassword) {
