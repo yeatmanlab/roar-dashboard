@@ -135,6 +135,7 @@
             :loading="isLoadingAssignments || isFetchingAssignments"
             :groupheaders="true"
             data-cy="roar-data-table"
+            :task-scoring-versions="getScoringVersions"
             @export-all="exportData({ selectedRows: $event })"
             @export-selected="exportData({ selectedRows: $event })"
           >
@@ -207,7 +208,8 @@
                 :org-type="orgType"
                 :org-id="orgId"
                 :org-info="orgData"
-                :administration-info="administrationData"
+                :administration-name="administrationData?.name"
+                :task-scoring-versions="getScoringVersions"
               />
             </div>
           </PvTabPanel>
@@ -307,6 +309,7 @@ import {
   includeReliabilityFlagsOnExport,
   addElementToPdf,
   getScoreValue,
+  getSubskillValues,
   tasksToDisplayCorrectIncorrectDifference,
   includedValidityFlags,
   roamAlpacaSubskills,
@@ -350,6 +353,16 @@ const displayName = computed(() => {
     return getTitle(administrationData.value, isSuperAdmin.value);
   }
   return 'Fetching administration name...';
+});
+
+const getScoringVersions = computed(() => {
+  const scoringVersions = Object.fromEntries(
+    administrationData.value?.assessments.map((assessment) => [
+      assessment.taskId,
+      assessment?.params?.scoringVersion ?? null,
+    ]),
+  );
+  return scoringVersions;
 });
 
 const formatPhonicsScore = (score) => {
@@ -831,17 +844,15 @@ const computeAssignmentAndRunData = computed(() => {
           currRowScores[taskId].incorrectPhonemes = incorrectPhonemesArray.length > 0 ? incorrectPhonemesArray : 'None';
         }
         if (taskId === 'pa' && assessment.scores) {
-          const first = _get(assessment, 'scores.computed.FSM.roarScore');
-          const last = _get(assessment, 'scores.computed.LSM.roarScore');
-          const deletion = _get(assessment, 'scores.computed.DEL.roarScore');
+          const computedScores = _get(assessment, 'scores.computed');
+          const scoringVersion = _get(computedScores, 'composite.scoringVersion');
+          const { firstSound, lastSound, deletion, total } = getSubskillValues(computedScores, taskId, scoringVersion);
           let skills = [];
-          if (first < 15) skills.push('First Sound Matching');
-          if (last < 15) skills.push('Last sound matching');
+          if (firstSound < 15) skills.push('First Sound Matching');
+          if (lastSound < 15) skills.push('Last sound matching');
           if (deletion < 15) skills.push('Deletion');
-          currRowScores[taskId].firstSound = first;
-          currRowScores[taskId].lastSound = last;
-          currRowScores[taskId].deletion = deletion;
-          currRowScores[taskId].total = _get(assessment, 'scores.computed.composite.roarScore');
+
+          Object.assign(currRowScores[taskId], { firstSound, lastSound, deletion, total, scoringVersion });
           currRowScores[taskId].skills = skills.length > 0 ? skills.join(', ') : 'None';
         }
         if (tasksToDisplayGradeEstimate.includes(taskId)) {

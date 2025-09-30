@@ -773,19 +773,19 @@ const SCORE_FIELD_MAPPINGS = {
   },
   pa: {
     percentile: {
-      new: (grade) => (grade < 6 ? 'percentile' : 'sprPercentile'),
+      new: 'percentile',
       legacy: (grade) => (grade < 6 ? 'percentile' : 'sprPercentile'),
     },
     percentileDisplay: {
-      new: (grade) => (grade < 6 ? 'percentile' : 'sprPercentileString'),
+      new: 'percentile',
       legacy: (grade) => (grade < 6 ? 'percentile' : 'sprPercentileString'),
     },
     standardScore: {
-      new: (grade) => (grade < 6 ? 'standardScore' : 'sprStandardScore'),
+      new: 'standardScore',
       legacy: (grade) => (grade < 6 ? 'standardScore' : 'sprStandardScore'),
     },
     standardScoreDisplay: {
-      new: (grade) => (grade < 6 ? 'standardScore' : 'sprStandardScoreString'),
+      new: 'standardScore',
       legacy: (grade) => (grade < 6 ? 'standardScore' : 'sprStandardScoreString'),
     },
     rawScore: {
@@ -1003,7 +1003,7 @@ export const getRawScoreThreshold = (taskId) => {
   return { above: null, some: null };
 };
 
-export const getRawScoreRange = (taskId) => {
+export const getRawScoreRange = (taskId, scoringVersion = null) => {
   if (taskId.includes('swr')) {
     return {
       min: 100,
@@ -1020,6 +1020,12 @@ export const getRawScoreRange = (taskId) => {
       max: 150,
     };
   } else if (taskId.includes('pa')) {
+    if (scoringVersion === 4) {
+      return {
+        min: 100,
+        max: 900,
+      };
+    }
     return {
       min: 0,
       max: 57,
@@ -1041,6 +1047,27 @@ export const getRawScoreRange = (taskId) => {
     };
   }
   return null;
+};
+
+/**
+ * Safely accesses subskill values from a scores object
+ * @param {Object} scoresObject - The scores object to access
+ * @param {string} taskId - The task identifier
+ * @param {number} scoringVersion - The scoring version. TODO: Some updates (like ROAM) do not have scoringVersion.
+ * @returns {*} The subskill values or empty object if not found
+ */
+export const getSubskillValues = (scoresObject, taskId, scoringVersion = null) => {
+  if (taskId === 'pa') {
+    const paPath = scoringVersion === 4 ? 'numCorrect' : 'roarScore';
+    return {
+      firstSound: scoresObject?.FSM?.[paPath],
+      lastSound: scoresObject?.LSM?.[paPath],
+      deletion: scoresObject?.DEL?.[paPath],
+      total: scoresObject?.composite?.[paPath],
+    };
+  }
+
+  return {};
 };
 
 export const taskInfoById = {
@@ -1090,9 +1117,7 @@ export const taskInfoById = {
       'phonological awareness, as a foundational pre-reading skill, is crucial for ' +
       'achieving reading fluency. Without support for their foundational reading ' +
       'abilities, students may struggle to catch up in overall reading proficiency. ' +
-      "The student's score will range between " +
-      `${getRawScoreRange('pa').min}-${getRawScoreRange('pa').max} and can be ` +
-      "viewed by selecting 'Raw Score' on the table above.",
+      "The student's score will range between {{RANGE}} and can be viewed by selecting 'Raw Score' on the table above.",
     definitions: [
       {
         header: 'What Does Elision Mean?',
@@ -1226,4 +1251,17 @@ export const taskInfoById = {
       'student-level and classroom-wide competencies so that instruction can be customized ' +
       'appropriately.',
   },
+};
+
+// Then create a function to populate the template
+export const replaceScoreRange = (desc, taskId, scoringVersion = null) => {
+  if (!desc) return '';
+
+  // Only process desc field if it contains placeholders
+  if (desc.includes('{{RANGE}}')) {
+    const range = getRawScoreRange(taskId, scoringVersion);
+    return desc.replace('{{RANGE}}', `${range?.min}-${range?.max}`);
+  }
+
+  return desc;
 };
