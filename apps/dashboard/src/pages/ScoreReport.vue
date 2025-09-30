@@ -540,11 +540,9 @@ const getScoresAndSupportFromAssessment = ({ grade, assessment, taskId, optional
   let percentileString = getScoreValue(compositeScores, taskId, gradeValue, 'percentileDisplay');
   let standardScore = getScoreValue(compositeScores, taskId, gradeValue, 'standardScore');
   let rawScore = getScoreValue(compositeScores, taskId, gradeValue, 'rawScore');
-  let tempPercentileSign = '';
 
-  // Extract percentile for getSupportLevel and keep sign for display
   if (typeof percentile === 'string' && percentile.match(/[<>]/).length > 0) {
-    tempPercentileSign = percentile.match(/[<>]/)[0];
+    percentileString = percentile;
     percentile = parseFloat(percentile.replace(/[<>]/g, ''));
   }
 
@@ -582,7 +580,6 @@ const getScoresAndSupportFromAssessment = ({ grade, assessment, taskId, optional
   }
 
   if (percentile) percentile = _round(percentile);
-  if (tempPercentileSign) percentile = `${tempPercentileSign}${percentile}`;
   if (percentileString && !isNaN(_round(percentileString))) percentileString = _round(percentileString);
 
   return {
