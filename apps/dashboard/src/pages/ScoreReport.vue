@@ -770,11 +770,20 @@ const computeAssignmentAndRunData = computed(() => {
         if (tasksToDisplayCorrectIncorrectDifference.includes(taskId)) {
           const numCorrect = assessment.scores?.raw?.composite?.test?.numCorrect;
           const numIncorrect = assessment.scores?.raw?.composite?.test?.numAttempted - numCorrect;
-          currRowScores[taskId].correctIncorrectDifference =
-            numCorrect != null && numIncorrect != null ? Math.round(numCorrect - numIncorrect) : null;
+          const scoringVersion = _get(assessment, 'scores.computed.composite.scoringVersion');
+
+          if (!scoringVersion) {
+            currRowScores[taskId].correctIncorrectDifference =
+              numCorrect != null && numIncorrect != null ? Math.round(numCorrect - numIncorrect) : null;
+            // scoreReportColumns only can only access admin variants, so set rawScore = correctIncorrectDifference
+            // for admins with mixed normed & unnormed scores
+            currRowScores[taskId].rawScore = currRowScores[taskId].correctIncorrectDifference;
+          }
+
           currRowScores[taskId].numCorrect = numCorrect;
           currRowScores[taskId].numIncorrect = numIncorrect;
           currRowScores[taskId].tagColor = tagColor;
+          currRowScores[taskId].scoringVersion = scoringVersion;
           scoreFilterTags += ' Assessed ';
         } else if (tasksToDisplayPercentCorrect.includes(taskId)) {
           const numAttempted = assessment.scores?.raw?.composite?.test?.numAttempted;
@@ -1072,9 +1081,15 @@ const createExportData = ({ rows, includeProgress = false }) => {
         tableRow[`${taskName} - Num Attempted`] = score.numAttempted;
         tableRow[`${taskName} - Num Correct`] = score.numCorrect;
       } else if (tasksToDisplayCorrectIncorrectDifference.includes(taskId)) {
-        tableRow[`${taskName} - Correct/Incorrect Difference`] = score.correctIncorrectDifference;
-        tableRow[`${taskName} - Num Incorrect`] = score.numIncorrect;
-        tableRow[`${taskName} - Num Correct`] = score.numCorrect;
+        if (score.scoringVersion) {
+          tableRow[`${taskName} - Raw Score`] = score.rawScore;
+          tableRow[`${taskName} - Percentile`] = score.percentileString;
+          tableRow[`${taskName} - Standard`] = score.standardScore;
+        } else {
+          tableRow[`${taskName} - Correct/Incorrect Difference`] = score.correctIncorrectDifference;
+          tableRow[`${taskName} - Num Incorrect`] = score.numIncorrect;
+          tableRow[`${taskName} - Num Correct`] = score.numCorrect;
+        }
       } else if (tasksToDisplayTotalCorrect.includes(taskId)) {
         if (score.isNewScoring && score.recruitment !== 'responseModality') {
           tableRow[`${taskName} - Raw Score`] = score.rawScore;
@@ -1532,7 +1547,7 @@ const scoreReportColumns = computed(() => {
       colField = `scores.${taskId}.rawScore`;
     } else {
       if (tasksToDisplayCorrectIncorrectDifference.includes(taskId) && viewMode.value === 'raw') {
-        colField = `scores.${taskId}.correctIncorrectDifference`;
+        colField = `scores.${taskId}.rawScore`; // Technically correctIncorrectDifference if unnormed
       } else if (tasksToDisplayTotalCorrect.includes(taskId) && viewMode.value === 'raw') {
         colField = `scores.${taskId}.rawScore`;
       } else if (tasksToDisplayPercentCorrect.includes(taskId) && viewMode.value === 'raw') {
