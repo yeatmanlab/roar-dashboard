@@ -729,11 +729,11 @@ const ALLOWED_SCORE_FIELD_TYPES = [
 const SCORE_FIELD_MAPPINGS = {
   swr: {
     percentile: {
-      new: 'wjPercentile',
+      new: 'percentile',
       legacy: 'wjPercentile', // Same for now, but can be updated
     },
     percentileDisplay: {
-      new: 'wjPercentile',
+      new: 'percentile',
       legacy: 'wjPercentile',
     },
     standardScore: {
@@ -751,11 +751,11 @@ const SCORE_FIELD_MAPPINGS = {
   },
   'swr-es': {
     percentile: {
-      new: 'wjPercentile',
+      new: 'percentile',
       legacy: 'wjPercentile',
     },
     percentileDisplay: {
-      new: 'wjPercentile',
+      new: 'percentile',
       legacy: 'wjPercentile',
     },
     standardScore: {

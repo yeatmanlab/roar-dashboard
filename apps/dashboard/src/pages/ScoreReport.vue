@@ -756,11 +756,20 @@ const computeAssignmentAndRunData = computed(() => {
         if (tasksToDisplayCorrectIncorrectDifference.includes(taskId)) {
           const numCorrect = assessment.scores?.raw?.composite?.test?.numCorrect;
           const numIncorrect = assessment.scores?.raw?.composite?.test?.numAttempted - numCorrect;
-          currRowScores[taskId].correctIncorrectDifference =
-            numCorrect != null && numIncorrect != null ? Math.round(numCorrect - numIncorrect) : null;
+          const scoringVersion = _get(assessment, 'scores.computed.composite.scoringVersion');
+
+          if (!scoringVersion) {
+            currRowScores[taskId].correctIncorrectDifference =
+              numCorrect != null && numIncorrect != null ? Math.round(numCorrect - numIncorrect) : null;
+            // scoreReportColumns only can only access admin variants, so set rawScore = correctIncorrectDifference
+            // for admins with mixed normed & unnormed scores
+            currRowScores[taskId].rawScore = currRowScores[taskId].correctIncorrectDifference;
+          }
+
           currRowScores[taskId].numCorrect = numCorrect;
           currRowScores[taskId].numIncorrect = numIncorrect;
           currRowScores[taskId].tagColor = tagColor;
+          currRowScores[taskId].scoringVersion = scoringVersion;
           scoreFilterTags += ' Assessed ';
         } else if (tasksToDisplayPercentCorrect.includes(taskId)) {
           const numAttempted = assessment.scores?.raw?.composite?.test?.numAttempted;
@@ -795,21 +804,21 @@ const computeAssignmentAndRunData = computed(() => {
         }
         if (taskId === 'phonics' && assessment.scores) {
           // Process phonics scores
-          const composite = assessment.scores.computed?.composite;
+          const composite = _get(assessment, 'scores.computed.composite');
           if (composite) {
             currRowScores[taskId] = {
               composite: {
-                totalPercentCorrect: composite.totalPercentCorrect,
+                totalPercentCorrect: _get(composite, 'totalPercentCorrect'),
                 subscores: {
-                  cvc: formatPhonicsScore(composite.subscores?.cvc),
-                  digraph: formatPhonicsScore(composite.subscores?.digraph),
-                  initial_blend: formatPhonicsScore(composite.subscores?.initial_blend),
-                  tri_blend: formatPhonicsScore(composite.subscores?.tri_blend),
-                  final_blend: formatPhonicsScore(composite.subscores?.final_blend),
-                  r_controlled: formatPhonicsScore(composite.subscores?.r_controlled),
-                  r_cluster: formatPhonicsScore(composite.subscores?.r_cluster),
-                  silent_e: formatPhonicsScore(composite.subscores?.silent_e),
-                  vowel_team: formatPhonicsScore(composite.subscores?.vowel_team),
+                  cvc: formatPhonicsScore(_get(composite, 'subscores.cvc')),
+                  digraph: formatPhonicsScore(_get(composite, 'subscores.digraph')),
+                  initial_blend: formatPhonicsScore(_get(composite, 'subscores.initial_blend')),
+                  tri_blend: formatPhonicsScore(_get(composite, 'subscores.tri_blend')),
+                  final_blend: formatPhonicsScore(_get(composite, 'subscores.final_blend')),
+                  r_controlled: formatPhonicsScore(_get(composite, 'subscores.r_controlled')),
+                  r_cluster: formatPhonicsScore(_get(composite, 'subscores.r_cluster')),
+                  silent_e: formatPhonicsScore(_get(composite, 'subscores.silent_e')),
+                  vowel_team: formatPhonicsScore(_get(composite, 'subscores.vowel_team')),
                 },
               },
               skillsToWorkOn: composite.skillsToWorkOn || 'None',
@@ -1056,9 +1065,15 @@ const createExportData = ({ rows, includeProgress = false }) => {
         tableRow[`${taskName} - Num Attempted`] = score.numAttempted;
         tableRow[`${taskName} - Num Correct`] = score.numCorrect;
       } else if (tasksToDisplayCorrectIncorrectDifference.includes(taskId)) {
-        tableRow[`${taskName} - Correct/Incorrect Difference`] = score.correctIncorrectDifference;
-        tableRow[`${taskName} - Num Incorrect`] = score.numIncorrect;
-        tableRow[`${taskName} - Num Correct`] = score.numCorrect;
+        if (score.scoringVersion) {
+          tableRow[`${taskName} - Raw Score`] = score.rawScore;
+          tableRow[`${taskName} - Percentile`] = score.percentileString;
+          tableRow[`${taskName} - Standard`] = score.standardScore;
+        } else {
+          tableRow[`${taskName} - Correct/Incorrect Difference`] = score.correctIncorrectDifference;
+          tableRow[`${taskName} - Num Incorrect`] = score.numIncorrect;
+          tableRow[`${taskName} - Num Correct`] = score.numCorrect;
+        }
       } else if (tasksToDisplayTotalCorrect.includes(taskId)) {
         if (score.isNewScoring && score.recruitment !== 'responseModality') {
           tableRow[`${taskName} - Raw Score`] = score.rawScore;
@@ -1516,7 +1531,7 @@ const scoreReportColumns = computed(() => {
       colField = `scores.${taskId}.rawScore`;
     } else {
       if (tasksToDisplayCorrectIncorrectDifference.includes(taskId) && viewMode.value === 'raw') {
-        colField = `scores.${taskId}.correctIncorrectDifference`;
+        colField = `scores.${taskId}.rawScore`; // Technically correctIncorrectDifference if unnormed
       } else if (tasksToDisplayTotalCorrect.includes(taskId) && viewMode.value === 'raw') {
         colField = `scores.${taskId}.rawScore`;
       } else if (tasksToDisplayPercentCorrect.includes(taskId) && viewMode.value === 'raw') {
