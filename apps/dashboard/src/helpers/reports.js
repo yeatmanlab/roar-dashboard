@@ -672,7 +672,11 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = 
     };
   }
   if (percentile !== undefined && getGrade(grade) < 6) {
-    const useUpdatedNorms = (taskId === 'sre' && scoringVersion === 4) || (taskId === 'swr' && scoringVersion === 7);
+    const isUpdatedSre = taskId === 'sre' && scoringVersion >= 4;
+    const isUpdatedSreEs = taskId === 'sre-es' && scoringVersion >= 1;
+    const isUpdatedSwr = taskId === 'swr' && scoringVersion >= 7;
+    const isUpdatedSwrEs = taskId === 'swr-es' && scoringVersion >= 1;
+    const useUpdatedNorms = isUpdatedSwr || isUpdatedSwrEs || isUpdatedSre || isUpdatedSreEs;
     const [achievedCutOff, developingCutOff] = useUpdatedNorms ? [40, 20] : [50, 25];
     if (percentile >= achievedCutOff) {
       support_level = 'Achieved Skill';
