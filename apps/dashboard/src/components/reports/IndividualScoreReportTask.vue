@@ -261,6 +261,10 @@ const props = defineProps({
     type: Boolean,
     required: false,
   },
+  taskScoringVersions: {
+    type: Object,
+    required: true,
+  },
 });
 
 const emit = defineEmits(['update:expanded']);
@@ -446,7 +450,14 @@ const computedTaskData = computed(() => {
 function getSupportLevelLanguage(grade, percentile, rawScore, taskId, truncated = null) {
   // truncated is applied when the description on the task card is shortened;
   // the sentences called when truncated is true will better match the shortened descriptions
-  const { support_level } = getSupportLevel(grade, percentile, rawScore, taskId);
+  const { support_level } = getSupportLevel(
+    grade,
+    percentile,
+    rawScore,
+    taskId,
+    false,
+    props.taskScoringVersions[taskId],
+  );
   if (support_level) {
     if (support_level === 'Achieved Skill') {
       if (truncated) {

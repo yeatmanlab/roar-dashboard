@@ -288,6 +288,17 @@ const routes = [
     meta: { pageTitle: 'SRE', permission: Permissions.Tasks.LAUNCH },
   },
   {
+    path: '/launch/:launchId' + GAME_ROUTES.SRE_ES,
+    name: 'Launch SRE-ES',
+    component: () => import('../components/tasks/TaskSRE.vue'),
+    props: (route) => ({
+      taskId: 'sre-es',
+      language: 'es',
+      launchId: route.params.launchId,
+    }),
+    meta: { pageTitle: 'SRE-ES', permission: Permissions.Tasks.LAUNCH },
+  },
+  {
     path: '/launch/:launchId' + GAME_ROUTES.LETTER,
     name: 'Launch Letter',
     component: () => import('../components/tasks/TaskLetter.vue'),

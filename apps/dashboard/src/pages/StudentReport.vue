@@ -98,6 +98,7 @@
         :student-data="studentData"
         :task-data="taskData"
         :expanded="expanded"
+        :task-scoring-versions="getScoringVersions"
       />
     </div>
     <div id="support-graphic" class="support-wrapper">
@@ -336,6 +337,16 @@ const studentFirstName = computed(() => {
 const studentLastName = computed(() => {
   if (!studentData?.value?.name) return '';
   return studentData.value.name.last;
+});
+
+const getScoringVersions = computed(() => {
+  const scoringVersions = Object.fromEntries(
+    administrationData.value?.assessments.map((assessment) => [
+      assessment.taskId,
+      assessment?.params?.scoringVersion ?? null,
+    ]),
+  );
+  return scoringVersions;
 });
 
 const refreshing = ref(false);
