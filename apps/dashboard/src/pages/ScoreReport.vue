@@ -208,6 +208,7 @@
                 :org-id="orgId"
                 :org-info="orgData"
                 :administration-info="administrationData"
+                :task-scoring-versions="getScoringVersions"
               />
             </div>
           </PvTabPanel>
@@ -350,6 +351,16 @@ const displayName = computed(() => {
     return getTitle(administrationData.value, isSuperAdmin.value);
   }
   return 'Fetching administration name...';
+});
+
+const getScoringVersions = computed(() => {
+  const scoringVersions = Object.fromEntries(
+    administrationData.value?.assessments.map((assessment) => [
+      assessment.taskId,
+      assessment?.params?.scoringVersion ?? null,
+    ]),
+  );
+  return scoringVersions;
 });
 
 const formatPhonicsScore = (score) => {
@@ -540,6 +551,13 @@ const getScoresAndSupportFromAssessment = ({ grade, assessment, taskId, optional
   let percentileString = getScoreValue(compositeScores, taskId, gradeValue, 'percentileDisplay');
   let standardScore = getScoreValue(compositeScores, taskId, gradeValue, 'standardScore');
   let rawScore = getScoreValue(compositeScores, taskId, gradeValue, 'rawScore');
+  let tempPercentileSign = '';
+
+  // Extract percentile for getSupportLevel and keep sign for display
+  if (typeof percentile === 'string' && percentile.match(/[<>]/).length > 0) {
+    tempPercentileSign = percentile.match(/[<>]/)[0];
+    percentile = parseFloat(percentile.replace(/[<>]/g, ''));
+  }
 
   if (
     tasksToDisplayCorrectIncorrectDifference.includes(assessment.taskId) ||
@@ -571,10 +589,18 @@ const getScoresAndSupportFromAssessment = ({ grade, assessment, taskId, optional
       }
     }
   } else {
-    ({ support_level, tag_color } = getSupportLevel(grade, percentile, rawScore, taskId, optional));
+    ({ support_level, tag_color } = getSupportLevel(
+      grade,
+      percentile,
+      rawScore,
+      taskId,
+      optional,
+      getScoringVersions.value[taskId],
+    ));
   }
 
   if (percentile) percentile = _round(percentile);
+  if (tempPercentileSign) percentile = `${tempPercentileSign}${percentile}`;
   if (percentileString && !isNaN(_round(percentileString))) percentileString = _round(percentileString);
 
   return {
