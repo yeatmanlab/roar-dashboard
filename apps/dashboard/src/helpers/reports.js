@@ -673,7 +673,8 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = 
       tag_color: supportLevelColors.optional,
     };
   }
-  if (tasksToDisplayPercentCorrect.includes(taskId)) {
+  // Only return Raw Score for tasks that should display percentage and are not SWR/SRE
+  if (tasksToDisplayPercentCorrect.includes(taskId) && !['swr', 'swr-es', 'sre', 'sre-es'].includes(taskId)) {
     return {
       support_level: 'Raw Score',
       tag_color: supportLevelColors.Assessed,

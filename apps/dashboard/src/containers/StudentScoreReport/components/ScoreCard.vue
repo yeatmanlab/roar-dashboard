@@ -114,6 +114,7 @@
 
 <script setup>
 import { ref, watch } from 'vue';
+import { startCase } from 'lodash';
 import PvKnob from 'primevue/knob';
 import PvTag from 'primevue/tag';
 import PvAccordion from 'primevue/accordion';
@@ -198,18 +199,6 @@ const ACCORDION_PANELS = Object.freeze({
 
 const visiblePanels = ref([]);
 
-const formatDate = (date) => {
-  return new Date(date).toLocaleDateString(undefined, {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  });
-};
-
-const formatScoreType = (type) => {
-  return _startCase(type);
-};
-
 const formatPhonicsKey = (key) => {
   const keyMap = {
     cvc: 'CVC Words',
@@ -221,7 +210,7 @@ const formatPhonicsKey = (key) => {
     silent_e: 'Silent E',
     vowel_team: 'Vowel Teams',
   };
-  return keyMap[key] || _startCase(key);
+  return keyMap[key] || startCase(key);
 };
 
 watch(
