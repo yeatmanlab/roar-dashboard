@@ -971,7 +971,15 @@ export function getScoreValue(scoresObject, taskId, grade, fieldType) {
   // Try new field name first
   const newFieldName = resolveFieldName(taskId, gradeValue, fieldType, false);
   if (newFieldName && scoresObject[newFieldName] !== undefined) {
-    return scoresObject[newFieldName];
+    let scoreValue = scoresObject[newFieldName];
+    if (
+      (fieldType === 'percentile' || fieldType === 'standardScore') &&
+      typeof scoreValue === 'string' &&
+      scoreValue.match(/[<>]/).length > 0
+    ) {
+      scoreValue = parseFloat(scoreValue.replace(/[<>]/g, ''));
+    }
+    return scoreValue;
   }
 
   // Fall back to legacy field name

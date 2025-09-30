@@ -195,6 +195,48 @@ describe('reports', () => {
         expect(getScoreValue(scoresObject, 'swr-es', 4, 'standardScoreDisplay')).toBe(105);
         expect(getScoreValue(scoresObject, 'swr-es', 4, 'rawScore')).toBe(480);
       });
+
+      it('should parse percentile value with > or < and return a number', () => {
+        const scoresObject = {
+          percentile: '>55',
+          standardScore: 110,
+          roarScore: 550,
+        };
+
+        expect(getScoreValue(scoresObject, 'swr', 3, 'percentile')).toBe(55);
+        expect(getScoreValue(scoresObject, 'swr', 3, 'percentileDisplay')).toBe('>55');
+        expect(getScoreValue(scoresObject, 'swr', 3, 'standardScore')).toBe(110);
+        expect(getScoreValue(scoresObject, 'swr', 3, 'standardScoreDisplay')).toBe(110);
+        expect(getScoreValue(scoresObject, 'swr', 3, 'rawScore')).toBe(550);
+      });
+
+      it('should parse standardScore value with > or < and return a number', () => {
+        const scoresObject = {
+          percentile: 55,
+          standardScore: '>110',
+          roarScore: 550,
+        };
+
+        expect(getScoreValue(scoresObject, 'swr', 3, 'percentile')).toBe(55);
+        expect(getScoreValue(scoresObject, 'swr', 3, 'percentileDisplay')).toBe(55);
+        expect(getScoreValue(scoresObject, 'swr', 3, 'standardScore')).toBe(110);
+        expect(getScoreValue(scoresObject, 'swr', 3, 'standardScoreDisplay')).toBe('>110');
+        expect(getScoreValue(scoresObject, 'swr', 3, 'rawScore')).toBe(550);
+      });
+
+      it('should not parse values not standardScore or percentile with > or <', () => {
+        const scoresObject = {
+          percentile: 55,
+          standardScore: 110,
+          roarScore: '>900',
+        };
+
+        expect(getScoreValue(scoresObject, 'swr', 3, 'percentile')).toBe(55);
+        expect(getScoreValue(scoresObject, 'swr', 3, 'percentileDisplay')).toBe(55);
+        expect(getScoreValue(scoresObject, 'swr', 3, 'standardScore')).toBe(110);
+        expect(getScoreValue(scoresObject, 'swr', 3, 'standardScoreDisplay')).toBe(110);
+        expect(getScoreValue(scoresObject, 'swr', 3, 'rawScore')).toBe('>900');
+      });
     });
 
     describe('PA task field mapping with grade dependency', () => {
