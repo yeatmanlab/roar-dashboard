@@ -59,8 +59,7 @@
               data-cy="sign-in__nycps-sso"
               @click="authWithNYCPS"
             >
-              <img src="../assets/provider-nycps-logo.svg" alt="The NYCPS Logo" class="flex mr-2 w-2" />
-              <span>NYCPS</span>
+              <span>Sign in with NYCPS</span>
             </PvButton>
           </div>
         </section>
@@ -240,15 +239,13 @@ const authWithClassLink = () => {
   spinner.value = true;
 };
 
-const authWithNYCPS = async () => {
-  try {
-    spinner.value = true;
-    await authStore.signInWithNYCPSPopup();
-  } catch (error) {
-    console.error('NYCPS auth error:', error);
-  } finally {
-    spinner.value = false;
-  }
+const authWithNYCPS = () => {
+  // if (process.env.NODE_ENV === 'development' && !window.Cypress) {
+  authStore.signInWithNYCPSPopup();
+  // } else {
+  //   authStore.signInWithNYCPSRedirect();
+  // }
+  spinner.value = true;
 };
 
 const authWithEmail = (state) => {
