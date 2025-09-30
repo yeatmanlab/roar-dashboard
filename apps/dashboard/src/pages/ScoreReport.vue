@@ -208,6 +208,7 @@
                 :org-id="orgId"
                 :org-info="orgData"
                 :administration-info="administrationData"
+                :task-scoring-versions="getScoringVersions"
               />
             </div>
           </PvTabPanel>
@@ -350,6 +351,16 @@ const displayName = computed(() => {
     return getTitle(administrationData.value, isSuperAdmin.value);
   }
   return 'Fetching administration name...';
+});
+
+const getScoringVersions = computed(() => {
+  const scoringVersions = Object.fromEntries(
+    administrationData.value?.assessments.map((assessment) => [
+      assessment.taskId,
+      assessment?.params?.scoringVersion ?? null,
+    ]),
+  );
+  return scoringVersions;
 });
 
 const formatPhonicsScore = (score) => {
@@ -580,7 +591,14 @@ const getScoresAndSupportFromAssessment = ({ grade, assessment, taskId, optional
       }
     }
   } else {
-    ({ support_level, tag_color } = getSupportLevel(grade, percentile, rawScore, taskId, optional));
+    ({ support_level, tag_color } = getSupportLevel(
+      grade,
+      percentile,
+      rawScore,
+      taskId,
+      optional,
+      getScoringVersions.value[taskId],
+    ));
   }
 
   if (percentile) percentile = _round(percentile);

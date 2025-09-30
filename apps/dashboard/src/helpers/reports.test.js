@@ -8,6 +8,8 @@ import {
   getRawScoreRange,
   getTagColor,
   supportLevelColors,
+  replaceScoreRange,
+  taskInfoById,
 } from './reports';
 
 vi.mock('./index', () => ({
@@ -43,51 +45,136 @@ describe('reports', () => {
   };
 
   describe('getSupportLevel', () => {
-    it('should return null support level when rawScore is undefined', () => {
-      const result = getSupportLevel(3, 50, undefined, 'swr');
-      expect(result).toEqual({
-        support_level: null,
-        tag_color: null,
+    describe('old scoring', () => {
+      it('should return null support level when rawScore is undefined', () => {
+        const result = getSupportLevel(3, 50, undefined, 'swr', false);
+        expect(result).toEqual({
+          support_level: null,
+          tag_color: null,
+        });
+      });
+
+      it('should return Optional support level when optional is true', () => {
+        const result = getSupportLevel(3, 50, 100, 'swr', true, false);
+        expect(result).toEqual({
+          support_level: 'Optional',
+          tag_color: undefined,
+        });
+      });
+
+      it('should return Achieved Skill for percentile >= 50 and grade < 6', () => {
+        const result = getSupportLevel(3, 75, 100, 'swr', false);
+        expect(result).toEqual({
+          support_level: 'Achieved Skill',
+          tag_color: 'green',
+        });
+      });
+
+      it('should return Developing Skill for percentile between 25 and 50', () => {
+        const result = getSupportLevel(3, 30, 100, 'swr', false);
+        expect(result).toEqual({
+          support_level: 'Developing Skill',
+          tag_color: '#edc037',
+        });
+      });
+
+      it('should return Needs Extra Support for percentile <= 25', () => {
+        const result = getSupportLevel(3, 20, 100, 'swr', false);
+        expect(result).toEqual({
+          support_level: 'Needs Extra Support',
+          tag_color: '#c93d82',
+        });
+      });
+
+      it('should use raw score thresholds for grade >= 6', () => {
+        const result = getSupportLevel(6, undefined, 600, 'swr', false);
+        expect(result).toEqual({
+          support_level: 'Achieved Skill',
+          tag_color: 'green',
+        });
       });
     });
 
-    it('should return Optional support level when optional is true', () => {
-      const result = getSupportLevel(3, 50, 100, 'swr', true);
-      expect(result).toEqual({
-        support_level: 'Optional',
-        tag_color: undefined,
+    describe('new scoring', () => {
+      it('should return Achieved Skill for percentile >= 40 and grade < 6', () => {
+        const result = getSupportLevel(3, 50, 513, 'swr', false, 7);
+        expect(result).toEqual({
+          support_level: 'Achieved Skill',
+          tag_color: 'green',
+        });
       });
-    });
 
-    it('should return Achieved Skill for percentile >= 50 and grade < 6', () => {
-      const result = getSupportLevel(3, 75, 100, 'swr');
-      expect(result).toEqual({
-        support_level: 'Achieved Skill',
-        tag_color: 'green',
+      it('should return Developing Skill for percentile between 20 and 40', () => {
+        const result = getSupportLevel(3, 21, 413, 'swr', false, 7);
+        expect(result).toEqual({
+          support_level: 'Developing Skill',
+          tag_color: '#edc037',
+        });
       });
-    });
 
-    it('should return Developing Skill for percentile between 25 and 50', () => {
-      const result = getSupportLevel(3, 30, 100, 'swr');
-      expect(result).toEqual({
-        support_level: 'Developing Skill',
-        tag_color: '#edc037',
+      it('should return Needs Extra Support for percentile <= 20', () => {
+        const result = getSupportLevel(3, 20, 100, 'swr', false, 7);
+        expect(result).toEqual({
+          support_level: 'Needs Extra Support',
+          tag_color: '#c93d82',
+        });
       });
-    });
 
-    it('should return Needs Extra Support for percentile <= 25', () => {
-      const result = getSupportLevel(3, 20, 100, 'swr');
-      expect(result).toEqual({
-        support_level: 'Needs Extra Support',
-        tag_color: '#c93d82',
+      it('should return Achieved Skill for percentile >= 40 and grade < 6 for sre', () => {
+        const result = getSupportLevel(3, 40, 41, 'sre', false, 4);
+        expect(result).toEqual({
+          support_level: 'Achieved Skill',
+          tag_color: 'green',
+        });
       });
-    });
 
-    it('should use raw score thresholds for grade >= 6', () => {
-      const result = getSupportLevel(6, undefined, 600, 'swr');
-      expect(result).toEqual({
-        support_level: 'Achieved Skill',
-        tag_color: 'green',
+      it('should return Achieved Skill for grade >= 6 for swr', () => {
+        const result = getSupportLevel(6, undefined, 520, 'swr', false, 7);
+        expect(result).toEqual({
+          support_level: 'Achieved Skill',
+          tag_color: 'green',
+        });
+      });
+
+      it('should return Developing Skill for grade >= 6 for swr-es', () => {
+        const result = getSupportLevel(6, undefined, 500, 'swr-es', false, 1);
+        expect(result).toEqual({
+          support_level: 'Developing Skill',
+          tag_color: '#edc037',
+        });
+      });
+
+      it('should return Developing Skill for grade >= 6 for sre', () => {
+        const result = getSupportLevel(6, undefined, 30, 'sre', false, 4);
+        expect(result).toEqual({
+          support_level: 'Developing Skill',
+          tag_color: '#edc037',
+        });
+      });
+
+      it('should return Needs Extra Support for grade >= 6 for sre-es', () => {
+        const result = getSupportLevel(6, undefined, 10, 'sre-es', false, 1);
+        expect(result).toEqual({
+          support_level: 'Needs Extra Support',
+          tag_color: '#c93d82',
+        });
+      });
+
+      it('should fallback to legacy thresholds for grade >= 6', () => {
+        const result = getSupportLevel(6, undefined, 30, 'sre', false);
+        expect(result).toEqual({
+          support_level: 'Needs Extra Support',
+          tag_color: '#c93d82',
+        });
+      });
+
+      it('should return null for old scoring without scoring version (unnormed)', () => {
+        const result = getSupportLevel(6, undefined, 30, 'sre-es', false);
+
+        expect(result).toEqual({
+          support_level: null,
+          tag_color: null,
+        });
       });
     });
   });
@@ -397,35 +484,71 @@ describe('reports', () => {
   });
 
   describe('getRawScoreThreshold', () => {
-    it('should return correct thresholds for swr', () => {
-      const result = getRawScoreThreshold('swr');
-      expect(result).toEqual({
-        above: 550,
-        some: 400,
+    describe('old scoring', () => {
+      it('should return correct thresholds for swr', () => {
+        const result = getRawScoreThreshold('swr');
+        expect(result).toEqual({
+          above: 550,
+          some: 400,
+        });
+      });
+
+      it('should return correct thresholds for sre', () => {
+        const result = getRawScoreThreshold('sre');
+        expect(result).toEqual({
+          above: 70,
+          some: 47,
+        });
+      });
+
+      it('should return correct thresholds for pa', () => {
+        const result = getRawScoreThreshold('pa');
+        expect(result).toEqual({
+          above: 55,
+          some: 45,
+        });
+      });
+
+      it('should return null thresholds for unknown task', () => {
+        const result = getRawScoreThreshold('unknown');
+        expect(result).toEqual({
+          above: null,
+          some: null,
+        });
       });
     });
 
-    it('should return correct thresholds for sre', () => {
-      const result = getRawScoreThreshold('sre');
-      expect(result).toEqual({
-        above: 70,
-        some: 47,
+    describe('new scoring', () => {
+      it('should return correct thresholds for swr with scoring version 7', () => {
+        const result = getRawScoreThreshold('swr', 7);
+        expect(result).toEqual({
+          above: 513,
+          some: 413,
+        });
       });
-    });
 
-    it('should return correct thresholds for pa', () => {
-      const result = getRawScoreThreshold('pa');
-      expect(result).toEqual({
-        above: 55,
-        some: 45,
+      it('should return correct thresholds for sre with scoring version 4', () => {
+        const result = getRawScoreThreshold('sre', 4);
+        expect(result).toEqual({
+          above: 41,
+          some: 23,
+        });
       });
-    });
 
-    it('should return null thresholds for unknown task', () => {
-      const result = getRawScoreThreshold('unknown');
-      expect(result).toEqual({
-        above: null,
-        some: null,
+      it('should return correct thresholds for swr-es', () => {
+        const result = getRawScoreThreshold('swr-es', 1);
+        expect(result).toEqual({
+          above: 547,
+          some: 447,
+        });
+      });
+
+      it('should return correct thresholds for sre-es', () => {
+        const result = getRawScoreThreshold('sre-es', 1);
+        expect(result).toEqual({
+          above: 25,
+          some: 12,
+        });
       });
     });
   });
@@ -515,6 +638,35 @@ describe('reports', () => {
       expect(getTagColor('Unknown')).toBe(supportLevelColors.Assessed);
       expect(getTagColor(null)).toBe(supportLevelColors.Assessed);
       expect(getTagColor(undefined)).toBe(supportLevelColors.Assessed);
+    });
+  });
+
+  describe('replaceScoreRange', () => {
+    it('should return an empty string if text does not exist', () => {
+      expect(replaceScoreRange(taskInfoById['hearts-and-flowers']?.desc, 'hearts-ands-flowers')).toBe('');
+    });
+
+    it('should return original text if templates do not exist', () => {
+      const alpacaDesc = taskInfoById['roam-alpaca']?.desc;
+      expect(replaceScoreRange(alpacaDesc, 'roam-alpaca', 5)).toBe(alpacaDesc);
+    });
+
+    it('should return original cutoff for swr if scoring version is not 7', () => {
+      const swrDesc = replaceScoreRange(taskInfoById['swr']?.desc, 'swr', 6);
+      expect(swrDesc).not.toMatch(/{{.*}}/);
+      expect(swrDesc).toMatch(/75%/);
+    });
+
+    it('should return new cutoff for swr if scoring version is 7', () => {
+      const swrDesc = replaceScoreRange(taskInfoById['swr']?.desc, 'swr', 7);
+      expect(swrDesc).not.toMatch(/{{.*}}/);
+      expect(swrDesc).toMatch(/80%/);
+    });
+
+    it('should return new cutoff for sre if scoring version is 4', () => {
+      const sreDesc = replaceScoreRange(taskInfoById['sre']?.desc, 'sre', 4);
+      expect(sreDesc).not.toMatch(/{{.*}}/);
+      expect(sreDesc).toMatch(/80%/);
     });
   });
 });
