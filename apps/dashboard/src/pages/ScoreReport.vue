@@ -546,6 +546,10 @@ const getScoresAndSupportFromAssessment = ({ grade, assessment, taskId, optional
     percentile = parseFloat(percentile.replace(/[<>]/g, ''));
   }
 
+  if (typeof standardScore === 'string' && standardScore.match(/[<>]/).length > 0) {
+    standardScore = parseFloat(standardScore.replace(/[<>]/g, ''));
+  }
+
   if (
     tasksToDisplayCorrectIncorrectDifference.includes(assessment.taskId) ||
     tasksToDisplayPercentCorrect.includes(assessment.taskId) ||
