@@ -222,16 +222,7 @@ const ScoreReportService = (() => {
     const taskName = taskDisplayNames[task.taskId]?.extendedName;
     const taskDescription = extendedDescriptions[task.taskId];
 
-    if (tasksToDisplayPercentCorrect.includes(task.taskId)) {
-      return {
-        keypath: 'scoreReports.percentageCorrectTaskDescription',
-        slots: {
-          percentage: task.percentage.value,
-          taskName,
-          taskDescription,
-        },
-      };
-    } else if (rawOnlyTasks.includes(task.taskId)) {
+    if (rawOnlyTasks.includes(task.taskId)) {
       return {
         keypath: 'scoreReports.rawTaskDescription',
         slots: {
@@ -245,22 +236,8 @@ const ScoreReportService = (() => {
         keypath: 'scoreReports.standardTaskDescription',
         slots: {
           standardScore: Math.round(task.standardScore.value),
-          supportCategory: getSupportLevelLanguage(
-            grade,
-            task?.percentileScore.value,
-            task?.rawScore.value,
-            task.taskId,
-            i18n,
-          ),
           taskName,
           taskDescription,
-        },
-      };
-    } else {
-      return {
-        keypath: 'scoreReports.percentileTaskDescription',
-        slots: {
-          percentile: getPercentileWithSuffix(Math.round(task?.percentileScore.value)) + ' percentile',
           supportCategory: getSupportLevelLanguage(
             grade,
             task.percentileScore.value,
@@ -268,8 +245,22 @@ const ScoreReportService = (() => {
             task.taskId,
             i18n,
           ),
+        },
+      };
+    } else {
+      return {
+        keypath: 'scoreReports.percentileTaskDescription',
+        slots: {
+          percentile: getPercentileWithSuffix(Math.round(task.percentileScore.value)) + ' percentile',
           taskName,
           taskDescription,
+          supportCategory: getSupportLevelLanguage(
+            grade,
+            task.percentileScore.value,
+            task.rawScore.value,
+            task.taskId,
+            i18n,
+          ),
         },
       };
     }
@@ -356,7 +347,7 @@ const ScoreReportService = (() => {
         const tags = createTaskTags(optional, reliable, engagementFlags, i18n);
         let scoreToDisplay;
         if (tasksToDisplayPercentCorrect.includes(taskId)) {
-          scoreToDisplay = 'percentage';
+          scoreToDisplay = grade >= 6 ? 'standardScore' : 'percentileScore';
         } else if (rawOnlyTasks.includes(taskId)) {
           scoreToDisplay = SCORE_TYPE_KEYS.RAW_SCORE;
         } else {
