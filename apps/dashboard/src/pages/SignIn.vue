@@ -232,11 +232,11 @@ const authWithClassLink = () => {
 };
 
 const authWithNYCPS = () => {
-  if (process.env.NODE_ENV === 'development' && !window.Cypress) {
-    authStore.signInWithNYCPSPopup();
-  } else {
-    authStore.signInWithNYCPSRedirect();
-  }
+  // if (process.env.NODE_ENV === 'development' && !window.Cypress) {
+  authStore.signInWithNYCPSPopup();
+  // } else {
+  //   authStore.signInWithNYCPSRedirect();
+  // }
   spinner.value = true;
 };
 
