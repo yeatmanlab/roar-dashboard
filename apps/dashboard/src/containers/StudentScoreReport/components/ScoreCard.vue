@@ -56,6 +56,7 @@
             {{ $t('scoreReports.scoreBreakdown') }}
           </PvAccordionHeader>
           <PvAccordionContent :pt="{ content: { class: 'px-0' } }">
+            <!-- Regular scores -->
             <div v-for="[key, rawScore, rangeMin, rangeMax] in scoresArray" :key="key">
               <div v-if="!isNaN(rawScore)" class="flex justify-content-between">
                 <div class="mr-2">
@@ -69,6 +70,23 @@
                 </div>
               </div>
             </div>
+
+            <!-- Phonics subscores -->
+            <template v-if="taskId === 'phonics' && score?.subscores && Object.keys(score.subscores).length > 0">
+              <div class="mt-4 mb-2 font-semibold">{{ $t('scoreReports.phonicsSubscores') }}:</div>
+              <div
+                v-for="[key, value] in Object.entries(score.subscores || {})"
+                :key="key"
+                class="flex px-2 mb-1 justify-content-between"
+              >
+                <div class="mr-2">
+                  <span>{{ formatPhonicsKey(key) }}</span>
+                </div>
+                <div class="ml-2">
+                  <b>{{ value }}</b>
+                </div>
+              </div>
+            </template>
           </PvAccordionContent>
         </PvAccordionPanel>
 
@@ -91,6 +109,7 @@
 
 <script setup>
 import { ref, watch } from 'vue';
+import _startCase from 'lodash/startCase';
 import PvKnob from 'primevue/knob';
 import PvTag from 'primevue/tag';
 import PvAccordion from 'primevue/accordion';
@@ -111,6 +130,13 @@ const props = defineProps({
   score: {
     type: Object,
     required: true,
+    validator: (value) => {
+      return (
+        typeof value === 'object' &&
+        value !== null &&
+        ('value' in value || 'supportColor' in value || 'min' in value || 'max' in value || 'subscores' in value)
+      );
+    },
   },
   tags: {
     type: Array,
@@ -163,6 +189,20 @@ const ACCORDION_PANELS = Object.freeze({
 });
 
 const visiblePanels = ref([]);
+
+const formatPhonicsKey = (key) => {
+  const keyMap = {
+    cvc: 'CVC Words',
+    digraph: 'Digraphs',
+    initial_blend: 'Initial Blends',
+    final_blend: 'Final Blends',
+    r_controlled: 'R-Controlled',
+    r_cluster: 'R-Clusters',
+    silent_e: 'Silent E',
+    vowel_team: 'Vowel Teams',
+  };
+  return keyMap[key] || _startCase(key);
+};
 
 watch(
   () => props.expanded,

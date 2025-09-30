@@ -72,8 +72,29 @@ const computedTaskData = computed(() => {
   // Process longitudinal data
   const longitudinalData = toValue(props.longitudinalData);
 
+  // Add phonics subscores if available
+  const processedTasks = currentTasks.map((task) => {
+    if (task.taskId === 'phonics' && task.scores?.composite?.subscores) {
+      // Format the subscores as correct/attempted
+      const formattedSubscores = {};
+      const subscores = task.scores.composite.subscores;
+      Object.entries(subscores).forEach(([key, value]) => {
+        formattedSubscores[key] = `${value.correct}/${value.attempted}`;
+      });
+
+      return {
+        ...task,
+        [task.scoreToDisplay]: {
+          ...task[task.scoreToDisplay],
+          subscores: formattedSubscores,
+        },
+      };
+    }
+    return task;
+  });
+
   if (longitudinalData && Object.keys(longitudinalData).length > 0) {
-    return currentTasks.map((task) => {
+    return processedTasks.map((task) => {
       const taskHistory = longitudinalData[task.taskId] || [];
 
       const processedHistory = [...taskHistory]
@@ -110,7 +131,7 @@ const computedTaskData = computed(() => {
     });
   }
 
-  return currentTasks;
+  return processedTasks;
 });
 
 /**
