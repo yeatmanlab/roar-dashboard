@@ -1,0 +1,60 @@
+<template>
+  <div class="text-left">
+    <h1 class="mb-1 text-xs text-gray-600 uppercase">
+      {{ $t('scoreReports.pageTitle') }}
+    </h1>
+    <h2 class="p-0 m-0 text-4xl font-semibold">{{ studentFirstName }} {{ studentLastName }}</h2>
+  </div>
+
+  <dl v-if="studentGrade || className || administrationName" class="inline-block py-2 w-full">
+    <div v-if="studentGrade" class="inline-block mr-8">
+      <dt class="inline font-semibold">{{ $t('scoreReports.grade') }}:</dt>
+      <dd class="inline ml-2">{{ getGradeWithSuffix(studentGrade) }}</dd>
+    </div>
+    <div v-if="className" class="inline-block mr-8">
+      <dt class="inline font-semibold">{{ $t('scoreReports.class') }}:</dt>
+      <dd class="inline ml-2">{{ className }}</dd>
+    </div>
+    <div v-if="administrationName" class="inline-block">
+      <dt class="inline font-semibold">{{ $t('scoreReports.administration') }}:</dt>
+      <dd class="inline ml-2">{{ administrationName }}</dd>
+    </div>
+  </dl>
+</template>
+
+<script setup>
+import { getGradeWithSuffix } from '@/helpers/reports.js';
+
+defineProps({
+  studentFirstName: {
+    type: String,
+    required: true,
+  },
+  studentLastName: {
+    type: String,
+    default: '',
+  },
+  studentGrade: {
+    type: [String, Number],
+    default: null,
+  },
+  className: {
+    type: String,
+    default: '',
+  },
+  administrationName: {
+    type: String,
+    default: '',
+  },
+  expanded: {
+    type: Boolean,
+    default: false,
+  },
+  exportLoading: {
+    type: Boolean,
+    default: false,
+  },
+});
+
+defineEmits(['toggleExpand', 'exportPdf']);
+</script>

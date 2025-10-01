@@ -97,6 +97,7 @@ const ScoreReportService = (() => {
 
     tags.push({
       icon: 'pi pi-info-circle',
+      label: 'Type',
       value: i18n.t(optional ? 'scoreReports.optional' : 'scoreReports.required'),
       severity: TAG_SEVERITIES.INFO,
       tooltip: i18n.t(optional ? 'scoreReports.optionalTagText' : 'scoreReports.requiredTagText'),
@@ -104,6 +105,7 @@ const ScoreReportService = (() => {
 
     tags.push({
       value: i18n.t(reliable === false ? 'scoreReports.unreliable' : 'scoreReports.reliable'),
+      label: 'Reliability',
       icon: reliable === false ? 'pi pi-times' : 'pi pi-check',
       severity: reliable === false ? TAG_SEVERITIES.DANGER : TAG_SEVERITIES.SUCCESS,
       tooltip:

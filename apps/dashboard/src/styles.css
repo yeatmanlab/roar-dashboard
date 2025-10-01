@@ -113,6 +113,27 @@ legend {
   border-top-style: solid;
 }
 
+.border-collapse {
+  border-collapse: collapse;
+}
+
+.list-inside {
+  list-style-position: outside;
+}
+
+.columns-2 {
+  columns: 2;
+}
+@media (min-width: 768px) {
+  .md\:columns-2 {
+    columns: 2;
+  }
+}
+
+.float-right {
+  float: right;
+}
+
 .grid-cols-1 {
   grid-template-columns: repeat(1, minmax(0, 1fr));
 }

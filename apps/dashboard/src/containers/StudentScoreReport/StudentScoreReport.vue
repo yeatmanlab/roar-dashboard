@@ -7,54 +7,91 @@
     </div>
 
     <template v-else>
-      <div data-pdf-export-container>
-        <HeaderSection
+      <template v-if="isPrintMode">
+        <HeaderPrintSection
           :student-first-name="studentFirstName"
           :student-last-name="studentLastName"
           :student-grade="studentGrade"
           :administration-name="administrationData?.name"
           :administration-date="administrationData?.date"
-          :data-pdf-export-section="SCORE_REPORT_EXPORT_SECTIONS.HEADER"
         />
 
         <template v-if="!taskData?.length">
-          <EmptyState :student-first-name="studentFirstName" data-pdf-export-section />
+          <EmptyState :student-first-name="studentFirstName" />
         </template>
 
         <template v-else>
-          <SummarySection
+          <SummaryPrintSection
             :student-first-name="studentFirstName"
-            :formatted-tasks="tasksList"
+            :tasks="tasksListArray"
             :expanded="expanded"
             :export-loading="exportLoading"
-            :data-pdf-export-section="SCORE_REPORT_EXPORT_SECTIONS.SUMMARY"
             @toggle-expand="toggleExpand"
             @export-pdf="handleExportToPdf"
           />
 
-          <ScoreCardsListSection
+          <ScoreCardsListPrintSection
             :student-first-name="studentFirstName"
             :student-grade="studentGrade"
             :task-data="taskData"
             :tasks-dictionary="tasksDictionary"
             :longitudinal-data="longitudinalData"
             :expanded="expanded"
-            :data-pdf-export-section="SCORE_REPORT_EXPORT_SECTIONS.DETAILS"
-          />
-
-          <SupportSection
-            :expanded="expanded"
-            :student-grade="studentGrade"
-            :data-pdf-export-section="SCORE_REPORT_EXPORT_SECTIONS.SUPPORT"
           />
         </template>
-      </div>
+      </template>
+
+      <template v-else>
+        <div data-pdf-export-container>
+          <HeaderSection
+            :student-first-name="studentFirstName"
+            :student-last-name="studentLastName"
+            :student-grade="studentGrade"
+            :administration-name="administrationData?.name"
+            :administration-date="administrationData?.date"
+            :data-pdf-export-section="SCORE_REPORT_EXPORT_SECTIONS.HEADER"
+          />
+
+          <template v-if="!taskData?.length">
+            <EmptyState :student-first-name="studentFirstName" data-pdf-export-section />
+          </template>
+
+          <template v-else>
+            <SummarySection
+              :student-first-name="studentFirstName"
+              :formatted-tasks="tasksList"
+              :expanded="expanded"
+              :export-loading="exportLoading"
+              :data-pdf-export-section="SCORE_REPORT_EXPORT_SECTIONS.SUMMARY"
+              @toggle-expand="toggleExpand"
+              @export-pdf="handleExportToPdf"
+            />
+
+            <ScoreCardsListSection
+              :student-first-name="studentFirstName"
+              :student-grade="studentGrade"
+              :task-data="taskData"
+              :tasks-dictionary="tasksDictionary"
+              :longitudinal-data="longitudinalData"
+              :expanded="expanded"
+              :data-pdf-export-section="SCORE_REPORT_EXPORT_SECTIONS.DETAILS"
+            />
+
+            <SupportSection
+              :expanded="expanded"
+              :student-grade="studentGrade"
+              :data-pdf-export-section="SCORE_REPORT_EXPORT_SECTIONS.SUPPORT"
+            />
+          </template>
+        </div>
+      </template>
     </template>
   </div>
 </template>
 
 <script setup>
 import { computed, ref, onMounted, onUnmounted, watch, nextTick, toValue } from 'vue';
+import { useRoute } from 'vue-router';
 import { useAuthStore } from '@/store/auth';
 import useUserDataQuery from '@/composables/queries/useUserDataQuery';
 import useAdministrationsQuery from '@/composables/queries/useAdministrationsQuery';
@@ -65,13 +102,17 @@ import PdfExportService from '@/services/PdfExport.service';
 import { taskDisplayNames } from '@/helpers/reports';
 
 import AppSpinner from '@/components/AppSpinner.vue';
-import HeaderSection from './components/HeaderSection.vue';
-import SummarySection from './components/SummarySection.vue';
-import ScoreCardsListSection from './components/ScoreCardsListSection.vue';
+import HeaderSection from './components/header/HeaderSection.vue';
+import HeaderPrintSection from './components/header/HeaderPrintSection.vue';
+import SummarySection from './components/summary/SummarySection.vue';
+import SummaryPrintSection from './components/summary/SummaryPrintSection.vue';
+import ScoreCardsListSection from './components/score-cards-list/ScoreCardsListSection.vue';
+import ScoreCardsListPrintSection from './components/score-cards-list/ScoreCardsListPrintSection.vue';
 import SupportSection from './components/SupportSection.vue';
 import EmptyState from './components/EmptyState.vue';
 import { getStudentDisplayName } from '@/helpers/getStudentDisplayName';
 import { formatList } from '@/helpers/formatList';
+import { formatListArray } from '@/helpers/formatListArray';
 import { SCORE_REPORT_SECTIONS_EXPANDED_URL_PARAM } from '@/constants/scores';
 
 const SCORE_REPORT_EXPORT_SECTIONS = Object.freeze({
@@ -101,6 +142,9 @@ const props = defineProps({
 });
 
 const authStore = useAuthStore();
+const route = useRoute();
+
+const isPrintMode = computed(() => route.query.print === 'true', { immediate: true });
 
 // Data loading state
 const initialized = ref(false);
@@ -162,6 +206,15 @@ const { data: tasksDictionary, isLoading: isLoadingTasksDictionary } = useTasksD
 const tasks = computed(() => taskData?.value?.map((assignment) => assignment.taskId) || []);
 const tasksList = computed(() =>
   formatList(tasks.value, tasksDictionary.value, (task, entry) => entry?.technicalName ?? task, {
+    orderLookup: Object.entries(taskDisplayNames).reduce((acc, [key, value]) => {
+      acc[key] = value.order;
+      return acc;
+    }, {}),
+    suffix: '.',
+  }),
+);
+const tasksListArray = computed(() =>
+  formatListArray(tasks.value, tasksDictionary.value, (task, entry) => entry?.technicalName ?? task, {
     orderLookup: Object.entries(taskDisplayNames).reduce((acc, [key, value]) => {
       acc[key] = value.order;
       return acc;
