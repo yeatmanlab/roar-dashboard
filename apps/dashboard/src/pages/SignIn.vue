@@ -227,7 +227,7 @@ const authWithClassLink = () => {
     authStore.signInWithClassLinkRedirect();
     spinner.value = true;
   } else {
-    authStore.signInWithClassLinkPopup();
+    authStore.signInWithClassLinkRedirect();
     spinner.value = true;
   }
 };
