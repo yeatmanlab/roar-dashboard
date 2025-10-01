@@ -17,7 +17,7 @@
           :expanded="expanded"
           :longitudinal-data="task.historicalScores"
           :task-id="task.taskId"
-          :grade="studentGrade"
+          :student-grade="studentGrade"
         />
       </template>
     </div>
@@ -38,7 +38,7 @@ const props = defineProps({
     required: true,
   },
   studentGrade: {
-    type: Number,
+    type: String,
     required: true,
   },
   taskData: {

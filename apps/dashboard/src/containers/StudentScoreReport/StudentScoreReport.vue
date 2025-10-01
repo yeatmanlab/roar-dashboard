@@ -24,7 +24,7 @@
         <template v-else>
           <SummarySection
             :student-first-name="studentFirstName"
-            :formatted-tasks="formattedTasksList"
+            :formatted-tasks="tasksList"
             :expanded="expanded"
             :export-loading="exportLoading"
             :data-pdf-export-section="SCORE_REPORT_EXPORT_SECTIONS.SUMMARY"
@@ -44,7 +44,7 @@
 
           <SupportSection
             :expanded="expanded"
-            :student-grade="studentData?.studentData?.grade"
+            :student-grade="studentGrade"
             :data-pdf-export-section="SCORE_REPORT_EXPORT_SECTIONS.SUPPORT"
           />
         </template>
@@ -54,7 +54,7 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted, onUnmounted, watch, nextTick } from 'vue';
+import { computed, ref, onMounted, onUnmounted, watch, nextTick, toValue } from 'vue';
 import { useAuthStore } from '@/store/auth';
 import useUserDataQuery from '@/composables/queries/useUserDataQuery';
 import useAdministrationsQuery from '@/composables/queries/useAdministrationsQuery';
@@ -71,7 +71,6 @@ import ScoreCardsListSection from './components/ScoreCardsListSection.vue';
 import SupportSection from './components/SupportSection.vue';
 import EmptyState from './components/EmptyState.vue';
 import { getStudentDisplayName } from '@/helpers/getStudentDisplayName';
-import { getStudentGrade } from '@/helpers/getStudentGrade';
 import { formatList } from '@/helpers/formatList';
 import { SCORE_REPORT_SECTIONS_EXPANDED_URL_PARAM } from '@/constants/scores';
 
@@ -161,7 +160,7 @@ const { data: tasksDictionary, isLoading: isLoadingTasksDictionary } = useTasksD
 
 // Computed properties
 const tasks = computed(() => taskData?.value?.map((assignment) => assignment.taskId) || []);
-const formattedTasksList = computed(() =>
+const tasksList = computed(() =>
   formatList(tasks.value, tasksDictionary.value, (task, entry) => entry?.technicalName ?? task, {
     orderLookup: Object.entries(taskDisplayNames).reduce((acc, [key, value]) => {
       acc[key] = value.order;
@@ -187,7 +186,7 @@ const studentLastName = computed(
 
 const studentGrade = computed(
   () => {
-    return getStudentGrade(studentData);
+    return toValue(studentData)?.studentData?.grade;
   },
   { immediate: true },
 );

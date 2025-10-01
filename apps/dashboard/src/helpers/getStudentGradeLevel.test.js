@@ -1,12 +1,12 @@
 import { describe, it, expect, vi } from 'vitest';
 import { ref } from 'vue';
-import { getStudentGrade } from './getStudentGrade';
+import { getStudentGradeLevel } from './getStudentGradeLevel';
 
 vi.mock('@bdelab/roar-utils', () => ({
   getGrade: vi.fn((grade) => parseInt(grade)),
 }));
 
-describe('getStudentGrade', () => {
+describe('getStudentGradeLevel', () => {
   it('should extract numeric grade from student data ref structure', () => {
     const studentData = ref({
       studentData: {
@@ -14,7 +14,7 @@ describe('getStudentGrade', () => {
       },
     });
 
-    const result = getStudentGrade(studentData);
+    const result = getStudentGradeLevel(studentData);
     expect(result).toBe(3);
   });
 
@@ -25,7 +25,7 @@ describe('getStudentGrade', () => {
       },
     });
 
-    const result = getStudentGrade(studentData);
+    const result = getStudentGradeLevel(studentData);
     expect(result).toBe(1);
   });
 
@@ -34,7 +34,7 @@ describe('getStudentGrade', () => {
       studentData: {},
     });
 
-    const result = getStudentGrade(studentData);
+    const result = getStudentGradeLevel(studentData);
     expect(result).toBe(NaN);
   });
 });

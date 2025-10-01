@@ -591,7 +591,7 @@ function getOrdinalSuffix(n) {
 }
 
 export function getGradeToDisplay(grade) {
-  const gradeValue = getGrade(grade);
+  const gradeLevel = getGrade(grade);
 
   if (grade === 'Pre-K') {
     return 'Prekindergarten';
@@ -601,17 +601,17 @@ export function getGradeToDisplay(grade) {
     return 'Kindergarten';
   }
 
-  if (typeof gradeValue !== 'number' || gradeValue < 0) {
+  if (typeof gradeLevel !== 'number' || gradeLevel < 0) {
     console.error('Invalid grade provided'); // For Sentry logging
     return null;
   }
 
-  const suffix = getOrdinalSuffix(gradeValue);
-  return `${gradeValue}${suffix} Grade`;
+  const suffix = getOrdinalSuffix(gradeLevel);
+  return `${gradeLevel}${suffix} Grade`;
 }
 
 export function getGradeWithSuffix(grade) {
-  const gradeValue = getGrade(grade);
+  const gradeLevel = getGrade(grade);
 
   if (grade === 'Pre-K') {
     return 'Pre-K';
@@ -625,16 +625,13 @@ export function getGradeWithSuffix(grade) {
     return 'K';
   }
 
-  if (typeof gradeValue !== 'number' || gradeValue < 1) {
+  if (typeof gradeLevel !== 'number' || gradeLevel < 1) {
     return grade;
   }
 
-  return `${gradeValue}${getOrdinalSuffix(gradeValue)}`;
+  return `${gradeLevel}${getOrdinalSuffix(gradeLevel)}`;
 }
-/*
- *  Get Support Level
- *  Function to take scores, taskId, and grade and return the proper support category for the run.
- */
+
 export const getDialColor = (grade, percentile, rawScore, taskId) => {
   if (taskId === 'phonics') {
     return 'var(--gray-500)';
@@ -647,18 +644,22 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = 
   let support_level = null;
   let tag_color = null;
 
+  const gradeLevel = getGrade(grade);
+
   if (rawScore === undefined) {
     return {
       support_level,
       tag_color,
     };
   }
+
   if (optional) {
     return {
       support_level: 'Optional',
       tag_color: supportLevelColors.optional,
     };
   }
+
   if (
     (tasksToDisplayPercentCorrect.includes(taskId) ||
       tasksToDisplayCorrectIncorrectDifference.includes(taskId) ||
@@ -671,7 +672,8 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = 
       tag_color: supportLevelColors.Assessed,
     };
   }
-  if (percentile !== undefined && getGrade(grade) < 6) {
+
+  if (percentile !== undefined && gradeLevel < 6) {
     const isUpdatedSre = taskId === 'sre' && scoringVersion >= 4;
     const isUpdatedSreEs = taskId === 'sre-es' && scoringVersion >= 1;
     const isUpdatedSwr = taskId === 'swr' && scoringVersion >= 7;
@@ -688,7 +690,7 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = 
       support_level = 'Needs Extra Support';
       tag_color = supportLevelColors.below;
     }
-  } else if (rawScore !== undefined && grade >= 6) {
+  } else if (rawScore !== undefined && gradeLevel >= 6) {
     const { above, some } = getRawScoreThreshold(taskId, scoringVersion);
 
     // Only return support_level and tag_color if the thresholds are not null
@@ -783,20 +785,20 @@ const SCORE_FIELD_MAPPINGS = {
   },
   pa: {
     percentile: {
-      new: (grade) => (grade < 6 ? 'percentile' : 'sprPercentile'),
-      legacy: (grade) => (grade < 6 ? 'percentile' : 'sprPercentile'),
+      new: (gradeLevel) => (gradeLevel < 6 ? 'percentile' : 'sprPercentile'),
+      legacy: (gradeLevel) => (gradeLevel < 6 ? 'percentile' : 'sprPercentile'),
     },
     percentileDisplay: {
-      new: (grade) => (grade < 6 ? 'percentile' : 'sprPercentileString'),
-      legacy: (grade) => (grade < 6 ? 'percentile' : 'sprPercentileString'),
+      new: (gradeLevel) => (gradeLevel < 6 ? 'percentile' : 'sprPercentileString'),
+      legacy: (gradeLevel) => (gradeLevel < 6 ? 'percentile' : 'sprPercentileString'),
     },
     standardScore: {
-      new: (grade) => (grade < 6 ? 'standardScore' : 'sprStandardScore'),
-      legacy: (grade) => (grade < 6 ? 'standardScore' : 'sprStandardScore'),
+      new: (gradeLevel) => (gradeLevel < 6 ? 'standardScore' : 'sprStandardScore'),
+      legacy: (gradeLevel) => (gradeLevel < 6 ? 'standardScore' : 'sprStandardScore'),
     },
     standardScoreDisplay: {
-      new: (grade) => (grade < 6 ? 'standardScore' : 'sprStandardScoreString'),
-      legacy: (grade) => (grade < 6 ? 'standardScore' : 'sprStandardScoreString'),
+      new: (gradeLevel) => (gradeLevel < 6 ? 'standardScore' : 'sprStandardScoreString'),
+      legacy: (gradeLevel) => (gradeLevel < 6 ? 'standardScore' : 'sprStandardScoreString'),
     },
     rawScore: {
       new: 'roarScore',
@@ -806,19 +808,19 @@ const SCORE_FIELD_MAPPINGS = {
   sre: {
     percentile: {
       new: 'percentile',
-      legacy: (grade) => (grade < 6 ? 'tosrecPercentile' : 'sprPercentile'),
+      legacy: (gradeLevel) => (gradeLevel < 6 ? 'tosrecPercentile' : 'sprPercentile'),
     },
     percentileDisplay: {
       new: 'percentile',
-      legacy: (grade) => (grade < 6 ? 'tosrecPercentile' : 'sprPercentile'),
+      legacy: (gradeLevel) => (gradeLevel < 6 ? 'tosrecPercentile' : 'sprPercentile'),
     },
     standardScore: {
       new: 'standardScore',
-      legacy: (grade) => (grade < 6 ? 'tosrecSS' : 'sprStandardScore'),
+      legacy: (gradeLevel) => (gradeLevel < 6 ? 'tosrecSS' : 'sprStandardScore'),
     },
     standardScoreDisplay: {
       new: 'standardScore',
-      legacy: (grade) => (grade < 6 ? 'tosrecSS' : 'sprStandardScore'),
+      legacy: (gradeLevel) => (gradeLevel < 6 ? 'tosrecSS' : 'sprStandardScore'),
     },
     rawScore: {
       new: 'sreScore',

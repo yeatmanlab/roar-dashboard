@@ -22,8 +22,8 @@ const props = defineProps({
     type: String,
     required: true,
   },
-  grade: {
-    type: Number,
+  studentGrade: {
+    type: String,
     required: true,
   },
 });
@@ -74,7 +74,7 @@ const chartData = computed(() => {
     .map((e) => {
       const x = new Date(e.date);
       const y = +e.scores[type];
-      const s = getSupportLevel(props.grade, e.scores?.percentile, e.scores?.rawScore, props.taskId);
+      const s = getSupportLevel(props.studentGrade, e.scores?.percentile, e.scores?.rawScore, props.taskId);
       return {
         x,
         y,
