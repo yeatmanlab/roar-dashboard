@@ -561,7 +561,6 @@ const getScoresAndSupportFromAssessment = ({ grade, assessment, taskId, optional
   }
 
   if (
-    tasksToDisplayCorrectIncorrectDifference.includes(assessment.taskId) ||
     tasksToDisplayPercentCorrect.includes(assessment.taskId) ||
     tasksToDisplayTotalCorrect.includes(taskId) ||
     tasksToDisplayGradeEstimate.includes(assessment.taskId)
@@ -1553,8 +1552,6 @@ const scoreReportColumns = computed(() => {
       colField = `scores.${taskId}.percentile`;
     } else if (
       viewMode.value === 'standard' &&
-      tasksToDisplayCorrectIncorrectDifference.includes(taskId) &&
-      getScoringVersions.value[taskId] >= 1 &&
       !tasksToDisplayPercentCorrect.includes(taskId) &&
       !tasksToDisplayTotalCorrect.includes(taskId) &&
       !tasksToDisplayGradeEstimate.includes(taskId)
