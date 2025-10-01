@@ -1,6 +1,7 @@
 import html2canvas from 'html2canvas';
 import { toValue } from 'vue';
 import { getGrade } from '@bdelab/roar-utils';
+import { LEVANTE_TASK_IDS_NO_SCORES } from '../constants/levanteTasks';
 /*
  *  Task Display Names
  *  A map of all tasks, including their taskId, display name, and index for ordering
@@ -398,6 +399,7 @@ export const excludeFromScoringTasks = [
   'external-test-task',
   'qualtrics-experience',
   'roar-survey',
+  ...LEVANTE_TASK_IDS_NO_SCORES,
 ];
 
 export const includeReliabilityFlagsOnExport = ['Word', 'Letter', 'Phoneme', 'Sentence'];
@@ -643,7 +645,7 @@ export const getDialColor = (grade, percentile, rawScore, taskId) => {
   return tag_color;
 };
 
-export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = null) => {
+export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = null, scoringVersion = null) => {
   let support_level = null;
   let tag_color = null;
 
@@ -672,10 +674,16 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = 
     };
   }
   if (percentile !== undefined && getGrade(grade) < 6) {
-    if (percentile >= 50) {
+    const isUpdatedSre = taskId === 'sre' && scoringVersion >= 4;
+    const isUpdatedSreEs = taskId === 'sre-es' && scoringVersion >= 1;
+    const isUpdatedSwr = taskId === 'swr' && scoringVersion >= 7;
+    const isUpdatedSwrEs = taskId === 'swr-es' && scoringVersion >= 1;
+    const useUpdatedNorms = isUpdatedSwr || isUpdatedSwrEs || isUpdatedSre || isUpdatedSreEs;
+    const [achievedCutOff, developingCutOff] = useUpdatedNorms ? [40, 20] : [50, 25];
+    if (percentile >= achievedCutOff) {
       support_level = 'Achieved Skill';
       tag_color = supportLevelColors.above;
-    } else if (percentile > 25 && percentile < 50) {
+    } else if (percentile > developingCutOff && percentile < achievedCutOff) {
       support_level = 'Developing Skill';
       tag_color = supportLevelColors.some;
     } else {
@@ -683,16 +691,20 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = 
       tag_color = supportLevelColors.below;
     }
   } else if (rawScore !== undefined && grade >= 6) {
-    const { above, some } = getRawScoreThreshold(taskId);
-    if (rawScore >= above) {
-      support_level = 'Achieved Skill';
-      tag_color = supportLevelColors.above;
-    } else if (rawScore > some && rawScore < above) {
-      support_level = 'Developing Skill';
-      tag_color = supportLevelColors.some;
-    } else {
-      support_level = 'Needs Extra Support';
-      tag_color = supportLevelColors.below;
+    const { above, some } = getRawScoreThreshold(taskId, scoringVersion);
+
+    // Only return support_level and tag_color if the thresholds are not null
+    if (above != null && some != null) {
+      if (rawScore >= above) {
+        support_level = 'Achieved Skill';
+        tag_color = supportLevelColors.above;
+      } else if (rawScore > some && rawScore < above) {
+        support_level = 'Developing Skill';
+        tag_color = supportLevelColors.some;
+      } else {
+        support_level = 'Needs Extra Support';
+        tag_color = supportLevelColors.below;
+      }
     }
   }
   return {
@@ -729,11 +741,11 @@ const ALLOWED_SCORE_FIELD_TYPES = [
 const SCORE_FIELD_MAPPINGS = {
   swr: {
     percentile: {
-      new: 'wjPercentile',
+      new: 'percentile',
       legacy: 'wjPercentile', // Same for now, but can be updated
     },
     percentileDisplay: {
-      new: 'wjPercentile',
+      new: 'percentile',
       legacy: 'wjPercentile',
     },
     standardScore: {
@@ -751,11 +763,11 @@ const SCORE_FIELD_MAPPINGS = {
   },
   'swr-es': {
     percentile: {
-      new: 'wjPercentile',
+      new: 'percentile',
       legacy: 'wjPercentile',
     },
     percentileDisplay: {
-      new: 'wjPercentile',
+      new: 'percentile',
       legacy: 'wjPercentile',
     },
     standardScore: {
@@ -795,24 +807,41 @@ const SCORE_FIELD_MAPPINGS = {
   },
   sre: {
     percentile: {
-      new: (grade) => (grade < 6 ? 'tosrecPercentile' : 'sprPercentile'),
+      new: 'percentile',
       legacy: (grade) => (grade < 6 ? 'tosrecPercentile' : 'sprPercentile'),
     },
     percentileDisplay: {
-      new: (grade) => (grade < 6 ? 'tosrecPercentile' : 'sprPercentile'),
+      new: 'percentile',
       legacy: (grade) => (grade < 6 ? 'tosrecPercentile' : 'sprPercentile'),
     },
     standardScore: {
-      new: (grade) => (grade < 6 ? 'tosrecSS' : 'sprStandardScore'),
+      new: 'standardScore',
       legacy: (grade) => (grade < 6 ? 'tosrecSS' : 'sprStandardScore'),
     },
     standardScoreDisplay: {
-      new: (grade) => (grade < 6 ? 'tosrecSS' : 'sprStandardScore'),
+      new: 'standardScore',
       legacy: (grade) => (grade < 6 ? 'tosrecSS' : 'sprStandardScore'),
     },
     rawScore: {
       new: 'sreScore',
       legacy: 'sreScore',
+    },
+  },
+  'sre-es': {
+    percentile: {
+      new: 'percentile',
+    },
+    percentileDisplay: {
+      new: 'percentile',
+    },
+    standardScore: {
+      new: 'standardScore',
+    },
+    standardScoreDisplay: {
+      new: 'standardScore',
+    },
+    rawScore: {
+      new: 'sreScore',
     },
   },
   letter: {
@@ -954,7 +983,15 @@ export function getScoreValue(scoresObject, taskId, grade, fieldType) {
   // Try new field name first
   const newFieldName = resolveFieldName(taskId, gradeValue, fieldType, false);
   if (newFieldName && scoresObject[newFieldName] !== undefined) {
-    return scoresObject[newFieldName];
+    let scoreValue = scoresObject[newFieldName];
+    if (
+      (fieldType === 'percentile' || fieldType === 'standardScore') &&
+      typeof scoreValue === 'string' &&
+      scoreValue.match(/[<>]/).length > 0
+    ) {
+      scoreValue = parseFloat(scoreValue.replace(/[<>]/g, ''));
+    }
+    return scoreValue;
   }
 
   // Fall back to legacy field name
@@ -966,17 +1003,43 @@ export function getScoreValue(scoresObject, taskId, grade, fieldType) {
   return undefined;
 }
 
-export const getRawScoreThreshold = (taskId) => {
+export const getRawScoreThreshold = (taskId, scoringVersion) => {
   if (taskId === 'swr') {
+    if (scoringVersion >= 7) {
+      return {
+        above: 513,
+        some: 413,
+      };
+    }
     return {
       above: 550,
       some: 400,
     };
+  } else if (taskId === 'swr-es') {
+    if (scoringVersion >= 1) {
+      return {
+        above: 547,
+        some: 447,
+      };
+    }
   } else if (taskId === 'sre') {
+    if (scoringVersion >= 4) {
+      return {
+        above: 41,
+        some: 23,
+      };
+    }
     return {
       above: 70,
       some: 47,
     };
+  } else if (taskId === 'sre-es') {
+    if (scoringVersion >= 1) {
+      return {
+        above: 25,
+        some: 12,
+      };
+    }
   } else if (taskId === 'pa') {
     return {
       above: 55,
@@ -1051,7 +1114,7 @@ export const taskInfoById = {
       getRawScoreRange('swr').min
     }-${
       getRawScoreRange('swr').max
-    } and can be viewed by selecting 'Raw Score' on the table above. Students in the pink category need support in word-level decoding. For these students, decoding difficulties are likely the bottleneck for growth in reading fluency and comprehension. Students in grades K-5 in the pink category have word-level decoding skills below 75% of their peers, nationally. Students in grades 6-12 in the pink category have word-level decoding skills below a third-grade level. Students in the yellow category are still developing their decoding skills and will likely benefit from further practice and/or support in foundational reading skills. Students in the green category demonstrate that word-level decoding is not holding them back from developing fluency and comprehension of connected text.`,
+    } and can be viewed by selecting 'Raw Score' on the table above. Students in the pink category need support in word-level decoding. For these students, decoding difficulties are likely the bottleneck for growth in reading fluency and comprehension. Students in grades K-5 in the pink category have word-level decoding skills below {{SUPPORT_RANGE}} of their peers, nationally. Students in grades 6-12 in the pink category have word-level decoding skills below a third-grade level. Students in the yellow category are still developing their decoding skills and will likely benefit from further practice and/or support in foundational reading skills. Students in the green category demonstrate that word-level decoding is not holding them back from developing fluency and comprehension of connected text.`,
     definitions: [
       {
         header: 'WHAT IS DECODING',
@@ -1104,7 +1167,7 @@ export const taskInfoById = {
       "and can be viewed by selecting 'Raw Score' on the table above. " +
       'Students in the pink category need support in sentence-reading ' +
       'efficiency to support growth in reading comprehension. Students in grades ' +
-      'K-5 in the pink category have sentence-reading efficiency skills below 75% ' +
+      'K-5 in the pink category have sentence-reading efficiency skills below {{SUPPORT_RANGE}} ' +
       'of their peers. Students in grades 6-12 in the pink category have ' +
       'sentence-reading efficiency skills below a third-grade level. ' +
       'Students in the yellow category are still developing their sentence' +
@@ -1209,4 +1272,22 @@ export const taskInfoById = {
       'student-level and classroom-wide competencies so that instruction can be customized ' +
       'appropriately.',
   },
+};
+
+// Then create a function to populate the template
+export const replaceScoreRange = (desc, taskId, scoringVersion = null) => {
+  if (!desc) return '';
+
+  // Only process desc field if it contains placeholders
+  if (desc.includes('{{RANGE}}')) {
+    const range = getRawScoreRange(taskId, scoringVersion);
+    return desc.replace('{{RANGE}}', `${range?.min}-${range?.max}`);
+  }
+
+  if (desc.includes('{{SUPPORT_RANGE}}')) {
+    const useUpdatedNorms = (taskId === 'sre' && scoringVersion >= 4) || (taskId === 'swr' && scoringVersion >= 7);
+    return desc.replace('{{SUPPORT_RANGE}}', `${useUpdatedNorms ? '80' : '75'}%`);
+  }
+
+  return desc;
 };
