@@ -1,6 +1,7 @@
 <template>
-  <div v-if="spinner" class="loading-blur">
+  <div v-if="spinner || autoSigningIn" class="loading-blur">
     <AppSpinner />
+    <div v-if="autoSigningIn" class="text-center mt-4 text-xl font-bold">Signing you in automatically...</div>
   </div>
   <div id="signin-container">
     <section id="signin">
@@ -278,8 +279,27 @@ const handleWarningModalClose = () => {
 };
 
 const email = ref('');
-
 const signInMethods = ref([]);
+const autoSigningIn = ref(false);
+
+// Check if we're coming from registration
+onMounted(() => {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('autoLogin') === 'true') {
+    autoSigningIn.value = true;
+    // Get credentials from params
+    const loginEmail = params.get('email');
+    const loginPassword = params.get('password');
+    if (loginEmail && loginPassword) {
+      // Auto sign in
+      authWithEmail({
+        email: loginEmail,
+        password: loginPassword,
+        usePassword: true, // Required by authWithEmail
+      });
+    }
+  }
+});
 
 const openWarningModal = async () => {
   signInMethods.value = await roarfirekit.value.fetchEmailAuthMethods(email.value);
