@@ -1079,16 +1079,10 @@ const createExportData = ({ rows, includeProgress = false }) => {
         tableRow[`${taskName} - Percent Correct`] = score.percentCorrect;
         tableRow[`${taskName} - Num Attempted`] = score.numAttempted;
         tableRow[`${taskName} - Num Correct`] = score.numCorrect;
-      } else if (tasksToDisplayCorrectIncorrectDifference.includes(taskId)) {
-        if (score.scoringVersion) {
-          tableRow[`${taskName} - Raw Score`] = score.rawScore;
-          tableRow[`${taskName} - Percentile`] = score.percentileString;
-          tableRow[`${taskName} - Standard`] = score.standardScore;
-        } else {
-          tableRow[`${taskName} - Correct/Incorrect Difference`] = score.correctIncorrectDifference;
-          tableRow[`${taskName} - Num Incorrect`] = score.numIncorrect;
-          tableRow[`${taskName} - Num Correct`] = score.numCorrect;
-        }
+      } else if (tasksToDisplayCorrectIncorrectDifference.includes(taskId) && !score.scoringVersion) {
+        tableRow[`${taskName} - Correct/Incorrect Difference`] = score.correctIncorrectDifference;
+        tableRow[`${taskName} - Num Incorrect`] = score.numIncorrect;
+        tableRow[`${taskName} - Num Correct`] = score.numCorrect;
       } else if (tasksToDisplayTotalCorrect.includes(taskId)) {
         if (score.isNewScoring && score.recruitment !== 'responseModality') {
           tableRow[`${taskName} - Raw Score`] = score.rawScore;
