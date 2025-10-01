@@ -779,10 +779,7 @@ const computeAssignmentAndRunData = computed(() => {
             currRowScores[taskId].rawScore = currRowScores[taskId].correctIncorrectDifference;
           }
 
-          currRowScores[taskId].numCorrect = numCorrect;
-          currRowScores[taskId].numIncorrect = numIncorrect;
-          currRowScores[taskId].tagColor = tagColor;
-          currRowScores[taskId].scoringVersion = scoringVersion;
+          Object.assign(currRowScores[taskId], { numCorrect, numIncorrect, scoringVersion });
           scoreFilterTags += ' Assessed ';
         } else if (tasksToDisplayPercentCorrect.includes(taskId)) {
           const numAttempted = assessment.scores?.raw?.composite?.test?.numAttempted;
