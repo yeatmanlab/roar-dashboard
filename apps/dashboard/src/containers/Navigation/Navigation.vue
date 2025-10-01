@@ -99,6 +99,8 @@ const navbarBlacklist = [
   'Launch RAN',
   'Launch Crowding',
   'Launch MEP',
+  'AuthNycps',
+  'InitiateAuthNycps',
 ];
 
 const showAccountSettingsLink = computed(() => {
