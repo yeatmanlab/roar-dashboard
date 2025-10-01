@@ -224,10 +224,11 @@ const authWithClever = () => {
 
 const authWithClassLink = () => {
   if (isMobileBrowser()) {
-    authStore.signInWithClassLinkPopup();
+    authStore.signInWithClassLinkRedirect();
     spinner.value = true;
   } else {
-    authStore.signInWithClassLinkRedirect();
+    authStore.signInWithClassLinkPopup();
+    spinner.value = true;
   }
 };
 
