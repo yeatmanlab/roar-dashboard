@@ -8,8 +8,9 @@ import {
   getSupportLevel,
   getRawScoreRange,
   getScoreValue,
+  tasksToDisplayPercentCorrect,
 } from '@/helpers/reports';
-import { SCORE_SUPPORT_SKILL_LEVELS, SCORE_TYPES } from '@/constants/scores';
+import { SCORE_SUPPORT_SKILL_LEVELS, SCORE_TYPE_KEYS } from '@/constants/scores';
 import { TAG_SEVERITIES } from '@/constants/tags';
 
 /**
@@ -135,7 +136,14 @@ const ScoreReportService = (() => {
   const createScoresArray = (taskId, scoresForTask, scores, grade, i18n) => {
     let formattedScoresArray = Object.keys(scoresForTask).map((key) => {
       const score = scoresForTask[key];
-      return [score.name, score.value, score.min, score.max];
+      let name = score.name;
+
+      // For tasks that display percentage, rename percentileScore to Percent Correct
+      if (key === 'percentileScore' && tasksToDisplayPercentCorrect.includes(taskId)) {
+        name = _startCase(i18n.t('scoreReports.percentageScore'));
+      }
+
+      return [name, score.value, score.min, score.max];
     });
 
     // Special handling for PA task
@@ -228,22 +236,8 @@ const ScoreReportService = (() => {
         keypath: 'scoreReports.standardTaskDescription',
         slots: {
           standardScore: Math.round(task.standardScore.value),
-          supportCategory: getSupportLevelLanguage(
-            grade,
-            task?.percentileScore.value,
-            task?.rawScore.value,
-            task.taskId,
-            i18n,
-          ),
           taskName,
           taskDescription,
-        },
-      };
-    } else {
-      return {
-        keypath: 'scoreReports.percentileTaskDescription',
-        slots: {
-          percentile: getPercentileWithSuffix(Math.round(task?.percentileScore.value)) + ' percentile',
           supportCategory: getSupportLevelLanguage(
             grade,
             task.percentileScore.value,
@@ -251,8 +245,22 @@ const ScoreReportService = (() => {
             task.taskId,
             i18n,
           ),
+        },
+      };
+    } else {
+      return {
+        keypath: 'scoreReports.percentileTaskDescription',
+        slots: {
+          percentile: getPercentileWithSuffix(Math.round(task.percentileScore.value)) + ' percentile',
           taskName,
           taskDescription,
+          supportCategory: getSupportLevelLanguage(
+            grade,
+            task.percentileScore.value,
+            task.rawScore.value,
+            task.taskId,
+            i18n,
+          ),
         },
       };
     }
@@ -327,11 +335,24 @@ const ScoreReportService = (() => {
             max: 99,
             supportColor,
           },
+          percentage: {
+            name: 'Percent Correct',
+            value: Math.round((rawScore / rawScoreRange?.max) * 100),
+            min: 0,
+            max: 100,
+            supportColor,
+          },
         };
 
         const tags = createTaskTags(optional, reliable, engagementFlags, i18n);
-        let scoreToDisplay = grade >= 6 ? SCORE_TYPES.STANDARD_SCORE : SCORE_TYPES.PERCENTILE_SCORE;
-        if (rawOnlyTasks.includes(taskId)) scoreToDisplay = SCORE_TYPES.RAW_SCORE;
+        let scoreToDisplay;
+        if (tasksToDisplayPercentCorrect.includes(taskId)) {
+          scoreToDisplay = grade >= 6 ? 'standardScore' : 'percentileScore';
+        } else if (rawOnlyTasks.includes(taskId)) {
+          scoreToDisplay = SCORE_TYPE_KEYS.RAW_SCORE;
+        } else {
+          scoreToDisplay = grade >= 6 ? SCORE_TYPE_KEYS.STANDARD_SCORE : SCORE_TYPE_KEYS.PERCENTILE_SCORE;
+        }
 
         computedTaskAcc[taskId] = {
           taskId,

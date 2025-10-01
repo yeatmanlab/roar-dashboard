@@ -384,7 +384,16 @@ export const tasksToDisplayGraphs = ['swr', 'sre', 'pa'];
  *  Raw Only Tasks
  *  A list of tasks to only display raw scores when included in a RoarDataTable.
  */
-export const rawOnlyTasks = ['cva', 'morphology', 'vocab', 'fluency', 'roar-readaloud'];
+export const rawOnlyTasks = [
+  'cva',
+  'morphology',
+  'vocab',
+  'fluency',
+  'roar-readaloud',
+  'letter',
+  'letter-es',
+  'letter-en-ca',
+];
 
 /*
  *  Excluded from Score Report Apps
@@ -638,8 +647,8 @@ export function getGradeWithSuffix(grade) {
  *  Function to take scores, taskId, and grade and return the proper support category for the run.
  */
 export const getDialColor = (grade, percentile, rawScore, taskId) => {
-  if (taskId === 'phonics') {
-    return 'var(--gray-500)';
+  if (tasksToDisplayPercentCorrect.includes(taskId)) {
+    return 'var(--blue-500)';
   }
   const { tag_color } = getSupportLevel(grade, percentile, rawScore, taskId);
   return tag_color;
@@ -661,10 +670,16 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = 
       tag_color: supportLevelColors.optional,
     };
   }
+  // Only return Raw Score for tasks that should display percentage and are not SWR/SRE
+  if (tasksToDisplayPercentCorrect.includes(taskId) && !['swr', 'swr-es', 'sre', 'sre-es'].includes(taskId)) {
+    return {
+      support_level: 'Raw Score',
+      tag_color: supportLevelColors.Assessed,
+    };
+  }
+
   if (
-    (tasksToDisplayPercentCorrect.includes(taskId) ||
-      tasksToDisplayCorrectIncorrectDifference.includes(taskId) ||
-      tasksToDisplayTotalCorrect.includes(taskId)) &&
+    (tasksToDisplayCorrectIncorrectDifference.includes(taskId) || tasksToDisplayTotalCorrect.includes(taskId)) &&
     tasksToDisplayGradeEstimate.includes(taskId) &&
     rawScore !== undefined
   ) {
@@ -1047,6 +1062,18 @@ export const getRawScoreThreshold = (taskId, scoringVersion) => {
     };
   }
   return { above: null, some: null };
+};
+
+/**
+ * Calculate the percent correct for a task
+ *
+ * @param {number} rawScore - The raw score value
+ * @param {number} maxScore - The maximum possible score
+ * @returns {number} The percentage correct (0-100)
+ */
+export const calculatePercentCorrect = (rawScore, maxScore) => {
+  if (!rawScore || !maxScore || maxScore === 0) return 0;
+  return Math.round((rawScore / maxScore) * 100);
 };
 
 export const getRawScoreRange = (taskId) => {
