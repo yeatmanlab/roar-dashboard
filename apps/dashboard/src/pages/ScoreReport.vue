@@ -319,6 +319,7 @@ import { CSV_EXPORT_STATIC_COLUMNS } from '@/constants/csvExport';
 import { APP_ROUTES } from '@/constants/routes';
 import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
 import { SCORE_REPORT_NEXT_STEPS_DOCUMENT_PATH } from '@/constants/scores';
+import { LEVANTE_TASK_IDS_NO_SCORES } from '@/constants/levanteTasks';
 import _startCase from 'lodash/startCase';
 
 const { userCan, Permissions } = usePermissions();
@@ -1105,7 +1106,8 @@ const createExportData = ({ rows, includeProgress = false }) => {
         // Technically thetaEstimate for old scoring system (previous implementation)
         tableRow[`${taskName} - Grade Estimate`] = score.gradeEstimate;
         tableRow[`${taskName} - Support Level`] = score.supportLevel;
-      } else {
+        // TODO: Check if all tasks in excludeFromScoringTasks can be excluded from scoring report
+      } else if (!LEVANTE_TASK_IDS_NO_SCORES.includes(taskId) && taskId !== 'roar-survey') {
         tableRow[`${taskName} - Percentile`] = score.percentileString;
         tableRow[`${taskName} - Standard`] = score.standardScore;
         tableRow[`${taskName} - Raw`] = score.rawScore;
@@ -1152,6 +1154,14 @@ const createExportData = ({ rows, includeProgress = false }) => {
               }
             }
           });
+
+          /**
+           * Use taskId to bypass the current filter ' - ' for scored tasks in exportData
+           * to avoid duplicate columns (e.g. ROAR - Survey) and allow unique headers (e.g. Hearts and Flowers)
+           */
+          if (excludeFromScoringTasks.includes(taskId)) {
+            tableRow[`${taskId} - Progress`] = progressRow.progress[taskId].value ?? 'not assigned';
+          }
         } else {
           // If no progressRow is found, mark all scores as "not assigned"
           scoreReportColumns.value.forEach((column) => {
@@ -1239,6 +1249,19 @@ const exportData = async ({ selectedRows = null, includeProgress = false }) => {
     finalColumns.forEach((col) => {
       reorderedRow[col] = row[col] !== undefined ? row[col] : null;
     });
+
+    // Add progress columns for unscored tasks when exporting combined reports
+    if (includeProgress) {
+      const unscoredTaskIds = Object.values(administrationData.value.assessments)
+        .filter((assessment) => excludeFromScoringTasks.includes(assessment.taskId))
+        .map((assessment) => assessment.taskId);
+      unscoredTaskIds.forEach((taskId) => {
+        const taskName = tasksDictionary.value[taskId]?.publicName ?? taskId;
+        reorderedRow[`${taskName} - Progress`] =
+          row[`${taskId} - Progress`] !== undefined ? row[`${taskId} - Progress`] : null;
+      });
+    }
+
     return reorderedRow;
   });
 
@@ -1530,7 +1553,8 @@ const scoreReportColumns = computed(() => {
       colField = `scores.${taskId}.percentile`;
     } else if (
       viewMode.value === 'standard' &&
-      !tasksToDisplayCorrectIncorrectDifference.includes(taskId) &&
+      tasksToDisplayCorrectIncorrectDifference.includes(taskId) &&
+      getScoringVersions.value[taskId] >= 1 &&
       !tasksToDisplayPercentCorrect.includes(taskId) &&
       !tasksToDisplayTotalCorrect.includes(taskId) &&
       !tasksToDisplayGradeEstimate.includes(taskId)
