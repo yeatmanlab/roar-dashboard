@@ -1530,7 +1530,8 @@ const scoreReportColumns = computed(() => {
       colField = `scores.${taskId}.percentile`;
     } else if (
       viewMode.value === 'standard' &&
-      !tasksToDisplayCorrectIncorrectDifference.includes(taskId) &&
+      tasksToDisplayCorrectIncorrectDifference.includes(taskId) &&
+      getScoringVersions.value[taskId] >= 1 &&
       !tasksToDisplayPercentCorrect.includes(taskId) &&
       !tasksToDisplayTotalCorrect.includes(taskId) &&
       !tasksToDisplayGradeEstimate.includes(taskId)
