@@ -29,3 +29,5 @@ export const LEVANTE_TASK_IDS = [
   'mefs',
   'roar-inference',
 ];
+
+export const LEVANTE_TASK_IDS_NO_SCORES = ['hearts-and-flowers', 'memory-game'];
