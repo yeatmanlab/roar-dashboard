@@ -167,13 +167,11 @@ export const useAuthStore = () => {
       async signInWithNYCPSPopup() {
         this.ssoProvider = AUTH_SSO_PROVIDERS.NYCPS;
         if (this.isFirekitInit) {
-          console.log('In authStore. Calling roarfirekit.signInWithPopup');
           return this.roarfirekit.signInWithPopup(AUTH_SSO_PROVIDERS.NYCPS);
         }
       },
       async signInWithNYCPSRedirect() {
         this.ssoProvider = AUTH_SSO_PROVIDERS.NYCPS;
-        console.log('In authStore. Calling roarfirekit.initiateRedirect');
         return this.roarfirekit.initiateRedirect(AUTH_SSO_PROVIDERS.NYCPS);
       },
       async initStateFromRedirect() {
