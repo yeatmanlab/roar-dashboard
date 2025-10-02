@@ -52,6 +52,8 @@ defineProps({
 });
 
 function getScoreReportNextStepsDocumentPath() {
-  return `${document.location.origin}${SCORE_REPORT_NEXT_STEPS_DOCUMENT_PATH}`;
+  return `https://roar.education${SCORE_REPORT_NEXT_STEPS_DOCUMENT_PATH}`;
+  // TODO: Remove the hard-coded return in favor of the dynamic one
+  // return `${document.location.origin}${SCORE_REPORT_NEXT_STEPS_DOCUMENT_PATH}`;
 }
 </script>
