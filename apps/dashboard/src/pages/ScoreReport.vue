@@ -554,8 +554,8 @@ const getScoresAndSupportFromAssessment = ({ grade, assessment, taskId, optional
   let rawScore = getScoreValue(compositeScores, taskId, gradeValue, 'rawScore');
 
   if (
-    tasksToDisplayCorrectIncorrectDifference.includes(assessment.taskId) ||
-    tasksToDisplayPercentCorrect.includes(assessment.taskId) ||
+    (tasksToDisplayPercentCorrect.includes(assessment.taskId) &&
+      !(taskId === 'swr-es' && getScoringVersions.value[taskId] >= 1)) ||
     tasksToDisplayTotalCorrect.includes(taskId) ||
     tasksToDisplayGradeEstimate.includes(assessment.taskId)
   ) {
@@ -772,10 +772,7 @@ const computeAssignmentAndRunData = computed(() => {
             currRowScores[taskId].rawScore = currRowScores[taskId].correctIncorrectDifference;
           }
 
-          currRowScores[taskId].numCorrect = numCorrect;
-          currRowScores[taskId].numIncorrect = numIncorrect;
-          currRowScores[taskId].tagColor = tagColor;
-          currRowScores[taskId].scoringVersion = scoringVersion;
+          Object.assign(currRowScores[taskId], { numCorrect, numIncorrect, scoringVersion });
           scoreFilterTags += ' Assessed ';
         } else if (tasksToDisplayPercentCorrect.includes(taskId)) {
           const numAttempted = assessment.scores?.raw?.composite?.test?.numAttempted;
@@ -784,9 +781,9 @@ const computeAssignmentAndRunData = computed(() => {
             numAttempted > 0 && !isNaN(numCorrect) && !isNaN(numAttempted)
               ? Math.round((numCorrect * 100) / numAttempted).toString() + '%'
               : null;
-          currRowScores[taskId].percentCorrect = percentCorrect;
-          currRowScores[taskId].numAttempted = numAttempted;
-          currRowScores[taskId].numCorrect = numCorrect;
+          const scoringVersion = _get(assessment, 'scores.computed.composite.scoringVersion');
+
+          Object.assign(currRowScores[taskId], { numCorrect, numAttempted, percentCorrect, scoringVersion });
           currRowScores[taskId].tagColor = percentCorrect === null ? 'transparent' : tagColor;
           scoreFilterTags += ' Assessed ';
         } else if (tasksToDisplayTotalCorrect.includes(taskId)) {
@@ -1068,20 +1065,17 @@ const createExportData = ({ rows, includeProgress = false }) => {
       const taskName = tasksDictionary.value[taskId]?.publicName ?? taskId;
 
       // Add task-specific score information
-      if (tasksToDisplayPercentCorrect.includes(taskId)) {
+      if (
+        tasksToDisplayPercentCorrect.includes(taskId) &&
+        !(taskId === 'swr-es' && getScoringVersions.value[taskId] >= 1)
+      ) {
         tableRow[`${taskName} - Percent Correct`] = score.percentCorrect;
         tableRow[`${taskName} - Num Attempted`] = score.numAttempted;
         tableRow[`${taskName} - Num Correct`] = score.numCorrect;
-      } else if (tasksToDisplayCorrectIncorrectDifference.includes(taskId)) {
-        if (score.scoringVersion) {
-          tableRow[`${taskName} - Raw Score`] = score.rawScore;
-          tableRow[`${taskName} - Percentile`] = score.percentileString;
-          tableRow[`${taskName} - Standard`] = score.standardScore;
-        } else {
-          tableRow[`${taskName} - Correct/Incorrect Difference`] = score.correctIncorrectDifference;
-          tableRow[`${taskName} - Num Incorrect`] = score.numIncorrect;
-          tableRow[`${taskName} - Num Correct`] = score.numCorrect;
-        }
+      } else if (tasksToDisplayCorrectIncorrectDifference.includes(taskId) && !score.scoringVersion) {
+        tableRow[`${taskName} - Correct/Incorrect Difference`] = score.correctIncorrectDifference;
+        tableRow[`${taskName} - Num Incorrect`] = score.numIncorrect;
+        tableRow[`${taskName} - Num Correct`] = score.numCorrect;
       } else if (tasksToDisplayTotalCorrect.includes(taskId)) {
         if (score.isNewScoring && score.recruitment !== 'responseModality') {
           tableRow[`${taskName} - Raw Score`] = score.rawScore;
@@ -1545,9 +1539,8 @@ const scoreReportColumns = computed(() => {
       colField = `scores.${taskId}.percentile`;
     } else if (
       viewMode.value === 'standard' &&
-      tasksToDisplayCorrectIncorrectDifference.includes(taskId) &&
-      getScoringVersions.value[taskId] >= 1 &&
-      !tasksToDisplayPercentCorrect.includes(taskId) &&
+      (!tasksToDisplayPercentCorrect.includes(taskId) ||
+        (taskId === 'swr-es' && getScoringVersions.value[taskId] >= 1)) &&
       !tasksToDisplayTotalCorrect.includes(taskId) &&
       !tasksToDisplayGradeEstimate.includes(taskId)
     ) {
@@ -1555,7 +1548,8 @@ const scoreReportColumns = computed(() => {
     } else if (
       viewMode.value === 'raw' &&
       !tasksToDisplayCorrectIncorrectDifference.includes(taskId) &&
-      !tasksToDisplayPercentCorrect.includes(taskId) &&
+      (!tasksToDisplayPercentCorrect.includes(taskId) ||
+        (taskId === 'swr-es' && getScoringVersions.value[taskId] >= 1)) &&
       !tasksToDisplayTotalCorrect.includes(taskId) &&
       !tasksToDisplayGradeEstimate.includes(taskId)
     ) {
