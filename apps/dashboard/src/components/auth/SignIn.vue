@@ -3,83 +3,105 @@
     <form class="p-fluid" @submit.prevent="handleFormSubmit(!v$.$invalid)">
       <div class="mt-2 field">
         <div class="p-input-icon-right">
-          <PvInputText
-            :id="$t('authSignIn.emailId')"
-            v-model="v$.email.$model"
-            :class="['w-full', { 'p-invalid': invalid }]"
-            aria-describedby="email-error"
-            :placeholder="$t('authSignIn.emailPlaceholder')"
-            data-cy="sign-in__username"
-            @keyup="checkForCapsLock"
-            @click="checkForCapsLock"
-          />
-        </div>
-        <small v-if="invalid" class="p-error">{{ $t('authSignIn.incorrectEmailOrPassword') }}</small>
-      </div>
-      <div class="mt-4 mb-5 field">
-        <div>
-          <!-- Email is currently being evaluated (loading state) -->
-          <span v-if="evaluatingEmail">
-            <PvSkeleton height="2.75rem" />
-          </span>
-          <!-- Email is entered, Password is desired -->
-          <div v-else-if="allowPassword && allowLink">
-            <PvPassword
-              :id="$t('authSignIn.passwordId')"
-              v-model="v$.password.$model"
+          <InputGroup>
+            <PvInputText
+              :id="$t('authSignIn.emailId')"
+              v-model="v$.email.$model"
               :class="['w-full', { 'p-invalid': invalid }]"
-              :feedback="false"
-              :placeholder="$t('authSignIn.passwordPlaceholder')"
-              :input-props="{ autocomplete: 'current-password' }"
-              toggle-mask
-              show-icon="pi pi-eye-slash"
-              hide-icon="pi pi-eye"
-              data-cy="sign-in__password"
+              aria-describedby="email-error"
+              :placeholder="$t('authSignIn.emailPlaceholder')"
+              data-cy="sign-in__username"
               @keyup="checkForCapsLock"
               @click="checkForCapsLock"
             />
-            <small
+            <InputGroupAddon>
+              <!-- <InputGroupAddon :style="{ 'visibility': showPasswordField ? 'hidden' : 'visible' }"></InputGroupAddon> -->
+              <PvButton
+                type="checkProviders"
+                class="bg-white border-none text-primary p-0 hover:bg-primary hover:text-white p-2"
+                icon="pi pi-arrow-right"
+                @click="onShowPasswordClick"
+              />
+            </InputGroupAddon>
+          </InputGroup>
+        </div>
+      </div>
+      <div class="mt-4 mb-5 field">
+        <div>
+          <!-- <span v-if="evaluatingEmail">
+            <PvSkeleton height="2.75rem" />
+          </span> -->
+          <div v-if="showPasswordField && allowPassword && allowLink">
+            <InputGroup>
+              <PvPassword
+                :id="$t('authSignIn.passwordId')"
+                v-model="v$.password.$model"
+                :class="['w-full', { 'p-invalid': invalid }]"
+                :feedback="false"
+                :placeholder="$t('authSignIn.passwordPlaceholder')"
+                :input-props="{ autocomplete: 'current-password' }"
+                toggle-mask
+                data-cy="sign-in__password"
+                @keyup="checkForCapsLock"
+                @click="checkForCapsLock"
+              />
+              <InputGroupAddon>
+                <PvButton
+                  type="submit"
+                  class="bg-white border-none text-primary p-0 hover:bg-primary hover:text-white p-2"
+                  icon="pi pi-arrow-right"
+                  data-cy="sign-in__submit"
+                />
+              </InputGroupAddon>
+            </InputGroup>
+            <!-- <small EMILY: REVISIT THIS
               class="text-link sign-in-method-link"
               @click="
                 allowPassword = false;
                 state.usePassword = false;
               "
               >{{ $t('authSignIn.signInWithEmailLinkInstead') }}</small
-            >
-            <small class="text-link sign-in-method-link" @click="handleForgotPassword">Forgot password?</small>
+            > -->
           </div>
-          <!-- Username is entered, Password is desired -->
-          <PvPassword
-            v-else-if="allowPassword"
-            :id="$t('authSignIn.passwordId')"
-            v-model="v$.password.$model"
-            :class="['w-full', { 'p-invalid': invalid }]"
-            toggle-mask
-            show-icon="pi pi-eye-slash"
-            hide-icon="pi pi-eye"
-            :feedback="false"
-            :placeholder="$t('authSignIn.passwordPlaceholder')"
-            data-cy="sign-in__password"
-            @keyup="checkForCapsLock"
-            @click="checkForCapsLock"
-          >
-            <template #header>
-              <h6>{{ $t('authSignIn.pickPassword') }}</h6>
-            </template>
-            <template #footer="sp">
-              {{ sp.level }}
-              <PvDivider />
-              <p class="mt-2">{{ $t('authSignIn.suggestions') }}</p>
-              <ul class="pl-2 mt-0 ml-2" style="line-height: 1.5">
-                <li>{{ $t('authSignIn.atLeastOneLowercase') }}</li>
-                <li>{{ $t('authSignIn.atLeastOneUppercase') }}</li>
-                <li>{{ $t('authSignIn.atLeastOneNumeric') }}</li>
-                <li>{{ $t('authSignIn.minimumCharacters') }}</li>
-              </ul>
-            </template>
-          </PvPassword>
-          <!-- Email is entered, MagicLink is desired login -->
-          <div v-else-if="allowLink">
+          <InputGroup v-else-if="showPasswordField && (allowPassword || makePasswordVisible)">
+            <!-- Username is entered, Password is desired -->
+            <PvPassword
+              :id="$t('authSignIn.passwordId')"
+              v-model="v$.password.$model"
+              :class="['w-full', { 'p-invalid': invalid }]"
+              toggle-mask
+              :feedback="false"
+              :placeholder="$t('authSignIn.passwordPlaceholder')"
+              data-cy="sign-in__password"
+              @keyup="checkForCapsLock"
+              @click="checkForCapsLock"
+            >
+              <template #header>
+                <h6>{{ $t('authSignIn.pickPassword') }}</h6>
+              </template>
+              <template #footer="sp">
+                {{ sp.level }}
+                <PvDivider />
+                <p class="mt-2">{{ $t('authSignIn.suggestions') }}</p>
+                <ul class="pl-2 mt-0 ml-2" style="line-height: 1.5">
+                  <li>{{ $t('authSignIn.atLeastOneLowercase') }}</li>
+                  <li>{{ $t('authSignIn.atLeastOneUppercase') }}</li>
+                  <li>{{ $t('authSignIn.atLeastOneNumeric') }}</li>
+                  <li>{{ $t('authSignIn.minimumCharacters') }}</li>
+                </ul>
+              </template>
+            </PvPassword>
+            <InputGroupAddon>
+              <PvButton
+                type="submit"
+                class="bg-white border-none text-primary p-0 hover:bg-primary hover:text-white p-2"
+                icon="pi pi-arrow-right"
+                data-cy="sign-in__submit"
+              />
+            </InputGroupAddon>
+          </InputGroup>
+          <!-- Email is entered, MagicLink is desired login Emily: going to revisit this-->
+          <!-- <div v-else-if="allowLink">
             <PvPassword :placeholder="$t('authSignIn.signInWithEmailLinkPlaceHolder')" class="w-full" disabled />
             <small
               class="text-link sign-in-method-link"
@@ -89,57 +111,20 @@
               "
               >{{ $t('authSignIn.signInWithPasswordInstead') }}</small
             >
-          </div>
+          </div> -->
           <!-- Email is entered, however it is an invalid email (prevent login) -->
-          <div v-else>
+          <!-- <div v-else>
             <PvPassword
               disabled
               class="w-full text-red-600 p-invalid"
               :placeholder="$t('authSignIn.invalidEmailPlaceholder')"
             />
-          </div>
+          </div> -->
           <div v-if="capsLockEnabled" class="mt-2 p-error">⇪ Caps Lock is on!</div>
         </div>
       </div>
-      <PvButton
-        type="submit"
-        class="flex p-3 mt-5 w-5 border-none border-round hover:bg-black-alpha-20"
-        :label="$t('authSignIn.buttonLabel') + ' &rarr;'"
-        data-cy="sign-in__submit"
-      />
-      <hr class="mt-5 opacity-20" />
     </form>
   </div>
-  <RoarModal
-    :is-enabled="forgotPasswordModalOpen"
-    title="Forgot Password"
-    subtitle="Enter your email to reset your password"
-    small
-    @modal-closed="forgotPasswordModalOpen = false"
-  >
-    <template #default>
-      <div class="flex flex-column">
-        <label>Email</label>
-        <PvInputText v-model="forgotEmail" />
-      </div>
-    </template>
-    <template #footer>
-      <PvButton
-        tabindex="0"
-        class="p-2 bg-white border-none border-round text-primary hover:surface-200"
-        text
-        label="Cancel"
-        outlined
-        @click="closeForgotPasswordModal"
-      ></PvButton>
-      <PvButton
-        tabindex="0"
-        class="p-2 text-white border-none border-round bg-primary hover:surface-400"
-        label="Send Reset Email"
-        @click="sendResetEmail"
-      ></PvButton>
-    </template>
-  </RoarModal>
 </template>
 
 <script setup>
@@ -152,18 +137,25 @@ import PvButton from 'primevue/button';
 import PvDivider from 'primevue/divider';
 import PvInputText from 'primevue/inputtext';
 import PvPassword from 'primevue/password';
-import PvSkeleton from 'primevue/skeleton';
+// import PvSkeleton from 'primevue/skeleton';
+import InputGroup from 'primevue/inputgroup';
+import InputGroupAddon from 'primevue/inputgroupaddon';
 import { useAuthStore } from '@/store/auth';
-import RoarModal from '../modals/RoarModal.vue';
+// import RoarModal from '../modals/RoarModal.vue';
 
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
+const showPasswordField = ref(false);
 
-const emit = defineEmits(['submit', 'update:email']);
+const emit = defineEmits(['submit', 'update:email', 'checkproviders']);
 // eslint-disable-next-line no-unused-vars
 const props = defineProps({
   invalid: { type: Boolean, required: false, default: false },
 });
+
+const onShowPasswordClick = () => {
+  if (validateRoarEmail(state.email)) showPasswordField.value = true;
+};
 
 const state = reactive({
   email: '',
@@ -181,7 +173,6 @@ const rules = {
 const submitted = ref(false);
 const v$ = useVuelidate(rules, state);
 const capsLockEnabled = ref(false);
-const forgotPasswordModalOpen = ref(false);
 
 const handleFormSubmit = (isFormValid) => {
   submitted.value = true;
@@ -235,22 +226,6 @@ function checkForCapsLock(e) {
   }
 }
 
-const forgotEmail = ref('');
-function handleForgotPassword() {
-  console.log('Opening modal for forgot password');
-  forgotPasswordModalOpen.value = true;
-  // e.preventDefault();
-}
-function closeForgotPasswordModal() {
-  forgotPasswordModalOpen.value = false;
-  forgotEmail.value = '';
-}
-function sendResetEmail() {
-  console.log('Submitting forgot password with email', forgotEmail.value);
-  roarfirekit.value.sendPasswordResetEmail(forgotEmail.value);
-  closeForgotPasswordModal();
-}
-
 watch(
   () => state.email,
   async (email) => {
@@ -281,16 +256,6 @@ watch(
 .submit-button:hover {
   background-color: #b7b5b5;
   color: black;
-}
-.text-link {
-  cursor: pointer;
-  color: var(--text-color-secondary);
-  font-weight: bold;
-  text-decoration: underline;
-}
-
-.text-link:hover {
-  color: var(--primary-color-text);
 }
 .sign-in-method-link {
   margin-top: 0.5rem;
