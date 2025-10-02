@@ -29,9 +29,17 @@ describe('Participant: Auth', () => {
     // Get all calls to console.log
     cy.get('@consoleLog').then((spy) => {
       const calls = spy.getCalls();
+      cy.log('Start of spy console logs');
       // Do something with the calls
       cy.log(calls);
     });
+    cy.get('@consoleError').then((spy) => {
+      const calls = spy.getCalls();
+      cy.log('Start of spy console errors');
+      // Do something with the calls
+      cy.log('ERROR LOG:', calls);
+    });
+
     // Perform SSO login flow.
     cy.loginWithClever(CLEVER_SCHOOL_NAME, CLEVER_USERNAME, CLEVER_PASSWORD);
 
@@ -45,7 +53,14 @@ describe('Participant: Auth', () => {
     cy.get('@consoleLog').then((spy) => {
       const calls = spy.getCalls();
       // Do something with the calls
+      cy.log('End of spy console logs');
       cy.log(calls);
+    });
+    cy.get('@consoleError').then((spy) => {
+      const calls = spy.getCalls();
+      cy.log('End of spy console errors');
+      // Do something with the calls
+      cy.log('ERROR LOG:', calls);
     });
   });
 
