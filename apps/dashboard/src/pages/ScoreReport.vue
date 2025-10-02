@@ -561,7 +561,8 @@ const getScoresAndSupportFromAssessment = ({ grade, assessment, taskId, optional
   }
 
   if (
-    tasksToDisplayPercentCorrect.includes(assessment.taskId) ||
+    (tasksToDisplayPercentCorrect.includes(assessment.taskId) &&
+      !(taskId === 'swr-es' && getScoringVersions.value[taskId] >= 1)) ||
     tasksToDisplayTotalCorrect.includes(taskId) ||
     tasksToDisplayGradeEstimate.includes(assessment.taskId)
   ) {
@@ -788,9 +789,9 @@ const computeAssignmentAndRunData = computed(() => {
             numAttempted > 0 && !isNaN(numCorrect) && !isNaN(numAttempted)
               ? Math.round((numCorrect * 100) / numAttempted).toString() + '%'
               : null;
-          currRowScores[taskId].percentCorrect = percentCorrect;
-          currRowScores[taskId].numAttempted = numAttempted;
-          currRowScores[taskId].numCorrect = numCorrect;
+          const scoringVersion = _get(assessment, 'scores.computed.composite.scoringVersion');
+
+          Object.assign(currRowScores[taskId], { numCorrect, numAttempted, percentCorrect, scoringVersion });
           currRowScores[taskId].tagColor = percentCorrect === null ? 'transparent' : tagColor;
           scoreFilterTags += ' Assessed ';
         } else if (tasksToDisplayTotalCorrect.includes(taskId)) {
@@ -1072,7 +1073,10 @@ const createExportData = ({ rows, includeProgress = false }) => {
       const taskName = tasksDictionary.value[taskId]?.publicName ?? taskId;
 
       // Add task-specific score information
-      if (tasksToDisplayPercentCorrect.includes(taskId)) {
+      if (
+        tasksToDisplayPercentCorrect.includes(taskId) &&
+        !(taskId === 'swr-es' && getScoringVersions.value[taskId] >= 1)
+      ) {
         tableRow[`${taskName} - Percent Correct`] = score.percentCorrect;
         tableRow[`${taskName} - Num Attempted`] = score.numAttempted;
         tableRow[`${taskName} - Num Correct`] = score.numCorrect;
@@ -1543,7 +1547,8 @@ const scoreReportColumns = computed(() => {
       colField = `scores.${taskId}.percentile`;
     } else if (
       viewMode.value === 'standard' &&
-      !tasksToDisplayPercentCorrect.includes(taskId) &&
+      (!tasksToDisplayPercentCorrect.includes(taskId) ||
+        (taskId === 'swr-es' && getScoringVersions.value[taskId] >= 1)) &&
       !tasksToDisplayTotalCorrect.includes(taskId) &&
       !tasksToDisplayGradeEstimate.includes(taskId)
     ) {
@@ -1551,7 +1556,8 @@ const scoreReportColumns = computed(() => {
     } else if (
       viewMode.value === 'raw' &&
       !tasksToDisplayCorrectIncorrectDifference.includes(taskId) &&
-      !tasksToDisplayPercentCorrect.includes(taskId) &&
+      (!tasksToDisplayPercentCorrect.includes(taskId) ||
+        (taskId === 'swr-es' && getScoringVersions.value[taskId] >= 1)) &&
       !tasksToDisplayTotalCorrect.includes(taskId) &&
       !tasksToDisplayGradeEstimate.includes(taskId)
     ) {
