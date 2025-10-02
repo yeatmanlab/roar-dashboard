@@ -1,0 +1,5 @@
+{
+  "inactivityLogout": "you will be automatically logged out in { timeLeft } seconds.\"",
+  "inactivityLogoutAcceptLabel": "Continuar",
+  "loading": "Cargando..."
+}

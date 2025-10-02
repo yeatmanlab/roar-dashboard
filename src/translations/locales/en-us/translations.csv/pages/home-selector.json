@@ -1,0 +1,5 @@
+{
+  "inactivityLogout": "\"You will soon be logged out for security purposes. Please click \"\"Continue\"\" if you wish to continue your session.\\n Otherwise",
+  "inactivityLogoutAcceptLabel": "Continue",
+  "loading": "Loading..."
+}

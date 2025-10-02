@@ -1,0 +1,15 @@
+{
+  "consentUpdatedStatus": "",
+  "contactAdministrator": "\"Por favor",
+  "loadingAssignments": "Cargando Asignaciones",
+  "noAssignments": "¡No tienes asignaciones!",
+  "selectAssignment": "Seleccionar una asignación",
+  "showOptionalAssignments": "Mostrar asignaciones opcionales",
+  "assignments": "Asignaciones",
+  "current": "Actual",
+  "past": "Pasado",
+  "upcoming": "Próximo",
+  "noCurrentAssignmentsFound": "No se encontraron asignaciones actuales",
+  "noPastAssignmentsFound": "No se encontraron asignaciones pasadas",
+  "noUpcomingAssignmentsFound": "No se encontraron asignaciones futuras"
+}

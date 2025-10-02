@@ -1,0 +1,15 @@
+{
+  "consentUpdatedStatus": "",
+  "contactAdministrator": "Please contact your administrator to get added to an assignment.",
+  "loadingAssignments": "Lade Zuordnungen",
+  "noAssignments": "Sie haben keine Zuordnungen!",
+  "selectAssignment": "Wählen Sie eine Zuordnung aus",
+  "showOptionalAssignments": "Optionale Zuordnungen anzeigen",
+  "assignments": "Zuordnungen",
+  "current": "Aktuell",
+  "past": "Vergangen",
+  "upcoming": "Kommend",
+  "noCurrentAssignmentsFound": "Keine aktuellen Zuordnungen gefunden",
+  "noPastAssignmentsFound": "Keine vergangenen Zuordnungen gefunden",
+  "noUpcomingAssignmentsFound": "Keine kommenden Zuordnungen gefunden"
+}

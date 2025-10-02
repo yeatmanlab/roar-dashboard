@@ -1,0 +1,5 @@
+{
+  "inactivityLogout": "wenn Sie Ihre Sitzung fortsetzen möchten. \\n Andernfalls werden Sie in { timeLeft } Sekunden automatisch abgemeldet.\"",
+  "inactivityLogoutAcceptLabel": "Continue",
+  "loading": "Loading..."
+}

@@ -1,0 +1,9 @@
+{
+  "adminAction": "aquí",
+  "adminInfoPrompt": "Si te registraste con un correo de Google o si tu proveedor de correo utiliza Google SSO.",
+  "adminPrompt": "¿Eres un Administrador? Haz clic {action} para Iniciar sesión.",
+  "havingTrouble": "¿Tienes problemas?",
+  "login": "Inicia sesión para acceder a tu panel de control",
+  "loginWith": "Iniciar sesión con",
+  "welcome": "¡Bienvenido a ROAR!"
+}

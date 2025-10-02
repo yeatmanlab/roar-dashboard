@@ -1,0 +1,9 @@
+{
+  "adminAction": "here",
+  "adminInfoPrompt": "\"Wenn Sie sich mit einer Google-E-Mail oder Ihr E-Mail-Anbieter Google SSO verwendet",
+  "adminPrompt": "\"Sind Sie ein Administrator? Klicken Sie {action}",
+  "havingTrouble": "Having trouble?",
+  "login": "\"Melden Sie sich an",
+  "loginWith": "Log in with",
+  "welcome": "Welcome to ROAR!"
+}

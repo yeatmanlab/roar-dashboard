@@ -20,8 +20,11 @@ function ensureDir(dir) {
 function readCsv(filePath) {
   const text = fs.readFileSync(filePath, 'utf8');
   const [headerLine, ...rows] = text.split(/\r?\n/).filter(Boolean);
-  const headers = headerLine.split(',').map((h) => h.trim());
-  return { headers, rows: rows.map((r) => r.split(',')) };
+  const headers = headerLine.split(',').map((h) => h.trim().replace(/^"(.*)"$/, '$1'));
+  return {
+    headers,
+    rows: rows.map((r) => r.split(',').map((cell) => cell.trim().replace(/^"(.*)"$/, '$1')))
+  };
 }
 
 function writeJson(filePath, obj) {
@@ -41,7 +44,7 @@ function rebuildFromConsolidated() {
     const { headers, rows } = readCsv(path.join(consolidatedRoot, csvName));
     // identifier,label,en,es-co,de,de-ch,en-so,fr-ca,nl
     const langHeaders = headers.slice(2);
-    langHeaders.forEach((h) => languageSet.add(h.trim().toLowerCase()));
+    langHeaders.forEach((h) => languageSet.add(h.toLowerCase()));
 
     const section = csvName.replace('dashboard-', '').replace('-translations.csv', '');
     // Group rows by component path in identifier like components/navbar.title
