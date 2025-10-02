@@ -215,7 +215,9 @@ const modalPassword = ref('');
 
 const authWithClever = () => {
   if (process.env.NODE_ENV === 'development' && !window.Cypress) {
+    console.log('Attempting to sign in with popup');
     authStore.signInWithCleverPopup().then(async () => {
+      console.log('Popup signed in');
       if (authStore.uid) {
         const userClaims = await fetchDocById('userClaims', authStore.uid);
         authStore.userClaims = userClaims;
@@ -227,6 +229,7 @@ const authWithClever = () => {
       }
     });
   } else {
+    console.log('Attempting to sign in with redirect');
     authStore.signInWithCleverRedirect();
   }
   spinner.value = true;

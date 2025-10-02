@@ -62,6 +62,9 @@ onBeforeMount(async () => {
   await authStore.initFirekit();
 
   await authStore.initStateFromRedirect().then(async () => {
+    console.log('[App.vue] initStateFromRedirect callback');
+    console.log('authStore.uid', authStore.uid);
+    console.log('authStore.roarUid', authStore.roarUid);
     // @TODO: Refactor this callback as we should ideally use the useUserClaimsQuery and useUserDataQuery composables.
     // @NOTE: Whilst the rest of the application relies on the user's ROAR UID, this callback requires the user's ID
     // in order for SSO to work and cannot currently be changed without significant refactoring.
