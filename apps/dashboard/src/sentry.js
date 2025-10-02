@@ -34,6 +34,7 @@ export function initSentry(app) {
           emailPlaceholder: languageOptions[language].translations.sentryForm.emailPlaceholder,
           messageLabel: languageOptions[language].translations.sentryForm.messageLabel,
           messagePlaceholder: languageOptions[language].translations.sentryForm.messagePlaceholder,
+          disclaimer: languageOptions[language].translations.sentryForm.disclaimer,
         }),
         contextLinesIntegration(),
         extraErrorDataIntegration(),
