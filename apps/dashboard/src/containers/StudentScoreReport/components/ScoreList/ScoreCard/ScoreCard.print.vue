@@ -17,7 +17,13 @@
       <div>
         <span class="font-semibold">{{ score.name }}: </span>
         <span class="font-semibold" :style="{ color: score.supportColor }">
-          {{ description.slots.percentile }}
+          <!-- @TODO: Improve this -->
+          <template v-if="score.name === 'Percentile'">
+            {{ description.slots.percentile }}
+          </template>
+          <template v-else>
+            {{ score.value }}
+          </template>
         </span>
       </div>
 
