@@ -215,7 +215,17 @@ const modalPassword = ref('');
 
 const authWithClever = () => {
   if (process.env.NODE_ENV === 'development' && !window.Cypress) {
-    authStore.signInWithCleverPopup();
+    authStore.signInWithCleverPopup().then(async () => {
+      if (authStore.uid) {
+        const userClaims = await fetchDocById('userClaims', authStore.uid);
+        authStore.userClaims = userClaims;
+      }
+      if (authStore.roarUid) {
+        const userData = await fetchDocById('users', authStore.roarUid);
+        authStore.userData = userData;
+        setUser({ id: authStore.roarUid, userType: userData.userType });
+      }
+    });
   } else {
     authStore.signInWithCleverRedirect();
   }
@@ -234,7 +244,17 @@ const authWithClassLink = () => {
 
 const authWithNYCPS = () => {
   if (process.env.NODE_ENV === 'development' && !window.Cypress) {
-    authStore.signInWithNYCPSPopup();
+    authStore.signInWithNYCPSPopup().then(async () => {
+      if (authStore.uid) {
+        const userClaims = await fetchDocById('userClaims', authStore.uid);
+        authStore.userClaims = userClaims;
+      }
+      if (authStore.roarUid) {
+        const userData = await fetchDocById('users', authStore.roarUid);
+        authStore.userData = userData;
+        setUser({ id: authStore.roarUid, userType: userData.userType });
+      }
+    });
   } else {
     authStore.signInWithNYCPSRedirect();
   }
