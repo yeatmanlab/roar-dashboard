@@ -1,5 +1,5 @@
 <template>
-  <div class="p-4 mb-4 text-sm rounded border border-gray-200 border-solid page-break-inside-avoid">
+  <div class="p-4 mb-4 text-sm rounded border border-gray-200 border-solid break-inside-avoid">
     <div class="flex justify-between align-items-center">
       <h2 class="m-0 text-lg font-semibold">{{ publicName }}</h2>
 

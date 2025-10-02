@@ -1,5 +1,5 @@
 <template>
-  <div class="text-sm break-inside-avoid-page break-before-page">
+  <div class="text-sm break-inside-avoid">
     <h2 class="mt-6 text-xl font-bold">Detailed Assessment Results</h2>
 
     <ul class="p-0 m-0">
