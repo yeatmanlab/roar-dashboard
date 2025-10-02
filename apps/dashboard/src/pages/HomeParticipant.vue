@@ -431,6 +431,7 @@ watch(
       selectedAdmin.value = sortedUserAdministrations.value.find(
         (administration) => administration.id === selectedAdminId,
       );
+
       return;
     }
 
