@@ -1,5 +1,5 @@
 <template>
-  <div class="pt-2 mt-2 border border-gray-800 border-top-2">
+  <div class="pt-2 mt-2 text-sm border border-gray-800 border-top-2">
     <h2 class="text-xl font-bold">Assessment Overview</h2>
     <p>{{ $t('scoreReports.roarSummary') }}</p>
 

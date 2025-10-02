@@ -1,31 +1,32 @@
 <template>
-  <h2 class="mt-6 text-xl font-bold">Detailed Assessment Results</h2>
+  <div class="text-sm break-inside-avoid-page break-before-page">
+    <h2 class="mt-6 text-xl font-bold">Detailed Assessment Results</h2>
 
-  <ul class="p-0 m-0">
-    <li v-for="task in computedTaskData" :key="task.taskId" class="list-none">
-      <ScorePrintCard
-        :public-name="tasksDictionary[task.taskId]?.publicName ?? task.taskId"
-        :score-label="task[task.scoreToDisplay].name"
-        :score="task[task.scoreToDisplay]"
-        :tags="task.tags"
-        :value-template="scoreValueTemplate(task)"
-        :score-to-display="task.scoreToDisplay"
-        :student-first-name="studentFirstName"
-        :description="getTaskDescription(task)"
-        :scores-array="getTaskScoresArray(task)"
-        :expanded="expanded"
-        :longitudinal-data="task.historicalScores"
-        :task-id="task.taskId"
-        :student-grade="studentGrade"
-      />
-    </li>
-  </ul>
+    <ul class="p-0 m-0">
+      <li v-for="task in computedTaskData" :key="task.taskId" class="list-none">
+        <ScoreCard
+          :public-name="tasksDictionary[task.taskId]?.publicName ?? task.taskId"
+          :score-label="task[task.scoreToDisplay].name"
+          :score="task[task.scoreToDisplay]"
+          :tags="task.tags"
+          :value-template="scoreValueTemplate(task)"
+          :score-to-display="task.scoreToDisplay"
+          :student-first-name="studentFirstName"
+          :description="getTaskDescription(task)"
+          :scores-array="getTaskScoresArray(task)"
+          :longitudinal-data="task.historicalScores"
+          :task-id="task.taskId"
+          :student-grade="studentGrade"
+        />
+      </li>
+    </ul>
+  </div>
 </template>
 
 <script setup>
 import { computed, toValue } from 'vue';
 import { useI18n } from 'vue-i18n';
-import ScorePrintCard from './ScorePrintCard.vue';
+import { ScoreCardPrint as ScoreCard } from './ScoreCard';
 import ScoreReportService from '@/services/ScoreReport.service';
 import { SCORE_TYPES } from '@/constants/scores';
 import { getScoreValue } from '@/helpers/reports';
@@ -51,10 +52,6 @@ const props = defineProps({
     type: Object,
     required: false,
     default: () => ({}),
-  },
-  expanded: {
-    type: Boolean,
-    required: false,
   },
 });
 

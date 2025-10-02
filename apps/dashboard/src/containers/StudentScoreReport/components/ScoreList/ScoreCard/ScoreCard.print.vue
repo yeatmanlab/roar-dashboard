@@ -1,14 +1,13 @@
 <template>
-  <div class="p-4 mb-4 rounded border border-gray-200 border-solid">
+  <div class="p-4 mb-4 text-sm rounded border border-gray-200 border-solid page-break-inside-avoid">
     <div class="flex justify-between align-items-center">
       <h2 class="m-0 text-lg font-semibold">{{ publicName }}</h2>
 
       <table class="mt-1 text-sm border-collapse sm:mt-0">
         <tbody>
-          <!-- TODO: Add severity color indicator -->
-          <tr v-for="tag in tags" :key="tag.value">
-            <td class="pr-2 font-medium text-right">{{ tag.label }}:</td>
-            <td>{{ tag.value }}</td>
+          <tr v-for="tag in tags" :key="tag.value" class="font-medium">
+            <td class="pr-2 text-right">{{ tag.label }}:</td>
+            <td :class="`text-${getSeverityColor(tag.severity)}-700`">{{ tag.value }}</td>
           </tr>
         </tbody>
       </table>
@@ -16,8 +15,10 @@
 
     <div class="py-3 mt-3 border-t border-gray-200">
       <div>
-        <span class="font-semibold">{{ scoreLabel }}:</span>
-        <span class="font-semibold" :style="{ color: score.supportColor }">{{ score.value }}</span>
+        <span class="font-semibold">{{ score.name }}: </span>
+        <span class="font-semibold" :style="{ color: score.supportColor }">
+          {{ description.slots.percentile }}
+        </span>
       </div>
 
       <i18n-t :keypath="description.keypath" tag="p" class="mb-0">
@@ -53,11 +54,22 @@
           </tr>
         </tbody>
       </table>
+
+      <template v-if="enableLongitudinalChart">
+        <h3 class="mt-4 text-xs font-semibold uppercase">{{ $t('scoreReports.progressOverTime') }}</h3>
+        <LongitudinalChart :longitudinal-data="longitudinalData" :task-id="taskId" :student-grade="studentGrade" />
+      </template>
     </div>
   </div>
 </template>
 
 <script setup>
+import { ref } from 'vue';
+import { LongitudinalChartPrint as LongitudinalChart } from './LongitudinalChart';
+
+// @TODO: Make this configurable in a future enhancement
+const enableLongitudinalChart = ref(false);
+
 defineProps({
   publicName: {
     type: String,
@@ -107,10 +119,6 @@ defineProps({
     type: Array,
     required: true,
   },
-  expanded: {
-    type: Boolean,
-    required: false,
-  },
   longitudinalData: {
     type: Array,
     required: false,
@@ -121,4 +129,13 @@ defineProps({
     required: true,
   },
 });
+
+const severityToColor = {
+  success: 'green',
+  warning: 'yellow',
+  error: 'red',
+  info: 'blue',
+};
+
+const getSeverityColor = (severity) => severityToColor[severity];
 </script>

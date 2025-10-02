@@ -116,7 +116,7 @@ import PvAccordion from 'primevue/accordion';
 import PvAccordionPanel from 'primevue/accordionpanel';
 import PvAccordionHeader from 'primevue/accordionheader';
 import PvAccordionContent from 'primevue/accordioncontent';
-import LongitudinalChart from './ScoreCardLongitudinalChart.vue';
+import { LongitudinalChartScreen as LongitudinalChart } from './LongitudinalChart';
 
 const props = defineProps({
   publicName: {

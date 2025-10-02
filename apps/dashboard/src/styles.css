@@ -4,6 +4,11 @@
 @import './assets/styles/theme-tailwind.css';
 @import './assets/styles/theme.scss';
 
+/* Base */
+p {
+  line-height: 1.25rem;
+}
+
 /* Tailwind CSS classes */
 /* @TODO: Remove once yeatmanlab/roar-project-management/issues/321 is resolved */
 .sr-only {
@@ -92,6 +97,14 @@ legend {
   width: 25%;
 }
 
+.leading-5 {
+  line-height: 1.25rem;
+}
+
+.leading-6 {
+  line-height: 1.5rem;
+}
+
 .leading-7 {
   line-height: 1.75rem;
 }
@@ -124,6 +137,7 @@ legend {
 .columns-2 {
   columns: 2;
 }
+
 @media (min-width: 768px) {
   .md\:columns-2 {
     columns: 2;
@@ -217,4 +231,12 @@ legend {
   .\32xl\:grid-cols-4 {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
+}
+
+.break-inside-avoid-page {
+  break-inside: avoid-page;
+}
+
+.break-before-page {
+  break-before: page;
 }

@@ -3,12 +3,15 @@
     id="individual-report-header"
     class="flex my-2 flex-column md:flex-row md:align-items-center md:justify-between"
     data-cy="report__header"
+    aria-labelledby="page-title"
   >
     <div class="my-3 text-left">
-      <h1 class="mb-1 text-sm text-gray-400 uppercase">
-        {{ $t('scoreReports.pageTitle') }}
+      <h1 id="page-title" class="p-0 m-0 text-5xl">
+        <span class="block mb-1 text-sm text-gray-600 uppercase">
+          {{ $t('scoreReports.pageTitle') }}
+        </span>
+        <span>{{ studentFirstName }} {{ studentLastName }}</span>
       </h1>
-      <h2 class="p-0 m-0 text-5xl">{{ studentFirstName }} {{ studentLastName }}</h2>
     </div>
 
     <div v-if="studentGrade || className || administrationName" class="px-4 py-2 bg-gray-100 rounded">

@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div data-pdf-export-container :class="{ 'is-print-mode leading-': isPrintMode, 'is-preview-mode': isPreviewMode }">
     <!-- Loading State -->
     <div v-if="isLoading" class="flex flex-column justify-content-center align-items-center">
       <AppSpinner class="mb-4" />
@@ -8,7 +8,7 @@
 
     <template v-else>
       <template v-if="isPrintMode">
-        <HeaderPrintSection
+        <HeaderPrint
           :student-first-name="studentFirstName"
           :student-last-name="studentLastName"
           :student-grade="studentGrade"
@@ -21,29 +21,28 @@
         </template>
 
         <template v-else>
-          <SummaryPrintSection
+          <SummaryPrint
             :student-first-name="studentFirstName"
             :tasks="tasksListArray"
             :expanded="expanded"
             :export-loading="exportLoading"
-            @toggle-expand="toggleExpand"
-            @export-pdf="handleExportToPdf"
           />
 
-          <ScoreCardsListPrintSection
+          <ScoreListPrint
             :student-first-name="studentFirstName"
             :student-grade="studentGrade"
             :task-data="taskData"
             :tasks-dictionary="tasksDictionary"
             :longitudinal-data="longitudinalData"
-            :expanded="expanded"
           />
+
+          <SupportPrint :student-grade="studentGrade" />
         </template>
       </template>
 
       <template v-else>
         <div data-pdf-export-container>
-          <HeaderSection
+          <HeaderScreen
             :student-first-name="studentFirstName"
             :student-last-name="studentLastName"
             :student-grade="studentGrade"
@@ -57,7 +56,7 @@
           </template>
 
           <template v-else>
-            <SummarySection
+            <SummaryScreen
               :student-first-name="studentFirstName"
               :formatted-tasks="tasksList"
               :expanded="expanded"
@@ -67,7 +66,7 @@
               @export-pdf="handleExportToPdf"
             />
 
-            <ScoreCardsListSection
+            <ScoreListScreen
               :student-first-name="studentFirstName"
               :student-grade="studentGrade"
               :task-data="taskData"
@@ -77,7 +76,7 @@
               :data-pdf-export-section="SCORE_REPORT_EXPORT_SECTIONS.DETAILS"
             />
 
-            <SupportSection
+            <SupportScreen
               :expanded="expanded"
               :student-grade="studentGrade"
               :data-pdf-export-section="SCORE_REPORT_EXPORT_SECTIONS.SUPPORT"
@@ -102,18 +101,16 @@ import PdfExportService from '@/services/PdfExport.service';
 import { taskDisplayNames } from '@/helpers/reports';
 
 import AppSpinner from '@/components/AppSpinner.vue';
-import HeaderSection from './components/header/HeaderSection.vue';
-import HeaderPrintSection from './components/header/HeaderPrintSection.vue';
-import SummarySection from './components/summary/SummarySection.vue';
-import SummaryPrintSection from './components/summary/SummaryPrintSection.vue';
-import ScoreCardsListSection from './components/score-cards-list/ScoreCardsListSection.vue';
-import ScoreCardsListPrintSection from './components/score-cards-list/ScoreCardsListPrintSection.vue';
-import SupportSection from './components/SupportSection.vue';
+import { HeaderScreen, HeaderPrint } from './components/Header';
+import { SummaryScreen, SummaryPrint } from './components/Summary';
+import { ScoreListScreen, ScoreListPrint } from './components/ScoreList';
+import { SupportScreen, SupportPrint } from './components/Support';
 import EmptyState from './components/EmptyState.vue';
 import { getStudentDisplayName } from '@/helpers/getStudentDisplayName';
 import { formatList } from '@/helpers/formatList';
 import { formatListArray } from '@/helpers/formatListArray';
 import { SCORE_REPORT_SECTIONS_EXPANDED_URL_PARAM } from '@/constants/scores';
+import { Previewer } from 'pagedjs';
 
 const SCORE_REPORT_EXPORT_SECTIONS = Object.freeze({
   HEADER: 'header',
@@ -145,6 +142,7 @@ const authStore = useAuthStore();
 const route = useRoute();
 
 const isPrintMode = computed(() => route.query.print === 'true', { immediate: true });
+const isPreviewMode = computed(() => route.query.preview === 'true', { immediate: true });
 
 // Data loading state
 const initialized = ref(false);
@@ -361,4 +359,150 @@ watch(
   },
   { immediate: false },
 );
+
+// --- Paged.js helpers and lifecycle ---
+// Track rendering state to avoid overlapping previews (useful with HMR and reactive re-runs)
+const pagedRendering = ref(false);
+
+// Wait for web fonts to be ready so text renders correctly in preview
+const waitForFonts = async () => {
+  if (document?.fonts && document.fonts.ready) {
+    try {
+      await document.fonts.ready;
+      // eslint-disable-next-line no-empty
+    } catch {}
+  }
+};
+
+// Wait for all images under a root node to finish loading
+const waitForImages = async (root) => {
+  const images = Array.from(root.querySelectorAll('img'));
+  await Promise.all(
+    images.map(
+      (img) =>
+        new Promise((resolve) => {
+          if (img.complete) return resolve();
+          img.addEventListener('load', resolve, { once: true });
+          img.addEventListener('error', resolve, { once: true });
+        }),
+    ),
+  );
+};
+
+// Remove previous Paged.js output/styles (for HMR or subsequent previews)
+const clearPagedOutput = () => {
+  const pages = document.querySelector('.pagedjs_pages');
+  if (pages && pages.parentElement) {
+    pages.parentElement.removeChild(pages);
+  }
+  // Remove any internal paged styles
+  document
+    .querySelectorAll('style[data-pagedjs-internal], #pagedjs-generated-styles')
+    .forEach((n) => n.parentElement && n.parentElement.removeChild(n));
+};
+
+onUnmounted(() => {
+  clearPagedOutput();
+  pagedRendering.value = false;
+});
+
+const runPagedPreview = async () => {
+  try {
+    // Wait next tick to ensure DOM is stable
+    await nextTick();
+    // Ensure fonts and images are ready to avoid rendering only placeholders/spinners
+    await waitForFonts();
+    await waitForImages(document.body);
+    // Give the browser one more frame to settle layout
+    await new Promise((r) => requestAnimationFrame(() => r()));
+
+    // Clear any previous Paged.js artifacts (useful for HMR and re-renders)
+    clearPagedOutput();
+
+    // Prevent re-entrancy
+    if (pagedRendering.value) return;
+    pagedRendering.value = true;
+    try {
+      const previewer = new Previewer();
+      // Render the entire document. This is the simplest, previously working approach.
+      await previewer.preview();
+    } finally {
+      pagedRendering.value = false;
+    }
+  } catch (e) {
+    // Non-fatal; just log for diagnostics
+    console.error('Paged.js preview failed:', e);
+  }
+};
+
+watch(
+  [isLoading, isPrintMode, isPreviewMode],
+  async ([loading, print, preview]) => {
+    if (!loading && print && preview) {
+      await runPagedPreview();
+    }
+  },
+  { immediate: false },
+);
+
+// Vite HMR: cleanup paged output when this module is replaced during development
+if (import.meta && import.meta.hot) {
+  import.meta.hot.dispose(() => {
+    clearPagedOutput();
+    pagedRendering.value = false;
+    runPagedPreview();
+  });
+}
 </script>
+
+<style>
+.pagedjs_pages {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem;
+  gap: 2rem;
+}
+
+.pagedjs_page {
+  border: 1px solid red;
+}
+
+[data-pdf-export-container].is-print-mode:not(.is-preview-mode) {
+  width: 8.5in; /* Equivalent of a US Letter page width */
+  padding: 18mm 15mm 18mm 15mm; /* 0.5 inch */
+}
+
+h1 {
+  string-set: title content(text);
+}
+
+@media print {
+  @page {
+    size: Letter;
+    margin: 18mm 15mm 18mm 15mm; /* 0.5 inch */
+
+    @bottom-left {
+      content: string(title);
+      font-size: 0.5rem;
+    }
+
+    @bottom-right {
+      content: counter(page) ' / ' counter(pages);
+      font-size: 0.5rem;
+    }
+  }
+
+  header {
+    display: none;
+  }
+
+  .page-break-before {
+    break-before: page;
+  }
+
+  .page-break-inside-avoid {
+    break-inside: avoid;
+  }
+}
+</style>

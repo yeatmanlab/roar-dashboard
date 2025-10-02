@@ -1,6 +1,12 @@
 <template>
-  <main class="min-h-screen" :class="{ 'bg-white': isPrintMode, 'bg-gray-50': !isPrintMode }">
-    <div class="container flex py-4 pb-8 flex-column align-items-around">
+  <main :class="{ 'min-h-screen bg-gray-50': !isPrintMode }">
+    <div
+      class="container flex-column"
+      :class="{
+        'align-items-around py-4 pb-8': !isPrintMode,
+        'px-0 align-items-center': isPrintMode,
+      }"
+    >
       <StudentScoreReport :administration-id="administrationId" :user-id="userId" :org-type="orgType" :org-id="orgId" />
     </div>
   </main>

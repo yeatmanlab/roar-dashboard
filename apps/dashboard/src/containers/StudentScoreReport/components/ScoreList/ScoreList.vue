@@ -27,7 +27,7 @@
 <script setup>
 import { computed, toValue } from 'vue';
 import { useI18n } from 'vue-i18n';
-import ScoreCard from './ScoreCard.vue';
+import { ScoreCardScreen as ScoreCard } from './ScoreCard';
 import ScoreReportService from '@/services/ScoreReport.service';
 import { SCORE_TYPES } from '@/constants/scores';
 import { getScoreValue } from '@/helpers/reports';
