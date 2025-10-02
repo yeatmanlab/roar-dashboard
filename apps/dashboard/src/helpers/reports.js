@@ -413,7 +413,6 @@ export const tasksToDisplayPercentCorrect = [
   'letter-en-ca',
   'phonics',
   'cva',
-  'swr-es',
   'pa-es',
   'morphology',
   'vocab',
@@ -663,7 +662,6 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = 
   }
   if (
     ((tasksToDisplayPercentCorrect.includes(taskId) && !(taskId === 'swr-es' && scoringVersion >= 1)) ||
-      tasksToDisplayCorrectIncorrectDifference.includes(taskId) ||
       tasksToDisplayTotalCorrect.includes(taskId)) &&
     tasksToDisplayGradeEstimate.includes(taskId) &&
     rawScore !== undefined
