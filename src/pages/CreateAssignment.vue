@@ -587,26 +587,28 @@ const submit = async () => {
     },
   };
 
-  if (props.adminId) args.administrationId = props.adminId;
+  if (props.adminId) {
+    args.administrationId = props.adminId;
+  } else {
+    const { data: assignmentExist } = await doesAssignmentExist();
 
-  const { data: assignmentExist } = await doesAssignmentExist();
+    if (assignmentExist === null) {
+      return toast.add({
+        severity: TOAST_SEVERITIES.ERROR,
+        summary: 'Error',
+        detail: 'Failed to check for duplicate assignment names. Try again or use a different name.',
+        life: TOAST_DEFAULT_LIFE_DURATION,
+      });
+    }
 
-  if (assignmentExist === null) {
-    return toast.add({
-      severity: TOAST_SEVERITIES.ERROR,
-      summary: 'Error',
-      detail: 'Failed to check for duplicate assignment names. Try again or use a different name.',
-      life: TOAST_DEFAULT_LIFE_DURATION,
-    });
-  }
-
-  if (assignmentExist) {
-    return toast.add({
-      severity: 'error',
-      summary: 'Assignment Creation Error',
-      detail: 'An assignment with that name already exists.',
-      life: TOAST_DEFAULT_LIFE_DURATION,
-    });
+    if (assignmentExist) {
+      return toast.add({
+        severity: 'error',
+        summary: 'Assignment Creation Error',
+        detail: 'An assignment with that name already exists.',
+        life: TOAST_DEFAULT_LIFE_DURATION,
+      });
+    }
   }
 
   upsertAdministration(args, {
@@ -614,7 +616,9 @@ const submit = async () => {
       toast.add({
         severity: TOAST_SEVERITIES.SUCCESS,
         summary: 'Success',
-        detail: props.adminId ? 'Assignment updated' : 'Assignment created',
+        detail: props.adminId
+          ? 'Your assignment edits are being processed. Please check back in a few minutes.'
+          : 'Your new assignment is being processed. Please check back in a few minutes.',
         life: TOAST_DEFAULT_LIFE_DURATION,
       });
 
