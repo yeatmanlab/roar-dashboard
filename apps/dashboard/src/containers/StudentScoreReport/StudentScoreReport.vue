@@ -1,6 +1,5 @@
 <template>
-  <div data-pdf-export-container :class="{ 'is-print-mode leading-': isPrintMode, 'is-preview-mode': isPreviewMode }">
-    <!-- Loading State -->
+  <div :class="{ 'is-print-mode': isPrintMode, 'is-preview-mode': isPreviewMode }">
     <div v-if="isLoading" class="flex flex-column justify-content-center align-items-center">
       <AppSpinner class="mb-4" />
       <span>{{ $t('scoreReports.loading') }}</span>
@@ -8,51 +7,52 @@
 
     <template v-else>
       <template v-if="isPrintMode">
-        <HeaderPrint
-          :student-first-name="studentFirstName"
-          :student-last-name="studentLastName"
-          :student-grade="studentGrade"
-          :administration-name="administrationData?.name"
-          :administration-date="administrationData?.date"
-        />
-
-        <template v-if="!taskData?.length">
-          <EmptyState :student-first-name="studentFirstName" />
-        </template>
-
-        <template v-else>
-          <SummaryPrint
+        <div data-pdf-export-container>
+          <HeaderPrint
             :student-first-name="studentFirstName"
-            :tasks="tasksListArray"
-            :expanded="expanded"
-            :export-loading="exportLoading"
-          />
-
-          <ScoreListPrint
-            :student-first-name="studentFirstName"
+            :student-last-name="studentLastName"
             :student-grade="studentGrade"
-            :task-data="taskData"
-            :tasks-dictionary="tasksDictionary"
-            :longitudinal-data="longitudinalData"
+            :administration-name="administrationData?.name"
+            :administration-date="administrationData?.date"
           />
 
-          <SupportPrint :student-grade="studentGrade" />
-        </template>
+          <template v-if="!taskData?.length">
+            <EmptyState :student-first-name="studentFirstName" />
+          </template>
+
+          <template v-else>
+            <SummaryPrint
+              :student-first-name="studentFirstName"
+              :tasks="tasksListArray"
+              :expanded="expanded"
+              :export-loading="exportLoading"
+            />
+
+            <ScoreListPrint
+              :student-first-name="studentFirstName"
+              :student-grade="studentGrade"
+              :task-data="taskData"
+              :tasks-dictionary="tasksDictionary"
+              :longitudinal-data="longitudinalData"
+            />
+
+            <SupportPrint :student-grade="studentGrade" />
+          </template>
+        </div>
       </template>
 
       <template v-else>
-        <div data-pdf-export-container>
+        <div>
           <HeaderScreen
             :student-first-name="studentFirstName"
             :student-last-name="studentLastName"
             :student-grade="studentGrade"
             :administration-name="administrationData?.name"
             :administration-date="administrationData?.date"
-            :data-pdf-export-section="SCORE_REPORT_EXPORT_SECTIONS.HEADER"
           />
 
           <template v-if="!taskData?.length">
-            <EmptyState :student-first-name="studentFirstName" data-pdf-export-section />
+            <EmptyState :student-first-name="studentFirstName" />
           </template>
 
           <template v-else>
@@ -61,7 +61,6 @@
               :formatted-tasks="tasksList"
               :expanded="expanded"
               :export-loading="exportLoading"
-              :data-pdf-export-section="SCORE_REPORT_EXPORT_SECTIONS.SUMMARY"
               @toggle-expand="toggleExpand"
               @export-pdf="handleExportToPdf"
             />
@@ -73,14 +72,9 @@
               :tasks-dictionary="tasksDictionary"
               :longitudinal-data="longitudinalData"
               :expanded="expanded"
-              :data-pdf-export-section="SCORE_REPORT_EXPORT_SECTIONS.DETAILS"
             />
 
-            <SupportScreen
-              :expanded="expanded"
-              :student-grade="studentGrade"
-              :data-pdf-export-section="SCORE_REPORT_EXPORT_SECTIONS.SUPPORT"
-            />
+            <SupportScreen :expanded="expanded" :student-grade="studentGrade" />
           </template>
         </div>
       </template>
@@ -109,7 +103,6 @@ import EmptyState from './components/EmptyState.vue';
 import { getStudentDisplayName } from '@/helpers/getStudentDisplayName';
 import { formatList } from '@/helpers/formatList';
 import { formatListArray } from '@/helpers/formatListArray';
-import { SCORE_REPORT_SECTIONS_EXPANDED_URL_PARAM } from '@/constants/scores';
 import { Previewer } from 'pagedjs';
 
 const SCORE_REPORT_EXPORT_SECTIONS = Object.freeze({
@@ -144,7 +137,9 @@ const route = useRoute();
 const isPrintMode = computed(() => route.query.print === 'true', { immediate: true });
 const isPreviewMode = computed(() => route.query.preview === 'true', { immediate: true });
 
-// Data loading state
+const expanded = ref(false);
+const exportLoading = ref(false);
+
 const initialized = ref(false);
 const isLoading = computed(
   () =>
@@ -155,11 +150,6 @@ const isLoading = computed(
     isLoadingLongitudinalData.value,
 );
 
-// UI control state
-const expanded = ref(false);
-const exportLoading = ref(false);
-
-// Data queries
 const { data: studentData, isLoading: isLoadingStudentData } = useUserDataQuery(props.userId, {
   enabled: initialized,
 });
@@ -172,7 +162,6 @@ const { data: administrationData, isLoading: isLoadingAdministrationData } = use
   },
 );
 
-// Get current administration data
 const { data: taskData, isLoading: isLoadingTaskData } = useUserRunPageQuery(
   props.userId,
   props.administrationId,
@@ -183,7 +172,6 @@ const { data: taskData, isLoading: isLoadingTaskData } = useUserRunPageQuery(
   },
 );
 
-// Get longitudinal data across all administrations
 const { data: longitudinalData, isLoading: isLoadingLongitudinalData } = useUserLongitudinalRunsQuery(
   props.userId,
   props.orgType,
@@ -200,7 +188,6 @@ const { data: tasksDictionary, isLoading: isLoadingTasksDictionary } = useTasksD
   enabled: initialized,
 });
 
-// Computed properties
 const tasks = computed(() => taskData?.value?.map((assignment) => assignment.taskId) || []);
 const tasksList = computed(() =>
   formatList(tasks.value, tasksDictionary.value, (task, entry) => entry?.technicalName ?? task, {
@@ -211,6 +198,7 @@ const tasksList = computed(() =>
     suffix: '.',
   }),
 );
+
 const tasksListArray = computed(() =>
   formatListArray(tasks.value, tasksDictionary.value, (task, entry) => entry?.technicalName ?? task, {
     orderLookup: Object.entries(taskDisplayNames).reduce((acc, [key, value]) => {
@@ -251,6 +239,9 @@ const setExpanded = (isExpanded) => {
   }
 };
 
+/**
+ * Toggles the expanded state of the report cards
+ */
 const toggleExpand = () => {
   setExpanded(!expanded.value);
 };
@@ -304,12 +295,6 @@ onMounted(() => {
   });
 
   refresh();
-
-  // Auto-expand when page is opened for export via iframe using ?expanded=true flag
-  const params = new URLSearchParams(window.location.search);
-  if (params.get(SCORE_REPORT_SECTIONS_EXPANDED_URL_PARAM) === 'true') {
-    setExpanded(true);
-  }
 });
 
 onUnmounted(() => {
@@ -318,10 +303,14 @@ onUnmounted(() => {
 
 // PostMessage communication for iframe loading state
 let hasMessageBeenSent = false;
-let isMounted = false;
 
+/**
+ * Sends a message to the parent window to indicate that the page has loaded.
+ *
+ * @returns {Promise<void>} Promise that resolves when the message is sent
+ */
 const sendPageLoadedMessage = async () => {
-  if (hasMessageBeenSent || window.parent === window || !isMounted) return;
+  if (hasMessageBeenSent || window.parent === window) return;
 
   // Wait for next tick to ensure DOM is fully updated
   await nextTick();
@@ -339,26 +328,6 @@ const sendPageLoadedMessage = async () => {
     );
   }
 };
-
-onMounted(() => {
-  isMounted = true;
-
-  // Check if we're already loaded when mounted
-  if (!isLoading.value) {
-    sendPageLoadedMessage();
-  }
-});
-
-watch(
-  isLoading,
-  (loading) => {
-    // Only send message when loading completes and component is mounted
-    if (!loading) {
-      sendPageLoadedMessage();
-    }
-  },
-  { immediate: false },
-);
 
 // --- Paged.js helpers and lifecycle ---
 // Track rendering state to avoid overlapping previews (useful with HMR and reactive re-runs)
@@ -427,6 +396,7 @@ const runPagedPreview = async () => {
       // Render the entire document. This is the simplest, previously working approach.
       await previewer.preview();
     } finally {
+      sendPageLoadedMessage();
       pagedRendering.value = false;
     }
   } catch (e) {
@@ -465,9 +435,10 @@ if (import.meta && import.meta.hot) {
 }
 
 .pagedjs_page {
-  border: 1px solid red;
+  background-color: #fff;
 }
 
+/* Render the print view in a container that is identical to the PDF export container */
 [data-pdf-export-container].is-print-mode:not(.is-preview-mode) {
   width: 8.5in; /* Equivalent of a US Letter page width */
   padding: 18mm 15mm 18mm 15mm; /* 0.5 inch */
@@ -475,6 +446,9 @@ if (import.meta && import.meta.hot) {
 
 h1 {
   string-set: title content(text);
+}
+
+@media screen {
 }
 
 @media print {
@@ -497,12 +471,8 @@ h1 {
     display: none;
   }
 
-  .page-break-before {
-    break-before: page;
-  }
-
-  .page-break-inside-avoid {
-    break-inside: avoid;
+  .pagedjs_page {
+    border: none;
   }
 }
 </style>

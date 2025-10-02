@@ -606,6 +606,7 @@ const exportBulkPdfReports = async (selectedRows) => {
 
   try {
     bulkPdfExportLoading.value = true;
+
     exportProgress.value = {
       show: true,
       completed: 0,
@@ -627,7 +628,7 @@ const exportBulkPdfReports = async (selectedRows) => {
 
     // URL generator function
     const urlGenerator = (student) => {
-      return `${window.location.origin}/scores/${props.administrationId}/${props.orgType}/${props.orgId}/user/${student.id}/new`;
+      return `${window.location.origin}/scores/${props.administrationId}/${props.orgType}/${props.orgId}/user/${student.id}/new?print=true&preview=true`;
     };
 
     // Filename generator function
@@ -635,11 +636,10 @@ const exportBulkPdfReports = async (selectedRows) => {
       const studentName =
         `${student.firstName || ''} ${student.lastName || ''}`.trim() || student.username || student.id;
       const safeStudentName = studentName.replace(/[^a-zA-Z0-9\s-_]/g, '');
-      const sanitizedAdminName =
-        administrationData.value?.name?.replace(/[^a-zA-Z0-9\s-]/g, '').replace(/\s+/g, '-') || 'Report';
       // Include student ID to ensure uniqueness when students have the same name
       const safeStudentId = student.id.replace(/[^a-zA-Z0-9-_]/g, '');
-      return `${safeStudentName}_${safeStudentId}_${sanitizedAdminName}.pdf`;
+      const fileName = `${safeStudentName}_${safeStudentId}`;
+      return `ROAR-IndividualScoreReport-${fileName}.pdf`;
     };
 
     // ZIP filename
