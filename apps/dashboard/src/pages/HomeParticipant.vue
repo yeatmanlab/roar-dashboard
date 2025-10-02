@@ -50,6 +50,7 @@
                   :options="sortedUserAdministrations ?? []"
                   :option-label="getOptionLabel"
                   input-id="dd-assignment"
+                  :loading="isLoadingBar"
                   data-cy="dropdown-select-administration"
                   @change="toggleShowOptionalAssessments"
                 />
@@ -285,6 +286,11 @@ async function checkConsent() {
   const isOlder = isAdult || isSeniorGrade;
 
   let docTypeKey = isOlder ? 'consent' : 'assent';
+
+  if (typeof legal[docTypeKey] === 'string' && legal[docTypeKey].toLowerCase() === 'no consent') {
+    return;
+  }
+
   let docType = legal[docTypeKey][0]?.type.toLowerCase();
   let docAmount = legal?.amount;
   let docExpectedTime = legal?.expectedTime;
@@ -403,14 +409,17 @@ const studentInfo = computed(() => {
   };
 });
 
+const isLoadingBar = ref(false);
 watch(
   [userData, selectedAdmin, userAssignments],
   async ([newUserData, isSelectedAdminChanged]) => {
+    isLoadingBar.value = true;
     // If the assignments are still loading, abort.
     if (isLoadingAssignments.value || isFetchingAssignments.value || !userAssignments.value?.length) return;
 
     // If the selected admin changed, ensure consent was given before proceeding.
     if (!_isEmpty(newUserData) && isSelectedAdminChanged) {
+      showConsent.value = false;
       await checkConsent();
     }
 
@@ -425,12 +434,13 @@ watch(
       selectedAdmin.value = sortedUserAdministrations.value.find(
         (administration) => administration.id === selectedAdminId,
       );
-
+      isLoadingBar.value = false;
       return;
     }
 
     // Otherwise, choose the first sorted administration if there is no selected administration.
     selectedAdmin.value = sortedUserAdministrations.value[0];
+    isLoadingBar.value = false;
   },
   { immediate: true },
 );
