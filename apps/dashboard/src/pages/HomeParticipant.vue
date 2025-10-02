@@ -175,7 +175,6 @@ const getOptionLabel = computed(() => {
 
 const gameStore = useGameStore();
 const { selectedAdmin } = storeToRefs(gameStore);
-console.log(selectedAdmin.value);
 
 const {
   isLoading: isLoadingUserData,
@@ -235,8 +234,6 @@ const {
 );
 
 const sortedUserAdministrations = computed(() => {
-  console.log(userAssignments.value);
-  console.log([...(userAssignments.value ?? []).sort((a, b) => (a.name || '').localeCompare(b.name || ''))]);
   return [...(userAssignments.value ?? [])].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 });
 
