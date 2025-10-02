@@ -285,6 +285,11 @@ async function checkConsent() {
   const isOlder = isAdult || isSeniorGrade;
 
   let docTypeKey = isOlder ? 'consent' : 'assent';
+
+  if (typeof legal[docTypeKey] === 'string' && legal[docTypeKey].toLowerCase() === 'no consent') {
+    return;
+  }
+
   let docType = legal[docTypeKey][0]?.type.toLowerCase();
   let docAmount = legal?.amount;
   let docExpectedTime = legal?.expectedTime;
@@ -411,6 +416,7 @@ watch(
 
     // If the selected admin changed, ensure consent was given before proceeding.
     if (!_isEmpty(newUserData) && isSelectedAdminChanged) {
+      showConsent.value = false;
       await checkConsent();
     }
 
