@@ -50,7 +50,6 @@
                   :options="sortedUserAdministrations ?? []"
                   :option-label="getOptionLabel"
                   input-id="dd-assignment"
-                  :loading="isLoadingBar"
                   data-cy="dropdown-select-administration"
                   @change="toggleShowOptionalAssessments"
                 />
@@ -409,11 +408,9 @@ const studentInfo = computed(() => {
   };
 });
 
-const isLoadingBar = ref(false);
 watch(
   [userData, selectedAdmin, userAssignments],
   async ([newUserData, isSelectedAdminChanged]) => {
-    isLoadingBar.value = true;
     // If the assignments are still loading, abort.
     if (isLoadingAssignments.value || isFetchingAssignments.value || !userAssignments.value?.length) return;
 
@@ -434,13 +431,11 @@ watch(
       selectedAdmin.value = sortedUserAdministrations.value.find(
         (administration) => administration.id === selectedAdminId,
       );
-      isLoadingBar.value = false;
       return;
     }
 
     // Otherwise, choose the first sorted administration if there is no selected administration.
     selectedAdmin.value = sortedUserAdministrations.value[0];
-    isLoadingBar.value = false;
   },
   { immediate: true },
 );
