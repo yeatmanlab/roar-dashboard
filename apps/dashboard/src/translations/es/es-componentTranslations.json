@@ -100,13 +100,13 @@
     "loading": "cargando"
   },
   "sentryForm": {
-    "formTitle": "Reportar un problema a ROAR",
+    "formTitle": "Informe de error en ROAR",
     "buttonLabel": "Reportar un problema",
-    "submitButtonLabel": "Enviar informe de problema",
+    "submitButtonLabel": "Enviar informe",
     "cancelButtonLabel": "Cancelar",
     "namePlaceholder": "Tu nombre (opcional)",
     "emailPlaceholder": "tu.email@example.org (opcional)",
-    "messageLabel": "Descripción",
-    "messagePlaceholder": "¿Cuál es el problema? ¿Qué querías experimentar en su lugar? Gracias por compartir."
+    "messageLabel": "Este formulario es solo para informar comportamientos inesperados del software. No recibirás una respuesta. Para soporte o consultas generales, comunícate con tu socio de ROAR o coordinador de investigación.",
+    "messagePlaceholder": "Describe el problema y qué esperabas que sucediera en su lugar. Gracias por compartir."
   }
 }

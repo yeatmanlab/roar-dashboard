@@ -82,7 +82,7 @@
     "cancelButtonLabel": "Cancelar",
     "namePlaceholder": "Tu nombre (opcional)",
     "emailPlaceholder": "tu.email@example.org (opcional)",
-    "messageLabel": "Descripción",
+    "messageLabel": "Este formulario es solo para informar comportamientos inesperados del software. No recibirás una respuesta. Para soporte o consultas generales, comunícate con tu coordinador de ROAR.",
     "messagePlaceholder": "¿Cuál es el problema? ¿Qué querías experimentar en su lugar? Gracias por compartir."
   }
 }
