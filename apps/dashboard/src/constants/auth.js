@@ -31,7 +31,7 @@ export const AUTH_USER_TYPE = Object.freeze({
  * @constant {Object} AUTH_SSO_PROVIDERS - The sources of SSO authentication.
  */
 export const AUTH_SSO_PROVIDERS = Object.freeze({
-  CLEVER: 'clever',
+  CLEVER: 'oidc.clever',
   CLASSLINK: 'classlink',
   GOOGLE: 'google',
   NYCPS: 'nycps',
