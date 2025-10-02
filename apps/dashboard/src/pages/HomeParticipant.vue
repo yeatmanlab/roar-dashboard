@@ -175,7 +175,7 @@ const getOptionLabel = computed(() => {
 
 const gameStore = useGameStore();
 const { selectedAdmin } = storeToRefs(gameStore);
-console.log(gameStore);
+console.log(selectedAdmin.value);
 
 const {
   isLoading: isLoadingUserData,
@@ -235,6 +235,8 @@ const {
 );
 
 const sortedUserAdministrations = computed(() => {
+  console.log(userAssignments.value);
+  console.log([...(userAssignments.value ?? []).sort((a, b) => (a.name || '').localeCompare(b.name || ''))]);
   return [...(userAssignments.value ?? [])].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 });
 
@@ -409,12 +411,9 @@ watch(
   async ([newUserData, isSelectedAdminChanged]) => {
     // If the assignments are still loading, abort.
     if (isLoadingAssignments.value || isFetchingAssignments.value || !userAssignments.value?.length) return;
-    console.log(selectedAdmin, isSelectedAdminChanged);
+
     // If the selected admin changed, ensure consent was given before proceeding.
-    if (
-      !_isEmpty(newUserData) &&
-      (_isEmpty(selectedAdmin.value) || isSelectedAdminChanged.id !== selectedAdmin.value?.id)
-    ) {
+    if (!_isEmpty(newUserData) && isSelectedAdminChanged) {
       await checkConsent();
     }
 
