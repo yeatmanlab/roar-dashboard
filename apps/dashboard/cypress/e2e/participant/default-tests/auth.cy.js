@@ -7,13 +7,6 @@ const CLEVER_USERNAME = Cypress.env('CLEVER_USERNAME');
 const CLEVER_PASSWORD = Cypress.env('CLEVER_PASSWORD');
 
 describe('Participant: Auth', () => {
-  beforeEach(() => {
-    cy.window().then((win) => {
-      cy.spy(win.console, 'log').as('consoleLog');
-      cy.spy(win.console, 'error').as('consoleError');
-      cy.spy(win.console, 'warn').as('consoleWarn');
-    });
-  });
   it('Logs in as participant using username and password', () => {
     cy.login(PARTICIPANT_USERNAME, PARTICIPANT_PASSWORD);
     cy.get('[data-cy="navbar__display-name"]').should('contain', 'Hi, Cypress!');
@@ -26,20 +19,6 @@ describe('Participant: Auth', () => {
   });
 
   it('Logs in as participant using Clever SSO', () => {
-    // Get all calls to console.log
-    cy.get('@consoleLog').then((spy) => {
-      const calls = spy.getCalls();
-      cy.log('Start of spy console logs');
-      // Do something with the calls
-      cy.log(calls);
-    });
-    cy.get('@consoleError').then((spy) => {
-      const calls = spy.getCalls();
-      cy.log('Start of spy console errors');
-      // Do something with the calls
-      cy.log('ERROR LOG:', calls);
-    });
-
     // Perform SSO login flow.
     cy.loginWithClever(CLEVER_SCHOOL_NAME, CLEVER_USERNAME, CLEVER_PASSWORD);
 
@@ -49,19 +28,6 @@ describe('Participant: Auth', () => {
     cy.get('[data-cy="home-participant__administration-emptystate"]').should('not.exist');
     cy.get('[data-cy="dropdown-select-administration"]').click();
     cy.get('.p-select-list-container').find('li').should('contain', 'Cypress Test Roar Apps Administration');
-    // Get all calls to console.log
-    cy.get('@consoleLog').then((spy) => {
-      const calls = spy.getCalls();
-      // Do something with the calls
-      cy.log('End of spy console logs');
-      cy.log(calls);
-    });
-    cy.get('@consoleError').then((spy) => {
-      const calls = spy.getCalls();
-      cy.log('End of spy console errors');
-      // Do something with the calls
-      cy.log('ERROR LOG:', calls);
-    });
   });
 
   it('Logs out', () => {
