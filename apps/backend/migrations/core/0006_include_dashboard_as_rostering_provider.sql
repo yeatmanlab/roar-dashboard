@@ -1,0 +1,1 @@
+ALTER TYPE "app"."rostering_provider" ADD VALUE 'dashboard' BEFORE 'nycps';
