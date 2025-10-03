@@ -211,9 +211,11 @@ const handleExportToPdf = async () => {
 
   exportLoading.value = true;
   try {
-    setExpanded(true);
-    await nextTick();
-    await PdfExportService.generateDocument(fileName);
+    // Always render the print view in an offscreen iframe for consistent export
+    const url = `${window.location.origin}/scores/${props.administrationId}/${props.orgType}/${props.orgId}/user/${props.userId}/new?print=true`;
+    await PdfExportService.generateSingleDocument(url, fileName, {
+      containerSelector: '[data-pdf-export-container]',
+    });
   } catch (error) {
     console.error('Error exporting to PDF:', error);
   } finally {
