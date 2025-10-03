@@ -71,14 +71,18 @@ const ScoreReportService = (() => {
    * @private
    */
   const getSupportLevelLanguage = (grade, percentile, rawScore, taskId, i18n) => {
-    const { support_level } = getSupportLevel(grade, percentile, rawScore, taskId);
-    return support_level === SCORE_SUPPORT_SKILL_LEVELS.ACHIEVED_SKILL
-      ? i18n.t('scoreReports.achievedText')
-      : support_level === SCORE_SUPPORT_SKILL_LEVELS.DEVELOPING_SKILL
-        ? i18n.t('scoreReports.developingText')
-        : support_level === SCORE_SUPPORT_SKILL_LEVELS.NEEDS_EXTRA_SUPPORT
-          ? i18n.t('scoreReports.extraSupportText')
-          : '';
+    const { support_level: supportLevel } = getSupportLevel(grade, percentile, rawScore, taskId);
+
+    switch (supportLevel) {
+      case SCORE_SUPPORT_SKILL_LEVELS.ACHIEVED_SKILL:
+        return i18n.t('scoreReports.achievedText');
+      case SCORE_SUPPORT_SKILL_LEVELS.DEVELOPING_SKILL:
+        return i18n.t('scoreReports.developingText');
+      case SCORE_SUPPORT_SKILL_LEVELS.NEEDS_EXTRA_SUPPORT:
+        return i18n.t('scoreReports.extraSupportText');
+      default:
+        return '';
+    }
   };
 
   /**
@@ -217,6 +221,25 @@ const ScoreReportService = (() => {
     const taskName = taskDisplayNames[task.taskId]?.extendedName;
     const taskDescription = extendedDescriptions[task.taskId];
 
+    // For tasks that display percent correct, align description with component behavior
+    if (tasksToDisplayPercentCorrect.includes(task.taskId)) {
+      return {
+        keypath: 'scoreReports.percentageCorrectTaskDescription',
+        slots: {
+          percentage: Math.round(task.percentileScore.value),
+          supportCategory: getSupportLevelLanguage(
+            grade,
+            task?.percentileScore.value,
+            task?.rawScore.value,
+            task.taskId,
+            i18n,
+          ),
+          taskName,
+          taskDescription,
+        },
+      };
+    }
+
     if (rawOnlyTasks.includes(task.taskId)) {
       return {
         keypath: 'scoreReports.rawTaskDescription',
@@ -226,7 +249,9 @@ const ScoreReportService = (() => {
           taskDescription,
         },
       };
-    } else if (grade >= 6) {
+    }
+
+    if (grade >= 6) {
       return {
         keypath: 'scoreReports.standardTaskDescription',
         slots: {
@@ -242,23 +267,23 @@ const ScoreReportService = (() => {
           taskDescription,
         },
       };
-    } else {
-      return {
-        keypath: 'scoreReports.percentileTaskDescription',
-        slots: {
-          percentile: getPercentileWithSuffix(Math.round(task?.percentileScore.value)) + ' percentile',
-          supportCategory: getSupportLevelLanguage(
-            grade,
-            task.percentileScore.value,
-            task.rawScore.value,
-            task.taskId,
-            i18n,
-          ),
-          taskName,
-          taskDescription,
-        },
-      };
     }
+
+    return {
+      keypath: 'scoreReports.percentileTaskDescription',
+      slots: {
+        percentile: getPercentileWithSuffix(Math.round(task?.percentileScore.value)) + ' percentile',
+        supportCategory: getSupportLevelLanguage(
+          grade,
+          task.percentileScore.value,
+          task.rawScore.value,
+          task.taskId,
+          i18n,
+        ),
+        taskName,
+        taskDescription,
+      },
+    };
   };
 
   /**
