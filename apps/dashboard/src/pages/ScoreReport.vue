@@ -776,7 +776,7 @@ const computeAssignmentAndRunData = computed(() => {
           scoreFilterTags += ' Assessed ';
         } else if (tasksToDisplayPercentCorrect.includes(taskId)) {
           const numAttempted = assessment.scores?.raw?.composite?.test?.numAttempted;
-          const numCorrect = assessment.scores?.raw?.composite?.test?.numCorrect;
+          const numCorrect = assessment.scores?.raw?.composite?.test?.numCorrect ?? 0;
           const percentCorrect =
             numAttempted > 0 && !isNaN(numCorrect) && !isNaN(numAttempted)
               ? Math.round((numCorrect * 100) / numAttempted).toString() + '%'
@@ -810,6 +810,7 @@ const computeAssignmentAndRunData = computed(() => {
           const composite = _get(assessment, 'scores.computed.composite');
           if (composite) {
             currRowScores[taskId] = {
+              ...currRowScores[taskId],
               composite: {
                 totalPercentCorrect: _get(composite, 'totalPercentCorrect'),
                 subscores: {
