@@ -23,7 +23,7 @@
 
     <router-view :key="$route.fullPath" />
 
-    <SessionTimer v-if="loadSessionTimeoutHandler" />
+    <!-- <SessionTimer v-if="loadSessionTimeoutHandler" /> -->
   </div>
   <div v-else>
     <LevanteSpinner fullscreen />
@@ -45,7 +45,7 @@ import NavBar from '@/components/NavBar.vue';
 import { NAVBAR_BLACKLIST } from './constants';
 import SideBar from '@/components/SideBar.vue';
 
-const SessionTimer = defineAsyncComponent(() => import('@/containers/SessionTimer/SessionTimer.vue'));
+// const SessionTimer = defineAsyncComponent(() => import('@/containers/SessionTimer/SessionTimer.vue'));
 const VueQueryDevtools = defineAsyncComponent(() =>
   import('@tanstack/vue-query-devtools').then((module) => module.VueQueryDevtools),
 );
