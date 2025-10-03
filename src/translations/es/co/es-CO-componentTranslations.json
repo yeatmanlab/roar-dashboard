@@ -130,7 +130,9 @@
       "taskNotYetAvailable": "Aún no está disponible",
       "paDescription": "Identificar el sonido en las palabras",
       "sreDescription": "Lee las oraciones tan rápido como puedas y decide si son verdaderas o falsas.",
-      "swrDescription": "Las palabras aparecerán rápidamente en la pantalla. Decide si son reales o inventadas."
+      "swrDescription": "Las palabras aparecerán rápidamente en la pantalla. Decide si son reales o inventadas.",
+      "hostileAttributionName": "¿A Propósito o por Accidente?",
+      "hostileAttributionDescription": "Escucha las historias y responde a las preguntas."
     },
     "navbar": {
       "greeting": "¡Hola!",

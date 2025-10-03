@@ -345,7 +345,7 @@ const levanteTasks: string[] = [
   'mefs',
   'roarInference',
   'vocab',
-
+  'hostileAttribution',
 ];
 
 const roarTasks: string[] = [

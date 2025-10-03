@@ -130,7 +130,9 @@
       "taskNotYetAvailable": "Not available yet",
       "paDescription": "Identify the sound in the words.",
       "sreDescription": "Read the sentences as quickly as you can and decide if they are true or false.",
-      "swrDescription": "The words will appear quickly on the screen. Decide if they are real or made-up."
+      "swrDescription": "The words will appear quickly on the screen. Decide if they are real or made-up.",
+      "hostileAttributionName": "On Purpose or by Accident?",
+      "hostileAttributionDescription": "Listen to the stories and answer the questions."
     },
     "navbar": {
       "greeting": "Hi",
