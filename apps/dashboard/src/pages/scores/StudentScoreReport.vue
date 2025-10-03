@@ -4,7 +4,7 @@
       class="container flex-column"
       :class="{
         'align-items-around py-4 pb-8': !isPrintMode,
-        'px-0 align-items-center': isPrintMode,
+        'align-items-center px-0 p-0': isPrintMode,
       }"
     >
       <StudentScoreReport :administration-id="administrationId" :user-id="userId" :org-type="orgType" :org-id="orgId" />
@@ -38,7 +38,7 @@ defineProps({
 
 const route = useRoute();
 
-const isPrintMode = computed(() => route.query.print === 'true', { immediate: true });
+const isPrintMode = computed(() => route.query.print !== undefined, { immediate: true });
 </script>
 
 <style scoped>
