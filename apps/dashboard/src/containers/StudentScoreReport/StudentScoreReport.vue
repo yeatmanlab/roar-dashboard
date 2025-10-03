@@ -55,7 +55,7 @@
         <template v-else>
           <SummaryScreen
             :student-first-name="studentFirstName"
-            :formatted-tasks="tasksList"
+            :tasks="tasksListArray"
             :expanded="expanded"
             :export-loading="exportLoading"
             @toggle-expand="toggleExpand"
@@ -98,7 +98,6 @@ import { ScoreListScreen, ScoreListPrint } from './components/ScoreList';
 import { SupportScreen, SupportPrint } from './components/Support';
 import EmptyState from './components/EmptyState.vue';
 import { getStudentDisplayName } from '@/helpers/getStudentDisplayName';
-import { formatList } from '@/helpers/formatList';
 import { formatListArray } from '@/helpers/formatListArray';
 
 const props = defineProps({
@@ -158,16 +157,6 @@ const { data: tasksDictionary, isLoading: isLoadingTasksDictionary } = useTasksD
 });
 
 const tasks = computed(() => taskData?.value?.map((assignment) => assignment.taskId) || []);
-const tasksList = computed(() =>
-  formatList(tasks.value, tasksDictionary.value, (task, entry) => entry?.technicalName ?? task, {
-    orderLookup: Object.entries(taskDisplayNames).reduce((acc, [key, value]) => {
-      acc[key] = value.order;
-      return acc;
-    }, {}),
-    suffix: '.',
-  }),
-);
-
 const tasksListArray = computed(() =>
   formatListArray(tasks.value, tasksDictionary.value, (task, entry) => entry?.technicalName ?? task, {
     orderLookup: Object.entries(taskDisplayNames).reduce((acc, [key, value]) => {

@@ -38,10 +38,9 @@
           {{ studentFirstName }}
         </template>
       </i18n-t>
-      <ul class="inline-flex p-0" style="list-style-type: none">
-        <li>
-          <!-- TODO: Improve task rendering -->
-          <strong>{{ formattedTasks }}</strong>
+      <ul class="p-0 list-none columns-2">
+        <li v-for="task in tasks" :key="task" class="pb-1 before:pi before:pi-check">
+          <strong>{{ task }}</strong>
         </li>
       </ul>
       <i18n-t keypath="scoreReports.summary" tag="div">
@@ -69,7 +68,7 @@ defineProps({
     type: Boolean,
     default: false,
   },
-  formattedTasks: {
+  tasks: {
     type: String,
     required: true,
   },
@@ -77,3 +76,21 @@ defineProps({
 
 defineEmits(['toggleExpand', 'exportPdf']);
 </script>
+
+<style scoped>
+/* ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+} */
+ul li {
+  position: relative;
+}
+ul li::before {
+  content: '\e909'; /* Unicode for pi-check */
+  font-family: 'PrimeIcons';
+  font-size: 0.75rem;
+  color: #16a34a; /* Tailwind green-600 */
+  margin-right: 0.5rem;
+}
+</style>
