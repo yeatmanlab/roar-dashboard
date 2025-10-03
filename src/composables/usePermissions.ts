@@ -1,6 +1,6 @@
 // composables/usePermissions.ts
 import { ref, computed, onMounted, readonly, toValue } from 'vue';
-import { CacheService, PermissionDocument, PermissionService, type Resource, type Action, type Role, type UserRole as CoreUserRole } from '@levante-framework/permissions-core';
+import { CacheService, PermissionDocument, PermissionService, type Resource, type Action, type Role, type UserRole as CoreUserRole, GroupSubResource, AdminSubResource } from '@levante-framework/permissions-core';
 import { useAuthStore } from '@/store/auth';
 import { getAxiosInstance, getBaseDocumentPath, convertValues } from '@/helpers/query/utils';
 import _mapValues from 'lodash/mapValues';
@@ -71,21 +71,22 @@ export const usePermissions = () => {
     }
   });
 
-  const can = (resource: Resource, action: Action): boolean => {
+  const can = (resource: Resource, action: Action, subResource?: GroupSubResource | AdminSubResource): boolean => {
     if (!shouldUsePermissions || !permissionsLoaded.value || !user.value || !currentSite) return false;
 
     return permissionService.canPerformSiteAction(
       user.value,
       currentSite,
       resource,
-      action
+      action,
+      subResource
     );
   };
 
-  const canGlobal = (resource: Resource, action: Action): boolean => {
+  const canGlobal = (resource: Resource, action: Action, subResource?: GroupSubResource | AdminSubResource): boolean => {
     if (!shouldUsePermissions || !permissionsLoaded.value || !user.value) return false;
 
-    return permissionService.canPerformGlobalAction(user.value, resource, action);
+    return permissionService.canPerformGlobalAction(user.value, resource, action, subResource);
   };
 
   const hasRole = (role: Role): boolean => {

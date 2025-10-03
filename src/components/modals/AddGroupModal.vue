@@ -49,7 +49,7 @@
             <small v-if="v$.parentDistrict.$error" class="p-error">Please select a site.</small>
           </div>
 
-          <div v-if="orgType?.singular === 'class'" class="w-full">
+          <div v-if="orgType?.singular === SINGULAR_ORG_TYPES.CLASSES" class="w-full">
             <div class="flex flex-column gap-1 w-full">
               <PvFloatLabel class="w-full">
                 <PvSelect
@@ -147,11 +147,20 @@ import useOrgNameExistsQuery from '@/composables/queries/useOrgNameExistsQuery';
 import useSchoolClassesQuery from '@/composables/queries/useSchoolClassesQuery';
 import useUpsertOrgMutation from '@/composables/mutations/useUpsertOrgMutation';
 import useVuelidate from '@vuelidate/core';
+import { usePermissions } from '@/composables/usePermissions';
+import { useAuthStore } from '@/store/auth';
+import { PERMISSION_ACTIONS } from '@/constants/roles';
 
 interface OrgType {
   firestoreCollection: string;
   label: string;
   singular: string;
+}
+
+interface SelectedOrg {
+  id: string;
+  name: string;
+  tags: string[];
 }
 
 interface Props {
@@ -167,20 +176,51 @@ const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
 
 const toast = useToast();
+const authStore = useAuthStore();
+const { can, canGlobal } = usePermissions();
 
 const isSubmitBtnDisabled = ref(false);
 const orgName = ref('');
 const orgType = ref<OrgType | undefined>(undefined);
-const orgTypes: OrgType[] = [
-  { firestoreCollection: 'districts', singular: 'district', label: 'Site' },
-  { firestoreCollection: 'schools', singular: 'school', label: 'School' },
-  { firestoreCollection: 'classes', singular: 'class', label: 'Class' },
-  { firestoreCollection: 'groups', singular: 'group', label: 'Cohort' },
+
+const allOrgTypes: OrgType[] = [
+  { firestoreCollection: FIRESTORE_COLLECTIONS.DISTRICTS, singular: SINGULAR_ORG_TYPES.DISTRICTS, label: 'Site' },
+  { firestoreCollection: FIRESTORE_COLLECTIONS.SCHOOLS, singular: SINGULAR_ORG_TYPES.SCHOOLS, label: 'School' },
+  { firestoreCollection: FIRESTORE_COLLECTIONS.CLASSES, singular: SINGULAR_ORG_TYPES.CLASSES, label: 'Class' },
+  { firestoreCollection: FIRESTORE_COLLECTIONS.GROUPS, singular: SINGULAR_ORG_TYPES.GROUPS, label: 'Cohort' },
 ];
-const parentDistrict = ref(undefined);
-const parentSchool = ref(undefined);
-const tags = ref([]);
-const tagSuggestions = ref([]);
+
+const orgTypes = computed(() => {
+  if (!authStore.shouldUsePermissions) {
+    return allOrgTypes;
+  }
+
+  return allOrgTypes.filter((orgType) => {
+    if (orgType.singular === SINGULAR_ORG_TYPES.DISTRICTS) {
+      return canGlobal(FIRESTORE_COLLECTIONS.GROUPS, PERMISSION_ACTIONS.CREATE, 'sites');
+    } else if (orgType.singular === SINGULAR_ORG_TYPES.SCHOOLS) {
+      return can(FIRESTORE_COLLECTIONS.GROUPS, PERMISSION_ACTIONS.CREATE, FIRESTORE_COLLECTIONS.SCHOOLS);
+    } else if (orgType.singular === SINGULAR_ORG_TYPES.CLASSES) {
+      return can(FIRESTORE_COLLECTIONS.GROUPS, PERMISSION_ACTIONS.CREATE, FIRESTORE_COLLECTIONS.CLASSES);
+    } else if (orgType.singular === SINGULAR_ORG_TYPES.GROUPS) {
+      return can(FIRESTORE_COLLECTIONS.GROUPS, PERMISSION_ACTIONS.CREATE, 'cohorts');
+    }
+    return false;
+  });
+});
+
+
+
+const parentDistrict = ref<SelectedOrg | undefined>(undefined);
+const parentSchool = ref<SelectedOrg | undefined>(undefined);
+const tags = ref<string[]>([]);
+const tagSuggestions = ref<string[]>([]);
+
+const orgTypesRequiringParent: string[] = [
+  SINGULAR_ORG_TYPES.SCHOOLS,
+  SINGULAR_ORG_TYPES.CLASSES,
+  SINGULAR_ORG_TYPES.GROUPS,
+];
 
 const v$ = useVuelidate(
   {
@@ -191,10 +231,10 @@ const v$ = useVuelidate(
       required,
     },
     parentDistrict: {
-      required: requiredIf(() => ['school', 'class', 'group'].includes(orgType?.value?.singular || '')),
+      required: requiredIf(() => orgTypesRequiringParent.includes(orgType?.value?.singular || '')),
     },
     parentSchool: {
-      required: requiredIf(() => orgType?.value?.singular === 'class'),
+      required: requiredIf(() => orgType?.value?.singular === SINGULAR_ORG_TYPES.CLASSES),
     },
   },
   {
@@ -205,16 +245,16 @@ const v$ = useVuelidate(
   },
 );
 
-const allTags = computed(() => {
+const allTags = computed<string[]>(() => {
   const districtTags = (districts.value ?? []).map((org: CreateOrgType) => org.tags);
   const schoolTags = (districts.value ?? []).map((org: CreateOrgType) => org.tags);
   const classTags = (classes.value ?? []).map((org: CreateOrgType) => org.tags);
   const groupTags = (groups.value ?? []).map((org: CreateOrgType) => org.tags);
-  return _without(_union(...districtTags, ...schoolTags, ...classTags, ...groupTags), undefined) || [];
+  return (_without(_union(...districtTags, ...schoolTags, ...classTags, ...groupTags), undefined) || []) as string[];
 });
 const classQueryEnabled = computed(() => parentSchool?.value !== undefined);
 const orgTypeLabel = computed(() => (orgType.value ? _capitalize(orgType.value.label) : 'Group'));
-const parentOrgRequired = computed(() => ['school', 'class', 'group'].includes(orgType.value?.singular || ''));
+const parentOrgRequired = computed(() => orgTypesRequiringParent.includes(orgType.value?.singular || ''));
 const selectedDistrict = computed(() => parentDistrict?.value?.id);
 const selectedSchool = computed(() => parentSchool?.value?.id);
 const schoolQueryEnabled = computed(() => parentDistrict?.value !== undefined);
@@ -265,14 +305,14 @@ const resetForm = () => {
   v$.value.$reset();
 };
 
-const searchTags = (e) => {
+const searchTags = (e: { query: string }) => {
   const query = e.query.toLowerCase();
-  let filteredOptions = allTags.value.filter((opt) => opt.toLowerCase().includes(query));
+  let filteredOptions = allTags.value.filter((opt: string) => opt.toLowerCase().includes(query));
 
   if (filteredOptions.length === 0 && query) {
     filteredOptions.push(query);
   } else {
-    filteredOptions = filteredOptions.map((opt) => opt);
+    filteredOptions = filteredOptions.map((opt: string) => opt);
   }
 
   tagSuggestions.value = filteredOptions;
@@ -374,7 +414,7 @@ const submit = async () => {
     });
   }
 
-  const data: CreateOrgType = {
+  const data = {
     name: orgName.value,
     normalizedName: normalizeToLowercase(orgName.value),
     type: orgType.value!.firestoreCollection,
@@ -382,7 +422,7 @@ const submit = async () => {
     schoolId: toRaw(parentSchool.value)?.id,
     districtId: toRaw(parentDistrict.value)?.id,
     parentOrgId: toRaw(parentDistrict.value)?.id,
-  };
+  } as CreateOrgType;
 
   const { data: orgNameExists } = await doesOrgNameExist();
 

@@ -32,10 +32,11 @@ import { useAuthStore } from '@/store/auth';
 import { usePermissions } from '@/composables/usePermissions';
 import LevanteSpinner from '@/components/LevanteSpinner.vue';
 import PvButton from 'primevue/button';
-import type { Resource, Action, Role } from '@levante-framework/permissions-core';
+import type { Resource, Action, Role, GroupSubResource, AdminSubResource } from '@levante-framework/permissions-core';
 
 interface Props {
   resource?: Resource;
+  subResource?: GroupSubResource | AdminSubResource;
   action?: Action;
   requireRole?: Role;
   fallbackRoute?: string;
@@ -43,6 +44,7 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   resource: undefined,
+  subResource: undefined,
   action: undefined,
   requireRole: undefined,
   fallbackRoute: undefined,
@@ -60,7 +62,7 @@ const isLoadingPermissions = computed(() => {
 });
 
 const shouldCheckPermissions = computed(() => {
-  return shouldUsePermissions.value && (props.resource || props.requireRole);
+  return shouldUsePermissions.value && (props.resource || props.subResource || props.requireRole);
 });
 
 const hasPermission = computed(() => {
@@ -69,11 +71,12 @@ const hasPermission = computed(() => {
   }
 
   if (props.resource && props.action) {
-    console.log('props.resource: ', props.resource);
-    console.log('props.action: ', props.action);
-    console.log('permissionsLoaded: ', permissionsLoaded.value);
-    console.log('hasPermission: ', can(props.resource, props.action));
-    return can(props.resource, props.action);
+    // console.log('props.resource: ', props.resource);
+    // console.log('props.action: ', props.action);
+    // console.log('permissionsLoaded: ', permissionsLoaded.value);
+    // console.log('hasPermission: ', can(props.resource, props.action));
+
+    return can(props.resource, props.action, props.subResource);
   }
 
   if (props.requireRole) {
