@@ -25,6 +25,18 @@ const DEFAULT_IFRAME_TIMEOUT_MS = 30000; // timeout for loading iframe content
  * - Service composes a PDF with jsPDF and returns it as a Blob that can be downloaded or zipped
  */
 const PdfExportService = (() => {
+  // --- Bulk export configuration toggle ---
+  // mode: 'sequential' | 'parallel'
+  // concurrency: number of parallel jobs when mode === 'parallel'
+  const BULK_EXPORT_CONFIG = Object.freeze({ mode: 'sequential', concurrency: 5 });
+  /**
+   * Internal helper to log debug messages consistently.
+   * Keeping it simple for now – can be wired to a proper logger later.
+   */
+  const debugLog = (...args) => {
+    console.debug('[PDF Export]', ...args);
+  };
+
   /**
    * Get Paged.js-rendered pages from a document.
    *
@@ -135,11 +147,14 @@ const PdfExportService = (() => {
    * @returns {Promise<void|Blob>} Resolves after saving the file or returns a Blob when `returnBlob=true`
    */
   const generateDocument = async (elements, fileName, options = {}) => {
+    const genStart = typeof performance !== 'undefined' ? performance.now() : Date.now();
     const targetDoc = (elements && elements.length > 0 && elements[0]?.ownerDocument) || document;
 
     const orientation = options.orientation || 'portrait';
     const format = options.format || 'letter';
     const returnBlob = options.returnBlob || false;
+
+    debugLog('generateDocument:start', { fileName, orientation, format, returnBlob });
 
     // Wait for Paged.js pages
     const pages = await waitForPages(targetDoc, 20000);
@@ -149,12 +164,18 @@ const PdfExportService = (() => {
     }
 
     // Render each paged page into the PDF
-    return renderPagesToPdf(pages, {
+    const result = await renderPagesToPdf(pages, {
       orientation,
       format,
       returnBlob,
       fileName,
     });
+
+    const genEnd = typeof performance !== 'undefined' ? performance.now() : Date.now();
+    const elapsedMs = Math.round(genEnd - genStart);
+    debugLog('generateDocument:end', { fileName, elapsedMs });
+
+    return result;
   };
 
   /**
@@ -218,7 +239,6 @@ const PdfExportService = (() => {
           if (!container) {
             throw new Error(`Could not find container within iFrame ${containerSelector}`);
           }
-
           handleSuccess(container);
         } catch (error) {
           handleError(error);
@@ -299,15 +319,26 @@ const PdfExportService = (() => {
       containerSelector = EXPORT_CONTAINER_SELECTOR,
       zipFilename = DEFAULT_BULK_EXPORT_FILENAME,
       onProgress,
+      // Allow overriding global config per-call
+      mode = BULK_EXPORT_CONFIG.mode,
+      concurrency = BULK_EXPORT_CONFIG.concurrency,
     } = options;
+
+    const bulkStart = typeof performance !== 'undefined' ? performance.now() : Date.now();
+    debugLog('generateBulkDocuments:start', { totalItems: items?.length || 0, zipFilename, mode, concurrency });
 
     const zip = new JSZip();
     const errors = [];
     let completed = 0;
 
-    for (const item of items) {
+    // Worker to process one item by index
+    const processDocument = async (index) => {
+      const item = items[index];
       try {
         const filename = filenameGenerator(item);
+
+        const itemStart = typeof performance !== 'undefined' ? performance.now() : Date.now();
+        debugLog('generateBulkDocuments:item:start', { filename, completed, total: items.length });
 
         onProgress?.({
           completed,
@@ -328,22 +359,50 @@ const PdfExportService = (() => {
 
         zip.file(filename, pdfBlob);
 
-        iframe.parentNode.removeChild(iframe);
+        // Cleanup and slight delay to give the browser breathing room
+        if (iframe?.parentNode) iframe.parentNode.removeChild(iframe);
         const delay = 1000;
         await new Promise((resolve) => setTimeout(resolve, delay));
 
         completed++;
+
+        const itemEnd = typeof performance !== 'undefined' ? performance.now() : Date.now();
+        const itemElapsedMs = Math.round(itemEnd - itemStart);
+        debugLog('generateBulkDocuments:item:end', {
+          filename,
+          completed,
+          total: items.length,
+          elapsedMs: itemElapsedMs,
+        });
       } catch (error) {
         const errorMessage = error?.message || error?.toString() || 'Unknown error occurred';
-        console.error(`Export failed for student ${item.id}:`, error);
+        console.error(`Export failed for student ${item?.id}:`, error);
 
         errors.push({
-          studentId: item.id || 'unknown',
-          studentName: `${item.firstName || ''} ${item.lastName || ''}`.trim() || item.username || item.id,
+          studentId: item?.id || 'unknown',
+          studentName: `${item?.firstName || ''} ${item?.lastName || ''}`.trim() || item?.username || item?.id,
           message: errorMessage,
         });
 
         completed++;
+      }
+    };
+
+    if (mode === 'parallel') {
+      const poolSize = Math.max(1, Math.min(concurrency || 5, items.length));
+      let next = 0;
+      const workers = Array.from({ length: poolSize }, async () => {
+        while (true) {
+          const current = next++;
+          if (current >= items.length) break;
+          await processDocument(current);
+        }
+      });
+      await Promise.all(workers);
+    } else {
+      // Sequential fallback (default)
+      for (let i = 0; i < items.length; i++) {
+        await processDocument(i);
       }
     }
 
@@ -354,6 +413,10 @@ const PdfExportService = (() => {
       console.error('Failed to create and download ZIP file:', error);
       throw new Error('Failed to create and download ZIP file.');
     }
+
+    const bulkEnd = typeof performance !== 'undefined' ? performance.now() : Date.now();
+    const bulkElapsedMs = Math.round(bulkEnd - bulkStart);
+    debugLog('generateBulkDocuments:end', { totalItems: items?.length || 0, zipFilename, elapsedMs: bulkElapsedMs });
 
     onProgress?.({
       completed,
