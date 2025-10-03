@@ -61,8 +61,9 @@ describe('PdfExportService', () => {
     };
 
     // Mock elements to resolve ownerDocument
-    mockPages[0].ownerDocument = mockDocument;
-    mockPages[1].ownerDocument = mockDocument;
+    mockPages.forEach((page) => {
+      page.ownerDocument = mockDocument;
+    });
 
     // Spy on console.debug to verify logging
     consoleDebugSpy = vi.spyOn(console, 'debug').mockImplementation(() => {});
