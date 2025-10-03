@@ -251,11 +251,13 @@ onUnmounted(() => {
   clearPaged();
 });
 
-// Vite HMR: cleanup paged output when this module is replaced during development
+// Vite HMR: cleanup paged output when this module is replaced during print view development
 if (import.meta && import.meta.hot) {
   import.meta.hot.dispose(() => {
-    clearPaged();
-    runPaged();
+    if (isPrintMode.value) {
+      clearPaged();
+      runPaged();
+    }
   });
 }
 </script>
