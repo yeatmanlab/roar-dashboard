@@ -17,13 +17,7 @@
       <div>
         <span class="font-semibold">{{ score.name }}: </span>
         <span class="font-semibold" :style="{ color: score.supportColor }">
-          <!-- @TODO: Improve this -->
-          <template v-if="score.name === 'Percentile'">
-            {{ description.slots.percentile }}
-          </template>
-          <template v-else>
-            {{ score.value }}
-          </template>
+          {{ getFromScoreValueTemplate(score.value) }}
         </span>
       </div>
 
@@ -76,7 +70,7 @@ import { LongitudinalChartPrint as LongitudinalChart } from './LongitudinalChart
 // @TODO: Make this configurable in a future enhancement
 const enableLongitudinalChart = ref(false);
 
-defineProps({
+const props = defineProps({
   publicName: {
     type: String,
     required: true,
@@ -143,5 +137,28 @@ const severityToColor = {
   info: 'blue',
 };
 
+/**
+ * Returns the CSS/TailwindCSS color based on the severity.
+ *
+ * @param {string} severity – The severity to be converted to a color
+ * @returns {string} The severity color
+ */
 const getSeverityColor = (severity) => severityToColor[severity];
+
+/**
+ * Returns the formatted score value based on the value template.
+ *
+ * In the web view, this is handled automatically by the PrimeVue knob component but requires manual handling in the
+ * print view.
+ *
+ * @param {number} scoreValue – The score value to be formatted
+ * @returns {string} The formatted score value
+ */
+const getFromScoreValueTemplate = (scoreValue) => {
+  if (props.valueTemplate) {
+    return props.valueTemplate.replace('{value}', scoreValue);
+  }
+
+  return scoreValue;
+};
 </script>

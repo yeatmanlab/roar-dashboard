@@ -8,6 +8,7 @@ import {
   getSupportLevel,
   getRawScoreRange,
   getScoreValue,
+  tasksToDisplayPercentCorrect,
 } from '@/helpers/reports';
 import { SCORE_SUPPORT_SKILL_LEVELS, SCORE_TYPES } from '@/constants/scores';
 import { TAG_SEVERITIES } from '@/constants/tags';
@@ -277,6 +278,28 @@ const ScoreReportService = (() => {
   };
 
   /**
+   * Get the score type to display for a given task
+   *
+   * @param {string} taskId – The task ID
+   * @param {number} grade – The grade level
+   * @param {Array} rawOnlyTasks – Array of raw-only tasks
+   * @returns {string} The score type to display
+   */
+  const getScoreToDisplay = (taskId, grade, rawOnlyTasks) => {
+    const alwaysDisplaysPercentile = ['phonics', 'letter', 'letter-es', 'letter-en-ca'];
+
+    if (rawOnlyTasks.includes(taskId)) {
+      return SCORE_TYPES.RAW_SCORE;
+    }
+
+    if (alwaysDisplaysPercentile.includes(taskId)) {
+      return SCORE_TYPES.PERCENTILE_SCORE;
+    }
+
+    return grade >= 6 ? SCORE_TYPES.STANDARD_SCORE : SCORE_TYPES.PERCENTILE_SCORE;
+  };
+
+  /**
    * Process task data into formatted task scores
    *
    * @TODO: Replace hard-coded task IDs with constants
@@ -302,8 +325,9 @@ const ScoreReportService = (() => {
       }
 
       if (!isNaN(rawScore) && !tasksBlacklist.includes(taskId)) {
+        // Use 'percentile' field type to match helpers/reports.getScoreValue mapping
         const percentileScore = getScoreValue(compositeScores, taskId, grade, 'percentile');
-        const standardScore = getScoreValue(compositeScores, taskId, grade, 'standardScore');
+        const standardScore = getScoreValue(compositeScores, taskId, grade, SCORE_TYPES.STANDARD_SCORE);
         const rawScoreRange = getRawScoreRange(taskId);
         const supportColor = getSupportLevel(grade, percentileScore, rawScore, taskId).tag_color;
 
@@ -320,20 +344,22 @@ const ScoreReportService = (() => {
             value: Math.round(rawScore),
             min: rawScoreRange?.min,
             max: rawScoreRange?.max,
-            supportColor: 'gray',
+            supportColor: 'var(--blue-500)',
           },
           percentileScore: {
-            name: _startCase(i18n.t('scoreReports.percentileScore')),
+            name: tasksToDisplayPercentCorrect.includes(taskId)
+              ? _startCase(i18n.t('scoreReports.percentCorrect'))
+              : _startCase(i18n.t('scoreReports.percentileScore')),
             value: Math.round(percentileScore),
             min: 0,
-            max: 99,
+            max: taskId.includes('letter') ? 100 : 99,
             supportColor,
           },
         };
 
         const tags = createTaskTags(optional, reliable, engagementFlags, i18n);
-        let scoreToDisplay = grade >= 6 ? SCORE_TYPES.STANDARD_SCORE : SCORE_TYPES.PERCENTILE_SCORE;
-        if (rawOnlyTasks.includes(taskId)) scoreToDisplay = SCORE_TYPES.RAW_SCORE;
+
+        const scoreToDisplay = getScoreToDisplay(taskId, grade, rawOnlyTasks);
 
         computedTaskAcc[taskId] = {
           taskId,

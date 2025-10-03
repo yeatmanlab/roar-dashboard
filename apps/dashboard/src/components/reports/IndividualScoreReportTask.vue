@@ -1,11 +1,11 @@
 <template>
   <template v-if="!isLoadingTasksDictionary">
     <div v-for="task in computedTaskData" :key="task" class="flex flex-column align-items-end justify-content-start">
-      <div class="flex flex-column align-items-center justify-content-center mb-1 p-1 score-card">
+      <div class="flex p-1 mb-1 flex-column align-items-center justify-content-center score-card">
         <div class="flex flex-column md:flex-row align-items-center justify-content-center">
-          <div class="flex flex-column justify-content-center align-items-center mt-2">
+          <div class="flex mt-2 flex-column justify-content-center align-items-center">
             <div class="header-task-name">{{ tasksDictionary[task.taskId]?.publicName ?? task.taskId }}</div>
-            <div class="text-xs uppercase font-thin text-gray-400">
+            <div class="text-xs font-thin text-gray-400 uppercase">
               {{ task[task.scoreToDisplay].name }}
             </div>
             <div class="flex gap-2 mb-2">
@@ -36,7 +36,7 @@
           </div>
         </div>
 
-        <div v-if="tasksToDisplayPercentCorrect.includes(task.taskId)" class="score-description px-4 py-2">
+        <div v-if="tasksToDisplayPercentCorrect.includes(task.taskId)" class="px-4 py-2 score-description">
           <i18n-t keypath="scoreReports.percentageCorrectTaskDescription" tag="span">
             <template #firstName>
               {{ studentFirstName }}
@@ -57,7 +57,7 @@
             </template>
           </i18n-t>
         </div>
-        <div v-else-if="rawOnlyTasks.includes(task.taskId)" class="score-description px-4 py-2">
+        <div v-else-if="rawOnlyTasks.includes(task.taskId)" class="px-4 py-2 score-description">
           <i18n-t keypath="scoreReports.rawTaskDescription" tag="span">
             <template #firstName>
               {{ studentFirstName }}
@@ -126,26 +126,26 @@
               </template>
               <div class="flex flex-column">
                 <!-- Total scores -->
-                <div class="flex flex-row justify-content-between align-items-center mb-2">
-                  <span class="font-light text-sm">Percent Correct</span>
-                  <span class="font-bold text-sm"
+                <div class="flex flex-row mb-2 justify-content-between align-items-center">
+                  <span class="text-sm font-light">Percent Correct</span>
+                  <span class="text-sm font-bold"
                     >{{ Math.round(_get(task.scores, 'composite.totalPercentCorrect')) }}%</span
                   >
                 </div>
-                <div class="flex flex-row justify-content-between align-items-center mb-3">
-                  <span class="font-light text-sm">Raw Score (0-72)</span>
-                  <span class="font-bold text-sm">{{ _get(task.scores, 'composite.totalCorrect') }}</span>
+                <div class="flex flex-row mb-3 justify-content-between align-items-center">
+                  <span class="text-sm font-light">Raw Score (0-72)</span>
+                  <span class="text-sm font-bold">{{ _get(task.scores, 'composite.totalCorrect') }}</span>
                 </div>
                 <!-- Divider -->
-                <div class="border-bottom-1 border-300 mb-3"></div>
+                <div class="mb-3 border-bottom-1 border-300"></div>
                 <!-- Subscores -->
                 <div
                   v-for="category in phonicsCategories"
                   :key="category"
-                  class="flex flex-row justify-content-between align-items-center mb-2"
+                  class="flex flex-row mb-2 justify-content-between align-items-center"
                 >
-                  <span class="font-light text-sm">{{ t(`scoreReports.phonics.${category}`) }}</span>
-                  <span class="font-bold text-sm">{{
+                  <span class="text-sm font-light">{{ t(`scoreReports.phonics.${category}`) }}</span>
+                  <span class="text-sm font-bold">{{
                     (() => {
                       const subscore = _get(task.scores, `composite.subscores.${category}`);
                       return subscore ? `${subscore.correct}/${subscore.attempted}` : '0/0';
@@ -167,7 +167,7 @@
               <div v-for="[key, rawScore] in task.scoresArray" :key="key">
                 <div v-if="!isNaN(rawScore)" class="flex justify-content-between score-table">
                   <div class="mr-2">
-                    <span class="font-bold text-sm">{{ key }}</span>
+                    <span class="text-sm font-bold">{{ key }}</span>
                   </div>
                   <div class="ml-2">
                     <b>{{ isNaN(rawScore) ? rawScore : Math.round(rawScore) }}</b>
@@ -196,11 +196,11 @@
                 <div v-for="[key, value, rangeMin, rangeMax] in task.scoresArray" :key="key">
                   <div class="flex justify-content-between score-table">
                     <div class="mr-2">
-                      <span class="font-bold text-sm">{{ key }}</span>
+                      <span class="text-sm font-bold">{{ key }}</span>
                       <span v-if="rangeMax" class="text-500">({{ rangeMin }}-{{ rangeMax }}):</span>
                       <span v-else>:</span>
                     </div>
-                    <span class="font-bold text-sm ml-2">{{ value }}</span>
+                    <span class="ml-2 text-sm font-bold">{{ value }}</span>
                   </div>
                 </div>
               </div>
