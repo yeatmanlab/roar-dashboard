@@ -46,6 +46,10 @@
           :student-grade="studentGrade"
           :administration-name="administrationData?.name"
           :administration-date="administrationData?.date"
+          :expanded="expanded"
+          :export-loading="exportLoading"
+          @toggle-expand="toggleExpand"
+          @export-pdf="handleExportToPdf"
         />
 
         <template v-if="!taskData?.length">
@@ -53,14 +57,7 @@
         </template>
 
         <template v-else>
-          <SummaryScreen
-            :student-first-name="studentFirstName"
-            :tasks="tasksListArray"
-            :expanded="expanded"
-            :export-loading="exportLoading"
-            @toggle-expand="toggleExpand"
-            @export-pdf="handleExportToPdf"
-          />
+          <SummaryScreen :student-first-name="studentFirstName" :tasks="tasksListArray" />
 
           <ScoreListScreen
             :student-first-name="studentFirstName"

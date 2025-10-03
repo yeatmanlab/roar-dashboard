@@ -3,8 +3,8 @@
     <div
       class="container flex-column"
       :class="{
-        'align-items-around py-4 pb-8': !isPrintMode,
-        'align-items-center px-0 p-0': isPrintMode,
+        'align-items-around pt-6 pb-8': !isPrintMode,
+        'align-items-center p-0': isPrintMode,
       }"
     >
       <StudentScoreReport :administration-id="administrationId" :user-id="userId" :org-type="orgType" :org-id="orgId" />

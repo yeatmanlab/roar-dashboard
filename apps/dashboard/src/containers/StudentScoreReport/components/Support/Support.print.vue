@@ -51,9 +51,12 @@ defineProps({
   },
 });
 
+/**
+ * Returns the URL of the next steps document
+ *
+ * @returns {string} The URL of the next steps document based on the current origin
+ */
 function getScoreReportNextStepsDocumentPath() {
-  return `https://roar.education${SCORE_REPORT_NEXT_STEPS_DOCUMENT_PATH}`;
-  // TODO: Remove the hard-coded return in favor of the dynamic one
-  // return `${document.location.origin}${SCORE_REPORT_NEXT_STEPS_DOCUMENT_PATH}`;
+  return `${document.location.origin}${SCORE_REPORT_NEXT_STEPS_DOCUMENT_PATH}`;
 }
 </script>

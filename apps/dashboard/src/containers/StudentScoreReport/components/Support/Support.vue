@@ -1,5 +1,5 @@
 <template>
-  <div id="support-graphic">
+  <section class="pt-4">
     <PvAccordion v-model:value="visiblePanels" class="my-2 w-full" multiple>
       <PvAccordionPanel :value="SUPPORT_PANELS.TASK">
         <PvAccordionHeader>{{ $t('scoreReports.taskTabHeader') }}</PvAccordionHeader>
@@ -75,7 +75,7 @@
         </PvAccordionContent>
       </PvAccordionPanel>
     </PvAccordion>
-  </div>
+  </section>
 </template>
 
 <script setup>

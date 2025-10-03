@@ -1,5 +1,5 @@
 <template>
-  <section class="py-4">
+  <section class="pt-4">
     <h2 class="text-2xl font-bold">Detailed Assessment Results</h2>
 
     <div class="grid gap-2 lg:grid-cols-2 xl:grid-cols-3">
