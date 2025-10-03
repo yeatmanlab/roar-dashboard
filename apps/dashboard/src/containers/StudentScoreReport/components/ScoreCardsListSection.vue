@@ -1,27 +1,24 @@
 <template>
   <section class="py-4">
     <h2 class="text-2xl font-bold">Detailed Assessment Results</h2>
-
-    <div
-      v-for="task in computedTaskData"
-      :key="task.taskId"
-      class="grid lg:grid-cols-2 xl:grid-cols-3 align-items-end justify-content-start"
-    >
-      <ScoreCard
-        :public-name="tasksDictionary[task.taskId]?.publicName ?? task.taskId"
-        :score-label="task[task.scoreToDisplay].name"
-        :score="task[task.scoreToDisplay]"
-        :tags="task.tags"
-        :value-template="scoreValueTemplate(task)"
-        :score-to-display="task.scoreToDisplay"
-        :student-first-name="studentFirstName"
-        :description="getTaskDescription(task)"
-        :scores-array="getTaskScoresArray(task)"
-        :expanded="expanded"
-        :longitudinal-data="task.historicalScores"
-        :task-id="task.taskId"
-        :grade="studentGrade"
-      />
+    <div class="grid lg:grid-cols-2 xl:grid-cols-3 align-items-start justify-content-start gap-4">
+      <template v-for="task in computedTaskData" :key="task.taskId">
+        <ScoreCard
+          :public-name="tasksDictionary[task.taskId]?.publicName ?? task.taskId"
+          :score-label="task[task.scoreToDisplay].name"
+          :score="task[task.scoreToDisplay]"
+          :tags="task.tags"
+          :value-template="scoreValueTemplate(task)"
+          :score-to-display="task.scoreToDisplay"
+          :student-first-name="studentFirstName"
+          :description="getTaskDescription(task)"
+          :scores-array="getTaskScoresArray(task)"
+          :expanded="expanded"
+          :longitudinal-data="task.historicalScores"
+          :task-id="task.taskId"
+          :grade="studentGrade"
+        />
+      </template>
     </div>
   </section>
 </template>
