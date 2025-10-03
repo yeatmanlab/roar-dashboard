@@ -7,15 +7,18 @@ import { getSupportLevel, getRawScoreRange } from '@/helpers/reports';
 // Mock dependencies
 vi.mock('@/helpers/reports', () => ({
   rawOnlyTasks: ['mock-raw-task'],
+  tasksToDisplayPercentCorrect: ['letter', 'letter-es', 'letter-en-ca', 'phonics'],
   taskDisplayNames: {
     'mock-task-1': { extendedName: 'Task One', order: 1 },
     'mock-task-2': { extendedName: 'Task Two', order: 2 },
     'mock-raw-task': { extendedName: 'Raw Only Task', order: 3 },
+    letter: { extendedName: 'Letter Names and Sounds', order: 4 },
   },
   extendedDescriptions: {
     'mock-task-1': 'Description for task one',
     'mock-task-2': 'Description for task two',
     'mock-raw-task': 'Description for raw only task',
+    letter: 'Letter task description',
   },
   getSupportLevel: vi.fn(),
   getRawScoreRange: vi.fn(),
@@ -140,6 +143,23 @@ describe('ScoreReportService', () => {
       expect(result.slots.percentile).toBe('55th percentile');
       expect(result.slots.taskName).toBe('Task Two');
       expect(result.slots.taskDescription).toBe('Description for task two');
+      expect(result.slots.supportCategory).toBe('scoreReports.developingText');
+    });
+
+    it('should return percentage correct task description for percent correct tasks', () => {
+      const task = {
+        taskId: 'letter',
+        rawScore: { value: 75 },
+        percentileScore: { value: 85 },
+        standardScore: { value: 110 },
+      };
+
+      const result = ScoreReportService.getScoreDescription(task, 3, mockI18n);
+
+      expect(result.keypath).toBe('scoreReports.percentageCorrectTaskDescription');
+      expect(result.slots.percentage).toBe(85);
+      expect(result.slots.taskName).toBe('Letter Names and Sounds');
+      expect(result.slots.taskDescription).toBe('Letter task description');
       expect(result.slots.supportCategory).toBe('scoreReports.developingText');
     });
   });
