@@ -1,5 +1,5 @@
 <template>
-  <div :class="{ 'is-print-mode': isPrintMode, 'is-preview-mode': isPreviewMode }">
+  <div>
     <div v-if="isLoading" class="flex flex-column justify-content-center align-items-center">
       <AppSpinner class="mb-4" />
       <span>{{ $t('scoreReports.loading') }}</span>
@@ -135,7 +135,6 @@ const authStore = useAuthStore();
 const route = useRoute();
 
 const isPrintMode = computed(() => route.query.print === 'true', { immediate: true });
-const isPreviewMode = computed(() => route.query.preview === 'true', { immediate: true });
 
 const expanded = ref(false);
 const exportLoading = ref(false);
@@ -406,9 +405,9 @@ const runPagedPreview = async () => {
 };
 
 watch(
-  [isLoading, isPrintMode, isPreviewMode],
-  async ([loading, print, preview]) => {
-    if (!loading && print && preview) {
+  [isLoading, isPrintMode],
+  async ([loading, print]) => {
+    if (!loading && print) {
       await runPagedPreview();
     }
   },
@@ -439,7 +438,7 @@ if (import.meta && import.meta.hot) {
 }
 
 /* Render the print view in a container that is identical to the PDF export container */
-[data-pdf-export-container].is-print-mode:not(.is-preview-mode) {
+[data-pdf-export-container]:not(.is-preview-mode) {
   width: 8.5in; /* Equivalent of a US Letter page width */
   padding: 18mm 15mm 18mm 15mm; /* 0.5 inch */
 }
