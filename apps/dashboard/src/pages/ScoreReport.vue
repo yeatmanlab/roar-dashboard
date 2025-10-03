@@ -1072,7 +1072,10 @@ const createExportData = ({ rows, includeProgress = false }) => {
         tableRow[`${taskName} - Percent Correct`] = score.percentCorrect;
         tableRow[`${taskName} - Num Attempted`] = score.numAttempted;
         tableRow[`${taskName} - Num Correct`] = score.numCorrect;
-      } else if (tasksToDisplayCorrectIncorrectDifference.includes(taskId) && !score.scoringVersion) {
+      } else if (
+        tasksToDisplayCorrectIncorrectDifference.includes(taskId) &&
+        !(getScoringVersions.value[taskId] >= 1)
+      ) {
         tableRow[`${taskName} - Correct/Incorrect Difference`] = score.correctIncorrectDifference;
         tableRow[`${taskName} - Num Incorrect`] = score.numIncorrect;
         tableRow[`${taskName} - Num Correct`] = score.numCorrect;
