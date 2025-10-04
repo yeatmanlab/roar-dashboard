@@ -99,8 +99,8 @@ service cloud.firestore {
       // If the authenticated user (requestor) is creating a new user (target), then
       // the requestor must satisfy one of the following conditions
       // - the requestor is a district admin for the districtId of the target. The schoolId and classId must be in that district. And families and groups must be empty.
-    // - the requestor is a school admin for the schoolId of the target. The districtId of the target must match that of the school. And the classId must be in the school.
-    // - the requestor is a class admin for the classId of the target. The districtId and schoolId of the target must match that of the class.
+      // - the requestor is a school admin for the schoolId of the target. The districtId of the target must match that of the school. And the classId must be in the school.
+      // - the requestor is a class admin for the classId of the target. The districtId and schoolId of the target must match that of the class.
       // - the requestor is a family admin and the target is in the same family. No educational orgs can be set
       // - the requestor is a group admin for the groupId of the target. No educational orgs can be set
 
@@ -246,7 +246,7 @@ service cloud.firestore {
       // the requestor must satisfy one of the following conditions
       // - the requestor is a district admin for the districtId of the target. They can only update common + educational keys. Any added schools and classes must be in the district.
       // - the requestor is a school admin for the schoolId of the target. They may not update district info. They can only update common + educational keys. Any added classes must be in the school.
-    // - the requestor is a class admin for the classId of the target. The districtId and schoolId of the target must match that of the class.
+      // - the requestor is a class admin for the classId of the target. The districtId and schoolId of the target must match that of the class.
       // - the requestor is a family admin for a current family of the target. No educational orgs can be set
       // - the requestor is a group admin for a current group of the target. No educational orgs can be set
 
@@ -368,7 +368,7 @@ service cloud.firestore {
         }
 
         function canUpdateAssignment() {
-          return (myData() || isAdminForAnyAssignedOrg() || isAdminForAnyReadOrg()) && lengthOfAssessmentsUnchanged() && keysNotUpdated(['assigningOrgs', 'readOrgs']);
+          return (myData() || isAdminForAnyAssigningOrg() || isAdminForAnyReadOrg()) && lengthOfAssessmentsUnchanged() && keysNotUpdated(['assigningOrgs', 'readOrgs']);
         }
 
         allow read: if canReadAssignment();
@@ -420,14 +420,36 @@ service cloud.firestore {
     // N.B. This assumes that the assigningOrgs are exhaustively listed. E.g., if district 1 assigns an administration,
     // then schools A and B, which are in district 1, are assumed to also be listed in assigningOrgs.
     match /administrations/{administrationId} {
+      // Helper function to check if administration uses new subcollection format
+      function isNewFormat() {
+        return resource.data.get('formatVersion', 1) == 2;
+      }
+
+      // Helper function to check if user is assigned to administration (hybrid approach)
       function userAssignedToAdministration() {
         let userData = get(/databases/$(database)/documents/users/$(roarUid())).data;
-        return userData.get(['districts', 'current'], []).hasAny(resource.data.districts)
-          || userData.get(['schools', 'current'], []).hasAny(resource.data.schools)
-          || userData.get(['classes', 'current'], []).hasAny(resource.data.classes)
-          || userData.get(['groups', 'current'], []).hasAny(resource.data.groups)
-          || userData.get(['families', 'current'], []).hasAny(resource.data.families);
+        
+        // Use ternary operator instead of if/else (Firestore rules requirement)
+        return isNewFormat() 
+          ? (
+              // For new format, just check if user has any current orgs
+              // The client will handle precise filtering using collection group queries
+              userData.get(['districts', 'current'], []).size() > 0
+              || userData.get(['schools', 'current'], []).size() > 0
+              || userData.get(['classes', 'current'], []).size() > 0
+              || userData.get(['groups', 'current'], []).size() > 0
+              || userData.get(['families', 'current'], []).size() > 0
+            )
+          : (
+              // For old format, check arrays in main document (exact matching)
+              userData.get(['districts', 'current'], []).hasAny(resource.data.districts)
+              || userData.get(['schools', 'current'], []).hasAny(resource.data.schools)
+              || userData.get(['classes', 'current'], []).hasAny(resource.data.classes)
+              || userData.get(['groups', 'current'], []).hasAny(resource.data.groups)
+              || userData.get(['families', 'current'], []).hasAny(resource.data.families)
+            );
       }
+
 
       function userCreatedExistingAdministration() {
         return roarUid() == resource.data.get('createdBy', 'nullId');
@@ -558,6 +580,48 @@ service cloud.firestore {
 
         allow read: if loggedIn() && canReadStats();
         allow write: if false;
+      }
+
+      // Rules for assignedOrgs subcollection
+      match /assignedOrgs/{orgId} {
+        function canReadAssignedOrg() {
+          let adminOrgs = get(/databases/$(database)/documents/userClaims/$(request.auth.uid)).data.get('claims', {}).get('adminOrgs', {});
+          let orgType = resource.data.get('orgType', '');
+          let orgIdFromDoc = resource.data.get('orgId', '');
+          
+          // Check if user is admin for this specific org
+          return adminOrgs.get(orgType, []).hasAny([orgIdFromDoc])
+            || getUserClaims().get('super_admin', false) == true;
+        }
+
+        function canWriteAssignedOrg() {
+          // Only allow writes from cloud functions (admin SDK) or super admins
+          return getUserClaims().get('super_admin', false) == true;
+        }
+
+        allow read: if loggedIn() && canReadAssignedOrg();
+        allow write: if canWriteAssignedOrg();
+      }
+
+      // Rules for readOrgs subcollection
+      match /readOrgs/{orgId} {
+        function canReadReadOrg() {
+          let adminOrgs = get(/databases/$(database)/documents/userClaims/$(request.auth.uid)).data.get('claims', {}).get('adminOrgs', {});
+          let orgType = resource.data.get('orgType', '');
+          let orgIdFromDoc = resource.data.get('orgId', '');
+          
+          // Check if user is admin for this specific org
+          return adminOrgs.get(orgType, []).hasAny([orgIdFromDoc])
+            || getUserClaims().get('super_admin', false) == true;
+        }
+
+        function canWriteReadOrg() {
+          // Only allow writes from cloud functions (admin SDK) or super admins
+          return getUserClaims().get('super_admin', false) == true;
+        }
+
+        allow read: if loggedIn() && canReadReadOrg();
+        allow write: if canWriteReadOrg();
       }
     }
 
