@@ -105,8 +105,7 @@
     "cancelButtonLabel": "Cancel",
     "namePlaceholder": "Your Name (optional)",
     "emailPlaceholder": "your.email@example.org (optional)",
-    "messageLabel": "Describe the issue",
-    "messagePlaceholder": "What happened? What did you expect instead?",
-    "disclaimer": "⚠️ This form is only for reporting unexpected software behavior. You will not receive a reply. For support or general inquiries, please contact your ROAR partner or research coordinator."
+    "messageLabel": "🐞 Reports here go to the ROAR IT team for software issues only.\n\n  💬 For general inquiries,\n email roar-partner@stanford.edu. \n\n\n Describe your issue:",
+    "messagePlaceholder": "What is the issue? What did you want to experience instead? Thank you for sharing."
   }
 }
