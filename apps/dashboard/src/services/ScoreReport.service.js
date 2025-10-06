@@ -226,7 +226,7 @@ const ScoreReportService = (() => {
       return {
         keypath: 'scoreReports.percentageCorrectTaskDescription',
         slots: {
-          percentage: task.percentage.value,
+          percentage: task.percentileScore.value,
           taskName,
           taskDescription,
         },
@@ -346,10 +346,11 @@ const ScoreReportService = (() => {
           },
           percentage: {
             name: 'Percent Correct',
-            value: Math.round((rawScore / rawScoreRange?.max) * 100),
+            value: compositeScores?.totalPercentCorrect,
             min: 0,
             max: 100,
             supportColor,
+            valueTemplate: '{value}%',
           },
         };
 

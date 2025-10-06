@@ -491,9 +491,8 @@ function getPercentileSuffix(percentile) {
 }
 
 function getValueTemplate(task) {
-  const appendPercentageTo = ['phonics', 'letter', 'letter-es', 'letter-en-ca'];
-  if (appendPercentageTo.includes(task.taskId)) {
-    return task[task.scoreToDisplay].value + '%';
+  if (task.scoreToDisplay === 'percentage' && tasksToDisplayPercentCorrect.includes(task.taskId)) {
+    return '{value}%';
   }
 
   if (task.scoreToDisplay === 'percentileScore') {
@@ -504,8 +503,7 @@ function getValueTemplate(task) {
 }
 
 function getScoreToDisplay(taskId, gradeValue) {
-  const alwaysDisplaysPercentileScore = ['phonics', 'letter', 'letter-es', 'letter-en-ca'];
-  if (alwaysDisplaysPercentileScore.includes(taskId)) return 'percentileScore';
+  if (tasksToDisplayPercentCorrect.includes(taskId)) return 'percentage';
   return gradeValue >= 6 ? 'standardScore' : 'percentileScore';
 }
 </script>
