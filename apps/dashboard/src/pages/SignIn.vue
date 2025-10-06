@@ -59,7 +59,13 @@
               data-cy="sign-in__classlink-sso"
               @click="authWithNYCPS"
             >
-              <!-- <img src="../assets/provider-classlink-logo.png" alt="The ClassLink Logo" class="flex mr-2 w-2" /> -->
+              <!-- NYCPS Logo needs to be slightly wider as it is not a square -->
+              <img
+                src="../assets/provider-nycps-logo.jpg"
+                alt="The NYC Public Schools Logo"
+                class="flex mr-2"
+                style="width: 21%"
+              />
               <span>NYCPS</span>
             </PvButton>
           </div>
