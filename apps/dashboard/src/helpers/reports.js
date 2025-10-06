@@ -653,11 +653,7 @@ export const getDialColor = (grade, percentile, rawScore, taskId) => {
   return tag_color;
 };
 
-<<<<<<< HEAD
 export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = null, scoringVersion = null) => {
-=======
-export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = null) => {
->>>>>>> ecbff996 (remove console.logs)
   let support_level = null;
   let tag_color = null;
 
