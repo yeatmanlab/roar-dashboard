@@ -22,7 +22,7 @@
 
     <HomeParentStudentView
       v-if="currentParentView.name === VIEWS.BY_STUDENT"
-      :is-loading="isLoadingAdministrations || isLoadingChildrenAssignments"
+      :is-loading="isLoadingChildrenAssignments"
       :parent-registration-complete="parentRegistrationComplete"
       :children-assignments="childrenAssignments || []"
       :org-type="orgType"
@@ -42,6 +42,7 @@ import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useMultipleUserAssignmentsQuery from '@/composables/queries/useMultipleUserAssignmentsQuery';
 import { useTimeoutPoll } from '@vueuse/core';
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
+
 import { pluralizeFirestoreCollection } from '@/helpers';
 import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes.js';
 import { useAuthStore } from '@/store/auth';

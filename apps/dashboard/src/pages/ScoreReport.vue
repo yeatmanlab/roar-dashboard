@@ -467,9 +467,8 @@ const { data: userClaims } = useUserClaimsQuery({
 
 const { isSuperAdmin } = useUserType(userClaims);
 
-const { data: administrationData } = useAdministrationsQuery([props.administrationId], {
+const { data: administrationData } = useAdministrationsQuery(props.orgId, {
   enabled: initialized,
-  select: (data) => data[0],
 });
 
 const { data: districtSchoolsData } = useDistrictSchoolsQuery(props.orgId, {
@@ -478,7 +477,6 @@ const { data: districtSchoolsData } = useDistrictSchoolsQuery(props.orgId, {
 
 const { data: orgData, isLoading: isLoadingOrgData } = useOrgQuery(props.orgType, [props.orgId], {
   enabled: initialized,
-  select: (data) => data[0],
 });
 
 const {
@@ -639,134 +637,142 @@ const computedProgressData = computed(() => {
 // 1. assignmentTableData: The data that should be passed into the ROARDataTable component
 // 2. runsByTaskId: run data for the TaskReport distribution chartsb
 const computeAssignmentAndRunData = computed(() => {
-  if (!assignmentData.value || assignmentData.value.length === 0) {
-    return { assignmentTableData: [], runsByTaskId: {} };
-  } else {
-    // assignmentTableData is an array of objects, each representing a row in the table
-    const assignmentTableDataAcc = [];
-    // runsByTaskId is an object with keys as taskIds and values as arrays of scores
-    const runsByTaskIdAcc = {};
+  // Initialize return value
+  const result = { assignmentTableData: [], runsByTaskId: {} };
 
-    for (const { assignment, user } of assignmentData.value) {
-      // for each row, compute: username, firstName, lastName, assessmentPID, grade, school, all the scores, and routeParams for report link
+  if (!assignmentData.value?.length) {
+    return result;
+  }
+
+  // Pre-compute task type maps for faster lookups
+  const taskTypeMaps = {
+    correctIncorrectDiff: new Set(tasksToDisplayCorrectIncorrectDifference),
+    percentCorrect: new Set(tasksToDisplayPercentCorrect),
+    totalCorrect: new Set(tasksToDisplayTotalCorrect),
+    gradeEstimate: new Set(tasksToDisplayGradeEstimate),
+  };
+
+  // Create a Map for school name lookups
+  const schoolNameMap = new Map(Object.entries(schoolNameDictionary.value || {}));
+
+  // Process data in batches of 1000 for better performance
+  const BATCH_SIZE = 1000;
+  const assignmentTableDataAcc = [];
+  const runsByTaskIdAcc = {};
+
+  for (let i = 0; i < assignmentData.value.length; i += BATCH_SIZE) {
+    const batch = assignmentData.value.slice(i, i + BATCH_SIZE);
+
+    for (const { assignment, user } of batch) {
       const grade = String(assignment.userData?.grade);
-      // compute schoolName. Use the schoolId from the assignment's assigningOrgs, as this should be correct even when the
-      //   user is unenrolled. The assigningOrgs should be up to date and persistant. Fallback to the student's current schools.
-      let schoolName = '';
       const assigningSchool = assignment?.assigningOrgs?.schools;
-      const schoolId = assigningSchool[0] ?? user?.schools?.current[0];
-      if (schoolId) {
-        schoolName = schoolNameDictionary.value[schoolId];
-      }
+      const schoolId = assigningSchool?.[0] ?? user?.schools?.current?.[0];
+      const schoolName = schoolId ? schoolNameMap.get(schoolId) || '' : '';
 
       const firstName = _startCase(user.name?.first?.toString() ?? '');
       const lastName = _startCase(user.name?.last?.toString() ?? '');
-      const username = user.username?.toString() ?? '';
-
-      const firstNameOrUsername = firstName ?? username;
 
       const currRow = {
         user: {
-          username: username,
-          email: user.email,
-          userId: user.userId,
-          firstName: firstName,
-          lastName: lastName,
-          grade: grade,
-          assessmentPid: user.assessmentPid,
-          schoolName: schoolName,
-          stateId: user.studentData?.state_id,
+          firstName,
+          lastName,
           studentId: user.studentData?.student_number,
+          grade,
+          school: schoolName,
+          assessmentPID: user.assessmentPid,
+          id: user.id,
         },
-        tooltip: `View ${firstNameOrUsername}'s Score Report`,
-        launchTooltip: `View assessment portal for ${firstNameOrUsername}`,
         routeParams: {
-          administrationId: props.administrationId,
           orgId: props.orgId,
           orgType: props.orgType,
-          userId: user.userId,
+          adminId: props.adminId,
+          userId: user.id,
         },
-        compositeScore: assignment.compositeScore ?? null,
-        startDate:
-          assignment.assessments.reduce((earliest, assessment) => {
-            if (!earliest) return assessment.startedOn;
-            return assessment.startedOn < earliest ? assessment.startedOn : earliest;
-          }, null) ?? null,
+        scores: {},
+        numAssessmentsCompleted: 0,
+        support_level: null,
+        percentile: null,
+        rawScore: null,
+        tag_color: null,
         completionDate: assignment.completed
           ? (assignment.assessments.reduce((latest, assessment) => {
               if (!latest) return assessment.completedOn;
               return assessment.completedOn > latest ? assessment.completedOn : latest;
             }, null) ?? null)
           : null,
-        // compute and add scores data in next step as so
-        // swr: { support_level: 'Needs Extra Support', percentile: 10, raw: 10, reliable: true, engagementFlags: {}},
       };
 
       let numAssessmentsCompleted = 0;
       const currRowScores = {};
+
+      // Pre-compute assessment statuses for the entire assignment
+      const assessmentStatuses = new Map(
+        assignment.assessments.map((assessment) => [
+          assessment.taskId,
+          {
+            isOptional: assessment.optional,
+            isReliable: assessment.reliable,
+            status: assessment.completedOn ? 'Completed' : assessment.startedOn ? 'Started' : 'Assigned',
+            isCompleted: !!assessment.completedOn,
+          },
+        ]),
+      );
+
       for (const assessment of assignment.assessments) {
-        // General Logic to grab support level, scores, etc
-        let scoreFilterTags = '';
         const taskId = assessment.taskId;
-        const isOptional = assessment.optional;
-        if (isOptional) {
-          scoreFilterTags += ' Optional ';
-        } else {
-          scoreFilterTags += ' Required ';
+        const status = assessmentStatuses.get(taskId);
+        if (!status) continue;
+
+        // Build score filter tags efficiently
+        const scoreFilterTags = [
+          status.isOptional ? 'Optional' : 'Required',
+          status.isReliable ? 'Reliable' : 'Unreliable',
+          status.status,
+        ];
+
+        if (status.isCompleted) {
+          numAssessmentsCompleted++;
         }
-        if (assessment.reliable == true) {
-          scoreFilterTags += ' Reliable ';
-        } else {
-          scoreFilterTags += ' Unreliable ';
-        }
-        // Add filter tags for completed/incomplete
-        if (assessment.completedOn != undefined) {
-          numAssessmentsCompleted += 1;
-          scoreFilterTags += ' Completed ';
-        } else if (assessment.startedOn != undefined) {
-          scoreFilterTags += ' Started ';
-        } else {
-          scoreFilterTags += ' Assigned ';
-        }
-        // Add filter tags for assessed (what is this?)
-        if (typeof assessment?.scores?.computed?.composite == 'number') {
-          scoreFilterTags += ' Assessed ';
+        // Efficiently check if assessed
+        if (typeof assessment?.scores?.computed?.composite === 'number') {
+          scoreFilterTags.push('Assessed');
         }
 
-        // compute and add scores data in next step as so
-        const { support_level, tag_color, percentile, percentileString, standardScore, rawScore } =
-          getScoresAndSupportFromAssessment({
-            grade,
-            assessment,
-            taskId,
-            isOptional,
-          });
+        // Compute scores data
+        const scores = getScoresAndSupportFromAssessment({
+          grade,
+          assessment,
+          taskId,
+          isOptional: status.isOptional,
+        });
 
-        if (tag_color === supportLevelColors.above) {
-          scoreFilterTags += ' Green ';
-        } else if (tag_color === supportLevelColors.some) {
-          scoreFilterTags += ' Yellow ';
-        } else if (tag_color === supportLevelColors.below) {
-          scoreFilterTags += ' Pink ';
+        // Add color tag based on support level
+        const colorMap = {
+          [supportLevelColors.above]: 'Green',
+          [supportLevelColors.some]: 'Yellow',
+          [supportLevelColors.below]: 'Pink',
+        };
+        if (scores.tag_color in colorMap) {
+          scoreFilterTags.push(colorMap[scores.tag_color]);
         }
 
-        const tagColor = returnColorByReliability(assessment, rawScore, support_level, tag_color);
+        const tagColor = returnColorByReliability(assessment, scores.rawScore, scores.support_level, scores.tag_color);
 
-        // Logic to update assignmentTableDataAcc
+        // Create score object with optimized structure
         currRowScores[taskId] = {
-          optional: isOptional,
-          supportLevel: support_level,
-          reliable: assessment.reliable,
+          optional: status.isOptional,
+          supportLevel: scores.support_level,
+          reliable: status.isReliable,
           engagementFlags: assessment.engagementFlags ?? [],
-          tagColor: tagColor,
-          percentile: percentile,
-          percentileString: percentileString,
-          rawScore: rawScore,
-          standardScore: standardScore,
-          tags: scoreFilterTags,
+          tagColor,
+          percentile: scores.percentile,
+          percentileString: scores.percentileString,
+          rawScore: scores.rawScore,
+          standardScore: scores.standardScore,
+          tags: scoreFilterTags.join(' '),
         };
 
-        if (tasksToDisplayCorrectIncorrectDifference.includes(taskId)) {
+        if (taskTypeMaps.correctIncorrectDiff.has(taskId)) {
           const numCorrect = assessment.scores?.raw?.composite?.test?.numCorrect;
           const numIncorrect = assessment.scores?.raw?.composite?.test?.numAttempted - numCorrect;
           const scoringVersion = _get(assessment, 'scores.computed.composite.scoringVersion');
@@ -783,8 +789,8 @@ const computeAssignmentAndRunData = computed(() => {
           currRowScores[taskId].numIncorrect = numIncorrect;
           currRowScores[taskId].tagColor = tagColor;
           currRowScores[taskId].scoringVersion = scoringVersion;
-          scoreFilterTags += ' Assessed ';
-        } else if (tasksToDisplayPercentCorrect.includes(taskId)) {
+          scoreFilterTags.push('Assessed');
+        } else if (taskTypeMaps.percentCorrect.has(taskId)) {
           const numAttempted = assessment.scores?.raw?.composite?.test?.numAttempted;
           const numCorrect = assessment.scores?.raw?.composite?.test?.numCorrect;
           const percentCorrect =
@@ -795,8 +801,8 @@ const computeAssignmentAndRunData = computed(() => {
           currRowScores[taskId].numAttempted = numAttempted;
           currRowScores[taskId].numCorrect = numCorrect;
           currRowScores[taskId].tagColor = percentCorrect === null ? 'transparent' : tagColor;
-          scoreFilterTags += ' Assessed ';
-        } else if (tasksToDisplayTotalCorrect.includes(taskId)) {
+          scoreFilterTags.push('Assessed');
+        } else if (taskTypeMaps.totalCorrect.has(taskId)) {
           // isNewScoring is 1.2.23+, otherwise handles 1.2.14
           const isNewScoring = _has(assessment, 'scores.computed.composite.numCorrect');
           const propertyKeys = isNewScoring
@@ -813,7 +819,7 @@ const computeAssignmentAndRunData = computed(() => {
           currRowScores[taskId].fc = _get(assessment, 'scores.computed.FC');
           currRowScores[taskId].fr = _get(assessment, 'scores.computed.FR');
 
-          scoreFilterTags += ' Assessed ';
+          scoreFilterTags.push('Assessed');
         }
         if (taskId === 'phonics' && assessment.scores) {
           // Process phonics scores
@@ -870,7 +876,7 @@ const computeAssignmentAndRunData = computed(() => {
           currRowScores[taskId].total = _get(assessment, 'scores.computed.composite.roarScore');
           currRowScores[taskId].skills = skills.length > 0 ? skills.join(', ') : 'None';
         }
-        if (tasksToDisplayGradeEstimate.includes(taskId)) {
+        if (taskTypeMaps.gradeEstimate.has(taskId)) {
           const isNewScoring = _has(assessment, 'scores.computed.composite.roarScore');
 
           const propertyKeys = isNewScoring
@@ -925,16 +931,16 @@ const computeAssignmentAndRunData = computed(() => {
           // A bit of a workaround to properly sort grades in facetted graphs (changes Kindergarten to grade 0)
           grade: getGrade(grade),
           scores: {
-            support_level: support_level,
-            stdPercentile: percentile,
-            rawScore: rawScore,
+            support_level: scores.support_level,
+            stdPercentile: scores.percentile,
+            rawScore: scores.rawScore,
           },
           taskId,
           user: {
             grade,
             schoolName: schoolsDictWithGrade.value[schoolId] ?? '0 Unknown School',
           },
-          tag_color: tag_color,
+          tag_color: scores.tag_color,
         };
 
         if (run.taskId in runsByTaskIdAcc) {
@@ -944,59 +950,58 @@ const computeAssignmentAndRunData = computed(() => {
         }
       }
 
-      // update scores for current row with computed object
+      // update scores and other properties for current row
       currRow.scores = currRowScores;
       currRow.numAssessmentsCompleted = numAssessmentsCompleted;
-      // push currRow to assignmentTableDataAcc
       assignmentTableDataAcc.push(currRow);
     }
 
     // sort by numAssessmentsCompleted
     assignmentTableDataAcc.sort((a, b) => {
+      // First sort by completion count
       const completionDiff = b.numAssessmentsCompleted - a.numAssessmentsCompleted;
-      if (completionDiff !== 0) {
-        return completionDiff;
+      if (completionDiff !== 0) return completionDiff;
+
+      // Then by school name
+      const schoolDiff = (a.user?.school ?? '').localeCompare(b.user?.school ?? '');
+      if (schoolDiff !== 0) return schoolDiff;
+
+      // Then by grade
+      const gradeA = Number(a.user.grade);
+      const gradeB = Number(b.user.grade);
+      if (!isNaN(gradeA) && !isNaN(gradeB)) {
+        const gradeDiff = gradeA - gradeB;
+        if (gradeDiff !== 0) return gradeDiff;
+      } else {
+        const gradeDiff = (a.user?.grade?.toString() ?? '').localeCompare(b.user?.grade?.toString() ?? '');
+        if (gradeDiff !== 0) return gradeDiff;
       }
 
-      const schoolDiff = (a.user?.schoolName ?? '').localeCompare(b.user?.schoolName ?? '');
-      if (schoolDiff !== 0) {
-        return schoolDiff;
-      }
-
-      const gradeDiff = Number(a.user.grade) - Number(b.user.grade);
-      if (isNaN(gradeDiff)) {
-        const gradeA = a.user?.grade?.toString() ?? '';
-        const gradeB = b.user?.grade?.toString() ?? '';
-        const stringGradeDiff = gradeA.localeCompare(gradeB);
-        if (stringGradeDiff !== 0) {
-          return stringGradeDiff;
-        }
-      } else if (gradeDiff !== 0) {
-        return gradeDiff;
-      }
-
-      const lastNameDiff = (a.user?.lastName ?? '').localeCompare(b.user?.lastName ?? '');
-      return lastNameDiff;
+      // Finally by last name
+      return (a.user?.lastName ?? '').localeCompare(b.user?.lastName ?? '');
     });
 
-    const filteredRunsByTaskId = _pickBy(runsByTaskIdAcc, (scores, taskId) => {
+    let filteredRunsByTaskId = _pickBy(runsByTaskIdAcc, (scores, taskId) => {
       return Object.keys(taskInfoById).includes(taskId);
     });
 
-    // We only want to display the ROAM Tasks if the recruitment param is responseModality
-    // Otherwise, remove them from the runsByTaskId object to prevent including them in TaskReports.
-    const assessments = administrationData.value.assessments;
-    for (const assessment of assessments) {
-      if (roamFluencyTasks.includes(assessment.taskId)) {
-        const recruitment = assessment.params.recruitment;
-        if (recruitment !== 'responseModality') {
-          delete filteredRunsByTaskId[assessment.taskId];
+    // Filter ROAM tasks based on recruitment parameter
+    if (administrationData.value?.assessments) {
+      for (const assessment of administrationData.value.assessments) {
+        if (roamFluencyTasks.includes(assessment.taskId)) {
+          const recruitment = assessment.params?.recruitment;
+          if (recruitment !== 'responseModality') {
+            delete filteredRunsByTaskId[assessment.taskId];
+          }
         }
       }
     }
 
-    return { runsByTaskId: filteredRunsByTaskId, assignmentTableData: assignmentTableDataAcc };
+    result.assignmentTableData = assignmentTableDataAcc;
+    result.runsByTaskId = filteredRunsByTaskId;
   }
+
+  return result;
 });
 
 // This composable manages the data which is passed into the FilterBar component slot for filtering
