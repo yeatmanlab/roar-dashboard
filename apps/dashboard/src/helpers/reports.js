@@ -1047,7 +1047,7 @@ export const getRawScoreThreshold = (taskId, scoringVersion) => {
   return { above: null, some: null };
 };
 
-export const getRawScoreRange = (taskId) => {
+export const getRawScoreRange = (taskId, scoringVersion = null) => {
   if (taskId.includes('swr')) {
     return {
       min: 100,
@@ -1059,6 +1059,12 @@ export const getRawScoreRange = (taskId) => {
       max: 90,
     };
   } else if (taskId.includes('phonics')) {
+    if (scoringVersion >= 4) {
+      return {
+        min: 100,
+        max: 900,
+      };
+    }
     return {
       min: 0,
       max: 150,
@@ -1134,9 +1140,7 @@ export const taskInfoById = {
       'phonological awareness, as a foundational pre-reading skill, is crucial for ' +
       'achieving reading fluency. Without support for their foundational reading ' +
       'abilities, students may struggle to catch up in overall reading proficiency. ' +
-      "The student's score will range between " +
-      `${getRawScoreRange('pa').min}-${getRawScoreRange('pa').max} and can be ` +
-      "viewed by selecting 'Raw Score' on the table above.",
+      "The student's score will range between {{ RANGE }} and can be viewed by selecting 'Raw Score' on the table above.",
     definitions: [
       {
         header: 'What Does Elision Mean?',
