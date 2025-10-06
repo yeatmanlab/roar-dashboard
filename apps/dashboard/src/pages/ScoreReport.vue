@@ -937,7 +937,10 @@ const computeAssignmentAndRunData = computed(() => {
       // update scores for current row with computed object
       currRow.scores = currRowScores;
       currRow.numAssessmentsCompleted = numAssessmentsCompleted;
-      // push currRow to assignmentTableDataAcc
+      currRow.support_level = currRowScores?.support_level;
+      currRow.percentile = currRowScores?.percentile;
+      currRow.rawScore = currRowScores?.rawScore;
+      currRow.tag_color = currRowScores?.tag_color;
       assignmentTableDataAcc.push(currRow);
     }
 

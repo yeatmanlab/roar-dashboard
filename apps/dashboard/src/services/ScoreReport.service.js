@@ -222,7 +222,16 @@ const ScoreReportService = (() => {
     const taskName = taskDisplayNames[task.taskId]?.extendedName;
     const taskDescription = extendedDescriptions[task.taskId];
 
-    if (rawOnlyTasks.includes(task.taskId)) {
+    if (tasksToDisplayPercentCorrect.includes(task.taskId)) {
+      return {
+        keypath: 'scoreReports.percentageCorrectTaskDescription',
+        slots: {
+          percentage: task.percentage.value,
+          taskName,
+          taskDescription,
+        },
+      };
+    } else if (rawOnlyTasks.includes(task.taskId)) {
       return {
         keypath: 'scoreReports.rawTaskDescription',
         slots: {
@@ -236,24 +245,22 @@ const ScoreReportService = (() => {
         keypath: 'scoreReports.standardTaskDescription',
         slots: {
           standardScore: Math.round(task.standardScore.value),
-          taskName,
-          taskDescription,
           supportCategory: getSupportLevelLanguage(
             grade,
-            task.percentileScore.value,
-            task.rawScore.value,
+            task?.percentileScore.value,
+            task?.rawScore.value,
             task.taskId,
             i18n,
           ),
+          taskName,
+          taskDescription,
         },
       };
     } else {
       return {
         keypath: 'scoreReports.percentileTaskDescription',
         slots: {
-          percentile: getPercentileWithSuffix(Math.round(task.percentileScore.value)) + ' percentile',
-          taskName,
-          taskDescription,
+          percentile: getPercentileWithSuffix(Math.round(task?.percentileScore.value)) + ' percentile',
           supportCategory: getSupportLevelLanguage(
             grade,
             task.percentileScore.value,
@@ -261,6 +268,8 @@ const ScoreReportService = (() => {
             task.taskId,
             i18n,
           ),
+          taskName,
+          taskDescription,
         },
       };
     }
@@ -347,7 +356,7 @@ const ScoreReportService = (() => {
         const tags = createTaskTags(optional, reliable, engagementFlags, i18n);
         let scoreToDisplay;
         if (tasksToDisplayPercentCorrect.includes(taskId)) {
-          scoreToDisplay = grade >= 6 ? 'standardScore' : 'percentileScore';
+          scoreToDisplay = 'percentage';
         } else if (rawOnlyTasks.includes(taskId)) {
           scoreToDisplay = SCORE_TYPE_KEYS.RAW_SCORE;
         } else {
@@ -359,7 +368,6 @@ const ScoreReportService = (() => {
           scoreToDisplay,
           ...scoresForTask,
           tags,
-          scores, // Include the original scores object for phonics subscores
         };
 
         computedTaskAcc[taskId].scoresArray = createScoresArray(taskId, scoresForTask, scores, grade, i18n);
