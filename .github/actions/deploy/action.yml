@@ -58,6 +58,7 @@ runs:
         mkdir app
         cp -r build/apps/dashboard/dist app/dist
         cp build/apps/dashboard/firebase/admin/firebase.json app/firebase.json
+        rm -rf build
         cd app && pwd && ls -la
 
     # Deploy application
