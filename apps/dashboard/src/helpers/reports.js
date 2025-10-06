@@ -1140,7 +1140,7 @@ export const taskInfoById = {
       'phonological awareness, as a foundational pre-reading skill, is crucial for ' +
       'achieving reading fluency. Without support for their foundational reading ' +
       'abilities, students may struggle to catch up in overall reading proficiency. ' +
-      "The student's score will range between {{ RANGE }} and can be viewed by selecting 'Raw Score' on the table above.",
+      "The student's score will range between {{RANGE}} and can be viewed by selecting 'Raw Score' on the table above.",
     definitions: [
       {
         header: 'What Does Elision Mean?',
