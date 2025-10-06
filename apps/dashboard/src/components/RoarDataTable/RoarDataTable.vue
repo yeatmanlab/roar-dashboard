@@ -423,7 +423,7 @@ import _isEmpty from 'lodash/isEmpty';
 import _toUpper from 'lodash/toUpper';
 import _startCase from 'lodash/startCase';
 import _uniq from 'lodash/uniq';
-import { supportLevelColors, progressTags, replaceScoreRange } from '@/helpers/reports';
+import { supportLevelColors, progressTags } from '@/helpers/reports';
 import SkeletonTable from '@/components/SkeletonTable.vue';
 import TableScoreTag from '@/components/reports/TableScoreTag.vue';
 
@@ -627,39 +627,20 @@ const resetFilters = () => {
 
 let toolTipByHeader = (header) => {
   const headerToTooltipMap = {
-    'ROAR - Word': {
-      taskId: 'swr',
-      desc: 'Assesses decoding skills at the word level. \n\n  Percentile ranges from 0-99 \n Raw Score ranges from 100-900',
-    },
-    'ROAR - Letter': {
-      taskId: 'letter',
-      desc: 'Assesses knowledge of letter names and sounds. \n\n Percentile ranges from 0-99 \n Raw Score ranges from 0-48 or 0-90, depending on diagnostic length',
-    },
-    'ROAR - Phoneme': {
-      taskId: 'pa',
-      desc: 'Assesses phonological awareness: sound matching and elision. \n\n Percentile ranges from 0-99 \n Raw Score ranges from {{RANGE}}',
-    },
-    'ROAR - Sentence': {
-      taskId: 'sre',
-      desc: 'Assesses reading fluency at the sentence level. \n\n Percentile ranges from 0-99 \n Raw Score ranges from 0-130 ',
-    },
-    'ROAR - Palabra': {
-      taskId: 'swr-es',
-      desc: 'Assesses decoding skills at the word level in Spanish. This test is still in the research phase. \n\n  Percentile ranges from 0-99 \n Raw Score ranges from 100-900',
-    },
+    'ROAR - Word':
+      'Assesses decoding skills at the word level. \n\n  Percentile ranges from 0-99 \n Raw Score ranges from 100-900',
+    'ROAR - Letter':
+      'Assesses knowledge of letter names and sounds. \n\n Percentile ranges from 0-99 \n Raw Score ranges from 0-48 or 0-90, depending on diagnostic length',
+    'ROAR - Phoneme':
+      'Assesses phonological awareness: sound matching and elision. \n\n Percentile ranges from 0-99 \n Raw Score ranges from 0-57',
+    'ROAR - Sentence':
+      'Assesses reading fluency at the sentence level. \n\n Percentile ranges from 0-99 \n Raw Score ranges from 0-130 ',
+    'ROAR - Palabra':
+      'Assesses decoding skills at the word level in Spanish. This test is still in the research phase. \n\n  Percentile ranges from 0-99 \n Raw Score ranges from 100-900',
     Report: 'Individual Score Report',
   };
 
-  if (!headerToTooltipMap[header]) {
-    return '';
-  }
-
-  if (typeof headerToTooltipMap[header] === 'string') {
-    return headerToTooltipMap[header];
-  }
-
-  const { taskId, desc } = headerToTooltipMap[header];
-  return replaceScoreRange(desc, taskId, props.taskScoringVersions[taskId]) || '';
+  return headerToTooltipMap[header] || '';
 };
 
 // Generate list of options given a column
