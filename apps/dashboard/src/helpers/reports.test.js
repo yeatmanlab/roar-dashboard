@@ -327,7 +327,7 @@ describe('reports', () => {
     });
 
     describe('PA task field mapping with grade dependency', () => {
-      it('should retrieve correct field values for pa task with grade < 6', () => {
+      it('should retrieve correct legacy field values for pa task with grade < 6', () => {
         const scoresObject = {
           percentile: 60,
           standardScore: 95,
@@ -341,7 +341,7 @@ describe('reports', () => {
         expect(getScoreValue(scoresObject, 'pa', 3, 'rawScore')).toBe(45);
       });
 
-      it('should retrieve correct field values for pa task with grade >= 6', () => {
+      it('should retrieve correct legacy field values for pa task with grade >= 6', () => {
         const scoresObject = {
           sprPercentile: 70,
           sprPercentileString: '>99',
@@ -357,19 +357,41 @@ describe('reports', () => {
         expect(getScoreValue(scoresObject, 'pa', 6, 'rawScore')).toBe(55);
       });
 
-      it('should handle grade-dependent field names correctly', () => {
+      it('should retrieve grade-dependent legacy field values for pa task with grade >= 6', () => {
         const scoresObject = {
-          percentile: 60,
+          percentile: null,
           sprPercentile: 70,
         };
-
-        // Grade < 6 should use 'percentile'
-        const resultGrade3 = getScoreValue(scoresObject, 'pa', 3, 'percentile');
-        expect(resultGrade3).toBe(60);
 
         // Grade >= 6 should use 'sprPercentile'
         const resultGrade6 = getScoreValue(scoresObject, 'pa', 6, 'percentile');
         expect(resultGrade6).toBe(70);
+      });
+
+      it('should retrieve grade-dependent legacy field values for pa task with grade < 6', () => {
+        const scoresObject = {
+          percentile: 45,
+          sprPercentile: null,
+        };
+
+        // Grade < 6 should use 'percentile'
+        const resultGrade6 = getScoreValue(scoresObject, 'pa', 3, 'percentile');
+        expect(resultGrade6).toBe(45);
+      });
+
+      it('should retrieve same field values for pa task for all grades', () => {
+        const scoresObject = {
+          percentile: 45,
+          standardScore: 88,
+          roarScore: 65,
+        };
+
+        expect(getScoreValue(scoresObject, 'pa', 3, 'percentile')).toBe(45);
+        expect(getScoreValue(scoresObject, 'pa', 3, 'standardScore')).toBe(88);
+        expect(getScoreValue(scoresObject, 'pa', 3, 'rawScore')).toBe(65);
+        expect(getScoreValue(scoresObject, 'pa', 6, 'percentile')).toBe(45);
+        expect(getScoreValue(scoresObject, 'pa', 6, 'standardScore')).toBe(88);
+        expect(getScoreValue(scoresObject, 'pa', 6, 'rawScore')).toBe(65);
       });
     });
 

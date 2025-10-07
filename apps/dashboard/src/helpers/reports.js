@@ -783,19 +783,19 @@ const SCORE_FIELD_MAPPINGS = {
   },
   pa: {
     percentile: {
-      new: (grade) => (grade < 6 ? 'percentile' : 'sprPercentile'),
+      new: 'percentile',
       legacy: (grade) => (grade < 6 ? 'percentile' : 'sprPercentile'),
     },
     percentileDisplay: {
-      new: (grade) => (grade < 6 ? 'percentile' : 'sprPercentileString'),
+      new: 'percentile',
       legacy: (grade) => (grade < 6 ? 'percentile' : 'sprPercentileString'),
     },
     standardScore: {
-      new: (grade) => (grade < 6 ? 'standardScore' : 'sprStandardScore'),
+      new: 'standardScore',
       legacy: (grade) => (grade < 6 ? 'standardScore' : 'sprStandardScore'),
     },
     standardScoreDisplay: {
-      new: (grade) => (grade < 6 ? 'standardScore' : 'sprStandardScoreString'),
+      new: 'standardScore',
       legacy: (grade) => (grade < 6 ? 'standardScore' : 'sprStandardScoreString'),
     },
     rawScore: {
@@ -980,7 +980,7 @@ export function getScoreValue(scoresObject, taskId, grade, fieldType) {
 
   // Try new field name first
   const newFieldName = resolveFieldName(taskId, gradeValue, fieldType, false);
-  if (newFieldName && scoresObject[newFieldName] !== undefined) {
+  if (newFieldName && scoresObject[newFieldName] != null) {
     let scoreValue = scoresObject[newFieldName];
     if (
       (fieldType === 'percentile' || fieldType === 'standardScore') &&
@@ -1039,6 +1039,12 @@ export const getRawScoreThreshold = (taskId, scoringVersion) => {
       };
     }
   } else if (taskId === 'pa') {
+    if (scoringVersion >= 4) {
+      return {
+        above: 513,
+        some: 413,
+      };
+    }
     return {
       above: 55,
       some: 45,

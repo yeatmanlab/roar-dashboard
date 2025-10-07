@@ -475,6 +475,7 @@ const props = defineProps({
     default: false,
   },
   groupheaders: { type: Boolean, default: false },
+  taskScoringVersions: { type: Object, required: false, default: () => {} },
 });
 
 const inputColumns = ref(props.columns);

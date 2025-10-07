@@ -117,6 +117,7 @@
             :allow-filtering="true"
             :reset-filters="resetFilters"
             :lazy-pre-sorting="orderBy"
+            :task-scoring-versions="getScoringVersions"
             @export-selected="exportSelected"
             @export-all="exportAll"
           />
@@ -190,6 +191,16 @@ const displayName = computed(() => {
     return getTitle(administrationData.value, isSuperAdmin.value);
   }
   return '';
+});
+
+const getScoringVersions = computed(() => {
+  const scoringVersions = Object.fromEntries(
+    administrationData.value?.assessments.map((assessment) => [
+      assessment.taskId,
+      assessment?.params?.scoringVersion ?? null,
+    ]),
+  );
+  return scoringVersions;
 });
 
 const handleViewChange = () => {

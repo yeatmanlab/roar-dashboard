@@ -135,6 +135,7 @@
             :loading="isLoadingAssignments || isFetchingAssignments"
             :groupheaders="true"
             data-cy="roar-data-table"
+            :task-scoring-versions="getScoringVersions"
             @export-all="exportData({ selectedRows: $event })"
             @export-selected="exportData({ selectedRows: $event })"
           >
