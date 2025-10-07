@@ -37,9 +37,9 @@ export const users = db.table(
     grade: gradeEnum(),
     schoolLevel: schoolLevelEnum().generatedAlwaysAs(sql`app.get_school_level_from_grade(grade)`),
 
-    statusEll: p.boolean(),
+    statusEll: p.text(),
     statusFrl: freeReducedLunchStatusEnum(),
-    statusIep: p.boolean(),
+    statusIep: p.text(),
 
     studentId: p.text(),
     sisId: p.text(),
