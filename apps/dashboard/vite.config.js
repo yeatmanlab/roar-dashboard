@@ -192,13 +192,13 @@ export default defineConfig(({ mode }) => {
       headers: {
         ...responseHeaders,
       },
-      https:
-        process.env.NODE_ENV === 'development'
-          ? {
-              key: fs.readFileSync(path.resolve(__dirname, '../../certs/roar-local.key')),
-              cert: fs.readFileSync(path.resolve(__dirname, '../../certs/roar-local.crt')),
-            }
-          : false,
+      https: false,
+      // process.env.NODE_ENV === 'development'
+      //   ? {
+      //       key: fs.readFileSync(path.resolve(__dirname, '../../certs/roar-local.key')),
+      //       cert: fs.readFileSync(path.resolve(__dirname, '../../certs/roar-local.crt')),
+      //     }
+      //   : false,
     },
 
     preview: {
@@ -235,7 +235,6 @@ export default defineConfig(({ mode }) => {
     },
     optimizeDeps: {
       include: [
-        'pagedjs',
         '@bdelab/roar-firekit',
         'vue-google-maps-community-fork',
         'fast-deep-equal', // Required due to https://github.com/nathanap/vue-google-maps-community-fork/issues/4
