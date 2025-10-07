@@ -33,6 +33,7 @@ export function useLongitudinalSeries(props) {
         return {
           x,
           y,
+          assignmentId: e.assignmentId || e.administrationId || '',
           percentile: e.scores?.percentile ?? null,
           standardScore: e.scores?.standardScore ?? null,
           color: s?.tag_color || getColorByScoreType(t),

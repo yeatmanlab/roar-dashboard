@@ -66,7 +66,11 @@
             :tasks-dictionary="tasksDictionary"
             :longitudinal-data="longitudinalData"
             :expanded="expanded"
+<<<<<<< HEAD
             :task-scoring-versions="getScoringVersions"
+=======
+            :current-assignment-id="administrationId"
+>>>>>>> 945e0762 (add emphasis for current assignmentId, update dial color)
           />
 
           <SupportScreen :expanded="expanded" :student-grade="studentGrade" />
