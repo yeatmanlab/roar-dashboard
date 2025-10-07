@@ -23,7 +23,7 @@
                 data-cy="input-administration-name"
               />
               <label for="administration-name" class="w-full"
-                >Assignment Name<span class="required-asterisk">*</span></label
+                >Assignment Name <span class="required-asterisk">*</span></label
               >
             </PvFloatLabel>
             <small
@@ -209,25 +209,13 @@ const props = defineProps({
   adminId: { type: String, required: false, default: null },
 });
 
-const header = computed(() => {
-  if (props.adminId) {
-    return 'Edit an assignment';
-  }
+const header = computed(() => (props.adminId ? 'Edit an assignment' : 'Create Assignment'));
 
-  return 'Create Assignment';
-});
+const description = computed(
+  () => 'An assignment is a collection of tasks assigned to users who are members of a group',
+);
 
-const description = computed(() => {
-  return 'An assignment is a collection of tasks assigned to users who are members of a group';
-});
-
-const submitLabel = computed(() => {
-  if (props.adminId) {
-    return 'Update Assignment';
-  }
-
-  return 'Create Assignment';
-});
+const submitLabel = computed(() => (props.adminId ? 'Update Assignment' : 'Create Assignment'));
 
 // +------------------------------------------------------------------------------------------------------------------+
 // | Fetch Variants with Params
@@ -255,9 +243,7 @@ const { data: existingAdministrationData } = useAdministrationsQuery([props.admi
   select: (data) => data[0],
 });
 
-const existingAssessments = computed(() => {
-  return existingAdministrationData?.value?.assessments ?? [];
-});
+const existingAssessments = computed(() => existingAdministrationData?.value?.assessments ?? []);
 
 // Fetch the districts assigned to the administration.
 const districtIds = computed(() => existingAdministrationData?.value?.minimalOrgs?.districts ?? []);

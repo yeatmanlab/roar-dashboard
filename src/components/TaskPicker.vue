@@ -14,7 +14,7 @@
               <PvInputText
                 v-model="searchTerm"
                 class="w-full"
-                placeholder="Variant name, ID, or Task ID"
+                placeholder="Variant name, Task name, or TaskID"
                 data-cy="input-variant-name"
               />
             </PvIconField>
@@ -28,7 +28,7 @@
             <i class="pi pi-times" />
           </PvButton>
         </div>
-        <div v-if="searchTerm.length >= 3">
+        <div v-if="searchTerm.length >= 2">
           <div v-if="isSearching">
             <span>Searching...</span>
           </div>
@@ -58,7 +58,7 @@
             </VueDraggableNext>
           </PvScrollPanel>
         </div>
-        <div v-if="searchTerm.length < 3">
+        <div v-if="searchTerm.length < 2">
           <PvSelect
             v-model="currentTask"
             :options="taskOptions"
@@ -112,8 +112,7 @@
       <div class="divider"></div>
       <div class="w-full lg:w-6" data-cy="panel-droppable-zone">
         <div class="panel-title mb-2 text-base">
-          Selected Tasks
-          <span class="required-asterisk text-red-500 ml-1">*</span>
+          Selected Tasks<span class="required-asterisk text-red-500 ml-1">*</span>
         </div>
         <PvScrollPanel style="height: 32rem; width: 100%; overflow-y: auto">
           <!-- Draggable Zone 2 -->
@@ -396,19 +395,24 @@ const isSearching = ref<boolean>(false);
 const searchCards = (term: string): void => {
   isSearching.value = true;
   searchResults.value = [];
+
   Object.values(props.allVariants).forEach((variants) => {
     const matchingVariants = _filter(variants, (variant) => {
       if (
-        _toLower(variant.variant.name).includes(_toLower(term)) ||
-        _toLower(variant.id).includes(_toLower(term)) ||
-        _toLower(variant.task.id).includes(_toLower(term)) ||
-        _toLower(variant.task.studentFacingName || '').includes(_toLower(term))
-      )
+        _toLower(variant?.id)?.includes(_toLower(term)) ||
+        _toLower(variant?.task?.name)?.includes(_toLower(term)) ||
+        _toLower(variant?.task?.studentFacingName).includes(_toLower(term)) ||
+        _toLower(variant?.variant?.name)?.includes(_toLower(term))
+      ) {
         return true;
-      else return false;
+      }
+
+      return false;
     });
+
     searchResults.value.push(...matchingVariants);
   });
+
   isSearching.value = false;
 };
 
@@ -420,7 +424,7 @@ function clearSearch(): void {
 const debounceSearch = _debounce(searchCards, 250);
 
 watch(searchTerm, (term: string) => {
-  if (term.length >= 3) {
+  if (term.length >= 2) {
     debounceSearch(term);
   } else {
     searchResults.value = [];
