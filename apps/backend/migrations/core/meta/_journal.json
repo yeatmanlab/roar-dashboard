@@ -302,6 +302,13 @@
       "when": 1759858618922,
       "tag": "0042_convert_status_ell_and_status_iep_to_text",
       "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1759869537715,
+      "tag": "0043_add_user_name_columns",
+      "breakpoints": true
     }
   ]
 }

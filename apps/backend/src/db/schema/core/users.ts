@@ -29,6 +29,10 @@ export const users = db.table(
       .default(sql`'{}'::"app"."auth_provider"[]`),
     authId: p.text().unique(),
 
+    name_first: p.text().notNull(),
+    name_middle: p.text(),
+    name_last: p.text().notNull(),
+
     username: p.text().unique(),
     email: p.text(),
     userType: userTypeEnum(),
