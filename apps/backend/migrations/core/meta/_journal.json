@@ -288,6 +288,13 @@
       "when": 1758035479192,
       "tag": "0040_add_run_demographics_table",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1759858577847,
+      "tag": "0041_add_missing_enums",
+      "breakpoints": true
     }
   ]
 }
