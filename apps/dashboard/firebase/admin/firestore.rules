@@ -535,50 +535,7 @@ service cloud.firestore {
       allow delete: if false;
 
       match /stats/{anyDocumentInThisCollection=**} {
-        function getParentAdministration() {
-          return get(/databases/$(database)/documents/administrations/$(administrationId)).data;
-        }
-
-        function isAdminForAnyAssignedOrgWithRead() {
-          let parentAdministration = getParentAdministration();
-          let districts = parentAdministration.get('districts', []);
-          let schools = parentAdministration.get('schools', []);
-          let classes = parentAdministration.get('classes', []);
-          let groups = parentAdministration.get('groups', []);
-          let families = parentAdministration.get('families', []);
-          let adminOrgs = get(/databases/$(database)/documents/userClaims/$(request.auth.uid)).data.get('claims', {}).get('adminOrgs', {});
-          return districts.hasAny(adminOrgs.get('districts', ['..']))
-            || schools.hasAny(adminOrgs.get('schools', ['..']))
-            || classes.hasAny(adminOrgs.get('classes', ['..']))
-            || groups.hasAny(adminOrgs.get('groups', ['..']))
-            || families.hasAny(adminOrgs.get('families', ['..']))
-        }
-
-        function isAdminForAnyReadOrgWithRead() {
-          let parentAdministration = getParentAdministration();
-          let districts = parentAdministration.get(['readOrgs', 'districts'], []);
-          let schools = parentAdministration.get(['readOrgs', 'schools'], []);
-          let classes = parentAdministration.get(['readOrgs', 'classes'], []);
-          let groups = parentAdministration.get(['readOrgs', 'groups'], []);
-          let families = parentAdministration.get(['readOrgs', 'families'], []);
-          let adminOrgs = get(/databases/$(database)/documents/userClaims/$(request.auth.uid)).data.get('claims', {}).get('adminOrgs', {});
-          return districts.hasAny(adminOrgs.get('districts', ['..']))
-            || schools.hasAny(adminOrgs.get('schools', ['..']))
-            || classes.hasAny(adminOrgs.get('classes', ['..']))
-            || groups.hasAny(adminOrgs.get('groups', ['..']))
-            || families.hasAny(adminOrgs.get('families', ['..']))
-        }
-
-        function userCreatedAdministrationWithRead() {
-          let parentAdministration = getParentAdministration();
-          return roarUid() == parentAdministration.get('createdBy', 'nullId');
-        }
-
-        function canReadStats() {
-          return isAdminForAnyAssignedOrgWithRead() || isAdminForAnyReadOrgWithRead() || userCreatedAdministrationWithRead();
-        }
-
-        allow read: if loggedIn() && canReadStats();
+        allow read: if loggedIn();
         allow write: if false;
       }
 
