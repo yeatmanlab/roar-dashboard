@@ -50,6 +50,7 @@ const { isAdmin, isSuperAdmin, isLaunchAdmin } = useUserType(userClaims);
 // @TODO: Move the navbar blacklist to route meta definitions.
 const navbarBlacklist = [
   'SignIn',
+  'SignInPartners',
   'Register',
   'Maintenance',
   'PlayApp',

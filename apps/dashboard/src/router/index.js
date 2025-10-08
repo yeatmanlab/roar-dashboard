@@ -577,6 +577,19 @@ const routes = [
     },
   },
   {
+    path: APP_ROUTES.SIGN_IN_PARTNERS,
+    name: 'SignInPartners',
+    component: () => import('../pages/SignInPartners.vue'),
+    meta: {
+      pageTitle: {
+        'en-US': pageTitlesUS['signInPartners'],
+        en: pageTitlesEN['signInPartners'],
+        es: pageTitlesES['signInPartners'],
+        'es-CO': pageTitlesCO['signInPartners'],
+      },
+    },
+  },
+  {
     path: APP_ROUTES.SSO,
     name: 'SSO',
     beforeRouteLeave: [removeQueryParams, removeHash],
@@ -808,6 +821,7 @@ router.beforeEach(async (to, from, next) => {
     'Maintenance',
     'Register',
     'SignIn',
+    'SignInPartners',
   ];
 
   const inMaintenanceMode = false;
