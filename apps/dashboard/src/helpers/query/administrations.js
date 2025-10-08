@@ -118,8 +118,7 @@ const getOrgsFromSubcollections = async (administrations, axiosInstance, documen
     for (const subcollectionPath of subcollectionPaths) {
       const adminId = subcollectionPath.split('/').slice(-2, -1)[0]; // Extract admin ID from path
 
-      const { data } = await axiosInstance.post(':runQuery', {
-        parent: subcollectionPath.replace('/assignedOrgs', ''),
+      const { data } = await axiosInstance.post(`/administrations/${adminId}:runQuery`, {
         structuredQuery: {
           from: [{ collectionId: 'assignedOrgs' }],
           select: {
