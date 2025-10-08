@@ -334,8 +334,8 @@
               v-tooltip.left="!allStudentsValid ? 'Please fix validation errors before submitting' : ''"
               label="Submit"
               severity="primary"
-              icon="pi pi-check"
-              :disabled="!allStudentsValid"
+              :icon="submitting === SubmitStatus.SUBMITTING ? 'pi pi-spinner pi-spin' : 'pi pi-check'"
+              :disabled="!allStudentsValid || submitting === SubmitStatus.SUBMITTING"
               @click="submit()"
             />
           </div>
