@@ -9,6 +9,7 @@ const excludedTaskIds = [
   'roav-phonics',
   'crowding',
   'crowding-pt',
+  'roar-readaloud',
 ];
 
 export const TASKS_EXCLUDED_FROM_RETAKE = [...LEVANTE_TASK_IDS, ...excludedTaskIds];
