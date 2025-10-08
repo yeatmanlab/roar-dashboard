@@ -584,44 +584,15 @@ service cloud.firestore {
 
       // Rules for assignedOrgs subcollection
       match /assignedOrgs/{orgId} {
-        function canReadAssignedOrg() {
-          let adminOrgs = get(/databases/$(database)/documents/userClaims/$(request.auth.uid)).data.get('claims', {}).get('adminOrgs', {});
-          let orgType = resource.data.get('orgType', '');
-          let orgIdFromDoc = resource.data.get('orgId', '');
-          
-          // Check if user is admin for this specific org
-          return adminOrgs.get(orgType, []).hasAny([orgIdFromDoc])
-            || getUserClaims().get('super_admin', false) == true;
-        }
 
-        function canWriteAssignedOrg() {
-          // Only allow writes from cloud functions (admin SDK) or super admins
-          return getUserClaims().get('super_admin', false) == true;
-        }
-
-        allow read: if loggedIn() && canReadAssignedOrg();
-        allow write: if canWriteAssignedOrg();
+        allow read: if loggedIn();
+        allow write: if false;
       }
 
       // Rules for readOrgs subcollection
       match /readOrgs/{orgId} {
-        function canReadReadOrg() {
-          let adminOrgs = get(/databases/$(database)/documents/userClaims/$(request.auth.uid)).data.get('claims', {}).get('adminOrgs', {});
-          let orgType = resource.data.get('orgType', '');
-          let orgIdFromDoc = resource.data.get('orgId', '');
-          
-          // Check if user is admin for this specific org
-          return adminOrgs.get(orgType, []).hasAny([orgIdFromDoc])
-            || getUserClaims().get('super_admin', false) == true;
-        }
-
-        function canWriteReadOrg() {
-          // Only allow writes from cloud functions (admin SDK) or super admins
-          return getUserClaims().get('super_admin', false) == true;
-        }
-
-        allow read: if loggedIn() && canReadReadOrg();
-        allow write: if canWriteReadOrg();
+        allow read: if loggedIn();
+        allow write: if false;
       }
     }
 
