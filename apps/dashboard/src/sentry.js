@@ -26,6 +26,7 @@ export function initSentry(app) {
           showName: false,
           showEmail: false,
           colorScheme: 'light',
+          isRequiredLabel: '',
           formTitle: languageOptions[language].translations.sentryForm.formTitle,
           buttonLabel: languageOptions[language].translations.sentryForm.buttonLabel,
           cancelButtonLabel: languageOptions[language].translations.sentryForm.cancelButtonLabel,
@@ -46,5 +47,24 @@ export function initSentry(app) {
       replaysSessionSampleRate: 0.1, // This sets the sample rate at 10%. You may want to change it to 100% while in development and then sample at a lower rate in production.
       replaysOnErrorSampleRate: 1.0, // If you're not already sampling the entire session, change the sample rate to 100% when sampling sessions where errors occur.
     });
+
+    setTimeout(() => {
+      const host = document.getElementById('sentry-feedback');
+      if (!host || !host.shadowRoot) return;
+
+      const style = document.createElement('style');
+      style.id = 'roar-sentry-patch';
+      style.textContent = `
+        .form__label__text {
+          display: flex !important;
+          flex-wrap: wrap !important;
+          align-items: center !important;
+          gap: 4px !important;
+          grid-auto-columns: unset !important;
+          white-space: pre-line !important;
+        }
+      `;
+      host.shadowRoot.appendChild(style);
+    }, 1000);
   }
 }
