@@ -10,6 +10,7 @@ import {
   supportLevelColors,
   replaceScoreRange,
   taskInfoById,
+  getDialColor,
 } from './reports';
 
 vi.mock('./index', () => ({
@@ -709,6 +710,28 @@ describe('reports', () => {
       const sreDesc = replaceScoreRange(taskInfoById['sre']?.desc, 'sre', 4);
       expect(sreDesc).not.toMatch(/{{.*}}/);
       expect(sreDesc).toMatch(/80%/);
+    });
+  });
+
+  describe('getDialColor', () => {
+    it('should return gray for phonics', () => {
+      expect(getDialColor(6, 40, 45, 'phonics', null, null)).toBe('var(--gray-500)');
+    });
+
+    it('should return support level color using percentile for grade < 6 for sre with scoringVersion 3', () => {
+      expect(getDialColor(3, 45, null, 'sre', null, 3)).toBe('#edc037');
+    });
+
+    it('should return support level color using raw score for grade >= 6 for sre with scoringVersion 3', () => {
+      expect(getDialColor(6, null, 40, 'sre', null, 3)).toBe('#c93d82');
+    });
+
+    it('should return support level color using percentile for grade < 6 for sre with scoringVersion 4', () => {
+      expect(getDialColor(3, 45, null, 'sre', null, 4)).toBe('green');
+    });
+
+    it('should return support level color using raw score for grade >= 6 for sre with scoringVersion 4', () => {
+      expect(getDialColor(6, null, 40, 'sre', null, 4)).toBe('#edc037');
     });
   });
 });
