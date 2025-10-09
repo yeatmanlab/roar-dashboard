@@ -733,5 +733,21 @@ describe('reports', () => {
     it('should return support level color using raw score for grade >= 6 for sre with scoringVersion 4', () => {
       expect(getDialColor(6, null, 40, 'sre', null, 4)).toBe('#edc037');
     });
+
+    it('should return null if percentile is undefined for grade < 6', () => {
+      expect(getDialColor(3, undefined, 40, 'sre', null, 4)).toBe(null);
+    });
+
+    it('should return null if raw score is undefined for grade >= 6', () => {
+      expect(getDialColor(6, 45, undefined, 'sre', null, 4)).toBe(null);
+    });
+
+    it('should return null if percentile is null for grade < 6', () => {
+      expect(getDialColor(3, null, 40, 'sre', null, 4)).toBe(null);
+    });
+
+    it('should return null if raw score is null for grade >= 6', () => {
+      expect(getDialColor(6, 45, null, 'sre', null, 4)).toBe(null);
+    });
   });
 });
