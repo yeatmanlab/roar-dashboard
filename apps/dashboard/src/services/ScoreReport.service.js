@@ -293,9 +293,8 @@ const ScoreReportService = (() => {
       const compositeScores = scores?.composite;
 
       let rawScore = null;
-      const useSpanishNorms = (taskId === 'swr-es' || taskId === 'sre-es') && taskScoringVersions[taskId] >= 1;
 
-      if (!taskId.includes('vocab') && !(taskId.includes('es') && !useSpanishNorms)) {
+      if (!taskId.includes('vocab') && !taskId.includes('es')) {
         rawScore = getScoreValue(compositeScores, taskId, grade, 'rawScore');
       } else {
         rawScore = compositeScores;

@@ -303,7 +303,7 @@ describe('ScoreReportService', () => {
       expect(result[0].taskId).toBe('mock-task-1');
     });
 
-    it('should handle vocab/es tasks without scoringVersion with composite scores directly', () => {
+    it('should handle vocab/es tasks with composite scores directly', () => {
       const taskData = [
         {
           taskId: 'vocab-test',
@@ -316,28 +316,6 @@ describe('ScoreReportService', () => {
       ];
 
       const result = ScoreReportService.processTaskScores(taskData, 5, mockI18n);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].rawScore.value).toBe(25);
-    });
-
-    it('should handle es tasks with scoringVersion with rawScores directly', () => {
-      const taskData = [
-        {
-          taskId: 'swr-es',
-          optional: false,
-          reliable: true,
-          scores: {
-            composite: {
-              rawScore: 25,
-              percentileScore: 50,
-              standardScore: 30,
-            },
-          },
-        },
-      ];
-
-      const result = ScoreReportService.processTaskScores(taskData, 5, mockI18n, { 'swr-es': 1 });
 
       expect(result).toHaveLength(1);
       expect(result[0].rawScore.value).toBe(25);
