@@ -126,8 +126,16 @@ async function startTask(selectedAdmin) {
       // Navigate to home, but first set the refresh flag to true.
       gameStore.requireHomeRefresh();
       if (props.launchId) {
-        router.push({ name: 'LaunchParticipant', params: { launchId: props.launchId } });
+        console.log('props to see in launchId', props);
+        // router.replace({ name: 'LaunchParticipant', params: { launchId: props.launchId } });
+        // router.push({ name: 'LaunchParticipant', params: { launchId: props.launchId } });
+        // router.push({ name: 'Home' });
+        // gameStore.requireHomeRefresh();
+        router.go(-1);
+        // router.push({ name: 'LaunchParticipant', params: { launchId: props.launchId } });
+        console.log('router', router);
       } else {
+        console.log('no launchid');
         router.push({ name: 'Home' });
       }
     });
