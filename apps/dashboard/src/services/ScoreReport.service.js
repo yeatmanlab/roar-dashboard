@@ -282,9 +282,10 @@ const ScoreReportService = (() => {
    * @param {Array} taskData - Array of task data objects
    * @param {number} grade - Student grade
    * @param {Object} i18n - i18n instance for translations
+   * @param {Object} taskScoringVersions - Task scoring versions
    * @returns {Array} Processed task scores
    */
-  const processTaskScores = (taskData, grade, i18n) => {
+  const processTaskScores = (taskData, grade, i18n, taskScoringVersions = {}) => {
     const tasksBlacklist = ['vocab', 'cva'];
     const computedTaskAcc = {};
 
@@ -292,8 +293,9 @@ const ScoreReportService = (() => {
       const compositeScores = scores?.composite;
 
       let rawScore = null;
+      const useSpanishNorms = (taskId === 'swr-es' || taskId === 'sre-es') && taskScoringVersions[taskId] >= 1;
 
-      if (!taskId.includes('vocab') && !taskId.includes('es')) {
+      if (!taskId.includes('vocab') && !(taskId.includes('es') && !useSpanishNorms)) {
         rawScore = getScoreValue(compositeScores, taskId, grade, 'rawScore');
       } else {
         rawScore = compositeScores;
@@ -303,7 +305,14 @@ const ScoreReportService = (() => {
         const percentileScore = getScoreValue(compositeScores, taskId, grade, 'percentile');
         const standardScore = getScoreValue(compositeScores, taskId, grade, 'standardScore');
         const rawScoreRange = getRawScoreRange(taskId);
-        const supportColor = getSupportLevel(grade, percentileScore, rawScore, taskId).tag_color;
+        const supportColor = getSupportLevel(
+          grade,
+          percentileScore,
+          rawScore,
+          taskId,
+          optional,
+          taskScoringVersions[taskId],
+        ).tag_color;
 
         const scoresForTask = {
           standardScore: {

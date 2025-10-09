@@ -39,6 +39,7 @@
           :longitudinal-data="longitudinalData"
           :expanded="expanded"
           :data-pdf-export-section="SCORE_REPORT_EXPORT_SECTIONS.DETAILS"
+          :task-scoring-versions="getScoringVersions"
         />
 
         <SupportSection
@@ -188,6 +189,16 @@ const studentGrade = computed(
   },
   { immediate: true },
 );
+
+const getScoringVersions = computed(() => {
+  const scoringVersions = Object.fromEntries(
+    administrationData.value?.assessments.map((assessment) => [
+      assessment.taskId,
+      assessment?.params?.scoringVersion ?? null,
+    ]),
+  );
+  return scoringVersions;
+});
 
 /**
  * Toggles the expanded state of the report to show all cards

@@ -60,6 +60,10 @@ const props = defineProps({
     type: Boolean,
     required: false,
   },
+  taskScoringVersions: {
+    type: Object,
+    required: true,
+  },
 });
 
 const { t } = useI18n();
@@ -69,7 +73,12 @@ const { t } = useI18n();
  */
 const computedTaskData = computed(() => {
   // Process current task data
-  const currentTasks = ScoreReportService.processTaskScores(props.taskData, props.studentGrade, { t });
+  const currentTasks = ScoreReportService.processTaskScores(
+    props.taskData,
+    props.studentGrade,
+    { t },
+    props.taskScoringVersions,
+  );
 
   // Process longitudinal data
   const longitudinalData = toValue(props.longitudinalData);
