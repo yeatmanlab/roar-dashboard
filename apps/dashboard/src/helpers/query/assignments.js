@@ -301,25 +301,54 @@ export const assignmentPageFetcher = async (
         }),
       );
 
-      const batchRunDocs = await appAxiosInstance
-        .post(':batchGet', {
-          documents: runDocPaths,
-          mask: { fieldPaths: ['scores', 'reliable', 'engagementFlags'] },
-        })
-        .then(({ data }) => {
-          return _without(
-            data.map(({ found }) => {
-              if (found) {
-                return {
-                  name: found.name,
-                  data: _mapValues(found.fields, (value) => convertValues(value)),
-                };
-              }
-              return undefined;
-            }),
-            undefined,
-          );
-        });
+      let batchRunDocs;
+
+      try {
+        batchRunDocs = await appAxiosInstance
+          .post(':batchGet', {
+            documents: runDocPaths,
+            mask: { fieldPaths: ['scores', 'reliable', 'engagementFlags'] },
+          })
+          .then(({ data }) => {
+            return _without(
+              data.map(({ found }) => {
+                if (found) {
+                  return {
+                    name: found.name,
+                    data: _mapValues(found.fields, (value) => convertValues(value)),
+                  };
+                }
+                // skip this one
+                return undefined;
+              }),
+              undefined,
+            );
+          });
+      } catch (e) {
+        console.log(e);
+        // go 1 by 1
+        const maskParams = ['scores', 'reliable', 'engagementFlags']
+          .map((f) => `mask.fieldPaths=${encodeURIComponent(f)}`)
+          .join('&');
+
+        const results = await Promise.allSettled(
+          runDocPaths.map(
+            (path) =>
+              appAxiosInstance
+                .get(`${path}?${maskParams}`)
+                .then(({ data }) => ({
+                  name: data.name,
+                  data: _mapValues(data.fields ?? {}, (v) => convertValues(v)),
+                }))
+                .catch(() => undefined), // skip this one
+          ),
+        );
+
+        batchRunDocs = _without(
+          results.map((r) => (r.status === 'fulfilled' ? r.value : undefined)),
+          undefined,
+        );
+      }
 
       // Again the order of batchGet is not guaranteed. This time, we'd like to
       // group the runDocs by user's roarUid, in the same order as the userDocPaths
