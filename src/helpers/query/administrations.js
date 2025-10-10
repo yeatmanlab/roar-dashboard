@@ -172,7 +172,7 @@ export const administrationPageFetcher = async (isSuperAdmin, exhaustiveAdminOrg
 };
 
 /**
- * Fetches administrations that are assigned to a specific organization.
+ * Returns administrations that are assigned to a specific organization.
  *
  * @param {String} orgId – The organization ID to filter administrations by.
  * @param {String} orgType – The organization type (districts, schools, classes, groups).
