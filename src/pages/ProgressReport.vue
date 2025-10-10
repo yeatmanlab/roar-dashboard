@@ -24,7 +24,7 @@
             <div>
               <div class="uppercase font-light text-gray-500 text-md">Created by</div>
               <div class="administration-creator">
-                {{ creator?.displayName }}
+                {{ createdByUser }}
               </div>
             </div>
           </div>
@@ -198,8 +198,7 @@ import RoarDataTable from '@/components/RoarDataTable.vue';
 import { isEmpty } from 'lodash';
 import PvFloatLabel from 'primevue/floatlabel';
 import LevanteSpinner from '@/components/LevanteSpinner.vue';
-// import ProgressChartLegend from '@/components/reports/ProgressChartLegend.vue'; // File does not exist
-// import ProgressChart from '@/components/reports/ProgressChart.vue'; // File does not exist
+
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -296,11 +295,13 @@ const { data: administrationData } = useAdministrationsQuery([props.administrati
   select: (data) => data[0],
 });
 
-const createdBy = computed(() => administrationData?.value?.createdBy);
+const createdById = computed(() => administrationData?.value?.createdBy);
 
-const { data: creator } = useUserDataQuery(createdBy, {
-  enabled: computed(() => !!createdBy.value),
+const { data: userData } = useUserDataQuery(createdById, {
+  enabled: computed(() => !!createdById.value),
 });
+
+const createdByUser = computed(() => userData.value?.name.first ? userData.value.name.first + ' ' + userData.value.name.last : userData.value?.displayName);
 
 const { data: adminStats } = useAdministrationsStatsQuery([props.administrationId], {
   enabled: initialized,
@@ -324,40 +325,21 @@ const {
   enabled: initialized,
 });
 
-const schoolNameDictionary = computed(() => {
-  if (districtSchoolsData.value) {
-    return districtSchoolsData.value.reduce((acc, school) => {
-      acc[school.id] = school.name;
-      return acc;
-    }, {});
-  } else {
-    return {};
-  }
-});
 
 const computedProgressData = computed(() => {
   if (!assignmentData.value) return [];
   // assignmentTableData is an array of objects, each representing a row in the table
   const assignmentTableDataAcc = [];
 
-  for (const { assignment, user, survey } of assignmentData.value) {
-    // compute schoolName
-    let schoolName = '';
-    const schoolId = user?.schools?.current[0];
-    if (schoolId) {
-      schoolName = schoolNameDictionary.value[schoolId];
-    }
-
+  for (const { assignment, user } of assignmentData.value) {
     const currRow = {
+
       user: {
         username: user?.username || assignment?.userData?.username || '',
-        userType: user.userType,
+        userType: user.userType === 'parent' ? 'caregiver' : user.userType,
         userId: user.userId,
-        firstName: user?.name?.first || '',
-        lastName: user?.name?.last || '',
         grade: user.studentData?.grade,
         assessmentPid: user.assessmentPid,
-        schoolName: schoolName,
       },
       // compute and add progress data in next step
     };
@@ -469,45 +451,9 @@ const exportAll = async () => {
 const progressReportColumns = computed(() => {
   if (isLoadingTasksDictionary.value || assignmentData.value === undefined) return [];
 
-  const tableColumns = [];
-  const columnDefinitions = [{ field: 'user.email', header: 'Email', pinned: true }];
-
-  columnDefinitions.forEach(({ field, header, pinned }) => {
-    const path = field.split('.');
-    if (assignmentData.value.find((assignment) => _get(assignment, path))) {
-      tableColumns.push({
-        field,
-        header,
-        dataType: 'text',
-        sort: true,
-        filter: true,
-        ...(pinned && { pinned: true }),
-      });
-    }
-  });
-
-  tableColumns.push({
-    field: 'user.username',
-    header: 'Username',
-    dataType: 'text',
-    sort: true,
-    filter: true,
-  });
-
-  if (props.orgType === 'district') {
-    const schoolsMap = districtSchoolsData.value?.reduce((acc, school) => {
-      acc[school.id] = school.name;
-      return acc;
-    }, {});
-    tableColumns.push({
-      field: 'user.schoolName',
-      header: 'School',
-      dataType: 'text',
-      sort: true,
-      filter: false,
-      schoolsMap: schoolsMap,
-    });
-  }
+  const tableColumns = [{ field: 'user.username', header: 'Username', dataType: 'text', sort: true, filter: true },
+    { field: 'user.userType', header: 'User Type', dataType: 'text', sort: true, filter: true },
+  ];
 
   const allTaskIds = administrationData.value.assessments?.map((assessment) => assessment.taskId);
   const sortedTasks = allTaskIds?.sort((p1, p2) => {

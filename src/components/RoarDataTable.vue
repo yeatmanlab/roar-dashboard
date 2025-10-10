@@ -217,10 +217,11 @@
               <div v-else-if="col.field === 'user.lastName'">
                 {{ _get(colData, col.field) }}
               </div>
-              <div v-else-if="col.field === 'userType' && _get(colData, col.field) === 'parent'">caregiver</div>
-              <div v-else-if="col.field === 'userType' && _get(colData, col.field) === 'student'">child</div>
               <div v-else-if="col.field === 'id' && _get(colData, 'userType') === 'admin'">--</div>
               <div v-else-if="col.field === 'username' && _get(colData, 'userType') === 'admin'">--</div>
+              <div v-else-if="col.field === 'user.userType'">
+                <span class="user-type-value">{{ _get(colData, col.field) }}</span>
+              </div>
               <div v-else>
                 {{ _get(colData, col.field) }}
               </div>
@@ -823,5 +824,9 @@ button.p-column-filter-menu-button.p-link:hover {
 /* Add spacing between icon and text in tags */
 .progress-tag .p-tag-icon {
   margin-right: 0.5rem !important;
+}
+
+.user-type-value {
+  text-transform: capitalize;
 }
 </style>

@@ -906,7 +906,6 @@ export const assignmentPageFetcher = async (
 
       let batchSurveyDocs = [];
       if (isLevante) {
-        console.log('adminId: ', adminId);
         // Batch get survey response docs
         batchSurveyDocs = await Promise.all(
           userDocPaths.map(async (userDocPath) => {
