@@ -10,7 +10,7 @@
             — Created by <span class="font-bold">{{ props.creator?.displayName }}</span></small
           >
         </div>
-        <div class="flex justify-content-end w-3">
+        <div v-if="speedDialItems.length > 0" class="flex justify-content-end w-3">
           <PvSpeedDial
             :action-button-props="{
               rounded: true,
@@ -189,6 +189,8 @@ import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
 import { FIRESTORE_COLLECTIONS } from '@/constants/firebase';
 import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
 import { isLevante, getTooltip } from '@/helpers';
+import { useQueryClient } from '@tanstack/vue-query';
+import { ADMINISTRATIONS_LIST_QUERY_KEY } from '@/constants/queryKeys';
 
 interface Assessment {
   taskId: string;
@@ -227,6 +229,7 @@ interface Props {
   showParams: boolean;
   isSuperAdmin: boolean;
   creator?: any;
+  onDeleteAdministration?: (administrationId: string) => void;
 }
 
 interface SpeedDialItem {
@@ -271,6 +274,7 @@ interface ChartOptions {
 }
 
 const router = useRouter();
+const queryClient = useQueryClient();
 
 const props = withDefaults(defineProps<Props>(), {
   creator: {},
@@ -282,12 +286,20 @@ const toast = useToast();
 
 const { mutateAsync: deleteAdministration } = useDeleteAdministrationMutation();
 
+const now = computed(() => new Date());
+
+const isCurrent = computed(() => {
+  const opened = new Date(props?.dates?.start);
+  const closed = new Date(props?.dates?.end);
+  return opened <= now.value && closed >= now.value;
+});
+
+const isUpcoming = computed(() => new Date(props?.dates?.start) > now.value);
+
 const administrationStatus = computed((): string => {
-  const now = new Date();
-  const dateClosed = new Date(props.dates.end);
-  let status = 'OPEN';
-  if (now > dateClosed) status = 'CLOSED';
-  return status;
+  if (isCurrent.value) return 'Open';
+  else if (isUpcoming.value) return 'Upcoming';
+  else return 'Closed';
 });
 
 const administrationStatusBadge = computed((): string => administrationStatus.value.toLowerCase());
@@ -295,7 +307,7 @@ const administrationStatusBadge = computed((): string => administrationStatus.va
 const speedDialItems = computed((): SpeedDialItem[] => {
   const items: SpeedDialItem[] = [];
 
-  if (props.isSuperAdmin) {
+  if (props.isSuperAdmin && isUpcoming.value) {
     items.push({
       label: 'Delete',
       icon: 'pi pi-trash',
@@ -305,14 +317,18 @@ const speedDialItems = computed((): SpeedDialItem[] => {
           message: 'Are you sure you want to delete this administration?',
           icon: 'pi pi-exclamation-triangle',
           accept: async () => {
-            await deleteAdministration(props.id);
+            props?.onDeleteAdministration?.(props?.id);
 
             toast.add({
               severity: TOAST_SEVERITIES.INFO,
               summary: 'Confirmed',
-              detail: `Deleted administration ${props.title}`,
+              detail: `The deletion of ${props.title} is being processed. Please check back in a few minutes.`,
               life: TOAST_DEFAULT_LIFE_DURATION,
             });
+
+            await deleteAdministration(props.id);
+            queryClient.invalidateQueries({ queryKey: [ADMINISTRATIONS_LIST_QUERY_KEY] });
+            console.log(`Administration ${props.title} deleted successfully`);
           },
           reject: () => {
             toast.add({
@@ -327,16 +343,16 @@ const speedDialItems = computed((): SpeedDialItem[] => {
     });
   }
 
-  items.push({
-    label: 'Edit',
-    icon: 'pi pi-pencil',
-    command: () => {
-      router.push({
-        name: 'EditAssignment',
-        params: { adminId: props.id },
-      });
-    },
-  });
+  // items.push({
+  //   label: 'Edit',
+  //   icon: 'pi pi-pencil',
+  //   command: () => {
+  //     router.push({
+  //       name: 'EditAssignment',
+  //       params: { adminId: props.id },
+  //     });
+  //   },
+  // });
 
   return items;
 });
@@ -605,15 +621,21 @@ const onExpand = async (node: TreeNode): Promise<void> => {
   border-radius: var(--p-border-radius-xl);
   font-size: 0.7rem;
   margin: 0 0 0 0.8rem;
+  text-transform: uppercase;
 
   &.open {
-    background-color: var(--green-100);
-    color: var(--green-800);
+    background: rgba(var(--bright-green-rgb), 0.2);
+    color: var(--bright-green);
   }
 
   &.closed {
-    background-color: var(--gray-300);
-    color: var(--red-900);
+    background-color: rgba(var(--bright-red-rgb), 0.2);
+    color: var(--bright-red);
+  }
+
+  &.upcoming {
+    background-color: rgba(var(--bright-yellow-rgb), 0.2);
+    color: var(--bright-yellow);
   }
 }
 

@@ -119,6 +119,7 @@
                     :is-super-admin="isSuperAdmin"
                     :creator="item.creator"
                     data-cy="h2-card-admin"
+                    :on-delete-administration="onDeleteAdministration"
                   />
                 </div>
               </template>
@@ -391,6 +392,12 @@ const onSortChange = (event) => {
   }
 
   sortKey.value = sortValue;
+};
+
+const onDeleteAdministration = (administrationId) => {
+  filteredAdministrations.value = filteredAdministrations.value.filter(
+    (administration) => administration?.id !== administrationId,
+  );
 };
 </script>
 

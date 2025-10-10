@@ -146,14 +146,24 @@ const routes: Array<RouteRecordRaw> = [
       allowedRoles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.SITE_ADMIN],
     },
   },
+  // {
+  //   path: '/edit-assignment/:adminId',
+  //   name: 'EditAssignment',
+  //   props: true,
+  //   component: () => import('../pages/CreateAssignment.vue'),
+  //   meta: {
+  //     pageTitle: 'Edit an Assignment',
+  //     allowedRoles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.SITE_ADMIN],
+  //   },
+  // },
   {
     path: '/edit-assignment/:adminId',
     name: 'EditAssignment',
     props: true,
-    component: () => import('../pages/CreateAssignment.vue'),
-    meta: {
-      pageTitle: 'Edit an Assignment',
-      allowedRoles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.SITE_ADMIN],
+    redirect: (to) => {
+      return {
+        name: 'Home',
+      };
     },
   },
   {
@@ -356,7 +366,7 @@ router.beforeEach(async (to: RouteLocationNormalized, from: RouteLocationNormali
 router.afterEach((to, from) => {
   logger.capture('pageview', {
     to: { name: to.name, path: to.path },
-    from: { name: from.name, path: from.path }
+    from: { name: from.name, path: from.path },
   });
 });
 
