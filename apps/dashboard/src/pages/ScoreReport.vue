@@ -527,8 +527,10 @@ function returnColorByReliability(assessment, rawScore, support_level, tag_color
       tasksToDisplayPercentCorrect.includes(assessment.taskId)
     ) {
       const test = assessment.scores?.raw?.composite?.test;
+      // When letter-es has numAttempted === numIncorrect, numCorrect === undefined.
+      // It does not return percentCorrect, so it incorrectly hides the tag.
       if (
-        (test?.numCorrect === undefined && test?.percentCorrect === undefined) ||
+        (assessment.taskId !== 'letter-es' && test?.numCorrect === undefined && test?.percentCorrect === undefined) ||
         (test?.numAttempted === 0 && test?.numCorrect === 0)
       ) {
         return '#EEEEF0';
