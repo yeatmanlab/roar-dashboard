@@ -9,65 +9,82 @@
           <ROARLogoShort />
         </div>
       </header>
-      <h1>{{ $t('pageSignIn.welcome') }}</h1>
-      <h1>PARTNERS</h1>
+      <div class="flex flex-row align-content-center justify-content-center gap-1 w-full">
+        <div class="justify-content-end align-content-end">
+          <h1>{{ $t('pageSignIn.welcome') }}</h1>
+        </div>
+        <div class="ml-3 justify-content-end align-content-end">
+          <LanguageSelector />
+        </div>
+      </div>
       <section class="signin-options">
-        <section class="signin-option-container signin-option-userpass">
-          <h4 class="signin-option-title">{{ $t('pageSignIn.login') }}</h4>
-          <div id="languageSelect" class="flex m-4 justify-content-center">
-            <LanguageSelector class="w-7" />
-          </div>
+        <section class="flex w-full m-4 mt-2 flex-column align-content-center justify-content-center border-500">
           <SignInPartners :invalid="incorrect" @submit="authWithEmail" @update:email="email = $event" />
-        </section>
-        <section class="flex w-full flex-column">
-          <h4
+          <!-- <h4
             class="flex flex-wrap-reverse mt-1 mb-3 font-bold align-content-center justify-content-center text-md text-500"
           >
             {{ $t('pageSignIn.loginWith') }}
-          </h4>
-          <div class="flex flex-row w-full align-content-center justify-content-center">
+          </h4> -->
+          <div class="flex flex-column w-full align-content-center justify-content-center">
             <PvButton
-              label="Sign in with Google"
-              class="flex p-1 mr-2 ml-2 w-3 text-center text-black surface-0 border-black-alpha-10 justify-content-center hover:border-primary hover:surface-ground"
-              style="border-radius: 3rem; height: 3rem; color: black"
-              data-cy="sign-in__google-sso"
-              @click="authWithGoogle"
-            >
-              <img src="../assets/provider-google-logo.svg" alt="The Google Logo" class="flex mr-2 w-2" />
-              <span>Google</span>
-            </PvButton>
-            <PvButton
-              class="flex p-1 mr-2 ml-2 w-3 surface-0 border-black-alpha-10 justify-content-center hover:border-primary hover:surface-ground"
-              style="border-radius: 3rem; height: 3rem; color: black"
+              class="flex h-1 m-1 w-full surface-0 border-400 border-round-md justify-content-center hover:border-primary hover:surface-ground"
+              style="border-radius: 3rem; height: 2.5rem; color: black"
               data-cy="sign-in__clever-sso"
               @click="authWithClever"
             >
-              <img src="../assets/provider-clever-logo.svg" alt="The Clever Logo" class="flex mr-2 w-2" />
-              <span>Clever</span>
+              <div class="flex flex-row align-items-center w-full">
+                <div class="flex justify-content-end w-6">
+                  <img
+                    src="../assets/provider-clever-logo.svg"
+                    alt="The Clever Logo"
+                    class="flex p-1"
+                    style="width: 3.5vh"
+                  />
+                </div>
+                <div class="flex justify-content-start w-full pl-3">
+                  <span> Sign in with Clever</span>
+                </div>
+              </div>
             </PvButton>
             <PvButton
-              class="flex p-1 mr-2 ml-2 w-3 text-black surface-0 border-black-alpha-10 justify-content-center hover:border-primary hover:surface-ground"
-              style="border-radius: 3rem; height: 3rem; color: black"
+              class="flex h-1 m-1 w-full text-black surface-0 border-400 border-round-md justify-content-center hover:border-primary hover:surface-ground"
+              style="height: 2.5rem; color: black"
               data-cy="sign-in__classlink-sso"
               @click="authWithClassLink"
             >
-              <img src="../assets/provider-classlink-logo.png" alt="The ClassLink Logo" class="flex mr-2 w-2" />
-              <span>ClassLink</span>
+              <div class="flex flex-row align-items-center w-full">
+                <div class="flex justify-content-end w-6">
+                  <img
+                    src="../assets/provider-classlink-logo.png"
+                    alt="The ClassLink Logo"
+                    class="flex p-1"
+                    style="width: 3.5vh"
+                  />
+                </div>
+                <div class="flex justify-content-start w-full pl-3">
+                  <span> Sign in with ClassLink</span>
+                </div>
+              </div>
             </PvButton>
             <PvButton
-              class="flex p-1 mr-2 ml-2 w-3 text-black surface-0 border-black-alpha-10 justify-content-center hover:border-primary hover:surface-ground"
-              style="border-radius: 3rem; height: 3rem; color: black"
+              class="flex h-1 m-1 w-full text-black surface-0 border-400 border-round-md justify-content-center hover:border-primary hover:surface-ground"
+              style="height: 2.5rem; color: black"
               data-cy="sign-in__classlink-sso"
               @click="authWithNYCPS"
             >
-              <!-- NYCPS Logo needs to be slightly wider as it is not a square -->
-              <img
-                src="../assets/provider-nycps-logo.jpg"
-                alt="The NYC Public Schools Logo"
-                class="flex mr-2"
-                style="width: 21%"
-              />
-              <span>NYCPS</span>
+              <div class="flex flex-row align-items-center w-full">
+                <div class="flex justify-content-end w-6">
+                  <img
+                    src="../assets/provider-nycps-logo.jpg"
+                    alt="The NYC Public Schools Logo"
+                    class="flex p-1"
+                    style="width: 3.5vh"
+                  />
+                </div>
+                <div class="flex justify-content-start w-full pl-3">
+                  <span> Sign in with NYCPS</span>
+                </div>
+              </div>
             </PvButton>
           </div>
         </section>
@@ -97,17 +114,6 @@
       {{ displaySignInMethods.slice(0, -1).join(', ') + ' or ' + displaySignInMethods.slice(-1) }}. If this is you,
       click to sign in below.
       <div class="flex gap-2 my-2 align-items-center flex-column">
-        <div v-if="signInMethods.includes('google')" class="flex">
-          <PvButton
-            label="Sign in with Google"
-            class="flex p-1 mr-1 text-center surface-0 border-black-alpha-10 justify-content-center hover:border-primary hover:surface-ground"
-            style="border-radius: 3rem; height: 3rem"
-            @click="authWithGoogle"
-          >
-            <img src="../assets/provider-google-logo.svg" alt="The Google Logo" class="flex mr-2 w-2" />
-            <span>Google</span>
-          </PvButton>
-        </div>
         <div v-if="signInMethods.includes(AUTH_SSO_PROVIDERS.CLEVER)">
           <PvButton
             class="flex p-1 mr-1 surface-0 border-black-alpha-10 justify-content-center hover:border-primary hover:surface-ground"
@@ -180,7 +186,7 @@ const authStore = useAuthStore();
 const router = useRouter();
 const route = useRoute();
 
-const { spinner, ssoProvider, routeToProfile, roarfirekit } = storeToRefs(authStore);
+const { spinner, ssoProvider, routeToProfile } = storeToRefs(authStore);
 const warningModalOpen = ref(false);
 
 authStore.$subscribe(() => {
@@ -194,38 +200,6 @@ authStore.$subscribe(() => {
     }
   }
 });
-
-const authWithGoogle = () => {
-  if (isMobileBrowser()) {
-    authStore.signInWithGoogleRedirect();
-  } else {
-    authStore
-      .signInWithGooglePopup()
-      .then(async () => {
-        if (authStore.uid) {
-          const userClaims = await fetchDocById('userClaims', authStore.uid);
-          authStore.userClaims = userClaims;
-        }
-        if (authStore.roarUid) {
-          const userData = await fetchDocById('users', authStore.roarUid);
-          authStore.userData = userData;
-          setUser({ id: authStore.roarUid, userType: userData.userType });
-        }
-      })
-      .catch((e) => {
-        const errorCode = e.code;
-        if (errorCode === 'auth/email-already-in-use') {
-          // User tried to register with an email that is already linked to a firebase account.
-          openWarningModal();
-          spinner.value = false;
-        } else {
-          spinner.value = false;
-        }
-      });
-
-    spinner.value = true;
-  }
-};
 
 const modalPassword = ref('');
 
@@ -326,10 +300,10 @@ const email = ref('');
 
 const signInMethods = ref([]);
 
-const openWarningModal = async () => {
-  signInMethods.value = await roarfirekit.value.fetchEmailAuthMethods(email.value);
-  warningModalOpen.value = true;
-};
+// const openWarningModal = async () => {
+//   signInMethods.value = await roarfirekit.value.fetchEmailAuthMethods(email.value);
+//   warningModalOpen.value = true;
+// };
 
 const displaySignInMethods = computed(() => {
   return signInMethods.value.map((method) => {
@@ -377,5 +351,36 @@ input.p-inputtext.p-component.p-password-input {
 }
 div#password {
   width: 100%;
+}
+
+.provider-button {
+  display: flex;
+  align-items: center; /* centers logo + text vertically */
+  justify-content: center; /* centers content horizontally */
+  gap: 0.75rem; /* consistent spacing */
+  height: 2.5rem;
+  border-radius: 3rem;
+  color: black;
+  background-color: white;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  transition:
+    border-color 0.2s,
+    background-color 0.2s;
+}
+
+.provider-button:hover {
+  border-color: var(--primary-color);
+  background-color: var(--surface-ground);
+}
+
+.provider-logo {
+  height: 1.5rem; /* consistent height */
+  width: auto; /* auto width for varying aspect ratios */
+  display: block;
+}
+
+.provider-text {
+  font-size: 1rem;
+  line-height: 1;
 }
 </style>

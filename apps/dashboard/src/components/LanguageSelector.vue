@@ -1,41 +1,42 @@
 <template>
-  <div class="card flex justify-center w-full">
-    <PvSelect
-      v-model="$i18n.locale"
-      class="w-full md:w-56 bg-white"
-      :options="languageDropdownOptions"
-      option-label="name"
-      option-value="value"
-      :placeholder="$t('authSignIn.selectLanguage')"
-      :highlight-on-select="true"
+  <div class="language-picker">
+    <PvButton
+      v-tooltip.top="'Change language'"
+      class="p-button-text p-button-rounded m-0 p-0 p-button-plain bg-primary border-2 border-primary hover:surface-200"
+      aria-label="Change language"
+      @click="toggleMenu($event)"
     >
-    </PvSelect>
+      <i class="pi pi-globe text-white p-2 m-0 hover:text-primary" style="font-size: 1.1rem"></i>
+    </PvButton>
+
+    <PvMenu ref="menu" :model="menuItems" popup />
   </div>
 </template>
 
 <script setup>
-import { computed } from 'vue';
-import PvSelect from 'primevue/select';
+import { ref, computed } from 'vue';
+import PvButton from 'primevue/button';
+import PvMenu from 'primevue/menu';
+import { useI18n } from 'vue-i18n';
 import { languageOptions } from '@/translations/i18n.js';
 
-// Convert the object to an array of [key, value] pairs
-let languageOptionsArray = Object.entries(languageOptions);
+const { locale } = useI18n();
+const menu = ref(null);
 
-// Sort the array by the key (language code)
-languageOptionsArray.sort((a, b) => a[0].localeCompare(b[1]));
+let languageOptionsArray = Object.entries(languageOptions).sort((a, b) => a[0].localeCompare(b[0]));
 
-// Convert it back to an object
-let sortedLanguageOptions = Object.fromEntries(languageOptionsArray);
+const menuItems = computed(() =>
+  languageOptionsArray.map(([value]) => ({
+    label: value.language + (locale.value === value.code ? '  ✓' : ''),
+    command: () => {
+      locale.value = value.code;
+    },
+  })),
+);
 
-const languageDropdownOptions = computed(() => {
-  return Object.entries(sortedLanguageOptions).map(([key, value]) => {
-    return {
-      name: value.language,
-      code: value.code,
-      value: key,
-    };
-  });
-});
+function toggleMenu(event) {
+  menu.value.toggle(event);
+}
 </script>
 
 <style scoped></style>

@@ -2,25 +2,24 @@
   <div class="card">
     <form class="p-fluid" @submit.prevent="handleFormSubmit(!v$.$invalid)">
       <!-- Role switch (Student / Educator) -->
-      <div class="mt-2 mb-3">
+      <div class="mt-2 mb-3 role-select">
         <PvSelectButton
           v-model="state.role"
           :options="roles"
           option-label="label"
           option-value="value"
           :allow-empty="false"
-          :class="['border-round w-full']"
           fluid
         >
           <template #option="{ option }">
-            <div class="seg p-0">
+            <div class="p-0 flex align-items-center">
               <i :class="`${option.icon} mr-2`" aria-hidden="true"></i>
               <span>{{ option.label }}</span>
             </div>
           </template>
         </PvSelectButton>
       </div>
-      <div class="mt-2 field">
+      <div class="mt-1 field">
         <div class="p-input-icon-right">
           <PvInputText
             :id="$t('authSignIn.emailId')"
@@ -35,7 +34,7 @@
         </div>
         <small v-if="invalid" class="p-error">{{ $t('authSignIn.incorrectEmailOrPassword') }}</small>
       </div>
-      <div class="mt-4 mb-5 field">
+      <div class="mt-2 mb-3 field">
         <div>
           <!-- Email is currently being evaluated (loading state) -->
           <span v-if="evaluatingEmail">
@@ -57,15 +56,9 @@
               @keyup="checkForCapsLock"
               @click="checkForCapsLock"
             />
-            <small
-              class="text-link sign-in-method-link"
-              @click="
-                allowPassword = false;
-                state.usePassword = false;
-              "
-              >{{ $t('authSignIn.signInWithEmailLinkInstead') }}</small
-            >
-            <small class="text-link sign-in-method-link" @click="handleForgotPassword">Forgot password?</small>
+            <div class="flex justify-content-end w-full">
+              <small class="text-link sign-in-method-link" @click="handleForgotPassword">Forgot password?</small>
+            </div>
           </div>
           <!-- Username is entered, Password is desired -->
           <PvPassword
@@ -121,12 +114,21 @@
         </div>
       </div>
       <PvButton
+        v-if="isEducator && allowLink"
+        class="flex pt-2 pb-2 mt-0 mb-2 w-full border-round surface-100 text-primary hover:surface-200 hover:text-primary hover:border-primary"
+        :label="$t('authSignIn.signInWithEmailLinkButton')"
+        :disabled="!canSendLink"
+        @click="handleSignInWithEmailLink"
+      />
+      <PvButton
         type="submit"
-        class="flex p-3 mt-5 w-5 border-none border-round hover:bg-black-alpha-20"
+        class="flex pt-2 pb-2 mt-0 mb-3 w-full border-round hover:surface-200 hover:text-primary hover:border-primary"
         :label="$t('authSignIn.buttonLabel') + ' &rarr;'"
         data-cy="sign-in__submit"
       />
-      <hr class="mt-5 opacity-20" />
+      <div class="divider w-full">
+        <span class="text-md">or</span>
+      </div>
     </form>
   </div>
   <RoarModal
@@ -162,7 +164,7 @@
 </template>
 
 <script setup>
-import { reactive, ref, watch } from 'vue';
+import { reactive, ref, watch, computed } from 'vue';
 import { storeToRefs } from 'pinia';
 import { required, requiredUnless } from '@vuelidate/validators';
 import { useVuelidate } from '@vuelidate/core';
@@ -182,6 +184,21 @@ const roles = [
   { label: 'Student', value: 'student', icon: 'pi pi-graduation-cap' },
   { label: 'Educator', value: 'educator', icon: 'pi pi-user' },
 ];
+
+const isEducator = computed(() => state.role === 'educator');
+
+// Enable the email-link button only when the email is valid, link flow allowed,
+// and we’re not currently checking the email.
+const canSendLink = computed(() => {
+  return isValidEmail(state.email) && allowLink.value && !evaluatingEmail.value;
+});
+
+// Clicking the educator-only button submits in "magic link" mode immediately.
+function handleSignInWithEmailLink() {
+  state.useLink = true;
+  state.usePassword = false;
+  emit('submit', state);
+}
 
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
@@ -315,6 +332,7 @@ watch(
   color: var(--text-color-secondary);
   font-weight: bold;
   text-decoration: underline;
+  font-size: 1rem;
 }
 
 .text-link:hover {
@@ -323,13 +341,34 @@ watch(
 .sign-in-method-link {
   margin-top: 0.5rem;
   display: flex;
-  justify-content: flex-end;
-  width: 100%;
 }
 .p-togglebutton {
   background: var(--primary-color) !important;
 }
 .p-togglebutton-content {
   background: var(--primary-color) !important;
+}
+.divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  color: #6b7280; /* Tailwind gray-500 */
+  font-weight: 500;
+  margin: 0.5rem 0;
+  font-size: 0.95rem;
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid #d1d5db; /* Tailwind gray-300 */
+  margin: 0 0.75rem;
+}
+:deep(.role-select .p-selectbutton .p-button.p-highlight) {
+  border: 2px solid #ef4444 !important; /* red */
+  /* optional bg:
+  background-color: #fee2e2 !important;
+  */
 }
 </style>
