@@ -45,7 +45,7 @@ describe('Partner Admin: Score Reports', () => {
 
   it('Exports the complete score report', () => {
     // Login as a partner admin.
-    cy.login(PARTNER_ADMIN_USERNAME, PARTNER_ADMIN_PASSWORD);
+    cy.loginEducator(PARTNER_ADMIN_USERNAME, PARTNER_ADMIN_PASSWORD);
 
     // Wait until the administrations list is loaded.
     // Note: As the application currently does not support paginated fetching of administrations, we have to wait for
@@ -68,7 +68,7 @@ describe('Partner Admin: Score Reports', () => {
 
   it('Exports a selected score report', () => {
     // Login as a partner admin.
-    cy.login(PARTNER_ADMIN_USERNAME, PARTNER_ADMIN_PASSWORD);
+    cy.loginEducator(PARTNER_ADMIN_USERNAME, PARTNER_ADMIN_PASSWORD);
 
     // Wait until the administrations list is loaded.
     // Note: As the application currently does not support paginated fetching of administrations, we have to wait for
