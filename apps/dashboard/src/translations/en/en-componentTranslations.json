@@ -7,7 +7,7 @@
     "buttonLabel": "Go!",
     "minimumCharacters": "Minimum 8 characters",
     "emailId": "email",
-    "emailPlaceholder": "Username or email",
+    "emailPlaceholder": "Enter username or email",
     "incorrectEmailOrPassword": "Incorrect username/email or password",
     "invalidEmailPlaceholder": "Error: invalid email",
     "passwordId": "password",

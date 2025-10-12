@@ -20,11 +20,6 @@
       <section class="signin-options">
         <section class="flex w-full m-4 mt-2 flex-column align-content-center justify-content-center border-500">
           <SignInPartners :invalid="incorrect" @submit="authWithEmail" @update:email="email = $event" />
-          <!-- <h4
-            class="flex flex-wrap-reverse mt-1 mb-3 font-bold align-content-center justify-content-center text-md text-500"
-          >
-            {{ $t('pageSignIn.loginWith') }}
-          </h4> -->
           <div class="flex flex-column w-full align-content-center justify-content-center">
             <PvButton
               class="flex h-1 m-1 w-full surface-0 border-400 border-round-md justify-content-center hover:border-primary hover:surface-ground"
