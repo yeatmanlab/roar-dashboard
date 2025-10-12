@@ -29,38 +29,47 @@
 
         <PvPopover ref="op" append-to="body" style="max-width: 28rem">
           <div class="p-3 text-sm">
-            <h3 class="text-xl font-bold mb-2 mt-0">Follow these steps to sign in</h3>
+            <!-- Title -->
+            <h3 class="text-xl font-bold mb-2 mt-0">
+              {{ $t('authSignIn.signInPopover.title') }}
+            </h3>
 
-            <h4 class="mt-3 mb-1 text-primary text-lg font-semibold">👩‍🎓 Students</h4>
+            <!-- Students -->
+            <h4 class="mt-3 mb-1 text-primary text-lg font-semibold">
+              {{ $t('authSignIn.signInPopover.studentsTitle') }}
+            </h4>
             <ul class="pl-3 mb-3">
-              <li>Enter your <strong>username</strong> or <strong>email</strong>.</li>
-              <li>Type your <strong>password</strong> and click <strong>Go! →</strong>.</li>
+              <li v-html="$t('authSignIn.signInPopover.studentsSteps.enter')"></li>
+              <li v-html="$t('authSignIn.signInPopover.studentsSteps.password')"></li>
               <li>
-                Or choose your school’s login:
+                {{ $t('authSignIn.signInPopover.studentsSteps.chooseLogin') }}
                 <ul class="pl-3 mt-1">
-                  <li>Sign in with <strong>Clever</strong></li>
-                  <li>Sign in with <strong>ClassLink</strong></li>
-                  <li>Sign in with <strong>NYCPS</strong></li>
+                  <li v-html="$t('authSignIn.signInPopover.studentsSteps.clever')"></li>
+                  <li v-html="$t('authSignIn.signInPopover.studentsSteps.classlink')"></li>
+                  <li v-html="$t('authSignIn.signInPopover.studentsSteps.nycps')"></li>
                 </ul>
               </li>
             </ul>
 
-            <h4 class="mt-2 mb-1 text-primary text-lg font-semibold">👩‍🏫 Educators</h4>
+            <!-- Educators -->
+            <h4 class="mt-2 mb-1 text-primary text-lg font-semibold">
+              {{ $t('authSignIn.signInPopover.educatorsTitle') }}
+            </h4>
             <ul class="pl-3 mb-1">
-              <li>Enter your <strong>email</strong>.</li>
+              <li v-html="$t('authSignIn.signInPopover.educatorsSteps.enter')"></li>
               <li>
-                Then choose one option:
+                {{ $t('authSignIn.signInPopover.educatorsSteps.chooseOption') }}
                 <ul class="pl-3 mt-1">
-                  <li><strong>Sign in using password: </strong> type your password to log in.</li>
-                  <li><strong>Sign in using email link: </strong> receive a sign-in link in your inbox.</li>
+                  <li v-html="$t('authSignIn.signInPopover.educatorsSteps.passwordOption')"></li>
+                  <li v-html="$t('authSignIn.signInPopover.educatorsSteps.emailLinkOption')"></li>
                 </ul>
               </li>
               <li>
-                You may also use:
+                {{ $t('authSignIn.signInPopover.educatorsSteps.youMayAlso') }}
                 <ul class="pl-3 mt-1">
-                  <li><strong>Sign in with Clever</strong></li>
-                  <li><strong>Sign in with ClassLink</strong></li>
-                  <li><strong>Sign in with NYCPS</strong></li>
+                  <li v-html="$t('authSignIn.signInPopover.educatorsSteps.clever')"></li>
+                  <li v-html="$t('authSignIn.signInPopover.educatorsSteps.classlink')"></li>
+                  <li v-html="$t('authSignIn.signInPopover.educatorsSteps.nycps')"></li>
                 </ul>
               </li>
             </ul>

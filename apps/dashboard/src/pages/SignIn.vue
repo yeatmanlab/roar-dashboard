@@ -29,28 +29,24 @@
 
         <PvPopover ref="op" append-to="body" style="max-width: 28rem">
           <div class="p-3 text-sm">
-            <h3 class="text-xl font-bold mb-2 mt-0">How to sign in as Super Admin</h3>
+            <h3 class="text-xl font-bold mb-2 mt-0">
+              {{ $t('authSignIn.superAdminPopover.title') }}
+            </h3>
 
             <ul class="pl-3 mb-3">
+              <li v-html="$t('authSignIn.superAdminPopover.emailLine')"></li>
               <li>
-                Enter your <strong>Stanford email</strong> or the <strong>admin email</strong> assigned to your ROAR
-                account.
-              </li>
-              <li>
-                Then choose one of the following options:
+                {{ $t('authSignIn.superAdminPopover.chooseOptions') }}
                 <ul class="pl-3 mt-1">
-                  <li><strong>Sign-in using password:</strong> type your password to access your dashboard.</li>
-                  <li><strong>Sign-in using email link:</strong> receive a one-time secure link in your inbox.</li>
+                  <li v-html="$t('authSignIn.superAdminPopover.passwordOption')"></li>
+                  <li v-html="$t('authSignIn.superAdminPopover.emailLinkOption')"></li>
                 </ul>
               </li>
-              <li class="mt-1">
-                You can also <strong>Sign in with Google</strong> if your account is linked to a Google email.
-              </li>
+              <li class="mt-1" v-html="$t('authSignIn.superAdminPopover.googleLine')"></li>
             </ul>
 
             <p class="mt-2 text-600 italic">
-              🔒 Only authorized Super Admins can access this portal. If you cannot sign in, contact the ROAR support
-              team for verification or access recovery.
+              {{ $t('authSignIn.superAdminPopover.notice') }}
             </p>
           </div>
         </PvPopover>
