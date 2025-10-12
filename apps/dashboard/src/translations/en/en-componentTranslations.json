@@ -17,7 +17,11 @@
     "signInWithEmailLinkPlaceHolder": "Press Go to sign-in with an email link.",
     "signInWithEmailLinkInstead": "Sign-in using email link",
     "signInWithPasswordInstead": "Sign-in using password",
-    "suggestions": "Suggestions"
+    "suggestions": "Suggestions",
+    "forgotPassword": "Forgot password?",
+    "student": "Student",
+    "educator": "Educator",
+    "or": "or"
   },
   "cleverLanding": {
     "cleverLoading": "Loading your data from Clever..."

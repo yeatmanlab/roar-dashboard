@@ -15,7 +15,7 @@
           <template #option="{ option }">
             <div class="p-0 flex align-items-center">
               <i :class="`${option.icon} mr-2`" aria-hidden="true"></i>
-              <span>{{ option.label }}</span>
+              <span>{{ $t(option.label) }}</span>
             </div>
           </template>
         </PvSelectButton>
@@ -54,7 +54,9 @@
               @click="checkForCapsLock"
             />
             <div class="flex justify-content-end w-full">
-              <small class="text-link sign-in-method-link" @click="handleForgotPassword">Forgot password?</small>
+              <small class="text-link sign-in-method-link" @click="handleForgotPassword">{{
+                $t('authSignIn.forgotPassword')
+              }}</small>
             </div>
           </div>
           <div v-if="capsLockEnabled" class="mt-2 p-error">⇪ Caps Lock is on!</div>
@@ -64,13 +66,13 @@
         <PvButton
           v-if="isEducator"
           class="flex pt-2 pb-2 mt-0 mb-2 w-full border-round bg-primary text-white hover:surface-200 hover:text-primary hover:border-primary"
-          :label="$t('Sign-in using password')"
+          :label="$t('authSignIn.signInUsingPassword')"
           @click="allowSignInPassword"
         />
         <PvButton
           v-if="isEducator"
           class="flex pt-2 pb-2 mt-0 mb-2 w-full border-round bg-primary text-white hover:surface-200 hover:text-primary hover:border-primary"
-          :label="$t('authSignIn.signInWithEmailLinkInstead')"
+          :label="$t('authSignIn.signInUsingEmailLink')"
           @click="!canSendLink ? showInvalidEmail() : handleSignInWithEmailLink()"
         />
       </div>
@@ -82,7 +84,7 @@
         data-cy="sign-in__submit"
       />
       <div class="divider w-full">
-        <span class="text-md">or</span>
+        <span class="text-md">{{ $t('authSignIn.or') }}</span>
       </div>
     </form>
   </div>
@@ -134,12 +136,14 @@ import PvToast from 'primevue/toast';
 import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts.js';
 
 import PvSelectButton from 'primevue/selectbutton'; // add this import
+import { useI18n } from 'vue-i18n';
 
-// options for the SelectButton
-const roles = [
-  { label: 'Student', value: 'student', icon: 'pi pi-graduation-cap' },
-  { label: 'Educator', value: 'educator', icon: 'pi pi-user' },
-];
+const { t } = useI18n();
+
+const roles = computed(() => [
+  { label: t('authSignIn.student'), value: 'student', icon: 'pi pi-graduation-cap' },
+  { label: t('authSignIn.educator'), value: 'educator', icon: 'pi pi-user' },
+]);
 
 const isEducator = computed(() => state.role === 'educator');
 const isStudent = computed(() => state.role === 'student');

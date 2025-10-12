@@ -1,7 +1,8 @@
 <template>
+  <PvToast />
   <div class="card">
     <form class="p-fluid" @submit.prevent="handleFormSubmit(!v$.$invalid)">
-      <div class="mt-2 field">
+      <div class="mt-1 field">
         <div class="p-input-icon-right">
           <PvInputText
             :id="$t('authSignIn.emailId')"
@@ -16,14 +17,10 @@
         </div>
         <small v-if="invalid" class="p-error">{{ $t('authSignIn.incorrectEmailOrPassword') }}</small>
       </div>
-      <div class="mt-4 mb-5 field">
+      <div v-if="showPasswordField" class="mt-2 mb-3 field">
         <div>
-          <!-- Email is currently being evaluated (loading state) -->
-          <span v-if="evaluatingEmail">
-            <PvSkeleton height="2.75rem" />
-          </span>
           <!-- Email is entered, Password is desired -->
-          <div v-else-if="allowPassword && allowLink">
+          <div>
             <PvPassword
               :id="$t('authSignIn.passwordId')"
               v-model="v$.password.$model"
@@ -38,76 +35,37 @@
               @keyup="checkForCapsLock"
               @click="checkForCapsLock"
             />
-            <small
-              class="text-link sign-in-method-link"
-              @click="
-                allowPassword = false;
-                state.usePassword = false;
-              "
-              >{{ $t('authSignIn.signInWithEmailLinkInstead') }}</small
-            >
-            <small class="text-link sign-in-method-link" @click="handleForgotPassword">Forgot password?</small>
-          </div>
-          <!-- Username is entered, Password is desired -->
-          <PvPassword
-            v-else-if="allowPassword"
-            :id="$t('authSignIn.passwordId')"
-            v-model="v$.password.$model"
-            :class="['w-full', { 'p-invalid': invalid }]"
-            toggle-mask
-            show-icon="pi pi-eye-slash"
-            hide-icon="pi pi-eye"
-            :feedback="false"
-            :placeholder="$t('authSignIn.passwordPlaceholder')"
-            data-cy="sign-in__password"
-            @keyup="checkForCapsLock"
-            @click="checkForCapsLock"
-          >
-            <template #header>
-              <h6>{{ $t('authSignIn.pickPassword') }}</h6>
-            </template>
-            <template #footer="sp">
-              {{ sp.level }}
-              <PvDivider />
-              <p class="mt-2">{{ $t('authSignIn.suggestions') }}</p>
-              <ul class="pl-2 mt-0 ml-2" style="line-height: 1.5">
-                <li>{{ $t('authSignIn.atLeastOneLowercase') }}</li>
-                <li>{{ $t('authSignIn.atLeastOneUppercase') }}</li>
-                <li>{{ $t('authSignIn.atLeastOneNumeric') }}</li>
-                <li>{{ $t('authSignIn.minimumCharacters') }}</li>
-              </ul>
-            </template>
-          </PvPassword>
-          <!-- Email is entered, MagicLink is desired login -->
-          <div v-else-if="allowLink">
-            <PvPassword :placeholder="$t('authSignIn.signInWithEmailLinkPlaceHolder')" class="w-full" disabled />
-            <small
-              class="text-link sign-in-method-link"
-              @click="
-                allowPassword = true;
-                state.usePassword = true;
-              "
-              >{{ $t('authSignIn.signInWithPasswordInstead') }}</small
-            >
-          </div>
-          <!-- Email is entered, however it is an invalid email (prevent login) -->
-          <div v-else>
-            <PvPassword
-              disabled
-              class="w-full text-red-600 p-invalid"
-              :placeholder="$t('authSignIn.invalidEmailPlaceholder')"
-            />
+            <div class="flex justify-content-end w-full">
+              <small class="text-link sign-in-method-link" @click="handleForgotPassword">{{
+                $t('authSignIn.forgotPassword')
+              }}</small>
+            </div>
           </div>
           <div v-if="capsLockEnabled" class="mt-2 p-error">⇪ Caps Lock is on!</div>
         </div>
       </div>
+      <div v-if="!showPasswordField" class="flex flex-row gap-3">
+        <PvButton
+          class="flex pt-2 pb-2 mt-0 mb-2 w-full border-round bg-primary text-white hover:surface-200 hover:text-primary hover:border-primary"
+          :label="$t('Sign-in using password')"
+          @click="allowSignInPassword"
+        />
+        <PvButton
+          class="flex pt-2 pb-2 mt-0 mb-2 w-full border-round bg-primary text-white hover:surface-200 hover:text-primary hover:border-primary"
+          :label="$t('authSignIn.signInUsingEmailLink')"
+          @click="!canSendLink ? showInvalidEmail() : handleSignInWithEmailLink()"
+        />
+      </div>
       <PvButton
+        v-if="showPasswordField"
         type="submit"
-        class="flex p-3 mt-5 w-5 border-none border-round hover:bg-black-alpha-20"
+        class="flex pt-2 pb-2 mt-0 mb-3 w-full border-round hover:surface-200 hover:text-primary hover:border-primary"
         :label="$t('authSignIn.buttonLabel') + ' &rarr;'"
         data-cy="sign-in__submit"
       />
-      <hr class="mt-5 opacity-20" />
+      <div class="divider w-full">
+        <span class="text-md">{{ $t('authSignIn.or') }}</span>
+      </div>
     </form>
   </div>
   <RoarModal
@@ -143,18 +101,30 @@
 </template>
 
 <script setup>
-import { reactive, ref, watch } from 'vue';
+import { reactive, ref, watch, computed } from 'vue';
 import { storeToRefs } from 'pinia';
 import { required, requiredUnless } from '@vuelidate/validators';
 import { useVuelidate } from '@vuelidate/core';
 import _debounce from 'lodash/debounce';
 import PvButton from 'primevue/button';
-import PvDivider from 'primevue/divider';
 import PvInputText from 'primevue/inputtext';
 import PvPassword from 'primevue/password';
-import PvSkeleton from 'primevue/skeleton';
+import { useToast } from 'primevue/usetoast';
 import { useAuthStore } from '@/store/auth';
 import RoarModal from '../modals/RoarModal.vue';
+import PvToast from 'primevue/toast';
+import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts.js';
+
+// Enable the email-link button only when the email is valid, link flow allowed,
+// and we’re not currently checking the email.
+const canSendLink = computed(() => {
+  return isValidEmail(state.email) && !evaluatingEmail.value;
+});
+
+// Clicking the educator-only button submits in "magic link" mode immediately.
+function handleSignInWithEmailLink() {
+  emit('submit', state);
+}
 
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
@@ -168,20 +138,31 @@ const props = defineProps({
 const state = reactive({
   email: '',
   password: '',
-  useLink: false,
-  usePassword: true,
 });
+
+const toast = useToast();
+
+function showInvalidEmail() {
+  console.log('Invalid email');
+  toast.add({
+    severity: TOAST_SEVERITIES.ERROR,
+    summary: 'Error',
+    detail: 'Invalid email',
+    life: TOAST_DEFAULT_LIFE_DURATION,
+  });
+}
 
 const rules = {
   email: { required },
   password: {
-    requiredIf: requiredUnless(() => state.useLink),
+    requiredIf: requiredUnless(() => showPasswordField.value === true),
   },
 };
 const submitted = ref(false);
 const v$ = useVuelidate(rules, state);
 const capsLockEnabled = ref(false);
 const forgotPasswordModalOpen = ref(false);
+const showPasswordField = ref(false);
 
 const handleFormSubmit = (isFormValid) => {
   submitted.value = true;
@@ -191,6 +172,10 @@ const handleFormSubmit = (isFormValid) => {
   emit('submit', state);
 };
 
+function allowSignInPassword() {
+  showPasswordField.value = true;
+}
+
 const isValidEmail = (email) => {
   var re =
     /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
@@ -198,27 +183,13 @@ const isValidEmail = (email) => {
 };
 
 const evaluatingEmail = ref(false);
-const allowPassword = ref(true);
-const allowLink = ref(true);
 
 const validateRoarEmail = _debounce(
   async (email) => {
     await roarfirekit.value.isEmailAvailable(email).then(async (emailAvail) => {
       if (emailAvail) {
         console.log(`Email ${email} is available`);
-        allowPassword.value = true;
-        allowLink.value = false;
-      } else {
-        if (roarfirekit.value.isRoarAuthEmail(email)) {
-          // Roar auth email are made up, so sign-in link is not allowed.
-          allowLink.value = false;
-          allowPassword.value = true;
-        } else {
-          allowLink.value = true;
-          allowPassword.value = true;
-        }
       }
-      state.useLink = allowLink.value;
       evaluatingEmail.value = false;
     });
   },
@@ -258,12 +229,6 @@ watch(
     if (isValidEmail(email)) {
       evaluatingEmail.value = true;
       validateRoarEmail(email);
-    } else {
-      // In this case, assume that the input is a username
-      // Password is allowed. Sign-in link is not allowed.
-      allowPassword.value = true;
-      allowLink.value = false;
-      state.useLink = allowLink.value;
     }
   },
 );
@@ -287,6 +252,7 @@ watch(
   color: var(--text-color-secondary);
   font-weight: bold;
   text-decoration: underline;
+  font-size: 1rem;
 }
 
 .text-link:hover {
@@ -295,7 +261,28 @@ watch(
 .sign-in-method-link {
   margin-top: 0.5rem;
   display: flex;
-  justify-content: flex-end;
-  width: 100%;
+}
+.p-togglebutton {
+  background: var(--primary-color) !important;
+}
+.p-togglebutton-content {
+  background: var(--primary-color) !important;
+}
+.divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  color: #6b7280; /* Tailwind gray-500 */
+  font-weight: 500;
+  margin: 0.5rem 0;
+  font-size: 0.95rem;
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid #d1d5db; /* Tailwind gray-300 */
+  margin: 0 0.75rem;
 }
 </style>

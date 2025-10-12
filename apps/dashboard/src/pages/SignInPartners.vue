@@ -16,6 +16,56 @@
         <div class="ml-3 justify-content-end align-content-end">
           <LanguageSelector />
         </div>
+        <div class="ml-3 justify-content-end align-content-end">
+          <PvButton
+            v-tooltip.top="'Click for help on signin'"
+            class="p-button-text p-button-rounded m-0 p-0 p-button-plain bg-primary border-2 border-primary hover:surface-200"
+            aria-label="Sign in help button"
+            @click="toggle($event)"
+          >
+            <i class="pi pi-question text-white p-2 font-bold m-0 hover:text-primary" style="font-size: 1.1rem"></i>
+          </PvButton>
+        </div>
+
+        <PvPopover ref="op" append-to="body" style="max-width: 28rem">
+          <div class="p-3 text-sm">
+            <h3 class="text-xl font-bold mb-2 mt-0">Follow these steps to sign in</h3>
+
+            <h4 class="mt-3 mb-1 text-primary text-lg font-semibold">👩‍🎓 Students</h4>
+            <ul class="pl-3 mb-3">
+              <li>Enter your <strong>username</strong> or <strong>email</strong>.</li>
+              <li>Type your <strong>password</strong> and click <strong>Go! →</strong>.</li>
+              <li>
+                Or choose your school’s login:
+                <ul class="pl-3 mt-1">
+                  <li>Sign in with <strong>Clever</strong></li>
+                  <li>Sign in with <strong>ClassLink</strong></li>
+                  <li>Sign in with <strong>NYCPS</strong></li>
+                </ul>
+              </li>
+            </ul>
+
+            <h4 class="mt-2 mb-1 text-primary text-lg font-semibold">👩‍🏫 Educators</h4>
+            <ul class="pl-3 mb-1">
+              <li>Enter your <strong>email</strong>.</li>
+              <li>
+                Then choose one option:
+                <ul class="pl-3 mt-1">
+                  <li><strong>Sign in using password: </strong> type your password to log in.</li>
+                  <li><strong>Sign in using email link: </strong> receive a sign-in link in your inbox.</li>
+                </ul>
+              </li>
+              <li>
+                You may also use:
+                <ul class="pl-3 mt-1">
+                  <li><strong>Sign in with Clever</strong></li>
+                  <li><strong>Sign in with ClassLink</strong></li>
+                  <li><strong>Sign in with NYCPS</strong></li>
+                </ul>
+              </li>
+            </ul>
+          </div>
+        </PvPopover>
       </div>
       <section class="signin-options">
         <section class="flex w-full m-4 mt-2 flex-column align-content-center justify-content-center border-500">
@@ -37,7 +87,7 @@
                   />
                 </div>
                 <div class="flex justify-content-start w-full pl-3">
-                  <span> Sign in with Clever</span>
+                  <span> {{ $t('authSignIn.signInWith') }} Clever</span>
                 </div>
               </div>
             </PvButton>
@@ -57,7 +107,7 @@
                   />
                 </div>
                 <div class="flex justify-content-start w-full pl-3">
-                  <span> Sign in with ClassLink</span>
+                  <span> {{ $t('authSignIn.signInWith') }} ClassLink</span>
                 </div>
               </div>
             </PvButton>
@@ -77,7 +127,7 @@
                   />
                 </div>
                 <div class="flex justify-content-start w-full pl-3">
-                  <span> Sign in with NYCPS</span>
+                  <span> {{ $t('authSignIn.signInWith') }} NYCPS</span>
                 </div>
               </div>
             </PvButton>
@@ -166,6 +216,7 @@ import { setUser } from '@sentry/vue';
 import PvButton from 'primevue/button';
 import PvPassword from 'primevue/password';
 import ROARLogoShort from '@/assets/RoarLogo-Short.vue';
+import PvPopover from 'primevue/popover';
 import { useAuthStore } from '@/store/auth';
 import { isMobileBrowser } from '@/helpers';
 import { redirectSignInPath } from '@/helpers/redirectSignInPath';
@@ -244,6 +295,11 @@ const authWithNYCPS = () => {
     authStore.signInWithNYCPSRedirect();
   }
   spinner.value = true;
+};
+
+const op = ref(null);
+const toggle = (event) => {
+  op.value.toggle(event);
 };
 
 const authWithEmail = (state) => {

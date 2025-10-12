@@ -1,6 +1,7 @@
 <template>
   <div class="language-picker">
     <PvButton
+      v-model="$i18n.locale"
       v-tooltip.top="'Change language'"
       class="p-button-text p-button-rounded m-0 p-0 p-button-plain bg-primary border-2 border-primary hover:surface-200"
       aria-label="Change language"
@@ -20,19 +21,36 @@ import PvMenu from 'primevue/menu';
 import { useI18n } from 'vue-i18n';
 import { languageOptions } from '@/translations/i18n.js';
 
-const { locale } = useI18n();
+// const { locale } = useI18n();
+// const menu = ref(null);
+
+// 1) Global composer
+const { locale } = useI18n({ useScope: 'global' });
+
 const menu = ref(null);
 
-let languageOptionsArray = Object.entries(languageOptions).sort((a, b) => a[0].localeCompare(b[0]));
+// 2) Work with the real locale key
+const languageOptionsArray = Object.entries(languageOptions).sort((a, b) => a[0].localeCompare(b[0]));
 
 const menuItems = computed(() =>
-  languageOptionsArray.map(([, value]) => ({
-    label: value.language + (locale.value === value.code ? '  ✓' : ''),
+  languageOptionsArray.map(([key, value]) => ({
+    label: value.language + (locale.value === key ? '  ✓' : ''),
     command: () => {
-      locale.value = value.code;
-    },
+      locale.value = key;
+    }, // <- set to 'en' | 'en-US' | 'es' | 'es-CO'
   })),
 );
+
+// let languageOptionsArray = Object.entries(languageOptions).sort((a, b) => a[0].localeCompare(b[0]));
+
+// const menuItems = computed(() =>
+//   languageOptionsArray.map(([, value]) => ({
+//     label: value.language + (locale.value === value.code ? '  ✓' : ''),
+//     command: () => {
+//       locale.value = value.code;
+//     },
+//   })),
+// );
 
 function toggleMenu(event) {
   menu.value.toggle(event);

@@ -9,73 +9,145 @@
           <ROARLogoShort />
         </div>
       </header>
-      <h1>{{ $t('pageSignIn.welcome') }}</h1>
-      <section class="signin-options">
-        <section class="signin-option-container signin-option-userpass">
-          <h4 class="signin-option-title">{{ $t('pageSignIn.login') }}</h4>
-          <div id="languageSelect" class="flex m-4 justify-content-center">
-            <LanguageSelector class="w-7" />
-          </div>
-          <SignIn :invalid="incorrect" @submit="authWithEmail" @update:email="email = $event" />
-        </section>
-        <section class="flex w-full flex-column">
-          <h4
-            class="flex flex-wrap-reverse mt-1 mb-3 font-bold align-content-center justify-content-center text-md text-500"
+      <div class="flex flex-row align-content-center justify-content-center gap-1 w-full">
+        <div class="justify-content-end align-content-end">
+          <h1>{{ $t('pageSignIn.welcome') }}</h1>
+        </div>
+        <div class="ml-3 justify-content-end align-content-end">
+          <LanguageSelector />
+        </div>
+        <div class="ml-3 justify-content-end align-content-end">
+          <PvButton
+            v-tooltip.top="'Click for help on signin'"
+            class="p-button-text p-button-rounded m-0 p-0 p-button-plain bg-primary border-2 border-primary hover:surface-200"
+            aria-label="Sign in help button"
+            @click="toggle($event)"
           >
-            {{ $t('pageSignIn.loginWith') }}
-          </h4>
-          <div class="flex flex-row w-full align-content-center justify-content-center">
+            <i class="pi pi-question text-white p-2 font-bold m-0 hover:text-primary" style="font-size: 1.1rem"></i>
+          </PvButton>
+        </div>
+
+        <PvPopover ref="op" append-to="body" style="max-width: 28rem">
+          <div class="p-3 text-sm">
+            <h3 class="text-xl font-bold mb-2 mt-0">How to sign in as Super Admin</h3>
+
+            <ul class="pl-3 mb-3">
+              <li>
+                Enter your <strong>Stanford email</strong> or the <strong>admin email</strong> assigned to your ROAR
+                account.
+              </li>
+              <li>
+                Then choose one of the following options:
+                <ul class="pl-3 mt-1">
+                  <li><strong>Sign-in using password:</strong> type your password to access your dashboard.</li>
+                  <li><strong>Sign-in using email link:</strong> receive a one-time secure link in your inbox.</li>
+                </ul>
+              </li>
+              <li class="mt-1">
+                You can also <strong>Sign in with Google</strong> if your account is linked to a Google email.
+              </li>
+            </ul>
+
+            <p class="mt-2 text-600 italic">
+              🔒 Only authorized Super Admins can access this portal. If you cannot sign in, contact the ROAR support
+              team for verification or access recovery.
+            </p>
+          </div>
+        </PvPopover>
+      </div>
+      <section class="signin-options">
+        <section class="flex w-full m-4 mt-2 flex-column align-content-center justify-content-center border-500">
+          <SignIn :invalid="incorrect" @submit="authWithEmail" @update:email="email = $event" />
+          <div class="flex flex-column w-full align-content-center justify-content-center">
             <PvButton
               label="Sign in with Google"
-              class="flex p-1 mr-2 ml-2 w-3 text-center text-black surface-0 border-black-alpha-10 justify-content-center hover:border-primary hover:surface-ground"
-              style="border-radius: 3rem; height: 3rem; color: black"
+              class="flex h-1 m-1 w-full surface-0 border-400 border-round-md justify-content-center hover:border-primary hover:surface-groundd"
+              style="border-radius: 3rem; height: 2.5rem; color: black"
               data-cy="sign-in__google-sso"
               @click="authWithGoogle"
             >
-              <img src="../assets/provider-google-logo.svg" alt="The Google Logo" class="flex mr-2 w-2" />
-              <span>Google</span>
+              <div class="flex flex-row align-items-center w-full">
+                <div class="flex justify-content-end w-6">
+                  <img
+                    src="../assets/provider-google-logo.svg"
+                    alt="The Google Logo"
+                    class="flex p-1"
+                    style="width: 3.5vh"
+                  />
+                </div>
+                <div class="flex justify-content-start w-full pl-3">
+                  <span>{{ $t('authSignIn.signInWith') }} Google</span>
+                </div>
+              </div>
             </PvButton>
-            <PvButton
-              class="flex p-1 mr-2 ml-2 w-3 surface-0 border-black-alpha-10 justify-content-center hover:border-primary hover:surface-ground"
-              style="border-radius: 3rem; height: 3rem; color: black"
+            <!-- <PvButton
+              class="flex h-1 m-1 w-full surface-0 border-400 border-round-md justify-content-center hover:border-primary hover:surface-ground"
+              style="border-radius: 3rem; height: 2.5rem; color: black"
               data-cy="sign-in__clever-sso"
               @click="authWithClever"
             >
-              <img src="../assets/provider-clever-logo.svg" alt="The Clever Logo" class="flex mr-2 w-2" />
-              <span>Clever</span>
+              <div class="flex flex-row align-items-center w-full">
+                <div class="flex justify-content-end w-6">
+                  <img
+                    src="../assets/provider-clever-logo.svg"
+                    alt="The Clever Logo"
+                    class="flex p-1"
+                    style="width: 3.5vh"
+                  />
+                </div>
+                <div class="flex justify-content-start w-full pl-3">
+                  <span> Sign in with Clever</span>
+                </div>
+              </div>
             </PvButton>
             <PvButton
-              class="flex p-1 mr-2 ml-2 w-3 text-black surface-0 border-black-alpha-10 justify-content-center hover:border-primary hover:surface-ground"
-              style="border-radius: 3rem; height: 3rem; color: black"
+              class="flex h-1 m-1 w-full text-black surface-0 border-400 border-round-md justify-content-center hover:border-primary hover:surface-ground"
+              style="height: 2.5rem; color: black"
               data-cy="sign-in__classlink-sso"
               @click="authWithClassLink"
             >
-              <img src="../assets/provider-classlink-logo.png" alt="The ClassLink Logo" class="flex mr-2 w-2" />
-              <span>ClassLink</span>
+              <div class="flex flex-row align-items-center w-full">
+                <div class="flex justify-content-end w-6">
+                  <img
+                    src="../assets/provider-classlink-logo.png"
+                    alt="The ClassLink Logo"
+                    class="flex p-1"
+                    style="width: 3.5vh"
+                  />
+                </div>
+                <div class="flex justify-content-start w-full pl-3">
+                  <span> Sign in with ClassLink</span>
+                </div>
+              </div>
             </PvButton>
             <PvButton
-              class="flex p-1 mr-2 ml-2 w-3 text-black surface-0 border-black-alpha-10 justify-content-center hover:border-primary hover:surface-ground"
-              style="border-radius: 3rem; height: 3rem; color: black"
+              class="flex h-1 m-1 w-full text-black surface-0 border-400 border-round-md justify-content-center hover:border-primary hover:surface-ground"
+              style="height: 2.5rem; color: black"
               data-cy="sign-in__classlink-sso"
               @click="authWithNYCPS"
             >
-              <!-- NYCPS Logo needs to be slightly wider as it is not a square -->
-              <img
-                src="../assets/provider-nycps-logo.jpg"
-                alt="The NYC Public Schools Logo"
-                class="flex mr-2"
-                style="width: 21%"
-              />
-              <span>NYCPS</span>
-            </PvButton>
+              <div class="flex flex-row align-items-center w-full">
+                <div class="flex justify-content-end w-6">
+                  <img
+                    src="../assets/provider-nycps-logo.jpg"
+                    alt="The NYC Public Schools Logo"
+                    class="flex p-1"
+                    style="width: 3.5vh"
+                  />
+                </div>
+                <div class="flex justify-content-start w-full pl-3">
+                  <span> Sign in with NYCPS</span>
+                </div>
+              </div>
+            </PvButton> -->
           </div>
         </section>
         <!-- <section class="signin-option-container signin-option-providers">
-          <div class="flex flex-row w-full justify-content-center">
-            <p class="text-sm signin-option-title">Don't have an account yet?</p>
-            <PvButton label="Register" class="w-3 signin-button" @click="router.push({ name: 'Register' })" />
-          </div>
-        </section> -->
+            <div class="flex flex-row w-full justify-content-center">
+              <p class="text-sm signin-option-title">Don't have an account yet?</p>
+              <PvButton label="Register" class="w-3 signin-button" @click="router.push({ name: 'Register' })" />
+            </div>
+          </section> -->
       </section>
       <footer style="display: none">
         <!-- TODO: figure out a link for this -->
@@ -96,17 +168,6 @@
       {{ displaySignInMethods.slice(0, -1).join(', ') + ' or ' + displaySignInMethods.slice(-1) }}. If this is you,
       click to sign in below.
       <div class="flex gap-2 my-2 align-items-center flex-column">
-        <div v-if="signInMethods.includes('google')" class="flex">
-          <PvButton
-            label="Sign in with Google"
-            class="flex p-1 mr-1 text-center surface-0 border-black-alpha-10 justify-content-center hover:border-primary hover:surface-ground"
-            style="border-radius: 3rem; height: 3rem"
-            @click="authWithGoogle"
-          >
-            <img src="../assets/provider-google-logo.svg" alt="The Google Logo" class="flex mr-2 w-2" />
-            <span>Google</span>
-          </PvButton>
-        </div>
         <div v-if="signInMethods.includes(AUTH_SSO_PROVIDERS.CLEVER)">
           <PvButton
             class="flex p-1 mr-1 surface-0 border-black-alpha-10 justify-content-center hover:border-primary hover:surface-ground"
@@ -163,6 +224,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { setUser } from '@sentry/vue';
 import PvButton from 'primevue/button';
 import PvPassword from 'primevue/password';
+import PvPopover from 'primevue/popover';
 import ROARLogoShort from '@/assets/RoarLogo-Short.vue';
 import { useAuthStore } from '@/store/auth';
 import { isMobileBrowser } from '@/helpers';
@@ -227,6 +289,11 @@ const authWithGoogle = () => {
 };
 
 const modalPassword = ref('');
+
+const op = ref(null);
+const toggle = (event) => {
+  op.value.toggle(event);
+};
 
 const authWithClever = () => {
   if (process.env.NODE_ENV === 'development' && !window.Cypress) {
