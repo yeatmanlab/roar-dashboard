@@ -9,6 +9,7 @@ import NavBar from '@/components/NavBar';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import { useAuthStore } from '@/store/auth';
 import { usePermissions } from '@/composables/usePermissions';
+import useIsNycpsUser from '@/composables/useIsNycpsUser';
 import mockUserClaims, {
   mockSuperAdminUserClaims,
   mockPartnerAdminUserClaims,
@@ -26,6 +27,7 @@ vi.mock('vue-router', async (getModule) => {
 
 vi.mock('@/composables/queries/useUserClaimsQuery');
 vi.mock('@/composables/usePermissions');
+vi.mock('@/composables/useIsNycpsUser');
 
 const firstName = faker.person.firstName();
 const lastName = faker.person.lastName();
@@ -40,7 +42,7 @@ authStore.roarfirekit = {
   restConfig: vi.fn().mockReturnValue(true),
 };
 
-authStore.userData = {
+const defaultUserData = {
   name: {
     first: firstName,
     last: lastName,
@@ -49,6 +51,8 @@ authStore.userData = {
   displayName: displayName,
   email: email,
 };
+
+authStore.userData = { ...defaultUserData };
 
 describe('<Navigation />', () => {
   let wrapper;
@@ -59,6 +63,9 @@ describe('<Navigation />', () => {
   };
 
   beforeEach(() => {
+    // Reset authStore.userData to default state
+    authStore.userData = { ...defaultUserData };
+
     mockRoute = {
       name: 'Dashboard',
     };
@@ -70,6 +77,9 @@ describe('<Navigation />', () => {
     vi.mocked(usePermissions).mockReturnValue({
       userCan: vi.fn().mockReturnValue(false),
       Permissions: mockPermissions,
+    });
+    vi.mocked(useIsNycpsUser).mockReturnValue({
+      isNycpsUser: { value: false },
     });
 
     useRoute.mockReturnValue(mockRoute);
@@ -187,7 +197,7 @@ describe('<Navigation />', () => {
     });
 
     it('should render the user type as final fall back for display name', () => {
-      delete authStore.userData;
+      authStore.userData = undefined;
 
       wrapper = mount(Navigation, {
         global: {

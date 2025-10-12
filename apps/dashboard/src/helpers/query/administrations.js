@@ -44,18 +44,127 @@ const processBatchStats = async (axiosInstance, statsPaths, batchSize = 5) => {
   return batchStatsDocs;
 };
 
+/**
+ * Get assigned orgs for administrations, handling both old and new formats
+ * @param {Array} administrationData - Array of administration documents
+ * @returns {Object} Object mapping administration IDs to their assigned orgs
+ */
+const getAdministrationOrgs = async (administrationData) => {
+  const axiosInstance = getAxiosInstance();
+  const documentPrefix = axiosInstance.defaults.baseURL.replace('https://firestore.googleapis.com/v1/', '');
+  const result = {};
+
+  // Separate old and new format administrations
+  const oldFormatAdmins = [];
+  const newFormatAdmins = [];
+
+  administrationData.forEach(({ data: admin }) => {
+    if (admin.formatVersion === 2) {
+      newFormatAdmins.push(admin);
+    } else {
+      // Old format or no formatVersion (defaults to old format)
+      oldFormatAdmins.push(admin);
+    }
+  });
+
+  // Handle old format administrations (read from arrays in main document)
+  oldFormatAdmins.forEach((admin) => {
+    result[admin.id] = {
+      districts: admin.districts || [],
+      schools: admin.schools || [],
+      classes: admin.classes || [],
+      groups: admin.groups || [],
+      families: admin.families || [],
+    };
+  });
+
+  // Handle new format administrations (read from subcollections)
+  if (newFormatAdmins.length > 0) {
+    const subcollectionOrgs = await getOrgsFromSubcollections(newFormatAdmins, axiosInstance, documentPrefix);
+    Object.assign(result, subcollectionOrgs);
+  }
+
+  return result;
+};
+
+/**
+ * Get orgs from subcollections for new format administrations
+ * @param {Array} administrations - Array of new format administration documents
+ * @param {Object} axiosInstance - Axios instance for API calls
+ * @param {string} documentPrefix - Document path prefix
+ * @returns {Object} Object mapping administration IDs to their assigned orgs
+ */
+const getOrgsFromSubcollections = async (administrations, axiosInstance, documentPrefix) => {
+  const result = {};
+
+  // Initialize empty org structures for all administrations
+  administrations.forEach((admin) => {
+    result[admin.id] = {
+      districts: [],
+      schools: [],
+      classes: [],
+      groups: [],
+      families: [],
+    };
+  });
+
+  // Batch query all assignedOrgs subcollections
+  const subcollectionPaths = administrations.map(
+    (admin) => `${documentPrefix}/administrations/${admin.id}/assignedOrgs`,
+  );
+
+  try {
+    // Query each subcollection
+    for (const subcollectionPath of subcollectionPaths) {
+      const adminId = subcollectionPath.split('/').slice(-2, -1)[0]; // Extract admin ID from path
+
+      const { data } = await axiosInstance.post(`/administrations/${adminId}:runQuery`, {
+        structuredQuery: {
+          from: [{ collectionId: 'assignedOrgs' }],
+          select: {
+            fields: [{ fieldPath: 'orgType' }, { fieldPath: 'orgId' }],
+          },
+        },
+      });
+
+      // Process the results
+      if (data && Array.isArray(data)) {
+        data.forEach((item) => {
+          if (item.document && item.document.fields) {
+            const orgType = convertValues(item.document.fields.orgType);
+            const orgId = convertValues(item.document.fields.orgId);
+
+            if (orgType && orgId && result[adminId] && result[adminId][orgType]) {
+              result[adminId][orgType].push(orgId);
+            }
+          }
+        });
+      }
+    }
+  } catch (error) {
+    console.error('Error fetching subcollection orgs:', error);
+    // Return empty org structures on error
+  }
+
+  return result;
+};
+
 const mapAdministrations = async ({ isSuperAdmin, data, adminOrgs }) => {
+  // Get assigned orgs for all administrations (handling both old and new formats)
+  const administrationOrgs = await getAdministrationOrgs(data);
+
   // First format the administration documents
   const administrationData = data
     .map((a) => a.data)
     .map((a) => {
-      let assignedOrgs = {
-        districts: a.districts,
-        schools: a.schools,
-        classes: a.classes,
-        groups: a.groups,
-        families: a.families,
+      let assignedOrgs = administrationOrgs[a.id] || {
+        districts: [],
+        schools: [],
+        classes: [],
+        groups: [],
+        families: [],
       };
+
       if (!isSuperAdmin.value) {
         assignedOrgs = filterAdminOrgs(adminOrgs.value, assignedOrgs);
       }
