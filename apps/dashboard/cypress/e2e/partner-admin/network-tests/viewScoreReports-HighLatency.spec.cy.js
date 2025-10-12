@@ -8,7 +8,7 @@ const testUserList = Cypress.env('testUserList');
 const testAssignments = Cypress.env('testAssignmentsList');
 
 function checkUrl() {
-  cy.login(testPartnerAdminUsername, testPartnerAdminPassword);
+  cy.loginEducator(testPartnerAdminUsername, testPartnerAdminPassword);
   cy.navigateTo('/');
   cy.url().should('eq', `${baseUrl}/`);
 }

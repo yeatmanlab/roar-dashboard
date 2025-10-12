@@ -29,50 +29,25 @@
 
         <PvPopover ref="op" append-to="body" style="max-width: 28rem">
           <div class="p-3 text-sm">
-            <!-- Title -->
             <h3 class="text-xl font-bold mb-2 mt-0">
-              {{ $t('authSignIn.signInPopover.title') }}
+              {{ $t('authSignIn.superAdminPopover.title') }}
             </h3>
 
-            <!-- Students -->
-            <h4 class="mt-3 mb-1 text-primary text-lg font-semibold">
-              {{ $t('authSignIn.signInPopover.studentsTitle') }}
-            </h4>
             <ul class="pl-3 mb-3">
-              <li v-html="$t('authSignIn.signInPopover.studentsSteps.enter')"></li>
-              <li v-html="$t('authSignIn.signInPopover.studentsSteps.password')"></li>
+              <li v-html="$t('authSignIn.superAdminPopover.emailLine')"></li>
               <li>
-                {{ $t('authSignIn.signInPopover.studentsSteps.chooseLogin') }}
+                {{ $t('authSignIn.superAdminPopover.chooseOptions') }}
                 <ul class="pl-3 mt-1">
-                  <li v-html="$t('authSignIn.signInPopover.studentsSteps.clever')"></li>
-                  <li v-html="$t('authSignIn.signInPopover.studentsSteps.classlink')"></li>
-                  <li v-html="$t('authSignIn.signInPopover.studentsSteps.nycps')"></li>
+                  <li v-html="$t('authSignIn.superAdminPopover.passwordOption')"></li>
+                  <li v-html="$t('authSignIn.superAdminPopover.emailLinkOption')"></li>
                 </ul>
               </li>
+              <li class="mt-1" v-html="$t('authSignIn.superAdminPopover.googleLine')"></li>
             </ul>
 
-            <!-- Educators -->
-            <h4 class="mt-2 mb-1 text-primary text-lg font-semibold">
-              {{ $t('authSignIn.signInPopover.educatorsTitle') }}
-            </h4>
-            <ul class="pl-3 mb-1">
-              <li v-html="$t('authSignIn.signInPopover.educatorsSteps.enter')"></li>
-              <li>
-                {{ $t('authSignIn.signInPopover.educatorsSteps.chooseOption') }}
-                <ul class="pl-3 mt-1">
-                  <li v-html="$t('authSignIn.signInPopover.educatorsSteps.passwordOption')"></li>
-                  <li v-html="$t('authSignIn.signInPopover.educatorsSteps.emailLinkOption')"></li>
-                </ul>
-              </li>
-              <li>
-                {{ $t('authSignIn.signInPopover.educatorsSteps.youMayAlso') }}
-                <ul class="pl-3 mt-1">
-                  <li v-html="$t('authSignIn.signInPopover.educatorsSteps.clever')"></li>
-                  <li v-html="$t('authSignIn.signInPopover.educatorsSteps.classlink')"></li>
-                  <li v-html="$t('authSignIn.signInPopover.educatorsSteps.nycps')"></li>
-                </ul>
-              </li>
-            </ul>
+            <p class="mt-2 text-600 italic">
+              {{ $t('authSignIn.superAdminPopover.notice') }}
+            </p>
           </div>
         </PvPopover>
       </div>
@@ -81,6 +56,27 @@
           <SignInPartners :invalid="incorrect" @submit="authWithEmail" @update:email="email = $event" />
           <div class="flex flex-column w-full align-content-center justify-content-center">
             <PvButton
+              label="Sign in with Google"
+              class="flex h-1 m-1 w-full surface-0 border-400 border-round-md justify-content-center hover:border-primary hover:surface-groundd"
+              style="border-radius: 3rem; height: 2.5rem; color: black"
+              data-cy="sign-in__google-sso"
+              @click="authWithGoogle"
+            >
+              <div class="flex flex-row align-items-center w-full">
+                <div class="flex justify-content-end w-6">
+                  <img
+                    src="../assets/provider-google-logo.svg"
+                    alt="The Google Logo"
+                    class="flex p-1"
+                    style="width: 3.5vh"
+                  />
+                </div>
+                <div class="flex justify-content-start w-full pl-3">
+                  <span>{{ $t('authSignIn.signInWith') }} Google</span>
+                </div>
+              </div>
+            </PvButton>
+            <!-- <PvButton
               class="flex h-1 m-1 w-full surface-0 border-400 border-round-md justify-content-center hover:border-primary hover:surface-ground"
               style="border-radius: 3rem; height: 2.5rem; color: black"
               data-cy="sign-in__clever-sso"
@@ -96,7 +92,7 @@
                   />
                 </div>
                 <div class="flex justify-content-start w-full pl-3">
-                  <span> {{ $t('authSignIn.signInWith') }} Clever</span>
+                  <span> Sign in with Clever</span>
                 </div>
               </div>
             </PvButton>
@@ -116,7 +112,7 @@
                   />
                 </div>
                 <div class="flex justify-content-start w-full pl-3">
-                  <span> {{ $t('authSignIn.signInWith') }} ClassLink</span>
+                  <span> Sign in with ClassLink</span>
                 </div>
               </div>
             </PvButton>
@@ -136,10 +132,10 @@
                   />
                 </div>
                 <div class="flex justify-content-start w-full pl-3">
-                  <span> {{ $t('authSignIn.signInWith') }} NYCPS</span>
+                  <span> Sign in with NYCPS</span>
                 </div>
               </div>
-            </PvButton>
+            </PvButton> -->
           </div>
         </section>
         <!-- <section class="signin-option-container signin-option-providers">
@@ -224,8 +220,8 @@ import { useRoute, useRouter } from 'vue-router';
 import { setUser } from '@sentry/vue';
 import PvButton from 'primevue/button';
 import PvPassword from 'primevue/password';
-import ROARLogoShort from '@/assets/RoarLogo-Short.vue';
 import PvPopover from 'primevue/popover';
+import ROARLogoShort from '@/assets/RoarLogo-Short.vue';
 import { useAuthStore } from '@/store/auth';
 import { isMobileBrowser } from '@/helpers';
 import { redirectSignInPath } from '@/helpers/redirectSignInPath';
@@ -241,7 +237,7 @@ const authStore = useAuthStore();
 const router = useRouter();
 const route = useRoute();
 
-const { spinner, ssoProvider, routeToProfile } = storeToRefs(authStore);
+const { spinner, ssoProvider, routeToProfile, roarfirekit } = storeToRefs(authStore);
 const warningModalOpen = ref(false);
 
 authStore.$subscribe(() => {
@@ -256,7 +252,44 @@ authStore.$subscribe(() => {
   }
 });
 
+const authWithGoogle = () => {
+  if (isMobileBrowser()) {
+    authStore.signInWithGoogleRedirect();
+  } else {
+    authStore
+      .signInWithGooglePopup()
+      .then(async () => {
+        if (authStore.uid) {
+          const userClaims = await fetchDocById('userClaims', authStore.uid);
+          authStore.userClaims = userClaims;
+        }
+        if (authStore.roarUid) {
+          const userData = await fetchDocById('users', authStore.roarUid);
+          authStore.userData = userData;
+          setUser({ id: authStore.roarUid, userType: userData.userType });
+        }
+      })
+      .catch((e) => {
+        const errorCode = e.code;
+        if (errorCode === 'auth/email-already-in-use') {
+          // User tried to register with an email that is already linked to a firebase account.
+          openWarningModal();
+          spinner.value = false;
+        } else {
+          spinner.value = false;
+        }
+      });
+
+    spinner.value = true;
+  }
+};
+
 const modalPassword = ref('');
+
+const op = ref(null);
+const toggle = (event) => {
+  op.value.toggle(event);
+};
 
 const authWithClever = () => {
   if (process.env.NODE_ENV === 'development' && !window.Cypress) {
@@ -304,11 +337,6 @@ const authWithNYCPS = () => {
     authStore.signInWithNYCPSRedirect();
   }
   spinner.value = true;
-};
-
-const op = ref(null);
-const toggle = (event) => {
-  op.value.toggle(event);
 };
 
 const authWithEmail = (state) => {
@@ -360,10 +388,10 @@ const email = ref('');
 
 const signInMethods = ref([]);
 
-// const openWarningModal = async () => {
-//   signInMethods.value = await roarfirekit.value.fetchEmailAuthMethods(email.value);
-//   warningModalOpen.value = true;
-// };
+const openWarningModal = async () => {
+  signInMethods.value = await roarfirekit.value.fetchEmailAuthMethods(email.value);
+  warningModalOpen.value = true;
+};
 
 const displaySignInMethods = computed(() => {
   return signInMethods.value.map((method) => {
@@ -411,36 +439,5 @@ input.p-inputtext.p-component.p-password-input {
 }
 div#password {
   width: 100%;
-}
-
-.provider-button {
-  display: flex;
-  align-items: center; /* centers logo + text vertically */
-  justify-content: center; /* centers content horizontally */
-  gap: 0.75rem; /* consistent spacing */
-  height: 2.5rem;
-  border-radius: 3rem;
-  color: black;
-  background-color: white;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  transition:
-    border-color 0.2s,
-    background-color 0.2s;
-}
-
-.provider-button:hover {
-  border-color: var(--primary-color);
-  background-color: var(--surface-ground);
-}
-
-.provider-logo {
-  height: 1.5rem; /* consistent height */
-  width: auto; /* auto width for varying aspect ratios */
-  display: block;
-}
-
-.provider-text {
-  font-size: 1rem;
-  line-height: 1;
 }
 </style>
