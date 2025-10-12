@@ -26,7 +26,7 @@ const menu = ref(null);
 let languageOptionsArray = Object.entries(languageOptions).sort((a, b) => a[0].localeCompare(b[0]));
 
 const menuItems = computed(() =>
-  languageOptionsArray.map(([value]) => ({
+  languageOptionsArray.map(([, value]) => ({
     label: value.language + (locale.value === value.code ? '  ✓' : ''),
     command: () => {
       locale.value = value.code;
