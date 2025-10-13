@@ -15,18 +15,14 @@ import { flattenObj } from '@/helpers';
 import { FIRESTORE_DATABASES } from '@/constants/firebase';
 
 export const convertValues = (value) => {
-  const passThroughKeys = [
-    'nullValue',
-    'booleanValue',
-    'timestampValue',
-    'stringValue',
-    'bytesValue',
-    'referenceValue',
-    'geoPointValue',
-  ];
+  const passThroughKeys = ['nullValue', 'booleanValue', 'stringValue', 'bytesValue', 'referenceValue', 'geoPointValue'];
   const numberKeys = ['integerValue', 'doubleValue'];
   return _toPairs(value).map(([key, _value]) => {
-    if (passThroughKeys.includes(key)) {
+    if (key === 'timestampValue') {
+      return {
+        toDate: () => new Date(_value),
+      };
+    } else if (passThroughKeys.includes(key)) {
       return _value;
     } else if (numberKeys.includes(key)) {
       return Number(_value);

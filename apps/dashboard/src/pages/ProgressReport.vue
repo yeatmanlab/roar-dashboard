@@ -43,6 +43,18 @@
             v-if="adminStats != null"
             class="flex flex-column align-items-around flex-wrap gap-3 rounded bg-gray-100 p-5"
           >
+            <div v-if="adminStats?.lastAggregated" class="text-xs text-gray-500 text-right w-full">
+              Stats Last Updated:
+              {{
+                new Date(adminStats.lastAggregated.toDate()).toLocaleString('en-US', {
+                  month: 'long',
+                  day: 'numeric',
+                  year: 'numeric',
+                  hour: 'numeric',
+                  minute: 'numeric',
+                })
+              }}
+            </div>
             <div class="flex flex-column gap-1 mx-5 mb-5">
               <div class="text-sm uppercase text-gray-500">Progress by Assessment</div>
               <div

@@ -1,6 +1,18 @@
 <template>
   <div class="p-card card-administration mb-1 w-full" data-cy="administration-card">
     <div v-if="props.stats && isSuperAdmin" class="card-admin-chart">
+      <div v-if="props.stats.lastAggregated" class="text-xs text-gray-500 text-right w-full mb-2">
+        Stats Last Updated:
+        {{
+          new Date(props.stats.lastAggregated.toDate()).toLocaleString('en-US', {
+            month: 'long',
+            day: 'numeric',
+            year: 'numeric',
+            hour: 'numeric',
+            minute: 'numeric',
+          })
+        }}
+      </div>
       <PvChart type="doughnut" :data="doughnutChartData" :options="doughnutChartOptions" />
     </div>
 
