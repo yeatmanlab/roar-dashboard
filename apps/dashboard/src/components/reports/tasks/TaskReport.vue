@@ -54,7 +54,7 @@
       </div>
     </div>
   </div>
-  <div class="my-2 mx-4">
+  <div v-if="orgType !== 'district'" class="my-2 mx-4">
     <SubscoreTable
       v-if="taskId === 'phonics' && !isLoadingTasksDictionary"
       task-id="phonics"

@@ -107,7 +107,7 @@
             </div>
           </div>
           <RoarDataTable
-            v-if="progressReportColumns?.length ?? 0 > 0"
+            v-if="(progressReportColumns?.length ?? 0 > 0) && orgType !== 'district'"
             :data="filteredTableData"
             :columns="progressReportColumns"
             :total-records="filteredTableData?.length"

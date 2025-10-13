@@ -42,6 +42,7 @@
 
                 <div v-if="!isLoadingAssignments" class="flex gap-2 mr-5 flex-column">
                   <PvButton
+                    v-if="orgType !== 'district'"
                     class="flex flex-row p-2 text-sm text-white border-none bg-primary border-round h-2rem hover:bg-red-900"
                     :icon="!exportLoading ? 'pi pi-download mr-2' : 'pi pi-spin pi-spinner mr-2'"
                     label="Export Combined Reports"
@@ -128,6 +129,7 @@
 
         <div v-if="assignmentData?.length ?? 0 > 0">
           <RoarDataTable
+            v-if="orgType !== 'district'"
             :data="filteredTableData"
             :columns="scoreReportColumns"
             :total-records="filteredTableData?.length"
@@ -150,8 +152,11 @@
               />
             </span>
           </RoarDataTable>
+          <template v-else>
+            <div class="text-center my-6">Score report tables are only available at the school level and below</div>
+          </template>
         </div>
-        <div v-if="!isLoadingAssignments" class="legend-container">
+        <div v-if="!isLoadingAssignments && orgType !== 'district'" class="legend-container">
           <div class="legend-entry">
             <div class="circle tooltip" :style="`background-color: ${supportLevelColors.below};`" />
             <div>
@@ -177,7 +182,7 @@
             </div>
           </div>
         </div>
-        <div class="legend-description">
+        <div v-if="orgType !== 'district'" class="legend-description">
           Students are classified into three support groups based on nationally-normed percentiles. Blank spaces
           indicate that the assessment was not completed. <br />
           Pale colors indicate that the score may not reflect the reader’s ability because responses were made too
@@ -192,7 +197,7 @@
 
         <PvTabView :active-index="activeTabIndex">
           <PvTabPanel
-            v-for="taskId of sortedTaskIds"
+            v-for="taskId of sortedAndFilteredSubscoreTaskIds"
             :key="taskId"
             :header="tasksDictionary[taskId]?.publicName ?? taskId"
           >
@@ -1631,6 +1636,12 @@ const sortedTaskIds = computed(() => {
 const sortedAndFilteredTaskIds = computed(() => {
   return sortedTaskIds.value?.filter((taskId) => {
     return tasksToDisplayGraphs.includes(taskId);
+  });
+});
+
+const sortedAndFilteredSubscoreTaskIds = computed(() => {
+  return sortedTaskIds.value?.filter((taskId) => {
+    return props.orgType !== 'district' || tasksToDisplayGraphs.includes(taskId);
   });
 });
 
