@@ -19,12 +19,13 @@ import useSignOutMutation from '@/composables/mutations/useSignOutMutation';
 import { getSidebarActions } from '@/router/sidebarActions';
 import NavBar from '@/components/NavBar';
 import { usePermissions } from '@/composables/usePermissions';
+import useIsNycpsUser from '@/composables/useIsNycpsUser';
 const { userCan, Permissions } = usePermissions();
 
 const router = useRouter();
 const route = useRoute();
 const authStore = useAuthStore();
-const { roarfirekit } = storeToRefs(authStore);
+const { roarfirekit, userData } = storeToRefs(authStore);
 
 const initialized = ref(false);
 
@@ -46,6 +47,7 @@ const { data: userClaims } = useUserClaimsQuery({
 });
 
 const { isAdmin, isSuperAdmin, isLaunchAdmin } = useUserType(userClaims);
+const { isNycpsUser } = useIsNycpsUser(userData);
 
 // @TODO: Move the navbar blacklist to route meta definitions.
 const navbarBlacklist = [
@@ -104,7 +106,9 @@ const navbarBlacklist = [
 ];
 
 const showAccountSettingsLink = computed(() => {
-  return userCan(Permissions.Profile.READ);
+  // Hide button while loading to prevent button from popping in and out
+  if (!userData.value) return false;
+  return userCan(Permissions.Profile.READ) && !isNycpsUser.value;
 });
 
 const displayNavbar = computed(() => {
