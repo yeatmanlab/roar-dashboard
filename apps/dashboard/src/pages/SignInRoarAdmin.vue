@@ -53,7 +53,7 @@
       </div>
       <section class="signin-options">
         <section class="flex w-full m-4 mt-2 flex-column align-content-center justify-content-center border-500">
-          <SignInPartners :invalid="incorrect" @submit="authWithEmail" @update:email="email = $event" />
+          <SignInRoarAdmin :invalid="incorrect" @submit="authWithEmail" @update:email="email = $event" />
           <div class="flex flex-column w-full align-content-center justify-content-center">
             <PvButton
               label="Sign in with Google"
@@ -229,7 +229,7 @@ import { fetchDocById } from '@/helpers/query/utils';
 import { AUTH_SSO_PROVIDERS } from '@/constants/auth';
 import { APP_ROUTES } from '@/constants/routes';
 import RoarModal from '@/components/modals/RoarModal.vue';
-import SignInPartners from '@/components/auth/SignInPartners.vue';
+import SignInRoarAdmin from '@/components/auth/SignInRoarAdmin.vue';
 import LanguageSelector from '@/components/LanguageSelector.vue';
 
 const incorrect = ref(false);

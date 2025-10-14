@@ -577,15 +577,15 @@ const routes = [
     },
   },
   {
-    path: APP_ROUTES.SIGN_IN_PARTNERS,
-    name: 'SignInPartners',
-    component: () => import('../pages/SignInPartners.vue'),
+    path: APP_ROUTES.SIGN_IN_ADMIN,
+    name: 'SignInRoarAdmin',
+    component: () => import('../pages/SignInRoarAdmin.vue'),
     meta: {
       pageTitle: {
-        'en-US': pageTitlesUS['signInPartners'],
-        en: pageTitlesEN['signInPartners'],
-        es: pageTitlesES['signInPartners'],
-        'es-CO': pageTitlesCO['signInPartners'],
+        'en-US': pageTitlesUS['SignInRoarAdmin'],
+        en: pageTitlesEN['SignInRoarAdmin'],
+        es: pageTitlesES['SignInRoarAdmin'],
+        'es-CO': pageTitlesCO['SignInRoarAdmin'],
       },
     },
   },
@@ -821,7 +821,7 @@ router.beforeEach(async (to, from, next) => {
     'Maintenance',
     'Register',
     'SignIn',
-    'SignInPartners',
+    'SignInRoarAdmin',
   ];
 
   const inMaintenanceMode = false;

@@ -52,7 +52,7 @@ const { isNycpsUser } = useIsNycpsUser(userData);
 // @TODO: Move the navbar blacklist to route meta definitions.
 const navbarBlacklist = [
   'SignIn',
-  'SignInPartners',
+  'SignInRoarAdmin',
   'Register',
   'Maintenance',
   'PlayApp',
