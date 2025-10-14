@@ -102,10 +102,6 @@ export const useAuthStore = defineStore(
       return firebaseUser.value.adminFirebaseUser?.email ?? undefined;
     }
 
-    function isUserAuthedAdmin(): boolean {
-      return Boolean(firebaseUser.value.adminFirebaseUser);
-    }
-
     function isAuthenticated(): boolean {
       return Boolean(firebaseUser.value.adminFirebaseUser);
     }
@@ -115,7 +111,7 @@ export const useAuthStore = defineStore(
     }
 
     function isUserAdmin(): boolean {
-      return Boolean(userClaims.value?.claims?.super_admin || userClaims.value?.claims?.admin);
+      return Boolean(userClaims.value?.claims?.admin);
     }
 
     function isUserSuperAdmin(): boolean {
@@ -286,7 +282,6 @@ export const useAuthStore = defineStore(
       getRoarUid,
       getUid,
       getEmail,
-      isUserAuthedAdmin,
       isAuthenticated,
       isFirekitInit,
       isUserAdmin,

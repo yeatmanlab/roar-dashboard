@@ -250,13 +250,13 @@ export const fetchOrgByName = async (orgType, orgNormalizedName, selectedDistric
 export const orgFetcher = async (
   orgType,
   selectedDistrict,
-  isAdmin,
+  isSuperAdmin,
   adminOrgs,
   select = ['name', 'id', 'tags', 'currentActivationCode'],
 ) => {
   const districtId = toValue(selectedDistrict);
 
-  if (isAdmin) {
+  if (isSuperAdmin) {
     const axiosInstance = getAxiosInstance();
     const requestBody = getOrgsRequestBody({
       orgType: orgType,
@@ -344,7 +344,7 @@ export const orgPageFetcher = async (
   orderBy,
   pageLimit,
   page,
-  isAdmin,
+  isSuperAdmin,
   adminOrgs,
   select = ['id', 'name', 'tags'],
 ) => {
@@ -361,7 +361,7 @@ export const orgPageFetcher = async (
     select,
   });
 
-  if (isAdmin.value) {
+  if (isSuperAdmin) {
     return axiosInstance.post(`${getBaseDocumentPath()}:runQuery`, requestBody).then(({ data }) => mapFields(data));
   } else {
     if (activeOrgType.value === 'schools' && (adminOrgs.value['districts'] ?? []).includes(selectedDistrict.value)) {

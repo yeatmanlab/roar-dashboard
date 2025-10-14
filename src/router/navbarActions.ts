@@ -1,6 +1,3 @@
-import { isLevante } from '../helpers';
-
-// Define an interface for the action options
 interface NavbarAction {
   title: string;
   icon?: string; // Optional icon
@@ -104,13 +101,12 @@ export const getNavbarActions = ({
   isAdmin = false,
 }: GetNavbarActionsParams): Readonly<NavbarAction>[] => {
   return navbarActionOptions.filter((action) => {
-    // If the action requires admin and the user is an admin, or if the action
-    // requires super admin and the user is a super admin,
-    // or if the action does not require admin or super admin,
-    // the action will be in the dropdown
+    // If super admin, always allow
+    // If admin, allow if the action requires admin
+    // If not admin, allow if the action does not require admin
     if (
+      isSuperAdmin ||
       (action.requiresAdmin && isAdmin) ||
-      (action.requiresSuperAdmin && isSuperAdmin) ||
       (!action.requiresAdmin && !action.requiresSuperAdmin)
     ) {
       return true;

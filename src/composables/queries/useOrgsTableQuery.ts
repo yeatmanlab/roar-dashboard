@@ -34,7 +34,7 @@ const useOrgsTableQuery = (
   });
 
   const authStore = useAuthStore();
-  const { isUserAdmin } = authStore;
+  const { isUserSuperAdmin } = authStore;
 
   // Get admin's administation orgs.
   const adminOrgs = computed(() => userClaims.value?.claims?.adminOrgs);
@@ -63,7 +63,7 @@ const useOrgsTableQuery = (
         orderBy,
         ref(100000),
         ref(0),
-        isUserAdmin(),
+        isUserSuperAdmin(),
         adminOrgs,
         selectFields.value,
       ),

@@ -87,57 +87,6 @@
         </PvTabPanels>
       </PvTabs>
     </section>
-    <section class="flex mt-8 justify-content-end">
-      <PvDialog
-        v-model:visible="isDialogVisible"
-        dialog-title="text-primary"
-        :style="{ width: '50rem' }"
-        :draggable="false"
-      >
-        <template #header>
-          <h1 class="text-primary font-bold m-0">Invitation</h1>
-        </template>
-        <p class="font-bold text-lg">Link:</p>
-        <PvInputGroup>
-          <PvInputText
-            style="width: 70%"
-            :value="`https://roar.education/register/?code=${activationCode}`"
-            autocomplete="off"
-            readonly
-          />
-          <PvButton
-            class="bg-primary border-none p-2 text-white hover:bg-red-900 font-normal"
-            @click="copyToClipboard(`https://roar.education/register/?code=${activationCode}`)"
-          >
-            <i class="pi pi-copy p-2"></i>
-          </PvButton>
-        </PvInputGroup>
-        <p class="font-bold text-lg">Code:</p>
-        <PvInputGroup class="mt-3">
-          <PvInputText
-            style="width: 70%"
-            :value="activationCode"
-            autocomplete="off"
-            data-cy="input-text-activation-code"
-            readonly
-          />
-          <PvButton
-            class="bg-primary border-none p-2 text-white hover:bg-red-900"
-            data-cy="button-copy-invitation"
-            @click="copyToClipboard(activationCode)"
-          >
-            <i class="pi pi-copy p-2"></i>
-          </PvButton>
-        </PvInputGroup>
-        <div class="flex justify-content-end">
-          <PvButton
-            class="mt-3 bg-primary border-none border-round p-3 text-white hover:bg-red-900"
-            @click="closeDialog"
-            >Close</PvButton
-          >
-        </div>
-      </PvDialog>
-    </section>
   </main>
   <RoarModal
     title="Edit Group"
@@ -188,9 +137,7 @@ import { storeToRefs } from 'pinia';
 import { useToast } from 'primevue/usetoast';
 import { useRouter } from 'vue-router';
 import PvButton from 'primevue/button';
-import PvDialog from 'primevue/dialog';
 import PvSelect from 'primevue/select';
-import PvInputGroup from 'primevue/inputgroup';
 import PvInputText from 'primevue/inputtext';
 import PvTab from 'primevue/tab';
 import PvTabList from 'primevue/tablist';
@@ -336,26 +283,7 @@ const filteredOrgData = computed(() => {
   return orgData.value.filter((org) => org.parentOrgId === selectedDistrict.value);
 });
 
-function copyToClipboard(text) {
-  navigator.clipboard
-    .writeText(text)
-    .then(function () {
-      toast.add({
-        severity: TOAST_SEVERITIES.SUCCESS,
-        summary: 'Hoorah!',
-        detail: 'Your code has been successfully copied to clipboard!',
-        life: TOAST_DEFAULT_LIFE_DURATION,
-      });
-    })
-    .catch(function () {
-      toast.add({
-        severity: TOAST_SEVERITIES.ERROR,
-        summary: 'Error!',
-        detail: 'Your code has not been copied to clipboard! \n Please try again',
-        life: TOAST_DEFAULT_LIFE_DURATION,
-      });
-    });
-}
+
 
 const exportAll = async () => {
   const exportData = await orgFetchAll(
@@ -587,9 +515,6 @@ const closeEditModal = () => {
   currentEditOrgId.value = null;
 };
 
-const closeDialog = () => {
-  isDialogVisible.value = false;
-};
 
 const updateOrgData = async () => {
   isSubmitting.value = true;
