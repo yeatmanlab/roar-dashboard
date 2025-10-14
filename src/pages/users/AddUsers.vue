@@ -219,6 +219,13 @@ const onFileUpload = async (event) => {
   // Parse the file directly with csvFileToJson
   const parsedData = await csvFileToJson(file);
 
+  parsedData.forEach((user) => {
+    const userTypeField = Object.keys(user).find((key) => key.toLowerCase() === 'usertype');
+    if (userTypeField && typeof user[userTypeField] === 'string') {
+      user[userTypeField] = user[userTypeField].trim();
+    }
+  });
+
   // Check if there's any data
   if (!parsedData || parsedData.length === 0) {
     toast.add({
@@ -721,6 +728,7 @@ async function submitUsers() {
         // Ensure the key is exactly 'userType' and handle potential casing issues
         if (userTypeField) {
           const userTypeValue = user[userTypeField];
+
           // Set the key to 'userType' regardless of original casing
           processedUser.userType = userTypeValue;
           // Remove the original field if the casing was different
