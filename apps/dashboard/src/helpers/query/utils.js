@@ -19,9 +19,8 @@ export const convertValues = (value) => {
   const numberKeys = ['integerValue', 'doubleValue'];
   return _toPairs(value).map(([key, _value]) => {
     if (key === 'timestampValue') {
-      return {
-        toDate: () => new Date(_value),
-      };
+      // For timestamp values, return a Date object directly
+      return new Date(_value);
     } else if (passThroughKeys.includes(key)) {
       return _value;
     } else if (numberKeys.includes(key)) {
