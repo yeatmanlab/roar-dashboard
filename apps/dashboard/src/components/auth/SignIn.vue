@@ -4,18 +4,29 @@
     <form class="p-fluid" @submit.prevent="handleFormSubmit(!v$.$invalid)">
       <div class="mt-1 field">
         <div class="p-input-icon-right">
-          <PvInputText
-            :id="$t('authSignIn.emailId')"
-            v-model="v$.email.$model"
-            :class="['w-full', { 'p-invalid': invalid }]"
-            aria-describedby="email-error"
-            :placeholder="$t('authSignIn.emailPlaceholder')"
-            data-cy="sign-in__username"
-            @keyup="checkForCapsLock"
-            @click="checkForCapsLock"
-          />
+          <InputGroup>
+            <PvInputText
+              :id="$t('authSignIn.emailId')"
+              v-model="v$.email.$model"
+              :class="['w-full', { 'p-invalid': invalid }]"
+              aria-describedby="email-error"
+              :placeholder="$t('authSignIn.emailPlaceholder')"
+              data-cy="sign-in__username"
+              @keyup="checkForCapsLock"
+              @click="checkForCapsLock"
+            />
+            <small v-if="invalid" class="p-error">{{ $t('authSignIn.incorrectEmailOrPassword') }}</small>
+            <InputGroupAddon>
+              <!-- <InputGroupAddon :style="{ 'visibility': showPasswordField ? 'hidden' : 'visible' }"></InputGroupAddon> -->
+              <PvButton
+                type="checkProviders"
+                class="bg-white border-none text-primary p-0 hover:bg-primary hover:text-white p-2"
+                icon="pi pi-arrow-right"
+                @click="onShowPasswordClick"
+              />
+            </InputGroupAddon>
+          </InputGroup>
         </div>
-        <small v-if="invalid" class="p-error">{{ $t('authSignIn.incorrectEmailOrPassword') }}</small>
       </div>
       <div v-if="showPasswordField" class="mt-2 mb-3 field">
         <div>
@@ -90,6 +101,8 @@ import _debounce from 'lodash/debounce';
 import PvButton from 'primevue/button';
 import PvInputText from 'primevue/inputtext';
 import PvPassword from 'primevue/password';
+import InputGroup from 'primevue/inputgroup';
+import InputGroupAddon from 'primevue/inputgroupaddon';
 // import { useToast } from 'primevue/usetoast';
 import { useAuthStore } from '@/store/auth';
 import RoarModal from '../modals/RoarModal.vue';
@@ -110,7 +123,7 @@ import RoarModal from '../modals/RoarModal.vue';
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
 
-const emit = defineEmits(['submit', 'update:email']);
+const emit = defineEmits(['submit', 'update:email', 'checkProviders']);
 // eslint-disable-next-line no-unused-vars
 const props = defineProps({
   invalid: { type: Boolean, required: false, default: false },
