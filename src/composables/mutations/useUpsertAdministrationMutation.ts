@@ -7,6 +7,7 @@ import {
   ADMINISTRATIONS_LIST_QUERY_KEY,
   ADMINISTRATION_ASSIGNMENTS_QUERY_KEY,
 } from '@/constants/queryKeys';
+import { logger } from '@/logger';
 
 interface AdministrationData {
   [key: string]: any;
@@ -28,7 +29,7 @@ const useUpsertAdministrationMutation = (): UseMutationReturnType<void, Error, A
     mutationFn: async (data: AdministrationData): Promise<void> => {
       await authStore.roarfirekit.upsertAdministration(data);
     },
-    onSuccess: (): void => {
+    onSuccess: (_, data: AdministrationData): void => {
       // Invalidate the queries to refetch the administration data.
       // @NOTE: Usually we would apply a more granular invalidation strategy including updating the specific
       // adminitration record in the cache. However, unfortunately, given the nature of the data model and the data that
@@ -41,6 +42,10 @@ const useUpsertAdministrationMutation = (): UseMutationReturnType<void, Error, A
       queryClient.invalidateQueries({
         queryKey: [ADMINISTRATION_ASSIGNMENTS_QUERY_KEY],
       });
+      logger.capture('Admin: Create Administration', { data });
+    },
+    onError: (error: Error, data: AdministrationData): void => {
+      logger.error('Error creating administration', { data, error });
     },
   });
 };

@@ -3,6 +3,7 @@ import type { UseMutationReturnType } from '@tanstack/vue-query';
 import { useAuthStore } from '@/store/auth';
 import { COMPLETE_ASSESSMENT_MUTATION_KEY } from '@/constants/mutationKeys';
 import { USER_ASSIGNMENTS_QUERY_KEY } from '@/constants/queryKeys';
+import { logger } from '@/logger';
 
 interface CompleteAssessmentParams {
   adminId: string;
@@ -30,6 +31,7 @@ const useCompleteAssessmentMutation = (): UseMutationReturnType<void, Error, Com
       await authStore.roarfirekit.completeAssessment(adminId, taskId);
     },
     onSuccess: (_, variables: CompleteAssessmentParams): void => {
+      logger.capture('Assignment Complete', { adminId: variables.adminId, taskId: variables.taskId });
       console.log(
         `Assessment completion mutation successful for adminId: ${variables.adminId}, taskId: ${variables.taskId}`,
       );
@@ -38,6 +40,7 @@ const useCompleteAssessmentMutation = (): UseMutationReturnType<void, Error, Com
       queryClient.invalidateQueries({ queryKey: [USER_ASSIGNMENTS_QUERY_KEY] });
     },
     onError: (error: Error, variables: CompleteAssessmentParams): void => {
+      logger.error('Error completing assessment', { adminId: variables.adminId, taskId: variables.taskId, error });
       console.error(
         `Error completing assessment for adminId: ${variables.adminId}, taskId: ${variables.taskId}:`,
         error,

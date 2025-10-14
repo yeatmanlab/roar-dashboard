@@ -123,6 +123,7 @@ import PvDivider from 'primevue/divider';
 import PvFileUpload from 'primevue/fileupload';
 import { useRouter } from 'vue-router';
 import { TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
+import { logger } from '@/logger';
 const authStore = useAuthStore();
 const toast = useToast();
 const isFileUploaded = ref(false);
@@ -748,6 +749,7 @@ async function submitUsers() {
       // This is the most likely place for an error, due to
       // permissions, etc. If so, drop to Catch block
       const res = await authStore.createUsers(processedUsers);
+      logger.capture('Admin: Add Users', { processedUsers });
       const currentRegisteredUsers = res.data.data;
 
       // Update only the newly registered users
@@ -775,8 +777,7 @@ async function submitUsers() {
       });
       convertUsersToCSV();
     } catch (error) {
-      // TODO: Show users that failed to register
-      console.error(error);
+      logger.error('Error Registering Users', { processedUsers: users, error });
 
       toast.add({
         severity: 'error',
