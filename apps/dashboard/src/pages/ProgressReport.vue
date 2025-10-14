@@ -177,7 +177,9 @@ const props = defineProps({
 
 const initialized = ref(false);
 
-const isLoading = computed(() => isLoadingAssignments.value || isLoadingTasksDictionary.value);
+const isLoading = computed(() =>
+  props.orgType === 'districts' ? isLoadingAssignments.value || isLoadingTasksDictionary.value : false,
+);
 
 const reportView = ref({ name: 'Progress Report', constant: true });
 const reportViews = [
@@ -269,6 +271,10 @@ const schoolNameDictionary = computed(() => {
 });
 
 const computedProgressData = computed(() => {
+  if (props.orgType === 'district') {
+    // return the backend data from aggregation
+    return [];
+  }
   if (!assignmentData.value) return [];
   // assignmentTableData is an array of objects, each representing a row in the table
   const assignmentTableDataAcc = [];

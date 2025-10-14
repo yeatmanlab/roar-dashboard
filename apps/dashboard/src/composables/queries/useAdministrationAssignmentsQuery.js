@@ -16,6 +16,9 @@ import { ADMINISTRATION_ASSIGNMENTS_QUERY_KEY } from '@/constants/queryKeys';
  * @returns {UseQueryResult} The TanStack query result.
  */
 const useAdministrationAssignmentsQuery = (administrationId, orgType, orgId, queryOptions = undefined) => {
+  if (orgType === 'district') {
+    return {};
+  }
   const authStore = useAuthStore();
   const { roarUid } = storeToRefs(authStore);
 
