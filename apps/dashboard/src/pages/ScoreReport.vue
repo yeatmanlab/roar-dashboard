@@ -639,6 +639,10 @@ const computedProgressData = computed(() => {
 // 1. assignmentTableData: The data that should be passed into the ROARDataTable component
 // 2. runsByTaskId: run data for the TaskReport distribution chartsb
 const computeAssignmentAndRunData = computed(() => {
+  if (props.orgType === 'district') {
+    // return the backend data from aggregation
+    return { assignmentTableData: [], runsByTaskId: {} };
+  }
   if (!assignmentData.value || assignmentData.value.length === 0) {
     return { assignmentTableData: [], runsByTaskId: {} };
   } else {
