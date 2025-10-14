@@ -235,6 +235,7 @@ import { APP_ROUTES } from '@/constants/routes';
 import RoarModal from '@/components/modals/RoarModal.vue';
 import SignIn from '@/components/auth/SignIn.vue';
 import LanguageSelector from '@/components/LanguageSelector.vue';
+import { roarfirekit } from '@bdelab/roar-firekit';
 
 const incorrect = ref(false);
 const authStore = useAuthStore();
@@ -360,11 +361,6 @@ const email = ref('');
 
 const signInMethods = ref([]);
 
-// const openWarningModal = async () => {
-//   signInMethods.value = await roarfirekit.value.fetchEmailAuthMethods(email.value);
-//   warningModalOpen.value = true;
-// };
-
 const displaySignInMethods = computed(() => {
   return signInMethods.value.map((method) => {
     if (method === 'password') return 'Password';
@@ -373,6 +369,42 @@ const displaySignInMethods = computed(() => {
     if (method === AUTH_SSO_PROVIDERS.CLASSLINK) return 'ClassLink';
   });
 });
+
+const availableProviders = ref([]);
+const hasCheckedProviders = ref(false);
+
+const getProviders = async () => {
+  const authKit = roarfirekit.value;
+  if (!authKit) {
+    return [];
+  }
+  const emailProvider = (email.value || '').trim().toLowerCase();
+  const raw = await authKit.fetchEmailAuthMethods(emailProvider);
+  availableProviders.value = await normalizeProviders(raw || []);
+  hasCheckedProviders.value = true;
+};
+
+console.log('getProviders', getProviders());
+
+const normalizeProviders = async (ids = []) => {
+  const out = new Set();
+  for (const id of ids) {
+    const emailFromProvider = String(id).toLowerCase();
+    if (emailFromProvider === 'password' || emailFromProvider === 'emaillink') out.add('password');
+    if (
+      emailFromProvider === 'google.com' ||
+      emailFromProvider === 'google' ||
+      emailFromProvider === AUTH_SSO_PROVIDERS.GOOGLE
+    ) {
+      out.add(AUTH_SSO_PROVIDERS.GOOGLE);
+    }
+    if (emailFromProvider.startsWith('oidc.') && emailFromProvider.includes('clever'))
+      out.add(AUTH_SSO_PROVIDERS.CLEVER);
+    if (emailFromProvider.startsWith('oidc.') && emailFromProvider.includes('classlink'))
+      out.add(AUTH_SSO_PROVIDERS.CLASSLINK);
+  }
+  return [...out];
+};
 
 onMounted(() => {
   document.body.classList.add('page-signin');

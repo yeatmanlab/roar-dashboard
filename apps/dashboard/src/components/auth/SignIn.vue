@@ -1,26 +1,7 @@
 <template>
-  <PvToast />
+  <!-- <PvToast /> -->
   <div class="card">
     <form class="p-fluid" @submit.prevent="handleFormSubmit(!v$.$invalid)">
-      <!-- Role switch (Student / Educator) -->
-      <div class="mt-2 mb-3 role-select">
-        <PvSelectButton
-          v-model="state.role"
-          :options="roles"
-          option-label="label"
-          option-value="value"
-          :allow-empty="false"
-          fluid
-          data-cy="sign-in__role-select"
-        >
-          <template #option="{ option }">
-            <div class="p-0 flex align-items-center">
-              <i :class="`${option.icon} mr-2`" aria-hidden="true"></i>
-              <span>{{ $t(option.label) }}</span>
-            </div>
-          </template>
-        </PvSelectButton>
-      </div>
       <div class="mt-1 field">
         <div class="p-input-icon-right">
           <PvInputText
@@ -36,10 +17,10 @@
         </div>
         <small v-if="invalid" class="p-error">{{ $t('authSignIn.incorrectEmailOrPassword') }}</small>
       </div>
-      <div v-if="showPasswordField || isStudent" class="mt-2 mb-3 field">
+      <div v-if="showPasswordField" class="mt-2 mb-3 field">
         <div>
           <!-- Email is entered, Password is desired -->
-          <div v-if="showPasswordField || isStudent">
+          <div v-if="showPasswordField">
             <PvPassword
               :id="$t('authSignIn.passwordId')"
               v-model="v$.password.$model"
@@ -63,27 +44,6 @@
           <div v-if="capsLockEnabled" class="mt-2 p-error">⇪ Caps Lock is on!</div>
         </div>
       </div>
-      <div v-if="!showPasswordField || isStudent" class="flex flex-row gap-3">
-        <PvButton
-          v-if="isEducator"
-          class="flex pt-2 pb-2 mt-0 mb-2 w-full border-round bg-primary text-white hover:surface-200 hover:text-primary hover:border-primary"
-          :label="$t('authSignIn.signInUsingPassword')"
-          @click="allowSignInPassword"
-        />
-        <PvButton
-          v-if="isEducator"
-          class="flex pt-2 pb-2 mt-0 mb-2 w-full border-round bg-primary text-white hover:surface-200 hover:text-primary hover:border-primary"
-          :label="$t('authSignIn.signInUsingEmailLink')"
-          @click="!canSendLink ? showInvalidEmail() : handleSignInWithEmailLink()"
-        />
-      </div>
-      <PvButton
-        v-if="showPasswordField || isStudent"
-        type="submit"
-        class="flex pt-2 pb-2 mt-0 mb-3 w-full border-round hover:surface-200 hover:text-primary hover:border-primary"
-        :label="$t('authSignIn.buttonLabel') + ' &rarr;'"
-        data-cy="sign-in__submit"
-      />
       <div class="divider w-full">
         <span class="text-md">{{ $t('authSignIn.or') }}</span>
       </div>
@@ -122,7 +82,7 @@
 </template>
 
 <script setup>
-import { reactive, ref, watch, computed } from 'vue';
+import { reactive, ref, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { required, requiredUnless } from '@vuelidate/validators';
 import { useVuelidate } from '@vuelidate/core';
@@ -130,35 +90,22 @@ import _debounce from 'lodash/debounce';
 import PvButton from 'primevue/button';
 import PvInputText from 'primevue/inputtext';
 import PvPassword from 'primevue/password';
-import { useToast } from 'primevue/usetoast';
+// import { useToast } from 'primevue/usetoast';
 import { useAuthStore } from '@/store/auth';
 import RoarModal from '../modals/RoarModal.vue';
-import PvToast from 'primevue/toast';
-import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts.js';
+// import PvToast from 'primevue/toast';
+// import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts.js';
 
-import PvSelectButton from 'primevue/selectbutton'; // add this import
-import { useI18n } from 'vue-i18n';
+// // Enable the email-link button only when the email is valid, link flow allowed,
+// // and we’re not currently checking the email.
+// const canSendLink = computed(() => {
+//   return isValidEmail(state.email) && !evaluatingEmail.value;
+// });
 
-const { t } = useI18n();
-
-const roles = computed(() => [
-  { label: t('authSignIn.student'), value: 'student', icon: 'pi pi-graduation-cap' },
-  { label: t('authSignIn.educator'), value: 'educator', icon: 'pi pi-user' },
-]);
-
-const isEducator = computed(() => state.role === 'educator');
-const isStudent = computed(() => state.role === 'student');
-
-// Enable the email-link button only when the email is valid, link flow allowed,
-// and we’re not currently checking the email.
-const canSendLink = computed(() => {
-  return isValidEmail(state.email) && !evaluatingEmail.value;
-});
-
-// Clicking the educator-only button submits in "magic link" mode immediately.
-function handleSignInWithEmailLink() {
-  emit('submit', state);
-}
+// // Clicking the educator-only button submits in "magic link" mode immediately.
+// function handleSignInWithEmailLink() {
+//   emit('submit', state);
+// }
 
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
@@ -175,17 +122,17 @@ const state = reactive({
   role: 'student',
 });
 
-const toast = useToast();
+// const toast = useToast();
 
-function showInvalidEmail() {
-  console.log('Invalid email');
-  toast.add({
-    severity: TOAST_SEVERITIES.ERROR,
-    summary: 'Error',
-    detail: 'Invalid email',
-    life: TOAST_DEFAULT_LIFE_DURATION,
-  });
-}
+// function showInvalidEmail() {
+//   console.log('Invalid email');
+//   toast.add({
+//     severity: TOAST_SEVERITIES.ERROR,
+//     summary: 'Error',
+//     detail: 'Invalid email',
+//     life: TOAST_DEFAULT_LIFE_DURATION,
+//   });
+// }
 
 const rules = {
   email: { required },
@@ -207,9 +154,9 @@ const handleFormSubmit = (isFormValid) => {
   emit('submit', state);
 };
 
-function allowSignInPassword() {
-  showPasswordField.value = true;
-}
+// function allowSignInPassword() {
+//   showPasswordField.value = true;
+// }
 
 const isValidEmail = (email) => {
   var re =
