@@ -168,7 +168,7 @@ const authWithGoogle = () => {
           const userData = await fetchDocById('users', authStore.getUserId());
           authStore.userData = userData;
 
-          if (!authStore.isUserAdmin()) {
+          if (!authStore.isUserAdmin() && !authStore.isUserSuperAdmin()) {
             const userAssignments = await getUserAssignments(authStore.getUserId());
             const sortedAssignments = sortAssignmentsByDateOpened(userAssignments);
             assignmentsStore.setUserAssignments(sortedAssignments);
@@ -219,7 +219,7 @@ const authWithEmail = async (state) => {
           const userData = await fetchDocById('users', authStore.getUserId());
           authStore.userData = userData;
 
-          if (!authStore.isUserAdmin()) {
+          if (!authStore.isUserAdmin() && !authStore.isUserSuperAdmin()) {
             const userAssignments = await getUserAssignments(authStore.getUserId());
             const sortedAssignments = sortAssignmentsByDateOpened(userAssignments);
             assignmentsStore.setUserAssignments(sortedAssignments);
