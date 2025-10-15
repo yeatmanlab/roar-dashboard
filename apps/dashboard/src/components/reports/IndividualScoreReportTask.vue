@@ -290,7 +290,7 @@ const computedTaskData = computed(() => {
     let rawScore = null;
 
     const useSpanishNorms = (taskId === 'swr-es' || taskId === 'sre-es') && props.taskScoringVersions[taskId] >= 1;
-    if (!taskId.includes('vocab') && !(taskId.includes('es') && !useSpanishNorms)) {
+    if (!taskId.includes('vocab') && (!taskId.includes('es') || useSpanishNorms)) {
       rawScore = getScoreValue(compositeScores, taskId, grade.value, 'rawScore');
     } else {
       rawScore = compositeScores;
