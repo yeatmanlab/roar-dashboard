@@ -3,29 +3,28 @@
   <div class="card">
     <form class="p-fluid" @submit.prevent="handleFormSubmit(!v$.$invalid)">
       <div class="mt-1 field">
-        <div class="p-input-icon-right">
-          <InputGroup>
+        <div class="p-input-icon-right mt-4">
+          <PvFloatLabel>
             <PvInputText
               :id="$t('authSignIn.emailId')"
               v-model="v$.email.$model"
               :class="['w-full', { 'p-invalid': invalid }]"
               aria-describedby="email-error"
-              :placeholder="$t('authSignIn.emailPlaceholder')"
               data-cy="sign-in__username"
               @keyup="checkForCapsLock"
               @click="checkForCapsLock"
             />
-            <small v-if="invalid" class="p-error">{{ $t('authSignIn.incorrectEmailOrPassword') }}</small>
-            <InputGroupAddon>
-              <!-- <InputGroupAddon :style="{ 'visibility': showPasswordField ? 'hidden' : 'visible' }"></InputGroupAddon> -->
-              <PvButton
-                type="checkProviders"
-                class="bg-white border-none text-primary p-0 hover:bg-primary hover:text-white p-2"
-                icon="pi pi-arrow-right"
-                @click="onShowPasswordClick"
-              />
-            </InputGroupAddon>
-          </InputGroup>
+            <label for="email">{{ $t('authSignIn.emailPlaceholder') }}</label>
+          </PvFloatLabel>
+          <small v-if="invalid" class="p-error">{{ $t('authSignIn.incorrectEmailOrPassword') }}</small>
+          <!-- <InputGroupAddon :style="{ 'visibility': showPasswordField ? 'hidden' : 'visible' }"></InputGroupAddon> -->
+          <PvButton
+            type="checkProviders"
+            class="mt-3 w-full p-0 hover:surface-200 hover:text-primary p-2"
+            @click="onShowPasswordClick"
+          >
+            <span>Continue</span>
+          </PvButton>
         </div>
       </div>
       <div v-if="showPasswordField" class="mt-2 mb-3 field">
@@ -101,8 +100,7 @@ import _debounce from 'lodash/debounce';
 import PvButton from 'primevue/button';
 import PvInputText from 'primevue/inputtext';
 import PvPassword from 'primevue/password';
-import InputGroup from 'primevue/inputgroup';
-import InputGroupAddon from 'primevue/inputgroupaddon';
+import PvFloatLabel from 'primevue/floatlabel';
 // import { useToast } from 'primevue/usetoast';
 import { useAuthStore } from '@/store/auth';
 import RoarModal from '../modals/RoarModal.vue';

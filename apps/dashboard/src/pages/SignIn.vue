@@ -2,79 +2,18 @@
   <div v-if="spinner" class="loading-blur">
     <AppSpinner />
   </div>
-  <div id="signin-container">
+  <div id="signin-container" class="surface-200">
     <section id="signin">
-      <header>
+      <header class="mb-0 pb-0">
         <div class="signin-logo">
           <ROARLogoShort />
         </div>
       </header>
-      <div class="flex flex-row align-content-center justify-content-center gap-1 w-full">
-        <div class="justify-content-end align-content-end">
-          <h1>{{ $t('pageSignIn.welcome') }}</h1>
+      <div class="flex flex-row align-content-center justify-content-center gap-1 w-full m-0 p-0">
+        <div class="justify-content-center align-content-center">
+          <h1 class="text-color text-center">{{ $t('pageSignIn.welcome') }}</h1>
+          <p class="text-center">{{ $t('pageSignIn.login') }}</p>
         </div>
-        <div class="ml-3 justify-content-end align-content-end">
-          <LanguageSelector />
-        </div>
-        <div class="ml-3 justify-content-end align-content-end">
-          <PvButton
-            v-tooltip.top="'Click for help on signin'"
-            class="p-button-text p-button-rounded m-0 p-0 p-button-plain bg-primary border-2 border-primary hover:surface-200"
-            aria-label="Sign in help button"
-            @click="toggle($event)"
-          >
-            <i class="pi pi-question text-white p-2 font-bold m-0 hover:text-primary" style="font-size: 1.1rem"></i>
-          </PvButton>
-        </div>
-
-        <PvPopover ref="op" append-to="body" style="max-width: 28rem">
-          <div class="p-3 text-sm">
-            <!-- Title -->
-            <h3 class="text-xl font-bold mb-2 mt-0">
-              {{ $t('authSignIn.signInPopover.title') }}
-            </h3>
-
-            <!-- Students -->
-            <h4 class="mt-3 mb-1 text-primary text-lg font-semibold">
-              {{ $t('authSignIn.signInPopover.studentsTitle') }}
-            </h4>
-            <ul class="pl-3 mb-3">
-              <li v-html="$t('authSignIn.signInPopover.studentsSteps.enter')"></li>
-              <li v-html="$t('authSignIn.signInPopover.studentsSteps.password')"></li>
-              <li>
-                {{ $t('authSignIn.signInPopover.studentsSteps.chooseLogin') }}
-                <ul class="pl-3 mt-1">
-                  <li v-html="$t('authSignIn.signInPopover.studentsSteps.clever')"></li>
-                  <li v-html="$t('authSignIn.signInPopover.studentsSteps.classlink')"></li>
-                  <li v-html="$t('authSignIn.signInPopover.studentsSteps.nycps')"></li>
-                </ul>
-              </li>
-            </ul>
-
-            <!-- Educators -->
-            <h4 class="mt-2 mb-1 text-primary text-lg font-semibold">
-              {{ $t('authSignIn.signInPopover.educatorsTitle') }}
-            </h4>
-            <ul class="pl-3 mb-1">
-              <li v-html="$t('authSignIn.signInPopover.educatorsSteps.enter')"></li>
-              <li>
-                {{ $t('authSignIn.signInPopover.educatorsSteps.chooseOption') }}
-                <ul class="pl-3 mt-1">
-                  <li v-html="$t('authSignIn.signInPopover.educatorsSteps.passwordOption')"></li>
-                  <li v-html="$t('authSignIn.signInPopover.educatorsSteps.emailLinkOption')"></li>
-                </ul>
-              </li>
-              <li>
-                {{ $t('authSignIn.signInPopover.educatorsSteps.youMayAlso') }}
-                <ul class="pl-3 mt-1">
-                  <li v-html="$t('authSignIn.signInPopover.educatorsSteps.clever')"></li>
-                  <li v-html="$t('authSignIn.signInPopover.educatorsSteps.classlink')"></li>
-                  <li v-html="$t('authSignIn.signInPopover.educatorsSteps.nycps')"></li>
-                </ul>
-              </li>
-            </ul>
-          </div>
-        </PvPopover>
       </div>
       <section class="signin-options">
         <section class="flex w-full m-4 mt-2 flex-column align-content-center justify-content-center border-500">
@@ -149,9 +88,22 @@
             </div>
           </section> -->
       </section>
-      <footer style="display: none">
+      <footer class="flex flex-row surface-200 m-0 p-0">
         <!-- TODO: figure out a link for this -->
-        <a href="#trouble">{{ $t('pageSignIn.havingTrouble') }}</a>
+        <a href="#trouble" style="display: none">{{ $t('pageSignIn.havingTrouble') }}</a>
+        <div class="flex flex-row w-full">
+          <div class="w-full">
+            <LanguageSelector />
+          </div>
+          <div class="w-5 justify-content-end flex flex-row gap-0">
+            <a href="#Terms" class="text-400 w-full inline-block text-sm pt-2 text-right underline hover:text-primary"
+              >Terms</a
+            >
+            <a href="#Privacy" class="text-400 w-full inline-block text-sm pt-2 text-right underline hover:text-primary"
+              >Privacy</a
+            >
+          </div>
+        </div>
       </footer>
     </section>
   </div>
@@ -225,7 +177,6 @@ import { setUser } from '@sentry/vue';
 import PvButton from 'primevue/button';
 import PvPassword from 'primevue/password';
 import ROARLogoShort from '@/assets/RoarLogo-Short.vue';
-import PvPopover from 'primevue/popover';
 import { useAuthStore } from '@/store/auth';
 import { isMobileBrowser } from '@/helpers';
 import { redirectSignInPath } from '@/helpers/redirectSignInPath';
@@ -305,11 +256,6 @@ const authWithNYCPS = () => {
     authStore.signInWithNYCPSRedirect();
   }
   spinner.value = true;
-};
-
-const op = ref(null);
-const toggle = (event) => {
-  op.value.toggle(event);
 };
 
 const authWithEmail = (state) => {

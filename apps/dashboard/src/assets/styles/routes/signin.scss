@@ -18,16 +18,14 @@ body.page-signin {
 
 #signin {
   background: var(--surface-a);
-  width: clamp(500px, 75vw, 620px);
+  width: clamp(300px, 65vw, 480px);
   height: auto;
-  padding: 1rem 0rem 2rem;
   margin-block: auto;
   border-radius: 5px;
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 1rem;
 
   h1 {
     font-size: clamp(2rem, 20vw, 2rem);
@@ -42,9 +40,10 @@ body.page-signin {
     // justify-content: space-around;
     text-align: center;
     flex-direction: column;
+    padding: 0;
 
     width: 100%;
-    border-bottom: 1px solid var(--surface-d);
+    // border-bottom: 1px solid var(--surface-d);
     // border-bottom: 10px solid var(--surface-d);
     padding-block: 2rem;
 
@@ -52,7 +51,7 @@ body.page-signin {
       // width: 100%;
 
       svg {
-        height: 111px;
+        height: 90px;
         width: auto;
 
         * {
@@ -65,7 +64,6 @@ body.page-signin {
   footer {
     width: 100%;
     text-align: center;
-    border-top: 1px solid var(--surface-d);
     margin-top: 2rem;
     padding-top: 1rem;
     padding-bottom: 2rem;

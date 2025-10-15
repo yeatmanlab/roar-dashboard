@@ -1,14 +1,14 @@
 <template>
   <div class="language-picker">
-    <PvButton
-      v-model="$i18n.locale"
-      v-tooltip.top="'Change language'"
-      class="p-button-text p-button-rounded m-0 p-0 p-button-plain bg-primary border-2 border-primary hover:surface-200"
+    <a
+      href="#"
+      class="text-400 w-full inline-block text-left text-sm pt-2 rounded-md underline hover:text-primary"
       aria-label="Change language"
-      @click="toggleMenu($event)"
+      @click.prevent="toggleMenu($event)"
     >
-      <i class="pi pi-globe text-white p-2 m-0 hover:text-primary" style="font-size: 1.1rem"></i>
-    </PvButton>
+      <span>{{ currentLanguageLabel }}</span>
+      <i class="pi pi-chevron-down text-sm pl-2" />
+    </a>
 
     <PvMenu ref="menu" :model="menuItems" popup />
   </div>
@@ -16,17 +16,17 @@
 
 <script setup>
 import { ref, computed } from 'vue';
-import PvButton from 'primevue/button';
 import PvMenu from 'primevue/menu';
 import { useI18n } from 'vue-i18n';
 import { languageOptions } from '@/translations/i18n.js';
 
 const { locale } = useI18n({ useScope: 'global' });
-
 const menu = ref(null);
 
+// Sort languages alphabetically
 const languageOptionsArray = Object.entries(languageOptions).sort((a, b) => a[0].localeCompare(b[0]));
 
+// Build the menu items
 const menuItems = computed(() =>
   languageOptionsArray.map(([key, value]) => ({
     label: value.language + (locale.value === key ? '  ✓' : ''),
@@ -36,9 +36,13 @@ const menuItems = computed(() =>
   })),
 );
 
+// Display current language label
+const currentLanguageLabel = computed(() => {
+  const current = languageOptions[locale.value];
+  return current ? current.language : 'Select Language';
+});
+
 function toggleMenu(event) {
   menu.value.toggle(event);
 }
 </script>
-
-<style scoped></style>
