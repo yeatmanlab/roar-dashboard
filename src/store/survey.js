@@ -91,7 +91,6 @@ export const useSurveyStore = defineStore('surveyStore', () => {
     numSpecificPages.value = 0;
     currentSurveyAudioSource.value = null;
     isSavingSurveyResponses.value = false;
-    surveyAudioPlayerBuffers.value = {};
     surveyAudioLoading.value = false;
     allSurveyPages.value = [];
     allSpecificPages.value = [];
@@ -101,7 +100,6 @@ export const useSurveyStore = defineStore('surveyStore', () => {
     isGeneralSurveyComplete.value = false;
     isSpecificSurveyComplete.value = false;
     isSurveyCompleted.value = false;
-    audioLinkMap.value = {};
   }
 
   return {

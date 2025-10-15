@@ -15,13 +15,13 @@
           </PvTabList>
           <PvTabPanels>
             <PvTabPanel v-for="orgType in orgHeaders" :key="orgType.id" :value="orgType.id">
-              <!-- <div class="grid column-gap-3 mt-2">
+              <div class="grid column-gap-3 mt-2">
                 <div v-if="orgType.id !== 'districts'" class="col-6 md:col-5 lg:col-5 xl:col-5 mt-3">
                   <PvFloatLabel>
                     <PvSelect
                       v-model="selectedDistrict"
                       input-id="district"
-                      :options="allDistricts"
+                      :options="districtOptions"
                       option-label="name"
                       option-value="id"
                       :loading="isLoadingDistricts"
@@ -46,7 +46,7 @@
                     <label for="school">Select from school</label>
                   </PvFloatLabel>
                 </div>
-              </div> -->
+              </div>
               <div class="card flex justify-content-center">
                 <PvListbox
                   v-model="selectedOrgs[activeOrgType]"
@@ -100,6 +100,7 @@ import { storeToRefs } from 'pinia';
 import _capitalize from 'lodash/capitalize';
 import _get from 'lodash/get';
 import _head from 'lodash/head';
+import _uniqBy from 'lodash/uniqBy';
 import PvChip from 'primevue/chip';
 import PvSelect from 'primevue/select';
 import PvListbox from 'primevue/listbox';
@@ -153,6 +154,7 @@ interface Emits {
 const initialized = ref<boolean>(false);
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
+const { isUserSuperAdmin } = authStore;
 
 const selectedDistrict = ref<string | undefined>(undefined);
 const selectedSchool = ref<string | undefined>(undefined);
@@ -198,7 +200,6 @@ const { isLoading: isLoadingClaims, data: userClaims } = useUserClaimsQuery({
   enabled: initialized,
 });
 
-const isSuperAdmin = computed((): boolean => Boolean(userClaims.value?.claims?.super_admin));
 const adminOrgs = computed(() => userClaims.value?.claims?.adminOrgs);
 
 const orgHeaders = computed((): Record<string, OrgHeader> => {
@@ -234,13 +235,16 @@ const { isLoading: isLoadingDistricts, data: allDistricts } = useDistrictsListQu
   enabled: claimsLoaded,
 });
 
+// TODO: This deduplication is temporary; update the source queries to emit unique districts.
+const districtOptions = computed(() => _uniqBy(allDistricts.value ?? [], (district) => district.id));
+
 const schoolQueryEnabled = computed((): boolean => {
   return claimsLoaded.value && selectedDistrict.value !== undefined;
 });
 
 const { isLoading: isLoadingSchools, data: allSchools } = useQuery({
   queryKey: ['schools', selectedDistrict],
-  queryFn: () => orgFetcher('schools', selectedDistrict, isSuperAdmin, adminOrgs),
+  queryFn: () => orgFetcher('schools', selectedDistrict, isUserSuperAdmin(), adminOrgs),
   placeholderData: (previousData) => previousData,
   enabled: schoolQueryEnabled,
   staleTime: 5 * 60 * 1000, // 5 minutes
@@ -249,7 +253,7 @@ const { isLoading: isLoadingSchools, data: allSchools } = useQuery({
 const { data: orgData } = useQuery({
   queryKey: ['orgs', activeOrgType, selectedDistrict, selectedSchool],
   queryFn: () =>
-    orgFetchAll(activeOrgType, selectedDistrict, selectedSchool, ref(orderByNameASC), isSuperAdmin, adminOrgs, [
+    orgFetchAll(activeOrgType, selectedDistrict, selectedSchool, ref(orderByNameASC), isUserSuperAdmin(), adminOrgs, [
       'id',
       'name',
       'districtId',
@@ -261,6 +265,14 @@ const { data: orgData } = useQuery({
   enabled: claimsLoaded,
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
+
+watch(
+  () => [orgData.value, activeOrgType.value],
+  ([options, orgType]) => {
+    const optionIds = (options ?? []).map((option) => option.id);
+    selectedOrgs[orgType] = selectedOrgs[orgType].filter((org) => optionIds.includes(org.id));
+  },
+);
 
 // reset selections when changing tabs if forParentOrg is true
 watch(activeOrgType, () => {
@@ -297,7 +309,7 @@ onMounted((): void => {
   if ((roarfirekit.value as any)?.restConfig) init();
 });
 
-watch(allDistricts, (newValue) => {
+watch(districtOptions, (newValue) => {
   selectedDistrict.value = _get(_head(newValue), 'id');
 });
 

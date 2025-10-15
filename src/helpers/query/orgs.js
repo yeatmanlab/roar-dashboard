@@ -5,6 +5,7 @@ import _flattenDeep from 'lodash/flattenDeep';
 import _isEmpty from 'lodash/isEmpty';
 import _without from 'lodash/without';
 import _zip from 'lodash/zip';
+import _uniqBy from 'lodash/uniqBy';
 import {
   batchGetDocs,
   convertValues,
@@ -127,6 +128,14 @@ export const getOrgsRequestBody = ({
         },
       });
     }
+  } else if (orgType === 'groups' && parentDistrict) {
+    filters.push({
+      fieldFilter: {
+        field: { fieldPath: 'districtId' },
+        op: 'EQUAL',
+        value: { stringValue: parentDistrict },
+      },
+    });
   }
 
   if (filters.length > 0) {
@@ -278,7 +287,11 @@ export const orgFetcher = async (
       const promises = (adminOrgs.value[orgType] ?? []).map((orgId) => {
         return fetchDocById(orgType, orgId, select);
       });
-      return Promise.all(promises);
+      const districts = await Promise.all(promises);
+      return _uniqBy(
+        districts.filter(Boolean),
+        (district) => district.id,
+      );
     } else if (orgType === 'districts') {
       // First grab all the districts in adminOrgs
       const promises = (adminOrgs.value[orgType] ?? []).map((orgId) => {
@@ -382,7 +395,13 @@ export const orgPageFetcher = async (
     const promises = orgIds.map((orgId) => fetchDocById(activeOrgType.value, orgId, select));
     const orderField = (orderBy?.value ?? orderByDefault)[0].field.fieldPath;
     const orderDirection = (orderBy?.value ?? orderByDefault)[0].direction;
-    const orgs = (await Promise.all(promises)).sort((a, b) => {
+    let orgs = await Promise.all(promises);
+
+    if (activeOrgType.value === 'groups' && selectedDistrict.value) {
+      orgs = orgs.filter((org) => org?.districtId === selectedDistrict.value);
+    }
+
+    orgs = orgs.sort((a, b) => {
       if (orderDirection === 'ASCENDING') return 2 * +(a[orderField] > b[orderField]) - 1;
       if (orderDirection === 'DESCENDING') return 2 * +(b[orderField] > a[orderField]) - 1;
       return 0;
