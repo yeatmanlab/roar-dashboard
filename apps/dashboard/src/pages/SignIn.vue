@@ -2,7 +2,7 @@
   <div v-if="spinner" class="loading-blur">
     <AppSpinner />
   </div>
-  <div id="signin-container" class="surface-200">
+  <div id="signin-container" class="bg-gray-50">
     <section id="signin">
       <header class="mb-0 pb-0">
         <div class="signin-logo">
@@ -88,7 +88,7 @@
             </div>
           </section> -->
       </section>
-      <footer class="flex flex-row surface-200 m-0 p-0">
+      <footer class="flex flex-row bg-gray-50 m-0 p-0">
         <!-- TODO: figure out a link for this -->
         <a href="#trouble" style="display: none">{{ $t('pageSignIn.havingTrouble') }}</a>
         <div class="flex flex-row w-full">
