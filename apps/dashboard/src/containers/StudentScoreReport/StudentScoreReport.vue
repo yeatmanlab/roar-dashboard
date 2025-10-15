@@ -46,6 +46,10 @@
           :student-grade="studentGrade"
           :administration-name="administrationData?.name"
           :administration-date="administrationData?.date"
+          :expanded="expanded"
+          :export-loading="exportLoading"
+          @toggle-expand="toggleExpand"
+          @export-pdf="handleExportToPdf"
         />
 
         <template v-if="!taskData?.length">
@@ -53,14 +57,7 @@
         </template>
 
         <template v-else>
-          <SummaryScreen
-            :student-first-name="studentFirstName"
-            :formatted-tasks="tasksList"
-            :expanded="expanded"
-            :export-loading="exportLoading"
-            @toggle-expand="toggleExpand"
-            @export-pdf="handleExportToPdf"
-          />
+          <SummaryScreen :student-first-name="studentFirstName" :tasks="tasksListArray" />
 
           <ScoreListScreen
             :student-first-name="studentFirstName"
@@ -98,7 +95,6 @@ import { ScoreListScreen, ScoreListPrint } from './components/ScoreList';
 import { SupportScreen, SupportPrint } from './components/Support';
 import EmptyState from './components/EmptyState.vue';
 import { getStudentDisplayName } from '@/helpers/getStudentDisplayName';
-import { formatList } from '@/helpers/formatList';
 import { formatListArray } from '@/helpers/formatListArray';
 
 const props = defineProps({
@@ -158,16 +154,6 @@ const { data: tasksDictionary, isLoading: isLoadingTasksDictionary } = useTasksD
 });
 
 const tasks = computed(() => taskData?.value?.map((assignment) => assignment.taskId) || []);
-const tasksList = computed(() =>
-  formatList(tasks.value, tasksDictionary.value, (task, entry) => entry?.technicalName ?? task, {
-    orderLookup: Object.entries(taskDisplayNames).reduce((acc, [key, value]) => {
-      acc[key] = value.order;
-      return acc;
-    }, {}),
-    suffix: '.',
-  }),
-);
-
 const tasksListArray = computed(() =>
   formatListArray(tasks.value, tasksDictionary.value, (task, entry) => entry?.technicalName ?? task, {
     orderLookup: Object.entries(taskDisplayNames).reduce((acc, [key, value]) => {
@@ -225,9 +211,11 @@ const handleExportToPdf = async () => {
 
   exportLoading.value = true;
   try {
-    setExpanded(true);
-    await nextTick();
-    await PdfExportService.generateDocument(fileName);
+    // Always render the print view in an offscreen iframe for consistent export
+    const url = `${window.location.origin}/scores/${props.administrationId}/${props.orgType}/${props.orgId}/user/${props.userId}/new?print=true`;
+    await PdfExportService.generateSingleDocument(url, fileName, {
+      containerSelector: '[data-pdf-export-container]',
+    });
   } catch (error) {
     console.error('Error exporting to PDF:', error);
   } finally {
@@ -262,11 +250,13 @@ onUnmounted(() => {
   clearPaged();
 });
 
-// Vite HMR: cleanup paged output when this module is replaced during development
+// Vite HMR: cleanup paged output when this module is replaced during print view development
 if (import.meta && import.meta.hot) {
   import.meta.hot.dispose(() => {
-    clearPaged();
-    runPaged();
+    if (isPrintMode.value) {
+      clearPaged();
+      runPaged();
+    }
   });
 }
 </script>

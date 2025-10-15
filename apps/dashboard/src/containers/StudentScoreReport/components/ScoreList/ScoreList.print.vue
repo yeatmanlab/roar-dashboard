@@ -64,17 +64,3 @@ const { computedTaskData, scoreValueTemplate, getTaskDescription, getTaskScoresA
   t,
 });
 </script>
-
-<style scoped>
-.grid {
-  display: grid !important;
-  margin: 0 !important;
-}
-
-@media (min-width: 1024px) {
-  .grid > * {
-    height: 100%;
-    align-self: flex-start;
-  }
-}
-</style>

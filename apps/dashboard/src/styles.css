@@ -59,6 +59,12 @@ legend {
   }
 }
 
+@media (min-width: 1024px) {
+  .lg\:justify-between {
+    justify-content: space-between;
+  }
+}
+
 .border {
   border-width: 1px;
 }
@@ -140,6 +146,12 @@ legend {
 
 @media (min-width: 768px) {
   .md\:columns-2 {
+    columns: 2;
+  }
+}
+
+@media (min-width: 1024px) {
+  .lg\:columns-2 {
     columns: 2;
   }
 }
@@ -239,4 +251,10 @@ legend {
 
 .break-before-page {
   break-before: page;
+}
+
+.transition-all {
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
 }

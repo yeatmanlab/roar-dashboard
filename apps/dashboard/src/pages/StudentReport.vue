@@ -41,7 +41,6 @@
           :label="!expanded ? $t('scoreReports.expandSections') : $t('scoreReports.collapseSections')"
           :icon="!expanded ? 'pi pi-plus ml-2' : 'pi pi-minus ml-2'"
           icon-pos="right"
-          data-html2canvas-ignore="true"
           data-cy="report__expand-btn"
           @click="setExpand"
         />
@@ -52,7 +51,6 @@
           :icon="exportLoading ? 'pi pi-spin pi-spinner ml-2' : 'pi pi-download ml-2'"
           :disabled="exportLoading"
           icon-pos="right"
-          data-html2canvas-ignore="true"
           data-cy="report__pdf-export-btn"
           @click="exportToPdf"
         />
@@ -170,7 +168,7 @@
           </div>
         </PvAccordionTab>
       </PvAccordion>
-      <div data-html2canvas-ignore="true" class="mb-7 w-full">
+      <div class="mb-7 w-full">
         <PvAccordion
           class="my-2 w-full"
           :active-index="expanded ? 0 : null"
@@ -180,11 +178,7 @@
           <PvAccordionTab :header="$t('scoreReports.nextStepsTabHeader')">
             <i18n-t keypath="scoreReports.nextSteps" tag="div" class="text-lg">
               <template #link>
-                <a
-                  :href="SCORE_REPORT_NEXT_STEPS_DOCUMENT_PATH"
-                  class="hover:text-red-700"
-                  data-html2canvas-ignore="true"
-                  target="_blank"
+                <a :href="SCORE_REPORT_NEXT_STEPS_DOCUMENT_PATH" class="hover:text-red-700" target="_blank"
                   >click here.</a
                 >
               </template>

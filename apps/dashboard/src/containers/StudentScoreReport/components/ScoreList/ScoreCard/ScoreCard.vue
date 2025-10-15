@@ -1,5 +1,5 @@
 <template>
-  <article class="flex gap-4 pt-4 bg-white border-2 border border-gray-100 flex-column">
+  <article class="flex gap-4 pt-4 bg-white rounded border-2 border border-gray-100 flex-column">
     <div class="flex gap-3 px-4 flex-column align-items-center">
       <div class="flex gap-1 text-center flex-column">
         <h2 class="m-0 text-lg font-semibold">{{ publicName }}</h2>

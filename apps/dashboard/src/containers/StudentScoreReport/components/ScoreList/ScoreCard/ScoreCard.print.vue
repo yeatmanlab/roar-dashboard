@@ -130,6 +130,9 @@ const props = defineProps({
   },
 });
 
+/**
+ * The severity to color mapping for tags
+ */
 const severityToColor = {
   success: 'green',
   warning: 'yellow',
