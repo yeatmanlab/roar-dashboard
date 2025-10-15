@@ -131,7 +131,7 @@ export const getOrgsRequestBody = ({
   } else if (orgType === 'groups' && parentDistrict) {
     filters.push({
       fieldFilter: {
-        field: { fieldPath: 'districtId' },
+        field: { fieldPath: 'parentOrgId' },
         op: 'EQUAL',
         value: { stringValue: parentDistrict },
       },
@@ -398,7 +398,7 @@ export const orgPageFetcher = async (
     let orgs = await Promise.all(promises);
 
     if (activeOrgType.value === 'groups' && selectedDistrict.value) {
-      orgs = orgs.filter((org) => org?.districtId === selectedDistrict.value);
+      orgs = orgs.filter((org) => org?.parentOrgId === selectedDistrict.value);
     }
 
     orgs = orgs.sort((a, b) => {
