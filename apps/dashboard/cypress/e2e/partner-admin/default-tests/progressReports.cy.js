@@ -97,7 +97,7 @@ describe('Partner Admin: Progress Reports', () => {
 
     // Validate that the exported file exists.
     // @TODO: Extend to validate contents of the file.
-    cy.readFile(`cypress/downloads/roar-progress-partner-test-administration-cypress-test-district.csv`);
+    cy.readFile(`cypress/downloads/roar-progress-partner-test-administration-cypress-test-school.csv`);
   });
 
   it('Exports a selected progress report', () => {
