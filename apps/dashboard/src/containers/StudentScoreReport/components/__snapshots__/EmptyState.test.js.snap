@@ -1,0 +1,25 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`EmptyState.vue > snapshots > renders with different student name 1`] = `
+"<div class="px-4 py-8 mt-2 text-center bg-white rounded border-2 border border-gray-100">
+  <h2 class="font-bold text-gray-600 text-md">Sarah is still working!</h2>
+  <p class="text-gray-400">Sarah needs to complete at least one assessment.</p>
+  <div class="mt-5">
+    <!-- TODO: Fix routing to always go back to overview --><button class="p-button p-component p-button-secondary" data-p="" type="button" aria-label="Back to overview " data-pc-name="button" data-p-disabled="false" data-p-severity="secondary" data-html2canvas-ignore="true" pc0="" data-pc-section="root"><span class="p-button-icon p-button-icon-left pi pi-arrow-left" data-p="left" data-pc-section="icon"></span><span class="p-button-label" data-pc-section="label" data-p="">Back to overview </span>
+      <!---->
+    </button>
+  </div>
+</div>"
+`;
+
+exports[`EmptyState.vue > snapshots > renders with student first name 1`] = `
+"<div class="px-4 py-8 mt-2 text-center bg-white rounded border-2 border border-gray-100">
+  <h2 class="font-bold text-gray-600 text-md">John is still working!</h2>
+  <p class="text-gray-400">John needs to complete at least one assessment.</p>
+  <div class="mt-5">
+    <!-- TODO: Fix routing to always go back to overview --><button class="p-button p-component p-button-secondary" data-p="" type="button" aria-label="Back to overview " data-pc-name="button" data-p-disabled="false" data-p-severity="secondary" data-html2canvas-ignore="true" pc0="" data-pc-section="root"><span class="p-button-icon p-button-icon-left pi pi-arrow-left" data-p="left" data-pc-section="icon"></span><span class="p-button-label" data-pc-section="label" data-p="">Back to overview </span>
+      <!---->
+    </button>
+  </div>
+</div>"
+`;

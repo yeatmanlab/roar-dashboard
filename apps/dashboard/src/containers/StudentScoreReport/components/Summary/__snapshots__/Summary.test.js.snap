@@ -1,0 +1,139 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Summary.vue > snapshots > renders with different student name 1`] = `
+"<section data-v-7eb30534="" class="pt-4 lg:pr-8">
+  <p data-v-7eb30534=""></p>
+  <p data-v-7eb30534="" class="mt-2">Michael has completed the following assessments:</p>
+  <ul data-v-7eb30534="" class="p-0 list-none lg:columns-2">
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">S</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">i</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">n</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">g</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">l</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">e</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534=""> </strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">W</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">o</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">r</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">d</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534=""> </strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">R</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">e</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">a</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">d</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">i</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">n</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">g</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">,</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534=""> </strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">P</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">h</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">o</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">n</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">i</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">c</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">s</strong></li>
+  </ul>
+  <p data-v-7eb30534="">Based on these results, Michael shows strong performance.</p>
+</section>"
+`;
+
+exports[`Summary.vue > snapshots > renders with multiple tasks 1`] = `
+"<section data-v-7eb30534="" class="pt-4 lg:pr-8">
+  <p data-v-7eb30534=""></p>
+  <p data-v-7eb30534="" class="mt-2">Sarah has completed the following assessments:</p>
+  <ul data-v-7eb30534="" class="p-0 list-none lg:columns-2">
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">S</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">i</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">n</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">g</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">l</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">e</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534=""> </strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">W</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">o</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">r</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">d</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534=""> </strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">R</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">e</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">a</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">d</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">i</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">n</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">g</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">,</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534=""> </strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">S</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">e</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">n</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">t</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">e</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">n</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">c</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">e</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534=""> </strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">R</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">e</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">a</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">d</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">i</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">n</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">g</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">,</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534=""> </strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">P</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">h</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">o</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">n</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">o</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">l</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">o</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">g</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">i</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">c</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">a</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">l</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534=""> </strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">A</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">w</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">a</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">r</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">e</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">n</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">e</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">s</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">s</strong></li>
+  </ul>
+  <p data-v-7eb30534="">Based on these results, Sarah shows strong performance.</p>
+</section>"
+`;
+
+exports[`Summary.vue > snapshots > renders with single task 1`] = `
+"<section data-v-7eb30534="" class="pt-4 lg:pr-8">
+  <p data-v-7eb30534=""></p>
+  <p data-v-7eb30534="" class="mt-2">John has completed the following assessments:</p>
+  <ul data-v-7eb30534="" class="p-0 list-none lg:columns-2">
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">S</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">i</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">n</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">g</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">l</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">e</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534=""> </strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">W</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">o</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">r</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">d</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534=""> </strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">R</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">e</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">a</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">d</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">i</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">n</strong></li>
+    <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">g</strong></li>
+  </ul>
+  <p data-v-7eb30534="">Based on these results, John shows strong performance.</p>
+</section>"
+`;
