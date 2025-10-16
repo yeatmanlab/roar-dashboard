@@ -210,7 +210,13 @@
                   class="p-2 border border-round surface-200 text-primary hover:surface-500 hover:text-white"
                   :label="col.buttonLabel"
                   :aria-label="col.buttonTooltip"
-                  :icon="col.buttonIcon"
+                  :icon="
+                    colData.isExporting && col.eventName === 'export-org-users'
+                      ? 'pi pi-spin pi-spinner mr-2'
+                      : col.buttonIcon
+                  "
+                  :loading="colData.isExporting && col.eventName === 'export-org-users'"
+                  :disabled="colData.isExporting && col.eventName === 'export-org-users'"
                   style="color: black !important"
                   size="small"
                   :data-cy="`data-table__event-btn__${col.eventName}`"

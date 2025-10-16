@@ -65,12 +65,6 @@
               class="p-2 rounded"
             />
           </div>
-          <div v-if="isExporting" class="mt-3 flex flex-column align-items-center justify-content-center gap-3">
-            <AppSpinner />
-            <span class="text-gray-500 font-semibold text-lg text-center">
-              Preparing CSV{{ exportingOrgName ? ` for ${exportingOrgName}` : '' }}…
-            </span>
-          </div>
           <RoarDataTable
             v-if="showTable"
             :key="tableKey"
@@ -84,7 +78,7 @@
             @export-org-users="(orgId) => exportOrgUsers(orgId)"
             @edit-button="onEditButtonClick($event)"
           />
-          <AppSpinner v-else-if="!tableData && !isExporting" />
+          <AppSpinner v-else-if="!tableData" />
         </PvTabPanel>
       </PvTabView>
       <AppSpinner v-else />
@@ -170,6 +164,39 @@
       </div>
     </template>
   </RoarModal>
+  <OrgExportModal
+    v-model:visible="showExportConfirmation"
+    :export-in-progress="exportInProgress"
+    :export-complete="exportComplete"
+    :export-success="exportSuccess"
+    :export-cancelled="exportCancelled"
+    :export-warning-level="exportWarningLevel"
+    :title="exportModalTitle"
+    :message="exportModalMessage"
+    :severity="exportModalSeverity"
+    @confirm="confirmExport"
+    @cancel="cancelExport"
+    @request-cancel="requestCancelExport"
+  />
+  <PvDialog v-model:visible="showNoUsersModal" :style="{ width: '30rem' }" :draggable="false" modal>
+    <template #header>
+      <div class="flex align-items-center gap-2">
+        <i class="pi pi-info-circle text-blue-500" style="font-size: 1.5rem"></i>
+        <h2 class="m-0 font-bold">No Users Found</h2>
+      </div>
+    </template>
+    <p class="m-0">No users were found for {{ noUsersOrgName }}. There is nothing to export.</p>
+    <template #footer>
+      <div class="flex justify-content-end">
+        <PvButton
+          label="OK"
+          severity="primary"
+          class="border-none border-round p-2"
+          @click="showNoUsersModal = false"
+        />
+      </div>
+    </template>
+  </PvDialog>
 </template>
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
@@ -188,10 +215,8 @@ import PvToast from 'primevue/toast';
 import PvToggleButton from 'primevue/togglebutton';
 import _get from 'lodash/get';
 import _head from 'lodash/head';
-import _kebabCase from 'lodash/kebabCase';
 import { useAuthStore } from '@/store/auth';
 import { orgFetchAll } from '@/helpers/query/orgs';
-import { fetchUsersByOrg, countUsersByOrg } from '@/helpers/query/users';
 import { orderByDefault, exportCsv, fetchDocById } from '@/helpers/query/utils';
 import useUserType from '@/composables/useUserType';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
@@ -200,7 +225,9 @@ import useDistrictSchoolsQuery from '@/composables/queries/useDistrictSchoolsQue
 import useOrgsTableQuery from '@/composables/queries/useOrgsTableQuery';
 import EditOrgsForm from './EditOrgsForm.vue';
 import RoarModal from './modals/RoarModal.vue';
-import { CSV_EXPORT_MAX_RECORD_COUNT } from '@/constants/csvExport';
+import OrgExportModal from './OrgExportModal.vue';
+import { useOrgExport } from '@/composables/useOrgExport';
+import { useOrgTableColumns } from '@/composables/useOrgTableColumns';
 import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts.js';
 import RoarDataTable from '@/components/RoarDataTable';
 import { ORG_TYPES } from '../constants/orgTypes';
@@ -218,8 +245,6 @@ const currentEditOrgId = ref(null);
 const localOrgData = ref(null);
 const isSubmitting = ref(false);
 const hideSubgroups = ref(false);
-const isExporting = ref(false);
-const exportingOrgName = ref('');
 const { userCan, Permissions } = usePermissions();
 
 const districtPlaceholder = computed(() => {
@@ -284,6 +309,30 @@ const activeOrgType = computed(() => {
   return Object.keys(orgHeaders.value)[activeIndex.value];
 });
 
+// Use export composable (must be after activeOrgType is defined)
+const {
+  showExportConfirmation,
+  exportInProgress,
+  exportComplete,
+  exportSuccess,
+  exportCancelled,
+  exportWarningLevel,
+  exportingOrgId,
+  showNoUsersModal,
+  noUsersOrgName,
+  // currentBatch and totalBatches are available but not used in this component
+  exportOrgUsers,
+  confirmExport,
+  cancelExport,
+  requestCancelExport,
+  exportModalTitle,
+  exportModalMessage,
+  exportModalSeverity,
+} = useOrgExport(activeOrgType, orderBy);
+
+// Use table columns composable (must be after activeOrgType is defined)
+const { tableColumns } = useOrgTableColumns(activeOrgType, isSuperAdmin, userCan, Permissions);
+
 const claimsLoaded = computed(() => !!userClaims?.value?.claims);
 
 const { isLoading: isLoadingDistricts, data: allDistricts } = useDistrictsListQuery({
@@ -339,171 +388,12 @@ const exportAll = async () => {
   exportCsv(exportData, `roar-${activeOrgType.value}.csv`);
 };
 
-// Type guard to check if orgType is an object with a string 'name' property
-function hasNameProperty(obj) {
-  return obj && typeof obj === 'object' && typeof obj.name === 'string';
-}
-
-/**
- * Exports users of a given organization type to a CSV file.
- *
- * @NOTE In order to avoid overly large exports, the function will allow exports up to a predefined limit (currently
- * 10,000 records). To avoid running a large and potentially unecessary query, we first run an aggregation query to
- * verify that the export is within the limit.
- *
- * @TODO Replace this logic with a server driven export, for example a cloud function that generate a download link for
- * the user, effectively allowing complete and large exports.
- *
- * @param {Object} orgType - The organization type object.
- * @param {string} orgType.id - The ID of the organization type.
- * @param {string} orgType.name - The name of the organization type.
- *
- * @returns {Promise<void>} - A promise that resolves when the export is complete.
- */
-const exportOrgUsers = async (orgType) => {
-  if (!orgType) return;
-  const orgName = hasNameProperty(orgType) ? orgType.name : '';
-
-  isExporting.value = true;
-  exportingOrgName.value = orgName;
-
-  try {
-    // First, count the users
-    const userCount = await countUsersByOrg(activeOrgType.value, orgType.id, orderBy);
-
-    if (userCount === 0) {
-      toast.add({
-        severity: 'error',
-        summary: 'Export Failed',
-        detail: 'No users found for the organization.',
-        life: 3000,
-      });
-      return;
-    }
-
-    if (userCount > CSV_EXPORT_MAX_RECORD_COUNT) {
-      toast.add({
-        severity: 'error',
-        summary: 'Export Failed',
-        detail: 'Too many users to export. Please filter the users by selecting a smaller org type.',
-        life: 3000,
-      });
-      return;
-    }
-
-    // Fetch the users if the count is within acceptable limits
-    const users = await fetchUsersByOrg(activeOrgType.value, orgType.id, userCount, ref(0), orderBy);
-
-    const computedExportData = users.map((user) => ({
-      Username: _get(user, 'username'),
-      Email: _get(user, 'email'),
-      FirstName: _get(user, 'name.first'),
-      LastName: _get(user, 'name.last'),
-      Grade: _get(user, 'studentData.grade'),
-      Gender: _get(user, 'studentData.gender'),
-      DateOfBirth: _get(user, 'studentData.dob'),
-      UserType: _get(user, 'userType'),
-      ell_status: _get(user, 'studentData.ell_status'),
-      iep_status: _get(user, 'studentData.iep_status'),
-      frl_status: _get(user, 'studentData.frl_status'),
-      race: _get(user, 'studentData.race'),
-      hispanic_ethnicity: _get(user, 'studentData.hispanic_ethnicity'),
-      home_language: _get(user, 'studentData.home_language'),
-    }));
-
-    // ex. cypress-test-district-users-export.csv
-    exportCsv(computedExportData, `${_kebabCase(orgType.name)}-users-export.csv`);
-
-    toast.add({
-      severity: 'success',
-      summary: 'Export Successful',
-      detail: 'Users have been exported successfully!',
-      life: 3000,
-    });
-  } catch (error) {
-    toast.add({
-      severity: 'error',
-      summary: 'Export Failed',
-      detail: error.message,
-      life: 3000,
-    });
-    Sentry.captureException(error);
-  } finally {
-    isExporting.value = false;
-    exportingOrgName.value = '';
-  }
-};
-
-const tableColumns = computed(() => {
-  const columns = [
-    { field: 'name', header: 'Name', dataType: 'string', pinned: true, sort: true },
-    { field: 'abbreviation', header: 'Abbreviation', dataType: 'string', sort: true },
-    { field: 'address.formattedAddress', header: 'Address', dataType: 'string', sort: true },
-    { field: 'tags', header: 'Tags', dataType: 'array', chip: true, sort: false },
-  ];
-
-  if (['districts', 'schools'].includes(activeOrgType.value)) {
-    columns.push(
-      { field: 'mdrNumber', header: 'MDR Number', dataType: 'string', sort: false },
-      { field: 'ncesId', header: 'NCES ID', dataType: 'string', sort: false },
-    );
-  }
-
-  if (['districts', 'schools', 'classes'].includes(activeOrgType.value)) {
-    columns.push({ field: 'clever', header: 'Clever', dataType: 'boolean', sort: false });
-    columns.push({ field: 'classlink', header: 'ClassLink', dataType: 'boolean', sort: false });
-  }
-
-  if (userCan(Permissions.Users.LIST)) {
-    columns.push({
-      header: 'Users',
-      link: true,
-      routeName: 'ListUsers',
-      routeTooltip: 'View users',
-      routeLabel: 'Users',
-      routeIcon: 'pi pi-user',
-      sort: false,
-    });
-  }
-
-  if (userCan(Permissions.Organizations.UPDATE)) {
-    columns.push({
-      header: 'Edit',
-      button: true,
-      eventName: 'edit-button',
-      buttonIcon: 'pi pi-pencil',
-      sort: false,
-    });
-  }
-
-  if (isSuperAdmin.value) {
-    columns.push({
-      header: 'SignUp Code',
-      buttonLabel: 'Invite Users',
-      button: true,
-      eventName: 'show-activation-code',
-      buttonIcon: 'pi pi-send mr-2',
-      sort: false,
-    });
-  }
-
-  columns.push({
-    header: 'Export Users',
-    buttonLabel: 'Export Users',
-    button: true,
-    eventName: 'export-org-users',
-    buttonIcon: 'pi pi-download mr-2',
-    sort: false,
-  });
-
-  return columns;
-});
-
 const tableData = computed(() => {
   if (isLoading.value) return [];
   const tableData = orgData?.value?.map((org) => {
     return {
       ...org,
+      isExporting: exportingOrgId.value === org.id,
       routeParams: {
         orgType: activeOrgType.value,
         orgId: org.id,
@@ -574,7 +464,7 @@ const updateOrgData = async () => {
     });
 };
 
-const showTable = computed(() => !!tableData.value && !isExporting.value);
+const showTable = computed(() => !!tableData.value);
 
 let unsubscribe;
 const initTable = () => {
