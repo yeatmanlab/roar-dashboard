@@ -424,6 +424,7 @@ import { SCORE_REPORT_NEXT_STEPS_DOCUMENT_PATH } from '@/constants/scores';
 import { LEVANTE_TASK_IDS_NO_SCORES } from '@/constants/levanteTasks';
 import _startCase from 'lodash/startCase';
 import AppDialog from '@/components/Dialog/Dialog.vue';
+import { getStudentDisplayName } from '@/helpers/getStudentDisplayName';
 
 const { userCan, Permissions } = usePermissions();
 
@@ -654,12 +655,24 @@ const exportBulkPdfReports = async (selectedRows) => {
       zipFilename,
       debug: false,
       onProgress: (progress) => {
+        // Get the student name from the students array using the current index
+        const currentStudent = students[progress.completed];
+        let displayName = 'Processing...';
+
+        if (currentStudent) {
+          const { firstName, lastName } = getStudentDisplayName({
+            name: { first: currentStudent.firstName, last: currentStudent.lastName },
+            username: currentStudent.username,
+          });
+          displayName = `${firstName} ${lastName}`.trim() || currentStudent.username || 'Processing...';
+        }
+
         exportProgress.value = {
           ...exportProgress.value,
           completed: progress.completed,
           total: progress.total,
           percentage: progress.percentage,
-          currentStudent: progress.current,
+          currentStudent: displayName,
           errors: progress.errors,
         };
       },
