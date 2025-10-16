@@ -8,19 +8,19 @@ const testDistrictId = Cypress.env('testDistrictId');
 const testSchoolId = Cypress.env('testSchoolId');
 const testSchoolName = Cypress.env('testSchoolName');
 const testPartnerAdministrationName = Cypress.env('testPartnerAdministrationName');
-const testAdministrationId = Cypress.env('testAdministrationId');
+const testPartnerAdministrationId = Cypress.env('testPartnerAdministrationId');
 const testUserList = Cypress.env('testUserList');
 const testAssignments = Cypress.env('testAssignmentsList');
 
 const openSchoolProgressReport = () => {
   cy.performRowAction(testDistrictName, 'card-administration__node-toggle-button');
   cy.performRowAction(testSchoolName, 'card-administration__button-progress');
-  cy.url().should('eq', `${baseUrl}/administration/${testAdministrationId}/school/${testSchoolId}`);
+  cy.url().should('eq', `${baseUrl}/administration/${testPartnerAdministrationId}/school/${testSchoolId}`);
 };
 
 describe('Partner Admin: Progress Reports', () => {
-  // @TODO: Expand on test to verify only stats exist for admin district.
-  it("Renders only stats for administration's district progress report", () => {
+  // @TODO: Expand on test to verify only stats exist for district admin.
+  it('Renders only stats for district admin progress report', () => {
     // Login as a partner admin.
     cy.login(PARTNER_ADMIN_USERNAME, PARTNER_ADMIN_PASSWORD);
 
@@ -32,7 +32,7 @@ describe('Partner Admin: Progress Reports', () => {
     // Select the test administration and open district progress report.
     cy.getAdministrationCard(testPartnerAdministrationName);
     cy.performRowAction(testDistrictName, 'card-administration__button-progress');
-    cy.url().should('eq', `${baseUrl}/administration/${testAdministrationId}/district/${testDistrictId}`);
+    cy.url().should('eq', `${baseUrl}/administration/${testPartnerAdministrationId}/district/${testDistrictId}`);
 
     // Validate that progress report table with individiual student data does not exist.
     cy.get('[data-cy="roar-data-table"]').should('not.exist');
