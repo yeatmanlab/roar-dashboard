@@ -17,10 +17,15 @@
       </div>
       <section class="signin-options">
         <section class="flex w-full m-4 mt-2 flex-column align-content-center justify-content-center border-500">
-          <SignIn :invalid="incorrect" @submit="authWithEmail" @update:email="email = $event" />
+          <SignIn
+            :invalid="incorrect"
+            @submit="authWithEmail"
+            @update:email="email = $event"
+            @checkproviders="checkAvailableProviders"
+          />
           <div class="flex flex-column w-full align-content-center justify-content-center">
             <PvButton
-              class="flex h-1 m-1 w-full surface-0 border-400 border-round-md justify-content-center hover:border-primary hover:surface-ground"
+              class="flex h-1 m-1 w-full surface-0 border-200 border-2 border-round-md justify-content-center hover:border-primary hover:surface-ground"
               style="border-radius: 3rem; height: 2.5rem; color: black"
               data-cy="sign-in__clever-sso"
               @click="authWithClever"
@@ -40,7 +45,7 @@
               </div>
             </PvButton>
             <PvButton
-              class="flex h-1 m-1 w-full text-black surface-0 border-400 border-round-md justify-content-center hover:border-primary hover:surface-ground"
+              class="flex h-1 m-1 w-full text-black surface-0 border-200 border-2 border-round-md justify-content-center hover:border-primary hover:surface-ground"
               style="height: 2.5rem; color: black"
               data-cy="sign-in__classlink-sso"
               @click="authWithClassLink"
@@ -60,7 +65,7 @@
               </div>
             </PvButton>
             <PvButton
-              class="flex h-1 m-1 w-full text-black surface-0 border-400 border-round-md justify-content-center hover:border-primary hover:surface-ground"
+              class="flex h-1 m-1 w-full text-black surface-0 border-200 border-2 border-round-md justify-content-center hover:border-primary hover:surface-ground"
               style="height: 2.5rem; color: black"
               data-cy="sign-in__classlink-sso"
               @click="authWithNYCPS"
@@ -258,6 +263,38 @@ const authWithNYCPS = () => {
   spinner.value = true;
 };
 
+// const authWithGoogle = () => {
+//   if (isMobileBrowser()) {
+//     authStore.signInWithGoogleRedirect();
+//   } else {
+//     authStore
+//       .signInWithGooglePopup()
+//       .then(async () => {
+//         if (authStore.uid) {
+//           const userClaims = await fetchDocById('userClaims', authStore.uid);
+//           authStore.userClaims = userClaims;
+//         }
+//         if (authStore.roarUid) {
+//           const userData = await fetchDocById('users', authStore.roarUid);
+//           authStore.userData = userData;
+//           setUser({ id: authStore.roarUid, userType: userData.userType });
+//         }
+//       })
+//       .catch((e) => {
+//         const errorCode = e.code;
+//         if (errorCode === 'auth/email-already-in-use') {
+//           // User tried to register with an email that is already linked to a firebase account.
+//           openWarningModal();
+//           spinner.value = false;
+//         } else {
+//           spinner.value = false;
+//         }
+//       });
+
+//     spinner.value = true;
+//   }
+// };
+
 const authWithEmail = (state) => {
   // If username is supplied instead of email
   // turn it into our internal auth email
@@ -330,7 +367,10 @@ const getProviders = async () => {
   hasCheckedProviders.value = true;
 };
 
-console.log('getProviders', getProviders());
+const checkAvailableProviders = () => {
+  getProviders();
+  console.log('availableProviders.value', availableProviders.value);
+};
 
 const normalizeProviders = async (ids = []) => {
   const out = new Set();
