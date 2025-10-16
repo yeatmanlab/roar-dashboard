@@ -5,8 +5,8 @@ const PARTNER_ADMIN_PASSWORD = Cypress.env('PARTNER_ADMIN_PASSWORD');
 
 const testDistrictName = Cypress.env('testDistrictName');
 const testDistrictId = Cypress.env('testDistrictId');
-const testSchoolId = Cypress.env('testSchoolId');
 const testSchoolName = Cypress.env('testSchoolName');
+const testSchoolId = Cypress.env('testSchoolId');
 const testPartnerAdministrationName = Cypress.env('testPartnerAdministrationName');
 const testPartnerAdministrationId = Cypress.env('testPartnerAdministrationId');
 const testUserList = Cypress.env('testUserList');

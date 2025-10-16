@@ -1,5 +1,7 @@
 const baseUrl = Cypress.config().baseUrl;
-const testDistrictId = Cypress.env('testDistrictId');
+const testDistrictName = Cypress.env('testDistrictName');
+const testSchoolName = Cypress.env('testSchoolName');
+const testSchoolId = Cypress.env('testSchoolId');
 const testPartnerAdministrationName = Cypress.env('testPartnerAdministrationName');
 const testPartnerAdministrationId = Cypress.env('testPartnerAdministrationId');
 const testPartnerAdminUsername = Cypress.env('PARTNER_ADMIN_USERNAME');
@@ -7,7 +9,7 @@ const testPartnerAdminPassword = Cypress.env('PARTNER_ADMIN_PASSWORD');
 const testUserList = Cypress.env('testUserList');
 
 describe('Partner Admin: Individual Reports', () => {
-  it("Selects an administration and views a student's individual score report", () => {
+  it("Selects a school administration and views a student's individual score report", () => {
     // Login as a partner admin.
     cy.login(testPartnerAdminUsername, testPartnerAdminPassword);
 
@@ -19,12 +21,15 @@ describe('Partner Admin: Individual Reports', () => {
     // Select the test administration and open the details page.
     cy.getAdministrationCard(testPartnerAdministrationName);
 
+    // Open district score report.
+    cy.performRowAction(testDistrictName, 'card-administration__node-toggle-button');
+
     // Wait for the score report button to load.
     cy.waitForScoreReportButton();
 
-    // Open the score report.
-    cy.get('button').contains('Scores').first().click();
-    cy.url().should('eq', `${baseUrl}/scores/${testPartnerAdministrationId}/district/${testDistrictId}`);
+    // Open school score report.
+    cy.performRowAction(testSchoolName, 'card-administration__button-scores');
+    cy.url().should('eq', `${baseUrl}/scores/${testPartnerAdministrationId}/school/${testSchoolId}`);
 
     // Validate that all test users are present in the progress report.
     cy.checkUserList(testUserList);
