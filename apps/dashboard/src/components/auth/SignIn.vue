@@ -21,7 +21,7 @@
           <PvButton
             type="checkProviders"
             class="mt-3 w-full p-0 hover:surface-200 hover:text-primary p-2"
-            @click="onShowPasswordClick"
+            @click="emit('check-providers', state.email)"
           >
             <span>Continue</span>
           </PvButton>
@@ -51,6 +51,43 @@
               }}</small>
             </div>
           </div>
+          <PvInputGroup v-else>
+            <!-- Username is entered, Password is desired -->
+            <PvPassword
+              :id="$t('authSignIn.passwordId')"
+              v-model="v$.password.$model"
+              :class="['w-full', { 'p-invalid': invalid }]"
+              toggle-mask
+              :feedback="false"
+              :placeholder="$t('authSignIn.passwordPlaceholder')"
+              data-cy="sign-in__password"
+              @keyup="checkForCapsLock"
+              @click="checkForCapsLock"
+            >
+              <template #header>
+                <h6>{{ $t('authSignIn.pickPassword') }}</h6>
+              </template>
+              <template #footer="sp">
+                {{ sp.level }}
+                <PvDivider />
+                <p class="mt-2">{{ $t('authSignIn.suggestions') }}</p>
+                <ul class="pl-2 mt-0 ml-2" style="line-height: 1.5">
+                  <li>{{ $t('authSignIn.atLeastOneLowercase') }}</li>
+                  <li>{{ $t('authSignIn.atLeastOneUppercase') }}</li>
+                  <li>{{ $t('authSignIn.atLeastOneNumeric') }}</li>
+                  <li>{{ $t('authSignIn.minimumCharacters') }}</li>
+                </ul>
+              </template>
+            </PvPassword>
+            <PvInputGroupAddon>
+              <PvButton
+                type="submit"
+                class="bg-white border-none text-primary p-0 hover:bg-primary hover:text-white p-2"
+                icon="pi pi-arrow-right"
+                data-cy="sign-in__submit"
+              />
+            </PvInputGroupAddon>
+          </PvInputGroup>
           <div v-if="capsLockEnabled" class="mt-2 p-error">⇪ Caps Lock is on!</div>
         </div>
       </div>
@@ -101,6 +138,9 @@ import PvButton from 'primevue/button';
 import PvInputText from 'primevue/inputtext';
 import PvPassword from 'primevue/password';
 import PvFloatLabel from 'primevue/floatlabel';
+import PvInputGroup from 'primevue/inputgroup';
+import PvInputGroupAddon from 'primevue/inputgroupaddon';
+import PvDivider from 'primevue/divider';
 // import { useToast } from 'primevue/usetoast';
 import { useAuthStore } from '@/store/auth';
 import RoarModal from '../modals/RoarModal.vue';
@@ -121,7 +161,7 @@ import RoarModal from '../modals/RoarModal.vue';
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
 
-const emit = defineEmits(['submit', 'update:email', 'checkProviders']);
+const emit = defineEmits(['submit', 'update:email', 'check-providers']);
 // eslint-disable-next-line no-unused-vars
 const props = defineProps({
   invalid: { type: Boolean, required: false, default: false },

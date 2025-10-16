@@ -21,7 +21,7 @@
             :invalid="incorrect"
             @submit="authWithEmail"
             @update:email="email = $event"
-            @checkproviders="checkAvailableProviders"
+            @check-providers="checkAvailableProviders"
           />
           <div class="flex flex-column w-full align-content-center justify-content-center">
             <PvButton
@@ -367,8 +367,8 @@ const getProviders = async () => {
   hasCheckedProviders.value = true;
 };
 
-const checkAvailableProviders = () => {
-  getProviders();
+const checkAvailableProviders = async () => {
+  await getProviders(email.value);
   console.log('availableProviders.value', availableProviders.value);
 };
 
