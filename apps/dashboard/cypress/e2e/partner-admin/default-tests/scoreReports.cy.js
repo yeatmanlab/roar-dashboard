@@ -3,19 +3,22 @@ const baseUrl = Cypress.config().baseUrl;
 const PARTNER_ADMIN_USERNAME = Cypress.env('PARTNER_ADMIN_USERNAME');
 const PARTNER_ADMIN_PASSWORD = Cypress.env('PARTNER_ADMIN_PASSWORD');
 
+const testDistrictName = Cypress.env('testDistrictName');
 const testDistrictId = Cypress.env('testDistrictId');
+const testSchoolId = Cypress.env('testSchoolId');
+const testSchoolName = Cypress.env('testSchoolName');
 const testPartnerAdministrationName = Cypress.env('testPartnerAdministrationName');
 const testPartnerAdministrationId = Cypress.env('testPartnerAdministrationId');
-const testUserList = Cypress.env('testUserList');
-const testAssignments = Cypress.env('testAssignmentsList');
 
-const openScoreReport = () => {
-  cy.get('button').contains('Scores').first().click();
-  cy.url().should('eq', `${baseUrl}/scores/${testPartnerAdministrationId}/district/${testDistrictId}`);
+const openSchoolScoreReport = () => {
+  cy.performRowAction(testDistrictName, 'card-administration__node-toggle-button');
+  cy.performRowAction(testSchoolName, 'card-administration__button-scores');
+  cy.url().should('eq', `${baseUrl}/scores/${testPartnerAdministrationId}/school/${testSchoolId}`);
 };
 
 describe('Partner Admin: Score Reports', () => {
-  it("Renders an administration's score report", () => {
+  // @TODO: Expand on test to verify only stats exist for district admin.
+  it('Renders only stats for district admin score report', () => {
     // Login as a partner admin.
     cy.login(PARTNER_ADMIN_USERNAME, PARTNER_ADMIN_PASSWORD);
 
@@ -24,23 +27,13 @@ describe('Partner Admin: Score Reports', () => {
     // the whole list to be loaded and that can take a while, hence the long timeout.
     cy.waitForAdministrationsList();
 
-    // Select the test administration and open the details page.
+    // Select the test administration and open district score report.
     cy.getAdministrationCard(testPartnerAdministrationName);
+    cy.performRowAction(testDistrictName, 'card-administration__button-scores');
+    cy.url().should('eq', `${baseUrl}/scores/${testPartnerAdministrationId}/district/${testDistrictId}`);
 
-    // Open the score report.
-    openScoreReport();
-
-    // Validate that all test users are present in the progress report.
-    cy.checkUserList(testUserList);
-
-    // Validate that all test assignments are present in the score report.
-    cy.get('[data-cy="roar-data-table"] thead th').then(($header) => {
-      const tableHeaders = $header.map((index, elem) => Cypress.$(elem).text().trim()).get();
-
-      testAssignments.forEach((assignment) => {
-        expect(tableHeaders).to.include(assignment);
-      });
-    });
+    // Validate that score report table with individiual student data does not exist.
+    cy.get('[data-cy="roar-data-table"]').should('not.exist');
   });
 
   it('Exports the complete score report', () => {
@@ -56,7 +49,7 @@ describe('Partner Admin: Score Reports', () => {
     cy.getAdministrationCard(testPartnerAdministrationName);
 
     // Open the score report.
-    openScoreReport();
+    openSchoolScoreReport();
 
     // Export the score report.
     cy.get('[data-cy="data-table__export-table-btn"]').contains('Export Whole Table').click();
@@ -79,7 +72,7 @@ describe('Partner Admin: Score Reports', () => {
     cy.getAdministrationCard(testPartnerAdministrationName);
 
     // Open the score report.
-    openScoreReport();
+    openSchoolScoreReport();
 
     // Validate that the export button is disabled.
     cy.get('[data-cy="data-table__export-selected-btn"]').should('be.disabled');
