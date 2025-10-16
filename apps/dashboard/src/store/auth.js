@@ -3,8 +3,9 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { useRouter } from 'vue-router';
 import _isEmpty from 'lodash/isEmpty';
 import _union from 'lodash/union';
-import { initializeFirekit } from '../firekit';
-import { AUTH_SSO_PROVIDERS } from '../constants/auth';
+import { initializeFirekit } from '@/firekit';
+import { AUTH_SSO_PROVIDERS } from '@/constants/auth';
+import { APP_ROUTES } from '@/constants/routes';
 
 export const useAuthStore = () => {
   return defineStore('authStore', {
@@ -22,6 +23,7 @@ export const useAuthStore = () => {
         userClaims: null,
         cleverOAuthRequested: false,
         classLinkOAuthRequested: false,
+        nycpsOAuthRequested: false,
         routeToProfile: false,
         ssoProvider: null,
         showOptionalAssessments: false,
@@ -121,7 +123,7 @@ export const useAuthStore = () => {
       },
       async initiateLoginWithEmailLink({ email }) {
         if (this.isFirekitInit) {
-          const redirectUrl = `${window.location.origin}/auth-email-link`;
+          const redirectUrl = `${window.location.origin}${APP_ROUTES.AUTH_EMAIL_LINK}`;
           return this.roarfirekit.initiateLoginWithEmailLink({ email, redirectUrl }).then(() => {
             window.localStorage.setItem('emailForSignIn', email);
           });
@@ -161,6 +163,16 @@ export const useAuthStore = () => {
       async signInWithClassLinkRedirect() {
         this.ssoProvider = AUTH_SSO_PROVIDERS.CLASSLINK;
         return this.roarfirekit.initiateRedirect(AUTH_SSO_PROVIDERS.CLASSLINK);
+      },
+      async signInWithNYCPSPopup() {
+        this.ssoProvider = AUTH_SSO_PROVIDERS.NYCPS;
+        if (this.isFirekitInit) {
+          return this.roarfirekit.signInWithPopup(AUTH_SSO_PROVIDERS.NYCPS);
+        }
+      },
+      async signInWithNYCPSRedirect() {
+        this.ssoProvider = AUTH_SSO_PROVIDERS.NYCPS;
+        return this.roarfirekit.initiateRedirect(AUTH_SSO_PROVIDERS.NYCPS);
       },
       async initStateFromRedirect() {
         this.spinner = true;

@@ -76,13 +76,13 @@
     "loading": "cargando"
   },
   "sentryForm": {
-    "formTitle": "Reportar un problema a ROAR",
+    "formTitle": "Informe de error en ROAR",
     "buttonLabel": "Reportar un problema",
-    "submitButtonLabel": "Enviar informe de problema",
+    "submitButtonLabel": "Enviar informe",
     "cancelButtonLabel": "Cancelar",
     "namePlaceholder": "Tu nombre (opcional)",
     "emailPlaceholder": "tu.email@example.org (opcional)",
-    "messageLabel": "Descripción",
-    "messagePlaceholder": "¿Cuál es el problema? ¿Qué querías experimentar en su lugar? Gracias por compartir."
+    "messageLabel": "🐞 Este formulario es solo para reportar errores de software o problemas técnicos.\n\n💬 Para preguntas generales, contacta primero a tu partner en ROAR.\n\n📧 Si no está disponible o no puede resolver tu problema, comunícate con nosotros en roar-partnerships@stanford.edu.\n\nDescribe tu problema:",
+    "messagePlaceholder": "Describe el problema y qué esperabas que sucediera en su lugar. Gracias por compartir."
   }
 }
