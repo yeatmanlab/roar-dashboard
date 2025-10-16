@@ -197,7 +197,7 @@ const modalPassword = ref('');
 const authWithEmail = async (state) => {
   // If username is supplied instead of email
   // turn it into our internal auth email
-
+  spinner.value = true;
   incorrect.value = false;
   let creds = toRaw(state);
   if (creds.useLink && !creds.usePassword) {
@@ -226,8 +226,6 @@ const authWithEmail = async (state) => {
             authStore.setShowSideBar(true);
           }
         }
-
-        spinner.value = true;
       })
       .catch((e) => {
         incorrect.value = true;
@@ -236,6 +234,9 @@ const authWithEmail = async (state) => {
         } else {
           throw e;
         }
+      })
+      .finally(() => {
+        spinner.value = false;
       });
   }
 };
