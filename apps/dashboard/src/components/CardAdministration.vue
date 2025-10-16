@@ -86,6 +86,16 @@
         row-hover
         :loading="loadingTreeTable"
         :value="treeTableOrgs"
+        :pt="{
+          column: {
+            nodeToggleButton: {
+              'data-testid': 'card-administration__node-toggle-button',
+            },
+            bodyCellContent: {
+              'data-testid': 'card-administration__body-cell-content',
+            },
+          },
+        }"
         @node-expand="onExpand"
       >
         <PvColumn field="name" header="Name" expander style="width: 20rem"></PvColumn>
@@ -119,7 +129,7 @@
                   label="Progress"
                   aria-label="Completion details"
                   size="small"
-                  data-cy="button-progress"
+                  pt:root:data-testid="card-administration__button-progress"
                 />
               </router-link>
               <router-link
@@ -139,7 +149,7 @@
                   label="Scores"
                   aria-label="Scores"
                   size="small"
-                  data-cy="button-scores"
+                  pt:root:data-testid="card-administration__button-scores"
                 />
               </router-link>
             </div>

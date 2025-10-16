@@ -3,19 +3,24 @@ const baseUrl = Cypress.config().baseUrl;
 const PARTNER_ADMIN_USERNAME = Cypress.env('PARTNER_ADMIN_USERNAME');
 const PARTNER_ADMIN_PASSWORD = Cypress.env('PARTNER_ADMIN_PASSWORD');
 
+const testDistrictName = Cypress.env('testDistrictName');
 const testDistrictId = Cypress.env('testDistrictId');
+const testSchoolId = Cypress.env('testSchoolId');
+const testSchoolName = Cypress.env('testSchoolName');
 const testPartnerAdministrationName = Cypress.env('testPartnerAdministrationName');
 const testAdministrationId = Cypress.env('testAdministrationId');
 const testUserList = Cypress.env('testUserList');
 const testAssignments = Cypress.env('testAssignmentsList');
 
-const openProgressReport = () => {
-  cy.get('button').contains('Progress').first().click();
-  cy.url().should('eq', `${baseUrl}/administration/${testAdministrationId}/district/${testDistrictId}`);
+const openSchoolProgressReport = () => {
+  cy.performRowAction(testDistrictName, 'card-administration__node-toggle-button');
+  cy.performRowAction(testSchoolName, 'card-administration__button-progress');
+  cy.url().should('eq', `${baseUrl}/administration/${testAdministrationId}/school/${testSchoolId}`);
 };
 
 describe('Partner Admin: Progress Reports', () => {
-  it("Renders an administration's progress report", () => {
+  // @TODO: Expand on test to verify only stats exist for admin district.
+  it("Renders only stats for administration's district progress report", () => {
     // Login as a partner admin.
     cy.login(PARTNER_ADMIN_USERNAME, PARTNER_ADMIN_PASSWORD);
 
@@ -24,11 +29,29 @@ describe('Partner Admin: Progress Reports', () => {
     // the whole list to be loaded and that can take a while, hence the long timeout.
     cy.waitForAdministrationsList();
 
-    // Select the test administration and open the details page.
+    // Select the test administration and open district progress report.
+    cy.getAdministrationCard(testPartnerAdministrationName);
+    cy.performRowAction(testDistrictName, 'card-administration__button-progress');
+    cy.url().should('eq', `${baseUrl}/administration/${testAdministrationId}/district/${testDistrictId}`);
+
+    // Validate that progress report table with individiual student data does not exist.
+    cy.get('[data-cy="roar-data-table"]').should('not.exist');
+  });
+
+  it("Renders a school's progress report", () => {
+    // Login as a partner admin.
+    cy.login(PARTNER_ADMIN_USERNAME, PARTNER_ADMIN_PASSWORD);
+
+    // Wait until the administrations list is loaded.
+    // Note: As the application currently does not support paginated fetching of administrations, we have to wait for
+    // the whole list to be loaded and that can take a while, hence the long timeout.
+    cy.waitForAdministrationsList();
+
+    // Select the test administration and open district progress report.
     cy.getAdministrationCard(testPartnerAdministrationName);
 
-    // Open the progress report.
-    openProgressReport();
+    // Expand desired district and open school progress report.
+    openSchoolProgressReport();
 
     // Validate that all test users are present in the progress report.
     cy.checkUserList(testUserList);
@@ -66,8 +89,8 @@ describe('Partner Admin: Progress Reports', () => {
     // Select the test administration and open the details page.
     cy.getAdministrationCard(testPartnerAdministrationName);
 
-    // Open the score report.
-    openProgressReport();
+    // Expand desired district and open school progress report.
+    openSchoolProgressReport();
 
     // Export the score report.
     cy.get('[data-cy="data-table__export-table-btn"]').contains('Export Whole Table').click();
@@ -89,8 +112,8 @@ describe('Partner Admin: Progress Reports', () => {
     // Select the test administration and open the details page.
     cy.getAdministrationCard(testPartnerAdministrationName);
 
-    // Open the score report.
-    openProgressReport();
+    // Expand desired district and open school progress report.
+    openSchoolProgressReport();
 
     // Validate that the export button is disabled.
     cy.get('[data-cy="data-table__export-selected-btn"]').should('be.disabled');

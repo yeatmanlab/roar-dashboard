@@ -531,3 +531,15 @@ function getIfExists({ selector, skip = true }) {
 }
 
 Cypress.Commands.add('getIfExists', getIfExists);
+
+/**
+ * Selects a row in CardAdministration and performs an action on it.
+ * @param {string} orgName The name of the organization.
+ * @param {string} buttonSelector The selector of the button to click.
+ */
+Cypress.Commands.add('performRowAction', (orgName, buttonSelector) => {
+  cy.contains('[data-testid="card-administration__body-cell-content"]', orgName)
+    .closest('tr')
+    .find(`[data-testid="${buttonSelector}"]`)
+    .click();
+});
