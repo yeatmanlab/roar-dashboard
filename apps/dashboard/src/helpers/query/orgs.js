@@ -449,22 +449,22 @@ export const fetchTreeOrgs = async (administrationId, assignedOrgs) => {
     orgTypes.map((orgType) => (assignedOrgs[orgType] ?? []).map((orgId) => `${orgType}/${orgId}`) ?? []),
   );
 
-  const statsPaths = _flattenDeep(
-    orgTypes.map(
-      (orgType) =>
-        (assignedOrgs[orgType] ?? []).map((orgId) => `administrations/${administrationId}/stats/${orgId}`) ?? [],
-    ),
-  );
+  // const statsPaths = _flattenDeep(
+  //   orgTypes.map(
+  //     (orgType) =>
+  //       (assignedOrgs[orgType] ?? []).map((orgId) => `administrations/${administrationId}/stats/${orgId}`) ?? [],
+  //   ),
+  // );
 
   const promises = [
     batchGetDocs(orgPaths, ['name', 'schools', 'classes', 'archivedSchools', 'archivedClasses', 'districtId']),
-    batchGetDocs(statsPaths),
+    // batchGetDocs(statsPaths),
   ];
 
   const [orgDocs, statsDocs] = await Promise.all(promises);
 
   const dsgfOrgs = _without(
-    _zip(orgDocs, statsDocs).map(([orgDoc, stats], index) => {
+    orgDocs.map((orgDoc, index) => {
       if (!orgDoc || _isEmpty(orgDoc)) {
         return undefined;
       }
@@ -483,7 +483,6 @@ export const fetchTreeOrgs = async (administrationId, assignedOrgs) => {
           classes,
           archivedSchools,
           archivedClasses,
-          stats,
           ...nodeData,
         },
       };
@@ -505,6 +504,8 @@ export const fetchTreeOrgs = async (administrationId, assignedOrgs) => {
     }),
     undefined,
   );
+
+  console.log('dsgfOrgs', dsgfOrgs);
 
   const districtIds = dsgfOrgs
     .filter((node) => node.data.orgType === SINGULAR_ORG_TYPES.DISTRICTS)
@@ -530,19 +531,19 @@ export const fetchTreeOrgs = async (administrationId, assignedOrgs) => {
   });
 
   const independentClassPaths = independentClassIds.map((classId) => `classes/${classId}`);
-  const independentClassStatPaths = independentClassIds.map(
-    (classId) => `administrations/${administrationId}/stats/${classId}`,
-  );
+  // const independentClassStatPaths = independentClassIds.map(
+  //   (classId) => `administrations/${administrationId}/stats/${classId}`,
+  // );
 
   const classPromises = [
     batchGetDocs(independentClassPaths, ['name', 'schoolId', 'districtId']),
-    batchGetDocs(independentClassStatPaths),
+    // batchGetDocs(independentClassStatPaths),
   ];
 
-  const [classDocs, classStats] = await Promise.all(classPromises);
+  const [classDocs] = await Promise.all(classPromises);
 
   let independentClasses = _without(
-    _zip(classDocs, classStats).map(([orgDoc, stats], index) => {
+    classDocs.map((orgDoc, index) => {
       const { collection = FIRESTORE_COLLECTIONS.CLASSES, ...nodeData } = orgDoc ?? {};
 
       if (_isEmpty(nodeData)) return undefined;
@@ -551,7 +552,6 @@ export const fetchTreeOrgs = async (administrationId, assignedOrgs) => {
         key: String(dsgfOrgs.length + index),
         data: {
           orgType: SINGULAR_ORG_TYPES[collection.toUpperCase()],
-          ...(stats && { stats }),
           ...nodeData,
         },
       };
@@ -641,3 +641,20 @@ export const fetchTreeOrgs = async (administrationId, assignedOrgs) => {
 
   return treeTableOrgs;
 };
+
+/**
+ * Fetches minimal orgs for a given administration
+ */
+export const getMinimalOrgs = async (administrationId, assignedOrgs) => {};
+
+/**
+ * Fetches children orgs for a given parent org. Will only return orgs that are assigned to the administration.
+ * NOTE: may not need to take in administrationId, if the parentOrg is assigned to the administration, then the children will be assigned as well.
+ *
+ * @param {*} administrationId
+ * @param {*} parentOrgId
+ * @param {*} parentOrgType
+ */
+export const getChildrenOrgs = async (administrationId, parentOrgId, parentOrgType) => {};
+
+export const formatTreeTableOrgs = (orgs) => {};

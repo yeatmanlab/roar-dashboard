@@ -333,11 +333,11 @@ const onExpand = async (node) => {
     expanding.value = true;
 
     const classPaths = node.children.map(({ data }) => `classes/${data.id}`);
-    const statPaths = node.children.map(({ data }) => `administrations/${props.id}/stats/${data.id}`);
+    // const statPaths = node.children.map(({ data }) => `administrations/${props.id}/stats/${data.id}`);
 
-    const classPromises = [batchGetDocs(classPaths, ['name', 'schoolId']), batchGetDocs(statPaths)];
+    const classPromises = [batchGetDocs(classPaths, ['name', 'schoolId'])];
 
-    const [classDocs, classStats] = await Promise.all(classPromises);
+    const [classDocs] = await Promise.all(classPromises);
 
     // Lazy node is a copy of the expanding node. We will insert more detailed
     // children nodes later.
@@ -350,7 +350,7 @@ const onExpand = async (node) => {
     };
 
     const childNodes = _without(
-      _zip(classDocs, classStats).map(([orgDoc, stats], index) => {
+      classDocs.map((orgDoc, index) => {
         const { collection = FIRESTORE_COLLECTIONS.CLASSES, ...nodeData } = orgDoc ?? {};
 
         if (_isEmpty(nodeData)) return undefined;
@@ -359,7 +359,6 @@ const onExpand = async (node) => {
           key: `${node.key}-${index}`,
           data: {
             orgType: SINGULAR_ORG_TYPES[collection.toUpperCase()],
-            ...(stats && { stats }),
             ...nodeData,
           },
         };
