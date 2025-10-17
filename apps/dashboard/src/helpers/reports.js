@@ -72,7 +72,7 @@ export const taskDisplayNames = {
     studentFacingName: 'Palabra',
     extendedTitle: 'ROAR - Word',
     extendedName: 'Single Word Recognition',
-    order: 6,
+    order: 50,
   },
   sre: {
     name: 'Sentence',
@@ -88,7 +88,7 @@ export const taskDisplayNames = {
     studentFacingName: 'Frase',
     extendedTitle: 'ROAR - Frase',
     extendedName: 'Sentence Reading Efficiency',
-    order: 8,
+    order: 51,
   },
   morphology: {
     name: 'Morphology',
