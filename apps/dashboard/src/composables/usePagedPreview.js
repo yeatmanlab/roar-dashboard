@@ -47,7 +47,6 @@ function clearPagedOutputInternal() {
  */
 async function waitForFonts() {
   if (document.fonts?.ready) {
-     
     try {
       await document.fonts.ready;
     } catch {
@@ -144,7 +143,7 @@ export default function usePagedPreview(opts = {}) {
       }
     } catch (e) {
       error.value = e;
-       
+
       console.error('Paged.js preview failed:', e);
     } finally {
       isRendering.value = false;
