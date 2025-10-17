@@ -36,6 +36,7 @@
           />
           <div v-if="!hideProviders" class="flex flex-column w-full align-content-center justify-content-center">
             <PvButton
+              v-if="(multipleProviders && availableProviders.includes('clever')) || !showPasswordField"
               class="flex h-1 m-1 w-full surface-0 border-200 border-1 border-round-md justify-content-center hover:border-primary hover:surface-ground"
               style="border-radius: 3rem; height: 2.5rem; color: black"
               data-cy="sign-in__clever-sso"
@@ -56,6 +57,7 @@
               </div>
             </PvButton>
             <PvButton
+              v-if="(multipleProviders && availableProviders.includes('classlink')) || !showPasswordField"
               class="flex h-1 m-1 w-full text-black surface-0 border-200 border-1 border-round-md justify-content-center hover:border-primary hover:surface-ground"
               style="height: 2.5rem; color: black"
               data-cy="sign-in__classlink-sso"
@@ -76,6 +78,7 @@
               </div>
             </PvButton>
             <PvButton
+              v-if="(multipleProviders && availableProviders.includes('nycps')) || !showPasswordField"
               class="flex h-1 m-1 w-full text-black surface-0 border-200 border-1 border-round-md justify-content-center hover:border-primary hover:surface-ground"
               style="height: 2.5rem; color: black"
               data-cy="sign-in__classlink-sso"
@@ -286,6 +289,7 @@ const signInMethods = ref([]);
 
 const availableProviders = ref([]);
 const hasCheckedProviders = ref(false);
+const multipleProviders = ref(false);
 
 const getProviders = async () => {
   const authKit = roarfirekit.value;
@@ -303,25 +307,35 @@ const showPasswordField = ref(false);
 const checkAvailableProviders = async (em) => {
   email.value = (em || '').trim();
 
-  // Username path: only after clicking Continue
+  // Username path
   const isUsername = !!email.value && !email.value.includes('@');
   if (isUsername) {
-    showPasswordField.value = true; // reveal password UI
-    availableProviders.value = ['password']; // optional: for downstream logic
+    showPasswordField.value = true;
+    availableProviders.value = ['password'];
     hideProviders.value = true;
     return;
   }
 
   await getProviders(email.value);
-  // auto-SSO if you want…
+
+  // Check if there are multiple SSO options
+  const ssoProviders = availableProviders.value.filter((p) => ['google', 'clever', 'classlink', 'nycps'].includes(p));
+  multipleProviders.value = ssoProviders.length > 1;
+
+  if (multipleProviders.value) {
+    // You might want to show a selection menu instead of auto-login
+    hideProviders.value = false;
+    showPasswordField.value = false;
+    return;
+  }
+
+  // Auto-SSO if there’s only one
   if (availableProviders.value.includes('google')) authWithGoogle();
   if (availableProviders.value.includes('clever')) authWithClever();
   if (availableProviders.value.includes('classlink')) authWithClassLink();
   if (availableProviders.value.includes('nycps')) authWithNYCPS();
 
-  // Show password field if:
-  //    - "password" is in the list
-  //    - OR there are no providers at all (new or unknown email)
+  // Show password field if needed
   showPasswordField.value =
     availableProviders.value.includes('password') ||
     availableProviders.value.includes('link') ||
@@ -359,6 +373,7 @@ function resetSignInUI() {
   hasCheckedProviders.value = false;
   modalPassword.value = '';
   spinner.value = false;
+  multipleProviders.value = false;
 }
 
 onMounted(() => {

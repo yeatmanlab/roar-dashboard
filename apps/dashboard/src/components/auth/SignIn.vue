@@ -20,7 +20,7 @@
             <PvChip
               :label="v$.email.$model"
               class="flex justify-content-center align-items-center"
-              image="/src/assets/cute-lion.png"
+              image="../../src/assets/cute-lion.png"
               removable
               @remove="handleChipRemove"
             />
