@@ -3,27 +3,27 @@
     <section class="main-body">
       <div v-if="isLoading" class="loading-wrapper">
         <AppSpinner style="margin: 1rem 0rem" />
-        <div class="uppercase text-sm text-gray-600 font-light">Loading Progress Datatable</div>
+        <div class="text-sm font-light text-gray-600 uppercase">Loading Progress Datatable</div>
       </div>
 
       <template v-else>
         <div class="flex justify-content-between align-items-center">
-          <div class="flex flex-column align-items-start mb-4 gap-2">
+          <div class="flex gap-2 mb-4 flex-column align-items-start">
             <div>
-              <div class="uppercase font-light text-gray-500 text-md">{{ props.orgType }} Progress Report</div>
-              <div class="report-title uppercase">
+              <div class="font-light text-gray-500 uppercase text-md">{{ props.orgType }} Progress Report</div>
+              <div class="uppercase report-title">
                 {{ orgData?.name }}
               </div>
             </div>
             <div>
-              <div class="uppercase font-light text-gray-500 text-md">Administration</div>
-              <div class="administration-name uppercase">
+              <div class="font-light text-gray-500 uppercase text-md">Administration</div>
+              <div class="uppercase administration-name">
                 {{ displayName }}
               </div>
             </div>
           </div>
-          <div class="flex flex-row align-items-center gap-4">
-            <div class="uppercase text-sm text-gray-600">VIEW</div>
+          <div class="flex flex-row gap-4 align-items-center">
+            <div class="text-sm text-gray-600 uppercase">VIEW</div>
             <PvSelectButton
               v-model="reportView"
               v-tooltip.top="'View different report'"
@@ -41,22 +41,22 @@
         <div v-if="assignmentData?.length">
           <div
             v-if="adminStats != null"
-            class="flex flex-column align-items-around flex-wrap gap-3 rounded bg-gray-100 p-5"
+            class="flex flex-wrap gap-3 p-5 bg-gray-100 rounded flex-column align-items-around"
           >
-            <div class="flex flex-column gap-1 mx-5 mb-5">
-              <div class="text-sm uppercase text-gray-500">Progress by Assessment</div>
+            <div class="flex gap-1 mx-5 mb-5 flex-column">
+              <div class="text-sm text-gray-500 uppercase">Progress by Assessment</div>
               <div
                 v-for="{ taskId } of administrationData.assessments"
                 :key="taskId"
                 class="flex justify-content-between align-items-center"
               >
-                <div v-if="tasksDictionary[taskId]" class="text-lg font-bold text-gray-600 w-full">
+                <div v-if="tasksDictionary[taskId]" class="w-full text-lg font-bold text-gray-600">
                   {{ tasksDictionary[taskId]?.technicalName ?? taskId }}
-                  <span v-if="tasksDictionary[taskId].name" class="font-light uppercase text-sm">
+                  <span v-if="tasksDictionary[taskId].name" class="text-sm font-light uppercase">
                     ({{ tasksDictionary[taskId]?.publicName }})
                   </span>
                 </div>
-                <div v-else class="text-lg font-bold text-gray-600 w-full">
+                <div v-else class="w-full text-lg font-bold text-gray-600">
                   {{ taskId }}
                 </div>
                 <PvChart
@@ -67,12 +67,12 @@
                 />
               </div>
             </div>
-            <div class="flex flex-column mx-5">
-              <div class="text-sm uppercase text-gray-500">Total Assessment Progress</div>
+            <div class="flex mx-5 flex-column">
+              <div class="text-sm text-gray-500 uppercase">Total Assessment Progress</div>
               <div class="flex justify-content-between align-items-center">
-                <div class="text-xl font-bold text-gray-600 w-full">
+                <div class="w-full text-xl font-bold text-gray-600">
                   Total
-                  <span class="font-light text-sm"> ({{ adminStats.assignment.assigned }} total assignments) </span>
+                  <span class="text-sm font-light"> ({{ adminStats.assignment.assigned }} total assignments) </span>
                 </div>
                 <PvChart
                   type="bar"
@@ -82,8 +82,8 @@
                 />
               </div>
             </div>
-            <div class="flex flex-column align-items-center mx-5">
-              <div class="flex flex-wrap justify-content-around align-items-center px-2 py-1 rounded">
+            <div class="flex mx-5 flex-column align-items-center">
+              <div class="flex flex-wrap px-2 py-1 rounded justify-content-around align-items-center">
                 <div class="legend-entry">
                   <div class="circle" style="background-color: var(--bright-green)" />
                   <div>
@@ -103,7 +103,7 @@
                   </div>
                 </div>
               </div>
-              <div class="font-light uppercase text-xs text-gray-500 my-1">Legend</div>
+              <div class="my-1 text-xs font-light text-gray-500 uppercase">Legend</div>
             </div>
           </div>
           <RoarDataTable
@@ -113,7 +113,6 @@
             :total-records="filteredTableData?.length"
             :loading="isLoadingAssignments || isFetchingAssignments"
             :page-limit="pageLimit"
-            data-cy="roar-data-table"
             :allow-filtering="true"
             :reset-filters="resetFilters"
             :lazy-pre-sorting="orderBy"

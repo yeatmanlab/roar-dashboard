@@ -233,7 +233,6 @@
             :page-limit="pageLimit"
             :loading="isLoadingAssignments || isFetchingAssignments"
             :groupheaders="true"
-            data-cy="roar-data-table"
             @export-all="exportData({ selectedRows: $event })"
             @export-selected="exportData({ selectedRows: $event })"
             @export-pdf-reports="openExportModal($event)"

@@ -124,6 +124,11 @@
             scrollable
             :select-all="selectAll"
             data-cy="roar-data-table"
+            :pt="{
+              root: {
+                'data-cy': 'roar-data-table',
+              },
+            }"
             @select-all-change="onSelectAll"
             @row-select="onSelectionChange"
             @row-unselect="onSelectionChange"
