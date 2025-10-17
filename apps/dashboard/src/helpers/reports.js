@@ -688,7 +688,7 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = 
       support_level = 'Needs Extra Support';
       tag_color = supportLevelColors.below;
     }
-  } else if (rawScore != null && grade >= 6) {
+  } else if (rawScore !== null && rawScore !== undefined && grade >= 6) {
     const { above, some } = getRawScoreThreshold(taskId, scoringVersion);
 
     // Only return support_level and tag_color if the thresholds are not null
