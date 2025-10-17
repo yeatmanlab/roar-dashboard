@@ -3,8 +3,8 @@
   <div class="card">
     <form class="p-fluid" @submit.prevent="handleFormSubmit(!v$.$invalid)">
       <div class="mt-1 field">
-        <div class="p-input-icon-right mt-4">
-          <PvFloatLabel>
+        <div class="p-input-icon-right">
+          <PvFloatLabel v-if="!showPasswordField" class="mt-4">
             <PvInputText
               :id="$t('authSignIn.emailId')"
               v-model="v$.email.$model"
@@ -16,21 +16,24 @@
             />
             <label for="email">{{ $t('authSignIn.emailPlaceholder') }}</label>
           </PvFloatLabel>
-          <small v-if="invalid" class="p-error">{{ $t('authSignIn.incorrectEmailOrPassword') }}</small>
-          <!-- <InputGroupAddon :style="{ 'visibility': showPasswordField ? 'hidden' : 'visible' }"></InputGroupAddon> -->
-          <PvButton
-            type="checkProviders"
-            class="mt-3 w-full p-0 hover:surface-200 hover:text-primary p-2"
-            @click="emit('check-providers', state.email)"
-          >
-            <span>Continue</span>
-          </PvButton>
+          <div v-else class="w-full flex justify-content-center align-items-center mb-8 mt-0 pt-0">
+            <PvChip
+              :label="v$.email.$model"
+              class="flex justify-content-center align-items-center"
+              image="/src/assets/cute-lion.png"
+              removable
+              @remove="handleChipRemove"
+            />
+          </div>
+          <PvMessage v-if="invalid" icon="pi pi-times-circle" class="text-red-500" severity="error">{{
+            $t('authSignIn.incorrectEmailOrPassword')
+          }}</PvMessage>
         </div>
       </div>
-      <div v-if="showPasswordField" class="mt-2 mb-3 field">
+      <div v-if="showPassword" class="mt-2 mb-1 field">
         <div>
           <!-- Email is entered, Password is desired -->
-          <div v-if="showPasswordField">
+          <div v-if="showPassword">
             <PvPassword
               :id="$t('authSignIn.passwordId')"
               v-model="v$.password.$model"
@@ -45,8 +48,8 @@
               @keyup="checkForCapsLock"
               @click="checkForCapsLock"
             />
-            <div class="flex justify-content-end w-full">
-              <small class="text-link sign-in-method-link" @click="handleForgotPassword">{{
+            <div class="flex justify-content-start w-full">
+              <small class="text-link text-sm text-400 sign-in-method-link" @click="handleForgotPassword">{{
                 $t('authSignIn.forgotPassword')
               }}</small>
             </div>
@@ -91,7 +94,14 @@
           <div v-if="capsLockEnabled" class="mt-2 p-error">⇪ Caps Lock is on!</div>
         </div>
       </div>
-      <div class="divider w-full">
+      <PvButton
+        type="button"
+        class="mt-3 w-full p-0 hover:surface-200 hover:text-primary p-2"
+        @click="!showPasswordField ? emit('check-providers', state.email) : emit('submit', state)"
+      >
+        <span>Continue</span>
+      </PvButton>
+      <div v-if="!showPasswordField" class="divider w-full">
         <span class="text-md">{{ $t('authSignIn.or') }}</span>
       </div>
     </form>
@@ -133,7 +143,6 @@ import { reactive, ref, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { required, requiredUnless } from '@vuelidate/validators';
 import { useVuelidate } from '@vuelidate/core';
-import _debounce from 'lodash/debounce';
 import PvButton from 'primevue/button';
 import PvInputText from 'primevue/inputtext';
 import PvPassword from 'primevue/password';
@@ -141,49 +150,51 @@ import PvFloatLabel from 'primevue/floatlabel';
 import PvInputGroup from 'primevue/inputgroup';
 import PvInputGroupAddon from 'primevue/inputgroupaddon';
 import PvDivider from 'primevue/divider';
-// import { useToast } from 'primevue/usetoast';
+import PvChip from 'primevue/chip';
+import PvMessage from 'primevue/message';
 import { useAuthStore } from '@/store/auth';
 import RoarModal from '../modals/RoarModal.vue';
-// import PvToast from 'primevue/toast';
-// import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts.js';
-
-// // Enable the email-link button only when the email is valid, link flow allowed,
-// // and we’re not currently checking the email.
-// const canSendLink = computed(() => {
-//   return isValidEmail(state.email) && !evaluatingEmail.value;
-// });
-
-// // Clicking the educator-only button submits in "magic link" mode immediately.
-// function handleSignInWithEmailLink() {
-//   emit('submit', state);
-// }
 
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
 
-const emit = defineEmits(['submit', 'update:email', 'check-providers']);
-// eslint-disable-next-line no-unused-vars
+const emit = defineEmits(['submit', 'update:email', 'update:showPasswordField', 'check-providers', 'reset']);
+
+const showPassword = ref(false); // single source of truth for template
+
 const props = defineProps({
   invalid: { type: Boolean, required: false, default: false },
+  showPasswordField: { type: Boolean, required: false, default: false },
 });
+
+function handleChipRemove() {
+  // reset child-local state
+  state.email = '';
+  state.password = '';
+  submitted.value = false;
+  capsLockEnabled.value = false;
+  v$?.value?.$reset?.();
+
+  // sync parent state via emits
+  emit('update:email', '');
+  emit('update:showPasswordField', false);
+
+  // tell the parent to reset its own UI state
+  emit('reset');
+}
 
 const state = reactive({
   email: '',
   password: '',
-  role: 'student',
 });
 
-// const toast = useToast();
-
-// function showInvalidEmail() {
-//   console.log('Invalid email');
-//   toast.add({
-//     severity: TOAST_SEVERITIES.ERROR,
-//     summary: 'Error',
-//     detail: 'Invalid email',
-//     life: TOAST_DEFAULT_LIFE_DURATION,
-//   });
-// }
+watch(
+  () => props.showPasswordField,
+  (v) => {
+    showPassword.value = !!v;
+  },
+  { immediate: true },
+);
 
 const rules = {
   email: { required },
@@ -195,7 +206,7 @@ const submitted = ref(false);
 const v$ = useVuelidate(rules, state);
 const capsLockEnabled = ref(false);
 const forgotPasswordModalOpen = ref(false);
-const showPasswordField = ref(false);
+// const showPasswordField = ref(false);
 
 const handleFormSubmit = (isFormValid) => {
   submitted.value = true;
@@ -204,31 +215,6 @@ const handleFormSubmit = (isFormValid) => {
   }
   emit('submit', state);
 };
-
-// function allowSignInPassword() {
-//   showPasswordField.value = true;
-// }
-
-const isValidEmail = (email) => {
-  var re =
-    /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
-  return re.test(email);
-};
-
-const evaluatingEmail = ref(false);
-
-const validateRoarEmail = _debounce(
-  async (email) => {
-    await roarfirekit.value.isEmailAvailable(email).then(async (emailAvail) => {
-      if (emailAvail) {
-        console.log(`Email ${email} is available`);
-      }
-      evaluatingEmail.value = false;
-    });
-  },
-  250,
-  { maxWait: 1000 },
-);
 
 function checkForCapsLock(e) {
   // Make sure the event is a keyboard event.
@@ -259,33 +245,7 @@ watch(
   () => state.email,
   async (email) => {
     emit('update:email', email);
-    if (isValidEmail(email)) {
-      evaluatingEmail.value = true;
-      validateRoarEmail(email);
-    }
   },
-);
-
-// Reset the form when the role changes
-function resetForRole(role) {
-  if (role === 'student') {
-    showPasswordField.value = false;
-    state.password = '';
-    capsLockEnabled.value = false;
-    submitted.value = false;
-    v$?.value?.$reset?.();
-  } else if (role === 'educator') {
-    showPasswordField.value = false;
-    capsLockEnabled.value = false;
-    submitted.value = false;
-    v$?.value?.$reset?.();
-  }
-}
-
-watch(
-  () => state.role,
-  (role) => resetForRole(role),
-  { immediate: true },
 );
 </script>
 <style scoped>

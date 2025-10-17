@@ -577,19 +577,6 @@ const routes = [
     },
   },
   {
-    path: APP_ROUTES.SIGN_IN_ADMIN,
-    name: 'SignInRoarAdmin',
-    component: () => import('../pages/SignInRoarAdmin.vue'),
-    meta: {
-      pageTitle: {
-        'en-US': pageTitlesUS['SignInRoarAdmin'],
-        en: pageTitlesEN['SignInRoarAdmin'],
-        es: pageTitlesES['SignInRoarAdmin'],
-        'es-CO': pageTitlesCO['SignInRoarAdmin'],
-      },
-    },
-  },
-  {
     path: APP_ROUTES.SSO,
     name: 'SSO',
     beforeRouteLeave: [removeQueryParams, removeHash],

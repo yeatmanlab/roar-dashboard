@@ -131,7 +131,11 @@
     "havingTrouble": "Having trouble?",
     "login": "Log in to ROAR to start roaring",
     "loginWith": "Log in with",
-    "welcome": "Welcome!"
+    "welcome": "Welcome!",
+    "EnterYourPassword": "Enter your password",
+    "AlmostTime": "Almost time to let your learning roar",
+    "Terms": "Terms",
+    "Privacy": "Privacy"
   },
   "tasks": {
     "preparing": "Preparing your game!",

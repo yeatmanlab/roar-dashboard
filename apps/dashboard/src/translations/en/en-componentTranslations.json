@@ -126,9 +126,13 @@
   },
   "pageSignIn": {
     "havingTrouble": "Having trouble?",
-    "login": "Log in to access your dashboard",
+    "login": "Log in to start roaring",
     "loginWith": "Log in with",
-    "welcome": "Welcome to ROAR!"
+    "welcome": "Welcome to ROAR!",
+    "EnterYourPassword": "Enter your password",
+    "AlmostTime": "Almost time to let your learning roar",
+    "Terms": "Terms",
+    "Privacy": "Privacy"
   },
   "tasks": {
     "preparing": "Preparing your game!",
