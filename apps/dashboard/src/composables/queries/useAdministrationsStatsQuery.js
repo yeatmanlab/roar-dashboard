@@ -2,7 +2,7 @@ import { toValue } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
 import { computeQueryOverrides } from '@/helpers/computeQueryOverrides';
 import { hasArrayEntries } from '@/helpers/hasArrayEntries';
-import { fetchDocumentsById } from '@/helpers/query/utils';
+import { fetchDocsById } from '@/helpers/query/utils';
 import { ADMINISTRATIONS_STATS_QUERY_KEY } from '@/constants/queryKeys';
 import { FIRESTORE_COLLECTIONS } from '@/constants/firebase';
 
@@ -23,8 +23,11 @@ const useAdministrationsStatsQuery = (administrationIds, orgId, queryOptions = u
   return useQuery({
     queryKey: [ADMINISTRATIONS_STATS_QUERY_KEY, administrationIds],
     queryFn: () => {
-      const ids = toValue(administrationIds)?.map((administrationId) => `${administrationId}/stats/${statsKey}`);
-      return fetchDocumentsById(FIRESTORE_COLLECTIONS.ADMINISTRATIONS, ids);
+      const payload = toValue(administrationIds)?.map((administrationId) => ({
+        collection: FIRESTORE_COLLECTIONS.ADMINISTRATIONS,
+        docId: `${administrationId}/stats/${statsKey}`,
+      }));
+      return fetchDocsById(payload);
     },
     enabled: isQueryEnabled,
     ...options,
