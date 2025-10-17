@@ -671,7 +671,7 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = 
       tag_color: supportLevelColors.Assessed,
     };
   }
-  if (percentile != null && getGrade(grade) < 6) {
+  if (percentile !== null && percentile !== undefined && getGrade(grade) < 6) {
     const isUpdatedSre = taskId === 'sre' && scoringVersion >= 4;
     const isUpdatedSreEs = taskId === 'sre-es' && scoringVersion >= 1;
     const isUpdatedSwr = taskId === 'swr' && scoringVersion >= 7;
