@@ -295,6 +295,7 @@ import useOrgQuery from '@/composables/queries/useOrgQuery';
 import useDistrictSchoolsQuery from '@/composables/queries/useDistrictSchoolsQuery';
 import useAdministrationAssignmentsQuery from '@/composables/queries/useAdministrationAssignmentsQuery';
 import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery';
+// import useDistrictSupportCategoriesQuery from '@/composables/queries/useDistrictSupportCategoriesQuery';
 import { usePermissions } from '@/composables/usePermissions';
 import { exportCsv } from '@/helpers/query/utils';
 import { getTitle } from '@/helpers/query/administrations';
@@ -358,6 +359,12 @@ const displayName = computed(() => {
   }
   return 'Fetching administration name...';
 });
+
+// use useDistrictSupportCategoriesQuery to get support categories
+
+// DistributionChartSupport uses percent/count to show the data
+// DistributionFacets uses raw/percentile to show the data
+// DistributionChartOverview uses count to show the data
 
 const getScoringVersions = computed(() => {
   const scoringVersions = Object.fromEntries(
