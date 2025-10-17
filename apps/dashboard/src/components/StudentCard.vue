@@ -83,7 +83,7 @@
                     />
                     <router-link
                       :to="{
-                        name: 'StudentReport',
+                        name: 'StudentScoreReport',
                         params: {
                           administrationId: assignment.id,
                           orgType: props.orgType,
