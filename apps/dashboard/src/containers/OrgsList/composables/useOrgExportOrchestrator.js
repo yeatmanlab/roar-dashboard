@@ -75,9 +75,16 @@ export function useOrgExportOrchestrator(activeOrgType, orderBy) {
 
     try {
       const { orgType, userCount } = modalState.pendingExportData.value;
-      const result = await exportLogic.performExport(orgType, userCount);
 
-      // Sync progress tracking
+      // Progress callback to update modal state in real-time
+      const onProgress = (current, total) => {
+        modalState.currentBatch.value = current;
+        modalState.totalBatches.value = total;
+      };
+
+      const result = await exportLogic.performExport(orgType, userCount, onProgress);
+
+      // Final sync of progress tracking
       modalState.currentBatch.value = exportLogic.currentBatch.value;
       modalState.totalBatches.value = exportLogic.totalBatches.value;
 

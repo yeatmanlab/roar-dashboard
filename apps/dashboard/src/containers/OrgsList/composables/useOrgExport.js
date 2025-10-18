@@ -79,8 +79,9 @@ export function useOrgExport(activeOrgType, orderBy) {
   /**
    * Performs the actual CSV export.
    * For very large exports (>= critical threshold), splits into batches.
+   * @param {Function} onProgress - Optional callback for progress updates
    */
-  const performExport = async (orgType, userCount) => {
+  const performExport = async (orgType, userCount, onProgress) => {
     try {
       const needsBatching = userCount >= CSV_EXPORT_CRITICAL_THRESHOLD;
 
@@ -94,6 +95,11 @@ export function useOrgExport(activeOrgType, orderBy) {
           }
 
           currentBatch.value = batchIndex + 1;
+
+          // Notify progress callback if provided
+          if (onProgress) {
+            onProgress(currentBatch.value, totalBatches.value);
+          }
 
           const users = await fetchUsersByOrg(
             activeOrgType.value,

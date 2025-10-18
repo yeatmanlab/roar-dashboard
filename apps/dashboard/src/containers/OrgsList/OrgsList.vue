@@ -84,12 +84,7 @@
       <AppSpinner v-else />
     </section>
     <section class="flex mt-8 justify-content-end">
-      <PvDialog
-        v-model:visible="isDialogVisible"
-        dialog-title="text-primary"
-        :style="{ width: '50rem' }"
-        :draggable="false"
-      >
+      <Dialog v-model:visible="isDialogVisible" width="50rem">
         <template #header>
           <h1 class="text-primary font-bold m-0">Invitation</h1>
         </template>
@@ -132,7 +127,7 @@
             >Close</PvButton
           >
         </div>
-      </PvDialog>
+      </Dialog>
     </section>
   </main>
   <RoarModal
@@ -178,7 +173,7 @@
     @cancel="cancelExport"
     @request-cancel="requestCancelExport"
   />
-  <PvDialog v-model:visible="showNoUsersModal" :style="{ width: '30rem' }" :draggable="false" modal>
+  <Dialog v-model:visible="showNoUsersModal" width="30rem">
     <template #header>
       <div class="flex align-items-center gap-2">
         <i class="pi pi-info-circle text-blue-500 text-2xl"></i>
@@ -196,7 +191,7 @@
         />
       </div>
     </template>
-  </PvDialog>
+  </Dialog>
 </template>
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
@@ -205,7 +200,6 @@ import { storeToRefs } from 'pinia';
 import { useToast } from 'primevue/usetoast';
 import PvFloatLabel from 'primevue/floatlabel';
 import PvButton from 'primevue/button';
-import PvDialog from 'primevue/dialog';
 import PvSelect from 'primevue/select';
 import PvInputGroup from 'primevue/inputgroup';
 import PvInputText from 'primevue/inputtext';
@@ -225,6 +219,7 @@ import useDistrictSchoolsQuery from '@/composables/queries/useDistrictSchoolsQue
 import useOrgsTableQuery from '@/composables/queries/useOrgsTableQuery';
 import EditOrgsForm from '@/components/EditOrgsForm.vue';
 import RoarModal from '@/components/modals/RoarModal.vue';
+import Dialog from '@/components/Dialog';
 import OrgExportModal from './components/OrgExportModal.vue';
 import { useOrgExportOrchestrator } from './composables/useOrgExportOrchestrator';
 import { useOrgTableColumns } from './composables/useOrgTableColumns';
@@ -490,5 +485,13 @@ watch(allSchools, (newValue) => {
 const tableKey = ref(0);
 watch([selectedDistrict, selectedSchool], () => {
   tableKey.value += 1;
+});
+
+// Watch for modal close via X button to reset export state
+watch(showExportConfirmation, (newValue, oldValue) => {
+  // If modal was open and is now closed, and we're not in progress
+  if (oldValue && !newValue && !exportInProgress.value) {
+    cancelExport();
+  }
 });
 </script>
