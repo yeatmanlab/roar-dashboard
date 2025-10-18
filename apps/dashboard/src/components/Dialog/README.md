@@ -4,11 +4,10 @@ A flexible, reusable dialog wrapper around PrimeVue's Dialog component that stan
 
 ## Features
 
-- ✅ Supports both `visible` (v-model) and `isEnabled` (watch) patterns
-- ✅ Configurable PrimeVue props (modal, draggable, closable, closeOnEscape)
-- ✅ Customizable width and styling
-- ✅ Slot-based content (header, default, footer)
-- ✅ Backward compatible with original Dialog from enh/1127/score-reports-bulk-export
+- Supports both `visible` (v-model) and `isEnabled` (watch) patterns
+- Configurable PrimeVue props (modal, draggable, closable, closeOnEscape)
+- Customizable width and styling
+- Slot-based content (header, default, footer)
 
 ## Usage
 
