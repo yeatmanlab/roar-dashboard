@@ -1,4 +1,5 @@
 import { computed } from 'vue';
+import { ORG_EXPORT_EVENTS } from '../constants/exportConstants';
 
 /**
  * Composable for generating organization table columns based on org type and permissions.
@@ -73,7 +74,7 @@ export function useOrgTableColumns(activeOrgType, isSuperAdmin, userCan, Permiss
       header: 'Export Users',
       buttonLabel: 'Export Users',
       button: true,
-      eventName: 'export-org-users',
+      eventName: ORG_EXPORT_EVENTS.EXPORT_ORG_USERS,
       buttonIcon: 'pi pi-download mr-2',
       sort: false,
     });

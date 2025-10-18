@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
-import { ref } from 'vue';
 import { useOrgTableColumns } from './useOrgTableColumns';
+import { ORG_EXPORT_EVENTS } from '../constants/exportConstants';
+import { ref } from 'vue';
 
 describe('useOrgTableColumns', () => {
   const mockPermissions = {
@@ -44,7 +45,7 @@ describe('useOrgTableColumns', () => {
         header: 'Export Users',
         buttonLabel: 'Export Users',
         button: true,
-        eventName: 'export-org-users',
+        eventName: ORG_EXPORT_EVENTS.EXPORT_ORG_USERS,
         buttonIcon: 'pi pi-download mr-2',
         sort: false,
       });

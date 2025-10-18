@@ -23,3 +23,8 @@ export const EXPORT_STATUS = {
   CANCELLED: 'cancelled',
   FAILED: 'failed',
 };
+
+// Event name constants
+export const ORG_EXPORT_EVENTS = {
+  EXPORT_ORG_USERS: 'export-org-users',
+};

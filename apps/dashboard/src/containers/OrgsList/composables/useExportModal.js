@@ -1,6 +1,6 @@
 import { ref, computed } from 'vue';
 import { CSV_EXPORT_BATCH_SIZE } from '@/constants/csvExport';
-import { WARNING_LEVELS } from './exportConstants';
+import { WARNING_LEVELS } from '../constants/exportConstants';
 
 /**
  * Modal state management composable - handles UI state for export modal

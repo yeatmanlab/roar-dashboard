@@ -210,13 +210,9 @@
                   class="p-2 border border-round surface-200 text-primary hover:surface-500 hover:text-white"
                   :label="col.buttonLabel"
                   :aria-label="col.buttonTooltip"
-                  :icon="
-                    colData.isExporting && col.eventName === 'export-org-users'
-                      ? 'pi pi-spin pi-spinner mr-2'
-                      : col.buttonIcon
-                  "
-                  :loading="colData.isExporting && col.eventName === 'export-org-users'"
-                  :disabled="colData.isExporting && col.eventName === 'export-org-users'"
+                  :icon="isExportingOrgUsers(colData, col) ? 'pi pi-spin pi-spinner mr-2' : col.buttonIcon"
+                  :loading="isExportingOrgUsers(colData, col)"
+                  :disabled="isExportingOrgUsers(colData, col)"
                   style="color: black !important"
                   size="small"
                   :data-cy="`data-table__event-btn__${col.eventName}`"
@@ -432,6 +428,7 @@ import _uniq from 'lodash/uniq';
 import { supportLevelColors, progressTags } from '@/helpers/reports';
 import SkeletonTable from '@/components/SkeletonTable.vue';
 import TableScoreTag from '@/components/reports/TableScoreTag.vue';
+import { ORG_EXPORT_EVENTS } from '@/containers/OrgsList/constants/exportConstants';
 
 /*
 Using the DataTable
@@ -675,6 +672,16 @@ function getFormattedDate(date) {
     }
   }
   return '';
+}
+
+/**
+ * Check if a button is currently exporting org users
+ * @param {object} colData - The column data
+ * @param {object} col - The column configuration
+ * @returns {boolean} True if the button is exporting org users
+ */
+function isExportingOrgUsers(colData, col) {
+  return colData.isExporting && col.eventName === ORG_EXPORT_EVENTS.EXPORT_ORG_USERS;
 }
 
 const onColumnToggle = (selected) => {
