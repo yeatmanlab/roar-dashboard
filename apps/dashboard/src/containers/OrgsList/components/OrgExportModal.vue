@@ -1,10 +1,8 @@
 <template>
-  <PvDialog
+  <Dialog
     :visible="visible"
-    :style="{ width: '40rem' }"
-    :draggable="false"
+    width="40rem"
     :closable="!exportInProgress"
-    modal
     @update:visible="$emit('update:visible', $event)"
   >
     <template #header>
@@ -53,12 +51,12 @@
         </template>
       </div>
     </template>
-  </PvDialog>
+  </Dialog>
 </template>
 
 <script setup>
 import { computed } from 'vue';
-import PvDialog from 'primevue/dialog';
+import Dialog from '@/components/Dialog';
 import PvMessage from 'primevue/message';
 import PvButton from 'primevue/button';
 
