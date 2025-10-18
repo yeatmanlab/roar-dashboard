@@ -781,8 +781,10 @@ function returnColorByReliability(assessment, rawScore, support_level, tag_color
       tasksToDisplayPercentCorrect.includes(assessment.taskId)
     ) {
       const test = assessment.scores?.raw?.composite?.test;
+      // When letter-es has numAttempted === numIncorrect, numCorrect === undefined.
+      // It does not return percentCorrect, so it incorrectly hides the tag.
       if (
-        (test?.numCorrect === undefined && test?.percentCorrect === undefined) ||
+        (assessment.taskId !== 'letter-es' && test?.numCorrect === undefined && test?.percentCorrect === undefined) ||
         (test?.numAttempted === 0 && test?.numCorrect === 0)
       ) {
         return '#EEEEF0';
@@ -1030,7 +1032,7 @@ const computeAssignmentAndRunData = computed(() => {
           scoreFilterTags += ' Assessed ';
         } else if (tasksToDisplayPercentCorrect.includes(taskId)) {
           const numAttempted = assessment.scores?.raw?.composite?.test?.numAttempted;
-          const numCorrect = assessment.scores?.raw?.composite?.test?.numCorrect;
+          const numCorrect = assessment.scores?.raw?.composite?.test?.numCorrect ?? 0;
           const percentCorrect =
             numAttempted > 0 && !isNaN(numCorrect) && !isNaN(numAttempted)
               ? Math.round((numCorrect * 100) / numAttempted).toString() + '%'
@@ -1064,6 +1066,7 @@ const computeAssignmentAndRunData = computed(() => {
           const composite = _get(assessment, 'scores.computed.composite');
           if (composite) {
             currRowScores[taskId] = {
+              ...currRowScores[taskId],
               composite: {
                 totalPercentCorrect: _get(composite, 'totalPercentCorrect'),
                 subscores: {
