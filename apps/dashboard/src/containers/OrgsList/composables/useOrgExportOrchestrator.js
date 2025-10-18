@@ -1,6 +1,6 @@
 import { useOrgExport } from './useOrgExport';
 import { useExportModal } from './useExportModal';
-import { WARNING_LEVELS } from '../constants/exportConstants';
+import { WARNING_LEVELS, EXPORT_PHASE } from '../constants/exportConstants';
 
 /**
  * Orchestrator composable that connects export logic with modal state
@@ -30,8 +30,10 @@ export function useOrgExportOrchestrator(activeOrgType, orderBy) {
       const userCount = await exportLogic.countOrgUsers(orgType);
 
       if (userCount === 0) {
-        modalState.noUsersOrgName.value = exportLogic.hasNameProperty(orgType) ? orgType.name : 'this organization';
-        modalState.showNoUsersModal.value = true;
+        modalState.modalState.value.noUsersOrgName = exportLogic.hasNameProperty(orgType)
+          ? orgType.name
+          : 'this organization';
+        modalState.modalState.value.showNoUsersModal = true;
         modalState.exportingOrgId.value = null;
         return;
       }
@@ -47,15 +49,14 @@ export function useOrgExportOrchestrator(activeOrgType, orderBy) {
 
       // Show confirmation modal for larger exports
       modalState.resetCompletionStates();
-      modalState.pendingExportData.value = { orgType, userCount };
+      modalState.exportData.value.pendingExportData = { orgType, userCount };
       modalState.exportWarningLevel.value = warningLevel;
-      modalState.showExportConfirmation.value = true;
+      modalState.modalState.value.showExportConfirmation = true;
     } catch (error) {
       // Show error in modal
-      modalState.exportComplete.value = true;
-      modalState.exportSuccess.value = false;
+      modalState.exportPhase.value = EXPORT_PHASE.FAILED;
       modalState.exportError.value = error.message;
-      modalState.showExportConfirmation.value = true;
+      modalState.modalState.value.showExportConfirmation = true;
     }
   };
 
@@ -63,48 +64,38 @@ export function useOrgExportOrchestrator(activeOrgType, orderBy) {
    * Handles user confirmation to proceed with export.
    */
   const confirmExport = async () => {
-    if (!modalState.pendingExportData.value) return;
+    if (!modalState.exportData.value.pendingExportData) return;
 
     // Switch modal to progress mode
-    modalState.exportInProgress.value = true;
-    modalState.exportComplete.value = false;
-    modalState.exportSuccess.value = false;
-    modalState.exportCancelled.value = false;
+    modalState.exportPhase.value = EXPORT_PHASE.IN_PROGRESS;
     modalState.exportError.value = '';
     exportLogic.resetExportState();
 
     try {
-      const { orgType, userCount } = modalState.pendingExportData.value;
+      const { orgType, userCount } = modalState.exportData.value.pendingExportData;
 
       // Progress callback to update modal state in real-time
       const onProgress = (current, total) => {
-        modalState.currentBatch.value = current;
-        modalState.totalBatches.value = total;
+        modalState.progressState.value.currentBatch = current;
+        modalState.progressState.value.totalBatches = total;
       };
 
       const result = await exportLogic.performExport(orgType, userCount, onProgress);
 
       // Final sync of progress tracking
-      modalState.currentBatch.value = exportLogic.currentBatch.value;
-      modalState.totalBatches.value = exportLogic.totalBatches.value;
+      modalState.progressState.value.currentBatch = exportLogic.currentBatch.value;
+      modalState.progressState.value.totalBatches = exportLogic.totalBatches.value;
 
       if (result.cancelled) {
-        modalState.exportComplete.value = true;
-        modalState.exportSuccess.value = false;
-        modalState.exportCancelled.value = true;
+        modalState.exportPhase.value = EXPORT_PHASE.CANCELLED;
       } else if (result.success) {
-        modalState.exportComplete.value = true;
-        modalState.exportSuccess.value = true;
-        modalState.exportWasBatched.value = result.batched;
-        modalState.exportBatchCount.value = result.batchCount;
+        modalState.exportPhase.value = EXPORT_PHASE.SUCCESS;
+        modalState.exportData.value.exportWasBatched = result.batched;
+        modalState.exportData.value.exportBatchCount = result.batchCount;
       }
     } catch (error) {
-      modalState.exportComplete.value = true;
-      modalState.exportSuccess.value = false;
-      modalState.exportCancelled.value = false;
+      modalState.exportPhase.value = EXPORT_PHASE.FAILED;
       modalState.exportError.value = error.message;
-    } finally {
-      modalState.exportInProgress.value = false;
     }
   };
 
@@ -124,24 +115,23 @@ export function useOrgExportOrchestrator(activeOrgType, orderBy) {
   };
 
   return {
-    // State from modal
-    showExportConfirmation: modalState.showExportConfirmation,
-    exportInProgress: modalState.exportInProgress,
-    exportComplete: modalState.exportComplete,
-    exportSuccess: modalState.exportSuccess,
-    exportCancelled: modalState.exportCancelled,
+    // State from modal (grouped)
+    modalState: modalState.modalState,
+    exportPhase: modalState.exportPhase,
+    exportError: modalState.exportError,
     exportWarningLevel: modalState.exportWarningLevel,
+    exportData: modalState.exportData,
+    progressState: modalState.progressState,
     exportingOrgId: modalState.exportingOrgId,
-    showNoUsersModal: modalState.showNoUsersModal,
-    noUsersOrgName: modalState.noUsersOrgName,
-    currentBatch: modalState.currentBatch,
-    totalBatches: modalState.totalBatches,
 
     // Computed from modal
     isExportingOrgUsers: modalState.isExportingOrgUsers,
     exportModalTitle: modalState.exportModalTitle,
     exportModalMessage: modalState.exportModalMessage,
     exportModalSeverity: modalState.exportModalSeverity,
+
+    // Constants
+    EXPORT_PHASE: modalState.EXPORT_PHASE,
 
     // Functions
     exportOrgUsers,

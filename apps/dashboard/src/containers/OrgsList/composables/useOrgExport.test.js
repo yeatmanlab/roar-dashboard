@@ -4,7 +4,7 @@ import { useOrgExport } from './useOrgExport';
 import * as usersQuery from '@/helpers/query/users';
 import * as queryUtils from '@/helpers/query/utils';
 import * as Sentry from '@sentry/vue';
-import { WARNING_LEVELS } from './exportConstants';
+import { WARNING_LEVELS } from '../constants/exportConstants';
 
 // Mock dependencies
 vi.mock('@/helpers/query/users');

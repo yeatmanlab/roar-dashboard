@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { useExportModal } from './useExportModal';
-import { WARNING_LEVELS } from './exportConstants';
+import { WARNING_LEVELS, EXPORT_PHASE } from '../constants/exportConstants';
 
 describe('useExportModal', () => {
   beforeEach(() => {
@@ -15,31 +15,20 @@ describe('useExportModal', () => {
 
   describe('Initial State', () => {
     it('should initialize with correct default values', () => {
-      const {
-        showExportConfirmation,
-        exportInProgress,
-        exportComplete,
-        exportSuccess,
-        exportCancelled,
-        exportWarningLevel,
-        exportingOrgId,
-        showNoUsersModal,
-        noUsersOrgName,
-        currentBatch,
-        totalBatches,
-      } = useExportModal();
+      const { modalState, exportPhase, exportWarningLevel, exportData, progressState, exportingOrgId } =
+        useExportModal();
 
-      expect(showExportConfirmation.value).toBe(false);
-      expect(exportInProgress.value).toBe(false);
-      expect(exportComplete.value).toBe(false);
-      expect(exportSuccess.value).toBe(false);
-      expect(exportCancelled.value).toBe(false);
+      expect(modalState.value.showExportConfirmation).toBe(false);
+      expect(modalState.value.showNoUsersModal).toBe(false);
+      expect(modalState.value.noUsersOrgName).toBe('');
+      expect(exportPhase.value).toBe(EXPORT_PHASE.IDLE);
       expect(exportWarningLevel.value).toBe(WARNING_LEVELS.NORMAL);
+      expect(exportData.value.pendingExportData).toBe(null);
+      expect(exportData.value.exportWasBatched).toBe(false);
+      expect(exportData.value.exportBatchCount).toBe(0);
+      expect(progressState.value.currentBatch).toBe(0);
+      expect(progressState.value.totalBatches).toBe(0);
       expect(exportingOrgId.value).toBe(null);
-      expect(showNoUsersModal.value).toBe(false);
-      expect(noUsersOrgName.value).toBe('');
-      expect(currentBatch.value).toBe(0);
-      expect(totalBatches.value).toBe(0);
     });
   });
 
@@ -58,80 +47,66 @@ describe('useExportModal', () => {
   });
 
   describe('exportModalTitle', () => {
-    it('should return correct title for each state', () => {
-      const { exportModalTitle, exportComplete, exportCancelled, exportSuccess, exportInProgress, exportWarningLevel } =
-        useExportModal();
+    it('should return correct title for each export phase', () => {
+      const { exportModalTitle, exportPhase, exportWarningLevel } = useExportModal();
 
-      // Cancelled state
-      exportComplete.value = true;
-      exportCancelled.value = true;
+      // Cancelled phase
+      exportPhase.value = EXPORT_PHASE.CANCELLED;
       expect(exportModalTitle.value).toBe('Export Cancelled');
 
-      // Success state
-      exportCancelled.value = false;
-      exportSuccess.value = true;
+      // Success phase
+      exportPhase.value = EXPORT_PHASE.SUCCESS;
       expect(exportModalTitle.value).toBe('Export Successful');
 
-      // Failed state
-      exportSuccess.value = false;
+      // Failed phase
+      exportPhase.value = EXPORT_PHASE.FAILED;
       expect(exportModalTitle.value).toBe('Export Failed');
 
-      // In progress state
-      exportComplete.value = false;
-      exportInProgress.value = true;
+      // In progress phase
+      exportPhase.value = EXPORT_PHASE.IN_PROGRESS;
       expect(exportModalTitle.value).toBe('Exporting...');
 
-      // Critical warning
-      exportInProgress.value = false;
+      // Idle with critical warning
+      exportPhase.value = EXPORT_PHASE.IDLE;
       exportWarningLevel.value = WARNING_LEVELS.CRITICAL;
       expect(exportModalTitle.value).toBe('Large Export Warning');
 
-      // Strong warning
+      // Idle with strong warning
       exportWarningLevel.value = WARNING_LEVELS.STRONG;
       expect(exportModalTitle.value).toBe('Export Warning');
 
-      // Default
+      // Idle with normal warning
       exportWarningLevel.value = WARNING_LEVELS.NORMAL;
       expect(exportModalTitle.value).toBe('Confirm Export');
     });
   });
 
   describe('exportModalSeverity', () => {
-    it('should return correct severity for each state', () => {
-      const {
-        exportModalSeverity,
-        exportComplete,
-        exportCancelled,
-        exportSuccess,
-        exportInProgress,
-        exportWarningLevel,
-      } = useExportModal();
+    it('should return correct severity for each export phase', () => {
+      const { exportModalSeverity, exportPhase, exportWarningLevel } = useExportModal();
 
       // Cancelled
-      exportComplete.value = true;
-      exportCancelled.value = true;
+      exportPhase.value = EXPORT_PHASE.CANCELLED;
       expect(exportModalSeverity.value).toBe('warn');
 
       // Success
-      exportCancelled.value = false;
-      exportSuccess.value = true;
+      exportPhase.value = EXPORT_PHASE.SUCCESS;
       expect(exportModalSeverity.value).toBe('success');
 
-      // Error
-      exportSuccess.value = false;
+      // Failed
+      exportPhase.value = EXPORT_PHASE.FAILED;
       expect(exportModalSeverity.value).toBe('error');
 
       // In progress
-      exportComplete.value = false;
-      exportInProgress.value = true;
+      exportPhase.value = EXPORT_PHASE.IN_PROGRESS;
       expect(exportModalSeverity.value).toBe('info');
 
-      // Critical warning
-      exportInProgress.value = false;
+      // Idle with critical warning
+      exportPhase.value = EXPORT_PHASE.IDLE;
       exportWarningLevel.value = WARNING_LEVELS.CRITICAL;
       expect(exportModalSeverity.value).toBe('warn');
 
-      // Normal
+      // Idle with normal warning
       exportWarningLevel.value = WARNING_LEVELS.NORMAL;
       expect(exportModalSeverity.value).toBe('info');
     });
@@ -141,71 +116,70 @@ describe('useExportModal', () => {
     it('should reset all state to defaults', () => {
       const {
         resetModalState,
-        showExportConfirmation,
-        exportInProgress,
-        exportComplete,
-        exportSuccess,
-        exportCancelled,
+        modalState,
+        exportPhase,
         exportWarningLevel,
+        exportData,
+        progressState,
         exportingOrgId,
-        currentBatch,
-        totalBatches,
       } = useExportModal();
 
       // Set some state
-      showExportConfirmation.value = true;
-      exportInProgress.value = true;
-      exportComplete.value = true;
-      exportSuccess.value = true;
-      currentBatch.value = 3;
-      totalBatches.value = 5;
+      modalState.value.showExportConfirmation = true;
+      exportPhase.value = EXPORT_PHASE.SUCCESS;
+      exportData.value.exportBatchCount = 3;
+      progressState.value.currentBatch = 2;
+      progressState.value.totalBatches = 5;
       exportingOrgId.value = 'org-123';
 
       resetModalState();
 
-      expect(showExportConfirmation.value).toBe(false);
+      expect(modalState.value.showExportConfirmation).toBe(false);
+      expect(modalState.value.showNoUsersModal).toBe(false);
+      expect(modalState.value.noUsersOrgName).toBe('');
+      expect(exportPhase.value).toBe(EXPORT_PHASE.IDLE);
       expect(exportWarningLevel.value).toBe(WARNING_LEVELS.NORMAL);
-      expect(exportInProgress.value).toBe(false);
-      expect(exportComplete.value).toBe(false);
-      expect(exportSuccess.value).toBe(false);
-      expect(exportCancelled.value).toBe(false);
+      expect(exportData.value.pendingExportData).toBe(null);
+      expect(exportData.value.exportWasBatched).toBe(false);
+      expect(exportData.value.exportBatchCount).toBe(0);
+      expect(progressState.value.currentBatch).toBe(0);
+      expect(progressState.value.totalBatches).toBe(0);
       expect(exportingOrgId.value).toBe(null);
-      expect(currentBatch.value).toBe(0);
-      expect(totalBatches.value).toBe(0);
     });
   });
 
   describe('resetCompletionStates', () => {
     it('should reset only completion states', () => {
-      const {
-        resetCompletionStates,
-        exportInProgress,
-        exportComplete,
-        exportSuccess,
-        exportCancelled,
-        exportError,
-        showExportConfirmation,
-      } = useExportModal();
+      const { resetCompletionStates, exportPhase, exportError, modalState, exportData } = useExportModal();
 
       // Set some state
-      showExportConfirmation.value = true;
-      exportInProgress.value = true;
-      exportComplete.value = true;
-      exportSuccess.value = true;
-      exportCancelled.value = true;
+      modalState.value.showExportConfirmation = true;
+      exportPhase.value = EXPORT_PHASE.SUCCESS;
       exportError.value = 'Some error';
+      exportData.value.pendingExportData = { orgType: {}, userCount: 100 };
 
       resetCompletionStates();
 
       // Completion states should be reset
-      expect(exportInProgress.value).toBe(false);
-      expect(exportComplete.value).toBe(false);
-      expect(exportSuccess.value).toBe(false);
-      expect(exportCancelled.value).toBe(false);
+      expect(exportPhase.value).toBe(EXPORT_PHASE.IDLE);
       expect(exportError.value).toBe('');
 
       // Other state should remain
-      expect(showExportConfirmation.value).toBe(true);
+      expect(modalState.value.showExportConfirmation).toBe(true);
+      expect(exportData.value.pendingExportData).toEqual({ orgType: {}, userCount: 100 });
+    });
+  });
+
+  describe('EXPORT_PHASE constant', () => {
+    it('should export EXPORT_PHASE constant', () => {
+      const { EXPORT_PHASE: exportedPhase } = useExportModal();
+
+      expect(exportedPhase).toBeDefined();
+      expect(exportedPhase.IDLE).toBe('idle');
+      expect(exportedPhase.IN_PROGRESS).toBe('inProgress');
+      expect(exportedPhase.SUCCESS).toBe('success');
+      expect(exportedPhase.FAILED).toBe('failed');
+      expect(exportedPhase.CANCELLED).toBe('cancelled');
     });
   });
 });

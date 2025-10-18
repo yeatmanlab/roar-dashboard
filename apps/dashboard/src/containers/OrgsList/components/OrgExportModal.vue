@@ -2,7 +2,7 @@
   <Dialog
     :visible="visible"
     width="40rem"
-    :closable="!exportInProgress"
+    :closable="exportPhase !== EXPORT_PHASE.IN_PROGRESS"
     @update:visible="$emit('update:visible', $event)"
   >
     <template #header>
@@ -18,7 +18,11 @@
       <div class="flex justify-content-end gap-2">
         <!-- Show only Close button when complete -->
         <PvButton
-          v-if="exportComplete"
+          v-if="
+            exportPhase === EXPORT_PHASE.SUCCESS ||
+            exportPhase === EXPORT_PHASE.FAILED ||
+            exportPhase === EXPORT_PHASE.CANCELLED
+          "
           label="Close"
           severity="primary"
           class="border-none border-round p-2"
@@ -26,7 +30,7 @@
         />
         <!-- Show Cancel button during export -->
         <PvButton
-          v-else-if="exportInProgress"
+          v-else-if="exportPhase === EXPORT_PHASE.IN_PROGRESS"
           label="Cancel Export"
           severity="danger"
           outlined
@@ -59,26 +63,15 @@ import { computed } from 'vue';
 import Dialog from '@/components/Dialog';
 import PvMessage from 'primevue/message';
 import PvButton from 'primevue/button';
+import { EXPORT_PHASE } from '@/containers/OrgsList/constants/exportConstants';
 
 const props = defineProps({
   visible: {
     type: Boolean,
     required: true,
   },
-  exportInProgress: {
-    type: Boolean,
-    required: true,
-  },
-  exportComplete: {
-    type: Boolean,
-    required: true,
-  },
-  exportSuccess: {
-    type: Boolean,
-    required: true,
-  },
-  exportCancelled: {
-    type: Boolean,
+  exportPhase: {
+    type: String,
     required: true,
   },
   exportWarningLevel: {
@@ -102,56 +95,61 @@ const props = defineProps({
 defineEmits(['update:visible', 'confirm', 'cancel', 'request-cancel']);
 
 /**
- * Computed property for status icon configuration
+ * Computed property for status icon configuration based on export phase
  */
 const status = computed(() => {
-  if (props.exportComplete && props.exportSuccess) {
-    return {
-      icon: 'pi-check-circle',
-      color: 'text-green-500',
-      aria: 'Export successful',
-    };
+  switch (props.exportPhase) {
+    case EXPORT_PHASE.SUCCESS:
+      return {
+        icon: 'pi-check-circle',
+        color: 'text-green-500',
+        aria: 'Export successful',
+      };
+    case EXPORT_PHASE.CANCELLED:
+      return {
+        icon: 'pi-ban',
+        color: 'text-orange-500',
+        aria: 'Export cancelled',
+      };
+    case EXPORT_PHASE.FAILED:
+      return {
+        icon: 'pi-times-circle',
+        color: 'text-red-500',
+        aria: 'Export failed',
+      };
+    case EXPORT_PHASE.IN_PROGRESS:
+      return {
+        icon: 'pi-spinner',
+        color: 'text-blue-500',
+        spin: 'pi-spin',
+        aria: 'Export in progress',
+      };
+    case EXPORT_PHASE.IDLE:
+      if (props.exportWarningLevel === 'critical') {
+        return {
+          icon: 'pi-exclamation-triangle',
+          color: 'text-orange-500',
+          aria: 'Critical warning',
+        };
+      }
+      if (props.exportWarningLevel === 'strong') {
+        return {
+          icon: 'pi-exclamation-circle',
+          color: 'text-yellow-600',
+          aria: 'Warning',
+        };
+      }
+      return {
+        icon: 'pi-info-circle',
+        color: 'text-blue-500',
+        aria: 'Information',
+      };
+    default:
+      return {
+        icon: 'pi-info-circle',
+        color: 'text-blue-500',
+        aria: 'Information',
+      };
   }
-  if (props.exportComplete && props.exportCancelled) {
-    return {
-      icon: 'pi-ban',
-      color: 'text-orange-500',
-      aria: 'Export cancelled',
-    };
-  }
-  if (props.exportComplete && !props.exportSuccess) {
-    return {
-      icon: 'pi-times-circle',
-      color: 'text-red-500',
-      aria: 'Export failed',
-    };
-  }
-  if (props.exportInProgress) {
-    return {
-      icon: 'pi-spinner',
-      color: 'text-blue-500',
-      spin: 'pi-spin',
-      aria: 'Export in progress',
-    };
-  }
-  if (props.exportWarningLevel === 'critical') {
-    return {
-      icon: 'pi-exclamation-triangle',
-      color: 'text-orange-500',
-      aria: 'Critical warning',
-    };
-  }
-  if (props.exportWarningLevel === 'strong') {
-    return {
-      icon: 'pi-exclamation-circle',
-      color: 'text-yellow-600',
-      aria: 'Warning',
-    };
-  }
-  return {
-    icon: 'pi-info-circle',
-    color: 'text-blue-500',
-    aria: 'Information',
-  };
 });
 </script>

@@ -160,11 +160,8 @@
     </template>
   </RoarModal>
   <OrgExportModal
-    v-model:visible="showExportConfirmation"
-    :export-in-progress="exportInProgress"
-    :export-complete="exportComplete"
-    :export-success="exportSuccess"
-    :export-cancelled="exportCancelled"
+    v-model:visible="modalState.showExportConfirmation"
+    :export-phase="exportPhase"
     :export-warning-level="exportWarningLevel"
     :title="exportModalTitle"
     :message="exportModalMessage"
@@ -173,21 +170,24 @@
     @cancel="cancelExport"
     @request-cancel="requestCancelExport"
   />
-  <Dialog v-model:visible="showNoUsersModal" width="30rem">
+  <Dialog v-model:visible="modalState.showNoUsersModal" width="30rem">
     <template #header>
       <div class="flex align-items-center gap-2">
         <i class="pi pi-info-circle text-blue-500 text-2xl"></i>
         <h2 class="m-0 font-bold">No Users Found</h2>
       </div>
     </template>
-    <p class="m-0">No users were found for {{ noUsersOrgName }}. There is nothing to export.</p>
+    <p class="text-center">
+      No users found in <strong>{{ modalState.noUsersOrgName }}</strong
+      >. There are no users to export.
+    </p>
     <template #footer>
       <div class="flex justify-content-end">
         <PvButton
           label="OK"
           severity="primary"
           class="border-none border-round p-2"
-          @click="showNoUsersModal = false"
+          @click="modalState.showNoUsersModal = false"
         />
       </div>
     </template>
@@ -306,15 +306,10 @@ const activeOrgType = computed(() => {
 
 // Use export orchestrator composable (must be after activeOrgType is defined)
 const {
-  showExportConfirmation,
-  exportInProgress,
-  exportComplete,
-  exportSuccess,
-  exportCancelled,
+  modalState,
+  exportPhase,
   exportWarningLevel,
   exportingOrgId,
-  showNoUsersModal,
-  noUsersOrgName,
   exportOrgUsers,
   confirmExport,
   cancelExport,
@@ -322,6 +317,7 @@ const {
   exportModalTitle,
   exportModalMessage,
   exportModalSeverity,
+  EXPORT_PHASE,
 } = useOrgExportOrchestrator(activeOrgType, orderBy);
 
 // Use table columns composable (must be after activeOrgType is defined)
@@ -488,10 +484,13 @@ watch([selectedDistrict, selectedSchool], () => {
 });
 
 // Watch for modal close via X button to reset export state
-watch(showExportConfirmation, (newValue, oldValue) => {
-  // If modal was open and is now closed, and we're not in progress
-  if (oldValue && !newValue && !exportInProgress.value) {
-    cancelExport();
-  }
-});
+watch(
+  () => modalState.value.showExportConfirmation,
+  (newValue, oldValue) => {
+    // If modal was open and is now closed, and we're not in progress
+    if (oldValue && !newValue && exportPhase.value !== EXPORT_PHASE.IN_PROGRESS) {
+      cancelExport();
+    }
+  },
+);
 </script>

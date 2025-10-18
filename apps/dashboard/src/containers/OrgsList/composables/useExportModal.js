@@ -1,6 +1,6 @@
 import { ref, computed } from 'vue';
 import { CSV_EXPORT_BATCH_SIZE } from '@/constants/csvExport';
-import { WARNING_LEVELS } from '../constants/exportConstants';
+import { WARNING_LEVELS, EXPORT_PHASE } from '../constants/exportConstants';
 
 /**
  * Modal state management composable - handles UI state for export modal
@@ -8,27 +8,30 @@ import { WARNING_LEVELS } from '../constants/exportConstants';
  * @returns {object} Modal state and computed properties
  */
 export function useExportModal() {
-  // Modal visibility
-  const showExportConfirmation = ref(false);
-  const showNoUsersModal = ref(false);
-  const noUsersOrgName = ref('');
+  // Modal visibility state
+  const modalState = ref({
+    showExportConfirmation: false,
+    showNoUsersModal: false,
+    noUsersOrgName: '',
+  });
 
-  // Export state
-  const exportInProgress = ref(false);
-  const exportComplete = ref(false);
-  const exportSuccess = ref(false);
-  const exportCancelled = ref(false);
+  // Export phase and status
+  const exportPhase = ref(EXPORT_PHASE.IDLE);
   const exportError = ref('');
   const exportWarningLevel = ref(WARNING_LEVELS.NORMAL);
 
-  // Export data
-  const pendingExportData = ref(null);
-  const exportWasBatched = ref(false);
-  const exportBatchCount = ref(0);
+  // Export data and configuration
+  const exportData = ref({
+    pendingExportData: null,
+    exportWasBatched: false,
+    exportBatchCount: 0,
+  });
 
-  // Progress tracking (from export composable)
-  const currentBatch = ref(0);
-  const totalBatches = ref(0);
+  // Progress tracking
+  const progressState = ref({
+    currentBatch: 0,
+    totalBatches: 0,
+  });
 
   // Button spinner state
   const exportingOrgId = ref(null);
@@ -39,55 +42,62 @@ export function useExportModal() {
   const isExportingOrgUsers = computed(() => exportingOrgId.value !== null);
 
   /**
-   * Modal title based on current export state.
+   * Modal title based on current export phase.
    */
   const exportModalTitle = computed(() => {
-    switch (true) {
-      case exportComplete.value && exportCancelled.value:
+    switch (exportPhase.value) {
+      case EXPORT_PHASE.CANCELLED:
         return 'Export Cancelled';
-      case exportComplete.value && exportSuccess.value:
+      case EXPORT_PHASE.SUCCESS:
         return 'Export Successful';
-      case exportComplete.value && !exportSuccess.value:
+      case EXPORT_PHASE.FAILED:
         return 'Export Failed';
-      case exportInProgress.value:
+      case EXPORT_PHASE.IN_PROGRESS:
         return 'Exporting...';
-      case exportWarningLevel.value === WARNING_LEVELS.CRITICAL:
-        return 'Large Export Warning';
-      case exportWarningLevel.value === WARNING_LEVELS.STRONG:
-        return 'Export Warning';
+      case EXPORT_PHASE.IDLE:
+        if (exportWarningLevel.value === WARNING_LEVELS.CRITICAL) {
+          return 'Large Export Warning';
+        }
+        if (exportWarningLevel.value === WARNING_LEVELS.STRONG) {
+          return 'Export Warning';
+        }
+        return 'Confirm Export';
       default:
         return 'Confirm Export';
     }
   });
 
   /**
-   * Modal message based on current export state.
+   * Modal message based on current export phase.
    */
   const exportModalMessage = computed(() => {
-    const userCount = pendingExportData.value?.userCount || 0;
+    const userCount = exportData.value.pendingExportData?.userCount || 0;
     const formattedCount = userCount.toLocaleString();
-    const orgName = pendingExportData.value?.orgType?.name || '';
+    const orgName = exportData.value.pendingExportData?.orgType?.name || '';
 
-    // Complete state messages
-    if (exportComplete.value) {
-      switch (true) {
-        case exportCancelled.value && totalBatches.value > 1 && currentBatch.value > 0:
-          return `Export was cancelled after ${currentBatch.value} of ${totalBatches.value} batches were downloaded.\n\nYou may have partial data in the downloaded files.`;
-        case exportCancelled.value:
-          return 'Export was cancelled. No files were downloaded.';
-        case exportSuccess.value && exportWasBatched.value:
-          return `Users from ${orgName} have been exported successfully in ${exportBatchCount.value} separate CSV files!`;
-        case exportSuccess.value:
-          return `Users from ${orgName} have been exported successfully!`;
-        default:
-          return exportError.value || 'An unknown error occurred during export.';
+    // Completion phase messages
+    if (exportPhase.value === EXPORT_PHASE.CANCELLED) {
+      if (progressState.value.totalBatches > 1 && progressState.value.currentBatch > 0) {
+        return `Export was cancelled after ${progressState.value.currentBatch} of ${progressState.value.totalBatches} batches were downloaded.\n\nYou may have partial data in the downloaded files.`;
       }
+      return 'Export was cancelled. No files were downloaded.';
+    }
+
+    if (exportPhase.value === EXPORT_PHASE.SUCCESS) {
+      if (exportData.value.exportWasBatched) {
+        return `Users from ${orgName} have been exported successfully in ${exportData.value.exportBatchCount} separate CSV files!`;
+      }
+      return `Users from ${orgName} have been exported successfully!`;
+    }
+
+    if (exportPhase.value === EXPORT_PHASE.FAILED) {
+      return exportError.value || 'An unknown error occurred during export.';
     }
 
     // In progress messages
-    if (exportInProgress.value) {
-      if (totalBatches.value > 1) {
-        return `Exporting batch ${currentBatch.value} of ${totalBatches.value}...\n\nPlease wait while your files are being prepared.`;
+    if (exportPhase.value === EXPORT_PHASE.IN_PROGRESS) {
+      if (progressState.value.totalBatches > 1) {
+        return `Exporting batch ${progressState.value.currentBatch} of ${progressState.value.totalBatches}...\n\nPlease wait while your files are being prepared.`;
       }
       return `Exporting ${formattedCount} users...\n\nPlease wait while your file is being prepared.`;
     }
@@ -115,28 +125,26 @@ Consider filtering by a smaller organization if you need faster results.`;
   });
 
   /**
-   * Modal severity based on current export state.
+   * Modal severity based on current export phase.
    */
   const exportModalSeverity = computed(() => {
-    if (exportComplete.value) {
-      switch (true) {
-        case exportCancelled.value:
-          return 'warn';
-        case exportSuccess.value:
-          return 'success';
-        default:
-          return 'error';
-      }
-    }
-
-    if (exportInProgress.value) {
-      return 'info';
-    }
-
-    switch (exportWarningLevel.value) {
-      case WARNING_LEVELS.CRITICAL:
-      case WARNING_LEVELS.STRONG:
+    switch (exportPhase.value) {
+      case EXPORT_PHASE.CANCELLED:
         return 'warn';
+      case EXPORT_PHASE.SUCCESS:
+        return 'success';
+      case EXPORT_PHASE.FAILED:
+        return 'error';
+      case EXPORT_PHASE.IN_PROGRESS:
+        return 'info';
+      case EXPORT_PHASE.IDLE:
+        if (
+          exportWarningLevel.value === WARNING_LEVELS.CRITICAL ||
+          exportWarningLevel.value === WARNING_LEVELS.STRONG
+        ) {
+          return 'warn';
+        }
+        return 'info';
       default:
         return 'info';
     }
@@ -146,18 +154,23 @@ Consider filtering by a smaller organization if you need faster results.`;
    * Resets all modal state.
    */
   const resetModalState = () => {
-    showExportConfirmation.value = false;
-    pendingExportData.value = null;
-    exportWarningLevel.value = WARNING_LEVELS.NORMAL;
-    exportInProgress.value = false;
-    exportComplete.value = false;
-    exportSuccess.value = false;
-    exportCancelled.value = false;
+    modalState.value = {
+      showExportConfirmation: false,
+      showNoUsersModal: false,
+      noUsersOrgName: '',
+    };
+    exportPhase.value = EXPORT_PHASE.IDLE;
     exportError.value = '';
-    currentBatch.value = 0;
-    totalBatches.value = 0;
-    exportWasBatched.value = false;
-    exportBatchCount.value = 0;
+    exportWarningLevel.value = WARNING_LEVELS.NORMAL;
+    exportData.value = {
+      pendingExportData: null,
+      exportWasBatched: false,
+      exportBatchCount: 0,
+    };
+    progressState.value = {
+      currentBatch: 0,
+      totalBatches: 0,
+    };
     exportingOrgId.value = null;
   };
 
@@ -165,29 +178,18 @@ Consider filtering by a smaller organization if you need faster results.`;
    * Resets completion states only.
    */
   const resetCompletionStates = () => {
-    exportInProgress.value = false;
-    exportComplete.value = false;
-    exportSuccess.value = false;
-    exportCancelled.value = false;
+    exportPhase.value = EXPORT_PHASE.IDLE;
     exportError.value = '';
   };
 
   return {
-    // State
-    showExportConfirmation,
-    showNoUsersModal,
-    noUsersOrgName,
-    exportInProgress,
-    exportComplete,
-    exportSuccess,
-    exportCancelled,
+    // Grouped state
+    modalState,
+    exportPhase,
     exportError,
     exportWarningLevel,
-    pendingExportData,
-    exportWasBatched,
-    exportBatchCount,
-    currentBatch,
-    totalBatches,
+    exportData,
+    progressState,
     exportingOrgId,
 
     // Computed
@@ -199,5 +201,8 @@ Consider filtering by a smaller organization if you need faster results.`;
     // Functions
     resetModalState,
     resetCompletionStates,
+
+    // Export constants for consumers
+    EXPORT_PHASE,
   };
 }
