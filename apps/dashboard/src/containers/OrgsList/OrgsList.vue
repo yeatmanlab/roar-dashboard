@@ -91,7 +91,7 @@
         <p class="font-bold text-lg">Link:</p>
         <PvInputGroup>
           <PvInputText
-            style="width: 70%"
+            class="w-2/3"
             :value="`https://roar.education/register/?code=${activationCode}`"
             autocomplete="off"
             readonly
@@ -106,7 +106,7 @@
         <p class="font-bold text-lg">Code:</p>
         <PvInputGroup class="mt-3">
           <PvInputText
-            style="width: 70%"
+            class="w-2/3"
             :value="activationCode"
             autocomplete="off"
             data-cy="activation-code__input"

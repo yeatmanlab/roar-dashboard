@@ -12,7 +12,7 @@
       </div>
     </template>
     <PvMessage :severity="severity" :closable="false" class="mb-3">
-      <div style="white-space: pre-line">{{ message }}</div>
+      <div class="whitespace-pre-line">{{ message }}</div>
     </PvMessage>
     <template #footer>
       <div class="flex justify-content-end gap-2">
