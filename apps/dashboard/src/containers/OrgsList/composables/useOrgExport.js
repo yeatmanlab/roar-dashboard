@@ -77,63 +77,79 @@ export function useOrgExport(activeOrgType, orderBy) {
   };
 
   /**
-   * Performs the actual CSV export.
-   * For very large exports (>= critical threshold), splits into batches.
+   * Performs a batched export for large datasets.
+   * Splits the export into multiple CSV files to avoid memory issues.
    * @param {Function} onProgress - Optional callback for progress updates
+   * @returns {object} Result object with success status and batch info
+   */
+  const performBatchedExport = async (orgType, userCount, onProgress) => {
+    const numBatches = Math.ceil(userCount / CSV_EXPORT_BATCH_SIZE);
+    totalBatches.value = numBatches;
+
+    for (let batchIndex = 0; batchIndex < numBatches; batchIndex++) {
+      if (cancelRequested.value) {
+        return { cancelled: true, batchesCompleted: batchIndex };
+      }
+
+      currentBatch.value = batchIndex + 1;
+
+      // Notify progress callback if provided
+      if (onProgress) {
+        onProgress(currentBatch.value, totalBatches.value);
+      }
+
+      const users = await fetchUsersByOrg(activeOrgType.value, orgType.id, CSV_EXPORT_BATCH_SIZE, batchIndex, orderBy);
+
+      if (cancelRequested.value) {
+        return { cancelled: true, batchesCompleted: batchIndex };
+      }
+
+      const computedExportData = transformUsersForExport(users);
+      const filename = `${_kebabCase(orgType.name)}-users-export-part-${batchIndex + 1}-of-${numBatches}.csv`;
+      exportCsv(computedExportData, filename);
+
+      // Small delay between batches to avoid overwhelming the browser
+      if (batchIndex < numBatches - 1) {
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
+    }
+
+    return { success: true, batched: true, batchCount: numBatches };
+  };
+
+  /**
+   * Performs a single export for smaller datasets.
+   * @returns {object} Result object with success status
+   */
+  const performSingleExport = async (orgType, userCount) => {
+    const users = await fetchUsersByOrg(activeOrgType.value, orgType.id, userCount, 0, orderBy);
+
+    if (cancelRequested.value) {
+      return { cancelled: true };
+    }
+
+    const computedExportData = transformUsersForExport(users);
+    exportCsv(computedExportData, `${_kebabCase(orgType.name)}-users-export.csv`);
+
+    return { success: true, batched: false, batchCount: 1 };
+  };
+
+  /**
+   * Performs the actual CSV export.
+   * Automatically chooses between single or batched export based on user count.
+   * @param {object} orgType - Organization to export
+   * @param {number} userCount - Number of users to export
+   * @param {Function} onProgress - Optional callback for progress updates
+   * @returns {object} Result object with success status and batch info
    */
   const performExport = async (orgType, userCount, onProgress) => {
     try {
       const needsBatching = userCount >= CSV_EXPORT_CRITICAL_THRESHOLD;
 
       if (needsBatching) {
-        const numBatches = Math.ceil(userCount / CSV_EXPORT_BATCH_SIZE);
-        totalBatches.value = numBatches;
-
-        for (let batchIndex = 0; batchIndex < numBatches; batchIndex++) {
-          if (cancelRequested.value) {
-            return { cancelled: true, batchesCompleted: batchIndex };
-          }
-
-          currentBatch.value = batchIndex + 1;
-
-          // Notify progress callback if provided
-          if (onProgress) {
-            onProgress(currentBatch.value, totalBatches.value);
-          }
-
-          const users = await fetchUsersByOrg(
-            activeOrgType.value,
-            orgType.id,
-            CSV_EXPORT_BATCH_SIZE,
-            batchIndex,
-            orderBy,
-          );
-
-          if (cancelRequested.value) {
-            return { cancelled: true, batchesCompleted: batchIndex };
-          }
-
-          const computedExportData = transformUsersForExport(users);
-          const filename = `${_kebabCase(orgType.name)}-users-export-part-${batchIndex + 1}-of-${numBatches}.csv`;
-          exportCsv(computedExportData, filename);
-
-          if (batchIndex < numBatches - 1) {
-            await new Promise((resolve) => setTimeout(resolve, 100));
-          }
-        }
-
-        return { success: true, batched: true, batchCount: numBatches };
+        return await performBatchedExport(orgType, userCount, onProgress);
       } else {
-        const users = await fetchUsersByOrg(activeOrgType.value, orgType.id, userCount, 0, orderBy);
-
-        if (cancelRequested.value) {
-          return { cancelled: true };
-        }
-
-        const computedExportData = transformUsersForExport(users);
-        exportCsv(computedExportData, `${_kebabCase(orgType.name)}-users-export.csv`);
-
-        return { success: true, batched: false, batchCount: 1 };
+        return await performSingleExport(orgType, userCount);
       }
     } catch (error) {
       Sentry.captureException(error);
