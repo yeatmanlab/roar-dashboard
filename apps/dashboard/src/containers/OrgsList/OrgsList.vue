@@ -5,7 +5,7 @@
       <div class="flex flex-column mb-5">
         <div class="flex justify-content-between mb-2">
           <div class="flex align-items-center gap-3">
-            <i class="pi pi-folder-open text-gray-400 rounded" style="font-size: 1.6rem" />
+            <i class="pi pi-folder-open text-gray-400 rounded text-2xl" />
             <div class="admin-page-header">List Organizations</div>
           </div>
         </div>
@@ -181,7 +181,7 @@
   <PvDialog v-model:visible="showNoUsersModal" :style="{ width: '30rem' }" :draggable="false" modal>
     <template #header>
       <div class="flex align-items-center gap-2">
-        <i class="pi pi-info-circle text-blue-500" style="font-size: 1.5rem"></i>
+        <i class="pi pi-info-circle text-blue-500 text-2xl"></i>
         <h2 class="m-0 font-bold">No Users Found</h2>
       </div>
     </template>
@@ -223,15 +223,15 @@ import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useDistrictsListQuery from '@/composables/queries/useDistrictsListQuery';
 import useDistrictSchoolsQuery from '@/composables/queries/useDistrictSchoolsQuery';
 import useOrgsTableQuery from '@/composables/queries/useOrgsTableQuery';
-import EditOrgsForm from './EditOrgsForm.vue';
-import RoarModal from './modals/RoarModal.vue';
-import OrgExportModal from './OrgExportModal.vue';
-import { useOrgExport } from '@/composables/useOrgExport';
-import { useOrgTableColumns } from '@/composables/useOrgTableColumns';
+import EditOrgsForm from '@/components/EditOrgsForm.vue';
+import RoarModal from '@/components/modals/RoarModal.vue';
+import OrgExportModal from './components/OrgExportModal.vue';
+import { useOrgExportOrchestrator } from './composables/useOrgExportOrchestrator';
+import { useOrgTableColumns } from './composables/useOrgTableColumns';
 import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts.js';
 import RoarDataTable from '@/components/RoarDataTable';
-import { ORG_TYPES } from '../constants/orgTypes';
-import { usePermissions } from '../composables/usePermissions';
+import { ORG_TYPES } from '@/constants/orgTypes';
+import { usePermissions } from '@/composables/usePermissions';
 
 const initialized = ref(false);
 const selectedDistrict = ref(undefined);
@@ -309,7 +309,7 @@ const activeOrgType = computed(() => {
   return Object.keys(orgHeaders.value)[activeIndex.value];
 });
 
-// Use export composable (must be after activeOrgType is defined)
+// Use export orchestrator composable (must be after activeOrgType is defined)
 const {
   showExportConfirmation,
   exportInProgress,
@@ -320,7 +320,6 @@ const {
   exportingOrgId,
   showNoUsersModal,
   noUsersOrgName,
-  // currentBatch and totalBatches are available but not used in this component
   exportOrgUsers,
   confirmExport,
   cancelExport,
@@ -328,7 +327,7 @@ const {
   exportModalTitle,
   exportModalMessage,
   exportModalSeverity,
-} = useOrgExport(activeOrgType, orderBy);
+} = useOrgExportOrchestrator(activeOrgType, orderBy);
 
 // Use table columns composable (must be after activeOrgType is defined)
 const { tableColumns } = useOrgTableColumns(activeOrgType, isSuperAdmin, userCan, Permissions);

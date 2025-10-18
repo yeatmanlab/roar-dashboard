@@ -8,40 +8,8 @@
     @update:visible="$emit('update:visible', $event)"
   >
     <template #header>
-      <div class="flex align-items-center gap-2">
-        <!-- Success icon -->
-        <i
-          v-if="exportComplete && exportSuccess"
-          class="pi pi-check-circle text-green-500"
-          style="font-size: 1.5rem"
-        ></i>
-        <!-- Cancelled icon -->
-        <i
-          v-else-if="exportComplete && exportCancelled"
-          class="pi pi-ban text-orange-500"
-          style="font-size: 1.5rem"
-        ></i>
-        <!-- Error icon -->
-        <i
-          v-else-if="exportComplete && !exportSuccess"
-          class="pi pi-times-circle text-red-500"
-          style="font-size: 1.5rem"
-        ></i>
-        <!-- Progress spinner -->
-        <i v-else-if="exportInProgress" class="pi pi-spin pi-spinner text-blue-500" style="font-size: 1.5rem"></i>
-        <!-- Warning icons -->
-        <i
-          v-else-if="exportWarningLevel === 'critical'"
-          class="pi pi-exclamation-triangle text-orange-500"
-          style="font-size: 1.5rem"
-        ></i>
-        <i
-          v-else-if="exportWarningLevel === 'strong'"
-          class="pi pi-exclamation-circle text-yellow-600"
-          style="font-size: 1.5rem"
-        ></i>
-        <!-- Default info icon -->
-        <i v-else class="pi pi-info-circle text-blue-500" style="font-size: 1.5rem"></i>
+      <div class="flex items-center gap-2">
+        <i :class="['pi', status.icon, status.color, status.spin, 'text-2xl']" role="img" :aria-label="status.aria" />
         <h2 class="m-0 font-bold">{{ title }}</h2>
       </div>
     </template>
@@ -89,11 +57,12 @@
 </template>
 
 <script setup>
+import { computed } from 'vue';
 import PvDialog from 'primevue/dialog';
 import PvMessage from 'primevue/message';
 import PvButton from 'primevue/button';
 
-defineProps({
+const props = defineProps({
   visible: {
     type: Boolean,
     required: true,
@@ -133,4 +102,58 @@ defineProps({
 });
 
 defineEmits(['update:visible', 'confirm', 'cancel', 'request-cancel']);
+
+/**
+ * Computed property for status icon configuration
+ */
+const status = computed(() => {
+  if (props.exportComplete && props.exportSuccess) {
+    return {
+      icon: 'pi-check-circle',
+      color: 'text-green-500',
+      aria: 'Export successful',
+    };
+  }
+  if (props.exportComplete && props.exportCancelled) {
+    return {
+      icon: 'pi-ban',
+      color: 'text-orange-500',
+      aria: 'Export cancelled',
+    };
+  }
+  if (props.exportComplete && !props.exportSuccess) {
+    return {
+      icon: 'pi-times-circle',
+      color: 'text-red-500',
+      aria: 'Export failed',
+    };
+  }
+  if (props.exportInProgress) {
+    return {
+      icon: 'pi-spinner',
+      color: 'text-blue-500',
+      spin: 'pi-spin',
+      aria: 'Export in progress',
+    };
+  }
+  if (props.exportWarningLevel === 'critical') {
+    return {
+      icon: 'pi-exclamation-triangle',
+      color: 'text-orange-500',
+      aria: 'Critical warning',
+    };
+  }
+  if (props.exportWarningLevel === 'strong') {
+    return {
+      icon: 'pi-exclamation-circle',
+      color: 'text-yellow-600',
+      aria: 'Warning',
+    };
+  }
+  return {
+    icon: 'pi-info-circle',
+    color: 'text-blue-500',
+    aria: 'Information',
+  };
+});
 </script>
