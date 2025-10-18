@@ -446,7 +446,7 @@ const routes = [
     name: 'Launch Core Tasks',
     component: () => import('../components/tasks/TaskLevante.vue'),
     props: (route) => ({
-      taskId: 'core-tasks',
+      taskId: route.params.taskId,
       language: 'en',
       launchId: route.params.launchId,
     }),
