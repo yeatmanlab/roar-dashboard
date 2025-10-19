@@ -6,7 +6,6 @@
     "atLeastOneNumeric": "Al menos un numérico",
     "buttonLabel": "¡Vamos!",
     "minimumCharacters": "Mínimo 8 caracteres",
-    "educator": "Educador",
     "emailId": "correo electrónico",
     "emailPlaceholder": "Nombre de usuario o correo electrónico",
     "forgotPassword": "¿Olvidaste tu contraseña?",
@@ -24,40 +23,7 @@
     "signInWithPasswordInstead": "Iniciar sesión con contraseña",
     "signInUsingPassword": "Iniciar sesión con contraseña",
     "signInUsingEmailLink": "Iniciar sesión con enlace al email",
-    "suggestions": "Sugerencias",
-    "student": "Alumno",
-    "superAdminPopover": {
-      "title": "Cómo iniciar sesión como Super Administrador",
-      "emailLine": "Ingresa tu <strong>correo de Stanford</strong> o el <strong>correo de administrador</strong> asignado a tu cuenta de ROAR.",
-      "chooseOptions": "Luego elige una de las siguientes opciones:",
-      "passwordOption": "<strong>Iniciar sesión con contraseña:</strong> escribe tu contraseña para acceder a tu panel.",
-      "emailLinkOption": "<strong>Iniciar sesión con enlace por correo:</strong> recibe un enlace seguro de un solo uso en tu bandeja de entrada.",
-      "googleLine": "También puedes <strong>iniciar sesión con Google</strong> si tu cuenta está vinculada a un correo de Google.",
-      "notice": "🔒 Solo los Super Administradores autorizados pueden acceder a este portal. Si no puedes iniciar sesión, contacta al equipo de soporte de ROAR para verificación o recuperación de acceso."
-    },
-    "signInPopover": {
-      "title": "Sigue estos pasos para iniciar sesión",
-      "studentsTitle": "👩‍🎓 Estudiantes",
-      "studentsSteps": {
-        "enter": "Ingresa tu <strong>nombre de usuario</strong> o <strong>correo</strong>.",
-        "password": "Escribe tu <strong>contraseña</strong> y haz clic en <strong>¡Ir! →</strong>.",
-        "chooseLogin": "O elige el inicio de sesión de tu escuela:",
-        "clever": "Inicia sesión con <strong>Clever</strong>",
-        "classlink": "Inicia sesión con <strong>ClassLink</strong>",
-        "nycps": "Inicia sesión con <strong>NYCPS</strong>"
-      },
-      "educatorsTitle": "👩‍🏫 Educadores",
-      "educatorsSteps": {
-        "enter": "Ingresa tu <strong>correo electrónico</strong>.",
-        "chooseOption": "Luego elige una opción:",
-        "passwordOption": "<strong>Iniciar sesión con contraseña:</strong> escribe tu contraseña para acceder.",
-        "emailLinkOption": "<strong>Iniciar sesión con enlace por correo:</strong> recibe un enlace de acceso en tu bandeja de entrada.",
-        "youMayAlso": "También puedes usar:",
-        "clever": "Inicia sesión con <strong>Clever</strong>",
-        "classlink": "Inicia sesión con <strong>ClassLink</strong>",
-        "nycps": "Inicia sesión con <strong>NYCPS</strong>"
-      }
-    }
+    "suggestions": "Sugerencias"
   },
   "cleverLanding": {
     "cleverLoading": "Cargando tus datos desde Clever..."

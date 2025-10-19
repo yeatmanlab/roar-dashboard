@@ -808,7 +808,6 @@ router.beforeEach(async (to, from, next) => {
     'Maintenance',
     'Register',
     'SignIn',
-    'SignInRoarAdmin',
   ];
 
   const inMaintenanceMode = false;

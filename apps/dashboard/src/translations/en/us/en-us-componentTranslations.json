@@ -22,41 +22,7 @@
     "signInWith": "Sign in with",
     "suggestions": "Suggestions",
     "forgotPassword": "Forgot password?",
-    "student": "Student",
-    "educator": "Educator",
-    "or": "or",
-    "superAdminPopover": {
-      "title": "How to sign in as Super Admin",
-      "emailLine": "Enter your <strong>Stanford email</strong> or the <strong>admin email</strong> assigned to your ROAR account.",
-      "chooseOptions": "Then choose one of the following options:",
-      "passwordOption": "<strong>Sign-in using password:</strong> type your password to access your dashboard.",
-      "emailLinkOption": "<strong>Sign-in using email link:</strong> receive a one-time secure link in your inbox.",
-      "googleLine": "You can also <strong>Sign in with Google</strong> if your account is linked to a Google email.",
-      "notice": "🔒 Only authorized Super Admins can access this portal. If you cannot sign in, contact the ROAR support team for verification or access recovery."
-    },
-    "signInPopover": {
-      "title": "Follow these steps to sign in",
-      "studentsTitle": "👩‍🎓 Students",
-      "studentsSteps": {
-        "enter": "Enter your <strong>username</strong> or <strong>email</strong>.",
-        "password": "Type your <strong>password</strong> and click <strong>Go! →</strong>.",
-        "chooseLogin": "Or choose your school’s login:",
-        "clever": "Sign in with <strong>Clever</strong>",
-        "classlink": "Sign in with <strong>ClassLink</strong>",
-        "nycps": "Sign in with <strong>NYCPS</strong>"
-      },
-      "educatorsTitle": "👩‍🏫 Educators",
-      "educatorsSteps": {
-        "enter": "Enter your <strong>email</strong>.",
-        "chooseOption": "Then choose one option:",
-        "passwordOption": "<strong>Sign in using password:</strong> type your password to log in.",
-        "emailLinkOption": "<strong>Sign in using email link:</strong> receive a sign-in link in your inbox.",
-        "youMayAlso": "You may also use:",
-        "clever": "Sign in with <strong>Clever</strong>",
-        "classlink": "Sign in with <strong>ClassLink</strong>",
-        "nycps": "Sign in with <strong>NYCPS</strong>"
-      }
-    }
+    "or": "or"
   },
   "cleverLanding": {
     "cleverLoading": "Loading your data from Clever..."

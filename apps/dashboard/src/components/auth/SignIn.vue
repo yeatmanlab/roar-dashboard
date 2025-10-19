@@ -208,14 +208,13 @@ watch(
 const rules = {
   email: { required },
   password: {
-    requiredIf: requiredUnless(() => state.role === 'educator'),
+    requiredIf: requiredUnless(() => !props.showPasswordField),
   },
 };
 const submitted = ref(false);
 const v$ = useVuelidate(rules, state);
 const capsLockEnabled = ref(false);
 const forgotPasswordModalOpen = ref(false);
-// const showPasswordField = ref(false);
 
 const handleFormSubmit = (isFormValid) => {
   submitted.value = true;
