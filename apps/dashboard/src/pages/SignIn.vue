@@ -47,19 +47,13 @@
           <div v-if="!hideProviders" class="flex flex-column w-full align-content-center justify-content-center">
             <PvButton
               v-if="(multipleProviders && availableProviders.includes('clever')) || !showPasswordField"
-              class="flex h-1 m-1 w-full surface-0 border-200 border-1 border-round-md justify-content-center hover:border-primary hover:surface-ground"
-              style="border-radius: 3rem; height: 2.5rem; color: black"
+              class="flex h-1 m-1 w-full surface-0 border-200 border-1 border-round-md justify-content-center hover:border-primary hover:surface-ground provider-button"
               data-cy="sign-in__clever-sso"
               @click="authWithClever"
             >
               <div class="flex flex-row align-items-center w-full">
                 <div class="flex justify-content-end w-5">
-                  <img
-                    src="../assets/provider-clever-logo.svg"
-                    alt="The Clever Logo"
-                    class="flex p-1"
-                    style="width: 3.5vh"
-                  />
+                  <img src="../assets/provider-clever-logo.svg" alt="The Clever Logo" class="flex p-1 provider-logo" />
                 </div>
                 <div class="flex justify-content-start w-full pl-3">
                   <span> {{ $t('authSignIn.signInWith') }} Clever</span>
@@ -68,8 +62,7 @@
             </PvButton>
             <PvButton
               v-if="(multipleProviders && availableProviders.includes('classlink')) || !showPasswordField"
-              class="flex h-1 m-1 w-full text-black surface-0 border-200 border-1 border-round-md justify-content-center hover:border-primary hover:surface-ground"
-              style="height: 2.5rem; color: black"
+              class="flex h-1 m-1 w-full text-black surface-0 border-200 border-1 border-round-md justify-content-center hover:border-primary hover:surface-ground provider-button"
               data-cy="sign-in__classlink-sso"
               @click="authWithClassLink"
             >
@@ -78,8 +71,7 @@
                   <img
                     src="../assets/provider-classlink-logo.png"
                     alt="The ClassLink Logo"
-                    class="flex p-1"
-                    style="width: 3.5vh"
+                    class="flex p-1 provider-logo"
                   />
                 </div>
                 <div class="flex justify-content-start w-full pl-3">
@@ -89,8 +81,7 @@
             </PvButton>
             <PvButton
               v-if="(multipleProviders && availableProviders.includes('nycps')) || !showPasswordField"
-              class="flex h-1 m-1 w-full text-black surface-0 border-200 border-1 border-round-md justify-content-center hover:border-primary hover:surface-ground"
-              style="height: 2.5rem; color: black"
+              class="flex h-1 m-1 w-full text-black surface-0 border-200 border-1 border-round-md justify-content-center hover:border-primary hover:surface-ground provider-button"
               data-cy="sign-in__classlink-sso"
               @click="authWithNYCPS"
             >
@@ -99,8 +90,7 @@
                   <img
                     src="../assets/provider-nycps-logo.jpg"
                     alt="The NYC Public Schools Logo"
-                    class="flex p-1"
-                    style="width: 3.5vh"
+                    class="flex p-1 provider-logo"
                   />
                 </div>
                 <div class="flex justify-content-start w-full pl-3">
@@ -112,7 +102,7 @@
         </section>
       </section>
       <footer class="flex flex-row bg-gray-50 m-0 p-0">
-        <a href="#trouble" style="display: none">{{ $t('pageSignIn.havingTrouble') }}</a>
+        <a href="#trouble" class="hidden">{{ $t('pageSignIn.havingTrouble') }}</a>
         <div class="flex flex-row w-full">
           <div class="w-full">
             <LanguageSelector />
@@ -427,33 +417,11 @@ div#password {
 }
 
 .provider-button {
-  display: flex;
-  align-items: center; /* centers logo + text vertically */
-  justify-content: center; /* centers content horizontally */
-  gap: 0.75rem; /* consistent spacing */
-  height: 2.5rem;
   border-radius: 3rem;
-  color: black;
-  background-color: white;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  transition:
-    border-color 0.2s,
-    background-color 0.2s;
+  height: 2.5rem;
+  color: black !important;
 }
-
-.provider-button:hover {
-  border-color: var(--primary-color);
-  background-color: var(--surface-ground);
-}
-
 .provider-logo {
-  height: 1.5rem; /* consistent height */
-  width: auto; /* auto width for varying aspect ratios */
-  display: block;
-}
-
-.provider-text {
-  font-size: 1rem;
-  line-height: 1;
+  width: 3.5vh;
 }
 </style>

@@ -50,9 +50,10 @@ describe('Participant: Auth', () => {
     cy.visit('/game/core-tasks/trog');
 
     cy.get('[data-cy="sign-in__username"]').type(PARTICIPANT_USERNAME, { log: false });
+    cy.get('[data-cy="signin-continue"]').click();
     cy.get('[data-cy="sign-in__password"]').type(PARTICIPANT_PASSWORD, { log: false });
 
-    cy.get('[data-cy="sign-in__submit"]').contains('Go!').click();
+    cy.get('[data-cy="signin-continue"]').click();
 
     cy.url().should('eq', `${Cypress.config().baseUrl}/game/core-tasks/trog`);
   });
