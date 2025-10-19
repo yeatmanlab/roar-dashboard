@@ -9,7 +9,7 @@ const testUserList = Cypress.env('testUserList');
 describe('Partner Admin: Individual Reports', () => {
   it("Selects an administration and views a student's individual score report", () => {
     // Login as a partner admin.
-    cy.loginEducator(testPartnerAdminUsername, testPartnerAdminPassword);
+    cy.login(testPartnerAdminUsername, testPartnerAdminPassword);
 
     // Wait until the administrations list is loaded.
     // Note: As the application currently does not support paginated fetching of administrations, we have to wait for

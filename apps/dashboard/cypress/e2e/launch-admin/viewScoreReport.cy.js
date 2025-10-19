@@ -3,7 +3,7 @@ const LAUNCH_ADMIN_PASSWORD = Cypress.env('LAUNCH_ADMIN_PASSWORD');
 
 describe('Launch Admin: View student score report', () => {
   it("Navigates to view a student's score report", () => {
-    cy.loginEducator(LAUNCH_ADMIN_USERNAME, LAUNCH_ADMIN_PASSWORD);
+    cy.login(LAUNCH_ADMIN_USERNAME, LAUNCH_ADMIN_PASSWORD);
     cy.waitForStudentReportList();
     cy.get('[data-cy="view-score-report-btn').first().click();
 

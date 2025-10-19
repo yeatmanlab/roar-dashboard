@@ -19,54 +19,11 @@ Cypress.Commands.add('login', (username, password) => {
       cy.visit(APP_ROUTES.HOME);
 
       cy.get('[data-cy="sign-in__username"]').type(username, { log: false });
+
+      cy.get('[data-cy="signin-continue"]').click();
       cy.get('[data-cy="sign-in__password"]').type(password, { log: false });
 
-      cy.get('button').contains('Go!').click();
-
-      cy.url().should('eq', `${baseUrl}/`);
-      cy.log('Login successful.');
-      cy.agreeToConsent();
-    },
-    {
-      validate: () => {
-        cy.window().then((win) => {
-          const sessionStorageKeys = Object.keys(win.sessionStorage);
-
-          const adminAuthUserKeyPattern = new RegExp('^firebase:authUser:.+:admin$');
-          const appAuthUserKeyPattern = new RegExp('^firebase:authUser:.+:app$');
-
-          const hasAdminAuthUserKey = sessionStorageKeys.some((key) => adminAuthUserKeyPattern.test(key));
-          const hasAppAuthUserKey = sessionStorageKeys.some((key) => appAuthUserKeyPattern.test(key));
-
-          expect(hasAdminAuthUserKey, 'Session storage should contain a firebase:authUser:{id}:admin key').to.be.true;
-          expect(hasAppAuthUserKey, 'Session storage should contain a firebase:authUser:{id}:app key').to.be.true;
-        });
-      },
-    },
-  );
-
-  cy.visit('/');
-  cy.url().should('eq', `${baseUrl}/`);
-});
-
-Cypress.Commands.add('loginEducator', (username, password) => {
-  cy.session(
-    [username],
-    () => {
-      cy.visit(APP_ROUTES.HOME);
-
-      // NEW: select Educator role
-      cy.get('[data-cy="sign-in__role-select"]').within(() => {
-        cy.contains('button', /educator/i).click();
-      });
-
-      // NEW: click "Sign-in using password"
-      cy.contains('button', /sign-in using password/i).click();
-
-      // existing login steps
-      cy.get('[data-cy="sign-in__username"]').type(username, { log: false });
-      cy.get('[data-cy="sign-in__password"]').type(password, { log: false });
-      cy.get('button').contains('Go!').click();
+      cy.get('[data-cy="signin-continue"]').click();
 
       cy.url().should('eq', `${baseUrl}/`);
       cy.log('Login successful.');

@@ -131,8 +131,12 @@
     "welcome": "Welcome to ROAR!",
     "EnterYourPassword": "Enter your password",
     "AlmostTime": "Almost time to let your learning roar",
+    "ChooseYourProvider": "Select a provider",
+    "ChooseYourProviderDescription": "Please select a provider to continue.",
     "Terms": "Terms",
-    "Privacy": "Privacy"
+    "Privacy": "Privacy",
+    "continue": "Continue",
+    "availableProviders": "Available Providers"
   },
   "tasks": {
     "preparing": "Preparing your game!",

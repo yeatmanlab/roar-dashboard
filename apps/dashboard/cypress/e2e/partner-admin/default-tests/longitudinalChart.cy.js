@@ -12,7 +12,7 @@ const navigateToStudentReport = () => {
 describe('Longitudinal Chart Component', () => {
   beforeEach(() => {
     // Login as a partner admin
-    cy.loginEducator(PARTNER_ADMIN_USERNAME, PARTNER_ADMIN_PASSWORD);
+    cy.login(PARTNER_ADMIN_USERNAME, PARTNER_ADMIN_PASSWORD);
   });
 
   it('renders the longitudinal chart correctly', () => {

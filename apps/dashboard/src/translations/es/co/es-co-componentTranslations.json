@@ -111,8 +111,12 @@
     "welcome": "¡Bienvenido!",
     "EnterYourPassword": "Ingresa tu contraseña",
     "AlmostTime": "Casi es hora de empezar a rugir",
+    "ChooseYourProvider": "Selecciona una opción",
+    "ChooseYourProviderDescription": "Por favor, selecciona una opción para continuar.",
     "Terms": "Términos",
-    "Privacy": "Privacidad"
+    "Privacy": "Privacidad",
+    "continue": "Continuar",
+    "availableProviders": "Opciones disponibles"
   },
   "tasks": {
     "preparing": "¡Preparando tu juego!",

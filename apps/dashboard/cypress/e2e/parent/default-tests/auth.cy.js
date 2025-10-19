@@ -11,13 +11,13 @@ const PARENT_LAST_NAME = Cypress.env('PARENT_LAST_NAME');
 
 describe('Parent: Auth', () => {
   it('Logs in as parent using username and password', () => {
-    cy.loginEducator(PARENT_USERNAME, PARENT_PASSWORD);
+    cy.login(PARENT_USERNAME, PARENT_PASSWORD);
     cy.waitForParentHomepage();
     cy.get('[data-cy="parent-homepage"]').should('exist');
   });
 
   it('Logs out', () => {
-    cy.loginEducator(PARENT_USERNAME, PARENT_PASSWORD);
+    cy.login(PARENT_USERNAME, PARENT_PASSWORD);
     cy.waitForParentHomepage();
     cy.logout();
   });

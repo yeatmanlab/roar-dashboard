@@ -17,7 +17,7 @@ const openProgressReport = () => {
 describe('Partner Admin: Progress Reports', () => {
   it("Renders an administration's progress report", () => {
     // Login as a partner admin.
-    cy.loginEducator(PARTNER_ADMIN_USERNAME, PARTNER_ADMIN_PASSWORD);
+    cy.login(PARTNER_ADMIN_USERNAME, PARTNER_ADMIN_PASSWORD);
 
     // Wait until the administrations list is loaded.
     // Note: As the application currently does not support paginated fetching of administrations, we have to wait for
@@ -56,7 +56,7 @@ describe('Partner Admin: Progress Reports', () => {
 
   it('Exports the complete progress report', () => {
     // Login as a partner admin.
-    cy.loginEducator(PARTNER_ADMIN_USERNAME, PARTNER_ADMIN_PASSWORD);
+    cy.login(PARTNER_ADMIN_USERNAME, PARTNER_ADMIN_PASSWORD);
 
     // Wait until the administrations list is loaded.
     // Note: As the application currently does not support paginated fetching of administrations, we have to wait for
@@ -79,7 +79,7 @@ describe('Partner Admin: Progress Reports', () => {
 
   it('Exports a selected progress report', () => {
     // Login as a partner admin.
-    cy.loginEducator(PARTNER_ADMIN_USERNAME, PARTNER_ADMIN_PASSWORD);
+    cy.login(PARTNER_ADMIN_USERNAME, PARTNER_ADMIN_PASSWORD);
 
     // Wait until the administrations list is loaded.
     // Note: As the application currently does not support paginated fetching of administrations, we have to wait for

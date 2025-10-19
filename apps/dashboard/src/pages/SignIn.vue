@@ -10,18 +10,27 @@
         </div>
       </header>
       <div
-        v-if="!showPasswordField"
+        v-if="multipleProviders"
         class="flex flex-row align-content-center justify-content-center gap-1 w-full m-0 p-0"
       >
         <div class="justify-content-center align-content-center">
-          <h1 class="text-color text-center">{{ $t('pageSignIn.welcome') }}</h1>
-          <p class="text-center">{{ $t('pageSignIn.login') }}</p>
+          <h1 class="text-color text-center">{{ $t('pageSignIn.ChooseYourProvider') }}</h1>
+          <p class="text-center">{{ $t('pageSignIn.ChooseYourProviderDescription') }}</p>
+        </div>
+      </div>
+      <div
+        v-else-if="showPasswordField"
+        class="flex flex-row align-content-center justify-content-center gap-1 w-full m-0 p-0"
+      >
+        <div class="justify-content-center align-content-center">
+          <h1 class="text-color text-center">{{ $t('pageSignIn.EnterYourPassword') }}</h1>
+          <p class="text-center">{{ $t('pageSignIn.AlmostTime') }}</p>
         </div>
       </div>
       <div v-else class="flex flex-row align-content-center justify-content-center gap-1 w-full m-0 p-0">
         <div class="justify-content-center align-content-center">
-          <h1 class="text-color text-center">{{ $t('pageSignIn.EnterYourPassword') }}</h1>
-          <p class="text-center">{{ $t('pageSignIn.AlmostTime') }}</p>
+          <h1 class="text-color text-center">{{ $t('pageSignIn.welcome') }}</h1>
+          <p class="text-center">{{ $t('pageSignIn.login') }}</p>
         </div>
       </div>
       <section class="signin-options">
@@ -29,6 +38,7 @@
           <SignIn
             :invalid="incorrect"
             :show-password-field="showPasswordField"
+            :multiple-providers="multipleProviders"
             @submit="authWithEmail"
             @update:email="email = $event"
             @check-providers="checkAvailableProviders"
@@ -319,7 +329,7 @@ const checkAvailableProviders = async (em) => {
   await getProviders(email.value);
 
   // Check if there are multiple SSO options
-  const ssoProviders = availableProviders.value.filter((p) => ['google', 'clever', 'classlink', 'nycps'].includes(p));
+  const ssoProviders = availableProviders.value.filter((p) => ['clever', 'classlink', 'nycps'].includes(p));
   multipleProviders.value = ssoProviders.length > 1;
 
   if (multipleProviders.value) {
@@ -359,6 +369,7 @@ const normalizeProviders = async (ids = []) => {
       out.add(AUTH_SSO_PROVIDERS.CLEVER);
     if (emailFromProvider.startsWith('oidc.') && emailFromProvider.includes('classlink'))
       out.add(AUTH_SSO_PROVIDERS.CLASSLINK);
+    if (emailFromProvider.startsWith('oidc.') && emailFromProvider.includes('nycps')) out.add(AUTH_SSO_PROVIDERS.NYCPS);
   }
   return [...out];
 };

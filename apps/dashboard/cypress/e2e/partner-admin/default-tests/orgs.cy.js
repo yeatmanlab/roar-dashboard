@@ -14,7 +14,7 @@ describe('Partner Admin: Orgs', () => {
     describe(`${org.tabName} – ${org.orgName}`, () => {
       it(`Lists the org in the data table`, () => {
         // Login as the partner admin.
-        cy.loginEducator(PARTNER_ADMIN_USERNAME, PARTNER_ADMIN_PASSWORD);
+        cy.login(PARTNER_ADMIN_USERNAME, PARTNER_ADMIN_PASSWORD);
 
         // Wait to ensure that the login is successful.
         // @NOTE: This is currently required as the app is not immediately ready to navigate to the orgs list page.

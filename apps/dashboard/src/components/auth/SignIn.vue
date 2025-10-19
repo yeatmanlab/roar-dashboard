@@ -4,7 +4,7 @@
     <form class="p-fluid" @submit.prevent="handleFormSubmit(!v$.$invalid)">
       <div class="mt-1 field">
         <div class="p-input-icon-right">
-          <PvFloatLabel v-if="!showPasswordField" class="mt-4">
+          <PvFloatLabel v-if="!showPasswordField" class="mt-4" variant="on">
             <PvInputText
               :id="$t('authSignIn.emailId')"
               v-model="v$.email.$model"
@@ -18,6 +18,7 @@
           </PvFloatLabel>
           <div v-else class="w-full flex justify-content-center align-items-center mb-8 mt-0 pt-0">
             <PvChip
+              v-if="multipleProviders || showPasswordField"
               :label="v$.email.$model"
               class="flex justify-content-center align-items-center"
               image="../../src/assets/cute-lion.png"
@@ -30,24 +31,26 @@
           }}</PvMessage>
         </div>
       </div>
-      <div v-if="showPassword" class="mt-2 mb-1 field">
+      <div v-if="showPassword && !multipleProviders" class="mt-2 mb-1 field">
         <div>
           <!-- Email is entered, Password is desired -->
           <div v-if="showPassword">
-            <PvPassword
-              :id="$t('authSignIn.passwordId')"
-              v-model="v$.password.$model"
-              :class="['w-full', { 'p-invalid': invalid }]"
-              :feedback="false"
-              :placeholder="$t('authSignIn.passwordPlaceholder')"
-              :input-props="{ autocomplete: 'current-password' }"
-              toggle-mask
-              show-icon="pi pi-eye-slash"
-              hide-icon="pi pi-eye"
-              data-cy="sign-in__password"
-              @keyup="checkForCapsLock"
-              @click="checkForCapsLock"
-            />
+            <PvFloatLabel class="mt-4" variant="on">
+              <PvPassword
+                :id="$t('authSignIn.passwordId')"
+                v-model="v$.password.$model"
+                :class="['w-full', { 'p-invalid': invalid }]"
+                :feedback="false"
+                :input-props="{ autocomplete: 'current-password' }"
+                toggle-mask
+                show-icon="pi pi-eye-slash"
+                hide-icon="pi pi-eye"
+                data-cy="sign-in__password"
+                @keyup="checkForCapsLock"
+                @click="checkForCapsLock"
+              />
+              <label for="password">{{ $t('authSignIn.passwordPlaceholder') }}</label>
+            </PvFloatLabel>
             <div class="flex justify-content-start w-full">
               <small class="text-link text-sm text-400 sign-in-method-link" @click="handleForgotPassword">{{
                 $t('authSignIn.forgotPassword')
@@ -95,13 +98,18 @@
         </div>
       </div>
       <PvButton
+        v-if="!multipleProviders"
         type="button"
         class="mt-3 w-full p-0 hover:surface-200 hover:text-primary p-2"
+        data-cy="signin-continue"
         @click="!showPasswordField ? emit('check-providers', state.email) : emit('submit', state)"
       >
-        <span>Continue</span>
+        <span>{{ $t('pageSignIn.continue') }}</span>
       </PvButton>
-      <div v-if="!showPasswordField" class="divider w-full">
+      <div v-if="multipleProviders" class="flex justify-content-start w-full">
+        <small class="pl-2 pb-2 text-base font-bold text-500">{{ $t('pageSignIn.availableProviders') }}</small>
+      </div>
+      <div v-if="!showPasswordField && !multipleProviders" class="divider w-full">
         <span class="text-md">{{ $t('authSignIn.or') }}</span>
       </div>
     </form>
@@ -163,8 +171,9 @@ const emit = defineEmits(['submit', 'update:email', 'update:showPasswordField', 
 const showPassword = ref(false); // single source of truth for template
 
 const props = defineProps({
-  invalid: { type: Boolean, required: false, default: false },
-  showPasswordField: { type: Boolean, required: false, default: false },
+  invalid: { type: Boolean, default: false },
+  showPasswordField: { type: Boolean, default: false },
+  multipleProviders: { type: Boolean, default: false }, // NEW
 });
 
 function handleChipRemove() {

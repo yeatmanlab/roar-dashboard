@@ -4,7 +4,7 @@ const ORG_CODE = Cypress.env('ACTIVATION_CODE');
 
 describe('Parent: Add Child', () => {
   beforeEach(() => {
-    cy.loginEducator(PARENT_USERNAME, PARENT_PASSWORD);
+    cy.login(PARENT_USERNAME, PARENT_PASSWORD);
     cy.waitForParentHomepage();
   });
 
