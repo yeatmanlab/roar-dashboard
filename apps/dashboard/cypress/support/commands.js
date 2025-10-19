@@ -109,7 +109,7 @@ Cypress.Commands.add('loginWithClever', (schoolName, username, password, firstPa
 Cypress.Commands.add('logout', () => {
   cy.get('[data-cy="navbar__signout-btn-desktop"]').click();
   cy.url().should('eq', `${baseUrl}/signin`);
-  cy.get('h1').should('contain.text', 'Welcome to ROAR!');
+  cy.get('h1').should('contain.text', 'Welcome!');
   cy.log('Logout successful.');
 });
 
