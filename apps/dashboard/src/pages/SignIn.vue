@@ -138,7 +138,7 @@ import { useAuthStore } from '@/store/auth';
 import { isMobileBrowser } from '@/helpers';
 import { redirectSignInPath } from '@/helpers/redirectSignInPath';
 import { fetchDocById } from '@/helpers/query/utils';
-import { AUTH_SSO_PROVIDERS , SCORE_REPORT_TERMS_OF_SERVICE_DOCUMENT_PATH } from '@/constants/auth';
+import { AUTH_SSO_PROVIDERS, SCORE_REPORT_TERMS_OF_SERVICE_DOCUMENT_PATH } from '@/constants/auth';
 import { APP_ROUTES } from '@/constants/routes';
 import SignIn from '@/components/auth/SignIn.vue';
 import LanguageSelector from '@/components/LanguageSelector.vue';
