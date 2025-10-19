@@ -109,13 +109,15 @@
           </div>
           <div class="w-5 justify-content-end flex flex-row gap-0">
             <a
-              href="#Terms"
+              :href="SCORE_REPORT_TERMS_OF_SERVICE_DOCUMENT_PATH"
               class="text-400 w-full inline-block text-sm pt-2 text-right underline hover:text-primary"
+              target="_blank"
               >{{ $t('pageSignIn.Terms') }}</a
             >
             <a
-              href="#Privacy"
+              :href="SCORE_REPORT_TERMS_OF_SERVICE_DOCUMENT_PATH"
               class="text-400 w-full inline-block text-sm pt-2 text-right underline hover:text-primary"
+              target="_blank"
               >{{ $t('pageSignIn.Privacy') }}</a
             >
           </div>
@@ -136,7 +138,7 @@ import { useAuthStore } from '@/store/auth';
 import { isMobileBrowser } from '@/helpers';
 import { redirectSignInPath } from '@/helpers/redirectSignInPath';
 import { fetchDocById } from '@/helpers/query/utils';
-import { AUTH_SSO_PROVIDERS } from '@/constants/auth';
+import { AUTH_SSO_PROVIDERS , SCORE_REPORT_TERMS_OF_SERVICE_DOCUMENT_PATH } from '@/constants/auth';
 import { APP_ROUTES } from '@/constants/routes';
 import SignIn from '@/components/auth/SignIn.vue';
 import LanguageSelector from '@/components/LanguageSelector.vue';

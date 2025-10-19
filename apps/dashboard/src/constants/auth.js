@@ -36,3 +36,5 @@ export const AUTH_SSO_PROVIDERS = Object.freeze({
   GOOGLE: 'google',
   NYCPS: 'nycps',
 });
+
+export const SCORE_REPORT_TERMS_OF_SERVICE_DOCUMENT_PATH = '/docs/roar-terms-of-service.pdf';
