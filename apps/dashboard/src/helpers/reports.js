@@ -633,9 +633,12 @@ export function getGradeWithSuffix(grade) {
   return `${gradeLevel}${getOrdinalSuffix(gradeLevel)}`;
 }
 
-export const getDialColor = (grade, percentile, rawScore, taskId) => {
-  if (taskId === 'phonics' || taskId === 'letter' || taskId === 'letter-en-ca') {
+export const getDialColor = (grade, percentile, rawScore, taskId, optional = null, scoringVersion = null) => {
+  if (taskId === 'letter' || taskId === 'letter-en-ca') {
     return 'var(--blue-500)';
+  }
+  if (taskId === 'phonics') {
+    return 'var(--gray-500)';
   }
   const { tag_color } = getSupportLevel(grade, percentile, rawScore, taskId, optional, scoringVersion);
   return tag_color;
@@ -681,28 +684,34 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = 
     const [achievedCutOff, developingCutOff] = useUpdatedNorms ? [40, 20] : [50, 25];
     if (percentile >= achievedCutOff) {
       support_level = 'Achieved Skill';
-      tag_color = supportLevelColors.above;
+      tag_color = useUpdatedNorms ? 'green' : supportLevelColors.above;
     } else if (percentile > developingCutOff && percentile < achievedCutOff) {
       support_level = 'Developing Skill';
-      tag_color = supportLevelColors.some;
+      tag_color = useUpdatedNorms ? '#edc037' : supportLevelColors.some;
     } else {
       support_level = 'Needs Extra Support';
-      tag_color = supportLevelColors.below;
+      tag_color = useUpdatedNorms ? '#c93d82' : supportLevelColors.below;
     }
   } else if (rawScore !== null && rawScore !== undefined && gradeLevel >= 6) {
     const { above, some } = getRawScoreThreshold(taskId, scoringVersion);
 
     // Only return support_level and tag_color if the thresholds are not null
     if (above != null && some != null) {
+      const isUpdatedSre = taskId === 'sre' && scoringVersion >= 4;
+      const isUpdatedSreEs = taskId === 'sre-es' && scoringVersion >= 1;
+      const isUpdatedSwr = taskId === 'swr' && scoringVersion >= 7;
+      const isUpdatedSwrEs = taskId === 'swr-es' && scoringVersion >= 1;
+      const useUpdatedNorms = isUpdatedSwr || isUpdatedSwrEs || isUpdatedSre || isUpdatedSreEs;
+
       if (rawScore >= above) {
         support_level = 'Achieved Skill';
-        tag_color = supportLevelColors.above;
+        tag_color = useUpdatedNorms ? 'green' : supportLevelColors.above;
       } else if (rawScore > some && rawScore < above) {
         support_level = 'Developing Skill';
-        tag_color = supportLevelColors.some;
+        tag_color = useUpdatedNorms ? '#edc037' : supportLevelColors.some;
       } else {
         support_level = 'Needs Extra Support';
-        tag_color = supportLevelColors.below;
+        tag_color = useUpdatedNorms ? '#c93d82' : supportLevelColors.below;
       }
     }
   }
