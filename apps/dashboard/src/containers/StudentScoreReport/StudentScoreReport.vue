@@ -66,6 +66,7 @@
             :tasks-dictionary="tasksDictionary"
             :longitudinal-data="longitudinalData"
             :expanded="expanded"
+            :task-scoring-versions="getScoringVersions"
           />
 
           <SupportScreen :expanded="expanded" :student-grade="studentGrade" />
@@ -167,7 +168,15 @@ const tasksListArray = computed(() =>
 const studentFirstName = computed(() => getStudentDisplayName(studentData).firstName);
 const studentLastName = computed(() => getStudentDisplayName(studentData).lastName);
 const studentGrade = computed(() => toValue(studentData)?.studentData?.grade);
-
+const getScoringVersions = computed(() => {
+  const scoringVersions = Object.fromEntries(
+    administrationData.value?.assessments.map((assessment) => [
+      assessment.taskId,
+      assessment?.params?.scoringVersion ?? null,
+    ]),
+  );
+  return scoringVersions;
+});
 /**
  * Controls the expanded state of the report cards
  */

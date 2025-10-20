@@ -55,6 +55,10 @@ const props = defineProps({
     type: Boolean,
     required: false,
   },
+  taskScoringVersions: {
+    type: Object,
+    required: true,
+  },
 });
 
 const { t } = useI18n();
@@ -64,6 +68,7 @@ const { computedTaskData, scoreValueTemplate, getTaskDescription, getTaskScoresA
   studentGrade: props.studentGrade,
   taskData: props.taskData,
   longitudinalData: props.longitudinalData,
+  taskScoringVersions: props.taskScoringVersions,
   t,
 });
 </script>

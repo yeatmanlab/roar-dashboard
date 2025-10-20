@@ -56,6 +56,7 @@ describe('useScoreListData', () => {
         taskData,
         longitudinalData: null,
         t: mockT,
+        taskScoringVersions: {},
       };
 
       const { computedTaskData } = useScoreListData(params);
@@ -64,7 +65,7 @@ describe('useScoreListData', () => {
       const result = computedTaskData.value;
 
       expect(getStudentGradeLevel).toHaveBeenCalledWith('Grade 5');
-      expect(ScoreReportService.processTaskScores).toHaveBeenCalledWith(taskData, 5, { t: mockT });
+      expect(ScoreReportService.processTaskScores).toHaveBeenCalledWith(taskData, 5, { t: mockT }, {});
       expect(result).toEqual(processedTasks);
     });
 
@@ -106,6 +107,7 @@ describe('useScoreListData', () => {
         taskData,
         longitudinalData: null,
         t: mockT,
+        taskScoringVersions: {},
       };
 
       const { computedTaskData } = useScoreListData(params);
@@ -153,6 +155,7 @@ describe('useScoreListData', () => {
         taskData,
         longitudinalData: null,
         t: mockT,
+        taskScoringVersions: {},
       };
 
       const { computedTaskData } = useScoreListData(params);
@@ -196,6 +199,7 @@ describe('useScoreListData', () => {
         taskData,
         longitudinalData,
         t: mockT,
+        taskScoringVersions: {},
       };
 
       const { computedTaskData } = useScoreListData(params);
@@ -241,6 +245,7 @@ describe('useScoreListData', () => {
         taskData,
         longitudinalData,
         t: mockT,
+        taskScoringVersions: {},
       };
 
       const { computedTaskData } = useScoreListData(params);
@@ -279,6 +284,7 @@ describe('useScoreListData', () => {
         taskData,
         longitudinalData,
         t: mockT,
+        taskScoringVersions: {},
       };
 
       const { computedTaskData } = useScoreListData(params);
@@ -317,6 +323,7 @@ describe('useScoreListData', () => {
         taskData,
         longitudinalData,
         t: mockT,
+        taskScoringVersions: {},
       };
 
       const { computedTaskData } = useScoreListData(params);
@@ -350,6 +357,7 @@ describe('useScoreListData', () => {
         taskData,
         longitudinalData: {},
         t: mockT,
+        taskScoringVersions: {},
       };
 
       const { computedTaskData } = useScoreListData(params);
@@ -384,6 +392,7 @@ describe('useScoreListData', () => {
         taskData,
         longitudinalData,
         t: mockT,
+        taskScoringVersions: {},
       };
 
       const { computedTaskData } = useScoreListData(params);
@@ -416,6 +425,7 @@ describe('useScoreListData', () => {
         taskData,
         longitudinalData: null,
         t: mockT,
+        taskScoringVersions: {},
       };
 
       const { computedTaskData, scoreValueTemplate } = useScoreListData(params);
@@ -447,6 +457,7 @@ describe('useScoreListData', () => {
         taskData,
         longitudinalData: null,
         t: mockT,
+        taskScoringVersions: {},
       };
 
       const { computedTaskData, scoreValueTemplate } = useScoreListData(params);
@@ -479,6 +490,7 @@ describe('useScoreListData', () => {
         taskData,
         longitudinalData: null,
         t: mockT,
+        taskScoringVersions: {},
       };
 
       const { computedTaskData, scoreValueTemplate } = useScoreListData(params);
@@ -512,6 +524,7 @@ describe('useScoreListData', () => {
         taskData,
         longitudinalData: null,
         t: mockT,
+        taskScoringVersions: {},
       };
 
       const { computedTaskData, scoreValueTemplate } = useScoreListData(params);
@@ -546,6 +559,7 @@ describe('useScoreListData', () => {
         taskData,
         longitudinalData: null,
         t: mockT,
+        taskScoringVersions: {},
       };
 
       const { computedTaskData, getTaskDescription } = useScoreListData(params);
@@ -581,6 +595,7 @@ describe('useScoreListData', () => {
         taskData,
         longitudinalData: null,
         t: mockT,
+        taskScoringVersions: {},
       };
 
       const { computedTaskData, getTaskScoresArray } = useScoreListData(params);

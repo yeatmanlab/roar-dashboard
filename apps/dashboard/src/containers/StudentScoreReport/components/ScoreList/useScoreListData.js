@@ -11,14 +11,14 @@ import { getStudentGradeLevel } from '@/helpers/getStudentGradeLevel';
  * Params is a plain object to keep usage similar across both components.
  */
 export function useScoreListData(params) {
-  const { studentGrade, taskData, longitudinalData, t } = params;
+  const { studentGrade, taskData, longitudinalData, t, taskScoringVersions } = params;
 
   // Normalize grade once
   const gradeLevel = getStudentGradeLevel(studentGrade);
 
   // Build main task data
   const computedTaskData = computed(() => {
-    const currentTasks = ScoreReportService.processTaskScores(taskData, gradeLevel, { t });
+    const currentTasks = ScoreReportService.processTaskScores(taskData, gradeLevel, { t }, taskScoringVersions);
 
     const ld = toValue(longitudinalData);
 

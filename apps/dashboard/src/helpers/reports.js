@@ -72,7 +72,7 @@ export const taskDisplayNames = {
     studentFacingName: 'Palabra',
     extendedTitle: 'ROAR - Word',
     extendedName: 'Single Word Recognition',
-    order: 6,
+    order: 50,
   },
   sre: {
     name: 'Sentence',
@@ -88,7 +88,7 @@ export const taskDisplayNames = {
     studentFacingName: 'Frase',
     extendedTitle: 'ROAR - Frase',
     extendedName: 'Sentence Reading Efficiency',
-    order: 8,
+    order: 51,
   },
   morphology: {
     name: 'Morphology',
@@ -632,12 +632,15 @@ export function getGradeWithSuffix(grade) {
 
   return `${gradeLevel}${getOrdinalSuffix(gradeLevel)}`;
 }
-
-export const getDialColor = (grade, percentile, rawScore, taskId) => {
+/*
+ *  Get Support Level
+ *  Function to take scores, taskId, grade, optional, and scoringVersion and return the proper support category for the run.
+ */
+export const getDialColor = (grade, percentile, rawScore, taskId, optional = null, scoringVersion = null) => {
   if (taskId === 'phonics') {
     return 'var(--gray-500)';
   }
-  const { tag_color } = getSupportLevel(grade, percentile, rawScore, taskId);
+  const { tag_color } = getSupportLevel(grade, percentile, rawScore, taskId, optional, scoringVersion);
   return tag_color;
 };
 
@@ -672,8 +675,7 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = 
       tag_color: supportLevelColors.Assessed,
     };
   }
-
-  if (percentile !== undefined && gradeLevel < 6) {
+  if (percentile !== null && percentile !== undefined && gradeLevel < 6) {
     const isUpdatedSre = taskId === 'sre' && scoringVersion >= 4;
     const isUpdatedSreEs = taskId === 'sre-es' && scoringVersion >= 1;
     const isUpdatedSwr = taskId === 'swr' && scoringVersion >= 7;
@@ -690,7 +692,7 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = 
       support_level = 'Needs Extra Support';
       tag_color = supportLevelColors.below;
     }
-  } else if (rawScore !== undefined && gradeLevel >= 6) {
+  } else if (rawScore !== null && rawScore !== undefined && gradeLevel >= 6) {
     const { above, some } = getRawScoreThreshold(taskId, scoringVersion);
 
     // Only return support_level and tag_color if the thresholds are not null
