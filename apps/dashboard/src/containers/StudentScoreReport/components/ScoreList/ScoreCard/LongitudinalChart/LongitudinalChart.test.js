@@ -2,6 +2,25 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import LongitudinalChart from './LongitudinalChart.vue';
 
+// Mock roar-utils
+vi.mock('@bdelab/roar-utils', async () => {
+  const actual = await vi.importActual('@bdelab/roar-utils');
+  return {
+    ...actual,
+    getGrade: vi.fn(),
+  };
+});
+
+// Mock helpers/reports
+vi.mock('@/helpers/reports', () => ({
+  getDialColor: vi.fn(),
+  supportLevelColors: {
+    above: 'green',
+    some: '#edc037',
+    below: '#c93d82',
+  },
+}));
+
 // Mock Chart.js
 vi.mock('chart.js/auto', () => ({
   default: vi.fn().mockImplementation(() => ({
