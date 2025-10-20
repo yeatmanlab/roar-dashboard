@@ -634,6 +634,17 @@ export function getGradeWithSuffix(grade) {
   return `${gradeLevel}${getOrdinalSuffix(gradeLevel)}`;
 }
 
+/**
+ * Returns the color to be used for a dial based on grade, percentile, raw score, and task ID.
+ *
+ * @param {string} grade - The grade level of the student (e.g., 'K', '1', 'Pre-K').
+ * @param {number|null} percentile - The percentile score for the student (may be null).
+ * @param {number|null} rawScore - The raw score for the student (may be null).
+ * @param {string} taskId - The ID of the task (e.g., 'letter', 'phonics').
+ * @param {any} [optional=null] - Optional additional data for scoring.
+ * @param {string|null} [scoringVersion=null] - Optional scoring version identifier.
+ * @returns {string} The CSS color variable to use for the dial.
+ */
 export const getDialColor = (grade, percentile, rawScore, taskId, optional = null, scoringVersion = null) => {
   if (taskId === 'letter' || taskId === 'letter-en-ca') {
     return 'var(--blue-500)';
