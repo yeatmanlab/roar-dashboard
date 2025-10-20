@@ -125,14 +125,14 @@ const status = computed(() => {
         aria: 'Export in progress',
       };
     case EXPORT_PHASE.IDLE:
-      if (props.exportWarningLevel === 'critical') {
+      if (props.exportWarningLevel === WARNING_LEVELS.CRITICAL) {
         return {
           icon: 'pi-exclamation-triangle',
           color: 'text-orange-500',
           aria: 'Critical warning',
         };
       }
-      if (props.exportWarningLevel === 'strong') {
+      if (props.exportWarningLevel === WARNING_LEVELS.STRONG) {
         return {
           icon: 'pi-exclamation-circle',
           color: 'text-yellow-600',
