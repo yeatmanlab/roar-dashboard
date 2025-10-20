@@ -192,13 +192,13 @@ export default defineConfig(({ mode }) => {
       headers: {
         ...responseHeaders,
       },
-      https: false,
-      // process.env.NODE_ENV === 'development'
-      //   ? {
-      //       key: fs.readFileSync(path.resolve(__dirname, '../../certs/roar-local.key')),
-      //       cert: fs.readFileSync(path.resolve(__dirname, '../../certs/roar-local.crt')),
-      //     }
-      //   : false,
+      https:
+        process.env.NODE_ENV === 'development'
+          ? {
+              key: fs.readFileSync(path.resolve(__dirname, '../../certs/roar-local.key')),
+              cert: fs.readFileSync(path.resolve(__dirname, '../../certs/roar-local.crt')),
+            }
+          : false,
     },
 
     preview: {
