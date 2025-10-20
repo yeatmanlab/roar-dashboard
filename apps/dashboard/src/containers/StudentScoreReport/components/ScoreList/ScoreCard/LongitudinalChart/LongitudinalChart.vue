@@ -1,5 +1,5 @@
 <template>
-  <div class="longitudinal-chart px-2 pt-2 rounded border border-gray-100 border-solid" data-cy="longitudinal-chart">
+  <div class="p-2 rounded border border-gray-100 border-solid" data-cy="longitudinal-chart">
     <div style="height: 10rem">
       <canvas ref="canvasRef" class="w-full h-full"></canvas>
     </div>
