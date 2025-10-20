@@ -37,4 +37,5 @@ export const AUTH_SSO_PROVIDERS = Object.freeze({
   NYCPS: 'nycps',
 });
 
-export const SCORE_REPORT_TERMS_OF_SERVICE_DOCUMENT_PATH = '/docs/roar-terms-of-service.pdf';
+export const TERMS_OF_SERVICE_DOCUMENT_PATH = '/docs/roar-terms-of-service.pdf';
+export const USER_ICON_IMAGE_PATH = '/src/assets/cute-lion.png';

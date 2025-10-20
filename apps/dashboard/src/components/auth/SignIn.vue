@@ -21,7 +21,7 @@
               v-if="multipleProviders || showPasswordField"
               :label="v$.email.$model"
               class="flex justify-content-center align-items-center"
-              image="../../src/assets/cute-lion.png"
+              :image="USER_ICON_IMAGE_PATH"
               removable
               @remove="handleChipRemove"
             />
@@ -162,6 +162,7 @@ import PvChip from 'primevue/chip';
 import PvMessage from 'primevue/message';
 import { useAuthStore } from '@/store/auth';
 import RoarModal from '../modals/RoarModal.vue';
+import { USER_ICON_IMAGE_PATH } from '@/constants/auth';
 
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
@@ -182,7 +183,9 @@ function handleChipRemove() {
   state.password = '';
   submitted.value = false;
   capsLockEnabled.value = false;
-  v$?.value?.$reset?.();
+  if (v$ && v$.value && typeof v$.value.$reset === 'function') {
+    v$.value.$reset();
+  }
 
   // sync parent state via emits
   emit('update:email', '');
