@@ -52,7 +52,7 @@ export const APP_ROUTES = {
   PROGRESS_REPORT: '/administration/:administrationId/:orgType/:orgId',
   REGISTER: '/register',
   SCORE_REPORT: '/scores/:administrationId/:orgType/:orgId',
-  SCORE_REPORT_STUDENT: '/scores/:administrationId/:orgType/:orgId/user/:userId/new',
+  SCORE_REPORT_STUDENT: '/scores/:administrationId/:orgType/:orgId/user/:userId',
   SIGN_IN: '/signin',
   SSO: '/sso',
   UNAUTHORIZED: '/unauthorized',

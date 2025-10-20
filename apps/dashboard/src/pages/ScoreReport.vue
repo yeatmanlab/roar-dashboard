@@ -630,7 +630,7 @@ const exportBulkPdfReports = async (selectedRows) => {
 
     // URL generator function
     const urlGenerator = (student) => {
-      return `${window.location.origin}/scores/${props.administrationId}/${props.orgType}/${props.orgId}/user/${student.id}/new?print=true`;
+      return `${window.location.origin}/scores/${props.administrationId}/${props.orgType}/${props.orgId}/user/${student.id}?print=true`;
     };
 
     // Filename generator function
