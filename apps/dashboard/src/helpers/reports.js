@@ -474,7 +474,7 @@ export const supportLevelColors = {
   below: '#c93d82',
   Pink: '#c93d82',
   optional: 'var(--gray-500)',
-  Optional: '#03befc',
+  Optional: 'var(--gray-500)',
   Assessed: 'var(--blue-500)',
   Unreliable: '#d6b8c7',
 };
@@ -661,7 +661,7 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = 
   if (optional) {
     return {
       support_level: 'Optional',
-      tag_color: undefined,
+      tag_color: supportLevelColors.Optional,
     };
   }
 
