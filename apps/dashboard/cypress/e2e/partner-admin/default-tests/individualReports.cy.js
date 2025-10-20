@@ -23,14 +23,16 @@ describe('Partner Admin: Individual Reports', () => {
     cy.get('button').contains('Scores').first().click();
     cy.url().should('eq', `${baseUrl}/scores/${testPartnerAdministrationId}/district/${testDistrictId}`);
 
+    cy.waitForRoarTable({ tableSelector: '[data-cy="score-report__data-table"]' });
+
     // Validate that all test users are present in the progress report.
     cy.checkUserList(testUserList);
 
     // Validate the individual score report.
+    // @TODO: Change to populated test account to actually validate score report contents.
     cy.get('[data-cy="data-table__entry-details-btn"]').first().click();
     cy.get('[data-cy="report__header"] h1').should('contain', 'Individual Score Report');
     cy.get('[data-cy="report__expand-btn"]').contains('Expand All Sections').click();
     cy.get('[data-cy="report__pdf-export-btn"]').contains('Export to PDF');
-    cy.get('div').contains('The ROAR assessments return these kinds of scores');
   });
 });

@@ -432,20 +432,59 @@ Cypress.Commands.add(
  *
  * @param {Array<string>} userList - The list of users to check.
  */
-Cypress.Commands.add('checkUserList', (userList) => {
-  cy.get('[data-cy="roar-data-table"] tbody tr').each((row) => {
-    cy.wrap(row)
-      .find('td.p-datatable-frozen-column')
-      .then((cell) => {
-        // Clean the non-breaking space character and any whitespace from the cell text.
-        const cellText = cell
-          .text()
-          .replace(/&nbsp;/g, '')
-          .trim();
+// cypress/support/commands.js
+Cypress.Commands.add(
+  'checkUserList',
+  (
+    userList,
+    { tableSel = '[data-cy="roar-data-table"]', colSel = 'td.p-datatable-frozen-column', caseInsensitive = false } = {},
+  ) => {
+    cy.get(tableSel)
+      .first()
+      .within(() => {
+        cy.get(`tbody tr ${colSel}`).then(($cells) => {
+          const normalize = (s) => {
+            // Replace actual NBSPs, collapse spaces, trim, and optionally lowercase
+            let t = (s ?? '')
+              .replace(/\u00A0/g, ' ')
+              .replace(/\s+/g, ' ')
+              .trim();
+            return caseInsensitive ? t.toLowerCase() : t;
+          };
 
-        expect(userList).to.include(cellText);
+          const expected = userList.map(normalize);
+          const expectedSet = new Set(expected);
+
+          const displayed = [...$cells].map((el) => normalize(el.textContent)).filter(Boolean);
+
+          displayed.forEach((v) => {
+            expect(expectedSet.has(v), `Displayed row "${v}" should exist in the provided user list`).to.be.true;
+          });
+
+          // Optional sanity check: table should not be empty
+          expect(displayed.length, 'Should have at least one visible row').to.be.greaterThan(0);
+        });
       });
+  },
+);
+
+/**
+ * Waits for the table to load and ensure it has at least one row.
+ *
+ * @param {object} options - The options for the command.
+ * @param {string} options.tableSelector - The selector for the table.
+ * @param {number} options.minRows - The minimum number of rows to wait for.
+ */
+Cypress.Commands.add('waitForRoarTable', ({ tableSelector = '[data-cy="roar-data-table"]', minRows = 1 } = {}) => {
+  cy.get(tableSelector).should('be.visible');
+
+  // Ensure rows actually rendered
+  cy.get(`${tableSelector} tbody tr`).should(($rows) => {
+    expect($rows.length, 'rendered table rows').to.be.greaterThan(minRows - 1);
   });
+
+  // If virtualized, ensure table is in view
+  cy.get(tableSelector).scrollIntoView();
 });
 
 /**

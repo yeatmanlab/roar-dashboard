@@ -1,5 +1,5 @@
 <template>
-  <main class="container main">
+  <main class="container main" data-cy="score-report">
     <section class="main-body">
       <div>
         <section>
@@ -225,7 +225,7 @@
         </AppDialog>
 
         <!-- Main table -->
-        <div v-if="assignmentData?.length ?? 0 > 0">
+        <div v-if="assignmentData?.length ?? 0 > 0" data-cy="score-report__table">
           <RoarDataTable
             :data="filteredTableData"
             :columns="scoreReportColumns"
@@ -233,6 +233,7 @@
             :page-limit="pageLimit"
             :loading="isLoadingAssignments || isFetchingAssignments"
             :groupheaders="true"
+            test-id="score-report__data-table"
             @export-all="exportData({ selectedRows: $event })"
             @export-selected="exportData({ selectedRows: $event })"
             @export-pdf-reports="openExportModal($event)"

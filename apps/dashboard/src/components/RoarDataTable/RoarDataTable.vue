@@ -123,10 +123,9 @@
             :loading="loading"
             scrollable
             :select-all="selectAll"
-            data-cy="roar-data-table"
             :pt="{
               root: {
-                'data-cy': 'roar-data-table',
+                'data-cy': props.testId,
               },
             }"
             @select-all-change="onSelectAll"
@@ -509,6 +508,7 @@ const props = defineProps({
     default: false,
   },
   groupheaders: { type: Boolean, default: false },
+  testId: { type: String, default: 'roar-data-table' },
 });
 
 const inputColumns = ref(props.columns);
