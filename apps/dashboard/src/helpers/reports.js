@@ -473,8 +473,9 @@ export const supportLevelColors = {
   Yellow: '#edc037',
   below: '#c93d82',
   Pink: '#c93d82',
+  optional: 'var(--gray-500)',
   Optional: '#03befc',
-  Assessed: '#A4DDED',
+  Assessed: 'var(--blue-500)',
   Unreliable: '#d6b8c7',
 };
 
@@ -660,7 +661,7 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = 
   if (optional) {
     return {
       support_level: 'Optional',
-      tag_color: supportLevelColors.optional,
+      tag_color: undefined,
     };
   }
 
@@ -684,34 +685,28 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = 
     const [achievedCutOff, developingCutOff] = useUpdatedNorms ? [40, 20] : [50, 25];
     if (percentile >= achievedCutOff) {
       support_level = 'Achieved Skill';
-      tag_color = useUpdatedNorms ? 'green' : supportLevelColors.above;
+      tag_color = supportLevelColors.above;
     } else if (percentile > developingCutOff && percentile < achievedCutOff) {
       support_level = 'Developing Skill';
-      tag_color = useUpdatedNorms ? '#edc037' : supportLevelColors.some;
+      tag_color = supportLevelColors.some;
     } else {
       support_level = 'Needs Extra Support';
-      tag_color = useUpdatedNorms ? '#c93d82' : supportLevelColors.below;
+      tag_color = supportLevelColors.below;
     }
   } else if (rawScore !== null && rawScore !== undefined && gradeLevel >= 6) {
     const { above, some } = getRawScoreThreshold(taskId, scoringVersion);
 
     // Only return support_level and tag_color if the thresholds are not null
     if (above != null && some != null) {
-      const isUpdatedSre = taskId === 'sre' && scoringVersion >= 4;
-      const isUpdatedSreEs = taskId === 'sre-es' && scoringVersion >= 1;
-      const isUpdatedSwr = taskId === 'swr' && scoringVersion >= 7;
-      const isUpdatedSwrEs = taskId === 'swr-es' && scoringVersion >= 1;
-      const useUpdatedNorms = isUpdatedSwr || isUpdatedSwrEs || isUpdatedSre || isUpdatedSreEs;
-
       if (rawScore >= above) {
         support_level = 'Achieved Skill';
-        tag_color = useUpdatedNorms ? 'green' : supportLevelColors.above;
+        tag_color = supportLevelColors.above;
       } else if (rawScore > some && rawScore < above) {
         support_level = 'Developing Skill';
-        tag_color = useUpdatedNorms ? '#edc037' : supportLevelColors.some;
+        tag_color = supportLevelColors.some;
       } else {
         support_level = 'Needs Extra Support';
-        tag_color = useUpdatedNorms ? '#c93d82' : supportLevelColors.below;
+        tag_color = supportLevelColors.below;
       }
     }
   }
