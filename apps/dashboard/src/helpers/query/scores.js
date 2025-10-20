@@ -1,10 +1,13 @@
 import { useAuthStore } from '@/store/auth';
 import { storeToRefs } from 'pinia';
 
-export const getDistrictSupportCategories = async (assignmentId, districtId) => {
+export const getDistrictSupportCategories = async (districtId, assignmentId) => {
   const authStore = useAuthStore();
   const { roarfirekit } = storeToRefs(authStore);
-  const aggregatedScores = await roarfirekit.value.aggregateSupportCategories({ assignmentId, districtId });
+  console.log('districtId from scores.js', districtId);
+  console.log('assignmentId from scores.js', assignmentId);
+  const aggregatedScores = await roarfirekit.value.aggregateSupportCategories(districtId, assignmentId);
+  console.log('aggregatedScores from scores.js', aggregatedScores.data);
 
   // {
   //   swr: {
