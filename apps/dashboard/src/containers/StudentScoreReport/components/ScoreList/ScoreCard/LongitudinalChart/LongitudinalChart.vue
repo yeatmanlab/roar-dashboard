@@ -1,6 +1,6 @@
 <template>
   <div class="p-2 rounded border border-gray-100 border-solid" data-cy="longitudinal-chart">
-    <div style="height: 10rem">
+    <div class="h-64">
       <canvas ref="canvasRef" class="w-full h-full"></canvas>
     </div>
     <div class="flex justify-end gap-3 mt-2 text-xs">
