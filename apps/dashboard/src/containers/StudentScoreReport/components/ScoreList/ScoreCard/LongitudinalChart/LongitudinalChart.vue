@@ -5,15 +5,15 @@
     </div>
     <div class="flex justify-end gap-3 mt-2 text-xs">
       <div class="flex items-center gap-1">
-        <div class="w-3 h-3 rounded-full" style="background-color: green"></div>
+        <div class="w-3 h-3 rounded-full" :style="{ backgroundColor: supportLevelColors.above }"></div>
         <span>Achieved Skill</span>
       </div>
       <div class="flex items-center gap-1">
-        <div class="w-3 h-3 rounded-full" style="background-color: #edc037"></div>
+        <div class="w-3 h-3 rounded-full" :style="{ backgroundColor: supportLevelColors.some }"></div>
         <span>Developing Skill</span>
       </div>
       <div class="flex items-center gap-1">
-        <div class="w-3 h-3 rounded-full" style="background-color: #c93d82"></div>
+        <div class="w-3 h-3 rounded-full" :style="{ backgroundColor: supportLevelColors.below }"></div>
         <span>Needs Extra Support</span>
       </div>
     </div>
@@ -25,6 +25,7 @@ import { computed, ref, onMounted, onBeforeUnmount, watch } from 'vue';
 import Chart from 'chart.js/auto';
 import 'chartjs-adapter-date-fns';
 import { useLongitudinalSeries } from './useLongitudinalSeries';
+import { supportLevelColors } from '../../../../../../helpers/reports';
 
 const canvasRef = ref(null);
 let chartInstance = null;

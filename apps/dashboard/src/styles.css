@@ -49,6 +49,19 @@ legend {
   transition-duration: 150ms;
 }
 
+/* Temporary fixes for TailwindCSS classes */
+.h-3 {
+  height: 0.75rem !important;
+}
+
+.w-3 {
+  width: 0.75rem !important;
+}
+
+.rounded-full {
+  border-radius: 9999px !important;
+}
+
 .justify-between {
   justify-content: space-between;
 }
