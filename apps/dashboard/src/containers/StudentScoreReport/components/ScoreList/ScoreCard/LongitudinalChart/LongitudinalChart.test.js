@@ -78,6 +78,7 @@ describe('LongitudinalChart.vue', () => {
     ],
     taskId: 'swr',
     studentGrade: '3',
+    currentAssignmentId: 'test-id',
   };
 
   beforeEach(() => {

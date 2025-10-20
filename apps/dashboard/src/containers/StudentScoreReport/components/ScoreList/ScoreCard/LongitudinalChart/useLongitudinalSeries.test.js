@@ -1,16 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useLongitudinalSeries } from './useLongitudinalSeries';
-import { getSupportLevel } from '@/helpers/reports';
+import { getDialColor } from '@/helpers/reports';
 
-// Mock the getSupportLevel helper
+// Mock the reports helpers
 vi.mock('@/helpers/reports', () => ({
-  getSupportLevel: vi.fn(),
+  getDialColor: vi.fn(),
 }));
 
 describe('useLongitudinalSeries', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    getSupportLevel.mockReturnValue({ tag_color: 'green' });
+    getDialColor.mockReturnValue('var(--blue-500)');
   });
 
   describe('series data processing', () => {
@@ -127,8 +127,8 @@ describe('useLongitudinalSeries', () => {
   });
 
   describe('color assignment', () => {
-    it('should use support level tag color when available', () => {
-      getSupportLevel.mockReturnValue({ tag_color: 'red' });
+    it('should use dial color when available', () => {
+      getDialColor.mockReturnValue('var(--blue-500)');
 
       const props = {
         longitudinalData: [{ date: '2024-01-01', scores: { rawScore: 10, percentile: 25 } }],
@@ -138,11 +138,11 @@ describe('useLongitudinalSeries', () => {
 
       const { series } = useLongitudinalSeries(props);
 
-      expect(series.value[0].color).toBe('red');
+      expect(series.value[0].color).toBe('var(--blue-500)');
     });
 
-    it('should use default score type color when support level color is not available', () => {
-      getSupportLevel.mockReturnValue({ tag_color: null });
+    it('should use default score type color when dial color is not available', () => {
+      getDialColor.mockReturnValue(null);
 
       const props = {
         longitudinalData: [{ date: '2024-01-01', scores: { rawScore: 10 } }],
@@ -155,7 +155,7 @@ describe('useLongitudinalSeries', () => {
       expect(series.value[0].color).toBe('#2196F3'); // Raw score default color
     });
 
-    it('should call getSupportLevel with correct parameters', () => {
+    it('should call getDialColor with correct parameters', () => {
       const props = {
         longitudinalData: [{ date: '2024-01-01', scores: { rawScore: 10, percentile: 50 } }],
         studentGrade: 5,
@@ -163,10 +163,10 @@ describe('useLongitudinalSeries', () => {
       };
 
       const { series } = useLongitudinalSeries(props);
-      // Access the computed value to trigger the reactive function
+
       series.value;
 
-      expect(getSupportLevel).toHaveBeenCalledWith(5, 50, 10, 'swr');
+      expect(getDialColor).toHaveBeenCalledWith(5, 50, 10, 'swr');
     });
   });
 
