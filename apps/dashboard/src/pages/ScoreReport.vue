@@ -295,7 +295,6 @@ import useOrgQuery from '@/composables/queries/useOrgQuery';
 import useDistrictSchoolsQuery from '@/composables/queries/useDistrictSchoolsQuery';
 import useAdministrationAssignmentsQuery from '@/composables/queries/useAdministrationAssignmentsQuery';
 import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery';
-// import useDistrictSupportCategoriesQuery from '@/composables/queries/useDistrictSupportCategoriesQuery';
 import { usePermissions } from '@/composables/usePermissions';
 import { exportCsv } from '@/helpers/query/utils';
 import { getTitle } from '@/helpers/query/administrations';
@@ -321,6 +320,7 @@ import {
   roamFluencyTasks,
 } from '@/helpers/reports';
 import RoarDataTable from '@/components/RoarDataTable';
+import useDistrictSupportCategoriesQuery from '@/composables/queries/useDistrictSupportCategoriesQuery';
 import { CSV_EXPORT_STATIC_COLUMNS } from '@/constants/csvExport';
 import { APP_ROUTES } from '@/constants/routes';
 import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
@@ -365,6 +365,11 @@ const displayName = computed(() => {
 // DistributionChartSupport uses percent/count to show the data
 // DistributionFacets uses raw/percentile to show the data
 // DistributionChartOverview uses count to show the data
+
+// const districtSupportCategoriesQuery = useDistrictSupportCategoriesQuery(props.orgId, props.administrationId);
+// console.log('districtSupportCategoriesQuery', districtSupportCategoriesQuery.result);
+// console.log('props.orgId', props.orgId);
+// console.log('props.administrationId', props.administrationId);
 
 const getScoringVersions = computed(() => {
   const scoringVersions = Object.fromEntries(
@@ -646,6 +651,10 @@ const computedProgressData = computed(() => {
 const computeAssignmentAndRunData = computed(() => {
   if (props.orgType === 'district') {
     // return the backend data from aggregation
+    console.log('print before the districtSupportCategoriesQuery');
+    const { data: districtSupportCategories } = useDistrictSupportCategoriesQuery(props.orgId, props.administrationId);
+
+    console.log('districtSupportCategories', districtSupportCategories);
     return { assignmentTableData: [], runsByTaskId: {} };
   }
   if (!assignmentData.value || assignmentData.value.length === 0) {
@@ -1649,7 +1658,7 @@ const sortedAndFilteredTaskIds = computed(() => {
 
 const sortedAndFilteredSubscoreTaskIds = computed(() => {
   return sortedTaskIds.value?.filter((taskId) => {
-    return props.orgType !== 'district' || tasksToDisplayGraphs.includes(taskId);
+    return tasksToDisplayGraphs.includes(taskId);
   });
 });
 
