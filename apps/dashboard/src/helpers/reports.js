@@ -635,11 +635,8 @@ export function getGradeWithSuffix(grade) {
 }
 
 export const getDialColor = (grade, percentile, rawScore, taskId, optional = null, scoringVersion = null) => {
-  if (taskId === 'letter' || taskId === 'letter-en-ca') {
+  if (taskId === 'letter' || taskId === 'letter-en-ca' || taskId === 'phonics') {
     return 'var(--blue-500)';
-  }
-  if (taskId === 'phonics') {
-    return 'var(--gray-500)';
   }
   const { tag_color } = getSupportLevel(grade, percentile, rawScore, taskId, optional, scoringVersion);
   return tag_color;

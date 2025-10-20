@@ -1,5 +1,5 @@
 import { computed } from 'vue';
-import { getSupportLevel } from '@/helpers/reports';
+import { getDialColor } from '@/helpers/reports';
 
 const SCORE_TYPES = {
   rawScore: { key: 'rawScore', label: 'Raw Score', color: '#2196F3', priority: 1 },
@@ -29,14 +29,14 @@ export function useLongitudinalSeries(props) {
       .map((e) => {
         const x = new Date(e.date);
         const y = +e.scores[t];
-        const s = getSupportLevel(props.studentGrade, e.scores?.percentile, e.scores?.rawScore, props.taskId);
+        const color = getDialColor(props.studentGrade, e.scores?.percentile, e.scores?.rawScore, props.taskId);
         return {
           x,
           y,
           assignmentId: e.assignmentId || e.administrationId || '',
           percentile: e.scores?.percentile ?? null,
           standardScore: e.scores?.standardScore ?? null,
-          color: s?.tag_color || getColorByScoreType(t),
+          color: color || getColorByScoreType(t),
         };
       });
   });

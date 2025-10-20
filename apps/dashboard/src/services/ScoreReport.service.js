@@ -2,6 +2,7 @@ import _lowerCase from 'lodash/lowerCase';
 import _startCase from 'lodash/startCase';
 import _toUpper from 'lodash/toUpper';
 import {
+  getDialColor,
   rawOnlyTasks,
   taskDisplayNames,
   extendedDescriptions,
@@ -356,14 +357,14 @@ const ScoreReportService = (() => {
         const percentileScore = getScoreValue(compositeScores, taskId, grade, 'percentile');
         const standardScore = getScoreValue(compositeScores, taskId, grade, SCORE_TYPES.STANDARD_SCORE);
         const rawScoreRange = getRawScoreRange(taskId);
-        const supportColor = getSupportLevel(
+        const supportColor = getDialColor(
           grade,
           percentileScore,
           rawScore,
           taskId,
           optional,
           taskScoringVersions[taskId],
-        ).tag_color;
+        );
 
         const scoresForTask = {
           standardScore: {
@@ -378,7 +379,7 @@ const ScoreReportService = (() => {
             value: Math.round(rawScore),
             min: rawScoreRange?.min,
             max: rawScoreRange?.max,
-            supportColor: 'var(--blue-500)',
+            supportColor,
           },
           percentileScore: {
             name: tasksToDisplayPercentCorrect.includes(taskId)
