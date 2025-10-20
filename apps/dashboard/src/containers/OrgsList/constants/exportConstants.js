@@ -10,6 +10,14 @@ export const WARNING_LEVELS = {
   CRITICAL: 'critical',
 };
 
+// Modal severity constants
+export const MODAL_SEVERITIES = Object.freeze({
+  SUCCESS: 'success',
+  INFO: 'info',
+  ERROR: 'error',
+  WARN: 'warn',
+});
+
 // Event name constants
 export const ORG_EXPORT_EVENTS = {
   EXPORT_ORG_USERS: 'export-org-users',

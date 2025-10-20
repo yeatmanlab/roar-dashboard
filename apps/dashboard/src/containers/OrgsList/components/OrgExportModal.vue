@@ -47,8 +47,8 @@
             @click="$emit('cancel')"
           />
           <PvButton
-            :label="exportWarningLevel === 'critical' ? 'Export Anyway' : 'Continue Export'"
-            :severity="exportWarningLevel === 'critical' ? 'danger' : 'primary'"
+            :label="exportWarningLevel === WARNING_LEVELS.CRITICAL ? 'Export Anyway' : 'Continue Export'"
+            :severity="exportWarningLevel === WARNING_LEVELS.CRITICAL ? 'danger' : 'primary'"
             class="border-none border-round p-2"
             @click="$emit('confirm')"
           />
@@ -63,7 +63,7 @@ import { computed } from 'vue';
 import Dialog from '@/components/Dialog';
 import PvMessage from 'primevue/message';
 import PvButton from 'primevue/button';
-import { EXPORT_PHASE } from '@/containers/OrgsList/constants/exportConstants';
+import { EXPORT_PHASE, WARNING_LEVELS } from '@/containers/OrgsList/constants/exportConstants';
 
 const props = defineProps({
   visible: {

@@ -1,6 +1,6 @@
 import { ref, computed } from 'vue';
 import { CSV_EXPORT_BATCH_SIZE } from '@/constants/csvExport';
-import { WARNING_LEVELS, EXPORT_PHASE } from '../constants/exportConstants';
+import { WARNING_LEVELS, EXPORT_PHASE, MODAL_SEVERITIES } from '../constants/exportConstants';
 
 /**
  * Modal state management composable - handles UI state for export modal
@@ -42,6 +42,11 @@ export function useExportModal() {
   const isExportingOrgUsers = computed(() => exportingOrgId.value !== null);
 
   /**
+   * Computed helper for pending export data
+   */
+  const pendingExportData = computed(() => exportData.value.pendingExportData);
+
+  /**
    * Modal title based on current export phase.
    */
   const exportModalTitle = computed(() => {
@@ -61,6 +66,7 @@ export function useExportModal() {
         if (exportWarningLevel.value === WARNING_LEVELS.STRONG) {
           return 'Export Warning';
         }
+        return 'Confirm Export';
       default:
         return 'Confirm Export';
     }
@@ -73,77 +79,64 @@ export function useExportModal() {
     const userCount = pendingExportData.value?.userCount || 0;
     const formattedCount = userCount.toLocaleString();
     const orgName = pendingExportData.value?.orgType?.name || '';
-  
-    const isComplete = exportComplete.value;
-    const isCancelled = exportCancelled.value;
-    const isSuccess = exportSuccess.value;
-    const isInProgress = exportInProgress.value;
-  
-    const total = totalBatches.value || 0;
-    const current = currentBatch.value || 0;
-  
-    const wasBatched = exportWasBatched.value;
-    const batchCount = exportBatchCount.value;
     const numBatches = Math.ceil(userCount / CSV_EXPORT_BATCH_SIZE);
-    const errorMsg = exportError.value;
-  
-    const warningLevel = exportWarningLevel.value;
-  
-    const cancelledMessage = () => {
+
+    // Cancelled phase
+    if (exportPhase.value === EXPORT_PHASE.CANCELLED) {
+      const total = progressState.value.totalBatches;
+      const current = progressState.value.currentBatch;
       if (total > 1 && current > 0) {
         return `Export was cancelled after ${current} of ${total} batches were downloaded.\n\nYou may have partial data in the downloaded files.`;
       }
       return `Export was cancelled. No files were downloaded.`;
-    };
-  
-    const successMessage = () => {
-      if (wasBatched) {
-        return `Users from ${orgName} have been exported successfully in ${batchCount} separate CSV files!`;
+    }
+
+    // Success phase
+    if (exportPhase.value === EXPORT_PHASE.SUCCESS) {
+      if (exportData.value.exportWasBatched) {
+        return `Users from ${orgName} have been exported successfully in ${exportData.value.exportBatchCount} separate CSV files!`;
       }
       return `Users from ${orgName} have been exported successfully!`;
-    };
-  
-    const progressMessage = () => {
+    }
+
+    // Failed phase
+    if (exportPhase.value === EXPORT_PHASE.FAILED) {
+      return exportError.value || 'An unknown error occurred during export.';
+    }
+
+    // In progress phase
+    if (exportPhase.value === EXPORT_PHASE.IN_PROGRESS) {
+      const total = progressState.value.totalBatches;
+      const current = progressState.value.currentBatch;
       if (total > 1) {
         return `Exporting batch ${current} of ${total}...\n\nPlease wait while your files are being prepared.`;
       }
       return `Exporting ${formattedCount} users...\n\nPlease wait while your file is being prepared.`;
-    };
-  
-    const warningMessage = () => {
-      if (warningLevel === 'critical') {
-        return `
-          This export contains ${formattedCount} users and will be split into ${numBatches} separate CSV files (${CSV_EXPORT_BATCH_SIZE.toLocaleString()} users each) to prevent your browser from becoming unresponsive.
-    
-          The files will download one at a time and will be named:
-          • part-1-of-${numBatches}.csv
-          • part-2-of-${numBatches}.csv
-          • etc.
-          
-          This may take several minutes to complete. If you prefer smaller exports, consider filtering by a smaller organization type (district, school, or class).
-        `;
-      }
-  
-      if (warningLevel === 'strong') {
-        return `
-          This export contains ${formattedCount} users and may take 1-3 minutes to complete.
-  
-          Consider filtering by a smaller organization if you need faster results.
-        `;
-      }
-  
-      return `This export contains ${formattedCount} users and may take 30-60 seconds to complete.`;
-    };
-  
-    if (isComplete) {
-      if (isCancelled) return cancelledMessage();
-      if (isSuccess) return successMessage();
-      return errorMsg || 'An unknown error occurred during export.';
     }
+
+    // Idle phase (warning messages)
+    if (exportWarningLevel.value === WARNING_LEVELS.CRITICAL) {
+      return `
+        This export contains ${formattedCount} users and will be split into ${numBatches} separate CSV files (${CSV_EXPORT_BATCH_SIZE.toLocaleString()} users each) to prevent your browser from becoming unresponsive.
   
-    if (isInProgress) return progressMessage();
-  
-    return warningMessage();
+        The files will download one at a time and will be named:
+        • part-1-of-${numBatches}.csv
+        • part-2-of-${numBatches}.csv
+        • etc.
+        
+        This may take several minutes to complete. If you prefer smaller exports, consider filtering by a smaller organization type (district, school, or class).
+      `;
+    }
+
+    if (exportWarningLevel.value === WARNING_LEVELS.STRONG) {
+      return `
+        This export contains ${formattedCount} users and may take 1-3 minutes to complete.
+
+        Consider filtering by a smaller organization if you need faster results.
+      `;
+    }
+
+    return `This export contains ${formattedCount} users and may take 30-60 seconds to complete.`;
   });
 
   /**
@@ -152,22 +145,23 @@ export function useExportModal() {
   const exportModalSeverity = computed(() => {
     switch (exportPhase.value) {
       case EXPORT_PHASE.CANCELLED:
-        return 'warn';
+        return MODAL_SEVERITIES.WARN;
       case EXPORT_PHASE.SUCCESS:
-        return 'success';
+        return MODAL_SEVERITIES.SUCCESS;
       case EXPORT_PHASE.FAILED:
-        return 'error';
+        return MODAL_SEVERITIES.ERROR;
       case EXPORT_PHASE.IN_PROGRESS:
-        return 'info';
+        return MODAL_SEVERITIES.INFO;
       case EXPORT_PHASE.IDLE:
         if (
           exportWarningLevel.value === WARNING_LEVELS.CRITICAL ||
           exportWarningLevel.value === WARNING_LEVELS.STRONG
         ) {
-          return 'warn';
+          return MODAL_SEVERITIES.WARN;
         }
+        return MODAL_SEVERITIES.INFO;
       default:
-        return 'info';
+        return MODAL_SEVERITIES.INFO;
     }
   });
 

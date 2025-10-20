@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { useExportModal } from './useExportModal';
-import { WARNING_LEVELS, EXPORT_PHASE } from '../constants/exportConstants';
+import { WARNING_LEVELS, EXPORT_PHASE, MODAL_SEVERITIES } from '../constants/exportConstants';
 
 describe('useExportModal', () => {
   beforeEach(() => {
@@ -87,28 +87,28 @@ describe('useExportModal', () => {
 
       // Cancelled
       exportPhase.value = EXPORT_PHASE.CANCELLED;
-      expect(exportModalSeverity.value).toBe('warn');
+      expect(exportModalSeverity.value).toBe(MODAL_SEVERITIES.WARN);
 
       // Success
       exportPhase.value = EXPORT_PHASE.SUCCESS;
-      expect(exportModalSeverity.value).toBe('success');
+      expect(exportModalSeverity.value).toBe(MODAL_SEVERITIES.SUCCESS);
 
       // Failed
       exportPhase.value = EXPORT_PHASE.FAILED;
-      expect(exportModalSeverity.value).toBe('error');
+      expect(exportModalSeverity.value).toBe(MODAL_SEVERITIES.ERROR);
 
       // In progress
       exportPhase.value = EXPORT_PHASE.IN_PROGRESS;
-      expect(exportModalSeverity.value).toBe('info');
+      expect(exportModalSeverity.value).toBe(MODAL_SEVERITIES.INFO);
 
       // Idle with critical warning
       exportPhase.value = EXPORT_PHASE.IDLE;
       exportWarningLevel.value = WARNING_LEVELS.CRITICAL;
-      expect(exportModalSeverity.value).toBe('warn');
+      expect(exportModalSeverity.value).toBe(MODAL_SEVERITIES.WARN);
 
       // Idle with normal warning
       exportWarningLevel.value = WARNING_LEVELS.NORMAL;
-      expect(exportModalSeverity.value).toBe('info');
+      expect(exportModalSeverity.value).toBe(MODAL_SEVERITIES.INFO);
     });
   });
 
