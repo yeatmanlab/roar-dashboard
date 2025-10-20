@@ -14,7 +14,10 @@ const openScoreReport = () => {
   cy.url().should('eq', `${baseUrl}/scores/${testPartnerAdministrationId}/district/${testDistrictId}`);
 
   // Validate that all test users are present in the progress report.
-  cy.checkUserList(testUserList);
+  cy.checkUserList(testUserList, { tableSelector: '[data-cy="score-report__data-table"]' });
+
+  // Ensure the score report table is loaded.
+  cy.waitForRoarTable({ tableSelector: '[data-cy="score-report__data-table"]' });
 };
 
 describe('Partner Admin: Score Reports', () => {
@@ -34,8 +37,7 @@ describe('Partner Admin: Score Reports', () => {
     openScoreReport();
 
     // Validate that all test assignments are present in the score report.
-    cy.get('[data-cy="roar-data-table"] thead th').should('exist');
-    cy.get('[data-cy="roar-data-table"] thead th').then(($header) => {
+    cy.get('[data-cy="score-report__data-table"] thead th').then(($header) => {
       const tableHeaders = $header.map((index, elem) => Cypress.$(elem).text().trim()).get();
 
       testAssignments.forEach((assignment) => {

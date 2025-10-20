@@ -23,10 +23,11 @@ describe('Partner Admin: Individual Reports', () => {
     cy.get('button').contains('Scores').first().click();
     cy.url().should('eq', `${baseUrl}/scores/${testPartnerAdministrationId}/district/${testDistrictId}`);
 
+    // Ensure the score report is loaded.
     cy.waitForRoarTable({ tableSelector: '[data-cy="score-report__data-table"]' });
 
     // Validate that all test users are present in the progress report.
-    cy.checkUserList(testUserList);
+    cy.checkUserList(testUserList, { tableSelector: '[data-cy="score-report__data-table"]' });
 
     // Validate the individual score report.
     // @TODO: Change to populated test account to actually validate score report contents.

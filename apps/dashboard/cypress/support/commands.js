@@ -437,9 +437,13 @@ Cypress.Commands.add(
   'checkUserList',
   (
     userList,
-    { tableSel = '[data-cy="roar-data-table"]', colSel = 'td.p-datatable-frozen-column', caseInsensitive = false } = {},
+    {
+      tableSelector = '[data-cy="roar-data-table"]',
+      colSel = 'td.p-datatable-frozen-column',
+      caseInsensitive = false,
+    } = {},
   ) => {
-    cy.get(tableSel)
+    cy.get(tableSelector)
       .first()
       .within(() => {
         cy.get(`tbody tr ${colSel}`).then(($cells) => {
