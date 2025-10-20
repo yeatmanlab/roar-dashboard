@@ -23,6 +23,6 @@ describe('Longitudinal Chart Component', () => {
     cy.contains('Progress Over Time').click();
 
     // Verify PrimeVue chart component is rendered inside the accordion
-    cy.get('.longitudinal-chart').should('exist');
+    cy.get('[data-cy="longitudinal-chart"]').should('exist');
   });
 });

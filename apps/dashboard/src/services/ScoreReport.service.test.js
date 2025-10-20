@@ -7,6 +7,7 @@ import { getSupportLevel, getRawScoreRange } from '@/helpers/reports';
 // Mock dependencies
 vi.mock('@/helpers/reports', () => ({
   rawOnlyTasks: ['mock-raw-task'],
+  tasksToDisplayPercentCorrect: ['phonics'],
   taskDisplayNames: {
     'mock-task-1': { extendedName: 'Task One', order: 1 },
     'mock-task-2': { extendedName: 'Task Two', order: 2 },

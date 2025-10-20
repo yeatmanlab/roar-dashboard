@@ -446,7 +446,7 @@ const routes = [
     name: 'Launch Core Tasks',
     component: () => import('../components/tasks/TaskLevante.vue'),
     props: (route) => ({
-      taskId: 'core-tasks',
+      taskId: route.params.taskId,
       language: 'en',
       launchId: route.params.launchId,
     }),
@@ -711,16 +711,6 @@ const routes = [
     props: true,
     component: () => import('../pages/ScoreReport.vue'),
     meta: { pageTitle: 'View Scores', permission: Permissions.Reports.Score.READ },
-  },
-  {
-    path: APP_ROUTES.STUDENT_REPORT,
-    name: 'StudentReport',
-    props: true,
-    component: () => import('../pages/StudentReport.vue'),
-    meta: {
-      pageTitle: 'Student Score Report',
-      permission: Permissions.Reports.Student.READ,
-    },
   },
   {
     path: APP_ROUTES.SCORE_REPORT_STUDENT,

@@ -55,7 +55,6 @@ export const APP_ROUTES = {
   SCORE_REPORT_STUDENT: '/scores/:administrationId/:orgType/:orgId/user/:userId/new',
   SIGN_IN: '/signin',
   SSO: '/sso',
-  STUDENT_REPORT: '/scores/:administrationId/:orgType/:orgId/user/:userId',
   UNAUTHORIZED: '/unauthorized',
 };
 

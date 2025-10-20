@@ -1,8 +1,6 @@
 <template>
-  <article
-    class="flex gap-4 pt-4 bg-white border-2 border border-gray-100 flex-column align-items-center justify-content-center"
-  >
-    <div class="flex gap-3 px-4 flex-column align-items-center justify-content-center">
+  <article class="flex gap-4 pt-4 bg-white rounded border-2 border border-gray-100 flex-column">
+    <div class="flex gap-3 px-4 flex-column align-items-center">
       <div class="flex gap-1 text-center flex-column">
         <h2 class="m-0 text-lg font-semibold">{{ publicName }}</h2>
         <div class="text-sm font-thin text-gray-400">{{ scoreLabel }}</div>
@@ -25,7 +23,7 @@
       </div>
     </div>
 
-    <div class="flex gap-2 px-4 flex-column align-items-center justify-content-center">
+    <div class="flex gap-2 px-4 grow flex-column align-items-center">
       <PvKnob
         readonly
         :value-template="valueTemplate"
@@ -48,7 +46,7 @@
     </div>
 
     <template v-if="scoresArray?.length || longitudinalData?.length > 0">
-      <PvAccordion v-model:value="visiblePanels" class="px-4 w-full border-t border-gray-100">
+      <PvAccordion v-model:value="visiblePanels" class="px-4 w-full border-t border-gray-100" multiple>
         <PvAccordionPanel
           class="bg-gray-50"
           :pt="{ root: { class: 'border-0' } }"
@@ -79,7 +77,7 @@
               <div
                 v-for="[key, value] in Object.entries(score.subscores || {})"
                 :key="key"
-                class="flex justify-content-between mb-1 px-2"
+                class="flex px-2 mb-1 justify-content-between"
               >
                 <div class="mr-2">
                   <span>{{ formatPhonicsKey(key) }}</span>
@@ -94,7 +92,6 @@
 
         <PvAccordionPanel
           v-if="longitudinalData?.length > 0"
-          class="bg-gray-50"
           :pt="{ root: { class: 'border-0' } }"
           :value="ACCORDION_PANELS.LONGITUDINAL"
         >
@@ -102,28 +99,7 @@
             {{ $t('scoreReports.progressOverTime') }}
           </PvAccordionHeader>
           <PvAccordionContent :pt="{ content: { class: 'px-0' } }">
-            <LongitudinalChart :longitudinal-data="longitudinalData" :task-id="taskId" :grade="grade" />
-            <div class="historical-scores mt-4">
-              <div
-                v-for="historicalScore in longitudinalData"
-                :key="historicalScore.assignmentId"
-                class="historical-score-item p-3 surface-100 border-round mb-2"
-              >
-                <div class="flex justify-content-between align-items-center mb-2">
-                  <span class="date font-semibold">{{ formatDate(historicalScore.date) }}</span>
-                </div>
-                <div class="score-types grid">
-                  <div
-                    v-for="(value, type) in historicalScore.scores"
-                    :key="type"
-                    class="score-type-item col-6 flex justify-content-between align-items-center p-2"
-                  >
-                    <span class="score-label text-500">{{ formatScoreType(type) }}:</span>
-                    <span class="score-value font-semibold">{{ value }}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <LongitudinalChart :longitudinal-data="longitudinalData" :task-id="taskId" :student-grade="studentGrade" />
           </PvAccordionContent>
         </PvAccordionPanel>
       </PvAccordion>
@@ -140,7 +116,7 @@ import PvAccordion from 'primevue/accordion';
 import PvAccordionPanel from 'primevue/accordionpanel';
 import PvAccordionHeader from 'primevue/accordionheader';
 import PvAccordionContent from 'primevue/accordioncontent';
-import LongitudinalChart from '@/components/reports/LongitudinalChart.vue';
+import { LongitudinalChartScreen as LongitudinalChart } from './LongitudinalChart';
 
 const props = defineProps({
   publicName: {
@@ -179,6 +155,10 @@ const props = defineProps({
     type: String,
     required: true,
   },
+  studentGrade: {
+    type: String,
+    required: true,
+  },
   description: {
     type: Object,
     required: true,
@@ -200,10 +180,6 @@ const props = defineProps({
     type: String,
     required: true,
   },
-  grade: {
-    type: Number,
-    required: false,
-  },
 });
 
 const ACCORDION_PANELS = Object.freeze({
@@ -213,18 +189,6 @@ const ACCORDION_PANELS = Object.freeze({
 });
 
 const visiblePanels = ref([]);
-
-const formatDate = (date) => {
-  return new Date(date).toLocaleDateString(undefined, {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  });
-};
-
-const formatScoreType = (type) => {
-  return _startCase(type);
-};
 
 const formatPhonicsKey = (key) => {
   const keyMap = {
@@ -243,7 +207,7 @@ const formatPhonicsKey = (key) => {
 watch(
   () => props.expanded,
   (newValue) => {
-    visiblePanels.value = newValue ? [ACCORDION_PANELS.SCORE_BREAKDOWN] : [];
+    visiblePanels.value = newValue ? [ACCORDION_PANELS.SCORE_BREAKDOWN, ACCORDION_PANELS.LONGITUDINAL] : [];
   },
   { immediate: true },
 );
