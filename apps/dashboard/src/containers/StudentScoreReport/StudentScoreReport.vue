@@ -222,7 +222,7 @@ const handleExportToPdf = async () => {
   exportLoading.value = true;
   try {
     // Always render the print view in an offscreen iframe for consistent export
-    const url = `${window.location.origin}/scores/${props.administrationId}/${props.orgType}/${props.orgId}/user/${props.userId}/new?print=true`;
+    const url = `${window.location.origin}/scores/${props.administrationId}/${props.orgType}/${props.orgId}/user/${props.userId}?print=true`;
     await PdfExportService.generateSingleDocument(url, fileName, {
       containerSelector: '[data-pdf-export-container]',
     });
