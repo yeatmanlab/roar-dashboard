@@ -153,12 +153,9 @@ describe('query/scores', () => {
   });
 
   it('should call aggregateSupportCategories with correct parameters', async () => {
-    const result = await getDistrictSupportCategories('test-assignment', 'test-district');
+    const result = await getDistrictSupportCategories('test-district', 'test-assignment');
 
-    expect(aggregateSupportCategoriesMock).toHaveBeenCalledWith({
-      assignmentId: 'test-assignment',
-      districtId: 'test-district',
-    });
+    expect(aggregateSupportCategoriesMock).toHaveBeenCalledWith('test-district', 'test-assignment');
 
     expect(result).toEqual(mockSupportCategoriesData);
   });
