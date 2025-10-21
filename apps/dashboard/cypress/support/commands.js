@@ -181,10 +181,10 @@ Cypress.Commands.add('waitForScoreReportButton', () => {
   // the whole list to be loaded and that can take a while, hence the long timeout.
   cy.waitUntil(
     () => {
-      return Cypress.$('[data-cy="button-progress"] ').length;
+      return Cypress.$('[data-cy="button-scores"] ').length;
     },
     {
-      errorMsg: 'Failed to find the progress report button before timeout',
+      errorMsg: 'Failed to find the score report button before timeout',
       timeout: 1200000,
       interval: 1000,
     },
