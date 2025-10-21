@@ -5,6 +5,7 @@ export const getDistrictSupportCategories = async (districtId, assignmentId) => 
   const authStore = useAuthStore();
   const { roarfirekit } = storeToRefs(authStore);
   const aggregatedScores = await roarfirekit.value.aggregateSupportCategories(districtId, assignmentId);
+  console.log('aggregatedScores from scores.js', aggregatedScores);
 
   // {
   //   swr: {

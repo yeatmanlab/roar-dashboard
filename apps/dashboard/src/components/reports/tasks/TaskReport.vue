@@ -188,6 +188,8 @@ const props = defineProps({
   },
 });
 
+console.log('runs from task report', props.runs);
+
 const { data: tasksDictionary, isLoading: isLoadingTasksDictionary } = useTasksDictionaryQuery();
 
 const facetMode = ref({ name: 'Grade', key: 'grade' });
@@ -197,10 +199,26 @@ const facetModes = [
 ];
 
 const minGradeByRuns = computed(() => {
+  if (props.orgType === 'district') {
+    // For district, props.runs is an object with support categories
+    // We need to extract all grade values from the nested structure
+    if (!props.runs || typeof props.runs !== 'object') {
+      return 0;
+    }
+    const allGrades = [];
+    Object.values(props.runs).forEach((category) => {
+      if (category && typeof category === 'object' && category.grades) {
+        allGrades.push(...Object.keys(category.grades));
+      }
+    });
+    return allGrades.length > 0 ? Math.min(...allGrades.map(Number)) : 0;
+  }
   return Math.min(
     ...props.runs.filter((run) => run.scores.rawScore || run.scores.stdPercentile).map((run) => run.grade),
   );
 });
+
+console.log('min grade by runs', minGradeByRuns.value);
 
 const taskDesc = computed(() => {
   return replaceScoreRange(taskInfoById[props.taskId]?.desc, props.taskId, props.taskScoringVersions[props.taskId]);

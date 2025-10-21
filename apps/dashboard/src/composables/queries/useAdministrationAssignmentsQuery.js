@@ -17,7 +17,7 @@ import { ADMINISTRATION_ASSIGNMENTS_QUERY_KEY } from '@/constants/queryKeys';
  */
 const useAdministrationAssignmentsQuery = (administrationId, orgType, orgId, queryOptions = undefined) => {
   if (orgType === 'district') {
-    return {};
+    return { isLoading: false, isFetching: false, data: [] };
   }
   const authStore = useAuthStore();
   const { roarUid } = storeToRefs(authStore);
