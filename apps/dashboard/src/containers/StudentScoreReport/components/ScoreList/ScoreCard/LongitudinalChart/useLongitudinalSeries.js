@@ -18,33 +18,7 @@ export function useLongitudinalSeries(props) {
     return [...a].sort((x, y) => new Date(x.date) - new Date(y.date));
   });
 
-  const chosenType = computed(() => {
-    // For special tasks that always use raw score
-    if (props.taskId === 'letter' || props.taskId === 'letter-en-ca' || props.taskId === 'phonics') {
-      return 'rawScore';
-    }
-
-    // For all other tasks, use grade-based scoring
-    const availableTypes = sorted.value.reduce((types, e) => {
-      if (e.scores?.percentile != null) types.add('percentile');
-      if (e.scores?.rawScore != null) types.add('rawScore');
-      if (e.scores?.standardScore != null) types.add('standardScore');
-      return types;
-    }, new Set());
-
-    // For grades < 6, prefer percentile if available
-    if (props.studentGrade < 6 && availableTypes.has('percentile')) {
-      return 'percentile';
-    }
-
-    // For grades >= 6, prefer rawScore if available
-    if (props.studentGrade >= 6 && availableTypes.has('rawScore')) {
-      return 'rawScore';
-    }
-
-    // Fall back to any available score type in priority order
-    return preferredTypes.find((t) => availableTypes.has(t));
-  });
+  const chosenType = computed(() => preferredTypes.find((t) => sorted.value.some((e) => e.scores?.[t] != null)));
 
   const series = computed(() => {
     if (!chosenType.value) return [];
