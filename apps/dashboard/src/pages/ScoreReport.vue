@@ -69,7 +69,11 @@
                   <div v-for="taskId of sortedAndFilteredTaskIds" :key="taskId" style="width: 33%">
                     <div class="distribution-overview-wrapper">
                       <DistributionChartOverview
-                        :runs="computeAssignmentAndRunData.runsByTaskId[taskId]"
+                        :runs="
+                          props.orgType === 'district'
+                            ? aggregatedDistrictSupportCategories[taskId]
+                            : computeAssignmentAndRunData.runsByTaskId[taskId]
+                        "
                         :initialized="initialized"
                         :task-id="taskId"
                         :org-type="props.orgType"
@@ -208,7 +212,11 @@
                 :task-id="taskId"
                 :initialized="initialized"
                 :administration-id="administrationId"
-                :runs="computeAssignmentAndRunData.runsByTaskId[taskId]"
+                :runs="
+                  orgType === 'district'
+                    ? aggregatedDistrictSupportCategories[taskId]
+                    : computeAssignmentAndRunData.runsByTaskId[taskId]
+                "
                 :org-type="orgType"
                 :org-id="orgId"
                 :org-info="orgData"
@@ -360,21 +368,26 @@ const displayName = computed(() => {
   return 'Fetching administration name...';
 });
 
-// Get actual data and remove watch
-const query = useDistrictSupportCategoriesQuery(
-  props.orgId,
-  props.administrationId,
-  computed(() => props.orgType === 'district'),
-);
+// const aggregatedDistrictSupportCategories = ref({});
 
-// log when data arrives
-watch(
-  query.data,
-  (val) => {
-    console.log('districtSupportCategories (value):', val);
-  },
-  { immediate: true },
-);
+const {
+  data: aggregatedDistrictSupportCategories,
+  isLoading: isLoadingDistrictSupportCategories,
+  isFetching: isFetchingDistrictSupportCategories,
+} = useDistrictSupportCategoriesQuery(props.orgId, props.administrationId, {
+  enabled: initialized,
+});
+
+console.log('aggregatedDistrictSupportCategories.value', aggregatedDistrictSupportCategories.value);
+
+// // log when data arrives
+// watch(
+//   aggregatedDistrictSupportCategories.data,
+//   (val) => {
+//     console.log('districtSupportCategories (value):', val);
+//   },
+//   { immediate: true },
+// );
 
 const getScoringVersions = computed(() => {
   const scoringVersions = Object.fromEntries(
@@ -1012,6 +1025,7 @@ const computeAssignmentAndRunData = computed(() => {
         }
       }
     }
+    console.log('filteredRunsByTaskId', filteredRunsByTaskId, 'assignmentTableDataAcc', assignmentTableDataAcc);
 
     return { runsByTaskId: filteredRunsByTaskId, assignmentTableData: assignmentTableDataAcc };
   }
@@ -1641,16 +1655,21 @@ const allTasks = computed(() => {
 });
 
 const sortedTaskIds = computed(() => {
-  const runsByTaskId = computeAssignmentAndRunData.value.runsByTaskId;
-  const specialTaskIds = ['swr', 'sre', 'pa', 'phonics'].filter((id) => Object.keys(runsByTaskId).includes(id));
-  const remainingTaskIds = Object.keys(runsByTaskId).filter((id) => !specialTaskIds.includes(id));
+  if (props.orgType === 'district') {
+    if (isLoadingDistrictSupportCategories.value || isFetchingDistrictSupportCategories.value) return [];
+    return Object.keys(aggregatedDistrictSupportCategories.value);
+  } else {
+    const runsByTaskId = computeAssignmentAndRunData.value.runsByTaskId;
+    const specialTaskIds = ['swr', 'sre', 'pa', 'phonics'].filter((id) => Object.keys(runsByTaskId).includes(id));
+    const remainingTaskIds = Object.keys(runsByTaskId).filter((id) => !specialTaskIds.includes(id));
 
-  remainingTaskIds.sort((p1, p2) => {
-    return taskDisplayNames[p1].order - taskDisplayNames[p2].order;
-  });
+    remainingTaskIds.sort((p1, p2) => {
+      return taskDisplayNames[p1].order - taskDisplayNames[p2].order;
+    });
 
-  const sortedIds = specialTaskIds.concat(remainingTaskIds);
-  return sortedIds.filter((taskId) => allTasks.value.includes(taskId));
+    const sortedIds = specialTaskIds.concat(remainingTaskIds);
+    return sortedIds.filter((taskId) => allTasks.value.includes(taskId));
+  }
 });
 
 const sortedAndFilteredTaskIds = computed(() => {

@@ -21,7 +21,17 @@ import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQue
 
 const { data: tasksDictionary, isLoading: isLoadingTasksDictionary } = useTasksDictionaryQuery();
 
+// const MATCHING_SUPPORT_LEVELS = {
+//   above: 'Achieved Skill',
+//   some: 'Developing Skill',
+//   below: 'Needs Extra Support',
+// };
+
 const returnGradeCount = computed(() => {
+  if (props.orgType === 'district') {
+    // return Object.entries(props.runs).filter(([support_level]) => MATCHING_SUPPORT_LEVELS[support_level] != undefined).map(([support_level, total]) => ({ category: MATCHING_SUPPORT_LEVELS[support_level.grades], value: total.total }));
+  }
+
   const gradeCount = [];
   for (const run of props.runs) {
     let gradeCounter = gradeCount.find((grade) => grade.category === run?.user?.grade);

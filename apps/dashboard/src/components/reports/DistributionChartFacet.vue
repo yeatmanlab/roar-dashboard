@@ -59,6 +59,8 @@ const props = defineProps({
   },
 });
 
+console.log('runs from facet chart', props.runs);
+
 const { data: tasksDictionary, isLoading: isLoadingTasksDictionary } = useTasksDictionaryQuery();
 
 const scoreMode = ref({ name: 'Raw Score', key: 'rawScore' });

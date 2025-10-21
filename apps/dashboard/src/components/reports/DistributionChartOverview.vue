@@ -18,7 +18,7 @@ const props = defineProps({
   },
   runs: {
     type: Array,
-    required: true,
+    required: false,
   },
   orgType: {
     type: String,
@@ -44,9 +44,22 @@ const props = defineProps({
   },
 });
 
+console.log('runs.value', props.runs);
+
 const { data: tasksDictionary, isLoading: isLoadingTasksDictionary } = useTasksDictionaryQuery();
 
+const MATCHING_SUPPORT_LEVELS = {
+  above: 'Achieved Skill',
+  some: 'Developing Skill',
+  below: 'Needs Extra Support',
+};
+
 const supportLevelsOverview = computed(() => {
+  if (props.orgType === 'district') {
+    return Object.entries(props.runs)
+      .filter(([support_level]) => MATCHING_SUPPORT_LEVELS[support_level] != undefined)
+      .map(([support_level, total]) => ({ category: MATCHING_SUPPORT_LEVELS[support_level], value: total.total }));
+  }
   if (!props.runs) return [];
   let values = {};
   for (const { scores } of props.runs) {
@@ -63,6 +76,8 @@ const supportLevelsOverview = computed(() => {
     .filter(([support_level]) => support_level !== 'null')
     .map(([support_level, count]) => ({ category: support_level, value: count }));
 });
+
+console.log('supportLevelsOverview.value', supportLevelsOverview.value);
 
 const overviewDistributionChart = computed(() => {
   if (isLoadingTasksDictionary.value) return {};
