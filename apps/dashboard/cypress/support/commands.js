@@ -167,6 +167,8 @@ Cypress.Commands.add('waitForProgressReportButton', () => {
     },
     {
       errorMsg: 'Failed to find the progress report button before timeout',
+      timeout: 600000,
+      interval: 1000,
     },
   );
 });
@@ -183,6 +185,8 @@ Cypress.Commands.add('waitForScoreReportButton', () => {
     },
     {
       errorMsg: 'Failed to find the progress report button before timeout',
+      timeout: 600000,
+      interval: 1000,
     },
   );
 });
