@@ -185,7 +185,6 @@ describe('query/administrations', () => {
       expect(result[1].stats.total.assignment).toBe(25);
     });
 
-
     it('should filter and sort administrations correctly', async () => {
       mockPost.mockResolvedValueOnce({
         data: [
