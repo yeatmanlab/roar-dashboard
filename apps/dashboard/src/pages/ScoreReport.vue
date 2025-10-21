@@ -360,8 +360,7 @@ const displayName = computed(() => {
   return 'Fetching administration name...';
 });
 
-console.log('print before the districtSupportCategoriesQuery');
-
+// Get actual data and remove watch
 const query = useDistrictSupportCategoriesQuery(
   props.orgId,
   props.administrationId,
