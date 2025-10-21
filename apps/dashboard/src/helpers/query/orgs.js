@@ -2,21 +2,9 @@ import { toValue, unref } from 'vue';
 import { storeToRefs } from 'pinia';
 import _intersection from 'lodash/intersection';
 import _uniq from 'lodash/uniq';
-import _flattenDeep from 'lodash/flattenDeep';
-import _isEmpty from 'lodash/isEmpty';
-import _without from 'lodash/without';
-import _zip from 'lodash/zip';
-import {
-  batchGetDocs,
-  convertValues,
-  fetchDocById,
-  getAxiosInstance,
-  mapFields,
-  orderByDefault,
-} from '@/helpers/query/utils';
+import { convertValues, fetchDocById, getAxiosInstance, mapFields, orderByDefault } from '@/helpers/query/utils';
 import { useAuthStore } from '@/store/auth';
-import { ORG_TYPES, SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
-import { FIRESTORE_COLLECTIONS } from '@/constants/firebase';
+import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
 
 export const getOrgsRequestBody = ({
   orgType,
