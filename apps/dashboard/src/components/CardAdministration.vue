@@ -180,8 +180,11 @@ import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
 import { ADMINISTRATION_FORM_TYPES } from '@/constants/routes';
 import { FIRESTORE_COLLECTIONS } from '@/constants/firebase';
 import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
+import { useAuthStore } from '@/store/auth';
 
 const router = useRouter();
+const authStore = useAuthStore();
+const { roarfirekit } = authStore;
 
 const props = defineProps({
   id: { type: String, required: true },
@@ -310,7 +313,7 @@ const isWideScreen = computed(() => {
 
 const { data: tasksDictionary, isLoading: isLoadingTasksDictionary } = useTasksDictionaryQuery();
 
-const { data: orgs, isLoading: isLoadingDsgfOrgs } = useDsgfOrgQuery(props.id, props.assignees, {
+const { data: orgs, isLoading: isLoadingDsgfOrgs } = useDsgfOrgQuery(props.id, {
   enabled: enableQueries,
 });
 
