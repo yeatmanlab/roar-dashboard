@@ -28,14 +28,25 @@ export function useLongitudinalSeries(props) {
       .map((e) => {
         const x = new Date(e.date);
         const y = +e.scores[t];
+        console.log('[DEBUG] Point data:', {
+          taskId: props.taskId,
+          grade: props.studentGrade,
+          percentile: e.scores?.percentile,
+          rawScore: e.scores?.rawScore,
+          date: x,
+          score: y,
+        });
         const color = getDialColor(props.studentGrade, e.scores?.percentile, e.scores?.rawScore, props.taskId);
+        console.log('[DEBUG] Color from getDialColor:', { color });
+        const finalColor = color || supportLevelColors.Assessed;
+        console.log('[DEBUG] Final color:', { finalColor });
         return {
           x,
           y,
           assignmentId: e.assignmentId || e.administrationId || '',
           percentile: e.scores?.percentile ?? null,
           standardScore: e.scores?.standardScore ?? null,
-          color: color || supportLevelColors.Assessed,
+          color: finalColor,
         };
       });
   });
