@@ -446,7 +446,7 @@ const routes = [
     name: 'Launch Core Tasks',
     component: () => import('../components/tasks/TaskLevante.vue'),
     props: (route) => ({
-      taskId: 'core-tasks',
+      taskId: route.params.taskId,
       language: 'en',
       launchId: route.params.launchId,
     }),
@@ -685,7 +685,7 @@ const routes = [
   {
     path: APP_ROUTES.ORGS_LIST,
     name: 'ListOrgs',
-    component: () => import('../components/ListOrgs.vue'),
+    component: () => import('../pages/ListOrgs.vue'),
     meta: { pageTitle: 'List organizations', permission: Permissions.Organizations.LIST },
   },
   {
