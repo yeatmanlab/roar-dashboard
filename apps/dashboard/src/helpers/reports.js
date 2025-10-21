@@ -673,7 +673,7 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = 
   if (optional) {
     return {
       support_level: 'Optional',
-      tag_color: undefined,
+      tag_color: supportLevelColors.Optional,
     };
   }
 
@@ -688,6 +688,7 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = 
       tag_color: supportLevelColors.Assessed,
     };
   }
+  // Try percentile-based scoring for grades < 6
   if (percentile !== null && percentile !== undefined && gradeLevel < 6) {
     const isUpdatedSre = taskId === 'sre' && scoringVersion >= 4;
     const isUpdatedSreEs = taskId === 'sre-es' && scoringVersion >= 1;
@@ -705,7 +706,10 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = 
       support_level = 'Needs Extra Support';
       tag_color = supportLevelColors.below;
     }
-  } else if (rawScore !== null && rawScore !== undefined && gradeLevel >= 6) {
+  }
+
+  // Fall back to raw score-based scoring if percentile is not available or grade >= 6
+  if (support_level === null && rawScore !== null && rawScore !== undefined) {
     const { above, some } = getRawScoreThreshold(taskId, scoringVersion);
 
     // Only return support_level and tag_color if the thresholds are not null
