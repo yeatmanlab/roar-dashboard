@@ -156,6 +156,38 @@ Cypress.Commands.add('waitForStudentReportList', () => {
 });
 
 /**
+ * Waits for the progress report button to load.
+ */
+Cypress.Commands.add('waitForProgressReportButton', () => {
+  // Note: As the application currently does not support paginated fetching of administrations, we have to wait for
+  // the whole list to be loaded and that can take a while, hence the long timeout.
+  cy.waitUntil(
+    () => {
+      return Cypress.$('[data-cy="button-progress"] ').length;
+    },
+    {
+      errorMsg: 'Failed to find the progress report button before timeout',
+    },
+  );
+});
+
+/**
+ * Waits for the score report button to load.
+ */
+Cypress.Commands.add('waitForScoreReportButton', () => {
+  // Note: As the application currently does not support paginated fetching of administrations, we have to wait for
+  // the whole list to be loaded and that can take a while, hence the long timeout.
+  cy.waitUntil(
+    () => {
+      return Cypress.$('[data-cy="button-progress"] ').length;
+    },
+    {
+      errorMsg: 'Failed to find the progress report button before timeout',
+    },
+  );
+});
+
+/**
  * Waits for the launch student button to load.
  */
 Cypress.Commands.add('waitForPlayAssessmentsBtn', () => {
