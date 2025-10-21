@@ -68,7 +68,7 @@
         </div>
       </div>
 
-      <div v-if="isAssigned">
+      <div>
         <PvButton
           class="mt-2 m-0 bg-primary text-white border-none border-round h-2rem text-sm hover:bg-red-900"
           :icon="toggleIcon"
@@ -79,8 +79,12 @@
         />
       </div>
 
+      <div v-if="showTable && noOrgsFound" class="mt-3 p-3 text-center text-gray-600 bg-gray-50 border-round">
+        No organizations found for this administration.
+      </div>
+
       <PvTreeTable
-        v-if="showTable"
+        v-if="showTable && !noOrgsFound"
         class="mt-3"
         lazy
         row-hover
@@ -159,8 +163,6 @@ import _fromPairs from 'lodash/fromPairs';
 import _isEmpty from 'lodash/isEmpty';
 import _mapValues from 'lodash/mapValues';
 import _toPairs from 'lodash/toPairs';
-import _without from 'lodash/without';
-import _zip from 'lodash/zip';
 import PvButton from 'primevue/button';
 import PvColumn from 'primevue/column';
 import PvChart from 'primevue/chart';
@@ -170,14 +172,12 @@ import PvPopover from 'primevue/popover';
 import PvSpeedDial from 'primevue/speeddial';
 import PvTreeTable from 'primevue/treetable';
 import { taskDisplayNames } from '@/helpers/reports';
-import { removeEmptyOrgs } from '@/helpers';
 import { setBarChartData, setBarChartOptions } from '@/helpers/plotting';
 import useDsgfOrgQuery from '@/composables/queries/useDsgfOrgQuery';
 import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery';
 import useDeleteAdministrationMutation from '@/composables/mutations/useDeleteAdministrationMutation';
 import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
 import { ADMINISTRATION_FORM_TYPES } from '@/constants/routes';
-import { FIRESTORE_COLLECTIONS } from '@/constants/firebase';
 import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
 import { useAuthStore } from '@/store/auth';
 
@@ -191,7 +191,6 @@ const props = defineProps({
   publicName: { type: String, required: true },
   stats: { type: Object, required: false, default: () => ({}) },
   dates: { type: Object, required: true },
-  assignees: { type: Object, required: true },
   assessments: { type: Array, required: true },
   showParams: { type: Boolean, required: true },
   isSuperAdmin: { type: Boolean, required: true },
@@ -281,9 +280,6 @@ function getAssessment(assessmentId) {
   return props.assessments.find((assessment) => assessment.taskId.toLowerCase() === assessmentId);
 }
 
-const displayOrgs = removeEmptyOrgs(props.assignees);
-const isAssigned = !_isEmpty(Object.values(displayOrgs));
-
 const showTable = ref(false);
 const enableQueries = ref(false);
 
@@ -305,6 +301,10 @@ const toggleTable = () => {
   enableQueries.value = true;
   showTable.value = !showTable.value;
 };
+
+const noOrgsFound = computed(() => {
+  return !loadingTreeTable.value && (!treeTableOrgs.value || treeTableOrgs.value.length === 0);
+});
 
 const isWideScreen = computed(() => {
   return window.innerWidth > 768;
