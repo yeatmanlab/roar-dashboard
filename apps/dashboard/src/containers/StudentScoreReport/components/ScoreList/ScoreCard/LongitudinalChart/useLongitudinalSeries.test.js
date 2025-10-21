@@ -5,12 +5,24 @@ import { getDialColor } from '@/helpers/reports';
 // Mock the reports helpers
 vi.mock('@/helpers/reports', () => ({
   getDialColor: vi.fn(),
+  supportLevelColors: {
+    above: '#22c55e', // green-500
+    Green: '#22c55e', // green-500
+    some: '#edc037', // yellow
+    Yellow: '#edc037', // yellow
+    below: '#c93d82', // pink
+    Pink: '#c93d82', // pink
+    optional: '#71717a', // gray-500
+    Optional: '#71717a', // gray-500
+    Assessed: '#3b82f6', // blue-500
+    Unreliable: '#d6b8c7', // pink-200
+  },
 }));
 
 describe('useLongitudinalSeries', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    getDialColor.mockReturnValue('var(--blue-500)');
+    getDialColor.mockReturnValue('#3b82f6'); // blue-500
   });
 
   describe('series data processing', () => {
@@ -128,7 +140,7 @@ describe('useLongitudinalSeries', () => {
 
   describe('color assignment', () => {
     it('should use dial color when available', () => {
-      getDialColor.mockReturnValue('var(--blue-500)');
+      getDialColor.mockReturnValue('#3b82f6'); // blue-500
 
       const props = {
         longitudinalData: [{ date: '2024-01-01', scores: { rawScore: 10, percentile: 25 } }],
@@ -138,7 +150,7 @@ describe('useLongitudinalSeries', () => {
 
       const { series } = useLongitudinalSeries(props);
 
-      expect(series.value[0].color).toBe('var(--blue-500)');
+      expect(series.value[0].color).toBe('#3b82f6'); // blue-500
     });
 
     it('should use default score type color when dial color is not available', () => {
@@ -152,7 +164,7 @@ describe('useLongitudinalSeries', () => {
 
       const { series } = useLongitudinalSeries(props);
 
-      expect(series.value[0].color).toBe('#2196F3'); // Raw score default color
+      expect(series.value[0].color).toBe('#3b82f6'); // blue-500 (default color)
     });
 
     it('should call getDialColor with correct parameters', () => {
@@ -206,7 +218,7 @@ describe('useLongitudinalSeries', () => {
 
       const { seriesStroke } = useLongitudinalSeries(props);
 
-      expect(seriesStroke.value).toBe('#2196F3'); // Raw score color
+      expect(seriesStroke.value).toBe('#3b82f6'); // blue-500
     });
   });
 
