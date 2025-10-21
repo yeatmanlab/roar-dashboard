@@ -646,13 +646,14 @@ export function getGradeWithSuffix(grade) {
  * @returns {string} The CSS color variable to use for the dial.
  */
 export const getDialColor = (grade, percentile, rawScore, taskId, optional = null, scoringVersion = null) => {
-  console.log('[DEBUG] getDialColor inputs:', { grade, percentile, rawScore, taskId, optional, scoringVersion });
   if (taskId === 'letter' || taskId === 'letter-en-ca' || taskId === 'phonics') {
-    console.log('[DEBUG] Special case task, returning blue');
     return '#3b82f6'; // blue-500
   }
-  const { tag_color } = getSupportLevel(grade, percentile, rawScore, taskId, optional, scoringVersion);
-  console.log('[DEBUG] getSupportLevel returned:', { tag_color });
+  const { tag_color, support_level } = getSupportLevel(grade, percentile, rawScore, taskId, optional, scoringVersion);
+  console.log('[DEBUG] getDialColor:', {
+    inputs: { grade, percentile, rawScore, taskId },
+    result: { tag_color, support_level },
+  });
   return tag_color;
 };
 
