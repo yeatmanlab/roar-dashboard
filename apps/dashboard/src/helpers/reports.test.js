@@ -67,7 +67,7 @@ describe('reports', () => {
         const result = getSupportLevel(3, 75, 100, 'swr', false);
         expect(result).toEqual({
           support_level: 'Achieved Skill',
-          tag_color: 'green',
+          tag_color: '#22c55e', // green-500
         });
       });
 
@@ -91,7 +91,7 @@ describe('reports', () => {
         const result = getSupportLevel(6, undefined, 600, 'swr', false);
         expect(result).toEqual({
           support_level: 'Achieved Skill',
-          tag_color: 'green',
+          tag_color: '#22c55e', // green-500
         });
       });
     });
@@ -101,7 +101,7 @@ describe('reports', () => {
         const result = getSupportLevel(3, 50, 513, 'swr', false, 7);
         expect(result).toEqual({
           support_level: 'Achieved Skill',
-          tag_color: 'green',
+          tag_color: '#22c55e', // green-500
         });
       });
 
@@ -125,7 +125,7 @@ describe('reports', () => {
         const result = getSupportLevel(3, 40, 41, 'sre', false, 4);
         expect(result).toEqual({
           support_level: 'Achieved Skill',
-          tag_color: 'green',
+          tag_color: '#22c55e', // green-500
         });
       });
 
@@ -133,7 +133,7 @@ describe('reports', () => {
         const result = getSupportLevel(6, undefined, 520, 'swr', false, 7);
         expect(result).toEqual({
           support_level: 'Achieved Skill',
-          tag_color: 'green',
+          tag_color: '#22c55e', // green-500
         });
       });
 
@@ -715,7 +715,7 @@ describe('reports', () => {
 
   describe('getDialColor', () => {
     it('should return gray for phonics', () => {
-      expect(getDialColor(6, 40, 45, 'phonics', null, null)).toBe('var(--gray-500)');
+      expect(getDialColor(6, 40, 45, 'phonics', null, null)).toBe('#3b82f6'); // blue-500
     });
 
     it('should return support level color using percentile for grade < 6 for sre with scoringVersion 3', () => {
@@ -727,7 +727,7 @@ describe('reports', () => {
     });
 
     it('should return support level color using percentile for grade < 6 for sre with scoringVersion 4', () => {
-      expect(getDialColor(3, 45, null, 'sre', null, 4)).toBe('green');
+      expect(getDialColor(3, 45, null, 'sre', null, 4)).toBe('#22c55e'); // green-500
     });
 
     it('should return support level color using raw score for grade >= 6 for sre with scoringVersion 4', () => {
