@@ -169,7 +169,6 @@ import PvDataTable from 'primevue/datatable';
 import PvPopover from 'primevue/popover';
 import PvSpeedDial from 'primevue/speeddial';
 import PvTreeTable from 'primevue/treetable';
-import { batchGetDocs } from '@/helpers/query/utils';
 import { taskDisplayNames } from '@/helpers/reports';
 import { removeEmptyOrgs } from '@/helpers';
 import { setBarChartData, setBarChartOptions } from '@/helpers/plotting';
@@ -332,15 +331,16 @@ watch(showTable, (newValue) => {
 
 const expanding = ref(false);
 const onExpand = async (node) => {
-  if (node.data.orgType === SINGULAR_ORG_TYPES.SCHOOLS && node.children?.length > 0 && !node.data.expanded) {
+  if (
+    (node.data.orgType === SINGULAR_ORG_TYPES.SCHOOLS || node.data.orgType === SINGULAR_ORG_TYPES.DISTRICTS) &&
+    node.children?.length > 0 &&
+    !node.data.expanded
+  ) {
     expanding.value = true;
 
-    const classPaths = node.children.map(({ data }) => `classes/${data.id}`);
-    // const statPaths = node.children.map(({ data }) => `administrations/${props.id}/stats/${data.id}`);
-
-    const classPromises = [batchGetDocs(classPaths, ['name', 'schoolId'])];
-
-    const [classDocs] = await Promise.all(classPromises);
+    // Fetch child orgs using roarfirekit
+    const orgType = node.data.orgType.toLowerCase();
+    const { data: childOrgs } = await roarfirekit.getAdministrationOrgsAndStats(props.id, node.data.id, orgType);
 
     // Lazy node is a copy of the expanding node. We will insert more detailed
     // children nodes later.
@@ -352,22 +352,19 @@ const onExpand = async (node) => {
       },
     };
 
-    const childNodes = _without(
-      classDocs.map((orgDoc, index) => {
-        const { collection = FIRESTORE_COLLECTIONS.CLASSES, ...nodeData } = orgDoc ?? {};
-
-        if (_isEmpty(nodeData)) return undefined;
-
-        return {
-          key: `${node.key}-${index}`,
-          data: {
-            orgType: SINGULAR_ORG_TYPES[collection.toUpperCase()],
-            ...nodeData,
-          },
-        };
-      }),
-      undefined,
-    );
+    // Build child nodes from the returned org data
+    const childNodes = childOrgs.map((org, index) => {
+      return {
+        key: `${node.key}-${index}`,
+        data: {
+          id: org.orgId,
+          name: org.name,
+          orgType: SINGULAR_ORG_TYPES[org.orgType.toUpperCase()],
+          stats: org.stats,
+          ...org,
+        },
+      };
+    });
 
     lazyNode.children = childNodes;
 

@@ -450,16 +450,12 @@ export const fetchTreeOrgs = async (administrationId) => {
   // Fetch all org data and stats for the administration
   const { data: allOrgData } = await roarfirekit.value.getAdministrationOrgsAndStats(administrationId);
 
-  console.log('allOrgData from getAdministrationOrgsAndStats', allOrgData);
-
   // Build the node tree
   const nodeMap = new Map();
-  console.log('nodeMap 1', nodeMap);
   let nodeIndex = 0;
 
   // First pass: Create nodes for all orgs
   allOrgData.forEach((org) => {
-    console.log('processing org', org);
     const { orgId, name, orgType, stats, hasChildren } = org;
 
     const node = {
@@ -488,8 +484,6 @@ export const fetchTreeOrgs = async (administrationId) => {
 
     nodeMap.set(orgId, node);
   });
-
-  console.log('nodeMap', nodeMap);
 
   // Second pass: Build the hierarchy
   const treeTableOrgs = [];
@@ -604,24 +598,5 @@ export const fetchTreeOrgs = async (administrationId) => {
     }
   });
 
-  console.log('treeTableOrgs', treeTableOrgs);
-
   return treeTableOrgs;
 };
-
-/**
- * Fetches minimal orgs for a given administration
- */
-export const getMinimalOrgs = async (administrationId, assignedOrgs) => {};
-
-/**
- * Fetches children orgs for a given parent org. Will only return orgs that are assigned to the administration.
- * NOTE: may not need to take in administrationId, if the parentOrg is assigned to the administration, then the children will be assigned as well.
- *
- * @param {*} administrationId
- * @param {*} parentOrgId
- * @param {*} parentOrgType
- */
-export const getChildrenOrgs = async (administrationId, parentOrgId, parentOrgType) => {};
-
-export const formatTreeTableOrgs = (orgs) => {};

@@ -130,15 +130,12 @@ export const administrationPageFetcher = async (isSuperAdmin, exhaustiveAdminOrg
   const authStore = useAuthStore();
   const { roarfirekit } = storeToRefs(authStore);
   const administrationIds = await roarfirekit.value.getAdministrations({ testData: toValue(fetchTestData) });
-  // console.log('administrationIds', administrationIds);
 
   const axiosInstance = getAxiosInstance();
   const documentPrefix = axiosInstance.defaults.baseURL.replace('https://firestore.googleapis.com/v1/', '');
   const documents = administrationIds.map((id) => `${documentPrefix}/administrations/${id}`);
-  // console.log('documents', documents);
 
   const { data } = await axiosInstance.post(':batchGet', { documents });
-  // console.log('data', data);
 
   const administrationData = _without(
     data.map(({ found }) => {
@@ -155,8 +152,6 @@ export const administrationPageFetcher = async (isSuperAdmin, exhaustiveAdminOrg
     }),
     undefined,
   );
-
-  // console.log('administrationData', administrationData);
 
   const administrations = await mapAdministrations({
     isSuperAdmin,
