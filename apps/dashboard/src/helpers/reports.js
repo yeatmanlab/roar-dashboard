@@ -467,16 +467,16 @@ export const subskillTasks = ['roam-alpaca', ...roamFluencyTasks];
  *  Colors corresponding to each support level.
  */
 export const supportLevelColors = {
-  above: 'green',
-  Green: 'green',
-  some: '#edc037',
-  Yellow: '#edc037',
-  below: '#c93d82',
-  Pink: '#c93d82',
-  optional: 'var(--gray-500)',
-  Optional: 'var(--gray-500)',
-  Assessed: 'var(--blue-500)',
-  Unreliable: '#d6b8c7',
+  above: '#22c55e', // green-500
+  Green: '#22c55e', // green-500
+  some: '#edc037', // yellow
+  Yellow: '#edc037', // yellow
+  below: '#c93d82', // pink
+  Pink: '#c93d82', // pink
+  optional: '#71717a', // gray-500
+  Optional: '#71717a', // gray-500
+  Assessed: '#3b82f6', // blue-500
+  Unreliable: '#d6b8c7', // pink-200
 };
 
 export const progressTags = {
@@ -646,11 +646,8 @@ export function getGradeWithSuffix(grade) {
  * @returns {string} The CSS color variable to use for the dial.
  */
 export const getDialColor = (grade, percentile, rawScore, taskId, optional = null, scoringVersion = null) => {
-  if (taskId === 'letter' || taskId === 'letter-en-ca') {
-    return 'var(--blue-500)';
-  }
-  if (taskId === 'phonics') {
-    return 'var(--gray-500)';
+  if (taskId === 'letter' || taskId === 'letter-en-ca' || taskId === 'phonics') {
+    return '#3b82f6'; // blue-500
   }
   const { tag_color } = getSupportLevel(grade, percentile, rawScore, taskId, optional, scoringVersion);
   return tag_color;
