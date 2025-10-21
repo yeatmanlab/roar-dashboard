@@ -2,12 +2,11 @@ import { computed } from 'vue';
 import { getDialColor, supportLevelColors } from '@/helpers/reports';
 
 const SCORE_TYPES = {
-  rawScore: { key: 'rawScore', label: 'Raw Score', color: '#2196F3', priority: 1 },
-  percentile: { key: 'percentile', label: 'Percentile', color: '#4CAF50', priority: 2 },
-  standardScore: { key: 'standardScore', label: 'Standard Score', color: '#FF9800', priority: 3 },
+  rawScore: { key: 'rawScore', label: 'Raw Score', priority: 1 },
+  percentile: { key: 'percentile', label: 'Percentile', priority: 2 },
+  standardScore: { key: 'standardScore', label: 'Standard Score', priority: 3 },
 };
 
-const getColorByScoreType = (t) => SCORE_TYPES[t]?.color ?? '#9C27B0';
 const getLabelByScoreType = (t) => SCORE_TYPES[t]?.label ?? 'Score';
 const preferredTypes = Object.values(SCORE_TYPES)
   .sort((a, b) => a.priority - b.priority)
@@ -46,13 +45,13 @@ export function useLongitudinalSeries(props) {
           assignmentId: e.assignmentId || e.administrationId || '',
           percentile: e.scores?.percentile ?? null,
           standardScore: e.scores?.standardScore ?? null,
-          color: color || getColorByScoreType(t),
+          color: color || supportLevelColors.Assessed,
         };
       });
   });
 
   const seriesLabel = computed(() => getLabelByScoreType(chosenType.value));
-  const seriesStroke = computed(() => getColorByScoreType(chosenType.value));
+  const seriesStroke = computed(() => supportLevelColors.Assessed);
 
   const xDomain = computed(() => {
     if (!series.value.length) return [new Date(), new Date()];
