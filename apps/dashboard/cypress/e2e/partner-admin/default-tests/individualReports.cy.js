@@ -28,7 +28,7 @@ describe('Partner Admin: Individual Reports', () => {
     cy.waitForScoreReportButton();
 
     // Open school score report.
-    cy.performRowAction(testSchoolName, 'card-administration__button-scores');
+    cy.performRowAction(testSchoolName, 'button-scores');
     cy.url().should('eq', `${baseUrl}/scores/${testPartnerAdministrationId}/school/${testSchoolId}`);
 
     // Validate that all test users are present in the progress report.

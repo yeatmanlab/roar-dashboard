@@ -133,7 +133,7 @@
                   label="Progress"
                   aria-label="Completion details"
                   size="small"
-                  pt:root:data-testid="card-administration__button-progress"
+                  data-cy="button-progress"
                 />
               </router-link>
               <router-link
@@ -153,7 +153,7 @@
                   label="Scores"
                   aria-label="Scores"
                   size="small"
-                  pt:root:data-testid="card-administration__button-scores"
+                  data-cy="button-scores"
                 />
               </router-link>
             </div>
