@@ -3,7 +3,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted } from 'vue';
+import { computed, onMounted, watch } from 'vue';
 import embed from 'vega-embed';
 import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery';
 
@@ -44,8 +44,6 @@ const props = defineProps({
   },
 });
 
-console.log('runs.value', props.runs);
-
 const { data: tasksDictionary, isLoading: isLoadingTasksDictionary } = useTasksDictionaryQuery();
 
 const MATCHING_SUPPORT_LEVELS = {
@@ -77,8 +75,6 @@ const supportLevelsOverview = computed(() => {
     .map(([support_level, count]) => ({ category: support_level, value: count }));
 });
 
-console.log('supportLevelsOverview.value', supportLevelsOverview.value);
-
 const overviewDistributionChart = computed(() => {
   if (isLoadingTasksDictionary.value) return {};
 
@@ -89,7 +85,7 @@ const overviewDistributionChart = computed(() => {
     spacing: 10,
     background: null,
     title: {
-      text: `${tasksDictionary.value[props.taskId].publicName ?? props.taskId}`,
+      text: `${tasksDictionary.value[props.taskId]?.publicName ?? props.taskId}`,
       subtitle: `Count by Support Level`,
       anchor: 'middle',
       fontSize: 20,
@@ -127,9 +123,41 @@ const overviewDistributionChart = computed(() => {
 });
 
 const draw = async () => {
-  let chartSpecSupport = overviewDistributionChart.value;
+  const chartSpecSupport = overviewDistributionChart.value;
+
+  // Don't draw if chart spec is empty (still loading)
+  if (!chartSpecSupport || Object.keys(chartSpecSupport).length === 0) {
+    return;
+  }
+
   await embed(`#roar-dist-chart-overview-${props.taskId}`, chartSpecSupport);
 };
+
+// Watch for changes to computed chart specification
+watch(
+  () => overviewDistributionChart.value,
+  () => {
+    draw();
+  },
+  { deep: true },
+);
+
+// Watch runs directly in case computed doesn't trigger
+watch(
+  () => props.runs,
+  () => {
+    draw();
+  },
+  { deep: true },
+);
+
+// Watch orgType since it changes the data processing logic
+watch(
+  () => props.orgType,
+  () => {
+    draw();
+  },
+);
 
 onMounted(() => {
   if (props.taskId !== 'letter') {

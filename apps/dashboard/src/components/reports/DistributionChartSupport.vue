@@ -206,7 +206,7 @@ const distributionBySupport = computed(() => {
     width: 350,
     background: null,
     title: {
-      text: `${tasksDictionary.value[props.taskId].publicName ?? props.taskId}`,
+      text: `${tasksDictionary.value[props.taskId]?.publicName ?? props.taskId}`,
       subtitle: `Support Level Distribution By ${props.facetMode.name}`,
       anchor: 'middle',
       fontSize: 18,
@@ -308,15 +308,39 @@ const distributionBySupport = computed(() => {
 });
 
 const draw = async () => {
-  let chartSpecSupport = distributionBySupport.value;
+  const chartSpecSupport = distributionBySupport.value;
+
+  // Don't draw if chart spec is empty (still loading)
+  if (!chartSpecSupport || Object.keys(chartSpecSupport).length === 0) {
+    return;
+  }
+
   await embed(`#roar-distribution-chart-support-${props.taskId}`, chartSpecSupport);
 };
+
+// Watch for changes to the computed chart specification (includes tasksDictionary loading)
+watch(
+  () => distributionBySupport.value,
+  () => {
+    draw();
+  },
+  { deep: true },
+);
 
 watch(
   () => props.facetMode,
   () => {
     draw();
   },
+);
+
+// Watch runs for data changes
+watch(
+  () => props.runs,
+  () => {
+    draw();
+  },
+  { deep: true },
 );
 
 onMounted(() => {
