@@ -33,6 +33,7 @@
             :task-data="taskData"
             :tasks-dictionary="tasksDictionary"
             :longitudinal-data="longitudinalData"
+            :task-scoring-versions="getScoringVersions"
           />
 
           <SupportPrint :student-grade="studentGrade" />
