@@ -656,11 +656,8 @@ export const getDialColor = (grade, percentile, rawScore, taskId, optional = nul
     return null;
   }
 
-  const { tag_color, support_level } = getSupportLevel(grade, percentile, rawScore, taskId, optional, scoringVersion);
-  console.log('[DEBUG] getDialColor:', {
-    inputs: { grade, percentile, rawScore, taskId },
-    result: { tag_color, support_level },
-  });
+  const { tag_color } = getSupportLevel(grade, percentile, rawScore, taskId, optional, scoringVersion);
+
   return tag_color;
 };
 

@@ -34,16 +34,7 @@ export function useLongitudinalSeries(props) {
         const standardScore = e.scores.standardScore ?? null;
 
         const color = getDialColor(props.studentGrade, percentile, rawScore, props.taskId);
-        console.log('[DEBUG] Point:', {
-          taskId: props.taskId,
-          grade: props.studentGrade,
-          percentile,
-          rawScore,
-          date: x.toISOString(),
-          score: y,
-          colorFromDialColor: color,
-          finalColor: color || supportLevelColors.Assessed,
-        });
+
         return {
           x,
           y,
