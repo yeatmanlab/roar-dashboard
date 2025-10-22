@@ -647,7 +647,7 @@ export function getGradeWithSuffix(grade) {
  */
 export const getDialColor = (grade, percentile, rawScore, taskId, optional = null, scoringVersion = null) => {
   if (taskId === 'letter' || taskId === 'letter-en-ca' || taskId === 'phonics') {
-    return '#3b82f6'; // blue-500
+    return supportLevelColors.Assessed
   }
 
   // For grades < 6, we require a valid percentile
