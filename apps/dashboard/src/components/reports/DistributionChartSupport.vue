@@ -21,15 +21,59 @@ import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQue
 
 const { data: tasksDictionary, isLoading: isLoadingTasksDictionary } = useTasksDictionaryQuery();
 
-// const MATCHING_SUPPORT_LEVELS = {
-//   above: 'Achieved Skill',
-//   some: 'Developing Skill',
-//   below: 'Needs Extra Support',
-// };
+const props = defineProps({
+  initialized: {
+    type: Boolean,
+    required: true,
+  },
+  taskId: {
+    type: String,
+    required: true,
+  },
+  orgType: {
+    type: String,
+    required: true,
+  },
+  orgId: {
+    type: String,
+    required: true,
+  },
+  administrationId: {
+    type: String,
+    required: true,
+  },
+  runs: {
+    type: Array,
+    required: true,
+  },
+  facetMode: {
+    type: Object,
+    required: true,
+    default() {
+      return { name: 'Grade', key: 'grade' };
+    },
+  },
+});
 
 const returnGradeCount = computed(() => {
+  // District: aggregate from { above/some/below: { grades: { "1": n, ... } } }
   if (props.orgType === 'district') {
-    // return Object.entries(props.runs).filter(([support_level]) => MATCHING_SUPPORT_LEVELS[support_level] != undefined).map(([support_level, total]) => ({ category: MATCHING_SUPPORT_LEVELS[support_level.grades], value: total.total }));
+    const levelKey = { below: 0, some: 1, above: 2 }; // match your chart order
+    const out = new Map(); // key = grade
+
+    ['below', 'some', 'above'].forEach((level) => {
+      const grades = props?.runs?.[level]?.grades ?? {};
+      Object.entries(grades).forEach(([grade, count]) => {
+        if (!out.has(grade)) {
+          out.set(grade, { category: grade, support_levels: [0, 0, 0], totalStudents: 0 });
+        }
+        const row = out.get(grade);
+        row.support_levels[levelKey[level]] += count;
+        row.totalStudents += count;
+      });
+    });
+
+    return Array.from(out.values());
   }
 
   const gradeCount = [];
@@ -57,6 +101,25 @@ const returnGradeCount = computed(() => {
 });
 
 const returnSchoolCount = computed(() => {
+  if (props.orgType === 'district') {
+    const levelKey = { below: 0, some: 1, above: 2 };
+    const out = new Map(); // key = school name (or id if you prefer)
+
+    ['below', 'some', 'above'].forEach((level) => {
+      const schools = props?.runs?.[level]?.schools ?? {};
+      Object.values(schools).forEach(({ name, count }) => {
+        const key = name ?? 'Unknown school';
+        if (!out.has(key)) {
+          out.set(key, { category: key, support_levels: [0, 0, 0], totalStudents: 0 });
+        }
+        const row = out.get(key);
+        row.support_levels[levelKey[level]] += count;
+        row.totalStudents += count;
+      });
+    });
+
+    return Array.from(out.values());
+  }
   const schoolCount = [];
   for (const score of props.runs) {
     let schoolCounter = schoolCount.find((school) => school.category === score?.user?.schoolName);
@@ -242,40 +305,6 @@ const distributionBySupport = computed(() => {
       ],
     },
   };
-});
-
-const props = defineProps({
-  initialized: {
-    type: Boolean,
-    required: true,
-  },
-  taskId: {
-    type: String,
-    required: true,
-  },
-  orgType: {
-    type: String,
-    required: true,
-  },
-  orgId: {
-    type: String,
-    required: true,
-  },
-  administrationId: {
-    type: String,
-    required: true,
-  },
-  runs: {
-    type: Array,
-    required: true,
-  },
-  facetMode: {
-    type: Object,
-    required: true,
-    default() {
-      return { name: 'Grade', key: 'grade' };
-    },
-  },
 });
 
 const draw = async () => {

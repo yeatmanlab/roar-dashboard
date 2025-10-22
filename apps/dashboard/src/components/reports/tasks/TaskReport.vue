@@ -188,8 +188,6 @@ const props = defineProps({
   },
 });
 
-console.log('runs from task report', props.runs);
-
 const { data: tasksDictionary, isLoading: isLoadingTasksDictionary } = useTasksDictionaryQuery();
 
 const facetMode = ref({ name: 'Grade', key: 'grade' });
@@ -217,8 +215,6 @@ const minGradeByRuns = computed(() => {
     ...props.runs.filter((run) => run.scores.rawScore || run.scores.stdPercentile).map((run) => run.grade),
   );
 });
-
-console.log('min grade by runs', minGradeByRuns.value);
 
 const taskDesc = computed(() => {
   return replaceScoreRange(taskInfoById[props.taskId]?.desc, props.taskId, props.taskScoringVersions[props.taskId]);
