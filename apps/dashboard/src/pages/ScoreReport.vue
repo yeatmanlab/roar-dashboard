@@ -377,8 +377,6 @@ const displayName = computed(() => {
   return 'Fetching administration name...';
 });
 
-// const aggregatedDistrictSupportCategories = ref({});
-
 const {
   data: aggregatedDistrictSupportCategories,
   isLoading: isLoadingDistrictSupportCategories,

@@ -19,7 +19,7 @@
   </div>
   <div v-if="tasksToDisplayGraphs.includes(taskId)" :id="'tab-view-chart-' + taskId" class="chart-toggle-wrapper">
     <div v-if="orgType === 'district'" class="mb-3" data-html2canvas-ignore="true">
-      <div class="flex uppercase text-xs font-light">view rows by</div>
+      <div class="flex uppercase text-xs font-light justify-content-center align-items-center">view rows by</div>
       <PvSelectButton
         v-model="facetMode"
         class="flex flex-row my-2 select-button"
