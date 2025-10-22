@@ -30,13 +30,14 @@ export function useLongitudinalSeries(props) {
         const y = +e.scores[t];
 
         const rawScore = e.scores.rawScore;
-        const percentile = e.scores.percentileScore;
+        const percentile = e.scores.percentileScore ?? e.scores.percentile ?? null;
+        const standardScore = e.scores.standardScore ?? null;
 
         const color = getDialColor(props.studentGrade, percentile, rawScore, props.taskId);
         console.log('[DEBUG] Point:', {
           taskId: props.taskId,
           grade: props.studentGrade,
-          percentile: e.scores.percentileScore,
+          percentile,
           rawScore,
           date: x.toISOString(),
           score: y,
@@ -48,7 +49,7 @@ export function useLongitudinalSeries(props) {
           y,
           assignmentId: e.assignmentId || e.administrationId || '',
           percentile,
-          standardScore: e.scores.standardScore,
+          standardScore,
           color: color || supportLevelColors.Assessed,
         };
       });

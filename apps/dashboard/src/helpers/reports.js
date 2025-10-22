@@ -649,6 +649,13 @@ export const getDialColor = (grade, percentile, rawScore, taskId, optional = nul
   if (taskId === 'letter' || taskId === 'letter-en-ca' || taskId === 'phonics') {
     return '#3b82f6'; // blue-500
   }
+
+  // For grades < 6, we require a valid percentile
+  const gradeLevel = getGrade(grade);
+  if (gradeLevel < 6 && (percentile === null || percentile === undefined)) {
+    return null;
+  }
+
   const { tag_color, support_level } = getSupportLevel(grade, percentile, rawScore, taskId, optional, scoringVersion);
   console.log('[DEBUG] getDialColor:', {
     inputs: { grade, percentile, rawScore, taskId },
