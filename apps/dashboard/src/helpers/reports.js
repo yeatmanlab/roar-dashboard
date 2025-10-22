@@ -2,6 +2,7 @@ import html2canvas from 'html2canvas';
 import { toValue } from 'vue';
 import { getGrade } from '@bdelab/roar-utils';
 import { LEVANTE_TASK_IDS_NO_SCORES } from '../constants/levanteTasks';
+import { supportLevelColors } from '@/constants/scores';
 /*
  *  Task Display Names
  *  A map of all tasks, including their taskId, display name, and index for ordering
@@ -466,18 +467,6 @@ export const subskillTasks = ['roam-alpaca', ...roamFluencyTasks];
  *  Support Level Colors
  *  Colors corresponding to each support level.
  */
-export const supportLevelColors = {
-  above: '#22c55e', // green-500
-  Green: '#22c55e', // green-500
-  some: '#edc037', // yellow
-  Yellow: '#edc037', // yellow
-  below: '#c93d82', // pink
-  Pink: '#c93d82', // pink
-  optional: '#71717a', // gray-500
-  Optional: '#71717a', // gray-500
-  Assessed: '#3b82f6', // blue-500
-  Unreliable: '#d6b8c7', // pink-200
-};
 
 export const progressTags = {
   Optional: {
@@ -647,7 +636,7 @@ export function getGradeWithSuffix(grade) {
  */
 export const getDialColor = (grade, percentile, rawScore, taskId, optional = null, scoringVersion = null) => {
   if (taskId === 'letter' || taskId === 'letter-en-ca' || taskId === 'phonics') {
-    return supportLevelColors.Assessed
+    return supportLevelColors.Assessed;
   }
 
   // For grades < 6, we require a valid percentile

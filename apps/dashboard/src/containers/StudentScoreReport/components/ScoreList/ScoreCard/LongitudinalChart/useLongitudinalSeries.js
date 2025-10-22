@@ -1,5 +1,6 @@
 import { computed } from 'vue';
-import { getDialColor, supportLevelColors } from '@/helpers/reports';
+import { getDialColor } from '@/helpers/reports';
+import { supportLevelColors } from '@/constants/scores';
 
 const SCORE_TYPES = {
   rawScore: { key: 'rawScore', label: 'Raw Score', priority: 1 },
