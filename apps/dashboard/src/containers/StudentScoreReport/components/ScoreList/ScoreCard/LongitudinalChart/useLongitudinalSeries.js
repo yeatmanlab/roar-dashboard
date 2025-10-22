@@ -29,9 +29,9 @@ export function useLongitudinalSeries(props) {
         const x = new Date(e.date);
         const y = +e.scores[t];
 
-        const rawScore = e.scores.rawScore;
-        const percentile = e.scores.percentileScore ?? e.scores.percentile ?? null;
-        const standardScore = e.scores.standardScore ?? null;
+        const rawScore = e?.scores?.rawScore;
+        const percentile = e?.scores?.percentileScore ?? e?.scores?.percentile;
+        const standardScore = e?.scores?.standardScore;
 
         const color = getDialColor(props.studentGrade, percentile, rawScore, props.taskId);
 
