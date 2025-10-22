@@ -28,12 +28,16 @@ export function useLongitudinalSeries(props) {
       .map((e) => {
         const x = new Date(e.date);
         const y = +e.scores[t];
-        const color = getDialColor(props.studentGrade, e.scores?.percentile, e.scores?.rawScore, props.taskId);
+
+        const rawScore = e.scores.rawScore;
+        const percentile = e.scores.percentileScore;
+
+        const color = getDialColor(props.studentGrade, percentile, rawScore, props.taskId);
         console.log('[DEBUG] Point:', {
           taskId: props.taskId,
           grade: props.studentGrade,
-          percentile: e.scores?.percentile,
-          rawScore: e.scores?.rawScore,
+          percentile: e.scores.percentileScore,
+          rawScore,
           date: x.toISOString(),
           score: y,
           colorFromDialColor: color,
@@ -43,8 +47,8 @@ export function useLongitudinalSeries(props) {
           x,
           y,
           assignmentId: e.assignmentId || e.administrationId || '',
-          percentile: e.scores?.percentile ?? null,
-          standardScore: e.scores?.standardScore ?? null,
+          percentile,
+          standardScore: e.scores.standardScore,
           color: color || supportLevelColors.Assessed,
         };
       });
