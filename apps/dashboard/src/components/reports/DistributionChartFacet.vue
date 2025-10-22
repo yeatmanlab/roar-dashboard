@@ -287,9 +287,24 @@ const distributionChartFacet = computed(() => {
 });
 
 const draw = async () => {
-  let chartSpecDist = distributionChartFacet.value;
+  const chartSpecDist = distributionChartFacet.value;
+
+  // Don't draw if chart spec is empty (still loading)
+  if (!chartSpecDist || Object.keys(chartSpecDist).length === 0) {
+    return;
+  }
+
   await embed(`#roar-distribution-chart-${props.taskId}`, chartSpecDist);
 };
+
+// Watch for changes to the computed chart specification (includes tasksDictionary loading)
+watch(
+  () => distributionChartFacet.value,
+  () => {
+    draw();
+  },
+  { deep: true },
+);
 
 // Update Distribution Graph on external facetMode change
 watch(
@@ -301,10 +316,11 @@ watch(
 
 // Update Distribution Graph on computedRuns recalculation
 watch(
-  () => computedRuns,
+  () => computedRuns.value,
   () => {
     draw();
   },
+  { deep: true },
 );
 
 // Update Distribution Graph on internal scoreMode change

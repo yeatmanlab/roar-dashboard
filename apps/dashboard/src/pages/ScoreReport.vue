@@ -157,7 +157,7 @@
             </span>
           </RoarDataTable>
           <template v-else>
-            <div class="text-center my-6">Score report tables are only available at the school level and below</div>
+            <div class="my-6 text-center">Score report tables are only available at the school level and below</div>
           </template>
         </div>
         <div v-if="!isLoadingAssignments && orgType !== 'district'" class="legend-container">
@@ -388,6 +388,7 @@ const {
 });
 
 const getScoringVersions = computed(() => {
+  if (!administrationData.value?.assessments) return {};
   const scoringVersions = Object.fromEntries(
     administrationData.value?.assessments.map((assessment) => [
       assessment.taskId,
@@ -1653,7 +1654,14 @@ const allTasks = computed(() => {
 
 const sortedTaskIds = computed(() => {
   if (props.orgType === 'district') {
-    if (isLoadingDistrictSupportCategories.value || isFetchingDistrictSupportCategories.value) return [];
+    if (isLoadingDistrictSupportCategories.value || isFetchingDistrictSupportCategories.value) {
+      return [];
+    }
+
+    if (!aggregatedDistrictSupportCategories.value) {
+      return [];
+    }
+
     return Object.keys(aggregatedDistrictSupportCategories.value);
   } else {
     const runsByTaskId = computeAssignmentAndRunData.value.runsByTaskId;
