@@ -196,7 +196,7 @@ describe('useLongitudinalSeries', () => {
       expect(series.value[0].standardScore).toBe(95);
     });
 
-    it('should set percentile and standardScore to null when not available', () => {
+    it('should set percentile and standardScore to undefined when not available', () => {
       const props = {
         longitudinalData: [{ date: '2024-01-01', scores: { rawScore: 10 } }],
         studentGrade: 3,
@@ -205,8 +205,8 @@ describe('useLongitudinalSeries', () => {
 
       const { series } = useLongitudinalSeries(props);
 
-      expect(series.value[0].percentile).toBeNull();
-      expect(series.value[0].standardScore).toBeNull();
+      expect(series.value[0].percentile).toBeUndefined();
+      expect(series.value[0].standardScore).toBeUndefined();
     });
 
     it('should set correct seriesStroke color based on chosen type', () => {

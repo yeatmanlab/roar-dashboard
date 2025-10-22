@@ -3,6 +3,7 @@ import { toValue } from 'vue';
 import { getGrade } from '@bdelab/roar-utils';
 import { LEVANTE_TASK_IDS_NO_SCORES } from '../constants/levanteTasks';
 import { supportLevelColors } from '@/constants/scores';
+export { supportLevelColors };
 /*
  *  Task Display Names
  *  A map of all tasks, including their taskId, display name, and index for ordering
