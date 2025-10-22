@@ -20,6 +20,7 @@ import { onMounted, ref, watch, computed } from 'vue';
 import embed from 'vega-embed';
 import PvSelectButton from 'primevue/selectbutton';
 import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery';
+// import { supportLevelColors } from '@/helpers/reports';
 
 const props = defineProps({
   initialized: {
@@ -59,7 +60,52 @@ const props = defineProps({
   },
 });
 
-console.log('runs from facet chart', props.runs);
+// facet: 'grade' | 'school'
+const makeRunsFromBins = ({ binsObj, facet, scoreKey }) => {
+  // , levelKey that will be used to color the bars
+  // level key is above, some, below
+  const rows = [];
+  if (!binsObj || typeof binsObj !== 'object') return rows;
+
+  // const tagColor = supportLevelColors[levelKey] || null; // ideally we will use this once we grab the tagColor
+
+  for (const [binLabel, payload] of Object.entries(binsObj)) {
+    const [a, b] = String(binLabel).split('-').map(Number);
+    const value = Number.isFinite(a) && Number.isFinite(b) ? (a + b) / 2 : NaN;
+    if (!Number.isFinite(value)) continue;
+
+    if (facet === 'grade') {
+      const grades = payload?.grades ?? {};
+      for (const [gradeKey, countRaw] of Object.entries(grades)) {
+        const count = Number(countRaw) || 0;
+        for (let i = 0; i < count; i++) {
+          rows.push({
+            grade: String(gradeKey),
+            scores: { [scoreKey]: value },
+            tag_color: 'green',
+          });
+        }
+      }
+    } else {
+      const schools = payload?.schools ?? {};
+      for (const school of Object.values(schools)) {
+        const name = school?.name ?? 'Unknown school';
+        const count = Number(school?.count) || 0;
+        for (let i = 0; i < count; i++) {
+          rows.push({
+            user: { schoolName: name },
+            scores: { [scoreKey]: value },
+            tag_color: 'green',
+          });
+        }
+      }
+    }
+  }
+  return rows;
+};
+
+// Normalize facet mode to 'grade' | 'school'
+const facetKind = computed(() => (props.facetMode?.name === 'Grade' ? 'grade' : 'school'));
 
 const { data: tasksDictionary, isLoading: isLoadingTasksDictionary } = useTasksDictionaryQuery();
 
@@ -104,12 +150,38 @@ const getRangeHigh = (scoreMode, taskId) => {
 
 // With Percentile View, only display runs under grade 6
 const computedRuns = computed(() => {
-  if (scoreMode.value.name === 'Percentile') {
-    return props.runs.filter((run) => run.grade < 6);
+  if (props.orgType === 'district') {
+    const facet = facetKind.value;
+    const modeKey = scoreMode.value.name === 'Percentile' ? 'percentile' : 'raw';
+    const scoreKey = scoreMode.value.name === 'Percentile' ? 'stdPercentile' : 'rawScore';
+
+    const levels = ['above', 'some', 'below'];
+    const rows = [];
+
+    // if backend provided keyed bins (preferred)
+    const hasKeyed = levels.some((k) => props?.runs?.[k]?.[modeKey]);
+    if (hasKeyed) {
+      for (const levelKey of levels) {
+        const binsObj = props?.runs?.[levelKey]?.[modeKey];
+        if (binsObj) {
+          rows.push(...makeRunsFromBins({ binsObj, facet, scoreKey, levelKey }));
+        }
+      }
+    } else {
+      // fallback to flat shape: props.runs.percentile / props.runs.raw (no color by level)
+      rows.push(...makeRunsFromBins({ binsObj: props?.runs?.[modeKey], facet, scoreKey }));
+    }
+
+    // keep your <6 rule for percentile + grade
+    return scoreMode.value.name === 'Percentile' && facet === 'grade' ? rows.filter((r) => Number(r.grade) < 6) : rows;
+  }
+
+  // non-district (original)
+  if (scoreMode.value.name === 'Percentile' && props.facetMode.name === 'Grade') {
+    return props.runs.filter((run) => Number(run.grade) < 6);
   }
   return props.runs;
 });
-
 const distributionChartFacet = computed(() => {
   if (isLoadingTasksDictionary.value) return {};
   return {
@@ -200,7 +272,9 @@ const distributionChartFacet = computed(() => {
           type: 'quantitative',
           format: `.0f`,
         },
-        { field: 'user.grade', title: 'Student Grade' },
+        props.facetMode.name === 'Grade'
+          ? { field: 'grade', title: 'Student Grade' }
+          : { field: 'user.schoolName', title: 'School' },
         { aggregate: 'count', title: 'Student Count' },
       ],
     },

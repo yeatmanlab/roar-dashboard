@@ -199,33 +199,37 @@
           <div class="text-sm font-light text-gray-600 uppercase">Loading Task Reports</div>
         </div>
 
-        <PvTabView :active-index="activeTabIndex">
-          <PvTabPanel
-            v-for="taskId of sortedAndFilteredSubscoreTaskIds"
-            :key="taskId"
-            :header="tasksDictionary[taskId]?.publicName ?? taskId"
-          >
-            <div :id="'tab-view-' + taskId">
-              <TaskReport
-                v-if="taskId"
-                :computed-table-data="computeAssignmentAndRunData.assignmentTableData"
-                :task-id="taskId"
-                :initialized="initialized"
-                :administration-id="administrationId"
-                :runs="
-                  orgType === 'district'
-                    ? aggregatedDistrictSupportCategories[taskId]
-                    : computeAssignmentAndRunData.runsByTaskId[taskId]
-                "
-                :org-type="orgType"
-                :org-id="orgId"
-                :org-info="orgData"
-                :administration-info="administrationData"
-                :task-scoring-versions="getScoringVersions"
-              />
-            </div>
-          </PvTabPanel>
-        </PvTabView>
+        <PvTabs v-model:value="activeTabValue">
+          <PvTabList>
+            <PvTab v-for="(taskId, i) in sortedAndFilteredSubscoreTaskIds" :key="taskId" :value="String(i)">
+              {{ tasksDictionary[taskId]?.publicName ?? taskId }}
+            </PvTab>
+          </PvTabList>
+
+          <PvTabPanels>
+            <PvTabPanel v-for="(taskId, i) in sortedAndFilteredSubscoreTaskIds" :key="taskId" :value="String(i)">
+              <div :id="'tab-view-' + taskId">
+                <TaskReport
+                  v-if="taskId"
+                  :computed-table-data="computeAssignmentAndRunData.assignmentTableData"
+                  :task-id="taskId"
+                  :initialized="initialized"
+                  :administration-id="administrationId"
+                  :runs="
+                    orgType === 'district'
+                      ? aggregatedDistrictSupportCategories?.[taskId]
+                      : computeAssignmentAndRunData.runsByTaskId?.[taskId]
+                  "
+                  :org-type="orgType"
+                  :org-id="orgId"
+                  :org-info="orgData"
+                  :administration-info="administrationData"
+                  :task-scoring-versions="getScoringVersions"
+                />
+              </div>
+            </PvTabPanel>
+          </PvTabPanels>
+        </PvTabs>
         <div id="score-report-closing" class="px-4 py-2 mt-4 bg-gray-200">
           <h2 class="extra-info-title">HOW ROAR SCORES INFORM PLANNING TO PROVIDE SUPPORT</h2>
           <p>
@@ -293,7 +297,10 @@ import PvConfirmDialog from 'primevue/confirmdialog';
 import PvSelect from 'primevue/select';
 import PvSelectButton from 'primevue/selectbutton';
 import PvTabPanel from 'primevue/tabpanel';
-import PvTabView from 'primevue/tabview';
+import PvTabs from 'primevue/tabs';
+import PvTabList from 'primevue/tablist';
+import PvTab from 'primevue/tab';
+import PvTabPanels from 'primevue/tabpanels';
 import { useAuthStore } from '@/store/auth';
 import { getDynamicRouterPath } from '@/helpers/getDynamicRouterPath';
 import useUserType from '@/composables/useUserType';
@@ -344,6 +351,8 @@ const router = useRouter();
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
 
+const activeTabValue = ref('0');
+
 const props = defineProps({
   administrationId: {
     type: String,
@@ -377,17 +386,6 @@ const {
 } = useDistrictSupportCategoriesQuery(props.orgId, props.administrationId, {
   enabled: initialized,
 });
-
-console.log('aggregatedDistrictSupportCategories.value', aggregatedDistrictSupportCategories.value);
-
-// // log when data arrives
-// watch(
-//   aggregatedDistrictSupportCategories.data,
-//   (val) => {
-//     console.log('districtSupportCategories (value):', val);
-//   },
-//   { immediate: true },
-// );
 
 const getScoringVersions = computed(() => {
   const scoringVersions = Object.fromEntries(
@@ -1025,7 +1023,6 @@ const computeAssignmentAndRunData = computed(() => {
         }
       }
     }
-    console.log('filteredRunsByTaskId', filteredRunsByTaskId, 'assignmentTableDataAcc', assignmentTableDataAcc);
 
     return { runsByTaskId: filteredRunsByTaskId, assignmentTableData: assignmentTableDataAcc };
   }
