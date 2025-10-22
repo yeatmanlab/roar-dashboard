@@ -58,7 +58,9 @@
   },
   "navBar": {
     "greeting": "¡Hola",
-    "signOut": "Salir"
+    "signOut": "Salir",
+    "changeLanguage": "Cambiar idioma",
+    "accountSettings": "Ajustes"
   },
   "notFound": {
     "label": "Ir a la página de inicio.",

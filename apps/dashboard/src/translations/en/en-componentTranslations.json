@@ -78,7 +78,9 @@
   },
   "navBar": {
     "greeting": "Hi",
-    "signOut": "Sign Out"
+    "signOut": "Sign Out",
+    "changeLanguage": "Change Language",
+    "accountSettings": "Settings"
   },
   "notFound": {
     "label": "Return to Home",
