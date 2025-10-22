@@ -12,7 +12,7 @@ const testPartnerAdministrationId = Cypress.env('testPartnerAdministrationId');
 
 const openSchoolScoreReport = () => {
   cy.performRowAction(testDistrictName, 'card-administration__node-toggle-button');
-  cy.performRowAction(testSchoolName, 'card-administration__button-scores');
+  cy.performRowAction(testSchoolName, 'button-scores');
   cy.url().should('eq', `${baseUrl}/scores/${testPartnerAdministrationId}/school/${testSchoolId}`);
 };
 
@@ -29,7 +29,7 @@ describe('Partner Admin: Score Reports', () => {
 
     // Select the test administration and open district score report.
     cy.getAdministrationCard(testPartnerAdministrationName);
-    cy.performRowAction(testDistrictName, 'card-administration__button-scores');
+    cy.performRowAction(testDistrictName, 'button-scores');
     cy.url().should('eq', `${baseUrl}/scores/${testPartnerAdministrationId}/district/${testDistrictId}`);
 
     // Validate that score report table with individiual student data does not exist.

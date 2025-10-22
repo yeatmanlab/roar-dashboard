@@ -14,7 +14,7 @@ const testAssignments = Cypress.env('testAssignmentsList');
 
 const openSchoolProgressReport = () => {
   cy.performRowAction(testDistrictName, 'card-administration__node-toggle-button');
-  cy.performRowAction(testSchoolName, 'card-administration__button-progress');
+  cy.performRowAction(testSchoolName, 'button-progress');
   cy.url().should('eq', `${baseUrl}/administration/${testPartnerAdministrationId}/school/${testSchoolId}`);
 };
 
@@ -31,7 +31,7 @@ describe('Partner Admin: Progress Reports', () => {
 
     // Select the test administration and open district progress report.
     cy.getAdministrationCard(testPartnerAdministrationName);
-    cy.performRowAction(testDistrictName, 'card-administration__button-progress');
+    cy.performRowAction(testDistrictName, 'button-progress');
     cy.url().should('eq', `${baseUrl}/administration/${testPartnerAdministrationId}/district/${testDistrictId}`);
 
     // Validate that progress report table with individiual student data does not exist.

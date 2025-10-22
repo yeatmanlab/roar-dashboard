@@ -23,7 +23,7 @@ describe('Partner Admin: Individual Reports', () => {
 
     // Select the test administration and open district score report.
     cy.performRowAction(testDistrictName, 'card-administration__node-toggle-button');
-    cy.performRowAction(testSchoolName, 'card-administration__button-scores');
+    cy.performRowAction(testSchoolName, 'button-scores');
     cy.url().should('eq', `${baseUrl}/scores/${testPartnerAdministrationId}/school/${testSchoolId}`);
 
     // Validate that all test users are present in the progress report.

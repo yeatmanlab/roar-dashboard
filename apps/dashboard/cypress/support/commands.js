@@ -538,8 +538,9 @@ Cypress.Commands.add('getIfExists', getIfExists);
  * @param {string} buttonSelector The selector of the button to click.
  */
 Cypress.Commands.add('performRowAction', (orgName, buttonSelector) => {
-  cy.contains('[data-testid="card-administration__body-cell-content"]', orgName)
+  cy.findAllByTestId('card-administration__body-cell-content')
+    .contains(orgName)
     .closest('tr')
-    .find(`[data-testid="${buttonSelector}"]`)
+    .find(`[data-cy="${buttonSelector}"], [data-testid="${buttonSelector}"]`)
     .click();
 });
