@@ -709,10 +709,13 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = 
   }
 
   // For grades >= 6 or if percentile is not available for grades >= 6
+  // Use raw score if:
+  // 1. Grade >= 6, OR
+  // 2. Grade < 6 but percentile is not available
   if (
     rawScore !== null &&
     rawScore !== undefined &&
-    (gradeLevel >= 6 || (gradeLevel >= 6 && (percentile === null || percentile === undefined)))
+    (gradeLevel >= 6 || percentile === null || percentile === undefined)
   ) {
     const { above, some } = getRawScoreThreshold(taskId, scoringVersion);
 
