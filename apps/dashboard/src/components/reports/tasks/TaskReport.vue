@@ -1,21 +1,11 @@
 <template>
   <div :id="'tab-view-description-' + taskId" class="flex flex-col items-center justify-center mx-2">
-    <PvAccordion
-      v-if="taskInfoById[taskId]"
-      class="mb-5 w-full"
-      :active-index="0"
-      expand-icon="pi pi-plus ml-2"
-      collapse-icon="pi pi-minus ml-2"
-    >
-      <PvAccordionTab :header="('About ' + taskInfoById[taskId]?.subheader).toUpperCase()">
-        <div>
-          <div style="text-transform: uppercase" class="text-2xl font-bold">{{ taskInfoById[taskId]?.subheader }}</div>
-          <!-- The following HTML is from a hard-coded source (below) -->
-          <!-- eslint-disable-next-line vue/no-v-html -->
-          <p class="mt-1 text-md font-light" v-html="taskDesc"></p>
-        </div>
-      </PvAccordionTab>
-    </PvAccordion>
+    <div>
+      <div style="text-transform: uppercase" class="text-2xl font-bold mt-3">{{ taskInfoById[taskId]?.subheader }}</div>
+      <!-- The following HTML is from a hard-coded source (below) -->
+      <!-- eslint-disable-next-line vue/no-v-html -->
+      <p class="mt-1 text-md font-light mb-3" v-html="taskDesc"></p>
+    </div>
   </div>
   <div v-if="tasksToDisplayGraphs.includes(taskId)" :id="'tab-view-chart-' + taskId" class="chart-toggle-wrapper">
     <div v-if="orgType === 'district'" class="mb-3" data-html2canvas-ignore="true">
@@ -136,8 +126,6 @@
 </template>
 <script setup>
 import { ref, computed } from 'vue';
-import PvAccordion from 'primevue/accordion';
-import PvAccordionTab from 'primevue/accordiontab';
 import PvSelectButton from 'primevue/selectbutton';
 import { tasksToDisplayGraphs, taskInfoById, replaceScoreRange } from '@/helpers/reports.js';
 import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery.js';

@@ -25,7 +25,11 @@
                 </div>
               </div>
               <div class="flex gap-1 flex-column align-items-end">
-                <div class="flex flex-row gap-4 align-items-center" data-html2canvas-ignore="true">
+                <div
+                  v-if="orgType !== 'district'"
+                  class="flex flex-row gap-4 align-items-center"
+                  data-html2canvas-ignore="true"
+                >
                   <div class="flex flex-row text-sm text-gray-600 uppercase">VIEW</div>
                   <PvSelectButton
                     v-model="reportView"
@@ -201,7 +205,12 @@
 
         <PvTabs v-model:value="activeTabValue">
           <PvTabList>
-            <PvTab v-for="(taskId, i) in sortedAndFilteredSubscoreTaskIds" :key="taskId" :value="String(i)">
+            <PvTab
+              v-for="(taskId, i) in sortedAndFilteredSubscoreTaskIds"
+              :key="taskId"
+              :value="String(i)"
+              class="text-base"
+            >
               {{ tasksDictionary[taskId]?.publicName ?? taskId }}
             </PvTab>
           </PvTabList>
