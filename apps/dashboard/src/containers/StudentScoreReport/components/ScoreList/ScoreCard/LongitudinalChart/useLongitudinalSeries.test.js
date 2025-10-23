@@ -1,16 +1,28 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useLongitudinalSeries } from './useLongitudinalSeries';
-import { getSupportLevel } from '@/helpers/reports';
+import { getDialColor } from '@/helpers/reports';
 
-// Mock the getSupportLevel helper
+// Mock the reports helpers
 vi.mock('@/helpers/reports', () => ({
-  getSupportLevel: vi.fn(),
+  getDialColor: vi.fn(),
+  supportLevelColors: {
+    above: '#22c55e', // green-500
+    Green: '#22c55e', // green-500
+    some: '#edc037', // yellow
+    Yellow: '#edc037', // yellow
+    below: '#c93d82', // pink
+    Pink: '#c93d82', // pink
+    optional: '#71717a', // gray-500
+    Optional: '#71717a', // gray-500
+    Assessed: '#3b82f6', // blue-500
+    Unreliable: '#d6b8c7', // pink-200
+  },
 }));
 
 describe('useLongitudinalSeries', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    getSupportLevel.mockReturnValue({ tag_color: 'green' });
+    getDialColor.mockReturnValue('#3b82f6'); // blue-500
   });
 
   describe('series data processing', () => {
@@ -127,8 +139,8 @@ describe('useLongitudinalSeries', () => {
   });
 
   describe('color assignment', () => {
-    it('should use support level tag color when available', () => {
-      getSupportLevel.mockReturnValue({ tag_color: 'red' });
+    it('should use dial color when available', () => {
+      getDialColor.mockReturnValue('#3b82f6'); // blue-500
 
       const props = {
         longitudinalData: [{ date: '2024-01-01', scores: { rawScore: 10, percentile: 25 } }],
@@ -138,11 +150,11 @@ describe('useLongitudinalSeries', () => {
 
       const { series } = useLongitudinalSeries(props);
 
-      expect(series.value[0].color).toBe('red');
+      expect(series.value[0].color).toBe('#3b82f6'); // blue-500
     });
 
-    it('should use default score type color when support level color is not available', () => {
-      getSupportLevel.mockReturnValue({ tag_color: null });
+    it('should use default score type color when dial color is not available', () => {
+      getDialColor.mockReturnValue(null);
 
       const props = {
         longitudinalData: [{ date: '2024-01-01', scores: { rawScore: 10 } }],
@@ -152,10 +164,10 @@ describe('useLongitudinalSeries', () => {
 
       const { series } = useLongitudinalSeries(props);
 
-      expect(series.value[0].color).toBe('#2196F3'); // Raw score default color
+      expect(series.value[0].color).toBe('#3b82f6'); // blue-500 (default color)
     });
 
-    it('should call getSupportLevel with correct parameters', () => {
+    it('should call getDialColor with correct parameters', () => {
       const props = {
         longitudinalData: [{ date: '2024-01-01', scores: { rawScore: 10, percentile: 50 } }],
         studentGrade: 5,
@@ -163,10 +175,10 @@ describe('useLongitudinalSeries', () => {
       };
 
       const { series } = useLongitudinalSeries(props);
-      // Access the computed value to trigger the reactive function
+
       series.value;
 
-      expect(getSupportLevel).toHaveBeenCalledWith(5, 50, 10, 'swr');
+      expect(getDialColor).toHaveBeenCalledWith(5, 50, 10, 'swr');
     });
   });
 
@@ -184,7 +196,7 @@ describe('useLongitudinalSeries', () => {
       expect(series.value[0].standardScore).toBe(95);
     });
 
-    it('should set percentile and standardScore to null when not available', () => {
+    it('should set percentile and standardScore to undefined when not available', () => {
       const props = {
         longitudinalData: [{ date: '2024-01-01', scores: { rawScore: 10 } }],
         studentGrade: 3,
@@ -193,8 +205,8 @@ describe('useLongitudinalSeries', () => {
 
       const { series } = useLongitudinalSeries(props);
 
-      expect(series.value[0].percentile).toBeNull();
-      expect(series.value[0].standardScore).toBeNull();
+      expect(series.value[0].percentile).toBeUndefined();
+      expect(series.value[0].standardScore).toBeUndefined();
     });
 
     it('should set correct seriesStroke color based on chosen type', () => {
@@ -206,7 +218,7 @@ describe('useLongitudinalSeries', () => {
 
       const { seriesStroke } = useLongitudinalSeries(props);
 
-      expect(seriesStroke.value).toBe('#2196F3'); // Raw score color
+      expect(seriesStroke.value).toBe('#3b82f6'); // blue-500
     });
   });
 

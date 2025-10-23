@@ -466,17 +466,7 @@ export const subskillTasks = ['roam-alpaca', ...roamFluencyTasks];
  *  Support Level Colors
  *  Colors corresponding to each support level.
  */
-export const supportLevelColors = {
-  above: 'green',
-  Green: 'green',
-  some: '#edc037',
-  Yellow: '#edc037',
-  below: '#c93d82',
-  Pink: '#c93d82',
-  Optional: '#03befc',
-  Assessed: '#A4DDED',
-  Unreliable: '#d6b8c7',
-};
+import { supportLevelColors } from '@/constants/scores';
 
 export const progressTags = {
   Optional: {
@@ -632,15 +622,31 @@ export function getGradeWithSuffix(grade) {
 
   return `${gradeLevel}${getOrdinalSuffix(gradeLevel)}`;
 }
-/*
- *  Get Support Level
- *  Function to take scores, taskId, grade, optional, and scoringVersion and return the proper support category for the run.
+
+/**
+ * Returns the color to be used for a dial based on grade, percentile, raw score, and task ID.
+ *
+ * @param {string} grade - The grade level of the student (e.g., 'K', '1', 'Pre-K').
+ * @param {number|null} percentile - The percentile score for the student (may be null).
+ * @param {number|null} rawScore - The raw score for the student (may be null).
+ * @param {string} taskId - The ID of the task (e.g., 'letter', 'phonics').
+ * @param {any} [optional=null] - Optional additional data for scoring.
+ * @param {string|null} [scoringVersion=null] - Optional scoring version identifier.
+ * @returns {string} The CSS color variable to use for the dial.
  */
 export const getDialColor = (grade, percentile, rawScore, taskId, optional = null, scoringVersion = null) => {
-  if (taskId === 'phonics') {
-    return 'var(--gray-500)';
+  if (taskId === 'letter' || taskId === 'letter-en-ca' || taskId === 'phonics') {
+    return '#3b82f6'; // blue-500
   }
+
+  // For grades < 6, we require a valid percentile
+  const gradeLevel = getGrade(grade);
+  if (gradeLevel < 6 && (percentile === null || percentile === undefined)) {
+    return null;
+  }
+
   const { tag_color } = getSupportLevel(grade, percentile, rawScore, taskId, optional, scoringVersion);
+
   return tag_color;
 };
 
@@ -660,7 +666,7 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = 
   if (optional) {
     return {
       support_level: 'Optional',
-      tag_color: supportLevelColors.optional,
+      tag_color: undefined,
     };
   }
 
@@ -675,6 +681,7 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = 
       tag_color: supportLevelColors.Assessed,
     };
   }
+  // Try percentile-based scoring for grades < 6
   if (percentile !== null && percentile !== undefined && gradeLevel < 6) {
     const isUpdatedSre = taskId === 'sre' && scoringVersion >= 4;
     const isUpdatedSreEs = taskId === 'sre-es' && scoringVersion >= 1;
@@ -692,7 +699,17 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = 
       support_level = 'Needs Extra Support';
       tag_color = supportLevelColors.below;
     }
-  } else if (rawScore !== null && rawScore !== undefined && gradeLevel >= 6) {
+  }
+
+  // For grades >= 6 or if percentile is not available for grades >= 6
+  // Use raw score if:
+  // 1. Grade >= 6, OR
+  // 2. Grade < 6 but percentile is not available
+  if (
+    rawScore !== null &&
+    rawScore !== undefined &&
+    (gradeLevel >= 6 || percentile === null || percentile === undefined)
+  ) {
     const { above, some } = getRawScoreThreshold(taskId, scoringVersion);
 
     // Only return support_level and tag_color if the thresholds are not null

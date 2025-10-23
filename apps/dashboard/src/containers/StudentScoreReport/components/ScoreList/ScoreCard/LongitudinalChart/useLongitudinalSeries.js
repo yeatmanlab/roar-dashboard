@@ -1,13 +1,13 @@
 import { computed } from 'vue';
-import { getSupportLevel } from '@/helpers/reports';
+import { getDialColor } from '@/helpers/reports';
+import { supportLevelColors } from '@/constants/scores';
 
 const SCORE_TYPES = {
-  rawScore: { key: 'rawScore', label: 'Raw Score', color: '#2196F3', priority: 1 },
-  percentile: { key: 'percentile', label: 'Percentile', color: '#4CAF50', priority: 2 },
-  standardScore: { key: 'standardScore', label: 'Standard Score', color: '#FF9800', priority: 3 },
+  rawScore: { key: 'rawScore', label: 'Raw Score', priority: 1 },
+  percentile: { key: 'percentile', label: 'Percentile', priority: 2 },
+  standardScore: { key: 'standardScore', label: 'Standard Score', priority: 3 },
 };
 
-const getColorByScoreType = (t) => SCORE_TYPES[t]?.color ?? '#9C27B0';
 const getLabelByScoreType = (t) => SCORE_TYPES[t]?.label ?? 'Score';
 const preferredTypes = Object.values(SCORE_TYPES)
   .sort((a, b) => a.priority - b.priority)
@@ -29,19 +29,26 @@ export function useLongitudinalSeries(props) {
       .map((e) => {
         const x = new Date(e.date);
         const y = +e.scores[t];
-        const s = getSupportLevel(props.studentGrade, e.scores?.percentile, e.scores?.rawScore, props.taskId);
+
+        const rawScore = e?.scores?.rawScore;
+        const percentile = e?.scores?.percentileScore ?? e?.scores?.percentile;
+        const standardScore = e?.scores?.standardScore;
+
+        const color = getDialColor(props.studentGrade, percentile, rawScore, props.taskId);
+
         return {
           x,
           y,
-          percentile: e.scores?.percentile ?? null,
-          standardScore: e.scores?.standardScore ?? null,
-          color: s?.tag_color || getColorByScoreType(t),
+          assignmentId: e.assignmentId || e.administrationId || '',
+          percentile,
+          standardScore,
+          color: color || supportLevelColors.Assessed,
         };
       });
   });
 
   const seriesLabel = computed(() => getLabelByScoreType(chosenType.value));
-  const seriesStroke = computed(() => getColorByScoreType(chosenType.value));
+  const seriesStroke = computed(() => supportLevelColors.Assessed);
 
   const xDomain = computed(() => {
     if (!series.value.length) return [new Date(), new Date()];

@@ -67,6 +67,7 @@
             :longitudinal-data="longitudinalData"
             :expanded="expanded"
             :task-scoring-versions="getScoringVersions"
+            :current-assignment-id="administrationId"
           />
 
           <SupportScreen :expanded="expanded" :student-grade="studentGrade" />

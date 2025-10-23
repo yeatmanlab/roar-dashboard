@@ -1,10 +1,22 @@
 <template>
-  <div
-    class="px-2 pt-2 h-64 rounded border border-gray-100 border-solid"
-    style="height: 10rem"
-    data-cy="longitudinal-chart"
-  >
-    <canvas ref="canvasRef" class="w-full h-full"></canvas>
+  <div class="p-2 rounded border border-gray-100 border-solid" data-cy="longitudinal-chart">
+    <div class="h-64">
+      <canvas ref="canvasRef" class="w-full h-full"></canvas>
+    </div>
+    <div class="flex justify-end gap-3 mt-2 text-xs">
+      <div class="flex items-center gap-1">
+        <div class="w-3 h-3 rounded-full" :style="{ backgroundColor: supportLevelColors.above }"></div>
+        <span>Achieved Skill</span>
+      </div>
+      <div class="flex items-center gap-1">
+        <div class="w-3 h-3 rounded-full" :style="{ backgroundColor: supportLevelColors.some }"></div>
+        <span>Developing Skill</span>
+      </div>
+      <div class="flex items-center gap-1">
+        <div class="w-3 h-3 rounded-full" :style="{ backgroundColor: supportLevelColors.below }"></div>
+        <span>Needs Extra Support</span>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -13,6 +25,7 @@ import { computed, ref, onMounted, onBeforeUnmount, watch } from 'vue';
 import Chart from 'chart.js/auto';
 import 'chartjs-adapter-date-fns';
 import { useLongitudinalSeries } from './useLongitudinalSeries';
+import { supportLevelColors } from '@/constants/scores';
 
 const canvasRef = ref(null);
 let chartInstance = null;
@@ -21,6 +34,7 @@ const props = defineProps({
   longitudinalData: { type: Array, required: true },
   taskId: { type: String, required: true },
   studentGrade: { type: String, required: true },
+  currentAssignmentId: { type: String, required: true },
 });
 
 const { series, seriesLabel, seriesStroke } = useLongitudinalSeries(props);
@@ -32,10 +46,20 @@ const chartData = computed(() => ({
       data: series.value.map((p) => ({ x: p.x, y: p.y })),
       tension: 0.4,
       borderColor: seriesStroke.value,
-      pointRadius: 4,
-      pointHoverRadius: 6,
+      pointRadius: series.value.map((p) => (p.assignmentId && p.assignmentId === props.currentAssignmentId ? 8 : 4)),
+      pointHoverRadius: series.value.map((p) =>
+        p.assignmentId && p.assignmentId === props.currentAssignmentId ? 10 : 6,
+      ),
       pointBackgroundColor: series.value.map((p) => p.color),
-      pointBorderColor: series.value.map((p) => p.color),
+      pointBorderColor: series.value.map((p) =>
+        p.assignmentId && p.assignmentId === props.currentAssignmentId ? '#000000' : p.color,
+      ),
+      pointBorderWidth: series.value.map((p) =>
+        p.assignmentId && p.assignmentId === props.currentAssignmentId ? 2 : 1,
+      ),
+      pointStyle: series.value.map((p) =>
+        p.assignmentId && p.assignmentId === props.currentAssignmentId ? 'rectRot' : 'circle',
+      ),
       spanGaps: true,
     },
   ],
@@ -60,6 +84,7 @@ const chartOptions = computed(() => ({
           const lines = [`${seriesLabel.value}: ${p.y}`];
           if (p.percentile != null) lines.push(`Percentile: ${p.percentile}`);
           if (p.standardScore != null) lines.push(`Standard Score: ${p.standardScore}`);
+          if (p.assignmentId === props.currentAssignmentId) lines.unshift('✦ Current Score Report ✦');
           return lines;
         },
       },

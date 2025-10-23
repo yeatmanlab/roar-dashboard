@@ -18,6 +18,7 @@
           :longitudinal-data="task.historicalScores"
           :task-id="task.taskId"
           :student-grade="studentGrade"
+          :current-assignment-id="currentAssignmentId"
         />
       </template>
     </div>
@@ -57,6 +58,9 @@ const props = defineProps({
   },
   taskScoringVersions: {
     type: Object,
+  },
+  currentAssignmentId: {
+    type: String,
     required: true,
   },
 });

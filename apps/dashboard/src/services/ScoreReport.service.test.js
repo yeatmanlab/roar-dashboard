@@ -20,6 +20,7 @@ vi.mock('@/helpers/reports', () => ({
   },
   getSupportLevel: vi.fn(),
   getRawScoreRange: vi.fn(),
+  getDialColor: vi.fn().mockReturnValue('var(--blue-500)'),
   getScoreValue: vi.fn().mockImplementation((scoresObject, taskId, grade, fieldType) => {
     // Return the actual field value from the scores object if it exists
     // This allows the test to use real data from the mock task data

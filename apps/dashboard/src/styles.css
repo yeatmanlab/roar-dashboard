@@ -48,6 +48,9 @@ legend {
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   transition-duration: 150ms;
 }
+.rounded-full {
+  border-radius: 9999px !important;
+}
 
 .justify-between {
   justify-content: space-between;
