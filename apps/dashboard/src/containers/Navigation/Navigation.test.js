@@ -9,11 +9,7 @@ import NavBar from '@/components/NavBar';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import { useAuthStore } from '@/store/auth';
 import { usePermissions } from '@/composables/usePermissions';
-import useIsNycpsUser from '@/composables/useIsNycpsUser';
-import mockUserClaims, {
-  mockSuperAdminUserClaims,
-  mockPartnerAdminUserClaims,
-} from '@/test-support/mocks/mockUserClaims';
+import mockUserClaims from '@/test-support/mocks/mockUserClaims';
 import mockPermissions from '@/test-support/mocks/mockPermissions';
 
 vi.mock('vue-router', async (getModule) => {
@@ -27,7 +23,6 @@ vi.mock('vue-router', async (getModule) => {
 
 vi.mock('@/composables/queries/useUserClaimsQuery');
 vi.mock('@/composables/usePermissions');
-vi.mock('@/composables/useIsNycpsUser');
 
 const firstName = faker.person.firstName();
 const lastName = faker.person.lastName();
@@ -77,9 +72,6 @@ describe('<Navigation />', () => {
     vi.mocked(usePermissions).mockReturnValue({
       userCan: vi.fn().mockReturnValue(false),
       Permissions: mockPermissions,
-    });
-    vi.mocked(useIsNycpsUser).mockReturnValue({
-      isNycpsUser: { value: false },
     });
 
     useRoute.mockReturnValue(mockRoute);
@@ -211,74 +203,6 @@ describe('<Navigation />', () => {
       const navbarComponent = wrapper.findComponent(NavBar);
       expect(navbarComponent.props()).toMatchObject({
         displayName: 'User',
-      });
-    });
-  });
-
-  describe('account settings', () => {
-    it('should hide the account settings for participants', () => {
-      wrapper = mount(Navigation, {
-        global: {
-          plugins: [testingPinia, VueQueryPlugin],
-          stubs: {
-            NavBar: true,
-          },
-        },
-      });
-
-      const navbarComponent = wrapper.findComponent(NavBar);
-      expect(navbarComponent.props()).toMatchObject({
-        showAccountSettingsLink: false,
-      });
-    });
-
-    it('should show the account settings for partner admins', () => {
-      vi.mocked(useUserClaimsQuery).mockReturnValue({
-        isLoading: false,
-        data: mockPartnerAdminUserClaims,
-      });
-      vi.mocked(usePermissions).mockReturnValue({
-        userCan: vi.fn().mockReturnValue(true),
-        Permissions: mockPermissions,
-      });
-
-      wrapper = mount(Navigation, {
-        global: {
-          plugins: [testingPinia, VueQueryPlugin],
-          stubs: {
-            NavBar: true,
-          },
-        },
-      });
-
-      const navbarComponent = wrapper.findComponent(NavBar);
-      expect(navbarComponent.props()).toMatchObject({
-        showAccountSettingsLink: true,
-      });
-    });
-
-    it('should show the account settings for super admins', () => {
-      vi.mocked(useUserClaimsQuery).mockReturnValue({
-        isLoading: false,
-        data: mockSuperAdminUserClaims,
-      });
-      vi.mocked(usePermissions).mockReturnValue({
-        userCan: vi.fn().mockReturnValue(true),
-        Permissions: mockPermissions,
-      });
-
-      wrapper = mount(Navigation, {
-        global: {
-          plugins: [testingPinia, VueQueryPlugin],
-          stubs: {
-            NavBar: true,
-          },
-        },
-      });
-
-      const navbarComponent = wrapper.findComponent(NavBar);
-      expect(navbarComponent.props()).toMatchObject({
-        showAccountSettingsLink: true,
       });
     });
   });
