@@ -21,8 +21,13 @@ describe('Partner Admin: Individual Reports', () => {
     // Select the test administration and open the details page.
     cy.getAdministrationCard(testPartnerAdministrationName);
 
-    // Select the test administration and open district score report.
+    // Select the test administration
     cy.performRowAction(testDistrictName, 'card-administration__node-toggle-button');
+
+    // Wait for the score report button to load.
+    cy.waitForScoreReportButton(testSchoolName);
+
+    // Select the test school and open the score report.
     cy.performRowAction(testSchoolName, 'button-scores');
     cy.url().should('eq', `${baseUrl}/scores/${testPartnerAdministrationId}/school/${testSchoolId}`);
 

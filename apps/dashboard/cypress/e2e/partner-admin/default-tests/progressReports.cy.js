@@ -14,6 +14,7 @@ const testAssignments = Cypress.env('testAssignmentsList');
 
 const openSchoolProgressReport = () => {
   cy.performRowAction(testDistrictName, 'card-administration__node-toggle-button');
+  cy.waitForProgressReportButton(testSchoolName);
   cy.performRowAction(testSchoolName, 'button-progress');
   cy.url().should('eq', `${baseUrl}/administration/${testPartnerAdministrationId}/school/${testSchoolId}`);
 };
@@ -31,6 +32,10 @@ describe('Partner Admin: Progress Reports', () => {
 
     // Select the test administration and open district progress report.
     cy.getAdministrationCard(testPartnerAdministrationName);
+
+    // Wait for the progress report button to load.
+    cy.waitForProgressReportButton(testDistrictName);
+
     cy.performRowAction(testDistrictName, 'button-progress');
     cy.url().should('eq', `${baseUrl}/administration/${testPartnerAdministrationId}/district/${testDistrictId}`);
 

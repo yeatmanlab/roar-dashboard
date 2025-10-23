@@ -1,12 +1,8 @@
 <template>
   <div class="distribution-wrapper">
     <div :id="`roar-distribution-chart-${taskId}`"></div>
-    <div
-      v-if="minGradeByRuns < 6"
-      class="view-by-wrapper my-2 justify-content-center align-items-center pl-8 ml-4"
-      data-html2canvas-ignore="true"
-    >
-      <div class="flex uppercase text-xs font-light justify-content-center align-items-center">view scores by</div>
+    <div v-if="minGradeByRuns < 6" class="view-by-wrapper my-2" data-html2canvas-ignore="true">
+      <div class="flex uppercase text-xs font-light">view scores by</div>
       <PvSelectButton
         v-model="scoreMode"
         :allow-empty="false"
@@ -24,7 +20,7 @@ import { onMounted, ref, watch, computed } from 'vue';
 import embed from 'vega-embed';
 import PvSelectButton from 'primevue/selectbutton';
 import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery';
-import { supportLevelColors } from '@/helpers/reports';
+// import { supportLevelColors } from '@/helpers/reports';
 
 const props = defineProps({
   initialized: {
@@ -68,6 +64,7 @@ const props = defineProps({
 const makeRunsFromBins = ({ binsObj, facet, scoreKey }) => {
   // , levelKey that will be used to color the bars
   // level key is above, some, below
+  console.log('makeRunsFromBins', binsObj, facet, scoreKey);
   const rows = [];
   if (!binsObj || typeof binsObj !== 'object') return rows;
 
@@ -86,7 +83,7 @@ const makeRunsFromBins = ({ binsObj, facet, scoreKey }) => {
           rows.push({
             grade: String(gradeKey),
             scores: { [scoreKey]: value },
-            tag_color: supportLevelColors['Assessed'],
+            tag_color: 'green',
           });
         }
       }
@@ -99,7 +96,7 @@ const makeRunsFromBins = ({ binsObj, facet, scoreKey }) => {
           rows.push({
             user: { schoolName: name },
             scores: { [scoreKey]: value },
-            tag_color: supportLevelColors['Assessed'],
+            tag_color: 'green',
           });
         }
       }
@@ -176,7 +173,8 @@ const computedRuns = computed(() => {
       rows.push(...makeRunsFromBins({ binsObj: props?.runs?.[modeKey], facet, scoreKey }));
     }
 
-    return rows;
+    // keep your <6 rule for percentile + grade
+    return scoreMode.value.name === 'Percentile' && facet === 'grade' ? rows.filter((r) => Number(r.grade) < 6) : rows;
   }
 
   // non-district (original)
@@ -198,22 +196,13 @@ const distributionChartFacet = computed(() => {
     data: {
       values: computedRuns.value,
     },
-    transform:
-      props.facetMode.name === 'Grade'
-        ? [
-            {
-              calculate: "datum.grade === '0' || datum.grade === 'Kindergarten' ? 0 : toNumber(datum.grade)",
-              as: 'gradeNumeric',
-            },
-          ]
-        : [],
     mark: 'bar',
     height: 50,
     width: 360,
     encoding: {
       row: {
-        field: props.facetMode.key === 'grade' ? `gradeNumeric` : `user.${props.facetMode.key}`,
-        type: props.facetMode.key === 'grade' ? 'quantitative' : 'ordinal',
+        field: props.facetMode.key === 'grade' ? `grade` : `user.${props.facetMode.key}`,
+        type: 'ordinal',
         title: '',
         header: {
           titleColor: 'navy',
@@ -264,10 +253,8 @@ const distributionChartFacet = computed(() => {
       },
 
       y: {
-        type: 'ordinal',
         aggregate: 'count',
         title: 'Count',
-        sort: 'ascending',
         axis: {
           labelBaseline: 'right',
           titleFontSize: 14,
@@ -286,7 +273,9 @@ const distributionChartFacet = computed(() => {
           type: 'quantitative',
           format: `.0f`,
         },
-        props.facetMode.name === 'Grade' ? { field: 'grade', title: 'Student Grade' } : {},
+        props.facetMode.name === 'Grade'
+          ? { field: 'grade', title: 'Student Grade' }
+          : { field: 'user.schoolName', title: 'School' },
         { aggregate: 'count', title: 'Student Count' },
       ],
     },
@@ -299,24 +288,9 @@ const distributionChartFacet = computed(() => {
 });
 
 const draw = async () => {
-  const chartSpecDist = distributionChartFacet.value;
-
-  // Don't draw if chart spec is empty (still loading)
-  if (!chartSpecDist || Object.keys(chartSpecDist).length === 0) {
-    return;
-  }
-
+  let chartSpecDist = distributionChartFacet.value;
   await embed(`#roar-distribution-chart-${props.taskId}`, chartSpecDist);
 };
-
-// Watch for changes to the computed chart specification (includes tasksDictionary loading)
-watch(
-  () => distributionChartFacet.value,
-  () => {
-    draw();
-  },
-  { deep: true },
-);
 
 // Update Distribution Graph on external facetMode change
 watch(
@@ -328,11 +302,10 @@ watch(
 
 // Update Distribution Graph on computedRuns recalculation
 watch(
-  () => computedRuns.value,
+  () => computedRuns,
   () => {
     draw();
   },
-  { deep: true },
 );
 
 // Update Distribution Graph on internal scoreMode change
