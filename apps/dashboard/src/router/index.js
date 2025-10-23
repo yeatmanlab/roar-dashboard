@@ -732,31 +732,31 @@ const routes = [
       permission: Permissions.Reports.Student.READ,
     },
   },
-  {
-    path: APP_ROUTES.ACCOUNT_PROFILE,
-    name: 'Profile',
-    component: () => import('../pages/AdminProfile.vue'),
-    children: [
-      {
-        path: '',
-        name: 'ProfileInfo',
-        component: () => import('../components/views/UserInfoView.vue'),
-      },
-      {
-        path: 'password',
-        name: 'ProfilePassword',
-        component: () => import('../components/views/PasswordView.vue'),
-        meta: { requireAdmin: true },
-      },
-      {
-        path: 'accounts',
-        name: 'ProfileAccounts',
-        component: () => import('../components/views/LinkAccountsView.vue'),
-        meta: { requireAdmin: true },
-      },
-    ],
-    meta: { pageTitle: 'Profile', permission: Permissions.Profile.READ },
-  },
+  // {
+  //   path: APP_ROUTES.ACCOUNT_PROFILE,
+  //   name: 'Profile',
+  //   component: () => import('../pages/AdminProfile.vue'),
+  //   children: [
+  //     {
+  //       path: '',
+  //       name: 'ProfileInfo',
+  //       component: () => import('../components/views/UserInfoView.vue'),
+  //     },
+  //     {
+  //       path: 'password',
+  //       name: 'ProfilePassword',
+  //       component: () => import('../components/views/PasswordView.vue'),
+  //       meta: { requireAdmin: true },
+  //     },
+  //     {
+  //       path: 'accounts',
+  //       name: 'ProfileAccounts',
+  //       component: () => import('../components/views/LinkAccountsView.vue'),
+  //       meta: { requireAdmin: true },
+  //     },
+  //   ],
+  //   meta: { pageTitle: 'Profile', permission: Permissions.Profile.READ },
+  // },
   {
     path: '/enable-cookies',
     name: 'EnableCookies',
