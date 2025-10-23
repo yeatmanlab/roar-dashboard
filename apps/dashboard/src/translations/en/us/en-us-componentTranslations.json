@@ -22,7 +22,8 @@
     "signInWith": "Sign in with",
     "suggestions": "Suggestions",
     "forgotPassword": "Forgot password?",
-    "or": "or"
+    "or": "or",
+    "magicLink": "Request email link"
   },
   "cleverLanding": {
     "cleverLoading": "Loading your data from Clever..."

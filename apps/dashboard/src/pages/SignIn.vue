@@ -43,6 +43,7 @@
             @update:email="email = $event"
             @check-providers="checkAvailableProviders"
             @reset="resetSignInUI"
+            @magic-link="sendMagicLink"
           />
           <div v-if="!hideProviders" class="flex flex-column w-full align-content-center justify-content-center">
             <PvButton
@@ -181,6 +182,18 @@ authStore.$subscribe(() => {
 
 const modalPassword = ref('');
 
+const sendMagicLink = (emailStr) => {
+  spinner.value = true;
+  authStore
+    .initiateLoginWithEmailLink({ email: emailStr })
+    .then(() => {
+      router.push({ name: 'AuthEmailSent' });
+    })
+    .finally(() => {
+      spinner.value = false;
+    });
+};
+
 const authWithClever = () => {
   if (process.env.NODE_ENV === 'development' && !window.Cypress) {
     authStore.signInWithCleverPopup().then(async () => {
@@ -265,39 +278,33 @@ const authWithEmail = (state) => {
   // turn it into our internal auth email
   incorrect.value = false;
   let creds = toRaw(state);
-  if (creds.useLink && !creds.usePassword) {
-    authStore.initiateLoginWithEmailLink({ email: creds.email }).then(() => {
-      router.push({ name: 'AuthEmailSent' });
-    });
-  } else {
-    if (!creds.email.includes('@')) {
-      creds.email = `${creds.email}@roar-auth.com`;
-    }
-
-    authStore
-      .logInWithEmailAndPassword(creds)
-      .then(async () => {
-        if (authStore.uid) {
-          const userClaims = await fetchDocById('userClaims', authStore.uid);
-          authStore.userClaims = userClaims;
-        }
-        if (authStore.roarUid) {
-          const userData = await fetchDocById('users', authStore.roarUid);
-          authStore.userData = userData;
-          setUser({ id: authStore.roarUid, userType: userData.userType });
-        }
-
-        spinner.value = true;
-      })
-      .catch((e) => {
-        incorrect.value = true;
-        if (['auth/user-not-found', 'auth/wrong-password'].includes(e.code)) {
-          return;
-        } else {
-          throw e;
-        }
-      });
+  if (!creds.email.includes('@')) {
+    creds.email = `${creds.email}@roar-auth.com`;
   }
+
+  authStore
+    .logInWithEmailAndPassword(creds)
+    .then(async () => {
+      if (authStore.uid) {
+        const userClaims = await fetchDocById('userClaims', authStore.uid);
+        authStore.userClaims = userClaims;
+      }
+      if (authStore.roarUid) {
+        const userData = await fetchDocById('users', authStore.roarUid);
+        authStore.userData = userData;
+        setUser({ id: authStore.roarUid, userType: userData.userType });
+      }
+
+      spinner.value = true;
+    })
+    .catch((e) => {
+      incorrect.value = true;
+      if (['auth/user-not-found', 'auth/wrong-password'].includes(e.code)) {
+        return;
+      } else {
+        throw e;
+      }
+    });
 };
 
 const email = ref('');

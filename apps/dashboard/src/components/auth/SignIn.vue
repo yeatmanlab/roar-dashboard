@@ -51,10 +51,18 @@
               />
               <label for="password">{{ $t('authSignIn.passwordPlaceholder') }}</label>
             </PvFloatLabel>
-            <div class="flex justify-content-start w-full">
-              <small class="text-link text-sm text-400 sign-in-method-link" @click="handleForgotPassword">{{
-                $t('authSignIn.forgotPassword')
-              }}</small>
+            <div class="flex w-full align-items-center justify-content-between">
+              <small class="text-link text-sm text-400 sign-in-method-link" @click="handleForgotPassword">
+                {{ $t('authSignIn.forgotPassword') }}
+              </small>
+
+              <small
+                v-if="!isUsername"
+                class="text-link text-sm text-400 sign-in-method-link"
+                @click="emit('magic-link', state.email)"
+              >
+                {{ $t('authSignIn.magicLink') || 'Magic Link' }}
+              </small>
             </div>
           </div>
           <PvInputGroup v-else>
@@ -147,7 +155,7 @@
 </template>
 
 <script setup>
-import { reactive, ref, watch } from 'vue';
+import { reactive, ref, watch, computed } from 'vue';
 import { storeToRefs } from 'pinia';
 import { required, requiredUnless } from '@vuelidate/validators';
 import { useVuelidate } from '@vuelidate/core';
@@ -167,7 +175,14 @@ import { USER_ICON_IMAGE_PATH } from '@/constants/auth';
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
 
-const emit = defineEmits(['submit', 'update:email', 'update:showPasswordField', 'check-providers', 'reset']);
+const emit = defineEmits([
+  'submit',
+  'update:email',
+  'update:showPasswordField',
+  'check-providers',
+  'reset',
+  'magic-link',
+]);
 
 const showPassword = ref(false); // single source of truth for template
 
@@ -199,6 +214,8 @@ const state = reactive({
   email: '',
   password: '',
 });
+
+const isUsername = computed(() => !!state.email && !state.email.includes('@'));
 
 watch(
   () => props.showPasswordField,

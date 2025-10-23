@@ -23,7 +23,8 @@
     "signInWithPasswordInstead": "Iniciar sesión con contraseña",
     "signInUsingPassword": "Iniciar sesión con contraseña",
     "signInUsingEmailLink": "Iniciar sesión con enlace al email",
-    "suggestions": "Sugerencias"
+    "suggestions": "Sugerencias",
+    "magicLink": "Solicitar link al email"
   },
   "cleverLanding": {
     "cleverLoading": "Cargando tus datos desde Clever..."
