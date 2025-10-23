@@ -25,7 +25,7 @@ describe('Partner Admin: Individual Reports', () => {
     cy.performRowAction(testDistrictName, 'card-administration__node-toggle-button');
 
     // Wait for the score report button to load.
-    cy.waitForScoreReportButton();
+    cy.waitForScoreReportButton(testSchoolName);
 
     // Open school score report.
     cy.performRowAction(testSchoolName, 'button-scores');

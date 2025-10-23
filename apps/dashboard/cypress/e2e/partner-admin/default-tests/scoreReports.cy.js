@@ -12,6 +12,7 @@ const testPartnerAdministrationId = Cypress.env('testPartnerAdministrationId');
 
 const openSchoolScoreReport = () => {
   cy.performRowAction(testDistrictName, 'card-administration__node-toggle-button');
+  cy.waitForScoreReportButton(testSchoolName);
   cy.performRowAction(testSchoolName, 'button-scores');
   cy.url().should('eq', `${baseUrl}/scores/${testPartnerAdministrationId}/school/${testSchoolId}`);
 };
@@ -29,14 +30,11 @@ describe('Partner Admin: Score Reports', () => {
 
     // Select the test administration and open district score report.
     cy.getAdministrationCard(testPartnerAdministrationName);
+
+    cy.waitForScoreReportButton(testDistrictName);
+
     cy.performRowAction(testDistrictName, 'button-scores');
     cy.url().should('eq', `${baseUrl}/scores/${testPartnerAdministrationId}/district/${testDistrictId}`);
-
-    // Wait for the score report button to load.
-    cy.waitForScoreReportButton();
-
-    // Open the score report.
-    openSchoolScoreReport();
 
     // Validate that score report table with individiual student data does not exist.
     cy.get('[data-cy="roar-data-table"]').should('not.exist');

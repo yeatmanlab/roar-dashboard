@@ -157,16 +157,27 @@ Cypress.Commands.add('waitForStudentReportList', () => {
 
 /**
  * Waits for the progress report button to load.
+ * @param {string} orgName - Optional organization name to wait for button in specific row
  */
-Cypress.Commands.add('waitForProgressReportButton', () => {
+Cypress.Commands.add('waitForProgressReportButton', (orgName = null) => {
   // Note: As the application currently does not support paginated fetching of administrations, we have to wait for
   // the whole list to be loaded and that can take a while, hence the long timeout.
   cy.waitUntil(
     () => {
-      return Cypress.$('[data-cy="button-progress"] ').length;
+      if (orgName) {
+        // Find the specific row containing orgName, then check for button within that row
+        const row = Cypress.$('[data-testid="card-administration__body-cell-content"]')
+          .filter((i, el) => Cypress.$(el).text().includes(orgName))
+          .closest('tr');
+        return row.find('[data-cy="button-progress"]').length > 0;
+      }
+      // If no orgName, just check if any button exists
+      return Cypress.$('[data-cy="button-progress"]').length;
     },
     {
-      errorMsg: 'Failed to find the progress report button before timeout',
+      errorMsg: orgName
+        ? `Failed to find progress button for ${orgName} before timeout`
+        : 'Failed to find the progress report button before timeout',
       timeout: 1200000,
       interval: 1000,
     },
@@ -175,16 +186,27 @@ Cypress.Commands.add('waitForProgressReportButton', () => {
 
 /**
  * Waits for the score report button to load.
+ * @param {string} orgName - Optional organization name to wait for button in specific row
  */
-Cypress.Commands.add('waitForScoreReportButton', () => {
+Cypress.Commands.add('waitForScoreReportButton', (orgName = null) => {
   // Note: As the application currently does not support paginated fetching of administrations, we have to wait for
   // the whole list to be loaded and that can take a while, hence the long timeout.
   cy.waitUntil(
     () => {
-      return Cypress.$('[data-cy="button-scores"] ').length;
+      if (orgName) {
+        // Find the specific row containing orgName, then check for button within that row
+        const row = Cypress.$('[data-testid="card-administration__body-cell-content"]')
+          .filter((i, el) => Cypress.$(el).text().includes(orgName))
+          .closest('tr');
+        return row.find('[data-cy="button-scores"]').length > 0;
+      }
+      // If no orgName, just check if any button exists
+      return Cypress.$('[data-cy="button-scores"]').length;
     },
     {
-      errorMsg: 'Failed to find the score report button before timeout',
+      errorMsg: orgName
+        ? `Failed to find score button for ${orgName} before timeout`
+        : 'Failed to find the score report button before timeout',
       timeout: 1200000,
       interval: 1000,
     },
