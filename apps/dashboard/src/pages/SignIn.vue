@@ -30,7 +30,7 @@
               class="flex p-1 mr-2 ml-2 w-3 text-center text-black surface-0 border-black-alpha-10 justify-content-center hover:border-primary hover:surface-ground"
               style="border-radius: 3rem; height: 3rem; color: black"
               data-cy="sign-in__google-sso"
-              @click="authWithGoogle"
+              @click="authWithSSO(AUTH_SSO_PROVIDERS.GOOGLE)"
             >
               <img src="../assets/provider-google-logo.svg" alt="The Google Logo" class="flex mr-2 w-2" />
               <span>Google</span>
@@ -39,7 +39,7 @@
               class="flex p-1 mr-2 ml-2 w-3 surface-0 border-black-alpha-10 justify-content-center hover:border-primary hover:surface-ground"
               style="border-radius: 3rem; height: 3rem; color: black"
               data-cy="sign-in__clever-sso"
-              @click="authWithClever"
+              @click="authWithSSO(AUTH_SSO_PROVIDERS.CLEVER)"
             >
               <img src="../assets/provider-clever-logo.svg" alt="The Clever Logo" class="flex mr-2 w-2" />
               <span>Clever</span>
@@ -48,7 +48,7 @@
               class="flex p-1 mr-2 ml-2 w-3 text-black surface-0 border-black-alpha-10 justify-content-center hover:border-primary hover:surface-ground"
               style="border-radius: 3rem; height: 3rem; color: black"
               data-cy="sign-in__classlink-sso"
-              @click="authWithClassLink"
+              @click="authWithSSO(AUTH_SSO_PROVIDERS.CLASSLINK)"
             >
               <img src="../assets/provider-classlink-logo.png" alt="The ClassLink Logo" class="flex mr-2 w-2" />
               <span>ClassLink</span>
@@ -57,7 +57,7 @@
               class="flex p-1 mr-2 ml-2 w-3 text-black surface-0 border-black-alpha-10 justify-content-center hover:border-primary hover:surface-ground"
               style="border-radius: 3rem; height: 3rem; color: black"
               data-cy="sign-in__classlink-sso"
-              @click="authWithNYCPS"
+              @click="authWithSSO(AUTH_SSO_PROVIDERS.NYCPS)"
             >
               <!-- NYCPS Logo needs to be slightly wider as it is not a square -->
               <img
@@ -101,7 +101,7 @@
             label="Sign in with Google"
             class="flex p-1 mr-1 text-center surface-0 border-black-alpha-10 justify-content-center hover:border-primary hover:surface-ground"
             style="border-radius: 3rem; height: 3rem"
-            @click="authWithGoogle"
+            @click="authWithSSO(AUTH_SSO_PROVIDERS.GOOGLE)"
           >
             <img src="../assets/provider-google-logo.svg" alt="The Google Logo" class="flex mr-2 w-2" />
             <span>Google</span>
@@ -111,7 +111,7 @@
           <PvButton
             class="flex p-1 mr-1 surface-0 border-black-alpha-10 justify-content-center hover:border-primary hover:surface-ground"
             style="border-radius: 3rem; height: 3rem"
-            @click="authWithClever"
+            @click="authWithSSO(AUTH_SSO_PROVIDERS.CLEVER)"
           >
             <img src="../assets/provider-clever-logo.svg" alt="The Clever Logo" class="flex mr-2 w-2" />
             <span>Clever</span>
@@ -121,7 +121,7 @@
           <PvButton
             class="flex p-1 mr-1 surface-0 border-black-alpha-10 justify-content-center hover:border-primary hover:surface-ground"
             style="border-radius: 3rem; height: 3rem"
-            @click="authWithClassLink"
+            @click="authWithSSO(AUTH_SSO_PROVIDERS.CLASSLINK)"
           >
             <img src="../assets/provider-classlink-logo.png" alt="The ClassLink Logo" class="flex mr-2 w-2" />
             <span>ClassLink</span>
@@ -174,6 +174,8 @@ import RoarModal from '@/components/modals/RoarModal.vue';
 import SignIn from '@/components/auth/SignIn.vue';
 import LanguageSelector from '@/components/LanguageSelector.vue';
 
+import { FIREBASE_FUNCTIONS_ERROR_CODES, FIREBASE_FUNCTIONS_ERROR_REASONS } from '@/constants/firebase';
+
 const incorrect = ref(false);
 const authStore = useAuthStore();
 const router = useRouter();
@@ -194,87 +196,79 @@ authStore.$subscribe(() => {
   }
 });
 
-const authWithGoogle = () => {
-  if (isMobileBrowser()) {
-    authStore.signInWithGoogleRedirect();
-  } else {
-    authStore
-      .signInWithGooglePopup()
-      .then(async () => {
-        if (authStore.uid) {
-          const userClaims = await fetchDocById('userClaims', authStore.uid);
-          authStore.userClaims = userClaims;
-        }
-        if (authStore.roarUid) {
-          const userData = await fetchDocById('users', authStore.roarUid);
-          authStore.userData = userData;
-          setUser({ id: authStore.roarUid, userType: userData.userType });
-        }
-      })
-      .catch((e) => {
-        const errorCode = e.code;
-        if (errorCode === 'auth/email-already-in-use') {
-          // User tried to register with an email that is already linked to a firebase account.
-          openWarningModal();
-          spinner.value = false;
-        } else {
-          spinner.value = false;
-        }
-      });
+/**
+ * Configuration for SSO providers
+ *
+ * Defines the behavior for each provider (popup vs redirect logic) until we refactor the auth flow and remove the need
+ * for different popup and redirect methods.
+ */
+const SSO_CONFIG = {
+  [AUTH_SSO_PROVIDERS.GOOGLE]: {
+    usePopup: () => !isMobileBrowser(),
+    popupMethod: () => authStore.signInWithGooglePopup(),
+    redirectMethod: () => authStore.signInWithGoogleRedirect(),
+  },
+  [AUTH_SSO_PROVIDERS.CLEVER]: {
+    usePopup: () => process.env.NODE_ENV === 'development' && !window.Cypress,
+    popupMethod: () => authStore.signInWithCleverPopup(),
+    redirectMethod: () => authStore.signInWithCleverRedirect(),
+  },
+  [AUTH_SSO_PROVIDERS.CLASSLINK]: {
+    usePopup: () => false, // ClassLink always uses redirect
+    redirectMethod: () => authStore.signInWithClassLinkRedirect(),
+  },
+  [AUTH_SSO_PROVIDERS.NYCPS]: {
+    usePopup: () => process.env.NODE_ENV === 'development' && !window.Cypress,
+    popupMethod: () => authStore.signInWithNYCPSPopup(),
+    redirectMethod: () => authStore.signInWithNYCPSRedirect(),
+  },
+};
 
-    spinner.value = true;
+/**
+ * Unified SSO authentication handler
+ * @param {string} provider - The SSO provider constant (from AUTH_SSO_PROVIDERS)
+ */
+const authWithSSO = async (provider) => {
+  const config = SSO_CONFIG[provider];
+
+  if (!config) {
+    console.error(`Unknown SSO provider: ${provider}`);
+    return;
+  }
+
+  // Common post-authentication logic
+  const handleAuthSuccess = async () => {
+    if (authStore.uid) {
+      const userClaims = await fetchDocById('userClaims', authStore.uid);
+      authStore.userClaims = userClaims;
+    }
+    if (authStore.roarUid) {
+      const userData = await fetchDocById('users', authStore.roarUid);
+      authStore.userData = userData;
+      setUser({ id: authStore.roarUid, userType: userData.userType });
+    }
+  };
+
+  // Show loading spinner
+  spinner.value = true;
+
+  // Handle authentication
+  try {
+    if (config.usePopup()) {
+      await config.popupMethod();
+      await handleAuthSuccess();
+      // Turn off spinner after successful popup authentication
+      spinner.value = false;
+    } else {
+      // For redirect, leave spinner on - page will navigate away
+      config.redirectMethod();
+    }
+  } catch (error) {
+    handleSSOError(error, provider); // handleSSOError will turn off the spinner
   }
 };
 
 const modalPassword = ref('');
-
-const authWithClever = () => {
-  if (process.env.NODE_ENV === 'development' && !window.Cypress) {
-    authStore.signInWithCleverPopup().then(async () => {
-      if (authStore.uid) {
-        const userClaims = await fetchDocById('userClaims', authStore.uid);
-        authStore.userClaims = userClaims;
-      }
-      if (authStore.roarUid) {
-        const userData = await fetchDocById('users', authStore.roarUid);
-        authStore.userData = userData;
-        setUser({ id: authStore.roarUid, userType: userData.userType });
-      }
-    });
-  } else {
-    authStore.signInWithCleverRedirect();
-  }
-  spinner.value = true;
-};
-
-const authWithClassLink = () => {
-  if (isMobileBrowser()) {
-    authStore.signInWithClassLinkRedirect();
-    spinner.value = true;
-  } else {
-    authStore.signInWithClassLinkRedirect();
-    spinner.value = true;
-  }
-};
-
-const authWithNYCPS = () => {
-  if (process.env.NODE_ENV === 'development' && !window.Cypress) {
-    authStore.signInWithNYCPSPopup().then(async () => {
-      if (authStore.uid) {
-        const userClaims = await fetchDocById('userClaims', authStore.uid);
-        authStore.userClaims = userClaims;
-      }
-      if (authStore.roarUid) {
-        const userData = await fetchDocById('users', authStore.roarUid);
-        authStore.userData = userData;
-        setUser({ id: authStore.roarUid, userType: userData.userType });
-      }
-    });
-  } else {
-    authStore.signInWithNYCPSRedirect();
-  }
-  spinner.value = true;
-};
 
 const authWithEmail = (state) => {
   // If username is supplied instead of email
@@ -339,19 +333,62 @@ const displaySignInMethods = computed(() => {
   });
 });
 
+/**
+ * Unified error handler for SSO authentication errors
+ * @param {Error} error - The error object from Firebase Auth
+ * @param {string} providerName - The name of the SSO provider (e.g., 'Google', 'Clever', 'ClassLink', 'NYCPS')
+ */
+const handleSSOError = (error, providerName) => {
+  const errorCode = error.code;
+  const errorMessage = error.message;
+
+  // Turn off spinner
+  spinner.value = false;
+
+  // Check if the auth provider has been disabled
+  if (
+    errorCode === FIREBASE_FUNCTIONS_ERROR_CODES.AUTH_PERMISSIONS_DENIED &&
+    error.customData?.reason === FIREBASE_FUNCTIONS_ERROR_REASONS.AUTH_PERMISSIONS_DENIED
+  ) {
+    window.alert(`${providerName} sign-in isn't available for this account. Please try a different sign-in method.`);
+    return;
+  }
+
+  // Check if email is already in use
+  if (errorCode === FIREBASE_FUNCTIONS_ERROR_CODES.EMAIL_ALREADY_IN_USE) {
+    openWarningModal();
+    return;
+  }
+
+  // Handle popup closed by user
+  if (
+    [
+      FIREBASE_FUNCTIONS_ERROR_CODES.POPUP_CLOSED_BY_USER,
+      FIREBASE_FUNCTIONS_ERROR_CODES.CANCELLED_POPUP_REQUEST,
+    ].includes(errorCode)
+  ) {
+    // Silently ignore as user intentionally closed the popup
+    return;
+  }
+
+  // Generic error handling
+  console.error(`${providerName} SSO Error:`, error);
+  window.alert(`An error occurred during ${providerName} sign-in: ${errorMessage}`);
+};
+
 onMounted(() => {
   document.body.classList.add('page-signin');
   if (authStore.cleverOAuthRequested) {
     authStore.cleverOAuthRequested = false;
-    authWithClever();
+    authWithSSO(AUTH_SSO_PROVIDERS.CLEVER);
   }
   if (authStore.classLinkOAuthRequested) {
     authStore.classLinkOAuthRequested = false;
-    authWithClassLink();
+    authWithSSO(AUTH_SSO_PROVIDERS.CLASSLINK);
   }
   if (authStore.nycpsOAuthRequested) {
     authStore.nycpsOAuthRequested = false;
-    authWithNYCPS();
+    authWithSSO(AUTH_SSO_PROVIDERS.NYCPS);
   }
 });
 
