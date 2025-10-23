@@ -44,7 +44,10 @@
                   </PvSelectButton>
                 </div>
 
-                <div v-if="!isLoadingAssignments" class="flex gap-2 mr-5 flex-column">
+                <div
+                  v-if="!isLoadingAssignments && !isLoadingDistrictSupportCategories"
+                  class="flex gap-2 mr-5 flex-column"
+                >
                   <PvButton
                     v-if="orgType !== 'district'"
                     class="flex flex-row p-2 text-sm text-white border-none bg-primary border-round h-2rem hover:bg-red-900"
@@ -53,6 +56,7 @@
                     @click="exportData({ includeProgress: true })"
                   />
                   <PvButton
+                    v-if="orgType !== 'district' || !isEmptyDistrictSupportCategories"
                     class="flex flex-row p-2 mb-2 text-sm text-white border-none bg-primary border-round h-2rem hover:bg-red-900"
                     :icon="!exportLoading ? 'pi pi-download mr-2' : 'pi pi-spin pi-spinner mr-2'"
                     :disabled="exportLoading"
@@ -124,6 +128,9 @@
                 </div>
                 <div class="my-1 text-xs font-light text-gray-500 uppercase">Legend</div>
               </div>
+            </div>
+            <div v-if="isEmptyDistrictSupportCategories" class="flex justify-content-center">
+              <h1>Placeholder</h1>
             </div>
           </div>
         </section>
@@ -547,6 +554,10 @@ const schoolNameDictionary = computed(() => {
       return acc;
     }, {}) || {}
   );
+});
+
+const isEmptyDistrictSupportCategories = computed(() => {
+  return props.orgType === 'district' && aggregatedDistrictSupportCategories.value?.status === 'failed';
 });
 
 // Return a faded color if assessment is not reliable
