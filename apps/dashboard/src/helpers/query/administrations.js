@@ -6,7 +6,18 @@ import _without from 'lodash/without';
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '@/store/auth';
 import { convertValues, getAxiosInstance, orderByDefault } from './utils';
-import { filterAdminOrgs } from '@/helpers';
+
+const REQUIRED_ADMINISTRATION_FIELDS = [
+  'name',
+  'publicName',
+  'assessments',
+  'dateClosed',
+  'dateOpened',
+  'dateCreated',
+  'testData',
+];
+
+const REQUIRED_STATS_FIELDS = ['assignment'];
 
 export function getTitle(item, isSuperAdmin) {
   if (isSuperAdmin) {
@@ -17,12 +28,13 @@ export function getTitle(item, isSuperAdmin) {
   }
 }
 
-const processBatchStats = async (axiosInstance, statsPaths, batchSize = 5) => {
+const processBatchStats = async (axiosInstance, statsPaths, batchSize = 500) => {
   const batchStatsDocs = [];
   const statsPathChunks = _chunk(statsPaths, batchSize);
   for (const batch of statsPathChunks) {
     const { data } = await axiosInstance.post(':batchGet', {
       documents: batch,
+      mask: { fieldPaths: REQUIRED_STATS_FIELDS },
     });
 
     const processedBatch = _without(
@@ -44,21 +56,11 @@ const processBatchStats = async (axiosInstance, statsPaths, batchSize = 5) => {
   return batchStatsDocs;
 };
 
-const mapAdministrations = async ({ isSuperAdmin, data, adminOrgs }) => {
+const mapAdministrations = async (adminData) => {
   // First format the administration documents
-  const administrationData = data
+  const administrationData = adminData
     .map((a) => a.data)
     .map((a) => {
-      let assignedOrgs = {
-        districts: a.districts,
-        schools: a.schools,
-        classes: a.classes,
-        groups: a.groups,
-        families: a.families,
-      };
-      if (!isSuperAdmin.value) {
-        assignedOrgs = filterAdminOrgs(adminOrgs.value, assignedOrgs);
-      }
       return {
         id: a.id,
         name: a.name,
@@ -69,14 +71,13 @@ const mapAdministrations = async ({ isSuperAdmin, data, adminOrgs }) => {
           created: a.dateCreated,
         },
         assessments: a.assessments,
-        assignedOrgs,
         // If testData is not defined, default to false when mapping
         testData: a.testData ?? false,
       };
     });
 
   // Create a list of all the stats document paths we need to get
-  const statsPaths = data
+  const statsPaths = adminData
     // First filter out any missing administration documents
     .filter((item) => item.name !== undefined)
     // Then map to the total stats document
@@ -105,7 +106,10 @@ export const administrationPageFetcher = async (isSuperAdmin, exhaustiveAdminOrg
   const documentPrefix = axiosInstance.defaults.baseURL.replace('https://firestore.googleapis.com/v1/', '');
   const documents = administrationIds.map((id) => `${documentPrefix}/administrations/${id}`);
 
-  const { data } = await axiosInstance.post(':batchGet', { documents });
+  const { data } = await axiosInstance.post(':batchGet', {
+    documents,
+    mask: { fieldPaths: REQUIRED_ADMINISTRATION_FIELDS },
+  });
 
   const administrationData = _without(
     data.map(({ found }) => {
@@ -123,11 +127,7 @@ export const administrationPageFetcher = async (isSuperAdmin, exhaustiveAdminOrg
     undefined,
   );
 
-  const administrations = await mapAdministrations({
-    isSuperAdmin,
-    data: administrationData,
-    adminOrgs: exhaustiveAdminOrgs,
-  });
+  const administrations = await mapAdministrations(administrationData);
 
   const orderField = (orderBy?.value ?? orderByDefault)[0].field.fieldPath;
   const orderDirection = (orderBy?.value ?? orderByDefault)[0].direction;

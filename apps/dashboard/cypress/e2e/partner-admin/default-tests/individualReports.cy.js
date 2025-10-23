@@ -19,6 +19,9 @@ describe('Partner Admin: Individual Reports', () => {
     // Select the test administration and open the details page.
     cy.getAdministrationCard(testPartnerAdministrationName);
 
+    // Wait for the score report button to load.
+    cy.waitForScoreReportButton();
+
     // Open the score report.
     cy.get('button').contains('Scores').first().click();
     cy.url().should('eq', `${baseUrl}/scores/${testPartnerAdministrationId}/district/${testDistrictId}`);

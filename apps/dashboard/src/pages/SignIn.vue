@@ -53,6 +53,21 @@
               <img src="../assets/provider-classlink-logo.png" alt="The ClassLink Logo" class="flex mr-2 w-2" />
               <span>ClassLink</span>
             </PvButton>
+            <PvButton
+              class="flex p-1 mr-2 ml-2 w-3 text-black surface-0 border-black-alpha-10 justify-content-center hover:border-primary hover:surface-ground"
+              style="border-radius: 3rem; height: 3rem; color: black"
+              data-cy="sign-in__classlink-sso"
+              @click="authWithNYCPS"
+            >
+              <!-- NYCPS Logo needs to be slightly wider as it is not a square -->
+              <img
+                src="../assets/provider-nycps-logo.jpg"
+                alt="The NYC Public Schools Logo"
+                class="flex mr-2"
+                style="width: 21%"
+              />
+              <span>NYCPS</span>
+            </PvButton>
           </div>
         </section>
         <!-- <section class="signin-option-container signin-option-providers">
@@ -215,7 +230,17 @@ const modalPassword = ref('');
 
 const authWithClever = () => {
   if (process.env.NODE_ENV === 'development' && !window.Cypress) {
-    authStore.signInWithCleverPopup();
+    authStore.signInWithCleverPopup().then(async () => {
+      if (authStore.uid) {
+        const userClaims = await fetchDocById('userClaims', authStore.uid);
+        authStore.userClaims = userClaims;
+      }
+      if (authStore.roarUid) {
+        const userData = await fetchDocById('users', authStore.roarUid);
+        authStore.userData = userData;
+        setUser({ id: authStore.roarUid, userType: userData.userType });
+      }
+    });
   } else {
     authStore.signInWithCleverRedirect();
   }
@@ -230,6 +255,25 @@ const authWithClassLink = () => {
     authStore.signInWithClassLinkRedirect();
     spinner.value = true;
   }
+};
+
+const authWithNYCPS = () => {
+  if (process.env.NODE_ENV === 'development' && !window.Cypress) {
+    authStore.signInWithNYCPSPopup().then(async () => {
+      if (authStore.uid) {
+        const userClaims = await fetchDocById('userClaims', authStore.uid);
+        authStore.userClaims = userClaims;
+      }
+      if (authStore.roarUid) {
+        const userData = await fetchDocById('users', authStore.roarUid);
+        authStore.userData = userData;
+        setUser({ id: authStore.roarUid, userType: userData.userType });
+      }
+    });
+  } else {
+    authStore.signInWithNYCPSRedirect();
+  }
+  spinner.value = true;
 };
 
 const authWithEmail = (state) => {
@@ -304,6 +348,10 @@ onMounted(() => {
   if (authStore.classLinkOAuthRequested) {
     authStore.classLinkOAuthRequested = false;
     authWithClassLink();
+  }
+  if (authStore.nycpsOAuthRequested) {
+    authStore.nycpsOAuthRequested = false;
+    authWithNYCPS();
   }
 });
 

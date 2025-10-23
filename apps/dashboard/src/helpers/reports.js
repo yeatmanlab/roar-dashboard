@@ -402,7 +402,7 @@ export const excludeFromScoringTasks = [
   ...LEVANTE_TASK_IDS_NO_SCORES,
 ];
 
-export const includeReliabilityFlagsOnExport = ['Word', 'Letter', 'Phoneme', 'Sentence'];
+export const includeReliabilityFlagsOnExport = ['Word', 'Letter', 'Phoneme', 'Sentence', 'Palabra', 'Frase'];
 
 /*
  *  Tasks to Display Percent Correct
@@ -413,7 +413,6 @@ export const tasksToDisplayPercentCorrect = [
   'letter-en-ca',
   'phonics',
   'cva',
-  'swr-es',
   'pa-es',
   'morphology',
   'vocab',
@@ -662,8 +661,7 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = 
     };
   }
   if (
-    (tasksToDisplayPercentCorrect.includes(taskId) ||
-      tasksToDisplayCorrectIncorrectDifference.includes(taskId) ||
+    ((tasksToDisplayPercentCorrect.includes(taskId) && !(taskId === 'swr-es' && scoringVersion >= 1)) ||
       tasksToDisplayTotalCorrect.includes(taskId)) &&
     tasksToDisplayGradeEstimate.includes(taskId) &&
     rawScore !== undefined

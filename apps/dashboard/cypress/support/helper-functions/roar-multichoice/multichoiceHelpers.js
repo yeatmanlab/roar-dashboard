@@ -6,13 +6,16 @@ const CLEVER_PASSWORD = Cypress.env('CLEVER_PASSWORD');
 const PARTICIPANT_USERNAME = Cypress.env('PARTICIPANT_USERNAME');
 const PARTICIPANT_PASSWORD = Cypress.env('PARTICIPANT_PASSWORD');
 
-function clickButton(selector) {
-  cy.get(selector).then(($btn) => {
-    if ($btn.length > 0) {
-      $btn.click();
-    }
-  });
-}
+const CLICK_SELECTORS = [
+  '.go-button',
+  '.glowingButton',
+  'button.jspsych-btn',
+  '#jspsych-content .go-button',
+  '#jspsych-content button',
+  '[aria-label*="Next"]',
+  '[aria-label*="Continue"]',
+  '[role="button"]',
+];
 
 const timeout = Cypress.env('timeout');
 
@@ -20,24 +23,40 @@ function checkGameTab(language, task) {
   cy.get('.p-tablist-tab-list', { timeout: timeout }).contains(languageOptions[language][task].gameTab).should('exist');
 }
 
-function makeChoiceOrContinue(gameCompleteText) {
-  cy.wait(1);
-  cy.get('body').then((body) => {
-    const text = body.text().replace(/\s\s+/g, ' ').trim();
-    cy.log('Found text: ', text);
-    if (text.includes(gameCompleteText)) {
-      cy.log('Game is complete.').then(() => true);
-    } else {
-      if (body.find('.go-button').length > 0) {
-        clickButton('.go-button');
-      } else if (body.find('.glowingButton').length > 0) {
-        clickButton('.glowingButton');
-      } else {
-        clickButton('button:first');
+function clickFirstVisible() {
+  cy.get('body', { timeout }).then(($body) => {
+    for (const sel of CLICK_SELECTORS) {
+      const $candidate = $body.find(sel).filter(':visible').first();
+      if ($candidate.length) {
+        cy.wrap($candidate).click({ force: true });
+        return;
       }
-      cy.log('Making choice or continuing.');
-      makeChoiceOrContinue(gameCompleteText);
     }
+    // Fallback for canvas/overlay UIs
+    cy.get('body').type('{rightarrow}', { force: true });
+  });
+}
+
+// Loops until the completion text is present.
+function makeChoiceOrContinue(gameCompleteText, tries = 0) {
+  if (tries > 800) throw new Error('Exceeded max tries while playing the game.');
+
+  cy.get('body', { timeout: 1000 }).then(($body) => {
+    const text = $body.text().replace(/\s\s+/g, ' ').trim();
+
+    // If we see the "all done" message, stop.
+    if (text.includes(gameCompleteText)) {
+      cy.log('Game is complete.');
+      return;
+    }
+
+    // If we see feedback like "That's right!" or "Try again", we still need to advance.
+    // Either way, attempt to click/advance.
+    clickFirstVisible();
+
+    // Small wait to let the next trial render, then recurse.
+    cy.wait(150);
+    makeChoiceOrContinue(gameCompleteText, tries + 1);
   });
 }
 
