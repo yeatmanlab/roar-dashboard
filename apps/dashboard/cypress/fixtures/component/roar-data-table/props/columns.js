@@ -2,7 +2,7 @@ const columns = [
   {
     header: 'Report',
     link: true,
-    routeName: 'StudentReport',
+    routeName: 'StudentScoreReport',
     routeTooltip: 'Student Score Report',
     routeIcon: 'pi pi-chart-bar border-none text-primary hover:text-white',
     sort: false,

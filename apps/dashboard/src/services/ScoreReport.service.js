@@ -2,12 +2,14 @@ import _lowerCase from 'lodash/lowerCase';
 import _startCase from 'lodash/startCase';
 import _toUpper from 'lodash/toUpper';
 import {
+  getDialColor,
   rawOnlyTasks,
   taskDisplayNames,
   extendedDescriptions,
   getSupportLevel,
   getRawScoreRange,
   getScoreValue,
+  tasksToDisplayPercentCorrect,
 } from '@/helpers/reports';
 import { SCORE_SUPPORT_SKILL_LEVELS, SCORE_TYPES } from '@/constants/scores';
 import { TAG_SEVERITIES } from '@/constants/tags';
@@ -70,14 +72,18 @@ const ScoreReportService = (() => {
    * @private
    */
   const getSupportLevelLanguage = (grade, percentile, rawScore, taskId, i18n) => {
-    const { support_level } = getSupportLevel(grade, percentile, rawScore, taskId);
-    return support_level === SCORE_SUPPORT_SKILL_LEVELS.ACHIEVED_SKILL
-      ? i18n.t('scoreReports.achievedText')
-      : support_level === SCORE_SUPPORT_SKILL_LEVELS.DEVELOPING_SKILL
-        ? i18n.t('scoreReports.developingText')
-        : support_level === SCORE_SUPPORT_SKILL_LEVELS.NEEDS_EXTRA_SUPPORT
-          ? i18n.t('scoreReports.extraSupportText')
-          : '';
+    const { support_level: supportLevel } = getSupportLevel(grade, percentile, rawScore, taskId);
+
+    switch (supportLevel) {
+      case SCORE_SUPPORT_SKILL_LEVELS.ACHIEVED_SKILL:
+        return i18n.t('scoreReports.achievedText');
+      case SCORE_SUPPORT_SKILL_LEVELS.DEVELOPING_SKILL:
+        return i18n.t('scoreReports.developingText');
+      case SCORE_SUPPORT_SKILL_LEVELS.NEEDS_EXTRA_SUPPORT:
+        return i18n.t('scoreReports.extraSupportText');
+      default:
+        return '';
+    }
   };
 
   /**
@@ -97,6 +103,7 @@ const ScoreReportService = (() => {
 
     tags.push({
       icon: 'pi pi-info-circle',
+      label: 'Type',
       value: i18n.t(optional ? 'scoreReports.optional' : 'scoreReports.required'),
       severity: TAG_SEVERITIES.INFO,
       tooltip: i18n.t(optional ? 'scoreReports.optionalTagText' : 'scoreReports.requiredTagText'),
@@ -104,6 +111,7 @@ const ScoreReportService = (() => {
 
     tags.push({
       value: i18n.t(reliable === false ? 'scoreReports.unreliable' : 'scoreReports.reliable'),
+      label: 'Reliability',
       icon: reliable === false ? 'pi pi-times' : 'pi pi-check',
       severity: reliable === false ? TAG_SEVERITIES.DANGER : TAG_SEVERITIES.SUCCESS,
       tooltip:
@@ -214,6 +222,25 @@ const ScoreReportService = (() => {
     const taskName = taskDisplayNames[task.taskId]?.extendedName;
     const taskDescription = extendedDescriptions[task.taskId];
 
+    // For tasks that display percent correct, align description with component behavior
+    if (tasksToDisplayPercentCorrect.includes(task.taskId)) {
+      return {
+        keypath: 'scoreReports.percentageCorrectTaskDescription',
+        slots: {
+          percentage: Math.round(task.percentileScore.value),
+          supportCategory: getSupportLevelLanguage(
+            grade,
+            task?.percentileScore.value,
+            task?.rawScore.value,
+            task.taskId,
+            i18n,
+          ),
+          taskName,
+          taskDescription,
+        },
+      };
+    }
+
     if (rawOnlyTasks.includes(task.taskId)) {
       return {
         keypath: 'scoreReports.rawTaskDescription',
@@ -223,7 +250,9 @@ const ScoreReportService = (() => {
           taskDescription,
         },
       };
-    } else if (grade >= 6) {
+    }
+
+    if (grade >= 6) {
       return {
         keypath: 'scoreReports.standardTaskDescription',
         slots: {
@@ -239,23 +268,23 @@ const ScoreReportService = (() => {
           taskDescription,
         },
       };
-    } else {
-      return {
-        keypath: 'scoreReports.percentileTaskDescription',
-        slots: {
-          percentile: getPercentileWithSuffix(Math.round(task?.percentileScore.value)) + ' percentile',
-          supportCategory: getSupportLevelLanguage(
-            grade,
-            task.percentileScore.value,
-            task.rawScore.value,
-            task.taskId,
-            i18n,
-          ),
-          taskName,
-          taskDescription,
-        },
-      };
     }
+
+    return {
+      keypath: 'scoreReports.percentileTaskDescription',
+      slots: {
+        percentile: getPercentileWithSuffix(Math.round(task?.percentileScore.value)) + ' percentile',
+        supportCategory: getSupportLevelLanguage(
+          grade,
+          task.percentileScore.value,
+          task.rawScore.value,
+          task.taskId,
+          i18n,
+        ),
+        taskName,
+        taskDescription,
+      },
+    };
   };
 
   /**
@@ -275,6 +304,28 @@ const ScoreReportService = (() => {
   };
 
   /**
+   * Get the score type to display for a given task
+   *
+   * @param {string} taskId – The task ID
+   * @param {number} grade – The grade level
+   * @param {Array} rawOnlyTasks – Array of raw-only tasks
+   * @returns {string} The score type to display
+   */
+  const getScoreToDisplay = (taskId, grade, rawOnlyTasks) => {
+    const alwaysDisplaysPercentile = ['phonics', 'letter', 'letter-es', 'letter-en-ca'];
+
+    if (rawOnlyTasks.includes(taskId)) {
+      return SCORE_TYPES.RAW_SCORE;
+    }
+
+    if (alwaysDisplaysPercentile.includes(taskId)) {
+      return SCORE_TYPES.PERCENTILE_SCORE;
+    }
+
+    return grade >= 6 ? SCORE_TYPES.STANDARD_SCORE : SCORE_TYPES.PERCENTILE_SCORE;
+  };
+
+  /**
    * Process task data into formatted task scores
    *
    * @TODO: Replace hard-coded task IDs with constants
@@ -282,9 +333,10 @@ const ScoreReportService = (() => {
    * @param {Array} taskData - Array of task data objects
    * @param {number} grade - Student grade
    * @param {Object} i18n - i18n instance for translations
+   * @param {Object} taskScoringVersions - Task scoring versions
    * @returns {Array} Processed task scores
    */
-  const processTaskScores = (taskData, grade, i18n) => {
+  const processTaskScores = (taskData, grade, i18n, taskScoringVersions = {}) => {
     const tasksBlacklist = ['vocab', 'cva'];
     const computedTaskAcc = {};
 
@@ -293,17 +345,26 @@ const ScoreReportService = (() => {
 
       let rawScore = null;
 
-      if (!taskId.includes('vocab') && !taskId.includes('es')) {
+      const useSpanishNorms = (taskId === 'swr-es' || taskId === 'sre-es') && taskScoringVersions[taskId] >= 1;
+      if (!taskId.includes('vocab') && (!taskId.includes('es') || useSpanishNorms)) {
         rawScore = getScoreValue(compositeScores, taskId, grade, 'rawScore');
       } else {
         rawScore = compositeScores;
       }
 
       if (!isNaN(rawScore) && !tasksBlacklist.includes(taskId)) {
+        // Use 'percentile' field type to match helpers/reports.getScoreValue mapping
         const percentileScore = getScoreValue(compositeScores, taskId, grade, 'percentile');
-        const standardScore = getScoreValue(compositeScores, taskId, grade, 'standardScore');
+        const standardScore = getScoreValue(compositeScores, taskId, grade, SCORE_TYPES.STANDARD_SCORE);
         const rawScoreRange = getRawScoreRange(taskId);
-        const supportColor = getSupportLevel(grade, percentileScore, rawScore, taskId).tag_color;
+        const supportColor = getDialColor(
+          grade,
+          percentileScore,
+          rawScore,
+          taskId,
+          optional,
+          taskScoringVersions[taskId],
+        );
 
         const scoresForTask = {
           standardScore: {
@@ -318,20 +379,22 @@ const ScoreReportService = (() => {
             value: Math.round(rawScore),
             min: rawScoreRange?.min,
             max: rawScoreRange?.max,
-            supportColor: 'gray',
+            supportColor,
           },
           percentileScore: {
-            name: _startCase(i18n.t('scoreReports.percentileScore')),
+            name: tasksToDisplayPercentCorrect.includes(taskId)
+              ? _startCase(i18n.t('scoreReports.percentCorrect'))
+              : _startCase(i18n.t('scoreReports.percentileScore')),
             value: Math.round(percentileScore),
             min: 0,
-            max: 99,
+            max: taskId.includes('letter') ? 100 : 99,
             supportColor,
           },
         };
 
         const tags = createTaskTags(optional, reliable, engagementFlags, i18n);
-        let scoreToDisplay = grade >= 6 ? SCORE_TYPES.STANDARD_SCORE : SCORE_TYPES.PERCENTILE_SCORE;
-        if (rawOnlyTasks.includes(taskId)) scoreToDisplay = SCORE_TYPES.RAW_SCORE;
+
+        const scoreToDisplay = getScoreToDisplay(taskId, grade, rawOnlyTasks);
 
         computedTaskAcc[taskId] = {
           taskId,

@@ -5,7 +5,7 @@ const PARTNER_ADMIN_PASSWORD = Cypress.env('PARTNER_ADMIN_PASSWORD');
 
 const navigateToStudentReport = () => {
   cy.visit(
-    `${baseUrl}/scores/${Cypress.env('testAdministrationIdLongitudinal')}/district/${Cypress.env('testDistrictIdLongitudinal')}/user/${Cypress.env('testUserIdLongitudinal')}/new`,
+    `${baseUrl}/scores/${Cypress.env('testAdministrationIdLongitudinal')}/district/${Cypress.env('testDistrictIdLongitudinal')}/user/${Cypress.env('testUserIdLongitudinal')}`,
   );
 };
 
@@ -23,6 +23,6 @@ describe('Longitudinal Chart Component', () => {
     cy.contains('Progress Over Time').click();
 
     // Verify PrimeVue chart component is rendered inside the accordion
-    cy.get('.longitudinal-chart').should('exist');
+    cy.get('[data-cy="longitudinal-chart"]').should('exist');
   });
 });

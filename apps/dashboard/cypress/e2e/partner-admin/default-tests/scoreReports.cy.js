@@ -12,6 +12,12 @@ const testAssignments = Cypress.env('testAssignmentsList');
 const openScoreReport = () => {
   cy.get('button').contains('Scores').first().click();
   cy.url().should('eq', `${baseUrl}/scores/${testPartnerAdministrationId}/district/${testDistrictId}`);
+
+  // Validate that all test users are present in the progress report.
+  cy.checkUserList(testUserList, { tableSelector: '[data-cy="score-report__data-table"]' });
+
+  // Ensure the score report table is loaded.
+  cy.waitForRoarTable({ tableSelector: '[data-cy="score-report__data-table"]' });
 };
 
 describe('Partner Admin: Score Reports', () => {
@@ -33,11 +39,8 @@ describe('Partner Admin: Score Reports', () => {
     // Open the score report.
     openScoreReport();
 
-    // Validate that all test users are present in the progress report.
-    cy.checkUserList(testUserList);
-
     // Validate that all test assignments are present in the score report.
-    cy.get('[data-cy="roar-data-table"] thead th').then(($header) => {
+    cy.get('[data-cy="score-report__data-table"] thead th').then(($header) => {
       const tableHeaders = $header.map((index, elem) => Cypress.$(elem).text().trim()).get();
 
       testAssignments.forEach((assignment) => {
@@ -62,7 +65,7 @@ describe('Partner Admin: Score Reports', () => {
     openScoreReport();
 
     // Export the score report.
-    cy.get('[data-cy="data-table__export-table-btn"]').contains('Export Whole Table').click();
+    cy.get('[data-cy="data-table__export-table-btn"]').contains('Export All (CSV)').click();
 
     // Validate that the exported file exists.
     // @TODO: Extend to validate contents of the file.
@@ -85,7 +88,7 @@ describe('Partner Admin: Score Reports', () => {
     openScoreReport();
 
     // Validate that the export button is disabled.
-    cy.get('[data-cy="data-table__export-selected-btn"]').should('be.disabled');
+    cy.get('[data-cy="data-table__export-selected-btn"]').should('exist').should('be.disabled');
 
     // Select a user to export.
     cy.findAllByTestId('row-checkbox__input').eq(1).click();
@@ -93,7 +96,7 @@ describe('Partner Admin: Score Reports', () => {
     cy.findAllByTestId('row-checkbox__input').eq(5).click();
 
     // Export the score report.
-    cy.get('[data-cy="data-table__export-selected-btn"]').contains('Export Selected').click();
+    cy.get('[data-cy="data-table__export-selected-btn"]').contains('Export Selected (CSV)').click();
 
     // Validate that the exported file exists.
     // @TODO: Extend to validate contents of the file.

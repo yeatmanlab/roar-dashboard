@@ -1,8 +1,5 @@
 // Primary Colors
 :root {
-  // --primary-color: #ff7f47;
-  // --primary-color-hover: #cf4d23;
-
   --primary-color: #8c1515;
   --primary-color-hover: #5b0c0f;
 }
@@ -186,4 +183,10 @@
   --bright-orange: #d97706;
   --bright-yellow: #f59e0b;
   --bright-green: #22c55e;
+}
+/* Override PrimeVue component styles */
+:root {
+  --p-button-outlined-secondary-border-color: var(--gray-300) !important;
+  --p-button-outlined-secondary-color: var(--gray-500) !important;
+  --p-button-outlined-secondary-hover-color: var(--gray-600) !important;
 }
