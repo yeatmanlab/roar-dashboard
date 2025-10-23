@@ -22,7 +22,6 @@ export const supportLevelColors = Object.freeze({
   Yellow: '#edc037', // yellow
   below: '#c93d82', // pink
   Pink: '#c93d82', // pink
-  optional: '#71717a', // gray-500
   Optional: '#71717a', // gray-500
   Assessed: '#3b82f6', // blue-500
   Unreliable: '#d6b8c7', // pink-200
