@@ -4,7 +4,6 @@ const PARTNER_ADMIN_USERNAME = Cypress.env('PARTNER_ADMIN_USERNAME');
 const PARTNER_ADMIN_PASSWORD = Cypress.env('PARTNER_ADMIN_PASSWORD');
 
 const testDistrictName = Cypress.env('testDistrictName');
-const testDistrictId = Cypress.env('testDistrictId');
 const testSchoolName = Cypress.env('testSchoolName');
 const testSchoolId = Cypress.env('testSchoolId');
 const testPartnerAdministrationName = Cypress.env('testPartnerAdministrationName');
@@ -35,11 +34,10 @@ describe('Partner Admin: Progress Reports', () => {
 
     cy.waitForProgressReportButton(testDistrictName);
 
-    cy.performRowAction(testDistrictName, 'button-progress');
-    cy.url().should('eq', `${baseUrl}/administration/${testPartnerAdministrationId}/district/${testDistrictId}`);
-
-    // Validate that progress report table with individiual student data does not exist.
-    cy.get('[data-cy="roar-data-table"]').should('not.exist');
+    cy.contains('[data-testid="card-administration__body-cell-content"]', testDistrictName)
+      .closest('tr')
+      .find('[data-cy="button-progress"]')
+      .should('be.disabled');
   });
 
   it("Renders a school's progress report", () => {

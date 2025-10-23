@@ -124,8 +124,11 @@
                 class="no-underline text-black"
               >
                 <PvButton
-                  v-tooltip.top="'See completion details'"
+                  v-tooltip.top="
+                    node.data.orgType !== 'district' ? 'See completion details' : 'Unavailable for district'
+                  "
                   class="m-0 mr-1 surface-0 text-primary shadow-1 border-none p-2 border-round hover:surface-100"
+                  :disabled="node.data.orgType === 'district'"
                   style="height: 2.5rem; color: var(--primary-color) !important; border: none !important"
                   severity="secondary"
                   text
