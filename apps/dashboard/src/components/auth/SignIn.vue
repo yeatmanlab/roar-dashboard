@@ -13,6 +13,7 @@
               data-cy="sign-in__username"
               @keyup="checkForCapsLock"
               @click="checkForCapsLock"
+              @keydown.enter.prevent="emit('check-providers', state.email)"
             />
             <label for="email">{{ $t('authSignIn.emailPlaceholder') }}</label>
           </PvFloatLabel>
