@@ -105,11 +105,18 @@ const navbarBlacklist = [
   'InitiateAuthNycps',
 ];
 
-const showAccountSettingsLink = computed(() => {
-  // Hide button while loading to prevent button from popping in and out
-  if (!userData.value) return false;
-  return userCan(Permissions.Profile.READ) && !isNycpsUser.value;
-});
+/**
+ * The settings page is temporarily disabled. It has no useful functionality except for
+ * allowing users to change their passwords, which is broken at the moment.
+ *
+ * @TODO: Revisit how we give the user the option of changing their password.
+ */
+// const showAccountSettingsLink = computed(() => {
+//   // Hide button while loading to prevent button from popping in and out
+//   if (!userData.value) return false;
+//   return userCan(Permissions.Profile.READ) && !isNycpsUser.value;
+// });
+const showAccountSettingsLink = ref(false);
 
 const displayNavbar = computed(() => {
   if (!route.name) return false;
