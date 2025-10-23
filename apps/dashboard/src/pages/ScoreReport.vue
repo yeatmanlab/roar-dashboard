@@ -415,7 +415,7 @@ import {
   getTagColor,
   roamFluencyTasks,
 } from '@/helpers/reports';
-import { supportLevelColors , SCORE_REPORT_NEXT_STEPS_DOCUMENT_PATH } from '@/constants/scores';
+import { supportLevelColors, SCORE_REPORT_NEXT_STEPS_DOCUMENT_PATH } from '@/constants/scores';
 import RoarDataTable from '@/components/RoarDataTable';
 import { CSV_EXPORT_STATIC_COLUMNS } from '@/constants/csvExport';
 import { APP_ROUTES } from '@/constants/routes';
