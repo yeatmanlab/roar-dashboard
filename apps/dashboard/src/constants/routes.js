@@ -37,7 +37,7 @@ export const GAME_ROUTES = {
 
 export const APP_ROUTES = {
   HOME: '/',
-  ACCOUNT_PROFILE: '/profile',
+  // ACCOUNT_PROFILE: '/profile',
   AUTH_CLASSLINK: '/auth-classlink',
   AUTH_CLEVER: '/auth-clever',
   AUTH_EMAIL_LINK: '/auth-email-link',
