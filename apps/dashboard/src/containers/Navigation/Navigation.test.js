@@ -9,7 +9,6 @@ import NavBar from '@/components/NavBar';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import { useAuthStore } from '@/store/auth';
 import { usePermissions } from '@/composables/usePermissions';
-import useIsNycpsUser from '@/composables/useIsNycpsUser';
 import mockUserClaims from '@/test-support/mocks/mockUserClaims';
 import mockPermissions from '@/test-support/mocks/mockPermissions';
 
@@ -24,7 +23,6 @@ vi.mock('vue-router', async (getModule) => {
 
 vi.mock('@/composables/queries/useUserClaimsQuery');
 vi.mock('@/composables/usePermissions');
-vi.mock('@/composables/useIsNycpsUser');
 
 const firstName = faker.person.firstName();
 const lastName = faker.person.lastName();
@@ -74,9 +72,6 @@ describe('<Navigation />', () => {
     vi.mocked(usePermissions).mockReturnValue({
       userCan: vi.fn().mockReturnValue(false),
       Permissions: mockPermissions,
-    });
-    vi.mocked(useIsNycpsUser).mockReturnValue({
-      isNycpsUser: { value: false },
     });
 
     useRoute.mockReturnValue(mockRoute);
