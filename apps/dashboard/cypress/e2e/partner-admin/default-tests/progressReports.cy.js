@@ -27,6 +27,9 @@ describe('Partner Admin: Progress Reports', () => {
     // Select the test administration and open the details page.
     cy.getAdministrationCard(testPartnerAdministrationName);
 
+    // Wait for the progress report button to load.
+    cy.waitForProgressReportButton();
+
     // Open the progress report.
     openProgressReport();
 

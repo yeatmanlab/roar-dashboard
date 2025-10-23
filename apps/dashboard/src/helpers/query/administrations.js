@@ -6,7 +6,18 @@ import _without from 'lodash/without';
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '@/store/auth';
 import { convertValues, getAxiosInstance, orderByDefault } from './utils';
-import { filterAdminOrgs } from '@/helpers';
+
+const REQUIRED_ADMINISTRATION_FIELDS = [
+  'name',
+  'publicName',
+  'assessments',
+  'dateClosed',
+  'dateOpened',
+  'dateCreated',
+  'testData',
+];
+
+const REQUIRED_STATS_FIELDS = ['assignment'];
 
 export function getTitle(item, isSuperAdmin) {
   if (isSuperAdmin) {
@@ -17,12 +28,13 @@ export function getTitle(item, isSuperAdmin) {
   }
 }
 
-const processBatchStats = async (axiosInstance, statsPaths, batchSize = 5) => {
+const processBatchStats = async (axiosInstance, statsPaths, batchSize = 500) => {
   const batchStatsDocs = [];
   const statsPathChunks = _chunk(statsPaths, batchSize);
   for (const batch of statsPathChunks) {
     const { data } = await axiosInstance.post(':batchGet', {
       documents: batch,
+      mask: { fieldPaths: REQUIRED_STATS_FIELDS },
     });
 
     const processedBatch = _without(
@@ -44,130 +56,11 @@ const processBatchStats = async (axiosInstance, statsPaths, batchSize = 5) => {
   return batchStatsDocs;
 };
 
-/**
- * Get assigned orgs for administrations, handling both old and new formats
- * @param {Array} administrationData - Array of administration documents
- * @returns {Object} Object mapping administration IDs to their assigned orgs
- */
-const getAdministrationOrgs = async (administrationData) => {
-  const axiosInstance = getAxiosInstance();
-  const documentPrefix = axiosInstance.defaults.baseURL.replace('https://firestore.googleapis.com/v1/', '');
-  const result = {};
-
-  // Separate old and new format administrations
-  const oldFormatAdmins = [];
-  const newFormatAdmins = [];
-
-  administrationData.forEach(({ data: admin }) => {
-    if (admin.formatVersion === 2) {
-      newFormatAdmins.push(admin);
-    } else {
-      // Old format or no formatVersion (defaults to old format)
-      oldFormatAdmins.push(admin);
-    }
-  });
-
-  // Handle old format administrations (read from arrays in main document)
-  oldFormatAdmins.forEach((admin) => {
-    result[admin.id] = {
-      districts: admin.districts || [],
-      schools: admin.schools || [],
-      classes: admin.classes || [],
-      groups: admin.groups || [],
-      families: admin.families || [],
-    };
-  });
-
-  // Handle new format administrations (read from subcollections)
-  if (newFormatAdmins.length > 0) {
-    const subcollectionOrgs = await getOrgsFromSubcollections(newFormatAdmins, axiosInstance, documentPrefix);
-    Object.assign(result, subcollectionOrgs);
-  }
-
-  return result;
-};
-
-/**
- * Get orgs from subcollections for new format administrations
- * @param {Array} administrations - Array of new format administration documents
- * @param {Object} axiosInstance - Axios instance for API calls
- * @param {string} documentPrefix - Document path prefix
- * @returns {Object} Object mapping administration IDs to their assigned orgs
- */
-const getOrgsFromSubcollections = async (administrations, axiosInstance, documentPrefix) => {
-  const result = {};
-
-  // Initialize empty org structures for all administrations
-  administrations.forEach((admin) => {
-    result[admin.id] = {
-      districts: [],
-      schools: [],
-      classes: [],
-      groups: [],
-      families: [],
-    };
-  });
-
-  // Batch query all assignedOrgs subcollections
-  const subcollectionPaths = administrations.map(
-    (admin) => `${documentPrefix}/administrations/${admin.id}/assignedOrgs`,
-  );
-
-  try {
-    // Query each subcollection
-    for (const subcollectionPath of subcollectionPaths) {
-      const adminId = subcollectionPath.split('/').slice(-2, -1)[0]; // Extract admin ID from path
-
-      const { data } = await axiosInstance.post(`/administrations/${adminId}:runQuery`, {
-        structuredQuery: {
-          from: [{ collectionId: 'assignedOrgs' }],
-          select: {
-            fields: [{ fieldPath: 'orgType' }, { fieldPath: 'orgId' }],
-          },
-        },
-      });
-
-      // Process the results
-      if (data && Array.isArray(data)) {
-        data.forEach((item) => {
-          if (item.document && item.document.fields) {
-            const orgType = convertValues(item.document.fields.orgType);
-            const orgId = convertValues(item.document.fields.orgId);
-
-            if (orgType && orgId && result[adminId] && result[adminId][orgType]) {
-              result[adminId][orgType].push(orgId);
-            }
-          }
-        });
-      }
-    }
-  } catch (error) {
-    console.error('Error fetching subcollection orgs:', error);
-    // Return empty org structures on error
-  }
-
-  return result;
-};
-
-const mapAdministrations = async ({ isSuperAdmin, data, adminOrgs }) => {
-  // Get assigned orgs for all administrations (handling both old and new formats)
-  const administrationOrgs = await getAdministrationOrgs(data);
-
+const mapAdministrations = async (adminData) => {
   // First format the administration documents
-  const administrationData = data
+  const administrationData = adminData
     .map((a) => a.data)
     .map((a) => {
-      let assignedOrgs = administrationOrgs[a.id] || {
-        districts: [],
-        schools: [],
-        classes: [],
-        groups: [],
-        families: [],
-      };
-
-      if (!isSuperAdmin.value) {
-        assignedOrgs = filterAdminOrgs(adminOrgs.value, assignedOrgs);
-      }
       return {
         id: a.id,
         name: a.name,
@@ -178,14 +71,13 @@ const mapAdministrations = async ({ isSuperAdmin, data, adminOrgs }) => {
           created: a.dateCreated,
         },
         assessments: a.assessments,
-        assignedOrgs,
         // If testData is not defined, default to false when mapping
         testData: a.testData ?? false,
       };
     });
 
   // Create a list of all the stats document paths we need to get
-  const statsPaths = data
+  const statsPaths = adminData
     // First filter out any missing administration documents
     .filter((item) => item.name !== undefined)
     // Then map to the total stats document
@@ -214,7 +106,10 @@ export const administrationPageFetcher = async (isSuperAdmin, exhaustiveAdminOrg
   const documentPrefix = axiosInstance.defaults.baseURL.replace('https://firestore.googleapis.com/v1/', '');
   const documents = administrationIds.map((id) => `${documentPrefix}/administrations/${id}`);
 
-  const { data } = await axiosInstance.post(':batchGet', { documents });
+  const { data } = await axiosInstance.post(':batchGet', {
+    documents,
+    mask: { fieldPaths: REQUIRED_ADMINISTRATION_FIELDS },
+  });
 
   const administrationData = _without(
     data.map(({ found }) => {
@@ -232,11 +127,7 @@ export const administrationPageFetcher = async (isSuperAdmin, exhaustiveAdminOrg
     undefined,
   );
 
-  const administrations = await mapAdministrations({
-    isSuperAdmin,
-    data: administrationData,
-    adminOrgs: exhaustiveAdminOrgs,
-  });
+  const administrations = await mapAdministrations(administrationData);
 
   const orderField = (orderBy?.value ?? orderByDefault)[0].field.fieldPath;
   const orderDirection = (orderBy?.value ?? orderByDefault)[0].direction;
