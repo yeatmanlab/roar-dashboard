@@ -25,7 +25,7 @@ import { computed, ref, onMounted, onBeforeUnmount, watch } from 'vue';
 import Chart from 'chart.js/auto';
 import 'chartjs-adapter-date-fns';
 import { useLongitudinalSeries } from './useLongitudinalSeries';
-import { supportLevelColors } from '../../../../../../helpers/reports';
+import { supportLevelColors } from '@/constants/scores';
 
 const canvasRef = ref(null);
 let chartInstance = null;
