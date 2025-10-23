@@ -7,11 +7,11 @@ import {
   getRawScoreThreshold,
   getRawScoreRange,
   getTagColor,
-  supportLevelColors,
   replaceScoreRange,
   taskInfoById,
   getDialColor,
 } from './reports';
+import { supportLevelColors } from '@/constants/scores';
 
 vi.mock('./index', () => ({
   flattenObj: vi.fn((obj) => obj),

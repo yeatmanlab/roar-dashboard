@@ -399,7 +399,6 @@ import {
   taskDisplayNames,
   taskInfoById,
   descriptionsByTaskId,
-  supportLevelColors,
   getSupportLevel,
   tasksToDisplayGraphs,
   rawOnlyTasks,
@@ -416,11 +415,11 @@ import {
   getTagColor,
   roamFluencyTasks,
 } from '@/helpers/reports';
+import { supportLevelColors , SCORE_REPORT_NEXT_STEPS_DOCUMENT_PATH } from '@/constants/scores';
 import RoarDataTable from '@/components/RoarDataTable';
 import { CSV_EXPORT_STATIC_COLUMNS } from '@/constants/csvExport';
 import { APP_ROUTES } from '@/constants/routes';
 import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
-import { SCORE_REPORT_NEXT_STEPS_DOCUMENT_PATH } from '@/constants/scores';
 import { LEVANTE_TASK_IDS_NO_SCORES } from '@/constants/levanteTasks';
 import _startCase from 'lodash/startCase';
 import AppDialog from '@/components/Dialog/Dialog.vue';

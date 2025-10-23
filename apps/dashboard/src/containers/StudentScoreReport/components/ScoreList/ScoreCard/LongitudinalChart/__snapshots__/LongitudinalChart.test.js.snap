@@ -5,7 +5,7 @@ exports[`LongitudinalChart.vue > snapshots > renders with different task 1`] = `
   <div class="h-64"><canvas class="w-full h-full"></canvas></div>
   <div class="flex justify-end gap-3 mt-2 text-xs">
     <div class="flex items-center gap-1">
-      <div class="w-3 h-3 rounded-full" style="background-color: green;"></div><span>Achieved Skill</span>
+      <div class="w-3 h-3 rounded-full" style="background-color: #22c55e;"></div><span>Achieved Skill</span>
     </div>
     <div class="flex items-center gap-1">
       <div class="w-3 h-3 rounded-full" style="background-color: #edc037;"></div><span>Developing Skill</span>
@@ -22,7 +22,7 @@ exports[`LongitudinalChart.vue > snapshots > renders with longitudinal data 1`] 
   <div class="h-64"><canvas class="w-full h-full"></canvas></div>
   <div class="flex justify-end gap-3 mt-2 text-xs">
     <div class="flex items-center gap-1">
-      <div class="w-3 h-3 rounded-full" style="background-color: green;"></div><span>Achieved Skill</span>
+      <div class="w-3 h-3 rounded-full" style="background-color: #22c55e;"></div><span>Achieved Skill</span>
     </div>
     <div class="flex items-center gap-1">
       <div class="w-3 h-3 rounded-full" style="background-color: #edc037;"></div><span>Developing Skill</span>
@@ -39,7 +39,7 @@ exports[`LongitudinalChart.vue > snapshots > renders with single data point 1`] 
   <div class="h-64"><canvas class="w-full h-full"></canvas></div>
   <div class="flex justify-end gap-3 mt-2 text-xs">
     <div class="flex items-center gap-1">
-      <div class="w-3 h-3 rounded-full" style="background-color: green;"></div><span>Achieved Skill</span>
+      <div class="w-3 h-3 rounded-full" style="background-color: #22c55e;"></div><span>Achieved Skill</span>
     </div>
     <div class="flex items-center gap-1">
       <div class="w-3 h-3 rounded-full" style="background-color: #edc037;"></div><span>Developing Skill</span>
