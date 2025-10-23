@@ -1,5 +1,4 @@
 import NavBar from './NavBar.vue';
-import { APP_ROUTES } from '../../constants/routes';
 
 const MOCK_USERNAME = 'Test User';
 const MOCK_MENU_ITEMS = [
@@ -34,7 +33,6 @@ describe('<NavBar />', () => {
       cy.get('[data-cy="navbar__display-name"]').should('be.visible').contains(MOCK_USERNAME);
       cy.get('[data-cy="navbar__signout-btn-mobile"]').should('not.exist');
       cy.get('[data-cy="navbar__signout-btn-desktop"]').should('be.visible').contains('Sign Out');
-      cy.get('[data-cy="navbar__account-settings-btn"]').should('be.visible');
     });
 
     it('Renders the menu items', () => {
@@ -138,19 +136,6 @@ describe('<NavBar />', () => {
           cy.findAllByTestId('menubar__item').should('have.length', 1).first().should('be.visible').click();
           cy.get('@menuItemSpy').should('have.been.calledOnce');
         });
-    });
-
-    it('Allows users to navigate to their account settings', () => {
-      cy.mount(NavBar, {
-        props: {
-          displayName: MOCK_USERNAME,
-          menuItems: MOCK_MENU_ITEMS,
-        },
-      });
-
-      cy.get('[data-cy="navbar__account-settings-btn"]')
-        .should('be.visible')
-        .should('have.attr', 'href', APP_ROUTES.ACCOUNT_PROFILE);
     });
 
     it('Allows user to sign-out', () => {
