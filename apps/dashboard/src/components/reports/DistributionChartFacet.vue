@@ -64,14 +64,9 @@ const props = defineProps({
   },
 });
 
-// facet: 'grade' | 'school'
 const makeRunsFromBins = ({ binsObj, facet, scoreKey }) => {
-  // , levelKey that will be used to color the bars
-  // level key is above, some, below
   const rows = [];
   if (!binsObj || typeof binsObj !== 'object') return rows;
-
-  // const tagColor = supportLevelColors[levelKey] || null; // ideally we will use this once we grab the tagColor
 
   for (const [binLabel, payload] of Object.entries(binsObj)) {
     const [a, b] = String(binLabel).split('-').map(Number);
