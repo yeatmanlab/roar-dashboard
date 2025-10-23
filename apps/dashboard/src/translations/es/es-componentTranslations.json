@@ -103,13 +103,16 @@
     "loginWith": "Inicia sesión con",
     "welcome": "¡Bienvenido!",
     "EnterYourPassword": "Ingresa tu contraseña",
-    "AlmostTime": "Casi es hora de empezar a rugir",
+    "almostTime": "Casi es hora de empezar a rugir",
     "ChooseYourProvider": "Selecciona una opción",
     "ChooseYourProviderDescription": "Por favor, selecciona una opción para continuar.",
     "Terms": "Términos",
     "Privacy": "Privacidad",
     "continue": "Continuar",
-    "availableProviders": "Opciones disponibles"
+    "availableProviders": "Opciones disponibles",
+    "usePassword": "Iniciar sesión con contraseña",
+    "checkInbox": "Verifica tu correo electrónico",
+    "checkInboxDescription": "Hemos enviado un enlace de verificación al email proporcionado."
   },
   "tasks": {
     "preparing": "¡Preparando tu juego!",

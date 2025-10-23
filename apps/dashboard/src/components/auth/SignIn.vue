@@ -34,7 +34,7 @@
       <div v-if="showPassword && !multipleProviders" class="mt-2 mb-1 field">
         <div>
           <!-- Email is entered, Password is desired -->
-          <div v-if="showPassword">
+          <div v-if="showPassword && !emailLinkSent">
             <PvFloatLabel class="mt-4" variant="on">
               <PvPassword
                 :id="$t('authSignIn.passwordId')"
@@ -65,7 +65,7 @@
               </small>
             </div>
           </div>
-          <PvInputGroup v-else>
+          <PvInputGroup v-else-if="!emailLinkSent">
             <!-- Username is entered, Password is desired -->
             <PvPassword
               :id="$t('authSignIn.passwordId')"
@@ -106,13 +106,22 @@
         </div>
       </div>
       <PvButton
-        v-if="!multipleProviders"
+        v-if="!multipleProviders && !emailLinkSent"
         type="button"
         class="mt-3 w-full p-0 hover:surface-200 hover:text-primary p-2"
         data-cy="signin-continue"
         @click="!showPasswordField ? emit('check-providers', state.email) : emit('submit', state)"
       >
         <span>{{ $t('pageSignIn.continue') }}</span>
+      </PvButton>
+      <PvButton
+        v-if="emailLinkSent"
+        type="button"
+        class="mt-3 w-full p-0 bg-white text-500 border-500 hover:bg-primary hover:border-primary hover:text-white p-2"
+        data-cy="signin-use-password"
+        @click="goBackToPassword"
+      >
+        <span>{{ $t('pageSignIn.usePassword') }}</span>
       </PvButton>
       <div v-if="multipleProviders" class="flex justify-content-start w-full">
         <small class="pl-2 pb-2 text-base font-bold text-500">{{ $t('pageSignIn.availableProviders') }}</small>
@@ -182,6 +191,7 @@ const emit = defineEmits([
   'check-providers',
   'reset',
   'magic-link',
+  'cancel-magic-link',
 ]);
 
 const showPassword = ref(false); // single source of truth for template
@@ -189,7 +199,8 @@ const showPassword = ref(false); // single source of truth for template
 const props = defineProps({
   invalid: { type: Boolean, default: false },
   showPasswordField: { type: Boolean, default: false },
-  multipleProviders: { type: Boolean, default: false }, // NEW
+  multipleProviders: { type: Boolean, default: false },
+  emailLinkSent: { type: Boolean, default: false },
 });
 
 function handleChipRemove() {
@@ -216,6 +227,12 @@ const state = reactive({
 });
 
 const isUsername = computed(() => !!state.email && !state.email.includes('@'));
+
+const goBackToPassword = () => {
+  showPassword.value = true;
+  emit('update:showPasswordField', true);
+  emit('cancel-magic-link');
+};
 
 watch(
   () => props.showPasswordField,

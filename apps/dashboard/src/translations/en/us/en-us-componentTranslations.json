@@ -98,17 +98,20 @@
   },
   "pageSignIn": {
     "havingTrouble": "Having trouble?",
-    "login": "Log in to ROAR to start roaring",
+    "login": "Log in to ROAR to start ROARing",
     "loginWith": "Log in with",
     "welcome": "Welcome!",
     "EnterYourPassword": "Enter your password",
-    "AlmostTime": "Almost time to let your learning roar",
+    "almostTime": "Almost time to let your learning ROAR",
     "ChooseYourProvider": "Select a provider",
     "ChooseYourProviderDescription": "Please select a provider to continue.",
     "Terms": "Terms",
     "Privacy": "Privacy",
     "continue": "Continue",
-    "availableProviders": "Available Providers"
+    "availableProviders": "Available Providers",
+    "usePassword": "Log in with Password",
+    "checkInbox": "Check your inbox",
+    "checkInboxDescription": "We've sent a verification link to the provided email."
   },
   "tasks": {
     "preparing": "Preparing your game!",

@@ -18,13 +18,21 @@
           <p class="text-center">{{ $t('pageSignIn.ChooseYourProviderDescription') }}</p>
         </div>
       </div>
+      <div v-else-if="emailLinkSent">
+        <div class="flex flex-row align-content-center justify-content-center gap-1 w-full m-0 p-0">
+          <div class="justify-content-center align-content-center">
+            <h1 class="text-color text-center">{{ $t('pageSignIn.checkInbox') }}</h1>
+            <p class="text-center">{{ $t('pageSignIn.checkInboxDescription') }}</p>
+          </div>
+        </div>
+      </div>
       <div
         v-else-if="showPasswordField"
         class="flex flex-row align-content-center justify-content-center gap-1 w-full m-0 p-0"
       >
         <div class="justify-content-center align-content-center">
           <h1 class="text-color text-center">{{ $t('pageSignIn.EnterYourPassword') }}</h1>
-          <p class="text-center">{{ $t('pageSignIn.AlmostTime') }}</p>
+          <p class="text-center">{{ $t('pageSignIn.almostTime') }}</p>
         </div>
       </div>
       <div v-else class="flex flex-row align-content-center justify-content-center gap-1 w-full m-0 p-0">
@@ -39,11 +47,13 @@
             :invalid="incorrect"
             :show-password-field="showPasswordField"
             :multiple-providers="multipleProviders"
+            :email-link-sent="emailLinkSent"
             @submit="authWithEmail"
             @update:email="email = $event"
             @check-providers="checkAvailableProviders"
             @reset="resetSignInUI"
             @magic-link="sendMagicLink"
+            @cancel-magic-link="emailLinkSent = false"
           />
           <div v-if="!hideProviders" class="flex flex-column w-full align-content-center justify-content-center">
             <PvButton
@@ -161,6 +171,7 @@ import LanguageSelector from '@/components/LanguageSelector.vue';
 
 const incorrect = ref(false);
 const hideProviders = ref(false);
+const emailLinkSent = ref(false);
 const authStore = useAuthStore();
 const router = useRouter();
 const route = useRoute();
@@ -182,16 +193,10 @@ authStore.$subscribe(() => {
 
 const modalPassword = ref('');
 
-const sendMagicLink = (emailStr) => {
-  spinner.value = true;
-  authStore
-    .initiateLoginWithEmailLink({ email: emailStr })
-    .then(() => {
-      router.push({ name: 'AuthEmailSent' });
-    })
-    .finally(() => {
-      spinner.value = false;
-    });
+const sendMagicLink = (email) => {
+  authStore.initiateLoginWithEmailLink({ email: email }).then(() => {
+    emailLinkSent.value = true;
+  });
 };
 
 const authWithClever = () => {
