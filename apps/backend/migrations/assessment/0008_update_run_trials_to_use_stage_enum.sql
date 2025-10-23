@@ -1,0 +1,1 @@
+ALTER TABLE "app"."run_trials" ALTER COLUMN "assessment_stage" SET DATA TYPE "app"."assessment_stage" USING "assessment_stage"::"app"."assessment_stage";
