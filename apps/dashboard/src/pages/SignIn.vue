@@ -46,7 +46,7 @@
           />
           <div v-if="!hideProviders" class="flex flex-column w-full align-content-center justify-content-center">
             <PvButton
-              v-if="(multipleProviders && availableProviders.includes('clever')) || !showPasswordField"
+              v-if="showGenericProviders || (showScopedProviders && availableProviders.includes('clever'))"
               class="flex h-1 m-1 w-full surface-0 border-200 border-1 border-round-md justify-content-center hover:border-primary hover:surface-ground provider-button"
               data-cy="sign-in__clever-sso"
               @click="authWithClever"
@@ -61,7 +61,7 @@
               </div>
             </PvButton>
             <PvButton
-              v-if="(multipleProviders && availableProviders.includes('classlink')) || !showPasswordField"
+              v-if="showGenericProviders || (showScopedProviders && availableProviders.includes('classlink'))"
               class="flex h-1 m-1 w-full text-black surface-0 border-200 border-1 border-round-md justify-content-center hover:border-primary hover:surface-ground provider-button"
               data-cy="sign-in__classlink-sso"
               @click="authWithClassLink"
@@ -80,7 +80,7 @@
               </div>
             </PvButton>
             <PvButton
-              v-if="(multipleProviders && availableProviders.includes('nycps')) || !showPasswordField"
+              v-if="showGenericProviders || (showScopedProviders && availableProviders.includes('nycps'))"
               class="flex h-1 m-1 w-full text-black surface-0 border-200 border-1 border-round-md justify-content-center hover:border-primary hover:surface-ground provider-button"
               data-cy="sign-in__classlink-sso"
               @click="authWithNYCPS"
@@ -95,6 +95,21 @@
                 </div>
                 <div class="flex justify-content-start w-full pl-3">
                   <span> {{ $t('authSignIn.signInWith') }} NYCPS</span>
+                </div>
+              </div>
+            </PvButton>
+            <PvButton
+              v-if="showScopedProviders && availableProviders.includes('google')"
+              class="flex h-1 m-1 w-full text-black surface-0 border-200 border-1 border-round-md justify-content-center hover:border-primary hover:surface-ground provider-button"
+              data-cy="sign-in__google-sso"
+              @click="authWithGoogle"
+            >
+              <div class="flex flex-row align-items-center w-full">
+                <div class="flex justify-content-end w-5">
+                  <img src="../assets/provider-google-logo.svg" alt="The Google Logo" class="flex p-1 provider-logo" />
+                </div>
+                <div class="flex justify-content-start w-full pl-3">
+                  <span> {{ $t('authSignIn.signInWith') }} Google</span>
                 </div>
               </div>
             </PvButton>
@@ -128,7 +143,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref, toRaw, onBeforeUnmount } from 'vue';
+import { onMounted, ref, toRaw, onBeforeUnmount, computed } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useRoute, useRouter } from 'vue-router';
 import { setUser } from '@sentry/vue';
@@ -321,7 +336,7 @@ const checkAvailableProviders = async (em) => {
   await getProviders(email.value);
 
   // Check if there are multiple SSO options
-  const ssoProviders = availableProviders.value.filter((p) => ['clever', 'classlink', 'nycps'].includes(p));
+  const ssoProviders = availableProviders.value.filter((p) => ['google', 'clever', 'classlink', 'nycps'].includes(p));
   multipleProviders.value = ssoProviders.length > 1;
 
   if (multipleProviders.value) {
@@ -378,6 +393,10 @@ function resetSignInUI() {
   spinner.value = false;
   multipleProviders.value = false;
 }
+
+const showGenericProviders = computed(() => !hasCheckedProviders.value && !showPasswordField.value);
+
+const showScopedProviders = computed(() => hasCheckedProviders.value && multipleProviders.value);
 
 onMounted(() => {
   document.body.classList.add('page-signin');
