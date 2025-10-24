@@ -6,7 +6,7 @@
           <i class="pi pi-exclamation-circle"></i>
         </template>
         <template v-else>
-          <i class="pi pi-info-circle"></i>
+          <i class="text-gray-500 pi pi-info-circle"></i>
         </template>
       </slot>
     </div>

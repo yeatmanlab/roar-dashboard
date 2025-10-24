@@ -95,7 +95,8 @@
     "welcome": "Welcome to ROAR!",
     "ssoErrorTitle": "Whoops",
     "ssoProviderDisabledMessage": "{providerName} sign-in isn't available for this account. Please try a different sign-in method.",
-    "ssoGenericErrorMessage": "An error occurred signing in. Please try again later."
+    "ssoGenericErrorMessage": "An error occurred signing in. Please try again later.",
+    "ssoAutoRedirect": "{provider} account detected. Redirecting to {provider} login..."
   },
   "tasks": {
     "preparing": "Preparing your game!",

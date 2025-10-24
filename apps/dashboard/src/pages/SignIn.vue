@@ -24,7 +24,20 @@
             </Alert>
           </div>
 
-          <SignIn :invalid="incorrect" @submit="authWithEmail" @update:email="email = $event" />
+          <div v-if="autoRedirectProvider" class="mx-4 mb-3">
+            <Alert>
+              <AlertDescription>{{
+                $t('pageSignIn.ssoAutoRedirect', { provider: getProviderDisplayName(autoRedirectProvider) })
+              }}</AlertDescription>
+            </Alert>
+          </div>
+
+          <SignIn
+            :invalid="incorrect"
+            @submit="authWithEmail"
+            @update:email="handleEmailUpdate"
+            @sso-auto-redirect="handleSSOAutoRedirect"
+          />
         </section>
         <section class="flex w-full flex-column">
           <h4
@@ -67,7 +80,6 @@
               data-cy="sign-in__classlink-sso"
               @click="authWithSSO(AUTH_SSO_PROVIDERS.NYCPS)"
             >
-              <!-- NYCPS Logo needs to be slightly wider as it is not a square -->
               <img
                 src="../assets/provider-nycps-logo.jpg"
                 alt="The NYC Public Schools Logo"
@@ -190,6 +202,7 @@ const route = useRoute();
 
 // SSO error state
 const ssoError = ref(null); // { title: string, message: string } or null
+const autoRedirectProvider = ref(null); // Track which SSO provider is auto-redirecting
 
 const { spinner, ssoProvider, roarfirekit, redirectError } = storeToRefs(authStore);
 const warningModalOpen = ref(false);
@@ -239,6 +252,15 @@ const SSO_CONFIG = {
 };
 
 /**
+ * Get the display name for an SSO provider
+ * @param {string} provider - The SSO provider constant
+ * @returns {string} The display name for the provider
+ */
+const getProviderDisplayName = (provider) => {
+  return SSO_CONFIG[provider]?.displayName || provider.toUpperCase();
+};
+
+/**
  * Unified SSO authentication handler
  * @param {string} provider - The SSO provider constant (from AUTH_SSO_PROVIDERS)
  */
@@ -274,8 +296,11 @@ const authWithSSO = async (provider) => {
     if (config.usePopup()) {
       await config.popupMethod();
       await handleAuthSuccess();
-      // Turn off spinner after successful popup authentication
+      // Turn off spinner and hide auto-redirect message
+      // NOTE: This is currently needed due to a bug in firekit that swallows the auth errors informing the dashboard
+      // that the popup was closed. Hence, after a timeout, the below code is executed.
       spinner.value = false;
+      autoRedirectProvider.value = null;
     } else {
       // For redirect, leave spinner on - page will navigate away
       config.redirectMethod();
@@ -325,6 +350,36 @@ const authWithEmail = (state) => {
         }
       });
   }
+};
+
+/**
+ * Handler for email updates
+ * Resets auto-redirect state when email changes
+ */
+const handleEmailUpdate = (newEmail) => {
+  email.value = newEmail;
+
+  // Reset auto-redirect state when email changes
+  // This ensures the message disappears when user modifies the email
+  autoRedirectProvider.value = null;
+};
+
+/**
+ * Handler for SSO auto-redirect
+ * Automatically triggers the appropriate SSO flow when a matching email domain is detected
+ * @param {Object} payload - Object containing email and provider
+ */
+const handleSSOAutoRedirect = ({ provider }) => {
+  // Set flag to show redirect message with the detected provider
+  autoRedirectProvider.value = provider;
+
+  // Clear any previous SSO errors
+  ssoError.value = null;
+
+  // Trigger the SSO flow after a brief delay to show the message
+  setTimeout(() => {
+    authWithSSO(provider);
+  }, 1000);
 };
 
 const handleWarningModalClose = () => {

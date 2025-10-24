@@ -102,6 +102,7 @@
         </div>
       </div>
       <PvButton
+        :disabled="evaluatingEmail"
         type="submit"
         class="flex p-3 mt-5 w-5 border-none border-round hover:bg-black-alpha-20"
         :label="$t('authSignIn.buttonLabel') + ' &rarr;'"
@@ -154,12 +155,13 @@ import PvInputText from 'primevue/inputtext';
 import PvPassword from 'primevue/password';
 import PvSkeleton from 'primevue/skeleton';
 import { useAuthStore } from '@/store/auth';
+import { getAutoRedirectSSOProvider } from '@/constants/auth';
 import RoarModal from '../modals/RoarModal.vue';
 
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
 
-const emit = defineEmits(['submit', 'update:email']);
+const emit = defineEmits(['submit', 'update:email', 'sso-auto-redirect']);
 // eslint-disable-next-line no-unused-vars
 const props = defineProps({
   invalid: { type: Boolean, required: false, default: false },
@@ -201,29 +203,46 @@ const evaluatingEmail = ref(false);
 const allowPassword = ref(true);
 const allowLink = ref(true);
 
-const validateRoarEmail = _debounce(
+const validateEmailAndCheckSSO = _debounce(
   async (email) => {
-    await roarfirekit.value.isEmailAvailable(email).then(async (emailAvail) => {
-      if (emailAvail) {
-        console.log(`Email ${email} is available`);
-        allowPassword.value = true;
-        allowLink.value = false;
-      } else {
-        if (roarfirekit.value.isRoarAuthEmail(email)) {
-          // Roar auth email are made up, so sign-in link is not allowed.
-          allowLink.value = false;
-          allowPassword.value = true;
-        } else {
-          allowLink.value = true;
-          allowPassword.value = true;
-        }
+    if (isValidEmail(email)) {
+      evaluatingEmail.value = true;
+
+      // Check if this email domain should auto-redirect to an SSO provider
+      const ssoProvider = getAutoRedirectSSOProvider(email);
+      if (ssoProvider) {
+        emit('sso-auto-redirect', { email, provider: ssoProvider });
+        return;
       }
+
+      // If no auto-redirect, proceed with normal email validation
+      await roarfirekit.value.isEmailAvailable(email).then(async (emailAvail) => {
+        if (emailAvail) {
+          allowPassword.value = true;
+          allowLink.value = false;
+        } else {
+          if (roarfirekit.value.isRoarAuthEmail(email)) {
+            // Roar auth email are made up, so sign-in link is not allowed.
+            allowLink.value = false;
+            allowPassword.value = true;
+          } else {
+            allowLink.value = true;
+            allowPassword.value = true;
+          }
+        }
+        state.useLink = allowLink.value;
+        evaluatingEmail.value = false;
+      });
+    } else {
+      // In this case, assume that the input is a username
+      // Password is allowed. Sign-in link is not allowed.
+      allowPassword.value = true;
+      allowLink.value = false;
       state.useLink = allowLink.value;
-      evaluatingEmail.value = false;
-    });
+    }
   },
-  250,
-  { maxWait: 1000 },
+  300,
+  { maxWait: 1500 },
 );
 
 function checkForCapsLock(e) {
@@ -236,6 +255,7 @@ function checkForCapsLock(e) {
 }
 
 const forgotEmail = ref('');
+
 function handleForgotPassword() {
   console.log('Opening modal for forgot password');
   forgotPasswordModalOpen.value = true;
@@ -253,18 +273,11 @@ function sendResetEmail() {
 
 watch(
   () => state.email,
-  async (email) => {
+  (email) => {
     emit('update:email', email);
-    if (isValidEmail(email)) {
-      evaluatingEmail.value = true;
-      validateRoarEmail(email);
-    } else {
-      // In this case, assume that the input is a username
-      // Password is allowed. Sign-in link is not allowed.
-      allowPassword.value = true;
-      allowLink.value = false;
-      state.useLink = allowLink.value;
-    }
+
+    // All validation logic is debounced to avoid running on every keystroke
+    validateEmailAndCheckSSO(email);
   },
 );
 </script>
