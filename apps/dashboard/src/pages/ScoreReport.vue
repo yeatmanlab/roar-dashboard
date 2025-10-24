@@ -95,19 +95,19 @@
               >
                 <div class="flex align-items-center">
                   <div class="legend-entry">
-                    <div class="circle" :style="`background-color: ${supportLevelColors.below};`" />
+                    <div class="circle" :style="`background-color: ${SCORE_SUPPORT_LEVEL_COLORS.BELOW};`" />
                     <div>
                       <div>Needs Extra Support</div>
                     </div>
                   </div>
                   <div class="legend-entry">
-                    <div class="circle" :style="`background-color: ${supportLevelColors.some};`" />
+                    <div class="circle" :style="`background-color: ${SCORE_SUPPORT_LEVEL_COLORS.SOME};`" />
                     <div>
                       <div>Developing Skill</div>
                     </div>
                   </div>
                   <div class="legend-entry">
-                    <div class="circle" :style="`background-color: ${supportLevelColors.above};`" />
+                    <div class="circle" :style="`background-color: ${SCORE_SUPPORT_LEVEL_COLORS.ABOVE};`" />
                     <div>
                       <div>Achieved Skill</div>
                     </div>
@@ -253,25 +253,25 @@
         </div>
         <div v-if="!isLoadingAssignments" class="legend-container">
           <div class="legend-entry">
-            <div class="circle tooltip" :style="`background-color: ${supportLevelColors.below};`" />
+            <div class="circle tooltip" :style="`background-color: ${SCORE_SUPPORT_LEVEL_COLORS.BELOW};`" />
             <div>
               <div>Needs Extra Support</div>
             </div>
           </div>
           <div class="legend-entry">
-            <div class="circle tooltip" :style="`background-color: ${supportLevelColors.some};`" />
+            <div class="circle tooltip" :style="`background-color: ${SCORE_SUPPORT_LEVEL_COLORS.SOME};`" />
             <div>
               <div>Developing Skill</div>
             </div>
           </div>
           <div class="legend-entry">
-            <div class="circle tooltip" :style="`background-color: ${supportLevelColors.above};`" />
+            <div class="circle tooltip" :style="`background-color: ${SCORE_SUPPORT_LEVEL_COLORS.ABOVE};`" />
             <div>
               <div>Achieved Skill</div>
             </div>
           </div>
           <div class="legend-entry">
-            <div class="circle tooltip" :style="`background-color: ${supportLevelColors.Assessed}`" />
+            <div class="circle tooltip" :style="`background-color: ${SCORE_SUPPORT_LEVEL_COLORS.ASSESSED}`" />
             <div>
               <div>Assessed</div>
             </div>
@@ -415,7 +415,7 @@ import {
   getTagColor,
   roamFluencyTasks,
 } from '@/helpers/reports';
-import { supportLevelColors, SCORE_REPORT_NEXT_STEPS_DOCUMENT_PATH } from '@/constants/scores';
+import { SCORE_SUPPORT_LEVEL_COLORS, SCORE_REPORT_NEXT_STEPS_DOCUMENT_PATH } from '@/constants/scores';
 import RoarDataTable from '@/components/RoarDataTable';
 import { CSV_EXPORT_STATIC_COLUMNS } from '@/constants/csvExport';
 import { APP_ROUTES } from '@/constants/routes';
@@ -830,6 +830,7 @@ const getScoresAndSupportFromAssessment = ({ grade, assessment, taskId, optional
     } else {
       support_level = '';
       tag_color = '#A4DDED';
+
       if (tasksToDisplayTotalCorrect.includes(taskId)) {
         const numAttempted = _get(assessment, 'scores.computed.composite.numAttempted');
         const oldNumAttempted = _get(assessment, 'scores.computed.composite.totalNumAttempted');
@@ -991,11 +992,11 @@ const computeAssignmentAndRunData = computed(() => {
             isOptional,
           });
 
-        if (tag_color === supportLevelColors.above) {
+        if (tag_color === SCORE_SUPPORT_LEVEL_COLORS.ABOVE) {
           scoreFilterTags += ' Green ';
-        } else if (tag_color === supportLevelColors.some) {
+        } else if (tag_color === SCORE_SUPPORT_LEVEL_COLORS.SOME) {
           scoreFilterTags += ' Yellow ';
-        } else if (tag_color === supportLevelColors.below) {
+        } else if (tag_color === SCORE_SUPPORT_LEVEL_COLORS.BELOW) {
           scoreFilterTags += ' Pink ';
         }
 

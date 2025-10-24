@@ -318,10 +318,10 @@
                   >
                     <template #option="{ option }">
                       <div class="flex p-0 align-items-center">
-                        <div v-if="supportLevelColors[option]" class="flex gap-2 p-0">
+                        <div v-if="SCORE_SUPPORT_LEVEL_COLORS[option]" class="flex gap-2 p-0">
                           <div
                             class="small-circle tooltip"
-                            :style="`background-color: ${supportLevelColors[option]};`"
+                            :style="`background-color: ${SCORE_SUPPORT_LEVEL_COLORS[option]};`"
                           />
                           <span class="tooltiptext">{{ option }}</span>
                         </div>
@@ -340,8 +340,11 @@
                       </div>
                     </template>
                     <template #value="{ value }">
-                      <div v-if="supportLevelColors[value]" class="flex gap-2">
-                        <div class="small-circle tooltip" :style="`background-color: ${supportLevelColors[value]};`" />
+                      <div v-if="SCORE_SUPPORT_LEVEL_COLORS[value]" class="flex gap-2">
+                        <div
+                          class="small-circle tooltip"
+                          :style="`background-color: ${SCORE_SUPPORT_LEVEL_COLORS[value]};`"
+                        />
                         <span class="tooltiptext">{{ value }}</span>
                       </div>
                       <div v-else-if="progressTags[value]">
@@ -459,7 +462,7 @@ import _toUpper from 'lodash/toUpper';
 import _startCase from 'lodash/startCase';
 import _uniq from 'lodash/uniq';
 import { progressTags } from '@/helpers/reports';
-import { supportLevelColors } from '@/constants/scores';
+import { SCORE_SUPPORT_LEVEL_COLORS } from '@/constants/scores';
 import SkeletonTable from '@/components/SkeletonTable.vue';
 import TableScoreTag from '@/components/reports/TableScoreTag.vue';
 import { ORG_EXPORT_EVENTS } from '@/containers/OrgsList/constants/exportConstants';

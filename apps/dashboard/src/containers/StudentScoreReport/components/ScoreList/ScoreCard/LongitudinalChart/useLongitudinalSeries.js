@@ -1,6 +1,6 @@
 import { computed } from 'vue';
 import { getDialColor } from '@/helpers/reports';
-import { supportLevelColors } from '@/constants/scores';
+import { SCORE_SUPPORT_LEVEL_COLORS } from '@/constants/scores';
 
 const SCORE_TYPES = {
   rawScore: { key: 'rawScore', label: 'Raw Score', priority: 1 },
@@ -42,13 +42,13 @@ export function useLongitudinalSeries(props) {
           assignmentId: e.assignmentId || e.administrationId || '',
           percentile,
           standardScore,
-          color: color || supportLevelColors.Assessed,
+          color: color || SCORE_SUPPORT_LEVEL_COLORS.ASSESSED,
         };
       });
   });
 
   const seriesLabel = computed(() => getLabelByScoreType(chosenType.value));
-  const seriesStroke = computed(() => supportLevelColors.Assessed);
+  const seriesStroke = computed(() => SCORE_SUPPORT_LEVEL_COLORS.ASSESSED);
 
   const xDomain = computed(() => {
     if (!series.value.length) return [new Date(), new Date()];
