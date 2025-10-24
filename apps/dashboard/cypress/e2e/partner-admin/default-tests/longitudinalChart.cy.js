@@ -15,7 +15,8 @@ describe('Longitudinal Chart Component', () => {
     cy.login(PARTNER_ADMIN_USERNAME, PARTNER_ADMIN_PASSWORD);
   });
 
-  it('renders the longitudinal chart correctly', () => {
+  // TODO: Enable this test when longitudinal charts are enabled again
+  it.skip('renders the longitudinal chart correctly', () => {
     // Navigate to a student's score report page
     navigateToStudentReport();
 
