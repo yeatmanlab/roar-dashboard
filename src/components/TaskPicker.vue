@@ -255,7 +255,7 @@ const groupedTasks: Record<string, string[]> = {
   Math: ['Math'],
   Reasoning: ['Pattern Matching'],
   'Spatial Cognition': ['Shape Rotation'],
-  'Social Cognition': ['Stories', 'On Purpose or by Accident?'],
+  'Social Cognition': ['Stories'],
   Attitudes: ['Survey'],
 };
 
