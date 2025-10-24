@@ -135,9 +135,11 @@
 
           <div v-if="exportModalStep === EXPORT_MODAL_STEP.WARNING" class="">
             <p class="mt-0">
-              Bulk exporting of score reports as PDFs is <b>currently in beta</b> and may take some time.
+              This export generates a printer-friendly score report. Charts and visualizations will not be included in
+              the PDF.
             </p>
-            <p>Please do not navigate away or close this tab until the export has finished.</p>
+            <p>Please note: The export may take a few moments.</p>
+            <p>Do not close this tab or navigate away until the export is complete.</p>
           </div>
 
           <div v-else-if="exportModalStep === EXPORT_MODAL_STEP.PROGRESS">
