@@ -55,7 +55,7 @@
         </tbody>
       </table>
 
-      <template v-if="enableLongitudinalChart">
+      <template v-if="FEATURE_FLAGS.ENABLE_LONGITUDINAL_REPORTS">
         <h3 class="mt-4 text-xs font-semibold uppercase">{{ $t('scoreReports.progressOverTime') }}</h3>
         <LongitudinalChart :longitudinal-data="longitudinalData" :task-id="taskId" :student-grade="studentGrade" />
       </template>
@@ -64,11 +64,8 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
 import { LongitudinalChartPrint as LongitudinalChart } from './LongitudinalChart';
-
-// @TODO: Make this configurable in a future enhancement
-const enableLongitudinalChart = ref(false);
+import { FEATURE_FLAGS } from '@/constants/featureFlags';
 
 const props = defineProps({
   publicName: {
