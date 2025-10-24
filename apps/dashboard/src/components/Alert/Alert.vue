@@ -2,8 +2,11 @@
   <div :class="cn(alertVariants({ variant }), props.class)" role="alert">
     <div class="flex-shrink-0 mt-0.5 mr-3">
       <slot name="icon">
-        <template v-if="variant === ALERT_VARIANTS.DESTRUCTIVE || ALERT_VARIANTS.WARNING">
+        <template v-if="variant === ALERT_VARIANTS.DESTRUCTIVE">
           <i class="pi pi-exclamation-circle"></i>
+        </template>
+        <template v-else>
+          <i class="pi pi-info-circle"></i>
         </template>
       </slot>
     </div>

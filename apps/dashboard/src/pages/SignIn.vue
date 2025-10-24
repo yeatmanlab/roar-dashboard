@@ -191,7 +191,7 @@ const route = useRoute();
 // SSO error state
 const ssoError = ref(null); // { title: string, message: string } or null
 
-const { spinner, ssoProvider, roarfirekit } = storeToRefs(authStore);
+const { spinner, ssoProvider, roarfirekit, redirectError } = storeToRefs(authStore);
 const warningModalOpen = ref(false);
 
 authStore.$subscribe(() => {
@@ -402,6 +402,20 @@ const handleSSOError = (error, providerName) => {
 
 onMounted(() => {
   document.body.classList.add('page-signin');
+
+  // Check for redirect errors (e.g., when Firebase blocking function rejects SSO)
+  if (redirectError.value) {
+    // Get the provider display name from SSO_CONFIG, or use ssoProvider if available
+    const providerConfig = ssoProvider.value ? SSO_CONFIG[ssoProvider.value] : null;
+    const providerDisplayName = providerConfig?.displayName || 'SSO';
+
+    // Handle the redirect error
+    handleSSOError(redirectError.value, providerDisplayName);
+
+    // Clear the redirect error from the store
+    authStore.redirectError = null;
+  }
+
   if (authStore.cleverOAuthRequested) {
     authStore.cleverOAuthRequested = false;
     authWithSSO(AUTH_SSO_PROVIDERS.CLEVER);
