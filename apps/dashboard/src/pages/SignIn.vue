@@ -281,7 +281,7 @@ const authWithSSO = async (provider) => {
       config.redirectMethod();
     }
   } catch (error) {
-    handleSSOError(error, config.displayName); // handleSSOError will turn off the spinner
+    handleSSOError(error, config.displayName);
   }
 };
 
@@ -375,7 +375,7 @@ const handleSSOError = (error, providerName) => {
   }
 
   // Check if email is already in use
-  if (errorCode === FIREBASE_FUNCTIONS_ERROR_CODES.EMAIL_ALREADY_IN_USE) {
+  if (errorCode === FIREBASE_FUNCTIONS_ERROR_CODES.AUTH_EMAIL_ALREADY_IN_USE) {
     openWarningModal();
     return;
   }
@@ -383,8 +383,8 @@ const handleSSOError = (error, providerName) => {
   // Handle popup closed by user
   if (
     [
-      FIREBASE_FUNCTIONS_ERROR_CODES.POPUP_CLOSED_BY_USER,
-      FIREBASE_FUNCTIONS_ERROR_CODES.CANCELLED_POPUP_REQUEST,
+      FIREBASE_FUNCTIONS_ERROR_CODES.AUTH_POPUP_CLOSED_BY_USER,
+      FIREBASE_FUNCTIONS_ERROR_CODES.AUTH_POPUP_CANCELLED,
     ].includes(errorCode)
   ) {
     // Silently ignore as user intentionally closed the popup
