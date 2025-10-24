@@ -16,6 +16,14 @@
           <div id="languageSelect" class="flex m-4 justify-content-center">
             <LanguageSelector class="w-7" />
           </div>
+
+          <div v-if="ssoError" class="mx-4 mb-3">
+            <Alert :variant="ALERT_VARIANTS.DESTRUCTIVE">
+              <AlertTitle>{{ ssoError.title }}</AlertTitle>
+              <AlertDescription>{{ ssoError.message }}</AlertDescription>
+            </Alert>
+          </div>
+
           <SignIn :invalid="incorrect" @submit="authWithEmail" @update:email="email = $event" />
         </section>
         <section class="flex w-full flex-column">
@@ -70,19 +78,10 @@
             </PvButton>
           </div>
         </section>
-        <!-- <section class="signin-option-container signin-option-providers">
-          <div class="flex flex-row w-full justify-content-center">
-            <p class="text-sm signin-option-title">Don't have an account yet?</p>
-            <PvButton label="Register" class="w-3 signin-button" @click="router.push({ name: 'Register' })" />
-          </div>
-        </section> -->
       </section>
-      <footer style="display: none">
-        <!-- TODO: figure out a link for this -->
-        <a href="#trouble">{{ $t('pageSignIn.havingTrouble') }}</a>
-      </footer>
     </section>
   </div>
+
   <RoarModal
     :is-enabled="warningModalOpen"
     title="Email is already associated with an account"
@@ -157,9 +156,10 @@
 </template>
 
 <script setup>
-import { onMounted, ref, toRaw, onBeforeUnmount, computed } from 'vue';
+import { onMounted, ref, toRaw, onBeforeUnmount, computed, defineAsyncComponent } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useRoute, useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { setUser } from '@sentry/vue';
 import PvButton from 'primevue/button';
 import PvPassword from 'primevue/password';
@@ -174,12 +174,22 @@ import RoarModal from '@/components/modals/RoarModal.vue';
 import SignIn from '@/components/auth/SignIn.vue';
 import LanguageSelector from '@/components/LanguageSelector.vue';
 
-import { FIREBASE_FUNCTIONS_ERROR_CODES, FIREBASE_FUNCTIONS_ERROR_REASONS } from '@/constants/firebase';
+// Lazy-load Alert components
+const Alert = defineAsyncComponent(() => import('@/components/Alert').then((m) => m.Alert));
+const AlertTitle = defineAsyncComponent(() => import('@/components/Alert').then((m) => m.AlertTitle));
+const AlertDescription = defineAsyncComponent(() => import('@/components/Alert').then((m) => m.AlertDescription));
 
+import { FIREBASE_FUNCTIONS_ERROR_CODES, FIREBASE_FUNCTIONS_ERROR_REASONS } from '@/constants/firebase';
+import { ALERT_VARIANTS } from '../components/Alert';
+
+const { t } = useI18n();
 const incorrect = ref(false);
 const authStore = useAuthStore();
 const router = useRouter();
 const route = useRoute();
+
+// SSO error state
+const ssoError = ref(null); // { title: string, message: string } or null
 
 const { spinner, ssoProvider, roarfirekit } = storeToRefs(authStore);
 const warningModalOpen = ref(false);
@@ -204,20 +214,24 @@ authStore.$subscribe(() => {
  */
 const SSO_CONFIG = {
   [AUTH_SSO_PROVIDERS.GOOGLE]: {
+    displayName: 'Google',
     usePopup: () => !isMobileBrowser(),
     popupMethod: () => authStore.signInWithGooglePopup(),
     redirectMethod: () => authStore.signInWithGoogleRedirect(),
   },
   [AUTH_SSO_PROVIDERS.CLEVER]: {
+    displayName: 'Clever',
     usePopup: () => process.env.NODE_ENV === 'development' && !window.Cypress,
     popupMethod: () => authStore.signInWithCleverPopup(),
     redirectMethod: () => authStore.signInWithCleverRedirect(),
   },
   [AUTH_SSO_PROVIDERS.CLASSLINK]: {
+    displayName: 'ClassLink',
     usePopup: () => false, // ClassLink always uses redirect
     redirectMethod: () => authStore.signInWithClassLinkRedirect(),
   },
   [AUTH_SSO_PROVIDERS.NYCPS]: {
+    displayName: 'NYCPS',
     usePopup: () => process.env.NODE_ENV === 'development' && !window.Cypress,
     popupMethod: () => authStore.signInWithNYCPSPopup(),
     redirectMethod: () => authStore.signInWithNYCPSRedirect(),
@@ -235,6 +249,9 @@ const authWithSSO = async (provider) => {
     console.error(`Unknown SSO provider: ${provider}`);
     return;
   }
+
+  // Clear any previous SSO errors
+  ssoError.value = null;
 
   // Common post-authentication logic
   const handleAuthSuccess = async () => {
@@ -264,7 +281,7 @@ const authWithSSO = async (provider) => {
       config.redirectMethod();
     }
   } catch (error) {
-    handleSSOError(error, provider); // handleSSOError will turn off the spinner
+    handleSSOError(error, config.displayName); // handleSSOError will turn off the spinner
   }
 };
 
@@ -336,7 +353,7 @@ const displaySignInMethods = computed(() => {
 /**
  * Unified error handler for SSO authentication errors
  * @param {Error} error - The error object from Firebase Auth
- * @param {string} providerName - The name of the SSO provider (e.g., 'Google', 'Clever', 'ClassLink', 'NYCPS')
+ * @param {string} providerName - The display name of the SSO provider (e.g., 'Google', 'Clever', 'ClassLink', 'NYCPS')
  */
 const handleSSOError = (error, providerName) => {
   const errorCode = error.code;
@@ -347,10 +364,13 @@ const handleSSOError = (error, providerName) => {
 
   // Check if the auth provider has been disabled
   if (
-    errorCode === FIREBASE_FUNCTIONS_ERROR_CODES.AUTH_PERMISSIONS_DENIED &&
-    error.customData?.reason === FIREBASE_FUNCTIONS_ERROR_REASONS.AUTH_PERMISSIONS_DENIED
+    errorCode === FIREBASE_FUNCTIONS_ERROR_CODES.AUTH_INTERNAL &&
+    errorMessage.includes(FIREBASE_FUNCTIONS_ERROR_REASONS.AUTH_PROVIDER_DISABLED)
   ) {
-    window.alert(`${providerName} sign-in isn't available for this account. Please try a different sign-in method.`);
+    ssoError.value = {
+      title: t('pageSignIn.ssoErrorTitle'),
+      message: t('pageSignIn.ssoProviderDisabledMessage', { providerName }),
+    };
     return;
   }
 
@@ -372,8 +392,12 @@ const handleSSOError = (error, providerName) => {
   }
 
   // Generic error handling
-  console.error(`${providerName} SSO Error:`, error);
-  window.alert(`An error occurred during ${providerName} sign-in: ${errorMessage}`);
+  console.error(`SSO Error / ${providerName}:`, error);
+
+  ssoError.value = {
+    title: t('pageSignIn.ssoErrorTitle'),
+    message: t('pageSignIn.ssoGenericErrorMessage'),
+  };
 };
 
 onMounted(() => {
