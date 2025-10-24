@@ -13,6 +13,7 @@ import useUserChildDataQuery from '@/composables/queries/useUserChildDataQuery';
 import useCompleteAssessmentMutation from '@/composables/mutations/useCompleteAssessmentMutation';
 import packageLockJson from '../../../package-lock.json';
 import LevanteSpinner from '@/components/LevanteSpinner.vue';
+import { logger } from '@/logger';
 
 const props = defineProps({
   taskId: { type: String, required: true, default: 'swr' },
@@ -30,6 +31,7 @@ const assignmentsStore = useAssignmentsStore();
 const { selectedAssignment } = storeToRefs(assignmentsStore);
 const { roarfirekit } = storeToRefs(authStore);
 const { isFirekitInit } = authStore;
+const { getUserId } = authStore;
 
 const { mutateAsync: completeAssessmentMutate } = useCompleteAssessmentMutation();
 
@@ -125,6 +127,7 @@ async function startTask(selectedAdmin) {
     alert(
       'An error occurred while starting the task. Please refresh the page and try again. If the error persists, please submit an issue report.',
     );
+    logger.error('Error starting task', { error,  administrationId: selectedAdmin.value.id, taskId, userId: getUserId() });
   }
 }
 </script>

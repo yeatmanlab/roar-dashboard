@@ -27,6 +27,7 @@ const taskStarted = ref(false);
 const gameStarted = ref(false);
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
+const { getUserId } = authStore;
 const { isFirekitInit } = authStore;
 const assignmentsStore = useAssignmentsStore();
 const { selectedAssignment } = storeToRefs(assignmentsStore);
@@ -132,6 +133,7 @@ async function startTask(selectedAdmin) {
     alert(
       'An error occurred while starting the task. Please refresh the page and try again. If the error persists, please submit an issue report.',
     );
+    logger.error('Error starting task', { error,  administrationId: selectedAdmin.value.id, taskId, userId: getUserId() });
   }
 }
 </script>
