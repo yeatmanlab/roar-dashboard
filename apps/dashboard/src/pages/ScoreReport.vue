@@ -1048,6 +1048,9 @@ const computeAssignmentAndRunData = computed(() => {
           Object.assign(currRowScores[taskId], { numCorrect, numAttempted, percentCorrect, scoringVersion });
           currRowScores[taskId].tagColor = percentCorrect === null ? 'transparent' : tagColor;
           scoreFilterTags += ' Assessed ';
+
+          // @TODO: Remove after decoupling the percentile returned by getScoreValue from the individual score report.
+          currRowScores[taskId].percentile = null;
         } else if (tasksToDisplayTotalCorrect.includes(taskId)) {
           // isNewScoring is 1.2.23+, otherwise handles 1.2.14
           const isNewScoring = _has(assessment, 'scores.computed.composite.numCorrect');
