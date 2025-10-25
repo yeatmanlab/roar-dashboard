@@ -318,12 +318,8 @@
                   >
                     <template #option="{ option }">
                       <div class="flex p-0 align-items-center">
-                        {{ option }}
-                        <div v-if="SCORE_SUPPORT_LEVEL_COLORS[option?.toUpperCase()]" class="flex gap-2 p-0">
-                          <div
-                            class="small-circle tooltip"
-                            :style="`background-color: ${SCORE_SUPPORT_LEVEL_COLORS[option?.toUpperCase()]};`"
-                          />
+                        <div v-if="getOptionColor(option)" class="flex gap-2 p-0">
+                          <div class="small-circle tooltip" :style="`background-color: ${getOptionColor(option)};`" />
                           <span class="tooltiptext">{{ option }}</span>
                         </div>
                         <div v-else-if="progressTags[option]">
@@ -341,11 +337,8 @@
                       </div>
                     </template>
                     <template #value="{ value }">
-                      <div v-if="SCORE_SUPPORT_LEVEL_COLORS[value?.toUpperCase()]" class="flex gap-2">
-                        <div
-                          class="small-circle tooltip"
-                          :style="`background-color: ${SCORE_SUPPORT_LEVEL_COLORS[value?.toUpperCase()]};`"
-                        />
+                      <div v-if="getOptionColor(value)" class="flex gap-2">
+                        <div class="small-circle tooltip" :style="`background-color: ${getOptionColor(value)};`" />
                         <span class="tooltiptext">{{ value }}</span>
                       </div>
                       <div v-else-if="progressTags[value]">
@@ -534,6 +527,23 @@ const dataTable = ref();
 const selectAll = ref(false);
 const currentSort = ref([]);
 const selectedRows = ref([]);
+
+// Map color names to their semantic keys in SCORE_SUPPORT_LEVEL_COLORS
+const colorNameToKey = (colorName) => {
+  const mapping = {
+    GREEN: 'ABOVE',
+    YELLOW: 'SOME',
+    PINK: 'BELOW',
+  };
+  const upperName = colorName?.toUpperCase();
+  return mapping[upperName] || upperName;
+};
+
+// Get color for a filter option (handles both color names and semantic keys)
+const getOptionColor = (option) => {
+  const key = colorNameToKey(option);
+  return SCORE_SUPPORT_LEVEL_COLORS[key];
+};
 
 const taskFilterOptions = ref([
   {
