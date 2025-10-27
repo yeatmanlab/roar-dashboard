@@ -175,8 +175,7 @@ const emailLinkSent = ref(false);
 const authStore = useAuthStore();
 const router = useRouter();
 const route = useRoute();
-const { spinner, ssoProvider, roarfirekit, routeToProfile } = storeToRefs(authStore);
-const warningModalOpen = ref(false);
+const { spinner, ssoProvider, roarfirekit } = storeToRefs(authStore);
 
 authStore.$subscribe(() => {
   if (authStore.uid) {
@@ -403,6 +402,7 @@ function resetSignInUI() {
   modalPassword.value = '';
   spinner.value = false;
   multipleProviders.value = false;
+  emailLinkSent.value = false;
 }
 
 const showGenericProviders = computed(() => !hasCheckedProviders.value && !showPasswordField.value);
