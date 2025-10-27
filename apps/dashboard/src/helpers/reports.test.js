@@ -11,7 +11,7 @@ import {
   taskInfoById,
   getDialColor,
 } from './reports';
-import { supportLevelColors } from '@/constants/scores';
+import { SCORE_SUPPORT_LEVEL_COLORS } from '@/constants/scores';
 
 vi.mock('./index', () => ({
   flattenObj: vi.fn((obj) => obj),
@@ -67,7 +67,7 @@ describe('reports', () => {
         const result = getSupportLevel(3, 75, 100, 'swr', false);
         expect(result).toEqual({
           support_level: 'Achieved Skill',
-          tag_color: '#22c55e', // green-500
+          tag_color: '#008000',
         });
       });
 
@@ -91,7 +91,7 @@ describe('reports', () => {
         const result = getSupportLevel(6, undefined, 600, 'swr', false);
         expect(result).toEqual({
           support_level: 'Achieved Skill',
-          tag_color: '#22c55e', // green-500
+          tag_color: '#008000', // green-500
         });
       });
     });
@@ -101,7 +101,7 @@ describe('reports', () => {
         const result = getSupportLevel(3, 50, 513, 'swr', false, 7);
         expect(result).toEqual({
           support_level: 'Achieved Skill',
-          tag_color: '#22c55e', // green-500
+          tag_color: '#008000', // green-500
         });
       });
 
@@ -125,7 +125,7 @@ describe('reports', () => {
         const result = getSupportLevel(3, 40, 41, 'sre', false, 4);
         expect(result).toEqual({
           support_level: 'Achieved Skill',
-          tag_color: '#22c55e', // green-500
+          tag_color: '#008000', // green-500
         });
       });
 
@@ -133,7 +133,7 @@ describe('reports', () => {
         const result = getSupportLevel(6, undefined, 520, 'swr', false, 7);
         expect(result).toEqual({
           support_level: 'Achieved Skill',
-          tag_color: '#22c55e', // green-500
+          tag_color: '#008000', // green-500
         });
       });
 
@@ -666,21 +666,21 @@ describe('reports', () => {
 
   describe('getTagColor', () => {
     it('should return below color for "Needs Extra Support"', () => {
-      expect(getTagColor('Needs Extra Support')).toBe(supportLevelColors.below);
+      expect(getTagColor('Needs Extra Support')).toBe(SCORE_SUPPORT_LEVEL_COLORS.BELOW);
     });
 
     it('should return some color for "Developing Skill"', () => {
-      expect(getTagColor('Developing Skill')).toBe(supportLevelColors.some);
+      expect(getTagColor('Developing Skill')).toBe(SCORE_SUPPORT_LEVEL_COLORS.SOME);
     });
 
     it('should return above color for "Achieved Skill"', () => {
-      expect(getTagColor('Achieved Skill')).toBe(supportLevelColors.above);
+      expect(getTagColor('Achieved Skill')).toBe(SCORE_SUPPORT_LEVEL_COLORS.ABOVE);
     });
 
     it('should handle unexpected values gracefully', () => {
-      expect(getTagColor('Unknown')).toBe(supportLevelColors.Assessed);
-      expect(getTagColor(null)).toBe(supportLevelColors.Assessed);
-      expect(getTagColor(undefined)).toBe(supportLevelColors.Assessed);
+      expect(getTagColor('Unknown')).toBe(SCORE_SUPPORT_LEVEL_COLORS.ASSESSED);
+      expect(getTagColor(null)).toBe(SCORE_SUPPORT_LEVEL_COLORS.ASSESSED);
+      expect(getTagColor(undefined)).toBe(SCORE_SUPPORT_LEVEL_COLORS.ASSESSED);
     });
   });
 
@@ -727,7 +727,7 @@ describe('reports', () => {
     });
 
     it('should return support level color using percentile for grade < 6 for sre with scoringVersion 4', () => {
-      expect(getDialColor(3, 45, null, 'sre', null, 4)).toBe('#22c55e'); // green-500
+      expect(getDialColor(3, 45, null, 'sre', null, 4)).toBe('#008000'); // green-500
     });
 
     it('should return support level color using raw score for grade >= 6 for sre with scoringVersion 4', () => {

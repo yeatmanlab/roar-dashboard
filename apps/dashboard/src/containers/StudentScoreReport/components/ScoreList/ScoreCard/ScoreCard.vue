@@ -91,7 +91,7 @@
         </PvAccordionPanel>
 
         <PvAccordionPanel
-          v-if="longitudinalData?.length > 0"
+          v-if="FEATURE_FLAGS.ENABLE_LONGITUDINAL_REPORTS && longitudinalData?.length > 0"
           :pt="{ root: { class: 'border-0' } }"
           :value="ACCORDION_PANELS.LONGITUDINAL"
         >
@@ -122,6 +122,7 @@ import PvAccordionPanel from 'primevue/accordionpanel';
 import PvAccordionHeader from 'primevue/accordionheader';
 import PvAccordionContent from 'primevue/accordioncontent';
 import { LongitudinalChartScreen as LongitudinalChart } from './LongitudinalChart';
+import { FEATURE_FLAGS } from '@/constants/featureFlags';
 
 const props = defineProps({
   publicName: {
