@@ -10,6 +10,7 @@ import {
   replaceScoreRange,
   taskInfoById,
   getDialColor,
+  getDistributionChartPath,
 } from './reports';
 import { supportLevelColors } from '@/constants/scores';
 
@@ -748,6 +749,94 @@ describe('reports', () => {
 
     it('should return null if raw score is null for grade >= 6', () => {
       expect(getDialColor(6, 45, null, 'sre', null, 4)).toBe(null);
+    });
+  });
+
+  describe('getDistributionChartPath', () => {
+    describe('grade >= 6 scenarios', () => {
+      it('should return no-cutoffs chart when grade is 6 or higher', () => {
+        expect(getDistributionChartPath(6, { swr: 7, sre: 4 }, 'en')).toMatch(
+          /en-all-grades-distribution-chart-no-cutoffs\.webp$/,
+        );
+      });
+
+      it('should return no-cutoffs chart for grade 7 regardless of scoring versions', () => {
+        expect(getDistributionChartPath(7, { swr: 6, sre: 3 }, 'en')).toMatch(
+          /en-all-grades-distribution-chart-no-cutoffs\.webp$/,
+        );
+      });
+    });
+
+    describe('grade < 6', () => {
+      it('should return v2 chart when all applicable tasks use updated norms', () => {
+        expect(getDistributionChartPath(3, { swr: 7, sre: 4, 'swr-es': 1 }, 'en')).toMatch(
+          /en-elementary-distribution-chart-scoring-v2\.webp$/,
+        );
+      });
+
+      it('should return v2 chart when all applicable tasks use updated norms and assigned unnormed tasks', () => {
+        expect(getDistributionChartPath(3, { swr: 7, sre: 4, letter: null, morphology: null }, 'en')).toMatch(
+          /en-elementary-distribution-chart-scoring-v2\.webp$/,
+        );
+      });
+
+      it('should return v2 chart when swr-es is unnormed but other tasks use updated norms', () => {
+        expect(getDistributionChartPath(3, { swr: 7, 'swr-es': null }, 'en')).toMatch(
+          /en-elementary-distribution-chart-scoring-v2\.webp$/,
+        );
+      });
+
+      it('should return v2 chart when sre-es is unnormed but other tasks use updated norms', () => {
+        expect(getDistributionChartPath(3, { sre: 4, 'sre-es': null }, 'en')).toMatch(
+          /en-elementary-distribution-chart-scoring-v2\.webp$/,
+        );
+      });
+
+      it('should return Spanish v2 chart when language is "es" and tasks use updated norms', () => {
+        expect(getDistributionChartPath(3, { 'swr-es': 1, 'sre-es': 1 }, 'es')).toMatch(
+          /es-elementary-distribution-chart-scoring-v2\.webp$/,
+        );
+      });
+
+      it('should return v1 chart when all applicable tasks use old norms', () => {
+        expect(getDistributionChartPath(3, { swr: 6, sre: 3, 'swr-es': null, letter: null }, 'en')).toMatch(
+          /en-elementary-distribution-chart-scoring-v1\.webp$/,
+        );
+      });
+
+      it('should return v1 chart when pa is assigned and other tasks use old norms', () => {
+        expect(getDistributionChartPath(3, { swr: 6, sre: 3, pa: 1 }, 'en')).toMatch(
+          /en-elementary-distribution-chart-scoring-v1\.webp$/,
+        );
+      });
+
+      it('should return no-cutoffs chart when pa is assigned even if other tasks use updated norms', () => {
+        expect(getDistributionChartPath(3, { swr: 7, sre: 4, pa: 1 }, 'en')).toMatch(
+          /en-all-grades-distribution-chart-no-cutoffs\.webp$/,
+        );
+      });
+
+      it('should return no-cutoffs chart when scoring versions are mixed', () => {
+        expect(getDistributionChartPath(3, { swr: 6, sre: 4, 'swr-es': 1, 'sre-es': null }, 'en')).toMatch(
+          /en-all-grades-distribution-chart-no-cutoffs\.webp$/,
+        );
+      });
+    });
+
+    it('should return no-cutoffs chart when taskScoringVersions is empty', () => {
+      expect(getDistributionChartPath(3, {}, 'en')).toMatch(/en-all-grades-distribution-chart-no-cutoffs\.webp$/);
+    });
+
+    it('should return no-cutoffs chart when only non-applicable tasks exist (e.g., letter)', () => {
+      expect(getDistributionChartPath(3, { letter: null }, 'en')).toMatch(
+        /en-all-grades-distribution-chart-no-cutoffs\.webp$/,
+      );
+    });
+
+    it('should handle string grade values correctly', () => {
+      expect(getDistributionChartPath('3', { swr: 7, sre: 4 }, 'en')).toMatch(
+        /en-elementary-distribution-chart-scoring-v2\.webp$/,
+      );
     });
   });
 });

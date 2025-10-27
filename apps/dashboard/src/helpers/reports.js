@@ -1136,7 +1136,7 @@ export const getDistributionChartPath = (grade, taskScoringVersions, language = 
   // Default to no cutoffs for grade >= 6 and admins with mixed scoring versions
   let path = `../assets/${language}-all-grades-distribution-chart-no-cutoffs.webp`;
 
-  if (grade < 6 && applicableTasks.length > 0) {
+  if (parseInt(grade) < 6 && applicableTasks.length > 0) {
     const hasNoUpdatedNorms = applicableTasks.every(([taskId, version]) => version < updatedNormVersions[taskId]);
     // PA is the only support-level task without updated norms in getRawScoreRange
     const hasAllUpdatedNorms =
