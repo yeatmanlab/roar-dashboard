@@ -210,7 +210,7 @@ describe('useLongitudinalSeries', () => {
 
       const { seriesStroke } = useLongitudinalSeries(props);
 
-      expect(seriesStroke.value).toBe('#3b82f6'); // blue-500
+      expect(seriesStroke.value).toBe('#666666'); // gray line
     });
   });
 

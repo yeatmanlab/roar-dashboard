@@ -48,7 +48,7 @@ export function useLongitudinalSeries(props) {
   });
 
   const seriesLabel = computed(() => getLabelByScoreType(chosenType.value));
-  const seriesStroke = computed(() => '#3b82f6'); // blue-500
+  const seriesStroke = computed(() => '#666666'); // gray line
 
   const xDomain = computed(() => {
     if (!series.value.length) return [new Date(), new Date()];
