@@ -24,7 +24,7 @@ import { onMounted, ref, watch, computed } from 'vue';
 import embed from 'vega-embed';
 import PvSelectButton from 'primevue/selectbutton';
 import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery';
-import { supportLevelColors } from '@/helpers/reports';
+import { SCORE_SUPPORT_LEVEL_COLORS } from '@/constants/scores';
 
 const props = defineProps({
   initialized: {
@@ -81,7 +81,7 @@ const makeRunsFromBins = ({ binsObj, facet, scoreKey }) => {
           rows.push({
             grade: String(gradeKey),
             scores: { [scoreKey]: value },
-            tag_color: supportLevelColors['Assessed'],
+            tag_color: SCORE_SUPPORT_LEVEL_COLORS['ASSESSED'],
           });
         }
       }
@@ -94,7 +94,7 @@ const makeRunsFromBins = ({ binsObj, facet, scoreKey }) => {
           rows.push({
             user: { schoolName: name },
             scores: { [scoreKey]: value },
-            tag_color: supportLevelColors['Assessed'],
+            tag_color: SCORE_SUPPORT_LEVEL_COLORS['ASSESSED'],
           });
         }
       }
@@ -193,22 +193,21 @@ const distributionChartFacet = computed(() => {
     data: {
       values: computedRuns.value,
     },
-    transform:
-      props.facetMode.name === 'Grade'
-        ? [
-            {
-              calculate: "datum.grade === '0' || datum.grade === 'Kindergarten' ? 0 : toNumber(datum.grade)",
-              as: 'gradeNumeric',
-            },
-          ]
-        : [],
+    transform: isGradeFacet.value
+      ? [
+          {
+            calculate: "datum.grade === '0' || datum.grade === 'Kindergarten' ? 0 : toNumber(datum.grade)",
+            as: 'gradeNumeric',
+          },
+        ]
+      : [],
     mark: 'bar',
     height: 50,
     width: 360,
     encoding: {
       row: {
-        field: props.facetMode.key === 'grade' ? `gradeNumeric` : `user.${props.facetMode.key}`,
-        type: props.facetMode.key === 'grade' ? 'quantitative' : 'ordinal',
+        field: isGradeFacet.value ? 'gradeNumeric' : `user.${props.facetMode.key}`,
+        type: isGradeFacet.value ? 'quantitative' : 'ordinal',
         title: '',
         header: {
           titleColor: 'navy',
@@ -224,10 +223,9 @@ const distributionChartFacet = computed(() => {
           labelOrient: 'left',
           labelBaseline: 'line-bottom',
           labelPadding: 0,
-          labelExpr:
-            props.facetMode.name === 'Grade'
-              ? "join(['Grade ',if(datum.value == '0', 'K', datum.value ), ], '')"
-              : 'split(slice(datum.value, 2, datum.value.length), " ")',
+          labelExpr: isGradeFacet.value
+            ? "join(['Grade ',if(datum.value == '0', 'K', datum.value ), ], '')"
+            : 'split(slice(datum.value, 2, datum.value.length), " ")',
           labelLimit: 150,
           labelSeparation: 0, // Set the spacing between lines in pixels
         },
@@ -304,6 +302,8 @@ const draw = async () => {
   await embed(`#roar-distribution-chart-${props.taskId}`, chartSpecDist);
 };
 
+const isGradeFacet = computed(() => props.facetMode.key === 'grade');
+
 // Watch for changes to the computed chart specification (includes tasksDictionary loading)
 watch(
   () => distributionChartFacet.value,
@@ -323,7 +323,7 @@ watch(
 
 // Update Distribution Graph on computedRuns recalculation
 watch(
-  () => computedRuns.value,
+  () => computedRuns,
   () => {
     draw();
   },

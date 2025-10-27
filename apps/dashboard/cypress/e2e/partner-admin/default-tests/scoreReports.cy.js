@@ -36,7 +36,7 @@ describe('Partner Admin: Score Reports', () => {
     cy.performRowAction(testDistrictName, 'button-scores');
     cy.url().should('eq', `${baseUrl}/scores/${testPartnerAdministrationId}/district/${testDistrictId}`);
 
-    // Validate that score report table with individiual student data does not exist.
+    // Validate that score report table with individual student data does not exist.
     cy.get('[data-cy="roar-data-table"]').should('not.exist');
   });
 
