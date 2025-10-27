@@ -98,7 +98,7 @@ describe('Partner Admin: Progress Reports', () => {
     openSchoolProgressReport();
 
     // Export the score report.
-    cy.get('[data-cy="data-table__export-table-btn"]').contains('Export Whole Table').click();
+    cy.get('[data-cy="data-table__export-table-btn"]').contains('Export All (CSV)').click();
 
     // Validate that the exported file exists.
     // @TODO: Extend to validate contents of the file.
@@ -129,7 +129,7 @@ describe('Partner Admin: Progress Reports', () => {
     cy.findAllByTestId('row-checkbox__input').eq(5).click();
 
     // Export the score report.
-    cy.get('[data-cy="data-table__export-selected-btn"]').contains('Export Selected').click();
+    cy.get('[data-cy="data-table__export-selected-btn"]').contains('Export Selected (CSV)').click();
 
     // Validate that the exported file exists.
     // @TODO: Extend to validate contents of the file.
