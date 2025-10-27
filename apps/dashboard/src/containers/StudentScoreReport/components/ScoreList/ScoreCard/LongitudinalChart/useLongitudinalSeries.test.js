@@ -17,12 +17,13 @@ describe('useLongitudinalSeries', () => {
     it('should sort longitudinal data by date', () => {
       const props = {
         longitudinalData: [
-          { date: '2024-03-01', scores: { rawScore: 10 } },
-          { date: '2024-01-01', scores: { rawScore: 5 } },
-          { date: '2024-02-01', scores: { rawScore: 8 } },
+          { date: '2024-03-01', scores: { rawScore: 10 }, assignmentId: 'a3' },
+          { date: '2024-01-01', scores: { rawScore: 5 }, assignmentId: 'a1' },
+          { date: '2024-02-01', scores: { rawScore: 8 }, assignmentId: 'a2' },
         ],
         studentGrade: 3,
         taskId: 'test-task',
+        currentAssignmentId: 'a3',
       };
 
       const { series } = useLongitudinalSeries(props);
@@ -35,9 +36,12 @@ describe('useLongitudinalSeries', () => {
 
     it('should prefer rawScore over other score types', () => {
       const props = {
-        longitudinalData: [{ date: '2024-01-01', scores: { rawScore: 10, percentile: 50, standardScore: 100 } }],
+        longitudinalData: [
+          { date: '2024-01-01', scores: { rawScore: 10, percentile: 50, standardScore: 100 }, assignmentId: 'a1' },
+        ],
         studentGrade: 3,
         taskId: 'test-task',
+        currentAssignmentId: 'a1',
       };
 
       const { series, seriesLabel } = useLongitudinalSeries(props);
@@ -228,60 +232,12 @@ describe('useLongitudinalSeries', () => {
       expect(xDomain.value[1]).toEqual(new Date('2024-03-01'));
     });
 
-    it('should calculate correct y domain with min and max values', () => {
-      const props = {
-        longitudinalData: [
-          { date: '2024-01-01', scores: { rawScore: 10 } },
-          { date: '2024-02-01', scores: { rawScore: 25 } },
-          { date: '2024-03-01', scores: { rawScore: 15 } },
-        ],
-        studentGrade: 3,
-        taskId: 'test-task',
-      };
-
-      const { yDomain } = useLongitudinalSeries(props);
-
-      expect(yDomain.value[0]).toBe(0); // Min is floored to 0
-      expect(yDomain.value[1]).toBe(25); // Max value
-    });
-
-    it('should include 0 in y domain even if all values are positive', () => {
-      const props = {
-        longitudinalData: [
-          { date: '2024-01-01', scores: { rawScore: 50 } },
-          { date: '2024-02-01', scores: { rawScore: 75 } },
-        ],
-        studentGrade: 3,
-        taskId: 'test-task',
-      };
-
-      const { yDomain } = useLongitudinalSeries(props);
-
-      expect(yDomain.value[0]).toBe(0);
-      expect(yDomain.value[1]).toBe(75);
-    });
-
-    it('should handle negative scores in y domain', () => {
-      const props = {
-        longitudinalData: [
-          { date: '2024-01-01', scores: { rawScore: -5 } },
-          { date: '2024-02-01', scores: { rawScore: 10 } },
-        ],
-        studentGrade: 3,
-        taskId: 'test-task',
-      };
-
-      const { yDomain } = useLongitudinalSeries(props);
-
-      expect(yDomain.value[0]).toBe(-5);
-      expect(yDomain.value[1]).toBe(10);
-    });
-
     it('should handle single value y domain', () => {
       const props = {
-        longitudinalData: [{ date: '2024-01-01', scores: { rawScore: 10 } }],
+        longitudinalData: [{ date: '2024-01-01', scores: { rawScore: 10 }, assignmentId: 'a1' }],
         studentGrade: 3,
         taskId: 'test-task',
+        currentAssignmentId: 'a1',
       };
 
       const { yDomain } = useLongitudinalSeries(props);

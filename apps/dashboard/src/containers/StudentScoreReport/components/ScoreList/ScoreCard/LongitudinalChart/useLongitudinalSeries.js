@@ -24,12 +24,8 @@ export function useLongitudinalSeries(props) {
   const series = computed(() => {
     if (!chosenType.value) return [];
     const t = chosenType.value;
-    const currentAssignment = sorted.value.find((e) => e.assignmentId === props.currentAssignmentId);
-    if (!currentAssignment) return [];
-    const currentDate = new Date(currentAssignment.date);
-
     return sorted.value
-      .filter((e) => e.scores?.[t] != null && !Number.isNaN(+e.scores[t]) && new Date(e.date) <= currentDate)
+      .filter((e) => e.scores?.[t] != null && !Number.isNaN(+e.scores[t]))
       .map((e) => {
         const x = new Date(e.date);
         const y = +e.scores[t];
@@ -52,7 +48,7 @@ export function useLongitudinalSeries(props) {
   });
 
   const seriesLabel = computed(() => getLabelByScoreType(chosenType.value));
-  const seriesStroke = computed(() => '#666666');
+  const seriesStroke = computed(() => '#3b82f6'); // blue-500
 
   const xDomain = computed(() => {
     if (!series.value.length) return [new Date(), new Date()];

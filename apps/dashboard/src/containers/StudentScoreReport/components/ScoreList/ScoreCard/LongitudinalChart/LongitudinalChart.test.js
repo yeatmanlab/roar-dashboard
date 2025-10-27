@@ -14,6 +14,9 @@ vi.mock('@bdelab/roar-utils', async () => {
 // Mock helpers/reports
 vi.mock('@/helpers/reports', () => ({
   getDialColor: vi.fn(),
+  tasksToDisplayPercentCorrect: [],
+  tasksToDisplayTotalCorrect: [],
+  tasksToDisplayGradeEstimate: [],
 }));
 
 // Mock Chart.js
@@ -87,12 +90,21 @@ HTMLCanvasElement.prototype.getContext = vi.fn(() => ({
 describe('LongitudinalChart.vue', () => {
   const defaultProps = {
     longitudinalData: [
-      { date: '2024-01-01', scores: { rawScore: 45, percentile: 65 } },
-      { date: '2024-06-01', scores: { rawScore: 50, percentile: 75 } },
+      {
+        date: '2024-01-01',
+        scores: { rawScore: 45, percentile: 65, standardScore: 95 },
+        assignmentId: 'a1',
+      },
+      {
+        date: '2024-06-01',
+        scores: { rawScore: 50, percentile: 75, standardScore: 105 },
+        assignmentId: 'a2',
+      },
     ],
     taskId: 'swr',
     studentGrade: '3',
-    currentAssignmentId: 'test-id',
+    currentAssignmentId: 'a2',
+    scoreLabel: 'Percentile Score',
   };
 
   beforeEach(() => {

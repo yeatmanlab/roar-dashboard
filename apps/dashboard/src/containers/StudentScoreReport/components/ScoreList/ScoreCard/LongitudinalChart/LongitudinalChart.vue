@@ -45,6 +45,14 @@ const props = defineProps({
 
 const { series, seriesStroke } = useLongitudinalSeries(props);
 
+// Filter series to only show points up to current assignment
+const filteredSeries = computed(() => {
+  const currentAssignment = series.value.find((p) => p.assignmentId === props.currentAssignmentId);
+  if (!currentAssignment) return [];
+  const currentDate = currentAssignment.x;
+  return series.value.filter((p) => p.x <= currentDate);
+});
+
 const showSupportLevels = computed(() => {
   // Don't show support levels if the task is in any of these lists
   const isDisplayTask = [
@@ -65,21 +73,23 @@ const chartData = computed(() => ({
   datasets: [
     {
       label: props.scoreLabel,
-      data: series.value.map((p) => ({ x: p.x, y: p.y })),
+      data: filteredSeries.value.map((p) => ({ x: p.x, y: p.y })),
       tension: 0.4,
       borderColor: seriesStroke.value,
-      pointRadius: series.value.map((p) => (p.assignmentId && p.assignmentId === props.currentAssignmentId ? 8 : 4)),
-      pointHoverRadius: series.value.map((p) =>
+      pointRadius: filteredSeries.value.map((p) =>
+        p.assignmentId && p.assignmentId === props.currentAssignmentId ? 8 : 4,
+      ),
+      pointHoverRadius: filteredSeries.value.map((p) =>
         p.assignmentId && p.assignmentId === props.currentAssignmentId ? 10 : 6,
       ),
-      pointBackgroundColor: series.value.map((p) => p.color),
-      pointBorderColor: series.value.map((p) =>
+      pointBackgroundColor: filteredSeries.value.map((p) => p.color),
+      pointBorderColor: filteredSeries.value.map((p) =>
         p.assignmentId && p.assignmentId === props.currentAssignmentId ? '#000000' : p.color,
       ),
-      pointBorderWidth: series.value.map((p) =>
+      pointBorderWidth: filteredSeries.value.map((p) =>
         p.assignmentId && p.assignmentId === props.currentAssignmentId ? 2 : 1,
       ),
-      pointStyle: series.value.map((p) =>
+      pointStyle: filteredSeries.value.map((p) =>
         p.assignmentId && p.assignmentId === props.currentAssignmentId ? 'rectRot' : 'circle',
       ),
       spanGaps: true,
