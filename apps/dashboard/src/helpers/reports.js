@@ -466,7 +466,7 @@ export const subskillTasks = ['roam-alpaca', ...roamFluencyTasks];
  *  Support Level Colors
  *  Colors corresponding to each support level.
  */
-import { supportLevelColors } from '@/constants/scores';
+import { SCORE_SUPPORT_LEVEL_COLORS } from '@/constants/scores';
 
 export const progressTags = {
   Optional: {
@@ -678,7 +678,7 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = 
   ) {
     return {
       support_level: 'Raw Score',
-      tag_color: supportLevelColors.Assessed,
+      tag_color: SCORE_SUPPORT_LEVEL_COLORS.ASSESSED,
     };
   }
   // Try percentile-based scoring for grades < 6
@@ -691,13 +691,13 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = 
     const [achievedCutOff, developingCutOff] = useUpdatedNorms ? [40, 20] : [50, 25];
     if (percentile >= achievedCutOff) {
       support_level = 'Achieved Skill';
-      tag_color = supportLevelColors.above;
+      tag_color = SCORE_SUPPORT_LEVEL_COLORS.ABOVE;
     } else if (percentile > developingCutOff && percentile < achievedCutOff) {
       support_level = 'Developing Skill';
-      tag_color = supportLevelColors.some;
+      tag_color = SCORE_SUPPORT_LEVEL_COLORS.SOME;
     } else {
       support_level = 'Needs Extra Support';
-      tag_color = supportLevelColors.below;
+      tag_color = SCORE_SUPPORT_LEVEL_COLORS.BELOW;
     }
   }
 
@@ -716,13 +716,13 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = 
     if (above != null && some != null) {
       if (rawScore >= above) {
         support_level = 'Achieved Skill';
-        tag_color = supportLevelColors.above;
+        tag_color = SCORE_SUPPORT_LEVEL_COLORS.ABOVE;
       } else if (rawScore > some && rawScore < above) {
         support_level = 'Developing Skill';
-        tag_color = supportLevelColors.some;
+        tag_color = SCORE_SUPPORT_LEVEL_COLORS.SOME;
       } else {
         support_level = 'Needs Extra Support';
-        tag_color = supportLevelColors.below;
+        tag_color = SCORE_SUPPORT_LEVEL_COLORS.BELOW;
       }
     }
   }
@@ -734,13 +734,13 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = 
 
 export function getTagColor(supportLevel) {
   if (supportLevel === 'Needs Extra Support') {
-    return supportLevelColors.below;
+    return SCORE_SUPPORT_LEVEL_COLORS.BELOW;
   } else if (supportLevel === 'Developing Skill') {
-    return supportLevelColors.some;
+    return SCORE_SUPPORT_LEVEL_COLORS.SOME;
   } else if (supportLevel === 'Achieved Skill') {
-    return supportLevelColors.above;
+    return SCORE_SUPPORT_LEVEL_COLORS.ABOVE;
   }
-  return supportLevelColors.Assessed;
+  return SCORE_SUPPORT_LEVEL_COLORS.ASSESSED;
 }
 
 const ALLOWED_SCORE_FIELD_TYPES = [

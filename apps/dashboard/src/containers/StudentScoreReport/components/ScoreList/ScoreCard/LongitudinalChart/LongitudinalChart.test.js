@@ -14,11 +14,6 @@ vi.mock('@bdelab/roar-utils', async () => {
 // Mock helpers/reports
 vi.mock('@/helpers/reports', () => ({
   getDialColor: vi.fn(),
-  supportLevelColors: {
-    above: 'green',
-    some: '#edc037',
-    below: '#c93d82',
-  },
 }));
 
 // Mock Chart.js
