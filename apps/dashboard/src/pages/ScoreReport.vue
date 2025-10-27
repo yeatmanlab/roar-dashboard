@@ -1,5 +1,5 @@
 <template>
-  <main class="container main">
+  <main class="container main" data-cy="score-report">
     <section class="main-body">
       <div>
         <section>
@@ -95,19 +95,19 @@
               >
                 <div class="flex align-items-center">
                   <div class="legend-entry">
-                    <div class="circle" :style="`background-color: ${supportLevelColors.below};`" />
+                    <div class="circle" :style="`background-color: ${SCORE_SUPPORT_LEVEL_COLORS.BELOW};`" />
                     <div>
                       <div>Needs Extra Support</div>
                     </div>
                   </div>
                   <div class="legend-entry">
-                    <div class="circle" :style="`background-color: ${supportLevelColors.some};`" />
+                    <div class="circle" :style="`background-color: ${SCORE_SUPPORT_LEVEL_COLORS.SOME};`" />
                     <div>
                       <div>Developing Skill</div>
                     </div>
                   </div>
                   <div class="legend-entry">
-                    <div class="circle" :style="`background-color: ${supportLevelColors.above};`" />
+                    <div class="circle" :style="`background-color: ${SCORE_SUPPORT_LEVEL_COLORS.ABOVE};`" />
                     <div>
                       <div>Achieved Skill</div>
                     </div>
@@ -124,9 +124,110 @@
           <AppSpinner style="margin-bottom: 1rem" />
           <span class="text-sm font-light text-gray-600 uppercase">Loading Administration Datatable</span>
         </div>
-        <!-- Main table -->
 
-        <div v-if="assignmentData?.length ?? 0 > 0">
+        <!-- Bulk Export Modal -->
+        <AppDialog :is-enabled="exportModalEnabled" @modal-closed="exportModalEnabled = false">
+          <template #header>
+            <template v-if="exportModalStep !== EXPORT_MODAL_STEP.COMPLETED">
+              <h1 class="p-0 m-0 font-semibold text-md">PDF Export</h1>
+            </template>
+          </template>
+
+          <div v-if="exportModalStep === EXPORT_MODAL_STEP.WARNING" class="">
+            <p class="mt-0">
+              This export generates a printer-friendly score report. Charts and visualizations will not be included in
+              the PDF.
+            </p>
+            <p>Please note: The export may take a few moments.</p>
+            <p>Do not close this tab or navigate away until the export is complete.</p>
+          </div>
+
+          <div v-else-if="exportModalStep === EXPORT_MODAL_STEP.PROGRESS">
+            <p class="mt-0">Your export is in progress and may take some time.</p>
+
+            <div class="pt-2">
+              <PvProgressBar :value="exportProgress.percentage" class="mb-2" />
+
+              <div class="flex mt-4 mb-2 justify-content-between align-items-center">
+                <span class="text-sm text-gray-600"> {{ exportProgress.completed }} / {{ exportProgress.total }}</span>
+
+                <span class="text-sm text-gray-600">
+                  {{
+                    exportProgress.currentStudent
+                      ? `Processing: ${exportProgress.currentStudent}`
+                      : 'Preparing export...'
+                  }}
+                </span>
+              </div>
+
+              <div v-if="exportProgress.errors.length > 0" class="p-3 mt-4 rounded border border-gray-200 border-solid">
+                <div class="flex gap-2">
+                  <i class="text-red-600 pi pi-exclamation-circle"></i>
+                  <h4 class="mt-0 mb-1 text-sm font-semibold text-red-600">Export Errors</h4>
+                </div>
+
+                <p class="text-sm text-red-600">
+                  Errors have occurred while exporting the score reports. Please check the errors below:
+                </p>
+
+                <ul class="text-sm text-red-600">
+                  <li v-for="error in exportProgress.errors" :key="error.studentId">
+                    {{ error.studentName }}: {{ error.message }}
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <div v-else-if="exportModalStep === EXPORT_MODAL_STEP.COMPLETED">
+            <div class="flex text-center flex-column align-items-center">
+              <i class="mb-2 text-green-600 pi pi-check-circle" style="font-size: 2rem"></i>
+              <h1 class="p-0 m-0 mb-3 font-semibold text-md">Export complete</h1>
+
+              <p class="m-0">
+                Your export has finished{{ exportProgress.errors.length ? ' with some errors' : '' }}. The ZIP download
+                should have started automatically.
+              </p>
+
+              <div
+                v-if="exportProgress.errors.length > 0"
+                class="p-3 mt-4 w-full rounded border border-gray-200 border-solid"
+              >
+                <div class="flex gap-2">
+                  <i class="text-red-600 pi pi-exclamation-circle"></i>
+                  <h4 class="mt-0 mb-1 text-sm font-semibold text-red-600">Export Errors</h4>
+                </div>
+                <p class="text-sm text-red-600">The following items failed to export:</p>
+                <ul class="text-sm text-left text-red-600">
+                  <li v-for="error in exportProgress.errors" :key="error.studentId">
+                    {{ error.studentName }}: {{ error.message }}
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <template #footer>
+            <div v-if="exportModalStep === EXPORT_MODAL_STEP.WARNING" class="flex gap-2">
+              <PvButton label="Cancel" class="p-button-text" @click="exportModalEnabled = false" />
+              <PvButton
+                label="Continue"
+                icon="pi pi-arrow-right"
+                class="text-white border-none bg-primary border-round hover:bg-red-900"
+                @click="proceedExportFromModal"
+              />
+            </div>
+            <div
+              v-else-if="exportModalStep === EXPORT_MODAL_STEP.COMPLETED"
+              class="flex gap-2 w-full justify-content-center"
+            >
+              <PvButton label="Close" class="w-full p-button-text" @click="exportModalEnabled = false" />
+            </div>
+          </template>
+        </AppDialog>
+
+        <!-- Main table -->
+        <div v-if="assignmentData?.length ?? 0 > 0" data-cy="score-report__table">
           <RoarDataTable
             :data="filteredTableData"
             :columns="scoreReportColumns"
@@ -134,9 +235,10 @@
             :page-limit="pageLimit"
             :loading="isLoadingAssignments || isFetchingAssignments"
             :groupheaders="true"
-            data-cy="roar-data-table"
+            test-id="score-report__data-table"
             @export-all="exportData({ selectedRows: $event })"
             @export-selected="exportData({ selectedRows: $event })"
+            @export-pdf-reports="openExportModal($event)"
           >
             <span>
               <label for="view-columns" class="view-label">View</label>
@@ -153,25 +255,25 @@
         </div>
         <div v-if="!isLoadingAssignments" class="legend-container">
           <div class="legend-entry">
-            <div class="circle tooltip" :style="`background-color: ${supportLevelColors.below};`" />
+            <div class="circle tooltip" :style="`background-color: ${SCORE_SUPPORT_LEVEL_COLORS.BELOW};`" />
             <div>
               <div>Needs Extra Support</div>
             </div>
           </div>
           <div class="legend-entry">
-            <div class="circle tooltip" :style="`background-color: ${supportLevelColors.some};`" />
+            <div class="circle tooltip" :style="`background-color: ${SCORE_SUPPORT_LEVEL_COLORS.SOME};`" />
             <div>
               <div>Developing Skill</div>
             </div>
           </div>
           <div class="legend-entry">
-            <div class="circle tooltip" :style="`background-color: ${supportLevelColors.above};`" />
+            <div class="circle tooltip" :style="`background-color: ${SCORE_SUPPORT_LEVEL_COLORS.ABOVE};`" />
             <div>
               <div>Achieved Skill</div>
             </div>
           </div>
           <div class="legend-entry">
-            <div class="circle tooltip" :style="`background-color: ${supportLevelColors.Assessed}`" />
+            <div class="circle tooltip" :style="`background-color: ${SCORE_SUPPORT_LEVEL_COLORS.ASSESSED}`" />
             <div>
               <div>Assessed</div>
             </div>
@@ -281,6 +383,7 @@ import PvSelect from 'primevue/select';
 import PvSelectButton from 'primevue/selectbutton';
 import PvTabPanel from 'primevue/tabpanel';
 import PvTabView from 'primevue/tabview';
+import PvProgressBar from 'primevue/progressbar';
 import { useAuthStore } from '@/store/auth';
 import { getDynamicRouterPath } from '@/helpers/getDynamicRouterPath';
 import useUserType from '@/composables/useUserType';
@@ -292,12 +395,12 @@ import useAdministrationAssignmentsQuery from '@/composables/queries/useAdminist
 import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery';
 import { usePermissions } from '@/composables/usePermissions';
 import { exportCsv } from '@/helpers/query/utils';
+import PdfExportService from '@/services/PdfExport.service';
 import { getTitle } from '@/helpers/query/administrations';
 import {
   taskDisplayNames,
   taskInfoById,
   descriptionsByTaskId,
-  supportLevelColors,
   getSupportLevel,
   tasksToDisplayGraphs,
   rawOnlyTasks,
@@ -314,13 +417,15 @@ import {
   getTagColor,
   roamFluencyTasks,
 } from '@/helpers/reports';
+import { SCORE_SUPPORT_LEVEL_COLORS, SCORE_REPORT_NEXT_STEPS_DOCUMENT_PATH } from '@/constants/scores';
 import RoarDataTable from '@/components/RoarDataTable';
 import { CSV_EXPORT_STATIC_COLUMNS } from '@/constants/csvExport';
 import { APP_ROUTES } from '@/constants/routes';
 import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
-import { SCORE_REPORT_NEXT_STEPS_DOCUMENT_PATH } from '@/constants/scores';
 import { LEVANTE_TASK_IDS_NO_SCORES } from '@/constants/levanteTasks';
 import _startCase from 'lodash/startCase';
+import AppDialog from '@/components/Dialog/Dialog.vue';
+import { getStudentDisplayName } from '@/helpers/getStudentDisplayName';
 
 const { userCan, Permissions } = usePermissions();
 
@@ -346,6 +451,13 @@ const props = defineProps({
 });
 
 const initialized = ref(false);
+
+// Modal step constants for export dialog
+const EXPORT_MODAL_STEP = Object.freeze({
+  WARNING: 'warning',
+  PROGRESS: 'progress',
+  COMPLETED: 'completed',
+});
 
 const displayName = computed(() => {
   if (administrationData.value) {
@@ -381,6 +493,51 @@ const handleViewChange = () => {
 };
 
 const exportLoading = ref(false);
+const bulkPdfExportLoading = ref(false);
+
+// Export progress tracking
+const exportProgress = ref({
+  show: false,
+  completed: 0,
+  total: 0,
+  percentage: 0,
+  currentStudent: null,
+  errors: [],
+});
+
+// Modal-based bulk export (beta)
+const exportModalEnabled = ref(false);
+const exportModalStep = ref(EXPORT_MODAL_STEP.WARNING); // 'warning' | 'progress' | 'completed'
+const selectedRowsForExport = ref([]);
+
+const openExportModal = (selectedRows) => {
+  selectedRowsForExport.value = selectedRows || [];
+  exportModalStep.value = EXPORT_MODAL_STEP.WARNING;
+  exportModalEnabled.value = true;
+  // Reset progress state for fresh run
+  exportProgress.value = {
+    show: false,
+    completed: 0,
+    total: selectedRowsForExport.value.length || 0,
+    percentage: 0,
+    currentStudent: null,
+    errors: [],
+  };
+};
+
+const proceedExportFromModal = async () => {
+  // Switch view inside the modal
+  exportModalStep.value = EXPORT_MODAL_STEP.PROGRESS;
+  exportProgress.value.show = true;
+  exportProgress.value.total = selectedRowsForExport.value.length || 0;
+
+  try {
+    await exportBulkPdfReports(selectedRowsForExport.value);
+  } finally {
+    // Always move to completed state when the export routine finishes (success or with errors)
+    exportModalStep.value = EXPORT_MODAL_STEP.COMPLETED;
+  }
+};
 
 const activeTabIndex = ref(0);
 
@@ -436,6 +593,105 @@ const handleExportToPdf = async () => {
   window.scrollTo(0, 0);
 
   return;
+};
+
+/**
+ * Exports selected student reports as PDFs in bulk
+ *
+ * @param {Array} selectedRows - Array of selected rows to export
+ * @returns {Promise<void>}
+ */
+const exportBulkPdfReports = async (selectedRows) => {
+  if (!selectedRows || selectedRows.length === 0) {
+    console.warn('No students selected for bulk PDF export');
+    return;
+  }
+
+  try {
+    bulkPdfExportLoading.value = true;
+
+    exportProgress.value = {
+      show: true,
+      completed: 0,
+      total: selectedRows.length,
+      percentage: 0,
+      currentStudent: null,
+      errors: [],
+    };
+
+    // Transform selected rows to student objects
+    const students = selectedRows.map((row) => ({
+      id: row.user.userId,
+      firstName: row.user.firstName,
+      lastName: row.user.lastName,
+      username: row.user.username,
+      email: row.user.email,
+      grade: row.user.grade,
+    }));
+
+    // URL generator function
+    const urlGenerator = (student) => {
+      return `${window.location.origin}/scores/${props.administrationId}/${props.orgType}/${props.orgId}/user/${student.id}?print=true`;
+    };
+
+    // Filename generator function
+    const filenameGenerator = (student) => {
+      const studentName =
+        `${student.firstName || ''} ${student.lastName || ''}`.trim() || student.username || student.id;
+      const safeStudentName = studentName.replace(/[^a-zA-Z0-9\s-_]/g, '');
+      // Include student ID to ensure uniqueness when students have the same name
+      const safeStudentId = student.id.replace(/[^a-zA-Z0-9-_]/g, '');
+      const fileName = `${safeStudentName}_${safeStudentId}`;
+      return `ROAR-IndividualScoreReport-${fileName}.pdf`;
+    };
+
+    // ZIP filename
+    const sanitizedOrgName =
+      orgData.value?.name?.replace(/[^a-zA-Z0-9\s-]/g, '').replace(/\s+/g, '-') || 'organization';
+    const sanitizedAdminName =
+      administrationData.value?.name?.replace(/[^a-zA-Z0-9\s-]/g, '').replace(/\s+/g, '-') || 'reports';
+    const zipFilename = `${sanitizedOrgName}-${sanitizedAdminName}-score-reports.zip`;
+
+    await PdfExportService.generateBulkDocuments(students, urlGenerator, filenameGenerator, {
+      zipFilename,
+      debug: false,
+      onProgress: (progress) => {
+        // Get the student name from the students array using the current index
+        const currentStudent = students[progress.completed];
+        let displayName = 'Processing...';
+
+        if (currentStudent) {
+          const { firstName, lastName } = getStudentDisplayName({
+            name: { first: currentStudent.firstName, last: currentStudent.lastName },
+            username: currentStudent.username,
+          });
+          displayName = `${firstName} ${lastName}`.trim() || currentStudent.username || 'Processing...';
+        }
+
+        exportProgress.value = {
+          ...exportProgress.value,
+          completed: progress.completed,
+          total: progress.total,
+          percentage: progress.percentage,
+          currentStudent: displayName,
+          errors: progress.errors,
+        };
+      },
+    });
+
+    // Hide progress after completion, but keep visible longer if there are errors
+    setTimeout(() => {
+      const hasErrors = exportProgress.value.errors && exportProgress.value.errors.length > 0;
+      if (!hasErrors) {
+        exportProgress.value.show = false;
+      }
+    }, 3000);
+  } catch (error) {
+    console.error('Error during bulk PDF export:', error);
+    // TODO: Show error toast
+  } finally {
+    bulkPdfExportLoading.value = false;
+  }
 };
 
 const orderBy = ref([
@@ -527,10 +783,13 @@ function returnColorByReliability(assessment, rawScore, support_level, tag_color
       tasksToDisplayPercentCorrect.includes(assessment.taskId)
     ) {
       const test = assessment.scores?.raw?.composite?.test;
-      // When letter-es has numAttempted === numIncorrect, numCorrect === undefined.
+      // When letter-es or morphology has numAttempted === numIncorrect, numCorrect === undefined.
       // It does not return percentCorrect, so it incorrectly hides the tag.
       if (
-        (assessment.taskId !== 'letter-es' && test?.numCorrect === undefined && test?.percentCorrect === undefined) ||
+        (assessment.taskId !== 'letter-es' &&
+          assessment.taskId !== 'morphology' &&
+          test?.numCorrect === undefined &&
+          test?.percentCorrect === undefined) ||
         (test?.numAttempted === 0 && test?.numCorrect === 0)
       ) {
         return '#EEEEF0';
@@ -576,6 +835,7 @@ const getScoresAndSupportFromAssessment = ({ grade, assessment, taskId, optional
     } else {
       support_level = '';
       tag_color = '#A4DDED';
+
       if (tasksToDisplayTotalCorrect.includes(taskId)) {
         const numAttempted = _get(assessment, 'scores.computed.composite.numAttempted');
         const oldNumAttempted = _get(assessment, 'scores.computed.composite.totalNumAttempted');
@@ -737,11 +997,11 @@ const computeAssignmentAndRunData = computed(() => {
             isOptional,
           });
 
-        if (tag_color === supportLevelColors.above) {
+        if (tag_color === SCORE_SUPPORT_LEVEL_COLORS.ABOVE) {
           scoreFilterTags += ' Green ';
-        } else if (tag_color === supportLevelColors.some) {
+        } else if (tag_color === SCORE_SUPPORT_LEVEL_COLORS.SOME) {
           scoreFilterTags += ' Yellow ';
-        } else if (tag_color === supportLevelColors.below) {
+        } else if (tag_color === SCORE_SUPPORT_LEVEL_COLORS.BELOW) {
           scoreFilterTags += ' Pink ';
         }
 
@@ -788,6 +1048,9 @@ const computeAssignmentAndRunData = computed(() => {
           Object.assign(currRowScores[taskId], { numCorrect, numAttempted, percentCorrect, scoringVersion });
           currRowScores[taskId].tagColor = percentCorrect === null ? 'transparent' : tagColor;
           scoreFilterTags += ' Assessed ';
+
+          // @TODO: Remove after decoupling the percentile returned by getScoreValue from the individual score report.
+          currRowScores[taskId].percentile = null;
         } else if (tasksToDisplayTotalCorrect.includes(taskId)) {
           // isNewScoring is 1.2.23+, otherwise handles 1.2.14
           const isNewScoring = _has(assessment, 'scores.computed.composite.numCorrect');
@@ -831,23 +1094,30 @@ const computeAssignmentAndRunData = computed(() => {
             };
           }
         } else if ((taskId === 'letter' || taskId === 'letter-en-ca') && assessment.scores) {
-          currRowScores[taskId].lowerCaseScore = assessment.scores.computed.LowercaseNames?.subScore;
-          currRowScores[taskId].upperCaseScore = assessment.scores.computed.UppercaseNames?.subScore;
-          currRowScores[taskId].phonemeScore = assessment.scores.computed.Phonemes?.subScore;
-          currRowScores[taskId].totalScore = assessment.scores.computed.composite?.totalCorrect;
-          const incorrectLettersArray = [
-            ...(_get(assessment, 'scores.computed.UppercaseNames.upperIncorrect') ?? '').split(','),
-            ...(_get(assessment, 'scores.computed.LowercaseNames.lowerIncorrect') ?? '').split(','),
-          ]
-            .sort((a, b) => _toUpper(a) - _toUpper(b))
-            .filter(Boolean)
-            .join(', ');
-          currRowScores[taskId].incorrectLetters = incorrectLettersArray.length > 0 ? incorrectLettersArray : 'None';
+          // Hide tag when only practice questions are attempted
+          if (assessment.scores.computed.composite.totalNumAttempted === 0) {
+            currRowScores[taskId] = null;
+          } else {
+            currRowScores[taskId].lowerCaseScore = assessment.scores.computed.LowercaseNames?.subScore;
+            currRowScores[taskId].upperCaseScore = assessment.scores.computed.UppercaseNames?.subScore;
+            currRowScores[taskId].phonemeScore = assessment.scores.computed.Phonemes?.subScore;
+            currRowScores[taskId].totalScore = assessment.scores.computed.composite?.totalCorrect;
 
-          const incorrectPhonemesArray = (_get(assessment, 'scores.computed.Phonemes.phonemeIncorrect') ?? '')
-            .split(',')
-            .join(', ');
-          currRowScores[taskId].incorrectPhonemes = incorrectPhonemesArray.length > 0 ? incorrectPhonemesArray : 'None';
+            const incorrectLettersArray = [
+              ...(_get(assessment, 'scores.computed.UppercaseNames.upperIncorrect') ?? '').split(','),
+              ...(_get(assessment, 'scores.computed.LowercaseNames.lowerIncorrect') ?? '').split(','),
+            ]
+              .sort((a, b) => _toUpper(a) - _toUpper(b))
+              .filter(Boolean)
+              .join(', ');
+            currRowScores[taskId].incorrectLetters = incorrectLettersArray.length > 0 ? incorrectLettersArray : 'None';
+
+            const incorrectPhonemesArray = (_get(assessment, 'scores.computed.Phonemes.phonemeIncorrect') ?? '')
+              .split(',')
+              .join(', ');
+            currRowScores[taskId].incorrectPhonemes =
+              incorrectPhonemesArray.length > 0 ? incorrectPhonemesArray : 'None';
+          }
         }
         if (taskId === 'pa' && assessment.scores) {
           const first = _get(assessment, 'scores.computed.FSM.roarScore');
@@ -1324,7 +1594,7 @@ const scoreReportColumns = computed(() => {
   tableColumns.push({
     header: 'Report',
     link: true,
-    routeName: 'StudentReport',
+    routeName: 'StudentScoreReport',
     routeTooltip: 'Student Score Report',
     routeIcon: 'pi pi-chart-bar border-none text-primary hover:text-white',
     sort: false,

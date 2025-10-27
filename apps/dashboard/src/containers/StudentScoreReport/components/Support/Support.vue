@@ -1,5 +1,5 @@
 <template>
-  <div id="support-graphic">
+  <section class="pt-4">
     <PvAccordion v-model:value="visiblePanels" class="my-2 w-full" multiple>
       <PvAccordionPanel :value="SUPPORT_PANELS.TASK">
         <PvAccordionHeader>{{ $t('scoreReports.taskTabHeader') }}</PvAccordionHeader>
@@ -8,7 +8,7 @@
             v-if="!(studentGrade >= 6)"
             class="flex p-3 mb-4 border border-gray-100 border-1 flex-column align-items-center"
           >
-            <img src="../../../assets/support-distribution.png" width="650" />
+            <img src="@/assets/support-distribution.png" width="650" />
           </div>
 
           <p class="mt-0">{{ $t('scoreReports.taskIntro') }}</p>
@@ -75,7 +75,7 @@
         </PvAccordionContent>
       </PvAccordionPanel>
     </PvAccordion>
-  </div>
+  </section>
 </template>
 
 <script setup>

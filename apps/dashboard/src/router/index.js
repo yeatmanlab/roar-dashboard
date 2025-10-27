@@ -713,16 +713,6 @@ const routes = [
     meta: { pageTitle: 'View Scores', permission: Permissions.Reports.Score.READ },
   },
   {
-    path: APP_ROUTES.STUDENT_REPORT,
-    name: 'StudentReport',
-    props: true,
-    component: () => import('../pages/StudentReport.vue'),
-    meta: {
-      pageTitle: 'Student Score Report',
-      permission: Permissions.Reports.Student.READ,
-    },
-  },
-  {
     path: APP_ROUTES.SCORE_REPORT_STUDENT,
     name: 'StudentScoreReport',
     props: true,
@@ -732,31 +722,31 @@ const routes = [
       permission: Permissions.Reports.Student.READ,
     },
   },
-  {
-    path: APP_ROUTES.ACCOUNT_PROFILE,
-    name: 'Profile',
-    component: () => import('../pages/AdminProfile.vue'),
-    children: [
-      {
-        path: '',
-        name: 'ProfileInfo',
-        component: () => import('../components/views/UserInfoView.vue'),
-      },
-      {
-        path: 'password',
-        name: 'ProfilePassword',
-        component: () => import('../components/views/PasswordView.vue'),
-        meta: { requireAdmin: true },
-      },
-      {
-        path: 'accounts',
-        name: 'ProfileAccounts',
-        component: () => import('../components/views/LinkAccountsView.vue'),
-        meta: { requireAdmin: true },
-      },
-    ],
-    meta: { pageTitle: 'Profile', permission: Permissions.Profile.READ },
-  },
+  // {
+  //   path: APP_ROUTES.ACCOUNT_PROFILE,
+  //   name: 'Profile',
+  //   component: () => import('../pages/AdminProfile.vue'),
+  //   children: [
+  //     {
+  //       path: '',
+  //       name: 'ProfileInfo',
+  //       component: () => import('../components/views/UserInfoView.vue'),
+  //     },
+  //     {
+  //       path: 'password',
+  //       name: 'ProfilePassword',
+  //       component: () => import('../components/views/PasswordView.vue'),
+  //       meta: { requireAdmin: true },
+  //     },
+  //     {
+  //       path: 'accounts',
+  //       name: 'ProfileAccounts',
+  //       component: () => import('../components/views/LinkAccountsView.vue'),
+  //       meta: { requireAdmin: true },
+  //     },
+  //   ],
+  //   meta: { pageTitle: 'Profile', permission: Permissions.Profile.READ },
+  // },
   {
     path: '/enable-cookies',
     name: 'EnableCookies',

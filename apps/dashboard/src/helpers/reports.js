@@ -72,7 +72,7 @@ export const taskDisplayNames = {
     studentFacingName: 'Palabra',
     extendedTitle: 'ROAR - Word',
     extendedName: 'Single Word Recognition',
-    order: 6,
+    order: 50,
   },
   sre: {
     name: 'Sentence',
@@ -88,7 +88,7 @@ export const taskDisplayNames = {
     studentFacingName: 'Frase',
     extendedTitle: 'ROAR - Frase',
     extendedName: 'Sentence Reading Efficiency',
-    order: 8,
+    order: 51,
   },
   morphology: {
     name: 'Morphology',
@@ -466,17 +466,7 @@ export const subskillTasks = ['roam-alpaca', ...roamFluencyTasks];
  *  Support Level Colors
  *  Colors corresponding to each support level.
  */
-export const supportLevelColors = {
-  above: 'green',
-  Green: 'green',
-  some: '#edc037',
-  Yellow: '#edc037',
-  below: '#c93d82',
-  Pink: '#c93d82',
-  Optional: '#03befc',
-  Assessed: '#A4DDED',
-  Unreliable: '#d6b8c7',
-};
+import { SCORE_SUPPORT_LEVEL_COLORS } from '@/constants/scores';
 
 export const progressTags = {
   Optional: {
@@ -592,7 +582,7 @@ function getOrdinalSuffix(n) {
 }
 
 export function getGradeToDisplay(grade) {
-  const gradeValue = getGrade(grade);
+  const gradeLevel = getGrade(grade);
 
   if (grade === 'Pre-K') {
     return 'Prekindergarten';
@@ -602,17 +592,17 @@ export function getGradeToDisplay(grade) {
     return 'Kindergarten';
   }
 
-  if (typeof gradeValue !== 'number' || gradeValue < 0) {
+  if (typeof gradeLevel !== 'number' || gradeLevel < 0) {
     console.error('Invalid grade provided'); // For Sentry logging
     return null;
   }
 
-  const suffix = getOrdinalSuffix(gradeValue);
-  return `${gradeValue}${suffix} Grade`;
+  const suffix = getOrdinalSuffix(gradeLevel);
+  return `${gradeLevel}${suffix} Grade`;
 }
 
 export function getGradeWithSuffix(grade) {
-  const gradeValue = getGrade(grade);
+  const gradeLevel = getGrade(grade);
 
   if (grade === 'Pre-K') {
     return 'Pre-K';
@@ -626,21 +616,37 @@ export function getGradeWithSuffix(grade) {
     return 'K';
   }
 
-  if (typeof gradeValue !== 'number' || gradeValue < 1) {
+  if (typeof gradeLevel !== 'number' || gradeLevel < 1) {
     return grade;
   }
 
-  return `${gradeValue}${getOrdinalSuffix(gradeValue)}`;
+  return `${gradeLevel}${getOrdinalSuffix(gradeLevel)}`;
 }
-/*
- *  Get Support Level
- *  Function to take scores, taskId, and grade and return the proper support category for the run.
+
+/**
+ * Returns the color to be used for a dial based on grade, percentile, raw score, and task ID.
+ *
+ * @param {string} grade - The grade level of the student (e.g., 'K', '1', 'Pre-K').
+ * @param {number|null} percentile - The percentile score for the student (may be null).
+ * @param {number|null} rawScore - The raw score for the student (may be null).
+ * @param {string} taskId - The ID of the task (e.g., 'letter', 'phonics').
+ * @param {any} [optional=null] - Optional additional data for scoring.
+ * @param {string|null} [scoringVersion=null] - Optional scoring version identifier.
+ * @returns {string} The CSS color variable to use for the dial.
  */
-export const getDialColor = (grade, percentile, rawScore, taskId) => {
-  if (taskId === 'phonics') {
-    return 'var(--gray-500)';
+export const getDialColor = (grade, percentile, rawScore, taskId, optional = null, scoringVersion = null) => {
+  if (taskId === 'letter' || taskId === 'letter-en-ca' || taskId === 'phonics') {
+    return '#3b82f6'; // blue-500
   }
-  const { tag_color } = getSupportLevel(grade, percentile, rawScore, taskId);
+
+  // For grades < 6, we require a valid percentile
+  const gradeLevel = getGrade(grade);
+  if (gradeLevel < 6 && (percentile === null || percentile === undefined)) {
+    return null;
+  }
+
+  const { tag_color } = getSupportLevel(grade, percentile, rawScore, taskId, optional, scoringVersion);
+
   return tag_color;
 };
 
@@ -648,18 +654,22 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = 
   let support_level = null;
   let tag_color = null;
 
+  const gradeLevel = getGrade(grade);
+
   if (rawScore === undefined) {
     return {
       support_level,
       tag_color,
     };
   }
+
   if (optional) {
     return {
       support_level: 'Optional',
-      tag_color: supportLevelColors.optional,
+      tag_color: undefined,
     };
   }
+
   if (
     ((tasksToDisplayPercentCorrect.includes(taskId) && !(taskId === 'swr-es' && scoringVersion >= 1)) ||
       tasksToDisplayTotalCorrect.includes(taskId)) &&
@@ -668,10 +678,11 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = 
   ) {
     return {
       support_level: 'Raw Score',
-      tag_color: supportLevelColors.Assessed,
+      tag_color: SCORE_SUPPORT_LEVEL_COLORS.ASSESSED,
     };
   }
-  if (percentile !== undefined && getGrade(grade) < 6) {
+  // Try percentile-based scoring for grades < 6
+  if (percentile !== null && percentile !== undefined && gradeLevel < 6) {
     const isUpdatedSre = taskId === 'sre' && scoringVersion >= 4;
     const isUpdatedSreEs = taskId === 'sre-es' && scoringVersion >= 1;
     const isUpdatedSwr = taskId === 'swr' && scoringVersion >= 7;
@@ -680,28 +691,38 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = 
     const [achievedCutOff, developingCutOff] = useUpdatedNorms ? [40, 20] : [50, 25];
     if (percentile >= achievedCutOff) {
       support_level = 'Achieved Skill';
-      tag_color = supportLevelColors.above;
+      tag_color = SCORE_SUPPORT_LEVEL_COLORS.ABOVE;
     } else if (percentile > developingCutOff && percentile < achievedCutOff) {
       support_level = 'Developing Skill';
-      tag_color = supportLevelColors.some;
+      tag_color = SCORE_SUPPORT_LEVEL_COLORS.SOME;
     } else {
       support_level = 'Needs Extra Support';
-      tag_color = supportLevelColors.below;
+      tag_color = SCORE_SUPPORT_LEVEL_COLORS.BELOW;
     }
-  } else if (rawScore !== undefined && grade >= 6) {
+  }
+
+  // For grades >= 6 or if percentile is not available for grades >= 6
+  // Use raw score if:
+  // 1. Grade >= 6, OR
+  // 2. Grade < 6 but percentile is not available
+  if (
+    rawScore !== null &&
+    rawScore !== undefined &&
+    (gradeLevel >= 6 || percentile === null || percentile === undefined)
+  ) {
     const { above, some } = getRawScoreThreshold(taskId, scoringVersion);
 
     // Only return support_level and tag_color if the thresholds are not null
     if (above != null && some != null) {
       if (rawScore >= above) {
         support_level = 'Achieved Skill';
-        tag_color = supportLevelColors.above;
+        tag_color = SCORE_SUPPORT_LEVEL_COLORS.ABOVE;
       } else if (rawScore > some && rawScore < above) {
         support_level = 'Developing Skill';
-        tag_color = supportLevelColors.some;
+        tag_color = SCORE_SUPPORT_LEVEL_COLORS.SOME;
       } else {
         support_level = 'Needs Extra Support';
-        tag_color = supportLevelColors.below;
+        tag_color = SCORE_SUPPORT_LEVEL_COLORS.BELOW;
       }
     }
   }
@@ -713,13 +734,13 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = 
 
 export function getTagColor(supportLevel) {
   if (supportLevel === 'Needs Extra Support') {
-    return supportLevelColors.below;
+    return SCORE_SUPPORT_LEVEL_COLORS.BELOW;
   } else if (supportLevel === 'Developing Skill') {
-    return supportLevelColors.some;
+    return SCORE_SUPPORT_LEVEL_COLORS.SOME;
   } else if (supportLevel === 'Achieved Skill') {
-    return supportLevelColors.above;
+    return SCORE_SUPPORT_LEVEL_COLORS.ABOVE;
   }
-  return supportLevelColors.Assessed;
+  return SCORE_SUPPORT_LEVEL_COLORS.ASSESSED;
 }
 
 const ALLOWED_SCORE_FIELD_TYPES = [
@@ -783,20 +804,20 @@ const SCORE_FIELD_MAPPINGS = {
   },
   pa: {
     percentile: {
-      new: (grade) => (grade < 6 ? 'percentile' : 'sprPercentile'),
-      legacy: (grade) => (grade < 6 ? 'percentile' : 'sprPercentile'),
+      new: (gradeLevel) => (gradeLevel < 6 ? 'percentile' : 'sprPercentile'),
+      legacy: (gradeLevel) => (gradeLevel < 6 ? 'percentile' : 'sprPercentile'),
     },
     percentileDisplay: {
-      new: (grade) => (grade < 6 ? 'percentile' : 'sprPercentileString'),
-      legacy: (grade) => (grade < 6 ? 'percentile' : 'sprPercentileString'),
+      new: (gradeLevel) => (gradeLevel < 6 ? 'percentile' : 'sprPercentileString'),
+      legacy: (gradeLevel) => (gradeLevel < 6 ? 'percentile' : 'sprPercentileString'),
     },
     standardScore: {
-      new: (grade) => (grade < 6 ? 'standardScore' : 'sprStandardScore'),
-      legacy: (grade) => (grade < 6 ? 'standardScore' : 'sprStandardScore'),
+      new: (gradeLevel) => (gradeLevel < 6 ? 'standardScore' : 'sprStandardScore'),
+      legacy: (gradeLevel) => (gradeLevel < 6 ? 'standardScore' : 'sprStandardScore'),
     },
     standardScoreDisplay: {
-      new: (grade) => (grade < 6 ? 'standardScore' : 'sprStandardScoreString'),
-      legacy: (grade) => (grade < 6 ? 'standardScore' : 'sprStandardScoreString'),
+      new: (gradeLevel) => (gradeLevel < 6 ? 'standardScore' : 'sprStandardScoreString'),
+      legacy: (gradeLevel) => (gradeLevel < 6 ? 'standardScore' : 'sprStandardScoreString'),
     },
     rawScore: {
       new: 'roarScore',
@@ -806,19 +827,19 @@ const SCORE_FIELD_MAPPINGS = {
   sre: {
     percentile: {
       new: 'percentile',
-      legacy: (grade) => (grade < 6 ? 'tosrecPercentile' : 'sprPercentile'),
+      legacy: (gradeLevel) => (gradeLevel < 6 ? 'tosrecPercentile' : 'sprPercentile'),
     },
     percentileDisplay: {
       new: 'percentile',
-      legacy: (grade) => (grade < 6 ? 'tosrecPercentile' : 'sprPercentile'),
+      legacy: (gradeLevel) => (gradeLevel < 6 ? 'tosrecPercentile' : 'sprPercentile'),
     },
     standardScore: {
       new: 'standardScore',
-      legacy: (grade) => (grade < 6 ? 'tosrecSS' : 'sprStandardScore'),
+      legacy: (gradeLevel) => (gradeLevel < 6 ? 'tosrecSS' : 'sprStandardScore'),
     },
     standardScoreDisplay: {
       new: 'standardScore',
-      legacy: (grade) => (grade < 6 ? 'tosrecSS' : 'sprStandardScore'),
+      legacy: (gradeLevel) => (gradeLevel < 6 ? 'tosrecSS' : 'sprStandardScore'),
     },
     rawScore: {
       new: 'sreScore',

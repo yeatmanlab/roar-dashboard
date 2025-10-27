@@ -1,12 +1,20 @@
 <template>
-  <main class="min-h-screen bg-gray-50">
-    <div class="container flex py-4 pb-8 flex-column align-items-around">
+  <main :class="{ 'min-h-screen bg-gray-50': !isPrintMode }">
+    <div
+      class="container flex-column"
+      :class="{
+        'align-items-around pt-6 pb-8': !isPrintMode,
+        'align-items-center p-0': isPrintMode,
+      }"
+    >
       <StudentScoreReport :administration-id="administrationId" :user-id="userId" :org-type="orgType" :org-id="orgId" />
     </div>
   </main>
 </template>
 
 <script setup>
+import { computed } from 'vue';
+import { useRoute } from 'vue-router';
 import StudentScoreReport from '@/containers/StudentScoreReport/StudentScoreReport.vue';
 
 defineProps({
@@ -27,6 +35,10 @@ defineProps({
     required: true,
   },
 });
+
+const route = useRoute();
+
+const isPrintMode = computed(() => route.query.print !== undefined, { immediate: true });
 </script>
 
 <style scoped>

@@ -1,7 +1,7 @@
 <template>
   <div :id="`roar-distribution-chart-support-${taskId}`"></div>
-  <div class="view-by-wrapper my-2" data-html2canvas-ignore="true">
-    <div class="flex uppercase text-xs font-light">view support levels by</div>
+  <div class="my-2 view-by-wrapper" data-html2canvas-ignore="true">
+    <div class="flex text-xs font-light uppercase">view support levels by</div>
     <PvSelectButton
       v-model="xMode"
       class="flex flex-row my-2 select-button"
@@ -18,6 +18,7 @@ import { computed, onMounted, ref, watch } from 'vue';
 import embed from 'vega-embed';
 import PvSelectButton from 'primevue/selectbutton';
 import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery';
+import { SCORE_SUPPORT_LEVEL_COLORS } from '@/constants/scores';
 
 const { data: tasksDictionary, isLoading: isLoadingTasksDictionary } = useTasksDictionaryQuery();
 
@@ -214,7 +215,9 @@ const distributionBySupport = computed(() => {
         field: 'group',
         title: 'Support Level',
         sort: ['Needs Extra Support', 'Developing Skill', 'Achieved Skill'],
-        scale: { range: ['rgb(201, 61, 130)', 'rgb(237, 192, 55)', 'green'] },
+        scale: {
+          range: [SCORE_SUPPORT_LEVEL_COLORS.BELOW, SCORE_SUPPORT_LEVEL_COLORS.SOME, SCORE_SUPPORT_LEVEL_COLORS.ABOVE],
+        },
         labelFontSize: 16,
         legend: {
           orient: 'bottom',

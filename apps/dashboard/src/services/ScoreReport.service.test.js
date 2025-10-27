@@ -7,6 +7,7 @@ import { getSupportLevel, getRawScoreRange } from '@/helpers/reports';
 // Mock dependencies
 vi.mock('@/helpers/reports', () => ({
   rawOnlyTasks: ['mock-raw-task'],
+  tasksToDisplayPercentCorrect: ['phonics'],
   taskDisplayNames: {
     'mock-task-1': { extendedName: 'Task One', order: 1 },
     'mock-task-2': { extendedName: 'Task Two', order: 2 },
@@ -19,6 +20,7 @@ vi.mock('@/helpers/reports', () => ({
   },
   getSupportLevel: vi.fn(),
   getRawScoreRange: vi.fn(),
+  getDialColor: vi.fn().mockReturnValue('var(--blue-500)'),
   getScoreValue: vi.fn().mockImplementation((scoresObject, taskId, grade, fieldType) => {
     // Return the actual field value from the scores object if it exists
     // This allows the test to use real data from the mock task data
@@ -303,7 +305,7 @@ describe('ScoreReportService', () => {
       expect(result[0].taskId).toBe('mock-task-1');
     });
 
-    it('should handle vocab/es tasks with composite scores directly', () => {
+    it('should handle vocab/es tasks without scoringVersions with composite scores directly', () => {
       const taskData = [
         {
           taskId: 'vocab-test',
@@ -316,6 +318,28 @@ describe('ScoreReportService', () => {
       ];
 
       const result = ScoreReportService.processTaskScores(taskData, 5, mockI18n);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].rawScore.value).toBe(25);
+    });
+
+    it('should handle es tasks with scoringVersion with rawScores directly', () => {
+      const taskData = [
+        {
+          taskId: 'swr-es',
+          optional: false,
+          reliable: true,
+          scores: {
+            composite: {
+              rawScore: 25,
+              percentileScore: 50,
+              standardScore: 30,
+            },
+          },
+        },
+      ];
+
+      const result = ScoreReportService.processTaskScores(taskData, 5, mockI18n, { 'swr-es': 1 });
 
       expect(result).toHaveLength(1);
       expect(result[0].rawScore.value).toBe(25);

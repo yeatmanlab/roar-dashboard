@@ -109,7 +109,7 @@ const props = defineProps({
   },
   showAccountSettingsLink: {
     type: Boolean,
-    default: true,
+    default: false, // Temporarily disabled
   },
 });
 

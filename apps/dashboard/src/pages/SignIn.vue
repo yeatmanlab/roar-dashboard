@@ -175,16 +175,15 @@ const emailLinkSent = ref(false);
 const authStore = useAuthStore();
 const router = useRouter();
 const route = useRoute();
-const { roarfirekit } = storeToRefs(authStore);
-
-const { spinner, ssoProvider, routeToProfile } = storeToRefs(authStore);
+const { spinner, ssoProvider, roarfirekit, routeToProfile } = storeToRefs(authStore);
+const warningModalOpen = ref(false);
 
 authStore.$subscribe(() => {
   if (authStore.uid) {
     if (ssoProvider.value) {
       router.push({ path: APP_ROUTES.SSO });
-    } else if (routeToProfile.value) {
-      router.push({ path: APP_ROUTES.ACCOUNT_PROFILE });
+      // } else if (routeToProfile.value) {
+      //   router.push({ path: APP_ROUTES.ACCOUNT_PROFILE });
     } else {
       router.push({ path: redirectSignInPath(route) });
     }

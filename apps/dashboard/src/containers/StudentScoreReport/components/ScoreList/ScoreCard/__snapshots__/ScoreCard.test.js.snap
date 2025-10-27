@@ -1,0 +1,386 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`ScoreCard.vue > snapshots > renders default collapsed state 1`] = `
+"<article class="flex gap-4 pt-4 bg-white rounded border-2 border border-gray-100 flex-column">
+  <div class="flex gap-3 px-4 flex-column align-items-center">
+    <div class="flex gap-1 text-center flex-column">
+      <h2 class="m-0 text-lg font-semibold">Single Word Reading</h2>
+      <div class="text-sm font-thin text-gray-400">Percentile Score</div>
+    </div>
+    <div class="flex gap-2">
+      <div class="flex flex-row w-full align-items-center justify-content-center"><span class="p-tag p-component p-tag-info text-xs" data-p="info" data-pc-name="tag" pc0="" data-pc-section="root"><span class="p-tag-icon pi pi-check-circle" data-pc-section="icon"></span><span class="p-tag-label" data-pc-section="label">Required</span></span></div>
+      <div class="flex flex-row w-full align-items-center justify-content-center"><span class="p-tag p-component p-tag-success text-xs" data-p="success" data-pc-name="tag" pc1="" data-pc-section="root"><span class="p-tag-icon pi pi-shield" data-pc-section="icon"></span><span class="p-tag-label" data-pc-section="label">Reliable</span></span></div>
+    </div>
+  </div>
+  <div class="flex gap-2 px-4 grow flex-column align-items-center">
+    <div class="p-knob p-component" data-pc-name="knob" pc2="" data-pc-section="root"><svg viewBox="0 0 100 100" role="slider" width="180" height="180" tabindex="-1" aria-valuemin="0" aria-valuemax="100" aria-valuenow="75" data-pc-section="svg">
+        <path d="M 29.99999999999986 84.64101615137747 A 40 40 0 1 1 70.00000000000003 84.64101615137753" stroke-width="14" stroke="var(--p-knob-range-background)" class="p-knob-range" data-pc-section="range"></path>
+        <path d="M 29.99999999999986 84.64101615137747 A 40 40 0 1 1 88.63703305156272 39.64723819589918" stroke-width="14" stroke="#4CAF50" class="p-knob-value" data-pc-section="value"></path><text x="50" y="57" text-anchor="middle" fill="var(--p-knob-text-color)" class="p-knob-text" data-pc-section="text">75%</text>
+      </svg></div>
+    <p class="mb-0">John scored in the <strong>75th percentile</strong> on <strong>Single Word Reading</strong>, which measures the ability to read individual words. This is in the <strong>Achieved Skill</strong> range.</p>
+  </div>
+  <div class="p-accordion p-component px-4 w-full border-t border-gray-100" data-pc-name="accordion" pc3="" data-pc-section="root">
+    <div class="p-accordionpanel bg-gray-50 border-0" data-pc-name="accordionpanel" data-p-disabled="false" data-p-active="false" pc4="" data-pc-section="root"><button data-p="" class="p-accordionheader px-0" type="button" id="pv_id_3_accordionheader_scoreBreakdown" tabindex="0" aria-expanded="false" aria-controls="pv_id_3_accordioncontent_scoreBreakdown" data-pc-name="accordionheader" data-p-disabled="false" data-p-active="false" pc5="" data-pc-section="root"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg" class="p-icon p-accordionheader-toggle-icon" aria-hidden="true" data-pc-section="toggleicon">
+          <path d="M7.01744 10.398C6.91269 10.3985 6.8089 10.378 6.71215 10.3379C6.61541 10.2977 6.52766 10.2386 6.45405 10.1641L1.13907 4.84913C1.03306 4.69404 0.985221 4.5065 1.00399 4.31958C1.02276 4.13266 1.10693 3.95838 1.24166 3.82747C1.37639 3.69655 1.55301 3.61742 1.74039 3.60402C1.92777 3.59062 2.11386 3.64382 2.26584 3.75424L7.01744 8.47394L11.769 3.75424C11.9189 3.65709 12.097 3.61306 12.2748 3.62921C12.4527 3.64535 12.6199 3.72073 12.7498 3.84328C12.8797 3.96582 12.9647 4.12842 12.9912 4.30502C13.0177 4.48162 12.9841 4.662 12.8958 4.81724L7.58083 10.1322C7.50996 10.2125 7.42344 10.2775 7.32656 10.3232C7.22968 10.3689 7.12449 10.3944 7.01744 10.398Z" fill="currentColor"></path>
+        </svg></button>
+      <transition-stub name="p-toggleable-content" appear="false" persisted="false" css="true">
+        <div class="p-accordioncontent" id="pv_id_3_accordioncontent_scoreBreakdown" role="region" aria-labelledby="pv_id_3_accordionheader_scoreBreakdown" data-pc-name="accordioncontent" data-p-active="false" pc7="" data-pc-section="root" style="display: none;">
+          <div class="p-accordioncontent-content px-0" data-pc-section="content">
+            <!-- Regular scores -->
+            <div>
+              <div class="flex justify-content-between">
+                <div class="mr-2"><b>Raw Score</b><span class="text-500"> (0-100):</span></div>
+                <div class="ml-2"><b>50</b></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-content-between">
+                <div class="mr-2"><b>Percentile</b><span class="text-500"> (0-100):</span></div>
+                <div class="ml-2"><b>75</b></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-content-between">
+                <div class="mr-2"><b>Standard Score</b><span class="text-500"> (70-130):</span></div>
+                <div class="ml-2"><b>105</b></div>
+              </div>
+            </div><!-- Phonics subscores -->
+            <!--v-if-->
+          </div>
+        </div>
+      </transition-stub>
+    </div>
+    <!--v-if-->
+  </div>
+</article>"
+`;
+
+exports[`ScoreCard.vue > snapshots > renders expanded state 1`] = `
+"<article class="flex gap-4 pt-4 bg-white rounded border-2 border border-gray-100 flex-column">
+  <div class="flex gap-3 px-4 flex-column align-items-center">
+    <div class="flex gap-1 text-center flex-column">
+      <h2 class="m-0 text-lg font-semibold">Single Word Reading</h2>
+      <div class="text-sm font-thin text-gray-400">Percentile Score</div>
+    </div>
+    <div class="flex gap-2">
+      <div class="flex flex-row w-full align-items-center justify-content-center"><span class="p-tag p-component p-tag-info text-xs" data-p="info" data-pc-name="tag" pc0="" data-pc-section="root"><span class="p-tag-icon pi pi-check-circle" data-pc-section="icon"></span><span class="p-tag-label" data-pc-section="label">Required</span></span></div>
+      <div class="flex flex-row w-full align-items-center justify-content-center"><span class="p-tag p-component p-tag-success text-xs" data-p="success" data-pc-name="tag" pc1="" data-pc-section="root"><span class="p-tag-icon pi pi-shield" data-pc-section="icon"></span><span class="p-tag-label" data-pc-section="label">Reliable</span></span></div>
+    </div>
+  </div>
+  <div class="flex gap-2 px-4 grow flex-column align-items-center">
+    <div class="p-knob p-component" data-pc-name="knob" pc2="" data-pc-section="root"><svg viewBox="0 0 100 100" role="slider" width="180" height="180" tabindex="-1" aria-valuemin="0" aria-valuemax="100" aria-valuenow="75" data-pc-section="svg">
+        <path d="M 29.99999999999986 84.64101615137747 A 40 40 0 1 1 70.00000000000003 84.64101615137753" stroke-width="14" stroke="var(--p-knob-range-background)" class="p-knob-range" data-pc-section="range"></path>
+        <path d="M 29.99999999999986 84.64101615137747 A 40 40 0 1 1 88.63703305156272 39.64723819589918" stroke-width="14" stroke="#4CAF50" class="p-knob-value" data-pc-section="value"></path><text x="50" y="57" text-anchor="middle" fill="var(--p-knob-text-color)" class="p-knob-text" data-pc-section="text">75%</text>
+      </svg></div>
+    <p class="mb-0">John scored in the <strong>75th percentile</strong> on <strong>Single Word Reading</strong>, which measures the ability to read individual words. This is in the <strong>Achieved Skill</strong> range.</p>
+  </div>
+  <div class="p-accordion p-component px-4 w-full border-t border-gray-100" data-pc-name="accordion" pc3="" data-pc-section="root">
+    <div class="p-accordionpanel p-accordionpanel-active bg-gray-50 border-0" data-pc-name="accordionpanel" data-p-disabled="false" data-p-active="true" pc4="" data-pc-section="root"><button data-p="active" class="p-accordionheader px-0" type="button" id="pv_id_3_accordionheader_scoreBreakdown" tabindex="0" aria-expanded="true" aria-controls="pv_id_3_accordioncontent_scoreBreakdown" data-pc-name="accordionheader" data-p-disabled="false" data-p-active="true" pc5="" data-pc-section="root"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg" class="p-icon p-accordionheader-toggle-icon" aria-hidden="true" data-pc-section="toggleicon">
+          <path d="M12.2097 10.4113C12.1057 10.4118 12.0027 10.3915 11.9067 10.3516C11.8107 10.3118 11.7237 10.2532 11.6506 10.1792L6.93602 5.46461L2.22139 10.1476C2.07272 10.244 1.89599 10.2877 1.71953 10.2717C1.54307 10.2556 1.3771 10.1808 1.24822 10.0593C1.11933 9.93766 1.035 9.77633 1.00874 9.6011C0.982477 9.42587 1.0158 9.2469 1.10338 9.09287L6.37701 3.81923C6.52533 3.6711 6.72639 3.58789 6.93602 3.58789C7.14565 3.58789 7.3467 3.6711 7.49502 3.81923L12.7687 9.09287C12.9168 9.24119 13 9.44225 13 9.65187C13 9.8615 12.9168 10.0626 12.7687 10.2109C12.616 10.3487 12.4151 10.4207 12.2097 10.4113Z" fill="currentColor"></path>
+        </svg></button>
+      <transition-stub name="p-toggleable-content" appear="false" persisted="false" css="true">
+        <div class="p-accordioncontent" id="pv_id_3_accordioncontent_scoreBreakdown" role="region" aria-labelledby="pv_id_3_accordionheader_scoreBreakdown" data-pc-name="accordioncontent" data-p-active="true" pc7="" data-pc-section="root">
+          <div class="p-accordioncontent-content px-0" data-pc-section="content">
+            <!-- Regular scores -->
+            <div>
+              <div class="flex justify-content-between">
+                <div class="mr-2"><b>Raw Score</b><span class="text-500"> (0-100):</span></div>
+                <div class="ml-2"><b>50</b></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-content-between">
+                <div class="mr-2"><b>Percentile</b><span class="text-500"> (0-100):</span></div>
+                <div class="ml-2"><b>75</b></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-content-between">
+                <div class="mr-2"><b>Standard Score</b><span class="text-500"> (70-130):</span></div>
+                <div class="ml-2"><b>105</b></div>
+              </div>
+            </div><!-- Phonics subscores -->
+            <!--v-if-->
+          </div>
+        </div>
+      </transition-stub>
+    </div>
+    <!--v-if-->
+  </div>
+</article>"
+`;
+
+exports[`ScoreCard.vue > snapshots > renders phonics task with subscores 1`] = `
+"<article class="flex gap-4 pt-4 bg-white rounded border-2 border border-gray-100 flex-column">
+  <div class="flex gap-3 px-4 flex-column align-items-center">
+    <div class="flex gap-1 text-center flex-column">
+      <h2 class="m-0 text-lg font-semibold">Phonics</h2>
+      <div class="text-sm font-thin text-gray-400">Percentile Score</div>
+    </div>
+    <div class="flex gap-2">
+      <div class="flex flex-row w-full align-items-center justify-content-center"><span class="p-tag p-component p-tag-info text-xs" data-p="info" data-pc-name="tag" pc0="" data-pc-section="root"><span class="p-tag-icon pi pi-check-circle" data-pc-section="icon"></span><span class="p-tag-label" data-pc-section="label">Required</span></span></div>
+      <div class="flex flex-row w-full align-items-center justify-content-center"><span class="p-tag p-component p-tag-success text-xs" data-p="success" data-pc-name="tag" pc1="" data-pc-section="root"><span class="p-tag-icon pi pi-shield" data-pc-section="icon"></span><span class="p-tag-label" data-pc-section="label">Reliable</span></span></div>
+    </div>
+  </div>
+  <div class="flex gap-2 px-4 grow flex-column align-items-center">
+    <div class="p-knob p-component" data-pc-name="knob" pc2="" data-pc-section="root"><svg viewBox="0 0 100 100" role="slider" width="180" height="180" tabindex="-1" aria-valuemin="0" aria-valuemax="100" aria-valuenow="85" data-pc-section="svg">
+        <path d="M 29.99999999999986 84.64101615137747 A 40 40 0 1 1 70.00000000000003 84.64101615137753" stroke-width="14" stroke="var(--p-knob-range-background)" class="p-knob-range" data-pc-section="range"></path>
+        <path d="M 29.99999999999986 84.64101615137747 A 40 40 0 1 1 88.63703305156272 60.35276180410082" stroke-width="14" stroke="#4CAF50" class="p-knob-value" data-pc-section="value"></path><text x="50" y="57" text-anchor="middle" fill="var(--p-knob-text-color)" class="p-knob-text" data-pc-section="text">85%</text>
+      </svg></div>
+    <p class="mb-0">John scored in the <strong>75th percentile</strong> on <strong>Single Word Reading</strong>, which measures the ability to read individual words. This is in the <strong>Achieved Skill</strong> range.</p>
+  </div>
+  <div class="p-accordion p-component px-4 w-full border-t border-gray-100" data-pc-name="accordion" pc3="" data-pc-section="root">
+    <div class="p-accordionpanel bg-gray-50 border-0" data-pc-name="accordionpanel" data-p-disabled="false" data-p-active="false" pc4="" data-pc-section="root"><button data-p="" class="p-accordionheader px-0" type="button" id="pv_id_3_accordionheader_scoreBreakdown" tabindex="0" aria-expanded="false" aria-controls="pv_id_3_accordioncontent_scoreBreakdown" data-pc-name="accordionheader" data-p-disabled="false" data-p-active="false" pc5="" data-pc-section="root"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg" class="p-icon p-accordionheader-toggle-icon" aria-hidden="true" data-pc-section="toggleicon">
+          <path d="M7.01744 10.398C6.91269 10.3985 6.8089 10.378 6.71215 10.3379C6.61541 10.2977 6.52766 10.2386 6.45405 10.1641L1.13907 4.84913C1.03306 4.69404 0.985221 4.5065 1.00399 4.31958C1.02276 4.13266 1.10693 3.95838 1.24166 3.82747C1.37639 3.69655 1.55301 3.61742 1.74039 3.60402C1.92777 3.59062 2.11386 3.64382 2.26584 3.75424L7.01744 8.47394L11.769 3.75424C11.9189 3.65709 12.097 3.61306 12.2748 3.62921C12.4527 3.64535 12.6199 3.72073 12.7498 3.84328C12.8797 3.96582 12.9647 4.12842 12.9912 4.30502C13.0177 4.48162 12.9841 4.662 12.8958 4.81724L7.58083 10.1322C7.50996 10.2125 7.42344 10.2775 7.32656 10.3232C7.22968 10.3689 7.12449 10.3944 7.01744 10.398Z" fill="currentColor"></path>
+        </svg></button>
+      <transition-stub name="p-toggleable-content" appear="false" persisted="false" css="true">
+        <div class="p-accordioncontent" id="pv_id_3_accordioncontent_scoreBreakdown" role="region" aria-labelledby="pv_id_3_accordionheader_scoreBreakdown" data-pc-name="accordioncontent" data-p-active="false" pc7="" data-pc-section="root" style="display: none;">
+          <div class="p-accordioncontent-content px-0" data-pc-section="content">
+            <!-- Regular scores -->
+            <div>
+              <div class="flex justify-content-between">
+                <div class="mr-2"><b>Raw Score</b><span class="text-500"> (0-100):</span></div>
+                <div class="ml-2"><b>50</b></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-content-between">
+                <div class="mr-2"><b>Percentile</b><span class="text-500"> (0-100):</span></div>
+                <div class="ml-2"><b>75</b></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-content-between">
+                <div class="mr-2"><b>Standard Score</b><span class="text-500"> (70-130):</span></div>
+                <div class="ml-2"><b>105</b></div>
+              </div>
+            </div><!-- Phonics subscores -->
+            <div class="mt-4 mb-2 font-semibold">:</div>
+            <div class="flex px-2 mb-1 justify-content-between">
+              <div class="mr-2"><span>CVC Words</span></div>
+              <div class="ml-2"><b>10/10</b></div>
+            </div>
+            <div class="flex px-2 mb-1 justify-content-between">
+              <div class="mr-2"><span>Digraphs</span></div>
+              <div class="ml-2"><b>8/10</b></div>
+            </div>
+            <div class="flex px-2 mb-1 justify-content-between">
+              <div class="mr-2"><span>Initial Blends</span></div>
+              <div class="ml-2"><b>7/8</b></div>
+            </div>
+            <div class="flex px-2 mb-1 justify-content-between">
+              <div class="mr-2"><span>Final Blends</span></div>
+              <div class="ml-2"><b>6/8</b></div>
+            </div>
+            <div class="flex px-2 mb-1 justify-content-between">
+              <div class="mr-2"><span>R-Controlled</span></div>
+              <div class="ml-2"><b>5/6</b></div>
+            </div>
+            <div class="flex px-2 mb-1 justify-content-between">
+              <div class="mr-2"><span>R-Clusters</span></div>
+              <div class="ml-2"><b>4/5</b></div>
+            </div>
+            <div class="flex px-2 mb-1 justify-content-between">
+              <div class="mr-2"><span>Silent E</span></div>
+              <div class="ml-2"><b>9/10</b></div>
+            </div>
+            <div class="flex px-2 mb-1 justify-content-between">
+              <div class="mr-2"><span>Vowel Teams</span></div>
+              <div class="ml-2"><b>8/9</b></div>
+            </div>
+          </div>
+        </div>
+      </transition-stub>
+    </div>
+    <!--v-if-->
+  </div>
+</article>"
+`;
+
+exports[`ScoreCard.vue > snapshots > renders with different tag combinations 1`] = `
+"<article class="flex gap-4 pt-4 bg-white rounded border-2 border border-gray-100 flex-column">
+  <div class="flex gap-3 px-4 flex-column align-items-center">
+    <div class="flex gap-1 text-center flex-column">
+      <h2 class="m-0 text-lg font-semibold">Single Word Reading</h2>
+      <div class="text-sm font-thin text-gray-400">Percentile Score</div>
+    </div>
+    <div class="flex gap-2">
+      <div class="flex flex-row w-full align-items-center justify-content-center"><span class="p-tag p-component p-tag-secondary text-xs" data-p="secondary" data-pc-name="tag" pc0="" data-pc-section="root"><span class="p-tag-icon pi pi-info-circle" data-pc-section="icon"></span><span class="p-tag-label" data-pc-section="label">Optional</span></span></div>
+      <div class="flex flex-row w-full align-items-center justify-content-center"><span class="p-tag p-component text-xs" data-p="warning" data-pc-name="tag" pc1="" data-pc-section="root"><span class="p-tag-icon pi pi-exclamation-triangle" data-pc-section="icon"></span><span class="p-tag-label" data-pc-section="label">Unreliable</span></span></div>
+    </div>
+  </div>
+  <div class="flex gap-2 px-4 grow flex-column align-items-center">
+    <div class="p-knob p-component" data-pc-name="knob" pc2="" data-pc-section="root"><svg viewBox="0 0 100 100" role="slider" width="180" height="180" tabindex="-1" aria-valuemin="0" aria-valuemax="100" aria-valuenow="75" data-pc-section="svg">
+        <path d="M 29.99999999999986 84.64101615137747 A 40 40 0 1 1 70.00000000000003 84.64101615137753" stroke-width="14" stroke="var(--p-knob-range-background)" class="p-knob-range" data-pc-section="range"></path>
+        <path d="M 29.99999999999986 84.64101615137747 A 40 40 0 1 1 88.63703305156272 39.64723819589918" stroke-width="14" stroke="#4CAF50" class="p-knob-value" data-pc-section="value"></path><text x="50" y="57" text-anchor="middle" fill="var(--p-knob-text-color)" class="p-knob-text" data-pc-section="text">75%</text>
+      </svg></div>
+    <p class="mb-0">John scored in the <strong>75th percentile</strong> on <strong>Single Word Reading</strong>, which measures the ability to read individual words. This is in the <strong>Achieved Skill</strong> range.</p>
+  </div>
+  <div class="p-accordion p-component px-4 w-full border-t border-gray-100" data-pc-name="accordion" pc3="" data-pc-section="root">
+    <div class="p-accordionpanel bg-gray-50 border-0" data-pc-name="accordionpanel" data-p-disabled="false" data-p-active="false" pc4="" data-pc-section="root"><button data-p="" class="p-accordionheader px-0" type="button" id="pv_id_3_accordionheader_scoreBreakdown" tabindex="0" aria-expanded="false" aria-controls="pv_id_3_accordioncontent_scoreBreakdown" data-pc-name="accordionheader" data-p-disabled="false" data-p-active="false" pc5="" data-pc-section="root"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg" class="p-icon p-accordionheader-toggle-icon" aria-hidden="true" data-pc-section="toggleicon">
+          <path d="M7.01744 10.398C6.91269 10.3985 6.8089 10.378 6.71215 10.3379C6.61541 10.2977 6.52766 10.2386 6.45405 10.1641L1.13907 4.84913C1.03306 4.69404 0.985221 4.5065 1.00399 4.31958C1.02276 4.13266 1.10693 3.95838 1.24166 3.82747C1.37639 3.69655 1.55301 3.61742 1.74039 3.60402C1.92777 3.59062 2.11386 3.64382 2.26584 3.75424L7.01744 8.47394L11.769 3.75424C11.9189 3.65709 12.097 3.61306 12.2748 3.62921C12.4527 3.64535 12.6199 3.72073 12.7498 3.84328C12.8797 3.96582 12.9647 4.12842 12.9912 4.30502C13.0177 4.48162 12.9841 4.662 12.8958 4.81724L7.58083 10.1322C7.50996 10.2125 7.42344 10.2775 7.32656 10.3232C7.22968 10.3689 7.12449 10.3944 7.01744 10.398Z" fill="currentColor"></path>
+        </svg></button>
+      <transition-stub name="p-toggleable-content" appear="false" persisted="false" css="true">
+        <div class="p-accordioncontent" id="pv_id_3_accordioncontent_scoreBreakdown" role="region" aria-labelledby="pv_id_3_accordionheader_scoreBreakdown" data-pc-name="accordioncontent" data-p-active="false" pc7="" data-pc-section="root" style="display: none;">
+          <div class="p-accordioncontent-content px-0" data-pc-section="content">
+            <!-- Regular scores -->
+            <div>
+              <div class="flex justify-content-between">
+                <div class="mr-2"><b>Raw Score</b><span class="text-500"> (0-100):</span></div>
+                <div class="ml-2"><b>50</b></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-content-between">
+                <div class="mr-2"><b>Percentile</b><span class="text-500"> (0-100):</span></div>
+                <div class="ml-2"><b>75</b></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-content-between">
+                <div class="mr-2"><b>Standard Score</b><span class="text-500"> (70-130):</span></div>
+                <div class="ml-2"><b>105</b></div>
+              </div>
+            </div><!-- Phonics subscores -->
+            <!--v-if-->
+          </div>
+        </div>
+      </transition-stub>
+    </div>
+    <!--v-if-->
+  </div>
+</article>"
+`;
+
+exports[`ScoreCard.vue > snapshots > renders with longitudinal data 1`] = `
+"<article class="flex gap-4 pt-4 bg-white rounded border-2 border border-gray-100 flex-column">
+  <div class="flex gap-3 px-4 flex-column align-items-center">
+    <div class="flex gap-1 text-center flex-column">
+      <h2 class="m-0 text-lg font-semibold">Single Word Reading</h2>
+      <div class="text-sm font-thin text-gray-400">Percentile Score</div>
+    </div>
+    <div class="flex gap-2">
+      <div class="flex flex-row w-full align-items-center justify-content-center"><span class="p-tag p-component p-tag-info text-xs" data-p="info" data-pc-name="tag" pc0="" data-pc-section="root"><span class="p-tag-icon pi pi-check-circle" data-pc-section="icon"></span><span class="p-tag-label" data-pc-section="label">Required</span></span></div>
+      <div class="flex flex-row w-full align-items-center justify-content-center"><span class="p-tag p-component p-tag-success text-xs" data-p="success" data-pc-name="tag" pc1="" data-pc-section="root"><span class="p-tag-icon pi pi-shield" data-pc-section="icon"></span><span class="p-tag-label" data-pc-section="label">Reliable</span></span></div>
+    </div>
+  </div>
+  <div class="flex gap-2 px-4 grow flex-column align-items-center">
+    <div class="p-knob p-component" data-pc-name="knob" pc2="" data-pc-section="root"><svg viewBox="0 0 100 100" role="slider" width="180" height="180" tabindex="-1" aria-valuemin="0" aria-valuemax="100" aria-valuenow="75" data-pc-section="svg">
+        <path d="M 29.99999999999986 84.64101615137747 A 40 40 0 1 1 70.00000000000003 84.64101615137753" stroke-width="14" stroke="var(--p-knob-range-background)" class="p-knob-range" data-pc-section="range"></path>
+        <path d="M 29.99999999999986 84.64101615137747 A 40 40 0 1 1 88.63703305156272 39.64723819589918" stroke-width="14" stroke="#4CAF50" class="p-knob-value" data-pc-section="value"></path><text x="50" y="57" text-anchor="middle" fill="var(--p-knob-text-color)" class="p-knob-text" data-pc-section="text">75%</text>
+      </svg></div>
+    <p class="mb-0">John scored in the <strong>75th percentile</strong> on <strong>Single Word Reading</strong>, which measures the ability to read individual words. This is in the <strong>Achieved Skill</strong> range.</p>
+  </div>
+  <div class="p-accordion p-component px-4 w-full border-t border-gray-100" data-pc-name="accordion" pc3="" data-pc-section="root">
+    <div class="p-accordionpanel bg-gray-50 border-0" data-pc-name="accordionpanel" data-p-disabled="false" data-p-active="false" pc4="" data-pc-section="root"><button data-p="" class="p-accordionheader px-0" type="button" id="pv_id_3_accordionheader_scoreBreakdown" tabindex="0" aria-expanded="false" aria-controls="pv_id_3_accordioncontent_scoreBreakdown" data-pc-name="accordionheader" data-p-disabled="false" data-p-active="false" pc5="" data-pc-section="root"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg" class="p-icon p-accordionheader-toggle-icon" aria-hidden="true" data-pc-section="toggleicon">
+          <path d="M7.01744 10.398C6.91269 10.3985 6.8089 10.378 6.71215 10.3379C6.61541 10.2977 6.52766 10.2386 6.45405 10.1641L1.13907 4.84913C1.03306 4.69404 0.985221 4.5065 1.00399 4.31958C1.02276 4.13266 1.10693 3.95838 1.24166 3.82747C1.37639 3.69655 1.55301 3.61742 1.74039 3.60402C1.92777 3.59062 2.11386 3.64382 2.26584 3.75424L7.01744 8.47394L11.769 3.75424C11.9189 3.65709 12.097 3.61306 12.2748 3.62921C12.4527 3.64535 12.6199 3.72073 12.7498 3.84328C12.8797 3.96582 12.9647 4.12842 12.9912 4.30502C13.0177 4.48162 12.9841 4.662 12.8958 4.81724L7.58083 10.1322C7.50996 10.2125 7.42344 10.2775 7.32656 10.3232C7.22968 10.3689 7.12449 10.3944 7.01744 10.398Z" fill="currentColor"></path>
+        </svg></button>
+      <transition-stub name="p-toggleable-content" appear="false" persisted="false" css="true">
+        <div class="p-accordioncontent" id="pv_id_3_accordioncontent_scoreBreakdown" role="region" aria-labelledby="pv_id_3_accordionheader_scoreBreakdown" data-pc-name="accordioncontent" data-p-active="false" pc7="" data-pc-section="root" style="display: none;">
+          <div class="p-accordioncontent-content px-0" data-pc-section="content">
+            <!-- Regular scores -->
+            <div>
+              <div class="flex justify-content-between">
+                <div class="mr-2"><b>Raw Score</b><span class="text-500"> (0-100):</span></div>
+                <div class="ml-2"><b>50</b></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-content-between">
+                <div class="mr-2"><b>Percentile</b><span class="text-500"> (0-100):</span></div>
+                <div class="ml-2"><b>75</b></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-content-between">
+                <div class="mr-2"><b>Standard Score</b><span class="text-500"> (70-130):</span></div>
+                <div class="ml-2"><b>105</b></div>
+              </div>
+            </div><!-- Phonics subscores -->
+            <!--v-if-->
+          </div>
+        </div>
+      </transition-stub>
+    </div>
+    <!--v-if-->
+  </div>
+</article>"
+`;
+
+exports[`ScoreCard.vue > snapshots > renders with low score (needs support) 1`] = `
+"<article class="flex gap-4 pt-4 bg-white rounded border-2 border border-gray-100 flex-column">
+  <div class="flex gap-3 px-4 flex-column align-items-center">
+    <div class="flex gap-1 text-center flex-column">
+      <h2 class="m-0 text-lg font-semibold">Single Word Reading</h2>
+      <div class="text-sm font-thin text-gray-400">Percentile Score</div>
+    </div>
+    <div class="flex gap-2">
+      <div class="flex flex-row w-full align-items-center justify-content-center"><span class="p-tag p-component p-tag-info text-xs" data-p="info" data-pc-name="tag" pc0="" data-pc-section="root"><span class="p-tag-icon pi pi-check-circle" data-pc-section="icon"></span><span class="p-tag-label" data-pc-section="label">Required</span></span></div>
+      <div class="flex flex-row w-full align-items-center justify-content-center"><span class="p-tag p-component p-tag-success text-xs" data-p="success" data-pc-name="tag" pc1="" data-pc-section="root"><span class="p-tag-icon pi pi-shield" data-pc-section="icon"></span><span class="p-tag-label" data-pc-section="label">Reliable</span></span></div>
+    </div>
+  </div>
+  <div class="flex gap-2 px-4 grow flex-column align-items-center">
+    <div class="p-knob p-component" data-pc-name="knob" pc2="" data-pc-section="root"><svg viewBox="0 0 100 100" role="slider" width="180" height="180" tabindex="-1" aria-valuemin="0" aria-valuemax="100" aria-valuenow="25" data-pc-section="svg">
+        <path d="M 29.99999999999986 84.64101615137747 A 40 40 0 1 1 70.00000000000003 84.64101615137753" stroke-width="14" stroke="var(--p-knob-range-background)" class="p-knob-range" data-pc-section="range"></path>
+        <path d="M 29.99999999999986 84.64101615137747 A 40 40 0 0 1 11.362966948437297 39.64723819589906" stroke-width="14" stroke="#F44336" class="p-knob-value" data-pc-section="value"></path><text x="50" y="57" text-anchor="middle" fill="var(--p-knob-text-color)" class="p-knob-text" data-pc-section="text">25%</text>
+      </svg></div>
+    <p class="mb-0">John scored in the <strong>25th percentile</strong> on <strong>Single Word Reading</strong>, which measures the ability to read individual words. This is in the <strong>Needs Extra Support</strong> range.</p>
+  </div>
+  <div class="p-accordion p-component px-4 w-full border-t border-gray-100" data-pc-name="accordion" pc3="" data-pc-section="root">
+    <div class="p-accordionpanel bg-gray-50 border-0" data-pc-name="accordionpanel" data-p-disabled="false" data-p-active="false" pc4="" data-pc-section="root"><button data-p="" class="p-accordionheader px-0" type="button" id="pv_id_3_accordionheader_scoreBreakdown" tabindex="0" aria-expanded="false" aria-controls="pv_id_3_accordioncontent_scoreBreakdown" data-pc-name="accordionheader" data-p-disabled="false" data-p-active="false" pc5="" data-pc-section="root"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg" class="p-icon p-accordionheader-toggle-icon" aria-hidden="true" data-pc-section="toggleicon">
+          <path d="M7.01744 10.398C6.91269 10.3985 6.8089 10.378 6.71215 10.3379C6.61541 10.2977 6.52766 10.2386 6.45405 10.1641L1.13907 4.84913C1.03306 4.69404 0.985221 4.5065 1.00399 4.31958C1.02276 4.13266 1.10693 3.95838 1.24166 3.82747C1.37639 3.69655 1.55301 3.61742 1.74039 3.60402C1.92777 3.59062 2.11386 3.64382 2.26584 3.75424L7.01744 8.47394L11.769 3.75424C11.9189 3.65709 12.097 3.61306 12.2748 3.62921C12.4527 3.64535 12.6199 3.72073 12.7498 3.84328C12.8797 3.96582 12.9647 4.12842 12.9912 4.30502C13.0177 4.48162 12.9841 4.662 12.8958 4.81724L7.58083 10.1322C7.50996 10.2125 7.42344 10.2775 7.32656 10.3232C7.22968 10.3689 7.12449 10.3944 7.01744 10.398Z" fill="currentColor"></path>
+        </svg></button>
+      <transition-stub name="p-toggleable-content" appear="false" persisted="false" css="true">
+        <div class="p-accordioncontent" id="pv_id_3_accordioncontent_scoreBreakdown" role="region" aria-labelledby="pv_id_3_accordionheader_scoreBreakdown" data-pc-name="accordioncontent" data-p-active="false" pc7="" data-pc-section="root" style="display: none;">
+          <div class="p-accordioncontent-content px-0" data-pc-section="content">
+            <!-- Regular scores -->
+            <div>
+              <div class="flex justify-content-between">
+                <div class="mr-2"><b>Raw Score</b><span class="text-500"> (0-100):</span></div>
+                <div class="ml-2"><b>50</b></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-content-between">
+                <div class="mr-2"><b>Percentile</b><span class="text-500"> (0-100):</span></div>
+                <div class="ml-2"><b>75</b></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-content-between">
+                <div class="mr-2"><b>Standard Score</b><span class="text-500"> (70-130):</span></div>
+                <div class="ml-2"><b>105</b></div>
+              </div>
+            </div><!-- Phonics subscores -->
+            <!--v-if-->
+          </div>
+        </div>
+      </transition-stub>
+    </div>
+    <!--v-if-->
+  </div>
+</article>"
+`;
+
+exports[`ScoreCard.vue > snapshots > renders without scores array 1`] = `
+"<article class="flex gap-4 pt-4 bg-white rounded border-2 border border-gray-100 flex-column">
+  <div class="flex gap-3 px-4 flex-column align-items-center">
+    <div class="flex gap-1 text-center flex-column">
+      <h2 class="m-0 text-lg font-semibold">Single Word Reading</h2>
+      <div class="text-sm font-thin text-gray-400">Percentile Score</div>
+    </div>
+    <div class="flex gap-2">
+      <div class="flex flex-row w-full align-items-center justify-content-center"><span class="p-tag p-component p-tag-info text-xs" data-p="info" data-pc-name="tag" pc0="" data-pc-section="root"><span class="p-tag-icon pi pi-check-circle" data-pc-section="icon"></span><span class="p-tag-label" data-pc-section="label">Required</span></span></div>
+      <div class="flex flex-row w-full align-items-center justify-content-center"><span class="p-tag p-component p-tag-success text-xs" data-p="success" data-pc-name="tag" pc1="" data-pc-section="root"><span class="p-tag-icon pi pi-shield" data-pc-section="icon"></span><span class="p-tag-label" data-pc-section="label">Reliable</span></span></div>
+    </div>
+  </div>
+  <div class="flex gap-2 px-4 grow flex-column align-items-center">
+    <div class="p-knob p-component" data-pc-name="knob" pc2="" data-pc-section="root"><svg viewBox="0 0 100 100" role="slider" width="180" height="180" tabindex="-1" aria-valuemin="0" aria-valuemax="100" aria-valuenow="75" data-pc-section="svg">
+        <path d="M 29.99999999999986 84.64101615137747 A 40 40 0 1 1 70.00000000000003 84.64101615137753" stroke-width="14" stroke="var(--p-knob-range-background)" class="p-knob-range" data-pc-section="range"></path>
+        <path d="M 29.99999999999986 84.64101615137747 A 40 40 0 1 1 88.63703305156272 39.64723819589918" stroke-width="14" stroke="#4CAF50" class="p-knob-value" data-pc-section="value"></path><text x="50" y="57" text-anchor="middle" fill="var(--p-knob-text-color)" class="p-knob-text" data-pc-section="text">75%</text>
+      </svg></div>
+    <p class="mb-0">John scored in the <strong>75th percentile</strong> on <strong>Single Word Reading</strong>, which measures the ability to read individual words. This is in the <strong>Achieved Skill</strong> range.</p>
+  </div>
+  <!--v-if-->
+</article>"
+`;
