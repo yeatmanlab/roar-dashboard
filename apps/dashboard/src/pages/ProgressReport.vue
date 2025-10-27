@@ -177,7 +177,7 @@ const props = defineProps({
 const initialized = ref(false);
 
 const isLoading = computed(
-  () => props.orgType === 'districts' && (isLoadingAssignments.value || isLoadingTasksDictionary.value),
+  () => props.orgType === 'district' && (isLoadingAssignments.value || isLoadingTasksDictionary.value),
 );
 
 const reportView = ref({ name: 'Progress Report', constant: true });
