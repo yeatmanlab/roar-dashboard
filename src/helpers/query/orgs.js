@@ -1,6 +1,5 @@
 import { toValue } from 'vue';
 import _intersection from 'lodash/intersection';
-import _uniq from 'lodash/uniq';
 import _flattenDeep from 'lodash/flattenDeep';
 import _isEmpty from 'lodash/isEmpty';
 import _without from 'lodash/without';
@@ -8,8 +7,8 @@ import _zip from 'lodash/zip';
 import _uniqBy from 'lodash/uniqBy';
 import {
   batchGetDocs,
-  convertValues,
   fetchDocById,
+  fetchDocumentsById,
   getAxiosInstance,
   mapFields,
   orderByDefault,
@@ -164,81 +163,6 @@ export const getOrgsRequestBody = ({
   return requestBody;
 };
 
-export const orgCounter = async (activeOrgType, selectedDistrict, selectedSchool, orderBy, isSuperAdmin, adminOrgs) => {
-  if (isSuperAdmin.value) {
-    const axiosInstance = getAxiosInstance();
-    const requestBody = getOrgsRequestBody({
-      orgType: activeOrgType.value,
-      parentDistrict: selectedDistrict.value,
-      parentSchool: selectedSchool.value,
-      aggregationQuery: true,
-      orderBy: orderBy.value,
-      paginate: false,
-      select: ['name', 'id'],
-    });
-    console.log(`Fetching count for ${activeOrgType.value}`);
-    return axiosInstance.post(':runAggregationQuery', requestBody).then(({ data }) => {
-      return Number(convertValues(data[0].result?.aggregateFields?.count));
-    });
-  } else {
-    console.log('Org Counter, not super admin');
-    if (['groups', 'families'].includes(activeOrgType.value)) {
-      return adminOrgs.value[activeOrgType.value]?.length ?? 0;
-    }
-
-    const { districts: districtIds = [], schools: schoolIds = [], classes: classIds = [] } = adminOrgs.value;
-
-    if (activeOrgType.value === 'districts') {
-      // Count all of the districts in the adminOrgs but also add districts from admin schools and classes
-      const schoolPromises = schoolIds.map((schoolId) => {
-        return fetchDocById('schools', schoolId, ['districtId']);
-      });
-
-      const classPromises = classIds.map((classId) => {
-        return fetchDocById('classes', classId, ['districtId']);
-      });
-
-      const schools = await Promise.all(schoolPromises);
-      const classes = await Promise.all(classPromises);
-
-      districtIds.push(...schools.map(({ districtId }) => districtId));
-      districtIds.push(...classes.map(({ districtId }) => districtId));
-      return _uniq(districtIds).length;
-    } else if (activeOrgType.value === 'schools') {
-      return fetchDocById('districts', selectedDistrict.value, ['schools']).then(async ({ schools }) => {
-        if (districtIds.includes(selectedDistrict.value)) {
-          return schools?.length ?? 0;
-        } else if (schoolIds.length > 0) {
-          return _intersection(schools ?? [], schoolIds).length ?? 0;
-        } else if (classIds.length > 0) {
-          // If we get here, there's no way that the selectedDistrict is not also the parent district of their admin class(es).
-          const classPromises = classIds.map((classId) => {
-            return fetchDocById('classes', classId, ['schoolId']);
-          });
-
-          const classes = await Promise.all(classPromises);
-          return _intersection(
-            schools,
-            classes.map(({ schoolId }) => schoolId),
-          ).length;
-        }
-
-        return 0;
-      });
-    } else if (activeOrgType.value === 'classes') {
-      if (selectedSchool.value) {
-        return fetchDocById('schools', selectedSchool.value, ['classes']).then((school) => {
-          console.log('in orgs counter', districtIds);
-          if (districtIds.includes(selectedDistrict.value) || schoolIds.includes(selectedSchool.value)) {
-            return school.classes?.length ?? 0;
-          }
-          return _intersection(school.classes ?? [], classIds).length;
-        });
-      }
-      return 0;
-    }
-  }
-};
 
 export const fetchOrgByName = async (orgType, orgNormalizedName, selectedDistrict, selectedSchool, orderBy = null) => {
   const axiosInstance = getAxiosInstance();
@@ -418,7 +342,8 @@ export const orgFetchAll = async (
   orderBy,
   isSuperAdmin,
   adminOrgs,
-  select,
+  select = ['id', 'name', 'tags'],
+  includeCreators = false,
 ) => {
   const axiosInstance = getAxiosInstance();
   const requestBody = getOrgsRequestBody({
@@ -431,9 +356,10 @@ export const orgFetchAll = async (
     select,
   });
 
+  let orgs;
   if (isSuperAdmin.value) {
     try {
-      return await axiosInstance.post(`${getBaseDocumentPath()}:runQuery`, requestBody).then(({ data }) => {
+      orgs = await axiosInstance.post(`${getBaseDocumentPath()}:runQuery`, requestBody).then(({ data }) => {
         return mapFields(data);
       });
     } catch (error) {
@@ -442,7 +368,7 @@ export const orgFetchAll = async (
     }
   } else {
     try {
-      return await orgPageFetcher(
+      orgs = await orgPageFetcher(
         activeOrgType,
         selectedDistrict,
         selectedSchool,
@@ -459,7 +385,63 @@ export const orgFetchAll = async (
       return [];
     }
   }
+
+  // @TODO: Add admin's name to group documents to avoid extra queries
+  // Add creator data if requested
+  if (includeCreators) {
+    try {
+      // Extract unique creator IDs
+      const creatorIds = [...new Set(
+        orgs
+          .map(org => org.createdBy)
+          .filter(Boolean)
+      )];
+
+      if (creatorIds.length > 0) {
+        // Fetch creator data in batch
+        let creatorsData = [];
+        try {
+          creatorsData = await fetchDocumentsById(FIRESTORE_COLLECTIONS.USERS, creatorIds, ['displayName', 'name']);
+        } catch (error) {
+          console.error('orgFetchAll: Error fetching creator data from Firestore:', error);
+          creatorsData = [];
+        }
+
+        // Create a map for quick lookup
+        const creatorsMap = new Map();
+        creatorsData.forEach(creator => {
+          creatorsMap.set(creator.id, creator);
+        });
+
+        // Add creator data to orgs
+        orgs = orgs.map(org => {
+          let creatorName = '--';
+          if (org.createdBy) {
+            const creatorData = creatorsMap.get(org.createdBy);
+            if (creatorData) {
+              if (creatorData.displayName) {
+                creatorName = creatorData.displayName;
+              } else if (creatorData.name && creatorData.name.first && creatorData.name.last) {
+                creatorName = `${creatorData.name.first} ${creatorData.name.last}`;
+              }
+            }
+          }
+          
+          return {
+            ...org,
+            creatorName,
+          };
+        });
+      }
+    } catch (error) {
+      console.error('orgFetchAll: Error fetching creator data:', error);
+      // Continue without creator data if fetching fails
+    }
+  }
+
+  return orgs;
 };
+
 
 /**
  * Fetches Districts Schools Groups Families (DSGF) Org data for a given administration.

@@ -10,7 +10,18 @@ import PvFloatLabel from 'primevue/floatlabel';
 import PvInputText from 'primevue/inputtext';
 import PvSelect from 'primevue/select';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { nextTick } from 'vue';
+import { nextTick, ref } from 'vue';
+
+// Mock useAuthStore
+vi.mock('@/store/auth', () => ({
+  useAuthStore: vi.fn(() => ({
+    getUserId: vi.fn(() => 'test-user-id'),
+    $subscribe: vi.fn(),
+    roarfirekit: ref({
+      restConfig: true,
+    }),
+  })),
+}));
 
 const mockUseUpsertOrgMutation = vi.fn();
 let mockOrgNameExists = false;

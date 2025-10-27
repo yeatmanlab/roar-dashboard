@@ -1,12 +1,12 @@
-import { computed, ref } from 'vue';
+import { computed } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
 import _isEmpty from 'lodash/isEmpty';
-import useUserType from '@/composables/useUserType';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import { computeQueryOverrides } from '@/helpers/computeQueryOverrides';
-import { orgPageFetcher } from '@/helpers/query/orgs';
+import { orgFetchAll } from '@/helpers/query/orgs';
 import { ORGS_TABLE_QUERY_KEY } from '@/constants/queryKeys';
 import { useAuthStore } from '@/store/auth';
+
 /**
  * Orgs Table query.
  *
@@ -46,26 +46,25 @@ const useOrgsTableQuery = (
 
   // Determine select fields based on org type
   const selectFields = computed(() => {
-    const orgType = typeof activeOrgType === 'function' ? activeOrgType() : activeOrgType.value || activeOrgType;
+    const orgType = typeof activeOrgType === 'function' ? activeOrgType() : (activeOrgType as any).value || activeOrgType;
     if (orgType === 'groups') {
-      return ['id', 'name', 'tags', 'parentOrgId'];
+      return ['id', 'name', 'tags', 'parentOrgId', 'createdBy'];
     }
-    return ['id', 'name', 'tags'];
+    return ['id', 'name', 'tags', 'createdBy'];
   });
 
   return useQuery({
-    queryKey: [ORGS_TABLE_QUERY_KEY, activeOrgType, selectedDistrict, selectedSchool, orderBy],
+    queryKey: [ORGS_TABLE_QUERY_KEY, 'withCreators', activeOrgType, selectedDistrict, selectedSchool, orderBy],
     queryFn: () =>
-      orgPageFetcher(
+      orgFetchAll(
         activeOrgType,
         selectedDistrict,
         selectedSchool,
         orderBy,
-        ref(100000),
-        ref(0),
         isUserSuperAdmin(),
         adminOrgs,
         selectFields.value,
+        true, // includeCreators = true
       ),
     enabled: isQueryEnabled,
     ...options,

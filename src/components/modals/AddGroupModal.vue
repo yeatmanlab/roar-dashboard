@@ -322,12 +322,13 @@ const parseCreateOrgData = (data: CreateOrgType) => {
   let formatted;
   let parsed;
 
-  const { districtId, name, normalizedName, parentOrgId, schoolId, tags, type } = data;
+  const { districtId, name, normalizedName, parentOrgId, schoolId, tags, type, createdBy } = data;
   const commonFields = {
     name,
     normalizedName,
     tags,
     type,
+    createdBy,
   };
 
   switch (type) {
@@ -422,6 +423,7 @@ const submit = async () => {
     schoolId: toRaw(parentSchool.value)?.id,
     districtId: toRaw(parentDistrict.value)?.id,
     parentOrgId: toRaw(parentDistrict.value)?.id,
+    createdBy: authStore.getUserId(),
   } as CreateOrgType;
 
   const { data: orgNameExists } = await doesOrgNameExist();
