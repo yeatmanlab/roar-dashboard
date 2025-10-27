@@ -1108,25 +1108,44 @@ export const getRawScoreRange = (taskId) => {
   return null;
 };
 
+/**
+ * Returns the distribution chart path based on grade and task scoring versions.
+ *
+ * @param {number|string} grade - Student's grade level
+ * @param {Object.<string, number>} taskScoringVersions - Map of task IDs to scoring versions
+ * @param {string} [language='en'] - Language code ('en' or 'es')
+ * @returns {string} Full URL to the distribution chart asset
+ *
+ * @description
+ * Grade >= 6: no-cutoffs chart
+ * Grade < 6:
+ * - All applicable tasks meet thresholds → v2 chart
+ * - All below thresholds → v1 chart
+ * - Mixed or none → no-cutoffs chart
+ * - If unnormed Palabra or Frase as only support-level tasks, exclude and show no-cutoffs chart
+ */
 export const getDistributionChartPath = (grade, taskScoringVersions, language = 'en') => {
   const updatedNormVersions = { swr: 7, 'swr-es': 1, sre: 4, 'sre-es': 1 };
-  // Default to no cutoffs for grade > 6,
+  const tasks = Object.entries(taskScoringVersions);
+
+  // Filter to only tasks that have updated norms and exclude unnormed Spanish tasks (version < 1)
+  const applicableTasks = tasks.filter(
+    ([taskId, version]) => taskId in updatedNormVersions && !(['swr-es', 'sre-es'].includes(taskId) && version < 1),
+  );
+
+  // Default to no cutoffs for grade >= 6 and admins with mixed scoring versions
   let path = `../assets/${language}-all-grades-distribution-chart-no-cutoffs.webp`;
 
-  if (grade < 6) {
-    const tasks = Object.entries(taskScoringVersions);
-    const applicableTasks = tasks.filter(([taskId]) => taskId in updatedNormVersions);
-    const hasNotUpdatedNorms =
-      applicableTasks.length === 0 ||
-      applicableTasks.every(([taskId, version]) => version < updatedNormVersions[taskId]);
-    // All available support level tasks have updated norms. PA is currently the only task that doesn't have updated norms (getRawScoreRange).
+  if (grade < 6 && applicableTasks.length > 0) {
+    const hasNoUpdatedNorms = applicableTasks.every(([taskId, version]) => version < updatedNormVersions[taskId]);
+    // PA is the only support-level task without updated norms in getRawScoreRange
     const hasAllUpdatedNorms =
       !('pa' in taskScoringVersions) &&
       applicableTasks.every(([taskId, version]) => version >= updatedNormVersions[taskId]);
 
     if (hasAllUpdatedNorms) {
       path = `../assets/${language}-elementary-distribution-chart-scoring-v2.webp`;
-    } else if (hasNotUpdatedNorms) {
+    } else if (hasNoUpdatedNorms) {
       path = `../assets/${language}-elementary-distribution-chart-scoring-v1.webp`;
     }
   }
