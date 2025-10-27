@@ -3,17 +3,17 @@
     <div class="h-64">
       <canvas ref="canvasRef" class="w-full h-full"></canvas>
     </div>
-    <div class="flex justify-end gap-3 mt-2 text-xs">
-      <div class="flex items-center gap-1">
-        <div class="w-3 h-3 rounded-full" :style="{ backgroundColor: supportLevelColors.above }"></div>
+    <div class="flex gap-3 justify-end mt-2 text-xs">
+      <div class="flex gap-1 items-center">
+        <div class="w-3 h-3 rounded-full" :style="{ backgroundColor: SCORE_SUPPORT_LEVEL_COLORS.ABOVE }"></div>
         <span>Achieved Skill</span>
       </div>
-      <div class="flex items-center gap-1">
-        <div class="w-3 h-3 rounded-full" :style="{ backgroundColor: supportLevelColors.some }"></div>
+      <div class="flex gap-1 items-center">
+        <div class="w-3 h-3 rounded-full" :style="{ backgroundColor: SCORE_SUPPORT_LEVEL_COLORS.SOME }"></div>
         <span>Developing Skill</span>
       </div>
-      <div class="flex items-center gap-1">
-        <div class="w-3 h-3 rounded-full" :style="{ backgroundColor: supportLevelColors.below }"></div>
+      <div class="flex gap-1 items-center">
+        <div class="w-3 h-3 rounded-full" :style="{ backgroundColor: SCORE_SUPPORT_LEVEL_COLORS.BELOW }"></div>
         <span>Needs Extra Support</span>
       </div>
     </div>
@@ -25,7 +25,7 @@ import { computed, ref, onMounted, onBeforeUnmount, watch } from 'vue';
 import Chart from 'chart.js/auto';
 import 'chartjs-adapter-date-fns';
 import { useLongitudinalSeries } from './useLongitudinalSeries';
-import { supportLevelColors } from '@/constants/scores';
+import { SCORE_SUPPORT_LEVEL_COLORS } from '@/constants/scores';
 
 const canvasRef = ref(null);
 let chartInstance = null;
