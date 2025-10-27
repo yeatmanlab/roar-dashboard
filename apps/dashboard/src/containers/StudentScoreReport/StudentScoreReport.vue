@@ -36,7 +36,7 @@
             :task-scoring-versions="getScoringVersions"
           />
 
-          <SupportPrint :student-grade="studentGrade" />
+          <SupportPrint :student-grade="studentGrade" :distribution-chart-path="distributionChartPath" />
         </template>
       </div>
 
@@ -71,7 +71,11 @@
             :current-assignment-id="administrationId"
           />
 
-          <SupportScreen :expanded="expanded" :student-grade="studentGrade" />
+          <SupportScreen
+            :expanded="expanded"
+            :student-grade="studentGrade"
+            :distribution-chart-path="distributionChartPath"
+          />
         </template>
       </template>
     </template>
@@ -82,6 +86,7 @@
 import { computed, ref, onMounted, onUnmounted, watch, nextTick, toValue } from 'vue';
 import { useRoute } from 'vue-router';
 import { useAuthStore } from '@/store/auth';
+import { useI18n } from 'vue-i18n';
 import useUserDataQuery from '@/composables/queries/useUserDataQuery';
 import useAdministrationsQuery from '@/composables/queries/useAdministrationsQuery';
 import useUserRunPageQuery from '@/composables/queries/useUserRunPageQuery';
@@ -89,7 +94,7 @@ import useUserLongitudinalRunsQuery from '@/composables/queries/useUserLongitudi
 import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery';
 import usePagedPreview from '@/composables/usePagedPreview';
 import PdfExportService from '@/services/PdfExport.service';
-import { taskDisplayNames } from '@/helpers/reports';
+import { taskDisplayNames, getDistributionChartPath } from '@/helpers/reports';
 
 import AppSpinner from '@/components/AppSpinner.vue';
 import { HeaderScreen, HeaderPrint } from './components/Header';
@@ -178,6 +183,13 @@ const getScoringVersions = computed(() => {
     ]),
   );
   return scoringVersions;
+});
+
+const { locale } = useI18n();
+
+const distributionChartPath = computed(() => {
+  const language = locale.value.includes('es') ? 'es' : 'en';
+  return getDistributionChartPath(studentGrade.value, getScoringVersions.value, language);
 });
 /**
  * Controls the expanded state of the report cards

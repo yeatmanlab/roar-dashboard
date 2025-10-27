@@ -1108,6 +1108,32 @@ export const getRawScoreRange = (taskId) => {
   return null;
 };
 
+export const getDistributionChartPath = (grade, taskScoringVersions, language = 'en') => {
+  const updatedNormVersions = { swr: 7, 'swr-es': 1, sre: 4, 'sre-es': 1 };
+  // Default to no cutoffs for grade > 6,
+  let path = `../assets/${language}-all-grades-distribution-chart-no-cutoffs.webp`;
+
+  if (grade < 6) {
+    const tasks = Object.entries(taskScoringVersions);
+    const applicableTasks = tasks.filter(([taskId]) => taskId in updatedNormVersions);
+    const hasNotUpdatedNorms =
+      applicableTasks.length === 0 ||
+      applicableTasks.every(([taskId, version]) => version < updatedNormVersions[taskId]);
+    // All available support level tasks have updated norms. PA is currently the only task that doesn't have updated norms (getRawScoreRange).
+    const hasAllUpdatedNorms =
+      !('pa' in taskScoringVersions) &&
+      applicableTasks.every(([taskId, version]) => version >= updatedNormVersions[taskId]);
+
+    if (hasAllUpdatedNorms) {
+      path = `../assets/${language}-elementary-distribution-chart-scoring-v2.webp`;
+    } else if (hasNotUpdatedNorms) {
+      path = `../assets/${language}-elementary-distribution-chart-scoring-v1.webp`;
+    }
+  }
+
+  return new URL(path, import.meta.url).href;
+};
+
 export const taskInfoById = {
   phonics: {
     color: '#4B7BE5',
