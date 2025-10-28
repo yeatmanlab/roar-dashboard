@@ -6,6 +6,7 @@
 import { computed, onMounted } from 'vue';
 import embed from 'vega-embed';
 import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery';
+import { SCORE_SUPPORT_LEVEL_COLORS } from '@/constants/scores';
 
 const props = defineProps({
   initialized: {
@@ -96,7 +97,7 @@ const overviewDistributionChart = computed(() => {
         title: 'Support Level',
         scale: {
           domain: ['Needs Extra Support', 'Developing Skill', 'Achieved Skill'],
-          range: ['rgb(201, 61, 130)', 'rgb(237, 192, 55)', 'green'],
+          range: [SCORE_SUPPORT_LEVEL_COLORS.BELOW, SCORE_SUPPORT_LEVEL_COLORS.SOME, SCORE_SUPPORT_LEVEL_COLORS.ABOVE],
         },
         legend: false,
       },

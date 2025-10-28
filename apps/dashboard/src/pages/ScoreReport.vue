@@ -95,19 +95,19 @@
               >
                 <div class="flex align-items-center">
                   <div class="legend-entry">
-                    <div class="circle" :style="`background-color: ${supportLevelColors.below};`" />
+                    <div class="circle" :style="`background-color: ${SCORE_SUPPORT_LEVEL_COLORS.BELOW};`" />
                     <div>
                       <div>Needs Extra Support</div>
                     </div>
                   </div>
                   <div class="legend-entry">
-                    <div class="circle" :style="`background-color: ${supportLevelColors.some};`" />
+                    <div class="circle" :style="`background-color: ${SCORE_SUPPORT_LEVEL_COLORS.SOME};`" />
                     <div>
                       <div>Developing Skill</div>
                     </div>
                   </div>
                   <div class="legend-entry">
-                    <div class="circle" :style="`background-color: ${supportLevelColors.above};`" />
+                    <div class="circle" :style="`background-color: ${SCORE_SUPPORT_LEVEL_COLORS.ABOVE};`" />
                     <div>
                       <div>Achieved Skill</div>
                     </div>
@@ -135,9 +135,11 @@
 
           <div v-if="exportModalStep === EXPORT_MODAL_STEP.WARNING" class="">
             <p class="mt-0">
-              Bulk exporting of score reports as PDFs is <b>currently in beta</b> and may take some time.
+              This export generates a printer-friendly score report. Charts and visualizations will not be included in
+              the PDF.
             </p>
-            <p>Please do not navigate away or close this tab until the export has finished.</p>
+            <p>Please note: The export may take a few moments.</p>
+            <p>Do not close this tab or navigate away until the export is complete.</p>
           </div>
 
           <div v-else-if="exportModalStep === EXPORT_MODAL_STEP.PROGRESS">
@@ -253,25 +255,25 @@
         </div>
         <div v-if="!isLoadingAssignments" class="legend-container">
           <div class="legend-entry">
-            <div class="circle tooltip" :style="`background-color: ${supportLevelColors.below};`" />
+            <div class="circle tooltip" :style="`background-color: ${SCORE_SUPPORT_LEVEL_COLORS.BELOW};`" />
             <div>
               <div>Needs Extra Support</div>
             </div>
           </div>
           <div class="legend-entry">
-            <div class="circle tooltip" :style="`background-color: ${supportLevelColors.some};`" />
+            <div class="circle tooltip" :style="`background-color: ${SCORE_SUPPORT_LEVEL_COLORS.SOME};`" />
             <div>
               <div>Developing Skill</div>
             </div>
           </div>
           <div class="legend-entry">
-            <div class="circle tooltip" :style="`background-color: ${supportLevelColors.above};`" />
+            <div class="circle tooltip" :style="`background-color: ${SCORE_SUPPORT_LEVEL_COLORS.ABOVE};`" />
             <div>
               <div>Achieved Skill</div>
             </div>
           </div>
           <div class="legend-entry">
-            <div class="circle tooltip" :style="`background-color: ${supportLevelColors.Assessed}`" />
+            <div class="circle tooltip" :style="`background-color: ${SCORE_SUPPORT_LEVEL_COLORS.ASSESSED}`" />
             <div>
               <div>Assessed</div>
             </div>
@@ -415,7 +417,7 @@ import {
   getTagColor,
   roamFluencyTasks,
 } from '@/helpers/reports';
-import { supportLevelColors, SCORE_REPORT_NEXT_STEPS_DOCUMENT_PATH } from '@/constants/scores';
+import { SCORE_SUPPORT_LEVEL_COLORS, SCORE_REPORT_NEXT_STEPS_DOCUMENT_PATH } from '@/constants/scores';
 import RoarDataTable from '@/components/RoarDataTable';
 import { CSV_EXPORT_STATIC_COLUMNS } from '@/constants/csvExport';
 import { APP_ROUTES } from '@/constants/routes';
@@ -781,10 +783,13 @@ function returnColorByReliability(assessment, rawScore, support_level, tag_color
       tasksToDisplayPercentCorrect.includes(assessment.taskId)
     ) {
       const test = assessment.scores?.raw?.composite?.test;
-      // When letter-es has numAttempted === numIncorrect, numCorrect === undefined.
+      // When letter-es or morphology has numAttempted === numIncorrect, numCorrect === undefined.
       // It does not return percentCorrect, so it incorrectly hides the tag.
       if (
-        (assessment.taskId !== 'letter-es' && test?.numCorrect === undefined && test?.percentCorrect === undefined) ||
+        (assessment.taskId !== 'letter-es' &&
+          assessment.taskId !== 'morphology' &&
+          test?.numCorrect === undefined &&
+          test?.percentCorrect === undefined) ||
         (test?.numAttempted === 0 && test?.numCorrect === 0)
       ) {
         return '#EEEEF0';
@@ -830,6 +835,7 @@ const getScoresAndSupportFromAssessment = ({ grade, assessment, taskId, optional
     } else {
       support_level = '';
       tag_color = '#A4DDED';
+
       if (tasksToDisplayTotalCorrect.includes(taskId)) {
         const numAttempted = _get(assessment, 'scores.computed.composite.numAttempted');
         const oldNumAttempted = _get(assessment, 'scores.computed.composite.totalNumAttempted');
@@ -991,11 +997,11 @@ const computeAssignmentAndRunData = computed(() => {
             isOptional,
           });
 
-        if (tag_color === supportLevelColors.above) {
+        if (tag_color === SCORE_SUPPORT_LEVEL_COLORS.ABOVE) {
           scoreFilterTags += ' Green ';
-        } else if (tag_color === supportLevelColors.some) {
+        } else if (tag_color === SCORE_SUPPORT_LEVEL_COLORS.SOME) {
           scoreFilterTags += ' Yellow ';
-        } else if (tag_color === supportLevelColors.below) {
+        } else if (tag_color === SCORE_SUPPORT_LEVEL_COLORS.BELOW) {
           scoreFilterTags += ' Pink ';
         }
 
@@ -1042,6 +1048,9 @@ const computeAssignmentAndRunData = computed(() => {
           Object.assign(currRowScores[taskId], { numCorrect, numAttempted, percentCorrect, scoringVersion });
           currRowScores[taskId].tagColor = percentCorrect === null ? 'transparent' : tagColor;
           scoreFilterTags += ' Assessed ';
+
+          // @TODO: Remove after decoupling the percentile returned by getScoreValue from the individual score report.
+          currRowScores[taskId].percentile = null;
         } else if (tasksToDisplayTotalCorrect.includes(taskId)) {
           // isNewScoring is 1.2.23+, otherwise handles 1.2.14
           const isNewScoring = _has(assessment, 'scores.computed.composite.numCorrect');
@@ -1085,23 +1094,30 @@ const computeAssignmentAndRunData = computed(() => {
             };
           }
         } else if ((taskId === 'letter' || taskId === 'letter-en-ca') && assessment.scores) {
-          currRowScores[taskId].lowerCaseScore = assessment.scores.computed.LowercaseNames?.subScore;
-          currRowScores[taskId].upperCaseScore = assessment.scores.computed.UppercaseNames?.subScore;
-          currRowScores[taskId].phonemeScore = assessment.scores.computed.Phonemes?.subScore;
-          currRowScores[taskId].totalScore = assessment.scores.computed.composite?.totalCorrect;
-          const incorrectLettersArray = [
-            ...(_get(assessment, 'scores.computed.UppercaseNames.upperIncorrect') ?? '').split(','),
-            ...(_get(assessment, 'scores.computed.LowercaseNames.lowerIncorrect') ?? '').split(','),
-          ]
-            .sort((a, b) => _toUpper(a) - _toUpper(b))
-            .filter(Boolean)
-            .join(', ');
-          currRowScores[taskId].incorrectLetters = incorrectLettersArray.length > 0 ? incorrectLettersArray : 'None';
+          // Hide tag when only practice questions are attempted
+          if (assessment.scores.computed.composite.totalNumAttempted === 0) {
+            currRowScores[taskId] = null;
+          } else {
+            currRowScores[taskId].lowerCaseScore = assessment.scores.computed.LowercaseNames?.subScore;
+            currRowScores[taskId].upperCaseScore = assessment.scores.computed.UppercaseNames?.subScore;
+            currRowScores[taskId].phonemeScore = assessment.scores.computed.Phonemes?.subScore;
+            currRowScores[taskId].totalScore = assessment.scores.computed.composite?.totalCorrect;
 
-          const incorrectPhonemesArray = (_get(assessment, 'scores.computed.Phonemes.phonemeIncorrect') ?? '')
-            .split(',')
-            .join(', ');
-          currRowScores[taskId].incorrectPhonemes = incorrectPhonemesArray.length > 0 ? incorrectPhonemesArray : 'None';
+            const incorrectLettersArray = [
+              ...(_get(assessment, 'scores.computed.UppercaseNames.upperIncorrect') ?? '').split(','),
+              ...(_get(assessment, 'scores.computed.LowercaseNames.lowerIncorrect') ?? '').split(','),
+            ]
+              .sort((a, b) => _toUpper(a) - _toUpper(b))
+              .filter(Boolean)
+              .join(', ');
+            currRowScores[taskId].incorrectLetters = incorrectLettersArray.length > 0 ? incorrectLettersArray : 'None';
+
+            const incorrectPhonemesArray = (_get(assessment, 'scores.computed.Phonemes.phonemeIncorrect') ?? '')
+              .split(',')
+              .join(', ');
+            currRowScores[taskId].incorrectPhonemes =
+              incorrectPhonemesArray.length > 0 ? incorrectPhonemesArray : 'None';
+          }
         }
         if (taskId === 'pa' && assessment.scores) {
           const first = _get(assessment, 'scores.computed.FSM.roarScore');
