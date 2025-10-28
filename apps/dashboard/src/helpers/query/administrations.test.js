@@ -150,7 +150,7 @@ describe('query/administrations', () => {
       const result = await administrationPageFetcher(
         false, // fetchTestData
         { value: [{ field: { fieldPath: 'name' }, direction: 'ASCENDING' }] }, // orderBy
-        true, // fetchStats
+        true, // fetchStats (for super admin)
       );
 
       expect(getAxiosInstance).toHaveBeenCalled();
