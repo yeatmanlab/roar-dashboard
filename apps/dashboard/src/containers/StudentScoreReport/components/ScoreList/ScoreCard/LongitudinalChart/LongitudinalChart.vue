@@ -3,20 +3,44 @@
     <div class="h-64">
       <canvas ref="canvasRef" class="w-full h-full"></canvas>
     </div>
-    <div v-if="showSupportLevels" class="flex gap-3 justify-end mt-2 text-xs">
-      <div class="flex gap-1 items-center">
-        <div class="w-3 h-3 rounded-full" :style="{ backgroundColor: SCORE_SUPPORT_LEVEL_COLORS.ABOVE }"></div>
-        <span>Achieved Skill</span>
+    <template v-if="showSupportLevels">
+      <div class="flex gap-3 justify-end mt-2 text-xs">
+        <div class="ml-2 flex gap-2 align-items-center">
+          <div
+            class="rounded-full flex-shrink-0"
+            style="width: 1rem; height: 1rem"
+            :style="{ backgroundColor: SCORE_SUPPORT_LEVEL_COLORS.ABOVE }"
+          ></div>
+          <span>Achieved Skill</span>
+        </div>
+        <div class="flex gap-2 align-items-center">
+          <div
+            class="rounded-full flex-shrink-0"
+            style="width: 1rem; height: 1rem"
+            :style="{ backgroundColor: SCORE_SUPPORT_LEVEL_COLORS.SOME }"
+          ></div>
+          <span>Developing Skill</span>
+        </div>
+        <div class="flex gap-2 align-items-center">
+          <div
+            class="rounded-full flex-shrink-0"
+            style="width: 1rem; height: 1rem"
+            :style="{ backgroundColor: SCORE_SUPPORT_LEVEL_COLORS.BELOW }"
+          ></div>
+          <span>Needs Extra Support</span>
+        </div>
       </div>
-      <div class="flex gap-1 items-center">
-        <div class="w-3 h-3 rounded-full" :style="{ backgroundColor: SCORE_SUPPORT_LEVEL_COLORS.SOME }"></div>
-        <span>Developing Skill</span>
+    </template>
+    <template v-else>
+      <div class="flex justify-content-center align-items-center gap-2 mt-4 text-xs">
+        <div
+          class="rounded-full flex-shrink-0"
+          style="width: 1rem; height: 1rem"
+          :style="{ backgroundColor: SCORE_SUPPORT_LEVEL_COLORS.ASSESSED }"
+        ></div>
+        <span>Assessed</span>
       </div>
-      <div class="flex gap-1 items-center">
-        <div class="w-3 h-3 rounded-full" :style="{ backgroundColor: SCORE_SUPPORT_LEVEL_COLORS.BELOW }"></div>
-        <span>Needs Extra Support</span>
-      </div>
-    </div>
+    </template>
   </div>
 </template>
 
