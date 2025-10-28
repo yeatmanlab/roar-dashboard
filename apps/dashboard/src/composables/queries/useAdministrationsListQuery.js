@@ -21,7 +21,7 @@ const useAdministrationsListQuery = (orderBy, testAdministrationsOnly = false, q
     enabled: queryOptions?.enabled ?? true,
   });
 
-  // Get admin status to determine if stats should be fetched.
+  // Get super admin status to determine if stats should be fetched for super admins.
   const { isSuperAdmin } = useUserType(userClaims);
 
   // Ensure all necessary data is loaded before enabling the query.
