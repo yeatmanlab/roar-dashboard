@@ -1151,7 +1151,7 @@ const computeAssignmentAndRunData = computed(() => {
         } else if ((taskId === 'letter' || taskId === 'letter-en-ca') && assessment.scores) {
           // Hide tag when only practice questions are attempted
           if (assessment.scores.computed.composite.totalNumAttempted === 0) {
-            currRowScores[taskId] = null;
+            currRowScores[taskId].rawScore = null;
           } else {
             currRowScores[taskId].lowerCaseScore = assessment.scores.computed.LowercaseNames?.subScore;
             currRowScores[taskId].upperCaseScore = assessment.scores.computed.UppercaseNames?.subScore;
