@@ -162,8 +162,8 @@ function setSentryWidgetVisibility(show) {
 
 // run again whenever role changes (like after sign-out/sign-in)
 watch(
-  [isParticipant],
-  ([participant]) => {
+  isParticipant,
+  (participant) => {
     setSentryWidgetVisibility(!participant);
   },
   { immediate: false },
