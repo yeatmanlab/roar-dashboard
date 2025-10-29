@@ -21,7 +21,12 @@ import { alertVariants, ALERT_VARIANTS } from '.';
 import { cn } from '@/utils';
 
 const props = defineProps({
-  class: { type: null, required: false, default: null },
-  variant: { type: null, required: false, default: 'default' },
+  class: { type: String, required: false, default: null },
+  variant: {
+    type: String,
+    required: false,
+    default: ALERT_VARIANTS.DEFAULT,
+    validator: (value) => Object.values(ALERT_VARIANTS).includes(value),
+  },
 });
 </script>

@@ -212,6 +212,7 @@ const validateEmailAndCheckSSO = _debounce(
       const ssoProvider = getAutoRedirectSSOProvider(email);
       if (ssoProvider) {
         emit('sso-auto-redirect', { email, provider: ssoProvider });
+        evaluatingEmail.value = false;
         return;
       }
 

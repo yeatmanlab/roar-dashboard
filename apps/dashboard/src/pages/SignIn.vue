@@ -77,7 +77,7 @@
             <PvButton
               class="flex p-1 mr-2 ml-2 w-3 text-black surface-0 border-black-alpha-10 justify-content-center hover:border-primary hover:surface-ground"
               style="border-radius: 3rem; height: 3rem; color: black"
-              data-cy="sign-in__classlink-sso"
+              data-cy="sign-in__nycps-sso"
               @click="authWithSSO(AUTH_SSO_PROVIDERS.NYCPS)"
             >
               <img
