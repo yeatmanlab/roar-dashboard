@@ -153,6 +153,21 @@ watch(userClaims, (updatedUserClaims) => {
     logAuthEvent(AUTH_LOG_MESSAGES.USER_CLAIMS_UPDATED, { data: { assessmentUid, adminUid } });
   }
 });
+// hide sentry widget if participant
+function setSentryWidgetVisibility(show) {
+  const sentryWidget = document.getElementById('sentry-feedback');
+  if (!sentryWidget) return;
+  sentryWidget.style.display = show ? '' : 'none';
+}
+
+// run again whenever role changes (like after sign-out/sign-in)
+watch(
+  isParticipant,
+  (participant) => {
+    setSentryWidgetVisibility(!participant);
+  },
+  { immediate: false },
+);
 
 onMounted(async () => {
   if (requireRefresh.value) {
@@ -160,5 +175,6 @@ onMounted(async () => {
     router.go(0);
   }
   if (roarfirekit.value.restConfig?.()) init();
+  setSentryWidgetVisibility(!isParticipant.value);
 });
 </script>
