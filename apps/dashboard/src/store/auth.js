@@ -30,6 +30,7 @@ export const useAuthStore = () => {
         adminAuthStateListener: null,
         appAuthStateListener: null,
         accessToken: null,
+        redirectError: null, // Stores SSO redirect errors for display on sign-in page
       };
     },
     getters: {
@@ -137,11 +138,13 @@ export const useAuthStore = () => {
         }
       },
       async signInWithGooglePopup() {
+        this.ssoProvider = AUTH_SSO_PROVIDERS.GOOGLE;
         if (this.isFirekitInit) {
           return this.roarfirekit.signInWithPopup(AUTH_SSO_PROVIDERS.GOOGLE);
         }
       },
       async signInWithGoogleRedirect() {
+        this.ssoProvider = AUTH_SSO_PROVIDERS.GOOGLE;
         return this.roarfirekit.initiateRedirect(AUTH_SSO_PROVIDERS.GOOGLE);
       },
       async signInWithCleverPopup() {
@@ -176,19 +179,28 @@ export const useAuthStore = () => {
       },
       async initStateFromRedirect() {
         this.spinner = true;
+        this.redirectError = null; // Clear any previous redirect errors
         const enableCookiesCallback = () => {
           const router = useRouter();
           router.replace({ name: 'EnableCookies' });
         };
         if (this.isFirekitInit) {
-          return await this.roarfirekit.signInFromRedirectResult(enableCookiesCallback).then((result) => {
-            // If the result is null, then no redirect operation was called.
-            if (result !== null) {
-              this.spinner = true;
-            } else {
+          return await this.roarfirekit
+            .signInFromRedirectResult(enableCookiesCallback)
+            .then((result) => {
+              // If the result is null, then no redirect operation was called.
+              if (result !== null) {
+                this.spinner = true;
+              } else {
+                this.spinner = false;
+              }
+            })
+            .catch((error) => {
+              console.error('Error processing redirect result:', error);
+              // Store redirect error for display on sign-in page
+              this.redirectError = error;
               this.spinner = false;
-            }
-          });
+            });
         }
       },
       async forceIdTokenRefresh() {
