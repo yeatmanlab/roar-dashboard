@@ -79,8 +79,6 @@ const props = defineProps({
   availableProviders: { type: Array, default: () => [] },
 });
 
-console.log('showGenericProviders', props.showGenericProviders);
-
 defineEmits(['auth-clever', 'auth-classlink', 'auth-nycps', 'auth-google']);
 </script>
 

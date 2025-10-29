@@ -17,6 +17,12 @@
       </div>
     </div>
 
+    <div v-if="invalid" class="w-full border-red-200 p-2 border-2 bg-red-100 text-center">
+      <PvMessage icon="pi pi-times-circle" class="text-red-500 mb-2" severity="error">
+        {{ $t('authSignIn.incorrectEmailOrPassword') }}
+      </PvMessage>
+    </div>
+
     <!-- PASSWORD / MAGIC LINK / CREATE PASSWORD -->
     <SignInPasswordBlock
       :show="props.showPasswordField && !props.multipleProviders"
@@ -27,7 +33,7 @@
       @update:password="emit('update:password', $event)"
       @forgot-password="emit('forgot-password')"
       @magic-link="emit('magic-link')"
-      @submit="onSubmit"
+      @submit="emit('submit')"
     />
 
     <!-- CONTINUE button (email -> check providers OR password submit) -->
@@ -72,6 +78,7 @@
 
 <script setup>
 import PvButton from 'primevue/button';
+import PvMessage from 'primevue/message';
 
 import SignInEmailInput from '@/containers/SignIn/components/SignInEmailInput.vue';
 import SignedInEmailChip from '@/containers/SignIn/components/SignedInEmailChip.vue';
@@ -82,15 +89,12 @@ import SignInProvidersList from '@/containers/SignIn/components/SignInProvidersL
 const props = defineProps({
   email: { type: String, default: '' },
   password: { type: String, default: '' },
-
   invalid: { type: Boolean, default: false },
   showPasswordField: { type: Boolean, default: false },
   multipleProviders: { type: Boolean, default: false },
   emailLinkSent: { type: Boolean, default: false },
-
   hideProviders: { type: Boolean, default: false },
   isUsername: { type: Boolean, default: false },
-
   availableProviders: { type: Array, default: () => [] },
   showGenericProviders: { type: Boolean, default: true },
   showScopedProviders: { type: Boolean, default: false },
