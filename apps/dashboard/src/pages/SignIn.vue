@@ -74,9 +74,10 @@
 </template>
 
 <script setup>
-import { onMounted, ref, toRaw, onBeforeUnmount, computed } from 'vue';
+import { onMounted, ref, toRaw, onBeforeUnmount, computed, defineAsyncComponent } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useRoute, useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { setUser } from '@sentry/vue';
 import { useAuthStore } from '@/store/auth';
 import { isMobileBrowser } from '@/helpers';
@@ -333,15 +334,15 @@ onMounted(() => {
   // carry over your redirect-based OAuth triggers
   if (authStore.cleverOAuthRequested) {
     authStore.cleverOAuthRequested = false;
-    authWithClever();
+    authWithSSO(AUTH_SSO_PROVIDERS.CLEVER);
   }
   if (authStore.classLinkOAuthRequested) {
     authStore.classLinkOAuthRequested = false;
-    authWithClassLink();
+    authWithSSO(AUTH_SSO_PROVIDERS.CLASSLINK);
   }
   if (authStore.nycpsOAuthRequested) {
     authStore.nycpsOAuthRequested = false;
-    authWithNYCPS();
+    authWithSSO(AUTH_SSO_PROVIDERS.NYCPS);
   }
 });
 
