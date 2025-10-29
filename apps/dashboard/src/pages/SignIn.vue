@@ -16,6 +16,14 @@
           <div id="languageSelect" class="flex m-4 justify-content-center">
             <LanguageSelector class="w-7" />
           </div>
+
+          <div v-if="ssoError" class="mx-4 mb-3">
+            <Alert :variant="ALERT_VARIANTS.DESTRUCTIVE">
+              <AlertTitle>{{ ssoError.title }}</AlertTitle>
+              <AlertDescription>{{ ssoError.message }}</AlertDescription>
+            </Alert>
+          </div>
+
           <SignIn :invalid="incorrect" @submit="authWithEmail" @update:email="email = $event" />
         </section>
         <section class="flex w-full flex-column">
@@ -30,7 +38,7 @@
               class="flex p-1 mr-2 ml-2 w-3 text-center text-black surface-0 border-black-alpha-10 justify-content-center hover:border-primary hover:surface-ground"
               style="border-radius: 3rem; height: 3rem; color: black"
               data-cy="sign-in__google-sso"
-              @click="authWithGoogle"
+              @click="authWithSSO(AUTH_SSO_PROVIDERS.GOOGLE)"
             >
               <img src="../assets/provider-google-logo.svg" alt="The Google Logo" class="flex mr-2 w-2" />
               <span>Google</span>
@@ -39,7 +47,7 @@
               class="flex p-1 mr-2 ml-2 w-3 surface-0 border-black-alpha-10 justify-content-center hover:border-primary hover:surface-ground"
               style="border-radius: 3rem; height: 3rem; color: black"
               data-cy="sign-in__clever-sso"
-              @click="authWithClever"
+              @click="authWithSSO(AUTH_SSO_PROVIDERS.CLEVER)"
             >
               <img src="../assets/provider-clever-logo.svg" alt="The Clever Logo" class="flex mr-2 w-2" />
               <span>Clever</span>
@@ -48,7 +56,7 @@
               class="flex p-1 mr-2 ml-2 w-3 text-black surface-0 border-black-alpha-10 justify-content-center hover:border-primary hover:surface-ground"
               style="border-radius: 3rem; height: 3rem; color: black"
               data-cy="sign-in__classlink-sso"
-              @click="authWithClassLink"
+              @click="authWithSSO(AUTH_SSO_PROVIDERS.CLASSLINK)"
             >
               <img src="../assets/provider-classlink-logo.png" alt="The ClassLink Logo" class="flex mr-2 w-2" />
               <span>ClassLink</span>
@@ -57,7 +65,7 @@
               class="flex p-1 mr-2 ml-2 w-3 text-black surface-0 border-black-alpha-10 justify-content-center hover:border-primary hover:surface-ground"
               style="border-radius: 3rem; height: 3rem; color: black"
               data-cy="sign-in__classlink-sso"
-              @click="authWithNYCPS"
+              @click="authWithSSO(AUTH_SSO_PROVIDERS.NYCPS)"
             >
               <!-- NYCPS Logo needs to be slightly wider as it is not a square -->
               <img
@@ -70,19 +78,10 @@
             </PvButton>
           </div>
         </section>
-        <!-- <section class="signin-option-container signin-option-providers">
-          <div class="flex flex-row w-full justify-content-center">
-            <p class="text-sm signin-option-title">Don't have an account yet?</p>
-            <PvButton label="Register" class="w-3 signin-button" @click="router.push({ name: 'Register' })" />
-          </div>
-        </section> -->
       </section>
-      <footer style="display: none">
-        <!-- TODO: figure out a link for this -->
-        <a href="#trouble">{{ $t('pageSignIn.havingTrouble') }}</a>
-      </footer>
     </section>
   </div>
+
   <RoarModal
     :is-enabled="warningModalOpen"
     title="Email is already associated with an account"
@@ -101,7 +100,7 @@
             label="Sign in with Google"
             class="flex p-1 mr-1 text-center surface-0 border-black-alpha-10 justify-content-center hover:border-primary hover:surface-ground"
             style="border-radius: 3rem; height: 3rem"
-            @click="authWithGoogle"
+            @click="authWithSSO(AUTH_SSO_PROVIDERS.GOOGLE)"
           >
             <img src="../assets/provider-google-logo.svg" alt="The Google Logo" class="flex mr-2 w-2" />
             <span>Google</span>
@@ -111,7 +110,7 @@
           <PvButton
             class="flex p-1 mr-1 surface-0 border-black-alpha-10 justify-content-center hover:border-primary hover:surface-ground"
             style="border-radius: 3rem; height: 3rem"
-            @click="authWithClever"
+            @click="authWithSSO(AUTH_SSO_PROVIDERS.CLEVER)"
           >
             <img src="../assets/provider-clever-logo.svg" alt="The Clever Logo" class="flex mr-2 w-2" />
             <span>Clever</span>
@@ -121,7 +120,7 @@
           <PvButton
             class="flex p-1 mr-1 surface-0 border-black-alpha-10 justify-content-center hover:border-primary hover:surface-ground"
             style="border-radius: 3rem; height: 3rem"
-            @click="authWithClassLink"
+            @click="authWithSSO(AUTH_SSO_PROVIDERS.CLASSLINK)"
           >
             <img src="../assets/provider-classlink-logo.png" alt="The ClassLink Logo" class="flex mr-2 w-2" />
             <span>ClassLink</span>
@@ -157,9 +156,10 @@
 </template>
 
 <script setup>
-import { onMounted, ref, toRaw, onBeforeUnmount, computed } from 'vue';
+import { onMounted, ref, toRaw, onBeforeUnmount, computed, defineAsyncComponent } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useRoute, useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { setUser } from '@sentry/vue';
 import PvButton from 'primevue/button';
 import PvPassword from 'primevue/password';
@@ -174,12 +174,24 @@ import RoarModal from '@/components/modals/RoarModal.vue';
 import SignIn from '@/components/auth/SignIn.vue';
 import LanguageSelector from '@/components/LanguageSelector.vue';
 
+// Lazy-load Alert components
+const Alert = defineAsyncComponent(() => import('@/components/Alert').then((m) => m.Alert));
+const AlertTitle = defineAsyncComponent(() => import('@/components/Alert').then((m) => m.AlertTitle));
+const AlertDescription = defineAsyncComponent(() => import('@/components/Alert').then((m) => m.AlertDescription));
+
+import { FIREBASE_FUNCTIONS_ERROR_CODES, FIREBASE_FUNCTIONS_ERROR_REASONS } from '@/constants/firebase';
+import { ALERT_VARIANTS } from '../components/Alert';
+
+const { t } = useI18n();
 const incorrect = ref(false);
 const authStore = useAuthStore();
 const router = useRouter();
 const route = useRoute();
 
-const { spinner, ssoProvider, roarfirekit } = storeToRefs(authStore);
+// SSO error state
+const ssoError = ref(null); // { title: string, message: string } or null
+
+const { spinner, ssoProvider, roarfirekit, redirectError } = storeToRefs(authStore);
 const warningModalOpen = ref(false);
 
 authStore.$subscribe(() => {
@@ -194,87 +206,86 @@ authStore.$subscribe(() => {
   }
 });
 
-const authWithGoogle = () => {
-  if (isMobileBrowser()) {
-    authStore.signInWithGoogleRedirect();
-  } else {
-    authStore
-      .signInWithGooglePopup()
-      .then(async () => {
-        if (authStore.uid) {
-          const userClaims = await fetchDocById('userClaims', authStore.uid);
-          authStore.userClaims = userClaims;
-        }
-        if (authStore.roarUid) {
-          const userData = await fetchDocById('users', authStore.roarUid);
-          authStore.userData = userData;
-          setUser({ id: authStore.roarUid, userType: userData.userType });
-        }
-      })
-      .catch((e) => {
-        const errorCode = e.code;
-        if (errorCode === 'auth/email-already-in-use') {
-          // User tried to register with an email that is already linked to a firebase account.
-          openWarningModal();
-          spinner.value = false;
-        } else {
-          spinner.value = false;
-        }
-      });
+/**
+ * Configuration for SSO providers
+ *
+ * Defines the behavior for each provider (popup vs redirect logic) until we refactor the auth flow and remove the need
+ * for different popup and redirect methods.
+ */
+const SSO_CONFIG = {
+  [AUTH_SSO_PROVIDERS.GOOGLE]: {
+    displayName: 'Google',
+    usePopup: () => !isMobileBrowser(),
+    popupMethod: () => authStore.signInWithGooglePopup(),
+    redirectMethod: () => authStore.signInWithGoogleRedirect(),
+  },
+  [AUTH_SSO_PROVIDERS.CLEVER]: {
+    displayName: 'Clever',
+    usePopup: () => process.env.NODE_ENV === 'development' && !window.Cypress,
+    popupMethod: () => authStore.signInWithCleverPopup(),
+    redirectMethod: () => authStore.signInWithCleverRedirect(),
+  },
+  [AUTH_SSO_PROVIDERS.CLASSLINK]: {
+    displayName: 'ClassLink',
+    usePopup: () => false, // ClassLink always uses redirect
+    redirectMethod: () => authStore.signInWithClassLinkRedirect(),
+  },
+  [AUTH_SSO_PROVIDERS.NYCPS]: {
+    displayName: 'NYCPS',
+    usePopup: () => process.env.NODE_ENV === 'development' && !window.Cypress,
+    popupMethod: () => authStore.signInWithNYCPSPopup(),
+    redirectMethod: () => authStore.signInWithNYCPSRedirect(),
+  },
+};
 
-    spinner.value = true;
+/**
+ * Unified SSO authentication handler
+ * @param {string} provider - The SSO provider constant (from AUTH_SSO_PROVIDERS)
+ */
+const authWithSSO = async (provider) => {
+  const config = SSO_CONFIG[provider];
+
+  if (!config) {
+    console.error(`Unknown SSO provider: ${provider}`);
+    return;
+  }
+
+  // Clear any previous SSO errors
+  ssoError.value = null;
+
+  // Common post-authentication logic
+  const handleAuthSuccess = async () => {
+    if (authStore.uid) {
+      const userClaims = await fetchDocById('userClaims', authStore.uid);
+      authStore.userClaims = userClaims;
+    }
+    if (authStore.roarUid) {
+      const userData = await fetchDocById('users', authStore.roarUid);
+      authStore.userData = userData;
+      setUser({ id: authStore.roarUid, userType: userData.userType });
+    }
+  };
+
+  // Show loading spinner
+  spinner.value = true;
+
+  // Handle authentication
+  try {
+    if (config.usePopup()) {
+      await config.popupMethod();
+      await handleAuthSuccess();
+      // Turn off spinner after successful popup authentication
+      spinner.value = false;
+    } else {
+      // For redirect, leave spinner on - page will navigate away
+      config.redirectMethod();
+    }
+  } catch (error) {
+    handleSSOError(error, config.displayName);
   }
 };
 
 const modalPassword = ref('');
-
-const authWithClever = () => {
-  if (process.env.NODE_ENV === 'development' && !window.Cypress) {
-    authStore.signInWithCleverPopup().then(async () => {
-      if (authStore.uid) {
-        const userClaims = await fetchDocById('userClaims', authStore.uid);
-        authStore.userClaims = userClaims;
-      }
-      if (authStore.roarUid) {
-        const userData = await fetchDocById('users', authStore.roarUid);
-        authStore.userData = userData;
-        setUser({ id: authStore.roarUid, userType: userData.userType });
-      }
-    });
-  } else {
-    authStore.signInWithCleverRedirect();
-  }
-  spinner.value = true;
-};
-
-const authWithClassLink = () => {
-  if (isMobileBrowser()) {
-    authStore.signInWithClassLinkRedirect();
-    spinner.value = true;
-  } else {
-    authStore.signInWithClassLinkRedirect();
-    spinner.value = true;
-  }
-};
-
-const authWithNYCPS = () => {
-  if (process.env.NODE_ENV === 'development' && !window.Cypress) {
-    authStore.signInWithNYCPSPopup().then(async () => {
-      if (authStore.uid) {
-        const userClaims = await fetchDocById('userClaims', authStore.uid);
-        authStore.userClaims = userClaims;
-      }
-      if (authStore.roarUid) {
-        const userData = await fetchDocById('users', authStore.roarUid);
-        authStore.userData = userData;
-        setUser({ id: authStore.roarUid, userType: userData.userType });
-      }
-    });
-  } else {
-    authStore.signInWithNYCPSRedirect();
-  }
-  spinner.value = true;
-};
 
 const authWithEmail = (state) => {
   // If username is supplied instead of email
@@ -339,19 +350,83 @@ const displaySignInMethods = computed(() => {
   });
 });
 
+/**
+ * Unified error handler for SSO authentication errors
+ * @param {Error} error - The error object from Firebase Auth
+ * @param {string} providerName - The display name of the SSO provider (e.g., 'Google', 'Clever', 'ClassLink', 'NYCPS')
+ */
+const handleSSOError = (error, providerName) => {
+  const errorCode = error.code;
+  const errorMessage = error.message;
+
+  // Turn off spinner
+  spinner.value = false;
+
+  // Check if the auth provider has been disabled
+  if (
+    errorCode === FIREBASE_FUNCTIONS_ERROR_CODES.AUTH_INTERNAL &&
+    errorMessage.includes(FIREBASE_FUNCTIONS_ERROR_REASONS.AUTH_PROVIDER_DISABLED)
+  ) {
+    ssoError.value = {
+      title: t('pageSignIn.ssoErrorTitle'),
+      message: t('pageSignIn.ssoProviderDisabledMessage', { providerName }),
+    };
+    return;
+  }
+
+  // Check if email is already in use
+  if (errorCode === FIREBASE_FUNCTIONS_ERROR_CODES.AUTH_EMAIL_ALREADY_IN_USE) {
+    openWarningModal();
+    return;
+  }
+
+  // Handle popup closed by user
+  if (
+    [
+      FIREBASE_FUNCTIONS_ERROR_CODES.AUTH_POPUP_CLOSED_BY_USER,
+      FIREBASE_FUNCTIONS_ERROR_CODES.AUTH_POPUP_CANCELLED,
+    ].includes(errorCode)
+  ) {
+    // Silently ignore as user intentionally closed the popup
+    return;
+  }
+
+  // Generic error handling
+  console.error(`SSO Error / ${providerName}:`, error);
+
+  ssoError.value = {
+    title: t('pageSignIn.ssoErrorTitle'),
+    message: t('pageSignIn.ssoGenericErrorMessage'),
+  };
+};
+
 onMounted(() => {
   document.body.classList.add('page-signin');
+
+  // Check for redirect errors (e.g., when Firebase blocking function rejects SSO)
+  if (redirectError.value) {
+    // Get the provider display name from SSO_CONFIG, or use ssoProvider if available
+    const providerConfig = ssoProvider.value ? SSO_CONFIG[ssoProvider.value] : null;
+    const providerDisplayName = providerConfig?.displayName || 'SSO';
+
+    // Handle the redirect error
+    handleSSOError(redirectError.value, providerDisplayName);
+
+    // Clear the redirect error from the store
+    authStore.redirectError = null;
+  }
+
   if (authStore.cleverOAuthRequested) {
     authStore.cleverOAuthRequested = false;
-    authWithClever();
+    authWithSSO(AUTH_SSO_PROVIDERS.CLEVER);
   }
   if (authStore.classLinkOAuthRequested) {
     authStore.classLinkOAuthRequested = false;
-    authWithClassLink();
+    authWithSSO(AUTH_SSO_PROVIDERS.CLASSLINK);
   }
   if (authStore.nycpsOAuthRequested) {
     authStore.nycpsOAuthRequested = false;
-    authWithNYCPS();
+    authWithSSO(AUTH_SSO_PROVIDERS.NYCPS);
   }
 });
 
