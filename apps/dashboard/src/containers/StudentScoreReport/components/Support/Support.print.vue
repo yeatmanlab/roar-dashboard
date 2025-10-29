@@ -2,7 +2,7 @@
   <div class="text-sm break-before-page">
     <h2 class="text-xl font-bold">{{ $t('scoreReports.taskTabHeader') }}</h2>
 
-    <div class="p-1 mb-4 text-center border border-gray-100 border-1">
+    <div v-if="!(studentGrade >= 6)" class="p-1 mb-4 text-center border border-gray-100 border-1">
       <img :src="distributionChartPath" height="300" />
     </div>
 

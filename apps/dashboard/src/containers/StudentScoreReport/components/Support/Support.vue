@@ -4,7 +4,10 @@
       <PvAccordionPanel :value="SUPPORT_PANELS.TASK">
         <PvAccordionHeader>{{ $t('scoreReports.taskTabHeader') }}</PvAccordionHeader>
         <PvAccordionContent>
-          <div class="flex p-3 mb-4 border border-gray-100 border-1 flex-column align-items-center">
+          <div
+            v-if="!(studentGrade >= 6)"
+            class="flex p-3 mb-4 border border-gray-100 border-1 flex-column align-items-center"
+          >
             <img :src="distributionChartPath" width="650" />
           </div>
 
