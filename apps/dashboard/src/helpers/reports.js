@@ -1117,15 +1117,13 @@ export const getRawScoreRange = (taskId) => {
  * @returns {string} Full URL to the distribution chart asset
  *
  * @description
- * Grade >= 6: no-cutoffs chart
- * Grade < 6:
  * - All applicable tasks meet thresholds → v2 chart
  * - All below thresholds → v1 chart
- * - Mixed or none → no-cutoffs chart
- * - If unnormed Palabra or Frase as only support-level tasks, exclude and show no-cutoffs chart
+ * - Mixed → no-cutoffs chart
  */
 export const getDistributionChartPath = (grade, taskScoringVersions, language = 'en') => {
-  const updatedNormVersions = { swr: 7, 'swr-es': 1, sre: 4, 'sre-es': 1 };
+  // PA will always return null for scoringVersion until v4 is released
+  const updatedNormVersions = { swr: 7, 'swr-es': 1, sre: 4, 'sre-es': 1, pa: 4 };
   const tasks = Object.entries(taskScoringVersions);
 
   // Filter to only tasks that have updated norms and exclude unnormed Spanish tasks (version < 1)
@@ -1133,15 +1131,13 @@ export const getDistributionChartPath = (grade, taskScoringVersions, language = 
     ([taskId, version]) => taskId in updatedNormVersions && !(['swr-es', 'sre-es'].includes(taskId) && version < 1),
   );
 
-  // Default to no cutoffs for grade >= 6 and admins with mixed scoring versions
+  // Default to admins with mixed scoring versions
   let path = `../assets/${language}-all-grades-distribution-chart-no-cutoffs.webp`;
 
+  // Images are currently only available for elementary grades
   if (parseInt(grade) < 6 && applicableTasks.length > 0) {
     const hasNoUpdatedNorms = applicableTasks.every(([taskId, version]) => version < updatedNormVersions[taskId]);
-    // PA is the only support-level task without updated norms in getRawScoreRange
-    const hasAllUpdatedNorms =
-      !('pa' in taskScoringVersions) &&
-      applicableTasks.every(([taskId, version]) => version >= updatedNormVersions[taskId]);
+    const hasAllUpdatedNorms = applicableTasks.every(([taskId, version]) => version >= updatedNormVersions[taskId]);
 
     if (hasAllUpdatedNorms) {
       path = `../assets/${language}-elementary-distribution-chart-scoring-v2.webp`;
