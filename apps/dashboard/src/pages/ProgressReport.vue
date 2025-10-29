@@ -107,7 +107,7 @@
             </div>
           </div>
           <RoarDataTable
-            v-if="progressReportColumns?.length ?? 0 > 0"
+            v-if="(progressReportColumns?.length ?? 0 > 0) && orgType !== 'district'"
             :data="filteredTableData"
             :columns="progressReportColumns"
             :total-records="filteredTableData?.length"
@@ -176,7 +176,9 @@ const props = defineProps({
 
 const initialized = ref(false);
 
-const isLoading = computed(() => isLoadingAssignments.value || isLoadingTasksDictionary.value);
+const isLoading = computed(
+  () => props.orgType === 'district' && (isLoadingAssignments.value || isLoadingTasksDictionary.value),
+);
 
 const reportView = ref({ name: 'Progress Report', constant: true });
 const reportViews = [
@@ -268,6 +270,10 @@ const schoolNameDictionary = computed(() => {
 });
 
 const computedProgressData = computed(() => {
+  if (props.orgType === 'district') {
+    // return the backend data from aggregation
+    return [];
+  }
   if (!assignmentData.value) return [];
   // assignmentTableData is an array of objects, each representing a row in the table
   const assignmentTableDataAcc = [];

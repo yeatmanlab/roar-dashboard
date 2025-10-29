@@ -3,7 +3,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted } from 'vue';
+import { computed, onMounted, watch } from 'vue';
 import embed from 'vega-embed';
 import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery';
 import { SCORE_SUPPORT_LEVEL_COLORS } from '@/constants/scores';
@@ -19,7 +19,7 @@ const props = defineProps({
   },
   runs: {
     type: Array,
-    required: true,
+    required: false,
   },
   orgType: {
     type: String,
@@ -47,7 +47,18 @@ const props = defineProps({
 
 const { data: tasksDictionary, isLoading: isLoadingTasksDictionary } = useTasksDictionaryQuery();
 
+const MATCHING_SUPPORT_LEVELS = {
+  above: 'Achieved Skill',
+  some: 'Developing Skill',
+  below: 'Needs Extra Support',
+};
+
 const supportLevelsOverview = computed(() => {
+  if (props.orgType === 'district') {
+    return Object.entries(props.runs)
+      .filter(([support_level]) => MATCHING_SUPPORT_LEVELS[support_level] != undefined)
+      .map(([support_level, total]) => ({ category: MATCHING_SUPPORT_LEVELS[support_level], value: total.total }));
+  }
   if (!props.runs) return [];
   let values = {};
   for (const { scores } of props.runs) {
@@ -75,7 +86,7 @@ const overviewDistributionChart = computed(() => {
     spacing: 10,
     background: null,
     title: {
-      text: `${tasksDictionary.value[props.taskId].publicName ?? props.taskId}`,
+      text: `${tasksDictionary.value[props.taskId]?.publicName ?? props.taskId}`,
       subtitle: `Count by Support Level`,
       anchor: 'middle',
       fontSize: 20,
@@ -113,9 +124,41 @@ const overviewDistributionChart = computed(() => {
 });
 
 const draw = async () => {
-  let chartSpecSupport = overviewDistributionChart.value;
+  const chartSpecSupport = overviewDistributionChart.value;
+
+  // Don't draw if chart spec is empty (still loading)
+  if (!chartSpecSupport || Object.keys(chartSpecSupport).length === 0) {
+    return;
+  }
+
   await embed(`#roar-dist-chart-overview-${props.taskId}`, chartSpecSupport);
 };
+
+// Watch for changes to computed chart specification
+watch(
+  () => overviewDistributionChart.value,
+  () => {
+    draw();
+  },
+  { deep: true },
+);
+
+// Watch runs directly in case computed doesn't trigger
+watch(
+  () => props.runs,
+  () => {
+    draw();
+  },
+  { deep: true },
+);
+
+// Watch orgType since it changes the data processing logic
+watch(
+  () => props.orgType,
+  () => {
+    draw();
+  },
+);
 
 onMounted(() => {
   if (props.taskId !== 'letter') {

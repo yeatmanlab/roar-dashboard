@@ -25,7 +25,11 @@
                 </div>
               </div>
               <div class="flex gap-1 flex-column align-items-end">
-                <div class="flex flex-row gap-4 align-items-center" data-html2canvas-ignore="true">
+                <div
+                  v-if="orgType !== 'district'"
+                  class="flex flex-row gap-4 align-items-center"
+                  data-html2canvas-ignore="true"
+                >
                   <div class="flex flex-row text-sm text-gray-600 uppercase">VIEW</div>
                   <PvSelectButton
                     v-model="reportView"
@@ -40,14 +44,19 @@
                   </PvSelectButton>
                 </div>
 
-                <div v-if="!isLoadingAssignments" class="flex gap-2 mr-5 flex-column">
+                <div
+                  v-if="!isLoadingAssignments && !isLoadingDistrictSupportCategories"
+                  class="flex gap-2 mr-5 flex-column"
+                >
                   <PvButton
+                    v-if="orgType !== 'district'"
                     class="flex flex-row p-2 text-sm text-white border-none bg-primary border-round h-2rem hover:bg-red-900"
                     :icon="!exportLoading ? 'pi pi-download mr-2' : 'pi pi-spin pi-spinner mr-2'"
                     label="Export Combined Reports"
                     @click="exportData({ includeProgress: true })"
                   />
                   <PvButton
+                    v-if="orgType !== 'district' || !isEmptyDistrictSupportCategories"
                     class="flex flex-row p-2 mb-2 text-sm text-white border-none bg-primary border-round h-2rem hover:bg-red-900"
                     :icon="!exportLoading ? 'pi pi-download mr-2' : 'pi pi-spin pi-spinner mr-2'"
                     :disabled="exportLoading"
@@ -68,7 +77,11 @@
                   <div v-for="taskId of sortedAndFilteredTaskIds" :key="taskId" style="width: 33%">
                     <div class="distribution-overview-wrapper">
                       <DistributionChartOverview
-                        :runs="computeAssignmentAndRunData.runsByTaskId[taskId]"
+                        :runs="
+                          props.orgType === 'district'
+                            ? aggregatedDistrictSupportCategories[taskId]
+                            : computeAssignmentAndRunData.runsByTaskId[taskId]
+                        "
                         :initialized="initialized"
                         :task-id="taskId"
                         :org-type="props.orgType"
@@ -115,6 +128,9 @@
                 </div>
                 <div class="my-1 text-xs font-light text-gray-500 uppercase">Legend</div>
               </div>
+            </div>
+            <div v-if="isEmptyDistrictSupportCategories" class="flex justify-content-center">
+              <h1>Placeholder</h1>
             </div>
           </div>
         </section>
@@ -229,6 +245,7 @@
         <!-- Main table -->
         <div v-if="assignmentData?.length ?? 0 > 0" data-cy="score-report__table">
           <RoarDataTable
+            v-if="orgType !== 'district'"
             :data="filteredTableData"
             :columns="scoreReportColumns"
             :total-records="filteredTableData?.length"
@@ -252,8 +269,11 @@
               />
             </span>
           </RoarDataTable>
+          <template v-else>
+            <div class="my-6 text-center">Score report tables are only available at the school level and below</div>
+          </template>
         </div>
-        <div v-if="!isLoadingAssignments" class="legend-container">
+        <div v-if="!isLoadingAssignments && orgType !== 'district'" class="legend-container">
           <div class="legend-entry">
             <div class="circle tooltip" :style="`background-color: ${SCORE_SUPPORT_LEVEL_COLORS.BELOW};`" />
             <div>
@@ -279,7 +299,7 @@
             </div>
           </div>
         </div>
-        <div class="legend-description">
+        <div v-if="orgType !== 'district'" class="legend-description">
           Students are classified into three support groups based on nationally-normed percentiles. Blank spaces
           indicate that the assessment was not completed. <br />
           Pale colors indicate that the score may not reflect the reader’s ability because responses were made too
@@ -292,29 +312,42 @@
           <div class="text-sm font-light text-gray-600 uppercase">Loading Task Reports</div>
         </div>
 
-        <PvTabView :active-index="activeTabIndex">
-          <PvTabPanel
-            v-for="taskId of sortedTaskIds"
-            :key="taskId"
-            :header="tasksDictionary[taskId]?.publicName ?? taskId"
-          >
-            <div :id="'tab-view-' + taskId">
-              <TaskReport
-                v-if="taskId"
-                :computed-table-data="computeAssignmentAndRunData.assignmentTableData"
-                :task-id="taskId"
-                :initialized="initialized"
-                :administration-id="administrationId"
-                :runs="computeAssignmentAndRunData.runsByTaskId[taskId]"
-                :org-type="orgType"
-                :org-id="orgId"
-                :org-info="orgData"
-                :administration-info="administrationData"
-                :task-scoring-versions="getScoringVersions"
-              />
-            </div>
-          </PvTabPanel>
-        </PvTabView>
+        <PvTabs v-model:value="activeTabValue">
+          <PvTabList>
+            <PvTab
+              v-for="(taskId, i) in sortedAndFilteredSubscoreTaskIds"
+              :key="taskId"
+              :value="String(i)"
+              class="text-base"
+            >
+              {{ tasksDictionary[taskId]?.publicName ?? taskId }}
+            </PvTab>
+          </PvTabList>
+
+          <PvTabPanels>
+            <PvTabPanel v-for="(taskId, i) in sortedAndFilteredSubscoreTaskIds" :key="taskId" :value="String(i)">
+              <div :id="'tab-view-' + taskId">
+                <TaskReport
+                  v-if="taskId"
+                  :computed-table-data="computeAssignmentAndRunData.assignmentTableData"
+                  :task-id="taskId"
+                  :initialized="initialized"
+                  :administration-id="administrationId"
+                  :runs="
+                    orgType === 'district'
+                      ? aggregatedDistrictSupportCategories?.[taskId]
+                      : computeAssignmentAndRunData.runsByTaskId?.[taskId]
+                  "
+                  :org-type="orgType"
+                  :org-id="orgId"
+                  :org-info="orgData"
+                  :administration-info="administrationData"
+                  :task-scoring-versions="getScoringVersions"
+                />
+              </div>
+            </PvTabPanel>
+          </PvTabPanels>
+        </PvTabs>
         <div id="score-report-closing" class="px-4 py-2 mt-4 bg-gray-200">
           <h2 class="extra-info-title">HOW ROAR SCORES INFORM PLANNING TO PROVIDE SUPPORT</h2>
           <p>
@@ -382,7 +415,10 @@ import PvConfirmDialog from 'primevue/confirmdialog';
 import PvSelect from 'primevue/select';
 import PvSelectButton from 'primevue/selectbutton';
 import PvTabPanel from 'primevue/tabpanel';
-import PvTabView from 'primevue/tabview';
+import PvTabs from 'primevue/tabs';
+import PvTabList from 'primevue/tablist';
+import PvTab from 'primevue/tab';
+import PvTabPanels from 'primevue/tabpanels';
 import PvProgressBar from 'primevue/progressbar';
 import { useAuthStore } from '@/store/auth';
 import { getDynamicRouterPath } from '@/helpers/getDynamicRouterPath';
@@ -419,6 +455,7 @@ import {
 } from '@/helpers/reports';
 import { SCORE_SUPPORT_LEVEL_COLORS, SCORE_REPORT_NEXT_STEPS_DOCUMENT_PATH } from '@/constants/scores';
 import RoarDataTable from '@/components/RoarDataTable';
+import useDistrictSupportCategoriesQuery from '@/composables/queries/useDistrictSupportCategoriesQuery';
 import { CSV_EXPORT_STATIC_COLUMNS } from '@/constants/csvExport';
 import { APP_ROUTES } from '@/constants/routes';
 import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
@@ -434,6 +471,8 @@ let TaskReport, DistributionChartOverview;
 const router = useRouter();
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
+
+const activeTabValue = ref('0');
 
 const props = defineProps({
   administrationId: {
@@ -466,7 +505,16 @@ const displayName = computed(() => {
   return 'Fetching administration name...';
 });
 
+const {
+  data: aggregatedDistrictSupportCategories,
+  isLoading: isLoadingDistrictSupportCategories,
+  isFetching: isFetchingDistrictSupportCategories,
+} = useDistrictSupportCategoriesQuery(props.orgId, props.administrationId, {
+  enabled: initialized,
+});
+
 const getScoringVersions = computed(() => {
+  if (!administrationData.value?.assessments) return {};
   const scoringVersions = Object.fromEntries(
     administrationData.value?.assessments.map((assessment) => [
       assessment.taskId,
@@ -764,6 +812,10 @@ const schoolNameDictionary = computed(() => {
   );
 });
 
+const isEmptyDistrictSupportCategories = computed(() => {
+  return props.orgType === 'district' && aggregatedDistrictSupportCategories.value?.status === 'failed';
+});
+
 // Return a faded color if assessment is not reliable
 function returnColorByReliability(assessment, rawScore, support_level, tag_color) {
   if (assessment.reliable !== undefined && !assessment.reliable && assessment.engagementFlags !== undefined) {
@@ -894,6 +946,9 @@ const computedProgressData = computed(() => {
 // 1. assignmentTableData: The data that should be passed into the ROARDataTable component
 // 2. runsByTaskId: run data for the TaskReport distribution chartsb
 const computeAssignmentAndRunData = computed(() => {
+  if (props.orgType === 'district') {
+    return { assignmentTableData: [], runsByTaskId: {} };
+  }
   if (!assignmentData.value || assignmentData.value.length === 0) {
     return { assignmentTableData: [], runsByTaskId: {} };
   } else {
@@ -1886,19 +1941,37 @@ const allTasks = computed(() => {
 });
 
 const sortedTaskIds = computed(() => {
-  const runsByTaskId = computeAssignmentAndRunData.value.runsByTaskId;
-  const specialTaskIds = ['swr', 'sre', 'pa', 'phonics'].filter((id) => Object.keys(runsByTaskId).includes(id));
-  const remainingTaskIds = Object.keys(runsByTaskId).filter((id) => !specialTaskIds.includes(id));
+  if (props.orgType === 'district') {
+    if (isLoadingDistrictSupportCategories.value || isFetchingDistrictSupportCategories.value) {
+      return [];
+    }
 
-  remainingTaskIds.sort((p1, p2) => {
-    return taskDisplayNames[p1].order - taskDisplayNames[p2].order;
-  });
+    if (!aggregatedDistrictSupportCategories.value) {
+      return [];
+    }
 
-  const sortedIds = specialTaskIds.concat(remainingTaskIds);
-  return sortedIds.filter((taskId) => allTasks.value.includes(taskId));
+    return Object.keys(aggregatedDistrictSupportCategories.value);
+  } else {
+    const runsByTaskId = computeAssignmentAndRunData.value.runsByTaskId;
+    const specialTaskIds = ['swr', 'sre', 'pa', 'phonics'].filter((id) => Object.keys(runsByTaskId).includes(id));
+    const remainingTaskIds = Object.keys(runsByTaskId).filter((id) => !specialTaskIds.includes(id));
+
+    remainingTaskIds.sort((p1, p2) => {
+      return taskDisplayNames[p1].order - taskDisplayNames[p2].order;
+    });
+
+    const sortedIds = specialTaskIds.concat(remainingTaskIds);
+    return sortedIds.filter((taskId) => allTasks.value.includes(taskId));
+  }
 });
 
 const sortedAndFilteredTaskIds = computed(() => {
+  return sortedTaskIds.value?.filter((taskId) => {
+    return tasksToDisplayGraphs.includes(taskId);
+  });
+});
+
+const sortedAndFilteredSubscoreTaskIds = computed(() => {
   return sortedTaskIds.value?.filter((taskId) => {
     return tasksToDisplayGraphs.includes(taskId);
   });

@@ -141,6 +141,7 @@ module.exports = defineConfig({
     testDistrictNcesId: '0123456789',
     testDistrictId: 'qoW9OEPcV50rIA2IcqbV',
     testSchoolName: 'Cypress Test School',
+    testSchoolId: '3LN7JxYOXt5Ih3XMTx1G',
     testSchoolInitials: 'SATS',
     testSchoolNcesId: '0123456789',
     testClassName: 'Cypress Test Class',
