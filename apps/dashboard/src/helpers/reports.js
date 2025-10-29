@@ -566,6 +566,14 @@ export const roamFluencySubskillHeaders = {
   numAttempted: 'Num Attempted',
 };
 
+export const updatedNormVersions = {
+  swr: 7,
+  'swr-es': 1,
+  sre: 4,
+  'sre-es': 1,
+  pa: 4,
+};
+
 function getOrdinalSuffix(n) {
   if (n >= 11 && n <= 13) return 'th';
 
@@ -1122,8 +1130,6 @@ export const getRawScoreRange = (taskId) => {
  * - Mixed → no-cutoffs chart
  */
 export const getDistributionChartPath = (grade, taskScoringVersions, language = 'en') => {
-  // PA will always return null for scoringVersion until v4 is released
-  const updatedNormVersions = { swr: 7, 'swr-es': 1, sre: 4, 'sre-es': 1, pa: 4 };
   const tasks = Object.entries(taskScoringVersions);
 
   // Filter to only tasks that have updated norms and exclude unnormed Spanish tasks (version < 1)
