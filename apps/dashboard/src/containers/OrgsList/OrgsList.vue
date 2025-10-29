@@ -9,7 +9,7 @@
             <div class="admin-page-header">List Organizations</div>
           </div>
         </div>
-        <div class="text-md text-gray-500 ml-6">View organizations asssigned to your account.</div>
+        <div class="text-md text-gray-500 ml-6">View organizations assigned to your account.</div>
       </div>
       <PvTabView
         v-if="claimsLoaded"
