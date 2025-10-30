@@ -3,6 +3,12 @@ import { mount } from '@vue/test-utils';
 import { createI18n } from 'vue-i18n';
 import Support from './Support.vue';
 
+const DISTRIBUTION_CHART_PATHS = {
+  enDefault: 'en-all-grades-distribution-chart-no-cutoffs.webp',
+  enElementary1: 'en-elementary-distribution-chart-scoring-v1.webp',
+  enElementary2: 'en-elementary-distribution-chart-scoring-v2.webp',
+};
+
 describe('Support.vue', () => {
   let i18n;
 
@@ -42,6 +48,7 @@ describe('Support.vue', () => {
         props: {
           expanded: false,
           studentGrade: 3,
+          distributionChartPath: DISTRIBUTION_CHART_PATHS.enElementary1,
         },
         global: {
           plugins: [i18n],
@@ -56,6 +63,7 @@ describe('Support.vue', () => {
         props: {
           expanded: true,
           studentGrade: 3,
+          distributionChartPath: DISTRIBUTION_CHART_PATHS.enElementary1,
         },
         global: {
           plugins: [i18n],
@@ -70,6 +78,7 @@ describe('Support.vue', () => {
         props: {
           expanded: false,
           studentGrade: 7,
+          distributionChartPath: DISTRIBUTION_CHART_PATHS.enDefault,
         },
         global: {
           plugins: [i18n],
@@ -84,6 +93,7 @@ describe('Support.vue', () => {
         props: {
           expanded: true,
           studentGrade: 7,
+          distributionChartPath: DISTRIBUTION_CHART_PATHS.enDefault,
         },
         global: {
           plugins: [i18n],
@@ -98,6 +108,7 @@ describe('Support.vue', () => {
         props: {
           expanded: true,
           studentGrade: 0,
+          distributionChartPath: DISTRIBUTION_CHART_PATHS.enElementary1,
         },
         global: {
           plugins: [i18n],
@@ -114,6 +125,7 @@ describe('Support.vue', () => {
         props: {
           expanded: false,
           studentGrade: 3,
+          distributionChartPath: DISTRIBUTION_CHART_PATHS.enElementary1,
         },
         global: {
           plugins: [i18n],
@@ -124,19 +136,72 @@ describe('Support.vue', () => {
       expect(accordion.exists()).toBe(true);
     });
 
-    it('shows distribution image for grade < 6', () => {
+    it('shows v1 distribution image for grade < 6', () => {
       const wrapper = mount(Support, {
         props: {
           expanded: true,
           studentGrade: 5,
+          distributionChartPath: DISTRIBUTION_CHART_PATHS.enElementary1,
+          isDistributionChartEnabled: true,
         },
         global: {
           plugins: [i18n],
         },
       });
 
-      const img = wrapper.find('img[src*="support-distribution"]');
+      const img = wrapper.find(`img[src*="${DISTRIBUTION_CHART_PATHS.enElementary1}"]`);
       expect(img.exists()).toBe(true);
+    });
+
+    it('shows v2 distribution image for grade < 6', () => {
+      const wrapper = mount(Support, {
+        props: {
+          expanded: true,
+          studentGrade: 5,
+          distributionChartPath: DISTRIBUTION_CHART_PATHS.enElementary2,
+          isDistributionChartEnabled: true,
+        },
+        global: {
+          plugins: [i18n],
+        },
+      });
+
+      const img = wrapper.find(`img[src*="${DISTRIBUTION_CHART_PATHS.enElementary2}"]`);
+      expect(img.exists()).toBe(true);
+    });
+
+    it('shows default distribution image for grade < 6', () => {
+      const wrapper = mount(Support, {
+        props: {
+          expanded: true,
+          studentGrade: 5,
+          distributionChartPath: DISTRIBUTION_CHART_PATHS.enDefault,
+          isDistributionChartEnabled: true,
+        },
+        global: {
+          plugins: [i18n],
+        },
+      });
+
+      const img = wrapper.find(`img[src*="${DISTRIBUTION_CHART_PATHS.enDefault}"]`);
+      expect(img.exists()).toBe(true);
+    });
+
+    it('does not show distribution image for grade < 6', () => {
+      const wrapper = mount(Support, {
+        props: {
+          expanded: true,
+          studentGrade: 5,
+          distributionChartPath: DISTRIBUTION_CHART_PATHS.enElementary1,
+          isDistributionChartEnabled: false,
+        },
+        global: {
+          plugins: [i18n],
+        },
+      });
+
+      const img = wrapper.find(`img[src*="${DISTRIBUTION_CHART_PATHS.enElementary1}"]`);
+      expect(img.exists()).toBe(false);
     });
 
     it('does not show distribution image for grade >= 6', () => {
@@ -144,13 +209,14 @@ describe('Support.vue', () => {
         props: {
           expanded: true,
           studentGrade: 6,
+          distributionChartPath: DISTRIBUTION_CHART_PATHS.enDefault,
         },
         global: {
           plugins: [i18n],
         },
       });
 
-      const img = wrapper.find('img[src*="support-distribution"]');
+      const img = wrapper.find(`img[src*="${DISTRIBUTION_CHART_PATHS.enDefault}"]`);
       expect(img.exists()).toBe(false);
     });
 
@@ -159,6 +225,7 @@ describe('Support.vue', () => {
         props: {
           expanded: true,
           studentGrade: 5,
+          distributionChartPath: DISTRIBUTION_CHART_PATHS.enElementary1,
         },
         global: {
           plugins: [i18n],
@@ -168,6 +235,8 @@ describe('Support.vue', () => {
       // Just verify component renders with correct grade prop
       expect(wrapper.exists()).toBe(true);
       expect(wrapper.props('studentGrade')).toBe(5);
+      expect(wrapper.props('distributionChartPath')).toBe(DISTRIBUTION_CHART_PATHS.enElementary1);
+      expect(wrapper.props('isDistributionChartEnabled')).toBe(true);
     });
 
     it('shows support level descriptions for grade >= 6', () => {
@@ -175,6 +244,7 @@ describe('Support.vue', () => {
         props: {
           expanded: true,
           studentGrade: 7,
+          distributionChartPath: DISTRIBUTION_CHART_PATHS.enDefault,
         },
         global: {
           plugins: [i18n],
@@ -184,6 +254,8 @@ describe('Support.vue', () => {
       // Just verify the component renders for grade >= 6
       expect(wrapper.exists()).toBe(true);
       expect(wrapper.props('studentGrade')).toBe(7);
+      expect(wrapper.props('distributionChartPath')).toBe(DISTRIBUTION_CHART_PATHS.enDefault);
+      expect(wrapper.props('isDistributionChartEnabled')).toBe(true);
     });
 
     it('expands all panels when expanded prop is true', async () => {
@@ -191,6 +263,8 @@ describe('Support.vue', () => {
         props: {
           expanded: true,
           studentGrade: 3,
+          distributionChartPath: DISTRIBUTION_CHART_PATHS.enElementary1,
+          isDistributionChartEnabled: true,
         },
         global: {
           plugins: [i18n],
@@ -208,6 +282,8 @@ describe('Support.vue', () => {
         props: {
           expanded: false,
           studentGrade: 3,
+          distributionChartPath: DISTRIBUTION_CHART_PATHS.enElementary1,
+          isDistributionChartEnabled: true,
         },
         global: {
           plugins: [i18n],
@@ -225,6 +301,7 @@ describe('Support.vue', () => {
         props: {
           expanded: false,
           studentGrade: 3,
+          distributionChartPath: DISTRIBUTION_CHART_PATHS.enElementary1,
         },
         global: {
           plugins: [i18n],
@@ -236,6 +313,30 @@ describe('Support.vue', () => {
       await wrapper.setProps({ expanded: true });
 
       expect(wrapper.props('expanded')).toBe(true);
+    });
+
+    it('updates panels when isDistributionChartEnabled prop changes', async () => {
+      const wrapper = mount(Support, {
+        props: {
+          expanded: true,
+          studentGrade: 3,
+          distributionChartPath: DISTRIBUTION_CHART_PATHS.enElementary1,
+          isDistributionChartEnabled: false,
+        },
+        global: {
+          plugins: [i18n],
+        },
+      });
+
+      expect(wrapper.props('isDistributionChartEnabled')).toBe(false);
+      let img = wrapper.find(`img[src*="${DISTRIBUTION_CHART_PATHS.enElementary1}"]`);
+      expect(img.exists()).toBe(false);
+
+      await wrapper.setProps({ isDistributionChartEnabled: true });
+
+      expect(wrapper.props('isDistributionChartEnabled')).toBe(true);
+      img = wrapper.find(`img[src*="${DISTRIBUTION_CHART_PATHS.enElementary1}"]`);
+      expect(img.exists()).toBe(true);
     });
 
     it('renders external link to next steps document', () => {
