@@ -99,7 +99,7 @@ const chartData = computed(() => ({
       label: props.scoreLabel,
       data: filteredSeries.value.map((p) => ({ x: p.x, y: p.y })),
       tension: 0.4,
-      borderColor: seriesStroke,
+      borderColor: seriesStroke.value,
       pointRadius: filteredSeries.value.map((p) =>
         p.assignmentId && p.assignmentId === props.currentAssignmentId ? 8 : 4,
       ),
