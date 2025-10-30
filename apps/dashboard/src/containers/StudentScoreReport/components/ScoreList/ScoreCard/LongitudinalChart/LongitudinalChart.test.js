@@ -2,6 +2,13 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import LongitudinalChart from './LongitudinalChart.vue';
 
+// Mock feature flags
+vi.mock('@/constants/featureFlags', () => ({
+  FEATURE_FLAGS: {
+    ENABLE_LONGITUDINAL_REPORTS: true,
+  },
+}));
+
 // Mock roar-utils
 vi.mock('@bdelab/roar-utils', async () => {
   const actual = await vi.importActual('@bdelab/roar-utils');

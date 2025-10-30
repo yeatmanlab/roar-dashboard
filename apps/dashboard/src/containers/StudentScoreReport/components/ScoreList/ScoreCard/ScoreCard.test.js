@@ -3,6 +3,13 @@ import { mount } from '@vue/test-utils';
 import { createI18n } from 'vue-i18n';
 import ScoreCard from './ScoreCard.vue';
 
+// Mock feature flags
+vi.mock('@/constants/featureFlags', () => ({
+  FEATURE_FLAGS: {
+    ENABLE_LONGITUDINAL_REPORTS: true,
+  },
+}));
+
 // Mock the LongitudinalChart component to avoid Chart.js dependencies
 vi.mock('./LongitudinalChart', () => ({
   LongitudinalChartScreen: {
