@@ -53,16 +53,16 @@
           <div class="w-full">
             <LanguageSelector />
           </div>
-          <div class="w-5 justify-content-end flex flex-row gap-0">
+          <div class="w-5 justify-content-end flex flex-row gap-2">
             <a
               :href="TERMS_OF_SERVICE_DOCUMENT_PATH"
-              class="text-400 w-full inline-block text-sm pt-2 text-right underline hover:text-primary"
+              class="text-400 w-full inline-block text-sm pt-2 text-right hover:text-primary"
               target="_blank"
               >{{ $t('pageSignIn.Terms') }}</a
             >
             <a
               :href="TERMS_OF_SERVICE_DOCUMENT_PATH"
-              class="text-400 w-full inline-block text-sm pt-2 text-right underline hover:text-primary"
+              class="text-400 w-full inline-block text-sm pt-2 text-right hover:text-primary"
               target="_blank"
               >{{ $t('pageSignIn.Privacy') }}</a
             >
@@ -74,10 +74,9 @@
 </template>
 
 <script setup>
-import { onMounted, ref, toRaw, onBeforeUnmount, computed, defineAsyncComponent } from 'vue';
+import { onMounted, ref, toRaw, onBeforeUnmount, computed } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useRoute, useRouter } from 'vue-router';
-import { useI18n } from 'vue-i18n';
 import { setUser } from '@sentry/vue';
 import { useAuthStore } from '@/store/auth';
 import { isMobileBrowser } from '@/helpers';
@@ -330,45 +329,9 @@ function resetSignInUI() {
  */
 onMounted(() => {
   document.body.classList.add('page-signin');
-
-  // carry over your redirect-based OAuth triggers
-  if (authStore.cleverOAuthRequested) {
-    authStore.cleverOAuthRequested = false;
-    authWithSSO(AUTH_SSO_PROVIDERS.CLEVER);
-  }
-  if (authStore.classLinkOAuthRequested) {
-    authStore.classLinkOAuthRequested = false;
-    authWithSSO(AUTH_SSO_PROVIDERS.CLASSLINK);
-  }
-  if (authStore.nycpsOAuthRequested) {
-    authStore.nycpsOAuthRequested = false;
-    authWithSSO(AUTH_SSO_PROVIDERS.NYCPS);
-  }
 });
 
 onBeforeUnmount(() => {
   document.body.classList.remove('page-signin');
 });
 </script>
-
-<style scoped>
-.loading-blur {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 10;
-  background-color: rgba(255, 255, 255, 0.7);
-  padding-top: 21vh;
-}
-
-.provider-button {
-  border-radius: 3rem;
-  height: 2.5rem;
-  color: black !important;
-}
-.provider-logo {
-  width: 3.5vh;
-}
-</style>

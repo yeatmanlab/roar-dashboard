@@ -2,7 +2,7 @@
   <section class="flex w-full m-4 mt-2 flex-column align-content-center justify-content-center border-500">
     <!-- EMAIL / CHIP -->
     <div class="mt-1 field">
-      <div class="p-input-icon-right">
+      <div>
         <!-- If we're NOT showing password yet, show the email input -->
         <SignInEmailInput
           v-if="!props.showPasswordField"
@@ -17,15 +17,15 @@
       </div>
     </div>
 
-    <div v-if="invalid" class="w-full border-red-200 p-2 border-2 bg-red-100 text-center">
-      <PvMessage icon="pi pi-times-circle" class="text-red-500 mb-2" severity="error">
+    <div v-if="invalid" class="w-full p-2 text-center">
+      <PvMessage icon="pi pi-exclamation-circle" class="text-red-500 mb-2" severity="error">
         {{ $t('authSignIn.incorrectEmailOrPassword') }}
       </PvMessage>
     </div>
 
     <!-- PASSWORD / MAGIC LINK / CREATE PASSWORD -->
     <SignInPasswordBlock
-      :show="props.showPasswordField && !props.multipleProviders"
+      :show="props.showPasswordField && !props.multipleProviders && !props.emailLinkSent"
       :email-link-sent="props.emailLinkSent"
       :is-username="props.isUsername"
       :invalid="props.invalid"
@@ -40,7 +40,7 @@
     <PvButton
       v-if="!props.multipleProviders && !props.emailLinkSent"
       type="button"
-      class="mt-3 w-full p-0 hover:surface-200 hover:text-primary p-2"
+      class="mt-3 w-full p-0 hover:shadow-4 hover:bg-primary hover:text-white p-2"
       data-cy="signin-continue"
       @click="!props.showPasswordField ? emit('check-providers', props.email) : emit('submit')"
     >
@@ -59,7 +59,7 @@
 
     <!-- Divider "or" -->
     <div v-if="!props.showPasswordField && !props.multipleProviders" class="divider w-full">
-      <span class="text-md">{{ $t('authSignIn.or') }}</span>
+      <span class="text-sm">{{ $t('authSignIn.or') }}</span>
     </div>
 
     <!-- Provider list buttons -->
@@ -121,9 +121,9 @@ const emit = defineEmits([
   display: flex;
   align-items: center;
   text-align: center;
-  color: #6b7280;
+  color: #94a3b8;
   font-weight: 500;
-  margin: 0.5rem 0;
+  margin: 1rem 0;
   font-size: 0.95rem;
 }
 .divider::before,
@@ -131,6 +131,11 @@ const emit = defineEmits([
   content: '';
   flex: 1;
   border-bottom: 1px solid #d1d5db;
-  margin: 0 0.75rem;
+}
+.divider::before {
+  margin-right: 0.75rem;
+}
+.divider::after {
+  margin-left: 0.75rem;
 }
 </style>

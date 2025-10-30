@@ -7,8 +7,8 @@
     "buttonLabel": "Go!",
     "minimumCharacters": "Minimum 8 characters",
     "emailId": "email",
-    "emailPlaceholder": "Enter username or email",
-    "incorrectEmailOrPassword": "Incorrect username/email or password",
+    "emailPlaceholder": "Enter your email or username",
+    "incorrectEmailOrPassword": "Invalid username/email or password.",
     "invalidEmailPlaceholder": "Error: invalid email",
     "passwordId": "password",
     "passwordPlaceholder": "Password",
@@ -19,7 +19,7 @@
     "signInWithPasswordInstead": "Sign-in using password",
     "suggestions": "Suggestions",
     "forgotPassword": "Forgot password?",
-    "or": "or",
+    "or": "OR",
     "magicLink": "Request email link"
   },
   "cleverLanding": {
@@ -106,7 +106,7 @@
     "Privacy": "Privacy",
     "continue": "Continue",
     "availableProviders": "Available Providers",
-    "usePassword": "Log in with Password",
+    "usePassword": "Log in with password",
     "checkInbox": "Check your inbox",
     "checkInboxDescription": "We've sent a verification link to the provided email."
   },

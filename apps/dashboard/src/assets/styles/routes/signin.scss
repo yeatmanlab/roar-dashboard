@@ -18,7 +18,7 @@ body.page-signin {
 
 #signin {
   background: var(--surface-a);
-  width: clamp(300px, 65vw, 480px);
+  width: clamp(300px, 65vw, 400px);
   height: auto;
   margin-block: auto;
   border-radius: 5px;
@@ -51,8 +51,8 @@ body.page-signin {
       // width: 100%;
 
       svg {
-        height: 90px;
-        width: auto;
+        height: auto;
+        width: 87.97px;
 
         * {
           fill: var(--primary-color);
@@ -142,6 +142,12 @@ body.page-signin {
 
 .grecaptcha-badge {
   display: none;
+}
+
+.provider-button {
+  border-radius: 3rem;
+  height: 2.5rem;
+  color: black !important;
 }
 
 .signin-button {

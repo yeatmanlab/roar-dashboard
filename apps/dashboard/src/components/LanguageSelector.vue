@@ -13,7 +13,7 @@
     <template v-else>
       <a
         href="#"
-        class="text-400 w-full inline-block text-left text-sm pt-2 rounded-md underline hover:text-primary"
+        class="text-400 w-full inline-block text-left text-sm pt-2 rounded-md hover:text-primary"
         aria-label="Change language"
         @click.prevent="toggleMenu($event)"
       >

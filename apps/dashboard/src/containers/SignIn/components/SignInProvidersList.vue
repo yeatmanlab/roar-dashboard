@@ -6,13 +6,9 @@
       data-cy="sign-in__clever-sso"
       @click="$emit('auth-clever')"
     >
-      <div class="flex flex-row align-items-center w-full">
-        <div class="flex justify-content-end w-5">
-          <img src="@/assets/provider-clever-logo.svg" alt="The Clever Logo" class="flex p-1 provider-logo" />
-        </div>
-        <div class="flex justify-content-start w-full pl-3">
-          <span>{{ $t('authSignIn.signInWith') }} Clever</span>
-        </div>
+      <div class="flex flex-row align-items-center w-full gap-2">
+        <img src="@/assets/provider-clever-logo.svg" alt="The Clever Logo" class="flex p-1 w-1" />
+        <span>{{ $t('authSignIn.signInWith') }} Clever</span>
       </div>
     </PvButton>
 
@@ -22,13 +18,9 @@
       data-cy="sign-in__classlink-sso"
       @click="$emit('auth-classlink')"
     >
-      <div class="flex flex-row align-items-center w-full">
-        <div class="flex justify-content-end w-5">
-          <img src="@/assets/provider-classlink-logo.png" alt="The ClassLink Logo" class="flex p-1 provider-logo" />
-        </div>
-        <div class="flex justify-content-start w-full pl-3">
-          <span>{{ $t('authSignIn.signInWith') }} ClassLink</span>
-        </div>
+      <div class="flex flex-row align-items-center w-full gap-2">
+        <img src="@/assets/provider-classlink-logo.png" alt="The ClassLink Logo" class="flex p-1 w-1" />
+        <span>{{ $t('authSignIn.signInWith') }} ClassLink</span>
       </div>
     </PvButton>
 
@@ -38,17 +30,9 @@
       data-cy="sign-in__nycps-sso"
       @click="$emit('auth-nycps')"
     >
-      <div class="flex flex-row align-items-center w-full">
-        <div class="flex justify-content-end w-5">
-          <img
-            src="@/assets/provider-nycps-logo.jpg"
-            alt="The NYC Public Schools Logo"
-            class="flex p-1 provider-logo"
-          />
-        </div>
-        <div class="flex justify-content-start w-full pl-3">
-          <span>{{ $t('authSignIn.signInWith') }} NYCPS</span>
-        </div>
+      <div class="flex flex-row align-items-center w-full gap-2">
+        <img src="@/assets/provider-nycps-logo.jpg" alt="The NYC Public Schools Logo" class="flex p-1 w-1" />
+        <span>{{ $t('authSignIn.signInWith') }} NYCPS</span>
       </div>
     </PvButton>
 
@@ -58,13 +42,9 @@
       data-cy="sign-in__google-sso"
       @click="$emit('auth-google')"
     >
-      <div class="flex flex-row align-items-center w-full">
-        <div class="flex justify-content-end w-5">
-          <img src="@/assets/provider-google-logo.svg" alt="The Google Logo" class="flex p-1 provider-logo" />
-        </div>
-        <div class="flex justify-content-start w-full pl-3">
-          <span>{{ $t('authSignIn.signInWith') }} Google</span>
-        </div>
+      <div class="flex flex-row align-items-center w-full gap-2">
+        <img src="@/assets/provider-google-logo.svg" alt="The Google Logo" class="flex p-1 w-1" />
+        <span>{{ $t('authSignIn.signInWith') }} Google</span>
       </div>
     </PvButton>
   </div>
@@ -81,14 +61,3 @@ const props = defineProps({
 
 defineEmits(['auth-clever', 'auth-classlink', 'auth-nycps', 'auth-google']);
 </script>
-
-<style scoped>
-.provider-button {
-  border-radius: 3rem;
-  height: 2.5rem;
-  color: black !important;
-}
-.provider-logo {
-  width: 3.5vh;
-}
-</style>

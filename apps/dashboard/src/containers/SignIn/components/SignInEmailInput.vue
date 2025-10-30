@@ -1,8 +1,8 @@
 <template>
-  <PvFloatLabel class="mt-4" variant="on">
+  <PvFloatLabel class="mt-4">
     <PvInputText
       id="email"
-      :class="['w-full', { 'p-invalid': props.invalid }]"
+      :class="['w-full', 'border-200', { 'p-invalid': props.invalid }]"
       :model-value="props.modelValue"
       aria-describedby="email-error"
       data-cy="sign-in__username"
@@ -10,7 +10,7 @@
       @keydown="checkForCapsLock"
       @keydown.enter.prevent="emit('enter', props.modelValue)"
     />
-    <label for="email">{{ $t('authSignIn.emailPlaceholder') }}</label>
+    <label for="email" class="text-400">{{ $t('authSignIn.emailPlaceholder') }}</label>
   </PvFloatLabel>
 
   <PvMessage v-if="props.invalid" icon="pi pi-times-circle" class="text-red-500" severity="error">
