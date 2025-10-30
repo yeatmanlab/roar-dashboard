@@ -445,7 +445,7 @@ const setDoughnutChartOptions = () => ({
 
 const setDoughnutChartData = () => {
   const docStyle = getComputedStyle(document.documentElement);
-  let { assigned = 0, started = 0, completed = 0 } = props.stats.total?.assignment || {};
+  let { assigned = 0, started = 0, completed = 0 } = props.stats || {};
 
   started -= completed;
   assigned -= started + completed;
