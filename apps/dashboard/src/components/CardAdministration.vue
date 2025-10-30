@@ -90,6 +90,7 @@
         row-hover
         :loading="loadingTreeTable"
         :value="treeTableOrgs"
+        data-cy="administration-orgs-tree"
         @node-expand="onExpand"
       >
         <PvColumn field="name" header="Name" expander style="width: 20rem"></PvColumn>
