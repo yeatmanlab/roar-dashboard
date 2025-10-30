@@ -18,8 +18,8 @@
         </div>
         <PvChart
           type="bar"
-          :data="setBarChartData(adminStats[taskId])"
-          :options="setBarChartOptions(adminStats[taskId])"
+          :data="setBarChartData(getTaskStats(taskId))"
+          :options="setBarChartOptions(getTaskStats(taskId))"
           class="h-2rem lg:w-full"
         />
       </div>
@@ -29,12 +29,12 @@
       <div class="flex justify-content-between align-items-center">
         <div class="w-full text-xl font-bold text-gray-600">
           Total
-          <span class="text-sm font-light"> ({{ adminStats.assignment.assigned }} total assignments) </span>
+          <span class="text-sm font-light"> ({{ adminStats.assigned }} total assignments) </span>
         </div>
         <PvChart
           type="bar"
-          :data="setBarChartData(adminStats.assignment)"
-          :options="setBarChartOptions(adminStats.assignment)"
+          :data="setBarChartData(getTotalStats())"
+          :options="setBarChartOptions(getTotalStats())"
           class="h-3rem lg:w-full"
         />
       </div>
@@ -48,7 +48,7 @@ import PvChart from 'primevue/chart';
 import { setBarChartData, setBarChartOptions } from '@/helpers/plotting';
 import ProgressLegend from './ProgressLegend.vue';
 
-defineProps({
+const props = defineProps({
   adminStats: {
     type: Object,
     required: true,
@@ -62,4 +62,26 @@ defineProps({
     required: true,
   },
 });
+
+/**
+ * Get stats for a specific task from the new data structure
+ * New format: { byTask: { "task-id": { assigned, started, completed } } }
+ */
+const getTaskStats = (taskId) => {
+  // Convert taskId format: "roar-inference" -> "roar-inference" (keep as is)
+  // The byTask object uses the taskId directly
+  return props.adminStats?.byTask?.[taskId] || { assigned: 0, started: 0, completed: 0 };
+};
+
+/**
+ * Get total stats from the new data structure
+ * New format: { assigned, started, completed, byTask: {...} }
+ */
+const getTotalStats = () => {
+  return {
+    assigned: props.adminStats?.assigned || 0,
+    started: props.adminStats?.started || 0,
+    completed: props.adminStats?.completed || 0,
+  };
+};
 </script>

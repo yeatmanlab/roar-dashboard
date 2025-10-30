@@ -3,20 +3,27 @@
     <div class="flex flex-wrap px-2 py-1 rounded justify-content-around align-items-center">
       <div class="flex flex-row items-center text-sm font-light">
         <div
-          class="inline-block rounded-full border-5 border-white h-6 w-6 mr-2 align-middle bg-[var(--bright-green)]"
+          class="inline-block rounded-full border-5 border-white h-6 w-6 mr-2 align-middle"
+          style="background-color: var(--bright-green)"
         />
         <div>
           <div>Completed</div>
         </div>
       </div>
       <div class="flex flex-row items-center text-sm font-light">
-        <div class="inline-block rounded-full border-5 border-white h-6 w-6 mr-2 align-middle bg-[var(--yellow-100)]" />
+        <div
+          class="inline-block rounded-full border-5 border-white h-6 w-6 mr-2 align-middle"
+          style="background-color: var(--yellow-100)"
+        />
         <div>
           <div>Started</div>
         </div>
       </div>
       <div class="flex flex-row items-center text-sm font-light">
-        <div class="inline-block rounded-full border-5 border-white h-6 w-6 mr-2 align-middle bg-[var(--surface-d)]" />
+        <div
+          class="inline-block rounded-full border-5 border-white h-6 w-6 mr-2 align-middle"
+          style="background-color: var(--surface-d)"
+        />
         <div>
           <div>Assigned</div>
         </div>

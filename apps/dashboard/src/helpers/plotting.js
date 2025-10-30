@@ -32,9 +32,6 @@ export const setBarChartData = (orgStats) => {
   let { assigned = 0, started = 0, completed = 0 } = orgStats || {};
   const documentStyle = getComputedStyle(document.documentElement);
 
-  started -= completed;
-  assigned -= started + completed;
-
   const borderRadii = getBorderRadii(completed, started, assigned);
   const borderWidth = 0;
 

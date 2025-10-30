@@ -114,10 +114,17 @@ const { data: administrationData } = useAdministrationsQuery([props.administrati
   select: (data) => data[0],
 });
 
-const { data: adminStats } = useAdministrationsStatsQuery([props.administrationId], props.orgId, {
-  enabled: initialized,
-  select: (data) => data[0],
-});
+const { data: adminStats } = useAdministrationsStatsQuery(
+  [props.administrationId],
+  props.orgId,
+  props.orgType,
+  null, // taskIds - not needed since we're using fetchAllTaskIds
+  true, // fetchAllTaskIds - get stats for all tasks in the administration
+  {
+    enabled: initialized,
+    select: (data) => data[0],
+  },
+);
 
 const { data: districtSchoolsData } = useDistrictSchoolsQuery(props.orgId, {
   enabled: props.orgType === SINGULAR_ORG_TYPES.DISTRICTS && initialized,
