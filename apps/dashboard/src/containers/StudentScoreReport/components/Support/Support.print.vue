@@ -58,7 +58,7 @@ defineProps({
   },
   isDistributionChartEnabled: {
     type: Boolean,
-    required: true,
+    default: true,
   },
 });
 
