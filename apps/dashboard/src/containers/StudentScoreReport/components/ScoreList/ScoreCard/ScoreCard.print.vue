@@ -57,7 +57,12 @@
 
       <template v-if="FEATURE_FLAGS.ENABLE_LONGITUDINAL_REPORTS">
         <h3 class="mt-4 text-xs font-semibold uppercase">{{ $t('scoreReports.progressOverTime') }}</h3>
-        <LongitudinalChart :longitudinal-data="longitudinalData" :task-id="taskId" :student-grade="studentGrade" />
+        <LongitudinalChart
+          :longitudinal-data="longitudinalData"
+          :task-id="taskId"
+          :student-grade="studentGrade"
+          :current-assignment-id="currentAssignmentId"
+        />
       </template>
     </div>
   </div>
@@ -122,6 +127,10 @@ const props = defineProps({
     default: () => [],
   },
   taskId: {
+    type: String,
+    required: true,
+  },
+  currentAssignmentId: {
     type: String,
     required: true,
   },

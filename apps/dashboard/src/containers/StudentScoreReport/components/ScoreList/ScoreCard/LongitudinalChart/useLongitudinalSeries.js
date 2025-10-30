@@ -48,7 +48,10 @@ export function useLongitudinalSeries(props) {
   });
 
   const seriesLabel = computed(() => getLabelByScoreType(chosenType.value));
-  const seriesStroke = computed(() => SCORE_SUPPORT_LEVEL_COLORS.ASSESSED);
+
+  // Even though this is a static value, we keep it as computed
+  // to maintain compatibility with existing tests and component usage
+  const seriesStroke = computed(() => '#666666');
 
   const xDomain = computed(() => {
     if (!series.value.length) return [new Date(), new Date()];
