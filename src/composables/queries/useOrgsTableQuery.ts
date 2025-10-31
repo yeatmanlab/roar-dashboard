@@ -1,4 +1,4 @@
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
 import _isEmpty from 'lodash/isEmpty';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
@@ -6,6 +6,7 @@ import { computeQueryOverrides } from '@/helpers/computeQueryOverrides';
 import { orgFetchAll } from '@/helpers/query/orgs';
 import { ORGS_TABLE_QUERY_KEY } from '@/constants/queryKeys';
 import { useAuthStore } from '@/store/auth';
+import { storeToRefs } from 'pinia';
 
 /**
  * Orgs Table query.
@@ -23,30 +24,22 @@ import { useAuthStore } from '@/store/auth';
  * @returns {UseQueryResult} The TanStack query result.
  */
 const useOrgsTableQuery = (
-  activeOrgType,
-  selectedDistrict,
-  selectedSchool,
-  orderBy,
+  activeOrgType: Ref<string>,
+  selectedDistrict: Ref<string>,
+  selectedSchool: Ref<string>,
+  orderBy: Ref<any>,
   queryOptions?: UseQueryOptions,
 ): UseQueryReturnType => {
-  const { data: userClaims } = useUserClaimsQuery({
-    enabled: queryOptions?.enabled ?? true,
-  });
-
   const authStore = useAuthStore();
+  const { userClaims } = storeToRefs(authStore);
   const { isUserSuperAdmin } = authStore;
 
-  // Get admin's administation orgs.
   const adminOrgs = computed(() => userClaims.value?.claims?.adminOrgs);
-
-  // Ensure all necessary data is loaded before enabling the query.
-  const claimsLoaded = computed(() => !_isEmpty(userClaims?.value?.claims));
-  const queryConditions = [() => claimsLoaded.value];
-  const { isQueryEnabled, options } = computeQueryOverrides(queryConditions, queryOptions);
 
   // Determine select fields based on org type
   const selectFields = computed(() => {
-    const orgType = typeof activeOrgType === 'function' ? activeOrgType() : (activeOrgType as any).value || activeOrgType;
+    const orgType =
+      typeof activeOrgType === 'function' ? activeOrgType() : (activeOrgType as any).value || activeOrgType;
     if (orgType === 'groups') {
       return ['id', 'name', 'tags', 'parentOrgId', 'createdBy'];
     }
@@ -61,13 +54,12 @@ const useOrgsTableQuery = (
         selectedDistrict,
         selectedSchool,
         orderBy,
-        isUserSuperAdmin(),
+        ref(isUserSuperAdmin()),
         adminOrgs,
         selectFields.value,
         true, // includeCreators = true
       ),
-    enabled: isQueryEnabled,
-    ...options,
+    ...queryOptions,
   });
 };
 

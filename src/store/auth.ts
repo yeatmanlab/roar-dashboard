@@ -49,36 +49,36 @@ export const useAuthStore = defineStore(
     // State
     const adminAuthStateListener: Ref<Unsubscribe | null> = ref(null);
     const adminOrgs: Ref<unknown | null> = ref(null);
+    const currentSite: Ref<string | null> = ref(null);
     const firebaseUser: Ref<FirebaseUser> = ref({ adminFirebaseUser: null });
     const roarfirekit: Ref<RoarFirekit | null> = ref(null);
     const routeToProfile: Ref<boolean> = ref(false);
+    const shouldUsePermissions: Ref<boolean> = ref(false);
     const showOptionalAssessments: Ref<boolean> = ref(false);
     const showSideBar: Ref<boolean> = ref(false);
+    const sites: Ref<SiteInfo[]> = ref([]);
     const spinner: Ref<boolean> = ref(false);
     const ssoProvider: Ref<string | null> = ref(null);
     const userClaims: Ref<UserClaims | null> = ref(null);
     const userData: Ref<UserData | null> = ref(null);
-    const sites: Ref<SiteInfo[]> = ref([]);
-    const currentSite: Ref<string | null> = ref(null);
-    const shouldUsePermissions: Ref<boolean> = ref(false);
 
     // Reset function
     function $reset(): void {
-      adminAuthStateListener.value?.();
       adminAuthStateListener.value = null;
+      adminAuthStateListener.value?.();
       adminOrgs.value = null;
+      currentSite.value = null;
       firebaseUser.value = { adminFirebaseUser: null };
       roarfirekit.value = null;
       routeToProfile.value = false;
+      shouldUsePermissions.value = false;
       showOptionalAssessments.value = false;
       showSideBar.value = false;
+      sites.value = [];
       spinner.value = false;
       ssoProvider.value = null;
       userClaims.value = null;
       userData.value = null;
-      sites.value = [];
-      currentSite.value = null;
-      shouldUsePermissions.value = false;
     }
 
     // Getters
@@ -102,6 +102,10 @@ export const useAuthStore = defineStore(
       return firebaseUser.value.adminFirebaseUser?.email ?? undefined;
     }
 
+    function isUserAuthedAdmin(): boolean {
+      return Boolean(firebaseUser.value.adminFirebaseUser);
+    }
+
     function isAuthenticated(): boolean {
       return Boolean(firebaseUser.value.adminFirebaseUser);
     }
@@ -111,7 +115,7 @@ export const useAuthStore = defineStore(
     }
 
     function isUserAdmin(): boolean {
-      return Boolean(userClaims.value?.claims?.admin);
+      return Boolean(userClaims.value?.claims?.super_admin || userClaims.value?.claims?.admin);
     }
 
     function isUserSuperAdmin(): boolean {
@@ -144,7 +148,7 @@ export const useAuthStore = defineStore(
               firebaseUser.value.adminFirebaseUser = null;
               logger.setUser(null);
             }
-          }
+          },
         );
       }
     }
@@ -241,12 +245,16 @@ export const useAuthStore = defineStore(
 
     function setUserData(data: UserData): void {
       userData.value = data;
+
       if (data?.roles && data.roles.length > 0) {
         sites.value = data.roles.map((role: { siteId: string; role: string; siteName: string }) => ({
           siteId: role.siteId,
-          siteName: role.siteName
+          siteName: role.siteName,
         }));
-        currentSite.value = data.roles[0]?.siteId ?? null;
+
+        if (!currentSite.value) {
+          currentSite.value = data.roles[0]?.siteId ?? null;
+        }
       }
     }
 
@@ -263,28 +271,29 @@ export const useAuthStore = defineStore(
       // State
       adminAuthStateListener,
       adminOrgs,
+      currentSite,
       firebaseUser,
       roarfirekit,
       routeToProfile,
+      shouldUsePermissions,
       showOptionalAssessments,
       showSideBar,
+      sites,
       spinner,
       ssoProvider,
       userClaims,
       userData,
-      sites,
-      currentSite,
-      shouldUsePermissions,
 
       // Getters
-      getUserId,
-      getUserEmail,
+      getEmail,
       getRoarUid,
       getUid,
-      getEmail,
+      getUserEmail,
+      getUserId,
       isAuthenticated,
       isFirekitInit,
       isUserAdmin,
+      isUserAuthedAdmin,
       isUserSuperAdmin,
 
       // Actions
@@ -311,7 +320,7 @@ export const useAuthStore = defineStore(
   {
     persist: {
       debug: false,
-      paths: ['firebaseUser', 'ssoProvider'],
+      paths: ['currentSite', 'firebaseUser', 'ssoProvider'],
       storage: sessionStorage,
     },
   },

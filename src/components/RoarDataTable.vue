@@ -365,7 +365,7 @@
           <template #empty>
             <div class="flex flex-column align-items-center align-text-left my-8">
               <div class="text-lg font-bold my-2">No results found</div>
-              <div class="font-light">The filters applied have no matching results .</div>
+              <div class="font-light">The filters applied have no matching results.</div>
               <PvButton
                 text
                 class="my-2 bg-primary p-2 border-none border-round text-white hover:bg-red-900"

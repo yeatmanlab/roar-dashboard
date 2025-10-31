@@ -109,17 +109,16 @@
                     v-for="item in slotProps.items"
                     :id="item.id"
                     :key="item.id"
-                    :title="getTitle(item, isSuperAdmin)"
+                    :title="getTitle(item, isUserSuperAdmin())"
                     :stats="item.stats"
                     :dates="item.dates"
                     :assignees="item.assignedOrgs"
                     :assessments="item.assessments"
                     :public-name="item.publicName ?? item.name"
-                    :show-params="isSuperAdmin"
-                    :is-super-admin="isSuperAdmin"
+                    :show-params="isUserSuperAdmin()"
+                    :is-super-admin="isUserSuperAdmin()"
                     :creator="item.creator"
                     data-cy="h2-card-admin"
-                    :on-delete-administration="onDeleteAdministration"
                   />
                 </div>
               </template>
@@ -154,8 +153,6 @@ import PvInputGroup from 'primevue/inputgroup';
 import { useAuthStore } from '@/store/auth';
 import { orderByNameASC } from '@/helpers/query/utils';
 import { getTitle } from '@/helpers/query/administrations';
-import useUserType from '@/composables/useUserType';
-import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useAdministrationsListQuery from '@/composables/queries/useAdministrationsListQuery';
 import CardAdministration from '@/components/CardAdministration.vue';
 import LevanteSpinner from '@/components/LevanteSpinner.vue';
@@ -174,8 +171,8 @@ const filteredAdministrations = ref([]);
 const fetchTestAdministrations = ref(false);
 
 const authStore = useAuthStore();
-
-const { roarfirekit } = storeToRefs(authStore);
+const { currentSite, roarfirekit } = storeToRefs(authStore);
+const { isUserSuperAdmin } = authStore;
 
 let unsubscribeInitializer;
 const init = () => {
@@ -190,12 +187,6 @@ unsubscribeInitializer = authStore.$subscribe(async (mutation, state) => {
 onMounted(() => {
   if (roarfirekit.value.restConfig) init();
 });
-
-const { data: userClaims } = useUserClaimsQuery({
-  enabled: initialized,
-});
-
-const { isSuperAdmin } = useUserType(userClaims);
 
 /**
  * Generate search tokens for autocomplete.
@@ -218,13 +209,14 @@ const generateAutoCompleteSearchTokens = () => {
   searchTokens.value = [...new Set(searchTokens.value)];
 };
 
-const {
-  isLoading: isLoadingAdministrations,
-  isFetching: isFetchingAdministrations,
-  data: administrations,
-} = useAdministrationsListQuery(orderBy, fetchTestAdministrations, {
-  enabled: initialized,
-});
+const { isLoading: isLoadingAdministrations, data: administrations } = useAdministrationsListQuery(
+  currentSite,
+  orderBy,
+  fetchTestAdministrations,
+  {
+    enabled: initialized,
+  },
+);
 
 /**
  * Administration data watcher
@@ -379,7 +371,7 @@ const onSortChange = (event) => {
   const value = event.value.value;
   const sortValue = event.value;
 
-  if (!isSuperAdmin.value && sortValue[0].field.fieldPath === 'name') {
+  if (!isUserSuperAdmin() && sortValue[0].field.fieldPath === 'name') {
     // catches edge case where a partner admin should sort by the public name attribute
     sortField.value = 'publicName';
   } else {
@@ -392,12 +384,6 @@ const onSortChange = (event) => {
   }
 
   sortKey.value = sortValue;
-};
-
-const onDeleteAdministration = (administrationId) => {
-  filteredAdministrations.value = filteredAdministrations.value.filter(
-    (administration) => administration?.id !== administrationId,
-  );
 };
 </script>
 

@@ -193,7 +193,7 @@ describe('Add Users Page', () => {
       // Test that the Start Adding button is visible
       const startAddingButton = wrapper.find('button[data-testid="start-adding-button"]');
       expect(startAddingButton.exists()).toBe(true);
-      expect(startAddingButton.text()).toBe('Start Adding Users');
+      expect(startAddingButton.text()).toBe('Add Users from Uploaded File');
     });
 
     it('handles validation errors when year is missing for child', async () => {

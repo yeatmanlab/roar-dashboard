@@ -12,7 +12,7 @@
           <span class="step-number">1</span>Download the template below or create your own CSV with the required columns
         </li>
         <li><span class="step-number">2</span>Fill in the CSV with the user data</li>
-        <li><span class="step-number">3</span>Upload the CSV file and click "Start Adding Users"</li>
+        <li><span class="step-number">3</span>Upload the CSV file and click "Add Users from Uploaded File"</li>
         <li>
           <span class="step-number">4</span>When finished, a file called "registered_users.csv" will be downloaded. If
           it is not in your downloads folder, click the "Download Users" button.
@@ -30,20 +30,20 @@
       <li><b>id</b><span class="field-marker">*</span> - A unique identifier for the user in CSV file.</li>
       <li><b>userType</b><span class="field-marker">*</span> - The type of user: child, caregiver, teacher.</li>
       <li>
-        <b>month</b><span class="field-marker">*</span><span class="field-marker">†</span> - The month a child user was
-        born (numeric; For Example, 5 for May).
+        <b>month</b><span class="field-marker">**</span> - The month a child user was born (numeric; For Example, 5 for
+        May).
       </li>
       <li>
-        <b>year</b><span class="field-marker">*</span><span class="field-marker">†</span> - The year a child user was
-        born (four-digit; For Example, 2017).
+        <b>year</b><span class="field-marker">**</span> - The year a child user was born (four-digit; For Example,
+        2017).
       </li>
       <li><b>caregiverId</b> - A unique identifier (id) for the child's caregiver.</li>
       <li><b>teacherId</b> - A unique identifier (id) for the child's teacher.</li>
-      <li>
+      <li v-if="!shouldUsePermissions">
         <b>site</b><span class="field-marker">*</span> - The name of the site you created from the Add Groups page.
       </li>
       <li>
-        One of the following<span class="field-marker">*</span>:
+        One of the following:<span class="field-marker">*</span>
         <ul class="nested-list">
           <li><b>cohort</b> - The name of the cohort.</li>
           <li>
@@ -57,37 +57,64 @@
     </ul>
 
     <p class="mb-6 legend">
-      <span class="field-marker">*</span> Required for this Step<br />
-      <span class="field-marker">†</span> Required only for child users. Leave blank for caregiver or teacher users.
+      <span class="field-marker">*</span> Required for this Step.<br />
+      <span class="field-marker">**</span> Required only for child users. Leave blank for caregiver or teacher users.
     </p>
-
-    <div class="download-button-container">
-      <button class="download-csv-btn" data-testid="download-template" @click="downloadTemplate">
-        <i class="pi pi-download"></i>
-        Download CSV Template
-      </button>
-    </div>
 
     <p>
       Below is an example of what your CSV/spreadsheet should look like. Only the required columns will be processed.
     </p>
+
     <div class="csv-example-image-container">
       <img
+        v-if="!shouldUsePermissions"
         id="add-users-example-image"
         :src="LEVANTE_STATIC_ASSETS_URL + '/add_users_example.png'"
         alt="Add Users CSV Example "
         class="csv-example-image"
       />
+      <img
+        v-else
+        id="add-users-example-image"
+        :src="LEVANTE_STATIC_ASSETS_URL + '/add_users_example_with_permissions.png'"
+        alt="Add Users CSV Example "
+        class="csv-example-image"
+      />
+    </div>
+
+    <div class="download-button-container">
+      <PvButton
+        class="download-csv-btn"
+        data-testid="download-template"
+        severity="primary"
+        variant="outlined"
+        @click="downloadTemplate"
+      >
+        <i class="pi pi-download"></i>
+        Download CSV Template
+      </PvButton>
     </div>
   </PvPanel>
 </template>
 
 <script setup>
 import { LEVANTE_STATIC_ASSETS_URL } from '@/constants/bucket';
+import { useAuthStore } from '@/store/auth';
+import { storeToRefs } from 'pinia';
 import PvPanel from 'primevue/panel';
+import PvButton from 'primevue/button';
+
+const authStore = useAuthStore();
+const { shouldUsePermissions } = storeToRefs(authStore);
 
 const generateTemplateFile = () => {
   const headers = ['id', 'userType', 'month', 'year', 'caregiverId', 'teacherId', 'site', 'school', 'class', 'cohort'];
+
+  if (shouldUsePermissions.value) {
+    const siteIndex = headers.indexOf('site');
+    if (siteIndex != -1) headers.splice(siteIndex, 1);
+  }
+
   const csvContent = headers.join(',') + '\n';
   return new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
 };
@@ -105,7 +132,7 @@ const downloadTemplate = () => {
 };
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .info-message-container {
   display: flex;
   background-color: rgb(252, 252, 218);
@@ -152,36 +179,14 @@ const downloadTemplate = () => {
 
 .download-button-container {
   display: flex;
-  justify-content: center;
-  margin: 2rem 0;
-}
+  margin: 2rem 0 0;
 
-.download-csv-btn {
-  background-color: var(--primary-color);
-  color: white;
-  border: none;
-  border-radius: 0.5rem;
-  padding: 1rem 2rem;
-  font-size: 1.1rem;
-  font-weight: bold;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  transition:
-    background-color 0.2s,
-    transform 0.2s;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.download-csv-btn:hover {
-  background-color: var(--primary-darker, #5b0c0f);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-
-.download-csv-btn i {
-  font-size: 1.2rem;
+  .download-csv-btn {
+    &:hover {
+      background: var(--primary-color);
+      color: white;
+    }
+  }
 }
 
 .how-to-section {

@@ -119,6 +119,8 @@ describe('HomeAdministrator', () => {
         roarfirekit: ref({
           restConfig: true,
         }),
+        isUserSuperAdmin: vi.fn(() => true),
+        currentSite: ref('test-site'),
       })),
     }));
 
@@ -184,6 +186,34 @@ describe('HomeAdministrator', () => {
     vi.mock('@/composables/queries/useAdministrationsListQuery', () => ({
       default: vi.fn(),
     }));
+
+    // Mock CardAdministration component
+    vi.mock('@/components/CardAdministration.vue', () => ({
+      default: {
+        name: 'CardAdministration',
+        template: '<div data-cy="h2-card-admin"><h2 data-cy="h2-card-admin-title">{{ title }}</h2></div>',
+        props: [
+          'title',
+          'stats',
+          'dates',
+          'assignees',
+          'assessments',
+          'publicName',
+          'showParams',
+          'isSuperAdmin',
+          'creator',
+        ],
+      },
+    }));
+
+    // Mock LevanteSpinner component
+    vi.mock('@/components/LevanteSpinner.vue', () => ({
+      default: {
+        name: 'LevanteSpinner',
+        template: '<div class="levante-spinner-container">Loading...</div>',
+        props: ['size'],
+      },
+    }));
   });
 
   afterEach(() => {
@@ -196,6 +226,8 @@ describe('HomeAdministrator', () => {
       isLoading: ref(false),
       isFetching: ref(false),
       isError: ref(false),
+      error: ref(null),
+      isSuccess: ref(true),
     });
 
     const wrapper = mount(HomeAdministrator, {
@@ -228,6 +260,8 @@ describe('HomeAdministrator', () => {
       isLoading: ref(true),
       isFetching: ref(false),
       isError: ref(false),
+      error: ref(null),
+      isSuccess: ref(false),
     });
 
     const wrapper = mount(HomeAdministrator, {
@@ -249,6 +283,8 @@ describe('HomeAdministrator', () => {
       isLoading: ref(false),
       isFetching: ref(false),
       isError: ref(false),
+      error: ref(null),
+      isSuccess: ref(true),
     });
 
     const wrapper = mount(HomeAdministrator, {
@@ -276,6 +312,8 @@ describe('HomeAdministrator', () => {
       isLoading: ref(false),
       isFetching: ref(false),
       isError: ref(false),
+      error: ref(null),
+      isSuccess: ref(true),
     });
 
     const wrapper = mount(HomeAdministrator, {
@@ -325,6 +363,8 @@ describe('HomeAdministrator', () => {
       isLoading: ref(false),
       isFetching: ref(false),
       isError: ref(false),
+      error: ref(null),
+      isSuccess: ref(true),
     });
 
     const wrapper = mount(HomeAdministrator, {

@@ -37,18 +37,36 @@ vi.mock('@/store/auth', () => ({
     roarfirekit: ref({
       restConfig: true,
     }),
+    isUserSuperAdmin: vi.fn(() => true),
+    currentSite: ref('test-site'),
+    shouldUsePermissions: ref(false),
+    userClaims: ref({
+      claims: {
+        adminOrgs: {
+          districts: [],
+          schools: [],
+          classes: [],
+          groups: [],
+          families: [],
+        },
+      },
+    }),
   })),
 }));
 
 vi.mock('@/composables/queries/useUserClaimsQuery', () => ({
   default: () => ({
-    data: {
-      value: {
-        claims: {
-          //
+    data: ref({
+      claims: {
+        adminOrgs: {
+          districts: [],
+          schools: [],
+          classes: [],
+          groups: [],
+          families: [],
         },
       },
-    },
+    }),
   }),
 }));
 
@@ -62,10 +80,80 @@ vi.mock('@/composables/usePermissions', () => ({
   }),
 }));
 
+// Mock query composables
+vi.mock('@/composables/queries/useDistrictsListQuery', () => ({
+  default: () => ({
+    isLoading: ref(false),
+    data: ref([]),
+  }),
+}));
+
+vi.mock('@/composables/queries/useDistrictSchoolsQuery', () => ({
+  default: () => ({
+    isLoading: ref(false),
+    data: ref([]),
+  }),
+}));
+
+vi.mock('@/composables/queries/useOrgsTableQuery', () => ({
+  default: () => ({
+    isLoading: ref(false),
+    isFetching: ref(false),
+    data: ref([]),
+    isError: ref(false),
+    error: ref(null),
+  }),
+}));
+
+vi.mock('@/composables/queries/useAdministrationsListQuery', () => ({
+  useFullAdministrationsListQuery: () => ({
+    isLoading: ref(false),
+    isFetching: ref(false),
+    data: ref([]),
+    isError: ref(false),
+    error: ref(null),
+  }),
+}));
+
 vi.mock('@/components/PermissionGuard.vue', () => ({
   default: {
     name: 'PermissionGuard',
     template: '<div class="permission-guard"><slot /></div>',
+  },
+}));
+
+vi.mock('@/components/EditOrgsForm.vue', () => ({
+  default: {
+    name: 'EditOrgsForm',
+    template: '<div class="edit-orgs-form">Edit Orgs Form</div>',
+  },
+}));
+
+vi.mock('@/components/modals/RoarModal.vue', () => ({
+  default: {
+    name: 'RoarModal',
+    template: '<div class="roar-modal"><slot /></div>',
+  },
+}));
+
+vi.mock('@/components/RoarDataTable.vue', () => ({
+  default: {
+    name: 'RoarDataTable',
+    template: '<div class="roar-data-table" data-cy="roar-data-table">Data Table</div>',
+  },
+}));
+
+vi.mock('@/components/modals/AddGroupModal.vue', () => ({
+  default: {
+    name: 'AddGroupModal',
+    template: '<div class="add-group-modal">Add Group Modal</div>',
+  },
+}));
+
+vi.mock('@/components/modals/GroupAssignmentsModal.vue', () => ({
+  default: {
+    name: 'GroupAssignmentsModal',
+    template: '<div class="group-assignments-modal">Group Assignments Modal</div>',
   },
 }));
 

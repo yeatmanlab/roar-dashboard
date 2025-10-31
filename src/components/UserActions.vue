@@ -8,12 +8,11 @@
       </div>
     </div>
     <div v-else class="flex gap-2 options-wrapper">
-
-      <div v-if="authStore.shouldUsePermissions">
+      <div v-if="authStore.shouldUsePermissions" class="flex align-items-center gap-2">
         <label for="site-select">Site:</label>
         <PvSelect
           :options="siteOptions"
-          :value="authStore.currentSite"
+          :value="selectedSite?.value"
           :optionValue="(o) => o.value"
           :optionLabel="(o) => o.label"
           class="options-site"
@@ -21,7 +20,8 @@
         >
           <template #value>
             <i class="pi pi-building"></i>
-            </template>
+            {{ selectedSite?.label || 'Select site' }}
+          </template>
         </PvSelect>
       </div>
 
@@ -56,7 +56,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, computed, watchEffect } from 'vue';
 import useSignOutMutation from '@/composables/mutations/useSignOutMutation';
 import PvButton from 'primevue/button';
 import PvSelect from 'primevue/select';
@@ -64,6 +64,7 @@ import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { APP_ROUTES } from '@/constants/routes';
 import { useAuthStore } from '@/store/auth';
+import useDistrictsListQuery from '@/composables/queries/useDistrictsListQuery';
 
 interface Props {
   isBasicView: boolean;
@@ -78,6 +79,11 @@ interface DropdownChangeEvent {
   value: string;
 }
 
+interface SiteOption {
+  siteId: string;
+  siteName: string;
+}
+
 const authStore = useAuthStore();
 const siteOptions = ref<DropdownOption[]>([]);
 const i18n = useI18n();
@@ -85,15 +91,29 @@ const router = useRouter();
 const { mutate: signOut } = useSignOutMutation();
 const feedbackButton = ref<HTMLButtonElement | null>(null);
 
-onMounted(() => {
-  siteOptions.value = (authStore.sites as {siteId: string, siteName: string}[]).map((site: {siteId: string, siteName: string}) => ({ label: site.siteName, value: site.siteId }));
+const props = defineProps<Props>();
+
+const { data: districtsData = [] } = useDistrictsListQuery();
+
+watchEffect(() => {
+  if (authStore.isUserSuperAdmin()) {
+    siteOptions.value = districtsData?.value?.map((district) => ({ label: district?.name, value: district?.id }));
+    siteOptions.value?.unshift({ label: 'All sites', value: 'any' });
+  } else {
+    siteOptions.value = authStore.sites.map((site: SiteOption) => ({
+      label: site.siteName,
+      value: site.siteId,
+    }));
+  }
 });
+
+const selectedSite = computed<DropdownOption | null>(
+  () => siteOptions.value?.find((siteOption) => siteOption?.value === authStore.currentSite) || null,
+);
 
 const handleSiteChange = (e: DropdownChangeEvent): void => {
   authStore.currentSite = e.value;
 };
-
-const props = defineProps<Props>();
 
 const helpOptions: DropdownOption[] = [
   { label: 'Researcher Documentation', value: 'researcherDocumentation' },
@@ -130,11 +150,16 @@ const handleProfileChange = (e: DropdownChangeEvent): void => {
     }
   }
 }
+
 .nav-user-wrapper {
   display: flex;
   align-items: center;
   outline: 1.2px solid rgba(0, 0, 0, 0.1);
   border-radius: 0.3rem;
   padding: 0.5rem 0.8rem;
+}
+
+.options-site {
+  max-width: 300px;
 }
 </style>

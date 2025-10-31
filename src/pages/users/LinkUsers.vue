@@ -3,54 +3,55 @@
     <section class="main-body">
       <LinkUsersInfo />
 
-      <div v-if="!isFileUploaded" class="text-gray-500 mb-2 surface-100 border-round p-2 mt-5">
-        <PvFileUpload
-          name="linkUsersUploader[]"
-          custom-upload
-          accept=".csv"
-          class="bg-primary mb-2 p-3 w-2 text-white border-none border-round h-3rem m-0 hover:bg-red-900"
-          auto
-          :show-upload-button="false"
-          :show-cancel-button="false"
-          @uploader="onFileUpload($event)"
-        >
-          <template #empty>
-            <div class="flex justify-center items-center text-gray-500">
-              <p>Click choose or drag and drop files to here to upload.</p>
-            </div>
-          </template>
-        </PvFileUpload>
-      </div>
+      <PvDivider class="my-5" />
 
-      <div v-if="isFileUploaded && !errorUsers.length">
-        <PvDataTable
-          ref="dataTable"
-          :value="rawUserFile"
-          show-gridlines
-          :row-hover="true"
-          :resizable-columns="true"
-          paginator
-          :always-show-paginator="false"
-          :rows="10"
-          class="datatable"
-        >
-          <PvColumn v-for="col of allFields" :key="col.field" :field="col.field">
-            <template #header>
-              <div class="col-header">
-                <b>{{ col.header }}</b>
-              </div>
-            </template>
-          </PvColumn>
-        </PvDataTable>
-
-        <div class="submit-container">
-          <PvButton
-            :label="activeSubmit ? 'Linking Users' : 'Start Linking'"
-            :icon="activeSubmit ? 'pi pi-spin pi-spinner' : ''"
-            :disabled="activeSubmit"
-            class="bg-primary mb-2 p-3 w-2 text-white border-none border-round h-3rem m-0 hover:bg-red-900"
-            @click="submitUsers"
+      <div class="m-0 mb-5 p-3 bg-gray-100 border-1 border-gray-200 border-round">
+        <div class="flex align-items-center gap-3">
+          <PvFileUpload
+            :choose-label="isFileUploaded && !errorUsers.length ? 'Choose Another CSV File' : 'Choose CSV File'"
+            :empty-label="'Test'"
+            :show-cancel-button="false"
+            :show-upload-button="false"
+            auto
+            accept=".csv"
+            custom-upload
+            mode="basic"
+            name="linkUsersFile[]"
+            @uploader="onFileUpload($event)"
           />
+          <span v-if="isFileUploaded" class="text-gray-500">File: {{ uploadedFile?.name }}</span>
+          <span v-else class="text-gray-500">No file chosen</span>
+        </div>
+
+        <div v-if="isFileUploaded && !errorUsers.length">
+          <PvDataTable
+            ref="dataTable"
+            :value="rawUserFile"
+            show-gridlines
+            :row-hover="true"
+            :resizable-columns="true"
+            paginator
+            :always-show-paginator="false"
+            :rows="10"
+            class="datatable"
+          >
+            <PvColumn v-for="col of allFields" :key="col.field" :field="col.field">
+              <template #header>
+                <div class="col-header">
+                  <b>{{ col.header }}</b>
+                </div>
+              </template>
+            </PvColumn>
+          </PvDataTable>
+
+          <div class="submit-container">
+            <PvButton
+              :label="activeSubmit ? 'Linking Users' : 'Start Linking'"
+              :icon="activeSubmit ? 'pi pi-spin pi-spinner' : 'pi pi-link'"
+              :disabled="activeSubmit"
+              @click="submitUsers"
+            />
+          </div>
         </div>
       </div>
 
@@ -94,10 +95,12 @@ import _forEach from 'lodash/forEach';
 import _startCase from 'lodash/startCase';
 import _isEmpty from 'lodash/isEmpty';
 import { TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
+import PvDivider from 'primevue/divider';
 
 const authStore = useAuthStore();
 const toast = useToast();
 const isFileUploaded = ref(false);
+const uploadedFile = ref(null);
 const rawUserFile = ref([]);
 const errorUsers = ref([]);
 const errorUserColumns = ref([]);
@@ -137,9 +140,12 @@ const allFields = [
 ];
 
 const onFileUpload = async (event) => {
+  uploadedFile.value = null;
+
   showErrorTable.value = false;
   // Read the file
-  const file = event.files[0];
+  const file = event.files[event.files.length - 1];
+  uploadedFile.value = file;
 
   // Parse the file directly with csvFileToJson
   const parsedData = await csvFileToJson(file);

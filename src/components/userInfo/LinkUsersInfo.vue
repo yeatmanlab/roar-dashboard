@@ -28,23 +28,22 @@
       <li><b>id</b><span class="field-marker">*</span> - A unique identifier for the user in CSV file.</li>
       <li><b>userType</b><span class="field-marker">*</span> - The type of user: child, caregiver, teacher.</li>
       <li>
-        <b>caregiverId</b><span class="field-marker">*</span><span class="field-marker">†</span> - A unique identifier
-        (id) for the child's caregiver.
+        <b>caregiverId</b><span class="field-marker">**</span> - A unique identifier (id) for the child's caregiver.
       </li>
       <li>
-        <b>teacherId</b><span class="field-marker">*</span><span class="field-marker">†</span> - A unique identifier
-        (id) for the child's teacher. (*only required if administering teacher survey)
+        <b>teacherId</b><span class="field-marker">**</span> - A unique identifier (id) for the child's teacher — only
+        required if administering teacher survey.
       </li>
       <li>
-        <b>uid</b><span class="field-marker">*</span><span class="field-marker">‡</span> - The unique LEVANTE identifier
-        that is returned after user is added to dashboard.
+        <b>uid</b><span class="field-marker">***</span> - The unique LEVANTE identifier that is returned after user is
+        added to dashboard.
       </li>
     </ul>
 
     <p class="mb-6 legend">
-      <span class="field-marker">*</span> Required for this Step<br />
-      <span class="field-marker">†</span> Required only for child users. Leave blank for caregiver or teacher users.<br />
-      <span class="field-marker">‡</span> Created by the platform during Add Users step.
+      <span class="field-marker">*</span> Required for this Step.<br />
+      <span class="field-marker">**</span> Required only for child users. Leave blank for caregiver or teacher users.<br />
+      <span class="field-marker">***</span> Created by the platform during Add Users step.
     </p>
 
     <p>
