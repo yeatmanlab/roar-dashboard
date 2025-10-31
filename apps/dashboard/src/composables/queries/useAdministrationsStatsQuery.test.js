@@ -264,4 +264,43 @@ describe('useAdministrationsStatsQuery', () => {
       taskIds: ['swr'],
     });
   });
+
+  it('should throw an error when orgId is provided without orgType', async () => {
+    const mockAdministrationIds = ref(['admin1']);
+    const orgId = ref('org123');
+
+    let queryResult;
+    withSetup(
+      () => {
+        queryResult = useAdministrationsStatsQuery(mockAdministrationIds, orgId, null, null, false);
+      },
+      {
+        plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
+      },
+    );
+
+    // Wait for query to execute
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    // The query should be in error state
+    expect(queryResult.isError.value).toBe(true);
+    expect(queryResult.error.value?.message).toBe('orgType is required when orgId is provided');
+  });
+
+  it('should not throw an error when orgType is provided without orgId', async () => {
+    const mockAdministrationIds = ref(['admin1']);
+    const orgType = ref('school');
+
+    withSetup(() => useAdministrationsStatsQuery(mockAdministrationIds, null, orgType, null, false), {
+      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
+    });
+
+    // Wait for query to execute
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    // Should only include administrationIds, not orgId/orgType
+    expect(mockGetAssignmentStats).toHaveBeenCalledWith({
+      administrationIds: ['admin1'],
+    });
+  });
 });
