@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { setBarChartData, setBarChartOptions } from './plotting';
+import { PROGRESS_COLORS } from '@/constants/completionStatus';
 
 global.document = {
   documentElement: {},
@@ -9,21 +10,6 @@ global.document = {
 describe('plotting', () => {
   beforeEach(() => {
     vi.resetAllMocks();
-
-    document.documentElement.style = {};
-    const mockGetComputedStyle = vi.fn().mockReturnValue({
-      getPropertyValue: vi.fn((property) => {
-        const colors = {
-          '--bright-green': '#00FF00',
-          '--yellow-100': '#FFFF00',
-          '--surface-d': '#DDDDDD',
-        };
-        return colors[property] || '';
-      }),
-    });
-
-    document.getComputedStyle = mockGetComputedStyle;
-    global.getComputedStyle = mockGetComputedStyle;
   });
 
   describe('setBarChartData', () => {
@@ -63,13 +49,13 @@ describe('plotting', () => {
       expect(chartData.datasets[2].data).toEqual([0]);
     });
 
-    it('should use correct colors from CSS variables', () => {
+    it('should use correct colors from completion status constants', () => {
       const orgStats = { assigned: 10, started: 5, completed: 2 };
       const chartData = setBarChartData(orgStats);
 
-      expect(chartData.datasets[0].backgroundColor).toBe('#00FF00');
-      expect(chartData.datasets[1].backgroundColor).toBe('#FFFF00');
-      expect(chartData.datasets[2].backgroundColor).toBe('#DDDDDD');
+      expect(chartData.datasets[0].backgroundColor).toBe(PROGRESS_COLORS.COMPLETED);
+      expect(chartData.datasets[1].backgroundColor).toBe(PROGRESS_COLORS.STARTED);
+      expect(chartData.datasets[2].backgroundColor).toBe(PROGRESS_COLORS.ASSIGNED);
     });
   });
 

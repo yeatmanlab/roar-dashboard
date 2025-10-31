@@ -1,32 +1,24 @@
 <template>
-  <div class="flex mx-5 flex-column align-items-center">
-    <div class="flex flex-wrap px-2 py-1 rounded justify-content-around align-items-center">
-      <div class="flex flex-row items-center text-sm font-light">
-        <div
-          class="inline-block rounded-full border-5 border-white h-6 w-6 mr-2 align-middle"
-          style="background-color: var(--bright-green)"
-        />
-        <div>
-          <div>Completed</div>
-        </div>
+  <div
+    class="flex mx-5 flex-column align-items-center"
+    :style="{
+      '--color-completed': PROGRESS_COLORS.COMPLETED,
+      '--color-started': PROGRESS_COLORS.STARTED,
+      '--color-assigned': PROGRESS_COLORS.ASSIGNED,
+    }"
+  >
+    <div class="flex flex-wrap gap-3 px-2 py-1 rounded justify-content-around align-items-center">
+      <div class="flex flex-row items-center gap-2 text-sm font-light">
+        <div class="legend-circle legend-circle--completed" />
+        <div>Completed</div>
       </div>
-      <div class="flex flex-row items-center text-sm font-light">
-        <div
-          class="inline-block rounded-full border-5 border-white h-6 w-6 mr-2 align-middle"
-          style="background-color: var(--yellow-100)"
-        />
-        <div>
-          <div>Started</div>
-        </div>
+      <div class="flex flex-row items-center gap-2 text-sm font-light">
+        <div class="legend-circle legend-circle--started" />
+        <div>Started</div>
       </div>
-      <div class="flex flex-row items-center text-sm font-light">
-        <div
-          class="inline-block rounded-full border-5 border-white h-6 w-6 mr-2 align-middle"
-          style="background-color: var(--surface-d)"
-        />
-        <div>
-          <div>Assigned</div>
-        </div>
+      <div class="flex flex-row items-center gap-2 text-sm font-light">
+        <div class="legend-circle legend-circle--assigned" />
+        <div>Assigned</div>
       </div>
     </div>
     <div class="my-1 text-xs font-light text-gray-500 uppercase">Legend</div>
@@ -34,5 +26,26 @@
 </template>
 
 <script setup>
-// No props needed - this is a static legend component
+import { PROGRESS_COLORS } from '@/constants/completionStatus';
 </script>
+
+<style scoped>
+.legend-circle {
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 9999px;
+}
+
+.legend-circle--completed {
+  background-color: var(--color-completed);
+}
+
+.legend-circle--started {
+  background-color: var(--color-started);
+}
+
+.legend-circle--assigned {
+  background-color: var(--color-assigned);
+}
+</style>
