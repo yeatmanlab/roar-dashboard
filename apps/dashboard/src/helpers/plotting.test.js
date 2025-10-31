@@ -32,13 +32,13 @@ describe('plotting', () => {
     });
 
     it('should use raw values without subtraction when stats are provided', () => {
-      const orgStats = { assigned: 10, started: 5, completed: 2 };
+      const orgStats = { assigned: 3, started: 5, completed: 2 };
       const chartData = setBarChartData(orgStats);
 
       // Values are now used directly (backend pre-calculates net values)
       expect(chartData.datasets[0].data).toEqual([2]); // completed
       expect(chartData.datasets[1].data).toEqual([5]); // started (raw value)
-      expect(chartData.datasets[2].data).toEqual([10]); // assigned (raw value)
+      expect(chartData.datasets[2].data).toEqual([3]); // assigned (raw value)
     });
 
     it('should handle undefined orgStats', () => {
