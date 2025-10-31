@@ -641,7 +641,7 @@ async function submitUsers() {
                     const schoolId = await getOrgId(
                       pluralizeFirestoreCollection(orgType),
                       schoolName,
-                      ref(siteId),
+                      ref({ id: siteId }),
                       ref(undefined),
                     );
                     orgInfo.schools.push(schoolId);
@@ -667,12 +667,12 @@ async function submitUsers() {
                   for (const schoolName of schools) {
                     try {
                       const siteId = await getOrgId('districts', siteName);
-                      const schoolId = await getOrgId('schools', schoolName);
+                      const schoolId = await getOrgId('schools', schoolName, ref({ id: siteId }), ref(undefined));
                       const classId = await getOrgId(
                         pluralizeFirestoreCollection(orgType),
                         className,
-                        ref(siteId),
-                        ref(schoolId),
+                        ref({ id: siteId }),
+                        ref({ id: schoolId }),
                       );
                       orgInfo.classes.push(classId);
                       classFound = true;
@@ -952,8 +952,15 @@ const orgIds = {
  */
 const getOrgId = async (orgType, orgName, parentDistrict = ref(null), parentSchool = ref(null)) => {
   const normalizedOrgName = normalizeToLowercase(orgName);
+  
+  // For schools and classes, include parent IDs in cache key to avoid cross-site conflicts
+  const parentDistrictId = parentDistrict?.value?.id || null;
+  const parentSchoolId = parentSchool?.value?.id || null;
+  const cacheKey = parentDistrictId || parentSchoolId 
+    ? `${normalizedOrgName}__${parentDistrictId || ''}__${parentSchoolId || ''}` 
+    : normalizedOrgName;
 
-  if (orgIds[orgType][normalizedOrgName]) return orgIds[orgType][normalizedOrgName];
+  if (orgIds[orgType][cacheKey]) return orgIds[orgType][cacheKey];
 
   // Array of objects. Ex: [{id: 'lut54353jkler'}]
   const orgs = await fetchOrgByName(orgType, normalizedOrgName, parentDistrict, parentSchool);
@@ -968,7 +975,7 @@ const getOrgId = async (orgType, orgName, parentDistrict = ref(null), parentScho
     }
   }
 
-  orgIds[orgType][normalizedOrgName] = orgs[0].id;
+  orgIds[orgType][cacheKey] = orgs[0].id;
 
   return orgs[0].id;
 };
