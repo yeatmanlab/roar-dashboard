@@ -42,6 +42,12 @@ const useAdministrationsStatsQuery = (
       // Add orgId and orgType if provided
       const orgIdValue = toValue(orgId);
       const orgTypeValue = toValue(orgType);
+      
+      // Validate that orgType is provided when orgId is provided
+      if (orgIdValue && !orgTypeValue) {
+        throw new Error('orgType is required when orgId is provided');
+      }
+      
       if (orgIdValue && orgTypeValue) {
         params.orgId = orgIdValue;
         params.orgType = orgTypeValue;
