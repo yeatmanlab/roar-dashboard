@@ -29,7 +29,7 @@
       <div class="flex justify-content-between align-items-center">
         <div class="w-full text-xl font-bold text-gray-600">
           Total
-          <span class="text-sm font-light"> ({{ adminStats.assigned }} total assignments) </span>
+          <span class="text-sm font-light"> ({{ totalAssignments }} total assignments) </span>
         </div>
         <PvChart
           type="bar"
@@ -45,6 +45,7 @@
 
 <script setup>
 import PvChart from 'primevue/chart';
+import { computed } from 'vue';
 import { setBarChartData, setBarChartOptions } from '@/helpers/plotting';
 import ProgressLegend from './ProgressLegend.vue';
 
@@ -61,6 +62,10 @@ const props = defineProps({
     type: Object,
     required: true,
   },
+});
+
+const totalAssignments = computed(() => {
+  return (props.adminStats?.assigned || 0) + (props.adminStats?.started || 0) + (props.adminStats?.completed || 0);
 });
 
 /**
