@@ -272,18 +272,23 @@ describe('useAdministrationsStatsQuery', () => {
     let queryResult;
     withSetup(
       () => {
-        queryResult = useAdministrationsStatsQuery(mockAdministrationIds, orgId, null, null, false);
+        queryResult = useAdministrationsStatsQuery(mockAdministrationIds, orgId, null, null, false, {
+          retry: false, // Disable retries to make the test faster
+        });
       },
       {
         plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
       },
     );
 
-    // Wait for query to execute
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    // Wait for query to execute and fail
+    await vi.waitFor(
+      () => {
+        expect(queryResult.isError.value).toBe(true);
+      },
+      { timeout: 1000 },
+    );
 
-    // The query should be in error state
-    expect(queryResult.isError.value).toBe(true);
     expect(queryResult.error.value?.message).toBe('orgType is required when orgId is provided');
   });
 
