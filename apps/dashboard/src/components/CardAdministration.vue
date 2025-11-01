@@ -90,6 +90,7 @@
         row-hover
         :loading="loadingTreeTable"
         :value="treeTableOrgs"
+        data-cy="administration-orgs-tree"
         @node-expand="onExpand"
       >
         <PvColumn field="name" header="Name" expander style="width: 20rem"></PvColumn>
@@ -178,6 +179,7 @@ import useDeleteAdministrationMutation from '@/composables/mutations/useDeleteAd
 import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
 import { ADMINISTRATION_FORM_TYPES } from '@/constants/routes';
 import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
+import { PROGRESS_COLORS } from '@/constants/completionStatus';
 import { useAuthStore } from '@/store/auth';
 
 const router = useRouter();
@@ -444,23 +446,14 @@ const setDoughnutChartOptions = () => ({
 });
 
 const setDoughnutChartData = () => {
-  const docStyle = getComputedStyle(document.documentElement);
   let { assigned = 0, started = 0, completed = 0 } = props.stats || {};
-
-  started -= completed;
-  assigned -= started + completed;
 
   return {
     labels: ['Completed', 'Started', 'Assigned'],
     datasets: [
       {
         data: [completed, started, assigned],
-        backgroundColor: [
-          docStyle.getPropertyValue('--bright-green'),
-          docStyle.getPropertyValue('--yellow-100'),
-          docStyle.getPropertyValue('--surface-d'),
-        ],
-        // hoverBackgroundColor: ['green', docStyle.getPropertyValue('--surface-d')]
+        backgroundColor: [PROGRESS_COLORS.COMPLETED, PROGRESS_COLORS.STARTED, PROGRESS_COLORS.ASSIGNED],
       },
     ],
   };

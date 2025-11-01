@@ -4,7 +4,7 @@
   "bin": {
     "setup-certs": "./scripts/setup-certs.sh"
   },
-  "version": "3.16.0",
+  "version": "3.20.0",
   "scripts": {
     "dev": "turbo run dev",
     "dev:setup:certs": "setup-certs",

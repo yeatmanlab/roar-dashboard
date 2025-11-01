@@ -61,6 +61,9 @@ describe('Partner Admin: Score Reports', () => {
     // Select the test administration and open the details page.
     cy.getAdministrationCard(testPartnerAdministrationName);
 
+    // Wait for the score report button to load.
+    cy.waitForScoreReportButton();
+
     // Open the score report.
     openScoreReport();
 
@@ -83,6 +86,9 @@ describe('Partner Admin: Score Reports', () => {
 
     // Select the test administration and open the details page.
     cy.getAdministrationCard(testPartnerAdministrationName);
+
+    // Wait for the score report button to load.
+    cy.waitForScoreReportButton();
 
     // Open the score report.
     openScoreReport();

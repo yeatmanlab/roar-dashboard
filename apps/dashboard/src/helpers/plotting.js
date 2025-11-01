@@ -1,3 +1,5 @@
+import { PROGRESS_COLORS } from '@/constants/completionStatus';
+
 export const chart = {};
 
 const getBorderRadii = (left, middle, right) => {
@@ -30,10 +32,6 @@ const getBorderRadii = (left, middle, right) => {
 
 export const setBarChartData = (orgStats) => {
   let { assigned = 0, started = 0, completed = 0 } = orgStats || {};
-  const documentStyle = getComputedStyle(document.documentElement);
-
-  started -= completed;
-  assigned -= started + completed;
 
   const borderRadii = getBorderRadii(completed, started, assigned);
   const borderWidth = 0;
@@ -44,7 +42,7 @@ export const setBarChartData = (orgStats) => {
       {
         type: 'bar',
         label: 'Completed',
-        backgroundColor: documentStyle.getPropertyValue('--bright-green'),
+        backgroundColor: PROGRESS_COLORS.COMPLETED,
         data: [completed],
         borderWidth: borderWidth,
         borderSkipped: false,
@@ -53,7 +51,7 @@ export const setBarChartData = (orgStats) => {
       {
         type: 'bar',
         label: 'Started',
-        backgroundColor: documentStyle.getPropertyValue('--yellow-100'),
+        backgroundColor: PROGRESS_COLORS.STARTED,
         data: [started],
         borderWidth: borderWidth,
         borderSkipped: false,
@@ -62,7 +60,7 @@ export const setBarChartData = (orgStats) => {
       {
         type: 'bar',
         label: 'Assigned',
-        backgroundColor: documentStyle.getPropertyValue('--surface-d'),
+        backgroundColor: PROGRESS_COLORS.ASSIGNED,
         data: [assigned],
         borderWidth: borderWidth,
         borderSkipped: false,
