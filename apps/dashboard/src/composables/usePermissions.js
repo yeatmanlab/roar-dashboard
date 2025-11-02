@@ -15,6 +15,13 @@ export function usePermissions() {
     // Fixing this issue is a TODO.
     const authStore = useAuthStore();
     const { accessToken } = storeToRefs(authStore);
+
+    // If there's no access token yet, we cannot evaluate permissions.
+    // Return false to prevent permission checks before authentication is complete.
+    if (!accessToken.value) {
+      return false;
+    }
+
     return PermissionsService.canUser(accessToken.value, permission);
   };
 
