@@ -790,13 +790,13 @@ describe('reports', () => {
     });
 
     it('should return v1 chart when pa is assigned and other tasks use old norms', () => {
-      expect(getDistributionChartPath(3, { swr: 6, sre: 3, pa: null }, 'en')).toMatch(
+      expect(getDistributionChartPath(3, { swr: 6, sre: 3, pa: 3 }, 'en')).toMatch(
         /en-elementary-distribution-chart-scoring-v1\.webp$/,
       );
     });
 
     it('should return no-cutoffs chart when pa is assigned even if other tasks use updated norms', () => {
-      expect(getDistributionChartPath(3, { swr: 7, sre: 4, pa: null }, 'en')).toMatch(
+      expect(getDistributionChartPath(3, { swr: 7, sre: 4, pa: 3 }, 'en')).toMatch(
         /en-all-grades-distribution-chart-no-cutoffs\.webp$/,
       );
     });

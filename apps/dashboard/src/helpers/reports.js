@@ -1128,6 +1128,7 @@ export const getRawScoreRange = (taskId) => {
  * - All applicable tasks meet thresholds → v2 chart
  * - All below thresholds → v1 chart
  * - Mixed → no-cutoffs chart
+ * - Special case: For Spanish tasks 'swr-es' and 'sre-es', versions < 1 are considered "unnormed" and should be excluded.
  */
 export const getDistributionChartPath = (grade, taskScoringVersions, language = 'en') => {
   const tasks = Object.entries(taskScoringVersions);

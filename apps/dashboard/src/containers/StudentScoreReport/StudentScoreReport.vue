@@ -198,7 +198,6 @@ const distributionChartPath = computed(() => {
     .filter((task) => task.scores)
     .map((task) => task.taskId);
 
-  // Consider scoring versions for completed normed tasks (unnormed tasks do not matter here)
   const scoringVersions = Object.fromEntries(
     completedTasks.map((taskId) => [taskId, getScoringVersions.value[taskId]]),
   );
