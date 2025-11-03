@@ -1127,7 +1127,7 @@ export const getRawScoreRange = (taskId) => {
  * @description
  * - All applicable tasks meet thresholds → v2 chart
  * - All below thresholds → v1 chart
- * - Mixed → no-cutoffs chart
+ * - Mixed, grade >= 6 → no-cutoffs chart
  * - Special case: For Spanish tasks 'swr-es' and 'sre-es', versions < 1 are considered "unnormed" and should be excluded.
  */
 export const getDistributionChartPath = (grade, taskScoringVersions, language = 'en') => {
@@ -1138,7 +1138,7 @@ export const getDistributionChartPath = (grade, taskScoringVersions, language = 
     ([taskId, version]) => taskId in updatedNormVersions && !(['swr-es', 'sre-es'].includes(taskId) && version < 1),
   );
 
-  // Default to admins with mixed scoring versions
+  // Default to admins with mixed scoring versions or grade >= 6
   let path = `../assets/${language}-all-grades-distribution-chart-no-cutoffs.webp`;
 
   // Images are currently only available for elementary grades
