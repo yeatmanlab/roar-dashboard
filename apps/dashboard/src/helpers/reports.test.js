@@ -810,20 +810,20 @@ describe('reports', () => {
     });
 
     describe('grade >= 6', () => {
-      it('should return no-cutoffs charts regardless of scoring versions', () => {
+      it('should return secondary chart regardless of scoring versions', () => {
         expect(getDistributionChartPath(6, { swr: 7, sre: 4, 'swr-es': 1, 'sre-es': null }, 'en')).toMatch(
-          /en-all-grades-distribution-chart-no-cutoffs\.webp$/,
+          /en-secondary-distribution-chart-scoring-v1\.webp$/,
         );
       });
     });
 
     it('should return no-cutoffs chart when taskScoringVersions is empty', () => {
-      expect(getDistributionChartPath(6, {}, 'en')).toMatch(/en-all-grades-distribution-chart-no-cutoffs\.webp$/);
+      expect(getDistributionChartPath(6, {}, 'en')).toMatch(/en-secondary-distribution-chart-scoring-v1\.webp$/);
     });
 
     it('should handle string grade values correctly', () => {
       expect(getDistributionChartPath('6', { swr: 7, sre: 4 }, 'en')).toMatch(
-        /en-all-grades-distribution-chart-no-cutoffs\.webp$/,
+        /en-secondary-distribution-chart-scoring-v1\.webp$/,
       );
     });
   });

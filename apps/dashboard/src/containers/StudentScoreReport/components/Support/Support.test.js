@@ -5,7 +5,7 @@ import Support from './Support.vue';
 
 const DISTRIBUTION_CHART_PATHS = {
   elementaryV1: 'en-elementary-distribution-chart-scoring-v1.webp',
-  allGradesNoCutoffs: 'en-all-grades-distribution-chart-no-cutoffs.webp',
+  secondaryV1: 'en-secondary-distribution-chart-scoring-v1.webp',
 };
 
 describe('Support.vue', () => {
@@ -77,7 +77,7 @@ describe('Support.vue', () => {
         props: {
           expanded: false,
           studentGrade: 7,
-          distributionChartPath: DISTRIBUTION_CHART_PATHS.allGradesNoCutoffs,
+          distributionChartPath: DISTRIBUTION_CHART_PATHS.secondaryV1,
         },
         global: {
           plugins: [i18n],
@@ -92,7 +92,7 @@ describe('Support.vue', () => {
         props: {
           expanded: true,
           studentGrade: 7,
-          distributionChartPath: DISTRIBUTION_CHART_PATHS.allGradesNoCutoffs,
+          distributionChartPath: DISTRIBUTION_CHART_PATHS.secondaryV1,
         },
         global: {
           plugins: [i18n],
@@ -174,14 +174,14 @@ describe('Support.vue', () => {
         props: {
           expanded: true,
           studentGrade: 6,
-          distributionChartPath: DISTRIBUTION_CHART_PATHS.allGradesNoCutoffs,
+          distributionChartPath: DISTRIBUTION_CHART_PATHS.secondaryV1,
         },
         global: {
           plugins: [i18n],
         },
       });
 
-      const img = wrapper.find(`img[src*="${DISTRIBUTION_CHART_PATHS.allGradesNoCutoffs}"]`);
+      const img = wrapper.find(`img[src*="${DISTRIBUTION_CHART_PATHS.secondaryV1}"]`);
       expect(img.exists()).toBe(true);
     });
 
@@ -190,7 +190,7 @@ describe('Support.vue', () => {
         props: {
           expanded: true,
           studentGrade: 6,
-          distributionChartPath: DISTRIBUTION_CHART_PATHS.allGradesNoCutoffs,
+          distributionChartPath: DISTRIBUTION_CHART_PATHS.secondaryV1,
           isDistributionChartEnabled: false,
         },
         global: {
@@ -198,7 +198,7 @@ describe('Support.vue', () => {
         },
       });
 
-      const img = wrapper.find(`img[src*="${DISTRIBUTION_CHART_PATHS.allGradesNoCutoffs}"]`);
+      const img = wrapper.find(`img[src*="${DISTRIBUTION_CHART_PATHS.secondaryV1}"]`);
       expect(img.exists()).toBe(false);
     });
 
@@ -224,7 +224,7 @@ describe('Support.vue', () => {
         props: {
           expanded: true,
           studentGrade: 7,
-          distributionChartPath: DISTRIBUTION_CHART_PATHS.allGradesNoCutoffs,
+          distributionChartPath: DISTRIBUTION_CHART_PATHS.secondaryV1,
         },
         global: {
           plugins: [i18n],

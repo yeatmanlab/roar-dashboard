@@ -1127,22 +1127,23 @@ export const getRawScoreRange = (taskId) => {
  * @description
  * - All applicable tasks meet thresholds → v2 chart
  * - All below thresholds → v1 chart
- * - Mixed, grade >= 6 → no-cutoffs chart
+ * - Mixed → no-cutoffs chart
  * - Special case: For Spanish tasks 'swr-es' and 'sre-es', versions < 1 are considered "unnormed" and should be excluded.
+ * - grade >= 6 → secondary chart only
  */
 export const getDistributionChartPath = (grade, taskScoringVersions, language = 'en') => {
   const tasks = Object.entries(taskScoringVersions);
 
   // Filter to only tasks that have updated norms and exclude unnormed Spanish tasks (version < 1)
+  // isDistributionChartEnabled ensures there are in-progress/completed normed tasks
   const applicableTasks = tasks.filter(
     ([taskId, version]) => taskId in updatedNormVersions && !(['swr-es', 'sre-es'].includes(taskId) && version < 1),
   );
 
-  // Default to admins with mixed scoring versions or grade >= 6
-  let path = `../assets/${language}-all-grades-distribution-chart-no-cutoffs.webp`;
+  let path = '';
 
   // Images are currently only available for elementary grades
-  if (parseInt(grade) < 6 && applicableTasks.length > 0) {
+  if (parseInt(grade) < 6) {
     const hasNoUpdatedNorms = applicableTasks.every(([taskId, version]) => version < updatedNormVersions[taskId]);
     const hasAllUpdatedNorms = applicableTasks.every(([taskId, version]) => version >= updatedNormVersions[taskId]);
 
@@ -1150,7 +1151,12 @@ export const getDistributionChartPath = (grade, taskScoringVersions, language = 
       path = `../assets/${language}-elementary-distribution-chart-scoring-v2.webp`;
     } else if (hasNoUpdatedNorms) {
       path = `../assets/${language}-elementary-distribution-chart-scoring-v1.webp`;
+    } else {
+      // Default to admins with mixed scoring versions
+      path = `../assets/${language}-all-grades-distribution-chart-no-cutoffs.webp`;
     }
+  } else {
+    path = `../assets/${language}-secondary-distribution-chart-scoring-v1.webp`;
   }
 
   return new URL(path, import.meta.url).href;

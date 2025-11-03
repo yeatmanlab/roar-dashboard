@@ -206,12 +206,21 @@ const distributionChartPath = computed(() => {
 });
 
 // Only show the distribution chart if there are completed normed tasks
+// Spanish tasks (sre-es, swr-es) must also have a non-null scoring version
 const isDistributionChartEnabled = computed(() => {
   const normedTaskIds = Object.keys(updatedNormVersions);
-  const hasNormedTasks = Object.values(taskData.value).some(
-    (task) => normedTaskIds.includes(task.taskId) && task.scores,
-  );
-  return hasNormedTasks;
+  return Object.values(taskData.value).some((task) => {
+    // Must have scores and be a normed task
+    if (!task.scores || !normedTaskIds.includes(task.taskId)) return false;
+
+    // Spanish tasks require a non-null scoring version
+    if (task.taskId === 'sre-es' || task.taskId === 'swr-es') {
+      return getScoringVersions.value[task.taskId] !== null;
+    }
+
+    // All other normed tasks just need scores
+    return true;
+  });
 });
 
 /**
