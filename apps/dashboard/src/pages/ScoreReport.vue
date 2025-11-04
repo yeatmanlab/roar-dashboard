@@ -126,11 +126,42 @@
                     </div>
                   </div>
                 </div>
-                <div class="my-1 text-xs font-light text-gray-500 uppercase">Legend</div>
+                <!-- One/all of word, sentence, phoneme have been taken, but additionally they have other assessments that do not show charts (we want to say we only show charts for validated assessments)  -->
+                <div v-if="!isEmptyDistrictSupportCategories && props.orgType === 'district'">
+                  <p v-if="validatedApps && numValidatedApps.length > validatedApps.length" class="text-center text-sm">
+                    * Charts are available for validated ROAR assessments (Word, Sentence, and Phoneme) to give you
+                    clear, reliable insights. Results from other assessments do not currently display charts.
+                  </p>
+                  <p class="text-center align-items-center text-sm">
+                    See school or class report to get more information about other assessments.
+                  </p>
+                </div>
               </div>
             </div>
-            <div v-if="isEmptyDistrictSupportCategories" class="flex justify-content-center">
-              <h1>Placeholder</h1>
+            <!-- None of word, sentence, phoneme have been assigned, they will have other apps -->
+            <div
+              v-if="isEmptyDistrictSupportCategories && validatedApps.length === 0"
+              class="justify-content-center surface-100 p-2"
+            >
+              <p class="text-center text-sm">
+                * Charts are shown only for Word, Sentence, and Phoneme. None of these assessments are currently
+                assigned.
+              </p>
+              <p class="text-center align-items-center text-sm">
+                See school or class report to get more information about other assessments.
+              </p>
+            </div>
+            <!-- None of word, sentence, phoneme have been taken yet -->
+            <div
+              v-else-if="isEmptyDistrictSupportCategories && validatedApps.length > 0"
+              class="justify-content-center surface-100 p-2"
+            >
+              <p v-if="validatedApps && numValidatedApps.length === validatedApps.length" class="text-center text-sm">
+                * Charts will appear once students have started their Word, Sentence, and/or Phoneme assessments.
+              </p>
+              <p class="text-center align-items-center text-sm">
+                See school or class report to get detailed information about the assessments.
+              </p>
             </div>
           </div>
         </section>
@@ -348,7 +379,7 @@
             </PvTabPanel>
           </PvTabPanels>
         </PvTabs>
-        <div id="score-report-closing" class="px-4 py-2 mt-4 bg-gray-200">
+        <div id="score-report-closing" class="px-4 py-2 mt-4 bg-gray-100">
           <h2 class="extra-info-title">HOW ROAR SCORES INFORM PLANNING TO PROVIDE SUPPORT</h2>
           <p>
             Each foundational reading skill is a building block of the subsequent skill. Phonological awareness supports
@@ -375,7 +406,7 @@
           <!-- Reintroduce when we have somewhere for this link to go. -->
           <!-- <a href="google.com">Click here</a> for more guidance on steps you can take in planning to support your students. -->
         </div>
-        <div class="px-4 py-2 mb-7 bg-gray-200">
+        <div class="px-4 py-2 mb-7 bg-gray-100">
           <h2 class="extra-info-title">NEXT STEPS</h2>
           <!-- Reintroduce when we have somewhere for this link to go. -->
           <!-- <p>This score report has provided a snapshot of your school's reading performance at the time of administration. By providing classifications for students based on national norms for scoring, you are able to see which students can benefit from varying levels of support. To read more about what to do to support your students, <a href="google.com">read here.</a></p> -->
@@ -777,6 +808,13 @@ const { data: administrationData } = useAdministrationsQuery([props.administrati
   select: (data) => data[0],
 });
 
+const validatedApps = computed(() =>
+  administrationData.value?.assessments
+    ?.map((task) => task.taskId)
+    .filter((id) => id === 'swr' || id === 'sre' || id === 'pa'),
+);
+const numValidatedApps = computed(() => administrationData.value?.assessments?.map((task) => task.taskId));
+
 const { data: districtSchoolsData } = useDistrictSchoolsQuery(props.orgId, {
   enabled: props.orgType === SINGULAR_ORG_TYPES.DISTRICTS && initialized,
 });
@@ -813,7 +851,12 @@ const schoolNameDictionary = computed(() => {
 });
 
 const isEmptyDistrictSupportCategories = computed(() => {
-  return props.orgType === 'district' && aggregatedDistrictSupportCategories.value?.status === 'failed';
+  return (
+    props.orgType === 'district' &&
+    (aggregatedDistrictSupportCategories.value?.status === 'failed' ||
+      aggregatedDistrictSupportCategories.value?.length === 0 ||
+      !aggregatedDistrictSupportCategories.value)
+  );
 });
 
 // Return a faded color if assessment is not reliable
