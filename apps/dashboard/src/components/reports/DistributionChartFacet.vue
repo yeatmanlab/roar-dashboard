@@ -189,6 +189,7 @@ const distributionChartFacet = computed(() => {
       subtitle: `${scoreMode.value.name} Distribution By ${props.facetMode.name}`,
       anchor: 'middle',
       fontSize: 18,
+      dx: 70,
     },
     data: {
       values: computedRuns.value,
@@ -257,7 +258,7 @@ const distributionChartFacet = computed(() => {
       },
 
       y: {
-        type: 'ordinal',
+        type: 'quantitative',
         aggregate: 'count',
         title: 'Count',
         sort: 'ascending',
