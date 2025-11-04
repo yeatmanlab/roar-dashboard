@@ -21,7 +21,7 @@
         <div>Assigned</div>
       </div>
     </div>
-    <div class="my-1 text-xs font-light text-gray-500 uppercase">Legend</div>
+    <div class="mt-1 text-xs font-light text-gray-500 uppercase">Legend</div>
   </div>
 </template>
 
@@ -32,8 +32,8 @@ import { PROGRESS_COLORS } from '@/constants/completionStatus';
 <style scoped>
 .legend-circle {
   display: inline-block;
-  width: 1rem;
-  height: 1rem;
+  width: 1.75rem;
+  height: 1.75rem;
   border-radius: 9999px;
 }
 

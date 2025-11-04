@@ -7,10 +7,11 @@
       </div>
 
       <template v-else>
-        <ProgressReportHeader
+        <ReportHeader
           :org-type="props.orgType"
           :org-name="orgData?.name"
           :administration-name="displayName"
+          report-type="Progress"
           :report-view="reportView"
           :report-views="REPORT_VIEWS"
           @view-change="handleViewChange"
@@ -61,7 +62,8 @@ import { getTitle } from '@/helpers/query/administrations';
 import { APP_ROUTES } from '@/constants/routes';
 import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
 import RoarDataTable from '@/components/RoarDataTable';
-import { ProgressReportHeader, ProgressStatsOverview } from './components';
+import ReportHeader from '@/components/ReportHeader.vue';
+import { ProgressStatsOverview } from './components';
 import { useProgressData, useProgressColumns, useProgressExport, useProgressFilters } from './composables';
 import {
   REPORT_VIEWS,
