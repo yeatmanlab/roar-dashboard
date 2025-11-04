@@ -40,7 +40,7 @@ export function useProgressData(assignmentData, schoolNameDictionary) {
         routeParams: {
           userId: user.userId,
         },
-        launchTooltip: `View assessment portal for ${user.name?.first || user.username}`,
+        launchTooltip: `View assessment portal for ${user.name?.first ?? user.username ?? 'user'}`,
       };
 
       const currRowProgress = {};

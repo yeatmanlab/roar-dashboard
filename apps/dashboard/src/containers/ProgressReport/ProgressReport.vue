@@ -3,7 +3,7 @@
     <section class="main-body">
       <div v-if="isLoading" class="my-4 flex flex-col w-full items-center justify-center">
         <AppSpinner class="my-4" />
-        <div class="text-sm font-light text-gray-600 uppercase">Loading Progress Datatable</div>
+        <div class="text-sm font-light text-gray-600 uppercase">Loading Progress Report</div>
       </div>
 
       <template v-else>
