@@ -42,7 +42,7 @@
 import PvChart from 'primevue/chart';
 import { computed } from 'vue';
 import { setBarChartData, setBarChartOptions } from '@/helpers/plotting';
-import ProgressLegend from './ProgressLegend.vue';
+import ProgressLegend from '../ProgressLegend';
 
 const props = defineProps({
   adminStats: {

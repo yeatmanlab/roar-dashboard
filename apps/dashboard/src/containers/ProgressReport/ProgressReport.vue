@@ -65,12 +65,7 @@ import RoarDataTable from '@/components/RoarDataTable';
 import ReportHeader from '@/components/ReportHeader.vue';
 import { ProgressStatsOverview } from './components';
 import { useProgressData, useProgressColumns, useProgressExport, useProgressFilters } from './composables';
-import {
-  REPORT_VIEWS,
-  DEFAULT_ORDER_BY,
-  DISTRICT_ORDER_BY_PREFIX,
-  DEFAULT_PAGE_LIMIT,
-} from './constants/progressReportConstants';
+import { REPORT_VIEWS, DEFAULT_ORDER_BY, DISTRICT_ORDER_BY_PREFIX, DEFAULT_PAGE_LIMIT } from './constants';
 
 const router = useRouter();
 const authStore = useAuthStore();
