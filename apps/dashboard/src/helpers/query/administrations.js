@@ -17,8 +17,6 @@ const REQUIRED_ADMINISTRATION_FIELDS = [
   'testData',
 ];
 
-const REQUIRED_STATS_FIELDS = ['assignment'];
-
 export function getTitle(item, isSuperAdmin) {
   if (isSuperAdmin) {
     return item.name;
@@ -28,35 +26,7 @@ export function getTitle(item, isSuperAdmin) {
   }
 }
 
-const processBatchStats = async (axiosInstance, statsPaths, batchSize = 500) => {
-  const batchStatsDocs = [];
-  const statsPathChunks = _chunk(statsPaths, batchSize);
-  for (const batch of statsPathChunks) {
-    const { data } = await axiosInstance.post(':batchGet', {
-      documents: batch,
-      mask: { fieldPaths: REQUIRED_STATS_FIELDS },
-    });
-
-    const processedBatch = _without(
-      data.map(({ found }) => {
-        if (found) {
-          return {
-            name: found.name,
-            data: _mapValues(found.fields, (value) => convertValues(value)),
-          };
-        }
-        return undefined;
-      }),
-      undefined,
-    );
-
-    batchStatsDocs.push(...processedBatch);
-  }
-
-  return batchStatsDocs;
-};
-
-const mapAdministrations = async (adminData) => {
+const mapAdministrations = (adminData, stats) => {
   // First format the administration documents
   const administrationData = adminData
     .map((a) => a.data)
@@ -76,58 +46,73 @@ const mapAdministrations = async (adminData) => {
       };
     });
 
-  // Create a list of all the stats document paths we need to get
-  const statsPaths = adminData
-    // First filter out any missing administration documents
-    .filter((item) => item.name !== undefined)
-    // Then map to the total stats document
-    .map(({ name }) => `${name}/stats/total`);
-
-  const axiosInstance = getAxiosInstance();
-  const batchStatsDocs = await processBatchStats(axiosInstance, statsPaths);
-
   const administrations = administrationData?.map((administration) => {
-    const thisAdminStats = batchStatsDocs.find((statsDoc) => statsDoc.name.includes(administration.id));
+    const thisAdminStats = stats[administration.id] ?? {};
     return {
       ...administration,
-      stats: { total: thisAdminStats?.data },
+      stats: thisAdminStats,
     };
   });
 
   return administrations;
 };
 
-export const administrationPageFetcher = async (isSuperAdmin, exhaustiveAdminOrgs, fetchTestData = false, orderBy) => {
+export const administrationPageFetcher = async (fetchTestData = false, orderBy, fetchStats = true) => {
   const authStore = useAuthStore();
   const { roarfirekit } = storeToRefs(authStore);
+
   const administrationIds = await roarfirekit.value.getAdministrations({ testData: toValue(fetchTestData) });
 
   const axiosInstance = getAxiosInstance();
   const documentPrefix = axiosInstance.defaults.baseURL.replace('https://firestore.googleapis.com/v1/', '');
   const documents = administrationIds.map((id) => `${documentPrefix}/administrations/${id}`);
 
-  const { data } = await axiosInstance.post(':batchGet', {
-    documents,
-    mask: { fieldPaths: REQUIRED_ADMINISTRATION_FIELDS },
-  });
+  const administrationDataPromise = axiosInstance
+    .post(':batchGet', {
+      documents,
+      mask: { fieldPaths: REQUIRED_ADMINISTRATION_FIELDS },
+    })
+    .then(({ data }) =>
+      _without(
+        data.map(({ found }) => {
+          if (found) {
+            return {
+              name: found.name,
+              data: {
+                id: _last(found.name.split('/')),
+                ..._mapValues(found.fields, (value) => convertValues(value)),
+              },
+            };
+          }
+          return undefined;
+        }),
+        undefined,
+      ),
+    );
 
-  const administrationData = _without(
-    data.map(({ found }) => {
-      if (found) {
-        return {
-          name: found.name,
-          data: {
-            id: _last(found.name.split('/')),
-            ..._mapValues(found.fields, (value) => convertValues(value)),
-          },
-        };
-      }
-      return undefined;
-    }),
-    undefined,
-  );
+  const stats = {};
+  let administrationData;
 
-  const administrations = await mapAdministrations(administrationData);
+  if (fetchStats) {
+    const statsPromises = _chunk(administrationIds, 200).map((chunk) => {
+      return roarfirekit.value
+        .getAssignmentStats({
+          administrationIds: chunk,
+        })
+        .then(({ data }) => data);
+    });
+
+    const [adminData, statsChunks] = await Promise.all([administrationDataPromise, Promise.all(statsPromises)]);
+    administrationData = adminData;
+
+    for (const statsChunk of statsChunks) {
+      Object.assign(stats, statsChunk);
+    }
+  } else {
+    administrationData = await administrationDataPromise;
+  }
+
+  const administrations = mapAdministrations(administrationData, stats);
 
   const orderField = (orderBy?.value ?? orderByDefault)[0].field.fieldPath;
   const orderDirection = (orderBy?.value ?? orderByDefault)[0].direction;

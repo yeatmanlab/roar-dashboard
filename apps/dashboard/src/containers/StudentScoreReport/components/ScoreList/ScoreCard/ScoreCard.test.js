@@ -3,6 +3,13 @@ import { mount } from '@vue/test-utils';
 import { createI18n } from 'vue-i18n';
 import ScoreCard from './ScoreCard.vue';
 
+// Mock feature flags
+vi.mock('@/constants/featureFlags', () => ({
+  FEATURE_FLAGS: {
+    ENABLE_LONGITUDINAL_REPORTS: true,
+  },
+}));
+
 // Mock the LongitudinalChart component to avoid Chart.js dependencies
 vi.mock('./LongitudinalChart', () => ({
   LongitudinalChartScreen: {
@@ -116,9 +123,10 @@ describe('ScoreCard.vue', () => {
         props: {
           ...defaultProps,
           longitudinalData: [
-            { date: '2024-01-01', scores: { rawScore: 45, percentile: 65 } },
-            { date: '2024-06-01', scores: { rawScore: 50, percentile: 75 } },
+            { date: '2024-01-01', scores: { rawScore: 45, percentile: 65 }, assignmentId: 'a1' },
+            { date: '2024-06-01', scores: { rawScore: 50, percentile: 75 }, assignmentId: 'a2' },
           ],
+          currentAssignmentId: 'a2',
         },
         global: {
           plugins: [i18n],

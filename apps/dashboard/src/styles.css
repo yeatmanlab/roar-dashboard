@@ -9,6 +9,10 @@ p {
   line-height: 1.25rem;
 }
 
+.jspsych-display-element p {
+  line-height: initial;
+}
+
 /* Tailwind CSS classes */
 /* @TODO: Remove once yeatmanlab/roar-project-management/issues/321 is resolved */
 .sr-only {
