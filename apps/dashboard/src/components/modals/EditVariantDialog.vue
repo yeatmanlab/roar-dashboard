@@ -32,7 +32,7 @@
         </div>
       </div>
       <div class="flex w-6 justify-content-end">
-        <img :src="assessment.task.image" class="w-5" />
+        <img :alt="assessment.task.id" :src="assessment.task.image" class="w-5" />
       </div>
     </div>
     <div class="flex flex-column w-full my-2 gap-2">
