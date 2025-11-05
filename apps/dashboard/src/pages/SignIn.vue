@@ -1,5 +1,5 @@
 <template>
-  <div v-if="spinner.value" class="loading-blur">
+  <div v-if="spinner" class="loading-blur">
     <AppSpinner />
   </div>
 

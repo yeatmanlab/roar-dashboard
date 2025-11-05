@@ -23,10 +23,8 @@ import PvInputText from 'primevue/inputtext';
 import PvMessage from 'primevue/message';
 import { useCapsLock } from '../../../composables/useCapsLock';
 
-const props = defineProps({ modelValue: { type: String, default: '' }, invalid: { type: Boolean, default: false } });
+defineProps({ modelValue: { type: String, default: '' }, invalid: { type: Boolean, default: false } });
 defineEmits(['update:modelValue', 'enter']);
 
 const { checkForCapsLock } = useCapsLock();
-const modelValue = props.modelValue; // expose for template readability
-const invalid = props.invalid;
 </script>

@@ -18,7 +18,7 @@
       <label for="password">{{ $t('authSignIn.passwordPlaceholder') }}</label>
     </PvFloatLabel>
 
-    <div class="mt-2 flex w-full items-center justify-between">
+    <div class="mt-2 flex w-full align-items-center justify-content-between">
       <small class="text-sm text-400 cursor-pointer font-semibold hover:text-primary" @click="$emit('forgot-password')">
         {{ $t('authSignIn.forgotPassword') }}
       </small>
