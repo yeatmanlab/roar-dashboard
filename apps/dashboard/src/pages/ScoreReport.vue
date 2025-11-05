@@ -128,7 +128,10 @@
                 </div>
                 <!-- One/all of word, sentence, phoneme have been taken, but additionally they have other assessments that do not show charts (we want to say we only show charts for validated assessments)  -->
                 <div v-if="!isEmptyDistrictSupportCategories && props.orgType === 'district'">
-                  <p v-if="validatedApps && numValidatedApps.length > validatedApps.length" class="text-center text-sm">
+                  <p
+                    v-if="assignedNormedTaskIds && assignedTaskIds.length > assignedNormedTaskIds.length"
+                    class="text-center text-sm"
+                  >
                     * Charts are available for validated ROAR assessments (Word, Sentence, and Phoneme) to give you
                     clear, reliable insights. Results from other assessments do not currently display charts.
                   </p>
@@ -140,7 +143,7 @@
             </div>
             <!-- None of word, sentence, phoneme have been assigned, they will have other apps -->
             <div
-              v-if="isEmptyDistrictSupportCategories && validatedApps.length === 0"
+              v-if="isEmptyDistrictSupportCategories && assignedNormedTaskIds.length === 0"
               class="justify-content-center surface-100 p-2"
             >
               <p class="text-center text-sm">
@@ -153,10 +156,10 @@
             </div>
             <!-- None of word, sentence, phoneme have been taken yet -->
             <div
-              v-else-if="isEmptyDistrictSupportCategories && validatedApps.length > 0"
+              v-else-if="isEmptyDistrictSupportCategories && assignedNormedTaskIds.length > 0"
               class="justify-content-center surface-100 p-2"
             >
-              <p v-if="validatedApps && numValidatedApps.length === validatedApps.length" class="text-center text-sm">
+              <p class="text-center text-sm">
                 * Charts will appear once students have started their Word, Sentence, and/or Phoneme assessments.
               </p>
               <p class="text-center align-items-center text-sm">
@@ -808,13 +811,6 @@ const { data: administrationData } = useAdministrationsQuery([props.administrati
   select: (data) => data[0],
 });
 
-const validatedApps = computed(() =>
-  administrationData.value?.assessments
-    ?.map((task) => task.taskId)
-    .filter((id) => id === 'swr' || id === 'sre' || id === 'pa'),
-);
-const numValidatedApps = computed(() => administrationData.value?.assessments?.map((task) => task.taskId));
-
 const { data: districtSchoolsData } = useDistrictSchoolsQuery(props.orgId, {
   enabled: props.orgType === SINGULAR_ORG_TYPES.DISTRICTS && initialized,
 });
@@ -853,11 +849,15 @@ const schoolNameDictionary = computed(() => {
 const isEmptyDistrictSupportCategories = computed(() => {
   return (
     props.orgType === 'district' &&
-    (aggregatedDistrictSupportCategories.value?.status === 'failed' ||
-      aggregatedDistrictSupportCategories.value?.length === 0 ||
-      !aggregatedDistrictSupportCategories.value)
+    (!aggregatedDistrictSupportCategories.value ||
+      aggregatedDistrictSupportCategories.value?.status === 'failed' ||
+      aggregatedDistrictSupportCategories.value?.length === 0)
   );
 });
+
+const assignedTaskIds = computed(() => administrationData.value?.assessments?.map((task) => task.taskId));
+// Currently do not want to show swr-es and sre-es pi charts
+const assignedNormedTaskIds = computed(() => assignedTaskIds.value.filter((id) => ['swr', 'sre', 'pa'].includes(id)));
 
 // Return a faded color if assessment is not reliable
 function returnColorByReliability(assessment, rawScore, support_level, tag_color) {
