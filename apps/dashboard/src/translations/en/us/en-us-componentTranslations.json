@@ -23,7 +23,8 @@
     "suggestions": "Suggestions",
     "forgotPassword": "Forgot password?",
     "or": "OR",
-    "magicLink": "Request email link"
+    "magicLink": "Request email link",
+    "error": "Error"
   },
   "cleverLanding": {
     "cleverLoading": "Loading your data from Clever..."

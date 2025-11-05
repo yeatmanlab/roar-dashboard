@@ -14,6 +14,13 @@ body.page-register {
   }
 }
 
+body.page-signin .signin-card {
+  width: 100%;
+  max-width: 440px; /* controls overall width */
+  margin-top: 5rem; /* center + vertical rhythm */
+  padding: 2rem; /* card padding */
+}
+
 #register {
   @extend #signin;
 

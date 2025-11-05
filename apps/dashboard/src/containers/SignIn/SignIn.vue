@@ -1,92 +1,98 @@
 <template>
-  <section class="flex w-full m-4 mt-2 flex-column align-content-center justify-content-center border-500">
-    <!-- EMAIL / CHIP -->
+  <section class="flex w-full m-0 flex-column align-content-center justify-content-center">
+    <!-- EMAIL / CHIP (kept) -->
     <div class="mt-1 field">
       <div>
-        <!-- If we're NOT showing password yet, show the email input -->
-        <SignInEmailInput
-          v-if="!props.showPasswordField"
-          :model-value="props.email"
-          :invalid="props.invalid"
-          @update:model-value="emit('update:email', $event)"
-          @enter="emit('check-providers', $event)"
+        <IdentifierInput
+          v-if="!showPasswordField && !emailLinkSent"
+          :model-value="email"
+          :invalid="invalid"
+          @update:model-value="$emit('update:email', $event)"
+          @enter="$emit('check-providers', $event)"
         />
-
-        <!-- If we ARE already in password flow (or multipleProviders), show chip -->
-        <SignedInEmailChip v-else :email="props.email" @remove="emit('clear-email')" />
+        <SignInEmailChip v-else :email="email" @remove="$emit('clear-email')" />
       </div>
     </div>
 
-    <div v-if="invalid" class="w-full p-2 text-center">
-      <PvMessage icon="pi pi-exclamation-circle" class="text-red-500 mb-2" severity="error">
-        {{ $t('authSignIn.incorrectEmailOrPassword') }}
-      </PvMessage>
-    </div>
-
-    <!-- PASSWORD / MAGIC LINK / CREATE PASSWORD -->
-    <SignInPasswordBlock
-      :show="props.showPasswordField && !props.multipleProviders && !props.emailLinkSent"
-      :email-link-sent="props.emailLinkSent"
-      :is-username="props.isUsername"
-      :invalid="props.invalid"
-      :password="props.password"
-      @update:password="emit('update:password', $event)"
-      @forgot-password="emit('forgot-password')"
-      @magic-link="emit('magic-link')"
-      @submit="emit('submit')"
+    <!-- ERROR: PvMessage -> Alert -->
+    <SignInError
+      :show="invalid"
+      :title="$t('authSignIn.error')"
+      :description="$t('authSignIn.incorrectEmailOrPassword')"
     />
 
-    <!-- CONTINUE button (email -> check providers OR password submit) -->
+    <!-- PASSWORD -->
+    <PasswordInput
+      :show="showPasswordField && !multipleProviders && !emailLinkSent"
+      :email-link-sent="emailLinkSent"
+      :is-username="isUsername"
+      :invalid="invalid"
+      :password="password"
+      @update:password="$emit('update:password', $event)"
+      @forgot-password="$emit('forgot-password')"
+      @magic-link="$emit('magic-link')"
+      @submit="$emit('submit')"
+    />
+
+    <!-- CONTINUE button (kept classes) -->
     <PvButton
-      v-if="!props.multipleProviders && !props.emailLinkSent"
+      v-if="!multipleProviders && !emailLinkSent"
       type="button"
       class="mt-3 w-full p-0 hover:shadow-4 hover:bg-primary hover:text-white p-2"
       data-cy="signin-continue"
-      @click="!props.showPasswordField ? emit('check-providers', props.email) : emit('submit')"
+      @click="!showPasswordField ? $emit('check-providers', email) : $emit('submit')"
     >
       <span>{{ $t('pageSignIn.continue') }}</span>
     </PvButton>
 
-    <!-- "Use password instead" button after sending magic link -->
-    <SignInMagicLinkBackButton v-if="props.emailLinkSent" @back-to-password="emit('back-to-password')" />
+    <!-- Magic link back / success -->
+    <MagicLinkBackButton v-if="emailLinkSent" @back-to-password="$emit('back-to-password')" />
 
-    <!-- "Available providers" label when multipleProviders -->
-    <div v-if="props.multipleProviders" class="flex justify-content-start w-full">
+    <!-- label -->
+    <div v-if="multipleProviders" class="flex justify-content-start w-full">
       <small class="pl-2 pb-2 text-base font-bold text-500">
         {{ $t('pageSignIn.availableProviders') }}
       </small>
     </div>
 
-    <!-- Divider "or" -->
-    <div v-if="!props.showPasswordField && !props.multipleProviders" class="divider w-full">
+    <!-- Divider -->
+    <div
+      v-if="!showPasswordField && !emailLinkSent && !hideProviders && (showGenericProviders || showScopedProviders)"
+      class="divider w-full"
+    >
       <span class="text-sm">{{ $t('authSignIn.or') }}</span>
     </div>
 
-    <!-- Provider list buttons -->
-    <SignInProvidersList
-      v-if="!props.hideProviders"
-      :show-generic-providers="props.showGenericProviders"
-      :show-scoped-providers="props.showScopedProviders"
-      :available-providers="props.availableProviders"
-      @auth-clever="emit('auth-clever')"
-      @auth-classlink="emit('auth-classlink')"
-      @auth-nycps="emit('auth-nycps')"
-      @auth-google="emit('auth-google')"
+    <!-- Providers (now split; same visual using ProviderButton) -->
+    <GenericProviders
+      v-if="!hideProviders && showGenericProviders && !emailLinkSent && !showPasswordField"
+      :available-providers="availableProviders"
+      @auth-google="$emit('auth-google')"
+    />
+    <ScopedProviders
+      v-if="!hideProviders && showScopedProviders"
+      :available-providers="availableProviders"
+      @auth-clever="$emit('auth-clever')"
+      @auth-classlink="$emit('auth-classlink')"
+      @auth-nycps="$emit('auth-nycps')"
     />
   </section>
 </template>
 
 <script setup>
 import PvButton from 'primevue/button';
-import PvMessage from 'primevue/message';
 
-import SignInEmailInput from '@/containers/SignIn/components/SignInEmailInput.vue';
-import SignedInEmailChip from '@/containers/SignIn/components/SignedInEmailChip.vue';
-import SignInPasswordBlock from '@/containers/SignIn/components/SignInPasswordBlock.vue';
-import SignInMagicLinkBackButton from '@/containers/SignIn/components/SignInMagicLinkBackButton.vue';
-import SignInProvidersList from '@/containers/SignIn/components/SignInProvidersList.vue';
+import {
+  SignInError,
+  IdentifierInput,
+  GenericProviders,
+  PasswordInput,
+  ScopedProviders,
+  MagicLinkBackButton,
+  SignInEmailChip,
+} from './components';
 
-const props = defineProps({
+defineProps({
   email: { type: String, default: '' },
   password: { type: String, default: '' },
   invalid: { type: Boolean, default: false },
@@ -99,8 +105,7 @@ const props = defineProps({
   showGenericProviders: { type: Boolean, default: true },
   showScopedProviders: { type: Boolean, default: false },
 });
-
-const emit = defineEmits([
+defineEmits([
   'update:email',
   'update:password',
   'check-providers',

@@ -4,72 +4,76 @@
   </div>
 
   <div id="signin-container" class="bg-gray-50">
-    <section id="signin">
-      <!-- Logo / header -->
-      <header class="mb-0 pb-0">
-        <div class="signin-logo">
-          <ROARLogoShort />
-        </div>
-      </header>
+    <div class="signin-column">
+      <SignInCard class="signin-card">
+        <section id="signin" class="m-0 p-0">
+          <!-- Logo / header -->
+          <header class="mb-0 pb-0">
+            <div class="signin-logo">
+              <ROARLogoShort />
+            </div>
+          </header>
 
-      <!-- Render title + subtitle -->
-      <SignInHeaderCopy
-        :multiple-providers="multipleProviders"
-        :email-link-sent="emailLinkSent"
-        :show-password-field="showPasswordField"
-      />
+          <!-- Render title + subtitle -->
+          <SignInHeader
+            :multiple-providers="multipleProviders"
+            :email-link-sent="emailLinkSent"
+            :show-password-field="showPasswordField"
+          />
 
-      <!-- Main sign-in UI -->
-      <SignInForm
-        :email="email"
-        :password="modalPassword"
-        :invalid="incorrect"
-        :show-password-field="showPasswordField"
-        :multiple-providers="multipleProviders"
-        :email-link-sent="emailLinkSent"
-        :hide-providers="hideProviders"
-        :is-username="isUsername"
-        :available-providers="availableProviders"
-        :show-generic-providers="showGenericProviders"
-        :show-scoped-providers="showScopedProviders"
-        @update:email="onEmailUpdate"
-        @update:password="onPasswordUpdate"
-        @check-providers="checkAvailableProviders"
-        @submit="authWithEmailWrapper"
-        @forgot-password="handleForgotPasswordWrapper"
-        @magic-link="sendMagicLink(email)"
-        @back-to-password="handleBackToPassword"
-        @auth-clever="authWithClever"
-        @auth-classlink="authWithClassLink"
-        @auth-nycps="authWithNYCPS"
-        @auth-google="authWithGoogle"
-        @clear-email="resetSignInUI"
-      />
+          <!-- Main sign-in UI -->
+          <SignInForm
+            :email="email"
+            :password="modalPassword"
+            :invalid="incorrect"
+            :show-password-field="showPasswordField"
+            :multiple-providers="multipleProviders"
+            :email-link-sent="emailLinkSent"
+            :hide-providers="hideProviders"
+            :is-username="isUsername"
+            :available-providers="availableProviders"
+            :show-generic-providers="showGenericProviders"
+            :show-scoped-providers="showScopedProviders"
+            @update:email="onEmailUpdate"
+            @update:password="onPasswordUpdate"
+            @check-providers="checkAvailableProviders"
+            @submit="authWithEmailWrapper"
+            @forgot-password="handleForgotPasswordWrapper"
+            @magic-link="sendMagicLink(email)"
+            @back-to-password="handleBackToPassword"
+            @auth-clever="authWithClever"
+            @auth-classlink="authWithClassLink"
+            @auth-nycps="authWithNYCPS"
+            @auth-google="authWithGoogle"
+            @clear-email="resetSignInUI"
+          />
+        </section>
+      </SignInCard>
 
-      <!-- Footer -->
-      <footer class="flex flex-row bg-gray-50 m-0 p-0">
+      <!-- Footer (outside the card, but aligned to its width) -->
+      <footer class="signin-footer">
         <a href="#trouble" class="hidden">{{ $t('pageSignIn.havingTrouble') }}</a>
-        <div class="flex flex-row w-full">
-          <div class="w-full">
+        <div class="w-full flex">
+          <div class="flex-1">
             <LanguageSelector />
           </div>
-          <div class="w-5 justify-content-end flex flex-row gap-2">
+          <div class="flex gap-2">
             <a
               :href="TERMS_OF_SERVICE_DOCUMENT_PATH"
-              class="text-400 w-full inline-block text-sm pt-2 text-right hover:text-primary"
+              class="text-400 inline-block text-sm hover:text-primary pt-2"
               target="_blank"
-              >{{ $t('pageSignIn.Terms') }}</a
+              >{{ $t('pageSignIn.Privacy') }}</a
             >
             <a
               :href="TERMS_OF_SERVICE_DOCUMENT_PATH"
-              class="text-400 w-full inline-block text-sm pt-2 text-right hover:text-primary"
+              class="text-400 inline-block text-sm hover:text-primary pt-2"
               target="_blank"
-              >{{ $t('pageSignIn.Privacy') }}</a
+              >{{ $t('pageSignIn.Terms') }}</a
             >
           </div>
         </div>
       </footer>
-    </section>
+    </div>
   </div>
 </template>
 
@@ -87,8 +91,8 @@ import { APP_ROUTES } from '@/constants/routes';
 import ROARLogoShort from '@/assets/RoarLogo-Short.vue';
 import LanguageSelector from '@/components/LanguageSelector.vue';
 import AppSpinner from '@/components/AppSpinner.vue';
-import SignInHeaderCopy from '@/containers/SignIn/components/SignInHeaderCopy.vue';
 import SignInForm from '@/containers/SignIn/SignIn.vue';
+import { SignInCard, SignInHeader } from '@/containers/SignIn/components';
 
 const authStore = useAuthStore();
 const router = useRouter();
@@ -116,8 +120,8 @@ const isUsername = computed(() => {
   return val !== '' && !val.includes('@');
 });
 
-const showGenericProviders = computed(() => !hasCheckedProviders.value && !showPasswordField.value);
-const showScopedProviders = computed(() => hasCheckedProviders.value && multipleProviders.value);
+const showGenericProviders = computed(() => false);
+const showScopedProviders = computed(() => !showPasswordField.value && !emailLinkSent.value);
 
 /**
  * Redirect user after login
