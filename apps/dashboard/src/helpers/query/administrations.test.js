@@ -28,9 +28,21 @@ vi.mock('lodash/without', () => ({
   default: vi.fn((arr, val) => arr.filter((item) => item !== val)),
 }));
 
+const mockGetAssignmentStats = vi.fn().mockResolvedValue({
+  data: {
+    admin1: { total: { assignment: 30 } },
+    admin2: { total: { assignment: 25 } },
+  },
+});
+
 vi.mock('pinia', () => ({
   storeToRefs: vi.fn(() => ({
-    roarfirekit: { value: { getAdministrations: vi.fn().mockResolvedValue(['admin1', 'admin2']) } },
+    roarfirekit: {
+      value: {
+        getAdministrations: vi.fn().mockResolvedValue(['admin1', 'admin2']),
+        getAssignmentStats: mockGetAssignmentStats,
+      },
+    },
   })),
 }));
 
@@ -135,36 +147,14 @@ describe('query/administrations', () => {
         ],
       });
 
-      mockPost.mockResolvedValueOnce({
-        data: [
-          {
-            found: {
-              name: 'projects/test/databases/test/documents/administrations/admin1/stats/total',
-              fields: {
-                assignment: { integerValue: '30' },
-              },
-            },
-          },
-          {
-            found: {
-              name: 'projects/test/databases/test/documents/administrations/admin2/stats/total',
-              fields: {
-                assignment: { integerValue: '25' },
-              },
-            },
-          },
-        ],
-      });
-
       const result = await administrationPageFetcher(
-        { value: true }, // isSuperAdmin
-        { value: {} }, // exhaustiveAdminOrgs
         false, // fetchTestData
         { value: [{ field: { fieldPath: 'name' }, direction: 'ASCENDING' }] }, // orderBy
+        true, // fetchStats (for super admin)
       );
 
       expect(getAxiosInstance).toHaveBeenCalled();
-      expect(mockPost).toHaveBeenCalledTimes(2);
+      expect(mockPost).toHaveBeenCalledTimes(1);
       expect(result).toHaveLength(2);
 
       expect(result[0].id).toBe('admin1');
@@ -219,28 +209,10 @@ describe('query/administrations', () => {
         ],
       });
 
-      mockPost.mockResolvedValueOnce({
-        data: [
-          {
-            found: {
-              name: 'projects/test/databases/test/documents/administrations/admin1/stats/total',
-              fields: {},
-            },
-          },
-          {
-            found: {
-              name: 'projects/test/databases/test/documents/administrations/admin2/stats/total',
-              fields: {},
-            },
-          },
-        ],
-      });
-
       const result = await administrationPageFetcher(
-        { value: true }, // isSuperAdmin
-        { value: {} }, // exhaustiveAdminOrgs
         false, // fetchTestData
         { value: [{ field: { fieldPath: 'name' }, direction: 'ASCENDING' }] }, // orderBy
+        true, // fetchStats
       );
 
       expect(result).toHaveLength(2);
@@ -280,33 +252,51 @@ describe('query/administrations', () => {
         ],
       });
 
-      mockPost.mockResolvedValueOnce({
-        data: [
-          {
-            found: {
-              name: 'projects/test/databases/test/documents/administrations/admin1/stats/total',
-              fields: {},
-            },
-          },
-          {
-            found: {
-              name: 'projects/test/databases/test/documents/administrations/admin2/stats/total',
-              fields: {},
-            },
-          },
-        ],
-      });
-
       const resultDesc = await administrationPageFetcher(
-        { value: true }, // isSuperAdmin
-        { value: {} }, // exhaustiveAdminOrgs
         false, // fetchTestData
         { value: [{ field: { fieldPath: 'name' }, direction: 'DESCENDING' }] }, // orderBy
+        true, // fetchStats
       );
 
       expect(resultDesc).toHaveLength(2);
       expect(resultDesc[0].name).toBe('Admin Z'); // Should be first in descending order
       expect(resultDesc[1].name).toBe('Admin A'); // Should be second in descending order
+    });
+
+    it('should fetch administrations without stats when fetchStats is false', async () => {
+      mockPost.mockResolvedValueOnce({
+        data: [
+          {
+            found: {
+              name: 'projects/test/databases/test/documents/administrations/admin1',
+              fields: {
+                name: { stringValue: 'Admin 1' },
+                publicName: { stringValue: 'Public Admin 1' },
+                dateOpened: { timestampValue: '2023-01-01T00:00:00Z' },
+                dateClosed: { timestampValue: '2023-12-31T00:00:00Z' },
+                dateCreated: { timestampValue: '2022-12-01T00:00:00Z' },
+                assessments: { arrayValue: { values: [{ stringValue: 'assessment1' }] } },
+                testData: { booleanValue: false },
+              },
+            },
+          },
+        ],
+      });
+
+      const result = await administrationPageFetcher(
+        false, // fetchTestData
+        { value: [{ field: { fieldPath: 'name' }, direction: 'ASCENDING' }] }, // orderBy
+        false, // fetchStats
+      );
+
+      expect(getAxiosInstance).toHaveBeenCalled();
+      expect(mockPost).toHaveBeenCalledTimes(1);
+      expect(mockGetAssignmentStats).not.toHaveBeenCalled();
+      expect(result).toHaveLength(1);
+
+      expect(result[0].id).toBe('admin1');
+      expect(result[0].name).toBe('Admin 1');
+      expect(result[0].stats).toEqual({});
     });
   });
 });
