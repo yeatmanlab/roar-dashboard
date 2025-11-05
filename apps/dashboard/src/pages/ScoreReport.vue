@@ -9,37 +9,16 @@
           </div>
 
           <div v-if="orgData && administrationData" id="at-a-glance-charts">
-            <div class="flex justify-content-between align-items-center">
-              <div class="flex gap-2 flex-column align-items-start">
-                <div>
-                  <div class="text-xs font-light text-gray-500 uppercase">{{ props.orgType }} Score Report</div>
-                  <div class="report-title">
-                    {{ _toUpper(orgData?.name) }}
-                  </div>
-                </div>
-                <div>
-                  <div class="text-xs font-light text-gray-500 uppercase">Administration</div>
-                  <div class="mb-4 administration-name">
-                    {{ _toUpper(displayName) }}
-                  </div>
-                </div>
-              </div>
-              <div class="flex gap-1 flex-column align-items-end">
-                <div class="flex flex-row gap-4 align-items-center" data-html2canvas-ignore="true">
-                  <div class="flex flex-row text-sm text-gray-600 uppercase">VIEW</div>
-                  <PvSelectButton
-                    v-model="reportView"
-                    v-tooltip.top="'View different report'"
-                    :options="reportViews"
-                    option-disabled="constant"
-                    :allow-empty="false"
-                    option-label="name"
-                    class="flex my-2 select-button"
-                    @change="handleViewChange"
-                  >
-                  </PvSelectButton>
-                </div>
-
+            <ReportHeader
+              :org-type="props.orgType"
+              :org-name="_toUpper(orgData?.name)"
+              :administration-name="_toUpper(displayName)"
+              report-type="Score"
+              :report-view="reportView"
+              :report-views="reportViews"
+              @view-change="handleViewChange"
+            >
+              <template #export-buttons>
                 <div v-if="!isLoadingAssignments" class="flex gap-2 mr-5 flex-column">
                   <PvButton
                     class="flex flex-row p-2 text-sm text-white border-none bg-primary border-round h-2rem hover:bg-red-900"
@@ -56,8 +35,8 @@
                     @click="handleExportToPdf"
                   />
                 </div>
-              </div>
-            </div>
+              </template>
+            </ReportHeader>
             <div v-if="isLoadingAssignments" class="loading-wrapper">
               <AppSpinner style="margin: 1rem 0rem" />
               <div class="text-sm font-light text-gray-600 uppercase">Loading Overview Charts</div>
@@ -380,10 +359,10 @@ import { getGrade } from '@bdelab/roar-utils';
 import PvButton from 'primevue/button';
 import PvConfirmDialog from 'primevue/confirmdialog';
 import PvSelect from 'primevue/select';
-import PvSelectButton from 'primevue/selectbutton';
 import PvTabPanel from 'primevue/tabpanel';
 import PvTabView from 'primevue/tabview';
 import PvProgressBar from 'primevue/progressbar';
+import ReportHeader from '@/components/ReportHeader.vue';
 import { useAuthStore } from '@/store/auth';
 import { getDynamicRouterPath } from '@/helpers/getDynamicRouterPath';
 import useUserType from '@/composables/useUserType';
@@ -1967,17 +1946,6 @@ onMounted(async () => {
   justify-content: center;
 }
 
-.report-title {
-  font-size: clamp(1.5rem, 2rem, 2.5rem);
-  font-weight: bold;
-  margin-top: 0;
-}
-
-.administration-name {
-  font-size: clamp(1.1rem, 1.3rem, 1.7rem);
-  font-weight: light;
-}
-
 .report-subheader {
   font-size: clamp(0.9rem, 1.1rem, 1.3rem);
   font-weight: light;
@@ -2069,20 +2037,6 @@ onMounted(async () => {
 
 .confirm .p-dialog-header-close {
   display: none !important;
-}
-
-.select-button .p-button:last-of-type:not(:only-of-type) {
-  border-top-left-radius: 0;
-  border-bottom-left-radius: 0;
-  border-top-right-radius: 25rem;
-  border-bottom-right-radius: 25rem;
-}
-
-.select-button .p-button:first-of-type:not(:only-of-type) {
-  border-top-left-radius: 25rem;
-  border-bottom-left-radius: 25rem;
-  border-top-right-radius: 0;
-  border-bottom-right-radius: 0;
 }
 
 .p-datatable .p-column-header-content {

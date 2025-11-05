@@ -20,6 +20,7 @@
 <script setup>
 import { ref, computed } from 'vue';
 import PvChart from 'primevue/chart';
+import { PROGRESS_COLORS } from '@/constants/completionStatus';
 
 const props = defineProps({
   totalGames: { type: Number, required: true, default: 0 },
@@ -46,15 +47,12 @@ const chartOptions = ref({
 });
 
 const setChartData = (completed, incomplete) => {
-  let docStyle = getComputedStyle(document.documentElement);
-
   return {
     labels: ['Finished', 'Unfinished'],
     datasets: [
       {
         data: [completed, incomplete],
-        backgroundColor: [docStyle.getPropertyValue('--bright-green'), docStyle.getPropertyValue('--surface-d')],
-        // hoverBackgroundColor: ['green', docStyle.getPropertyValue('--surface-d')]
+        backgroundColor: [PROGRESS_COLORS.COMPLETED, PROGRESS_COLORS.ASSIGNED],
       },
     ],
   };
