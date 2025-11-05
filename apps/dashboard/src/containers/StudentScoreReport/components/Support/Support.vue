@@ -5,10 +5,10 @@
         <PvAccordionHeader>{{ $t('scoreReports.taskTabHeader') }}</PvAccordionHeader>
         <PvAccordionContent>
           <div
-            v-if="!(studentGrade >= 6)"
+            v-if="isDistributionChartEnabled"
             class="flex p-3 mb-4 border border-gray-100 border-1 flex-column align-items-center"
           >
-            <img src="@/assets/support-distribution.png" width="650" />
+            <img :src="distributionChartPath" width="650" />
           </div>
 
           <p class="mt-0">{{ $t('scoreReports.taskIntro') }}</p>
@@ -100,6 +100,14 @@ const props = defineProps({
   studentGrade: {
     type: [Number, String],
     default: null,
+  },
+  distributionChartPath: {
+    type: String,
+    required: true,
+  },
+  isDistributionChartEnabled: {
+    type: Boolean,
+    default: true,
   },
 });
 
