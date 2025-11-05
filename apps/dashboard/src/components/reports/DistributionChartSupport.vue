@@ -90,11 +90,10 @@ const districtGradeSupportBreakdown = computed(() => {
     if (supportLevel === 'Needs Extra Support') gradeCounter.support_levels[0]++;
     else if (supportLevel === 'Developing Skill') gradeCounter.support_levels[1]++;
     else if (supportLevel === 'Achieved Skill') gradeCounter.support_levels[2]++;
-    else return; // skip null or undefined support levels
+    else continue; // skip null or undefined support levels
 
     gradeCounter.totalStudents++;
   }
-
   return gradeCounts;
 });
 
@@ -180,6 +179,7 @@ const returnSupportLevelValues = computed(() => {
   const schoolCounts = districtSchoolSupportBreakdown.value;
   const counts = props.facetMode.name === 'Grade' ? gradeCounts : schoolCounts;
   const values = [];
+
   // generates values for bar chart
   for (const count of counts) {
     if (count?.totalStudents > 0) {
