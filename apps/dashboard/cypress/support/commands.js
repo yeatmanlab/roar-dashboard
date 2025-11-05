@@ -403,6 +403,9 @@ Cypress.Commands.add('getAdministrationCard', (testAdministration) => {
       cy.wrap($cards).should('have.length.greaterThan', 0);
 
       cy.wrap($cards.get(0)).find('button').contains('Show details').click();
+
+      // Wait for the tree table to load after clicking Show details
+      cy.get('[data-cy="administration-orgs-tree"]', { timeout: 30000 }).should('be.visible');
     });
 });
 
