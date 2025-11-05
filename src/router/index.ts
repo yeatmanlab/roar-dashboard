@@ -146,24 +146,14 @@ const routes: Array<RouteRecordRaw> = [
       allowedRoles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.SITE_ADMIN],
     },
   },
-  // {
-  //   path: '/edit-assignment/:adminId',
-  //   name: 'EditAssignment',
-  //   props: true,
-  //   component: () => import('../pages/CreateAssignment.vue'),
-  //   meta: {
-  //     pageTitle: 'Edit an Assignment',
-  //     allowedRoles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.SITE_ADMIN],
-  //   },
-  // },
   {
     path: '/edit-assignment/:adminId',
     name: 'EditAssignment',
     props: true,
-    redirect: (to) => {
-      return {
-        name: 'Home',
-      };
+    component: () => import('../pages/CreateAssignment.vue'),
+    meta: {
+      pageTitle: 'Edit an Assignment',
+      allowedRoles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.SITE_ADMIN],
     },
   },
   {
