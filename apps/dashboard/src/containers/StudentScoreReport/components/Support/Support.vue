@@ -110,7 +110,11 @@ const props = defineProps({
   },
 });
 
-const capitalize = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+const capitalize = (s) => {
+  const str = (s ?? '').toString();
+  if (!str) return '';
+  return str.charAt(0).toUpperCase() + str.slice(1);
+};
 
 const visiblePanels = ref(props.expanded ? [SUPPORT_PANELS.TASK, SUPPORT_PANELS.NEXT_STEPS] : []);
 

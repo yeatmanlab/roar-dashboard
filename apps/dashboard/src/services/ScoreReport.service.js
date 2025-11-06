@@ -12,6 +12,7 @@ import {
 } from '@/helpers/reports';
 import { SCORE_SUPPORT_SKILL_LEVELS, SCORE_TYPES } from '@/constants/scores';
 import { TAG_SEVERITIES } from '@/constants/tags';
+import { useI18n } from 'vue-i18n';
 
 /**
  * ScoreReport Service
@@ -30,6 +31,11 @@ const ScoreReportService = (() => {
   const getPercentileSuffix = (percentile) => {
     const lastDigit = percentile % 10;
     const lastTwoDigits = percentile % 100;
+    const { locale } = useI18n();
+    // If the active language is Spanish, just use º
+    if (locale.value === 'es') {
+      return 'º';
+    }
 
     if (lastTwoDigits >= 11 && lastTwoDigits <= 13) {
       return 'th';
@@ -272,7 +278,9 @@ const ScoreReportService = (() => {
     return {
       keypath: 'scoreReports.percentileTaskDescription',
       slots: {
-        percentile: getPercentileWithSuffix(Math.round(task?.percentileScore.value)) + ' percentile',
+        percentile:
+          getPercentileWithSuffix(Math.round(task?.percentileScore.value)) +
+          ` ${i18n.t('scoreReports.percentileScore')}`,
         supportCategory: getSupportLevelLanguage(
           grade,
           task.percentileScore.value,

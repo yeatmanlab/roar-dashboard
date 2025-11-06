@@ -3,6 +3,7 @@ import { toValue } from 'vue';
 import { getGrade } from '@bdelab/roar-utils';
 import { LEVANTE_TASK_IDS_NO_SCORES } from '../constants/levanteTasks';
 import { i18n } from '@/translations/i18n';
+import { useI18n } from 'vue-i18n';
 
 /*
  *  Task Display Names
@@ -594,6 +595,12 @@ export const updatedNormVersions = {
 };
 
 function getOrdinalSuffix(n) {
+  const { locale } = useI18n();
+  // If the active language is Spanish, just use º
+  if (locale.value === 'es') {
+    return 'º';
+  }
+
   if (n >= 11 && n <= 13) return 'th';
 
   switch (n % 10) {
