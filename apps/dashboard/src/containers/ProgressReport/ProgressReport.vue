@@ -1,7 +1,7 @@
 <template>
   <main class="container main">
     <section class="main-body">
-      <div v-if="isLoading" class="my-4 flex flex-col w-full items-center justify-center">
+      <div v-if="isLoading" class="my-4 flex flex-column align-items-center justify-content-center w-full">
         <AppSpinner class="my-4" />
         <div class="text-sm font-light text-gray-600 uppercase">Loading Progress Report</div>
       </div>
