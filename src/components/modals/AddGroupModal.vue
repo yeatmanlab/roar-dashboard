@@ -77,23 +77,6 @@
         </PvFloatLabel>
         <small v-if="v$.orgName.$error" class="p-error">Please supply a name.</small>
       </div>
-
-      <p class="m-0">Optional fields:</p>
-
-      <PvFloatLabel>
-        <PvAutoComplete
-          v-model="tags"
-          class="w-full"
-          data-cy="input-autocomplete"
-          dropdown
-          multiple
-          name="tags"
-          :options="allTags"
-          :suggestions="tagSuggestions"
-          @complete="searchTags"
-        />
-        <label for="tags">Tags</label>
-      </PvFloatLabel>
     </div>
 
     <template #footer>
@@ -134,7 +117,6 @@ import {
   CreateOrgType,
   CreateSchoolSchema,
 } from '@levante-framework/levante-zod';
-import PvAutoComplete from 'primevue/autocomplete';
 import PvButton from 'primevue/button';
 import PvDialog from 'primevue/dialog';
 import PvFloatLabel from 'primevue/floatlabel';
@@ -209,12 +191,9 @@ const orgTypes = computed(() => {
   });
 });
 
-
-
 const parentDistrict = ref<SelectedOrg | undefined>(undefined);
 const parentSchool = ref<SelectedOrg | undefined>(undefined);
 const tags = ref<string[]>([]);
-const tagSuggestions = ref<string[]>([]);
 
 const orgTypesRequiringParent: string[] = [
   SINGULAR_ORG_TYPES.SCHOOLS,
@@ -245,18 +224,9 @@ const v$ = useVuelidate(
   },
 );
 
-const allTags = computed<string[]>(() => {
-  const districtTags = (districts.value ?? []).map((org: CreateOrgType) => org.tags);
-  const schoolTags = (districts.value ?? []).map((org: CreateOrgType) => org.tags);
-  const classTags = (classes.value ?? []).map((org: CreateOrgType) => org.tags);
-  const groupTags = (groups.value ?? []).map((org: CreateOrgType) => org.tags);
-  return (_without(_union(...districtTags, ...schoolTags, ...classTags, ...groupTags), undefined) || []) as string[];
-});
-const classQueryEnabled = computed(() => parentSchool?.value !== undefined);
 const orgTypeLabel = computed(() => (orgType.value ? _capitalize(orgType.value.label) : 'Group'));
 const parentOrgRequired = computed(() => orgTypesRequiringParent.includes(orgType.value?.singular || ''));
 const selectedDistrict = computed(() => parentDistrict?.value?.id);
-const selectedSchool = computed(() => parentSchool?.value?.id);
 const schoolQueryEnabled = computed(() => parentDistrict?.value !== undefined);
 const schoolDropdownEnabled = computed(() => {
   return parentDistrict.value && !isFetchingSchools.value;
@@ -264,13 +234,7 @@ const schoolDropdownEnabled = computed(() => {
 
 const { mutate: upsertOrg, isPending: isSubmittingOrg } = useUpsertOrgMutation();
 
-const { data: classes } = useSchoolClassesQuery(selectedSchool, {
-  enabled: classQueryEnabled,
-});
-
 const { data: districts, loading: isLoadingDistricts } = useDistrictsListQuery();
-
-const { data: groups } = useGroupsListQuery();
 
 const { isFetching: isFetchingSchools, data: schools } = useDistrictSchoolsQuery(selectedDistrict, {
   enabled: schoolQueryEnabled,
@@ -303,19 +267,6 @@ const resetForm = () => {
   parentDistrict.value = undefined;
   parentSchool.value = undefined;
   v$.value.$reset();
-};
-
-const searchTags = (e: { query: string }) => {
-  const query = e.query.toLowerCase();
-  let filteredOptions = allTags.value.filter((opt: string) => opt.toLowerCase().includes(query));
-
-  if (filteredOptions.length === 0 && query) {
-    filteredOptions.push(query);
-  } else {
-    filteredOptions = filteredOptions.map((opt: string) => opt);
-  }
-
-  tagSuggestions.value = filteredOptions;
 };
 
 const parseCreateOrgData = (data: CreateOrgType) => {
