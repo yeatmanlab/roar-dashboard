@@ -2,6 +2,7 @@ import html2canvas from 'html2canvas';
 import { toValue } from 'vue';
 import { getGrade } from '@bdelab/roar-utils';
 import { LEVANTE_TASK_IDS_NO_SCORES } from '../constants/levanteTasks';
+import { SCORE_REPORT_DISTRIBUTION_CHART_PATHS } from '../constants/filePaths';
 /*
  *  Task Display Names
  *  A map of all tasks, including their taskId, display name, and index for ordering
@@ -1142,24 +1143,28 @@ export const getDistributionChartPath = (grade, taskScoringVersions, language = 
 
   let path = '';
 
+  const pickPath = (baseKey) => {
+    return SCORE_REPORT_DISTRIBUTION_CHART_PATHS[`${baseKey}${language === 'en' ? 'En' : 'Es'}`];
+  };
+
   // Images are currently only available for elementary grades
   if (parseInt(grade) < 6) {
     const hasNoUpdatedNorms = applicableTasks.every(([taskId, version]) => version < updatedNormVersions[taskId]);
     const hasAllUpdatedNorms = applicableTasks.every(([taskId, version]) => version >= updatedNormVersions[taskId]);
 
     if (hasAllUpdatedNorms) {
-      path = `../assets/${language}-elementary-distribution-chart-scoring-v2.webp`;
+      path = pickPath('elementaryV2');
     } else if (hasNoUpdatedNorms) {
-      path = `../assets/${language}-elementary-distribution-chart-scoring-v1.webp`;
+      path = pickPath('elementaryV1');
     } else {
       // Default to admins with mixed scoring versions
-      path = `../assets/${language}-all-grades-distribution-chart-no-cutoffs.webp`;
+      path = pickPath('noCutoffs');
     }
   } else {
-    path = `../assets/${language}-secondary-distribution-chart-scoring-v1.webp`;
+    path = pickPath('secondaryV1');
   }
 
-  return new URL(path, import.meta.url).href;
+  return path;
 };
 
 export const taskInfoById = {
