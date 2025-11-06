@@ -9,7 +9,7 @@ exports[`Support.vue > snapshots > renders collapsed state for grade < 6 1`] = `
       <transition-stub name="p-toggleable-content" appear="false" persisted="false" css="true">
         <div class="p-accordioncontent" id="pv_id_0_accordioncontent_1" role="region" aria-labelledby="pv_id_0_accordionheader_1" data-pc-name="accordioncontent" data-p-active="false" pc4="" data-pc-section="root" style="display: none;">
           <div class="p-accordioncontent-content" data-pc-section="content">
-            <div class="flex p-3 mb-4 border border-gray-100 border-1 flex-column align-items-center"><img src="en-elementary-distribution-chart-scoring-v1.webp" width="650"></div>
+            <div class="flex p-3 mb-4 border border-gray-100 border-1 flex-column align-items-center"><img src="/assets/img/distribution-chart-elementary-v1-en.webp" width="650"></div>
             <p class="mt-0"></p>
             <ul>
               <li>A <b></b>: A <b></b> indicates performance relative to a mean of 100.</li>
@@ -45,7 +45,7 @@ exports[`Support.vue > snapshots > renders collapsed state for grade >= 6 1`] = 
       <transition-stub name="p-toggleable-content" appear="false" persisted="false" css="true">
         <div class="p-accordioncontent" id="pv_id_0_accordioncontent_1" role="region" aria-labelledby="pv_id_0_accordionheader_1" data-pc-name="accordioncontent" data-p-active="false" pc4="" data-pc-section="root" style="display: none;">
           <div class="p-accordioncontent-content" data-pc-section="content">
-            <div class="flex p-3 mb-4 border border-gray-100 border-1 flex-column align-items-center"><img src="en-secondary-distribution-chart-scoring-v1.webp" width="650"></div>
+            <div class="flex p-3 mb-4 border border-gray-100 border-1 flex-column align-items-center"><img src="/assets/img/distribution-chart-secondary-v1-en.webp" width="650"></div>
             <p class="mt-0"></p>
             <ul>
               <li>A <b></b>: A <b></b> indicates performance relative to a mean of 100.</li>
@@ -86,7 +86,7 @@ exports[`Support.vue > snapshots > renders expanded state for grade < 6 1`] = `
       <transition-stub name="p-toggleable-content" appear="false" persisted="false" css="true">
         <div class="p-accordioncontent" id="pv_id_0_accordioncontent_1" role="region" aria-labelledby="pv_id_0_accordionheader_1" data-pc-name="accordioncontent" data-p-active="true" pc4="" data-pc-section="root">
           <div class="p-accordioncontent-content" data-pc-section="content">
-            <div class="flex p-3 mb-4 border border-gray-100 border-1 flex-column align-items-center"><img src="en-elementary-distribution-chart-scoring-v1.webp" width="650"></div>
+            <div class="flex p-3 mb-4 border border-gray-100 border-1 flex-column align-items-center"><img src="/assets/img/distribution-chart-elementary-v1-en.webp" width="650"></div>
             <p class="mt-0"></p>
             <ul>
               <li>A <b></b>: A <b></b> indicates performance relative to a mean of 100.</li>
@@ -122,7 +122,7 @@ exports[`Support.vue > snapshots > renders expanded state for grade >= 6 1`] = `
       <transition-stub name="p-toggleable-content" appear="false" persisted="false" css="true">
         <div class="p-accordioncontent" id="pv_id_0_accordioncontent_1" role="region" aria-labelledby="pv_id_0_accordionheader_1" data-pc-name="accordioncontent" data-p-active="true" pc4="" data-pc-section="root">
           <div class="p-accordioncontent-content" data-pc-section="content">
-            <div class="flex p-3 mb-4 border border-gray-100 border-1 flex-column align-items-center"><img src="en-secondary-distribution-chart-scoring-v1.webp" width="650"></div>
+            <div class="flex p-3 mb-4 border border-gray-100 border-1 flex-column align-items-center"><img src="/assets/img/distribution-chart-secondary-v1-en.webp" width="650"></div>
             <p class="mt-0"></p>
             <ul>
               <li>A <b></b>: A <b></b> indicates performance relative to a mean of 100.</li>
@@ -163,7 +163,7 @@ exports[`Support.vue > snapshots > renders with Kindergarten grade 1`] = `
       <transition-stub name="p-toggleable-content" appear="false" persisted="false" css="true">
         <div class="p-accordioncontent" id="pv_id_0_accordioncontent_1" role="region" aria-labelledby="pv_id_0_accordionheader_1" data-pc-name="accordioncontent" data-p-active="true" pc4="" data-pc-section="root">
           <div class="p-accordioncontent-content" data-pc-section="content">
-            <div class="flex p-3 mb-4 border border-gray-100 border-1 flex-column align-items-center"><img src="en-elementary-distribution-chart-scoring-v1.webp" width="650"></div>
+            <div class="flex p-3 mb-4 border border-gray-100 border-1 flex-column align-items-center"><img src="/assets/img/distribution-chart-elementary-v1-en.webp" width="650"></div>
             <p class="mt-0"></p>
             <ul>
               <li>A <b></b>: A <b></b> indicates performance relative to a mean of 100.</li>
