@@ -81,7 +81,6 @@ const makeRunsFromBins = ({ binsObj, facet, scoreKey }) => {
           rows.push({
             grade: String(gradeKey),
             scores: { [scoreKey]: value },
-            tag_color: SCORE_SUPPORT_LEVEL_COLORS['ASSESSED'],
           });
         }
       }
@@ -94,7 +93,6 @@ const makeRunsFromBins = ({ binsObj, facet, scoreKey }) => {
           rows.push({
             user: { schoolName: name },
             scores: { [scoreKey]: value },
-            tag_color: SCORE_SUPPORT_LEVEL_COLORS['ASSESSED'],
           });
         }
       }
@@ -233,12 +231,8 @@ const distributionChartFacet = computed(() => {
         spacing: 18,
         sort: 'ascending',
       },
-
       color: {
-        field: `tag_color`,
-        type: 'nominal',
-        legend: null,
-        scale: null,
+        value: SCORE_SUPPORT_LEVEL_COLORS['ASSESSED'],
       },
 
       x: {

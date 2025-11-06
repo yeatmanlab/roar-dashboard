@@ -125,12 +125,13 @@
                 class="no-underline text-black"
               >
                 <PvButton
-                  v-tooltip.top="
-                    node.data.orgType !== 'district' ? 'See completion details' : 'Unavailable for district'
-                  "
+                  v-tooltip.top="node.data.orgType !== 'district' ? 'See completion details' : ''"
                   class="m-0 mr-1 surface-0 text-primary shadow-1 border-none p-2 border-round hover:surface-100"
-                  :disabled="node.data.orgType === 'district'"
-                  style="height: 2.5rem; color: var(--primary-color) !important; border: none !important"
+                  :style="
+                    node.data.orgType !== 'district'
+                      ? { height: '2.5rem', color: 'var(--primary-color) !important', border: 'none !important' }
+                      : { display: 'none !important' }
+                  "
                   severity="secondary"
                   text
                   raised
@@ -146,6 +147,7 @@
                   params: { administrationId: props.id, orgId: node.data.id, orgType: node.data.orgType },
                 }"
                 class="no-underline"
+                :style="node.data.orgType === 'district' ? { 'margin-left': '5rem !important' } : {}"
               >
                 <PvButton
                   v-tooltip.top="'See Scores'"

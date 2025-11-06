@@ -493,8 +493,6 @@ const props = defineProps({
   },
 });
 
-console.log(props.orgType);
-
 const initialized = ref(false);
 
 // Modal step constants for export dialog
@@ -819,7 +817,6 @@ const schoolNameDictionary = computed(() => {
 });
 
 const isEmptyDistrictSupportCategories = computed(() => {
-  console.log(aggregatedDistrictSupportCategories.value);
   return (
     props.orgType === 'district' &&
     (aggregatedDistrictSupportCategories.value?.status === 'failed' ||
