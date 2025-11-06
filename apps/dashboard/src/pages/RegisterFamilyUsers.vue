@@ -92,6 +92,7 @@ import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import Register from '../components/auth/RegisterParent.vue';
 import RegisterStudent from '../components/auth/RegisterChildren.vue';
 import ROARLogoShort from '@/assets/RoarLogo-Short.vue';
+import EmailService from '@/services/Email.service';
 
 const authStore = useAuthStore();
 const initialized = ref(false);
@@ -223,11 +224,50 @@ watch([parentInfo, studentInfo], ([newParentInfo, newStudentInfo]) => {
         consentData,
         isTestData.value,
       )
-      .then(() => {
-        spinner.value = false;
-        dialogHeader.value = 'Success!';
-        dialogMessage.value = 'Your family has been created!';
-        showDialog();
+      .then(async () => {
+        try {
+          // Sign in with the newly created account
+          await authStore.roarfirekit.logInWithEmailAndPassword({
+            email: rawParentInfo.ParentEmail,
+            password: rawParentInfo.password,
+          });
+
+          // Wait briefly for auth state to update
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+
+          // Get the app user from auth store
+          const appUser = authStore.firebaseUser.appFirebaseUser;
+
+          if (!appUser) {
+            throw new Error('User not found after sign in');
+          }
+
+          // Send verification email
+          await EmailService.sendConfirmationEmail(appUser);
+
+          spinner.value = false;
+          dialogHeader.value = 'Success!';
+          dialogMessage.value = 'Your family account has been created! Redirecting you to sign in...';
+
+          showDialog();
+
+          // After a brief delay, redirect to sign in with credentials
+          setTimeout(() => {
+            const params = new URLSearchParams({
+              autoLogin: 'true',
+              email: rawParentInfo.ParentEmail,
+              password: rawParentInfo.password,
+            });
+            window.location.href = `/signin?${params.toString()}`;
+          }, 2000);
+        } catch (emailError) {
+          console.error('Error sending confirmation email:', emailError);
+          spinner.value = false;
+          dialogHeader.value = 'Success!';
+          dialogMessage.value =
+            'Your family account has been created! You will receive email verification instructions when you sign in.';
+          showDialog();
+        }
       })
       .catch((error) => {
         spinner.value = false;
