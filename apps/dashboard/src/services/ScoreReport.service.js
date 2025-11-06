@@ -12,7 +12,9 @@ import {
 } from '@/helpers/reports';
 import { SCORE_SUPPORT_SKILL_LEVELS, SCORE_TYPES } from '@/constants/scores';
 import { TAG_SEVERITIES } from '@/constants/tags';
-import { useI18n } from 'vue-i18n';
+
+import { i18n } from '@/translations/i18n';
+const locale = i18n.global.locale?.value ?? i18n.global.locale ?? 'en';
 
 /**
  * ScoreReport Service
@@ -31,9 +33,8 @@ const ScoreReportService = (() => {
   const getPercentileSuffix = (percentile) => {
     const lastDigit = percentile % 10;
     const lastTwoDigits = percentile % 100;
-    const { locale } = useI18n();
     // If the active language is Spanish, just use º
-    if (locale.value === 'es') {
+    if (locale.value !== 'en-US' || locale.value !== 'en') {
       return 'º';
     }
 
