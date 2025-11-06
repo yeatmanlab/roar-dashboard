@@ -1,5 +1,4 @@
 import _lowerCase from 'lodash/lowerCase';
-import _startCase from 'lodash/startCase';
 import _toUpper from 'lodash/toUpper';
 import {
   getDialColor,
@@ -366,16 +365,18 @@ const ScoreReportService = (() => {
           taskScoringVersions[taskId],
         );
 
+        const capitalize = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+
         const scoresForTask = {
           standardScore: {
-            name: _startCase(i18n.t('scoreReports.standardScore')),
+            name: capitalize(i18n.t('scoreReports.standardScore')),
             value: Math.round(standardScore),
             min: 0,
             max: 180,
             supportColor,
           },
           rawScore: {
-            name: _startCase(i18n.t('scoreReports.rawScore')),
+            name: capitalize(i18n.t('scoreReports.rawScore')),
             value: Math.round(rawScore),
             min: rawScoreRange?.min,
             max: rawScoreRange?.max,
@@ -383,8 +384,8 @@ const ScoreReportService = (() => {
           },
           percentileScore: {
             name: tasksToDisplayPercentCorrect.includes(taskId)
-              ? _startCase(i18n.t('scoreReports.percentCorrect'))
-              : _startCase(i18n.t('scoreReports.percentileScore')),
+              ? capitalize(i18n.t('scoreReports.percentCorrect'))
+              : capitalize(i18n.t('scoreReports.percentileScore')),
             value: Math.round(percentileScore),
             min: 0,
             max: taskId.includes('letter') ? 100 : 99,

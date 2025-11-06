@@ -2,6 +2,8 @@ import html2canvas from 'html2canvas';
 import { toValue } from 'vue';
 import { getGrade } from '@bdelab/roar-utils';
 import { LEVANTE_TASK_IDS_NO_SCORES } from '../constants/levanteTasks';
+import { i18n } from '@/translations/i18n';
+
 /*
  *  Task Display Names
  *  A map of all tasks, including their taskId, display name, and index for ordering
@@ -291,7 +293,7 @@ export const taskDisplayNames = {
   },
 };
 
-export const extendedDescriptions = {
+const EXTENDED_DESCRIPTIONS_FALLBACK = {
   swr: 'This test measures your student’s skill in reading single words quickly and correctly.',
   'swr-es':
     'This test measures how well a student can identify real words and made-up words. ' +
@@ -308,7 +310,7 @@ export const extendedDescriptions = {
     'This test measures how well your student knows the names of letters and which letters are used to spell each sound',
   'letter-en-ca':
     'This test measures how well your student knows the names of letters and which letters are used to spell each sound',
-  'letter-es.':
+  'letter-es':
     'This test measures how well your student knows the names of letters and which letters are used to spell each sound.',
   comp: 'Temporary description for comp',
   phonics:
@@ -322,6 +324,23 @@ export const extendedDescriptions = {
   'roar-readaloud': 'Temporary description for readaloud',
   'roar-survey': 'Temporary description for survey',
 };
+
+export function getExtendedDescription(taskId) {
+  const key = `scoreReports.taskDescriptions.${taskId}`;
+  const translated = i18n && i18n.global && typeof i18n.global.t === 'function' ? i18n.global.t(key) : undefined;
+
+  return translated && translated !== key ? translated : EXTENDED_DESCRIPTIONS_FALLBACK[taskId];
+}
+
+// Optional: keep old API shape
+export const extendedDescriptions = new Proxy(
+  {},
+  {
+    get(_, taskId) {
+      return getExtendedDescription(String(taskId));
+    },
+  },
+);
 
 /*
  *  Descriptions By Task Id

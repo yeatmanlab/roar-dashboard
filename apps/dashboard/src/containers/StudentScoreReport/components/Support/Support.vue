@@ -15,22 +15,19 @@
           <ul>
             <i18n-t keypath="scoreReports.standardScoreDescription" tag="li">
               <template #taskTitle>
-                <b>{{ _startCase($t('scoreReports.standardScore')) }}</b
-                >: A <b>{{ $t('scoreReports.standardScore') }}</b>
+                <b>{{ capitalize($t('scoreReports.standardScore')) }}: </b>
               </template>
             </i18n-t>
 
             <i18n-t v-if="!(studentGrade >= 6)" keypath="scoreReports.percentileScoreDescription" tag="li">
               <template #taskTitle>
-                <b>{{ _startCase($t('scoreReports.percentileScore')) }}</b
-                >: A <b>{{ $t('scoreReports.percentileScore') }}</b>
+                <b>{{ capitalize($t('scoreReports.percentileScore')) }}: </b>
               </template>
             </i18n-t>
 
             <i18n-t keypath="scoreReports.rawScoreDescription" tag="li">
               <template #taskTitle>
-                <b>{{ _startCase($t('scoreReports.rawScore')) }}</b
-                >: A <b>{{ $t('scoreReports.rawScore') }}</b>
+                <b>{{ capitalize($t('scoreReports.rawScore')) }}: </b>
               </template>
             </i18n-t>
           </ul>
@@ -67,8 +64,11 @@
         <PvAccordionContent>
           <i18n-t keypath="scoreReports.nextSteps" tag="p" class="mt-0">
             <template #link>
-              <a :href="SCORE_REPORT_NEXT_STEPS_DOCUMENT_PATH" class="text-gray-700 hover:text-red-700" target="_blank"
-                >click here</a
+              <a
+                :href="SCORE_REPORT_NEXT_STEPS_DOCUMENT_PATH"
+                class="text-gray-700 hover:text-red-700"
+                target="_blank"
+                >{{ $t('scoreReports.clickHere') }}</a
               >.
             </template>
           </i18n-t>
@@ -80,7 +80,6 @@
 
 <script setup>
 import { ref, watch } from 'vue';
-import _startCase from 'lodash/startCase';
 import PvAccordion from 'primevue/accordion';
 import PvAccordionPanel from 'primevue/accordionpanel';
 import PvAccordionHeader from 'primevue/accordionheader';
@@ -110,6 +109,8 @@ const props = defineProps({
     default: true,
   },
 });
+
+const capitalize = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 
 const visiblePanels = ref(props.expanded ? [SUPPORT_PANELS.TASK, SUPPORT_PANELS.NEXT_STEPS] : []);
 
