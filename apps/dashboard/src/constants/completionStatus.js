@@ -4,7 +4,7 @@
  */
 
 export const PROGRESS_COLORS = {
-  COMPLETED: '#2F7D57',
-  STARTED: '#E9D27A',
+  COMPLETED: '#22c55e',
+  STARTED: '#FAEDC4',
   ASSIGNED: '#D4D7DB',
 };
