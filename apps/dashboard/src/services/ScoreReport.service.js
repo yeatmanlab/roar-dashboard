@@ -13,9 +13,6 @@ import {
 import { SCORE_SUPPORT_SKILL_LEVELS, SCORE_TYPES } from '@/constants/scores';
 import { TAG_SEVERITIES } from '@/constants/tags';
 
-import { i18n } from '@/translations/i18n';
-const locale = i18n.global.locale?.value ?? i18n.global.locale ?? 'en';
-
 /**
  * ScoreReport Service
  *
@@ -30,27 +27,24 @@ const ScoreReportService = (() => {
    * @returns {string} The suffix (st, nd, rd, or th)
    * @private
    */
-  const getPercentileSuffix = (percentile) => {
+
+  // ...
+
+  const getPercentileSuffix = (percentile, i18n) => {
     const lastDigit = percentile % 10;
     const lastTwoDigits = percentile % 100;
-    // If the active language is Spanish, just use º
-    if (locale.value !== 'en-US' || locale.value !== 'en') {
-      return 'º';
-    }
 
-    if (lastTwoDigits >= 11 && lastTwoDigits <= 13) {
-      return 'th';
-    }
+    if (lastTwoDigits >= 11 && lastTwoDigits <= 13) return i18n.t('scoreReports.th');
 
     switch (lastDigit) {
       case 1:
-        return 'st';
+        return i18n.t('scoreReports.st');
       case 2:
-        return 'nd';
+        return i18n.t('scoreReports.nd');
       case 3:
-        return 'rd';
+        return i18n.t('scoreReports.rd');
       default:
-        return 'th';
+        return i18n.t('scoreReports.th');
     }
   };
 
@@ -61,8 +55,8 @@ const ScoreReportService = (() => {
    * @returns {string} The percentile with appropriate suffix
    * @private
    */
-  const getPercentileWithSuffix = (percentile) => {
-    return `${percentile}${getPercentileSuffix(percentile)}`;
+  const getPercentileWithSuffix = (percentile, i18n) => {
+    return `${percentile}${getPercentileSuffix(percentile, i18n)}`;
   };
 
   /**
@@ -209,8 +203,8 @@ const ScoreReportService = (() => {
    *
    * @public
    */
-  const getPercentileSuffixTemplate = (percentile) => {
-    return `{value}${getPercentileSuffix(percentile)}`;
+  const getPercentileSuffixTemplate = (percentile, i18n) => {
+    return `{value}${getPercentileSuffix(percentile, i18n)}`;
   };
 
   /**
@@ -280,7 +274,7 @@ const ScoreReportService = (() => {
       keypath: 'scoreReports.percentileTaskDescription',
       slots: {
         percentile:
-          getPercentileWithSuffix(Math.round(task?.percentileScore.value)) +
+          getPercentileWithSuffix(Math.round(task?.percentileScore.value), i18n) +
           ` ${i18n.t('scoreReports.percentileScore')}`,
         supportCategory: getSupportLevelLanguage(
           grade,
@@ -374,18 +368,16 @@ const ScoreReportService = (() => {
           taskScoringVersions[taskId],
         );
 
-        const capitalize = (s) => s.charAt(0).toUpperCase() + s.slice(1);
-
         const scoresForTask = {
           standardScore: {
-            name: capitalize(i18n.t('scoreReports.standardScore')),
+            name: i18n.t('scoreReports.standardScore'),
             value: Math.round(standardScore),
             min: 0,
             max: 180,
             supportColor,
           },
           rawScore: {
-            name: capitalize(i18n.t('scoreReports.rawScore')),
+            name: i18n.t('scoreReports.rawScore'),
             value: Math.round(rawScore),
             min: rawScoreRange?.min,
             max: rawScoreRange?.max,
@@ -393,8 +385,8 @@ const ScoreReportService = (() => {
           },
           percentileScore: {
             name: tasksToDisplayPercentCorrect.includes(taskId)
-              ? capitalize(i18n.t('scoreReports.percentCorrect'))
-              : capitalize(i18n.t('scoreReports.percentileScore')),
+              ? i18n.t('scoreReports.percentCorrect')
+              : i18n.t('scoreReports.percentileScore'),
             value: Math.round(percentileScore),
             min: 0,
             max: taskId.includes('letter') ? 100 : 99,

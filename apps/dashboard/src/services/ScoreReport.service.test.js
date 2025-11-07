@@ -139,7 +139,9 @@ describe('ScoreReportService', () => {
       const result = ScoreReportService.getScoreDescription(task, 4, mockI18n);
 
       expect(result.keypath).toBe('scoreReports.percentileTaskDescription');
-      expect(result.slots.percentile).toBe(`55th ${mockI18n.t('scoreReports.percentileScore')}`);
+      expect(result.slots.percentile).toBe(
+        `55${mockI18n.t('scoreReports.th')} ${mockI18n.t('scoreReports.percentileScore')}`,
+      );
       expect(result.slots.taskName).toBe('Task Two');
       expect(result.slots.taskDescription).toBe('Description for task two');
       expect(result.slots.supportCategory).toBe('scoreReports.developingText');

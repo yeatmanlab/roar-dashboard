@@ -16,13 +16,13 @@
     "summary": "In this report, you will find {firstName}’s scoring at the time of testing, as well as ways you can support {firstName} in their path to reading fluency and comprehension!",
     "taskTabHeader": "Understanding the Scores",
     "taskIntro": "The ROAR assessments return these kinds of scores:",
-    "standardScore": "standard score",
-    "percentileScore": "percentile",
-    "percentCorrect": "percent correct",
-    "rawScore": "raw score",
-    "standardScoreDescription": "{taskTitle} is a way of showing how your child's test performance compares to other kids of the same age or grade. Standard Scores have a range of 0-180. The standard score is comparable within a grade level, but not across grade levels or over time.",
-    "percentileScoreDescription": "{taskTitle} refers to a student's rank within their grade level on the given skill. The percentile is the number of students out of 100 who have lower scores for that skill. For example, students in the 50th percentile would score higher than 50 out of 100 students in the same grade.",
-    "rawScoreDescription": "{taskTitle} is the basic measure of a student’s performance on the test. Depending on the test, the raw score is based on a number of factors. These may include the number of items a student answered correctly or incorrectly, and the difficulty of the items. The raw score is comparable across grade levels and over time.",
+    "standardScore": "Standard Score",
+    "percentileScore": "Percentile",
+    "percentCorrect": "Percent Correct",
+    "rawScore": "Raw Score",
+    "standardScoreDescription": "{taskTitle} This score is a way of showing how your child's test performance compares to other kids of the same age or grade. Standard Scores have a range of 0-180. The standard score is comparable within a grade level, but not across grade levels or over time.",
+    "percentileScoreDescription": "{taskTitle} This score refers to a student's rank within their grade level on the given skill. The percentile is the number of students out of 100 who have lower scores for that skill. For example, students in the 50th percentile would score higher than 50 out of 100 students in the same grade.",
+    "rawScoreDescription": "{taskTitle} This score is the basic measure of a student’s performance on the test. Depending on the test, the raw score is based on a number of factors. These may include the number of items a student answered correctly or incorrectly, and the difficulty of the items. The raw score is comparable across grade levels and over time.",
     "roarDescription": "{roar} assesses foundational reading skills that are ideally in place before 5th grade.",
     "extraSupportDescription": "In Grades 6–12, skills that {supportCategory} are at or below a 3rd-grade level. Students with this support level likely need additional systematic, intensive instruction on this skill in order to access grade-level reading.",
     "developingDescription": "Skills that are {supportCategory} are between a 3rd- and 5th-grade level. Students with this support level may need additional instruction on this skill in order to access grade-level reading.",
@@ -99,6 +99,10 @@
       "roar-readaloud": "Temporary description for readaloud",
       "roar-survey": "Temporary description for survey"
     },
-    "clickHere": "click here"
+    "clickHere": "click here",
+    "st": "st",
+    "nd": "nd",
+    "rd": "rd",
+    "th": "th"
   }
 }

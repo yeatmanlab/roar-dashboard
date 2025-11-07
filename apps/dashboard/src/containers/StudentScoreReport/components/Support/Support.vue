@@ -15,19 +15,19 @@
           <ul>
             <i18n-t keypath="scoreReports.standardScoreDescription" tag="li">
               <template #taskTitle>
-                <b>{{ capitalize($t('scoreReports.standardScore')) }}: </b>
+                <b>{{ $t('scoreReports.standardScore') }}: </b>
               </template>
             </i18n-t>
 
             <i18n-t v-if="!(studentGrade >= 6)" keypath="scoreReports.percentileScoreDescription" tag="li">
               <template #taskTitle>
-                <b>{{ capitalize($t('scoreReports.percentileScore')) }}: </b>
+                <b>{{ $t('scoreReports.percentileScore') }}: </b>
               </template>
             </i18n-t>
 
             <i18n-t keypath="scoreReports.rawScoreDescription" tag="li">
               <template #taskTitle>
-                <b>{{ capitalize($t('scoreReports.rawScore')) }}: </b>
+                <b>{{ $t('scoreReports.rawScore') }}: </b>
               </template>
             </i18n-t>
           </ul>
@@ -109,12 +109,6 @@ const props = defineProps({
     default: true,
   },
 });
-
-const capitalize = (s) => {
-  const str = (s ?? '').toString();
-  if (!str) return '';
-  return str.charAt(0).toUpperCase() + str.slice(1);
-};
 
 const visiblePanels = ref(props.expanded ? [SUPPORT_PANELS.TASK, SUPPORT_PANELS.NEXT_STEPS] : []);
 

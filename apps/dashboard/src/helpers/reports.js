@@ -597,7 +597,7 @@ export const updatedNormVersions = {
 function getOrdinalSuffix(n) {
   const { locale } = useI18n();
   // If the active language is Spanish, just use º
-  if (locale.value !== 'en-US' || locale.value !== 'en') {
+  if (locale.value === 'es' || locale.value === 'es-CO') {
     return 'º';
   }
 

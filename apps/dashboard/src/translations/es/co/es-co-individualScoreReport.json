@@ -16,12 +16,12 @@
     "summary": "En este informe, encontrará la puntuación de {firstName} en el momento de la prueba, así como formas en que puede apoyar a {firstName} en su camino hacia la fluidez y comprensión lectora.",
     "taskTabHeader": "Comprender las puntuaciones",
     "taskIntro": "Las evaluaciones ROAR arrojan este tipo de puntuaciones:",
-    "standardScore": "puntuación estándar",
-    "percentileScore": "percentil",
-    "rawScore": "puntuación bruta",
-    "standardScoreDescription": "{taskTitle} es una forma de mostrar cómo se compara el desempeño de su hijo/hija en las pruebas con el de otros niños de la misma edad o grado. Las puntuaciones estándar tienen un rango de 0 a 180. La puntuación estándar es comparable dentro de un mismo nivel de grado, pero no entre niveles de grado ni a lo largo del tiempo.",
-    "percentileScoreDescription": "{taskTitle} se refiere al rango de un estudiante dentro de su nivel de grado en la habilidad dada. El percentil es el número de estudiantes, de cada 100, que tienen puntuaciones más bajas en esa habilidad. Por ejemplo, los estudiantes en el percentil 50 obtendrían una puntuación más alta que 50 de cada 100 estudiantes en el mismo grado.",
-    "rawScoreDescription": "{taskTitle} es la medida básica del desempeño de un estudiante en la prueba. Dependiendo de la prueba, la puntuación bruta se basa en varios factores. Estos pueden incluir la cantidad de elementos que un estudiante respondió correcta o incorrectamente y la dificultad de los elementos. La puntuación bruta es comparable entre niveles de grado y a lo largo del tiempo.",
+    "standardScore": "Puntuación Estándar",
+    "percentileScore": "Percentil",
+    "rawScore": "Puntuación Bruta",
+    "standardScoreDescription": "{taskTitle} Esta puntuación es una forma de mostrar cómo se compara el desempeño de su hijo/hija en las pruebas con el de otros niños de la misma edad o grado. Las puntuaciones estándar tienen un rango de 0 a 180. La puntuación estándar es comparable dentro de un mismo nivel de grado, pero no entre niveles de grado ni a lo largo del tiempo.",
+    "percentileScoreDescription": "{taskTitle} Esta puntuación se refiere al rango de un estudiante dentro de su nivel de grado en la habilidad dada. El percentil es el número de estudiantes, de cada 100, que tienen puntuaciones más bajas en esa habilidad. Por ejemplo, los estudiantes en el percentil 50 obtendrían una puntuación más alta que 50 de cada 100 estudiantes en el mismo grado.",
+    "rawScoreDescription": "{taskTitle} Esta puntuación es la medida básica del desempeño de un estudiante en la prueba. Dependiendo de la prueba, la puntuación bruta se basa en varios factores. Estos pueden incluir la cantidad de elementos que un estudiante respondió correcta o incorrectamente y la dificultad de los elementos. La puntuación bruta es comparable entre niveles de grado y a lo largo del tiempo.",
     "roarDescription": "{roar} evalúa las habilidades fundamentales de lectura que idealmente están vigentes antes del quinto grado.",
     "extraSupportDescription": "En los grados 6 a 12, habilidades que {supportCategory} están en el nivel de tercer grado o por debajo de él. Los estudiantes con este nivel de apoyo probablemente necesiten instrucción adicional sistemática e intensiva sobre esta habilidad para poder acceder a la lectura de su grado.",
     "developingDescription": "Las habilidades que son {supportCategory} están entre el nivel de 3ro- y 5to- grado. Los estudiantes con este nivel de apoyo pueden necesitar instrucción adicional sobre esta habilidad para poder acceder a la lectura de su nivel de grado.",
@@ -83,6 +83,10 @@
       "roar-readaloud": "Descripción temporal para readaloud.",
       "roar-survey": "Descripción temporal para survey."
     },
-    "clickHere": "Haga clic aquí"
+    "clickHere": "Haga clic aquí",
+    "st": "º",
+    "nd": "º",
+    "rd": "º",
+    "th": "º"
   }
 }

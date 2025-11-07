@@ -11,21 +11,21 @@
     <ul class="p-0 pl-3">
       <i18n-t keypath="scoreReports.standardScoreDescription" tag="li" class="mb-2">
         <template #taskTitle>
-          <b>{{ capitalize($t('scoreReports.standardScore')) }}</b
+          <b>{{ $t('scoreReports.standardScore') }}</b
           >: A <b>{{ $t('scoreReports.standardScore') }}</b>
         </template>
       </i18n-t>
 
       <i18n-t v-if="!(studentGrade >= 6)" keypath="scoreReports.percentileScoreDescription" tag="li" class="mb-2">
         <template #taskTitle>
-          <b>{{ capitalize($t('scoreReports.percentileScore')) }}</b
+          <b>{{ $t('scoreReports.percentileScore') }}</b
           >: A <b>{{ $t('scoreReports.percentileScore') }}</b>
         </template>
       </i18n-t>
 
       <i18n-t keypath="scoreReports.rawScoreDescription" tag="li" class="mb-2">
         <template #taskTitle>
-          <b>{{ capitalize($t('scoreReports.rawScore')) }}</b
+          <b>{{ $t('scoreReports.rawScore') }}</b
           >: A <b>{{ $t('scoreReports.rawScore') }}</b>
         </template>
       </i18n-t>
@@ -57,8 +57,6 @@ defineProps({
     default: true,
   },
 });
-
-const capitalize = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 
 /**
  * Returns the URL of the next steps document
