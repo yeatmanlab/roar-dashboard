@@ -6,8 +6,8 @@
           <h2 data-cy="h2-card-admin-title" class="sm:text-lg lg:text-lx m-0 h2-card-admin-title">
             {{ title }}
           </h2>
-          <small v-if="Object.keys(props.creator).length" class="m-0 ml-1">
-            — Created by <span class="font-bold">{{ creatorName }}</span></small
+          <small class="m-0 ml-1">
+            — Created by <span class="font-bold">{{ props.creatorName || "--" }}</span></small
           >
         </div>
         <div v-if="speedDialItems.length > 0" class="flex justify-content-end w-3">
@@ -228,7 +228,7 @@ interface Props {
   assessments: Assessment[];
   showParams: boolean;
   isSuperAdmin: boolean;
-  creator?: any;
+  creatorName: string;
   onDeleteAdministration?: (administrationId: string) => void;
 }
 
@@ -277,7 +277,6 @@ const router = useRouter();
 const queryClient = useQueryClient();
 
 const props = withDefaults(defineProps<Props>(), {
-  creator: {},
   stats: () => ({}),
 });
 
@@ -285,16 +284,6 @@ const confirm = useConfirm();
 const toast = useToast();
 
 const { mutateAsync: deleteAdministration } = useDeleteAdministrationMutation();
-
-const creatorName = computed(() => {
-  if (props.creator?.displayName) return props.creator.displayName;
-
-  const first = props.creator?.name?.first || '';
-  const middle = props.creator?.name?.middle || '';
-  const last = props.creator?.name?.last || '';
-
-  return `${first} ${middle} ${last}`;
-});
 
 const now = computed(() => new Date());
 

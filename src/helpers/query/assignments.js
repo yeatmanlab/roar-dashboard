@@ -995,7 +995,8 @@ export const assignmentPageFetcher = async (
               assignment.assessments.map((assessment) => assessment.runId),
               undefined,
             );
-            return runIds.map((runId) => `${getBaseDocumentPath()}/runs/${runId}`);
+            const userId = assignment.parentDoc;
+            return runIds.map((runId) => `${getBaseDocumentPath()}/users/${userId}/runs/${runId}`);
           }),
         );
 

@@ -23,9 +23,9 @@
             </div>
             <div>
               <div class="uppercase font-light text-gray-500 text-md">Created by</div>
-              <div class="administration-creator">
-                {{ createdByUser }}
-              </div>
+              <!-- <div class="administration-creator">
+                {{ administrationData.creatorName }}
+              </div> -->
             </div>
           </div>
           <div v-if="!isLevante" class="flex flex-row align-items-center gap-4">
@@ -222,6 +222,47 @@ const props = defineProps({
 
 const initialized = ref(false);
 
+const { data: tasksDictionary, isLoading: isLoadingTasksDictionary } = useTasksDictionaryQuery({
+  enabled: initialized,
+});
+
+const { data: userClaims, isLoading: isLoadingUserClaims } = useUserClaimsQuery({
+  enabled: initialized,
+});
+
+const { isSuperAdmin } = useUserType(userClaims);
+
+const { data: administrationData, isLoading: isLoadingAdministration } = useAdministrationsQuery([props.administrationId], {
+  enabled: initialized,
+  select: (data) => data[0],
+});
+
+watch(administrationData, (newData) => {
+  console.log('administrationData', newData);
+});
+
+const { data: adminStats, isLoading: isLoadingAdminStats } = useAdministrationsStatsQuery([props.administrationId], {
+  enabled: initialized,
+  select: (data) => data[0],
+});
+
+const { data: districtSchoolsData, isLoading: isLoadingDistrictSchools } = useDistrictSchoolsQuery(props.orgId, {
+  enabled: props.orgType === SINGULAR_ORG_TYPES.DISTRICTS && initialized,
+});
+
+const { data: orgData, isLoading: isLoadingOrg } = useOrgQuery(props.orgType, [props.orgId], {
+  enabled: initialized,
+  select: (data) => data[0],
+});
+
+const {
+  isLoading: isLoadingAssignments,
+  isFetching: isFetchingAssignments,
+  data: assignmentData,
+} = useAdministrationAssignmentsQuery(props.administrationId, props.orgType, props.orgId, {
+  enabled: initialized,
+});
+
 const displayOrgType = computed(() => {
   if (props.orgType === 'district') {
     return 'Site';
@@ -231,7 +272,7 @@ const displayOrgType = computed(() => {
   return props.orgType;
 });
 
-const isLoading = computed(() => isLoadingAssignments.value || isLoadingTasksDictionary.value);
+const isLoading = computed(() => isLoadingAssignments.value || isLoadingTasksDictionary.value || isLoadingAdministration.value || isLoadingAdminStats.value || isLoadingDistrictSchools.value || isLoadingOrg.value || isLoadingUserClaims.value);
 
 const reportView = ref({ name: 'Progress Report', constant: true });
 const reportViews = [
@@ -280,50 +321,7 @@ const filterSchools = ref([]);
 const filterGrades = ref([]);
 const pageLimit = ref(10);
 
-const { data: tasksDictionary, isLoading: isLoadingTasksDictionary } = useTasksDictionaryQuery({
-  enabled: initialized,
-});
 
-const { data: userClaims } = useUserClaimsQuery({
-  enabled: initialized,
-});
-
-const { isSuperAdmin } = useUserType(userClaims);
-
-const { data: administrationData } = useAdministrationsQuery([props.administrationId], {
-  enabled: initialized,
-  select: (data) => data[0],
-});
-
-const createdById = computed(() => administrationData?.value?.createdBy);
-
-const { data: userData } = useUserDataQuery(createdById, {
-  enabled: computed(() => !!createdById.value),
-});
-
-const createdByUser = computed(() => userData.value?.name.first ? userData.value.name.first + ' ' + userData.value.name.last : userData.value?.displayName);
-
-const { data: adminStats } = useAdministrationsStatsQuery([props.administrationId], {
-  enabled: initialized,
-  select: (data) => data[0],
-});
-
-const { data: districtSchoolsData } = useDistrictSchoolsQuery(props.orgId, {
-  enabled: props.orgType === SINGULAR_ORG_TYPES.DISTRICTS && initialized,
-});
-
-const { data: orgData } = useOrgQuery(props.orgType, [props.orgId], {
-  enabled: initialized,
-  select: (data) => data[0],
-});
-
-const {
-  isLoading: isLoadingAssignments,
-  isFetching: isFetchingAssignments,
-  data: assignmentData,
-} = useAdministrationAssignmentsQuery(props.administrationId, props.orgType, props.orgId, {
-  enabled: initialized,
-});
 
 
 const computedProgressData = computed(() => {

@@ -571,6 +571,7 @@ const submit = async () => {
       amount: toRaw(state).amount ?? '',
       expectedTime: toRaw(state).expectedTime ?? '',
     },
+    creatorName: authStore.userData?.displayName || authStore.userData?.name?.first + ' ' + authStore.userData?.name?.middle + ' ' + authStore.userData?.name?.last,
   };
 
   if (props.adminId) {

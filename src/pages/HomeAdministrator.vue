@@ -117,7 +117,7 @@
                     :public-name="item.publicName ?? item.name"
                     :show-params="isUserSuperAdmin()"
                     :is-super-admin="isUserSuperAdmin()"
-                    :creator="item.creator"
+                    :creator-name="item.creatorName"
                     data-cy="h2-card-admin"
                   />
                 </div>
