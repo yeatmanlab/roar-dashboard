@@ -156,7 +156,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { useConfirm } from 'primevue/useconfirm';
 import { useToast } from 'primevue/usetoast';
 import { useRouter } from 'vue-router';
@@ -298,9 +298,21 @@ const toggleLabel = computed(() => {
   return ' Show details';
 });
 
-const toggleTable = () => {
+const toggleTable = async () => {
+  // Close any open popovers before toggling to prevent positioning issues
+  Object.values(paramPanelRefs).forEach((ref) => {
+    if (ref.value?.[0]) {
+      ref.value[0].hide();
+    }
+  });
+
   enableQueries.value = true;
   showTable.value = !showTable.value;
+
+  // Force layout recalculation after DOM update
+  await nextTick();
+  // Trigger a reflow to fix icon positioning
+  void document.body.offsetHeight;
 };
 
 const noOrgsFound = computed(() => {
@@ -497,6 +509,8 @@ button.p-button.p-component.p-button-sm.p-button-sm {
   flex-direction: row;
   gap: 2rem;
   padding: 1rem;
+  position: relative;
+  transform: translateZ(0);
 
   .card-admin-chart {
     width: 12ch;
@@ -534,6 +548,12 @@ button.p-button.p-component.p-button-sm.p-button-sm {
 
   .cursor-pointer {
     cursor: pointer;
+  }
+
+  // Ensure icons are properly positioned within the card
+  .pi {
+    position: relative;
+    display: inline-block;
   }
 }
 
