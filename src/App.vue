@@ -44,6 +44,7 @@ import LevanteSpinner from '@/components/LevanteSpinner.vue';
 import NavBar from '@/components/NavBar.vue';
 import { NAVBAR_BLACKLIST } from './constants';
 import SideBar from '@/components/SideBar.vue';
+import { usePageEventTracking } from '@/composables/usePageEventTracking';
 
 // const SessionTimer = defineAsyncComponent(() => import('@/containers/SessionTimer/SessionTimer.vue'));
 const VueQueryDevtools = defineAsyncComponent(() =>
@@ -55,6 +56,9 @@ const showDevtools = ref(false);
 
 const authStore = useAuthStore();
 const route = useRoute();
+
+// Initialize page event tracking for global analytics
+usePageEventTracking();
 
 const pageTitle = computed(() => {
   const locale = i18n.global.locale.value;
