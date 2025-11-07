@@ -36,7 +36,11 @@
             :task-scoring-versions="getScoringVersions"
           />
 
-          <SupportPrint :student-grade="studentGrade" />
+          <SupportPrint
+            :student-grade="studentGrade"
+            :distribution-chart-path="distributionChartPath"
+            :is-distribution-chart-enabled="isDistributionChartEnabled"
+          />
         </template>
       </div>
 
@@ -71,7 +75,12 @@
             :current-assignment-id="administrationId"
           />
 
-          <SupportScreen :expanded="expanded" :student-grade="studentGrade" />
+          <SupportScreen
+            :expanded="expanded"
+            :student-grade="studentGrade"
+            :distribution-chart-path="distributionChartPath"
+            :is-distribution-chart-enabled="isDistributionChartEnabled"
+          />
         </template>
       </template>
     </template>
@@ -82,6 +91,7 @@
 import { computed, ref, onMounted, onUnmounted, watch, nextTick, toValue } from 'vue';
 import { useRoute } from 'vue-router';
 import { useAuthStore } from '@/store/auth';
+import { useI18n } from 'vue-i18n';
 import useUserDataQuery from '@/composables/queries/useUserDataQuery';
 import useAdministrationsQuery from '@/composables/queries/useAdministrationsQuery';
 import useUserRunPageQuery from '@/composables/queries/useUserRunPageQuery';
@@ -89,7 +99,7 @@ import useUserLongitudinalRunsQuery from '@/composables/queries/useUserLongitudi
 import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery';
 import usePagedPreview from '@/composables/usePagedPreview';
 import PdfExportService from '@/services/PdfExport.service';
-import { taskDisplayNames } from '@/helpers/reports';
+import { taskDisplayNames, getDistributionChartPath, updatedNormVersions } from '@/helpers/reports';
 
 import AppSpinner from '@/components/AppSpinner.vue';
 import { HeaderScreen, HeaderPrint } from './components/Header';
@@ -179,6 +189,40 @@ const getScoringVersions = computed(() => {
   );
   return scoringVersions;
 });
+
+const { locale } = useI18n();
+
+const distributionChartPath = computed(() => {
+  const language = locale.value.includes('es') ? 'es' : 'en';
+  const completedTasks = Object.values(taskData.value)
+    .filter((task) => task.scores)
+    .map((task) => task.taskId);
+
+  const scoringVersions = Object.fromEntries(
+    completedTasks.map((taskId) => [taskId, getScoringVersions.value[taskId]]),
+  );
+
+  return getDistributionChartPath(studentGrade.value, scoringVersions, language);
+});
+
+// Only show the distribution chart if there are completed normed tasks
+// Spanish tasks (sre-es, swr-es) must also have a non-null scoring version
+const isDistributionChartEnabled = computed(() => {
+  const normedTaskIds = Object.keys(updatedNormVersions);
+  return Object.values(taskData.value).some((task) => {
+    // Must have scores and be a normed task
+    if (!task.scores || !normedTaskIds.includes(task.taskId)) return false;
+
+    // Spanish tasks require a non-null scoring version
+    if (task.taskId === 'sre-es' || task.taskId === 'swr-es') {
+      return getScoringVersions.value[task.taskId] !== null;
+    }
+
+    // All other normed tasks just need scores
+    return true;
+  });
+});
+
 /**
  * Controls the expanded state of the report cards
  */
