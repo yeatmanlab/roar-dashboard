@@ -821,9 +821,31 @@ describe('reports', () => {
       expect(getDistributionChartPath(6, {}, 'en')).toMatch(/distribution-chart-secondary-v1-en\.webp$/);
     });
 
+    it('should return no-cutoffs chart if grade is undefined', () => {
+      expect(getDistributionChartPath(undefined, { swr: 7, sre: 4 }, 'en')).toMatch(
+        /distribution-chart-no-cutoffs-en\.webp$/,
+      );
+    });
+
+    it('should return no-cutoffs chart if grade is null', () => {
+      expect(getDistributionChartPath(null, { swr: 7, sre: 4 }, 'en')).toMatch(
+        /distribution-chart-no-cutoffs-en\.webp$/,
+      );
+    });
+
+    it('should return no-cutoffs chart if grade is empty string', () => {
+      expect(getDistributionChartPath('', { swr: 7, sre: 4 }, 'en')).toMatch(/distribution-chart-no-cutoffs-en\.webp$/);
+    });
+
+    it('should return no-cutoffs chart if grade is not a number', () => {
+      expect(getDistributionChartPath('K0', { swr: 7, sre: 4 }, 'en')).toMatch(
+        /distribution-chart-no-cutoffs-en\.webp$/,
+      );
+    });
+
     it('should handle string grade values correctly', () => {
-      expect(getDistributionChartPath('6', { swr: 7, sre: 4 }, 'en')).toMatch(
-        /distribution-chart-secondary-v1-en\.webp$/,
+      expect(getDistributionChartPath('3', { swr: 7, sre: 4 }, 'en')).toMatch(
+        /distribution-chart-elementary-v2-en\.webp$/,
       );
     });
   });

@@ -1134,20 +1134,21 @@ export const getRawScoreRange = (taskId) => {
  */
 export const getDistributionChartPath = (grade, taskScoringVersions, language = 'en') => {
   const tasks = Object.entries(taskScoringVersions);
-
   // Filter to only tasks that have updated norms and exclude unnormed Spanish tasks (version < 1)
   // isDistributionChartEnabled ensures there are in-progress/completed normed tasks
   const applicableTasks = tasks.filter(
     ([taskId, version]) => taskId in updatedNormVersions && !(['swr-es', 'sre-es'].includes(taskId) && version < 1),
   );
 
-  let path = '';
-
   const pickPath = (baseKey) => {
     return SCORE_REPORT_DISTRIBUTION_CHART_PATHS[`${baseKey}${language === 'en' ? 'En' : 'Es'}`];
   };
 
-  // Images are currently only available for elementary grades
+  // Default to admins with mixed scoring versions or undefined grades
+  let path = pickPath('noCutoffs');
+
+  if (grade == null || grade === '' || Number.isNaN(Number(grade))) return path;
+
   if (parseInt(grade) < 6) {
     const hasNoUpdatedNorms = applicableTasks.every(([taskId, version]) => version < updatedNormVersions[taskId]);
     const hasAllUpdatedNorms = applicableTasks.every(([taskId, version]) => version >= updatedNormVersions[taskId]);
@@ -1156,9 +1157,6 @@ export const getDistributionChartPath = (grade, taskScoringVersions, language = 
       path = pickPath('elementaryV2');
     } else if (hasNoUpdatedNorms) {
       path = pickPath('elementaryV1');
-    } else {
-      // Default to admins with mixed scoring versions
-      path = pickPath('noCutoffs');
     }
   } else {
     path = pickPath('secondaryV1');
