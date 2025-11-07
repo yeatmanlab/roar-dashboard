@@ -37,7 +37,49 @@ function ensureDir(dirPath) {
   if (!fs.existsSync(dirPath)) fs.mkdirSync(dirPath, { recursive: true });
 }
 
+function createBackup() {
+  const backupDir = path.join(consolidatedRoot, '.backup');
+  ensureDir(backupDir);
+  
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const backupPath = path.join(backupDir, `pre-sync-${timestamp}`);
+  ensureDir(backupPath);
+  
+  // Backup consolidated files
+  if (fs.existsSync(consolidatedRoot)) {
+    const files = fs.readdirSync(consolidatedRoot);
+    for (const file of files) {
+      if (file.endsWith('.csv')) {
+        const src = path.join(consolidatedRoot, file);
+        const dest = path.join(backupPath, file);
+        fs.copyFileSync(src, dest);
+      }
+    }
+  }
+  
+  // Backup component files
+  if (fs.existsSync(consolidatedComponents)) {
+    const componentBackupDir = path.join(backupPath, 'components');
+    ensureDir(componentBackupDir);
+    
+    const files = fs.readdirSync(consolidatedComponents);
+    for (const file of files) {
+      if (file.endsWith('.csv')) {
+        const src = path.join(consolidatedComponents, file);
+        const dest = path.join(componentBackupDir, file);
+        fs.copyFileSync(src, dest);
+      }
+    }
+  }
+  
+  console.log(`📦 Created backup at ${backupPath}`);
+  return backupPath;
+}
+
 function syncCsvsToConsolidated() {
+  // Create backup before syncing
+  const backupPath = createBackup();
+  
   ensureDir(consolidatedRoot);
   ensureDir(consolidatedComponents);
 
@@ -65,11 +107,23 @@ function buildJson() {
   if (res.status !== 0) process.exit(res.status || 1);
 }
 
+function runSafetyCheck() {
+  console.log('🔍 Running translation safety check...');
+  const script = path.resolve(projectRoot, 'src/translations/tools/translation-safety-check.js');
+  const res = run('node', [script]);
+  if (res.status !== 0) {
+    console.error('❌ Translation safety check failed. Aborting sync to prevent data loss.');
+    process.exit(res.status || 1);
+  }
+}
+
 function main() {
   console.log('🌐 Pulling translations from Crowdin...');
   ensureCrowdinDownload();
   console.log('📦 Syncing downloaded CSVs to consolidated/ ...');
   syncCsvsToConsolidated();
+  console.log('🔍 Running translation safety check...');
+  runSafetyCheck();
   console.log('🔧 Regenerating per-locale JSON...');
   buildJson();
   console.log('✅ Done');

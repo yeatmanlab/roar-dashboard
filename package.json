@@ -34,6 +34,7 @@
     "predev": "sh -c 'if [ -n \"$CROWDIN_API_TOKEN\" ]; then npm run i18n:crowdin:download; fi' && node src/translations/tools/conditional-csv-to-json.js",
     "prebuild": "sh -c 'if [ -n \"$CROWDIN_API_TOKEN\" ]; then npm run i18n:crowdin:download; fi' && node src/translations/tools/conditional-csv-to-json.js",
     "i18n:validate": "node src/translations/tools/validate-csvs.js",
+    "i18n:safety-check": "node src/translations/tools/translation-safety-check.js",
     "i18n:add-locale": "node src/translations/tools/add-locale-column.js",
     "i18n:sync": "npm run i18n:consolidate && npm run i18n:crowdin:upload && npm run i18n:crowdin:download && npm run i18n:csv-to-json && npm run i18n:validate"
   },
@@ -70,7 +71,7 @@
     "jspdf": "^2.5.1",
     "lodash": "^4.17.21",
     "marked": "^7.0.3",
-    "papaparse": "^5.3.2",
+    "papaparse": "^5.5.3",
     "pinia": "^2.0.33",
     "pinia-plugin-persistedstate": "^3.1.0",
     "posthog-js": "^1.236.6",
