@@ -106,13 +106,14 @@
                 <div v-if="!isEmptyDistrictSupportCategories && props.orgType === 'district'">
                   <p
                     v-if="assignedNormedTaskIds && assignedTaskIds.length > assignedNormedTaskIds.length"
-                    class="text-center text-sm"
+                    class="text-center text-sm font-bold"
                   >
-                    * Charts are available for validated ROAR assessments (Word, Sentence, and Phoneme) to give you
-                    clear, reliable insights. Results from other assessments do not currently display charts.
+                    In this district-level report, visualizations are available for foundational ROAR assessments (Word,
+                    Sentence, and Phoneme) to give you clear, reliable insights on these foundational skills.
                   </p>
-                  <p class="text-center align-items-center text-sm">
-                    See school or class report to get more information about other assessments.
+                  <p class="text-center align-items-center text-sm font-bold">
+                    View school-level or classroom-level reports to see student-level data and information about other
+                    assessments.
                   </p>
                 </div>
               </div>
@@ -121,19 +122,16 @@
               v-if="!isLoadingAssignments && !isLoadingDistrictSupportCategories && isEmptyDistrictSupportCategories"
               class="justify-content-center surface-100 p-2"
             >
-              <p class="text-center text-sm">
+              <p class="text-center text-sm font-bold">
                 {{
                   assignedNormedTaskIds.length === 0
-                    ? '* Charts are shown only for Word, Sentence, and Phoneme. None of these assessments are currently assigned.'
-                    : '* Charts will appear once students have started their Word, Sentence, and/or Phoneme assessments.'
+                    ? 'In this district-level report, visualizations are only available for foundational ROAR assessments (Word, Sentence, and Phoneme). None of these are currently assigned within your district.'
+                    : 'Visualizations will appear once students complete Word, Sentence, and/or Phoneme assessments.'
                 }}
               </p>
-              <p class="text-center align-items-center text-sm">
-                {{
-                  assignedNormedTaskIds.length === 0
-                    ? 'See school or class report to get more information about other assessments.'
-                    : 'See school or class report to get detailed information about the assessments.'
-                }}
+              <p class="text-center align-items-center text-sm font-bold">
+                View school-level or classroom-level reports to see student-level data and information about other
+                assessments.
               </p>
             </div>
           </div>
