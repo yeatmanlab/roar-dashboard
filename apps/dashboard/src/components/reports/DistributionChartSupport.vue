@@ -14,7 +14,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import embed from 'vega-embed';
 import PvSelectButton from 'primevue/selectbutton';
 import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery';
@@ -318,34 +318,13 @@ const draw = async () => {
   await embed(`#roar-distribution-chart-support-${props.taskId}`, chartSpecSupport);
 };
 
-// Watch for changes to the computed chart specification (includes tasksDictionary loading)
 watch(
-  () => distributionBySupport.value,
+  [() => distributionBySupport.value, () => props.facetMode, () => props.runs],
   () => {
     draw();
   },
-  { deep: true },
+  { deep: true, immediate: true },
 );
-
-watch(
-  () => props.facetMode,
-  () => {
-    draw();
-  },
-);
-
-// Watch runs for data changes
-watch(
-  () => props.runs,
-  () => {
-    draw();
-  },
-  { deep: true },
-);
-
-onMounted(() => {
-  draw(); // Call your function when the component is mounted
-});
 </script>
 
 <style lang="scss">

@@ -23,3 +23,9 @@ export const SCORE_SUPPORT_LEVEL_COLORS = Object.freeze({
   OPTIONAL: '#71717a', // gray-500
   UNRELIABLE: '#d6b8c7', // pink-200
 });
+
+export const MATCHING_SUPPORT_LEVELS = {
+  above: 'Achieved Skill',
+  some: 'Developing Skill',
+  below: 'Needs Extra Support',
+};

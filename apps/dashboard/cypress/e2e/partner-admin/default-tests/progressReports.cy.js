@@ -34,7 +34,7 @@ describe('Partner Admin: Progress Reports', () => {
 
     cy.waitForProgressReportButton(testDistrictName);
 
-    // COMMENTING FOR NOW SINCE THERE IS NO DISTRIC PROGRESS REPORT YET
+    // COMMENTING FOR NOW SINCE THERE IS NO DISTRICT PROGRESS REPORT YET
 
     // cy.contains('[data-testid="card-administration__body-cell-content"]', testDistrictName)
     //   .closest('tr')

@@ -6,7 +6,7 @@
 import { computed, onMounted, watch } from 'vue';
 import embed from 'vega-embed';
 import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery';
-import { SCORE_SUPPORT_LEVEL_COLORS } from '@/constants/scores';
+import { SCORE_SUPPORT_LEVEL_COLORS, MATCHING_SUPPORT_LEVELS } from '@/constants/scores';
 
 const props = defineProps({
   initialized: {
@@ -46,12 +46,6 @@ const props = defineProps({
 });
 
 const { data: tasksDictionary, isLoading: isLoadingTasksDictionary } = useTasksDictionaryQuery();
-
-const MATCHING_SUPPORT_LEVELS = {
-  above: 'Achieved Skill',
-  some: 'Developing Skill',
-  below: 'Needs Extra Support',
-};
 
 const supportLevelsOverview = computed(() => {
   if (props.orgType === 'district') {
