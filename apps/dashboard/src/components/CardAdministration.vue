@@ -260,21 +260,33 @@ const processedDates = computed(() => {
   });
 });
 
-const assessmentIds = props.assessments
-  .map((assessment) => assessment.taskId.toLowerCase())
-  .sort((p1, p2) => {
-    return (taskDisplayNames[p1]?.order ?? 0) - (taskDisplayNames[p2]?.order ?? 0);
-  });
+const assessmentIds = computed(() => {
+  return props.assessments
+    .map((assessment) => assessment.taskId.toLowerCase())
+    .sort((p1, p2) => {
+      return (taskDisplayNames[p1]?.order ?? 0) - (taskDisplayNames[p2]?.order ?? 0);
+    });
+});
 
-const paramPanelRefs = _fromPairs(props.assessments.map((assessment) => [assessment.taskId.toLowerCase(), ref()]));
-const params = _fromPairs(props.assessments.map((assessment) => [assessment.taskId.toLowerCase(), assessment.params]));
+const paramPanelRefs = ref({});
+const params = ref({});
+
+// Watch for changes in assessments prop and update paramPanelRefs and params
+watch(
+  () => props.assessments,
+  (newAssessments) => {
+    paramPanelRefs.value = _fromPairs(newAssessments.map((assessment) => [assessment.taskId.toLowerCase(), ref()]));
+    params.value = _fromPairs(newAssessments.map((assessment) => [assessment.taskId.toLowerCase(), assessment.params]));
+  },
+  { immediate: true },
+);
 
 const toEntryObjects = (inputObj) => {
   return _toPairs(inputObj).map(([key, value]) => ({ key, value }));
 };
 
 const toggleParams = (event, id) => {
-  paramPanelRefs[id].value[0].toggle(event);
+  paramPanelRefs.value[id].value[0].toggle(event);
 };
 
 function getAssessment(assessmentId) {
