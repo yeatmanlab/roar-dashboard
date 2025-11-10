@@ -194,6 +194,7 @@ import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toast
 import { isLevante, normalizeToLowercase } from '@/helpers';
 import { useQueryClient } from '@tanstack/vue-query';
 import useAssignmentByNameQuery from '@/composables/queries/useAssignmentByNameQuery';
+import { ADMINISTRATIONS_LIST_QUERY_KEY, ADMINISTRATIONS_QUERY_KEY, DSGF_ORGS_QUERY_KEY } from '@/constants/queryKeys';
 
 const initialized = ref(false);
 const router = useRouter();
@@ -241,6 +242,8 @@ const fetchAdminitrations = computed(() => initialized.value && !!props.adminId)
 const { data: existingAdministrationData } = useAdministrationsQuery([props.adminId], {
   enabled: fetchAdminitrations,
   select: (data) => data[0],
+  staleTime: 0,
+  gcTime: 0,
 });
 
 const existingAssessments = computed(() => existingAdministrationData?.value?.assessments ?? []);
@@ -314,12 +317,7 @@ const rules = {
 
 const v$ = useVuelidate(rules, state);
 
-const minStartDate = computed(() => {
-  if (props.adminId && existingAdministrationData.value?.dateOpened) {
-    return new Date(existingAdministrationData.value.dateOpened);
-  }
-  return new Date();
-});
+const minStartDate = computed(() => new Date());
 
 const minEndDate = computed(() => {
   if (state.dateStarted) {
@@ -609,8 +607,9 @@ const submit = async () => {
         life: TOAST_DEFAULT_LIFE_DURATION,
       });
 
-      queryClient.invalidateQueries({ queryKey: ['administrations-list'] });
-      console.log('Invalidated administrations list query cache.');
+      queryClient.invalidateQueries({ queryKey: [ADMINISTRATIONS_LIST_QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: [ADMINISTRATIONS_QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: [DSGF_ORGS_QUERY_KEY] });
 
       router.push({ path: APP_ROUTES.HOME });
     },

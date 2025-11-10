@@ -404,6 +404,8 @@ const { data: tasksDictionary, isLoading: isLoadingTasksDictionary } = useTasksD
 
 const { data: orgs, isLoading: isLoadingDsgfOrgs } = useDsgfOrgQuery(props.id, props.assignees, {
   enabled: enableQueries,
+  staleTime: 0,
+  gcTime: 0,
 });
 
 const loadingTreeTable = computed((): boolean => {

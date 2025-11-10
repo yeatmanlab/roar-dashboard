@@ -61,6 +61,7 @@ const plugins = [
           queries: {
             staleTime: (window as any).Cypress ? 0 : 10 * 60 * 1000,
             gcTime: (window as any).Cypress ? 0 : 15 * 60 * 1000,
+            refetchOnWindowFocus: false,
           },
         },
       },

@@ -215,6 +215,8 @@ const { isLoading: isLoadingAdministrations, data: administrations } = useAdmini
   fetchTestAdministrations,
   {
     enabled: initialized,
+    staleTime: 0,
+    gcTime: 0,
   },
 );
 
