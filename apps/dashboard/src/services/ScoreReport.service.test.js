@@ -13,11 +13,15 @@ vi.mock('@/helpers/reports', () => ({
     'mock-task-2': { extendedName: 'Task Two', order: 2 },
     'mock-raw-task': { extendedName: 'Raw Only Task', order: 3 },
   },
-  extendedDescriptions: {
-    'mock-task-1': 'Description for task one',
-    'mock-task-2': 'Description for task two',
-    'mock-raw-task': 'Description for raw only task',
-  },
+  // CHANGED: make it a function that returns from a small map needed for extended descriptions
+  getExtendedDescription: vi.fn((taskId) => {
+    const map = {
+      'mock-task-1': 'Description for task one',
+      'mock-task-2': 'Description for task two',
+      'mock-raw-task': 'Description for raw only task',
+    };
+    return map[String(taskId)] ?? '';
+  }),
   getSupportLevel: vi.fn(),
   getRawScoreRange: vi.fn(),
   getDialColor: vi.fn().mockReturnValue('var(--blue-500)'),
