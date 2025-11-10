@@ -13,11 +13,15 @@ vi.mock('@/helpers/reports', () => ({
     'mock-task-2': { extendedName: 'Task Two', order: 2 },
     'mock-raw-task': { extendedName: 'Raw Only Task', order: 3 },
   },
-  extendedDescriptions: {
-    'mock-task-1': 'Description for task one',
-    'mock-task-2': 'Description for task two',
-    'mock-raw-task': 'Description for raw only task',
-  },
+  // CHANGED: make it a function that returns from a small map needed for extended descriptions
+  getExtendedDescription: vi.fn((taskId) => {
+    const map = {
+      'mock-task-1': 'Description for task one',
+      'mock-task-2': 'Description for task two',
+      'mock-raw-task': 'Description for raw only task',
+    };
+    return map[String(taskId)] ?? '';
+  }),
   getSupportLevel: vi.fn(),
   getRawScoreRange: vi.fn(),
   getDialColor: vi.fn().mockReturnValue('var(--blue-500)'),
@@ -139,7 +143,9 @@ describe('ScoreReportService', () => {
       const result = ScoreReportService.getScoreDescription(task, 4, mockI18n);
 
       expect(result.keypath).toBe('scoreReports.percentileTaskDescription');
-      expect(result.slots.percentile).toBe('55th percentile');
+      expect(result.slots.percentile).toBe(
+        `55${mockI18n.t('scoreReports.th')} ${mockI18n.t('scoreReports.percentileScore')}`,
+      );
       expect(result.slots.taskName).toBe('Task Two');
       expect(result.slots.taskDescription).toBe('Description for task two');
       expect(result.slots.supportCategory).toBe('scoreReports.developingText');
