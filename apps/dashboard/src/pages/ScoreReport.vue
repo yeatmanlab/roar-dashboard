@@ -1049,6 +1049,12 @@ const computeAssignmentAndRunData = computed(() => {
           currRowScores[taskId].fc = _get(assessment, 'scores.computed.FC');
           currRowScores[taskId].fr = _get(assessment, 'scores.computed.FR');
 
+          if (currRowScores[taskId].fc != null || currRowScores[taskId].fr != null) {
+            const fcRawScore = currRowScores[taskId].fc ? currRowScores[taskId].fc.rawScore : 0;
+            const frRawScore = currRowScores[taskId].fr ? currRowScores[taskId].fr.rawScore : 0;
+            currRowScores[taskId].rawScore = fcRawScore + frRawScore;
+          }
+
           scoreFilterTags += ' Assessed ';
         }
         if (taskId === 'phonics' && assessment.scores) {
@@ -1335,10 +1341,18 @@ const createExportData = ({ rows, includeProgress = false }) => {
         tableRow[`${taskName} - Num Incorrect`] = score.numIncorrect;
         tableRow[`${taskName} - Num Correct`] = score.numCorrect;
       } else if (tasksToDisplayTotalCorrect.includes(taskId)) {
+        const setScores = (prefix, data) => {
+          if (!data) return;
+          tableRow[`${taskName}${prefix} - Num Correct`] = data.numCorrect;
+          tableRow[`${taskName}${prefix} - Num Incorrect`] = data.numIncorrect;
+          tableRow[`${taskName}${prefix} - Num Attempted`] = data.numAttempted;
+        };
+
         tableRow[`${taskName} - Raw Score`] = score.rawScore;
-        tableRow[`${taskName} - Num Correct`] = score.numCorrect;
-        tableRow[`${taskName} - Num Incorrect`] = score.numIncorrect;
-        tableRow[`${taskName} - Num Attempted`] = score.numAttempted;
+        setScores('', score);
+
+        if (score.fc != null) setScores('\n Multiple Choice', score.fc);
+        if (score.fr != null) setScores('\n Free Response', score.fr);
       } else if (rawOnlyTasks.includes(taskId)) {
         tableRow[`${taskName} - Raw`] = score.rawScore;
       } else if (tasksToDisplayGradeEstimate.includes(taskId)) {
