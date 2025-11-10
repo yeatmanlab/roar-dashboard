@@ -128,30 +128,14 @@ const draw = async () => {
   await embed(`#roar-dist-chart-overview-${props.taskId}`, chartSpecSupport);
 };
 
-// Watch for changes to computed chart specification
 watch(
-  () => overviewDistributionChart.value,
+  [() => overviewDistributionChart.value, () => props.runs, () => props.orgType],
   () => {
-    draw();
+    if (props.taskId !== 'letter') {
+      draw();
+    }
   },
-  { deep: true },
-);
-
-// Watch runs directly in case computed doesn't trigger
-watch(
-  () => props.runs,
-  () => {
-    draw();
-  },
-  { deep: true },
-);
-
-// Watch orgType since it changes the data processing logic
-watch(
-  () => props.orgType,
-  () => {
-    draw();
-  },
+  { deep: true, immediate: true },
 );
 
 onMounted(() => {
