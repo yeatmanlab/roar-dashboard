@@ -12,9 +12,9 @@ exports[`Support.vue > snapshots > renders collapsed state for grade < 6 1`] = `
             <div class="flex p-3 mb-4 border border-gray-100 border-1 flex-column align-items-center"><img src="/assets/img/distribution-chart-elementary-v1-en.webp" width="650"></div>
             <p class="mt-0"></p>
             <ul>
-              <li>A <b></b>: A <b></b> indicates performance relative to a mean of 100.</li>
-              <li>A <b></b>: A <b></b> shows where a student ranks compared to peers.</li>
-              <li>A <b></b>: A <b></b> is the number of items answered correctly.</li>
+              <li><b>: </b> indicates performance relative to a mean of 100.</li>
+              <li><b>: </b> shows where a student ranks compared to peers.</li>
+              <li><b>: </b> is the number of items answered correctly.</li>
             </ul>
             <!--v-if-->
           </div>
@@ -27,7 +27,7 @@ exports[`Support.vue > snapshots > renders collapsed state for grade < 6 1`] = `
       <transition-stub name="p-toggleable-content" appear="false" persisted="false" css="true">
         <div class="p-accordioncontent" id="pv_id_0_accordioncontent_2" role="region" aria-labelledby="pv_id_0_accordionheader_2" data-pc-name="accordioncontent" data-p-active="false" pc8="" data-pc-section="root" style="display: none;">
           <div class="p-accordioncontent-content" data-pc-section="content">
-            <p class="mt-0">For guidance on next steps, <a href="/docs/roar-next-steps.pdf" class="text-gray-700 hover:text-red-700" target="_blank">click here</a>. </p>
+            <p class="mt-0">For guidance on next steps, <a href="/docs/roar-next-steps.pdf" class="text-gray-700 hover:text-red-700" target="_blank"></a>. </p>
           </div>
         </div>
       </transition-stub>
@@ -48,9 +48,9 @@ exports[`Support.vue > snapshots > renders collapsed state for grade >= 6 1`] = 
             <div class="flex p-3 mb-4 border border-gray-100 border-1 flex-column align-items-center"><img src="/assets/img/distribution-chart-secondary-v1-en.webp" width="650"></div>
             <p class="mt-0"></p>
             <ul>
-              <li>A <b></b>: A <b></b> indicates performance relative to a mean of 100.</li>
+              <li><b>: </b> indicates performance relative to a mean of 100.</li>
               <!--v-if-->
-              <li>A <b></b>: A <b></b> is the number of items answered correctly.</li>
+              <li><b>: </b> is the number of items answered correctly.</li>
             </ul>
             <div>
               <p><b>ROAR</b> assessments provide insights into reading abilities.</p>
@@ -68,7 +68,7 @@ exports[`Support.vue > snapshots > renders collapsed state for grade >= 6 1`] = 
       <transition-stub name="p-toggleable-content" appear="false" persisted="false" css="true">
         <div class="p-accordioncontent" id="pv_id_0_accordioncontent_2" role="region" aria-labelledby="pv_id_0_accordionheader_2" data-pc-name="accordioncontent" data-p-active="false" pc8="" data-pc-section="root" style="display: none;">
           <div class="p-accordioncontent-content" data-pc-section="content">
-            <p class="mt-0">For guidance on next steps, <a href="/docs/roar-next-steps.pdf" class="text-gray-700 hover:text-red-700" target="_blank">click here</a>. </p>
+            <p class="mt-0">For guidance on next steps, <a href="/docs/roar-next-steps.pdf" class="text-gray-700 hover:text-red-700" target="_blank"></a>. </p>
           </div>
         </div>
       </transition-stub>
@@ -89,9 +89,9 @@ exports[`Support.vue > snapshots > renders expanded state for grade < 6 1`] = `
             <div class="flex p-3 mb-4 border border-gray-100 border-1 flex-column align-items-center"><img src="/assets/img/distribution-chart-elementary-v1-en.webp" width="650"></div>
             <p class="mt-0"></p>
             <ul>
-              <li>A <b></b>: A <b></b> indicates performance relative to a mean of 100.</li>
-              <li>A <b></b>: A <b></b> shows where a student ranks compared to peers.</li>
-              <li>A <b></b>: A <b></b> is the number of items answered correctly.</li>
+              <li><b>: </b> indicates performance relative to a mean of 100.</li>
+              <li><b>: </b> shows where a student ranks compared to peers.</li>
+              <li><b>: </b> is the number of items answered correctly.</li>
             </ul>
             <!--v-if-->
           </div>
@@ -104,7 +104,7 @@ exports[`Support.vue > snapshots > renders expanded state for grade < 6 1`] = `
       <transition-stub name="p-toggleable-content" appear="false" persisted="false" css="true">
         <div class="p-accordioncontent" id="pv_id_0_accordioncontent_2" role="region" aria-labelledby="pv_id_0_accordionheader_2" data-pc-name="accordioncontent" data-p-active="true" pc8="" data-pc-section="root">
           <div class="p-accordioncontent-content" data-pc-section="content">
-            <p class="mt-0">For guidance on next steps, <a href="/docs/roar-next-steps.pdf" class="text-gray-700 hover:text-red-700" target="_blank">click here</a>. </p>
+            <p class="mt-0">For guidance on next steps, <a href="/docs/roar-next-steps.pdf" class="text-gray-700 hover:text-red-700" target="_blank"></a>. </p>
           </div>
         </div>
       </transition-stub>
@@ -125,9 +125,9 @@ exports[`Support.vue > snapshots > renders expanded state for grade >= 6 1`] = `
             <div class="flex p-3 mb-4 border border-gray-100 border-1 flex-column align-items-center"><img src="/assets/img/distribution-chart-secondary-v1-en.webp" width="650"></div>
             <p class="mt-0"></p>
             <ul>
-              <li>A <b></b>: A <b></b> indicates performance relative to a mean of 100.</li>
+              <li><b>: </b> indicates performance relative to a mean of 100.</li>
               <!--v-if-->
-              <li>A <b></b>: A <b></b> is the number of items answered correctly.</li>
+              <li><b>: </b> is the number of items answered correctly.</li>
             </ul>
             <div>
               <p><b>ROAR</b> assessments provide insights into reading abilities.</p>
@@ -145,7 +145,7 @@ exports[`Support.vue > snapshots > renders expanded state for grade >= 6 1`] = `
       <transition-stub name="p-toggleable-content" appear="false" persisted="false" css="true">
         <div class="p-accordioncontent" id="pv_id_0_accordioncontent_2" role="region" aria-labelledby="pv_id_0_accordionheader_2" data-pc-name="accordioncontent" data-p-active="true" pc8="" data-pc-section="root">
           <div class="p-accordioncontent-content" data-pc-section="content">
-            <p class="mt-0">For guidance on next steps, <a href="/docs/roar-next-steps.pdf" class="text-gray-700 hover:text-red-700" target="_blank">click here</a>. </p>
+            <p class="mt-0">For guidance on next steps, <a href="/docs/roar-next-steps.pdf" class="text-gray-700 hover:text-red-700" target="_blank"></a>. </p>
           </div>
         </div>
       </transition-stub>
@@ -166,9 +166,9 @@ exports[`Support.vue > snapshots > renders with Kindergarten grade 1`] = `
             <div class="flex p-3 mb-4 border border-gray-100 border-1 flex-column align-items-center"><img src="/assets/img/distribution-chart-elementary-v1-en.webp" width="650"></div>
             <p class="mt-0"></p>
             <ul>
-              <li>A <b></b>: A <b></b> indicates performance relative to a mean of 100.</li>
-              <li>A <b></b>: A <b></b> shows where a student ranks compared to peers.</li>
-              <li>A <b></b>: A <b></b> is the number of items answered correctly.</li>
+              <li><b>: </b> indicates performance relative to a mean of 100.</li>
+              <li><b>: </b> shows where a student ranks compared to peers.</li>
+              <li><b>: </b> is the number of items answered correctly.</li>
             </ul>
             <!--v-if-->
           </div>
@@ -181,7 +181,7 @@ exports[`Support.vue > snapshots > renders with Kindergarten grade 1`] = `
       <transition-stub name="p-toggleable-content" appear="false" persisted="false" css="true">
         <div class="p-accordioncontent" id="pv_id_0_accordioncontent_2" role="region" aria-labelledby="pv_id_0_accordionheader_2" data-pc-name="accordioncontent" data-p-active="true" pc8="" data-pc-section="root">
           <div class="p-accordioncontent-content" data-pc-section="content">
-            <p class="mt-0">For guidance on next steps, <a href="/docs/roar-next-steps.pdf" class="text-gray-700 hover:text-red-700" target="_blank">click here</a>. </p>
+            <p class="mt-0">For guidance on next steps, <a href="/docs/roar-next-steps.pdf" class="text-gray-700 hover:text-red-700" target="_blank"></a>. </p>
           </div>
         </div>
       </transition-stub>
