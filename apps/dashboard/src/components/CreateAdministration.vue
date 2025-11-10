@@ -584,9 +584,9 @@ watch(
       _forEach(ORG_TYPES, (orgType) => {
         if (!_isEmpty(adminInfo[orgType])) {
           state[orgType] = adminInfo[orgType].map((orgId) => ({ id: orgId }));
-          // NOTE: Some administrations seem to lack the above orgs fields in their existingAdministrationData, so we can handle this case by utilizing the minimalOrgs object
-          // NOTE: It may be possible to always use the minimalOrgs object and remove the above orgs fields check
-          // NOTE: We may want to keep both checks for backward compatibility
+          // TODO: Some administrations seem to lack the above orgs fields in their existingAdministrationData, so we can handle this case by utilizing the minimalOrgs object
+          // TODO: It may be possible to always use the minimalOrgs object and remove the above orgs fields check
+          // TODO: We may want to keep both checks for backward compatibility
         } else if (!_isEmpty(adminInfo.minimalOrgs[orgType])) {
           state[orgType] = adminInfo.minimalOrgs[orgType].map((orgId) => ({ id: orgId }));
         } else {
