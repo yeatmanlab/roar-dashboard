@@ -110,11 +110,22 @@ function handleToolTip(_taskId, _toolTip, _colData) {
 
       const isResponseModality =
         _colData.scores?.[_taskId]?.isNewScoring && _colData.scores?.[_taskId]?.recruitment === 'responseModality';
-      Object.entries(roamFluencySubskillHeaders).forEach(([property, propertyHeader]) => {
-        if (_colData.scores?.[_taskId]?.[property] != undefined && !(isResponseModality && property === 'rawScore')) {
-          _toolTip += `${propertyHeader}: ${_colData.scores?.[_taskId]?.[property]}\n`;
+      let fcStats = 'Multiple Choice: \n';
+      let frStats = 'Free Response: \n';
+      for (const [property, propertyHeader] of Object.entries(roamFluencySubskillHeaders)) {
+        if (_colData.scores?.[_taskId]?.[property] != undefined) {
+          if (isResponseModality && property !== 'rawScore') {
+            fcStats += `${propertyHeader}: ${_colData.scores?.[_taskId]?.fc?.[property] ?? 0}\n`;
+            frStats += `${propertyHeader}: ${_colData.scores?.[_taskId]?.fr?.[property] ?? 0}\n`;
+          } else if (!isResponseModality) {
+            _toolTip += `${propertyHeader}: ${_colData.scores?.[_taskId]?.[property]}\n`;
+          }
         }
-      });
+      }
+
+      if (isResponseModality) {
+        _toolTip = fcStats + '\n' + frStats;
+      }
     } else if (
       tasksToDisplayPercentCorrect.includes(_taskId) &&
       !(_taskId === 'swr-es' && _colData.scores?.[_taskId]?.scoringVersion)

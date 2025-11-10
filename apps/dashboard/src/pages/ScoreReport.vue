@@ -1229,6 +1229,7 @@ const computeAssignmentAndRunData = computed(() => {
 
     // We only want to display the ROAM Tasks if the recruitment param is responseModality
     // Otherwise, remove them from the runsByTaskId object to prevent including them in TaskReports.
+    // Response modality admins who switch mid-way will no longer see the subscore tables
     const assessments = administrationData.value.assessments;
     for (const assessment of assessments) {
       if (roamFluencyTasks.includes(assessment.taskId)) {
@@ -1334,9 +1335,7 @@ const createExportData = ({ rows, includeProgress = false }) => {
         tableRow[`${taskName} - Num Incorrect`] = score.numIncorrect;
         tableRow[`${taskName} - Num Correct`] = score.numCorrect;
       } else if (tasksToDisplayTotalCorrect.includes(taskId)) {
-        if (score.isNewScoring && score.recruitment !== 'responseModality') {
-          tableRow[`${taskName} - Raw Score`] = score.rawScore;
-        }
+        tableRow[`${taskName} - Raw Score`] = score.rawScore;
         tableRow[`${taskName} - Num Correct`] = score.numCorrect;
         tableRow[`${taskName} - Num Incorrect`] = score.numIncorrect;
         tableRow[`${taskName} - Num Attempted`] = score.numAttempted;
@@ -1785,11 +1784,6 @@ const scoreReportColumns = computed(() => {
     if (excludeFromScoringTasks.includes(taskId)) continue; // Skip adding this column
     let colField;
     const isOptional = `scores.${taskId}.optional`;
-    let isFluencyResponseModality = false;
-    if (roamFluencyTasks.includes(taskId)) {
-      const fluencyTasks = administrationData.value?.assessments?.find((assessment) => assessment.taskId === taskId);
-      isFluencyResponseModality = fluencyTasks?.params?.recruitment === 'responseModality';
-    }
 
     // Color needs to include a field to allow sorting.
     if (viewMode.value === 'percentile' || viewMode.value === 'color') {
@@ -1850,7 +1844,7 @@ const scoreReportColumns = computed(() => {
       filter: true,
       sortField: colField ? colField : `scores.${taskId}.percentile`,
       tag: viewMode.value !== 'color',
-      emptyTag: viewMode.value === 'color' || isFluencyResponseModality || isOptional,
+      emptyTag: viewMode.value === 'color' || isOptional,
       tagColor: `scores.${taskId}.tagColor`,
       style: (() => {
         return `text-align: center; ${getTaskStyle(taskId, backgroundColor, orderedTasks)}`;
