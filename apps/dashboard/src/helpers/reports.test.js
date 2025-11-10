@@ -815,10 +815,10 @@ describe('reports', () => {
           /distribution-chart-secondary-v1-en\.webp$/,
         );
       });
-    });
 
-    it('should return no-cutoffs chart when taskScoringVersions is empty', () => {
-      expect(getDistributionChartPath(6, {}, 'en')).toMatch(/distribution-chart-secondary-v1-en\.webp$/);
+      it('should return secondary chart when taskScoringVersions is empty', () => {
+        expect(getDistributionChartPath(6, {}, 'en')).toMatch(/distribution-chart-secondary-v1-en\.webp$/);
+      });
     });
 
     it('should return no-cutoffs chart if grade is undefined', () => {
