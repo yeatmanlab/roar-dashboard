@@ -82,7 +82,7 @@ export function useScoreListData(params) {
       if (appendPercentageTo.includes(task.taskId)) {
         return task[task.scoreToDisplay].value + '%';
       }
-      const percentileSuffix = ScoreReportService.getPercentileSuffixTemplate(task.percentileScore.value);
+      const percentileSuffix = ScoreReportService.getPercentileSuffixTemplate(task.percentileScore.value, { t });
       return task.scoreToDisplay === SCORE_TYPES.PERCENTILE_SCORE ? percentileSuffix : undefined;
     };
   });
