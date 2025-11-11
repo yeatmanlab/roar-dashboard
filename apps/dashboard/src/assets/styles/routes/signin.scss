@@ -4,6 +4,60 @@ body.page-signin {
   min-height: 100vh;
   background: var(--primary-color);
 }
+.divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  color: #94a3b8;
+  font-weight: 500;
+  margin: 1rem 0;
+  font-size: 0.95rem;
+}
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid #d1d5db;
+}
+.divider::before {
+  margin-right: 0.75rem;
+}
+.divider::after {
+  margin-left: 0.75rem;
+}
+.loading-blur {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  backdrop-filter: blur(2px);
+  z-index: 50;
+}
+#signin-container-blur {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+}
+.signin-column {
+  width: 100%;
+  max-width: 480px;
+  margin-inline: auto;
+  padding: 1rem;
+}
+.signin-card {
+  width: 100%;
+}
+.signin-logo {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 0.25rem;
+}
+.signin-footer {
+  width: 100%;
+  max-width: 480px;
+  margin: 0.5rem auto 0;
+  padding: 0 0.5rem;
+}
 
 #signin-container {
   display: flex;

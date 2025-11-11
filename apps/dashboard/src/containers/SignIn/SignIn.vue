@@ -1,6 +1,6 @@
 <template>
   <section class="flex w-full m-0 flex-column align-content-center justify-content-center">
-    <!-- EMAIL / CHIP (kept) -->
+    <!-- EMAIL / CHIP -->
     <div class="mt-1 field">
       <div>
         <IdentifierInput
@@ -14,7 +14,7 @@
       </div>
     </div>
 
-    <!-- ERROR: PvMessage -> Alert -->
+    <!-- ERROR -->
     <SignInError
       :show="invalid"
       :title="$t('authSignIn.error')"
@@ -34,7 +34,7 @@
       @submit="$emit('submit')"
     />
 
-    <!-- CONTINUE button (kept classes) -->
+    <!-- CONTINUE -->
     <PvButton
       v-if="!multipleProviders && !emailLinkSent"
       type="button"
@@ -63,12 +63,14 @@
       <span class="text-sm">{{ $t('authSignIn.or') }}</span>
     </div>
 
-    <!-- Providers (now split; same visual using ProviderButton) -->
+    <!-- Generic providers (Google) -->
     <GenericProviders
       v-if="!hideProviders && showGenericProviders && !emailLinkSent && !showPasswordField"
       :available-providers="availableProviders"
       @auth-google="$emit('auth-google')"
     />
+
+    <!-- Scoped providers (Clever, ClassLink, NYCPS) -->
     <ScopedProviders
       v-if="!hideProviders && showScopedProviders"
       :available-providers="availableProviders"
@@ -120,27 +122,3 @@ defineEmits([
   'clear-email',
 ]);
 </script>
-
-<style scoped>
-.divider {
-  display: flex;
-  align-items: center;
-  text-align: center;
-  color: #94a3b8;
-  font-weight: 500;
-  margin: 1rem 0;
-  font-size: 0.95rem;
-}
-.divider::before,
-.divider::after {
-  content: '';
-  flex: 1;
-  border-bottom: 1px solid #d1d5db;
-}
-.divider::before {
-  margin-right: 0.75rem;
-}
-.divider::after {
-  margin-left: 0.75rem;
-}
-</style>

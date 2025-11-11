@@ -3,7 +3,7 @@
     <AppSpinner />
   </div>
 
-  <div id="signin-container" class="bg-gray-50">
+  <div id="signin-container-blur" class="bg-gray-50">
     <div class="signin-column">
       <SignInCard class="signin-card">
         <section id="signin" class="m-0 p-0">
@@ -98,8 +98,12 @@ const authStore = useAuthStore();
 const router = useRouter();
 const route = useRoute();
 const { spinner, ssoProvider, roarfirekit } = storeToRefs(authStore);
+
 const incorrect = ref(false);
+
+/* 👇 Show buttons on the main screen */
 const hideProviders = ref(false);
+
 const emailLinkSent = ref(false);
 const email = ref('');
 const modalPassword = ref('');
@@ -120,7 +124,10 @@ const isUsername = computed(() => {
   return val !== '' && !val.includes('@');
 });
 
+/* Keep Google hidden on first screen (optional) */
 const showGenericProviders = computed(() => false);
+
+/* 👇 Show district (Clever/ClassLink/NYCPS) on the first screen */
 const showScopedProviders = computed(() => !showPasswordField.value && !emailLinkSent.value);
 
 /**
@@ -202,13 +209,8 @@ function authWithGoogle() {
       .then(async () => {
         await getUserClaims();
       })
-      .catch((e) => {
-        const errorCode = e.code;
-        if (errorCode === 'auth/email-already-in-use') {
-          spinner.value = false;
-        } else {
-          spinner.value = false;
-        }
+      .catch(() => {
+        spinner.value = false;
       });
 
     spinner.value = true;
@@ -276,15 +278,17 @@ async function getProviders() {
 async function checkAvailableProviders(triggeredEmail) {
   // set email first
   onEmailUpdate(triggeredEmail);
+
   // username path
   if (isUsername.value) {
     showPasswordField.value = true;
     availableProviders.value = ['password'];
     hideProviders.value = true;
+    hasCheckedProviders.value = true;
     return;
   }
 
-  await getProviders(email.value);
+  await getProviders();
 
   // Check for multiple SSO providers
   const ssoProviders = availableProviders.value.filter((p) => ['google', 'clever', 'classlink', 'nycps'].includes(p));
@@ -319,7 +323,10 @@ function resetSignInUI() {
   email.value = '';
   modalPassword.value = '';
   incorrect.value = false;
+
+  // Keep your choice: show district providers on main screen
   hideProviders.value = false;
+
   showPasswordField.value = false;
   availableProviders.value = [];
   hasCheckedProviders.value = false;
@@ -339,3 +346,39 @@ onBeforeUnmount(() => {
   document.body.classList.remove('page-signin');
 });
 </script>
+
+<style scoped>
+.loading-blur {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  backdrop-filter: blur(2px);
+  z-index: 50;
+}
+#signin-container-blur {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+}
+.signin-column {
+  width: 100%;
+  max-width: 480px;
+  margin-inline: auto;
+  padding: 1rem;
+}
+.signin-card {
+  width: 100%;
+}
+.signin-logo {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 0.25rem;
+}
+.signin-footer {
+  width: 100%;
+  max-width: 480px;
+  margin: 0.5rem auto 0;
+  padding: 0 0.5rem;
+}
+</style>
