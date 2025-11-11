@@ -1,12 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { createI18n } from 'vue-i18n';
+import { SCORE_REPORT_DISTRIBUTION_CHART_PATHS } from '@/constants/filePaths';
 import Support from './Support.vue';
-
-const DISTRIBUTION_CHART_PATHS = {
-  elementaryV1: 'en-elementary-distribution-chart-scoring-v1.webp',
-  secondaryV1: 'en-secondary-distribution-chart-scoring-v1.webp',
-};
 
 describe('Support.vue', () => {
   let i18n;
@@ -24,9 +20,9 @@ describe('Support.vue', () => {
             standardScore: 'standard score',
             percentileScore: 'percentile',
             rawScore: 'raw score',
-            standardScoreDescription: 'A {taskTitle} indicates performance relative to a mean of 100.',
-            percentileScoreDescription: 'A {taskTitle} shows where a student ranks compared to peers.',
-            rawScoreDescription: 'A {taskTitle} is the number of items answered correctly.',
+            standardScoreDescription: '{taskTitle} indicates performance relative to a mean of 100.',
+            percentileScoreDescription: '{taskTitle} shows where a student ranks compared to peers.',
+            rawScoreDescription: '{taskTitle} is the number of items answered correctly.',
             roarDescription: '{roar} assessments provide insights into reading abilities.',
             extraSupportDescription: 'Students in the {supportCategory} range may benefit from additional instruction.',
             developingDescription: 'Students in the {supportCategory} range are building foundational skills.',
@@ -47,7 +43,7 @@ describe('Support.vue', () => {
         props: {
           expanded: false,
           studentGrade: 3,
-          distributionChartPath: DISTRIBUTION_CHART_PATHS.elementaryV1,
+          distributionChartPath: SCORE_REPORT_DISTRIBUTION_CHART_PATHS.elementaryV1En,
         },
         global: {
           plugins: [i18n],
@@ -62,7 +58,7 @@ describe('Support.vue', () => {
         props: {
           expanded: true,
           studentGrade: 3,
-          distributionChartPath: DISTRIBUTION_CHART_PATHS.elementaryV1,
+          distributionChartPath: SCORE_REPORT_DISTRIBUTION_CHART_PATHS.elementaryV1En,
         },
         global: {
           plugins: [i18n],
@@ -77,7 +73,7 @@ describe('Support.vue', () => {
         props: {
           expanded: false,
           studentGrade: 7,
-          distributionChartPath: DISTRIBUTION_CHART_PATHS.secondaryV1,
+          distributionChartPath: SCORE_REPORT_DISTRIBUTION_CHART_PATHS.secondaryV1En,
         },
         global: {
           plugins: [i18n],
@@ -92,7 +88,7 @@ describe('Support.vue', () => {
         props: {
           expanded: true,
           studentGrade: 7,
-          distributionChartPath: DISTRIBUTION_CHART_PATHS.secondaryV1,
+          distributionChartPath: SCORE_REPORT_DISTRIBUTION_CHART_PATHS.secondaryV1En,
         },
         global: {
           plugins: [i18n],
@@ -107,7 +103,7 @@ describe('Support.vue', () => {
         props: {
           expanded: true,
           studentGrade: 0,
-          distributionChartPath: DISTRIBUTION_CHART_PATHS.elementaryV1,
+          distributionChartPath: SCORE_REPORT_DISTRIBUTION_CHART_PATHS.elementaryV1En,
         },
         global: {
           plugins: [i18n],
@@ -124,7 +120,7 @@ describe('Support.vue', () => {
         props: {
           expanded: false,
           studentGrade: 3,
-          distributionChartPath: DISTRIBUTION_CHART_PATHS.elementaryV1,
+          distributionChartPath: SCORE_REPORT_DISTRIBUTION_CHART_PATHS.elementaryV1En,
         },
         global: {
           plugins: [i18n],
@@ -140,7 +136,7 @@ describe('Support.vue', () => {
         props: {
           expanded: true,
           studentGrade: 5,
-          distributionChartPath: DISTRIBUTION_CHART_PATHS.elementaryV1,
+          distributionChartPath: SCORE_REPORT_DISTRIBUTION_CHART_PATHS.elementaryV1En,
           isDistributionChartEnabled: true,
         },
         global: {
@@ -148,7 +144,7 @@ describe('Support.vue', () => {
         },
       });
 
-      const img = wrapper.find(`img[src*="${DISTRIBUTION_CHART_PATHS.elementaryV1}"]`);
+      const img = wrapper.find(`img[src*="${SCORE_REPORT_DISTRIBUTION_CHART_PATHS.elementaryV1En}"]`);
       expect(img.exists()).toBe(true);
     });
 
@@ -157,7 +153,7 @@ describe('Support.vue', () => {
         props: {
           expanded: true,
           studentGrade: 5,
-          distributionChartPath: DISTRIBUTION_CHART_PATHS.elementaryV1,
+          distributionChartPath: SCORE_REPORT_DISTRIBUTION_CHART_PATHS.elementaryV1En,
           isDistributionChartEnabled: false,
         },
         global: {
@@ -165,7 +161,7 @@ describe('Support.vue', () => {
         },
       });
 
-      const img = wrapper.find(`img[src*="${DISTRIBUTION_CHART_PATHS.elementaryV1}"]`);
+      const img = wrapper.find(`img[src*="${SCORE_REPORT_DISTRIBUTION_CHART_PATHS.elementaryV1En}"]`);
       expect(img.exists()).toBe(false);
     });
 
@@ -174,14 +170,14 @@ describe('Support.vue', () => {
         props: {
           expanded: true,
           studentGrade: 6,
-          distributionChartPath: DISTRIBUTION_CHART_PATHS.secondaryV1,
+          distributionChartPath: SCORE_REPORT_DISTRIBUTION_CHART_PATHS.secondaryV1En,
         },
         global: {
           plugins: [i18n],
         },
       });
 
-      const img = wrapper.find(`img[src*="${DISTRIBUTION_CHART_PATHS.secondaryV1}"]`);
+      const img = wrapper.find(`img[src*="${SCORE_REPORT_DISTRIBUTION_CHART_PATHS.secondaryV1En}"]`);
       expect(img.exists()).toBe(true);
     });
 
@@ -190,7 +186,7 @@ describe('Support.vue', () => {
         props: {
           expanded: true,
           studentGrade: 6,
-          distributionChartPath: DISTRIBUTION_CHART_PATHS.secondaryV1,
+          distributionChartPath: SCORE_REPORT_DISTRIBUTION_CHART_PATHS.secondaryV1En,
           isDistributionChartEnabled: false,
         },
         global: {
@@ -198,7 +194,7 @@ describe('Support.vue', () => {
         },
       });
 
-      const img = wrapper.find(`img[src*="${DISTRIBUTION_CHART_PATHS.secondaryV1}"]`);
+      const img = wrapper.find(`img[src*="${SCORE_REPORT_DISTRIBUTION_CHART_PATHS.secondaryV1En}"]`);
       expect(img.exists()).toBe(false);
     });
 
@@ -207,7 +203,7 @@ describe('Support.vue', () => {
         props: {
           expanded: true,
           studentGrade: 5,
-          distributionChartPath: DISTRIBUTION_CHART_PATHS.elementaryV1,
+          distributionChartPath: SCORE_REPORT_DISTRIBUTION_CHART_PATHS.elementaryV1En,
         },
         global: {
           plugins: [i18n],
@@ -224,7 +220,7 @@ describe('Support.vue', () => {
         props: {
           expanded: true,
           studentGrade: 7,
-          distributionChartPath: DISTRIBUTION_CHART_PATHS.secondaryV1,
+          distributionChartPath: SCORE_REPORT_DISTRIBUTION_CHART_PATHS.secondaryV1En,
         },
         global: {
           plugins: [i18n],
@@ -241,7 +237,7 @@ describe('Support.vue', () => {
         props: {
           expanded: true,
           studentGrade: 3,
-          distributionChartPath: DISTRIBUTION_CHART_PATHS.elementaryV1,
+          distributionChartPath: SCORE_REPORT_DISTRIBUTION_CHART_PATHS.elementaryV1En,
           isDistributionChartEnabled: true,
         },
         global: {
@@ -260,7 +256,7 @@ describe('Support.vue', () => {
         props: {
           expanded: false,
           studentGrade: 3,
-          distributionChartPath: DISTRIBUTION_CHART_PATHS.elementaryV1,
+          distributionChartPath: SCORE_REPORT_DISTRIBUTION_CHART_PATHS.elementaryV1En,
           isDistributionChartEnabled: true,
         },
         global: {
@@ -279,7 +275,7 @@ describe('Support.vue', () => {
         props: {
           expanded: false,
           studentGrade: 3,
-          distributionChartPath: DISTRIBUTION_CHART_PATHS.elementaryV1,
+          distributionChartPath: SCORE_REPORT_DISTRIBUTION_CHART_PATHS.elementaryV1En,
         },
         global: {
           plugins: [i18n],
@@ -298,7 +294,7 @@ describe('Support.vue', () => {
         props: {
           expanded: true,
           studentGrade: 3,
-          distributionChartPath: DISTRIBUTION_CHART_PATHS.elementaryV1,
+          distributionChartPath: SCORE_REPORT_DISTRIBUTION_CHART_PATHS.elementaryV1En,
           isDistributionChartEnabled: false,
         },
         global: {
@@ -307,13 +303,13 @@ describe('Support.vue', () => {
       });
 
       expect(wrapper.props('isDistributionChartEnabled')).toBe(false);
-      let img = wrapper.find(`img[src*="${DISTRIBUTION_CHART_PATHS.elementaryV1}"]`);
+      let img = wrapper.find(`img[src*="${SCORE_REPORT_DISTRIBUTION_CHART_PATHS.elementaryV1En}"]`);
       expect(img.exists()).toBe(false);
 
       await wrapper.setProps({ isDistributionChartEnabled: true });
 
       expect(wrapper.props('isDistributionChartEnabled')).toBe(true);
-      img = wrapper.find(`img[src*="${DISTRIBUTION_CHART_PATHS.elementaryV1}"]`);
+      img = wrapper.find(`img[src*="${SCORE_REPORT_DISTRIBUTION_CHART_PATHS.elementaryV1En}"]`);
       expect(img.exists()).toBe(true);
     });
 
