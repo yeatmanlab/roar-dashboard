@@ -1345,9 +1345,20 @@ const createExportData = ({ rows, includeProgress = false }) => {
         const setSubscore = (field, score) => {
           // Response modality prod data only uses new field names (ver 1.2.23+)
           let result = '';
-          if (score.fr != null) result += `Free Response: ${score.fr[field] ?? 0}`;
-          if (score.fc != null) result += `${result ? '\n' : ''}Multiple Choice: ${score.fc[field] ?? 0}`;
+          let total = 0;
+          if (score.fr) {
+            result += `Free Response: ${score.fr[field] ?? 0}`;
+            total += score.fr[field] ?? 0;
+          }
 
+          if (score.fc) {
+            result += `${result ? '\n' : ''}Multiple Choice: ${score.fc[field] ?? 0}`;
+            total += score.fc[field] ?? 0;
+          }
+
+          if (score.fr || score.fc) result += `\nTotal: ${total}`;
+
+          // If result is an empty string, handle a non-response modality score
           return result || score[field];
         };
 
