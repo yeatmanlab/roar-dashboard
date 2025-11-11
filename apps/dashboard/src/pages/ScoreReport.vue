@@ -106,12 +106,12 @@
                 <div v-if="!isEmptyDistrictSupportCategories && props.orgType === 'district'">
                   <p
                     v-if="assignedNormedTaskIds && assignedTaskIds.length > assignedNormedTaskIds.length"
-                    class="text-center text-sm font-bold"
+                    class="text-center text-sm font-bold px-4"
                   >
                     In this district-level report, visualizations are available for foundational ROAR assessments (Word,
                     Sentence, and Phoneme) to give you clear, reliable insights on these foundational skills.
                   </p>
-                  <p class="text-center align-items-center text-sm font-bold">
+                  <p class="text-center align-items-center text-sm font-bold px-4">
                     View school-level or classroom-level reports to see student-level data and information about other
                     assessments.
                   </p>
@@ -122,14 +122,14 @@
               v-if="!isLoadingAssignments && !isLoadingDistrictSupportCategories && isEmptyDistrictSupportCategories"
               class="justify-content-center surface-100 p-2"
             >
-              <p class="text-center text-sm font-bold">
+              <p class="text-center text-sm font-bold px-4">
                 {{
                   assignedNormedTaskIds.length === 0
                     ? 'In this district-level report, visualizations are only available for foundational ROAR assessments (Word, Sentence, and Phoneme). None of these are currently assigned within your district.'
                     : 'Visualizations will appear once students complete Word, Sentence, and/or Phoneme assessments.'
                 }}
               </p>
-              <p class="text-center align-items-center text-sm font-bold">
+              <p class="text-center align-items-center text-sm font-bold px-4">
                 View school-level or classroom-level reports to see student-level data and information about other
                 assessments.
               </p>
