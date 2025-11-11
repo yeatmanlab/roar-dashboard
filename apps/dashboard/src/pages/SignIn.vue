@@ -1,5 +1,5 @@
 <template>
-  <div v-if="spinner" class="loading-blur">
+  <div v-if="storeSpinner" class="loading-blur">
     <AppSpinner />
   </div>
 
@@ -50,7 +50,7 @@
         </section>
       </SignInCard>
 
-      <!-- Footer (outside the card, but aligned to its width) -->
+      <!-- Footer (Language, Privacy, Terms) -->
       <footer class="signin-footer">
         <a href="#trouble" class="hidden">{{ $t('pageSignIn.havingTrouble') }}</a>
         <div class="w-full flex">
@@ -78,31 +78,21 @@
 </template>
 
 <script setup>
-import { onMounted, onBeforeUnmount, computed, toRaw } from 'vue';
-import { storeToRefs } from 'pinia';
+import { onMounted, onBeforeUnmount } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { setUser } from '@sentry/vue';
-
 import { useAuthStore } from '@/store/auth';
-import { isMobileBrowser } from '@/helpers';
-import { redirectSignInPath } from '@/helpers/redirectSignInPath';
-import { fetchDocById } from '@/helpers/query/utils';
 import { TERMS_OF_SERVICE_DOCUMENT_PATH } from '@/constants/auth';
-import { APP_ROUTES } from '@/constants/routes';
-
 import ROARLogoShort from '@/assets/RoarLogo-Short.vue';
 import LanguageSelector from '@/components/LanguageSelector.vue';
 import AppSpinner from '@/components/AppSpinner.vue';
-
 import SignInForm from '@/containers/SignIn/SignIn.vue';
 import { SignInCard, SignInHeader } from '@/containers/SignIn/components';
-
 import { useSignInForm } from '@/containers/SignIn/composables/useSignInForm';
 import { useProviders } from '@/containers/SignIn/composables/useProviders';
+import { useAuth } from '@/containers/SignIn/composables/useAuth';
 
 /* ---------------- Store / Router ---------------- */
 const authStore = useAuthStore();
-const { spinner, ssoProvider, roarfirekit } = storeToRefs(authStore);
 const router = useRouter();
 const route = useRoute();
 
@@ -115,7 +105,6 @@ const {
   multipleProviders,
   emailLinkSent,
   hideProviders,
-  // local form spinner exists in composable; we keep using store spinner for overlay
   onEmailUpdate,
   onPasswordUpdate,
   resetSignInUI,
@@ -123,116 +112,30 @@ const {
   hasCheckedProviders,
 } = useSignInForm();
 
-/* ---------------- Visibility decisions ---------------- */
-/* Keep Google hidden on the first screen (optional) */
-const showGenericProviders = computed(() => false);
-/* Show district (Clever/ClassLink/NYCPS) on the first screen */
-const showScopedProviders = computed(() => !showPasswordField.value && !emailLinkSent.value);
-
-/* Email treated as username if it has no '@' */
-const isUsername = computed(() => {
-  const v = email.value ?? '';
-  return v !== '' && !String(v).includes('@');
+const {
+  roarfirekit,
+  spinner: storeSpinner,
+  authWithGoogle,
+  authWithClever,
+  authWithClassLink,
+  authWithNYCPS,
+  sendMagicLink,
+  handleForgotPassword: handleForgotPasswordWrapper,
+  handleBackToPassword,
+  isUsername,
+  showGenericProviders,
+  showScopedProviders,
+} = useAuth({
+  authStore,
+  router,
+  route,
+  email,
+  password: modalPassword,
+  invalid: incorrect,
+  emailLinkSent,
+  showPasswordField,
 });
 
-/* ---------------- Auth: redirect after login ---------------- */
-authStore.$subscribe(() => {
-  if (authStore.uid) {
-    if (ssoProvider.value) router.push({ path: APP_ROUTES.SSO });
-    else router.push({ path: redirectSignInPath(route) });
-  }
-});
-
-/* ---------------- User claims ---------------- */
-async function getUserClaims() {
-  if (authStore.uid) {
-    const userClaims = await fetchDocById('userClaims', authStore.uid);
-    authStore.userClaims = userClaims;
-  }
-  if (authStore.roarUid) {
-    const userData = await fetchDocById('users', authStore.roarUid);
-    authStore.userData = userData;
-    setUser({ id: authStore.roarUid, userType: userData?.userType });
-  }
-}
-
-/* ---------------- Magic link + password reset ---------------- */
-function sendMagicLink(userEmail) {
-  authStore.initiateLoginWithEmailLink({ email: userEmail }).then(() => {
-    emailLinkSent.value = true;
-  });
-}
-function handleForgotPasswordWrapper() {
-  roarfirekit.value?.sendPasswordResetEmail(email.value);
-}
-function handleBackToPassword() {
-  emailLinkSent.value = false;
-  showPasswordField.value = true;
-}
-
-/* ---------------- SSO flows ---------------- */
-function authWithClever() {
-  if (process.env.NODE_ENV === 'development' && !window.Cypress) {
-    authStore.signInWithCleverPopup().then(getUserClaims);
-  } else {
-    authStore.signInWithCleverRedirect();
-  }
-  spinner.value = true;
-}
-function authWithClassLink() {
-  authStore.signInWithClassLinkRedirect();
-  spinner.value = true;
-}
-function authWithNYCPS() {
-  if (process.env.NODE_ENV === 'development' && !window.Cypress) {
-    authStore.signInWithNYCPSPopup().then(getUserClaims);
-  } else {
-    authStore.signInWithNYCPSRedirect();
-  }
-  spinner.value = true;
-}
-function authWithGoogle() {
-  if (isMobileBrowser()) {
-    authStore.signInWithGoogleRedirect();
-    spinner.value = true;
-    return;
-  }
-  spinner.value = true;
-  authStore
-    .signInWithGooglePopup()
-    .then(getUserClaims)
-    .catch(() => {
-      spinner.value = false;
-    });
-}
-
-/* ---------------- Email/password ---------------- */
-function authWithEmailWrapper() {
-  incorrect.value = false;
-
-  let creds = toRaw({
-    email: email.value,
-    password: modalPassword.value,
-  });
-
-  // username path => convert to internal email
-  if (!String(creds.email).includes('@')) {
-    creds.email = `${creds.email}@roar-auth.com`;
-  }
-
-  authStore
-    .logInWithEmailAndPassword(creds)
-    .then(async () => {
-      await getUserClaims();
-      spinner.value = true;
-    })
-    .catch(() => {
-      incorrect.value = true;
-      // For unknown codes we still surface invalid; optionally log e.code
-    });
-}
-
-/* ---------------- Provider discovery (composable) ---------------- */
 const { checkAvailableProviders } = useProviders({
   email,
   isUsername,
@@ -246,10 +149,9 @@ const { checkAvailableProviders } = useProviders({
   authWithClever,
   authWithClassLink,
   authWithNYCPS,
-  invalid: incorrect, // clears stale error when chooser appears
+  invalid: incorrect, // clear stale error when chooser appears
 });
 
-/* ---------------- Lifecycle ---------------- */
 onMounted(() => {
   document.body.classList.add('page-signin');
 });

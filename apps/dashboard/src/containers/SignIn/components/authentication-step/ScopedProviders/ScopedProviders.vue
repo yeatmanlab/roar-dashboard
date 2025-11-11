@@ -44,8 +44,6 @@
 <script setup>
 import PvButton from 'primevue/button';
 import { computed } from 'vue';
-
-// ✅ Vite-resolved assets; place these in src/assets/
 import CLEVER_LOGO from '@/assets/provider-clever-logo.svg';
 import CLASSLINK_LOGO from '@/assets/provider-classlink-logo.png';
 import NYCPS_LOGO from '@/assets/provider-nycps-logo.jpg';
@@ -55,7 +53,6 @@ const props = defineProps({
   availableProviders: { type: Array, default: () => [] },
 });
 
-// Default page: show all scoped providers (matches your old “generic” behavior)
 const showAll = computed(() => (props.availableProviders?.length ?? 0) === 0);
 defineEmits(['auth-clever', 'auth-classlink', 'auth-nycps']);
 </script>

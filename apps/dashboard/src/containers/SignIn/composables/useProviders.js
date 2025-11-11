@@ -1,32 +1,5 @@
-// Handles provider discovery + normalization + branching into SSO/password
-// - No global state created here. We *receive* refs from the caller (page)
-// - Keeps your current internal provider names: 'google', 'clever', 'classlink', 'nycps', 'password'
 import { toValue } from 'vue';
 
-/**
- * @param {{
- *   // refs from the page (SINGLE SOURCE OF TRUTH)
- *   email: import('vue').Ref<string>,
- *   isUsername: import('vue').ComputedRef<boolean>,
- *   availableProviders: import('vue').Ref<string[]>,
- *   hasCheckedProviders: import('vue').Ref<boolean>,
- *   multipleProviders: import('vue').Ref<boolean>,
- *   hideProviders: import('vue').Ref<boolean>,
- *   showPasswordField: import('vue').Ref<boolean>,
- *
- *   // deps
- *   roarfirekit: import('vue').Ref<any>,          // authStore.roarfirekit
- *
- *   // actions to run for single-provider auto-continue
- *   authWithGoogle?: () => void,
- *   authWithClever?: () => void,
- *   authWithClassLink?: () => void,
- *   authWithNYCPS?: () => void,
- *
- *   // optional: clear error when entering chooser
- *   invalid?: import('vue').Ref<boolean>,
- * }} options
- */
 export function useProviders(options) {
   const {
     email,
@@ -58,10 +31,10 @@ export function useProviders(options) {
       // password & email link collapse to the password UI flow
       if (lower.includes('password') || lower.includes('email')) out.add('password');
 
-      // google (various aliases)
+      // google
       if (lower.includes('google')) out.add('google');
 
-      // district OIDC providers
+      // OIDC providers
       if (lower.includes('clever')) out.add('clever');
       if (lower.includes('classlink')) out.add('classlink');
       if (lower.includes('nycps')) out.add('nycps');
@@ -69,7 +42,6 @@ export function useProviders(options) {
     return [...out];
   }
 
-  /** Fetch providers for current email and update refs */
   async function getProviders() {
     const kit = toValue(roarfirekit);
     if (!kit) {
@@ -105,10 +77,9 @@ export function useProviders(options) {
       return;
     }
 
-    // fetch & normalize
     const providers = await getProviders();
 
-    // multi SSO chooser?
+    // multi SSO chooser
     const sso = providers.filter((p) => ['google', 'clever', 'classlink', 'nycps'].includes(p));
     multipleProviders.value = sso.length > 1;
 
