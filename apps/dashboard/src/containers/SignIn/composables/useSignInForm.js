@@ -11,7 +11,8 @@ export function useSignInForm() {
   const spinner = ref(false);
   const availableProviders = ref([]); // ['google','clever','classlink','nycps']
   const hasCheckedProviders = ref(false);
-
+  const forgotPasswordOpen = ref(false);
+  const forgotEmail = ref('');
   const isUsername = computed(() => email.value !== '' && !email.value.includes('@'));
   const canContinue = computed(() => !multipleProviders.value && !emailLinkSent.value);
 
@@ -20,6 +21,14 @@ export function useSignInForm() {
   }
   function onPasswordUpdate(val) {
     password.value = String(val || '');
+  }
+  function openForgotPasswordModal() {
+    // pre-fill with whatever is in the email field
+    forgotEmail.value = email.value || '';
+    forgotPasswordOpen.value = true;
+  }
+  function closeForgotPasswordModal() {
+    forgotPasswordOpen.value = false;
   }
 
   function resetSignInUI() {
@@ -33,6 +42,8 @@ export function useSignInForm() {
     spinner.value = false;
     availableProviders.value = [];
     hasCheckedProviders.value = false;
+    forgotPasswordOpen.value = false;
+    forgotEmail.value = '';
   }
 
   function continueClick(emit) {
@@ -51,11 +62,15 @@ export function useSignInForm() {
     spinner,
     availableProviders,
     hasCheckedProviders,
+    forgotPasswordOpen,
+    forgotEmail,
     isUsername,
     canContinue,
     onEmailUpdate,
     onPasswordUpdate,
     resetSignInUI,
     continueClick,
+    openForgotPasswordModal,
+    closeForgotPasswordModal,
   };
 }
