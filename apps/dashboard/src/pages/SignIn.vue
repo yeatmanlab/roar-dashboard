@@ -37,7 +37,7 @@
             @update:email="onEmailUpdate"
             @update:password="onPasswordUpdate"
             @check-providers="checkAvailableProviders"
-            @submit="authWithEmailWrapper"
+            @submit="authWithEmailPassword"
             @forgot-password="handleForgotPasswordWrapper"
             @magic-link="sendMagicLink(email)"
             @back-to-password="handleBackToPassword"
@@ -119,6 +119,7 @@ const {
   authWithClever,
   authWithClassLink,
   authWithNYCPS,
+  authWithEmailPassword,
   sendMagicLink,
   handleForgotPassword: handleForgotPasswordWrapper,
   handleBackToPassword,
