@@ -2,6 +2,7 @@ import html2canvas from 'html2canvas';
 import { toValue } from 'vue';
 import { getGrade } from '@bdelab/roar-utils';
 import { LEVANTE_TASK_IDS_NO_SCORES } from '../constants/levanteTasks';
+import { SCORE_REPORT_DISTRIBUTION_CHART_PATHS } from '../constants/filePaths';
 import { i18n } from '@/translations/i18n';
 import { useI18n } from 'vue-i18n';
 
@@ -1118,33 +1119,35 @@ export const getRawScoreRange = (taskId) => {
  */
 export const getDistributionChartPath = (grade, taskScoringVersions, language = 'en') => {
   const tasks = Object.entries(taskScoringVersions);
-
   // Filter to only tasks that have updated norms and exclude unnormed Spanish tasks (version < 1)
   // isDistributionChartEnabled ensures there are in-progress/completed normed tasks
   const applicableTasks = tasks.filter(
     ([taskId, version]) => taskId in updatedNormVersions && !(['swr-es', 'sre-es'].includes(taskId) && version < 1),
   );
 
-  let path = '';
+  const pickPath = (baseKey) => {
+    return SCORE_REPORT_DISTRIBUTION_CHART_PATHS[`${baseKey}${language === 'en' ? 'En' : 'Es'}`];
+  };
 
-  // Images are currently only available for elementary grades
+  // Default to admins with mixed scoring versions or undefined grades
+  let path = pickPath('noCutoffs');
+
+  if (grade == null || grade === '' || Number.isNaN(Number(grade))) return path;
+
   if (parseInt(grade) < 6) {
     const hasNoUpdatedNorms = applicableTasks.every(([taskId, version]) => version < updatedNormVersions[taskId]);
     const hasAllUpdatedNorms = applicableTasks.every(([taskId, version]) => version >= updatedNormVersions[taskId]);
 
     if (hasAllUpdatedNorms) {
-      path = `../assets/${language}-elementary-distribution-chart-scoring-v2.webp`;
+      path = pickPath('elementaryV2');
     } else if (hasNoUpdatedNorms) {
-      path = `../assets/${language}-elementary-distribution-chart-scoring-v1.webp`;
-    } else {
-      // Default to admins with mixed scoring versions
-      path = `../assets/${language}-all-grades-distribution-chart-no-cutoffs.webp`;
+      path = pickPath('elementaryV1');
     }
   } else {
-    path = `../assets/${language}-secondary-distribution-chart-scoring-v1.webp`;
+    path = pickPath('secondaryV1');
   }
 
-  return new URL(path, import.meta.url).href;
+  return path;
 };
 
 export const taskInfoById = {
