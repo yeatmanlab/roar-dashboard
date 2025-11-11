@@ -1,4 +1,3 @@
-// src/containers/SignIn/composables/useSignInForm.js
 import { ref, computed } from 'vue';
 
 export function useSignInForm() {
@@ -12,15 +11,18 @@ export function useSignInForm() {
   const hideProviders = ref(false);
   const spinner = ref(false);
 
-  // derived state
-  const isUsername = computed(() => email.value && !email.value.includes('@'));
+  // provider discovery state (needed by useProviders)
+  const availableProviders = ref([]); // ['google','clever','classlink','nycps','password']
+  const hasCheckedProviders = ref(false);
+
+  // ----- derived -----
+  const isUsername = computed(() => email.value !== '' && !email.value.includes('@'));
   const canContinue = computed(() => !multipleProviders.value && !emailLinkSent.value);
 
   // ----- actions -----
   function onEmailUpdate(val) {
     email.value = String(val || '').trim();
   }
-
   function onPasswordUpdate(val) {
     password.value = String(val || '');
   }
@@ -32,17 +34,21 @@ export function useSignInForm() {
     showPasswordField.value = false;
     multipleProviders.value = false;
     emailLinkSent.value = false;
+
+    // keep district providers visible on first screen (your current behavior)
     hideProviders.value = false;
+
     spinner.value = false;
+
+    // reset discovery
+    availableProviders.value = [];
+    hasCheckedProviders.value = false;
   }
 
-  // used by the Continue button
+  // used by the Continue button (if you ever need it in the container)
   function continueClick(emit) {
-    if (!showPasswordField.value) {
-      emit?.('check-providers', email.value);
-    } else {
-      emit?.('submit');
-    }
+    if (!showPasswordField.value) emit?.('check-providers', email.value);
+    else emit?.('submit');
   }
 
   return {
@@ -55,6 +61,10 @@ export function useSignInForm() {
     emailLinkSent,
     hideProviders,
     spinner,
+
+    // provider discovery state (← required for auto-continue)
+    availableProviders,
+    hasCheckedProviders,
 
     // derived
     isUsername,
