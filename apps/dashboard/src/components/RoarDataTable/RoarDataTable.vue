@@ -390,6 +390,7 @@
                     </template>
                   </PvSelect>
                 </div>
+                <!-- Only a single tag is supported, may return partial matches (e.g., 'Stanford' → 'Stanford University') -->
                 <div v-if="col.dataType === 'tag'">
                   <PvSelect
                     v-model="filterModel.value"

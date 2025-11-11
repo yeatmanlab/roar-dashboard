@@ -16,7 +16,7 @@ export function useOrgTableColumns(activeOrgType, isSuperAdmin, userCan, Permiss
       { field: 'name', header: 'Name', dataType: 'text', pinned: true, sort: true },
       { field: 'abbreviation', header: 'Abbreviation', dataType: 'text', sort: true },
       { field: 'address.formattedAddress', header: 'Address', dataType: 'text', sort: true },
-      { field: 'tags', header: 'Tags', dataType: 'tag', chip: true, sort: false, filterField: 'tagFilterField' },
+      { field: 'tags', header: 'Tags', dataType: 'tag', chip: true, sort: false },
     ];
 
     // Add MDR Number and NCES ID for districts and schools

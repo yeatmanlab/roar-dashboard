@@ -383,9 +383,6 @@ const tableData = computed(() => {
   if (isLoading.value) return [];
   const tableData = orgData?.value?.map((org) => {
     const orgInfo = _cloneDeep(org);
-    if ('tags' in orgInfo) {
-      orgInfo.tagFilterField = orgInfo.tags.map((tag) => tag.toLowerCase()).join(' ');
-    }
     return {
       ...orgInfo,
       isExporting: exportingOrgId.value === org.id,
