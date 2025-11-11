@@ -151,10 +151,7 @@
               :data-type="col.dataType"
               :sortable="col.sort !== false"
               :show-filter-match-modes="
-                !col.useMultiSelect &&
-                col.dataType !== 'score' &&
-                col.dataType !== 'progress' &&
-                col.dataType !== 'array'
+                !col.useMultiSelect && col.dataType !== 'score' && col.dataType !== 'progress' && col.dataType !== 'tag'
               "
               :show-filter-operator="col.allowMultipleFilters === true"
               :filter-field="col?.filterField ? col.filterField : col.field"
@@ -202,7 +199,7 @@
                     _get(colData, col.tagColor) === 'white' ? 'black' : 'white'
                   }; outline: 1px dotted #0000CD; outline-offset: 3px`"
                 />
-                <div v-else-if="col.chip && col.dataType === 'array' && _get(colData, col.field) !== undefined">
+                <div v-else-if="col.chip && col.dataType === 'tag' && _get(colData, col.field) !== undefined">
                   <PvChip v-for="chip in _get(colData, col.field)" :key="chip" :label="chip" />
                 </div>
                 <div v-else-if="col.link">
@@ -393,7 +390,7 @@
                     </template>
                   </PvSelect>
                 </div>
-                <div v-if="col.dataType === 'array'">
+                <div v-if="col.dataType === 'tag'">
                   <PvSelect
                     v-model="filterModel.value"
                     :options="orgTagFilterOptions"
@@ -675,7 +672,7 @@ const dataTypesToFilterMatchMode = {
   BOOLEAN: FilterMatchMode.EQUALS,
   SCORE: FilterMatchMode.CONTAINS,
   PROGRESS: FilterMatchMode.CONTAINS,
-  ARRAY: FilterMatchMode.CONTAINS,
+  TAG: FilterMatchMode.CONTAINS,
 };
 
 const computedFilters = computed(() => {
