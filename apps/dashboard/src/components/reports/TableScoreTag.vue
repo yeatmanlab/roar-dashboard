@@ -114,7 +114,7 @@ function handleToolTip(_taskId, _toolTip, _colData) {
       let frStats = 'Free Response: \n';
       for (const [property, propertyHeader] of Object.entries(roamFluencySubskillHeaders)) {
         if (_colData.scores?.[_taskId]?.[property] != undefined) {
-          if (isResponseModality && property !== 'rawScore') {
+          if (isResponseModality) {
             fcStats += `${propertyHeader}: ${_colData.scores?.[_taskId]?.fc?.[property] ?? 0}\n`;
             frStats += `${propertyHeader}: ${_colData.scores?.[_taskId]?.fr?.[property] ?? 0}\n`;
           } else if (!isResponseModality) {

@@ -1347,13 +1347,15 @@ const createExportData = ({ rows, includeProgress = false }) => {
           let result = '';
           let total = 0;
           if (score.fr) {
-            result += `Free Response: ${score.fr[field] ?? 0}`;
-            total += score.fr[field] ?? 0;
+            const frScore = score.fr[field] ?? 0;
+            result += `Free Response: ${frScore}`;
+            total += frScore;
           }
 
           if (score.fc) {
-            result += `${result ? '\n' : ''}Multiple Choice: ${score.fc[field] ?? 0}`;
-            total += score.fc[field] ?? 0;
+            const fcScore = score.fc[field] ?? 0;
+            result += `${result ? '\n' : ''}Multiple Choice: ${fcScore}`;
+            total += fcScore;
           }
 
           if (score.fr || score.fc) result += `\nTotal: ${total}`;
@@ -1364,11 +1366,9 @@ const createExportData = ({ rows, includeProgress = false }) => {
 
         tableRow[`${taskName} - Raw Score`] = score.rawScore;
 
-        Object.entries(roamFluencySubskillHeaders)
-          .slice(1)
-          .forEach(([property, propertyHeader]) => {
-            tableRow[`${taskName} - ${propertyHeader}`] = setSubscore(property, score);
-          });
+        Object.entries(roamFluencySubskillHeaders).forEach(([property, propertyHeader]) => {
+          tableRow[`${taskName} - ${propertyHeader}`] = setSubscore(property, score);
+        });
       } else if (rawOnlyTasks.includes(taskId)) {
         tableRow[`${taskName} - Raw`] = score.rawScore;
       } else if (tasksToDisplayGradeEstimate.includes(taskId)) {
