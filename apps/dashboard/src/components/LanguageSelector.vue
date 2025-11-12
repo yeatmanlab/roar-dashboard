@@ -5,8 +5,10 @@
         v-tooltip.top="$t('navBar.changeLanguage')"
         icon="pi pi-globe"
         class="m-0 p-0 text-primary bg-gray-100 border-none border-round cursor-pointer h-3rem w-3rem text-sm hover:bg-red-900 hover:text-white border-style"
-        aria-label="Change language"
-        @click="toggleMenu($event)"
+        :aria-label="$t('navBar.changeLanguage')"
+        aria-haspopup="menu"
+        :aria-expanded="menuVisible ? 'true' : 'false'"
+        @click="toggleMenu"
       />
     </template>
 
@@ -14,15 +16,33 @@
       <a
         href="#"
         class="text-400 w-full inline-block text-left text-sm pt-2 rounded-md hover:text-primary"
-        aria-label="Change language"
-        @click.prevent="toggleMenu($event)"
+        :aria-label="$t('navBar.changeLanguage')"
+        aria-haspopup="menu"
+        :aria-expanded="menuVisible ? 'true' : 'false'"
+        @click.prevent="toggleMenu"
       >
         <span>{{ currentLanguageLabel }}</span>
-        <i class="pi pi-chevron-down text-sm pl-2" />
+        <i class="pi pi-chevron-down text-sm pl-2" aria-hidden="true" />
       </a>
     </template>
 
-    <PvMenu ref="menu" :model="menuItems" popup />
+    <PvMenu ref="menu" :model="menuItems" popup role="menu" @show="menuVisible = true" @hide="menuVisible = false">
+      <!-- Accessible item template -->
+      <template #item="{ item, props: slotProps }">
+        <a
+          v-bind="slotProps.action"
+          role="menuitemradio"
+          :aria-checked="item.key === locale ? 'true' : 'false'"
+          :tabindex="item.key === locale ? 0 : -1"
+          @click.prevent="onSelect(item.key)"
+        >
+          <!-- Visual checkmark, hidden from AT -->
+          <span aria-hidden="true">{{ item.key === locale ? '✓ ' : '' }}</span>
+          <span>{{ item.label }}</span>
+          <span v-if="item.key === locale">({{ $t('common.selected') }})</span>
+        </a>
+      </template>
+    </PvMenu>
   </div>
 </template>
 
@@ -36,34 +56,37 @@ import { languageOptions } from '@/translations/i18n.js';
 const props = defineProps({
   styleProp: {
     type: String,
-    default: 'default', // or 'home'
+    default: 'default',
   },
 });
 
-const { locale } = useI18n({ useScope: 'global' });
+const { locale, t } = useI18n({ useScope: 'global' });
 const menu = ref(null);
+const menuVisible = ref(false);
 
-// Sort languages alphabetically
-const languageOptionsArray = Object.entries(languageOptions).sort((a, b) => a[0].localeCompare(b[0]));
-
-// Build the menu items
+// Build menu items once; labels from languageOptions
 const menuItems = computed(() =>
-  languageOptionsArray.map(([key, value]) => ({
-    label: value.language + (locale.value === key ? '  ✓' : ''),
-    command: () => {
-      locale.value = key;
-    },
+  Object.entries(languageOptions).map(([key, value]) => ({
+    key,
+    label: value.language,
   })),
 );
 
-// Display current language label
+// Current language label
 const currentLanguageLabel = computed(() => {
   const current = languageOptions[locale.value];
-  return current ? current.language : 'Select Language';
+  return current ? current.language : t('languageSelector.selectLanguage', 'Select Language');
 });
 
 function toggleMenu(event) {
-  menu.value.toggle(event);
+  menu.value?.toggle(event);
+}
+
+function onSelect(key) {
+  if (key && key !== locale.value) {
+    locale.value = key;
+  }
+  menu.value?.hide();
 }
 </script>
 

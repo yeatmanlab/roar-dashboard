@@ -1,4 +1,5 @@
 import { toValue } from 'vue';
+import { AUTH_SSO_PROVIDERS } from '@/constants/auth';
 
 export function useProviders(options) {
   const {
@@ -9,9 +10,7 @@ export function useProviders(options) {
     multipleProviders,
     hideProviders,
     showPasswordField,
-
     roarfirekit,
-
     authWithGoogle,
     authWithClever,
     authWithClassLink,
@@ -21,23 +20,17 @@ export function useProviders(options) {
   } = options;
 
   /** Normalize Firebase/AuthKit provider ids to our internal names */
-  function normalizeProviders(ids = []) {
+  async function normalizeProviders(ids = []) {
     const out = new Set();
-    const list = Array.isArray(ids) ? ids : [];
+    for (const id of ids) {
+      const lower = String(id).toLowerCase();
 
-    for (const id of list) {
-      const lower = String(id || '').toLowerCase();
+      if (lower === 'password' || lower === 'emaillink') out.add('password');
 
-      // password & email link collapse to the password UI flow
-      if (lower.includes('password') || lower.includes('email')) out.add('password');
-
-      // google
-      if (lower.includes('google')) out.add('google');
-
-      // OIDC providers
-      if (lower.includes('clever')) out.add('clever');
-      if (lower.includes('classlink')) out.add('classlink');
-      if (lower.includes('nycps')) out.add('nycps');
+      if (lower === 'google.com' || lower === AUTH_SSO_PROVIDERS.GOOGLE) out.add(AUTH_SSO_PROVIDERS.GOOGLE);
+      if (lower.startsWith('oidc.') && lower.includes('clever')) out.add(AUTH_SSO_PROVIDERS.CLEVER);
+      if (lower.startsWith('oidc.') && lower.includes('classlink')) out.add(AUTH_SSO_PROVIDERS.CLASSLINK);
+      if (lower.startsWith('oidc.') && lower.includes('nycps')) out.add(AUTH_SSO_PROVIDERS.NYCPS);
     }
     return [...out];
   }
@@ -80,7 +73,14 @@ export function useProviders(options) {
     const providers = await getProviders();
 
     // multi SSO chooser
-    const sso = providers.filter((p) => ['google', 'clever', 'classlink', 'nycps'].includes(p));
+    const sso = providers.filter((p) =>
+      [
+        AUTH_SSO_PROVIDERS.GOOGLE,
+        AUTH_SSO_PROVIDERS.CLEVER,
+        AUTH_SSO_PROVIDERS.CLASSLINK,
+        AUTH_SSO_PROVIDERS.NYCPS,
+      ].includes(p),
+    );
     multipleProviders.value = sso.length > 1;
 
     if (multipleProviders.value) {
@@ -91,10 +91,10 @@ export function useProviders(options) {
     }
 
     // single SSO → auto continue
-    if (providers.includes('google')) return authWithGoogle?.();
-    if (providers.includes('clever')) return authWithClever?.();
-    if (providers.includes('classlink')) return authWithClassLink?.();
-    if (providers.includes('nycps')) return authWithNYCPS?.();
+    if (providers.includes(AUTH_SSO_PROVIDERS.GOOGLE)) return authWithGoogle?.();
+    if (providers.includes(AUTH_SSO_PROVIDERS.CLEVER)) return authWithClever?.();
+    if (providers.includes(AUTH_SSO_PROVIDERS.CLASSLINK)) return authWithClassLink?.();
+    if (providers.includes(AUTH_SSO_PROVIDERS.NYCPS)) return authWithNYCPS?.();
 
     // fallback → password / magic link
     showPasswordField.value = providers.includes('password') || providers.length === 0;

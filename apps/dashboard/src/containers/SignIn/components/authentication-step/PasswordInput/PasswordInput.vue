@@ -27,7 +27,7 @@
         class="text-sm text-400 cursor-pointer font-semibold hover:text-primary"
         @click="$emit('magic-link')"
       >
-        {{ $t('authSignIn.magicLink') || 'Magic Link' }}
+        {{ $t('authSignIn.magicLink') }}
       </small>
     </div>
   </div>

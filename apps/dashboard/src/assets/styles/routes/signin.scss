@@ -4,6 +4,9 @@ body.page-signin {
   min-height: 100vh;
   background: var(--primary-color);
 }
+.border-style {
+  outline: 1.2px solid rgba(0, 0, 0, 0.1);
+}
 .divider {
   display: flex;
   align-items: center;
