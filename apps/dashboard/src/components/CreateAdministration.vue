@@ -176,6 +176,7 @@ import _isEqual from 'lodash/isEqual';
 import _union from 'lodash/union';
 import _groupBy from 'lodash/groupBy';
 import _values from 'lodash/values';
+import _cloneDeep from 'lodash/cloneDeep';
 import { useVuelidate } from '@vuelidate/core';
 import { required, requiredIf } from '@vuelidate/validators';
 import { useAuthStore } from '@/store/auth';
@@ -401,6 +402,19 @@ const variantsByTaskId = computed(() => {
   return _groupBy(allVariants.value, 'task.id');
 });
 
+const handleFoundVariant = (assessment, allVariants) => {
+  const { conditions: assessmentConditions = undefined, params: assessmentParams, taskId } = assessment;
+  const allVariantsForThisTask = _filter(allVariants, (variant) => variant.task.id === taskId);
+  const found = findVariantWithParams(allVariantsForThisTask, assessmentParams);
+  if (found) {
+    const clonedFound = _cloneDeep(found);
+    // Set conditions from assessment, or undefined if no conditions exist
+    clonedFound.variant.conditions = !_isEmpty(assessmentConditions) ? assessmentConditions : undefined;
+    preSelectedVariants.value = _union(preSelectedVariants.value, [clonedFound]);
+    variants.value = _union(variants.value, [clonedFound]);
+  }
+};
+
 const handleVariantsChanged = (newVariants) => {
   variants.value = newVariants;
 };
@@ -466,7 +480,7 @@ const submit = async () => {
       taskId: assessment.task.id,
       params: toRaw(assessment.variant.params),
       // Exclude conditions key if there are no conditions to be set.
-      ...(toRaw(assessment.variant.conditions || undefined) && { conditions: toRaw(assessment.variant.conditions) }),
+      ...(!_isEmpty(assessment.variant.conditions) && { conditions: toRaw(assessment.variant.conditions) }),
     }),
   );
 
@@ -596,14 +610,7 @@ watch(
       state.dateStarted = new Date(adminInfo.dateOpened);
       state.dateClosed = new Date(adminInfo.dateClosed);
       _forEach(adminInfo.assessments, (assessment) => {
-        const assessmentParams = assessment.params;
-        const taskId = assessment.taskId;
-        const allVariantsForThisTask = _filter(allVariantInfo, (variant) => variant.task.id === taskId);
-        const found = findVariantWithParams(allVariantsForThisTask, assessmentParams);
-        if (found) {
-          preSelectedVariants.value = _union(preSelectedVariants.value, [found]);
-          variants.value = _union(variants.value, [found]);
-        }
+        handleFoundVariant(assessment, allVariantInfo);
       });
       state.legal = adminInfo.legal;
       state.consent = adminInfo?.legal?.consent ?? null;
