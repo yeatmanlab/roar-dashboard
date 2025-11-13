@@ -261,7 +261,7 @@ const processedDates = computed(() => {
 });
 
 const assessmentIds = computed(() => {
-  return props.assessments
+  return (props.assessments ?? [])
     .map((assessment) => assessment.taskId.toLowerCase())
     .sort((p1, p2) => {
       return (taskDisplayNames[p1]?.order ?? 0) - (taskDisplayNames[p2]?.order ?? 0);
