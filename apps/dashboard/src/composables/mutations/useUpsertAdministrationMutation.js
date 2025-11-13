@@ -5,6 +5,7 @@ import {
   ADMINISTRATIONS_QUERY_KEY,
   ADMINISTRATIONS_LIST_QUERY_KEY,
   ADMINISTRATION_ASSIGNMENTS_QUERY_KEY,
+  DSGF_ORGS_QUERY_KEY,
 } from '@/constants/queryKeys';
 
 /**
@@ -32,6 +33,7 @@ const useUpsertAdministrationMutation = () => {
       queryClient.invalidateQueries({ queryKey: [ADMINISTRATIONS_QUERY_KEY] });
       queryClient.invalidateQueries({ queryKey: [ADMINISTRATIONS_LIST_QUERY_KEY] });
       queryClient.invalidateQueries({ queryKey: [ADMINISTRATION_ASSIGNMENTS_QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: [DSGF_ORGS_QUERY_KEY] });
     },
   });
 };
