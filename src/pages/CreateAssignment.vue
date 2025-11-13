@@ -155,7 +155,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref, toRaw, toRef, watch } from 'vue';
+import { computed, onMounted, reactive, ref, toRaw, toRef, toValue, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useToast } from 'primevue/usetoast';
@@ -204,7 +204,7 @@ const queryClient = useQueryClient();
 const { mutate: upsertAdministration, isPending: isSubmitting } = useUpsertAdministrationMutation();
 
 const authStore = useAuthStore();
-const { roarfirekit } = storeToRefs(authStore);
+const { roarfirekit, userData } = storeToRefs(authStore);
 
 const props = defineProps({
   adminId: { type: String, required: false, default: null },
@@ -217,6 +217,14 @@ const description = computed(
 );
 
 const submitLabel = computed(() => (props.adminId ? 'Update Assignment' : 'Create Assignment'));
+
+const creatorName = computed(() => {
+  const firstName = userData.value?.name?.first || '';
+  const middleName = userData.value?.name?.middle || '';
+  const lastName = userData.value?.name?.last || '';
+
+  return userData.value?.displayName || `${firstName} ${middleName} ${lastName}`;
+});
 
 // +------------------------------------------------------------------------------------------------------------------+
 // | Fetch Variants with Params
@@ -569,7 +577,7 @@ const submit = async () => {
       amount: toRaw(state).amount ?? '',
       expectedTime: toRaw(state).expectedTime ?? '',
     },
-    creatorName: authStore.userData?.displayName || authStore.userData?.name?.first + ' ' + authStore.userData?.name?.middle + ' ' + authStore.userData?.name?.last,
+    creatorName: toValue(creatorName),
   };
 
   if (props.adminId) {

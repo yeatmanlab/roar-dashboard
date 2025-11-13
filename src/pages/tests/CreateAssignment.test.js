@@ -45,6 +45,14 @@ vi.mock('@/store/auth', () => ({
     roarfirekit: ref({
       restConfig: true,
     }),
+    userData: ref({
+      name: {
+        first: 'Test First',
+        middle: 'Test Middle',
+        last: 'Test Last',
+      },
+      displayName: 'Test Display Name',
+    }),
   })),
 }));
 
