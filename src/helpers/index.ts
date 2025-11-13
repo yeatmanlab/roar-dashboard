@@ -100,7 +100,6 @@ export const userHasSelectedOrgs = (userArray: any[], selections: SelectionItem[
 export const formatDate = (date: Date | number | string | undefined | null): string | undefined =>
   date?.toLocaleString('en-US');
 
-
 const loadDateFnsLocale = async (localeCode: string): Promise<any> => {
   const localeMap: Record<string, () => Promise<any>> = {
     en: () => import('date-fns/locale/en-US'),
@@ -209,7 +208,10 @@ export const csvFileToJson = async (file: File): Promise<any[]> => {
     Papa.parse(text, {
       header: true,
       skipEmptyLines: 'greedy',
-      transformHeader: (header: string): string => header.trim(),
+      transformHeader: (header: string): string => {
+        if (header.trim().toLowerCase() === 'id') return 'id';
+        return header.trim();
+      },
       transform: (value: string, field: string | number): string => {
         // Ensure field is treated as string if it's a number (column index)
         if (typeof field === 'number') field = String(field);
