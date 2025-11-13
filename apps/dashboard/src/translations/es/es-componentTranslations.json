@@ -25,7 +25,9 @@
     "signInUsingEmailLink": "Iniciar sesión con enlace al email",
     "suggestions": "Sugerencias",
     "magicLink": "Solicitar link al email",
-    "error": "Error"
+    "error": "Error",
+    "success": "Listo",
+    "checkYourEmail": "Abre tu email {email} para restablecer tu contraseña."
   },
   "cleverLanding": {
     "cleverLoading": "Cargando tus datos desde Clever..."

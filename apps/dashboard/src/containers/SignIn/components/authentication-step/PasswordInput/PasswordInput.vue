@@ -18,15 +18,11 @@
       <label for="password">{{ $t('authSignIn.passwordPlaceholder') }}</label>
     </PvFloatLabel>
 
-    <div class="mt-2 flex w-full align-items-center justify-content-between">
+    <div v-if="!isUsername" class="mt-2 flex w-full align-items-center justify-content-between">
       <small class="text-sm text-400 cursor-pointer font-semibold hover:text-primary" @click="$emit('forgot-password')">
         {{ $t('authSignIn.forgotPassword') }}
       </small>
-      <small
-        v-if="!isUsername"
-        class="text-sm text-400 cursor-pointer font-semibold hover:text-primary"
-        @click="$emit('magic-link')"
-      >
+      <small class="text-sm text-400 cursor-pointer font-semibold hover:text-primary" @click="$emit('magic-link')">
         {{ $t('authSignIn.magicLink') }}
       </small>
     </div>

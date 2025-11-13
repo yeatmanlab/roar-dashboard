@@ -34,11 +34,13 @@
             :available-providers="availableProviders"
             :show-generic-providers="showGenericProviders"
             :show-scoped-providers="showScopedProviders"
+            :show-success-alert="showSuccessAlert"
+            :success-email="successEmail"
             @update:email="onEmailUpdate"
             @update:password="onPasswordUpdate"
             @check-providers="checkAvailableProviders"
             @submit="authWithEmailPassword"
-            @forgot-password="handleForgotPasswordWrapper"
+            @forgot-password="handleForgotPassword"
             @magic-link="sendMagicLink(email)"
             @back-to-password="handleBackToPassword"
             @auth-clever="authWithClever"
@@ -121,11 +123,13 @@ const {
   authWithNYCPS,
   authWithEmailPassword,
   sendMagicLink,
-  handleForgotPassword: handleForgotPasswordWrapper,
+  handleForgotPassword,
   handleBackToPassword,
   isUsername,
   showGenericProviders,
   showScopedProviders,
+  showSuccessAlert,
+  successEmail,
 } = useAuth({
   authStore,
   router,
@@ -135,6 +139,7 @@ const {
   invalid: incorrect,
   emailLinkSent,
   showPasswordField,
+  resetSignInUI,
 });
 
 const { checkAvailableProviders } = useProviders({

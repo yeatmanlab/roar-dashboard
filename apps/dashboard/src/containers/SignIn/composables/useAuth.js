@@ -1,5 +1,5 @@
 import { storeToRefs } from 'pinia';
-import { toRaw, computed } from 'vue';
+import { toRaw, computed, ref } from 'vue';
 import { setUser } from '@sentry/vue';
 
 import { isMobileBrowser } from '@/helpers';
@@ -22,23 +22,20 @@ import { APP_ROUTES } from '@/constants/routes';
  * }} context
  */
 export function useAuth(context) {
-  const { authStore, router, route, email, password, invalid, emailLinkSent, showPasswordField } = context;
+  const { authStore, router, route, email, password, invalid, emailLinkSent, showPasswordField, resetSignInUI } =
+    context;
 
   // pull reactive store refs (spinner, ssoProvider, roarfirekit)
   const { spinner, ssoProvider, roarfirekit } = storeToRefs(authStore);
 
-  // ✅ Derived UI decisions moved here
   const isUsername = computed(() => {
     const v = email.value ?? '';
     return v !== '' && !String(v).includes('@');
   });
-  // Keep Google hidden on first screen (as before)
   const showGenericProviders = computed(() => false);
-  // Show district (Clever/ClassLink/NYCPS) on first screen
   const showScopedProviders = computed(() => !showPasswordField.value && !emailLinkSent.value);
 
   /* ---------- Post-login redirect wiring ---------- */
-  // This mirrors your old page behavior
   authStore.$subscribe(() => {
     if (authStore.uid) {
       if (ssoProvider.value) {
@@ -68,9 +65,51 @@ export function useAuth(context) {
       emailLinkSent.value = true;
     });
   }
-  function handleForgotPassword() {
-    roarfirekit.value?.sendPasswordResetEmail(email.value);
+  // ✅ Password reset “always-success” alert
+  const showSuccessAlert = ref(false);
+  const successEmail = ref('');
+
+  /**
+   * Forgot password:
+   * - optionally accepts an identifier (e.g., the chip’s email)
+   * - skips request for usernames (no @)
+   * - tries to send reset email if methods suggest password-based sign-in
+   * - ALWAYS shows the success alert
+   */
+  async function handleForgotPassword(overrideIdentifier) {
+    const identifier = String(overrideIdentifier ?? email.value ?? '').trim();
+
+    try {
+      // Optional pre-check (avoids EMAIL_NOT_FOUND noise)
+      let methods = [];
+      try {
+        methods = await roarfirekit.value?.fetchEmailAuthMethods(identifier);
+      } catch {
+        /* ignore */
+      }
+
+      const hasPasswordish =
+        Array.isArray(methods) &&
+        methods.some((m) => {
+          const s = String(m).toLowerCase();
+          return s === 'password' || s === 'email' || s === 'emaillink';
+        });
+
+      if (hasPasswordish) {
+        await roarfirekit.value.sendPasswordResetEmail(identifier);
+      }
+    } catch {
+      // swallow errors — UX is “always success”
+    } finally {
+      successEmail.value = identifier;
+      showSuccessAlert.value = true;
+      setTimeout(() => {
+        showSuccessAlert.value = false;
+        resetSignInUI();
+      }, 5000);
+    }
   }
+
   function handleBackToPassword() {
     emailLinkSent.value = false;
     showPasswordField.value = true;
@@ -78,8 +117,8 @@ export function useAuth(context) {
 
   /* ---------- SSO flows ---------- */
   function authWithClever() {
+    spinner.value = true;
     if (process.env.NODE_ENV === 'development' && !window.Cypress) {
-      spinner.value = true;
       authStore
         .signInWithCleverPopup()
         .then(getUserClaims)
@@ -92,18 +131,24 @@ export function useAuth(context) {
 
   function authWithClassLink() {
     spinner.value = true;
-    authStore.signInWithClassLinkRedirect();
+    if (process.env.NODE_ENV === 'development' && !window.Cypress) {
+      authStore
+        .signInWithClassLinkPopup()
+        .then(getUserClaims)
+        .catch(() => (spinner.value = false));
+    } else {
+      authStore.signInWithClassLinkRedirect();
+    }
   }
 
   function authWithNYCPS() {
+    spinner.value = true;
     if (process.env.NODE_ENV === 'development' && !window.Cypress) {
-      spinner.value = true;
       authStore
         .signInWithNYCPSPopup()
         .then(getUserClaims)
         .catch(() => (spinner.value = false));
     } else {
-      spinner.value = true;
       authStore.signInWithNYCPSRedirect();
     }
   }
@@ -161,6 +206,8 @@ export function useAuth(context) {
     sendMagicLink,
     handleForgotPassword,
     handleBackToPassword,
+    showSuccessAlert,
+    successEmail,
 
     // claims (exposed in case you need it)
     getUserClaims,

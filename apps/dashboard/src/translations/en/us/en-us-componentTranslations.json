@@ -24,7 +24,9 @@
     "forgotPassword": "Forgot password?",
     "or": "OR",
     "magicLink": "Request email link",
-    "error": "Error"
+    "error": "Error",
+    "success": "Success",
+    "checkYourEmail": "Check your email {email} for password reset instructions"
   },
   "cleverLanding": {
     "cleverLoading": "Loading your data from Clever..."

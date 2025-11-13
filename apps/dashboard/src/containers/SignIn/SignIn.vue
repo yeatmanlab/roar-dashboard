@@ -21,6 +21,13 @@
       :description="$t('authSignIn.incorrectEmailOrPassword')"
     />
 
+    <!-- PASSWORD RESET ALERT -->
+    <SuccessAlert
+      :show="showSuccessAlert"
+      :title="$t('authSignIn.success')"
+      :description="$t('authSignIn.checkYourEmail', { successEmail })"
+    />
+
     <!-- PASSWORD -->
     <PasswordInput
       :show="showPasswordField && !multipleProviders && !emailLinkSent"
@@ -92,6 +99,7 @@ import {
   ScopedProviders,
   MagicLinkBackButton,
   SignInEmailChip,
+  SuccessAlert,
 } from './components';
 
 defineProps({
@@ -106,6 +114,8 @@ defineProps({
   availableProviders: { type: Array, default: () => [] },
   showGenericProviders: { type: Boolean, default: true },
   showScopedProviders: { type: Boolean, default: false },
+  showSuccessAlert: { type: Boolean, default: false },
+  successEmail: { type: String, default: '' },
 });
 defineEmits([
   'update:email',
