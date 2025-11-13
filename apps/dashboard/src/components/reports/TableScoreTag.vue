@@ -101,24 +101,24 @@ function handleToolTip(_taskId, _toolTip, _colData) {
       _toolTip += 'Num Incorrect: ' + _colData.scores?.[_taskId]?.numIncorrect + '\n';
       _toolTip += 'Correct - Incorrect: ' + _colData.scores?.[_taskId]?.correctIncorrectDifference + '\n';
     } else if (tasksToDisplayTotalCorrect.includes(_taskId)) {
-      const numCorrect = _colData.scores?.[_taskId]?.numCorrect;
-      const numAttempted = _colData.scores?.[_taskId]?.numAttempted;
+      const taskScore = _colData.scores?.[_taskId];
+      const numCorrect = taskScore?.numCorrect;
+      const numAttempted = taskScore?.numAttempted;
 
       if (!(numCorrect != undefined && numAttempted != undefined)) {
         return '';
       }
 
-      const isResponseModality =
-        _colData.scores?.[_taskId]?.isNewScoring && _colData.scores?.[_taskId]?.recruitment === 'responseModality';
+      const isResponseModality = taskScore?.isNewScoring && taskScore?.recruitment === 'responseModality';
       let fcStats = 'Multiple Choice: \n';
       let frStats = 'Free Response: \n';
       for (const [property, propertyHeader] of Object.entries(roamFluencySubskillHeaders)) {
-        if (_colData.scores?.[_taskId]?.[property] != undefined) {
+        if (taskScore?.[property] != undefined) {
           if (isResponseModality) {
-            fcStats += `${propertyHeader}: ${_colData.scores?.[_taskId]?.fc?.[property] ?? 0}\n`;
-            frStats += `${propertyHeader}: ${_colData.scores?.[_taskId]?.fr?.[property] ?? 0}\n`;
+            fcStats += `${propertyHeader}: ${taskScore?.fc?.[property] ?? 0}\n`;
+            frStats += `${propertyHeader}: ${taskScore?.fr?.[property] ?? 0}\n`;
           } else if (!isResponseModality) {
-            _toolTip += `${propertyHeader}: ${_colData.scores?.[_taskId]?.[property]}\n`;
+            _toolTip += `${propertyHeader}: ${taskScore?.[property]}\n`;
           }
         }
       }
