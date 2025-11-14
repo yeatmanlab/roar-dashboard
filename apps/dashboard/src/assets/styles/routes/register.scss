@@ -6,19 +6,10 @@ body.page-register {
 }
 
 #register-container {
-  @extend #signin-container;
-
-  .register-title {
-    text-align: center;
-    margin-bottom: 2rem;
-  }
-}
-
-body.page-signin .signin-card {
   width: 100%;
-  max-width: 440px; /* controls overall width */
-  margin-top: 5rem; /* center + vertical rhythm */
-  padding: 2rem; /* card padding */
+  max-width: 60vh;
+  margin-inline: auto;
+  padding: 1rem;
 }
 
 #register {

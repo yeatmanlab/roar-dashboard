@@ -41,9 +41,15 @@ body.page-signin {
   display: grid;
   place-items: center;
 }
+body.page-signin .signin-card {
+  width: 100%;
+  max-width: 50vh; /* controls overall width */
+  margin-top: 3rem; /* center + vertical rhythm */
+  padding: 2rem; /* card padding */
+}
 .signin-column {
   width: 100%;
-  max-width: 480px;
+  max-width: 45vh;
   margin-inline: auto;
   padding: 1rem;
 }

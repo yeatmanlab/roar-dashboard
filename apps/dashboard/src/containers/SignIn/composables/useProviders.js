@@ -86,7 +86,7 @@ export function useProviders(options) {
     if (multipleProviders.value) {
       hideProviders.value = false; // show chooser
       showPasswordField.value = false; // stay on non-password view
-      if (invalid) invalid.value = false; // clear lingering red error if any
+      if (invalid?.value) invalid.value = false; // clear lingering red error if any
       return;
     }
 
