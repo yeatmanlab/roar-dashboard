@@ -1,25 +1,15 @@
 <template>
   <div :id="'tab-view-description-' + taskId" class="flex flex-col items-center justify-center mx-2">
-    <PvAccordion
-      v-if="taskInfoById[taskId]"
-      class="mb-5 w-full"
-      :active-index="0"
-      expand-icon="pi pi-plus ml-2"
-      collapse-icon="pi pi-minus ml-2"
-    >
-      <PvAccordionTab :header="('About ' + taskInfoById[taskId]?.subheader).toUpperCase()">
-        <div>
-          <div style="text-transform: uppercase" class="text-2xl font-bold">{{ taskInfoById[taskId]?.subheader }}</div>
-          <!-- The following HTML is from a hard-coded source (below) -->
-          <!-- eslint-disable-next-line vue/no-v-html -->
-          <p class="mt-1 text-md font-light" v-html="taskDesc"></p>
-        </div>
-      </PvAccordionTab>
-    </PvAccordion>
+    <div>
+      <div style="text-transform: uppercase" class="text-2xl font-bold mt-3">{{ taskInfoById[taskId]?.subheader }}</div>
+      <!-- The following HTML is from a hard-coded source (below) -->
+      <!-- eslint-disable-next-line vue/no-v-html -->
+      <p class="mt-1 text-md font-light mb-3" v-html="taskDesc"></p>
+    </div>
   </div>
   <div v-if="tasksToDisplayGraphs.includes(taskId)" :id="'tab-view-chart-' + taskId" class="chart-toggle-wrapper">
     <div v-if="orgType === 'district'" class="mb-3" data-html2canvas-ignore="true">
-      <div class="flex uppercase text-xs font-light">view rows by</div>
+      <div class="flex uppercase text-xs font-light justify-content-center align-items-center">view rows by</div>
       <PvSelectButton
         v-model="facetMode"
         class="flex flex-row my-2 select-button"
@@ -54,7 +44,7 @@
       </div>
     </div>
   </div>
-  <div class="my-2 mx-4">
+  <div v-if="orgType !== 'district'" class="my-2 mx-4">
     <SubscoreTable
       v-if="taskId === 'phonics' && !isLoadingTasksDictionary"
       task-id="phonics"
@@ -136,8 +126,6 @@
 </template>
 <script setup>
 import { ref, computed } from 'vue';
-import PvAccordion from 'primevue/accordion';
-import PvAccordionTab from 'primevue/accordiontab';
 import PvSelectButton from 'primevue/selectbutton';
 import { tasksToDisplayGraphs, taskInfoById, replaceScoreRange } from '@/helpers/reports.js';
 import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery.js';
@@ -197,6 +185,20 @@ const facetModes = [
 ];
 
 const minGradeByRuns = computed(() => {
+  if (props.orgType === 'district') {
+    // For district, props.runs is an object with support categories
+    // We need to extract all grade values from the nested structure
+    if (!props.runs || typeof props.runs !== 'object') {
+      return 0;
+    }
+    const allGrades = [];
+    Object.values(props.runs).forEach((category) => {
+      if (category && typeof category === 'object' && category.grades) {
+        allGrades.push(...Object.keys(category.grades));
+      }
+    });
+    return allGrades.length > 0 ? Math.min(...allGrades.map(Number)) : 0;
+  }
   return Math.min(
     ...props.runs.filter((run) => run.scores.rawScore || run.scores.stdPercentile).map((run) => run.grade),
   );
