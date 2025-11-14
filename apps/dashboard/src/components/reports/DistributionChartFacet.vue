@@ -1,8 +1,12 @@
 <template>
   <div class="distribution-wrapper">
     <div :id="`roar-distribution-chart-${taskId}`"></div>
-    <div v-if="minGradeByRuns < 6" class="view-by-wrapper my-2" data-html2canvas-ignore="true">
-      <div class="flex uppercase text-xs font-light">view scores by</div>
+    <div
+      v-if="minGradeByRuns < 6"
+      class="view-by-wrapper my-2 justify-content-center align-items-center pl-8 ml-4"
+      data-html2canvas-ignore="true"
+    >
+      <div class="flex uppercase text-xs font-light justify-content-center align-items-center">view scores by</div>
       <PvSelectButton
         v-model="scoreMode"
         :allow-empty="false"
@@ -20,6 +24,7 @@ import { onMounted, ref, watch, computed } from 'vue';
 import embed from 'vega-embed';
 import PvSelectButton from 'primevue/selectbutton';
 import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery';
+import { SCORE_SUPPORT_LEVEL_COLORS } from '@/constants/scores';
 
 const props = defineProps({
   initialized: {
@@ -58,6 +63,46 @@ const props = defineProps({
     required: true,
   },
 });
+
+const makeRunsFromBins = ({ binsObj, facet, scoreKey }) => {
+  const rows = [];
+  if (!binsObj || typeof binsObj !== 'object') return rows;
+
+  for (const [binLabel, payload] of Object.entries(binsObj)) {
+    const [a, b] = String(binLabel).split('-').map(Number);
+    const value = Number.isFinite(a) && Number.isFinite(b) ? (a + b) / 2 : NaN;
+    if (!Number.isFinite(value)) continue;
+
+    if (facet === 'grade') {
+      const grades = payload?.grades ?? {};
+      for (const [gradeKey, countRaw] of Object.entries(grades)) {
+        const count = Number(countRaw) || 0;
+        for (let i = 0; i < count; i++) {
+          rows.push({
+            grade: String(gradeKey),
+            scores: { [scoreKey]: value },
+          });
+        }
+      }
+    } else {
+      const schools = payload?.schools ?? {};
+      for (const school of Object.values(schools)) {
+        const name = school?.name ?? 'Unknown school';
+        const count = Number(school?.count) || 0;
+        for (let i = 0; i < count; i++) {
+          rows.push({
+            user: { schoolName: name },
+            scores: { [scoreKey]: value },
+          });
+        }
+      }
+    }
+  }
+  return rows;
+};
+
+// Normalize facet mode to 'grade' | 'school'
+const facetKind = computed(() => (props.facetMode?.name === 'Grade' ? 'grade' : 'school'));
 
 const { data: tasksDictionary, isLoading: isLoadingTasksDictionary } = useTasksDictionaryQuery();
 
@@ -102,12 +147,37 @@ const getRangeHigh = (scoreMode, taskId) => {
 
 // With Percentile View, only display runs under grade 6
 const computedRuns = computed(() => {
-  if (scoreMode.value.name === 'Percentile') {
-    return props.runs.filter((run) => run.grade < 6);
+  if (props.orgType === 'district') {
+    const facet = facetKind.value;
+    const modeKey = scoreMode.value.name === 'Percentile' ? 'percentile' : 'raw';
+    const scoreKey = scoreMode.value.name === 'Percentile' ? 'stdPercentile' : 'rawScore';
+
+    const levels = ['above', 'some', 'below'];
+    const rows = [];
+
+    // if backend provided keyed bins (preferred)
+    const hasKeyed = levels.some((k) => props?.runs?.[k]?.[modeKey]);
+    if (hasKeyed) {
+      for (const levelKey of levels) {
+        const binsObj = props?.runs?.[levelKey]?.[modeKey];
+        if (binsObj) {
+          rows.push(...makeRunsFromBins({ binsObj, facet, scoreKey, levelKey }));
+        }
+      }
+    } else {
+      // fallback to flat shape: props.runs.percentile / props.runs.raw (no color by level)
+      rows.push(...makeRunsFromBins({ binsObj: props?.runs?.[modeKey], facet, scoreKey }));
+    }
+
+    return rows;
+  }
+
+  // non-district (original)
+  if (scoreMode.value.name === 'Percentile' && props.facetMode.name === 'Grade') {
+    return props.runs.filter((run) => Number(run.grade) < 6);
   }
   return props.runs;
 });
-
 const distributionChartFacet = computed(() => {
   if (isLoadingTasksDictionary.value) return {};
   return {
@@ -117,17 +187,26 @@ const distributionChartFacet = computed(() => {
       subtitle: `${scoreMode.value.name} Distribution By ${props.facetMode.name}`,
       anchor: 'middle',
       fontSize: 18,
+      dx: 70,
     },
     data: {
       values: computedRuns.value,
     },
+    transform: isGradeFacet.value
+      ? [
+          {
+            calculate: "datum.grade === '0' || datum.grade === 'Kindergarten' ? 0 : toNumber(datum.grade)",
+            as: 'gradeNumeric',
+          },
+        ]
+      : [],
     mark: 'bar',
     height: 50,
     width: 360,
     encoding: {
       row: {
-        field: props.facetMode.key === 'grade' ? `grade` : `user.${props.facetMode.key}`,
-        type: 'ordinal',
+        field: isGradeFacet.value ? 'gradeNumeric' : `user.${props.facetMode.key}`,
+        type: isGradeFacet.value ? 'quantitative' : 'ordinal',
         title: '',
         header: {
           titleColor: 'navy',
@@ -143,22 +222,17 @@ const distributionChartFacet = computed(() => {
           labelOrient: 'left',
           labelBaseline: 'line-bottom',
           labelPadding: 0,
-          labelExpr:
-            props.facetMode.name === 'Grade'
-              ? "join(['Grade ',if(datum.value == '0', 'K', datum.value ), ], '')"
-              : 'split(slice(datum.value, 2, datum.value.length), " ")',
+          labelExpr: isGradeFacet.value
+            ? "join(['Grade ',if(datum.value == '0', 'K', datum.value ), ], '')"
+            : 'split(slice(datum.value, 2, datum.value.length), " ")',
           labelLimit: 150,
           labelSeparation: 0, // Set the spacing between lines in pixels
         },
         spacing: 18,
         sort: 'ascending',
       },
-
       color: {
-        field: `tag_color`,
-        type: 'nominal',
-        legend: null,
-        scale: null,
+        value: SCORE_SUPPORT_LEVEL_COLORS['ASSESSED'],
       },
 
       x: {
@@ -178,8 +252,10 @@ const distributionChartFacet = computed(() => {
       },
 
       y: {
+        type: 'quantitative',
         aggregate: 'count',
         title: 'Count',
+        sort: 'ascending',
         axis: {
           labelBaseline: 'right',
           titleFontSize: 14,
@@ -198,7 +274,7 @@ const distributionChartFacet = computed(() => {
           type: 'quantitative',
           format: `.0f`,
         },
-        { field: 'user.grade', title: 'Student Grade' },
+        props.facetMode.name === 'Grade' ? { field: 'grade', title: 'Student Grade' } : {},
         { aggregate: 'count', title: 'Student Count' },
       ],
     },
@@ -211,9 +287,26 @@ const distributionChartFacet = computed(() => {
 });
 
 const draw = async () => {
-  let chartSpecDist = distributionChartFacet.value;
+  const chartSpecDist = distributionChartFacet.value;
+
+  // Don't draw if chart spec is empty (still loading)
+  if (!chartSpecDist || Object.keys(chartSpecDist).length === 0) {
+    return;
+  }
+
   await embed(`#roar-distribution-chart-${props.taskId}`, chartSpecDist);
 };
+
+const isGradeFacet = computed(() => props.facetMode.key === 'grade');
+
+// Watch for changes to the computed chart specification (includes tasksDictionary loading)
+watch(
+  () => distributionChartFacet.value,
+  () => {
+    draw();
+  },
+  { deep: true },
+);
 
 // Update Distribution Graph on external facetMode change
 watch(
@@ -229,6 +322,7 @@ watch(
   () => {
     draw();
   },
+  { deep: true },
 );
 
 // Update Distribution Graph on internal scoreMode change

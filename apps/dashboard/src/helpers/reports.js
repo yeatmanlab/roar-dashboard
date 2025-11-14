@@ -310,15 +310,15 @@ export function getExtendedDescription(taskId) {
 export const descriptionsByTaskId = {
   // "letter": { header: "ROAR-Letter Sound Matching (ROAR-Letter)", description: " assesses knowledge of letter names and sounds." },
   pa: {
-    header: 'ROAR-Phonological Awareness (ROAR-Phoneme)',
+    header: 'ROAR-Phonological Awareness',
     description: ' measures the ability to hear and manipulate the individual sounds within words.',
   },
   swr: {
-    header: 'ROAR-Single Word Recognition (ROAR-Word)',
+    header: 'ROAR-Single Word Recognition',
     description: ' assesses decoding skills at the word level.',
   },
   sre: {
-    header: 'ROAR-Sentence Reading Efficiency (ROAR-Sentence)',
+    header: 'ROAR-Sentence Reading Efficiency',
     description: ' assesses reading fluency at the sentence level.',
   },
 };

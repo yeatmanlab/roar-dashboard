@@ -17,7 +17,11 @@
 
     <div class="flex gap-1 flex-column align-items-end flex-shrink-0">
       <!-- View Selector -->
-      <div class="view-selector-container flex flex-row gap-3 align-items-center" data-html2canvas-ignore="true">
+      <div
+        v-if="orgType !== 'district'"
+        class="view-selector-container flex flex-row gap-3 align-items-center"
+        data-html2canvas-ignore="true"
+      >
         <div class="view-label flex flex-row text-sm text-gray-600 uppercase">VIEW</div>
         <PvSelectButton
           v-tooltip.top="'View different report'"
