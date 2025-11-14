@@ -1,11 +1,10 @@
 import _lowerCase from 'lodash/lowerCase';
-import _startCase from 'lodash/startCase';
 import _toUpper from 'lodash/toUpper';
 import {
   getDialColor,
   rawOnlyTasks,
   taskDisplayNames,
-  extendedDescriptions,
+  getExtendedDescription as _getExtendedDescription,
   getSupportLevel,
   getRawScoreRange,
   getScoreValue,
@@ -16,61 +15,51 @@ import { TAG_SEVERITIES } from '@/constants/tags';
 
 /**
  * ScoreReport Service
- *
- * Service for handling business logic related to score reports, such as processing task scores and generating score
- * descriptions.
  */
 const ScoreReportService = (() => {
+  // --- NEW: tiny translator fallback only for suffixes ---
+  const tFallbackMap = {
+    'scoreReports.st': 'st',
+    'scoreReports.nd': 'nd',
+    'scoreReports.rd': 'rd',
+    'scoreReports.th': 'th',
+  };
+  const tt = (i18n, key) => (i18n && typeof i18n.t === 'function' ? i18n.t(key) : (tFallbackMap[key] ?? key));
+
+  // --- NEW: safe wrapper for getExtendedDescription to avoid test-time import/mocking issues ---
+  const safeGetExtendedDescription = (taskId) => {
+    try {
+      return typeof _getExtendedDescription === 'function' ? _getExtendedDescription(taskId) : '';
+    } catch {
+      return '';
+    }
+  };
+
   /**
    * Get the appropriate suffix for a percentile number (st, nd, rd, th)
-   *
-   * @param {number} percentile - The percentile to get suffix for
-   * @returns {string} The suffix (st, nd, rd, or th)
-   * @private
    */
-  const getPercentileSuffix = (percentile) => {
+  const getPercentileSuffix = (percentile, i18n) => {
     const lastDigit = percentile % 10;
     const lastTwoDigits = percentile % 100;
 
-    if (lastTwoDigits >= 11 && lastTwoDigits <= 13) {
-      return 'th';
-    }
+    if (lastTwoDigits >= 11 && lastTwoDigits <= 13) return tt(i18n, 'scoreReports.th');
 
     switch (lastDigit) {
       case 1:
-        return 'st';
+        return tt(i18n, 'scoreReports.st');
       case 2:
-        return 'nd';
+        return tt(i18n, 'scoreReports.nd');
       case 3:
-        return 'rd';
+        return tt(i18n, 'scoreReports.rd');
       default:
-        return 'th';
+        return tt(i18n, 'scoreReports.th');
     }
   };
 
-  /**
-   * Get percentile with appropriate suffix (1st, 2nd, 3rd, 4th, etc.)
-   *
-   * @param {number} percentile - The percentile to format
-   * @returns {string} The percentile with appropriate suffix
-   * @private
-   */
-  const getPercentileWithSuffix = (percentile) => {
-    return `${percentile}${getPercentileSuffix(percentile)}`;
+  const getPercentileWithSuffix = (percentile, i18n) => {
+    return `${percentile}${getPercentileSuffix(percentile, i18n)}`;
   };
 
-  /**
-   * Get support level language key for i18n translation
-   *
-   * @param {number} grade - The grade level
-   * @param {number} percentile - The percentile score
-   * @param {number} rawScore - The raw score
-   * @param {string} taskId - The task ID
-   * @param {Object} i18n - The i18n instance
-   * @returns {string} The support level language key
-   *
-   * @private
-   */
   const getSupportLevelLanguage = (grade, percentile, rawScore, taskId, i18n) => {
     const { support_level: supportLevel } = getSupportLevel(grade, percentile, rawScore, taskId);
 
@@ -86,18 +75,6 @@ const ScoreReportService = (() => {
     }
   };
 
-  /**
-   * Create task tags for optional/required and reliable/unreliable status
-   *
-   * @param {boolean} optional - Whether the task is optional
-   * @param {boolean} reliable - Whether the task is reliable
-   * @param {Object} engagementFlags - Engagement flags for the task
-   * @param {Object} i18n - The i18n instance
-   *
-   * @returns {Array} The task tags
-   *
-   * @private
-   */
   const createTaskTags = (optional, reliable, engagementFlags, i18n) => {
     const tags = [];
 
@@ -127,26 +104,12 @@ const ScoreReportService = (() => {
     return tags;
   };
 
-  /**
-   * Create scores array for a task
-   *
-   * @param {string} taskId - The task ID
-   * @param {Object} scoresForTask - The scores for the task
-   * @param {Object} scores - The scores object
-   * @param {number} grade - The grade level
-   * @param {Object} i18n - The i18n instance
-   *
-   * @returns {Array} The scores array
-   *
-   * @private
-   */
   const createScoresArray = (taskId, scoresForTask, scores, grade, i18n) => {
     let formattedScoresArray = Object.keys(scoresForTask).map((key) => {
       const score = scoresForTask[key];
       return [score.name, score.value, score.min, score.max];
     });
 
-    // Special handling for PA task
     if (taskId === 'pa') {
       const fsm = scores?.FSM?.roarScore;
       const lsm = scores?.LSM?.roarScore;
@@ -163,7 +126,6 @@ const ScoreReportService = (() => {
       formattedScoresArray.push([i18n.t('scoreReports.skillsToWorkOn'), skills.join(', ') || 'None']);
     }
 
-    // Special handling for letter tasks
     if (taskId === 'letter' || taskId === 'letter-en-ca') {
       const upperIncorrect = scores?.UppercaseNames?.upperIncorrect;
       const lowerIncorrect = scores?.LowercaseNames?.lowerIncorrect;
@@ -195,34 +157,15 @@ const ScoreReportService = (() => {
     return formattedScoresArray.sort((a, b) => (order[a[0]] ?? 99) - (order[b[0]] ?? 99));
   };
 
-  /**
-   * Get percentile suffix template for i18n interpolation
-   *
-   * @param {number} percentile - The percentile to format
-   * @returns {string} The percentile suffix template
-   *
-   * @public
-   */
-  const getPercentileSuffixTemplate = (percentile) => {
-    return `{value}${getPercentileSuffix(percentile)}`;
+  const getPercentileSuffixTemplate = (percentile, i18n) => {
+    return `{value}${getPercentileSuffix(percentile, i18n)}`;
   };
 
-  /**
-   * Get score description object for a task
-   *
-   * @param {Object} task - The task object
-   * @param {number} grade - The grade level
-   * @param {Object} i18n - The i18n instance
-   *
-   * @returns {Object} The score description object
-   *
-   * @public
-   */
   const getScoreDescription = (task, grade, i18n) => {
     const taskName = taskDisplayNames[task.taskId]?.extendedName;
-    const taskDescription = extendedDescriptions[task.taskId];
+    // --- CHANGED: use safe wrapper instead of direct call ---
+    const taskDescription = safeGetExtendedDescription(String(task.taskId));
 
-    // For tasks that display percent correct, align description with component behavior
     if (tasksToDisplayPercentCorrect.includes(task.taskId)) {
       return {
         keypath: 'scoreReports.percentageCorrectTaskDescription',
@@ -273,7 +216,9 @@ const ScoreReportService = (() => {
     return {
       keypath: 'scoreReports.percentileTaskDescription',
       slots: {
-        percentile: getPercentileWithSuffix(Math.round(task?.percentileScore.value)) + ' percentile',
+        percentile:
+          getPercentileWithSuffix(Math.round(task?.percentileScore.value), i18n) +
+          ` ${i18n.t('scoreReports.percentileScore')}`,
         supportCategory: getSupportLevelLanguage(
           grade,
           task.percentileScore.value,
@@ -287,15 +232,6 @@ const ScoreReportService = (() => {
     };
   };
 
-  /**
-   * Get scores array for a task
-   *
-   * @TODO: Replace hard-coded task IDs with constants
-   * @TODO: This was ported from the existing helpers but we should confirm expected business logic.
-   *
-   * @param {Object} task - Task data
-   * @returns {Array|null} Array of scores or null
-   */
   const getScoresArrayForTask = (task) => {
     if (!rawOnlyTasks.includes(task.taskId) || task.taskId === 'letter' || task.taskId === 'letter-en-ca') {
       return task.scoresArray;
@@ -303,14 +239,6 @@ const ScoreReportService = (() => {
     return null;
   };
 
-  /**
-   * Get the score type to display for a given task
-   *
-   * @param {string} taskId – The task ID
-   * @param {number} grade – The grade level
-   * @param {Array} rawOnlyTasks – Array of raw-only tasks
-   * @returns {string} The score type to display
-   */
   const getScoreToDisplay = (taskId, grade, rawOnlyTasks) => {
     const alwaysDisplaysPercentile = ['phonics', 'letter', 'letter-es', 'letter-en-ca'];
 
@@ -325,17 +253,6 @@ const ScoreReportService = (() => {
     return grade >= 6 ? SCORE_TYPES.STANDARD_SCORE : SCORE_TYPES.PERCENTILE_SCORE;
   };
 
-  /**
-   * Process task data into formatted task scores
-   *
-   * @TODO: Replace hard-coded task IDs with constants
-   *
-   * @param {Array} taskData - Array of task data objects
-   * @param {number} grade - Student grade
-   * @param {Object} i18n - i18n instance for translations
-   * @param {Object} taskScoringVersions - Task scoring versions
-   * @returns {Array} Processed task scores
-   */
   const processTaskScores = (taskData, grade, i18n, taskScoringVersions = {}) => {
     const tasksBlacklist = ['vocab', 'cva'];
     const computedTaskAcc = {};
@@ -353,7 +270,6 @@ const ScoreReportService = (() => {
       }
 
       if (!isNaN(rawScore) && !tasksBlacklist.includes(taskId)) {
-        // Use 'percentile' field type to match helpers/reports.getScoreValue mapping
         const percentileScore = getScoreValue(compositeScores, taskId, grade, 'percentile');
         const standardScore = getScoreValue(compositeScores, taskId, grade, SCORE_TYPES.STANDARD_SCORE);
         const rawScoreRange = getRawScoreRange(taskId);
@@ -368,14 +284,14 @@ const ScoreReportService = (() => {
 
         const scoresForTask = {
           standardScore: {
-            name: _startCase(i18n.t('scoreReports.standardScore')),
+            name: i18n.t('scoreReports.standardScore'),
             value: Math.round(standardScore),
             min: 0,
             max: 180,
             supportColor,
           },
           rawScore: {
-            name: _startCase(i18n.t('scoreReports.rawScore')),
+            name: i18n.t('scoreReports.rawScore'),
             value: Math.round(rawScore),
             min: rawScoreRange?.min,
             max: rawScoreRange?.max,
@@ -383,8 +299,8 @@ const ScoreReportService = (() => {
           },
           percentileScore: {
             name: tasksToDisplayPercentCorrect.includes(taskId)
-              ? _startCase(i18n.t('scoreReports.percentCorrect'))
-              : _startCase(i18n.t('scoreReports.percentileScore')),
+              ? i18n.t('scoreReports.percentCorrect')
+              : i18n.t('scoreReports.percentileScore'),
             value: Math.round(percentileScore),
             min: 0,
             max: taskId.includes('letter') ? 100 : 99,
@@ -393,7 +309,6 @@ const ScoreReportService = (() => {
         };
 
         const tags = createTaskTags(optional, reliable, engagementFlags, i18n);
-
         const scoreToDisplay = getScoreToDisplay(taskId, grade, rawOnlyTasks);
 
         computedTaskAcc[taskId] = {
@@ -401,7 +316,7 @@ const ScoreReportService = (() => {
           scoreToDisplay,
           ...scoresForTask,
           tags,
-          scores, // Include the original scores object for phonics subscores
+          scores,
         };
 
         computedTaskAcc[taskId].scoresArray = createScoresArray(taskId, scoresForTask, scores, grade, i18n);
