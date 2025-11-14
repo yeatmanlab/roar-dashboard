@@ -292,12 +292,16 @@ watch(
     // added twice to the selectedVariants array, despite the _union call.
     selectedVariants.value = _union(selectedVariants.value, newVariants);
 
-    // Update the conditions for the variants that were pre-existing
+    // Update the card with the type, and update conditions for the variants that were pre-existing
     selectedVariants.value = selectedVariants.value.map((variant) => {
+      variant = { ...variant, type: CARD_TYPES.VARIANT };
       const preExistingInfo = props.preExistingAssessmentInfo.find((info) => info?.variantId === variant?.id);
 
       if (preExistingInfo) {
-        return { ...variant, variant: { ...variant?.variant, conditions: preExistingInfo.conditions } };
+        return {
+          ...variant,
+          variant: { ...variant?.variant, conditions: preExistingInfo.conditions },
+        };
       }
       return variant;
     });
@@ -550,9 +554,7 @@ watch(
 // Card event handlers
 const removeCard = (variant) => {
   // Filter out cards where the id and type match the variant to remove.
-  selectedVariants.value = selectedVariants.value.filter(
-    (selectedVariant) => selectedVariant.id !== variant.id && selectedVariant.type === variant.type,
-  );
+  selectedVariants.value = selectedVariants.value.filter((selectedVariant) => selectedVariant.id !== variant.id);
 };
 const selectVariantCard = (variant) => {
   // Check if this variant is already in the list
