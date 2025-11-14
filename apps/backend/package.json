@@ -36,7 +36,7 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
-    "@faker-js/faker": "^10.0.0",
+    "@faker-js/faker": "^10.1.0",
     "@roar-dashboard/eslint-config": "*",
     "@roar-dashboard/typescript-config": "*",
     "@rollup/plugin-alias": "^5.1.1",
