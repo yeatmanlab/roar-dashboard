@@ -497,7 +497,8 @@ describe('useScoreListData', () => {
 
       const result = scoreValueTemplate.value(computedTaskData.value[0]);
       expect(result).toBe('75th');
-      expect(ScoreReportService.getPercentileSuffixTemplate).toHaveBeenCalledWith(75);
+      // MINIMAL CHANGE: the composable calls with (75, { t: mockT })
+      expect(ScoreReportService.getPercentileSuffixTemplate).toHaveBeenCalledWith(75, { t: mockT });
     });
 
     it('should return undefined for non-percentile score types', () => {

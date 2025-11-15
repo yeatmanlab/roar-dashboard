@@ -2,6 +2,10 @@ import html2canvas from 'html2canvas';
 import { toValue } from 'vue';
 import { getGrade } from '@bdelab/roar-utils';
 import { LEVANTE_TASK_IDS_NO_SCORES } from '../constants/levanteTasks';
+import { SCORE_REPORT_DISTRIBUTION_CHART_PATHS } from '../constants/filePaths';
+import { i18n } from '@/translations/i18n';
+import { useI18n } from 'vue-i18n';
+
 /*
  *  Task Display Names
  *  A map of all tasks, including their taskId, display name, and index for ordering
@@ -291,37 +295,13 @@ export const taskDisplayNames = {
   },
 };
 
-export const extendedDescriptions = {
-  swr: 'This test measures your student’s skill in reading single words quickly and correctly.',
-  'swr-es':
-    'This test measures how well a student can identify real words and made-up words. ' +
-    'The goal is for students to recognize words quickly and accurately, a skill called decoding. ' +
-    'High scores on this assessment indicate a readiness to be a skilled and fluent reader.',
-  pa: 'This test measures how well your student can break down a spoken word into its individual sounds and choose or create a word with the same sounds.',
-  sre: 'This test measures how quickly your student can silently read and understand sentences.',
-  vocab: 'This test measures how well your student knows words by having them match a picture to a spoken word.',
-  multichoice: 'Temporary description for multichoice',
-  morph:
-    'This test measures how well your student understands how parts of words, including prefixes and suffixes, can change the meaning of a word in a sentence',
-  cva: 'This test measures your students’ knowledge of words that are often used in the books they read at school',
-  letter:
-    'This test measures how well your student knows the names of letters and which letters are used to spell each sound',
-  'letter-en-ca':
-    'This test measures how well your student knows the names of letters and which letters are used to spell each sound',
-  'letter-es.':
-    'This test measures how well your student knows the names of letters and which letters are used to spell each sound.',
-  comp: 'Temporary description for comp',
-  phonics:
-    "This is a new test of phonics knowledge. It is currently being studied to determine how well it measures a student's ability to use phonics patterns to decode nonsense words.",
-  syntax: 'This test measures how well students understand sentences that vary from simple to complicated',
-  trog: 'This test measures how well students understand sentences that vary from simple to complicated',
-  fluency: 'Temporary description for fluency',
-  ran: 'Temporary description for ran',
-  crowding: 'Temporary description for crowding',
-  'roav-mep': 'Temporary description for mep',
-  'roar-readaloud': 'Temporary description for readaloud',
-  'roar-survey': 'Temporary description for survey',
-};
+export function getExtendedDescription(taskId) {
+  const key = `scoreReports.taskDescriptions.${taskId}`;
+  const hasTranslator = i18n && i18n.global && typeof i18n.global.t === 'function';
+  const translated = hasTranslator ? i18n.global.t(key) : undefined;
+
+  return translated && translated !== key ? translated : '';
+}
 
 /*
  *  Descriptions By Task Id
@@ -330,15 +310,15 @@ export const extendedDescriptions = {
 export const descriptionsByTaskId = {
   // "letter": { header: "ROAR-Letter Sound Matching (ROAR-Letter)", description: " assesses knowledge of letter names and sounds." },
   pa: {
-    header: 'ROAR-Phonological Awareness (ROAR-Phoneme)',
+    header: 'ROAR-Phonological Awareness',
     description: ' measures the ability to hear and manipulate the individual sounds within words.',
   },
   swr: {
-    header: 'ROAR-Single Word Recognition (ROAR-Word)',
+    header: 'ROAR-Single Word Recognition',
     description: ' assesses decoding skills at the word level.',
   },
   sre: {
-    header: 'ROAR-Sentence Reading Efficiency (ROAR-Sentence)',
+    header: 'ROAR-Sentence Reading Efficiency',
     description: ' assesses reading fluency at the sentence level.',
   },
 };
@@ -575,6 +555,12 @@ export const updatedNormVersions = {
 };
 
 function getOrdinalSuffix(n) {
+  const { locale } = useI18n();
+  // If the active language is Spanish, just use º
+  if (locale.value === 'es' || locale.value === 'es-CO') {
+    return 'º';
+  }
+
   if (n >= 11 && n <= 13) return 'th';
 
   switch (n % 10) {
@@ -1133,33 +1119,35 @@ export const getRawScoreRange = (taskId) => {
  */
 export const getDistributionChartPath = (grade, taskScoringVersions, language = 'en') => {
   const tasks = Object.entries(taskScoringVersions);
-
   // Filter to only tasks that have updated norms and exclude unnormed Spanish tasks (version < 1)
   // isDistributionChartEnabled ensures there are in-progress/completed normed tasks
   const applicableTasks = tasks.filter(
     ([taskId, version]) => taskId in updatedNormVersions && !(['swr-es', 'sre-es'].includes(taskId) && version < 1),
   );
 
-  let path = '';
+  const pickPath = (baseKey) => {
+    return SCORE_REPORT_DISTRIBUTION_CHART_PATHS[`${baseKey}${language === 'en' ? 'En' : 'Es'}`];
+  };
 
-  // Images are currently only available for elementary grades
+  // Default to admins with mixed scoring versions or undefined grades
+  let path = pickPath('noCutoffs');
+
+  if (grade == null || grade === '' || Number.isNaN(Number(grade))) return path;
+
   if (parseInt(grade) < 6) {
     const hasNoUpdatedNorms = applicableTasks.every(([taskId, version]) => version < updatedNormVersions[taskId]);
     const hasAllUpdatedNorms = applicableTasks.every(([taskId, version]) => version >= updatedNormVersions[taskId]);
 
     if (hasAllUpdatedNorms) {
-      path = `../assets/${language}-elementary-distribution-chart-scoring-v2.webp`;
+      path = pickPath('elementaryV2');
     } else if (hasNoUpdatedNorms) {
-      path = `../assets/${language}-elementary-distribution-chart-scoring-v1.webp`;
-    } else {
-      // Default to admins with mixed scoring versions
-      path = `../assets/${language}-all-grades-distribution-chart-no-cutoffs.webp`;
+      path = pickPath('elementaryV1');
     }
   } else {
-    path = `../assets/${language}-secondary-distribution-chart-scoring-v1.webp`;
+    path = pickPath('secondaryV1');
   }
 
-  return new URL(path, import.meta.url).href;
+  return path;
 };
 
 export const taskInfoById = {
