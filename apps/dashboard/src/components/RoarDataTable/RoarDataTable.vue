@@ -150,7 +150,9 @@
               :field="col.field"
               :data-type="col.dataType"
               :sortable="col.sort !== false"
-              :show-filter-match-modes="!col.useMultiSelect && col.dataType !== 'score' && col.dataType !== 'progress'"
+              :show-filter-match-modes="
+                !col.useMultiSelect && col.dataType !== 'score' && col.dataType !== 'progress' && col.dataType !== 'tag'
+              "
               :show-filter-operator="col.allowMultipleFilters === true"
               :filter-field="col?.filterField ? col.filterField : col.field"
               :show-add-button="col.allowMultipleFilters === true"
@@ -197,7 +199,7 @@
                     _get(colData, col.tagColor) === 'white' ? 'black' : 'white'
                   }; outline: 1px dotted #0000CD; outline-offset: 3px`"
                 />
-                <div v-else-if="col.chip && col.dataType === 'array' && _get(colData, col.field) !== undefined">
+                <div v-else-if="col.chip && col.dataType === 'tag' && _get(colData, col.field) !== undefined">
                   <PvChip v-for="chip in _get(colData, col.field)" :key="chip" :label="chip" />
                 </div>
                 <div v-else-if="col.link">
@@ -388,6 +390,35 @@
                     </template>
                   </PvSelect>
                 </div>
+                <!-- Only a single tag is supported, may return partial matches (e.g., 'Stanford' → 'Stanford University') -->
+                <div v-if="col.dataType === 'tag'">
+                  <PvSelect
+                    v-model="filterModel.value"
+                    :options="orgTagFilterOptions"
+                    style="margin-bottom: 0.5rem; width: 12rem"
+                    data-cy="data-table__progress-filter-dropdown"
+                  >
+                    <template #option="{ option }">
+                      <div v-if="option" class="flex align-items-center">
+                        <PvTag
+                          :value="option"
+                          :style="`min-width: 2rem; font-weight: bold`"
+                          rounded
+                          pt:root:data-testid="tag__root"
+                        />
+                      </div>
+                    </template>
+                    <template #value="{ value }">
+                      <PvTag
+                        v-if="value"
+                        :value="value"
+                        :style="`min-width: 2rem; font-weight: bold`"
+                        rounded
+                        pt:root:data-testid="tag__root"
+                      />
+                    </template>
+                  </PvSelect>
+                </div>
               </template>
               <template #filterclear="{ filterCallback }">
                 <div class="flex flex-row-reverse">
@@ -521,6 +552,16 @@ const computedColumns = computed(() => {
   });
 });
 
+const orgTagFilterOptions = computed(() => {
+  const availableTags = [];
+  props.data.forEach((row) => {
+    if ('tags' in row) {
+      availableTags.push(...row.tags);
+    }
+  });
+  return _uniq(availableTags);
+});
+
 const toast = useToast();
 
 const dataTable = ref();
@@ -632,6 +673,7 @@ const dataTypesToFilterMatchMode = {
   BOOLEAN: FilterMatchMode.EQUALS,
   SCORE: FilterMatchMode.CONTAINS,
   PROGRESS: FilterMatchMode.CONTAINS,
+  TAG: FilterMatchMode.CONTAINS,
 };
 
 const computedFilters = computed(() => {

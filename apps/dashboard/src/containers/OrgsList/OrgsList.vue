@@ -209,6 +209,7 @@ import PvToast from 'primevue/toast';
 import PvToggleButton from 'primevue/togglebutton';
 import _get from 'lodash/get';
 import _head from 'lodash/head';
+import _cloneDeep from 'lodash/cloneDeep';
 import { useAuthStore } from '@/store/auth';
 import { orgFetchAll } from '@/helpers/query/orgs';
 import { orderByDefault, exportCsv, fetchDocById } from '@/helpers/query/utils';
@@ -381,8 +382,9 @@ const exportAll = async () => {
 const tableData = computed(() => {
   if (isLoading.value) return [];
   const tableData = orgData?.value?.map((org) => {
+    const orgInfo = _cloneDeep(org);
     return {
-      ...org,
+      ...orgInfo,
       isExporting: exportingOrgId.value === org.id,
       routeParams: {
         orgType: activeOrgType.value,
