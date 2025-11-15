@@ -112,12 +112,13 @@ function handleToolTip(_taskId, _toolTip, _colData) {
         _colData.scores?.[_taskId]?.isNewScoring && _colData.scores?.[_taskId]?.recruitment === 'responseModality';
 
       if (isResponseModality) {
+        const taskScores = _colData.scores?.[_taskId];
         let fcStats = 'Multiple Choice: \n';
         let frStats = 'Free Response: \n';
         for (const [property, propertyHeader] of Object.entries(roamFluencySubskillHeaders)) {
-          if (_colData.scores?.[_taskId]?.[property] != undefined) {
-            fcStats += `${propertyHeader}: ${_colData.scores?.[_taskId]?.fc?.[property] ?? 0}\n`;
-            frStats += `${propertyHeader}: ${_colData.scores?.[_taskId]?.fr?.[property] ?? 0}\n`;
+          if (taskScores?.[property] != undefined) {
+            fcStats += `${propertyHeader}: ${taskScores?.fc?.[property] ?? 0}\n`;
+            frStats += `${propertyHeader}: ${taskScores?.fr?.[property] ?? 0}\n`;
           }
         }
         _toolTip = fcStats + '\n' + frStats;
