@@ -1000,6 +1000,7 @@ const computeAssignmentAndRunData = computed(() => {
           schoolName: schoolName,
           stateId: user.studentData?.state_id,
           studentId: user.studentData?.student_number,
+          sisId: user.sisId ?? user.studentData?.sis_id,
         },
         tooltip: `View ${firstNameOrUsername}'s Score Report`,
         launchTooltip: `View assessment portal for ${firstNameOrUsername}`,
@@ -1399,6 +1400,7 @@ const createExportData = ({ rows, includeProgress = false }) => {
     // if (orgData.value?.clever === true) {
     tableRow['State ID'] = user.stateId;
     tableRow['Student ID'] = user.studentId;
+    tableRow['SIS ID'] = user.sisId;
     // }
 
     for (const taskId in scores) {
@@ -1793,6 +1795,15 @@ const scoreReportColumns = computed(() => {
   tableColumns.push({
     field: 'user.studentId',
     header: 'Student ID',
+    dataType: 'text',
+    sort: false,
+    hidden: true, // Column is hidden by default, available via the Show/Hide Columns menu
+    headerStyle: `background:var(--primary-color); color:white; padding-top:0; margin-top:0; padding-bottom:0; margin-bottom:0; border:0; margin-left:0; border-right-width:2px; border-right-style:solid; border-right-color:#ffffff;`,
+  });
+
+  tableColumns.push({
+    field: 'user.sisId',
+    header: 'SIS ID',
     dataType: 'text',
     sort: false,
     hidden: true, // Column is hidden by default, available via the Show/Hide Columns menu
