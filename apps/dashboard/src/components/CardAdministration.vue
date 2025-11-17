@@ -48,7 +48,11 @@
         </template>
 
         <div v-if="showParams">
-          <PvPopover v-for="assessmentId in assessmentIds" :key="assessmentId" :ref="paramPanelRefs[assessmentId]">
+          <PvPopover
+            v-for="assessmentId in assessmentIds"
+            :key="assessmentId"
+            :ref="(el) => (paramPanelRefs[assessmentId] = el)"
+          >
             <div v-if="getAssessment(assessmentId).variantId">
               Variant ID: {{ getAssessment(assessmentId).variantId }}
             </div>
@@ -301,7 +305,7 @@ const toEntryObjects = (inputObj) => {
 };
 
 const toggleParams = (event, id) => {
-  paramPanelRefs.value[id].value[0].toggle(event);
+  paramPanelRefs.value[id].toggle(event);
 };
 
 function getAssessment(assessmentId) {
