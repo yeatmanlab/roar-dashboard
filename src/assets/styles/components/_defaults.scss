@@ -51,6 +51,27 @@ $xl: 1920px;
   animation: p-component-overlay-leave-animation 150ms forwards;
 }
 
+.p-dialog {
+  .p-dialog-footer {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-end;
+    width: 100%;
+    gap: 1rem;
+    padding: 1.5rem;
+    border-top: 1px solid #e6e7eb;
+    border-radius: 0 0 var(--border-radius) var(--border-radius);
+  }
+}
+
+.modal-footer {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-end;
+  width: 100%;
+  gap: 1rem;
+}
+
 @keyframes p-component-overlay-enter-animation {
   from {
     background-color: transparent;

@@ -1,6 +1,7 @@
 import { mount } from '@vue/test-utils';
 import PrimeVue from 'primevue/config';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { createPinia, setActivePinia } from 'pinia';
 import RoarDataTable from '../RoarDataTable.vue';
 
 vi.mock('@bdelab/roar-utils', () => ({
@@ -49,6 +50,10 @@ const mountOptions = {
     totalRecords: 100,
   },
 };
+
+beforeEach(() => {
+  setActivePinia(createPinia());
+});
 
 describe('RoarDataTable.vue', () => {
   it('should render the component WITH content', () => {

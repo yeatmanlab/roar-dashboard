@@ -12,7 +12,8 @@ import _without from 'lodash/without';
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '@/store/auth';
 import { flattenObj, isEmulator } from '@/helpers';
-import { FIRESTORE_BASE_URL, FIRESTORE_DATABASES } from '@/constants/firebase';
+import { FIRESTORE_BASE_URL, FIRESTORE_COLLECTIONS, FIRESTORE_DATABASES } from '@/constants/firebase';
+import { ROLES } from '@/constants/roles';
 
 export const convertValues = (value) => {
   const passThroughKeys = [
