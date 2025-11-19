@@ -60,7 +60,9 @@
             <LanguageSelector />
           </div>
           <div class="flex gap-2">
+            <!-- hidding privacy for now until we have a document -->
             <a
+              v-if="false"
               :href="TERMS_OF_SERVICE_DOCUMENT_PATH"
               class="text-400 inline-block text-sm hover:text-primary pt-2"
               target="_blank"
