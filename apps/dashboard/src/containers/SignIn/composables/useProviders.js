@@ -44,7 +44,7 @@ export function useProviders(options) {
     }
     const emailVal = (toValue(email) || '').trim().toLowerCase();
     const raw = await kit.fetchEmailAuthMethods(emailVal);
-    const norm = normalizeProviders(raw || []);
+    const norm = await normalizeProviders(raw || []);
     availableProviders.value = norm;
     hasCheckedProviders.value = true;
     return norm;
@@ -72,6 +72,9 @@ export function useProviders(options) {
 
     const providers = await getProviders();
 
+    availableProviders.value = providers;
+    hasCheckedProviders.value = true;
+
     // multi SSO chooser
     const sso = providers.filter((p) =>
       [
@@ -81,6 +84,7 @@ export function useProviders(options) {
         AUTH_SSO_PROVIDERS.NYCPS,
       ].includes(p),
     );
+
     multipleProviders.value = sso.length > 1;
 
     if (multipleProviders.value) {

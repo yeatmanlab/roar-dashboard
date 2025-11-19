@@ -1,5 +1,11 @@
 <template>
-  <div class="bg-white border border-200 rounded-2xl p-4 md:p-5 shadow-1">
-    <slot />
-  </div>
+  <Card class="bg-white border border-round-xs border-200 p-3 shadow-1">
+    <template #content>
+      <slot />
+    </template>
+  </Card>
 </template>
+
+<script setup>
+import Card from 'primevue/card';
+</script>

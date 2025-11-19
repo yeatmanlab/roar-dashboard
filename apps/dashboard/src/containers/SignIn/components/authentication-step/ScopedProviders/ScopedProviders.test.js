@@ -6,7 +6,6 @@ describe('ScopedProviders.vue', () => {
   it('should render the component', () => {
     const wrapper = mount(ScopedProviders, {
       props: {
-        showScopedProviders: false,
         availableProviders: [],
       },
     });
@@ -17,7 +16,6 @@ describe('ScopedProviders.vue', () => {
   it('should have correct container CSS classes', () => {
     const wrapper = mount(ScopedProviders, {
       props: {
-        showScopedProviders: false,
         availableProviders: [],
       },
     });
@@ -30,74 +28,69 @@ describe('ScopedProviders.vue', () => {
     expect(container.classes()).toContain('justify-content-center');
   });
 
-  it('should display all buttons when availableProviders is empty', () => {
+  it('should display Google button when google in availableProviders', () => {
     const wrapper = mount(ScopedProviders, {
       props: {
-        showScopedProviders: false,
-        availableProviders: [],
+        availableProviders: ['google'],
       },
     });
 
     const buttons = wrapper.findAllComponents({ name: 'Button' });
-    expect(buttons.length).toBe(3);
+    const googleButton = buttons.find((btn) => btn.attributes('data-cy') === 'sign-in__google-sso');
+    expect(googleButton).toBeDefined();
   });
 
   it('should display Clever button when clever in availableProviders', () => {
     const wrapper = mount(ScopedProviders, {
       props: {
-        showScopedProviders: true,
         availableProviders: ['clever'],
       },
     });
 
     const buttons = wrapper.findAllComponents({ name: 'Button' });
-    const cleverButton = buttons.find((btn) => btn.attributes('data-cy') === 'sign-in__clever-sso');
+    const cleverButton = buttons.find((btn) => btn.attributes('data-cy') === 'sign-in__clever-sso-scoped');
     expect(cleverButton).toBeDefined();
   });
 
   it('should display ClassLink button when classlink in availableProviders', () => {
     const wrapper = mount(ScopedProviders, {
       props: {
-        showScopedProviders: true,
         availableProviders: ['classlink'],
       },
     });
 
     const buttons = wrapper.findAllComponents({ name: 'Button' });
-    const classlinkButton = buttons.find((btn) => btn.attributes('data-cy') === 'sign-in__classlink-sso');
+    const classlinkButton = buttons.find((btn) => btn.attributes('data-cy') === 'sign-in__classlink-sso-scoped');
     expect(classlinkButton).toBeDefined();
   });
 
   it('should display NYCPS button when nycps in availableProviders', () => {
     const wrapper = mount(ScopedProviders, {
       props: {
-        showScopedProviders: true,
         availableProviders: ['nycps'],
       },
     });
 
     const buttons = wrapper.findAllComponents({ name: 'Button' });
-    const nycpsButton = buttons.find((btn) => btn.attributes('data-cy') === 'sign-in__nycps-sso');
+    const nycpsButton = buttons.find((btn) => btn.attributes('data-cy') === 'sign-in__nycps-sso-scoped');
     expect(nycpsButton).toBeDefined();
   });
 
   it('should display multiple buttons when multiple providers available', () => {
     const wrapper = mount(ScopedProviders, {
       props: {
-        showScopedProviders: true,
-        availableProviders: ['clever', 'classlink', 'nycps'],
+        availableProviders: ['google', 'clever', 'classlink', 'nycps'],
       },
     });
 
     const buttons = wrapper.findAllComponents({ name: 'Button' });
-    expect(buttons.length).toBe(3);
+    expect(buttons.length).toBe(4);
   });
 
-  it('should not display buttons when showScopedProviders is false and providers are specified', () => {
+  it('should not display buttons when providers are not in availableProviders', () => {
     const wrapper = mount(ScopedProviders, {
       props: {
-        showScopedProviders: false,
-        availableProviders: ['clever'],
+        availableProviders: [],
       },
     });
 
@@ -105,10 +98,22 @@ describe('ScopedProviders.vue', () => {
     expect(buttons.length).toBe(0);
   });
 
+  it('should emit auth-google when Google button clicked', async () => {
+    const wrapper = mount(ScopedProviders, {
+      props: {
+        availableProviders: ['google'],
+      },
+    });
+
+    const googleButton = wrapper.findComponent({ name: 'Button' });
+    await googleButton.trigger('click');
+
+    expect(wrapper.emitted('auth-google')).toBeTruthy();
+  });
+
   it('should emit auth-clever when Clever button clicked', async () => {
     const wrapper = mount(ScopedProviders, {
       props: {
-        showScopedProviders: true,
         availableProviders: ['clever'],
       },
     });
@@ -122,13 +127,12 @@ describe('ScopedProviders.vue', () => {
   it('should emit auth-classlink when ClassLink button clicked', async () => {
     const wrapper = mount(ScopedProviders, {
       props: {
-        showScopedProviders: true,
         availableProviders: ['classlink'],
       },
     });
 
     const buttons = wrapper.findAllComponents({ name: 'Button' });
-    const classlinkButton = buttons.find((btn) => btn.attributes('data-cy') === 'sign-in__classlink-sso');
+    const classlinkButton = buttons.find((btn) => btn.attributes('data-cy') === 'sign-in__classlink-sso-scoped');
     await classlinkButton.trigger('click');
 
     expect(wrapper.emitted('auth-classlink')).toBeTruthy();
@@ -137,13 +141,12 @@ describe('ScopedProviders.vue', () => {
   it('should emit auth-nycps when NYCPS button clicked', async () => {
     const wrapper = mount(ScopedProviders, {
       props: {
-        showScopedProviders: true,
         availableProviders: ['nycps'],
       },
     });
 
     const buttons = wrapper.findAllComponents({ name: 'Button' });
-    const nycpsButton = buttons.find((btn) => btn.attributes('data-cy') === 'sign-in__nycps-sso');
+    const nycpsButton = buttons.find((btn) => btn.attributes('data-cy') === 'sign-in__nycps-sso-scoped');
     await nycpsButton.trigger('click');
 
     expect(wrapper.emitted('auth-nycps')).toBeTruthy();
@@ -152,22 +155,21 @@ describe('ScopedProviders.vue', () => {
   it('should have correct button data-cy attributes', () => {
     const wrapper = mount(ScopedProviders, {
       props: {
-        showScopedProviders: false,
-        availableProviders: [],
+        availableProviders: ['google', 'clever', 'classlink', 'nycps'],
       },
     });
 
     const buttons = wrapper.findAllComponents({ name: 'Button' });
-    expect(buttons[0].attributes('data-cy')).toBe('sign-in__clever-sso');
-    expect(buttons[1].attributes('data-cy')).toBe('sign-in__classlink-sso');
-    expect(buttons[2].attributes('data-cy')).toBe('sign-in__nycps-sso');
+    expect(buttons[0].attributes('data-cy')).toBe('sign-in__google-sso');
+    expect(buttons[1].attributes('data-cy')).toBe('sign-in__clever-sso-scoped');
+    expect(buttons[2].attributes('data-cy')).toBe('sign-in__classlink-sso-scoped');
+    expect(buttons[3].attributes('data-cy')).toBe('sign-in__nycps-sso-scoped');
   });
 
   it('should have correct button CSS classes', () => {
     const wrapper = mount(ScopedProviders, {
       props: {
-        showScopedProviders: false,
-        availableProviders: [],
+        availableProviders: ['google', 'clever', 'classlink', 'nycps'],
       },
     });
 
@@ -191,34 +193,32 @@ describe('ScopedProviders.vue', () => {
   it('should display provider logos', () => {
     const wrapper = mount(ScopedProviders, {
       props: {
-        showScopedProviders: false,
-        availableProviders: [],
+        availableProviders: ['google', 'clever', 'classlink', 'nycps'],
       },
     });
 
     const images = wrapper.findAll('img');
-    expect(images.length).toBe(3);
+    expect(images.length).toBe(4);
   });
 
   it('should have correct image alt text', () => {
     const wrapper = mount(ScopedProviders, {
       props: {
-        showScopedProviders: false,
-        availableProviders: [],
+        availableProviders: ['google', 'clever', 'classlink', 'nycps'],
       },
     });
 
     const images = wrapper.findAll('img');
-    expect(images[0].attributes('alt')).toBe('The Clever Logo');
-    expect(images[1].attributes('alt')).toBe('The ClassLink Logo');
-    expect(images[2].attributes('alt')).toBe('The NYC Public Schools Logo');
+    expect(images[0].attributes('alt')).toBe('The Google Logo');
+    expect(images[1].attributes('alt')).toBe('The Clever Logo');
+    expect(images[2].attributes('alt')).toBe('The ClassLink Logo');
+    expect(images[3].attributes('alt')).toBe('The NYC Public Schools Logo');
   });
 
   it('should have correct image CSS classes', () => {
     const wrapper = mount(ScopedProviders, {
       props: {
-        showScopedProviders: false,
-        availableProviders: [],
+        availableProviders: ['google', 'clever', 'classlink', 'nycps'],
       },
     });
 
@@ -233,44 +233,26 @@ describe('ScopedProviders.vue', () => {
   it('should display provider names in buttons', () => {
     const wrapper = mount(ScopedProviders, {
       props: {
-        showScopedProviders: false,
-        availableProviders: [],
+        availableProviders: ['google', 'clever', 'classlink', 'nycps'],
       },
     });
 
     const spans = wrapper.findAll('span');
+    expect(spans.some((span) => span.text().includes('Google'))).toBe(true);
     expect(spans.some((span) => span.text().includes('Clever'))).toBe(true);
     expect(spans.some((span) => span.text().includes('ClassLink'))).toBe(true);
     expect(spans.some((span) => span.text().includes('NYCPS'))).toBe(true);
   });
 
-  it('should toggle button visibility when props change', async () => {
-    const wrapper = mount(ScopedProviders, {
-      props: {
-        showScopedProviders: false,
-        availableProviders: ['clever'],
-      },
-    });
-
-    let buttons = wrapper.findAllComponents({ name: 'Button' });
-    expect(buttons.length).toBe(0);
-
-    await wrapper.setProps({ showScopedProviders: true });
-
-    buttons = wrapper.findAllComponents({ name: 'Button' });
-    expect(buttons.length).toBe(1);
-  });
-
   it('should show only specified providers when availableProviders is set', async () => {
     const wrapper = mount(ScopedProviders, {
       props: {
-        showScopedProviders: true,
         availableProviders: ['clever'],
       },
     });
 
     const buttons = wrapper.findAllComponents({ name: 'Button' });
     expect(buttons.length).toBe(1);
-    expect(buttons[0].attributes('data-cy')).toBe('sign-in__clever-sso');
+    expect(buttons[0].attributes('data-cy')).toBe('sign-in__clever-sso-scoped');
   });
 });

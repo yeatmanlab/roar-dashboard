@@ -9,14 +9,22 @@ describe('SignInCard.vue', () => {
     expect(wrapper.exists()).toBe(true);
   });
 
+  it('should render Card component', () => {
+    const wrapper = mount(SignInCard);
+
+    const card = wrapper.findComponent({ name: 'Card' });
+    expect(card.exists()).toBe(true);
+  });
+
   it('should have correct CSS classes', () => {
     const wrapper = mount(SignInCard);
 
-    const card = wrapper.find('div');
+    const card = wrapper.findComponent({ name: 'Card' });
     expect(card.classes()).toContain('bg-white');
     expect(card.classes()).toContain('border');
-    expect(card.classes()).toContain('rounded-2xl');
-    expect(card.classes()).toContain('p-4');
+    expect(card.classes()).toContain('border-round-xs');
+    expect(card.classes()).toContain('border-200');
+    expect(card.classes()).toContain('p-3');
     expect(card.classes()).toContain('shadow-1');
   });
 
@@ -39,12 +47,5 @@ describe('SignInCard.vue', () => {
 
     expect(wrapper.html()).toContain('First');
     expect(wrapper.html()).toContain('Second');
-  });
-
-  it('should have responsive padding', () => {
-    const wrapper = mount(SignInCard);
-
-    const card = wrapper.find('div');
-    expect(card.classes()).toContain('md:p-5');
   });
 });

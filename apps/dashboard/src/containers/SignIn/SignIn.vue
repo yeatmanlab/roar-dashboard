@@ -62,25 +62,24 @@
       </small>
     </div>
 
-    <!-- Divider -->
-    <div
-      v-if="!showPasswordField && !emailLinkSent && !hideProviders && (showGenericProviders || showScopedProviders)"
-      class="divider w-full"
-    >
+    <!-- Divider (only on first screen, not on chooser) -->
+    <div v-if="!showPasswordField && !emailLinkSent && !hideProviders && !multipleProviders" class="divider w-full">
       <span class="text-sm">{{ $t('authSignIn.or') }}</span>
     </div>
 
-    <!-- Generic providers (Google) -->
+    <!-- Generic district providers (main screen) -->
     <GenericProviders
-      v-if="!hideProviders && showGenericProviders && !emailLinkSent && !showPasswordField"
-      :available-providers="availableProviders"
-      @auth-google="$emit('auth-google')"
+      v-if="!hideProviders && !emailLinkSent && !showPasswordField && !multipleProviders"
+      @auth-clever="$emit('auth-clever')"
+      @auth-classlink="$emit('auth-classlink')"
+      @auth-nycps="$emit('auth-nycps')"
     />
 
-    <!-- Scoped providers (Clever, ClassLink, NYCPS) -->
+    <!-- Scoped providers (after checking email & multiple providers) -->
     <ScopedProviders
-      v-if="!hideProviders && showScopedProviders"
+      v-if="!hideProviders && multipleProviders"
       :available-providers="availableProviders"
+      @auth-google="$emit('auth-google')"
       @auth-clever="$emit('auth-clever')"
       @auth-classlink="$emit('auth-classlink')"
       @auth-nycps="$emit('auth-nycps')"

@@ -8,7 +8,7 @@
     "minimumCharacters": "Mínimo 8 caracteres",
     "emailId": "correo electrónico",
     "emailPlaceholder": "Ingrese su usuario o correo electrónico",
-    "forgotPassword": "¿Olvidaste tu contraseña?",
+    "forgotPassword": "Reestablecer contraseña",
     "incorrectEmailOrPassword": "Nombre de usuario/email o contraseña incorrectos",
     "invalidEmailPlaceholder": "Error: email no válido",
     "or": "O",
