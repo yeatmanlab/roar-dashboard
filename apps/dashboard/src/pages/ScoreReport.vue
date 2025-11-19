@@ -454,6 +454,7 @@ import {
   roamAlpacaSubskills,
   getTagColor,
   roamFluencyTasks,
+  roamFluencySubskillHeaders,
 } from '@/helpers/reports';
 import { SCORE_SUPPORT_LEVEL_COLORS, SCORE_REPORT_NEXT_STEPS_DOCUMENT_PATH } from '@/constants/scores';
 import RoarDataTable from '@/components/RoarDataTable';
@@ -1000,6 +1001,7 @@ const computeAssignmentAndRunData = computed(() => {
           schoolName: schoolName,
           stateId: user.studentData?.state_id,
           studentId: user.studentData?.student_number,
+          sisId: user.sisId ?? user.studentData?.sis_id,
         },
         tooltip: `View ${firstNameOrUsername}'s Score Report`,
         launchTooltip: `View assessment portal for ${firstNameOrUsername}`,
@@ -1135,6 +1137,12 @@ const computeAssignmentAndRunData = computed(() => {
           currRowScores[taskId].recruitment = _get(assessment, 'params.recruitment');
           currRowScores[taskId].fc = _get(assessment, 'scores.computed.FC');
           currRowScores[taskId].fr = _get(assessment, 'scores.computed.FR');
+
+          if (currRowScores[taskId].recruitment === 'responseModality') {
+            const { fc, fr } = currRowScores[taskId];
+            const totalRawScore = (fc?.rawScore ?? 0) + (fr?.rawScore ?? 0);
+            currRowScores[taskId].rawScore = totalRawScore === 0 ? null : totalRawScore;
+          }
 
           scoreFilterTags += ' Assessed ';
         }
@@ -1316,6 +1324,7 @@ const computeAssignmentAndRunData = computed(() => {
 
     // We only want to display the ROAM Tasks if the recruitment param is responseModality
     // Otherwise, remove them from the runsByTaskId object to prevent including them in TaskReports.
+    // Response modality admins who switch mid-way will no longer see the subscore tables
     const assessments = administrationData.value.assessments;
     for (const assessment of assessments) {
       if (roamFluencyTasks.includes(assessment.taskId)) {
@@ -1399,6 +1408,7 @@ const createExportData = ({ rows, includeProgress = false }) => {
     // if (orgData.value?.clever === true) {
     tableRow['State ID'] = user.stateId;
     tableRow['Student ID'] = user.studentId;
+    tableRow['SIS ID'] = user.sisId;
     // }
 
     for (const taskId in scores) {
@@ -1421,12 +1431,33 @@ const createExportData = ({ rows, includeProgress = false }) => {
         tableRow[`${taskName} - Num Incorrect`] = score.numIncorrect;
         tableRow[`${taskName} - Num Correct`] = score.numCorrect;
       } else if (tasksToDisplayTotalCorrect.includes(taskId)) {
-        if (score.isNewScoring && score.recruitment !== 'responseModality') {
-          tableRow[`${taskName} - Raw Score`] = score.rawScore;
-        }
-        tableRow[`${taskName} - Num Correct`] = score.numCorrect;
-        tableRow[`${taskName} - Num Incorrect`] = score.numIncorrect;
-        tableRow[`${taskName} - Num Attempted`] = score.numAttempted;
+        const setSubscore = (field, score) => {
+          // Response modality prod data only uses new field names (ver 1.2.23+)
+          let result = '';
+          let total = 0;
+          if (score.fr) {
+            const frScore = score.fr[field] ?? 0;
+            result += `Free Response: ${frScore}`;
+            total += frScore;
+          }
+
+          if (score.fc) {
+            const fcScore = score.fc[field] ?? 0;
+            result += `${result ? '\n' : ''}Multiple Choice: ${fcScore}`;
+            total += fcScore;
+          }
+
+          if (score.fr || score.fc) result += `\nTotal: ${total}`;
+
+          // If result is an empty string, handle a non-response modality score
+          return result || score[field];
+        };
+
+        tableRow[`${taskName} - Raw Score`] = score.rawScore;
+
+        Object.entries(roamFluencySubskillHeaders).forEach(([property, propertyHeader]) => {
+          tableRow[`${taskName} - ${propertyHeader}`] = setSubscore(property, score);
+        });
       } else if (rawOnlyTasks.includes(taskId)) {
         tableRow[`${taskName} - Raw`] = score.rawScore;
       } else if (tasksToDisplayGradeEstimate.includes(taskId)) {
@@ -1799,6 +1830,15 @@ const scoreReportColumns = computed(() => {
     headerStyle: `background:var(--primary-color); color:white; padding-top:0; margin-top:0; padding-bottom:0; margin-bottom:0; border:0; margin-left:0; border-right-width:2px; border-right-style:solid; border-right-color:#ffffff;`,
   });
 
+  tableColumns.push({
+    field: 'user.sisId',
+    header: 'SIS ID',
+    dataType: 'text',
+    sort: false,
+    hidden: true, // Column is hidden by default, available via the Show/Hide Columns menu
+    headerStyle: `background:var(--primary-color); color:white; padding-top:0; margin-top:0; padding-bottom:0; margin-bottom:0; border:0; margin-left:0; border-right-width:2px; border-right-style:solid; border-right-color:#ffffff;`,
+  });
+
   const isAdministrationOpen = administrationData.value?.dateClosed
     ? new Date(administrationData.value?.dateClosed) > new Date()
     : false;
@@ -1872,11 +1912,6 @@ const scoreReportColumns = computed(() => {
     if (excludeFromScoringTasks.includes(taskId)) continue; // Skip adding this column
     let colField;
     const isOptional = `scores.${taskId}.optional`;
-    let isFluencyResponseModality = false;
-    if (roamFluencyTasks.includes(taskId)) {
-      const fluencyTasks = administrationData.value?.assessments?.find((assessment) => assessment.taskId === taskId);
-      isFluencyResponseModality = fluencyTasks?.params?.recruitment === 'responseModality';
-    }
 
     // Color needs to include a field to allow sorting.
     if (viewMode.value === 'percentile' || viewMode.value === 'color') {
@@ -1937,7 +1972,7 @@ const scoreReportColumns = computed(() => {
       filter: true,
       sortField: colField ? colField : `scores.${taskId}.percentile`,
       tag: viewMode.value !== 'color',
-      emptyTag: viewMode.value === 'color' || isFluencyResponseModality || isOptional,
+      emptyTag: viewMode.value === 'color' || isOptional,
       tagColor: `scores.${taskId}.tagColor`,
       style: (() => {
         return `text-align: center; ${getTaskStyle(taskId, backgroundColor, orderedTasks)}`;
