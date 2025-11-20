@@ -20,15 +20,8 @@
         <span class="text-base font-semibold whitespace-nowrap" :style="{ color: score.supportColor }">
           {{ scoreLabel }}: {{ getFromScoreValueTemplate(score.value) }}
         </span>
-        <div class="progress-chart flex-1">
-          <canvas v-if="showCanvas" ref="canvasRef" class="w-full h-full"></canvas>
-          <img
-            v-else
-            :src="chartImgSrc"
-            class="w-full progress-chart-img"
-            style="object-fit: fill"
-            alt="Score progress chart"
-          />
+        <div class="progress-bar flex-1">
+          <div :style="getProgressBarStyle()"></div>
         </div>
       </div>
       <i18n-t :keypath="description.keypath" tag="p" class="mb-0">
@@ -79,14 +72,8 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue';
-import Chart from 'chart.js/auto';
 import { LongitudinalChartPrint as LongitudinalChart } from './LongitudinalChart';
 import { FEATURE_FLAGS } from '@/constants/featureFlags';
-import {
-  setIndividualScoreReportPrintChartData,
-  setIndividualScoreReportPrintChartOptions,
-} from '@/containers/StudentScoreReport/helpers/charts';
 import PvTag from 'primevue/tag';
 
 const props = defineProps({
@@ -170,58 +157,20 @@ const getFromScoreValueTemplate = (scoreValue) => {
   return scoreValue;
 };
 
-// Chart rendering for print
-const canvasRef = ref(null);
-let chartInstance = null;
-const showCanvas = ref(true);
-const chartImgSrc = ref('');
-
-async function renderThenSnapshot() {
-  // Render the chart
-  const ctx = canvasRef.value?.getContext('2d');
-  if (!ctx) return;
-  if (chartInstance) {
-    chartInstance.destroy();
-    chartInstance = null;
-  }
-
-  // Call helper functions with current prop values
-  const data = setIndividualScoreReportPrintChartData(props.score, props.scoreLabel);
-  const options = setIndividualScoreReportPrintChartOptions(props.score.min, props.score.max);
-
-  chartInstance = new Chart(ctx, {
-    type: 'bar',
-    data,
-    options,
-  });
-
-  // Ensure it has painted at least once before snapshotting
-  await nextTick();
-  await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
-
-  // Snapshot to data URL and swap to <img>
-  const url = chartInstance.toBase64Image('image/png', 1); // full quality
-  chartImgSrc.value = url;
-  showCanvas.value = false;
-
-  // Cleanup
-  chartInstance.destroy();
-  chartInstance = null;
-}
-
-onMounted(renderThenSnapshot);
-onBeforeUnmount(() => {
-  chartInstance?.destroy();
-  chartInstance = null;
-});
+const getProgressBarStyle = () => {
+  return {
+    height: '1rem',
+    width: `${Math.round((props.score.value / props.score.max) * 100)}%`,
+    backgroundColor: props.score.supportColor,
+  };
+};
 </script>
 
 <style scoped>
-.progress-chart {
-  height: 1.25rem;
-}
-
-.progress-chart-img {
-  height: 2rem;
+.progress-bar {
+  background-color: #e2e8f0;
+  border-radius: 2rem;
+  height: 1rem;
+  overflow: hidden;
 }
 </style>
