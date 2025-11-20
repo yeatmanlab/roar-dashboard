@@ -32,8 +32,8 @@
     </ul>
   </div>
 
-  <div class="pt-4 mt-6 text-sm">
-    <h2 class="text-xl font-bold">{{ $t('scoreReports.nextStepsTabHeader') }}</h2>
+  <div class="pt-4 text-xs">
+    <h2 class="text-lg font-bold">{{ $t('scoreReports.nextStepsTabHeader') }}</h2>
     <i18n-t keypath="scoreReports.nextSteps" tag="p" class="mt-0">
       <template #link> : {{ getScoreReportNextStepsDocumentPath() }} </template>
     </i18n-t>
