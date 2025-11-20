@@ -5,7 +5,7 @@
       {{ $t('scoreReports.roarSummary') }}
       <i18n-t keypath="scoreReports.summary" :tag="false">
         <template #firstName>
-          <span class="inline">{{ studentFirstName }}</span>
+          {{ studentFirstName }}
         </template>
       </i18n-t>
     </p>

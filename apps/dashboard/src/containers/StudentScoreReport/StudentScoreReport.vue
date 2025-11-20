@@ -181,7 +181,6 @@ const studentFirstName = computed(() => getStudentDisplayName(studentData).first
 const studentLastName = computed(() => getStudentDisplayName(studentData).lastName);
 const studentGrade = computed(() => toValue(studentData)?.studentData?.grade);
 const studentId = computed(() => {
-  // @TODO: What about nycps which is is sisId?
   const s = toValue(studentData);
   if (!s) return '';
 
