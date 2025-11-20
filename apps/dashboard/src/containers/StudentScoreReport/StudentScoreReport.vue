@@ -168,7 +168,7 @@ const { data: tasksDictionary, isLoading: isLoadingTasksDictionary } = useTasksD
 
 const tasks = computed(() => taskData?.value?.map((assignment) => assignment.taskId) || []);
 const tasksListArray = computed(() =>
-  formatListArray(tasks.value, tasksDictionary.value, (task, entry) => entry?.technicalName ?? task, {
+  formatListArray(tasks.value, tasksDictionary.value, (task, entry) => entry?.publicName ?? task, {
     orderLookup: Object.entries(taskDisplayNames).reduce((acc, [key, value]) => {
       acc[key] = value.order;
       return acc;
