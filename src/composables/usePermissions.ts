@@ -1,5 +1,6 @@
 // composables/usePermissions.ts
-import { ref, computed, onMounted, readonly, toValue } from 'vue';
+import { ref, computed, onMounted, readonly } from 'vue';
+import { storeToRefs } from 'pinia';
 import { CacheService, PermissionDocument, PermissionService, type Resource, type Action, type Role, type UserRole as CoreUserRole, GroupSubResource, AdminSubResource } from '@levante-framework/permissions-core';
 import { useAuthStore } from '@/store/auth';
 import { getAxiosInstance, getBaseDocumentPath, convertValues } from '@/helpers/query/utils';
@@ -15,20 +16,20 @@ const permissionService = new PermissionService(cache);
 
 export const usePermissions = () => {
   const authStore = useAuthStore();
-  const { isAuthenticated, firebaseUser, userData, shouldUsePermissions } = authStore;
+  const { isAuthenticated } = authStore;
+  const { firebaseUser, userData, shouldUsePermissions, currentSite } = storeToRefs(authStore);
 
   // console.log('isAuthenticated: ', isAuthenticated);
   // console.log('firebaseUser: ', firebaseUser.adminFirebaseUser);
 
   const permissionsLoaded = ref(false);
-  const currentSite = toValue(authStore.currentSite);
   const user = computed(() => {
-    if (!isAuthenticated() || !firebaseUser.adminFirebaseUser) return null;
+    if (!isAuthenticated() || !firebaseUser.value.adminFirebaseUser) return null;
 
     return {
-      uid: firebaseUser.adminFirebaseUser.uid,
-      email: firebaseUser.adminFirebaseUser.email ?? '',
-      roles: JSON.parse(JSON.stringify((userData as UserData)?.roles ?? [])) as CoreUserRole[],
+      uid: firebaseUser.value.adminFirebaseUser.uid,
+      email: firebaseUser.value.adminFirebaseUser.email ?? '',
+      roles: JSON.parse(JSON.stringify((userData.value as UserData)?.roles ?? [])) as CoreUserRole[],
     };
   });
 
@@ -66,17 +67,17 @@ export const usePermissions = () => {
 
   // Load permissions when component mounts and user is authenticated
   onMounted(() => {
-    if (shouldUsePermissions && isAuthenticated()) {
+    if (shouldUsePermissions.value && isAuthenticated()) {
       loadPermissions();
     }
   });
 
   const can = (resource: Resource, action: Action, subResource?: GroupSubResource | AdminSubResource): boolean => {
-    if (!shouldUsePermissions || !permissionsLoaded.value || !user.value || !currentSite) return false;
+    if (!shouldUsePermissions.value || !permissionsLoaded.value || !user.value || !currentSite.value) return false;
 
     return permissionService.canPerformSiteAction(
       user.value,
-      currentSite,
+      currentSite.value,
       resource,
       action,
       subResource
@@ -84,17 +85,17 @@ export const usePermissions = () => {
   };
 
   const canGlobal = (resource: Resource, action: Action, subResource?: GroupSubResource | AdminSubResource): boolean => {
-    if (!shouldUsePermissions || !permissionsLoaded.value || !user.value) return false;
+    if (!shouldUsePermissions.value || !permissionsLoaded.value || !user.value) return false;
 
     return permissionService.canPerformGlobalAction(user.value, resource, action, subResource);
   };
 
   const hasRole = (role: Role): boolean => {
-    if (!shouldUsePermissions || !permissionsLoaded.value || !user.value || !currentSite) return false;
+    if (!shouldUsePermissions.value || !permissionsLoaded.value || !user.value || !currentSite.value) return false;
 
     const userRole = permissionService.getUserSiteRole(
       user.value,
-      currentSite
+      currentSite.value
     );
 
     if (!userRole) return false;
@@ -103,7 +104,7 @@ export const usePermissions = () => {
   };
 
   const permissions = computed(() => {
-    if (!shouldUsePermissions || !permissionsLoaded.value) return {};
+    if (!shouldUsePermissions.value || !permissionsLoaded.value) return {};
 
     const resources = ['groups', 'assignments', 'users', 'admins', 'tasks'] as Resource[];
     const actions = ['create', 'read', 'update', 'delete', 'exclude'] as Action[];
