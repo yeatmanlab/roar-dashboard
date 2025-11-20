@@ -27,6 +27,12 @@
             :export-loading="exportLoading"
           />
 
+          <SupportPrint
+            :student-grade="studentGrade"
+            :distribution-chart-path="distributionChartPath"
+            :is-distribution-chart-enabled="isDistributionChartEnabled"
+          />
+
           <ScoreListPrint
             :student-first-name="studentFirstName"
             :student-grade="studentGrade"
@@ -34,12 +40,6 @@
             :tasks-dictionary="tasksDictionary"
             :longitudinal-data="longitudinalData"
             :task-scoring-versions="getScoringVersions"
-          />
-
-          <SupportPrint
-            :student-grade="studentGrade"
-            :distribution-chart-path="distributionChartPath"
-            :is-distribution-chart-enabled="isDistributionChartEnabled"
           />
         </template>
       </div>
