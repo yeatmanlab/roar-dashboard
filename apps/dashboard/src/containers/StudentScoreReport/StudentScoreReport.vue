@@ -180,6 +180,15 @@ const tasksListArray = computed(() =>
 const studentFirstName = computed(() => getStudentDisplayName(studentData).firstName);
 const studentLastName = computed(() => getStudentDisplayName(studentData).lastName);
 const studentGrade = computed(() => toValue(studentData)?.studentData?.grade);
+const studentId = computed(() => {
+  // @TODO: What about nycps which is is sisId?
+  const s = toValue(studentData);
+  if (!s) return '';
+
+  const id = s.sisId ?? s.studentData?.sis_id ?? s.studentData?.student_number ?? s.studentData?.state_id;
+  return id ? `-${id}` : '';
+});
+
 const getScoringVersions = computed(() => {
   const scoringVersions = Object.fromEntries(
     administrationData.value?.assessments.map((assessment) => [
@@ -262,7 +271,7 @@ const { run: runPaged, clear: clearPaged } = usePagedPreview({
  */
 const handleExportToPdf = async () => {
   const studentName = `${studentFirstName.value}${studentLastName.value ? studentLastName.value : ''}`;
-  const fileName = `ROAR-IndividualScoreReport-${studentName}.pdf`;
+  const fileName = `ROAR-IndividualScoreReport-${studentName}${studentId.value}.pdf`;
 
   exportLoading.value = true;
   try {
