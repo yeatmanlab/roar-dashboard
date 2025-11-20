@@ -1,5 +1,5 @@
 <template>
-  <div class="pt-2 mt-1 text-xs border border-gray-800 border-top-2">
+  <div class="py-2 mt-1 text-xs border border-gray-800 border-top-2">
     <h2 class="text-lg font-bold">Assessment Overview</h2>
     <p>
       {{ $t('scoreReports.roarSummary') }}
@@ -15,7 +15,7 @@
         {{ studentFirstName }}
       </template>
     </i18n-t>
-    <ul class="p-0 pl-3 columns-2">
+    <ul class="p-0 pl-3 columns-3">
       <li v-for="task in tasks" :key="task" class="pb-1">
         <strong>{{ task }}</strong>
       </li>

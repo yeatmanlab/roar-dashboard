@@ -1,5 +1,5 @@
 <template>
-  <div class="p-2 mb-4 text-sm rounded border border-gray-200 border-solid break-inside-avoid">
+  <div class="p-3 mb-4 text-sm rounded border border-gray-200 border-solid break-inside-avoid">
     <div class="flex justify-between align-items-center">
       <h2 class="m-0 text-lg font-semibold">{{ publicName }}</h2>
       <div class="flex gap-2 text-sm border-collapse">
@@ -15,7 +15,7 @@
       </div>
     </div>
 
-    <div class="py-3 mt-3 border-t border-gray-200 text-xs">
+    <div class="pt-3 mt-3 border-t border-gray-200 text-xs">
       <div class="flex gap-2 align-items-center">
         <span class="text-base font-semibold whitespace-nowrap" :style="{ color: score.supportColor }">
           {{ scoreLabel }}: {{ getFromScoreValueTemplate(score.value) }}

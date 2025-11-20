@@ -1,8 +1,8 @@
 <template>
   <div class="text-sm">
     <div class="text-left">
-      <h1 class="p-0 m-0 text-4xl">
-        <span class="block mb-1 text-sm text-gray-600 uppercase">
+      <h1 class="p-0 m-0 text-3xl">
+        <span class="block mb-1 text-xs text-gray-600 uppercase">
           {{ $t('scoreReports.pageTitle') }}
         </span>
         <span class="hidden">: </span>
