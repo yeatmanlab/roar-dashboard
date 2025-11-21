@@ -945,6 +945,50 @@ const SCORE_FIELD_MAPPINGS = {
       legacy: 'totalCorrect',
     },
   },
+  morphology: {
+    percentile: {
+      new: 'totalPercentCorrect',
+      legacy: 'totalPercentCorrect',
+    },
+    percentileDisplay: {
+      new: 'totalPercentCorrect',
+      legacy: 'totalPercentCorrect',
+    },
+    standardScore: {
+      new: undefined,
+      legacy: undefined,
+    },
+    standardScoreDisplay: {
+      new: undefined,
+      legacy: undefined,
+    },
+    rawScore: {
+      new: 'totalPercentCorrect',
+      legacy: 'totalPercentCorrect',
+    },
+  },
+  cva: {
+    percentile: {
+      new: 'totalPercentCorrect',
+      legacy: 'totalPercentCorrect',
+    },
+    percentileDisplay: {
+      new: 'totalPercentCorrect',
+      legacy: 'totalPercentCorrect',
+    },
+    standardScore: {
+      new: undefined,
+      legacy: undefined,
+    },
+    standardScoreDisplay: {
+      new: undefined,
+      legacy: undefined,
+    },
+    rawScore: {
+      new: 'totalPercentCorrect',
+      legacy: 'totalPercentCorrect',
+    },
+  },
 };
 
 /**
