@@ -8,13 +8,14 @@
           {{ studentFirstName }}
         </template>
       </i18n-t>
+
+      <i18n-t keypath="scoreReports.completedTasks" :tag="false">
+        <template #firstName>
+          {{ '  ' + studentFirstName }}
+        </template>
+      </i18n-t>
     </p>
 
-    <i18n-t keypath="scoreReports.completedTasks" tag="p">
-      <template #firstName>
-        {{ studentFirstName }}
-      </template>
-    </i18n-t>
     <ul class="p-0 pl-3 columns-3">
       <li v-for="task in tasks" :key="task" class="pb-1">
         <strong>{{ task }}</strong>
