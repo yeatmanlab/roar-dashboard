@@ -17,7 +17,10 @@
 
     <div class="pt-3 mt-3 border-t border-gray-200 text-xs">
       <div class="flex gap-2 align-items-center">
-        <span class="text-base font-semibold whitespace-nowrap mb-1" :style="{ color: score.supportColor }">
+        <span
+          class="text-base font-semibold whitespace-nowrap progress-bar-label"
+          :style="{ color: score.supportColor }"
+        >
           {{ scoreLabel }}: {{ getFromScoreValueTemplate(score.value) }}
         </span>
         <div class="progress-bar flex-1">
@@ -172,5 +175,9 @@ const getProgressBarStyle = () => {
   border-radius: 2rem;
   height: 1rem;
   overflow: hidden;
+}
+
+.progress-bar-label {
+  margin-bottom: 2px;
 }
 </style>
