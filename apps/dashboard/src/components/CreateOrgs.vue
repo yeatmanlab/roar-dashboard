@@ -367,15 +367,15 @@ const searchTags = (event) => {
   tagSuggestions.value = filteredOptions;
 };
 
-const addTag = (event) => {
-  const input = event.target.value.trim();
-  if (input && !state.tags.includes(input)) {
-    state.tags.push(input);
-  }
-  // Use the template ref to clear the input value
+const addTag = () => {
+  // Use the template ref to access the input element
   if (tagAutoComplete.value?.$el) {
     const inputElement = tagAutoComplete.value.$el.querySelector('input');
     if (inputElement) {
+      const input = inputElement.value.trim();
+      if (input && !state.tags.includes(input)) {
+        state.tags.push(input);
+      }
       inputElement.value = '';
     }
   }
