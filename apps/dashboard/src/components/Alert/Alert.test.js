@@ -9,12 +9,12 @@ describe('Alert Component', () => {
         default: [
           mount(AlertTitle, {
             slots: {
-              default: 'Error Alert',
+              default: 'Quick info',
             },
           }),
           mount(AlertDescription, {
             slots: {
-              default: "Whoops, well that wasn't great, now was it?",
+              default: 'Time to start roaring',
             },
           }),
         ],
