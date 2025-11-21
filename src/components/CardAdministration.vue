@@ -161,7 +161,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref, watchEffect } from 'vue';
 import { useConfirm } from 'primevue/useconfirm';
 import { useToast } from 'primevue/usetoast';
 import { useRouter } from 'vue-router';
@@ -393,12 +393,10 @@ function getAssessment(assessmentId: string): Assessment | undefined {
   return props.assessments.find((assessment) => assessment.taskId.toLowerCase() === assessmentId);
 }
 
-const showTable = ref<boolean>(false);
 const enableQueries = ref<boolean>(false);
 
 onMounted((): void => {
   enableQueries.value = true;
-  showTable.value = !showTable.value;
 });
 
 const isWideScreen = computed((): boolean => {
@@ -418,12 +416,18 @@ const loadingTreeTable = computed((): boolean => {
 });
 
 const treeTableOrgs = ref<TreeNode[]>([]);
-watch(orgs, (newValue) => {
-  treeTableOrgs.value = newValue || [];
-});
 
-watch(showTable, (newValue) => {
-  if (newValue) treeTableOrgs.value = orgs.value || [];
+const cloneTreeNodes = (nodes: TreeNode[] = []): TreeNode[] =>
+  // Clone each node so we never mutate the TanStack Query cache when
+  // expanding nodes or adding stats locally.
+  nodes.map((node) => ({
+    ...node,
+    data: { ...node.data },
+    ...(node.children ? { children: cloneTreeNodes(node.children) } : {}),
+  }));
+
+watchEffect(() => {
+  treeTableOrgs.value = cloneTreeNodes(orgs.value ?? []);
 });
 
 const expanding = ref<boolean>(false);
