@@ -19,15 +19,21 @@
               @view-change="handleViewChange"
             >
               <template #export-buttons>
-                <div v-if="!isLoadingAssignments" class="flex gap-2 mr-5 flex-column">
+                <div
+                  v-if="!isLoadingAssignments && !isLoadingDistrictSupportCategories"
+                  class="flex gap-2 mr-5 flex-column"
+                >
                   <PvButton
+                    v-if="orgType !== 'district'"
                     class="flex flex-row p-2 text-sm text-white border-none bg-primary border-round h-2rem hover:bg-red-900"
                     :icon="!exportLoading ? 'pi pi-download mr-2' : 'pi pi-spin pi-spinner mr-2'"
                     label="Export Combined Reports"
                     @click="exportData({ includeProgress: true })"
                   />
                   <PvButton
+                    v-if="orgType !== 'district' || !isEmptyDistrictSupportCategories"
                     class="flex flex-row p-2 mb-2 text-sm text-white border-none bg-primary border-round h-2rem hover:bg-red-900"
+                    :class="orgType === 'district' && !isEmptyDistrictSupportCategories ? 'mt-4' : ''"
                     :icon="!exportLoading ? 'pi pi-download mr-2' : 'pi pi-spin pi-spinner mr-2'"
                     :disabled="exportLoading"
                     label="Export To Pdf"
@@ -47,7 +53,11 @@
                   <div v-for="taskId of sortedAndFilteredTaskIds" :key="taskId" style="width: 33%">
                     <div class="distribution-overview-wrapper">
                       <DistributionChartOverview
-                        :runs="computeAssignmentAndRunData.runsByTaskId[taskId]"
+                        :runs="
+                          props.orgType === 'district'
+                            ? aggregatedDistrictSupportCategories[taskId]
+                            : computeAssignmentAndRunData.runsByTaskId[taskId]
+                        "
                         :initialized="initialized"
                         :task-id="taskId"
                         :org-type="props.orgType"
@@ -92,8 +102,37 @@
                     </div>
                   </div>
                 </div>
-                <div class="my-1 text-xs font-light text-gray-500 uppercase">Legend</div>
+                <!-- One/all of word, sentence, phoneme have been taken, but additionally they have other assessments that do not show charts (we want to say we only show charts for validated assessments)  -->
+                <div v-if="!isEmptyDistrictSupportCategories && props.orgType === 'district'">
+                  <p
+                    v-if="assignedNormedTaskIds && assignedTaskIds.length > assignedNormedTaskIds.length"
+                    class="text-center text-sm font-bold px-4"
+                  >
+                    In this district-level report, visualizations are available for foundational ROAR assessments (Word,
+                    Sentence, and Phoneme) to give you clear, reliable insights on these foundational skills.
+                  </p>
+                  <p class="text-center align-items-center text-sm font-bold px-4">
+                    View school-level or classroom-level reports to see student-level data and information about other
+                    assessments.
+                  </p>
+                </div>
               </div>
+            </div>
+            <div
+              v-if="!isLoadingAssignments && !isLoadingDistrictSupportCategories && isEmptyDistrictSupportCategories"
+              class="justify-content-center surface-100 p-2"
+            >
+              <p class="text-center text-sm font-bold px-4">
+                {{
+                  assignedNormedTaskIds.length === 0
+                    ? 'In this district-level report, visualizations are only available for foundational ROAR assessments (Word, Sentence, and Phoneme). None of these are currently assigned within your district.'
+                    : 'Visualizations will appear once students complete Word, Sentence, and/or Phoneme assessments.'
+                }}
+              </p>
+              <p class="text-center align-items-center text-sm font-bold px-4">
+                View school-level or classroom-level reports to see student-level data and information about other
+                assessments.
+              </p>
             </div>
           </div>
         </section>
@@ -208,6 +247,7 @@
         <!-- Main table -->
         <div v-if="assignmentData?.length ?? 0 > 0" data-cy="score-report__table">
           <RoarDataTable
+            v-if="orgType !== 'district'"
             :data="filteredTableData"
             :columns="scoreReportColumns"
             :total-records="filteredTableData?.length"
@@ -231,8 +271,11 @@
               />
             </span>
           </RoarDataTable>
+          <template v-else>
+            <div class="my-6 text-center">Score report tables are only available at the school level and below</div>
+          </template>
         </div>
-        <div v-if="!isLoadingAssignments" class="legend-container">
+        <div v-if="!isLoadingAssignments && orgType !== 'district'" class="legend-container">
           <div class="legend-entry">
             <div class="circle tooltip" :style="`background-color: ${SCORE_SUPPORT_LEVEL_COLORS.BELOW};`" />
             <div>
@@ -258,7 +301,7 @@
             </div>
           </div>
         </div>
-        <div class="legend-description">
+        <div v-if="orgType !== 'district'" class="legend-description">
           Students are classified into three support groups based on nationally-normed percentiles. Blank spaces
           indicate that the assessment was not completed. <br />
           Pale colors indicate that the score may not reflect the reader’s ability because responses were made too
@@ -271,30 +314,43 @@
           <div class="text-sm font-light text-gray-600 uppercase">Loading Task Reports</div>
         </div>
 
-        <PvTabView :active-index="activeTabIndex">
-          <PvTabPanel
-            v-for="taskId of sortedTaskIds"
-            :key="taskId"
-            :header="tasksDictionary[taskId]?.publicName ?? taskId"
-          >
-            <div :id="'tab-view-' + taskId">
-              <TaskReport
-                v-if="taskId"
-                :computed-table-data="computeAssignmentAndRunData.assignmentTableData"
-                :task-id="taskId"
-                :initialized="initialized"
-                :administration-id="administrationId"
-                :runs="computeAssignmentAndRunData.runsByTaskId[taskId]"
-                :org-type="orgType"
-                :org-id="orgId"
-                :org-info="orgData"
-                :administration-info="administrationData"
-                :task-scoring-versions="getScoringVersions"
-              />
-            </div>
-          </PvTabPanel>
-        </PvTabView>
-        <div id="score-report-closing" class="px-4 py-2 mt-4 bg-gray-200">
+        <PvTabs v-model:value="activeTabValue">
+          <PvTabList>
+            <PvTab
+              v-for="(taskId, i) in sortedAndFilteredSubscoreTaskIds"
+              :key="taskId"
+              :value="String(i)"
+              class="text-base"
+            >
+              {{ tasksDictionary[taskId]?.publicName ?? taskId }}
+            </PvTab>
+          </PvTabList>
+
+          <PvTabPanels>
+            <PvTabPanel v-for="(taskId, i) in sortedAndFilteredSubscoreTaskIds" :key="taskId" :value="String(i)">
+              <div :id="'tab-view-' + taskId">
+                <TaskReport
+                  v-if="taskId"
+                  :computed-table-data="computeAssignmentAndRunData.assignmentTableData"
+                  :task-id="taskId"
+                  :initialized="initialized"
+                  :administration-id="administrationId"
+                  :runs="
+                    orgType === 'district'
+                      ? aggregatedDistrictSupportCategories?.[taskId]
+                      : computeAssignmentAndRunData.runsByTaskId?.[taskId]
+                  "
+                  :org-type="orgType"
+                  :org-id="orgId"
+                  :org-info="orgData"
+                  :administration-info="administrationData"
+                  :task-scoring-versions="getScoringVersions"
+                />
+              </div>
+            </PvTabPanel>
+          </PvTabPanels>
+        </PvTabs>
+        <div id="score-report-closing" class="px-4 py-2 mt-4 bg-gray-100">
           <h2 class="extra-info-title">HOW ROAR SCORES INFORM PLANNING TO PROVIDE SUPPORT</h2>
           <p>
             Each foundational reading skill is a building block of the subsequent skill. Phonological awareness supports
@@ -321,7 +377,7 @@
           <!-- Reintroduce when we have somewhere for this link to go. -->
           <!-- <a href="google.com">Click here</a> for more guidance on steps you can take in planning to support your students. -->
         </div>
-        <div class="px-4 py-2 mb-7 bg-gray-200">
+        <div class="px-4 py-2 mb-7 bg-gray-100">
           <h2 class="extra-info-title">NEXT STEPS</h2>
           <!-- Reintroduce when we have somewhere for this link to go. -->
           <!-- <p>This score report has provided a snapshot of your school's reading performance at the time of administration. By providing classifications for students based on national norms for scoring, you are able to see which students can benefit from varying levels of support. To read more about what to do to support your students, <a href="google.com">read here.</a></p> -->
@@ -360,7 +416,10 @@ import PvButton from 'primevue/button';
 import PvConfirmDialog from 'primevue/confirmdialog';
 import PvSelect from 'primevue/select';
 import PvTabPanel from 'primevue/tabpanel';
-import PvTabView from 'primevue/tabview';
+import PvTabs from 'primevue/tabs';
+import PvTabList from 'primevue/tablist';
+import PvTab from 'primevue/tab';
+import PvTabPanels from 'primevue/tabpanels';
 import PvProgressBar from 'primevue/progressbar';
 import ReportHeader from '@/components/ReportHeader.vue';
 import { useAuthStore } from '@/store/auth';
@@ -395,9 +454,11 @@ import {
   roamAlpacaSubskills,
   getTagColor,
   roamFluencyTasks,
+  roamFluencySubskillHeaders,
 } from '@/helpers/reports';
 import { SCORE_SUPPORT_LEVEL_COLORS, SCORE_REPORT_NEXT_STEPS_DOCUMENT_PATH } from '@/constants/scores';
 import RoarDataTable from '@/components/RoarDataTable';
+import useDistrictSupportCategoriesQuery from '@/composables/queries/useDistrictSupportCategoriesQuery';
 import { CSV_EXPORT_STATIC_COLUMNS } from '@/constants/csvExport';
 import { APP_ROUTES } from '@/constants/routes';
 import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
@@ -413,6 +474,8 @@ let TaskReport, DistributionChartOverview;
 const router = useRouter();
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
+
+const activeTabValue = ref('0');
 
 const props = defineProps({
   administrationId: {
@@ -445,7 +508,16 @@ const displayName = computed(() => {
   return 'Fetching administration name...';
 });
 
+const {
+  data: aggregatedDistrictSupportCategories,
+  isLoading: isLoadingDistrictSupportCategories,
+  isFetching: isFetchingDistrictSupportCategories,
+} = useDistrictSupportCategoriesQuery(props.orgId, props.administrationId, {
+  enabled: initialized,
+});
+
 const getScoringVersions = computed(() => {
+  if (!administrationData.value?.assessments) return {};
   const scoringVersions = Object.fromEntries(
     administrationData.value?.assessments.map((assessment) => [
       assessment.taskId,
@@ -743,6 +815,19 @@ const schoolNameDictionary = computed(() => {
   );
 });
 
+const isEmptyDistrictSupportCategories = computed(() => {
+  return (
+    props.orgType === 'district' &&
+    (aggregatedDistrictSupportCategories.value?.status === 'failed' ||
+      aggregatedDistrictSupportCategories.value?.length === 0 ||
+      !aggregatedDistrictSupportCategories.value)
+  );
+});
+
+const assignedTaskIds = computed(() => administrationData.value?.assessments?.map((task) => task.taskId));
+// Currently do not want to show swr-es and sre-es pi charts
+const assignedNormedTaskIds = computed(() => assignedTaskIds.value.filter((id) => ['swr', 'sre', 'pa'].includes(id)));
+
 // Return a faded color if assessment is not reliable
 function returnColorByReliability(assessment, rawScore, support_level, tag_color) {
   if (assessment.reliable !== undefined && !assessment.reliable && assessment.engagementFlags !== undefined) {
@@ -875,6 +960,9 @@ const computedProgressData = computed(() => {
 // 1. assignmentTableData: The data that should be passed into the ROARDataTable component
 // 2. runsByTaskId: run data for the TaskReport distribution chartsb
 const computeAssignmentAndRunData = computed(() => {
+  if (props.orgType === 'district') {
+    return { assignmentTableData: [], runsByTaskId: {} };
+  }
   if (!assignmentData.value || assignmentData.value.length === 0) {
     return { assignmentTableData: [], runsByTaskId: {} };
   } else {
@@ -913,6 +1001,7 @@ const computeAssignmentAndRunData = computed(() => {
           schoolName: schoolName,
           stateId: user.studentData?.state_id,
           studentId: user.studentData?.student_number,
+          sisId: user.sisId ?? user.studentData?.sis_id,
         },
         tooltip: `View ${firstNameOrUsername}'s Score Report`,
         launchTooltip: `View assessment portal for ${firstNameOrUsername}`,
@@ -1048,6 +1137,12 @@ const computeAssignmentAndRunData = computed(() => {
           currRowScores[taskId].recruitment = _get(assessment, 'params.recruitment');
           currRowScores[taskId].fc = _get(assessment, 'scores.computed.FC');
           currRowScores[taskId].fr = _get(assessment, 'scores.computed.FR');
+
+          if (currRowScores[taskId].recruitment === 'responseModality') {
+            const { fc, fr } = currRowScores[taskId];
+            const totalRawScore = (fc?.rawScore ?? 0) + (fr?.rawScore ?? 0);
+            currRowScores[taskId].rawScore = totalRawScore === 0 ? null : totalRawScore;
+          }
 
           scoreFilterTags += ' Assessed ';
         }
@@ -1229,6 +1324,7 @@ const computeAssignmentAndRunData = computed(() => {
 
     // We only want to display the ROAM Tasks if the recruitment param is responseModality
     // Otherwise, remove them from the runsByTaskId object to prevent including them in TaskReports.
+    // Response modality admins who switch mid-way will no longer see the subscore tables
     const assessments = administrationData.value.assessments;
     for (const assessment of assessments) {
       if (roamFluencyTasks.includes(assessment.taskId)) {
@@ -1312,6 +1408,7 @@ const createExportData = ({ rows, includeProgress = false }) => {
     // if (orgData.value?.clever === true) {
     tableRow['State ID'] = user.stateId;
     tableRow['Student ID'] = user.studentId;
+    tableRow['SIS ID'] = user.sisId;
     // }
 
     for (const taskId in scores) {
@@ -1334,12 +1431,33 @@ const createExportData = ({ rows, includeProgress = false }) => {
         tableRow[`${taskName} - Num Incorrect`] = score.numIncorrect;
         tableRow[`${taskName} - Num Correct`] = score.numCorrect;
       } else if (tasksToDisplayTotalCorrect.includes(taskId)) {
-        if (score.isNewScoring && score.recruitment !== 'responseModality') {
-          tableRow[`${taskName} - Raw Score`] = score.rawScore;
-        }
-        tableRow[`${taskName} - Num Correct`] = score.numCorrect;
-        tableRow[`${taskName} - Num Incorrect`] = score.numIncorrect;
-        tableRow[`${taskName} - Num Attempted`] = score.numAttempted;
+        const setSubscore = (field, score) => {
+          // Response modality prod data only uses new field names (ver 1.2.23+)
+          let result = '';
+          let total = 0;
+          if (score.fr) {
+            const frScore = score.fr[field] ?? 0;
+            result += `Free Response: ${frScore}`;
+            total += frScore;
+          }
+
+          if (score.fc) {
+            const fcScore = score.fc[field] ?? 0;
+            result += `${result ? '\n' : ''}Multiple Choice: ${fcScore}`;
+            total += fcScore;
+          }
+
+          if (score.fr || score.fc) result += `\nTotal: ${total}`;
+
+          // If result is an empty string, handle a non-response modality score
+          return result || score[field];
+        };
+
+        tableRow[`${taskName} - Raw Score`] = score.rawScore;
+
+        Object.entries(roamFluencySubskillHeaders).forEach(([property, propertyHeader]) => {
+          tableRow[`${taskName} - ${propertyHeader}`] = setSubscore(property, score);
+        });
       } else if (rawOnlyTasks.includes(taskId)) {
         tableRow[`${taskName} - Raw`] = score.rawScore;
       } else if (tasksToDisplayGradeEstimate.includes(taskId)) {
@@ -1712,6 +1830,15 @@ const scoreReportColumns = computed(() => {
     headerStyle: `background:var(--primary-color); color:white; padding-top:0; margin-top:0; padding-bottom:0; margin-bottom:0; border:0; margin-left:0; border-right-width:2px; border-right-style:solid; border-right-color:#ffffff;`,
   });
 
+  tableColumns.push({
+    field: 'user.sisId',
+    header: 'SIS ID',
+    dataType: 'text',
+    sort: false,
+    hidden: true, // Column is hidden by default, available via the Show/Hide Columns menu
+    headerStyle: `background:var(--primary-color); color:white; padding-top:0; margin-top:0; padding-bottom:0; margin-bottom:0; border:0; margin-left:0; border-right-width:2px; border-right-style:solid; border-right-color:#ffffff;`,
+  });
+
   const isAdministrationOpen = administrationData.value?.dateClosed
     ? new Date(administrationData.value?.dateClosed) > new Date()
     : false;
@@ -1785,11 +1912,6 @@ const scoreReportColumns = computed(() => {
     if (excludeFromScoringTasks.includes(taskId)) continue; // Skip adding this column
     let colField;
     const isOptional = `scores.${taskId}.optional`;
-    let isFluencyResponseModality = false;
-    if (roamFluencyTasks.includes(taskId)) {
-      const fluencyTasks = administrationData.value?.assessments?.find((assessment) => assessment.taskId === taskId);
-      isFluencyResponseModality = fluencyTasks?.params?.recruitment === 'responseModality';
-    }
 
     // Color needs to include a field to allow sorting.
     if (viewMode.value === 'percentile' || viewMode.value === 'color') {
@@ -1850,7 +1972,7 @@ const scoreReportColumns = computed(() => {
       filter: true,
       sortField: colField ? colField : `scores.${taskId}.percentile`,
       tag: viewMode.value !== 'color',
-      emptyTag: viewMode.value === 'color' || isFluencyResponseModality || isOptional,
+      emptyTag: viewMode.value === 'color' || isOptional,
       tagColor: `scores.${taskId}.tagColor`,
       style: (() => {
         return `text-align: center; ${getTaskStyle(taskId, backgroundColor, orderedTasks)}`;
@@ -1867,19 +1989,37 @@ const allTasks = computed(() => {
 });
 
 const sortedTaskIds = computed(() => {
-  const runsByTaskId = computeAssignmentAndRunData.value.runsByTaskId;
-  const specialTaskIds = ['swr', 'sre', 'pa', 'phonics'].filter((id) => Object.keys(runsByTaskId).includes(id));
-  const remainingTaskIds = Object.keys(runsByTaskId).filter((id) => !specialTaskIds.includes(id));
+  if (props.orgType === 'district') {
+    if (isLoadingDistrictSupportCategories.value || isFetchingDistrictSupportCategories.value) {
+      return [];
+    }
 
-  remainingTaskIds.sort((p1, p2) => {
-    return taskDisplayNames[p1].order - taskDisplayNames[p2].order;
-  });
+    if (!aggregatedDistrictSupportCategories.value) {
+      return [];
+    }
 
-  const sortedIds = specialTaskIds.concat(remainingTaskIds);
-  return sortedIds.filter((taskId) => allTasks.value.includes(taskId));
+    return Object.keys(aggregatedDistrictSupportCategories.value);
+  } else {
+    const runsByTaskId = computeAssignmentAndRunData.value.runsByTaskId;
+    const specialTaskIds = ['swr', 'sre', 'pa', 'phonics'].filter((id) => Object.keys(runsByTaskId).includes(id));
+    const remainingTaskIds = Object.keys(runsByTaskId).filter((id) => !specialTaskIds.includes(id));
+
+    remainingTaskIds.sort((p1, p2) => {
+      return taskDisplayNames[p1].order - taskDisplayNames[p2].order;
+    });
+
+    const sortedIds = specialTaskIds.concat(remainingTaskIds);
+    return sortedIds.filter((taskId) => allTasks.value.includes(taskId));
+  }
 });
 
 const sortedAndFilteredTaskIds = computed(() => {
+  return sortedTaskIds.value?.filter((taskId) => {
+    return tasksToDisplayGraphs.includes(taskId);
+  });
+});
+
+const sortedAndFilteredSubscoreTaskIds = computed(() => {
   return sortedTaskIds.value?.filter((taskId) => {
     return tasksToDisplayGraphs.includes(taskId);
   });
