@@ -371,6 +371,8 @@ const searchTags = (event) => {
 const addTag = (event) => {
   // Use the template ref to access the input element
   // Note: We use the ref instead of event.target for more robust access to the component's internal input
+  // PrimeVue AutoComplete doesn't provide a built-in method to clear just the input field,
+  // so we need to access it through $el.querySelector('input')
   if (tagAutoComplete.value?.$el) {
     const inputElement = tagAutoComplete.value.$el.querySelector('input');
     if (inputElement) {
