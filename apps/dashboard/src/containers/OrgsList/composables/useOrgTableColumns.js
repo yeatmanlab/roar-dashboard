@@ -13,17 +13,17 @@ import { ORG_EXPORT_EVENTS } from '../constants/exportConstants';
 export function useOrgTableColumns(activeOrgType, isSuperAdmin, userCan, Permissions) {
   const tableColumns = computed(() => {
     const columns = [
-      { field: 'name', header: 'Name', dataType: 'string', pinned: true, sort: true },
-      { field: 'abbreviation', header: 'Abbreviation', dataType: 'string', sort: true },
-      { field: 'address.formattedAddress', header: 'Address', dataType: 'string', sort: true },
-      { field: 'tags', header: 'Tags', dataType: 'array', chip: true, sort: false },
+      { field: 'name', header: 'Name', dataType: 'text', pinned: true, sort: true },
+      { field: 'abbreviation', header: 'Abbreviation', dataType: 'text', sort: true },
+      { field: 'address.formattedAddress', header: 'Address', dataType: 'text', sort: true },
+      { field: 'tags', header: 'Tags', dataType: 'tag', chip: true, sort: false },
     ];
 
     // Add MDR Number and NCES ID for districts and schools
     if (['districts', 'schools'].includes(activeOrgType.value)) {
       columns.push(
-        { field: 'mdrNumber', header: 'MDR Number', dataType: 'string', sort: false },
-        { field: 'ncesId', header: 'NCES ID', dataType: 'string', sort: false },
+        { field: 'mdrNumber', header: 'MDR Number', dataType: 'text', sort: false },
+        { field: 'ncesId', header: 'NCES ID', dataType: 'text', sort: false },
       );
     }
 
