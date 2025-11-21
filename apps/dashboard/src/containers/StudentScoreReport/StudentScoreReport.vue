@@ -109,6 +109,7 @@ import { SupportScreen, SupportPrint } from './components/Support';
 import EmptyState from './components/EmptyState.vue';
 import { getStudentDisplayName } from '@/helpers/getStudentDisplayName';
 import { formatListArray } from '@/helpers/formatListArray';
+import { getStudentExternalId } from '@/helpers/getStudentExternalId';
 
 const props = defineProps({
   administrationId: { type: String, required: true },
@@ -180,14 +181,6 @@ const tasksListArray = computed(() =>
 const studentFirstName = computed(() => getStudentDisplayName(studentData).firstName);
 const studentLastName = computed(() => getStudentDisplayName(studentData).lastName);
 const studentGrade = computed(() => toValue(studentData)?.studentData?.grade);
-const studentId = computed(() => {
-  const s = toValue(studentData);
-  if (!s) return '';
-
-  const id = s.sisId ?? s.studentData?.sis_id ?? s.studentData?.student_number ?? s.studentData?.state_id;
-  return id ? `-${id}` : '';
-});
-
 const getScoringVersions = computed(() => {
   const scoringVersions = Object.fromEntries(
     administrationData.value?.assessments.map((assessment) => [
@@ -270,7 +263,14 @@ const { run: runPaged, clear: clearPaged } = usePagedPreview({
  */
 const handleExportToPdf = async () => {
   const studentName = `${studentFirstName.value}${studentLastName.value ? studentLastName.value : ''}`;
-  const fileName = `ROAR-IndividualScoreReport-${studentName}${studentId.value}.pdf`;
+  const studentDataValue = toValue(studentData);
+  // Align to how user data is set in ScoreReport.vue
+  const studentDataIds = {
+    sisId: studentDataValue?.sisId ?? studentDataValue?.studentData?.sis_id,
+    studentId: studentDataValue?.studentData?.student_number,
+    stateId: studentDataValue?.studentData?.state_id,
+  };
+  const fileName = `ROAR-IndividualScoreReport-${studentName}${getStudentExternalId(studentDataIds)}.pdf`;
 
   exportLoading.value = true;
   try {
