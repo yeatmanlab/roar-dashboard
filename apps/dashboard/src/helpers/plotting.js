@@ -25,7 +25,7 @@ export const chart = {};
  *            middle: {topLeft:number,topRight:number,bottomLeft:number,bottomRight:number},
  *            right: {topLeft:number,topRight:number,bottomLeft:number,bottomRight:number}}}
  */
-const getBorderRadii = (left, middle, right) => {
+export const getBorderRadii = (left, middle, right) => {
   const RADIUS = 8;
   const defaultRadius = { topLeft: 0, topRight: 0, bottomLeft: 0, bottomRight: 0 };
   const borderRadii = { left: { ...defaultRadius }, middle: { ...defaultRadius }, right: { ...defaultRadius } };
@@ -72,7 +72,7 @@ const getBorderRadii = (left, middle, right) => {
  * @param {number} [orgStats.assigned=0] - Count of students assigned but not started
  * @returns {Object} Chart.js data configuration with labels and datasets
  */
-export const setBarChartData = (orgStats) => {
+export const setProgressChartData = (orgStats) => {
   let { assigned = 0, started = 0, completed = 0 } = orgStats || {};
 
   // Backend provides net values: assigned (not started), started (not completed), completed
@@ -131,7 +131,7 @@ export const setBarChartData = (orgStats) => {
  * @param {number} [orgStats.assigned=0] - Count of students assigned but not started
  * @returns {Object} Chart.js options configuration
  */
-export const setBarChartOptions = (orgStats) => {
+export const setProgressChartOptions = (orgStats) => {
   let { assigned = 0, started = 0, completed = 0 } = orgStats || {};
 
   const min = 0;

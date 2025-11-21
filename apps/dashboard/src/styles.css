@@ -6,7 +6,7 @@
 
 /* Base */
 p {
-  line-height: 1.25rem;
+  line-height: 150%;
 }
 
 .jspsych-display-element p {
@@ -149,6 +149,10 @@ legend {
 
 .columns-2 {
   columns: 2;
+}
+
+.columns-3 {
+  columns: 3;
 }
 
 @media (min-width: 768px) {

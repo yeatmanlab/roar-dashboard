@@ -1,26 +1,32 @@
 <template>
-  <div class="p-4 mb-4 text-sm rounded border border-gray-200 border-solid break-inside-avoid">
+  <div class="p-3 mb-4 text-sm rounded border border-gray-200 border-solid break-inside-avoid">
     <div class="flex justify-between align-items-center">
       <h2 class="m-0 text-lg font-semibold">{{ publicName }}</h2>
-
-      <table class="mt-1 text-sm border-collapse sm:mt-0">
-        <tbody>
-          <tr v-for="tag in tags" :key="tag.value" class="font-medium">
-            <td class="pr-2 text-right">{{ tag.label }}:</td>
-            <td :class="`text-${getSeverityColor(tag.severity)}-700`">{{ tag.value }}</td>
-          </tr>
-        </tbody>
-      </table>
+      <div class="flex gap-2 text-sm border-collapse">
+        <PvTag
+          v-for="tag in tags"
+          :key="tag.value"
+          v-tooltip.top="tag.tooltip"
+          :icon="tag.icon"
+          :value="tag.value"
+          :severity="tag.severity"
+          class="text-xs"
+        />
+      </div>
     </div>
 
-    <div class="py-3 mt-3 border-t border-gray-200">
-      <div>
-        <span class="font-semibold">{{ score.name }}: </span>
-        <span class="font-semibold" :style="{ color: score.supportColor }">
-          {{ getFromScoreValueTemplate(score.value) }}
+    <div class="pt-3 mt-3 border-t border-gray-200 text-xs">
+      <div class="flex gap-2 align-items-center">
+        <span
+          class="text-base font-semibold whitespace-nowrap progress-bar-label"
+          :style="{ color: score.supportColor }"
+        >
+          {{ scoreLabel }}: {{ getFromScoreValueTemplate(score.value) }}
         </span>
+        <div class="progress-bar flex-1">
+          <div :style="getProgressBarStyle()"></div>
+        </div>
       </div>
-
       <i18n-t :keypath="description.keypath" tag="p" class="mb-0">
         <template #firstName>{{ studentFirstName }}</template>
         <template v-for="(_, slotName) in description.slots" #[slotName] :key="slotName">
@@ -31,7 +37,7 @@
         </template>
       </i18n-t>
 
-      <h3 class="mt-4 text-xs font-semibold uppercase">{{ $t('scoreReports.scoreBreakdown') }}</h3>
+      <h3 class="mt-3 text-xs font-semibold uppercase">{{ $t('scoreReports.scoreBreakdown') }}</h3>
       <table class="w-full border-collapse">
         <thead>
           <tr>
@@ -71,6 +77,7 @@
 <script setup>
 import { LongitudinalChartPrint as LongitudinalChart } from './LongitudinalChart';
 import { FEATURE_FLAGS } from '@/constants/featureFlags';
+import PvTag from 'primevue/tag';
 
 const props = defineProps({
   publicName: {
@@ -137,24 +144,6 @@ const props = defineProps({
 });
 
 /**
- * The severity to color mapping for tags
- */
-const severityToColor = {
-  success: 'green',
-  warning: 'yellow',
-  error: 'red',
-  info: 'blue',
-};
-
-/**
- * Returns the CSS/TailwindCSS color based on the severity.
- *
- * @param {string} severity – The severity to be converted to a color
- * @returns {string} The severity color
- */
-const getSeverityColor = (severity) => severityToColor[severity];
-
-/**
  * Returns the formatted score value based on the value template.
  *
  * In the web view, this is handled automatically by the PrimeVue knob component but requires manual handling in the
@@ -170,4 +159,25 @@ const getFromScoreValueTemplate = (scoreValue) => {
 
   return scoreValue;
 };
+
+const getProgressBarStyle = () => {
+  return {
+    height: '1rem',
+    width: `${Math.round((props.score.value / props.score.max) * 100)}%`,
+    backgroundColor: props.score.supportColor,
+  };
+};
 </script>
+
+<style scoped>
+.progress-bar {
+  background-color: #e2e8f0;
+  border-radius: 2rem;
+  height: 1rem;
+  overflow: hidden;
+}
+
+.progress-bar-label {
+  margin-bottom: 2px;
+}
+</style>
