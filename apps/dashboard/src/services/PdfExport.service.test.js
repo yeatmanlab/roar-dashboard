@@ -217,11 +217,11 @@ describe('PdfExportService', () => {
 
     it('should accept items, urlGenerator, and filenameGenerator parameters', async () => {
       const items = [
-        { id: 1, name: 'Student 1' },
-        { id: 2, name: 'Student 2' },
+        { id: 1, name: 'Student 1', externalId: '_sisId-12345' },
+        { id: 2, name: 'Student 2', externalId: '_studentId-67890' },
       ];
       const urlGenerator = (item) => `http://test.com/student/${item.id}`;
-      const filenameGenerator = (item) => `student-${item.id}.pdf`;
+      const filenameGenerator = (item) => `student-${item.id}${item.externalId}.pdf`;
 
       // This will likely timeout in test environment
       const promise = PdfExportService.generateBulkDocuments(items, urlGenerator, filenameGenerator);
@@ -237,9 +237,9 @@ describe('PdfExportService', () => {
     });
 
     it('should accept options parameter with onProgress callback', async () => {
-      const items = [{ id: 1, name: 'Student 1' }];
+      const items = [{ id: 1, name: 'Student 1', externalId: '_sisId-12345' }];
       const urlGenerator = (item) => `http://test.com/student/${item.id}`;
-      const filenameGenerator = (item) => `student-${item.id}.pdf`;
+      const filenameGenerator = (item) => `student-${item.id}${item.externalId}.pdf`;
       const onProgress = vi.fn();
 
       const options = {
@@ -283,7 +283,7 @@ describe('PdfExportService', () => {
     it('should handle empty items array for bulk export', async () => {
       const items = [];
       const urlGenerator = (item) => `http://test.com/student/${item.id}`;
-      const filenameGenerator = (item) => `student-${item.id}.pdf`;
+      const filenameGenerator = (item) => `student-${item.id}${item.externalId || ''}.pdf`;
 
       // Empty items should complete quickly
       await PdfExportService.generateBulkDocuments(items, urlGenerator, filenameGenerator).catch(() => {
