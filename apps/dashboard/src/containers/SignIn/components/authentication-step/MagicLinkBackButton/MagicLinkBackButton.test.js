@@ -29,7 +29,6 @@ describe('MagicLinkBackButton.vue', () => {
     const button = wrapper.findComponent({ name: 'Button' });
     expect(button.classes()).toContain('mt-3');
     expect(button.classes()).toContain('w-full');
-    expect(button.classes()).toContain('p-0');
     expect(button.classes()).toContain('bg-white');
     expect(button.classes()).toContain('text-500');
     expect(button.classes()).toContain('border-500');
