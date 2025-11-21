@@ -191,6 +191,8 @@ import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toast
 import { isLevante, getTooltip } from '@/helpers';
 import { useQueryClient } from '@tanstack/vue-query';
 import { ADMINISTRATIONS_LIST_QUERY_KEY } from '@/constants/queryKeys';
+import { usePermissions } from '@/composables/usePermissions';
+import { ROLES } from '@/constants/roles';
 
 interface Assessment {
   taskId: string;
@@ -280,6 +282,8 @@ const props = withDefaults(defineProps<Props>(), {
   stats: () => ({}),
 });
 
+const { hasRole } = usePermissions();
+
 const confirm = useConfirm();
 const toast = useToast();
 
@@ -306,7 +310,8 @@ const administrationStatusBadge = computed((): string => administrationStatus.va
 const speedDialItems = computed((): SpeedDialItem[] => {
   const items: SpeedDialItem[] = [];
 
-  if (props.isSuperAdmin && isUpcoming.value) {
+  // TODO: Change this to admin when edit assignment refactor is complete
+  if (isUpcoming.value && hasRole(ROLES.SUPER_ADMIN)) {
     items.push({
       label: 'Delete',
       icon: 'pi pi-trash',

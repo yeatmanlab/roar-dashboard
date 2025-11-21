@@ -42,7 +42,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, type Ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import PvButton from 'primevue/button';
@@ -54,12 +54,13 @@ import { APP_ROUTES } from '@/constants/routes';
 import Badge from 'primevue/badge';
 import UserActions from './UserActions.vue';
 import useUserType from '@/composables/useUserType';
+import { ROLES } from '@/constants/roles';
 
 interface NavbarAction {
   category: string;
   title: string;
   icon: string;
-  buttonLink: string;
+  buttonLink: { name: string; params?: Record<string, any> };
 }
 
 interface MenuItem {
@@ -73,7 +74,7 @@ interface MenuItem {
 
 const router = useRouter();
 const authStore = useAuthStore();
-const { roarfirekit } = storeToRefs(authStore);
+const { roarfirekit, userData, currentSite } = storeToRefs(authStore);
 
 const initialized = ref<boolean>(false);
 const menu = ref();
@@ -147,7 +148,7 @@ const computedItems = computed((): MenuItem[] => {
   return items;
 });
 
-const { isAdmin, isSuperAdmin } = useUserType(userClaims);
+const { isAdmin, isSuperAdmin } = useUserType(userClaims) as { isAdmin: Ref<boolean>; isSuperAdmin: Ref<boolean> };
 
 const computedIsBasicView = computed((): boolean => {
   if (!userClaims.value) {
@@ -156,16 +157,13 @@ const computedIsBasicView = computed((): boolean => {
   return !isSuperAdmin.value && !isAdmin.value;
 });
 
-const isAtHome = computed((): boolean => {
-  return router.currentRoute.value.fullPath === '/';
-});
-
 const rawActions = computed((): NavbarAction[] => {
+  const userRoles = userData.value?.roles || [];
+  const currentRoleObj = userRoles.find((r: { siteId: string; role: string }) => (r.siteId === currentSite.value) || r.role === ROLES.SUPER_ADMIN);
+
   return getNavbarActions({
-    isSuperAdmin: isSuperAdmin.value,
-    isAdmin: isAdmin.value,
-    includeHomeLink: !isAtHome.value,
-  });
+    userRole: currentRoleObj?.role,
+  }) as unknown as NavbarAction[];
 });
 
 const toggleMenu = (event: Event): void => {

@@ -7,8 +7,12 @@
           <i class="pi pi-building"></i>{{ currentSiteName }}
         </span>
       </div>
-
-      <PvButton @click="isAdministratorModalVisible = true"><i class="pi pi-plus"></i>Add Administrator</PvButton>
+      <PermissionGuard v-if="!isAllSitesSelected" :requireRole="ROLES.ADMIN">
+        <PvButton @click="isAdministratorModalVisible = true"><i class="pi pi-plus"></i>Add Administrator</PvButton>
+      </PermissionGuard>
+      <PvButton v-else disabled severity="secondary" class="p-button-outlined">
+        <i class="pi pi-ban"></i>Select a site to manage administrators
+      </PvButton>
     </div>
 
     <div class="m-0 mt-5">
@@ -79,6 +83,8 @@
 </template>
 
 <script lang="ts" setup>
+import { usePermissions } from '@/composables/usePermissions';
+import { AdminSubResource } from '@levante-framework/permissions-core';
 import AddAdministratorModal from '@/components/modals/AddAdministratorModal.vue';
 import RoarDataTable from '@/components/RoarDataTable.vue';
 import useAdminsBySiteQuery from '@/composables/queries/useAdminsBySiteQuery';
@@ -93,6 +99,8 @@ import PvInputText from 'primevue/inputtext';
 import { useConfirm } from 'primevue/useconfirm';
 import { useToast } from 'primevue/usetoast';
 import { computed, ref } from 'vue';
+import PermissionGuard from '@/components/PermissionGuard.vue';
+import { ROLES } from '@/constants/roles';
 
 interface SiteOption {
   label: string;
@@ -152,8 +160,9 @@ interface AdministratorTableRow extends AdministratorRecord {
 }
 
 const authStore = useAuthStore();
-const { currentSite, roarfirekit, shouldUsePermissions, sites } = storeToRefs(authStore);
+const { currentSite, roarfirekit, sites } = storeToRefs(authStore);
 const { isUserSuperAdmin } = authStore;
+const { can } = usePermissions();
 const confirm = useConfirm();
 const toast = useToast();
 
@@ -170,10 +179,12 @@ const siteOptions = computed<SiteOption[]>(() => {
     // For super admin, use districts data
     const districtList = (districtsData.value as DistrictRecord[] | undefined) ?? [];
 
-    return districtList.map((district) => ({
+    const options = districtList.map((district) => ({
       label: district.name,
       value: district.id,
     }));
+
+    return [{ label: 'All Sites', value: 'any' }, ...options];
   } else {
     // For regular admin, use sites from auth store
     const availableSites = (sites.value as SiteSummary[] | undefined) ?? [];
@@ -185,9 +196,11 @@ const siteOptions = computed<SiteOption[]>(() => {
   }
 });
 
-const selectedSite = computed<SiteOption | undefined>(() =>
-  siteOptions.value?.find((siteOption: SiteOption) => siteOption?.value === currentSite.value),
-);
+const selectedSite = computed<SiteOption | undefined>(() => {
+  return siteOptions.value?.find((siteOption: SiteOption) => siteOption?.value === currentSite.value)
+});
+
+const isAllSitesSelected = computed(() => selectedSite.value?.value === 'any');
 
 const {
   data: adminsData,
@@ -205,24 +218,32 @@ const tableData = computed<AdministratorTableRow[]>(() => {
   return admins
     .map((admin) => {
       const fullName = formatAdministratorName(admin) || '--';
+      const targetRole = admin.roles?.find((r) => r.siteId === selectedSite.value?.value)?.role as AdminSubResource;
 
+      const actions: AdministratorAction[] = [];
+
+      if (!isAllSitesSelected.value && targetRole && can('admins', 'update', targetRole)) {
+        actions.push({
+          name: 'edit',
+          tooltip: 'Edit',
+          icon: 'pi pi-pen-to-square',
+          callback: () => onClickEditBtn(admin),
+        });
+      }
+
+      if (!isAllSitesSelected.value && targetRole && can('admins', 'delete', targetRole)) {
+        actions.push({
+          name: 'remove',
+          tooltip: 'Remove',
+          icon: 'pi pi-trash',
+          callback: () => onClickRemoveBtn(admin),
+        });
+      }
+      
       return {
         ...admin,
         fullName,
-        actions: [
-          {
-            name: 'edit',
-            tooltip: 'Edit',
-            icon: 'pi pi-pen-to-square',
-            callback: () => onClickEditBtn(admin),
-          },
-          {
-            name: 'remove',
-            tooltip: 'Remove',
-            icon: 'pi pi-trash',
-            callback: () => onClickRemoveBtn(admin),
-          },
-        ],
+        actions,
       };
     })
     .sort((a, b) => {
@@ -232,29 +253,38 @@ const tableData = computed<AdministratorTableRow[]>(() => {
     });
 });
 
-const tableColumns = computed(() => [
-  {
-    field: 'fullName',
-    header: 'Name',
-    dataType: 'string',
-  },
-  {
-    field: 'email',
-    header: 'Email',
-    dataType: 'string',
-  },
-  {
-    field: 'roles',
-    header: 'Role',
-    dataType: 'string',
-  },
-  {
-    field: 'actions',
-    header: 'Actions',
-    dataType: 'string',
-    sort: false,
-  },
-]);
+const tableColumns = computed(() => {
+  const hasActions = tableData.value.some((row) => row.actions && row.actions.length > 0);
+
+  const columns: { field: string; header: string; dataType: string; sort?: boolean }[] = [
+    {
+      field: 'fullName',
+      header: 'Name',
+      dataType: 'string',
+    },
+    {
+      field: 'email',
+      header: 'Email',
+      dataType: 'string',
+    },
+    {
+      field: 'roles',
+      header: 'Role',
+      dataType: 'string',
+    },
+  ];
+
+  if (hasActions) {
+    columns.push({
+      field: 'actions',
+      header: 'Actions',
+      dataType: 'string',
+      sort: false,
+    });
+  }
+
+  return columns;
+});
 
 const currentSiteName = computed(() => {
   const availableSites = (sites.value as SiteSummary[] | undefined) ?? [];

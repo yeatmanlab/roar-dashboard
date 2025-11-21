@@ -5,6 +5,7 @@ import _mapValues from 'lodash/mapValues';
 import _without from 'lodash/without';
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '@/store/auth';
+import { AUTH_USER_TYPE } from '@/constants/auth';
 import { convertValues, getAxiosInstance, getBaseDocumentPath, orderByDefault } from './utils';
 import { filterAdminOrgs } from '@/helpers';
 import { FIRESTORE_DATABASES } from '@/constants/firebase';
@@ -196,25 +197,23 @@ export const getAdministrationsByOrg = (orgId, orgType, administrations) => {
 export const fetchAdminsBySite = async (siteId, siteName, db = FIRESTORE_DATABASES.ADMIN) => {
   const axiosInstance = getAxiosInstance(db);
 
-  const filters = [
-    {
-      fieldFilter: {
-        field: { fieldPath: 'roles' },
-        op: 'ARRAY_CONTAINS',
-        value: {
-          mapValue: {
-            fields: {
-              siteId: { stringValue: 'any' },
-              role: { stringValue: ROLES.SUPER_ADMIN },
-            },
-          },
-        },
-      },
-    },
-  ];
+  let requestBody;
 
-  if (siteName) {
-    filters.push(
+  if (siteId.value === 'any') {
+    requestBody = {
+      structuredQuery: {
+        from: [{ collectionId: FIRESTORE_COLLECTIONS.USERS }],
+        where: {
+          fieldFilter: {
+            field: { fieldPath: 'userType' },
+            op: 'EQUAL',
+            value: { stringValue: AUTH_USER_TYPE.ADMIN },
+          },
+        },
+      },
+    };
+  } else {
+    const filters = [
       {
         fieldFilter: {
           field: { fieldPath: 'roles' },
@@ -222,58 +221,77 @@ export const fetchAdminsBySite = async (siteId, siteName, db = FIRESTORE_DATABAS
           value: {
             mapValue: {
               fields: {
-                siteId: { stringValue: siteId.value },
-                siteName: { stringValue: siteName.value },
-                role: { stringValue: ROLES.ADMIN },
+                siteId: { stringValue: 'any' },
+                role: { stringValue: ROLES.SUPER_ADMIN },
               },
             },
           },
         },
       },
-      {
-        fieldFilter: {
-          field: { fieldPath: 'roles' },
-          op: 'ARRAY_CONTAINS',
-          value: {
-            mapValue: {
-              fields: {
-                siteId: { stringValue: siteId.value },
-                siteName: { stringValue: siteName.value },
-                role: { stringValue: ROLES.SITE_ADMIN },
+    ];
+
+    if (siteName) {
+      filters.push(
+        {
+          fieldFilter: {
+            field: { fieldPath: 'roles' },
+            op: 'ARRAY_CONTAINS',
+            value: {
+              mapValue: {
+                fields: {
+                  siteId: { stringValue: siteId.value },
+                  siteName: { stringValue: siteName.value },
+                  role: { stringValue: ROLES.ADMIN },
+                },
               },
             },
           },
         },
-      },
-      {
-        fieldFilter: {
-          field: { fieldPath: 'roles' },
-          op: 'ARRAY_CONTAINS',
-          value: {
-            mapValue: {
-              fields: {
-                siteId: { stringValue: siteId.value },
-                siteName: { stringValue: siteName.value },
-                role: { stringValue: ROLES.RESEARCH_ASSISTANT },
+        {
+          fieldFilter: {
+            field: { fieldPath: 'roles' },
+            op: 'ARRAY_CONTAINS',
+            value: {
+              mapValue: {
+                fields: {
+                  siteId: { stringValue: siteId.value },
+                  siteName: { stringValue: siteName.value },
+                  role: { stringValue: ROLES.SITE_ADMIN },
+                },
               },
             },
           },
         },
+        {
+          fieldFilter: {
+            field: { fieldPath: 'roles' },
+            op: 'ARRAY_CONTAINS',
+            value: {
+              mapValue: {
+                fields: {
+                  siteId: { stringValue: siteId.value },
+                  siteName: { stringValue: siteName.value },
+                  role: { stringValue: ROLES.RESEARCH_ASSISTANT },
+                },
+              },
+            },
+          },
+        },
+      );
+    }
+
+    requestBody = {
+      structuredQuery: {
+        from: [{ collectionId: FIRESTORE_COLLECTIONS.USERS }],
+        where: {
+          compositeFilter: {
+            op: 'OR',
+            filters,
+          },
+        },
       },
-    );
+    };
   }
-
-  const requestBody = {
-    structuredQuery: {
-      from: [{ collectionId: FIRESTORE_COLLECTIONS.USERS }],
-      where: {
-        compositeFilter: {
-          op: 'OR',
-          filters,
-        },
-      },
-    },
-  };
 
   try {
     const response = await axiosInstance.post(`${getBaseDocumentPath()}:runQuery`, requestBody);

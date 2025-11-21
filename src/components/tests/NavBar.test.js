@@ -3,20 +3,20 @@ import { mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import PrimeVue from 'primevue/config';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ref, computed } from 'vue';
+import { ref, computed, reactive } from 'vue';
 import { createI18n } from 'vue-i18n';
 import { createRouter, createWebHistory } from 'vue-router';
 import NavBar from '../NavBar.vue';
+import { ROLES } from '@/constants/roles';
 
-let mockIsUserAdmin = true;
-let mockIsUserSuperAdmin = true;
+// Define a reactive variable to control the role in tests
+const currentTestRole = ref(ROLES.PARTICIPANT);
 
 vi.mock('@/composables/queries/useUserClaimsQuery', () => ({
   default: vi.fn(() => ({
     data: computed(() => ({
       claims: {
-        super_admin: mockIsUserSuperAdmin,
-        adminOrgs: mockIsUserAdmin ? { testOrg: [{ id: 1 }] } : {},
+        super_admin: currentTestRole.value === ROLES.SUPER_ADMIN,
       },
     })),
   })),
@@ -24,60 +24,34 @@ vi.mock('@/composables/queries/useUserClaimsQuery', () => ({
 
 vi.mock('@/composables/useUserType', () => ({
   default: vi.fn(() => ({
-    isAdmin: computed(() => mockIsUserAdmin),
-    isSuperAdmin: computed(() => mockIsUserSuperAdmin),
+    isAdmin: computed(
+      () =>
+        currentTestRole.value === ROLES.ADMIN ||
+        currentTestRole.value === ROLES.SITE_ADMIN ||
+        currentTestRole.value === ROLES.SUPER_ADMIN,
+    ),
+    isSuperAdmin: computed(() => currentTestRole.value === ROLES.SUPER_ADMIN),
   })),
 }));
 
 vi.mock('@/store/auth', () => ({
-  useAuthStore: vi.fn(() => ({
-    $subscribe: vi.fn(),
-    isUserAdmin: () => mockIsUserAdmin,
-    roarfirekit: ref({
-      restConfig: true,
+  useAuthStore: vi.fn(() =>
+    reactive({
+      $subscribe: vi.fn(),
+      roarfirekit: ref({
+        restConfig: true,
+      }),
+      userData: computed(() => ({
+        roles: [
+          {
+            siteId: 'testSite',
+            role: currentTestRole.value,
+          },
+        ],
+      })),
+      currentSite: ref('testSite'),
     }),
-  })),
-}));
-
-vi.mock('@/router/navbarActions', () => ({
-  getNavbarActions: vi.fn(({ isSuperAdmin, isAdmin }) => {
-    const actions = [];
-
-    if (isAdmin && isSuperAdmin) {
-      // Admin + SuperAdmin: 6 items
-      actions.push(
-        { category: 'Groups', title: 'Groups', icon: 'pi pi-users', buttonLink: '/list-groups' },
-        { category: 'Assignments', title: 'View Assignments', icon: 'pi pi-list', buttonLink: '/' },
-        {
-          category: 'Assignments',
-          title: 'Create Assignment',
-          icon: 'pi pi-sliders-h',
-          buttonLink: '/create-assignment',
-        },
-        { category: 'Assignments', title: 'Manage Tasks', icon: 'pi pi-pencil', buttonLink: '/manage-tasks-variants' },
-        { category: 'Users', title: 'Add Users', icon: 'pi pi-user-plus', buttonLink: '/add-users' },
-        { category: 'Users', title: 'Link Users', icon: 'pi pi-link', buttonLink: '/link-users' },
-        {
-          category: 'Users',
-          title: 'Register administrator',
-          icon: 'pi pi-user-plus',
-          buttonLink: '/create-administrator',
-        },
-      );
-    } else if (isAdmin && !isSuperAdmin) {
-      // Admin but not SuperAdmin: 2 items
-      actions.push(
-        { category: 'Groups', title: 'Groups', icon: 'pi pi-users', buttonLink: '/list-groups' },
-        { category: 'Assignments', title: 'View Assignments', icon: 'pi pi-list', buttonLink: '/' },
-      );
-    }
-
-    if (!isAdmin && !isSuperAdmin) {
-      return [];
-    }
-
-    return actions;
-  }),
+  ),
 }));
 
 vi.mock('../UserActions.vue', () => ({
@@ -109,8 +83,8 @@ const router = createRouter({
     { path: '/link-users', name: 'Link Users', component: { template: '<div>link-users</div>' } },
     {
       path: '/create-administrator',
-      name: 'CreateAdministrator',
-      component: { template: '<div>create-administrator</div>' },
+      name: 'ManageAdministrators', // Corrected name to match navbarActions
+      component: { template: '<div>manage-administrators</div>' },
     },
     { path: '/create-assignment', name: 'CreateAssignment', component: { template: '<div>create-assignment</div>' } },
     {
@@ -128,83 +102,114 @@ const mountOptions = {
 };
 
 beforeEach(async () => {
-  mockIsUserAdmin = true;
-  mockIsUserSuperAdmin = true;
+  currentTestRole.value = ROLES.PARTICIPANT;
   setActivePinia(createPinia());
 });
 
 describe('NavBar.vue', () => {
-  describe('User type: admin', () => {
-    it('should render the component', () => {
+  describe('Role: SUPER_ADMIN', () => {
+    beforeEach(() => {
+      currentTestRole.value = ROLES.SUPER_ADMIN;
+    });
+
+    it('should render all menu items', () => {
       const wrapper = mount(NavBar, mountOptions);
       expect(wrapper.exists()).toBe(true);
 
       const links = wrapper.findAll('.p-menubar-item-link');
+      
       expect(links.length).toBe(9);
 
-      // If false, the help dropdown with Report an Issue option is displayed
+      const html = wrapper.html();
+      expect(html).toContain('Groups');
+      expect(html).toContain('Users');
+      expect(html).toContain('Add Users');
+      expect(html).toContain('Link Users');
+      expect(html).toContain('Manage Administrators');
+      expect(html).toContain('Assignments');
+      expect(html).toContain('View Assignments');
+      expect(html).toContain('Create Assignment');
+      expect(html).toContain('Manage Tasks');
+
       expect(wrapper.vm.computedIsBasicView).toBe(false);
-    });
-
-    it('should display the menu accordingly to user type', async () => {
-      const wrapper = mount(NavBar, mountOptions);
-      const links = wrapper.findAll('.p-menubar-item-link');
-
-      expect(links.length).toBe(9);
-      expect(links[0].html()).toContain('Groups');
-      expect(links[1].html()).toContain('Users');
-      expect(links[2].html()).toContain('Add Users');
-      expect(links[3].html()).toContain('Link Users');
-      expect(links[4].html()).toContain('Register administrator');
-      expect(links[5].html()).toContain('Assignments');
-      expect(links[6].html()).toContain('View Assignments');
-      expect(links[7].html()).toContain('Create Assignment');
-      expect(links[8].html()).toContain('Manage Tasks');
     });
   });
 
-  describe('User type: non-admin', () => {
+  describe('Role: SITE_ADMIN', () => {
     beforeEach(() => {
-      mockIsUserAdmin = true; // Still admin but not super admin
-      mockIsUserSuperAdmin = false;
+      currentTestRole.value = ROLES.SITE_ADMIN;
     });
 
-    it('should render the component', () => {
-      const wrapper = mount(NavBar, mountOptions);
-      expect(wrapper.exists()).toBe(true);
-
-      const links = wrapper.findAll('.p-menubar-item-link');
-      expect(links.length).toBe(3);
-
-      // If false, the help dropdown with Report an Issue option is displayed
-      expect(wrapper.vm.computedIsBasicView).toBe(false);
-    });
-
-    it('should display the menu accordingly to user type', async () => {
+    it('should render site admin menu items (same as admin)', () => {
       const wrapper = mount(NavBar, mountOptions);
       const links = wrapper.findAll('.p-menubar-item-link');
 
-      expect(links.length).toBe(3);
-      expect(links[0].html()).toContain('Groups');
-      expect(links[1].html()).toContain('Assignments');
-      expect(links[2].html()).toContain('View Assignments');
+      // Same as ADMIN
+      expect(links.length).toBe(8);
+      expect(wrapper.html()).not.toContain('Manage Tasks');
     });
   });
 
-  describe('User type: non-admin & non-superAdmin', () => {
+  describe('Role: ADMIN', () => {
     beforeEach(() => {
-      mockIsUserAdmin = false;
-      mockIsUserSuperAdmin = false;
+      currentTestRole.value = ROLES.ADMIN;
     });
 
-    it('should render the component', () => {
+    it('should render admin menu items', () => {
       const wrapper = mount(NavBar, mountOptions);
-      expect(wrapper.exists()).toBe(true);
-
       const links = wrapper.findAll('.p-menubar-item-link');
+
+      expect(links.length).toBe(8);
+
+      const html = wrapper.html();
+      expect(html).toContain('Groups');
+      expect(html).toContain('Users');
+      expect(html).toContain('Add Users');
+      expect(html).toContain('Link Users');
+      expect(html).toContain('Manage Administrators');
+      expect(html).toContain('Assignments');
+      expect(html).toContain('View Assignments');
+      expect(html).toContain('Create Assignment');
+      
+      expect(html).not.toContain('Manage Tasks');
+    });
+  });
+
+  describe('Role: RESEARCH_ASSISTANT', () => {
+    beforeEach(() => {
+      currentTestRole.value = ROLES.RESEARCH_ASSISTANT;
+    });
+
+    it('should render research assistant menu items', () => {
+      const wrapper = mount(NavBar, mountOptions);
+      const links = wrapper.findAll('.p-menubar-item-link');
+
+      expect(links.length).toBe(7);
+
+      const html = wrapper.html();
+      expect(html).toContain('Groups');
+      expect(html).toContain('Users');
+      expect(html).toContain('Add Users');
+      expect(html).toContain('Link Users');
+      expect(html).toContain('Manage Administrators');
+      expect(html).toContain('Assignments');
+      expect(html).toContain('View Assignments');
+      
+      expect(html).not.toContain('Create Assignment');
+      expect(html).not.toContain('Manage Tasks');
+    });
+  });
+
+  describe('Role: PARTICIPANT', () => {
+    beforeEach(() => {
+      currentTestRole.value = ROLES.PARTICIPANT;
+    });
+
+    it('should render no menu items', () => {
+      const wrapper = mount(NavBar, mountOptions);
+      const links = wrapper.findAll('.p-menubar-item-link');
+
       expect(links.length).toBe(0);
-
-      // If false, the help dropdown with Report an Issue option is displayed
       expect(wrapper.vm.computedIsBasicView).toBe(true);
     });
   });

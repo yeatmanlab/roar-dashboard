@@ -125,11 +125,13 @@
 </template>
 
 <script lang="ts" setup>
+import { usePermissions } from '@/composables/usePermissions';
 import useDistrictsListQuery from '@/composables/queries/useDistrictsListQuery';
 import { ROLES } from '@/constants/roles';
 import { TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
 import { useAuthStore } from '@/store/auth';
 import { Name } from '@levante-framework/firekit/lib/interfaces';
+import { AdminSubResource } from '@levante-framework/permissions-core';
 import useVuelidate from '@vuelidate/core';
 import { required } from '@vuelidate/validators';
 import _cloneDeep from 'lodash/cloneDeep';
@@ -199,6 +201,7 @@ const props = withDefaults(defineProps<Props>(), {
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
 const { isUserSuperAdmin } = authStore;
+const { can } = usePermissions();
 const toast = useToast();
 
 const { data: districtsData } = useDistrictsListQuery();
@@ -214,17 +217,25 @@ const modalTitle = computed(() => (isEditMode.value ? 'Update Administrator Role
 const submitBtnLabel = computed(() => (isEditMode.value ? 'Update Administrator' : 'Add Administrator'));
 const submittingBtnLabel = computed(() => (isEditMode.value ? 'Updating Administrator' : 'Adding Administrator'));
 const roleOptions = computed(() => {
+  const action = isEditMode.value ? 'update' : 'create';
+
   return Object.values(ROLES)
     .map((role) => {
       switch (role) {
         case ROLES.SUPER_ADMIN:
           return isUserSuperAdmin() ? { value: role, label: 'Super Admin' } : null;
         case ROLES.SITE_ADMIN:
-          return { value: role, label: 'Site Admin' };
+          return can('admins', action, role as AdminSubResource)
+            ? { value: role, label: 'Site Admin' }
+            : null;
         case ROLES.ADMIN:
-          return { value: role, label: 'Admin' };
+          return can('admins', action, role as AdminSubResource)
+            ? { value: role, label: 'Admin' }
+            : null;
         case ROLES.RESEARCH_ASSISTANT:
-          return { value: role, label: 'Research Assistant' };
+          return can('admins', action, role as AdminSubResource)
+            ? { value: role, label: 'Research Assistant' }
+            : null;
         default:
           return null;
       }
@@ -388,18 +399,6 @@ async function submit() {
     middle: middleName.value,
     last: lastName.value,
   };
-
-  const uniqueDistricts = [...new Set(siteRolePairs.value.map((pair) => pair.district))];
-
-  const adminOrgs = {
-    districts: uniqueDistricts,
-    schools: [],
-    classes: [],
-    groups: [],
-    families: [],
-  };
-
-  const orgs = _cloneDeep(adminOrgs);
 
   const roles: { role: string; siteId: string; siteName: string }[] = [];
 

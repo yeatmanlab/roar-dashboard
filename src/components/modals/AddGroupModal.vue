@@ -101,8 +101,6 @@
 
 <script setup lang="ts">
 import _capitalize from 'lodash/capitalize';
-import _union from 'lodash/union';
-import _without from 'lodash/without';
 import { computed, ref, toRaw, watch } from 'vue';
 import { FIRESTORE_COLLECTIONS } from '@/constants/firebase';
 import { normalizeToLowercase } from '@/helpers';
@@ -124,14 +122,13 @@ import PvInputText from 'primevue/inputtext';
 import PvSelect from 'primevue/select';
 import useDistrictSchoolsQuery from '@/composables/queries/useDistrictSchoolsQuery';
 import useDistrictsListQuery from '@/composables/queries/useDistrictsListQuery';
-import useGroupsListQuery from '@/composables/queries/useGroupsListQuery';
 import useOrgNameExistsQuery from '@/composables/queries/useOrgNameExistsQuery';
 import useSchoolClassesQuery from '@/composables/queries/useSchoolClassesQuery';
 import useUpsertOrgMutation from '@/composables/mutations/useUpsertOrgMutation';
 import useVuelidate from '@vuelidate/core';
 import { usePermissions } from '@/composables/usePermissions';
 import { useAuthStore } from '@/store/auth';
-import { PERMISSION_ACTIONS } from '@/constants/roles';
+import { ROLES } from '@/constants/roles';
 
 interface OrgType {
   firestoreCollection: string;
@@ -159,7 +156,7 @@ const emit = defineEmits<Emits>();
 
 const toast = useToast();
 const authStore = useAuthStore();
-const { can, canGlobal } = usePermissions();
+const { hasMinimumRole, userRole } = usePermissions();
 
 const isSubmitBtnDisabled = ref(false);
 const orgName = ref('');
@@ -177,18 +174,15 @@ const orgTypes = computed(() => {
     return allOrgTypes;
   }
 
-  return allOrgTypes.filter((orgType) => {
-    if (orgType.singular === SINGULAR_ORG_TYPES.DISTRICTS) {
-      return canGlobal(FIRESTORE_COLLECTIONS.GROUPS, PERMISSION_ACTIONS.CREATE, 'sites');
-    } else if (orgType.singular === SINGULAR_ORG_TYPES.SCHOOLS) {
-      return can(FIRESTORE_COLLECTIONS.GROUPS, PERMISSION_ACTIONS.CREATE, FIRESTORE_COLLECTIONS.SCHOOLS);
-    } else if (orgType.singular === SINGULAR_ORG_TYPES.CLASSES) {
-      return can(FIRESTORE_COLLECTIONS.GROUPS, PERMISSION_ACTIONS.CREATE, FIRESTORE_COLLECTIONS.CLASSES);
-    } else if (orgType.singular === SINGULAR_ORG_TYPES.GROUPS) {
-      return can(FIRESTORE_COLLECTIONS.GROUPS, PERMISSION_ACTIONS.CREATE, 'cohorts');
-    }
-    return false;
-  });
+  if (!userRole.value) {
+    return [];
+  }
+
+  return allOrgTypes.filter((orgType) =>
+    orgType.singular === SINGULAR_ORG_TYPES.DISTRICTS
+      ? hasMinimumRole(ROLES.SUPER_ADMIN)
+      : hasMinimumRole(ROLES.SITE_ADMIN),
+  );
 });
 
 const parentDistrict = ref<SelectedOrg | undefined>(undefined);

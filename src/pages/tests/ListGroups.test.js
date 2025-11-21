@@ -75,8 +75,24 @@ vi.mock('@/composables/usePermissions', () => ({
     can: vi.fn(() => true),
     canGlobal: vi.fn(() => true),
     hasRole: vi.fn(() => true),
+    hasMinimumRole: vi.fn(() => true),
+    userRole: ref('siteAdmin'),
     permissions: ref({}),
     permissionsLoaded: ref(true),
+  }),
+}));
+
+vi.mock('@/composables/queries/_useDistrictsQuery', () => ({
+  default: () => ({
+    data: ref([]),
+    isLoading: ref(false),
+  }),
+}));
+
+vi.mock('@/composables/queries/_useSchoolsQuery', () => ({
+  default: () => ({
+    data: ref([]),
+    isLoading: ref(false),
   }),
 }));
 
