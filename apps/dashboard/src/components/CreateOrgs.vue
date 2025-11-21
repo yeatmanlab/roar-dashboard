@@ -153,6 +153,7 @@
           <div class="col-12 md:col-6 lg:col-4 mt-3" data-cy="div-auto-complete">
             <PvFloatLabel>
               <PvAutoComplete
+                ref="tagAutoComplete"
                 v-model="state.tags"
                 multiple
                 dropdown
@@ -353,6 +354,8 @@ const ncesTooltip = computed(() => {
 });
 
 const tagSuggestions = ref([]);
+const tagAutoComplete = ref(null);
+
 const searchTags = (event) => {
   const query = event.query.toLowerCase();
   let filteredOptions = allTags.value.filter((opt) => opt.toLowerCase().includes(query));
@@ -369,7 +372,13 @@ const addTag = (event) => {
   if (input && !state.tags.includes(input)) {
     state.tags.push(input);
   }
-  event.target.value = '';
+  // Use the template ref to clear the input value
+  if (tagAutoComplete.value?.$el) {
+    const inputElement = tagAutoComplete.value.$el.querySelector('input');
+    if (inputElement) {
+      inputElement.value = '';
+    }
+  }
 };
 
 const setAddress = (place) => {
