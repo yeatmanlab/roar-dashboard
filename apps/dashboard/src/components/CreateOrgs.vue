@@ -367,8 +367,10 @@ const searchTags = (event) => {
   tagSuggestions.value = filteredOptions;
 };
 
-const addTag = () => {
+// eslint-disable-next-line no-unused-vars
+const addTag = (event) => {
   // Use the template ref to access the input element
+  // Note: We use the ref instead of event.target for more robust access to the component's internal input
   if (tagAutoComplete.value?.$el) {
     const inputElement = tagAutoComplete.value.$el.querySelector('input');
     if (inputElement) {
