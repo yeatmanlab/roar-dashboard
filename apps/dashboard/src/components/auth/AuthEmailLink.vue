@@ -9,9 +9,6 @@
       <PvButton label="Finish signing in" @click="loginFromEmailLink(formEmail)" />
     </div>
   </div>
-  <transition-group name="p-message" tag="div">
-    <PvMessage v-for="msg of messages" :key="msg.id" :severity="msg.severity">{{ msg.content }}</PvMessage>
-  </transition-group>
 </template>
 
 <script setup>
@@ -21,7 +18,6 @@ import { storeToRefs } from 'pinia';
 import PvFloatLabel from 'primevue/floatlabel';
 import PvButton from 'primevue/button';
 import PvInputText from 'primevue/inputtext';
-import PvMessage from 'primevue/message';
 import { useAuthStore } from '@/store/auth';
 import { fetchDocById } from '@/helpers/query/utils';
 
@@ -43,29 +39,6 @@ authStore.$subscribe(async () => {
 
 const formEmail = ref();
 const localStorageEmail = ref();
-const messages = ref([]);
-
-const addMessages = (errorCode) => {
-  if (errorCode === 'auth/invalid-action-code') {
-    messages.value = [
-      {
-        severity: 'warn',
-        content:
-          'There was an issue with the sign-in link that you clicked on. This can happen when you attempt reuse a sign-in link from a previous email. We are rerouting you to the sign-in page to request another link.',
-        id: 0,
-      },
-    ];
-  } else if (errorCode === 'timeout') {
-    messages.value = [
-      {
-        severity: 'warn',
-        content:
-          'There was an issue with the email sign-in link. We apologize for the inconvenience and are rerouting you to the sign-in page to request another link.',
-        id: 0,
-      },
-    ];
-  }
-};
 
 const loginFromEmailLink = async (email) => {
   unsubscribe();
@@ -74,7 +47,6 @@ const loginFromEmailLink = async (email) => {
     .signInWithEmailLink({ email, emailLink })
     .catch((error) => {
       if (error.code === 'auth/invalid-action-code') {
-        addMessages(error.code);
         setTimeout(() => {
           router.replace({ name: 'SignIn' });
         }, 5000);
@@ -94,7 +66,7 @@ const loginFromEmailLink = async (email) => {
     });
 };
 
-const unsubscribe = authStore.$subscribe(async (mutation, state) => {
+const unsubscribe = authStore.$subscribe(async (_, state) => {
   if (state.roarfirekit.isSignInWithEmailLink && state.roarfirekit.signInWithEmailLink) {
     if (!roarfirekit.value.isSignInWithEmailLink(window.location.href)) {
       router.replace({ name: 'Home' });
