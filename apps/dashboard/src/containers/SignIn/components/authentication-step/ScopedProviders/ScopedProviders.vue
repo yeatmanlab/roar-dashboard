@@ -2,7 +2,7 @@
   <div class="flex flex-column w-full align-content-center justify-content-center">
     <!-- Google -->
     <PvButton
-      v-if="props.availableProviders.includes('google')"
+      v-if="availableProviders.includes('google')"
       class="flex h-1 m-1 w-full text-black surface-0 border-200 border-1 border-round-md justify-content-center hover:border-primary hover:surface-ground provider-button"
       data-cy="sign-in__google-sso"
       @click="$emit('auth-google')"
@@ -15,7 +15,7 @@
 
     <!-- Clever -->
     <PvButton
-      v-if="props.availableProviders.includes('clever')"
+      v-if="availableProviders.includes('clever')"
       class="flex h-1 m-1 w-full surface-0 border-200 border-1 border-round-md justify-content-center hover:border-primary hover:surface-ground provider-button"
       data-cy="sign-in__clever-sso-scoped"
       @click="$emit('auth-clever')"
@@ -28,7 +28,7 @@
 
     <!-- ClassLink -->
     <PvButton
-      v-if="props.availableProviders.includes('classlink')"
+      v-if="availableProviders.includes('classlink')"
       class="flex h-1 m-1 w-full text-black surface-0 border-200 border-1 border-round-md justify-content-center hover:border-primary hover:surface-ground provider-button"
       data-cy="sign-in__classlink-sso-scoped"
       @click="$emit('auth-classlink')"
@@ -41,7 +41,7 @@
 
     <!-- NYCPS -->
     <PvButton
-      v-if="props.availableProviders.includes('nycps')"
+      v-if="availableProviders.includes('nycps')"
       class="flex h-1 m-1 w-full text-black surface-0 border-200 border-1 border-round-md justify-content-center hover:border-primary hover:surface-ground provider-button"
       data-cy="sign-in__nycps-sso-scoped"
       @click="$emit('auth-nycps')"
@@ -61,7 +61,7 @@ import CLEVER_LOGO from '@/assets/provider-clever-logo.svg';
 import CLASSLINK_LOGO from '@/assets/provider-classlink-logo.png';
 import NYCPS_LOGO from '@/assets/provider-nycps-logo.jpg';
 
-const props = defineProps({
+defineProps({
   availableProviders: { type: Array, default: () => [] },
 });
 

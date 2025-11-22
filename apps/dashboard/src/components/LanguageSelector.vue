@@ -39,7 +39,6 @@
           <!-- Visual checkmark, hidden from AT -->
           <span aria-hidden="true">{{ item.key === locale ? '✓ ' : '' }}</span>
           <span>{{ item.label }}</span>
-          <span v-if="item.key === locale">({{ $t('common.selected') }})</span>
         </a>
       </template>
     </PvMenu>

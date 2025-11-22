@@ -4,7 +4,7 @@
     <div class="mt-1 field">
       <div>
         <IdentifierInput
-          v-if="!showPasswordField && !emailLinkSent"
+          v-if="!showPasswordField && !emailLinkSent && !multipleProviders"
           :model-value="email"
           :invalid="invalid"
           @update:model-value="$emit('update:email', $event)"
