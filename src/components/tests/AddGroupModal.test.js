@@ -13,6 +13,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { nextTick, ref } from 'vue';
 
 // Mock useAuthStore
+const mockFirebaseUser = ref({
+  adminFirebaseUser: {
+    uid: 'test-user-id',
+    email: 'test@example.com',
+  },
+});
+
 vi.mock('@/store/auth', () => ({
   useAuthStore: vi.fn(() => ({
     getUserId: vi.fn(() => 'test-user-id'),
@@ -20,6 +27,13 @@ vi.mock('@/store/auth', () => ({
     roarfirekit: ref({
       restConfig: true,
     }),
+    isAuthenticated: () => true,
+    firebaseUser: mockFirebaseUser,
+    userData: ref({
+      roles: [],
+    }),
+    shouldUsePermissions: ref(false),
+    currentSite: ref(null),
   })),
 }));
 
