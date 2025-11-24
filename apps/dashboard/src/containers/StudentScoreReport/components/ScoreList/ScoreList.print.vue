@@ -6,7 +6,7 @@
       <li v-for="task in computedTaskData" :key="task.taskId" class="list-none">
         <ScoreCard
           :public-name="tasksDictionary[task.taskId]?.publicName ?? task.taskId"
-          :score-label="task[task.scoreToDisplay].name"
+          :score-label="getScoreLabel(task[task.scoreToDisplay].name)"
           :score="task[task.scoreToDisplay]"
           :tags="task.tags"
           :value-template="scoreValueTemplate(task)"
@@ -84,4 +84,13 @@ const { computedTaskData, scoreValueTemplate, getTaskDescription, getTaskScoresA
 function getScoreReportNextStepsDocumentPath() {
   return `${document.location.origin}${SCORE_REPORT_NEXT_STEPS_DOCUMENT_PATH}`;
 }
+
+/**
+ * Returns shortened score label
+ *
+ * @returns {string} Original score label
+ */
+const getScoreLabel = (taskName) => {
+  return taskName === 'Percent Correct' ? 'Correct' : taskName;
+};
 </script>

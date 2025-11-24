@@ -61,6 +61,7 @@
     "reliableTagText": "El comportamiento del estudiante no generó ninguna señal y la puntuación puede considerarse confiable.",
     "unreliableTagText": "La puntuación fue marcada como poco confiable.",
     "unreliableTagTextFlags": "La puntuación se marcó como no confiable debido a los siguientes factores",
+    "unreliablePrintText": "Esta evaluación fue señalada como ${reliability}, lo que indica que la puntuación podría no ser precisa.",
     "phonics": {
       "cvc": "CVC (Consonante-Vocal-Consonante)",
       "digraph": "Dígrafo",

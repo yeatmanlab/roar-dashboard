@@ -61,6 +61,7 @@
     "reliableTagText": "The student's behavior did not trigger any flags and the run can be considered reliable",
     "unreliableTagText": "The run was marked as unreliable.",
     "unreliableTagTextFlags": "The run was marked unreliable because of the following flags",
+    "unreliablePrintText": "This assessment was flagged as {reliability}, which means that the score may not be accurate.",
     "taskDescriptions": {
       "swr": "This test measures your student’s skill in reading single words quickly and correctly.",
       "swr-es": "This test measures how well a student can identify real words and made-up words. The goal is for students to recognize words quickly and accurately, a skill called decoding. High scores on this assessment indicate a readiness to be a skilled and fluent reader.",

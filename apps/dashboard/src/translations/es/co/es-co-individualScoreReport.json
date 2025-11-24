@@ -60,6 +60,7 @@
     "reliableTagText": "El comportamiento del estudiante no generó ninguna señal y la puntuación puede considerarse confiable.",
     "unreliableTagText": "La puntuación fue marcada como poco confiable.",
     "unreliableTagTextFlags": "La puntuación se marcó como no confiable debido a los siguientes factores",
+    "unreliablePrintText": "Esta evaluación fue señalada como ${reliability}, lo que indica que la puntuación podría no ser precisa.",
     "taskDescriptions": {
       "swr": "Esta prueba mide la habilidad del estudiante para leer palabras individuales rápida y correctamente.",
       "swr-es": "Esta prueba mide qué tan bien un estudiante puede identificar palabras reales y palabras inventadas. El objetivo es reconocer palabras rápida y precisamente, una habilidad llamada decodificación. Los puntajes altos en esta evaluación indican preparación para ser un lector hábil y fluido.",
