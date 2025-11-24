@@ -40,31 +40,31 @@ describe('getStudentExternalId', () => {
   });
 
   describe('should handle missing data', () => {
-    it('should return empty string if no studentData is undefined', () => {
+    it('should return empty string if studentData is undefined', () => {
       const studentData = undefined;
 
       expect(getStudentExternalId(studentData)).toBe('');
     });
 
-    it('should return empty string if no studentData is null', () => {
+    it('should return empty string if studentData is null', () => {
       const studentData = null;
 
       expect(getStudentExternalId(studentData)).toBe('');
     });
 
-    it('should return empty string if no studentData is empty object', () => {
+    it('should return empty string if studentData is empty object', () => {
       const studentData = {};
 
       expect(getStudentExternalId(studentData)).toBe('');
     });
 
-    it('should return empty string if no studentData not an object', () => {
+    it('should return empty string if studentData is not an object', () => {
       const studentData = 'not an object';
 
       expect(getStudentExternalId(studentData)).toBe('');
     });
 
-    it('should return empty string if no external id is available', () => {
+    it('should return empty string if external id is unavailable', () => {
       const studentData = {
         username: 'username',
         email: 'test@example.com',
