@@ -167,7 +167,10 @@ const { data: tasksDictionary, isLoading: isLoadingTasksDictionary } = useTasksD
   enabled: initialized,
 });
 
-const tasks = computed(() => taskData?.value?.map((assignment) => assignment.taskId) || []);
+const avaliableTasks = ['sre', 'swr', 'sre-es', 'swr-es', 'pa', 'letter', 'phonics'];
+const tasks = computed(
+  () => taskData?.value?.map((assignment) => assignment.taskId).filter((t) => avaliableTasks.includes(t)) || [],
+);
 const tasksListArray = computed(() =>
   formatListArray(tasks.value, tasksDictionary.value, (task, entry) => entry?.publicName ?? task, {
     orderLookup: Object.entries(taskDisplayNames).reduce((acc, [key, value]) => {
