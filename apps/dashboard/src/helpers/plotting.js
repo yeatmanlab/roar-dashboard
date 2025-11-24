@@ -25,7 +25,7 @@ export const chart = {};
  *            middle: {topLeft:number,topRight:number,bottomLeft:number,bottomRight:number},
  *            right: {topLeft:number,topRight:number,bottomLeft:number,bottomRight:number}}}
  */
-export const getBorderRadii = (left, middle, right) => {
+const getBorderRadii = (left, middle, right) => {
   const RADIUS = 8;
   const defaultRadius = { topLeft: 0, topRight: 0, bottomLeft: 0, bottomRight: 0 };
   const borderRadii = { left: { ...defaultRadius }, middle: { ...defaultRadius }, right: { ...defaultRadius } };
