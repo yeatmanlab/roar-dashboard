@@ -3,12 +3,7 @@
     <h2 class="text-lg font-bold">Assessment Overview</h2>
     <p>
       {{ $t('scoreReports.roarSummary') }}
-      <i18n-t keypath="scoreReports.summary" :tag="false">
-        <template #firstName>
-          {{ studentFirstName }}
-        </template>
-      </i18n-t>
-      {{ ' ' }}
+      {{ $t('scoreReports.summary') }}
       <i18n-t keypath="scoreReports.completedTasks" :tag="false">
         <template #firstName>
           {{ studentFirstName }}
