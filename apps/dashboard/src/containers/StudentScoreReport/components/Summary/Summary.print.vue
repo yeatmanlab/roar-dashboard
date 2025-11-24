@@ -11,7 +11,7 @@
       {{ ' ' }}
       <i18n-t keypath="scoreReports.completedTasks" :tag="false">
         <template #firstName>
-          {{ '  ' + studentFirstName }}
+          {{ studentFirstName }}
         </template>
       </i18n-t>
     </p>

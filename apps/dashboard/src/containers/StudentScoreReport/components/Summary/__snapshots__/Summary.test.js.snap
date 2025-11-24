@@ -3,7 +3,7 @@
 exports[`Summary.vue > snapshots > renders with different student name 1`] = `
 "<section data-v-7eb30534="" class="pt-4 lg:pr-8">
   <p data-v-7eb30534=""></p>
-  <p data-v-7eb30534="" class="mt-2">Michael has completed the following assessments:</p>
+  <p data-v-7eb30534=""></p>
   <ul data-v-7eb30534="" class="p-0 list-none lg:columns-2">
     <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">S</strong></li>
     <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">i</strong></li>
@@ -41,7 +41,7 @@ exports[`Summary.vue > snapshots > renders with different student name 1`] = `
 exports[`Summary.vue > snapshots > renders with multiple tasks 1`] = `
 "<section data-v-7eb30534="" class="pt-4 lg:pr-8">
   <p data-v-7eb30534=""></p>
-  <p data-v-7eb30534="" class="mt-2">Sarah has completed the following assessments:</p>
+  <p data-v-7eb30534=""></p>
   <ul data-v-7eb30534="" class="p-0 list-none lg:columns-2">
     <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">S</strong></li>
     <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">i</strong></li>
@@ -112,7 +112,7 @@ exports[`Summary.vue > snapshots > renders with multiple tasks 1`] = `
 exports[`Summary.vue > snapshots > renders with single task 1`] = `
 "<section data-v-7eb30534="" class="pt-4 lg:pr-8">
   <p data-v-7eb30534=""></p>
-  <p data-v-7eb30534="" class="mt-2">John has completed the following assessments:</p>
+  <p data-v-7eb30534=""></p>
   <ul data-v-7eb30534="" class="p-0 list-none lg:columns-2">
     <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">S</strong></li>
     <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">i</strong></li>

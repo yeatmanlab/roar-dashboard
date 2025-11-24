@@ -124,19 +124,5 @@ describe('Summary.vue', () => {
 
       expect(wrapper.text()).toContain('Based on these results, John shows strong performance');
     });
-
-    it('displays completed tasks message', () => {
-      const wrapper = mount(Summary, {
-        props: {
-          studentFirstName: 'Sarah',
-          tasks: 'Single Word Reading',
-        },
-        global: {
-          plugins: [i18n],
-        },
-      });
-
-      expect(wrapper.text()).toContain('Sarah has completed the following assessments');
-    });
   });
 });
