@@ -8,7 +8,7 @@
           {{ studentFirstName }}
         </template>
       </i18n-t>
-
+      {{ ' ' }}
       <i18n-t keypath="scoreReports.completedTasks" :tag="false">
         <template #firstName>
           {{ '  ' + studentFirstName }}
