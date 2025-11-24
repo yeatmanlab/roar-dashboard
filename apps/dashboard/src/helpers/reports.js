@@ -364,7 +364,7 @@ export const tasksToDisplayGraphs = ['swr', 'sre', 'pa'];
  *  Raw Only Tasks
  *  A list of tasks to only display raw scores when included in a RoarDataTable.
  */
-export const rawOnlyTasks = ['cva', 'morphology', 'vocab', 'fluency', 'roar-readaloud'];
+export const rawOnlyTasks = ['vocab', 'fluency', 'roar-readaloud'];
 
 /*
  *  Excluded from Score Report Apps
@@ -629,7 +629,7 @@ export function getGradeWithSuffix(grade) {
  * @returns {string} The CSS color variable to use for the dial.
  */
 export const getDialColor = (grade, percentile, rawScore, taskId, optional = null, scoringVersion = null) => {
-  if (taskId === 'letter' || taskId === 'letter-en-ca' || taskId === 'phonics') {
+  if (tasksToDisplayPercentCorrect.includes(taskId)) {
     return '#3b82f6'; // blue-500
   }
 
@@ -948,45 +948,35 @@ const SCORE_FIELD_MAPPINGS = {
   morphology: {
     percentile: {
       new: 'totalPercentCorrect',
-      legacy: 'totalPercentCorrect',
     },
     percentileDisplay: {
       new: 'totalPercentCorrect',
-      legacy: 'totalPercentCorrect',
     },
     standardScore: {
       new: undefined,
-      legacy: undefined,
     },
     standardScoreDisplay: {
       new: undefined,
-      legacy: undefined,
     },
     rawScore: {
-      new: 'totalPercentCorrect',
-      legacy: 'totalPercentCorrect',
+      new: 'totalCorrect',
     },
   },
   cva: {
     percentile: {
       new: 'totalPercentCorrect',
-      legacy: 'totalPercentCorrect',
     },
     percentileDisplay: {
       new: 'totalPercentCorrect',
-      legacy: 'totalPercentCorrect',
     },
     standardScore: {
       new: undefined,
-      legacy: undefined,
     },
     standardScoreDisplay: {
       new: undefined,
-      legacy: undefined,
     },
     rawScore: {
-      new: 'totalPercentCorrect',
-      legacy: 'totalPercentCorrect',
+      new: 'totalCorrect',
     },
   },
 };
