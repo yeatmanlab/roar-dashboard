@@ -4,7 +4,7 @@
       <div style="text-transform: uppercase" class="text-2xl font-bold mt-3">{{ taskInfoById[taskId]?.subheader }}</div>
       <!-- The following HTML is from a hard-coded source (below) -->
       <!-- eslint-disable-next-line vue/no-v-html -->
-      <p class="mt-1 text-md font-light mb-3" v-html="taskDesc"></p>
+      <p class="mt-1 text-md font-light mb-3" style="white-space: pre-line" v-html="taskDesc"></p>
     </div>
   </div>
   <div v-if="tasksToDisplayGraphs.includes(taskId)" :id="'tab-view-chart-' + taskId" class="chart-toggle-wrapper">
