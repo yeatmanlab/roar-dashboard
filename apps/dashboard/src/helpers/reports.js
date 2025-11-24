@@ -1275,7 +1275,7 @@ export const taskInfoById = {
     color: '#E19834',
     header: 'ROAR-ReadAloud',
     subheader: 'ReadAloud',
-    desc: 'The read-aloud assessment records students’ responses as they read words aloud. The student is shown a nonword and asked to read it aloud, allowing us to evaluate decoding accuracy without relying on memorized words.Scores are not immediately available as student recordings need to be human-scored. The read-aloud assessment is currently under active development alongside the phonics assessment, and support for scoring is still limited at this time.',
+    desc: 'The read-aloud assessment records students’ responses as they read words aloud. The student is shown a nonword and asked to read it aloud, allowing us to evaluate decoding accuracy without relying on memorized words. Scores are not immediately available as student recordings need to be human-scored. The read-aloud assessment is currently under active development alongside the phonics assessment, and support for scoring is still limited at this time.',
   },
   'fluency-arf': {
     header: 'ROAM Math Facts',
