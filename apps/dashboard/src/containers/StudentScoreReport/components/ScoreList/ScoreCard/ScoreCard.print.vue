@@ -155,8 +155,8 @@ const isReliable = computed(() => props.tags.find((tag) => tag.label === 'Reliab
 .knob-container p {
   color: var(--p-knob-text-color);
   position: absolute;
-  top: 60%;
-  left: 50%;
+  top: 57%;
+  left: 51%;
   transform: translateX(-50%);
 }
 
