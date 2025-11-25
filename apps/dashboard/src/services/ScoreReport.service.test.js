@@ -150,6 +150,35 @@ describe('ScoreReportService', () => {
       expect(result.slots.taskDescription).toBe('Description for task two');
       expect(result.slots.supportCategory).toBe('scoreReports.developingText');
     });
+
+    it('should pass scoringVersion to getSupportLevel for percentile description', () => {
+      getSupportLevel.mockImplementation((grade, percentile, rawScore, taskId, optional, scoringVersion) => {
+        if (scoringVersion === 4) {
+          return {
+            support_level: SCORE_SUPPORT_SKILL_LEVELS.ACHIEVED_SKILL,
+            tag_color: 'green',
+          };
+        }
+        return {
+          support_level: SCORE_SUPPORT_SKILL_LEVELS.DEVELOPING_SKILL,
+          tag_color: 'orange',
+        };
+      });
+
+      const task = {
+        taskId: 'sre',
+        rawScore: { value: 56 },
+        percentileScore: { value: 70 },
+        standardScore: { value: 104 },
+      };
+
+      const result = ScoreReportService.getScoreDescription(task, 8, mockI18n, 4);
+
+      expect(result.keypath).toBe('scoreReports.standardTaskDescription');
+      expect(result.slots.supportCategory).toBe('scoreReports.achievedText');
+
+      expect(getSupportLevel).toHaveBeenCalledWith(8, 70, 56, 'sre', null, 4);
+    });
   });
 
   describe('getScoresArrayForTask', () => {
