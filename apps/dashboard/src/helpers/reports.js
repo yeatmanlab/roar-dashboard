@@ -1133,23 +1133,21 @@ export const taskInfoById = {
     subheader: 'Phonics Assessment',
     desc: `Phonics evaluates a student’s understanding of letter–sound relationships and their ability to decode words using phonics skills. In this assessment, students hear an audio recording of a nonword and select the matching nonword from four choices. The assessment covers several phonics patterns including CVC words, digraphs, blends, r-controlled vowels, silent e, and vowel teams. Each category reflects a specific type of phonics knowledge that helps students recognize and apply patterns essential for strong reading skills. Descriptions and example words for each pattern are provided below.
 
-• <strong>CVC:</strong> Three-letter consonant–vowel–consonant pattern words (e.g., <em>jad</em>)
+<ul class="list-disc ml-6 mt-3 space-y-2">
+  <li><strong>CVC:</strong> Three-letter consonant–vowel–consonant pattern words (e.g., <em>jad</em>)</li>
+  <li><strong>Digraph:</strong> Two letters that work together to represent one sound (e.g., <em>ch</em> in <em>chog</em>)</li>
+  <li><strong>Initial Blend:</strong> Consonant clusters at the beginning of a word where each letter’s sound can be heard (e.g., <em>bl</em> in <em>blazz</em>)</li>
+  <li><strong>Triple Blend:</strong> Three-consonant clusters at the beginning of a word where all sounds are heard (e.g., <em>str</em> in <em>stren</em>)</li>
+  <li><strong>Final Blend:</strong> Consonant clusters at the end of a word where each letter’s sound can be heard (e.g., <em>sk</em> in <em>visk</em>)</li>
 
-• <strong>Digraph:</strong> Two letters that work together to represent one sound (e.g., <em>ch</em> in <em>chog</em>)
+  <li><strong>R-Controlled:</strong> A vowel followed by the letter r, which changes the vowel’s sound (e.g., <em>or</em> in <em>vort</em>)</li>
 
-• <strong>Initial Blend:</strong> Consonant clusters at the beginning of a word where each letter’s sound can be heard (e.g., <em>bl</em> in <em>blazz</em>)
+  <li><strong>R-Cluster:</strong> A three-letter cluster containing two vowels and the letter r, where the vowel sound is influenced by r (e.g., <em>-oar</em> in <em>zoar</em>, <em>-ear</em> in <em>kear</em>)</li>
 
-• <strong>Triple Blend:</strong> Three-consonant clusters at the beginning of a word where all sounds are heard (e.g., <em>str</em> in <em>stren</em>)
+  <li><strong>Silent E:</strong> Word ending with a silent e, which causes the middle vowel to be pronounced with a long vowel sound (e.g., <em>o-e</em> in <em>koze</em>)</li>
 
-• <strong>Final Blend:</strong> Consonant clusters at the end of a word where each letter’s sound can be heard (e.g., <em>sk</em> in <em>visk</em>)
-
-• <strong>R-Controlled:</strong> A vowel followed by the letter r, which changes the vowel’s sound (e.g., <em>or</em> in <em>vort</em>)
-
-• <strong>R-Cluster:</strong> A three-letter cluster containing two vowels and the letter r, where the vowel sound is influenced by r (e.g., <em>-oar</em> in <em>zoar</em>, <em>-ear</em> in <em>kear</em>)
-
-• <strong>Silent E:</strong> Word ending with a silent e, which causes the middle vowel to be pronounced with a long vowel sound (e.g., <em>o-e</em> in <em>koze</em>)
-
-• <strong>Vowel Team:</strong> Two or more vowels that work together to represent one vowel sound (e.g., <em>oa</em> in <em>woab</em>)`,
+  <li><strong>Vowel Team:</strong> Two or more vowels that work together to represent one vowel sound (e.g., <em>oa</em> in <em>woab</em>)</li>
+</ul>`,
 
     definitions: [
       {
