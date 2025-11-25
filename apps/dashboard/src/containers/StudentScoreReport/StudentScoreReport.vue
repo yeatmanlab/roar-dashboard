@@ -110,6 +110,7 @@ import EmptyState from './components/EmptyState.vue';
 import { getStudentDisplayName } from '@/helpers/getStudentDisplayName';
 import { formatListArray } from '@/helpers/formatListArray';
 import { getStudentExternalId } from '@/helpers/getStudentExternalId';
+import { STUDENT_SCORE_REPORT_TASK_IDS } from '@/constants/studentScoreReportTasks';
 
 const props = defineProps({
   administrationId: { type: String, required: true },
@@ -167,10 +168,12 @@ const { data: tasksDictionary, isLoading: isLoadingTasksDictionary } = useTasksD
   enabled: initialized,
 });
 
-const availableTasks = ['sre', 'swr', 'sre-es', 'swr-es', 'pa', 'letter', 'phonics'];
 const tasks = computed(
-  () => taskData?.value?.map((assignment) => assignment.taskId).filter((t) => availableTasks.includes(t)) || [],
+  () =>
+    taskData?.value?.map((assignment) => assignment.taskId).filter((t) => STUDENT_SCORE_REPORT_TASK_IDS.includes(t)) ||
+    [],
 );
+
 const tasksListArray = computed(() =>
   formatListArray(tasks.value, tasksDictionary.value, (task, entry) => entry?.publicName ?? task, {
     orderLookup: Object.entries(taskDisplayNames).reduce((acc, [key, value]) => {

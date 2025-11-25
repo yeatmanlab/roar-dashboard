@@ -88,7 +88,7 @@ function getScoreReportNextStepsDocumentPath() {
 /**
  * Returns shortened score label
  *
- * @returns {string} Original score label
+ * @returns {string} Returns abbreviated score label
  */
 const getScoreLabel = (taskName) => {
   return taskName === 'Percent Correct' ? 'Correct' : taskName;
