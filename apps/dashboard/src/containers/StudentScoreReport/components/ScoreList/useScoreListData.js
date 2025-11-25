@@ -88,7 +88,7 @@ export function useScoreListData(params) {
   });
 
   const getTaskDescription = computed(() => {
-    return (task) => ScoreReportService.getScoreDescription(task, gradeLevel, { t });
+    return (task) => ScoreReportService.getScoreDescription(task, gradeLevel, { t }, taskScoringVersions[task.taskId]);
   });
 
   const getTaskScoresArray = computed(() => {
