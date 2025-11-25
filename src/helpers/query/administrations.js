@@ -120,7 +120,6 @@ export const administrationPageFetcher = async (
     testData: toValue(fetchTestData),
   });
 
-  const districtId = toValue(selectedDistrictId) === 'any' ? null : toValue(selectedDistrictId);
   const axiosInstance = getAxiosInstance();
   const documents = administrationIds.map((id) => `${getBaseDocumentPath()}/administrations/${id}`);
 
@@ -154,13 +153,6 @@ export const administrationPageFetcher = async (
     data: administrationData,
     adminOrgs: exhaustiveAdminOrgs,
   });
-
-  if (shouldUsePermissions.value && districtId) {
-    administrations = administrations.filter((adm) => {
-      const assignedDistricts = adm?.assignedOrgs?.districts || [];
-      return assignedDistricts.includes(districtId);
-    });
-  }
 
   const orderField = (orderBy?.value ?? orderByDefault)[0].field.fieldPath;
   const orderDirection = (orderBy?.value ?? orderByDefault)[0].direction;

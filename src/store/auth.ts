@@ -50,6 +50,7 @@ export const useAuthStore = defineStore(
     const adminAuthStateListener: Ref<Unsubscribe | null> = ref(null);
     const adminOrgs: Ref<unknown | null> = ref(null);
     const currentSite: Ref<string | null> = ref(null);
+    const currentSiteName: Ref<string | null> = ref(null);
     const firebaseUser: Ref<FirebaseUser> = ref({ adminFirebaseUser: null });
     const roarfirekit: Ref<RoarFirekit | null> = ref(null);
     const routeToProfile: Ref<boolean> = ref(false);
@@ -68,6 +69,7 @@ export const useAuthStore = defineStore(
       adminAuthStateListener.value?.();
       adminOrgs.value = null;
       currentSite.value = null;
+      currentSiteName.value = null;
       firebaseUser.value = { adminFirebaseUser: null };
       roarfirekit.value = null;
       routeToProfile.value = false;
@@ -254,8 +256,14 @@ export const useAuthStore = defineStore(
 
         if (!currentSite.value) {
           currentSite.value = data.roles[0]?.siteId ?? null;
+          currentSiteName.value = data.roles[0]?.siteName ?? null;
         }
       }
+    }
+
+    function setCurrentSite(siteId: string | null, siteName: string | null): void {
+      currentSite.value = siteId;
+      currentSiteName.value = siteName;
     }
 
     function setUserClaims(claims: UserClaims | null): void {
@@ -272,6 +280,7 @@ export const useAuthStore = defineStore(
       adminAuthStateListener,
       adminOrgs,
       currentSite,
+      currentSiteName,
       firebaseUser,
       roarfirekit,
       routeToProfile,
@@ -308,6 +317,7 @@ export const useAuthStore = defineStore(
       logInWithEmailAndPassword,
       sendMyPasswordResetEmail,
       setAuthStateListeners,
+      setCurrentSite,
       setShowSideBar,
       setUserClaims,
       setUserData,
@@ -320,7 +330,7 @@ export const useAuthStore = defineStore(
   {
     persist: {
       debug: false,
-      paths: ['currentSite', 'firebaseUser', 'ssoProvider'],
+      paths: ['currentSite', 'currentSiteName', 'firebaseUser', 'ssoProvider'],
       storage: sessionStorage,
     },
   },

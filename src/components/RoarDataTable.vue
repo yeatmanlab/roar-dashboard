@@ -104,6 +104,7 @@
           :loading="loading"
           scrollable
           :select-all="selectAll"
+          :row-class="rowClass"
           data-cy="roar-data-table"
           @select-all-change="onSelectAll"
           @row-select="onSelectionChange"
@@ -480,6 +481,7 @@ const props = defineProps({
   allowFiltering: { type: Boolean, default: true },
   allowColumnSelection: { type: Boolean, default: true },
   showOptionsControl: { type: Boolean, default: true },
+  rowClass: { type: Function, default: null },
 });
 
 const inputColumns = ref(props.columns);
@@ -488,7 +490,7 @@ const selectedColumns = ref(props.columns);
 const computedColumns = computed(() => {
   return _map(selectedColumns.value, (col) => {
     return _find(props.columns, (pcol) => pcol.header === col.header);
-  });
+  }).filter(Boolean);
 });
 const currentSort = ref([]);
 const selectedRows = ref([]);
@@ -914,5 +916,13 @@ button.p-column-filter-menu-button.p-link:hover {
   .action--edit {
     color: inherit;
   }
+}
+
+.p-datatable .p-datatable-tbody > tr.current-user-row {
+  background-color: #fef2f2 !important;
+}
+
+.p-datatable .p-datatable-tbody > tr.current-user-row > td:first-child {
+  border-left: 3px solid var(--primary-color) !important;
 }
 </style>

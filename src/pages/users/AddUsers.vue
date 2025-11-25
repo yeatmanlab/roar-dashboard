@@ -801,9 +801,7 @@ async function submitUsers() {
         return processedUser;
       });
 
-      // This is the most likely place for an error, due to
-      // permissions, etc. If so, drop to Catch block
-      const res = await createUsers(processedUsers);
+      const res = await createUsers({users: processedUsers, siteId: currentSite.value});
       logger.capture('Admin: Add Users', { processedUsers });
       const currentRegisteredUsers = res.data.data;
 

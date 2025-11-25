@@ -1,84 +1,90 @@
 <template>
   <div class="p-5">
-    <div class="flex align-items-center gap-2">
-      <div class="flex flex-column flex-1">
-        <h2 class="admin-page-header m-0">Administrators</h2>
-        <span v-if="currentSiteName" class="flex align-items-center gap-1 m-0 mt-1 text-lg text-gray-500">
-          <i class="pi pi-building"></i>{{ currentSiteName }}
-        </span>
+    <template v-if="isPageLoading">
+      <div class="flex justify-center items-center h-96">
+        <LevanteSpinner :size="120" />
       </div>
-      <PermissionGuard v-if="!isAllSitesSelected" :requireRole="ROLES.ADMIN">
-        <PvButton @click="isAdministratorModalVisible = true"><i class="pi pi-plus"></i>Add Administrator</PvButton>
-      </PermissionGuard>
-      <PvButton v-else disabled severity="secondary" class="p-button-outlined">
-        <i class="pi pi-ban"></i>Select a site to manage administrators
-      </PvButton>
-    </div>
+    </template>
 
-    <div class="m-0 mt-5">
-      <RoarDataTable
-        key="administrators"
-        sortable
-        :allow-filtering="false"
-        :columns="tableColumns"
-        :data="tableData"
-        :loading="isAdminsLoading || isAdminsFetching || isAdminsRefetching"
+    <template v-else>
+      <div class="flex align-items-center gap-2">
+        <div class="flex flex-column flex-1">
+          <h2 class="admin-page-header m-0">Administrators</h2>
+          <span v-if="currentSiteName" class="flex align-items-center gap-1 m-0 mt-1 text-lg text-gray-500">
+            <i class="pi pi-building"></i>{{ currentSiteName }}
+          </span>
+        </div>
+        <PermissionGuard :required-role="ROLES.ADMIN">
+          <PvButton :disabled="isAdminsLoading || isAdminsFetching || isAdminsRefetching || isAllSitesSelected" @click="isAdministratorModalVisible = true"><i class="pi pi-plus"></i>Add Administrator</PvButton>
+        </PermissionGuard>
+      </div>
+
+      <div class="m-0 mt-5">
+        <RoarDataTable
+          key="administrators"
+          sortable
+          :allow-filtering="false"
+          :columns="tableColumns"
+          :data="tableData"
+          :loading="isAdminsLoading || isAdminsFetching || isAdminsRefetching"
+          :row-class="getRowClass"
+        />
+      </div>
+
+      <AddAdministratorModal
+        :data="administrator"
+        :is-visible="isAdministratorModalVisible"
+        @close="closeAdministratorModal"
+        @refetch="adminsRefetch"
       />
-    </div>
 
-    <AddAdministratorModal
-      :data="administrator"
-      :is-visible="isAdministratorModalVisible"
-      @close="closeAdministratorModal"
-      @refetch="adminsRefetch"
-    />
+      <PvDialog
+        v-model:visible="isRemovalVerificationModalVisible"
+        modal
+        header="Confirm Removal"
+        :style="{ width: '32rem' }"
+        @hide="closeRemovalVerificationModal"
+      >
+        <div class="flex flex-column gap-3">
+          <p class="text-sm text-gray-600">
+            To remove this administrator from the site, type
+            <span class="font-semibold text-gray-900">{{ removalTargetLabel }}</span>
+            and select Remove. This action cannot be undone.
+          </p>
 
-    <PvDialog
-      v-model:visible="isRemovalVerificationModalVisible"
-      modal
-      header="Confirm Removal"
-      :style="{ width: '32rem' }"
-      @hide="closeRemovalVerificationModal"
-    >
-      <div class="flex flex-column gap-3">
-        <p class="text-sm text-gray-600">
-          To remove this administrator from the site, type
-          <span class="font-semibold text-gray-900">{{ removalTargetLabel }}</span>
-          and select Remove. This action cannot be undone.
-        </p>
-
-        <div class="flex flex-column gap-2">
-          <label class="text-sm font-medium text-gray-700">Administrator name</label>
-          <PvInputText
-            v-model="removalConfirmationInput"
-            autofocus
-            placeholder="Type administrator name"
-            class="w-full"
-          />
+          <div class="flex flex-column gap-2">
+            <label class="text-sm font-medium text-gray-700">Administrator name</label>
+            <PvInputText
+              v-model="removalConfirmationInput"
+              autofocus
+              placeholder="Type administrator name"
+              class="w-full"
+            />
+          </div>
         </div>
-      </div>
 
-      <template #footer>
-        <div class="flex justify-end gap-2 w-full">
-          <PvButton
-            label="Cancel"
-            class="p-button-text"
-            severity="secondary"
-            :disabled="isRemovingAdministrator"
-            @click="closeRemovalVerificationModal"
-          />
-          <PvButton
-            label="Remove"
-            severity="danger"
-            :loading="isRemovingAdministrator"
-            :disabled="!isRemovalConfirmationValid || isRemovingAdministrator"
-            @click="executeAdministratorRemoval"
-          />
-        </div>
-      </template>
-    </PvDialog>
+        <template #footer>
+          <div class="flex justify-end gap-2 w-full">
+            <PvButton
+              label="Cancel"
+              class="p-button-text"
+              severity="secondary"
+              :disabled="isRemovingAdministrator"
+              @click="closeRemovalVerificationModal"
+            />
+            <PvButton
+              label="Remove"
+              severity="danger"
+              :loading="isRemovingAdministrator"
+              :disabled="!isRemovalConfirmationValid || isRemovingAdministrator"
+              @click="executeAdministratorRemoval"
+            />
+          </div>
+        </template>
+      </PvDialog>
 
-    <PvConfirmDialog :draggable="false" />
+      <PvConfirmDialog :draggable="false" />
+    </template>
   </div>
 </template>
 
@@ -86,9 +92,9 @@
 import { usePermissions } from '@/composables/usePermissions';
 import { AdminSubResource } from '@levante-framework/permissions-core';
 import AddAdministratorModal from '@/components/modals/AddAdministratorModal.vue';
+import LevanteSpinner from '@/components/LevanteSpinner.vue';
 import RoarDataTable from '@/components/RoarDataTable.vue';
 import useAdminsBySiteQuery from '@/composables/queries/useAdminsBySiteQuery';
-import useDistrictsListQuery from '@/composables/queries/useDistrictsListQuery';
 import { TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
 import { useAuthStore } from '@/store/auth';
 import { storeToRefs } from 'pinia';
@@ -98,24 +104,9 @@ import PvDialog from 'primevue/dialog';
 import PvInputText from 'primevue/inputtext';
 import { useConfirm } from 'primevue/useconfirm';
 import { useToast } from 'primevue/usetoast';
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import PermissionGuard from '@/components/PermissionGuard.vue';
 import { ROLES } from '@/constants/roles';
-
-interface SiteOption {
-  label: string;
-  value: string;
-}
-
-interface DistrictRecord {
-  id: string;
-  name: string;
-}
-
-interface SiteSummary {
-  siteId: string;
-  siteName: string;
-}
 
 interface AdministratorName {
   first?: string;
@@ -157,12 +148,12 @@ interface AdministratorAction {
 interface AdministratorTableRow extends AdministratorRecord {
   fullName: string;
   actions: AdministratorAction[];
+  isCurrentUser: boolean;
 }
 
 const authStore = useAuthStore();
-const { currentSite, roarfirekit, sites } = storeToRefs(authStore);
-const { isUserSuperAdmin } = authStore;
-const { can } = usePermissions();
+const { currentSite, currentSiteName, roarfirekit } = storeToRefs(authStore);
+const { can, permissionsLoaded } = usePermissions();
 const confirm = useConfirm();
 const toast = useToast();
 
@@ -172,35 +163,7 @@ const isRemovalVerificationModalVisible = ref(false);
 const removalConfirmationInput = ref('');
 const isRemovingAdministrator = ref(false);
 
-const { data: districtsData } = useDistrictsListQuery();
-
-const siteOptions = computed<SiteOption[]>(() => {
-  if (isUserSuperAdmin()) {
-    // For super admin, use districts data
-    const districtList = (districtsData.value as DistrictRecord[] | undefined) ?? [];
-
-    const options = districtList.map((district) => ({
-      label: district.name,
-      value: district.id,
-    }));
-
-    return [{ label: 'All Sites', value: 'any' }, ...options];
-  } else {
-    // For regular admin, use sites from auth store
-    const availableSites = (sites.value as SiteSummary[] | undefined) ?? [];
-
-    return availableSites.map((site) => ({
-      label: site.siteName,
-      value: site.siteId,
-    }));
-  }
-});
-
-const selectedSite = computed<SiteOption | undefined>(() => {
-  return siteOptions.value?.find((siteOption: SiteOption) => siteOption?.value === currentSite.value)
-});
-
-const isAllSitesSelected = computed(() => selectedSite.value?.value === 'any');
+const isAllSitesSelected = computed(() => currentSite.value === 'any');
 
 const {
   data: adminsData,
@@ -208,21 +171,28 @@ const {
   isFetching: isAdminsFetching,
   isRefetching: isAdminsRefetching,
   refetch: adminsRefetch,
-} = useAdminsBySiteQuery(selectedSite, {
-  enabled: computed(() => !!selectedSite.value),
+} = useAdminsBySiteQuery();
+
+const isPageLoading = computed(() => {
+  if (!permissionsLoaded.value) return true;
+  return currentSite.value && isAdminsLoading.value;
 });
+
+const currentUserId = computed(() => authStore.getUid());
 
 const tableData = computed<AdministratorTableRow[]>(() => {
   const admins = (adminsData?.value as AdministratorRecord[] | undefined) ?? [];
 
   return admins
     .map((admin) => {
-      const fullName = formatAdministratorName(admin) || '--';
-      const targetRole = admin.roles?.find((r) => r.siteId === selectedSite.value?.value)?.role as AdminSubResource;
+      const baseName = formatAdministratorName(admin) || '--';
+      const targetRole = admin.roles?.find((r) => r.siteId === currentSite.value)?.role as AdminSubResource;
+      const isCurrentUser = admin.id === currentUserId.value
+      const fullName = isCurrentUser ? `${baseName} (You)` : baseName;
 
       const actions: AdministratorAction[] = [];
 
-      if (!isAllSitesSelected.value && targetRole && can('admins', 'update', targetRole)) {
+      if (!isCurrentUser && !isAllSitesSelected.value && targetRole && can('admins', 'update', targetRole)) {
         actions.push({
           name: 'edit',
           tooltip: 'Edit',
@@ -231,7 +201,7 @@ const tableData = computed<AdministratorTableRow[]>(() => {
         });
       }
 
-      if (!isAllSitesSelected.value && targetRole && can('admins', 'delete', targetRole)) {
+      if (!isCurrentUser && !isAllSitesSelected.value && targetRole && can('admins', 'delete', targetRole)) {
         actions.push({
           name: 'remove',
           tooltip: 'Remove',
@@ -244,6 +214,7 @@ const tableData = computed<AdministratorTableRow[]>(() => {
         ...admin,
         fullName,
         actions,
+        isCurrentUser,
       };
     })
     .sort((a, b) => {
@@ -286,10 +257,6 @@ const tableColumns = computed(() => {
   return columns;
 });
 
-const currentSiteName = computed(() => {
-  const availableSites = (sites.value as SiteSummary[] | undefined) ?? [];
-  return availableSites.find((site) => site.siteId === currentSite.value)?.siteName;
-});
 
 const closeAdministratorModal = () => {
   administrator.value = null;
@@ -354,7 +321,7 @@ async function executeAdministratorRemoval() {
     return;
   }
 
-  const siteId = selectedSite.value?.value ?? currentSite.value ?? null;
+  const siteId = currentSite.value;
 
   if (!siteId) {
     toast.add({
@@ -407,5 +374,9 @@ function formatAdministratorName(admin?: AdministratorRecord | null) {
   }
 
   return [admin.name.first, admin.name.middle, admin.name.last].filter(Boolean).join(' ').trim();
+}
+
+function getRowClass(data: AdministratorTableRow) {
+  return data.isCurrentUser ? 'current-user-row' : '';
 }
 </script>

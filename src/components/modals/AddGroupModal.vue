@@ -36,7 +36,7 @@
             <PvFloatLabel class="w-full">
               <PvSelect
                 v-model="parentDistrict"
-                :loading="isLoadingDistricts"
+                :loading="false"
                 :options="districts"
                 class="w-full"
                 data-cy="dropdown-parent-district"
@@ -123,7 +123,6 @@ import PvSelect from 'primevue/select';
 import useDistrictSchoolsQuery from '@/composables/queries/useDistrictSchoolsQuery';
 import useDistrictsListQuery from '@/composables/queries/useDistrictsListQuery';
 import useOrgNameExistsQuery from '@/composables/queries/useOrgNameExistsQuery';
-import useSchoolClassesQuery from '@/composables/queries/useSchoolClassesQuery';
 import useUpsertOrgMutation from '@/composables/mutations/useUpsertOrgMutation';
 import useVuelidate from '@vuelidate/core';
 import { usePermissions } from '@/composables/usePermissions';
@@ -220,7 +219,7 @@ const v$ = useVuelidate(
 
 const orgTypeLabel = computed(() => (orgType.value ? _capitalize(orgType.value.label) : 'Group'));
 const parentOrgRequired = computed(() => orgTypesRequiringParent.includes(orgType.value?.singular || ''));
-const selectedDistrict = computed(() => parentDistrict?.value?.id);
+const selectedDistrict = computed(() => parentDistrict?.value?.id ?? '');
 const schoolQueryEnabled = computed(() => parentDistrict?.value !== undefined);
 const schoolDropdownEnabled = computed(() => {
   return parentDistrict.value && !isFetchingSchools.value;
@@ -228,7 +227,19 @@ const schoolDropdownEnabled = computed(() => {
 
 const { mutate: upsertOrg, isPending: isSubmittingOrg } = useUpsertOrgMutation();
 
-const { data: districts, loading: isLoadingDistricts } = useDistrictsListQuery();
+const { data: allDistricts } = useDistrictsListQuery({ enabled: !authStore.isUserSuperAdmin() });
+
+const districts = computed<SelectedOrg[]>(() => {
+  if (authStore.isUserSuperAdmin()) {
+    return allDistricts.value ?? [];
+  }
+
+  return authStore.sites.map((site) => ({
+    id: site.siteId,
+    name: site.siteName,
+    tags: [],
+  }));
+});
 
 const { isFetching: isFetchingSchools, data: schools } = useDistrictSchoolsQuery(selectedDistrict, {
   enabled: schoolQueryEnabled,

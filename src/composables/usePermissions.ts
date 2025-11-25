@@ -13,16 +13,13 @@ interface UserData {
 // Session-level cache
 const cache = new CacheService(300000); // 5 minutes
 const permissionService = new PermissionService(cache);
+const permissionsLoaded = ref(false);
+let isLoadingPermissions = false;
 
 export const usePermissions = () => {
   const authStore = useAuthStore();
   const { isAuthenticated } = authStore;
   const { firebaseUser, userData, shouldUsePermissions, currentSite } = storeToRefs(authStore);
-
-  // console.log('isAuthenticated: ', isAuthenticated);
-  // console.log('firebaseUser: ', firebaseUser.adminFirebaseUser);
-
-  const permissionsLoaded = ref(false);
   const user = computed(() => {
     if (!isAuthenticated() || !firebaseUser.value.adminFirebaseUser) return null;
 
@@ -33,49 +30,38 @@ export const usePermissions = () => {
     };
   });
 
-  // Load permissions from Firestore document
   const loadPermissions = async () => {
-    const axiosInstance = getAxiosInstance();
-    const response = await axiosInstance.get(`${getBaseDocumentPath()}/system/permissions`);
+    if (permissionsLoaded.value || isLoadingPermissions) return;
+    isLoadingPermissions = true;
 
-    // TODO: Implement real-time listener for permission changes
-    // onSnapshot(permissionsRef, (doc) => {
-    //   if (doc.exists()) {
-    //     const data = response.data;
-    //     PermissionService.loadPermissions(data.matrix as PermissionMatrix);
-    //     permissionsLoaded.value = true;
-    //   } else {
-    //     console.error('Permissions document not found');
-    //   }
-    // }, (error) => {
-    //   console.error('Failed to load permissions:', error);
-    // });
+    try {
+      const axiosInstance = getAxiosInstance();
+      const response = await axiosInstance.get(`${getBaseDocumentPath()}/system/permissions`);
+      const rawData = response.data;
+      const convertedData = _mapValues(rawData.fields, (value) => convertValues(value));
+      const { success, errors } = permissionService.loadPermissions(convertedData as PermissionDocument);
+      permissionsLoaded.value = true;
 
-    const rawData = response.data;
-    
-    // Convert Firestore field values to JavaScript values
-    const convertedData = _mapValues(rawData.fields, (value) => convertValues(value));
-    
-
-    const {success, errors } = permissionService.loadPermissions(convertedData as PermissionDocument);
-
-    if (!success) {
-      console.error('Failed to load permissions:', errors);
+      if (!success) {
+        console.error('Failed to load permissions:', errors);
+      }
+    } finally {
+      isLoadingPermissions = false;
     }
-    permissionsLoaded.value = true;
   };
 
-  // Load permissions when component mounts and user is authenticated
   onMounted(() => {
+    if (permissionsLoaded.value) return;
+
     if (shouldUsePermissions.value && isAuthenticated()) {
       loadPermissions();
     }
   });
 
   const userRole = computed<Role | null>(() => {
-    if (!shouldUsePermissions || !permissionsLoaded.value || !user.value || !currentSite) return null;
+    if (!shouldUsePermissions.value || !permissionsLoaded.value || !user.value || !currentSite.value) return null;
 
-    return permissionService.getUserSiteRole(user.value, currentSite);
+    return permissionService.getUserSiteRole(user.value, currentSite.value);
   });
 
   const can = (resource: Resource, action: Action, subResource?: GroupSubResource | AdminSubResource): boolean => {

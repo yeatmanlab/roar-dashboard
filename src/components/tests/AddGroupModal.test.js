@@ -28,12 +28,25 @@ vi.mock('@/store/auth', () => ({
       restConfig: true,
     }),
     isAuthenticated: () => true,
+    isUserSuperAdmin: vi.fn(() => true),
     firebaseUser: mockFirebaseUser,
     userData: ref({
       roles: [],
     }),
     shouldUsePermissions: ref(false),
     currentSite: ref(null),
+    userClaims: ref({
+      claims: {
+        adminOrgs: {
+          districts: [],
+          schools: [],
+          classes: [],
+          groups: [],
+          families: [],
+        },
+      },
+    }),
+    sites: [],
   })),
 }));
 
@@ -53,6 +66,20 @@ vi.mock('@/composables/queries/useOrgNameExistsQuery', () => ({
     refetch: vi.fn().mockResolvedValue({
       data: mockOrgNameExists,
     }),
+  })),
+}));
+
+vi.mock('@/composables/queries/useDistrictsListQuery', () => ({
+  default: vi.fn(() => ({
+    data: ref([]),
+    isLoading: ref(false),
+  })),
+}));
+
+vi.mock('@/composables/queries/useDistrictSchoolsQuery', () => ({
+  default: vi.fn(() => ({
+    data: ref([]),
+    isFetching: ref(false),
   })),
 }));
 

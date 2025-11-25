@@ -53,8 +53,8 @@ import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import { APP_ROUTES } from '@/constants/routes';
 import Badge from 'primevue/badge';
 import UserActions from './UserActions.vue';
-import useUserType from '@/composables/useUserType';
 import { ROLES } from '@/constants/roles';
+import { usePermissions } from '@/composables/usePermissions';
 
 interface NavbarAction {
   category: string;
@@ -75,6 +75,7 @@ interface MenuItem {
 const router = useRouter();
 const authStore = useAuthStore();
 const { roarfirekit, userData, currentSite } = storeToRefs(authStore);
+const { userRole } = usePermissions();
 
 const initialized = ref<boolean>(false);
 const menu = ref();
@@ -101,11 +102,6 @@ onMounted((): void => {
 
 onUnmounted((): void => {
   window.removeEventListener('resize', handleResize);
-});
-
-const { data: userClaims } = useUserClaimsQuery({
-  queryKey: ['userClaims'],
-  enabled: initialized,
 });
 
 const computedItems = computed((): MenuItem[] => {
@@ -148,13 +144,11 @@ const computedItems = computed((): MenuItem[] => {
   return items;
 });
 
-const { isAdmin, isSuperAdmin } = useUserType(userClaims) as { isAdmin: Ref<boolean>; isSuperAdmin: Ref<boolean> };
-
 const computedIsBasicView = computed((): boolean => {
-  if (!userClaims.value) {
-    return false;
+  if (userRole.value === ROLES.PARTICIPANT) {
+    return true;
   }
-  return !isSuperAdmin.value && !isAdmin.value;
+  return false;
 });
 
 const rawActions = computed((): NavbarAction[] => {

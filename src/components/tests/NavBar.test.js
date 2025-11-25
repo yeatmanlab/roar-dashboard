@@ -34,6 +34,12 @@ vi.mock('@/composables/useUserType', () => ({
   })),
 }));
 
+vi.mock('@/composables/usePermissions', () => ({
+  usePermissions: () => ({
+    userRole: computed(() => currentTestRole.value),
+  }),
+}));
+
 vi.mock('@/store/auth', () => ({
   useAuthStore: vi.fn(() =>
     reactive({
@@ -41,15 +47,23 @@ vi.mock('@/store/auth', () => ({
       roarfirekit: ref({
         restConfig: true,
       }),
-      userData: computed(() => ({
+      userData: ref({
         roles: [
           {
             siteId: 'testSite',
             role: currentTestRole.value,
           },
         ],
-      })),
+      }),
       currentSite: ref('testSite'),
+      shouldUsePermissions: ref(true),
+      firebaseUser: ref({
+        adminFirebaseUser: {
+          uid: 'test-user-id',
+          email: 'test@example.com',
+        },
+      }),
+      isAuthenticated: () => true,
     }),
   ),
 }));

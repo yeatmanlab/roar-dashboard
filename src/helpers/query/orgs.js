@@ -154,7 +154,7 @@ export const orgFetcher = async (
   selectedDistrict,
   isSuperAdmin,
   adminOrgs,
-  select = ['name', 'id', 'tags', 'currentActivationCode'],
+  select = ['name', 'id'],
 ) => {
   const districtId = toValue(selectedDistrict) === 'any' ? null : toValue(selectedDistrict);
 
@@ -167,12 +167,6 @@ export const orgFetcher = async (
       paginate: false,
       select: select,
     });
-
-    if (orgType === 'districts') {
-      console.log(`Fetching ${orgType}`);
-    } else if (orgType === 'schools') {
-      console.log(`Fetching ${orgType} for ${districtId}`);
-    }
 
     return axiosInstance.post(`${getBaseDocumentPath()}:runQuery`, requestBody).then(({ data }) => mapFields(data));
   } else {

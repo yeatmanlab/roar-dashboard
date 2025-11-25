@@ -2,7 +2,7 @@ import * as VueQuery from '@tanstack/vue-query';
 import { mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import PrimeVue from 'primevue/config';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ref } from 'vue';
 import ListGroups from '../groups/ListGroups.vue';
 
@@ -175,6 +175,19 @@ vi.mock('@/components/modals/GroupAssignmentsModal.vue', () => ({
 
 beforeEach(() => {
   setActivePinia(createPinia());
+});
+
+beforeEach(() => {
+  vi.useFakeTimers();
+});
+
+afterEach(() => {
+  vi.runAllTimers();
+  vi.useRealTimers();
+});
+
+afterAll(() => {
+  vi.useRealTimers();
 });
 
 const mountOptions = {

@@ -18,7 +18,7 @@ interface Props {
   resource?: Resource;
   subResource?: GroupSubResource | AdminSubResource;
   action?: Action;
-  requireRole?: Role;
+  requiredRole?: Role;
   fallbackRoute?: string;
 }
 
@@ -26,7 +26,7 @@ const props = withDefaults(defineProps<Props>(), {
   resource: undefined,
   subResource: undefined,
   action: undefined,
-  requireRole: undefined,
+  requiredRole: undefined,
   fallbackRoute: undefined,
 });
 
@@ -41,7 +41,7 @@ const isLoadingPermissions = computed(() => {
 });
 
 const shouldCheckPermissions = computed(() => {
-  return shouldUsePermissions.value && (props.resource || props.subResource || props.requireRole);
+  return shouldUsePermissions.value && (props.resource || props.subResource || props.requiredRole);
 });
 
 const hasPermission = computed(() => {
@@ -53,8 +53,8 @@ const hasPermission = computed(() => {
     return can(props.resource, props.action, props.subResource);
   }
 
-  if (props.requireRole) {
-    return hasRole(props.requireRole);
+  if (props.requiredRole) {
+    return hasRole(props.requiredRole);
   }
 
   return false;

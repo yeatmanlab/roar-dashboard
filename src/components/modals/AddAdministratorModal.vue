@@ -17,7 +17,7 @@
       <div class="flex flex-column gap-1 w-full">
         <PvFloatLabel>
           <PvInputText id="first-name" v-model="firstName" class="w-full" data-cy="input-administrator-first-name" />
-          <label for="first-name">First name</label>
+          <label for="first-name">First name<span class="required-asterisk">*</span></label>
         </PvFloatLabel>
         <small v-if="v$.firstName.$error" class="p-error">First name is required.</small>
       </div>
@@ -32,7 +32,7 @@
       <div class="flex flex-column gap-1 w-full">
         <PvFloatLabel>
           <PvInputText id="last-name" v-model="lastName" class="w-full" data-cy="input-administrator-last-name" />
-          <label for="last-name">Last name</label>
+          <label for="last-name">Last name<span class="required-asterisk">*</span></label>
         </PvFloatLabel>
         <small v-if="v$.lastName.$error" class="p-error">Last name is required.</small>
       </div>
@@ -49,66 +49,21 @@
     </div>
 
     <div class="w-full m-0 mt-5">
-      <div class="flex flex-column gap-5">
-        <div v-for="(siteRolePair, index) in siteRolePairs" :key="index" class="flex align-items-center gap-2">
-          <div class="w-full">
-            <div class="flex flex-column gap-1 w-full">
-              <PvFloatLabel>
-                <PvSelect
-                  :id="`site-${index}`"
-                  v-model="siteRolePair.district"
-                  :options="getAvailableDistricts(index)"
-                  optionLabel="label"
-                  optionValue="value"
-                  filter
-                  class="w-full"
-                  :data-cy="`select-site-${index}`"
-                />
-                <label :for="`site-${index}`">Site</label>
-              </PvFloatLabel>
-              <small v-if="!siteRolePair.district && v$.$dirty" class="p-error">Site is required.</small>
-            </div>
-          </div>
-
-          <span class="text-gray-500"><i class="pi pi-arrow-right text-sm"></i></span>
-
-          <div class="w-full">
-            <div class="flex flex-column gap-1 w-full">
-              <PvFloatLabel>
-                <PvSelect
-                  :id="`role-${index}`"
-                  v-model="siteRolePair.role"
-                  :options="roleOptions"
-                  optionLabel="label"
-                  optionValue="value"
-                  filter
-                  class="w-full"
-                  :data-cy="`select-role-${index}`"
-                />
-                <label :for="`role-${index}`">Role</label>
-              </PvFloatLabel>
-              <small v-if="!siteRolePair.role && v$.$dirty" class="p-error">Role is required.</small>
-            </div>
-          </div>
-
-          <PvButton
-            v-if="siteRolePairs.length > 1"
-            icon="pi pi-times"
-            class="p-button-danger"
-            variant="link"
-            :data-cy="`remove-site-role-${index}`"
-            @click="removeSiteRolePair(index)"
+      <div class="flex flex-column gap-1 w-full">
+        <PvFloatLabel>
+          <PvSelect
+            id="role"
+            v-model="selectedRole"
+            :options="roleOptions"
+            optionLabel="label"
+            optionValue="value"
+            filter
+            class="w-full"
+            data-cy="select-role"
           />
-        </div>
-
-        <PvButton
-          label="Add Site"
-          icon="pi pi-plus"
-          class="p-button-outlined p-button-secondary w-full md:w-auto"
-
-          data-cy="add-site-role-button"
-          @click="addSiteRolePair"
-        />
+          <label for="role">Role<span class="required-asterisk">*</span></label>
+        </PvFloatLabel>
+        <small v-if="!selectedRole && v$.$dirty" class="p-error">Role is required.</small>
       </div>
     </div>
 
@@ -134,7 +89,6 @@ import { Name } from '@levante-framework/firekit/lib/interfaces';
 import { AdminSubResource } from '@levante-framework/permissions-core';
 import useVuelidate from '@vuelidate/core';
 import { required } from '@vuelidate/validators';
-import _cloneDeep from 'lodash/cloneDeep';
 import { storeToRefs } from 'pinia';
 import PvButton from 'primevue/button';
 import PvDialog from 'primevue/dialog';
@@ -176,11 +130,6 @@ interface DistrictOption {
   label: string;
 }
 
-interface SiteRolePair {
-  district: string;
-  role: string;
-}
-
 interface Emits {
   (event: 'close'): void;
   (event: 'refetch'): void;
@@ -199,16 +148,22 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const authStore = useAuthStore();
-const { roarfirekit } = storeToRefs(authStore);
+const { roarfirekit, currentSite, sites } = storeToRefs(authStore);
 const { isUserSuperAdmin } = authStore;
 const { can } = usePermissions();
 const toast = useToast();
 
 const { data: districtsData } = useDistrictsListQuery();
 
-const districts = computed<DistrictOption[]>(
-  () => districtsData?.value?.map((district: DistrictData) => ({ value: district?.id, label: district?.name })) || [],
-);
+
+
+const currentSiteInfo = computed(() => {
+  const siteFromSites = sites.value.find((site) => site.siteId === currentSite.value);
+  if (siteFromSites) {
+    return { siteId: siteFromSites.siteId, siteName: siteFromSites.siteName };
+  }
+  return null;
+});
 
 
 const isEditMode = computed(() => Boolean(props?.data));
@@ -249,8 +204,8 @@ const isSubmitting = ref(false);
 const isTestData = ref(false);
 const lastName = ref<string>('');
 const middleName = ref<string>('');
-const siteRolePairs = ref<SiteRolePair[]>([{ district: '', role: '' }]);
-const initialSiteRolePairs = ref<SiteRolePair[]>([]);
+const selectedRole = ref<string>('');
+const initialRole = ref<string>('');
 
 const v$ = useVuelidate(
   {
@@ -265,32 +220,15 @@ const v$ = useVuelidate(
   },
 );
 
-const validateSiteRolePairs = (): boolean => siteRolePairs.value.every((pair) => pair.district && pair.role);
-
 const hasRoleChanges = computed(() => {
   if (!isEditMode.value) {
     return true;
   }
-
-  const normalizedInitial = normalizeSiteRolePairs(initialSiteRolePairs.value);
-  const normalizedCurrent = normalizeSiteRolePairs(siteRolePairs.value);
-
-  if (normalizedInitial.length !== normalizedCurrent.length) {
-    return true;
-  }
-
-  return normalizedCurrent.some((pair, index) => {
-    const initialPair = normalizedInitial[index];
-
-    if (!initialPair) {
-      return true;
-    }
-
-    return pair.district !== initialPair.district || pair.role !== initialPair.role;
-  });
+  return selectedRole.value !== initialRole.value;
 });
 
 const isSubmitDisabled = computed(() => {
+  if (!currentSiteInfo.value) return true;
   if (isSubmitting.value) {
     return true;
   }
@@ -315,29 +253,15 @@ watch(
       lastName.value = newLastName ?? '';
       middleName.value = newMiddleName ?? '';
 
-      const mappedPairs =
-        newData.roles?.map((roleData) => ({
-          district: roleData.siteId,
-          role: roleData.role,
-        })) ?? [];
-
-      if (mappedPairs.length > 0) {
-        siteRolePairs.value = mappedPairs;
-        initialSiteRolePairs.value = _cloneDeep(mappedPairs);
-      } else {
-        siteRolePairs.value = [{ district: '', role: '' }];
-        initialSiteRolePairs.value = [];
-      }
+      const currentSiteRole = newData.roles?.find((roleData) => roleData.siteId === currentSite.value);
+      selectedRole.value = currentSiteRole?.role ?? '';
+      initialRole.value = currentSiteRole?.role ?? '';
     } else {
       resetForm();
     }
   },
   { immediate: true },
 );
-
-function addSiteRolePair() {
-  siteRolePairs.value.push({ district: '', role: '' });
-}
 
 function handleOnClose() {
   emit('close');
@@ -349,16 +273,9 @@ function resetForm() {
   firstName.value = '';
   lastName.value = '';
   middleName.value = '';
-  siteRolePairs.value = [{ district: '', role: '' }];
-  initialSiteRolePairs.value = [];
-
+  selectedRole.value = '';
+  initialRole.value = '';
   isSubmitting.value = false;
-}
-
-function removeSiteRolePair(index: number) {
-  if (siteRolePairs.value.length > 1) {
-    siteRolePairs.value.splice(index, 1);
-  }
 }
 
 async function submit() {
@@ -372,11 +289,11 @@ async function submit() {
     return;
   }
 
-  if (!validateSiteRolePairs()) {
+  if (!selectedRole.value) {
     return toast.add({
       severity: 'error',
       summary: 'Error',
-      detail: 'Please select a site and role for all entries.',
+      detail: 'Please select a role.',
       life: TOAST_DEFAULT_LIFE_DURATION,
     });
   }
@@ -400,19 +317,13 @@ async function submit() {
     last: lastName.value,
   };
 
-  const roles: { role: string; siteId: string; siteName: string }[] = [];
-
-  siteRolePairs.value.forEach((pair) => {
-    const district = districts.value.find((d: DistrictOption) => d.value === pair.district);
-
-    if (district && pair.role) {
-      roles.push({
-        role: pair.role,
-        siteId: district.value,
-        siteName: district.label,
-      });
-    }
-  });
+  const roles: { role: string; siteId: string; siteName: string }[] = [
+    {
+      role: selectedRole.value,
+      siteId: currentSiteInfo.value!.siteId,
+      siteName: currentSiteInfo.value!.siteName,
+    },
+  ];
 
   // If props.data, we are updating an existing administrator.
   if (props?.data?.id) {
@@ -474,23 +385,5 @@ async function submit() {
 
       console.error('Error creating administrator', error);
     });
-}
-
-function getAvailableDistricts(index: number): DistrictOption[] {
-  const selectedDistricts = siteRolePairs.value
-    .map((pair, pairIndex) => (pairIndex === index ? null : pair.district))
-    .filter((districtId): districtId is string => Boolean(districtId));
-
-  return districts.value.filter(
-    (district) =>
-      siteRolePairs.value[index]?.district === district.value || !selectedDistricts.includes(district.value),
-  );
-}
-
-function normalizeSiteRolePairs(pairs: SiteRolePair[]): SiteRolePair[] {
-  return pairs
-    .filter((pair) => pair.district && pair.role)
-    .map((pair) => ({ ...pair }))
-    .sort((a, b) => a.district.localeCompare(b.district));
 }
 </script>
