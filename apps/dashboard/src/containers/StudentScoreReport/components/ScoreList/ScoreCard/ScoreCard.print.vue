@@ -21,7 +21,7 @@
         </i18n-t>
       </div>
       <div class="flex flex-column relative knob-container">
-        <p class="text-xs font-thin my-0">{{ scoreLabel }}</p>
+        <p class="text-xs font-thin text-center my-0">{{ scoreLabel }}</p>
         <PvKnob
           readonly
           :value-template="valueTemplate"
