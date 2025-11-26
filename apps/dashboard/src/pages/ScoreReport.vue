@@ -226,7 +226,7 @@
           </div>
 
           <template #footer>
-            <div v-if="exportModalStep === EXPORT_MODAL_STEP.WARNING" class="flex gap-2">
+            <div v-if="exportModalStep === EXPORT_MODAL_STEP.WARNING" class="flex gap-2 p-3">
               <PvButton label="Cancel" class="p-button-text" @click="exportModalEnabled = false" />
               <PvButton
                 label="Continue"
