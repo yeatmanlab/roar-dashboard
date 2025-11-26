@@ -560,13 +560,18 @@ describe('useScoreListData', () => {
         taskData,
         longitudinalData: null,
         t: mockT,
-        taskScoringVersions: {},
+        taskScoringVersions: { task1: 1 },
       };
 
       const { computedTaskData, getTaskDescription } = useScoreListData(params);
 
       const result = getTaskDescription.value(computedTaskData.value[0]);
-      expect(ScoreReportService.getScoreDescription).toHaveBeenCalledWith(computedTaskData.value[0], 5, { t: mockT });
+      expect(ScoreReportService.getScoreDescription).toHaveBeenCalledWith(
+        computedTaskData.value[0],
+        5,
+        { t: mockT },
+        1,
+      );
       expect(result).toEqual({ keypath: 'test.description' });
     });
   });
