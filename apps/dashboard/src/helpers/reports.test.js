@@ -632,7 +632,7 @@ describe('reports', () => {
     it('should have correct properties for letter task', () => {
       expect(taskDisplayNames.letter).toHaveProperty('name', 'Letter');
       expect(taskDisplayNames.letter).toHaveProperty('publicName', 'ROAR - Letter');
-      expect(taskDisplayNames.letter).toHaveProperty('order', 1);
+      expect(taskDisplayNames.letter).toHaveProperty('order', 4);
     });
   });
 

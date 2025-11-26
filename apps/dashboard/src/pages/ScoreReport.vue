@@ -2020,9 +2020,13 @@ const sortedAndFilteredTaskIds = computed(() => {
 });
 
 const sortedAndFilteredSubscoreTaskIds = computed(() => {
-  return sortedTaskIds.value?.filter((taskId) => {
-    return tasksToDisplayGraphs.includes(taskId);
-  });
+  if (props.orgType === 'district') {
+    return sortedTaskIds.value?.filter((taskId) => {
+      return tasksToDisplayGraphs.includes(taskId);
+    });
+  }
+  const availableTaskIds = Object.keys(computeAssignmentAndRunData.value?.runsByTaskId);
+  return availableTaskIds.sort((a, b) => taskDisplayNames[a].order - taskDisplayNames[b].order);
 });
 
 let unsubscribe;
