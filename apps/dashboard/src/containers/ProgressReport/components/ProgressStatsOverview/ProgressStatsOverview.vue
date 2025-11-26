@@ -15,8 +15,8 @@
         </div>
         <PvChart
           type="bar"
-          :data="setBarChartData(getTaskStats(taskId))"
-          :options="setBarChartOptions(getTaskStats(taskId))"
+          :data="setProgressChartData(getTaskStats(taskId))"
+          :options="setProgressChartOptions(getTaskStats(taskId))"
           class="h-2rem chart-item"
         />
       </template>
@@ -29,8 +29,8 @@
       </div>
       <PvChart
         type="bar"
-        :data="setBarChartData(getTotalStats())"
-        :options="setBarChartOptions(getTotalStats())"
+        :data="setProgressChartData(getTotalStats())"
+        :options="setProgressChartOptions(getTotalStats())"
         class="h-3rem chart-item"
       />
     </div>
@@ -41,7 +41,7 @@
 <script setup>
 import PvChart from 'primevue/chart';
 import { computed } from 'vue';
-import { setBarChartData, setBarChartOptions } from '@/helpers/plotting';
+import { setProgressChartData, setProgressChartOptions } from '@/helpers/plotting';
 import ProgressLegend from '../ProgressLegend';
 
 const props = defineProps({

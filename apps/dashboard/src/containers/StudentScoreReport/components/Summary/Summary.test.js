@@ -14,7 +14,7 @@ describe('Summary.vue', () => {
         en: {
           scoreReports: {
             roarSummary: 'This is a summary of assessment results.',
-            completedTasks: '{firstName} has completed the following assessments:',
+            completedTasks: 'This report includes scores for the following assessments:',
             summary: 'Based on these results, {firstName} shows strong performance.',
           },
         },
@@ -123,20 +123,6 @@ describe('Summary.vue', () => {
       });
 
       expect(wrapper.text()).toContain('Based on these results, John shows strong performance');
-    });
-
-    it('displays completed tasks message', () => {
-      const wrapper = mount(Summary, {
-        props: {
-          studentFirstName: 'Sarah',
-          tasks: 'Single Word Reading',
-        },
-        global: {
-          plugins: [i18n],
-        },
-      });
-
-      expect(wrapper.text()).toContain('Sarah has completed the following assessments');
     });
   });
 });

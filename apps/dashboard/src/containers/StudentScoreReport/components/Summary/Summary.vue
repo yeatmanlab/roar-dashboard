@@ -1,12 +1,7 @@
 <template>
   <section class="pt-4 lg:pr-8">
     <p>{{ $t('scoreReports.roarSummary') }}</p>
-
-    <i18n-t keypath="scoreReports.completedTasks" tag="p" class="mt-2">
-      <template #firstName>
-        {{ studentFirstName }}
-      </template>
-    </i18n-t>
+    <p>{{ $t('scoreReports.completedTasks') }}</p>
 
     <ul class="p-0 list-none lg:columns-2">
       <li v-for="task in tasks" :key="task" class="pb-1">

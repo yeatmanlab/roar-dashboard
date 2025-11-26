@@ -27,6 +27,12 @@
             :export-loading="exportLoading"
           />
 
+          <SupportPrint
+            :student-grade="studentGrade"
+            :distribution-chart-path="distributionChartPath"
+            :is-distribution-chart-enabled="isDistributionChartEnabled"
+          />
+
           <ScoreListPrint
             :student-first-name="studentFirstName"
             :student-grade="studentGrade"
@@ -34,12 +40,6 @@
             :tasks-dictionary="tasksDictionary"
             :longitudinal-data="longitudinalData"
             :task-scoring-versions="getScoringVersions"
-          />
-
-          <SupportPrint
-            :student-grade="studentGrade"
-            :distribution-chart-path="distributionChartPath"
-            :is-distribution-chart-enabled="isDistributionChartEnabled"
           />
         </template>
       </div>
@@ -109,6 +109,8 @@ import { SupportScreen, SupportPrint } from './components/Support';
 import EmptyState from './components/EmptyState.vue';
 import { getStudentDisplayName } from '@/helpers/getStudentDisplayName';
 import { formatListArray } from '@/helpers/formatListArray';
+import { getStudentExternalId } from '@/helpers/getStudentExternalId';
+import { STUDENT_SCORE_REPORT_TASK_IDS } from '@/constants/studentScoreReportTasks';
 
 const props = defineProps({
   administrationId: { type: String, required: true },
@@ -166,9 +168,14 @@ const { data: tasksDictionary, isLoading: isLoadingTasksDictionary } = useTasksD
   enabled: initialized,
 });
 
-const tasks = computed(() => taskData?.value?.map((assignment) => assignment.taskId) || []);
+const tasks = computed(
+  () =>
+    taskData?.value?.map((assignment) => assignment.taskId).filter((t) => STUDENT_SCORE_REPORT_TASK_IDS.includes(t)) ||
+    [],
+);
+
 const tasksListArray = computed(() =>
-  formatListArray(tasks.value, tasksDictionary.value, (task, entry) => entry?.technicalName ?? task, {
+  formatListArray(tasks.value, tasksDictionary.value, (task, entry) => entry?.publicName ?? task, {
     orderLookup: Object.entries(taskDisplayNames).reduce((acc, [key, value]) => {
       acc[key] = value.order;
       return acc;
@@ -262,7 +269,14 @@ const { run: runPaged, clear: clearPaged } = usePagedPreview({
  */
 const handleExportToPdf = async () => {
   const studentName = `${studentFirstName.value}${studentLastName.value ? studentLastName.value : ''}`;
-  const fileName = `ROAR-IndividualScoreReport-${studentName}.pdf`;
+  const studentDataValue = toValue(studentData);
+  // Align to how user data is set in ScoreReport.vue
+  const studentDataIds = {
+    sisId: studentDataValue?.sisId ?? studentDataValue?.studentData?.sis_id,
+    studentId: studentDataValue?.studentData?.student_number,
+    stateId: studentDataValue?.studentData?.state_id,
+  };
+  const fileName = `ROAR-IndividualScoreReport-${studentName}${getStudentExternalId(studentDataIds)}.pdf`;
 
   exportLoading.value = true;
   try {

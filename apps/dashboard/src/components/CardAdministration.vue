@@ -112,8 +112,8 @@
           <template #body="{ node }">
             <PvChart
               type="bar"
-              :data="setBarChartData(node.data.stats?.assignment)"
-              :options="setBarChartOptions(node.data.stats?.assignment)"
+              :data="setProgressChartData(node.data.stats?.assignment)"
+              :options="setProgressChartOptions(node.data.stats?.assignment)"
               class="h-3rem w-full"
             />
           </template>
@@ -191,7 +191,7 @@ import PvPopover from 'primevue/popover';
 import PvSpeedDial from 'primevue/speeddial';
 import PvTreeTable from 'primevue/treetable';
 import { taskDisplayNames } from '@/helpers/reports';
-import { setBarChartData, setBarChartOptions } from '@/helpers/plotting';
+import { setProgressChartData, setProgressChartOptions } from '@/helpers/plotting';
 import useDsgfOrgQuery from '@/composables/queries/useDsgfOrgQuery';
 import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery';
 import useDeleteAdministrationMutation from '@/composables/mutations/useDeleteAdministrationMutation';
