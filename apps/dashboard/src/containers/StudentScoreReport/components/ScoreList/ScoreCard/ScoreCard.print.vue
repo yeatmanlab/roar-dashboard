@@ -20,8 +20,8 @@
           </template>
         </i18n-t>
       </div>
-      <div class="flex flex-column relative knob-container">
-        <p class="text-xs font-thin text-center my-0">{{ scoreLabel }}</p>
+      <div class="flex flex-column relative max-h-fit relative">
+        <p class="text-xs font-thin text-center my-0 knob-label">{{ scoreLabel }}</p>
         <PvKnob
           readonly
           :value-template="valueTemplate"
@@ -147,12 +147,7 @@ const isReliable = computed(() => props.tags.find((tag) => tag.label === 'Reliab
 </script>
 
 <style scoped>
-.knob-container {
-  max-height: fit-content;
-  position: relative;
-}
-
-.knob-container p {
+.knob-label {
   color: var(--p-knob-text-color);
   position: absolute;
   top: 57%;
@@ -160,8 +155,8 @@ const isReliable = computed(() => props.tags.find((tag) => tag.label === 'Reliab
   transform: translateX(-50%);
 }
 
-/* PrimeVue --p-tag-danger-color or --p-red-700 */
+/* PvTag --p-tag-danger-color */
 .unreliable-text {
-  color: #5b0c0f;
+  color: var(--p-red-700);
 }
 </style>
