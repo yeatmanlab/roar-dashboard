@@ -1214,7 +1214,7 @@ const computeAssignmentAndRunData = computed(() => {
 
           const propertyKeys = isNewScoring
             ? ['rawScore', 'numAttempted', 'gradeEstimate']
-            : ['totalCorrect', 'totalNumAttempted', 'thetaEstimate'];
+            : ['totalCorrect', 'totalNumAttempted', 'gradeEstimate'];
 
           const [numCorrect, numAttempted, gradeEstimate] = propertyKeys.map((key) =>
             _get(assessment, `scores.computed.composite.${key}`),
