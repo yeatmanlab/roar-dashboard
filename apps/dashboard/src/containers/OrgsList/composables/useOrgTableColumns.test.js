@@ -25,7 +25,7 @@ describe('useOrgTableColumns', () => {
       expect(baseColumns[0]).toMatchObject({
         field: 'name',
         header: 'Name',
-        dataType: 'string',
+        dataType: 'text',
         pinned: true,
         sort: true,
       });

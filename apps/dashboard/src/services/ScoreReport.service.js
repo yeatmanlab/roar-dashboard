@@ -60,8 +60,8 @@ const ScoreReportService = (() => {
     return `${percentile}${getPercentileSuffix(percentile, i18n)}`;
   };
 
-  const getSupportLevelLanguage = (grade, percentile, rawScore, taskId, i18n) => {
-    const { support_level: supportLevel } = getSupportLevel(grade, percentile, rawScore, taskId);
+  const getSupportLevelLanguage = (grade, percentile, rawScore, taskId, i18n, scoringVersion) => {
+    const { support_level: supportLevel } = getSupportLevel(grade, percentile, rawScore, taskId, null, scoringVersion);
 
     switch (supportLevel) {
       case SCORE_SUPPORT_SKILL_LEVELS.ACHIEVED_SKILL:
@@ -161,8 +161,9 @@ const ScoreReportService = (() => {
     return `{value}${getPercentileSuffix(percentile, i18n)}`;
   };
 
-  const getScoreDescription = (task, grade, i18n) => {
+  const getScoreDescription = (task, grade, i18n, scoringVersion) => {
     const taskName = taskDisplayNames[task.taskId]?.extendedName;
+
     // --- CHANGED: use safe wrapper instead of direct call ---
     const taskDescription = safeGetExtendedDescription(String(task.taskId));
 
@@ -177,6 +178,7 @@ const ScoreReportService = (() => {
             task?.rawScore.value,
             task.taskId,
             i18n,
+            scoringVersion,
           ),
           taskName,
           taskDescription,
@@ -206,6 +208,7 @@ const ScoreReportService = (() => {
             task?.rawScore.value,
             task.taskId,
             i18n,
+            scoringVersion,
           ),
           taskName,
           taskDescription,
@@ -225,6 +228,7 @@ const ScoreReportService = (() => {
           task.rawScore.value,
           task.taskId,
           i18n,
+          scoringVersion,
         ),
         taskName,
         taskDescription,
@@ -253,8 +257,8 @@ const ScoreReportService = (() => {
     return grade >= 6 ? SCORE_TYPES.STANDARD_SCORE : SCORE_TYPES.PERCENTILE_SCORE;
   };
 
-  const processTaskScores = (taskData, grade, i18n, taskScoringVersions = {}) => {
-    const tasksBlacklist = ['vocab'];
+  const processTaskScores = (taskData, grade, i18n, scoringVersions = {}) => {
+    const tasksBlacklist = ['vocab', 'cva'];
     const computedTaskAcc = {};
 
     for (const { taskId, scores, reliable, optional, engagementFlags } of taskData) {
@@ -262,7 +266,7 @@ const ScoreReportService = (() => {
 
       let rawScore = null;
 
-      const useSpanishNorms = (taskId === 'swr-es' || taskId === 'sre-es') && taskScoringVersions[taskId] >= 1;
+      const useSpanishNorms = (taskId === 'swr-es' || taskId === 'sre-es') && scoringVersions[taskId] >= 1;
       if (!taskId.includes('vocab') && (!taskId.includes('es') || useSpanishNorms)) {
         rawScore = getScoreValue(compositeScores, taskId, grade, 'rawScore');
       } else {
@@ -273,14 +277,7 @@ const ScoreReportService = (() => {
         const percentileScore = getScoreValue(compositeScores, taskId, grade, 'percentile');
         const standardScore = getScoreValue(compositeScores, taskId, grade, SCORE_TYPES.STANDARD_SCORE);
         const rawScoreRange = getRawScoreRange(taskId);
-        const supportColor = getDialColor(
-          grade,
-          percentileScore,
-          rawScore,
-          taskId,
-          optional,
-          taskScoringVersions[taskId],
-        );
+        const supportColor = getDialColor(grade, percentileScore, rawScore, taskId, optional, scoringVersions[taskId]);
 
         const scoresForTask = {
           standardScore: {
