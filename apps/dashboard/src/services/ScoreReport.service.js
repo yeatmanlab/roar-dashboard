@@ -258,7 +258,7 @@ const ScoreReportService = (() => {
   };
 
   const processTaskScores = (taskData, grade, i18n, scoringVersions = {}) => {
-    const tasksBlacklist = ['vocab', 'cva'];
+    const tasksBlacklist = ['vocab'];
     const computedTaskAcc = {};
 
     for (const { taskId, scores, reliable, optional, engagementFlags } of taskData) {
