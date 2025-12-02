@@ -13,7 +13,7 @@ import { convertValues, getAxiosInstance, mapFields } from './utils';
 import { pluralizeFirestoreCollection } from '@/helpers';
 import { ORG_TYPES, ORG_TYPES_IN_ORDER } from '@/constants/orgTypes';
 
-const userSelectFields = ['name', 'assessmentPid', 'username', 'studentData', 'schools', 'classes'];
+const userSelectFields = ['name', 'assessmentPid', 'username', 'studentData', 'schools', 'classes', 'sisId'];
 
 const assignmentSelectFields = [
   'assessments',

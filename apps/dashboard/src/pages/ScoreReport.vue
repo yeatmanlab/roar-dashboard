@@ -466,7 +466,7 @@ import { LEVANTE_TASK_IDS_NO_SCORES } from '@/constants/levanteTasks';
 import _startCase from 'lodash/startCase';
 import AppDialog from '@/components/Dialog/Dialog.vue';
 import { getStudentDisplayName } from '@/helpers/getStudentDisplayName';
-
+import { getStudentExternalId } from '@/helpers/getStudentExternalId';
 const { userCan, Permissions } = usePermissions();
 
 let TaskReport, DistributionChartOverview;
@@ -678,6 +678,7 @@ const exportBulkPdfReports = async (selectedRows) => {
       username: row.user.username,
       email: row.user.email,
       grade: row.user.grade,
+      externalId: getStudentExternalId(row.user),
     }));
 
     // URL generator function
@@ -693,7 +694,7 @@ const exportBulkPdfReports = async (selectedRows) => {
       // Include student ID to ensure uniqueness when students have the same name
       const safeStudentId = student.id.replace(/[^a-zA-Z0-9-_]/g, '');
       const fileName = `${safeStudentName}_${safeStudentId}`;
-      return `ROAR-IndividualScoreReport-${fileName}.pdf`;
+      return `ROAR-IndividualScoreReport-${fileName}${student.externalId}.pdf`;
     };
 
     // ZIP filename
