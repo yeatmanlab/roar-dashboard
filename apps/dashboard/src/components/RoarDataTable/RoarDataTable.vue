@@ -70,7 +70,7 @@
             "
             icon="pi pi-file-excel"
             label="Export Selected (CSV)"
-            :badge="selectedRows?.length?.toString()"
+            :badge="`${selectedRows.length}/${totalRecords ?? data.length}`"
             :disabled="selectedRows.length === 0"
             class="text-white border-none bg-primary border-round hover:bg-red-900"
             data-cy="data-table__export-selected-btn"
@@ -82,9 +82,9 @@
             v-tooltip.bottom="
               `Export PDF reports for ${selectedRows.length} selected student${selectedRows.length > 1 ? 's' : ''}`
             "
-            label="Export Reports (PDF)"
+            label="Export Selected (PDF)"
             icon="pi pi-file-pdf"
-            :badge="selectedRows?.length?.toString()"
+            :badge="`${selectedRows.length}/${totalRecords ?? data.length}`"
             :disabled="selectedRows.length === 0"
             class="text-white border-none bg-primary border-round hover:bg-red-900"
             data-cy="data-table__export-pdf-btn"
@@ -465,7 +465,6 @@
 
 <script setup>
 import { ref, computed } from 'vue';
-import { useToast } from 'primevue/usetoast';
 import PvFloatLabel from 'primevue/floatlabel';
 import PvButton from 'primevue/button';
 import PvDatePicker from 'primevue/datepicker';
@@ -562,8 +561,6 @@ const orgTagFilterOptions = computed(() => {
   return _uniq(availableTags);
 });
 
-const toast = useToast();
-
 const dataTable = ref();
 const selectAll = ref(false);
 const currentSort = ref([]);
@@ -618,17 +615,6 @@ const onSelectAll = (event) => {
   // https://github.com/primefaces/primevue/issues/3477). The dataToRender method is not
   // exposed in the public API, but it is available on the ref of the DataTable component.
   selectedRows.value = dataTable.value.dataToRender();
-
-  // Show a toast if the user has selected less rows than the total number of rows in the table as the "select all"
-  // checkbox only selects the currently visible rows.
-  if (selectedRows.value.length < props.totalRecords) {
-    toast.add({
-      severity: 'info',
-      summary: `${selectedRows.value.length} rows selected`,
-      detail: `You've selected ${selectedRows.value.length} out of ${props.totalRecords} rows in this table. To include all rows in your export, click Export Whole Table.`,
-      life: 5000,
-    });
-  }
 
   emit('selection', selectedRows.value);
 };
