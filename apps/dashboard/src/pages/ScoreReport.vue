@@ -43,16 +43,11 @@
                 </div>
               </template>
             </ReportHeader>
-            <div v-if="isLoadingAssignments || isLoadingDistrictSupportCategories" class="loading-wrapper">
+            <div v-if="isLoadingAssignments" class="loading-wrapper">
               <AppSpinner style="margin: 1rem 0rem" />
               <div class="text-sm font-light text-gray-600 uppercase">Loading Overview Charts</div>
             </div>
-            <div
-              v-if="
-                !isLoadingAssignments && !isLoadingDistrictSupportCategories && sortedAndFilteredTaskIds?.length > 0
-              "
-              class="py-3 mb-2 text-left bg-gray-100"
-            >
+            <div v-if="sortedAndFilteredTaskIds?.length > 0" class="py-3 mb-2 text-left bg-gray-100">
               <div class="overview-wrapper">
                 <div class="chart-wrapper">
                   <div v-for="taskId of sortedAndFilteredTaskIds" :key="taskId" style="width: 33%">
@@ -318,44 +313,43 @@
           <AppSpinner style="margin: 1rem 0rem" />
           <div class="text-sm font-light text-gray-600 uppercase">Loading Task Reports</div>
         </div>
-        <template v-if="!isLoadingAssignments && !isLoadingTasksDictionary && !isLoadingDistrictSupportCategories">
-          <PvTabs v-model:value="activeTabValue">
-            <PvTabList>
-              <PvTab
-                v-for="(taskId, i) in sortedAndFilteredSubscoreTaskIds"
-                :key="taskId"
-                :value="String(i)"
-                class="text-base"
-              >
-                {{ tasksDictionary[taskId]?.publicName ?? taskId }}
-              </PvTab>
-            </PvTabList>
 
-            <PvTabPanels>
-              <PvTabPanel v-for="(taskId, i) in sortedAndFilteredSubscoreTaskIds" :key="taskId" :value="String(i)">
-                <div :id="'tab-view-' + taskId">
-                  <TaskReport
-                    v-if="taskId"
-                    :computed-table-data="computeAssignmentAndRunData.assignmentTableData"
-                    :task-id="taskId"
-                    :initialized="initialized"
-                    :administration-id="administrationId"
-                    :runs="
-                      orgType === 'district'
-                        ? aggregatedDistrictSupportCategories?.[taskId]
-                        : computeAssignmentAndRunData.runsByTaskId?.[taskId]
-                    "
-                    :org-type="orgType"
-                    :org-id="orgId"
-                    :org-info="orgData"
-                    :administration-info="administrationData"
-                    :task-scoring-versions="getScoringVersions"
-                  />
-                </div>
-              </PvTabPanel>
-            </PvTabPanels>
-          </PvTabs>
-        </template>
+        <PvTabs v-model:value="activeTabValue">
+          <PvTabList>
+            <PvTab
+              v-for="(taskId, i) in sortedAndFilteredSubscoreTaskIds"
+              :key="taskId"
+              :value="String(i)"
+              class="text-base"
+            >
+              {{ tasksDictionary[taskId]?.publicName ?? taskId }}
+            </PvTab>
+          </PvTabList>
+
+          <PvTabPanels>
+            <PvTabPanel v-for="(taskId, i) in sortedAndFilteredSubscoreTaskIds" :key="taskId" :value="String(i)">
+              <div :id="'tab-view-' + taskId">
+                <TaskReport
+                  v-if="taskId"
+                  :computed-table-data="computeAssignmentAndRunData.assignmentTableData"
+                  :task-id="taskId"
+                  :initialized="initialized"
+                  :administration-id="administrationId"
+                  :runs="
+                    orgType === 'district'
+                      ? aggregatedDistrictSupportCategories?.[taskId]
+                      : computeAssignmentAndRunData.runsByTaskId?.[taskId]
+                  "
+                  :org-type="orgType"
+                  :org-id="orgId"
+                  :org-info="orgData"
+                  :administration-info="administrationData"
+                  :task-scoring-versions="getScoringVersions"
+                />
+              </div>
+            </PvTabPanel>
+          </PvTabPanels>
+        </PvTabs>
         <div id="score-report-closing" class="px-4 py-2 mt-4 bg-gray-100">
           <h2 class="extra-info-title">HOW ROAR SCORES INFORM PLANNING TO PROVIDE SUPPORT</h2>
           <p>
@@ -519,7 +513,7 @@ const {
   isLoading: isLoadingDistrictSupportCategories,
   isFetching: isFetchingDistrictSupportCategories,
 } = useDistrictSupportCategoriesQuery(props.orgId, props.administrationId, {
-  enabled: computed(() => initialized.value && props.orgType === 'district'),
+  enabled: initialized,
 });
 
 const getScoringVersions = computed(() => {
