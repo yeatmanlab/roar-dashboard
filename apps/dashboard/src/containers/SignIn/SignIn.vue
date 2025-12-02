@@ -1,5 +1,13 @@
+<!-- apps/dashboard/src/containers/SignIn/SignIn.vue -->
 <template>
   <section class="flex w-full m-0 flex-column align-content-center justify-content-center">
+    <!-- TITLE + SUBTITLE -->
+    <SignInHeader
+      :multiple-providers="multipleProviders"
+      :email-link-sent="emailLinkSent"
+      :show-password-field="showPasswordField"
+      class="mb-2"
+    />
     <!-- EMAIL / CHIP -->
     <div class="mt-1 field">
       <div>
@@ -7,10 +15,10 @@
           v-if="!showPasswordField && !emailLinkSent && !multipleProviders"
           :model-value="email"
           :invalid="invalid"
-          @update:model-value="$emit('update:email', $event)"
-          @enter="$emit('check-providers', $event)"
+          @update:model-value="onEmailUpdate"
+          @enter="checkAvailableProviders"
         />
-        <SignInEmailChip v-else :email="email" @remove="$emit('clear-email')" />
+        <SignInEmailChip v-else :email="email" @remove="resetSignInUI" />
       </div>
     </div>
 
@@ -35,10 +43,10 @@
       :is-username="isUsername"
       :invalid="invalid"
       :password="password"
-      @update:password="$emit('update:password', $event)"
-      @forgot-password="$emit('forgot-password')"
-      @magic-link="$emit('magic-link')"
-      @submit="$emit('submit')"
+      @update:password="onPasswordUpdate"
+      @forgot-password="handleForgotPassword"
+      @magic-link="() => sendMagicLink(email)"
+      @submit="authWithEmailPassword"
     />
 
     <!-- CONTINUE -->
@@ -47,13 +55,13 @@
       type="button"
       class="mt-3 w-full p-0 hover:shadow-4 hover:bg-primary hover:text-white p-2"
       data-cy="signin-continue"
-      @click="!showPasswordField ? $emit('check-providers', email) : $emit('submit')"
+      @click="!showPasswordField ? checkAvailableProviders(email) : authWithEmailPassword()"
     >
       <span>{{ $t('pageSignIn.continue') }}</span>
     </PvButton>
 
     <!-- Magic link back / success -->
-    <MagicLinkBackButton v-if="emailLinkSent" @back-to-password="$emit('back-to-password')" />
+    <MagicLinkBackButton v-if="emailLinkSent" @back-to-password="handleBackToPassword" />
 
     <!-- label -->
     <div v-if="multipleProviders" class="flex justify-content-start w-full">
@@ -72,16 +80,18 @@
       v-if="!hideProviders && (showGenericProviders || showScopedProviders)"
       :available-providers="availableProviders"
       :show-all-district="!hasCheckedProviders"
-      @auth-google="$emit('auth-google')"
-      @auth-clever="$emit('auth-clever')"
-      @auth-classlink="$emit('auth-classlink')"
-      @auth-nycps="$emit('auth-nycps')"
+      @auth-google="authWithGoogle"
+      @auth-clever="authWithClever"
+      @auth-classlink="authWithClassLink"
+      @auth-nycps="authWithNYCPS"
     />
   </section>
 </template>
 
 <script setup>
 import PvButton from 'primevue/button';
+import { useRouter, useRoute } from 'vue-router';
+import { useAuthStore } from '@/store/auth';
 
 import {
   SignInError,
@@ -91,36 +101,76 @@ import {
   MagicLinkBackButton,
   SignInEmailChip,
   SuccessAlert,
+  SignInHeader,
 } from './components';
 
-defineProps({
-  email: { type: String, default: '' },
-  password: { type: String, default: '' },
-  invalid: { type: Boolean, default: false },
-  showPasswordField: { type: Boolean, default: false },
-  multipleProviders: { type: Boolean, default: false },
-  emailLinkSent: { type: Boolean, default: false },
-  hideProviders: { type: Boolean, default: false },
-  isUsername: { type: Boolean, default: false },
-  availableProviders: { type: Array, default: () => [] },
-  hasCheckedProviders: { type: Boolean, default: false },
-  showGenericProviders: { type: Boolean, default: true },
-  showScopedProviders: { type: Boolean, default: false },
-  showSuccessAlert: { type: Boolean, default: false },
-  successEmail: { type: String, default: '' },
+import { useSignInForm } from './composables/useSignInForm';
+import { useProviders } from './composables/useProviders';
+import { useAuth } from './composables/useAuth';
+
+/* ---- store & router ---- */
+const authStore = useAuthStore();
+const router = useRouter();
+const route = useRoute();
+
+/* ---- form state (single source of truth) ---- */
+const {
+  email,
+  password,
+  invalid,
+  showPasswordField,
+  multipleProviders,
+  emailLinkSent,
+  hideProviders,
+  onEmailUpdate,
+  onPasswordUpdate,
+  resetSignInUI,
+  availableProviders,
+  hasCheckedProviders,
+  isUsername,
+} = useSignInForm();
+
+/* ---- auth flows, forgot password, success alert ---- */
+const {
+  roarfirekit,
+  authWithGoogle,
+  authWithClever,
+  authWithClassLink,
+  authWithNYCPS,
+  authWithEmailPassword,
+  sendMagicLink,
+  handleForgotPassword,
+  handleBackToPassword,
+  showGenericProviders,
+  showScopedProviders,
+  showResetAlert: showSuccessAlert,
+  successEmail,
+} = useAuth({
+  authStore,
+  router,
+  route,
+  email,
+  password,
+  invalid,
+  emailLinkSent,
+  showPasswordField,
+  resetSignInUI,
 });
-defineEmits([
-  'update:email',
-  'update:password',
-  'check-providers',
-  'submit',
-  'forgot-password',
-  'magic-link',
-  'back-to-password',
-  'auth-clever',
-  'auth-classlink',
-  'auth-nycps',
-  'auth-google',
-  'clear-email',
-]);
+
+/* ---- provider discovery & chooser ---- */
+const { checkAvailableProviders } = useProviders({
+  email,
+  isUsername,
+  availableProviders,
+  hasCheckedProviders,
+  multipleProviders,
+  hideProviders,
+  showPasswordField,
+  roarfirekit,
+  authWithGoogle,
+  authWithClever,
+  authWithClassLink,
+  authWithNYCPS,
+  invalid,
+});
 </script>
