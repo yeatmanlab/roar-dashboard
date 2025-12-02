@@ -1,2 +1,2 @@
 export * from './IdentifierInput';
-export * from './GenericProviders';
+export * from './Providers';

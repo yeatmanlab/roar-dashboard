@@ -67,18 +67,11 @@
       <span class="text-sm">{{ $t('authSignIn.or') }}</span>
     </div>
 
-    <!-- Generic district providers (main screen) -->
-    <GenericProviders
-      v-if="!hideProviders && !emailLinkSent && !showPasswordField && !multipleProviders"
-      @auth-clever="$emit('auth-clever')"
-      @auth-classlink="$emit('auth-classlink')"
-      @auth-nycps="$emit('auth-nycps')"
-    />
-
-    <!-- Scoped providers (after checking email & multiple providers) -->
-    <ScopedProviders
-      v-if="!hideProviders && multipleProviders"
+    <!-- Providers row -->
+    <Providers
+      v-if="!hideProviders && (showGenericProviders || showScopedProviders)"
       :available-providers="availableProviders"
+      :show-all-district="!hasCheckedProviders"
       @auth-google="$emit('auth-google')"
       @auth-clever="$emit('auth-clever')"
       @auth-classlink="$emit('auth-classlink')"
@@ -93,9 +86,8 @@ import PvButton from 'primevue/button';
 import {
   SignInError,
   IdentifierInput,
-  GenericProviders,
+  Providers,
   PasswordInput,
-  ScopedProviders,
   MagicLinkBackButton,
   SignInEmailChip,
   SuccessAlert,
@@ -111,6 +103,7 @@ defineProps({
   hideProviders: { type: Boolean, default: false },
   isUsername: { type: Boolean, default: false },
   availableProviders: { type: Array, default: () => [] },
+  hasCheckedProviders: { type: Boolean, default: false },
   showGenericProviders: { type: Boolean, default: true },
   showScopedProviders: { type: Boolean, default: false },
   showSuccessAlert: { type: Boolean, default: false },

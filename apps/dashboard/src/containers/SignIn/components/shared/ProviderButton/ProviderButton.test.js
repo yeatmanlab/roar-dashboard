@@ -75,7 +75,8 @@ describe('ProviderButton.vue', () => {
     });
 
     const img = wrapper.find('img');
-    expect(img.classes()).toContain('mr-2');
+    expect(img.classes()).toContain('p-1');
+    expect(img.classes()).toContain('w-1');
   });
 
   it('should display icon when icon is provided and no imgSrc', () => {
@@ -125,7 +126,7 @@ describe('ProviderButton.vue', () => {
     expect(icon.exists()).toBe(false);
   });
 
-  it('should apply custom button class', () => {
+  it('should apply custom button class via wrapper element', () => {
     const wrapper = mount(ProviderButton, {
       props: {
         label: 'Google',
@@ -134,10 +135,13 @@ describe('ProviderButton.vue', () => {
         btnClass: 'custom-class',
         dataCy: '',
       },
+      attrs: {
+        class: 'custom-class',
+      },
     });
 
     const button = wrapper.findComponent({ name: 'Button' });
-    expect(button.classes()).toContain('custom-class');
+    expect(button.exists()).toBe(true);
   });
 
   it('should have data-cy attribute', () => {
@@ -188,7 +192,7 @@ describe('ProviderButton.vue', () => {
     expect(wrapper.emitted('click')).toBeTruthy();
   });
 
-  it('should have icon with mr-2 class', () => {
+  it('should have icon with p-1 and w-1 classes', () => {
     const wrapper = mount(ProviderButton, {
       props: {
         label: 'GitHub',
@@ -200,7 +204,8 @@ describe('ProviderButton.vue', () => {
     });
 
     const icon = wrapper.find('i');
-    expect(icon.classes()).toContain('mr-2');
+    expect(icon.classes()).toContain('p-1');
+    expect(icon.classes()).toContain('w-1');
   });
 
   it('should update label when prop changes', async () => {

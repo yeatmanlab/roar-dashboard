@@ -85,30 +85,33 @@ describe('SignIn.vue', () => {
     expect(passwordInput.exists()).toBe(true);
   });
 
-  it('should display GenericProviders when not hideProviders and not multipleProviders', () => {
+  it('should display Providers when not hideProviders and not multipleProviders', () => {
     const wrapper = mount(SignIn, {
       props: {
         ...defaultProps,
         hideProviders: false,
         multipleProviders: false,
+        showGenericProviders: true,
       },
     });
 
-    const genericProviders = wrapper.findComponent({ name: 'GenericProviders' });
-    expect(genericProviders.exists()).toBe(true);
+    const providers = wrapper.findComponent({ name: 'Providers' });
+    expect(providers.exists()).toBe(true);
   });
 
-  it('should display ScopedProviders when multipleProviders is true', () => {
+  it('should display Providers when multipleProviders is true', () => {
     const wrapper = mount(SignIn, {
       props: {
         ...defaultProps,
         multipleProviders: true,
         availableProviders: ['google', 'clever'],
+        hideProviders: false,
+        showGenericProviders: true,
       },
     });
 
-    const scopedProviders = wrapper.findComponent({ name: 'ScopedProviders' });
-    expect(scopedProviders.exists()).toBe(true);
+    const providers = wrapper.findComponent({ name: 'Providers' });
+    expect(providers.exists()).toBe(true);
   });
 
   it('should not display providers when hideProviders is true', () => {
@@ -152,17 +155,20 @@ describe('SignIn.vue', () => {
     expect(divider.exists()).toBe(false);
   });
 
-  it('should pass availableProviders to ScopedProviders', () => {
+  it('should pass availableProviders to Providers', () => {
     const wrapper = mount(SignIn, {
       props: {
         ...defaultProps,
         multipleProviders: true,
         availableProviders: ['google', 'clever', 'classlink'],
+        hideProviders: false,
+        showGenericProviders: true,
       },
     });
 
-    const scopedProviders = wrapper.findComponent({ name: 'ScopedProviders' });
-    expect(scopedProviders.props('availableProviders')).toEqual(['google', 'clever', 'classlink']);
+    const providers = wrapper.findComponent({ name: 'Providers' });
+    expect(providers.exists()).toBe(true);
+    expect(providers.props('availableProviders')).toEqual(['google', 'clever', 'classlink']);
   });
 
   it('should update when props change', async () => {

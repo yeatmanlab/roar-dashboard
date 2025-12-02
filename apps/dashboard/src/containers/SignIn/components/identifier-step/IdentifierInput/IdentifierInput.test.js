@@ -149,7 +149,7 @@ describe('IdentifierInput.vue', () => {
     expect(floatLabel.exists()).toBe(true);
   });
 
-  it('should have aria-describedby attribute', () => {
+  it('should have correct id attribute', () => {
     const wrapper = mount(IdentifierInput, {
       props: {
         modelValue: '',
@@ -158,7 +158,7 @@ describe('IdentifierInput.vue', () => {
     });
 
     const input = wrapper.findComponent({ name: 'InputText' });
-    expect(input.attributes('aria-describedby')).toBe('email-error');
+    expect(input.attributes('id')).toBe('email');
   });
 
   it('should update when props change', async () => {

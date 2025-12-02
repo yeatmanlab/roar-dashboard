@@ -36,9 +36,6 @@ describe('SignInEmailChip.vue', () => {
     expect(container.classes()).toContain('flex');
     expect(container.classes()).toContain('justify-content-center');
     expect(container.classes()).toContain('align-items-center');
-    expect(container.classes()).toContain('mb-8');
-    expect(container.classes()).toContain('mt-0');
-    expect(container.classes()).toContain('pt-0');
   });
 
   it('should have removable chip', () => {

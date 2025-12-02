@@ -32,6 +32,7 @@
             :hide-providers="hideProviders"
             :is-username="isUsername"
             :available-providers="availableProviders"
+            :has-checked-providers="hasCheckedProviders"
             :show-generic-providers="showGenericProviders"
             :show-scoped-providers="showScopedProviders"
             :show-success-alert="showSuccessAlert"
