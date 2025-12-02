@@ -926,23 +926,18 @@ const SCORE_FIELD_MAPPINGS = {
   phonics: {
     percentile: {
       new: 'totalPercentCorrect',
-      legacy: 'totalPercentCorrect',
     },
     percentileDisplay: {
       new: 'totalPercentCorrect',
-      legacy: 'totalPercentCorrect',
     },
     standardScore: {
-      new: 'totalPercentCorrect',
-      legacy: 'totalPercentCorrect',
+      new: undefined,
     },
     standardScoreDisplay: {
-      new: 'totalPercentCorrect',
-      legacy: 'totalPercentCorrect',
+      new: undefined,
     },
     rawScore: {
       new: 'totalCorrect',
-      legacy: 'totalCorrect',
     },
   },
   morphology: {

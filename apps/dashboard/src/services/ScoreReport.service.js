@@ -105,10 +105,18 @@ const ScoreReportService = (() => {
   };
 
   const createScoresArray = (taskId, scoresForTask, scores, grade, i18n) => {
-    let formattedScoresArray = Object.keys(scoresForTask).map((key) => {
-      const score = scoresForTask[key];
-      return [score.name, score.value, score.min, score.max];
-    });
+    let formattedScoresArray = [];
+    // Display percentage correct and task-specific subscores in accordion
+    // percentileScore is mapped to percentage correct in processTaskScores
+    if (tasksToDisplayPercentCorrect.includes(taskId)) {
+      const { name, value, min, max } = scoresForTask['percentileScore'];
+      formattedScoresArray = [[name, value, min, max]];
+    } else {
+      formattedScoresArray = Object.keys(scoresForTask).map((key) => {
+        const score = scoresForTask[key];
+        return [score.name, score.value, score.min, score.max];
+      });
+    }
 
     if (taskId === 'pa') {
       const fsm = scores?.FSM?.roarScore;
@@ -273,6 +281,7 @@ const ScoreReportService = (() => {
         rawScore = compositeScores;
       }
 
+      // SCORE_FIELD_MAPPINGS.rawScore enables, SCORE_FIELD_MAPPINGS.percentileScore determines dial value
       if (!isNaN(rawScore) && !tasksBlacklist.includes(taskId)) {
         const percentileScore = getScoreValue(compositeScores, taskId, grade, 'percentile');
         const standardScore = getScoreValue(compositeScores, taskId, grade, SCORE_TYPES.STANDARD_SCORE);
