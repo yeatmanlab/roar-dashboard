@@ -309,18 +309,6 @@ describe('ScoreReportService', () => {
           },
         },
         {
-          taskId: 'cva',
-          optional: false,
-          reliable: true,
-          scores: {
-            composite: {
-              rawScore: 18,
-              percentileScore: 60,
-              standardScore: 90,
-            },
-          },
-        },
-        {
           taskId: 'mock-task-1',
           optional: false,
           reliable: true,
