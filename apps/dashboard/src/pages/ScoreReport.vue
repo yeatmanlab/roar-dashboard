@@ -848,7 +848,7 @@ function returnColorByReliability(assessment, rawScore, support_level, tag_color
       tasksToDisplayPercentCorrect.includes(assessment.taskId)
     ) {
       const test = assessment.scores?.raw?.composite?.test;
-      const tasksWithUndefinedPercentCorrect = ['letter', 'letter-es', 'morphology'];
+      const tasksWithUndefinedPercentCorrect = ['letter', 'letter-es', 'morphology', 'phonics'];
 
       // @TODO: See if this is still needed by verifying the games that trigger this
       // When an above task has numAttempted === numIncorrect, numCorrect === undefined.
@@ -1150,7 +1150,10 @@ const computeAssignmentAndRunData = computed(() => {
         if (taskId === 'phonics' && assessment.scores) {
           // Process phonics scores
           const composite = _get(assessment, 'scores.computed.composite');
-          if (composite) {
+          // Hide tag when only practice questions are attempted
+          if (assessment.scores.computed.composite.totalNumAttempted === 0) {
+            currRowScores[taskId].rawScore = null;
+          } else if (composite) {
             currRowScores[taskId] = {
               ...currRowScores[taskId],
               composite: {
