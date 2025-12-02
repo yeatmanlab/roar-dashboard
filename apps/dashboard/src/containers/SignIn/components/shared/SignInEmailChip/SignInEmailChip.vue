@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full flex justify-content-center align-items-center mb-8 mt-0 pt-0">
+  <div class="w-full flex justify-content-center align-items-center">
     <PvChip
       :label="email"
       class="flex justify-content-center align-items-center"

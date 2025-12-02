@@ -1,5 +1,5 @@
 import { storeToRefs } from 'pinia';
-import { toRaw, computed, ref } from 'vue';
+import { computed, ref } from 'vue';
 import { setUser } from '@sentry/vue';
 
 import { isMobileBrowser } from '@/helpers';
@@ -7,20 +7,6 @@ import { redirectSignInPath } from '@/helpers/redirectSignInPath';
 import { fetchDocById } from '@/helpers/query/utils';
 import { APP_ROUTES } from '@/constants/routes';
 
-/**
- * @param {{
- *   authStore: ReturnType<typeof import('@/store/auth').useAuthStore>,
- *   router: import('vue-router').Router,
- *   route: import('vue-router').RouteLocationNormalizedLoaded,
- *
- *   // refs from useSignInForm
- *   email: import('vue').Ref<string>,
- *   password: import('vue').Ref<string>,
- *   invalid: import('vue').Ref<boolean>,
- *   emailLinkSent: import('vue').Ref<boolean>,
- *   showPasswordField: import('vue').Ref<boolean>,
- * }} context
- */
 export function useAuth(context) {
   const { authStore, router, route, email, password, invalid, emailLinkSent, showPasswordField, resetSignInUI } =
     context;
@@ -35,7 +21,7 @@ export function useAuth(context) {
   const showGenericProviders = computed(() => false);
   const showScopedProviders = computed(() => !showPasswordField.value && !emailLinkSent.value);
 
-  /* ---------- Post-login redirect wiring ---------- */
+  // ---------- Post-login redirect wiring ----------
   authStore.$subscribe(() => {
     if (authStore.uid) {
       if (ssoProvider.value) {
@@ -46,7 +32,7 @@ export function useAuth(context) {
     }
   });
 
-  /* ---------- Claims ---------- */
+  // ---------- Claims ----------
   async function getUserClaims() {
     if (authStore.uid) {
       const userClaims = await fetchDocById('userClaims', authStore.uid);
@@ -59,7 +45,7 @@ export function useAuth(context) {
     }
   }
 
-  /* ---------- Magic link + password reset ---------- */
+  // ---------- Magic link + password reset ----------
   function sendMagicLink(userEmail) {
     authStore.initiateLoginWithEmailLink({ email: userEmail }).then(() => {
       emailLinkSent.value = true;
@@ -115,7 +101,7 @@ export function useAuth(context) {
     showPasswordField.value = true;
   }
 
-  /* ---------- SSO flows ---------- */
+  // ---------- SSO flows ----------
   function authWithClever() {
     spinner.value = true;
     if (process.env.NODE_ENV === 'development' && !window.Cypress) {
@@ -168,13 +154,13 @@ export function useAuth(context) {
       });
   }
 
-  /* ---------- Email/password ---------- */
+  // ---------- Email/password ----------
   function authWithEmailPassword() {
     invalid.value = false;
-    const creds = toRaw({
+    const creds = {
       email: email.value.includes('@') ? email.value : `${email.value}@roar-auth.com`,
       password: password.value,
-    });
+    };
     authStore
       .logInWithEmailAndPassword(creds)
       .then(async () => {

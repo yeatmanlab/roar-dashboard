@@ -3,6 +3,7 @@
     <PvFloatLabel class="mt-4">
       <PvPassword
         id="password"
+        v-tooltip.top="capsLockEnabled ? $t('authSignIn.capsLockOn') : ''"
         :feedback="false"
         :class="['w-full', 'text-200', { 'p-invalid': invalid }]"
         :input-props="{ autocomplete: 'current-password' }"
@@ -15,6 +16,7 @@
         @keydown="checkForCapsLock"
         @keydown.enter.prevent="$emit('submit')"
       />
+
       <label for="password">{{ $t('authSignIn.passwordPlaceholder') }}</label>
     </PvFloatLabel>
 
@@ -42,5 +44,5 @@ defineProps({
 });
 defineEmits(['update:password', 'forgot-password', 'magic-link', 'submit']);
 
-const { checkForCapsLock } = useCapsLock();
+const { checkForCapsLock, capsLockEnabled } = useCapsLock();
 </script>

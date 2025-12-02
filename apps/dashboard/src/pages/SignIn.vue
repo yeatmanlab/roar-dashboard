@@ -53,8 +53,7 @@
       </SignInCard>
 
       <!-- Footer (Language, Privacy, Terms) -->
-      <footer class="signin-footer">
-        <a href="#trouble" class="hidden">{{ $t('pageSignIn.havingTrouble') }}</a>
+      <footer class="mt-2">
         <div class="w-full flex">
           <div class="flex-1">
             <LanguageSelector />
@@ -64,13 +63,13 @@
             <a
               v-if="false"
               :href="TERMS_OF_SERVICE_DOCUMENT_PATH"
-              class="text-400 inline-block text-sm hover:text-primary pt-2"
+              class="text-400 inline-block text-sm hover:text-primary p-1"
               target="_blank"
               >{{ $t('pageSignIn.Privacy') }}</a
             >
             <a
               :href="TERMS_OF_SERVICE_DOCUMENT_PATH"
-              class="text-400 inline-block text-sm hover:text-primary pt-2"
+              class="text-400 inline-block text-sm hover:text-primary p-1"
               target="_blank"
               >{{ $t('pageSignIn.Terms') }}</a
             >

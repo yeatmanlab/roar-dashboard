@@ -26,7 +26,8 @@
     "magicLink": "Request email link",
     "error": "Error",
     "success": "Success",
-    "checkYourEmail": "Check your email {email} for password reset instructions"
+    "checkYourEmail": "Check your email {email} for password reset instructions",
+    "capsLockOn": "⬆️"
   },
   "cleverLanding": {
     "cleverLoading": "Loading your data from Clever..."

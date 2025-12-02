@@ -1,5 +1,6 @@
 <template>
   <div class="language-picker">
+    <!-- HOME STYLE -->
     <template v-if="props.styleProp === 'home'">
       <PvButton
         v-tooltip.top="$t('navBar.changeLanguage')"
@@ -12,34 +13,34 @@
       />
     </template>
 
+    <!-- DEFAULT STYLE: TRIGGER -->
     <template v-else>
-      <a
-        href="#"
-        class="text-400 w-full inline-block text-left text-sm pt-2 rounded-md hover:text-primary"
+      <PvButton
+        class="text-400 w-8 inline-block text-left text-sm pt-2 rounded-md hover:text-primary underline button-link"
         :aria-label="$t('navBar.changeLanguage')"
         aria-haspopup="menu"
         :aria-expanded="menuVisible ? 'true' : 'false'"
-        @click.prevent="toggleMenu"
+        @click="toggleMenu"
       >
         <span>{{ currentLanguageLabel }}</span>
         <i class="pi pi-chevron-down text-sm pl-2" aria-hidden="true" />
-      </a>
+      </PvButton>
     </template>
 
+    <!-- MENU -->
     <PvMenu ref="menu" :model="menuItems" popup role="menu" @show="menuVisible = true" @hide="menuVisible = false">
-      <!-- Accessible item template -->
       <template #item="{ item, props: slotProps }">
-        <a
+        <PvButton
           v-bind="slotProps.action"
+          class="w-full text-left hover:text-primary button-link"
           role="menuitemradio"
           :aria-checked="item.key === locale ? 'true' : 'false'"
           :tabindex="item.key === locale ? 0 : -1"
-          @click.prevent="onSelect(item.key)"
+          @click="onSelect(item.key)"
         >
-          <!-- Visual checkmark, hidden from AT -->
           <span aria-hidden="true">{{ item.key === locale ? '✓ ' : '' }}</span>
           <span>{{ item.label }}</span>
-        </a>
+        </PvButton>
       </template>
     </PvMenu>
   </div>
@@ -63,7 +64,6 @@ const { locale, t } = useI18n({ useScope: 'global' });
 const menu = ref(null);
 const menuVisible = ref(false);
 
-// Build menu items once; labels from languageOptions
 const menuItems = computed(() =>
   Object.entries(languageOptions).map(([key, value]) => ({
     key,
@@ -71,7 +71,6 @@ const menuItems = computed(() =>
   })),
 );
 
-// Current language label
 const currentLanguageLabel = computed(() => {
   const current = languageOptions[locale.value];
   return current ? current.language : t('languageSelector.selectLanguage', 'Select Language');
@@ -82,7 +81,7 @@ function toggleMenu(event) {
 }
 
 function onSelect(key) {
-  if (key && key !== locale.value) {
+  if (key !== locale.value) {
     locale.value = key;
   }
   menu.value?.hide();
@@ -92,5 +91,9 @@ function onSelect(key) {
 <style scoped>
 .border-style {
   outline: 1.2px solid rgba(0, 0, 0, 0.1);
+}
+.button-link {
+  background-color: transparent !important;
+  border: none !important;
 }
 </style>

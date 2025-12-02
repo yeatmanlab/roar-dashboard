@@ -1,5 +1,5 @@
 <template>
-  <Alert v-if="show" variant="destructive" class="w-full mb-2">
+  <Alert v-if="show" variant="ALERT_VARIANTS.DESTRUCTIVE" class="w-full mb-2">
     <AlertTitle>{{ title }}</AlertTitle>
     <AlertDescription>
       <slot>{{ description }}</slot>

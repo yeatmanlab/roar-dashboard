@@ -1,8 +1,10 @@
 <template>
-  <PvButton :class="['w-full p-2', btnClass]" type="button" :data-cy="dataCy" @click="$emit('click')">
-    <img v-if="imgSrc" :src="imgSrc" alt="" class="mr-2" style="width: 18px; height: 18px; object-fit: contain" />
-    <i v-else-if="icon" :class="['mr-2', icon]" aria-hidden="true"></i>
-    <span>{{ label }}</span>
+  <PvButton class="w-full p-2" type="button" :data-cy="dataCy" @click="$emit('click')">
+    <div class="flex flex-row align-items-center w-full gap-2">
+      <img v-if="imgSrc" :src="imgSrc" :alt="imgAlt" class="flex p-1 w-1 object-contain" />
+      <i v-else-if="icon" :class="['flex p-1 w-1', icon]" aria-hidden="true" />
+      <span>{{ label }}</span>
+    </div>
   </PvButton>
 </template>
 
@@ -11,10 +13,11 @@ import PvButton from 'primevue/button';
 
 defineProps({
   label: { type: String, default: '' },
-  imgSrc: { type: String, default: '' }, // provider logos
+  imgSrc: { type: String, default: '' },
+  imgAlt: { type: String, default: '' },
   icon: { type: String, default: '' },
-  btnClass: { type: String, default: '' },
   dataCy: { type: String, default: '' },
 });
+
 defineEmits(['click']);
 </script>
