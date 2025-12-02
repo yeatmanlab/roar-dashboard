@@ -346,18 +346,18 @@ const speedDialItems = computed((): SpeedDialItem[] => {
       },
     });
   }
-
-  items.push({
-    label: 'Edit',
-    icon: 'pi pi-pencil',
-    command: () => {
-      router.push({
-        name: 'EditAssignment',
-        params: { adminId: props.id },
-      });
-    },
-  });
-
+  if (hasRole(ROLES.ADMIN)) {
+    items.push({
+      label: 'Edit',
+      icon: 'pi pi-pencil',
+      command: () => {
+        router.push({
+          name: 'EditAssignment',
+          params: { adminId: props.id },
+        });
+      },
+    });
+  }
   return items;
 });
 

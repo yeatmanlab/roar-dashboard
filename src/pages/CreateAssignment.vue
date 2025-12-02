@@ -578,6 +578,7 @@ const submit = async () => {
       expectedTime: toRaw(state).expectedTime ?? '',
     },
     creatorName: toValue(creatorName),
+    siteId: authStore.currentSite,
   };
 
   if (props.adminId) {

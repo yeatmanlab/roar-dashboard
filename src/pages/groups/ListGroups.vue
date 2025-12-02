@@ -5,8 +5,10 @@
         <div class="flex flex-column align-items-start mb-2 md:flex-row w-full justify-content-between">
           <div class="flex align-items-center gap-3 mb-4 md:mb-0">
             <div class="admin-page-header mr-4">Groups</div>
-            <PermissionGuard :requireRole="ROLES.SITE_ADMIN">
+            <PermissionGuard :requiredRole="ROLES.SITE_ADMIN">
               <PvButton
+                v-tooltip.bottom="currentSite === 'any' ? 'Please select a specific site to add a group' : ''"
+                :disabled="currentSite === 'any'"
                 class="bg-primary text-white border-none p-2 ml-auto"
                 data-testid="add-group-btn"
                 @click="isAddGroupModalVisible = true"
@@ -80,7 +82,6 @@
               sortable
               :loading="isTableLoading"
               :allow-filtering="false"
-              @export-all="exportAll"
               @selected-org-id="showCode"
               @export-org-users="(orgId) => exportOrgUsers(orgId)"
               @edit-button="onEditButtonClick($event)"
@@ -205,7 +206,6 @@ import _head from 'lodash/head';
 import _kebabCase from 'lodash/kebabCase';
 import _debounce from 'lodash/debounce';
 import { useAuthStore } from '@/store/auth';
-import { orgFetchAll } from '@/helpers/query/orgs';
 import { fetchUsersByOrg, countUsersByOrg } from '@/helpers/query/users';
 import { getAdministrationsByOrg } from '@/helpers/query/administrations';
 import { orderByDefault, exportCsv, fetchDocById } from '@/helpers/query/utils';
@@ -266,9 +266,8 @@ const addUsers = () => {
 const authStore = useAuthStore();
 const { currentSite, roarfirekit, shouldUsePermissions, userClaims } = storeToRefs(authStore);
 const { isUserSuperAdmin } = authStore;
-const { hasMinimumRole, userRole } = usePermissions();
+const { hasMinimumRole } = usePermissions();
 
-const adminOrgs = computed(() => userClaims.value?.claims?.adminOrgs);
 const claimsLoaded = computed(() => !!userClaims.value?.claims);
 const selectedSite = computed(() => (shouldUsePermissions.value ? currentSite.value : selectedDistrict.value));
 
@@ -352,17 +351,6 @@ function copyToClipboard(text) {
     });
 }
 
-const exportAll = async () => {
-  const exportData = await orgFetchAll(
-    activeOrgType,
-    selectedSite,
-    selectedSchool,
-    orderBy,
-    isUserSuperAdmin(),
-    adminOrgs,
-  );
-  exportCsv(exportData, `roar-${activeOrgType.value}.csv`);
-};
 
 /**
  * Exports users of a given organization type to a CSV file.

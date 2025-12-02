@@ -81,7 +81,6 @@
 
 <script lang="ts" setup>
 import { usePermissions } from '@/composables/usePermissions';
-import useDistrictsListQuery from '@/composables/queries/useDistrictsListQuery';
 import { ROLES } from '@/constants/roles';
 import { TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
 import { useAuthStore } from '@/store/auth';
@@ -120,16 +119,6 @@ interface AdministratorData {
   };
 }
 
-interface DistrictData {
-  id: string;
-  name: string;
-}
-
-interface DistrictOption {
-  value: string;
-  label: string;
-}
-
 interface Emits {
   (event: 'close'): void;
   (event: 'refetch'): void;
@@ -148,22 +137,10 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const authStore = useAuthStore();
-const { roarfirekit, currentSite, sites } = storeToRefs(authStore);
+const { roarfirekit, currentSite, currentSiteName } = storeToRefs(authStore);
 const { isUserSuperAdmin } = authStore;
 const { can } = usePermissions();
 const toast = useToast();
-
-const { data: districtsData } = useDistrictsListQuery();
-
-
-
-const currentSiteInfo = computed(() => {
-  const siteFromSites = sites.value.find((site) => site.siteId === currentSite.value);
-  if (siteFromSites) {
-    return { siteId: siteFromSites.siteId, siteName: siteFromSites.siteName };
-  }
-  return null;
-});
 
 
 const isEditMode = computed(() => Boolean(props?.data));
@@ -228,7 +205,7 @@ const hasRoleChanges = computed(() => {
 });
 
 const isSubmitDisabled = computed(() => {
-  if (!currentSiteInfo.value) return true;
+
   if (isSubmitting.value) {
     return true;
   }
@@ -320,8 +297,8 @@ async function submit() {
   const roles: { role: string; siteId: string; siteName: string }[] = [
     {
       role: selectedRole.value,
-      siteId: currentSiteInfo.value!.siteId,
-      siteName: currentSiteInfo.value!.siteName,
+      siteId: currentSite.value!,
+      siteName: currentSiteName.value!,
     },
   ];
 

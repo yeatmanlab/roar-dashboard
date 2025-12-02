@@ -4,7 +4,7 @@
       <PvPanel class="m-0 p-0 h-full">
         <template #header>
           <div class="flex align-items-center font-bold">
-            Select {{ forParentOrg ? 'Parent Site' : 'Group(s)' }}
+            Select Group(s)
             <span class="required-asterisk text-red-500 ml-1">*</span>
           </div>
         </template>
@@ -16,10 +16,7 @@
           <PvTabPanels>
             <PvTabPanel v-for="orgType in orgHeaders" :key="orgType.id" :value="orgType.id">
               <div class="grid column-gap-3 mt-2">
-                <div
-                  v-if="!shouldUsePermissions && orgType.id !== 'districts'"
-                  class="col-6 md:col-5 lg:col-5 xl:col-5 mt-3"
-                >
+                <div v-if="!shouldUsePermissions" class="col-6 md:col-5 lg:col-5 xl:col-5 mt-3">
                   <PvFloatLabel>
                     <PvSelect
                       v-model="selectedDistrict"
@@ -57,7 +54,7 @@
                 <PvListbox
                   v-model="selectedOrgs[activeOrgType]"
                   :options="orgData"
-                  :multiple="!forParentOrg"
+                  :multiple="true"
                   :meta-key-selection="false"
                   :empty-message="isLoadingOrgData ? 'Loading options...' : 'No available options'"
                   option-label="name"
@@ -72,7 +69,7 @@
         </PvTabs>
       </PvPanel>
     </div>
-    <div v-if="!forParentOrg" class="col-12 md:col-4">
+    <div class="col-12 md:col-4">
       <PvPanel class="h-full">
         <template #header>
           <div class="flex align-items-center font-bold">
@@ -82,15 +79,15 @@
         </template>
         <PvScrollPanel style="width: 100%; height: 26rem">
           <div v-for="orgKey in Object.keys(selectedOrgs)" :key="orgKey">
-            <div v-if="selectedOrgs[orgKey].length > 0">
+            <div v-if="selectedOrgs[orgKey as keyof OrgCollection]?.length > 0">
               <b>{{ _capitalize(convertToGroupName(orgKey)) }}:</b>
               <PvChip
-                v-for="org in selectedOrgs[orgKey]"
+                v-for="org in selectedOrgs[orgKey as keyof OrgCollection]"
                 :key="org.id"
                 class="m-1 surface-200 p-2 text-black border-round"
                 removable
                 :label="org.name"
-                @remove="remove(org, orgKey)"
+                @remove="remove(org, orgKey as keyof OrgCollection)"
               />
             </div>
           </div>
@@ -102,7 +99,6 @@
 
 <script setup lang="ts">
 import { reactive, ref, computed, onMounted, watch, toRaw } from 'vue';
-import { useQuery } from '@tanstack/vue-query';
 import { storeToRefs } from 'pinia';
 import _capitalize from 'lodash/capitalize';
 import _get from 'lodash/get';
@@ -119,11 +115,12 @@ import PvTabPanel from 'primevue/tabpanel';
 import PvTabPanels from 'primevue/tabpanels';
 import PvTabs from 'primevue/tabs';
 import { useAuthStore } from '@/store/auth';
-import { orgFetcher, orgFetchAll } from '@/helpers/query/orgs';
-import { orderByNameASC } from '@/helpers/query/utils';
+import _useSchoolsQuery from '@/composables/queries/_useSchoolsQuery';
+import { orderByDefault } from '@/helpers/query/utils';
 import PvFloatLabel from 'primevue/floatlabel';
 import { convertToGroupName } from '@/helpers';
 import useDistrictsListQuery from '@/composables/queries/useDistrictsListQuery';
+import useOrgsTableQuery from '@/composables/queries/useOrgsTableQuery';
 
 interface OrgItem {
   id: string;
@@ -150,7 +147,6 @@ interface OrgHeader {
 
 interface Props {
   orgs?: Partial<OrgCollection>;
-  forParentOrg?: boolean;
 }
 
 interface Emits {
@@ -159,8 +155,7 @@ interface Emits {
 
 const initialized = ref<boolean>(false);
 const authStore = useAuthStore();
-const { currentSite, roarfirekit, shouldUsePermissions, userClaims } = storeToRefs(authStore);
-const { isUserSuperAdmin } = authStore;
+const { currentSite, roarfirekit, shouldUsePermissions } = storeToRefs(authStore);
 
 const selectedDistrict = ref<string | undefined>();
 const selectedSchool = ref<string | undefined>(undefined);
@@ -175,7 +170,6 @@ const props = withDefaults(defineProps<Props>(), {
     groups: [],
     families: [],
   }),
-  forParentOrg: false,
 });
 
 const selectedOrgs = reactive<OrgCollection>({
@@ -204,17 +198,8 @@ watch(
   { immediate: true, deep: true },
 );
 
-const adminOrgs = computed(() => userClaims.value?.claims?.adminOrgs);
-
 const orgHeaders = computed((): Record<string, OrgHeader> => {
-  if (props.forParentOrg) {
-    return {
-      districts: { header: 'Sites', id: 'districts' },
-    };
-  }
-
   return {
-    districts: { header: 'Sites', id: 'districts' },
     schools: { header: 'Schools', id: 'schools' },
     classes: { header: 'Classes', id: 'classes' },
     groups: { header: 'Cohorts', id: 'groups' },
@@ -236,57 +221,36 @@ const activeOrgTypeValue = computed<string | number>({
 const { isLoading: isLoadingDistricts, data: allDistricts } = useDistrictsListQuery();
 
 // TODO: This deduplication is temporary; update the source queries to emit unique districts.
-const districtOptions = computed(() => _uniqBy(allDistricts.value ?? [], (district) => district.id));
-
-const schoolQueryEnabled = computed((): boolean => selectedSite.value !== undefined);
-
-const { isLoading: isLoadingSchools, data: allSchools } = useQuery({
-  queryKey: ['schools', selectedSite],
-  queryFn: () => orgFetcher('schools', selectedSite, ref(isUserSuperAdmin()), adminOrgs),
-  placeholderData: (previousData) => previousData,
-  enabled: schoolQueryEnabled,
-  staleTime: 5 * 60 * 1000, // 5 minutes
-});
-
-const { data: orgData, isLoading: isLoadingOrgData } = useQuery({
-  queryKey: ['orgs', activeOrgType, selectedSite, selectedSchool],
-  queryFn: () =>
-    orgFetchAll(activeOrgType, selectedSite, selectedSchool, ref(orderByNameASC), ref(isUserSuperAdmin()), adminOrgs, [
-      'id',
-      'name',
-      'districtId',
-      'schoolId',
-      'schools',
-      'classes',
-    ]),
-  placeholderData: (previousData) => previousData,
-  staleTime: 5 * 60 * 1000, // 5 minutes
-});
-
-watch(
-  () => [orgData.value, activeOrgType.value],
-  ([options, orgType]) => {
-    const optionIds = (options ?? []).map((option) => option.id);
-    selectedOrgs[orgType] = selectedOrgs[orgType].filter((org) => optionIds.includes(org.id));
-  },
+const districtOptions = computed(() =>
+  _uniqBy(allDistricts.value ?? [], (district: { id: string }) => district.id),
 );
 
-// reset selections when changing tabs if forParentOrg is true
-watch(activeOrgType, () => {
-  if (props.forParentOrg) {
-    // Reset all selections
-    Object.keys(selectedOrgs).forEach((key) => {
-      if (key in selectedOrgs) {
-        selectedOrgs[key as keyof OrgCollection] = [];
-      }
-    });
-  }
-});
+const { isLoading: isLoadingSchools, data: allSchools } = _useSchoolsQuery(selectedSite)
+
+const orderBy = ref(orderByDefault);
+const { data: orgData, isLoading: isLoadingOrgData } = useOrgsTableQuery(
+  activeOrgType,
+  selectedSite,
+  selectedSchool,
+  orderBy,
+  false, // includeCreators = false for GroupPicker
+);
+
+watch(
+  () => [orgData.value, activeOrgType.value] as const,
+  ([options, orgType]) => {
+    const optionIds = (options ?? []).map((option: OrgItem) => option.id);
+    const key = orgType as keyof OrgCollection;
+    if (selectedOrgs[key]) {
+      selectedOrgs[key] = selectedOrgs[key].filter((org: OrgItem) => optionIds.includes(org.id));
+    }
+  },
+);
 
 const remove = (org: OrgItem, orgKey: keyof OrgCollection): void => {
   const rawSelectedOrgs = toRaw(selectedOrgs);
   if (Array.isArray(rawSelectedOrgs[orgKey])) {
-    selectedOrgs[orgKey] = selectedOrgs[orgKey].filter((_org) => _org.id !== org.id);
+    selectedOrgs[orgKey] = (selectedOrgs[orgKey] ?? []).filter((_org) => _org.id !== org.id);
   } else {
     selectedOrgs[orgKey] = [];
   }

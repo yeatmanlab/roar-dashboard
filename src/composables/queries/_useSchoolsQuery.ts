@@ -1,11 +1,18 @@
 import { SCHOOLS_QUERY_KEY } from '@/constants/queryKeys';
 import { fetchSchools } from '@/helpers/query/orgs';
 import { useAuthStore } from '@/store/auth';
-import { useQuery, UseQueryOptions } from '@tanstack/vue-query';
+import { useQuery } from '@tanstack/vue-query';
 import { storeToRefs } from 'pinia';
-import { computed, Ref } from 'vue';
+import { computed, type ComputedRef, type MaybeRefOrGetter, type Ref } from 'vue';
 
-const _useSchoolsQuery = (districtId?: Ref<string>, queryOptions?: UseQueryOptions) => {
+interface SchoolsQueryOptions {
+  enabled?: MaybeRefOrGetter<boolean> | ComputedRef<boolean>;
+}
+
+const _useSchoolsQuery = (
+  districtId?: Ref<string | null | undefined> | ComputedRef<string | null | undefined>,
+  queryOptions?: SchoolsQueryOptions,
+) => {
   const authStore = useAuthStore();
   const { sites } = storeToRefs(authStore);
   const { isUserSuperAdmin } = authStore;
