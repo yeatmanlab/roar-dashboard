@@ -73,7 +73,7 @@ const menuItems = computed(() =>
 
 const currentLanguageLabel = computed(() => {
   const current = languageOptions[locale.value];
-  return current ? current.language : t('languageSelector.selectLanguage', 'Select Language');
+  return current ? current.language : t('authSignIn.selectLanguage', 'Select Language');
 });
 
 function toggleMenu(event) {

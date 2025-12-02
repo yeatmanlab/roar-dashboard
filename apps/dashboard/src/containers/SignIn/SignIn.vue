@@ -143,7 +143,7 @@ const {
   handleBackToPassword,
   showGenericProviders,
   showScopedProviders,
-  showResetAlert: showSuccessAlert,
+  showSuccessAlert,
   successEmail,
 } = useAuth({
   authStore,

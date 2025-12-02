@@ -51,7 +51,7 @@ describe('SignInError.vue', () => {
     });
 
     const alert = wrapper.findComponent({ name: 'Alert' });
-    expect(alert.props('variant')).toBe('ALERT_VARIANTS.DESTRUCTIVE');
+    expect(alert.props('variant')).toBe('destructive');
   });
 
   it('should display title in AlertTitle', () => {
