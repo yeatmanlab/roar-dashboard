@@ -3,7 +3,6 @@
     <PvFloatLabel class="mt-4">
       <PvPassword
         id="password"
-        v-tooltip.top="capsLockEnabled ? $t('authSignIn.capsLockOn') : ''"
         :feedback="false"
         :class="['w-full', 'text-200', { 'p-invalid': invalid }]"
         :input-props="{ autocomplete: 'current-password' }"
@@ -13,7 +12,6 @@
         :model-value="password"
         data-cy="sign-in__password"
         @update:model-value="(v) => $emit('update:password', v)"
-        @keydown="checkForCapsLock"
         @keydown.enter.prevent="$emit('submit')"
       />
 
@@ -34,7 +32,6 @@
 <script setup>
 import PvPassword from 'primevue/password';
 import PvFloatLabel from 'primevue/floatlabel';
-import { useCapsLock } from '../../../composables/useCapsLock';
 
 defineProps({
   show: { type: Boolean, default: false },
@@ -42,7 +39,6 @@ defineProps({
   invalid: { type: Boolean, default: false },
   password: { type: String, default: '' },
 });
-defineEmits(['update:password', 'forgot-password', 'magic-link', 'submit']);
 
-const { checkForCapsLock, capsLockEnabled } = useCapsLock();
+defineEmits(['update:password', 'forgot-password', 'magic-link', 'submit']);
 </script>

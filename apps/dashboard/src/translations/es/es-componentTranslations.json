@@ -27,8 +27,7 @@
     "magicLink": "Solicitar link al email",
     "error": "Error",
     "success": "Listo",
-    "checkYourEmail": "Abre tu email {email} para restablecer tu contraseña.",
-    "capsLockOn": "⬆️"
+    "checkYourEmail": "Abre tu email {email} para restablecer tu contraseña."
   },
   "cleverLanding": {
     "cleverLoading": "Cargando tus datos desde Clever..."
