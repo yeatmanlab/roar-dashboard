@@ -79,7 +79,7 @@
       "sre": "Esta prueba mide qué tan rápido el estudiante puede leer y comprender oraciones en silencio.",
       "vocab": "Esta prueba mide qué tan bien el estudiante conoce las palabras, haciendo que relacione una imagen con una palabra hablada.",
       "multichoice": "Descripción temporal para multichoice.",
-      "morph": "Esta prueba mide qué tan bien el estudiante entiende cómo las partes de las palabras, incluidos los prefijos y sufijos, pueden cambiar el significado de una palabra en una oración.",
+      "morphology": "Esta prueba mide qué tan bien el estudiante entiende cómo las partes de las palabras, incluidos los prefijos y sufijos, pueden cambiar el significado de una palabra en una oración.",
       "cva": "Esta prueba mide el conocimiento del estudiante sobre palabras que se usan con frecuencia en los libros que leen en la escuela.",
       "letter": "Esta prueba mide qué tan bien el estudiante conoce los nombres de las letras y qué letras se usan para representar cada sonido.",
       "letter-en-ca": "Esta prueba mide qué tan bien el estudiante conoce los nombres de las letras y qué letras se usan para representar cada sonido.",
