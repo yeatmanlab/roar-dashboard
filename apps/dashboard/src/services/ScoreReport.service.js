@@ -106,8 +106,7 @@ const ScoreReportService = (() => {
 
   const createScoresArray = (taskId, scoresForTask, scores, grade, i18n) => {
     let formattedScoresArray = [];
-    // Display percentage correct and task-specific subscores in accordion
-    // percentileScore is mapped to percentage correct in processTaskScores
+    // Display percentage correct (mapped as percentileScore in processTaskScores) in accordion
     if (tasksToDisplayPercentCorrect.includes(taskId)) {
       const { name, value, min, max } = scoresForTask['percentileScore'];
       formattedScoresArray = [[name, value, min, max]];
