@@ -206,6 +206,7 @@ import PvProgressBar from 'primevue/progressbar';
 import { useAssignmentsStore } from '@/store/assignments';
 import { ASSIGNMENT_STATUSES } from '@/constants';
 import { getAssignmentStatus } from '@/helpers/assignments';
+import { LEVANTE_TASK_IDS, ROAR_TASK_IDS } from '@/constants/coreTasks';
 
 interface TaskData {
   name: string;
@@ -331,27 +332,13 @@ const getSpecificSurveyProgressClass = computed(() => (loopIndex: number): strin
 
 const { t, locale } = useI18n();
 
-const levanteTasks: string[] = [
-  'intro',
-  'heartsAndFlowers',
-  'egmaMath',
-  'matrixReasoning',
-  'memoryGame',
-  'mentalRotation',
-  'sameDifferentSelection',
-  'theoryOfMind',
-  'trog',
-  'survey',
-  'mefs',
-  'roarInference',
-  'vocab',
-];
+const normalizeTaskId = (taskId: string): string => camelize(taskId.toLowerCase());
 
-const roarTasks: string[] = [
-  'pa',
-  'swr',
-  'sre',
-];
+const normalizedLevanteTaskIds = new Set(LEVANTE_TASK_IDS.map((taskId) => normalizeTaskId(taskId)));
+const normalizedRoarTaskIds = new Set(ROAR_TASK_IDS.map((taskId) => normalizeTaskId(taskId)));
+
+const isLevanteTask = (taskId: string): boolean => normalizedLevanteTaskIds.has(normalizeTaskId(taskId));
+const isRoarTask = (taskId: string): boolean => normalizedRoarTaskIds.has(normalizeTaskId(taskId));
 
 const getTaskName = (taskId: string, taskName: string): string => {
   // Translate Levante task names. The task name is not the same as the taskId.
@@ -366,11 +353,11 @@ const getTaskName = (taskId: string, taskName: string): string => {
     }
   }
 
-  if (levanteTasks.includes(camelize(taskIdLowercased))) {
+  if (isLevanteTask(taskIdLowercased)) {
     return t(`gameTabs.${camelize(taskIdLowercased)}Name`);
   }
 
-  if (roarTasks.includes(camelize(taskIdLowercased))) {
+  if (isRoarTask(taskIdLowercased)) {
     return t(`gameTabs.${camelize(taskIdLowercased)}`);
   }
 
@@ -390,7 +377,7 @@ const getTaskDescription = (taskId: string, taskDescription: string): string => 
     }
   }
 
-  if (levanteTasks.includes(camelize(taskIdLowercased)) || roarTasks.includes(camelize(taskIdLowercased))) {
+  if (isLevanteTask(taskIdLowercased) || isRoarTask(taskIdLowercased)) {
     return t(`gameTabs.${camelize(taskIdLowercased)}Description`);
   }
 
@@ -405,7 +392,7 @@ const getRoutePath = (taskId: string, variantURL?: string, taskURL?: string): st
 
   if (lowerCasedAndCamelizedTaskId === 'survey') {
     return '/survey';
-  } else if (levanteTasks.includes(lowerCasedAndCamelizedTaskId)) {
+  } else if (LEVANTE_TASK_IDS.some((taskId) => camelize(taskId.toLowerCase()) === lowerCasedAndCamelizedTaskId)) {
     return '/game/core-tasks/' + taskId;
   } else {
     return '/game/' + taskId;

@@ -5,7 +5,7 @@
   <div v-else class="options-container">
     <div class="flex justify-content-end mr-3 mt-2 button-container">
       <button
-        v-if="props.showOptionsControl"
+        v-if="props.showOptionsControl && shouldRenderToolbar"
         data-testid="options-control"
         type="button"
         class="text-red-700 cursor-pointer options-toggle"
@@ -14,7 +14,10 @@
         {{ showControls ? 'Hide Options' : 'Show Options' }}
       </button>
     </div>
-    <div v-if="showControls" class="w-full gap-1 pt-1 flex justify-content-center align-items-center flex-wrap mb-4">
+    <div
+      v-if="showControls && shouldRenderToolbar"
+      class="w-full gap-1 pt-1 flex justify-content-center align-items-center flex-wrap mb-4"
+    >
       <div
         v-if="props.allowFiltering || props.allowColumnSelection || props.allowExport"
         class="w-full gap-1 pt-1 flex justify-content-center align-items-center flex-wrap mt-3"
@@ -48,9 +51,8 @@
           />
           <label for="ms-columns" class="view-label2">Freeze Columns</label>
         </PvFloatLabel>
-        <!-- <span v-if="props.allowExport" class="flex flex-row flex-wrap justify-content-end gap-2 max-h-3 export-wrapper">
+        <span v-if="props.allowExport" class="flex flex-row flex-wrap justify-content-end gap-2 max-h-3 export-wrapper">
           <PvButton
-            v-if="allowExport"
             v-tooltip.bottom="
               `Export scores for ${selectedRows.length} student${
                 selectedRows.length > 1 ? 's' : ''
@@ -59,17 +61,16 @@
             label="Export Selected"
             :badge="selectedRows?.length?.toString()"
             :disabled="selectedRows.length === 0"
-            class="m-1 m-1 h-3rem bg-primary text-white border-none border-round h-2rem text-sm hover:bg-red-900"
-            @click="exportCSV(true, $event)"
+            class="m-1 h-3rem bg-primary text-white border-none border-round text-sm hover:bg-red-900"
+            @click="exportCSV(true)"
           />
           <PvButton
-            v-if="allowExport"
             v-tooltip.bottom="'Export all scores for all students to a CSV file for spreadsheet import.'"
             label="Export Whole Table"
-            class="m-1 h-3rem bg-primary text-white border-none border-round h-2rem text-sm hover:bg-red-900"
-            @click="exportCSV(false, $event)"
+            class="m-1 h-3rem bg-primary text-white border-none border-round text-sm hover:bg-red-900"
+            @click="exportCSV(false)"
           />
-        </span> -->
+        </span>
       </div>
     </div>
     <div class="flex flex-column">
@@ -405,7 +406,6 @@
 
 <script setup>
 import { ref, computed } from 'vue';
-import { useToast } from 'primevue/usetoast';
 import PvButton from 'primevue/button';
 import PvDatePicker from 'primevue/datepicker';
 import PvChip from 'primevue/chip';
@@ -432,6 +432,27 @@ import { ROLES } from '@/constants/roles';
 import { useAuthStore } from '@/store/auth';
 import { storeToRefs } from 'pinia';
 
+const props = defineProps({
+  columns: { type: Array, required: true },
+  data: { type: Array, required: true },
+  allowExport: { type: Boolean, default: true },
+  exportFilename: { type: String, default: 'datatable-export' },
+  pageLimit: { type: Number, default: 15 },
+  totalRecords: { type: Number, required: false, default: 0 },
+  loading: { type: Boolean, default: false },
+  lazy: { type: Boolean, default: false },
+  lazyPreSorting: { type: Array, required: false, default: () => [] },
+  isInsideListOrgs: {
+    type: Boolean,
+    default: false,
+  },
+  groupheaders: { type: Boolean, default: false },
+  allowFiltering: { type: Boolean, default: true },
+  allowColumnSelection: { type: Boolean, default: true },
+  showOptionsControl: { type: Boolean, default: true },
+  rowClass: { type: Function, default: null },
+});
+
 /*
 Using the DataTable
 Required Props: columns, data
@@ -455,35 +476,17 @@ Array of objects consisting of a field and header at minimum.
       scrolled left-to-right. It is suggested that this only be used on
       the leftmost column.
 */
-const authStore = useAuthStore();
-const { currentSite } = storeToRefs(authStore);
+const shouldRenderToolbar = computed(
+  () => props.allowFiltering || props.allowColumnSelection || props.allowExport,
+);
 
-const showControls = ref(false);
+const showControls = ref(!props.showOptionsControl && shouldRenderToolbar.value);
 const toggleControls = () => {
+  if (!props.showOptionsControl || !shouldRenderToolbar.value) return;
   showControls.value = !showControls.value;
 };
-
-const props = defineProps({
-  columns: { type: Array, required: true },
-  data: { type: Array, required: true },
-  allowExport: { type: Boolean, default: true },
-  exportFilename: { type: String, default: 'datatable-export' },
-  pageLimit: { type: Number, default: 15 },
-  totalRecords: { type: Number, required: false, default: 0 },
-  loading: { type: Boolean, default: false },
-  lazy: { type: Boolean, default: false },
-  lazyPreSorting: { type: Array, required: false, default: () => [] },
-  isInsideListOrgs: {
-    type: Boolean,
-    default: false,
-  },
-  groupheaders: { type: Boolean, default: false },
-  allowFiltering: { type: Boolean, default: true },
-  allowColumnSelection: { type: Boolean, default: true },
-  showOptionsControl: { type: Boolean, default: true },
-  rowClass: { type: Function, default: null },
-});
-
+const authStore = useAuthStore();
+const { currentSite } = storeToRefs(authStore);
 const inputColumns = ref(props.columns);
 const selectedColumns = ref(props.columns);
 // Filter the live data (props.columns) with the selections of selectedColumns
@@ -513,21 +516,11 @@ const taskFilterOptions = ref([
   },
 ]);
 
-const toast = useToast();
 const selectAll = ref(false);
 const onSelectAll = () => {
   selectAll.value = !selectAll.value;
   if (selectAll.value) {
     selectedRows.value = props.data;
-    toast.add({
-      severity: 'info',
-      summary: 'Rows selected',
-      detail: `You selected ${selectedRows.value.length} rows but there are
-        ${props.totalRecords} total rows in all of this table's pages. If you
-        would like to export all rows, please click the "Export Whole Table"
-        button.`,
-      life: 5000,
-    });
   } else {
     selectedRows.value = [];
   }

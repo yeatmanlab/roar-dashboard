@@ -116,7 +116,7 @@
             data-cy="roar-data-table"
             :allow-filtering="!isLevante"
             :reset-filters="resetFilters"
-            :allow-export="!isLevante"
+            :allow-export="true"
             :allow-column-selection="!isLevante"
             :lazy-pre-sorting="orderBy"
             :show-options-control="false"
@@ -173,23 +173,20 @@ import { useRouter } from 'vue-router';
 import _get from 'lodash/get';
 import _kebabCase from 'lodash/kebabCase';
 import _map from 'lodash/map';
+import _startCase from 'lodash/startCase';
 import PvChart from 'primevue/chart';
 import PvMultiSelect from 'primevue/multiselect';
 import PvSelectButton from 'primevue/selectbutton';
 import { useAuthStore } from '@/store/auth';
-import useUserType from '@/composables/useUserType';
-import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useAdministrationsQuery from '@/composables/queries/useAdministrationsQuery';
 import useAdministrationsStatsQuery from '@/composables/queries/useAdministrationsStatsQuery';
 import useOrgQuery from '@/composables/queries/useOrgQuery';
 import useDistrictSchoolsQuery from '@/composables/queries/useDistrictSchoolsQuery';
 import useAdministrationAssignmentsQuery from '@/composables/queries/useAdministrationAssignmentsQuery';
 import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery';
-import useUserDataQuery from '@/composables/queries/useUserDataQuery';
 import { getDynamicRouterPath } from '@/helpers/getDynamicRouterPath';
 import { exportCsv } from '@/helpers/query/utils';
 import { taskDisplayNames, gradeOptions } from '@/helpers/reports';
-import { getTitle } from '@/helpers/query/administrations';
 import { setBarChartData, setBarChartOptions } from '@/helpers/plotting';
 import { isLevante, getTooltip } from '@/helpers';
 import { APP_ROUTES } from '@/constants/routes';
@@ -225,12 +222,6 @@ const initialized = ref(false);
 const { data: tasksDictionary, isLoading: isLoadingTasksDictionary } = useTasksDictionaryQuery({
   enabled: initialized,
 });
-
-const { data: userClaims, isLoading: isLoadingUserClaims } = useUserClaimsQuery({
-  enabled: initialized,
-});
-
-const { isSuperAdmin } = useUserType(userClaims);
 
 const { data: administrationData, isLoading: isLoadingAdministration } = useAdministrationsQuery([props.administrationId], {
   enabled: initialized,
@@ -272,7 +263,15 @@ const displayOrgType = computed(() => {
   return props.orgType;
 });
 
-const isLoading = computed(() => isLoadingAssignments.value || isLoadingTasksDictionary.value || isLoadingAdministration.value || isLoadingAdminStats.value || isLoadingDistrictSchools.value || isLoadingOrg.value || isLoadingUserClaims.value);
+const isLoading = computed(
+  () =>
+    isLoadingAssignments.value ||
+    isLoadingTasksDictionary.value ||
+    isLoadingAdministration.value ||
+    isLoadingAdminStats.value ||
+    isLoadingDistrictSchools.value ||
+    isLoadingOrg.value,
+);
 
 const reportView = ref({ name: 'Progress Report', constant: true });
 const reportViews = [
@@ -280,12 +279,7 @@ const reportViews = [
   { name: 'Score Report', constant: false },
 ];
 
-const displayName = computed(() => {
-  if (administrationData.value) {
-    return getTitle(administrationData.value, isSuperAdmin.value);
-  }
-  return '';
-});
+const displayName = computed(() => administrationData.value?.name ?? '');
 
 const handleViewChange = () => {
   const { administrationId, orgType, orgId } = props;
@@ -321,8 +315,74 @@ const filterSchools = ref([]);
 const filterGrades = ref([]);
 const pageLimit = ref(10);
 
+const CSV_NOT_ASSIGNED_VALUE = 'Not Assigned';
 
+const orderedTaskIds = computed(() => {
+  const taskIds = administrationData.value?.assessments?.map((assessment) => assessment.taskId) ?? [];
+  const sortedTasks = [...taskIds].sort((p1, p2) => {
+    if (Object.keys(taskDisplayNames).includes(p1) && Object.keys(taskDisplayNames).includes(p2)) {
+      return taskDisplayNames[p1].order - taskDisplayNames[p2].order;
+    } else {
+      return -1;
+    }
+  });
 
+  const priorityTasks = ['swr', 'sre', 'pa'];
+  const ordered = [];
+
+  for (const task of priorityTasks) {
+    if (sortedTasks.includes(task)) {
+      ordered.push(task);
+    }
+  }
+
+  for (const task of sortedTasks) {
+    if (!priorityTasks.includes(task)) {
+      ordered.push(task);
+    }
+  }
+
+  return ordered;
+});
+
+const getTaskColumnLabel = (taskId) => {
+  if (tasksDictionary.value?.[taskId]?.publicName) {
+    return tasksDictionary.value[taskId].publicName;
+  }
+  if (tasksDictionary.value?.[taskId]?.name) {
+    return tasksDictionary.value[taskId].name;
+  }
+  return _startCase(taskId);
+};
+
+const appendTaskProgressColumns = (row, progress = {}) => {
+  const addTaskValue = (taskId) => {
+    const columnLabel = getTaskColumnLabel(taskId);
+    row[columnLabel] = progress?.[taskId]?.value ?? CSV_NOT_ASSIGNED_VALUE;
+  };
+
+  orderedTaskIds.value.forEach(addTaskValue);
+};
+
+const buildProgressExportRow = (user, progress = {}) => {
+  const tableRow = {
+    Username: _get(user, 'username') ?? '',
+    'User Type': _startCase(_get(user, 'userType') ?? ''),
+  };
+
+  if (props.orgType === 'district') {
+    tableRow.School = _get(user, 'schoolName') ?? '';
+  }
+
+  appendTaskProgressColumns(tableRow, progress);
+
+  return tableRow;
+};
+
+const buildExportData = (rows) => {
+  if (!rows) return [];
+  return _map(rows, ({ user, progress }) => buildProgressExportRow(user, progress));
+};
 
 const computedProgressData = computed(() => {
   if (!assignmentData.value) return [];
@@ -396,88 +456,27 @@ const resetFilters = () => {
 };
 
 const exportSelected = (selectedRows) => {
-  const computedExportData = _map(selectedRows, ({ user, progress }) => {
-    let tableRow = {
-      Email: _get(user, 'email'),
-      First: _get(user, 'firstName'),
-      Last: _get(user, 'lastName'),
-      Grade: _get(user, 'grade'),
-    };
-    if (authStore.isUserSuperAdmin()) {
-      tableRow['PID'] = _get(user, 'assessmentPid');
-    }
-    if (props.orgType === 'district') {
-      tableRow['School'] = _get(user, 'schoolName');
-    }
-    for (const taskId in progress) {
-      tableRow[tasksDictionary.value[taskId]?.publicName ?? taskId] = progress[taskId].value;
-    }
-    return tableRow;
-  });
-  exportCsv(computedExportData, 'roar-progress-selected.csv');
-  return;
+  const computedExportData = buildExportData(selectedRows);
+  exportCsv(computedExportData, 'progress-selected.csv');
 };
 
 const exportAll = async () => {
-  const computedExportData = _map(computedProgressData.value, ({ user, progress }) => {
-    let tableRow = {
-      Email: _get(user, 'email'),
-      First: _get(user, 'firstName'),
-      Last: _get(user, 'lastName'),
-      Grade: _get(user, 'grade'),
-    };
-    if (authStore.isUserSuperAdmin()) {
-      tableRow['PID'] = _get(user, 'assessmentPid');
-    }
-    if (props.orgType === 'district') {
-      tableRow['School'] = _get(user, 'schoolName');
-    }
-    for (const taskId in progress) {
-      tableRow[tasksDictionary.value[taskId]?.publicName ?? taskId] = progress[taskId].value;
-    }
-    return tableRow;
-  });
-  exportCsv(
-    computedExportData,
-    `roar-progress-${_kebabCase(getTitle(administrationData.value, isSuperAdmin.value))}-${_kebabCase(
-      orgData.value.name,
-    )}.csv`,
-  );
-  return;
+  const computedExportData = buildExportData(computedProgressData.value);
+  const administrationTitle = administrationData.value?.name ?? 'progress';
+  const orgName = orgData.value?.name ?? 'organization';
+  const formattedFileName = `progress-report-${_kebabCase(administrationTitle)}-${_kebabCase(orgName) || 'org'}.csv`;
+  exportCsv(computedExportData, formattedFileName);
 };
 
 const progressReportColumns = computed(() => {
   if (isLoadingTasksDictionary.value || assignmentData.value === undefined) return [];
 
-  const tableColumns = [{ field: 'user.username', header: 'Username', dataType: 'text', sort: true, filter: true },
+  const tableColumns = [
+    { field: 'user.username', header: 'Username', dataType: 'text', sort: true, filter: true },
     { field: 'user.userType', header: 'User Type', dataType: 'text', sort: true, filter: true },
   ];
 
-  const allTaskIds = administrationData.value.assessments?.map((assessment) => assessment.taskId);
-  const sortedTasks = allTaskIds?.sort((p1, p2) => {
-    if (Object.keys(taskDisplayNames).includes(p1) && Object.keys(taskDisplayNames).includes(p2)) {
-      return taskDisplayNames[p1].order - taskDisplayNames[p2].order;
-    } else {
-      return -1;
-    }
-  });
-
-  const priorityTasks = ['swr', 'sre', 'pa'];
-  const orderedTasks = [];
-
-  for (const task of priorityTasks) {
-    if (sortedTasks.includes(task)) {
-      orderedTasks.push(task);
-    }
-  }
-
-  for (const task of sortedTasks) {
-    if (!priorityTasks.includes(task)) {
-      orderedTasks.push(task);
-    }
-  }
-
-  for (const taskId of orderedTasks) {
+  for (const taskId of orderedTaskIds.value) {
     tableColumns.push({
       field: `progress.${taskId}.value`,
       filterField: `progress.${taskId}.tags`,
