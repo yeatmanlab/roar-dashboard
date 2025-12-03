@@ -19,9 +19,11 @@ Cypress.Commands.add('login', (username, password) => {
       cy.visit(APP_ROUTES.HOME);
 
       cy.get('[data-cy="sign-in__username"]').type(username, { log: false });
+
+      cy.get('[data-cy="signin-continue"]').click();
       cy.get('[data-cy="sign-in__password"]').type(password, { log: false });
 
-      cy.get('button').contains('Go!').click();
+      cy.get('[data-cy="signin-continue"]').click();
 
       cy.url().should('eq', `${baseUrl}/`);
       cy.log('Login successful.');
@@ -107,7 +109,7 @@ Cypress.Commands.add('loginWithClever', (schoolName, username, password, firstPa
 Cypress.Commands.add('logout', () => {
   cy.get('[data-cy="navbar__signout-btn-desktop"]').click();
   cy.url().should('eq', `${baseUrl}/signin`);
-  cy.get('h1').should('contain.text', 'Welcome to ROAR!');
+  cy.get('h1').should('contain.text', 'Welcome!');
   cy.log('Logout successful.');
 });
 
