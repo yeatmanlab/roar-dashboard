@@ -200,6 +200,7 @@ watch(
 
 const orgHeaders = computed((): Record<string, OrgHeader> => {
   return {
+    districts: { header: 'Sites', id: 'districts' },
     schools: { header: 'Schools', id: 'schools' },
     classes: { header: 'Classes', id: 'classes' },
     groups: { header: 'Cohorts', id: 'groups' },

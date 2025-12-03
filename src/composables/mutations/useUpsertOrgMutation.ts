@@ -2,10 +2,12 @@ import { FIRESTORE_COLLECTIONS } from '@/constants/firebase';
 import {
   DISTRICT_SCHOOLS_QUERY_KEY,
   DISTRICTS_LIST_QUERY_KEY,
+  DISTRICTS_QUERY_KEY,
   GROUPS_LIST_QUERY_KEY,
   ORG_MUTATION_KEY,
   ORGS_TABLE_QUERY_KEY,
   SCHOOL_CLASSES_QUERY_KEY,
+  SCHOOLS_QUERY_KEY,
 } from '@/constants/queryKeys';
 import { useAuthStore } from '@/store/auth';
 import { CreateOrgType, OrgType } from '@levante-framework/levante-zod';
@@ -97,61 +99,71 @@ const useUpsertOrgMutation = () => {
     onSettled: (data, error, variables, context) => {
       if (context?.queryKey) {
         queryClient.invalidateQueries({ queryKey: context.queryKey });
+      }
 
-        // We need to invalidate this query otherwise a site will not show up right away in the list groups table.
-        if (variables.type === FIRESTORE_COLLECTIONS.DISTRICTS) {
-          console.log('invalidating orgs-table');
-          queryClient.invalidateQueries({
-            queryKey: [ORGS_TABLE_QUERY_KEY],
-            exact: false,
-          });
-        }
+      // Always invalidate the orgs-table query so the ListGroups table updates
+      queryClient.invalidateQueries({
+        queryKey: [ORGS_TABLE_QUERY_KEY],
+        exact: false,
+      });
 
-        // Invalidate the general orgs query used by GroupPicker in CreateAssignment
+      // Invalidate the general orgs query used by GroupPicker in CreateAssignment
+      queryClient.invalidateQueries({
+        queryKey: ['orgs'],
+        exact: false,
+      });
+
+      // Invalidate specific queries based on org type
+      const orgType = variables.type;
+
+      if (orgType === FIRESTORE_COLLECTIONS.DISTRICTS) {
         queryClient.invalidateQueries({
-          queryKey: ['orgs'],
+          queryKey: [DISTRICTS_LIST_QUERY_KEY],
+        });
+        queryClient.invalidateQueries({
+          queryKey: [DISTRICTS_QUERY_KEY],
           exact: false,
         });
-      } else {
-        // Fallback invalidation logic (should be less common if onMutate always provides context.queryKey)
-        const orgType = variables.type;
-        if (orgType === FIRESTORE_COLLECTIONS.DISTRICTS) {
-          queryClient.invalidateQueries({
-            queryKey: [DISTRICTS_LIST_QUERY_KEY],
-          });
-        }
-        // Added type checks for variables before accessing parent IDs
-        if (orgType === FIRESTORE_COLLECTIONS.SCHOOLS && variables.districtId) {
+      }
+
+      if (orgType === FIRESTORE_COLLECTIONS.SCHOOLS) {
+        // Invalidate SCHOOLS_QUERY_KEY used by _useSchoolsQuery (dropdown in AddGroupModal)
+        queryClient.invalidateQueries({
+          queryKey: [SCHOOLS_QUERY_KEY],
+          exact: false,
+        });
+        // Also invalidate DISTRICT_SCHOOLS_QUERY_KEY for backwards compatibility
+        if (variables.districtId) {
           queryClient.invalidateQueries({
             queryKey: [DISTRICT_SCHOOLS_QUERY_KEY, variables.districtId],
           });
-        } else if (orgType === FIRESTORE_COLLECTIONS.SCHOOLS) {
+        } else {
           queryClient.invalidateQueries({
             queryKey: [DISTRICT_SCHOOLS_QUERY_KEY],
           });
         }
-        if (orgType === FIRESTORE_COLLECTIONS.CLASSES && variables.schoolId) {
+      }
+
+      if (orgType === FIRESTORE_COLLECTIONS.CLASSES) {
+        if (variables.schoolId) {
           queryClient.invalidateQueries({
             queryKey: [SCHOOL_CLASSES_QUERY_KEY, variables.schoolId],
           });
-        } else if (orgType === FIRESTORE_COLLECTIONS.CLASSES) {
+        } else {
           queryClient.invalidateQueries({
             queryKey: [SCHOOL_CLASSES_QUERY_KEY],
           });
         }
-        if (orgType === FIRESTORE_COLLECTIONS.GROUPS && variables.parentOrgId) {
+      }
+
+      if (orgType === FIRESTORE_COLLECTIONS.GROUPS) {
+        if (variables.parentOrgId) {
           queryClient.invalidateQueries({
             queryKey: [GROUPS_LIST_QUERY_KEY, variables.parentOrgId],
           });
-        } else if (orgType === FIRESTORE_COLLECTIONS.GROUPS) {
+        } else {
           queryClient.invalidateQueries({ queryKey: [GROUPS_LIST_QUERY_KEY] });
         }
-
-        // Invalidate the general orgs query used by GroupPicker in CreateAssignment
-        queryClient.invalidateQueries({
-          queryKey: ['orgs'],
-          exact: false,
-        });
       }
     },
   });
