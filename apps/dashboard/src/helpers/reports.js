@@ -370,6 +370,7 @@ export const tasksToDisplayPercentCorrect = [
   'phonics',
   'cva',
   'pa-es',
+  'swr-es',
   'morphology',
   'vocab',
   'trog',

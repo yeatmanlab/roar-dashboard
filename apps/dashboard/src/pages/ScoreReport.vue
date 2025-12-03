@@ -1103,6 +1103,8 @@ const computeAssignmentAndRunData = computed(() => {
             // scoreReportColumns only can only access admin variants, so set rawScore = correctIncorrectDifference
             // for admins with mixed normed & unnormed scores
             currRowScores[taskId].rawScore = currRowScores[taskId].correctIncorrectDifference;
+            currRowScores[taskId].tagColor =
+              assessment.scores?.raw?.composite?.test?.numAttempted > 0 ? '#A4DDED' : 'transparent';
           }
 
           Object.assign(currRowScores[taskId], { numCorrect, numIncorrect, scoringVersion });
@@ -1117,11 +1119,14 @@ const computeAssignmentAndRunData = computed(() => {
           const scoringVersion = _get(assessment, 'scores.computed.composite.scoringVersion');
 
           Object.assign(currRowScores[taskId], { numCorrect, numAttempted, percentCorrect, scoringVersion });
-          currRowScores[taskId].tagColor = percentCorrect === null ? 'transparent' : tagColor;
-          scoreFilterTags += ' Assessed ';
 
-          // @TODO: Remove after decoupling the percentile returned by getScoreValue from the individual score report.
-          currRowScores[taskId].percentile = null;
+          // Only assign these values for swr-es if unnormed score
+          if (assessment.taskId !== 'swr-es' || !scoringVersion) {
+            currRowScores[taskId].tagColor = percentCorrect === null ? 'transparent' : tagColor;
+            scoreFilterTags += ' Assessed ';
+            // @TODO: Remove after decoupling the percentile returned by getScoreValue from the individual score report.
+            currRowScores[taskId].percentile = null;
+          }
         } else if (tasksToDisplayTotalCorrect.includes(taskId)) {
           // isNewScoring is 1.2.23+, otherwise handles 1.2.14
           const isNewScoring = _has(assessment, 'scores.computed.composite.numCorrect');
