@@ -7,7 +7,7 @@
     "buttonLabel": "Go!",
     "minimumCharacters": "Minimum 8 characters",
     "emailId": "email",
-    "emailPlaceholder": "Username or email",
+    "emailPlaceholder": "Enter your email or username",
     "incorrectEmailOrPassword": "Incorrect username/email or password",
     "invalidEmailPlaceholder": "Error: invalid email",
     "passwordId": "password",
@@ -17,7 +17,16 @@
     "signInWithEmailLinkPlaceHolder": "Press Go to sign-in with an email link.",
     "signInWithEmailLinkInstead": "Sign-in using email link",
     "signInWithPasswordInstead": "Sign-in using password",
-    "suggestions": "Suggestions"
+    "signInUsingPassword": "Sign-in using password",
+    "signInUsingEmailLink": "Sign-in using email link",
+    "signInWith": "Sign in with",
+    "suggestions": "Suggestions",
+    "forgotPassword": "Forgot password?",
+    "or": "OR",
+    "magicLink": "Request email link",
+    "error": "Error",
+    "success": "Success",
+    "checkYourEmail": "Check your email {email} for password reset instructions"
   },
   "cleverLanding": {
     "cleverLoading": "Loading your data from Clever..."
@@ -76,7 +85,9 @@
   },
   "navBar": {
     "greeting": "Hi",
-    "signOut": "Sign Out"
+    "signOut": "Sign Out",
+    "changeLanguage": "Change Language",
+    "accountSettings": "Settings"
   },
   "notFound": {
     "label": "Return to Home.",
@@ -90,12 +101,20 @@
   },
   "pageSignIn": {
     "havingTrouble": "Having trouble?",
-    "login": "Log in to access your dashboard",
+    "login": "Log in to start ROARing",
     "loginWith": "Log in with",
-    "welcome": "Welcome to ROAR!",
-    "ssoErrorTitle": "Whoops",
-    "ssoProviderDisabledMessage": "{providerName} sign-in isn't available for this account. Please try a different sign-in method.",
-    "ssoGenericErrorMessage": "An error occurred signing in. Please try again later."
+    "welcome": "Welcome!",
+    "EnterYourPassword": "Enter your password",
+    "almostTime": "Almost time to let your learning ROAR",
+    "ChooseYourProvider": "Select a provider",
+    "ChooseYourProviderDescription": "Please select a provider to continue.",
+    "Terms": "Terms",
+    "Privacy": "Privacy",
+    "continue": "Continue",
+    "availableProviders": "Available Providers",
+    "usePassword": "Log in with password",
+    "checkInbox": "Check your inbox",
+    "checkInboxDescription": "We've sent a verification link to the provided email."
   },
   "tasks": {
     "preparing": "Preparing your game!",
