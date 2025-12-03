@@ -28,9 +28,9 @@ export function useProviders(options) {
       if (lower === 'password' || lower === 'emaillink') out.add('password');
 
       if (lower === 'google.com' || lower === AUTH_SSO_PROVIDERS.GOOGLE) out.add(AUTH_SSO_PROVIDERS.GOOGLE);
-      if (lower.startsWith('oidc.') && lower.includes('clever')) out.add(AUTH_SSO_PROVIDERS.CLEVER);
-      if (lower.startsWith('oidc.') && lower.includes('classlink')) out.add(AUTH_SSO_PROVIDERS.CLASSLINK);
-      if (lower.startsWith('oidc.') && lower.includes('nycps')) out.add(AUTH_SSO_PROVIDERS.NYCPS);
+      if (lower.includes('clever')) out.add(AUTH_SSO_PROVIDERS.CLEVER);
+      if (lower.includes('classlink')) out.add(AUTH_SSO_PROVIDERS.CLASSLINK);
+      if (lower.includes('nycps')) out.add(AUTH_SSO_PROVIDERS.NYCPS);
     }
     return [...out];
   }
