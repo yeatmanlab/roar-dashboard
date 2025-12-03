@@ -182,13 +182,6 @@ const allFields = [
   },
 ];
 
-if (!shouldUsePermissions.value) {
-  allFields.push({
-    field: 'site',
-    header: 'Site',
-    dataType: 'string',
-  });
-}
 
 // Error Users Table refs
 const errorTable = ref();
@@ -314,19 +307,6 @@ const onFileUpload = async (event) => {
     return;
   }
 
-  if (!shouldUsePermissions.value) {
-    const hasSite = allColumns.includes('site');
-
-    if (!hasSite) {
-      return toast.add({
-        severity: 'error',
-        summary: 'Error: Missing Column',
-        detail: 'Missing required column(s): Site',
-        life: TOAST_DEFAULT_LIFE_DURATION,
-      });
-    }
-  }
-
   // Check required fields are not empty
   const childRequiredInfo = ['usertype', 'month', 'year'];
   const careGiverRequiredInfo = ['usertype'];
@@ -409,21 +389,6 @@ const onFileUpload = async (event) => {
 
     if (!hasCohort && !hasSchool) {
       missingFields.push('Cohort OR School');
-    }
-
-    if (!shouldUsePermissions.value) {
-      const siteField = Object.keys(user).find((key) => key.toLowerCase() === 'site');
-      const hasSite =
-        siteField &&
-        user[siteField] &&
-        user[siteField]
-          .split(',')
-          .map((s) => s.trim())
-          .filter((s) => s).length > 0;
-
-      if (!hasSite) {
-        missingFields.push('Site');
-      }
     }
 
     // --- Aggregate Errors and Add User to Error List if Needed ---
@@ -524,24 +489,12 @@ async function submitUsers() {
   for (const { user, index } of usersToBeRegistered) {
     try {
       // Find fields case-insensitively
-      const siteField = Object.keys(user).find((key) => key.toLowerCase() === 'site');
       const schoolField = Object.keys(user).find((key) => key.toLowerCase() === 'school');
       const classField = Object.keys(user).find((key) => key.toLowerCase() === 'class');
       const cohortField = Object.keys(user).find((key) => key.toLowerCase() === 'cohort');
 
       // Get values using the actual field names and parse as comma-separated arrays
-      const sites = siteField
-        ? // If csv has site column
-          user[siteField]
-            .split(',')
-            .map((s) => s.trim())
-            .filter((s) => s)
-        : // If NOT, check for usePermissions
-        shouldUsePermissions.value
-        ? // If usePermissions, pass currentSite's name from auth store
-          [currentSiteName.value]
-        : // If NOT, no site was provided
-          [];
+      const sites = [currentSiteName.value];
 
       const schools = schoolField
         ? user[schoolField]

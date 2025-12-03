@@ -46,10 +46,6 @@ const createCSVWithMissingYearForChild = () => {
   );
 };
 
-const createCSVWithMissingOrg = () => {
-  return 'id,userType,month,year,caregiverId,teacherId,site,school,class,cohort\n' + '1,child,5,2018,,,,,,';
-};
-
 const createCSVWithInvalidUserType = () => {
   return (
     'id,userType,month,year,caregiverId,teacherId,site,school,class,cohort\n' +
@@ -206,19 +202,6 @@ describe('Add Users Page', () => {
       await wrapper.vm.onFileUpload(mockEventData);
       expect(wrapper.vm.errorUsers.length).toBeGreaterThan(0);
       expect(wrapper.vm.errorUsers[0].error).toContain('Missing Field(s): year');
-      expect(wrapper.vm.showErrorTable).toBe(true);
-      expect(wrapper.vm.isFileUploaded).toBe(false);
-    });
-
-    // Site is always required
-    it('handles validation errors when a site is missing', async () => {
-      const wrapper = mount(AddUsers, {
-        global: { plugins: [PrimeVue, ToastService] },
-      });
-      const mockEventData = mockFileUpload(createCSVWithMissingOrg());
-      await wrapper.vm.onFileUpload(mockEventData);
-      expect(wrapper.vm.errorUsers.length).toBeGreaterThan(0);
-      expect(wrapper.vm.errorUsers[0].error).toContain('Site');
       expect(wrapper.vm.showErrorTable).toBe(true);
       expect(wrapper.vm.isFileUploaded).toBe(false);
     });

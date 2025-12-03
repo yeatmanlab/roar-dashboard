@@ -382,19 +382,6 @@ const handleConsentSelected = (newConsentAssent) => {
   }
 };
 
-const checkForUniqueTasks = (assignments) => {
-  if (_isEmpty(assignments)) return false;
-  const uniqueTasks = _uniqBy(assignments, (assignment) => assignment.taskId);
-  return uniqueTasks.length === assignments.length;
-};
-
-const getNonUniqueTasks = (assignments) => {
-  const grouped = _groupBy(assignments, (assignment) => assignment.taskId);
-  const taskIds = _values(grouped);
-  const filtered = _filter(taskIds, (taskIdArray) => taskIdArray.length > 1);
-  nonUniqueTasks.value = filtered.map((taskIdArray) => taskIdArray[0].taskId);
-};
-
 const checkForRequiredOrgs = (orgs) => {
   const filtered = _filter(orgs, (org) => !_isEmpty(org));
   return Boolean(filtered.length);
@@ -404,12 +391,10 @@ const checkForRequiredOrgs = (orgs) => {
 // | Form submission
 // +------------------------------------------------------------------------------------------------------------------+
 const removeNull = (obj) => {
-  // eslint-disable-next-line no-unused-vars
   return Object.fromEntries(Object.entries(obj).filter(([_, v]) => v !== null));
 };
 
 const removeUndefined = (obj) => {
-  // eslint-disable-next-line no-unused-vars
   return Object.fromEntries(Object.entries(obj).filter(([_, v]) => v !== undefined));
 };
 
@@ -519,9 +504,7 @@ const submit = async () => {
     }),
   );
 
-  console.log('Checking task uniqueness...', submittedAssessments);
   if (_isEmpty(submittedAssessments)) {
-    console.log('Task check failed (empty), showing toast.');
     toast.add({
       severity: TOAST_SEVERITIES.ERROR,
       summary: 'Task Selections',
