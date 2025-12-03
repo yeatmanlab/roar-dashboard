@@ -110,6 +110,8 @@ import useVuelidate from '@vuelidate/core';
 import { usePermissions } from '@/composables/usePermissions';
 import { useAuthStore } from '@/store/auth';
 import { ROLES } from '@/constants/roles';
+import { useQueryClient } from '@tanstack/vue-query';
+import { DISTRICTS_QUERY_KEY, ORGS_TABLE_QUERY_KEY, SCHOOLS_QUERY_KEY } from '@/constants/queryKeys';
 
 interface OrgType {
   firestoreCollection: string;
@@ -138,6 +140,7 @@ const emit = defineEmits<Emits>();
 const toast = useToast();
 const authStore = useAuthStore();
 const { hasMinimumRole, userRole } = usePermissions();
+const queryClient = useQueryClient();
 
 const isSubmitBtnDisabled = ref(false);
 const orgName = ref('');
@@ -395,6 +398,10 @@ const submit = async () => {
         detail: `${orgTypeLabel.value} created successfully.`,
         life: TOAST_DEFAULT_LIFE_DURATION,
       });
+
+      queryClient.invalidateQueries({ queryKey: [ORGS_TABLE_QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: [DISTRICTS_QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: [SCHOOLS_QUERY_KEY] });
 
       handleOnClose();
     },
