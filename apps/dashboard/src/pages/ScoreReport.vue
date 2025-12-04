@@ -1135,7 +1135,7 @@ const computeAssignmentAndRunData = computed(() => {
             currRowScores[taskId].percentile = null;
 
             // Hide tag when only practice questions are attempted
-            if (numAttempted == null) {
+            if (numAttempted === null || numAttempted === undefined) {
               currRowScores[taskId].rawScore = null;
             }
           }
