@@ -30,7 +30,7 @@
           <div class="flex gap-2">
             <a
               :href="TERMS_OF_SERVICE_DOCUMENT_PATH"
-              class="text-400 inline-block text-sm hover:text-primary pt-2"
+              class="text-400 text-sm hover:text-primary pt-2 hidden"
               target="_blank"
             >
               {{ $t('pageSignIn.Privacy') }}
