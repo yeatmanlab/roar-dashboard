@@ -21,7 +21,6 @@
             v-model="v$.email.$model"
             name="username"
             :class="{ 'p-invalid': v$.email.$invalid && submitted }"
-            aria-describedby="email-error"
           />
         </div>
         <span v-if="v$.email.$error && submitted">

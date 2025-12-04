@@ -5,6 +5,9 @@
         <template v-if="variant === ALERT_VARIANTS.DESTRUCTIVE">
           <i class="pi pi-exclamation-circle"></i>
         </template>
+        <template v-else-if="variant === ALERT_VARIANTS.SUCCESS">
+          <i class="pi pi-check-circle"></i>
+        </template>
         <template v-else>
           <i class="pi pi-info-circle"></i>
         </template>

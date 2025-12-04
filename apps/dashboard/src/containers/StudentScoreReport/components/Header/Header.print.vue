@@ -1,8 +1,8 @@
 <template>
   <div class="text-sm">
     <div class="text-left">
-      <h1 class="p-0 m-0 text-5xl">
-        <span class="block mb-1 text-sm text-gray-600 uppercase">
+      <h1 class="p-0 m-0 text-3xl">
+        <span class="block mb-1 text-xs text-gray-600 uppercase">
           {{ $t('scoreReports.pageTitle') }}
         </span>
         <span class="hidden">: </span>
@@ -10,7 +10,7 @@
       </h1>
     </div>
 
-    <dl v-if="studentGrade || className || administrationName" class="flex gap-6 justify-between py-2 w-full">
+    <dl v-if="studentGrade || className || administrationName" class="flex gap-6 justify-between my-2 py-2 w-full">
       <div class="flex gap-6">
         <div v-if="administrationName" class="inline-block">
           <dt class="inline font-semibold">{{ $t('scoreReports.administration') }}:</dt>

@@ -66,6 +66,7 @@
                 <div v-if="showAccountSettingsLink" class="nav-user-wrapper bg-gray-100 p-0">
                   <router-link :to="{ path: APP_ROUTES.ACCOUNT_PROFILE }" data-cy="navbar__account-settings-btn">
                     <PvButton
+                      v-tooltip.top="$t('navBar.accountSettings')"
                       class="no-underline m-0 p-0 text-primary bg-gray-100 border-none border-round cursor-pointer h-3rem w-3rem text-sm hover:bg-red-900 hover:text-white"
                     >
                       <i class="pi pi-cog"></i></PvButton
@@ -73,7 +74,7 @@
                 </div>
 
                 <div class="my-2">
-                  <LanguageSelector />
+                  <LanguageSelector style-prop="home" />
                 </div>
               </div>
             </template>
