@@ -1125,7 +1125,13 @@ const computeAssignmentAndRunData = computed(() => {
             currRowScores[taskId].tagColor = percentCorrect === null ? 'transparent' : tagColor;
             scoreFilterTags += ' Assessed ';
             // @TODO: Remove after decoupling the percentile returned by getScoreValue from the individual score report.
+            // Prevent reporting in percentile view
             currRowScores[taskId].percentile = null;
+
+            // Hide tag when only practice questions are attempted
+            if (numAttempted == null) {
+              currRowScores[taskId].rawScore = null;
+            }
           }
         } else if (tasksToDisplayTotalCorrect.includes(taskId)) {
           // isNewScoring is 1.2.23+, otherwise handles 1.2.14
@@ -1155,10 +1161,7 @@ const computeAssignmentAndRunData = computed(() => {
         if (taskId === 'phonics' && assessment.scores) {
           // Process phonics scores
           const composite = _get(assessment, 'scores.computed.composite');
-          // Hide tag when only practice questions are attempted
-          if (assessment.scores.computed.composite.totalNumAttempted === 0) {
-            currRowScores[taskId].rawScore = null;
-          } else if (composite) {
+          if (composite) {
             currRowScores[taskId] = {
               ...currRowScores[taskId],
               composite: {
@@ -1179,30 +1182,24 @@ const computeAssignmentAndRunData = computed(() => {
             };
           }
         } else if ((taskId === 'letter' || taskId === 'letter-en-ca') && assessment.scores) {
-          // Hide tag when only practice questions are attempted
-          if (assessment.scores.computed.composite.totalNumAttempted === 0) {
-            currRowScores[taskId].rawScore = null;
-          } else {
-            currRowScores[taskId].lowerCaseScore = assessment.scores.computed.LowercaseNames?.subScore;
-            currRowScores[taskId].upperCaseScore = assessment.scores.computed.UppercaseNames?.subScore;
-            currRowScores[taskId].phonemeScore = assessment.scores.computed.Phonemes?.subScore;
-            currRowScores[taskId].totalScore = assessment.scores.computed.composite?.totalCorrect;
+          currRowScores[taskId].lowerCaseScore = assessment.scores.computed.LowercaseNames?.subScore;
+          currRowScores[taskId].upperCaseScore = assessment.scores.computed.UppercaseNames?.subScore;
+          currRowScores[taskId].phonemeScore = assessment.scores.computed.Phonemes?.subScore;
+          currRowScores[taskId].totalScore = assessment.scores.computed.composite?.totalCorrect;
 
-            const incorrectLettersArray = [
-              ...(_get(assessment, 'scores.computed.UppercaseNames.upperIncorrect') ?? '').split(','),
-              ...(_get(assessment, 'scores.computed.LowercaseNames.lowerIncorrect') ?? '').split(','),
-            ]
-              .sort((a, b) => _toUpper(a) - _toUpper(b))
-              .filter(Boolean)
-              .join(', ');
-            currRowScores[taskId].incorrectLetters = incorrectLettersArray.length > 0 ? incorrectLettersArray : 'None';
+          const incorrectLettersArray = [
+            ...(_get(assessment, 'scores.computed.UppercaseNames.upperIncorrect') ?? '').split(','),
+            ...(_get(assessment, 'scores.computed.LowercaseNames.lowerIncorrect') ?? '').split(','),
+          ]
+            .sort((a, b) => _toUpper(a) - _toUpper(b))
+            .filter(Boolean)
+            .join(', ');
+          currRowScores[taskId].incorrectLetters = incorrectLettersArray.length > 0 ? incorrectLettersArray : 'None';
 
-            const incorrectPhonemesArray = (_get(assessment, 'scores.computed.Phonemes.phonemeIncorrect') ?? '')
-              .split(',')
-              .join(', ');
-            currRowScores[taskId].incorrectPhonemes =
-              incorrectPhonemesArray.length > 0 ? incorrectPhonemesArray : 'None';
-          }
+          const incorrectPhonemesArray = (_get(assessment, 'scores.computed.Phonemes.phonemeIncorrect') ?? '')
+            .split(',')
+            .join(', ');
+          currRowScores[taskId].incorrectPhonemes = incorrectPhonemesArray.length > 0 ? incorrectPhonemesArray : 'None';
         }
         if (taskId === 'pa' && assessment.scores) {
           const first = _get(assessment, 'scores.computed.FSM.roarScore');
