@@ -4,19 +4,18 @@
       <div>
         <div class="flex flex-column">
           <div class="flex flex-row flex-wrap align-items-center justify-content-between mb-3 gap-3">
-            <div class="flex flex-column gap-2">
+            <div class="flex flex-1 flex-column gap-2">
               <div class="flex align-items-center flex-wrap gap-3 mb-2">
                 <div class="admin-page-header">All Assignments</div>
               </div>
-              <div class="text-md text-gray-500">
-                This page lists all the assignments that are administered to your users.
-              </div>
-              <div class="text-md text-gray-500 mb-1">
-                You can view and monitor completion and create new bundles of tasks, surveys, and questionnaires to be
-                administered as assignments.
+
+              <div class="text-md text-gray-500 mb-1 line-height-3">
+                This page lists all the assignments that are administered to your users. You can view and monitor
+                completion and create new bundles of tasks, surveys, and questionnaires to be administered as
+                assignments.
               </div>
             </div>
-            <div class="flex align-items-center gap-2 mt-2">
+            <div class="flex flex-1 justify-content-end align-items-center gap-2 mt-2">
               <div class="flex gap-3 align-items-stretch justify-content-start">
                 <div class="flex flex-column gap-1">
                   <small id="search-help" class="text-gray-400">Search by name</small>
@@ -373,18 +372,8 @@ const onSortChange = (event) => {
   const value = event.value.value;
   const sortValue = event.value;
 
-  if (!isUserSuperAdmin() && sortValue[0].field.fieldPath === 'name') {
-    // catches edge case where a partner admin should sort by the public name attribute
-    sortField.value = 'publicName';
-  } else {
-    sortField.value = value[0].field?.fieldPath;
-  }
-  if (value[0].direction === 'DESCENDING') {
-    sortOrder.value = -1;
-  } else {
-    sortOrder.value = 1;
-  }
-
+  sortField.value = value[0].field?.fieldPath;
+  sortOrder.value = value[0].direction === 'DESCENDING' ? -1 : 1;
   sortKey.value = sortValue;
 };
 </script>
