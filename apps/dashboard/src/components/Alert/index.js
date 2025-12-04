@@ -7,6 +7,7 @@ export { default as AlertDescription } from './AlertDescription.vue';
 export const ALERT_VARIANTS = Object.freeze({
   DEFAULT: 'default',
   DESTRUCTIVE: 'destructive',
+  SUCCESS: 'success',
 });
 
 export const alertVariants = cva(
@@ -17,6 +18,8 @@ export const alertVariants = cva(
         [ALERT_VARIANTS.DEFAULT]: 'text-zinc-950 dark:bg-zinc-950 dark:text-zinc-50',
         [ALERT_VARIANTS.DESTRUCTIVE]:
           'bg-red-50 border-red-500/50 text-red-500 dark:border-red-500 [&>svg]:text-red-500 dark:border-red-900/50 dark:text-red-900 dark:dark:border-red-900 dark:[&>svg]:text-red-900',
+        [ALERT_VARIANTS.SUCCESS]:
+          'bg-green-50 border-green-500/50 text-green-500 dark:border-green-500 [&>svg]:text-green-500 dark:border-green-900/50 dark:text-green-900 dark:dark:border-green-900 dark:[&>svg]:text-green-900',
       },
     },
     defaultVariants: {
