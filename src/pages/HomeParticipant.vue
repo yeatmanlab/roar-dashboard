@@ -1,26 +1,28 @@
 <template>
-  <div>
-    <div v-if="!initialized || isLoading || isFetching">
-      <LevanteSpinner fullscreen />
-    </div>
-
-    <div v-else-if="!hasAssignments">
-      <div class="col-full text-center py-8">
-        <h1>{{ $t('homeParticipant.noAssignments') }}</h1>
-        <p class="text-center">
-          {{ $t('homeParticipant.contactAdministrator') }}
-        </p>
-        <PvButton
-          :label="$t('navBar.signOut')"
-          class="no-underline bg-primary border-none border-round p-2 text-white hover:bg-red-900"
-          icon="pi pi-sign-out"
-          @click="signOut"
-        />
+  <div class="app app--sidebar">
+    <SideBar />
+    <div>
+      <div v-if="!initialized || isLoading || isFetching">
+        <LevanteSpinner fullscreen />
       </div>
-    </div>
 
-    <div v-else>
-      <div class="assignment">
+      <div v-else-if="!hasAssignments">
+        <div class="col-full text-center py-8">
+          <h1>{{ $t('homeParticipant.noAssignments') }}</h1>
+          <p class="text-center">
+            {{ $t('homeParticipant.contactAdministrator') }}
+          </p>
+          <PvButton
+            :label="$t('navBar.signOut')"
+            class="no-underline bg-primary border-none border-round p-2 text-white hover:bg-red-900"
+            icon="pi pi-sign-out"
+            @click="signOut"
+          />
+        </div>
+      </div>
+
+      <div v-else>
+        <div class="assignment">
         <div class="assignment__header">
           <PvTag
             :value="t(`participantSidebar.status${capitalize(getAssignmentStatus(selectedAssignment))}`)"
@@ -74,6 +76,7 @@
         </div>
       </div>
     </div>
+    </div>
   </div>
   <ConsentModal
     v-if="showConsent"
@@ -104,6 +107,7 @@ import useDistrictsQuery from '@/composables/queries/useDistrictsQuery';
 import ConsentModal from '@/components/ConsentModal.vue';
 import GameTabs from '@/components/GameTabs.vue';
 import ParticipantSidebar from '@/components/ParticipantSidebar.vue';
+import SideBar from '@/components/SideBar.vue';
 import { useI18n } from 'vue-i18n';
 import axios from 'axios';
 import { LEVANTE_BUCKET_URL } from '@/constants/bucket';

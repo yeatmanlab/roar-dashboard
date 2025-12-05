@@ -172,7 +172,6 @@ const authWithGoogle = () => {
             const userAssignments = await getUserAssignments(authStore.getUserId());
             const sortedAssignments = sortAssignmentsByDateOpened(userAssignments);
             assignmentsStore.setUserAssignments(sortedAssignments);
-            authStore.setShowSideBar(true);
           }
         }
       })
@@ -223,7 +222,6 @@ const authWithEmail = async (state) => {
             const userAssignments = await getUserAssignments(authStore.getUserId());
             const sortedAssignments = sortAssignmentsByDateOpened(userAssignments);
             assignmentsStore.setUserAssignments(sortedAssignments);
-            authStore.setShowSideBar(true);
           }
         }
       })

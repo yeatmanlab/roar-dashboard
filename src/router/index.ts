@@ -318,13 +318,9 @@ const router = createRouter({
 router.beforeEach(async (to: RouteLocationNormalized, from: RouteLocationNormalized, next: NavigationGuardNext) => {
   const authStore = useAuthStore();
   const { shouldUsePermissions, userData } = storeToRefs(authStore);
-  const { isAuthenticated, setShowSideBar } = authStore;
+  const { isAuthenticated } = authStore;
   const allowedUnauthenticatedRoutes = ['AuthEmailLink', 'AuthEmailSent', 'Debug', 'Maintenance', 'SignIn'];
   const inMaintenanceMode = false;
-
-  if (NAVBAR_BLACKLIST.includes(to.name)) {
-    setShowSideBar(false);
-  }
 
   if (inMaintenanceMode && to.name !== 'Maintenance') {
     return next({ name: 'Maintenance' });

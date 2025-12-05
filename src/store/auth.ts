@@ -56,7 +56,6 @@ export const useAuthStore = defineStore(
     const routeToProfile: Ref<boolean> = ref(false);
     const shouldUsePermissions: Ref<boolean> = ref(false);
     const showOptionalAssessments: Ref<boolean> = ref(false);
-    const showSideBar: Ref<boolean> = ref(false);
     const sites: Ref<SiteInfo[]> = ref([]);
     const spinner: Ref<boolean> = ref(false);
     const ssoProvider: Ref<string | null> = ref(null);
@@ -75,7 +74,6 @@ export const useAuthStore = defineStore(
       routeToProfile.value = false;
       shouldUsePermissions.value = false;
       showOptionalAssessments.value = false;
-      showSideBar.value = false;
       sites.value = [];
       spinner.value = false;
       ssoProvider.value = null;
@@ -271,9 +269,6 @@ export const useAuthStore = defineStore(
       shouldUsePermissions.value = Boolean(claims?.claims?.useNewPermissions);
     }
 
-    function setShowSideBar(show: boolean): void {
-      showSideBar.value = show;
-    }
 
     return {
       // State
@@ -286,7 +281,6 @@ export const useAuthStore = defineStore(
       routeToProfile,
       shouldUsePermissions,
       showOptionalAssessments,
-      showSideBar,
       sites,
       spinner,
       ssoProvider,
@@ -318,7 +312,6 @@ export const useAuthStore = defineStore(
       sendMyPasswordResetEmail,
       setAuthStateListeners,
       setCurrentSite,
-      setShowSideBar,
       setUserClaims,
       setUserData,
       signInWithEmailLink,
