@@ -22,6 +22,20 @@
       "when": 1765213742223,
       "tag": "0002_add_set_updated_at_fn",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1765214053300,
+      "tag": "0003_add_get_school_level_from_grade_fn",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1765214143550,
+      "tag": "0004_add_get_school_levels_from_grades_array_fn",
+      "breakpoints": true
     }
   ]
 }
