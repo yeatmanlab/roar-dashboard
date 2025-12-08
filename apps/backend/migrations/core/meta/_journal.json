@@ -50,6 +50,13 @@
       "when": 1765225114423,
       "tag": "0006_add_orgs_table",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1765231455240,
+      "tag": "0007_add_groups_table",
+      "breakpoints": true
     }
   ]
 }
