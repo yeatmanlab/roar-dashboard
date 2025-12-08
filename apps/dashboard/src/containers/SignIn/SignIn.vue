@@ -90,6 +90,7 @@
 
 <script setup>
 import PvButton from 'primevue/button';
+import { onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '@/store/auth';
 
@@ -172,5 +173,21 @@ const { checkAvailableProviders } = useProviders({
   authWithClassLink,
   authWithNYCPS,
   invalid,
+});
+
+/* ---- Automatic SSO auth when redirected from OAuth landing pages ---- */
+onMounted(() => {
+  if (authStore.cleverOAuthRequested) {
+    authStore.cleverOAuthRequested = false;
+    authWithClever();
+  }
+  if (authStore.classLinkOAuthRequested) {
+    authStore.classLinkOAuthRequested = false;
+    authWithClassLink();
+  }
+  if (authStore.nycpsOAuthRequested) {
+    authStore.nycpsOAuthRequested = false;
+    authWithNYCPS();
+  }
 });
 </script>
