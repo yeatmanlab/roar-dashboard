@@ -3,11 +3,10 @@
  *
  * Enumerates the available rostering entity statuses following the OneRoster spec.
  */
-enum rosteringEntityStatusEnum {
-  ENROLLED = 'enrolled',
-  UNENROLLED = 'unenrolled',
-  FAILED = 'failed',
-  SKIPPED = 'skipped',
-}
+import { rosteringEntityStatusEnum } from '../db/schema/enums';
+import { pgEnumToConst } from './utils';
 
-export default rosteringEntityStatusEnum;
+const RosteringEntityStatus = pgEnumToConst(rosteringEntityStatusEnum);
+
+export type RosteringEntityStatus = (typeof rosteringEntityStatusEnum.enumValues)[number];
+export default RosteringEntityStatus;

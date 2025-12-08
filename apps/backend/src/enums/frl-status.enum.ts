@@ -3,10 +3,10 @@
  *
  * Enumerates the available free/reduced lunch status.
  */
-enum FreeReducedLunchStatus {
-  FREE = 'Free',
-  REDUCED = 'Reduced',
-  PAID = 'Paid',
-}
+import { freeReducedLunchStatusEnum } from '../db/schema/enums';
+import { pgEnumToConst } from './utils';
 
+const FreeReducedLunchStatus = pgEnumToConst(freeReducedLunchStatusEnum);
+
+export type FreeReducedLunchStatus = (typeof freeReducedLunchStatusEnum.enumValues)[number];
 export default FreeReducedLunchStatus;

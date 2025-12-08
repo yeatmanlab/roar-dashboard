@@ -3,12 +3,10 @@
  *
  * Enumerates the available school levels, usually automatically derived from the grade.
  */
-enum SchoolLevel {
-  EARLY_CHILDHOOD = 'early_childhood',
-  ELEMENTARY = 'elementary',
-  MIDDLE = 'middle',
-  HIGH = 'high',
-  POSTSECONDARY = 'postsecondary',
-}
+import { schoolLevelEnum } from '../db/schema/enums';
+import { pgEnumToConst } from './utils';
 
+const SchoolLevel = pgEnumToConst(schoolLevelEnum);
+
+export type SchoolLevel = (typeof schoolLevelEnum.enumValues)[number];
 export default SchoolLevel;

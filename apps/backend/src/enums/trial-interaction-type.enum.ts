@@ -3,11 +3,10 @@
  *
  * Enumerates the available trial interaction types.
  */
-enum TrialInteractionType {
-  FOCUS = 'focus',
-  BLUR = 'blur',
-  FULLSCREEN_ENTER = 'fullscreen_enter',
-  FULLSCREEN_EXIT = 'fullscreen_exit',
-}
+import { trialInteractionTypeEnum } from '../db/schema/enums';
+import { pgEnumToConst } from './utils';
 
+const TrialInteractionType = pgEnumToConst(trialInteractionTypeEnum);
+
+export type TrialInteractionType = (typeof trialInteractionTypeEnum.enumValues)[number];
 export default TrialInteractionType;

@@ -3,10 +3,10 @@
  *
  * Enumerates the available assignment progress states.
  */
-enum AssignmentProgress {
-  ASSIGNED = 'assigned',
-  STARTED = 'started',
-  COMPLETED = 'completed',
-}
+import { assignmentProgressEnum } from '../db/schema/enums';
+import { pgEnumToConst } from './utils';
 
+const AssignmentProgress = pgEnumToConst(assignmentProgressEnum);
+
+export type AssignmentProgress = (typeof assignmentProgressEnum.enumValues)[number];
 export default AssignmentProgress;

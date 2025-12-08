@@ -3,9 +3,10 @@
  *
  * Enumerates the available assessment stages.
  */
-enum AssessmentStage {
-  PRACTICE = 'practice',
-  TEST = 'test',
-}
+import { assessmentStageEnum } from '../db/schema/enums';
+import { pgEnumToConst } from './utils';
 
+const AssessmentStage = pgEnumToConst(assessmentStageEnum);
+
+export type AssessmentStage = (typeof assessmentStageEnum.enumValues)[number];
 export default AssessmentStage;

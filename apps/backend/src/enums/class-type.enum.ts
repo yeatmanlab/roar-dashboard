@@ -3,10 +3,10 @@
  *
  * Enumerates the available class types following the OneRoster spec.
  */
-enum ClassType {
-  HOMEROOM = 'homeroom',
-  SCHEDULED = 'scheduled',
-  OTHER = 'other',
-}
+import { classTypeEnum } from '../db/schema/enums';
+import { pgEnumToConst } from './utils';
 
+const ClassType = pgEnumToConst(classTypeEnum);
+
+export type ClassType = (typeof classTypeEnum.enumValues)[number];
 export default ClassType;

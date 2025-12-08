@@ -3,12 +3,10 @@
  *
  * Enumerates the available authentication providers.
  */
-enum AuthProvider {
-  PASSWORD = 'password',
-  OIDC_CLEVER = 'oidc.clever',
-  OIDC_CLASSLINK = 'oidc.classlink',
-  OIDC_NYCPS = 'oidc.nycps',
-  GOOGLE = 'google',
-}
+import { authProviderEnum } from '../db/schema/enums';
+import { pgEnumToConst } from './utils';
 
+const AuthProvider = pgEnumToConst(authProviderEnum);
+
+export type AuthProvider = (typeof authProviderEnum.enumValues)[number];
 export default AuthProvider;

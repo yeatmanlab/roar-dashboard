@@ -3,10 +3,10 @@
  *
  * Enumerates the available group types.
  */
-enum GroupType {
-  COHORT = 'cohort',
-  COMMUNITY = 'community',
-  BUSINESS = 'business',
-}
+import { groupTypeEnum } from '../db/schema/enums';
+import { pgEnumToConst } from './utils';
 
+const GroupType = pgEnumToConst(groupTypeEnum);
+
+export type GroupType = (typeof groupTypeEnum.enumValues)[number];
 export default GroupType;

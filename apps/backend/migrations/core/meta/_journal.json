@@ -8,6 +8,13 @@
       "when": 1765205711457,
       "tag": "0000_set_base_config",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1765213630584,
+      "tag": "0001_add_enums",
+      "breakpoints": true
     }
   ]
 }

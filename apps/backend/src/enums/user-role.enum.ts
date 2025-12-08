@@ -3,12 +3,10 @@
  *
  * Enumerates the available roles a user can be assigned.
  */
-enum UserRole {
-  SUPER_ADMIN = 'super_admin',
-  PLATFORM_ADMIN = 'platform_admin',
-  LAUNCH_ADMIN = 'launch_admin',
-  ADMIN = 'admin',
-  STUDENT = 'student',
-}
+import { userRoleEnum } from '../db/schema/enums';
+import { pgEnumToConst } from './utils';
 
+const UserRole = pgEnumToConst(userRoleEnum);
+
+export type UserRole = (typeof userRoleEnum.enumValues)[number];
 export default UserRole;
