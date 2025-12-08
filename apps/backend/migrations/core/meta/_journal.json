@@ -15,6 +15,13 @@
       "when": 1765213630584,
       "tag": "0001_add_enums",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1765213742223,
+      "tag": "0002_add_set_updated_at_fn",
+      "breakpoints": true
     }
   ]
 }
