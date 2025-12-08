@@ -36,6 +36,13 @@
       "when": 1765214143550,
       "tag": "0004_add_get_school_levels_from_grades_array_fn",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1765214505936,
+      "tag": "0005_add_users_table",
+      "breakpoints": true
     }
   ]
 }
