@@ -7,8 +7,8 @@
     "buttonLabel": "Go!",
     "minimumCharacters": "Minimum 8 characters",
     "emailId": "email",
-    "emailPlaceholder": "Username or email",
-    "incorrectEmailOrPassword": "Incorrect username/email or password",
+    "emailPlaceholder": "Enter your email or username",
+    "incorrectEmailOrPassword": "Invalid username/email or password.",
     "invalidEmailPlaceholder": "Error: invalid email",
     "passwordId": "password",
     "passwordPlaceholder": "Password",
@@ -17,7 +17,13 @@
     "signInWithEmailLinkPlaceHolder": "Press Go to sign-in with an email link.",
     "signInWithEmailLinkInstead": "Sign-in using email link",
     "signInWithPasswordInstead": "Sign-in using password",
-    "suggestions": "Suggestions"
+    "suggestions": "Suggestions",
+    "forgotPassword": "Forgot password?",
+    "or": "OR",
+    "magicLink": "Request email link",
+    "error": "Error",
+    "success": "Success",
+    "checkYourEmail": "Check your email {email} for password reset instructions"
   },
   "cleverLanding": {
     "cleverLoading": "Loading your data from Clever..."
@@ -76,7 +82,9 @@
   },
   "navBar": {
     "greeting": "Hi",
-    "signOut": "Sign Out"
+    "signOut": "Sign Out",
+    "changeLanguage": "Change Language",
+    "accountSettings": "Settings"
   },
   "notFound": {
     "label": "Return to Home",
@@ -90,22 +98,33 @@
   },
   "pageSignIn": {
     "havingTrouble": "Having trouble?",
-    "login": "Log in to access your dashboard",
+    "login": "Log in to start ROARing",
     "loginWith": "Log in with",
-    "welcome": "Welcome to ROAR!"
+    "welcome": "Welcome to ROAR!",
+    "EnterYourPassword": "Enter your password",
+    "almostTime": "Almost time to let your learning ROAR",
+    "ChooseYourProvider": "Select a provider",
+    "ChooseYourProviderDescription": "Please select a provider to continue.",
+    "Terms": "Terms",
+    "Privacy": "Privacy",
+    "continue": "Continue",
+    "availableProviders": "Available Providers",
+    "usePassword": "Log in with password",
+    "checkInbox": "Check your inbox",
+    "checkInboxDescription": "We've sent a verification link to the provided email."
   },
   "tasks": {
     "preparing": "Preparing your game!",
     "loading": "loading"
   },
   "sentryForm": {
-    "formTitle": "Report an Issue to ROAR",
+    "formTitle": "ROAR Bug Report",
     "buttonLabel": "Report an Issue",
     "submitButtonLabel": "Submit Issue Report",
     "cancelButtonLabel": "Cancel",
     "namePlaceholder": "Your Name (optional)",
     "emailPlaceholder": "your.email@example.org (optional)",
-    "messageLabel": "Description",
+    "messageLabel": "🐞 This form is for reporting software bugs and technical issues only. \n\n 💬 For general questions or support inquiries, please contact your district’s ROAR support lead first. \n\n 📧 If they are unavailable or unable to resolve your issue, please contact us at roar-partnerships@stanford.edu. \n\n Describe your issue:",
     "messagePlaceholder": "What is the issue? What did you want to experience instead? Thank you for sharing."
   }
 }

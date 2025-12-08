@@ -1,7 +1,7 @@
 <template>
   <div
     v-if="(_get(colData, col.field) != undefined || _get(colData, 'optional')) && col.emptyTag !== true"
-    v-tooltip.right="`${returnScoreTooltip(colData, col.field)}`"
+    v-tooltip.right="col.tooltip === false ? null : returnScoreTooltip(colData, col.field)"
   >
     <PvTag
       :value="_get(colData, col.field)"
@@ -17,7 +17,8 @@
       pt:root:data-testid="tag__root"
     />
   </div>
-  <div v-else-if="col.emptyTag" v-tooltip.right="`${returnScoreTooltip(colData, col.field)}`">
+
+  <div v-else-if="col.emptyTag" v-tooltip.right="col.tooltip === false ? null : returnScoreTooltip(colData, col.field)">
     <div
       class="circle"
       :style="`background-color: ${_get(colData, col.tagColor)}; color: ${
@@ -110,12 +111,29 @@ function handleToolTip(_taskId, _toolTip, _colData) {
 
       const isResponseModality =
         _colData.scores?.[_taskId]?.isNewScoring && _colData.scores?.[_taskId]?.recruitment === 'responseModality';
-      Object.entries(roamFluencySubskillHeaders).forEach(([property, propertyHeader]) => {
-        if (_colData.scores?.[_taskId]?.[property] != undefined && !(isResponseModality && property === 'rawScore')) {
-          _toolTip += `${propertyHeader}: ${_colData.scores?.[_taskId]?.[property]}\n`;
+
+      if (isResponseModality) {
+        const taskScores = _colData.scores?.[_taskId];
+        let fcStats = 'Multiple Choice: \n';
+        let frStats = 'Free Response: \n';
+        for (const [property, propertyHeader] of Object.entries(roamFluencySubskillHeaders)) {
+          if (taskScores?.[property] != undefined) {
+            fcStats += `${propertyHeader}: ${taskScores?.fc?.[property] ?? 0}\n`;
+            frStats += `${propertyHeader}: ${taskScores?.fr?.[property] ?? 0}\n`;
+          }
         }
-      });
-    } else if (tasksToDisplayPercentCorrect.includes(_taskId)) {
+        _toolTip = fcStats + '\n' + frStats;
+      } else {
+        for (const [property, propertyHeader] of Object.entries(roamFluencySubskillHeaders)) {
+          if (_colData.scores?.[_taskId]?.[property] != undefined) {
+            _toolTip += `${propertyHeader}: ${_colData.scores?.[_taskId]?.[property]}\n`;
+          }
+        }
+      }
+    } else if (
+      tasksToDisplayPercentCorrect.includes(_taskId) &&
+      !(_taskId === 'swr-es' && _colData.scores?.[_taskId]?.scoringVersion)
+    ) {
       _toolTip += 'Num Correct: ' + _colData.scores?.[_taskId]?.numCorrect + '\n';
       _toolTip += 'Num Attempted: ' + _colData.scores?.[_taskId]?.numAttempted + '\n';
       _toolTip += 'Percent Correct: ' + _colData.scores?.[_taskId]?.percentCorrect + '\n';

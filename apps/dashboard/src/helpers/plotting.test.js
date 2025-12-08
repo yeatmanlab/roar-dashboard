@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { setBarChartData, setBarChartOptions } from './plotting';
+import { setProgressChartData, setProgressChartOptions } from './plotting';
+import { PROGRESS_COLORS } from '@/constants/completionStatus';
 
 global.document = {
   documentElement: {},
@@ -9,27 +10,12 @@ global.document = {
 describe('plotting', () => {
   beforeEach(() => {
     vi.resetAllMocks();
-
-    document.documentElement.style = {};
-    const mockGetComputedStyle = vi.fn().mockReturnValue({
-      getPropertyValue: vi.fn((property) => {
-        const colors = {
-          '--bright-green': '#00FF00',
-          '--yellow-100': '#FFFF00',
-          '--surface-d': '#DDDDDD',
-        };
-        return colors[property] || '';
-      }),
-    });
-
-    document.getComputedStyle = mockGetComputedStyle;
-    global.getComputedStyle = mockGetComputedStyle;
   });
 
-  describe('setBarChartData', () => {
+  describe('setProgressChartData', () => {
     it('should return correct chart data structure with zero values', () => {
       const orgStats = { assigned: 0, started: 0, completed: 0 };
-      const chartData = setBarChartData(orgStats);
+      const chartData = setProgressChartData(orgStats);
 
       expect(chartData).toHaveProperty('labels');
       expect(chartData).toHaveProperty('datasets');
@@ -45,39 +31,38 @@ describe('plotting', () => {
       expect(chartData.datasets[2].data).toEqual([0]);
     });
 
-    it('should calculate correct values when stats are provided', () => {
+    it('should use raw values without subtraction when stats are provided', () => {
       const orgStats = { assigned: 10, started: 5, completed: 2 };
-      const chartData = setBarChartData(orgStats);
+      const chartData = setProgressChartData(orgStats);
 
-      expect(chartData.datasets[0].data).toEqual([2]);
-
-      expect(chartData.datasets[1].data).toEqual([3]); // 5 - 2
-
-      expect(chartData.datasets[2].data).toEqual([5]); // 10 - (3 + 2)
+      // Values are now used directly (backend pre-calculates net values)
+      expect(chartData.datasets[0].data).toEqual([2]); // completed
+      expect(chartData.datasets[1].data).toEqual([5]); // started (raw value)
+      expect(chartData.datasets[2].data).toEqual([10]); // assigned (raw value)
     });
 
     it('should handle undefined orgStats', () => {
-      const chartData = setBarChartData(undefined);
+      const chartData = setProgressChartData(undefined);
 
       expect(chartData.datasets[0].data).toEqual([0]);
       expect(chartData.datasets[1].data).toEqual([0]);
       expect(chartData.datasets[2].data).toEqual([0]);
     });
 
-    it('should use correct colors from CSS variables', () => {
+    it('should use correct colors from completion status constants', () => {
       const orgStats = { assigned: 10, started: 5, completed: 2 };
-      const chartData = setBarChartData(orgStats);
+      const chartData = setProgressChartData(orgStats);
 
-      expect(chartData.datasets[0].backgroundColor).toBe('#00FF00');
-      expect(chartData.datasets[1].backgroundColor).toBe('#FFFF00');
-      expect(chartData.datasets[2].backgroundColor).toBe('#DDDDDD');
+      expect(chartData.datasets[0].backgroundColor).toBe(PROGRESS_COLORS.COMPLETED);
+      expect(chartData.datasets[1].backgroundColor).toBe(PROGRESS_COLORS.STARTED);
+      expect(chartData.datasets[2].backgroundColor).toBe(PROGRESS_COLORS.ASSIGNED);
     });
   });
 
-  describe('setBarChartOptions', () => {
+  describe('setProgressChartOptions', () => {
     it('should return correct chart options structure', () => {
       const orgStats = { assigned: 10 };
-      const options = setBarChartOptions(orgStats);
+      const options = setProgressChartOptions(orgStats);
 
       expect(options).toHaveProperty('indexAxis', 'y');
       expect(options).toHaveProperty('maintainAspectRatio', false);
@@ -89,7 +74,7 @@ describe('plotting', () => {
 
     it('should set min to 0 and max to assigned value', () => {
       const orgStats = { assigned: 10 };
-      const options = setBarChartOptions(orgStats);
+      const options = setProgressChartOptions(orgStats);
 
       expect(options.scales.x.min).toBe(0);
       expect(options.scales.x.max).toBe(10);
@@ -98,7 +83,7 @@ describe('plotting', () => {
     });
 
     it('should handle undefined orgStats', () => {
-      const options = setBarChartOptions(undefined);
+      const options = setProgressChartOptions(undefined);
 
       expect(options.scales.x.min).toBe(0);
       expect(options.scales.x.max).toBe(0);

@@ -7,10 +7,12 @@ import {
   getRawScoreThreshold,
   getRawScoreRange,
   getTagColor,
-  supportLevelColors,
   replaceScoreRange,
   taskInfoById,
+  getDialColor,
+  getDistributionChartPath,
 } from './reports';
+import { SCORE_SUPPORT_LEVEL_COLORS } from '@/constants/scores';
 
 vi.mock('./index', () => ({
   flattenObj: vi.fn((obj) => obj),
@@ -66,7 +68,7 @@ describe('reports', () => {
         const result = getSupportLevel(3, 75, 100, 'swr', false);
         expect(result).toEqual({
           support_level: 'Achieved Skill',
-          tag_color: 'green',
+          tag_color: '#008000',
         });
       });
 
@@ -90,7 +92,7 @@ describe('reports', () => {
         const result = getSupportLevel(6, undefined, 600, 'swr', false);
         expect(result).toEqual({
           support_level: 'Achieved Skill',
-          tag_color: 'green',
+          tag_color: '#008000', // green-500
         });
       });
     });
@@ -100,7 +102,7 @@ describe('reports', () => {
         const result = getSupportLevel(3, 50, 513, 'swr', false, 7);
         expect(result).toEqual({
           support_level: 'Achieved Skill',
-          tag_color: 'green',
+          tag_color: '#008000', // green-500
         });
       });
 
@@ -124,7 +126,7 @@ describe('reports', () => {
         const result = getSupportLevel(3, 40, 41, 'sre', false, 4);
         expect(result).toEqual({
           support_level: 'Achieved Skill',
-          tag_color: 'green',
+          tag_color: '#008000', // green-500
         });
       });
 
@@ -132,7 +134,7 @@ describe('reports', () => {
         const result = getSupportLevel(6, undefined, 520, 'swr', false, 7);
         expect(result).toEqual({
           support_level: 'Achieved Skill',
-          tag_color: 'green',
+          tag_color: '#008000', // green-500
         });
       });
 
@@ -630,7 +632,7 @@ describe('reports', () => {
     it('should have correct properties for letter task', () => {
       expect(taskDisplayNames.letter).toHaveProperty('name', 'Letter');
       expect(taskDisplayNames.letter).toHaveProperty('publicName', 'ROAR - Letter');
-      expect(taskDisplayNames.letter).toHaveProperty('order', 1);
+      expect(taskDisplayNames.letter).toHaveProperty('order', 4);
     });
   });
 
@@ -665,21 +667,21 @@ describe('reports', () => {
 
   describe('getTagColor', () => {
     it('should return below color for "Needs Extra Support"', () => {
-      expect(getTagColor('Needs Extra Support')).toBe(supportLevelColors.below);
+      expect(getTagColor('Needs Extra Support')).toBe(SCORE_SUPPORT_LEVEL_COLORS.BELOW);
     });
 
     it('should return some color for "Developing Skill"', () => {
-      expect(getTagColor('Developing Skill')).toBe(supportLevelColors.some);
+      expect(getTagColor('Developing Skill')).toBe(SCORE_SUPPORT_LEVEL_COLORS.SOME);
     });
 
     it('should return above color for "Achieved Skill"', () => {
-      expect(getTagColor('Achieved Skill')).toBe(supportLevelColors.above);
+      expect(getTagColor('Achieved Skill')).toBe(SCORE_SUPPORT_LEVEL_COLORS.ABOVE);
     });
 
     it('should handle unexpected values gracefully', () => {
-      expect(getTagColor('Unknown')).toBe(supportLevelColors.Assessed);
-      expect(getTagColor(null)).toBe(supportLevelColors.Assessed);
-      expect(getTagColor(undefined)).toBe(supportLevelColors.Assessed);
+      expect(getTagColor('Unknown')).toBe(SCORE_SUPPORT_LEVEL_COLORS.ASSESSED);
+      expect(getTagColor(null)).toBe(SCORE_SUPPORT_LEVEL_COLORS.ASSESSED);
+      expect(getTagColor(undefined)).toBe(SCORE_SUPPORT_LEVEL_COLORS.ASSESSED);
     });
   });
 
@@ -709,6 +711,142 @@ describe('reports', () => {
       const sreDesc = replaceScoreRange(taskInfoById['sre']?.desc, 'sre', 4);
       expect(sreDesc).not.toMatch(/{{.*}}/);
       expect(sreDesc).toMatch(/80%/);
+    });
+  });
+
+  describe('getDialColor', () => {
+    it('should return gray for phonics', () => {
+      expect(getDialColor(6, 40, 45, 'phonics', null, null)).toBe('#3b82f6'); // blue-500
+    });
+
+    it('should return support level color using percentile for grade < 6 for sre with scoringVersion 3', () => {
+      expect(getDialColor(3, 45, null, 'sre', null, 3)).toBe('#edc037');
+    });
+
+    it('should return support level color using raw score for grade >= 6 for sre with scoringVersion 3', () => {
+      expect(getDialColor(6, null, 40, 'sre', null, 3)).toBe('#c93d82');
+    });
+
+    it('should return support level color using percentile for grade < 6 for sre with scoringVersion 4', () => {
+      expect(getDialColor(3, 45, null, 'sre', null, 4)).toBe('#008000'); // green-500
+    });
+
+    it('should return support level color using raw score for grade >= 6 for sre with scoringVersion 4', () => {
+      expect(getDialColor(6, null, 40, 'sre', null, 4)).toBe('#edc037');
+    });
+
+    it('should return null if percentile is undefined for grade < 6', () => {
+      expect(getDialColor(3, undefined, 40, 'sre', null, 4)).toBe(null);
+    });
+
+    it('should return null if raw score is undefined for grade >= 6', () => {
+      expect(getDialColor(6, 45, undefined, 'sre', null, 4)).toBe(null);
+    });
+
+    it('should return null if percentile is null for grade < 6', () => {
+      expect(getDialColor(3, null, 40, 'sre', null, 4)).toBe(null);
+    });
+
+    it('should return null if raw score is null for grade >= 6', () => {
+      expect(getDialColor(6, 45, null, 'sre', null, 4)).toBe(null);
+    });
+  });
+
+  describe('getDistributionChartPath', () => {
+    describe('grade < 6', () => {
+      it('should return v2 chart when all applicable tasks use updated norms', () => {
+        expect(getDistributionChartPath(3, { swr: 7, sre: 4, 'swr-es': 1 }, 'en')).toMatch(
+          /distribution-chart-elementary-v2-en\.webp$/,
+        );
+      });
+
+      it('should return v2 chart when all applicable tasks use updated norms and assigned unnormed tasks', () => {
+        expect(getDistributionChartPath(3, { swr: 7, sre: 4, letter: null, morphology: null }, 'en')).toMatch(
+          /distribution-chart-elementary-v2-en\.webp$/,
+        );
+      });
+
+      it('should return v2 chart when swr-es is unnormed but other tasks use updated norms', () => {
+        expect(getDistributionChartPath(3, { swr: 7, 'swr-es': null }, 'en')).toMatch(
+          /distribution-chart-elementary-v2-en\.webp$/,
+        );
+      });
+
+      it('should return v2 chart when sre-es is unnormed but other tasks use updated norms', () => {
+        expect(getDistributionChartPath(3, { sre: 4, 'sre-es': null }, 'en')).toMatch(
+          /distribution-chart-elementary-v2-en\.webp$/,
+        );
+      });
+
+      it('should return Spanish v2 chart when language is "es" and tasks use updated norms', () => {
+        expect(getDistributionChartPath(3, { 'swr-es': 1, 'sre-es': 1 }, 'es')).toMatch(
+          /distribution-chart-elementary-v2-es\.webp$/,
+        );
+      });
+
+      it('should return v1 chart when all applicable tasks use old norms', () => {
+        expect(getDistributionChartPath(3, { swr: 6, sre: 3, 'swr-es': null, letter: null }, 'en')).toMatch(
+          /distribution-chart-elementary-v1-en\.webp$/,
+        );
+      });
+
+      it('should return v1 chart when pa is assigned and other tasks use old norms', () => {
+        expect(getDistributionChartPath(3, { swr: 6, sre: 3, pa: 3 }, 'en')).toMatch(
+          /distribution-chart-elementary-v1-en\.webp$/,
+        );
+      });
+
+      it('should return no-cutoffs chart when pa is assigned even if other tasks use updated norms', () => {
+        expect(getDistributionChartPath(3, { swr: 7, sre: 4, pa: 3 }, 'en')).toMatch(
+          /distribution-chart-no-cutoffs-en\.webp$/,
+        );
+      });
+
+      it('should return no-cutoffs chart when scoring versions are mixed', () => {
+        expect(getDistributionChartPath(3, { swr: 6, sre: 4, 'swr-es': 1, 'sre-es': null }, 'en')).toMatch(
+          /distribution-chart-no-cutoffs-en\.webp$/,
+        );
+      });
+    });
+
+    describe('grade >= 6', () => {
+      it('should return secondary chart regardless of scoring versions', () => {
+        expect(getDistributionChartPath(6, { swr: 7, sre: 4, 'swr-es': 1, 'sre-es': null }, 'en')).toMatch(
+          /distribution-chart-secondary-v1-en\.webp$/,
+        );
+      });
+
+      it('should return secondary chart when taskScoringVersions is empty', () => {
+        expect(getDistributionChartPath(6, {}, 'en')).toMatch(/distribution-chart-secondary-v1-en\.webp$/);
+      });
+    });
+
+    it('should return no-cutoffs chart if grade is undefined', () => {
+      expect(getDistributionChartPath(undefined, { swr: 7, sre: 4 }, 'en')).toMatch(
+        /distribution-chart-no-cutoffs-en\.webp$/,
+      );
+    });
+
+    it('should return no-cutoffs chart if grade is null', () => {
+      expect(getDistributionChartPath(null, { swr: 7, sre: 4 }, 'en')).toMatch(
+        /distribution-chart-no-cutoffs-en\.webp$/,
+      );
+    });
+
+    it('should return no-cutoffs chart if grade is empty string', () => {
+      expect(getDistributionChartPath('', { swr: 7, sre: 4 }, 'en')).toMatch(/distribution-chart-no-cutoffs-en\.webp$/);
+    });
+
+    it('should return no-cutoffs chart if grade is not a number', () => {
+      expect(getDistributionChartPath('K0', { swr: 7, sre: 4 }, 'en')).toMatch(
+        /distribution-chart-no-cutoffs-en\.webp$/,
+      );
+    });
+
+    it('should handle string grade values correctly', () => {
+      expect(getDistributionChartPath('3', { swr: 7, sre: 4 }, 'en')).toMatch(
+        /distribution-chart-elementary-v2-en\.webp$/,
+      );
     });
   });
 });

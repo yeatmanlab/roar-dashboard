@@ -7,6 +7,7 @@ export const CLASSES_QUERY_KEY = 'classes';
 export const DISTRICTS_QUERY_KEY = 'districts';
 export const DISTRICTS_LIST_QUERY_KEY = 'districts-list';
 export const DISTRICT_SCHOOLS_QUERY_KEY = 'district-schools';
+export const DISTRICT_SUPPORT_CATEGORIES_QUERY_KEY = 'district-support-categories';
 export const DSGF_ORGS_QUERY_KEY = 'dsgf-orgs';
 export const FAMILIES_QUERY_KEY = 'families';
 export const GROUPS_QUERY_KEY = 'groups';

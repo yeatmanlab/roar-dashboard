@@ -2,6 +2,10 @@ import html2canvas from 'html2canvas';
 import { toValue } from 'vue';
 import { getGrade } from '@bdelab/roar-utils';
 import { LEVANTE_TASK_IDS_NO_SCORES } from '../constants/levanteTasks';
+import { SCORE_REPORT_DISTRIBUTION_CHART_PATHS } from '../constants/filePaths';
+import { i18n } from '@/translations/i18n';
+import { useI18n } from 'vue-i18n';
+
 /*
  *  Task Display Names
  *  A map of all tasks, including their taskId, display name, and index for ordering
@@ -16,7 +20,7 @@ export const taskDisplayNames = {
     studentFacingName: 'Letter',
     extendedTitle: 'ROAR - Letter',
     extendedName: 'Letter Names and Sounds',
-    order: 1,
+    order: 4,
   },
   'letter-es': {
     name: 'Letra',
@@ -24,7 +28,7 @@ export const taskDisplayNames = {
     studentFacingName: 'Letra',
     extendedTitle: 'ROAR - Letra',
     extendedName: 'Letter Names and Sounds',
-    order: 2,
+    order: 6,
   },
   'letter-en-ca': {
     name: 'Letter',
@@ -32,7 +36,7 @@ export const taskDisplayNames = {
     studentFacingName: 'Letter',
     extendedTitle: 'ROAR - Letter',
     extendedName: 'Letter Names and Sounds',
-    order: 27,
+    order: 5,
   },
   phonics: {
     name: 'Phonics',
@@ -40,7 +44,7 @@ export const taskDisplayNames = {
     studentFacingName: 'Phonics',
     extendedTitle: 'ROAR - Phonics',
     extendedName: 'Phonics Assessment',
-    order: 28,
+    order: 16,
   },
   pa: {
     name: 'Phoneme',
@@ -56,7 +60,7 @@ export const taskDisplayNames = {
     studentFacingName: 'Fonema',
     extendedTitle: 'ROAR - Fonema',
     extendedName: 'Phonological Awareness',
-    order: 4,
+    order: 7,
   },
   swr: {
     name: 'Word',
@@ -64,7 +68,7 @@ export const taskDisplayNames = {
     studentFacingName: 'Word',
     extendedTitle: 'ROAR - Word',
     extendedName: 'Single Word Recognition',
-    order: 5,
+    order: 1,
   },
   'swr-es': {
     name: 'Palabra',
@@ -72,7 +76,7 @@ export const taskDisplayNames = {
     studentFacingName: 'Palabra',
     extendedTitle: 'ROAR - Word',
     extendedName: 'Single Word Recognition',
-    order: 6,
+    order: 8,
   },
   sre: {
     name: 'Sentence',
@@ -80,7 +84,7 @@ export const taskDisplayNames = {
     studentFacingName: 'Sentence',
     extendedTitle: 'ROAR - Sentence',
     extendedName: 'Sentence Reading Efficiency',
-    order: 7,
+    order: 2,
   },
   'sre-es': {
     name: 'Frase',
@@ -88,7 +92,7 @@ export const taskDisplayNames = {
     studentFacingName: 'Frase',
     extendedTitle: 'ROAR - Frase',
     extendedName: 'Sentence Reading Efficiency',
-    order: 8,
+    order: 9,
   },
   morphology: {
     name: 'Morphology',
@@ -96,7 +100,7 @@ export const taskDisplayNames = {
     studentFacingName: 'Morphology',
     extendedTitle: 'ROAR - Morphology',
     extendedName: 'Morphological Awareness',
-    order: 9,
+    order: 12,
   },
   cva: {
     name: 'Written-Vocab',
@@ -104,7 +108,7 @@ export const taskDisplayNames = {
     studentFacingName: 'Written Vocab',
     extendedTitle: 'ROAR - Written Vocabulary',
     extendedName: 'Written Vocabulary',
-    order: 10,
+    order: 13,
   },
   multichoice: {
     name: 'Multichoice',
@@ -120,15 +124,7 @@ export const taskDisplayNames = {
     studentFacingName: 'Picture Vocab',
     extendedTitle: 'ROAR - Picture Vocabulary',
     extendedName: 'Picture Vocabulary',
-    order: 12,
-  },
-  fluency: {
-    name: 'Fluency',
-    publicName: 'ROAR - Fluency',
-    studentFacingName: 'Fluency',
-    extendedTitle: 'ROAM - Fluency',
-    extendedName: 'Math Fluency',
-    order: 12,
+    order: 14,
   },
   'fluency-arf': {
     name: 'Single Digit Fluency',
@@ -136,7 +132,7 @@ export const taskDisplayNames = {
     studentFacingName: 'Math Facts',
     extendedTitle: 'ROAM - Single Digit',
     extendedName: 'Math Fluency - Single Digit',
-    order: 13,
+    order: 18,
   },
   'fluency-arf-es': {
     name: 'Un Dígito',
@@ -144,7 +140,7 @@ export const taskDisplayNames = {
     studentFacingName: 'Un Dígito',
     extendedTitle: 'ROAM - Un Dígito',
     extendedName: 'Math Fluency - Single Digit',
-    order: 14,
+    order: 10,
   },
   'fluency-calf': {
     name: 'Multi Digit Fluency',
@@ -152,7 +148,7 @@ export const taskDisplayNames = {
     studentFacingName: 'Calculation Fluency',
     extendedTitle: 'ROAM - Multi Digit',
     extendedName: 'Math Fluency - Multi Digit',
-    order: 15,
+    order: 19,
   },
   'fluency-calf-es': {
     name: 'Varios Dígitos',
@@ -160,7 +156,7 @@ export const taskDisplayNames = {
     studentFacingName: 'Varios Dígitos',
     extendedTitle: 'ROAM - Varios Dígitos',
     extendedName: 'Math Fluency - Multi Digit',
-    order: 16,
+    order: 11,
   },
   'roam-alpaca': {
     name: 'Core - Math',
@@ -168,7 +164,7 @@ export const taskDisplayNames = {
     studentFacingName: 'Core Math',
     extendedTitle: 'ROAM - Core Math',
     extendedName: 'Core Math - Alpaca',
-    order: 28,
+    order: 20,
   },
   'roam-alpaca-es': {
     name: 'Matemáticas Centrales',
@@ -176,7 +172,7 @@ export const taskDisplayNames = {
     studentFacingName: 'Matematica Central',
     extendedTitle: 'ROAM - Matemática Central',
     extendedName: 'Matemáticas Centrales',
-    order: 29,
+    order: 11,
   },
   roar_readaloud: {
     name: 'Read Aloud',
@@ -184,7 +180,7 @@ export const taskDisplayNames = {
     studentFacingName: 'Read Aloud',
     extendedTitle: 'ROAR - Read Aloud',
     extendedName: 'Read Aloud',
-    order: 30,
+    order: 16,
   },
   'roar-readaloud': {
     name: 'Read Aloud',
@@ -194,21 +190,13 @@ export const taskDisplayNames = {
     extendedName: 'Read Aloud',
     order: 30,
   },
-  syntax: {
-    name: 'Syntax',
-    publicName: 'ROAR - Syntax',
-    studentFacingName: 'Syntax',
-    extendedTitle: 'ROAR - Syntax',
-    extendedName: 'Syntax',
-    order: 17,
-  },
   trog: {
     name: 'Syntax',
     publicName: 'ROAR - Syntax',
     studentFacingName: 'Syntax',
     extendedTitle: 'ROAR - Syntax',
     extendedName: 'Syntax',
-    order: 17,
+    order: 15,
   },
   roarInference: {
     name: 'Inference',
@@ -216,7 +204,7 @@ export const taskDisplayNames = {
     studentFacingName: 'Inference',
     extendedTitle: 'ROAR - Inference',
     extendedName: 'Inference',
-    order: 27,
+    order: 17,
   },
   comp: {
     name: 'Comprehension',
@@ -224,7 +212,7 @@ export const taskDisplayNames = {
     extendedTitle: 'ROAR - Comprehension',
     studentFacingName: 'Comprehension',
     extendedName: 'Reading Comprehension',
-    order: 19,
+    order: 28,
   },
   mep: {
     name: 'MEP',
@@ -232,7 +220,7 @@ export const taskDisplayNames = {
     studentFacingName: 'Multi-Element Processing',
     extendedTitle: 'ROAR - MEP',
     extendedName: 'MEP',
-    order: 20,
+    order: 24,
   },
   'mep-pseudo': {
     name: 'MEP-Pseudo',
@@ -240,7 +228,7 @@ export const taskDisplayNames = {
     studentFacingName: 'Multi-Element Processing-Pseudo',
     extendedTitle: 'ROAR - MEP Pseudo',
     extendedName: 'MEP-Pseudo',
-    order: 21,
+    order: 25,
   },
   ExternalTask: {
     name: 'External Task',
@@ -248,7 +236,7 @@ export const taskDisplayNames = {
     extendedTitle: 'ROAR - External Task',
     extendedName: 'External Task',
     studentFacingName: 'External Task',
-    order: 22,
+    order: 50,
   },
   ran: {
     name: 'RAN',
@@ -256,14 +244,14 @@ export const taskDisplayNames = {
     studentFacingName: 'RAN',
     extendedTitle: 'ROAV - RAN',
     extendedName: 'RAN',
-    order: 23,
+    order: 21,
   },
   crowding: {
     name: 'Crowding',
     publicName: 'ROAV - Crowding',
     extendedTitle: 'ROAV - Crowding',
     extendedName: 'Crowding',
-    order: 24,
+    order: 22,
   },
   'roav-mep': {
     name: 'MEP',
@@ -271,15 +259,7 @@ export const taskDisplayNames = {
     studentFacingName: 'Multi-Element Processing',
     extendedTitle: 'ROAV - MEP',
     extendedName: 'MEP',
-    order: 25,
-  },
-  ExternalTest: {
-    name: 'External Test',
-    publicName: 'ROAR - External Test',
-    studentFacingName: 'External Test',
-    extendedTitle: 'ROAR - External Test',
-    extendedName: 'External Test',
-    order: 26,
+    order: 23,
   },
   'roar-survey': {
     name: 'Survey',
@@ -291,37 +271,13 @@ export const taskDisplayNames = {
   },
 };
 
-export const extendedDescriptions = {
-  swr: 'This test measures your student’s skill in reading single words quickly and correctly.',
-  'swr-es':
-    'This test measures how well a student can identify real words and made-up words. ' +
-    'The goal is for students to recognize words quickly and accurately, a skill called decoding. ' +
-    'High scores on this assessment indicate a readiness to be a skilled and fluent reader.',
-  pa: 'This test measures how well your student can break down a spoken word into its individual sounds and choose or create a word with the same sounds.',
-  sre: 'This test measures how quickly your student can silently read and understand sentences.',
-  vocab: 'This test measures how well your student knows words by having them match a picture to a spoken word.',
-  multichoice: 'Temporary description for multichoice',
-  morph:
-    'This test measures how well your student understands how parts of words, including prefixes and suffixes, can change the meaning of a word in a sentence',
-  cva: 'This test measures your students’ knowledge of words that are often used in the books they read at school',
-  letter:
-    'This test measures how well your student knows the names of letters and which letters are used to spell each sound',
-  'letter-en-ca':
-    'This test measures how well your student knows the names of letters and which letters are used to spell each sound',
-  'letter-es.':
-    'This test measures how well your student knows the names of letters and which letters are used to spell each sound.',
-  comp: 'Temporary description for comp',
-  phonics:
-    "This is a new test of phonics knowledge. It is currently being studied to determine how well it measures a student's ability to use phonics patterns to decode nonsense words.",
-  syntax: 'This test measures how well students understand sentences that vary from simple to complicated',
-  trog: 'This test measures how well students understand sentences that vary from simple to complicated',
-  fluency: 'Temporary description for fluency',
-  ran: 'Temporary description for ran',
-  crowding: 'Temporary description for crowding',
-  'roav-mep': 'Temporary description for mep',
-  'roar-readaloud': 'Temporary description for readaloud',
-  'roar-survey': 'Temporary description for survey',
-};
+export function getExtendedDescription(taskId) {
+  const key = `scoreReports.taskDescriptions.${taskId}`;
+  const hasTranslator = i18n && i18n.global && typeof i18n.global.t === 'function';
+  const translated = hasTranslator ? i18n.global.t(key) : undefined;
+
+  return translated && translated !== key ? translated : '';
+}
 
 /*
  *  Descriptions By Task Id
@@ -330,15 +286,15 @@ export const extendedDescriptions = {
 export const descriptionsByTaskId = {
   // "letter": { header: "ROAR-Letter Sound Matching (ROAR-Letter)", description: " assesses knowledge of letter names and sounds." },
   pa: {
-    header: 'ROAR-Phonological Awareness (ROAR-Phoneme)',
+    header: 'ROAR-Phonological Awareness',
     description: ' measures the ability to hear and manipulate the individual sounds within words.',
   },
   swr: {
-    header: 'ROAR-Single Word Recognition (ROAR-Word)',
+    header: 'ROAR-Single Word Recognition',
     description: ' assesses decoding skills at the word level.',
   },
   sre: {
-    header: 'ROAR-Sentence Reading Efficiency (ROAR-Sentence)',
+    header: 'ROAR-Sentence Reading Efficiency',
     description: ' assesses reading fluency at the sentence level.',
   },
 };
@@ -402,7 +358,7 @@ export const excludeFromScoringTasks = [
   ...LEVANTE_TASK_IDS_NO_SCORES,
 ];
 
-export const includeReliabilityFlagsOnExport = ['Word', 'Letter', 'Phoneme', 'Sentence'];
+export const includeReliabilityFlagsOnExport = ['Word', 'Letter', 'Phoneme', 'Sentence', 'Palabra', 'Frase'];
 
 /*
  *  Tasks to Display Percent Correct
@@ -413,8 +369,8 @@ export const tasksToDisplayPercentCorrect = [
   'letter-en-ca',
   'phonics',
   'cva',
-  'swr-es',
   'pa-es',
+  'swr-es',
   'morphology',
   'vocab',
   'trog',
@@ -467,17 +423,7 @@ export const subskillTasks = ['roam-alpaca', ...roamFluencyTasks];
  *  Support Level Colors
  *  Colors corresponding to each support level.
  */
-export const supportLevelColors = {
-  above: 'green',
-  Green: 'green',
-  some: '#edc037',
-  Yellow: '#edc037',
-  below: '#c93d82',
-  Pink: '#c93d82',
-  Optional: '#03befc',
-  Assessed: '#A4DDED',
-  Unreliable: '#d6b8c7',
-};
+import { SCORE_SUPPORT_LEVEL_COLORS } from '@/constants/scores';
 
 export const progressTags = {
   Optional: {
@@ -577,7 +523,21 @@ export const roamFluencySubskillHeaders = {
   numAttempted: 'Num Attempted',
 };
 
+export const updatedNormVersions = {
+  swr: 7,
+  'swr-es': 1,
+  sre: 4,
+  'sre-es': 1,
+  pa: 4,
+};
+
 function getOrdinalSuffix(n) {
+  const { locale } = useI18n();
+  // If the active language is Spanish, just use º
+  if (locale.value === 'es' || locale.value === 'es-CO') {
+    return 'º';
+  }
+
   if (n >= 11 && n <= 13) return 'th';
 
   switch (n % 10) {
@@ -593,7 +553,7 @@ function getOrdinalSuffix(n) {
 }
 
 export function getGradeToDisplay(grade) {
-  const gradeValue = getGrade(grade);
+  const gradeLevel = getGrade(grade);
 
   if (grade === 'Pre-K') {
     return 'Prekindergarten';
@@ -603,17 +563,17 @@ export function getGradeToDisplay(grade) {
     return 'Kindergarten';
   }
 
-  if (typeof gradeValue !== 'number' || gradeValue < 0) {
+  if (typeof gradeLevel !== 'number' || gradeLevel < 0) {
     console.error('Invalid grade provided'); // For Sentry logging
     return null;
   }
 
-  const suffix = getOrdinalSuffix(gradeValue);
-  return `${gradeValue}${suffix} Grade`;
+  const suffix = getOrdinalSuffix(gradeLevel);
+  return `${gradeLevel}${suffix} Grade`;
 }
 
 export function getGradeWithSuffix(grade) {
-  const gradeValue = getGrade(grade);
+  const gradeLevel = getGrade(grade);
 
   if (grade === 'Pre-K') {
     return 'Pre-K';
@@ -627,21 +587,37 @@ export function getGradeWithSuffix(grade) {
     return 'K';
   }
 
-  if (typeof gradeValue !== 'number' || gradeValue < 1) {
+  if (typeof gradeLevel !== 'number' || gradeLevel < 1) {
     return grade;
   }
 
-  return `${gradeValue}${getOrdinalSuffix(gradeValue)}`;
+  return `${gradeLevel}${getOrdinalSuffix(gradeLevel)}`;
 }
-/*
- *  Get Support Level
- *  Function to take scores, taskId, and grade and return the proper support category for the run.
+
+/**
+ * Returns the color to be used for a dial based on grade, percentile, raw score, and task ID.
+ *
+ * @param {string} grade - The grade level of the student (e.g., 'K', '1', 'Pre-K').
+ * @param {number|null} percentile - The percentile score for the student (may be null).
+ * @param {number|null} rawScore - The raw score for the student (may be null).
+ * @param {string} taskId - The ID of the task (e.g., 'letter', 'phonics').
+ * @param {any} [optional=null] - Optional additional data for scoring.
+ * @param {string|null} [scoringVersion=null] - Optional scoring version identifier.
+ * @returns {string} The CSS color variable to use for the dial.
  */
-export const getDialColor = (grade, percentile, rawScore, taskId) => {
-  if (taskId === 'phonics') {
-    return 'var(--gray-500)';
+export const getDialColor = (grade, percentile, rawScore, taskId, optional = null, scoringVersion = null) => {
+  if (taskId === 'letter' || taskId === 'letter-en-ca' || taskId === 'phonics') {
+    return '#3b82f6'; // blue-500
   }
-  const { tag_color } = getSupportLevel(grade, percentile, rawScore, taskId);
+
+  // For grades < 6, we require a valid percentile
+  const gradeLevel = getGrade(grade);
+  if (gradeLevel < 6 && (percentile === null || percentile === undefined)) {
+    return null;
+  }
+
+  const { tag_color } = getSupportLevel(grade, percentile, rawScore, taskId, optional, scoringVersion);
+
   return tag_color;
 };
 
@@ -649,31 +625,35 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = 
   let support_level = null;
   let tag_color = null;
 
+  const gradeLevel = getGrade(grade);
+
   if (rawScore === undefined) {
     return {
       support_level,
       tag_color,
     };
   }
+
   if (optional) {
     return {
       support_level: 'Optional',
-      tag_color: supportLevelColors.optional,
+      tag_color: undefined,
     };
   }
+
   if (
-    (tasksToDisplayPercentCorrect.includes(taskId) ||
-      tasksToDisplayCorrectIncorrectDifference.includes(taskId) ||
+    ((tasksToDisplayPercentCorrect.includes(taskId) && !(taskId === 'swr-es' && scoringVersion >= 1)) ||
       tasksToDisplayTotalCorrect.includes(taskId)) &&
     tasksToDisplayGradeEstimate.includes(taskId) &&
     rawScore !== undefined
   ) {
     return {
       support_level: 'Raw Score',
-      tag_color: supportLevelColors.Assessed,
+      tag_color: SCORE_SUPPORT_LEVEL_COLORS.ASSESSED,
     };
   }
-  if (percentile !== undefined && getGrade(grade) < 6) {
+  // Try percentile-based scoring for grades < 6
+  if (percentile !== null && percentile !== undefined && gradeLevel < 6) {
     const isUpdatedSre = taskId === 'sre' && scoringVersion >= 4;
     const isUpdatedSreEs = taskId === 'sre-es' && scoringVersion >= 1;
     const isUpdatedSwr = taskId === 'swr' && scoringVersion >= 7;
@@ -682,28 +662,38 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = 
     const [achievedCutOff, developingCutOff] = useUpdatedNorms ? [40, 20] : [50, 25];
     if (percentile >= achievedCutOff) {
       support_level = 'Achieved Skill';
-      tag_color = supportLevelColors.above;
+      tag_color = SCORE_SUPPORT_LEVEL_COLORS.ABOVE;
     } else if (percentile > developingCutOff && percentile < achievedCutOff) {
       support_level = 'Developing Skill';
-      tag_color = supportLevelColors.some;
+      tag_color = SCORE_SUPPORT_LEVEL_COLORS.SOME;
     } else {
       support_level = 'Needs Extra Support';
-      tag_color = supportLevelColors.below;
+      tag_color = SCORE_SUPPORT_LEVEL_COLORS.BELOW;
     }
-  } else if (rawScore !== undefined && grade >= 6) {
+  }
+
+  // For grades >= 6 or if percentile is not available for grades >= 6
+  // Use raw score if:
+  // 1. Grade >= 6, OR
+  // 2. Grade < 6 but percentile is not available
+  if (
+    rawScore !== null &&
+    rawScore !== undefined &&
+    (gradeLevel >= 6 || percentile === null || percentile === undefined)
+  ) {
     const { above, some } = getRawScoreThreshold(taskId, scoringVersion);
 
     // Only return support_level and tag_color if the thresholds are not null
     if (above != null && some != null) {
       if (rawScore >= above) {
         support_level = 'Achieved Skill';
-        tag_color = supportLevelColors.above;
+        tag_color = SCORE_SUPPORT_LEVEL_COLORS.ABOVE;
       } else if (rawScore > some && rawScore < above) {
         support_level = 'Developing Skill';
-        tag_color = supportLevelColors.some;
+        tag_color = SCORE_SUPPORT_LEVEL_COLORS.SOME;
       } else {
         support_level = 'Needs Extra Support';
-        tag_color = supportLevelColors.below;
+        tag_color = SCORE_SUPPORT_LEVEL_COLORS.BELOW;
       }
     }
   }
@@ -715,13 +705,13 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = 
 
 export function getTagColor(supportLevel) {
   if (supportLevel === 'Needs Extra Support') {
-    return supportLevelColors.below;
+    return SCORE_SUPPORT_LEVEL_COLORS.BELOW;
   } else if (supportLevel === 'Developing Skill') {
-    return supportLevelColors.some;
+    return SCORE_SUPPORT_LEVEL_COLORS.SOME;
   } else if (supportLevel === 'Achieved Skill') {
-    return supportLevelColors.above;
+    return SCORE_SUPPORT_LEVEL_COLORS.ABOVE;
   }
-  return supportLevelColors.Assessed;
+  return SCORE_SUPPORT_LEVEL_COLORS.ASSESSED;
 }
 
 const ALLOWED_SCORE_FIELD_TYPES = [
@@ -785,20 +775,20 @@ const SCORE_FIELD_MAPPINGS = {
   },
   pa: {
     percentile: {
-      new: (grade) => (grade < 6 ? 'percentile' : 'sprPercentile'),
-      legacy: (grade) => (grade < 6 ? 'percentile' : 'sprPercentile'),
+      new: (gradeLevel) => (gradeLevel < 6 ? 'percentile' : 'sprPercentile'),
+      legacy: (gradeLevel) => (gradeLevel < 6 ? 'percentile' : 'sprPercentile'),
     },
     percentileDisplay: {
-      new: (grade) => (grade < 6 ? 'percentile' : 'sprPercentileString'),
-      legacy: (grade) => (grade < 6 ? 'percentile' : 'sprPercentileString'),
+      new: (gradeLevel) => (gradeLevel < 6 ? 'percentile' : 'sprPercentileString'),
+      legacy: (gradeLevel) => (gradeLevel < 6 ? 'percentile' : 'sprPercentileString'),
     },
     standardScore: {
-      new: (grade) => (grade < 6 ? 'standardScore' : 'sprStandardScore'),
-      legacy: (grade) => (grade < 6 ? 'standardScore' : 'sprStandardScore'),
+      new: (gradeLevel) => (gradeLevel < 6 ? 'standardScore' : 'sprStandardScore'),
+      legacy: (gradeLevel) => (gradeLevel < 6 ? 'standardScore' : 'sprStandardScore'),
     },
     standardScoreDisplay: {
-      new: (grade) => (grade < 6 ? 'standardScore' : 'sprStandardScoreString'),
-      legacy: (grade) => (grade < 6 ? 'standardScore' : 'sprStandardScoreString'),
+      new: (gradeLevel) => (gradeLevel < 6 ? 'standardScore' : 'sprStandardScoreString'),
+      legacy: (gradeLevel) => (gradeLevel < 6 ? 'standardScore' : 'sprStandardScoreString'),
     },
     rawScore: {
       new: 'roarScore',
@@ -808,19 +798,19 @@ const SCORE_FIELD_MAPPINGS = {
   sre: {
     percentile: {
       new: 'percentile',
-      legacy: (grade) => (grade < 6 ? 'tosrecPercentile' : 'sprPercentile'),
+      legacy: (gradeLevel) => (gradeLevel < 6 ? 'tosrecPercentile' : 'sprPercentile'),
     },
     percentileDisplay: {
       new: 'percentile',
-      legacy: (grade) => (grade < 6 ? 'tosrecPercentile' : 'sprPercentile'),
+      legacy: (gradeLevel) => (gradeLevel < 6 ? 'tosrecPercentile' : 'sprPercentile'),
     },
     standardScore: {
       new: 'standardScore',
-      legacy: (grade) => (grade < 6 ? 'tosrecSS' : 'sprStandardScore'),
+      legacy: (gradeLevel) => (gradeLevel < 6 ? 'tosrecSS' : 'sprStandardScore'),
     },
     standardScoreDisplay: {
       new: 'standardScore',
-      legacy: (grade) => (grade < 6 ? 'tosrecSS' : 'sprStandardScore'),
+      legacy: (gradeLevel) => (gradeLevel < 6 ? 'tosrecSS' : 'sprStandardScore'),
     },
     rawScore: {
       new: 'sreScore',
@@ -1089,12 +1079,77 @@ export const getRawScoreRange = (taskId) => {
   return null;
 };
 
+/**
+ * Returns the distribution chart path based on grade and task scoring versions.
+ *
+ * @param {number|string} grade - Student's grade level
+ * @param {Object.<string, number>} taskScoringVersions - Map of task IDs to scoring versions
+ * @param {string} [language='en'] - Language code ('en' or 'es')
+ * @returns {string} Full URL to the distribution chart asset
+ *
+ * @description
+ * - All applicable tasks meet thresholds → v2 chart
+ * - All below thresholds → v1 chart
+ * - Mixed → no-cutoffs chart
+ * - Special case: For Spanish tasks 'swr-es' and 'sre-es', versions < 1 are considered "unnormed" and should be excluded.
+ * - grade >= 6 → secondary chart only
+ */
+export const getDistributionChartPath = (grade, taskScoringVersions, language = 'en') => {
+  const tasks = Object.entries(taskScoringVersions);
+  // Filter to only tasks that have updated norms and exclude unnormed Spanish tasks (version < 1)
+  // isDistributionChartEnabled ensures there are in-progress/completed normed tasks
+  const applicableTasks = tasks.filter(
+    ([taskId, version]) => taskId in updatedNormVersions && !(['swr-es', 'sre-es'].includes(taskId) && version < 1),
+  );
+
+  const pickPath = (baseKey) => {
+    return SCORE_REPORT_DISTRIBUTION_CHART_PATHS[`${baseKey}${language === 'en' ? 'En' : 'Es'}`];
+  };
+
+  // Default to admins with mixed scoring versions or undefined grades
+  let path = pickPath('noCutoffs');
+
+  if (grade == null || grade === '' || Number.isNaN(Number(grade))) return path;
+
+  if (parseInt(grade) < 6) {
+    const hasNoUpdatedNorms = applicableTasks.every(([taskId, version]) => version < updatedNormVersions[taskId]);
+    const hasAllUpdatedNorms = applicableTasks.every(([taskId, version]) => version >= updatedNormVersions[taskId]);
+
+    if (hasAllUpdatedNorms) {
+      path = pickPath('elementaryV2');
+    } else if (hasNoUpdatedNorms) {
+      path = pickPath('elementaryV1');
+    }
+  } else {
+    path = pickPath('secondaryV1');
+  }
+
+  return path;
+};
+
 export const taskInfoById = {
   phonics: {
     color: '#4B7BE5',
     header: 'ROAR-PHONICS',
     subheader: 'Phonics Assessment',
-    desc: 'ROAR - Phonics evaluates a students understanding of letter-sound relationships and their ability to decode words using phonics skills. The assessment covers various phonics patterns including CVC words, digraphs, blends, r-controlled vowels, silent e, and vowel teams. Each category measures the students proficiency in recognizing and applying specific phonics patterns, which is essential for developing strong reading skills.',
+    desc: `Phonics evaluates a student’s understanding of letter–sound relationships and their ability to decode words using phonics skills. In this assessment, students hear an audio recording of a nonword and select the matching nonword from four choices. The assessment covers several phonics patterns including CVC words, digraphs, blends, r-controlled vowels, silent e, and vowel teams. Each category reflects a specific type of phonics knowledge that helps students recognize and apply patterns essential for strong reading skills. Descriptions and example words for each pattern are provided below.
+
+<ul class="list-disc ml-6 mt-3 space-y-2">
+  <li><strong>CVC:</strong> Three-letter consonant–vowel–consonant pattern words (e.g., <em>jad</em>)</li>
+  <li><strong>Digraph:</strong> Two letters that work together to represent one sound (e.g., <em>ch</em> in <em>chog</em>)</li>
+  <li><strong>Initial Blend:</strong> Consonant clusters at the beginning of a word where each letter’s sound can be heard (e.g., <em>bl</em> in <em>blazz</em>)</li>
+  <li><strong>Triple Blend:</strong> Three-consonant clusters at the beginning of a word where all sounds are heard (e.g., <em>str</em> in <em>stren</em>)</li>
+  <li><strong>Final Blend:</strong> Consonant clusters at the end of a word where each letter’s sound can be heard (e.g., <em>sk</em> in <em>visk</em>)</li>
+
+  <li><strong>R-Controlled:</strong> A vowel followed by the letter r, which changes the vowel’s sound (e.g., <em>or</em> in <em>vort</em>)</li>
+
+  <li><strong>R-Cluster:</strong> A three-letter cluster containing two vowels and the letter r, where the vowel sound is influenced by r (e.g., <em>-oar</em> in <em>zoar</em>, <em>-ear</em> in <em>kear</em>)</li>
+
+  <li><strong>Silent E:</strong> Word ending with a silent e, which causes the middle vowel to be pronounced with a long vowel sound (e.g., <em>o-e</em> in <em>koze</em>)</li>
+
+  <li><strong>Vowel Team:</strong> Two or more vowels that work together to represent one vowel sound (e.g., <em>oa</em> in <em>woab</em>)</li>
+</ul>`,
+
     definitions: [
       {
         header: 'WHAT ARE PHONICS PATTERNS?',
@@ -1219,7 +1274,7 @@ export const taskInfoById = {
     color: '#E19834',
     header: 'ROAR-ReadAloud',
     subheader: 'ReadAloud',
-    desc: 'ROAR-ReadAloud',
+    desc: 'The read-aloud assessment records students’ responses as they read words aloud. The student is shown a nonword and asked to read it aloud, allowing us to evaluate decoding accuracy without relying on memorized words. Scores are not immediately available as student recordings need to be human-scored. The read-aloud assessment is currently under active development alongside the phonics assessment, and support for scoring is still limited at this time.',
   },
   'fluency-arf': {
     header: 'ROAM Math Facts',

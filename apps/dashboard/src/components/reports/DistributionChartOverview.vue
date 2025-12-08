@@ -3,9 +3,10 @@
 </template>
 
 <script setup>
-import { computed, onMounted } from 'vue';
+import { computed, onMounted, watch } from 'vue';
 import embed from 'vega-embed';
 import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery';
+import { SCORE_SUPPORT_LEVEL_COLORS, MATCHING_SUPPORT_LEVELS } from '@/constants/scores';
 
 const props = defineProps({
   initialized: {
@@ -18,7 +19,7 @@ const props = defineProps({
   },
   runs: {
     type: Array,
-    required: true,
+    required: false,
   },
   orgType: {
     type: String,
@@ -47,6 +48,11 @@ const props = defineProps({
 const { data: tasksDictionary, isLoading: isLoadingTasksDictionary } = useTasksDictionaryQuery();
 
 const supportLevelsOverview = computed(() => {
+  if (props.orgType === 'district') {
+    return Object.entries(props.runs)
+      .filter(([support_level]) => MATCHING_SUPPORT_LEVELS[support_level] != undefined)
+      .map(([support_level, total]) => ({ category: MATCHING_SUPPORT_LEVELS[support_level], value: total.total }));
+  }
   if (!props.runs) return [];
   let values = {};
   for (const { scores } of props.runs) {
@@ -74,7 +80,7 @@ const overviewDistributionChart = computed(() => {
     spacing: 10,
     background: null,
     title: {
-      text: `${tasksDictionary.value[props.taskId].publicName ?? props.taskId}`,
+      text: `${tasksDictionary.value[props.taskId]?.publicName ?? props.taskId}`,
       subtitle: `Count by Support Level`,
       anchor: 'middle',
       fontSize: 20,
@@ -96,7 +102,7 @@ const overviewDistributionChart = computed(() => {
         title: 'Support Level',
         scale: {
           domain: ['Needs Extra Support', 'Developing Skill', 'Achieved Skill'],
-          range: ['rgb(201, 61, 130)', 'rgb(237, 192, 55)', 'green'],
+          range: [SCORE_SUPPORT_LEVEL_COLORS.BELOW, SCORE_SUPPORT_LEVEL_COLORS.SOME, SCORE_SUPPORT_LEVEL_COLORS.ABOVE],
         },
         legend: false,
       },
@@ -112,9 +118,25 @@ const overviewDistributionChart = computed(() => {
 });
 
 const draw = async () => {
-  let chartSpecSupport = overviewDistributionChart.value;
+  const chartSpecSupport = overviewDistributionChart.value;
+
+  // Don't draw if chart spec is empty (still loading)
+  if (!chartSpecSupport || Object.keys(chartSpecSupport).length === 0) {
+    return;
+  }
+
   await embed(`#roar-dist-chart-overview-${props.taskId}`, chartSpecSupport);
 };
+
+watch(
+  [() => overviewDistributionChart.value, () => props.runs, () => props.orgType],
+  () => {
+    if (props.taskId !== 'letter') {
+      draw();
+    }
+  },
+  { deep: true, immediate: true },
+);
 
 onMounted(() => {
   if (props.taskId !== 'letter') {

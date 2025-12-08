@@ -154,3 +154,11 @@ async function startTask(selectedAdmin) {
   outline: none;
 }
 </style>
+
+<style scoped>
+:deep(p.speechbubble-text-morphology),
+:deep(p.mid-centered-text),
+:deep(div#jspsych-audio-multi-response-prompt > p.item-stimulus) {
+  line-height: inherit;
+}
+</style>

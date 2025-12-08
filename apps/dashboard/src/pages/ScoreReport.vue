@@ -1,5 +1,5 @@
 <template>
-  <main class="container main">
+  <main class="container main" data-cy="score-report">
     <section class="main-body">
       <div>
         <section>
@@ -9,46 +9,31 @@
           </div>
 
           <div v-if="orgData && administrationData" id="at-a-glance-charts">
-            <div class="flex justify-content-between align-items-center">
-              <div class="flex gap-2 flex-column align-items-start">
-                <div>
-                  <div class="text-xs font-light text-gray-500 uppercase">{{ props.orgType }} Score Report</div>
-                  <div class="report-title">
-                    {{ _toUpper(orgData?.name) }}
-                  </div>
-                </div>
-                <div>
-                  <div class="text-xs font-light text-gray-500 uppercase">Administration</div>
-                  <div class="mb-4 administration-name">
-                    {{ _toUpper(displayName) }}
-                  </div>
-                </div>
-              </div>
-              <div class="flex gap-1 flex-column align-items-end">
-                <div class="flex flex-row gap-4 align-items-center" data-html2canvas-ignore="true">
-                  <div class="flex flex-row text-sm text-gray-600 uppercase">VIEW</div>
-                  <PvSelectButton
-                    v-model="reportView"
-                    v-tooltip.top="'View different report'"
-                    :options="reportViews"
-                    option-disabled="constant"
-                    :allow-empty="false"
-                    option-label="name"
-                    class="flex my-2 select-button"
-                    @change="handleViewChange"
-                  >
-                  </PvSelectButton>
-                </div>
-
-                <div v-if="!isLoadingAssignments" class="flex gap-2 mr-5 flex-column">
+            <ReportHeader
+              :org-type="props.orgType"
+              :org-name="_toUpper(orgData?.name)"
+              :administration-name="_toUpper(displayName)"
+              report-type="Score"
+              :report-view="reportView"
+              :report-views="reportViews"
+              @view-change="handleViewChange"
+            >
+              <template #export-buttons>
+                <div
+                  v-if="!isLoadingAssignments && !isLoadingDistrictSupportCategories"
+                  class="flex gap-2 mr-5 flex-column"
+                >
                   <PvButton
+                    v-if="orgType !== 'district'"
                     class="flex flex-row p-2 text-sm text-white border-none bg-primary border-round h-2rem hover:bg-red-900"
                     :icon="!exportLoading ? 'pi pi-download mr-2' : 'pi pi-spin pi-spinner mr-2'"
                     label="Export Combined Reports"
                     @click="exportData({ includeProgress: true })"
                   />
                   <PvButton
+                    v-if="orgType !== 'district' || !isEmptyDistrictSupportCategories"
                     class="flex flex-row p-2 mb-2 text-sm text-white border-none bg-primary border-round h-2rem hover:bg-red-900"
+                    :class="orgType === 'district' && !isEmptyDistrictSupportCategories ? 'mt-4' : ''"
                     :icon="!exportLoading ? 'pi pi-download mr-2' : 'pi pi-spin pi-spinner mr-2'"
                     :disabled="exportLoading"
                     label="Export To Pdf"
@@ -56,19 +41,28 @@
                     @click="handleExportToPdf"
                   />
                 </div>
-              </div>
-            </div>
-            <div v-if="isLoadingAssignments" class="loading-wrapper">
+              </template>
+            </ReportHeader>
+            <div v-if="isLoadingAssignments || isLoadingDistrictSupportCategories" class="loading-wrapper">
               <AppSpinner style="margin: 1rem 0rem" />
               <div class="text-sm font-light text-gray-600 uppercase">Loading Overview Charts</div>
             </div>
-            <div v-if="sortedAndFilteredTaskIds?.length > 0" class="py-3 mb-2 text-left bg-gray-100">
+            <div
+              v-if="
+                !isLoadingAssignments && !isLoadingDistrictSupportCategories && sortedAndFilteredTaskIds?.length > 0
+              "
+              class="py-3 mb-2 text-left bg-gray-100"
+            >
               <div class="overview-wrapper">
                 <div class="chart-wrapper">
                   <div v-for="taskId of sortedAndFilteredTaskIds" :key="taskId" style="width: 33%">
                     <div class="distribution-overview-wrapper">
                       <DistributionChartOverview
-                        :runs="computeAssignmentAndRunData.runsByTaskId[taskId]"
+                        :runs="
+                          props.orgType === 'district'
+                            ? aggregatedDistrictSupportCategories[taskId]
+                            : computeAssignmentAndRunData.runsByTaskId[taskId]
+                        "
                         :initialized="initialized"
                         :task-id="taskId"
                         :org-type="props.orgType"
@@ -95,26 +89,55 @@
               >
                 <div class="flex align-items-center">
                   <div class="legend-entry">
-                    <div class="circle" :style="`background-color: ${supportLevelColors.below};`" />
+                    <div class="circle" :style="`background-color: ${SCORE_SUPPORT_LEVEL_COLORS.BELOW};`" />
                     <div>
                       <div>Needs Extra Support</div>
                     </div>
                   </div>
                   <div class="legend-entry">
-                    <div class="circle" :style="`background-color: ${supportLevelColors.some};`" />
+                    <div class="circle" :style="`background-color: ${SCORE_SUPPORT_LEVEL_COLORS.SOME};`" />
                     <div>
                       <div>Developing Skill</div>
                     </div>
                   </div>
                   <div class="legend-entry">
-                    <div class="circle" :style="`background-color: ${supportLevelColors.above};`" />
+                    <div class="circle" :style="`background-color: ${SCORE_SUPPORT_LEVEL_COLORS.ABOVE};`" />
                     <div>
                       <div>Achieved Skill</div>
                     </div>
                   </div>
                 </div>
-                <div class="my-1 text-xs font-light text-gray-500 uppercase">Legend</div>
+                <!-- One/all of word, sentence, phoneme have been taken, but additionally they have other assessments that do not show charts (we want to say we only show charts for validated assessments)  -->
+                <div v-if="!isEmptyDistrictSupportCategories && props.orgType === 'district'">
+                  <p
+                    v-if="assignedNormedTaskIds && assignedTaskIds.length > assignedNormedTaskIds.length"
+                    class="text-center text-sm font-bold px-4"
+                  >
+                    In this district-level report, visualizations are available for foundational ROAR assessments (Word,
+                    Sentence, and Phoneme) to give you clear, reliable insights on these foundational skills.
+                  </p>
+                  <p class="text-center align-items-center text-sm font-bold px-4">
+                    View school-level or classroom-level reports to see student-level data and information about other
+                    assessments.
+                  </p>
+                </div>
               </div>
+            </div>
+            <div
+              v-if="!isLoadingAssignments && !isLoadingDistrictSupportCategories && isEmptyDistrictSupportCategories"
+              class="justify-content-center surface-100 p-2"
+            >
+              <p class="text-center text-sm font-bold px-4">
+                {{
+                  assignedNormedTaskIds.length === 0
+                    ? 'In this district-level report, visualizations are only available for foundational ROAR assessments (Word, Sentence, and Phoneme). None of these are currently assigned within your district.'
+                    : 'Visualizations will appear once students complete Word, Sentence, and/or Phoneme assessments.'
+                }}
+              </p>
+              <p class="text-center align-items-center text-sm font-bold px-4">
+                View school-level or classroom-level reports to see student-level data and information about other
+                assessments.
+              </p>
             </div>
           </div>
         </section>
@@ -124,19 +147,122 @@
           <AppSpinner style="margin-bottom: 1rem" />
           <span class="text-sm font-light text-gray-600 uppercase">Loading Administration Datatable</span>
         </div>
-        <!-- Main table -->
 
-        <div v-if="assignmentData?.length ?? 0 > 0">
+        <!-- Bulk Export Modal -->
+        <AppDialog :is-enabled="exportModalEnabled" @modal-closed="exportModalEnabled = false">
+          <template #header>
+            <template v-if="exportModalStep !== EXPORT_MODAL_STEP.COMPLETED">
+              <h1 class="p-0 m-0 font-semibold text-md">PDF Export</h1>
+            </template>
+          </template>
+
+          <div v-if="exportModalStep === EXPORT_MODAL_STEP.WARNING" class="">
+            <p class="mt-0">
+              This export generates a printer-friendly score report. Charts and visualizations will not be included in
+              the PDF.
+            </p>
+            <p>Please note: The export may take a few moments.</p>
+            <p>Do not close this tab or navigate away until the export is complete.</p>
+          </div>
+
+          <div v-else-if="exportModalStep === EXPORT_MODAL_STEP.PROGRESS">
+            <p class="mt-0">Your export is in progress and may take some time.</p>
+
+            <div class="pt-2">
+              <PvProgressBar :value="exportProgress.percentage" class="mb-2" />
+
+              <div class="flex mt-4 mb-2 justify-content-between align-items-center">
+                <span class="text-sm text-gray-600"> {{ exportProgress.completed }} / {{ exportProgress.total }}</span>
+
+                <span class="text-sm text-gray-600">
+                  {{
+                    exportProgress.currentStudent
+                      ? `Processing: ${exportProgress.currentStudent}`
+                      : 'Preparing export...'
+                  }}
+                </span>
+              </div>
+
+              <div v-if="exportProgress.errors.length > 0" class="p-3 mt-4 rounded border border-gray-200 border-solid">
+                <div class="flex gap-2">
+                  <i class="text-red-600 pi pi-exclamation-circle"></i>
+                  <h4 class="mt-0 mb-1 text-sm font-semibold text-red-600">Export Errors</h4>
+                </div>
+
+                <p class="text-sm text-red-600">
+                  Errors have occurred while exporting the score reports. Please check the errors below:
+                </p>
+
+                <ul class="text-sm text-red-600">
+                  <li v-for="error in exportProgress.errors" :key="error.studentId">
+                    {{ error.studentName }}: {{ error.message }}
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <div v-else-if="exportModalStep === EXPORT_MODAL_STEP.COMPLETED">
+            <div class="flex text-center flex-column align-items-center">
+              <i class="mb-2 text-green-600 pi pi-check-circle" style="font-size: 2rem"></i>
+              <h1 class="p-0 m-0 mb-3 font-semibold text-md">Export complete</h1>
+
+              <p class="m-0">
+                Your export has finished{{ exportProgress.errors.length ? ' with some errors' : '' }}. The ZIP download
+                should have started automatically.
+              </p>
+
+              <div
+                v-if="exportProgress.errors.length > 0"
+                class="p-3 mt-4 w-full rounded border border-gray-200 border-solid"
+              >
+                <div class="flex gap-2">
+                  <i class="text-red-600 pi pi-exclamation-circle"></i>
+                  <h4 class="mt-0 mb-1 text-sm font-semibold text-red-600">Export Errors</h4>
+                </div>
+                <p class="text-sm text-red-600">The following items failed to export:</p>
+                <ul class="text-sm text-left text-red-600">
+                  <li v-for="error in exportProgress.errors" :key="error.studentId">
+                    {{ error.studentName }}: {{ error.message }}
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <template #footer>
+            <div v-if="exportModalStep === EXPORT_MODAL_STEP.WARNING" class="flex gap-2 p-3">
+              <PvButton label="Cancel" class="p-button-text" @click="exportModalEnabled = false" />
+              <PvButton
+                label="Continue"
+                icon="pi pi-arrow-right"
+                class="text-white border-none bg-primary border-round hover:bg-red-900"
+                @click="proceedExportFromModal"
+              />
+            </div>
+            <div
+              v-else-if="exportModalStep === EXPORT_MODAL_STEP.COMPLETED"
+              class="flex gap-2 w-full justify-content-center"
+            >
+              <PvButton label="Close" class="w-full p-button-text" @click="exportModalEnabled = false" />
+            </div>
+          </template>
+        </AppDialog>
+
+        <!-- Main table -->
+        <div v-if="assignmentData?.length ?? 0 > 0" data-cy="score-report__table">
           <RoarDataTable
+            v-if="orgType !== 'district'"
             :data="filteredTableData"
             :columns="scoreReportColumns"
             :total-records="filteredTableData?.length"
             :page-limit="pageLimit"
             :loading="isLoadingAssignments || isFetchingAssignments"
             :groupheaders="true"
-            data-cy="roar-data-table"
+            test-id="score-report__data-table"
             @export-all="exportData({ selectedRows: $event })"
             @export-selected="exportData({ selectedRows: $event })"
+            @export-pdf-reports="openExportModal($event)"
           >
             <span>
               <label for="view-columns" class="view-label">View</label>
@@ -150,34 +276,37 @@
               />
             </span>
           </RoarDataTable>
+          <template v-else>
+            <div class="my-6 text-center">Score report tables are only available at the school level and below</div>
+          </template>
         </div>
-        <div v-if="!isLoadingAssignments" class="legend-container">
+        <div v-if="!isLoadingAssignments && orgType !== 'district'" class="legend-container">
           <div class="legend-entry">
-            <div class="circle tooltip" :style="`background-color: ${supportLevelColors.below};`" />
+            <div class="circle tooltip" :style="`background-color: ${SCORE_SUPPORT_LEVEL_COLORS.BELOW};`" />
             <div>
               <div>Needs Extra Support</div>
             </div>
           </div>
           <div class="legend-entry">
-            <div class="circle tooltip" :style="`background-color: ${supportLevelColors.some};`" />
+            <div class="circle tooltip" :style="`background-color: ${SCORE_SUPPORT_LEVEL_COLORS.SOME};`" />
             <div>
               <div>Developing Skill</div>
             </div>
           </div>
           <div class="legend-entry">
-            <div class="circle tooltip" :style="`background-color: ${supportLevelColors.above};`" />
+            <div class="circle tooltip" :style="`background-color: ${SCORE_SUPPORT_LEVEL_COLORS.ABOVE};`" />
             <div>
               <div>Achieved Skill</div>
             </div>
           </div>
           <div class="legend-entry">
-            <div class="circle tooltip" :style="`background-color: ${supportLevelColors.Assessed}`" />
+            <div class="circle tooltip" :style="`background-color: ${SCORE_SUPPORT_LEVEL_COLORS.ASSESSED}`" />
             <div>
               <div>Assessed</div>
             </div>
           </div>
         </div>
-        <div class="legend-description">
+        <div v-if="orgType !== 'district'" class="legend-description">
           Students are classified into three support groups based on nationally-normed percentiles. Blank spaces
           indicate that the assessment was not completed. <br />
           Pale colors indicate that the score may not reflect the reader’s ability because responses were made too
@@ -189,31 +318,45 @@
           <AppSpinner style="margin: 1rem 0rem" />
           <div class="text-sm font-light text-gray-600 uppercase">Loading Task Reports</div>
         </div>
+        <template v-if="!isLoadingAssignments && !isLoadingTasksDictionary && !isLoadingDistrictSupportCategories">
+          <PvTabs v-model:value="activeTabValue">
+            <PvTabList>
+              <PvTab
+                v-for="(taskId, i) in sortedAndFilteredSubscoreTaskIds"
+                :key="taskId"
+                :value="String(i)"
+                class="text-base"
+              >
+                {{ tasksDictionary[taskId]?.publicName ?? taskId }}
+              </PvTab>
+            </PvTabList>
 
-        <PvTabView :active-index="activeTabIndex">
-          <PvTabPanel
-            v-for="taskId of sortedTaskIds"
-            :key="taskId"
-            :header="tasksDictionary[taskId]?.publicName ?? taskId"
-          >
-            <div :id="'tab-view-' + taskId">
-              <TaskReport
-                v-if="taskId"
-                :computed-table-data="computeAssignmentAndRunData.assignmentTableData"
-                :task-id="taskId"
-                :initialized="initialized"
-                :administration-id="administrationId"
-                :runs="computeAssignmentAndRunData.runsByTaskId[taskId]"
-                :org-type="orgType"
-                :org-id="orgId"
-                :org-info="orgData"
-                :administration-info="administrationData"
-                :task-scoring-versions="getScoringVersions"
-              />
-            </div>
-          </PvTabPanel>
-        </PvTabView>
-        <div id="score-report-closing" class="px-4 py-2 mt-4 bg-gray-200">
+            <PvTabPanels>
+              <PvTabPanel v-for="(taskId, i) in sortedAndFilteredSubscoreTaskIds" :key="taskId" :value="String(i)">
+                <div :id="'tab-view-' + taskId">
+                  <TaskReport
+                    v-if="taskId"
+                    :computed-table-data="computeAssignmentAndRunData.assignmentTableData"
+                    :task-id="taskId"
+                    :initialized="initialized"
+                    :administration-id="administrationId"
+                    :runs="
+                      orgType === 'district'
+                        ? aggregatedDistrictSupportCategories?.[taskId]
+                        : computeAssignmentAndRunData.runsByTaskId?.[taskId]
+                    "
+                    :org-type="orgType"
+                    :org-id="orgId"
+                    :org-info="orgData"
+                    :administration-info="administrationData"
+                    :task-scoring-versions="getScoringVersions"
+                  />
+                </div>
+              </PvTabPanel>
+            </PvTabPanels>
+          </PvTabs>
+        </template>
+        <div id="score-report-closing" class="px-4 py-2 mt-4 bg-gray-100">
           <h2 class="extra-info-title">HOW ROAR SCORES INFORM PLANNING TO PROVIDE SUPPORT</h2>
           <p>
             Each foundational reading skill is a building block of the subsequent skill. Phonological awareness supports
@@ -240,7 +383,7 @@
           <!-- Reintroduce when we have somewhere for this link to go. -->
           <!-- <a href="google.com">Click here</a> for more guidance on steps you can take in planning to support your students. -->
         </div>
-        <div class="px-4 py-2 mb-7 bg-gray-200">
+        <div class="px-4 py-2 mb-7 bg-gray-100">
           <h2 class="extra-info-title">NEXT STEPS</h2>
           <!-- Reintroduce when we have somewhere for this link to go. -->
           <!-- <p>This score report has provided a snapshot of your school's reading performance at the time of administration. By providing classifications for students based on national norms for scoring, you are able to see which students can benefit from varying levels of support. To read more about what to do to support your students, <a href="google.com">read here.</a></p> -->
@@ -278,9 +421,13 @@ import { getGrade } from '@bdelab/roar-utils';
 import PvButton from 'primevue/button';
 import PvConfirmDialog from 'primevue/confirmdialog';
 import PvSelect from 'primevue/select';
-import PvSelectButton from 'primevue/selectbutton';
 import PvTabPanel from 'primevue/tabpanel';
-import PvTabView from 'primevue/tabview';
+import PvTabs from 'primevue/tabs';
+import PvTabList from 'primevue/tablist';
+import PvTab from 'primevue/tab';
+import PvTabPanels from 'primevue/tabpanels';
+import PvProgressBar from 'primevue/progressbar';
+import ReportHeader from '@/components/ReportHeader.vue';
 import { useAuthStore } from '@/store/auth';
 import { getDynamicRouterPath } from '@/helpers/getDynamicRouterPath';
 import useUserType from '@/composables/useUserType';
@@ -292,12 +439,12 @@ import useAdministrationAssignmentsQuery from '@/composables/queries/useAdminist
 import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery';
 import { usePermissions } from '@/composables/usePermissions';
 import { exportCsv } from '@/helpers/query/utils';
+import PdfExportService from '@/services/PdfExport.service';
 import { getTitle } from '@/helpers/query/administrations';
 import {
   taskDisplayNames,
   taskInfoById,
   descriptionsByTaskId,
-  supportLevelColors,
   getSupportLevel,
   tasksToDisplayGraphs,
   rawOnlyTasks,
@@ -313,15 +460,19 @@ import {
   roamAlpacaSubskills,
   getTagColor,
   roamFluencyTasks,
+  roamFluencySubskillHeaders,
 } from '@/helpers/reports';
+import { SCORE_SUPPORT_LEVEL_COLORS, SCORE_REPORT_NEXT_STEPS_DOCUMENT_PATH } from '@/constants/scores';
 import RoarDataTable from '@/components/RoarDataTable';
+import useDistrictSupportCategoriesQuery from '@/composables/queries/useDistrictSupportCategoriesQuery';
 import { CSV_EXPORT_STATIC_COLUMNS } from '@/constants/csvExport';
 import { APP_ROUTES } from '@/constants/routes';
 import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
-import { SCORE_REPORT_NEXT_STEPS_DOCUMENT_PATH } from '@/constants/scores';
 import { LEVANTE_TASK_IDS_NO_SCORES } from '@/constants/levanteTasks';
 import _startCase from 'lodash/startCase';
-
+import AppDialog from '@/components/Dialog/Dialog.vue';
+import { getStudentDisplayName } from '@/helpers/getStudentDisplayName';
+import { getStudentExternalId } from '@/helpers/getStudentExternalId';
 const { userCan, Permissions } = usePermissions();
 
 let TaskReport, DistributionChartOverview;
@@ -329,6 +480,8 @@ let TaskReport, DistributionChartOverview;
 const router = useRouter();
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
+
+const activeTabValue = ref('0');
 
 const props = defineProps({
   administrationId: {
@@ -347,6 +500,13 @@ const props = defineProps({
 
 const initialized = ref(false);
 
+// Modal step constants for export dialog
+const EXPORT_MODAL_STEP = Object.freeze({
+  WARNING: 'warning',
+  PROGRESS: 'progress',
+  COMPLETED: 'completed',
+});
+
 const displayName = computed(() => {
   if (administrationData.value) {
     return getTitle(administrationData.value, isSuperAdmin.value);
@@ -354,7 +514,16 @@ const displayName = computed(() => {
   return 'Fetching administration name...';
 });
 
+const {
+  data: aggregatedDistrictSupportCategories,
+  isLoading: isLoadingDistrictSupportCategories,
+  isFetching: isFetchingDistrictSupportCategories,
+} = useDistrictSupportCategoriesQuery(props.orgId, props.administrationId, {
+  enabled: computed(() => initialized.value && props.orgType === 'district'),
+});
+
 const getScoringVersions = computed(() => {
+  if (!administrationData.value?.assessments) return {};
   const scoringVersions = Object.fromEntries(
     administrationData.value?.assessments.map((assessment) => [
       assessment.taskId,
@@ -381,6 +550,51 @@ const handleViewChange = () => {
 };
 
 const exportLoading = ref(false);
+const bulkPdfExportLoading = ref(false);
+
+// Export progress tracking
+const exportProgress = ref({
+  show: false,
+  completed: 0,
+  total: 0,
+  percentage: 0,
+  currentStudent: null,
+  errors: [],
+});
+
+// Modal-based bulk export (beta)
+const exportModalEnabled = ref(false);
+const exportModalStep = ref(EXPORT_MODAL_STEP.WARNING); // 'warning' | 'progress' | 'completed'
+const selectedRowsForExport = ref([]);
+
+const openExportModal = (selectedRows) => {
+  selectedRowsForExport.value = selectedRows || [];
+  exportModalStep.value = EXPORT_MODAL_STEP.WARNING;
+  exportModalEnabled.value = true;
+  // Reset progress state for fresh run
+  exportProgress.value = {
+    show: false,
+    completed: 0,
+    total: selectedRowsForExport.value.length || 0,
+    percentage: 0,
+    currentStudent: null,
+    errors: [],
+  };
+};
+
+const proceedExportFromModal = async () => {
+  // Switch view inside the modal
+  exportModalStep.value = EXPORT_MODAL_STEP.PROGRESS;
+  exportProgress.value.show = true;
+  exportProgress.value.total = selectedRowsForExport.value.length || 0;
+
+  try {
+    await exportBulkPdfReports(selectedRowsForExport.value);
+  } finally {
+    // Always move to completed state when the export routine finishes (success or with errors)
+    exportModalStep.value = EXPORT_MODAL_STEP.COMPLETED;
+  }
+};
 
 const activeTabIndex = ref(0);
 
@@ -436,6 +650,106 @@ const handleExportToPdf = async () => {
   window.scrollTo(0, 0);
 
   return;
+};
+
+/**
+ * Exports selected student reports as PDFs in bulk
+ *
+ * @param {Array} selectedRows - Array of selected rows to export
+ * @returns {Promise<void>}
+ */
+const exportBulkPdfReports = async (selectedRows) => {
+  if (!selectedRows || selectedRows.length === 0) {
+    console.warn('No students selected for bulk PDF export');
+    return;
+  }
+
+  try {
+    bulkPdfExportLoading.value = true;
+
+    exportProgress.value = {
+      show: true,
+      completed: 0,
+      total: selectedRows.length,
+      percentage: 0,
+      currentStudent: null,
+      errors: [],
+    };
+
+    // Transform selected rows to student objects
+    const students = selectedRows.map((row) => ({
+      id: row.user.userId,
+      firstName: row.user.firstName,
+      lastName: row.user.lastName,
+      username: row.user.username,
+      email: row.user.email,
+      grade: row.user.grade,
+      externalId: getStudentExternalId(row.user),
+    }));
+
+    // URL generator function
+    const urlGenerator = (student) => {
+      return `${window.location.origin}/scores/${props.administrationId}/${props.orgType}/${props.orgId}/user/${student.id}?print=true`;
+    };
+
+    // Filename generator function
+    const filenameGenerator = (student) => {
+      const studentName =
+        `${student.firstName || ''} ${student.lastName || ''}`.trim() || student.username || student.id;
+      const safeStudentName = studentName.replace(/[^a-zA-Z0-9\s-_]/g, '');
+      // Include student ID to ensure uniqueness when students have the same name
+      const safeStudentId = student.id.replace(/[^a-zA-Z0-9-_]/g, '');
+      const fileName = `${safeStudentName}_${safeStudentId}`;
+      return `ROAR-IndividualScoreReport-${fileName}${student.externalId}.pdf`;
+    };
+
+    // ZIP filename
+    const sanitizedOrgName =
+      orgData.value?.name?.replace(/[^a-zA-Z0-9\s-]/g, '').replace(/\s+/g, '-') || 'organization';
+    const sanitizedAdminName =
+      administrationData.value?.name?.replace(/[^a-zA-Z0-9\s-]/g, '').replace(/\s+/g, '-') || 'reports';
+    const zipFilename = `${sanitizedOrgName}-${sanitizedAdminName}-score-reports.zip`;
+
+    await PdfExportService.generateBulkDocuments(students, urlGenerator, filenameGenerator, {
+      zipFilename,
+      debug: false,
+      onProgress: (progress) => {
+        // Get the student name from the students array using the current index
+        const currentStudent = students[progress.completed];
+        let displayName = 'Processing...';
+
+        if (currentStudent) {
+          const { firstName, lastName } = getStudentDisplayName({
+            name: { first: currentStudent.firstName, last: currentStudent.lastName },
+            username: currentStudent.username,
+          });
+          displayName = `${firstName} ${lastName}`.trim() || currentStudent.username || 'Processing...';
+        }
+
+        exportProgress.value = {
+          ...exportProgress.value,
+          completed: progress.completed,
+          total: progress.total,
+          percentage: progress.percentage,
+          currentStudent: displayName,
+          errors: progress.errors,
+        };
+      },
+    });
+
+    // Hide progress after completion, but keep visible longer if there are errors
+    setTimeout(() => {
+      const hasErrors = exportProgress.value.errors && exportProgress.value.errors.length > 0;
+      if (!hasErrors) {
+        exportProgress.value.show = false;
+      }
+    }, 3000);
+  } catch (error) {
+    console.error('Error during bulk PDF export:', error);
+    // TODO: Show error toast
+  } finally {
+    bulkPdfExportLoading.value = false;
+  }
 };
 
 const orderBy = ref([
@@ -508,6 +822,19 @@ const schoolNameDictionary = computed(() => {
   );
 });
 
+const isEmptyDistrictSupportCategories = computed(() => {
+  return (
+    props.orgType === 'district' &&
+    (aggregatedDistrictSupportCategories.value?.status === 'failed' ||
+      aggregatedDistrictSupportCategories.value?.length === 0 ||
+      !aggregatedDistrictSupportCategories.value)
+  );
+});
+
+const assignedTaskIds = computed(() => administrationData.value?.assessments?.map((task) => task.taskId));
+// Currently do not want to show swr-es and sre-es pi charts
+const assignedNormedTaskIds = computed(() => assignedTaskIds.value.filter((id) => ['swr', 'sre', 'pa'].includes(id)));
+
 // Return a faded color if assessment is not reliable
 function returnColorByReliability(assessment, rawScore, support_level, tag_color) {
   if (assessment.reliable !== undefined && !assessment.reliable && assessment.engagementFlags !== undefined) {
@@ -527,8 +854,15 @@ function returnColorByReliability(assessment, rawScore, support_level, tag_color
       tasksToDisplayPercentCorrect.includes(assessment.taskId)
     ) {
       const test = assessment.scores?.raw?.composite?.test;
+      const tasksWithUndefinedPercentCorrect = ['letter', 'letter-es', 'morphology', 'phonics'];
+
+      // @TODO: See if this is still needed by verifying the games that trigger this
+      // When an above task has numAttempted === numIncorrect, numCorrect === undefined.
+      // It does not return percentCorrect, so it incorrectly hides the tag.
       if (
-        (test?.numCorrect === undefined && test?.percentCorrect === undefined) ||
+        (!tasksWithUndefinedPercentCorrect.includes(assessment.taskId) &&
+          test?.numCorrect === undefined &&
+          test?.percentCorrect === undefined) ||
         (test?.numAttempted === 0 && test?.numCorrect === 0)
       ) {
         return '#EEEEF0';
@@ -552,17 +886,10 @@ const getScoresAndSupportFromAssessment = ({ grade, assessment, taskId, optional
   let percentileString = getScoreValue(compositeScores, taskId, gradeValue, 'percentileDisplay');
   let standardScore = getScoreValue(compositeScores, taskId, gradeValue, 'standardScore');
   let rawScore = getScoreValue(compositeScores, taskId, gradeValue, 'rawScore');
-  let tempPercentileSign = '';
-
-  // Extract percentile for getSupportLevel and keep sign for display
-  if (typeof percentile === 'string' && percentile.match(/[<>]/).length > 0) {
-    tempPercentileSign = percentile.match(/[<>]/)[0];
-    percentile = parseFloat(percentile.replace(/[<>]/g, ''));
-  }
 
   if (
-    tasksToDisplayCorrectIncorrectDifference.includes(assessment.taskId) ||
-    tasksToDisplayPercentCorrect.includes(assessment.taskId) ||
+    (tasksToDisplayPercentCorrect.includes(assessment.taskId) &&
+      !(taskId === 'swr-es' && getScoringVersions.value[taskId] >= 1)) ||
     tasksToDisplayTotalCorrect.includes(taskId) ||
     tasksToDisplayGradeEstimate.includes(assessment.taskId)
   ) {
@@ -581,6 +908,7 @@ const getScoresAndSupportFromAssessment = ({ grade, assessment, taskId, optional
     } else {
       support_level = '';
       tag_color = '#A4DDED';
+
       if (tasksToDisplayTotalCorrect.includes(taskId)) {
         const numAttempted = _get(assessment, 'scores.computed.composite.numAttempted');
         const oldNumAttempted = _get(assessment, 'scores.computed.composite.totalNumAttempted');
@@ -601,7 +929,6 @@ const getScoresAndSupportFromAssessment = ({ grade, assessment, taskId, optional
   }
 
   if (percentile) percentile = _round(percentile);
-  if (tempPercentileSign) percentile = `${tempPercentileSign}${percentile}`;
   if (percentileString && !isNaN(_round(percentileString))) percentileString = _round(percentileString);
 
   return {
@@ -640,6 +967,9 @@ const computedProgressData = computed(() => {
 // 1. assignmentTableData: The data that should be passed into the ROARDataTable component
 // 2. runsByTaskId: run data for the TaskReport distribution chartsb
 const computeAssignmentAndRunData = computed(() => {
+  if (props.orgType === 'district') {
+    return { assignmentTableData: [], runsByTaskId: {} };
+  }
   if (!assignmentData.value || assignmentData.value.length === 0) {
     return { assignmentTableData: [], runsByTaskId: {} };
   } else {
@@ -678,6 +1008,7 @@ const computeAssignmentAndRunData = computed(() => {
           schoolName: schoolName,
           stateId: user.studentData?.state_id,
           studentId: user.studentData?.student_number,
+          sisId: user.sisId ?? user.studentData?.sis_id,
         },
         tooltip: `View ${firstNameOrUsername}'s Score Report`,
         launchTooltip: `View assessment portal for ${firstNameOrUsername}`,
@@ -743,11 +1074,11 @@ const computeAssignmentAndRunData = computed(() => {
             isOptional,
           });
 
-        if (tag_color === supportLevelColors.above) {
+        if (tag_color === SCORE_SUPPORT_LEVEL_COLORS.ABOVE) {
           scoreFilterTags += ' Green ';
-        } else if (tag_color === supportLevelColors.some) {
+        } else if (tag_color === SCORE_SUPPORT_LEVEL_COLORS.SOME) {
           scoreFilterTags += ' Yellow ';
-        } else if (tag_color === supportLevelColors.below) {
+        } else if (tag_color === SCORE_SUPPORT_LEVEL_COLORS.BELOW) {
           scoreFilterTags += ' Pink ';
         }
 
@@ -778,25 +1109,36 @@ const computeAssignmentAndRunData = computed(() => {
             // scoreReportColumns only can only access admin variants, so set rawScore = correctIncorrectDifference
             // for admins with mixed normed & unnormed scores
             currRowScores[taskId].rawScore = currRowScores[taskId].correctIncorrectDifference;
+            currRowScores[taskId].tagColor =
+              assessment.scores?.raw?.composite?.test?.numAttempted > 0 ? '#A4DDED' : 'transparent';
           }
 
-          currRowScores[taskId].numCorrect = numCorrect;
-          currRowScores[taskId].numIncorrect = numIncorrect;
-          currRowScores[taskId].tagColor = tagColor;
-          currRowScores[taskId].scoringVersion = scoringVersion;
+          Object.assign(currRowScores[taskId], { numCorrect, numIncorrect, scoringVersion });
           scoreFilterTags += ' Assessed ';
         } else if (tasksToDisplayPercentCorrect.includes(taskId)) {
           const numAttempted = assessment.scores?.raw?.composite?.test?.numAttempted;
-          const numCorrect = assessment.scores?.raw?.composite?.test?.numCorrect;
+          const numCorrect = assessment.scores?.raw?.composite?.test?.numCorrect ?? 0;
           const percentCorrect =
             numAttempted > 0 && !isNaN(numCorrect) && !isNaN(numAttempted)
               ? Math.round((numCorrect * 100) / numAttempted).toString() + '%'
               : null;
-          currRowScores[taskId].percentCorrect = percentCorrect;
-          currRowScores[taskId].numAttempted = numAttempted;
-          currRowScores[taskId].numCorrect = numCorrect;
-          currRowScores[taskId].tagColor = percentCorrect === null ? 'transparent' : tagColor;
-          scoreFilterTags += ' Assessed ';
+          const scoringVersion = _get(assessment, 'scores.computed.composite.scoringVersion');
+
+          Object.assign(currRowScores[taskId], { numCorrect, numAttempted, percentCorrect, scoringVersion });
+
+          // Only assign these values for swr-es if unnormed score
+          if (assessment.taskId !== 'swr-es' || !scoringVersion) {
+            currRowScores[taskId].tagColor = percentCorrect === null ? 'transparent' : tagColor;
+            scoreFilterTags += ' Assessed ';
+            // @TODO: Remove after decoupling the percentile returned by getScoreValue from the individual score report.
+            // Prevent reporting in percentile view
+            currRowScores[taskId].percentile = null;
+
+            // Hide tag when only practice questions are attempted
+            if (numAttempted === null || numAttempted === undefined) {
+              currRowScores[taskId].rawScore = null;
+            }
+          }
         } else if (tasksToDisplayTotalCorrect.includes(taskId)) {
           // isNewScoring is 1.2.23+, otherwise handles 1.2.14
           const isNewScoring = _has(assessment, 'scores.computed.composite.numCorrect');
@@ -814,6 +1156,12 @@ const computeAssignmentAndRunData = computed(() => {
           currRowScores[taskId].fc = _get(assessment, 'scores.computed.FC');
           currRowScores[taskId].fr = _get(assessment, 'scores.computed.FR');
 
+          if (currRowScores[taskId].recruitment === 'responseModality') {
+            const { fc, fr } = currRowScores[taskId];
+            const totalRawScore = (fc?.rawScore ?? 0) + (fr?.rawScore ?? 0);
+            currRowScores[taskId].rawScore = totalRawScore === 0 ? null : totalRawScore;
+          }
+
           scoreFilterTags += ' Assessed ';
         }
         if (taskId === 'phonics' && assessment.scores) {
@@ -821,6 +1169,7 @@ const computeAssignmentAndRunData = computed(() => {
           const composite = _get(assessment, 'scores.computed.composite');
           if (composite) {
             currRowScores[taskId] = {
+              ...currRowScores[taskId],
               composite: {
                 totalPercentCorrect: _get(composite, 'totalPercentCorrect'),
                 subscores: {
@@ -843,6 +1192,7 @@ const computeAssignmentAndRunData = computed(() => {
           currRowScores[taskId].upperCaseScore = assessment.scores.computed.UppercaseNames?.subScore;
           currRowScores[taskId].phonemeScore = assessment.scores.computed.Phonemes?.subScore;
           currRowScores[taskId].totalScore = assessment.scores.computed.composite?.totalCorrect;
+
           const incorrectLettersArray = [
             ...(_get(assessment, 'scores.computed.UppercaseNames.upperIncorrect') ?? '').split(','),
             ...(_get(assessment, 'scores.computed.LowercaseNames.lowerIncorrect') ?? '').split(','),
@@ -986,6 +1336,7 @@ const computeAssignmentAndRunData = computed(() => {
 
     // We only want to display the ROAM Tasks if the recruitment param is responseModality
     // Otherwise, remove them from the runsByTaskId object to prevent including them in TaskReports.
+    // Response modality admins who switch mid-way will no longer see the subscore tables
     const assessments = administrationData.value.assessments;
     for (const assessment of assessments) {
       if (roamFluencyTasks.includes(assessment.taskId)) {
@@ -1069,6 +1420,7 @@ const createExportData = ({ rows, includeProgress = false }) => {
     // if (orgData.value?.clever === true) {
     tableRow['State ID'] = user.stateId;
     tableRow['Student ID'] = user.studentId;
+    tableRow['SIS ID'] = user.sisId;
     // }
 
     for (const taskId in scores) {
@@ -1076,27 +1428,48 @@ const createExportData = ({ rows, includeProgress = false }) => {
       const taskName = tasksDictionary.value[taskId]?.publicName ?? taskId;
 
       // Add task-specific score information
-      if (tasksToDisplayPercentCorrect.includes(taskId)) {
+      if (
+        tasksToDisplayPercentCorrect.includes(taskId) &&
+        !(taskId === 'swr-es' && getScoringVersions.value[taskId] >= 1)
+      ) {
         tableRow[`${taskName} - Percent Correct`] = score.percentCorrect;
         tableRow[`${taskName} - Num Attempted`] = score.numAttempted;
         tableRow[`${taskName} - Num Correct`] = score.numCorrect;
-      } else if (tasksToDisplayCorrectIncorrectDifference.includes(taskId)) {
-        if (score.scoringVersion) {
-          tableRow[`${taskName} - Raw Score`] = score.rawScore;
-          tableRow[`${taskName} - Percentile`] = score.percentileString;
-          tableRow[`${taskName} - Standard`] = score.standardScore;
-        } else {
-          tableRow[`${taskName} - Correct/Incorrect Difference`] = score.correctIncorrectDifference;
-          tableRow[`${taskName} - Num Incorrect`] = score.numIncorrect;
-          tableRow[`${taskName} - Num Correct`] = score.numCorrect;
-        }
-      } else if (tasksToDisplayTotalCorrect.includes(taskId)) {
-        if (score.isNewScoring && score.recruitment !== 'responseModality') {
-          tableRow[`${taskName} - Raw Score`] = score.rawScore;
-        }
-        tableRow[`${taskName} - Num Correct`] = score.numCorrect;
+      } else if (
+        tasksToDisplayCorrectIncorrectDifference.includes(taskId) &&
+        !(getScoringVersions.value[taskId] >= 1)
+      ) {
+        tableRow[`${taskName} - Correct/Incorrect Difference`] = score.correctIncorrectDifference;
         tableRow[`${taskName} - Num Incorrect`] = score.numIncorrect;
-        tableRow[`${taskName} - Num Attempted`] = score.numAttempted;
+        tableRow[`${taskName} - Num Correct`] = score.numCorrect;
+      } else if (tasksToDisplayTotalCorrect.includes(taskId)) {
+        const setSubscore = (field, score) => {
+          // Response modality prod data only uses new field names (ver 1.2.23+)
+          let result = '';
+          let total = 0;
+          if (score.fr) {
+            const frScore = score.fr[field] ?? 0;
+            result += `Free Response: ${frScore}`;
+            total += frScore;
+          }
+
+          if (score.fc) {
+            const fcScore = score.fc[field] ?? 0;
+            result += `${result ? '\n' : ''}Multiple Choice: ${fcScore}`;
+            total += fcScore;
+          }
+
+          if (score.fr || score.fc) result += `\nTotal: ${total}`;
+
+          // If result is an empty string, handle a non-response modality score
+          return result || score[field];
+        };
+
+        tableRow[`${taskName} - Raw Score`] = score.rawScore;
+
+        Object.entries(roamFluencySubskillHeaders).forEach(([property, propertyHeader]) => {
+          tableRow[`${taskName} - ${propertyHeader}`] = setSubscore(property, score);
+        });
       } else if (rawOnlyTasks.includes(taskId)) {
         tableRow[`${taskName} - Raw`] = score.rawScore;
       } else if (tasksToDisplayGradeEstimate.includes(taskId)) {
@@ -1332,7 +1705,7 @@ const scoreReportColumns = computed(() => {
   tableColumns.push({
     header: 'Report',
     link: true,
-    routeName: 'StudentReport',
+    routeName: 'StudentScoreReport',
     routeTooltip: 'Student Score Report',
     routeIcon: 'pi pi-chart-bar border-none text-primary hover:text-white',
     sort: false,
@@ -1469,6 +1842,15 @@ const scoreReportColumns = computed(() => {
     headerStyle: `background:var(--primary-color); color:white; padding-top:0; margin-top:0; padding-bottom:0; margin-bottom:0; border:0; margin-left:0; border-right-width:2px; border-right-style:solid; border-right-color:#ffffff;`,
   });
 
+  tableColumns.push({
+    field: 'user.sisId',
+    header: 'SIS ID',
+    dataType: 'text',
+    sort: false,
+    hidden: true, // Column is hidden by default, available via the Show/Hide Columns menu
+    headerStyle: `background:var(--primary-color); color:white; padding-top:0; margin-top:0; padding-bottom:0; margin-bottom:0; border:0; margin-left:0; border-right-width:2px; border-right-style:solid; border-right-color:#ffffff;`,
+  });
+
   const isAdministrationOpen = administrationData.value?.dateClosed
     ? new Date(administrationData.value?.dateClosed) > new Date()
     : false;
@@ -1542,20 +1924,14 @@ const scoreReportColumns = computed(() => {
     if (excludeFromScoringTasks.includes(taskId)) continue; // Skip adding this column
     let colField;
     const isOptional = `scores.${taskId}.optional`;
-    let isFluencyResponseModality = false;
-    if (roamFluencyTasks.includes(taskId)) {
-      const fluencyTasks = administrationData.value?.assessments?.find((assessment) => assessment.taskId === taskId);
-      isFluencyResponseModality = fluencyTasks?.params?.recruitment === 'responseModality';
-    }
 
     // Color needs to include a field to allow sorting.
     if (viewMode.value === 'percentile' || viewMode.value === 'color') {
       colField = `scores.${taskId}.percentile`;
     } else if (
       viewMode.value === 'standard' &&
-      tasksToDisplayCorrectIncorrectDifference.includes(taskId) &&
-      getScoringVersions.value[taskId] >= 1 &&
-      !tasksToDisplayPercentCorrect.includes(taskId) &&
+      (!tasksToDisplayPercentCorrect.includes(taskId) ||
+        (taskId === 'swr-es' && getScoringVersions.value[taskId] >= 1)) &&
       !tasksToDisplayTotalCorrect.includes(taskId) &&
       !tasksToDisplayGradeEstimate.includes(taskId)
     ) {
@@ -1563,7 +1939,8 @@ const scoreReportColumns = computed(() => {
     } else if (
       viewMode.value === 'raw' &&
       !tasksToDisplayCorrectIncorrectDifference.includes(taskId) &&
-      !tasksToDisplayPercentCorrect.includes(taskId) &&
+      (!tasksToDisplayPercentCorrect.includes(taskId) ||
+        (taskId === 'swr-es' && getScoringVersions.value[taskId] >= 1)) &&
       !tasksToDisplayTotalCorrect.includes(taskId) &&
       !tasksToDisplayGradeEstimate.includes(taskId)
     ) {
@@ -1607,7 +1984,7 @@ const scoreReportColumns = computed(() => {
       filter: true,
       sortField: colField ? colField : `scores.${taskId}.percentile`,
       tag: viewMode.value !== 'color',
-      emptyTag: viewMode.value === 'color' || isFluencyResponseModality || isOptional,
+      emptyTag: viewMode.value === 'color' || isOptional,
       tagColor: `scores.${taskId}.tagColor`,
       style: (() => {
         return `text-align: center; ${getTaskStyle(taskId, backgroundColor, orderedTasks)}`;
@@ -1624,22 +2001,44 @@ const allTasks = computed(() => {
 });
 
 const sortedTaskIds = computed(() => {
-  const runsByTaskId = computeAssignmentAndRunData.value.runsByTaskId;
-  const specialTaskIds = ['swr', 'sre', 'pa', 'phonics'].filter((id) => Object.keys(runsByTaskId).includes(id));
-  const remainingTaskIds = Object.keys(runsByTaskId).filter((id) => !specialTaskIds.includes(id));
+  if (props.orgType === 'district') {
+    if (isLoadingDistrictSupportCategories.value || isFetchingDistrictSupportCategories.value) {
+      return [];
+    }
 
-  remainingTaskIds.sort((p1, p2) => {
-    return taskDisplayNames[p1].order - taskDisplayNames[p2].order;
-  });
+    if (!aggregatedDistrictSupportCategories.value) {
+      return [];
+    }
 
-  const sortedIds = specialTaskIds.concat(remainingTaskIds);
-  return sortedIds.filter((taskId) => allTasks.value.includes(taskId));
+    return Object.keys(aggregatedDistrictSupportCategories.value);
+  } else {
+    const runsByTaskId = computeAssignmentAndRunData.value.runsByTaskId;
+    const specialTaskIds = ['swr', 'sre', 'pa', 'phonics'].filter((id) => Object.keys(runsByTaskId).includes(id));
+    const remainingTaskIds = Object.keys(runsByTaskId).filter((id) => !specialTaskIds.includes(id));
+
+    remainingTaskIds.sort((p1, p2) => {
+      return taskDisplayNames[p1].order - taskDisplayNames[p2].order;
+    });
+
+    const sortedIds = specialTaskIds.concat(remainingTaskIds);
+    return sortedIds.filter((taskId) => allTasks.value.includes(taskId));
+  }
 });
 
 const sortedAndFilteredTaskIds = computed(() => {
   return sortedTaskIds.value?.filter((taskId) => {
     return tasksToDisplayGraphs.includes(taskId);
   });
+});
+
+const sortedAndFilteredSubscoreTaskIds = computed(() => {
+  if (props.orgType === 'district') {
+    return sortedTaskIds.value?.filter((taskId) => {
+      return tasksToDisplayGraphs.includes(taskId);
+    });
+  }
+  const availableTaskIds = Object.keys(computeAssignmentAndRunData.value?.runsByTaskId);
+  return availableTaskIds.sort((a, b) => taskDisplayNames[a].order - taskDisplayNames[b].order);
 });
 
 let unsubscribe;
@@ -1701,17 +2100,6 @@ onMounted(async () => {
   width: 100%;
   align-items: center;
   justify-content: center;
-}
-
-.report-title {
-  font-size: clamp(1.5rem, 2rem, 2.5rem);
-  font-weight: bold;
-  margin-top: 0;
-}
-
-.administration-name {
-  font-size: clamp(1.1rem, 1.3rem, 1.7rem);
-  font-weight: light;
 }
 
 .report-subheader {
@@ -1805,20 +2193,6 @@ onMounted(async () => {
 
 .confirm .p-dialog-header-close {
   display: none !important;
-}
-
-.select-button .p-button:last-of-type:not(:only-of-type) {
-  border-top-left-radius: 0;
-  border-bottom-left-radius: 0;
-  border-top-right-radius: 25rem;
-  border-bottom-right-radius: 25rem;
-}
-
-.select-button .p-button:first-of-type:not(:only-of-type) {
-  border-top-left-radius: 25rem;
-  border-bottom-left-radius: 25rem;
-  border-top-right-radius: 0;
-  border-bottom-right-radius: 0;
 }
 
 .p-datatable .p-column-header-content {

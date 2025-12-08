@@ -28,9 +28,21 @@ vi.mock('lodash/without', () => ({
   default: vi.fn((arr, val) => arr.filter((item) => item !== val)),
 }));
 
+const mockGetAssignmentStats = vi.fn().mockResolvedValue({
+  data: {
+    admin1: { total: { assignment: 30 } },
+    admin2: { total: { assignment: 25 } },
+  },
+});
+
 vi.mock('pinia', () => ({
   storeToRefs: vi.fn(() => ({
-    roarfirekit: { value: { getAdministrations: vi.fn().mockResolvedValue(['admin1', 'admin2']) } },
+    roarfirekit: {
+      value: {
+        getAdministrations: vi.fn().mockResolvedValue(['admin1', 'admin2']),
+        getAssignmentStats: mockGetAssignmentStats,
+      },
+    },
   })),
 }));
 
@@ -115,11 +127,6 @@ describe('query/administrations', () => {
                 dateClosed: { timestampValue: '2023-12-31T00:00:00Z' },
                 dateCreated: { timestampValue: '2022-12-01T00:00:00Z' },
                 assessments: { arrayValue: { values: [{ stringValue: 'assessment1' }] } },
-                districts: { arrayValue: { values: [{ stringValue: 'district1' }] } },
-                schools: { arrayValue: { values: [{ stringValue: 'school1' }] } },
-                classes: { arrayValue: { values: [{ stringValue: 'class1' }] } },
-                groups: { arrayValue: { values: [] } },
-                families: { arrayValue: { values: [] } },
                 testData: { booleanValue: false },
               },
             },
@@ -133,11 +140,6 @@ describe('query/administrations', () => {
                 dateClosed: { timestampValue: '2023-11-30T00:00:00Z' },
                 dateCreated: { timestampValue: '2023-01-15T00:00:00Z' },
                 assessments: { arrayValue: { values: [{ stringValue: 'assessment2' }] } },
-                districts: { arrayValue: { values: [{ stringValue: 'district2' }] } },
-                schools: { arrayValue: { values: [{ stringValue: 'school2' }] } },
-                classes: { arrayValue: { values: [{ stringValue: 'class2' }] } },
-                groups: { arrayValue: { values: [] } },
-                families: { arrayValue: { values: [] } },
                 testData: { booleanValue: true },
               },
             },
@@ -145,40 +147,14 @@ describe('query/administrations', () => {
         ],
       });
 
-      mockPost.mockResolvedValueOnce({
-        data: [
-          {
-            found: {
-              name: 'projects/test/databases/test/documents/administrations/admin1/stats/total',
-              fields: {
-                completed: { integerValue: '10' },
-                started: { integerValue: '20' },
-                assigned: { integerValue: '30' },
-              },
-            },
-          },
-          {
-            found: {
-              name: 'projects/test/databases/test/documents/administrations/admin2/stats/total',
-              fields: {
-                completed: { integerValue: '5' },
-                started: { integerValue: '15' },
-                assigned: { integerValue: '25' },
-              },
-            },
-          },
-        ],
-      });
-
       const result = await administrationPageFetcher(
-        { value: true }, // isSuperAdmin
-        { value: {} }, // exhaustiveAdminOrgs
         false, // fetchTestData
         { value: [{ field: { fieldPath: 'name' }, direction: 'ASCENDING' }] }, // orderBy
+        true, // fetchStats (for super admin)
       );
 
       expect(getAxiosInstance).toHaveBeenCalled();
-      expect(mockPost).toHaveBeenCalledTimes(2);
+      expect(mockPost).toHaveBeenCalledTimes(1);
       expect(result).toHaveLength(2);
 
       expect(result[0].id).toBe('admin1');
@@ -188,16 +164,15 @@ describe('query/administrations', () => {
       expect(result[0].dates.end).toBe('2023-12-31T00:00:00Z');
       expect(result[0].dates.created).toBe('2022-12-01T00:00:00Z');
       expect(result[0].assessments).toEqual(['assessment1']);
-      expect(result[0].assignedOrgs.districts).toEqual(['district1']);
-      expect(result[0].assignedOrgs.schools).toEqual(['school1']);
-      expect(result[0].assignedOrgs.classes).toEqual(['class1']);
       expect(result[0].stats.total).toBeDefined();
-      expect(result[0].stats.total.completed).toBe(10);
+      expect(result[0].stats.total.assignment).toBe(30);
+      expect(result[0].testData).toBe(false);
 
       expect(result[1].id).toBe('admin2');
       expect(result[1].name).toBe('Admin 2');
       expect(result[1].publicName).toBeUndefined();
       expect(result[1].testData).toBe(true);
+      expect(result[1].stats.total.assignment).toBe(25);
     });
 
     it('should filter and sort administrations correctly', async () => {
@@ -208,12 +183,12 @@ describe('query/administrations', () => {
               name: 'projects/test/databases/test/documents/administrations/admin2',
               fields: {
                 name: { stringValue: 'Admin Z' }, // This should come second in ascending order
+                publicName: { stringValue: 'Public Admin Z' },
+                dateOpened: { timestampValue: '2023-01-15T00:00:00Z' },
+                dateClosed: { timestampValue: '2023-12-15T00:00:00Z' },
                 dateCreated: { timestampValue: '2023-01-15T00:00:00Z' },
-                districts: { arrayValue: { values: [] } },
-                schools: { arrayValue: { values: [] } },
-                classes: { arrayValue: { values: [] } },
-                groups: { arrayValue: { values: [] } },
-                families: { arrayValue: { values: [] } },
+                assessments: { arrayValue: { values: [] } },
+                testData: { booleanValue: false },
               },
             },
           },
@@ -222,40 +197,22 @@ describe('query/administrations', () => {
               name: 'projects/test/databases/test/documents/administrations/admin1',
               fields: {
                 name: { stringValue: 'Admin A' }, // This should come first in ascending order
+                publicName: { stringValue: 'Public Admin A' },
+                dateOpened: { timestampValue: '2022-12-01T00:00:00Z' },
+                dateClosed: { timestampValue: '2023-12-01T00:00:00Z' },
                 dateCreated: { timestampValue: '2022-12-01T00:00:00Z' },
-                districts: { arrayValue: { values: [] } },
-                schools: { arrayValue: { values: [] } },
-                classes: { arrayValue: { values: [] } },
-                groups: { arrayValue: { values: [] } },
-                families: { arrayValue: { values: [] } },
+                assessments: { arrayValue: { values: [] } },
+                testData: { booleanValue: false },
               },
             },
           },
         ],
       });
 
-      mockPost.mockResolvedValueOnce({
-        data: [
-          {
-            found: {
-              name: 'projects/test/databases/test/documents/administrations/admin1/stats/total',
-              fields: {},
-            },
-          },
-          {
-            found: {
-              name: 'projects/test/databases/test/documents/administrations/admin2/stats/total',
-              fields: {},
-            },
-          },
-        ],
-      });
-
       const result = await administrationPageFetcher(
-        { value: true }, // isSuperAdmin
-        { value: {} }, // exhaustiveAdminOrgs
         false, // fetchTestData
         { value: [{ field: { fieldPath: 'name' }, direction: 'ASCENDING' }] }, // orderBy
+        true, // fetchStats
       );
 
       expect(result).toHaveLength(2);
@@ -269,12 +226,12 @@ describe('query/administrations', () => {
               name: 'projects/test/databases/test/documents/administrations/admin2',
               fields: {
                 name: { stringValue: 'Admin Z' },
+                publicName: { stringValue: 'Public Admin Z' },
+                dateOpened: { timestampValue: '2023-01-15T00:00:00Z' },
+                dateClosed: { timestampValue: '2023-12-15T00:00:00Z' },
                 dateCreated: { timestampValue: '2023-01-15T00:00:00Z' },
-                districts: { arrayValue: { values: [] } },
-                schools: { arrayValue: { values: [] } },
-                classes: { arrayValue: { values: [] } },
-                groups: { arrayValue: { values: [] } },
-                families: { arrayValue: { values: [] } },
+                assessments: { arrayValue: { values: [] } },
+                testData: { booleanValue: false },
               },
             },
           },
@@ -283,45 +240,63 @@ describe('query/administrations', () => {
               name: 'projects/test/databases/test/documents/administrations/admin1',
               fields: {
                 name: { stringValue: 'Admin A' },
+                publicName: { stringValue: 'Public Admin A' },
+                dateOpened: { timestampValue: '2022-12-01T00:00:00Z' },
+                dateClosed: { timestampValue: '2023-12-01T00:00:00Z' },
                 dateCreated: { timestampValue: '2022-12-01T00:00:00Z' },
-                districts: { arrayValue: { values: [] } },
-                schools: { arrayValue: { values: [] } },
-                classes: { arrayValue: { values: [] } },
-                groups: { arrayValue: { values: [] } },
-                families: { arrayValue: { values: [] } },
+                assessments: { arrayValue: { values: [] } },
+                testData: { booleanValue: false },
               },
             },
           },
         ],
       });
 
-      mockPost.mockResolvedValueOnce({
-        data: [
-          {
-            found: {
-              name: 'projects/test/databases/test/documents/administrations/admin1/stats/total',
-              fields: {},
-            },
-          },
-          {
-            found: {
-              name: 'projects/test/databases/test/documents/administrations/admin2/stats/total',
-              fields: {},
-            },
-          },
-        ],
-      });
-
       const resultDesc = await administrationPageFetcher(
-        { value: true }, // isSuperAdmin
-        { value: {} }, // exhaustiveAdminOrgs
         false, // fetchTestData
         { value: [{ field: { fieldPath: 'name' }, direction: 'DESCENDING' }] }, // orderBy
+        true, // fetchStats
       );
 
       expect(resultDesc).toHaveLength(2);
       expect(resultDesc[0].name).toBe('Admin Z'); // Should be first in descending order
       expect(resultDesc[1].name).toBe('Admin A'); // Should be second in descending order
+    });
+
+    it('should fetch administrations without stats when fetchStats is false', async () => {
+      mockPost.mockResolvedValueOnce({
+        data: [
+          {
+            found: {
+              name: 'projects/test/databases/test/documents/administrations/admin1',
+              fields: {
+                name: { stringValue: 'Admin 1' },
+                publicName: { stringValue: 'Public Admin 1' },
+                dateOpened: { timestampValue: '2023-01-01T00:00:00Z' },
+                dateClosed: { timestampValue: '2023-12-31T00:00:00Z' },
+                dateCreated: { timestampValue: '2022-12-01T00:00:00Z' },
+                assessments: { arrayValue: { values: [{ stringValue: 'assessment1' }] } },
+                testData: { booleanValue: false },
+              },
+            },
+          },
+        ],
+      });
+
+      const result = await administrationPageFetcher(
+        false, // fetchTestData
+        { value: [{ field: { fieldPath: 'name' }, direction: 'ASCENDING' }] }, // orderBy
+        false, // fetchStats
+      );
+
+      expect(getAxiosInstance).toHaveBeenCalled();
+      expect(mockPost).toHaveBeenCalledTimes(1);
+      expect(mockGetAssignmentStats).not.toHaveBeenCalled();
+      expect(result).toHaveLength(1);
+
+      expect(result[0].id).toBe('admin1');
+      expect(result[0].name).toBe('Admin 1');
+      expect(result[0].stats).toEqual({});
     });
   });
 });

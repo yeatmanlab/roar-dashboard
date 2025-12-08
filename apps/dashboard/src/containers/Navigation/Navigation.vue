@@ -18,8 +18,6 @@ import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useSignOutMutation from '@/composables/mutations/useSignOutMutation';
 import { getSidebarActions } from '@/router/sidebarActions';
 import NavBar from '@/components/NavBar';
-import { usePermissions } from '@/composables/usePermissions';
-const { userCan, Permissions } = usePermissions();
 
 const router = useRouter();
 const route = useRoute();
@@ -99,11 +97,22 @@ const navbarBlacklist = [
   'Launch RAN',
   'Launch Crowding',
   'Launch MEP',
+  'AuthNycps',
+  'InitiateAuthNycps',
 ];
 
-const showAccountSettingsLink = computed(() => {
-  return userCan(Permissions.Profile.READ);
-});
+/**
+ * The settings page is temporarily disabled. It has no useful functionality except for
+ * allowing users to change their passwords, which is broken at the moment.
+ *
+ * @TODO: Revisit how we give the user the option of changing their password.
+ */
+// const showAccountSettingsLink = computed(() => {
+//   // Hide button while loading to prevent button from popping in and out
+//   if (!userData.value) return false;
+//   return userCan(Permissions.Profile.READ);
+// });
+const showAccountSettingsLink = ref(false);
 
 const displayNavbar = computed(() => {
   if (!route.name) return false;

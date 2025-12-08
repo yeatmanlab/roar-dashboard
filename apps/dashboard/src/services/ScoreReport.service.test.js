@@ -7,18 +7,24 @@ import { getSupportLevel, getRawScoreRange } from '@/helpers/reports';
 // Mock dependencies
 vi.mock('@/helpers/reports', () => ({
   rawOnlyTasks: ['mock-raw-task'],
+  tasksToDisplayPercentCorrect: ['phonics'],
   taskDisplayNames: {
     'mock-task-1': { extendedName: 'Task One', order: 1 },
     'mock-task-2': { extendedName: 'Task Two', order: 2 },
     'mock-raw-task': { extendedName: 'Raw Only Task', order: 3 },
   },
-  extendedDescriptions: {
-    'mock-task-1': 'Description for task one',
-    'mock-task-2': 'Description for task two',
-    'mock-raw-task': 'Description for raw only task',
-  },
+  // CHANGED: make it a function that returns from a small map needed for extended descriptions
+  getExtendedDescription: vi.fn((taskId) => {
+    const map = {
+      'mock-task-1': 'Description for task one',
+      'mock-task-2': 'Description for task two',
+      'mock-raw-task': 'Description for raw only task',
+    };
+    return map[String(taskId)] ?? '';
+  }),
   getSupportLevel: vi.fn(),
   getRawScoreRange: vi.fn(),
+  getDialColor: vi.fn().mockReturnValue('var(--blue-500)'),
   getScoreValue: vi.fn().mockImplementation((scoresObject, taskId, grade, fieldType) => {
     // Return the actual field value from the scores object if it exists
     // This allows the test to use real data from the mock task data
@@ -137,10 +143,41 @@ describe('ScoreReportService', () => {
       const result = ScoreReportService.getScoreDescription(task, 4, mockI18n);
 
       expect(result.keypath).toBe('scoreReports.percentileTaskDescription');
-      expect(result.slots.percentile).toBe('55th percentile');
+      expect(result.slots.percentile).toBe(
+        `55${mockI18n.t('scoreReports.th')} ${mockI18n.t('scoreReports.percentileScore')}`,
+      );
       expect(result.slots.taskName).toBe('Task Two');
       expect(result.slots.taskDescription).toBe('Description for task two');
       expect(result.slots.supportCategory).toBe('scoreReports.developingText');
+    });
+
+    it('should pass scoringVersion to getSupportLevel for percentile description', () => {
+      getSupportLevel.mockImplementation((grade, percentile, rawScore, taskId, optional, scoringVersion) => {
+        if (scoringVersion === 4) {
+          return {
+            support_level: SCORE_SUPPORT_SKILL_LEVELS.ACHIEVED_SKILL,
+            tag_color: 'green',
+          };
+        }
+        return {
+          support_level: SCORE_SUPPORT_SKILL_LEVELS.DEVELOPING_SKILL,
+          tag_color: 'orange',
+        };
+      });
+
+      const task = {
+        taskId: 'sre',
+        rawScore: { value: 56 },
+        percentileScore: { value: 70 },
+        standardScore: { value: 104 },
+      };
+
+      const result = ScoreReportService.getScoreDescription(task, 8, mockI18n, 4);
+
+      expect(result.keypath).toBe('scoreReports.standardTaskDescription');
+      expect(result.slots.supportCategory).toBe('scoreReports.achievedText');
+
+      expect(getSupportLevel).toHaveBeenCalledWith(8, 70, 56, 'sre', null, 4);
     });
   });
 
@@ -303,7 +340,7 @@ describe('ScoreReportService', () => {
       expect(result[0].taskId).toBe('mock-task-1');
     });
 
-    it('should handle vocab/es tasks with composite scores directly', () => {
+    it('should handle vocab/es tasks without scoringVersions with composite scores directly', () => {
       const taskData = [
         {
           taskId: 'vocab-test',
@@ -316,6 +353,28 @@ describe('ScoreReportService', () => {
       ];
 
       const result = ScoreReportService.processTaskScores(taskData, 5, mockI18n);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].rawScore.value).toBe(25);
+    });
+
+    it('should handle es tasks with scoringVersion with rawScores directly', () => {
+      const taskData = [
+        {
+          taskId: 'swr-es',
+          optional: false,
+          reliable: true,
+          scores: {
+            composite: {
+              rawScore: 25,
+              percentileScore: 50,
+              standardScore: 30,
+            },
+          },
+        },
+      ];
+
+      const result = ScoreReportService.processTaskScores(taskData, 5, mockI18n, { 'swr-es': 1 });
 
       expect(result).toHaveLength(1);
       expect(result[0].rawScore.value).toBe(25);

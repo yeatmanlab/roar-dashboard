@@ -42,17 +42,19 @@ describe('Participant: Auth', () => {
   });
 
   it('Redirects to login with redirect_to set to previous path when unauthenticated user visits a protected route', () => {
-    cy.visit(APP_ROUTES.ACCOUNT_PROFILE);
-    cy.url().should('eq', `${Cypress.config().baseUrl}/signin?redirect_to=/profile`);
+    // list-orgs is not accessable to participants, but this test is only for testing the redirect_to functionality.
+    cy.visit(APP_ROUTES.ORGS_LIST);
+    cy.url().should('eq', `${Cypress.config().baseUrl}/signin?redirect_to=${APP_ROUTES.ORGS_LIST}`);
   });
 
   it('Redirects to redirect_to path after successfully authenticating with email', () => {
     cy.visit('/game/core-tasks/trog');
 
     cy.get('[data-cy="sign-in__username"]').type(PARTICIPANT_USERNAME, { log: false });
+    cy.get('[data-cy="signin-continue"]').click();
     cy.get('[data-cy="sign-in__password"]').type(PARTICIPANT_PASSWORD, { log: false });
 
-    cy.get('[data-cy="sign-in__submit"]').contains('Go!').click();
+    cy.get('[data-cy="signin-continue"]').click();
 
     cy.url().should('eq', `${Cypress.config().baseUrl}/game/core-tasks/trog`);
   });

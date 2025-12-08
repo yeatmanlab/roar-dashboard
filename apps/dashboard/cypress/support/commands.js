@@ -19,9 +19,11 @@ Cypress.Commands.add('login', (username, password) => {
       cy.visit(APP_ROUTES.HOME);
 
       cy.get('[data-cy="sign-in__username"]').type(username, { log: false });
+
+      cy.get('[data-cy="signin-continue"]').click();
       cy.get('[data-cy="sign-in__password"]').type(password, { log: false });
 
-      cy.get('button').contains('Go!').click();
+      cy.get('[data-cy="signin-continue"]').click();
 
       cy.url().should('eq', `${baseUrl}/`);
       cy.log('Login successful.');
@@ -107,7 +109,7 @@ Cypress.Commands.add('loginWithClever', (schoolName, username, password, firstPa
 Cypress.Commands.add('logout', () => {
   cy.get('[data-cy="navbar__signout-btn-desktop"]').click();
   cy.url().should('eq', `${baseUrl}/signin`);
-  cy.get('h1').should('contain.text', 'Welcome to ROAR!');
+  cy.get('h1').should('contain.text', 'Welcome!');
   cy.log('Logout successful.');
 });
 
@@ -151,6 +153,64 @@ Cypress.Commands.add('waitForStudentReportList', () => {
     },
     {
       errorMsg: 'Failed to find the score report button before timeout',
+    },
+  );
+});
+
+/**
+ * Waits for the progress report button to load.
+ * @param {string} orgName - Optional organization name to wait for button in specific row
+ */
+Cypress.Commands.add('waitForProgressReportButton', (orgName = null) => {
+  // Note: As the application currently does not support paginated fetching of administrations, we have to wait for
+  // the whole list to be loaded and that can take a while, hence the long timeout.
+  cy.waitUntil(
+    () => {
+      if (orgName) {
+        // Find the specific row containing orgName, then check for button within that row
+        const row = Cypress.$('[data-testid="card-administration__body-cell-content"]')
+          .filter((i, el) => Cypress.$(el).text().includes(orgName))
+          .closest('tr');
+        return row.find('[data-cy="button-progress"]').length > 0;
+      }
+      // If no orgName, just check if any button exists
+      return Cypress.$('[data-cy="button-progress"]').length;
+    },
+    {
+      errorMsg: orgName
+        ? `Failed to find progress button for ${orgName} before timeout`
+        : 'Failed to find the progress report button before timeout',
+      timeout: 1200000,
+      interval: 1000,
+    },
+  );
+});
+
+/**
+ * Waits for the score report button to load.
+ * @param {string} orgName - Optional organization name to wait for button in specific row
+ */
+Cypress.Commands.add('waitForScoreReportButton', (orgName = null) => {
+  // Note: As the application currently does not support paginated fetching of administrations, we have to wait for
+  // the whole list to be loaded and that can take a while, hence the long timeout.
+  cy.waitUntil(
+    () => {
+      if (orgName) {
+        // Find the specific row containing orgName, then check for button within that row
+        const row = Cypress.$('[data-testid="card-administration__body-cell-content"]')
+          .filter((i, el) => Cypress.$(el).text().includes(orgName))
+          .closest('tr');
+        return row.find('[data-cy="button-scores"]').length > 0;
+      }
+      // If no orgName, just check if any button exists
+      return Cypress.$('[data-cy="button-scores"]').length;
+    },
+    {
+      errorMsg: orgName
+        ? `Failed to find score button for ${orgName} before timeout`
+        : 'Failed to find the score report button before timeout',
+      timeout: 1200000,
+      interval: 1000,
     },
   );
 });
@@ -345,6 +405,9 @@ Cypress.Commands.add('getAdministrationCard', (testAdministration) => {
       cy.wrap($cards).should('have.length.greaterThan', 0);
 
       cy.wrap($cards.get(0)).find('button').contains('Show details').click();
+
+      // Wait for the tree table to load after clicking Show details
+      cy.get('[data-cy="administration-orgs-tree"]', { timeout: 30000 }).should('be.visible');
     });
 });
 
@@ -432,20 +495,63 @@ Cypress.Commands.add(
  *
  * @param {Array<string>} userList - The list of users to check.
  */
-Cypress.Commands.add('checkUserList', (userList) => {
-  cy.get('[data-cy="roar-data-table"] tbody tr').each((row) => {
-    cy.wrap(row)
-      .find('td.p-datatable-frozen-column')
-      .then((cell) => {
-        // Clean the non-breaking space character and any whitespace from the cell text.
-        const cellText = cell
-          .text()
-          .replace(/&nbsp;/g, '')
-          .trim();
+// cypress/support/commands.js
+Cypress.Commands.add(
+  'checkUserList',
+  (
+    userList,
+    {
+      tableSelector = '[data-cy="roar-data-table"]',
+      colSel = 'td.p-datatable-frozen-column',
+      caseInsensitive = false,
+    } = {},
+  ) => {
+    cy.get(tableSelector)
+      .first()
+      .within(() => {
+        cy.get(`tbody tr ${colSel}`).then(($cells) => {
+          const normalize = (s) => {
+            // Replace actual NBSPs, collapse spaces, trim, and optionally lowercase
+            let t = (s ?? '')
+              .replace(/\u00A0/g, ' ')
+              .replace(/\s+/g, ' ')
+              .trim();
+            return caseInsensitive ? t.toLowerCase() : t;
+          };
 
-        expect(userList).to.include(cellText);
+          const expected = userList.map(normalize);
+          const expectedSet = new Set(expected);
+
+          const displayed = [...$cells].map((el) => normalize(el.textContent)).filter(Boolean);
+
+          displayed.forEach((v) => {
+            expect(expectedSet.has(v), `Displayed row "${v}" should exist in the provided user list`).to.be.true;
+          });
+
+          // Optional sanity check: table should not be empty
+          expect(displayed.length, 'Should have at least one visible row').to.be.greaterThan(0);
+        });
       });
+  },
+);
+
+/**
+ * Waits for the table to load and ensure it has at least one row.
+ *
+ * @param {object} options - The options for the command.
+ * @param {string} options.tableSelector - The selector for the table.
+ * @param {number} options.minRows - The minimum number of rows to wait for.
+ */
+Cypress.Commands.add('waitForRoarTable', ({ tableSelector = '[data-cy="roar-data-table"]', minRows = 1 } = {}) => {
+  cy.get(tableSelector).should('be.visible');
+
+  // Ensure rows actually rendered
+  cy.get(`${tableSelector} tbody tr`).should(($rows) => {
+    expect($rows.length, 'rendered table rows').to.be.greaterThan(minRows - 1);
   });
+
+  // If virtualized, ensure table is in view
+  cy.get(tableSelector).scrollIntoView();
 });
 
 /**
@@ -531,3 +637,16 @@ function getIfExists({ selector, skip = true }) {
 }
 
 Cypress.Commands.add('getIfExists', getIfExists);
+
+/**
+ * Selects a row in CardAdministration and performs an action on it.
+ * @param {string} orgName The name of the organization.
+ * @param {string} buttonSelector The selector of the button to click.
+ */
+Cypress.Commands.add('performRowAction', (orgName, buttonSelector) => {
+  cy.findAllByTestId('card-administration__body-cell-content')
+    .contains(orgName)
+    .closest('tr')
+    .find(`[data-cy="${buttonSelector}"], [data-testid="${buttonSelector}"]`)
+    .click();
+});

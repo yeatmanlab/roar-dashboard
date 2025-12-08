@@ -1,24 +1,33 @@
 {
   "authSignIn": {
-    "atLeastOneLowercase": "Al menos una letra minúscula",
-    "atLeastOneUpperCase": "Al menos una letra mayúscula",
+    "atLeastOneLowercase": "Al menos una minúscula",
+    "atLeastOneUpperCase": "Al menos una mayúscula",
     "atLeastOneNumber": "Al menos un número",
-    "atLeastOneNumeric": "Al menos un numéro",
+    "atLeastOneNumeric": "Al menos un numérico",
     "buttonLabel": "¡Vamos!",
     "minimumCharacters": "Mínimo 8 caracteres",
     "emailId": "correo electrónico",
-    "emailPlaceholder": "Nombre de usuario o correo electrónico",
-    "incorrectEmailOrPassword": "Nombre de usuario/correo electrónico o contraseña incorrectos",
-    "invalidEmailPlaceholder": "Error: el correo electrónico no es válido",
+    "emailPlaceholder": "Ingrese su usuario o correo electrónico",
+    "forgotPassword": "Reestablecer contraseña",
+    "incorrectEmailOrPassword": "Nombre de usuario/email o contraseña incorrectos",
+    "invalidEmailPlaceholder": "Error: email no válido",
+    "or": "O",
     "pageTitle": "Iniciar sesión",
     "passwordId": "contraseña",
     "passwordPlaceholder": "Contraseña",
     "pickPassword": "Elige una contraseña",
     "selectLanguage": "Seleccionar idioma",
-    "signInWithEmailLinkPlaceHolder": "Presiona Vamos para iniciar sesión con un enlace de correo electrónico.",
+    "signInWith": "Iniciar sesión con",
+    "signInWithEmailLinkPlaceHolder": "Presiona Go para iniciar sesión con un enlace de correo electrónico.",
     "signInWithEmailLinkInstead": "Iniciar sesión con enlace de correo electrónico",
     "signInWithPasswordInstead": "Iniciar sesión con contraseña",
-    "suggestions": "Sugerencias"
+    "signInUsingPassword": "Iniciar sesión con contraseña",
+    "signInUsingEmailLink": "Iniciar sesión con enlace al email",
+    "suggestions": "Sugerencias",
+    "magicLink": "Solicitar link al email",
+    "error": "Error",
+    "success": "Listo",
+    "checkYourEmail": "Abre tu email {email} para restablecer tu contraseña."
   },
   "cleverLanding": {
     "cleverLoading": "Cargando tus datos desde Clever..."
@@ -53,7 +62,9 @@
   },
   "navBar": {
     "greeting": "¡Hola",
-    "signOut": "Salir"
+    "signOut": "Salir",
+    "changeLanguage": "Cambiar idioma",
+    "accountSettings": "Ajustes"
   },
   "notFound": {
     "label": "Ir a la página de inicio.",
@@ -67,22 +78,33 @@
   },
   "pageSignIn": {
     "havingTrouble": "¿Tienes problemas?",
-    "login": "Inicia sesión para acceder a tus actividades",
+    "login": "Inicia sesión para empezar a rugir",
     "loginWith": "Inicia sesión con",
-    "welcome": "¡Bienvenido a ROAR!"
+    "welcome": "¡Bienvenido!",
+    "EnterYourPassword": "Ingresa tu contraseña",
+    "almostTime": "Casi es hora de empezar a rugir",
+    "ChooseYourProvider": "Selecciona una opción",
+    "ChooseYourProviderDescription": "Por favor, selecciona una opción para continuar.",
+    "Terms": "Términos",
+    "Privacy": "Privacidad",
+    "continue": "Continuar",
+    "availableProviders": "Opciones disponibles",
+    "usePassword": "Iniciar sesión con contraseña",
+    "checkInbox": "Verifica tu correo electrónico",
+    "checkInboxDescription": "Hemos enviado un enlace de verificación al email proporcionado."
   },
   "tasks": {
     "preparing": "¡Preparando tu juego!",
     "loading": "cargando"
   },
   "sentryForm": {
-    "formTitle": "Reportar un problema a ROAR",
+    "formTitle": "Informe de error en ROAR",
     "buttonLabel": "Reportar un problema",
-    "submitButtonLabel": "Enviar informe de problema",
+    "submitButtonLabel": "Enviar informe",
     "cancelButtonLabel": "Cancelar",
     "namePlaceholder": "Tu nombre (opcional)",
     "emailPlaceholder": "tu.email@example.org (opcional)",
-    "messageLabel": "Descripción",
-    "messagePlaceholder": "¿Cuál es el problema? ¿Qué querías experimentar en su lugar? Gracias por compartir."
+    "messageLabel": "🐞 Este formulario es solo para reportar errores de software o problemas técnicos.\n\n💬 Para preguntas generales, contacta primero a tu partner en ROAR.\n\n📧 Si no está disponible o no puede resolver tu problema, comunícate con nosotros en roar-partnerships@stanford.edu.\n\nDescribe tu problema:",
+    "messagePlaceholder": "Describe el problema y qué esperabas que sucediera en su lugar. Gracias por compartir."
   }
 }
