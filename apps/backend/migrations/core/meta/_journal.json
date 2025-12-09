@@ -78,6 +78,13 @@
       "when": 1765240958219,
       "tag": "0010_add_families_table",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1765241143447,
+      "tag": "0011_add_validate_class_org_refs_fn",
+      "breakpoints": true
     }
   ]
 }
