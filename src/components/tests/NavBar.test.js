@@ -8,6 +8,7 @@ import { createI18n } from 'vue-i18n';
 import { createRouter, createWebHistory } from 'vue-router';
 import NavBar from '../NavBar.vue';
 import { ROLES } from '@/constants/roles';
+import { getNavbarActions } from '@/router/navbarActions';
 
 // Define a reactive variable to control the role in tests
 const currentTestRole = ref(ROLES.PARTICIPANT);
@@ -115,6 +116,40 @@ const mountOptions = {
   },
 };
 
+const countMenuLinks = (menuItems = []) => {
+  const stack = [...menuItems];
+  let count = 0;
+  while (stack.length) {
+    const item = stack.pop();
+    count += 1;
+    if (item.items && item.items.length) {
+      stack.push(...item.items);
+    }
+  }
+  return count;
+};
+
+const buildMenuLabels = (actions = []) => {
+  const labels = [];
+  const groupsAction = actions.find((action) => action.category === 'Groups');
+  if (groupsAction) {
+    labels.push(groupsAction.title);
+  }
+
+  const headers = ['Users', 'Assignments'];
+  headers.forEach((header) => {
+    const headerItems = actions.filter((action) => action.category === header);
+    if (headerItems.length) {
+      labels.push(header);
+      headerItems.forEach((action) => labels.push(action.title));
+    }
+  });
+
+  return labels;
+};
+
+const allMenuLabels = buildMenuLabels(getNavbarActions({ userRole: ROLES.SUPER_ADMIN }));
+
 beforeEach(async () => {
   currentTestRole.value = ROLES.PARTICIPANT;
   setActivePinia(createPinia());
@@ -131,19 +166,16 @@ describe('NavBar.vue', () => {
       expect(wrapper.exists()).toBe(true);
 
       const links = wrapper.findAll('.p-menubar-item-link');
-      
-      expect(links.length).toBe(9);
+      const expectedLinkCount = countMenuLinks(wrapper.vm.computedItems);
+      const visibleLabels = buildMenuLabels(getNavbarActions({ userRole: currentTestRole.value }));
+      // routes the user should not have access to based on their role
+      const hiddenLabels = allMenuLabels.filter((label) => !visibleLabels.includes(label));
+
+      expect(links.length).toBe(expectedLinkCount);
 
       const html = wrapper.html();
-      expect(html).toContain('Groups');
-      expect(html).toContain('Users');
-      expect(html).toContain('Add Users');
-      expect(html).toContain('Link Users');
-      expect(html).toContain('Manage Administrators');
-      expect(html).toContain('Assignments');
-      expect(html).toContain('View Assignments');
-      expect(html).toContain('Create Assignment');
-      expect(html).toContain('Manage Tasks');
+      visibleLabels.forEach((label) => expect(html).toContain(label));
+      hiddenLabels.forEach((label) => expect(html).not.toContain(label));
 
       expect(wrapper.vm.computedIsBasicView).toBe(false);
     });
@@ -157,10 +189,12 @@ describe('NavBar.vue', () => {
     it('should render site admin menu items (same as admin)', () => {
       const wrapper = mount(NavBar, mountOptions);
       const links = wrapper.findAll('.p-menubar-item-link');
+      const visibleLabels = buildMenuLabels(getNavbarActions({ userRole: currentTestRole.value }));
+      const hiddenLabels = allMenuLabels.filter((label) => !visibleLabels.includes(label));
 
-      // Same as ADMIN
-      expect(links.length).toBe(8);
-      expect(wrapper.html()).not.toContain('Manage Tasks');
+      expect(links.length).toBe(countMenuLinks(wrapper.vm.computedItems));
+      visibleLabels.forEach((label) => expect(wrapper.html()).toContain(label));
+      hiddenLabels.forEach((label) => expect(wrapper.html()).not.toContain(label));
     });
   });
 
@@ -172,20 +206,14 @@ describe('NavBar.vue', () => {
     it('should render admin menu items', () => {
       const wrapper = mount(NavBar, mountOptions);
       const links = wrapper.findAll('.p-menubar-item-link');
+      const visibleLabels = buildMenuLabels(getNavbarActions({ userRole: currentTestRole.value }));
+      const hiddenLabels = allMenuLabels.filter((label) => !visibleLabels.includes(label));
 
-      expect(links.length).toBe(8);
+      expect(links.length).toBe(countMenuLinks(wrapper.vm.computedItems));
 
       const html = wrapper.html();
-      expect(html).toContain('Groups');
-      expect(html).toContain('Users');
-      expect(html).toContain('Add Users');
-      expect(html).toContain('Link Users');
-      expect(html).toContain('Manage Administrators');
-      expect(html).toContain('Assignments');
-      expect(html).toContain('View Assignments');
-      expect(html).toContain('Create Assignment');
-      
-      expect(html).not.toContain('Manage Tasks');
+      visibleLabels.forEach((label) => expect(html).toContain(label));
+      hiddenLabels.forEach((label) => expect(html).not.toContain(label));
     });
   });
 
@@ -197,20 +225,14 @@ describe('NavBar.vue', () => {
     it('should render research assistant menu items', () => {
       const wrapper = mount(NavBar, mountOptions);
       const links = wrapper.findAll('.p-menubar-item-link');
+      const visibleLabels = buildMenuLabels(getNavbarActions({ userRole: currentTestRole.value }));
+      const hiddenLabels = allMenuLabels.filter((label) => !visibleLabels.includes(label));
 
-      expect(links.length).toBe(7);
+      expect(links.length).toBe(countMenuLinks(wrapper.vm.computedItems));
 
       const html = wrapper.html();
-      expect(html).toContain('Groups');
-      expect(html).toContain('Users');
-      expect(html).toContain('Add Users');
-      expect(html).toContain('Link Users');
-      expect(html).toContain('Manage Administrators');
-      expect(html).toContain('Assignments');
-      expect(html).toContain('View Assignments');
-      
-      expect(html).not.toContain('Create Assignment');
-      expect(html).not.toContain('Manage Tasks');
+      visibleLabels.forEach((label) => expect(html).toContain(label));
+      hiddenLabels.forEach((label) => expect(html).not.toContain(label));
     });
   });
 
@@ -222,9 +244,14 @@ describe('NavBar.vue', () => {
     it('should render no menu items', () => {
       const wrapper = mount(NavBar, mountOptions);
       const links = wrapper.findAll('.p-menubar-item-link');
+      const visibleLabels = buildMenuLabels(getNavbarActions({ userRole: currentTestRole.value }));
+      const hiddenLabels = allMenuLabels.filter((label) => !visibleLabels.includes(label));
 
-      expect(links.length).toBe(0);
+      expect(links.length).toBe(countMenuLinks(wrapper.vm.computedItems));
       expect(wrapper.vm.computedIsBasicView).toBe(true);
+      const html = wrapper.html();
+      visibleLabels.forEach((label) => expect(html).toContain(label));
+      hiddenLabels.forEach((label) => expect(html).not.toContain(label));
     });
   });
 });

@@ -392,7 +392,7 @@ const getRoutePath = (taskId: string, variantURL?: string, taskURL?: string): st
 
   if (lowerCasedAndCamelizedTaskId === 'survey') {
     return '/survey';
-  } else if (LEVANTE_TASK_IDS.some((taskId) => camelize(taskId.toLowerCase()) === lowerCasedAndCamelizedTaskId)) {
+  } else if (LEVANTE_TASK_IDS.some((taskId) => taskId === lowerCasedAndCamelizedTaskId)) {
     return '/game/core-tasks/' + taskId;
   } else {
     return '/game/' + taskId;
