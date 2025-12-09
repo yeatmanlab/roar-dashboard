@@ -71,6 +71,13 @@
       "when": 1765240121042,
       "tag": "0009_add_classes_table",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1765240958219,
+      "tag": "0010_add_families_table",
+      "breakpoints": true
     }
   ]
 }
