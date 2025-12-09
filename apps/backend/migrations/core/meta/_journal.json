@@ -64,6 +64,13 @@
       "when": 1765238948681,
       "tag": "0008_add_courses_table",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1765240121042,
+      "tag": "0009_add_classes_table",
+      "breakpoints": true
     }
   ]
 }
