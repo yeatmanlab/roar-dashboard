@@ -85,6 +85,13 @@
       "when": 1765241143447,
       "tag": "0011_add_validate_class_org_refs_fn",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1765404776882,
+      "tag": "0012_add_agreements_table",
+      "breakpoints": true
     }
   ]
 }

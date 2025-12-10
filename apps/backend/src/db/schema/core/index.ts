@@ -2,6 +2,7 @@
 export * from '../enums';
 
 // Tables
+export * from './agreements';
 export * from './classes';
 export * from './courses';
 export * from './families';
