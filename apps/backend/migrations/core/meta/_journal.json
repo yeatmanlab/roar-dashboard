@@ -92,6 +92,13 @@
       "when": 1765404776882,
       "tag": "0012_add_agreements_table",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1765405133639,
+      "tag": "0013_add_agreement_versions_table",
+      "breakpoints": true
     }
   ]
 }
