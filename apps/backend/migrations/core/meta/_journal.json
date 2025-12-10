@@ -99,6 +99,41 @@
       "when": 1765405133639,
       "tag": "0013_add_agreement_versions_table",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1765410438291,
+      "tag": "0014_add_tasks_table",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1765410517463,
+      "tag": "0015_add_task_variants_table",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1765410560174,
+      "tag": "0016_add_task_variant_parameters_table",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1765410619243,
+      "tag": "0017_add_task_bundles_table",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1765410671049,
+      "tag": "0018_add_task_bundle_variants_table",
+      "breakpoints": true
     }
   ]
 }
