@@ -8,6 +8,7 @@ export * from './classes';
 export * from './courses';
 export * from './families';
 export * from './groups';
+export * from './run-demographics';
 export * from './tasks';
 export * from './task-variants';
 export * from './task-variant-parameters';
