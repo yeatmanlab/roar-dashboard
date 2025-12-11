@@ -183,6 +183,41 @@
       "when": 1765413269061,
       "tag": "0025_add_administration_orgs_table",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1765414486921,
+      "tag": "0026_add_user_agreements_table",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1765455545769,
+      "tag": "0027_add_user_classes_table",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1765459412677,
+      "tag": "0028_add_user_families_table",
+      "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1765459442122,
+      "tag": "0029_add_user_groups_table",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1765459463503,
+      "tag": "0030_add_user_orgs_table",
+      "breakpoints": true
     }
   ]
 }

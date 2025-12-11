@@ -22,3 +22,8 @@ export * from './task-bundles';
 export * from './task-bundle-variants';
 export * from './orgs';
 export * from './users';
+export * from './user-agreements';
+export * from './user-classes';
+export * from './user-families';
+export * from './user-groups';
+export * from './user-orgs';
