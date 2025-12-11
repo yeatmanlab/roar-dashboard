@@ -16,8 +16,13 @@ CREATE TABLE "app"."tasks" (
 CREATE UNIQUE INDEX "tasks_slug_unique_idx" ON "app"."tasks" USING btree ("slug");--> statement-breakpoint
 CREATE INDEX "tasks_slug_lower_idx" ON "app"."tasks" USING btree (lower("slug"));--> statement-breakpoint
 CREATE INDEX "tasks_name_lower_idx" ON "app"."tasks" USING btree (lower("name"));
+--> statement-breakpoint
 
--- Manual edit:
+
+-- =============================================================================
+-- Manual Edits
+-- =============================================================================
+
 -- Add trigger to update tasks.updated_at
 DROP TRIGGER IF EXISTS tasks_set_updated_at ON app.tasks;
 CREATE TRIGGER tasks_set_updated_at

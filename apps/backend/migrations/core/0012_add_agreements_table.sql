@@ -10,8 +10,13 @@ CREATE TABLE "app"."agreements" (
 CREATE INDEX "agreements_name_lower_idx" ON "app"."agreements" USING btree (lower("name"));--> statement-breakpoint
 CREATE INDEX "agreements_name_lower_pattern_idx" ON "app"."agreements" USING btree (lower("name") text_pattern_ops);--> statement-breakpoint
 CREATE INDEX "agreements_type_idx" ON "app"."agreements" USING btree ("agreement_type");
+--> statement-breakpoint
 
--- Manual edit: 
+
+-- =============================================================================
+-- Manual Edits
+-- =============================================================================
+
 -- Add trigger to update agreements.updated_at
 DROP TRIGGER IF EXISTS agreements_set_updated_at ON app.agreements;
 CREATE TRIGGER agreements_set_updated_at

@@ -11,9 +11,13 @@ CREATE TABLE "app"."families" (
 	"updated_at" timestamp with time zone,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
+--> statement-breakpoint
 
 
--- Manual edit: 
+-- =============================================================================
+-- Manual Edits
+-- =============================================================================
+
 -- Add trigger to update families.updated_at
 DROP TRIGGER IF EXISTS families_set_updated_at ON app.families;
 CREATE TRIGGER families_set_updated_at

@@ -34,9 +34,13 @@ CREATE TABLE "app"."users" (
 );
 --> statement-breakpoint
 CREATE UNIQUE INDEX "users_email_lower_uniqIdx" ON "app"."users" USING btree (lower("email")) WHERE "app"."users"."email" IS NOT NULL;
+--> statement-breakpoint
 
 
--- Manual edit: 
+-- =============================================================================
+-- Manual Edits
+-- =============================================================================
+
 -- Add trigger to update updated_at
 DROP TRIGGER IF EXISTS users_set_updated_at ON app.users;
 CREATE TRIGGER users_set_updated_at

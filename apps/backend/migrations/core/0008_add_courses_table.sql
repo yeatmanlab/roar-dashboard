@@ -12,9 +12,13 @@ CREATE UNIQUE INDEX "courses_org_name_lower_uniqIdx" ON "app"."courses" USING bt
 CREATE UNIQUE INDEX "courses_org_number_uniqIdx" ON "app"."courses" USING btree ("org_id","number");--> statement-breakpoint
 CREATE INDEX "courses_name_lower_idx" ON "app"."courses" USING btree (lower("name"));--> statement-breakpoint
 CREATE INDEX "courses_name_lower_pattern_idx" ON "app"."courses" USING btree (lower("name") text_pattern_ops);
+--> statement-breakpoint
 
 
--- Manual edit: 
+-- =============================================================================
+-- Manual Edits
+-- =============================================================================
+
 -- Add trigger to update updated_at
 DROP TRIGGER IF EXISTS courses_set_updated_at ON app.courses;
 CREATE TRIGGER courses_set_updated_at

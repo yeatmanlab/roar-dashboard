@@ -8,9 +8,13 @@ CREATE TABLE "app"."administration_orgs" (
 --> statement-breakpoint
 ALTER TABLE "app"."administration_orgs" ADD CONSTRAINT "administration_orgs_administration_id_administrations_id_fk" FOREIGN KEY ("administration_id") REFERENCES "app"."administrations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "app"."administration_orgs" ADD CONSTRAINT "administration_orgs_org_id_orgs_id_fk" FOREIGN KEY ("org_id") REFERENCES "app"."orgs"("id") ON DELETE restrict ON UPDATE no action;
+--> statement-breakpoint
 
 
--- Manual edit:
+-- =============================================================================
+-- Manual Edits
+-- =============================================================================
+
 -- Add trigger to update administration_orgs.updated_at
 DROP TRIGGER IF EXISTS administration_orgs_set_updated_at ON app.administration_orgs;
 CREATE TRIGGER administration_orgs_set_updated_at

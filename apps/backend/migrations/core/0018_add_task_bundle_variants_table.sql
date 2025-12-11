@@ -12,8 +12,13 @@ ALTER TABLE "app"."task_bundle_variants" ADD CONSTRAINT "task_bundle_variants_ta
 CREATE INDEX "task_bundle_variants_task_bundle_id_idx" ON "app"."task_bundle_variants" USING btree ("task_bundle_id");--> statement-breakpoint
 CREATE INDEX "task_bundle_variants_task_variant_id_idx" ON "app"."task_bundle_variants" USING btree ("task_variant_id");--> statement-breakpoint
 CREATE INDEX "task_bundle_variants_task_bundle_id_sort_order_idx" ON "app"."task_bundle_variants" USING btree ("task_bundle_id","sort_order");
+--> statement-breakpoint
 
--- Manual edit:
+
+-- =============================================================================
+-- Manual Edits
+-- =============================================================================
+
 -- Add trigger to update task_bundle_variants.updated_at
 DROP TRIGGER IF EXISTS task_bundle_variants_set_updated_at ON app.task_bundle_variants;
 CREATE TRIGGER task_bundle_variants_set_updated_at

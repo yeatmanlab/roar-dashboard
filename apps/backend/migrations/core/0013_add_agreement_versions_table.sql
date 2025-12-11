@@ -17,9 +17,13 @@ CREATE UNIQUE INDEX "agreement_versions_identity_unique_idx" ON "app"."agreement
 CREATE INDEX "agreement_versions_agreement_id_idx" ON "app"."agreement_versions" USING btree ("agreement_id");--> statement-breakpoint
 CREATE INDEX "agreement_versions_current_idx" ON "app"."agreement_versions" USING btree ("is_current","agreement_id");--> statement-breakpoint
 CREATE INDEX "agreement_versions_current_locale_idx" ON "app"."agreement_versions" USING btree ("is_current","locale","agreement_id");
+--> statement-breakpoint
 
 
--- Manual edit: 
+-- =============================================================================
+-- Manual Edits
+-- =============================================================================
+
 -- Add trigger to update agreement_versions.updated_at
 DROP TRIGGER IF EXISTS agreement_versions_set_updated_at ON app.agreement_versions;
 CREATE TRIGGER agreement_versions_set_updated_at

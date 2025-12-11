@@ -11,9 +11,13 @@ CREATE TABLE "app"."task_bundles" (
 --> statement-breakpoint
 CREATE INDEX "task_bundles_slug_lower_idx" ON "app"."task_bundles" USING btree (lower("slug"));--> statement-breakpoint
 CREATE INDEX "task_bundles_name_lower_idx" ON "app"."task_bundles" USING btree (lower("name"));
+--> statement-breakpoint
 
 
--- Manual edit:
+-- =============================================================================
+-- Manual Edits
+-- =============================================================================
+
 -- Add trigger to update task_bundles.updated_at
 DROP TRIGGER IF EXISTS task_bundles_set_updated_at ON app.task_bundles;
 CREATE TRIGGER task_bundles_set_updated_at

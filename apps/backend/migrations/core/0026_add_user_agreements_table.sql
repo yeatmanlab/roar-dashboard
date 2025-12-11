@@ -12,9 +12,13 @@ ALTER TABLE "app"."user_agreements" ADD CONSTRAINT "user_agreements_agreement_ve
 CREATE INDEX "user_agreements_user_idx" ON "app"."user_agreements" USING btree ("user_id");--> statement-breakpoint
 CREATE INDEX "user_agreements_user_agreement_idx" ON "app"."user_agreements" USING btree ("user_id","agreement_version_id");--> statement-breakpoint
 CREATE INDEX "user_agreements_agreement_version_idx" ON "app"."user_agreements" USING btree ("agreement_version_id");
+--> statement-breakpoint
 
 
--- Manual edit:
+-- =============================================================================
+-- Manual Edits
+-- =============================================================================
+
 -- Add trigger to update user_agreements.updated_at
 DROP TRIGGER IF EXISTS user_agreements_set_updated_at ON app.user_agreements;
 CREATE TRIGGER user_agreements_set_updated_at

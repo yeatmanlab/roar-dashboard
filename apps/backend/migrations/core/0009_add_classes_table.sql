@@ -25,8 +25,13 @@ CREATE INDEX "classes_district_idx" ON "app"."classes" USING btree ("district_id
 CREATE INDEX "classes_course_idx" ON "app"."classes" USING btree ("course_id");--> statement-breakpoint
 CREATE INDEX "classes_name_lower_idx" ON "app"."classes" USING btree (lower("name"));--> statement-breakpoint
 CREATE INDEX "classes_name_lower_pattern_idx" ON "app"."classes" USING btree (lower("name") text_pattern_ops);
+--> statement-breakpoint
 
--- Manual edit: 
+
+-- =============================================================================
+-- Manual Edits
+-- =============================================================================
+
 -- Add trigger to update updated_at
 DROP TRIGGER IF EXISTS classes_set_updated_at ON app.classes;
 CREATE TRIGGER classes_set_updated_at

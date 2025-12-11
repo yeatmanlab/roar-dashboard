@@ -14,9 +14,13 @@ ALTER TABLE "app"."administration_task_variants" ADD CONSTRAINT "administration_
 CREATE INDEX "administration_task_variants_administration_id_order_index_idx" ON "app"."administration_task_variants" USING btree ("administration_id","order_index");--> statement-breakpoint
 CREATE INDEX "administration_task_variants_task_variant_id_idx" ON "app"."administration_task_variants" USING btree ("task_variant_id");--> statement-breakpoint
 CREATE UNIQUE INDEX "administration_task_variants_admin_order_unique_idx" ON "app"."administration_task_variants" USING btree ("administration_id","order_index");
+--> statement-breakpoint
 
 
--- Manual edit:
+-- =============================================================================
+-- Manual Edits
+-- =============================================================================
+
 -- Add trigger to update administration_task_variants.updated_at
 DROP TRIGGER IF EXISTS administration_task_variants_set_updated_at ON app.administration_task_variants;
 CREATE TRIGGER administration_task_variants_set_updated_at

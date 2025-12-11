@@ -15,8 +15,13 @@ CREATE TABLE "app"."run_demographics" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "run_demographics_runId_unique" UNIQUE("run_id")
 );
+--> statement-breakpoint
 
--- Manual edit:
+
+-- =============================================================================
+-- Manual Edits
+-- =============================================================================
+
 -- Add trigger to update run_demographics.updated_at
 DROP TRIGGER IF EXISTS run_demographics_set_updated_at ON app.run_demographics;
 CREATE TRIGGER run_demographics_set_updated_at

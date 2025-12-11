@@ -21,8 +21,13 @@ ALTER TABLE "app"."groups" ADD CONSTRAINT "groups_parent_group_id_groups_id_fk" 
 CREATE INDEX "groups_parent_idx" ON "app"."groups" USING btree ("parent_group_id");--> statement-breakpoint
 CREATE INDEX "groups_name_lower_idx" ON "app"."groups" USING btree (lower("name"));--> statement-breakpoint
 CREATE INDEX "groups_name_lower_pattern_idx" ON "app"."groups" USING btree (lower("name") text_pattern_ops);
+--> statement-breakpoint
 
--- Manual edit: 
+
+-- =============================================================================
+-- Manual Edits
+-- =============================================================================
+
 -- Add trigger to update updated_at
 DROP TRIGGER IF EXISTS groups_set_updated_at ON app.groups;
 CREATE TRIGGER groups_set_updated_at

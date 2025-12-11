@@ -29,8 +29,13 @@ CREATE INDEX "orgs_parent_idx" ON "app"."orgs" USING btree ("parent_org_id");-->
 CREATE INDEX "orgs_parent_type_idx" ON "app"."orgs" USING btree ("parent_org_id","org_type");--> statement-breakpoint
 CREATE INDEX "orgs_name_lower_idx" ON "app"."orgs" USING btree (lower("name"));--> statement-breakpoint
 CREATE INDEX "orgs_name_lower_pattern_idx" ON "app"."orgs" USING btree (lower("name") text_pattern_ops);
+--> statement-breakpoint
 
--- Manual edit: 
+
+-- =============================================================================
+-- Manual Edits
+-- =============================================================================
+
 -- Add trigger to update updated_at
 DROP TRIGGER IF EXISTS orgs_set_updated_at ON app.orgs;
 CREATE TRIGGER orgs_set_updated_at

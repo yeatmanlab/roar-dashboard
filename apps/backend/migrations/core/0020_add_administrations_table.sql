@@ -21,9 +21,13 @@ CREATE INDEX "administrations_created_by_idx" ON "app"."administrations" USING b
 CREATE INDEX "administrations_date_end_idx" ON "app"."administrations" USING btree ("date_end");--> statement-breakpoint
 CREATE INDEX "administrations_date_range_idx" ON "app"."administrations" USING btree ("date_start","date_end");--> statement-breakpoint
 CREATE UNIQUE INDEX "administrations_name_internal_unique_idx" ON "app"."administrations" USING btree (lower("name_internal"));
+--> statement-breakpoint
 
 
--- Manual edit:
+-- =============================================================================
+-- Manual Edits
+-- =============================================================================
+
 -- Add trigger to update administrations.updated_at
 DROP TRIGGER IF EXISTS administrations_set_updated_at ON app.administrations;
 CREATE TRIGGER administrations_set_updated_at

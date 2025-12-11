@@ -13,9 +13,13 @@ CREATE TABLE "app"."user_classes" (
 ALTER TABLE "app"."user_classes" ADD CONSTRAINT "user_classes_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "app"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "app"."user_classes" ADD CONSTRAINT "user_classes_class_id_classes_id_fk" FOREIGN KEY ("class_id") REFERENCES "app"."classes"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "user_classes_class_idx" ON "app"."user_classes" USING btree ("class_id");
+--> statement-breakpoint
 
 
--- Manual edit:
+-- =============================================================================
+-- Manual Edits
+-- =============================================================================
+
 -- Add trigger to update user_classes.updated_at
 DROP TRIGGER IF EXISTS user_classes_set_updated_at ON app.user_classes;
 CREATE TRIGGER user_classes_set_updated_at

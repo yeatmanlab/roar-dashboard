@@ -13,9 +13,13 @@ CREATE TABLE "app"."user_families" (
 ALTER TABLE "app"."user_families" ADD CONSTRAINT "user_families_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "app"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "app"."user_families" ADD CONSTRAINT "user_families_family_id_families_id_fk" FOREIGN KEY ("family_id") REFERENCES "app"."families"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "user_families_family_idx" ON "app"."user_families" USING btree ("family_id");
+--> statement-breakpoint
 
 
--- Manual edit:
+-- =============================================================================
+-- Manual Edits
+-- =============================================================================
+
 -- Add user_families_child_active_uniqIdx
 -- Due to https://github.com/drizzle-team/drizzle-orm/issues/3349, the unique index cannot currently be declared inside
 -- the users-families schema declaration and must be added here as a raw SQL migration.

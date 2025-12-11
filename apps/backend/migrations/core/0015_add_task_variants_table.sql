@@ -11,8 +11,13 @@ CREATE TABLE "app"."task_variants" (
 ALTER TABLE "app"."task_variants" ADD CONSTRAINT "task_variants_task_id_tasks_id_fk" FOREIGN KEY ("task_id") REFERENCES "app"."tasks"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 CREATE UNIQUE INDEX "task_variants_task_name_unique_idx" ON "app"."task_variants" USING btree ("task_id",lower("name")) WHERE "app"."task_variants"."name" IS NOT NULL;--> statement-breakpoint
 CREATE INDEX "task_variants_task_id_status_idx" ON "app"."task_variants" USING btree ("task_id","status");
+--> statement-breakpoint
 
--- Manual edit:
+
+-- =============================================================================
+-- Manual Edits
+-- =============================================================================
+
 -- Add trigger to update task_variants.updated_at
 DROP TRIGGER IF EXISTS task_variants_set_updated_at ON app.task_variants;
 CREATE TRIGGER task_variants_set_updated_at
