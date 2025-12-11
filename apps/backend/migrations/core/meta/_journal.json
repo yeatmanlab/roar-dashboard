@@ -239,6 +239,27 @@
       "when": 1765459942373,
       "tag": "0033_add_validate_org_hierarchy_fn",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1765496701593,
+      "tag": "0034_add_rostering_runs_table",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1765497088841,
+      "tag": "0035_add_rostering_run_entities_table",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1765497382403,
+      "tag": "0036_add_rostering_provider_ids_table",
+      "breakpoints": true
     }
   ]
 }
