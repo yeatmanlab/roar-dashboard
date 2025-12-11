@@ -2,6 +2,8 @@
 export * from '../enums';
 
 // Tables
+export * from './administrations';
+export * from './administration-task-variants';
 export * from './agreements';
 export * from './agreement-versions';
 export * from './classes';
