@@ -7,9 +7,13 @@ const db = p.pgSchema('app');
 /**
  * Task Variant Parameters Table
  *
- * Stores information about task variant parameters in the system. Each task variant parameter is a configuration
- * parameter of a task variant that can be used to create assessments. A single task variant usually has multiple
- * parameters, each with different values.
+ * Stores configuration parameters for task variants. Each parameter is a key-value pair that
+ * customizes how the assessment runs (e.g., time limits, difficulty settings, language).
+ *
+ * Note: Uses `taskVariantId` as the primary key, implying one parameter record per variant.
+ * If multiple parameters are needed, they should be stored in the JSONB `value` field.
+ *
+ * @see {@link taskVariants} - The task variant this parameter configures
  */
 
 export const taskVariantParameters = db.table(

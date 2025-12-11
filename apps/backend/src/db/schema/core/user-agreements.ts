@@ -9,8 +9,14 @@ const db = p.pgSchema('app');
 /**
  * User Agreements Table
  *
- * Stores information about the agreements a user has signed. By definition, a single user will have multiple signed
- * agreements and a single agreement can have multiple users assigned to it.
+ * Records of user consent to agreement versions. A user can sign the same agreement version
+ * multiple times (e.g., annual reconsent), so this table uses a surrogate ID as primary key.
+ *
+ * Note: Users are required to reconsent to agreements annually. Multiple records may exist
+ * for the same user+agreementVersion combination with different timestamps.
+ *
+ * @see {@link users} - The user who signed (cascade delete)
+ * @see {@link agreementVersions} - The specific version signed (restrict delete)
  */
 export const userAgreements = db.table(
   'user_agreements',

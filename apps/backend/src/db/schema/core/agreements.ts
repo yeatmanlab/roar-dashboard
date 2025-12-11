@@ -8,7 +8,12 @@ const db = p.pgSchema('app');
 /**
  * Agreements Table
  *
- * Stores information about agreements in the system.
+ * Stores information about legal agreements in the system (e.g., terms of service, privacy policy,
+ * consent forms). Each agreement can have multiple versions across different locales.
+ *
+ * @see {@link agreementVersions} - Versioned content of this agreement
+ * @see {@link userAgreements} - Records of users who have signed versions of this agreement
+ * @see {@link administrationAgreements} - Administrations that require this agreement
  */
 export const agreements = db.table(
   'agreements',

@@ -5,10 +5,13 @@ import { timestamps } from '../common';
 const db = p.pgSchema('app');
 
 /**
- * Tasks Bundles Table
+ * Task Bundles Table
  *
- * Stores information about task bundles in the system. Each task bundle is a collection of tasks available within the
- * ROAR platform, grouped together for easy access and assignment configuration.
+ * Stores predefined collections of task variants that can be assigned together. Bundles provide
+ * a convenient way to group related assessments for common use cases (e.g., "Grade 3 Reading Battery",
+ * "Phonics Assessment Suite").
+ *
+ * @see {@link taskBundleVariants} - Junction table linking task variants to this bundle
  */
 
 export const taskBundles = db.table(

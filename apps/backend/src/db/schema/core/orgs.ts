@@ -9,8 +9,11 @@ const db = p.pgSchema('app');
 /**
  * Orgs Table
  *
- * Stores information about orgs in the system. The orgs table contains hierarchical information about the orgs
- * (district,school,local,state,region) in the system, defined by the parent_org_id column.
+ * Stores information about organizations in the system. Orgs follow a hierarchical structure
+ * (national → state → local → district → school → department) defined by the `parentOrgId` column.
+ * Orgs are exclusively synced via third-party rostering providers (e.g., Clever, ClassLink).
+ *
+ * @see {@link orgs.parentOrgId} - Self-reference for hierarchical structure
  */
 
 export const orgs = db.table(
@@ -54,7 +57,7 @@ export const orgs = db.table(
     // - Type lookups
     p.index('orgs_type_idx').on(table.orgType),
 
-    // - Hierachical lookups
+    // - Hierarchical lookups
     p.index('orgs_parent_idx').on(table.parentOrgId),
     p.index('orgs_parent_type_idx').on(table.parentOrgId, table.orgType),
 

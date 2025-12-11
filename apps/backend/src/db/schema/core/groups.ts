@@ -9,14 +9,17 @@ const db = p.pgSchema('app');
 /**
  * Groups Table
  *
- * Stores information about groups in the system. Just like orgs, groups can be structured hierarchically through the
- * `parent_group_id` column. Commonly, groups are cohorts, communities or businesses.
+ * Stores information about groups in the system. Groups can be structured hierarchically through the
+ * `parentGroupId` column. Commonly, groups are cohorts, communities, or businesses.
  *
- * Compared to orgs, groups are not automatically rostered through a third-party provider. Instead, groups are currently
- * created manually within the dashboard. Users are then assigned to groups either manually via the dashboard, or
- * through CSV upload.
+ * Unlike orgs, groups are not synced via third-party rostering providers. Instead, groups are
+ * created/rostered internally within the dashboard. Users are assigned to groups either manually or via CSV upload.
  *
- * @TODO: Decide whether the group's hierarchical structure is needed if deprecated in families.
+ * Additionally, groups are used to manage administrations for families through the ROAR at Home program.
+ *
+ * @see {@link groups.parentGroupId} - Self-reference for hierarchical structure
+ *
+ * @todo Decide whether the group's hierarchical structure is needed if deprecated in families.
  */
 export const groups = db.table(
   'groups',

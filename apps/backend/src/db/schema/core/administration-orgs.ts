@@ -8,8 +8,17 @@ const db = p.pgSchema('app');
 /**
  * Administration Orgs Table
  *
- * Stores information about the relationship between administrations and orgs. Administrations can be assigned to one or
- * multiple orgs to enable the assignment of tasks to those orgs.
+ * Junction table linking administrations to organizations. Defines which orgs are assigned
+ * to participate in an administration.
+ *
+ * - One administration can be assigned to multiple orgs
+ * - Users in assigned orgs become eligible to take the administration's assessments
+ * - Can target any org level (district, school, etc.)
+ *
+ * @see {@link administrations} - The administration (cascade delete)
+ * @see {@link orgs} - The assigned organization (restrict delete)
+ * @see {@link administrationClasses} - Alternative: assign to specific classes
+ * @see {@link administrationGroups} - Alternative: assign to groups
  */
 export const administrationOrgs = db.table(
   'administration_orgs',

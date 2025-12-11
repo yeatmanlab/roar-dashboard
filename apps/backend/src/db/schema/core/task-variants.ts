@@ -9,8 +9,12 @@ const db = p.pgSchema('app');
 /**
  * Task Variants Table
  *
- * Stores information about task variants in the system. Each task variant is a variant of a task that can be used to
- * create assessments. A single task usually has multiple variants, each with different parameters.
+ * Stores information about task variants in the system. Each task can have multiple variants
+ * with different parameters or configurations. Task variants are assigned to administrations
+ * to define which assessments students will take.
+ *
+ * @see {@link tasks} - The parent task this variant belongs to
+ * @see {@link administrationTaskVariants} - Junction table linking variants to administrations
  */
 
 export const taskVariants = db.table(

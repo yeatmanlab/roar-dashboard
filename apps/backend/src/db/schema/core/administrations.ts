@@ -8,8 +8,12 @@ const db = p.pgSchema('app');
 /**
  * Administrations Table
  *
- * Stores information about administrations in the system. Administrations are made up of a set of task variants used
- * during the assessment of a student, and are assigned to entities such as orgs, classes, families, etc.
+ * Stores information about administrations in the system. An administration defines a collection of
+ * task variants (assessments) that students will complete during a specific time period. Administrations
+ * are assigned to entities such as orgs, classes, families, etc.
+ *
+ * @see {@link users} - Referenced via createdBy
+ * @see {@link administrationTaskVariants} - Junction table defining which task variants are in this administration
  */
 export const administrations = db.table(
   'administrations',

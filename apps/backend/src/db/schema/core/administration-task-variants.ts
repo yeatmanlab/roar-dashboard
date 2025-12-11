@@ -8,8 +8,11 @@ const db = p.pgSchema('app');
 /**
  * Administration Task Variants Table
  *
- * Stores information about administration task variants in the system. Administration task variant entries record which
- * task variants are used within a specific administration.
+ * Junction table linking task variants to administrations. Defines which assessments are included
+ * in each administration and their order of presentation.
+ *
+ * @see {@link administrations} - The administration this entry belongs to (cascade delete)
+ * @see {@link taskVariants} - The task variant being included (restrict delete)
  */
 export const administrationTaskVariants = db.table(
   'administration_task_variants',

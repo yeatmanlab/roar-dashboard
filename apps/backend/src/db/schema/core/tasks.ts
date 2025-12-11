@@ -7,7 +7,10 @@ const db = p.pgSchema('app');
 /**
  * Tasks Table
  *
- * Stores information about tasks in the system. Each task is an assessment available within the ROAR platform.
+ * Stores information about tasks (assessments) in the system. Each task represents a distinct
+ * assessment type available within the ROAR platform (e.g., SWR, PA, SRE, Letter, Vocab).
+ *
+ * @see {@link taskVariants} - Variants of this task with different configurations
  */
 
 export const tasks = db.table(

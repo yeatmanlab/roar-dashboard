@@ -8,9 +8,14 @@ const db = p.pgSchema('app');
 /**
  * Administration Agreements Table
  *
- * Stores information about the relationship between administrations and agreements. Administrations are usually
- * assigned a single agreement at the time of creation, but this table allows for multiple agreements to be assigned
- * to a single administration in case agreements are updated during the course of an administration.
+ * Junction table linking agreements to administrations. Defines which legal agreements
+ * participants must sign before taking assessments in an administration.
+ *
+ * - One administration can require multiple agreements (e.g., TOS + consent + assent)
+ * - Agreements can be added mid-administration if policies change
+ *
+ * @see {@link administrations} - The administration requiring these agreements (cascade delete)
+ * @see {@link agreements} - The agreement being required (restrict delete)
  */
 export const administrationAgreements = db.table(
   'administration_agreements',

@@ -8,8 +8,11 @@ const db = p.pgSchema('app');
 /**
  * Agreement Versions Table
  *
- * Stores information about agreement versions in the system. Each agreement exists in different versions and those are
- * recorded here to track changes over time.
+ * Stores information about agreement versions in the system. Each agreement can exist in multiple
+ * versions across different locales. Version content is stored in GitHub and referenced here.
+ *
+ * @see {@link agreements} - The parent agreement this version belongs to
+ * @see {@link userAgreements} - Records of users who have signed this version
  */
 export const agreementVersions = db.table(
   'agreement_versions',
@@ -43,7 +46,7 @@ export const agreementVersions = db.table(
     // - Unique constraint to prevent duplicate versions for the same agreement / locale / commit SHA
     p.uniqueIndex('agreement_versions_identity_unique_idx').on(table.agreementId, table.locale, table.githubCommitSha),
 
-    // - Ensure correct ISO 649-1 locale codes (2-letter)
+    // - Ensure correct ISO 639-1 locale codes (2-letter)
     p.check('agreement_versions_locale_format', sql`${table.locale} ~ '^[a-z]{2}$'`),
 
     // Indexes

@@ -10,8 +10,12 @@ const db = p.pgSchema('app');
 /**
  * User Classes Table
  *
- * Stores information about the membership of a user in a class. By definition, a single user can be a member of
- * multiple classes, and a single class can have multiple users.
+ * Junction table for user membership in classes (many-to-many relationship).
+ * - One user can be enrolled in many classes
+ * - One class can have many enrolled users
+ *
+ * @see {@link users} - The enrolled user (cascade delete)
+ * @see {@link classes} - The class (restrict delete)
  */
 export const userClasses = db.table(
   'user_classes',

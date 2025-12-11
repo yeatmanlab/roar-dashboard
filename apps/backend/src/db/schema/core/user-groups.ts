@@ -10,8 +10,12 @@ const db = p.pgSchema('app');
 /**
  * User Groups Table
  *
- * Stores information about the membership of a user in a group (e.g. cohort, community, etc.). By definition, a single
- * user can be a member of multiple groups, and a single group can have multiple users.
+ * Junction table for user membership in groups (many-to-many relationship).
+ * - One user can belong to multiple groups (e.g., cohorts, communities)
+ * - One group can have many users
+ *
+ * @see {@link users} - The group member (cascade delete)
+ * @see {@link groups} - The group (restrict delete)
  */
 export const userGroups = db.table(
   'user_groups',

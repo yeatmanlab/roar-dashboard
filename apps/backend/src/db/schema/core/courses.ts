@@ -8,9 +8,12 @@ const db = p.pgSchema('app');
 /**
  * Courses Table
  *
- * Stores information about courses in the system. By internal definition, can belong to any org type (e.g., district)
- * while classes are unique to schools. For example, School X offers a course called "Reading 101", taught on a yearly
- * basis with classes within a given district: "Reading 101 - 2025-2026", "Reading 101 - 2026-2027", etc.
+ * Stores information about courses in the system. Courses can belong to any org type (e.g., district, school)
+ * and serve as templates for classes. For example, a district might define a course "Reading 101", which is
+ * then taught as individual classes: "Reading 101 - 2025-2026", "Reading 101 - 2026-2027", etc.
+ *
+ * @see {@link orgs} - The organization that owns this course
+ * @see {@link classes} - Classes that reference this course
  */
 export const courses = db.table(
   'courses',

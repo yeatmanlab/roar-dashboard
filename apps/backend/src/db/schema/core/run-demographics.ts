@@ -8,8 +8,11 @@ const db = p.pgSchema('app');
 /**
  * Run Demographics Table
  *
- * Stores demographics data of a given user, snapshotted at the time of a run. Whilst all the run data is stored in the
- * assessment database, the run demographics are stored in the core database as the contained data is considered PII.
+ * Stores a snapshot of user demographics at the time of an assessment run. This data is kept
+ * separate from the assessment database because it contains PII (Personally Identifiable Information).
+ *
+ * Note: This table exists in the core database while run data is in the assessment database,
+ * maintaining PII separation while allowing demographic analysis of assessment results.
  */
 export const runDemographics = db.table('run_demographics', {
   id: p

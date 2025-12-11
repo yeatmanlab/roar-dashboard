@@ -8,8 +8,17 @@ const db = p.pgSchema('app');
 /**
  * Administration Groups Table
  *
- * Stores information about the relationship between administrations and groups. Administrations can be assigned to one
- * or multiple groups to enable the assignment of tasks to those groups.
+ * Junction table linking administrations to groups. Defines which groups are assigned
+ * to participate in an administration.
+ *
+ * - One administration can be assigned to multiple groups
+ * - Users in assigned groups become eligible to take the administration's assessments
+ * - Commonly used for ROAR at Home and cohort-based assessments
+ *
+ * @see {@link administrations} - The administration (cascade delete)
+ * @see {@link groups} - The assigned group (restrict delete)
+ * @see {@link administrationOrgs} - Alternative: assign to orgs
+ * @see {@link administrationClasses} - Alternative: assign to classes
  */
 export const administrationGroups = db.table(
   'administration_groups',

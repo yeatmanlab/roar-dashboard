@@ -10,8 +10,12 @@ const db = p.pgSchema('app');
 /**
  * User Families Table
  *
- * Stores information about the membership of a user in a family. By definition, a single user can be a member of
- * multiple families (depending on their user role) and a single family can have multiple users.
+ * Junction table for user membership in families (many-to-many relationship).
+ * - One user can belong to multiple families (e.g., child in divorced family)
+ * - One family can have multiple users (parents, children)
+ *
+ * @see {@link users} - The family member (cascade delete)
+ * @see {@link families} - The family (restrict delete)
  */
 export const userFamilies = db.table(
   'user_families',

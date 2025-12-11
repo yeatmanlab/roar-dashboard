@@ -6,10 +6,13 @@ import { taskVariants } from './task-variants';
 const db = p.pgSchema('app');
 
 /**
- * Tasks Bundle Variants Table
+ * Task Bundle Variants Table
  *
- * Stores information about task bundle variants in the system. Each task bundle contains a collection of task variants
- * ready to be assigned.
+ * Junction table linking task variants to bundles. Defines which task variants are included
+ * in each bundle and their presentation order.
+ *
+ * @see {@link taskBundles} - The bundle containing these variants
+ * @see {@link taskVariants} - The task variant included in the bundle
  */
 
 export const taskBundleVariants = db.table(

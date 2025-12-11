@@ -10,8 +10,12 @@ const db = p.pgSchema('app');
 /**
  * User Orgs Table
  *
- * Stores information about the membership of a user in an org (e.g. district, school, etc.). By definition, a single
- * user can be a member of multiple orgs, and a single org can have multiple users.
+ * Junction table for user membership in organizations (many-to-many relationship).
+ * - One user can belong to multiple orgs (e.g., student in school and district)
+ * - One org can have many users
+ *
+ * @see {@link users} - The organization member (cascade delete)
+ * @see {@link orgs} - The organization (restrict delete)
  */
 export const userOrgs = db.table(
   'user_orgs',

@@ -11,9 +11,12 @@ const db = p.pgSchema('app');
 /**
  * Classes Table
  *
- * Stores information about classes in the system. By internal definition, classes are only available for schools
- * (orgType = school) and optionally reference a course. For example, School X offers a course called "Reading 101",
+ * Stores information about classes in the system. Classes belong to schools (referenced via `schoolId`)
+ * and optionally reference a course template. For example, School X offers a course called "Reading 101",
  * taught on a yearly basis with classes "Reading 101 - 2025-2026", "Reading 101 - 2026-2027", etc.
+ *
+ * @see {@link orgs} - Referenced via schoolId and districtId
+ * @see {@link courses} - Optional course template this class is based on
  */
 export const classes = db.table(
   'classes',

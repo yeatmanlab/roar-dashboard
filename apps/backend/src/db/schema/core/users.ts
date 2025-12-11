@@ -8,13 +8,32 @@ const db = p.pgSchema('app');
 /**
  * Users Table
  *
- * Stores information about users in the system.
+ * Stores information about users in the system. Users can be students, teachers, administrators,
+ * parents, or other roles defined by `userType`.
  *
- * - `assessmentPid`: The assessmentPid is a unique identifier for the user in the system. It is generated automatically
- *   during the rostering process and usually includes the district and school prefixes.
+ * Key fields:
+ * - `assessmentPid` - Unique identifier generated during rostering, typically includes district/school prefixes
+ * - `authId` - External authentication provider ID (nullable due to rostering sync timing)
+ * - `authProvider` - Array of authentication providers the user can use (e.g., Clever, ClassLink, Google)
+ * - `schoolLevel` - Auto-generated from `grade` using `app.get_school_level_from_grade()`
+ * - `excludeFromResearch` - When true, user's data should not be included in research datasets
  *
- * - `authId`: The authId should ideally be not nullable, but currently has to be nullable due to the way the rostering
- *   process currently handles user syncing and auth record creation.
+ * Status fields (ELL, FRL, IEP):
+ * - `statusEll` - English Language Learner status
+ * - `statusFrl` - Free/Reduced Lunch status
+ * - `statusIep` - Individualized Education Program status
+ *
+ * Constraints:
+ * - `email` must be unique (case-insensitive) when not null
+ * - `dob` must be in the past when not null
+ *
+ * @see {@link userOrgs} - User's organization memberships
+ * @see {@link userClasses} - User's class enrollments
+ * @see {@link userFamilies} - User's family memberships
+ * @see {@link userGroups} - User's group memberships
+ *
+ * @todo Should `authProvider` be notNull()?
+ * @todo Should `authId` be notNull()?
  */
 export const users = db.table(
   'users',
@@ -24,8 +43,8 @@ export const users = db.table(
       .default(sql`gen_random_uuid()`)
       .primaryKey(),
     assessmentPid: p.text().notNull().unique(),
-    authProvider: authProviderEnum().array(), // @TODO: Should this be notNull() ?
-    authId: p.text().unique(), // @TODO: Should be notNull() ?
+    authProvider: authProviderEnum().array(),
+    authId: p.text().unique(),
 
     name_first: p.text(),
     name_middle: p.text(),
