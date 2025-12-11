@@ -225,6 +225,13 @@
       "when": 1765459563776,
       "tag": "0031_fix_task_variant_parameters_pkey",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1765459836949,
+      "tag": "0032_fix_groups_abbreviation_constraint_name",
+      "breakpoints": true
     }
   ]
 }

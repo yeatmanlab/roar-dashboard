@@ -50,7 +50,7 @@ export const groups = db.table(
   (table) => [
     // Constraints
     // - Ensure abbreviation format only contains letters and numbers
-    p.check('orgs_abbreviation_format', sql`${table.abbreviation} ~ '^[A-Za-z0-9]+$'`),
+    p.check('groups_abbreviation_format', sql`${table.abbreviation} ~ '^[A-Za-z0-9]+$'`),
 
     // Indexes
     // - Hierarchical lookups
