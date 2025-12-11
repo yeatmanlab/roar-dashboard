@@ -9,9 +9,11 @@ const db = p.pgSchema('app');
  *
  * Stores configuration parameters for task variants. Each parameter is a key-value pair that
  * customizes how the assessment runs (e.g., time limits, difficulty settings, language).
+ * A single task variant can have multiple parameters, each identified by a unique name.
  *
- * Note: Uses `taskVariantId` as the primary key, implying one parameter record per variant.
- * If multiple parameters are needed, they should be stored in the JSONB `value` field.
+ * Key fields:
+ * - `name` - The parameter name/key (unique per task variant)
+ * - `value` - JSONB value for the parameter (can be string, number, object, array, etc.)
  *
  * @see {@link taskVariants} - The task variant this parameter configures
  */
@@ -21,9 +23,8 @@ export const taskVariantParameters = db.table(
   {
     taskVariantId: p
       .uuid()
-      .references(() => taskVariants.id)
-      .notNull()
-      .primaryKey(),
+      .references(() => taskVariants.id, { onDelete: 'cascade' })
+      .notNull(),
 
     name: p.text().notNull(),
     value: p.jsonb().notNull(),
@@ -31,9 +32,11 @@ export const taskVariantParameters = db.table(
     ...timestamps,
   },
   (table) => [
-    // Constraints
-    // - Parameter name should be unique per variant Id
-    p.index('task_variant_parameters_name_variant_id_idx').on(table.taskVariantId, table.name),
+    // Primary key
+    p.primaryKey({
+      name: 'task_variant_parameters_pkey',
+      columns: [table.taskVariantId, table.name],
+    }),
   ],
 );
 

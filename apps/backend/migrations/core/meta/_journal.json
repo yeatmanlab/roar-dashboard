@@ -218,6 +218,13 @@
       "when": 1765459463503,
       "tag": "0030_add_user_orgs_table",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1765459563776,
+      "tag": "0031_fix_task_variant_parameters_pkey",
+      "breakpoints": true
     }
   ]
 }
