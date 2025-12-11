@@ -232,6 +232,13 @@
       "when": 1765459836949,
       "tag": "0032_fix_groups_abbreviation_constraint_name",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1765459942373,
+      "tag": "0033_add_validate_org_hierarchy_fn",
+      "breakpoints": true
     }
   ]
 }
