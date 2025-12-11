@@ -34,7 +34,7 @@
     "@bdelab/roar-vocab": "1.8.0",
     "@bdelab/roav-crowding": "1.1.35",
     "@bdelab/roav-mep": "1.2.6",
-    "@bdelab/roav-ran": "1.0.33",
+    "@bdelab/roav-ran": "1.0.34",
     "@dotenvx/dotenvx": "^1.24.4",
     "@primevue/core": "^4.2.4",
     "@primevue/themes": "^4.2.4",
