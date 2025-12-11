@@ -43,6 +43,13 @@
       "when": 1765492551764,
       "tag": "0005_add_run_trial_interactions_table",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1765492928472,
+      "tag": "0006_add_run_scores_table",
+      "breakpoints": true
     }
   ]
 }
