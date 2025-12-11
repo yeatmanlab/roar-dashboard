@@ -7,29 +7,39 @@ import { trialInteractionTypeEnum } from '../enums';
 const db = p.pgSchema('app');
 
 /**
- * Runs Trial Interactions Table
+ * Run Trial Interactions Table
  *
- * Stores information about run trial interactions in the system. For every run trial, assessments can record
- * user interactions (focus, blur, etc). These interactions are stored in the assessment database without any PII for
- * research purposes.
+ * Stores user interaction events during individual trials. These events capture engagement
+ * signals like window focus/blur, mouse movements, or other UI interactions that may indicate
+ * attention or distraction during the assessment.
+ *
+ * @see {@link runTrials} - Parent trial this interaction occurred during
  */
 
-export const runTrialInteractions = db.table('run_trial_interactions', {
-  id: p
-    .uuid()
-    .default(sql`gen_random_uuid()`)
-    .primaryKey(),
+export const runTrialInteractions = db.table(
+  'run_trial_interactions',
+  {
+    id: p
+      .uuid()
+      .default(sql`gen_random_uuid()`)
+      .primaryKey(),
 
-  trialId: p
-    .uuid()
-    .references(() => runTrials.id)
-    .notNull(),
+    trialId: p
+      .uuid()
+      .references(() => runTrials.id, { onDelete: 'cascade' })
+      .notNull(),
 
-  interactionType: trialInteractionTypeEnum().notNull(),
-  timeMs: p.integer().notNull(),
+    interactionType: trialInteractionTypeEnum().notNull(),
+    timeMs: p.integer().notNull(),
 
-  ...timestamps,
-});
+    ...timestamps,
+  },
+  (table) => [
+    // Indexes
+    // - Lookup interactions by trial
+    p.index('run_trial_interactions_trial_id_idx').on(table.trialId),
+  ],
+);
 
 export type RunTrialInteraction = typeof runTrialInteractions.$inferSelect;
 export type NewRunTrialInteraction = typeof runTrialInteractions.$inferInsert;

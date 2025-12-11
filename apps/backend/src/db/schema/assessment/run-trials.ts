@@ -7,10 +7,18 @@ import { assessmentStageEnum } from '../enums';
 const db = p.pgSchema('app');
 
 /**
- * Runs Trials Table
+ * Run Trials Table
  *
- * Stores information about run trials in the system. For every run, multiple trials are recorded throughout the
- * assessment. These trials are stored in the assessment database without any PII for research purposes.
+ * Stores individual trial records within an assessment run. Each trial represents a single
+ * stimulus-response interaction (e.g., one word shown, one answer given). Trials capture
+ * the raw assessment data needed for scoring and research analysis.
+ *
+ * Note: Most fields are nullable because different assessment types record different data.
+ * The schema is intentionally flexible to accommodate various ROAR assessment formats with
+ * the goal to standardize the data storage format in the near future.
+ *
+ * @see {@link runs} - Parent run this trial belongs to (cascade delete)
+ * @see {@link runTrialInteractions} - User interactions during this trial
  */
 
 export const runTrials = db.table(

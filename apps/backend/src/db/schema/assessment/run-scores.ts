@@ -7,10 +7,23 @@ import { assessmentStageEnum, scoreTypeEnum } from '../enums';
 const db = p.pgSchema('app');
 
 /**
- * Runs Scores
+ * Run Scores Table
  *
- * Stores information about run scores in the system. For every run, scores are recorded throughout the
- * assessment. These scores are stored in the assessment database without any PII for research purposes.
+ * Stores computed scores for assessment runs. A single run can have multiple scores across
+ * different domains and score types (e.g., raw score, percentile, theta estimate).
+ *
+ * Note: `taskId` and `taskVariantId` are denormalized from the parent run for query performance,
+ * allowing score lookups without joining to the runs table.
+ *
+ * Key fields:
+ * - `type` - Score type enum (e.g., raw, percentile, theta)
+ * - `domain` - Assessment domain being measured (e.g., phonics, vocabulary)
+ * - `name` - Specific score name within the domain
+ * - `value` - The score value (stored as text for flexibility)
+ * - `assessmentStage` - Which stage this score applies to (practice vs test)
+ * - `categoryScore` - Whether this is a category-level aggregate score
+ *
+ * @see {@link runs} - Parent run this score belongs to (cascade delete)
  */
 
 export const runScores = db.table(

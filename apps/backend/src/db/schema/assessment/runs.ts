@@ -7,8 +7,15 @@ const db = p.pgSchema('app');
 /**
  * Runs Table
  *
- * Stores information about runs in the system. For every assessment taken by a user, a run is created. Runs and
- * corresponding trials are stored in the assessment database without any PII for research purposes.
+ * Stores assessment run records. A run represents a single attempt at completing an assessment
+ * (task variant) by a user. Each run can have multiple trials and scores associated with it.
+ *
+ * Note: This table is in the assessment database, intentionally without foreign key constraints
+ * to the core database. IDs reference core entities but are not enforced at the database level
+ * for research data isolation purposes.
+ *
+ * @see {@link runTrials} - Individual trial records within this run
+ * @see {@link runScores} - Computed scores for this run
  */
 
 export const runs = db.table(
