@@ -260,6 +260,20 @@
       "when": 1765497382403,
       "tag": "0036_add_rostering_provider_ids_table",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1765498974510,
+      "tag": "0037_add_validate_rostering_entity_fk_fn",
+      "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1765534870000,
+      "tag": "0038_add_prevent_rostered_entity_delete_fn",
+      "breakpoints": true
     }
   ]
 }
