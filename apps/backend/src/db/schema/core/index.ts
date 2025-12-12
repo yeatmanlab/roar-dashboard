@@ -30,3 +30,6 @@ export * from './user-classes';
 export * from './user-families';
 export * from './user-groups';
 export * from './user-orgs';
+
+// Relations
+export * from './relations';
