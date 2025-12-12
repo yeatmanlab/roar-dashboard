@@ -163,8 +163,8 @@ function setSentryWidgetVisibility(show) {
 // run again whenever role changes (like after sign-out/sign-in)
 watch(
   isParticipant,
-  (participant) => {
-    setSentryWidgetVisibility(!participant);
+  () => {
+    setSentryWidgetVisibility(true);
   },
   { immediate: false },
 );
@@ -175,6 +175,6 @@ onMounted(async () => {
     router.go(0);
   }
   if (roarfirekit.value.restConfig?.()) init();
-  setSentryWidgetVisibility(!isParticipant.value);
+  setSentryWidgetVisibility(true);
 });
 </script>
