@@ -610,6 +610,7 @@ export const assignmentPageFetcher = async (
   pageLimit,
   page,
   includeScores = false,
+  includeSurveyResponses = false,
   select = undefined,
   paginate = true,
   filters = [],
@@ -905,7 +906,7 @@ export const assignmentPageFetcher = async (
         });
 
       let batchSurveyDocs = [];
-      if (isLevante) {
+      if (includeSurveyResponses) {
         // Batch get survey response docs
         batchSurveyDocs = await Promise.all(
           userDocPaths.map(async (userDocPath) => {
@@ -952,7 +953,7 @@ export const assignmentPageFetcher = async (
       // Merge assignments, users, and survey data
       const scoresObj = assignmentData.map((assignment, index) => {
         const user = batchUserDocs.find((userDoc) => userDoc.name.includes(assignment.parentDoc));
-        const surveyResponse = isLevante ? batchSurveyDocs[index] : null;
+        const surveyResponse = includeSurveyResponses ? batchSurveyDocs[index] : null;
 
         let progress = 'assigned';
         if (surveyResponse) {
@@ -978,7 +979,8 @@ export const assignmentPageFetcher = async (
           assignment,
           user: user.data,
           roarUid: user.name.split('/users/')[1],
-          ...(isLevante && {
+          ...(
+            includeSurveyResponses && {
             survey: {
               progress,
               ...surveyResponse,
@@ -1073,7 +1075,7 @@ export const getUserAssignments = async (roarUid) => {
 };
 
 // TODO: Rename this function to be more descriptive.
-export const assignmentFetchAll = async (adminId, orgType, orgId, includeScores = false) => {
+export const assignmentFetchAll = async (adminId, orgType, orgId, includeScores = false, includeSurveyResponses = false) => {
   return await assignmentPageFetcher(
     adminId,
     orgType,
@@ -1081,6 +1083,7 @@ export const assignmentFetchAll = async (adminId, orgType, orgId, includeScores 
     { value: 2 ** 31 - 1 },
     { value: 0 },
     includeScores,
+    includeSurveyResponses,
     true,
     true,
   );
