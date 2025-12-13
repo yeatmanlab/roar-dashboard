@@ -281,6 +281,13 @@
       "when": 1765617815041,
       "tag": "0039_add_exceptions_support_to_rostering_run_entities",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1765618107940,
+      "tag": "0040_add_run_type_support_to_rostering_runs",
+      "breakpoints": true
     }
   ]
 }

@@ -141,6 +141,14 @@ export const rosteringProviderEnum = db.enum('rostering_provider', [
 ]);
 
 /**
+ * Supported types of rostering runs.
+ * - full: Complete sync of all data
+ * - incremental: Sync of only changed data since last run
+ * - retry: Re-attempt of failed entities from previous run
+ */
+export const rosteringRunTypeEnum = db.enum('rostering_run_type', ['full', 'incremental', 'retry']);
+
+/**
  * School levels, typically derived from student grade.
  * - early_childhood: Pre-K and kindergarten
  * - elementary: Grades 1-5

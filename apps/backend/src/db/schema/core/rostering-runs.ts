@@ -1,6 +1,6 @@
 import * as p from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
-import { rosteringProviderEnum } from '../enums';
+import { rosteringProviderEnum, rosteringRunTypeEnum } from '../enums';
 
 const db = p.pgSchema('app');
 
@@ -21,6 +21,8 @@ export const rosteringRuns = db.table(
       .primaryKey(),
 
     rosteringProvider: rosteringProviderEnum().notNull(),
+
+    runType: rosteringRunTypeEnum().notNull(),
 
     syncStarted: p
       .timestamp({ withTimezone: true })
