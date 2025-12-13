@@ -32,6 +32,7 @@ export const rosteringRunEntities = db.table(
     providerId: p.text().notNull(),
 
     status: rosteringEntityStatusEnum().notNull(),
+    exceptions: p.text().array(),
 
     timestamp: p
       .timestamp({ withTimezone: true })

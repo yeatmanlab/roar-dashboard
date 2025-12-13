@@ -1,0 +1,1 @@
+ALTER TABLE "app"."rostering_run_entities" ADD COLUMN "exceptions" text[];

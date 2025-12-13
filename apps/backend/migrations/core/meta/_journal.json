@@ -274,6 +274,13 @@
       "when": 1765534870000,
       "tag": "0038_add_prevent_rostered_entity_delete_fn",
       "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1765617815041,
+      "tag": "0039_add_exceptions_support_to_rostering_run_entities",
+      "breakpoints": true
     }
   ]
 }
