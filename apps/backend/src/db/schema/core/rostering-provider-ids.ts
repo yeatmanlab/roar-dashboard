@@ -13,6 +13,7 @@ const db = p.pgSchema('app');
  *
  * Key fields:
  * - `providerType` - The rostering provider (Clever, ClassLink, etc.)
+ * - `partnerId` - Partner context (some providers have IDs unique only within a partner)
  * - `providerId` - External ID from the provider
  * - `entityType` - Type of internal entity (org, class, course, user)
  * - `entityId` - Internal UUID of the entity
@@ -23,21 +24,22 @@ export const rosteringProviderIds = db.table(
   {
     providerType: rosteringProviderEnum().notNull(),
     providerId: p.text().notNull(),
+    partnerId: p.text().notNull(),
     entityType: rosteringEntityTypeEnum().notNull(),
     entityId: p.uuid().notNull(),
 
     ...timestamps,
   },
   (table) => [
-    // Primary key: one provider ID per entity per provider type
+    // Primary key: provider IDs are unique within provider + partner scope
     p.primaryKey({
       name: 'rostering_provider_ids_pk',
-      columns: [table.providerType, table.entityType, table.entityId],
+      columns: [table.providerType, table.partnerId, table.providerId],
     }),
 
     // Constraints
-    // - Provider IDs must be unique within each provider
-    p.uniqueIndex('rostering_provider_ids_provider_id_unique_idx').on(table.providerType, table.providerId),
+    // - Each internal entity can have at most one ID per provider
+    p.uniqueIndex('rostering_provider_ids_entity_unique_idx').on(table.providerType, table.entityType, table.entityId),
 
     // Indexes
     // - Find provider ID by internal entity
