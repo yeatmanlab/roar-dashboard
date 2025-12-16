@@ -1,5 +1,9 @@
 <template>
-  <main class="container main">
+  <div v-if="props.adminId && !isFormPopulated" class="levante-spinner-wrapper">
+    <LevanteSpinner />
+  </div>
+
+  <main v-else class="container main">
     <section class="main-body">
       <div class="flex flex-column mb-5">
         <div class="flex justify-content-between mb-2">
@@ -193,10 +197,12 @@ import { APP_ROUTES } from '@/constants/routes';
 import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
 import { isLevante, normalizeToLowercase } from '@/helpers';
 import { useQueryClient } from '@tanstack/vue-query';
-import useAssignmentByNameQuery from '@/composables/queries/useAssignmentByNameQuery';
+import useAssignmentExistsQuery from '@/composables/queries/useAssignmentExistsQuery';
 import { ADMINISTRATIONS_LIST_QUERY_KEY, ADMINISTRATIONS_QUERY_KEY, DSGF_ORGS_QUERY_KEY } from '@/constants/queryKeys';
+import LevanteSpinner from '@/components/LevanteSpinner.vue';
 
 const initialized = ref(false);
+const isFormPopulated = ref(false);
 const router = useRouter();
 const toast = useToast();
 const queryClient = useQueryClient();
@@ -309,9 +315,10 @@ const state = reactive({
   expectedTime: '',
 });
 
-const { refetch: doesAssignmentExist } = useAssignmentByNameQuery(
+const { refetch: refetchAssignmentExists } = useAssignmentExistsQuery(
   toRef(state, 'administrationName'),
   toRef(state, 'districts'),
+  props.adminId,
 );
 
 const rules = {
@@ -422,6 +429,122 @@ const scrollToError = (elementId) => {
       }, 2000);
     }
   }, 100);
+};
+
+const hasAssignmentChanges = () => {
+  const original = existingAdministrationData.value;
+  const current = state;
+
+  // If no original data exists (new assignment), there are always changes
+  if (!original) return true;
+
+  // Compare name
+  if (current.administrationName !== original.name) {
+    return true;
+  }
+
+  // Compare dates - normalize to compare only date part (ignore time)
+  const normalizeDate = (date) => {
+    if (!date) return null;
+    const d = new Date(date);
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  };
+
+  const originalStartDate = normalizeDate(original.dateOpened);
+  const currentStartDate = normalizeDate(current.dateStarted);
+  if (originalStartDate !== currentStartDate) {
+    return true;
+  }
+
+  const originalEndDate = normalizeDate(original.dateClosed);
+  const currentEndDate = normalizeDate(current.dateClosed);
+  if (originalEndDate !== currentEndDate) {
+    return true;
+  }
+
+  // Compare sequential
+  if (current.sequential !== original.sequential) {
+    return true;
+  }
+
+  // Compare testData
+  if (isTestData.value !== original.testData) {
+    return true;
+  }
+
+  // Compare orgs - extract IDs and sort for comparison
+  const getOrgIds = (orgs) => {
+    return toRaw(orgs)
+      .map((org) => org.id)
+      .sort();
+  };
+
+  const originalOrgs = original.minimalOrgs ?? {};
+  const currentDistricts = getOrgIds(current.districts);
+  const currentSchools = getOrgIds(current.schools);
+  const currentClasses = getOrgIds(current.classes);
+  const currentGroups = getOrgIds(current.groups);
+
+  const originalDistricts = (originalOrgs.districts ?? []).slice().sort();
+  const originalSchools = (originalOrgs.schools ?? []).slice().sort();
+  const originalClasses = (originalOrgs.classes ?? []).slice().sort();
+  const originalGroups = (originalOrgs.groups ?? []).slice().sort();
+
+  if (!_isEqual(currentDistricts, originalDistricts)) {
+    return true;
+  }
+  if (!_isEqual(currentSchools, originalSchools)) {
+    return true;
+  }
+  if (!_isEqual(currentClasses, originalClasses)) {
+    return true;
+  }
+  if (!_isEqual(currentGroups, originalGroups)) {
+    return true;
+  }
+
+  // Compare assessments/variants
+  const normalizeAssessment = (assessment) => {
+    return {
+      taskId: assessment.taskId,
+      variantId: assessment.variantId,
+      params: removeNull(assessment.params ?? {}),
+      conditions: assessment.conditions ? removeNull(assessment.conditions) : undefined,
+    };
+  };
+
+  const currentAssessments = variants.value
+    .map((variant) => {
+      return normalizeAssessment({
+        taskId: variant.task.id,
+        variantId: variant.variant.id,
+        params: toRaw(variant.variant.params),
+        conditions: toRaw(variant.variant.conditions),
+      });
+    })
+    .sort((a, b) => {
+      if (a.taskId !== b.taskId) return a.taskId.localeCompare(b.taskId);
+      if (a.variantId !== b.variantId) return (a.variantId || '').localeCompare(b.variantId || '');
+      return JSON.stringify(a.params).localeCompare(JSON.stringify(b.params));
+    });
+
+  const originalAssessments = (original.assessments ?? []).map(normalizeAssessment).sort((a, b) => {
+    if (a.taskId !== b.taskId) return a.taskId.localeCompare(b.taskId);
+    if (a.variantId !== b.variantId) return (a.variantId || '').localeCompare(b.variantId || '');
+    return JSON.stringify(a.params).localeCompare(JSON.stringify(b.params));
+  });
+
+  if (currentAssessments.length !== originalAssessments.length) {
+    return true;
+  }
+
+  for (let i = 0; i < currentAssessments.length; i++) {
+    if (!_isEqual(currentAssessments[i], originalAssessments[i])) {
+      return true;
+    }
+  }
+
+  return false;
 };
 
 const submit = async () => {
@@ -566,26 +689,27 @@ const submit = async () => {
 
   if (props.adminId) {
     args.administrationId = props.adminId;
-  } else {
-    const { data: assignmentExist } = await doesAssignmentExist();
+  }
 
-    if (assignmentExist === null) {
-      return toast.add({
-        severity: TOAST_SEVERITIES.ERROR,
-        summary: 'Error',
-        detail: 'Failed to check for duplicate assignment names. Try again or use a different name.',
-        life: TOAST_DEFAULT_LIFE_DURATION,
-      });
-    }
+  if (!hasAssignmentChanges()) {
+    toast.add({
+      severity: TOAST_SEVERITIES.WARN,
+      summary: 'No assignment change was detected.',
+      life: TOAST_DEFAULT_LIFE_DURATION,
+    });
 
-    if (assignmentExist) {
-      return toast.add({
-        severity: 'error',
-        summary: 'Assignment Creation Error',
-        detail: 'An assignment with that name already exists.',
-        life: TOAST_DEFAULT_LIFE_DURATION,
-      });
-    }
+    return router.push({ path: APP_ROUTES.HOME });
+  }
+
+  const { data: assignmentExists } = await refetchAssignmentExists();
+
+  if (assignmentExists) {
+    return toast.add({
+      severity: 'error',
+      summary: 'Assignment Creation Error',
+      detail: 'An assignment with that name already exists.',
+      life: TOAST_DEFAULT_LIFE_DURATION,
+    });
   }
 
   upsertAdministration(args, {
@@ -641,6 +765,10 @@ watch([existingAdministrationData, allVariants], ([adminInfo, allVariantInfo]) =
     state.administrationPublicName = adminInfo.name;
     state.dateStarted = new Date(adminInfo.dateOpened);
     state.dateClosed = new Date(adminInfo.dateClosed);
+    state.districts = adminInfo.districts;
+    state.schools = adminInfo.schools;
+    state.classes = adminInfo.classes;
+    state.groups = adminInfo.groups;
     state.sequential = adminInfo.sequential;
     _forEach(adminInfo.assessments, (assessment) => {
       const assessmentParams = assessment.params;
@@ -659,6 +787,8 @@ watch([existingAdministrationData, allVariants], ([adminInfo, allVariantInfo]) =
     if (state.consent === 'No Consent') {
       noConsent.value = state.consent;
     }
+
+    isFormPopulated.value = true;
   }
 });
 </script>
@@ -823,5 +953,18 @@ watch([existingAdministrationData, allVariants], ([adminInfo, allVariantInfo]) =
   100% {
     background-color: transparent;
   }
+}
+
+.levante-spinner-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  width: 100vw;
+  pointer-events: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 9999;
 }
 </style>

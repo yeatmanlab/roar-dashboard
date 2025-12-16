@@ -1089,46 +1089,58 @@ export const assignmentFetchAll = async (adminId, orgType, orgId, includeScores 
   );
 };
 
-export const fetchAssignmentsByNameAndDistricts = async (name, normalizedName, districts) => {
+export const fetchAssignmentsByNameAndDistricts = async (name, normalizedName, districts, adminId) => {
   const axiosInstance = getAxiosInstance();
 
   const queries = districts.map(async (district) => {
+    const filters = [
+      {
+        fieldFilter: {
+          field: { fieldPath: 'districts' },
+          op: 'ARRAY_CONTAINS',
+          value: { stringValue: district.id },
+        },
+      },
+      {
+        compositeFilter: {
+          op: 'OR',
+          filters: [
+            {
+              fieldFilter: {
+                field: { fieldPath: 'name' },
+                op: 'EQUAL',
+                value: { stringValue: name },
+              },
+            },
+            {
+              fieldFilter: {
+                field: { fieldPath: 'normalizedName' },
+                op: 'EQUAL',
+                value: { stringValue: normalizedName },
+              },
+            },
+          ],
+        },
+      },
+    ];
+
+    if (adminId) {
+      filters.push({
+        fieldFilter: {
+          field: { fieldPath: '__name__' },
+          op: 'NOT_EQUAL',
+          value: { referenceValue: `${getBaseDocumentPath()}/${FIRESTORE_COLLECTIONS.ADMINISTRATIONS}/${adminId}` },
+        },
+      });
+    }
+
     const requestBody = {
       structuredQuery: {
         from: [{ collectionId: FIRESTORE_COLLECTIONS.ADMINISTRATIONS }],
         where: {
           compositeFilter: {
             op: 'AND',
-            filters: [
-              {
-                fieldFilter: {
-                  field: { fieldPath: 'districts' },
-                  op: 'ARRAY_CONTAINS',
-                  value: { stringValue: district.id },
-                },
-              },
-              {
-                compositeFilter: {
-                  op: 'OR',
-                  filters: [
-                    {
-                      fieldFilter: {
-                        field: { fieldPath: 'name' },
-                        op: 'EQUAL',
-                        value: { stringValue: name },
-                      },
-                    },
-                    {
-                      fieldFilter: {
-                        field: { fieldPath: 'normalizedName' },
-                        op: 'EQUAL',
-                        value: { stringValue: normalizedName },
-                      },
-                    },
-                  ],
-                },
-              },
-            ],
+            filters,
           },
         },
       },
@@ -1136,7 +1148,7 @@ export const fetchAssignmentsByNameAndDistricts = async (name, normalizedName, d
 
     try {
       const response = await axiosInstance.post(`${getBaseDocumentPath()}:runQuery`, requestBody);
-      return response.data.filter((data) => data.document);
+      return mapFields(response.data);
     } catch (error) {
       console.error('Error fetching assignment by name: ', error);
       return null;
