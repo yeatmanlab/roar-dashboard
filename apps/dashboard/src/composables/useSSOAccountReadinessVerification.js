@@ -10,18 +10,20 @@ import useSentryLogging from '@/composables/useSentryLogging';
 import { AUTH_USER_TYPE } from '@/constants/auth';
 import { AUTH_LOG_MESSAGES } from '@/constants/logMessages';
 import { redirectSignInPath } from '@/helpers/redirectSignInPath';
+import isTestEnv from '@/helpers/isTestEnv';
 
 const { logAuthEvent } = useSentryLogging();
 
 /**
- * Backoff configuration for polling.
+ * Get backoff configuration for polling.
+ * Uses fewer attempts when running in Cypress to speed up tests.
  */
-const BACKOFF_OPTIONS = {
-  numOfAttempts: 15, // Max retries before giving up
-  startingDelay: 600, // Initial delay in ms
-  timeMultiple: 1.5, // Backoff multiplier
-  delayFirstAttempt: false, // Check immediately first
-};
+const getBackoffOptions = () => ({
+  numOfAttempts: isTestEnv() ? 3 : 15,
+  startingDelay: isTestEnv() ? 200 : 600,
+  timeMultiple: 1.5,
+  delayFirstAttempt: false,
+});
 
 /**
  * Verify account readiness after SSO authentication.
@@ -52,10 +54,11 @@ const useSSOAccountReadinessVerification = () => {
    * User is considered ready when userType exists and is not 'guest'.
    * Guest users are temporary accounts that are still being provisioned.
    *
+   * @param {object|null} data - The user data to check.
    * @returns {boolean} True if user is ready and redirect was triggered.
    */
-  const checkAndRedirectIfReady = () => {
-    const userType = userData?.value?.userType;
+  const checkAndRedirectIfReady = (data) => {
+    const userType = data?.userType;
 
     if (!userType || userType === AUTH_USER_TYPE.GUEST) {
       return false;
@@ -74,17 +77,35 @@ const useSSOAccountReadinessVerification = () => {
   };
 
   /**
+   * Wait for roarUid to be available in the auth store.
+   *
+   * After SSO redirect, the auth store needs time to sync with Firebase and populate userClaims.
+   * This function polls quickly until roarUid is available, without counting against retry attempts.
+   * For new accounts where roarUid doesn't exist yet (backend provisioning), this will time out
+   * and the backOff loop will handle further retries.
+   *
+   * @param {number} maxWaitMs - Maximum time to wait in milliseconds.
+   * @param {number} intervalMs - Polling interval in milliseconds.
+   * @returns {Promise<void>}
+   */
+  const waitForRoarUid = async (maxWaitMs = 10000, intervalMs = 100) => {
+    const startTime = Date.now();
+    while (!roarUid.value && !hasRedirected && Date.now() - startTime < maxWaitMs) {
+      await new Promise((resolve) => setTimeout(resolve, intervalMs));
+    }
+    // Don't throw - roarUid might legitimately not exist for new accounts being provisioned.
+    // The backOff loop will handle that case with proper retries.
+  };
+
+  /**
    * Starts polling with exponential backoff to check for user readiness.
-   * Will retry up to BACKOFF_OPTIONS.numOfAttempts times before setting hasError.
+   * Will retry up to the configured max attempts before setting hasError.
    *
    * @returns {Promise<void>}
    */
   const startPolling = async () => {
     // Prevent multiple concurrent polling sessions.
-    if (isPolling.value) return;
-
-    // Check immediately - user data might already be ready (returning user).
-    if (checkAndRedirectIfReady()) {
+    if (isPolling.value) {
       return;
     }
 
@@ -92,23 +113,34 @@ const useSSOAccountReadinessVerification = () => {
     hasError.value = false;
 
     try {
+      // Wait for auth store to sync before starting the backOff loop.
+      // This prevents wasting retry attempts on "roarUid not available" for existing accounts.
+      await waitForRoarUid();
+
       await backOff(
         async () => {
-          // Refetch user data from the server.
-          await refetchUserData();
+          // Check if roarUid is available (may still be waiting for backend provisioning).
+          if (!roarUid.value) {
+            const error = new Error('User ID not available yet');
+            error.userType = undefined;
+            throw error;
+          }
 
-          if (checkAndRedirectIfReady()) {
+          // Refetch user data from the server and use the result directly.
+          const { data } = await refetchUserData();
+
+          if (checkAndRedirectIfReady(data)) {
             // Success - returning normally will exit backOff.
             return;
           }
 
           // Not ready yet - throw to trigger retry.
           const error = new Error('User not ready');
-          error.userType = userData?.value?.userType;
+          error.userType = data?.userType;
           throw error;
         },
         {
-          ...BACKOFF_OPTIONS,
+          ...getBackoffOptions(),
           retry: (error, attemptNumber) => {
             // Update retry count for UI/logging.
             retryCount.value = attemptNumber;
