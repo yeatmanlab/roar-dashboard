@@ -40,11 +40,7 @@ describe('Participant: Auth', () => {
     cy.interceptUserDataWithoutUserType();
 
     // Navigate to sign-in page and set E2E flag for reduced polling attempts.
-    cy.visit(APP_ROUTES.SIGN_IN, {
-      onBeforeLoad(win) {
-        win.localStorage.setItem('__E2E__', 'true');
-      },
-    });
+    cy.visit(APP_ROUTES.SIGN_IN);
     cy.performCleverOAuth(CLEVER_SCHOOL_NAME, CLEVER_USERNAME, CLEVER_PASSWORD);
 
     // Wait for error state to appear (polling exhausted retries without finding userType).
