@@ -2,25 +2,27 @@
   <div>
     <div
       v-if="!initialized || isLoading || isFetching"
-      class="loading-container bg-white-alpha-90"
+      class="flex flex-column align-items-center justify-content-center min-h-screen-minus-nav"
       data-cy="home-participant__administration-loadingstate"
     >
       <AppSpinner style="margin-bottom: 1rem" />
       <span>{{ $t('homeParticipant.loadingAssignments') }}</span>
     </div>
 
-    <div v-else-if="!hasAssignments" data-cy="home-participant__administration-emptystate">
-      <div class="py-8 text-center col-full">
-        <h1>{{ $t('homeParticipant.noAssignments') }}</h1>
-        <p class="text-center">{{ $t('homeParticipant.contactAdministrator') }}</p>
-
-        <PvButton
-          :label="$t('navBar.signOut')"
-          class="p-2 text-white no-underline border-none bg-primary border-round hover:bg-red-900"
-          icon="pi pi-sign-out"
-          @click="signOut"
-        />
-      </div>
+    <div
+      v-else-if="!hasAssignments"
+      class="flex align-items-center justify-content-center min-h-screen-minus-nav"
+      data-cy="home-participant__administration-emptystate"
+    >
+      <AppMessageState
+        :type="MESSAGE_STATE_TYPES.EMPTY"
+        :title="$t('homeParticipant.noAssignments')"
+        :message="$t('homeParticipant.contactAdministrator')"
+      >
+        <template #actions>
+          <PvButton :label="$t('navBar.signOut')" icon="pi pi-sign-out" @click="signOut" />
+        </template>
+      </AppMessageState>
     </div>
 
     <div v-else data-cy="home-participant__administration">
@@ -124,6 +126,8 @@ import useSignOutMutation from '@/composables/mutations/useSignOutMutation';
 import ConsentModal from '@/components/ConsentModal.vue';
 import GameTabs from '@/components/GameTabs.vue';
 import ParticipantSidebar from '@/components/ParticipantSidebar.vue';
+import { AppMessageState, MESSAGE_STATE_TYPES } from '@/components/AppMessageState';
+import AppSpinner from '@/components/AppSpinner.vue';
 import useUserType from '@/composables/useUserType';
 import { highestAdminOrgIntersection } from '@/helpers/query/assignments';
 import { checkConsentRenewalDate } from '@/helpers/checkConsentRenewalDate';
@@ -477,10 +481,5 @@ watch(
   .tabs-container {
     flex-direction: row;
   }
-}
-
-.loading-container {
-  width: 100%;
-  text-align: center;
 }
 </style>

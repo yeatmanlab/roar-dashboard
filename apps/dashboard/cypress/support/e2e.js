@@ -8,8 +8,16 @@ Cypress.on('uncaught:exception', () => {
   return false;
 });
 
-// beforeEach hook to simulate various network conditions based on information in the test filename.
 beforeEach(() => {
+  // Inject E2E test flag to handle conditional state in app code.
+  // This is required as the window.Cypress object seems to be unreliable in some cases in the current Cypress version.
+  cy.on('window:before:load', (win) => {
+    win.localStorage.setItem('__E2E__', 'true');
+  });
+
+  cy.visit('/');
+
+  // Simulate different network conditions based on test file name.
   if (Cypress.spec.name.includes('4G')) {
     cy.task('log', 'Simulating 4G connection');
     cy.intercept(

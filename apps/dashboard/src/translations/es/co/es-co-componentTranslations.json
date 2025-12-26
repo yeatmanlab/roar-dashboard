@@ -35,6 +35,12 @@
   "classLinkLanding": {
     "classLinkLoading": "Cargando tus datos desde ClassLink..."
   },
+  "ssoAuth": {
+    "errorTitle": "No se pudo completar el inicio de sesión",
+    "errorMessage": "Estamos teniendo problemas para configurar tu cuenta. Por favor, intenta de nuevo.",
+    "retryButton": "Intentar de nuevo",
+    "signOutButton": "Cerrar sesión"
+  },
   "consentModal": {
     "consentTitle": "Consentimiento",
     "assentTitle": "Asentimiento",
