@@ -25,6 +25,7 @@ export const taskBundles = db.table(
     slug: p.text().unique().notNull(),
     name: p.text().notNull(),
     description: p.text().notNull(),
+    image: p.text(),
 
     ...timestamps,
   },
