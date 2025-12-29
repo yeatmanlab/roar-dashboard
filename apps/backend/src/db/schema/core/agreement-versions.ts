@@ -31,7 +31,7 @@ export const agreementVersions = db.table(
 
     githubFilename: p.text().notNull(),
     githubOrgRepo: p.text().notNull(),
-    githubCommitSha: p.bigint({ mode: 'bigint' }).notNull(),
+    githubCommitSha: p.text().notNull(),
 
     ...timestamps,
   },

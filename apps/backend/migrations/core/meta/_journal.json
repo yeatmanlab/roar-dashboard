@@ -302,6 +302,13 @@
       "when": 1767040654625,
       "tag": "0042_add_invitation_codes_table",
       "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1767040775429,
+      "tag": "0043_fix_agreement_versions_github_commit_sha_column_type",
+      "breakpoints": true
     }
   ]
 }
