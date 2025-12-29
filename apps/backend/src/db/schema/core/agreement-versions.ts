@@ -27,7 +27,7 @@ export const agreementVersions = db.table(
       .notNull(),
 
     isCurrent: p.boolean().notNull(),
-    locale: p.varchar({ length: 2 }).notNull(),
+    locale: p.varchar({ length: 10 }).notNull(),
 
     githubFilename: p.text().notNull(),
     githubOrgRepo: p.text().notNull(),
@@ -46,8 +46,8 @@ export const agreementVersions = db.table(
     // - Unique constraint to prevent duplicate versions for the same agreement / locale / commit SHA
     p.uniqueIndex('agreement_versions_identity_unique_idx').on(table.agreementId, table.locale, table.githubCommitSha),
 
-    // - Ensure correct ISO 639-1 locale codes (2-letter)
-    p.check('agreement_versions_locale_format', sql`${table.locale} ~ '^[a-z]{2}$'`),
+    // - Ensure correct BCP 47 locale codes (ISO 639-1 language code with optional ISO 3166-1 region)
+    p.check('agreement_versions_locale_format', sql`${table.locale} ~ '^[a-z]{2}(-[A-Z]{2})?$'`),
 
     // Indexes
     // - Agreement ID lookups

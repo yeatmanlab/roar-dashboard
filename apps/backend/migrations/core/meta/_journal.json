@@ -309,6 +309,13 @@
       "when": 1767040775429,
       "tag": "0043_fix_agreement_versions_github_commit_sha_column_type",
       "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1767049345238,
+      "tag": "0044_fix_agreement_versions_locale_constraint",
+      "breakpoints": true
     }
   ]
 }
