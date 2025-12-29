@@ -14,6 +14,7 @@ export * from './classes';
 export * from './courses';
 export * from './families';
 export * from './groups';
+export * from './invitation-codes';
 export * from './run-demographics';
 export * from './rostering-runs';
 export * from './rostering-run-entities';
