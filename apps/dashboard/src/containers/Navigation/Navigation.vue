@@ -49,6 +49,7 @@ const { isAdmin, isSuperAdmin, isLaunchAdmin } = useUserType(userClaims);
 const navbarBlacklist = [
   'SignIn',
   'Register',
+  'SSO',
   'Maintenance',
   'PlayApp',
   'SWR',
