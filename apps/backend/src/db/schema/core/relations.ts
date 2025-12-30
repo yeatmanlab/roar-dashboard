@@ -5,6 +5,7 @@ import { classes } from './classes';
 import { courses } from './courses';
 import { families } from './families';
 import { groups } from './groups';
+import { invitationCodes } from './invitation-codes';
 import { orgs } from './orgs';
 import { users } from './users';
 import { userAgreements } from './user-agreements';
@@ -65,6 +66,14 @@ export const groupsRelations = relations(groups, ({ one, many }) => ({
   children: many(groups, { relationName: 'groupHierarchy' }),
   users: many(userGroups),
   administrations: many(administrationGroups),
+  invitationCodes: many(invitationCodes),
+}));
+
+/**
+ * Invitation Code Relations
+ */
+export const invitationCodesRelations = relations(invitationCodes, ({ one }) => ({
+  group: one(groups, { fields: [invitationCodes.groupId], references: [groups.id] }),
 }));
 
 /**

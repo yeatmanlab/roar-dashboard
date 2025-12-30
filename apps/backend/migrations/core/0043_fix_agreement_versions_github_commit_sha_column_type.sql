@@ -1,0 +1,1 @@
+ALTER TABLE "app"."agreement_versions" ALTER COLUMN "github_commit_sha" SET DATA TYPE text;
