@@ -1,3 +1,5 @@
+import type { userTypeEnum } from '../../db/schema/enums';
+
 /**
  * Decoded Firebase JWT interface.
  *
@@ -12,6 +14,20 @@ export type DecodedUser = {
   uid: string;
   email?: string;
   claims: Record<string, unknown>;
+};
+
+/**
+ * Minimal authentication context attached to req.user.
+ *
+ * Contains only the essential user information needed for authorization checks.
+ * Junction tables (userOrgs, userClasses, etc.) can be queried using the id.
+ *
+ * @property id - The PostgreSQL user UUID.
+ * @property userType - The user's type (student, educator, caregiver, admin).
+ */
+export type AuthContext = {
+  id: string;
+  userType: (typeof userTypeEnum.enumValues)[number];
 };
 
 /**

@@ -7,9 +7,30 @@ import { AuthService } from '../../services/auth/auth.service';
 import { API_ERROR_CODES } from '../../constants/api-error-codes';
 import { FIREBASE_ERROR_CODES } from '../../constants/firebase-error-codes';
 import { DecodedUserFactory } from '../../test-support/factories/auth.factory';
+import { UserFactory } from '../../test-support/factories/user.factory';
 
 // Mock AuthService
 vi.mock('../../services/auth/auth.service');
+
+// Hoist the mock function so it's available when vi.mock runs
+const mockFindByAuthId = vi.hoisted(() => vi.fn());
+
+// Mock UserService
+vi.mock('../../services/user', () => ({
+  UserService: () => ({
+    findByAuthId: mockFindByAuthId,
+  }),
+}));
+
+// Mock UserRepository
+vi.mock('../../repositories', () => ({
+  UserRepository: vi.fn(),
+}));
+
+// Mock CoreDbClient
+vi.mock('../../db/clients', () => ({
+  CoreDbClient: {},
+}));
 
 describe('AuthGuardMiddleware', () => {
   let app: express.Application;
@@ -41,10 +62,12 @@ describe('AuthGuardMiddleware', () => {
     });
   });
 
-  it('should successfully authenticate valid token and attach user to request', async () => {
-    const mockUser = DecodedUserFactory.build();
+  it('should successfully authenticate valid token and attach AuthContext to request', async () => {
+    const mockDecodedUser = DecodedUserFactory.build();
+    const mockUser = UserFactory.build({ authId: mockDecodedUser.uid });
 
-    authServiceMock.mockImplementation(() => new Promise((resolve) => setTimeout(() => resolve(mockUser), 10)));
+    authServiceMock.mockResolvedValue(mockDecodedUser);
+    mockFindByAuthId.mockResolvedValue(mockUser);
 
     const response = await request(app)
       .get('/')
@@ -52,7 +75,28 @@ describe('AuthGuardMiddleware', () => {
       .expect(StatusCodes.OK);
 
     expect(authServiceMock).toHaveBeenCalledWith('mock-valid-jwt-token');
-    expect(response.body.user).toEqual(mockUser);
+    expect(mockFindByAuthId).toHaveBeenCalledWith(mockDecodedUser.uid);
+    expect(response.body.user).toEqual({
+      id: mockUser.id,
+      userType: mockUser.userType,
+    });
+  });
+
+  it('should return 401 when user is not found in database', async () => {
+    const mockDecodedUser = DecodedUserFactory.build();
+
+    authServiceMock.mockResolvedValue(mockDecodedUser);
+    mockFindByAuthId.mockResolvedValue(null);
+
+    const response = await request(app)
+      .get('/')
+      .set('Authorization', 'Bearer mock-valid-jwt-token')
+      .expect(StatusCodes.UNAUTHORIZED);
+
+    expect(authServiceMock).toHaveBeenCalledWith('mock-valid-jwt-token');
+    expect(mockFindByAuthId).toHaveBeenCalledWith(mockDecodedUser.uid);
+    expect(response.body.message).toBe('User not found.');
+    expect(response.body.code).toBe(API_ERROR_CODES.AUTH.USER_NOT_FOUND);
   });
 
   describe('error handling', () => {
