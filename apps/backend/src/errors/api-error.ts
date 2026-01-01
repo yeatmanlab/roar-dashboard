@@ -1,5 +1,5 @@
 import { StatusCodes } from 'http-status-codes';
-import { v4 } from 'uuid';
+import { randomUUID } from 'crypto';
 
 /**
  * Parameters for initializing an ApiError instance.
@@ -8,7 +8,7 @@ interface ApiErrorParams {
   /** HTTP status code for the error. Defaults to 500 (Internal Server Error). */
   statusCode?: number;
   /** Additional context information about the error. */
-  context?: Record<string, unknown>;
+  context?: Record<string, unknown> | undefined;
   /** Unique identifier for tracing the error. Auto-generated if not provided. */
   traceId?: string;
   /** The underlying cause of the error. */
@@ -34,11 +34,9 @@ export class ApiError extends Error {
   /** HTTP status code for the error. */
   public readonly statusCode: number;
   /** Additional context information about the error. */
-  public readonly context?: Record<string, unknown>;
+  public readonly context: Record<string, unknown> | undefined;
   /** Unique identifier for tracing the error. Auto-generated if not provided. */
-  public readonly traceId?: string;
-  /** The original error or cause of the error. */
-  public readonly cause?: unknown;
+  public readonly traceId: string;
 
   /**
    * Creates a new ApiError instance.
@@ -46,14 +44,13 @@ export class ApiError extends Error {
    * @param options - Configuration options for the error
    */
   constructor(
-    public readonly message: string,
+    override readonly message: string,
     options?: ApiErrorParams,
   ) {
-    super(message);
+    super(message, { cause: options?.cause });
     this.name = 'ApiError';
     this.statusCode = options?.statusCode ?? StatusCodes.INTERNAL_SERVER_ERROR;
-    this.traceId = options?.traceId || v4();
+    this.traceId = options?.traceId ?? randomUUID();
     this.context = options?.context;
-    this.cause = options?.cause;
   }
 }

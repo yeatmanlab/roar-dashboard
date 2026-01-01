@@ -9,7 +9,7 @@ interface DatabaseErrorParams {
   /** The error code for the database error. */
   code?: DatabaseErrorCode;
   /** Additional context information about the error. */
-  context?: Record<string, unknown>;
+  context?: Record<string, unknown> | undefined;
   /** The original error object. */
   cause?: unknown;
 }
@@ -40,12 +40,7 @@ export class DatabaseError extends Error {
    * Additional contextual information about the error.
    * Useful for debugging and error tracking.
    */
-  public readonly context?: Record<string, unknown>;
-
-  /**
-   * The underlying cause or original error that triggered this database error.
-   */
-  public readonly cause?: unknown;
+  public readonly context: Record<string, unknown> | undefined;
 
   /**
    * Creates a new DatabaseError instance.
@@ -53,14 +48,13 @@ export class DatabaseError extends Error {
    * @param options - Optional configuration for the error
    */
   constructor(
-    public readonly message: string,
+    override readonly message: string,
     options?: DatabaseErrorParams,
   ) {
-    super(message);
+    super(message, { cause: options?.cause });
     this.name = 'DatabaseError';
     this.code = options?.code ?? DatabaseErrorCode.QUERY_FAILED;
     this.context = options?.context;
-    this.cause = options?.cause;
   }
 
   /**
