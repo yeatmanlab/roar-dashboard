@@ -1,4 +1,4 @@
-import type { BaseFilter } from '../../filters/base.filter';
+import type { SQL } from 'drizzle-orm';
 
 /**
  * Generic transaction type for database operations.
@@ -31,7 +31,7 @@ export interface BaseParams {
  * Parameters for retrieving data from a repository.
  *
  * If id is provided, retrieve a specific entity.
- * If filters are provided, retrieve entities that match the filters.
+ * If where is provided, retrieve entities that match the condition.
  * If transaction is provided, execute the operation within the transaction.
  * If limit is provided, limit the number of results.
  * If select is provided, select specific fields from the entities.
@@ -40,8 +40,8 @@ export interface BaseGetParams extends BaseParams {
   /** ID for specific entity retrieval. */
   id?: string;
 
-  /** Filters for entity retrieval. */
-  filters?: BaseFilter[];
+  /** Drizzle SQL where clause for entity retrieval. */
+  where?: SQL;
 }
 
 /**
@@ -53,26 +53,27 @@ export interface BaseGetByIdParams extends BaseParams {
 }
 
 /**
- * Params for retrieving documents using filters.
+ * Params for retrieving documents using a where clause.
  */
-export interface BaseGetByFiltersParams extends BaseParams {
-  /** The query filters */
-  filters: BaseFilter[];
+export interface BaseGetByWhereParams extends BaseParams {
+  /** The Drizzle SQL where clause */
+  where: SQL;
 }
 
 /**
  * Parameters for retrieving all entities from a repository.
  */
 export interface BaseGetAllParams extends BaseParams {
-  filters?: BaseFilter[];
+  /** Optional Drizzle SQL where clause. */
+  where?: SQL;
 }
 
 /**
  * Parameters for counting entities in a repository.
  */
 export interface BaseCountParams extends BaseParams {
-  /** Filters for entity counting. */
-  filters?: BaseFilter[];
+  /** Optional Drizzle SQL where clause for counting. */
+  where?: SQL;
 }
 
 /**
@@ -145,13 +146,13 @@ export interface BaseRepository<T> {
   /** Retrieves an entity by its ID. */
   get(params: BaseGetParams & { id: string }): Promise<Result<T> | null>;
 
-  /** Retrieves entities based on provided filters. */
-  get(params: BaseGetParams & { filters: BaseFilter[] }): Promise<Result<T>[]>;
+  /** Retrieves entities based on provided where clause. */
+  get(params: BaseGetParams & { where: SQL }): Promise<Result<T>[]>;
 
   /** Retrieves entities based on provided parameters. */
   get(params: BaseGetParams): Promise<Result<T> | Result<T>[] | null>;
 
-  /** Retrieves all entities with optional filtering. */
+  /** Retrieves all entities with optional where clause. */
   getAll(params: BaseGetAllParams): Promise<Result<T>[]>;
 
   /** Creates a new entity in the repository. */
@@ -169,6 +170,6 @@ export interface BaseRepository<T> {
   /** Runs a transaction within the repository. */
   runTransaction<R>(params: BaseRunTransactionParams<R>): Promise<R>;
 
-  /** Counts entities based on provided filters. */
+  /** Counts entities based on provided where clause. */
   count(params: BaseCountParams): Promise<number>;
 }
