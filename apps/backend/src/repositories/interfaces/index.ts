@@ -3,7 +3,7 @@ export type {
   BaseParams,
   BaseGetParams,
   BaseGetByIdParams,
-  BaseGetByFiltersParams,
+  BaseGetByWhereParams,
   BaseGetAllParams,
   BaseCountParams,
   BaseCreateParams,
