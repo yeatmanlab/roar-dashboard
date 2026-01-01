@@ -1,0 +1,15 @@
+export type {
+  Transaction,
+  BaseParams,
+  BaseGetParams,
+  BaseGetByIdParams,
+  BaseGetByFiltersParams,
+  BaseGetAllParams,
+  BaseCountParams,
+  BaseCreateParams,
+  BaseUpdateParams,
+  BaseDeleteParams,
+  BaseRunTransactionParams,
+  Result,
+  BaseRepository,
+} from './base.repository.interface';
