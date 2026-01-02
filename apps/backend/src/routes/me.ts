@@ -1,7 +1,7 @@
 import type { Router } from 'express';
 import { initServer, createExpressEndpoints } from '@ts-rest/express';
 import { MeContract } from '@roar-dashboard/api-contract';
-import { MeController } from '../controllers';
+import { MeController } from '../controllers/me.controller';
 import { AuthGuardMiddleware } from '../middleware/auth-guard/auth-guard.middleware';
 
 const s = initServer();

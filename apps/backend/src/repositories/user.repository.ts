@@ -14,7 +14,7 @@ import type {
   BaseRunTransactionParams,
   BaseCountParams,
   Result,
-} from './interfaces';
+} from './interfaces/base.repository.interface';
 
 /**
  * User Repository
