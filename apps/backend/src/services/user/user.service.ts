@@ -35,5 +35,15 @@ export function UserService({
     return userRepository.findByAuthId(authId);
   }
 
-  return { findByAuthId };
+  /**
+   * Get a user by their ID.
+   *
+   * @param id - The user's UUID.
+   * @returns The user record if found, null otherwise.
+   */
+  async function getById(id: string): Promise<User | null> {
+    return userRepository.get({ id });
+  }
+
+  return { findByAuthId, getById };
 }
