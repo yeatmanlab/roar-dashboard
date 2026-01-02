@@ -1,5 +1,5 @@
 import type { User } from '../../db/schema';
-import { UserRepository } from '../../repositories';
+import { UserRepository } from '../../repositories/user.repository';
 
 /**
  * UserService
