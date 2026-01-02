@@ -22,7 +22,7 @@ export const MeController = {
     if (!user) {
       return {
         status: StatusCodes.UNAUTHORIZED as const,
-        body: { error: { message: 'User not found' } },
+        body: { error: { message: 'Authentication failed' } },
       };
     }
 
