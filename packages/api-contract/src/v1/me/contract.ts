@@ -19,7 +19,7 @@ export const MeContract = c.router(
       },
       strictStatusCodes: true,
       summary: 'Get current user profile',
-      description: 'Returns the authenticated user profile including id, userType, name, and email.',
+      description: 'Returns the authenticated user profile including id, userType, and name.',
     },
   },
   { pathPrefix: '/me' },
