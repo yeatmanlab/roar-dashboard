@@ -1,5 +1,4 @@
 import { Router, type Express } from 'express';
-import { registerUsersRoutes } from './users';
 import { registerMeRoutes } from './me';
 import { API_VERSION } from '../constants/api';
 import { API_ROUTES } from '../constants/api-routes';
@@ -22,7 +21,6 @@ export function registerAllRoutes(app: Express) {
     });
   });
 
-  registerUsersRoutes(router);
   registerMeRoutes(router);
 
   app.use(`/${API_VERSION.V1}`, router);
