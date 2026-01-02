@@ -51,7 +51,7 @@ describe('MeController', () => {
       expect(mockGetById).toHaveBeenCalledWith('non-existent-id');
       expect(result).toEqual({
         status: StatusCodes.UNAUTHORIZED,
-        body: { error: { message: 'User not found' } },
+        body: { error: { message: 'Authentication failed' } },
       });
     });
 
