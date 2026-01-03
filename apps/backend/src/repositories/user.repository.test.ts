@@ -185,10 +185,10 @@ describe('UserRepository', () => {
       mockWhere.mockResolvedValue(undefined);
 
       const repository = new UserRepository(mockDb);
-      await repository.update({ id: 'user-id', data: { name_first: 'Updated' } });
+      await repository.update({ id: 'user-id', data: { nameFirst: 'Updated' } });
 
       expect(mockUpdate).toHaveBeenCalled();
-      expect(mockSet).toHaveBeenCalledWith({ name_first: 'Updated' });
+      expect(mockSet).toHaveBeenCalledWith({ nameFirst: 'Updated' });
     });
   });
 
@@ -197,7 +197,7 @@ describe('UserRepository', () => {
       mockWhere.mockResolvedValue(undefined);
 
       const repository = new UserRepository(mockDb);
-      await repository.updateIfChanged({ id: 'user-id', data: { name_first: 'Updated' } });
+      await repository.updateIfChanged({ id: 'user-id', data: { nameFirst: 'Updated' } });
 
       expect(mockUpdate).toHaveBeenCalled();
     });
