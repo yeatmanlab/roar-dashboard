@@ -7,6 +7,7 @@ import {
   cert,
   getApps,
 } from 'firebase-admin/app';
+import { logger } from '../logger';
 
 /**
  * FirebaseCoreClient
@@ -80,8 +81,7 @@ export class FirebaseCoreClient {
       const json = Buffer.from(encodedJsonCredentials, 'base64').toString('utf8');
       return cert(JSON.parse(json));
     } catch {
-      // @TODO: Replace with actual logger.
-      console.error('Failed to parse service account credentials');
+      logger.error('Failed to parse service account credentials, falling back to ADC');
 
       // If parsing fails, attempt ADC as a last resort
       return applicationDefault();

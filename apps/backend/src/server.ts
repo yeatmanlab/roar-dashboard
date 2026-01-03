@@ -3,6 +3,7 @@ import fs from 'fs';
 import http from 'http';
 import https from 'https';
 import app from './app';
+import { logger } from './logger';
 
 const { NODE_ENV = 'development', PORT = '4000', KEEP_ALIVE_TIMEOUT = '75000' } = process.env;
 
@@ -22,14 +23,14 @@ if (NODE_ENV === 'development') {
 
   server = https.createServer({ key, cert }, app);
   server.listen(port, () => {
-    console.log(`HTTPS server listening on https://localhost:${port}`);
+    logger.info(`HTTPS server listening on https://localhost:${port}`);
   });
 } else {
   // Standard HTTP server.
   // In production, this runs behind NGINX with TLS termination.
   server = http.createServer(app);
   server.listen(port, () => {
-    console.log(`HTTP server listening on http://0.0.0.0:${port}`);
+    logger.info(`HTTP server listening on http://0.0.0.0:${port}`);
   });
 }
 
@@ -59,11 +60,11 @@ function onError(error: NodeJS.ErrnoException): void {
 
   switch (error.code) {
     case 'EACCES':
-      console.error(`${bind} requires elevated privileges`);
+      logger.fatal({ port, code: error.code }, `${bind} requires elevated privileges`);
       process.exit(1);
       break;
     case 'EADDRINUSE':
-      console.error(`${bind} is already in use`);
+      logger.fatal({ port, code: error.code }, `${bind} is already in use`);
       process.exit(1);
       break;
     default:
@@ -81,7 +82,7 @@ function onListening(): void {
   const addr = server.address();
   const bind = typeof addr === 'string' ? `pipe ${addr}` : `port ${String(addr?.port)}`;
   if (NODE_ENV !== 'test') {
-    console.log(`Listening on ${bind}`);
+    logger.info(`Listening on ${bind}`);
   }
 }
 
@@ -93,17 +94,17 @@ server.on('listening', onListening);
  * Ensures all connections are closed cleanly on SIGTERM/SIGINT.
  */
 process.on('SIGTERM', () => {
-  console.log('SIGTERM received: shutting down server');
+  logger.info('SIGTERM received: shutting down server');
   server.close(() => {
-    console.log('Server shutdown');
+    logger.info('Server shutdown complete');
     process.exit(0);
   });
 });
 
 process.on('SIGINT', () => {
-  console.log('SIGINT received: shutting down server');
+  logger.info('SIGINT received: shutting down server');
   server.close(() => {
-    console.log('Server shutdown');
+    logger.info('Server shutdown complete');
     process.exit(0);
   });
 });
