@@ -50,7 +50,6 @@ export const AdministrationBaseSchema = z.object({
   publicName: z.string(),
   dates: AdministrationDatesSchema,
   isOrdered: z.boolean(),
-  testData: z.boolean(),
 });
 
 export type AdministrationBase = z.infer<typeof AdministrationBaseSchema>;

@@ -40,6 +40,17 @@ export const createSortQuerySchema = <T extends readonly [string, ...string[]]>(
     sortOrder: SortOrderSchema,
   });
 
+// Template schema to extract sort query structure
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- Used only for type derivation
+const _sortQueryTemplate = createSortQuerySchema(['_'] as const, '_');
+type SortQueryShape = z.infer<typeof _sortQueryTemplate>;
+
+/**
+ * Generic sort query type derived from createSortQuerySchema.
+ * @typeParam T - The allowed sort field values
+ */
+export type SortQuery<T extends string = string> = Omit<SortQueryShape, 'sortBy'> & { sortBy: T };
+
 /**
  * Schema for embed query parameter.
  */
@@ -65,6 +76,15 @@ export const PaginationMetaSchema = z.object({
 });
 
 export type PaginationMeta = z.infer<typeof PaginationMetaSchema>;
+
+/**
+ * Base paginated result returned by repositories/services.
+ * Contains items and total count for pagination calculation.
+ */
+export interface PaginatedResult<T> {
+  items: T[];
+  totalItems: number;
+}
 
 /**
  * Creates a paginated response schema for a given item schema.
