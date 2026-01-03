@@ -1,6 +1,7 @@
 import { initContract } from '@ts-rest/core';
 import { MeContract } from './me/index';
 export * from './response';
+export * from './common/index';
 
 const c = initContract();
 
