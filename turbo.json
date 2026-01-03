@@ -29,6 +29,7 @@
       "dependsOn": ["^check-types"]
     },
     "test": {
+      "dependsOn": ["^build"],
       "outputs": ["coverage/**"]
     },
     "test:watch": {
