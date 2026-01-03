@@ -4,6 +4,7 @@ import { StatusCodes } from 'http-status-codes';
 import { ApiError } from './errors/api-error';
 import { DatabaseError } from './errors/database-error';
 import { API_ERROR_CODES } from './constants/api-error-codes';
+import { logger } from './logger';
 
 /**
  * Global error handler for the Express application.
@@ -48,8 +49,7 @@ export function errorHandler(err: unknown, _req: Request, res: Response, _next: 
   }
 
   // Log unexpected errors for debugging
-  // @TODO: Replace with proper logging and error reporting mechanism
-  console.error('Unexpected error:', err);
+  logger.error({ err }, 'Unexpected error');
 
   // Fallback for unexpected errors - don't expose internal details
   return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({

@@ -3,10 +3,12 @@ import type { Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
 import { registerAllRoutes } from './routes';
 import { errorHandler } from './error-handler';
+import { requestLogger } from './middleware/request-logger/request-logger.middleware';
 import { API_ERROR_CODES } from './constants/api-error-codes';
 
 const app = express();
 
+app.use(requestLogger);
 app.use(express.json());
 
 registerAllRoutes(app);
