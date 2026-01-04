@@ -15,6 +15,7 @@ describe('UserRepository', () => {
   const mockSet = vi.fn();
   const mockDelete = vi.fn();
   const mockTransaction = vi.fn();
+  const mockDynamic = vi.fn();
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mockDb: any = {
@@ -28,10 +29,28 @@ describe('UserRepository', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    // Setup select chain: db.select().from().where().limit()
+    // Create a dynamic query builder that allows chaining
+    const createDynamicQuery = (resolvedValue: unknown) => {
+      const dynamicQuery = {
+        where: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockReturnThis(),
+        offset: vi.fn().mockReturnThis(),
+        orderBy: vi.fn().mockReturnThis(),
+        then: (resolve: (value: unknown) => void) => resolve(resolvedValue),
+        [Symbol.toStringTag]: 'Promise',
+      };
+      return dynamicQuery;
+    };
+
+    // Setup select chain: db.select().from().$dynamic() or db.select().from().where().limit()
     mockSelect.mockReturnValue({ from: mockFrom });
-    mockFrom.mockReturnValue({ where: mockWhere, limit: mockLimit });
+    mockFrom.mockReturnValue({
+      where: mockWhere,
+      limit: mockLimit,
+      $dynamic: mockDynamic,
+    });
     mockWhere.mockReturnValue({ limit: mockLimit });
+    mockDynamic.mockImplementation(() => createDynamicQuery([]));
 
     // Setup insert chain: db.insert().values().returning()
     mockInsert.mockReturnValue({ values: mockValues });
@@ -89,26 +108,42 @@ describe('UserRepository', () => {
 
     it('should return users when queried with where clause', async () => {
       const mockUsers = [UserFactory.build(), UserFactory.build()];
-      mockWhere.mockResolvedValue(mockUsers);
+      const mockDynamicWhere = vi.fn().mockReturnThis();
+      const dynamicQuery = {
+        where: mockDynamicWhere,
+        limit: vi.fn().mockReturnThis(),
+        then: (resolve: (value: unknown) => void) => resolve(mockUsers),
+        [Symbol.toStringTag]: 'Promise',
+      };
+      mockDynamic.mockReturnValue(dynamicQuery);
 
       const repository = new UserRepository(mockDb);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const mockWhereClause: any = {};
       const result = await repository.get({ where: mockWhereClause });
 
+      expect(mockDynamicWhere).toHaveBeenCalledWith(mockWhereClause);
       expect(result).toEqual(mockUsers);
     });
 
     it('should apply limit when provided with where clause', async () => {
       const mockUsers = [UserFactory.build()];
-      mockLimit.mockResolvedValue(mockUsers);
+      const mockDynamicWhere = vi.fn().mockReturnThis();
+      const mockDynamicLimit = vi.fn().mockReturnThis();
+      const dynamicQuery = {
+        where: mockDynamicWhere,
+        limit: mockDynamicLimit,
+        then: (resolve: (value: unknown) => void) => resolve(mockUsers),
+        [Symbol.toStringTag]: 'Promise',
+      };
+      mockDynamic.mockReturnValue(dynamicQuery);
 
       const repository = new UserRepository(mockDb);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const mockWhereClause: any = {};
       const result = await repository.get({ where: mockWhereClause, limit: 1 });
 
-      expect(mockLimit).toHaveBeenCalledWith(1);
+      expect(mockDynamicLimit).toHaveBeenCalledWith(1);
       expect(result).toEqual(mockUsers);
     });
 
@@ -121,39 +156,93 @@ describe('UserRepository', () => {
   });
 
   describe('getAll', () => {
-    it('should return all users', async () => {
+    it('should return paginated users', async () => {
       const mockUsers = [UserFactory.build(), UserFactory.build()];
-      mockFrom.mockResolvedValue(mockUsers);
+
+      // First call: count query returns total
+      const mockCountQuery = {
+        where: vi.fn().mockReturnThis(),
+        then: (resolve: (value: unknown) => void) => resolve([{ count: 10 }]),
+        [Symbol.toStringTag]: 'Promise',
+      };
+
+      // Second call: items query returns users
+      const mockItemsQuery = {
+        where: vi.fn().mockReturnThis(),
+        orderBy: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockReturnThis(),
+        offset: vi.fn().mockReturnThis(),
+        then: (resolve: (value: unknown) => void) => resolve(mockUsers),
+        [Symbol.toStringTag]: 'Promise',
+      };
+
+      mockDynamic.mockReturnValueOnce(mockCountQuery).mockReturnValueOnce(mockItemsQuery);
 
       const repository = new UserRepository(mockDb);
-      const result = await repository.getAll({});
+      const result = await repository.getAll({ page: 1, perPage: 2 });
 
-      expect(mockSelect).toHaveBeenCalled();
-      expect(result).toEqual(mockUsers);
+      expect(result.items).toEqual(mockUsers);
+      expect(result.totalItems).toBe(10);
     });
 
-    it('should apply where clause when provided', async () => {
+    it('should apply where clause to both count and items queries', async () => {
       const mockUsers = [UserFactory.build()];
-      mockWhere.mockResolvedValue(mockUsers);
+      const mockCountWhere = vi.fn().mockReturnThis();
+      const mockItemsWhere = vi.fn().mockReturnThis();
+
+      const mockCountQuery = {
+        where: mockCountWhere,
+        then: (resolve: (value: unknown) => void) => resolve([{ count: 5 }]),
+        [Symbol.toStringTag]: 'Promise',
+      };
+
+      const mockItemsQuery = {
+        where: mockItemsWhere,
+        orderBy: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockReturnThis(),
+        offset: vi.fn().mockReturnThis(),
+        then: (resolve: (value: unknown) => void) => resolve(mockUsers),
+        [Symbol.toStringTag]: 'Promise',
+      };
+
+      mockDynamic.mockReturnValueOnce(mockCountQuery).mockReturnValueOnce(mockItemsQuery);
 
       const repository = new UserRepository(mockDb);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const mockWhereClause: any = {};
-      const result = await repository.getAll({ where: mockWhereClause });
+      const mockWhereClause: any = { test: true };
+      const result = await repository.getAll({ page: 1, perPage: 10, where: mockWhereClause });
 
-      expect(mockWhere).toHaveBeenCalled();
-      expect(result).toEqual(mockUsers);
+      expect(mockCountWhere).toHaveBeenCalledWith(mockWhereClause);
+      expect(mockItemsWhere).toHaveBeenCalledWith(mockWhereClause);
+      expect(result.totalItems).toBe(5);
     });
 
-    it('should apply limit when provided', async () => {
+    it('should calculate correct offset for pagination', async () => {
       const mockUsers = [UserFactory.build()];
-      mockLimit.mockResolvedValue(mockUsers);
+      const mockOffsetFn = vi.fn().mockReturnThis();
+
+      const mockCountQuery = {
+        where: vi.fn().mockReturnThis(),
+        then: (resolve: (value: unknown) => void) => resolve([{ count: 100 }]),
+        [Symbol.toStringTag]: 'Promise',
+      };
+
+      const mockItemsQuery = {
+        where: vi.fn().mockReturnThis(),
+        orderBy: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockReturnThis(),
+        offset: mockOffsetFn,
+        then: (resolve: (value: unknown) => void) => resolve(mockUsers),
+        [Symbol.toStringTag]: 'Promise',
+      };
+
+      mockDynamic.mockReturnValueOnce(mockCountQuery).mockReturnValueOnce(mockItemsQuery);
 
       const repository = new UserRepository(mockDb);
-      const result = await repository.getAll({ limit: 10 });
+      await repository.getAll({ page: 3, perPage: 25 });
 
-      expect(mockLimit).toHaveBeenCalledWith(10);
-      expect(result).toEqual(mockUsers);
+      // Page 3 with 25 per page = offset of (3-1) * 25 = 50
+      expect(mockOffsetFn).toHaveBeenCalledWith(50);
     });
   });
 
@@ -176,7 +265,7 @@ describe('UserRepository', () => {
 
       const repository = new UserRepository(mockDb);
 
-      await expect(repository.create({ data: {} })).rejects.toThrow('Failed to create user');
+      await expect(repository.create({ data: {} })).rejects.toThrow('Failed to create entity');
     });
   });
 
@@ -189,17 +278,6 @@ describe('UserRepository', () => {
 
       expect(mockUpdate).toHaveBeenCalled();
       expect(mockSet).toHaveBeenCalledWith({ nameFirst: 'Updated' });
-    });
-  });
-
-  describe('updateIfChanged', () => {
-    it('should call update', async () => {
-      mockWhere.mockResolvedValue(undefined);
-
-      const repository = new UserRepository(mockDb);
-      await repository.updateIfChanged({ id: 'user-id', data: { nameFirst: 'Updated' } });
-
-      expect(mockUpdate).toHaveBeenCalled();
     });
   });
 
@@ -235,7 +313,13 @@ describe('UserRepository', () => {
 
   describe('count', () => {
     it('should return count of users', async () => {
-      mockFrom.mockResolvedValue([{ count: 5 }]);
+      // Create a dynamic query that resolves to count result
+      const dynamicQuery = {
+        where: vi.fn().mockReturnThis(),
+        then: (resolve: (value: unknown) => void) => resolve([{ count: 5 }]),
+        [Symbol.toStringTag]: 'Promise',
+      };
+      mockDynamic.mockReturnValue(dynamicQuery);
 
       const repository = new UserRepository(mockDb);
       const result = await repository.count({});
@@ -245,19 +329,30 @@ describe('UserRepository', () => {
     });
 
     it('should apply where clause when provided', async () => {
-      mockWhere.mockResolvedValue([{ count: 2 }]);
+      const mockDynamicWhere = vi.fn().mockReturnThis();
+      const dynamicQuery = {
+        where: mockDynamicWhere,
+        then: (resolve: (value: unknown) => void) => resolve([{ count: 2 }]),
+        [Symbol.toStringTag]: 'Promise',
+      };
+      mockDynamic.mockReturnValue(dynamicQuery);
 
       const repository = new UserRepository(mockDb);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const mockWhereClause: any = {};
       const result = await repository.count({ where: mockWhereClause });
 
-      expect(mockWhere).toHaveBeenCalled();
+      expect(mockDynamicWhere).toHaveBeenCalledWith(mockWhereClause);
       expect(result).toBe(2);
     });
 
     it('should return 0 when no results', async () => {
-      mockFrom.mockResolvedValue([]);
+      const dynamicQuery = {
+        where: vi.fn().mockReturnThis(),
+        then: (resolve: (value: unknown) => void) => resolve([]),
+        [Symbol.toStringTag]: 'Promise',
+      };
+      mockDynamic.mockReturnValue(dynamicQuery);
 
       const repository = new UserRepository(mockDb);
       const result = await repository.count({});

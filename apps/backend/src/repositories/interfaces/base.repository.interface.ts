@@ -62,10 +62,25 @@ export interface BaseGetByWhereParams extends BaseParams {
 
 /**
  * Parameters for retrieving all entities from a repository.
+ * Supports pagination and ordering.
  */
 export interface BaseGetAllParams extends BaseParams {
   /** Optional Drizzle SQL where clause. */
   where?: SQL;
+
+  /** Page number (1-indexed). Required for paginated queries. */
+  page: number;
+
+  /** Number of items per page. Required for paginated queries. */
+  perPage: number;
+}
+
+/**
+ * Result of a paginated query.
+ */
+export interface PaginatedResult<T> {
+  items: T[];
+  totalItems: number;
 }
 
 /**
@@ -126,12 +141,10 @@ export interface BaseRunTransactionParams<R> {
 }
 
 /**
- * Result type that includes the entity with its ID.
- */
-export type Result<T> = T & { id: string };
-
-/**
  * Base repository interface that defines standard operations for data access.
+ *
+ * All entities are expected to have an `id` field (UUID primary key).
+ * Unlike Firestore's Result<T> wrapper, Drizzle entities already include the id.
  *
  * @typeParam T - The type of entity managed by the repository.
  *
@@ -142,27 +155,24 @@ export type Result<T> = T & { id: string };
  * @see {@link BaseDeleteParams} - Base params for deleting an entity.
  * @see {@link BaseRunTransactionParams} - Parameters for running a transaction in a repository.
  */
-export interface BaseRepository<T> {
+export interface IBaseRepository<T> {
   /** Retrieves an entity by its ID. */
-  get(params: BaseGetParams & { id: string }): Promise<Result<T> | null>;
+  get(params: BaseGetParams & { id: string }): Promise<T | null>;
 
   /** Retrieves entities based on provided where clause. */
-  get(params: BaseGetParams & { where: SQL }): Promise<Result<T>[]>;
+  get(params: BaseGetParams & { where: SQL }): Promise<T[]>;
 
   /** Retrieves entities based on provided parameters. */
-  get(params: BaseGetParams): Promise<Result<T> | Result<T>[] | null>;
+  get(params: BaseGetParams): Promise<T | T[] | null>;
 
-  /** Retrieves all entities with optional where clause. */
-  getAll(params: BaseGetAllParams): Promise<Result<T>[]>;
+  /** Retrieves all entities with pagination, optional where clause, and ordering. */
+  getAll(params: BaseGetAllParams): Promise<PaginatedResult<T>>;
 
   /** Creates a new entity in the repository. */
-  create(params: BaseCreateParams<T>): Promise<Result<T>>;
+  create(params: BaseCreateParams<T>): Promise<T>;
 
   /** Updates an existing entity in the repository. */
   update(params: BaseUpdateParams<T>): Promise<void>;
-
-  /** Updates an existing entity in the repository if the data has changed. */
-  updateIfChanged(params: BaseUpdateParams<T>): Promise<void>;
 
   /** Deletes an entity from the repository. */
   delete(params: BaseDeleteParams): Promise<void>;
