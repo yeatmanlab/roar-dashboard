@@ -32,8 +32,8 @@ export const UserFactory = Factory.define<User>(() => ({
   hispanicEthnicity: null,
   homeLanguage: null,
   excludeFromResearch: false,
-  created_at: new Date(),
-  updated_at: new Date(),
+  createdAt: new Date(),
+  updatedAt: new Date(),
 }));
 
 /**
