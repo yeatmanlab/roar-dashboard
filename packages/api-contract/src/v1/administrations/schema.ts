@@ -29,16 +29,17 @@ export const AdministrationStatsSchema = z.object({
 export type AdministrationStats = z.infer<typeof AdministrationStatsSchema>;
 
 /**
- * Administration assessment schema (embedded via ?embed=assessments).
+ * Administration task schema (embedded via ?embed=tasks).
  */
-export const AdministrationAssessmentSchema = z.object({
+export const AdministrationTaskSchema = z.object({
   taskId: z.string().uuid(),
+  taskName: z.string(),
   variantId: z.string().uuid(),
   variantName: z.string().nullable(),
   orderIndex: z.number().int(),
 });
 
-export type AdministrationAssessment = z.infer<typeof AdministrationAssessmentSchema>;
+export type AdministrationTask = z.infer<typeof AdministrationTaskSchema>;
 
 /**
  * Base administration schema (without embedded data).
@@ -58,7 +59,7 @@ export type AdministrationBase = z.infer<typeof AdministrationBaseSchema>;
  */
 export const AdministrationSchema = AdministrationBaseSchema.extend({
   stats: AdministrationStatsSchema.optional(),
-  assessments: z.array(AdministrationAssessmentSchema).optional(),
+  tasks: z.array(AdministrationTaskSchema).optional(),
 });
 
 export type Administration = z.infer<typeof AdministrationSchema>;
@@ -84,14 +85,14 @@ export const AdministrationSortField = {
 /**
  * Allowed embed options for administrations.
  */
-export const ADMINISTRATION_EMBED_OPTIONS = ['stats', 'assessments'] as const;
+export const ADMINISTRATION_EMBED_OPTIONS = ['stats', 'tasks'] as const;
 
 /**
  * Embed option constants for type-safe access.
  */
 export const AdministrationEmbedOption = {
   STATS: 'stats',
-  ASSESSMENTS: 'assessments',
+  TASKS: 'tasks',
 } as const satisfies Record<string, (typeof ADMINISTRATION_EMBED_OPTIONS)[number]>;
 
 /**

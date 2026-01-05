@@ -1,6 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { StatusCodes } from 'http-status-codes';
-import { AdministrationFactory } from '../test-support/factories/administration.factory';
+import {
+  AdministrationFactory,
+  AdministrationWithEmbedsFactory,
+} from '../test-support/factories/administration.factory';
 
 // Mock the AdministrationService module
 vi.mock('../services/administration/administration.service', () => ({
@@ -147,7 +150,7 @@ describe('AdministrationsController', () => {
     });
 
     it('should include stats in response when embed=stats is requested', async () => {
-      const mockAdmin = AdministrationFactory.build({
+      const mockAdmin = AdministrationWithEmbedsFactory.build({
         id: 'admin-1',
         nameInternal: 'Test Admin',
         stats: { assigned: 25, started: 10, completed: 5 },
@@ -203,6 +206,43 @@ describe('AdministrationsController', () => {
       });
 
       expect(result.body.data.items[0]).not.toHaveProperty('stats');
+    });
+
+    it('should include tasks in response when embed=tasks is requested', async () => {
+      const mockAdmin = AdministrationWithEmbedsFactory.build({
+        id: 'admin-1',
+        nameInternal: 'Test Admin',
+        tasks: [
+          { taskId: 'task-1', taskName: 'SWR', variantId: 'variant-1', variantName: 'Variant A', orderIndex: 0 },
+          { taskId: 'task-2', taskName: 'PA', variantId: 'variant-2', variantName: null, orderIndex: 1 },
+        ],
+      });
+      mockList.mockResolvedValue({
+        items: [mockAdmin],
+        totalItems: 1,
+      });
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      const result = await Controller.list(mockAuthContext, {
+        page: 1,
+        perPage: 25,
+        sortBy: 'createdAt',
+        sortOrder: 'desc',
+        embed: ['tasks'],
+      });
+
+      expect(mockList).toHaveBeenCalledWith(mockAuthContext, {
+        page: 1,
+        perPage: 25,
+        sortBy: 'createdAt',
+        sortOrder: 'desc',
+        embed: ['tasks'],
+      });
+      expect(result.body.data.items[0]!.tasks).toEqual([
+        { taskId: 'task-1', taskName: 'SWR', variantId: 'variant-1', variantName: 'Variant A', orderIndex: 0 },
+        { taskId: 'task-2', taskName: 'PA', variantId: 'variant-2', variantName: null, orderIndex: 1 },
+      ]);
     });
   });
 });

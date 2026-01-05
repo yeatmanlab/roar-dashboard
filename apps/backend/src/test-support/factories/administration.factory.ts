@@ -1,6 +1,7 @@
 import { Factory } from 'fishery';
 import { faker } from '@faker-js/faker';
 import type { Administration } from '../../db/schema';
+import type { AdministrationWithEmbeds } from '../../services/administration/administration.service';
 
 /**
  * Factory for creating Administration test objects.
@@ -19,4 +20,11 @@ export const AdministrationFactory = Factory.define<Administration>(() => {
     createdAt: new Date(),
     updatedAt: new Date(),
   };
+});
+
+/**
+ * Factory for creating AdministrationWithEmbeds test objects.
+ */
+export const AdministrationWithEmbedsFactory = Factory.define<AdministrationWithEmbeds>(() => {
+  return AdministrationFactory.build();
 });

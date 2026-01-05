@@ -17,6 +17,7 @@ import { logger } from '../../logger';
 describe('AdministrationService', () => {
   const mockGetByIds = vi.fn();
   const mockGetAll = vi.fn();
+  const mockGetTasksByAdministrationIds = vi.fn();
   const mockGetAdministrationsScope = vi.fn();
   const mockGetAssignedUserCountsByAdministrationIds = vi.fn();
   const mockGetRunStatsByAdministrationIds = vi.fn();
@@ -25,6 +26,7 @@ describe('AdministrationService', () => {
   const mockAdministrationRepository: any = {
     getByIds: mockGetByIds,
     getAll: mockGetAll,
+    getTasksByAdministrationIds: mockGetTasksByAdministrationIds,
   };
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -463,6 +465,182 @@ describe('AdministrationService', () => {
         expect(result.items[0]).not.toHaveProperty('stats');
         // Should log both errors
         expect(logger.error).toHaveBeenCalledTimes(2);
+      });
+    });
+
+    describe('embed=tasks', () => {
+      it('should not fetch tasks when embed option is not provided', async () => {
+        const mockAdmins = AdministrationFactory.buildList(2);
+        mockGetAdministrationsScope.mockResolvedValue({ type: ResourceScopeType.UNRESTRICTED });
+        mockGetAll.mockResolvedValue({ items: mockAdmins, totalItems: 2 });
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+          authorizationService: mockAuthorizationService,
+        });
+
+        const result = await service.list(
+          { userId: 'admin-123', userType: 'admin' },
+          { page: 1, perPage: 25, sortBy: 'createdAt', sortOrder: 'desc' },
+        );
+
+        expect(mockGetTasksByAdministrationIds).not.toHaveBeenCalled();
+        expect(result.items[0]).not.toHaveProperty('tasks');
+      });
+
+      it('should fetch and attach tasks when embed includes tasks', async () => {
+        const mockAdmins = [
+          AdministrationFactory.build({ id: 'admin-1' }),
+          AdministrationFactory.build({ id: 'admin-2' }),
+        ];
+        mockGetAdministrationsScope.mockResolvedValue({ type: ResourceScopeType.UNRESTRICTED });
+        mockGetAll.mockResolvedValue({ items: mockAdmins, totalItems: 2 });
+
+        const tasksMap = new Map([
+          [
+            'admin-1',
+            [
+              { taskId: 'task-1', taskName: 'SWR', variantId: 'variant-1', variantName: 'Variant A', orderIndex: 0 },
+              { taskId: 'task-2', taskName: 'PA', variantId: 'variant-2', variantName: null, orderIndex: 1 },
+            ],
+          ],
+          [
+            'admin-2',
+            [{ taskId: 'task-3', taskName: 'SRE', variantId: 'variant-3', variantName: 'Variant C', orderIndex: 0 }],
+          ],
+        ]);
+        mockGetTasksByAdministrationIds.mockResolvedValue(tasksMap);
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+          authorizationService: mockAuthorizationService,
+        });
+
+        const result = await service.list(
+          { userId: 'admin-123', userType: 'admin' },
+          { page: 1, perPage: 25, sortBy: 'createdAt', sortOrder: 'desc', embed: ['tasks'] },
+        );
+
+        expect(mockGetTasksByAdministrationIds).toHaveBeenCalledWith(['admin-1', 'admin-2']);
+        expect(result.items[0]!.tasks).toEqual([
+          { taskId: 'task-1', taskName: 'SWR', variantId: 'variant-1', variantName: 'Variant A', orderIndex: 0 },
+          { taskId: 'task-2', taskName: 'PA', variantId: 'variant-2', variantName: null, orderIndex: 1 },
+        ]);
+        expect(result.items[1]!.tasks).toEqual([
+          { taskId: 'task-3', taskName: 'SRE', variantId: 'variant-3', variantName: 'Variant C', orderIndex: 0 },
+        ]);
+      });
+
+      it('should return empty array for administrations with no tasks', async () => {
+        const mockAdmins = [
+          AdministrationFactory.build({ id: 'admin-1' }),
+          AdministrationFactory.build({ id: 'admin-2' }),
+        ];
+        mockGetAdministrationsScope.mockResolvedValue({ type: ResourceScopeType.UNRESTRICTED });
+        mockGetAll.mockResolvedValue({ items: mockAdmins, totalItems: 2 });
+
+        // Only admin-1 has tasks
+        const tasksMap = new Map([
+          [
+            'admin-1',
+            [{ taskId: 'task-1', taskName: 'SWR', variantId: 'variant-1', variantName: 'Variant A', orderIndex: 0 }],
+          ],
+        ]);
+        mockGetTasksByAdministrationIds.mockResolvedValue(tasksMap);
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+          authorizationService: mockAuthorizationService,
+        });
+
+        const result = await service.list(
+          { userId: 'admin-123', userType: 'admin' },
+          { page: 1, perPage: 25, sortBy: 'createdAt', sortOrder: 'desc', embed: ['tasks'] },
+        );
+
+        expect(result.items[0]!.tasks).toHaveLength(1);
+        expect(result.items[1]!.tasks).toEqual([]);
+      });
+
+      it('should return administrations without tasks when query fails', async () => {
+        const mockAdmins = [AdministrationFactory.build({ id: 'admin-1' })];
+        mockGetAdministrationsScope.mockResolvedValue({ type: ResourceScopeType.UNRESTRICTED });
+        mockGetAll.mockResolvedValue({ items: mockAdmins, totalItems: 1 });
+
+        const dbError = new Error('Database error');
+        mockGetTasksByAdministrationIds.mockRejectedValue(dbError);
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+          authorizationService: mockAuthorizationService,
+        });
+
+        const result = await service.list(
+          { userId: 'admin-123', userType: 'admin' },
+          { page: 1, perPage: 25, sortBy: 'createdAt', sortOrder: 'desc', embed: ['tasks'] },
+        );
+
+        // Should return administrations without tasks
+        expect(result.items).toHaveLength(1);
+        expect(result.items[0]).not.toHaveProperty('tasks');
+        // Should log the error
+        expect(logger.error).toHaveBeenCalledWith({ err: dbError }, 'Failed to fetch tasks for tasks embed');
+      });
+
+      it('should not fetch tasks when result is empty', async () => {
+        mockGetAdministrationsScope.mockResolvedValue({ type: ResourceScopeType.UNRESTRICTED });
+        mockGetAll.mockResolvedValue({ items: [], totalItems: 0 });
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+          authorizationService: mockAuthorizationService,
+        });
+
+        const result = await service.list(
+          { userId: 'admin-123', userType: 'admin' },
+          { page: 1, perPage: 25, sortBy: 'createdAt', sortOrder: 'desc', embed: ['tasks'] },
+        );
+
+        expect(mockGetTasksByAdministrationIds).not.toHaveBeenCalled();
+        expect(result.items).toEqual([]);
+      });
+    });
+
+    describe('embed=stats,tasks', () => {
+      it('should fetch both stats and tasks when both are requested', async () => {
+        const mockAdmins = [AdministrationFactory.build({ id: 'admin-1' })];
+        mockGetAdministrationsScope.mockResolvedValue({ type: ResourceScopeType.UNRESTRICTED });
+        mockGetAll.mockResolvedValue({ items: mockAdmins, totalItems: 1 });
+
+        const assignedCounts = new Map([['admin-1', 25]]);
+        const runStats = new Map([['admin-1', { started: 10, completed: 5 }]]);
+        const tasksMap = new Map([
+          [
+            'admin-1',
+            [{ taskId: 'task-1', taskName: 'SWR', variantId: 'variant-1', variantName: 'Variant A', orderIndex: 0 }],
+          ],
+        ]);
+
+        mockGetAssignedUserCountsByAdministrationIds.mockResolvedValue(assignedCounts);
+        mockGetRunStatsByAdministrationIds.mockResolvedValue(runStats);
+        mockGetTasksByAdministrationIds.mockResolvedValue(tasksMap);
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+          authorizationRepository: mockAuthorizationRepository,
+          authorizationService: mockAuthorizationService,
+          runsRepository: mockRunsRepository,
+        });
+
+        const result = await service.list(
+          { userId: 'admin-123', userType: 'admin' },
+          { page: 1, perPage: 25, sortBy: 'createdAt', sortOrder: 'desc', embed: ['stats', 'tasks'] },
+        );
+
+        expect(result.items[0]!.stats).toEqual({ assigned: 25, started: 10, completed: 5 });
+        expect(result.items[0]!.tasks).toEqual([
+          { taskId: 'task-1', taskName: 'SWR', variantId: 'variant-1', variantName: 'Variant A', orderIndex: 0 },
+        ]);
       });
     });
   });
