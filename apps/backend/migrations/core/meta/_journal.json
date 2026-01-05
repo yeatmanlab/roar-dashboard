@@ -1,0 +1,300 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1765205711457,
+      "tag": "0000_set_base_config",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1765213630584,
+      "tag": "0001_add_enums",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1765213742223,
+      "tag": "0002_add_set_updated_at_fn",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1765214053300,
+      "tag": "0003_add_get_school_level_from_grade_fn",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1765214143550,
+      "tag": "0004_add_get_school_levels_from_grades_array_fn",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1765214505936,
+      "tag": "0005_add_users_table",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1765225114423,
+      "tag": "0006_add_orgs_table",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1765231455240,
+      "tag": "0007_add_groups_table",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1765238948681,
+      "tag": "0008_add_courses_table",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1765240121042,
+      "tag": "0009_add_classes_table",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1765240958219,
+      "tag": "0010_add_families_table",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1765241143447,
+      "tag": "0011_add_validate_class_org_refs_fn",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1765404776882,
+      "tag": "0012_add_agreements_table",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1765405133639,
+      "tag": "0013_add_agreement_versions_table",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1765410438291,
+      "tag": "0014_add_tasks_table",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1765410517463,
+      "tag": "0015_add_task_variants_table",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1765410560174,
+      "tag": "0016_add_task_variant_parameters_table",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1765410619243,
+      "tag": "0017_add_task_bundles_table",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1765410671049,
+      "tag": "0018_add_task_bundle_variants_table",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1765411317053,
+      "tag": "0019_add_run_demographics_table",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1765412326893,
+      "tag": "0020_add_administrations_table",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1765412592534,
+      "tag": "0021_add_administration_task_variants_table",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1765413178815,
+      "tag": "0022_add_administration_agreements_table",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1765413191624,
+      "tag": "0023_add_administration_classes_table",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1765413228910,
+      "tag": "0024_add_administration_groups_table",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1765413269061,
+      "tag": "0025_add_administration_orgs_table",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1765414486921,
+      "tag": "0026_add_user_agreements_table",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1765455545769,
+      "tag": "0027_add_user_classes_table",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1765459412677,
+      "tag": "0028_add_user_families_table",
+      "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1765459442122,
+      "tag": "0029_add_user_groups_table",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1765459463503,
+      "tag": "0030_add_user_orgs_table",
+      "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1765459563776,
+      "tag": "0031_fix_task_variant_parameters_pkey",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1765459836949,
+      "tag": "0032_fix_groups_abbreviation_constraint_name",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1765459942373,
+      "tag": "0033_add_validate_org_hierarchy_fn",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1765496701593,
+      "tag": "0034_add_rostering_runs_table",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1765497088841,
+      "tag": "0035_add_rostering_run_entities_table",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1765497382403,
+      "tag": "0036_add_rostering_provider_ids_table",
+      "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1765498974510,
+      "tag": "0037_add_validate_rostering_entity_fk_fn",
+      "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1765534870000,
+      "tag": "0038_add_prevent_rostered_entity_delete_fn",
+      "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1765617815041,
+      "tag": "0039_add_exceptions_support_to_rostering_run_entities",
+      "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1765618107940,
+      "tag": "0040_add_run_type_support_to_rostering_runs",
+      "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1765900403445,
+      "tag": "0041_add_rostering_provider_partner_id",
+      "breakpoints": true
+    }
+  ]
+}

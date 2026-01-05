@@ -34,6 +34,12 @@
   "classLinkLanding": {
     "classLinkLoading": "Loading your data from ClassLink..."
   },
+  "ssoAuth": {
+    "errorTitle": "Unable to complete sign-in",
+    "errorMessage": "We're having trouble setting up your account. Please try again.",
+    "retryButton": "Try Again",
+    "signOutButton": "Sign Out"
+  },
   "consentModal": {
     "consentTitle": "Consent",
     "assentTitle": "Assent",
