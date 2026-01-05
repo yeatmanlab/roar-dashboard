@@ -1,0 +1,29 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`AppMessageState > renders the empty type (default) 1`] = `
+"<div class="flex flex-column align-items-center gap-3" data-cy="app-message-state"><img src="/assets/img/roar-empty-state.png" aria-hidden="" class="w-32">
+  <h2 class="m-0" data-cy="app-message-state__title">No items found</h2>
+  <!--v-if-->
+</div>"
+`;
+
+exports[`AppMessageState > renders the error type 1`] = `
+"<div class="flex flex-column align-items-center gap-3" data-cy="app-message-state"><img src="/assets/img/roar-error-state.png" aria-hidden="" class="w-32">
+  <h2 class="m-0" data-cy="app-message-state__title">Something went wrong</h2>
+  <!--v-if-->
+</div>"
+`;
+
+exports[`AppMessageState > renders with a message 1`] = `
+"<div class="flex flex-column align-items-center gap-3" data-cy="app-message-state"><img src="/assets/img/roar-error-state.png" aria-hidden="" class="w-32">
+  <h2 class="m-0" data-cy="app-message-state__title">Unable to load data</h2>
+  <p class="m-0 mb-3 text-color-secondary" data-cy="app-message-state__message">Please try again later.</p>
+</div>"
+`;
+
+exports[`AppMessageState > renders with actions slot 1`] = `
+"<div class="flex flex-column align-items-center gap-3" data-cy="app-message-state"><img src="/assets/img/roar-error-state.png" aria-hidden="" class="w-32">
+  <h2 class="m-0" data-cy="app-message-state__title">Session expired</h2>
+  <p class="m-0 mb-3 text-color-secondary" data-cy="app-message-state__message">Your session has expired.</p><button>Sign In</button>
+</div>"
+`;
