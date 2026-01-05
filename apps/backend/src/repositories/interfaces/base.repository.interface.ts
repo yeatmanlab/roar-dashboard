@@ -61,18 +61,39 @@ export interface BaseGetByWhereParams extends BaseParams {
 }
 
 /**
- * Parameters for retrieving all entities from a repository.
- * Supports pagination and ordering.
+ * Shared pagination parameters for paginated queries.
+ * Used by both getAll() and getByIds() methods.
  */
-export interface BaseGetAllParams extends BaseParams {
-  /** Optional Drizzle SQL where clause. */
-  where?: SQL;
-
+export interface BasePaginatedQueryParams {
   /** Page number (1-indexed). Required for paginated queries. */
   page: number;
 
   /** Number of items per page. Required for paginated queries. */
   perPage: number;
+
+  /** Optional order by field and direction. */
+  orderBy?: {
+    field: string;
+    direction: 'asc' | 'desc';
+  };
+}
+
+/**
+ * Parameters for retrieving all entities from a repository.
+ * Supports pagination, filtering, and ordering.
+ */
+export interface BaseGetAllParams extends BasePaginatedQueryParams {
+  /** Optional Drizzle SQL where clause. */
+  where?: SQL;
+
+  /** Optional transaction context for the operation. */
+  transaction?: Transaction;
+
+  /** Optional limit for the number of results. */
+  limit?: number;
+
+  /** Optional fields to select from the entities. */
+  select?: string[];
 }
 
 /**

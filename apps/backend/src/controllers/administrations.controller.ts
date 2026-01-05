@@ -1,8 +1,17 @@
 import { StatusCodes } from 'http-status-codes';
 import { AdministrationService } from '../services/administration/administration.service';
 import type { AdministrationsListQuery } from '@roar-dashboard/api-contract';
+import type { UserType } from '../enums/user-type.enum';
 
 const administrationService = AdministrationService();
+
+/**
+ * Auth context passed from middleware.
+ */
+interface AuthContext {
+  userId: string;
+  userType: UserType;
+}
 
 /**
  * AdministrationsController
@@ -14,13 +23,12 @@ export const AdministrationsController = {
   /**
    * List administrations with pagination, search, and sorting.
    */
-  list: async (query: AdministrationsListQuery) => {
-    const { page, perPage, search, sortBy, sortOrder } = query;
+  list: async (authContext: AuthContext, query: AdministrationsListQuery) => {
+    const { page, perPage, sortBy, sortOrder } = query;
 
-    const result = await administrationService.list({
+    const result = await administrationService.list(authContext, {
       page,
       perPage,
-      search,
       sortBy,
       sortOrder,
     });
