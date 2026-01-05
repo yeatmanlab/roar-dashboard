@@ -1,9 +1,7 @@
 <template>
-  <div v-if="isLoading">
-    <div class="text-center col-full">
-      <AppSpinner />
-      <p class="text-center">{{ $t('homeSelector.loading') }}</p>
-    </div>
+  <div v-if="isLoading" class="flex flex-column align-items-center justify-content-center min-h-screen-minus-nav">
+    <AppSpinner style="margin-bottom: 1rem" />
+    <span>{{ $t('homeSelector.loading') }}</span>
   </div>
 
   <div v-else>
@@ -36,6 +34,7 @@ import useSentryLogging from '@/composables/useSentryLogging';
 import { CONSENT_TYPES } from '@/constants/consentTypes';
 import { APP_ROUTES } from '@/constants/routes';
 import { AUTH_LOG_MESSAGES } from '@/constants/logMessages';
+import AppSpinner from '@/components/AppSpinner.vue';
 
 const HomeParticipant = defineAsyncComponent(() => import('@/pages/HomeParticipant.vue'));
 const HomeAdministrator = defineAsyncComponent(() => import('@/pages/HomeAdministrator.vue'));

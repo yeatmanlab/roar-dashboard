@@ -1,0 +1,2 @@
+ALTER TABLE "app"."groups" DROP CONSTRAINT "orgs_abbreviation_format";--> statement-breakpoint
+ALTER TABLE "app"."groups" ADD CONSTRAINT "groups_abbreviation_format" CHECK ("app"."groups"."abbreviation" ~ '^[A-Za-z0-9]+$');

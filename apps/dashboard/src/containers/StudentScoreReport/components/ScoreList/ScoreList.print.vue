@@ -1,12 +1,12 @@
 <template>
   <div class="text-sm break-inside-avoid">
-    <h2 class="mt-6 text-xl font-bold">Detailed Assessment Results</h2>
+    <h2 class="text-lg font-bold">Detailed Assessment Results</h2>
 
     <ul class="p-0 m-0">
       <li v-for="task in computedTaskData" :key="task.taskId" class="list-none">
         <ScoreCard
           :public-name="tasksDictionary[task.taskId]?.publicName ?? task.taskId"
-          :score-label="task[task.scoreToDisplay].name"
+          :score-label="getScoreLabel(task[task.scoreToDisplay].name)"
           :score="task[task.scoreToDisplay]"
           :tags="task.tags"
           :value-template="scoreValueTemplate(task)"
@@ -20,6 +20,12 @@
         />
       </li>
     </ul>
+    <div class="text-xs">
+      <h2 class="text-lg font-bold">{{ $t('scoreReports.nextStepsTabHeader') }}</h2>
+      <i18n-t keypath="scoreReports.nextSteps" tag="p" class="mt-0">
+        <template #link> : {{ getScoreReportNextStepsDocumentPath() }} </template>
+      </i18n-t>
+    </div>
   </div>
 </template>
 
@@ -27,6 +33,7 @@
 import { useI18n } from 'vue-i18n';
 import { ScoreCardPrint as ScoreCard } from './ScoreCard';
 import { useScoreListData } from './useScoreListData';
+import { SCORE_REPORT_NEXT_STEPS_DOCUMENT_PATH } from '@/constants/scores';
 
 const props = defineProps({
   studentFirstName: {
@@ -68,4 +75,22 @@ const { computedTaskData, scoreValueTemplate, getTaskDescription, getTaskScoresA
   taskScoringVersions: props.taskScoringVersions,
   t,
 });
+
+/**
+ * Returns the URL of the next steps document
+ *
+ * @returns {string} The URL of the next steps document based on the current origin
+ */
+function getScoreReportNextStepsDocumentPath() {
+  return `${document.location.origin}${SCORE_REPORT_NEXT_STEPS_DOCUMENT_PATH}`;
+}
+
+/**
+ * Returns shortened score label
+ *
+ * @returns {string} Returns abbreviated score label
+ */
+const getScoreLabel = (taskName) => {
+  return taskName === 'Percent Correct' ? 'Correct' : taskName;
+};
 </script>

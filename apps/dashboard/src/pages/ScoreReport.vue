@@ -43,11 +43,16 @@
                 </div>
               </template>
             </ReportHeader>
-            <div v-if="isLoadingAssignments" class="loading-wrapper">
+            <div v-if="isLoadingAssignments || isLoadingDistrictSupportCategories" class="loading-wrapper">
               <AppSpinner style="margin: 1rem 0rem" />
               <div class="text-sm font-light text-gray-600 uppercase">Loading Overview Charts</div>
             </div>
-            <div v-if="sortedAndFilteredTaskIds?.length > 0" class="py-3 mb-2 text-left bg-gray-100">
+            <div
+              v-if="
+                !isLoadingAssignments && !isLoadingDistrictSupportCategories && sortedAndFilteredTaskIds?.length > 0
+              "
+              class="py-3 mb-2 text-left bg-gray-100"
+            >
               <div class="overview-wrapper">
                 <div class="chart-wrapper">
                   <div v-for="taskId of sortedAndFilteredTaskIds" :key="taskId" style="width: 33%">
@@ -226,7 +231,7 @@
           </div>
 
           <template #footer>
-            <div v-if="exportModalStep === EXPORT_MODAL_STEP.WARNING" class="flex gap-2">
+            <div v-if="exportModalStep === EXPORT_MODAL_STEP.WARNING" class="flex gap-2 p-3">
               <PvButton label="Cancel" class="p-button-text" @click="exportModalEnabled = false" />
               <PvButton
                 label="Continue"
@@ -313,43 +318,44 @@
           <AppSpinner style="margin: 1rem 0rem" />
           <div class="text-sm font-light text-gray-600 uppercase">Loading Task Reports</div>
         </div>
+        <template v-if="!isLoadingAssignments && !isLoadingTasksDictionary && !isLoadingDistrictSupportCategories">
+          <PvTabs v-model:value="activeTabValue">
+            <PvTabList>
+              <PvTab
+                v-for="(taskId, i) in sortedAndFilteredSubscoreTaskIds"
+                :key="taskId"
+                :value="String(i)"
+                class="text-base"
+              >
+                {{ tasksDictionary[taskId]?.publicName ?? taskId }}
+              </PvTab>
+            </PvTabList>
 
-        <PvTabs v-model:value="activeTabValue">
-          <PvTabList>
-            <PvTab
-              v-for="(taskId, i) in sortedAndFilteredSubscoreTaskIds"
-              :key="taskId"
-              :value="String(i)"
-              class="text-base"
-            >
-              {{ tasksDictionary[taskId]?.publicName ?? taskId }}
-            </PvTab>
-          </PvTabList>
-
-          <PvTabPanels>
-            <PvTabPanel v-for="(taskId, i) in sortedAndFilteredSubscoreTaskIds" :key="taskId" :value="String(i)">
-              <div :id="'tab-view-' + taskId">
-                <TaskReport
-                  v-if="taskId"
-                  :computed-table-data="computeAssignmentAndRunData.assignmentTableData"
-                  :task-id="taskId"
-                  :initialized="initialized"
-                  :administration-id="administrationId"
-                  :runs="
-                    orgType === 'district'
-                      ? aggregatedDistrictSupportCategories?.[taskId]
-                      : computeAssignmentAndRunData.runsByTaskId?.[taskId]
-                  "
-                  :org-type="orgType"
-                  :org-id="orgId"
-                  :org-info="orgData"
-                  :administration-info="administrationData"
-                  :task-scoring-versions="getScoringVersions"
-                />
-              </div>
-            </PvTabPanel>
-          </PvTabPanels>
-        </PvTabs>
+            <PvTabPanels>
+              <PvTabPanel v-for="(taskId, i) in sortedAndFilteredSubscoreTaskIds" :key="taskId" :value="String(i)">
+                <div :id="'tab-view-' + taskId">
+                  <TaskReport
+                    v-if="taskId"
+                    :computed-table-data="computeAssignmentAndRunData.assignmentTableData"
+                    :task-id="taskId"
+                    :initialized="initialized"
+                    :administration-id="administrationId"
+                    :runs="
+                      orgType === 'district'
+                        ? aggregatedDistrictSupportCategories?.[taskId]
+                        : computeAssignmentAndRunData.runsByTaskId?.[taskId]
+                    "
+                    :org-type="orgType"
+                    :org-id="orgId"
+                    :org-info="orgData"
+                    :administration-info="administrationData"
+                    :task-scoring-versions="getScoringVersions"
+                  />
+                </div>
+              </PvTabPanel>
+            </PvTabPanels>
+          </PvTabs>
+        </template>
         <div id="score-report-closing" class="px-4 py-2 mt-4 bg-gray-100">
           <h2 class="extra-info-title">HOW ROAR SCORES INFORM PLANNING TO PROVIDE SUPPORT</h2>
           <p>
@@ -466,7 +472,7 @@ import { LEVANTE_TASK_IDS_NO_SCORES } from '@/constants/levanteTasks';
 import _startCase from 'lodash/startCase';
 import AppDialog from '@/components/Dialog/Dialog.vue';
 import { getStudentDisplayName } from '@/helpers/getStudentDisplayName';
-
+import { getStudentExternalId } from '@/helpers/getStudentExternalId';
 const { userCan, Permissions } = usePermissions();
 
 let TaskReport, DistributionChartOverview;
@@ -513,7 +519,7 @@ const {
   isLoading: isLoadingDistrictSupportCategories,
   isFetching: isFetchingDistrictSupportCategories,
 } = useDistrictSupportCategoriesQuery(props.orgId, props.administrationId, {
-  enabled: initialized,
+  enabled: computed(() => initialized.value && props.orgType === 'district'),
 });
 
 const getScoringVersions = computed(() => {
@@ -678,6 +684,7 @@ const exportBulkPdfReports = async (selectedRows) => {
       username: row.user.username,
       email: row.user.email,
       grade: row.user.grade,
+      externalId: getStudentExternalId(row.user),
     }));
 
     // URL generator function
@@ -693,7 +700,7 @@ const exportBulkPdfReports = async (selectedRows) => {
       // Include student ID to ensure uniqueness when students have the same name
       const safeStudentId = student.id.replace(/[^a-zA-Z0-9-_]/g, '');
       const fileName = `${safeStudentName}_${safeStudentId}`;
-      return `ROAR-IndividualScoreReport-${fileName}.pdf`;
+      return `ROAR-IndividualScoreReport-${fileName}${student.externalId}.pdf`;
     };
 
     // ZIP filename
@@ -847,7 +854,7 @@ function returnColorByReliability(assessment, rawScore, support_level, tag_color
       tasksToDisplayPercentCorrect.includes(assessment.taskId)
     ) {
       const test = assessment.scores?.raw?.composite?.test;
-      const tasksWithUndefinedPercentCorrect = ['letter', 'letter-es', 'morphology'];
+      const tasksWithUndefinedPercentCorrect = ['letter', 'letter-es', 'morphology', 'phonics'];
 
       // @TODO: See if this is still needed by verifying the games that trigger this
       // When an above task has numAttempted === numIncorrect, numCorrect === undefined.
@@ -1102,6 +1109,8 @@ const computeAssignmentAndRunData = computed(() => {
             // scoreReportColumns only can only access admin variants, so set rawScore = correctIncorrectDifference
             // for admins with mixed normed & unnormed scores
             currRowScores[taskId].rawScore = currRowScores[taskId].correctIncorrectDifference;
+            currRowScores[taskId].tagColor =
+              assessment.scores?.raw?.composite?.test?.numAttempted > 0 ? '#A4DDED' : 'transparent';
           }
 
           Object.assign(currRowScores[taskId], { numCorrect, numIncorrect, scoringVersion });
@@ -1116,11 +1125,20 @@ const computeAssignmentAndRunData = computed(() => {
           const scoringVersion = _get(assessment, 'scores.computed.composite.scoringVersion');
 
           Object.assign(currRowScores[taskId], { numCorrect, numAttempted, percentCorrect, scoringVersion });
-          currRowScores[taskId].tagColor = percentCorrect === null ? 'transparent' : tagColor;
-          scoreFilterTags += ' Assessed ';
 
-          // @TODO: Remove after decoupling the percentile returned by getScoreValue from the individual score report.
-          currRowScores[taskId].percentile = null;
+          // Only assign these values for swr-es if unnormed score
+          if (assessment.taskId !== 'swr-es' || !scoringVersion) {
+            currRowScores[taskId].tagColor = percentCorrect === null ? 'transparent' : tagColor;
+            scoreFilterTags += ' Assessed ';
+            // @TODO: Remove after decoupling the percentile returned by getScoreValue from the individual score report.
+            // Prevent reporting in percentile view
+            currRowScores[taskId].percentile = null;
+
+            // Hide tag when only practice questions are attempted
+            if (numAttempted === null || numAttempted === undefined) {
+              currRowScores[taskId].rawScore = null;
+            }
+          }
         } else if (tasksToDisplayTotalCorrect.includes(taskId)) {
           // isNewScoring is 1.2.23+, otherwise handles 1.2.14
           const isNewScoring = _has(assessment, 'scores.computed.composite.numCorrect');
@@ -1170,30 +1188,24 @@ const computeAssignmentAndRunData = computed(() => {
             };
           }
         } else if ((taskId === 'letter' || taskId === 'letter-en-ca') && assessment.scores) {
-          // Hide tag when only practice questions are attempted
-          if (assessment.scores.computed.composite.totalNumAttempted === 0) {
-            currRowScores[taskId].rawScore = null;
-          } else {
-            currRowScores[taskId].lowerCaseScore = assessment.scores.computed.LowercaseNames?.subScore;
-            currRowScores[taskId].upperCaseScore = assessment.scores.computed.UppercaseNames?.subScore;
-            currRowScores[taskId].phonemeScore = assessment.scores.computed.Phonemes?.subScore;
-            currRowScores[taskId].totalScore = assessment.scores.computed.composite?.totalCorrect;
+          currRowScores[taskId].lowerCaseScore = assessment.scores.computed.LowercaseNames?.subScore;
+          currRowScores[taskId].upperCaseScore = assessment.scores.computed.UppercaseNames?.subScore;
+          currRowScores[taskId].phonemeScore = assessment.scores.computed.Phonemes?.subScore;
+          currRowScores[taskId].totalScore = assessment.scores.computed.composite?.totalCorrect;
 
-            const incorrectLettersArray = [
-              ...(_get(assessment, 'scores.computed.UppercaseNames.upperIncorrect') ?? '').split(','),
-              ...(_get(assessment, 'scores.computed.LowercaseNames.lowerIncorrect') ?? '').split(','),
-            ]
-              .sort((a, b) => _toUpper(a) - _toUpper(b))
-              .filter(Boolean)
-              .join(', ');
-            currRowScores[taskId].incorrectLetters = incorrectLettersArray.length > 0 ? incorrectLettersArray : 'None';
+          const incorrectLettersArray = [
+            ...(_get(assessment, 'scores.computed.UppercaseNames.upperIncorrect') ?? '').split(','),
+            ...(_get(assessment, 'scores.computed.LowercaseNames.lowerIncorrect') ?? '').split(','),
+          ]
+            .sort((a, b) => _toUpper(a) - _toUpper(b))
+            .filter(Boolean)
+            .join(', ');
+          currRowScores[taskId].incorrectLetters = incorrectLettersArray.length > 0 ? incorrectLettersArray : 'None';
 
-            const incorrectPhonemesArray = (_get(assessment, 'scores.computed.Phonemes.phonemeIncorrect') ?? '')
-              .split(',')
-              .join(', ');
-            currRowScores[taskId].incorrectPhonemes =
-              incorrectPhonemesArray.length > 0 ? incorrectPhonemesArray : 'None';
-          }
+          const incorrectPhonemesArray = (_get(assessment, 'scores.computed.Phonemes.phonemeIncorrect') ?? '')
+            .split(',')
+            .join(', ');
+          currRowScores[taskId].incorrectPhonemes = incorrectPhonemesArray.length > 0 ? incorrectPhonemesArray : 'None';
         }
         if (taskId === 'pa' && assessment.scores) {
           const first = _get(assessment, 'scores.computed.FSM.roarScore');
@@ -2020,9 +2032,13 @@ const sortedAndFilteredTaskIds = computed(() => {
 });
 
 const sortedAndFilteredSubscoreTaskIds = computed(() => {
-  return sortedTaskIds.value?.filter((taskId) => {
-    return tasksToDisplayGraphs.includes(taskId);
-  });
+  if (props.orgType === 'district') {
+    return sortedTaskIds.value?.filter((taskId) => {
+      return tasksToDisplayGraphs.includes(taskId);
+    });
+  }
+  const availableTaskIds = Object.keys(computeAssignmentAndRunData.value?.runsByTaskId);
+  return availableTaskIds.sort((a, b) => taskDisplayNames[a].order - taskDisplayNames[b].order);
 });
 
 let unsubscribe;

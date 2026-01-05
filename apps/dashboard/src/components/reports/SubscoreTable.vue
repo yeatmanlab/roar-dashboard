@@ -83,9 +83,7 @@ const columns = computed(() => {
       filter: true,
     });
   }
-  console.log('props.taskId', props.taskId);
   if (props.taskId === 'letter' || props.taskId === 'letter-en-ca') {
-    console.log('exporting letter data', props.taskId);
     tableColumns.push(
       { field: `scores.${props.taskId}.lowerCaseScore`, header: 'Lower Case', dataType: 'text', sort: false },
       { field: `scores.${props.taskId}.upperCaseScore`, header: 'Upper Case', dataType: 'text', sort: false },
@@ -130,6 +128,7 @@ const columns = computed(() => {
         header: header,
         dataType: 'text',
         sort: true,
+        tooltip: false,
         body: (row) => {
           return _get(row, `scores.${props.taskId}.composite.subscores.${field}`) || '0/0';
         },
@@ -142,6 +141,7 @@ const columns = computed(() => {
       header: 'Total % Correct',
       dataType: 'number',
       sort: true,
+      tooltip: false,
       body: (row) => {
         const totalPercent = _get(row, `scores.${props.taskId}.composite.totalPercentCorrect`);
         return typeof totalPercent === 'number' ? `${Math.round(totalPercent)}%` : '0%';
@@ -154,6 +154,7 @@ const columns = computed(() => {
       header: 'Skills To Work On',
       dataType: 'text',
       sort: false,
+      tooltip: false,
     });
   }
   if (props.taskId === 'roam-alpaca') {

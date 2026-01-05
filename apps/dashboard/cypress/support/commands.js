@@ -1,7 +1,6 @@
 import 'cypress-wait-until';
 import '@testing-library/cypress/add-commands';
 import { APP_ROUTES } from '../../src/constants/routes.js';
-import { redirectSignInPath } from '../../src/helpers/redirectSignInPath.js';
 
 const baseUrl = Cypress.config().baseUrl;
 
@@ -19,9 +18,11 @@ Cypress.Commands.add('login', (username, password) => {
       cy.visit(APP_ROUTES.HOME);
 
       cy.get('[data-cy="sign-in__username"]').type(username, { log: false });
+
+      cy.get('[data-cy="signin-continue"]').click();
       cy.get('[data-cy="sign-in__password"]').type(password, { log: false });
 
-      cy.get('button').contains('Go!').click();
+      cy.get('[data-cy="signin-continue"]').click();
 
       cy.url().should('eq', `${baseUrl}/`);
       cy.log('Login successful.');
@@ -50,20 +51,15 @@ Cypress.Commands.add('login', (username, password) => {
 });
 
 /**
- * Logs in a user using Clever SSO.
+ * Performs Clever OAuth flow and lands on the /sso page.
+ * Does NOT wait for redirect - use this as a building block for login commands.
  *
  * @param {string} schoolName - The name of the school to log in with.
  * @param {string} username - The username to log in with.
  * @param {string} password - The password to log in with.
- * @param {string} [firstPath=APP_ROUTES.HOME] - The first path to visit.
  */
-Cypress.Commands.add('loginWithClever', (schoolName, username, password, firstPath = APP_ROUTES.HOME) => {
+Cypress.Commands.add('performCleverOAuth', (schoolName, username, password) => {
   const CLEVER_SSO_URL = Cypress.env('cleverOAuthLink');
-
-  cy.visit(firstPath);
-
-  const signInPath = `${APP_ROUTES.SIGN_IN}${firstPath === APP_ROUTES.HOME ? '' : `?redirect_to=${firstPath}`}`;
-  cy.url().should('eq', `${baseUrl}${signInPath}`);
 
   cy.get('[data-cy="sign-in__clever-sso"]').contains('Clever').click();
 
@@ -78,27 +74,56 @@ Cypress.Commands.add('loginWithClever', (schoolName, username, password, firstPa
     },
     ({ schoolName, username, password }) => {
       cy.get('input[title="School name"]').type(schoolName);
-      cy.get('ul > li').contains(schoolName).click();
+      cy.get('ul > li').contains(schoolName).should('be.visible').click();
 
       cy.get('input#username').type(username);
       cy.get('input#password').type(password, { log: false });
-      cy.wait(1000); // Add a delay to simulate user input, as Clever SSO is sensitive to rapid input.
+      cy.wait(1000); // Delay to simulate user input, as Clever SSO is sensitive to rapid input.
       cy.get('button#UsernamePasswordForm--loginButton').click();
     },
   );
 
-  const landingPath = `${baseUrl}${
-    firstPath === APP_ROUTES.HOME ? APP_ROUTES.HOME : redirectSignInPath({ query: { redirect_to: firstPath } })
-  }`;
-  cy.url().should('include', landingPath);
+  // After OAuth, we land on /sso page which polls for account readiness.
+  cy.url({ timeout: 30000 }).should('include', '/sso');
+  cy.log('Clever OAuth complete, landed on /sso page.');
+});
 
-  if (landingPath === `${baseUrl}${APP_ROUTES.HOME}`) {
-    cy.get('[data-cy="app-spinner"]').should('be.visible');
-    cy.waitForParticipantHomepage();
-    cy.url().should('eq', `${baseUrl}/`);
-    cy.log('SSO login successful.');
-    cy.agreeToConsent();
-  }
+/**
+ * Logs in a user using Clever SSO.
+ * Authenticates via Clever OAuth, waits for the SSO page to process,
+ * and then waits for redirect to home page.
+ *
+ * @param {string} schoolName - The name of the school to log in with.
+ * @param {string} username - The username to log in with.
+ * @param {string} password - The password to log in with.
+ */
+Cypress.Commands.add('loginWithClever', (schoolName, username, password) => {
+  cy.visit(APP_ROUTES.HOME);
+  cy.url().should('eq', `${baseUrl}${APP_ROUTES.SIGN_IN}`);
+
+  cy.performCleverOAuth(schoolName, username, password);
+
+  // Wait for redirect to home page (SSO polling succeeded and user has valid userType).
+  cy.url({ timeout: 60000 }).should('eq', `${baseUrl}/`);
+
+  cy.log('Clever SSO login successful.');
+});
+
+/**
+ * Intercepts Firestore user document requests and removes userType from the response.
+ * This simulates an unprovisioned SSO user for testing the error state.
+ */
+Cypress.Commands.add('interceptUserDataWithoutUserType', () => {
+  // Intercept Firestore REST API calls for user documents.
+  // The URL pattern matches: firestore.googleapis.com/.../documents/users/{userId}
+  cy.intercept('GET', '**/firestore.googleapis.com/**/documents/users/**', (req) => {
+    req.continue((res) => {
+      // Remove userType from the response fields if it exists.
+      if (res.body?.fields?.userType) {
+        delete res.body.fields.userType;
+      }
+    });
+  }).as('userDataRequest');
 });
 
 /**
@@ -107,7 +132,7 @@ Cypress.Commands.add('loginWithClever', (schoolName, username, password, firstPa
 Cypress.Commands.add('logout', () => {
   cy.get('[data-cy="navbar__signout-btn-desktop"]').click();
   cy.url().should('eq', `${baseUrl}/signin`);
-  cy.get('h1').should('contain.text', 'Welcome to ROAR!');
+  cy.get('h1').should('contain.text', 'Welcome!');
   cy.log('Logout successful.');
 });
 
@@ -245,13 +270,16 @@ Cypress.Commands.add('waitForOrganisationsList', () => {
 
 /**
  * Wait for the participant homepage to load.
+ * Accepts either the assignments view or the empty state as valid loaded states.
  */
 Cypress.Commands.add('waitForParticipantHomepage', () => {
   // Note: Especially during SSO auth flows, the application takes a while to load. Until this is resolved, we need to
   // work with a slightly excessive timeout to ensure we allow the application to complete the auth flow.
   cy.waitUntil(
     () => {
-      return Cypress.$('[data-cy="home-participant__administration"]').length > 0;
+      const hasAssignments = Cypress.$('[data-cy="home-participant__administration"]').length > 0;
+      const hasEmptyState = Cypress.$('[data-cy="home-participant__administration-emptystate"]').length > 0;
+      return hasAssignments || hasEmptyState;
     },
     {
       errorMsg: 'Failed to load the participant home page before timeout',

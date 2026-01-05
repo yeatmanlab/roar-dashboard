@@ -6,7 +6,7 @@
 
 /* Base */
 p {
-  line-height: 1.25rem;
+  line-height: 150%;
 }
 
 .jspsych-display-element p {
@@ -151,6 +151,10 @@ legend {
   columns: 2;
 }
 
+.columns-3 {
+  columns: 3;
+}
+
 @media (min-width: 768px) {
   .md\:columns-2 {
     columns: 2;
@@ -264,4 +268,8 @@ legend {
   transition-property: all;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   transition-duration: 150ms;
+}
+
+.min-h-screen-minus-nav {
+  min-height: calc(100vh - 8rem);
 }
