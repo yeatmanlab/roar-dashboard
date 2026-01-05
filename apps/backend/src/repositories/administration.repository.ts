@@ -5,6 +5,7 @@ import { CoreDbClient } from '../db/clients';
 import type * as CoreDbSchema from '../db/schema/core';
 import type { PaginationQuery, SortQuery, ADMINISTRATION_SORT_FIELDS } from '@roar-dashboard/api-contract';
 import { BaseRepository, type PaginatedResult } from './base.repository';
+import type { BasePaginatedQueryParams } from './interfaces/base.repository.interface';
 
 /**
  * Sort field type derived from api-contract.
@@ -12,7 +13,7 @@ import { BaseRepository, type PaginatedResult } from './base.repository';
 export type AdministrationSortField = (typeof ADMINISTRATION_SORT_FIELDS)[number];
 
 /**
- * Query options for administration repository methods.
+ * Query options for administration repository methods (API contract format).
  */
 export type AdministrationQueryOptions = PaginationQuery & SortQuery<AdministrationSortField>;
 
@@ -35,21 +36,14 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
   /**
    * Get administrations by IDs with pagination and sorting.
    */
-  async getByIds(
-    ids: string[],
-    options: Pick<AdministrationQueryOptions, 'page' | 'perPage' | 'sortBy' | 'sortOrder'>,
-  ): Promise<PaginatedResult<Administration>> {
+  async getByIds(ids: string[], options: BasePaginatedQueryParams): Promise<PaginatedResult<Administration>> {
     if (ids.length === 0) {
       return { items: [], totalItems: 0 };
     }
 
-    const { sortBy, sortOrder } = options;
-
     return super.getAll({
       where: inArray(administrations.id, ids),
-      orderBy: { field: sortBy, direction: sortOrder },
-      page: options.page,
-      perPage: options.perPage,
+      ...options,
     });
   }
 }

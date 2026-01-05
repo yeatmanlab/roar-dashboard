@@ -1,7 +1,6 @@
 import { z } from 'zod';
 import {
   PaginationQuerySchema,
-  SearchQuerySchema,
   createSortQuerySchema,
   createEmbedQuerySchema,
   createPaginatedResponseSchema,
@@ -66,6 +65,9 @@ export type Administration = z.infer<typeof AdministrationSchema>;
 
 /**
  * Allowed sort fields for administrations.
+ *
+ * @TODO: Check with team whether to rename the DB column from 'nameInternal' to 'name'
+ * to avoid needing the mapping in the service layer.
  */
 export const ADMINISTRATION_SORT_FIELDS = ['createdAt', 'name', 'dateStart', 'dateEnd'] as const;
 
@@ -77,9 +79,9 @@ export const ADMINISTRATION_EMBED_OPTIONS = ['stats', 'assessments'] as const;
 /**
  * Query parameters for listing administrations.
  */
-export const AdministrationsListQuerySchema = PaginationQuerySchema.merge(SearchQuerySchema)
-  .merge(createSortQuerySchema(ADMINISTRATION_SORT_FIELDS, 'createdAt'))
-  .merge(createEmbedQuerySchema(ADMINISTRATION_EMBED_OPTIONS));
+export const AdministrationsListQuerySchema = PaginationQuerySchema.merge(
+  createSortQuerySchema(ADMINISTRATION_SORT_FIELDS, 'createdAt'),
+).merge(createEmbedQuerySchema(ADMINISTRATION_EMBED_OPTIONS));
 
 export type AdministrationsListQuery = z.infer<typeof AdministrationsListQuerySchema>;
 
