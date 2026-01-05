@@ -57,6 +57,13 @@
       "when": 1767626444494,
       "tag": "0007_add_missing_run_trial_interactions_indexes",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1767626499194,
+      "tag": "0008_drop_runs_assignment_id",
+      "breakpoints": true
     }
   ]
 }
