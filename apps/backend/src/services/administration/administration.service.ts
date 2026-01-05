@@ -3,6 +3,7 @@ import {
   AdministrationRepository,
   type AdministrationQueryOptions,
   type AdministrationSortField as AdministrationSortFieldType,
+  type AdministrationTask,
 } from '../../repositories/administration.repository';
 import { AuthorizationRepository } from '../../repositories/authorization.repository';
 import { RunsRepository } from '../../repositories/runs.repository';
@@ -24,10 +25,11 @@ import { logger } from '../../logger';
 type AdministrationEmbedOptionType = (typeof ADMINISTRATION_EMBED_OPTIONS)[number];
 
 /**
- * Administration with optional embedded stats.
+ * Administration with optional embedded data.
  */
 export interface AdministrationWithEmbeds extends Administration {
   stats?: AdministrationStats;
+  tasks?: AdministrationTask[];
 }
 
 /**
@@ -116,13 +118,19 @@ export function AdministrationService({
       return result;
     }
 
-    // Handle embed=stats
+    // Early return if no items to embed
+    if (result.items.length === 0) {
+      return result;
+    }
+
+    const administrationIds = result.items.map((admin) => admin.id);
     const shouldEmbedStats = embedOptions.includes(AdministrationEmbedOption.STATS);
+    const shouldEmbedTasks = embedOptions.includes(AdministrationEmbedOption.TASKS);
+
+    // Handle embed=stats
     let statsMap: Map<string, AdministrationStats> | null = null;
 
-    if (shouldEmbedStats && result.items.length > 0) {
-      const administrationIds = result.items.map((admin) => admin.id);
-
+    if (shouldEmbedStats) {
       // Fetch stats from both databases in parallel with graceful error handling.
       // If either query fails, we log the error and omit stats entirely (all-or-nothing).
       const [assignedResult, runsResult] = await Promise.allSettled([
@@ -154,12 +162,27 @@ export function AdministrationService({
       }
     }
 
-    // Attach embeds to each administration (only if stats were successfully fetched)
+    // Handle embed=tasks
+    let tasksMap: Map<string, AdministrationTask[]> | null = null;
+
+    if (shouldEmbedTasks) {
+      try {
+        tasksMap = await administrationRepository.getTasksByAdministrationIds(administrationIds);
+      } catch (err) {
+        logger.error({ err }, 'Failed to fetch tasks for tasks embed');
+      }
+    }
+
+    // Attach embeds to each administration
     const itemsWithEmbeds: AdministrationWithEmbeds[] = result.items.map((admin) => {
       const adminWithEmbeds: AdministrationWithEmbeds = { ...admin };
 
       if (shouldEmbedStats && statsMap !== null) {
         adminWithEmbeds.stats = statsMap.get(admin.id) ?? { assigned: 0, started: 0, completed: 0 };
+      }
+
+      if (shouldEmbedTasks && tasksMap !== null) {
+        adminWithEmbeds.tasks = tasksMap.get(admin.id) ?? [];
       }
 
       return adminWithEmbeds;

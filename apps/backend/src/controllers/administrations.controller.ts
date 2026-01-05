@@ -37,6 +37,11 @@ function transformAdministration(admin: AdministrationWithEmbeds): ApiAdministra
     result.stats = admin.stats;
   }
 
+  // Include tasks if embedded
+  if (admin.tasks) {
+    result.tasks = admin.tasks;
+  }
+
   return result;
 }
 
