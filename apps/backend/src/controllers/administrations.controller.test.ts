@@ -124,6 +124,7 @@ describe('AdministrationsController', () => {
         perPage: 50,
         sortBy: 'dateStart',
         sortOrder: 'asc',
+        embed: [],
       });
     });
 
@@ -143,6 +144,65 @@ describe('AdministrationsController', () => {
       expect(result.body.data.items).toEqual([]);
       expect(result.body.data.pagination.totalItems).toBe(0);
       expect(result.body.data.pagination.totalPages).toBe(0);
+    });
+
+    it('should include stats in response when embed=stats is requested', async () => {
+      const mockAdmin = AdministrationFactory.build({
+        id: 'admin-1',
+        nameInternal: 'Test Admin',
+        stats: { assigned: 25, started: 10, completed: 5 },
+      });
+      mockList.mockResolvedValue({
+        items: [mockAdmin],
+        totalItems: 1,
+      });
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      const result = await Controller.list(mockAuthContext, {
+        page: 1,
+        perPage: 25,
+        sortBy: 'createdAt',
+        sortOrder: 'desc',
+        embed: ['stats'],
+      });
+
+      expect(mockList).toHaveBeenCalledWith(mockAuthContext, {
+        page: 1,
+        perPage: 25,
+        sortBy: 'createdAt',
+        sortOrder: 'desc',
+        embed: ['stats'],
+      });
+      expect(result.body.data.items[0]!.stats).toEqual({
+        assigned: 25,
+        started: 10,
+        completed: 5,
+      });
+    });
+
+    it('should not include stats in response when not embedded', async () => {
+      const mockAdmin = AdministrationFactory.build({
+        id: 'admin-1',
+        nameInternal: 'Test Admin',
+        // No stats property
+      });
+      mockList.mockResolvedValue({
+        items: [mockAdmin],
+        totalItems: 1,
+      });
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      const result = await Controller.list(mockAuthContext, {
+        page: 1,
+        perPage: 25,
+        sortBy: 'createdAt',
+        sortOrder: 'desc',
+        embed: [],
+      });
+
+      expect(result.body.data.items[0]).not.toHaveProperty('stats');
     });
   });
 });
