@@ -72,9 +72,27 @@ export type Administration = z.infer<typeof AdministrationSchema>;
 export const ADMINISTRATION_SORT_FIELDS = ['createdAt', 'name', 'dateStart', 'dateEnd'] as const;
 
 /**
+ * Sort field constants for type-safe access.
+ */
+export const AdministrationSortField = {
+  CREATED_AT: 'createdAt',
+  NAME: 'name',
+  DATE_START: 'dateStart',
+  DATE_END: 'dateEnd',
+} as const satisfies Record<string, (typeof ADMINISTRATION_SORT_FIELDS)[number]>;
+
+/**
  * Allowed embed options for administrations.
  */
 export const ADMINISTRATION_EMBED_OPTIONS = ['stats', 'assessments'] as const;
+
+/**
+ * Embed option constants for type-safe access.
+ */
+export const AdministrationEmbedOption = {
+  STATS: 'stats',
+  ASSESSMENTS: 'assessments',
+} as const satisfies Record<string, (typeof ADMINISTRATION_EMBED_OPTIONS)[number]>;
 
 /**
  * Query parameters for listing administrations.

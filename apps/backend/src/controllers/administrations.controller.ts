@@ -1,6 +1,9 @@
 import { StatusCodes } from 'http-status-codes';
-import { AdministrationService } from '../services/administration/administration.service';
-import type { AdministrationsListQuery } from '@roar-dashboard/api-contract';
+import {
+  AdministrationService,
+  type AdministrationWithEmbeds,
+} from '../services/administration/administration.service';
+import type { AdministrationsListQuery, Administration as ApiAdministration } from '@roar-dashboard/api-contract';
 import type { UserType } from '../enums/user-type.enum';
 
 const administrationService = AdministrationService();
@@ -14,6 +17,30 @@ interface AuthContext {
 }
 
 /**
+ * Transform a database administration to the API response format.
+ */
+function transformAdministration(admin: AdministrationWithEmbeds): ApiAdministration {
+  const result: ApiAdministration = {
+    id: admin.id,
+    name: admin.nameInternal,
+    publicName: admin.namePublic,
+    dates: {
+      start: admin.dateStart.toISOString(),
+      end: admin.dateEnd.toISOString(),
+      created: admin.createdAt.toISOString(),
+    },
+    isOrdered: admin.isOrdered,
+  };
+
+  // Include stats if embedded
+  if (admin.stats) {
+    result.stats = admin.stats;
+  }
+
+  return result;
+}
+
+/**
  * AdministrationsController
  *
  * Handles HTTP concerns for the /administrations endpoints.
@@ -21,30 +48,21 @@ interface AuthContext {
  */
 export const AdministrationsController = {
   /**
-   * List administrations with pagination, search, and sorting.
+   * List administrations with pagination, sorting, and optional embeds.
    */
   list: async (authContext: AuthContext, query: AdministrationsListQuery) => {
-    const { page, perPage, sortBy, sortOrder } = query;
+    const { page, perPage, sortBy, sortOrder, embed } = query;
 
     const result = await administrationService.list(authContext, {
       page,
       perPage,
       sortBy,
       sortOrder,
+      embed,
     });
 
     // Transform to API response format
-    const items = result.items.map((admin) => ({
-      id: admin.id,
-      name: admin.nameInternal,
-      publicName: admin.namePublic,
-      dates: {
-        start: admin.dateStart.toISOString(),
-        end: admin.dateEnd.toISOString(),
-        created: admin.createdAt.toISOString(),
-      },
-      isOrdered: admin.isOrdered,
-    }));
+    const items = result.items.map(transformAdministration);
 
     const totalPages = Math.ceil(result.totalItems / perPage);
 
