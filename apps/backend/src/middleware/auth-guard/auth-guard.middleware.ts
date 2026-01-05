@@ -7,6 +7,7 @@ import { extractJwt } from './jwt-extractor';
 import { getFirebaseErrorCode } from '../../utils/get-firebase-error-code.util';
 import { API_ERROR_CODES } from '../../constants/api-error-codes';
 import { FIREBASE_ERROR_CODES } from '../../constants/firebase-error-codes';
+import { logger } from '../../logger';
 
 // Create service instance (repository auto-instantiated with correct DB client)
 const userService = UserService();
@@ -69,7 +70,7 @@ export async function AuthGuardMiddleware(req: Request, res: Response, next: Nex
       );
     }
 
-    console.error('Failed to verify token.', { error });
+    logger.warn({ err: error }, 'Failed to verify token');
     return next(
       createError(StatusCodes.UNAUTHORIZED, {
         message: 'Invalid token.',
