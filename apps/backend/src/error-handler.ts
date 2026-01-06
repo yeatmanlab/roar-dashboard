@@ -3,7 +3,7 @@ import { isHttpError } from 'http-errors';
 import { StatusCodes } from 'http-status-codes';
 import { ApiError } from './errors/api-error';
 import { DatabaseError } from './errors/database-error';
-import { API_ERROR_CODES } from './constants/api-error-codes';
+import { ApiErrorCode } from './enums/api-error-code.enum';
 import { logger } from './logger';
 
 /**
@@ -22,6 +22,7 @@ export function errorHandler(err: unknown, _req: Request, res: Response, _next: 
     return res.status(err.statusCode).json({
       error: {
         message: err.message,
+        code: err.code,
         traceId: err.traceId,
       },
     });
@@ -33,6 +34,7 @@ export function errorHandler(err: unknown, _req: Request, res: Response, _next: 
     return res.status(apiError.statusCode).json({
       error: {
         message: apiError.message,
+        code: apiError.code,
         traceId: apiError.traceId,
       },
     });
@@ -55,7 +57,7 @@ export function errorHandler(err: unknown, _req: Request, res: Response, _next: 
   return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
     error: {
       message: 'An unexpected error occurred.',
-      code: API_ERROR_CODES.INTERNAL,
+      code: ApiErrorCode.INTERNAL,
     },
   });
 }

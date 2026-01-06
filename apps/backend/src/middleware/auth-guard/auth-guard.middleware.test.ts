@@ -4,7 +4,7 @@ import request from 'supertest';
 import { StatusCodes } from 'http-status-codes';
 import { AuthGuardMiddleware } from './auth-guard.middleware';
 import { AuthService } from '../../services/auth/auth.service';
-import { API_ERROR_CODES } from '../../constants/api-error-codes';
+import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { FIREBASE_ERROR_CODES } from '../../constants/firebase-error-codes';
 import { DecodedUserFactory } from '../../test-support/factories/auth.factory';
 import { UserFactory } from '../../test-support/factories/user.factory';
@@ -96,7 +96,7 @@ describe('AuthGuardMiddleware', () => {
     expect(authServiceMock).toHaveBeenCalledWith('mock-valid-jwt-token');
     expect(mockFindByAuthId).toHaveBeenCalledWith(mockDecodedUser.uid);
     expect(response.body.message).toBe('User not found.');
-    expect(response.body.code).toBe(API_ERROR_CODES.AUTH.USER_NOT_FOUND);
+    expect(response.body.code).toBe(ApiErrorCode.AUTH_USER_NOT_FOUND);
   });
 
   describe('error handling', () => {
@@ -105,7 +105,7 @@ describe('AuthGuardMiddleware', () => {
         const response = await request(app).get('/').expect(StatusCodes.UNAUTHORIZED);
 
         expect(response.body.message).toBe('Token missing.');
-        expect(response.body.code).toBe(API_ERROR_CODES.AUTH.REQUIRED);
+        expect(response.body.code).toBe(ApiErrorCode.AUTH_REQUIRED);
         expect(authServiceMock).not.toHaveBeenCalled();
       });
 
@@ -116,7 +116,7 @@ describe('AuthGuardMiddleware', () => {
           .expect(StatusCodes.UNAUTHORIZED);
 
         expect(response.body.message).toBe('Token missing.');
-        expect(response.body.code).toBe(API_ERROR_CODES.AUTH.REQUIRED);
+        expect(response.body.code).toBe(ApiErrorCode.AUTH_REQUIRED);
         expect(authServiceMock).not.toHaveBeenCalled();
       });
 
@@ -124,7 +124,7 @@ describe('AuthGuardMiddleware', () => {
         const response = await request(app).get('/').set('Authorization', 'Bearer ').expect(StatusCodes.UNAUTHORIZED);
 
         expect(response.body.message).toBe('Token missing.');
-        expect(response.body.code).toBe(API_ERROR_CODES.AUTH.REQUIRED);
+        expect(response.body.code).toBe(ApiErrorCode.AUTH_REQUIRED);
         expect(authServiceMock).not.toHaveBeenCalled();
       });
     });
@@ -140,7 +140,7 @@ describe('AuthGuardMiddleware', () => {
           .expect(StatusCodes.UNAUTHORIZED);
 
         expect(response.body.message).toBe('Token expired.');
-        expect(response.body.code).toBe(API_ERROR_CODES.AUTH.TOKEN_EXPIRED);
+        expect(response.body.code).toBe(ApiErrorCode.AUTH_TOKEN_EXPIRED);
         expect(authServiceMock).toHaveBeenCalledWith('expired-token');
       });
     });
@@ -155,7 +155,7 @@ describe('AuthGuardMiddleware', () => {
         .expect(StatusCodes.UNAUTHORIZED);
 
       expect(response.body.message).toBe('Invalid token.');
-      expect(response.body.code).toBe(API_ERROR_CODES.AUTH.TOKEN_INVALID);
+      expect(response.body.code).toBe(ApiErrorCode.AUTH_TOKEN_INVALID);
     });
 
     it('should handle unexpected errors as invalid token', async () => {
@@ -168,7 +168,7 @@ describe('AuthGuardMiddleware', () => {
         .expect(StatusCodes.UNAUTHORIZED);
 
       expect(response.body.message).toBe('Invalid token.');
-      expect(response.body.code).toBe(API_ERROR_CODES.AUTH.TOKEN_INVALID);
+      expect(response.body.code).toBe(ApiErrorCode.AUTH_TOKEN_INVALID);
     });
 
     it('should handle auth service exceptions', async () => {
@@ -181,7 +181,7 @@ describe('AuthGuardMiddleware', () => {
         .expect(StatusCodes.UNAUTHORIZED);
 
       expect(response.body.message).toBe('Invalid token.');
-      expect(response.body.code).toBe(API_ERROR_CODES.AUTH.TOKEN_INVALID);
+      expect(response.body.code).toBe(ApiErrorCode.AUTH_TOKEN_INVALID);
     });
   });
 });
