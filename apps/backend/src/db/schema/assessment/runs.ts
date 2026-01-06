@@ -32,7 +32,6 @@ export const runs = db.table(
     taskVersion: p.text().notNull(),
 
     administrationId: p.uuid().notNull(),
-    assignmentId: p.uuid().notNull(),
 
     bestRun: p.boolean().notNull().default(false),
     reliableRun: p.boolean().notNull().default(false),
@@ -48,8 +47,8 @@ export const runs = db.table(
   },
   (table) => [
     // Indexes
-    // - Lookup for user's runs for a specific assignment + task
-    p.index('runs_user_assignment_task_idx').on(table.userId, table.assignmentId, table.taskId),
+    // - Lookup for user's runs for a specific administration + task
+    p.index('runs_user_administration_task_idx').on(table.userId, table.administrationId, table.taskId),
 
     //- Lookup for all runs by a user
     p.index('runs_user_id_idx').on(table.userId),
