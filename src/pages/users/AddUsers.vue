@@ -632,7 +632,7 @@ async function submitUsers() {
                 const cohortId = await getOrgId(
                   pluralizeFirestoreCollection('groups'),
                   cohortName,
-                  ref(undefined),
+                  ref({ id: currentSite.value }),
                   ref(undefined),
                 );
                 orgInfo.cohorts.push(cohortId);

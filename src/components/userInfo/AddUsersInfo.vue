@@ -39,9 +39,6 @@
       </li>
       <li><b>caregiverId</b> - A unique identifier (id) for the child's caregiver.</li>
       <li><b>teacherId</b> - A unique identifier (id) for the child's teacher.</li>
-      <li v-if="!shouldUsePermissions">
-        <b>site</b><span class="field-marker">*</span> - The name of the site you created from the Add Groups page.
-      </li>
       <li>
         One of the following:<span class="field-marker">*</span>
         <ul class="nested-list">
@@ -60,6 +57,21 @@
       <span class="field-marker">*</span> Required for this Step.<br />
       <span class="field-marker">**</span> Required only for child users. Leave blank for caregiver or teacher users.
     </p>
+
+    <PvAccordion v-model:value="siteColumnAccordionValue" class="mb-6">
+      <PvAccordionPanel value="site-column">
+        <PvAccordionHeader>What if my user file has a site column?</PvAccordionHeader>
+        <PvAccordionContent>
+          <p>
+            Early users of the dashboard may have user csv files which include a site column. 
+            This is no longer required for the add users process. 
+            The site to which users are added is now determined by the site selected in the site selector (top right). 
+            The Add Users process will only add users to the currently selected site, and will display a warning if your file contains a site column with values that do not match the currently selected site. 
+            Users in those rows will cause the add users process to fail. We recommend splitting up your user files by site.
+          </p>
+        </PvAccordionContent>
+      </PvAccordionPanel>
+    </PvAccordion>
 
     <p>
       Below is an example of what your CSV/spreadsheet should look like. Only the required columns will be processed.
@@ -101,11 +113,17 @@
 import { LEVANTE_STATIC_ASSETS_URL } from '@/constants/bucket';
 import { useAuthStore } from '@/store/auth';
 import { storeToRefs } from 'pinia';
+import { ref } from 'vue';
 import PvPanel from 'primevue/panel';
 import PvButton from 'primevue/button';
+import PvAccordion from 'primevue/accordion';
+import PvAccordionPanel from 'primevue/accordionpanel';
+import PvAccordionHeader from 'primevue/accordionheader';
+import PvAccordionContent from 'primevue/accordioncontent';
 
 const authStore = useAuthStore();
 const { shouldUsePermissions } = storeToRefs(authStore);
+const siteColumnAccordionValue = ref(null);
 
 const generateTemplateFile = () => {
   const headers = ['id', 'userType', 'month', 'year', 'caregiverId', 'teacherId', 'site', 'school', 'class', 'cohort'];
