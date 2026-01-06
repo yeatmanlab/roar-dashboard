@@ -6,7 +6,7 @@ import { errorHandler } from './error-handler';
 import { ApiError } from './errors/api-error';
 import { DatabaseError } from './errors/database-error';
 import { DatabaseErrorCode } from './enums/database-error-code.enum';
-import { API_ERROR_CODES } from './constants/api-error-codes';
+import { ApiErrorCode } from './enums/api-error-code.enum';
 import { logger } from './logger';
 
 vi.mock('./logger', () => ({
@@ -125,7 +125,7 @@ describe('errorHandler', () => {
       expect(jsonMock).toHaveBeenCalledWith({
         error: {
           message: 'An unexpected error occurred.',
-          code: API_ERROR_CODES.INTERNAL,
+          code: ApiErrorCode.INTERNAL,
         },
       });
     });
@@ -146,7 +146,7 @@ describe('errorHandler', () => {
       expect(jsonMock).toHaveBeenCalledWith({
         error: {
           message: 'An unexpected error occurred.',
-          code: API_ERROR_CODES.INTERNAL,
+          code: ApiErrorCode.INTERNAL,
         },
       });
     });

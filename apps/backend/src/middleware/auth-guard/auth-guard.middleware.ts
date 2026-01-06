@@ -5,7 +5,7 @@ import { AuthService } from '../../services/auth/auth.service';
 import { UserService } from '../../services/user';
 import { extractJwt } from './jwt-extractor';
 import { getFirebaseErrorCode } from '../../utils/get-firebase-error-code.util';
-import { API_ERROR_CODES } from '../../constants/api-error-codes';
+import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { FIREBASE_ERROR_CODES } from '../../constants/firebase-error-codes';
 import { logger } from '../../logger';
 
@@ -33,7 +33,7 @@ export async function AuthGuardMiddleware(req: Request, res: Response, next: Nex
       return next(
         createError(StatusCodes.UNAUTHORIZED, {
           message: 'Token missing.',
-          code: API_ERROR_CODES.AUTH.REQUIRED,
+          code: ApiErrorCode.AUTH_REQUIRED,
         }),
       );
 
@@ -46,7 +46,7 @@ export async function AuthGuardMiddleware(req: Request, res: Response, next: Nex
       return next(
         createError(StatusCodes.UNAUTHORIZED, {
           message: 'User not found.',
-          code: API_ERROR_CODES.AUTH.USER_NOT_FOUND,
+          code: ApiErrorCode.AUTH_USER_NOT_FOUND,
         }),
       );
     }
@@ -65,7 +65,7 @@ export async function AuthGuardMiddleware(req: Request, res: Response, next: Nex
       return next(
         createError(StatusCodes.UNAUTHORIZED, {
           message: 'Token expired.',
-          code: API_ERROR_CODES.AUTH.TOKEN_EXPIRED,
+          code: ApiErrorCode.AUTH_TOKEN_EXPIRED,
         }),
       );
     }
@@ -74,7 +74,7 @@ export async function AuthGuardMiddleware(req: Request, res: Response, next: Nex
     return next(
       createError(StatusCodes.UNAUTHORIZED, {
         message: 'Invalid token.',
-        code: API_ERROR_CODES.AUTH.TOKEN_INVALID,
+        code: ApiErrorCode.AUTH_TOKEN_INVALID,
       }),
     );
   }
