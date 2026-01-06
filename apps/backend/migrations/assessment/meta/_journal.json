@@ -64,6 +64,13 @@
       "when": 1767626499194,
       "tag": "0008_drop_runs_assignment_id",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1767699036917,
+      "tag": "0009_add_super_admin_user_type",
+      "breakpoints": true
     }
   ]
 }
