@@ -149,13 +149,7 @@ export const fetchOrgByName = async (orgType, orgNormalizedName, selectedDistric
   return axiosInstance.post(`${getBaseDocumentPath()}:runQuery`, requestBody).then(({ data }) => mapFields(data));
 };
 
-export const orgFetcher = async (
-  orgType,
-  selectedDistrict,
-  isSuperAdmin,
-  adminOrgs,
-  select = ['name', 'id'],
-) => {
+export const orgFetcher = async (orgType, selectedDistrict, isSuperAdmin, adminOrgs, select = ['name', 'id']) => {
   const districtId = toValue(selectedDistrict) === 'any' ? null : toValue(selectedDistrict);
 
   if (isSuperAdmin.value) {
@@ -597,4 +591,50 @@ export const fetchSchools = async (districts = null) => {
 
   // If districts is empty array or invalid, return empty array
   return Promise.resolve([]);
+};
+
+export const fetchOrgsBySite = async (siteId = null) => {
+  if (!siteId) return null;
+
+  const axiosInstance = getAxiosInstance();
+  const promises = [];
+
+  // Fetch schools where districtId === siteId
+  const schoolsRequestBody = getOrgsRequestBody({
+    orgType: ORG_TYPES.SCHOOLS,
+    aggregationQuery: false,
+    paginate: false,
+    parentDistrict: siteId,
+    select: ['id'],
+  });
+  promises.push(
+    axiosInstance.post(`${getBaseDocumentPath()}:runQuery`, schoolsRequestBody).then(({ data }) => mapFields(data)),
+  );
+
+  // Fetch classes where districtId === siteId
+  const classesRequestBody = getOrgsRequestBody({
+    orgType: ORG_TYPES.CLASSES,
+    aggregationQuery: false,
+    paginate: false,
+    parentDistrict: siteId,
+    select: ['id'],
+  });
+  promises.push(
+    axiosInstance.post(`${getBaseDocumentPath()}:runQuery`, classesRequestBody).then(({ data }) => mapFields(data)),
+  );
+
+  // Fetch groups where parentOrgId === siteId
+  const groupsRequestBody = getOrgsRequestBody({
+    orgType: ORG_TYPES.GROUPS,
+    aggregationQuery: false,
+    paginate: false,
+    parentDistrict: siteId,
+    select: ['id'],
+  });
+  promises.push(
+    axiosInstance.post(`${getBaseDocumentPath()}:runQuery`, groupsRequestBody).then(({ data }) => mapFields(data)),
+  );
+
+  const results = await Promise.all(promises);
+  return _flattenDeep(results);
 };

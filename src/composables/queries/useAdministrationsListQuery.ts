@@ -1,10 +1,8 @@
-import { computed, ref, Ref, toValue } from 'vue';
+import { computed, Ref, toValue } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
 import _isEmpty from 'lodash/isEmpty';
 import { computeQueryOverrides } from '@/helpers/computeQueryOverrides';
 import { administrationPageFetcher } from '@/helpers/query/administrations';
-import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
-import useUserType from '@/composables/useUserType';
 import { ADMINISTRATIONS_LIST_QUERY_KEY } from '@/constants/queryKeys';
 import { useAuthStore } from '@/store/auth';
 import { storeToRefs } from 'pinia';
@@ -25,11 +23,7 @@ const useAdministrationsListQuery = (
   queryOptions?: UseQueryOptions,
 ): UseQueryReturnType => {
   const authStore = useAuthStore();
-  const { shouldUsePermissions, userClaims } = storeToRefs(authStore);
-  const { isUserSuperAdmin } = authStore;
-
-  // Get admin status and administation orgs.
-  const exhaustiveAdministrationOrgs = computed(() => userClaims.value?.claims?.adminOrgs);
+  const { userClaims } = storeToRefs(authStore);
 
   // Ensure all necessary data is loaded before enabling the query.
   const claimsLoaded = computed(() => !_isEmpty(userClaims?.value?.claims));
@@ -46,14 +40,7 @@ const useAdministrationsListQuery = (
   return useQuery({
     queryKey,
     queryFn: async () => {
-      const result = await administrationPageFetcher(
-        selectedDistrictId,
-        shouldUsePermissions,
-        ref(isUserSuperAdmin()),
-        exhaustiveAdministrationOrgs,
-        testAdministrationsOnly,
-        orderBy,
-      );
+      const result = await administrationPageFetcher(selectedDistrictId, testAdministrationsOnly, orderBy);
       return result.sortedAdministrations;
     },
     enabled: isQueryEnabled,
@@ -78,9 +65,6 @@ const useFullAdministrationsListQuery = (
 ): UseQueryReturnType => {
   const authStore = useAuthStore();
   const { userClaims } = storeToRefs(authStore);
-  const { isUserSuperAdmin } = authStore;
-
-  const exhaustiveAdministrationOrgs = computed(() => userClaims.value?.claims?.adminOrgs);
 
   // Ensure all necessary data is loaded before enabling the query.
   const claimsLoaded = computed(() => !_isEmpty(userClaims?.value?.claims));
@@ -96,14 +80,7 @@ const useFullAdministrationsListQuery = (
 
   return useQuery({
     queryKey,
-    queryFn: () =>
-      administrationPageFetcher(
-        selectedDistrictId,
-        isUserSuperAdmin(),
-        exhaustiveAdministrationOrgs,
-        testAdministrationsOnly,
-        orderBy,
-      ),
+    queryFn: () => administrationPageFetcher(selectedDistrictId, testAdministrationsOnly, orderBy),
     enabled: isQueryEnabled,
     ...options,
   });

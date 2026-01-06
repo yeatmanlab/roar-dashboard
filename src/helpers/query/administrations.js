@@ -11,6 +11,7 @@ import { FIRESTORE_DATABASES } from '@/constants/firebase';
 import { ROLES } from '@/constants/roles';
 import { FIRESTORE_COLLECTIONS } from '@/constants/firebase';
 import { logger } from '@/logger';
+import { fetchOrgsBySite } from './orgs';
 
 export function getTitle(item, isSuperAdmin) {
   if (isSuperAdmin) {
@@ -101,16 +102,15 @@ const mapAdministrations = async (data) => {
   return administrations;
 };
 
-export const administrationPageFetcher = async (
-  selectedDistrictId,
-  shouldUsePermissions,
-  isSuperAdmin,
-  exhaustiveAdminOrgs,
-  fetchTestData = false,
-  orderBy,
-) => {
+export const administrationPageFetcher = async (selectedDistrictId, fetchTestData = false, orderBy) => {
   const authStore = useAuthStore();
   const { roarfirekit } = storeToRefs(authStore);
+
+  const siteId =
+    selectedDistrictId.value.trim() && selectedDistrictId.value !== 'any' ? selectedDistrictId.value : null;
+
+  let orgs = [];
+
   const administrationIds = await roarfirekit.value.getAdministrations({
     testData: toValue(fetchTestData),
   });
@@ -144,6 +144,21 @@ export const administrationPageFetcher = async (
   );
 
   let administrations = await mapAdministrations(administrationData);
+
+  if (siteId) {
+    orgs = await fetchOrgsBySite(siteId);
+    orgs.push({ id: siteId });
+
+    administrations = administrations.filter((administration) => {
+      return orgs.some(
+        (org) =>
+          administration.assignedOrgs.districts.includes(org.id) ||
+          administration.assignedOrgs.schools.includes(org.id) ||
+          administration.assignedOrgs.classes.includes(org.id) ||
+          administration.assignedOrgs.groups.includes(org.id),
+      );
+    });
+  }
 
   const orderField = (orderBy?.value ?? orderByDefault)[0].field.fieldPath;
   const orderDirection = (orderBy?.value ?? orderByDefault)[0].direction;
