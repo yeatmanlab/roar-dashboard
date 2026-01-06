@@ -5,23 +5,47 @@ describe('AuthorizationRepository', () => {
   const mockFrom = vi.fn();
   const mockSelect = vi.fn();
   const mockSelectDistinct = vi.fn();
-  const mockExecute = vi.fn();
+  const mockGroupBy = vi.fn();
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mockDb: any = {
     select: mockSelect,
     selectDistinct: mockSelectDistinct,
-    execute: mockExecute,
   };
 
   beforeEach(() => {
     vi.clearAllMocks();
 
+    // Create a chainable subquery mock that supports unionAll
+    const createSubqueryWithUnion = () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const subquery: any = {
+        unionAll: vi.fn(),
+        as: vi.fn(),
+      };
+
+      // unionAll returns another subquery that also supports unionAll and as
+      subquery.unionAll.mockReturnValue({
+        unionAll: vi.fn().mockReturnValue({
+          as: vi.fn().mockReturnValue({
+            administrationId: 'assignments.administrationId',
+            userId: 'assignments.userId',
+          }),
+        }),
+        as: vi.fn().mockReturnValue({
+          administrationId: 'assignments.administrationId',
+          userId: 'assignments.userId',
+        }),
+      });
+
+      return subquery;
+    };
+
     // Setup select chain for subqueries: db.select().from().innerJoin().where()
     const createSelectChain = () => ({
       from: vi.fn().mockReturnValue({
         innerJoin: vi.fn().mockReturnValue({
-          where: vi.fn().mockReturnThis(),
+          where: vi.fn().mockReturnValue(createSubqueryWithUnion()),
         }),
       }),
     });
@@ -97,43 +121,74 @@ describe('AuthorizationRepository', () => {
   });
 
   describe('getAssignedUserCountsByAdministrationIds', () => {
+    // Setup mock for aggregation query: db.select().from(assignments).groupBy()
+    const setupAggregationMock = (resolvedValue: { administrationId: string; assignedCount: number }[]) => {
+      mockGroupBy.mockResolvedValue(resolvedValue);
+
+      // Override mockSelect to handle both subquery selects and aggregation select
+      let selectCallCount = 0;
+      mockSelect.mockImplementation(() => {
+        selectCallCount++;
+        // First 3 calls are for viaOrgs, viaClasses, viaGroups subqueries
+        if (selectCallCount <= 3) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const subquery: any = {
+            unionAll: vi.fn(),
+            as: vi.fn(),
+          };
+          subquery.unionAll.mockReturnValue({
+            unionAll: vi.fn().mockReturnValue({
+              as: vi.fn().mockReturnValue({
+                administrationId: 'assignments.administrationId',
+                userId: 'assignments.userId',
+              }),
+            }),
+          });
+
+          return {
+            from: vi.fn().mockReturnValue({
+              innerJoin: vi.fn().mockReturnValue({
+                where: vi.fn().mockReturnValue(subquery),
+              }),
+            }),
+          };
+        }
+        // 4th call is for aggregation: db.select({...}).from(assignments).groupBy()
+        return {
+          from: vi.fn().mockReturnValue({
+            groupBy: mockGroupBy,
+          }),
+        };
+      });
+    };
+
     it('should return empty map when given empty array', async () => {
       const repository = new AuthorizationRepository(mockDb);
       const result = await repository.getAssignedUserCountsByAdministrationIds([]);
 
       expect(result).toEqual(new Map());
-      expect(mockExecute).not.toHaveBeenCalled();
+      expect(mockSelect).not.toHaveBeenCalled();
     });
 
     it('should return counts map for single administration', async () => {
-      mockExecute.mockResolvedValue({
-        rows: [{ administration_id: 'admin-1', assigned_count: 25 }],
-      });
+      setupAggregationMock([{ administrationId: 'admin-1', assignedCount: 25 }]);
 
       const repository = new AuthorizationRepository(mockDb);
-      const result = await repository.getAssignedUserCountsByAdministrationIds([
-        '550e8400-e29b-41d4-a716-446655440000',
-      ]);
+      const result = await repository.getAssignedUserCountsByAdministrationIds(['admin-1']);
 
       expect(result.get('admin-1')).toBe(25);
       expect(result.size).toBe(1);
     });
 
     it('should return counts map for multiple administrations', async () => {
-      mockExecute.mockResolvedValue({
-        rows: [
-          { administration_id: 'admin-1', assigned_count: 25 },
-          { administration_id: 'admin-2', assigned_count: 50 },
-          { administration_id: 'admin-3', assigned_count: 10 },
-        ],
-      });
+      setupAggregationMock([
+        { administrationId: 'admin-1', assignedCount: 25 },
+        { administrationId: 'admin-2', assignedCount: 50 },
+        { administrationId: 'admin-3', assignedCount: 10 },
+      ]);
 
       const repository = new AuthorizationRepository(mockDb);
-      const result = await repository.getAssignedUserCountsByAdministrationIds([
-        '550e8400-e29b-41d4-a716-446655440000',
-        '550e8400-e29b-41d4-a716-446655440001',
-        '550e8400-e29b-41d4-a716-446655440002',
-      ]);
+      const result = await repository.getAssignedUserCountsByAdministrationIds(['admin-1', 'admin-2', 'admin-3']);
 
       expect(result.size).toBe(3);
       expect(result.get('admin-1')).toBe(25);
@@ -142,15 +197,10 @@ describe('AuthorizationRepository', () => {
     });
 
     it('should not include administrations with no assigned users', async () => {
-      mockExecute.mockResolvedValue({
-        rows: [{ administration_id: 'admin-1', assigned_count: 15 }],
-      });
+      setupAggregationMock([{ administrationId: 'admin-1', assignedCount: 15 }]);
 
       const repository = new AuthorizationRepository(mockDb);
-      const result = await repository.getAssignedUserCountsByAdministrationIds([
-        '550e8400-e29b-41d4-a716-446655440000',
-        '550e8400-e29b-41d4-a716-446655440001',
-      ]);
+      const result = await repository.getAssignedUserCountsByAdministrationIds(['admin-1', 'admin-2']);
 
       expect(result.size).toBe(1);
       expect(result.has('admin-1')).toBe(true);
@@ -158,47 +208,63 @@ describe('AuthorizationRepository', () => {
     });
 
     it('should return empty map when no administrations have assigned users', async () => {
-      mockExecute.mockResolvedValue({ rows: [] });
+      setupAggregationMock([]);
 
       const repository = new AuthorizationRepository(mockDb);
-      const result = await repository.getAssignedUserCountsByAdministrationIds([
-        '550e8400-e29b-41d4-a716-446655440000',
-      ]);
+      const result = await repository.getAssignedUserCountsByAdministrationIds(['admin-1']);
 
       expect(result.size).toBe(0);
     });
 
     it('should propagate database errors', async () => {
       const dbError = new Error('Connection refused');
-      mockExecute.mockRejectedValue(dbError);
+      mockGroupBy.mockRejectedValue(dbError);
+
+      // Setup mocks for the subquery chain
+      let selectCallCount = 0;
+      mockSelect.mockImplementation(() => {
+        selectCallCount++;
+        if (selectCallCount <= 3) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const subquery: any = { unionAll: vi.fn() };
+          subquery.unionAll.mockReturnValue({
+            unionAll: vi.fn().mockReturnValue({
+              as: vi.fn().mockReturnValue({
+                administrationId: 'assignments.administrationId',
+                userId: 'assignments.userId',
+              }),
+            }),
+          });
+          return {
+            from: vi.fn().mockReturnValue({
+              innerJoin: vi.fn().mockReturnValue({
+                where: vi.fn().mockReturnValue(subquery),
+              }),
+            }),
+          };
+        }
+        return {
+          from: vi.fn().mockReturnValue({
+            groupBy: mockGroupBy,
+          }),
+        };
+      });
 
       const repository = new AuthorizationRepository(mockDb);
 
-      await expect(
-        repository.getAssignedUserCountsByAdministrationIds(['550e8400-e29b-41d4-a716-446655440000']),
-      ).rejects.toThrow('Connection refused');
-    });
-
-    it('should throw error for invalid UUID format', async () => {
-      const repository = new AuthorizationRepository(mockDb);
-
-      await expect(repository.getAssignedUserCountsByAdministrationIds(['not-a-valid-uuid'])).rejects.toThrow(
-        'Invalid UUID format',
+      await expect(repository.getAssignedUserCountsByAdministrationIds(['admin-1'])).rejects.toThrow(
+        'Connection refused',
       );
-      expect(mockExecute).not.toHaveBeenCalled();
     });
 
-    it('should throw error if any UUID in array is invalid', async () => {
-      const repository = new AuthorizationRepository(mockDb);
+    it('should build queries for all three membership types (orgs, classes, groups)', async () => {
+      setupAggregationMock([{ administrationId: 'admin-1', assignedCount: 10 }]);
 
-      await expect(
-        repository.getAssignedUserCountsByAdministrationIds([
-          '550e8400-e29b-41d4-a716-446655440000',
-          'invalid-uuid',
-          '550e8400-e29b-41d4-a716-446655440001',
-        ]),
-      ).rejects.toThrow('Invalid UUID format');
-      expect(mockExecute).not.toHaveBeenCalled();
+      const repository = new AuthorizationRepository(mockDb);
+      await repository.getAssignedUserCountsByAdministrationIds(['admin-1']);
+
+      // 3 subquery selects + 1 aggregation select = 4 total
+      expect(mockSelect).toHaveBeenCalledTimes(4);
     });
   });
 });

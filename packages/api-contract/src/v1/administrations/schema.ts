@@ -66,9 +66,6 @@ export type Administration = z.infer<typeof AdministrationSchema>;
 
 /**
  * Allowed sort fields for administrations.
- *
- * @TODO: Check with team whether to rename the DB column from 'nameInternal' to 'name'
- * to avoid needing the mapping in the service layer.
  */
 export const ADMINISTRATION_SORT_FIELDS = ['createdAt', 'name', 'dateStart', 'dateEnd'] as const;
 

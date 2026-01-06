@@ -40,12 +40,9 @@ export interface AdministrationWithEmbeds extends Administration {
 
 /**
  * Maps API sort field names to database column names.
- *
- * @TODO: Check with team whether to rename DB column 'nameInternal' to 'name'
- * to eliminate this mapping.
  */
 const SORT_FIELD_TO_COLUMN: Record<AdministrationSortFieldType, string> = {
-  [AdministrationSortField.NAME]: 'nameInternal',
+  [AdministrationSortField.NAME]: 'name',
   [AdministrationSortField.CREATED_AT]: 'createdAt',
   [AdministrationSortField.DATE_START]: 'dateStart',
   [AdministrationSortField.DATE_END]: 'dateEnd',

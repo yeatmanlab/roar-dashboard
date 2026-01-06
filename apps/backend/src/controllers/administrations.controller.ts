@@ -22,7 +22,7 @@ interface AuthContext {
 function transformAdministration(admin: AdministrationWithEmbeds): ApiAdministration {
   const result: ApiAdministration = {
     id: admin.id,
-    name: admin.nameInternal,
+    name: admin.name,
     publicName: admin.namePublic,
     dates: {
       start: admin.dateStart.toISOString(),
