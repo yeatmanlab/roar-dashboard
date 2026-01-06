@@ -335,7 +335,7 @@
       "idx": 47,
       "version": "7",
       "when": 1767662305834,
-      "tag": "0047_add-super-admin-user-type",
+      "tag": "0047_add_super_admin_user_type",
       "breakpoints": true
     }
   ]
