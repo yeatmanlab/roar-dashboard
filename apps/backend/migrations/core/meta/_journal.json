@@ -330,6 +330,13 @@
       "when": 1767657911474,
       "tag": "0046_rename_administrations_name_internal_to_name",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1767662305834,
+      "tag": "0047_add-super-admin-user-type",
+      "breakpoints": true
     }
   ]
 }
