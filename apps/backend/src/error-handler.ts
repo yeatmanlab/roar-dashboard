@@ -2,16 +2,14 @@ import type { NextFunction, Request, Response } from 'express';
 import { isHttpError } from 'http-errors';
 import { StatusCodes } from 'http-status-codes';
 import { ApiError } from './errors/api-error';
-import { DatabaseError } from './errors/database-error';
-import { API_ERROR_CODES } from './constants/api-error-codes';
+import { ApiErrorCode } from './enums/api-error-code.enum';
 import { logger } from './logger';
 
 /**
  * Global error handler for the Express application.
  *
  * Handles different error types and returns structured JSON responses:
- * - ApiError: Custom API errors with status code and context
- * - DatabaseError: Converted to ApiError with mapped HTTP status
+ * - ApiError: Custom API errors with status code, error code, and traceId
  * - HttpError: Errors created with http-errors package
  * - Unknown errors: Generic 500 response (details logged, not exposed)
  */
@@ -22,18 +20,8 @@ export function errorHandler(err: unknown, _req: Request, res: Response, _next: 
     return res.status(err.statusCode).json({
       error: {
         message: err.message,
+        code: err.code,
         traceId: err.traceId,
-      },
-    });
-  }
-
-  // Handle DatabaseError by converting to ApiError
-  if (err instanceof DatabaseError) {
-    const apiError = err.toApiError();
-    return res.status(apiError.statusCode).json({
-      error: {
-        message: apiError.message,
-        traceId: apiError.traceId,
       },
     });
   }
@@ -55,7 +43,7 @@ export function errorHandler(err: unknown, _req: Request, res: Response, _next: 
   return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
     error: {
       message: 'An unexpected error occurred.',
-      code: API_ERROR_CODES.INTERNAL,
+      code: ApiErrorCode.INTERNAL,
     },
   });
 }

@@ -61,11 +61,47 @@ export interface BaseGetByWhereParams extends BaseParams {
 }
 
 /**
- * Parameters for retrieving all entities from a repository.
+ * Shared pagination parameters for paginated queries.
+ * Used by both getAll() and getByIds() methods.
  */
-export interface BaseGetAllParams extends BaseParams {
+export interface BasePaginatedQueryParams {
+  /** Page number (1-indexed). Required for paginated queries. */
+  page: number;
+
+  /** Number of items per page. Required for paginated queries. */
+  perPage: number;
+
+  /** Optional order by field and direction. */
+  orderBy?: {
+    field: string;
+    direction: 'asc' | 'desc';
+  };
+}
+
+/**
+ * Parameters for retrieving all entities from a repository.
+ * Supports pagination, filtering, and ordering.
+ */
+export interface BaseGetAllParams extends BasePaginatedQueryParams {
   /** Optional Drizzle SQL where clause. */
   where?: SQL;
+
+  /** Optional transaction context for the operation. */
+  transaction?: Transaction;
+
+  /** Optional limit for the number of results. */
+  limit?: number;
+
+  /** Optional fields to select from the entities. */
+  select?: string[];
+}
+
+/**
+ * Result of a paginated query.
+ */
+export interface PaginatedResult<T> {
+  items: T[];
+  totalItems: number;
 }
 
 /**
@@ -126,12 +162,10 @@ export interface BaseRunTransactionParams<R> {
 }
 
 /**
- * Result type that includes the entity with its ID.
- */
-export type Result<T> = T & { id: string };
-
-/**
  * Base repository interface that defines standard operations for data access.
+ *
+ * All entities are expected to have an `id` field (UUID primary key).
+ * Unlike Firestore's Result<T> wrapper, Drizzle entities already include the id.
  *
  * @typeParam T - The type of entity managed by the repository.
  *
@@ -142,27 +176,24 @@ export type Result<T> = T & { id: string };
  * @see {@link BaseDeleteParams} - Base params for deleting an entity.
  * @see {@link BaseRunTransactionParams} - Parameters for running a transaction in a repository.
  */
-export interface BaseRepository<T> {
+export interface IBaseRepository<T> {
   /** Retrieves an entity by its ID. */
-  get(params: BaseGetParams & { id: string }): Promise<Result<T> | null>;
+  get(params: BaseGetParams & { id: string }): Promise<T | null>;
 
   /** Retrieves entities based on provided where clause. */
-  get(params: BaseGetParams & { where: SQL }): Promise<Result<T>[]>;
+  get(params: BaseGetParams & { where: SQL }): Promise<T[]>;
 
   /** Retrieves entities based on provided parameters. */
-  get(params: BaseGetParams): Promise<Result<T> | Result<T>[] | null>;
+  get(params: BaseGetParams): Promise<T | T[] | null>;
 
-  /** Retrieves all entities with optional where clause. */
-  getAll(params: BaseGetAllParams): Promise<Result<T>[]>;
+  /** Retrieves all entities with pagination, optional where clause, and ordering. */
+  getAll(params: BaseGetAllParams): Promise<PaginatedResult<T>>;
 
   /** Creates a new entity in the repository. */
-  create(params: BaseCreateParams<T>): Promise<Result<T>>;
+  create(params: BaseCreateParams<T>): Promise<T>;
 
   /** Updates an existing entity in the repository. */
   update(params: BaseUpdateParams<T>): Promise<void>;
-
-  /** Updates an existing entity in the repository if the data has changed. */
-  updateIfChanged(params: BaseUpdateParams<T>): Promise<void>;
 
   /** Deletes an entity from the repository. */
   delete(params: BaseDeleteParams): Promise<void>;

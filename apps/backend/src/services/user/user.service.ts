@@ -1,4 +1,8 @@
+import { StatusCodes } from 'http-status-codes';
 import type { User } from '../../db/schema';
+import { ApiErrorCode } from '../../enums/api-error-code.enum';
+import { ApiError } from '../../errors/api-error';
+import { logger } from '../../logger';
 import { UserRepository } from '../../repositories/user.repository';
 
 /**
@@ -30,9 +34,21 @@ export function UserService({
    *
    * @param authId - The Firebase UID to look up.
    * @returns The user record if found, null otherwise.
+   * @throws {ApiError} If the database query fails.
    */
   async function findByAuthId(authId: string): Promise<User | null> {
-    return userRepository.findByAuthId(authId);
+    try {
+      return await userRepository.findByAuthId(authId);
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+      logger.error({ err: error, authId }, 'Failed to find user by auth ID');
+      throw new ApiError('Failed to retrieve user', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { authId },
+        cause: error,
+      });
+    }
   }
 
   /**
@@ -40,9 +56,21 @@ export function UserService({
    *
    * @param id - The user's UUID.
    * @returns The user record if found, null otherwise.
+   * @throws {ApiError} If the database query fails.
    */
   async function getById(id: string): Promise<User | null> {
-    return userRepository.get({ id });
+    try {
+      return await userRepository.get({ id });
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+      logger.error({ err: error, userId: id }, 'Failed to get user by ID');
+      throw new ApiError('Failed to retrieve user', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId: id },
+        cause: error,
+      });
+    }
   }
 
   return { findByAuthId, getById };
