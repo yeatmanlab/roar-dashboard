@@ -4,8 +4,6 @@ import createError from 'http-errors';
 import { StatusCodes } from 'http-status-codes';
 import { errorHandler } from './error-handler';
 import { ApiError } from './errors/api-error';
-import { DatabaseError } from './errors/database-error';
-import { DatabaseErrorCode } from './enums/database-error-code.enum';
 import { ApiErrorCode } from './enums/api-error-code.enum';
 import { logger } from './logger';
 
@@ -34,8 +32,11 @@ describe('errorHandler', () => {
   });
 
   describe('ApiError handling', () => {
-    it('should return status code and message from ApiError', () => {
-      const error = new ApiError('Bad request', { statusCode: StatusCodes.BAD_REQUEST });
+    it('should return status code, message, code, and traceId from ApiError', () => {
+      const error = new ApiError('Bad request', {
+        statusCode: StatusCodes.BAD_REQUEST,
+        code: ApiErrorCode.REQUEST_INVALID,
+      });
 
       errorHandler(error, mockReq as Request, mockRes as Response, mockNext);
 
@@ -43,6 +44,7 @@ describe('errorHandler', () => {
       expect(jsonMock).toHaveBeenCalledWith({
         error: {
           message: 'Bad request',
+          code: ApiErrorCode.REQUEST_INVALID,
           traceId: error.traceId,
         },
       });
@@ -55,44 +57,19 @@ describe('errorHandler', () => {
 
       expect(statusMock).toHaveBeenCalledWith(StatusCodes.INTERNAL_SERVER_ERROR);
     });
-  });
 
-  describe('DatabaseError handling', () => {
-    it('should convert DatabaseError to ApiError response', () => {
-      const error = new DatabaseError('Record not found', {
-        code: DatabaseErrorCode.NOT_FOUND,
-      });
+    it('should include undefined code if no code provided', () => {
+      const error = new ApiError('Something went wrong');
 
       errorHandler(error, mockReq as Request, mockRes as Response, mockNext);
 
-      expect(statusMock).toHaveBeenCalledWith(StatusCodes.NOT_FOUND);
-      expect(jsonMock).toHaveBeenCalledWith(
-        expect.objectContaining({
-          error: expect.objectContaining({
-            message: 'Record not found',
-          }),
-        }),
-      );
-    });
-
-    it('should map CONFLICT code to 409', () => {
-      const error = new DatabaseError('Duplicate entry', {
-        code: DatabaseErrorCode.CONFLICT,
+      expect(jsonMock).toHaveBeenCalledWith({
+        error: {
+          message: 'Something went wrong',
+          code: undefined,
+          traceId: error.traceId,
+        },
       });
-
-      errorHandler(error, mockReq as Request, mockRes as Response, mockNext);
-
-      expect(statusMock).toHaveBeenCalledWith(StatusCodes.CONFLICT);
-    });
-
-    it('should map INVALID_PARAMS code to 400', () => {
-      const error = new DatabaseError('Invalid parameters', {
-        code: DatabaseErrorCode.INVALID_PARAMS,
-      });
-
-      errorHandler(error, mockReq as Request, mockRes as Response, mockNext);
-
-      expect(statusMock).toHaveBeenCalledWith(StatusCodes.BAD_REQUEST);
     });
   });
 
