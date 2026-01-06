@@ -6,7 +6,6 @@ import { AuthGuardMiddleware } from './auth-guard.middleware';
 import { AuthService } from '../../services/auth/auth.service';
 import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
-import { FIREBASE_ERROR_CODES } from '../../constants/firebase-error-codes';
 import { DecodedUserFactory } from '../../test-support/factories/auth.factory';
 import { UserFactory } from '../../test-support/factories/user.factory';
 
@@ -140,9 +139,12 @@ describe('AuthGuardMiddleware', () => {
     });
 
     describe('invalid JWT', () => {
-      it('should handle expired token error specifically', async () => {
-        const mockError = { code: FIREBASE_ERROR_CODES.AUTH.ID_TOKEN_EXPIRED };
-        authServiceMock.mockRejectedValue(mockError);
+      it('should pass through ApiError from AuthService for expired token', async () => {
+        const expiredError = new ApiError('Token expired.', {
+          statusCode: StatusCodes.UNAUTHORIZED,
+          code: ApiErrorCode.AUTH_TOKEN_EXPIRED,
+        });
+        authServiceMock.mockRejectedValue(expiredError);
 
         const response = await request(app)
           .get('/')
@@ -151,47 +153,40 @@ describe('AuthGuardMiddleware', () => {
 
         expect(response.body.message).toBe('Token expired.');
         expect(response.body.code).toBe(ApiErrorCode.AUTH_TOKEN_EXPIRED);
+        expect(response.body.traceId).toBeDefined();
         expect(authServiceMock).toHaveBeenCalledWith('expired-token');
+      });
+
+      it('should pass through ApiError from AuthService for invalid token', async () => {
+        const invalidError = new ApiError('Invalid token.', {
+          statusCode: StatusCodes.UNAUTHORIZED,
+          code: ApiErrorCode.AUTH_TOKEN_INVALID,
+        });
+        authServiceMock.mockRejectedValue(invalidError);
+
+        const response = await request(app)
+          .get('/')
+          .set('Authorization', 'Bearer invalid-token')
+          .expect(StatusCodes.UNAUTHORIZED);
+
+        expect(response.body.message).toBe('Invalid token.');
+        expect(response.body.code).toBe(ApiErrorCode.AUTH_TOKEN_INVALID);
+        expect(response.body.traceId).toBeDefined();
       });
     });
 
-    it("should handle Firebase's invalid token error", async () => {
-      const mockError = { code: 'auth/invalid-token' };
-      authServiceMock.mockRejectedValue(mockError);
-
-      const response = await request(app)
-        .get('/')
-        .set('Authorization', 'Bearer invalid-token')
-        .expect(StatusCodes.UNAUTHORIZED);
-
-      expect(response.body.message).toBe('Invalid token.');
-      expect(response.body.code).toBe(ApiErrorCode.AUTH_TOKEN_INVALID);
-    });
-
-    it('should handle unexpected errors as invalid token', async () => {
-      const mockError = new Error('Network error');
-      authServiceMock.mockRejectedValue(mockError);
-
-      const response = await request(app)
-        .get('/')
-        .set('Authorization', 'Bearer malformed-token')
-        .expect(StatusCodes.UNAUTHORIZED);
-
-      expect(response.body.message).toBe('Invalid token.');
-      expect(response.body.code).toBe(ApiErrorCode.AUTH_TOKEN_INVALID);
-    });
-
-    it('should handle auth service exceptions', async () => {
-      const mockError = 'String error';
-      authServiceMock.mockRejectedValue(mockError);
+    it('should wrap unexpected non-ApiError as internal error', async () => {
+      const unexpectedError = new Error('Unexpected failure');
+      authServiceMock.mockRejectedValue(unexpectedError);
 
       const response = await request(app)
         .get('/')
         .set('Authorization', 'Bearer failing-token')
-        .expect(StatusCodes.UNAUTHORIZED);
+        .expect(StatusCodes.INTERNAL_SERVER_ERROR);
 
-      expect(response.body.message).toBe('Invalid token.');
-      expect(response.body.code).toBe(ApiErrorCode.AUTH_TOKEN_INVALID);
+      expect(response.body.message).toBe('Authentication failed.');
+      expect(response.body.code).toBe(ApiErrorCode.INTERNAL);
+      expect(response.body.traceId).toBeDefined();
     });
   });
 });

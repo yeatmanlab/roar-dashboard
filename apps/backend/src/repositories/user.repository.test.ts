@@ -259,14 +259,6 @@ describe('UserRepository', () => {
       expect(mockReturning).toHaveBeenCalled();
       expect(result).toEqual(mockUser);
     });
-
-    it('should throw error when create fails', async () => {
-      mockReturning.mockResolvedValue([]);
-
-      const repository = new UserRepository(mockDb);
-
-      await expect(repository.create({ data: {} })).rejects.toThrow('Failed to create entity');
-    });
   });
 
   describe('update', () => {

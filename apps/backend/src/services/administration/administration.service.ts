@@ -1,4 +1,16 @@
+import {
+  AdministrationEmbedOption,
+  AdministrationSortField,
+  type PaginatedResult,
+  type AdministrationStats,
+  type ADMINISTRATION_EMBED_OPTIONS,
+} from '@roar-dashboard/api-contract';
+import { StatusCodes } from 'http-status-codes';
 import type { Administration } from '../../db/schema';
+import { ApiErrorCode } from '../../enums/api-error-code.enum';
+import type { UserType } from '../../enums/user-type.enum';
+import { ApiError } from '../../errors/api-error';
+import { logger } from '../../logger';
 import {
   AdministrationRepository,
   type AdministrationQueryOptions,
@@ -10,17 +22,8 @@ import {
 } from '../../repositories/administration-task-variant.repository';
 import { AuthorizationRepository } from '../../repositories/authorization.repository';
 import { RunsRepository } from '../../repositories/runs.repository';
-import { AuthorizationService } from '../authorization/authorization.service';
-import {
-  AdministrationEmbedOption,
-  AdministrationSortField,
-  type PaginatedResult,
-  type AdministrationStats,
-  type ADMINISTRATION_EMBED_OPTIONS,
-} from '@roar-dashboard/api-contract';
-import type { UserType } from '../../enums/user-type.enum';
 import { isUnrestrictedResource } from '../../utils/resource-scope.utils';
-import { logger } from '../../logger';
+import { AuthorizationService } from '../authorization/authorization.service';
 
 /**
  * Embed option type derived from api-contract.
@@ -94,28 +97,46 @@ export function AdministrationService({
    * @param authContext - User's auth context (id and type)
    * @param options - Query options including pagination, sorting, and embed
    * @returns Paginated result with administrations (optionally with embedded stats)
+   * @throws {ApiError} If the database query fails.
    */
   async function list(
     authContext: AuthContext,
     options: ListOptions,
   ): Promise<PaginatedResult<AdministrationWithEmbeds>> {
     const { userId, userType } = authContext;
-    const scope = await authorizationService.getAdministrationsScope(userId, userType);
 
-    // Transform API contract format to repository format
-    const queryParams = {
-      page: options.page,
-      perPage: options.perPage,
-      orderBy: {
-        field: SORT_FIELD_TO_COLUMN[options.sortBy],
-        direction: options.sortOrder,
-      },
-    };
+    let scope;
+    let result;
 
-    // Fetch administrations based on user's scope
-    const result = isUnrestrictedResource(scope)
-      ? await administrationRepository.getAll(queryParams)
-      : await administrationRepository.getByIds(scope.ids, queryParams);
+    try {
+      scope = await authorizationService.getAdministrationsScope(userId, userType);
+
+      // Transform API contract format to repository format
+      const queryParams = {
+        page: options.page,
+        perPage: options.perPage,
+        orderBy: {
+          field: SORT_FIELD_TO_COLUMN[options.sortBy],
+          direction: options.sortOrder,
+        },
+      };
+
+      // Fetch administrations based on user's scope
+      result = isUnrestrictedResource(scope)
+        ? await administrationRepository.getAll(queryParams)
+        : await administrationRepository.getByIds(scope.ids, queryParams);
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error({ err: error, userId }, 'Failed to list administrations');
+
+      throw new ApiError('Failed to retrieve administrations', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId },
+        cause: error,
+      });
+    }
 
     // If no embeds requested, return as-is
     const embedOptions = options.embed ?? [];

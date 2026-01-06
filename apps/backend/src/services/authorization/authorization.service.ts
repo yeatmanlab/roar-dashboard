@@ -1,6 +1,10 @@
-import { AuthorizationRepository } from '../../repositories/authorization.repository';
-import UserType, { type UserType as UserTypeValue } from '../../enums/user-type.enum';
+import { StatusCodes } from 'http-status-codes';
+import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ResourceScopeType } from '../../enums/resource-scope-type.enum';
+import UserType, { type UserType as UserTypeValue } from '../../enums/user-type.enum';
+import { ApiError } from '../../errors/api-error';
+import { logger } from '../../logger';
+import { AuthorizationRepository } from '../../repositories/authorization.repository';
 import type { ResourceScope } from '../../types/resource-scope';
 
 /**
@@ -21,6 +25,7 @@ export function AuthorizationService({
    * Get the scope of administrations a user can access.
    *
    * @returns ResourceScope - unrestricted for super_admin, scoped with IDs for all other users
+   * @throws {ApiError} If the database query fails.
    */
   async function getAdministrationsScope(userId: string, userType: UserTypeValue): Promise<ResourceScope> {
     // Super admin users bypass RBAC and have access to all administrations
@@ -28,8 +33,19 @@ export function AuthorizationService({
       return { type: ResourceScopeType.UNRESTRICTED };
     }
 
-    const ids = await authorizationRepository.getAccessibleAdministrationIds(userId);
-    return { type: ResourceScopeType.SCOPED, ids };
+    try {
+      const ids = await authorizationRepository.getAccessibleAdministrationIds(userId);
+      return { type: ResourceScopeType.SCOPED, ids };
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+      logger.error({ err: error, userId, userType }, 'Failed to get administrations scope');
+      throw new ApiError('Failed to retrieve authorization scope', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, userType },
+        cause: error,
+      });
+    }
   }
 
   return { getAdministrationsScope };

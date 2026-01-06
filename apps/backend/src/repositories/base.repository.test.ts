@@ -382,22 +382,6 @@ describe('BaseRepository', () => {
       expect(mockReturning).toHaveBeenCalled();
       expect(result).toEqual(mockEntity);
     });
-
-    it('should throw error when create returns no entity', async () => {
-      mockReturning.mockResolvedValue([]);
-
-      const repository = new TestRepository(mockDb, mockTable);
-
-      await expect(repository.create({ data: {} })).rejects.toThrow('Failed to create entity');
-    });
-
-    it('should throw error when create returns undefined', async () => {
-      mockReturning.mockResolvedValue([undefined]);
-
-      const repository = new TestRepository(mockDb, mockTable);
-
-      await expect(repository.create({ data: {} })).rejects.toThrow('Failed to create entity');
-    });
   });
 
   describe('update', () => {

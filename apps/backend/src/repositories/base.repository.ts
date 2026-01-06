@@ -128,10 +128,6 @@ export abstract class BaseRepository<
       .values(params.data as TInsert)
       .returning();
 
-    if (!entity) {
-      throw new Error('Failed to create entity');
-    }
-
     return entity as TEntity;
   }
 

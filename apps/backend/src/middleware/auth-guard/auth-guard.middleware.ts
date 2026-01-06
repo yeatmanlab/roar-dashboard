@@ -1,13 +1,10 @@
 import type { NextFunction, Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
+import { ApiErrorCode } from '../../enums/api-error-code.enum';
+import { ApiError } from '../../errors/api-error';
 import { AuthService } from '../../services/auth/auth.service';
 import { UserService } from '../../services/user';
 import { extractJwt } from './jwt-extractor';
-import { getFirebaseErrorCode } from '../../utils/get-firebase-error-code.util';
-import { ApiError } from '../../errors/api-error';
-import { ApiErrorCode } from '../../enums/api-error-code.enum';
-import { FIREBASE_ERROR_CODES } from '../../constants/firebase-error-codes';
-import { logger } from '../../logger';
 
 // Create service instance (repository auto-instantiated with correct DB client)
 const userService = UserService();
@@ -60,22 +57,17 @@ export async function AuthGuardMiddleware(req: Request, res: Response, next: Nex
 
     return next();
   } catch (error) {
-    const firebaseCode: string | undefined = getFirebaseErrorCode(error);
-
-    if (firebaseCode === FIREBASE_ERROR_CODES.AUTH.ID_TOKEN_EXPIRED) {
-      return next(
-        new ApiError('Token expired.', {
-          statusCode: StatusCodes.UNAUTHORIZED,
-          code: ApiErrorCode.AUTH_TOKEN_EXPIRED,
-        }),
-      );
+    // ApiError from AuthService (token expired/invalid) or UserService (DB error)
+    if (error instanceof ApiError) {
+      return next(error);
     }
 
-    logger.warn({ err: error }, 'Failed to verify token');
+    // Unexpected error - should not happen if services handle errors properly
     return next(
-      new ApiError('Invalid token.', {
-        statusCode: StatusCodes.UNAUTHORIZED,
-        code: ApiErrorCode.AUTH_TOKEN_INVALID,
+      new ApiError('Authentication failed.', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.INTERNAL,
+        cause: error,
       }),
     );
   }

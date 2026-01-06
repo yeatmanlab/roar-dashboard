@@ -1,6 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { StatusCodes } from 'http-status-codes';
 import { AuthorizationService } from './authorization.service';
 import { ResourceScopeType } from '../../enums/resource-scope-type.enum';
+import { ApiError } from '../../errors/api-error';
+import { ApiErrorCode } from '../../enums/api-error-code.enum';
+
+vi.mock('../../logger', () => ({
+  logger: {
+    error: vi.fn(),
+  },
+}));
 
 describe('AuthorizationService', () => {
   const mockGetAccessibleAdministrationIds = vi.fn();
@@ -100,7 +109,7 @@ describe('AuthorizationService', () => {
       expect(mockGetAccessibleAdministrationIds).toHaveBeenCalledWith('user-no-access');
     });
 
-    it('should propagate repository errors', async () => {
+    it('should wrap repository errors in ApiError with context', async () => {
       const dbError = new Error('Database connection failed');
       mockGetAccessibleAdministrationIds.mockRejectedValue(dbError);
 
@@ -109,9 +118,28 @@ describe('AuthorizationService', () => {
         authorizationRepository: mockAuthorizationRepository as any,
       });
 
-      await expect(service.getAdministrationsScope('user-123', 'educator')).rejects.toThrow(
-        'Database connection failed',
-      );
+      await expect(service.getAdministrationsScope('user-123', 'educator')).rejects.toMatchObject({
+        message: 'Failed to retrieve authorization scope',
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId: 'user-123', userType: 'educator' },
+        cause: dbError,
+      });
+    });
+
+    it('should re-throw ApiError without wrapping', async () => {
+      const apiError = new ApiError('Already wrapped', {
+        statusCode: StatusCodes.BAD_REQUEST,
+        code: ApiErrorCode.REQUEST_INVALID,
+      });
+      mockGetAccessibleAdministrationIds.mockRejectedValue(apiError);
+
+      const service = AuthorizationService({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        authorizationRepository: mockAuthorizationRepository as any,
+      });
+
+      await expect(service.getAdministrationsScope('user-123', 'educator')).rejects.toBe(apiError);
     });
   });
 });
