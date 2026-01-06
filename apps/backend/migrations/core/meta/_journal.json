@@ -323,6 +323,13 @@
       "when": 1767052619324,
       "tag": "0045_add_task_bundles_image_column",
       "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "7",
+      "when": 1767657911474,
+      "tag": "0046_rename_administrations_name_internal_to_name",
+      "breakpoints": true
     }
   ]
 }
