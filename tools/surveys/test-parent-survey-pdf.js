@@ -1,4 +1,4 @@
-// Test script to generate PDF from parent_survey_family.json
+// Test script to generate PDF from caregiver_survey_family.json
 // This is a Node.js script to test the PDF generation
 
 import fetch from 'node-fetch';
@@ -22,7 +22,7 @@ global.document = {
 async function testParentSurveyPdf() {
   try {
     // The survey URL from the dev bucket
-    const surveyUrl = 'https://storage.googleapis.com/levante-assets-dev/surveys/parent_survey_family.json';
+    const surveyUrl = 'https://storage.googleapis.com/levante-assets-dev/surveys/caregiver_survey_family.json';
 
     console.log('🔄 Fetching survey from:', surveyUrl);
 
@@ -68,8 +68,8 @@ async function testParentSurveyPdf() {
     console.log('🔧 Question types found:', Array.from(questionTypes).join(', '));
 
     // Save the survey JSON for inspection
-    fs.writeFileSync('parent_survey_family_sample.json', JSON.stringify(surveyJson, null, 2));
-    console.log('💾 Survey JSON saved to parent_survey_family_sample.json');
+    fs.writeFileSync('caregiver_survey_family_sample.json', JSON.stringify(surveyJson, null, 2));
+    console.log('💾 Survey JSON saved to caregiver_survey_family_sample.json');
 
     console.log('\n✨ Survey analysis complete! You can now use this data with the PDF generator.');
     console.log('\n📋 To generate PDF in your Vue app, use:');
@@ -77,11 +77,11 @@ async function testParentSurveyPdf() {
 import { generateSurveyPdfFromUrl, downloadPdf } from '@/helpers/surveyPdfGenerator';
 
 const result = await generateSurveyPdfFromUrl('${surveyUrl}', {
-  title: '${surveyJson.title || 'Parent Survey - Family'}',
+  title: '${surveyJson.title || 'Caregiver Survey - Family'}',
   includeQuestionNumbers: true,
   includePages: true,
   showChoices: true,
-  headerText: 'Levante Research Platform - Parent Survey',
+  headerText: 'Levante Research Platform - Caregiver Survey',
   footerText: 'Confidential - For Research Use Only'
 });
 
