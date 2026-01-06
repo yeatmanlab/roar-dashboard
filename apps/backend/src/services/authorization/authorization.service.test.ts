@@ -14,16 +14,31 @@ describe('AuthorizationService', () => {
   });
 
   describe('getAdministrationsScope', () => {
-    it('should return unrestricted scope for admin users', async () => {
+    it('should return unrestricted scope for super_admin users', async () => {
       const service = AuthorizationService({
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         authorizationRepository: mockAuthorizationRepository as any,
       });
 
-      const result = await service.getAdministrationsScope('user-123', 'admin');
+      const result = await service.getAdministrationsScope('user-123', 'super_admin');
 
       expect(result).toEqual({ type: ResourceScopeType.UNRESTRICTED });
       expect(mockGetAccessibleAdministrationIds).not.toHaveBeenCalled();
+    });
+
+    it('should return scoped access for admin users', async () => {
+      const accessibleIds = ['admin-1', 'admin-2'];
+      mockGetAccessibleAdministrationIds.mockResolvedValue(accessibleIds);
+
+      const service = AuthorizationService({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        authorizationRepository: mockAuthorizationRepository as any,
+      });
+
+      const result = await service.getAdministrationsScope('admin-user-123', 'admin');
+
+      expect(result).toEqual({ type: ResourceScopeType.SCOPED, ids: accessibleIds });
+      expect(mockGetAccessibleAdministrationIds).toHaveBeenCalledWith('admin-user-123');
     });
 
     it('should return scoped access for educator users', async () => {

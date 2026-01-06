@@ -16,7 +16,7 @@ export const UserFactory = Factory.define<User>(() => ({
   nameLast: faker.person.lastName(),
   username: faker.internet.username(),
   email: faker.internet.email(),
-  userType: faker.helpers.arrayElement(['student', 'educator', 'caregiver', 'admin'] as const),
+  userType: faker.helpers.arrayElement(['student', 'educator', 'caregiver', 'admin', 'super_admin'] as const),
   dob: null,
   grade: null,
   schoolLevel: null,
@@ -41,5 +41,5 @@ export const UserFactory = Factory.define<User>(() => ({
  */
 export const AuthContextFactory = Factory.define<AuthContext>(() => ({
   id: faker.string.uuid(),
-  userType: faker.helpers.arrayElement(['student', 'educator', 'caregiver', 'admin'] as const),
+  userType: faker.helpers.arrayElement(['student', 'educator', 'caregiver', 'admin', 'super_admin'] as const),
 }));
