@@ -1,10 +1,10 @@
 import type { NextFunction, Request, Response } from 'express';
-import createError from 'http-errors';
 import { StatusCodes } from 'http-status-codes';
 import { AuthService } from '../../services/auth/auth.service';
 import { UserService } from '../../services/user';
 import { extractJwt } from './jwt-extractor';
 import { getFirebaseErrorCode } from '../../utils/get-firebase-error-code.util';
+import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { FIREBASE_ERROR_CODES } from '../../constants/firebase-error-codes';
 import { logger } from '../../logger';
@@ -24,18 +24,19 @@ const userService = UserService();
  * @param next - The Express next function. If successful, the user information is attached to the request.
  *
  * @returns The next function.
- * @throws {HttpError} If the token is missing, invalid, or the user is not found in the database.
+ * @throws {ApiError} If the token is missing, invalid, or the user is not found in the database.
  */
 export async function AuthGuardMiddleware(req: Request, res: Response, next: NextFunction) {
   try {
     const token = extractJwt(req);
-    if (!token)
+    if (!token) {
       return next(
-        createError(StatusCodes.UNAUTHORIZED, {
-          message: 'Token missing.',
+        new ApiError('Token missing.', {
+          statusCode: StatusCodes.UNAUTHORIZED,
           code: ApiErrorCode.AUTH_REQUIRED,
         }),
       );
+    }
 
     // Verify Firebase token
     const decodedUser = await AuthService.verifyToken(token);
@@ -44,8 +45,8 @@ export async function AuthGuardMiddleware(req: Request, res: Response, next: Nex
     const user = await userService.findByAuthId(decodedUser.uid);
     if (!user) {
       return next(
-        createError(StatusCodes.UNAUTHORIZED, {
-          message: 'User not found.',
+        new ApiError('User not found.', {
+          statusCode: StatusCodes.UNAUTHORIZED,
           code: ApiErrorCode.AUTH_USER_NOT_FOUND,
         }),
       );
@@ -63,8 +64,8 @@ export async function AuthGuardMiddleware(req: Request, res: Response, next: Nex
 
     if (firebaseCode === FIREBASE_ERROR_CODES.AUTH.ID_TOKEN_EXPIRED) {
       return next(
-        createError(StatusCodes.UNAUTHORIZED, {
-          message: 'Token expired.',
+        new ApiError('Token expired.', {
+          statusCode: StatusCodes.UNAUTHORIZED,
           code: ApiErrorCode.AUTH_TOKEN_EXPIRED,
         }),
       );
@@ -72,8 +73,8 @@ export async function AuthGuardMiddleware(req: Request, res: Response, next: Nex
 
     logger.warn({ err: error }, 'Failed to verify token');
     return next(
-      createError(StatusCodes.UNAUTHORIZED, {
-        message: 'Invalid token.',
+      new ApiError('Invalid token.', {
+        statusCode: StatusCodes.UNAUTHORIZED,
         code: ApiErrorCode.AUTH_TOKEN_INVALID,
       }),
     );

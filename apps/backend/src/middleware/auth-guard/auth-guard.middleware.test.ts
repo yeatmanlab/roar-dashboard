@@ -4,6 +4,7 @@ import request from 'supertest';
 import { StatusCodes } from 'http-status-codes';
 import { AuthGuardMiddleware } from './auth-guard.middleware';
 import { AuthService } from '../../services/auth/auth.service';
+import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { FIREBASE_ERROR_CODES } from '../../constants/firebase-error-codes';
 import { DecodedUserFactory } from '../../test-support/factories/auth.factory';
@@ -51,14 +52,21 @@ describe('AuthGuardMiddleware', () => {
       res.json({ user: req.user });
     });
 
-    // Add error handler middleware to properly format http-errors
+    // Add error handler middleware to properly format ApiError
     // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
     app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-      res.status(err.status || err.statusCode || 500).json({
-        message: err.message,
-        code: err.code,
-        status: err.status || err.statusCode || 500,
-      });
+      if (err instanceof ApiError) {
+        res.status(err.statusCode).json({
+          message: err.message,
+          code: err.code,
+          traceId: err.traceId,
+        });
+      } else {
+        res.status(err.status || err.statusCode || 500).json({
+          message: err.message,
+          code: err.code,
+        });
+      }
     });
   });
 
@@ -97,6 +105,7 @@ describe('AuthGuardMiddleware', () => {
     expect(mockFindByAuthId).toHaveBeenCalledWith(mockDecodedUser.uid);
     expect(response.body.message).toBe('User not found.');
     expect(response.body.code).toBe(ApiErrorCode.AUTH_USER_NOT_FOUND);
+    expect(response.body.traceId).toBeDefined();
   });
 
   describe('error handling', () => {
@@ -106,6 +115,7 @@ describe('AuthGuardMiddleware', () => {
 
         expect(response.body.message).toBe('Token missing.');
         expect(response.body.code).toBe(ApiErrorCode.AUTH_REQUIRED);
+        expect(response.body.traceId).toBeDefined();
         expect(authServiceMock).not.toHaveBeenCalled();
       });
 
