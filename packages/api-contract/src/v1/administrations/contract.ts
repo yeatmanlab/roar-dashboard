@@ -22,7 +22,7 @@ export const AdministrationsContract = c.router(
       summary: 'List administrations',
       description:
         'Returns a paginated list of administrations the authenticated user has access to. ' +
-        'Use ?embed=stats to include assignment stats. Use ?embed=assessments to include task variants.',
+        'Use ?embed=stats to include assignment stats. Use ?embed=tasks to include task variants.',
     },
   },
   { pathPrefix: '/administrations' },
