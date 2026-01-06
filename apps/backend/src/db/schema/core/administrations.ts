@@ -23,8 +23,8 @@ export const administrations = db.table(
       .default(sql`gen_random_uuid()`)
       .primaryKey(),
 
+    name: p.text().notNull(),
     namePublic: p.text().notNull(),
-    nameInternal: p.text().notNull(),
     description: p.text().notNull(),
 
     dateStart: p.timestamp({ withTimezone: true }).notNull(),
@@ -42,10 +42,10 @@ export const administrations = db.table(
   (table) => [
     // Indexes
     // - Name equality or prefix lookups
+    p.index('administrations_name_lower_idx').on(sql`lower(${table.name})`),
+    p.index('administrations_name_lower_pattern_idx').on(sql`lower(${table.name}) text_pattern_ops`),
     p.index('administrations_name_public_lower_idx').on(sql`lower(${table.namePublic})`),
     p.index('administrations_name_public_lower_pattern_idx').on(sql`lower(${table.namePublic}) text_pattern_ops`),
-    p.index('administrations_name_internal_lower_idx').on(sql`lower(${table.nameInternal})`),
-    p.index('administrations_name_internal_lower_pattern_idx').on(sql`lower(${table.nameInternal}) text_pattern_ops`),
 
     // - Author lookups
     p.index('administrations_created_by_idx').on(table.createdBy),
@@ -56,7 +56,7 @@ export const administrations = db.table(
 
     // Constraints
     // - Names must be unique
-    p.uniqueIndex('administrations_name_internal_unique_idx').on(sql`lower(${table.nameInternal})`),
+    p.uniqueIndex('administrations_name_unique_idx').on(sql`lower(${table.name})`),
     // - Date range must be valid
     p.check('administrations_date_start_end_check', sql`(${table.dateStart} < ${table.dateEnd})`),
   ],
