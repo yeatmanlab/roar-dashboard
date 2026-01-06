@@ -179,7 +179,7 @@ describe('AdministrationService', () => {
       expect(result.totalItems).toBe(0);
     });
 
-    it('should map API sort field "name" to database column "nameInternal"', async () => {
+    it('should map API sort field "name" to database column "name"', async () => {
       mockGetAdministrationsScope.mockResolvedValue({
         type: ResourceScopeType.SCOPED,
         ids: ['id-1'],
@@ -204,7 +204,7 @@ describe('AdministrationService', () => {
       expect(mockGetByIds).toHaveBeenCalledWith(['id-1'], {
         page: 1,
         perPage: 25,
-        orderBy: { field: 'nameInternal', direction: 'asc' },
+        orderBy: { field: 'name', direction: 'asc' },
       });
     });
 

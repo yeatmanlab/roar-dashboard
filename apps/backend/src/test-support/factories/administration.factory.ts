@@ -11,7 +11,7 @@ export const AdministrationFactory = Factory.define<Administration>(() => {
   return {
     id: faker.string.uuid(),
     namePublic: faker.company.name() + ' Assessment',
-    nameInternal: faker.company.name() + ' Internal',
+    name: faker.company.name() + ' Internal',
     description: faker.lorem.sentence(),
     dateStart,
     dateEnd: faker.date.future({ refDate: dateStart }),

@@ -57,7 +57,7 @@ describe('AdministrationsController', () => {
     it('should transform administration fields to API response format', async () => {
       const mockAdmin = AdministrationFactory.build({
         id: 'admin-uuid-123',
-        nameInternal: 'Internal Name',
+        name: 'Internal Name',
         namePublic: 'Public Name',
         dateStart: new Date('2024-01-01T00:00:00Z'),
         dateEnd: new Date('2024-12-31T23:59:59Z'),
@@ -152,7 +152,7 @@ describe('AdministrationsController', () => {
     it('should include stats in response when embed=stats is requested', async () => {
       const mockAdmin = AdministrationWithEmbedsFactory.build({
         id: 'admin-1',
-        nameInternal: 'Test Admin',
+        name: 'Test Admin',
         stats: { assigned: 25, started: 10, completed: 5 },
       });
       mockList.mockResolvedValue({
@@ -187,7 +187,7 @@ describe('AdministrationsController', () => {
     it('should not include stats in response when not embedded', async () => {
       const mockAdmin = AdministrationFactory.build({
         id: 'admin-1',
-        nameInternal: 'Test Admin',
+        name: 'Test Admin',
         // No stats property
       });
       mockList.mockResolvedValue({
@@ -211,7 +211,7 @@ describe('AdministrationsController', () => {
     it('should include tasks in response when embed=tasks is requested', async () => {
       const mockAdmin = AdministrationWithEmbedsFactory.build({
         id: 'admin-1',
-        nameInternal: 'Test Admin',
+        name: 'Test Admin',
         tasks: [
           { taskId: 'task-1', taskName: 'SWR', variantId: 'variant-1', variantName: 'Variant A', orderIndex: 0 },
           { taskId: 'task-2', taskName: 'PA', variantId: 'variant-2', variantName: null, orderIndex: 1 },

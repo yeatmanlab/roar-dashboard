@@ -1,4 +1,4 @@
-import { sql } from 'drizzle-orm';
+import { eq, inArray, sql } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { CoreDbClient } from '../db/clients';
 import type * as CoreDbSchema from '../db/schema/core';
@@ -10,7 +10,6 @@ import {
   administrationClasses,
   administrationGroups,
 } from '../db/schema';
-import { toPostgresUuidArray } from '../utils/to-postgres-uuid-array.util';
 
 /**
  * Authorization Repository
@@ -71,39 +70,51 @@ export class AuthorizationRepository {
       return new Map();
     }
 
-    // Convert to PostgreSQL array literal with UUID validation
-    const pgArrayLiteral = toPostgresUuidArray(administrationIds);
+    // Build subqueries for each membership type using Drizzle query builder
+    const viaOrgs = this.db
+      .select({
+        administrationId: administrationOrgs.administrationId,
+        userId: userOrgs.userId,
+      })
+      .from(administrationOrgs)
+      .innerJoin(userOrgs, eq(userOrgs.orgId, administrationOrgs.orgId))
+      .where(inArray(administrationOrgs.administrationId, administrationIds));
 
-    // Count distinct users per administration across all membership types
-    // Using UNION ALL + GROUP BY to count unique users assigned via org, class, or group
-    const result = await this.db.execute<{ administration_id: string; assigned_count: number }>(sql`
-      SELECT administration_id, COUNT(DISTINCT user_id)::int AS assigned_count
-      FROM (
-        SELECT ao.administration_id, uo.user_id
-        FROM app.administration_orgs ao
-        INNER JOIN app.user_orgs uo ON uo.org_id = ao.org_id
-        WHERE ao.administration_id = ANY(${pgArrayLiteral}::uuid[])
+    const viaClasses = this.db
+      .select({
+        administrationId: administrationClasses.administrationId,
+        userId: userClasses.userId,
+      })
+      .from(administrationClasses)
+      .innerJoin(userClasses, eq(userClasses.classId, administrationClasses.classId))
+      .where(inArray(administrationClasses.administrationId, administrationIds));
 
-        UNION ALL
+    const viaGroups = this.db
+      .select({
+        administrationId: administrationGroups.administrationId,
+        userId: userGroups.userId,
+      })
+      .from(administrationGroups)
+      .innerJoin(userGroups, eq(userGroups.groupId, administrationGroups.groupId))
+      .where(inArray(administrationGroups.administrationId, administrationIds));
 
-        SELECT ac.administration_id, uc.user_id
-        FROM app.administration_classes ac
-        INNER JOIN app.user_classes uc ON uc.class_id = ac.class_id
-        WHERE ac.administration_id = ANY(${pgArrayLiteral}::uuid[])
+    // Combine with UNION ALL using Drizzle's method chaining
+    const combinedQuery = viaOrgs.unionAll(viaClasses).unionAll(viaGroups);
 
-        UNION ALL
+    // Wrap in subquery and aggregate with GROUP BY
+    const assignments = combinedQuery.as('assignments');
 
-        SELECT ag.administration_id, ug.user_id
-        FROM app.administration_groups ag
-        INNER JOIN app.user_groups ug ON ug.group_id = ag.group_id
-        WHERE ag.administration_id = ANY(${pgArrayLiteral}::uuid[])
-      ) AS assignments
-      GROUP BY administration_id
-    `);
+    const result = await this.db
+      .select({
+        administrationId: assignments.administrationId,
+        assignedCount: sql<number>`COUNT(DISTINCT ${assignments.userId})::int`,
+      })
+      .from(assignments)
+      .groupBy(assignments.administrationId);
 
     const countsMap = new Map<string, number>();
-    for (const row of result.rows) {
-      countsMap.set(row.administration_id, row.assigned_count);
+    for (const row of result) {
+      countsMap.set(row.administrationId, row.assignedCount);
     }
 
     return countsMap;
