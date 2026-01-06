@@ -20,12 +20,11 @@ export function AuthorizationService({
   /**
    * Get the scope of administrations a user can access.
    *
-   * @returns ResourceScope - unrestricted for admins, scoped with IDs for others
+   * @returns ResourceScope - unrestricted for super_admin, scoped with IDs for all other users
    */
   async function getAdministrationsScope(userId: string, userType: UserTypeValue): Promise<ResourceScope> {
-    // Admin users have access to all administrations
-    // @TODO: Fix this check to only apply to site_administrators
-    if (userType === UserType.ADMIN) {
+    // Super admin users bypass RBAC and have access to all administrations
+    if (userType === UserType.SUPER_ADMIN) {
       return { type: ResourceScopeType.UNRESTRICTED };
     }
 
