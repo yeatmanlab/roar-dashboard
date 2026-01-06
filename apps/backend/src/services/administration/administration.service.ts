@@ -3,8 +3,11 @@ import {
   AdministrationRepository,
   type AdministrationQueryOptions,
   type AdministrationSortField as AdministrationSortFieldType,
-  type AdministrationTask,
 } from '../../repositories/administration.repository';
+import {
+  AdministrationTaskVariantRepository,
+  type AdministrationTask,
+} from '../../repositories/administration-task-variant.repository';
 import { AuthorizationRepository } from '../../repositories/authorization.repository';
 import { RunsRepository } from '../../repositories/runs.repository';
 import { AuthorizationService } from '../authorization/authorization.service';
@@ -71,11 +74,13 @@ export interface ListOptions extends AdministrationQueryOptions {
  */
 export function AdministrationService({
   administrationRepository = new AdministrationRepository(),
+  administrationTaskVariantRepository = new AdministrationTaskVariantRepository(),
   authorizationRepository = new AuthorizationRepository(),
   authorizationService = AuthorizationService(),
   runsRepository = new RunsRepository(),
 }: {
   administrationRepository?: AdministrationRepository;
+  administrationTaskVariantRepository?: AdministrationTaskVariantRepository;
   authorizationRepository?: AuthorizationRepository;
   authorizationService?: ReturnType<typeof AuthorizationService>;
   runsRepository?: RunsRepository;
@@ -167,7 +172,7 @@ export function AdministrationService({
 
     if (shouldEmbedTasks) {
       try {
-        tasksMap = await administrationRepository.getTasksByAdministrationIds(administrationIds);
+        tasksMap = await administrationTaskVariantRepository.getByAdministrationIds(administrationIds);
       } catch (err) {
         logger.error({ err }, 'Failed to fetch tasks for tasks embed');
       }

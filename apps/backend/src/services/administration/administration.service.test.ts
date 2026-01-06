@@ -26,7 +26,11 @@ describe('AdministrationService', () => {
   const mockAdministrationRepository: any = {
     getByIds: mockGetByIds,
     getAll: mockGetAll,
-    getTasksByAdministrationIds: mockGetTasksByAdministrationIds,
+  };
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const mockAdministrationTaskVariantRepository: any = {
+    getByAdministrationIds: mockGetTasksByAdministrationIds,
   };
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -476,6 +480,7 @@ describe('AdministrationService', () => {
 
         const service = AdministrationService({
           administrationRepository: mockAdministrationRepository,
+          administrationTaskVariantRepository: mockAdministrationTaskVariantRepository,
           authorizationService: mockAuthorizationService,
         });
 
@@ -513,6 +518,7 @@ describe('AdministrationService', () => {
 
         const service = AdministrationService({
           administrationRepository: mockAdministrationRepository,
+          administrationTaskVariantRepository: mockAdministrationTaskVariantRepository,
           authorizationService: mockAuthorizationService,
         });
 
@@ -550,6 +556,7 @@ describe('AdministrationService', () => {
 
         const service = AdministrationService({
           administrationRepository: mockAdministrationRepository,
+          administrationTaskVariantRepository: mockAdministrationTaskVariantRepository,
           authorizationService: mockAuthorizationService,
         });
 
@@ -572,6 +579,7 @@ describe('AdministrationService', () => {
 
         const service = AdministrationService({
           administrationRepository: mockAdministrationRepository,
+          administrationTaskVariantRepository: mockAdministrationTaskVariantRepository,
           authorizationService: mockAuthorizationService,
         });
 
@@ -593,6 +601,7 @@ describe('AdministrationService', () => {
 
         const service = AdministrationService({
           administrationRepository: mockAdministrationRepository,
+          administrationTaskVariantRepository: mockAdministrationTaskVariantRepository,
           authorizationService: mockAuthorizationService,
         });
 
@@ -627,6 +636,7 @@ describe('AdministrationService', () => {
 
         const service = AdministrationService({
           administrationRepository: mockAdministrationRepository,
+          administrationTaskVariantRepository: mockAdministrationTaskVariantRepository,
           authorizationRepository: mockAuthorizationRepository,
           authorizationService: mockAuthorizationService,
           runsRepository: mockRunsRepository,
