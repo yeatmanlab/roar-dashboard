@@ -34,7 +34,7 @@ vi.mock('@/store/auth', () => ({
       roles: [],
     }),
     shouldUsePermissions: ref(false),
-    currentSite: ref(null),
+    currentSite: 'any',
     userClaims: ref({
       claims: {
         adminOrgs: {

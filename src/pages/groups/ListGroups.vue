@@ -7,8 +7,6 @@
             <div class="admin-page-header mr-4">Groups</div>
             <PermissionGuard :requiredRole="ROLES.SITE_ADMIN">
               <PvButton
-                v-tooltip.bottom="currentSite === 'any' ? 'Please select a specific site to add a group' : ''"
-                :disabled="currentSite === 'any'"
                 class="bg-primary text-white border-none p-2 ml-auto"
                 data-testid="add-group-btn"
                 @click="isAddGroupModalVisible = true"
@@ -351,7 +349,6 @@ function copyToClipboard(text) {
     });
 }
 
-
 /**
  * Exports users of a given organization type to a CSV file.
  *
@@ -483,14 +480,14 @@ const tableColumns = computed(() => {
     });
   }
 
-    // {
-    //   header: 'Export Users',
-    //   buttonLabel: 'Export Users',
-    //   button: true,
-    //   eventName: 'export-org-users',
-    //   buttonIcon: 'pi pi-download mr-2',
-    //   sort: false,
-    // },
+  // {
+  //   header: 'Export Users',
+  //   buttonLabel: 'Export Users',
+  //   button: true,
+  //   eventName: 'export-org-users',
+  //   buttonIcon: 'pi pi-download mr-2',
+  //   sort: false,
+  // },
 
   return columns;
 });
