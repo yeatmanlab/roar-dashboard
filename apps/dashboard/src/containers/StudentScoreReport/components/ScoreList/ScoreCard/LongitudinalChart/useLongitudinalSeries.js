@@ -40,6 +40,7 @@ export function useLongitudinalSeries(props) {
           x,
           y,
           assignmentId: e.assignmentId || e.administrationId || '',
+          rawScore,
           percentile,
           standardScore,
           color: color || SCORE_SUPPORT_LEVEL_COLORS.ASSESSED,
