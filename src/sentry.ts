@@ -58,12 +58,24 @@ export function initSentry(app: App) {
       extraErrorDataIntegration(),
     ],
     attachStacktrace: true,
+    sendDefaultPii: false,
     // Performance Monitoring
     tracesSampleRate: 0.2, // Capture 20% of the transactions
     tracePropagationTargets,
     // Session Replay
     replaysSessionSampleRate: 0.1,
     replaysOnErrorSampleRate: 1.0,
+    beforeSend(event) {
+      // Remove IP
+      delete event.user?.ip_address;
+
+      // Remove derived contexts
+      if (event.contexts?.geo) {
+        delete event.contexts.geo;
+      }
+
+      return event;
+    },
   });
 
   Sentry.setTag('commitSHA', import.meta.env.VITE_APP_VERSION);
