@@ -67,7 +67,7 @@ const props = defineProps({
   scoreLabel: { type: String, required: true },
 });
 
-const { series, seriesStroke } = useLongitudinalSeries(props);
+const { series, seriesLabel, seriesStroke } = useLongitudinalSeries(props);
 
 // Filter series to only show points up to current assignment
 const filteredSeries = computed(() => {
@@ -96,7 +96,7 @@ const showSupportLevels = computed(() => {
 const chartData = computed(() => ({
   datasets: [
     {
-      label: props.scoreLabel,
+      label: seriesLabel.value,
       data: filteredSeries.value.map((p) => ({ x: p.x, y: p.y })),
       tension: 0.4,
       borderColor: seriesStroke.value,
@@ -156,7 +156,7 @@ const chartOptions = computed(() => ({
       grid: { color: 'rgba(0,0,0,0.1)' },
       title: {
         display: true,
-        text: props.scoreLabel,
+        text: seriesLabel.value,
         font: {
           size: 12,
         },
