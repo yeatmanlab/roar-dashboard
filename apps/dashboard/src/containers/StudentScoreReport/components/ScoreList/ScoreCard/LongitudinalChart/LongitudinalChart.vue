@@ -137,10 +137,14 @@ const chartOptions = computed(() => ({
         },
         label: (ctx) => {
           const p = series.value[ctx.dataIndex];
-          const lines = [`${props.scoreLabel}: ${p.y}`];
+          const lines = [];
+          if (p.assignmentId === props.currentAssignmentId) lines.push('✦ Current Score Report ✦');
+
+          // Always show all available scores in a consistent order
+          if (p.rawScore != null) lines.push(`Raw Score: ${p.rawScore}`);
           if (p.percentile != null) lines.push(`Percentile: ${p.percentile}`);
           if (p.standardScore != null) lines.push(`Standard Score: ${p.standardScore}`);
-          if (p.assignmentId === props.currentAssignmentId) lines.unshift('✦ Current Score Report ✦');
+
           return lines;
         },
       },
