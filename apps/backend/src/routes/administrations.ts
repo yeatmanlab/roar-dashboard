@@ -19,7 +19,7 @@ export function registerAdministrationsRoutes(routerInstance: Router) {
       // @ts-expect-error - Express v4/v5 types mismatch in monorepo
       middleware: [AuthGuardMiddleware],
       handler: async ({ req, query }) =>
-        AdministrationsController.list({ userId: req.user!.id, userType: req.user!.userType }, query),
+        AdministrationsController.list({ userId: req.user!.id, isSuperAdmin: req.user!.isSuperAdmin }, query),
     },
   });
 

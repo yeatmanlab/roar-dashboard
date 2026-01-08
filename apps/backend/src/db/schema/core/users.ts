@@ -73,7 +73,6 @@ export const users = db.table(
     homeLanguage: p.text(),
 
     excludeFromResearch: p.boolean().notNull().default(false),
-
     isSuperAdmin: p.boolean().notNull().default(false),
 
     ...timestamps,

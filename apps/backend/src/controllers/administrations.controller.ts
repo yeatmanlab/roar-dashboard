@@ -4,7 +4,6 @@ import {
   type AdministrationWithEmbeds,
 } from '../services/administration/administration.service';
 import type { AdministrationsListQuery, Administration as ApiAdministration } from '@roar-dashboard/api-contract';
-import type { UserType } from '../enums/user-type.enum';
 
 const administrationService = AdministrationService();
 
@@ -13,7 +12,7 @@ const administrationService = AdministrationService();
  */
 interface AuthContext {
   userId: string;
-  userType: UserType;
+  isSuperAdmin: boolean;
 }
 
 /**

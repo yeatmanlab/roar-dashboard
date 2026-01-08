@@ -32,6 +32,7 @@ export const UserFactory = Factory.define<User>(() => ({
   hispanicEthnicity: null,
   homeLanguage: null,
   excludeFromResearch: false,
+  isSuperAdmin: false,
   createdAt: new Date(),
   updatedAt: new Date(),
 }));
@@ -41,5 +42,5 @@ export const UserFactory = Factory.define<User>(() => ({
  */
 export const AuthContextFactory = Factory.define<AuthContext>(() => ({
   id: faker.string.uuid(),
-  userType: faker.helpers.arrayElement(['student', 'educator', 'caregiver', 'admin', 'super_admin'] as const),
+  isSuperAdmin: faker.datatype.boolean(),
 }));

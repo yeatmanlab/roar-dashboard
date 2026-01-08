@@ -7,8 +7,9 @@ import {
 } from '@roar-dashboard/api-contract';
 import { StatusCodes } from 'http-status-codes';
 import type { Administration } from '../../db/schema';
+import { Permissions } from '../../constants/permissions';
+import { rolesForPermission } from '../../constants/role-permissions';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
-import type { UserType } from '../../enums/user-type.enum';
 import { ApiError } from '../../errors/api-error';
 import { logger } from '../../logger';
 import {
@@ -22,8 +23,6 @@ import {
 } from '../../repositories/administration-task-variant.repository';
 import { AuthorizationRepository } from '../../repositories/authorization.repository';
 import { RunsRepository } from '../../repositories/runs.repository';
-import { isUnrestrictedResource } from '../../utils/resource-scope.utils';
-import { AuthorizationService } from '../authorization/authorization.service';
 
 /**
  * Embed option type derived from api-contract.
@@ -49,11 +48,11 @@ const SORT_FIELD_TO_COLUMN: Record<AdministrationSortFieldType, string> = {
 };
 
 /**
- * Auth context containing user identity and role.
+ * Auth context containing user identity and super admin flag.
  */
 interface AuthContext {
   userId: string;
-  userType: UserType;
+  isSuperAdmin: boolean;
 }
 
 /**
@@ -76,20 +75,18 @@ export function AdministrationService({
   administrationRepository = new AdministrationRepository(),
   administrationTaskVariantRepository = new AdministrationTaskVariantRepository(),
   authorizationRepository = new AuthorizationRepository(),
-  authorizationService = AuthorizationService(),
   runsRepository = new RunsRepository(),
 }: {
   administrationRepository?: AdministrationRepository;
   administrationTaskVariantRepository?: AdministrationTaskVariantRepository;
   authorizationRepository?: AuthorizationRepository;
-  authorizationService?: ReturnType<typeof AuthorizationService>;
   runsRepository?: RunsRepository;
 } = {}) {
   /**
    * List administrations accessible to a user with pagination, sorting, and optional embeds.
    *
-   * Users with unrestricted scope have access to all administrations.
-   * Users with scoped access only see administrations they're assigned to.
+   * super_admin users have unrestricted access to all administrations.
+   * Other users only see administrations they're assigned to via org/class/group membership.
    *
    * @param authContext - User's auth context (id and type)
    * @param options - Query options including pagination, sorting, and embed
@@ -100,14 +97,11 @@ export function AdministrationService({
     authContext: AuthContext,
     options: ListOptions,
   ): Promise<PaginatedResult<AdministrationWithEmbeds>> {
-    const { userId, userType } = authContext;
+    const { userId, isSuperAdmin } = authContext;
 
-    let scope;
     let result;
 
     try {
-      scope = await authorizationService.getAdministrationsScope(userId, userType);
-
       // Transform API contract format to repository format
       const queryParams = {
         page: options.page,
@@ -118,10 +112,14 @@ export function AdministrationService({
         },
       };
 
-      // Fetch administrations based on user's scope
-      result = isUnrestrictedResource(scope)
-        ? await administrationRepository.getAll(queryParams)
-        : await administrationRepository.getByIds(scope.ids, queryParams);
+      // Super admins bypass authorization - get all administrations
+      if (isSuperAdmin) {
+        result = await administrationRepository.getAll(queryParams);
+      } else {
+        // Other users see only administrations they're authorized for via role membership
+        const allowedRoles = rolesForPermission(Permissions.Administrations.LIST);
+        result = await administrationRepository.listAuthorized({ userId, allowedRoles }, queryParams);
+      }
     } catch (error) {
       if (error instanceof ApiError) throw error;
 
