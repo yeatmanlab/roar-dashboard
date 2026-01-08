@@ -337,6 +337,13 @@
       "when": 1767662305834,
       "tag": "0047_add_super_admin_user_type",
       "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1767831228334,
+      "tag": "0048_move_super_admin_flag_into_separate_column",
+      "breakpoints": true
     }
   ]
 }
