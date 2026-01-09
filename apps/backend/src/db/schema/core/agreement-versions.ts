@@ -27,7 +27,7 @@ export const agreementVersions = db.table(
       .notNull(),
 
     isCurrent: p.boolean().notNull(),
-    locale: p.varchar({ length: 10 }).notNull(),
+    locale: p.varchar({ length: 5 }).notNull(),
 
     githubFilename: p.text().notNull(),
     githubOrgRepo: p.text().notNull(),
