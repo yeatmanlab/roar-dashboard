@@ -78,6 +78,13 @@
       "when": 1767831276767,
       "tag": "0010_remove_super_admin_from_user_type",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1767968407725,
+      "tag": "0011_extend_user_role_enum_oneroster",
+      "breakpoints": true
     }
   ]
 }
