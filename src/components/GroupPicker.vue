@@ -166,15 +166,19 @@ const removeSelectedOrg = (orgHeader: string, selectedOrg: OrgItem) => {
 };
 
 const syncSelectedOrgsWithOrgData = (orgType: string, options: OrgItem[] | undefined) => {
-  if (!options || options.length === 0) return;
+  if (!options?.length) return;
+
   const key = orgType as keyof OrgCollection;
   const currentSelected = selectedOrgs[key];
-  if (currentSelected && currentSelected.length > 0) {
-    const optionMap = new Map(options.map((option: OrgItem) => [option.id, option]));
-    selectedOrgs[key] = currentSelected
-      .map((org: OrgItem) => optionMap.get(org.id))
-      .filter((org: OrgItem | undefined): org is OrgItem => org !== undefined);
-  }
+
+  if (!currentSelected?.length) return;
+
+  const optionMap = new Map(options.map((option: OrgItem) => [option.id, option]));
+  const shouldPreserveOrg = key === 'classes' && selectedSchool.value;
+
+  selectedOrgs[key] = currentSelected
+    .map((org: OrgItem) => (shouldPreserveOrg && org.schoolId !== selectedSchool.value ? org : optionMap.get(org.id)))
+    .filter((org): org is OrgItem => org !== undefined);
 };
 
 watch(
