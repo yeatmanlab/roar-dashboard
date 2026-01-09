@@ -27,9 +27,10 @@ export class RoarApi {
    * @param options - Optional RequestInit options (method, body, etc.)
    * @returns Promise<Response> from the fetch call
    * 
-   * Automatically injects:
-   * - Authorization header with Bearer token (if available)
-   * - x-request-id header for request tracing (if requestId function provided)
+   * Automatically injects, when values are available:
+   * - Authorization header with Bearer token (only if a non-empty token is returned from auth.getToken)
+   * - x-request-id header for request tracing (only if the requestId function is defined and returns a value)
+   * If the token or requestId are undefined, the corresponding headers are not added.
    */
   async request(endpoint: string, options?: RequestInit): Promise<Response> {
     const url = `${this.ctx.baseUrl}${endpoint}`;
