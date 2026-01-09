@@ -49,7 +49,7 @@ export class FirekitFacade {
    */
   getContext(): CommandContext {
     if (!this.ctx) {
-      throw new Error('Firekit facade not initialized. Call initFirekitCompat() first.');
+      throw new Error('FirekitFacade not initialized. Call initFirekitCompat() first.');
     }
     return this.ctx;
   }
