@@ -27,11 +27,8 @@ describe('Participant: Auth', () => {
     cy.agreeToConsent();
 
     // Validate that the participant homepage loaded with assignments.
-    cy.get('[data-cy="home-participant__administration-emptystate"]').should('exist');
-
-    // @NOTE: The participant test account currently has no assignments.
-    // cy.get('[data-cy="dropdown-select-administration"]').click();
-    // cy.get('.p-select-list-container').find('li').should('contain', 'Cypress Test Roar Apps Administration');
+    cy.get('[data-cy="dropdown-select-administration"]').click();
+    cy.get('[data-cy="dropdown-select-administration"]').find('span').should('contain', 'ROAR Demo Rostering Admin');
   });
 
   it('Shows error state when SSO user has no userType', () => {
