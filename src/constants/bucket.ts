@@ -4,11 +4,12 @@ export const LEVANTE_BUCKET_URL =
     ? 'https://storage.googleapis.com/levante-assets-dev'
     : 'https://storage.googleapis.com/levante-assets-prod';
 
-// For static assets like PNG files (original buckets)
+// For dashboard UI static images (PNG files) hosted in the assets bucket.
+// Path convention: `gs://levante-assets-*/visual/dashboard/...`
 export const LEVANTE_STATIC_ASSETS_URL =
   import.meta.env.VITE_FIREBASE_PROJECT === 'DEV'
-    ? 'https://storage.googleapis.com/levante-dashboard-dev'
-    : 'https://storage.googleapis.com/levante-dashboard-prod';
+    ? 'https://storage.googleapis.com/levante-assets-dev/visual/dashboard'
+    : 'https://storage.googleapis.com/levante-assets-prod/visual/dashboard';
 
 export const LEVANTE_SURVEY_RESPONSES_KEY = 'levante-survey-responses';
 export const LEVANTE_BUCKET_SURVEY_AUDIO =
