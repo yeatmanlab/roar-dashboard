@@ -7,6 +7,7 @@
             <div class="admin-page-header mr-4">Groups</div>
             <PermissionGuard :requiredRole="ROLES.SITE_ADMIN">
               <PvButton
+                v-tooltip.bottom="currentSite === 'any' && 'Please select a specific site to add a group'"
                 class="bg-primary text-white border-none p-2 ml-auto"
                 data-testid="add-group-btn"
                 @click="isAddGroupModalVisible = true"

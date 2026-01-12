@@ -355,6 +355,17 @@ const submit = async () => {
     createdBy: authStore.getUserId(),
   } as CreateOrgType;
 
+  if (orgType.value?.singular !== SINGULAR_ORG_TYPES.DISTRICTS && authStore.currentSite === 'any') {
+    handleOnClose();
+    isSubmitBtnDisabled.value = false;
+    return toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'Please select a specific site to add a group',
+      life: TOAST_DEFAULT_LIFE_DURATION,
+    });
+  }
+
   const { data: orgNameExists } = await doesOrgNameExist();
 
   if (orgNameExists) {

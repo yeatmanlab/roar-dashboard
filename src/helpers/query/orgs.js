@@ -137,8 +137,8 @@ export const fetchOrgByName = async (orgType, orgNormalizedName, selectedDistric
   const axiosInstance = getAxiosInstance();
   const requestBody = getOrgsRequestBody({
     orgType,
-    parentDistrict: ['schools', 'classes', 'groups'].includes(orgType) ? selectedDistrict?.value?.id : null,
-    parentSchool: orgType === 'classes' ? selectedSchool?.value?.id : null,
+    parentDistrict: orgType === 'schools' || orgType === 'classes' ? selectedDistrict?.value?.id : null,
+    parentSchool: orgType === 'classes' ? null : selectedSchool?.value?.id,
     aggregationQuery: false,
     orgNormalizedName,
     paginate: false,
