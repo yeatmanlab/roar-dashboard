@@ -317,7 +317,6 @@ const state = reactive({
 
 const { refetch: refetchAssignmentExists } = useAssignmentExistsQuery(
   toRef(state, 'administrationName'),
-  toRef(state, 'districts'),
   props.adminId,
 );
 

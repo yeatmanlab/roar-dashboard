@@ -1,19 +1,24 @@
 import { USE_ASSIGNMENT_EXISTS_QUERY_KEY } from '@/constants/queryKeys';
 import { normalizeToLowercase } from '@/helpers';
-import { fetchAssignmentsByNameAndDistricts } from '@/helpers/query/assignments';
+import { fetchAssignmentsByNameAndSite } from '@/helpers/query/assignments';
+import { useAuthStore } from '@/store/auth';
 import { useQuery } from '@tanstack/vue-query';
+import { storeToRefs } from 'pinia';
 import { Ref } from 'vue';
 
-export default function useAssignmentExistsQuery(name: Ref<string>, districs: Ref<string[]>, adminId: string | null) {
+export default function useAssignmentExistsQuery(name: Ref<string>, adminId: string | null) {
+  const authStore = useAuthStore();
+  const { currentSite } = storeToRefs(authStore);
+
   return useQuery({
     enabled: false,
-    queryKey: [USE_ASSIGNMENT_EXISTS_QUERY_KEY, name.value, districs.value],
+    queryKey: [USE_ASSIGNMENT_EXISTS_QUERY_KEY, currentSite.value, name.value],
     queryFn: async () => {
       const normalizedName = normalizeToLowercase(name.value);
 
-      if (!normalizedName || districs.value.length <= 0) return false;
+      if (!normalizedName || !currentSite.value) return false;
 
-      const assignments = await fetchAssignmentsByNameAndDistricts(name.value, normalizedName, districs.value, adminId);
+      const assignments = await fetchAssignmentsByNameAndSite(name.value, normalizedName, currentSite.value, adminId);
 
       return Array.isArray(assignments) ? assignments?.length > 0 : false;
     },
