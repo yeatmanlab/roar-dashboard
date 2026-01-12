@@ -1,7 +1,21 @@
 <template>
   <div>
     <div v-if="props.isBasicView">
-      <div class="flex gap-2 align-items-center justify-content-center">
+      <div class="flex gap-5 align-items-center justify-content-center">
+        <div class="flex align-items-center gap-2">
+          <PvAvatar
+            :label="userInitial"
+            shape="circle"
+            style="background: var(--red-100); font-weight: 500; color: var(--primary-color)"
+          />
+          <div>
+            <p v-if="userData?.displayName || userData?.username" class="m-0 p-0 font-semibold text-sm">
+              {{ userData?.displayName || userData?.username }}
+            </p>
+            <p class="m-0 p-0 text-xs">{{ userData?.email }}</p>
+          </div>
+        </div>
+
         <PvButton data-cy="button-sign-out" @click="() => signOut()">
           <i class="pi pi-sign-out"></i> {{ $t('navBar.signOut') }}
         </PvButton>
@@ -65,6 +79,7 @@ import { useI18n } from 'vue-i18n';
 import { APP_ROUTES } from '@/constants/routes';
 import { useAuthStore } from '@/store/auth';
 import useDistrictsListQuery from '@/composables/queries/useDistrictsListQuery';
+import PvAvatar from 'primevue/avatar';
 
 interface Props {
   isBasicView: boolean;
@@ -85,13 +100,22 @@ interface SiteOption {
 }
 
 const authStore = useAuthStore();
-const { shouldUsePermissions, currentSite, currentSiteName } = storeToRefs(authStore);
+const { shouldUsePermissions, currentSite, currentSiteName, userData } = storeToRefs(authStore);
 const i18n = useI18n();
 const router = useRouter();
 const { mutate: signOut } = useSignOutMutation();
 const feedbackButton = ref<HTMLButtonElement | null>(null);
 
 const props = defineProps<Props>();
+
+const userInitial = computed(() => {
+  const data: string =
+    (userData.value?.displayName as string) ||
+    (userData.value?.username as string) ||
+    (userData.value?.email as string);
+
+  return data[0]!.toUpperCase();
+});
 
 const { data: districtsData = [], isLoading: isLoadingDistricts } = useDistrictsListQuery();
 
@@ -103,14 +127,14 @@ const siteOptions = computed<DropdownOption[]>(() => {
       }
       return [];
     }
-    const formattedSites = districtsData.value.map((district: { name: string; id: string }) => ({ 
-      label: district?.name, 
-      value: district?.id 
+    const formattedSites = districtsData.value.map((district: { name: string; id: string }) => ({
+      label: district?.name,
+      value: district?.id,
     }));
     return [{ label: 'All Sites', value: 'any' }, ...formattedSites];
   }
   return authStore.sites.map((site: SiteOption) => ({
-    label: site.siteName, 
+    label: site.siteName,
     value: site.siteId,
   }));
 });
