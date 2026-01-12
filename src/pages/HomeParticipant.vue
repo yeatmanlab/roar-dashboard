@@ -126,6 +126,8 @@ import { formatDateWithLocale } from '@/helpers';
 import PvTag from 'primevue/tag';
 import { getAssignmentStatus, isCurrent, sortAssignmentsByDateOpened } from '@/helpers/assignments';
 import { capitalize } from 'lodash';
+import 'survey-core/survey.i18n';
+
 
 const showConsent = ref(false);
 const consentVersion = ref('');
@@ -489,7 +491,13 @@ const specificSurveyData = computed(() => {
 
 function createSurveyInstance(surveyDataToStartAt) {
   settings.lazyRender = true;
-  const surveyInstance = new Model(surveyDataToStartAt);
+  // SurveyJS mutates the input JSON (e.g., deleting internal keys like `pos`). Vue Query/Vue may wrap fetched JSON in
+  // readonly/reactive proxies, which triggers warnings like "Delete operation on key 'pos' failed: target is readonly".
+  // Clone to a plain mutable object before passing it to SurveyJS.
+  const surveyJson = toRaw(surveyDataToStartAt);
+  const surveyInstance = new Model(
+    typeof structuredClone === 'function' ? structuredClone(surveyJson) : JSON.parse(JSON.stringify(surveyJson)),
+  );
   surveyInstance.locale = locale.value;
   return surveyInstance;
 }
@@ -723,4 +731,3 @@ watch(
   min-width: 24%;
 }
 </style>
-
