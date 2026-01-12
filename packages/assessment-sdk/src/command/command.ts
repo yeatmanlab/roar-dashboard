@@ -11,7 +11,7 @@ export interface Logger {
 
 /**
  * CommandContext provides SDK configuration and runtime dependencies.
- * 
+ *
  * @property baseUrl - API base URL for all requests
  * @property auth - Authentication callbacks for token management
  * @property auth.getToken - Retrieves current auth token (called before each request)
@@ -34,7 +34,7 @@ export interface CommandContext {
 /**
  * Command interface following the GoF Command pattern.
  * Each command represents a single operation that can be executed with retry logic.
- * 
+ *
  * @template TInput - Input type for the command
  * @template TOutput - Output type returned by execute()
  * @property name - Unique command identifier for logging and debugging

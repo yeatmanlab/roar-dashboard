@@ -16,12 +16,12 @@ let globalApi: RoarApi | undefined;
 /**
  * Initializes the Assessment SDK with configuration.
  * Creates and stores singleton instances of Invoker and RoarApi.
- * 
+ *
  * Should be called once at application startup before using the SDK.
- * 
+ *
  * @param ctx - CommandContext with baseUrl, auth callbacks, and optional logger
  * @returns Object with initialized invoker and api instances
- * 
+ *
  * Example:
  * ```
  * const { invoker, api } = initAssessmentSdk({
@@ -47,7 +47,7 @@ export function initAssessmentSdk(ctx: CommandContext) {
 /**
  * Retrieves the initialized Invoker instance.
  * Can be called from anywhere after initAssessmentSdk().
- * 
+ *
  * @returns Invoker singleton instance
  * @throws SDKError if SDK not initialized
  */
@@ -61,7 +61,7 @@ export function getInvoker() {
 /**
  * Retrieves the initialized RoarApi instance.
  * Can be called from anywhere after initAssessmentSdk().
- * 
+ *
  * @returns RoarApi singleton instance
  * @throws SDKError if SDK not initialized
  */
