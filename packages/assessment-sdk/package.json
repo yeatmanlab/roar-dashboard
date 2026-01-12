@@ -29,7 +29,7 @@
   "sideEffects": false,
   "dependencies": {
     "@ts-rest/core": "^3.52.1",
-    "@roar-dashboard/api-contract": "0.0.0"
+    "@roar-dashboard/api-contract": "*"
   },
   "devDependencies": {
     "@rollup/plugin-node-resolve": "^16.0.1",
@@ -40,6 +40,8 @@
     "rollup-plugin-esbuild": "^6.1.1",
     "rollup-plugin-node-externals": "^8.1.0",
     "typescript": "^5.9.2",
-    "vitest": "^2.1.8"
+    "vitest": "^2.1.8",
+    "@roar-dashboard/typescript-config": "*",
+    "@roar-dashboard/eslint-config": "*"
   }
 }
