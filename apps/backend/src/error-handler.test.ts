@@ -7,6 +7,13 @@ import { ApiError } from './errors/api-error';
 import { DatabaseError } from './errors/database-error';
 import { DatabaseErrorCode } from './enums/database-error-code.enum';
 import { API_ERROR_CODES } from './constants/api-error-codes';
+import { logger } from './logger';
+
+vi.mock('./logger', () => ({
+  logger: {
+    error: vi.fn(),
+  },
+}));
 
 describe('errorHandler', () => {
   let mockReq: Partial<Request>;
@@ -17,7 +24,6 @@ describe('errorHandler', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.spyOn(console, 'error').mockImplementation(() => {});
 
     jsonMock = vi.fn();
     statusMock = vi.fn().mockReturnValue({ json: jsonMock });
@@ -129,7 +135,7 @@ describe('errorHandler', () => {
 
       errorHandler(error, mockReq as Request, mockRes as Response, mockNext);
 
-      expect(console.error).toHaveBeenCalledWith('Unexpected error:', error);
+      expect(logger.error).toHaveBeenCalledWith({ err: error }, 'Unexpected error');
     });
 
     it('should not expose internal error details', () => {
