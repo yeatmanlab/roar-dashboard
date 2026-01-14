@@ -34,7 +34,7 @@
           <div v-else-if="_isEmpty(searchResults)">
             <span>No search results for {{ searchTerm }}</span>
           </div>
-          <PvScrollPanel class="task-picker-scroll-panel" style="height: 31rem; width: 100%; overflow-y: auto">
+          <PvScrollPanel class="task-picker-scroll-panel" style="height: 32rem; width: 100%; overflow-y: auto">
             <!-- Draggable Zone 3 -->
             <VueDraggableNext
               v-model="searchResults"
@@ -58,7 +58,7 @@
           </PvScrollPanel>
         </div>
         <div v-else>
-          <PvScrollPanel class="task-picker-scroll-panel" style="height: 31rem; width: 100%; overflow-y: auto">
+          <PvScrollPanel class="task-picker-scroll-panel" style="height: 32rem; width: 100%; overflow-y: auto">
             <div v-if="_isEmpty(groupedTaskSections)">No tasks available.</div>
             <div v-else class="flex flex-column gap-4 pr-1">
               <div
@@ -114,7 +114,8 @@
         <div class="panel-title mb-2 text-base">
           Selected Tasks<span class="required-asterisk text-red-500 ml-1">*</span>
         </div>
-        <PvScrollPanel class="task-picker-scroll-panel" style="height: 32rem; width: 100%; overflow-y: auto">
+
+        <div ref="selectedTasksScrollPanelRef" class="task-picker-scroll-panel">
           <!-- Draggable Zone 2 -->
           <VueDraggableNext
             v-model="selectedVariants"
@@ -149,13 +150,13 @@
               </div>
             </transition-group>
           </VueDraggableNext>
-        </PvScrollPanel>
+        </div>
       </div>
     </div>
   </PvPanel>
 </template>
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, nextTick, ref, watch } from 'vue';
 import _filter from 'lodash/filter';
 import _findIndex from 'lodash/findIndex';
 import _debounce from 'lodash/debounce';
@@ -245,6 +246,17 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<Emits>();
 
 const selectedVariants = ref<VariantObject[]>([]);
+const selectedTasksScrollPanelRef = ref<HTMLElement | null>(null);
+
+watch(
+  () => selectedVariants.value.length,
+  async () => {
+    await nextTick();
+    const selectedTasksScrollPanel = selectedTasksScrollPanelRef.value;
+    if (!selectedTasksScrollPanel) return;
+    selectedTasksScrollPanel.scrollTop = selectedTasksScrollPanel.scrollHeight;
+  },
+);
 
 const groupedTasks: Record<string, string[]> = {
   Introduction: ['Instructions'],
@@ -590,7 +602,12 @@ function addChildDefaultCondition(variant: VariantObject): VariantObject {
   font-size: x-large;
   font-weight: bold;
 }
-.task-picker-scroll-panel .p-scrollpanel-bar {
-  opacity: 1;
+.task-picker-scroll-panel {
+  max-height: 32rem;
+  overflow-y: auto;
+
+  .p-scrollpanel-bar {
+    opacity: 1;
+  }
 }
 </style>
