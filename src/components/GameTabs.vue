@@ -50,13 +50,28 @@
           :value="String(index)"
           class="p-0"
         >
-          <div class="roar-tabview-game flex flex-row p-5 surface-100 w-full">
-            <div class="roar-game-content flex flex-column" style="width: 65%">
+          <div class="roar-tabview-game flex flex-row align-items-center p-5 surface-100 w-full">
+            <div class="roar-game-image">
+              <div>
+                <img
+                  v-if="game.taskData.image"
+                  :src="game.taskData.image"
+                  style="width: 100%; object-fit: contain; height: auto"
+                />
+                <img
+                  v-else
+                  src="https://reading.stanford.edu/wp-content/uploads/2021/10/PA-1024x512.png"
+                  style="width: 100%; object-fit: contain; height: auto"
+                />
+              </div>
+            </div>
+
+            <div class="roar-game-content flex flex-column">
               <div class="flex flex-column h-full">
                 <div class="roar-game-title font-bold">
                   {{ getTaskName(game.taskId, game.taskData.name) }}
                 </div>
-                <div class="roar-game-description mr-2 flex-grow-1">
+                <div class="roar-game-description">
                   <p>
                     {{ getTaskDescription(game.taskId, game.taskData.description) }}
                   </p>
@@ -110,7 +125,7 @@
                   </div>
                 </div>
 
-                <div class="flex flex-column mt-auto">
+                <div class="flex flex-column">
                   <div class="roar-game-meta">
                     <PvTag
                       v-for="(items, metaIndex) in game.taskData.meta"
@@ -161,20 +176,6 @@
                     </div>
                   </div>
                 </div>
-              </div>
-            </div>
-            <div class="roar-game-image" style="width: 35%">
-              <div>
-                <img
-                  v-if="game.taskData.image"
-                  :src="game.taskData.image"
-                  style="width: 100%; object-fit: contain; height: 300px"
-                />
-                <img
-                  v-else
-                  src="https://reading.stanford.edu/wp-content/uploads/2021/10/PA-1024x512.png"
-                  style="width: 100%; object-fit: contain; height: 300px"
-                />
               </div>
             </div>
           </div>
@@ -399,7 +400,6 @@ const getRoutePath = (taskId: string, variantURL?: string, taskURL?: string): st
   }
 };
 
-
 const currentGameId = computed((): string | undefined => {
   return _get(
     _find(props.games, (game) => {
@@ -503,28 +503,26 @@ const isTaskComplete = (gameCompletedTime: string | Date | undefined, taskId: st
 .roar-tabview-game {
   display: flex;
   flex-direction: row;
+  gap: 2rem;
   width: 100%;
-  min-height: 400px;
   border-radius: 10px;
 }
 
 .roar-game-image {
-  flex: 0 0 35%;
   display: flex;
-  align-items: center;
   justify-content: center;
+  width: 100%;
+  max-width: 200px;
 }
 
 .roar-game-content {
-  flex: 0 0 65%;
-  padding-right: 2rem;
   display: flex;
   flex-direction: column;
+  flex-grow: 1;
 }
 
 .roar-game-description {
-  margin-bottom: 1rem;
-  flex-grow: 1;
+  margin-bottom: 0.5rem;
 }
 
 .roar-game-footer {
@@ -534,22 +532,23 @@ const isTaskComplete = (gameCompletedTime: string | Date | undefined, taskId: st
 }
 
 .game-btn {
-  display: flex;
+  display: inline-flex;
   justify-content: center;
   align-items: center;
   gap: 0.75rem;
   margin: 0;
   padding: 1rem;
-  background: transparent;
-  border: 1px solid var(--surface-200);
+  background: white;
+  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
   border-radius: 0.5rem;
   font-weight: 700;
   font-size: 1.125rem;
   color: inherit;
   text-decoration: none;
   user-select: none;
-  width: 100%;
+  min-width: 300px;
   box-sizing: border-box;
+  transition: box-shadow 0.2s ease-in-out;
 
   // Reset button defaults
   &[disabled] {
@@ -572,24 +571,27 @@ const isTaskComplete = (gameCompletedTime: string | Date | undefined, taskId: st
   }
 
   &:hover {
-    background: var(--surface-200);
+    box-shadow: 3px 3px 7px rgba(0, 0, 0, 0.2);
   }
 
   &.--disabled {
     cursor: not-allowed;
-    border: 1px solid rgba(var(--bright-yellow-rgb), 0.3);
+    box-shadow: none;
+    border: 2px solid rgba(var(--bright-yellow-rgb), 0.3);
+    background: rgba(var(--bright-yellow-rgb), 0.2);
 
     .pi {
       background: var(--bright-yellow);
     }
 
     &:hover {
-      background: transparent;
+      background: rgba(var(--bright-yellow-rgb), 0.2);
     }
   }
 
   &.--completed {
-    border: none;
+    box-shadow: none;
+    border: 2px solid rgba(var(--bright-green-rgb), 0.2);
     background: rgba(var(--bright-green-rgb), 0.1);
 
     .pi {
@@ -602,7 +604,9 @@ const isTaskComplete = (gameCompletedTime: string | Date | undefined, taskId: st
   }
 
   &.--incomplete {
-    border: none;
+    cursor: not-allowed;
+    box-shadow: none;
+    border: 2px solid rgba(var(--bright-red-rgb), 0.2);
     background: rgba(var(--bright-red-rgb), 0.1);
 
     .pi {
