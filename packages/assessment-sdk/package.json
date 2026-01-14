@@ -1,0 +1,47 @@
+{
+  "name": "@roar-dashboard/assessment-sdk",
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs"
+    },
+    "./compat/firekit": {
+      "types": "./dist/compat/firekit.d.ts",
+      "import": "./dist/compat/firekit.mjs"
+    }
+  },
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "dev": "rollup -cw --environment NODE_ENV:development",
+    "build": "rm -rf dist && rollup -c --environment NODE_ENV:production && tsc -p tsconfig.build.types.json",
+    "lint": "eslint .",
+    "lint:fix": "eslint --fix .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage"
+  },
+  "sideEffects": false,
+  "dependencies": {
+    "@ts-rest/core": "^3.52.1",
+    "@roar-dashboard/api-contract": "*"
+  },
+  "devDependencies": {
+    "@rollup/plugin-node-resolve": "^16.0.1",
+    "@rollup/plugin-typescript": "^12.1.4",
+    "@vitest/coverage-v8": "^2.1.8",
+    "@vitest/ui": "^2.1.8",
+    "rollup": "^4.48.1",
+    "rollup-plugin-esbuild": "^6.1.1",
+    "rollup-plugin-node-externals": "^8.1.0",
+    "typescript": "^5.9.2",
+    "vitest": "^2.1.8",
+    "@roar-dashboard/typescript-config": "*",
+    "@roar-dashboard/eslint-config": "*"
+  }
+}
