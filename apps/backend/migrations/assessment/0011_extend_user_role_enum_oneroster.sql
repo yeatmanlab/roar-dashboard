@@ -1,0 +1,2 @@
+DROP TYPE "app"."user_role";--> statement-breakpoint
+CREATE TYPE "app"."user_role" AS ENUM('administrator', 'aide', 'counselor', 'district_administrator', 'guardian', 'parent', 'principal', 'proctor', 'relative', 'site_administrator', 'student', 'system_administrator', 'teacher');
