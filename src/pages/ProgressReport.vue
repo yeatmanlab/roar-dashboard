@@ -209,7 +209,6 @@ import { isEmpty } from 'lodash';
 import PvFloatLabel from 'primevue/floatlabel';
 import LevanteSpinner from '@/components/LevanteSpinner.vue';
 
-
 const router = useRouter();
 const authStore = useAuthStore();
 
@@ -236,10 +235,13 @@ const { data: tasksDictionary, isLoading: isLoadingTasksDictionary } = useTasksD
   enabled: initialized,
 });
 
-const { data: administrationData, isLoading: isLoadingAdministration } = useAdministrationsQuery([props.administrationId], {
-  enabled: initialized,
-  select: (data) => data[0],
-});
+const { data: administrationData, isLoading: isLoadingAdministration } = useAdministrationsQuery(
+  [props.administrationId],
+  {
+    enabled: initialized,
+    select: (data) => data[0],
+  },
+);
 
 const { data: adminStats, isLoading: isLoadingAdminStats } = useAdministrationsStatsQuery([props.administrationId], {
   enabled: initialized,
@@ -337,33 +339,11 @@ const pageLimit = ref(10);
 
 const CSV_NOT_ASSIGNED_VALUE = 'Not Assigned';
 
-const orderedTaskIds = computed(() => {
-  const taskIds = administrationData.value?.assessments?.map((assessment) => assessment.taskId) ?? [];
-  const sortedTasks = [...taskIds].sort((p1, p2) => {
-    if (Object.keys(taskDisplayNames).includes(p1) && Object.keys(taskDisplayNames).includes(p2)) {
-      return taskDisplayNames[p1].order - taskDisplayNames[p2].order;
-    } else {
-      return -1;
-    }
-  });
-
-  const priorityTasks = ['swr', 'sre', 'pa'];
-  const ordered = [];
-
-  for (const task of priorityTasks) {
-    if (sortedTasks.includes(task)) {
-      ordered.push(task);
-    }
-  }
-
-  for (const task of sortedTasks) {
-    if (!priorityTasks.includes(task)) {
-      ordered.push(task);
-    }
-  }
-
-  return ordered;
-});
+const orderedTaskIds = computed(() =>
+  administrationData.value?.assessments
+    ?.map((assessment) => assessment.taskId.toLowerCase())
+    .sort((a, b) => (taskDisplayNames[a]?.order ?? 0) - (taskDisplayNames[b]?.order ?? 0)),
+);
 
 const getTaskColumnLabel = (taskId) => {
   if (tasksDictionary.value?.[taskId]?.publicName) {
@@ -411,7 +391,6 @@ const computedProgressData = computed(() => {
 
   for (const { assignment, user } of assignmentData.value) {
     const currRow = {
-
       user: {
         username: user?.username || assignment?.userData?.username || '',
         userType: user.userType === 'parent' ? 'caregiver' : user.userType,
