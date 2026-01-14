@@ -61,7 +61,7 @@ describe('requestLogger', () => {
     mockNext = vi.fn();
   });
 
-  describe('blacklisted routes', () => {
+  describe('excluded routes', () => {
     it('should skip logging for /health route', () => {
       mockReq.path = '/health';
 
@@ -180,7 +180,7 @@ describe('requestLogger', () => {
   });
 
   describe('middleware behavior', () => {
-    it('should call next() for non-blacklisted routes', () => {
+    it('should call next() for non-excluded routes', () => {
       requestLogger(mockReq as Request, mockRes as Response, mockNext);
 
       expect(mockNext).toHaveBeenCalled();

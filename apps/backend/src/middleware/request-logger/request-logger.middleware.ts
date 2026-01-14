@@ -18,7 +18,7 @@ const requestLog = logger.child(
 /**
  * Routes to exclude from request logging (e.g., health checks).
  */
-const BLACKLISTED_ROUTES = ['/health', '/ready'];
+const EXCLUDED_ROUTES = ['/health', '/ready'];
 
 /**
  * Express middleware that logs HTTP request/response details.
@@ -30,8 +30,8 @@ const BLACKLISTED_ROUTES = ['/health', '/ready'];
  * Sensitive headers (authorization, cookies) are automatically redacted.
  */
 export function requestLogger(req: Request, res: Response, next: NextFunction) {
-  // Skip logging for blacklisted routes
-  if (BLACKLISTED_ROUTES.includes(req.path)) {
+  // Skip logging for excluded routes
+  if (EXCLUDED_ROUTES.includes(req.path)) {
     return next();
   }
 
