@@ -16,6 +16,7 @@ export const API_ERROR_CODES = {
     REQUIRED: 'auth/required',
     TOKEN_INVALID: 'auth/token-invalid',
     TOKEN_EXPIRED: 'auth/token-expired',
+    USER_NOT_FOUND: 'auth/user-not-found',
   },
   REQUEST: {
     INVALID: 'request/invalid',
