@@ -63,18 +63,18 @@ describe('requestLogger', () => {
 
   describe('excluded routes', () => {
     it('should skip logging for /health route', () => {
-      mockReq.path = '/health';
+      const healthReq = { ...mockReq, path: '/health' };
 
-      requestLogger(mockReq as Request, mockRes as Response, mockNext);
+      requestLogger(healthReq as Request, mockRes as Response, mockNext);
 
       expect(mockNext).toHaveBeenCalled();
       expect(mockRes.on).not.toHaveBeenCalled();
     });
 
     it('should skip logging for /ready route', () => {
-      mockReq.path = '/ready';
+      const readyReq = { ...mockReq, path: '/ready' };
 
-      requestLogger(mockReq as Request, mockRes as Response, mockNext);
+      requestLogger(readyReq as Request, mockRes as Response, mockNext);
 
       expect(mockNext).toHaveBeenCalled();
       expect(mockRes.on).not.toHaveBeenCalled();
@@ -134,7 +134,7 @@ describe('requestLogger', () => {
       requestLogger(mockReq as Request, mockRes as Response, mockNext);
       finishHandler();
 
-      const logCall = mockChildLogger.info.mock.calls[0];
+      const logCall = mockChildLogger.info.mock.calls[0]!;
       const logData = logCall[0];
       const logMessage = logCall[1];
 
@@ -162,7 +162,7 @@ describe('requestLogger', () => {
       requestLogger(mockReq as Request, mockRes as Response, mockNext);
       finishHandler();
 
-      const logData = mockChildLogger.info.mock.calls[0][0];
+      const logData = mockChildLogger.info.mock.calls[0]![0];
       expect(logData.requestId).toBeUndefined();
     });
 
@@ -174,7 +174,7 @@ describe('requestLogger', () => {
       requestLogger(mockReq as Request, mockRes as Response, mockNext);
       finishHandler();
 
-      const logData = mockChildLogger.info.mock.calls[0][0];
+      const logData = mockChildLogger.info.mock.calls[0]![0];
       expect(logData.req.httpVersion).toBe('2.0');
     });
   });
