@@ -7,6 +7,7 @@ import posthogInstance from '@/plugins/posthog';
 import { logger } from '@/logger';
 import { RoarFirekit } from '@levante-framework/firekit';
 import { ref, type Ref } from 'vue';
+import { ROLES } from '@levante-framework/permissions-core';
 
 interface FirebaseUser {
   adminFirebaseUser: User | null;
@@ -119,7 +120,7 @@ export const useAuthStore = defineStore(
     }
 
     function isUserSuperAdmin(): boolean {
-      return Boolean(userClaims.value?.claims?.super_admin);
+      return Boolean(userData.value?.roles?.some((role) => role?.role === ROLES.SUPER_ADMIN));
     }
 
     // Actions
@@ -268,7 +269,6 @@ export const useAuthStore = defineStore(
       userClaims.value = claims;
       shouldUsePermissions.value = Boolean(claims?.claims?.useNewPermissions);
     }
-
 
     return {
       // State
