@@ -33,6 +33,7 @@
     "packages/*"
   ],
   "dependencies": {
+    "@bdelab/roam-apps": "^1.3.5",
     "husky": "^9.1.7",
     "lint-staged": "^16.1.2"
   }
