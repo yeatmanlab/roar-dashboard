@@ -4,7 +4,7 @@ import { StatusCodes } from 'http-status-codes';
 import { registerAllRoutes } from './routes';
 import { errorHandler } from './error-handler';
 import { requestLogger } from './middleware/request-logger/request-logger.middleware';
-import { API_ERROR_CODES } from './constants/api-error-codes';
+import { ApiErrorCode } from './enums/api-error-code.enum';
 
 const app = express();
 
@@ -18,7 +18,7 @@ app.use((_req: Request, res: Response) => {
   return res.status(StatusCodes.NOT_FOUND).json({
     error: {
       message: 'Not found.',
-      code: API_ERROR_CODES.REQUEST.INVALID,
+      code: ApiErrorCode.REQUEST_INVALID,
     },
   });
 });
