@@ -224,7 +224,7 @@ const distributionChartFacet = computed(() => {
           labelPadding: 0,
           labelExpr: isGradeFacet.value
             ? "join(['Grade ',if(datum.value == '0', 'K', datum.value ), ], '')"
-            : 'split(slice(datum.value, 2, datum.value.length), " ")',
+            : 'split(test(/^[0-9K] /, datum.value) ? slice(datum.value, 2, datum.value.length) : datum.value, " ")',
           labelLimit: 150,
           labelSeparation: 0, // Set the spacing between lines in pixels
         },
@@ -237,7 +237,7 @@ const distributionChartFacet = computed(() => {
 
       x: {
         field: `scores.${scoreMode.value.key}`,
-        title: scoreMode.value.name === 'Percentile' ? `${scoreMode.value.name} Score` : `${scoreMode.value.name}`,
+        title: scoreMode.value.name,
         bin: {
           step: getBinSize(scoreMode.value.name, props.taskId),
           extent: [getRangeLow(scoreMode.value.name, props.taskId), getRangeHigh(scoreMode.value.name, props.taskId)],
