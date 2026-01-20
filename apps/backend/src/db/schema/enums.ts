@@ -199,13 +199,29 @@ export const trialInteractionTypeEnum = db.enum('trial_interaction_type', [
 export const userFamilyRoleEnum = db.enum('user_family_role', ['parent', 'child']);
 
 /**
- * Administrative roles for dashboard access.
- * - site_administrator: Full access to all site settings and data
- * - administrator: School/district level admin access
- * - teacher: Educator access with class management
- * - student: Learner access with limited permissions
+ * User roles based on the OneRoster specification (v1.1 + v1.2 combined).
+ * Used in join tables (user_orgs, user_classes, user_groups) to define
+ * a user's role within that entity.
+ *
+ * OneRoster v1.1 roles: administrator, aide, guardian, parent, proctor, relative, student, teacher
+ * OneRoster v1.2 roles: aide, counselor, districtAdministrator, guardian, parent, principal,
+ *                       proctor, relative, siteAdministrator, student, systemAdministrator, teacher
  */
-export const userRoleEnum = db.enum('user_role', ['site_administrator', 'administrator', 'teacher', 'student']);
+export const userRoleEnum = db.enum('user_role', [
+  'administrator',
+  'aide',
+  'counselor',
+  'district_administrator',
+  'guardian',
+  'parent',
+  'principal',
+  'proctor',
+  'relative',
+  'site_administrator',
+  'student',
+  'system_administrator',
+  'teacher',
+]);
 
 /**
  * User types derived from the OneRoster specification.

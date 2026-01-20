@@ -74,6 +74,8 @@ export const users = db.table(
 
     excludeFromResearch: p.boolean().notNull().default(false),
 
+    isSuperAdmin: p.boolean().notNull().default(false),
+
     ...timestamps,
   },
   (table) => [

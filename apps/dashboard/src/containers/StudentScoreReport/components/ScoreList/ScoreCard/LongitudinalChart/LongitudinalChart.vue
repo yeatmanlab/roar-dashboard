@@ -67,7 +67,7 @@ const props = defineProps({
   scoreLabel: { type: String, required: true },
 });
 
-const { series, seriesStroke } = useLongitudinalSeries(props);
+const { series, seriesLabel, seriesStroke } = useLongitudinalSeries(props);
 
 // Filter series to only show points up to current assignment
 const filteredSeries = computed(() => {
@@ -96,7 +96,7 @@ const showSupportLevels = computed(() => {
 const chartData = computed(() => ({
   datasets: [
     {
-      label: props.scoreLabel,
+      label: seriesLabel.value,
       data: filteredSeries.value.map((p) => ({ x: p.x, y: p.y })),
       tension: 0.4,
       borderColor: seriesStroke.value,
@@ -137,10 +137,14 @@ const chartOptions = computed(() => ({
         },
         label: (ctx) => {
           const p = series.value[ctx.dataIndex];
-          const lines = [`${props.scoreLabel}: ${p.y}`];
+          const lines = [];
+          if (p.assignmentId === props.currentAssignmentId) lines.push('✦ Current Score Report ✦');
+
+          // Always show all available scores in a consistent order
+          if (p.rawScore != null) lines.push(`Raw Score: ${p.rawScore}`);
           if (p.percentile != null) lines.push(`Percentile: ${p.percentile}`);
           if (p.standardScore != null) lines.push(`Standard Score: ${p.standardScore}`);
-          if (p.assignmentId === props.currentAssignmentId) lines.unshift('✦ Current Score Report ✦');
+
           return lines;
         },
       },
@@ -152,7 +156,7 @@ const chartOptions = computed(() => ({
       grid: { color: 'rgba(0,0,0,0.1)' },
       title: {
         display: true,
-        text: props.scoreLabel,
+        text: seriesLabel.value,
         font: {
           size: 12,
         },
