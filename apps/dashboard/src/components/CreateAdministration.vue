@@ -359,8 +359,10 @@ const rules = {
 const v$ = useVuelidate(rules, state);
 
 const minStartDate = computed(() => {
-  if (props.adminId && existingAdministrationData.value?.dateOpened) {
-    return new Date(existingAdministrationData.value.dateOpened);
+  // When editing, allow selecting any date (no minimum restriction)
+  // When creating new, use today as minimum
+  if (props.adminId) {
+    return null;
   }
   return new Date();
 });

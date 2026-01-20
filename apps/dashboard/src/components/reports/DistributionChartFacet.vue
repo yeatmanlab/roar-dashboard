@@ -224,7 +224,7 @@ const distributionChartFacet = computed(() => {
           labelPadding: 0,
           labelExpr: isGradeFacet.value
             ? "join(['Grade ',if(datum.value == '0', 'K', datum.value ), ], '')"
-            : 'split(test(/^[0-9K] /, datum.value) ? slice(datum.value, 2, datum.value.length) : datum.value, " ")',
+            : 'split(slice(datum.value, 2, datum.value.length), " ")',
           labelLimit: 150,
           labelSeparation: 0, // Set the spacing between lines in pixels
         },

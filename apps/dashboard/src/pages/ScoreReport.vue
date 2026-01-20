@@ -807,9 +807,7 @@ const {
 const schoolsDictWithGrade = computed(() => {
   return (
     districtSchoolsData.value?.reduce((acc, school) => {
-      const grade = getGrade(school.lowGrade ?? 0);
-      // Only prepend grade if it's a valid value (not null, undefined, or empty string)
-      acc[school.id] = grade !== null && grade !== undefined && grade !== '' ? `${grade} ${school.name}` : school.name;
+      acc[school.id] = getGrade(school.lowGrade ?? 0) + ' ' + school.name;
       return acc;
     }, {}) || {}
   );
