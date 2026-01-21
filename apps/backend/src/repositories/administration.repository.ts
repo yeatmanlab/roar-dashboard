@@ -11,8 +11,10 @@ import {
   userGroups,
   orgs,
   classes,
+  groups,
   type Administration,
 } from '../db/schema';
+import { SUPERVISORY_ROLES } from '../constants/role-classifications';
 import { CoreDbClient } from '../db/clients';
 import type * as CoreDbSchema from '../db/schema/core';
 import type {
@@ -93,13 +95,21 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
   /**
    * Build a UNION query of all administration IDs the user can access.
    *
-   * This respects the org hierarchy:
+   * This respects the org hierarchy with two access patterns:
+   *
+   * "Look UP" paths (all roles) - see administrations on own entity + parent entities:
    * - Path 1: Direct org membership (user in district/school directly assigned)
    * - Path 2: User in school, admin assigned to parent district
    * - Path 3: User in class, admin assigned to district (via class.districtId)
    * - Path 4: User in class, admin assigned to school (via class.schoolId)
    * - Path 5: Direct class membership
    * - Path 6: Direct group membership
+   *
+   * "Look DOWN" paths (supervisory roles only) - see administrations on child entities:
+   * - Path 7: User in district, admin assigned to child school
+   * - Path 8: User in district, admin assigned to class under district
+   * - Path 9: User in school, admin assigned to class under school
+   * - Path 10: User in group, admin assigned to child group
    */
   private buildAccessibleAdministrationsUnion(userId: string, allowedRoles: UserRole[]) {
     // Path 1: Direct org membership
@@ -147,12 +157,59 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
       .innerJoin(userGroups, eq(userGroups.groupId, administrationGroups.groupId))
       .where(and(eq(userGroups.userId, userId), inArray(userGroups.role, allowedRoles)));
 
-    return viaDirectOrg
+    // Build base union (paths 1-6, all roles)
+    let union = viaDirectOrg
       .union(viaSchoolUnderDistrict)
       .union(viaClassUnderDistrict)
       .union(viaClassUnderSchool)
       .union(viaDirectClass)
       .union(viaDirectGroup);
+
+    // "Look DOWN" paths for supervisory roles only
+    // Compute which allowed roles are also supervisory roles
+    const supervisoryAllowedRoles = allowedRoles.filter((role) => SUPERVISORY_ROLES.includes(role));
+
+    if (supervisoryAllowedRoles.length > 0) {
+      // Path 7: User in district (org), admin assigned to child school
+      const viaDistrictToChildSchool = this.db
+        .select({ administrationId: administrationOrgs.administrationId })
+        .from(administrationOrgs)
+        .innerJoin(orgs, eq(orgs.id, administrationOrgs.orgId))
+        .innerJoin(userOrgs, eq(userOrgs.orgId, orgs.parentOrgId))
+        .where(and(eq(userOrgs.userId, userId), inArray(userOrgs.role, supervisoryAllowedRoles)));
+
+      // Path 8: User in district (org), admin assigned to class under that district
+      const viaDistrictToClass = this.db
+        .select({ administrationId: administrationClasses.administrationId })
+        .from(administrationClasses)
+        .innerJoin(classes, eq(classes.id, administrationClasses.classId))
+        .innerJoin(userOrgs, eq(userOrgs.orgId, classes.districtId))
+        .where(and(eq(userOrgs.userId, userId), inArray(userOrgs.role, supervisoryAllowedRoles)));
+
+      // Path 9: User in school (org), admin assigned to class under that school
+      const viaSchoolToClass = this.db
+        .select({ administrationId: administrationClasses.administrationId })
+        .from(administrationClasses)
+        .innerJoin(classes, eq(classes.id, administrationClasses.classId))
+        .innerJoin(userOrgs, eq(userOrgs.orgId, classes.schoolId))
+        .where(and(eq(userOrgs.userId, userId), inArray(userOrgs.role, supervisoryAllowedRoles)));
+
+      // Path 10: User in group, admin assigned to child group
+      const viaGroupToChildGroup = this.db
+        .select({ administrationId: administrationGroups.administrationId })
+        .from(administrationGroups)
+        .innerJoin(groups, eq(groups.id, administrationGroups.groupId))
+        .innerJoin(userGroups, eq(userGroups.groupId, groups.parentGroupId))
+        .where(and(eq(userGroups.userId, userId), inArray(userGroups.role, supervisoryAllowedRoles)));
+
+      union = union
+        .union(viaDistrictToChildSchool)
+        .union(viaDistrictToClass)
+        .union(viaSchoolToClass)
+        .union(viaGroupToChildGroup);
+    }
+
+    return union;
   }
 
   /**

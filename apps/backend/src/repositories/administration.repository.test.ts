@@ -60,8 +60,8 @@ describe('AdministrationRepository', () => {
   });
 
   describe('listAuthorized', () => {
-    // Create a chainable subquery mock that supports 5 unions + as
-    const createUnionSubquery = () => {
+    // Create a chainable subquery mock that supports many unions + as
+    const createUnionSubquery = (maxDepth = 9) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const createUnionChain = (depth = 0): any => {
         const result = {
@@ -70,7 +70,7 @@ describe('AdministrationRepository', () => {
             administrationId: 'accessible_admins.administrationId',
           }),
         };
-        if (depth < 5) {
+        if (depth < maxDepth) {
           result.union.mockReturnValue(createUnionChain(depth + 1));
         }
         return result;
@@ -83,20 +83,20 @@ describe('AdministrationRepository', () => {
     };
 
     // Create chainable innerJoin mock
-    const createInnerJoinChain = () => {
+    const createInnerJoinChain = (maxUnionDepth = 9) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const chain: any = {
         innerJoin: vi.fn(),
-        where: vi.fn().mockReturnValue(createUnionSubquery()),
+        where: vi.fn().mockReturnValue(createUnionSubquery(maxUnionDepth)),
       };
       chain.innerJoin.mockReturnValue(chain);
       return chain;
     };
 
-    // Setup mock for the UNION subquery building (6 select calls)
-    const setupUnionSubqueryMocks = () => {
+    // Setup mock for the UNION subquery building
+    const setupUnionSubqueryMocks = (maxUnionDepth = 9) => {
       mockSelect.mockImplementation(() => ({
-        from: vi.fn().mockReturnValue(createInnerJoinChain()),
+        from: vi.fn().mockReturnValue(createInnerJoinChain(maxUnionDepth)),
       }));
     };
 
@@ -113,6 +113,7 @@ describe('AdministrationRepository', () => {
 
     it('should execute count and data queries for authorized user', async () => {
       // Setup mocks for the full query flow
+      // Supervisory roles (like administrator) build 10 subqueries (6 base + 4 look-down)
       let selectCallCount = 0;
       const mockCountResult = [{ count: 2 }];
       const mockDataResult = [
@@ -122,12 +123,12 @@ describe('AdministrationRepository', () => {
 
       mockSelect.mockImplementation(() => {
         selectCallCount++;
-        // First 6 calls are for building the UNION subquery
-        if (selectCallCount <= 6) {
+        // First 10 calls are for building the UNION subquery (supervisory role)
+        if (selectCallCount <= 10) {
           return { from: vi.fn().mockReturnValue(createInnerJoinChain()) };
         }
-        // 7th call is for count query
-        if (selectCallCount === 7) {
+        // 11th call is for count query
+        if (selectCallCount === 11) {
           return {
             from: vi.fn().mockReturnValue({
               innerJoin: vi.fn().mockReturnValue({
@@ -165,11 +166,12 @@ describe('AdministrationRepository', () => {
     });
 
     it('should return empty items when count is 0', async () => {
+      // Supervisory roles build 10 subqueries
       let selectCallCount = 0;
 
       mockSelect.mockImplementation(() => {
         selectCallCount++;
-        if (selectCallCount <= 6) {
+        if (selectCallCount <= 10) {
           return { from: vi.fn().mockReturnValue(createInnerJoinChain()) };
         }
         // Count query returns 0
@@ -194,12 +196,13 @@ describe('AdministrationRepository', () => {
     });
 
     it('should apply pagination offset correctly', async () => {
+      // Supervisory roles build 10 subqueries
       let selectCallCount = 0;
       const mockOffsetFn = vi.fn().mockResolvedValue([]);
 
       mockSelect.mockImplementation(() => {
         selectCallCount++;
-        if (selectCallCount <= 6) {
+        if (selectCallCount <= 10) {
           return { from: vi.fn().mockReturnValue(createInnerJoinChain()) };
         }
         return {
@@ -235,14 +238,45 @@ describe('AdministrationRepository', () => {
       expect(mockOffsetFn).toHaveBeenCalledWith(20);
     });
 
-    it('should build 6 access path subqueries for UNION', async () => {
+    it('should build 6 access path subqueries for non-supervisory roles (student)', async () => {
+      setupUnionSubqueryMocks(5);
+
+      // Setup count to return 0 so we don't need to mock data query
+      let selectCallCount = 0;
+      mockSelect.mockImplementation(() => {
+        selectCallCount++;
+        // Student role only builds 6 subqueries (no look-down paths)
+        if (selectCallCount <= 6) {
+          return { from: vi.fn().mockReturnValue(createInnerJoinChain(5)) };
+        }
+        return {
+          from: vi.fn().mockReturnValue({
+            innerJoin: vi.fn().mockReturnValue({
+              where: vi.fn().mockResolvedValue([{ count: 0 }]),
+            }),
+          }),
+        };
+      });
+
+      const repository = new AdministrationRepository(mockDb);
+      await repository.listAuthorized(
+        { userId: 'user-123', allowedRoles: ['student' as UserRole] },
+        { page: 1, perPage: 10 },
+      );
+
+      // 6 subquery selects + 1 count select = 7 total (no look-down paths for student)
+      expect(mockSelect).toHaveBeenCalledTimes(7);
+    });
+
+    it('should build 10 access path subqueries for supervisory roles (administrator)', async () => {
       setupUnionSubqueryMocks();
 
       // Setup count to return 0 so we don't need to mock data query
       let selectCallCount = 0;
       mockSelect.mockImplementation(() => {
         selectCallCount++;
-        if (selectCallCount <= 6) {
+        // Supervisory roles build 10 subqueries (6 base + 4 look-down)
+        if (selectCallCount <= 10) {
           return { from: vi.fn().mockReturnValue(createInnerJoinChain()) };
         }
         return {
@@ -260,17 +294,74 @@ describe('AdministrationRepository', () => {
         { page: 1, perPage: 10 },
       );
 
-      // 6 subquery selects + 1 count select = 7 total
+      // 10 subquery selects + 1 count select = 11 total (includes look-down paths)
+      expect(mockSelect).toHaveBeenCalledTimes(11);
+    });
+
+    it('should build 10 access path subqueries for teacher role', async () => {
+      setupUnionSubqueryMocks();
+
+      let selectCallCount = 0;
+      mockSelect.mockImplementation(() => {
+        selectCallCount++;
+        if (selectCallCount <= 10) {
+          return { from: vi.fn().mockReturnValue(createInnerJoinChain()) };
+        }
+        return {
+          from: vi.fn().mockReturnValue({
+            innerJoin: vi.fn().mockReturnValue({
+              where: vi.fn().mockResolvedValue([{ count: 0 }]),
+            }),
+          }),
+        };
+      });
+
+      const repository = new AdministrationRepository(mockDb);
+      await repository.listAuthorized(
+        { userId: 'user-123', allowedRoles: ['teacher' as UserRole] },
+        { page: 1, perPage: 10 },
+      );
+
+      // 10 subquery selects + 1 count select = 11 total (teacher is supervisory)
+      expect(mockSelect).toHaveBeenCalledTimes(11);
+    });
+
+    it('should build 6 access path subqueries for guardian role', async () => {
+      setupUnionSubqueryMocks(5);
+
+      let selectCallCount = 0;
+      mockSelect.mockImplementation(() => {
+        selectCallCount++;
+        if (selectCallCount <= 6) {
+          return { from: vi.fn().mockReturnValue(createInnerJoinChain(5)) };
+        }
+        return {
+          from: vi.fn().mockReturnValue({
+            innerJoin: vi.fn().mockReturnValue({
+              where: vi.fn().mockResolvedValue([{ count: 0 }]),
+            }),
+          }),
+        };
+      });
+
+      const repository = new AdministrationRepository(mockDb);
+      await repository.listAuthorized(
+        { userId: 'user-123', allowedRoles: ['guardian' as UserRole] },
+        { page: 1, perPage: 10 },
+      );
+
+      // 6 subquery selects + 1 count select = 7 total (guardian is not supervisory)
       expect(mockSelect).toHaveBeenCalledTimes(7);
     });
 
     it('should propagate database errors', async () => {
       const dbError = new Error('Connection refused');
 
+      // Supervisory roles build 10 subqueries
       let selectCallCount = 0;
       mockSelect.mockImplementation(() => {
         selectCallCount++;
-        if (selectCallCount <= 6) {
+        if (selectCallCount <= 10) {
           return { from: vi.fn().mockReturnValue(createInnerJoinChain()) };
         }
         return {
@@ -290,6 +381,34 @@ describe('AdministrationRepository', () => {
           { page: 1, perPage: 10 },
         ),
       ).rejects.toThrow('Connection refused');
+    });
+
+    it('should build 10 subqueries when mixed roles include at least one supervisory role', async () => {
+      setupUnionSubqueryMocks();
+
+      let selectCallCount = 0;
+      mockSelect.mockImplementation(() => {
+        selectCallCount++;
+        if (selectCallCount <= 10) {
+          return { from: vi.fn().mockReturnValue(createInnerJoinChain()) };
+        }
+        return {
+          from: vi.fn().mockReturnValue({
+            innerJoin: vi.fn().mockReturnValue({
+              where: vi.fn().mockResolvedValue([{ count: 0 }]),
+            }),
+          }),
+        };
+      });
+
+      const repository = new AdministrationRepository(mockDb);
+      await repository.listAuthorized(
+        { userId: 'user-123', allowedRoles: ['student' as UserRole, 'teacher' as UserRole] },
+        { page: 1, perPage: 10 },
+      );
+
+      // When roles include a supervisory role (teacher), all 10 paths are built
+      expect(mockSelect).toHaveBeenCalledTimes(11);
     });
   });
 });
