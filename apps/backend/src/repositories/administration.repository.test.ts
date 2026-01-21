@@ -411,4 +411,174 @@ describe('AdministrationRepository', () => {
       expect(mockSelect).toHaveBeenCalledTimes(11);
     });
   });
+
+  describe('getAssignedUserCountsByAdministrationIds', () => {
+    const mockGroupBy = vi.fn();
+
+    // Setup mock for aggregation query: db.select().from(assignments).groupBy()
+    const setupAggregationMock = (resolvedValue: { administrationId: string; assignedCount: number }[]) => {
+      mockGroupBy.mockResolvedValue(resolvedValue);
+
+      // Override mockSelect to handle both subquery selects and aggregation select
+      let selectCallCount = 0;
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const createUnionAllChain = (depth = 0): any => {
+        const result = {
+          unionAll: vi.fn(),
+          as: vi.fn().mockReturnValue({
+            administrationId: 'assignments.administrationId',
+            userId: 'assignments.userId',
+          }),
+        };
+        if (depth < 5) {
+          result.unionAll.mockReturnValue(createUnionAllChain(depth + 1));
+        }
+        return result;
+      };
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const createInnerJoinChain = (): any => {
+        const chain = {
+          innerJoin: vi.fn(),
+          where: vi.fn().mockReturnValue(createUnionAllChain(0)),
+        };
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (chain.innerJoin as any).mockReturnValue(chain);
+        return chain;
+      };
+
+      mockSelect.mockImplementation(() => {
+        selectCallCount++;
+        // First 6 calls are for building the UNION ALL subquery
+        if (selectCallCount <= 6) {
+          return {
+            from: vi.fn().mockReturnValue(createInnerJoinChain()),
+          };
+        }
+        // 7th call is for aggregation select
+        return {
+          from: vi.fn().mockReturnValue({
+            groupBy: mockGroupBy,
+          }),
+        };
+      });
+    };
+
+    it('should return empty map when given empty array', async () => {
+      const repository = new AdministrationRepository(mockDb);
+      const result = await repository.getAssignedUserCountsByAdministrationIds([]);
+
+      expect(result).toEqual(new Map());
+      expect(mockSelect).not.toHaveBeenCalled();
+    });
+
+    it('should return counts map for single administration', async () => {
+      setupAggregationMock([{ administrationId: 'admin-1', assignedCount: 25 }]);
+
+      const repository = new AdministrationRepository(mockDb);
+      const result = await repository.getAssignedUserCountsByAdministrationIds(['admin-1']);
+
+      expect(result.get('admin-1')).toBe(25);
+      expect(result.size).toBe(1);
+    });
+
+    it('should return counts map for multiple administrations', async () => {
+      setupAggregationMock([
+        { administrationId: 'admin-1', assignedCount: 25 },
+        { administrationId: 'admin-2', assignedCount: 50 },
+        { administrationId: 'admin-3', assignedCount: 10 },
+      ]);
+
+      const repository = new AdministrationRepository(mockDb);
+      const result = await repository.getAssignedUserCountsByAdministrationIds(['admin-1', 'admin-2', 'admin-3']);
+
+      expect(result.size).toBe(3);
+      expect(result.get('admin-1')).toBe(25);
+      expect(result.get('admin-2')).toBe(50);
+      expect(result.get('admin-3')).toBe(10);
+    });
+
+    it('should not include administrations with no assigned users', async () => {
+      setupAggregationMock([{ administrationId: 'admin-1', assignedCount: 15 }]);
+
+      const repository = new AdministrationRepository(mockDb);
+      const result = await repository.getAssignedUserCountsByAdministrationIds(['admin-1', 'admin-2']);
+
+      expect(result.size).toBe(1);
+      expect(result.has('admin-1')).toBe(true);
+      expect(result.has('admin-2')).toBe(false);
+    });
+
+    it('should return empty map when no administrations have assigned users', async () => {
+      setupAggregationMock([]);
+
+      const repository = new AdministrationRepository(mockDb);
+      const result = await repository.getAssignedUserCountsByAdministrationIds(['admin-1']);
+
+      expect(result.size).toBe(0);
+    });
+
+    it('should propagate database errors', async () => {
+      const dbError = new Error('Connection refused');
+
+      let selectCallCount = 0;
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const createUnionAllChain = (depth = 0): any => {
+        const result = {
+          unionAll: vi.fn(),
+          as: vi.fn().mockReturnValue({
+            administrationId: 'assignments.administrationId',
+            userId: 'assignments.userId',
+          }),
+        };
+        if (depth < 5) {
+          result.unionAll.mockReturnValue(createUnionAllChain(depth + 1));
+        }
+        return result;
+      };
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const createInnerJoinChain = (): any => {
+        const chain = {
+          innerJoin: vi.fn(),
+          where: vi.fn().mockReturnValue(createUnionAllChain(0)),
+        };
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (chain.innerJoin as any).mockReturnValue(chain);
+        return chain;
+      };
+
+      mockSelect.mockImplementation(() => {
+        selectCallCount++;
+        if (selectCallCount <= 6) {
+          return {
+            from: vi.fn().mockReturnValue(createInnerJoinChain()),
+          };
+        }
+        return {
+          from: vi.fn().mockReturnValue({
+            groupBy: vi.fn().mockRejectedValue(dbError),
+          }),
+        };
+      });
+
+      const repository = new AdministrationRepository(mockDb);
+
+      await expect(repository.getAssignedUserCountsByAdministrationIds(['admin-1'])).rejects.toThrow(
+        'Connection refused',
+      );
+    });
+
+    it('should build queries for all six access paths (org hierarchy + direct memberships)', async () => {
+      setupAggregationMock([{ administrationId: 'admin-1', assignedCount: 10 }]);
+
+      const repository = new AdministrationRepository(mockDb);
+      await repository.getAssignedUserCountsByAdministrationIds(['admin-1']);
+
+      // 6 subquery selects + 1 aggregation select = 7 total
+      expect(mockSelect).toHaveBeenCalledTimes(7);
+    });
+  });
 });

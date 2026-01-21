@@ -22,7 +22,6 @@ import {
   AdministrationTaskVariantRepository,
   type AdministrationTask,
 } from '../../repositories/administration-task-variant.repository';
-import { AuthorizationRepository } from '../../repositories/authorization.repository';
 import { RunsRepository } from '../../repositories/runs.repository';
 
 /**
@@ -76,12 +75,10 @@ export interface ListOptions extends AdministrationQueryOptions {
 export function AdministrationService({
   administrationRepository = new AdministrationRepository(),
   administrationTaskVariantRepository = new AdministrationTaskVariantRepository(),
-  authorizationRepository = new AuthorizationRepository(),
   runsRepository = new RunsRepository(),
 }: {
   administrationRepository?: AdministrationRepository;
   administrationTaskVariantRepository?: AdministrationTaskVariantRepository;
-  authorizationRepository?: AuthorizationRepository;
   runsRepository?: RunsRepository;
 } = {}) {
   /**
@@ -164,7 +161,7 @@ export function AdministrationService({
       // Fetch stats from both databases in parallel with graceful error handling.
       // If either query fails, we log the error and omit stats entirely (all-or-nothing).
       const [assignedResult, runsResult] = await Promise.allSettled([
-        authorizationRepository.getAssignedUserCountsByAdministrationIds(administrationIds),
+        administrationRepository.getAssignedUserCountsByAdministrationIds(administrationIds),
         runsRepository.getRunStatsByAdministrationIds(administrationIds),
       ]);
 
