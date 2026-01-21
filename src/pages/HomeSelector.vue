@@ -1,20 +1,9 @@
 <template>
-  <div v-if="isLoading">
-    <div class="text-center col-full">
-      <LevanteSpinner fullscreen />
-    </div>
-  </div>
+  <LevanteSpinner v-if="isLoading" fullscreen />
 
-  <div v-else-if="authStore.shouldUsePermissions">
-    <HomeAdministrator v-if="hasRole(ROLES.RESEARCH_ASSISTANT)" />
-    <HomeParticipant v-else/>
-  </div>
+  <HomeAdministrator v-else-if="shouldRenderAdminPage" />
 
-  <div v-else>
-    <HomeParticipant v-if="isParticipant" />
-    <HomeAdministrator v-else-if="isAdminUser" />
-  </div>
-
+  <HomeParticipant v-else />
 
   <ConsentModal
     v-if="!isLoading && showConsent && isAdminUser"
@@ -33,8 +22,6 @@ import _isEmpty from 'lodash/isEmpty';
 import { useAuthStore } from '@/store/auth';
 import { useAssignmentsStore } from '@/store/assignments';
 import useUserType from '@/composables/useUserType';
-import useUserDataQuery from '@/composables/queries/useUserDataQuery';
-import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useUpdateConsentMutation from '@/composables/mutations/useUpdateConsentMutation';
 import { CONSENT_TYPES } from '@/constants/consentTypes';
 import { APP_ROUTES } from '@/constants/routes';
@@ -47,7 +34,7 @@ const HomeAdministrator = defineAsyncComponent(() => import('@/pages/HomeAdminis
 const ConsentModal = defineAsyncComponent(() => import('@/components/ConsentModal.vue'));
 
 const authStore = useAuthStore();
-const { roarfirekit, ssoProvider } = storeToRefs(authStore);
+const { roarfirekit, ssoProvider, userClaims, userData } = storeToRefs(authStore);
 const { hasRole } = usePermissions();
 
 const router = useRouter();
@@ -74,22 +61,19 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.roarfirekit?.restConfig) init();
 });
 
-const { isLoading: isLoadingUserData, data: userData } = useUserDataQuery(null, {
-  enabled: initialized,
+const shouldRenderAdminPage = computed(() => {
+  const adminRoles = [ROLES.ADMIN, ROLES.RESEARCH_ASSISTANT, ROLES.SITE_ADMIN, ROLES.SUPER_ADMIN];
+  return adminRoles.some((role) => hasRole(role));
 });
 
-const { isLoading: isLoadingClaims, data: userClaims } = useUserClaimsQuery({
-  enabled: initialized,
-});
-
-const { isAdmin, isSuperAdmin, isParticipant } = useUserType(userClaims);
+const { isAdmin, isSuperAdmin } = useUserType(userClaims);
 
 const isAdminUser = computed(() => isAdmin.value || isSuperAdmin.value);
 const isLoading = computed(() => {
   // @NOTE: In addition to the loading states, we also check if user data and user claims are loaded as due to the
   // current application initialization flow, the userData and userClaims queries initially reset. Once this is improved
   // these additional checks can be removed.
-  return !initialized.value || isLoadingUserData.value || isLoadingClaims.value || !userData.value || !userClaims.value;
+  return !initialized.value || !userData.value || !userClaims.value;
 });
 
 const showConsent = ref(false);
