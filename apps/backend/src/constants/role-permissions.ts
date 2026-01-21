@@ -10,7 +10,7 @@
  */
 
 import { Permissions, type Permission } from './permissions';
-import { USER_ROLE, type UserRole } from '../enums/user-role.enum';
+import { UserRole, type UserRole as UserRoleType } from '../enums/user-role.enum';
 
 /**
  * Permissions granted to each role.
@@ -22,8 +22,8 @@ import { USER_ROLE, type UserRole } from '../enums/user-role.enum';
  * - 'administrations.*' grants all administrations.* permissions
  * - Specific permissions for fine-grained control
  */
-export const RolePermissions: Partial<Record<UserRole, readonly Permission[]>> = {
-  [USER_ROLE.SITE_ADMINISTRATOR]: [
+export const RolePermissions: Partial<Record<UserRoleType, readonly Permission[]>> = {
+  [UserRole.SITE_ADMINISTRATOR]: [
     Permissions.Administrations.ALL,
     Permissions.Organizations.ALL,
     Permissions.Users.ALL,
@@ -36,7 +36,7 @@ export const RolePermissions: Partial<Record<UserRole, readonly Permission[]>> =
     Permissions.Profile.ALL,
     Permissions.TestData.CREATE,
   ],
-  [USER_ROLE.ADMINISTRATOR]: [
+  [UserRole.ADMINISTRATOR]: [
     Permissions.Administrations.ALL,
     Permissions.Organizations.ALL,
     Permissions.Users.ALL,
@@ -47,7 +47,7 @@ export const RolePermissions: Partial<Record<UserRole, readonly Permission[]>> =
     Permissions.Tasks.ALL,
     Permissions.Profile.ALL,
   ],
-  [USER_ROLE.TEACHER]: [
+  [UserRole.TEACHER]: [
     Permissions.Administrations.LIST,
     Permissions.Organizations.LIST,
     Permissions.Users.LIST,
@@ -58,17 +58,17 @@ export const RolePermissions: Partial<Record<UserRole, readonly Permission[]>> =
     Permissions.Tasks.LAUNCH,
     Permissions.Profile.READ,
   ],
-  [USER_ROLE.STUDENT]: [Permissions.Administrations.LIST, Permissions.Tasks.LAUNCH, Permissions.Profile.READ],
+  [UserRole.STUDENT]: [Permissions.Administrations.LIST, Permissions.Tasks.LAUNCH, Permissions.Profile.READ],
 };
 
 /**
  * Get all roles that have the given permission.
  * Handles wildcard matching (e.g., 'administrations.*' covers 'administrations.list').
  */
-export function rolesForPermission(permission: Permission): UserRole[] {
-  const roles: UserRole[] = [];
+export function rolesForPermission(permission: Permission): UserRoleType[] {
+  const roles: UserRoleType[] = [];
 
-  for (const [role, permissions] of Object.entries(RolePermissions) as [UserRole, readonly Permission[]][]) {
+  for (const [role, permissions] of Object.entries(RolePermissions) as [UserRoleType, readonly Permission[]][]) {
     for (const p of permissions) {
       // Exact match
       if (p === permission) {

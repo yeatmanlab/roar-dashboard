@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { rolesForPermission, RolePermissions } from './role-permissions';
 import { Permissions } from './permissions';
-import { USER_ROLE } from '../enums/user-role.enum';
+import { UserRole } from '../enums/user-role.enum';
 
 describe('role-permissions', () => {
   describe('rolesForPermission', () => {
@@ -10,10 +10,10 @@ describe('role-permissions', () => {
 
       // site_administrator and administrator have administrations.*
       // teacher and student have administrations.list directly
-      expect(roles).toContain(USER_ROLE.SITE_ADMINISTRATOR);
-      expect(roles).toContain(USER_ROLE.ADMINISTRATOR);
-      expect(roles).toContain(USER_ROLE.TEACHER);
-      expect(roles).toContain(USER_ROLE.STUDENT);
+      expect(roles).toContain(UserRole.SITE_ADMINISTRATOR);
+      expect(roles).toContain(UserRole.ADMINISTRATOR);
+      expect(roles).toContain(UserRole.TEACHER);
+      expect(roles).toContain(UserRole.STUDENT);
       expect(roles).toHaveLength(4);
     });
 
@@ -21,10 +21,10 @@ describe('role-permissions', () => {
       const roles = rolesForPermission(Permissions.Administrations.CREATE);
 
       // Only site_administrator and administrator have administrations.* (covers .create)
-      expect(roles).toContain(USER_ROLE.SITE_ADMINISTRATOR);
-      expect(roles).toContain(USER_ROLE.ADMINISTRATOR);
-      expect(roles).not.toContain(USER_ROLE.TEACHER);
-      expect(roles).not.toContain(USER_ROLE.STUDENT);
+      expect(roles).toContain(UserRole.SITE_ADMINISTRATOR);
+      expect(roles).toContain(UserRole.ADMINISTRATOR);
+      expect(roles).not.toContain(UserRole.TEACHER);
+      expect(roles).not.toContain(UserRole.STUDENT);
       expect(roles).toHaveLength(2);
     });
 
@@ -33,10 +33,10 @@ describe('role-permissions', () => {
 
       // site_administrator, administrator have reports.score.*
       // teacher has reports.score.read directly
-      expect(roles).toContain(USER_ROLE.SITE_ADMINISTRATOR);
-      expect(roles).toContain(USER_ROLE.ADMINISTRATOR);
-      expect(roles).toContain(USER_ROLE.TEACHER);
-      expect(roles).not.toContain(USER_ROLE.STUDENT);
+      expect(roles).toContain(UserRole.SITE_ADMINISTRATOR);
+      expect(roles).toContain(UserRole.ADMINISTRATOR);
+      expect(roles).toContain(UserRole.TEACHER);
+      expect(roles).not.toContain(UserRole.STUDENT);
     });
 
     it('should return empty array for unknown permission', () => {
@@ -48,7 +48,7 @@ describe('role-permissions', () => {
     it('should return only site_administrator for testdata.create', () => {
       const roles = rolesForPermission(Permissions.TestData.CREATE);
 
-      expect(roles).toContain(USER_ROLE.SITE_ADMINISTRATOR);
+      expect(roles).toContain(UserRole.SITE_ADMINISTRATOR);
       expect(roles).toHaveLength(1);
     });
 
@@ -58,33 +58,33 @@ describe('role-permissions', () => {
       // site_administrator and administrator have tasks.*
       // teacher has tasks.launch directly
       // student has tasks.launch directly
-      expect(roles).toContain(USER_ROLE.SITE_ADMINISTRATOR);
-      expect(roles).toContain(USER_ROLE.ADMINISTRATOR);
-      expect(roles).toContain(USER_ROLE.TEACHER);
-      expect(roles).toContain(USER_ROLE.STUDENT);
+      expect(roles).toContain(UserRole.SITE_ADMINISTRATOR);
+      expect(roles).toContain(UserRole.ADMINISTRATOR);
+      expect(roles).toContain(UserRole.TEACHER);
+      expect(roles).toContain(UserRole.STUDENT);
     });
   });
 
   describe('RolePermissions', () => {
     it('should define permissions for site_administrator', () => {
-      expect(RolePermissions[USER_ROLE.SITE_ADMINISTRATOR]).toBeDefined();
-      expect(RolePermissions[USER_ROLE.SITE_ADMINISTRATOR]).toContain(Permissions.Administrations.ALL);
+      expect(RolePermissions[UserRole.SITE_ADMINISTRATOR]).toBeDefined();
+      expect(RolePermissions[UserRole.SITE_ADMINISTRATOR]).toContain(Permissions.Administrations.ALL);
     });
 
     it('should define permissions for administrator', () => {
-      expect(RolePermissions[USER_ROLE.ADMINISTRATOR]).toBeDefined();
-      expect(RolePermissions[USER_ROLE.ADMINISTRATOR]).toContain(Permissions.Administrations.ALL);
+      expect(RolePermissions[UserRole.ADMINISTRATOR]).toBeDefined();
+      expect(RolePermissions[UserRole.ADMINISTRATOR]).toContain(Permissions.Administrations.ALL);
     });
 
     it('should define permissions for teacher', () => {
-      expect(RolePermissions[USER_ROLE.TEACHER]).toBeDefined();
-      expect(RolePermissions[USER_ROLE.TEACHER]).toContain(Permissions.Administrations.LIST);
+      expect(RolePermissions[UserRole.TEACHER]).toBeDefined();
+      expect(RolePermissions[UserRole.TEACHER]).toContain(Permissions.Administrations.LIST);
     });
 
     it('should define permissions for student', () => {
-      expect(RolePermissions[USER_ROLE.STUDENT]).toBeDefined();
-      expect(RolePermissions[USER_ROLE.STUDENT]).toContain(Permissions.Administrations.LIST);
-      expect(RolePermissions[USER_ROLE.STUDENT]).toContain(Permissions.Tasks.LAUNCH);
+      expect(RolePermissions[UserRole.STUDENT]).toBeDefined();
+      expect(RolePermissions[UserRole.STUDENT]).toContain(Permissions.Administrations.LIST);
+      expect(RolePermissions[UserRole.STUDENT]).toContain(Permissions.Tasks.LAUNCH);
     });
   });
 });
