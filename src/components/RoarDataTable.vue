@@ -27,12 +27,14 @@
           <PvMultiSelect
             id="ms-columns"
             v-tooltip.top="getTooltip('Show and hide columns')"
-            :model-value="selectedColumns"
-            :options="inputColumns"
             option-label="header"
-            :max-selected-labels="3"
             class="w-2 w-10rem"
             selected-items-label="{0} columns selected"
+            filter
+            filter-placeholder="Search..."
+            :model-value="selectedColumns"
+            :options="inputColumns"
+            :max-selected-labels="3"
             @update:model-value="onColumnToggle"
           />
           <label for="ms-columns" class="view-label2">Select Columns</label>
@@ -476,9 +478,7 @@ Array of objects consisting of a field and header at minimum.
       scrolled left-to-right. It is suggested that this only be used on
       the leftmost column.
 */
-const shouldRenderToolbar = computed(
-  () => props.allowFiltering || props.allowColumnSelection || props.allowExport,
-);
+const shouldRenderToolbar = computed(() => props.allowFiltering || props.allowColumnSelection || props.allowExport);
 
 const showControls = ref(!props.showOptionsControl && shouldRenderToolbar.value);
 const toggleControls = () => {
@@ -659,13 +659,13 @@ function getRole(roles) {
 function getRoleTagSeverity(roles) {
   switch (getRole(roles)) {
     case ROLES.SUPER_ADMIN:
-        return 'danger';
+      return 'danger';
     case ROLES.SITE_ADMIN:
-        return 'info';
+      return 'info';
     case ROLES.ADMIN:
-        return 'success';
+      return 'success';
     case ROLES.RESEARCH_ASSISTANT:
-        return 'warn';
+      return 'warn';
     default:
       return null;
   }
@@ -674,11 +674,11 @@ function getRoleTagSeverity(roles) {
 function getRoleTagLabel(roles) {
   switch (getRole(roles)) {
     case ROLES.SUPER_ADMIN:
-        return 'Super Admin';
+      return 'Super Admin';
     case ROLES.SITE_ADMIN:
-        return 'Site Admin';
+      return 'Site Admin';
     case ROLES.ADMIN:
-        return 'Admin';
+      return 'Admin';
     case ROLES.RESEARCH_ASSISTANT:
       return 'Research Assistant';
     default:
