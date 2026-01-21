@@ -197,104 +197,39 @@ export const fetchAdminsBySite = async (siteId, siteName, db = FIRESTORE_DATABAS
 
   let requestBody;
 
-  if (siteId.value === 'any') {
-    requestBody = {
-      structuredQuery: {
-        from: [{ collectionId: FIRESTORE_COLLECTIONS.USERS }],
-        where: {
-          fieldFilter: {
-            field: { fieldPath: 'userType' },
-            op: 'EQUAL',
-            value: { stringValue: AUTH_USER_TYPE.ADMIN },
-          },
-        },
+  // NOTE:
+  // Firestore `ARRAY_CONTAINS` on objects requires an exact match of the entire object.
+  // In PROD we have pre-existing admins whose `users.roles[]` entries may not include `siteName` (or may include
+  // a different/empty `siteName`), which makes exact-match queries brittle and can hide admins for a selected site.
+  //
+  // To keep this robust across old/new role shapes, we fetch all admin users and filter by `roles` client-side
+  // using only `siteId` + `role` (ignoring `siteName`).
+  requestBody = {
+    structuredQuery: {
+      from: [{ collectionId: FIRESTORE_COLLECTIONS.USERS }],
+      select: {
+        fields: [
+          { fieldPath: 'email' },
+          { fieldPath: 'name' },
+          { fieldPath: 'roles' },
+          { fieldPath: 'adminOrgs' },
+          { fieldPath: 'createdAt' },
+        ],
       },
-    };
-  } else {
-    const filters = [
-      {
+      where: {
         fieldFilter: {
-          field: { fieldPath: 'roles' },
-          op: 'ARRAY_CONTAINS',
-          value: {
-            mapValue: {
-              fields: {
-                siteId: { stringValue: 'any' },
-                role: { stringValue: ROLES.SUPER_ADMIN },
-              },
-            },
-          },
+          field: { fieldPath: 'userType' },
+          op: 'EQUAL',
+          value: { stringValue: AUTH_USER_TYPE.ADMIN },
         },
       },
-    ];
-
-    if (siteName) {
-      filters.push(
-        {
-          fieldFilter: {
-            field: { fieldPath: 'roles' },
-            op: 'ARRAY_CONTAINS',
-            value: {
-              mapValue: {
-                fields: {
-                  siteId: { stringValue: siteId.value },
-                  siteName: { stringValue: siteName.value },
-                  role: { stringValue: ROLES.ADMIN },
-                },
-              },
-            },
-          },
-        },
-        {
-          fieldFilter: {
-            field: { fieldPath: 'roles' },
-            op: 'ARRAY_CONTAINS',
-            value: {
-              mapValue: {
-                fields: {
-                  siteId: { stringValue: siteId.value },
-                  siteName: { stringValue: siteName.value },
-                  role: { stringValue: ROLES.SITE_ADMIN },
-                },
-              },
-            },
-          },
-        },
-        {
-          fieldFilter: {
-            field: { fieldPath: 'roles' },
-            op: 'ARRAY_CONTAINS',
-            value: {
-              mapValue: {
-                fields: {
-                  siteId: { stringValue: siteId.value },
-                  siteName: { stringValue: siteName.value },
-                  role: { stringValue: ROLES.RESEARCH_ASSISTANT },
-                },
-              },
-            },
-          },
-        },
-      );
-    }
-
-    requestBody = {
-      structuredQuery: {
-        from: [{ collectionId: FIRESTORE_COLLECTIONS.USERS }],
-        where: {
-          compositeFilter: {
-            op: 'OR',
-            filters,
-          },
-        },
-      },
-    };
-  }
+    },
+  };
 
   try {
     const response = await axiosInstance.post(`${getBaseDocumentPath()}:runQuery`, requestBody);
 
-    return response.data
+    const admins = response.data
       .filter((user) => user.document)
       .map((user) => {
         const doc = user.document;
@@ -304,6 +239,26 @@ export const fetchAdminsBySite = async (siteId, siteName, db = FIRESTORE_DATABAS
           ..._mapValues(doc.fields, (value) => convertValues(value)),
         };
       });
+
+    if (siteId.value === 'any') {
+      return admins;
+    }
+
+    const selectedSiteId = siteId.value;
+    const allowedSiteRoles = new Set([ROLES.ADMIN, ROLES.SITE_ADMIN, ROLES.RESEARCH_ASSISTANT]);
+
+    return admins.filter((admin) => {
+      const roles = Array.isArray(admin.roles) ? admin.roles : [];
+
+      return roles.some((r) => {
+        const rSiteId = r?.siteId;
+        const rRole = r?.role;
+        if (!rSiteId || !rRole) return false;
+
+        // Site-scoped roles: show admins assigned to the selected site regardless of siteName shape.
+        return rSiteId === selectedSiteId && allowedSiteRoles.has(rRole);
+      });
+    });
   } catch (error) {
     console.error('fetchAdminsBySite: Error fetching admins by siteId:', error);
     logger.error(error, { context: { function: 'fetchAdminsBySite', siteId, siteName } });
