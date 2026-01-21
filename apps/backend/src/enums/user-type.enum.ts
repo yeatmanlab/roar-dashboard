@@ -6,7 +6,6 @@
 import { userTypeEnum } from '../db/schema/enums';
 import { pgEnumToConst } from './utils';
 
-const UserType = pgEnumToConst(userTypeEnum);
+export const UserType = pgEnumToConst(userTypeEnum);
 
 export type UserType = (typeof userTypeEnum.enumValues)[number];
-export default UserType;

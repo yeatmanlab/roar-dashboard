@@ -6,7 +6,6 @@
 import { rosteringEntityStatusEnum } from '../db/schema/enums';
 import { pgEnumToConst } from './utils';
 
-const RosteringEntityStatus = pgEnumToConst(rosteringEntityStatusEnum);
+export const RosteringEntityStatus = pgEnumToConst(rosteringEntityStatusEnum);
 
 export type RosteringEntityStatus = (typeof rosteringEntityStatusEnum.enumValues)[number];
-export default RosteringEntityStatus;

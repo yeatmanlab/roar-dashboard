@@ -6,7 +6,6 @@
 import { taskVariantStatusEnum } from '../db/schema/enums';
 import { pgEnumToConst } from './utils';
 
-const TaskVariantStatus = pgEnumToConst(taskVariantStatusEnum);
+export const TaskVariantStatus = pgEnumToConst(taskVariantStatusEnum);
 
 export type TaskVariantStatus = (typeof taskVariantStatusEnum.enumValues)[number];
-export default TaskVariantStatus;
