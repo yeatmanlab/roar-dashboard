@@ -2,77 +2,131 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AuthorizationRepository } from './authorization.repository';
 
 describe('AuthorizationRepository', () => {
-  const mockFrom = vi.fn();
   const mockSelect = vi.fn();
-  const mockSelectDistinct = vi.fn();
   const mockGroupBy = vi.fn();
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mockDb: any = {
     select: mockSelect,
-    selectDistinct: mockSelectDistinct,
   };
 
   beforeEach(() => {
     vi.clearAllMocks();
 
-    // Create a chainable subquery mock that supports unionAll
+    // Create a chainable subquery mock that supports union (UNION removes duplicates)
     const createSubqueryWithUnion = () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const subquery: any = {
+        union: vi.fn(),
         unionAll: vi.fn(),
         as: vi.fn(),
       };
 
-      // unionAll returns another subquery that also supports unionAll and as
-      subquery.unionAll.mockReturnValue({
-        unionAll: vi.fn().mockReturnValue({
+      // Create a deeply nested mock that supports chaining 6 union calls + as
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const createUnionResult = (depth = 0): any => {
+        const result = {
+          union: vi.fn(),
+          unionAll: vi.fn(),
           as: vi.fn().mockReturnValue({
-            administrationId: 'assignments.administrationId',
+            administrationId: 'accessible.administrationId',
             userId: 'assignments.userId',
           }),
-        }),
-        as: vi.fn().mockReturnValue({
-          administrationId: 'assignments.administrationId',
-          userId: 'assignments.userId',
-        }),
-      });
+        };
+        if (depth < 6) {
+          result.union.mockReturnValue(createUnionResult(depth + 1));
+          result.unionAll.mockReturnValue(createUnionResult(depth + 1));
+        }
+        return result;
+      };
+
+      subquery.union.mockReturnValue(createUnionResult(1));
+      subquery.unionAll.mockReturnValue(createUnionResult(1));
 
       return subquery;
     };
 
-    // Setup select chain for subqueries: db.select().from().innerJoin().where()
+    // Create chainable innerJoin mock that supports arbitrary depth
+    const createInnerJoinChain = () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const chain: any = {
+        innerJoin: vi.fn(),
+        where: vi.fn().mockReturnValue(createSubqueryWithUnion()),
+      };
+      // innerJoin returns another chain that can also innerJoin or where
+      chain.innerJoin.mockReturnValue(chain);
+      return chain;
+    };
+
+    // Setup select chain for subqueries: db.select().from().innerJoin()...
     const createSelectChain = () => ({
-      from: vi.fn().mockReturnValue({
-        innerJoin: vi.fn().mockReturnValue({
-          where: vi.fn().mockReturnValue(createSubqueryWithUnion()),
-        }),
-      }),
+      from: vi.fn().mockReturnValue(createInnerJoinChain()),
     });
 
     mockSelect.mockImplementation(() => createSelectChain());
-
-    // Setup selectDistinct chain: db.selectDistinct().from()
-    mockSelectDistinct.mockReturnValue({
-      from: mockFrom,
-    });
   });
 
   describe('getAccessibleAdministrationIds', () => {
+    // Setup mock for the final select query from the subquery
+    const setupFinalSelectMock = (resolvedValue: { administrationId: string }[]) => {
+      // Override mockSelect to handle all query phases
+      let selectCallCount = 0;
+      mockSelect.mockImplementation(() => {
+        selectCallCount++;
+        // First 6 calls are for the 6 access path subqueries
+        if (selectCallCount <= 6) {
+          // Create chainable innerJoin mock
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const createChain = (): any => {
+            const chain = {
+              innerJoin: vi.fn(),
+              where: vi.fn(),
+            };
+            chain.innerJoin.mockReturnValue(chain);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const subquery: any = {
+              union: vi.fn(),
+              as: vi.fn(),
+            };
+            // Create deep union chain
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const createUnionChain = (depth = 0): any => {
+              const result = {
+                union: vi.fn(),
+                as: vi.fn().mockReturnValue({
+                  administrationId: 'accessible.administrationId',
+                }),
+              };
+              if (depth < 6) result.union.mockReturnValue(createUnionChain(depth + 1));
+              return result;
+            };
+            subquery.union.mockReturnValue(createUnionChain(1));
+            chain.where.mockReturnValue(subquery);
+            return chain;
+          };
+          return { from: vi.fn().mockReturnValue(createChain()) };
+        }
+        // 7th call is for final: db.select().from(accessibleAdmins)
+        return {
+          from: vi.fn().mockResolvedValue(resolvedValue),
+        };
+      });
+    };
+
     it('should return administration IDs accessible via org membership', async () => {
       const expectedIds = ['admin-1', 'admin-2'];
-      mockFrom.mockResolvedValue(expectedIds.map((id) => ({ administrationId: id })));
+      setupFinalSelectMock(expectedIds.map((id) => ({ administrationId: id })));
 
       const repository = new AuthorizationRepository(mockDb);
       const result = await repository.getAccessibleAdministrationIds('user-123');
 
       expect(result).toEqual(expectedIds);
-      expect(mockSelect).toHaveBeenCalledTimes(3); // viaOrgs, viaClasses, viaGroups
-      expect(mockSelectDistinct).toHaveBeenCalled();
+      // 6 subqueries + 1 final select = 7 calls
+      expect(mockSelect).toHaveBeenCalledTimes(7);
     });
 
     it('should return empty array when user has no accessible administrations', async () => {
-      mockFrom.mockResolvedValue([]);
+      setupFinalSelectMock([]);
 
       const repository = new AuthorizationRepository(mockDb);
       const result = await repository.getAccessibleAdministrationIds('user-no-access');
@@ -81,9 +135,9 @@ describe('AuthorizationRepository', () => {
     });
 
     it('should deduplicate administration IDs from multiple sources', async () => {
-      // Simulating UNION ALL + DISTINCT - the DB returns deduplicated results
+      // Simulating UNION - the DB returns deduplicated results
       const deduplicatedIds = ['admin-1', 'admin-2', 'admin-3'];
-      mockFrom.mockResolvedValue(deduplicatedIds.map((id) => ({ administrationId: id })));
+      setupFinalSelectMock(deduplicatedIds.map((id) => ({ administrationId: id })));
 
       const repository = new AuthorizationRepository(mockDb);
       const result = await repository.getAccessibleAdministrationIds('user-multi-membership');
@@ -92,7 +146,7 @@ describe('AuthorizationRepository', () => {
     });
 
     it('should handle single administration access', async () => {
-      mockFrom.mockResolvedValue([{ administrationId: 'single-admin' }]);
+      setupFinalSelectMock([{ administrationId: 'single-admin' }]);
 
       const repository = new AuthorizationRepository(mockDb);
       const result = await repository.getAccessibleAdministrationIds('user-single');
@@ -102,21 +156,45 @@ describe('AuthorizationRepository', () => {
 
     it('should propagate database errors', async () => {
       const dbError = new Error('Connection refused');
-      mockFrom.mockRejectedValue(dbError);
+      // Override to throw on final select
+      let selectCallCount = 0;
+      mockSelect.mockImplementation(() => {
+        selectCallCount++;
+        if (selectCallCount <= 6) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const createChain = (): any => {
+            const chain = { innerJoin: vi.fn(), where: vi.fn() };
+            chain.innerJoin.mockReturnValue(chain);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const subquery: any = { union: vi.fn(), as: vi.fn() };
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const createUnionChain = (d = 0): any => {
+              const r = { union: vi.fn(), as: vi.fn().mockReturnValue({ administrationId: 'x' }) };
+              if (d < 6) r.union.mockReturnValue(createUnionChain(d + 1));
+              return r;
+            };
+            subquery.union.mockReturnValue(createUnionChain(1));
+            chain.where.mockReturnValue(subquery);
+            return chain;
+          };
+          return { from: vi.fn().mockReturnValue(createChain()) };
+        }
+        return { from: vi.fn().mockRejectedValue(dbError) };
+      });
 
       const repository = new AuthorizationRepository(mockDb);
 
       await expect(repository.getAccessibleAdministrationIds('user-123')).rejects.toThrow('Connection refused');
     });
 
-    it('should query all three membership types (orgs, classes, groups)', async () => {
-      mockFrom.mockResolvedValue([]);
+    it('should query all six access paths (org hierarchy + direct memberships)', async () => {
+      setupFinalSelectMock([]);
 
       const repository = new AuthorizationRepository(mockDb);
       await repository.getAccessibleAdministrationIds('user-123');
 
-      // Verify three select queries were built (one for each membership type)
-      expect(mockSelect).toHaveBeenCalledTimes(3);
+      // 6 subqueries for access paths + 1 final select = 7 total
+      expect(mockSelect).toHaveBeenCalledTimes(7);
     });
   });
 
@@ -129,31 +207,33 @@ describe('AuthorizationRepository', () => {
       let selectCallCount = 0;
       mockSelect.mockImplementation(() => {
         selectCallCount++;
-        // First 3 calls are for viaOrgs, viaClasses, viaGroups subqueries
-        if (selectCallCount <= 3) {
+        // First 6 calls are for the 6 access path subqueries
+        if (selectCallCount <= 6) {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const subquery: any = {
-            unionAll: vi.fn(),
-            as: vi.fn(),
+          const createChain = (): any => {
+            const chain = { innerJoin: vi.fn(), where: vi.fn() };
+            chain.innerJoin.mockReturnValue(chain);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const subquery: any = { unionAll: vi.fn(), as: vi.fn() };
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const createUnionAllChain = (depth = 0): any => {
+              const result = {
+                unionAll: vi.fn(),
+                as: vi.fn().mockReturnValue({
+                  administrationId: 'assignments.administrationId',
+                  userId: 'assignments.userId',
+                }),
+              };
+              if (depth < 6) result.unionAll.mockReturnValue(createUnionAllChain(depth + 1));
+              return result;
+            };
+            subquery.unionAll.mockReturnValue(createUnionAllChain(1));
+            chain.where.mockReturnValue(subquery);
+            return chain;
           };
-          subquery.unionAll.mockReturnValue({
-            unionAll: vi.fn().mockReturnValue({
-              as: vi.fn().mockReturnValue({
-                administrationId: 'assignments.administrationId',
-                userId: 'assignments.userId',
-              }),
-            }),
-          });
-
-          return {
-            from: vi.fn().mockReturnValue({
-              innerJoin: vi.fn().mockReturnValue({
-                where: vi.fn().mockReturnValue(subquery),
-              }),
-            }),
-          };
+          return { from: vi.fn().mockReturnValue(createChain()) };
         }
-        // 4th call is for aggregation: db.select({...}).from(assignments).groupBy()
+        // 7th call is for aggregation: db.select({...}).from(assignments).groupBy()
         return {
           from: vi.fn().mockReturnValue({
             groupBy: mockGroupBy,
@@ -224,24 +304,30 @@ describe('AuthorizationRepository', () => {
       let selectCallCount = 0;
       mockSelect.mockImplementation(() => {
         selectCallCount++;
-        if (selectCallCount <= 3) {
+        if (selectCallCount <= 6) {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const subquery: any = { unionAll: vi.fn() };
-          subquery.unionAll.mockReturnValue({
-            unionAll: vi.fn().mockReturnValue({
-              as: vi.fn().mockReturnValue({
-                administrationId: 'assignments.administrationId',
-                userId: 'assignments.userId',
-              }),
-            }),
-          });
-          return {
-            from: vi.fn().mockReturnValue({
-              innerJoin: vi.fn().mockReturnValue({
-                where: vi.fn().mockReturnValue(subquery),
-              }),
-            }),
+          const createChain = (): any => {
+            const chain = { innerJoin: vi.fn(), where: vi.fn() };
+            chain.innerJoin.mockReturnValue(chain);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const subquery: any = { unionAll: vi.fn() };
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const createUnionAllChain = (d = 0): any => {
+              const r = {
+                unionAll: vi.fn(),
+                as: vi.fn().mockReturnValue({
+                  administrationId: 'assignments.administrationId',
+                  userId: 'assignments.userId',
+                }),
+              };
+              if (d < 6) r.unionAll.mockReturnValue(createUnionAllChain(d + 1));
+              return r;
+            };
+            subquery.unionAll.mockReturnValue(createUnionAllChain(1));
+            chain.where.mockReturnValue(subquery);
+            return chain;
           };
+          return { from: vi.fn().mockReturnValue(createChain()) };
         }
         return {
           from: vi.fn().mockReturnValue({
@@ -257,14 +343,14 @@ describe('AuthorizationRepository', () => {
       );
     });
 
-    it('should build queries for all three membership types (orgs, classes, groups)', async () => {
+    it('should build queries for all six access paths (org hierarchy + direct memberships)', async () => {
       setupAggregationMock([{ administrationId: 'admin-1', assignedCount: 10 }]);
 
       const repository = new AuthorizationRepository(mockDb);
       await repository.getAssignedUserCountsByAdministrationIds(['admin-1']);
 
-      // 3 subquery selects + 1 aggregation select = 4 total
-      expect(mockSelect).toHaveBeenCalledTimes(4);
+      // 6 subquery selects + 1 aggregation select = 7 total
+      expect(mockSelect).toHaveBeenCalledTimes(7);
     });
   });
 });

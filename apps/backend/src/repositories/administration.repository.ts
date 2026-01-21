@@ -1,4 +1,4 @@
-import { and, eq, or, inArray, countDistinct, asc, desc } from 'drizzle-orm';
+import { and, eq, inArray, countDistinct, asc, desc } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import {
   administrations,
@@ -8,6 +8,8 @@ import {
   userOrgs,
   userClasses,
   userGroups,
+  orgs,
+  classes,
   type Administration,
 } from '../db/schema';
 import { CoreDbClient } from '../db/clients';
@@ -48,11 +50,77 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
   }
 
   /**
+   * Build a UNION query of all administration IDs the user can access.
+   *
+   * This respects the org hierarchy:
+   * - Path 1: Direct org membership (user in district/school directly assigned)
+   * - Path 2: User in school, admin assigned to parent district
+   * - Path 3: User in class, admin assigned to district (via class.districtId)
+   * - Path 4: User in class, admin assigned to school (via class.schoolId)
+   * - Path 5: Direct class membership
+   * - Path 6: Direct group membership
+   */
+  private buildAccessibleAdministrationsUnion(userId: string, allowedRoles: UserRole[]) {
+    // Path 1: Direct org membership
+    const viaDirectOrg = this.db
+      .select({ administrationId: administrationOrgs.administrationId })
+      .from(administrationOrgs)
+      .innerJoin(userOrgs, eq(userOrgs.orgId, administrationOrgs.orgId))
+      .where(and(eq(userOrgs.userId, userId), inArray(userOrgs.role, allowedRoles)));
+
+    // Path 2: User in school, admin assigned to parent district
+    const viaSchoolUnderDistrict = this.db
+      .select({ administrationId: administrationOrgs.administrationId })
+      .from(administrationOrgs)
+      .innerJoin(orgs, eq(orgs.parentOrgId, administrationOrgs.orgId))
+      .innerJoin(userOrgs, eq(userOrgs.orgId, orgs.id))
+      .where(and(eq(userOrgs.userId, userId), inArray(userOrgs.role, allowedRoles)));
+
+    // Path 3: User in class, admin assigned to district
+    const viaClassUnderDistrict = this.db
+      .select({ administrationId: administrationOrgs.administrationId })
+      .from(administrationOrgs)
+      .innerJoin(classes, eq(classes.districtId, administrationOrgs.orgId))
+      .innerJoin(userClasses, eq(userClasses.classId, classes.id))
+      .where(and(eq(userClasses.userId, userId), inArray(userClasses.role, allowedRoles)));
+
+    // Path 4: User in class, admin assigned to school
+    const viaClassUnderSchool = this.db
+      .select({ administrationId: administrationOrgs.administrationId })
+      .from(administrationOrgs)
+      .innerJoin(classes, eq(classes.schoolId, administrationOrgs.orgId))
+      .innerJoin(userClasses, eq(userClasses.classId, classes.id))
+      .where(and(eq(userClasses.userId, userId), inArray(userClasses.role, allowedRoles)));
+
+    // Path 5: Direct class membership
+    const viaDirectClass = this.db
+      .select({ administrationId: administrationClasses.administrationId })
+      .from(administrationClasses)
+      .innerJoin(userClasses, eq(userClasses.classId, administrationClasses.classId))
+      .where(and(eq(userClasses.userId, userId), inArray(userClasses.role, allowedRoles)));
+
+    // Path 6: Direct group membership
+    const viaDirectGroup = this.db
+      .select({ administrationId: administrationGroups.administrationId })
+      .from(administrationGroups)
+      .innerJoin(userGroups, eq(userGroups.groupId, administrationGroups.groupId))
+      .where(and(eq(userGroups.userId, userId), inArray(userGroups.role, allowedRoles)));
+
+    return viaDirectOrg
+      .union(viaSchoolUnderDistrict)
+      .union(viaClassUnderDistrict)
+      .union(viaClassUnderSchool)
+      .union(viaDirectClass)
+      .union(viaDirectGroup);
+  }
+
+  /**
    * List administrations the user is authorized to access.
    *
-   * Authorization is built into the query via JOINs:
-   * - User must have a role in an org, class, or group linked to the administration
-   * - The role must be in the allowedRoles array
+   * Authorization respects the org hierarchy:
+   * - Administration assigned to a district → applies to all schools and classes in that district
+   * - Administration assigned to a school → applies to all classes in that school
+   * - User must have an allowed role in the org, class, or group
    */
   async listAuthorized(
     authorization: AuthorizationFilter,
@@ -67,47 +135,13 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
     const { page = 1, perPage = 10, orderBy } = options;
     const offset = (page - 1) * perPage;
 
-    // Build the base query with authorization JOINs
-    const baseQuery = this.db
-      .selectDistinct({ administration: administrations })
-      .from(administrations)
-      .leftJoin(administrationOrgs, eq(administrationOrgs.administrationId, administrations.id))
-      .leftJoin(userOrgs, and(eq(userOrgs.orgId, administrationOrgs.orgId), eq(userOrgs.userId, userId)))
-      .leftJoin(administrationClasses, eq(administrationClasses.administrationId, administrations.id))
-      .leftJoin(
-        userClasses,
-        and(eq(userClasses.classId, administrationClasses.classId), eq(userClasses.userId, userId)),
-      )
-      .leftJoin(administrationGroups, eq(administrationGroups.administrationId, administrations.id))
-      .leftJoin(userGroups, and(eq(userGroups.groupId, administrationGroups.groupId), eq(userGroups.userId, userId)))
-      .where(
-        or(
-          inArray(userOrgs.role, allowedRoles),
-          inArray(userClasses.role, allowedRoles),
-          inArray(userGroups.role, allowedRoles),
-        ),
-      );
+    // Build the UNION query for accessible administration IDs
+    const accessibleAdmins = this.buildAccessibleAdministrationsUnion(userId, allowedRoles).as('accessible_admins');
 
     // Count query
     const countResult = await this.db
-      .select({ count: countDistinct(administrations.id) })
-      .from(administrations)
-      .leftJoin(administrationOrgs, eq(administrationOrgs.administrationId, administrations.id))
-      .leftJoin(userOrgs, and(eq(userOrgs.orgId, administrationOrgs.orgId), eq(userOrgs.userId, userId)))
-      .leftJoin(administrationClasses, eq(administrationClasses.administrationId, administrations.id))
-      .leftJoin(
-        userClasses,
-        and(eq(userClasses.classId, administrationClasses.classId), eq(userClasses.userId, userId)),
-      )
-      .leftJoin(administrationGroups, eq(administrationGroups.administrationId, administrations.id))
-      .leftJoin(userGroups, and(eq(userGroups.groupId, administrationGroups.groupId), eq(userGroups.userId, userId)))
-      .where(
-        or(
-          inArray(userOrgs.role, allowedRoles),
-          inArray(userClasses.role, allowedRoles),
-          inArray(userGroups.role, allowedRoles),
-        ),
-      );
+      .select({ count: countDistinct(accessibleAdmins.administrationId) })
+      .from(accessibleAdmins);
 
     const totalItems = countResult[0]?.count ?? 0;
 
@@ -131,8 +165,14 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
     const sortColumn = getSortColumn(orderBy?.field);
     const sortDirection = orderBy?.direction === 'asc' ? asc(sortColumn) : desc(sortColumn);
 
-    // Data query with pagination and sorting
-    const dataResult = await baseQuery.orderBy(sortDirection).limit(perPage).offset(offset);
+    // Data query: join administrations with the accessible IDs subquery
+    const dataResult = await this.db
+      .selectDistinct({ administration: administrations })
+      .from(administrations)
+      .innerJoin(accessibleAdmins, eq(administrations.id, accessibleAdmins.administrationId))
+      .orderBy(sortDirection)
+      .limit(perPage)
+      .offset(offset);
 
     return {
       items: dataResult.map((row) => row.administration),
