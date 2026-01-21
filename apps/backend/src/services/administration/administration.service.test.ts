@@ -20,10 +20,13 @@ describe('AdministrationService', () => {
   const mockGetAssignedUserCountsByAdministrationIds = vi.fn();
   const mockGetRunStatsByAdministrationIds = vi.fn();
 
+  const mockBuildStatusFilter = vi.fn();
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mockAdministrationRepository: any = {
     listAuthorized: mockListAuthorized,
     getAll: mockGetAll,
+    buildStatusFilter: mockBuildStatusFilter,
   };
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

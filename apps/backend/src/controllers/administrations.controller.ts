@@ -52,10 +52,10 @@ function transformAdministration(admin: AdministrationWithEmbeds): ApiAdministra
  */
 export const AdministrationsController = {
   /**
-   * List administrations with pagination, sorting, and optional embeds.
+   * List administrations with pagination, sorting, optional status filter, and embeds.
    */
   list: async (authContext: AuthContext, query: AdministrationsListQuery) => {
-    const { page, perPage, sortBy, sortOrder, embed } = query;
+    const { page, perPage, sortBy, sortOrder, embed, status } = query;
 
     const result = await administrationService.list(authContext, {
       page,
@@ -63,6 +63,7 @@ export const AdministrationsController = {
       sortBy,
       sortOrder,
       embed,
+      ...(status && { status }),
     });
 
     // Transform to API response format

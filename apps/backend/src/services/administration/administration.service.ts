@@ -4,6 +4,7 @@ import {
   type PaginatedResult,
   type AdministrationStats,
   type ADMINISTRATION_EMBED_OPTIONS,
+  type AdministrationStatus,
 } from '@roar-dashboard/api-contract';
 import { StatusCodes } from 'http-status-codes';
 import type { Administration } from '../../db/schema';
@@ -56,10 +57,11 @@ interface AuthContext {
 }
 
 /**
- * Options for listing administrations including embed options.
+ * Options for listing administrations including embed and status filter.
  */
 export interface ListOptions extends AdministrationQueryOptions {
   embed?: AdministrationEmbedOptionType[];
+  status?: AdministrationStatus;
 }
 
 /**
@@ -114,11 +116,18 @@ export function AdministrationService({
 
       // Super admins bypass authorization - get all administrations
       if (isSuperAdmin) {
-        result = await administrationRepository.getAll(queryParams);
+        // Build status filter if provided
+        const statusFilter = administrationRepository.buildStatusFilter(options.status);
+        result = await administrationRepository.getAll(
+          statusFilter ? { ...queryParams, where: statusFilter } : queryParams,
+        );
       } else {
         // Other users see only administrations they're authorized for via role membership
         const allowedRoles = rolesForPermission(Permissions.Administrations.LIST);
-        result = await administrationRepository.listAuthorized({ userId, allowedRoles }, queryParams);
+        result = await administrationRepository.listAuthorized(
+          { userId, allowedRoles },
+          options.status ? { ...queryParams, status: options.status } : queryParams,
+        );
       }
     } catch (error) {
       if (error instanceof ApiError) throw error;

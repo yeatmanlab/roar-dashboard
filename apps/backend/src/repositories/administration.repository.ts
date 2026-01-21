@@ -1,4 +1,5 @@
-import { and, eq, inArray, countDistinct, asc, desc } from 'drizzle-orm';
+import { and, eq, inArray, countDistinct, asc, desc, lte, gte, lt, gt, sql } from 'drizzle-orm';
+import type { SQL } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import {
   administrations,
@@ -14,7 +15,12 @@ import {
 } from '../db/schema';
 import { CoreDbClient } from '../db/clients';
 import type * as CoreDbSchema from '../db/schema/core';
-import type { PaginationQuery, SortQuery, ADMINISTRATION_SORT_FIELDS } from '@roar-dashboard/api-contract';
+import type {
+  PaginationQuery,
+  SortQuery,
+  ADMINISTRATION_SORT_FIELDS,
+  AdministrationStatus,
+} from '@roar-dashboard/api-contract';
 import type { UserRole } from '../enums/user-role.enum';
 import { BaseRepository, type PaginatedResult } from './base.repository';
 import type { BasePaginatedQueryParams } from './interfaces/base.repository.interface';
@@ -39,6 +45,13 @@ export interface AuthorizationFilter {
 }
 
 /**
+ * Options for listing administrations with optional status filter.
+ */
+export interface ListAuthorizedOptions extends BasePaginatedQueryParams {
+  status?: AdministrationStatus;
+}
+
+/**
  * Administration Repository
  *
  * Provides data access methods for the administrations table.
@@ -47,6 +60,34 @@ export interface AuthorizationFilter {
 export class AdministrationRepository extends BaseRepository<Administration, typeof administrations> {
   constructor(db: NodePgDatabase<typeof CoreDbSchema> = CoreDbClient) {
     super(db, administrations);
+  }
+
+  /**
+   * Build a SQL condition to filter administrations by status.
+   *
+   * @param status - The status filter (active, past, upcoming)
+   * @returns SQL condition or undefined if no filter
+   */
+  buildStatusFilter(status?: AdministrationStatus): SQL | undefined {
+    if (!status) {
+      return undefined;
+    }
+
+    const now = sql`NOW()`;
+
+    switch (status) {
+      case 'active':
+        // dateStart <= now AND dateEnd >= now
+        return and(lte(administrations.dateStart, now), gte(administrations.dateEnd, now));
+      case 'past':
+        // dateEnd < now
+        return lt(administrations.dateEnd, now);
+      case 'upcoming':
+        // dateStart > now
+        return gt(administrations.dateStart, now);
+      default:
+        return undefined;
+    }
   }
 
   /**
@@ -121,10 +162,13 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
    * - Administration assigned to a district → applies to all schools and classes in that district
    * - Administration assigned to a school → applies to all classes in that school
    * - User must have an allowed role in the org, class, or group
+   *
+   * @param authorization - User ID and allowed roles
+   * @param options - Pagination, sorting, and optional status filter
    */
   async listAuthorized(
     authorization: AuthorizationFilter,
-    options: BasePaginatedQueryParams,
+    options: ListAuthorizedOptions,
   ): Promise<PaginatedResult<Administration>> {
     const { userId, allowedRoles } = authorization;
 
@@ -132,16 +176,24 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
       return { items: [], totalItems: 0 };
     }
 
-    const { page = 1, perPage = 10, orderBy } = options;
+    const { page = 1, perPage = 10, orderBy, status } = options;
     const offset = (page - 1) * perPage;
 
     // Build the UNION query for accessible administration IDs
     const accessibleAdmins = this.buildAccessibleAdministrationsUnion(userId, allowedRoles).as('accessible_admins');
 
+    // Build status filter if provided
+    const statusFilter = this.buildStatusFilter(status);
+
+    // Build the base join condition
+    const baseCondition = eq(administrations.id, accessibleAdmins.administrationId);
+
     // Count query
     const countResult = await this.db
-      .select({ count: countDistinct(accessibleAdmins.administrationId) })
-      .from(accessibleAdmins);
+      .select({ count: countDistinct(administrations.id) })
+      .from(administrations)
+      .innerJoin(accessibleAdmins, baseCondition)
+      .where(statusFilter);
 
     const totalItems = countResult[0]?.count ?? 0;
 
@@ -165,11 +217,12 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
     const sortColumn = getSortColumn(orderBy?.field);
     const sortDirection = orderBy?.direction === 'asc' ? asc(sortColumn) : desc(sortColumn);
 
-    // Data query: join administrations with the accessible IDs subquery
+    // Data query: join administrations with the accessible IDs subquery + status filter
     const dataResult = await this.db
       .selectDistinct({ administration: administrations })
       .from(administrations)
-      .innerJoin(accessibleAdmins, eq(administrations.id, accessibleAdmins.administrationId))
+      .innerJoin(accessibleAdmins, baseCondition)
+      .where(statusFilter)
       .orderBy(sortDirection)
       .limit(perPage)
       .offset(offset);
