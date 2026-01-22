@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AdministrationRepository } from './administration.repository';
 import { AuthorizationRepository } from './authorization.repository';
+import { AdministrationFactory } from '../test-support/factories/administration.factory';
 import type { UserRole } from '../enums/user-role.enum';
 
 // Mock AuthorizationRepository
@@ -32,46 +33,76 @@ describe('AdministrationRepository', () => {
     );
   });
 
-  describe('buildStatusFilter', () => {
-    it('should return undefined when status is undefined', () => {
+  describe('listAll', () => {
+    it('should delegate to getAll with pagination options', async () => {
+      const mockAdmin = AdministrationFactory.build();
+      const mockResult = { items: [mockAdmin], totalItems: 1 };
       const repository = new AdministrationRepository(mockDb);
-      const result = repository.buildStatusFilter(undefined);
 
-      expect(result).toBeUndefined();
+      // Spy on getAll to verify delegation
+      const getAllSpy = vi.spyOn(repository, 'getAll').mockResolvedValue(mockResult);
+
+      const result = await repository.listAll({ page: 1, perPage: 10 });
+
+      expect(getAllSpy).toHaveBeenCalledWith({
+        page: 1,
+        perPage: 10,
+      });
+      expect(result).toEqual(mockResult);
     });
 
-    it('should return SQL condition for active status', () => {
+    it('should pass status filter to getAll when status is provided', async () => {
+      const mockResult = { items: [], totalItems: 0 };
       const repository = new AdministrationRepository(mockDb);
-      const result = repository.buildStatusFilter('active');
 
-      // The result should be a SQL condition (not undefined)
-      expect(result).toBeDefined();
-      // Drizzle SQL objects have a queryChunks property
-      expect(result).toHaveProperty('queryChunks');
+      const getAllSpy = vi.spyOn(repository, 'getAll').mockResolvedValue(mockResult);
+
+      await repository.listAll({ page: 1, perPage: 10, status: 'active' });
+
+      // When status is provided, getAll should be called with a where clause
+      expect(getAllSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          page: 1,
+          perPage: 10,
+          where: expect.anything(), // SQL condition for status filter
+        }),
+      );
     });
 
-    it('should return SQL condition for past status', () => {
+    it('should not include where clause when status is not provided', async () => {
+      const mockResult = { items: [], totalItems: 0 };
       const repository = new AdministrationRepository(mockDb);
-      const result = repository.buildStatusFilter('past');
 
-      expect(result).toBeDefined();
-      expect(result).toHaveProperty('queryChunks');
+      const getAllSpy = vi.spyOn(repository, 'getAll').mockResolvedValue(mockResult);
+
+      await repository.listAll({ page: 1, perPage: 10 });
+
+      // When no status, getAll should be called without where clause
+      expect(getAllSpy).toHaveBeenCalledWith({
+        page: 1,
+        perPage: 10,
+      });
     });
 
-    it('should return SQL condition for upcoming status', () => {
+    it('should include orderBy when provided', async () => {
+      const mockResult = { items: [], totalItems: 0 };
       const repository = new AdministrationRepository(mockDb);
-      const result = repository.buildStatusFilter('upcoming');
 
-      expect(result).toBeDefined();
-      expect(result).toHaveProperty('queryChunks');
-    });
+      const getAllSpy = vi.spyOn(repository, 'getAll').mockResolvedValue(mockResult);
 
-    it('should return undefined for unknown status value', () => {
-      const repository = new AdministrationRepository(mockDb);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const result = repository.buildStatusFilter('invalid' as any);
+      await repository.listAll({
+        page: 1,
+        perPage: 10,
+        orderBy: { field: 'name', direction: 'asc' },
+      });
 
-      expect(result).toBeUndefined();
+      expect(getAllSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          page: 1,
+          perPage: 10,
+          orderBy: { field: 'name', direction: 'asc' },
+        }),
+      );
     });
   });
 

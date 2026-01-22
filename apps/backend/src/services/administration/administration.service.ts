@@ -111,19 +111,17 @@ export function AdministrationService({
         },
       };
 
-      // Super admins bypass authorization - get all administrations
+      // Fetch administrations based on user role and authorization
       if (isSuperAdmin) {
-        // Build status filter if provided
-        const statusFilter = administrationRepository.buildStatusFilter(options.status);
-        result = await administrationRepository.getAll(
-          statusFilter ? { ...queryParams, where: statusFilter } : queryParams,
-        );
+        result = await administrationRepository.listAll({
+          ...queryParams,
+          ...(options.status && { status: options.status }),
+        });
       } else {
-        // Other users see only administrations they're authorized for via role membership
         const allowedRoles = rolesForPermission(Permissions.Administrations.LIST);
         result = await administrationRepository.listAuthorized(
           { userId, allowedRoles },
-          options.status ? { ...queryParams, status: options.status } : queryParams,
+          { ...queryParams, ...(options.status && { status: options.status }) },
         );
       }
     } catch (error) {

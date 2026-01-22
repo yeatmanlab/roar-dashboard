@@ -20,13 +20,13 @@ describe('AdministrationService', () => {
   const mockGetAssignedUserCountsByAdministrationIds = vi.fn();
   const mockGetRunStatsByAdministrationIds = vi.fn();
 
-  const mockBuildStatusFilter = vi.fn();
+  const mockListAll = vi.fn();
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mockAdministrationRepository: any = {
     listAuthorized: mockListAuthorized,
+    listAll: mockListAll,
     getAll: mockGetAll,
-    buildStatusFilter: mockBuildStatusFilter,
     getAssignedUserCountsByAdministrationIds: mockGetAssignedUserCountsByAdministrationIds,
   };
 
@@ -47,7 +47,7 @@ describe('AdministrationService', () => {
   describe('list', () => {
     it('should return all administrations for super admins (unrestricted)', async () => {
       const mockAdmins = AdministrationFactory.buildList(3);
-      mockGetAll.mockResolvedValue({
+      mockListAll.mockResolvedValue({
         items: mockAdmins,
         totalItems: 3,
       });
@@ -66,7 +66,7 @@ describe('AdministrationService', () => {
         },
       );
 
-      expect(mockGetAll).toHaveBeenCalledWith({
+      expect(mockListAll).toHaveBeenCalledWith({
         page: 1,
         perPage: 25,
         orderBy: { field: 'createdAt', direction: 'desc' },
@@ -187,7 +187,7 @@ describe('AdministrationService', () => {
     describe('embed=stats', () => {
       it('should not fetch stats when embed option is not provided', async () => {
         const mockAdmins = AdministrationFactory.buildList(2);
-        mockGetAll.mockResolvedValue({ items: mockAdmins, totalItems: 2 });
+        mockListAll.mockResolvedValue({ items: mockAdmins, totalItems: 2 });
 
         const service = AdministrationService({
           administrationRepository: mockAdministrationRepository,
@@ -206,7 +206,7 @@ describe('AdministrationService', () => {
 
       it('should not fetch stats when embed is empty array', async () => {
         const mockAdmins = AdministrationFactory.buildList(2);
-        mockGetAll.mockResolvedValue({ items: mockAdmins, totalItems: 2 });
+        mockListAll.mockResolvedValue({ items: mockAdmins, totalItems: 2 });
 
         const service = AdministrationService({
           administrationRepository: mockAdministrationRepository,
@@ -228,7 +228,7 @@ describe('AdministrationService', () => {
           AdministrationFactory.build({ id: 'admin-1' }),
           AdministrationFactory.build({ id: 'admin-2' }),
         ];
-        mockGetAll.mockResolvedValue({ items: mockAdmins, totalItems: 2 });
+        mockListAll.mockResolvedValue({ items: mockAdmins, totalItems: 2 });
 
         const assignedCounts = new Map([
           ['admin-1', 25],
@@ -262,7 +262,7 @@ describe('AdministrationService', () => {
           AdministrationFactory.build({ id: 'admin-1' }),
           AdministrationFactory.build({ id: 'admin-2' }),
         ];
-        mockGetAll.mockResolvedValue({ items: mockAdmins, totalItems: 2 });
+        mockListAll.mockResolvedValue({ items: mockAdmins, totalItems: 2 });
 
         // Only admin-1 has data
         const assignedCounts = new Map([['admin-1', 10]]);
@@ -286,7 +286,7 @@ describe('AdministrationService', () => {
 
       it('should fetch stats in parallel', async () => {
         const mockAdmins = [AdministrationFactory.build({ id: 'admin-1' })];
-        mockGetAll.mockResolvedValue({ items: mockAdmins, totalItems: 1 });
+        mockListAll.mockResolvedValue({ items: mockAdmins, totalItems: 1 });
 
         // Track call order
         const callOrder: string[] = [];
@@ -324,7 +324,7 @@ describe('AdministrationService', () => {
       });
 
       it('should not fetch stats when result is empty', async () => {
-        mockGetAll.mockResolvedValue({ items: [], totalItems: 0 });
+        mockListAll.mockResolvedValue({ items: [], totalItems: 0 });
 
         const service = AdministrationService({
           administrationRepository: mockAdministrationRepository,
@@ -343,7 +343,7 @@ describe('AdministrationService', () => {
 
       it('should return administrations without stats when assigned counts query fails', async () => {
         const mockAdmins = [AdministrationFactory.build({ id: 'admin-1' })];
-        mockGetAll.mockResolvedValue({ items: mockAdmins, totalItems: 1 });
+        mockListAll.mockResolvedValue({ items: mockAdmins, totalItems: 1 });
 
         const dbError = new Error('Database connection failed');
         mockGetAssignedUserCountsByAdministrationIds.mockRejectedValue(dbError);
@@ -371,7 +371,7 @@ describe('AdministrationService', () => {
 
       it('should return administrations without stats when run stats query fails', async () => {
         const mockAdmins = [AdministrationFactory.build({ id: 'admin-1' })];
-        mockGetAll.mockResolvedValue({ items: mockAdmins, totalItems: 1 });
+        mockListAll.mockResolvedValue({ items: mockAdmins, totalItems: 1 });
 
         const dbError = new Error('Assessment DB timeout');
         mockGetAssignedUserCountsByAdministrationIds.mockResolvedValue(new Map([['admin-1', 25]]));
@@ -396,7 +396,7 @@ describe('AdministrationService', () => {
 
       it('should return administrations without stats when both queries fail', async () => {
         const mockAdmins = [AdministrationFactory.build({ id: 'admin-1' })];
-        mockGetAll.mockResolvedValue({ items: mockAdmins, totalItems: 1 });
+        mockListAll.mockResolvedValue({ items: mockAdmins, totalItems: 1 });
 
         const assignedError = new Error('Core DB error');
         const runsError = new Error('Assessment DB error');
@@ -424,7 +424,7 @@ describe('AdministrationService', () => {
     describe('embed=tasks', () => {
       it('should not fetch tasks when embed option is not provided', async () => {
         const mockAdmins = AdministrationFactory.buildList(2);
-        mockGetAll.mockResolvedValue({ items: mockAdmins, totalItems: 2 });
+        mockListAll.mockResolvedValue({ items: mockAdmins, totalItems: 2 });
 
         const service = AdministrationService({
           administrationRepository: mockAdministrationRepository,
@@ -445,7 +445,7 @@ describe('AdministrationService', () => {
           AdministrationFactory.build({ id: 'admin-1' }),
           AdministrationFactory.build({ id: 'admin-2' }),
         ];
-        mockGetAll.mockResolvedValue({ items: mockAdmins, totalItems: 2 });
+        mockListAll.mockResolvedValue({ items: mockAdmins, totalItems: 2 });
 
         const tasksMap = new Map([
           [
@@ -487,7 +487,7 @@ describe('AdministrationService', () => {
           AdministrationFactory.build({ id: 'admin-1' }),
           AdministrationFactory.build({ id: 'admin-2' }),
         ];
-        mockGetAll.mockResolvedValue({ items: mockAdmins, totalItems: 2 });
+        mockListAll.mockResolvedValue({ items: mockAdmins, totalItems: 2 });
 
         // Only admin-1 has tasks
         const tasksMap = new Map([
@@ -514,7 +514,7 @@ describe('AdministrationService', () => {
 
       it('should return administrations without tasks when query fails', async () => {
         const mockAdmins = [AdministrationFactory.build({ id: 'admin-1' })];
-        mockGetAll.mockResolvedValue({ items: mockAdmins, totalItems: 1 });
+        mockListAll.mockResolvedValue({ items: mockAdmins, totalItems: 1 });
 
         const dbError = new Error('Database error');
         mockGetTasksByAdministrationIds.mockRejectedValue(dbError);
@@ -537,7 +537,7 @@ describe('AdministrationService', () => {
       });
 
       it('should not fetch tasks when result is empty', async () => {
-        mockGetAll.mockResolvedValue({ items: [], totalItems: 0 });
+        mockListAll.mockResolvedValue({ items: [], totalItems: 0 });
 
         const service = AdministrationService({
           administrationRepository: mockAdministrationRepository,
@@ -557,7 +557,7 @@ describe('AdministrationService', () => {
     describe('embed=stats,tasks', () => {
       it('should fetch both stats and tasks when both are requested', async () => {
         const mockAdmins = [AdministrationFactory.build({ id: 'admin-1' })];
-        mockGetAll.mockResolvedValue({ items: mockAdmins, totalItems: 1 });
+        mockListAll.mockResolvedValue({ items: mockAdmins, totalItems: 1 });
 
         const assignedCounts = new Map([['admin-1', 25]]);
         const runStats = new Map([['admin-1', { started: 10, completed: 5 }]]);

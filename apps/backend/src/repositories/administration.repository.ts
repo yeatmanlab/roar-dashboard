@@ -56,11 +56,12 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
 
   /**
    * Build a SQL condition to filter administrations by status.
+   * Internal method used by listAll and listAuthorized.
    *
    * @param status - The status filter (active, past, upcoming)
    * @returns SQL condition or undefined if no filter
    */
-  buildStatusFilter(status?: AdministrationStatus): SQL | undefined {
+  private buildStatusFilter(status?: AdministrationStatus): SQL | undefined {
     if (!status) {
       return undefined;
     }
@@ -80,6 +81,27 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
       default:
         return undefined;
     }
+  }
+
+  /**
+   * List all administrations with optional status filter.
+   *
+   * This method does not apply authorization filtering and should only be used
+   * for super admin access where all administrations are visible.
+   *
+   * @param options - Pagination, sorting, and optional status filter
+   * @returns Paginated result with administrations
+   */
+  async listAll(options: ListAuthorizedOptions): Promise<PaginatedResult<Administration>> {
+    const { page = 1, perPage = 10, orderBy, status } = options;
+    const statusFilter = this.buildStatusFilter(status);
+
+    return this.getAll({
+      page,
+      perPage,
+      ...(orderBy && { orderBy }),
+      ...(statusFilter && { where: statusFilter }),
+    });
   }
 
   /**
