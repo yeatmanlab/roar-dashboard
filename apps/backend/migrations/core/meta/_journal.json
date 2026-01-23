@@ -365,6 +365,13 @@
       "when": 1769207509852,
       "tag": "0051_add_ltree_and_refactor_groups",
       "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "7",
+      "when": 1769208804144,
+      "tag": "0052_add_ltree_path_triggers",
+      "breakpoints": true
     }
   ]
 }
