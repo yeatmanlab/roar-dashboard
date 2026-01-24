@@ -31,28 +31,43 @@ export interface AuthorizationFilter {
  * Provides centralized authorization query building for resource access control.
  * Uses PostgreSQL ltree extension for efficient hierarchical queries.
  *
- * IMPORTANT: Performance depends on these PostgreSQL GiST indexes:
- * - orgs_path_gist_idx (app.orgs.path)
- * - classes_org_path_gist_idx (app.classes.org_path)
- * See migration: 0051_add_ltree_and_refactor_groups.sql
- *
- * This repository does NOT extend BaseRepository because it doesn't manage a single table.
+ * This repository does not extend BaseRepository because it doesn't manage a single table.
  * Instead, it provides query builders that other repositories can use to filter
  * resources based on user authorization.
  *
- * The hierarchy traversal supports two access patterns:
  *
- * "Look UP" (all roles) - Users see resources assigned to their entity or ancestors:
+ * Hierarchical Authorization Model:
+ *
+ * The hierarchy traversal supports two access patterns applied depending on user roles.
+ *
+ * "Look UP" (all roles) - Users see resources assigned to their entity or ancestors, for example:
  * - User in school sees resources assigned to parent district
  * - User in class sees resources assigned to school or district
  *
- * "Look DOWN" (supervisory roles) - Additionally see resources on descendants:
+ * "Look DOWN" (supervisory roles) - Additionally, users also see resources on descendants, for example:
  * - User in district sees resources assigned to child schools/classes
  * - User in school sees resources assigned to classes in that school
+ *
+ *
+ * Database ltree Usage:
+ *
+ * ltree is used to represent organizational hierarchy paths for efficient ancestor/descendant queries.
+ * ltree paths are maintained by database triggers.
  *
  * ltree operators used (raw SQL required - not supported by Drizzle helpers):
  * - `path1 <@ path2`: path1 is descendant of (or equal to) path2
  * - `path1 @> path2`: path1 is ancestor of (or equal to) path2
+ *
+ * Format: {org_type}_{uuid} where hyphens in UUID are replaced with underscores.
+ * Hierarchical paths are dot-separated: parent_segment.child_segment
+ *
+ * For example:
+ * - 'district_550e8400_e29b_41d4_a716_446655440000' (single org)
+ * - 'district_550e8400_e29b_41d4_a716_446655440000.school_a1b2c3d4_5e6f_7a8b_9c0d_1e2f3a4b5c6d' (hierarchy)
+ *
+ * IMPORTANT: Performance depends on these PostgreSQL GiST indexes:
+ * - orgs_path_gist_idx (app.orgs.path)
+ * - classes_org_path_gist_idx (app.classes.org_path)
  */
 export class AuthorizationRepository {
   constructor(protected readonly db: NodePgDatabase<typeof CoreDbSchema> = CoreDbClient) {}
@@ -62,16 +77,6 @@ export class AuthorizationRepository {
    *
    * Uses ltree path queries for efficient hierarchical access control.
    * Results are deduplicated via UNION (not UNION ALL) since we only need unique IDs.
-   *
-   * "Look UP" paths (all roles):
-   * - Path 1: User in org → admin in org (user's org is at or below admin's org)
-   * - Path 2: User in class → admin in org (class's org is at or below admin's org)
-   * - Path 3: User in class → admin in class (direct match)
-   * - Path 4: User in group → admin in group (direct match)
-   *
-   * "Look DOWN" paths (supervisory roles only):
-   * - Path 5: User in org → admin in org (admin's org is at or below user's org)
-   * - Path 6: User in org → admin in class (class is below user's org)
    *
    * @param authorization - User ID and allowed roles for access control
    * @returns A subquery that can be used in WHERE clauses to filter administrations
@@ -125,7 +130,10 @@ export class AuthorizationRepository {
       .where(and(eq(userGroups.userId, userId), inArray(userGroups.role, allowedRoles)));
 
     // Build base union (paths 1-4, all roles)
-    // Uses UNION (not UNION ALL) to deduplicate - we only need unique administration IDs
+    // Uses UNION (not UNION ALL) for deduplication since we only need unique administration IDs.
+    // Performance note: UNION adds sort+dedup overhead, but result sets are typically smalln and
+    // deduplication is required since a user can access the same administration via multiple
+    // paths (e.g., both org membership and direct class assignment).
     let union = viaUserOrgToAdminOrg.union(viaUserClassToAdminOrg).union(viaDirectClass).union(viaDirectGroup);
 
     // =========================================================================
@@ -232,7 +240,10 @@ export class AuthorizationRepository {
       .innerJoin(userGroups, eq(userGroups.groupId, administrationGroups.groupId))
       .where(inArray(administrationGroups.administrationId, administrationIds));
 
-    // Combine with UNION ALL to preserve duplicates for accurate counting
+    // Combine with UNION ALL (not UNION) to preserve duplicates intentionally.
+    // Performance note: UNION ALL is faster (no sort/dedup), but requires COUNT(DISTINCT userId)
+    // in the aggregation query. We need duplicates because a user can be assigned via multiple
+    // paths, and we want accurate per-administration counts without losing any assignments.
     return viaOrgToOrgUsers.unionAll(viaOrgToClassUsers).unionAll(viaDirectClass).unionAll(viaDirectGroup);
   }
 
