@@ -2,6 +2,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AuthorizationRepository } from './authorization.repository';
 import type { UserRole } from '../enums/user-role.enum';
 
+// Expected path counts for authorization queries
+// Look-up only: org→org, class→org, direct class, direct group
+const EXPECTED_PATHS_NON_SUPERVISORY = 4;
+// Look-up + look-down: base 4 + org→descendant org, org→descendant class
+const EXPECTED_PATHS_SUPERVISORY = 6;
+// User assignments: org→org users, org→class users, direct class, direct group
+const EXPECTED_PATHS_USER_ASSIGNMENTS = 4;
+
 describe('AuthorizationRepository', () => {
   const mockSelect = vi.fn();
 
@@ -15,7 +23,7 @@ describe('AuthorizationRepository', () => {
   });
 
   // Helper to create chainable union mock for building UNION queries
-  const createUnionChain = (maxDepth = 9) => {
+  const createUnionChain = (maxDepth = 5) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const createChain = (depth = 0): any => {
       const result = {
@@ -33,7 +41,7 @@ describe('AuthorizationRepository', () => {
   };
 
   // Helper to create chainable innerJoin mock
-  const createInnerJoinChain = (maxUnionDepth = 9) => {
+  const createInnerJoinChain = (maxUnionDepth = 5) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const chain: any = {
       innerJoin: vi.fn(),
@@ -44,15 +52,15 @@ describe('AuthorizationRepository', () => {
   };
 
   // Setup mock for UNION subquery building
-  const setupUnionMocks = (maxUnionDepth = 9) => {
+  const setupUnionMocks = (maxUnionDepth = 5) => {
     mockSelect.mockImplementation(() => ({
       from: vi.fn().mockReturnValue(createInnerJoinChain(maxUnionDepth)),
     }));
   };
 
   describe('buildAccessibleAdministrationIdsQuery', () => {
-    it('should build 6 access path subqueries for non-supervisory roles (student)', () => {
-      setupUnionMocks(5);
+    it('should build look-up only paths for non-supervisory roles (student)', () => {
+      setupUnionMocks(EXPECTED_PATHS_NON_SUPERVISORY - 1);
 
       const repository = new AuthorizationRepository(mockDb);
       repository.buildAccessibleAdministrationIdsQuery({
@@ -60,11 +68,11 @@ describe('AuthorizationRepository', () => {
         allowedRoles: ['student' as UserRole],
       });
 
-      // Student role only builds 6 subqueries (no look-down paths)
-      expect(mockSelect).toHaveBeenCalledTimes(6);
+      // Student role only builds look-up paths (no look-down)
+      expect(mockSelect).toHaveBeenCalledTimes(EXPECTED_PATHS_NON_SUPERVISORY);
     });
 
-    it('should build 10 access path subqueries for supervisory roles (administrator)', () => {
+    it('should build look-up and look-down paths for supervisory roles (administrator)', () => {
       setupUnionMocks();
 
       const repository = new AuthorizationRepository(mockDb);
@@ -73,11 +81,11 @@ describe('AuthorizationRepository', () => {
         allowedRoles: ['administrator' as UserRole],
       });
 
-      // Administrator builds 10 subqueries (6 base + 4 look-down)
-      expect(mockSelect).toHaveBeenCalledTimes(10);
+      // Administrator builds all paths (look-up + look-down)
+      expect(mockSelect).toHaveBeenCalledTimes(EXPECTED_PATHS_SUPERVISORY);
     });
 
-    it('should build 10 access path subqueries for teacher role', () => {
+    it('should build look-up and look-down paths for teacher role', () => {
       setupUnionMocks();
 
       const repository = new AuthorizationRepository(mockDb);
@@ -86,12 +94,12 @@ describe('AuthorizationRepository', () => {
         allowedRoles: ['teacher' as UserRole],
       });
 
-      // Teacher is supervisory, builds 10 subqueries
-      expect(mockSelect).toHaveBeenCalledTimes(10);
+      // Teacher is supervisory, builds all paths
+      expect(mockSelect).toHaveBeenCalledTimes(EXPECTED_PATHS_SUPERVISORY);
     });
 
-    it('should build 6 access path subqueries for guardian role', () => {
-      setupUnionMocks(5);
+    it('should build look-up only paths for guardian role', () => {
+      setupUnionMocks(EXPECTED_PATHS_NON_SUPERVISORY - 1);
 
       const repository = new AuthorizationRepository(mockDb);
       repository.buildAccessibleAdministrationIdsQuery({
@@ -99,11 +107,11 @@ describe('AuthorizationRepository', () => {
         allowedRoles: ['guardian' as UserRole],
       });
 
-      // Guardian is not supervisory, builds 6 subqueries
-      expect(mockSelect).toHaveBeenCalledTimes(6);
+      // Guardian is not supervisory, builds look-up paths only
+      expect(mockSelect).toHaveBeenCalledTimes(EXPECTED_PATHS_NON_SUPERVISORY);
     });
 
-    it('should build 10 subqueries when mixed roles include at least one supervisory role', () => {
+    it('should build all paths when mixed roles include at least one supervisory role', () => {
       setupUnionMocks();
 
       const repository = new AuthorizationRepository(mockDb);
@@ -112,8 +120,8 @@ describe('AuthorizationRepository', () => {
         allowedRoles: ['student' as UserRole, 'teacher' as UserRole],
       });
 
-      // When roles include a supervisory role (teacher), all 10 paths are built
-      expect(mockSelect).toHaveBeenCalledTimes(10);
+      // When roles include a supervisory role (teacher), all paths are built
+      expect(mockSelect).toHaveBeenCalledTimes(EXPECTED_PATHS_SUPERVISORY);
     });
 
     it('should return a query object with union and as methods', () => {
@@ -132,7 +140,7 @@ describe('AuthorizationRepository', () => {
 
   describe('buildAdministrationUserAssignmentsQuery', () => {
     // Helper to create chainable unionAll mock
-    const createUnionAllChain = (maxDepth = 5) => {
+    const createUnionAllChain = (maxDepth = 3) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const createChain = (depth = 0): any => {
         const result = {
@@ -166,14 +174,14 @@ describe('AuthorizationRepository', () => {
       }));
     };
 
-    it('should build 6 access path subqueries for user assignments', () => {
+    it('should build all user assignment paths', () => {
       setupAssignmentsMocks();
 
       const repository = new AuthorizationRepository(mockDb);
       repository.buildAdministrationUserAssignmentsQuery(['admin-1', 'admin-2']);
 
-      // Always builds 6 paths (no supervisory distinction for user assignments)
-      expect(mockSelect).toHaveBeenCalledTimes(6);
+      // Builds paths using ltree for hierarchy traversal
+      expect(mockSelect).toHaveBeenCalledTimes(EXPECTED_PATHS_USER_ASSIGNMENTS);
     });
   });
 
@@ -194,7 +202,7 @@ describe('AuthorizationRepository', () => {
             userId: 'assignments.userId',
           }),
         };
-        if (depth < 5) {
+        if (depth < 3) {
           result.unionAll.mockReturnValue(createUnionAllChain(depth + 1));
         }
         return result;
@@ -213,13 +221,13 @@ describe('AuthorizationRepository', () => {
 
       mockSelect.mockImplementation(() => {
         selectCallCount++;
-        // First 6 calls are for building the UNION ALL subquery
-        if (selectCallCount <= 6) {
+        // First 4 calls are for building the UNION ALL subquery
+        if (selectCallCount <= 4) {
           return {
             from: vi.fn().mockReturnValue(createInnerJoinChain()),
           };
         }
-        // 7th call is for aggregation select
+        // 5th call is for aggregation select
         return {
           from: vi.fn().mockReturnValue({
             groupBy: mockGroupBy,
@@ -296,7 +304,7 @@ describe('AuthorizationRepository', () => {
             userId: 'assignments.userId',
           }),
         };
-        if (depth < 5) {
+        if (depth < 3) {
           result.unionAll.mockReturnValue(createUnionAllChain(depth + 1));
         }
         return result;
@@ -315,7 +323,7 @@ describe('AuthorizationRepository', () => {
 
       mockSelect.mockImplementation(() => {
         selectCallCount++;
-        if (selectCallCount <= 6) {
+        if (selectCallCount <= 4) {
           return {
             from: vi.fn().mockReturnValue(createInnerJoinChain()),
           };
@@ -334,14 +342,14 @@ describe('AuthorizationRepository', () => {
       );
     });
 
-    it('should build queries for all six access paths', async () => {
+    it('should build queries for all four access paths', async () => {
       setupAggregationMock([{ administrationId: 'admin-1', assignedCount: 10 }]);
 
       const repository = new AuthorizationRepository(mockDb);
       await repository.getAssignedUserCountsByAdministrationIds(['admin-1']);
 
-      // 6 subquery selects + 1 aggregation select = 7 total
-      expect(mockSelect).toHaveBeenCalledTimes(7);
+      // 4 subquery selects + 1 aggregation select = 5 total
+      expect(mockSelect).toHaveBeenCalledTimes(5);
     });
   });
 });
