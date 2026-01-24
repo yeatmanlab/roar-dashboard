@@ -14,9 +14,6 @@ import { BaseRepository, type PaginatedResult } from './base.repository';
 import type { BasePaginatedQueryParams } from './interfaces/base.repository.interface';
 import { AuthorizationRepository, type AuthorizationFilter } from './authorization.repository';
 
-// Re-export AuthorizationFilter for backward compatibility
-export type { AuthorizationFilter } from './authorization.repository';
-
 /**
  * Sort field type derived from api-contract.
  */
