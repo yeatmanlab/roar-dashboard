@@ -5,7 +5,8 @@
  * Uses dynamic table discovery to avoid hardcoding table names.
  */
 import { sql } from 'drizzle-orm';
-import { getTestCoreDb, getTestAssessmentDb, type TestDbClient } from './test-db-client';
+import { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import { CoreDbClient, AssessmentDbClient } from '../../db/clients';
 
 /**
  * Truncate all tables in a specific schema.
@@ -14,7 +15,7 @@ import { getTestCoreDb, getTestAssessmentDb, type TestDbClient } from './test-db
  * @param db - Drizzle database client
  * @param schema - Schema name (e.g., 'app')
  */
-async function truncateSchema(db: TestDbClient, schema: string): Promise<void> {
+async function truncateSchema(db: NodePgDatabase<Record<string, unknown>>, schema: string): Promise<void> {
   // Query all tables in the schema
   const result = await db.execute<{ tablename: string }>(sql`
     SELECT tablename
@@ -38,7 +39,7 @@ async function truncateSchema(db: TestDbClient, schema: string): Promise<void> {
  */
 export async function truncateAllTables(): Promise<void> {
   await Promise.all([
-    truncateSchema(getTestCoreDb() as TestDbClient, 'app'),
-    truncateSchema(getTestAssessmentDb() as TestDbClient, 'app'),
+    truncateSchema(CoreDbClient as NodePgDatabase<Record<string, unknown>>, 'app'),
+    truncateSchema(AssessmentDbClient as NodePgDatabase<Record<string, unknown>>, 'app'),
   ]);
 }

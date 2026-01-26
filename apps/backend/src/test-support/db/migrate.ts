@@ -5,7 +5,7 @@
  * Should be called in beforeAll to ensure test databases have the latest schema.
  */
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
-import { getTestCoreDb, getTestAssessmentDb } from './test-db-client';
+import { CoreDbClient, AssessmentDbClient } from '../../db/clients';
 
 /**
  * Run migrations for both core and assessment test databases.
@@ -13,12 +13,12 @@ import { getTestCoreDb, getTestAssessmentDb } from './test-db-client';
  */
 export async function runMigrations(): Promise<void> {
   // Run core database migrations
-  await migrate(getTestCoreDb(), {
+  await migrate(CoreDbClient, {
     migrationsFolder: './migrations/core',
   });
 
   // Run assessment database migrations
-  await migrate(getTestAssessmentDb(), {
+  await migrate(AssessmentDbClient, {
     migrationsFolder: './migrations/assessment',
   });
 }

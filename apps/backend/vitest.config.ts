@@ -8,6 +8,8 @@ export default defineConfig({
     globals: true,
     watch: false,
     setupFiles: ['./vitest.setup.ts'],
+    // Exclude integration tests - they have their own config (vitest.integration.config.ts)
+    exclude: ['**/*.integration.test.ts', '**/node_modules/**'],
     coverage: {
       enabled: true,
       all: true,
