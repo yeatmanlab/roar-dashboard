@@ -1,4 +1,6 @@
 import type { CommandContext } from '../command/command';
+import { SDKError } from '../errors/sdk-error';
+import type { FinishRunInput, FinishRunOutput } from '../types';
 
 /**
  * FirekitFacade provides backward compatibility with legacy Firekit-based assessments.
@@ -84,4 +86,19 @@ export function initFirekitCompat(ctx: CommandContext): FirekitFacade {
  */
 export function getFirekitCompat(): FirekitFacade {
   return FirekitFacade.getInstance();
+}
+
+/**
+ * Firekit compatibility stub.
+ *
+ * From @bdelab/roar-firekit:
+ * async finishRun(finishingMetaData: { [key: string]: unknown } = {}) { […] }
+ *
+ * @param finishingMetaData - Optional finishing metadata for the run.
+ * @returns Promise<void>
+ * @throws SdkError - Always, until implemented.
+ */
+export async function finishRun(finishingMetaData: FinishRunInput = {}): Promise<FinishRunOutput> {
+  void finishingMetaData;
+  throw new SDKError('appkit.finishRun not yet implemented');
 }
