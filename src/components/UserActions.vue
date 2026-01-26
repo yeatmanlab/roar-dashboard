@@ -30,6 +30,7 @@
           :optionValue="(o) => o.value"
           :optionLabel="(o) => o.label"
           class="options-site"
+          data-cy="site-select"
           @change="handleSiteChange"
         >
           <template #value>

@@ -1,5 +1,5 @@
 <template>
-  <header id="site-header" class="navbar-container">
+  <header id="site-header" class="navbar-container" data-cy="nav-bar">
     <nav class="flex flex-row align-items-center justify-content-between w-full">
       <div id="navBarRightEnd" class="flex flex-row align-items-center justify-content-start w-full gap-1">
         <div class="flex align-items-center justify-content-center w-full">

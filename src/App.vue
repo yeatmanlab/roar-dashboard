@@ -23,7 +23,7 @@
 
     <!-- <SessionTimer v-if="loadSessionTimeoutHandler" /> -->
   </div>
-  <div v-else>
+  <div v-else data-cy="app-initializing">
     <LevanteSpinner fullscreen />
   </div>
 

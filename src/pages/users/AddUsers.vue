@@ -21,6 +21,7 @@
             custom-upload
             mode="basic"
             name="addUsersFile[]"
+            data-cy="upload-add-users-csv"
             @uploader="onFileUpload($event)"
           />
           <span v-if="isFileUploaded" class="text-gray-500">File: {{ uploadedFile?.name }}</span>
@@ -59,6 +60,7 @@
                 icon="pi pi-download"
                 variant="outlined"
                 class="download-button"
+                data-cy="button-download-users"
                 @click="downloadCSV"
               />
             </div>
@@ -69,6 +71,7 @@
               :icon="activeSubmit ? 'pi pi-spin pi-spinner' : ''"
               :disabled="activeSubmit || isAllSitesSelected"
               data-testid="start-adding-button"
+              data-cy="button-add-users-from-file"
               @click="submitUsers"
             />
           </div>

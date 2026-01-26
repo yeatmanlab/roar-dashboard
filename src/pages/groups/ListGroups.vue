@@ -10,6 +10,7 @@
                 v-tooltip.bottom="currentSite === 'any' && 'Please select a specific site to add a group'"
                 class="bg-primary text-white border-none p-2 ml-auto"
                 data-testid="add-group-btn"
+                data-cy="add-group-btn"
                 @click="isAddGroupModalVisible = true"
                 >Add Group</PvButton
               >
@@ -17,6 +18,7 @@
             <PvButton
               class="bg-primary text-white border-none p-2 ml-auto"
               data-testid="add-users-btn"
+              data-cy="add-users-btn"
               @click="addUsers"
               >Add Users</PvButton
             >
@@ -30,7 +32,7 @@
           </div>
         </div>
       </div>
-      <PvTabs v-if="claimsLoaded" v-model:value="activeOrgType" lazy class="mb-7">
+      <PvTabs v-if="claimsLoaded" v-model:value="activeOrgType" lazy class="mb-7" data-cy="groups-page-ready">
         <PvTabList>
           <PvTab v-for="orgType in orgHeaders" :key="orgType.id" :value="orgType.id">{{ orgType.header }}</PvTab>
         </PvTabList>
