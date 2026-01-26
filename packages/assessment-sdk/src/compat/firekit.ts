@@ -1,4 +1,6 @@
 import type { CommandContext } from '../command/command';
+import { SDKError } from '../errors/sdk-error';
+import type { AbortRunOutput } from '../types';
 
 /**
  * FirekitFacade provides backward compatibility with legacy Firekit-based assessments.
@@ -84,4 +86,17 @@ export function initFirekitCompat(ctx: CommandContext): FirekitFacade {
  */
 export function getFirekitCompat(): FirekitFacade {
   return FirekitFacade.getInstance();
+}
+
+/**
+ * Firekit compatibility stub.
+ *
+ * From @bdelab/roar-firekit:
+ * abortRun() { […] }
+ *
+ * @returns void
+ * @throws SDKError - Always, until implemented.
+ */
+export function abortRun(): AbortRunOutput {
+  throw new SDKError('appkit.abortRun not yet implemented');
 }
