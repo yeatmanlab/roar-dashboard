@@ -1,1 +1,1 @@
-export { FirekitFacade, initFirekitCompat, getFirekitCompat } from './firekit';
+export * from './firekit';
