@@ -30,11 +30,14 @@ jobs:
       - name: Setup environment
         uses: ./.github/actions/setup-node-environment
 
-      - name: Run linter
+      - name: Lint
         run: npm run lint
 
-      - name: Check format
+      - name: Format check
         run: npm run format:check
+
+      - name: Type check
+        run: npm run check-types
 
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
   # Test
@@ -51,7 +54,7 @@ jobs:
       - name: Setup environment
         uses: ./.github/actions/setup-node-environment
 
-      - name: Run unit tests
+      - name: Run tests
         run: npm run test
 
       - name: Report dashboard coverage
@@ -60,6 +63,13 @@ jobs:
         with:
           working-directory: "apps/dashboard"
           name: Dashboard
+
+      - name: Report backend coverage
+        if: success()
+        uses: davelosert/vitest-coverage-report-action@v2
+        with:
+          working-directory: "apps/backend"
+          name: Backend
 
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
   # Build the application
