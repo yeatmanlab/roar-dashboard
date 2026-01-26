@@ -15,6 +15,7 @@ import { SUPERVISORY_ROLES } from '../constants/role-classifications';
 import { CoreDbClient } from '../db/clients';
 import type * as CoreDbSchema from '../db/schema/core';
 import type { UserRole } from '../enums/user-role.enum';
+import { logger } from '../logger';
 
 /**
  * Authorization filter for repository queries.
@@ -79,10 +80,17 @@ export class AuthorizationRepository {
    * Results are deduplicated via UNION (not UNION ALL) since we only need unique IDs.
    *
    * @param authorization - User ID and allowed roles for access control
-   * @returns A subquery that can be used in WHERE clauses to filter administrations
+   * @returns A Drizzle subquery returning `{ administrationId: string }` rows. Use with `.as('alias')` for joins.
    */
   buildAccessibleAdministrationIdsQuery(authorization: AuthorizationFilter) {
     const { userId, allowedRoles } = authorization;
+
+    if (allowedRoles.length === 0) {
+      logger.warn(
+        { userId },
+        'buildAccessibleAdministrationIdsQuery called with empty allowedRoles - possible permission configuration issue',
+      );
+    }
 
     // Create table aliases for self-joins on orgs
     const adminOrg = alias(orgs, 'admin_org');
@@ -93,7 +101,7 @@ export class AuthorizationRepository {
     // =========================================================================
 
     // Path 1: User in org → admin assigned to org
-    // User sees admins at their org level or any ancestor org
+    // User sees administrations assigned to their org level or any ancestor org
     // ltree: user_org.path <@ admin_org.path (user is descendant of or equal to admin's org)
     const viaUserOrgToAdminOrg = this.db
       .select({ administrationId: administrationOrgs.administrationId })
@@ -104,7 +112,7 @@ export class AuthorizationRepository {
       .where(and(inArray(userOrgs.role, allowedRoles), sql`${userOrg.path} <@ ${adminOrg.path}`));
 
     // Path 2: User in class → admin assigned to org
-    // User sees admins at the class's school or any ancestor org
+    // User sees administrations assigned to the class's school or any ancestor org
     // ltree: class.org_path <@ admin_org.path
     const viaUserClassToAdminOrg = this.db
       .select({ administrationId: administrationOrgs.administrationId })
@@ -144,7 +152,7 @@ export class AuthorizationRepository {
 
     if (supervisoryAllowedRoles.length > 0) {
       // Path 5: User in org → admin assigned to descendant org (or same org)
-      // Supervisory user sees admins at any org at or below their org
+      // Supervisory user sees administrations assigned to any org at or below their org
       // ltree: admin_org.path <@ user_org.path (admin is descendant of or equal to user's org)
       // Note: Overlap with Path 1 at equality is handled by UNION deduplication
       const viaUserOrgToDescendantOrg = this.db
@@ -156,7 +164,7 @@ export class AuthorizationRepository {
         .where(and(inArray(userOrgs.role, supervisoryAllowedRoles), sql`${adminOrg.path} <@ ${userOrg.path}`));
 
       // Path 6: User in org → admin assigned to class under user's org
-      // Supervisory user sees admins on classes anywhere in their org subtree
+      // Supervisory user sees administrations on classes anywhere in their org subtree
       // ltree: class.org_path <@ user_org.path
       const viaUserOrgToDescendantClass = this.db
         .select({ administrationId: administrationClasses.administrationId })
@@ -186,7 +194,7 @@ export class AuthorizationRepository {
    * COUNT(DISTINCT userId) to get unique user counts.
    *
    * @param administrationIds - Array of administration IDs to get assignments for
-   * @returns A subquery with (administrationId, userId) tuples
+   * @returns A Drizzle subquery returning `{ administrationId: string, userId: string }` rows. Use with `.as('alias')` for aggregation.
    */
   buildAdministrationUserAssignmentsQuery(administrationIds: string[]) {
     // Create table aliases for self-joins on orgs

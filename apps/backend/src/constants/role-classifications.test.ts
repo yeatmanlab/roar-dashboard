@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { SUPERVISORY_ROLES, SUPERVISED_ROLES } from './role-classifications';
 import { userRoleEnum } from '../db/schema/enums';
+import { RolePermissions } from './role-permissions';
 
 describe('role-classifications', () => {
   const allRoles = userRoleEnum.enumValues;
@@ -69,6 +70,20 @@ describe('role-classifications', () => {
       const classifiedRoles = [...SUPERVISORY_ROLES, ...SUPERVISED_ROLES];
       for (const role of allRoles) {
         expect(classifiedRoles).toContain(role);
+      }
+    });
+
+    it('should ensure supervised roles do not have broad permissions', () => {
+      for (const role of SUPERVISED_ROLES) {
+        const permissions = RolePermissions[role] ?? [];
+        const hasBroadPerms = permissions.some(
+          (p) =>
+            // Check for create/update/delete permissions (except profile)
+            ((p.includes('.create') || p.includes('.update') || p.includes('.delete')) && !p.startsWith('profile.')) ||
+            // Check for broad wildcards (except profile.*)
+            (p.endsWith('.*') && !p.startsWith('profile.')),
+        );
+        expect(hasBroadPerms, `${role} should not have broad create/update/delete permissions`).toBe(false);
       }
     });
   });
