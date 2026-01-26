@@ -8,13 +8,11 @@ describe('firekit compat: startRun', () => {
     await expect(startRun({ foo: 'bar' })).rejects.toBeInstanceOf(SDKError);
   });
 
-  it("matches Firekit signature", () => {
+  it('matches Firekit signature', () => {
     // runtime assertion to satisfy vitest/expect-expect
-    expect(typeof startRun).toBe("function");
+    expect(typeof startRun).toBe('function');
 
     // compile-time signature check
-    expectTypeOf(startRun).toEqualTypeOf<
-        (additionalRunMetadata?: { [key: string]: string }) => Promise<void>
-    >();
-    });
+    expectTypeOf(startRun).toEqualTypeOf<(additionalRunMetadata?: { [key: string]: string }) => Promise<void>>();
+  });
 });
