@@ -32,6 +32,7 @@ export const UserFactory = Factory.define<User>(() => ({
   hispanicEthnicity: null,
   homeLanguage: null,
   excludeFromResearch: false,
+  isSuperAdmin: false,
   createdAt: new Date(),
   updatedAt: new Date(),
 }));
