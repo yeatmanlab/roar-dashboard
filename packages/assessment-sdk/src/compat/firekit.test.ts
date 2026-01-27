@@ -1,7 +1,7 @@
 import { describe, it, expect, expectTypeOf, vi } from 'vitest';
-import { startRun, finishRun, abortRun, updateEngagementFlags, updateUser } from './firekit';
+import { startRun, finishRun, abortRun, updateEngagementFlags, addInteraction, updateUser } from './firekit';
 import { SDKError } from '../errors/sdk-error';
-import type { UpdateEngagementFlagsInput, UpdateUserInput } from '../types';
+import type { UpdateEngagementFlagsInput, AddInteractionInput, UpdateUserInput } from '../types';
 
 describe('firekit compat', () => {
   describe('abortRun', () => {
@@ -56,6 +56,21 @@ describe('firekit compat', () => {
 
       // compile-time signature check
       expectTypeOf(updateEngagementFlags).toEqualTypeOf<(input: UpdateEngagementFlagsInput) => Promise<void>>();
+    });
+  });
+
+  describe('addInteraction', () => {
+    it('throws SDKError when called', () => {
+      expect(() => addInteraction({ type: 'click' })).toThrow(SDKError);
+      expect(() => addInteraction({ foo: 'bar' })).toThrow(SDKError);
+    });
+
+    it('matches Firekit signature', () => {
+      // runtime assertion to satisfy vitest/expect-expect
+      expect(typeof addInteraction).toBe('function');
+
+      // compile-time signature check
+      expectTypeOf(addInteraction).toEqualTypeOf<(interaction: AddInteractionInput) => void>();
     });
   });
 
