@@ -3,7 +3,7 @@
 /*// | both the main app and testing.              |*/
 /*// ***************************************/
 
-@import 'primeicons/primeicons.css';
+@import './assets/styles/primeicons.css';
 @import 'primeflex/primeflex.scss';
 
 @import './assets/styles/theme-tailwind.css';

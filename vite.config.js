@@ -1,5 +1,8 @@
 import { sentryVitePlugin } from '@sentry/vite-plugin';
 import { fileURLToPath, URL } from 'url';
+import { createRequire } from 'module';
+import fs from 'fs';
+import path from 'path';
 import { defineConfig } from 'vite';
 import Vue from '@vitejs/plugin-vue';
 import mkcert from 'vite-plugin-mkcert';
@@ -8,6 +11,26 @@ import UnheadVite from '@unhead/addons/vite';
 import * as child from 'child_process';
 
 const commitHash = child.execSync('git rev-parse --short HEAD').toString();
+const require = createRequire(import.meta.url);
+
+const copyPrimeiconsFonts = () => {
+  const primeiconsDir = path.dirname(require.resolve('primeicons/primeicons.css'));
+  const sourceDir = path.join(primeiconsDir, 'fonts');
+  const targetDir = fileURLToPath(new URL('./public/fonts', import.meta.url));
+
+  if (!fs.existsSync(sourceDir)) return;
+
+  fs.mkdirSync(targetDir, { recursive: true });
+  for (const entry of fs.readdirSync(sourceDir)) {
+    fs.copyFileSync(path.join(sourceDir, entry), path.join(targetDir, entry));
+  }
+};
+
+const primeiconsFontsPlugin = () => ({
+  name: 'primeicons-fonts',
+  buildStart: copyPrimeiconsFonts,
+  configureServer: copyPrimeiconsFonts,
+});
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -26,6 +49,7 @@ export default defineConfig({
     }),
     UnheadVite(),
     ...(process.env.VITE_HTTPS === 'TRUE' ? [mkcert()] : []),
+    primeiconsFontsPlugin(),
     ...(process.env.NODE_ENV !== 'development'
       ? [
           sentryVitePlugin({
