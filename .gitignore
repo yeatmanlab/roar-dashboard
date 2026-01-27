@@ -41,6 +41,7 @@ coverage
 # Other
 .vite/*
 .firebase/
+public/fonts/
 
 # Sentry Config File
 .env.sentry-build-plugin
