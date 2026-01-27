@@ -18,216 +18,223 @@ import type { UserRole } from '../enums/user-role.enum';
 import { logger } from '../logger';
 
 /**
- * Authorization filter for repository queries.
- * Encapsulates user identity and allowed roles for access control.
+ * Filter criteria for authorization queries.
  */
 export interface AuthorizationFilter {
+  /** The user requesting access */
   userId: string;
+  /** Roles the user holds that grant access (e.g., 'student', 'teacher', 'administrator') */
   allowedRoles: UserRole[];
 }
 
 /**
  * Authorization Repository
  *
- * Provides centralized authorization query building for resource access control.
- * Uses PostgreSQL ltree extension for efficient hierarchical queries.
+ * Builds SQL queries to determine what resources a user can access based on their
+ * org/class/group memberships. Used by other repositories to filter query results.
  *
- * This repository does not extend BaseRepository because it doesn't manage a single table.
- * Instead, it provides query builders that other repositories can use to filter
- * resources based on user authorization.
+ * ## How Access Works
  *
+ * Users gain access to administrations through their memberships:
  *
- * Hierarchical Authorization Model:
+ * ```
+ * User belongs to:          Can see administrations assigned to:
+ * ─────────────────         ──────────────────────────────────────
+ * District                  → That district (and descendants if supervisory)
+ * School                    → That school, parent district (and descendants if supervisory)
+ * Class                     → That class, parent school, parent district
+ * Group                     → That group only
+ * ```
  *
- * The hierarchy traversal supports two access patterns applied depending on user roles.
+ * ## Access Patterns
  *
- * "Look UP" (all roles) - Users see resources assigned to their entity or ancestors, for example:
- * - User in school sees resources assigned to parent district
- * - User in class sees resources assigned to school or district
+ * **"Look UP" (all roles)** — Users see administrations on their entity or ancestors:
+ * - Student in School A sees administrations assigned to School A or its parent District
+ * - Student in Class X sees administrations assigned to Class X, School A, or District
  *
- * "Look DOWN" (supervisory roles) - Additionally, users also see resources on descendants, for example:
- * - User in district sees resources assigned to child schools/classes
- * - User in school sees resources assigned to classes in that school
+ * **"Look DOWN" (supervisory roles only)** — Supervisors also see administrations on descendants:
+ * - Admin in District sees administrations on all child Schools and Classes
+ * - Teacher in School sees administrations on Classes in that School
  *
+ * ## ltree for Hierarchy Queries
  *
- * Database ltree Usage:
+ * We use PostgreSQL's ltree extension to efficiently query ancestor/descendant relationships.
+ * Paths are stored as dot-separated segments: `district_uuid.school_uuid`
  *
- * ltree is used to represent organizational hierarchy paths for efficient ancestor/descendant queries.
- * ltree paths are maintained by database triggers.
- *
- * ltree operators used (raw SQL required - not supported by Drizzle helpers):
- * - `path1 <@ path2`: path1 is descendant of (or equal to) path2
- * - `path1 @> path2`: path1 is ancestor of (or equal to) path2
- *
- * Format: {org_type}_{uuid} where hyphens in UUID are replaced with underscores.
- * Hierarchical paths are dot-separated: parent_segment.child_segment
- *
- * For example:
- * - 'district_550e8400_e29b_41d4_a716_446655440000' (single org)
- * - 'district_550e8400_e29b_41d4_a716_446655440000.school_a1b2c3d4_5e6f_7a8b_9c0d_1e2f3a4b5c6d' (hierarchy)
- *
- * IMPORTANT: Performance depends on these PostgreSQL GiST indexes:
- * - orgs_path_gist_idx (app.orgs.path)
- * - classes_org_path_gist_idx (app.classes.org_path)
+ * Key operators (require raw SQL):
+ * - `child <@ parent` — child is descendant of (or equal to) parent
+ * - `parent @> child` — parent is ancestor of (or equal to) child
  */
 export class AuthorizationRepository {
   constructor(protected readonly db: NodePgDatabase<typeof CoreDbSchema> = CoreDbClient) {}
 
   /**
-   * Build a UNION query of all administration IDs the user can access.
+   * Returns all administration IDs a user can access.
    *
-   * Uses ltree path queries for efficient hierarchical access control.
-   * Results are deduplicated via UNION (not UNION ALL) since we only need unique IDs.
+   * Starts from the user's memberships (typically small) and finds all administrations
+   * they can see based on org hierarchy. This is the core authorization query.
    *
-   * @param authorization - User ID and allowed roles for access control
-   * @returns A Drizzle subquery returning `{ administrationId: string }` rows. Use with `.as('alias')` for joins.
+   * @example
+   * ```ts
+   * const accessibleAdmins = authRepo.buildUserAdministrationIdsQuery({
+   *   userId: 'user-123',
+   *   allowedRoles: ['student', 'teacher'],
+   * });
+   *
+   * // Use in another query
+   * const admins = await db
+   *   .select()
+   *   .from(administrations)
+   *   .innerJoin(accessibleAdmins.as('accessible'), eq(administrations.id, accessible.administrationId));
+   * ```
+   *
+   * @returns Drizzle subquery with `{ administrationId: string }` rows.
+   *          Uses UNION to automatically deduplicate across access paths.
    */
-  buildAccessibleAdministrationIdsQuery(authorization: AuthorizationFilter) {
+  buildUserAdministrationIdsQuery(authorization: AuthorizationFilter) {
     const { userId, allowedRoles } = authorization;
 
     if (allowedRoles.length === 0) {
-      logger.warn(
-        { userId },
-        'buildAccessibleAdministrationIdsQuery called with empty allowedRoles - possible permission configuration issue',
-      );
+      logger.warn({ userId }, 'No allowed roles provided, query will return no results');
     }
 
-    // Create table aliases for self-joins on orgs
-    const adminOrg = alias(orgs, 'admin_org');
-    const userOrg = alias(orgs, 'user_org');
+    // Aliases for the orgs table (needed because we join it twice in the same query)
+    const adminOrgTable = alias(orgs, 'admin_org'); // Org where the administration is assigned
+    const userOrgTable = alias(orgs, 'user_org'); // Org where the user has membership
 
-    // =========================================================================
-    // LOOK UP paths (all roles)
-    // =========================================================================
+    // ─────────────────────────────────────────────────────────────────────────
+    // LOOK UP: Find administrations on user's entity or ancestors (all roles)
+    // ─────────────────────────────────────────────────────────────────────────
 
-    // Path 1: User in org → admin assigned to org
-    // User sees administrations assigned to their org level or any ancestor org
-    // ltree: user_org.path <@ admin_org.path (user is descendant of or equal to admin's org)
+    // Path 1: User's org membership → admins on that org or ancestor orgs
+    // Example: User in School A sees admins assigned to School A or parent District
     const viaUserOrgToAdminOrg = this.db
       .select({ administrationId: administrationOrgs.administrationId })
-      .from(administrationOrgs)
-      .innerJoin(adminOrg, eq(adminOrg.id, administrationOrgs.orgId))
-      .innerJoin(userOrgs, eq(userOrgs.userId, userId))
-      .innerJoin(userOrg, eq(userOrg.id, userOrgs.orgId))
-      .where(and(inArray(userOrgs.role, allowedRoles), sql`${userOrg.path} <@ ${adminOrg.path}`));
+      .from(userOrgs)
+      .innerJoin(userOrgTable, eq(userOrgTable.id, userOrgs.orgId))
+      // Safe: Drizzle's sql template parameterizes column references; ltree operators require raw SQL
+      .innerJoin(adminOrgTable, sql`${userOrgTable.path} <@ ${adminOrgTable.path}`)
+      .innerJoin(administrationOrgs, eq(administrationOrgs.orgId, adminOrgTable.id))
+      .where(and(eq(userOrgs.userId, userId), inArray(userOrgs.role, allowedRoles)));
 
-    // Path 2: User in class → admin assigned to org
-    // User sees administrations assigned to the class's school or any ancestor org
-    // ltree: class.org_path <@ admin_org.path
+    // Path 2: User's class membership → admins on the class's school or ancestor orgs
+    // Example: User in Class X sees admins assigned to School A or parent District
     const viaUserClassToAdminOrg = this.db
       .select({ administrationId: administrationOrgs.administrationId })
-      .from(administrationOrgs)
-      .innerJoin(adminOrg, eq(adminOrg.id, administrationOrgs.orgId))
-      .innerJoin(userClasses, eq(userClasses.userId, userId))
+      .from(userClasses)
       .innerJoin(classes, eq(classes.id, userClasses.classId))
-      .where(and(inArray(userClasses.role, allowedRoles), sql`${classes.orgPath} <@ ${adminOrg.path}`));
-
-    // Path 3: User in class → admin assigned to class (direct match)
-    const viaDirectClass = this.db
-      .select({ administrationId: administrationClasses.administrationId })
-      .from(administrationClasses)
-      .innerJoin(userClasses, eq(userClasses.classId, administrationClasses.classId))
+      .innerJoin(adminOrgTable, sql`${classes.orgPath} <@ ${adminOrgTable.path}`) // class is at or below administration's org
+      .innerJoin(administrationOrgs, eq(administrationOrgs.orgId, adminOrgTable.id))
       .where(and(eq(userClasses.userId, userId), inArray(userClasses.role, allowedRoles)));
 
-    // Path 4: User in group → admin assigned to group (direct match)
-    // Groups are standalone entities with no hierarchy
+    // Path 3: User's class membership → admins assigned directly to that class
+    const viaDirectClass = this.db
+      .select({ administrationId: administrationClasses.administrationId })
+      .from(userClasses)
+      .innerJoin(administrationClasses, eq(administrationClasses.classId, userClasses.classId))
+      .where(and(eq(userClasses.userId, userId), inArray(userClasses.role, allowedRoles)));
+
+    // Path 4: User's group membership → admins assigned directly to that group
     const viaDirectGroup = this.db
       .select({ administrationId: administrationGroups.administrationId })
-      .from(administrationGroups)
-      .innerJoin(userGroups, eq(userGroups.groupId, administrationGroups.groupId))
+      .from(userGroups)
+      .innerJoin(administrationGroups, eq(administrationGroups.groupId, userGroups.groupId))
       .where(and(eq(userGroups.userId, userId), inArray(userGroups.role, allowedRoles)));
 
-    // Build base union (paths 1-4, all roles)
-    // Uses UNION (not UNION ALL) for deduplication since we only need unique administration IDs.
-    // Performance note: UNION adds sort+dedup overhead, but result sets are typically smalln and
-    // deduplication is required since a user can access the same administration via multiple
-    // paths (e.g., both org membership and direct class assignment).
-    let union = viaUserOrgToAdminOrg.union(viaUserClassToAdminOrg).union(viaDirectClass).union(viaDirectGroup);
+    // Combine paths with UNION to deduplicate results
+    const lookUpUnion = viaUserOrgToAdminOrg.union(viaUserClassToAdminOrg).union(viaDirectClass).union(viaDirectGroup);
 
-    // =========================================================================
-    // LOOK DOWN paths (supervisory roles only)
-    // =========================================================================
+    // ─────────────────────────────────────────────────────────────────────────
+    // LOOK DOWN: Find administrations on descendants (supervisory roles only)
+    // ─────────────────────────────────────────────────────────────────────────
 
     const supervisoryAllowedRoles = allowedRoles.filter((role) => SUPERVISORY_ROLES.includes(role));
 
-    if (supervisoryAllowedRoles.length > 0) {
-      // Path 5: User in org → admin assigned to descendant org (or same org)
-      // Supervisory user sees administrations assigned to any org at or below their org
-      // ltree: admin_org.path <@ user_org.path (admin is descendant of or equal to user's org)
-      // Note: Overlap with Path 1 at equality is handled by UNION deduplication
-      const viaUserOrgToDescendantOrg = this.db
-        .select({ administrationId: administrationOrgs.administrationId })
-        .from(administrationOrgs)
-        .innerJoin(adminOrg, eq(adminOrg.id, administrationOrgs.orgId))
-        .innerJoin(userOrgs, eq(userOrgs.userId, userId))
-        .innerJoin(userOrg, eq(userOrg.id, userOrgs.orgId))
-        .where(and(inArray(userOrgs.role, supervisoryAllowedRoles), sql`${adminOrg.path} <@ ${userOrg.path}`));
-
-      // Path 6: User in org → admin assigned to class under user's org
-      // Supervisory user sees administrations on classes anywhere in their org subtree
-      // ltree: class.org_path <@ user_org.path
-      const viaUserOrgToDescendantClass = this.db
-        .select({ administrationId: administrationClasses.administrationId })
-        .from(administrationClasses)
-        .innerJoin(classes, eq(classes.id, administrationClasses.classId))
-        .innerJoin(userOrgs, eq(userOrgs.userId, userId))
-        .innerJoin(userOrg, eq(userOrg.id, userOrgs.orgId))
-        .where(and(inArray(userOrgs.role, supervisoryAllowedRoles), sql`${classes.orgPath} <@ ${userOrg.path}`));
-
-      union = union.union(viaUserOrgToDescendantOrg).union(viaUserOrgToDescendantClass);
+    if (supervisoryAllowedRoles.length === 0) {
+      return lookUpUnion;
     }
 
-    return union;
+    // Path 5: User's org membership → admins on descendant orgs
+    // Example: Admin in District sees admins assigned to child Schools
+    const viaUserOrgToDescendantOrg = this.db
+      .select({ administrationId: administrationOrgs.administrationId })
+      .from(userOrgs)
+      .innerJoin(userOrgTable, eq(userOrgTable.id, userOrgs.orgId))
+      .innerJoin(adminOrgTable, sql`${adminOrgTable.path} <@ ${userOrgTable.path}`) // administration's org is at or below user's org
+      .innerJoin(administrationOrgs, eq(administrationOrgs.orgId, adminOrgTable.id))
+      .where(and(eq(userOrgs.userId, userId), inArray(userOrgs.role, supervisoryAllowedRoles)));
+
+    // Path 6: User's org membership → admins on classes within user's org tree
+    // Example: Admin in District sees admins assigned to Classes in child Schools
+    const viaUserOrgToDescendantClass = this.db
+      .select({ administrationId: administrationClasses.administrationId })
+      .from(userOrgs)
+      .innerJoin(userOrgTable, eq(userOrgTable.id, userOrgs.orgId))
+      .innerJoin(classes, sql`${classes.orgPath} <@ ${userOrgTable.path}`) // class is at or below user's org
+      .innerJoin(administrationClasses, eq(administrationClasses.classId, classes.id))
+      .where(and(eq(userOrgs.userId, userId), inArray(userOrgs.role, supervisoryAllowedRoles)));
+
+    return lookUpUnion.union(viaUserOrgToDescendantOrg).union(viaUserOrgToDescendantClass);
   }
 
   /**
-   * Build a query to get all user-administration assignments for given administration IDs.
+   * Returns all users assigned to the given administrations.
    *
-   * Returns tuples of (administrationId, userId) for all users who are assigned to the
-   * given administrations via org/class/group membership. Uses ltree for hierarchy traversal:
-   * - Administration assigned to a district → includes users from all schools and classes in that district
-   * - Administration assigned to a school → includes users from all classes in that school
+   * This is the inverse of `buildUserAdministrationIdsQuery` — given administrations,
+   * find all users who should have access. Respects org hierarchy:
+   * - Admin assigned to District → includes users in that District + all child Schools + all Classes
+   * - Admin assigned to School → includes users in that School + all Classes in it
+   * - Admin assigned to Class/Group → includes only users directly in that Class/Group
    *
-   * Note: Uses UNION ALL (not UNION) because we explicitly want to preserve duplicates
-   * for accurate counting. A user can be assigned to an administration via multiple paths
-   * (e.g., both via org membership and class membership). Callers MUST use
-   * COUNT(DISTINCT userId) to get unique user counts.
-   *
-   * @param administrationIds - Array of administration IDs to get assignments for
-   * @returns A Drizzle subquery returning `{ administrationId: string, userId: string }` rows. Use with `.as('alias')` for aggregation.
+   * @returns Drizzle subquery with `{ administrationId: string, userId: string }` rows.
+   *          Uses UNION ALL for performance (no deduplication). A user with multiple paths
+   *          to an administration appears multiple times. Always use `COUNT(DISTINCT userId)`
+   *          when aggregating.
    */
   buildAdministrationUserAssignmentsQuery(administrationIds: string[]) {
-    // Create table aliases for self-joins on orgs
-    const adminOrg = alias(orgs, 'admin_org');
-    const userOrg = alias(orgs, 'user_org');
+    if (administrationIds.length === 0) {
+      // Return empty result set with correct schema
+      return this.db
+        .select({
+          administrationId: sql<string>`NULL::uuid`.as('administration_id'),
+          userId: sql<string>`NULL::uuid`.as('user_id'),
+        })
+        .from(administrationOrgs)
+        .where(sql`FALSE`);
+    }
 
-    // Path 1: Admin assigned to org → users in that org or any descendant org
-    // ltree: user_org.path <@ admin_org.path (raw SQL required for ltree operators)
+    // Aliases for the orgs table (needed because we join it twice in the same query)
+    const adminOrgTable = alias(orgs, 'admin_org'); // Org where the administration is assigned
+    const userOrgTable = alias(orgs, 'user_org'); // Org where the user has membership
+
+    // Path 1: Administration assigned to org → users in that org or descendant orgs
+    // Example: Administration on District → users in District, Schools, etc.
     const viaOrgToOrgUsers = this.db
       .select({
         administrationId: administrationOrgs.administrationId,
         userId: userOrgs.userId,
       })
       .from(administrationOrgs)
-      .innerJoin(adminOrg, eq(adminOrg.id, administrationOrgs.orgId))
-      .innerJoin(userOrg, sql`${userOrg.path} <@ ${adminOrg.path}`)
-      .innerJoin(userOrgs, eq(userOrgs.orgId, userOrg.id))
+      .innerJoin(adminOrgTable, eq(adminOrgTable.id, administrationOrgs.orgId))
+      // Safe: Drizzle's sql template parameterizes column references; ltree operators require raw SQL
+      .innerJoin(userOrgTable, sql`${userOrgTable.path} <@ ${adminOrgTable.path}`)
+      .innerJoin(userOrgs, eq(userOrgs.orgId, userOrgTable.id))
       .where(inArray(administrationOrgs.administrationId, administrationIds));
 
-    // Path 2: Admin assigned to org → users in classes under that org
-    // ltree: class.org_path <@ admin_org.path (raw SQL required for ltree operators)
+    // Path 2: Administration assigned to org → users in classes under that org
+    // Example: Administration on District → users in Classes within that District
     const viaOrgToClassUsers = this.db
       .select({
         administrationId: administrationOrgs.administrationId,
         userId: userClasses.userId,
       })
       .from(administrationOrgs)
-      .innerJoin(adminOrg, eq(adminOrg.id, administrationOrgs.orgId))
-      .innerJoin(classes, sql`${classes.orgPath} <@ ${adminOrg.path}`)
+      .innerJoin(adminOrgTable, eq(adminOrgTable.id, administrationOrgs.orgId))
+      .innerJoin(classes, sql`${classes.orgPath} <@ ${adminOrgTable.path}`) // class is at or below administration's org
       .innerJoin(userClasses, eq(userClasses.classId, classes.id))
       .where(inArray(administrationOrgs.administrationId, administrationIds));
 
-    // Path 3: Admin assigned to class → users in that class (direct)
+    // Path 3: Admin assigned to class → users in that class
     const viaDirectClass = this.db
       .select({
         administrationId: administrationClasses.administrationId,
@@ -237,8 +244,7 @@ export class AuthorizationRepository {
       .innerJoin(userClasses, eq(userClasses.classId, administrationClasses.classId))
       .where(inArray(administrationClasses.administrationId, administrationIds));
 
-    // Path 4: Admin assigned to group → users in that group (direct)
-    // Groups are standalone, no hierarchy
+    // Path 4: Admin assigned to group → users in that group
     const viaDirectGroup = this.db
       .select({
         administrationId: administrationGroups.administrationId,
@@ -248,25 +254,23 @@ export class AuthorizationRepository {
       .innerJoin(userGroups, eq(userGroups.groupId, administrationGroups.groupId))
       .where(inArray(administrationGroups.administrationId, administrationIds));
 
-    // Combine with UNION ALL (not UNION) to preserve duplicates intentionally.
-    // Performance note: UNION ALL is faster (no sort/dedup), but requires COUNT(DISTINCT userId)
-    // in the aggregation query. We need duplicates because a user can be assigned via multiple
-    // paths, and we want accurate per-administration counts without losing any assignments.
+    // UNION ALL preserves duplicates (faster than UNION, but requires COUNT(DISTINCT) later)
     return viaOrgToOrgUsers.unionAll(viaOrgToClassUsers).unionAll(viaDirectClass).unionAll(viaDirectGroup);
   }
 
   /**
-   * Get count of assigned users for multiple administrations.
+   * Counts unique users assigned to each administration.
    *
-   * A user is "assigned" to an administration if they belong to an org, class, or group
-   * that is linked to that administration. This respects the org hierarchy:
-   * - Administration assigned to a district → includes users from all schools and classes in that district
-   * - Administration assigned to a school → includes users from all classes in that school
+   * @example
+   * ```ts
+   * const counts = await authRepo.getAssignedUserCountsByAdministrationIds(['admin-1', 'admin-2']);
+   * // Map { 'admin-1' => 25, 'admin-2' => 50 }
    *
-   * @param administrationIds - Array of administration IDs to count assigned users for
-   * @returns Map of administration ID to assigned user count.
-   *          Administrations with zero assignments are NOT included in the map.
-   *          Use `map.get(id) ?? 0` to default to zero for missing entries.
+   * // Administrations with 0 users are not in the map, so default to 0:
+   * const count = counts.get('admin-3') ?? 0; // 0
+   * ```
+   *
+   * @returns Map of administrationId → user count (missing = 0 users)
    */
   async getAssignedUserCountsByAdministrationIds(administrationIds: string[]): Promise<Map<string, number>> {
     if (administrationIds.length === 0) {

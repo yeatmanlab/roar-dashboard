@@ -21,7 +21,7 @@ describe('AdministrationRepository', () => {
 
   // Mock AuthorizationRepository instance
   const mockAuthRepository = {
-    buildAccessibleAdministrationIdsQuery: vi.fn(),
+    buildUserAdministrationIdsQuery: vi.fn(),
     getAssignedUserCountsByAdministrationIds: vi.fn(),
   };
 
@@ -109,7 +109,7 @@ describe('AdministrationRepository', () => {
   describe('listAuthorized', () => {
     // Setup mock for the accessible admins subquery
     const setupAccessibleAdminsMock = () => {
-      mockAuthRepository.buildAccessibleAdministrationIdsQuery.mockReturnValue({
+      mockAuthRepository.buildUserAdministrationIdsQuery.mockReturnValue({
         as: vi.fn().mockReturnValue({
           administrationId: 'accessible_admins.administrationId',
         }),
@@ -124,10 +124,10 @@ describe('AdministrationRepository', () => {
       );
 
       expect(result).toEqual({ items: [], totalItems: 0 });
-      expect(mockAuthRepository.buildAccessibleAdministrationIdsQuery).not.toHaveBeenCalled();
+      expect(mockAuthRepository.buildUserAdministrationIdsQuery).not.toHaveBeenCalled();
     });
 
-    it('should call AuthorizationRepository.buildAccessibleAdministrationIdsQuery with correct params', async () => {
+    it('should call AuthorizationRepository.buildUserAdministrationIdsQuery with correct params', async () => {
       setupAccessibleAdminsMock();
 
       // Mock count query to return 0 to avoid needing data query mock
@@ -145,7 +145,7 @@ describe('AdministrationRepository', () => {
         { page: 1, perPage: 10 },
       );
 
-      expect(mockAuthRepository.buildAccessibleAdministrationIdsQuery).toHaveBeenCalledWith({
+      expect(mockAuthRepository.buildUserAdministrationIdsQuery).toHaveBeenCalledWith({
         userId: 'user-123',
         allowedRoles: ['administrator'],
       });

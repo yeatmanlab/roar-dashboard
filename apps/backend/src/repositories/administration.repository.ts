@@ -127,7 +127,7 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
 
     // Build the UNION query for accessible administration IDs using AuthorizationRepository
     const accessibleAdmins = this.authorizationRepository
-      .buildAccessibleAdministrationIdsQuery(authorization)
+      .buildUserAdministrationIdsQuery(authorization)
       .as('accessible_admins');
 
     // Build status filter if provided

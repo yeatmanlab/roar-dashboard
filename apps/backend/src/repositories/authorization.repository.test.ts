@@ -58,12 +58,12 @@ describe('AuthorizationRepository', () => {
     }));
   };
 
-  describe('buildAccessibleAdministrationIdsQuery', () => {
+  describe('buildUserAdministrationIdsQuery', () => {
     it('should build look-up only paths for non-supervisory roles (student)', () => {
       setupUnionMocks(EXPECTED_PATHS_NON_SUPERVISORY - 1);
 
       const repository = new AuthorizationRepository(mockDb);
-      repository.buildAccessibleAdministrationIdsQuery({
+      repository.buildUserAdministrationIdsQuery({
         userId: 'user-123',
         allowedRoles: ['student' as UserRole],
       });
@@ -76,7 +76,7 @@ describe('AuthorizationRepository', () => {
       setupUnionMocks();
 
       const repository = new AuthorizationRepository(mockDb);
-      repository.buildAccessibleAdministrationIdsQuery({
+      repository.buildUserAdministrationIdsQuery({
         userId: 'user-123',
         allowedRoles: ['administrator' as UserRole],
       });
@@ -89,7 +89,7 @@ describe('AuthorizationRepository', () => {
       setupUnionMocks();
 
       const repository = new AuthorizationRepository(mockDb);
-      repository.buildAccessibleAdministrationIdsQuery({
+      repository.buildUserAdministrationIdsQuery({
         userId: 'user-123',
         allowedRoles: ['teacher' as UserRole],
       });
@@ -102,7 +102,7 @@ describe('AuthorizationRepository', () => {
       setupUnionMocks(EXPECTED_PATHS_NON_SUPERVISORY - 1);
 
       const repository = new AuthorizationRepository(mockDb);
-      repository.buildAccessibleAdministrationIdsQuery({
+      repository.buildUserAdministrationIdsQuery({
         userId: 'user-123',
         allowedRoles: ['guardian' as UserRole],
       });
@@ -115,7 +115,7 @@ describe('AuthorizationRepository', () => {
       setupUnionMocks();
 
       const repository = new AuthorizationRepository(mockDb);
-      repository.buildAccessibleAdministrationIdsQuery({
+      repository.buildUserAdministrationIdsQuery({
         userId: 'user-123',
         allowedRoles: ['student' as UserRole, 'teacher' as UserRole],
       });
@@ -128,7 +128,7 @@ describe('AuthorizationRepository', () => {
       setupUnionMocks();
 
       const repository = new AuthorizationRepository(mockDb);
-      const result = repository.buildAccessibleAdministrationIdsQuery({
+      const result = repository.buildUserAdministrationIdsQuery({
         userId: 'user-123',
         allowedRoles: ['administrator' as UserRole],
       });
