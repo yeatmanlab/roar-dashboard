@@ -167,7 +167,7 @@ const ScoreReportService = (() => {
     // --- CHANGED: use safe wrapper instead of direct call ---
     const taskDescription = safeGetExtendedDescription(String(task.taskId));
 
-    if (tasksToDisplayPercentCorrect.includes(task.taskId)) {
+    if (tasksToDisplayPercentCorrect.includes(task.taskId) && !(task.taskId === 'swr-es' && scoringVersion >= 1)) {
       return {
         keypath: 'scoreReports.percentageCorrectTaskDescription',
         slots: {
@@ -295,9 +295,10 @@ const ScoreReportService = (() => {
             supportColor,
           },
           percentileScore: {
-            name: tasksToDisplayPercentCorrect.includes(taskId)
-              ? i18n.t('scoreReports.percentCorrect')
-              : i18n.t('scoreReports.percentileScore'),
+            name:
+              tasksToDisplayPercentCorrect.includes(taskId) && !useSpanishNorms
+                ? i18n.t('scoreReports.percentCorrect')
+                : i18n.t('scoreReports.percentileScore'),
             value: Math.round(percentileScore),
             min: 0,
             max: taskId.includes('letter') ? 100 : 99,
