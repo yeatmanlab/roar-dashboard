@@ -10,12 +10,12 @@ import {
   userGroups,
   orgs,
   classes,
-} from '../db/schema';
-import { SUPERVISORY_ROLES } from '../constants/role-classifications';
-import { CoreDbClient } from '../db/clients';
-import type * as CoreDbSchema from '../db/schema/core';
-import type { UserRole } from '../enums/user-role.enum';
-import { logger } from '../logger';
+} from '../../db/schema';
+import { SUPERVISORY_ROLES } from '../../constants/role-classifications';
+import { CoreDbClient } from '../../db/clients';
+import type * as CoreDbSchema from '../../db/schema/core';
+import type { UserRole } from '../../enums/user-role.enum';
+import { logger } from '../../logger';
 
 /**
  * Filter criteria for authorization queries.
@@ -28,9 +28,9 @@ export interface AuthorizationFilter {
 }
 
 /**
- * Authorization Repository
+ * Administration Access Controls
  *
- * Builds SQL queries to determine what resources a user can access based on their
+ * Builds SQL queries to determine what administrations a user can access based on their
  * org/class/group memberships. Used by other repositories to filter query results.
  *
  * ## How Access Works
@@ -65,7 +65,7 @@ export interface AuthorizationFilter {
  * - `child <@ parent` — child is descendant of (or equal to) parent
  * - `parent @> child` — parent is ancestor of (or equal to) child
  */
-export class AuthorizationRepository {
+export class AdministrationAccessControls {
   constructor(protected readonly db: NodePgDatabase<typeof CoreDbSchema> = CoreDbClient) {}
 
   /**
@@ -76,7 +76,7 @@ export class AuthorizationRepository {
    *
    * @example
    * ```ts
-   * const accessibleAdmins = authRepo.buildUserAdministrationIdsQuery({
+   * const accessibleAdmins = adminAccessControls.buildUserAdministrationIdsQuery({
    *   userId: 'user-123',
    *   allowedRoles: ['student', 'teacher'],
    * });
@@ -267,7 +267,7 @@ export class AuthorizationRepository {
    *
    * @example
    * ```ts
-   * const counts = await authRepo.getAssignedUserCountsByAdministrationIds(['admin-1', 'admin-2']);
+   * const counts = await adminAccessControls.getAssignedUserCountsByAdministrationIds(['admin-1', 'admin-2']);
    * // Map { 'admin-1' => 25, 'admin-2' => 50 }
    *
    * // Administrations with 0 users are not in the map, so default to 0:

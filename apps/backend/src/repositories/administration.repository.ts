@@ -12,7 +12,7 @@ import type {
 } from '@roar-dashboard/api-contract';
 import { BaseRepository, type PaginatedResult } from './base.repository';
 import type { BasePaginatedQueryParams } from './interfaces/base.repository.interface';
-import { AuthorizationRepository, type AuthorizationFilter } from './authorization.repository';
+import { AdministrationAccessControls, type AuthorizationFilter } from './access-controls';
 
 /**
  * Sort field type derived from api-contract.
@@ -37,18 +37,18 @@ export interface ListAuthorizedOptions extends BasePaginatedQueryParams {
  * Provides data access methods for the administrations table.
  * Extends BaseRepository for standard CRUD operations.
  *
- * Uses AuthorizationRepository for authorization-related queries (accessible administrations,
+ * Uses AdministrationAccessControls for authorization-related queries (accessible administrations,
  * assigned user counts) to keep authorization logic centralized and reusable.
  */
 export class AdministrationRepository extends BaseRepository<Administration, typeof administrations> {
-  private readonly authorizationRepository: AuthorizationRepository;
+  private readonly accessControls: AdministrationAccessControls;
 
   constructor(
     db: NodePgDatabase<typeof CoreDbSchema> = CoreDbClient,
-    authorizationRepository: AuthorizationRepository = new AuthorizationRepository(db),
+    accessControls: AdministrationAccessControls = new AdministrationAccessControls(db),
   ) {
     super(db, administrations);
-    this.authorizationRepository = authorizationRepository;
+    this.accessControls = accessControls;
   }
 
   /**
@@ -126,9 +126,7 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
     const offset = (page - 1) * perPage;
 
     // Build the UNION query for accessible administration IDs using AuthorizationRepository
-    const accessibleAdmins = this.authorizationRepository
-      .buildUserAdministrationIdsQuery(authorization)
-      .as('accessible_admins');
+    const accessibleAdmins = this.accessControls.buildUserAdministrationIdsQuery(authorization).as('accessible_admins');
 
     // Build status filter if provided
     const statusFilter = this.buildStatusFilter(status);
@@ -189,12 +187,12 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
    * - Administration assigned to a district → includes users from all schools and classes in that district
    * - Administration assigned to a school → includes users from all classes in that school
    *
-   * Delegates to AuthorizationRepository for the actual query logic.
+   * Delegates to AdministrationAccessControls for the actual query logic.
    *
    * @param administrationIds - Array of administration IDs to count assigned users for
    * @returns Map of administration ID to assigned user count
    */
   async getAssignedUserCountsByAdministrationIds(administrationIds: string[]): Promise<Map<string, number>> {
-    return this.authorizationRepository.getAssignedUserCountsByAdministrationIds(administrationIds);
+    return this.accessControls.getAssignedUserCountsByAdministrationIds(administrationIds);
   }
 }

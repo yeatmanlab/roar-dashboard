@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { AuthorizationRepository } from './authorization.repository';
-import type { UserRole } from '../enums/user-role.enum';
+import { AdministrationAccessControls } from './administration.access-controls';
+import type { UserRole } from '../../enums/user-role.enum';
 
 // Expected path counts for authorization queries
 // Ancestor only: org→org, class→org, direct class, direct group
@@ -10,7 +10,7 @@ const EXPECTED_PATHS_SUPERVISORY = 6;
 // User assignments: org→org users, org→class users, direct class, direct group
 const EXPECTED_PATHS_USER_ASSIGNMENTS = 4;
 
-describe('AuthorizationRepository', () => {
+describe('AdministrationAccessControls', () => {
   const mockSelect = vi.fn();
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -62,8 +62,8 @@ describe('AuthorizationRepository', () => {
     it('should build ancestor-only paths for non-supervisory roles (student)', () => {
       setupUnionMocks(EXPECTED_PATHS_NON_SUPERVISORY - 1);
 
-      const repository = new AuthorizationRepository(mockDb);
-      repository.buildUserAdministrationIdsQuery({
+      const accessControls = new AdministrationAccessControls(mockDb);
+      accessControls.buildUserAdministrationIdsQuery({
         userId: 'user-123',
         allowedRoles: ['student' as UserRole],
       });
@@ -75,8 +75,8 @@ describe('AuthorizationRepository', () => {
     it('should build ancestor and descendant paths for supervisory roles (administrator)', () => {
       setupUnionMocks();
 
-      const repository = new AuthorizationRepository(mockDb);
-      repository.buildUserAdministrationIdsQuery({
+      const accessControls = new AdministrationAccessControls(mockDb);
+      accessControls.buildUserAdministrationIdsQuery({
         userId: 'user-123',
         allowedRoles: ['administrator' as UserRole],
       });
@@ -88,8 +88,8 @@ describe('AuthorizationRepository', () => {
     it('should build ancestor and descendant paths for teacher role', () => {
       setupUnionMocks();
 
-      const repository = new AuthorizationRepository(mockDb);
-      repository.buildUserAdministrationIdsQuery({
+      const accessControls = new AdministrationAccessControls(mockDb);
+      accessControls.buildUserAdministrationIdsQuery({
         userId: 'user-123',
         allowedRoles: ['teacher' as UserRole],
       });
@@ -101,8 +101,8 @@ describe('AuthorizationRepository', () => {
     it('should build ancestor-only paths for guardian role', () => {
       setupUnionMocks(EXPECTED_PATHS_NON_SUPERVISORY - 1);
 
-      const repository = new AuthorizationRepository(mockDb);
-      repository.buildUserAdministrationIdsQuery({
+      const accessControls = new AdministrationAccessControls(mockDb);
+      accessControls.buildUserAdministrationIdsQuery({
         userId: 'user-123',
         allowedRoles: ['guardian' as UserRole],
       });
@@ -114,8 +114,8 @@ describe('AuthorizationRepository', () => {
     it('should build all paths when mixed roles include at least one supervisory role', () => {
       setupUnionMocks();
 
-      const repository = new AuthorizationRepository(mockDb);
-      repository.buildUserAdministrationIdsQuery({
+      const accessControls = new AdministrationAccessControls(mockDb);
+      accessControls.buildUserAdministrationIdsQuery({
         userId: 'user-123',
         allowedRoles: ['student' as UserRole, 'teacher' as UserRole],
       });
@@ -127,8 +127,8 @@ describe('AuthorizationRepository', () => {
     it('should return a query object with union and as methods', () => {
       setupUnionMocks();
 
-      const repository = new AuthorizationRepository(mockDb);
-      const result = repository.buildUserAdministrationIdsQuery({
+      const accessControls = new AdministrationAccessControls(mockDb);
+      const result = accessControls.buildUserAdministrationIdsQuery({
         userId: 'user-123',
         allowedRoles: ['administrator' as UserRole],
       });
@@ -177,8 +177,8 @@ describe('AuthorizationRepository', () => {
     it('should build all user assignment paths', () => {
       setupAssignmentsMocks();
 
-      const repository = new AuthorizationRepository(mockDb);
-      repository.buildAdministrationUserAssignmentsQuery(['admin-1', 'admin-2']);
+      const accessControls = new AdministrationAccessControls(mockDb);
+      accessControls.buildAdministrationUserAssignmentsQuery(['admin-1', 'admin-2']);
 
       // Builds paths using ltree for hierarchy traversal
       expect(mockSelect).toHaveBeenCalledTimes(EXPECTED_PATHS_USER_ASSIGNMENTS);
@@ -237,8 +237,8 @@ describe('AuthorizationRepository', () => {
     };
 
     it('should return empty map when given empty array', async () => {
-      const repository = new AuthorizationRepository(mockDb);
-      const result = await repository.getAssignedUserCountsByAdministrationIds([]);
+      const accessControls = new AdministrationAccessControls(mockDb);
+      const result = await accessControls.getAssignedUserCountsByAdministrationIds([]);
 
       expect(result).toEqual(new Map());
       expect(mockSelect).not.toHaveBeenCalled();
@@ -247,8 +247,8 @@ describe('AuthorizationRepository', () => {
     it('should return counts map for single administration', async () => {
       setupAggregationMock([{ administrationId: 'admin-1', assignedCount: 25 }]);
 
-      const repository = new AuthorizationRepository(mockDb);
-      const result = await repository.getAssignedUserCountsByAdministrationIds(['admin-1']);
+      const accessControls = new AdministrationAccessControls(mockDb);
+      const result = await accessControls.getAssignedUserCountsByAdministrationIds(['admin-1']);
 
       expect(result.get('admin-1')).toBe(25);
       expect(result.size).toBe(1);
@@ -261,8 +261,8 @@ describe('AuthorizationRepository', () => {
         { administrationId: 'admin-3', assignedCount: 10 },
       ]);
 
-      const repository = new AuthorizationRepository(mockDb);
-      const result = await repository.getAssignedUserCountsByAdministrationIds(['admin-1', 'admin-2', 'admin-3']);
+      const accessControls = new AdministrationAccessControls(mockDb);
+      const result = await accessControls.getAssignedUserCountsByAdministrationIds(['admin-1', 'admin-2', 'admin-3']);
 
       expect(result.size).toBe(3);
       expect(result.get('admin-1')).toBe(25);
@@ -273,8 +273,8 @@ describe('AuthorizationRepository', () => {
     it('should not include administrations with no assigned users', async () => {
       setupAggregationMock([{ administrationId: 'admin-1', assignedCount: 15 }]);
 
-      const repository = new AuthorizationRepository(mockDb);
-      const result = await repository.getAssignedUserCountsByAdministrationIds(['admin-1', 'admin-2']);
+      const accessControls = new AdministrationAccessControls(mockDb);
+      const result = await accessControls.getAssignedUserCountsByAdministrationIds(['admin-1', 'admin-2']);
 
       expect(result.size).toBe(1);
       expect(result.has('admin-1')).toBe(true);
@@ -284,8 +284,8 @@ describe('AuthorizationRepository', () => {
     it('should return empty map when no administrations have assigned users', async () => {
       setupAggregationMock([]);
 
-      const repository = new AuthorizationRepository(mockDb);
-      const result = await repository.getAssignedUserCountsByAdministrationIds(['admin-1']);
+      const accessControls = new AdministrationAccessControls(mockDb);
+      const result = await accessControls.getAssignedUserCountsByAdministrationIds(['admin-1']);
 
       expect(result.size).toBe(0);
     });
@@ -335,9 +335,9 @@ describe('AuthorizationRepository', () => {
         };
       });
 
-      const repository = new AuthorizationRepository(mockDb);
+      const accessControls = new AdministrationAccessControls(mockDb);
 
-      await expect(repository.getAssignedUserCountsByAdministrationIds(['admin-1'])).rejects.toThrow(
+      await expect(accessControls.getAssignedUserCountsByAdministrationIds(['admin-1'])).rejects.toThrow(
         'Connection refused',
       );
     });
@@ -345,8 +345,8 @@ describe('AuthorizationRepository', () => {
     it('should build queries for all four access paths', async () => {
       setupAggregationMock([{ administrationId: 'admin-1', assignedCount: 10 }]);
 
-      const repository = new AuthorizationRepository(mockDb);
-      await repository.getAssignedUserCountsByAdministrationIds(['admin-1']);
+      const accessControls = new AdministrationAccessControls(mockDb);
+      await accessControls.getAssignedUserCountsByAdministrationIds(['admin-1']);
 
       // 4 subquery selects + 1 aggregation select = 5 total
       expect(mockSelect).toHaveBeenCalledTimes(5);

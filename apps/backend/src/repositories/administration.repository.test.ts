@@ -1,12 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AdministrationRepository } from './administration.repository';
-import { AuthorizationRepository } from './authorization.repository';
+import { AdministrationAccessControls } from './access-controls';
 import { AdministrationFactory } from '../test-support/factories/administration.factory';
 import type { UserRole } from '../enums/user-role.enum';
 
-// Mock AuthorizationRepository
-vi.mock('./authorization.repository', () => ({
-  AuthorizationRepository: vi.fn(),
+// Mock AdministrationAccessControls
+vi.mock('./access-controls', () => ({
+  AdministrationAccessControls: vi.fn(),
 }));
 
 describe('AdministrationRepository', () => {
@@ -19,8 +19,8 @@ describe('AdministrationRepository', () => {
     selectDistinct: mockSelectDistinct,
   };
 
-  // Mock AuthorizationRepository instance
-  const mockAuthRepository = {
+  // Mock AdministrationAccessControls instance
+  const mockAccessControls = {
     buildUserAdministrationIdsQuery: vi.fn(),
     getAssignedUserCountsByAdministrationIds: vi.fn(),
   };
@@ -28,8 +28,8 @@ describe('AdministrationRepository', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Reset the mock implementation
-    vi.mocked(AuthorizationRepository).mockImplementation(
-      () => mockAuthRepository as unknown as AuthorizationRepository,
+    vi.mocked(AdministrationAccessControls).mockImplementation(
+      () => mockAccessControls as unknown as AdministrationAccessControls,
     );
   });
 
@@ -109,7 +109,7 @@ describe('AdministrationRepository', () => {
   describe('listAuthorized', () => {
     // Setup mock for the accessible admins subquery
     const setupAccessibleAdminsMock = () => {
-      mockAuthRepository.buildUserAdministrationIdsQuery.mockReturnValue({
+      mockAccessControls.buildUserAdministrationIdsQuery.mockReturnValue({
         as: vi.fn().mockReturnValue({
           administrationId: 'accessible_admins.administrationId',
         }),
@@ -124,10 +124,10 @@ describe('AdministrationRepository', () => {
       );
 
       expect(result).toEqual({ items: [], totalItems: 0 });
-      expect(mockAuthRepository.buildUserAdministrationIdsQuery).not.toHaveBeenCalled();
+      expect(mockAccessControls.buildUserAdministrationIdsQuery).not.toHaveBeenCalled();
     });
 
-    it('should call AuthorizationRepository.buildUserAdministrationIdsQuery with correct params', async () => {
+    it('should call AdministrationAccessControls.buildUserAdministrationIdsQuery with correct params', async () => {
       setupAccessibleAdminsMock();
 
       // Mock count query to return 0 to avoid needing data query mock
@@ -145,7 +145,7 @@ describe('AdministrationRepository', () => {
         { page: 1, perPage: 10 },
       );
 
-      expect(mockAuthRepository.buildUserAdministrationIdsQuery).toHaveBeenCalledWith({
+      expect(mockAccessControls.buildUserAdministrationIdsQuery).toHaveBeenCalledWith({
         userId: 'user-123',
         allowedRoles: ['administrator'],
       });
@@ -276,22 +276,22 @@ describe('AdministrationRepository', () => {
   });
 
   describe('getAssignedUserCountsByAdministrationIds', () => {
-    it('should delegate to AuthorizationRepository', async () => {
+    it('should delegate to AdministrationAccessControls', async () => {
       const expectedResult = new Map([
         ['admin-1', 25],
         ['admin-2', 50],
       ]);
-      mockAuthRepository.getAssignedUserCountsByAdministrationIds.mockResolvedValue(expectedResult);
+      mockAccessControls.getAssignedUserCountsByAdministrationIds.mockResolvedValue(expectedResult);
 
       const repository = new AdministrationRepository(mockDb);
       const result = await repository.getAssignedUserCountsByAdministrationIds(['admin-1', 'admin-2']);
 
-      expect(mockAuthRepository.getAssignedUserCountsByAdministrationIds).toHaveBeenCalledWith(['admin-1', 'admin-2']);
+      expect(mockAccessControls.getAssignedUserCountsByAdministrationIds).toHaveBeenCalledWith(['admin-1', 'admin-2']);
       expect(result).toEqual(expectedResult);
     });
 
-    it('should return empty map when AuthorizationRepository returns empty map', async () => {
-      mockAuthRepository.getAssignedUserCountsByAdministrationIds.mockResolvedValue(new Map());
+    it('should return empty map when AdministrationAccessControls returns empty map', async () => {
+      mockAccessControls.getAssignedUserCountsByAdministrationIds.mockResolvedValue(new Map());
 
       const repository = new AdministrationRepository(mockDb);
       const result = await repository.getAssignedUserCountsByAdministrationIds(['admin-1']);
@@ -299,9 +299,9 @@ describe('AdministrationRepository', () => {
       expect(result.size).toBe(0);
     });
 
-    it('should propagate errors from AuthorizationRepository', async () => {
+    it('should propagate errors from AdministrationAccessControls', async () => {
       const dbError = new Error('Connection refused');
-      mockAuthRepository.getAssignedUserCountsByAdministrationIds.mockRejectedValue(dbError);
+      mockAccessControls.getAssignedUserCountsByAdministrationIds.mockRejectedValue(dbError);
 
       const repository = new AdministrationRepository(mockDb);
 
