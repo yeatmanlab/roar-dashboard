@@ -35,7 +35,7 @@ async function truncateSchema(db: NodePgDatabase<Record<string, unknown>>, schem
 
 /**
  * Truncate all tables in both core and assessment test databases.
- * Should be called in beforeEach to ensure test isolation.
+ * Called in afterAll to clean up after all tests in a file complete.
  */
 export async function truncateAllTables(): Promise<void> {
   await Promise.all([

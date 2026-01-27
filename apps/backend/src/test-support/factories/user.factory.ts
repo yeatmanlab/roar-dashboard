@@ -4,6 +4,8 @@ import type { User, NewUser } from '../../db/schema';
 import type { AuthContext } from '../../services/auth/auth.types';
 import { CoreDbClient } from '../../db/clients';
 import { users } from '../../db/schema/core';
+import { AuthProvider } from '../../enums/auth-provider.enum';
+import { UserType } from '../../enums/user-type.enum';
 
 /**
  * Factory for creating User test objects.
@@ -52,14 +54,14 @@ export const UserFactory = Factory.define<User>(({ onCreate }) => {
   return {
     id: faker.string.uuid(),
     assessmentPid: faker.string.alphanumeric(12),
-    authProvider: ['password'],
+    authProvider: [AuthProvider.PASSWORD],
     authId: faker.string.uuid(),
     nameFirst: faker.person.firstName(),
     nameMiddle: null,
     nameLast: faker.person.lastName(),
     username: faker.internet.username(),
     email: faker.internet.email(),
-    userType: faker.helpers.arrayElement(['student', 'educator', 'caregiver', 'admin'] as const),
+    userType: faker.helpers.arrayElement(Object.values(UserType)),
     dob: null,
     grade: null,
     schoolLevel: null,

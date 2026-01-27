@@ -5,6 +5,7 @@ import type { AdministrationWithEmbeds } from '../../services/administration/adm
 import { CoreDbClient } from '../../db/clients';
 import { administrations } from '../../db/schema/core';
 import { UserFactory } from './user.factory';
+import { UserType } from '../../enums/user-type.enum';
 
 /**
  * Factory for creating Administration test objects.
@@ -18,10 +19,10 @@ import { UserFactory } from './user.factory';
  */
 export const AdministrationFactory = Factory.define<Administration>(({ onCreate }) => {
   onCreate(async (administration) => {
-    // If createdBy is a placeholder UUID, create a real user first
+    // If createdBy is a placeholder UUID, create an admin user first to use as creator
     let createdBy = administration.createdBy;
     if (!createdBy || createdBy === '00000000-0000-0000-0000-000000000000') {
-      const user = await UserFactory.create();
+      const user = await UserFactory.create({ userType: UserType.ADMIN });
       createdBy = user.id;
     }
 
@@ -42,16 +43,17 @@ export const AdministrationFactory = Factory.define<Administration>(({ onCreate 
   });
 
   const dateStart = faker.date.past();
+  const administrationName = faker.word.words(3).replace(/\b\w/g, (c) => c.toUpperCase());
+
   return {
     id: faker.string.uuid(),
-    namePublic: faker.company.name() + ' Assessment',
-    name: faker.company.name() + ' Internal',
+    namePublic: `${administrationName} Administration`,
+    name: `${administrationName} Internal`,
     description: faker.lorem.sentence(),
     dateStart,
     dateEnd: faker.date.future({ refDate: dateStart }),
     isOrdered: faker.datatype.boolean(),
-    // Placeholder - will be replaced in onCreate if not overridden
-    createdBy: '00000000-0000-0000-0000-000000000000',
+    createdBy: '00000000-0000-0000-0000-000000000000', // Auto-created if not overridden
     createdAt: new Date(),
     updatedAt: new Date(),
   };
