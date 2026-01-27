@@ -98,5 +98,5 @@ export function getFirekitCompat(): FirekitFacade {
  * @throws SDKError - Always, until implemented.
  */
 export function abortRun(): AbortRunOutput {
-  throw new SDKError('appkit.abortRun not yet implemented');
+  throw new SDKError('firekit.abortRun not yet implemented');
 }
