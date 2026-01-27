@@ -3,9 +3,9 @@ import { AuthorizationRepository } from './authorization.repository';
 import type { UserRole } from '../enums/user-role.enum';
 
 // Expected path counts for authorization queries
-// Look-up only: org→org, class→org, direct class, direct group
+// Ancestor only: org→org, class→org, direct class, direct group
 const EXPECTED_PATHS_NON_SUPERVISORY = 4;
-// Look-up + look-down: base 4 + org→descendant org, org→descendant class
+// Ancestor + descendant: base 4 + org→descendant org, org→descendant class
 const EXPECTED_PATHS_SUPERVISORY = 6;
 // User assignments: org→org users, org→class users, direct class, direct group
 const EXPECTED_PATHS_USER_ASSIGNMENTS = 4;
@@ -59,7 +59,7 @@ describe('AuthorizationRepository', () => {
   };
 
   describe('buildUserAdministrationIdsQuery', () => {
-    it('should build look-up only paths for non-supervisory roles (student)', () => {
+    it('should build ancestor-only paths for non-supervisory roles (student)', () => {
       setupUnionMocks(EXPECTED_PATHS_NON_SUPERVISORY - 1);
 
       const repository = new AuthorizationRepository(mockDb);
@@ -68,11 +68,11 @@ describe('AuthorizationRepository', () => {
         allowedRoles: ['student' as UserRole],
       });
 
-      // Student role only builds look-up paths (no look-down)
+      // Student role only builds ancestor paths (no descendant access)
       expect(mockSelect).toHaveBeenCalledTimes(EXPECTED_PATHS_NON_SUPERVISORY);
     });
 
-    it('should build look-up and look-down paths for supervisory roles (administrator)', () => {
+    it('should build ancestor and descendant paths for supervisory roles (administrator)', () => {
       setupUnionMocks();
 
       const repository = new AuthorizationRepository(mockDb);
@@ -81,11 +81,11 @@ describe('AuthorizationRepository', () => {
         allowedRoles: ['administrator' as UserRole],
       });
 
-      // Administrator builds all paths (look-up + look-down)
+      // Administrator builds all paths (ancestor + descendant)
       expect(mockSelect).toHaveBeenCalledTimes(EXPECTED_PATHS_SUPERVISORY);
     });
 
-    it('should build look-up and look-down paths for teacher role', () => {
+    it('should build ancestor and descendant paths for teacher role', () => {
       setupUnionMocks();
 
       const repository = new AuthorizationRepository(mockDb);
@@ -98,7 +98,7 @@ describe('AuthorizationRepository', () => {
       expect(mockSelect).toHaveBeenCalledTimes(EXPECTED_PATHS_SUPERVISORY);
     });
 
-    it('should build look-up only paths for guardian role', () => {
+    it('should build ancestor-only paths for guardian role', () => {
       setupUnionMocks(EXPECTED_PATHS_NON_SUPERVISORY - 1);
 
       const repository = new AuthorizationRepository(mockDb);
@@ -107,7 +107,7 @@ describe('AuthorizationRepository', () => {
         allowedRoles: ['guardian' as UserRole],
       });
 
-      // Guardian is not supervisory, builds look-up paths only
+      // Guardian is not supervisory, builds ancestor paths only
       expect(mockSelect).toHaveBeenCalledTimes(EXPECTED_PATHS_NON_SUPERVISORY);
     });
 

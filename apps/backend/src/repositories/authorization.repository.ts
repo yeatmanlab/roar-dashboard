@@ -48,11 +48,11 @@ export interface AuthorizationFilter {
  *
  * ## Access Patterns
  *
- * **"Look UP" (all roles)** — Users see administrations on their entity or ancestors:
+ * **Ancestor access (all roles)** — Users see administrations on their entity or ancestors:
  * - Student in School A sees administrations assigned to School A or its parent District
  * - Student in Class X sees administrations assigned to Class X, School A, or District
  *
- * **"Look DOWN" (supervisory roles only)** — Supervisors also see administrations on descendants:
+ * **Descendant access (supervisory roles only)** — Supervisors also see administrations on descendants:
  * - Admin in District sees administrations on all child Schools and Classes
  * - Teacher in School sees administrations on Classes in that School
  *
@@ -103,7 +103,7 @@ export class AuthorizationRepository {
     const userOrgTable = alias(orgs, 'user_org'); // Org where the user has membership
 
     // ─────────────────────────────────────────────────────────────────────────
-    // LOOK UP: Find administrations on user's entity or ancestors (all roles)
+    // ANCESTOR ACCESS: Find administrations on user's entity or ancestors (all roles)
     // ─────────────────────────────────────────────────────────────────────────
 
     // Path 1: User's org membership → admins on that org or ancestor orgs
@@ -111,10 +111,9 @@ export class AuthorizationRepository {
     const viaUserOrgToAdminOrg = this.db
       .select({ administrationId: administrationOrgs.administrationId })
       .from(userOrgs)
-      .innerJoin(userOrgTable, eq(userOrgTable.id, userOrgs.orgId))
-      // Safe: Drizzle's sql template parameterizes column references; ltree operators require raw SQL
-      .innerJoin(adminOrgTable, sql`${userOrgTable.path} <@ ${adminOrgTable.path}`)
-      .innerJoin(administrationOrgs, eq(administrationOrgs.orgId, adminOrgTable.id))
+      .innerJoin(userOrgTable, eq(userOrgTable.id, userOrgs.orgId)) // get the org details for user's membership
+      .innerJoin(adminOrgTable, sql`${userOrgTable.path} <@ ${adminOrgTable.path}`) // find orgs that are ancestors of (or equal to) user's org
+      .innerJoin(administrationOrgs, eq(administrationOrgs.orgId, adminOrgTable.id)) // get administrations assigned to those ancestor orgs
       .where(and(eq(userOrgs.userId, userId), inArray(userOrgs.role, allowedRoles)));
 
     // Path 2: User's class membership → admins on the class's school or ancestor orgs
@@ -122,36 +121,42 @@ export class AuthorizationRepository {
     const viaUserClassToAdminOrg = this.db
       .select({ administrationId: administrationOrgs.administrationId })
       .from(userClasses)
-      .innerJoin(classes, eq(classes.id, userClasses.classId))
-      .innerJoin(adminOrgTable, sql`${classes.orgPath} <@ ${adminOrgTable.path}`) // class is at or below administration's org
-      .innerJoin(administrationOrgs, eq(administrationOrgs.orgId, adminOrgTable.id))
+      .innerJoin(classes, eq(classes.id, userClasses.classId)) // get the class details for user's membership
+      .innerJoin(adminOrgTable, sql`${classes.orgPath} <@ ${adminOrgTable.path}`) // find orgs that are ancestors of (or equal to) class's org
+      .innerJoin(administrationOrgs, eq(administrationOrgs.orgId, adminOrgTable.id)) // get administrations assigned to those ancestor orgs
       .where(and(eq(userClasses.userId, userId), inArray(userClasses.role, allowedRoles)));
 
     // Path 3: User's class membership → admins assigned directly to that class
     const viaDirectClass = this.db
       .select({ administrationId: administrationClasses.administrationId })
       .from(userClasses)
-      .innerJoin(administrationClasses, eq(administrationClasses.classId, userClasses.classId))
+      .innerJoin(administrationClasses, eq(administrationClasses.classId, userClasses.classId)) // get administrations assigned to user's class
       .where(and(eq(userClasses.userId, userId), inArray(userClasses.role, allowedRoles)));
 
     // Path 4: User's group membership → admins assigned directly to that group
     const viaDirectGroup = this.db
       .select({ administrationId: administrationGroups.administrationId })
       .from(userGroups)
-      .innerJoin(administrationGroups, eq(administrationGroups.groupId, userGroups.groupId))
+      .innerJoin(administrationGroups, eq(administrationGroups.groupId, userGroups.groupId)) // get administrations assigned to user's group
       .where(and(eq(userGroups.userId, userId), inArray(userGroups.role, allowedRoles)));
 
-    // Combine paths with UNION to deduplicate results
-    const lookUpUnion = viaUserOrgToAdminOrg.union(viaUserClassToAdminOrg).union(viaDirectClass).union(viaDirectGroup);
+    // Combine ancestor paths with UNION to deduplicate results
+    const ancestorUnion = viaUserOrgToAdminOrg
+      .union(viaUserClassToAdminOrg)
+      .union(viaDirectClass)
+      .union(viaDirectGroup);
 
     // ─────────────────────────────────────────────────────────────────────────
-    // LOOK DOWN: Find administrations on descendants (supervisory roles only)
+    // DESCENDANT ACCESS: Find administrations on descendants (supervisory roles only)
     // ─────────────────────────────────────────────────────────────────────────
 
     const supervisoryAllowedRoles = allowedRoles.filter((role) => SUPERVISORY_ROLES.includes(role));
 
     if (supervisoryAllowedRoles.length === 0) {
-      return lookUpUnion;
+      if (allowedRoles.length > 0) {
+        logger.debug({ userId, allowedRoles }, 'No supervisory roles provided, skipping descendant paths');
+      }
+      return ancestorUnion;
     }
 
     // Path 5: User's org membership → admins on descendant orgs
@@ -159,9 +164,9 @@ export class AuthorizationRepository {
     const viaUserOrgToDescendantOrg = this.db
       .select({ administrationId: administrationOrgs.administrationId })
       .from(userOrgs)
-      .innerJoin(userOrgTable, eq(userOrgTable.id, userOrgs.orgId))
-      .innerJoin(adminOrgTable, sql`${adminOrgTable.path} <@ ${userOrgTable.path}`) // administration's org is at or below user's org
-      .innerJoin(administrationOrgs, eq(administrationOrgs.orgId, adminOrgTable.id))
+      .innerJoin(userOrgTable, eq(userOrgTable.id, userOrgs.orgId)) // get the org details for user's membership
+      .innerJoin(adminOrgTable, sql`${adminOrgTable.path} <@ ${userOrgTable.path}`) // find orgs that are descendants of (or equal to) user's org
+      .innerJoin(administrationOrgs, eq(administrationOrgs.orgId, adminOrgTable.id)) // get administrations assigned to those descendant orgs
       .where(and(eq(userOrgs.userId, userId), inArray(userOrgs.role, supervisoryAllowedRoles)));
 
     // Path 6: User's org membership → admins on classes within user's org tree
@@ -169,12 +174,12 @@ export class AuthorizationRepository {
     const viaUserOrgToDescendantClass = this.db
       .select({ administrationId: administrationClasses.administrationId })
       .from(userOrgs)
-      .innerJoin(userOrgTable, eq(userOrgTable.id, userOrgs.orgId))
-      .innerJoin(classes, sql`${classes.orgPath} <@ ${userOrgTable.path}`) // class is at or below user's org
-      .innerJoin(administrationClasses, eq(administrationClasses.classId, classes.id))
+      .innerJoin(userOrgTable, eq(userOrgTable.id, userOrgs.orgId)) // get the org details for user's membership
+      .innerJoin(classes, sql`${classes.orgPath} <@ ${userOrgTable.path}`) // find classes that are within (descendants of) user's org
+      .innerJoin(administrationClasses, eq(administrationClasses.classId, classes.id)) // get administrations assigned to those classes
       .where(and(eq(userOrgs.userId, userId), inArray(userOrgs.role, supervisoryAllowedRoles)));
 
-    return lookUpUnion.union(viaUserOrgToDescendantOrg).union(viaUserOrgToDescendantClass);
+    return ancestorUnion.union(viaUserOrgToDescendantOrg).union(viaUserOrgToDescendantClass);
   }
 
   /**
@@ -215,10 +220,9 @@ export class AuthorizationRepository {
         userId: userOrgs.userId,
       })
       .from(administrationOrgs)
-      .innerJoin(adminOrgTable, eq(adminOrgTable.id, administrationOrgs.orgId))
-      // Safe: Drizzle's sql template parameterizes column references; ltree operators require raw SQL
-      .innerJoin(userOrgTable, sql`${userOrgTable.path} <@ ${adminOrgTable.path}`)
-      .innerJoin(userOrgs, eq(userOrgs.orgId, userOrgTable.id))
+      .innerJoin(adminOrgTable, eq(adminOrgTable.id, administrationOrgs.orgId)) // get the org where administration is assigned
+      .innerJoin(userOrgTable, sql`${userOrgTable.path} <@ ${adminOrgTable.path}`) // find orgs that are descendants of (or equal to) admin's org
+      .innerJoin(userOrgs, eq(userOrgs.orgId, userOrgTable.id)) // get users who belong to those descendant orgs
       .where(inArray(administrationOrgs.administrationId, administrationIds));
 
     // Path 2: Administration assigned to org → users in classes under that org
@@ -229,9 +233,9 @@ export class AuthorizationRepository {
         userId: userClasses.userId,
       })
       .from(administrationOrgs)
-      .innerJoin(adminOrgTable, eq(adminOrgTable.id, administrationOrgs.orgId))
-      .innerJoin(classes, sql`${classes.orgPath} <@ ${adminOrgTable.path}`) // class is at or below administration's org
-      .innerJoin(userClasses, eq(userClasses.classId, classes.id))
+      .innerJoin(adminOrgTable, eq(adminOrgTable.id, administrationOrgs.orgId)) // get the org where administration is assigned
+      .innerJoin(classes, sql`${classes.orgPath} <@ ${adminOrgTable.path}`) // find classes that are within (descendants of) admin's org
+      .innerJoin(userClasses, eq(userClasses.classId, classes.id)) // get users who belong to those classes
       .where(inArray(administrationOrgs.administrationId, administrationIds));
 
     // Path 3: Admin assigned to class → users in that class
@@ -241,7 +245,7 @@ export class AuthorizationRepository {
         userId: userClasses.userId,
       })
       .from(administrationClasses)
-      .innerJoin(userClasses, eq(userClasses.classId, administrationClasses.classId))
+      .innerJoin(userClasses, eq(userClasses.classId, administrationClasses.classId)) // get users who belong to the administration's class
       .where(inArray(administrationClasses.administrationId, administrationIds));
 
     // Path 4: Admin assigned to group → users in that group
@@ -251,7 +255,7 @@ export class AuthorizationRepository {
         userId: userGroups.userId,
       })
       .from(administrationGroups)
-      .innerJoin(userGroups, eq(userGroups.groupId, administrationGroups.groupId))
+      .innerJoin(userGroups, eq(userGroups.groupId, administrationGroups.groupId)) // get users who belong to the administration's group
       .where(inArray(administrationGroups.administrationId, administrationIds));
 
     // UNION ALL preserves duplicates (faster than UNION, but requires COUNT(DISTINCT) later)
