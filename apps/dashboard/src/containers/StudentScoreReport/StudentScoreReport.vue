@@ -170,13 +170,8 @@ const { data: tasksDictionary, isLoading: isLoadingTasksDictionary } = useTasksD
 
 const tasks = computed(
   () =>
-    taskData?.value
-      ?.map((assignment) => assignment.taskId)
-      .filter((t) => {
-        if (!STUDENT_SCORE_REPORT_TASK_IDS.includes(t)) return false;
-        if (t === 'swr-es' || t === 'sre-es') return getScoringVersions.value[t] >= 1;
-        return true;
-      }) || [],
+    taskData?.value?.map((assignment) => assignment.taskId).filter((t) => STUDENT_SCORE_REPORT_TASK_IDS.includes(t)) ||
+    [],
 );
 
 const tasksListArray = computed(() =>
@@ -227,7 +222,7 @@ const isDistributionChartEnabled = computed(() => {
 
     // Spanish tasks require a non-null scoring version
     if (task.taskId === 'sre-es' || task.taskId === 'swr-es') {
-      return getScoringVersions.value[task.taskId] >= 1;
+      return getScoringVersions.value[task.taskId] !== null;
     }
 
     // All other normed tasks just need scores

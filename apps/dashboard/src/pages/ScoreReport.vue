@@ -807,9 +807,7 @@ const {
 const schoolsDictWithGrade = computed(() => {
   return (
     districtSchoolsData.value?.reduce((acc, school) => {
-      const grade = getGrade(school.lowGrade ?? 0);
-      // Only prepend grade if it's a valid value (not null, undefined, or empty string)
-      acc[school.id] = grade !== null && grade !== undefined && grade !== '' ? `${grade} ${school.name}` : school.name;
+      acc[school.id] = getGrade(school.lowGrade ?? 0) + ' ' + school.name;
       return acc;
     }, {}) || {}
   );
@@ -856,7 +854,7 @@ function returnColorByReliability(assessment, rawScore, support_level, tag_color
       tasksToDisplayPercentCorrect.includes(assessment.taskId)
     ) {
       const test = assessment.scores?.raw?.composite?.test;
-      const tasksWithUndefinedPercentCorrect = ['swr-es', 'letter', 'letter-es', 'morphology', 'phonics'];
+      const tasksWithUndefinedPercentCorrect = ['letter', 'letter-es', 'morphology', 'phonics'];
 
       // @TODO: See if this is still needed by verifying the games that trigger this
       // When an above task has numAttempted === numIncorrect, numCorrect === undefined.
@@ -1101,9 +1099,8 @@ const computeAssignmentAndRunData = computed(() => {
         };
 
         if (tasksToDisplayCorrectIncorrectDifference.includes(taskId)) {
-          const numAttempted = assessment.scores?.raw?.composite?.test?.numAttempted;
-          const numCorrect = assessment.scores?.raw?.composite?.test?.numCorrect ?? 0;
-          const numIncorrect = numAttempted - numCorrect;
+          const numCorrect = assessment.scores?.raw?.composite?.test?.numCorrect;
+          const numIncorrect = assessment.scores?.raw?.composite?.test?.numAttempted - numCorrect;
           const scoringVersion = _get(assessment, 'scores.computed.composite.scoringVersion');
 
           if (!scoringVersion) {
@@ -1111,9 +1108,9 @@ const computeAssignmentAndRunData = computed(() => {
               numCorrect != null && numIncorrect != null ? Math.round(numCorrect - numIncorrect) : null;
             // scoreReportColumns only can only access admin variants, so set rawScore = correctIncorrectDifference
             // for admins with mixed normed & unnormed scores
-            const isAttempted = numAttempted > 0;
-            currRowScores[taskId].rawScore = isAttempted ? currRowScores[taskId].correctIncorrectDifference : null;
-            currRowScores[taskId].tagColor = isAttempted ? '#A4DDED' : 'transparent';
+            currRowScores[taskId].rawScore = currRowScores[taskId].correctIncorrectDifference;
+            currRowScores[taskId].tagColor =
+              assessment.scores?.raw?.composite?.test?.numAttempted > 0 ? '#A4DDED' : 'transparent';
           }
 
           Object.assign(currRowScores[taskId], { numCorrect, numIncorrect, scoringVersion });
@@ -1229,7 +1226,7 @@ const computeAssignmentAndRunData = computed(() => {
 
           const propertyKeys = isNewScoring
             ? ['rawScore', 'numAttempted', 'gradeEstimate']
-            : ['totalCorrect', 'totalNumAttempted', 'gradeEstimate'];
+            : ['totalCorrect', 'totalNumAttempted', 'thetaEstimate'];
 
           const [numCorrect, numAttempted, gradeEstimate] = propertyKeys.map((key) =>
             _get(assessment, `scores.computed.composite.${key}`),
