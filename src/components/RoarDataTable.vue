@@ -11,11 +11,11 @@
         class="text-red-700 cursor-pointer options-toggle"
         @click.prevent="toggleControls"
       >
-        {{ showControls ? 'Hide Options' : 'Show Options' }}
+        {{ showOptions ? 'Hide Options' : 'Show Options' }}
       </button>
     </div>
     <div
-      v-if="showControls && shouldRenderToolbar"
+      v-if="showOptions && shouldRenderToolbar"
       class="w-full gap-1 pt-1 flex justify-content-center align-items-center flex-wrap mb-4"
     >
       <div
@@ -452,6 +452,7 @@ const props = defineProps({
   allowFiltering: { type: Boolean, default: true },
   allowColumnSelection: { type: Boolean, default: true },
   showOptionsControl: { type: Boolean, default: true },
+  showOptions: { type: Boolean, default: false },
   rowClass: { type: Function, default: null },
 });
 
@@ -480,10 +481,10 @@ Array of objects consisting of a field and header at minimum.
 */
 const shouldRenderToolbar = computed(() => props.allowFiltering || props.allowColumnSelection || props.allowExport);
 
-const showControls = ref(!props.showOptionsControl && shouldRenderToolbar.value);
+const showOptions = ref(props.showOptions && shouldRenderToolbar.value);
 const toggleControls = () => {
   if (!props.showOptionsControl || !shouldRenderToolbar.value) return;
-  showControls.value = !showControls.value;
+  showOptions.value = !showOptions.value;
 };
 const authStore = useAuthStore();
 const { currentSite } = storeToRefs(authStore);
