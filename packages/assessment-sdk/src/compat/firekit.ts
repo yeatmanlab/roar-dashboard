@@ -1,6 +1,6 @@
 import type { CommandContext } from '../command/command';
 import { SDKError } from '../errors/sdk-error';
-import type { StartRunOutput } from '../types';
+import type { StartRunInput, StartRunOutput } from '../types';
 
 /**
  * FirekitFacade provides backward compatibility with legacy Firekit-based assessments.
