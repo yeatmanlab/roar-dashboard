@@ -97,7 +97,7 @@ export function getFirekitCompat(): FirekitFacade {
  * @param additionalRunMetadata Optional additional run metadata
  * @returns Promise<void>
  */
-export async function startRun(additionalRunMetadata?: { [key: string]: string }): Promise<StartRunOutput> {
+export async function startRun(additionalRunMetadata?: StartRunInput): Promise<StartRunOutput> {
   void additionalRunMetadata;
   throw new SDKError('appkit.startRun not yet implemented');
 }
