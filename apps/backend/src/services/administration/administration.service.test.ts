@@ -184,6 +184,78 @@ describe('AdministrationService', () => {
       });
     });
 
+    describe('status filter', () => {
+      it('should pass status filter to listAll for super admins', async () => {
+        const mockAdmins = AdministrationFactory.buildList(2);
+        mockListAll.mockResolvedValue({ items: mockAdmins, totalItems: 2 });
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+        });
+
+        await service.list(
+          { userId: 'admin-123', isSuperAdmin: true },
+          { page: 1, perPage: 25, sortBy: 'createdAt', sortOrder: 'desc', status: 'active' },
+        );
+
+        expect(mockListAll).toHaveBeenCalledWith({
+          page: 1,
+          perPage: 25,
+          orderBy: { field: 'createdAt', direction: 'desc' },
+          status: 'active',
+        });
+      });
+
+      it('should pass status filter to listAuthorized for regular users', async () => {
+        const mockAdmins = AdministrationFactory.buildList(2);
+        mockListAuthorized.mockResolvedValue({ items: mockAdmins, totalItems: 2 });
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+        });
+
+        await service.list(
+          { userId: 'user-123', isSuperAdmin: false },
+          { page: 1, perPage: 25, sortBy: 'createdAt', sortOrder: 'desc', status: 'past' },
+        );
+
+        expect(mockListAuthorized).toHaveBeenCalledWith(expect.objectContaining({ userId: 'user-123' }), {
+          page: 1,
+          perPage: 25,
+          orderBy: { field: 'createdAt', direction: 'desc' },
+          status: 'past',
+        });
+      });
+
+      it('should work with status filter combined with embed=stats', async () => {
+        const mockAdmins = [AdministrationFactory.build({ id: 'admin-1' })];
+        mockListAll.mockResolvedValue({ items: mockAdmins, totalItems: 1 });
+
+        const assignedCounts = new Map([['admin-1', 10]]);
+        const runStats = new Map([['admin-1', { started: 5, completed: 2 }]]);
+        mockGetAssignedUserCountsByAdministrationIds.mockResolvedValue(assignedCounts);
+        mockGetRunStatsByAdministrationIds.mockResolvedValue(runStats);
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+          runsRepository: mockRunsRepository,
+        });
+
+        const result = await service.list(
+          { userId: 'admin-123', isSuperAdmin: true },
+          { page: 1, perPage: 25, sortBy: 'createdAt', sortOrder: 'desc', status: 'upcoming', embed: ['stats'] },
+        );
+
+        expect(mockListAll).toHaveBeenCalledWith({
+          page: 1,
+          perPage: 25,
+          orderBy: { field: 'createdAt', direction: 'desc' },
+          status: 'upcoming',
+        });
+        expect(result.items[0]!.stats).toEqual({ assigned: 10, started: 5, completed: 2 });
+      });
+    });
+
     describe('embed=stats', () => {
       it('should not fetch stats for non-super-admin users even when requested', async () => {
         const mockAdmins = AdministrationFactory.buildList(2);
