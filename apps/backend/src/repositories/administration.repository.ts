@@ -58,7 +58,7 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
    * @param status - The status filter (active, past, upcoming)
    * @returns SQL condition or undefined if no filter
    */
-  private buildStatusFilter(status?: AdministrationStatus): SQL | undefined {
+  private getStatusFilterCondition(status?: AdministrationStatus): SQL | undefined {
     if (!status) {
       return undefined;
     }
@@ -91,7 +91,7 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
    */
   async listAll(options: ListAuthorizedOptions): Promise<PaginatedResult<Administration>> {
     const { page, perPage, orderBy, status } = options;
-    const statusFilter = this.buildStatusFilter(status);
+    const statusFilter = this.getStatusFilterCondition(status);
 
     return this.getAll({
       page,
@@ -125,7 +125,7 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
       .as('accessible_admins');
 
     // Build status filter if provided
-    const statusFilter = this.buildStatusFilter(status);
+    const statusFilter = this.getStatusFilterCondition(status);
 
     // Build the base join condition
     const baseCondition = eq(administrations.id, accessibleAdmins.administrationId);
