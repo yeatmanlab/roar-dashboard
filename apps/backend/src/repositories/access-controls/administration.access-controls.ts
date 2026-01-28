@@ -16,6 +16,7 @@ import { CoreDbClient } from '../../db/clients';
 import type * as CoreDbSchema from '../../db/schema/core';
 import { logger } from '../../logger';
 import { parseAccessControlFilter, type AccessControlFilter } from './access-controls.utils';
+import { isDescendantOrEqual, isAncestorOrEqual } from '../utils/ltree.utils';
 
 /**
  * Administration Access Controls
@@ -51,9 +52,9 @@ import { parseAccessControlFilter, type AccessControlFilter } from './access-con
  * We use PostgreSQL's ltree extension to efficiently query ancestor/descendant relationships.
  * Paths are stored as dot-separated segments: `district_uuid.school_uuid`
  *
- * Key operators (require raw SQL):
- * - `child <@ parent` — child is descendant of (or equal to) parent
- * - `parent @> child` — parent is ancestor of (or equal to) child
+ * ltree operators are wrapped in helper functions (see `../utils/ltree.utils.ts`):
+ * - `isDescendantOrEqual(child, ancestor)` — child path is descendant of (or equal to) ancestor path
+ * - `isAncestorOrEqual(ancestor, child)` — ancestor path is ancestor of (or equal to) child path
  */
 export class AdministrationAccessControls {
   constructor(protected readonly db: NodePgDatabase<typeof CoreDbSchema> = CoreDbClient) {}
@@ -100,7 +101,7 @@ export class AdministrationAccessControls {
       .select({ administrationId: administrationOrgs.administrationId })
       .from(userOrgs)
       .innerJoin(userOrgTable, eq(userOrgTable.id, userOrgs.orgId)) // get the org details for user's membership
-      .innerJoin(adminOrgTable, sql`${userOrgTable.path} <@ ${adminOrgTable.path}`) // find orgs that are ancestors of (or equal to) user's org
+      .innerJoin(adminOrgTable, isDescendantOrEqual(userOrgTable.path, adminOrgTable.path)) // find orgs that are ancestors of (or equal to) user's org
       .innerJoin(administrationOrgs, eq(administrationOrgs.orgId, adminOrgTable.id)) // get administrations assigned to those ancestor orgs
       .where(and(eq(userOrgs.userId, userId), inArray(userOrgs.role, allowedRoles)));
 
@@ -110,7 +111,7 @@ export class AdministrationAccessControls {
       .select({ administrationId: administrationOrgs.administrationId })
       .from(userClasses)
       .innerJoin(classes, eq(classes.id, userClasses.classId)) // get the class details for user's membership
-      .innerJoin(adminOrgTable, sql`${classes.orgPath} <@ ${adminOrgTable.path}`) // find orgs that are ancestors of (or equal to) class's org
+      .innerJoin(adminOrgTable, isDescendantOrEqual(classes.orgPath, adminOrgTable.path)) // find orgs that are ancestors of (or equal to) class's org
       .innerJoin(administrationOrgs, eq(administrationOrgs.orgId, adminOrgTable.id)) // get administrations assigned to those ancestor orgs
       .where(and(eq(userClasses.userId, userId), inArray(userClasses.role, allowedRoles)));
 
@@ -155,7 +156,7 @@ export class AdministrationAccessControls {
       .select({ administrationId: administrationOrgs.administrationId })
       .from(userOrgs)
       .innerJoin(userOrgTable, eq(userOrgTable.id, userOrgs.orgId)) // get the org details for user's membership
-      .innerJoin(adminOrgTable, sql`${adminOrgTable.path} <@ ${userOrgTable.path}`) // find orgs that are descendants of (or equal to) user's org
+      .innerJoin(adminOrgTable, isAncestorOrEqual(userOrgTable.path, adminOrgTable.path)) // user's org is ancestor of (or equal to) admin's org
       .innerJoin(administrationOrgs, eq(administrationOrgs.orgId, adminOrgTable.id)) // get administrations assigned to those descendant orgs
       .where(and(eq(userOrgs.userId, userId), inArray(userOrgs.role, supervisoryAllowedRoles)));
 
@@ -165,7 +166,7 @@ export class AdministrationAccessControls {
       .select({ administrationId: administrationClasses.administrationId })
       .from(userOrgs)
       .innerJoin(userOrgTable, eq(userOrgTable.id, userOrgs.orgId)) // get the org details for user's membership
-      .innerJoin(classes, sql`${classes.orgPath} <@ ${userOrgTable.path}`) // find classes that are within (descendants of) user's org
+      .innerJoin(classes, isAncestorOrEqual(userOrgTable.path, classes.orgPath)) // user's org is ancestor of (or equal to) class's org
       .innerJoin(administrationClasses, eq(administrationClasses.classId, classes.id)) // get administrations assigned to those classes
       .where(and(eq(userOrgs.userId, userId), inArray(userOrgs.role, supervisoryAllowedRoles)));
 
@@ -206,7 +207,7 @@ export class AdministrationAccessControls {
       })
       .from(administrationOrgs)
       .innerJoin(adminOrgTable, eq(adminOrgTable.id, administrationOrgs.orgId)) // get the org where administration is assigned
-      .innerJoin(userOrgTable, sql`${userOrgTable.path} <@ ${adminOrgTable.path}`) // find orgs that are descendants of (or equal to) admin's org
+      .innerJoin(userOrgTable, isAncestorOrEqual(adminOrgTable.path, userOrgTable.path)) // admin's org is ancestor of (or equal to) user's org
       .innerJoin(userOrgs, eq(userOrgs.orgId, userOrgTable.id)) // get users who belong to those descendant orgs
       .where(inArray(administrationOrgs.administrationId, administrationIds));
 
@@ -219,7 +220,7 @@ export class AdministrationAccessControls {
       })
       .from(administrationOrgs)
       .innerJoin(adminOrgTable, eq(adminOrgTable.id, administrationOrgs.orgId)) // get the org where administration is assigned
-      .innerJoin(classes, sql`${classes.orgPath} <@ ${adminOrgTable.path}`) // find classes that are within (descendants of) admin's org
+      .innerJoin(classes, isAncestorOrEqual(adminOrgTable.path, classes.orgPath)) // admin's org is ancestor of (or equal to) class's org
       .innerJoin(userClasses, eq(userClasses.classId, classes.id)) // get users who belong to those classes
       .where(inArray(administrationOrgs.administrationId, administrationIds));
 

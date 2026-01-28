@@ -12,7 +12,8 @@ import type {
 } from '@roar-dashboard/api-contract';
 import { BaseRepository, type PaginatedResult } from './base.repository';
 import type { BasePaginatedQueryParams } from './interfaces/base.repository.interface';
-import { AdministrationAccessControls, type AccessControlFilter } from './access-controls';
+import { AdministrationAccessControls } from './access-controls/administration.access-controls';
+import type { AccessControlFilter } from './access-controls/access-controls.utils';
 
 /**
  * Sort field type derived from api-contract.

@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AdministrationRepository } from './administration.repository';
-import { AdministrationAccessControls } from './access-controls';
+import { AdministrationAccessControls } from './access-controls/administration.access-controls';
 import { AdministrationFactory } from '../test-support/factories/administration.factory';
 import type { UserRole } from '../enums/user-role.enum';
 
 // Mock AdministrationAccessControls
-vi.mock('./access-controls', () => ({
+vi.mock('./access-controls/administration.access-controls', () => ({
   AdministrationAccessControls: vi.fn(),
 }));
 
