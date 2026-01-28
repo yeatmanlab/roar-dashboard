@@ -149,7 +149,8 @@ export function AdministrationService({
     }
 
     const administrationIds = result.items.map((admin) => admin.id);
-    const shouldEmbedStats = embedOptions.includes(AdministrationEmbedOption.STATS);
+    // Stats are only available for super admins
+    const shouldEmbedStats = isSuperAdmin && embedOptions.includes(AdministrationEmbedOption.STATS);
     const shouldEmbedTasks = embedOptions.includes(AdministrationEmbedOption.TASKS);
 
     // Handle embed=stats

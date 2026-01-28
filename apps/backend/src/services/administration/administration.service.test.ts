@@ -185,6 +185,25 @@ describe('AdministrationService', () => {
     });
 
     describe('embed=stats', () => {
+      it('should not fetch stats for non-super-admin users even when requested', async () => {
+        const mockAdmins = AdministrationFactory.buildList(2);
+        mockListAuthorized.mockResolvedValue({ items: mockAdmins, totalItems: 2 });
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+          runsRepository: mockRunsRepository,
+        });
+
+        const result = await service.list(
+          { userId: 'user-123', isSuperAdmin: false },
+          { page: 1, perPage: 25, sortBy: 'createdAt', sortOrder: 'desc', embed: ['stats'] },
+        );
+
+        expect(mockGetAssignedUserCountsByAdministrationIds).not.toHaveBeenCalled();
+        expect(mockGetRunStatsByAdministrationIds).not.toHaveBeenCalled();
+        expect(result.items[0]).not.toHaveProperty('stats');
+      });
+
       it('should not fetch stats when embed option is not provided', async () => {
         const mockAdmins = AdministrationFactory.buildList(2);
         mockListAll.mockResolvedValue({ items: mockAdmins, totalItems: 2 });
