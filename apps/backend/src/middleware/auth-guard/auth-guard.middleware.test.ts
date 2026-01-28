@@ -85,7 +85,7 @@ describe('AuthGuardMiddleware', () => {
     expect(mockFindByAuthId).toHaveBeenCalledWith(mockDecodedUser.uid);
     expect(response.body.user).toEqual({
       id: mockUser.id,
-      userType: mockUser.userType,
+      isSuperAdmin: mockUser.isSuperAdmin ?? false,
     });
   });
 

@@ -7,6 +7,21 @@ import {
 } from '../common/query';
 
 /**
+ * Administration status values for filtering.
+ * - active: dateStart <= now <= dateEnd
+ * - past: dateEnd < now
+ * - upcoming: dateStart > now
+ */
+export const ADMINISTRATION_STATUS_VALUES = ['active', 'past', 'upcoming'] as const;
+
+/**
+ * Schema for administration status filter.
+ */
+export const AdministrationStatusSchema = z.enum(ADMINISTRATION_STATUS_VALUES);
+
+export type AdministrationStatus = z.infer<typeof AdministrationStatusSchema>;
+
+/**
  * Administration dates schema.
  */
 export const AdministrationDatesSchema = z.object({
@@ -97,7 +112,11 @@ export const AdministrationEmbedOption = {
  */
 export const AdministrationsListQuerySchema = PaginationQuerySchema.merge(
   createSortQuerySchema(ADMINISTRATION_SORT_FIELDS, 'createdAt'),
-).merge(createEmbedQuerySchema(ADMINISTRATION_EMBED_OPTIONS));
+)
+  .merge(createEmbedQuerySchema(ADMINISTRATION_EMBED_OPTIONS))
+  .extend({
+    status: AdministrationStatusSchema.optional(),
+  });
 
 export type AdministrationsListQuery = z.infer<typeof AdministrationsListQuerySchema>;
 

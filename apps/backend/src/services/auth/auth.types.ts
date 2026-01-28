@@ -1,5 +1,3 @@
-import type { userTypeEnum } from '../../db/schema/enums';
-
 /**
  * Decoded Firebase JWT interface.
  *
@@ -23,11 +21,11 @@ export type DecodedUser = {
  * Junction tables (userOrgs, userClasses, etc.) can be queried using the id.
  *
  * @property id - The PostgreSQL user UUID.
- * @property userType - The user's type (student, educator, caregiver, admin).
+ * @property isSuperAdmin - Whether the user has super admin privileges.
  */
 export type AuthContext = {
   id: string;
-  userType: (typeof userTypeEnum.enumValues)[number];
+  isSuperAdmin: boolean;
 };
 
 /**

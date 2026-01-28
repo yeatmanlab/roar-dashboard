@@ -1,6 +1,6 @@
 import * as p from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
-import { timestamps } from '../common';
+import { ltree, timestamps } from '../common';
 import { orgTypeEnum } from '../enums';
 import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 
@@ -29,6 +29,14 @@ export const orgs = db.table(
 
     orgType: orgTypeEnum().notNull(),
     parentOrgId: p.uuid().references((): AnyPgColumn => orgs.id, { onDelete: 'restrict' }),
+
+    /**
+     * Materialized path for hierarchical queries using ltree.
+     * Format: {org_type}_{uuid} with hyphens replaced by underscores.
+     * Maintained via database triggers on insert/update.
+     * @example 'district_550e8400_e29b_41d4_a716_446655440000.school_a1b2c3d4_5e6f_7a8b_9c0d_1e2f3a4b5c6d'
+     */
+    path: ltree('path').notNull(),
 
     locationAddressLine1: p.text(),
     locationAddressLine2: p.text(),
@@ -60,6 +68,7 @@ export const orgs = db.table(
     // - Hierarchical lookups
     p.index('orgs_parent_idx').on(table.parentOrgId),
     p.index('orgs_parent_type_idx').on(table.parentOrgId, table.orgType),
+    p.index('orgs_path_gist_idx').using('gist', table.path),
 
     // - Name equality or prefix lookups
     p.index('orgs_name_lower_idx').on(sql`lower(${table.name})`),

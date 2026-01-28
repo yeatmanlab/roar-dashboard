@@ -4,7 +4,6 @@ import {
   type AdministrationWithEmbeds,
 } from '../services/administration/administration.service';
 import type { AdministrationsListQuery, Administration as ApiAdministration } from '@roar-dashboard/api-contract';
-import type { UserType } from '../enums/user-type.enum';
 
 const administrationService = AdministrationService();
 
@@ -13,7 +12,7 @@ const administrationService = AdministrationService();
  */
 interface AuthContext {
   userId: string;
-  userType: UserType;
+  isSuperAdmin: boolean;
 }
 
 /**
@@ -53,10 +52,14 @@ function transformAdministration(admin: AdministrationWithEmbeds): ApiAdministra
  */
 export const AdministrationsController = {
   /**
-   * List administrations with pagination, sorting, and optional embeds.
+   * List administrations with pagination, sorting, optional status filter, and embeds.
+   *
+   * @param authContext - User's authentication context containing userId and super admin flag
+   * @param query - Query parameters including pagination, sorting, status filter, and embed options
+   * @returns Paginated list of administrations transformed to API response format
    */
   list: async (authContext: AuthContext, query: AdministrationsListQuery) => {
-    const { page, perPage, sortBy, sortOrder, embed } = query;
+    const { page, perPage, sortBy, sortOrder, embed, status } = query;
 
     const result = await administrationService.list(authContext, {
       page,
@@ -64,6 +67,7 @@ export const AdministrationsController = {
       sortBy,
       sortOrder,
       embed,
+      ...(status && { status }),
     });
 
     // Transform to API response format

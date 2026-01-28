@@ -41,7 +41,7 @@ export function UserService({
       return await userRepository.findByAuthId(authId);
     } catch (error) {
       if (error instanceof ApiError) throw error;
-      logger.error({ err: error, authId }, 'Failed to find user by auth ID');
+      logger.error({ err: error, context: { authId } }, 'Failed to find user by auth ID');
       throw new ApiError('Failed to retrieve user', {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
@@ -63,7 +63,7 @@ export function UserService({
       return await userRepository.get({ id });
     } catch (error) {
       if (error instanceof ApiError) throw error;
-      logger.error({ err: error, userId: id }, 'Failed to get user by ID');
+      logger.error({ err: error, context: { userId: id } }, 'Failed to get user by ID');
       throw new ApiError('Failed to retrieve user', {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,

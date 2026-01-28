@@ -14,7 +14,7 @@ const userService = UserService();
  * to decode the user information before passing the request to the next middleware.
  *
  * After verifying the Firebase token, it looks up the user in PostgreSQL and attaches
- * a minimal AuthContext ({ id, userType }) to req.user for authorization checks.
+ * a minimal AuthContext ({ id, isSuperAdmin }) to req.user for authorization checks.
  *
  * @param req - The Express request object.
  * @param res - The Express response object.
@@ -52,7 +52,7 @@ export async function AuthGuardMiddleware(req: Request, res: Response, next: Nex
     // Attach minimal auth context
     req.user = {
       id: user.id,
-      userType: user.userType,
+      isSuperAdmin: user.isSuperAdmin ?? false,
     };
 
     return next();
