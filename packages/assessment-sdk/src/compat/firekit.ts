@@ -193,11 +193,7 @@ export function addInteraction(interaction: AddInteractionInput): AddInteraction
  */
 export async function updateUser(userUpdateData: UpdateUserInput): UpdateUserOutput {
   // Issue deprecation warning
-  if (process.env.NODE_ENV !== 'production') {
-    console.warn(
-      '[DEPRECATION] updateUser() exists only for Firekit compatibility and will be removed in a future version.',
-    );
-  }
+  console.warn('appkit.updateUser is deprecated and related to standalone apps. Consider using alternative methods.');
 
   void userUpdateData;
   throw new SDKError('appkit.updateUser not yet implemented');

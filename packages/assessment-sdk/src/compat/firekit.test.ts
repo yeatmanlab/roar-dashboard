@@ -78,9 +78,7 @@ describe('firekit compat', () => {
     it('throws SDKError when called', async () => {
       await expect(updateUser({ assessmentPid: 'test-pid' })).rejects.toBeInstanceOf(SDKError);
       await expect(updateUser({ tasks: [], variants: [] })).rejects.toBeInstanceOf(SDKError);
-      await expect(updateUser({ assessmentPid: 'test', metadata: { customField: 'value' } })).rejects.toBeInstanceOf(
-        SDKError,
-      );
+      await expect(updateUser({ assessmentPid: 'test', customField: 'value' })).rejects.toBeInstanceOf(SDKError);
     });
 
     it('issues deprecation warning when called', async () => {
@@ -89,7 +87,7 @@ describe('firekit compat', () => {
       await expect(updateUser({ assessmentPid: 'test-pid' })).rejects.toBeInstanceOf(SDKError);
 
       expect(consoleWarnSpy).toHaveBeenCalledWith(
-        '[DEPRECATION] updateUser() exists only for Firekit compatibility and will be removed in a future version.',
+        'appkit.updateUser is deprecated and related to standalone apps. Consider using alternative methods.'
       );
 
       consoleWarnSpy.mockRestore();

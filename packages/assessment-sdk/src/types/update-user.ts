@@ -3,10 +3,10 @@
  * Matches: updateUser({ tasks, variants, assessmentPid, ...userMetadata }: UserUpdateInput)
  */
 export interface UpdateUserInput {
-  tasks?: string[];
-  variants?: string[];
+  tasks?: unknown;
+  variants?: unknown;
   assessmentPid?: string;
-  metadata?: Record<string, unknown>;
+  [key: string]: unknown; // For userMetadata spread
 }
 
 export type UpdateUserOutput = Promise<void>;
