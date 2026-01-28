@@ -101,10 +101,10 @@ export function abortRun(): AbortRunOutput {
   throw new SDKError('firekit.abortRun not yet implemented');
 }
 
- /**
+/**
  * Firekit compatibility stub.
  *
- * From @bdelab/roar-firekit: 
+ * From @bdelab/roar-firekit:
  * async startRun(additionalRunMetadata?: { [key: string]: string })
  *
  * @param additionalRunMetadata Optional additional run metadata
