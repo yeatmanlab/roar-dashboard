@@ -53,6 +53,10 @@ function transformAdministration(admin: AdministrationWithEmbeds): ApiAdministra
 export const AdministrationsController = {
   /**
    * List administrations with pagination, sorting, optional status filter, and embeds.
+   *
+   * @param authContext - User's authentication context containing userId and super admin flag
+   * @param query - Query parameters including pagination, sorting, status filter, and embed options
+   * @returns Paginated list of administrations transformed to API response format
    */
   list: async (authContext: AuthContext, query: AdministrationsListQuery) => {
     const { page, perPage, sortBy, sortOrder, embed, status } = query;
