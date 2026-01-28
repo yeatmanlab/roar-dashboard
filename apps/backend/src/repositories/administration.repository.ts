@@ -90,7 +90,7 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
    * @returns Paginated result with administrations
    */
   async listAll(options: ListAuthorizedOptions): Promise<PaginatedResult<Administration>> {
-    const { page = 1, perPage = 10, orderBy, status } = options;
+    const { page, perPage, orderBy, status } = options;
     const statusFilter = this.buildStatusFilter(status);
 
     return this.getAll({
@@ -116,7 +116,7 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
     accessControlFilter: AccessControlFilter,
     options: ListAuthorizedOptions,
   ): Promise<PaginatedResult<Administration>> {
-    const { page = 1, perPage = 10, orderBy, status } = options;
+    const { page, perPage, orderBy, status } = options;
     const offset = (page - 1) * perPage;
 
     // Build the UNION query for accessible administration IDs using access controls
