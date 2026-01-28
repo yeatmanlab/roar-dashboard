@@ -140,6 +140,8 @@ export class AdministrationAccessControls {
 
     const supervisoryAllowedRoles = allowedRoles.filter((role) => SUPERVISORY_ROLES.includes(role));
 
+    // Non-supervisory roles (e.g., student) only see administrations on their own entity or ancestors.
+    // Skip descendant path queries since they wouldn't match any rows anyway.
     if (supervisoryAllowedRoles.length === 0) {
       if (allowedRoles.length > 0) {
         logger.debug({ userId, allowedRoles }, 'No supervisory roles provided, skipping descendant paths');

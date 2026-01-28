@@ -143,7 +143,7 @@ export function AdministrationService({
       return result;
     }
 
-    // Early return if no items to embed
+    // Early return if no items to embed data onto
     if (result.items.length === 0) {
       return result;
     }
