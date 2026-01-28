@@ -1,6 +1,7 @@
 import {
   AdministrationEmbedOption,
   AdministrationSortField,
+  ADMINISTRATION_STATUS_VALUES,
   type PaginatedResult,
   type AdministrationStats,
   type ADMINISTRATION_EMBED_OPTIONS,
@@ -97,6 +98,15 @@ export function AdministrationService({
     options: ListOptions,
   ): Promise<PaginatedResult<AdministrationWithEmbeds>> {
     const { userId, isSuperAdmin } = authContext;
+
+    // Validate status parameter (defense in depth - API contract also validates)
+    if (options.status && !ADMINISTRATION_STATUS_VALUES.includes(options.status)) {
+      throw new ApiError('Invalid status filter', {
+        statusCode: StatusCodes.BAD_REQUEST,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+        context: { status: options.status },
+      });
+    }
 
     let result;
 
