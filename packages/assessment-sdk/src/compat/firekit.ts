@@ -1,6 +1,6 @@
 import type { CommandContext } from '../command/command';
 import { SDKError } from '../errors/sdk-error';
-import type { FinishRunInput, FinishRunOutput } from '../types';
+import type { FinishRunInput, FinishRunOutput, StartRunInput, StartRunOutput } from '../types';
 
 /**
  * FirekitFacade provides backward compatibility with legacy Firekit-based assessments.
@@ -101,4 +101,13 @@ export function getFirekitCompat(): FirekitFacade {
 export async function finishRun(finishingMetaData: FinishRunInput = {}): Promise<FinishRunOutput> {
   void finishingMetaData;
   throw new SDKError('appkit.finishRun not yet implemented');
+}
+ * async startRun(additionalRunMetadata?: { [key: string]: string })
+ *
+ * @param additionalRunMetadata Optional additional run metadata
+ * @returns Promise<void>
+ */
+export async function startRun(additionalRunMetadata?: StartRunInput): Promise<StartRunOutput> {
+  void additionalRunMetadata;
+  throw new SDKError('appkit.startRun not yet implemented');
 }
