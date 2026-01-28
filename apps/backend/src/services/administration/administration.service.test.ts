@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AdministrationService } from './administration.service';
 import { AdministrationFactory } from '../../test-support/factories/administration.factory';
 
-// Mock the logger
+// Mock the logger (used by the service for error handling)
 vi.mock('../../logger', () => ({
   logger: {
     error: vi.fn(),
@@ -10,8 +10,6 @@ vi.mock('../../logger', () => ({
     info: vi.fn(),
   },
 }));
-
-import { logger } from '../../logger';
 
 describe('AdministrationService', () => {
   const mockListAuthorized = vi.fn();
@@ -432,7 +430,7 @@ describe('AdministrationService', () => {
         expect(result.items).toEqual([]);
       });
 
-      it('should return administrations without stats when assigned counts query fails', async () => {
+      it('should throw ApiError when assigned counts query fails', async () => {
         const mockAdmins = [AdministrationFactory.build({ id: 'admin-1' })];
         mockListAll.mockResolvedValue({ items: mockAdmins, totalItems: 1 });
 
@@ -445,22 +443,15 @@ describe('AdministrationService', () => {
           runsRepository: mockRunsRepository,
         });
 
-        const result = await service.list(
-          { userId: 'admin-123', isSuperAdmin: true },
-          { page: 1, perPage: 25, sortBy: 'createdAt', sortOrder: 'desc', embed: ['stats'] },
-        );
-
-        // Should return administrations without stats
-        expect(result.items).toHaveLength(1);
-        expect(result.items[0]).not.toHaveProperty('stats');
-        // Should log the error with userId for tracing
-        expect(logger.error).toHaveBeenCalledWith(
-          { err: dbError, context: { userId: 'admin-123' } },
-          'Failed to fetch assigned user counts for stats embed',
-        );
+        await expect(
+          service.list(
+            { userId: 'admin-123', isSuperAdmin: true },
+            { page: 1, perPage: 25, sortBy: 'createdAt', sortOrder: 'desc', embed: ['stats'] },
+          ),
+        ).rejects.toThrow('Failed to fetch administration stats');
       });
 
-      it('should return administrations without stats when run stats query fails', async () => {
+      it('should throw ApiError when run stats query fails', async () => {
         const mockAdmins = [AdministrationFactory.build({ id: 'admin-1' })];
         mockListAll.mockResolvedValue({ items: mockAdmins, totalItems: 1 });
 
@@ -473,45 +464,12 @@ describe('AdministrationService', () => {
           runsRepository: mockRunsRepository,
         });
 
-        const result = await service.list(
-          { userId: 'admin-123', isSuperAdmin: true },
-          { page: 1, perPage: 25, sortBy: 'createdAt', sortOrder: 'desc', embed: ['stats'] },
-        );
-
-        // Should return administrations without stats
-        expect(result.items).toHaveLength(1);
-        expect(result.items[0]).not.toHaveProperty('stats');
-        // Should log the error with userId for tracing
-        expect(logger.error).toHaveBeenCalledWith(
-          { err: dbError, context: { userId: 'admin-123' } },
-          'Failed to fetch run stats for stats embed',
-        );
-      });
-
-      it('should return administrations without stats when both queries fail', async () => {
-        const mockAdmins = [AdministrationFactory.build({ id: 'admin-1' })];
-        mockListAll.mockResolvedValue({ items: mockAdmins, totalItems: 1 });
-
-        const assignedError = new Error('Core DB error');
-        const runsError = new Error('Assessment DB error');
-        mockGetAssignedUserCountsByAdministrationIds.mockRejectedValue(assignedError);
-        mockGetRunStatsByAdministrationIds.mockRejectedValue(runsError);
-
-        const service = AdministrationService({
-          administrationRepository: mockAdministrationRepository,
-          runsRepository: mockRunsRepository,
-        });
-
-        const result = await service.list(
-          { userId: 'admin-123', isSuperAdmin: true },
-          { page: 1, perPage: 25, sortBy: 'createdAt', sortOrder: 'desc', embed: ['stats'] },
-        );
-
-        // Should return administrations without stats
-        expect(result.items).toHaveLength(1);
-        expect(result.items[0]).not.toHaveProperty('stats');
-        // Should log both errors
-        expect(logger.error).toHaveBeenCalledTimes(2);
+        await expect(
+          service.list(
+            { userId: 'admin-123', isSuperAdmin: true },
+            { page: 1, perPage: 25, sortBy: 'createdAt', sortOrder: 'desc', embed: ['stats'] },
+          ),
+        ).rejects.toThrow('Failed to fetch administration stats');
       });
     });
 
@@ -606,7 +564,7 @@ describe('AdministrationService', () => {
         expect(result.items[1]!.tasks).toEqual([]);
       });
 
-      it('should return administrations without tasks when query fails', async () => {
+      it('should throw ApiError when tasks query fails', async () => {
         const mockAdmins = [AdministrationFactory.build({ id: 'admin-1' })];
         mockListAll.mockResolvedValue({ items: mockAdmins, totalItems: 1 });
 
@@ -618,19 +576,12 @@ describe('AdministrationService', () => {
           administrationTaskVariantRepository: mockAdministrationTaskVariantRepository,
         });
 
-        const result = await service.list(
-          { userId: 'admin-123', isSuperAdmin: true },
-          { page: 1, perPage: 25, sortBy: 'createdAt', sortOrder: 'desc', embed: ['tasks'] },
-        );
-
-        // Should return administrations without tasks
-        expect(result.items).toHaveLength(1);
-        expect(result.items[0]).not.toHaveProperty('tasks');
-        // Should log the error with userId for tracing
-        expect(logger.error).toHaveBeenCalledWith(
-          { err: dbError, context: { userId: 'admin-123' } },
-          'Failed to fetch tasks for tasks embed',
-        );
+        await expect(
+          service.list(
+            { userId: 'admin-123', isSuperAdmin: true },
+            { page: 1, perPage: 25, sortBy: 'createdAt', sortOrder: 'desc', embed: ['tasks'] },
+          ),
+        ).rejects.toThrow('Failed to fetch administration tasks');
       });
 
       it('should not fetch tasks when result is empty', async () => {

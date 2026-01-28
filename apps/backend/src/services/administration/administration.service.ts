@@ -83,6 +83,73 @@ export function AdministrationService({
   runsRepository?: RunsRepository;
 } = {}) {
   /**
+   * Fetch stats for administrations (assigned counts and run stats).
+   * Queries run in parallel.
+   *
+   * @param administrationIds - IDs of administrations to fetch stats for
+   * @param userId - User ID for error context
+   * @returns Map of administration ID to stats
+   * @throws {ApiError} If either query fails
+   */
+  async function fetchStatsEmbed(
+    administrationIds: string[],
+    userId: string,
+  ): Promise<Map<string, AdministrationStats>> {
+    const [assignedCounts, runStats] = await Promise.all([
+      administrationRepository.getAssignedUserCountsByAdministrationIds(administrationIds).catch((err) => {
+        throw new ApiError('Failed to fetch administration stats', {
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.DATABASE_QUERY_FAILED,
+          context: { userId, administrationIds, embed: 'stats' },
+          cause: err,
+        });
+      }),
+      runsRepository.getRunStatsByAdministrationIds(administrationIds).catch((err) => {
+        throw new ApiError('Failed to fetch administration stats', {
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.DATABASE_QUERY_FAILED,
+          context: { userId, administrationIds, embed: 'stats' },
+          cause: err,
+        });
+      }),
+    ]);
+
+    const statsMap = new Map<string, AdministrationStats>();
+    for (const adminId of administrationIds) {
+      statsMap.set(adminId, {
+        assigned: assignedCounts.get(adminId) ?? 0,
+        started: runStats.get(adminId)?.started ?? 0,
+        completed: runStats.get(adminId)?.completed ?? 0,
+      });
+    }
+    return statsMap;
+  }
+
+  /**
+   * Fetch tasks for administrations.
+   *
+   * @param administrationIds - IDs of administrations to fetch tasks for
+   * @param userId - User ID for error context
+   * @returns Map of administration ID to tasks array
+   * @throws {ApiError} If query fails
+   */
+  async function fetchTasksEmbed(
+    administrationIds: string[],
+    userId: string,
+  ): Promise<Map<string, AdministrationTask[]>> {
+    try {
+      return await administrationTaskVariantRepository.getByAdministrationIds(administrationIds);
+    } catch (err) {
+      throw new ApiError('Failed to fetch administration tasks', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, administrationIds, embed: 'tasks' },
+        cause: err,
+      });
+    }
+  }
+
+  /**
    * List administrations accessible to a user with pagination, sorting, and optional embeds.
    *
    * super_admin users have unrestricted access to all administrations.
@@ -159,68 +226,22 @@ export function AdministrationService({
     }
 
     const administrationIds = result.items.map((admin) => admin.id);
-    // Stats are only available for super admins
     const shouldEmbedStats = isSuperAdmin && embedOptions.includes(AdministrationEmbedOption.STATS);
     const shouldEmbedTasks = embedOptions.includes(AdministrationEmbedOption.TASKS);
 
-    // Handle embed=stats
-    let statsMap: Map<string, AdministrationStats> | null = null;
-
-    if (shouldEmbedStats) {
-      // Fetch stats from both databases in parallel with graceful error handling.
-      // If either query fails, we log the error and omit stats entirely (all-or-nothing).
-      const [assignedResult, runsResult] = await Promise.allSettled([
-        administrationRepository.getAssignedUserCountsByAdministrationIds(administrationIds),
-        runsRepository.getRunStatsByAdministrationIds(administrationIds),
-      ]);
-
-      // Extract results, logging any failures
-      const assignedCounts = assignedResult.status === 'fulfilled' ? assignedResult.value : null;
-      const runStats = runsResult.status === 'fulfilled' ? runsResult.value : null;
-
-      if (assignedResult.status === 'rejected') {
-        logger.error(
-          { err: assignedResult.reason, context: { userId } },
-          'Failed to fetch assigned user counts for stats embed',
-        );
-      }
-      if (runsResult.status === 'rejected') {
-        logger.error({ err: runsResult.reason, context: { userId } }, 'Failed to fetch run stats for stats embed');
-      }
-
-      // Only build stats map if both queries succeeded (all-or-nothing)
-      if (assignedCounts !== null && runStats !== null) {
-        statsMap = new Map();
-        for (const adminId of administrationIds) {
-          statsMap.set(adminId, {
-            assigned: assignedCounts.get(adminId) ?? 0,
-            started: runStats.get(adminId)?.started ?? 0,
-            completed: runStats.get(adminId)?.completed ?? 0,
-          });
-        }
-      }
-    }
-
-    // Handle embed=tasks
-    let tasksMap: Map<string, AdministrationTask[]> | null = null;
-
-    if (shouldEmbedTasks) {
-      try {
-        tasksMap = await administrationTaskVariantRepository.getByAdministrationIds(administrationIds);
-      } catch (err) {
-        logger.error({ err, context: { userId } }, 'Failed to fetch tasks for tasks embed');
-      }
-    }
+    // Fetch embed data (throws on failure)
+    const statsMap = shouldEmbedStats ? await fetchStatsEmbed(administrationIds, userId) : null;
+    const tasksMap = shouldEmbedTasks ? await fetchTasksEmbed(administrationIds, userId) : null;
 
     // Attach embeds to each administration
     const itemsWithEmbeds: AdministrationWithEmbeds[] = result.items.map((admin) => {
       const adminWithEmbeds: AdministrationWithEmbeds = { ...admin };
 
-      if (shouldEmbedStats && statsMap !== null) {
+      if (statsMap) {
         adminWithEmbeds.stats = statsMap.get(admin.id) ?? { assigned: 0, started: 0, completed: 0 };
       }
 
-      if (shouldEmbedTasks && tasksMap !== null) {
+      if (tasksMap) {
         adminWithEmbeds.tasks = tasksMap.get(admin.id) ?? [];
       }
 
