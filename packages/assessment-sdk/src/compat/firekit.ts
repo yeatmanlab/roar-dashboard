@@ -102,6 +102,11 @@ export async function finishRun(finishingMetaData: FinishRunInput = {}): Promise
   void finishingMetaData;
   throw new SDKError('appkit.finishRun not yet implemented');
 }
+
+/**
+ * Firekit compatibility stub.
+ *
+ * From @bdelab/roar-firekit:
  * async startRun(additionalRunMetadata?: { [key: string]: string })
  *
  * @param additionalRunMetadata Optional additional run metadata

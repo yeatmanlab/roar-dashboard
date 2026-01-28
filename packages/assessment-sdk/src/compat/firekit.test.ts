@@ -1,5 +1,5 @@
 import { describe, it, expect, expectTypeOf } from 'vitest';
-import { finishRun, startTun } from './firekit';
+import { finishRun, startRun } from './firekit';
 import { SDKError } from '../errors/sdk-error';
 
 describe('firekit compat', () => {
