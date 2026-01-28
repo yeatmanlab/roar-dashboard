@@ -137,7 +137,7 @@ export function AdministrationService({
     } catch (error) {
       if (error instanceof ApiError) throw error;
 
-      logger.error({ err: error, userId }, 'Failed to list administrations');
+      logger.error({ err: error, context: { userId } }, 'Failed to list administrations');
 
       throw new ApiError('Failed to retrieve administrations', {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
@@ -179,10 +179,13 @@ export function AdministrationService({
       const runStats = runsResult.status === 'fulfilled' ? runsResult.value : null;
 
       if (assignedResult.status === 'rejected') {
-        logger.error({ err: assignedResult.reason }, 'Failed to fetch assigned user counts for stats embed');
+        logger.error(
+          { err: assignedResult.reason, context: { userId } },
+          'Failed to fetch assigned user counts for stats embed',
+        );
       }
       if (runsResult.status === 'rejected') {
-        logger.error({ err: runsResult.reason }, 'Failed to fetch run stats for stats embed');
+        logger.error({ err: runsResult.reason, context: { userId } }, 'Failed to fetch run stats for stats embed');
       }
 
       // Only build stats map if both queries succeeded (all-or-nothing)
@@ -205,7 +208,7 @@ export function AdministrationService({
       try {
         tasksMap = await administrationTaskVariantRepository.getByAdministrationIds(administrationIds);
       } catch (err) {
-        logger.error({ err }, 'Failed to fetch tasks for tasks embed');
+        logger.error({ err, context: { userId } }, 'Failed to fetch tasks for tasks embed');
       }
     }
 

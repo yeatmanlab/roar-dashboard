@@ -381,9 +381,9 @@ describe('AdministrationService', () => {
         // Should return administrations without stats
         expect(result.items).toHaveLength(1);
         expect(result.items[0]).not.toHaveProperty('stats');
-        // Should log the error
+        // Should log the error with userId for tracing
         expect(logger.error).toHaveBeenCalledWith(
-          { err: dbError },
+          { err: dbError, context: { userId: 'admin-123' } },
           'Failed to fetch assigned user counts for stats embed',
         );
       });
@@ -409,8 +409,11 @@ describe('AdministrationService', () => {
         // Should return administrations without stats
         expect(result.items).toHaveLength(1);
         expect(result.items[0]).not.toHaveProperty('stats');
-        // Should log the error
-        expect(logger.error).toHaveBeenCalledWith({ err: dbError }, 'Failed to fetch run stats for stats embed');
+        // Should log the error with userId for tracing
+        expect(logger.error).toHaveBeenCalledWith(
+          { err: dbError, context: { userId: 'admin-123' } },
+          'Failed to fetch run stats for stats embed',
+        );
       });
 
       it('should return administrations without stats when both queries fail', async () => {
@@ -551,8 +554,11 @@ describe('AdministrationService', () => {
         // Should return administrations without tasks
         expect(result.items).toHaveLength(1);
         expect(result.items[0]).not.toHaveProperty('tasks');
-        // Should log the error
-        expect(logger.error).toHaveBeenCalledWith({ err: dbError }, 'Failed to fetch tasks for tasks embed');
+        // Should log the error with userId for tracing
+        expect(logger.error).toHaveBeenCalledWith(
+          { err: dbError, context: { userId: 'admin-123' } },
+          'Failed to fetch tasks for tasks embed',
+        );
       });
 
       it('should not fetch tasks when result is empty', async () => {
