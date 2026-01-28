@@ -15,7 +15,7 @@ import { SUPERVISORY_ROLES } from '../../constants/role-classifications';
 import { CoreDbClient } from '../../db/clients';
 import type * as CoreDbSchema from '../../db/schema/core';
 import { logger } from '../../logger';
-import { parseAccessControlFilter, type AccessControlFilter } from './access-controls.utils';
+import { parseAccessControlFilter, type AccessControlFilter } from '../utils/access-controls.utils';
 import { isDescendantOrEqual, isAncestorOrEqual } from '../utils/ltree.utils';
 
 /**
