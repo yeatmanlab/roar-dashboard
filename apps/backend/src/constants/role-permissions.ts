@@ -64,6 +64,10 @@ export const RolePermissions: Partial<Record<UserRoleType, readonly Permission[]
 /**
  * Get all roles that have the given permission.
  * Handles wildcard matching (e.g., 'administrations.*' covers 'administrations.list').
+ *
+ * @param permission - The permission to look up
+ * @returns Non-empty array of roles that have the permission
+ * @throws {Error} If no roles are configured for the permission (indicates misconfiguration)
  */
 export function rolesForPermission(permission: Permission): UserRoleType[] {
   const roles: UserRoleType[] = [];
@@ -85,6 +89,10 @@ export function rolesForPermission(permission: Permission): UserRoleType[] {
         }
       }
     }
+  }
+
+  if (roles.length === 0) {
+    throw new Error(`No roles configured for permission '${permission}' - check RolePermissions configuration`);
   }
 
   return roles;

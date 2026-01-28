@@ -39,10 +39,11 @@ describe('role-permissions', () => {
       expect(roles).not.toContain(UserRole.STUDENT);
     });
 
-    it('should return empty array for unknown permission', () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const roles = rolesForPermission('unknown.permission' as any);
-      expect(roles).toEqual([]);
+    it('should throw error for unknown permission', () => {
+      expect(() => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        rolesForPermission('unknown.permission' as any);
+      }).toThrow("No roles configured for permission 'unknown.permission'");
     });
 
     it('should return only site_administrator for testdata.create', () => {

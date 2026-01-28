@@ -59,6 +59,28 @@ describe('AdministrationAccessControls', () => {
   };
 
   describe('buildUserAdministrationIdsQuery', () => {
+    it('should throw error when userId is empty', () => {
+      const accessControls = new AdministrationAccessControls(mockDb);
+
+      expect(() =>
+        accessControls.buildUserAdministrationIdsQuery({
+          userId: '',
+          allowedRoles: ['student' as UserRole],
+        }),
+      ).toThrow('userId cannot be empty');
+    });
+
+    it('should throw error when allowedRoles is empty', () => {
+      const accessControls = new AdministrationAccessControls(mockDb);
+
+      expect(() =>
+        accessControls.buildUserAdministrationIdsQuery({
+          userId: 'user-123',
+          allowedRoles: [],
+        }),
+      ).toThrow('allowedRoles cannot be empty');
+    });
+
     it('should build ancestor-only paths for non-supervisory roles (student)', () => {
       setupUnionMocks(EXPECTED_PATHS_NON_SUPERVISORY - 1);
 
@@ -236,12 +258,12 @@ describe('AdministrationAccessControls', () => {
       });
     };
 
-    it('should return empty map when given empty array', async () => {
+    it('should throw error when given empty array', async () => {
       const accessControls = new AdministrationAccessControls(mockDb);
-      const result = await accessControls.getAssignedUserCountsByAdministrationIds([]);
 
-      expect(result).toEqual(new Map());
-      expect(mockSelect).not.toHaveBeenCalled();
+      await expect(accessControls.getAssignedUserCountsByAdministrationIds([])).rejects.toThrow(
+        'administrationIds required',
+      );
     });
 
     it('should return counts map for single administration', async () => {

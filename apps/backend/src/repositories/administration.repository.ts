@@ -12,7 +12,7 @@ import type {
 } from '@roar-dashboard/api-contract';
 import { BaseRepository, type PaginatedResult } from './base.repository';
 import type { BasePaginatedQueryParams } from './interfaces/base.repository.interface';
-import { AdministrationAccessControls, type AuthorizationFilter } from './access-controls';
+import { AdministrationAccessControls, type AccessControlFilter } from './access-controls';
 
 /**
  * Sort field type derived from api-contract.
@@ -109,24 +109,20 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
    * - Administration assigned to a school → applies to all classes in that school
    * - User must have an allowed role in the org, class, or group
    *
-   * @param authorization - User ID and allowed roles
+   * @param accessControlFilter - User ID and allowed roles
    * @param options - Pagination, sorting, and optional status filter
    */
   async listAuthorized(
-    authorization: AuthorizationFilter,
+    accessControlFilter: AccessControlFilter,
     options: ListAuthorizedOptions,
   ): Promise<PaginatedResult<Administration>> {
-    const { allowedRoles } = authorization;
-
-    if (allowedRoles.length === 0) {
-      return { items: [], totalItems: 0 };
-    }
-
     const { page = 1, perPage = 10, orderBy, status } = options;
     const offset = (page - 1) * perPage;
 
-    // Build the UNION query for accessible administration IDs using AuthorizationRepository
-    const accessibleAdmins = this.accessControls.buildUserAdministrationIdsQuery(authorization).as('accessible_admins');
+    // Build the UNION query for accessible administration IDs using access controls
+    const accessibleAdmins = this.accessControls
+      .buildUserAdministrationIdsQuery(accessControlFilter)
+      .as('accessible_admins');
 
     // Build status filter if provided
     const statusFilter = this.buildStatusFilter(status);

@@ -116,15 +116,17 @@ describe('AdministrationRepository', () => {
       });
     };
 
-    it('should return empty result when allowedRoles is empty', async () => {
-      const repository = new AdministrationRepository(mockDb);
-      const result = await repository.listAuthorized(
-        { userId: 'user-123', allowedRoles: [] },
-        { page: 1, perPage: 10 },
-      );
+    it('should throw error when allowedRoles is empty', async () => {
+      // Mock the access controls to throw when given empty allowedRoles
+      mockAccessControls.buildUserAdministrationIdsQuery.mockImplementation(() => {
+        throw new Error('allowedRoles cannot be empty');
+      });
 
-      expect(result).toEqual({ items: [], totalItems: 0 });
-      expect(mockAccessControls.buildUserAdministrationIdsQuery).not.toHaveBeenCalled();
+      const repository = new AdministrationRepository(mockDb);
+
+      await expect(
+        repository.listAuthorized({ userId: 'user-123', allowedRoles: [] }, { page: 1, perPage: 10 }),
+      ).rejects.toThrow('allowedRoles cannot be empty');
     });
 
     it('should call AdministrationAccessControls.buildUserAdministrationIdsQuery with correct params', async () => {

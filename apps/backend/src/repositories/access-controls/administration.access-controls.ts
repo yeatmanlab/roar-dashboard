@@ -14,18 +14,8 @@ import {
 import { SUPERVISORY_ROLES } from '../../constants/role-classifications';
 import { CoreDbClient } from '../../db/clients';
 import type * as CoreDbSchema from '../../db/schema/core';
-import type { UserRole } from '../../enums/user-role.enum';
 import { logger } from '../../logger';
-
-/**
- * Filter criteria for authorization queries.
- */
-export interface AuthorizationFilter {
-  /** The user requesting access */
-  userId: string;
-  /** Roles the user holds that grant access (e.g., 'student', 'teacher', 'administrator') */
-  allowedRoles: UserRole[];
-}
+import { parseAccessControlFilter, type AccessControlFilter } from './access-controls.utils';
 
 /**
  * Administration Access Controls
@@ -88,23 +78,21 @@ export class AdministrationAccessControls {
    *   .innerJoin(accessibleAdmins.as('accessible'), eq(administrations.id, accessible.administrationId));
    * ```
    *
+   * @param accessControlFilter - Filter containing userId and allowedRoles
    * @returns Drizzle subquery with `{ administrationId: string }` rows.
    *          Uses UNION to automatically deduplicate across access paths.
+   * @throws {ZodError} If called with empty userId or allowedRoles
    */
-  buildUserAdministrationIdsQuery(authorization: AuthorizationFilter) {
-    const { userId, allowedRoles } = authorization;
-
-    if (allowedRoles.length === 0) {
-      logger.warn({ userId }, 'No allowed roles provided, query will return no results');
-    }
+  buildUserAdministrationIdsQuery(accessControlFilter: AccessControlFilter) {
+    const { userId, allowedRoles } = parseAccessControlFilter(accessControlFilter);
 
     // Aliases for the orgs table (needed because we join it twice in the same query)
     const adminOrgTable = alias(orgs, 'admin_org'); // Org where the administration is assigned
     const userOrgTable = alias(orgs, 'user_org'); // Org where the user has membership
 
-    // ─────────────────────────────────────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────────────────────–––––––
     // ANCESTOR ACCESS: Find administrations on user's entity or ancestors (all roles)
-    // ─────────────────────────────────────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────────────────────–––––––
 
     // Path 1: User's org membership → admins on that org or ancestor orgs
     // Example: User in School A sees admins assigned to School A or parent District
@@ -146,9 +134,9 @@ export class AdministrationAccessControls {
       .union(viaDirectClass)
       .union(viaDirectGroup);
 
-    // ─────────────────────────────────────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────────────────────–––––––
     // DESCENDANT ACCESS: Find administrations on descendants (supervisory roles only)
-    // ─────────────────────────────────────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────────────────────–––––––
 
     const supervisoryAllowedRoles = allowedRoles.filter((role) => SUPERVISORY_ROLES.includes(role));
 
@@ -191,21 +179,16 @@ export class AdministrationAccessControls {
    * - Admin assigned to School → includes users in that School + all Classes in it
    * - Admin assigned to Class/Group → includes only users directly in that Class/Group
    *
+   * @param administrationIds - Array of administration IDs to query
    * @returns Drizzle subquery with `{ administrationId: string, userId: string }` rows.
    *          Uses UNION ALL for performance (no deduplication). A user with multiple paths
    *          to an administration appears multiple times. Always use `COUNT(DISTINCT userId)`
    *          when aggregating.
+   * @throws {Error} If called with empty administrationIds array
    */
   buildAdministrationUserAssignmentsQuery(administrationIds: string[]) {
     if (administrationIds.length === 0) {
-      // Return empty result set with correct schema
-      return this.db
-        .select({
-          administrationId: sql<string>`NULL::uuid`.as('administration_id'),
-          userId: sql<string>`NULL::uuid`.as('user_id'),
-        })
-        .from(administrationOrgs)
-        .where(sql`FALSE`);
+      throw new Error('administrationIds are required for building user assignments query');
     }
 
     // Aliases for the orgs table (needed because we join it twice in the same query)
@@ -274,11 +257,13 @@ export class AdministrationAccessControls {
    * const count = counts.get('admin-3') ?? 0; // 0
    * ```
    *
-   * @returns Map of administrationId → user count (missing = 0 users)
+   * @param administrationIds - Array of administration IDs to query
+   * @returns Map of administrationId → user count
+   * @throws {Error} If called with empty administrationIds array
    */
   async getAssignedUserCountsByAdministrationIds(administrationIds: string[]): Promise<Map<string, number>> {
     if (administrationIds.length === 0) {
-      return new Map();
+      throw new Error('administrationIds required for getting assigned user counts');
     }
 
     const assignments = this.buildAdministrationUserAssignmentsQuery(administrationIds).as('assignments');
