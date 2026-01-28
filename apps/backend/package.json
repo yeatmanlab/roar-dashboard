@@ -13,7 +13,6 @@
     "format:check": "prettier --check .",
     "test": "vitest run",
     "test:watch": "vitest --watch",
-    "test:integration": "vitest run -c vitest.integration.config.ts",
     "check-types": "tsc --noEmit",
     "check-types:watch": "tsc --noEmit --watch",
     "db:gen:core": "drizzle-kit generate --config ./drizzle.core.config.ts",
