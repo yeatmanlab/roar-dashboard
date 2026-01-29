@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - project/backend-refactor
+      - fix/1569/bootstrap-migrations  # TODO: Remove after testing
 
 concurrency:
   group: ${{ github.workflow }}
