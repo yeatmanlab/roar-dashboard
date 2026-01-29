@@ -60,13 +60,15 @@ runs:
         DB_USER: ${{ inputs.gcp-service-account }}
       run: |
         if [ "${{ inputs.database }}" = "core" ]; then
-          CORE_DATABASE_URL="postgresql://${DB_USER}@localhost:5432/${DB_NAME}" \
-          USE_CLOUDSQL_CONNECTOR="false" \
-          npm run db:migrate:core
+          npx drizzle-kit migrate \
+            --dialect=postgresql \
+            --migrations=./migrations/core \
+            --url="postgresql://${DB_USER}@localhost:5432/${DB_NAME}"
         elif [ "${{ inputs.database }}" = "assessment" ]; then
-          ASSESSMENT_DATABASE_URL="postgresql://${DB_USER}@localhost:5432/${DB_NAME}" \
-          USE_CLOUDSQL_CONNECTOR="false" \
-          npm run db:migrate:assess
+          npx drizzle-kit migrate \
+            --dialect=postgresql \
+            --migrations=./migrations/assessment \
+            --url="postgresql://${DB_USER}@localhost:5432/${DB_NAME}"
         else
           echo "Invalid database: ${{ inputs.database }}. Must be 'core' or 'assessment'."
           exit 1
