@@ -1,4 +1,4 @@
-name: Migrate Dev Environment
+name: Migrate Development Environment
 
 on:
   push:
@@ -15,8 +15,8 @@ permissions:
   id-token: write
 
 jobs:
-  migrate-core-db:
-    name: Migrate Core Database
+  core-db-migrations:
+    name: Apply core database migrations
     runs-on: ubuntu-latest
     environment: development
     timeout-minutes: 10
@@ -35,8 +35,8 @@ jobs:
           cloudsql-instance-connection-name: ${{ secrets.CLOUDSQL_INSTANCE_CONNECTION_NAME }}
           database: core
 
-  migrate-assessment-db:
-    name: Migrate Assessment Database
+  assessment-db-migrations:
+    name: Apply assessment database migrations
     runs-on: ubuntu-latest
     environment: development
     timeout-minutes: 10
