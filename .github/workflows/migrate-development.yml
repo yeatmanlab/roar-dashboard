@@ -1,0 +1,55 @@
+name: Migrate Dev Environment
+
+on:
+  push:
+    branches:
+      - project/backend-refactor
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  migrate-core-db:
+    name: Migrate Core Database
+    runs-on: ubuntu-latest
+    environment: development
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup environment
+        uses: ./.github/actions/setup-node-environment
+
+      - name: Run core database migrations
+        uses: ./.github/actions/run-db-migrations
+        with:
+          gcp-workload-identity-provider: ${{ secrets.GCP_DB_WORKLOAD_IDENTITY_PROVIDER }}
+          gcp-service-account: ${{ secrets.GCP_DB_MIGRATOR_CORE_SERVICE_ACCOUNT }}
+          cloudsql-instance-connection-name: ${{ secrets.CLOUDSQL_INSTANCE_CONNECTION_NAME }}
+          database: core
+
+  migrate-assessment-db:
+    name: Migrate Assessment Database
+    runs-on: ubuntu-latest
+    environment: development
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup environment
+        uses: ./.github/actions/setup-node-environment
+
+      - name: Run assessment database migrations
+        uses: ./.github/actions/run-db-migrations
+        with:
+          gcp-workload-identity-provider: ${{ secrets.GCP_DB_WORKLOAD_IDENTITY_PROVIDER }}
+          gcp-service-account: ${{ secrets.GCP_DB_MIGRATOR_ASSESSMENT_SERVICE_ACCOUNT }}
+          cloudsql-instance-connection-name: ${{ secrets.CLOUDSQL_INSTANCE_CONNECTION_NAME }}
+          database: assessment
