@@ -62,6 +62,9 @@ runs:
         DB_NAME="${{ inputs.database-name || inputs.database }}"
         DB_URL="postgresql://${DB_USER}@localhost:5432/${DB_NAME}"
 
+        # Install dotenv (required by drizzle config)
+        npm install --no-save dotenv@17.2.3
+
         if [ "${{ inputs.database }}" = "core" ]; then
           CORE_DATABASE_URL="${DB_URL}" npx drizzle-kit migrate --config=drizzle.core.config.ts
         elif [ "${{ inputs.database }}" = "assessment" ]; then
