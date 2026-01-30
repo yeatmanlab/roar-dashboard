@@ -55,20 +55,17 @@ runs:
     - name: Run migrations
       shell: bash
       working-directory: apps/backend
-      env:
-        DB_NAME: ${{ inputs.database-name || inputs.database }}
-        DB_USER: ${{ inputs.gcp-service-account }}
       run: |
+        # CloudSQL IAM auth requires the service account email without .gserviceaccount.com
+        DB_USER="${{ inputs.gcp-service-account }}"
+        DB_USER="${DB_USER%.gserviceaccount.com}"
+        DB_NAME="${{ inputs.database-name || inputs.database }}"
+        DB_URL="postgresql://${DB_USER}@localhost:5432/${DB_NAME}"
+
         if [ "${{ inputs.database }}" = "core" ]; then
-          npx drizzle-kit migrate \
-            --dialect=postgresql \
-            --migrations=./migrations/core \
-            --url="postgresql://${DB_USER}@localhost:5432/${DB_NAME}"
+          CORE_DATABASE_URL="${DB_URL}" npx drizzle-kit migrate --config=drizzle.core.config.ts
         elif [ "${{ inputs.database }}" = "assessment" ]; then
-          npx drizzle-kit migrate \
-            --dialect=postgresql \
-            --migrations=./migrations/assessment \
-            --url="postgresql://${DB_USER}@localhost:5432/${DB_NAME}"
+          ASSESSMENT_DATABASE_URL="${DB_URL}" npx drizzle-kit migrate --config=drizzle.assessment.config.ts
         else
           echo "Invalid database: ${{ inputs.database }}. Must be 'core' or 'assessment'."
           exit 1
