@@ -144,20 +144,15 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
       return { items: [], totalItems: 0 };
     }
 
-    // Get sort column based on field
-    const getSortColumn = (field: string | undefined) => {
-      switch (field) {
-        case 'dateStart':
-          return administrations.dateStart;
-        case 'dateEnd':
-          return administrations.dateEnd;
-        case 'name':
-          return administrations.name;
-        default:
-          return administrations.createdAt;
-      }
-    };
-    const sortColumn = getSortColumn(orderBy?.field);
+    // Map field name to column (matches SORT_FIELD_TO_COLUMN in administration.service.ts)
+    const SORT_FIELD_TO_COLUMN = {
+      name: administrations.name,
+      createdAt: administrations.createdAt,
+      dateStart: administrations.dateStart,
+      dateEnd: administrations.dateEnd,
+    } as const;
+    const sortColumn =
+      SORT_FIELD_TO_COLUMN[orderBy?.field as keyof typeof SORT_FIELD_TO_COLUMN] ?? administrations.createdAt;
     const sortDirection = orderBy?.direction === 'asc' ? asc(sortColumn) : desc(sortColumn);
 
     // Data query: join administrations with the accessible IDs subquery + status filter
