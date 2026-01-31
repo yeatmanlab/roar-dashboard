@@ -66,8 +66,10 @@ runs:
         npm install --no-save dotenv@17.2.3
 
         if [ "${{ inputs.database }}" = "core" ]; then
+          PGOPTIONS='-c role=role_app_migrator' \
           CORE_DATABASE_URL="${DB_URL}" npx drizzle-kit migrate --config=drizzle.core.config.ts
         elif [ "${{ inputs.database }}" = "assessment" ]; then
+          PGOPTIONS='-c role=role_app_migrator' \
           ASSESSMENT_DATABASE_URL="${DB_URL}" npx drizzle-kit migrate --config=drizzle.assessment.config.ts
         else
           echo "Invalid database: ${{ inputs.database }}. Must be 'core' or 'assessment'."
