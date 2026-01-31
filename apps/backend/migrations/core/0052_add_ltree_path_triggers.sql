@@ -69,25 +69,26 @@ BEGIN
 
   old_path := OLD.path;
 
-  -- Prevent cycles: new parent cannot be inside this org's subtree
-  IF NEW.parent_org_id IS NOT NULL THEN
+  -- Compute new path for this org
+  IF NEW.parent_org_id IS NULL THEN
+    -- Moving to root level
+    new_path := app.org_to_ltree_label(NEW.org_type, NEW.id);
+  ELSE
+    -- Moving under a parent - get parent's path (STRICT raises if parent doesn't exist)
     SELECT path INTO STRICT new_parent_path
     FROM app.orgs
     WHERE id = NEW.parent_org_id;
 
+    IF new_parent_path IS NULL THEN
+      RAISE EXCEPTION 'New parent org % has NULL path', NEW.parent_org_id;
+    END IF;
+
+    -- Prevent cycles: new parent cannot be inside this org's subtree
     IF new_parent_path <@ old_path THEN
       RAISE EXCEPTION 'Invalid move: cannot reparent org % under its descendant %',
         NEW.id, NEW.parent_org_id;
     END IF;
-  END IF;
 
-  -- Compute new path for this org
-  IF NEW.parent_org_id IS NULL THEN
-    new_path := app.org_to_ltree_label(NEW.org_type, NEW.id);
-  ELSE
-    IF new_parent_path IS NULL THEN
-      RAISE EXCEPTION 'New parent org % has NULL path', NEW.parent_org_id;
-    END IF;
     new_path := new_parent_path || app.org_to_ltree_label(NEW.org_type, NEW.id);
   END IF;
 
