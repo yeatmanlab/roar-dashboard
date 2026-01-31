@@ -7,9 +7,13 @@ import type { SQL, AnyColumn } from 'drizzle-orm';
  * ltree is a PostgreSQL extension for hierarchical data using dot-separated paths.
  * Paths are stored as segments like: `district_uuid.school_uuid.class_uuid`
  *
- * Key operators:
- * - `<@` (isDescendantOrEqual): Returns true if left path is descendant of or equal to right path
- * - `@>` (isAncestorOrEqual): Returns true if left path is ancestor of or equal to right path
+ * Key operators (from PostgreSQL docs):
+ * - `A <@ B`: A is a descendant of B (or equal to B). "A is contained in B"
+ * - `A @> B`: A is an ancestor of B (or equal to B). "A contains B"
+ *
+ * Our wrapper functions use semantic naming that matches the org hierarchy domain:
+ * - `isDescendantOrEqual(child, ancestor)` → `child <@ ancestor`
+ * - `isAncestorOrEqual(ancestor, child)` → `ancestor @> child`
  */
 
 /**
@@ -17,12 +21,15 @@ import type { SQL, AnyColumn } from 'drizzle-orm';
  *
  * Uses ltree `<@` operator: `child <@ ancestor`
  *
- * @example
- * // Find orgs that are descendants of user's org
- * .innerJoin(childOrg, isDescendantOrEqual(childOrg.path, parentOrg.path))
+ * In ltree terms: "child is contained in ancestor's subtree"
  *
- * @param childPath - The potential descendant path column
- * @param ancestorPath - The potential ancestor path column
+ * @example
+ * // Find ancestor orgs of user's org (user org is descendant of admin org)
+ * .innerJoin(adminOrg, isDescendantOrEqual(userOrg.path, adminOrg.path))
+ * // Matches: userOrg.path='district.school' is descendant of adminOrg.path='district'
+ *
+ * @param childPath - The potential descendant path column (left operand of <@)
+ * @param ancestorPath - The potential ancestor path column (right operand of <@)
  * @returns SQL condition for the ltree containment check
  */
 export function isDescendantOrEqual(childPath: AnyColumn, ancestorPath: AnyColumn): SQL {
@@ -34,15 +41,18 @@ export function isDescendantOrEqual(childPath: AnyColumn, ancestorPath: AnyColum
  *
  * Uses ltree `@>` operator: `ancestor @> child`
  *
+ * In ltree terms: "ancestor's subtree contains child"
+ *
  * This is the inverse of `isDescendantOrEqual` - use whichever reads more naturally
  * in your query context.
  *
  * @example
- * // Find orgs that are ancestors of class's org
- * .innerJoin(parentOrg, isAncestorOrEqual(parentOrg.path, childClass.orgPath))
+ * // Find descendant orgs of user's org (user org is ancestor of admin org)
+ * .innerJoin(adminOrg, isAncestorOrEqual(userOrg.path, adminOrg.path))
+ * // Matches: userOrg.path='district' is ancestor of adminOrg.path='district.school'
  *
- * @param ancestorPath - The potential ancestor path column
- * @param childPath - The potential descendant path column
+ * @param ancestorPath - The potential ancestor path column (left operand of @>)
+ * @param childPath - The potential descendant path column (right operand of @>)
  * @returns SQL condition for the ltree containment check
  */
 export function isAncestorOrEqual(ancestorPath: AnyColumn, childPath: AnyColumn): SQL {
