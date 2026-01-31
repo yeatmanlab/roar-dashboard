@@ -3,7 +3,7 @@
  */
 
 type DerivedKeys<V extends readonly string[], EnumName extends string | undefined> = Uppercase<
-  EnumName extends string ? `${string & EnumName}_${V[number]}` | V[number] : V[number]
+  EnumName extends string ? `${EnumName}_${V[number]}` | V[number] : V[number]
 >;
 
 /**
