@@ -8,12 +8,12 @@ import { CoreDbClient, AssessmentDbClient } from './index';
 describe('Integration Test Database Infrastructure', () => {
   it('should connect to core database', async () => {
     const result = await CoreDbClient.execute<{ one: number }>(sql`SELECT 1 as one`);
-    expect(result.rows[0].one).toBe(1);
+    expect(result.rows[0]?.one).toBe(1);
   });
 
   it('should connect to assessment database', async () => {
     const result = await AssessmentDbClient.execute<{ one: number }>(sql`SELECT 1 as one`);
-    expect(result.rows[0].one).toBe(1);
+    expect(result.rows[0]?.one).toBe(1);
   });
 
   it('should have app schema in core database', async () => {
@@ -22,7 +22,7 @@ describe('Integration Test Database Infrastructure', () => {
         SELECT 1 FROM information_schema.schemata WHERE schema_name = 'app'
       ) as exists
     `);
-    expect(result.rows[0].exists).toBe(true);
+    expect(result.rows[0]?.exists).toBe(true);
   });
 
   it('should have app schema in assessment database', async () => {
@@ -31,6 +31,6 @@ describe('Integration Test Database Infrastructure', () => {
         SELECT 1 FROM information_schema.schemata WHERE schema_name = 'app'
       ) as exists
     `);
-    expect(result.rows[0].exists).toBe(true);
+    expect(result.rows[0]?.exists).toBe(true);
   });
 });
