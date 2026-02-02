@@ -69,11 +69,7 @@ describe('firekit compat', () => {
     it('issues deprecation warning when called', async () => {
       const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
-      try {
-        await updateUser({ assessmentPid: 'test-pid' });
-      } catch {
-        // Expected to throw
-      }
+      await expect(updateUser({ assessmentPid: 'test-pid' })).rejects.toBeInstanceOf(SDKError);
 
       expect(consoleWarnSpy).toHaveBeenCalledWith(
         'appkit.updateUser is deprecated and related to standalone apps. Consider using alternative methods.'
