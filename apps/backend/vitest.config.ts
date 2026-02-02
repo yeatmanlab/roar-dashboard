@@ -10,6 +10,21 @@ const coverageConfig = {
   reporter: isCI
     ? ([['lcov', { projectRoot: '../..' }], 'json', 'json-summary', 'text-summary'] as const)
     : (['html', 'text'] as const),
+  exclude: [
+    // Vitest defaults
+    'coverage/**',
+    'dist/**',
+    '**/node_modules/**',
+    '**/[.]**',
+    'cypress/**',
+    '**/*.test.{js,ts,jsx,tsx}',
+    '**/*.integration.test.{js,ts,jsx,tsx}',
+    '**/{karma,rollup,webpack,vite,vitest,jest,ava,babel,nyc,cypress,tsup,build,eslint,prettier}.config.*',
+    // Custom exclusions
+    '**/test-support/**',
+    'drizzle.*.config.ts',
+    'vitest.*.ts',
+  ],
 };
 
 export default defineConfig({
@@ -24,6 +39,9 @@ export default defineConfig({
           watch: false,
           setupFiles: ['./vitest.setup.ts'],
           exclude: ['**/*.integration.test.ts', '**/node_modules/**'],
+          env: {
+            VITEST_PROJECT: 'unit',
+          },
         },
       },
       {
@@ -35,7 +53,7 @@ export default defineConfig({
           include: ['**/*.integration.test.ts'],
           exclude: ['**/node_modules/**'],
           globalSetup: ['./vitest.integration.globalSetup.ts'],
-          setupFiles: ['./vitest.integration.setup.ts'],
+          setupFiles: ['./vitest.setup.ts'],
           pool: 'forks',
           poolOptions: {
             forks: {
@@ -44,6 +62,9 @@ export default defineConfig({
           },
           testTimeout: 30000,
           hookTimeout: 30000,
+          env: {
+            VITEST_PROJECT: 'integration',
+          },
         },
       },
     ],
