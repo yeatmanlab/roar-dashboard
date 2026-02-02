@@ -43,18 +43,23 @@ jobs:
   # Test
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
   test:
-    name: Unit tests
+    name: Tests
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
+    env:
+      DOTENV_PRIVATE_KEY_TEST: ${{ secrets.DOTENV_PRIVATE_KEY_TEST }}
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          submodules: "recursive"
+          token: ${{ secrets.CI_GITHUB_PAT }}
 
       - name: Setup environment
         uses: ./.github/actions/setup-node-environment
 
-      - name: Run tests
+      - name: Run all tests
         run: npm run test
 
       - name: Report dashboard coverage
