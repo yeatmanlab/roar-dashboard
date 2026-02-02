@@ -20,6 +20,16 @@ export interface DistrictsListQuery {
   sortBy: 'name' | 'abbreviation' | 'createdAt';
   sortOrder: 'asc' | 'desc';
   includeEnded?: boolean;
+  embed?: string; // Comma-separated embeds (e.g., 'counts')
+}
+
+/**
+ * Aggregated counts for a district
+ */
+export interface ApiDistrictCounts {
+  users: number;
+  schools: number;
+  classes: number;
 }
 
 /**
@@ -55,6 +65,7 @@ export interface ApiDistrict {
   };
   isRosteringRootOrg: boolean;
   rosteringEnded?: string;
+  counts?: ApiDistrictCounts;
   children?: ApiDistrict[];
 }
 
@@ -70,10 +81,15 @@ function transformDistrict(district: DistrictWithEmbeds): ApiDistrict {
     parentOrgId: district.parentOrgId,
     dates: {
       created: district.createdAt.toISOString(),
-      updated: district.updatedAt.toISOString(),
+      updated: district.updatedAt?.toISOString() ?? district.createdAt.toISOString(),
     },
     isRosteringRootOrg: district.isRosteringRootOrg,
   };
+
+  // Include counts if present
+  if (district.counts) {
+    result.counts = district.counts;
+  }
 
   // Include location if any location field is present
   if (
@@ -93,10 +109,10 @@ function transformDistrict(district: DistrictWithEmbeds): ApiDistrict {
 
     // Transform PostgreSQL point to GeoJSON format
     if (district.locationLatLong) {
-      const { x, y } = district.locationLatLong;
+      const point = district.locationLatLong as unknown as { x: number; y: number };
       result.location.coordinates = {
         type: 'Point',
-        coordinates: [x, y], // [longitude, latitude]
+        coordinates: [point.x, point.y], // [longitude, latitude]
       };
     }
   }
@@ -139,7 +155,11 @@ export const DistrictsController = {
    * @returns Paginated list of districts transformed to API response format
    */
   list: async (authContext: AuthContext, query: DistrictsListQuery) => {
-    const { page, perPage, sortBy, sortOrder, includeEnded } = query;
+    const { page, perPage, sortBy, sortOrder, includeEnded, embed } = query;
+
+    // Parse embed parameter
+    const embeds = embed ? embed.split(',').map((e) => e.trim()) : [];
+    const embedCounts = embeds.includes('counts');
 
     const result = await districtService.list(authContext, {
       page,
@@ -147,6 +167,7 @@ export const DistrictsController = {
       sortBy,
       sortOrder,
       ...(includeEnded !== undefined && { includeEnded }),
+      ...(embedCounts && { embedCounts }),
     });
 
     // Transform to API response format

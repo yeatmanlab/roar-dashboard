@@ -1,8 +1,9 @@
 import { StatusCodes } from 'http-status-codes';
-import { DistrictRepository, type District } from '../../repositories/district.repository';
+import { DistrictRepository, type District, type DistrictWithCounts } from '../../repositories/district.repository';
 import { rolesForPermission } from '../../constants/role-permissions';
 import { Permissions } from '../../constants/permissions';
-import { ApiError, ApiErrorCode } from '../../errors/api-error';
+import { ApiError } from '../../errors/api-error';
+import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { logger } from '../../logger';
 import type { PaginatedResult } from '../../repositories/base.repository';
 
@@ -23,12 +24,13 @@ export interface ListOptions {
   sortBy: 'name' | 'abbreviation' | 'createdAt';
   sortOrder: 'asc' | 'desc';
   includeEnded?: boolean;
+  embedCounts?: boolean;
 }
 
 /**
  * District with optional embeds
  */
-export interface DistrictWithEmbeds extends District {
+export interface DistrictWithEmbeds extends DistrictWithCounts {
   children?: District[];
 }
 
@@ -79,10 +81,11 @@ export function DistrictService(deps: DistrictServiceDeps = {}) {
         page: options.page,
         perPage: options.perPage,
         orderBy: {
-          field: SORT_FIELD_TO_COLUMN[options.sortBy],
+          field: SORT_FIELD_TO_COLUMN[options.sortBy] ?? 'createdAt',
           direction: options.sortOrder,
         },
         includeEnded: options.includeEnded ?? false,
+        embedCounts: options.embedCounts ?? false,
       };
 
       // Fetch districts based on user role and authorization
@@ -108,61 +111,8 @@ export function DistrictService(deps: DistrictServiceDeps = {}) {
     return result;
   }
 
-  /**
-   * Get a single district by ID.
-   *
-   * @param authContext - User's auth context
-   * @param id - District ID
-   * @returns District or null if not found
-   * @throws {ApiError} If the database query fails
-   */
-  async function getById(authContext: AuthContext, id: string): Promise<District | null> {
-    const { userId } = authContext;
-
-    try {
-      return await districtRepository.getById(id);
-    } catch (error) {
-      logger.error({ err: error, context: { userId, districtId: id } }, 'Failed to get district by ID');
-
-      throw new ApiError('Failed to retrieve district', {
-        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-        code: ApiErrorCode.DATABASE_QUERY_FAILED,
-        context: { userId, districtId: id },
-        cause: error,
-      });
-    }
-  }
-
-  /**
-   * Get child organizations of a district.
-   *
-   * @param authContext - User's auth context
-   * @param districtId - Parent district ID
-   * @param includeEnded - Whether to include organizations with rosteringEnded set
-   * @returns List of child organizations
-   * @throws {ApiError} If the database query fails
-   */
-  async function getChildren(authContext: AuthContext, districtId: string, includeEnded = false): Promise<District[]> {
-    const { userId } = authContext;
-
-    try {
-      return await districtRepository.getChildren(districtId, includeEnded);
-    } catch (error) {
-      logger.error({ err: error, context: { userId, districtId } }, 'Failed to get district children');
-
-      throw new ApiError('Failed to retrieve district children', {
-        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-        code: ApiErrorCode.DATABASE_QUERY_FAILED,
-        context: { userId, districtId },
-        cause: error,
-      });
-    }
-  }
-
   return {
     list,
-    getById,
-    getChildren,
   };
 }
 

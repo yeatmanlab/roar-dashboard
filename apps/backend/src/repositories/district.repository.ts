@@ -1,7 +1,7 @@
-import { eq, asc, desc, countDistinct, and, isNull, SQL } from 'drizzle-orm';
+import { eq, asc, desc, countDistinct, and, isNull, SQL, sql, inArray } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { BaseRepository, type PaginatedResult } from './base.repository';
-import { orgs, type Org } from '../db/schema';
+import { orgs, type Org, userOrgs, classes } from '../db/schema';
 import { CoreDbClient } from '../db/clients';
 import type * as CoreDbSchema from '../db/schema/core';
 import { DistrictAccessControls } from './access-controls/district.access-controls';
@@ -11,6 +11,22 @@ import type { AccessControlFilter } from './utils/access-controls.utils';
  * District-specific type (Org with orgType = 'district')
  */
 export type District = Org;
+
+/**
+ * Aggregated counts for a district
+ */
+export interface DistrictCounts {
+  users: number;
+  schools: number;
+  classes: number;
+}
+
+/**
+ * District with optional counts embed
+ */
+export interface DistrictWithCounts extends District {
+  counts?: DistrictCounts;
+}
 
 /**
  * Options for listing districts with authorization
@@ -23,6 +39,7 @@ export interface ListAuthorizedOptions {
     direction: 'asc' | 'desc';
   };
   includeEnded?: boolean;
+  embedCounts?: boolean;
 }
 
 /**
@@ -84,8 +101,8 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
   async listAuthorized(
     accessControlFilter: AccessControlFilter,
     options: ListAuthorizedOptions,
-  ): Promise<PaginatedResult<District>> {
-    const { page, perPage, orderBy, includeEnded = false } = options;
+  ): Promise<PaginatedResult<DistrictWithCounts>> {
+    const { page, perPage, orderBy, includeEnded = false, embedCounts = false } = options;
     const offset = (page - 1) * perPage;
 
     // Build the UNION query for accessible district IDs using access controls
@@ -143,8 +160,24 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
       .limit(perPage)
       .offset(offset);
 
+    const districts = dataResult.map((row) => row.org as District);
+
+    // If embedCounts is requested, fetch aggregated statistics for each district
+    if (embedCounts && districts.length > 0) {
+      const districtIds = districts.map((d) => d.id);
+      const countsMap = await this.fetchDistrictCounts(districtIds, includeEnded);
+
+      return {
+        items: districts.map((district) => ({
+          ...district,
+          counts: countsMap.get(district.id) ?? { users: 0, schools: 0, classes: 0 },
+        })),
+        totalItems,
+      };
+    }
+
     return {
-      items: dataResult.map((row) => row.org as District),
+      items: districts,
       totalItems,
     };
   }
@@ -182,5 +215,67 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
     const where = whereConditions.length > 1 ? and(...whereConditions) : whereConditions[0];
 
     return this.db.select().from(orgs).where(where).orderBy(asc(orgs.name));
+  }
+
+  /**
+   * Fetch aggregated counts for multiple districts.
+   *
+   * Computes:
+   * - users: COUNT of active users in district (from userOrgs where enrollmentEnd IS NULL)
+   * - schools: COUNT of schools where parentOrgId = district.id and rosteringEnded IS NULL
+   * - classes: COUNT of classes in district schools (via classes joined through schools)
+   *
+   * @param districtIds - Array of district IDs to fetch counts for
+   * @param includeEnded - Whether to include ended organizations in school counts
+   * @returns Map of district ID to counts
+   */
+  private async fetchDistrictCounts(
+    districtIds: string[],
+    includeEnded: boolean,
+  ): Promise<Map<string, DistrictCounts>> {
+    // Build where conditions for schools
+    const schoolWhereConditions: SQL[] = [eq(orgs.orgType, 'school')];
+    if (!includeEnded) {
+      schoolWhereConditions.push(isNull(orgs.rosteringEnded));
+    }
+
+    // Query to get counts for all districts in one go
+    // We use separate subqueries for each count to handle the different join conditions
+    const results = await this.db
+      .select({
+        districtId: orgs.id,
+        users: sql<number>`(
+          SELECT COUNT(DISTINCT ${userOrgs.userId})
+          FROM app.user_orgs
+          WHERE ${userOrgs.orgId} = ${orgs.id}
+            AND ${userOrgs.enrollmentEnd} IS NULL
+        )`.as('users'),
+        schools: sql<number>`(
+          SELECT COUNT(DISTINCT id)
+          FROM app.orgs
+          WHERE parent_org_id = ${orgs.id}
+            AND org_type = 'school'
+            ${includeEnded ? sql`` : sql`AND rostering_ended IS NULL`}
+        )`.as('schools'),
+        classes: sql<number>`(
+          SELECT COUNT(DISTINCT ${classes.id})
+          FROM app.classes
+          WHERE ${classes.districtId} = ${orgs.id}
+        )`.as('classes'),
+      })
+      .from(orgs)
+      .where(and(eq(orgs.orgType, 'district'), inArray(orgs.id, districtIds)));
+
+    // Convert to Map for efficient lookup
+    const countsMap = new Map<string, DistrictCounts>();
+    for (const row of results) {
+      countsMap.set(row.districtId, {
+        users: Number(row.users) || 0,
+        schools: Number(row.schools) || 0,
+        classes: Number(row.classes) || 0,
+      });
+    }
+
+    return countsMap;
   }
 }
