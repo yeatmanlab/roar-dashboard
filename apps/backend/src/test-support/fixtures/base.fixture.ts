@@ -47,11 +47,15 @@ import { AdministrationGroupFactory } from '../factories/administration-group.fa
  *
  * Hierarchy structure:
  * ```
- * district
+ * district (District A)
  * ├── schoolA
  * │   └── classInSchoolA
  * └── schoolB
  *     └── classInSchoolB
+ *
+ * districtB (District B - separate branch for cross-district isolation tests)
+ * └── schoolInDistrictB
+ *     └── classInDistrictB
  *
  * group (standalone, no hierarchy)
  * ```
@@ -67,6 +71,7 @@ import { AdministrationGroupFactory } from '../factories/administration-group.fa
  * - groupStudent: student in standalone group
  * - unassignedUser: user with no assignments (edge case)
  * - multiAssignedUser: user assigned to both district AND schoolA (deduplication tests)
+ * - districtBStudent: student in districtB (for cross-district isolation tests)
  *
  * Administration assignments:
  * - adminAtDistrict: visible to all users in district hierarchy
@@ -74,6 +79,7 @@ import { AdministrationGroupFactory } from '../factories/administration-group.fa
  * - adminAtSchoolB: visible only to users in School B subtree
  * - adminAtClassA: visible only to users in classInSchoolA
  * - adminAtGroup: visible only to users in the standalone group
+ * - adminAtDistrictB: visible only to users in districtB branch
  */
 export interface BaseFixture {
   // ═══════════════════════════════════════════════════════════════════════════
@@ -97,6 +103,19 @@ export interface BaseFixture {
 
   /** Standalone group (no org hierarchy) */
   group: Group;
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // District B Branch (separate hierarchy for cross-district isolation tests)
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  /** District B - separate root district (sibling to district, for isolation tests) */
+  districtB: Org;
+
+  /** School in District B */
+  schoolInDistrictB: Org;
+
+  /** Class in School in District B */
+  classInDistrictB: Class;
 
   // ═══════════════════════════════════════════════════════════════════════════
   // USERS
@@ -132,6 +151,9 @@ export interface BaseFixture {
   /** User assigned to multiple orgs - district AND schoolA (deduplication tests) */
   multiAssignedUser: User;
 
+  /** Student in districtB (for cross-district isolation tests) */
+  districtBStudent: User;
+
   // ═══════════════════════════════════════════════════════════════════════════
   // ADMINISTRATIONS
   // ═══════════════════════════════════════════════════════════════════════════
@@ -150,6 +172,9 @@ export interface BaseFixture {
 
   /** Administration assigned to standalone group only */
   adminAtGroup: Administration;
+
+  /** Administration assigned to districtB (visible only to users in districtB branch) */
+  adminAtDistrictB: Administration;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -206,6 +231,27 @@ export async function seedBaseFixture(): Promise<BaseFixture> {
     name: 'Test Group',
   });
 
+  // ─────────────────────────────────────────────────────────────────────────────
+  // District B Branch (separate hierarchy for cross-district isolation tests)
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  const districtB = await OrgFactory.create({
+    name: 'Test District B',
+    orgType: OrgType.DISTRICT,
+  });
+
+  const schoolInDistrictB = await OrgFactory.create({
+    name: 'Test School in District B',
+    orgType: OrgType.SCHOOL,
+    parentOrgId: districtB.id,
+  });
+
+  const classInDistrictB = await ClassFactory.create({
+    name: 'Test Class in District B',
+    schoolId: schoolInDistrictB.id,
+    districtId: districtB.id,
+  });
+
   // ═══════════════════════════════════════════════════════════════════════════
   // Step 2: Create Users
   // ═══════════════════════════════════════════════════════════════════════════
@@ -220,6 +266,7 @@ export async function seedBaseFixture(): Promise<BaseFixture> {
   const groupStudent = await UserFactory.create({ nameFirst: 'Group', nameLast: 'Student' });
   const unassignedUser = await UserFactory.create({ nameFirst: 'Unassigned', nameLast: 'User' });
   const multiAssignedUser = await UserFactory.create({ nameFirst: 'Multi', nameLast: 'Assigned' });
+  const districtBStudent = await UserFactory.create({ nameFirst: 'DistrictB', nameLast: 'Student' });
 
   // ═══════════════════════════════════════════════════════════════════════════
   // Step 3: Assign Users to Orgs/Classes/Groups
@@ -242,6 +289,9 @@ export async function seedBaseFixture(): Promise<BaseFixture> {
   // Multi-assigned user: assigned to both district AND schoolA
   await UserOrgFactory.create({ userId: multiAssignedUser.id, orgId: district.id, role: UserRole.ADMINISTRATOR });
   await UserOrgFactory.create({ userId: multiAssignedUser.id, orgId: schoolA.id, role: UserRole.TEACHER });
+
+  // District B user (for cross-district isolation tests)
+  await UserOrgFactory.create({ userId: districtBStudent.id, orgId: districtB.id, role: UserRole.STUDENT });
 
   // ═══════════════════════════════════════════════════════════════════════════
   // Step 4: Create Administrations
@@ -272,6 +322,11 @@ export async function seedBaseFixture(): Promise<BaseFixture> {
     createdBy: districtAdmin.id,
   });
 
+  const adminAtDistrictB = await AdministrationFactory.create({
+    name: 'District B Administration',
+    createdBy: districtBStudent.id, // District B student creates (for simplicity)
+  });
+
   // ═══════════════════════════════════════════════════════════════════════════
   // Step 5: Assign Administrations to Orgs/Classes/Groups
   // ═══════════════════════════════════════════════════════════════════════════
@@ -281,19 +336,25 @@ export async function seedBaseFixture(): Promise<BaseFixture> {
   await AdministrationOrgFactory.create({ administrationId: adminAtSchoolB.id, orgId: schoolB.id });
   await AdministrationClassFactory.create({ administrationId: adminAtClassA.id, classId: classInSchoolA.id });
   await AdministrationGroupFactory.create({ administrationId: adminAtGroup.id, groupId: group.id });
+  await AdministrationOrgFactory.create({ administrationId: adminAtDistrictB.id, orgId: districtB.id });
 
   // ═══════════════════════════════════════════════════════════════════════════
   // Return Complete Fixture
   // ═══════════════════════════════════════════════════════════════════════════
 
   return {
-    // Orgs
+    // Orgs (District A branch)
     district,
     schoolA,
     schoolB,
     classInSchoolA,
     classInSchoolB,
     group,
+
+    // Orgs (District B branch - for cross-district isolation tests)
+    districtB,
+    schoolInDistrictB,
+    classInDistrictB,
 
     // Users
     districtAdmin,
@@ -306,6 +367,7 @@ export async function seedBaseFixture(): Promise<BaseFixture> {
     groupStudent,
     unassignedUser,
     multiAssignedUser,
+    districtBStudent,
 
     // Administrations
     adminAtDistrict,
@@ -313,5 +375,6 @@ export async function seedBaseFixture(): Promise<BaseFixture> {
     adminAtSchoolB,
     adminAtClassA,
     adminAtGroup,
+    adminAtDistrictB,
   };
 }
