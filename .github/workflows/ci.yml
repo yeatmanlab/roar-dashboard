@@ -80,11 +80,6 @@ jobs:
           PGPASSWORD=postgres psql -h localhost -U postgres -c "CREATE DATABASE roar_core_test;"
           PGPASSWORD=postgres psql -h localhost -U postgres -c "CREATE DATABASE roar_assessment_test;"
 
-      - name: Debug environment variables
-        run: |
-          echo "CORE_DATABASE_URL is: ${CORE_DATABASE_URL:+SET}"
-          echo "ASSESSMENT_DATABASE_URL is: ${ASSESSMENT_DATABASE_URL:+SET}"
-
       - name: Run all tests
         run: npm run test
 

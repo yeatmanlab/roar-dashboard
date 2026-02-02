@@ -31,7 +31,6 @@ if (isIntegrationTest) {
   const { truncateAllTables, closeAllConnections } = await import('./src/test-support/db');
 
   beforeAll(async () => {
-    // Clean slate for this file, then seed fresh fixture
     await truncateAllTables();
     await seedBaseFixture();
   });
