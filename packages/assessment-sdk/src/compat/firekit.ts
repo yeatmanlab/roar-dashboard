@@ -1,5 +1,6 @@
 import type { CommandContext } from '../command/command';
 import { SDKError } from '../errors/sdk-error';
+<<<<<<< HEAD
 import type {
   StartRunInput,
   StartRunOutput,
@@ -9,6 +10,9 @@ import type {
   UpdateEngagementFlagsInput,
   UpdateEngagementFlagsOutput,
 } from '../types';
+=======
+import type { StartRunInput, StartRunOutput, UpdateEngagementFlagsInput, UpdateEngagementFlagsOutput } from '../types';
+>>>>>>> c6cdfc6c (update for code review suggestions)
 
 /**
  * FirekitFacade provides backward compatibility with legacy Firekit-based assessments.
@@ -150,11 +154,11 @@ export function abortRun(): AbortRunOutput {
  * @returns Promise<void>
  * @throws SDKError - Always, until implemented.
  */
-export async function updateEngagementFlags(
-  flagNames: string[],
+export async function updateEngagementFlags({
+  flagNames,
   markAsReliable = false,
-  reliableByBlock: unknown = undefined,
-): UpdateEngagementFlagsOutput {
+  reliableByBlock = undefined,
+}: UpdateEngagementFlagsInput): UpdateEngagementFlagsOutput {
   void flagNames;
   void markAsReliable;
   void reliableByBlock;

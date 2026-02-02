@@ -5,7 +5,7 @@
 export interface UpdateEngagementFlagsInput {
   flagNames: string[];
   markAsReliable?: boolean;
-  reliableByBlock?: unknown;
+  reliableByBlock?: Record<string, boolean>;
 }
 
 export type UpdateEngagementFlagsOutput = Promise<void>;
