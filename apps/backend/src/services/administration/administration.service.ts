@@ -155,9 +155,14 @@ export function AdministrationService({
    * super_admin users have unrestricted access to all administrations.
    * Other users only see administrations they're assigned to via org/class/group membership.
    *
+   * **Embed restrictions:**
+   * - `stats`: Only returned for super_admin users (expensive query, sensitive data).
+   *   Non-super-admins requesting stats will receive results without stats silently.
+   * - `tasks`: Available to all users.
+   *
    * @param authContext - User's auth context (id and type)
    * @param options - Query options including pagination, sorting, and embed
-   * @returns Paginated result with administrations (optionally with embedded stats)
+   * @returns Paginated result with administrations (optionally with embedded stats/tasks)
    * @throws {ApiError} If the database query fails.
    */
   async function list(
