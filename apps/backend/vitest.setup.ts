@@ -8,6 +8,9 @@
  *
  * Integration tests get a pre-seeded base fixture with standard test data.
  * Tests can append additional data using factories as needed.
+ *
+ * Note: Migrations run once in globalSetup. Per-file, we truncate and re-seed
+ * to ensure test isolation between files.
  */
 import { vi, beforeEach, beforeAll, afterAll } from 'vitest';
 
@@ -22,18 +25,18 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-// Integration test hooks
+// Integration test hooks (per-file)
 if (isIntegrationTest) {
   const { seedBaseFixture } = await import('./src/test-support/fixtures');
-  const { runMigrations, truncateAllTables, closeAllConnections } = await import('./src/test-support/db');
+  const { truncateAllTables, closeAllConnections } = await import('./src/test-support/db');
 
   beforeAll(async () => {
-    await runMigrations();
+    // Clean slate for this file, then seed fresh fixture
+    await truncateAllTables();
     await seedBaseFixture();
   });
 
   afterAll(async () => {
-    await truncateAllTables();
     await closeAllConnections();
   });
 }
