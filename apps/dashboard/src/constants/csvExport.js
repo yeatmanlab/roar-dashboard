@@ -17,6 +17,7 @@ export const CSV_EXPORT_STATIC_COLUMNS = [
   'Last',
   'Grade',
   'PID',
+  'SIS ID',
   'School',
   'Start Date',
   'Completion Date',
