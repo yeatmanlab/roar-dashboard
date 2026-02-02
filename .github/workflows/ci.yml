@@ -48,6 +48,8 @@ jobs:
     timeout-minutes: 10
     env:
       DOTENV_PRIVATE_KEY_TEST: ${{ secrets.DOTENV_PRIVATE_KEY_TEST }}
+      CORE_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/roar_core_test
+      ASSESSMENT_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/roar_assessment_test
 
     services:
       postgres:
