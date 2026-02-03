@@ -27,9 +27,16 @@ BEGIN
   IF NEW.parent_org_id IS NULL THEN
     NEW.path := app.org_to_ltree_label(NEW.org_type, NEW.id);
   ELSE
-    SELECT path INTO STRICT parent_path
-    FROM app.orgs
-    WHERE id = NEW.parent_org_id;
+    BEGIN
+      SELECT path INTO STRICT parent_path
+      FROM app.orgs
+      WHERE id = NEW.parent_org_id;
+    EXCEPTION
+      WHEN NO_DATA_FOUND THEN
+        RAISE EXCEPTION 'Parent org with id % does not exist', NEW.parent_org_id;
+      WHEN TOO_MANY_ROWS THEN
+        RAISE EXCEPTION 'Multiple parent orgs found for id % (data integrity issue)', NEW.parent_org_id;
+    END;
 
     NEW.path := parent_path || app.org_to_ltree_label(NEW.org_type, NEW.id);
   END IF;
@@ -70,10 +77,17 @@ BEGIN
     -- Moving to root level
     new_path := app.org_to_ltree_label(NEW.org_type, NEW.id);
   ELSE
-    -- Moving under a parent - get parent's path (STRICT raises if parent doesn't exist)
-    SELECT path INTO STRICT new_parent_path
-    FROM app.orgs
-    WHERE id = NEW.parent_org_id;
+    -- Moving under a parent - get parent's path
+    BEGIN
+      SELECT path INTO STRICT new_parent_path
+      FROM app.orgs
+      WHERE id = NEW.parent_org_id;
+    EXCEPTION
+      WHEN NO_DATA_FOUND THEN
+        RAISE EXCEPTION 'Parent org with id % does not exist', NEW.parent_org_id;
+      WHEN TOO_MANY_ROWS THEN
+        RAISE EXCEPTION 'Multiple parent orgs found for id % (data integrity issue)', NEW.parent_org_id;
+    END;
 
     -- Prevent cycles: new parent cannot be inside this org's subtree
     IF new_parent_path <@ old_path THEN
@@ -118,9 +132,16 @@ RETURNS TRIGGER
 LANGUAGE plpgsql
 AS $$
 BEGIN
-  SELECT path INTO STRICT NEW.org_path
-  FROM app.orgs
-  WHERE id = NEW.school_id;
+  BEGIN
+    SELECT path INTO STRICT NEW.org_path
+    FROM app.orgs
+    WHERE id = NEW.school_id;
+  EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+      RAISE EXCEPTION 'School org with id % does not exist', NEW.school_id;
+    WHEN TOO_MANY_ROWS THEN
+      RAISE EXCEPTION 'Multiple orgs found for school id % (data integrity issue)', NEW.school_id;
+  END;
 
   RETURN NEW;
 END;
@@ -137,9 +158,16 @@ RETURNS TRIGGER
 LANGUAGE plpgsql
 AS $$
 BEGIN
-  SELECT path INTO STRICT NEW.org_path
-  FROM app.orgs
-  WHERE id = NEW.school_id;
+  BEGIN
+    SELECT path INTO STRICT NEW.org_path
+    FROM app.orgs
+    WHERE id = NEW.school_id;
+  EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+      RAISE EXCEPTION 'School org with id % does not exist', NEW.school_id;
+    WHEN TOO_MANY_ROWS THEN
+      RAISE EXCEPTION 'Multiple orgs found for school id % (data integrity issue)', NEW.school_id;
+  END;
 
   RETURN NEW;
 END;
