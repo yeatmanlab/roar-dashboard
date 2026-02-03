@@ -87,6 +87,7 @@ import { AdministrationGroupFactory } from '../factories/administration-group.fa
  * - groupStudent: student in standalone group
  * - unassignedUser: user with no assignments (edge case)
  * - multiAssignedUser: user assigned to both district AND schoolA (deduplication tests)
+ * - districtBAdmin: administrator at districtB (for cross-district isolation tests)
  * - districtBStudent: student in districtB (for cross-district isolation tests)
  *
  * Administration assignments:
@@ -166,6 +167,9 @@ export interface BaseFixture {
 
   /** User assigned to multiple orgs - district AND schoolA (deduplication tests) */
   multiAssignedUser: User;
+
+  /** Administrator at districtB (for cross-district isolation tests) */
+  districtBAdmin: User;
 
   /** Student in districtB (for cross-district isolation tests) */
   districtBStudent: User;
@@ -253,6 +257,7 @@ export async function seedBaseFixture(): Promise<BaseFixture> {
     groupStudent,
     unassignedUser,
     multiAssignedUser,
+    districtBAdmin,
     districtBStudent,
   ] = await Promise.all([
     UserFactory.create({ nameFirst: 'District', nameLast: 'Admin', userType: UserType.ADMIN }),
@@ -265,6 +270,7 @@ export async function seedBaseFixture(): Promise<BaseFixture> {
     UserFactory.create({ nameFirst: 'Group', nameLast: 'Student', userType: UserType.STUDENT }),
     UserFactory.create({ nameFirst: 'Unassigned', nameLast: 'User', userType: UserType.STUDENT }),
     UserFactory.create({ nameFirst: 'Multi', nameLast: 'Assigned', userType: UserType.ADMIN }),
+    UserFactory.create({ nameFirst: 'DistrictB', nameLast: 'Admin', userType: UserType.ADMIN }),
     UserFactory.create({ nameFirst: 'DistrictB', nameLast: 'Student', userType: UserType.STUDENT }),
   ]);
 
@@ -287,7 +293,8 @@ export async function seedBaseFixture(): Promise<BaseFixture> {
     // Multi-assigned user: assigned to both district AND schoolA
     UserOrgFactory.create({ userId: multiAssignedUser.id, orgId: district.id, role: UserRole.ADMINISTRATOR }),
     UserOrgFactory.create({ userId: multiAssignedUser.id, orgId: schoolA.id, role: UserRole.TEACHER }),
-    // District B user (for cross-district isolation tests)
+    // District B users (for cross-district isolation tests)
+    UserOrgFactory.create({ userId: districtBAdmin.id, orgId: districtB.id, role: UserRole.ADMINISTRATOR }),
     UserOrgFactory.create({ userId: districtBStudent.id, orgId: districtB.id, role: UserRole.STUDENT }),
   ]);
 
@@ -308,7 +315,7 @@ export async function seedBaseFixture(): Promise<BaseFixture> {
     AdministrationFactory.create({ name: 'School B Administration', createdBy: districtAdmin.id }),
     AdministrationFactory.create({ name: 'Class A Administration', createdBy: classATeacher.id }),
     AdministrationFactory.create({ name: 'Group Administration', createdBy: districtAdmin.id }),
-    AdministrationFactory.create({ name: 'District B Administration', createdBy: districtBStudent.id }),
+    AdministrationFactory.create({ name: 'District B Administration', createdBy: districtBAdmin.id }),
   ]);
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -356,6 +363,7 @@ export async function seedBaseFixture(): Promise<BaseFixture> {
     groupStudent,
     unassignedUser,
     multiAssignedUser,
+    districtBAdmin,
     districtBStudent,
 
     // Administrations

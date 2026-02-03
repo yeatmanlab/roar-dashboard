@@ -300,7 +300,10 @@ describe('AdministrationAccessControls', () => {
 
     it('does not include administrations with no assigned users', async () => {
       // Create an administration with no assignments
-      const orphanAdmin = await AdministrationFactory.create({ name: 'Orphan Admin' });
+      const orphanAdmin = await AdministrationFactory.create({
+        name: 'Orphan Admin',
+        createdBy: baseFixture.districtAdmin.id,
+      });
 
       const counts = await accessControls.getAssignedUserCountsByAdministrationIds([
         orphanAdmin.id,
@@ -316,7 +319,10 @@ describe('AdministrationAccessControls', () => {
 
     it('deduplicates users with multiple paths to same administration', async () => {
       // Use the existing districtB hierarchy from the fixture for this test
-      const testAdmin = await AdministrationFactory.create({ name: 'Test Admin for Dedup' });
+      const testAdmin = await AdministrationFactory.create({
+        name: 'Test Admin for Dedup',
+        createdBy: baseFixture.districtBAdmin.id,
+      });
 
       // Assign to districtB (users in this branch can access it)
       const { AdministrationOrgFactory } = await import('../../test-support/factories/administration-org.factory');
