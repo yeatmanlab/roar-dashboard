@@ -73,12 +73,37 @@ export interface ApiDistrict {
  * Transform a database district to the API response format.
  */
 function transformDistrict(district: DistrictWithEmbeds): ApiDistrict {
+  // Transform PostgreSQL point to GeoJSON format if present
+  let coordinates: { type: 'Point'; coordinates: [number, number] } | undefined;
+  if (district.locationLatLong) {
+    const point = district.locationLatLong as unknown as { x: number; y: number };
+    coordinates = {
+      type: 'Point',
+      coordinates: [point.x, point.y], // [longitude, latitude]
+    };
+  }
+
   const result: ApiDistrict = {
     id: district.id,
     name: district.name,
     abbreviation: district.abbreviation,
     orgType: district.orgType,
     parentOrgId: district.parentOrgId,
+    location: {
+      ...(district.locationAddressLine1 && { addressLine1: district.locationAddressLine1 }),
+      ...(district.locationAddressLine2 && { addressLine2: district.locationAddressLine2 }),
+      ...(district.locationCity && { city: district.locationCity }),
+      ...(district.locationStateProvince && { stateProvince: district.locationStateProvince }),
+      ...(district.locationPostalCode && { postalCode: district.locationPostalCode }),
+      ...(district.locationCountry && { country: district.locationCountry }),
+      ...(coordinates && { coordinates }),
+    },
+    identifiers: {
+      ...(district.mdrNumber && { mdrNumber: district.mdrNumber }),
+      ...(district.ncesId && { ncesId: district.ncesId }),
+      ...(district.stateId && { stateId: district.stateId }),
+      ...(district.schoolNumber && { schoolNumber: district.schoolNumber }),
+    },
     dates: {
       created: district.createdAt.toISOString(),
       updated: district.updatedAt?.toISOString() ?? district.createdAt.toISOString(),
@@ -86,53 +111,14 @@ function transformDistrict(district: DistrictWithEmbeds): ApiDistrict {
     isRosteringRootOrg: district.isRosteringRootOrg,
   };
 
-  // Include counts if present
-  if (district.counts) {
-    result.counts = district.counts;
-  }
-
-  // Include location if any location field is present
-  if (
-    district.locationAddressLine1 ||
-    district.locationCity ||
-    district.locationStateProvince ||
-    district.locationLatLong
-  ) {
-    result.location = {
-      ...(district.locationAddressLine1 && { addressLine1: district.locationAddressLine1 }),
-      ...(district.locationAddressLine2 && { addressLine2: district.locationAddressLine2 }),
-      ...(district.locationCity && { city: district.locationCity }),
-      ...(district.locationStateProvince && { stateProvince: district.locationStateProvince }),
-      ...(district.locationPostalCode && { postalCode: district.locationPostalCode }),
-      ...(district.locationCountry && { country: district.locationCountry }),
-    };
-
-    // Transform PostgreSQL point to GeoJSON format
-    if (district.locationLatLong) {
-      const point = district.locationLatLong as unknown as { x: number; y: number };
-      result.location.coordinates = {
-        type: 'Point',
-        coordinates: [point.x, point.y], // [longitude, latitude]
-      };
-    }
-  }
-
-  // Include identifiers if any are present
-  if (district.mdrNumber || district.ncesId || district.stateId || district.schoolNumber) {
-    result.identifiers = {
-      ...(district.mdrNumber && { mdrNumber: district.mdrNumber }),
-      ...(district.ncesId && { ncesId: district.ncesId }),
-      ...(district.stateId && { stateId: district.stateId }),
-      ...(district.schoolNumber && { schoolNumber: district.schoolNumber }),
-    };
-  }
-
-  // Include rosteringEnded if set
   if (district.rosteringEnded) {
     result.rosteringEnded = district.rosteringEnded.toISOString();
   }
 
-  // Include children if embedded
+  if (district.counts) {
+    result.counts = district.counts;
+  }
+
   if (district.children) {
     result.children = district.children.map(transformDistrict);
   }
