@@ -8,25 +8,9 @@ export default defineConfig(({ mode }) => {
   const resolvedMode = mode || 'test';
   const root = path.dirname(fileURLToPath(import.meta.url));
 
-  // Debug: Log env vars before loadEnv
-  console.log('[vitest.config] mode:', resolvedMode);
-  console.log('[vitest.config] root:', root);
-  console.log('[vitest.config] CORE_DATABASE_URL before loadEnv:', process.env.CORE_DATABASE_URL ? 'SET' : 'NOT SET');
-  console.log(
-    '[vitest.config] ASSESSMENT_DATABASE_URL before loadEnv:',
-    process.env.ASSESSMENT_DATABASE_URL ? 'SET' : 'NOT SET',
-  );
-
   // Load env vars for this mode from process and .env files
   const env = loadEnv(resolvedMode, root, '');
   Object.assign(process.env, env);
-
-  // Debug: Log env vars after loadEnv (from merged process.env)
-  console.log('[vitest.config] CORE_DATABASE_URL after loadEnv:', process.env.CORE_DATABASE_URL ? 'SET' : 'NOT SET');
-  console.log(
-    '[vitest.config] ASSESSMENT_DATABASE_URL after loadEnv:',
-    process.env.ASSESSMENT_DATABASE_URL ? 'SET' : 'NOT SET',
-  );
 
   const isCI = process.env.CI === 'true' || process.env.CI === '1';
 

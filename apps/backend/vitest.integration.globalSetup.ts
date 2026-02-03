@@ -8,10 +8,6 @@
  */
 
 export default async function globalSetup() {
-  // Debug: Log env vars to diagnose CI issues
-  console.log('[globalSetup] CORE_DATABASE_URL:', process.env.CORE_DATABASE_URL ? 'SET' : 'NOT SET');
-  console.log('[globalSetup] ASSESSMENT_DATABASE_URL:', process.env.ASSESSMENT_DATABASE_URL ? 'SET' : 'NOT SET');
-
   // Fail fast if required env vars are missing.
   // (Optional but strongly recommended)
   const required = ['CORE_DATABASE_URL', 'ASSESSMENT_DATABASE_URL'] as const;
