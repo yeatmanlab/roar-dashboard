@@ -218,7 +218,9 @@ describe('clients', () => {
       const { initializeDatabasePools, closeDatabasePools } = await import('./clients');
 
       await initializeDatabasePools();
-      const poolInstances = PoolMock.mock.results.map((r: { value: unknown }) => r.value);
+      const poolInstances = PoolMock.mock.results.map((r: { value: unknown }) => r.value) as Array<{
+        end: ReturnType<typeof vi.fn>;
+      }>;
 
       await closeDatabasePools();
 
@@ -236,7 +238,7 @@ describe('clients', () => {
       const { initializeDatabasePools, closeDatabasePools } = await import('./clients');
 
       await initializeDatabasePools();
-      const connectorInstance = ConnectorMock.mock.results[0].value;
+      const connectorInstance = ConnectorMock.mock.results[0]?.value as { close: ReturnType<typeof vi.fn> };
 
       await closeDatabasePools();
 
