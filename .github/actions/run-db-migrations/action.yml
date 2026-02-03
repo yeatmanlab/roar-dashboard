@@ -1,0 +1,83 @@
+# –––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––– #
+# roar-dashboard/run-db-migrations
+# –––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––– #
+
+name: Run Database Migrations
+description: Runs Drizzle database migrations against CloudSQL using IAM authentication.
+
+inputs:
+  gcp-workload-identity-provider:
+    description: "The GCP workload identity provider for authentication."
+    required: true
+  gcp-service-account:
+    description: "The GCP service account email for database access (migrator SA)."
+    required: true
+  cloudsql-instance-connection-name:
+    description: "The CloudSQL instance connection name (project:region:instance)."
+    required: true
+  database:
+    description: "Which database to migrate: 'core' or 'assessment'."
+    required: true
+  database-name:
+    description: "The database name."
+    required: false
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - name: Authenticate with GCP
+      uses: google-github-actions/auth@v3
+      with:
+        workload_identity_provider: ${{ inputs.gcp-workload-identity-provider }}
+        service_account: ${{ inputs.gcp-service-account }}
+
+    - name: Setup and Start Cloud SQL Proxy
+      shell: bash
+      run: |
+        curl -sSL -o cloud-sql-proxy \
+          https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.14.3/cloud-sql-proxy.linux.amd64
+        chmod +x cloud-sql-proxy
+
+        ./cloud-sql-proxy ${{ inputs.cloudsql-instance-connection-name }} \
+          --auto-iam-authn \
+          --port 5432 &
+
+        for i in {1..30}; do
+          if nc -z localhost 5432 2>/dev/null; then
+            echo "Cloud SQL Proxy is ready"
+            break
+          fi
+          echo "Waiting for Cloud SQL Proxy... ($i/30)"
+          sleep 1
+        done
+
+    - name: Run migrations
+      shell: bash
+      working-directory: apps/backend
+      run: |
+        # CloudSQL IAM auth requires the service account email without .gserviceaccount.com
+        DB_USER="${{ inputs.gcp-service-account }}"
+        DB_USER="${DB_USER%.gserviceaccount.com}"
+        DB_NAME="${{ inputs.database-name || inputs.database }}"
+        DB_URL="postgresql://${DB_USER}@localhost:5432/${DB_NAME}"
+
+        # Install dotenv (required by drizzle config) using version from package.json
+        DOTENV_VERSION=$(node -p "require('./package.json').dependencies.dotenv")
+        npm install --no-save "dotenv@${DOTENV_VERSION}"
+
+        if [ "${{ inputs.database }}" = "core" ]; then
+          PGOPTIONS='-c role=role_app_migrator' \
+          CORE_DATABASE_URL="${DB_URL}" npx drizzle-kit migrate --config=drizzle.core.config.ts
+        elif [ "${{ inputs.database }}" = "assessment" ]; then
+          PGOPTIONS='-c role=role_app_migrator' \
+          ASSESSMENT_DATABASE_URL="${DB_URL}" npx drizzle-kit migrate --config=drizzle.assessment.config.ts
+        else
+          echo "Invalid database: ${{ inputs.database }}. Must be 'core' or 'assessment'."
+          exit 1
+        fi
+
+    - name: Stop Cloud SQL Proxy
+      shell: bash
+      if: always()
+      run: pkill -f cloud-sql-proxy || true
