@@ -60,36 +60,36 @@ describe('AdministrationAccessControls', () => {
         const ids = await getAccessibleAdministrationIds(baseFixture.classAStudent.id, [UserRole.STUDENT]);
 
         // Student in classInSchoolA should see:
-        // - adminAtClassA (direct class membership)
-        // - adminAtSchoolA (ancestor org)
-        // - adminAtDistrict (ancestor org)
-        expect(ids).toContain(baseFixture.adminAtClassA.id);
-        expect(ids).toContain(baseFixture.adminAtSchoolA.id);
-        expect(ids).toContain(baseFixture.adminAtDistrict.id);
+        // - administrationAssignedToClassA (direct class membership)
+        // - administrationAssignedToSchoolA (ancestor org)
+        // - administrationAssignedToDistrict (ancestor org)
+        expect(ids).toContain(baseFixture.administrationAssignedToClassA.id);
+        expect(ids).toContain(baseFixture.administrationAssignedToSchoolA.id);
+        expect(ids).toContain(baseFixture.administrationAssignedToDistrict.id);
 
         // Should NOT see:
-        // - adminAtDistrictB (different branch)
-        // - adminAtGroup (not a member)
-        expect(ids).not.toContain(baseFixture.adminAtDistrictB.id);
-        expect(ids).not.toContain(baseFixture.adminAtGroup.id);
+        // - administrationAssignedToDistrictB (different branch)
+        // - administrationAssignedToGroup (not a member)
+        expect(ids).not.toContain(baseFixture.administrationAssignedToDistrictB.id);
+        expect(ids).not.toContain(baseFixture.administrationAssignedToGroup.id);
       });
 
       it('student in group sees only group administrations', async () => {
         const ids = await getAccessibleAdministrationIds(baseFixture.groupStudent.id, [UserRole.STUDENT]);
 
         // Only sees the group administration
-        expect(ids).toContain(baseFixture.adminAtGroup.id);
+        expect(ids).toContain(baseFixture.administrationAssignedToGroup.id);
 
         // Doesn't see org-based administrations
-        expect(ids).not.toContain(baseFixture.adminAtDistrict.id);
-        expect(ids).not.toContain(baseFixture.adminAtDistrictB.id);
+        expect(ids).not.toContain(baseFixture.administrationAssignedToDistrict.id);
+        expect(ids).not.toContain(baseFixture.administrationAssignedToDistrictB.id);
       });
 
       it('student in district sees district administration only (no descendant access)', async () => {
         const ids = await getAccessibleAdministrationIds(baseFixture.districtBStudent.id, [UserRole.STUDENT]);
 
         // Sees district-level admin
-        expect(ids).toContain(baseFixture.adminAtDistrictB.id);
+        expect(ids).toContain(baseFixture.administrationAssignedToDistrictB.id);
 
         // Student role = non-supervisory, so no descendant access
         // (District B has schoolInDistrictB, but no administrations assigned there)
@@ -102,34 +102,34 @@ describe('AdministrationAccessControls', () => {
         const ids = await getAccessibleAdministrationIds(baseFixture.schoolATeacher.id, [UserRole.TEACHER]);
 
         // Teacher in School A should see:
-        // - adminAtSchoolA (own org)
-        // - adminAtDistrict (ancestor)
-        // - adminAtClassA (descendant class)
-        expect(ids).toContain(baseFixture.adminAtSchoolA.id);
-        expect(ids).toContain(baseFixture.adminAtDistrict.id);
-        expect(ids).toContain(baseFixture.adminAtClassA.id);
+        // - administrationAssignedToSchoolA (own org)
+        // - administrationAssignedToDistrict (ancestor)
+        // - administrationAssignedToClassA (descendant class)
+        expect(ids).toContain(baseFixture.administrationAssignedToSchoolA.id);
+        expect(ids).toContain(baseFixture.administrationAssignedToDistrict.id);
+        expect(ids).toContain(baseFixture.administrationAssignedToClassA.id);
 
         // Should NOT see:
-        // - adminAtDistrictB (different branch)
-        // - adminAtGroup (not a member)
-        expect(ids).not.toContain(baseFixture.adminAtDistrictB.id);
-        expect(ids).not.toContain(baseFixture.adminAtGroup.id);
+        // - administrationAssignedToDistrictB (different branch)
+        // - administrationAssignedToGroup (not a member)
+        expect(ids).not.toContain(baseFixture.administrationAssignedToDistrictB.id);
+        expect(ids).not.toContain(baseFixture.administrationAssignedToGroup.id);
       });
 
       it('administrator in district sees administrations on district and all descendants', async () => {
         const ids = await getAccessibleAdministrationIds(baseFixture.districtAdmin.id, [UserRole.ADMINISTRATOR]);
 
         // Administrator in District should see:
-        // - adminAtDistrict (own org)
-        // - adminAtSchoolA (descendant org)
-        // - adminAtClassA (class in descendant org)
-        expect(ids).toContain(baseFixture.adminAtDistrict.id);
-        expect(ids).toContain(baseFixture.adminAtSchoolA.id);
-        expect(ids).toContain(baseFixture.adminAtClassA.id);
+        // - administrationAssignedToDistrict (own org)
+        // - administrationAssignedToSchoolA (descendant org)
+        // - administrationAssignedToClassA (class in descendant org)
+        expect(ids).toContain(baseFixture.administrationAssignedToDistrict.id);
+        expect(ids).toContain(baseFixture.administrationAssignedToSchoolA.id);
+        expect(ids).toContain(baseFixture.administrationAssignedToClassA.id);
 
         // Should NOT see:
-        // - adminAtDistrictB (different branch)
-        expect(ids).not.toContain(baseFixture.adminAtDistrictB.id);
+        // - administrationAssignedToDistrictB (different branch)
+        expect(ids).not.toContain(baseFixture.administrationAssignedToDistrictB.id);
       });
     });
 
@@ -145,12 +145,12 @@ describe('AdministrationAccessControls', () => {
         const ids = await getAccessibleAdministrationIds(baseFixture.districtBStudent.id, [UserRole.STUDENT]);
 
         // Should see District B admin
-        expect(ids).toContain(baseFixture.adminAtDistrictB.id);
+        expect(ids).toContain(baseFixture.administrationAssignedToDistrictB.id);
 
         // Should NOT see any District A admins
-        expect(ids).not.toContain(baseFixture.adminAtDistrict.id);
-        expect(ids).not.toContain(baseFixture.adminAtSchoolA.id);
-        expect(ids).not.toContain(baseFixture.adminAtClassA.id);
+        expect(ids).not.toContain(baseFixture.administrationAssignedToDistrict.id);
+        expect(ids).not.toContain(baseFixture.administrationAssignedToSchoolA.id);
+        expect(ids).not.toContain(baseFixture.administrationAssignedToClassA.id);
       });
 
       it('non-matching role returns no results', async () => {
@@ -181,15 +181,15 @@ describe('AdministrationAccessControls', () => {
         const ids = await getAccessibleAdministrationIds(multiRoleUser.id, [UserRole.TEACHER, UserRole.STUDENT]);
 
         // Should see through student membership in classInSchoolA:
-        // - adminAtClassA, adminAtSchoolA, adminAtDistrict
-        expect(ids).toContain(baseFixture.adminAtClassA.id);
-        expect(ids).toContain(baseFixture.adminAtSchoolA.id);
-        expect(ids).toContain(baseFixture.adminAtDistrict.id);
+        // - administrationAssignedToClassA, administrationAssignedToSchoolA, administrationAssignedToDistrict
+        expect(ids).toContain(baseFixture.administrationAssignedToClassA.id);
+        expect(ids).toContain(baseFixture.administrationAssignedToSchoolA.id);
+        expect(ids).toContain(baseFixture.administrationAssignedToDistrict.id);
 
         // Should also see through teacher membership in School B:
-        // - adminAtDistrict (ancestor)
-        // - adminAtSchoolB (teacher is supervisory, sees descendants, but also their own org)
-        // Note: No admin directly on School B's classes in our test data beyond adminAtSchoolB
+        // - administrationAssignedToDistrict (ancestor)
+        // - administrationAssignedToSchoolB (teacher is supervisory, sees descendants, but also their own org)
+        // Note: No admin directly on School B's classes in our test data beyond administrationAssignedToSchoolB
       });
     });
 
@@ -210,7 +210,9 @@ describe('AdministrationAccessControls', () => {
 
   describe('buildAdministrationUserAssignmentsQuery', () => {
     it('returns users assigned via org membership', async () => {
-      const query = accessControls.buildAdministrationUserAssignmentsQuery([baseFixture.adminAtDistrict.id]);
+      const query = accessControls.buildAdministrationUserAssignmentsQuery([
+        baseFixture.administrationAssignedToDistrict.id,
+      ]);
       const subquery = query.as('assignments');
 
       const result = await CoreDbClient.select({
@@ -220,7 +222,7 @@ describe('AdministrationAccessControls', () => {
 
       const userIds = result.map((r) => r.userId);
 
-      // adminAtDistrict should include:
+      // administrationAssignedToDistrict should include:
       // - districtAdmin (directly in district)
       // - schoolATeacher (in child school)
       // - classAStudent (in class under child school)
@@ -234,7 +236,9 @@ describe('AdministrationAccessControls', () => {
     });
 
     it('returns users assigned via class membership', async () => {
-      const query = accessControls.buildAdministrationUserAssignmentsQuery([baseFixture.adminAtClassA.id]);
+      const query = accessControls.buildAdministrationUserAssignmentsQuery([
+        baseFixture.administrationAssignedToClassA.id,
+      ]);
       const subquery = query.as('assignments');
 
       const result = await CoreDbClient.select({
@@ -244,7 +248,7 @@ describe('AdministrationAccessControls', () => {
 
       const userIds = result.map((r) => r.userId);
 
-      // adminAtClassA should include only class members
+      // administrationAssignedToClassA should include only class members
       expect(userIds).toContain(baseFixture.classAStudent.id);
 
       // Should NOT include school/district members (they're not in the class)
@@ -253,7 +257,9 @@ describe('AdministrationAccessControls', () => {
     });
 
     it('returns users assigned via group membership', async () => {
-      const query = accessControls.buildAdministrationUserAssignmentsQuery([baseFixture.adminAtGroup.id]);
+      const query = accessControls.buildAdministrationUserAssignmentsQuery([
+        baseFixture.administrationAssignedToGroup.id,
+      ]);
       const subquery = query.as('assignments');
 
       const result = await CoreDbClient.select({
@@ -263,7 +269,7 @@ describe('AdministrationAccessControls', () => {
 
       const userIds = result.map((r) => r.userId);
 
-      // adminAtGroup should include only group members
+      // administrationAssignedToGroup should include only group members
       expect(userIds).toContain(baseFixture.groupStudent.id);
       expect(userIds).toHaveLength(1);
     });
@@ -280,16 +286,16 @@ describe('AdministrationAccessControls', () => {
       // Note: Earlier tests may have added users to District A (multiRoleUser in "multiple roles" test)
       // We'll use relative comparisons where absolute counts depend on test order
       const counts = await accessControls.getAssignedUserCountsByAdministrationIds([
-        baseFixture.adminAtClassA.id,
-        baseFixture.adminAtGroup.id,
+        baseFixture.administrationAssignedToClassA.id,
+        baseFixture.administrationAssignedToGroup.id,
       ]);
 
       // classInSchoolA has: classAStudent + classATeacher + any users added by "multiple roles" test
       // At minimum, classAStudent should be there
-      expect(counts.get(baseFixture.adminAtClassA.id)).toBeGreaterThanOrEqual(1);
+      expect(counts.get(baseFixture.administrationAssignedToClassA.id)).toBeGreaterThanOrEqual(1);
 
       // Group has: groupStudent = 1 user (isolated, not affected by other tests)
-      expect(counts.get(baseFixture.adminAtGroup.id)).toBe(1);
+      expect(counts.get(baseFixture.administrationAssignedToGroup.id)).toBe(1);
     });
 
     it('does not include administrations with no assigned users', async () => {
@@ -298,14 +304,14 @@ describe('AdministrationAccessControls', () => {
 
       const counts = await accessControls.getAssignedUserCountsByAdministrationIds([
         orphanAdmin.id,
-        baseFixture.adminAtGroup.id,
+        baseFixture.administrationAssignedToGroup.id,
       ]);
 
       // Orphan admin not in map (0 users)
       expect(counts.has(orphanAdmin.id)).toBe(false);
 
       // Group still has 1 user
-      expect(counts.get(baseFixture.adminAtGroup.id)).toBe(1);
+      expect(counts.get(baseFixture.administrationAssignedToGroup.id)).toBe(1);
     });
 
     it('deduplicates users with multiple paths to same administration', async () => {

@@ -14,9 +14,9 @@ export type { BaseFixture };
  * ```typescript
  * import { baseFixture } from '../test-support/fixtures';
  *
- * it('user in school sees admin at district', async () => {
+ * it('user in school sees administration assigned to district', async () => {
  *   const results = await repo.query({ userId: baseFixture.schoolAStudent.id });
- *   expect(results).toContain(baseFixture.adminAtDistrict.id);
+ *   expect(results).toContain(baseFixture.administrationAssignedToDistrict.id);
  * });
  * ```
  */

@@ -4,26 +4,20 @@ import type { Administration, NewAdministration } from '../../db/schema';
 import type { AdministrationWithEmbeds } from '../../services/administration/administration.service';
 import { CoreDbClient } from '../../db/clients';
 import { administrations } from '../../db/schema/core';
-import { UserFactory } from './user.factory';
-import { UserType } from '../../enums/user-type.enum';
 
 /**
  * Factory for creating Administration test objects.
  *
  * Usage:
  * - `AdministrationFactory.build()` - Creates in-memory object (unit tests)
- * - `await AdministrationFactory.create()` - Persists to database (integration tests)
- * - `await AdministrationFactory.create({ createdBy: userId })` - Use existing user
+ * - `await AdministrationFactory.create({ createdBy: userId })` - Persists to database (integration tests)
  *
- * Note: When using `create()` without a `createdBy`, a user will be created automatically.
+ * Note: `createdBy` is required when using `create()`. The referenced user must already exist.
  */
 export const AdministrationFactory = Factory.define<Administration>(({ onCreate }) => {
   onCreate(async (administration) => {
-    // If createdBy is a placeholder UUID, create an admin user first to use as creator
-    let createdBy = administration.createdBy;
-    if (!createdBy || createdBy === '00000000-0000-0000-0000-000000000000') {
-      const user = await UserFactory.create({ userType: UserType.ADMIN });
-      createdBy = user.id;
+    if (!administration.createdBy || administration.createdBy === '00000000-0000-0000-0000-000000000000') {
+      throw new Error('AdministrationFactory.create() requires createdBy to reference an existing user');
     }
 
     const insertData: NewAdministration = {
@@ -34,7 +28,7 @@ export const AdministrationFactory = Factory.define<Administration>(({ onCreate 
       dateStart: administration.dateStart,
       dateEnd: administration.dateEnd,
       isOrdered: administration.isOrdered,
-      createdBy,
+      createdBy: administration.createdBy,
     };
 
     const [inserted] = await CoreDbClient.insert(administrations).values(insertData).returning();
@@ -53,7 +47,7 @@ export const AdministrationFactory = Factory.define<Administration>(({ onCreate 
     dateStart,
     dateEnd: faker.date.future({ refDate: dateStart }),
     isOrdered: faker.datatype.boolean(),
-    createdBy: '00000000-0000-0000-0000-000000000000', // Auto-created if not overridden
+    createdBy: '00000000-0000-0000-0000-000000000000', // Sentinel; must be overridden when using create()
     createdAt: new Date(),
     updatedAt: new Date(),
   };
