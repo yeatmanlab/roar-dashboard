@@ -96,23 +96,23 @@ async function startServer(): Promise<void> {
    * Graceful shutdown handlers for Docker/Kubernetes.
    * Ensures all connections are closed cleanly on SIGTERM/SIGINT.
    */
-  process.on('SIGTERM', () => {
-    logger.info('SIGTERM received: shutting down server');
-    server.close(async () => {
-      await closeDatabasePools();
-      logger.info('Server shutdown complete');
-      process.exit(0);
+  const shutdown = (signal: string) => {
+    logger.info(`${signal} received: shutting down server`);
+    server.close(() => {
+      closeDatabasePools()
+        .then(() => {
+          logger.info('Server shutdown complete');
+          process.exit(0);
+        })
+        .catch((err) => {
+          logger.error({ err }, 'Error closing database pools');
+          process.exit(1);
+        });
     });
-  });
+  };
 
-  process.on('SIGINT', () => {
-    logger.info('SIGINT received: shutting down server');
-    server.close(async () => {
-      await closeDatabasePools();
-      logger.info('Server shutdown complete');
-      process.exit(0);
-    });
-  });
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+  process.on('SIGINT', () => shutdown('SIGINT'));
 }
 
 startServer().catch((err) => {

@@ -62,8 +62,9 @@ runs:
         DB_NAME="${{ inputs.database-name || inputs.database }}"
         DB_URL="postgresql://${DB_USER}@localhost:5432/${DB_NAME}"
 
-        # Install dotenv (required by drizzle config)
-        npm install --no-save dotenv@17.2.3
+        # Install dotenv (required by drizzle config) using version from package.json
+        DOTENV_VERSION=$(node -p "require('./package.json').dependencies.dotenv")
+        npm install --no-save "dotenv@${DOTENV_VERSION}"
 
         if [ "${{ inputs.database }}" = "core" ]; then
           PGOPTIONS='-c role=role_app_migrator' \
