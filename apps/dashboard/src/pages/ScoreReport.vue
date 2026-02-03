@@ -319,20 +319,15 @@
           <div class="text-sm font-light text-gray-600 uppercase">Loading Task Reports</div>
         </div>
         <template v-if="!isLoadingAssignments && !isLoadingTasksDictionary && !isLoadingDistrictSupportCategories">
-          <PvTabs v-model:value="activeTabValue">
+          <PvTabs v-model:value="activeTabIndex">
             <PvTabList>
-              <PvTab
-                v-for="(taskId, i) in sortedAndFilteredSubscoreTaskIds"
-                :key="taskId"
-                :value="String(i)"
-                class="text-base"
-              >
+              <PvTab v-for="(taskId, i) in sortedAndFilteredSubscoreTaskIds" :key="taskId" :value="i" class="text-base">
                 {{ tasksDictionary[taskId]?.publicName ?? taskId }}
               </PvTab>
             </PvTabList>
 
             <PvTabPanels>
-              <PvTabPanel v-for="(taskId, i) in sortedAndFilteredSubscoreTaskIds" :key="taskId" :value="String(i)">
+              <PvTabPanel v-for="(taskId, i) in sortedAndFilteredSubscoreTaskIds" :key="taskId" :value="i">
                 <div :id="'tab-view-' + taskId">
                   <TaskReport
                     v-if="taskId"
@@ -480,8 +475,6 @@ let TaskReport, DistributionChartOverview;
 const router = useRouter();
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
-
-const activeTabValue = ref('0');
 
 const props = defineProps({
   administrationId: {
