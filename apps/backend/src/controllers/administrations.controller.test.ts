@@ -14,7 +14,7 @@ import { AdministrationService } from '../services/administration/administration
 
 describe('AdministrationsController', () => {
   const mockList = vi.fn();
-  const mockAuthContext = { userId: 'user-123', userType: 'educator' as const };
+  const mockAuthContext = { userId: 'user-123', isSuperAdmin: false };
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -113,7 +113,7 @@ describe('AdministrationsController', () => {
 
       const { AdministrationsController: Controller } = await import('./administrations.controller');
 
-      const authContext = { userId: 'user-456', userType: 'admin' as const };
+      const authContext = { userId: 'user-456', isSuperAdmin: true };
       await Controller.list(authContext, {
         page: 3,
         perPage: 50,

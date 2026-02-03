@@ -6,7 +6,6 @@
 import { freeReducedLunchStatusEnum } from '../db/schema/enums';
 import { pgEnumToConst } from './utils';
 
-const FreeReducedLunchStatus = pgEnumToConst(freeReducedLunchStatusEnum);
+export const FreeReducedLunchStatus = pgEnumToConst(freeReducedLunchStatusEnum);
 
 export type FreeReducedLunchStatus = (typeof freeReducedLunchStatusEnum.enumValues)[number];
-export default FreeReducedLunchStatus;

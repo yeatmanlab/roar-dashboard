@@ -1,14 +1,17 @@
 import {
   AdministrationEmbedOption,
   AdministrationSortField,
+  ADMINISTRATION_STATUS_VALUES,
   type PaginatedResult,
   type AdministrationStats,
   type ADMINISTRATION_EMBED_OPTIONS,
+  type AdministrationStatus,
 } from '@roar-dashboard/api-contract';
 import { StatusCodes } from 'http-status-codes';
 import type { Administration } from '../../db/schema';
+import { Permissions } from '../../constants/permissions';
+import { rolesForPermission } from '../../constants/role-permissions';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
-import type { UserType } from '../../enums/user-type.enum';
 import { ApiError } from '../../errors/api-error';
 import { logger } from '../../logger';
 import {
@@ -20,10 +23,7 @@ import {
   AdministrationTaskVariantRepository,
   type AdministrationTask,
 } from '../../repositories/administration-task-variant.repository';
-import { AuthorizationRepository } from '../../repositories/authorization.repository';
 import { RunsRepository } from '../../repositories/runs.repository';
-import { isUnrestrictedResource } from '../../utils/resource-scope.utils';
-import { AuthorizationService } from '../authorization/authorization.service';
 
 /**
  * Embed option type derived from api-contract.
@@ -49,18 +49,19 @@ const SORT_FIELD_TO_COLUMN: Record<AdministrationSortFieldType, string> = {
 };
 
 /**
- * Auth context containing user identity and role.
+ * Auth context containing user identity and super admin flag.
  */
 interface AuthContext {
   userId: string;
-  userType: UserType;
+  isSuperAdmin: boolean;
 }
 
 /**
- * Options for listing administrations including embed options.
+ * Options for listing administrations including embed and status filter.
  */
 export interface ListOptions extends AdministrationQueryOptions {
   embed?: AdministrationEmbedOptionType[];
+  status?: AdministrationStatus;
 }
 
 /**
@@ -75,39 +76,113 @@ export interface ListOptions extends AdministrationQueryOptions {
 export function AdministrationService({
   administrationRepository = new AdministrationRepository(),
   administrationTaskVariantRepository = new AdministrationTaskVariantRepository(),
-  authorizationRepository = new AuthorizationRepository(),
-  authorizationService = AuthorizationService(),
   runsRepository = new RunsRepository(),
 }: {
   administrationRepository?: AdministrationRepository;
   administrationTaskVariantRepository?: AdministrationTaskVariantRepository;
-  authorizationRepository?: AuthorizationRepository;
-  authorizationService?: ReturnType<typeof AuthorizationService>;
   runsRepository?: RunsRepository;
 } = {}) {
   /**
+   * Fetch stats for administrations (assigned counts and run stats).
+   * Queries run in parallel.
+   *
+   * @param administrationIds - IDs of administrations to fetch stats for
+   * @param userId - User ID for error context
+   * @returns Map of administration ID to stats
+   * @throws {ApiError} If either query fails
+   */
+  async function fetchStatsEmbed(
+    administrationIds: string[],
+    userId: string,
+  ): Promise<Map<string, AdministrationStats>> {
+    const [assignedCounts, runStats] = await Promise.all([
+      administrationRepository.getAssignedUserCountsByAdministrationIds(administrationIds).catch((err) => {
+        throw new ApiError('Failed to fetch administration stats', {
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.DATABASE_QUERY_FAILED,
+          context: { userId, administrationIds, embed: 'stats' },
+          cause: err,
+        });
+      }),
+      runsRepository.getRunStatsByAdministrationIds(administrationIds).catch((err) => {
+        throw new ApiError('Failed to fetch administration stats', {
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.DATABASE_QUERY_FAILED,
+          context: { userId, administrationIds, embed: 'stats' },
+          cause: err,
+        });
+      }),
+    ]);
+
+    const statsMap = new Map<string, AdministrationStats>();
+    for (const adminId of administrationIds) {
+      statsMap.set(adminId, {
+        assigned: assignedCounts.get(adminId) ?? 0,
+        started: runStats.get(adminId)?.started ?? 0,
+        completed: runStats.get(adminId)?.completed ?? 0,
+      });
+    }
+    return statsMap;
+  }
+
+  /**
+   * Fetch tasks for administrations.
+   *
+   * @param administrationIds - IDs of administrations to fetch tasks for
+   * @param userId - User ID for error context
+   * @returns Map of administration ID to tasks array
+   * @throws {ApiError} If query fails
+   */
+  async function fetchTasksEmbed(
+    administrationIds: string[],
+    userId: string,
+  ): Promise<Map<string, AdministrationTask[]>> {
+    try {
+      return await administrationTaskVariantRepository.getByAdministrationIds(administrationIds);
+    } catch (err) {
+      throw new ApiError('Failed to fetch administration tasks', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, administrationIds, embed: 'tasks' },
+        cause: err,
+      });
+    }
+  }
+
+  /**
    * List administrations accessible to a user with pagination, sorting, and optional embeds.
    *
-   * Users with unrestricted scope have access to all administrations.
-   * Users with scoped access only see administrations they're assigned to.
+   * super_admin users have unrestricted access to all administrations.
+   * Other users only see administrations they're assigned to via org/class/group membership.
+   *
+   * **Embed restrictions:**
+   * - `stats`: Only returned for super_admin users (expensive query, sensitive data).
+   *   Non-super-admins requesting stats will receive results without stats silently.
+   * - `tasks`: Available to all users.
    *
    * @param authContext - User's auth context (id and type)
    * @param options - Query options including pagination, sorting, and embed
-   * @returns Paginated result with administrations (optionally with embedded stats)
+   * @returns Paginated result with administrations (optionally with embedded stats/tasks)
    * @throws {ApiError} If the database query fails.
    */
   async function list(
     authContext: AuthContext,
     options: ListOptions,
   ): Promise<PaginatedResult<AdministrationWithEmbeds>> {
-    const { userId, userType } = authContext;
+    const { userId, isSuperAdmin } = authContext;
 
-    let scope;
+    // Validate status parameter (defense in depth - API contract also validates)
+    if (options.status && !ADMINISTRATION_STATUS_VALUES.includes(options.status)) {
+      throw new ApiError('Invalid status filter', {
+        statusCode: StatusCodes.BAD_REQUEST,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+        context: { status: options.status },
+      });
+    }
+
     let result;
 
     try {
-      scope = await authorizationService.getAdministrationsScope(userId, userType);
-
       // Transform API contract format to repository format
       const queryParams = {
         page: options.page,
@@ -118,14 +193,23 @@ export function AdministrationService({
         },
       };
 
-      // Fetch administrations based on user's scope
-      result = isUnrestrictedResource(scope)
-        ? await administrationRepository.getAll(queryParams)
-        : await administrationRepository.getByIds(scope.ids, queryParams);
+      // Fetch administrations based on user role and authorization
+      if (isSuperAdmin) {
+        result = await administrationRepository.listAll({
+          ...queryParams,
+          ...(options.status && { status: options.status }),
+        });
+      } else {
+        const allowedRoles = rolesForPermission(Permissions.Administrations.LIST);
+        result = await administrationRepository.listAuthorized(
+          { userId, allowedRoles },
+          { ...queryParams, ...(options.status && { status: options.status }) },
+        );
+      }
     } catch (error) {
       if (error instanceof ApiError) throw error;
 
-      logger.error({ err: error, userId }, 'Failed to list administrations');
+      logger.error({ err: error, context: { userId } }, 'Failed to list administrations');
 
       throw new ApiError('Failed to retrieve administrations', {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
@@ -141,70 +225,28 @@ export function AdministrationService({
       return result;
     }
 
-    // Early return if no items to embed
+    // Early return if no items to embed data onto
     if (result.items.length === 0) {
       return result;
     }
 
     const administrationIds = result.items.map((admin) => admin.id);
-    const shouldEmbedStats = embedOptions.includes(AdministrationEmbedOption.STATS);
+    const shouldEmbedStats = isSuperAdmin && embedOptions.includes(AdministrationEmbedOption.STATS);
     const shouldEmbedTasks = embedOptions.includes(AdministrationEmbedOption.TASKS);
 
-    // Handle embed=stats
-    let statsMap: Map<string, AdministrationStats> | null = null;
-
-    if (shouldEmbedStats) {
-      // Fetch stats from both databases in parallel with graceful error handling.
-      // If either query fails, we log the error and omit stats entirely (all-or-nothing).
-      const [assignedResult, runsResult] = await Promise.allSettled([
-        authorizationRepository.getAssignedUserCountsByAdministrationIds(administrationIds),
-        runsRepository.getRunStatsByAdministrationIds(administrationIds),
-      ]);
-
-      // Extract results, logging any failures
-      const assignedCounts = assignedResult.status === 'fulfilled' ? assignedResult.value : null;
-      const runStats = runsResult.status === 'fulfilled' ? runsResult.value : null;
-
-      if (assignedResult.status === 'rejected') {
-        logger.error({ err: assignedResult.reason }, 'Failed to fetch assigned user counts for stats embed');
-      }
-      if (runsResult.status === 'rejected') {
-        logger.error({ err: runsResult.reason }, 'Failed to fetch run stats for stats embed');
-      }
-
-      // Only build stats map if both queries succeeded (all-or-nothing)
-      if (assignedCounts !== null && runStats !== null) {
-        statsMap = new Map();
-        for (const adminId of administrationIds) {
-          statsMap.set(adminId, {
-            assigned: assignedCounts.get(adminId) ?? 0,
-            started: runStats.get(adminId)?.started ?? 0,
-            completed: runStats.get(adminId)?.completed ?? 0,
-          });
-        }
-      }
-    }
-
-    // Handle embed=tasks
-    let tasksMap: Map<string, AdministrationTask[]> | null = null;
-
-    if (shouldEmbedTasks) {
-      try {
-        tasksMap = await administrationTaskVariantRepository.getByAdministrationIds(administrationIds);
-      } catch (err) {
-        logger.error({ err }, 'Failed to fetch tasks for tasks embed');
-      }
-    }
+    // Fetch embed data (throws on failure)
+    const statsMap = shouldEmbedStats ? await fetchStatsEmbed(administrationIds, userId) : null;
+    const tasksMap = shouldEmbedTasks ? await fetchTasksEmbed(administrationIds, userId) : null;
 
     // Attach embeds to each administration
     const itemsWithEmbeds: AdministrationWithEmbeds[] = result.items.map((admin) => {
       const adminWithEmbeds: AdministrationWithEmbeds = { ...admin };
 
-      if (shouldEmbedStats && statsMap !== null) {
+      if (statsMap) {
         adminWithEmbeds.stats = statsMap.get(admin.id) ?? { assigned: 0, started: 0, completed: 0 };
       }
 
-      if (shouldEmbedTasks && tasksMap !== null) {
+      if (tasksMap) {
         adminWithEmbeds.tasks = tasksMap.get(admin.id) ?? [];
       }
 

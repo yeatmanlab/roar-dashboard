@@ -9,7 +9,7 @@ const corePool = new Pool({
 });
 
 corePool.on('error', (err) => {
-  logger.error({ err, pool: 'core' }, 'Unexpected database pool error');
+  logger.error({ err, context: { pool: 'core' } }, 'Unexpected database pool error');
 });
 
 const assessmentPool = new Pool({
@@ -17,7 +17,7 @@ const assessmentPool = new Pool({
 });
 
 assessmentPool.on('error', (err) => {
-  logger.error({ err, pool: 'assessment' }, 'Unexpected database pool error');
+  logger.error({ err, context: { pool: 'assessment' } }, 'Unexpected database pool error');
 });
 
 export const CoreDbClient = drizzle({ client: corePool, casing: 'snake_case', schema: CoreDbSchema, logger: false });

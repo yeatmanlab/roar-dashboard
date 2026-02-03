@@ -229,6 +229,5 @@ export const userRoleEnum = db.enum('user_role', [
  * - educator: Teacher/instructor
  * - caregiver: Parent/guardian
  * - admin: Administrative staff
- * - super_admin: Platform support with unrestricted access (bypasses RBAC)
  */
-export const userTypeEnum = db.enum('user_type', ['student', 'educator', 'caregiver', 'admin', 'super_admin']);
+export const userTypeEnum = db.enum('user_type', ['student', 'educator', 'caregiver', 'admin']);

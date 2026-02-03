@@ -48,11 +48,23 @@ export abstract class BaseRepository<
   TInsert extends Record<string, unknown> = TEntity,
 > implements IBaseRepository<TEntity>
 {
-  // Type-safe table reference for Drizzle queries.
-  // Cast needed because Drizzle's conditional types don't resolve with generics.
+  /**
+   * Type-safe table reference for Drizzle queries.
+   *
+   * Why `any`? Drizzle's PgTable type uses complex conditional types that don't resolve
+   * correctly with TypeScript generics. When accessing dynamic column names (e.g., `table.id`
+   * or `table[orderBy.field]`), TypeScript can't infer the column type from the generic TTable.
+   * This cast allows runtime column access while maintaining type safety at the API boundary.
+   */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private readonly typedTable: PgTable & Record<string, any>;
 
+  /**
+   * @param db - Drizzle database client. Uses `any` for schema type because repositories
+   *             may use different database schemas (core vs assessment) and Drizzle's
+   *             NodePgDatabase type requires the exact schema type parameter.
+   * @param table - The Drizzle table reference for this repository
+   */
   constructor(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     protected readonly db: NodePgDatabase<any>,
