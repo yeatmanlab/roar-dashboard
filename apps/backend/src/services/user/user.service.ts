@@ -60,7 +60,7 @@ export function UserService({
    */
   async function getById(id: string): Promise<User | null> {
     try {
-      return await userRepository.get({ id });
+      return await userRepository.getById({ id });
     } catch (error) {
       if (error instanceof ApiError) throw error;
       logger.error({ err: error, context: { userId: id } }, 'Failed to get user by ID');

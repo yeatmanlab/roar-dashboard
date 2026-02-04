@@ -27,3 +27,11 @@ export const AssessmentDbClient = drizzle({
   schema: AssessmentDbSchema,
   logger: false,
 });
+
+/**
+ * Close all database connection pools.
+ * Used for graceful shutdown and integration test cleanup.
+ */
+export async function closeAllConnections(): Promise<void> {
+  await Promise.all([corePool.end(), assessmentPool.end()]);
+}
