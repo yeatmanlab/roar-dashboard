@@ -1,9 +1,13 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Mock } from 'vitest';
 import { getAuth } from 'firebase-admin/auth';
 
 describe('FirebaseAuthClient', () => {
   const getAuthMock = getAuth as Mock;
+
+  beforeEach(() => {
+    vi.resetModules();
+  });
 
   it('exports a Firebase Auth instance', async () => {
     // Import the client to trigger initialization
