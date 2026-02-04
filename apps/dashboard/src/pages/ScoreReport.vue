@@ -26,7 +26,7 @@
                   <PvButton
                     v-if="orgType !== 'district'"
                     class="flex flex-row p-2 text-sm text-white border-none bg-primary border-round h-2rem hover:bg-red-900"
-                    :icon="!exportLoading ? 'pi pi-download mr-2' : 'pi pi-spin pi-spinner mr-2'"
+                    :icon="!csvExportLoading ? 'pi pi-download mr-2' : 'pi pi-spin pi-spinner mr-2'"
                     label="Export Combined Reports"
                     @click="exportData({ includeProgress: true })"
                   />
@@ -319,20 +319,15 @@
           <div class="text-sm font-light text-gray-600 uppercase">Loading Task Reports</div>
         </div>
         <template v-if="!isLoadingAssignments && !isLoadingTasksDictionary && !isLoadingDistrictSupportCategories">
-          <PvTabs v-model:value="activeTabValue">
+          <PvTabs v-model:value="activeTabIndex">
             <PvTabList>
-              <PvTab
-                v-for="(taskId, i) in sortedAndFilteredSubscoreTaskIds"
-                :key="taskId"
-                :value="String(i)"
-                class="text-base"
-              >
+              <PvTab v-for="(taskId, i) in sortedAndFilteredSubscoreTaskIds" :key="taskId" :value="i" class="text-base">
                 {{ tasksDictionary[taskId]?.publicName ?? taskId }}
               </PvTab>
             </PvTabList>
 
             <PvTabPanels>
-              <PvTabPanel v-for="(taskId, i) in sortedAndFilteredSubscoreTaskIds" :key="taskId" :value="String(i)">
+              <PvTabPanel v-for="(taskId, i) in sortedAndFilteredSubscoreTaskIds" :key="taskId" :value="i">
                 <div :id="'tab-view-' + taskId">
                   <TaskReport
                     v-if="taskId"
@@ -481,8 +476,6 @@ const router = useRouter();
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
 
-const activeTabValue = ref('0');
-
 const props = defineProps({
   administrationId: {
     type: String,
@@ -550,6 +543,7 @@ const handleViewChange = () => {
 };
 
 const exportLoading = ref(false);
+const csvExportLoading = ref(false);
 const bulkPdfExportLoading = ref(false);
 
 // Export progress tracking
@@ -1563,6 +1557,7 @@ const createExportData = ({ rows, includeProgress = false }) => {
  * @param {boolean} options.includeProgress - Determines if progress columns should be included in the export.
  */
 const exportData = async ({ selectedRows = null, includeProgress = false }) => {
+  csvExportLoading.value = true;
   const rows = selectedRows || computeAssignmentAndRunData.value.assignmentTableData;
   let exportData = createExportData({ rows, includeProgress });
 
@@ -1647,6 +1642,7 @@ const exportData = async ({ selectedRows = null, includeProgress = false }) => {
 
   // Export CSV
   exportCsv(exportData, fileName);
+  csvExportLoading.value = false;
 };
 
 const refreshing = ref(false);
