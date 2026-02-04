@@ -6,7 +6,6 @@
 import { schoolLevelEnum } from '../db/schema/enums';
 import { pgEnumToConst } from './utils';
 
-const SchoolLevel = pgEnumToConst(schoolLevelEnum);
+export const SchoolLevel = pgEnumToConst(schoolLevelEnum);
 
 export type SchoolLevel = (typeof schoolLevelEnum.enumValues)[number];
-export default SchoolLevel;

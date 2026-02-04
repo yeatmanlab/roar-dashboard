@@ -1,11 +1,18 @@
 import { initContract } from '@ts-rest/core';
-import { UsersContract } from './users/index';
+import { MeContract } from './me/index';
+import { AdministrationsContract } from './administrations/index';
+import { DistrictsContract } from './districts/index';
 export * from './response';
+export * from './common/index';
 
 const c = initContract();
 
 export const ApiContractV1 = c.router({
-  users: UsersContract,
+  me: MeContract,
+  administrations: AdministrationsContract,
+  districts: DistrictsContract,
 });
 
-export * from './users/index';
+export * from './me/index';
+export * from './administrations/index';
+export * from './districts/index';
