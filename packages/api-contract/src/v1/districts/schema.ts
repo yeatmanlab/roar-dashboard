@@ -131,3 +131,17 @@ export type DistrictsListQuery = z.infer<typeof DistrictsListQuerySchema>;
 export const DistrictsListResponseSchema = createPaginatedResponseSchema(DistrictSchema);
 
 export type DistrictsListResponse = z.infer<typeof DistrictsListResponseSchema>;
+
+/**
+ * Query parameters for getting a single district.
+ */
+export const DistrictGetQuerySchema = createEmbedQuerySchema(['children'] as const);
+
+export type DistrictGetQuery = z.infer<typeof DistrictGetQuerySchema>;
+
+/**
+ * Response for single district.
+ */
+export const DistrictGetResponseSchema = DistrictSchema;
+
+export type DistrictGetResponse = z.infer<typeof DistrictGetResponseSchema>;

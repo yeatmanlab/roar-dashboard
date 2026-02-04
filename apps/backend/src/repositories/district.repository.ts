@@ -183,7 +183,7 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
   }
 
   /**
-   * Get a single district by ID.
+   * Get a single district by ID (unrestricted - for super admins).
    *
    * @param id - District ID
    * @returns District or null if not found or not a district
@@ -196,6 +196,32 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
       .limit(1);
 
     return (result[0] as District) ?? null;
+  }
+
+  /**
+   * Get a single district by ID with authorization filtering.
+   *
+   * Verifies that the user has access to this district through their
+   * org/class/group memberships before returning it.
+   *
+   * @param id - District ID
+   * @param accessControlFilter - User ID and allowed roles
+   * @returns District or null if not found, not a district, or user lacks access
+   */
+  async getByIdAuthorized(id: string, accessControlFilter: AccessControlFilter): Promise<DistrictWithCounts | null> {
+    // Build the UNION query for accessible district IDs
+    const accessibleDistricts = this.accessControls
+      .buildUserDistrictIdsQuery(accessControlFilter)
+      .as('accessible_districts');
+
+    const result = await this.db
+      .select({ org: orgs })
+      .from(orgs)
+      .innerJoin(accessibleDistricts, eq(orgs.id, accessibleDistricts.orgId))
+      .where(and(eq(orgs.id, id), eq(orgs.orgType, 'district')))
+      .limit(1);
+
+    return (result[0]?.org as District) ?? null;
   }
 
   /**

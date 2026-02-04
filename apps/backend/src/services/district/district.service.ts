@@ -111,8 +111,63 @@ export function DistrictService(deps: DistrictServiceDeps = {}) {
     return result;
   }
 
+  /**
+   * Get a single district by ID.
+   *
+   * super_admin users have unrestricted access to any district.
+   * Other users can only access districts they're assigned to via org/class/group membership.
+   *
+   * @param authContext - User's auth context (id and super admin flag)
+   * @param id - District ID
+   * @param options - Options for embedding children
+   * @returns District or null if not found or user lacks access
+   * @throws {ApiError} If the database query fails
+   */
+  async function getById(
+    authContext: AuthContext,
+    id: string,
+    options: { embedChildren?: boolean } = {},
+  ): Promise<DistrictWithEmbeds | null> {
+    const { userId, isSuperAdmin } = authContext;
+    const { embedChildren = false } = options;
+
+    let district: District | null;
+
+    try {
+      // Fetch district based on user role and authorization
+      if (isSuperAdmin) {
+        district = await districtRepository.getById(id);
+      } else {
+        const allowedRoles = rolesForPermission(Permissions.Organizations.LIST);
+        district = await districtRepository.getByIdAuthorized(id, { userId, allowedRoles });
+      }
+
+      if (!district) {
+        return null;
+      }
+
+      // Fetch children if requested
+      if (embedChildren) {
+        const children = await districtRepository.getChildren(id, false);
+        return { ...district, children };
+      }
+
+      return district;
+    } catch (error) {
+      logger.error({ err: error, context: { userId, districtId: id } }, 'Failed to get district by ID');
+
+      throw new ApiError('Failed to retrieve district', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, districtId: id },
+        cause: error,
+      });
+    }
+  }
+
   return {
     list,
+    getById,
   };
 }
 

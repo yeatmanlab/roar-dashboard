@@ -176,4 +176,41 @@ export const DistrictsController = {
       },
     };
   },
+
+  /**
+   * Get a single district by ID.
+   *
+   * @param authContext - User's authentication context containing userId and super admin flag
+   * @param id - District ID (UUID)
+   * @param query - Query parameters for embeds
+   * @returns Single district transformed to API response format
+   */
+  getById: async (authContext: AuthContext, id: string, query: { embed?: string }) => {
+    const { embed } = query;
+
+    // Parse embed parameter
+    const embeds = embed ? embed.split(',').map((e) => e.trim()) : [];
+    const embedChildren = embeds.includes('children');
+
+    const district = await districtService.getById(authContext, id, { embedChildren });
+
+    if (!district) {
+      return {
+        status: StatusCodes.NOT_FOUND as const,
+        body: {
+          error: {
+            message: 'District not found or access denied',
+            code: 'DISTRICT_NOT_FOUND',
+          },
+        },
+      };
+    }
+
+    return {
+      status: StatusCodes.OK as const,
+      body: {
+        data: transformDistrict(district),
+      },
+    };
+  },
 };
