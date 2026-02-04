@@ -19,12 +19,16 @@ describe('AdministrationService', () => {
   const mockGetRunStatsByAdministrationIds = vi.fn();
 
   const mockListAll = vi.fn();
+  const mockGetById = vi.fn();
+  const mockGetAuthorized = vi.fn();
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mockAdministrationRepository: any = {
     listAuthorized: mockListAuthorized,
     listAll: mockListAll,
     getAll: mockGetAll,
+    getById: mockGetById,
+    getAuthorized: mockGetAuthorized,
     getAssignedUserCountsByAdministrationIds: mockGetAssignedUserCountsByAdministrationIds,
   };
 
@@ -602,7 +606,7 @@ describe('AdministrationService', () => {
       });
     });
 
-    describe('embed=stats,tasks', () => {
+    describe('embed=stats,tasks (combined)', () => {
       it('should fetch both stats and tasks when both are requested', async () => {
         const mockAdmins = [AdministrationFactory.build({ id: 'admin-1' })];
         mockListAll.mockResolvedValue({ items: mockAdmins, totalItems: 1 });
@@ -636,6 +640,97 @@ describe('AdministrationService', () => {
           { taskId: 'task-1', taskName: 'SWR', variantId: 'variant-1', variantName: 'Variant A', orderIndex: 0 },
         ]);
       });
+    });
+  });
+
+  describe('getById', () => {
+    it('should return administration for super admin (unrestricted)', async () => {
+      const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+      mockGetById.mockResolvedValue(mockAdmin);
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+      });
+
+      const result = await service.getById({ userId: 'admin-user', isSuperAdmin: true }, 'admin-123');
+
+      expect(mockGetById).toHaveBeenCalledWith({ id: 'admin-123' });
+      expect(mockGetAuthorized).not.toHaveBeenCalled();
+      expect(result).toEqual(mockAdmin);
+    });
+
+    it('should use getAuthorized for non-super admin users', async () => {
+      const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+      mockGetById.mockResolvedValue(mockAdmin);
+      mockGetAuthorized.mockResolvedValue(mockAdmin);
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+      });
+
+      const result = await service.getById({ userId: 'user-123', isSuperAdmin: false }, 'admin-123');
+
+      expect(mockGetById).toHaveBeenCalledWith({ id: 'admin-123' });
+      expect(mockGetAuthorized).toHaveBeenCalledWith(
+        {
+          userId: 'user-123',
+          allowedRoles: expect.arrayContaining(['site_administrator', 'administrator', 'teacher', 'student']),
+        },
+        'admin-123',
+      );
+      expect(result).toEqual(mockAdmin);
+    });
+
+    it('should throw not-found error when administration does not exist', async () => {
+      mockGetById.mockResolvedValue(null);
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+      });
+
+      await expect(service.getById({ userId: 'admin-user', isSuperAdmin: true }, 'non-existent-id')).rejects.toThrow(
+        'Administration not found',
+      );
+    });
+
+    it('should throw forbidden error when non-super admin has no access to existing administration', async () => {
+      const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+      mockGetById.mockResolvedValue(mockAdmin);
+      mockGetAuthorized.mockResolvedValue(null);
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+      });
+
+      await expect(service.getById({ userId: 'user-123', isSuperAdmin: false }, 'admin-123')).rejects.toThrow(
+        'You do not have permission to access this administration',
+      );
+    });
+
+    it('should throw not-found error for non-super admin when administration does not exist', async () => {
+      mockGetById.mockResolvedValue(null);
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+      });
+
+      await expect(service.getById({ userId: 'user-123', isSuperAdmin: false }, 'non-existent-id')).rejects.toThrow(
+        'Administration not found',
+      );
+      expect(mockGetAuthorized).not.toHaveBeenCalled();
+    });
+
+    it('should throw ApiError when database query fails', async () => {
+      const dbError = new Error('Connection refused');
+      mockGetById.mockRejectedValue(dbError);
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+      });
+
+      await expect(service.getById({ userId: 'admin-user', isSuperAdmin: true }, 'admin-123')).rejects.toThrow(
+        'Failed to retrieve administration',
+      );
     });
   });
 });

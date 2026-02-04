@@ -172,6 +172,34 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
   }
 
   /**
+   * Get a single administration by ID, only if the user is authorized to access it.
+   *
+   * Combines a direct lookup with an access control check. Returns the administration
+   * if found AND accessible, null otherwise (prevents existence leaking).
+   *
+   * @param accessControlFilter - User ID and allowed roles
+   * @param administrationId - The administration ID to retrieve
+   * @returns The administration if found and accessible, null otherwise
+   */
+  async getAuthorized(
+    accessControlFilter: AccessControlFilter,
+    administrationId: string,
+  ): Promise<Administration | null> {
+    const accessibleAdmins = this.accessControls
+      .buildUserAdministrationIdsQuery(accessControlFilter)
+      .as('accessible_admins');
+
+    const result = await this.db
+      .select({ administration: administrations })
+      .from(administrations)
+      .innerJoin(accessibleAdmins, eq(administrations.id, accessibleAdmins.administrationId))
+      .where(eq(administrations.id, administrationId))
+      .limit(1);
+
+    return result[0]?.administration ?? null;
+  }
+
+  /**
    * Get count of assigned users for multiple administrations.
    *
    * A user is "assigned" to an administration if they belong to an org, class, or group
