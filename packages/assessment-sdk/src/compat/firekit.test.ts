@@ -42,8 +42,12 @@ describe('firekit compat', () => {
   describe('updateEngagementFlags', () => {
     it('throws SDKError when called', async () => {
       await expect(updateEngagementFlags({ flagNames: ['flag1'] })).rejects.toBeInstanceOf(SDKError);
-      await expect(updateEngagementFlags({ flagNames: ['flag1', 'flag2'], markAsReliable: true })).rejects.toBeInstanceOf(SDKError);
-      await expect(updateEngagementFlags({ flagNames: ['flag1'], markAsReliable: false, reliableByBlock: { block1: true } })).rejects.toBeInstanceOf(SDKError);
+      await expect(
+        updateEngagementFlags({ flagNames: ['flag1', 'flag2'], markAsReliable: true }),
+      ).rejects.toBeInstanceOf(SDKError);
+      await expect(
+        updateEngagementFlags({ flagNames: ['flag1'], markAsReliable: false, reliableByBlock: { block1: true } }),
+      ).rejects.toBeInstanceOf(SDKError);
     });
 
     it('matches Firekit signature', () => {
@@ -51,9 +55,7 @@ describe('firekit compat', () => {
       expect(typeof updateEngagementFlags).toBe('function');
 
       // compile-time signature check
-      expectTypeOf(updateEngagementFlags).toEqualTypeOf<
-        (input: UpdateEngagementFlagsInput) => Promise<void>
-      >();
+      expectTypeOf(updateEngagementFlags).toEqualTypeOf<(input: UpdateEngagementFlagsInput) => Promise<void>>();
     });
   });
 });
