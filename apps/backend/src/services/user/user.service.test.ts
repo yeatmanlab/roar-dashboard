@@ -14,7 +14,7 @@ vi.mock('../../logger', () => ({
 describe('UserService', () => {
   const mockUserRepository = {
     findByAuthId: vi.fn(),
-    get: vi.fn(),
+    getById: vi.fn(),
   };
 
   beforeEach(() => {
@@ -78,30 +78,30 @@ describe('UserService', () => {
   describe('getById', () => {
     it('should return user when found', async () => {
       const mockUser = UserFactory.build();
-      mockUserRepository.get.mockResolvedValue(mockUser);
+      mockUserRepository.getById.mockResolvedValue(mockUser);
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const userService = UserService({ userRepository: mockUserRepository as any });
       const result = await userService.getById(mockUser.id);
 
-      expect(mockUserRepository.get).toHaveBeenCalledWith({ id: mockUser.id });
+      expect(mockUserRepository.getById).toHaveBeenCalledWith({ id: mockUser.id });
       expect(result).toEqual(mockUser);
     });
 
     it('should return null when user not found', async () => {
-      mockUserRepository.get.mockResolvedValue(null);
+      mockUserRepository.getById.mockResolvedValue(null);
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const userService = UserService({ userRepository: mockUserRepository as any });
       const result = await userService.getById('non-existent-id');
 
-      expect(mockUserRepository.get).toHaveBeenCalledWith({ id: 'non-existent-id' });
+      expect(mockUserRepository.getById).toHaveBeenCalledWith({ id: 'non-existent-id' });
       expect(result).toBeNull();
     });
 
     it('should wrap repository errors in ApiError with context', async () => {
       const dbError = new Error('Database connection failed');
-      mockUserRepository.get.mockRejectedValue(dbError);
+      mockUserRepository.getById.mockRejectedValue(dbError);
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const userService = UserService({ userRepository: mockUserRepository as any });
@@ -120,7 +120,7 @@ describe('UserService', () => {
         statusCode: StatusCodes.BAD_REQUEST,
         code: ApiErrorCode.REQUEST_INVALID,
       });
-      mockUserRepository.get.mockRejectedValue(apiError);
+      mockUserRepository.getById.mockRejectedValue(apiError);
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const userService = UserService({ userRepository: mockUserRepository as any });

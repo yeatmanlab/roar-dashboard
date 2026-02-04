@@ -1,5 +1,6 @@
 import { initContract } from '@ts-rest/core';
-import { AdministrationsListQuerySchema, AdministrationsListResponseSchema } from './schema';
+import { z } from 'zod';
+import { AdministrationBaseSchema, AdministrationsListQuerySchema, AdministrationsListResponseSchema } from './schema';
 import { ErrorEnvelopeSchema, SuccessEnvelopeSchema } from '../response';
 
 const c = initContract();
@@ -24,6 +25,23 @@ export const AdministrationsContract = c.router(
         'Returns a paginated list of administrations the authenticated user has access to. ' +
         'Use ?status=active|past|upcoming to filter by date status. ' +
         'Use ?embed=stats to include assignment stats. Use ?embed=tasks to include task variants.',
+    },
+    get: {
+      method: 'GET',
+      path: '/:id',
+      pathParams: z.object({ id: z.string().uuid() }),
+      responses: {
+        200: SuccessEnvelopeSchema(AdministrationBaseSchema),
+        401: ErrorEnvelopeSchema,
+        403: ErrorEnvelopeSchema,
+        404: ErrorEnvelopeSchema,
+      },
+      strictStatusCodes: true,
+      summary: 'Get administration by ID',
+      description:
+        'Returns a single administration by ID. ' +
+        'Returns 403 if the user lacks permission to access the administration. ' +
+        'Returns 404 if the administration does not exist.',
     },
   },
   { pathPrefix: '/administrations' },

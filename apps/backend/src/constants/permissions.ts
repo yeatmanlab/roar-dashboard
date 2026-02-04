@@ -33,6 +33,7 @@ export const Permissions = {
   Administrations: {
     ALL: 'administrations.*',
     LIST: 'administrations.list',
+    READ: 'administrations.read',
     CREATE: 'administrations.create',
     UPDATE: 'administrations.update',
   },
