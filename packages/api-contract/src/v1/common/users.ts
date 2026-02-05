@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { PaginationQuerySchema, createPaginatedResponseSchema, createSortQuerySchema } from '../common/query';
+import { PaginationQuerySchema, createPaginatedResponseSchema, createSortQuerySchema } from './query';
 import { MeSchema, UserTypeSchema } from '../me/schema';
 
 export const USER_ROLE_VALUES = [
