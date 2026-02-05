@@ -11,7 +11,6 @@ import {
   orgs,
   classes,
 } from '../../db/schema';
-import { SUPERVISORY_ROLES } from '../../constants/role-classifications';
 import { CoreDbClient } from '../../db/clients';
 import type * as CoreDbSchema from '../../db/schema/core';
 import { logger } from '../../logger';
@@ -19,6 +18,7 @@ import { parseAccessControlFilter, type AccessControlFilter } from '../utils/acc
 import { isDescendantOrEqual, isAncestorOrEqual } from '../utils/ltree.utils';
 import { isEnrollmentActive } from '../utils/enrollment.utils';
 import { isAuthorizedMembership } from '../utils/membership.utils';
+import { filterSupervisoryRoles } from '../utils/supervisory-roles.utils';
 
 /**
  * Administration Access Controls
@@ -153,7 +153,7 @@ export class AdministrationAccessControls {
     // DESCENDANT ACCESS: Find administrations on descendants (supervisory roles only)
     // ─────────────────────────────────────────────────────────────────────────–––––––
 
-    const supervisoryAllowedRoles = allowedRoles.filter((role) => SUPERVISORY_ROLES.includes(role));
+    const supervisoryAllowedRoles = filterSupervisoryRoles(allowedRoles);
 
     // Non-supervisory roles (e.g., student) only see administrations on their own entity or ancestors.
     // Skip descendant path queries since they wouldn't match any rows anyway.
