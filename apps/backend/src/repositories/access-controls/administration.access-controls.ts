@@ -14,8 +14,9 @@ import {
 import { CoreDbClient } from '../../db/clients';
 import type * as CoreDbSchema from '../../db/schema/core';
 import { logger } from '../../logger';
-import { parseAccessControlFilter, type AccessControlFilter } from '../utils/access-controls.utils';
-import { isDescendantOrEqual, isAncestorOrEqual } from '../utils/ltree.utils';
+import { parseAccessControlFilter, type AccessControlFilter } from '../utils/parse-access-control-filter.utils';
+import { isDescendantOrEqual } from '../utils/is-descendant-or-equal.utils';
+import { isAncestorOrEqual } from '../utils/is-ancestor-or-equal.utils';
 import { isEnrollmentActive } from '../utils/enrollment.utils';
 import { isAuthorizedMembership } from '../utils/membership.utils';
 import { filterSupervisoryRoles } from '../utils/supervisory-roles.utils';
