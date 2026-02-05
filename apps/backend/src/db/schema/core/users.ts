@@ -46,9 +46,9 @@ export const users = db.table(
     authProvider: authProviderEnum().array(),
     authId: p.text().unique(),
 
-    name_first: p.text(),
-    name_middle: p.text(),
-    name_last: p.text(),
+    nameFirst: p.text(),
+    nameMiddle: p.text(),
+    nameLast: p.text(),
 
     username: p.text().unique(),
     email: p.text().unique(),
@@ -73,7 +73,6 @@ export const users = db.table(
     homeLanguage: p.text(),
 
     excludeFromResearch: p.boolean().notNull().default(false),
-
     isSuperAdmin: p.boolean().notNull().default(false),
 
     ...timestamps,

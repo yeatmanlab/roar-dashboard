@@ -1,15 +1,15 @@
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import * as CoreDbSchema from './schema/core';
-// import * as AssessmentDbSchema from './schema/assessment';
+import * as AssessmentDbSchema from './schema/assessment';
+import { logger } from '../logger';
 
 const corePool = new Pool({
   connectionString: process.env.CORE_DATABASE_URL,
 });
 
 corePool.on('error', (err) => {
-  // @TODO: Replace with actual logger instance.
-  console.error('[DB Pool/Core] Unexpected client error', err);
+  logger.error({ err, context: { pool: 'core' } }, 'Unexpected database pool error');
 });
 
 const assessmentPool = new Pool({
@@ -17,9 +17,21 @@ const assessmentPool = new Pool({
 });
 
 assessmentPool.on('error', (err) => {
-  // @TODO: Replace with actual logger instance.
-  console.error('[DB Pool/Assessment] Unexpected client error', err);
+  logger.error({ err, context: { pool: 'assessment' } }, 'Unexpected database pool error');
 });
 
-export const CoreDbClient = drizzle({ client: corePool, casing: 'snake_case', schema: CoreDbSchema, logger: true });
-export const AssessmentDbClient = drizzle({ client: assessmentPool, casing: 'snake_case', schema: {}, logger: true });
+export const CoreDbClient = drizzle({ client: corePool, casing: 'snake_case', schema: CoreDbSchema, logger: false });
+export const AssessmentDbClient = drizzle({
+  client: assessmentPool,
+  casing: 'snake_case',
+  schema: AssessmentDbSchema,
+  logger: false,
+});
+
+/**
+ * Close all database connection pools.
+ * Used for graceful shutdown and integration test cleanup.
+ */
+export async function closeAllConnections(): Promise<void> {
+  await Promise.all([corePool.end(), assessmentPool.end()]);
+}

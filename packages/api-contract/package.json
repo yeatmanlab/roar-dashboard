@@ -17,7 +17,8 @@
     "lint:fix": "eslint --fix .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "typecheck": "tsc --noEmit"
+    "check-types": "tsc --noEmit",
+    "check-types:watch": "tsc --noEmit --watch"
   },
   "sideEffects": false,
   "dependencies": {
