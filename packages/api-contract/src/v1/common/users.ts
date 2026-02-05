@@ -65,7 +65,7 @@ export const UserDemographicSchema = z.object({
 });
 
 // TODO: should this include nameMiddle?
-export const UserSpecificBaseSchema = z.object({
+export const UserBaseSchema = z.object({
   id: z.string().uuid(),
   assessmentPid: z.string(),
   authProvider: UserAuthProviderSchema,
@@ -79,7 +79,7 @@ export const UserSpecificBaseSchema = z.object({
   localId: z.string().nullable(),
 });
 
-export const UserBaseSchema = UserSpecificBaseSchema.merge(MeSchema) // Includes id, nameFirst, nameLast, and userType
+export const UserSchema = UserBaseSchema.merge(MeSchema) // Includes id, nameFirst, nameLast, and userType
   .merge(UserDemographicSchema);
 
 // TODO: which fields to sort?
@@ -91,7 +91,7 @@ export const UserSortFields = {
   ENROLLMENT_START: 'enrollmentStart',
 } as const satisfies Record<string, (typeof USER_SORT_FIELDS)[number]>;
 
-export const UserListQuerySchema = PaginationQuerySchema.merge(
+export const UsersQuerySchema = PaginationQuerySchema.merge(
   createSortQuerySchema(USER_SORT_FIELDS, 'name.last'),
 ).extend({
   active: z.boolean().default(true),
@@ -100,7 +100,7 @@ export const UserListQuerySchema = PaginationQuerySchema.merge(
   grade: UserGradeSchema.optional(),
 });
 
-export type UserListQuery = z.infer<typeof UserListQuerySchema>;
+export type UsersQuery = z.infer<typeof UsersQuerySchema>;
 
-export const UserListResponseSchema = createPaginatedResponseSchema(UserBaseSchema);
-export type UserListResponse = z.infer<typeof UserListResponseSchema>;
+export const UsersResponseSchema = createPaginatedResponseSchema(UserBaseSchema);
+export type UsersResponse = z.infer<typeof UsersResponseSchema>;
