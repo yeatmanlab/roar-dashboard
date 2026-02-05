@@ -1,5 +1,10 @@
 import { StatusCodes } from 'http-status-codes';
 import { DistrictService, type DistrictWithEmbeds } from '../services/district/district.service';
+import type {
+  DistrictsListQuery,
+  District as ApiDistrict,
+  DistrictBase as ApiDistrictBase,
+} from '@roar-dashboard/api-contract';
 
 const districtService = DistrictService();
 
@@ -12,67 +17,10 @@ interface AuthContext {
 }
 
 /**
- * Query parameters for districts list endpoint
+ * Maps a database District entity to the base API schema.
+ * Converts Date fields to ISO strings and transforms location data to match the contract.
  */
-export interface DistrictsListQuery {
-  page: number;
-  perPage: number;
-  sortBy: 'name' | 'abbreviation' | 'createdAt';
-  sortOrder: 'asc' | 'desc';
-  includeEnded?: boolean;
-  embed?: string; // Comma-separated embeds (e.g., 'counts')
-}
-
-/**
- * Aggregated counts for a district
- */
-export interface ApiDistrictCounts {
-  users: number;
-  schools: number;
-  classes: number;
-}
-
-/**
- * API response format for a district
- */
-export interface ApiDistrict {
-  id: string;
-  name: string;
-  abbreviation: string;
-  orgType: string;
-  parentOrgId: string | null;
-  location?: {
-    addressLine1?: string;
-    addressLine2?: string;
-    city?: string;
-    stateProvince?: string;
-    postalCode?: string;
-    country?: string;
-    coordinates?: {
-      type: 'Point';
-      coordinates: [number, number]; // [longitude, latitude]
-    };
-  };
-  identifiers?: {
-    mdrNumber?: string;
-    ncesId?: string;
-    stateId?: string;
-    schoolNumber?: string;
-  };
-  dates: {
-    created: string;
-    updated: string;
-  };
-  isRosteringRootOrg: boolean;
-  rosteringEnded?: string;
-  counts?: ApiDistrictCounts;
-  children?: ApiDistrict[];
-}
-
-/**
- * Transform a database district to the API response format.
- */
-function transformDistrict(district: DistrictWithEmbeds): ApiDistrict {
+function transformDistrictBase(district: DistrictWithEmbeds): ApiDistrictBase {
   // Transform PostgreSQL point to GeoJSON format if present
   let coordinates: { type: 'Point'; coordinates: [number, number] } | undefined;
   if (district.locationLatLong) {
@@ -83,7 +31,7 @@ function transformDistrict(district: DistrictWithEmbeds): ApiDistrict {
     };
   }
 
-  const result: ApiDistrict = {
+  return {
     id: district.id,
     name: district.name,
     abbreviation: district.abbreviation,
@@ -109,18 +57,20 @@ function transformDistrict(district: DistrictWithEmbeds): ApiDistrict {
       updated: district.updatedAt?.toISOString() ?? district.createdAt.toISOString(),
     },
     isRosteringRootOrg: district.isRosteringRootOrg,
+    ...(district.rosteringEnded && { rosteringEnded: district.rosteringEnded.toISOString() }),
   };
+}
 
-  if (district.rosteringEnded) {
-    result.rosteringEnded = district.rosteringEnded.toISOString();
-  }
+/**
+ * Maps a database District entity to the full API schema, attaching
+ * optional embed data (counts) when present.
+ */
+function transformDistrict(district: DistrictWithEmbeds): ApiDistrict {
+  const result: ApiDistrict = transformDistrictBase(district);
 
+  // Include counts if embedded
   if (district.counts) {
     result.counts = district.counts;
-  }
-
-  if (district.children) {
-    result.children = district.children.map(transformDistrict);
   }
 
   return result;
@@ -143,9 +93,8 @@ export const DistrictsController = {
   list: async (authContext: AuthContext, query: DistrictsListQuery) => {
     const { page, perPage, sortBy, sortOrder, includeEnded, embed } = query;
 
-    // Parse embed parameter
-    const embeds = embed ? embed.split(',').map((e) => e.trim()) : [];
-    const embedCounts = embeds.includes('counts');
+    // Check if counts embed is requested
+    const embedCounts = embed?.includes('counts') ?? false;
 
     const result = await districtService.list(authContext, {
       page,
