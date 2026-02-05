@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { isAuthorizedMembership } from './membership.utils';
+import { isAuthorizedMembership } from './is-authorized-membership.utils';
 import { userOrgs, userClasses, userGroups } from '../../db/schema';
 
-describe('membership.utils', () => {
+describe('is-authorized-membership.utils', () => {
   describe('isAuthorizedMembership', () => {
     const testUserId = 'test-user-id';
     const testRoles = ['student', 'teacher'];
