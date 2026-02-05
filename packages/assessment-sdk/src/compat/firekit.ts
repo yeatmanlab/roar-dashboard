@@ -1,6 +1,14 @@
 import type { CommandContext } from '../command/command';
 import { SDKError } from '../errors/sdk-error';
-import type { StartRunInput, StartRunOutput, FinishRunInput, FinishRunOutput, AbortRunOutput } from '../types';
+import type {
+  StartRunInput,
+  StartRunOutput,
+  FinishRunInput,
+  FinishRunOutput,
+  AbortRunOutput,
+  UpdateEngagementFlagsInput,
+  UpdateEngagementFlagsOutput,
+} from '../types';
 
 /**
  * FirekitFacade provides backward compatibility with legacy Firekit-based assessments.
@@ -128,4 +136,27 @@ export async function finishRun(finishingMetaData: FinishRunInput = {}): Promise
  */
 export function abortRun(): AbortRunOutput {
   throw new SDKError('firekit.abortRun not yet implemented');
+}
+
+/**
+ * Firekit compatibility stub.
+ *
+ * From @bdelab/roar-firekit:
+ * async updateEngagementFlags(flagNames: string[], markAsReliable = false, reliableByBlock = undefined) { […] }
+ *
+ * @param flagNames - Array of engagement flag names to update.
+ * @param markAsReliable - Whether to mark the run as reliable (default: false).
+ * @param reliableByBlock - Optional block-level reliability data.
+ * @returns Promise<void>
+ * @throws SDKError - Always, until implemented.
+ */
+export async function updateEngagementFlags({
+  flagNames,
+  markAsReliable = false,
+  reliableByBlock = undefined,
+}: UpdateEngagementFlagsInput): UpdateEngagementFlagsOutput {
+  void flagNames;
+  void markAsReliable;
+  void reliableByBlock;
+  throw new SDKError('appkit.updateEngagementFlags not yet implemented');
 }

@@ -1,6 +1,7 @@
 import { describe, it, expect, expectTypeOf } from 'vitest';
-import { startRun, finishRun, abortRun } from './firekit';
+import { startRun, finishRun, abortRun, updateEngagementFlags } from './firekit';
 import { SDKError } from '../errors/sdk-error';
+import type { UpdateEngagementFlagsInput } from '../types';
 
 describe('firekit compat', () => {
   describe('abortRun', () => {
@@ -35,6 +36,26 @@ describe('firekit compat', () => {
     it('matches Firekit signature', () => {
       expect(typeof startRun).toBe('function');
       expectTypeOf(startRun).toEqualTypeOf<(additionalRunMetadata?: { [key: string]: string }) => Promise<void>>();
+    });
+  });
+
+  describe('updateEngagementFlags', () => {
+    it('throws SDKError when called', async () => {
+      await expect(updateEngagementFlags({ flagNames: ['flag1'] })).rejects.toBeInstanceOf(SDKError);
+      await expect(
+        updateEngagementFlags({ flagNames: ['flag1', 'flag2'], markAsReliable: true }),
+      ).rejects.toBeInstanceOf(SDKError);
+      await expect(
+        updateEngagementFlags({ flagNames: ['flag1'], markAsReliable: false, reliableByBlock: { block1: true } }),
+      ).rejects.toBeInstanceOf(SDKError);
+    });
+
+    it('matches Firekit signature', () => {
+      // runtime assertion to satisfy vitest/expect-expect
+      expect(typeof updateEngagementFlags).toBe('function');
+
+      // compile-time signature check
+      expectTypeOf(updateEngagementFlags).toEqualTypeOf<(input: UpdateEngagementFlagsInput) => Promise<void>>();
     });
   });
 });
