@@ -31,27 +31,33 @@ function transformDistrictBase(district: DistrictWithEmbeds): ApiDistrictBase {
     };
   }
 
+  // Build location object only if at least one field is present
+  const location = {
+    ...(district.locationAddressLine1 && { addressLine1: district.locationAddressLine1 }),
+    ...(district.locationAddressLine2 && { addressLine2: district.locationAddressLine2 }),
+    ...(district.locationCity && { city: district.locationCity }),
+    ...(district.locationStateProvince && { stateProvince: district.locationStateProvince }),
+    ...(district.locationPostalCode && { postalCode: district.locationPostalCode }),
+    ...(district.locationCountry && { country: district.locationCountry }),
+    ...(coordinates && { coordinates }),
+  };
+
+  // Build identifiers object only if at least one field is present
+  const identifiers = {
+    ...(district.mdrNumber && { mdrNumber: district.mdrNumber }),
+    ...(district.ncesId && { ncesId: district.ncesId }),
+    ...(district.stateId && { stateId: district.stateId }),
+    ...(district.schoolNumber && { schoolNumber: district.schoolNumber }),
+  };
+
   return {
     id: district.id,
     name: district.name,
     abbreviation: district.abbreviation,
     orgType: district.orgType,
     parentOrgId: district.parentOrgId,
-    location: {
-      ...(district.locationAddressLine1 && { addressLine1: district.locationAddressLine1 }),
-      ...(district.locationAddressLine2 && { addressLine2: district.locationAddressLine2 }),
-      ...(district.locationCity && { city: district.locationCity }),
-      ...(district.locationStateProvince && { stateProvince: district.locationStateProvince }),
-      ...(district.locationPostalCode && { postalCode: district.locationPostalCode }),
-      ...(district.locationCountry && { country: district.locationCountry }),
-      ...(coordinates && { coordinates }),
-    },
-    identifiers: {
-      ...(district.mdrNumber && { mdrNumber: district.mdrNumber }),
-      ...(district.ncesId && { ncesId: district.ncesId }),
-      ...(district.stateId && { stateId: district.stateId }),
-      ...(district.schoolNumber && { schoolNumber: district.schoolNumber }),
-    },
+    ...(Object.keys(location).length > 0 && { location }),
+    ...(Object.keys(identifiers).length > 0 && { identifiers }),
     dates: {
       created: district.createdAt.toISOString(),
       updated: district.updatedAt?.toISOString() ?? district.createdAt.toISOString(),
