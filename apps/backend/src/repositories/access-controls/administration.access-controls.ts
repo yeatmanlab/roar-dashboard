@@ -18,6 +18,7 @@ import { logger } from '../../logger';
 import { parseAccessControlFilter, type AccessControlFilter } from '../utils/access-controls.utils';
 import { isDescendantOrEqual, isAncestorOrEqual } from '../utils/ltree.utils';
 import { isEnrollmentActive } from '../utils/enrollment.utils';
+import { isAuthorizedMembership } from '../utils/membership.utils';
 
 /**
  * Administration Access Controls
@@ -101,40 +102,46 @@ export class AdministrationAccessControls {
     const viaUserOrgToAdminOrg = this.db
       .select({ administrationId: administrationOrgs.administrationId })
       .from(userOrgs)
-      .innerJoin(userOrgTable, eq(userOrgTable.id, userOrgs.orgId)) // get the org details for user's membership
-      .innerJoin(adminOrgTable, isDescendantOrEqual(userOrgTable.path, adminOrgTable.path)) // find orgs that are ancestors of (or equal to) user's org
-      .innerJoin(administrationOrgs, eq(administrationOrgs.orgId, adminOrgTable.id)) // get administrations assigned to those ancestor orgs
-      .where(and(eq(userOrgs.userId, userId), inArray(userOrgs.role, allowedRoles), isEnrollmentActive(userOrgs)));
+      // get the org details for user's membership
+      .innerJoin(userOrgTable, eq(userOrgTable.id, userOrgs.orgId))
+      // find orgs that are ancestors of (or equal to) user's org
+      .innerJoin(adminOrgTable, isDescendantOrEqual(userOrgTable.path, adminOrgTable.path))
+      // get administrations assigned to those ancestor orgs
+      .innerJoin(administrationOrgs, eq(administrationOrgs.orgId, adminOrgTable.id))
+      // only consider user's authorized memberships
+      .where(isAuthorizedMembership(userOrgs, userId, allowedRoles));
 
     // Path 2: User's class membership → admins on the class's school or ancestor orgs
     // Example: User in Class X sees admins assigned to School A or parent District
     const viaUserClassToAdminOrg = this.db
       .select({ administrationId: administrationOrgs.administrationId })
       .from(userClasses)
-      .innerJoin(classes, eq(classes.id, userClasses.classId)) // get the class details for user's membership
-      .innerJoin(adminOrgTable, isDescendantOrEqual(classes.orgPath, adminOrgTable.path)) // find orgs that are ancestors of (or equal to) class's org
-      .innerJoin(administrationOrgs, eq(administrationOrgs.orgId, adminOrgTable.id)) // get administrations assigned to those ancestor orgs
-      .where(
-        and(eq(userClasses.userId, userId), inArray(userClasses.role, allowedRoles), isEnrollmentActive(userClasses)),
-      );
+      // get the class details for user's membership
+      .innerJoin(classes, eq(classes.id, userClasses.classId))
+      // find orgs that are ancestors of (or equal to) class's org
+      .innerJoin(adminOrgTable, isDescendantOrEqual(classes.orgPath, adminOrgTable.path))
+      // get administrations assigned to those ancestor orgs
+      .innerJoin(administrationOrgs, eq(administrationOrgs.orgId, adminOrgTable.id))
+      // only consider user's authorized memberships
+      .where(isAuthorizedMembership(userClasses, userId, allowedRoles));
 
     // Path 3: User's class membership → admins assigned directly to that class
     const viaDirectClass = this.db
       .select({ administrationId: administrationClasses.administrationId })
       .from(userClasses)
-      .innerJoin(administrationClasses, eq(administrationClasses.classId, userClasses.classId)) // get administrations assigned to user's class
-      .where(
-        and(eq(userClasses.userId, userId), inArray(userClasses.role, allowedRoles), isEnrollmentActive(userClasses)),
-      );
+      // get administrations assigned to user's class
+      .innerJoin(administrationClasses, eq(administrationClasses.classId, userClasses.classId))
+      // only consider user's authorized memberships
+      .where(isAuthorizedMembership(userClasses, userId, allowedRoles));
 
     // Path 4: User's group membership → admins assigned directly to that group
     const viaDirectGroup = this.db
       .select({ administrationId: administrationGroups.administrationId })
       .from(userGroups)
-      .innerJoin(administrationGroups, eq(administrationGroups.groupId, userGroups.groupId)) // get administrations assigned to user's group
-      .where(
-        and(eq(userGroups.userId, userId), inArray(userGroups.role, allowedRoles), isEnrollmentActive(userGroups)),
-      );
+      // get administrations assigned to user's group
+      .innerJoin(administrationGroups, eq(administrationGroups.groupId, userGroups.groupId))
+      // only consider user's authorized memberships
+      .where(isAuthorizedMembership(userGroups, userId, allowedRoles));
 
     // Combine ancestor paths with UNION to deduplicate results
     const ancestorUnion = viaUserOrgToAdminOrg
@@ -160,24 +167,28 @@ export class AdministrationAccessControls {
     const viaUserOrgToDescendantOrg = this.db
       .select({ administrationId: administrationOrgs.administrationId })
       .from(userOrgs)
-      .innerJoin(userOrgTable, eq(userOrgTable.id, userOrgs.orgId)) // get the org details for user's membership
-      .innerJoin(adminOrgTable, isAncestorOrEqual(userOrgTable.path, adminOrgTable.path)) // user's org is ancestor of (or equal to) admin's org
-      .innerJoin(administrationOrgs, eq(administrationOrgs.orgId, adminOrgTable.id)) // get administrations assigned to those descendant orgs
-      .where(
-        and(eq(userOrgs.userId, userId), inArray(userOrgs.role, supervisoryAllowedRoles), isEnrollmentActive(userOrgs)),
-      );
+      // get the org details for user's membership
+      .innerJoin(userOrgTable, eq(userOrgTable.id, userOrgs.orgId))
+      // user's org is ancestor of (or equal to) admin's org
+      .innerJoin(adminOrgTable, isAncestorOrEqual(userOrgTable.path, adminOrgTable.path))
+      // get administrations assigned to those descendant orgs
+      .innerJoin(administrationOrgs, eq(administrationOrgs.orgId, adminOrgTable.id))
+      // only consider user's authorized memberships
+      .where(isAuthorizedMembership(userOrgs, userId, supervisoryAllowedRoles));
 
     // Path 6: User's org membership → admins on classes within user's org tree
     // Example: Admin in District sees admins assigned to Classes in child Schools
     const viaUserOrgToDescendantClass = this.db
       .select({ administrationId: administrationClasses.administrationId })
       .from(userOrgs)
-      .innerJoin(userOrgTable, eq(userOrgTable.id, userOrgs.orgId)) // get the org details for user's membership
-      .innerJoin(classes, isAncestorOrEqual(userOrgTable.path, classes.orgPath)) // user's org is ancestor of (or equal to) class's org
-      .innerJoin(administrationClasses, eq(administrationClasses.classId, classes.id)) // get administrations assigned to those classes
-      .where(
-        and(eq(userOrgs.userId, userId), inArray(userOrgs.role, supervisoryAllowedRoles), isEnrollmentActive(userOrgs)),
-      );
+      // get the org details for user's membership
+      .innerJoin(userOrgTable, eq(userOrgTable.id, userOrgs.orgId))
+      // user's org is ancestor of (or equal to) class's org
+      .innerJoin(classes, isAncestorOrEqual(userOrgTable.path, classes.orgPath))
+      // get administrations assigned to those classes
+      .innerJoin(administrationClasses, eq(administrationClasses.classId, classes.id))
+      // only consider user's authorized memberships
+      .where(isAuthorizedMembership(userOrgs, userId, supervisoryAllowedRoles));
 
     return ancestorUnion.union(viaUserOrgToDescendantOrg).union(viaUserOrgToDescendantClass);
   }
@@ -215,9 +226,12 @@ export class AdministrationAccessControls {
         userId: userOrgs.userId,
       })
       .from(administrationOrgs)
-      .innerJoin(adminOrgTable, eq(adminOrgTable.id, administrationOrgs.orgId)) // get the org where administration is assigned
-      .innerJoin(userOrgTable, isAncestorOrEqual(adminOrgTable.path, userOrgTable.path)) // admin's org is ancestor of (or equal to) user's org
-      .innerJoin(userOrgs, and(eq(userOrgs.orgId, userOrgTable.id), isEnrollmentActive(userOrgs))) // get users who belong to those descendant orgs with active enrollment
+      // get the org where administration is assigned
+      .innerJoin(adminOrgTable, eq(adminOrgTable.id, administrationOrgs.orgId))
+      // admin's org is ancestor of (or equal to) user's org
+      .innerJoin(userOrgTable, isAncestorOrEqual(adminOrgTable.path, userOrgTable.path))
+      // get users who belong to those descendant orgs with active enrollment
+      .innerJoin(userOrgs, and(eq(userOrgs.orgId, userOrgTable.id), isEnrollmentActive(userOrgs)))
       .where(inArray(administrationOrgs.administrationId, administrationIds));
 
     // Path 2: Administration assigned to org → users in classes under that org
@@ -228,9 +242,12 @@ export class AdministrationAccessControls {
         userId: userClasses.userId,
       })
       .from(administrationOrgs)
-      .innerJoin(adminOrgTable, eq(adminOrgTable.id, administrationOrgs.orgId)) // get the org where administration is assigned
-      .innerJoin(classes, isAncestorOrEqual(adminOrgTable.path, classes.orgPath)) // admin's org is ancestor of (or equal to) class's org
-      .innerJoin(userClasses, and(eq(userClasses.classId, classes.id), isEnrollmentActive(userClasses))) // get users who belong to those classes with active enrollment
+      // get the org where administration is assigned
+      .innerJoin(adminOrgTable, eq(adminOrgTable.id, administrationOrgs.orgId))
+      // admin's org is ancestor of (or equal to) class's org
+      .innerJoin(classes, isAncestorOrEqual(adminOrgTable.path, classes.orgPath))
+      // get users who belong to those classes with active enrollment
+      .innerJoin(userClasses, and(eq(userClasses.classId, classes.id), isEnrollmentActive(userClasses)))
       .where(inArray(administrationOrgs.administrationId, administrationIds));
 
     // Path 3: Admin assigned to class → users in that class
@@ -240,10 +257,11 @@ export class AdministrationAccessControls {
         userId: userClasses.userId,
       })
       .from(administrationClasses)
+      // get users who belong to the administration's class with active enrollment
       .innerJoin(
         userClasses,
         and(eq(userClasses.classId, administrationClasses.classId), isEnrollmentActive(userClasses)),
-      ) // get users who belong to the administration's class with active enrollment
+      )
       .where(inArray(administrationClasses.administrationId, administrationIds));
 
     // Path 4: Admin assigned to group → users in that group
@@ -253,7 +271,8 @@ export class AdministrationAccessControls {
         userId: userGroups.userId,
       })
       .from(administrationGroups)
-      .innerJoin(userGroups, and(eq(userGroups.groupId, administrationGroups.groupId), isEnrollmentActive(userGroups))) // get users who belong to the administration's group with active enrollment
+      // get users who belong to the administration's group with active enrollment
+      .innerJoin(userGroups, and(eq(userGroups.groupId, administrationGroups.groupId), isEnrollmentActive(userGroups)))
       .where(inArray(administrationGroups.administrationId, administrationIds));
 
     // UNION ALL preserves duplicates (faster than UNION, but requires COUNT(DISTINCT) later)
