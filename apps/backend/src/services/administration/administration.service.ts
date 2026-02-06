@@ -25,6 +25,7 @@ import {
   type AdministrationTask,
 } from '../../repositories/administration-task-variant.repository';
 import { RunsRepository } from '../../repositories/runs.repository';
+import type { AuthContext } from '../../types/auth-context';
 
 /**
  * Embed option type derived from api-contract.
@@ -48,14 +49,6 @@ const SORT_FIELD_TO_COLUMN: Record<AdministrationSortFieldType, string> = {
   [AdministrationSortField.DATE_START]: 'dateStart',
   [AdministrationSortField.DATE_END]: 'dateEnd',
 };
-
-/**
- * Auth context containing user identity and super admin flag.
- */
-interface AuthContext {
-  userId: string;
-  isSuperAdmin: boolean;
-}
 
 /**
  * Options for listing administrations including embed and status filter.
