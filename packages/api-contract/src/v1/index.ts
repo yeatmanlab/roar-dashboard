@@ -22,3 +22,4 @@ export * from './administrations/index';
 export * from './districts/index';
 export * from './groups/index';
 export * from './tasks/index';
+export * from './classes/index';
