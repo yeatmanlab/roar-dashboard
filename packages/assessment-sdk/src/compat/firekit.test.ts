@@ -106,7 +106,7 @@ describe('firekit compat', () => {
     it('throws SDKError when called', async () => {
       const trialData: TrialData = { response: 'correct', rt: 500 };
       await expect(writeTrial(trialData)).rejects.toBeInstanceOf(SDKError);
-      
+
       const callback = async (rawScores: RawScores): Promise<ComputedScores> => {
         return { computed: rawScores };
       };

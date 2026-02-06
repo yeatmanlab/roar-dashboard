@@ -3,8 +3,8 @@
  * Matches: updateUser({ tasks, variants, assessmentPid, ...userMetadata }: UserUpdateInput)
  */
 export interface UpdateUserInput {
-  tasks?: unknown;
-  variants?: unknown;
+  tasks?: string[];
+  variants?: string[];
   assessmentPid?: string;
   [key: string]: unknown; // For userMetadata spread
 }
