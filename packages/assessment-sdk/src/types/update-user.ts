@@ -6,7 +6,7 @@ export interface UpdateUserInput {
   tasks?: string[];
   variants?: string[];
   assessmentPid?: string;
-  [key: string]: unknown; // For userMetadata spread
+  metadata?: Record<string, unknown>;
 }
 
 export type UpdateUserOutput = Promise<void>;
