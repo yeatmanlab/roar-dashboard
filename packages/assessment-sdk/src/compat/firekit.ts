@@ -6,13 +6,10 @@ import type {
   FinishRunInput,
   FinishRunOutput,
   AbortRunOutput,
-<<<<<<< HEAD
   UpdateEngagementFlagsInput,
   UpdateEngagementFlagsOutput,
-=======
   AddInteractionInput,
   AddInteractionOutput,
->>>>>>> c8f39d60 (update to add add-interaction stub)
 } from '../types';
 
 /**
@@ -147,7 +144,6 @@ export function abortRun(): AbortRunOutput {
  * Firekit compatibility stub.
  *
  * From @bdelab/roar-firekit:
-<<<<<<< HEAD
  * async updateEngagementFlags(flagNames: string[], markAsReliable = false, reliableByBlock = undefined) { […] }
  *
  * @param flagNames - Array of engagement flag names to update.
@@ -165,7 +161,12 @@ export async function updateEngagementFlags({
   void markAsReliable;
   void reliableByBlock;
   throw new SDKError('appkit.updateEngagementFlags not yet implemented');
-=======
+}
+
+/**
+ * Firekit compatibility stub.
+ *
+ * From @bdelab/roar-firekit:
  * addInteraction(interaction: InteractionEvent) { […] }
  *
  * @param interaction - The interaction event to record.
@@ -175,5 +176,4 @@ export async function updateEngagementFlags({
 export function addInteraction(interaction: AddInteractionInput): AddInteractionOutput {
   void interaction;
   throw new SDKError('appkit.addInteraction not yet implemented');
->>>>>>> c8f39d60 (update to add add-interaction stub)
 }

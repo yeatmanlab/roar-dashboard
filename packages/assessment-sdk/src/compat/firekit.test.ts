@@ -1,13 +1,7 @@
 import { describe, it, expect, expectTypeOf } from 'vitest';
-<<<<<<< HEAD
-import { startRun, finishRun, abortRun, updateEngagementFlags } from './firekit';
+import { startRun, finishRun, abortRun, updateEngagementFlags, addInteraction } from './firekit';
 import { SDKError } from '../errors/sdk-error';
-import type { UpdateEngagementFlagsInput } from '../types';
-=======
-import { startRun, finishRun, abortRun, addInteraction } from './firekit';
-import { SDKError } from '../errors/sdk-error';
-import type { InteractionEvent } from '../types';
->>>>>>> c8f39d60 (update to add add-interaction stub)
+import type { UpdateEngagementFlagsInput, InteractionEvent } from '../types';
 
 describe('firekit compat', () => {
   describe('abortRun', () => {
@@ -45,7 +39,6 @@ describe('firekit compat', () => {
     });
   });
 
-<<<<<<< HEAD
   describe('updateEngagementFlags', () => {
     it('throws SDKError when called', async () => {
       await expect(updateEngagementFlags({ flagNames: ['flag1'] })).rejects.toBeInstanceOf(SDKError);
@@ -55,27 +48,29 @@ describe('firekit compat', () => {
       await expect(
         updateEngagementFlags({ flagNames: ['flag1'], markAsReliable: false, reliableByBlock: { block1: true } }),
       ).rejects.toBeInstanceOf(SDKError);
-=======
-  describe('addInteraction', () => {
-    it('throws SDKError when called', () => {
-      expect(() => addInteraction({ type: 'click' })).toThrow(SDKError);
-      expect(() => addInteraction({ foo: 'bar' })).toThrow(SDKError);
->>>>>>> c8f39d60 (update to add add-interaction stub)
     });
 
     it('matches Firekit signature', () => {
       // runtime assertion to satisfy vitest/expect-expect
-<<<<<<< HEAD
       expect(typeof updateEngagementFlags).toBe('function');
 
       // compile-time signature check
       expectTypeOf(updateEngagementFlags).toEqualTypeOf<(input: UpdateEngagementFlagsInput) => Promise<void>>();
-=======
+    });
+  });
+
+  describe('addInteraction', () => {
+    it('throws SDKError when called', () => {
+      expect(() => addInteraction({ type: 'click' })).toThrow(SDKError);
+      expect(() => addInteraction({ foo: 'bar' })).toThrow(SDKError);
+    });
+
+    it('matches Firekit signature', () => {
+      // runtime assertion to satisfy vitest/expect-expect
       expect(typeof addInteraction).toBe('function');
 
       // compile-time signature check
       expectTypeOf(addInteraction).toEqualTypeOf<(interaction: InteractionEvent) => void>();
->>>>>>> c8f39d60 (update to add add-interaction stub)
     });
   });
 });
