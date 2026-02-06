@@ -2,7 +2,6 @@ import {
   AdministrationEmbedOption,
   AdministrationSortField,
   DistrictSortField,
-  ADMINISTRATION_STATUS_VALUES,
   type PaginatedResult,
   type AdministrationStats,
   type ADMINISTRATION_EMBED_OPTIONS,
@@ -107,6 +106,56 @@ export function AdministrationService({
   runsRepository?: RunsRepository;
 } = {}) {
   /**
+   * Verify that an administration exists and the user has access to it.
+   *
+   * Performs a two-step check:
+   * 1. Verify the administration exists (returns 404 if not)
+   * 2. Verify the user has access (returns 403 if not, skipped for super admins)
+   *
+   * @param authContext - User's auth context (id and super admin flag)
+   * @param administrationId - The administration ID to verify access for
+   * @returns The administration if found and accessible
+   * @throws {ApiError} NOT_FOUND if administration doesn't exist
+   * @throws {ApiError} FORBIDDEN if user lacks access
+   */
+  async function verifyAdministrationAccess(
+    authContext: AuthContext,
+    administrationId: string,
+  ): Promise<Administration> {
+    const { userId, isSuperAdmin } = authContext;
+
+    // Look up the administration first (unrestricted) to distinguish 404 from 403
+    const administration = await administrationRepository.getById({ id: administrationId });
+
+    if (!administration) {
+      throw new ApiError('Administration not found', {
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+        context: { userId, administrationId },
+      });
+    }
+
+    // Super admins have unrestricted access
+    if (isSuperAdmin) {
+      return administration;
+    }
+
+    // Check access for non-super admin users
+    const allowedRoles = rolesForPermission(Permissions.Administrations.READ);
+    const authorized = await administrationRepository.getAuthorized({ userId, allowedRoles }, administrationId);
+
+    if (!authorized) {
+      throw new ApiError('You do not have permission to access this administration', {
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+        context: { userId, administrationId },
+      });
+    }
+
+    return authorized;
+  }
+
+  /**
    * Fetch stats for administrations (assigned counts and run stats).
    * Queries run in parallel.
    *
@@ -194,16 +243,6 @@ export function AdministrationService({
     options: ListOptions,
   ): Promise<PaginatedResult<AdministrationWithEmbeds>> {
     const { userId, isSuperAdmin } = authContext;
-
-    // Validate status parameter (defense in depth - API contract also validates)
-    // @TODO: Remove
-    if (options.status && !ADMINISTRATION_STATUS_VALUES.includes(options.status)) {
-      throw new ApiError('Invalid status filter', {
-        statusCode: StatusCodes.BAD_REQUEST,
-        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-        context: { status: options.status },
-      });
-    }
 
     let result;
 
@@ -298,38 +337,10 @@ export function AdministrationService({
    * @throws {ApiError} INTERNAL_SERVER_ERROR if the database query fails
    */
   async function getById(authContext: AuthContext, administrationId: string): Promise<Administration> {
-    const { userId, isSuperAdmin } = authContext;
+    const { userId } = authContext;
 
     try {
-      // Look up the administration first (unrestricted) to distinguish 404 from 403
-      const administration = await administrationRepository.getById({ id: administrationId });
-
-      if (!administration) {
-        throw new ApiError('Administration not found', {
-          statusCode: StatusCodes.NOT_FOUND,
-          code: ApiErrorCode.RESOURCE_NOT_FOUND,
-          context: { userId, administrationId },
-        });
-      }
-
-      // Super admins have unrestricted access
-      if (isSuperAdmin) {
-        return administration;
-      }
-
-      // Check access for non-super admin users
-      const allowedRoles = rolesForPermission(Permissions.Administrations.READ);
-      const authorized = await administrationRepository.getAuthorized({ userId, allowedRoles }, administrationId);
-
-      if (!authorized) {
-        throw new ApiError('You do not have permission to access this administration', {
-          statusCode: StatusCodes.FORBIDDEN,
-          code: ApiErrorCode.AUTH_FORBIDDEN,
-          context: { userId, administrationId },
-        });
-      }
-
-      return authorized;
+      return await verifyAdministrationAccess(authContext, administrationId);
     } catch (error) {
       if (error instanceof ApiError) throw error;
 
@@ -363,34 +374,11 @@ export function AdministrationService({
     administrationId: string,
     options: ListDistrictsOptions,
   ): Promise<PaginatedResult<Org>> {
-    const { userId, isSuperAdmin } = authContext;
+    const { userId } = authContext;
 
     try {
-      // First verify the administration exists and user has access
-      // This reuses the existing getById logic for access control
-      const administration = await administrationRepository.getById({ id: administrationId });
-
-      if (!administration) {
-        throw new ApiError('Administration not found', {
-          statusCode: StatusCodes.NOT_FOUND,
-          code: ApiErrorCode.RESOURCE_NOT_FOUND,
-          context: { userId, administrationId },
-        });
-      }
-
-      // Check access for non-super admin users
-      if (!isSuperAdmin) {
-        const allowedRoles = rolesForPermission(Permissions.Administrations.READ);
-        const authorized = await administrationRepository.getAuthorized({ userId, allowedRoles }, administrationId);
-
-        if (!authorized) {
-          throw new ApiError('You do not have permission to access this administration', {
-            statusCode: StatusCodes.FORBIDDEN,
-            code: ApiErrorCode.AUTH_FORBIDDEN,
-            context: { userId, administrationId },
-          });
-        }
-      }
+      // Verify the administration exists and user has access
+      await verifyAdministrationAccess(authContext, administrationId);
 
       // Fetch districts for the administration
       const queryParams = {
@@ -406,7 +394,10 @@ export function AdministrationService({
     } catch (error) {
       if (error instanceof ApiError) throw error;
 
-      logger.error({ err: error, context: { userId, administrationId } }, 'Failed to list administration districts');
+      logger.error(
+        { err: error, context: { userId, administrationId, options } },
+        'Failed to list administration districts',
+      );
 
       throw new ApiError('Failed to retrieve administration districts', {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
