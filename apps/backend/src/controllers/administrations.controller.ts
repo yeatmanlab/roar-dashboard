@@ -22,6 +22,9 @@ const administrationService = AdministrationService();
 /**
  * Maps a database Administration entity to the base API schema.
  * Converts Date fields to ISO strings and renames fields to match the contract.
+ *
+ * @param admin - The database Administration entity
+ * @returns The API-formatted administration base object
  */
 function transformAdministrationBase(admin: Administration): ApiAdministrationBase {
   return {
@@ -40,6 +43,9 @@ function transformAdministrationBase(admin: Administration): ApiAdministrationBa
 /**
  * Maps a database Administration entity to the full API schema, attaching
  * optional embed data (stats, tasks) when present.
+ *
+ * @param admin - The database Administration entity with optional embeds
+ * @returns The API-formatted administration object with embedded data
  */
 function transformAdministration(admin: AdministrationWithEmbeds): ApiAdministration {
   const result: ApiAdministration = transformAdministrationBase(admin);
@@ -59,18 +65,24 @@ function transformAdministration(admin: AdministrationWithEmbeds): ApiAdministra
 
 /**
  * Transforms PostgreSQL point type to GeoJSON Point format.
- * Drizzle ORM returns point as [number, number] tuple by default (longitude, latitude).
+ * Drizzle ORM returns point as [number, number] tuple (longitude, latitude).
+ *
+ * @param point - The PostgreSQL point as [longitude, latitude] tuple, or null
+ * @returns GeoJSON Point object, or null if input is null
  */
 function transformLatLong(point: [number, number] | null): ApiGeoPoint | null {
   if (!point) return null;
   return {
     type: 'Point',
-    coordinates: point, // Already in [longitude, latitude] format
+    coordinates: point, // GeoJSON spec: [longitude, latitude] (note: opposite of Google Maps)
   };
 }
 
 /**
  * Maps a database Org entity's location fields to the District location schema.
+ *
+ * @param org - The database Org entity
+ * @returns The API-formatted district location object
  */
 function transformDistrictLocation(org: Org): ApiDistrictLocation {
   return {
@@ -86,6 +98,9 @@ function transformDistrictLocation(org: Org): ApiDistrictLocation {
 
 /**
  * Maps a database Org entity to the District API schema.
+ *
+ * @param org - The database Org entity (must be orgType='district')
+ * @returns The API-formatted district object
  */
 function transformDistrict(org: Org): ApiDistrict {
   return {
