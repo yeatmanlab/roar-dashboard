@@ -5,23 +5,26 @@ import {
 } from '../services/administration/administration.service';
 import type {
   AdministrationsListQuery,
+  AdministrationDistrictsListQuery,
   Administration as ApiAdministration,
   AdministrationBase as ApiAdministrationBase,
+  District as ApiDistrict,
+  DistrictLocation as ApiDistrictLocation,
+  GeoPoint as ApiGeoPoint,
 } from '@roar-dashboard/api-contract';
-import type { Administration } from '../db/schema';
+import type { Administration, Org } from '../db/schema';
 import { ApiError } from '../errors/api-error';
 import { toErrorResponse } from '../utils/to-error-response.util';
+import type { AuthContext } from '../types/auth-context';
 
 const administrationService = AdministrationService();
-
-interface AuthContext {
-  userId: string;
-  isSuperAdmin: boolean;
-}
 
 /**
  * Maps a database Administration entity to the base API schema.
  * Converts Date fields to ISO strings and renames fields to match the contract.
+ *
+ * @param admin - The database Administration entity
+ * @returns The API-formatted administration base object
  */
 function transformAdministrationBase(admin: Administration): ApiAdministrationBase {
   return {
@@ -40,6 +43,9 @@ function transformAdministrationBase(admin: Administration): ApiAdministrationBa
 /**
  * Maps a database Administration entity to the full API schema, attaching
  * optional embed data (stats, tasks) when present.
+ *
+ * @param admin - The database Administration entity with optional embeds
+ * @returns The API-formatted administration object with embedded data
  */
 function transformAdministration(admin: AdministrationWithEmbeds): ApiAdministration {
   const result: ApiAdministration = transformAdministrationBase(admin);
@@ -55,6 +61,54 @@ function transformAdministration(admin: AdministrationWithEmbeds): ApiAdministra
   }
 
   return result;
+}
+
+/**
+ * Transforms PostgreSQL point type to GeoJSON Point format.
+ * Drizzle ORM returns point as [number, number] tuple (longitude, latitude).
+ *
+ * @param point - The PostgreSQL point as [longitude, latitude] tuple, or null
+ * @returns GeoJSON Point object, or null if input is null
+ */
+function transformLatLong(point: [number, number] | null): ApiGeoPoint | null {
+  if (!point) return null;
+  return {
+    type: 'Point',
+    coordinates: point, // GeoJSON spec: [longitude, latitude] (note: opposite of Google Maps)
+  };
+}
+
+/**
+ * Maps a database Org entity's location fields to the District location schema.
+ *
+ * @param org - The database Org entity
+ * @returns The API-formatted district location object
+ */
+function transformDistrictLocation(org: Org): ApiDistrictLocation {
+  return {
+    addressLine1: org.locationAddressLine1,
+    addressLine2: org.locationAddressLine2,
+    city: org.locationCity,
+    stateProvince: org.locationStateProvince,
+    postalCode: org.locationPostalCode,
+    country: org.locationCountry,
+    latLong: transformLatLong(org.locationLatLong),
+  };
+}
+
+/**
+ * Maps a database Org entity to the District API schema.
+ *
+ * @param org - The database Org entity (must be orgType='district')
+ * @returns The API-formatted district object
+ */
+function transformDistrict(org: Org): ApiDistrict {
+  return {
+    id: org.id,
+    name: org.name,
+    abbreviation: org.abbreviation,
+    location: transformDistrictLocation(org),
+  };
 }
 
 /**
@@ -86,7 +140,11 @@ export const AdministrationsController = {
       };
     } catch (error) {
       if (error instanceof ApiError) {
-        return toErrorResponse(error, [StatusCodes.NOT_FOUND, StatusCodes.FORBIDDEN]);
+        return toErrorResponse(error, [
+          StatusCodes.NOT_FOUND,
+          StatusCodes.FORBIDDEN,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        ]);
       }
       throw error;
     }
@@ -102,35 +160,98 @@ export const AdministrationsController = {
    * @param query - Query parameters (pagination, sorting, status filter, embed options)
    */
   list: async (authContext: AuthContext, query: AdministrationsListQuery) => {
-    const { page, perPage, sortBy, sortOrder, embed, status } = query;
+    try {
+      const { page, perPage, sortBy, sortOrder, embed, status } = query;
 
-    const result = await administrationService.list(authContext, {
-      page,
-      perPage,
-      sortBy,
-      sortOrder,
-      embed,
-      ...(status && { status }),
-    });
+      const result = await administrationService.list(authContext, {
+        page,
+        perPage,
+        sortBy,
+        sortOrder,
+        embed,
+        ...(status && { status }),
+      });
 
-    // Transform to API response format
-    const items = result.items.map(transformAdministration);
+      // Transform to API response format
+      const items = result.items.map(transformAdministration);
 
-    const totalPages = Math.ceil(result.totalItems / perPage);
+      const totalPages = Math.ceil(result.totalItems / perPage);
 
-    return {
-      status: StatusCodes.OK as const,
-      body: {
-        data: {
-          items,
-          pagination: {
-            page,
-            perPage,
-            totalItems: result.totalItems,
-            totalPages,
+      return {
+        status: StatusCodes.OK as const,
+        body: {
+          data: {
+            items,
+            pagination: {
+              page,
+              perPage,
+              totalItems: result.totalItems,
+              totalPages,
+            },
           },
         },
-      },
-    };
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [StatusCodes.INTERNAL_SERVER_ERROR]);
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * List districts assigned to an administration.
+   *
+   * Delegates to AdministrationService for authorization and retrieval.
+   * Transforms database entities to the API response format.
+   *
+   * @param authContext - User's authentication context
+   * @param administrationId - UUID of the administration
+   * @param query - Query parameters (pagination, sorting)
+   */
+  listDistricts: async (
+    authContext: AuthContext,
+    administrationId: string,
+    query: AdministrationDistrictsListQuery,
+  ) => {
+    try {
+      const { page, perPage, sortBy, sortOrder } = query;
+
+      const result = await administrationService.listDistricts(authContext, administrationId, {
+        page,
+        perPage,
+        sortBy,
+        sortOrder,
+      });
+
+      // Transform to API response format
+      const items = result.items.map(transformDistrict);
+
+      const totalPages = Math.ceil(result.totalItems / perPage);
+
+      return {
+        status: StatusCodes.OK as const,
+        body: {
+          data: {
+            items,
+            pagination: {
+              page,
+              perPage,
+              totalItems: result.totalItems,
+              totalPages,
+            },
+          },
+        },
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [
+          StatusCodes.NOT_FOUND,
+          StatusCodes.FORBIDDEN,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        ]);
+      }
+      throw error;
+    }
   },
 };

@@ -18,13 +18,23 @@ export function registerAdministrationsRoutes(routerInstance: Router) {
       // @ts-expect-error - Express v4/v5 types mismatch in monorepo
       middleware: [AuthGuardMiddleware],
       handler: async ({ req, query }) =>
-        AdministrationsController.list({ userId: req.user!.id, isSuperAdmin: req.user!.isSuperAdmin }, query),
+        AdministrationsController.list({ userId: req.user!.userId, isSuperAdmin: req.user!.isSuperAdmin }, query),
     },
     get: {
       // @ts-expect-error - Express v4/v5 types mismatch in monorepo
       middleware: [AuthGuardMiddleware],
       handler: async ({ req, params }) =>
-        AdministrationsController.get({ userId: req.user!.id, isSuperAdmin: req.user!.isSuperAdmin }, params.id),
+        AdministrationsController.get({ userId: req.user!.userId, isSuperAdmin: req.user!.isSuperAdmin }, params.id),
+    },
+    listDistricts: {
+      // @ts-expect-error - Express v4/v5 types mismatch in monorepo
+      middleware: [AuthGuardMiddleware],
+      handler: async ({ req, params, query }) =>
+        AdministrationsController.listDistricts(
+          { userId: req.user!.userId, isSuperAdmin: req.user!.isSuperAdmin },
+          params.id,
+          query,
+        ),
     },
   });
 

@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AdministrationService } from './administration.service';
 import { AdministrationFactory } from '../../test-support/factories/administration.factory';
+import { OrgFactory } from '../../test-support/factories/org.factory';
 
 // Mock the logger (used by the service for error handling)
 vi.mock('../../logger', () => ({
@@ -21,6 +22,7 @@ describe('AdministrationService', () => {
   const mockListAll = vi.fn();
   const mockGetById = vi.fn();
   const mockGetAuthorized = vi.fn();
+  const mockGetDistrictsByAdministrationId = vi.fn();
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mockAdministrationRepository: any = {
@@ -30,6 +32,7 @@ describe('AdministrationService', () => {
     getById: mockGetById,
     getAuthorized: mockGetAuthorized,
     getAssignedUserCountsByAdministrationIds: mockGetAssignedUserCountsByAdministrationIds,
+    getDistrictsByAdministrationId: mockGetDistrictsByAdministrationId,
   };
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -731,6 +734,191 @@ describe('AdministrationService', () => {
       await expect(service.getById({ userId: 'admin-user', isSuperAdmin: true }, 'admin-123')).rejects.toThrow(
         'Failed to retrieve administration',
       );
+    });
+  });
+
+  describe('listDistricts', () => {
+    const defaultOptions = {
+      page: 1,
+      perPage: 25,
+      sortBy: 'name' as const,
+      sortOrder: 'asc' as const,
+    };
+
+    it('should return districts for super admin (unrestricted)', async () => {
+      const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+      const mockDistricts = [
+        OrgFactory.build({ id: 'district-1', name: 'District A', orgType: 'district' }),
+        OrgFactory.build({ id: 'district-2', name: 'District B', orgType: 'district' }),
+      ];
+      mockGetById.mockResolvedValue(mockAdmin);
+      mockGetDistrictsByAdministrationId.mockResolvedValue({
+        items: mockDistricts,
+        totalItems: 2,
+      });
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+      });
+
+      const result = await service.listDistricts(
+        { userId: 'admin-user', isSuperAdmin: true },
+        'admin-123',
+        defaultOptions,
+      );
+
+      expect(mockGetById).toHaveBeenCalledWith({ id: 'admin-123' });
+      expect(mockGetAuthorized).not.toHaveBeenCalled();
+      expect(mockGetDistrictsByAdministrationId).toHaveBeenCalledWith('admin-123', {
+        page: 1,
+        perPage: 25,
+        orderBy: { field: 'name', direction: 'asc' },
+      });
+      expect(result.items).toHaveLength(2);
+      expect(result.totalItems).toBe(2);
+    });
+
+    it('should use getAuthorized for non-super admin users', async () => {
+      const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+      const mockDistricts = [OrgFactory.build({ id: 'district-1', name: 'District A', orgType: 'district' })];
+      mockGetById.mockResolvedValue(mockAdmin);
+      mockGetAuthorized.mockResolvedValue(mockAdmin);
+      mockGetDistrictsByAdministrationId.mockResolvedValue({
+        items: mockDistricts,
+        totalItems: 1,
+      });
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+      });
+
+      const result = await service.listDistricts(
+        { userId: 'user-123', isSuperAdmin: false },
+        'admin-123',
+        defaultOptions,
+      );
+
+      expect(mockGetById).toHaveBeenCalledWith({ id: 'admin-123' });
+      expect(mockGetAuthorized).toHaveBeenCalledWith(
+        {
+          userId: 'user-123',
+          allowedRoles: expect.arrayContaining(['site_administrator', 'administrator', 'teacher', 'student']),
+        },
+        'admin-123',
+      );
+      expect(mockGetDistrictsByAdministrationId).toHaveBeenCalledWith('admin-123', expect.any(Object));
+      expect(result.items).toHaveLength(1);
+    });
+
+    it('should pass pagination and sorting options to repository', async () => {
+      const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+      mockGetById.mockResolvedValue(mockAdmin);
+      mockGetDistrictsByAdministrationId.mockResolvedValue({ items: [], totalItems: 0 });
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+      });
+
+      await service.listDistricts({ userId: 'admin-user', isSuperAdmin: true }, 'admin-123', {
+        page: 3,
+        perPage: 50,
+        sortBy: 'name',
+        sortOrder: 'desc',
+      });
+
+      expect(mockGetDistrictsByAdministrationId).toHaveBeenCalledWith('admin-123', {
+        page: 3,
+        perPage: 50,
+        orderBy: { field: 'name', direction: 'desc' },
+      });
+    });
+
+    it('should return empty results when administration has no districts', async () => {
+      const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+      mockGetById.mockResolvedValue(mockAdmin);
+      mockGetDistrictsByAdministrationId.mockResolvedValue({ items: [], totalItems: 0 });
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+      });
+
+      const result = await service.listDistricts(
+        { userId: 'admin-user', isSuperAdmin: true },
+        'admin-123',
+        defaultOptions,
+      );
+
+      expect(result.items).toEqual([]);
+      expect(result.totalItems).toBe(0);
+    });
+
+    it('should throw not-found error when administration does not exist', async () => {
+      mockGetById.mockResolvedValue(null);
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+      });
+
+      await expect(
+        service.listDistricts({ userId: 'admin-user', isSuperAdmin: true }, 'non-existent-id', defaultOptions),
+      ).rejects.toThrow('Administration not found');
+      expect(mockGetDistrictsByAdministrationId).not.toHaveBeenCalled();
+    });
+
+    it('should throw forbidden error when non-super admin has no access to existing administration', async () => {
+      const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+      mockGetById.mockResolvedValue(mockAdmin);
+      mockGetAuthorized.mockResolvedValue(null);
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+      });
+
+      await expect(
+        service.listDistricts({ userId: 'user-123', isSuperAdmin: false }, 'admin-123', defaultOptions),
+      ).rejects.toThrow('You do not have permission to access this administration');
+      expect(mockGetDistrictsByAdministrationId).not.toHaveBeenCalled();
+    });
+
+    it('should throw not-found error for non-super admin when administration does not exist', async () => {
+      mockGetById.mockResolvedValue(null);
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+      });
+
+      await expect(
+        service.listDistricts({ userId: 'user-123', isSuperAdmin: false }, 'non-existent-id', defaultOptions),
+      ).rejects.toThrow('Administration not found');
+      expect(mockGetAuthorized).not.toHaveBeenCalled();
+      expect(mockGetDistrictsByAdministrationId).not.toHaveBeenCalled();
+    });
+
+    it('should throw ApiError when getById database query fails', async () => {
+      const dbError = new Error('Connection refused');
+      mockGetById.mockRejectedValue(dbError);
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+      });
+
+      await expect(
+        service.listDistricts({ userId: 'admin-user', isSuperAdmin: true }, 'admin-123', defaultOptions),
+      ).rejects.toThrow('Failed to retrieve administration districts');
+    });
+
+    it('should throw ApiError when getDistrictsByAdministrationId query fails', async () => {
+      const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+      mockGetById.mockResolvedValue(mockAdmin);
+      mockGetDistrictsByAdministrationId.mockRejectedValue(new Error('Database timeout'));
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+      });
+
+      await expect(
+        service.listDistricts({ userId: 'admin-user', isSuperAdmin: true }, 'admin-123', defaultOptions),
+      ).rejects.toThrow('Failed to retrieve administration districts');
     });
   });
 });

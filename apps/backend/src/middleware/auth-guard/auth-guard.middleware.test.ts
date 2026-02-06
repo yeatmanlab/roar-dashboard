@@ -84,7 +84,7 @@ describe('AuthGuardMiddleware', () => {
     expect(authServiceMock).toHaveBeenCalledWith('mock-valid-jwt-token');
     expect(mockFindByAuthId).toHaveBeenCalledWith(mockDecodedUser.uid);
     expect(response.body.user).toEqual({
-      id: mockUser.id,
+      userId: mockUser.id,
       isSuperAdmin: mockUser.isSuperAdmin ?? false,
     });
   });
