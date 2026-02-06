@@ -248,20 +248,15 @@ export function AdministrationService({
           field: SORT_FIELD_TO_COLUMN[options.sortBy],
           direction: options.sortOrder,
         },
+        ...(options.status && { status: options.status }),
       };
 
       // Fetch administrations based on user role and authorization
       if (isSuperAdmin) {
-        result = await administrationRepository.listAll({
-          ...queryParams,
-          ...(options.status && { status: options.status }),
-        });
+        result = await administrationRepository.listAll(queryParams);
       } else {
         const allowedRoles = rolesForPermission(Permissions.Administrations.LIST);
-        result = await administrationRepository.listAuthorized(
-          { userId, allowedRoles },
-          { ...queryParams, ...(options.status && { status: options.status }) },
-        );
+        result = await administrationRepository.listAuthorized({ userId, allowedRoles }, queryParams);
       }
     } catch (error) {
       if (error instanceof ApiError) throw error;
