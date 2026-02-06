@@ -206,6 +206,74 @@ describe('AdministrationAccessControls', () => {
         }).rejects.toThrow();
       });
     });
+
+    describe('enrollment date boundaries', () => {
+      it('excludes user with future enrollment start date (org membership)', async () => {
+        // futureEnrollmentStudent has enrollment starting 7 days from now at School A
+        const ids = await getAccessibleAdministrationIds(baseFixture.futureEnrollmentStudent.id, [UserRole.STUDENT]);
+
+        // User's enrollment hasn't started yet, so they shouldn't see any administrations
+        expect(ids).not.toContain(baseFixture.administrationAssignedToSchoolA.id);
+        expect(ids).not.toContain(baseFixture.administrationAssignedToDistrict.id);
+        expect(ids).toHaveLength(0);
+      });
+
+      it('excludes user with expired enrollment (org membership)', async () => {
+        // expiredEnrollmentStudent has enrollment that ended 7 days ago at School A
+        const ids = await getAccessibleAdministrationIds(baseFixture.expiredEnrollmentStudent.id, [UserRole.STUDENT]);
+
+        // User's enrollment has ended, so they shouldn't see any administrations
+        expect(ids).not.toContain(baseFixture.administrationAssignedToSchoolA.id);
+        expect(ids).not.toContain(baseFixture.administrationAssignedToDistrict.id);
+        expect(ids).toHaveLength(0);
+      });
+
+      it('includes user with active enrollment (null enrollmentEnd)', async () => {
+        // schoolAStudent has active enrollment (default: enrollmentStart=now, enrollmentEnd=null)
+        const ids = await getAccessibleAdministrationIds(baseFixture.schoolAStudent.id, [UserRole.STUDENT]);
+
+        // User has active enrollment, so they should see administrations
+        expect(ids).toContain(baseFixture.administrationAssignedToSchoolA.id);
+        expect(ids).toContain(baseFixture.administrationAssignedToDistrict.id);
+      });
+
+      it('excludes user with expired enrollment (class membership)', async () => {
+        // expiredClassStudent has enrollment that ended 7 days ago in classInSchoolA
+        const ids = await getAccessibleAdministrationIds(baseFixture.expiredClassStudent.id, [UserRole.STUDENT]);
+
+        // User's enrollment has ended
+        expect(ids).not.toContain(baseFixture.administrationAssignedToClassA.id);
+        expect(ids).not.toContain(baseFixture.administrationAssignedToSchoolA.id);
+        expect(ids).toHaveLength(0);
+      });
+
+      it('includes user with active enrollment (class membership)', async () => {
+        // classAStudent has active enrollment in classInSchoolA
+        const ids = await getAccessibleAdministrationIds(baseFixture.classAStudent.id, [UserRole.STUDENT]);
+
+        // User has active enrollment, so they should see class and ancestor administrations
+        expect(ids).toContain(baseFixture.administrationAssignedToClassA.id);
+        expect(ids).toContain(baseFixture.administrationAssignedToSchoolA.id);
+        expect(ids).toContain(baseFixture.administrationAssignedToDistrict.id);
+      });
+
+      it('excludes user with future enrollment start date (group membership)', async () => {
+        // futureGroupStudent has enrollment starting 7 days from now in the group
+        const ids = await getAccessibleAdministrationIds(baseFixture.futureGroupStudent.id, [UserRole.STUDENT]);
+
+        // User's enrollment hasn't started yet
+        expect(ids).not.toContain(baseFixture.administrationAssignedToGroup.id);
+        expect(ids).toHaveLength(0);
+      });
+
+      it('includes user with active enrollment (group membership)', async () => {
+        // groupStudent has active enrollment in the group
+        const ids = await getAccessibleAdministrationIds(baseFixture.groupStudent.id, [UserRole.STUDENT]);
+
+        // User has active enrollment, so they should see group administration
+        expect(ids).toContain(baseFixture.administrationAssignedToGroup.id);
+      });
+    });
   });
 
   describe('buildAdministrationUserAssignmentsQuery', () => {
@@ -369,6 +437,74 @@ describe('AdministrationAccessControls', () => {
       await expect(accessControls.getAssignedUserCountsByAdministrationIds([])).rejects.toThrow(
         'administrationIds required',
       );
+    });
+
+    describe('enrollment date boundaries', () => {
+      it('excludes users with expired enrollments from count', async () => {
+        // administrationAssignedToSchoolA is assigned to School A
+        // schoolAStudent has active enrollment, expiredEnrollmentStudent has expired enrollment
+        const counts = await accessControls.getAssignedUserCountsByAdministrationIds([
+          baseFixture.administrationAssignedToSchoolA.id,
+        ]);
+
+        // Get the assigned users to verify
+        const query = accessControls.buildAdministrationUserAssignmentsQuery([
+          baseFixture.administrationAssignedToSchoolA.id,
+        ]);
+        const subquery = query.as('assignments');
+        const result = await CoreDbClient.select({ userId: subquery.userId }).from(subquery);
+        const userIds = result.map((r) => r.userId);
+
+        // Active enrollment users should be included
+        expect(userIds).toContain(baseFixture.schoolAStudent.id);
+        expect(userIds).toContain(baseFixture.schoolATeacher.id);
+
+        // Expired enrollment user should NOT be included
+        expect(userIds).not.toContain(baseFixture.expiredEnrollmentStudent.id);
+
+        // Future enrollment user should NOT be included
+        expect(userIds).not.toContain(baseFixture.futureEnrollmentStudent.id);
+
+        // Count should match the number of active users
+        expect(counts.get(baseFixture.administrationAssignedToSchoolA.id)).toBeGreaterThanOrEqual(1);
+      });
+
+      it('excludes users with expired class enrollments from count', async () => {
+        // administrationAssignedToClassA is assigned to classInSchoolA
+        // classAStudent has active enrollment, expiredClassStudent has expired enrollment
+        const query = accessControls.buildAdministrationUserAssignmentsQuery([
+          baseFixture.administrationAssignedToClassA.id,
+        ]);
+        const subquery = query.as('assignments');
+        const result = await CoreDbClient.select({ userId: subquery.userId }).from(subquery);
+        const userIds = result.map((r) => r.userId);
+
+        // Active enrollment user should be included
+        expect(userIds).toContain(baseFixture.classAStudent.id);
+
+        // Expired enrollment user should NOT be included
+        expect(userIds).not.toContain(baseFixture.expiredClassStudent.id);
+      });
+
+      it('excludes users with future group enrollments from count', async () => {
+        // administrationAssignedToGroup is assigned to the standalone group
+        // groupStudent has active enrollment, futureGroupStudent has future enrollment
+        const query = accessControls.buildAdministrationUserAssignmentsQuery([
+          baseFixture.administrationAssignedToGroup.id,
+        ]);
+        const subquery = query.as('assignments');
+        const result = await CoreDbClient.select({ userId: subquery.userId }).from(subquery);
+        const userIds = result.map((r) => r.userId);
+
+        // Active enrollment user should be included
+        expect(userIds).toContain(baseFixture.groupStudent.id);
+
+        // Future enrollment user should NOT be included
+        expect(userIds).not.toContain(baseFixture.futureGroupStudent.id);
+
+        // Should only count the active user
+        expect(userIds).toHaveLength(1);
+      });
     });
   });
 });
