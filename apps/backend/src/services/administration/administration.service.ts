@@ -237,8 +237,6 @@ export function AdministrationService({
   ): Promise<PaginatedResult<AdministrationWithEmbeds>> {
     const { userId, isSuperAdmin } = authContext;
 
-    let result;
-
     try {
       // Transform API contract format to repository format
       const queryParams = {
@@ -252,12 +250,52 @@ export function AdministrationService({
       };
 
       // Fetch administrations based on user role and authorization
+      let result;
       if (isSuperAdmin) {
         result = await administrationRepository.listAll(queryParams);
       } else {
         const allowedRoles = rolesForPermission(Permissions.Administrations.LIST);
         result = await administrationRepository.listAuthorized({ userId, allowedRoles }, queryParams);
       }
+
+      // If no embeds requested, return as-is
+      const embedOptions = options.embed ?? [];
+      if (embedOptions.length === 0) {
+        return result;
+      }
+
+      // Early return if no items to embed data onto
+      if (result.items.length === 0) {
+        return result;
+      }
+
+      const administrationIds = result.items.map((admin) => admin.id);
+      const shouldEmbedStats = isSuperAdmin && embedOptions.includes(AdministrationEmbedOption.STATS);
+      const shouldEmbedTasks = embedOptions.includes(AdministrationEmbedOption.TASKS);
+
+      // Fetch embed data (throws on failure)
+      const statsMap = shouldEmbedStats ? await fetchStatsEmbed(administrationIds, userId) : null;
+      const tasksMap = shouldEmbedTasks ? await fetchTasksEmbed(administrationIds, userId) : null;
+
+      // Attach embeds to each administration
+      const itemsWithEmbeds: AdministrationWithEmbeds[] = result.items.map((admin) => {
+        const adminWithEmbeds: AdministrationWithEmbeds = { ...admin };
+
+        if (statsMap) {
+          adminWithEmbeds.stats = statsMap.get(admin.id) ?? { assigned: 0, started: 0, completed: 0 };
+        }
+
+        if (tasksMap) {
+          adminWithEmbeds.tasks = tasksMap.get(admin.id) ?? [];
+        }
+
+        return adminWithEmbeds;
+      });
+
+      return {
+        items: itemsWithEmbeds,
+        totalItems: result.totalItems,
+      };
     } catch (error) {
       if (error instanceof ApiError) throw error;
 
@@ -270,45 +308,6 @@ export function AdministrationService({
         cause: error,
       });
     }
-
-    // If no embeds requested, return as-is
-    const embedOptions = options.embed ?? [];
-    if (embedOptions.length === 0) {
-      return result;
-    }
-
-    // Early return if no items to embed data onto
-    if (result.items.length === 0) {
-      return result;
-    }
-
-    const administrationIds = result.items.map((admin) => admin.id);
-    const shouldEmbedStats = isSuperAdmin && embedOptions.includes(AdministrationEmbedOption.STATS);
-    const shouldEmbedTasks = embedOptions.includes(AdministrationEmbedOption.TASKS);
-
-    // Fetch embed data (throws on failure)
-    const statsMap = shouldEmbedStats ? await fetchStatsEmbed(administrationIds, userId) : null;
-    const tasksMap = shouldEmbedTasks ? await fetchTasksEmbed(administrationIds, userId) : null;
-
-    // Attach embeds to each administration
-    const itemsWithEmbeds: AdministrationWithEmbeds[] = result.items.map((admin) => {
-      const adminWithEmbeds: AdministrationWithEmbeds = { ...admin };
-
-      if (statsMap) {
-        adminWithEmbeds.stats = statsMap.get(admin.id) ?? { assigned: 0, started: 0, completed: 0 };
-      }
-
-      if (tasksMap) {
-        adminWithEmbeds.tasks = tasksMap.get(admin.id) ?? [];
-      }
-
-      return adminWithEmbeds;
-    });
-
-    return {
-      items: itemsWithEmbeds,
-      totalItems: result.totalItems,
-    };
   }
 
   /**
