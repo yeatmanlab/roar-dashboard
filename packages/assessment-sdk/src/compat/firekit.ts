@@ -176,7 +176,9 @@ export async function updateEngagementFlags({
  */
 export async function updateUser(userUpdateData: UpdateUserInput): UpdateUserOutput {
   // Issue deprecation warning
-  console.warn('appkit.updateUser is deprecated and related to standalone apps. Consider using alternative methods.');
+  if (process.env.NODE_ENV !== 'production') {
+    console.warn('[DEPRECATION] updateUser() exists only for Firekit compatibility and will be removed in a future version.');
+  }
 
   void userUpdateData;
   throw new SDKError('appkit.updateUser not yet implemented');
