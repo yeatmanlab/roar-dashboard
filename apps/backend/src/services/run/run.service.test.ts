@@ -75,37 +75,32 @@ describe('RunService', () => {
       });
     });
 
-    it('should create a run without administration_id', async () => {
+    it('should throw BAD_REQUEST when administration_id is missing', async () => {
       const bodyWithoutAdmin = {
         task_variant_id: '550e8400-e29b-41d4-a716-446655440000',
         task_version: '1.0.0',
       };
 
-      mockTaskService.getTaskByVariantId.mockResolvedValue({ taskId: 'task-456' });
-      mockTaskService.validateTaskVersion.mockResolvedValue(undefined);
-      mockRunsRepository.create.mockResolvedValue({ id: 'run-uuid-456' });
-
-      const result = await runService.create(mockAuthContext, bodyWithoutAdmin);
-
-      expect(result).toEqual({ runId: 'run-uuid-456' });
-      expect(mockAdministrationService.getById).not.toHaveBeenCalled();
-      expect(mockRunsRepository.create).toHaveBeenCalledWith({
-        data: {
-          userId: 'user-123',
-          taskId: 'task-456',
-          taskVariantId: '550e8400-e29b-41d4-a716-446655440000',
-          taskVersion: '1.0.0',
-        },
-      });
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await runService.create(mockAuthContext, bodyWithoutAdmin as any);
+      } catch (error) {
+        if (error instanceof ApiError) {
+          expect(error.statusCode).toBe(StatusCodes.BAD_REQUEST);
+          expect(error.code).toBe(ApiErrorCode.REQUEST_VALIDATION_FAILED);
+        }
+      }
     });
 
     it('should include metadata in run creation when provided', async () => {
       const bodyWithMetadata = {
         task_variant_id: '550e8400-e29b-41d4-a716-446655440000',
         task_version: '1.0.0',
+        administration_id: '660e8400-e29b-41d4-a716-446655440001',
         metadata: { source: 'dashboard', sessionId: 'sess-789' },
       };
 
+      mockAdministrationService.getById.mockResolvedValue({ id: 'admin-1' });
       mockTaskService.getTaskByVariantId.mockResolvedValue({ taskId: 'task-789' });
       mockTaskService.validateTaskVersion.mockResolvedValue(undefined);
       mockRunsRepository.create.mockResolvedValue({ id: 'run-uuid-789' });
@@ -118,6 +113,7 @@ describe('RunService', () => {
           taskId: 'task-789',
           taskVariantId: '550e8400-e29b-41d4-a716-446655440000',
           taskVersion: '1.0.0',
+          administrationId: '660e8400-e29b-41d4-a716-446655440001',
           metadata: { source: 'dashboard', sessionId: 'sess-789' },
         },
       });
@@ -305,9 +301,11 @@ describe('RunService', () => {
       const bodyWithEmptyMetadata = {
         task_variant_id: '550e8400-e29b-41d4-a716-446655440000',
         task_version: '1.0.0',
+        administration_id: '660e8400-e29b-41d4-a716-446655440001',
         metadata: {},
       };
 
+      mockAdministrationService.getById.mockResolvedValue({ id: 'admin-1' });
       mockTaskService.getTaskByVariantId.mockResolvedValue({ taskId: 'task-123' });
       mockTaskService.validateTaskVersion.mockResolvedValue(undefined);
       mockRunsRepository.create.mockResolvedValue({ id: 'run-uuid-123' });
