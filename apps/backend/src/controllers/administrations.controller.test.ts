@@ -252,6 +252,51 @@ describe('AdministrationsController', () => {
         { taskId: 'task-2', taskName: 'PA', variantId: 'variant-2', variantName: null, orderIndex: 1 },
       ]);
     });
+
+    it('should return 500 when service throws ApiError', async () => {
+      mockList.mockRejectedValue(
+        new ApiError('Failed to retrieve administrations', {
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        }),
+      );
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      const result = await Controller.list(mockAuthContext, {
+        page: 1,
+        perPage: 25,
+        sortBy: 'createdAt',
+        sortOrder: 'desc',
+        embed: [],
+      });
+
+      expect(result.status).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
+      expect(result.body).toEqual({
+        error: {
+          message: 'Failed to retrieve administrations',
+          code: 'database/query-failed',
+          traceId: expect.any(String),
+        },
+      });
+    });
+
+    it('should re-throw non-ApiError exceptions', async () => {
+      const unexpectedError = new Error('Database connection lost');
+      mockList.mockRejectedValue(unexpectedError);
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      await expect(
+        Controller.list(mockAuthContext, {
+          page: 1,
+          perPage: 25,
+          sortBy: 'createdAt',
+          sortOrder: 'desc',
+          embed: [],
+        }),
+      ).rejects.toThrow('Database connection lost');
+    });
   });
 
   describe('get', () => {
