@@ -16,6 +16,16 @@ vi.mock('../services/administration/administration.service', () => ({
 
 import { AdministrationService } from '../services/administration/administration.service';
 
+/**
+ * Type-safe assertion helper for success responses.
+ * Asserts the status is OK and returns the data with proper typing.
+ */
+function expectOkResponse<T>(result: { status: number; body: { data: T } | { error: unknown } }): T {
+  expect(result.status).toBe(StatusCodes.OK);
+  expect(result.body).toHaveProperty('data');
+  return (result.body as { data: T }).data;
+}
+
 describe('AdministrationsController', () => {
   const mockList = vi.fn();
   const mockGet = vi.fn();
@@ -52,9 +62,9 @@ describe('AdministrationsController', () => {
         embed: [],
       });
 
-      expect(result.status).toBe(StatusCodes.OK);
-      expect(result.body.data.items).toHaveLength(2);
-      expect(result.body.data.pagination).toEqual({
+      const data = expectOkResponse(result);
+      expect(data.items).toHaveLength(2);
+      expect(data.pagination).toEqual({
         page: 1,
         perPage: 25,
         totalItems: 2,
@@ -87,7 +97,8 @@ describe('AdministrationsController', () => {
         embed: [],
       });
 
-      const item = result.body.data.items[0]!;
+      const data = expectOkResponse(result);
+      const item = data.items[0]!;
       expect(item.id).toBe('admin-uuid-123');
       expect(item.name).toBe('Internal Name');
       expect(item.publicName).toBe('Public Name');
@@ -113,7 +124,8 @@ describe('AdministrationsController', () => {
         embed: [],
       });
 
-      expect(result.body.data.pagination.totalPages).toBe(10); // ceil(95/10) = 10
+      const data = expectOkResponse(result);
+      expect(data.pagination.totalPages).toBe(10); // ceil(95/10) = 10
     });
 
     it('should pass auth context and query parameters to service', async () => {
@@ -152,9 +164,10 @@ describe('AdministrationsController', () => {
         embed: [],
       });
 
-      expect(result.body.data.items).toEqual([]);
-      expect(result.body.data.pagination.totalItems).toBe(0);
-      expect(result.body.data.pagination.totalPages).toBe(0);
+      const data = expectOkResponse(result);
+      expect(data.items).toEqual([]);
+      expect(data.pagination.totalItems).toBe(0);
+      expect(data.pagination.totalPages).toBe(0);
     });
 
     it('should include stats in response when embed=stats is requested', async () => {
@@ -185,7 +198,8 @@ describe('AdministrationsController', () => {
         sortOrder: 'desc',
         embed: ['stats'],
       });
-      expect(result.body.data.items[0]!.stats).toEqual({
+      const data = expectOkResponse(result);
+      expect(data.items[0]!.stats).toEqual({
         assigned: 25,
         started: 10,
         completed: 5,
@@ -213,7 +227,8 @@ describe('AdministrationsController', () => {
         embed: [],
       });
 
-      expect(result.body.data.items[0]).not.toHaveProperty('stats');
+      const data = expectOkResponse(result);
+      expect(data.items[0]).not.toHaveProperty('stats');
     });
 
     it('should include tasks in response when embed=tasks is requested', async () => {
@@ -247,7 +262,8 @@ describe('AdministrationsController', () => {
         sortOrder: 'desc',
         embed: ['tasks'],
       });
-      expect(result.body.data.items[0]!.tasks).toEqual([
+      const data = expectOkResponse(result);
+      expect(data.items[0]!.tasks).toEqual([
         { taskId: 'task-1', taskName: 'SWR', variantId: 'variant-1', variantName: 'Variant A', orderIndex: 0 },
         { taskId: 'task-2', taskName: 'PA', variantId: 'variant-2', variantName: null, orderIndex: 1 },
       ]);
@@ -418,10 +434,9 @@ describe('AdministrationsController', () => {
         sortOrder: 'asc',
       });
 
-      expect(result.status).toBe(StatusCodes.OK);
-      if (result.status !== StatusCodes.OK) throw new Error('Expected OK status');
-      expect(result.body.data.items).toHaveLength(2);
-      expect(result.body.data.pagination).toEqual({
+      const data = expectOkResponse(result);
+      expect(data.items).toHaveLength(2);
+      expect(data.pagination).toEqual({
         page: 1,
         perPage: 25,
         totalItems: 2,
@@ -457,9 +472,8 @@ describe('AdministrationsController', () => {
         sortOrder: 'asc',
       });
 
-      expect(result.status).toBe(StatusCodes.OK);
-      if (result.status !== StatusCodes.OK) throw new Error('Expected OK status');
-      const item = result.body.data.items[0]!;
+      const data = expectOkResponse(result);
+      const item = data.items[0]!;
       expect(item.id).toBe('district-uuid-123');
       expect(item.name).toBe('Test District');
       expect(item.abbreviation).toBe('TD');
@@ -505,9 +519,8 @@ describe('AdministrationsController', () => {
         sortOrder: 'asc',
       });
 
-      expect(result.status).toBe(StatusCodes.OK);
-      if (result.status !== StatusCodes.OK) throw new Error('Expected OK status');
-      const item = result.body.data.items[0]!;
+      const data = expectOkResponse(result);
+      const item = data.items[0]!;
       expect(item.location).toEqual({
         addressLine1: null,
         addressLine2: null,
@@ -606,11 +619,10 @@ describe('AdministrationsController', () => {
         sortOrder: 'asc',
       });
 
-      expect(result.status).toBe(StatusCodes.OK);
-      if (result.status !== StatusCodes.OK) throw new Error('Expected OK status');
-      expect(result.body.data.items).toEqual([]);
-      expect(result.body.data.pagination.totalItems).toBe(0);
-      expect(result.body.data.pagination.totalPages).toBe(0);
+      const data = expectOkResponse(result);
+      expect(data.items).toEqual([]);
+      expect(data.pagination.totalItems).toBe(0);
+      expect(data.pagination.totalPages).toBe(0);
     });
 
     it('should re-throw non-ApiError exceptions', async () => {
