@@ -1,0 +1,36 @@
+import { z } from 'zod';
+import { initContract } from '@ts-rest/core';
+import { ErrorEnvelopeSchema, SuccessEnvelopeSchema } from '../response';
+import { UsersQuerySchema } from '../common/user';
+import { ClassUsersResponseSchema } from './schema';
+
+const c = initContract();
+
+/**
+ * Contract for the /classes endpoints.
+ * Provides access to classes the authenticated user can view.
+ */
+export const ClassesContract = c.router(
+  {
+    get: {
+      method: 'GET',
+      path: '/:classId/users',
+      pathParams: z.object({ classId: z.string().uuid() }),
+      query: UsersQuerySchema,
+      responses: {
+        200: SuccessEnvelopeSchema(ClassUsersResponseSchema),
+        401: ErrorEnvelopeSchema,
+        403: ErrorEnvelopeSchema,
+        404: ErrorEnvelopeSchema,
+      },
+      strictStatusCodes: true,
+      summary: 'Get class users by classId',
+      description:
+        'Returns a paginated list of users in a class. ' +
+        'Filters users by active status (default true to only include active users), userType, role, and grade if provided. ' +
+        'Returns 403 if the user lacks permission to access the class. ' +
+        'Returns 404 if the class does not exist.',
+    },
+  },
+  { pathPrefix: '/classes' },
+);
