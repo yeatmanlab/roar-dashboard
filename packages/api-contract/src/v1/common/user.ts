@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { PaginationQuerySchema, createPaginatedResponseSchema, createSortQuerySchema } from './query';
 import { MeSchema, UserTypeSchema } from '../me/schema';
 
-export const USER_ROLE_VALUES = [
+export const UserRoleSchema = z.enum([
   'administrator',
   'aide',
   'counselor',
@@ -16,16 +16,18 @@ export const USER_ROLE_VALUES = [
   'student',
   'system_administrator',
   'teacher',
-] as const;
-export const UserRoleSchema = z.enum(USER_ROLE_VALUES);
+]);
+export type UserRole = z.infer<typeof UserRoleSchema>;
 
-export const USER_AUTH_PROVIDER_VALUES = ['password', 'google', 'oidc.clever', 'oidc.classlink', 'oidc.nycps'] as const;
-export const UserAuthProviderSchema = z.array(z.enum(USER_AUTH_PROVIDER_VALUES));
+export const UserAuthProviderSchema = z.array(
+  z.enum(['password', 'google', 'oidc.clever', 'oidc.classlink', 'oidc.nycps']),
+);
+export type UserAuthProvider = z.infer<typeof UserAuthProviderSchema>;
 
-export const USER_STATUS_FRL_VALUES = ['Free', 'Reduced', 'Paid'] as const;
-export const UserStatusFrlSchema = z.enum(USER_STATUS_FRL_VALUES);
+export const UserStatusFrlSchema = z.enum(['Free', 'Reduced', 'Paid']);
+export type UserStatusFrl = z.infer<typeof UserStatusFrlSchema>;
 
-export const USER_GRADE_VALUES = [
+export const UserGradeSchema = z.enum([
   '1',
   '2',
   '3',
@@ -47,8 +49,8 @@ export const USER_GRADE_VALUES = [
   'PostGraduate',
   'Ungraded',
   'Other',
-] as const;
-export const UserGradeSchema = z.enum(USER_GRADE_VALUES);
+]);
+export type UserGrade = z.infer<typeof UserGradeSchema>;
 
 export const USER_SCHOOL_LEVEL_VALUES = ['early_childhood', 'elementary', 'middle', 'high', 'postsecondary'] as const;
 export const UserSchoolLevelSchema = z.enum(USER_SCHOOL_LEVEL_VALUES);
@@ -86,21 +88,26 @@ export const UserSchema = UserBaseSchema.merge(MeSchema) // Includes id, nameFir
 
 // TODO: which fields to sort?
 export const USERS_SORT_FIELDS = ['name.last', 'username', 'grade', 'enrollmentStart'] as const;
+export type UserSortField = (typeof USERS_SORT_FIELDS)[number];
 export const UsersSortFields = {
   NAME_LAST: 'name.last',
   USERNAME: 'username',
   GRADE: 'grade',
   ENROLLMENT_START: 'enrollmentStart',
-} as const satisfies Record<string, (typeof USERS_SORT_FIELDS)[number]>;
+} as const satisfies Record<string, UserSortField>;
 
-export const UsersQuerySchema = PaginationQuerySchema.merge(
-  createSortQuerySchema(USERS_SORT_FIELDS, 'name.last'),
-).extend({
-  active: z.boolean().default(true),
+const UserQueryFilterSchema = z.object({
+  active: z.boolean().optional(),
   role: UserRoleSchema.optional(),
   userType: UserTypeSchema.optional(),
   grade: UserGradeSchema.optional(),
 });
+
+export type UserQueryFilters = z.infer<typeof UserQueryFilterSchema>;
+
+export const UsersQuerySchema = PaginationQuerySchema.merge(
+  createSortQuerySchema(USERS_SORT_FIELDS, 'name.last'),
+).merge(UserQueryFilterSchema);
 
 export type UsersQuery = z.infer<typeof UsersQuerySchema>;
 
