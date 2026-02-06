@@ -218,7 +218,7 @@ export async function updateUser(userUpdateData: UpdateUserInput): UpdateUserOut
  */
 export async function writeTrial(
   trialData: TrialData,
-  computedScoreCallback?: (rawScores: RawScores) => Promise<ComputedScores>
+  computedScoreCallback?: (rawScores: RawScores) => Promise<ComputedScores>,
 ): WriteTrialOutput {
   void trialData;
   void computedScoreCallback;

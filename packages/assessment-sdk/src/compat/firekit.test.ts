@@ -87,7 +87,7 @@ describe('firekit compat', () => {
       await expect(updateUser({ assessmentPid: 'test-pid' })).rejects.toBeInstanceOf(SDKError);
 
       expect(consoleWarnSpy).toHaveBeenCalledWith(
-        'appkit.updateUser is deprecated and related to standalone apps. Consider using alternative methods.'
+        'appkit.updateUser is deprecated and related to standalone apps. Consider using alternative methods.',
       );
 
       consoleWarnSpy.mockRestore();
@@ -121,7 +121,7 @@ describe('firekit compat', () => {
       expectTypeOf(writeTrial).toEqualTypeOf<
         (
           trialData: TrialData,
-          computedScoreCallback?: (rawScores: RawScores) => Promise<ComputedScores>
+          computedScoreCallback?: (rawScores: RawScores) => Promise<ComputedScores>,
         ) => Promise<void>
       >();
     });
