@@ -63,7 +63,9 @@ describe('firekit compat', () => {
     it('throws SDKError when called', async () => {
       await expect(updateUser({ assessmentPid: 'test-pid' })).rejects.toBeInstanceOf(SDKError);
       await expect(updateUser({ tasks: [], variants: [] })).rejects.toBeInstanceOf(SDKError);
-      await expect(updateUser({ assessmentPid: 'test', metadata: { customField: 'value' } })).rejects.toBeInstanceOf(SDKError);
+      await expect(updateUser({ assessmentPid: 'test', metadata: { customField: 'value' } })).rejects.toBeInstanceOf(
+        SDKError,
+      );
     });
 
     it('issues deprecation warning when called', async () => {
