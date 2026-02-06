@@ -1,7 +1,7 @@
-import { and, eq, countDistinct, asc, desc, lte, gte, lt, gt, sql } from 'drizzle-orm';
+import { and, eq, countDistinct, asc, desc, lte, gte, lt, gt, sql, count } from 'drizzle-orm';
 import type { SQL } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { administrations, type Administration } from '../db/schema';
+import { administrations, administrationOrgs, orgs, type Administration, type Org } from '../db/schema';
 import { CoreDbClient } from '../db/clients';
 import type * as CoreDbSchema from '../db/schema/core';
 import type {
@@ -9,6 +9,7 @@ import type {
   SortQuery,
   ADMINISTRATION_SORT_FIELDS,
   AdministrationStatus,
+  DISTRICT_SORT_FIELDS,
 } from '@roar-dashboard/api-contract';
 import { BaseRepository, type PaginatedResult } from './base.repository';
 import type { BasePaginatedQueryParams } from './interfaces/base.repository.interface';
@@ -21,6 +22,11 @@ import type { AccessControlFilter } from './utils/parse-access-control-filter.ut
 export type AdministrationSortField = (typeof ADMINISTRATION_SORT_FIELDS)[number];
 
 /**
+ * Sort field type for districts.
+ */
+export type DistrictSortField = (typeof DISTRICT_SORT_FIELDS)[number];
+
+/**
  * Query options for administration repository methods (API contract format).
  */
 export type AdministrationQueryOptions = PaginationQuery & SortQuery<AdministrationSortField>;
@@ -31,6 +37,11 @@ export type AdministrationQueryOptions = PaginationQuery & SortQuery<Administrat
 export interface ListAuthorizedOptions extends BasePaginatedQueryParams {
   status?: AdministrationStatus;
 }
+
+/**
+ * Options for listing districts of an administration.
+ */
+export type ListDistrictsOptions = BasePaginatedQueryParams;
 
 /**
  * Administration Repository
@@ -214,5 +225,57 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
    */
   async getAssignedUserCountsByAdministrationIds(administrationIds: string[]): Promise<Map<string, number>> {
     return this.accessControls.getAssignedUserCountsByAdministrationIds(administrationIds);
+  }
+
+  /**
+   * Get districts assigned to an administration.
+   *
+   * Returns only orgs with orgType='district' that are directly assigned to the administration
+   * via the administration_orgs junction table.
+   *
+   * @param administrationId - The administration ID to get districts for
+   * @param options - Pagination and sorting options
+   * @returns Paginated result with districts
+   */
+  async getDistrictsByAdministrationId(
+    administrationId: string,
+    options: ListDistrictsOptions,
+  ): Promise<PaginatedResult<Org>> {
+    const { page, perPage, orderBy } = options;
+    const offset = (page - 1) * perPage;
+
+    // Base condition: orgs assigned to this administration that are districts
+    const baseCondition = and(eq(administrationOrgs.administrationId, administrationId), eq(orgs.orgType, 'district'));
+
+    // Count query
+    const countResult = await this.db
+      .select({ count: count() })
+      .from(administrationOrgs)
+      .innerJoin(orgs, eq(orgs.id, administrationOrgs.orgId))
+      .where(baseCondition);
+
+    const totalItems = countResult[0]?.count ?? 0;
+
+    if (totalItems === 0) {
+      return { items: [], totalItems: 0 };
+    }
+
+    // Sort by name (currently the only supported sort field)
+    const sortDirection = orderBy?.direction === 'desc' ? desc(orgs.name) : asc(orgs.name);
+
+    // Data query
+    const dataResult = await this.db
+      .select({ org: orgs })
+      .from(administrationOrgs)
+      .innerJoin(orgs, eq(orgs.id, administrationOrgs.orgId))
+      .where(baseCondition)
+      .orderBy(sortDirection)
+      .limit(perPage)
+      .offset(offset);
+
+    return {
+      items: dataResult.map((row) => row.org),
+      totalItems,
+    };
   }
 }

@@ -126,3 +126,68 @@ export type AdministrationsListQuery = z.infer<typeof AdministrationsListQuerySc
 export const AdministrationsListResponseSchema = createPaginatedResponseSchema(AdministrationSchema);
 
 export type AdministrationsListResponse = z.infer<typeof AdministrationsListResponseSchema>;
+
+/**
+ * GeoJSON Point schema for latitude/longitude coordinates.
+ */
+export const GeoPointSchema = z.object({
+  type: z.literal('Point'),
+  coordinates: z.tuple([z.number(), z.number()]), // [longitude, latitude]
+});
+
+export type GeoPoint = z.infer<typeof GeoPointSchema>;
+
+/**
+ * District location schema.
+ */
+export const DistrictLocationSchema = z.object({
+  addressLine1: z.string().nullable(),
+  addressLine2: z.string().nullable(),
+  city: z.string().nullable(),
+  stateProvince: z.string().nullable(),
+  postalCode: z.string().nullable(),
+  country: z.string().nullable(),
+  latLong: GeoPointSchema.nullable(),
+});
+
+export type DistrictLocation = z.infer<typeof DistrictLocationSchema>;
+
+/**
+ * District schema for administration district assignments.
+ */
+export const DistrictSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+  abbreviation: z.string(),
+  location: DistrictLocationSchema,
+});
+
+export type District = z.infer<typeof DistrictSchema>;
+
+/**
+ * Allowed sort fields for districts.
+ */
+export const DISTRICT_SORT_FIELDS = ['name'] as const;
+
+/**
+ * Sort field constants for type-safe access.
+ */
+export const DistrictSortField = {
+  NAME: 'name',
+} as const satisfies Record<string, (typeof DISTRICT_SORT_FIELDS)[number]>;
+
+/**
+ * Query parameters for listing administration districts.
+ */
+export const AdministrationDistrictsListQuerySchema = PaginationQuerySchema.merge(
+  createSortQuerySchema(DISTRICT_SORT_FIELDS, 'name'),
+);
+
+export type AdministrationDistrictsListQuery = z.infer<typeof AdministrationDistrictsListQuerySchema>;
+
+/**
+ * Paginated response for administration districts list.
+ */
+export const AdministrationDistrictsListResponseSchema = createPaginatedResponseSchema(DistrictSchema);
+
+export type AdministrationDistrictsListResponse = z.infer<typeof AdministrationDistrictsListResponseSchema>;

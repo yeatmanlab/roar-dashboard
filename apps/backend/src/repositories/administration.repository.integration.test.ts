@@ -269,4 +269,175 @@ describe('AdministrationRepository', () => {
       expect(counts.get(baseFixture.administrationAssignedToGroup.id)).toBe(1);
     });
   });
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // getDistrictsByAdministrationId
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  describe('getDistrictsByAdministrationId', () => {
+    it('returns districts assigned to an administration', async () => {
+      // administrationAssignedToDistrict is assigned to district (which is a district org)
+      const result = await repository.getDistrictsByAdministrationId(baseFixture.administrationAssignedToDistrict.id, {
+        page: 1,
+        perPage: 100,
+      });
+
+      expect(result.totalItems).toBe(1);
+      expect(result.items).toHaveLength(1);
+      expect(result.items[0]!.id).toBe(baseFixture.district.id);
+      expect(result.items[0]!.orgType).toBe('district');
+    });
+
+    it('returns empty when administration is assigned to non-district orgs', async () => {
+      // administrationAssignedToSchoolA is assigned to schoolA (which is a school org, not district)
+      const result = await repository.getDistrictsByAdministrationId(baseFixture.administrationAssignedToSchoolA.id, {
+        page: 1,
+        perPage: 100,
+      });
+
+      expect(result.totalItems).toBe(0);
+      expect(result.items).toEqual([]);
+    });
+
+    it('returns empty when administration is assigned to classes/groups only', async () => {
+      // administrationAssignedToClassA is only assigned to a class, not any org
+      const result = await repository.getDistrictsByAdministrationId(baseFixture.administrationAssignedToClassA.id, {
+        page: 1,
+        perPage: 100,
+      });
+
+      expect(result.totalItems).toBe(0);
+      expect(result.items).toEqual([]);
+    });
+
+    it('returns multiple districts when administration is assigned to multiple districts', async () => {
+      // Create an administration assigned to both districts
+      const multiDistrictAdmin = await AdministrationFactory.create({
+        name: 'Multi-District Admin',
+        createdBy: baseFixture.districtAdmin.id,
+      });
+      await AdministrationOrgFactory.create({
+        administrationId: multiDistrictAdmin.id,
+        orgId: baseFixture.district.id,
+      });
+      await AdministrationOrgFactory.create({
+        administrationId: multiDistrictAdmin.id,
+        orgId: baseFixture.districtB.id,
+      });
+
+      const result = await repository.getDistrictsByAdministrationId(multiDistrictAdmin.id, {
+        page: 1,
+        perPage: 100,
+        orderBy: { field: 'name', direction: 'asc' },
+      });
+
+      expect(result.totalItems).toBe(2);
+      expect(result.items).toHaveLength(2);
+
+      const districtIds = result.items.map((d) => d.id);
+      expect(districtIds).toContain(baseFixture.district.id);
+      expect(districtIds).toContain(baseFixture.districtB.id);
+    });
+
+    it('respects pagination', async () => {
+      // Create an administration assigned to both districts
+      const paginatedAdmin = await AdministrationFactory.create({
+        name: 'Paginated Admin',
+        createdBy: baseFixture.districtAdmin.id,
+      });
+      await AdministrationOrgFactory.create({
+        administrationId: paginatedAdmin.id,
+        orgId: baseFixture.district.id,
+      });
+      await AdministrationOrgFactory.create({
+        administrationId: paginatedAdmin.id,
+        orgId: baseFixture.districtB.id,
+      });
+
+      // Get first page
+      const page1 = await repository.getDistrictsByAdministrationId(paginatedAdmin.id, {
+        page: 1,
+        perPage: 1,
+        orderBy: { field: 'name', direction: 'asc' },
+      });
+
+      expect(page1.totalItems).toBe(2);
+      expect(page1.items).toHaveLength(1);
+
+      // Get second page
+      const page2 = await repository.getDistrictsByAdministrationId(paginatedAdmin.id, {
+        page: 2,
+        perPage: 1,
+        orderBy: { field: 'name', direction: 'asc' },
+      });
+
+      expect(page2.totalItems).toBe(2);
+      expect(page2.items).toHaveLength(1);
+
+      // Pages should have different items
+      expect(page1.items[0]!.id).not.toBe(page2.items[0]!.id);
+    });
+
+    it('sorts by name ascending by default', async () => {
+      // Create an administration assigned to both districts
+      const sortTestAdmin = await AdministrationFactory.create({
+        name: 'Sort Test Admin',
+        createdBy: baseFixture.districtAdmin.id,
+      });
+      await AdministrationOrgFactory.create({
+        administrationId: sortTestAdmin.id,
+        orgId: baseFixture.district.id,
+      });
+      await AdministrationOrgFactory.create({
+        administrationId: sortTestAdmin.id,
+        orgId: baseFixture.districtB.id,
+      });
+
+      const result = await repository.getDistrictsByAdministrationId(sortTestAdmin.id, {
+        page: 1,
+        perPage: 100,
+        orderBy: { field: 'name', direction: 'asc' },
+      });
+
+      expect(result.items.length).toBe(2);
+      // Verify ascending order
+      expect(result.items[0]!.name.toLowerCase() <= result.items[1]!.name.toLowerCase()).toBe(true);
+    });
+
+    it('supports descending sort order', async () => {
+      // Create an administration assigned to both districts
+      const descSortAdmin = await AdministrationFactory.create({
+        name: 'Desc Sort Admin',
+        createdBy: baseFixture.districtAdmin.id,
+      });
+      await AdministrationOrgFactory.create({
+        administrationId: descSortAdmin.id,
+        orgId: baseFixture.district.id,
+      });
+      await AdministrationOrgFactory.create({
+        administrationId: descSortAdmin.id,
+        orgId: baseFixture.districtB.id,
+      });
+
+      const result = await repository.getDistrictsByAdministrationId(descSortAdmin.id, {
+        page: 1,
+        perPage: 100,
+        orderBy: { field: 'name', direction: 'desc' },
+      });
+
+      expect(result.items.length).toBe(2);
+      // Verify descending order
+      expect(result.items[0]!.name.toLowerCase() >= result.items[1]!.name.toLowerCase()).toBe(true);
+    });
+
+    it('returns empty for non-existent administration ID', async () => {
+      const result = await repository.getDistrictsByAdministrationId('00000000-0000-0000-0000-000000000000', {
+        page: 1,
+        perPage: 100,
+      });
+
+      expect(result.totalItems).toBe(0);
+      expect(result.items).toEqual([]);
+    });
+  });
 });

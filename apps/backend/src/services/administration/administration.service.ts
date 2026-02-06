@@ -1,14 +1,16 @@
 import {
   AdministrationEmbedOption,
   AdministrationSortField,
+  DistrictSortField,
   ADMINISTRATION_STATUS_VALUES,
   type PaginatedResult,
   type AdministrationStats,
   type ADMINISTRATION_EMBED_OPTIONS,
   type AdministrationStatus,
+  type DISTRICT_SORT_FIELDS,
 } from '@roar-dashboard/api-contract';
 import { StatusCodes } from 'http-status-codes';
-import type { Administration } from '../../db/schema';
+import type { Administration, Org } from '../../db/schema';
 import { Permissions } from '../../constants/permissions';
 import { rolesForPermission } from '../../constants/role-permissions';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
@@ -62,6 +64,28 @@ interface AuthContext {
 export interface ListOptions extends AdministrationQueryOptions {
   embed?: AdministrationEmbedOptionType[];
   status?: AdministrationStatus;
+}
+
+/**
+ * Sort field type for districts.
+ */
+type DistrictSortFieldType = (typeof DISTRICT_SORT_FIELDS)[number];
+
+/**
+ * Maps API sort field names to database column names for districts.
+ */
+const DISTRICT_SORT_FIELD_TO_COLUMN: Record<DistrictSortFieldType, string> = {
+  [DistrictSortField.NAME]: 'name',
+};
+
+/**
+ * Options for listing districts of an administration.
+ */
+export interface ListDistrictsOptions {
+  page: number;
+  perPage: number;
+  sortBy: DistrictSortFieldType;
+  sortOrder: 'asc' | 'desc';
 }
 
 /**
@@ -172,6 +196,7 @@ export function AdministrationService({
     const { userId, isSuperAdmin } = authContext;
 
     // Validate status parameter (defense in depth - API contract also validates)
+    // @TODO: Remove
     if (options.status && !ADMINISTRATION_STATUS_VALUES.includes(options.status)) {
       throw new ApiError('Invalid status filter', {
         statusCode: StatusCodes.BAD_REQUEST,
@@ -319,5 +344,78 @@ export function AdministrationService({
     }
   }
 
-  return { list, getById };
+  /**
+   * List districts assigned to an administration with access control.
+   *
+   * Super admin users can access any administration's districts.
+   * Other users can only access districts for administrations they have access to.
+   *
+   * @param authContext - User's auth context (id and type)
+   * @param administrationId - The administration ID to get districts for
+   * @param options - Pagination and sorting options
+   * @returns Paginated result with districts
+   * @throws {ApiError} NOT_FOUND if administration doesn't exist
+   * @throws {ApiError} FORBIDDEN if user lacks access to the administration
+   * @throws {ApiError} INTERNAL_SERVER_ERROR if the database query fails
+   */
+  async function listDistricts(
+    authContext: AuthContext,
+    administrationId: string,
+    options: ListDistrictsOptions,
+  ): Promise<PaginatedResult<Org>> {
+    const { userId, isSuperAdmin } = authContext;
+
+    try {
+      // First verify the administration exists and user has access
+      // This reuses the existing getById logic for access control
+      const administration = await administrationRepository.getById({ id: administrationId });
+
+      if (!administration) {
+        throw new ApiError('Administration not found', {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: { userId, administrationId },
+        });
+      }
+
+      // Check access for non-super admin users
+      if (!isSuperAdmin) {
+        const allowedRoles = rolesForPermission(Permissions.Administrations.READ);
+        const authorized = await administrationRepository.getAuthorized({ userId, allowedRoles }, administrationId);
+
+        if (!authorized) {
+          throw new ApiError('You do not have permission to access this administration', {
+            statusCode: StatusCodes.FORBIDDEN,
+            code: ApiErrorCode.AUTH_FORBIDDEN,
+            context: { userId, administrationId },
+          });
+        }
+      }
+
+      // Fetch districts for the administration
+      const queryParams = {
+        page: options.page,
+        perPage: options.perPage,
+        orderBy: {
+          field: DISTRICT_SORT_FIELD_TO_COLUMN[options.sortBy],
+          direction: options.sortOrder,
+        },
+      };
+
+      return await administrationRepository.getDistrictsByAdministrationId(administrationId, queryParams);
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error({ err: error, context: { userId, administrationId } }, 'Failed to list administration districts');
+
+      throw new ApiError('Failed to retrieve administration districts', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, administrationId },
+        cause: error,
+      });
+    }
+  }
+
+  return { list, getById, listDistricts };
 }
