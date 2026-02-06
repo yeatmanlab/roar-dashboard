@@ -24,6 +24,7 @@ export const AdministrationsContract = c.router(
       responses: {
         200: SuccessEnvelopeSchema(AdministrationsListResponseSchema),
         401: ErrorEnvelopeSchema,
+        500: ErrorEnvelopeSchema,
       },
       strictStatusCodes: true,
       summary: 'List administrations',
@@ -41,6 +42,7 @@ export const AdministrationsContract = c.router(
         401: ErrorEnvelopeSchema,
         403: ErrorEnvelopeSchema,
         404: ErrorEnvelopeSchema,
+        500: ErrorEnvelopeSchema,
       },
       strictStatusCodes: true,
       summary: 'Get administration by ID',
@@ -59,6 +61,7 @@ export const AdministrationsContract = c.router(
         401: ErrorEnvelopeSchema,
         403: ErrorEnvelopeSchema,
         404: ErrorEnvelopeSchema,
+        500: ErrorEnvelopeSchema,
       },
       strictStatusCodes: true,
       summary: 'List districts assigned to an administration',

@@ -140,7 +140,11 @@ export const AdministrationsController = {
       };
     } catch (error) {
       if (error instanceof ApiError) {
-        return toErrorResponse(error, [StatusCodes.NOT_FOUND, StatusCodes.FORBIDDEN]);
+        return toErrorResponse(error, [
+          StatusCodes.NOT_FOUND,
+          StatusCodes.FORBIDDEN,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        ]);
       }
       throw error;
     }
@@ -156,36 +160,43 @@ export const AdministrationsController = {
    * @param query - Query parameters (pagination, sorting, status filter, embed options)
    */
   list: async (authContext: AuthContext, query: AdministrationsListQuery) => {
-    const { page, perPage, sortBy, sortOrder, embed, status } = query;
+    try {
+      const { page, perPage, sortBy, sortOrder, embed, status } = query;
 
-    const result = await administrationService.list(authContext, {
-      page,
-      perPage,
-      sortBy,
-      sortOrder,
-      embed,
-      ...(status && { status }),
-    });
+      const result = await administrationService.list(authContext, {
+        page,
+        perPage,
+        sortBy,
+        sortOrder,
+        embed,
+        ...(status && { status }),
+      });
 
-    // Transform to API response format
-    const items = result.items.map(transformAdministration);
+      // Transform to API response format
+      const items = result.items.map(transformAdministration);
 
-    const totalPages = Math.ceil(result.totalItems / perPage);
+      const totalPages = Math.ceil(result.totalItems / perPage);
 
-    return {
-      status: StatusCodes.OK as const,
-      body: {
-        data: {
-          items,
-          pagination: {
-            page,
-            perPage,
-            totalItems: result.totalItems,
-            totalPages,
+      return {
+        status: StatusCodes.OK as const,
+        body: {
+          data: {
+            items,
+            pagination: {
+              page,
+              perPage,
+              totalItems: result.totalItems,
+              totalPages,
+            },
           },
         },
-      },
-    };
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [StatusCodes.INTERNAL_SERVER_ERROR]);
+      }
+      throw error;
+    }
   },
 
   /**
@@ -234,7 +245,11 @@ export const AdministrationsController = {
       };
     } catch (error) {
       if (error instanceof ApiError) {
-        return toErrorResponse(error, [StatusCodes.NOT_FOUND, StatusCodes.FORBIDDEN]);
+        return toErrorResponse(error, [
+          StatusCodes.NOT_FOUND,
+          StatusCodes.FORBIDDEN,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        ]);
       }
       throw error;
     }
