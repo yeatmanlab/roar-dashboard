@@ -17,15 +17,15 @@ export const USER_ROLE_VALUES = [
   'system_administrator',
   'teacher',
 ] as const;
-export const UserRole = z.enum(USER_ROLE_VALUES);
+export const UserRoleSchema = z.enum(USER_ROLE_VALUES);
 
-export const UserAuthProviderSchema = z.array(
-  z.enum(['password', 'google', 'oidc.clever', 'oidc.classlink', 'oidc.nycps']),
-);
+export const USER_AUTH_PROVIDER_VALUES = ['password', 'google', 'oidc.clever', 'oidc.classlink', 'oidc.nycps'] as const;
+export const UserAuthProviderSchema = z.array(z.enum(USER_AUTH_PROVIDER_VALUES));
 
-export const UserStatusFrlSchema = z.enum(['Free', 'Reduced', 'Paid']);
+export const USER_STATUS_FRL_VALUES = ['Free', 'Reduced', 'Paid'] as const;
+export const UserStatusFrlSchema = z.enum(USER_STATUS_FRL_VALUES);
 
-export const UserGradeSchema = z.enum([
+export const USER_GRADE_VALUES = [
   '1',
   '2',
   '3',
@@ -47,9 +47,11 @@ export const UserGradeSchema = z.enum([
   'PostGraduate',
   'Ungraded',
   'Other',
-]);
+] as const;
+export const UserGradeSchema = z.enum(USER_GRADE_VALUES);
 
-export const UserSchoolLevelSchema = z.enum(['early_childhood', 'elementary', 'middle', 'high', 'postsecondary']);
+export const USER_SCHOOL_LEVEL_VALUES = ['early_childhood', 'elementary', 'middle', 'high', 'postsecondary'] as const;
+export const UserSchoolLevelSchema = z.enum(USER_SCHOOL_LEVEL_VALUES);
 
 // Extracted out for clarity (PII), based on run demographics table
 export const UserDemographicSchema = z.object({
@@ -95,7 +97,7 @@ export const UsersQuerySchema = PaginationQuerySchema.merge(
   createSortQuerySchema(USERS_SORT_FIELDS, 'name.last'),
 ).extend({
   active: z.boolean().default(true),
-  role: UserRole.optional(),
+  role: UserRoleSchema.optional(),
   userType: UserTypeSchema.optional(),
   grade: UserGradeSchema.optional(),
 });
