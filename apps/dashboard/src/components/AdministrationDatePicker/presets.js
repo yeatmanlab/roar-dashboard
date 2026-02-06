@@ -12,15 +12,24 @@ function createUTCDate(year, month, day) {
 }
 
 /**
- * Creates an object containing the date presets.
- * Dates will be in UTC, and will be set for the following year if the current date is past the end of the preset.
+ * Creates an object containing the administration date presets (Spring/Summer/Fall/Winter).
  *
- * @returns {Object} An object containing the date presets.
+ * Dates are generated in UTC. Winter is anchored to the “current winter administration”:
+ * - If today is in Jan/Feb/Mar, Winter started Dec 1 of the previous year.
+ * - Otherwise, Winter starts Dec 1 of the current year.
+ *
+ * This avoids incorrectly selecting the *next* winter at the start of a new calendar year.
+ *
+ * @returns {Object} An object containing the date presets keyed by season.
  */
-export function generateDatePresets() {
-  const now = new Date();
-  const currentYear = now.getFullYear();
 
+export function generateDatePresets(referenceDate = new Date()) {
+  const now = referenceDate;
+  const currentYear = now.getUTCFullYear();
+  const currentMonth = now.getUTCMonth();
+
+  // If we’re in Jan/Feb/Mar, the “current winter” started last year.
+  const winterStartYear = currentMonth <= 2 ? currentYear - 1 : currentYear;
   // Create initial presets
   const presets = [
     {
@@ -38,8 +47,8 @@ export function generateDatePresets() {
     {
       key: 'winter',
       label: 'Winter',
-      start: createUTCDate(currentYear, 11, 1), // December 1st
-      end: createUTCDate(currentYear + 1, 3, 1), // April 1st
+      start: createUTCDate(winterStartYear, 11, 1), // December 1st
+      end: createUTCDate(winterStartYear + 1, 3, 1), // April 1st
     },
     {
       key: 'spring',
@@ -48,18 +57,6 @@ export function generateDatePresets() {
       end: createUTCDate(currentYear, 5, 16), // June 16th
     },
   ];
-
-  // Determine which presets are in the past, move them to next year
-  presets.forEach((preset) => {
-    if (now > preset.end) {
-      preset.start = createUTCDate(
-        preset.start.getUTCFullYear() + 1,
-        preset.start.getUTCMonth(),
-        preset.start.getUTCDate(),
-      );
-      preset.end = createUTCDate(preset.end.getUTCFullYear() + 1, preset.end.getUTCMonth(), preset.end.getUTCDate());
-    }
-  });
 
   // Sort by start date
   presets.sort((a, b) => a.start - b.start);
