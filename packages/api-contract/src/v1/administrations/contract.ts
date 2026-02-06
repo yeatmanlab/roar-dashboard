@@ -1,6 +1,12 @@
 import { initContract } from '@ts-rest/core';
 import { z } from 'zod';
-import { AdministrationBaseSchema, AdministrationsListQuerySchema, AdministrationsListResponseSchema } from './schema';
+import {
+  AdministrationBaseSchema,
+  AdministrationsListQuerySchema,
+  AdministrationsListResponseSchema,
+  AdministrationDistrictsListQuerySchema,
+  AdministrationDistrictsListResponseSchema,
+} from './schema';
 import { ErrorEnvelopeSchema, SuccessEnvelopeSchema } from '../response';
 
 const c = initContract();
@@ -40,6 +46,24 @@ export const AdministrationsContract = c.router(
       summary: 'Get administration by ID',
       description:
         'Returns a single administration by ID. ' +
+        'Returns 403 if the user lacks permission to access the administration. ' +
+        'Returns 404 if the administration does not exist.',
+    },
+    listDistricts: {
+      method: 'GET',
+      path: '/:id/districts',
+      pathParams: z.object({ id: z.string().uuid() }),
+      query: AdministrationDistrictsListQuerySchema,
+      responses: {
+        200: SuccessEnvelopeSchema(AdministrationDistrictsListResponseSchema),
+        401: ErrorEnvelopeSchema,
+        403: ErrorEnvelopeSchema,
+        404: ErrorEnvelopeSchema,
+      },
+      strictStatusCodes: true,
+      summary: 'List districts assigned to an administration',
+      description:
+        'Returns a paginated list of districts assigned to the specified administration. ' +
         'Returns 403 if the user lacks permission to access the administration. ' +
         'Returns 404 if the administration does not exist.',
     },

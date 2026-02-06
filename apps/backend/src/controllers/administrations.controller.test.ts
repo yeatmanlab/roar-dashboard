@@ -4,8 +4,10 @@ import {
   AdministrationFactory,
   AdministrationWithEmbedsFactory,
 } from '../test-support/factories/administration.factory';
+import { OrgFactory } from '../test-support/factories/org.factory';
 import { ApiError } from '../errors/api-error';
 import { ApiErrorCode } from '../enums/api-error-code.enum';
+import { OrgType } from '../enums/org-type.enum';
 
 // Mock the AdministrationService module
 vi.mock('../services/administration/administration.service', () => ({
@@ -17,6 +19,7 @@ import { AdministrationService } from '../services/administration/administration
 describe('AdministrationsController', () => {
   const mockList = vi.fn();
   const mockGet = vi.fn();
+  const mockListDistricts = vi.fn();
   const mockAuthContext = { userId: 'user-123', isSuperAdmin: false };
 
   beforeEach(() => {
@@ -26,6 +29,7 @@ describe('AdministrationsController', () => {
     vi.mocked(AdministrationService).mockReturnValue({
       list: mockList,
       getById: mockGet,
+      listDistricts: mockListDistricts,
     });
   });
 
@@ -346,6 +350,238 @@ describe('AdministrationsController', () => {
       const { AdministrationsController: Controller } = await import('./administrations.controller');
 
       await expect(Controller.get(mockAuthContext, 'admin-123')).rejects.toThrow('Database connection lost');
+    });
+  });
+
+  describe('listDistricts', () => {
+    it('should return paginated districts with 200 status', async () => {
+      const mockDistricts = [
+        OrgFactory.build({ orgType: OrgType.DISTRICT }),
+        OrgFactory.build({ orgType: OrgType.DISTRICT }),
+      ];
+      mockListDistricts.mockResolvedValue({
+        items: mockDistricts,
+        totalItems: 2,
+      });
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      const result = await Controller.listDistricts(mockAuthContext, 'admin-123', {
+        page: 1,
+        perPage: 25,
+        sortBy: 'name',
+        sortOrder: 'asc',
+      });
+
+      expect(result.status).toBe(StatusCodes.OK);
+      if (result.status !== StatusCodes.OK) throw new Error('Expected OK status');
+      expect(result.body.data.items).toHaveLength(2);
+      expect(result.body.data.pagination).toEqual({
+        page: 1,
+        perPage: 25,
+        totalItems: 2,
+        totalPages: 1,
+      });
+    });
+
+    it('should transform district fields to API response format', async () => {
+      const mockDistrict = OrgFactory.build({
+        id: 'district-uuid-123',
+        name: 'Test District',
+        abbreviation: 'TD',
+        orgType: OrgType.DISTRICT,
+        locationAddressLine1: '123 Main St',
+        locationAddressLine2: 'Suite 100',
+        locationCity: 'Springfield',
+        locationStateProvince: 'IL',
+        locationPostalCode: '62701',
+        locationCountry: 'US',
+        locationLatLong: [-89.6501, 39.7817], // [longitude, latitude]
+      });
+      mockListDistricts.mockResolvedValue({
+        items: [mockDistrict],
+        totalItems: 1,
+      });
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      const result = await Controller.listDistricts(mockAuthContext, 'admin-123', {
+        page: 1,
+        perPage: 25,
+        sortBy: 'name',
+        sortOrder: 'asc',
+      });
+
+      expect(result.status).toBe(StatusCodes.OK);
+      if (result.status !== StatusCodes.OK) throw new Error('Expected OK status');
+      const item = result.body.data.items[0]!;
+      expect(item.id).toBe('district-uuid-123');
+      expect(item.name).toBe('Test District');
+      expect(item.abbreviation).toBe('TD');
+      expect(item.location).toEqual({
+        addressLine1: '123 Main St',
+        addressLine2: 'Suite 100',
+        city: 'Springfield',
+        stateProvince: 'IL',
+        postalCode: '62701',
+        country: 'US',
+        latLong: {
+          type: 'Point',
+          coordinates: [-89.6501, 39.7817],
+        },
+      });
+    });
+
+    it('should handle null location fields', async () => {
+      const mockDistrict = OrgFactory.build({
+        id: 'district-uuid-456',
+        name: 'Minimal District',
+        abbreviation: 'MD',
+        orgType: OrgType.DISTRICT,
+        locationAddressLine1: null,
+        locationAddressLine2: null,
+        locationCity: null,
+        locationStateProvince: null,
+        locationPostalCode: null,
+        locationCountry: null,
+        locationLatLong: null,
+      });
+      mockListDistricts.mockResolvedValue({
+        items: [mockDistrict],
+        totalItems: 1,
+      });
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      const result = await Controller.listDistricts(mockAuthContext, 'admin-123', {
+        page: 1,
+        perPage: 25,
+        sortBy: 'name',
+        sortOrder: 'asc',
+      });
+
+      expect(result.status).toBe(StatusCodes.OK);
+      if (result.status !== StatusCodes.OK) throw new Error('Expected OK status');
+      const item = result.body.data.items[0]!;
+      expect(item.location).toEqual({
+        addressLine1: null,
+        addressLine2: null,
+        city: null,
+        stateProvince: null,
+        postalCode: null,
+        country: null,
+        latLong: null,
+      });
+    });
+
+    it('should return 404 when administration does not exist', async () => {
+      mockListDistricts.mockRejectedValue(
+        new ApiError('Administration not found', {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+        }),
+      );
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      const result = await Controller.listDistricts(mockAuthContext, 'non-existent-id', {
+        page: 1,
+        perPage: 25,
+        sortBy: 'name',
+        sortOrder: 'asc',
+      });
+
+      expect(result.status).toBe(StatusCodes.NOT_FOUND);
+      expect(result.body).toEqual({
+        error: {
+          message: 'Administration not found',
+          code: 'resource/not-found',
+          traceId: expect.any(String),
+        },
+      });
+    });
+
+    it('should return 403 when user lacks permission to access administration', async () => {
+      mockListDistricts.mockRejectedValue(
+        new ApiError('You do not have permission to access this administration', {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        }),
+      );
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      const result = await Controller.listDistricts(mockAuthContext, 'admin-123', {
+        page: 1,
+        perPage: 25,
+        sortBy: 'name',
+        sortOrder: 'asc',
+      });
+
+      expect(result.status).toBe(StatusCodes.FORBIDDEN);
+      expect(result.body).toEqual({
+        error: {
+          message: 'You do not have permission to access this administration',
+          code: 'auth/forbidden',
+          traceId: expect.any(String),
+        },
+      });
+    });
+
+    it('should pass auth context, administration ID, and query parameters to service', async () => {
+      mockListDistricts.mockResolvedValue({ items: [], totalItems: 0 });
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      const authContext = { userId: 'user-456', isSuperAdmin: true };
+      await Controller.listDistricts(authContext, 'admin-123', {
+        page: 2,
+        perPage: 10,
+        sortBy: 'name',
+        sortOrder: 'desc',
+      });
+
+      expect(mockListDistricts).toHaveBeenCalledWith(authContext, 'admin-123', {
+        page: 2,
+        perPage: 10,
+        sortBy: 'name',
+        sortOrder: 'desc',
+      });
+    });
+
+    it('should return empty items array when no districts found', async () => {
+      mockListDistricts.mockResolvedValue({ items: [], totalItems: 0 });
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      const result = await Controller.listDistricts(mockAuthContext, 'admin-123', {
+        page: 1,
+        perPage: 25,
+        sortBy: 'name',
+        sortOrder: 'asc',
+      });
+
+      expect(result.status).toBe(StatusCodes.OK);
+      if (result.status !== StatusCodes.OK) throw new Error('Expected OK status');
+      expect(result.body.data.items).toEqual([]);
+      expect(result.body.data.pagination.totalItems).toBe(0);
+      expect(result.body.data.pagination.totalPages).toBe(0);
+    });
+
+    it('should re-throw non-ApiError exceptions', async () => {
+      const unexpectedError = new Error('Database connection lost');
+      mockListDistricts.mockRejectedValue(unexpectedError);
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      await expect(
+        Controller.listDistricts(mockAuthContext, 'admin-123', {
+          page: 1,
+          perPage: 25,
+          sortBy: 'name',
+          sortOrder: 'asc',
+        }),
+      ).rejects.toThrow('Database connection lost');
     });
   });
 });
