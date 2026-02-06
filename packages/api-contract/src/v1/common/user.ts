@@ -102,5 +102,5 @@ export const UsersQuerySchema = PaginationQuerySchema.merge(
 
 export type UsersQuery = z.infer<typeof UsersQuerySchema>;
 
-export const UsersResponseSchema = createPaginatedResponseSchema(UserBaseSchema);
+export const UsersResponseSchema = createPaginatedResponseSchema(UserSchema);
 export type UsersResponse = z.infer<typeof UsersResponseSchema>;
