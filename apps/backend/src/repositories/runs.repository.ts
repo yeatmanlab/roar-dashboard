@@ -27,12 +27,24 @@ export class RunsRepository extends BaseRepository<Run, typeof runs> {
 
   /**
    * Get run stats (started, completed counts) for multiple administrations.
+   *
+   * - started: Count of distinct users who have at least one run
+   * - completed: Count of distinct users who have at least one completed run
+   *
+   * Returns a Map where keys are administration IDs and values are the stats.
+   * Administrations with no runs will not appear in the map.
+   *
+   * @param administrationIds - Array of administration IDs to get stats for
+   * @returns Map of administration ID to run stats
    */
   async getRunStatsByAdministrationIds(administrationIds: string[]): Promise<Map<string, AdministrationRunStats>> {
     if (administrationIds.length === 0) {
       return new Map();
     }
 
+    // Count distinct users per administration:
+    // - started: users with any run record
+    // - completed: users with at least one run where completedAt is not null
     const result = await this.assessmentDb
       .select({
         administrationId: runs.administrationId,

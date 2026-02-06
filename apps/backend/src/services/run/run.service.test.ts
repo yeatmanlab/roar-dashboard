@@ -81,15 +81,13 @@ describe('RunService', () => {
         task_version: '1.0.0',
       };
 
-      try {
+      await expect(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await runService.create(mockAuthContext, bodyWithoutAdmin as any);
-      } catch (error) {
-        if (error instanceof ApiError) {
-          expect(error.statusCode).toBe(StatusCodes.BAD_REQUEST);
-          expect(error.code).toBe(ApiErrorCode.REQUEST_VALIDATION_FAILED);
-        }
-      }
+        runService.create(mockAuthContext, bodyWithoutAdmin as any),
+      ).rejects.toMatchObject({
+        statusCode: StatusCodes.BAD_REQUEST,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+      });
     });
 
     it('should include metadata in run creation when provided', async () => {
@@ -124,16 +122,11 @@ describe('RunService', () => {
         task_version: '1.0.0',
       };
 
-      await expect(runService.create(mockAuthContext, invalidBody)).rejects.toThrow(ApiError);
-
-      try {
-        await runService.create(mockAuthContext, invalidBody);
-      } catch (error) {
-        if (error instanceof ApiError) {
-          expect(error.statusCode).toBe(StatusCodes.BAD_REQUEST);
-          expect(error.code).toBe(ApiErrorCode.REQUEST_VALIDATION_FAILED);
-        }
-      }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await expect(runService.create(mockAuthContext, invalidBody as any)).rejects.toMatchObject({
+        statusCode: StatusCodes.BAD_REQUEST,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+      });
     });
 
     it('should throw BAD_REQUEST when task_version is missing', async () => {
@@ -141,14 +134,11 @@ describe('RunService', () => {
         task_variant_id: '550e8400-e29b-41d4-a716-446655440000',
       };
 
-      try {
-        await runService.create(mockAuthContext, invalidBody);
-      } catch (error) {
-        if (error instanceof ApiError) {
-          expect(error.statusCode).toBe(StatusCodes.BAD_REQUEST);
-          expect(error.code).toBe(ApiErrorCode.REQUEST_VALIDATION_FAILED);
-        }
-      }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await expect(runService.create(mockAuthContext, invalidBody as any)).rejects.toMatchObject({
+        statusCode: StatusCodes.BAD_REQUEST,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+      });
     });
 
     it('should throw INTERNAL_SERVER_ERROR when taskService is not configured', async () => {
