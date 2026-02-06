@@ -83,16 +83,16 @@ export const UserSchema = UserBaseSchema.merge(MeSchema) // Includes id, nameFir
   .merge(UserDemographicSchema);
 
 // TODO: which fields to sort?
-export const USER_SORT_FIELDS = ['name.last', 'username', 'grade', 'enrollmentStart'] as const;
-export const UserSortFields = {
+export const USERS_SORT_FIELDS = ['name.last', 'username', 'grade', 'enrollmentStart'] as const;
+export const UsersSortFields = {
   NAME_LAST: 'name.last',
   USERNAME: 'username',
   GRADE: 'grade',
   ENROLLMENT_START: 'enrollmentStart',
-} as const satisfies Record<string, (typeof USER_SORT_FIELDS)[number]>;
+} as const satisfies Record<string, (typeof USERS_SORT_FIELDS)[number]>;
 
 export const UsersQuerySchema = PaginationQuerySchema.merge(
-  createSortQuerySchema(USER_SORT_FIELDS, 'name.last'),
+  createSortQuerySchema(USERS_SORT_FIELDS, 'name.last'),
 ).extend({
   active: z.boolean().default(true),
   role: UserRole.optional(),
