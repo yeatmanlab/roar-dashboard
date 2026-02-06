@@ -1,7 +1,7 @@
 import { Factory } from 'fishery';
 import { faker } from '@faker-js/faker';
 import type { User, NewUser } from '../../db/schema';
-import type { AuthContext } from '../../services/auth/auth.types';
+import type { AuthContext } from '../../types/auth-context';
 import { CoreDbClient } from '../../db/clients';
 import { users } from '../../db/schema/core';
 import { AuthProvider } from '../../enums/auth-provider.enum';
@@ -87,6 +87,6 @@ export const UserFactory = Factory.define<User>(({ onCreate }) => {
  * Factory for creating AuthContext test objects.
  */
 export const AuthContextFactory = Factory.define<AuthContext>(() => ({
-  id: faker.string.uuid(),
+  userId: faker.string.uuid(),
   isSuperAdmin: faker.datatype.boolean(),
 }));

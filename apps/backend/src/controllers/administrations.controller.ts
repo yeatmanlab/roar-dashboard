@@ -15,13 +15,9 @@ import type {
 import type { Administration, Org } from '../db/schema';
 import { ApiError } from '../errors/api-error';
 import { toErrorResponse } from '../utils/to-error-response.util';
+import type { AuthContext } from '../types/auth-context';
 
 const administrationService = AdministrationService();
-
-interface AuthContext {
-  userId: string;
-  isSuperAdmin: boolean;
-}
 
 /**
  * Maps a database Administration entity to the base API schema.
