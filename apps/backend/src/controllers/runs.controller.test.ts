@@ -10,6 +10,10 @@ import { describe, it, expect } from 'vitest';
  * For comprehensive testing of the business logic, see:
  * - run.service.test.ts for create endpoint logic
  * - run-events.service.test.ts for event endpoint logic
+ *
+ * The controller handles HTTP concerns and delegates business logic to services:
+ * - create: POST /runs - Creates a new run
+ * - event: POST /runs/:runId/event - Handles run events (complete, abort)
  */
 describe('RunsController', () => {
   it('should export RunsController with create and event methods', async () => {

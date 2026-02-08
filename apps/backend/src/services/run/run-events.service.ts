@@ -56,6 +56,43 @@ export function RunEventsService({
   }
 
   /**
+   * Marks a run as aborted.
+   *
+   * Validates the event type, verifies user ownership, and updates the run's
+   * abort status with an optional reason. Currently only supports 'abort' event type.
+   *
+   * @param authContext - Authentication context with userId and isSuperAdmin
+   * @param runId - UUID of the run to abort
+   * @param body - Event body containing type and optional reason
+   * @throws ApiError with BAD_REQUEST (400) if event type is invalid
+   * @throws ApiError with NOT_FOUND (404) if run doesn't exist
+   * @throws ApiError with FORBIDDEN (403) if user doesn't own the run
+   * @throws ApiError with INTERNAL_SERVER_ERROR (500) if database update fails
+   */
+  async function abortRun(authContext: AuthContext, runId: string, body: RunEventBody): Promise<void> {
+    if (body.type !== 'abort') {
+      throw new ApiError('Invalid event type', {
+        statusCode: StatusCodes.BAD_REQUEST,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        context: { runId, type: (body as any).type },
+      });
+    }
+    await assertRunOwnedByUser(runId, authContext.userId);
+
+    const now = new Date();
+
+    await runsRepository.update({
+      id: runId,
+      data: {
+        updatedAt: now,
+        abortReason: body.reason ?? null,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any,
+    });
+  }
+
+  /**
    * Marks a run as complete.
    *
    * Validates the event type, verifies user ownership, and updates the run's
@@ -95,5 +132,5 @@ export function RunEventsService({
     });
   }
 
-  return { completeRun };
+  return { completeRun, abortRun };
 }
