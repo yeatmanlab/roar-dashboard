@@ -20,3 +20,22 @@ export const StartRunResponseSchema = z.object({
 });
 
 export type StartRunResponse = z.infer<typeof StartRunResponseSchema>;
+
+/**
+ * Schema for a run completion event.
+ *
+ * Represents an event that marks a run as complete.
+ * - type: Must be 'complete' (literal type for discriminated union)
+ * - metadata: Optional metadata about the completion (e.g., final score, session info)
+ */
+export const RunCompleteEventSchema = z.object({
+  type: z.literal('complete'),
+  metadata: z.record(z.unknown()).optional(),
+});
+
+/**
+ * Discriminated union schema for run events.
+ */
+export const RunEventBodySchema = z.discriminatedUnion('type', [RunCompleteEventSchema]);
+
+export type RunEventBody = z.infer<typeof RunEventBodySchema>;
