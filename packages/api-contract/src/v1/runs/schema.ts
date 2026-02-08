@@ -73,6 +73,19 @@ export const RunTrialEventSchema = z.object({
     .passthrough(), // allow app-specific
   interactions: z.array(RunTrialInteractionSchema).optional(),
 });
+/**
+ * Schema for a run engagement event.
+ *
+ * Represents an event that marks a run engagement.
+ * - type: Must be 'engagement' (literal type for discriminated union)
+ * - engagement_flags: Engagement flags
+ * - reliable_run: Whether the engagement is reliable
+ */
+export const RunEngagementEventSchema = z.object({
+  type: z.literal('engagement'),
+  engagement_flags: z.record(z.boolean()),
+  reliable_run: z.boolean(),
+});
 
 /**
  * Discriminated union schema for run events.
@@ -81,6 +94,7 @@ export const RunEventBodySchema = z.discriminatedUnion('type', [
   RunCompleteEventSchema,
   RunAbortEventSchema,
   RunTrialEventSchema,
+  RunEngagementEventSchema,
 ]);
 
 export type RunEventBody = z.infer<typeof RunEventBodySchema>;

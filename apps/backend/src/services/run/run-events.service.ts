@@ -10,6 +10,14 @@ interface AuthContext {
   isSuperAdmin: boolean;
 }
 
+const ALLOWED_ENGAGEMENT_FLAGS = new Set<string>([
+  // Emily: check with the team
+  'incomplete',
+  'response_time_too_fast',
+  'accuracy_too_low',
+  'not_enough_responses',
+]);
+
 /**
  * RunEventsService
  *
@@ -54,6 +62,65 @@ export function RunEventsService({
     }
 
     return run;
+  }
+
+  /**
+   * Updates engagement flags and reliability status for a run.
+   *
+   * Validates the event type, verifies user ownership, and validates all engagement
+   * flags against the allowed set. Updates the run with engagement flags and
+   * reliable_run status.
+   *
+   * @param authContext - Authentication context with userId and isSuperAdmin
+   * @param runId - UUID of the run to update engagement for
+   * @param body - Event body containing engagement_flags and reliable_run
+   * @throws ApiError with BAD_REQUEST (400) if event type is invalid
+   * @throws ApiError with BAD_REQUEST (400) if engagement flag value is not boolean
+   * @throws ApiError with BAD_REQUEST (400) if engagement flag name is not allowed
+   * @throws ApiError with NOT_FOUND (404) if run doesn't exist
+   * @throws ApiError with FORBIDDEN (403) if user doesn't own the run
+   * @throws ApiError with INTERNAL_SERVER_ERROR (500) if database update fails
+   */
+  async function updateEngagement(authContext: AuthContext, runId: string, body: RunEventBody): Promise<void> {
+    if (body.type !== 'engagement') {
+      throw new ApiError('Invalid event type', {
+        statusCode: StatusCodes.BAD_REQUEST,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        context: { runId, type: (body as any).type },
+      });
+    }
+
+    await assertRunOwnedByUser(runId, authContext.userId);
+
+    const flags = body.engagement_flags ?? {};
+    for (const [key, value] of Object.entries(flags)) {
+      if (typeof value !== 'boolean') {
+        throw new ApiError('Invalid engagement flag value', {
+          statusCode: StatusCodes.BAD_REQUEST,
+          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+          context: { runId, key, valueType: typeof value },
+        });
+      }
+
+      if (ALLOWED_ENGAGEMENT_FLAGS.size > 0 && !ALLOWED_ENGAGEMENT_FLAGS.has(key)) {
+        throw new ApiError('Invalid engagement flag name', {
+          statusCode: StatusCodes.BAD_REQUEST,
+          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+          context: { runId, key },
+        });
+      }
+    }
+
+    await runsRepository.update({
+      id: runId,
+      data: {
+        updatedAt: new Date(),
+        engagementFlags: flags,
+        reliableRun: body.reliable_run,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any,
+    });
   }
 
   /**
@@ -206,5 +273,5 @@ export function RunEventsService({
     });
   }
 
-  return { completeRun, abortRun, writeTrial };
+  return { completeRun, abortRun, writeTrial, updateEngagement };
 }

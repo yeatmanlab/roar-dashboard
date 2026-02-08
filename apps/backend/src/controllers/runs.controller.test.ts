@@ -13,7 +13,7 @@ import { describe, it, expect } from 'vitest';
  *
  * The controller handles HTTP concerns and delegates business logic to services:
  * - create: POST /runs - Creates a new run
- * - event: POST /runs/:runId/event - Handles run events (complete, abort, trial)
+ * - event: POST /runs/:runId/event - Handles run events (complete, abort, trial, engagement)
  */
 describe('RunsController', () => {
   it('should export RunsController with create and event methods', async () => {
