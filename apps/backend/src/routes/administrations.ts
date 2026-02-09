@@ -7,11 +7,10 @@ import { AuthGuardMiddleware } from '../middleware/auth-guard/auth-guard.middlew
 const s = initServer();
 
 /**
- * Administrations routes registration handler.
+ * Registers /administrations routes on the provided Express router.
  *
- * Registers the /administrations routes on the provided router instance.
- *
- * @param routerInstance - The router instance to register the routes on.
+ * All routes require authentication (AuthGuardMiddleware).
+ * Authorization is handled in the service/repository layer.
  */
 export function registerAdministrationsRoutes(routerInstance: Router) {
   const AdministrationsRoutes = s.router(AdministrationsContract, {
@@ -20,6 +19,12 @@ export function registerAdministrationsRoutes(routerInstance: Router) {
       middleware: [AuthGuardMiddleware],
       handler: async ({ req, query }) =>
         AdministrationsController.list({ userId: req.user!.id, isSuperAdmin: req.user!.isSuperAdmin }, query),
+    },
+    get: {
+      // @ts-expect-error - Express v4/v5 types mismatch in monorepo
+      middleware: [AuthGuardMiddleware],
+      handler: async ({ req, params }) =>
+        AdministrationsController.get({ userId: req.user!.id, isSuperAdmin: req.user!.isSuperAdmin }, params.id),
     },
   });
 

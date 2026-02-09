@@ -4,6 +4,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type { PgTable } from 'drizzle-orm/pg-core';
 import type {
   IBaseRepository,
+  BaseGetByIdParams,
   BaseGetParams,
   BaseGetAllParams,
   BaseCreateParams,
@@ -72,6 +73,15 @@ export abstract class BaseRepository<
   ) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     this.typedTable = table as PgTable & Record<string, any>;
+  }
+
+  /**
+   * Retrieves an entity by its primary key. Returns null if not found.
+   */
+  async getById(params: BaseGetByIdParams): Promise<TEntity | null> {
+    const idColumn = this.typedTable.id as Parameters<typeof eq>[0];
+    const [entity] = await this.db.select().from(this.typedTable).where(eq(idColumn, params.id)).limit(1);
+    return (entity as TEntity) ?? null;
   }
 
   /**

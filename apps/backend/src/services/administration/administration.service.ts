@@ -259,5 +259,65 @@ export function AdministrationService({
     };
   }
 
-  return { list };
+  /**
+   * Get a single administration by ID with access control.
+   *
+   * Super admin users can access any administration.
+   * Other users can only access administrations they're assigned to via org/class/group membership.
+   *
+   * @param authContext - User's auth context (id and type)
+   * @param administrationId - The administration ID to retrieve
+   * @returns The administration if found and accessible
+   * @throws {ApiError} NOT_FOUND if administration doesn't exist
+   * @throws {ApiError} FORBIDDEN if user lacks access
+   * @throws {ApiError} INTERNAL_SERVER_ERROR if the database query fails
+   */
+  async function getById(authContext: AuthContext, administrationId: string): Promise<Administration> {
+    const { userId, isSuperAdmin } = authContext;
+
+    try {
+      // Look up the administration first (unrestricted) to distinguish 404 from 403
+      const administration = await administrationRepository.getById({ id: administrationId });
+
+      if (!administration) {
+        throw new ApiError('Administration not found', {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: { userId, administrationId },
+        });
+      }
+
+      // Super admins have unrestricted access
+      if (isSuperAdmin) {
+        return administration;
+      }
+
+      // Check access for non-super admin users
+      const allowedRoles = rolesForPermission(Permissions.Administrations.READ);
+      const authorized = await administrationRepository.getAuthorized({ userId, allowedRoles }, administrationId);
+
+      if (!authorized) {
+        throw new ApiError('You do not have permission to access this administration', {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+          context: { userId, administrationId },
+        });
+      }
+
+      return authorized;
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error({ err: error, context: { userId, administrationId } }, 'Failed to get administration');
+
+      throw new ApiError('Failed to retrieve administration', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, administrationId },
+        cause: error,
+      });
+    }
+  }
+
+  return { list, getById };
 }

@@ -1,44 +1,48 @@
 {
   "$schema": "https://turborepo.com/schema.json",
   "ui": "tui",
-  "globalEnv": [
-    "NODE_ENV",
-    "MODE",
-    "CI",
+  "envMode": "strict",
+  "globalEnv": ["NODE_ENV", "MODE", "CI"],
+  "globalPassThroughEnv": [
+    "ASSESSMENT_DATABASE_URL",
+    "CORE_DATABASE_URL",
     "DOTENV_PRIVATE_KEY_TEST",
     "DOTENV_PRIVATE_KEY_DEVELOPMENT",
     "DOTENV_PRIVATE_KEY_STAGING",
     "DOTENV_PRIVATE_KEY_PRODUCTION",
     "USE_CLOUDSQL_CONNECTOR",
     "CLOUDSQL_INSTANCE_CONNECTION_NAME",
-    "CORE_DATABASE_URL",
     "CORE_DATABASE_NAME",
     "CORE_DATABASE_USER",
-    "ASSESSMENT_DATABASE_URL",
     "ASSESSMENT_DATABASE_NAME",
     "ASSESSMENT_DATABASE_USER"
   ],
-  "globalDependencies": [".env"], 
+  "globalDependencies": [".env"],
   "tasks": {
     "dev": {
       "dependsOn": ["^build"],
       "cache": false,
       "persistent": true,
-      "interruptible": true
+      "interruptible": true,
+      "passThroughEnv": [
+        "CORE_DATABASE_URL",
+        "ASSESSMENT_DATABASE_URL",
+        "GOOGLE_CLOUD_PROJECT"
+      ]
     },
     "build": {
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
       "dependsOn": ["^build"],
-      "outputs": [
-        "dist/**"
-      ]
+      "outputs": ["dist/**"]
     },
     "check-types": {
       "dependsOn": ["^check-types"]
     },
     "test": {
       "dependsOn": ["^build"],
-      "outputs": ["coverage/**"]
+      "inputs": ["$TURBO_DEFAULT$", ".env.test"],
+      "outputs": ["coverage/**"],
+      "passThroughEnv": ["CORE_DATABASE_URL", "ASSESSMENT_DATABASE_URL"]
     },
     "test:watch": {
       "outputs": ["coverage/**"]

@@ -2,6 +2,7 @@ import type { NextFunction, Request, Response } from 'express';
 import { isHttpError } from 'http-errors';
 import { StatusCodes } from 'http-status-codes';
 import { ApiError } from './errors/api-error';
+import { formatApiError } from './utils/format-api-error.util';
 import { ApiErrorCode } from './enums/api-error-code.enum';
 import { logger } from './logger';
 
@@ -17,13 +18,7 @@ import { logger } from './logger';
 export function errorHandler(err: unknown, _req: Request, res: Response, _next: NextFunction) {
   // Handle custom ApiError
   if (err instanceof ApiError) {
-    return res.status(err.statusCode).json({
-      error: {
-        message: err.message,
-        code: err.code,
-        traceId: err.traceId,
-      },
-    });
+    return res.status(err.statusCode).json(formatApiError(err));
   }
 
   // Handle HTTP errors created with http-errors package
