@@ -12,6 +12,7 @@ import { Permissions } from '../../constants/permissions';
 import { rolesForPermission } from '../../constants/role-permissions';
 import { hasSupervisoryRole } from '../../utils/has-supervisory-role.util';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
+import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { ApiError } from '../../errors/api-error';
 import { logger } from '../../logger';
 import {
@@ -366,10 +367,13 @@ export function AdministrationService({
 
       // Supervised users (student, guardian, parent, relative) cannot list districts
       if (!hasSupervisoryRole(userRoles)) {
-        throw new ApiError('Supervised users cannot list administration districts', {
+        logger.warn(
+          { userId, administrationId, userRoles },
+          'Supervised user attempted to list administration districts',
+        );
+        throw new ApiError(ApiErrorMessage.FORBIDDEN, {
           statusCode: StatusCodes.FORBIDDEN,
           code: ApiErrorCode.AUTH_FORBIDDEN,
-          context: { userId, administrationId, userRoles },
         });
       }
 

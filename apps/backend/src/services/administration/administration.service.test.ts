@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AdministrationService } from './administration.service';
 import { AdministrationFactory } from '../../test-support/factories/administration.factory';
 import { OrgFactory } from '../../test-support/factories/org.factory';
+import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 
 // Mock the logger (used by the service for error handling)
 vi.mock('../../logger', () => ({
@@ -947,7 +948,7 @@ describe('AdministrationService', () => {
 
         await expect(
           service.listDistricts({ userId: 'user-with-no-roles', isSuperAdmin: false }, 'admin-123', defaultOptions),
-        ).rejects.toThrow('Supervised users cannot list administration districts');
+        ).rejects.toThrow(ApiErrorMessage.FORBIDDEN);
         expect(mockGetDistrictsByAdministrationId).not.toHaveBeenCalled();
         expect(mockGetDistrictsByAdministrationIdAuthorized).not.toHaveBeenCalled();
       });
@@ -965,7 +966,7 @@ describe('AdministrationService', () => {
 
         await expect(
           service.listDistricts({ userId: 'student-user', isSuperAdmin: false }, 'admin-123', defaultOptions),
-        ).rejects.toThrow('Supervised users cannot list administration districts');
+        ).rejects.toThrow(ApiErrorMessage.FORBIDDEN);
         expect(mockGetDistrictsByAdministrationId).not.toHaveBeenCalled();
         expect(mockGetDistrictsByAdministrationIdAuthorized).not.toHaveBeenCalled();
       });
@@ -982,7 +983,7 @@ describe('AdministrationService', () => {
 
         await expect(
           service.listDistricts({ userId: 'guardian-user', isSuperAdmin: false }, 'admin-123', defaultOptions),
-        ).rejects.toThrow('Supervised users cannot list administration districts');
+        ).rejects.toThrow(ApiErrorMessage.FORBIDDEN);
       });
 
       it('should throw forbidden error when user has parent role', async () => {
@@ -997,7 +998,7 @@ describe('AdministrationService', () => {
 
         await expect(
           service.listDistricts({ userId: 'parent-user', isSuperAdmin: false }, 'admin-123', defaultOptions),
-        ).rejects.toThrow('Supervised users cannot list administration districts');
+        ).rejects.toThrow(ApiErrorMessage.FORBIDDEN);
       });
 
       it('should throw forbidden error when user has relative role', async () => {
@@ -1012,7 +1013,7 @@ describe('AdministrationService', () => {
 
         await expect(
           service.listDistricts({ userId: 'relative-user', isSuperAdmin: false }, 'admin-123', defaultOptions),
-        ).rejects.toThrow('Supervised users cannot list administration districts');
+        ).rejects.toThrow(ApiErrorMessage.FORBIDDEN);
       });
     });
 

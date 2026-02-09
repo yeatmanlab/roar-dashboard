@@ -16,6 +16,7 @@ import { OrgFactory } from '../../test-support/factories/org.factory';
 import { AdministrationFactory } from '../../test-support/factories/administration.factory';
 import { AdministrationOrgFactory } from '../../test-support/factories/administration-org.factory';
 import { UserRole } from '../../enums/user-role.enum';
+import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { ApiError } from '../../errors/api-error';
 
 describe('AdministrationService (integration)', () => {
@@ -52,7 +53,7 @@ describe('AdministrationService (integration)', () => {
         } catch (error) {
           expect(error).toBeInstanceOf(ApiError);
           expect((error as ApiError).statusCode).toBe(403);
-          expect((error as ApiError).message).toBe('Supervised users cannot list administration districts');
+          expect((error as ApiError).message).toBe(ApiErrorMessage.FORBIDDEN);
         }
       });
 
