@@ -12,6 +12,7 @@ import { AdministrationService } from './administration.service';
 import { baseFixture } from '../../test-support/fixtures';
 import { UserFactory } from '../../test-support/factories/user.factory';
 import { UserOrgFactory } from '../../test-support/factories/user-org.factory';
+import { OrgFactory } from '../../test-support/factories/org.factory';
 import { AdministrationFactory } from '../../test-support/factories/administration.factory';
 import { AdministrationOrgFactory } from '../../test-support/factories/administration-org.factory';
 import { UserRole } from '../../enums/user-role.enum';
@@ -258,6 +259,102 @@ describe('AdministrationService (integration)', () => {
         // Should NOT see districtB
         const districtIds = result.items.map((d) => d.id);
         expect(districtIds).not.toContain(baseFixture.districtB.id);
+      });
+
+      it('should filter districts based on school-level membership (ancestor access)', async () => {
+        // Scenario:
+        // - Administration assigned to District A, District B, and District C
+        // - User A: teacher at School A (in District A) -> sees only District A
+        // - User B: teacher at schoolInDistrictB (in District B) -> sees only District B
+        // - User C: teacher at School C1 (in District C) -> sees only District C
+        // - User D: admin at District A -> sees only District A
+        //
+        // This validates that school-level membership grants access to parent district
+        // via ancestor access, but not to other districts.
+        //
+        // Note: baseFixture.schoolB is under district (District A), not districtB.
+        // Use schoolInDistrictB for testing District B access.
+
+        // Create a third district and school for this test
+        const districtC = await OrgFactory.create({
+          name: 'District C',
+          orgType: 'district',
+        });
+        const schoolC1 = await OrgFactory.create({
+          name: 'School C1',
+          orgType: 'school',
+          parentOrgId: districtC.id,
+        });
+
+        // Create an administration assigned to all three districts
+        const threeDistrictAdmin = await AdministrationFactory.create({
+          name: 'Three-District Admin',
+          createdBy: baseFixture.districtAdmin.id,
+        });
+        await AdministrationOrgFactory.create({
+          administrationId: threeDistrictAdmin.id,
+          orgId: baseFixture.district.id,
+        });
+        await AdministrationOrgFactory.create({
+          administrationId: threeDistrictAdmin.id,
+          orgId: baseFixture.districtB.id,
+        });
+        await AdministrationOrgFactory.create({
+          administrationId: threeDistrictAdmin.id,
+          orgId: districtC.id,
+        });
+
+        // Create teachers at schoolInDistrictB and School C1
+        // (baseFixture has schoolATeacher for District A's School A)
+        const teacherInDistrictB = await UserFactory.create({ nameFirst: 'Teacher', nameLast: 'DistrictB' });
+        await UserOrgFactory.create({
+          userId: teacherInDistrictB.id,
+          orgId: baseFixture.schoolInDistrictB.id,
+          role: UserRole.TEACHER,
+        });
+
+        const teacherC = await UserFactory.create({ nameFirst: 'Teacher', nameLast: 'C' });
+        await UserOrgFactory.create({
+          userId: teacherC.id,
+          orgId: schoolC1.id,
+          role: UserRole.TEACHER,
+        });
+
+        // User A (schoolATeacher): teacher at School A -> should see District A only
+        const resultA = await service.listDistricts(
+          { userId: baseFixture.schoolATeacher.id, isSuperAdmin: false },
+          threeDistrictAdmin.id,
+          defaultDistrictOptions,
+        );
+        expect(resultA.totalItems).toBe(1);
+        expect(resultA.items[0]!.id).toBe(baseFixture.district.id);
+
+        // User B (teacherInDistrictB): teacher at schoolInDistrictB -> should see District B only
+        const resultB = await service.listDistricts(
+          { userId: teacherInDistrictB.id, isSuperAdmin: false },
+          threeDistrictAdmin.id,
+          defaultDistrictOptions,
+        );
+        expect(resultB.totalItems).toBe(1);
+        expect(resultB.items[0]!.id).toBe(baseFixture.districtB.id);
+
+        // User C (teacherC): teacher at School C1 -> should see District C only
+        const resultC = await service.listDistricts(
+          { userId: teacherC.id, isSuperAdmin: false },
+          threeDistrictAdmin.id,
+          defaultDistrictOptions,
+        );
+        expect(resultC.totalItems).toBe(1);
+        expect(resultC.items[0]!.id).toBe(districtC.id);
+
+        // District admin (districtAdmin): admin at District A -> should see District A only
+        const resultDistrictAdmin = await service.listDistricts(
+          { userId: baseFixture.districtAdmin.id, isSuperAdmin: false },
+          threeDistrictAdmin.id,
+          defaultDistrictOptions,
+        );
+        expect(resultDistrictAdmin.totalItems).toBe(1);
+        expect(resultDistrictAdmin.items[0]!.id).toBe(baseFixture.district.id);
       });
     });
 
