@@ -1,7 +1,22 @@
 import { describe, it, expect, expectTypeOf, vi } from 'vitest';
-import { startRun, finishRun, abortRun, updateEngagementFlags, addInteraction, updateUser, writeTrial } from './firekit';
+import {
+  startRun,
+  finishRun,
+  abortRun,
+  updateEngagementFlags,
+  addInteraction,
+  updateUser,
+  writeTrial,
+} from './firekit';
 import { SDKError } from '../errors/sdk-error';
-import type { UpdateEngagementFlagsInput, AddInteractionInput, UpdateUserInput, TrialData, RawScores, ComputedScores } from '../types';
+import type {
+  UpdateEngagementFlagsInput,
+  AddInteractionInput,
+  UpdateUserInput,
+  TrialData,
+  RawScores,
+  ComputedScores,
+} from '../types';
 
 describe('firekit compat', () => {
   describe('abortRun', () => {
