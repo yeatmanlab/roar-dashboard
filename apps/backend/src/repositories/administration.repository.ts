@@ -344,4 +344,115 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
   async getUserRolesForAdministration(userId: string, administrationId: string): Promise<string[]> {
     return this.accessControls.getUserRolesForAdministration(userId, administrationId);
   }
+
+  /**
+   * Get schools assigned to an administration.
+   *
+   * Returns only orgs with orgType='school' that are directly assigned to the administration
+   * via the administration_orgs junction table.
+   *
+   * @param administrationId - The administration ID to get schools for
+   * @param options - Pagination and sorting options
+   * @returns Paginated result with schools
+   */
+  async getSchoolsByAdministrationId(
+    administrationId: string,
+    options: ListDistrictsOptions,
+  ): Promise<PaginatedResult<Org>> {
+    const { page, perPage, orderBy } = options;
+    const offset = (page - 1) * perPage;
+
+    // Base condition: orgs assigned to this administration that are schools
+    const baseCondition = and(eq(administrationOrgs.administrationId, administrationId), eq(orgs.orgType, 'school'));
+
+    // Count query
+    const countResult = await this.db
+      .select({ count: count() })
+      .from(administrationOrgs)
+      .innerJoin(orgs, eq(orgs.id, administrationOrgs.orgId))
+      .where(baseCondition);
+
+    const totalItems = countResult[0]?.count ?? 0;
+
+    if (totalItems === 0) {
+      return { items: [], totalItems: 0 };
+    }
+
+    // Sort by name (currently the only supported sort field)
+    const sortDirection = orderBy?.direction === 'desc' ? desc(orgs.name) : asc(orgs.name);
+
+    // Data query
+    const dataResult = await this.db
+      .select({ org: orgs })
+      .from(administrationOrgs)
+      .innerJoin(orgs, eq(orgs.id, administrationOrgs.orgId))
+      .where(baseCondition)
+      .orderBy(sortDirection)
+      .limit(perPage)
+      .offset(offset);
+
+    return {
+      items: dataResult.map((row) => row.org),
+      totalItems,
+    };
+  }
+
+  /**
+   * Get schools assigned to an administration, filtered by user's accessible orgs.
+   *
+   * Unlike getSchoolsByAdministrationId (used for super admins), this method filters
+   * the results to only include schools that the user can access based on their
+   * org/class memberships.
+   *
+   * @param accessControlFilter - User ID and allowed roles for org access
+   * @param administrationId - The administration ID to get schools for
+   * @param options - Pagination and sorting options
+   * @returns Paginated result with schools the user can access
+   */
+  async getAuthorizedSchoolsByAdministrationId(
+    accessControlFilter: AccessControlFilter,
+    administrationId: string,
+    options: ListDistrictsOptions,
+  ): Promise<PaginatedResult<Org>> {
+    const { page, perPage, orderBy } = options;
+    const offset = (page - 1) * perPage;
+
+    // Build accessible orgs subquery (from OrgAccessControls)
+    const accessibleOrgs = this.orgAccessControls
+      .buildUserAccessibleOrgIdsQuery(accessControlFilter)
+      .as('accessible_orgs');
+
+    // Count query: schools assigned to this administration that the user can access
+    const countResult = await this.db
+      .select({ count: count() })
+      .from(administrationOrgs)
+      .innerJoin(orgs, eq(orgs.id, administrationOrgs.orgId))
+      .innerJoin(accessibleOrgs, eq(orgs.id, accessibleOrgs.orgId))
+      .where(and(eq(administrationOrgs.administrationId, administrationId), eq(orgs.orgType, 'school')));
+
+    const totalItems = countResult[0]?.count ?? 0;
+
+    if (totalItems === 0) {
+      return { items: [], totalItems: 0 };
+    }
+
+    // Sort by name (currently the only supported sort field)
+    const sortDirection = orderBy?.direction === 'desc' ? desc(orgs.name) : asc(orgs.name);
+
+    // Data query
+    const dataResult = await this.db
+      .select({ org: orgs })
+      .from(administrationOrgs)
+      .innerJoin(orgs, eq(orgs.id, administrationOrgs.orgId))
+      .innerJoin(accessibleOrgs, eq(orgs.id, accessibleOrgs.orgId))
+      .where(and(eq(administrationOrgs.administrationId, administrationId), eq(orgs.orgType, 'school')))
+      .orderBy(sortDirection)
+      .limit(perPage)
+      .offset(offset);
+
+    return {
+      items: dataResult.map((row) => row.org),
+      totalItems,
+    };
+  }
 }

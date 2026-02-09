@@ -5,6 +5,7 @@ import {
   type AdministrationEmbedOptionType,
   type AdministrationStatus,
   type DistrictSortFieldType,
+  type SchoolSortFieldType,
 } from '@roar-dashboard/api-contract';
 import { StatusCodes } from 'http-status-codes';
 import type { Administration, Org } from '../../db/schema';
@@ -55,6 +56,16 @@ export interface ListDistrictsOptions {
   page: number;
   perPage: number;
   sortBy: DistrictSortFieldType;
+  sortOrder: 'asc' | 'desc';
+}
+
+/**
+ * Options for listing schools of an administration.
+ */
+export interface ListSchoolsOptions {
+  page: number;
+  perPage: number;
+  sortBy: SchoolSortFieldType;
   sortOrder: 'asc' | 'desc';
 }
 
@@ -402,5 +413,86 @@ export function AdministrationService({
     }
   }
 
-  return { list, getById, listDistricts };
+  /**
+   * List schools assigned to an administration with access control.
+   *
+   * Authorization behavior:
+   * - Super admin: sees all schools assigned to the administration
+   * - Supervisory roles: sees only schools that intersect with their accessible org tree
+   * - Supervised roles (student/guardian/parent/relative): returns 403 Forbidden
+   *
+   * @param authContext - User's auth context (id and type)
+   * @param administrationId - The administration ID to get schools for
+   * @param options - Pagination and sorting options
+   * @returns Paginated result with schools
+   * @throws {ApiError} NOT_FOUND if administration doesn't exist
+   * @throws {ApiError} FORBIDDEN if user lacks access to the administration or has supervised role
+   * @throws {ApiError} INTERNAL_SERVER_ERROR if the database query fails
+   */
+  async function listSchools(
+    authContext: AuthContext,
+    administrationId: string,
+    options: ListSchoolsOptions,
+  ): Promise<PaginatedResult<Org>> {
+    const { userId, isSuperAdmin } = authContext;
+
+    try {
+      // First verify the administration exists and user has access
+      await verifyAdministrationAccess(authContext, administrationId);
+
+      // Build query params for the repository
+      const queryParams = {
+        page: options.page,
+        perPage: options.perPage,
+        orderBy: {
+          field: options.sortBy,
+          direction: options.sortOrder,
+        },
+      };
+
+      // Super admin: return all schools
+      if (isSuperAdmin) {
+        return await administrationRepository.getSchoolsByAdministrationId(administrationId, queryParams);
+      }
+
+      // Get user's roles for this administration to check if they have any supervisory roles
+      const userRoles = await administrationRepository.getUserRolesForAdministration(userId, administrationId);
+
+      // Supervised users (student, guardian, parent, relative) cannot list schools
+      if (!hasSupervisoryRole(userRoles)) {
+        logger.warn(
+          { userId, administrationId, userRoles },
+          'Supervised user attempted to list administration schools',
+        );
+        throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        });
+      }
+
+      // Supervisory role: filter schools by user's accessible orgs
+      const allowedRoles = rolesForPermission(Permissions.Administrations.READ);
+      return await administrationRepository.getAuthorizedSchoolsByAdministrationId(
+        { userId, allowedRoles },
+        administrationId,
+        queryParams,
+      );
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error(
+        { err: error, context: { userId, administrationId, options } },
+        'Failed to list administration schools',
+      );
+
+      throw new ApiError('Failed to retrieve administration schools', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, administrationId },
+        cause: error,
+      });
+    }
+  }
+
+  return { list, getById, listDistricts, listSchools };
 }

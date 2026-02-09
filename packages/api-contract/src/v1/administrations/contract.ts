@@ -6,6 +6,8 @@ import {
   AdministrationsListResponseSchema,
   AdministrationDistrictsListQuerySchema,
   AdministrationDistrictsListResponseSchema,
+  AdministrationSchoolsListQuerySchema,
+  AdministrationSchoolsListResponseSchema,
 } from './schema';
 import { ErrorEnvelopeSchema, SuccessEnvelopeSchema } from '../response';
 
@@ -67,6 +69,26 @@ export const AdministrationsContract = c.router(
       summary: 'List districts assigned to an administration',
       description:
         'Returns a paginated list of districts assigned to the specified administration. ' +
+        'Returns 403 if the user lacks permission to access the administration. ' +
+        'Returns 404 if the administration does not exist.',
+    },
+    listSchools: {
+      method: 'GET',
+      path: '/:id/schools',
+      pathParams: z.object({ id: z.string().uuid() }),
+      query: AdministrationSchoolsListQuerySchema,
+      responses: {
+        200: SuccessEnvelopeSchema(AdministrationSchoolsListResponseSchema),
+        401: ErrorEnvelopeSchema,
+        403: ErrorEnvelopeSchema,
+        404: ErrorEnvelopeSchema,
+        500: ErrorEnvelopeSchema,
+      },
+      strictStatusCodes: true,
+      summary: 'List schools assigned to an administration',
+      description:
+        'Returns a paginated list of schools assigned to the specified administration. ' +
+        'Supervisory users see only schools in their accessible org tree. ' +
         'Returns 403 if the user lacks permission to access the administration. ' +
         'Returns 404 if the administration does not exist.',
     },

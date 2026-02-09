@@ -181,3 +181,63 @@ export type AdministrationDistrictsListQuery = z.infer<typeof AdministrationDist
 export const AdministrationDistrictsListResponseSchema = createPaginatedResponseSchema(DistrictSchema);
 
 export type AdministrationDistrictsListResponse = z.infer<typeof AdministrationDistrictsListResponseSchema>;
+
+/**
+ * Allowed sort fields for schools.
+ */
+export const SCHOOL_SORT_FIELDS = ['name'] as const;
+
+/**
+ * Sort field type for schools.
+ */
+export type SchoolSortFieldType = (typeof SCHOOL_SORT_FIELDS)[number];
+
+/**
+ * Sort field constants for type-safe access.
+ */
+export const SchoolSortField = {
+  NAME: 'name',
+} as const satisfies Record<string, SchoolSortFieldType>;
+
+/**
+ * Query parameters for listing administration schools.
+ */
+export const AdministrationSchoolsListQuerySchema = PaginationQuerySchema.merge(
+  createSortQuerySchema(SCHOOL_SORT_FIELDS, 'name'),
+);
+
+export type AdministrationSchoolsListQuery = z.infer<typeof AdministrationSchoolsListQuerySchema>;
+
+/**
+ * School location schema.
+ */
+export const SchoolLocationSchema = z.object({
+  addressLine1: z.string().nullable(),
+  addressLine2: z.string().nullable(),
+  city: z.string().nullable(),
+  stateProvince: z.string().nullable(),
+  postalCode: z.string().nullable(),
+  country: z.string().nullable(),
+  latLong: GeoPointSchema.nullable(),
+});
+
+export type SchoolLocation = z.infer<typeof SchoolLocationSchema>;
+
+/**
+ * School schema for administration school assignments.
+ */
+export const SchoolSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+  abbreviation: z.string(),
+  location: SchoolLocationSchema,
+});
+
+export type School = z.infer<typeof SchoolSchema>;
+
+/**
+ * Paginated response for administration schools list.
+ */
+export const AdministrationSchoolsListResponseSchema = createPaginatedResponseSchema(SchoolSchema);
+
+export type AdministrationSchoolsListResponse = z.infer<typeof AdministrationSchoolsListResponseSchema>;
