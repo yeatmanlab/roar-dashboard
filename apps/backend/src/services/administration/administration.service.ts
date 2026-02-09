@@ -1,12 +1,10 @@
 import {
   AdministrationEmbedOption,
-  AdministrationSortField,
-  DistrictSortField,
   type PaginatedResult,
   type AdministrationStats,
-  type ADMINISTRATION_EMBED_OPTIONS,
+  type AdministrationEmbedOptionType,
   type AdministrationStatus,
-  type DISTRICT_SORT_FIELDS,
+  type DistrictSortFieldType,
 } from '@roar-dashboard/api-contract';
 import { StatusCodes } from 'http-status-codes';
 import type { Administration, Org } from '../../db/schema';
@@ -19,7 +17,6 @@ import { logger } from '../../logger';
 import {
   AdministrationRepository,
   type AdministrationQueryOptions,
-  type AdministrationSortField as AdministrationSortFieldType,
 } from '../../repositories/administration.repository';
 import {
   AdministrationTaskVariantRepository,
@@ -27,11 +24,6 @@ import {
 } from '../../repositories/administration-task-variant.repository';
 import { RunsRepository } from '../../repositories/runs.repository';
 import type { AuthContext } from '../../types/auth-context';
-
-/**
- * Embed option type derived from api-contract.
- */
-type AdministrationEmbedOptionType = (typeof ADMINISTRATION_EMBED_OPTIONS)[number];
 
 /**
  * Administration with optional embedded data.
@@ -42,34 +34,12 @@ export interface AdministrationWithEmbeds extends Administration {
 }
 
 /**
- * Maps API sort field names to database column names.
- */
-const SORT_FIELD_TO_COLUMN: Record<AdministrationSortFieldType, string> = {
-  [AdministrationSortField.NAME]: 'name',
-  [AdministrationSortField.CREATED_AT]: 'createdAt',
-  [AdministrationSortField.DATE_START]: 'dateStart',
-  [AdministrationSortField.DATE_END]: 'dateEnd',
-};
-
-/**
  * Options for listing administrations including embed and status filter.
  */
 export interface ListOptions extends AdministrationQueryOptions {
   embed?: AdministrationEmbedOptionType[];
   status?: AdministrationStatus;
 }
-
-/**
- * Sort field type for districts.
- */
-type DistrictSortFieldType = (typeof DISTRICT_SORT_FIELDS)[number];
-
-/**
- * Maps API sort field names to database column names for districts.
- */
-const DISTRICT_SORT_FIELD_TO_COLUMN: Record<DistrictSortFieldType, string> = {
-  [DistrictSortField.NAME]: 'name',
-};
 
 /**
  * Options for listing districts of an administration.
@@ -244,7 +214,7 @@ export function AdministrationService({
         page: options.page,
         perPage: options.perPage,
         orderBy: {
-          field: SORT_FIELD_TO_COLUMN[options.sortBy],
+          field: options.sortBy,
           direction: options.sortOrder,
         },
         ...(options.status && { status: options.status }),
@@ -375,7 +345,7 @@ export function AdministrationService({
         page: options.page,
         perPage: options.perPage,
         orderBy: {
-          field: DISTRICT_SORT_FIELD_TO_COLUMN[options.sortBy],
+          field: options.sortBy,
           direction: options.sortOrder,
         },
       };

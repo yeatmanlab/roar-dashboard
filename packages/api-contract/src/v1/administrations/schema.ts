@@ -85,6 +85,11 @@ export type Administration = z.infer<typeof AdministrationSchema>;
 export const ADMINISTRATION_SORT_FIELDS = ['createdAt', 'name', 'dateStart', 'dateEnd'] as const;
 
 /**
+ * Sort field type for administrations.
+ */
+export type AdministrationSortFieldType = (typeof ADMINISTRATION_SORT_FIELDS)[number];
+
+/**
  * Sort field constants for type-safe access.
  */
 export const AdministrationSortField = {
@@ -92,7 +97,7 @@ export const AdministrationSortField = {
   NAME: 'name',
   DATE_START: 'dateStart',
   DATE_END: 'dateEnd',
-} as const satisfies Record<string, (typeof ADMINISTRATION_SORT_FIELDS)[number]>;
+} as const satisfies Record<string, AdministrationSortFieldType>;
 
 /**
  * Allowed embed options for administrations.
@@ -100,12 +105,17 @@ export const AdministrationSortField = {
 export const ADMINISTRATION_EMBED_OPTIONS = ['stats', 'tasks'] as const;
 
 /**
+ * Embed option type for administrations.
+ */
+export type AdministrationEmbedOptionType = (typeof ADMINISTRATION_EMBED_OPTIONS)[number];
+
+/**
  * Embed option constants for type-safe access.
  */
 export const AdministrationEmbedOption = {
   STATS: 'stats',
   TASKS: 'tasks',
-} as const satisfies Record<string, (typeof ADMINISTRATION_EMBED_OPTIONS)[number]>;
+} as const satisfies Record<string, AdministrationEmbedOptionType>;
 
 /**
  * Query parameters for listing administrations.
@@ -170,11 +180,16 @@ export type District = z.infer<typeof DistrictSchema>;
 export const DISTRICT_SORT_FIELDS = ['name'] as const;
 
 /**
+ * Sort field type for districts.
+ */
+export type DistrictSortFieldType = (typeof DISTRICT_SORT_FIELDS)[number];
+
+/**
  * Sort field constants for type-safe access.
  */
 export const DistrictSortField = {
   NAME: 'name',
-} as const satisfies Record<string, (typeof DISTRICT_SORT_FIELDS)[number]>;
+} as const satisfies Record<string, DistrictSortFieldType>;
 
 /**
  * Query parameters for listing administration districts.

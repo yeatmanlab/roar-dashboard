@@ -7,9 +7,8 @@ import type * as CoreDbSchema from '../db/schema/core';
 import type {
   PaginationQuery,
   SortQuery,
-  ADMINISTRATION_SORT_FIELDS,
+  AdministrationSortFieldType,
   AdministrationStatus,
-  DISTRICT_SORT_FIELDS,
 } from '@roar-dashboard/api-contract';
 import { BaseRepository, type PaginatedResult } from './base.repository';
 import type { BasePaginatedQueryParams } from './interfaces/base.repository.interface';
@@ -18,19 +17,9 @@ import { OrgAccessControls } from './access-controls/org.access-controls';
 import type { AccessControlFilter } from './utils/parse-access-control-filter.utils';
 
 /**
- * Sort field type derived from api-contract.
- */
-export type AdministrationSortField = (typeof ADMINISTRATION_SORT_FIELDS)[number];
-
-/**
- * Sort field type for districts.
- */
-export type DistrictSortField = (typeof DISTRICT_SORT_FIELDS)[number];
-
-/**
  * Query options for administration repository methods (API contract format).
  */
-export type AdministrationQueryOptions = PaginationQuery & SortQuery<AdministrationSortField>;
+export type AdministrationQueryOptions = PaginationQuery & SortQuery<AdministrationSortFieldType>;
 
 /**
  * Options for listing administrations with optional status filter.
@@ -159,7 +148,7 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
       return { items: [], totalItems: 0 };
     }
 
-    // Map field name to column (matches SORT_FIELD_TO_COLUMN in administration.service.ts)
+    // Map API sort field name to Drizzle column
     const SORT_FIELD_TO_COLUMN = {
       name: administrations.name,
       createdAt: administrations.createdAt,
