@@ -13,7 +13,7 @@ import type {
 import { BaseRepository, type PaginatedResult } from './base.repository';
 import type { BasePaginatedQueryParams } from './interfaces/base.repository.interface';
 import { AdministrationAccessControls } from './access-controls/administration.access-controls';
-import type { AccessControlFilter } from './utils/access-controls.utils';
+import type { AccessControlFilter } from './utils/parse-access-control-filter.utils';
 
 /**
  * Sort field type derived from api-contract.
