@@ -54,6 +54,8 @@ export const RunsController = {
         await runEventsService.completeRun(authContext, runId, body);
       } else if (body.type === 'abort') {
         await runEventsService.abortRun(authContext, runId, body);
+      } else if (body.type === 'trial') {
+        await runEventsService.writeTrial(authContext, runId, body);
       } else {
         // Should never happen due to contract validation, but defense-in-depth:
         throw new ApiError('Invalid event type', {
