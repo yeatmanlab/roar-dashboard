@@ -12,6 +12,7 @@ import { StatusCodes } from 'http-status-codes';
 import type { Administration, Org } from '../../db/schema';
 import { Permissions } from '../../constants/permissions';
 import { rolesForPermission } from '../../constants/role-permissions';
+import { hasSupervisoryRole } from '../../utils/has-supervisory-role.util';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiError } from '../../errors/api-error';
 import { logger } from '../../logger';
@@ -117,7 +118,7 @@ export function AdministrationService({
   ): Promise<Administration> {
     const { userId, isSuperAdmin } = authContext;
 
-    // Look up the administration first (unrestricted) to distinguish 404 from 403
+    // Look up the administration first to distinguish 404 from 403
     const administration = await administrationRepository.getById({ id: administrationId });
 
     if (!administration) {
@@ -135,7 +136,7 @@ export function AdministrationService({
 
     // Check access for non-super admin users
     const allowedRoles = rolesForPermission(Permissions.Administrations.READ);
-    const authorized = await administrationRepository.getAuthorized({ userId, allowedRoles }, administrationId);
+    const authorized = await administrationRepository.getByIdAuthorized({ userId, allowedRoles }, administrationId);
 
     if (!authorized) {
       throw new ApiError('You do not have permission to access this administration', {
@@ -345,15 +346,17 @@ export function AdministrationService({
   /**
    * List districts assigned to an administration with access control.
    *
-   * Super admin users can access any administration's districts.
-   * Other users can only access districts for administrations they have access to.
+   * Authorization behavior:
+   * - Super admin: sees all districts assigned to the administration
+   * - Supervisory roles: sees only districts that intersect with their accessible org tree
+   * - Supervised roles (student/guardian/parent/relative): returns 403 Forbidden
    *
    * @param authContext - User's auth context (id and type)
    * @param administrationId - The administration ID to get districts for
    * @param options - Pagination and sorting options
    * @returns Paginated result with districts
    * @throws {ApiError} NOT_FOUND if administration doesn't exist
-   * @throws {ApiError} FORBIDDEN if user lacks access to the administration
+   * @throws {ApiError} FORBIDDEN if user lacks access to the administration or has supervised role
    * @throws {ApiError} INTERNAL_SERVER_ERROR if the database query fails
    */
   async function listDistricts(
@@ -361,13 +364,13 @@ export function AdministrationService({
     administrationId: string,
     options: ListDistrictsOptions,
   ): Promise<PaginatedResult<Org>> {
-    const { userId } = authContext;
+    const { userId, isSuperAdmin } = authContext;
 
     try {
-      // Verify the administration exists and user has access
+      // First verify the administration exists and user has access
       await verifyAdministrationAccess(authContext, administrationId);
 
-      // Fetch districts for the administration
+      // Build query params for the repository
       const queryParams = {
         page: options.page,
         perPage: options.perPage,
@@ -377,7 +380,30 @@ export function AdministrationService({
         },
       };
 
-      return await administrationRepository.getDistrictsByAdministrationId(administrationId, queryParams);
+      // Super admin: return all districts
+      if (isSuperAdmin) {
+        return await administrationRepository.getDistrictsByAdministrationId(administrationId, queryParams);
+      }
+
+      // Get user's roles for this administration to check if they have any supervisory roles
+      const userRoles = await administrationRepository.getUserRolesForAdministration(userId, administrationId);
+
+      // Supervised users (student, guardian, parent, relative) cannot list districts
+      if (!hasSupervisoryRole(userRoles)) {
+        throw new ApiError('Supervised users cannot list administration districts', {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+          context: { userId, administrationId, userRoles },
+        });
+      }
+
+      // Supervisory role: filter districts by user's accessible orgs
+      const allowedRoles = rolesForPermission(Permissions.Administrations.READ);
+      return await administrationRepository.getDistrictsByAdministrationIdAuthorized(
+        { userId, allowedRoles },
+        administrationId,
+        queryParams,
+      );
     } catch (error) {
       if (error instanceof ApiError) throw error;
 

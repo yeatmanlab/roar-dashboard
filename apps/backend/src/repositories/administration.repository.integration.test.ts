@@ -1,7 +1,7 @@
 /**
  * Integration tests for AdministrationRepository.
  *
- * Tests custom methods (listAll, listAuthorized, getAuthorized) against the
+ * Tests custom methods (listAll, listAuthorized, getByIdAuthorized) against the
  * real database with the base fixture's org hierarchy and administrations.
  *
  * getAssignedUserCountsByAdministrationIds is covered by the existing
@@ -220,12 +220,12 @@ describe('AdministrationRepository', () => {
   });
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // getAuthorized
+  // getByIdAuthorized
   // ─────────────────────────────────────────────────────────────────────────────
 
-  describe('getAuthorized', () => {
+  describe('getByIdAuthorized', () => {
     it('returns administration when user has access', async () => {
-      const result = await repository.getAuthorized(
+      const result = await repository.getByIdAuthorized(
         { userId: baseFixture.districtAdmin.id, allowedRoles: [UserRole.ADMINISTRATOR] },
         baseFixture.administrationAssignedToDistrict.id,
       );
@@ -236,7 +236,7 @@ describe('AdministrationRepository', () => {
 
     it('returns null when user lacks access', async () => {
       // District B admin should not have access to District A's administration
-      const result = await repository.getAuthorized(
+      const result = await repository.getByIdAuthorized(
         { userId: baseFixture.districtBAdmin.id, allowedRoles: [UserRole.ADMINISTRATOR] },
         baseFixture.administrationAssignedToDistrict.id,
       );
@@ -245,7 +245,7 @@ describe('AdministrationRepository', () => {
     });
 
     it('returns null for nonexistent administration ID', async () => {
-      const result = await repository.getAuthorized(
+      const result = await repository.getByIdAuthorized(
         { userId: baseFixture.districtAdmin.id, allowedRoles: [UserRole.ADMINISTRATOR] },
         '00000000-0000-0000-0000-000000000000',
       );
@@ -438,6 +438,168 @@ describe('AdministrationRepository', () => {
 
       expect(result.totalItems).toBe(0);
       expect(result.items).toEqual([]);
+    });
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // getDistrictsByAdministrationIdAuthorized
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  describe('getDistrictsByAdministrationIdAuthorized', () => {
+    it('returns districts that user has access to', async () => {
+      // districtAdmin has access to district through their org membership
+      const result = await repository.getDistrictsByAdministrationIdAuthorized(
+        { userId: baseFixture.districtAdmin.id, allowedRoles: [UserRole.ADMINISTRATOR] },
+        baseFixture.administrationAssignedToDistrict.id,
+        { page: 1, perPage: 100 },
+      );
+
+      expect(result.totalItems).toBe(1);
+      expect(result.items).toHaveLength(1);
+      expect(result.items[0]!.id).toBe(baseFixture.district.id);
+    });
+
+    it('returns only districts user can access when admin is assigned to multiple districts', async () => {
+      // Create an administration assigned to both districts
+      const multiDistrictAdmin = await AdministrationFactory.create({
+        name: 'Multi-District Auth Admin',
+        createdBy: baseFixture.districtAdmin.id,
+      });
+      await AdministrationOrgFactory.create({
+        administrationId: multiDistrictAdmin.id,
+        orgId: baseFixture.district.id,
+      });
+      await AdministrationOrgFactory.create({
+        administrationId: multiDistrictAdmin.id,
+        orgId: baseFixture.districtB.id,
+      });
+
+      // districtAdmin only has access to district (not districtB)
+      const result = await repository.getDistrictsByAdministrationIdAuthorized(
+        { userId: baseFixture.districtAdmin.id, allowedRoles: [UserRole.ADMINISTRATOR] },
+        multiDistrictAdmin.id,
+        { page: 1, perPage: 100 },
+      );
+
+      // Should only see the district they have access to
+      expect(result.totalItems).toBe(1);
+      expect(result.items).toHaveLength(1);
+      expect(result.items[0]!.id).toBe(baseFixture.district.id);
+    });
+
+    it('returns empty when user has no access to any assigned districts', async () => {
+      // districtBAdmin trying to access administrationAssignedToDistrict
+      // They have no access to the district where this admin is assigned
+      const result = await repository.getDistrictsByAdministrationIdAuthorized(
+        { userId: baseFixture.districtBAdmin.id, allowedRoles: [UserRole.ADMINISTRATOR] },
+        baseFixture.administrationAssignedToDistrict.id,
+        { page: 1, perPage: 100 },
+      );
+
+      expect(result.totalItems).toBe(0);
+      expect(result.items).toEqual([]);
+    });
+
+    it('student sees district through school membership (ancestor access)', async () => {
+      // schoolAStudent is in schoolA, which is a child of district
+      // They should see district via ancestor access
+      const result = await repository.getDistrictsByAdministrationIdAuthorized(
+        { userId: baseFixture.schoolAStudent.id, allowedRoles: [UserRole.STUDENT] },
+        baseFixture.administrationAssignedToDistrict.id,
+        { page: 1, perPage: 100 },
+      );
+
+      expect(result.totalItems).toBe(1);
+      expect(result.items).toHaveLength(1);
+      expect(result.items[0]!.id).toBe(baseFixture.district.id);
+    });
+
+    it('respects pagination', async () => {
+      // Create an administration assigned to both districts
+      const paginatedAuthAdmin = await AdministrationFactory.create({
+        name: 'Paginated Auth Admin',
+        createdBy: baseFixture.districtAdmin.id,
+      });
+      await AdministrationOrgFactory.create({
+        administrationId: paginatedAuthAdmin.id,
+        orgId: baseFixture.district.id,
+      });
+      await AdministrationOrgFactory.create({
+        administrationId: paginatedAuthAdmin.id,
+        orgId: baseFixture.districtB.id,
+      });
+
+      // Create a user with access to both districts
+      const { UserFactory } = await import('../test-support/factories/user.factory');
+      const { UserOrgFactory } = await import('../test-support/factories/user-org.factory');
+      const dualDistrictUser = await UserFactory.create();
+      await UserOrgFactory.create({
+        userId: dualDistrictUser.id,
+        orgId: baseFixture.district.id,
+        role: UserRole.ADMINISTRATOR,
+      });
+      await UserOrgFactory.create({
+        userId: dualDistrictUser.id,
+        orgId: baseFixture.districtB.id,
+        role: UserRole.ADMINISTRATOR,
+      });
+
+      // Get first page
+      const page1 = await repository.getDistrictsByAdministrationIdAuthorized(
+        { userId: dualDistrictUser.id, allowedRoles: [UserRole.ADMINISTRATOR] },
+        paginatedAuthAdmin.id,
+        { page: 1, perPage: 1, orderBy: { field: 'name', direction: 'asc' } },
+      );
+
+      expect(page1.totalItems).toBe(2);
+      expect(page1.items).toHaveLength(1);
+
+      // Get second page
+      const page2 = await repository.getDistrictsByAdministrationIdAuthorized(
+        { userId: dualDistrictUser.id, allowedRoles: [UserRole.ADMINISTRATOR] },
+        paginatedAuthAdmin.id,
+        { page: 2, perPage: 1, orderBy: { field: 'name', direction: 'asc' } },
+      );
+
+      expect(page2.totalItems).toBe(2);
+      expect(page2.items).toHaveLength(1);
+
+      // Pages should have different items
+      expect(page1.items[0]!.id).not.toBe(page2.items[0]!.id);
+    });
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // getUserRolesForAdministration
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  describe('getUserRolesForAdministration', () => {
+    it('returns roles for user with access via org', async () => {
+      const roles = await repository.getUserRolesForAdministration(
+        baseFixture.districtAdmin.id,
+        baseFixture.administrationAssignedToDistrict.id,
+      );
+
+      expect(roles).toContain('administrator');
+    });
+
+    it('returns empty array for user without access', async () => {
+      const roles = await repository.getUserRolesForAdministration(
+        baseFixture.districtBAdmin.id,
+        baseFixture.administrationAssignedToDistrict.id,
+      );
+
+      expect(roles).toHaveLength(0);
+    });
+
+    it('returns multiple roles for user with multiple memberships', async () => {
+      const roles = await repository.getUserRolesForAdministration(
+        baseFixture.multiAssignedUser.id,
+        baseFixture.administrationAssignedToDistrict.id,
+      );
+
+      expect(roles).toContain('administrator');
+      expect(roles).toContain('teacher');
     });
   });
 });
