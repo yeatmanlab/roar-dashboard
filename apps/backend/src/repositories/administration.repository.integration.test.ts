@@ -15,7 +15,11 @@ import { AdministrationRepository } from './administration.repository';
 import { UserRole } from '../enums/user-role.enum';
 
 describe('AdministrationRepository', () => {
-  const repository = new AdministrationRepository();
+  let repository: AdministrationRepository;
+
+  beforeAll(() => {
+    repository = new AdministrationRepository();
+  });
 
   // ─────────────────────────────────────────────────────────────────────────────
   // listAll

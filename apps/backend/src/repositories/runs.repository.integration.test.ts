@@ -15,7 +15,11 @@ import { RunFactory } from '../test-support/factories/run.factory';
 import { RunsRepository } from './runs.repository';
 
 describe('RunsRepository', () => {
-  const repository = new RunsRepository();
+  let repository: RunsRepository;
+
+  beforeAll(() => {
+    repository = new RunsRepository();
+  });
 
   describe('getRunStatsByAdministrationIds', () => {
     it('returns empty map for empty input array', async () => {

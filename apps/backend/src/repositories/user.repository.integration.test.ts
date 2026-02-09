@@ -12,7 +12,11 @@ import { UserFactory } from '../test-support/factories/user.factory';
 import { UserRepository } from './user.repository';
 
 describe('UserRepository', () => {
-  const repository = new UserRepository();
+  let repository: UserRepository;
+
+  beforeAll(() => {
+    repository = new UserRepository();
+  });
 
   // ─────────────────────────────────────────────────────────────────────────────
   // findByAuthId (custom method)

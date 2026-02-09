@@ -16,7 +16,11 @@ import { UserRepository } from './user.repository';
 import { users } from '../db/schema/core';
 
 describe('BaseRepository', () => {
-  const repository = new UserRepository();
+  let repository: UserRepository;
+
+  beforeAll(() => {
+    repository = new UserRepository();
+  });
 
   // ─────────────────────────────────────────────────────────────────────────────
   // getById

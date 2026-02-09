@@ -40,7 +40,11 @@ import { AdministrationFactory } from '../../test-support/factories/administrati
 import { UserRole } from '../../enums/user-role.enum';
 
 describe('AdministrationAccessControls', () => {
-  const accessControls = new AdministrationAccessControls();
+  let accessControls: AdministrationAccessControls;
+
+  beforeAll(() => {
+    accessControls = new AdministrationAccessControls();
+  });
 
   /**
    * Helper to execute the access control query and return administration IDs.
