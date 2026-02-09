@@ -10,6 +10,8 @@ import type {
   UpdateEngagementFlagsOutput,
   AddInteractionInput,
   AddInteractionOutput,
+  UpdateUserInput,
+  UpdateUserOutput,
   TrialData,
   RawScores,
   ComputedScores,
@@ -180,6 +182,29 @@ export async function updateEngagementFlags({
 export function addInteraction(interaction: AddInteractionInput): AddInteractionOutput {
   void interaction;
   throw new SDKError('appkit.addInteraction not yet implemented');
+}
+
+/**
+ * Firekit compatibility stub.
+ *
+ * From @bdelab/roar-firekit:
+ * async updateUser({ tasks, variants, assessmentPid, ...userMetadata }: UserUpdateInput): Promise<void> { […] }
+ *
+ * @deprecated This method is related to standalone apps and may be deprecated in the future.
+ * @param userUpdateData - User update data including tasks, variants, assessmentPid, and other metadata.
+ * @returns Promise<void>
+ * @throws SDKError - Always, until implemented.
+ */
+export async function updateUser(userUpdateData: UpdateUserInput): UpdateUserOutput {
+  // Issue deprecation warning
+  if (process.env.NODE_ENV !== 'production') {
+    console.warn(
+      '[DEPRECATION] updateUser() exists only for Firekit compatibility and will be removed in a future version.',
+    );
+  }
+
+  void userUpdateData;
+  throw new SDKError('appkit.updateUser not yet implemented');
 }
 
 /**
