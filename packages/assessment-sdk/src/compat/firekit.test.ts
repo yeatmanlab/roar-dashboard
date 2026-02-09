@@ -1,7 +1,7 @@
-import { describe, it, expect, expectTypeOf, vi } from 'vitest';
-import { startRun, finishRun, abortRun, updateEngagementFlags, addInteraction, updateUser, writeTrial } from './firekit';
+import { describe, it, expect, expectTypeOf } from 'vitest';
+import { startRun, finishRun, abortRun, updateEngagementFlags, addInteraction, writeTrial } from './firekit';
 import { SDKError } from '../errors/sdk-error';
-import type { UpdateEngagementFlagsInput, AddInteractionInput, UpdateUserInput, TrialData, RawScores, ComputedScores } from '../types';
+import type { UpdateEngagementFlagsInput, AddInteractionInput, TrialData, RawScores, ComputedScores } from '../types';
 
 describe('firekit compat', () => {
   describe('abortRun', () => {
@@ -71,34 +71,6 @@ describe('firekit compat', () => {
 
       // compile-time signature check
       expectTypeOf(addInteraction).toEqualTypeOf<(interaction: AddInteractionInput) => void>();
-    });
-  });
-
-  describe('updateUser', () => {
-    it('throws SDKError when called', async () => {
-      await expect(updateUser({ assessmentPid: 'test-pid' })).rejects.toBeInstanceOf(SDKError);
-      await expect(updateUser({ tasks: [], variants: [] })).rejects.toBeInstanceOf(SDKError);
-      await expect(updateUser({ assessmentPid: 'test', customField: 'value' })).rejects.toBeInstanceOf(SDKError);
-    });
-
-    it('issues deprecation warning when called', async () => {
-      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-
-      await expect(updateUser({ assessmentPid: 'test-pid' })).rejects.toBeInstanceOf(SDKError);
-
-      expect(consoleWarnSpy).toHaveBeenCalledWith(
-        'appkit.updateUser is deprecated and related to standalone apps. Consider using alternative methods.',
-      );
-
-      consoleWarnSpy.mockRestore();
-    });
-
-    it('matches Firekit signature', () => {
-      // runtime assertion to satisfy vitest/expect-expect
-      expect(typeof updateUser).toBe('function');
-
-      // compile-time signature check
-      expectTypeOf(updateUser).toEqualTypeOf<(userUpdateData: UpdateUserInput) => Promise<void>>();
     });
   });
 
