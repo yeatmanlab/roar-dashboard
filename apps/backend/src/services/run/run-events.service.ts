@@ -4,19 +4,12 @@ import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { RunsRepository } from '../../repositories/runs.repository';
 import { runTrials, runTrialInteractions } from '../../db/schema/assessment';
+import { ALLOWED_ENGAGEMENT_FLAG_KEYS } from '@roar-dashboard/api-contract';
 
 interface AuthContext {
   userId: string;
   isSuperAdmin: boolean;
 }
-
-const ALLOWED_ENGAGEMENT_FLAGS = new Set<string>([
-  // Emily: check with the team
-  'incomplete',
-  'response_time_too_fast',
-  'accuracy_too_low',
-  'not_enough_responses',
-]);
 
 /**
  * RunEventsService
@@ -103,7 +96,7 @@ export function RunEventsService({
         });
       }
 
-      if (ALLOWED_ENGAGEMENT_FLAGS.size > 0 && !ALLOWED_ENGAGEMENT_FLAGS.has(key)) {
+      if (ALLOWED_ENGAGEMENT_FLAG_KEYS.length > 0 && !ALLOWED_ENGAGEMENT_FLAG_KEYS.includes(key)) {
         throw new ApiError('Invalid engagement flag name', {
           statusCode: StatusCodes.BAD_REQUEST,
           code: ApiErrorCode.REQUEST_VALIDATION_FAILED,

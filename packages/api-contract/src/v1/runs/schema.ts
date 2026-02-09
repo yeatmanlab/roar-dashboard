@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { ALLOWED_ENGAGEMENT_FLAG_KEYS } from './constants';
 
 /**
  * Request body for POST /runs
@@ -73,6 +74,21 @@ export const RunTrialEventSchema = z.object({
     .passthrough(), // allow app-specific
   interactions: z.array(RunTrialInteractionSchema).optional(),
 });
+
+const EngagementFlagsSchema = z.record(z.boolean()).superRefine((flags, ctx) => {
+  const allowed = new Set(ALLOWED_ENGAGEMENT_FLAG_KEYS);
+  for (const key of Object.keys(flags)) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (!allowed.has(key as any)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `Unknown engagement flag: ${key}`,
+        path: [key],
+      });
+    }
+  }
+});
+
 /**
  * Schema for a run engagement event.
  *
@@ -83,7 +99,7 @@ export const RunTrialEventSchema = z.object({
  */
 export const RunEngagementEventSchema = z.object({
   type: z.literal('engagement'),
-  engagement_flags: z.record(z.boolean()),
+  engagement_flags: EngagementFlagsSchema,
   reliable_run: z.boolean(),
 });
 
