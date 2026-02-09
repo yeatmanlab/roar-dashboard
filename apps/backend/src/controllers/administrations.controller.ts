@@ -65,16 +65,19 @@ function transformAdministration(admin: AdministrationWithEmbeds): ApiAdministra
 
 /**
  * Transforms PostgreSQL point type to GeoJSON Point format.
- * Drizzle ORM returns point as [number, number] tuple (longitude, latitude).
+ *
+ * Drizzle ORM returns PostgreSQL point columns as [number, number] tuples.
+ * GeoJSON coordinates follow [longitude, latitude] order per RFC 7946,
+ * which is the opposite of Google Maps (lat, lng) convention.
  *
  * @param point - The PostgreSQL point as [longitude, latitude] tuple, or null
- * @returns GeoJSON Point object, or null if input is null
+ * @returns GeoJSON Point object with coordinates in [longitude, latitude] order, or null
  */
 function transformLatLong(point: [number, number] | null): ApiGeoPoint | null {
   if (!point) return null;
   return {
     type: 'Point',
-    coordinates: point, // GeoJSON spec: [longitude, latitude] (note: opposite of Google Maps)
+    coordinates: point,
   };
 }
 

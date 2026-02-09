@@ -101,6 +101,8 @@ export const AdministrationSortField = {
 
 /**
  * Allowed embed options for administrations.
+ * - 'stats': Include assigned user count and run statistics (started/completed)
+ * - 'tasks': Include task variants assigned to the administration
  */
 export const ADMINISTRATION_EMBED_OPTIONS = ['stats', 'tasks'] as const;
 

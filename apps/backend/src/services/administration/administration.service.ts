@@ -35,6 +35,12 @@ export interface AdministrationWithEmbeds extends Administration {
 
 /**
  * Options for listing administrations including embed and status filter.
+ *
+ * @property embed - Optional array of related data to include ('stats', 'tasks')
+ * @property status - Optional filter by administration status:
+ *   - 'active': dateStart <= now <= dateEnd
+ *   - 'past': dateEnd < now
+ *   - 'upcoming': dateStart > now
  */
 export interface ListOptions extends AdministrationQueryOptions {
   embed?: AdministrationEmbedOptionType[];
