@@ -17,15 +17,10 @@ import { UserRole } from '../enums/user-role.enum';
 describe('AdministrationRepository', () => {
   const repository = new AdministrationRepository();
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // listAll
-  // ─────────────────────────────────────────────────────────────────────────────
-
   describe('listAll', () => {
     it('returns all administrations with pagination', async () => {
       const result = await repository.listAll({ page: 1, perPage: 100 });
 
-      // baseFixture creates 6 administrations
       expect(result.totalItems).toBeGreaterThanOrEqual(6);
       expect(result.items.length).toBeGreaterThanOrEqual(6);
     });
@@ -77,6 +72,7 @@ describe('AdministrationRepository', () => {
 
       const ids = result.items.map((a) => a.id);
       expect(ids).toContain(activeAdmin.id);
+
       // All returned items should have dateStart <= now and dateEnd >= now
       for (const item of result.items) {
         expect(item.dateStart <= now).toBe(true);
@@ -131,10 +127,6 @@ describe('AdministrationRepository', () => {
       }
     });
   });
-
-  // ─────────────────────────────────────────────────────────────────────────────
-  // listAuthorized
-  // ─────────────────────────────────────────────────────────────────────────────
 
   describe('listAuthorized', () => {
     it('returns only authorized administrations for a user', async () => {
@@ -219,10 +211,6 @@ describe('AdministrationRepository', () => {
     });
   });
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // getByIdAuthorized
-  // ─────────────────────────────────────────────────────────────────────────────
-
   describe('getByIdAuthorized', () => {
     it('returns administration when user has access', async () => {
       const result = await repository.getByIdAuthorized(
@@ -254,11 +242,6 @@ describe('AdministrationRepository', () => {
     });
   });
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // getAssignedUserCountsByAdministrationIds (light coverage — detailed tests
-  // are in administration.access-controls.integration.test.ts)
-  // ─────────────────────────────────────────────────────────────────────────────
-
   describe('getAssignedUserCountsByAdministrationIds', () => {
     it('returns counts for administrations', async () => {
       const counts = await repository.getAssignedUserCountsByAdministrationIds([
@@ -269,10 +252,6 @@ describe('AdministrationRepository', () => {
       expect(counts.get(baseFixture.administrationAssignedToGroup.id)).toBe(1);
     });
   });
-
-  // ─────────────────────────────────────────────────────────────────────────────
-  // getDistrictsByAdministrationId
-  // ─────────────────────────────────────────────────────────────────────────────
 
   describe('getDistrictsByAdministrationId', () => {
     it('returns districts assigned to an administration', async () => {
@@ -441,10 +420,6 @@ describe('AdministrationRepository', () => {
     });
   });
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // getDistrictsByAdministrationIdAuthorized
-  // ─────────────────────────────────────────────────────────────────────────────
-
   describe('getDistrictsByAdministrationIdAuthorized', () => {
     it('returns districts that user has access to', async () => {
       // districtAdmin has access to district through their org membership
@@ -568,10 +543,6 @@ describe('AdministrationRepository', () => {
       expect(page1.items[0]!.id).not.toBe(page2.items[0]!.id);
     });
   });
-
-  // ─────────────────────────────────────────────────────────────────────────────
-  // getUserRolesForAdministration
-  // ─────────────────────────────────────────────────────────────────────────────
 
   describe('getUserRolesForAdministration', () => {
     it('returns roles for user with access via org', async () => {

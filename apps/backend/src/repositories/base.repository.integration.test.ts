@@ -18,10 +18,6 @@ import { users } from '../db/schema/core';
 describe('BaseRepository', () => {
   const repository = new UserRepository();
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // getById
-  // ─────────────────────────────────────────────────────────────────────────────
-
   describe('getById', () => {
     it('returns entity when found', async () => {
       const result = await repository.getById({ id: baseFixture.districtAdmin.id });
@@ -37,10 +33,6 @@ describe('BaseRepository', () => {
       expect(result).toBeNull();
     });
   });
-
-  // ─────────────────────────────────────────────────────────────────────────────
-  // get
-  // ─────────────────────────────────────────────────────────────────────────────
 
   describe('get', () => {
     it('returns entity by id', async () => {
@@ -77,10 +69,6 @@ describe('BaseRepository', () => {
       expect(result).toBeNull();
     });
   });
-
-  // ─────────────────────────────────────────────────────────────────────────────
-  // getAll
-  // ─────────────────────────────────────────────────────────────────────────────
 
   describe('getAll', () => {
     it('returns paginated results with correct totalItems', async () => {
@@ -172,10 +160,6 @@ describe('BaseRepository', () => {
     });
   });
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // create
-  // ─────────────────────────────────────────────────────────────────────────────
-
   describe('create', () => {
     it('inserts and returns entity with generated ID', async () => {
       const userData = UserFactory.build();
@@ -193,10 +177,6 @@ describe('BaseRepository', () => {
     });
   });
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // update
-  // ─────────────────────────────────────────────────────────────────────────────
-
   describe('update', () => {
     it('modifies entity fields', async () => {
       const user = await UserFactory.create();
@@ -209,20 +189,6 @@ describe('BaseRepository', () => {
       expect(updated!.nameFirst).toBe(newName);
     });
   });
-
-  // ─────────────────────────────────────────────────────────────────────────────
-  // delete
-  // ─────────────────────────────────────────────────────────────────────────────
-
-  // Note: BaseRepository.delete() is not tested here because the `users` table
-  // has a DB trigger (prevent_rostered_entity_delete) that blocks direct deletes
-  // due to a type casting issue in the trigger function. The delete method itself
-  // is a straightforward `db.delete().where()` call — the SQL generation is
-  // implicitly validated by the other CRUD tests that use the same column resolution.
-
-  // ─────────────────────────────────────────────────────────────────────────────
-  // count
-  // ─────────────────────────────────────────────────────────────────────────────
 
   describe('count', () => {
     it('returns total count', async () => {
@@ -248,10 +214,6 @@ describe('BaseRepository', () => {
       expect(result).toBe(0);
     });
   });
-
-  // ─────────────────────────────────────────────────────────────────────────────
-  // runTransaction
-  // ─────────────────────────────────────────────────────────────────────────────
 
   describe('runTransaction', () => {
     it('executes within transaction and commits', async () => {
