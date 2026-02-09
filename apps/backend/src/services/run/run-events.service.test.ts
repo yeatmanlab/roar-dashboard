@@ -432,4 +432,186 @@ describe('RunEventsService', () => {
       expect(mockRunsRepository.runTransaction).toHaveBeenCalled();
     });
   });
+
+  describe('updateEngagement', () => {
+    const validRunId = '550e8400-e29b-41d4-a716-446655440000';
+    const validBody = {
+      type: 'engagement' as const,
+      engagement_flags: {
+        incomplete: true,
+        response_time_too_fast: false,
+      },
+      reliable_run: true,
+    };
+
+    beforeEach(() => {
+      mockRunsRepository.update = vi.fn();
+    });
+
+    it('should update engagement successfully', async () => {
+      const mockRun = { id: validRunId, userId: 'user-123' };
+      mockRunsRepository.getById.mockResolvedValue(mockRun);
+      mockRunsRepository.update.mockResolvedValue(undefined);
+
+      await runEventsService.updateEngagement(mockAuthContext, validRunId, validBody);
+
+      expect(mockRunsRepository.getById).toHaveBeenCalledWith({ id: validRunId });
+      expect(mockRunsRepository.update).toHaveBeenCalledWith({
+        id: validRunId,
+        data: {
+          updatedAt: expect.any(Date),
+          engagementFlags: validBody.engagement_flags,
+          reliableRun: true,
+        },
+      });
+    });
+
+    it('should throw NOT_FOUND when run does not exist', async () => {
+      mockRunsRepository.getById.mockResolvedValue(null);
+
+      await expect(runEventsService.updateEngagement(mockAuthContext, validRunId, validBody)).rejects.toMatchObject({
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+      });
+
+      expect(mockRunsRepository.update).not.toHaveBeenCalled();
+    });
+
+    it('should throw FORBIDDEN when user does not own the run', async () => {
+      const mockRun = { id: validRunId, userId: 'different-user' };
+      mockRunsRepository.getById.mockResolvedValue(mockRun);
+
+      await expect(runEventsService.updateEngagement(mockAuthContext, validRunId, validBody)).rejects.toMatchObject({
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+      });
+
+      expect(mockRunsRepository.update).not.toHaveBeenCalled();
+    });
+
+    it('should throw BAD_REQUEST when event type is invalid', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const invalidBody = { type: 'invalid' } as any;
+
+      await expect(runEventsService.updateEngagement(mockAuthContext, validRunId, invalidBody)).rejects.toMatchObject({
+        statusCode: StatusCodes.BAD_REQUEST,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+      });
+
+      expect(mockRunsRepository.getById).not.toHaveBeenCalled();
+      expect(mockRunsRepository.update).not.toHaveBeenCalled();
+    });
+
+    it('should throw BAD_REQUEST when engagement flag value is not boolean', async () => {
+      const mockRun = { id: validRunId, userId: 'user-123' };
+      mockRunsRepository.getById.mockResolvedValue(mockRun);
+
+      const invalidBody = {
+        type: 'engagement' as const,
+        engagement_flags: {
+          incomplete: 'not-a-boolean',
+        },
+        reliable_run: true,
+      };
+
+      await expect(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        runEventsService.updateEngagement(mockAuthContext, validRunId, invalidBody as any),
+      ).rejects.toMatchObject({
+        statusCode: StatusCodes.BAD_REQUEST,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+      });
+
+      expect(mockRunsRepository.update).not.toHaveBeenCalled();
+    });
+
+    it('should throw BAD_REQUEST when engagement flag name is not allowed', async () => {
+      const mockRun = { id: validRunId, userId: 'user-123' };
+      mockRunsRepository.getById.mockResolvedValue(mockRun);
+
+      const invalidBody = {
+        type: 'engagement' as const,
+        engagement_flags: {
+          invalid_flag_name: true,
+        },
+        reliable_run: true,
+      };
+
+      await expect(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        runEventsService.updateEngagement(mockAuthContext, validRunId, invalidBody as any),
+      ).rejects.toMatchObject({
+        statusCode: StatusCodes.BAD_REQUEST,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+      });
+
+      expect(mockRunsRepository.update).not.toHaveBeenCalled();
+    });
+
+    it('should handle empty engagement flags', async () => {
+      const mockRun = { id: validRunId, userId: 'user-123' };
+      mockRunsRepository.getById.mockResolvedValue(mockRun);
+      mockRunsRepository.update.mockResolvedValue(undefined);
+
+      const bodyWithEmptyFlags = {
+        type: 'engagement' as const,
+        engagement_flags: {},
+        reliable_run: false,
+      };
+
+      await runEventsService.updateEngagement(mockAuthContext, validRunId, bodyWithEmptyFlags);
+
+      expect(mockRunsRepository.update).toHaveBeenCalledWith({
+        id: validRunId,
+        data: {
+          updatedAt: expect.any(Date),
+          engagementFlags: {},
+          reliableRun: false,
+        },
+      });
+    });
+
+    it('should handle multiple engagement flags', async () => {
+      const mockRun = { id: validRunId, userId: 'user-123' };
+      mockRunsRepository.getById.mockResolvedValue(mockRun);
+      mockRunsRepository.update.mockResolvedValue(undefined);
+
+      const bodyWithMultipleFlags = {
+        type: 'engagement' as const,
+        engagement_flags: {
+          incomplete: true,
+          response_time_too_fast: true,
+          accuracy_too_low: false,
+          not_enough_responses: true,
+        },
+        reliable_run: false,
+      };
+
+      await runEventsService.updateEngagement(mockAuthContext, validRunId, bodyWithMultipleFlags);
+
+      expect(mockRunsRepository.update).toHaveBeenCalledWith({
+        id: validRunId,
+        data: {
+          updatedAt: expect.any(Date),
+          engagementFlags: bodyWithMultipleFlags.engagement_flags,
+          reliableRun: false,
+        },
+      });
+    });
+
+    it('should update timestamp when updating engagement', async () => {
+      const mockRun = { id: validRunId, userId: 'user-123' };
+      mockRunsRepository.getById.mockResolvedValue(mockRun);
+      mockRunsRepository.update.mockResolvedValue(undefined);
+
+      const beforeCall = new Date();
+      await runEventsService.updateEngagement(mockAuthContext, validRunId, validBody);
+      const afterCall = new Date();
+
+      const updateCall = mockRunsRepository.update.mock.calls[0][0];
+      expect(updateCall.data.updatedAt).toBeInstanceOf(Date);
+      expect(updateCall.data.updatedAt.getTime()).toBeGreaterThanOrEqual(beforeCall.getTime());
+      expect(updateCall.data.updatedAt.getTime()).toBeLessThanOrEqual(afterCall.getTime());
+    });
+  });
 });

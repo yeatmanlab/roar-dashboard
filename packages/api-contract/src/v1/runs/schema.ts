@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { ALLOWED_ENGAGEMENT_FLAG_KEYS } from './constants';
 
 /**
  * Request body for POST /runs
@@ -74,6 +75,34 @@ export const RunTrialEventSchema = z.object({
   interactions: z.array(RunTrialInteractionSchema).optional(),
 });
 
+const EngagementFlagsSchema = z.record(z.boolean()).superRefine((flags, ctx) => {
+  const allowed = new Set(ALLOWED_ENGAGEMENT_FLAG_KEYS);
+  for (const key of Object.keys(flags)) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (!allowed.has(key as any)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `Unknown engagement flag: ${key}`,
+        path: [key],
+      });
+    }
+  }
+});
+
+/**
+ * Schema for a run engagement event.
+ *
+ * Represents an event that marks a run engagement.
+ * - type: Must be 'engagement' (literal type for discriminated union)
+ * - engagement_flags: Engagement flags
+ * - reliable_run: Whether the engagement is reliable
+ */
+export const RunEngagementEventSchema = z.object({
+  type: z.literal('engagement'),
+  engagement_flags: EngagementFlagsSchema,
+  reliable_run: z.boolean(),
+});
+
 /**
  * Discriminated union schema for run events.
  */
@@ -81,6 +110,7 @@ export const RunEventBodySchema = z.discriminatedUnion('type', [
   RunCompleteEventSchema,
   RunAbortEventSchema,
   RunTrialEventSchema,
+  RunEngagementEventSchema,
 ]);
 
 export type RunEventBody = z.infer<typeof RunEventBodySchema>;
