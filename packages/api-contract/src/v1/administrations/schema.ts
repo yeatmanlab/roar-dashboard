@@ -140,38 +140,11 @@ export const AdministrationsListResponseSchema = createPaginatedResponseSchema(A
 export type AdministrationsListResponse = z.infer<typeof AdministrationsListResponseSchema>;
 
 /**
- * GeoJSON Point schema for latitude/longitude coordinates.
- */
-export const GeoPointSchema = z.object({
-  type: z.literal('Point'),
-  coordinates: z.tuple([z.number(), z.number()]), // [longitude, latitude]
-});
-
-export type GeoPoint = z.infer<typeof GeoPointSchema>;
-
-/**
- * District location schema.
- */
-export const DistrictLocationSchema = z.object({
-  addressLine1: z.string().nullable(),
-  addressLine2: z.string().nullable(),
-  city: z.string().nullable(),
-  stateProvince: z.string().nullable(),
-  postalCode: z.string().nullable(),
-  country: z.string().nullable(),
-  latLong: GeoPointSchema.nullable(),
-});
-
-export type DistrictLocation = z.infer<typeof DistrictLocationSchema>;
-
-/**
  * District schema for administration district assignments.
  */
 export const DistrictSchema = z.object({
   id: z.string().uuid(),
   name: z.string(),
-  abbreviation: z.string(),
-  location: DistrictLocationSchema,
 });
 
 export type District = z.infer<typeof DistrictSchema>;
