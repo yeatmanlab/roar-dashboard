@@ -1,7 +1,7 @@
 /**
  * Integration tests for AdministrationRepository.
  *
- * Tests custom methods (listAll, listAuthorized, getByIdAuthorized) against the
+ * Tests custom methods (listAll, listAuthorized, getAuthorizedById) against the
  * real database with the base fixture's org hierarchy and administrations.
  *
  * getAssignedUserCountsByAdministrationIds is covered by the existing
@@ -211,9 +211,9 @@ describe('AdministrationRepository', () => {
     });
   });
 
-  describe('getByIdAuthorized', () => {
+  describe('getAuthorizedById', () => {
     it('returns administration when user has access', async () => {
-      const result = await repository.getByIdAuthorized(
+      const result = await repository.getAuthorizedById(
         { userId: baseFixture.districtAdmin.id, allowedRoles: [UserRole.ADMINISTRATOR] },
         baseFixture.administrationAssignedToDistrict.id,
       );
@@ -224,7 +224,7 @@ describe('AdministrationRepository', () => {
 
     it('returns null when user lacks access', async () => {
       // District B admin should not have access to District A's administration
-      const result = await repository.getByIdAuthorized(
+      const result = await repository.getAuthorizedById(
         { userId: baseFixture.districtBAdmin.id, allowedRoles: [UserRole.ADMINISTRATOR] },
         baseFixture.administrationAssignedToDistrict.id,
       );
@@ -233,7 +233,7 @@ describe('AdministrationRepository', () => {
     });
 
     it('returns null for nonexistent administration ID', async () => {
-      const result = await repository.getByIdAuthorized(
+      const result = await repository.getAuthorizedById(
         { userId: baseFixture.districtAdmin.id, allowedRoles: [UserRole.ADMINISTRATOR] },
         '00000000-0000-0000-0000-000000000000',
       );
@@ -420,10 +420,10 @@ describe('AdministrationRepository', () => {
     });
   });
 
-  describe('getDistrictsByAdministrationIdAuthorized', () => {
+  describe('getAuthorizedDistrictsByAdministrationId', () => {
     it('returns districts that user has access to', async () => {
       // districtAdmin has access to district through their org membership
-      const result = await repository.getDistrictsByAdministrationIdAuthorized(
+      const result = await repository.getAuthorizedDistrictsByAdministrationId(
         { userId: baseFixture.districtAdmin.id, allowedRoles: [UserRole.ADMINISTRATOR] },
         baseFixture.administrationAssignedToDistrict.id,
         { page: 1, perPage: 100 },
@@ -450,7 +450,7 @@ describe('AdministrationRepository', () => {
       });
 
       // districtAdmin only has access to district (not districtB)
-      const result = await repository.getDistrictsByAdministrationIdAuthorized(
+      const result = await repository.getAuthorizedDistrictsByAdministrationId(
         { userId: baseFixture.districtAdmin.id, allowedRoles: [UserRole.ADMINISTRATOR] },
         multiDistrictAdmin.id,
         { page: 1, perPage: 100 },
@@ -465,7 +465,7 @@ describe('AdministrationRepository', () => {
     it('returns empty when user has no access to any assigned districts', async () => {
       // districtBAdmin trying to access administrationAssignedToDistrict
       // They have no access to the district where this admin is assigned
-      const result = await repository.getDistrictsByAdministrationIdAuthorized(
+      const result = await repository.getAuthorizedDistrictsByAdministrationId(
         { userId: baseFixture.districtBAdmin.id, allowedRoles: [UserRole.ADMINISTRATOR] },
         baseFixture.administrationAssignedToDistrict.id,
         { page: 1, perPage: 100 },
@@ -478,7 +478,7 @@ describe('AdministrationRepository', () => {
     it('student sees district through school membership (ancestor access)', async () => {
       // schoolAStudent is in schoolA, which is a child of district
       // They should see district via ancestor access
-      const result = await repository.getDistrictsByAdministrationIdAuthorized(
+      const result = await repository.getAuthorizedDistrictsByAdministrationId(
         { userId: baseFixture.schoolAStudent.id, allowedRoles: [UserRole.STUDENT] },
         baseFixture.administrationAssignedToDistrict.id,
         { page: 1, perPage: 100 },
@@ -520,7 +520,7 @@ describe('AdministrationRepository', () => {
       });
 
       // Get first page
-      const page1 = await repository.getDistrictsByAdministrationIdAuthorized(
+      const page1 = await repository.getAuthorizedDistrictsByAdministrationId(
         { userId: dualDistrictUser.id, allowedRoles: [UserRole.ADMINISTRATOR] },
         paginatedAuthAdmin.id,
         { page: 1, perPage: 1, orderBy: { field: 'name', direction: 'asc' } },
@@ -530,7 +530,7 @@ describe('AdministrationRepository', () => {
       expect(page1.items).toHaveLength(1);
 
       // Get second page
-      const page2 = await repository.getDistrictsByAdministrationIdAuthorized(
+      const page2 = await repository.getAuthorizedDistrictsByAdministrationId(
         { userId: dualDistrictUser.id, allowedRoles: [UserRole.ADMINISTRATOR] },
         paginatedAuthAdmin.id,
         { page: 2, perPage: 1, orderBy: { field: 'name', direction: 'asc' } },

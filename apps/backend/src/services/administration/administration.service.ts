@@ -136,7 +136,7 @@ export function AdministrationService({
 
     // Check access for non-super admin users
     const allowedRoles = rolesForPermission(Permissions.Administrations.READ);
-    const authorized = await administrationRepository.getByIdAuthorized({ userId, allowedRoles }, administrationId);
+    const authorized = await administrationRepository.getAuthorizedById({ userId, allowedRoles }, administrationId);
 
     if (!authorized) {
       throw new ApiError('You do not have permission to access this administration', {
@@ -399,7 +399,7 @@ export function AdministrationService({
 
       // Supervisory role: filter districts by user's accessible orgs
       const allowedRoles = rolesForPermission(Permissions.Administrations.READ);
-      return await administrationRepository.getDistrictsByAdministrationIdAuthorized(
+      return await administrationRepository.getAuthorizedDistrictsByAdministrationId(
         { userId, allowedRoles },
         administrationId,
         queryParams,

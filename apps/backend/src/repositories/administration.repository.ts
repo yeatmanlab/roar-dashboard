@@ -196,7 +196,7 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
    * @param administrationId - The administration ID to retrieve
    * @returns The administration if found and accessible, null otherwise
    */
-  async getByIdAuthorized(
+  async getAuthorizedById(
     accessControlFilter: AccessControlFilter,
     administrationId: string,
   ): Promise<Administration | null> {
@@ -295,7 +295,7 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
    * @param options - Pagination and sorting options
    * @returns Paginated result with districts the user can access
    */
-  async getDistrictsByAdministrationIdAuthorized(
+  async getAuthorizedDistrictsByAdministrationId(
     accessControlFilter: AccessControlFilter,
     administrationId: string,
     options: ListDistrictsOptions,

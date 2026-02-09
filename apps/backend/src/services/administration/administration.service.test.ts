@@ -32,10 +32,10 @@ describe('AdministrationService', () => {
     listAll: mockListAll,
     getAll: mockGetAll,
     getById: mockGetById,
-    getByIdAuthorized: mockGetByIdAuthorized,
+    getAuthorizedById: mockGetByIdAuthorized,
     getAssignedUserCountsByAdministrationIds: mockGetAssignedUserCountsByAdministrationIds,
     getDistrictsByAdministrationId: mockGetDistrictsByAdministrationId,
-    getDistrictsByAdministrationIdAuthorized: mockGetDistrictsByAdministrationIdAuthorized,
+    getAuthorizedDistrictsByAdministrationId: mockGetDistrictsByAdministrationIdAuthorized,
     getUserRolesForAdministration: mockGetUserRolesForAdministration,
   };
 
