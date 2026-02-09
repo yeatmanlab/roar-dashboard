@@ -52,5 +52,20 @@ describe('hasSupervisoryRole', () => {
     it('returns false for empty array', () => {
       expect(hasSupervisoryRole([])).toBe(false);
     });
+
+    it('returns false for unknown/invalid role strings', () => {
+      // Unknown roles should NOT be treated as supervisory (security fix)
+      expect(hasSupervisoryRole(['unknown_role'])).toBe(false);
+      expect(hasSupervisoryRole(['typo_administrator'])).toBe(false);
+      expect(hasSupervisoryRole(['TEACHER'])).toBe(false); // case-sensitive
+    });
+
+    it('returns false when only unknown roles are present', () => {
+      expect(hasSupervisoryRole(['unknown1', 'unknown2'])).toBe(false);
+    });
+
+    it('returns true when unknown role is mixed with valid supervisory role', () => {
+      expect(hasSupervisoryRole(['unknown_role', 'teacher'])).toBe(true);
+    });
   });
 });
