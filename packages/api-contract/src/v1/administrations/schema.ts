@@ -209,28 +209,12 @@ export const AdministrationSchoolsListQuerySchema = PaginationQuerySchema.merge(
 export type AdministrationSchoolsListQuery = z.infer<typeof AdministrationSchoolsListQuerySchema>;
 
 /**
- * School location schema.
- */
-export const SchoolLocationSchema = z.object({
-  addressLine1: z.string().nullable(),
-  addressLine2: z.string().nullable(),
-  city: z.string().nullable(),
-  stateProvince: z.string().nullable(),
-  postalCode: z.string().nullable(),
-  country: z.string().nullable(),
-  latLong: GeoPointSchema.nullable(),
-});
-
-export type SchoolLocation = z.infer<typeof SchoolLocationSchema>;
-
-/**
  * School schema for administration school assignments.
+ * Contains only essential fields (id, name) for listing purposes.
  */
 export const SchoolSchema = z.object({
   id: z.string().uuid(),
   name: z.string(),
-  abbreviation: z.string(),
-  location: SchoolLocationSchema,
 });
 
 export type School = z.infer<typeof SchoolSchema>;

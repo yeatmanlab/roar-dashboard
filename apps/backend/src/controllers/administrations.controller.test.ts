@@ -618,13 +618,6 @@ describe('AdministrationsController', () => {
         name: 'Test School',
         abbreviation: 'TS',
         orgType: OrgType.SCHOOL,
-        locationAddressLine1: '456 Oak Ave',
-        locationAddressLine2: 'Building B',
-        locationCity: 'Lincoln',
-        locationStateProvince: 'NE',
-        locationPostalCode: '68501',
-        locationCountry: 'US',
-        locationLatLong: [-96.6852, 40.8136], // [longitude, latitude]
       });
       mockListSchools.mockResolvedValue({
         items: [mockSchool],
@@ -644,60 +637,8 @@ describe('AdministrationsController', () => {
       const item = data.items[0]!;
       expect(item.id).toBe('school-uuid-123');
       expect(item.name).toBe('Test School');
-      expect(item.abbreviation).toBe('TS');
-      expect(item.location).toEqual({
-        addressLine1: '456 Oak Ave',
-        addressLine2: 'Building B',
-        city: 'Lincoln',
-        stateProvince: 'NE',
-        postalCode: '68501',
-        country: 'US',
-        latLong: {
-          type: 'Point',
-          coordinates: [-96.6852, 40.8136],
-        },
-      });
-    });
-
-    it('should handle null location fields', async () => {
-      const mockSchool = OrgFactory.build({
-        id: 'school-uuid-456',
-        name: 'Minimal School',
-        abbreviation: 'MS',
-        orgType: OrgType.SCHOOL,
-        locationAddressLine1: null,
-        locationAddressLine2: null,
-        locationCity: null,
-        locationStateProvince: null,
-        locationPostalCode: null,
-        locationCountry: null,
-        locationLatLong: null,
-      });
-      mockListSchools.mockResolvedValue({
-        items: [mockSchool],
-        totalItems: 1,
-      });
-
-      const { AdministrationsController: Controller } = await import('./administrations.controller');
-
-      const result = await Controller.listSchools(mockAuthContext, 'admin-123', {
-        page: 1,
-        perPage: 25,
-        sortBy: 'name',
-        sortOrder: 'asc',
-      });
-
-      const data = expectOkResponse(result);
-      const item = data.items[0]!;
-      expect(item.location).toEqual({
-        addressLine1: null,
-        addressLine2: null,
-        city: null,
-        stateProvince: null,
-        postalCode: null,
-        country: null,
-        latLong: null,
-      });
+      // School response only contains id and name (no abbreviation or location)
+      expect(Object.keys(item)).toEqual(['id', 'name']);
     });
 
     it('should return 404 when administration does not exist', async () => {
@@ -729,7 +670,7 @@ describe('AdministrationsController', () => {
 
     it('should return 403 when user lacks permission to access administration', async () => {
       mockListSchools.mockRejectedValue(
-        new ApiError('You do not have permission to access this administration', {
+        new ApiError('You do not have permission to perform this action', {
           statusCode: StatusCodes.FORBIDDEN,
           code: ApiErrorCode.AUTH_FORBIDDEN,
         }),
@@ -747,7 +688,7 @@ describe('AdministrationsController', () => {
       expect(result.status).toBe(StatusCodes.FORBIDDEN);
       expect(result.body).toEqual({
         error: {
-          message: 'You do not have permission to access this administration',
+          message: 'You do not have permission to perform this action',
           code: 'auth/forbidden',
           traceId: expect.any(String),
         },

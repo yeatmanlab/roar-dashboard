@@ -644,7 +644,7 @@ describe('AdministrationService (integration)', () => {
           expect(error).toBeInstanceOf(ApiError);
           expect((error as ApiError).statusCode).toBe(403);
           // This is the "no access to administration" error, not "supervised user" error
-          expect((error as ApiError).message).toBe('You do not have permission to access this administration');
+          expect((error as ApiError).message).toBe('You do not have permission to perform this action');
         }
       });
     });

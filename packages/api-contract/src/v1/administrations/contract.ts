@@ -69,6 +69,7 @@ export const AdministrationsContract = c.router(
       summary: 'List districts assigned to an administration',
       description:
         'Returns a paginated list of districts assigned to the specified administration. ' +
+        'Supervisory users see only districts in their accessible org tree. ' +
         'Returns 403 if the user lacks permission to access the administration. ' +
         'Returns 404 if the administration does not exist.',
     },
