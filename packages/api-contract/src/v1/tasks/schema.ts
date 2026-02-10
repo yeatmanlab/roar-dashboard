@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
-enum TASK_VARIANT_STATUS {
+// TODO: Should this be re-used across api-contract and apps/backend?
+export enum TASK_VARIANT_STATUS {
   DRAFT = 'draft',
   PUBLISHED = 'published',
   DEPRECATED = 'deprecated',
@@ -17,7 +18,7 @@ export const TaskVariantCreateRequestSchema = z.object({
   name: z.string().trim().min(1).max(255),
   parameters: TaskVariantParametersArray,
   description: z.string().trim().min(1).max(1024).optional(),
-  status: z.nativeEnum(TASK_VARIANT_STATUS).optional(),
+  status: z.nativeEnum(TASK_VARIANT_STATUS).optional().default(TASK_VARIANT_STATUS.DRAFT),
 });
 
 export const TaskVariantCreateResponseSchema = z.object({
