@@ -150,15 +150,9 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
       return { items: [], totalItems: 0 };
     }
 
-    // Map API sort field name to Drizzle column
-    const SORT_FIELD_TO_COLUMN = {
-      name: administrations.name,
-      createdAt: administrations.createdAt,
-      dateStart: administrations.dateStart,
-      dateEnd: administrations.dateEnd,
-    } as const;
-    const sortColumn =
-      SORT_FIELD_TO_COLUMN[orderBy?.field as keyof typeof SORT_FIELD_TO_COLUMN] ?? administrations.createdAt;
+    // orderBy.field is validated by the API contract - use it directly with type assertion
+    const sortField = (orderBy?.field ?? 'createdAt') as keyof typeof administrations;
+    const sortColumn = administrations[sortField] as typeof administrations.createdAt;
     const sortDirection = orderBy?.direction === SortOrder.ASC ? asc(sortColumn) : desc(sortColumn);
 
     // Data query: join administrations with the accessible IDs subquery + status filter
