@@ -1,3 +1,6 @@
+-- Schema
+CREATE SCHEMA IF NOT EXISTS app;
+
 -- Extensions
 CREATE EXTENSION IF NOT EXISTS pgcrypto;   -- gen_random_uuid()
 CREATE EXTENSION IF NOT EXISTS citext;     -- case-insensitive text
