@@ -19,6 +19,7 @@ import type {
   AdministrationSortFieldType,
   AdministrationDistrictSortFieldType,
   AdministrationSchoolSortFieldType,
+  AdministrationClassSortFieldType,
   AdministrationStatus,
 } from '@roar-dashboard/api-contract';
 import { SortOrder } from '@roar-dashboard/api-contract';
@@ -51,7 +52,7 @@ const ORG_SORT_COLUMNS: Record<AdministrationDistrictSortFieldType | Administrat
 /**
  * Explicit mapping from API sort field names to class table columns.
  */
-const CLASS_SORT_COLUMNS: Record<string, Column> = {
+const CLASS_SORT_COLUMNS: Record<AdministrationClassSortFieldType, Column> = {
   name: classes.name,
 };
 
@@ -463,7 +464,9 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
     }
 
     // Use explicit column mapping for type safety
-    const sortColumn = CLASS_SORT_COLUMNS[orderBy?.field ?? 'name'] ?? classes.name;
+    // Cast is safe because API contract validates the sort field before reaching repository
+    const sortField = orderBy?.field as AdministrationClassSortFieldType | undefined;
+    const sortColumn = sortField ? CLASS_SORT_COLUMNS[sortField] : classes.name;
     const primaryOrder = orderBy?.direction === SortOrder.DESC ? desc(sortColumn) : asc(sortColumn);
 
     const dataResult = await this.db
@@ -522,8 +525,9 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
       return { items: [], totalItems: 0 };
     }
 
-    // Use explicit column mapping for type safety
-    const sortColumn = CLASS_SORT_COLUMNS[orderBy?.field ?? 'name'] ?? classes.name;
+    // Cast is safe because API contract validates the sort field before reaching repository
+    const sortField = orderBy?.field as AdministrationClassSortFieldType | undefined;
+    const sortColumn = sortField ? CLASS_SORT_COLUMNS[sortField] : classes.name;
     const primaryOrder = orderBy?.direction === SortOrder.DESC ? desc(sortColumn) : asc(sortColumn);
 
     const dataResult = await this.db
