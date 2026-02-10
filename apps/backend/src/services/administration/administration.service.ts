@@ -4,6 +4,8 @@ import {
   type AdministrationStats,
   type AdministrationEmbedOptionType,
   type AdministrationStatus,
+  type AdministrationDistrictSortFieldType,
+  type AdministrationSchoolSortFieldType,
 } from '@roar-dashboard/api-contract';
 import { StatusCodes } from 'http-status-codes';
 import type { Administration, Org } from '../../db/schema';
@@ -50,13 +52,17 @@ export interface ListOptions extends AdministrationQueryOptions {
 
 /**
  * Options for listing orgs (districts/schools) of an administration.
+ * Generic over the sort field type for type safety.
  */
-export interface ListOrgsOptions {
+export interface ListOrgsOptions<TSortField extends string = string> {
   page: number;
   perPage: number;
-  sortBy: string; // DistrictSortFieldType and SchoolSortFieldType are both 'name'
+  sortBy: TSortField;
   sortOrder: 'asc' | 'desc';
 }
+
+export type ListDistrictsOptions = ListOrgsOptions<AdministrationDistrictSortFieldType>;
+export type ListSchoolsOptions = ListOrgsOptions<AdministrationSchoolSortFieldType>;
 
 /**
  * AdministrationService
@@ -422,7 +428,7 @@ export function AdministrationService({
   async function listDistricts(
     authContext: AuthContext,
     administrationId: string,
-    options: ListOrgsOptions,
+    options: ListDistrictsOptions,
   ): Promise<PaginatedResult<Org>> {
     return listOrgs(authContext, administrationId, OrgType.DISTRICT, options);
   }
@@ -446,7 +452,7 @@ export function AdministrationService({
   async function listSchools(
     authContext: AuthContext,
     administrationId: string,
-    options: ListOrgsOptions,
+    options: ListSchoolsOptions,
   ): Promise<PaginatedResult<Org>> {
     return listOrgs(authContext, administrationId, OrgType.SCHOOL, options);
   }

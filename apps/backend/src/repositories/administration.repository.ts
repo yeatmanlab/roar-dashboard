@@ -1,5 +1,5 @@
 import { and, eq, countDistinct, asc, desc, lte, gte, lt, gt, sql, count } from 'drizzle-orm';
-import type { SQL } from 'drizzle-orm';
+import type { SQL, Column } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { administrations, administrationOrgs, orgs, type Administration, type Org } from '../db/schema';
 import { CoreDbClient } from '../db/clients';
@@ -17,6 +17,25 @@ import { AdministrationAccessControls } from './access-controls/administration.a
 import { OrgAccessControls } from './access-controls/org.access-controls';
 import type { AccessControlFilter } from './utils/parse-access-control-filter.utils';
 import { OrgType } from '../enums/org-type.enum';
+
+/**
+ * Explicit mapping from API sort field names to administration table columns.
+ * This ensures only valid columns are used for sorting, even if API validation is bypassed.
+ */
+const ADMINISTRATION_SORT_COLUMNS: Record<AdministrationSortFieldType, Column> = {
+  createdAt: administrations.createdAt,
+  name: administrations.name,
+  dateStart: administrations.dateStart,
+  dateEnd: administrations.dateEnd,
+};
+
+/**
+ * Explicit mapping from API sort field names to org table columns.
+ * Used for districts and schools which share the same sortable fields.
+ */
+const ORG_SORT_COLUMNS: Record<string, Column> = {
+  name: orgs.name,
+};
 
 /**
  * Query options for administration repository methods (API contract format).
@@ -150,9 +169,8 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
       return { items: [], totalItems: 0 };
     }
 
-    // orderBy.field is validated by the API contract - use it directly with type assertion
-    const sortField = (orderBy?.field ?? 'createdAt') as keyof typeof administrations;
-    const sortColumn = administrations[sortField] as typeof administrations.createdAt;
+    // Use explicit column mapping for type safety
+    const sortColumn = ADMINISTRATION_SORT_COLUMNS[orderBy?.field ?? 'createdAt'];
     const sortDirection = orderBy?.direction === SortOrder.ASC ? asc(sortColumn) : desc(sortColumn);
 
     // Data query: join administrations with the accessible IDs subquery + status filter
@@ -249,9 +267,8 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
       return { items: [], totalItems: 0 };
     }
 
-    // orderBy.field is validated by the API contract - use it directly with type assertion
-    const sortField = (orderBy?.field ?? 'name') as keyof typeof orgs;
-    const sortColumn = orgs[sortField] as typeof orgs.name;
+    // Use explicit column mapping for type safety
+    const sortColumn = ORG_SORT_COLUMNS[orderBy?.field ?? 'name'] ?? orgs.name;
     const sortDirection = orderBy?.direction === SortOrder.DESC ? desc(sortColumn) : asc(sortColumn);
 
     const dataResult = await this.db
@@ -310,9 +327,8 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
       return { items: [], totalItems: 0 };
     }
 
-    // orderBy.field is validated by the API contract - use it directly with type assertion
-    const sortField = (orderBy?.field ?? 'name') as keyof typeof orgs;
-    const sortColumn = orgs[sortField] as typeof orgs.name;
+    // Use explicit column mapping for type safety
+    const sortColumn = ORG_SORT_COLUMNS[orderBy?.field ?? 'name'] ?? orgs.name;
     const sortDirection = orderBy?.direction === SortOrder.DESC ? desc(sortColumn) : asc(sortColumn);
 
     const dataResult = await this.db
