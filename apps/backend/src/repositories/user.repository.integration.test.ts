@@ -18,10 +18,6 @@ describe('UserRepository', () => {
     repository = new UserRepository();
   });
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // findByAuthId (custom method)
-  // ─────────────────────────────────────────────────────────────────────────────
-
   describe('findByAuthId', () => {
     it('returns user when found by authId', async () => {
       const result = await repository.findByAuthId(baseFixture.districtAdmin.authId!);
@@ -38,11 +34,7 @@ describe('UserRepository', () => {
     });
   });
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // Inherited methods (light coverage)
-  // ─────────────────────────────────────────────────────────────────────────────
-
-  describe('getById (inherited)', () => {
+  describe('getById', () => {
     it('returns user', async () => {
       const result = await repository.getById({ id: baseFixture.schoolAStudent.id });
 

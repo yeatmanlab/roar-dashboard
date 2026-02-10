@@ -318,4 +318,114 @@ export class AdministrationAccessControls {
 
     return countsMap;
   }
+
+  /**
+   * Get all distinct roles a user has that grant access to a specific administration.
+   *
+   * Queries all membership paths (org, class, group) that connect the user to the
+   * administration and returns the distinct roles from those memberships. This is
+   * useful for determining if a user has any supervisory roles for an administration.
+   *
+   * @example
+   * ```ts
+   * const roles = await adminAccessControls.getUserRolesForAdministration('user-123', 'admin-456');
+   * // ['teacher', 'administrator']
+   *
+   * const hasSupervisoryRole = roles.some(role => SUPERVISORY_ROLES.includes(role));
+   * if (!hasSupervisoryRole) {
+   *   throw new ApiError('Supervised users cannot access this resource', ...);
+   * }
+   * ```
+   *
+   * @param userId - The ID of the user to query roles for
+   * @param administrationId - The ID of the administration to check access for
+   * @returns Array of distinct roles the user has for this administration
+   */
+  async getUserRolesForAdministration(userId: string, administrationId: string): Promise<string[]> {
+    // Aliases for the orgs table
+    const adminOrgTable = alias(orgs, 'admin_org');
+    const userOrgTable = alias(orgs, 'user_org');
+
+    // Path 1: User's org membership → admins on that org or ancestor orgs
+    const rolesViaUserOrgToAdminOrg = this.db
+      .selectDistinct({ role: userOrgs.role })
+      .from(userOrgs)
+      .innerJoin(userOrgTable, eq(userOrgTable.id, userOrgs.orgId))
+      .innerJoin(adminOrgTable, isDescendantOrEqual(userOrgTable.path, adminOrgTable.path))
+      .innerJoin(administrationOrgs, eq(administrationOrgs.orgId, adminOrgTable.id))
+      .where(
+        and(
+          eq(userOrgs.userId, userId),
+          eq(administrationOrgs.administrationId, administrationId),
+          isEnrollmentActive(userOrgs),
+        ),
+      );
+
+    // Path 2: User's org membership → admins on descendant orgs (supervisory roles)
+    const rolesViaUserOrgToDescendantOrg = this.db
+      .selectDistinct({ role: userOrgs.role })
+      .from(userOrgs)
+      .innerJoin(userOrgTable, eq(userOrgTable.id, userOrgs.orgId))
+      .innerJoin(adminOrgTable, isAncestorOrEqual(userOrgTable.path, adminOrgTable.path))
+      .innerJoin(administrationOrgs, eq(administrationOrgs.orgId, adminOrgTable.id))
+      .where(
+        and(
+          eq(userOrgs.userId, userId),
+          eq(administrationOrgs.administrationId, administrationId),
+          isEnrollmentActive(userOrgs),
+        ),
+      );
+
+    // Path 3: User's class membership → admins on the class's school or ancestor orgs
+    const rolesViaUserClassToAdminOrg = this.db
+      .selectDistinct({ role: userClasses.role })
+      .from(userClasses)
+      .innerJoin(classes, eq(classes.id, userClasses.classId))
+      .innerJoin(adminOrgTable, isDescendantOrEqual(classes.orgPath, adminOrgTable.path))
+      .innerJoin(administrationOrgs, eq(administrationOrgs.orgId, adminOrgTable.id))
+      .where(
+        and(
+          eq(userClasses.userId, userId),
+          eq(administrationOrgs.administrationId, administrationId),
+          isEnrollmentActive(userClasses),
+        ),
+      );
+
+    // Path 4: User's class membership → admins assigned directly to that class
+    const rolesViaDirectClass = this.db
+      .selectDistinct({ role: userClasses.role })
+      .from(userClasses)
+      .innerJoin(administrationClasses, eq(administrationClasses.classId, userClasses.classId))
+      .where(
+        and(
+          eq(userClasses.userId, userId),
+          eq(administrationClasses.administrationId, administrationId),
+          isEnrollmentActive(userClasses),
+        ),
+      );
+
+    // Path 5: User's group membership → admins assigned directly to that group
+    const rolesViaDirectGroup = this.db
+      .selectDistinct({ role: userGroups.role })
+      .from(userGroups)
+      .innerJoin(administrationGroups, eq(administrationGroups.groupId, userGroups.groupId))
+      .where(
+        and(
+          eq(userGroups.userId, userId),
+          eq(administrationGroups.administrationId, administrationId),
+          isEnrollmentActive(userGroups),
+        ),
+      );
+
+    // Combine all paths with UNION to get all distinct roles
+    const roleUnion = rolesViaUserOrgToAdminOrg
+      .union(rolesViaUserOrgToDescendantOrg)
+      .union(rolesViaUserClassToAdminOrg)
+      .union(rolesViaDirectClass)
+      .union(rolesViaDirectGroup);
+
+    const result = await this.db.select({ role: roleUnion.as('roles').role }).from(roleUnion.as('roles'));
+
+    return result.map((r) => r.role);
+  }
 }

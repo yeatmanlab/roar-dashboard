@@ -5,23 +5,24 @@ import {
 } from '../services/administration/administration.service';
 import type {
   AdministrationsListQuery,
+  AdministrationDistrictsListQuery,
   Administration as ApiAdministration,
   AdministrationBase as ApiAdministrationBase,
+  District as ApiDistrict,
 } from '@roar-dashboard/api-contract';
-import type { Administration } from '../db/schema';
+import type { Administration, Org } from '../db/schema';
 import { ApiError } from '../errors/api-error';
 import { toErrorResponse } from '../utils/to-error-response.util';
+import type { AuthContext } from '../types/auth-context';
 
 const administrationService = AdministrationService();
-
-interface AuthContext {
-  userId: string;
-  isSuperAdmin: boolean;
-}
 
 /**
  * Maps a database Administration entity to the base API schema.
  * Converts Date fields to ISO strings and renames fields to match the contract.
+ *
+ * @param admin - The database Administration entity
+ * @returns The API-formatted administration base object
  */
 function transformAdministrationBase(admin: Administration): ApiAdministrationBase {
   return {
@@ -40,6 +41,9 @@ function transformAdministrationBase(admin: Administration): ApiAdministrationBa
 /**
  * Maps a database Administration entity to the full API schema, attaching
  * optional embed data (stats, tasks) when present.
+ *
+ * @param admin - The database Administration entity with optional embeds
+ * @returns The API-formatted administration object with embedded data
  */
 function transformAdministration(admin: AdministrationWithEmbeds): ApiAdministration {
   const result: ApiAdministration = transformAdministrationBase(admin);
@@ -55,6 +59,19 @@ function transformAdministration(admin: AdministrationWithEmbeds): ApiAdministra
   }
 
   return result;
+}
+
+/**
+ * Maps a database Org entity to the District API schema.
+ *
+ * @param org - The database Org entity (must be orgType='district')
+ * @returns The API-formatted district object
+ */
+function transformDistrict(org: Org): ApiDistrict {
+  return {
+    id: org.id,
+    name: org.name,
+  };
 }
 
 /**
@@ -86,7 +103,11 @@ export const AdministrationsController = {
       };
     } catch (error) {
       if (error instanceof ApiError) {
-        return toErrorResponse(error, [StatusCodes.NOT_FOUND, StatusCodes.FORBIDDEN]);
+        return toErrorResponse(error, [
+          StatusCodes.NOT_FOUND,
+          StatusCodes.FORBIDDEN,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        ]);
       }
       throw error;
     }
@@ -102,35 +123,98 @@ export const AdministrationsController = {
    * @param query - Query parameters (pagination, sorting, status filter, embed options)
    */
   list: async (authContext: AuthContext, query: AdministrationsListQuery) => {
-    const { page, perPage, sortBy, sortOrder, embed, status } = query;
+    try {
+      const { page, perPage, sortBy, sortOrder, embed, status } = query;
 
-    const result = await administrationService.list(authContext, {
-      page,
-      perPage,
-      sortBy,
-      sortOrder,
-      embed,
-      ...(status && { status }),
-    });
+      const result = await administrationService.list(authContext, {
+        page,
+        perPage,
+        sortBy,
+        sortOrder,
+        embed,
+        ...(status && { status }),
+      });
 
-    // Transform to API response format
-    const items = result.items.map(transformAdministration);
+      // Transform to API response format
+      const items = result.items.map(transformAdministration);
 
-    const totalPages = Math.ceil(result.totalItems / perPage);
+      const totalPages = Math.ceil(result.totalItems / perPage);
 
-    return {
-      status: StatusCodes.OK as const,
-      body: {
-        data: {
-          items,
-          pagination: {
-            page,
-            perPage,
-            totalItems: result.totalItems,
-            totalPages,
+      return {
+        status: StatusCodes.OK as const,
+        body: {
+          data: {
+            items,
+            pagination: {
+              page,
+              perPage,
+              totalItems: result.totalItems,
+              totalPages,
+            },
           },
         },
-      },
-    };
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [StatusCodes.INTERNAL_SERVER_ERROR]);
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * List districts assigned to an administration.
+   *
+   * Delegates to AdministrationService for authorization and retrieval.
+   * Transforms database entities to the API response format.
+   *
+   * @param authContext - User's authentication context
+   * @param administrationId - UUID of the administration
+   * @param query - Query parameters (pagination, sorting)
+   */
+  listDistricts: async (
+    authContext: AuthContext,
+    administrationId: string,
+    query: AdministrationDistrictsListQuery,
+  ) => {
+    try {
+      const { page, perPage, sortBy, sortOrder } = query;
+
+      const result = await administrationService.listDistricts(authContext, administrationId, {
+        page,
+        perPage,
+        sortBy,
+        sortOrder,
+      });
+
+      // Transform to API response format
+      const items = result.items.map(transformDistrict);
+
+      const totalPages = Math.ceil(result.totalItems / perPage);
+
+      return {
+        status: StatusCodes.OK as const,
+        body: {
+          data: {
+            items,
+            pagination: {
+              page,
+              perPage,
+              totalItems: result.totalItems,
+              totalPages,
+            },
+          },
+        },
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [
+          StatusCodes.NOT_FOUND,
+          StatusCodes.FORBIDDEN,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        ]);
+      }
+      throw error;
+    }
   },
 };

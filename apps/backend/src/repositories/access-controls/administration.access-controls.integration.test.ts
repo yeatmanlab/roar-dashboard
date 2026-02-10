@@ -511,4 +511,86 @@ describe('AdministrationAccessControls', () => {
       });
     });
   });
+
+  describe('getUserRolesForAdministration', () => {
+    it('returns roles for user with org membership', async () => {
+      // districtAdmin has ADMINISTRATOR role at district level
+      const roles = await accessControls.getUserRolesForAdministration(
+        baseFixture.districtAdmin.id,
+        baseFixture.administrationAssignedToDistrict.id,
+      );
+
+      expect(roles).toContain('administrator');
+    });
+
+    it('returns roles for user with class membership', async () => {
+      // classAStudent has STUDENT role in classInSchoolA
+      const roles = await accessControls.getUserRolesForAdministration(
+        baseFixture.classAStudent.id,
+        baseFixture.administrationAssignedToClassA.id,
+      );
+
+      expect(roles).toContain('student');
+    });
+
+    it('returns roles for user with group membership', async () => {
+      // groupStudent has STUDENT role in the standalone group
+      const roles = await accessControls.getUserRolesForAdministration(
+        baseFixture.groupStudent.id,
+        baseFixture.administrationAssignedToGroup.id,
+      );
+
+      expect(roles).toContain('student');
+    });
+
+    it('returns multiple roles for user with multiple memberships', async () => {
+      // multiAssignedUser has ADMINISTRATOR at district and TEACHER at schoolA
+      const roles = await accessControls.getUserRolesForAdministration(
+        baseFixture.multiAssignedUser.id,
+        baseFixture.administrationAssignedToDistrict.id,
+      );
+
+      expect(roles).toContain('administrator');
+      expect(roles).toContain('teacher');
+    });
+
+    it('returns empty array for user with no access to administration', async () => {
+      // districtBAdmin has no access to administrationAssignedToDistrict (different branch)
+      const roles = await accessControls.getUserRolesForAdministration(
+        baseFixture.districtBAdmin.id,
+        baseFixture.administrationAssignedToDistrict.id,
+      );
+
+      expect(roles).toHaveLength(0);
+    });
+
+    it('returns empty array for user with no memberships', async () => {
+      const roles = await accessControls.getUserRolesForAdministration(
+        baseFixture.unassignedUser.id,
+        baseFixture.administrationAssignedToDistrict.id,
+      );
+
+      expect(roles).toHaveLength(0);
+    });
+
+    it('excludes roles from expired enrollments', async () => {
+      // expiredEnrollmentStudent has expired enrollment at School A
+      const roles = await accessControls.getUserRolesForAdministration(
+        baseFixture.expiredEnrollmentStudent.id,
+        baseFixture.administrationAssignedToSchoolA.id,
+      );
+
+      expect(roles).toHaveLength(0);
+    });
+
+    it('excludes roles from future enrollments', async () => {
+      // futureEnrollmentStudent has future enrollment at School A
+      const roles = await accessControls.getUserRolesForAdministration(
+        baseFixture.futureEnrollmentStudent.id,
+        baseFixture.administrationAssignedToSchoolA.id,
+      );
+
+      expect(roles).toHaveLength(0);
+    });
+  });
 });
