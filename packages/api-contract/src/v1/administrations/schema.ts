@@ -85,6 +85,11 @@ export type Administration = z.infer<typeof AdministrationSchema>;
 export const ADMINISTRATION_SORT_FIELDS = ['createdAt', 'name', 'dateStart', 'dateEnd'] as const;
 
 /**
+ * Sort field type for administrations.
+ */
+export type AdministrationSortFieldType = (typeof ADMINISTRATION_SORT_FIELDS)[number];
+
+/**
  * Sort field constants for type-safe access.
  */
 export const AdministrationSortField = {
@@ -92,12 +97,19 @@ export const AdministrationSortField = {
   NAME: 'name',
   DATE_START: 'dateStart',
   DATE_END: 'dateEnd',
-} as const satisfies Record<string, (typeof ADMINISTRATION_SORT_FIELDS)[number]>;
+} as const satisfies Record<string, AdministrationSortFieldType>;
 
 /**
  * Allowed embed options for administrations.
+ * - 'stats': Include assigned user count and run statistics (started/completed)
+ * - 'tasks': Include task variants assigned to the administration
  */
 export const ADMINISTRATION_EMBED_OPTIONS = ['stats', 'tasks'] as const;
+
+/**
+ * Embed option type for administrations.
+ */
+export type AdministrationEmbedOptionType = (typeof ADMINISTRATION_EMBED_OPTIONS)[number];
 
 /**
  * Embed option constants for type-safe access.
@@ -105,7 +117,7 @@ export const ADMINISTRATION_EMBED_OPTIONS = ['stats', 'tasks'] as const;
 export const AdministrationEmbedOption = {
   STATS: 'stats',
   TASKS: 'tasks',
-} as const satisfies Record<string, (typeof ADMINISTRATION_EMBED_OPTIONS)[number]>;
+} as const satisfies Record<string, AdministrationEmbedOptionType>;
 
 /**
  * Query parameters for listing administrations.
@@ -126,3 +138,46 @@ export type AdministrationsListQuery = z.infer<typeof AdministrationsListQuerySc
 export const AdministrationsListResponseSchema = createPaginatedResponseSchema(AdministrationSchema);
 
 export type AdministrationsListResponse = z.infer<typeof AdministrationsListResponseSchema>;
+
+/**
+ * District schema for administration district assignments.
+ */
+export const DistrictSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+});
+
+export type District = z.infer<typeof DistrictSchema>;
+
+/**
+ * Allowed sort fields for districts.
+ */
+export const DISTRICT_SORT_FIELDS = ['name'] as const;
+
+/**
+ * Sort field type for districts.
+ */
+export type DistrictSortFieldType = (typeof DISTRICT_SORT_FIELDS)[number];
+
+/**
+ * Sort field constants for type-safe access.
+ */
+export const DistrictSortField = {
+  NAME: 'name',
+} as const satisfies Record<string, DistrictSortFieldType>;
+
+/**
+ * Query parameters for listing administration districts.
+ */
+export const AdministrationDistrictsListQuerySchema = PaginationQuerySchema.merge(
+  createSortQuerySchema(DISTRICT_SORT_FIELDS, 'name'),
+);
+
+export type AdministrationDistrictsListQuery = z.infer<typeof AdministrationDistrictsListQuerySchema>;
+
+/**
+ * Paginated response for administration districts list.
+ */
+export const AdministrationDistrictsListResponseSchema = createPaginatedResponseSchema(DistrictSchema);
+
+export type AdministrationDistrictsListResponse = z.infer<typeof AdministrationDistrictsListResponseSchema>;

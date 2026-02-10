@@ -15,20 +15,6 @@ export type DecodedUser = {
 };
 
 /**
- * Minimal authentication context attached to req.user.
- *
- * Contains only the essential user information needed for authorization checks.
- * Junction tables (userOrgs, userClasses, etc.) can be queried using the id.
- *
- * @property id - The PostgreSQL user UUID.
- * @property isSuperAdmin - Whether the user has super admin privileges.
- */
-export type AuthContext = {
-  id: string;
-  isSuperAdmin: boolean;
-};
-
-/**
  * Auth Provider interface.
  *
  * @property verifyToken - Verifies a JWT token and returns the decoded Firebase user.
