@@ -29,7 +29,7 @@
  * 4. Group access: Direct group membership grants access to group's administrations
  * 5. Class access: Direct class membership grants access to class's administrations
  */
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { AdministrationAccessControls } from './administration.access-controls';
 import { CoreDbClient } from '../../test-support/db';
 import { baseFixture } from '../../test-support/fixtures';

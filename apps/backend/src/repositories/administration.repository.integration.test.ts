@@ -7,7 +7,7 @@
  * getAssignedUserCountsByAdministrationIds is covered by the existing
  * administration.access-controls.integration.test.ts — only light coverage here.
  */
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { baseFixture } from '../test-support/fixtures';
 import { AdministrationFactory } from '../test-support/factories/administration.factory';
 import { AdministrationOrgFactory } from '../test-support/factories/administration-org.factory';

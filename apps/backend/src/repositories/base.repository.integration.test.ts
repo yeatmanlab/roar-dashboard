@@ -8,7 +8,7 @@
  * transaction behavior — replacing the previous unit tests that mocked
  * the Drizzle query builder chain.
  */
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { eq } from 'drizzle-orm';
 import { baseFixture } from '../test-support/fixtures';
 import { UserFactory } from '../test-support/factories/user.factory';

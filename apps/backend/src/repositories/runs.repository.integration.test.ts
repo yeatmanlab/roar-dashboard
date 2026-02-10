@@ -8,7 +8,7 @@
  * use arbitrary UUIDs for userId/taskId/taskVariantId and fixture
  * administration IDs where convenient.
  */
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { faker } from '@faker-js/faker';
 import { baseFixture } from '../test-support/fixtures';
 import { RunFactory } from '../test-support/factories/run.factory';
