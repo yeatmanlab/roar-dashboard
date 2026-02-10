@@ -9,6 +9,8 @@ import type {
   AdministrationSchoolsListQuery,
   Administration as ApiAdministration,
   AdministrationBase as ApiAdministrationBase,
+  District,
+  School,
 } from '@roar-dashboard/api-contract';
 import type { Administration, Org } from '../db/schema';
 import { ApiError } from '../errors/api-error';
@@ -62,13 +64,12 @@ function transformAdministration(admin: AdministrationWithEmbeds): ApiAdministra
 }
 
 /**
- * Maps a database Org entity to the API schema.
- * Returns only essential fields (id, name) for listing purposes.
+ * Maps a database Org entity to the API schema for districts/schools.
  *
  * @param org - The database Org entity
- * @returns The API-formatted org object with id and name
+ * @returns The API-formatted org object
  */
-function transformOrg(org: Org): { id: string; name: string } {
+function transformOrg(org: Org): District | School {
   return {
     id: org.id,
     name: org.name,
