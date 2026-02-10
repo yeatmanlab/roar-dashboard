@@ -8,6 +8,8 @@ import type {
   PaginationQuery,
   SortQuery,
   AdministrationSortFieldType,
+  AdministrationDistrictSortFieldType,
+  AdministrationSchoolSortFieldType,
   AdministrationStatus,
 } from '@roar-dashboard/api-contract';
 import { SortOrder } from '@roar-dashboard/api-contract';
@@ -31,9 +33,9 @@ const ADMINISTRATION_SORT_COLUMNS: Record<AdministrationSortFieldType, Column> =
 
 /**
  * Explicit mapping from API sort field names to org table columns.
- * Used for districts and schools which share the same sortable fields.
+ * Districts and schools share the same sort fields.
  */
-const ORG_SORT_COLUMNS: Record<string, Column> = {
+const ORG_SORT_COLUMNS: Record<AdministrationDistrictSortFieldType | AdministrationSchoolSortFieldType, Column> = {
   name: orgs.name,
 };
 
@@ -170,7 +172,9 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
     }
 
     // Use explicit column mapping for type safety
-    const sortColumn = ADMINISTRATION_SORT_COLUMNS[orderBy?.field ?? 'createdAt'];
+    // Cast is safe because API contract validates the sort field before reaching repository
+    const sortField = orderBy?.field as AdministrationSortFieldType | undefined;
+    const sortColumn = sortField ? ADMINISTRATION_SORT_COLUMNS[sortField] : administrations.createdAt;
     const sortDirection = orderBy?.direction === SortOrder.ASC ? asc(sortColumn) : desc(sortColumn);
 
     // Data query: join administrations with the accessible IDs subquery + status filter
@@ -267,8 +271,9 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
       return { items: [], totalItems: 0 };
     }
 
-    // Use explicit column mapping for type safety
-    const sortColumn = ORG_SORT_COLUMNS[orderBy?.field ?? 'name'] ?? orgs.name;
+    // Cast is safe because API contract validates the sort field before reaching repository
+    const sortField = orderBy?.field as AdministrationDistrictSortFieldType | undefined;
+    const sortColumn = sortField ? ORG_SORT_COLUMNS[sortField] : orgs.name;
     const sortDirection = orderBy?.direction === SortOrder.DESC ? desc(sortColumn) : asc(sortColumn);
 
     const dataResult = await this.db
@@ -327,8 +332,9 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
       return { items: [], totalItems: 0 };
     }
 
-    // Use explicit column mapping for type safety
-    const sortColumn = ORG_SORT_COLUMNS[orderBy?.field ?? 'name'] ?? orgs.name;
+    // Cast is safe because API contract validates the sort field before reaching repository
+    const sortField = orderBy?.field as AdministrationDistrictSortFieldType | undefined;
+    const sortColumn = sortField ? ORG_SORT_COLUMNS[sortField] : orgs.name;
     const sortDirection = orderBy?.direction === SortOrder.DESC ? desc(sortColumn) : asc(sortColumn);
 
     const dataResult = await this.db
