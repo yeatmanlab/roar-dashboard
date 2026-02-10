@@ -142,12 +142,12 @@ export type AdministrationsListResponse = z.infer<typeof AdministrationsListResp
 /**
  * District schema for administration district assignments.
  */
-export const DistrictSchema = z.object({
+export const AdministrationDistrictSchema = z.object({
   id: z.string().uuid(),
   name: z.string(),
 });
 
-export type District = z.infer<typeof DistrictSchema>;
+export type AdministrationDistrict = z.infer<typeof AdministrationDistrictSchema>;
 
 /**
  * Allowed sort fields for districts.
@@ -178,7 +178,7 @@ export type AdministrationDistrictsListQuery = z.infer<typeof AdministrationDist
 /**
  * Paginated response for administration districts list.
  */
-export const AdministrationDistrictsListResponseSchema = createPaginatedResponseSchema(DistrictSchema);
+export const AdministrationDistrictsListResponseSchema = createPaginatedResponseSchema(AdministrationDistrictSchema);
 
 export type AdministrationDistrictsListResponse = z.infer<typeof AdministrationDistrictsListResponseSchema>;
 
@@ -212,16 +212,16 @@ export type AdministrationSchoolsListQuery = z.infer<typeof AdministrationSchool
  * School schema for administration school assignments.
  * Contains only essential fields (id, name) for listing purposes.
  */
-export const SchoolSchema = z.object({
+export const AdministrationSchoolSchema = z.object({
   id: z.string().uuid(),
   name: z.string(),
 });
 
-export type School = z.infer<typeof SchoolSchema>;
+export type AdministrationSchool = z.infer<typeof AdministrationSchoolSchema>;
 
 /**
  * Paginated response for administration schools list.
  */
-export const AdministrationSchoolsListResponseSchema = createPaginatedResponseSchema(SchoolSchema);
+export const AdministrationSchoolsListResponseSchema = createPaginatedResponseSchema(AdministrationSchoolSchema);
 
 export type AdministrationSchoolsListResponse = z.infer<typeof AdministrationSchoolsListResponseSchema>;

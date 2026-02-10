@@ -9,8 +9,8 @@ import type {
   AdministrationSchoolsListQuery,
   Administration as ApiAdministration,
   AdministrationBase as ApiAdministrationBase,
-  District,
-  School,
+  AdministrationDistrict,
+  AdministrationSchool,
 } from '@roar-dashboard/api-contract';
 import type { Administration, Org } from '../db/schema';
 import { ApiError } from '../errors/api-error';
@@ -69,7 +69,7 @@ function transformAdministration(admin: AdministrationWithEmbeds): ApiAdministra
  * @param org - The database Org entity
  * @returns The API-formatted org object
  */
-function transformOrg(org: Org): District | School {
+function transformOrg(org: Org): AdministrationDistrict | AdministrationSchool {
   return {
     id: org.id,
     name: org.name,
